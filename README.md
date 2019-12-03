@@ -13,7 +13,7 @@ npm i koishi -g
 koishi init
 
 # 运行你的 Bot
-koishi .
+koishi run
 ```
 
 现在可以对你的机器人说话了：
