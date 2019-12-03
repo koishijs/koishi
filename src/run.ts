@@ -4,12 +4,20 @@ import { black } from 'chalk'
 import CAC from 'cac/types/CAC'
 
 function createWorker () {
-  const child = fork(resolve(__dirname, '/worker'))
+  const child = fork(resolve(__dirname, 'worker'))
+  let started = false
+  child.on('message', (message) => {
+    if (message === 'started') started = true
+  })
   child.on('exit', (code) => {
     if (!code) {
       return console.log(`${black.bgCyanBright('  INFO  ')} Bot was stopped manually.`)
     } else if (code === 1) {
-      console.log(`${black.bgCyanBright('  WARN  ')} An error was encounted. Restarting...`)
+      if (started) {
+        console.log(`${black.bgCyanBright('  WARN  ')} An error was encounted. Restarting...`)
+      } else {
+        return console.log(`${black.bgCyanBright('  ERROR  ')} A fatal error was encounted.`)
+      }
     } else {
       console.log(`${black.bgCyanBright('  INFO  ')} Bot was restarted manually.`)
     }

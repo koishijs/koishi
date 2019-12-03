@@ -58,6 +58,7 @@ if (Array.isArray(config)) {
 
 onStart(() => {
   console.log(`${black.bgGreenBright(' SUCCESS ')} Bot has started successfully.`)
+  process.send('started')
 })
 
 startAll()
