@@ -1,0 +1,28 @@
+name: CI
+
+on:
+- push
+- pull_request
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out
+      uses: actions/checkout@v1
+    - name: Set up Node
+      uses: actions/setup-node@v1
+      with:
+        node-version: 10.x
+    - name: Install
+      run: npm install
+    - name: Build
+      run: npx tsc -b
+    - name: Lint
+      run: npm run lint
+      env:
+        CI: true
+    - name: Jest
+      run: npm run jest
+      env:
+        CI: true
