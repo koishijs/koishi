@@ -22,7 +22,3 @@ jobs:
       run: npm run lint
       env:
         CI: true
-    - name: Jest
-      run: npm run jest
-      env:
-        CI: true
