@@ -1,0 +1,46 @@
+{
+  "name": "koishi",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "koishi": "dist/cli.js"
+  },
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts",
+    "prepack": "tsc -b"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi-core.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi-core/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi-core#readme",
+  "devDependencies": {
+    "@types/node": "^12.12.14",
+    "@typescript-eslint/eslint-plugin": "^2.9.0",
+    "@typescript-eslint/parser": "^2.9.0",
+    "eslint": "^6.7.1",
+    "eslint-config-standard": "^14.1.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
+    "typescript": "^3.7.2"
+  },
+  "dependencies": {
+    "cac": "^6.5.3",
+    "chalk": "^3.0.0",
+    "fs-extra": "^8.1.0",
+    "koishi-core": "^0.1.10",
+    "koishi-plugin-common": "^0.1.0",
+    "koishi-utils": "^0.1.4"
+  }
+}
