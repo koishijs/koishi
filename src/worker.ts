@@ -1,8 +1,8 @@
-import { createApp, startAll, AppOptions, onStart } from 'koishi-core'
+import { createApp, startAll, AppOptions, onStart, Context } from 'koishi-core'
 import { resolve } from 'path'
 import { black } from 'chalk'
 
-export function loadFromModules (modules: string[], callback: () => void) {
+function loadFromModules (modules: string[], callback: () => void) {
   for (const name of modules) {
     try {
       return require(name)
@@ -30,19 +30,39 @@ function loadEcosystem (type: string, name: string) {
   })
 }
 
-function prepareApp (config: AppOptions) {
+type PluginConfig = [Plugin, any][]
+
+interface AppConfig extends AppOptions {
+  plugins?: PluginConfig | Record<string, PluginConfig>
+}
+
+function loadPlugins (ctx: Context, plugins: PluginConfig) {
+  for (const [plugin, options] of plugins) {
+    ctx.plugin(typeof plugin === 'string' ? loadEcosystem('plugin', plugin) : plugin, options)
+  }
+}
+
+function prepareApp (config: AppConfig) {
   for (const name in config.database || {}) {
     loadEcosystem('database', name)
   }
-  for (const plugin of config.plugins || []) {
-    if (typeof plugin[0] === 'string') {
-      plugin[0] = loadEcosystem('plugin', plugin[0])
+  const app = createApp(config)
+  if (Array.isArray(config.plugins)) {
+    loadPlugins(app, config.plugins)
+  } else if (config.plugins && typeof config.plugins === 'object') {
+    for (const path in config.plugins) {
+      const capture = /^\/(?:(user|discuss|group)\/(?:(\d+)\/)?)?$/.exec(path)
+      if (!path) {
+        console.log(`${black.bgRedBright(' WARNING ')} invalid context path: ${path}.`)
+        continue
+      }
+      const ctx = app._createContext(path, +capture[2])
+      loadPlugins(ctx, config.plugins[path])
     }
   }
-  createApp(config)
 }
 
-const config: AppOptions | AppOptions[] = loadFromModules([
+const config: AppConfig | AppConfig[] = loadFromModules([
   resolve(base, 'koishi.config.js'),
   base,
 ], () => {
