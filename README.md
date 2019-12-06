@@ -1,28 +1,5 @@
 # [Koishi](https://koishijs.github.io/)
  
-## 安装
-
-```sh
-# 进入文件夹
-cd my-bot
-
-# 安装 Koishi
-npm i koishi -g
-
-# 初始化配置文件
-koishi init
-
-# 运行你的 Bot
-koishi run
-```
-
-现在可以对你的机器人说话了：
-
-```
-> echo hello world
-< hello world
-```
-
 ## 特性
 
 ### 开箱即用的 CLI
@@ -69,3 +46,26 @@ Koishi 在开发时借助了下面的工具：
 - 使用 [GitHub Actions](https://github.com/features/actions) 进行持续集成
 
 这保证了其代码的正确性和可读性。
+
+## 安装
+
+```sh
+# 进入文件夹
+cd my-bot
+
+# 安装 Koishi
+npm i koishi -g
+
+# 初始化配置文件
+koishi init
+
+# 运行你的 Bot
+koishi run
+```
+
+现在可以对你的机器人说话了：
+
+```
+> echo hello world
+< hello world
+```
