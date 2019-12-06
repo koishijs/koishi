@@ -1,12 +1,18 @@
-import { createApp, startAll, AppOptions, onStart, Context } from 'koishi-core'
+import { createApp, startAll, AppOptions, onStart, Context, eachApp } from 'koishi-core'
+import { performance } from 'perf_hooks'
 import { resolve } from 'path'
 import { black } from 'chalk'
 
+const noModule = new Set<string>()
+
 function loadFromModules (modules: string[], callback: () => void) {
   for (const name of modules) {
+    if (noModule.has(name)) continue
     try {
       return require(name)
-    } catch (e) {}
+    } catch (e) {
+      noModule.add(name)
+    }
   }
   callback()
 }
@@ -26,7 +32,8 @@ function loadEcosystem (type: string, name: string) {
     depName,
     resolve(base, name),
   ], () => {
-    console.log(`${black.bgYellowBright(' WARNING ')} cannot resolve ${type} ${name}`)
+    console.log(`${black.bgRedBright(' ERROR ')} cannot resolve ${type} ${name}`)
+    process.exit(1)
   })
 }
 
@@ -38,13 +45,16 @@ interface AppConfig extends AppOptions {
 
 function loadPlugins (ctx: Context, plugins: PluginConfig) {
   for (const [plugin, options] of plugins) {
-    ctx.plugin(typeof plugin === 'string' ? loadEcosystem('plugin', plugin) : plugin, options)
+    const resolved = typeof plugin === 'string' ? loadEcosystem('plugin', plugin) : plugin
+    ctx.plugin(resolved, options)
+    if (resolved.name) console.log(`${black.bgCyanBright(' INFO ')} apply plugin ${resolved.name}`)
   }
 }
 
 function prepareApp (config: AppConfig) {
   for (const name in config.database || {}) {
-    loadEcosystem('database', name)
+    const resolved = loadEcosystem('database', name)
+    if (resolved) console.log(`${black.bgCyanBright(' INFO ')} apply database ${name}`)
   }
   const app = createApp(config)
   if (Array.isArray(config.plugins)) {
@@ -53,7 +63,7 @@ function prepareApp (config: AppConfig) {
     for (const path in config.plugins) {
       const capture = /^\/(?:(user|discuss|group)\/(?:(\d+)\/)?)?$/.exec(path)
       if (!path) {
-        console.log(`${black.bgRedBright(' WARNING ')} invalid context path: ${path}.`)
+        console.log(`${black.bgYellowBright(' WARNING ')} invalid context path: ${path}.`)
         continue
       }
       const ctx = app._createContext(path, +capture[2])
@@ -63,10 +73,10 @@ function prepareApp (config: AppConfig) {
 }
 
 const config: AppConfig | AppConfig[] = loadFromModules([
-  resolve(base, 'koishi.config.js'),
+  resolve(base, 'koishi.config'),
   base,
 ], () => {
-  console.log(`${black.bgRedBright('  ERROR  ')} config file not found.`)
+  console.log(`${black.bgRedBright(' ERROR ')} config file not found.`)
   process.exit(1)
 })
 
@@ -77,8 +87,20 @@ if (Array.isArray(config)) {
 }
 
 onStart(() => {
-  console.log(`${black.bgGreenBright(' SUCCESS ')} Bot has started successfully.`)
+  const time = (performance.now() - +process.env.KOISHI_START_TIME).toFixed()
+  console.log(`${black.bgGreenBright(' SUCCESS ')} bot started successfully in ${time} ms`)
   process.send('started')
 })
 
+eachApp((app) => {
+  app.receiver.on('warning', (error) => {
+    console.log(`${black.bgYellowBright(' WARNING ')} ${error}`)
+  })
+})
+
 startAll()
+
+process.on('uncaughtException', (error) => {
+  console.log(`${black.bgYellowBright(' ERROR ')} ${error}`)
+  process.exit(1)
+})

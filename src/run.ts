@@ -1,7 +1,11 @@
+import { CODE_RESTART } from 'koishi-plugin-common'
+import { performance } from 'perf_hooks'
 import { fork } from 'child_process'
 import { resolve } from 'path'
 import { black } from 'chalk'
 import CAC from 'cac/types/CAC'
+
+process.env.KOISHI_START_TIME = '' + performance.now()
 
 function createWorker () {
   const child = fork(resolve(__dirname, 'worker'))
@@ -11,15 +15,15 @@ function createWorker () {
   })
   child.on('exit', (code) => {
     if (!code) {
-      return console.log(`${black.bgCyanBright('  INFO  ')} Bot was stopped manually.`)
-    } else if (code === 1) {
-      if (started) {
-        console.log(`${black.bgCyanBright('  WARN  ')} An error was encounted. Restarting...`)
+      return console.log(`${black.bgCyanBright(' INFO ')} Bot was stopped manually.`)
+    } else if (started) {
+      if (code === CODE_RESTART) {
+        console.log(`${black.bgCyanBright(' INFO ')} Bot was restarted manually.`)
       } else {
-        return console.log(`${black.bgCyanBright('  ERROR  ')} A fatal error was encounted.`)
+        console.log(`${black.bgYellowBright(' WARNING ')} An error was encounted. Restarting...`)
       }
     } else {
-      console.log(`${black.bgCyanBright('  INFO  ')} Bot was restarted manually.`)
+      return console.log(`${black.bgRedBright(' ERROR ')} A fatal error was encounted.`)
     }
     createWorker()
   })

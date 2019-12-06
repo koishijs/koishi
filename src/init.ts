@@ -11,13 +11,16 @@ export default function (cli: CAC) {
     .option('-s, --secret [secret]', 'secret for koishi server')
     .option('-t, --token [token]', 'token for CoolQ server')
     .option('-u, --url <url>', 'CoolQ server url', { default: 'http://localhost:5700' })
+    .option('-h, --http', 'use http server (default)', { default: true })
+    .option('-w, --websocket', 'use websocket client')
     .action(function (options) {
       const path = resolve(process.cwd(), '' + options.output)
       if (!options.forced && existsSync(path)) {
-        console.log(`${black.bgRedBright('  ERROR  ')} ${options.output} already exists. If you want to overwrite the current file, use ${cyanBright.bold('koishi init -f')}.`)
+        console.log(`${black.bgRedBright(' ERROR ')} ${options.output} already exists. If you want to overwrite the current file, use ${cyanBright.bold('koishi init -f')}.`)
         process.exit(1)
       }
       const output: string[] = ['module.exports = {']
+      output.push(`  type: "${options.websocket ? 'ws' : 'http'}",`)
       output.push(`  port: ${JSON.stringify(options.port)},`)
       output.push(`  sendUrl: ${JSON.stringify(options.url)},`)
       if (options.secret) output.push(`  secret: ${JSON.stringify(options.secret)},`)
