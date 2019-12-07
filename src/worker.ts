@@ -1,11 +1,21 @@
 import { createApp, startAll, AppOptions, onStart, Context, eachApp } from 'koishi-core'
 import { performance } from 'perf_hooks'
+import { cyanBright } from 'chalk'
 import { resolve } from 'path'
-import { black } from 'chalk'
+import { logger } from './utils'
+
+process.on('uncaughtException', ({ message }) => {
+  process.send({
+    type: 'error',
+    message,
+  }, () => {
+    process.exit(-1)
+  })
+})
 
 const noModule = new Set<string>()
 
-function loadFromModules (modules: string[], callback: () => void) {
+function loadFromModules (modules: string[], message: string) {
   for (const name of modules) {
     if (noModule.has(name)) continue
     try {
@@ -14,7 +24,7 @@ function loadFromModules (modules: string[], callback: () => void) {
       noModule.add(name)
     }
   }
-  callback()
+  throw new Error(message)
 }
 
 const base = process.env.KOISHI_BASE_PATH
@@ -31,10 +41,7 @@ function loadEcosystem (type: string, name: string) {
   return loadFromModules([
     depName,
     resolve(base, name),
-  ], () => {
-    console.log(`${black.bgRedBright(' ERROR ')} cannot resolve ${type} ${name}`)
-    process.exit(1)
-  })
+  ], `cannot resolve ${type} ${name}`)
 }
 
 type PluginConfig = [Plugin, any][]
@@ -47,14 +54,14 @@ function loadPlugins (ctx: Context, plugins: PluginConfig) {
   for (const [plugin, options] of plugins) {
     const resolved = typeof plugin === 'string' ? loadEcosystem('plugin', plugin) : plugin
     ctx.plugin(resolved, options)
-    if (resolved.name) console.log(`${black.bgCyanBright(' INFO ')} apply plugin ${resolved.name}`)
+    if (resolved.name) logger.info(`apply plugin ${cyanBright(resolved.name)}`)
   }
 }
 
 function prepareApp (config: AppConfig) {
   for (const name in config.database || {}) {
     const resolved = loadEcosystem('database', name)
-    if (resolved) console.log(`${black.bgCyanBright(' INFO ')} apply database ${name}`)
+    if (resolved) logger.info(`apply database ${cyanBright(name)}`)
   }
   const app = createApp(config)
   if (Array.isArray(config.plugins)) {
@@ -63,7 +70,7 @@ function prepareApp (config: AppConfig) {
     for (const path in config.plugins) {
       const capture = /^\/(?:(user|discuss|group)\/(?:(\d+)\/)?)?$/.exec(path)
       if (!path) {
-        console.log(`${black.bgYellowBright(' WARNING ')} invalid context path: ${path}.`)
+        logger.warning(`invalid context path: ${path}.`)
         continue
       }
       const ctx = app._createContext(path, +capture[2])
@@ -75,10 +82,7 @@ function prepareApp (config: AppConfig) {
 const config: AppConfig | AppConfig[] = loadFromModules([
   resolve(base, 'koishi.config'),
   base,
-], () => {
-  console.log(`${black.bgRedBright(' ERROR ')} config file not found.`)
-  process.exit(1)
-})
+], `config file not found.`)
 
 if (Array.isArray(config)) {
   config.forEach(conf => prepareApp(conf))
@@ -87,20 +91,20 @@ if (Array.isArray(config)) {
 }
 
 onStart(() => {
-  const time = (performance.now() - +process.env.KOISHI_START_TIME).toFixed()
-  console.log(`${black.bgGreenBright(' SUCCESS ')} bot started successfully in ${time} ms`)
-  process.send('started')
+  const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
+  logger.success(`bot started successfully in ${time} ms`)
+  process.send({
+    type: 'start',
+  })
 })
 
 eachApp((app) => {
   app.receiver.on('warning', (error) => {
-    console.log(`${black.bgYellowBright(' WARNING ')} ${error}`)
+    logger.warning(`${error}`)
   })
 })
 
-startAll()
-
-process.on('uncaughtException', (error) => {
-  console.log(`${black.bgYellowBright(' ERROR ')} ${error}`)
-  process.exit(1)
+startAll().catch((error) => {
+  logger.error(error.message)
+  process.exit(-1)
 })

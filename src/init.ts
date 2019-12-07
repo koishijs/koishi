@@ -1,6 +1,7 @@
 import { existsSync, writeFileSync } from 'fs'
-import { black, cyanBright } from 'chalk'
+import { cyanBright } from 'chalk'
 import { resolve } from 'path'
+import { logger } from './utils'
 import CAC from 'cac/types/CAC'
 
 export default function (cli: CAC) {
@@ -16,7 +17,7 @@ export default function (cli: CAC) {
     .action(function (options) {
       const path = resolve(process.cwd(), '' + options.output)
       if (!options.forced && existsSync(path)) {
-        console.log(`${black.bgRedBright(' ERROR ')} ${options.output} already exists. If you want to overwrite the current file, use ${cyanBright.bold('koishi init -f')}.`)
+        logger.error(`${options.output} already exists. If you want to overwrite the current file, use ${cyanBright.bold('koishi init -f')}.`)
         process.exit(1)
       }
       const output: string[] = ['module.exports = {']
@@ -30,7 +31,7 @@ export default function (cli: CAC) {
       output.push('  ],')
       output.push('}\n')
       writeFileSync(path, output.join('\n'))
-      console.log(`${black.bgGreenBright(' SUCCESS ')} created config file: ${path}.`)
+      logger.success(`created config file: ${path}.`)
       process.exit(0)
     })
 }

@@ -1,8 +1,7 @@
-import { CODE_RESTART } from 'koishi-plugin-common'
 import { performance } from 'perf_hooks'
 import { fork } from 'child_process'
 import { resolve } from 'path'
-import { black } from 'chalk'
+import { logger } from './utils'
 import CAC from 'cac/types/CAC'
 
 process.env.KOISHI_START_TIME = '' + performance.now()
@@ -10,20 +9,25 @@ process.env.KOISHI_START_TIME = '' + performance.now()
 function createWorker () {
   const child = fork(resolve(__dirname, 'worker'))
   let started = false
-  child.on('message', (message) => {
-    if (message === 'started') started = true
+
+  child.on('message', (data) => {
+    if (data.type === 'start') {
+      started = true
+    } else if (data.type === 'error') {
+      logger.error(data.message)
+    }
   })
+
   child.on('exit', (code) => {
+    if (!started) process.exit(1)
     if (!code) {
-      return console.log(`${black.bgCyanBright(' INFO ')} Bot was stopped manually.`)
-    } else if (started) {
-      if (code === CODE_RESTART) {
-        console.log(`${black.bgCyanBright(' INFO ')} Bot was restarted manually.`)
-      } else {
-        console.log(`${black.bgYellowBright(' WARNING ')} An error was encounted. Restarting...`)
-      }
+      logger.info(`bot was stopped manually.`)
+      process.exit(0)
+    }
+    if (code === 1) {
+      logger.info(`bot was restarted manually.`)
     } else {
-      return console.log(`${black.bgRedBright(' ERROR ')} A fatal error was encounted.`)
+      logger.warning(`an error was encounted. restarting...`)
     }
     createWorker()
   })
