@@ -11,9 +11,8 @@ export default function (cli: CAC) {
     .option('-p, --port <port>', 'port number', { default: 8080 })
     .option('-s, --secret [secret]', 'secret for koishi server')
     .option('-t, --token [token]', 'token for CoolQ server')
-    .option('-u, --url <url>', 'CoolQ server url', { default: 'http://localhost:5700' })
-    .option('-h, --http', 'use http server (default)', { default: true })
-    .option('-w, --websocket', 'use websocket client')
+    .option('-u, --url <url>', 'CoolQ server url')
+    .option('-w, --websocket', 'use websocket client (default http)')
     .action(function (options) {
       const path = resolve(process.cwd(), '' + options.output)
       if (!options.forced && existsSync(path)) {
@@ -21,9 +20,14 @@ export default function (cli: CAC) {
         process.exit(1)
       }
       const output: string[] = ['module.exports = {']
-      output.push(`  type: "${options.websocket ? 'ws' : 'http'}",`)
-      output.push(`  port: ${JSON.stringify(options.port)},`)
-      output.push(`  sendUrl: ${JSON.stringify(options.url)},`)
+      if (options.websocket) {
+        output.push('  type: "ws",')
+        output.push(`  sendUrl: ${JSON.stringify(options.url || 'http://localhost:6700')},`)
+      } else {
+        output.push('  type: "http",')
+        output.push(`  port: ${JSON.stringify(options.port)},`)
+        output.push(`  wsServer: ${JSON.stringify(options.url || 'http://localhost:5700')},`)
+      }
       if (options.secret) output.push(`  secret: ${JSON.stringify(options.secret)},`)
       if (options.token) output.push(`  token: ${JSON.stringify(options.token)},`)
       output.push('  plugins: [')

@@ -1,8 +1,11 @@
-import { createApp, startAll, AppOptions, onStart, Context, eachApp } from 'koishi-core'
+import { App, startAll, AppOptions, onStart, Context, appList } from 'koishi-core'
+import { capitalize } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { cyanBright } from 'chalk'
 import { resolve } from 'path'
 import { logger } from './utils'
+
+const { version } = require('../package')
 
 process.on('uncaughtException', ({ message }) => {
   process.send({
@@ -63,7 +66,7 @@ function prepareApp (config: AppConfig) {
     const resolved = loadEcosystem('database', name)
     if (resolved) logger.info(`apply database ${cyanBright(name)}`)
   }
-  const app = createApp(config)
+  const app = new App(config)
   if (Array.isArray(config.plugins)) {
     loadPlugins(app, config.plugins)
   } else if (config.plugins && typeof config.plugins === 'object') {
@@ -82,7 +85,7 @@ function prepareApp (config: AppConfig) {
 const config: AppConfig | AppConfig[] = loadFromModules([
   resolve(base, 'koishi.config'),
   base,
-], `config file not found.`)
+], 'config file not found.')
 
 if (Array.isArray(config)) {
   config.forEach(conf => prepareApp(conf))
@@ -91,16 +94,34 @@ if (Array.isArray(config)) {
 }
 
 onStart(() => {
+  const versions = new Set<string>()
+  const httpPorts = new Set<string>()
+  const wsServers = new Set<string>()
+  const httpServers = new Set<string>()
+  appList.forEach((app) => {
+    const { type, port, httpServer, wsServer } = app.options
+    const { coolqEdition, pluginVersion } = app.server.version
+    versions.add(`Koishi/${version} CoolQ/${capitalize(coolqEdition)} CQHTTP/${pluginVersion} `)
+    if (type === 'http') {
+      httpPorts.add(`server listening at ${cyanBright(port)}`)
+      if (httpServer) httpServers.add(`connected to ${cyanBright(httpServer)}`)
+    } else {
+      wsServers.add(`connected to ${cyanBright(wsServer.replace(/^http/, 'ws'))}`)
+    }
+  })
+  for (const textSet of [versions, httpPorts, wsServers, httpServers]) {
+    for (const text of textSet) {
+      logger.info(text)
+    }
+  }
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
   logger.success(`bot started successfully in ${time} ms`)
-  process.send({
-    type: 'start',
-  })
+  process.send({ type: 'start' })
 })
 
-eachApp((app) => {
+appList.forEach((app) => {
   app.receiver.on('warning', (error) => {
-    logger.warning(`${error}`)
+    logger.warning(error)
   })
 })
 

@@ -21,13 +21,13 @@ function createWorker () {
   child.on('exit', (code) => {
     if (!started) process.exit(1)
     if (!code) {
-      logger.info(`bot was stopped manually.`)
+      logger.info('bot was stopped manually.')
       process.exit(0)
     }
     if (code === 1) {
-      logger.info(`bot was restarted manually.`)
+      logger.info('bot was restarted manually.')
     } else {
-      logger.warning(`an error was encounted. restarting...`)
+      logger.warning('an error was encounted. restarting...')
     }
     createWorker()
   })
