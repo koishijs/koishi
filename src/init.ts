@@ -22,11 +22,11 @@ export default function (cli: CAC) {
       const output: string[] = ['module.exports = {']
       if (options.websocket) {
         output.push('  type: "ws",')
-        output.push(`  sendUrl: ${JSON.stringify(options.url || 'http://localhost:6700')},`)
+        output.push(`  wsServer: ${JSON.stringify(options.url || 'http://localhost:6700')},`)
       } else {
         output.push('  type: "http",')
         output.push(`  port: ${JSON.stringify(options.port)},`)
-        output.push(`  wsServer: ${JSON.stringify(options.url || 'http://localhost:5700')},`)
+        output.push(`  httpServer: ${JSON.stringify(options.url || 'http://localhost:5700')},`)
       }
       if (options.secret) output.push(`  secret: ${JSON.stringify(options.secret)},`)
       if (options.token) output.push(`  token: ${JSON.stringify(options.token)},`)

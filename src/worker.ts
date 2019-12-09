@@ -71,12 +71,7 @@ function prepareApp (config: AppConfig) {
     loadPlugins(app, config.plugins)
   } else if (config.plugins && typeof config.plugins === 'object') {
     for (const path in config.plugins) {
-      const capture = /^\/(?:(user|discuss|group)\/(?:(\d+)\/)?)?$/.exec(path)
-      if (!path) {
-        logger.warning(`invalid context path: ${path}.`)
-        continue
-      }
-      const ctx = app._createContext(path, +capture[2])
+      const ctx = app._createContext(path)
       loadPlugins(ctx, config.plugins[path])
     }
   }

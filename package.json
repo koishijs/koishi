@@ -1,6 +1,6 @@
 {
   "name": "koishi",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -39,8 +39,8 @@
     "cac": "^6.5.3",
     "chalk": "^3.0.0",
     "fs-extra": "^8.1.0",
-    "koishi-core": "^0.2.5",
+    "koishi-core": "^0.2.7",
     "koishi-plugin-common": "^0.1.6",
-    "koishi-utils": "^0.1.7"
+    "koishi-utils": "^0.1.8"
   }
 }
