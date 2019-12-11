@@ -15,7 +15,7 @@ interface ExecOptions extends cp.ExecOptions {
 export function exec (command: string, options: ExecOptions = {}): Promise<number> {
   const { silent } = options
   return new Promise((resolve) => {
-    if (!silent) console.log(`$ ${command}\n`)
+    if (!silent) console.log(`$ ${command}`)
     const child = cp.exec(command, options)
     if (!silent) {
       child.stdout.pipe(process.stdout)

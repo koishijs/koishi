@@ -1,6 +1,6 @@
 {
   "name": "koishi",
-  "version": "0.1.9",
+  "version": "1.0.0-alpha.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [

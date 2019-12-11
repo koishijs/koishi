@@ -1,0 +1,37 @@
+{
+  "name": "koishi-database-level",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "jest": "jest tests/.*\\.spec\\.ts",
+    "lint": "eslint src --ext .ts",
+    "test": "npm run clear; npm run unit",
+    "unit": "nyc mocha --reporter=landing -r ts-node/register test/*.ts",
+    "clear": "rm -rf ./db;exit 0",
+    "coverage": "mkdir coverage; nyc report --reporter=text-lcov >> ./coverage/lcov.info"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi-database-level.git"
+  },
+  "author": "simon3000 <simon3000@163.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi-database-level/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi-database-level#readme",
+  "devDependencies": {
+    "@types/leveldown": "^4.0.2",
+    "@types/levelup": "^3.1.1"
+  },
+  "dependencies": {
+    "koishi-core": "^1.0.0-alpha.0",
+    "koishi-utils": "^1.0.0-alpha.0",
+    "leveldown": "^5.4.1",
+    "levelup": "^4.3.2",
+    "subleveldown": "^4.1.4"
+  }
+}

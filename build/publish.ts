@@ -3,16 +3,20 @@ import { resolve } from 'path'
 import { lte } from 'semver'
 import globby from 'globby'
 
-if (process.env.GITHUB_REF !== 'refs/heads/master' || process.env.GITHUB_EVENT_NAME !== 'push') {
+const { CI, GITHUB_EVENT_NAME, GITHUB_REF } = process.env
+
+if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) {
   console.log('publish skipped.')
   process.exit(0)
 }
 
-(async () => {
+const cwd = resolve(__dirname, '..')
+
+;(async () => {
   const folders = await globby(require('../package').workspaces, {
+    cwd,
     deep: 0,
     onlyDirectories: true,
-    cwd: resolve(__dirname, '..'),
   })
 
   for (const name of folders) {
@@ -21,6 +25,6 @@ if (process.env.GITHUB_REF !== 'refs/heads/master' || process.env.GITHUB_EVENT_N
     const version = execSync(`npm show ${meta.name} version`)
     if (lte(meta.version, version)) continue
     console.log(`publishing ${name}@${meta.version} ...`)
-    await exec(`npm publish`, { cwd: resolve(__dirname, '..', name) })
+    await exec(`yarn publish ${name}`, { cwd })
   }
 })()
