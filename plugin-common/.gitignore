@@ -1,4 +1,4 @@
-dist
+/dist
 
 yarn.lock
 node_modules/

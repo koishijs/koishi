@@ -1,0 +1,23 @@
+parser: '@typescript-eslint/parser'
+
+extends: standard
+
+plugins:
+  - '@typescript-eslint'
+
+rules:
+  comma-dangle:
+    - warn
+    - always-multiline
+  # https://github.com/typescript-eslint/typescript-eslint/issues/618
+  no-dupe-class-members: off
+  # https://github.com/typescript-eslint/typescript-eslint/issues/239
+  no-inner-declarations: off
+  no-mixed-operators: off
+  no-unused-vars: off
+  no-return-assign: off
+  no-sequences: off
+  # https://github.com/typescript-eslint/typescript-eslint/issues/1131
+  no-useless-constructor: off
+  one-var: off
+  operator-linebreak: off
