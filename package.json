@@ -7,6 +7,7 @@
     "database-*"
   ],
   "scripts": {
+    "build": "tsc -b",
     "docs": "npx vuepress dev . --cwd docs",
     "jest": "jest .*\\.spec\\.ts --runInBand",
     "lint": "eslint **/src/**/*.ts",
