@@ -94,14 +94,14 @@ onStart(() => {
   const wsServers = new Set<string>()
   const httpServers = new Set<string>()
   appList.forEach((app) => {
-    const { type, port, httpServer, wsServer } = app.options
-    const { coolqEdition, pluginVersion } = app.server.version
+    const { type, port, server } = app.options
+    const { coolqEdition, pluginVersion } = app.version
     versions.add(`Koishi/${version} CoolQ/${capitalize(coolqEdition)} CQHTTP/${pluginVersion} `)
     if (type === 'http') {
       httpPorts.add(`server listening at ${cyanBright(port)}`)
-      if (httpServer) httpServers.add(`connected to ${cyanBright(httpServer)}`)
+      if (server) httpServers.add(`connected to ${cyanBright(server)}`)
     } else {
-      wsServers.add(`connected to ${cyanBright(wsServer.replace(/^http/, 'ws'))}`)
+      wsServers.add(`connected to ${cyanBright(server.replace(/^http/, 'ws'))}`)
     }
   })
   for (const textSet of [versions, httpPorts, wsServers, httpServers]) {

@@ -9,9 +9,9 @@ export default function (cli: CAC) {
     .option('-f, --forced', 'overwrite config file if it exists')
     .option('-o, --output <file>', 'path of output file', { default: 'koishi.config.js' })
     .option('-p, --port <port>', 'port number', { default: 8080 })
-    .option('-s, --secret [secret]', 'secret for koishi server')
+    .option('--secret [secret]', 'secret for koishi server')
+    .option('-s, --server <url>', 'CoolQ server url')
     .option('-t, --token [token]', 'token for CoolQ server')
-    .option('-u, --url <url>', 'CoolQ server url')
     .option('-w, --websocket', 'use websocket client (default http)')
     .action(function (options) {
       const path = resolve(process.cwd(), '' + options.output)
@@ -22,11 +22,11 @@ export default function (cli: CAC) {
       const output: string[] = ['module.exports = {']
       if (options.websocket) {
         output.push('  type: "ws",')
-        output.push(`  wsServer: ${JSON.stringify(options.url || 'http://localhost:6700')},`)
+        output.push(`  server: ${JSON.stringify(options.server || 'ws://localhost:6700')},`)
       } else {
         output.push('  type: "http",')
         output.push(`  port: ${JSON.stringify(options.port)},`)
-        output.push(`  httpServer: ${JSON.stringify(options.url || 'http://localhost:5700')},`)
+        output.push(`  server: ${JSON.stringify(options.server || 'http://localhost:5700')},`)
       }
       if (options.secret) output.push(`  secret: ${JSON.stringify(options.secret)},`)
       if (options.token) output.push(`  token: ${JSON.stringify(options.token)},`)

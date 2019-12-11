@@ -1,4 +1,7 @@
-/dist
+dist
+
+/*
+!/koishi*
 
 yarn.lock
 node_modules/

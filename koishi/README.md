@@ -1,5 +1,11 @@
+<p align="center">
+  <a href="https://koishijs.github.io/" target="_blank">
+    <img width="160" src="https://raw.githubusercontent.com/koishijs/koishijs.github.io/master/koishi.png" alt="logo">
+  </a>
+</p>
+
 # [Koishi](https://koishijs.github.io/)
- 
+
 ## 特性
 
 ### 开箱即用的 CLI

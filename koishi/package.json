@@ -39,8 +39,8 @@
     "cac": "^6.5.3",
     "chalk": "^3.0.0",
     "fs-extra": "^8.1.0",
-    "koishi-core": "^0.2.7",
-    "koishi-plugin-common": "^0.1.6",
-    "koishi-utils": "^0.1.8"
+    "koishi-core": "^1.0.0-alpha.0",
+    "koishi-plugin-common": "^1.0.0-alpha.0",
+    "koishi-utils": "^1.0.0-alpha.0"
   }
 }
