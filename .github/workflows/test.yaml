@@ -27,4 +27,4 @@ jobs:
     - name: Jest
       run: yarn jest
     - name: Publish
-      run: ts-node build/publish
+      run: npx ts-node build/publish
