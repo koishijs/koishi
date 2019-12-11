@@ -33,7 +33,7 @@ export default function apply (app: App, authorityMap: Record<number, number | A
     if (!('memberAuthority' in config)) config.memberAuthority = 1
     if (!('adminAuthority' in config)) config.adminAuthority = config.memberAuthority
     if (!('ownerAuthority' in config)) config.ownerAuthority = config.adminAuthority
-  
+
     ctx.app.receiver.once('connected', async () => {
       await ctx.database.getGroup(+id, ctx.app.options.selfId)
       const memberList = await ctx.sender.getGroupMemberList(+id)
@@ -57,9 +57,9 @@ export default function apply (app: App, authorityMap: Record<number, number | A
         }
       }
     })
-  
+
     ctx.receiver.on('group_increase', updateAuthority)
-  
+
     async function updateAuthority ({ userId, role }: GroupMemberInfo) {
       const authority = config[role + 'Authority']
       const user = await ctx.database.getUser(userId, authority)

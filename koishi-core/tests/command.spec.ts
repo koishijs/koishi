@@ -12,7 +12,7 @@ describe('register commands', () => {
     app.command('a')
     app.user(10000).command('b')
     app.group(10000).command('c')
-  
+
     expect(app._commands).toHaveLength(3)
     expect(app._commandMap.a.context).toBe(app)
     expect(app._commandMap.b.context).toBe(app.user(10000))

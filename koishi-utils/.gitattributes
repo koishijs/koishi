@@ -1,3 +1,0 @@
-# Auto detect text files and perform LF normalization
-jest.config.js linguist-detectable=false
-* text=auto
