@@ -2,8 +2,17 @@
   <a href="https://koishijs.github.io/" target="_blank">
     <img width="160" src="https://raw.githubusercontent.com/koishijs/koishijs.github.io/master/koishi.png" alt="logo">
   </a>
-  <h1 id="koishi">Koishi</h1>
+  <h1 id="koishi"><a href="https://koishijs.github.io/" target="_blank">Koishi</a></h1>
+
+[![Status](https://img.shields.io/github/workflow/status/koishijs/koishi/CI/master?style=flat-square)](https://github.com/koishijs/koishi/actions?query=workflow:CI)
+[![npm](https://img.shields.io/npm/v/koishi?style=flat-square)](https://www.npmjs.com/package/koishi)
+[![GitHub](https://img.shields.io/github/license/koishijs/koishi?style=flat-square)](https://github.com/koishijs/koishi/blob/master/LICENSE)
+
 </div>
+
+Koishi 是一个在 [Node.js](https://nodejs.org/) 环境下运行，基于 [CoolQ](https://cqp.cc) 和 [CQHTTP](https://cqhttp.cc) 的 QQ 机器人框架。
+
+它的名字和图标来源于东方 Project 中的角色古明地恋（Komeiji Koishi）。
 
 ## 特性
 

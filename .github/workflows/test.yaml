@@ -26,3 +26,5 @@ jobs:
       run: yarn jest
       env:
         CI: true
+    - name: Publish
+      run: ts-node build/publish
