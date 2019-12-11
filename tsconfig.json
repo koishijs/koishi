@@ -6,11 +6,12 @@
     "moduleResolution": "node",
   },
   "references": [
-    { "path": "./koishi-utils" },
-    { "path": "./koishi-core" },
-    { "path": "./koishi" },
-    { "path": "./database-mysql" },
-    { "path": "./plugin-common" },
+    { "path": "./packages/koishi-utils" },
+    { "path": "./packages/koishi-core" },
+    { "path": "./packages/koishi-cli" },
+    { "path": "./packages/database-mysql" },
+    { "path": "./packages/database-level" },
+    { "path": "./packages/plugin-common" },
   ],
   "files": [],
 }

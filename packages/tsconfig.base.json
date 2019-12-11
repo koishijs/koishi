@@ -7,10 +7,5 @@
     "esModuleInterop": true,
     "moduleResolution": "node",
     "declaration": true,
-    "outDir": "dist",
-    "rootDir": "src",
   },
-  "include": [
-    "src",
-  ],
 }

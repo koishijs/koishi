@@ -2,15 +2,13 @@
   "name": "koishi-workspace",
   "private": true,
   "workspaces": [
-    "koishi*",
-    "plugin-*",
-    "database-*"
+    "packages/*"
   ],
   "scripts": {
     "build": "tsc -b",
     "docs": "npx vuepress dev . --cwd docs",
     "jest": "jest .*\\.spec\\.ts --runInBand",
-    "lint": "eslint **/src/**/*.ts",
+    "lint": "eslint packages/*/src/**/*.ts",
     "bump": "ts-node build/bump"
   },
   "version": "1.0.0",

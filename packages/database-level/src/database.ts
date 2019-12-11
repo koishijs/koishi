@@ -39,7 +39,7 @@ export class LevelDatabase {
   private baseDB: LevelUp
   public subs: Record<string, LevelUp> = {}
 
-  constructor({ path }: LevelConfig) {
+  constructor ({ path }: LevelConfig) {
     const absPath = resolve(process.cwd(), path)
     if (!openedDBs.has(absPath)) {
       openedDBs.set(absPath, levelup(leveldown(absPath)))
