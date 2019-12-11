@@ -1,5 +1,10 @@
-# [Koishi](https://koishijs.github.io/)
- 
+<div align="center">
+  <a href="https://koishijs.github.io/" target="_blank">
+    <img width="160" src="https://raw.githubusercontent.com/koishijs/koishijs.github.io/master/koishi.png" alt="logo">
+  </a>
+  <h1 id="koishi">Koishi</h1>
+</div>
+
 ## 特性
 
 ### 开箱即用的 CLI

@@ -2,13 +2,15 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "commonjs",
-    "incremental": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
-    "declaration": true,
-    "outDir": "dist",
   },
-  "include": [
-    "src"
-  ]
+  "references": [
+    { "path": "./koishi-utils" },
+    { "path": "./koishi-core" },
+    { "path": "./koishi" },
+    { "path": "./database-mysql" },
+    { "path": "./plugin-common" },
+  ],
+  "files": [],
 }

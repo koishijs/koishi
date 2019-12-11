@@ -1,46 +1,40 @@
 {
-  "name": "koishi",
-  "version": "0.1.9",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
-  "files": [
-    "dist"
+  "name": "koishi-workspace",
+  "private": true,
+  "workspaces": [
+    "koishi*",
+    "plugin-*",
+    "database-*"
   ],
-  "bin": {
-    "koishi": "dist/cli.js"
-  },
-  "author": "Shigma <1700011071@pku.edu.cn>",
-  "license": "MIT",
   "scripts": {
-    "lint": "eslint src --ext .ts",
-    "prepack": "tsc -b"
+    "build": "tsc -b",
+    "docs": "npx vuepress dev . --cwd docs",
+    "jest": "jest .*\\.spec\\.ts --runInBand",
+    "lint": "eslint **/src/**/*.ts",
+    "bump": "ts-node build/bump"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/koishijs/koishi.git"
-  },
-  "bugs": {
-    "url": "https://github.com/koishijs/koishi/issues"
-  },
-  "homepage": "https://github.com/koishijs/koishi#readme",
+  "version": "1.0.0",
+  "license": "MIT",
   "devDependencies": {
-    "@types/node": "^12.12.14",
+    "@types/jest": "^24.0.23",
+    "@types/semver": "^6.2.0",
     "@typescript-eslint/eslint-plugin": "^2.9.0",
     "@typescript-eslint/parser": "^2.9.0",
+    "cac": "^6.5.3",
+    "chalk": "^3.0.0",
     "eslint": "^6.7.1",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jest": "^23.1.1",
     "eslint-plugin-node": "^10.0.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
+    "express": "^4.17.1",
+    "globby": "^10.0.1",
+    "jest": "^24.9.0",
+    "semver": "^6.3.0",
+    "ts-jest": "^24.2.0",
+    "ts-node": "^8.5.4",
     "typescript": "^3.7.2"
-  },
-  "dependencies": {
-    "cac": "^6.5.3",
-    "chalk": "^3.0.0",
-    "fs-extra": "^8.1.0",
-    "koishi-core": "^0.2.7",
-    "koishi-plugin-common": "^0.1.6",
-    "koishi-utils": "^0.1.8"
   }
 }

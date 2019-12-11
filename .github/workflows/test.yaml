@@ -15,10 +15,14 @@ jobs:
       with:
         node-version: 10.x
     - name: Install
-      run: npm install
+      run: yarn
     - name: Build
-      run: npx tsc -b
+      run: yarn build
     - name: Lint
-      run: npm run lint
+      run: yarn lint
+      env:
+        CI: true
+    - name: Jest
+      run: yarn jest
       env:
         CI: true
