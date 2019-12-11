@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "commonjs",
+    "composite": true,
     "incremental": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
@@ -10,6 +11,6 @@
     "rootDir": "src",
   },
   "include": [
-    "src"
-  ]
+    "src",
+  ],
 }
