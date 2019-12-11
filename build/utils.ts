@@ -30,7 +30,7 @@ export function exec (command: string, options: ExecOptions = {}): Promise<numbe
 
 export function execSync (command: string, options: ExecOptions = {}) {
   const { silent } = options
-  if (!silent) console.log(`$ ${command}\n`)
+  if (!silent) console.log(`$ ${command}`)
   const result = cp.execSync(command, options).toString('utf8')
   if (!silent) console.log(result)
   return result

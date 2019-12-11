@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://koishijs.github.io/" target="_blank">
-    <img width="160" src="https://raw.githubusercontent.com/koishijs/koishijs.github.io/master/koishi.png" alt="logo">
+    <img width="160" src="https://koishijs.github.io/koishi.png" alt="logo">
   </a>
   <h1 id="koishi"><a href="https://koishijs.github.io/" target="_blank">Koishi</a></h1>
 
