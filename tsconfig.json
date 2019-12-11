@@ -1,0 +1,9 @@
+{
+  "references": [
+    { "path": "./koshi" },
+    { "path": "./koshi-core" },
+    { "path": "./koshi-utils" },
+    { "path": "./database-mysql" },
+    { "path": "./plugin-common" },
+  ],
+}
