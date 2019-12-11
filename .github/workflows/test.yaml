@@ -4,6 +4,10 @@ on:
 - push
 - pull_request
 
+env:
+  CI: true
+  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,14 +24,7 @@ jobs:
       run: yarn build
     - name: Lint
       run: yarn lint
-      env:
-        CI: true
     - name: Jest
       run: yarn jest
-      env:
-        CI: true
     - name: Publish
       run: ts-node build/publish
-      env:
-        CI: true
-        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
