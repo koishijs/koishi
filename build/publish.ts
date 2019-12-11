@@ -21,6 +21,6 @@ if (process.env.GITHUB_REF !== 'refs/heads/master' || process.env.GITHUB_EVENT_N
     const version = execSync(`npm show ${meta.name} version`)
     if (lte(meta.version, version)) continue
     console.log(`publishing ${name}@${meta.version} ...`)
-    await exec(`npm publish`, { cwd: resolve(__dirname, '..', name) })
+    await exec(`yarn publish`, { cwd: resolve(__dirname, '..', name) })
   }
 })()

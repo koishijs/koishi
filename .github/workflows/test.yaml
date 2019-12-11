@@ -6,7 +6,6 @@ on:
 
 env:
   CI: true
-  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
 jobs:
   build:
@@ -28,3 +27,5 @@ jobs:
       run: yarn jest
     - name: Publish
       run: npx ts-node build/publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
