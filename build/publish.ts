@@ -3,7 +3,7 @@ import { resolve } from 'path'
 import { lte } from 'semver'
 import globby from 'globby'
 
-if (!process.env.NPM_TOKEN) {
+if (process.env.GITHUB_REF !== 'refs/heads/master' || process.env.GITHUB_EVENT_NAME !== 'push') {
   console.log('publish skipped.')
   process.exit(0)
 }

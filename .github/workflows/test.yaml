@@ -28,3 +28,6 @@ jobs:
         CI: true
     - name: Publish
       run: ts-node build/publish
+      env:
+        CI: true
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
