@@ -1,4 +1,10 @@
 {
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+  },
   "references": [
     { "path": "./koishi-utils" },
     { "path": "./koishi-core" },
