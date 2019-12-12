@@ -10,6 +10,8 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
   process.exit(0)
 }
 
+console.log(Object.keys(process.env).join('\n'))
+
 const cwd = resolve(__dirname, '..')
 
 ;(async () => {
@@ -27,6 +29,6 @@ const cwd = resolve(__dirname, '..')
       if (lte(meta.version, version)) continue
     } catch {}
     console.log(`publishing ${name}@${meta.version} ...`)
-    await exec(`yarn publish ${name}`, { cwd })
+    await exec(`yarn publish ${name}`, { cwd }).catch(() => {})
   }
 })()

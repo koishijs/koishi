@@ -10,6 +10,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
     - name: Check out
       uses: actions/checkout@v1
@@ -27,5 +29,3 @@ jobs:
       run: yarn jest
     - name: Publish
       run: npx ts-node build/publish
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
