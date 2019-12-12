@@ -10,8 +10,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
     - name: Check out
       uses: actions/checkout@v1
@@ -19,6 +17,8 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 10.x
+    - name: Create .npmrc
+      run: '"//registry.npmjs.org/:_authToken=${{secrets.NPM_TOKEN}}" > .npmrc'
     - name: Install
       run: yarn
     - name: Build

@@ -1,6 +1,6 @@
 {
   "name": "koishi-database-level",
-  "version": "0.0.1",
+  "version": "1.0.0-alpha.0",
   "main": "dist/index.js",
   "files": [
     "dist"
@@ -8,10 +8,7 @@
   "scripts": {
     "jest": "jest tests/.*\\.spec\\.ts",
     "lint": "eslint src --ext .ts",
-    "test": "npm run clear; npm run unit",
-    "unit": "nyc mocha --reporter=landing -r ts-node/register test/*.ts",
-    "clear": "rm -rf ./db;exit 0",
-    "coverage": "mkdir coverage; nyc report --reporter=text-lcov >> ./coverage/lcov.info"
+    "prepack": "tsc -b"
   },
   "repository": {
     "type": "git",

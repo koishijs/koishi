@@ -1,1 +1,1 @@
-# Koishi
+# koishi-cli
