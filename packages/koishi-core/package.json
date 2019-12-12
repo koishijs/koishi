@@ -11,7 +11,7 @@
   "scripts": {
     "jest": "jest tests/.*\\.spec\\.ts --runInBand",
     "lint": "eslint src --ext .ts",
-    "precommit": "npx lint",
+    "precommit": "yarn lint",
     "prepack": "tsc -b"
   },
   "repository": {
