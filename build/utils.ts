@@ -12,26 +12,30 @@ interface ExecOptions extends cp.ExecOptions {
   silent?: boolean
 }
 
-export function exec (command: string, options: ExecOptions = {}): Promise<number> {
+export function exec (command: string, options: ExecOptions = {}): Promise<string> {
   const { silent } = options
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    let stdout = '', stderr = ''
     if (!silent) console.log(`$ ${command}`)
     const child = cp.exec(command, options)
-    if (!silent) {
-      child.stdout.pipe(process.stdout)
-      child.stderr.pipe(process.stderr)
-    }
+
+    child.stdout.on('data', (data) => {
+      stdout += data
+      if (!silent) process.stdout.write(data)
+    })
+
+    child.stderr.on('data', (data) => {
+      stderr += data
+      if (!silent) process.stderr.write(data)
+    })
+
     child.on('close', (code) => {
       if (!silent) console.log()
-      resolve(code)
+      if (code) {
+        reject(stderr)
+      } else {
+        resolve(stdout)
+      }
     })
   })
-}
-
-export function execSync (command: string, options: ExecOptions = {}) {
-  const { silent } = options
-  if (!silent) console.log(`$ ${command}`)
-  const result = cp.execSync(command, options).toString('utf8')
-  if (!silent) console.log(result)
-  return result
 }
