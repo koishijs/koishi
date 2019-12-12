@@ -1,5 +1,7 @@
 # [koishi-plugin-common](https://koishijs.github.io/plugins/common.html)
 
+[![npm](https://img.shields.io/npm/v/koishi-plugin-common?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-common)
+
 koishi-plugin-common 包含了一些基本插件，它们在你使用 `koishi` 库时是默认安装的。尽管如此，你仍然可以在 `koishi.config.js` 中显式地配置或禁用其中的一些功能：
 
 ```js
@@ -50,9 +52,7 @@ module.exports = {
 }
 ```
 
-::: tip 提示
-这个插件的默认行为已经包含了复读、检测重复复读和检测打断复读，但是不包含打断复读。如果希望修改这种行为，你需要手动覆盖这其中的部分配置。
-:::
+**提示：**这个插件的默认行为已经包含了复读、检测重复复读和检测打断复读，但是不包含打断复读。如果希望修改这种行为，你需要手动覆盖这其中的部分配置。
 
 ## 插件：respondent
 
@@ -113,9 +113,7 @@ module.exports = {
 
 这里的权限设置不仅会在机器人每次启动时生效，也会在有人加群时生效。
 
-::: warning 注意
-由于 CoolQ 的机制问题，机器人刚加某个群时可能无法获取成员列表，从而导致插件无法运行。遇到这种情况一般等待 1-2 天即可恢复正常。
-:::
+**注意：**由于 CoolQ 的机制问题，机器人刚加某个群时可能无法获取成员列表，从而导致插件无法运行。遇到这种情况一般等待 1-2 天即可恢复正常。
 
 ## 插件：requestHandler
 
@@ -203,9 +201,7 @@ Koishi，关机            # 退出进程，相当于 exit -c 0
 Koishi，重启            # 重启进程，相当于 exit -c 1
 ```
 
-::: tip 提示
-Koishi 的命令行工具使用**子进程**来实现对机器人的管理。当子进程退出时，主进程可以通过查看 exit code 来确定退出的原因，并执行相应的操作。
-:::
+**提示：**Koishi 的命令行工具使用**子进程**来实现对机器人的管理。当子进程退出时，主进程可以通过查看 exit code 来确定退出的原因，并执行相应的操作。
 
 ## 指令：info
 
@@ -244,9 +240,7 @@ module.exports = {
 }
 ```
 
-::: warning 注意
-由于 CoolQ 的限制，本功能只能由四季酱的好友使用。
-:::
+**注意：**由于 CoolQ 的限制，本功能只能由四季酱的好友使用。
 
 ## 指令：callme
 
