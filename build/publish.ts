@@ -25,7 +25,7 @@ const cwd = resolve(__dirname, '..')
   for (const name of folders) {
     const meta: PackageJSON = require(`../${name}/package`)
     if (meta.private) continue
-    const version = execSync(`npm show ${meta.name} version`)
+    // const version = execSync(`npm show ${meta.name} version`)
     // if (lte(meta.version, version)) continue
     console.log(`publishing ${name}@${meta.version} ...`)
     await exec(`yarn publish ${name}`, { cwd })
