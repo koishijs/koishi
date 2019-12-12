@@ -92,18 +92,23 @@ export function createGroup (id: number, assignee: number) {
 }
 
 export interface UserTable {
+  getUser <K extends UserField> (userId: number, fields?: K[]): Promise<Pick<UserData, K | 'id'>>
   getUser <K extends UserField> (userId: number, defaultAuthority?: number, fields?: K[]): Promise<Pick<UserData, K | 'id'>>
+  getUsers <K extends UserField> (fields?: K[]): Promise<Pick<UserData, K>[]>
   getUsers <K extends UserField> (ids: number[], fields?: K[]): Promise<Pick<UserData, K>[]>
-  getAllUsers <K extends UserField> (fields?: K[]): Promise<Pick<UserData, K>[]>
   setUser (userId: number, data: Partial<UserData>): Promise<any>
+  observeUser <K extends UserField> (user: number | UserData, fields?: K[]): Promise<User<K>>
   observeUser <K extends UserField> (user: number | UserData, defaultAuthority?: number, fields?: K[]): Promise<User<K>>
   getUserCount (): Promise<number>
 }
 
 export interface GroupTable {
+  getGroup <K extends GroupField> (groupId: number, fields?: K[]): Promise<Pick<GroupData, K | 'id'>>
   getGroup <K extends GroupField> (groupId: number, selfId?: number, fields?: K[]): Promise<Pick<GroupData, K | 'id'>>
+  getAllGroups <K extends GroupField> (assignees?: number[]): Promise<Pick<GroupData, K>[]>
   getAllGroups <K extends GroupField> (fields?: K[], assignees?: number[]): Promise<Pick<GroupData, K>[]>
   setGroup (groupId: number, data: Partial<GroupData>): Promise<any>
+  observeGroup <K extends GroupField> (group: number | GroupData, fields?: K[]): Promise<Group<K>>
   observeGroup <K extends GroupField> (group: number | GroupData, selfId?: number, fields?: K[]): Promise<Group<K>>
   getGroupCount (): Promise<number>
 }

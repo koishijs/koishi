@@ -1,56 +1,66 @@
-import { joinKeys, formatValues, arrayTypes } from './database'
+import { injectMethods, userFields, UserData, createUser, User, UserField } from 'koishi-core'
 import { observe, difference } from 'koishi-utils'
-import { injectMethods, userFields, UserData, createUser, User } from 'koishi-core'
+import { arrayTypes } from './database'
 
 arrayTypes.push('users.endings', 'users.achievement', 'users.inference')
 
 injectMethods('mysql', 'user', {
-  async getUser (userId, defaultAuthority = 0, fields = userFields) {
-    const [data] = await this.query('SELECT ' + joinKeys(fields) + ' FROM `users` WHERE `id` = ?', [userId]) as UserData[]
+  async getUser (userId, ...args) {
+    const authority = typeof args[0] === 'number' ? args.shift() as number : 0
+    const fields = args[0] as never || userFields
+    const [data] = await this.select<UserData[]>('users', fields, '`id` = ?', [userId])
     let fallback: UserData
     if (data) {
       data.id = userId
-    } else if (defaultAuthority < 0) {
+    } else if (authority < 0) {
       return null
     } else {
-      fallback = createUser(userId, defaultAuthority)
-      if (defaultAuthority) {
+      fallback = createUser(userId, authority)
+      if (authority) {
         await this.query(
-          'INSERT INTO `users` (' + joinKeys(userFields) + ') VALUES (' + userFields.map(() => '?').join(', ') + ')',
-          formatValues('users', fallback, userFields),
+          'INSERT INTO `users` (' + this.joinKeys(userFields) + ') VALUES (' + userFields.map(() => '?').join(', ') + ')',
+          this.formatValues('users', fallback, userFields),
         )
       }
     }
     return data || fallback
   },
 
-  async getUsers (ids, fields = userFields) {
-    if (!ids.length) return []
-    return this.query(`SELECT ${joinKeys(fields)} FROM users WHERE id IN (${ids.join(', ')})`)
-  },
-
-  async getAllUsers (fields = userFields) {
-    return this.query('SELECT ' + joinKeys(fields) + ' FROM `users`')
+  async getUsers (...args) {
+    let ids: number[], fields: UserField[]
+    if (args.length > 1) {
+      ids = args[0]
+      fields = args[1]
+    } else if (args.length && typeof args[0][0] === 'number') {
+      ids = args[0]
+      fields = userFields
+    } else {
+      fields = args[0] as any
+    }
+    if (ids && !ids.length) return []
+    return this.select('users', fields, ids && `\`id\` IN (${ids.join(', ')})`)
   },
 
   async setUser (userId, data) {
     return this.update('users', userId, data)
   },
 
-  async observeUser (user, defaultAuthority = 0, fields = userFields) {
+  async observeUser (user, ...args) {
     if (typeof user === 'number') {
-      const data = await this.getUser(user, defaultAuthority, fields)
+      const data = await this.getUser(user, ...args)
       return data && observe(data, diff => this.setUser(user, diff), `user ${user}`)
+    }
+
+    const authority = typeof args[0] === 'number' ? args.shift() as number : 0
+    const fields = args[0] as never || userFields
+    const additionalFields = difference(fields, Object.keys(user))
+    const additionalData = additionalFields.length
+      ? await this.getUser(user.id, authority, difference(fields, Object.keys(user)))
+      : {} as Partial<UserData>
+    if ('_diff' in user) {
+      return (user as User)._merge(additionalData)
     } else {
-      const additionalFields = difference(fields, Object.keys(user))
-      const additionalData = additionalFields.length
-        ? await this.getUser(user.id, defaultAuthority, difference(fields, Object.keys(user)))
-        : {} as Partial<UserData>
-      if ('_diff' in user) {
-        return (user as User)._merge(additionalData)
-      } else {
-        return observe(Object.assign(user, additionalData), diff => this.setUser(user.id, diff), `user ${user.id}`)
-      }
+      return observe(Object.assign(user, additionalData), diff => this.setUser(user.id, diff), `user ${user.id}`)
     }
   },
 

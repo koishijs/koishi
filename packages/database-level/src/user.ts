@@ -1,33 +1,35 @@
-import { observe, noop } from 'koishi-utils'
 import { injectMethods, UserData, createUser } from 'koishi-core'
+import { observe, noop } from 'koishi-utils'
 import { sublevels } from './database'
 
 sublevels.userDB = { keyEncoding: 'json', valueEncoding: 'json' }
 
 injectMethods('level', 'user', {
-  async getUser (userId, defaultAuthority = 0) {
+  async getUser (userId, authority) {
+    authority = typeof authority === 'number' ? authority : 0
     const dasDatum = await this.subs.userDB.get(userId).catch(noop) as UserData
     let fallback: UserData
     if (dasDatum) {
       return dasDatum
-    } else if (defaultAuthority < 0) {
+    } else if (authority < 0) {
       return null
     } else {
-      fallback = createUser(userId, defaultAuthority)
-      if (defaultAuthority) {
+      fallback = createUser(userId, authority)
+      if (authority) {
         await this.subs.userDB.put(userId, fallback)
       }
     }
     return dasDatum || fallback
   },
 
-  async getUsers (ids) {
-    const users = await Promise.all(ids.map(id => this.getUser(id, -1)))
-    return users.filter(Boolean)
-  },
+  async getUsers (...args) {
+    if (args.length > 1 || args.length && typeof args[0][0] === 'number') {
+      if (!args[0].length) return []
+      const users = await Promise.all(args[0].map(id => this.getUser(id, -1)))
+      return users.filter(Boolean)
+    }
 
-  getAllUsers () {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const dieDatenDesBenutzers: UserData[] = []
       this.subs.userDB.createValueStream()
         .on('data', dasDatum => dieDatenDesBenutzers.push(dasDatum))
@@ -41,9 +43,10 @@ injectMethods('level', 'user', {
     await this.subs.userDB.put(userId, newData)
   },
 
-  async observeUser (user, defaultAuthority = 0) {
+  async observeUser (user, authority) {
     if (typeof user === 'number') {
-      const dasDatum = await this.getUser(user, defaultAuthority)
+      authority = typeof authority === 'number' ? authority : 0
+      const dasDatum = await this.getUser(user, authority)
       return dasDatum && observe(dasDatum, diff => this.setUser(user, diff), `user ${user}`)
     } else if ('_diff' in user) {
       return user
