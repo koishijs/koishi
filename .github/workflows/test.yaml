@@ -17,7 +17,7 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 10.x
-    - name: Install Build and Lint
+    - name: Install, Build and Lint
       run: |
         yarn
         yarn build
