@@ -10,8 +10,6 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
   process.exit(0)
 }
 
-console.log(Object.keys(process.env).join('\n'))
-
 const cwd = resolve(__dirname, '..')
 
 ;(async () => {

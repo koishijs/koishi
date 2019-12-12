@@ -165,8 +165,10 @@ const [shortName, newVersion] = args
 if (!shortName || !newVersion) process.exit()
 
 const pkgMap = {
+  cli: 'koishi-cli',
   core: 'koishi-core',
   utils: 'koishi-utils',
+  test: 'test-utils',
   level: 'database-level',
   mysql: 'database-mysql',
   common: 'plugin-common',
@@ -175,7 +177,7 @@ const pkgMap = {
 }
 
 const name = pkgMap[shortName] || shortName
-const { pkgName } = packages[name]
+const { pkgName } = packages['packages/' + name]
 
 each((pkg) => {
   const { dependencies, devDependencies } = pkg.current
