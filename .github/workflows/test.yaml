@@ -17,20 +17,17 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 10.x
-    - name: Install
-      run: yarn
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    - name: Build
-      run: yarn build
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    - name: Lint
-      run: yarn lint
+    - name: Install Build and Lint
+      run: |
+        yarn
+        yarn build
+        yarn lint
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     - name: Jest
       run: yarn jest
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     - name: Publish
       run: npx ts-node build/publish
       env:
