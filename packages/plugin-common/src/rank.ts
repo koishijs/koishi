@@ -55,7 +55,7 @@ export default function apply (ctx: Context, options: CommandConfig) {
       Object.assign(options, rank.options)
 
       if (options.global) {
-        const users = await ctx.app.database.getAllUsers(['id', 'name', ...rank.fields])
+        const users = await ctx.app.database.getUsers(['id', 'name', ...rank.fields])
         data = users.map(user => ({ user, name: user.name }))
       } else {
         let members: GroupMemberInfo[]

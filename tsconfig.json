@@ -9,6 +9,7 @@
     { "path": "./packages/koishi-utils" },
     { "path": "./packages/koishi-core" },
     { "path": "./packages/koishi-cli" },
+    { "path": "./packages/test-utils" },
     { "path": "./packages/database-mysql" },
     { "path": "./packages/database-level" },
     { "path": "./packages/plugin-common" },

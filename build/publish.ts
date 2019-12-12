@@ -1,4 +1,4 @@
-import { PackageJSON, exec, execSync } from './utils'
+import { PackageJSON, exec } from './utils'
 import { resolve } from 'path'
 import { lte } from 'semver'
 import globby from 'globby'
@@ -25,8 +25,10 @@ const cwd = resolve(__dirname, '..')
   for (const name of folders) {
     const meta: PackageJSON = require(`../${name}/package`)
     if (meta.private) continue
-    // const version = execSync(`npm show ${meta.name} version`)
-    // if (lte(meta.version, version)) continue
+    // try {
+    //   const version = await exec(`npm show ${meta.name} version`)
+    //   if (lte(meta.version, version)) continue
+    // } catch {}
     console.log(`publishing ${name}@${meta.version} ...`)
     await exec(`yarn publish ${name}`, { cwd })
   }

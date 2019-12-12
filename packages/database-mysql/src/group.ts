@@ -1,28 +1,34 @@
-import { joinKeys, formatValues } from './database'
 import { isSubset, observe, difference, Observed } from 'koishi-utils'
-import { getSelfIds, injectMethods, GroupData, createGroup, groupFields } from 'koishi-core'
+import { getSelfIds, injectMethods, GroupData, createGroup, groupFields, GroupField } from 'koishi-core'
+
+declare module './database' {
+  interface MysqlDatabaseConfig {
+    groupRefreshInterval?: number
+  }
+}
 
 type CachedGroupData = GroupData & { _timestamp: number }
 
-const GROUP_REFRESH_INTERVAL = 60 * 1000
+const defaultRefreshInterval = 60 * 1000
 const groupCache: Record<number, CachedGroupData> = {}
 
 injectMethods('mysql', 'group', {
-  async getGroup (groupId, selfId = 0, fields = groupFields) {
+  async getGroup (groupId, ...args) {
+    const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
+    const fields = args[0] as never || groupFields
     const timestamp = Date.now()
     const cache = groupCache[groupId]
-    if (cache && isSubset(fields, Object.keys(cache)) && timestamp - cache._timestamp < GROUP_REFRESH_INTERVAL) {
-      return cache
-    }
+    const upToDate = timestamp - cache._timestamp < (this.config.groupRefreshInterval ?? defaultRefreshInterval)
+    if (cache && isSubset(fields, Object.keys(cache)) && upToDate) return cache
 
-    const [data] = await this.query('SELECT ' + joinKeys(fields) + ' FROM `groups` WHERE `id` = ?', [groupId]) as GroupData[]
+    const [data] = await this.select<GroupData[]>('groups', fields, '`id` = ?', [groupId])
     let fallback: GroupData
     if (!data) {
       fallback = createGroup(groupId, selfId)
       if (selfId && groupId) {
         await this.query(
-          'INSERT INTO `groups` (' + joinKeys(groupFields) + ') VALUES (' + groupFields.map(() => '?').join(', ') + ')',
-          formatValues('groups', fallback, groupFields),
+          'INSERT INTO `groups` (' + this.joinKeys(groupFields) + ') VALUES (' + groupFields.map(() => '?').join(', ') + ')',
+          this.formatValues('groups', fallback, groupFields),
         )
       }
     } else {
@@ -34,11 +40,20 @@ injectMethods('mysql', 'group', {
     return group
   },
 
-  async getAllGroups (fields = groupFields, assignees) {
-    if (!assignees) assignees = await getSelfIds()
-    let queryString = 'SELECT ' + joinKeys(fields) + ' FROM `groups`'
-    if (assignees) queryString += ` WHERE \`assignee\` IN (${assignees.join(',')})`
-    return this.query(queryString)
+  async getAllGroups (...args) {
+    let assignees: number[], fields: GroupField[]
+    if (args.length > 1) {
+      fields = args[0]
+      assignees = args[1]
+    } else if (args.length && typeof args[0][0] === 'number') {
+      fields = groupFields
+      assignees = args[0] as any
+    } else {
+      fields = args[0] || groupFields
+      assignees = await getSelfIds()
+    }
+    if (!assignees.length) return []
+    return this.select('groups', fields, `\`assignee\` IN (${assignees.join(',')})`)
   },
 
   async setGroup (groupId, data) {
@@ -51,20 +66,22 @@ injectMethods('mysql', 'group', {
     return result
   },
 
-  async observeGroup (group, selfId = 0, fields = groupFields) {
+  async observeGroup (group, ...args) {
     if (typeof group === 'number') {
-      const data = await this.getGroup(group, selfId, fields)
+      const data = await this.getGroup(group, ...args)
       return data && observe(data, diff => this.setGroup(group, diff), `group ${group}`)
+    }
+
+    const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
+    const fields = args[0] as never || groupFields
+    const additionalFields = difference(fields, Object.keys(group))
+    const additionalData = additionalFields.length
+      ? await this.getGroup(group.id, selfId, difference(fields, Object.keys(group)))
+      : {} as Partial<GroupData>
+    if ('_diff' in group) {
+      return (group as Observed<GroupData>)._merge(additionalData)
     } else {
-      const additionalFields = difference(fields, Object.keys(group))
-      const additionalData = additionalFields.length
-        ? await this.getGroup(group.id, selfId, difference(fields, Object.keys(group)))
-        : {} as Partial<GroupData>
-      if ('_diff' in group) {
-        return (group as Observed<GroupData>)._merge(additionalData)
-      } else {
-        return observe(Object.assign(group, additionalData), diff => this.setGroup(group.id, diff), `group ${group.id}`)
-      }
+      return observe(Object.assign(group, additionalData), diff => this.setGroup(group.id, diff), `group ${group.id}`)
     }
   },
 
