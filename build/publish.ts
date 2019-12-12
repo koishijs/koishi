@@ -5,10 +5,13 @@ import globby from 'globby'
 
 const { CI, GITHUB_EVENT_NAME, GITHUB_REF } = process.env
 
-if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) {
-  console.log('publish skipped.')
-  process.exit(0)
-}
+// NOTE: Only For Test
+// if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) {
+//   console.log('publish skipped.')
+//   process.exit(0)
+// }
+
+console.log(Object.keys(process.env).join('\n'))
 
 const cwd = resolve(__dirname, '..')
 
@@ -23,7 +26,7 @@ const cwd = resolve(__dirname, '..')
     const meta: PackageJSON = require(`../${name}/package`)
     if (meta.private) continue
     const version = execSync(`npm show ${meta.name} version`)
-    if (lte(meta.version, version)) continue
+    // if (lte(meta.version, version)) continue
     console.log(`publishing ${name}@${meta.version} ...`)
     await exec(`yarn publish ${name}`, { cwd })
   }
