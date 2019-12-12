@@ -19,6 +19,8 @@ jobs:
         node-version: 10.x
     - name: Install
       run: yarn
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     - name: Build
       run: yarn build
     - name: Lint
