@@ -1,4 +1,4 @@
-import { SERVER_PORT, SERVER_URL } from './utils'
+import { SERVER_PORT, SERVER_URL } from 'koishi-test-utils'
 import { App, startAll, stopAll, Meta, WsClient } from '../src'
 import { Server } from 'ws'
 import { snakeCase } from 'koishi-utils'

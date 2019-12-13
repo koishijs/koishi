@@ -19,6 +19,11 @@ describe('register commands', () => {
     expect(app._commandMap.c.context).toBe(app.group(10000))
   })
 
+  test('call chaining', () => {
+    const ctx = app.user(123)
+    expect(ctx.command('temp').end()).toBe(ctx)
+  })
+
   test('modify commands', () => {
     const d1 = app.command('d', 'foo', { authority: 1 })
     expect(app._commandMap.d.config.description).toBe('foo')

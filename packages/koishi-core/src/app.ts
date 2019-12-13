@@ -186,12 +186,14 @@ export class App extends Context {
   }
 
   async start () {
+    if (!this.options.type) return
     this.sender.start()
     await this.server.listen()
     showLog('started')
   }
 
   stop () {
+    if (!this.options.type) return
     this.server.close()
     this.sender.stop()
     showLog('stopped')

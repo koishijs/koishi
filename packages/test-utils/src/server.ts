@@ -2,7 +2,7 @@ import axios from 'axios'
 import express, { Express } from 'express'
 import { EventEmitter } from 'events'
 import { createHmac } from 'crypto'
-import { Meta, PostType, MetaTypeMap, SubTypeMap } from '../src'
+import { Meta, PostType, MetaTypeMap, SubTypeMap } from 'koishi-core'
 import { camelCase, snakeCase } from 'koishi-utils'
 
 export const SERVER_PORT = 15700
@@ -52,7 +52,7 @@ export async function waitFor (method: string) {
     emitter.on(method, listener)
     const timer = setTimeout(() => {
       emitter.off(method, listener)
-      reject()
+      reject(new Error('timeout'))
     }, MAX_TIMEOUT)
   })
 }

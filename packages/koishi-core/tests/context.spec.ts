@@ -78,3 +78,9 @@ describe('Composition API', () => {
     expect(ctx.contain(app.discuss(789))).toBe(false)
   })
 })
+
+describe('Context API', () => {
+  test('context.prototype.end', () => {
+    expect(app.users.except(123).plus(app.discuss(456)).end()).toBe(app)
+  })
+})

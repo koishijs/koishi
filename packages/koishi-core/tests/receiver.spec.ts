@@ -1,4 +1,4 @@
-import { SERVER_URL, CLIENT_PORT, createServer, postMeta, createMeta } from './utils'
+import { SERVER_URL, CLIENT_PORT, createServer, postMeta, createMeta } from 'koishi-test-utils'
 import { App, Meta } from '../src'
 import { Server } from 'http'
 

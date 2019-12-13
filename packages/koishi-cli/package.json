@@ -1,6 +1,6 @@
 {
   "name": "koishi",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -26,8 +26,8 @@
   "dependencies": {
     "cac": "^6.5.3",
     "chalk": "^3.0.0",
-    "koishi-core": "^1.0.0-alpha.1",
-    "koishi-plugin-common": "^1.0.0-alpha.1",
+    "koishi-core": "^1.0.0-alpha.2",
+    "koishi-plugin-common": "^1.0.0-alpha.2",
     "koishi-utils": "^1.0.0-alpha.0"
   }
 }
