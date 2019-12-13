@@ -33,7 +33,7 @@ export function getAverageActivity (activity: Activity, date: number) {
 }
 
 export function getSenderName (meta: MessageMeta) {
-  if (meta.$user.name !== String(meta.userId)) return meta.$user.name
+  if (meta.$user && meta.$user.name !== String(meta.userId)) return meta.$user.name
   return meta.messageType !== 'private' ? `[CQ:at,qq=${meta.userId}]` : meta.sender.card || meta.sender.nickname
 }
 

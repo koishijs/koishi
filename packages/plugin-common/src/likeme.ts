@@ -9,7 +9,7 @@ export default function apply (ctx: Context, config: LikemeOptions = {}) {
     .alias('给我点赞')
     .alias('为我点赞')
     .action(async ({ meta }) => {
-      const times = typeof config.likes === 'function' ? config.likes(meta.$user, meta) : config.likes
+      const times = typeof config.likes === 'function' ? config.likes(meta.$user) : config.likes ?? 10
       if (!times) return meta.$send(`${getSenderName(meta)}，你的好感度过低，四季酱无法为你点赞。`)
       try {
         await ctx.sender.sendLike(meta.userId, times)

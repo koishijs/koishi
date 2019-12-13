@@ -188,12 +188,12 @@ export class Context {
 
   getCommand (name: string, meta: MessageMeta) {
     const command = this._getCommandByRawName(name)
-    return command && command.context.match(meta) && command
+    return command && command.context.match(meta) && !command.getConfig('disable', meta) && command
   }
 
   runCommand (name: string, meta: MessageMeta, args: string[] = [], options: Record<string, any> = {}, rest = '') {
     const command = this._getCommandByRawName(name)
-    if (!command || !command.context.match(meta)) {
+    if (!command || !command.context.match(meta) || command.getConfig('disable', meta)) {
       return meta.$send(messages.COMMAND_NOT_FOUND)
     }
     return command.execute({ meta, command, args, options, rest, unknown: [] })

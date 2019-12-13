@@ -11,7 +11,6 @@ import {
   CommandOption,
   CommandArgument,
   OptionConfig,
-  removeBrackets,
   parseArguments,
   parseOption,
   parseLine,
@@ -26,7 +25,7 @@ export interface ParsedCommandLine extends ParsedLine {
   next?: NextFunction
 }
 
-export type UserType <T> = T | ((user: UserData, meta: MessageMeta) => T)
+export type UserType <T> = T | ((user: UserData) => T)
 
 export interface CommandConfig {
   /** disallow unknown options */
@@ -42,7 +41,7 @@ export interface CommandConfig {
   /** min authority */
   authority?: number
   authorityHint?: string
-  hidden?: UserType<boolean>
+  disable?: UserType<boolean>
   maxUsage?: UserType<number>
   maxUsageText?: string
   minInterval?: UserType<number>
@@ -171,9 +170,9 @@ export class Command {
     return this
   }
 
-  getConfig <K extends keyof CommandConfig> (key: K, meta: MessageMeta): Exclude<CommandConfig[K], (user: UserData, meta: MessageMeta) => any> {
+  getConfig <K extends keyof CommandConfig> (key: K, meta: MessageMeta): Exclude<CommandConfig[K], (user: UserData) => any> {
     const value = this.config[key] as any
-    return typeof value === 'function' ? value(meta.$user, meta) : value
+    return typeof value === 'function' ? value(meta.$user) : value
   }
 
   updateUsage (user: UserData, time = new Date()) {

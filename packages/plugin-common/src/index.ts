@@ -59,19 +59,23 @@ export const name = 'common'
 
 export function apply (ctx: Context, options: CommonPluginOptions = {}) {
   ctx
-    .plugin(admin, options.admin)
-    .plugin(authorize, options.authorize)
-    .plugin(broadcast, options.broadcast)
-    .plugin(callme, options.callme)
     .plugin(contextify, options.contextify)
     .plugin(echo, options.echo)
     .plugin(exit, options.exit)
     .plugin(help, options.help)
-    .plugin(info, options.info)
     .plugin(likeme, options.likeme)
-    .plugin(rank, options.rank)
     .plugin(repeater, options.repeater)
     .plugin(requestHandler, options)
     .plugin(respondent, options.respondent)
     .plugin(welcome, options.welcome)
+
+  if (ctx.database) {
+    ctx
+      .plugin(admin, options.admin)
+      .plugin(authorize, options.authorize)
+      .plugin(broadcast, options.broadcast)
+      .plugin(callme, options.callme)
+      .plugin(info, options.info)
+      .plugin(rank, options.rank)
+  }
 }

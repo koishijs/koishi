@@ -32,8 +32,9 @@ export interface AppOptions {
   secret?: string
   selfId?: number
   server?: string
-  database?: DatabaseConfig
   type?: ServerType
+  commandPrefix?: string
+  database?: DatabaseConfig
   similarityCoefficient?: number
 }
 
@@ -89,6 +90,10 @@ export type MajorContext <T extends Context> = T & {
 const appScope: ContextScope = [[null, []], [null, []], [null, []]]
 const appIdentifier = ContextScope.stringify(appScope)
 
+function createPrefixRegExp (...patterns: string[]) {
+  return new RegExp(`^(${patterns.join('|')})`)
+}
+
 export class App extends Context {
   app = this
   server: Server
@@ -142,15 +147,15 @@ export class App extends Context {
   _registerSelfId () {
     appMap[this.options.selfId] = this
     selfIds.push(this.options.selfId)
-    const atMeRE = `\\[CQ:at,qq=${this.options.selfId}\\]`
+    const patterns: string[] = []
     if (this.app.options.name) {
-      const nameRE = escapeRegex(this.app.options.name)
-      this.prefixRE = new RegExp(`^(${atMeRE} *|@${nameRE} +|${nameRE}[,，\\s]+|\\.)`)
-      this.userPrefixRE = new RegExp(`^(${nameRE}[,，\\s]+|\\.)`)
-    } else {
-      this.prefixRE = new RegExp(`^(${atMeRE} *|\\.)`)
-      this.userPrefixRE = new RegExp('^\\.')
+      patterns.push(`@?${escapeRegex(this.app.options.name)}([,，]\\s*|\\s+)`)
     }
+    if (this.app.options.commandPrefix) {
+      patterns.push(escapeRegex(this.app.options.commandPrefix))
+    }
+    this.prefixRE = createPrefixRegExp(...patterns, `\\[CQ:at,qq=${this.options.selfId}\\] *`)
+    this.userPrefixRE = createPrefixRegExp(...patterns)
   }
 
   _createContext <T extends Context> (scope: string | ContextScope) {

@@ -72,7 +72,7 @@ let app: App
 
 describe('inject methods', () => {
   test('inject methods for unknown database', () => {
-    expect(() => injectMethods('temp' as any, 'user', {})).toThrow()
+    expect(() => injectMethods('temp' as any, 'user', {})).not.toThrow()
   })
 
   test('inject methods for unknown table', () => {

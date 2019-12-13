@@ -6,10 +6,11 @@
   ],
   "scripts": {
     "build": "tsc -b",
+    "bump": "ts-node build/bump",
     "docs": "npx vuepress dev . --cwd docs",
     "jest": "jest .*\\.spec\\.ts --runInBand",
     "lint": "eslint packages/*/src/**/*.ts",
-    "bump": "ts-node build/bump"
+    "start": "yarn workspace shiki koishi run"
   },
   "version": "1.0.0",
   "license": "MIT",

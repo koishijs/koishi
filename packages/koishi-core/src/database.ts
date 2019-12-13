@@ -150,7 +150,7 @@ type DatabaseInjections <K extends SubdatabaseType, T extends TableType> = {
 }
 
 export function injectMethods <K extends SubdatabaseType, T extends TableType> (name: K, table: T, methods: DatabaseInjections<K, T>) {
-  if (!subdatabases[name]) throw new Error(`database "${name}" not found`)
+  if (!subdatabases[name]) return
   const injections = (subdatabases[name] as Subdatabase<K>)._injections
   if (!injections[table]) injections[table] = {}
   Object.assign(injections[table], methods)

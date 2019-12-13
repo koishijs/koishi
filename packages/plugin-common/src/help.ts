@@ -64,11 +64,10 @@ function showGlobalHelp (context: Context, meta: MessageMeta, options: any) {
   return meta.$send([
     '当前可用的指令有（括号内为对应的最低权限等级，标有星号的表示含有子指令）：',
     ...getCommandList(context, meta, null, options.expand),
-    `普通指令可以通过“${context.app.options.name}，<指令名>”的方式进行触发。`,
-    '全局指令则不需要添加上述前缀，直接输入“<指令名>”即可触发。',
+    '群聊普通指令可以通过“@我+指令名”的方式进行触发。',
+    '私聊或全局指令则不需要添加上述前缀，直接输入指令名即可触发。',
     '输入“全局指令”查看全部可用的全局指令。',
-    '输入“帮助 <指令名>”查看特定指令的语法和使用示例。',
-    '私聊发送“资助方式”以查看资助方式（需要 1 级权限）。',
+    '输入“帮助+指令名”查看特定指令的语法和使用示例。',
   ].join('\n'))
 }
 
