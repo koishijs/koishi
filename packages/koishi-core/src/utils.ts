@@ -34,7 +34,7 @@ export function getAverageActivity (activity: Activity, date: number) {
 
 export function getSenderName (meta: MessageMeta) {
   if (meta.$user && meta.$user.name !== String(meta.userId)) return meta.$user.name
-  return meta.messageType !== 'private' ? `[CQ:at,qq=${meta.userId}]` : meta.sender.card || meta.sender.nickname
+  return meta.sender.card || meta.sender.nickname
 }
 
 export function getContextId (meta: MessageMeta) {
@@ -49,10 +49,10 @@ export function getContextId (meta: MessageMeta) {
 
 export function getTargetId (target: string) {
   if (!target) return
-  let qq = Number(target)
+  let qq = +target
   if (!qq) {
     const capture = /\[CQ:at,qq=(\d+)\]/.exec(target)
-    if (capture) qq = Number(capture[1])
+    if (capture) qq = +capture[1]
   }
   if (!isInteger(qq)) return
   return qq

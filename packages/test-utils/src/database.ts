@@ -1,4 +1,4 @@
-import { App, DatabaseConfig, createUser, createGroup, appList } from 'koishi-core'
+import { App, DatabaseConfig, createUser, createGroup } from 'koishi-core'
 import { createArray } from './utils'
 
 type TestHook = (app: App) => any
