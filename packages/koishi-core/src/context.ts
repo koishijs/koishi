@@ -1,4 +1,4 @@
-import { isSubset, union, intersection, difference } from 'koishi-utils'
+import { contain, union, intersection, difference } from 'koishi-utils'
 import { MessageMeta, Meta, contextTypes } from './meta'
 import { Command, CommandConfig } from './command'
 import { EventEmitter } from 'events'
@@ -94,8 +94,8 @@ export class Context {
     return this._scope.every(([include1, exclude1], index) => {
       const [include2, exclude2] = ctx._scope[index]
       return include1
-        ? include2 && isSubset(include2, include1)
-        : include2 ? !intersection(include2, exclude1).length : isSubset(exclude1, exclude2)
+        ? include2 && contain(include1, include2)
+        : include2 ? !intersection(include2, exclude1).length : contain(exclude2, exclude1)
     })
   }
 

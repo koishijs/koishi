@@ -1,6 +1,6 @@
 {
   "name": "koishi-database-level",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "main": "dist/index.js",
   "files": [
     "dist"
@@ -23,11 +23,11 @@
   "devDependencies": {
     "@types/leveldown": "^4.0.2",
     "@types/levelup": "^3.1.1",
-    "koishi-test-utils": "^1.0.0-alpha.1"
+    "koishi-test-utils": "^1.0.0-alpha.2"
   },
   "dependencies": {
-    "koishi-core": "^1.0.0-alpha.2",
-    "koishi-utils": "^1.0.0-alpha.0",
+    "koishi-core": "^1.0.0-alpha.3",
+    "koishi-utils": "^1.0.0-alpha.1",
     "leveldown": "^5.4.1",
     "levelup": "^4.3.2",
     "subleveldown": "^4.1.4"

@@ -1,5 +1,5 @@
-export function isSubset (array1: readonly any[], array2: readonly any[]) {
-  return array1.every(item => array2.includes(item))
+export function contain (array1: readonly any[], array2: readonly any[]) {
+  return array2.every(item => array1.includes(item))
 }
 
 export function intersection <T> (array1: readonly T[], array2: readonly T[]) {

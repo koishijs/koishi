@@ -1,4 +1,4 @@
-import { isSubset, observe, difference, Observed } from 'koishi-utils'
+import { contain, observe, difference, Observed } from 'koishi-utils'
 import { getSelfIds, injectMethods, GroupData, createGroup, groupFields, GroupField } from 'koishi-core'
 
 declare module './database' {
@@ -19,7 +19,7 @@ injectMethods('mysql', 'group', {
     const timestamp = Date.now()
     const cache = groupCache[groupId]
     const upToDate = timestamp - cache._timestamp < (this.config.groupRefreshInterval ?? defaultRefreshInterval)
-    if (cache && isSubset(fields, Object.keys(cache)) && upToDate) return cache
+    if (cache && contain(Object.keys(cache), fields) && upToDate) return cache
 
     const [data] = await this.select<GroupData[]>('groups', fields, '`id` = ?', [groupId])
     let fallback: GroupData
