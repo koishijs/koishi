@@ -62,7 +62,7 @@ export interface Meta <T extends PostType = PostType> {
 }
 
 export interface AnonymousInfo {
-  id: number
+  id?: number
   name: string
   flag: string
 }

@@ -217,6 +217,24 @@ export class App extends Context {
       subId = meta.userId
     }
 
+    // polyfill CQHTTP 3.x events
+    // https://cqhttp.cc/docs/4.12/#/UpgradeGuide
+    if (typeof meta.anonymous === 'string') {
+      meta.anonymous = {
+        name: meta.anonymous,
+        flag: meta['anonymousFlag'],
+      }
+      delete meta['anonymousFlag']
+    // @ts-ignore
+    } else if (meta.postType === 'event') {
+      meta.postType = 'notice'
+      meta.noticeType = meta['event']
+      delete meta['event']
+    } else if (meta.postType === 'request') {
+      meta.comment = meta.message
+      delete meta.message
+    }
+
     // prepare events
     const events: string[] = []
     if (meta.postType === 'message' || meta.postType === 'send') {
