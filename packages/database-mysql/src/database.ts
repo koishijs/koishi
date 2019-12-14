@@ -1,5 +1,5 @@
 import { createPool, Pool, PoolConfig, escape, escapeId } from 'mysql'
-import { registerDatabase } from 'koishi-core'
+import { registerDatabase, AbstractDatabase } from 'koishi-core'
 import { types } from 'util'
 
 declare module 'koishi-core/dist/database' {
@@ -51,15 +51,20 @@ export interface OkPacket {
   changedRows: number
 }
 
-export class MysqlDatabase {
+export class MysqlDatabase implements AbstractDatabase {
   public pool: Pool
   public config: MysqlDatabaseConfig
+  public identifier: string
 
   constructor (config: MysqlDatabaseConfig) {
     this.config = {
       ...defaultConfig,
       ...config,
     }
+    this.identifier = (config.host || 'localhost') + (config.port || 3306) + config.user + config.database
+  }
+
+  async start () {
     this.pool = createPool(this.config)
   }
 
@@ -115,6 +120,10 @@ export class MysqlDatabase {
   count = async (table: string) => {
     const [{ 'COUNT(*)': count }] = await this.query('SELECT COUNT(*) FROM ??', [table])
     return count as number
+  }
+
+  stop () {
+    this.pool.end()
   }
 }
 

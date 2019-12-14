@@ -186,16 +186,30 @@ export class App extends Context {
   }
 
   async start () {
-    if (!this.options.type) return
-    this.sender.start()
-    await this.server.listen()
+    const tasks: Promise<any>[] = []
+    if (this.database) {
+      for (const type in this.options.database) {
+        tasks.push(this.database[type]?.start())
+      }
+    }
+    if (this.options.type) {
+      this.sender.start()
+      tasks.push(this.server.listen())
+    }
+    await Promise.all(tasks)
     showLog('started')
   }
 
   stop () {
-    if (!this.options.type) return
-    this.server.close()
-    this.sender.stop()
+    if (this.database) {
+      for (const type in this.options.database) {
+        this.database[type]?.stop()
+      }
+    }
+    if (this.options.type) {
+      this.server.close()
+      this.sender.stop()
+    }
     showLog('stopped')
   }
 

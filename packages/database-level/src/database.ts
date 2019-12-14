@@ -1,5 +1,5 @@
 import { resolve } from 'path'
-import { registerDatabase, TableType, TableData } from 'koishi-core'
+import { registerDatabase, TableType, TableData, AbstractDatabase } from 'koishi-core'
 import { AbstractLevelDOWN } from 'abstract-leveldown'
 import leveldown, { LevelDown } from 'leveldown'
 import levelup, { LevelUp } from 'levelup'
@@ -44,11 +44,13 @@ type SubLevels = {
   [K in TableType]?: LevelUp<AbstractLevelDOWN<number, TableData[K]>>
 }
 
-export class LevelDatabase {
+export class LevelDatabase implements AbstractDatabase {
   private baseDB: LevelUp
   public subs: SubLevels = {}
+  public identifier: string
 
   constructor ({ path }: LevelConfig) {
+    this.identifier = path
     const absPath = resolve(process.cwd(), path)
     if (!openedDBs.has(absPath)) {
       openedDBs.set(absPath, levelup(leveldown(absPath)))
@@ -57,7 +59,7 @@ export class LevelDatabase {
 
     for (const key in sublevels) {
       const config = sublevels[key]
-      this.subs[key] = sub(this.baseDB, name, config)
+      this.subs[key] = sub(this.baseDB, key, config)
     }
   }
 

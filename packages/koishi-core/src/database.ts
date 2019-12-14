@@ -126,8 +126,9 @@ export interface TableData {
 export type TableType = keyof Tables
 
 type UnionToIntersection <U> = (U extends any ? (key: U) => void : never) extends (key: infer I) => void ? I : never
+type ExtendValues <T extends Record<keyof any, any>, V> = { [K in keyof T]?: T[K] & V }
 
-export type Database = Subdatabases & UnionToIntersection<Tables[TableType]>
+export type Database = ExtendValues<Subdatabases, AbstractDatabase> & UnionToIntersection<Tables[TableType]>
 
 export interface DatabaseConfig {
   $tables?: Partial<Record<TableType, SubdatabaseType>>
@@ -138,8 +139,14 @@ export interface Subdatabases {}
 type SubdatabaseType = keyof Subdatabases
 
 interface Subdatabase <K extends SubdatabaseType = SubdatabaseType> {
-  new (config: K extends keyof DatabaseConfig ? DatabaseConfig[K] : void): Subdatabases[K]
+  new (config: K extends keyof DatabaseConfig ? DatabaseConfig[K] : void): Subdatabases[K] & AbstractDatabase
   _injections?: Partial<Record<TableType, {}>>
+}
+
+export interface AbstractDatabase {
+  identifier: string
+  start? (): Promise<void>
+  stop? (): void
 }
 
 const subdatabases: { [K in SubdatabaseType]?: Subdatabase<K> } = {}
