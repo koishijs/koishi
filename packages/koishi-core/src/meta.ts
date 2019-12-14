@@ -59,6 +59,8 @@ export interface Meta <T extends PostType = PostType> {
   comment?: string
   flag?: string
   time?: number
+  status?: StatusInfo
+  interval?: number
 }
 
 export interface AnonymousInfo {

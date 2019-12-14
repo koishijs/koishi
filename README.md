@@ -83,3 +83,5 @@ koishi run
 > echo hello world
 < hello world
 ```
+
+**注意：**Koishi 要求您的 Node.js 的版本不小于 10，CQHTTP 的版本不小于 3.4。如果使用 WebSocket，Koishi 要求 CQHTTP 版本不小于 4.6。同时，我们建议您保持较新的 CQHTTP 版本以确保所有功能可用。
