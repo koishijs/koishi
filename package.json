@@ -2,6 +2,7 @@
   "name": "koishi-workspace",
   "private": true,
   "workspaces": [
+    "bots/*",
     "packages/*"
   ],
   "scripts": {

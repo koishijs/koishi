@@ -1,5 +1,6 @@
 import { resolve } from 'path'
-import { registerDatabase } from 'koishi-core'
+import { registerDatabase, TableType, TableData } from 'koishi-core'
+import { AbstractLevelDOWN } from 'abstract-leveldown'
 import leveldown, { LevelDown } from 'leveldown'
 import levelup, { LevelUp } from 'levelup'
 import sub from 'subleveldown'
@@ -29,15 +30,23 @@ interface CodecEncoder {
 
 type EncodingOption = CodecEncoder | Encodings
 
-interface SubConfig { name?: string, valueEncoding: EncodingOption, keyEncoding: EncodingOption }
+interface SubConfig {
+  name?: string
+  valueEncoding: EncodingOption
+  keyEncoding: EncodingOption
+}
 
-export const sublevels: Record<string, SubConfig> = {}
+export const sublevels: Partial<Record<TableType, SubConfig>> = {}
 
 const openedDBs = new Map<string, LevelUp<LevelDown>>()
 
+type SubLevels = {
+  [K in TableType]?: LevelUp<AbstractLevelDOWN<number, TableData[K]>>
+}
+
 export class LevelDatabase {
   private baseDB: LevelUp
-  public subs: Record<string, LevelUp> = {}
+  public subs: SubLevels = {}
 
   constructor ({ path }: LevelConfig) {
     const absPath = resolve(process.cwd(), path)
@@ -46,17 +55,16 @@ export class LevelDatabase {
     }
     this.baseDB = openedDBs.get(absPath)
 
-    Object.entries(sublevels).forEach(([name, config]) => this.subs[name] = this.separate({ name, ...config }))
+    for (const key in sublevels) {
+      const config = sublevels[key]
+      this.subs[key] = sub(this.baseDB, name, config)
+    }
   }
 
-  separate ({ name, valueEncoding, keyEncoding }: SubConfig): LevelUp {
-    return sub(this.baseDB, name, { valueEncoding, keyEncoding })
-  }
-
-  count (subDatabaseName: 'groupDB' | 'userDB') {
+  count (table: TableType) {
     return new Promise<number>(resolve => {
       let userNum = 0
-      this.subs[subDatabaseName].createKeyStream()
+      this.subs[table].createKeyStream()
         .on('data', () => userNum++)
         .on('end', () => resolve(userNum))
     })

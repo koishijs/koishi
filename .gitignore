@@ -2,7 +2,7 @@ dist
 temp
 
 /docs
-/packages/shiki
+/bots
 
 yarn.lock
 node_modules/

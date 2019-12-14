@@ -118,7 +118,12 @@ export interface Tables {
   group: GroupTable
 }
 
-type TableType = keyof Tables
+export interface TableData {
+  user: UserData
+  group: GroupData
+}
+
+export type TableType = keyof Tables
 
 type UnionToIntersection <U> = (U extends any ? (key: U) => void : never) extends (key: infer I) => void ? I : never
 
@@ -150,8 +155,9 @@ type DatabaseInjections <K extends SubdatabaseType, T extends TableType> = {
 }
 
 export function injectMethods <K extends SubdatabaseType, T extends TableType> (name: K, table: T, methods: DatabaseInjections<K, T>) {
-  if (!subdatabases[name]) return
-  const injections = (subdatabases[name] as Subdatabase<K>)._injections
+  const subdatabase = subdatabases[name] as Subdatabase<K>
+  if (!subdatabase) return
+  const injections = subdatabase._injections
   if (!injections[table]) injections[table] = {}
   Object.assign(injections[table], methods)
 }
