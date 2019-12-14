@@ -219,6 +219,7 @@ export class App extends Context {
 
     // polyfill CQHTTP 3.x events
     // https://cqhttp.cc/docs/4.12/#/UpgradeGuide
+    /* eslint-disable dot-notation */
     if (typeof meta.anonymous === 'string') {
       meta.anonymous = {
         name: meta.anonymous,
@@ -234,6 +235,7 @@ export class App extends Context {
       meta.comment = meta.message
       delete meta.message
     }
+    /* eslint-enable dot-notation */
 
     // prepare events
     const events: string[] = []
