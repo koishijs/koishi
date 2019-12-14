@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc -b",
     "bump": "ts-node build/bump",
-    "docs": "npx vuepress dev . --cwd docs",
+    "docs": "cd docs & yarn dev",
     "jest": "jest .*\\.spec\\.ts --runInBand",
     "lint": "eslint packages/*/src/**/*.ts",
     "start": "yarn workspace shiki koishi run"

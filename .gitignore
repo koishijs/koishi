@@ -1,6 +1,7 @@
 dist
 temp
 
+/docs
 /packages/shiki
 
 yarn.lock
