@@ -1,4 +1,4 @@
-import { GroupContext, GroupMemberInfo, injectMethods, GroupRole, App } from 'koishi-core'
+import { GroupMemberInfo, injectMethods, GroupRole, App } from 'koishi-core'
 import { difference } from 'koishi-utils'
 import {} from 'koishi-database-mysql'
 
