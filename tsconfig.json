@@ -12,6 +12,7 @@
     { "path": "./packages/test-utils" },
     { "path": "./packages/database-level" },
     { "path": "./packages/database-mysql" },
+    { "path": "./packages/database-sqlite" },
     { "path": "./packages/plugin-common" },
   ],
   "files": [],
