@@ -19,7 +19,7 @@ export function createServer () {
   app.get('/:method', (req, res) => {
     emitter.emit(req.params.method, req.query)
     res.status(200).send({
-      data: null,
+      data: {},
       retcode: 0,
     })
   })
