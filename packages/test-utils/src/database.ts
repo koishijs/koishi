@@ -18,6 +18,9 @@ export function testDatabase (config: DatabaseConfig, options: TestDatabaseOptio
     if (hook) lifecycle(() => hook(app))
   }
 
+  beforeAll(() => app.start())
+  afterAll(() => app.stop())
+
   describe('user operations', () => {
     registerLifecycle(beforeEach, options.beforeEachUser)
     registerLifecycle(afterEach, options.afterEachUser)
@@ -116,7 +119,7 @@ export function testDatabase (config: DatabaseConfig, options: TestDatabaseOptio
       const selfId = 456
       const group = await db.getGroup(id, selfId)
       expect(group).toMatchObject(createGroup(id, selfId))
-      const count = await db.getUserCount()
+      const count = await db.getGroupCount()
       expect(count).toBe(1)
     })
 
@@ -132,7 +135,7 @@ export function testDatabase (config: DatabaseConfig, options: TestDatabaseOptio
     test('setGroup with data', async () => {
       const id = 123
       const flag = 789
-      await db.getUser(id, 1)
+      await db.getGroup(id, 1)
       await db.setGroup(id, { flag })
       const group = await db.getGroup(id)
       expect(group.id).toBe(id)
@@ -141,7 +144,7 @@ export function testDatabase (config: DatabaseConfig, options: TestDatabaseOptio
 
     test('setGroup without data', async () => {
       const id = 123
-      await db.getUser(id, 1)
+      await db.getGroup(id, 1)
       await expect(db.setGroup(id, {})).resolves.not.toThrow()
       const group = await db.getGroup(id)
       expect(group.id).toBe(id)

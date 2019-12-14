@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "esnext",
+    "target": "es2019",
     "module": "commonjs",
     "esModuleInterop": true,
     "moduleResolution": "node",
@@ -10,8 +10,8 @@
     { "path": "./packages/koishi-core" },
     { "path": "./packages/koishi-cli" },
     { "path": "./packages/test-utils" },
-    { "path": "./packages/database-mysql" },
     { "path": "./packages/database-level" },
+    { "path": "./packages/database-mysql" },
     { "path": "./packages/plugin-common" },
   ],
   "files": [],

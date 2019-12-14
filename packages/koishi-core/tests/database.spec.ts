@@ -1,4 +1,4 @@
-import { App, registerDatabase, injectMethods } from '../src'
+import { App, registerDatabase, injectMethods, AbstractDatabase } from '../src'
 
 declare module '../src/database' {
   interface Subdatabases {
@@ -30,6 +30,7 @@ interface FooOptions {
 }
 
 class FooDatabase {
+  public identifier = 'foo'
   constructor (public options: FooOptions) {}
 
   myFunc (value: number) {
@@ -39,7 +40,8 @@ class FooDatabase {
 
 interface BarOptions {}
 
-class BarDatabase {
+class BarDatabase implements AbstractDatabase {
+  public identifier = 'bar'
   constructor (public options: BarOptions) {}
 }
 

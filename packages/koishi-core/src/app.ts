@@ -189,7 +189,7 @@ export class App extends Context {
     const tasks: Promise<any>[] = []
     if (this.database) {
       for (const type in this.options.database) {
-        tasks.push(this.database[type]?.start())
+        tasks.push(this.database[type]?.start?.())
       }
     }
     if (this.options.type) {
@@ -203,7 +203,7 @@ export class App extends Context {
   stop () {
     if (this.database) {
       for (const type in this.options.database) {
-        this.database[type]?.stop()
+        this.database[type]?.stop?.()
       }
     }
     if (this.options.type) {

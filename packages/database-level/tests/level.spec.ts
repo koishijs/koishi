@@ -12,6 +12,6 @@ declare module 'levelup' {
 testDatabase({
   level: { path: resolve(__dirname, '../temp') },
 }, {
-  beforeEachUser: app => app.database.level.subs.userDB.clear(),
-  beforeEachGroup: app => app.database.level.subs.groupDB.clear(),
+  beforeEachUser: app => app.database.level.subs.user.clear(),
+  beforeEachGroup: app => app.database.level.subs.group.clear(),
 })
