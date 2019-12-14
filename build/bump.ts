@@ -1,7 +1,7 @@
-import { writeFileSync } from 'fs'
-import { execSync } from 'child_process'
+import { writeJson } from 'fs-extra'
 import { resolve } from 'path'
-import { SemVer, gt, gte } from 'semver'
+import { exec } from './utils'
+import { SemVer, gt } from 'semver'
 import chalk from 'chalk'
 import globby from 'globby'
 import CAC from 'cac'
@@ -11,17 +11,9 @@ const { args, options } = CAC()
   .option('-2, --minor', '')
   .option('-3, --patch', '')
   .option('-o, --only', '')
-  .option('-c, --confirm', '')
   .parse()
 
-type VersionFlag = 'major' | 'minor' | 'patch'
-
-interface Version {
-  major: number
-  minor: number
-  patch: number
-  alpha?: number
-}
+type BumpType = 'major' | 'minor' | 'patch'
 
 interface PackageJSON {
   name: string
@@ -31,140 +23,63 @@ interface PackageJSON {
   devDependencies: Record<string, string>
 }
 
-function toVersion (version: Version) {
-  return `${version.major}.${version.minor}.${version.patch}${
-    typeof version.alpha === 'number' ? `-alpha.${version.alpha}` : ''
-  }`
-}
-
 class Package {
-  pkgName: string
-  major: number
-  minor: number
-  patch: number
-  alpha: number
-  current: PackageJSON
-  previous: PackageJSON
-  newVersion: string
+  name: string
+  meta: PackageJSON
+  oldVersion: string
+  version: SemVer
+  dirty: boolean
 
-  constructor (public name: string) {
-    this.current = require(`../${name}/package.json`)
-    this.previous = JSON.parse(execSync('git show HEAD:package.json', {
-      cwd: resolve(__dirname, `../${name}`),
-      encoding: 'utf8',
-      stdio: ['ignore'],
-    }))
-    const verion = new SemVer(this.previous.version)
-    this.pkgName = this.current.name
-    this.major = verion.major
-    this.minor = verion.minor
-    this.patch = verion.patch
-    this.alpha = verion.prerelease[1] as number
-    this.newVersion = this.current.version
+  static async from (path: string) {
+    const pkg = packages[path] = new Package(path)
+    pkg.oldVersion = pkg.meta.version
+    if (pkg.meta.private) return
+    try {
+      const version = await exec(`npm view ${pkg.name} version`, {
+        cwd: resolve(__dirname, `../${path}`),
+        silent: true,
+      })
+      pkg.oldVersion = version.trim()
+    } catch { /* pass */ }
   }
 
-  bump (flag: VersionFlag) {
-    const result = {
-      major: this.major,
-      minor: this.minor,
-      patch: this.patch,
-      alpha: this.alpha,
-    }
-    if (typeof this.alpha === 'number') {
-      result.alpha += 1
+  constructor (public path: string) {
+    this.meta = require(`../${path}/package.json`)
+    this.name = this.meta.name
+    this.version = new SemVer(this.meta.version)
+  }
+
+  bump (flag: BumpType) {
+    if (this.meta.private) return
+    const newVersion = new SemVer(this.oldVersion)
+    if (flag === 'patch' && newVersion.prerelease.length) {
+      const prerelease = newVersion.prerelease.slice() as [string, number]
+      prerelease[1] += 1
+      newVersion.prerelease = prerelease
     } else {
-      result[flag] += 1
-      if (flag !== 'patch') result.patch = 0
-      if (flag === 'major') result.minor = 0
+      newVersion[flag] += 1
+      newVersion.prerelease = []
+      if (flag !== 'patch') newVersion.patch = 0
+      if (flag === 'major') newVersion.minor = 0
     }
-    if (gt(toVersion(result), this.newVersion)) {
-      this.newVersion = toVersion(result)
+    if (gt(newVersion, this.version)) {
+      this.dirty = true
+      this.version = newVersion
+      return this.meta.version = newVersion.format()
     }
   }
 
   save () {
-    writeFileSync(
-      resolve(__dirname, `../${this.name}/package.json`),
-      JSON.stringify(this.toJSON(), null, 2),
-    )
-  }
-
-  toJSON () {
-    this.current.version = this.newVersion
-    return this.current
+    return writeJson(resolve(__dirname, `../${this.path}/package.json`), {
+      ...this.meta,
+      version: this.version.format(),
+    })
   }
 }
 
 const packages: Record<string, Package> = {}
 
-globby.sync(require('../package').workspaces, {
-  deep: 0,
-  onlyDirectories: true,
-}).forEach((name) => {
-  try {
-    packages[name] = new Package(name)
-  } catch (error) { /* pass */ }
-})
-
-const packageNames = Object.keys(packages)
-
-function each (callback: (pkg: Package, name: string) => any) {
-  packageNames.forEach(name => callback(packages[name], name))
-}
-
-function bumpPkg (name: string, flag: VersionFlag = 'patch', stop = false) {
-  const pkg = packages[name]
-  if (!pkg) return
-  pkg.bump(flag)
-  each(({ current }) => {
-    Object.keys(current.devDependencies || {}).forEach((name) => {
-      if (name !== pkg.name) return
-      current.devDependencies[name] = '^' + pkg.newVersion
-    })
-    Object.keys(current.dependencies || {}).forEach((name) => {
-      if (name !== pkg.name) return
-      current.dependencies[name] = '^' + pkg.newVersion
-    })
-  })
-}
-
-// const flag = options.major ? 'major' : options.minor ? 'minor' : 'patch'
-
-// args.forEach(name => bumpPkg(name, flag, options.only))
-
-function getVersion (name: string) {
-  return execSync(`npm show ${name} version`).toString().trim()
-}
-
-function update (name: string) {
-  writeFileSync(
-    resolve(__dirname, `../${name}/package.json`),
-    JSON.stringify(packages[name], null, 2),
-  )
-}
-
-// each((pkg, name) => {
-//   if (!options.confirm) {
-//     if (pkg.newVersion !== pkg.current.version) {
-//       console.log(`- ${pkg.name}: \
-// ${chalk.cyan(pkg.current.version)} => \
-// ${chalk.blueBright(pkg.newVersion)}`)
-//     }
-//   } else if (pkg.newVersion !== pkg.previous.version) {
-//     update(name)
-//     const npmVersion = getVersion(pkg.name)
-//     if (gte(npmVersion, pkg.newVersion)) return
-//     console.log(` - ${pkg.name}: \
-// ${chalk.green(npmVersion)} => \
-// ${chalk.greenBright(pkg.newVersion)}`)
-//   }
-// })
-
-const [shortName, newVersion] = args
-
-if (!shortName || !newVersion) process.exit()
-
-const pkgMap = {
+const nameMap = {
   cli: 'koishi-cli',
   core: 'koishi-core',
   utils: 'koishi-utils',
@@ -176,17 +91,56 @@ const pkgMap = {
   monitor: 'plugin-monitor',
 }
 
-const name = pkgMap[shortName] || shortName
-const { pkgName } = packages['packages/' + name]
+function getPackage (name: string) {
+  return packages['packages/' + nameMap[name]]
+}
 
-each((pkg) => {
-  const { dependencies, devDependencies } = pkg.current
-  if (pkg.pkgName === pkgName) {
-    pkg.newVersion = newVersion
-  } else if (dependencies && pkgName in dependencies) {
-    dependencies[pkgName] = '^' + newVersion
-  } else if (devDependencies && pkgName in devDependencies) {
-    devDependencies[pkgName] = '^' + newVersion
-  } else return
-  pkg.save()
-})
+function each <T> (callback: (pkg: Package, name: string) => T) {
+  const results: T[] = []
+  for (const path in packages) {
+    results.push(callback(packages[path], packages[path].name))
+  }
+  return results
+}
+
+function bumpPkg (source: Package, flag: BumpType, stop = false) {
+  if (!source) return
+  const newVersion = source.bump(flag)
+  if (!newVersion) return
+  const dependents = new Set<Package>()
+  each((target) => {
+    const { meta } = target
+    if (target.name === source.name) return
+    Object.keys(meta.devDependencies || {}).forEach((name) => {
+      if (name !== source.name) return
+      meta.devDependencies[name] = '^' + newVersion
+      dependents.add(target)
+    })
+    Object.keys(meta.dependencies || {}).forEach((name) => {
+      if (name !== source.name) return
+      meta.dependencies[name] = '^' + newVersion
+      dependents.add(target)
+    })
+  })
+  if (stop) return
+  dependents.forEach(dep => bumpPkg(dep, flag))
+}
+
+const flag: BumpType = options.major ? 'major' : options.minor ? 'minor' : 'patch'
+
+;(async () => {
+  const folders = await globby(require('../package').workspaces, {
+    deep: 0,
+    onlyDirectories: true,
+  })
+
+  await Promise.all(folders.map(path => Package.from(path)))
+
+  args.forEach(name => bumpPkg(getPackage(name), flag, options.only))
+
+  await Promise.all(each((pkg) => {
+    if (!pkg.dirty) return
+    console.log(`- ${pkg.name}: ${chalk.cyanBright(pkg.oldVersion)} => ${chalk.yellowBright(pkg.meta.version)}`)
+    return pkg.save()
+  }))
+})()
