@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-common",
-  "version": "1.0.0-alpha.3",
+  "version": "1.0.0-alpha.4",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -22,7 +22,7 @@
     "koishi-database-mysql": "^1.0.0-alpha.3"
   },
   "dependencies": {
-    "koishi-core": "^1.0.0-alpha.3",
+    "koishi-core": "^1.0.0-alpha.4",
     "koishi-utils": "^1.0.0-alpha.1"
   }
 }

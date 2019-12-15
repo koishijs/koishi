@@ -31,10 +31,10 @@ class Package {
   dirty: boolean
 
   static async from (path: string) {
-    const pkg = packages[path] = new Package(path)
-    pkg.oldVersion = pkg.meta.version
-    if (pkg.meta.private) return
     try {
+      const pkg = packages[path] = new Package(path)
+      pkg.oldVersion = pkg.meta.version
+      if (pkg.meta.private) return
       const version = await exec(`npm view ${pkg.name} version`, {
         cwd: resolve(__dirname, `../${path}`),
         silent: true,
@@ -73,7 +73,7 @@ class Package {
     return writeJson(resolve(__dirname, `../${this.path}/package.json`), {
       ...this.meta,
       version: this.version.format(),
-    })
+    }, { spaces: 2 })
   }
 }
 

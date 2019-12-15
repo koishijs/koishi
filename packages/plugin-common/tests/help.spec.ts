@@ -1,5 +1,5 @@
 import { CLIENT_PORT, createServer, SERVER_URL, ServerSession } from 'koishi-test-utils'
-import { App } from 'koishi-core'
+import { App } from 'koishi-core/src'
 import help from '../src/help'
 
 const app = new App({

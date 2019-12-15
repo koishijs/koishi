@@ -25,4 +25,4 @@ rules:
   no-useless-constructor: off
   one-var: off
   operator-linebreak: off
-  '@typescript-eslint/explicit-function-return-type': off
+  '@typescript-eslint/no-unused-expressions': error

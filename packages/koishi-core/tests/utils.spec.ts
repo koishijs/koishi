@@ -1,6 +1,6 @@
 import { getSenderName, createUser, getContextId, getTargetId } from '../src'
 import { createSender } from 'koishi-test-utils'
-import { observe } from 'koishi-utils'
+import { observe } from 'koishi-utils/src'
 
 describe('getSenderName', () => {
   test('userData with name', () => {

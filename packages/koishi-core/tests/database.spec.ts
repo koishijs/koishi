@@ -1,4 +1,4 @@
-import { App, registerDatabase, injectMethods, AbstractDatabase } from '../src'
+import { App, registerDatabase, injectMethods, AbstractDatabase, createUser, extendUser, createGroup, extendGroup } from '../src'
 
 declare module '../src/database' {
   interface Subdatabases {
@@ -9,6 +9,16 @@ declare module '../src/database' {
   interface DatabaseConfig {
     foo?: FooOptions
     bar?: BarOptions
+  }
+
+  interface UserData {
+    foo: string
+    bar: number[]
+  }
+
+  interface GroupData {
+    bar: string
+    foo: number[]
   }
 
   interface UserTable {
@@ -52,7 +62,9 @@ injectMethods('foo', 'user', {
   myUserFunc1 () {
     return 'my-foo-user-func'
   },
+})
 
+injectMethods('foo', 'user', {
   myUserFunc2 () {
     return this.myUserFunc1() + '-' + this.myFunc(1)
   },
@@ -135,5 +147,35 @@ describe('multiple databases', () => {
     expect(app.database.myUserFunc1()).toBe('my-foo-user-func')
     expect(app.database.myUserFunc2()).toBe('my-foo-user-func-2')
     expect(app.database.myBazFunc()).toBe('my-bar-baz-func')
+  })
+})
+
+describe('extend fields', () => {
+  test('extend user fields', () => {
+    const id = 123
+    const authority = 4
+    const user = createUser(id, authority)
+
+    const extension = { foo: 'foo', bar: [0] }
+    extendUser(() => ({ ...extension }))
+
+    expect(createUser(id, authority)).toMatchObject({
+      ...user,
+      ...extension,
+    })
+  })
+
+  test('extend group fields', () => {
+    const id = 12345
+    const assignee = 54321
+    const user = createGroup(id, assignee)
+
+    const extension = { bar: 'bar', foo: [0] }
+    extendGroup(() => ({ ...extension }))
+
+    expect(createGroup(id, assignee)).toMatchObject({
+      ...user,
+      ...extension,
+    })
   })
 })

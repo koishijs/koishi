@@ -9,7 +9,7 @@ beforeAll(() => {
   app = new App()
 
   cmd1 = app
-    .command('cmd1 <foo> [bar]')
+    .command('cmd1 <foo> [...bar]')
     .option('-a, --alpha')
     .option('-b, --beta <beta>')
 
