@@ -1,5 +1,5 @@
 import axios from 'axios'
-import express, { Express } from 'express'
+import express, { Express, response } from 'express'
 import { EventEmitter } from 'events'
 import { createHmac } from 'crypto'
 import { Meta, PostType, MetaTypeMap, SubTypeMap } from 'koishi-core'
@@ -55,4 +55,22 @@ export async function waitFor (method: string) {
       reject(new Error('timeout'))
     }, MAX_TIMEOUT)
   })
+}
+
+export class ServerSession {
+  constructor (public type: MetaTypeMap['message'], subType: SubTypeMap['message'], public meta?: Meta<'message'>) {
+    meta.postType = 'message'
+    meta.messageType = type
+    meta.subType = subType
+  }
+
+  async send (message: string) {
+    await postMeta({ ...this.meta, message })
+    const response = await waitFor(`send_${this.type}_msg`) as any
+    return response.message
+  }
+
+  testSnapshot (message: string) {
+    return expect(this.send(message)).resolves.toMatchSnapshot(message)
+  }
 }

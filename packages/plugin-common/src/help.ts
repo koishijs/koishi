@@ -130,8 +130,6 @@ async function showCommandHelp (command: Command, meta: MessageMeta, options: an
       }
       output.push(line)
     })
-  } else if (command._options.length) {
-    output.push(`输入“help ${command.name} -o”查看完整的选项列表。`)
   }
 
   if (command._examples.length) {

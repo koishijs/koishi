@@ -28,6 +28,6 @@ jobs:
     - name: Lint
       run: yarn lint
     - name: Jest
-      run: yarn jest
+      run: yarn jest --coverage
     - name: Publish
       run: npx ts-node build/publish

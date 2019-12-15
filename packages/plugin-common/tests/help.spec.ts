@@ -1,12 +1,12 @@
-import { CLIENT_PORT, createServer, postMeta, createMeta, waitFor, SERVER_URL } from 'koishi-test-utils'
+import { CLIENT_PORT, createServer, SERVER_URL, ServerSession } from 'koishi-test-utils'
 import { App } from 'koishi-core'
-import help, * as messages from '../src/help'
+import help from '../src/help'
 
 const app = new App({
   type: 'http',
   port: CLIENT_PORT,
   server: SERVER_URL,
-}).plugin(help)
+})
 
 const server = createServer()
 
@@ -19,18 +19,27 @@ afterAll(() => {
   server.close()
 })
 
-describe('help', () => {
-  test('global help message', async () => {
-    await postMeta(createMeta('message', 'private', 'friend', {
-      message: 'help',
-      selfId: 123,
-      userId: 456,
-    }))
+app.plugin(help)
+app.command('help.foo', 'FOO')
+app.command('help/bar', 'BAR')
+  .usage('usage text')
+  .example('example 1')
+  .example('example 2')
+app.command('bar.baz', 'BAZ')
 
-    await expect(waitFor('send_private_msg')).resolves.toHaveProperty('message', [
-      messages.GLOBAL_HELP_PROLOGUE,
-      '    help (0)  显示帮助信息',
-      messages.GLOBAL_HELP_EPILOGUE,
-    ].join('\n'))
+const session = new ServerSession('private', 'friend', { selfId: 123, userId: 456 })
+
+describe('help command', () => {
+  test('show command help', async () => {
+    await session.testSnapshot('help -h')
+    await session.testSnapshot('help help')
+    await session.testSnapshot('bar -h')
+    await session.testSnapshot('help bar')
+  })
+
+  test('global help message', async () => {
+    await session.testSnapshot('help')
+    await session.testSnapshot('help -e')
+    await session.testSnapshot('help -s')
   })
 })
