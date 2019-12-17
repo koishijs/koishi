@@ -1,4 +1,4 @@
-import { GroupContext } from 'koishi-core'
+import { Context } from 'koishi-core'
 import { randomFraction } from 'koishi-utils'
 
 interface State {
@@ -53,10 +53,11 @@ function getText (sessionText: SessionText, userId: number, message: string) {
   return typeof sessionText === 'string' ? sessionText : sessionText(userId, message)
 }
 
-export default function apply (ctx: GroupContext, options: RepeaterOptions) {
+export default function apply (ctx: Context, options: RepeaterOptions) {
   options = { ...defaultOptions, ...options }
+  ctx = ctx.intersect(ctx.app.groups)
 
-  ctx.app.groups.receiver.on('send', ({ groupId, message }) => {
+  ctx.receiver.on('send', ({ groupId, message }) => {
     const state = getState(groupId)
     state.repeated = true
     if (state.message === message) {
