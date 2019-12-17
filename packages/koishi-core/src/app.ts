@@ -3,21 +3,12 @@ import escapeRegex from 'escape-string-regexp'
 import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig, ParsedCommandLine } from './command'
+import { Context, Middleware, NextFunction, ContextScope, Receiver } from './context'
 import { Database, GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig } from './database'
 import { updateActivity, showSuggestions } from './utils'
-import { simplify } from 'koishi-utils'
-import { EventEmitter } from 'events'
 import { Meta, MessageMeta, ContextType } from './meta'
+import { simplify } from 'koishi-utils'
 import * as errors from './errors'
-
-import {
-  Context,
-  Middleware,
-  NextFunction,
-  Plugin,
-  ContextScope,
-  Receiver,
-} from './context'
 
 export interface AppOptions {
   port?: number
@@ -56,8 +47,8 @@ export async function startAll () {
   }
 }
 
-export function stopAll () {
-  appList.forEach(app => app.stop())
+export async function stopAll () {
+  await Promise.all(appList.map(async app => app.stop()))
   for (const hook of onStopHooks) {
     hook(...appList)
   }
@@ -194,12 +185,14 @@ export class App extends Context {
     showLog('started')
   }
 
-  stop () {
+  async stop () {
+    const tasks: Promise<any>[] = []
     if (this.database) {
       for (const type in this.options.database) {
-        this.database[type]?.stop?.()
+        tasks.push(this.database[type]?.stop?.())
       }
     }
+    await Promise.all(tasks)
     if (this.options.type) {
       this.server.close()
       this.sender.stop()

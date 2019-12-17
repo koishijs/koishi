@@ -67,11 +67,12 @@ export class LevelDatabase {
     }
   }
 
-  async start () {
-    return new Promise((resolve, reject) => {
-      this.db.once('error', reject)
-      this.db.once('open', resolve)
-    })
+  start () {
+    return this.db.open()
+  }
+
+  stop () {
+    return this.db.close()
   }
 
   async create <K extends TableType> (table: K, data: Partial<TableData[K]>) {
@@ -81,7 +82,13 @@ export class LevelDatabase {
         .on('error', error => reject(error))
         .on('end', () => resolve(0))
     })
-    return (this.tables[table] as any).put(id, { id, ...data })
+    if (!data.id) data.id = id
+    await (this.tables[table] as any).put(id, data)
+    return data
+  }
+
+  async remove <K extends TableType> (table: K, id: number) {
+    return this.tables[table].del(id)
   }
 
   count (table: TableType) {

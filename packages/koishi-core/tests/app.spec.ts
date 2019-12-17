@@ -15,8 +15,8 @@ describe('lifecycle', () => {
     expect(mock1).toBeCalledWith(app1, app2)
   })
 
-  test('onStop', () => {
-    stopAll()
+  test('onStop', async () => {
+    await stopAll()
     expect(mock2).toBeCalledTimes(1)
   })
 })

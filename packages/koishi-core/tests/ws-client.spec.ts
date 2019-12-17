@@ -1,7 +1,7 @@
 import { SERVER_PORT, SERVER_URL } from 'koishi-test-utils'
 import { App, startAll, stopAll, Meta, WsClient } from '../src'
 import { Server } from 'ws'
-import { snakeCase } from 'koishi-utils/src'
+import { snakeCase } from 'koishi-utils'
 
 let app1: App, app2: App
 let server: Server

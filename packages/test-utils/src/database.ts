@@ -185,4 +185,6 @@ export function testDatabase (config: DatabaseConfig, options: TestDatabaseOptio
       expect(group.flag).toBe(flag)
     })
   })
+
+  return app
 }

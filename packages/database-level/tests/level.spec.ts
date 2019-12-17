@@ -1,10 +1,10 @@
 import { testDatabase } from 'koishi-test-utils'
+import { injectMethods } from 'koishi-core'
 import { resolve } from 'path'
-import { App, injectMethods } from 'koishi-core'
 import del from 'del'
 import '../src'
 
-// workaround levelup poor typings
+// workaround levelup's poor typings
 declare module 'levelup' {
   interface LevelUp {
     clear (): Promise<void>
@@ -13,39 +13,67 @@ declare module 'levelup' {
 
 declare module 'koishi-core/dist/database' {
   interface TableMethods {
-    myTable: {}
+    foo: FooMethods
   }
 
   interface TableData {
-    myTable: MyTable
+    foo: FooData
   }
 }
 
-interface MyTable {
+interface FooMethods {
+  createFoo (data?: Partial<FooData>): Promise<FooData>
+  removeFoo (id: number): Promise<void>
+  getFooCount (): Promise<number>
+}
+
+interface FooData {
   id: number
-  foo: string
+  bar: string
 }
 
 const path = resolve(__dirname, '../temp')
 
 afterAll(() => del(path))
 
-injectMethods('level', 'myTable', {})
+injectMethods('level', 'foo', {
+  async createFoo (data: Partial<FooData> = {}) {
+    return await this.create('foo', data) as FooData
+  },
 
-// testDatabase({
-//   level: { path },
-// }, {
-//   beforeEachUser: app => app.database.level.tables.user.clear(),
-//   beforeEachGroup: app => app.database.level.tables.group.clear(),
-// })
+  removeFoo (id: number) {
+    return this.remove('foo', id)
+  },
 
-describe('incremental index', () => {
-  const app = new App({ database: { level: { path: resolve(__dirname, '../temp') }, } })
-  test('foo', async () => {
-    expect(1).toBe(1)
-    await app.database.level.create('myTable', { foo: 'bar' })
-    await expect(app.database.level.tables.myTable.get(1)).resolves.toMatchObject({ id: 1, foo: 'bar' })
-    await app.database.level.create('myTable', { foo: 'baz' })
-    await expect(app.database.level.tables.myTable.get(2)).resolves.toMatchObject({ id: 2, foo: 'baz' })
+  getFooCount () {
+    return this.count('foo')
+  }
+})
+
+const app = testDatabase({
+  level: { path },
+}, {
+  beforeEachUser: app => app.database.level.tables.user.clear(),
+  beforeEachGroup: app => app.database.level.tables.group.clear(),
+})
+
+describe('other methods', () => {
+  const { database: db } = app
+  beforeAll(() => db.level.tables.foo.clear())
+
+  test('create & remove', async () => {
+    await expect(db.getFooCount()).resolves.toBe(0)
+    await expect(db.createFoo()).resolves.toMatchObject({ id: 1 })
+    await expect(db.getFooCount()).resolves.toBe(1)
+    await expect(db.createFoo()).resolves.toMatchObject({ id: 2 })
+    await expect(db.getFooCount()).resolves.toBe(2)
+    await expect(db.removeFoo(1)).resolves.toBeUndefined()
+    await expect(db.getFooCount()).resolves.toBe(1)
+    await expect(db.createFoo()).resolves.toMatchObject({ id: 3 })
+    await expect(db.getFooCount()).resolves.toBe(2)
+    await expect(db.removeFoo(3)).resolves.toBeUndefined()
+    await expect(db.getFooCount()).resolves.toBe(1)
+    await expect(db.createFoo()).resolves.toMatchObject({ id: 3 })
+    await expect(db.getFooCount()).resolves.toBe(2)
   })
 })

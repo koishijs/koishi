@@ -152,7 +152,7 @@ interface Subdatabase <T extends SubdatabaseType = SubdatabaseType, A extends Ab
 
 export interface AbstractDatabase {
   start? (): void | Promise<void>
-  stop? (): void
+  stop? (): void | Promise<void>
 }
 
 const subdatabases: { [K in SubdatabaseType]?: Subdatabase<K> } = {}
