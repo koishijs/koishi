@@ -12,17 +12,11 @@ import * as errors from './errors'
 
 import {
   Context,
-  UserContext,
-  GroupContext,
-  DiscussContext,
   Middleware,
   NextFunction,
   Plugin,
-  NoticeEvent,
-  RequestEvent,
-  MetaEventEvent,
-  MessageEvent,
   ContextScope,
+  Receiver,
 } from './context'
 
 export interface AppOptions {
@@ -73,7 +67,7 @@ let getSelfIdsPromise: Promise<any>
 export async function getSelfIds () {
   if (!getSelfIdsPromise) {
     getSelfIdsPromise = Promise.all(appList.map(async (app) => {
-      if (app.selfId) return
+      if (app.selfId || !app.options.type) return
       const info = await app.sender.getLoginInfo()
       app.options.selfId = info.userId
       app._registerSelfId()
@@ -83,8 +77,8 @@ export async function getSelfIds () {
   return selfIds
 }
 
-export type MajorContext <T extends Context> = T & {
-  except (...ids: number[]): T
+export interface MajorContext extends Context {
+  except (...ids: number[]): Context
 }
 
 const appScope: ContextScope = [[null, []], [null, []], [null, []]]
@@ -98,12 +92,12 @@ export class App extends Context {
   app = this
   server: Server
   database: Database
-  receiver: AppReceiver
+  receiver: Receiver
   prefixRE: RegExp
   userPrefixRE: RegExp
-  users: MajorContext<UserContext>
-  groups: MajorContext<GroupContext>
-  discusses: MajorContext<DiscussContext>
+  users: MajorContext
+  groups: MajorContext
+  discusses: MajorContext
 
   _commands: Command[] = []
   _commandMap: Record<string, Command> = {}
@@ -128,9 +122,9 @@ export class App extends Context {
     }
     this.receiver.on('message', this._applyMiddlewares)
     this.middleware(this._preprocess)
-    this.users = this._createContext([[null, []], [[], null], [[], null]])
-    this.groups = this._createContext([[[], null], [null, []], [[], null]])
-    this.discusses = this._createContext([[[], null], [[], null], [null, []]])
+    this.users = this._createContext([[null, []], [[], null], [[], null]]) as MajorContext
+    this.groups = this._createContext([[[], null], [null, []], [[], null]]) as MajorContext
+    this.discusses = this._createContext([[[], null], [[], null], [null, []]]) as MajorContext
     this.users.except = (...ids) => this._createContext([[null, ids], [[], null], [[], null]])
     this.groups.except = (...ids) => this._createContext([[[], null], [null, ids], [[], null]])
     this.discusses.except = (...ids) => this._createContext([[[], null], [[], null], [null, ids]])
@@ -158,7 +152,7 @@ export class App extends Context {
     this.userPrefixRE = createPrefixRegExp(...patterns)
   }
 
-  _createContext <T extends Context> (scope: string | ContextScope) {
+  _createContext (scope: string | ContextScope) {
     if (typeof scope === 'string') scope = ContextScope.parse(scope)
     scope = scope.map(([include, exclude]) => {
       return include ? [include.sort(), exclude] : [include, exclude.sort()]
@@ -170,19 +164,19 @@ export class App extends Context {
       ctx.sender = this.sender
       ctx.app = this
     }
-    return this._contexts[identifier] as T
+    return this._contexts[identifier]
   }
 
   discuss (...ids: number[]) {
-    return this._createContext<DiscussContext>([[[], null], [[], null], [ids, null]])
+    return this._createContext([[[], null], [[], null], [ids, null]])
   }
 
   group (...ids: number[]) {
-    return this._createContext<GroupContext>([[[], null], [ids, null], [[], null]])
+    return this._createContext([[[], null], [ids, null], [[], null]])
   }
 
   user (...ids: number[]) {
-    return this._createContext<UserContext>([[ids, null], [[], null], [[], null]])
+    return this._createContext([[ids, null], [[], null], [[], null]])
   }
 
   async start () {
@@ -411,7 +405,7 @@ export class App extends Context {
   parseCommandLine (message: string, meta: MessageMeta): ParsedCommandLine {
     const name = message.split(/\s/, 1)[0].toLowerCase()
     const command = this._commandMap[name]
-    if (command && command.context.match(meta)) {
+    if (command?.context.match(meta)) {
       const result = command.parse(message.slice(name.length).trimStart())
       return { meta, command, ...result }
     }
@@ -443,23 +437,4 @@ export class App extends Context {
     // flush user data
     if (meta.$user) await meta.$user._update()
   }
-}
-
-export interface AppReceiver extends EventEmitter {
-  on (event: NoticeEvent, listener: (meta: Meta<'notice'>) => any): this
-  on (event: MessageEvent, listener: (meta: Meta<'message'>) => any): this
-  on (event: RequestEvent, listener: (meta: Meta<'request'>) => any): this
-  on (event: MetaEventEvent, listener: (meta: Meta<'meta_event'>) => any): this
-  on (event: 'send', listener: (meta: Meta<'send'>) => any): this
-  on (event: 'plugin', listener: (plugin: Plugin) => any): this
-  on (event: 'warning', listener: (error: Error) => any): this
-  on (event: 'connected', listener: (app: App) => any): this
-  once (event: NoticeEvent, listener: (meta: Meta<'notice'>) => any): this
-  once (event: MessageEvent, listener: (meta: Meta<'message'>) => any): this
-  once (event: RequestEvent, listener: (meta: Meta<'request'>) => any): this
-  once (event: MetaEventEvent, listener: (meta: Meta<'meta_event'>) => any): this
-  once (event: 'send', listener: (meta: Meta<'send'>) => any): this
-  once (event: 'plugin', listener: (plugin: Plugin) => any): this
-  once (event: 'warning', listener: (error: Error) => any): this
-  once (event: 'connected', listener: (app: App) => any): this
 }

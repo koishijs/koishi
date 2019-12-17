@@ -8,7 +8,7 @@ declare module 'koishi-core/dist/database' {
   }
 
   interface DatabaseConfig {
-    mysql: PoolConfig
+    mysql?: PoolConfig
   }
 }
 
@@ -26,8 +26,7 @@ const defaultConfig: MysqlDatabaseConfig = {
     if (field.type === 'JSON') {
       return JSON.parse(field.string())
     } else if (field.type === 'BIT') {
-      const buffer = field.buffer()
-      return Boolean(buffer && buffer.readUInt8(0))
+      return Boolean(field.buffer()?.readUInt8(0))
     } else {
       return next()
     }

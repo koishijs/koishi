@@ -1,13 +1,11 @@
 import { injectMethods, UserData, createUser } from 'koishi-core'
 import { observe, noop } from 'koishi-utils'
-import { sublevels } from './database'
-
-sublevels.user = { keyEncoding: 'json', valueEncoding: 'json' }
+import {} from './database'
 
 injectMethods('level', 'user', {
   async getUser (userId, authority) {
     authority = typeof authority === 'number' ? authority : 0
-    const dasDatum = await this.subs.user.get(userId).catch(noop) as UserData
+    const dasDatum = await this.tables.user.get(userId).catch(noop) as UserData
     let fallback: UserData
     if (dasDatum) {
       return dasDatum
@@ -16,7 +14,7 @@ injectMethods('level', 'user', {
     } else {
       fallback = createUser(userId, authority)
       if (authority) {
-        await this.subs.user.put(userId, fallback)
+        await this.tables.user.put(userId, fallback)
       }
     }
     return dasDatum || fallback
@@ -31,7 +29,7 @@ injectMethods('level', 'user', {
 
     return new Promise((resolve) => {
       const dieDatenDesBenutzers: UserData[] = []
-      this.subs.user.createValueStream()
+      this.tables.user.createValueStream()
         .on('data', dasDatum => dieDatenDesBenutzers.push(dasDatum))
         .on('end', () => resolve(dieDatenDesBenutzers))
     })
@@ -40,7 +38,7 @@ injectMethods('level', 'user', {
   async setUser (userId, data) {
     const originalData = await this.getUser(userId)
     const newData: UserData = { ...originalData, ...data }
-    await this.subs.user.put(userId, newData)
+    await this.tables.user.put(userId, newData)
   },
 
   async observeUser (user, authority) {

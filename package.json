@@ -23,6 +23,7 @@
     "@typescript-eslint/parser": "^2.11.0",
     "cac": "^6.5.3",
     "chalk": "^3.0.0",
+    "del": "^5.1.0",
     "eslint": "^6.7.1",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-import": "^2.18.2",

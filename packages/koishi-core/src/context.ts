@@ -188,7 +188,8 @@ export class Context {
 
   getCommand (name: string, meta: MessageMeta) {
     const command = this._getCommandByRawName(name)
-    return command && command.context.match(meta) && !command.getConfig('disable', meta) && command
+    if (!command || !command.context.match(meta) || command.getConfig('disable', meta)) return
+    return command
   }
 
   runCommand (name: string, meta: MessageMeta, args: string[] = [], options: Record<string, any> = {}, rest = '') {
@@ -204,59 +205,29 @@ export class Context {
   }
 }
 
-type UserMessageEvent = 'message' | 'message/friend' | 'message/group' | 'message/discuss' | 'message/other'
-type GroupMessageEvent = 'message' | 'message/normal' | 'message/notice' | 'message/anonymous'
-type DiscussMessageEvent = 'message'
-type UserNoticeEvent = 'friend_add'
-type GroupNoticeEvent = 'group_increase' | 'group_increase/approve' | 'group_increase/invite'
+type SendEvent = 'send'
+type MessageEvent = 'message' | 'message/normal' | 'message/notice' | 'message/anonymous'
+  | 'message/friend' | 'message/group' | 'message/discuss' | 'message/other'
+type NoticeEvent = 'friend_add' | 'group_increase' | 'group_increase/approve' | 'group_increase/invite'
   | 'group_decrease' | 'group_decrease/leave' | 'group_decrease/kick' | 'group_decrease/kick_me'
   | 'group_upload' | 'group_admin' | 'group_admin/unset' | 'group_admin/set' | 'group_ban'
-type UserRequestEvent = 'request'
-type GroupRequestEvent = 'request' | 'request/add' | 'request/invite'
-
-export type MessageEvent = UserMessageEvent | GroupMessageEvent | DiscussMessageEvent
-export type NoticeEvent = UserNoticeEvent | GroupNoticeEvent
-export type RequestEvent = UserRequestEvent | GroupRequestEvent
-export type MetaEventEvent = 'meta_event' | 'meta_event/heartbeat'
+type RequestEvent = 'request' | 'request/add' | 'request/invite'
+type MetaEventEvent = 'meta_event' | 'meta_event/heartbeat'
   | 'meta_event/lifecycle' | 'meta_event/lifecycle/enable' | 'meta_event/lifecycle/disable'
 
-interface UserReceiver extends EventEmitter {
-  on (event: 'send', listener: (meta: Meta<'send'>) => any): this
-  on (event: UserNoticeEvent, listener: (meta: Meta<'notice'>) => any): this
-  on (event: UserMessageEvent, listener: (meta: Meta<'message'>) => any): this
-  on (event: UserRequestEvent, listener: (meta: Meta<'request'>) => any): this
-  once (event: 'send', listener: (meta: Meta<'send'>) => any): this
-  once (event: UserNoticeEvent, listener: (meta: Meta<'notice'>) => any): this
-  once (event: UserMessageEvent, listener: (meta: Meta<'message'>) => any): this
-  once (event: UserRequestEvent, listener: (meta: Meta<'request'>) => any): this
-}
-
-interface GroupReceiver extends EventEmitter {
-  on (event: 'send', listener: (meta: Meta<'send'>) => any): this
-  on (event: GroupNoticeEvent, listener: (meta: Meta<'notice'>) => any): this
-  on (event: GroupMessageEvent, listener: (meta: Meta<'message'>) => any): this
-  on (event: GroupRequestEvent, listener: (meta: Meta<'request'>) => any): this
-  once (event: 'send', listener: (meta: Meta<'send'>) => any): this
-  once (event: GroupNoticeEvent, listener: (meta: Meta<'notice'>) => any): this
-  once (event: GroupMessageEvent, listener: (meta: Meta<'message'>) => any): this
-  once (event: GroupRequestEvent, listener: (meta: Meta<'request'>) => any): this
-}
-
-export interface DiscussReceiver extends EventEmitter {
-  on (event: 'send', listener: (meta: Meta<'send'>) => any): this
-  on (event: DiscussMessageEvent, listener: (meta: Meta<'message'>) => any): this
-  once (event: 'send', listener: (meta: Meta<'send'>) => any): this
-  once (event: DiscussMessageEvent, listener: (meta: Meta<'message'>) => any): this
-}
-
-export interface UserContext extends Context {
-  receiver: UserReceiver
-}
-
-export interface GroupContext extends Context {
-  receiver: GroupReceiver
-}
-
-export interface DiscussContext extends Context {
-  receiver: DiscussReceiver
+export interface Receiver extends EventEmitter {
+  on (event: SendEvent, listener: (meta: Meta<'send'>) => any): this
+  on (event: NoticeEvent, listener: (meta: Meta<'notice'>) => any): this
+  on (event: MessageEvent, listener: (meta: Meta<'message'>) => any): this
+  on (event: RequestEvent, listener: (meta: Meta<'request'>) => any): this
+  on (event: MetaEventEvent, listener: (meta: Meta<'meta_event'>) => any): this
+  on (event: 'warning', listener: (error: Error) => any): this
+  on (event: 'connected', listener: (app: App) => any): this
+  once (event: SendEvent, listener: (meta: Meta<'send'>) => any): this
+  once (event: NoticeEvent, listener: (meta: Meta<'notice'>) => any): this
+  once (event: MessageEvent, listener: (meta: Meta<'message'>) => any): this
+  once (event: RequestEvent, listener: (meta: Meta<'request'>) => any): this
+  once (event: MetaEventEvent, listener: (meta: Meta<'meta_event'>) => any): this
+  once (event: 'warning', listener: (error: Error) => any): this
+  once (event: 'connected', listener: (app: App) => any): this
 }

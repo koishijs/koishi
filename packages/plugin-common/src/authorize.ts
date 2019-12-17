@@ -4,7 +4,7 @@ import {} from 'koishi-database-mysql'
 
 // optimize for mysql
 declare module 'koishi-core/dist/database' {
-  interface UserTable {
+  interface UserMethods {
     getUsersWithAuthorityBelow <K extends UserField> (ids: number[], authority: number): Promise<Pick<UserData, 'id' | 'authority'>[]>
   }
 }

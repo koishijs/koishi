@@ -1,4 +1,4 @@
-import { App, registerDatabase, injectMethods, AbstractDatabase, createUser, extendUser, createGroup, extendGroup } from '../src'
+import { App, registerDatabase, injectMethods, createUser, extendUser, createGroup, extendGroup } from '../src'
 
 declare module '../src/database' {
   interface Subdatabases {
@@ -21,12 +21,12 @@ declare module '../src/database' {
     foo: number[]
   }
 
-  interface UserTable {
+  interface UserMethods {
     myUserFunc1?: () => string
     myUserFunc2?: () => string
   }
 
-  interface Tables {
+  interface TableMethods {
     baz: TableBaz
   }
 }
@@ -40,7 +40,6 @@ interface FooOptions {
 }
 
 class FooDatabase {
-  public identifier = 'foo'
   constructor (public options: FooOptions) {}
 
   myFunc (value: number) {
@@ -50,8 +49,7 @@ class FooDatabase {
 
 interface BarOptions {}
 
-class BarDatabase implements AbstractDatabase {
-  public identifier = 'bar'
+class BarDatabase {
   constructor (public options: BarOptions) {}
 }
 

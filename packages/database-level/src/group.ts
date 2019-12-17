@@ -1,18 +1,16 @@
 import { getSelfIds, injectMethods, GroupData, createGroup } from 'koishi-core'
 import { noop, observe } from 'koishi-utils'
-import { sublevels } from './database'
-
-sublevels.group = { keyEncoding: 'json', valueEncoding: 'json' }
+import {} from './database'
 
 injectMethods('level', 'group', {
   async getGroup (groupId, selfId): Promise<GroupData> {
     selfId = typeof selfId === 'number' ? selfId : 0
-    const data = await this.subs.group.get(groupId).catch(noop) as GroupData | void
+    const data = await this.tables.group.get(groupId).catch(noop) as GroupData | void
     let fallback: GroupData
     if (!data) {
       fallback = createGroup(groupId, selfId)
       if (selfId && groupId) {
-        await this.subs.group.put(groupId, fallback)
+        await this.tables.group.put(groupId, fallback)
       }
     }
 
@@ -26,7 +24,7 @@ injectMethods('level', 'group', {
     if (!assignees.length) return []
     return new Promise((resolve) => {
       const groups: GroupData[] = []
-      this.subs.group.createValueStream()
+      this.tables.group.createValueStream()
         .on('data', (group: GroupData) => {
           if (assignees.includes(group.assignee)) {
             groups.push(group)
@@ -39,7 +37,7 @@ injectMethods('level', 'group', {
   async setGroup (groupId, data) {
     const originalData = await this.getGroup(groupId)
     const newData: GroupData = { ...originalData, ...data }
-    await this.subs.group.put(groupId, newData)
+    await this.tables.group.put(groupId, newData)
   },
 
   async observeGroup (group, selfId) {

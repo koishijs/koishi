@@ -91,7 +91,7 @@ export function createGroup (id: number, assignee: number) {
   return result
 }
 
-export interface UserTable {
+export interface UserMethods {
   getUser <K extends UserField> (userId: number, fields?: K[]): Promise<Pick<UserData, K | 'id'>>
   getUser <K extends UserField> (userId: number, defaultAuthority?: number, fields?: K[]): Promise<Pick<UserData, K | 'id'>>
   getUsers <K extends UserField> (fields?: K[]): Promise<Pick<UserData, K>[]>
@@ -102,7 +102,7 @@ export interface UserTable {
   getUserCount (): Promise<number>
 }
 
-export interface GroupTable {
+export interface GroupMethods {
   getGroup <K extends GroupField> (groupId: number, fields?: K[]): Promise<Pick<GroupData, K | 'id'>>
   getGroup <K extends GroupField> (groupId: number, selfId?: number, fields?: K[]): Promise<Pick<GroupData, K | 'id'>>
   getAllGroups <K extends GroupField> (assignees?: number[]): Promise<Pick<GroupData, K>[]>
@@ -113,9 +113,9 @@ export interface GroupTable {
   getGroupCount (): Promise<number>
 }
 
-export interface Tables {
-  user: UserTable
-  group: GroupTable
+export interface TableMethods {
+  user: UserMethods
+  group: GroupMethods
 }
 
 export interface TableData {
@@ -123,12 +123,11 @@ export interface TableData {
   group: GroupData
 }
 
-export type TableType = keyof Tables
+export type TableType = keyof TableMethods
 
 type UnionToIntersection <U> = (U extends any ? (key: U) => void : never) extends (key: infer I) => void ? I : never
-type ExtendValues <T extends Record<keyof any, any>, V> = { [K in keyof T]?: T[K] & V }
 
-export type Database = ExtendValues<Subdatabases, AbstractDatabase> & UnionToIntersection<Tables[TableType]>
+export type Database = Subdatabases & UnionToIntersection<TableMethods[TableType]>
 
 export interface DatabaseConfig {
   $tables?: Partial<Record<TableType, SubdatabaseType>>
@@ -136,37 +135,56 @@ export interface DatabaseConfig {
 
 export interface Subdatabases {}
 
-type SubdatabaseType = keyof Subdatabases
+export interface InjectOptions {}
 
-interface Subdatabase <K extends SubdatabaseType = SubdatabaseType> {
-  new (config: K extends keyof DatabaseConfig ? DatabaseConfig[K] : void): Subdatabases[K] & AbstractDatabase
-  _injections?: Partial<Record<TableType, {}>>
+type SubdatabaseType = keyof Subdatabases
+type DatabaseMap = Record<string | number, AbstractDatabase>
+
+export type TableConfig <K extends SubdatabaseType> = K extends keyof InjectOptions ? InjectOptions[K] : never
+export type InjectConfig <K extends SubdatabaseType> = Partial<Record<TableType, TableConfig<K>>>
+
+interface Subdatabase <T extends SubdatabaseType = SubdatabaseType, A extends AbstractDatabase = AbstractDatabase> {
+  new (config: DatabaseConfig[T], injectConfig?: InjectConfig<T>): A
+  identify? (config: DatabaseConfig[T]): string | number
+  _injectMethods?: Partial<Record<TableType, DatabaseInjections<T>>>
+  _injectOptions?: InjectConfig<T>
 }
 
 export interface AbstractDatabase {
-  identifier: string
-  start? (): Promise<void>
+  start? (): void | Promise<void>
   stop? (): void
 }
 
 const subdatabases: { [K in SubdatabaseType]?: Subdatabase<K> } = {}
+const existingDatabases: { [K in SubdatabaseType]?: DatabaseMap } = {}
 
-export function registerDatabase <K extends SubdatabaseType> (name: K, subdatabase: Subdatabase<K>) {
+export function registerDatabase <K extends SubdatabaseType> (name: K, subdatabase: Subdatabase<K, {}>) {
   subdatabases[name] = subdatabase as any
-  subdatabase._injections = {}
+  subdatabase._injectMethods = {}
+  subdatabase._injectOptions = {}
 }
 
-type DatabaseInjections <K extends SubdatabaseType, T extends TableType> = {
-  [M in keyof Tables[T]]?:
-    Tables[T][M] extends (...args: infer P) => infer R ? (this: DatabaseInjections<K, T> & Subdatabases[K], ...args: P) => R : never
+export type DatabaseInjections <K extends SubdatabaseType, T extends TableType = TableType> = {
+  [M in keyof TableMethods[T]]?: TableMethods[T][M] extends (...args: infer P) => infer R
+    ? (this: DatabaseInjections<K, T> & Subdatabases[K], ...args: P) => R
+    : never
 }
 
-export function injectMethods <K extends SubdatabaseType, T extends TableType> (name: K, table: T, methods: DatabaseInjections<K, T>) {
+export function injectMethods <K extends SubdatabaseType, T extends TableType> (
+  name: K,
+  table: T,
+  methods: DatabaseInjections<K, T>,
+  options?: TableConfig<K>,
+) {
   const subdatabase = subdatabases[name] as Subdatabase<K>
   if (!subdatabase) return
-  const injections = subdatabase._injections
+  const injections = subdatabase._injectMethods
   if (!injections[table]) injections[table] = {}
   Object.assign(injections[table], methods)
+  subdatabase._injectOptions[table] = {
+    ...subdatabase._injectOptions[table] as any,
+    ...options as any,
+  }
 }
 
 export function createDatabase (config: DatabaseConfig) {
@@ -179,18 +197,28 @@ export function createDatabase (config: DatabaseConfig) {
   }
   for (const type in subdatabases) {
     if (!config[type]) continue
-    const injections = (subdatabases[type] as Subdatabase)._injections
-    const subdatabase = database[type] = new subdatabases[type](config[type])
-    for (const table in injections) {
+    createSubdatabase(type as never)
+  }
+  return database
+
+  function createSubdatabase <T extends SubdatabaseType> (type: T) {
+    const Subdatabase: Subdatabase<T> = subdatabases[type]
+    const { _injectMethods, _injectOptions } = Subdatabase
+    const identifier = Subdatabase.identify?.(config[type])
+    const databases: DatabaseMap = existingDatabases[type] || (existingDatabases[type] = {} as never)
+    const subdatabase = identifier in databases
+      ? databases[identifier]
+      : databases[identifier] = new Subdatabase(config[type], _injectOptions)
+    database[type] = subdatabase as never
+    for (const table in _injectMethods) {
       if (!explicitTables[table] && implicitTables[table]) {
         throw new Error(`database "${implicitTables[table]}" and "${type}" conflict on table "${table}"`)
       } else if (!explicitTables[table] || explicitTables[table] === type) {
         implicitTables[table] = type
-        for (const name in injections[table]) {
-          subdatabase[name] = database[name] = injections[table][name].bind(subdatabase)
+        for (const name in _injectMethods[table]) {
+          subdatabase[name] = database[name] = _injectMethods[table][name].bind(subdatabase)
         }
       }
     }
   }
-  return database
 }

@@ -65,8 +65,9 @@ class Package {
     if (gt(newVersion, this.version)) {
       this.dirty = true
       this.version = newVersion
-      return this.meta.version = newVersion.format()
+      this.meta.version = newVersion.format()
     }
+    return this.meta.version
   }
 
   save () {

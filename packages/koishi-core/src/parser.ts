@@ -124,17 +124,17 @@ function parseArg0 (source: string): ParsedArg0 {
   return { content, quoted: false, rest: source.slice(content.length).trimLeft() }
 }
 
-export function parseValue (source: string | true, quoted: boolean, config: CommandOption) {
+export function parseValue (source: string | true, quoted: boolean, config = {} as CommandOption) {
   // quoted empty string
   if (source === '' && quoted) return ''
   // no explicit parameter
   if (source === true || source === '') {
-    if (config && config.default !== undefined) return config.default
-    if (config && config.isString) return ''
+    if (config.default !== undefined) return config.default
+    if (config.isString) return ''
     return true
   }
   // default behavior
-  if (config && config.isString) return source
+  if (config.isString) return source
   const n = +source
   return n * 0 === 0 ? n : source
 }

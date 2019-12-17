@@ -205,7 +205,7 @@ export class Command {
     // check argument count
     if (this.config.checkArgCount) {
       const nextArg = this._argsDef[args.length]
-      if (nextArg && nextArg.required) {
+      if (nextArg?.required) {
         return meta.$send(messages.INSUFFICIENT_ARGUMENTS)
       }
       const finalArg = this._argsDef[this._argsDef.length - 1]
