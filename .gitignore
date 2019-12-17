@@ -3,8 +3,6 @@ temp
 
 /docs
 /bots
-/packages/plugin-*
-!/packages/plugin-common
 
 yarn.lock
 node_modules/

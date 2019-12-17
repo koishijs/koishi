@@ -204,11 +204,12 @@ export function createDatabase (config: DatabaseConfig) {
   function createSubdatabase <T extends SubdatabaseType> (type: T) {
     const Subdatabase: Subdatabase<T> = subdatabases[type]
     const { _injectMethods, _injectOptions } = Subdatabase
-    const identifier = Subdatabase.identify?.(config[type])
+    const _config = (typeof config[type] === 'object' && config[type] ? config[type] : {}) as any
+    const identifier = _config.identifier ?? (_config.identifier = Subdatabase.identify?.(_config as never))
     const databases: DatabaseMap = existingDatabases[type] || (existingDatabases[type] = {} as never)
     const subdatabase = identifier in databases
       ? databases[identifier]
-      : databases[identifier] = new Subdatabase(config[type], _injectOptions)
+      : databases[identifier] = new Subdatabase({ identifier, ..._config }, _injectOptions)
     database[type] = subdatabase as never
     for (const table in _injectMethods) {
       if (!explicitTables[table] && implicitTables[table]) {
