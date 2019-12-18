@@ -11,7 +11,8 @@
     "docs": "cd docs & yarn dev",
     "jest": "jest .*\\.spec\\.ts --runInBand",
     "lint": "eslint packages/*/src/**/*.ts",
-    "start": "yarn workspace shiki koishi run"
+    "start:kira": "yarn workspace bot-kira koishi run",
+    "start:shiki": "yarn workspace bot-shiki koishi run"
   },
   "version": "1.0.0",
   "license": "MIT",

@@ -55,6 +55,9 @@ export class MysqlDatabase implements AbstractDatabase {
   public config: MysqlDatabaseConfig
   public identifier: string
 
+  escape = escape
+  escapeId = escapeId
+
   constructor (config: MysqlDatabaseConfig) {
     this.config = {
       ...defaultConfig,

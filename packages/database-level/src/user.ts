@@ -23,8 +23,8 @@ injectMethods('level', 'user', {
   async getUsers (...args) {
     if (args.length > 1 || args.length && typeof args[0][0] === 'number') {
       if (!args[0].length) return []
-      const users = await Promise.all(args[0].map(id => this.getUser(id, -1)))
-      return users.filter(Boolean)
+      const users = await Promise.all(args[0].map(id => this.tables.user.get(id).catch(noop)))
+      return users.filter(Boolean) as UserData[]
     }
 
     return new Promise((resolve) => {

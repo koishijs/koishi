@@ -84,7 +84,7 @@ export class LevelDatabase {
     })
     if (!data.id) data.id = id
     await (this.tables[table] as any).put(id, data)
-    return data
+    return data as TableData[K]
   }
 
   async remove <K extends TableType> (table: K, id: number) {

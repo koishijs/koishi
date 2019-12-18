@@ -1,5 +1,5 @@
 import { injectMethods, extendUser, Activity } from 'koishi-core'
-import { escape } from 'mysql'
+import deepEqual from 'fast-deep-equal'
 import {} from 'koishi-database-mysql'
 import {} from 'koishi-database-level'
 
@@ -18,8 +18,9 @@ declare module 'koishi-core/dist/database' {
 }
 
 interface DialogueMethods {
+  _getDialogueTest (test: DialogueTest): string
+  _testDialogue (test: DialogueTest, data: Dialogue): boolean
   createDialogue (options: Dialogue): Promise<Dialogue>
-  getDialogueTest (test: DialogueTest): string
   getDialogues (test: number[] | DialogueTest): Promise<Dialogue[]>
   setDialogue (id: number, data: Partial<Dialogue>): Promise<any>
   removeDialogues (ids: number[]): Promise<any>
@@ -61,18 +62,14 @@ export interface DialogueTest {
 }
 
 injectMethods('mysql', 'dialogue', {
-  createDialogue (options) {
-    return this.create('dialogues', options)
-  },
-
-  getDialogueTest (test) {
+  _getDialogueTest (test) {
     const conditionals: string[] = []
     if (test.keyword) {
-      if (test.question) conditionals.push('`question` LIKE ' + escape(`%${test.question}%`))
-      if (test.answer) conditionals.push('`answer` LIKE ' + escape(`%${test.answer}%`))
+      if (test.question) conditionals.push('`question` LIKE ' + this.escape(`%${test.question}%`))
+      if (test.answer) conditionals.push('`answer` LIKE ' + this.escape(`%${test.answer}%`))
     } else {
-      if (test.question) conditionals.push('`question` = ' + escape(test.question))
-      if (test.answer) conditionals.push('`answer` = ' + escape(test.answer))
+      if (test.question) conditionals.push('`question` = ' + this.escape(test.question))
+      if (test.answer) conditionals.push('`answer` = ' + this.escape(test.answer))
     }
     let envConditional = ''
     if (test.envMode === 2) {
@@ -97,27 +94,94 @@ injectMethods('mysql', 'dialogue', {
     return ' WHERE ' + conditionals.join(' AND ')
   },
 
+  createDialogue (options) {
+    return this.create('dialogue', options)
+  },
+
   async getDialogues (test) {
     if (Array.isArray(test)) {
       if (!test.length) return []
-      return this.query(`SELECT * FROM \`dialogues\` WHERE \`id\` IN (${test.join(',')})`)
+      return this.query(`SELECT * FROM \`dialogue\` WHERE \`id\` IN (${test.join(',')})`)
     }
-    return this.query('SELECT * FROM `dialogues`' + this.getDialogueTest(test))
+    return this.query('SELECT * FROM `dialogue`' + this._getDialogueTest(test))
   },
 
   setDialogue (id, data) {
-    return this.update('dialogues', id, data)
+    return this.update('dialogue', id, data)
   },
 
   removeDialogues (ids) {
-    return this.query(`DELETE FROM \`dialogues\` WHERE \`id\` IN (${ids.join(',')})`)
+    return this.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
   },
 
   async getDialogueCount (test) {
     const [{
       'COUNT(DISTINCT `question`)': questions,
       'COUNT(*)': answers,
-    }] = await this.query('SELECT COUNT(DISTINCT `question`), COUNT(*) FROM `dialogues`' + this.getDialogueTest(test))
+    }] = await this.query('SELECT COUNT(DISTINCT `question`), COUNT(*) FROM `dialogue`' + this._getDialogueTest(test))
     return { questions, answers }
+  },
+})
+
+injectMethods('level', 'dialogue', {
+  _testDialogue (test, data) {
+    if (test.keyword) {
+      if (test.question && !data.question.includes(test.question)) return
+      if (test.answer && !data.question.includes(test.answer)) return
+    } else {
+      if (test.question && data.question !== test.question) return
+      if (test.answer && data.question !== test.answer) return
+    }
+    if (test.envMode === 2) {
+      // TODO:
+    }
+    if (test.frozen === true) {
+      if (!(data.flag & 1)) return
+    } else if (test.frozen === false) {
+      if (data.flag & 1) return
+    }
+    if (test.writer && data.writer !== test.writer) return
+    return true
+  },
+
+  createDialogue (options) {
+    return this.create('dialogue', options)
+  },
+
+  async getDialogues (test) {
+    if (Array.isArray(test)) {
+      if (!test.length) return []
+      const data = await Promise.all(test.map(id => this.tables.dialogue.get(id)))
+      return data.filter(Boolean)
+    }
+
+    return new Promise((resolve, reject) => {
+      const dialogues: Dialogue[] = []
+      this.tables.dialogue.createValueStream()
+        .on('data', data => this._testDialogue(test, data) && dialogues.push(data))
+        .on('error', error => reject(error))
+        .on('end', () => resolve(dialogues))
+    })
+  },
+
+  async setDialogue (id, data) {
+    const originalData = await this.tables.dialogue.get(id)
+    const newData: Dialogue = { ...originalData, ...data }
+    return this.tables.dialogue.put(id, newData)
+  },
+
+  removeDialogues (ids) {
+    return Promise.all(ids.map(id => this.remove('dialogue', id)))
+  },
+
+  async getDialogueCount (test) {
+    return new Promise((resolve, reject) => {
+      const questionSet = new Set<string>()
+      let answers = 0
+      this.tables.dialogue.createValueStream()
+        .on('data', data => this._testDialogue(test, data) && (questionSet.add(data.question), ++answers))
+        .on('error', error => reject(error))
+        .on('end', () => resolve({ questions: questionSet.size, answers }))
+    })
   },
 })

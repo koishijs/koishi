@@ -35,7 +35,7 @@ injectMethods('level', 'group', {
   },
 
   async setGroup (groupId, data) {
-    const originalData = await this.getGroup(groupId)
+    const originalData = await this.tables.group.get(groupId)
     const newData: GroupData = { ...originalData, ...data }
     await this.tables.group.put(groupId, newData)
   },
