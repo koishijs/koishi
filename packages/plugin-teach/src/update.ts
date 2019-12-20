@@ -2,9 +2,10 @@ import { Dialogue, DialogueFlag } from './database'
 import { splitIds, TeachOptions } from './utils'
 
 export default async function (parsedOptions: TeachOptions) {
-  const { ctx, meta, argc, options } = parsedOptions
+  const { ctx, meta, argc, options, config } = parsedOptions
   if (argc) return meta.$send('存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
   if (!/^\d+(,\d+)*$/.exec(options.update)) return meta.$send('参数 -u, --update 错误，请检查指令语法。')
+
   const ids: number[] = splitIds(options.update)
   const dialogues = await ctx.database.getDialogues(ids)
   const actualIds = dialogues.map(d => d.id)
@@ -33,7 +34,7 @@ export default async function (parsedOptions: TeachOptions) {
     parsedOptions.groups = [meta.groupId]
   }
 
-  const hasUpdates = Object.keys(parsedOptions).length - 5
+  const hasUpdates = Object.keys(parsedOptions).length - 6
     || options.answer
     || options.question
     || options.frozen
@@ -122,17 +123,22 @@ export default async function (parsedOptions: TeachOptions) {
       `问题：${dialogue.question}`,
       `回答：${dialogue.answer}`,
     ]
-    if (dialogue.writer) {
+
+    if (config.useWriter && dialogue.writer) {
       const user = await ctx.database.getUser(dialogue.writer, 0, ['id', 'name'])
       output.push(`来源：${user.name}`)
     }
-    output.push(`生效环境：${dialogue.groups.startsWith('*')
-      ? groups.includes(meta.groupId)
-        ? groups.length - 1 ? `除本群等 ${groups.length} 个群外的所有群` : '除本群'
-        : groups.length ? `除 ${groups.length} 个群外的所有群` : '全局'
-      : groups.includes(meta.groupId)
-        ? groups.length - 1 ? `本群等 ${groups.length} 个群` : '本群'
-        : groups.length ? `${groups.length} 个群` : '全局禁止'}`)
+
+    if (config.useEnvironment) {
+      output.push(`生效环境：${dialogue.groups.startsWith('*')
+        ? groups.includes(meta.groupId)
+          ? groups.length - 1 ? `除本群等 ${groups.length} 个群外的所有群` : '除本群'
+          : groups.length ? `除 ${groups.length} 个群外的所有群` : '全局'
+        : groups.includes(meta.groupId)
+          ? groups.length - 1 ? `本群等 ${groups.length} 个群` : '本群'
+          : groups.length ? `${groups.length} 个群` : '全局禁止'}`)
+    }
+
     if (dialogue.probability < 1) output.push(`触发概率：${dialogue.probability}`)
     if (dialogue.flag & DialogueFlag.frozen) output.push('此问题已锁定')
     await meta.$send(output.join('\n'))

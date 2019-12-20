@@ -1,22 +1,25 @@
 import { updateActivity, Context } from 'koishi-core'
 import { randomPick, CQCode, sleep } from 'koishi-utils'
-import { simplifyQuestion } from './utils'
+import { simplifyQuestion, TeachConfig } from './utils'
+import { DialogueTest } from './database'
 
 function escapeAnswer (message: string) {
   return message.replace(/\$/g, '@@__DOLLARS_PLACEHOLDER__@@')
 }
 
-export default function (ctx: Context) {
-  ctx.middleware(async (meta, next) => {
+export default function (ctx: Context, config: TeachConfig) {
+  ctx.intersect(ctx.app.groups).middleware(async (meta, next) => {
     const { groupId } = meta
     const question = simplifyQuestion(meta.message)
     if (!question) return next()
 
-    const items = await ctx.database.getDialogues({
-      question,
-      envMode: 1,
-      groups: [groupId],
-    })
+    const test: DialogueTest = { question }
+    if (config.useEnvironment) {
+      test.envMode = 1
+      test.groups = [groupId]
+    }
+
+    const items = await ctx.database.getDialogues(test)
     if (!items.length) return next()
 
     const dialogue = randomPick(items)

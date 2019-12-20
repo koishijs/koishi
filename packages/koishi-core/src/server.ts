@@ -13,9 +13,9 @@ const showServerLog = debug('koishi:server')
 showServerLog.inspectOpts.depth = 0
 
 export abstract class Server {
-  public apps: App[] = []
+  public appList: App[] = []
   public version: VersionInfo
-  private _appMap: Record<number, App> = {}
+  public appMap: Record<number, App> = {}
   private _isListening = false
 
   protected abstract _listen (): Promise<void>
@@ -27,23 +27,21 @@ export abstract class Server {
 
   protected _handleData (data: any) {
     const meta = camelCase(data) as Meta
-    if (!this._appMap[meta.selfId]) {
-      const index = this.apps.findIndex(app => !app.options.selfId)
-      if (index < 0) return
-      this._appMap[meta.selfId] = this.apps[index]
-      this.apps[index].options.selfId = meta.selfId
-      this.apps[index]._registerSelfId()
+    if (!this.appMap[meta.selfId]) {
+      const app = this.appList.find(app => !app.options.selfId)
+      if (!app) return
+      app.options.selfId = meta.selfId
+      app._registerSelfId()
     }
-    const app = this._appMap[meta.selfId]
-    showServerLog('receive %o', meta)
+    const app = this.appMap[meta.selfId]
     app.dispatchMeta(meta)
     return true
   }
 
   bind (app: App) {
-    this.apps.push(app)
+    this.appList.push(app)
     if (app.options.selfId) {
-      this._appMap[app.options.selfId] = app
+      this.appMap[app.options.selfId] = app
     }
     return this
   }
@@ -52,7 +50,7 @@ export abstract class Server {
     if (this._isListening) return
     this._isListening = true
     await this._listen()
-    for (const app of this.apps) {
+    for (const app of this.appList) {
       app.receiver.emit('connected', app)
     }
   }
@@ -80,7 +78,9 @@ export class HttpServer extends Server {
             return res.end()
           }
         }
-        const valid = this._handleData(JSON.parse(body))
+        const data = JSON.parse(body)
+        showServerLog('receive %o', data)
+        const valid = this._handleData(data)
         res.statusCode = valid ? 200 : 403
         res.end()
       })
@@ -88,11 +88,11 @@ export class HttpServer extends Server {
   }
 
   async _listen () {
-    const { port } = this.apps[0].options
+    const { port } = this.appList[0].options
     this.server.listen(port)
-    if (this.apps[0].options.server) {
+    if (this.appList[0].options.server) {
       try {
-        this.version = await this.apps[0].sender.getVersionInfo()
+        this.version = await this.appList[0].sender.getVersionInfo()
       } catch (error) {
         throw new Error('authorization failed')
       }
@@ -155,7 +155,7 @@ export class WsClient extends Server {
           }
           if (!resolved) {
             resolved = true
-            const { server: wsServer } = this.apps[0].options
+            const { server: wsServer } = this.appList[0].options
             showServerLog('connect to ws server:', wsServer)
             resolve()
           }

@@ -1,4 +1,4 @@
-import { GroupRole, Context } from 'koishi-core'
+import { GroupRole, Context, getSelfIds } from 'koishi-core'
 import { updateAuthority } from './authorize'
 
 interface AuthorizeOptions {
@@ -24,6 +24,7 @@ export default function apply (ctx: Context, authorityMap: AuthorizeGroupOptions
     if (!('ownerAuthority' in config)) config.ownerAuthority = config.adminAuthority
 
     app.receiver.once('connected', async () => {
+      await getSelfIds()
       await database.getGroup(+id, app.options.selfId)
       const memberList = await ctx.sender.getGroupMemberList(+id)
       for (const role of ['member', 'admin', 'owner'] as GroupRole[]) {

@@ -47,7 +47,8 @@ export interface Dialogue {
 export enum DialogueFlag {
   frozen = 1,
   regexp = 2,
-  appellation = 4,
+  keyword = 4,
+  appellation = 8,
 }
 
 export interface DialogueTest {

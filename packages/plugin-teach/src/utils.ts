@@ -1,5 +1,11 @@
-import { Context, ParsedCommandLine, Meta } from 'koishi-core'
+import { Context, ParsedCommandLine, Meta, CommandConfig } from 'koishi-core'
 import { simplify, isInteger } from 'koishi-utils'
+
+export interface TeachConfig extends CommandConfig {
+  useWriter?: boolean
+  useFrozen?: boolean
+  useEnvironment?: boolean
+}
 
 const prefixPunctuation = /^([()\]]|\[(?!cq:))*/
 const suffixPunctuation = /([.,?!()[~]|(?<!\[cq:[^\]]+)\])*$/
@@ -40,55 +46,56 @@ export interface TeachOptions {
   args: string[]
   argc: number
   options: Record<string, any>
+  config: TeachConfig
   writer?: number
   groups?: number[]
   envMode?: -2 | -1 | 0 | 1 | 2
 }
 
-export default async function parseOptions (ctx: Context, parsedArgv: ParsedCommandLine) {
-  const { options, meta, args } = parsedArgv
+export default async function parseOptions (ctx: Context, config: TeachConfig, argv: ParsedCommandLine) {
+  const { options, meta, args } = argv
   const argc = args.length
 
   if (typeof options.chance === 'number' && (options.chance <= 0 || options.chance > 1)) {
-    await meta.$send('参数 -c, --chance 应为不超过 1 的正数。')
-    return
+    return meta.$send('参数 -c, --chance 应为不超过 1 的正数。')
   }
 
-  const parsedOptions: TeachOptions = { ctx, meta, argc, args, options }
+  const parsedOptions: TeachOptions = { ctx, meta, argc, args, options, config }
 
-  if (options.noWriter) {
-    parsedOptions.writer = 0
-  } else if (options.writer) {
-    if (isInteger(options.writer) && options.writer > 0) {
-      parsedOptions.writer = options.writer
-    } else {
-      await meta.$send('参数 -w, --writer 错误，请检查指令语法。')
-      return
+  if (config.useWriter) {
+    if (options.noWriter) {
+      parsedOptions.writer = 0
+    } else if (options.writer) {
+      if (isInteger(options.writer) && options.writer > 0) {
+        parsedOptions.writer = options.writer
+      } else {
+        return meta.$send('参数 -w, --writer 错误，请检查指令语法。')
+      }
     }
   }
 
-  if (options.globalEnv) {
-    parsedOptions.envMode = -2
-    parsedOptions.groups = []
-  } else if (options.noEnv) {
-    parsedOptions.envMode = 2
-    parsedOptions.groups = []
-  } else if (typeof options.env === 'string') {
-    if (options.env.match(/^(\*?(\d{9}(,\d{9})*)?|[#~]\d{9}(,\d{9})*)$/)) {
-      parsedOptions.groups = splitIds(options.env.replace(/^[#~*]/, '')).sort()
-      parsedOptions.envMode = options.env.startsWith('*') ? -2
-        : options.env.startsWith('#') ? 1
-          : options.env.startsWith('~') ? -1
-            : 2
-    } else {
-      await meta.$send('参数 -e, --env 错误，请检查指令语法。')
-      return
+  if (config.useEnvironment) {
+    if (options.globalEnv) {
+      parsedOptions.envMode = -2
+      parsedOptions.groups = []
+    } else if (options.noEnv) {
+      parsedOptions.envMode = 2
+      parsedOptions.groups = []
+    } else if (typeof options.env === 'string') {
+      if (options.env.match(/^(\*?(\d{9}(,\d{9})*)?|[#~]\d{9}(,\d{9})*)$/)) {
+        parsedOptions.groups = splitIds(options.env.replace(/^[#~*]/, '')).sort()
+        parsedOptions.envMode = options.env.startsWith('*') ? -2
+          : options.env.startsWith('#') ? 1
+            : options.env.startsWith('~') ? -1
+              : 2
+      } else {
+        return meta.$send('参数 -e, --env 错误，请检查指令语法。')
+      }
     }
   }
 
   if (String(options.question).includes('[CQ:image,')) {
-    await meta.$send('问题不能包含图片。')
-    return
+    return meta.$send('问题不能包含图片。')
   }
 
   options.question = simplifyQuestion(options.question)

@@ -7,7 +7,7 @@ import { Context, Middleware, NextFunction, ContextScope, Receiver } from './con
 import { Database, GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig } from './database'
 import { updateActivity, showSuggestions } from './utils'
 import { Meta, MessageMeta, ContextType } from './meta'
-import { simplify } from 'koishi-utils'
+import { simplify, capitalize } from 'koishi-utils'
 import * as errors from './errors'
 
 export interface AppOptions {
@@ -132,6 +132,9 @@ export class App extends Context {
   _registerSelfId () {
     appMap[this.options.selfId] = this
     selfIds.push(this.options.selfId)
+    if (this.options.type) {
+      this.server.appMap[this.options.selfId] = this
+    }
     const patterns: string[] = []
     if (this.app.options.name) {
       patterns.push(`@?${escapeRegex(this.app.options.name)}([,，]\\s*|\\s+)`)
@@ -269,11 +272,9 @@ export class App extends Context {
             writable: true,
           })
         }
-        meta.$send = message => this.sender.sendGroupMsg(meta.groupId, message)
-      } else if (meta.messageType === 'discuss') {
-        meta.$send = message => this.sender.sendDiscussMsg(meta.discussId, message)
-      } else {
-        meta.$send = message => this.sender.sendPrivateMsg(meta.userId, message)
+      }
+      meta.$send = async (message) => {
+        await this.sender[`send${capitalize(meta.messageType)}Msg`](subId, message)
       }
     }
 

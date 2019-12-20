@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-teach",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -18,12 +18,12 @@
   },
   "homepage": "https://github.com/koishijs/koishi/packages/plugin-teach#readme",
   "devDependencies": {
-    "koishi-database-level": "^1.0.0-alpha.4",
-    "koishi-database-mysql": "^1.0.0-alpha.4"
+    "koishi-database-level": "^1.0.0-alpha.5",
+    "koishi-database-mysql": "^1.0.0-alpha.5"
   },
   "dependencies": {
     "fast-deep-equal": "^3.1.1",
-    "koishi-core": "^1.0.0-alpha.4",
+    "koishi-core": "^1.0.0-alpha.5",
     "koishi-utils": "^1.0.0-alpha.1"
   }
 }

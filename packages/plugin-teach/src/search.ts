@@ -7,15 +7,17 @@ function formatAnswer (source: string) {
 }
 
 export default async function (parsedOptions: TeachOptions) {
-  const { ctx, meta, options } = parsedOptions
+  const { ctx, meta, options, config } = parsedOptions
   const question = options.all ? undefined : options.question
   const answer = options.all ? undefined : options.answer
   let { envMode, groups, writer } = parsedOptions
   const { keyword } = options
-  if (!envMode && !options.allEnv) {
+
+  if (config.useEnvironment && !envMode && !options.allEnv) {
     envMode = 1
     groups = [meta.groupId]
   }
+
   const dialogues = await ctx.database.getDialogues({
     writer,
     keyword,
@@ -25,12 +27,14 @@ export default async function (parsedOptions: TeachOptions) {
     groups,
     frozen: options.unFrozen ? false : options.frozen,
   })
+
   if (!options.question && !options.answer) {
     if (!dialogues.length) return meta.$send('没有搜索到任何回答，尝试切换到其他环境。')
     const output = dialogues.map(({ id, question, answer }) => `${id}. 问题：“${question}”，回答：“${formatAnswer(answer)}”`)
     output.unshift('全部问答如下：')
     return meta.$send(output.join('\n'))
   }
+
   if (!options.keyword) {
     if (!options.question) {
       if (!dialogues.length) return meta.$send(`没有搜索到回答“${answer}”，请尝试使用关键词匹配。`)
