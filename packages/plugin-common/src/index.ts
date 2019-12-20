@@ -1,6 +1,7 @@
 import { Context, CommandConfig } from 'koishi-core'
 import admin from './admin'
-import authorize from './authorize'
+import authorizeGroup, { AuthorizeGroupOptions } from './authorizeGroup'
+import authorizeUser, { AuthorizeUserOptions } from './authorizeUser'
 import broadcast, { BroadcastOptions } from './broadcast'
 import callme, { CallmeOptions } from './callme'
 import contextify from './contextify'
@@ -16,13 +17,13 @@ import respondent, { Respondent } from './respondent'
 import welcome, { WelcomeMessage } from './welcome'
 
 export * from './admin'
-export * from './exit'
 export * from './info'
 export * from './rank'
 
 export {
   admin,
-  authorize,
+  authorizeGroup,
+  authorizeUser,
   broadcast,
   callme,
   contextify,
@@ -40,7 +41,8 @@ export {
 
 interface CommonPluginOptions extends HandlerOptions {
   admin?: false | CommandConfig
-  authorize?: false | Record<number, number>
+  authorizeGroup?: AuthorizeGroupOptions
+  authorizeUser?: AuthorizeUserOptions
   broadcast?: false | BroadcastOptions
   callme?: false | CallmeOptions
   contextify?: false | CommandConfig
@@ -51,7 +53,7 @@ interface CommonPluginOptions extends HandlerOptions {
   likeme?: false | LikemeOptions
   rank?: false | CommandConfig
   repeater?: false | RepeaterOptions
-  respondent?: false | Respondent[]
+  respondent?: Respondent[]
   welcome?: false | WelcomeMessage
 }
 
@@ -72,7 +74,8 @@ export function apply (ctx: Context, options: CommonPluginOptions = {}) {
   if (ctx.database) {
     ctx
       .plugin(admin, options.admin)
-      .plugin(authorize, options.authorize)
+      .plugin(authorizeUser, options.authorizeUser)
+      .plugin(authorizeGroup, options.authorizeGroup)
       .plugin(broadcast, options.broadcast)
       .plugin(callme, options.callme)
       .plugin(info, options.info)

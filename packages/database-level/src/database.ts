@@ -21,6 +21,7 @@ declare module 'koishi-core/dist/database' {
 
 interface LevelConfig {
   path: string
+  identifier?: string
 }
 
 interface CodecEncoder {
@@ -55,19 +56,18 @@ export class LevelDatabase {
     return resolve(process.cwd(), config.path)
   }
 
-  constructor (config: LevelConfig, tables: InjectConfig<'level'>) {
-    this.db = levelup(leveldown(LevelDatabase.identify(config)))
-
-    for (const key in tables) {
-      const config = {
-        ...defaultSubLevelConfig,
-        ...tables[key as TableType],
-      }
-      this.tables[key] = sub(this.db, key, config)
-    }
-  }
+  constructor (public config: LevelConfig, public injectConfig: InjectConfig<'level'>) {}
 
   start () {
+    this.db = levelup(leveldown(this.config.identifier))
+
+    for (const key in this.injectConfig) {
+      this.tables[key] = sub(this.db, key, {
+        ...defaultSubLevelConfig,
+        ...this.injectConfig[key as TableType],
+      })
+    }
+
     return this.db.open()
   }
 

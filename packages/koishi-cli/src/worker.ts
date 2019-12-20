@@ -121,6 +121,6 @@ appList.forEach((app) => {
 })
 
 startAll().catch((error) => {
-  logger.error(error.message)
+  logger.error(error)
   process.exit(-1)
 })
