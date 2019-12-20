@@ -58,12 +58,15 @@ export class MysqlDatabase implements AbstractDatabase {
   escape = escape
   escapeId = escapeId
 
+  static identify (config: MysqlDatabaseConfig) {
+    return (config.host || 'localhost') + (config.port || 3306) + config.user + config.database
+  }
+
   constructor (config: MysqlDatabaseConfig) {
     this.config = {
       ...defaultConfig,
       ...config,
     }
-    this.identifier = (config.host || 'localhost') + (config.port || 3306) + config.user + config.database
   }
 
   async start () {

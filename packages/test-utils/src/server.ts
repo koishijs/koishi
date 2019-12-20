@@ -1,5 +1,5 @@
 import axios from 'axios'
-import express, { Express, response } from 'express'
+import express, { Express } from 'express'
 import { EventEmitter } from 'events'
 import { createHmac } from 'crypto'
 import { Meta, PostType, MetaTypeMap, SubTypeMap } from 'koishi-core'

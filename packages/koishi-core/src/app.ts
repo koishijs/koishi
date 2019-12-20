@@ -106,11 +106,11 @@ export class App extends Context {
     if (options.database && Object.keys(options.database).length) {
       this.database = createDatabase(options.database)
     }
-    if (options.selfId) this._registerSelfId()
     if (options.type) {
       this.server = createServer(this)
       this.sender = new Sender(this)
     }
+    if (options.selfId) this._registerSelfId()
     this.receiver.on('message', this._applyMiddlewares)
     this.middleware(this._preprocess)
     this.users = this._createContext([[null, []], [[], null], [[], null]]) as MajorContext
@@ -126,15 +126,13 @@ export class App extends Context {
   }
 
   get version () {
-    return this.server && this.server.version
+    return this.server?.version
   }
 
   _registerSelfId () {
-    appMap[this.options.selfId] = this
-    selfIds.push(this.options.selfId)
-    if (this.options.type) {
-      this.server.appMap[this.options.selfId] = this
-    }
+    appMap[this.selfId] = this
+    selfIds.push(this.selfId)
+    if (this.options.type) this.server.appMap[this.selfId] = this
     const patterns: string[] = []
     if (this.app.options.name) {
       patterns.push(`@?${escapeRegex(this.app.options.name)}([,，]\\s*|\\s+)`)
@@ -142,7 +140,7 @@ export class App extends Context {
     if (this.app.options.commandPrefix) {
       patterns.push(escapeRegex(this.app.options.commandPrefix))
     }
-    this.prefixRE = createPrefixRegExp(...patterns, `\\[CQ:at,qq=${this.options.selfId}\\] *`)
+    this.prefixRE = createPrefixRegExp(...patterns, `\\[CQ:at,qq=${this.selfId}\\] *`)
     this.userPrefixRE = createPrefixRegExp(...patterns)
   }
 
@@ -353,7 +351,7 @@ export class App extends Context {
       // update talkativeness
       // ignore some group calls
       if (meta.messageType === 'group') {
-        const isAssignee = meta.$group.assignee === this.options.selfId
+        const isAssignee = meta.$group.assignee === this.selfId
         if (isAssignee && !parsedArgv) updateActivity(user.talkativeness, meta.groupId)
         const noCommand = meta.$group.flag & GroupFlag.noCommand
         const noResponse = meta.$group.flag & GroupFlag.noResponse || !isAssignee
