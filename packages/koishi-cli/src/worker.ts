@@ -1,7 +1,7 @@
 import { App, startAll, AppOptions, onStart, Context, appList } from 'koishi-core'
 import { capitalize } from 'koishi-utils'
 import { performance } from 'perf_hooks'
-import { cyanBright } from 'chalk'
+import { cyan } from 'kleur'
 import { resolve } from 'path'
 import { logger } from './utils'
 
@@ -57,14 +57,14 @@ function loadPlugins (ctx: Context, plugins: PluginConfig) {
   for (const [plugin, options] of plugins) {
     const resolved = typeof plugin === 'string' ? loadEcosystem('plugin', plugin) : plugin
     ctx.plugin(resolved, options)
-    if (resolved.name) logger.info(`apply plugin ${cyanBright(resolved.name)}`)
+    if (resolved.name) logger.info(`apply plugin ${cyan(resolved.name)}`)
   }
 }
 
 function prepareApp (config: AppConfig) {
   for (const name in config.database || {}) {
     const resolved = loadEcosystem('database', name)
-    if (resolved) logger.info(`apply database ${cyanBright(name)}`)
+    if (resolved) logger.info(`apply database ${cyan(name)}`)
   }
   const app = new App(config)
   if (Array.isArray(config.plugins)) {
@@ -98,10 +98,10 @@ onStart(() => {
     const { coolqEdition, pluginVersion } = app.version
     versions.add(`Koishi/${version} CoolQ/${capitalize(coolqEdition)} CQHTTP/${pluginVersion} `)
     if (type === 'http') {
-      httpPorts.add(`server listening at ${cyanBright(port)}`)
-      if (server) httpServers.add(`connected to ${cyanBright(server)}`)
+      httpPorts.add(`server listening at ${cyan(port)}`)
+      if (server) httpServers.add(`connected to ${cyan(server)}`)
     } else {
-      wsServers.add(`connected to ${cyanBright(server.replace(/^http/, 'ws'))}`)
+      wsServers.add(`connected to ${cyan(server.replace(/^http/, 'ws'))}`)
     }
   })
   for (const textSet of [versions, httpPorts, wsServers, httpServers]) {

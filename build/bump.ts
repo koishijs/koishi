@@ -2,7 +2,7 @@ import { writeJson } from 'fs-extra'
 import { resolve } from 'path'
 import { exec } from './utils'
 import { SemVer, gt } from 'semver'
-import chalk from 'chalk'
+import { cyan, green } from 'kleur'
 import globby from 'globby'
 import CAC from 'cac'
 
@@ -140,7 +140,7 @@ const flag: BumpType = options.major ? 'major' : options.minor ? 'minor' : 'patc
 
   await Promise.all(each((pkg) => {
     if (!pkg.dirty) return
-    console.log(`- ${pkg.name}: ${chalk.cyanBright(pkg.oldVersion)} => ${chalk.yellowBright(pkg.meta.version)}`)
+    console.log(`- ${pkg.name}: ${cyan(pkg.oldVersion)} => ${green(pkg.meta.version)}`)
     return pkg.save()
   }))
 })()

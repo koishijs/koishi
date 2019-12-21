@@ -23,11 +23,15 @@
     "url": "https://github.com/koishijs/koishi/issues"
   },
   "homepage": "https://github.com/koishijs/koishi#readme",
+  "devDependencies": {
+    "@types/prompts": "^2.0.3"
+  },
   "dependencies": {
     "cac": "^6.5.3",
-    "chalk": "^3.0.0",
+    "kleur": "^3.0.3",
     "koishi-core": "^1.0.0-alpha.5",
     "koishi-plugin-common": "^1.0.0-alpha.5",
-    "koishi-utils": "^1.0.0-alpha.1"
+    "koishi-utils": "^1.0.0-alpha.1",
+    "prompts": "^2.3.0"
   }
 }
