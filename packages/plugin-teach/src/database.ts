@@ -69,6 +69,7 @@ injectMethods('mysql', 'dialogue', {
       if (test.question) conditionals.push('`question` LIKE ' + this.escape(`%${test.question}%`))
       if (test.answer) conditionals.push('`answer` LIKE ' + this.escape(`%${test.answer}%`))
     } else {
+      // TODO: support dialogue.keyword in mysql
       if (test.question) conditionals.push('`question` = ' + this.escape(test.question))
       if (test.answer) conditionals.push('`answer` = ' + this.escape(test.answer))
     }
@@ -129,6 +130,9 @@ injectMethods('level', 'dialogue', {
     if (test.keyword) {
       if (test.question && !data.question.includes(test.question)) return
       if (test.answer && !data.question.includes(test.answer)) return
+    } else if (data.flag & DialogueFlag.keyword) {
+      if (test.question && !test.question.includes(data.question)) return
+      if (test.answer && !test.question.includes(data.answer)) return
     } else {
       if (test.question && data.question !== test.question) return
       if (test.answer && data.question !== test.answer) return

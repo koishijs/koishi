@@ -67,10 +67,18 @@ export default async function (parsedOptions: TeachOptions) {
 
       let newFlag = dialogue.flag
       if (options.frozen) {
-        newFlag = newFlag - (newFlag & DialogueFlag.frozen) + DialogueFlag.frozen
+        newFlag |= DialogueFlag.frozen
       } else if (options.noFrozen) {
-        newFlag = newFlag - (newFlag & DialogueFlag.frozen)
+        newFlag &= ~DialogueFlag.frozen
       }
+
+      if (options.keyword) {
+        newFlag |= DialogueFlag.keyword
+      } else if (options.noKeyword) {
+        newFlag &= ~DialogueFlag.keyword
+      }
+
+      if (newFlag !== dialogue.flag) updates.flag = newFlag
 
       if (parsedOptions.envMode) {
         const oldGroups = splitIds(dialogue.groups.replace(/^\*/, ''))
