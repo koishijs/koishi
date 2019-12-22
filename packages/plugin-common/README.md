@@ -88,14 +88,29 @@ module.exports = {
 }
 ```
 
-## 插件：authorize
+## 插件：authorizeUser
 
-authorize 插件用于设置某个群中默认的玩家权限：
+authorizeUser 插件用于设置特定玩家的权限：
 
 ```js
 module.exports = {
   plugins: ['common', {
-    authorize: {
+    authorizeUser: {
+      // 设置玩家权限
+      123456789: 3,
+    }
+  }],
+}
+```
+
+## 插件：authorizeGroup
+
+authorizeGroup 插件用于设置某个群中默认的玩家权限：
+
+```js
+module.exports = {
+  plugins: ['common', {
+    authorizeGroup: {
       // 设置全群玩家权限为 2 级
       111222333: 2,
       // 默认行为：全群玩家权限为 1 级
@@ -111,7 +126,7 @@ module.exports = {
 }
 ```
 
-这里的权限设置不仅会在机器人每次启动时生效，也会在有人加群时生效。
+这里的权限设置不仅会在机器人每次启动时生效，也会在有人加群时生效。同时，与 authorizeUser 不同的是，后者是强制设置玩家等级，而 authorizeGroup 则是设置最低等级，即当玩家等级低于该值时才进行更新。
 
 **注意:** 由于 CoolQ 的机制问题，机器人刚加某个群时可能无法获取成员列表，从而导致插件无法运行。遇到这种情况一般等待 1-2 天即可恢复正常。
 
