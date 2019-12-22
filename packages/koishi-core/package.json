@@ -1,5 +1,6 @@
 {
   "name": "koishi-core",
+  "description": "Core features for Koishi",
   "version": "1.0.0-alpha.5",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -22,10 +23,17 @@
     "url": "https://github.com/koishijs/koishi/issues"
   },
   "homepage": "https://github.com/koishijs/koishi/tree/master/packages/koishi-core#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi"
+  ],
   "devDependencies": {
     "@types/debug": "^4.1.5",
     "@types/ws": "^6.0.4",
-    "husky": "^3.1.0",
     "koishi-test-utils": "^1.0.0-alpha.4"
   },
   "dependencies": {

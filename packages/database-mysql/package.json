@@ -1,5 +1,6 @@
 {
   "name": "koishi-database-mysql",
+  "description": "MySQL support for Koishi",
   "version": "1.0.0-alpha.5",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -20,6 +21,16 @@
     "url": "https://github.com/koishijs/koishi/issues"
   },
   "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-mysql#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "database",
+    "mysql"
+  ],
   "devDependencies": {
     "@types/mysql": "^2.15.8"
   },

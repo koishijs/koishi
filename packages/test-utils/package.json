@@ -1,5 +1,6 @@
 {
   "name": "koishi-test-utils",
+  "description": "Test utilities for Koishi",
   "version": "1.0.0-alpha.4",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -20,6 +21,16 @@
     "url": "https://github.com/koishijs/koishi/issues"
   },
   "homepage": "https://github.com/koishijs/koishi/packages/test-utils#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "test",
+    "utilities"
+  ],
   "devDependencies": {
     "@types/express": "^4.17.2"
   },

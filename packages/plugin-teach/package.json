@@ -1,5 +1,6 @@
 {
   "name": "koishi-plugin-teach",
+  "description": "Teach plugin for Koishi",
   "version": "0.1.1",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -17,6 +18,18 @@
     "url": "https://github.com/koishijs/koishi/issues"
   },
   "homepage": "https://github.com/koishijs/koishi/packages/plugin-teach#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "teach",
+    "dialogue",
+    "conversation"
+  ],
   "devDependencies": {
     "koishi-database-level": "^1.0.0-alpha.5",
     "koishi-database-mysql": "^1.0.0-alpha.5"

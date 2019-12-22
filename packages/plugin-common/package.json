@@ -1,5 +1,6 @@
 {
   "name": "koishi-plugin-common",
+  "description": "Common plugins for Koishi",
   "version": "1.0.0-alpha.5",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -17,8 +18,16 @@
     "url": "https://github.com/koishijs/koishi/issues"
   },
   "homepage": "https://github.com/koishijs/koishi/tree/master/packages/plugin-common#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin"
+  ],
   "devDependencies": {
-    "husky": "^3.1.0",
     "koishi-database-mysql": "^1.0.0-alpha.5"
   },
   "dependencies": {

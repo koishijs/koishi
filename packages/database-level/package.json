@@ -1,5 +1,6 @@
 {
   "name": "koishi-database-level",
+  "description": "Leveldb support for Koishi",
   "version": "1.0.0-alpha.5",
   "main": "dist/index.js",
   "files": [
@@ -20,6 +21,17 @@
     "url": "https://github.com/koishijs/koishi/issues"
   },
   "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-level#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "database",
+    "level",
+    "leveldb"
+  ],
   "devDependencies": {
     "@types/leveldown": "^4.0.2",
     "@types/levelup": "^3.1.1",
