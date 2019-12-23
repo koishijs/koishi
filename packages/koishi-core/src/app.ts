@@ -105,7 +105,17 @@ export class App extends Context {
     if (options.database && Object.keys(options.database).length) {
       this.database = createDatabase(options.database)
     }
+    if (!options.type && typeof options.server === 'string') {
+      options.type = options.server.split(':', 1)[0] as any
+    }
     if (options.type) {
+      if (typeof options.type !== 'string') {
+        throw new Error(errors.UNSUPPORTED_SERVER_TYPE)
+      }
+      options.type = options.type.toLowerCase() as any
+      if (options.type !== 'http' && options.type !== 'ws') {
+        throw new Error(errors.UNSUPPORTED_SERVER_TYPE)
+      }
       this.server = createServer(this)
       this.sender = new Sender(this)
     }
