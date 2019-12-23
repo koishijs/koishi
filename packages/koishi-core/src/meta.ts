@@ -135,8 +135,10 @@ export interface StatusInfo {
 
 export interface VersionInfo {
   coolqDirectory: string
-  coolqEdition: string
+  coolqEdition: 'air' | 'pro'
   pluginVersion: string
+  pluginMajorVersion: number
+  pluginMinorVersion: number
   pluginBuildNumber: number
-  pluginBuildConfiguration: string
+  pluginBuildConfiguration: 'debug' | 'release'
 }

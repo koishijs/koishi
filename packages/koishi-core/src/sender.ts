@@ -60,7 +60,7 @@ export class Sender {
     }
   }
 
-  private async post (action: string, params?: object) {
+  private async post <T = any> (action: string, params?: object): Promise<T> {
     showSenderLog('request %s %o', action, params)
     const response = await this._post(action, snakeCase(params))
     showSenderLog('response %o', response)
@@ -263,8 +263,12 @@ export class Sender {
     return this.post('get_status')
   }
 
-  getVersionInfo (): Promise<VersionInfo> {
-    return this.post('get_version_info')
+  async getVersionInfo (): Promise<VersionInfo> {
+    const data = await this.post<VersionInfo>('get_version_info')
+    const [, major, minor] = /^(\d+)\.(\d+)/.exec(data.pluginVersion)
+    data.pluginMajorVersion = +major
+    data.pluginMinorVersion = +minor
+    return data
   }
 
   async setRestartPlugin (delay = 0) {

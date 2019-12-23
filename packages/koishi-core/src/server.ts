@@ -1,6 +1,7 @@
 import WebSocket from 'ws'
 import debug from 'debug'
 import * as http from 'http'
+import * as errors from './errors'
 import { createHmac } from 'crypto'
 import { camelCase } from 'koishi-utils'
 import { Meta, VersionInfo } from './meta'
@@ -26,7 +27,7 @@ export abstract class Server {
   }
 
   protected _handleData (data: any) {
-    const meta = camelCase(data) as Meta
+    const meta = camelCase<Meta>(data)
     if (!this.appMap[meta.selfId]) {
       const app = this.appList.find(app => !app.options.selfId)
       if (!app) return
@@ -50,6 +51,9 @@ export abstract class Server {
     if (this._isListening) return
     this._isListening = true
     await this._listen()
+    if (this.version.pluginMajorVersion < 3 || this.version.pluginMajorVersion > 4) {
+      throw new Error(errors.UNSUPPORTED_CQHTTP_VERSION)
+    }
     for (const app of this.appList) {
       app.receiver.emit('connect')
       app.receiver.emit('connected')
