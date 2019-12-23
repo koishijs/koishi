@@ -28,14 +28,15 @@ export abstract class Server {
 
   protected _handleData (data: any) {
     const meta = camelCase<Meta>(data)
-    if (!this.appMap[meta.selfId]) {
+    if (!meta.selfId) {
+      // below version 3.4
+      meta.selfId = this.appList[0].selfId
+    } else if (!this.appMap[meta.selfId]) {
       const app = this.appList.find(app => !app.options.selfId)
       if (!app) return
-      app.options.selfId = meta.selfId
-      app._registerSelfId()
+      app._registerSelfId(meta.selfId)
     }
-    const app = this.appMap[meta.selfId]
-    app.dispatchMeta(meta)
+    this.appMap[meta.selfId].dispatchMeta(meta)
     return true
   }
 
@@ -47,12 +48,23 @@ export abstract class Server {
     return this
   }
 
+  versionLessThan (major: number, minor: number = 0, patch: number = 0) {
+    const { pluginMajorVersion, pluginMinorVersion, pluginPatchVersion } = this.version
+    return pluginMajorVersion < major || pluginMajorVersion === major &&
+      (pluginMinorVersion < minor || pluginMinorVersion === minor && pluginPatchVersion < patch)
+  }
+
   async listen () {
     if (this._isListening) return
     this._isListening = true
     await this._listen()
-    if (this.version.pluginMajorVersion < 3 || this.version.pluginMajorVersion > 4) {
+    if (this.versionLessThan(3)) {
       throw new Error(errors.UNSUPPORTED_CQHTTP_VERSION)
+    } else if (this.versionLessThan(3, 4)) {
+      const anonymous = this.appList.filter(app => app.options.type && !app.selfId)
+      if (anonymous.length > 1) throw new Error(errors.MULTIPLE_ANONYMOUS_BOTS)
+      const info = await anonymous[0].sender.getLoginInfo()
+      anonymous[0]._registerSelfId(info.userId)
     }
     for (const app of this.appList) {
       app.receiver.emit('connect')

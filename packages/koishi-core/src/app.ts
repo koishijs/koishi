@@ -60,8 +60,7 @@ export async function getSelfIds () {
     getSelfIdsPromise = Promise.all(appList.map(async (app) => {
       if (app.selfId || !app.options.type) return
       const info = await app.sender.getLoginInfo()
-      app.options.selfId = info.userId
-      app._registerSelfId()
+      app._registerSelfId(info.userId)
     }))
   }
   await getSelfIdsPromise
@@ -129,13 +128,8 @@ export class App extends Context {
     return this.server?.version
   }
 
-  versionLessThan (major: number, minor: number = 0, patch: number = 0) {
-    const { pluginMajorVersion, pluginMinorVersion, pluginPatchVersion } = this.version
-    return pluginMajorVersion < major || pluginMajorVersion === major &&
-      (pluginMinorVersion < minor || pluginMinorVersion === minor && pluginPatchVersion < patch)
-  }
-
-  _registerSelfId () {
+  _registerSelfId (selfId?: number) {
+    if (selfId) this.options.selfId = selfId
     appMap[this.selfId] = this
     selfIds.push(this.selfId)
     if (this.options.type) this.server.appMap[this.selfId] = this

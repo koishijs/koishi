@@ -139,7 +139,7 @@ export class Sender {
   }
 
   private _assertVersion (label: string, major: number, minor: number = 0, patch: number = 0) {
-    if (this.app.versionLessThan(major, minor, patch)) {
+    if (this.app.server.versionLessThan(major, minor, patch)) {
       throw new Error(`${label} requires CQHTTP version >= ${major}.${minor}`)
     }
   }
@@ -301,7 +301,7 @@ export class Sender {
   getGroupInfo (groupId: string, noCache = false): Promise<GroupInfo> {
     this._assertInteger('groupId', groupId)
     this._assertVersion('sender.getGroupInfo()', 4, 0, 1)
-    if (this.app.versionLessThan(4, 12)) return this.get('_get_group_info', { groupId, noCache })
+    if (this.app.server.versionLessThan(4, 12)) return this.get('_get_group_info', { groupId, noCache })
     return this.get('get_group_info', { groupId, noCache })
   }
 

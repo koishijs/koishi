@@ -10,7 +10,7 @@ function createWorker () {
   const child = fork(resolve(__dirname, 'worker'))
   let started = false
 
-  child.on('message', (data) => {
+  child.on('message', (data: any) => {
     if (data.type === 'start') {
       started = true
     } else if (data.type === 'error') {
