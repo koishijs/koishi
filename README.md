@@ -100,3 +100,31 @@ koishi run
 ```
 
 **注意:** Koishi 要求您的 Node.js 的版本不小于 10，CQHTTP 的版本不小于 3.4。如果使用 WebSocket，Koishi 要求 CQHTTP 版本不小于 4.6。同时，我们建议您保持较新的 CQHTTP 版本以确保所有功能可用。
+
+完整的文档在 [这里](https://koishijs.github.io/guide/getting-started.html)。
+
+## 贡献
+
+如果想对 Koishi 做出贡献，可以参考下面的指南：
+
+### 向本项目提交代码
+
+1. Fork 本项目并下载到你的本地
+2. 提交代码
+3. 从你的分支发起 PR 到 master 分支
+
+### 完善 Koishi 的文档
+
+与上面类似，但是针对的是 [这个项目](https://github.com/koishijs/koishijs.github.io)。
+
+### 开发 Koishi 插件
+
+我们欢迎开发 Koishi 插件并发布到 NPM 供大家使用。如果愿意的话我们也会邀请插件开发者成为 Koishi 团队成员。
+
+### 编写基于 Koishi 的机器人
+
+我们欢迎编写基于 Koishi 的机器人。如果有得意的作品也可以告诉我们，我们将在未来提供专门用于展示社区机器人的地方。
+
+### 支持项目作者
+
+<img src="./.github/wechat.png" alt="logo" style="max-width: 240px">
