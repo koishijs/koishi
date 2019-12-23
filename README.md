@@ -127,4 +127,4 @@ koishi run
 
 ### 支持项目作者
 
-<img src="./.github/wechat.png" alt="wechat" width="240">
+<img src="./.github/wechat.png" alt="wechat" width="320">
