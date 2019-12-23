@@ -15,6 +15,8 @@ import {
   AccountInfo,
   StrangerInfo,
   ListedGroupInfo,
+  VipInfo,
+  GroupNoticeInfo,
 } from './meta'
 
 const showSenderLog = debug('koishi:sender')
@@ -138,6 +140,7 @@ export class Sender {
   }
 
   async deleteMsg (messageId: number) {
+    if (!this.app.assertVersion('sender.deleteMsg()', 3, 3)) return
     await this.post('delete_msg', { messageId })
   }
 
@@ -201,11 +204,18 @@ export class Sender {
     return this.post('get_login_info')
   }
 
+  getVipInfo (userId: number): Promise<VipInfo> {
+    if (!this.app.assertVersion('sender.getVipInfo()', 4, 3, 1)) return
+    return this.post('_get_vip_info', { userId })
+  }
+
   getStrangerInfo (userId: number, noCache = false): Promise<StrangerInfo> {
     return this.post('get_stranger_info', { userId, noCache })
   }
 
   getFriendList (): Promise<FriendInfo[]> {
+    if (!this.app.assertVersion('sender.getFriendList()', 3, 0, 2)) return
+    if (this.app.versionLessThan(4, 12)) return this.post('_get_friend_list')
     return this.post('get_friend_list')
   }
 
@@ -214,6 +224,8 @@ export class Sender {
   }
 
   getGroupInfo (groupId: string, noCache = false): Promise<GroupInfo> {
+    if (!this.app.assertVersion('sender.getGroupInfo()', 4, 0, 1)) return
+    if (this.app.versionLessThan(4, 12)) return this.post('_get_group_info', { groupId, noCache })
     return this.post('get_group_info', { groupId, noCache })
   }
 
@@ -223,6 +235,16 @@ export class Sender {
 
   getGroupMemberList (groupId: number): Promise<GroupMemberInfo[]> {
     return this.post('get_group_member_list', { groupId })
+  }
+
+  getGroupNotice (groupId: number): Promise<GroupNoticeInfo[]> {
+    if (!this.app.assertVersion('sender.getGroupNotice()', 4, 9)) return
+    return this.post('_get_group_notice', { groupId })
+  }
+
+  async sendGroupNotice (groupId: number, title: string, content: string) {
+    if (!this.app.assertVersion('sender.sendGroupNotice()', 4, 9)) return
+    await this.post('_send_group_notice', { groupId, title, content })
   }
 
   async getCookies (domain?: string): Promise<string> {
@@ -240,21 +262,25 @@ export class Sender {
   }
 
   async getRecord (file: string, outFormat: RecordFormat, fullPath = false) {
+    if (!this.app.assertVersion('sender.getRecord()', 3, 3)) return
     const response = await this.post('get_record', { file, outFormat, fullPath })
     return response.file as string
   }
 
   async getImage (file: string) {
+    if (!this.app.assertVersion('sender.getImage()', 4, 8)) return
     const response = await this.post('get_image', { file })
     return response.file as string
   }
 
   async canSendImage () {
+    if (!this.app.assertVersion('sender.canSendImage()', 4, 8)) return
     const { yes } = await this.post('can_send_image')
     return yes as boolean
   }
 
   async canSendRecord () {
+    if (!this.app.assertVersion('sender.canSendRecord()', 4, 8)) return
     const { yes } = await this.post('can_send_record')
     return yes as boolean
   }
@@ -265,21 +291,33 @@ export class Sender {
 
   async getVersionInfo (): Promise<VersionInfo> {
     const data = await this.post<VersionInfo>('get_version_info')
-    const [, major, minor] = /^(\d+)\.(\d+)/.exec(data.pluginVersion)
-    data.pluginMajorVersion = +major
-    data.pluginMinorVersion = +minor
+    const match = /^(\d+)\.(\d+)\.(\d+)/.exec(data.pluginVersion)
+    if (match) {
+      const [, major, minor, patch] = match
+      data.pluginMajorVersion = +major
+      data.pluginMinorVersion = +minor
+      data.pluginPatchVersion = +patch
+    }
     return data
   }
 
   async setRestartPlugin (delay = 0) {
+    if (!this.app.assertVersion('sender.setRestartPlugin()', 3, 2)) return
     await this.post('set_restart_plugin', { delay })
   }
 
+  async setRestart (cleanLog = false, cleanCache = false, cleanEvent = false) {
+    if (!this.app.assertVersion('sender.setRestart()', 3, 0, 2)) return
+    await this.post('_set_restart', { cleanLog, cleanCache, cleanEvent })
+  }
+
   async cleanDataDir (dataDir: DataDirectoryType) {
+    if (!this.app.assertVersion('sender.cleanDataDir()', 3, 3, 4)) return
     await this.post('clean_data_dir', { dataDir })
   }
 
   async cleanPluginLog () {
+    if (!this.app.assertVersion('sender.cleanPluginLog()', 4, 1)) return
     await this.post('clean_plugin_log')
   }
 }

@@ -129,6 +129,19 @@ export class App extends Context {
     return this.server?.version
   }
 
+  versionLessThan (major: number, minor: number = 0, patch: number = 0) {
+    const { pluginMajorVersion, pluginMinorVersion, pluginPatchVersion } = this.version
+    return pluginMajorVersion < major || pluginMajorVersion === major &&
+      (pluginMinorVersion < minor || pluginMinorVersion === minor && pluginPatchVersion < patch)
+  }
+
+  assertVersion (label: string, major: number, minor: number = 0, patch: number = 0) {
+    if (this.versionLessThan(major, minor, patch)) {
+      this.emitWarning(`${label} requires CQHTTP version >= ${major}.${minor}`)
+    }
+    return true
+  }
+
   _registerSelfId () {
     appMap[this.selfId] = this
     selfIds.push(this.selfId)

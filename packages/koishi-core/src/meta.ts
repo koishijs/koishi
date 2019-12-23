@@ -139,6 +139,34 @@ export interface VersionInfo {
   pluginVersion: string
   pluginMajorVersion: number
   pluginMinorVersion: number
+  pluginPatchVersion: number
   pluginBuildNumber: number
   pluginBuildConfiguration: 'debug' | 'release'
+}
+
+export interface VipInfo extends AccountInfo {
+  level: number
+  levelSpeed: number
+  vipLevel: number
+  vipGrowthSpeed: number
+  vipGrowthTotal: string
+}
+
+export interface GroupNoticeInfo {
+  cn: number
+  fid: string
+  fn: number
+  msg: {
+    text: string
+    textFace: string
+    title: string
+  }
+  pubt: number
+  readNum: number
+  settings: {
+    isShowEditCard: number
+    remindTs: number
+  }
+  u: number
+  vn: number
 }
