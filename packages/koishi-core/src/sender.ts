@@ -1,9 +1,21 @@
 import debug from 'debug'
 import axios from 'axios'
 import { snakeCase, camelCase } from 'koishi-utils'
-import { GroupMemberInfo, StatusInfo, VersionInfo, Meta, FriendInfo, GroupInfo, Credentials, AccountInfo, StrangerInfo, ListedGroupInfo } from './meta'
 import { WsClient } from './server'
 import { App } from './app'
+
+import {
+  GroupMemberInfo,
+  StatusInfo,
+  VersionInfo,
+  Meta,
+  FriendInfo,
+  GroupInfo,
+  Credentials,
+  AccountInfo,
+  StrangerInfo,
+  ListedGroupInfo,
+} from './meta'
 
 const showSenderLog = debug('koishi:sender')
 
@@ -39,7 +51,7 @@ export class Sender {
       }
       this._post = async (action, params = {}) => {
         const uri = new URL(action, this.app.options.server).href
-        const { data } = await axios.get<CQResponse>(uri, { params, headers })
+        const { data } = await axios.get(uri, { params, headers })
         return data
       }
     } else if (type === 'ws') {

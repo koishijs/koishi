@@ -244,13 +244,11 @@ export class App extends Context {
     if (meta.postType === 'message' || meta.postType === 'send') {
       events.push(meta.postType)
     } else if (meta.postType === 'request') {
-      events.push('request')
-    } else if (meta.groupId) {
-      events.push(meta.noticeType)
-    } else if (meta.userId) {
+      events.push('request/' + meta.requestType)
+    } else if (meta.postType === 'notice') {
       events.push(meta.noticeType)
     } else {
-      events.push('meta_event/' + meta.metaEventType, 'meta_event')
+      events.push(meta.metaEventType)
     }
     if (meta.subType) events.unshift(events[0] + '/' + meta.subType)
 

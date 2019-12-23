@@ -51,7 +51,8 @@ export abstract class Server {
     this._isListening = true
     await this._listen()
     for (const app of this.appList) {
-      app.receiver.emit('connected', app)
+      app.receiver.emit('connect')
+      app.receiver.emit('connected')
     }
   }
 }

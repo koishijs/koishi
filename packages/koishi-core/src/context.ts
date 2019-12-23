@@ -210,10 +210,9 @@ type MessageEvent = 'message' | 'message/normal' | 'message/notice' | 'message/a
   | 'message/friend' | 'message/group' | 'message/discuss' | 'message/other'
 type NoticeEvent = 'friend_add' | 'group_increase' | 'group_increase/approve' | 'group_increase/invite'
   | 'group_decrease' | 'group_decrease/leave' | 'group_decrease/kick' | 'group_decrease/kick_me'
-  | 'group_upload' | 'group_admin' | 'group_admin/unset' | 'group_admin/set' | 'group_ban'
-type RequestEvent = 'request' | 'request/add' | 'request/invite'
-type MetaEventEvent = 'meta_event' | 'meta_event/heartbeat'
-  | 'meta_event/lifecycle' | 'meta_event/lifecycle/enable' | 'meta_event/lifecycle/disable'
+  | 'group_upload' | 'group_admin' | 'group_admin/unset' | 'group_admin/set' | 'group_ban' | 'group_ban/ban' | 'group_ban/lift_ban'
+type RequestEvent = 'request/friend' | 'request/group/add' | 'request/group/invite'
+type MetaEventEvent = 'heartbeat' | 'lifecycle' | 'lifecycle/enable' | 'lifecycle/disable'
 
 export interface Receiver extends EventEmitter {
   on (event: SendEvent, listener: (meta: Meta<'send'>) => any): this
@@ -222,6 +221,7 @@ export interface Receiver extends EventEmitter {
   on (event: RequestEvent, listener: (meta: Meta<'request'>) => any): this
   on (event: MetaEventEvent, listener: (meta: Meta<'meta_event'>) => any): this
   on (event: 'warning', listener: (error: Error) => any): this
+  on (event: 'connect', listener: (app: App) => any): this
   on (event: 'connected', listener: (app: App) => any): this
   once (event: SendEvent, listener: (meta: Meta<'send'>) => any): this
   once (event: NoticeEvent, listener: (meta: Meta<'notice'>) => any): this
@@ -229,5 +229,6 @@ export interface Receiver extends EventEmitter {
   once (event: RequestEvent, listener: (meta: Meta<'request'>) => any): this
   once (event: MetaEventEvent, listener: (meta: Meta<'meta_event'>) => any): this
   once (event: 'warning', listener: (error: Error) => any): this
+  once (event: 'connect', listener: (app: App) => any): this
   once (event: 'connected', listener: (app: App) => any): this
 }

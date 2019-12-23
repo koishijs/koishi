@@ -44,10 +44,10 @@ describe('meta.$path', () => {
     expect(meta.$path).toBe('/user/10000/friend_add')
   })
 
-  test('user/*/request', async () => {
+  test('user/*/request/friend', async () => {
     const meta = createMeta('request', 'friend', null, { userId: 10000 })
     await app.dispatchMeta(meta, false)
-    expect(meta.$path).toBe('/user/10000/request')
+    expect(meta.$path).toBe('/user/10000/request/friend')
   })
 
   test('group/*/message/normal', async () => {
@@ -86,10 +86,10 @@ describe('meta.$path', () => {
     expect(meta.$path).toBe('/group/20000/group_ban/ban')
   })
 
-  test('group/*/request/invite', async () => {
+  test('group/*/request/group/invite', async () => {
     const meta = createMeta('request', 'group', 'invite', { groupId: 20000 })
     await app.dispatchMeta(meta, false)
-    expect(meta.$path).toBe('/group/20000/request/invite')
+    expect(meta.$path).toBe('/group/20000/request/group/invite')
   })
 
   test('discuss/*/message', async () => {
@@ -98,16 +98,16 @@ describe('meta.$path', () => {
     expect(meta.$path).toBe('/discuss/30000/message')
   })
 
-  test('meta_event/lifecycle/enable', async () => {
+  test('lifecycle/enable', async () => {
     const meta = createMeta('meta_event', 'lifecycle', 'enable')
     await app.dispatchMeta(meta, false)
-    expect(meta.$path).toBe('/meta_event/lifecycle/enable')
+    expect(meta.$path).toBe('/lifecycle/enable')
   })
 
-  test('meta_event/heartbeat', async () => {
+  test('heartbeat', async () => {
     const meta = createMeta('meta_event', 'heartbeat', null)
     await app.dispatchMeta(meta, false)
-    expect(meta.$path).toBe('/meta_event/heartbeat')
+    expect(meta.$path).toBe('/heartbeat')
   })
 })
 
