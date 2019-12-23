@@ -1,9 +1,5 @@
-export function randomSign () {
-  return Math.floor(Math.random() * 2) * 2 - 1 as 1 | -1
-}
-
 const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-export function randomId (length = 16) {
+export function randomId (length = 8) {
   let output = ''
   for (let index = length; index > 0; --index) {
     output += chars[Math.floor(Math.random() * 62)]
@@ -67,7 +63,8 @@ export function randomWeightedPick <T extends keyof any> (weights: Record<T, num
   }
 }
 
-export function randomFraction (denominator: number, numerator: number) {
-  if (numerator <= 0) return false
-  return Math.random() * denominator <= numerator
+export function randomBool (probability: number) {
+  if (probability >= 1) return true
+  if (probability <= 0) return false
+  return Math.random() / probability < 1
 }

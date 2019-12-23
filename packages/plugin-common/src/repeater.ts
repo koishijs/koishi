@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { randomFraction } from 'koishi-utils'
+import { randomBool } from 'koishi-utils'
 
 interface State {
   message: string
@@ -36,12 +36,12 @@ export interface RepeaterOptions {
 }
 
 const defaultOptions: RepeaterOptions = {
-  repeat: (repeated, times) => !repeated && randomFraction(times, times - 1),
+  repeat: (repeated, times) => !repeated && randomBool(1 - 1 / times),
   interrupt: false,
   interruptText: '打断复读！',
-  repeatCheck: (repeated, times) => randomFraction(times, times - 1),
+  repeatCheck: (repeated, times) => randomBool(1 - 1 / times),
   repeatCheckText: (userId) => `[CQ:at,qq=${userId}] 在？为什么重复复读？`,
-  interruptCheck: (repeated, times) => repeated && randomFraction(times, times - 3),
+  interruptCheck: (repeated, times) => repeated && randomBool(1 - 3 / times),
   interruptCheckText: (userId) => `[CQ:at,qq=${userId}] 在？为什么打断复读？`,
 }
 

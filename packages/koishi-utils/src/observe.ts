@@ -64,7 +64,7 @@ function observeArray <T> (target: T[], label: string, update: () => void) {
 
   for (const method of arrayProxyMethods) {
     Object.defineProperty(target, method, {
-      value: function (...args: any[]) {
+      value (...args: any[]) {
         update()
         return Array.prototype[method].apply(this, args)
       },
