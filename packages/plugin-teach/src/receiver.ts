@@ -34,7 +34,7 @@ export default function (ctx: Context, config: TeachConfig) {
       .replace(/\$a/g, `[CQ:at,qq=${meta.userId}]`)
       .replace(/\$A/g, '[CQ:at,qq=all]')
       .replace(/\$m/g, CQCode.stringify('at', { qq: meta.selfId }))
-      .replace(/\$s/g, escapeAnswer(name === String(meta.userId) ? meta.sender.card || meta.sender.nickname : name))
+      .replace(/\$s/g, escapeAnswer(name === String(meta.userId) && meta.sender ? meta.sender.card || meta.sender.nickname : name))
       .replace(/\$0/g, escapeAnswer(meta.message))
       .split('$n')
       .map(str => str.trim().replace(/@@__DOLLARS_PLACEHOLDER__@@/g, '$'))

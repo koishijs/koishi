@@ -205,30 +205,44 @@ export class Context {
   }
 }
 
-type SendEvent = 'send'
-type MessageEvent = 'message' | 'message/normal' | 'message/notice' | 'message/anonymous'
-  | 'message/friend' | 'message/group' | 'message/discuss' | 'message/other'
-type NoticeEvent = 'friend_add' | 'group_increase' | 'group_increase/approve' | 'group_increase/invite'
-  | 'group_decrease' | 'group_decrease/leave' | 'group_decrease/kick' | 'group_decrease/kick_me'
-  | 'group_upload' | 'group_admin' | 'group_admin/unset' | 'group_admin/set' | 'group_ban' | 'group_ban/ban' | 'group_ban/lift_ban'
-type RequestEvent = 'request/friend' | 'request/group/add' | 'request/group/invite'
-type MetaEventEvent = 'heartbeat' | 'lifecycle' | 'lifecycle/enable' | 'lifecycle/disable'
+export interface Events {
+  'message' (meta: Meta<'message'>): any
+  'message/normal' (meta: Meta<'message'>): any
+  'message/notice' (meta: Meta<'message'>): any
+  'message/anonymous' (meta: Meta<'message'>): any
+  'message/friend' (meta: Meta<'message'>): any
+  'message/group' (meta: Meta<'message'>): any
+  'message/discuss' (meta: Meta<'message'>): any
+  'message/other' (meta: Meta<'message'>): any
+  'friend_add' (meta: Meta<'notice'>): any
+  'group_increase' (meta: Meta<'notice'>): any
+  'group_increase/invite' (meta: Meta<'notice'>): any
+  'group_increase/approve' (meta: Meta<'notice'>): any
+  'group_decrease' (meta: Meta<'notice'>): any
+  'group_decrease/leave' (meta: Meta<'notice'>): any
+  'group_decrease/kick' (meta: Meta<'notice'>): any
+  'group_decrease/kick_me' (meta: Meta<'notice'>): any
+  'group_upload' (meta: Meta<'notice'>): any
+  'group_admin' (meta: Meta<'notice'>): any
+  'group_admin/set' (meta: Meta<'notice'>): any
+  'group_admin/unset' (meta: Meta<'notice'>): any
+  'group_ban' (meta: Meta<'notice'>): any
+  'group_ban/ban' (meta: Meta<'notice'>): any
+  'group_ban/lift_ban' (meta: Meta<'notice'>): any
+  'request/friend' (meta: Meta<'request'>): any
+  'request/group/add' (meta: Meta<'request'>): any
+  'request/group/invite' (meta: Meta<'request'>): any
+  'heartbeat' (meta: Meta<'meta_event'>): any
+  'lifecycle' (meta: Meta<'meta_event'>): any
+  'lifecycle/enable' (meta: Meta<'meta_event'>): any
+  'lifecycle/disable' (meta: Meta<'meta_event'>): any
+  'send' (meta: Meta<'send'>): any
+  'warning' (error: Error): any
+  'connect' (): any
+  'connected' (): any
+}
 
 export interface Receiver extends EventEmitter {
-  on (event: SendEvent, listener: (meta: Meta<'send'>) => any): this
-  on (event: NoticeEvent, listener: (meta: Meta<'notice'>) => any): this
-  on (event: MessageEvent, listener: (meta: Meta<'message'>) => any): this
-  on (event: RequestEvent, listener: (meta: Meta<'request'>) => any): this
-  on (event: MetaEventEvent, listener: (meta: Meta<'meta_event'>) => any): this
-  on (event: 'warning', listener: (error: Error) => any): this
-  on (event: 'connect', listener: (app: App) => any): this
-  on (event: 'connected', listener: (app: App) => any): this
-  once (event: SendEvent, listener: (meta: Meta<'send'>) => any): this
-  once (event: NoticeEvent, listener: (meta: Meta<'notice'>) => any): this
-  once (event: MessageEvent, listener: (meta: Meta<'message'>) => any): this
-  once (event: RequestEvent, listener: (meta: Meta<'request'>) => any): this
-  once (event: MetaEventEvent, listener: (meta: Meta<'meta_event'>) => any): this
-  once (event: 'warning', listener: (error: Error) => any): this
-  once (event: 'connect', listener: (app: App) => any): this
-  once (event: 'connected', listener: (app: App) => any): this
+  on <K extends keyof Events> (event: K, listener: Events[K]): this
+  once <K extends keyof Events> (event: K, listener: Events[K]): this
 }

@@ -36,7 +36,7 @@ export interface Meta <T extends PostType = PostType> {
   $group?: GroupData
   $type?: ContextType
   $subId?: number
-  $send?: (message: string) => Promise<void>
+  $send?: (message: string, autoEscape?: boolean) => Promise<void>
   postType?: T
   messageType?: MetaTypeMap[T & 'message']
   noticeType?: MetaTypeMap[T & 'notice']

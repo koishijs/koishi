@@ -269,8 +269,8 @@ export class App extends Context {
           })
         }
       }
-      meta.$send = async (message) => {
-        await this.sender[`send${capitalize(meta.messageType)}Msg`](subId, message)
+      meta.$send = async (message, autoEscape = false) => {
+        await this.sender[`send${capitalize(meta.messageType)}Msg`](subId, message, autoEscape)
       }
     }
 
