@@ -299,30 +299,22 @@ export class Sender {
     return this.getAsync('set_discuss_leave', { discussId })
   }
 
-  setFriendAddRequest (flag: string, approve: true, remark: string): Promise<void>
-  setFriendAddRequest (flag: string, approve: false): Promise<void>
   async setFriendAddRequest (flag: string, approve = true, remark = '') {
     if (!flag) throw new Error('missing argument: flag')
     await this.get('set_friend_add_request', { flag, approve, remark })
   }
 
-  setFriendAddRequestAsync (flag: string, approve: true, remark: string): Promise<void>
-  setFriendAddRequestAsync (flag: string, approve: false): Promise<void>
   async setFriendAddRequestAsync (flag: string, approve = true, remark = '') {
     if (!flag) throw new Error('missing argument: flag')
     return this.getAsync('set_friend_add_request', { flag, approve, remark })
   }
 
-  setGroupAddRequest (flag: string, subType: 'add' | 'invite', approve: true): Promise<void>
-  setGroupAddRequest (flag: string, subType: 'add' | 'invite', approve: false, reason: string): Promise<void>
   async setGroupAddRequest (flag: string, subType: 'add' | 'invite', approve = true, reason = '') {
     if (!flag) throw new Error('missing argument: flag')
     this._assertElement('subType', subType, ['add', 'invite'])
     await this.get('set_group_add_request', { flag, subType, approve, reason })
   }
 
-  setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', approve: true): Promise<void>
-  setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', approve: false, reason: string): Promise<void>
   async setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', approve = true, reason = '') {
     if (!flag) throw new Error('missing argument: flag')
     this._assertElement('subType', subType, ['add', 'invite'])
@@ -427,11 +419,11 @@ export class Sender {
     return yes as boolean
   }
 
-  getStatus (): Promise<StatusInfo> {
-    return this.get('get_status')
+  getStatus () {
+    return this.get<StatusInfo>('get_status')
   }
 
-  async getVersionInfo (): Promise<VersionInfo> {
+  async getVersionInfo () {
     const data = await this.get<VersionInfo>('get_version_info')
     const match = /^(\d+)\.(\d+)\.(\d+)/.exec(data.pluginVersion)
     if (match) {
@@ -461,7 +453,7 @@ export class Sender {
 
   async cleanDataDirAsync (dataDir: DataDirectoryType) {
     this._assertElement('dataDir', dataDir, ['bface', 'image', 'record', 'show'])
-    this._assertVersion('sender.cleanDataDirAsync()', 4)
+    this._assertVersion('sender.cleanDataDirAsync()', 3, 3, 4)
     return this.getAsync('clean_data_dir', { dataDir })
   }
 
