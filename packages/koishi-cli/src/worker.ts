@@ -115,7 +115,7 @@ onStart(() => {
 })
 
 appList.forEach((app) => {
-  app.receiver.on('warning', (error) => {
+  app.receiver.on('error', (error) => {
     logger.warning(error)
   })
 })
