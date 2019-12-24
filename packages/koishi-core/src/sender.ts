@@ -47,7 +47,7 @@ interface MessageResponse {
 export class Sender {
   private _messages = new Array(61).fill(0)
   private _timer: NodeJS.Timeout
-  private _post: (api: string, args?: object) => Promise<CQResponse>
+  private _get: (api: string, args?: object) => Promise<CQResponse>
 
   constructor (public app: App) {
     const { type } = app.options
@@ -56,35 +56,35 @@ export class Sender {
       if (app.options.token) {
         headers.Authorization = `Token ${app.options.token}`
       }
-      this._post = async (action, params = {}) => {
+      this._get = async (action, params = {}) => {
         const uri = new URL(action, this.app.options.server).href
         const { data } = await axios.get(uri, { params, headers })
         return data
       }
     } else if (type === 'ws') {
       const server = app.server as WsClient
-      this._post = (action, params = {}) => server.send({ action, params })
+      this._get = (action, params = {}) => server.send({ action, params })
     }
   }
 
-  async get <T = any> (action: string, params?: object): Promise<T> {
+  async get <T = any> (action: string, params?: object, silent = false): Promise<T> {
     showSenderLog('request %s %o', action, params)
-    const response = await this._post(action, snakeCase(params))
+    const response = await this._get(action, snakeCase(params))
     showSenderLog('response %o', response)
     const { data, retcode } = response
-    if (retcode === 0) {
+    if (retcode === 0 && !silent) {
       return camelCase(data)
-    } else {
+    } else if (retcode < 0 && !silent) {
+      throw new SenderError(params, action, retcode)
+    } else if (retcode > 1) {
       throw new SenderError(params, action, retcode)
     }
   }
 
-  async async (action: string, params?: object) {
-    showSenderLog('request %s %o', action, params)
-    const response = await this._post(action + '_async', snakeCase(params))
-    showSenderLog('response %o', response)
-    const { retcode } = response
-    if (retcode !== 1) throw new SenderError(params, action, retcode)
+  private getAsync (action: string, params?: object): Promise<void> {
+    return this.app.server.versionLessThan(4)
+      ? this.get(action, params, true)
+      : this.get(action + '_async', params)
   }
 
   start () {
@@ -98,29 +98,8 @@ export class Sender {
     clearInterval(this._timer)
   }
 
-  async sendContextMsg (contextId: string, message: string, autoEscape?: boolean) {
-    const type = contextId[0]
-    const id = parseInt(contextId.slice(1))
-    switch (type) {
-      case 'g': return this.sendGroupMsg(id, message, autoEscape)
-      case 'p': return this.sendPrivateMsg(id, message, autoEscape)
-      case 'd': return this.sendDiscussMsg(id, message, autoEscape)
-    }
-  }
-
-  async sendContextMsgAsync (contextId: string, message: string, autoEscape?: boolean) {
-    const type = contextId[0]
-    const id = parseInt(contextId.slice(1))
-    switch (type) {
-      case 'g': return this.sendGroupMsgAsync(id, message, autoEscape)
-      case 'p': return this.sendPrivateMsgAsync(id, message, autoEscape)
-      case 'd': return this.sendDiscussMsgAsync(id, message, autoEscape)
-    }
-  }
-
   private async _dispatchSendMeta (type: ContextType, subId: number, message: string, messageId?: number) {
     const meta: Meta<'send'> = {
-      $path: `/${type}/${subId}/send`,
       postType: 'send',
       sendType: type === 'user' ? 'private' : type as any,
       messageId,
@@ -155,8 +134,8 @@ export class Sender {
   async sendGroupMsgAsync (groupId: number, message: string, autoEscape?: boolean) {
     this._assertInteger('groupId', groupId)
     if (!message) return
-    await this.async('send_group_msg', { groupId, message, autoEscape })
-    await this._dispatchSendMeta('group', groupId, message)
+    await this.get('send_group_msg_async', { groupId, message, autoEscape })
+    return this._dispatchSendMeta('group', groupId, message)
   }
 
   async sendDiscussMsg (discussId: number, message: string, autoEscape?: boolean) {
@@ -172,8 +151,8 @@ export class Sender {
     this._assertInteger('discussId', discussId)
     if (!message) return
     this._messages[0] += 1
-    await this.async('send_discuss_msg', { discussId, message, autoEscape })
-    await this._dispatchSendMeta('discuss', discussId, message)
+    await this.get('send_discuss_msg_async', { discussId, message, autoEscape })
+    return this._dispatchSendMeta('discuss', discussId, message)
   }
 
   async sendPrivateMsg (userId: number, message: string, autoEscape?: boolean) {
@@ -189,19 +168,32 @@ export class Sender {
     this._assertInteger('userId', userId)
     if (!message) return
     this._messages[0] += 1
-    await this.async('send_private_msg', { userId, message, autoEscape })
-    await this._dispatchSendMeta('user', userId, message)
+    await this.get('send_private_msg_async', { userId, message, autoEscape })
+    return this._dispatchSendMeta('user', userId, message)
   }
 
   async deleteMsg (messageId: number) {
     this._assertInteger('messageId', messageId)
     this._assertVersion('sender.deleteMsg()', 3, 3)
-    await this.get('delete_msg', { messageId })
+    return this.get<void>('delete_msg', { messageId })
+  }
+
+  async deleteMsgAsync (messageId: number) {
+    this._assertInteger('messageId', messageId)
+    this._assertVersion('sender.deleteMsgAsync()', 3, 3)
+    return this.getAsync('delete_msg', { messageId })
   }
 
   async sendLike (userId: number, times = 1) {
     this._assertInteger('userId', userId)
+    this._assertInteger('times', times)
     await this.get('send_like', { userId, times })
+  }
+
+  async sendLikeAsync (userId: number, times = 1) {
+    this._assertInteger('userId', userId)
+    this._assertInteger('times', times)
+    return this.getAsync('send_like', { userId, times })
   }
 
   async setGroupKick (groupId: number, userId: number, rejectAddRequest = false) {
@@ -210,14 +202,26 @@ export class Sender {
     await this.get('set_group_kick', { groupId, userId, rejectAddRequest })
   }
 
+  async setGroupKickAsync (groupId: number, userId: number, rejectAddRequest = false) {
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    return this.getAsync('set_group_kick', { groupId, userId, rejectAddRequest })
+  }
+
   async setGroupBan (groupId: number, userId: number, duration = 30 * 60) {
     this._assertInteger('groupId', groupId)
     this._assertInteger('userId', userId)
     await this.get('set_group_ban', { groupId, userId, duration })
   }
 
-  setGroupAnonymousBan (groupId: number, anonymous: object, duration: number): Promise<void>
-  setGroupAnonymousBan (groupId: number, flag: string, duration: number): Promise<void>
+  async setGroupBanAsync (groupId: number, userId: number, duration = 30 * 60) {
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    return this.getAsync('set_group_ban', { groupId, userId, duration })
+  }
+
+  setGroupAnonymousBan (groupId: number, anonymous: object, duration?: number): Promise<void>
+  setGroupAnonymousBan (groupId: number, flag: string, duration?: number): Promise<void>
   async setGroupAnonymousBan (groupId: number, meta: object | string, duration = 30 * 60) {
     this._assertInteger('groupId', groupId)
     if (!meta) throw new Error('missing argument: anonymous or flag')
@@ -226,9 +230,24 @@ export class Sender {
     await this.get('set_group_anonymous_ban', args)
   }
 
+  setGroupAnonymousBanAsync (groupId: number, anonymous: object, duration?: number): Promise<void>
+  setGroupAnonymousBanAsync (groupId: number, flag: string, duration?: number): Promise<void>
+  async setGroupAnonymousBanAsync (groupId: number, meta: object | string, duration = 30 * 60) {
+    this._assertInteger('groupId', groupId)
+    if (!meta) throw new Error('missing argument: anonymous or flag')
+    const args = { groupId, duration } as any
+    args[typeof meta === 'string' ? 'flag' : 'anomymous'] = meta
+    return this.getAsync('set_group_anonymous_ban', args)
+  }
+
   async setGroupWholeBan (groupId: number, enable = true) {
     this._assertInteger('groupId', groupId)
     await this.get('set_group_whole_ban', { groupId, enable })
+  }
+
+  async setGroupWholeBanAsync (groupId: number, enable = true) {
+    this._assertInteger('groupId', groupId)
+    return this.getAsync('set_group_whole_ban', { groupId, enable })
   }
 
   async setGroupAdmin (groupId: number, userId: number, enable: boolean) {
@@ -237,9 +256,20 @@ export class Sender {
     await this.get('set_group_admin', { groupId, userId, enable })
   }
 
+  async setGroupAdminAsync (groupId: number, userId: number, enable: boolean) {
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    return this.getAsync('set_group_admin', { groupId, userId, enable })
+  }
+
   async setGroupAnonymous (groupId: number, enable: boolean) {
     this._assertInteger('groupId', groupId)
     await this.get('set_group_anonymous', { groupId, enable })
+  }
+
+  async setGroupAnonymousAsync (groupId: number, enable: boolean) {
+    this._assertInteger('groupId', groupId)
+    return this.getAsync('set_group_anonymous', { groupId, enable })
   }
 
   async setGroupCard (groupId: number, userId: number, card = '') {
@@ -248,9 +278,20 @@ export class Sender {
     await this.get('set_group_admin', { groupId, userId, card })
   }
 
+  async setGroupCardAsync (groupId: number, userId: number, card = '') {
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    return this.getAsync('set_group_admin', { groupId, userId, card })
+  }
+
   async setGroupLeave (groupId: number, isDismiss = false) {
     this._assertInteger('groupId', groupId)
     await this.get('set_group_leave', { groupId, isDismiss })
+  }
+
+  async setGroupLeaveAsync (groupId: number, isDismiss = false) {
+    this._assertInteger('groupId', groupId)
+    return this.getAsync('set_group_leave', { groupId, isDismiss })
   }
 
   async setGroupSpecialTitle (groupId: number, userId: number, specialTitle = '', duration = -1) {
@@ -259,9 +300,20 @@ export class Sender {
     await this.get('set_group_special_title', { groupId, userId, specialTitle, duration })
   }
 
+  async setGroupSpecialTitleAsync (groupId: number, userId: number, specialTitle = '', duration = -1) {
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    return this.getAsync('set_group_special_title', { groupId, userId, specialTitle, duration })
+  }
+
   async setDiscussLeave (discussId: number) {
     this._assertInteger('discussId', discussId)
     await this.get('set_discuss_leave', { discussId })
+  }
+
+  async setDiscussLeaveAsync (discussId: number) {
+    this._assertInteger('discussId', discussId)
+    return this.getAsync('set_discuss_leave', { discussId })
   }
 
   setFriendAddRequest (flag: string, approve: true, remark: string): Promise<void>
@@ -271,12 +323,27 @@ export class Sender {
     await this.get('set_friend_add_request', { flag, approve, remark })
   }
 
+  setFriendAddRequestAsync (flag: string, approve: true, remark: string): Promise<void>
+  setFriendAddRequestAsync (flag: string, approve: false): Promise<void>
+  async setFriendAddRequestAsync (flag: string, approve = true, remark = '') {
+    if (!flag) throw new Error('missing argument: flag')
+    return this.getAsync('set_friend_add_request', { flag, approve, remark })
+  }
+
   setGroupAddRequest (flag: string, subType: 'add' | 'invite', approve: true): Promise<void>
   setGroupAddRequest (flag: string, subType: 'add' | 'invite', approve: false, reason: string): Promise<void>
   async setGroupAddRequest (flag: string, subType: 'add' | 'invite', approve = true, reason = '') {
     if (!flag) throw new Error('missing argument: flag')
     this._assertElement('subType', subType, ['add', 'invite'])
     await this.get('set_group_add_request', { flag, subType, approve, reason })
+  }
+
+  setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', approve: true): Promise<void>
+  setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', approve: false, reason: string): Promise<void>
+  async setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', approve = true, reason = '') {
+    if (!flag) throw new Error('missing argument: flag')
+    this._assertElement('subType', subType, ['add', 'invite'])
+    return this.getAsync('set_group_add_request', { flag, subType, approve, reason })
   }
 
   getLoginInfo (): Promise<AccountInfo> {
@@ -305,8 +372,9 @@ export class Sender {
   getGroupInfo (groupId: string, noCache = false): Promise<GroupInfo> {
     this._assertInteger('groupId', groupId)
     this._assertVersion('sender.getGroupInfo()', 4, 0, 1)
-    if (this.app.server.versionLessThan(4, 12)) return this.get('_get_group_info', { groupId, noCache })
-    return this.get('get_group_info', { groupId, noCache })
+    return this.app.server.versionLessThan(4, 12)
+      ? this.get('_get_group_info', { groupId, noCache })
+      : this.get('get_group_info', { groupId, noCache })
   }
 
   getGroupMemberInfo (groupId: number, userId: number, noCache = false): Promise<GroupMemberInfo> {
@@ -330,6 +398,12 @@ export class Sender {
     this._assertInteger('groupId', groupId)
     this._assertVersion('sender.sendGroupNotice()', 4, 9)
     await this.get('_send_group_notice', { groupId, title, content })
+  }
+
+  async sendGroupNoticeAsync (groupId: number, title: string, content: string) {
+    this._assertInteger('groupId', groupId)
+    this._assertVersion('sender.sendGroupNotice()', 4, 9)
+    return this.getAsync('_send_group_notice', { groupId, title, content })
   }
 
   async getCookies (domain?: string): Promise<string> {
@@ -405,7 +479,7 @@ export class Sender {
   async cleanDataDirAsync (dataDir: DataDirectoryType) {
     this._assertElement('dataDir', dataDir, ['bface', 'image', 'record', 'show'])
     this._assertVersion('sender.cleanDataDirAsync()', 4)
-    await this.async('clean_data_dir', { dataDir })
+    return this.getAsync('clean_data_dir', { dataDir })
   }
 
   async cleanPluginLog () {
@@ -415,6 +489,6 @@ export class Sender {
 
   async cleanPluginLogAsync () {
     this._assertVersion('sender.cleanPluginLogAsync()', 4, 1)
-    await this.async('clean_plugin_log')
+    await this.get('clean_plugin_log_async')
   }
 }

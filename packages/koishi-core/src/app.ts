@@ -7,7 +7,7 @@ import { Context, Middleware, NextFunction, ContextScope, Receiver } from './con
 import { Database, GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig } from './database'
 import { updateActivity, showSuggestions } from './utils'
 import { Meta, MessageMeta, ContextType } from './meta'
-import { simplify, capitalize } from 'koishi-utils'
+import { simplify, capitalize, noop } from 'koishi-utils'
 import * as errors from './errors'
 
 export interface AppOptions {
@@ -274,31 +274,36 @@ export class App extends Context {
         }
         meta.$delete = async () => {
           if (meta.$response) return meta.$response({ delete: true })
-          await this.sender.deleteMsg(meta.messageId)
+          return this.sender.deleteMsgAsync(meta.messageId)
         }
         meta.$ban = async (duration = 30 * 60) => {
           if (meta.$response) return meta.$response({ ban: true, banDuration: duration })
-          await this.sender.setGroupBan(meta.groupId, meta.userId, duration)
+          return meta.anonymous
+            ? this.sender.setGroupAnonymousBanAsync(meta.groupId, meta.anonymous.flag, duration)
+            : this.sender.setGroupBanAsync(meta.groupId, meta.userId, duration)
         }
         meta.$kick = async () => {
           if (meta.$response) return meta.$response({ kick: true })
-          await this.sender.setGroupKick(meta.groupId, meta.userId)
+          if (meta.anonymous) return
+          return this.sender.setGroupKickAsync(meta.groupId, meta.userId)
         }
       }
       meta.$send = async (message, autoEscape = false) => {
         if (meta.$response) return meta.$response({ reply: message, autoEscape, atSender: false })
-        await this.sender[`send${capitalize(meta.messageType)}Msg`](subId, message, autoEscape)
+        return this.sender[`send${capitalize(meta.messageType)}MsgAsync`](subId, message, autoEscape)
       }
     } else if (meta.postType === 'request') {
       meta.$approve = async (remark = '') => {
         if (meta.$response) return meta.$response({ approve: true, remark })
-        if (meta.requestType === 'friend') return this.sender.setFriendAddRequest(meta.flag, true, remark)
-        return this.sender.setGroupAddRequest(meta.flag, meta.subType as any, true)
+        return meta.requestType === 'friend'
+          ? this.sender.setFriendAddRequestAsync(meta.flag, true, remark)
+          : this.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, true)
       }
       meta.$reject = async (reason = '') => {
         if (meta.$response) return meta.$response({ approve: false, reason })
-        if (meta.requestType === 'friend') return this.sender.setFriendAddRequest(meta.flag, false)
-        return this.sender.setGroupAddRequest(meta.flag, meta.subType as any, false, reason)
+        return meta.requestType === 'friend'
+          ? this.sender.setFriendAddRequestAsync(meta.flag, false)
+          : this.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, false, reason)
       }
     }
 

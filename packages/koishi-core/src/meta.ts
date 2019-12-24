@@ -1,5 +1,4 @@
 import { GroupData, User } from './database'
-import { ServerResponse } from 'http'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
 
@@ -32,7 +31,6 @@ export type ContextType = keyof typeof contextTypes
 
 /** CQHTTP Meta Information */
 export interface Meta <T extends PostType = PostType> {
-  $path?: string
   $user?: User
   $group?: GroupData
   $type?: ContextType
