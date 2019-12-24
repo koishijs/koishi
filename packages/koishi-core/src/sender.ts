@@ -45,8 +45,6 @@ interface MessageResponse {
 }
 
 export class Sender {
-  private _messages = new Array(61).fill(0)
-  private _timer: NodeJS.Timeout
   private _get: (api: string, args?: object) => Promise<CQResponse>
 
   constructor (public app: App) {
@@ -85,17 +83,6 @@ export class Sender {
     return this.app.server.versionLessThan(4)
       ? this.get(action, params, true)
       : this.get(action + '_async', params)
-  }
-
-  start () {
-    this._timer = setInterval(() => {
-      this._messages.unshift(0)
-      this._messages.splice(-1, 1)
-    }, 1000)
-  }
-
-  stop () {
-    clearInterval(this._timer)
   }
 
   private async _dispatchSendMeta (type: ContextType, subId: number, message: string, messageId?: number) {
@@ -141,7 +128,6 @@ export class Sender {
   async sendDiscussMsg (discussId: number, message: string, autoEscape?: boolean) {
     this._assertInteger('discussId', discussId)
     if (!message) return
-    this._messages[0] += 1
     const { messageId } = await this.get<MessageResponse>('send_discuss_msg', { discussId, message, autoEscape })
     await this._dispatchSendMeta('discuss', discussId, message, messageId)
     return messageId
@@ -150,7 +136,6 @@ export class Sender {
   async sendDiscussMsgAsync (discussId: number, message: string, autoEscape?: boolean) {
     this._assertInteger('discussId', discussId)
     if (!message) return
-    this._messages[0] += 1
     await this.get('send_discuss_msg_async', { discussId, message, autoEscape })
     return this._dispatchSendMeta('discuss', discussId, message)
   }
@@ -158,7 +143,6 @@ export class Sender {
   async sendPrivateMsg (userId: number, message: string, autoEscape?: boolean) {
     this._assertInteger('userId', userId)
     if (!message) return
-    this._messages[0] += 1
     const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message, autoEscape })
     await this._dispatchSendMeta('user', userId, message, messageId)
     return messageId
@@ -167,7 +151,6 @@ export class Sender {
   async sendPrivateMsgAsync (userId: number, message: string, autoEscape?: boolean) {
     this._assertInteger('userId', userId)
     if (!message) return
-    this._messages[0] += 1
     await this.get('send_private_msg_async', { userId, message, autoEscape })
     return this._dispatchSendMeta('user', userId, message)
   }

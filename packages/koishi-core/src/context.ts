@@ -48,7 +48,7 @@ export class Context {
   public app: App
   public sender: Sender
   public database: Database
-  public receiver = new EventEmitter()
+  public receiver: Receiver = new EventEmitter()
 
   constructor (public readonly identifier: string, private readonly _scope: ContextScope) {}
 

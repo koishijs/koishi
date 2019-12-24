@@ -82,8 +82,6 @@ function createPrefixRegExp (...patterns: string[]) {
 export class App extends Context {
   app = this
   server: Server
-  database: Database
-  receiver: Receiver
   prefixRE: RegExp
   userPrefixRE: RegExp
   users: MajorContext
@@ -183,7 +181,6 @@ export class App extends Context {
       }
     }
     if (this.options.type) {
-      this.sender.start()
       tasks.push(this.server.listen())
     }
     await Promise.all(tasks)
@@ -200,7 +197,6 @@ export class App extends Context {
     await Promise.all(tasks)
     if (this.options.type) {
       this.server.close()
-      this.sender.stop()
     }
     showLog('stopped')
   }
