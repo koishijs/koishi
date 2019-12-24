@@ -86,8 +86,8 @@ export class Context {
   }
 
   match (meta: Meta) {
-    const [include, exclude] = this._scope[+contextTypes[meta.$type]]
-    return include ? include.includes(meta.$subId) : !exclude.includes(meta.$subId)
+    const [include, exclude] = this._scope[+contextTypes[meta.$ctxType]]
+    return include ? include.includes(meta.$ctxId) : !exclude.includes(meta.$ctxId)
   }
 
   contain (ctx: Context) {

@@ -33,8 +33,8 @@ export type ContextType = keyof typeof contextTypes
 export interface Meta <T extends PostType = PostType> {
   $user?: User
   $group?: GroupData
-  $type?: ContextType
-  $subId?: number
+  $ctxId?: number
+  $ctxType?: ContextType
   $response?: (data: any) => void
   $delete?: () => Promise<void>
   $kick?: () => Promise<void>

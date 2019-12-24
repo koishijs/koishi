@@ -37,16 +37,6 @@ export function getSenderName (meta: MessageMeta) {
   return meta.sender.card || meta.sender.nickname
 }
 
-export function getContextId (meta: MessageMeta) {
-  if (meta.messageType === 'group') {
-    return 'g' + meta.groupId
-  } else if (meta.messageType === 'discuss') {
-    return 'd' + meta.discussId
-  } else {
-    return 'p' + meta.userId
-  }
-}
-
 export function getTargetId (target: string) {
   if (!target) return
   let qq = +target
@@ -88,18 +78,17 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
       const command = typeof options.command === 'function'
         ? options.command(suggestion)
         : options.command
-      const userId = meta.userId
-      const contextId = getContextId(meta)
+      const identifier = meta.userId + meta.$ctxType + meta.$ctxId
       const fields = Array.from(command._userFields)
       if (!fields.includes('name')) fields.push('name')
       if (!fields.includes('usage')) fields.push('usage')
       if (!fields.includes('authority')) fields.push('authority')
 
       const middleware: Middleware = async (meta, next) => {
-        if (getContextId(meta) !== contextId || meta.userId !== userId) return next()
+        if (meta.userId + meta.$ctxType + meta.$ctxId !== identifier) return next()
         command.context.removeMiddleware(middleware)
         if (!meta.message.trim()) {
-          meta.$user = await command.context.database.observeUser(userId, 0, fields)
+          meta.$user = await command.context.database.observeUser(meta.userId, 0, fields)
           return execute(suggestions[0], meta, next)
         } else {
           return next()

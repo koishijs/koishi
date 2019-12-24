@@ -1,4 +1,4 @@
-import { getSenderName, createUser, getContextId, getTargetId } from '../src'
+import { getSenderName, createUser, getTargetId } from '../src'
 import { createSender } from 'koishi-test-utils'
 import { observe } from 'koishi-utils'
 
@@ -25,29 +25,6 @@ describe('getSenderName', () => {
       $user: observe(createUser(123, 1)),
       sender: createSender(123, 'bar'),
     })).toBe('bar')
-  })
-})
-
-describe('getContextId', () => {
-  test('private message', () => {
-    expect(getContextId({
-      messageType: 'private',
-      userId: 123,
-    })).toBe('p123')
-  })
-
-  test('group message', () => {
-    expect(getContextId({
-      messageType: 'group',
-      groupId: 456,
-    })).toBe('g456')
-  })
-
-  test('discuss message', () => {
-    expect(getContextId({
-      messageType: 'discuss',
-      discussId: 789,
-    })).toBe('d789')
   })
 })
 
