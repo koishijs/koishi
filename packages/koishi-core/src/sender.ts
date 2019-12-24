@@ -118,7 +118,7 @@ export class Sender {
     }
   }
 
-  private async _dispatchSendEvent <K extends ContextType> (type: K, subId: number, message: string, messageId?: number) {
+  private async _dispatchSendMeta (type: ContextType, subId: number, message: string, messageId?: number) {
     const meta: Meta<'send'> = {
       $path: `/${type}/${subId}/send`,
       postType: 'send',
@@ -148,7 +148,7 @@ export class Sender {
     this._assertInteger('groupId', groupId)
     if (!message) return
     const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message, autoEscape })
-    await this._dispatchSendEvent('group', groupId, message, messageId)
+    await this._dispatchSendMeta('group', groupId, message, messageId)
     return messageId
   }
 
@@ -156,7 +156,7 @@ export class Sender {
     this._assertInteger('groupId', groupId)
     if (!message) return
     await this.async('send_group_msg', { groupId, message, autoEscape })
-    await this._dispatchSendEvent('group', groupId, message)
+    await this._dispatchSendMeta('group', groupId, message)
   }
 
   async sendDiscussMsg (discussId: number, message: string, autoEscape?: boolean) {
@@ -164,7 +164,7 @@ export class Sender {
     if (!message) return
     this._messages[0] += 1
     const { messageId } = await this.get<MessageResponse>('send_discuss_msg', { discussId, message, autoEscape })
-    await this._dispatchSendEvent('discuss', discussId, message, messageId)
+    await this._dispatchSendMeta('discuss', discussId, message, messageId)
     return messageId
   }
 
@@ -173,7 +173,7 @@ export class Sender {
     if (!message) return
     this._messages[0] += 1
     await this.async('send_discuss_msg', { discussId, message, autoEscape })
-    await this._dispatchSendEvent('discuss', discussId, message)
+    await this._dispatchSendMeta('discuss', discussId, message)
   }
 
   async sendPrivateMsg (userId: number, message: string, autoEscape?: boolean) {
@@ -181,7 +181,7 @@ export class Sender {
     if (!message) return
     this._messages[0] += 1
     const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message, autoEscape })
-    await this._dispatchSendEvent('user', userId, message, messageId)
+    await this._dispatchSendMeta('user', userId, message, messageId)
     return messageId
   }
 
@@ -190,7 +190,7 @@ export class Sender {
     if (!message) return
     this._messages[0] += 1
     await this.async('send_private_msg', { userId, message, autoEscape })
-    await this._dispatchSendEvent('user', userId, message)
+    await this._dispatchSendMeta('user', userId, message)
   }
 
   async deleteMsg (messageId: number) {
@@ -210,7 +210,7 @@ export class Sender {
     await this.get('set_group_kick', { groupId, userId, rejectAddRequest })
   }
 
-  async setGroupBan (groupId: number, userId: number, duration = 36 * 60) {
+  async setGroupBan (groupId: number, userId: number, duration = 30 * 60) {
     this._assertInteger('groupId', groupId)
     this._assertInteger('userId', userId)
     await this.get('set_group_ban', { groupId, userId, duration })
@@ -218,7 +218,7 @@ export class Sender {
 
   setGroupAnonymousBan (groupId: number, anonymous: object, duration: number): Promise<void>
   setGroupAnonymousBan (groupId: number, flag: string, duration: number): Promise<void>
-  async setGroupAnonymousBan (groupId: number, meta: object | string, duration = 36 * 60) {
+  async setGroupAnonymousBan (groupId: number, meta: object | string, duration = 30 * 60) {
     this._assertInteger('groupId', groupId)
     if (!meta) throw new Error('missing argument: anonymous or flag')
     const args = { groupId, duration } as any
@@ -264,11 +264,15 @@ export class Sender {
     await this.get('set_discuss_leave', { discussId })
   }
 
+  setFriendAddRequest (flag: string, approve: true, remark: string): Promise<void>
+  setFriendAddRequest (flag: string, approve: false): Promise<void>
   async setFriendAddRequest (flag: string, approve = true, remark = '') {
     if (!flag) throw new Error('missing argument: flag')
     await this.get('set_friend_add_request', { flag, approve, remark })
   }
 
+  setGroupAddRequest (flag: string, subType: 'add' | 'invite', approve: true): Promise<void>
+  setGroupAddRequest (flag: string, subType: 'add' | 'invite', approve: false, reason: string): Promise<void>
   async setGroupAddRequest (flag: string, subType: 'add' | 'invite', approve = true, reason = '') {
     if (!flag) throw new Error('missing argument: flag')
     this._assertElement('subType', subType, ['add', 'invite'])

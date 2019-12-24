@@ -3,7 +3,7 @@ import debug from 'debug'
 import * as http from 'http'
 import * as errors from './errors'
 import { createHmac } from 'crypto'
-import { camelCase } from 'koishi-utils'
+import { camelCase, snakeCase } from 'koishi-utils'
 import { Meta, VersionInfo } from './meta'
 import { App, AppOptions } from './app'
 import { CQResponse } from './sender'
@@ -26,7 +26,7 @@ export abstract class Server {
     this.bind(app)
   }
 
-  protected _handleData (data: any) {
+  protected _handleMeta (data: any) {
     const meta = camelCase<Meta>(data)
     if (!meta.selfId) {
       // below version 3.4
@@ -36,8 +36,7 @@ export abstract class Server {
       if (!app) return
       app._registerSelfId(meta.selfId)
     }
-    this.appMap[meta.selfId].dispatchMeta(meta)
-    return true
+    return meta
   }
 
   bind (app: App) {
@@ -79,27 +78,56 @@ export class HttpServer extends Server {
   constructor (app: App) {
     super(app)
 
+    const { secret } = app.options
     this.server = http.createServer((req, res) => {
       let body = ''
       req.on('data', chunk => body += chunk)
       req.on('end', () => {
-        if (app.options.secret) {
+        if (secret) {
+          // no signature
           const signature = req.headers['x-signature']
           if (!signature) {
             res.statusCode = 401
             return res.end()
           }
-          const sig = createHmac('sha1', app.options.secret).update(body).digest('hex')
+
+          // invalid signature
+          const sig = createHmac('sha1', secret).update(body).digest('hex')
           if (signature !== `sha1=${sig}`) {
             res.statusCode = 403
             return res.end()
           }
         }
+
+        // no matched application
         const data = JSON.parse(body)
         showServerLog('receive %o', data)
-        const valid = this._handleData(data)
-        res.statusCode = valid ? 200 : 403
-        res.end()
+        const meta = this._handleMeta(data)
+        if (!meta) {
+          res.statusCode = 403
+          return res.end()
+        }
+
+        // ok, dispatch events
+        res.statusCode = 200
+        const app = this.appMap[meta.selfId]
+        if (app.options.quickOperationTimeout > 0) {
+          // handle quick operations
+          meta.$response = (data) => {
+            clearTimeout(timer)
+            res.write(JSON.stringify(snakeCase(data)))
+            res.end()
+            meta.$response = null
+          }
+          const timer = setTimeout(() => {
+            if (!meta.$response) return
+            res.end()
+            meta.$response = null
+          }, app.options.quickOperationTimeout)
+        } else {
+          res.end()
+        }
+        app.dispatchMeta(meta)
       })
     })
   }
@@ -172,19 +200,18 @@ export class WsClient extends Server {
           }
           if (!resolved) {
             resolved = true
-            const { server: wsServer } = this.appList[0].options
-            showServerLog('connect to ws server:', wsServer)
+            const { server } = this.appList[0].options
+            showServerLog('connect to ws server:', server)
             resolve()
           }
           if ('post_type' in parsed) {
-            this._handleData(parsed)
+            const meta = this._handleMeta(parsed)
+            if (meta) this.appMap[meta.selfId].dispatchMeta(meta)
           } else {
             if (parsed.echo === -1) {
               this.version = camelCase(parsed.data)
             }
-            if (parsed.echo in this._listeners) {
-              this._listeners[parsed.echo](parsed)
-            }
+            this._listeners[parsed.echo]?.(parsed)
           }
         })
       })
@@ -205,14 +232,14 @@ const serverTypes: Record<ServerType, [keyof AppOptions, Record<keyof any, Serve
 }
 
 export function createServer (app: App) {
-  const { type } = app.options
-  if (!type) {
-    throw new Error('missing configuration "type"')
+  if (typeof app.options.type !== 'string') {
+    throw new Error(errors.UNSUPPORTED_SERVER_TYPE)
   }
-  if (!serverTypes[type]) {
-    throw new Error(`server type "${type}" is not supported`)
+  app.options.type = app.options.type.toLowerCase() as any
+  if (!serverTypes[app.options.type]) {
+    throw new Error(errors.UNSUPPORTED_SERVER_TYPE)
   }
-  const [key, serverMap, Server] = serverTypes[type]
+  const [key, serverMap, Server] = serverTypes[app.options.type]
   const value = app.options[key] as any
   if (!value) {
     throw new Error(`missing configuration "${key}"`)

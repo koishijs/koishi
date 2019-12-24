@@ -1,4 +1,5 @@
 import { GroupData, User } from './database'
+import { ServerResponse } from 'http'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
 
@@ -36,6 +37,12 @@ export interface Meta <T extends PostType = PostType> {
   $group?: GroupData
   $type?: ContextType
   $subId?: number
+  $response?: (data: any) => void
+  $delete?: () => Promise<void>
+  $kick?: () => Promise<void>
+  $ban?: (duration?: number) => Promise<void>
+  $approve?: (remark?: string) => Promise<void>
+  $reject?: (reason?: string) => Promise<void>
   $send?: (message: string, autoEscape?: boolean) => Promise<void>
   postType?: T
   messageType?: MetaTypeMap[T & 'message']

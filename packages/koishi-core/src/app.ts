@@ -18,8 +18,9 @@ export interface AppOptions {
   selfId?: number
   server?: string
   type?: ServerType
-  commandPrefix?: string
   database?: DatabaseConfig
+  commandPrefix?: string
+  quickOperationTimeout?: number
   similarityCoefficient?: number
 }
 
@@ -109,13 +110,6 @@ export class App extends Context {
       options.type = options.server.split(':', 1)[0] as any
     }
     if (options.type) {
-      if (typeof options.type !== 'string') {
-        throw new Error(errors.UNSUPPORTED_SERVER_TYPE)
-      }
-      options.type = options.type.toLowerCase() as any
-      if (options.type !== 'http' && options.type !== 'ws') {
-        throw new Error(errors.UNSUPPORTED_SERVER_TYPE)
-      }
       this.server = createServer(this)
       this.sender = new Sender(this)
     }
@@ -278,9 +272,33 @@ export class App extends Context {
             writable: true,
           })
         }
+        meta.$delete = async () => {
+          if (meta.$response) return meta.$response({ delete: true })
+          await this.sender.deleteMsg(meta.messageId)
+        }
+        meta.$ban = async (duration = 30 * 60) => {
+          if (meta.$response) return meta.$response({ ban: true, banDuration: duration })
+          await this.sender.setGroupBan(meta.groupId, meta.userId, duration)
+        }
+        meta.$kick = async () => {
+          if (meta.$response) return meta.$response({ kick: true })
+          await this.sender.setGroupKick(meta.groupId, meta.userId)
+        }
       }
       meta.$send = async (message, autoEscape = false) => {
+        if (meta.$response) return meta.$response({ reply: message, autoEscape, atSender: false })
         await this.sender[`send${capitalize(meta.messageType)}Msg`](subId, message, autoEscape)
+      }
+    } else if (meta.postType === 'request') {
+      meta.$approve = async (remark = '') => {
+        if (meta.$response) return meta.$response({ approve: true, remark })
+        if (meta.requestType === 'friend') return this.sender.setFriendAddRequest(meta.flag, true, remark)
+        return this.sender.setGroupAddRequest(meta.flag, meta.subType as any, true)
+      }
+      meta.$reject = async (reason = '') => {
+        if (meta.$response) return meta.$response({ approve: false, reason })
+        if (meta.requestType === 'friend') return this.sender.setFriendAddRequest(meta.flag, false)
+        return this.sender.setGroupAddRequest(meta.flag, meta.subType as any, false, reason)
       }
     }
 
