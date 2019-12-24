@@ -1,28 +1,9 @@
-import { injectMethods, UserData, Database } from 'koishi-core'
+import { UserData, Database, Context, GroupRole } from 'koishi-core'
 import { difference } from 'koishi-utils'
-import {} from 'koishi-database-mysql'
 
-// optimize for mysql
-declare module 'koishi-core/dist/database' {
-  interface UserMethods {
-    getUsersWithAuthorityBelow <K extends UserField> (ids: number[], authority: number): Promise<Pick<UserData, 'id' | 'authority'>[]>
-    getUsersWithAuthorityNotEqual <K extends UserField> (ids: number[], authority: number): Promise<Pick<UserData, 'id' | 'authority'>[]>
-  }
-}
+type AuthorizedUsers = Pick<UserData, 'id' | 'authority'>[]
 
-injectMethods('mysql', 'user', {
-  async getUsersWithAuthorityBelow (ids, authority) {
-    if (!ids.length) return []
-    return this.query(`SELECT 'id', 'authority' FROM users WHERE 'id' IN (${ids.join(', ')}) AND 'authority' < ?`, [authority])
-  },
-
-  async getUsersWithAuthorityNotEqual (ids, authority) {
-    if (!ids.length) return []
-    return this.query(`SELECT 'id', 'authority' FROM users WHERE 'id' IN (${ids.join(', ')}) AND 'authority' != ?`, [authority])
-  },
-})
-
-export async function updateAuthority (database: Database, users: Pick<UserData, 'id' | 'authority'>[], ids: number[], authority: number) {
+export async function updateAuthority (database: Database, users: AuthorizedUsers, ids: number[], authority: number) {
   const userIds = users.map(u => u.id)
   const insertIds = difference(ids, userIds)
   const updateIds = ids.filter((id) => {
@@ -35,4 +16,95 @@ export async function updateAuthority (database: Database, users: Pick<UserData,
   for (const id of updateIds) {
     await database.setUser(id, { authority })
   }
+}
+
+export interface AuthorizeConfig {
+  authorizeUser?: Record<number, number>
+  authorizeGroup?: Record<number, number | Partial<Record<GroupRole, number>>>
+}
+
+interface AuthorizeInfo {
+  todo: number[]
+  insert: Set<number>
+  update: Set<number>
+}
+
+export default function apply (ctx: Context, config: AuthorizeConfig) {
+  const { app, database } = ctx
+  const { authorizeUser = {}, authorizeGroup = {} } = config
+  const authorityMap: Record<number, AuthorizeInfo> = []
+
+  for (const id in authorizeUser) {
+    if (authorityMap[authorizeUser[id]]) {
+      authorityMap[authorizeUser[id]].todo.push(+id)
+    } else {
+      authorityMap[authorizeUser[id]] = {
+        todo: [+id],
+        insert: new Set(),
+        update: new Set(),
+      }
+    }
+  }
+
+  async function updateAuthorizeInfo (authority: number, ids: number[]) {
+    const info = authorityMap[authority]
+    const users = await database.getUsers(ids, ['id', 'authority'])
+    for (const id of ids) {
+      const user = users.find(u => u.id === id)
+      if (!user) {
+        info.insert.add(id)
+      } else if (user.authority !== authority) {
+        info.update.add(id)
+      }
+    }
+  }
+
+  app.receiver.once('connected', async () => {
+    if (!app.selfId) {
+      const info = await app.sender.getLoginInfo()
+      app._registerSelfId(info.userId)
+    }
+
+    await Promise.all([
+      ...Object.keys(authorityMap).map(async (key) => {
+        await updateAuthorizeInfo(+key, authorityMap[key])
+      }),
+      ...Object.entries(authorizeGroup).map(async ([key, value]) => {
+        const groupId = +key
+        const config = typeof value === 'number' ? { member: value } : value
+        const ctx = app.group(groupId)
+
+        if (!('memberAuthority' in config)) config.member = 1
+        if (!('adminAuthority' in config)) config.admin = config.member
+        if (!('ownerAuthority' in config)) config.owner = config.admin
+
+        await database.getGroup(groupId, app.selfId)
+        const memberList = await ctx.sender.getGroupMemberList(groupId)
+        for (const role of ['member', 'admin', 'owner'] as GroupRole[]) {
+          const authority = config[role]
+          const memberIds = memberList.filter(m => m.role === role).map(m => m.userId)
+          await updateAuthorizeInfo(authority, memberIds)
+        }
+
+        ctx.receiver.on('group_increase', async ({ userId }) => {
+          const authority = config.member
+          const user = await database.getUser(userId, authority)
+          if (user.authority < authority) {
+            return database.setUser(userId, { authority })
+          }
+        })
+      })
+    ])
+
+    for (const key in authorityMap) {
+      const authority = +key
+      const { insert, update } = authorityMap[key]
+      for (const id of insert) {
+        await database.getUser(id, authority)
+      }
+      for (const id of update) {
+        await database.setUser(id, { authority })
+      }
+    }
+  })
 }

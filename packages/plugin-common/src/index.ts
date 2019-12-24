@@ -1,7 +1,6 @@
 import { Context, CommandConfig } from 'koishi-core'
 import admin from './admin'
-import authorizeGroup, { AuthorizeGroupOptions } from './authorizeGroup'
-import authorizeUser, { AuthorizeUserOptions } from './authorizeUser'
+import authorize, { AuthorizeConfig } from './authorize'
 import broadcast, { BroadcastOptions } from './broadcast'
 import callme, { CallmeOptions } from './callme'
 import contextify from './contextify'
@@ -12,7 +11,7 @@ import info from './info'
 import likeme, { LikemeOptions } from './likeme'
 import rank from './rank'
 import repeater, { RepeaterOptions } from './repeater'
-import requestHandler, { HandlerOptions } from './requestHandler'
+import requestHandler, { HandlerConfig } from './requestHandler'
 import respondent, { Respondent } from './respondent'
 import welcome, { WelcomeMessage } from './welcome'
 
@@ -22,8 +21,7 @@ export * from './rank'
 
 export {
   admin,
-  authorizeGroup,
-  authorizeUser,
+  authorize,
   broadcast,
   callme,
   contextify,
@@ -39,10 +37,8 @@ export {
   welcome,
 }
 
-interface CommonPluginOptions extends HandlerOptions {
+interface CommonPluginConfig extends HandlerConfig, AuthorizeConfig {
   admin?: false | CommandConfig
-  authorizeGroup?: AuthorizeGroupOptions
-  authorizeUser?: AuthorizeUserOptions
   broadcast?: false | BroadcastOptions
   callme?: false | CallmeOptions
   contextify?: false | CommandConfig
@@ -59,7 +55,7 @@ interface CommonPluginOptions extends HandlerOptions {
 
 export const name = 'common'
 
-export function apply (ctx: Context, options: CommonPluginOptions = {}) {
+export function apply (ctx: Context, options: CommonPluginConfig = {}) {
   ctx
     .plugin(contextify, options.contextify)
     .plugin(echo, options.echo)
@@ -74,8 +70,7 @@ export function apply (ctx: Context, options: CommonPluginOptions = {}) {
   if (ctx.database) {
     ctx
       .plugin(admin, options.admin)
-      .plugin(authorizeUser, options.authorizeUser)
-      .plugin(authorizeGroup, options.authorizeGroup)
+      .plugin(authorize, options)
       .plugin(broadcast, options.broadcast)
       .plugin(callme, options.callme)
       .plugin(info, options.info)

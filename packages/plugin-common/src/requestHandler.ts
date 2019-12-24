@@ -2,13 +2,13 @@ import { App, Meta } from 'koishi-core'
 
 type RequestHandler = boolean | ((meta: Meta<'request'>, app: App) => string | boolean | void | Promise<string | boolean | void>)
 
-export interface HandlerOptions {
+export interface HandlerConfig {
   handleFriend?: RequestHandler
   handleGroupAdd?: RequestHandler
   handleGroupInvite?: RequestHandler
 }
 
-const defaultHandlers: HandlerOptions = {
+const defaultHandlers: HandlerConfig = {
   async handleFriend (meta, app) {
     const user = await app.database.getUser(meta.userId, 0, ['authority'])
     if (user.authority >= 1) return true
@@ -23,7 +23,7 @@ async function getHandleResult (handler: RequestHandler, meta: Meta<'request'>, 
   return typeof handler === 'function' ? handler(meta, ctx) : handler
 }
 
-export default function apply (ctx: App, options: HandlerOptions = {}) {
+export default function apply (ctx: App, options: HandlerConfig = {}) {
   const { handleFriend, handleGroupAdd, handleGroupInvite } = { ...defaultHandlers, ...options }
 
   ctx.users.receiver.on('request/friend', async (meta) => {
