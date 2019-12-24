@@ -60,12 +60,12 @@ describe('Composition API', () => {
 
   test('context.prototype.match', () => {
     const ctx = app.user(123, 456).plus(app.groups.except(123, 456))
-    expect(ctx.match({ $type: 'user', $subId: 123 })).toBe(true)
-    expect(ctx.match({ $type: 'user', $subId: 789 })).toBe(false)
-    expect(ctx.match({ $type: 'group', $subId: 123 })).toBe(false)
-    expect(ctx.match({ $type: 'group', $subId: 789 })).toBe(true)
-    expect(ctx.match({ $type: 'discuss', $subId: 123 })).toBe(false)
-    expect(ctx.match({ $type: 'discuss', $subId: 789 })).toBe(false)
+    expect(ctx.match({ $ctxType: 'user', $ctxId: 123 })).toBe(true)
+    expect(ctx.match({ $ctxType: 'user', $ctxId: 789 })).toBe(false)
+    expect(ctx.match({ $ctxType: 'group', $ctxId: 123 })).toBe(false)
+    expect(ctx.match({ $ctxType: 'group', $ctxId: 789 })).toBe(true)
+    expect(ctx.match({ $ctxType: 'discuss', $ctxId: 123 })).toBe(false)
+    expect(ctx.match({ $ctxType: 'discuss', $ctxId: 789 })).toBe(false)
   })
 
   test('context.prototype.contain', () => {

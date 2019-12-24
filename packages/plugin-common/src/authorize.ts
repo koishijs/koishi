@@ -93,7 +93,7 @@ export default function apply (ctx: Context, config: AuthorizeConfig) {
             return database.setUser(userId, { authority })
           }
         })
-      })
+      }),
     ])
 
     for (const key in authorityMap) {

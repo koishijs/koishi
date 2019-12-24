@@ -1,4 +1,5 @@
 import axios from 'axios'
+import debug from 'debug'
 import express, { Express } from 'express'
 import { EventEmitter } from 'events'
 import { createHmac } from 'crypto'
@@ -12,12 +13,14 @@ export const SERVER_URL = `http://localhost:${SERVER_PORT}`
 
 let app: Express
 const emitter = new EventEmitter()
+const showLog = debug('koishi:test')
 
 export function createServer () {
   app = express()
 
   app.get('/:method', (req, res) => {
-    emitter.emit(req.params.method, req.query)
+    showLog('receive', req.params.method, req.query)
+    emitter.emit(req.params.method.replace(/_async$/, ''), req.query)
     res.status(200).send({
       data: {},
       retcode: 0,
@@ -40,6 +43,7 @@ export async function postMeta (meta: Meta, port = CLIENT_PORT, secret?: string)
   if (secret) {
     headers['X-Signature'] = 'sha1=' + createHmac('sha1', secret).update(JSON.stringify(data)).digest('hex')
   }
+  showLog('post', data)
   return axios.post(`http://localhost:${port}`, data, { headers })
 }
 

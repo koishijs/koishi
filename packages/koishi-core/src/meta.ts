@@ -31,6 +31,7 @@ export type ContextType = keyof typeof contextTypes
 
 /** CQHTTP Meta Information */
 export interface Meta <T extends PostType = PostType> {
+  $path?: string
   $user?: User
   $group?: GroupData
   $ctxId?: number

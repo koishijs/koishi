@@ -1,4 +1,4 @@
-import { contain, union, intersection, difference } from 'koishi-utils'
+import { contain, union, intersection, difference, noop } from 'koishi-utils'
 import { MessageMeta, Meta, contextTypes } from './meta'
 import { Command, CommandConfig } from './command'
 import { EventEmitter } from 'events'
@@ -44,13 +44,21 @@ export namespace ContextScope {
 const noopScope: ContextScope = [[[], null], [[], null], [[], null]]
 const noopIdentifier = ContextScope.stringify(noopScope)
 
+// @ts-ignore TODO: pending for typings
+// https://nodejs.org/api/events.html#events_capture_rejections_of_promises
+EventEmitter.captureRejections = true
+
 export class Context {
   public app: App
   public sender: Sender
   public database: Database
   public receiver: Receiver = new EventEmitter()
 
-  constructor (public readonly identifier: string, private readonly _scope: ContextScope) {}
+  constructor (public readonly identifier: string, private readonly _scope: ContextScope) {
+    // prevent event emitter from crashing
+    // https://nodejs.org/api/events.html#events_error_events
+    this.receiver.on('error', noop)
+  }
 
   inverse () {
     return this.app._createContext(this._scope.map(([include, exclude]) => {
@@ -86,7 +94,7 @@ export class Context {
   }
 
   match (meta: Meta) {
-    const [include, exclude] = this._scope[+contextTypes[meta.$ctxType]]
+    const [include, exclude] = this._scope[contextTypes[meta.$ctxType]]
     return include ? include.includes(meta.$ctxId) : !exclude.includes(meta.$ctxId)
   }
 
@@ -108,9 +116,6 @@ export class Context {
       plugin(app, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
       plugin.apply(app, options)
-      if ('name' in plugin) {
-        this.app.receiver.emit('plugin', plugin.name)
-      }
     }
     return this
   }
@@ -205,7 +210,7 @@ export class Context {
   }
 }
 
-export interface Events {
+export interface EventMap {
   'message' (meta: Meta<'message'>): any
   'message/normal' (meta: Meta<'message'>): any
   'message/notice' (meta: Meta<'message'>): any
@@ -237,12 +242,17 @@ export interface Events {
   'lifecycle/enable' (meta: Meta<'meta_event'>): any
   'lifecycle/disable' (meta: Meta<'meta_event'>): any
   'send' (meta: Meta<'send'>): any
-  'warning' (error: Error): any
+  'error' (error: Error): any
+  'error/command' (error: Error): any
+  'error/middleware' (error: Error): any
   'connect' (): any
   'connected' (): any
 }
 
+export type Events = keyof EventMap
+
 export interface Receiver extends EventEmitter {
-  on <K extends keyof Events> (event: K, listener: Events[K]): this
-  once <K extends keyof Events> (event: K, listener: Events[K]): this
+  on <K extends Events> (event: K, listener: EventMap[K]): this
+  once <K extends Events> (event: K, listener: EventMap[K]): this
+  emit <K extends Events> (event: K, ...args: Parameters<EventMap[K]>): boolean
 }

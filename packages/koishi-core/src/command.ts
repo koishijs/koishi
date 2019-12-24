@@ -229,9 +229,15 @@ export class Command {
       }
     }
 
-    if (this._checkUser(meta, options)) {
-      showCommandLog('execute %s', this.name)
+    // check authority and usage
+    if (!this._checkUser(meta, options)) return
+
+    showCommandLog('execute %s', this.name)
+    try {
       return this._action(config, ...args)
+    } catch (error) {
+      this.context.app.emitEvent(meta, 'error/command', error)
+      this.context.app.emitEvent(meta, 'error', error)
     }
   }
 

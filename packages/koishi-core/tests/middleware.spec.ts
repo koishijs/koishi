@@ -118,7 +118,7 @@ describe('runtime checks', () => {
     fn = jest.fn()
     // @ts-ignore
     app._middlewares = [[app, app._preprocess]]
-    app.receiver.on('warning', error => fn(error.message))
+    app.receiver.on('error', error => fn(error.message))
   })
 
   test('isolated next function', async () => {

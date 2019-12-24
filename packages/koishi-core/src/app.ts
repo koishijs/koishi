@@ -3,11 +3,11 @@ import escapeRegex from 'escape-string-regexp'
 import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig, ParsedCommandLine } from './command'
-import { Context, Middleware, NextFunction, ContextScope, Receiver } from './context'
-import { Database, GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig } from './database'
+import { Context, Middleware, NextFunction, ContextScope, Events, EventMap } from './context'
+import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig } from './database'
 import { updateActivity, showSuggestions } from './utils'
 import { Meta, MessageMeta, ContextType } from './meta'
-import { simplify, capitalize, noop } from 'koishi-utils'
+import { simplify, capitalize } from 'koishi-utils'
 import * as errors from './errors'
 
 export interface AppOptions {
@@ -201,22 +201,18 @@ export class App extends Context {
     showLog('stopped')
   }
 
-  emitWarning (message: string) {
-    this.receiver.emit('warning', new Error(message))
-  }
-
   async dispatchMeta (meta: Meta, emitEvents = true) {
     // prepare prefix
-    let type: ContextType, subId: number
+    let ctxType: ContextType, ctxId: number
     if (meta.groupId) {
-      type = 'group'
-      subId = meta.groupId
+      ctxType = 'group'
+      ctxId = meta.groupId
     } else if (meta.discussId) {
-      type = 'discuss'
-      subId = meta.discussId
+      ctxType = 'discuss'
+      ctxId = meta.discussId
     } else if (meta.userId) {
-      type = 'user'
-      subId = meta.userId
+      ctxType = 'user'
+      ctxId = meta.userId
     }
 
     // polyfill CQHTTP 3.x events
@@ -253,10 +249,10 @@ export class App extends Context {
     if (meta.subType) events.unshift(events[0] + '/' + meta.subType)
 
     // generate path
-    const path = (type ? `/${type}/${subId}/` : '/') + events[0]
+    const path = (ctxType ? `/${ctxType}/${ctxId}/` : '/') + events[0]
     Object.defineProperty(meta, '$path', { value: path })
-    Object.defineProperty(meta, '$type', { value: type })
-    Object.defineProperty(meta, '$subId', { value: subId })
+    Object.defineProperty(meta, '$ctxId', { value: ctxId })
+    Object.defineProperty(meta, '$ctxType', { value: ctxType })
     showReceiverLog('path %s', path)
 
     // add context properties
@@ -286,7 +282,7 @@ export class App extends Context {
       }
       meta.$send = async (message, autoEscape = false) => {
         if (meta.$response) return meta.$response({ reply: message, autoEscape, atSender: false })
-        return this.sender[`send${capitalize(meta.messageType)}MsgAsync`](subId, message, autoEscape)
+        return this.sender[`send${capitalize(meta.messageType)}MsgAsync`](ctxId, message, autoEscape)
       }
     } else if (meta.postType === 'request') {
       meta.$approve = async (remark = '') => {
@@ -305,13 +301,17 @@ export class App extends Context {
 
     // emit events
     if (!emitEvents) return
+    for (const event of events) {
+      this.emitEvent(meta, event as any, meta)
+    }
+  }
+
+  emitEvent <K extends Events> (meta: Meta, event: K, ...payload: Parameters<EventMap[K]>) {
     for (const path in this._contexts) {
       const context = this._contexts[path]
       if (!context.match(meta)) continue
-      showReceiverLog(path, 'emits', events)
-      events.forEach((event) => {
-        context.receiver.emit(event, meta)
-      })
+      showReceiverLog(path, 'emits', event)
+      context.receiver.emit(event, ...payload)
     }
   }
 
@@ -442,11 +442,18 @@ export class App extends Context {
     let index = 0
     const next = async (fallback?: NextFunction) => {
       if (!this._middlewareSet.has(counter)) {
-        return this.emitWarning(errors.ISOLATED_NEXT)
+        return this.emitEvent(meta, 'error', new Error(errors.ISOLATED_NEXT))
       }
       if (fallback) middlewares.push((_, next) => fallback(next))
       const middleware = middlewares[index++]
-      if (middleware) return middleware(meta, next)
+      if (middleware) {
+        try {
+          return middleware(meta, next)
+        } catch (error) {
+          this.emitEvent(meta, 'error/middleware', error)
+          this.emitEvent(meta, 'error', error)
+        }
+      }
     }
     await next()
 
