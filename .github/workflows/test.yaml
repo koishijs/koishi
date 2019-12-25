@@ -27,11 +27,13 @@ jobs:
       run: yarn build
     - name: Lint
       run: yarn lint
-    - name: Jest
+    - name: Unit Test
       run: yarn jest --coverage
-    - uses: codecov/codecov-action@v1
+    - name: Report Coverage
+      uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage/coverage-final.json
+        name: codecov
     - name: Publish
       run: npx ts-node build/publish

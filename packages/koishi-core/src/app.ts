@@ -5,7 +5,7 @@ import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig, ParsedCommandLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope, Events, EventMap } from './context'
 import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig } from './database'
-import { updateActivity, showSuggestions } from './utils'
+import { showSuggestions } from './utils'
 import { Meta, MessageMeta } from './meta'
 import { simplify } from 'koishi-utils'
 import * as errors from './errors'
@@ -274,8 +274,6 @@ export class App extends Context {
     if (parsedArgv) {
       if (!fields.includes('usage')) fields.push('usage')
       if (!fields.includes('authority')) fields.push('authority')
-    } else if (meta.messageType === 'group' && !fields.includes('talkativeness')) {
-      fields.push('talkativeness')
     }
 
     if (this.database) {
@@ -290,7 +288,6 @@ export class App extends Context {
       // ignore some group calls
       if (meta.messageType === 'group') {
         const isAssignee = meta.$group.assignee === this.selfId
-        if (isAssignee && !parsedArgv) updateActivity(user.talkativeness, meta.groupId)
         const noCommand = meta.$group.flag & GroupFlag.noCommand
         const noResponse = meta.$group.flag & GroupFlag.noResponse || !isAssignee
         const originalNext = next

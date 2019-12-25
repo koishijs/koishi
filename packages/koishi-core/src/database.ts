@@ -1,5 +1,4 @@
 import { Observed } from 'koishi-utils'
-import { Activity } from './utils'
 
 export interface Usage {
   last?: number
@@ -20,7 +19,6 @@ export interface UserData {
   ignoreEnd: number
   authority: number
   usage: Record<string, Usage>
-  talkativeness: Activity
 }
 
 export type User<K extends UserField = UserField> = Observed<Pick<UserData, K | 'id'>>
@@ -42,7 +40,6 @@ extendUser((id, authority) => ({
   ignoreEnd: 0,
   name: String(id),
   usage: {},
-  talkativeness: {},
 }))
 
 export function createUser (id: number, authority: number) {

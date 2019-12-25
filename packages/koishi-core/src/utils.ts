@@ -1,36 +1,8 @@
-import { isInteger, getDateNumber } from 'koishi-utils'
+import { isInteger } from 'koishi-utils'
 import { NextFunction, Middleware } from './context'
 import { Command } from './command'
 import { MessageMeta } from './meta'
 import leven from 'leven'
-
-export type Activity = Record<number, Record<number, number>>
-
-const PRESERVE_ACTIVITY = 7
-
-export function updateActivity (activity: Activity, groupId: number) {
-  const date = getDateNumber()
-  if (!activity[date]) {
-    activity[date] = {}
-    const dates = Object.keys(activity)
-    dates.slice(0, -PRESERVE_ACTIVITY).forEach(date => delete activity[date])
-  }
-  if (!activity[date][groupId]) {
-    activity[date][groupId] = 1
-  } else {
-    activity[date][groupId] += 1
-  }
-}
-
-function getMaxActivity (activity: Record<number, number> = {}) {
-  return Math.max(0, ...Object.keys(activity).map(k => activity[k]))
-}
-
-export function getAverageActivity (activity: Activity, date: number) {
-  return getMaxActivity(activity[date - 1]) / 2
-    + getMaxActivity(activity[date - 2]) / 3
-    + getMaxActivity(activity[date - 3]) / 6
-}
 
 export function getSenderName (meta: MessageMeta) {
   if (!meta.sender || meta.$user && meta.$user.name !== String(meta.userId)) return meta.$user.name
