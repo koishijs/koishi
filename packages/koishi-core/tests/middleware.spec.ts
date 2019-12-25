@@ -112,16 +112,17 @@ describe('middleware', () => {
 })
 
 describe('runtime checks', () => {
-  let fn: jest.Mock
-
   beforeEach(() => {
-    fn = jest.fn()
     // @ts-ignore
     app._middlewares = [[app, app._preprocess]]
-    app.receiver.on('error', error => fn(error.message))
   })
 
   test('isolated next function', async () => {
+    const errorCallback = jest.fn()
+    const middlewareErrorCallback = jest.fn()
+    app.receiver.on('error', error => errorCallback(error.message))
+    app.receiver.on('error/middleware', error => middlewareErrorCallback(error.message))
+
     app.middleware(async (_, next) => {
       next()
     })
@@ -140,6 +141,34 @@ describe('runtime checks', () => {
 
     await sleep(0)
 
-    expect(fn).toBeCalledWith(errors.ISOLATED_NEXT)
+    expect(errorCallback).toBeCalledTimes(1)
+    expect(errorCallback).toBeCalledWith(errors.ISOLATED_NEXT)
+    expect(middlewareErrorCallback).toBeCalledTimes(0)
+  })
+
+  test('middleware error', async () => {
+    const errorCallback = jest.fn()
+    const middlewareErrorCallback = jest.fn()
+    app.receiver.on('error', error => errorCallback(error.message))
+    app.receiver.on('error/middleware', error => middlewareErrorCallback(error.message))
+
+    const errorMessage = 'error message'
+    app.middleware(() => {
+      throw new Error(errorMessage)
+    })
+
+    await postMeta({
+      ...shared,
+      messageType: 'group',
+      subType: 'normal',
+      message: 'bar',
+    })
+
+    await sleep(0)
+
+    expect(errorCallback).toBeCalledTimes(1)
+    expect(errorCallback).toBeCalledWith(errorMessage)
+    expect(middlewareErrorCallback).toBeCalledTimes(1)
+    expect(middlewareErrorCallback).toBeCalledWith(errorMessage)
   })
 })

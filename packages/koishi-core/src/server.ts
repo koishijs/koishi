@@ -122,15 +122,7 @@ export abstract class Server {
       }
       meta.$send = async (message, autoEscape = false) => {
         if (meta.$response) {
-          app.emitEvent(meta, 'before-send', {
-            postType: 'send',
-            sendType: meta.messageType,
-            $path: `/${ctxType}/${ctxId}/send/`,
-            $ctxId: ctxId,
-            $ctxType: ctxType,
-            [ctxType + 'Id']: ctxId,
-            message,
-          })
+          app.emitEvent(meta, 'before-send', app.sender._createSendMeta(ctxType, ctxId, message))
           return meta.$response({ reply: message, autoEscape, atSender: false })
         }
         return app.sender[`send${capitalize(meta.messageType)}MsgAsync`](ctxId, message, autoEscape)

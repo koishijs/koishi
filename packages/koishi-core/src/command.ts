@@ -93,12 +93,16 @@ export class Command {
     }
   }
 
+  get app () {
+    return this.context.app
+  }
+
   private _registerAlias (name: string) {
     name = name.toLowerCase()
     this._aliases.push(name)
-    const previous = this.context.app._commandMap[name]
+    const previous = this.app._commandMap[name]
     if (!previous) {
-      this.context.app._commandMap[name] = this
+      this.app._commandMap[name] = this
     } else if (previous !== this) {
       throw new Error(errors.DUPLICATE_COMMAND)
     }
@@ -132,8 +136,8 @@ export class Command {
       authority: this.config.authority,
       ...config,
     }
-    this.context.app._shortcutMap[name] = this
-    this.context.app._shortcuts.push(config)
+    this.app._shortcutMap[name] = this
+    this.app._shortcuts.push(config)
     return this
   }
 
@@ -193,9 +197,10 @@ export class Command {
     return parseLine(source, this._argsDef, this._optsDef)
   }
 
-  async execute (config: ParsedCommandLine, next: NextFunction = noop) {
-    const { meta, options, args, unknown } = config
-    if (!config.next) config.next = next
+  async execute (argv: ParsedCommandLine, next: NextFunction = noop) {
+    const { meta, options, args, unknown } = argv
+    if (!argv.next) argv.next = next
+    this.app.emitEvent(meta, 'before-command', argv)
 
     // show help when use `-h, --help` or when there is no action
     if (!this._action || options.help && !this.config.noHelpOption) {
@@ -233,11 +238,13 @@ export class Command {
     if (!this._checkUser(meta, options)) return
 
     showCommandLog('execute %s', this.name)
+    this.app.emitEvent(meta, 'command', argv)
     try {
-      return this._action(config, ...args)
+      await this._action(argv, ...args)
+      this.app.emitEvent(meta, 'after-command', argv)
     } catch (error) {
-      this.context.app.receiver.emit('error/command', error)
-      this.context.app.receiver.emit('error', error)
+      this.app.receiver.emit('error/command', error)
+      this.app.receiver.emit('error', error)
     }
   }
 

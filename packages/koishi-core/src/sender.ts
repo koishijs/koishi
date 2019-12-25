@@ -99,7 +99,7 @@ export class Sender {
     }
   }
 
-  private _createSendMeta ($ctxType: ContextType, $ctxId: number, message: string) {
+  _createSendMeta ($ctxType: ContextType, $ctxId: number, message: string) {
     const sendType = $ctxType === 'user' ? 'private' : $ctxType as any
     const $path = `/${$ctxType}/${$ctxId}/send/`
     return {

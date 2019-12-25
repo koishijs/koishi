@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`apply suggestions show command help:   1`] = `"bar"`;
+
+exports[`apply suggestions show command help: fo bar 1`] = `"没有此命令。你要找的是不是“foo”？发送空行以调用推测的指令。"`;

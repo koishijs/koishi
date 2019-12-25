@@ -1,6 +1,6 @@
 import { contain, union, intersection, difference, noop } from 'koishi-utils'
 import { MessageMeta, Meta, contextTypes } from './meta'
-import { Command, CommandConfig } from './command'
+import { Command, CommandConfig, ParsedCommandLine } from './command'
 import { EventEmitter } from 'events'
 import { Sender } from './sender'
 import { App } from './app'
@@ -239,6 +239,9 @@ export interface EventMap {
   'lifecycle/disable' (meta: Meta<'meta_event'>): any
   'send' (meta: Meta<'send'>): any
   'before-send' (meta: Meta<'send'>): any
+  'before-command' (argv: ParsedCommandLine): any
+  'command' (argv: ParsedCommandLine): any
+  'after-command' (argv: ParsedCommandLine): any
   'error' (error: Error): any
   'error/command' (error: Error): any
   'error/middleware' (error: Error): any

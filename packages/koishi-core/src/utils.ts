@@ -88,7 +88,7 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
         if (meta.userId + meta.$ctxType + meta.$ctxId !== identifier) return next()
         command.context.removeMiddleware(middleware)
         if (!meta.message.trim()) {
-          meta.$user = await command.context.database.observeUser(meta.userId, 0, fields)
+          meta.$user = await command.context.database?.observeUser(meta.userId, 0, fields)
           return execute(suggestions[0], meta, next)
         } else {
           return next()
