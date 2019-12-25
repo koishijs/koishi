@@ -44,10 +44,6 @@ export namespace ContextScope {
 const noopScope: ContextScope = [[[], null], [[], null], [[], null]]
 const noopIdentifier = ContextScope.stringify(noopScope)
 
-// @ts-ignore TODO: pending for typings
-// https://nodejs.org/api/events.html#events_capture_rejections_of_promises
-EventEmitter.captureRejections = true
-
 export class Context {
   public app: App
   public sender: Sender
@@ -219,21 +215,21 @@ export interface EventMap {
   'message/group' (meta: Meta<'message'>): any
   'message/discuss' (meta: Meta<'message'>): any
   'message/other' (meta: Meta<'message'>): any
-  'friend_add' (meta: Meta<'notice'>): any
-  'group_increase' (meta: Meta<'notice'>): any
-  'group_increase/invite' (meta: Meta<'notice'>): any
-  'group_increase/approve' (meta: Meta<'notice'>): any
-  'group_decrease' (meta: Meta<'notice'>): any
-  'group_decrease/leave' (meta: Meta<'notice'>): any
-  'group_decrease/kick' (meta: Meta<'notice'>): any
-  'group_decrease/kick_me' (meta: Meta<'notice'>): any
-  'group_upload' (meta: Meta<'notice'>): any
-  'group_admin' (meta: Meta<'notice'>): any
-  'group_admin/set' (meta: Meta<'notice'>): any
-  'group_admin/unset' (meta: Meta<'notice'>): any
-  'group_ban' (meta: Meta<'notice'>): any
-  'group_ban/ban' (meta: Meta<'notice'>): any
-  'group_ban/lift_ban' (meta: Meta<'notice'>): any
+  'friend-add' (meta: Meta<'notice'>): any
+  'group-increase' (meta: Meta<'notice'>): any
+  'group-increase/invite' (meta: Meta<'notice'>): any
+  'group-increase/approve' (meta: Meta<'notice'>): any
+  'group-decrease' (meta: Meta<'notice'>): any
+  'group-decrease/leave' (meta: Meta<'notice'>): any
+  'group-decrease/kick' (meta: Meta<'notice'>): any
+  'group-decrease/kick-me' (meta: Meta<'notice'>): any
+  'group-upload' (meta: Meta<'notice'>): any
+  'group-admin' (meta: Meta<'notice'>): any
+  'group-admin/set' (meta: Meta<'notice'>): any
+  'group-admin/unset' (meta: Meta<'notice'>): any
+  'group-ban' (meta: Meta<'notice'>): any
+  'group-ban/ban' (meta: Meta<'notice'>): any
+  'group-ban/lift-ban' (meta: Meta<'notice'>): any
   'request/friend' (meta: Meta<'request'>): any
   'request/group/add' (meta: Meta<'request'>): any
   'request/group/invite' (meta: Meta<'request'>): any

@@ -49,6 +49,6 @@ export default function apply (ctx: Context, config: CommandConfig = {}) {
 
       newMeta.message = message
       newMeta.rawMessage = CQCode.unescape(message)
-      await ctx.app.dispatchMeta(newMeta)
+      await ctx.app.server.dispatchMeta(newMeta)
     })
 }

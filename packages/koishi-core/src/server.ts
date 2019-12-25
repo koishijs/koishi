@@ -3,7 +3,7 @@ import debug from 'debug'
 import * as http from 'http'
 import * as errors from './errors'
 import { createHmac } from 'crypto'
-import { camelCase, snakeCase, capitalize } from 'koishi-utils'
+import { camelCase, snakeCase, capitalize, paramCase } from 'koishi-utils'
 import { Meta, VersionInfo, ContextType } from './meta'
 import { App, AppOptions } from './app'
 import { CQResponse } from './sender'
@@ -152,7 +152,7 @@ export abstract class Server {
 
     // emit events
     for (const event of events) {
-      app.emitEvent(meta, event as any, meta)
+      app.emitEvent(meta, paramCase(event) as any, meta)
     }
   }
 
@@ -221,11 +221,10 @@ export class HttpServer extends Server {
           return res.end()
         }
 
-        // ok, dispatch events
+        // handle quick operations
         res.statusCode = 200
         const app = this.appMap[meta.selfId]
         if (app.options.quickOperationTimeout > 0) {
-          // handle quick operations
           meta.$response = (data) => {
             clearTimeout(timer)
             res.write(JSON.stringify(snakeCase(data)))
@@ -240,6 +239,8 @@ export class HttpServer extends Server {
         } else {
           res.end()
         }
+
+        // dispatch events
         this.dispatchMeta(meta)
       })
     })
