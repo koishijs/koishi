@@ -4,7 +4,7 @@ import express, { Express } from 'express'
 import { EventEmitter } from 'events'
 import { createHmac } from 'crypto'
 import { Meta, PostType, MetaTypeMap, SubTypeMap } from 'koishi-core'
-import { camelCase, snakeCase } from 'koishi-utils'
+import { camelCase, snakeCase, sleep } from 'koishi-utils'
 
 export const SERVER_PORT = 15700
 export const MAX_TIMEOUT = 1000
@@ -47,7 +47,7 @@ export async function postMeta (meta: Meta, port = CLIENT_PORT, secret?: string)
   return axios.post(`http://localhost:${port}`, data, { headers })
 }
 
-export async function waitFor (method: string) {
+export async function waitFor (method: string, timeout = MAX_TIMEOUT) {
   return new Promise((resolve, reject) => {
     const listener = (query: any) => {
       clearTimeout(timer)
@@ -57,24 +57,39 @@ export async function waitFor (method: string) {
     const timer = setTimeout(() => {
       emitter.off(method, listener)
       reject(new Error('timeout'))
-    }, MAX_TIMEOUT)
+    }, timeout)
   })
 }
 
 export class ServerSession {
+  action: string
+
   constructor (public type: MetaTypeMap['message'], subType: SubTypeMap['message'], public meta?: Meta<'message'>) {
     meta.postType = 'message'
     meta.messageType = type
     meta.subType = subType
+    this.action = `send_${this.type}_msg`
   }
 
-  async send (message: string) {
+  async waitForResponse (message: string) {
     await postMeta({ ...this.meta, message })
-    const response = await waitFor(`send_${this.type}_msg`) as any
+    const response = await waitFor(this.action) as any
     return response.message
   }
 
   testSnapshot (message: string) {
-    return expect(this.send(message)).resolves.toMatchSnapshot(message)
+    return expect(this.waitForResponse(message)).resolves.toMatchSnapshot(message)
+  }
+
+  async shouldHaveNoResponse (message: string): Promise<void> {
+    await postMeta({ ...this.meta, message })
+    return new Promise((resolve, reject) => {
+      const listener = () => reject(new Error('has response'))
+      emitter.once(this.action, listener)
+      sleep(0).then(() => {
+        resolve()
+        emitter.off(this.action, listener)
+      })
+    })
   }
 }
