@@ -9,7 +9,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   moduleFileExtensions: ['ts', 'js', 'json'],
-  coverageReporters: ['text'],
+  coverageReporters: ['text', 'json'],
   coveragePathIgnorePatterns: [
     'test-utils/',
     'tests/',

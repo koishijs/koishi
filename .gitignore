@@ -2,6 +2,7 @@ dist
 
 /docs
 /bots
+/coverage
 
 yarn.lock
 node_modules/

@@ -29,5 +29,9 @@ jobs:
       run: yarn lint
     - name: Jest
       run: yarn jest --coverage
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage/coverage-final.json
     - name: Publish
       run: npx ts-node build/publish
