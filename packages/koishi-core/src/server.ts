@@ -3,8 +3,8 @@ import debug from 'debug'
 import * as http from 'http'
 import * as errors from './errors'
 import { createHmac } from 'crypto'
-import { camelCase, snakeCase } from 'koishi-utils'
-import { Meta, VersionInfo } from './meta'
+import { camelCase, snakeCase, capitalize } from 'koishi-utils'
+import { Meta, VersionInfo, ContextType } from './meta'
 import { App, AppOptions } from './app'
 import { CQResponse } from './sender'
 
@@ -26,7 +26,7 @@ export abstract class Server {
     this.bind(app)
   }
 
-  protected _handleMeta (data: any) {
+  protected prepareMeta (data: any) {
     const meta = camelCase<Meta>(data)
     if (!meta.selfId) {
       // below version 3.4
@@ -37,6 +37,123 @@ export abstract class Server {
       app._registerSelfId(meta.selfId)
     }
     return meta
+  }
+
+  async dispatchMeta (meta: Meta) {
+    // prepare prefix
+    let ctxType: ContextType, ctxId: number
+    if (meta.groupId) {
+      ctxType = 'group'
+      ctxId = meta.groupId
+    } else if (meta.discussId) {
+      ctxType = 'discuss'
+      ctxId = meta.discussId
+    } else if (meta.userId) {
+      ctxType = 'user'
+      ctxId = meta.userId
+    }
+
+    // polyfill CQHTTP 3.x events
+    // https://cqhttp.cc/docs/4.12/#/UpgradeGuide
+    /* eslint-disable dot-notation */
+    if (typeof meta.anonymous === 'string') {
+      meta.anonymous = {
+        name: meta.anonymous,
+        flag: meta['anonymousFlag'],
+      }
+      delete meta['anonymousFlag']
+    // @ts-ignore
+    } else if (meta.postType === 'event') {
+      meta.postType = 'notice'
+      meta.noticeType = meta['event']
+      delete meta['event']
+    } else if (meta.postType === 'request') {
+      meta.comment = meta.message
+      delete meta.message
+    }
+    /* eslint-enable dot-notation */
+
+    // prepare events
+    const events: string[] = []
+    if (meta.postType === 'message' || meta.postType === 'send') {
+      events.push(meta.postType)
+    } else if (meta.postType === 'request') {
+      events.push('request/' + meta.requestType)
+    } else if (meta.postType === 'notice') {
+      events.push(meta.noticeType)
+    } else {
+      events.push(meta.metaEventType)
+    }
+    if (meta.subType) events.unshift(events[0] + '/' + meta.subType)
+
+    // generate path
+    const path = (ctxType ? `/${ctxType}/${ctxId}/` : '/') + events[0]
+    Object.defineProperty(meta, '$path', { value: path })
+    Object.defineProperty(meta, '$ctxId', { value: ctxId })
+    Object.defineProperty(meta, '$ctxType', { value: ctxType })
+
+    const app = this.appMap[meta.selfId]
+    if (!app) return
+
+    // add context properties
+    if (meta.postType === 'message') {
+      if (meta.messageType === 'group') {
+        if (app.database) {
+          Object.defineProperty(meta, '$group', {
+            value: await app.database.getGroup(meta.groupId),
+            writable: true,
+          })
+        }
+        meta.$delete = async () => {
+          if (meta.$response) return meta.$response({ delete: true })
+          return app.sender.deleteMsgAsync(meta.messageId)
+        }
+        meta.$ban = async (duration = 30 * 60) => {
+          if (meta.$response) return meta.$response({ ban: true, banDuration: duration })
+          return meta.anonymous
+            ? app.sender.setGroupAnonymousBanAsync(meta.groupId, meta.anonymous.flag, duration)
+            : app.sender.setGroupBanAsync(meta.groupId, meta.userId, duration)
+        }
+        meta.$kick = async () => {
+          if (meta.$response) return meta.$response({ kick: true })
+          if (meta.anonymous) return
+          return app.sender.setGroupKickAsync(meta.groupId, meta.userId)
+        }
+      }
+      meta.$send = async (message, autoEscape = false) => {
+        if (meta.$response) {
+          app.emitEvent(meta, 'before-send', {
+            postType: 'send',
+            sendType: meta.messageType,
+            $path: `/${ctxType}/${ctxId}/send/`,
+            $ctxId: ctxId,
+            $ctxType: ctxType,
+            [ctxType + 'Id']: ctxId,
+            message,
+          })
+          return meta.$response({ reply: message, autoEscape, atSender: false })
+        }
+        return app.sender[`send${capitalize(meta.messageType)}MsgAsync`](ctxId, message, autoEscape)
+      }
+    } else if (meta.postType === 'request') {
+      meta.$approve = async (remark = '') => {
+        if (meta.$response) return meta.$response({ approve: true, remark })
+        return meta.requestType === 'friend'
+          ? app.sender.setFriendAddRequestAsync(meta.flag, true, remark)
+          : app.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, true)
+      }
+      meta.$reject = async (reason = '') => {
+        if (meta.$response) return meta.$response({ approve: false, reason })
+        return meta.requestType === 'friend'
+          ? app.sender.setFriendAddRequestAsync(meta.flag, false)
+          : app.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, false, reason)
+      }
+    }
+
+    // emit events
+    for (const event of events) {
+      app.emitEvent(meta, event as any, meta)
+    }
   }
 
   bind (app: App) {
@@ -55,8 +172,8 @@ export abstract class Server {
 
   async listen () {
     if (this.isListening) return
-    await this._listen()
     this.isListening = true
+    await this._listen()
     if (this.versionLessThan(3)) {
       throw new Error(errors.UNSUPPORTED_CQHTTP_VERSION)
     } else if (this.versionLessThan(3, 4)) {
@@ -98,7 +215,7 @@ export class HttpServer extends Server {
         // no matched application
         const data = JSON.parse(body)
         showServerLog('receive %o', data)
-        const meta = this._handleMeta(data)
+        const meta = this.prepareMeta(data)
         if (!meta) {
           res.statusCode = 403
           return res.end()
@@ -123,7 +240,7 @@ export class HttpServer extends Server {
         } else {
           res.end()
         }
-        app.dispatchMeta(meta)
+        this.dispatchMeta(meta)
       })
     })
   }
@@ -201,8 +318,8 @@ export class WsClient extends Server {
             resolve()
           }
           if ('post_type' in parsed) {
-            const meta = this._handleMeta(parsed)
-            if (meta) this.appMap[meta.selfId].dispatchMeta(meta)
+            const meta = this.prepareMeta(parsed)
+            if (meta) this.dispatchMeta(meta)
           } else {
             if (parsed.echo === -1) {
               this.version = camelCase(parsed.data)

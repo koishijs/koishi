@@ -236,8 +236,8 @@ export class Command {
     try {
       return this._action(config, ...args)
     } catch (error) {
-      this.context.app.emitEvent(meta, 'error/command', error)
-      this.context.app.emitEvent(meta, 'error', error)
+      this.context.app.receiver.emit('error/command', error)
+      this.context.app.receiver.emit('error', error)
     }
   }
 

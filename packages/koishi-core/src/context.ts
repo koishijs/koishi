@@ -247,9 +247,10 @@ export interface EventMap {
   'error/command' (error: Error): any
   'error/middleware' (error: Error): any
   'ready' (): any
-  'connect' (): any
-  'connected' (): any
   'before-connect' (): any
+  'connect' (): any
+  'before-disconnect' (): any
+  'disconnect' (): any
 }
 
 export type Events = keyof EventMap

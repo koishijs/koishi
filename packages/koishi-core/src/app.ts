@@ -6,8 +6,8 @@ import { Command, ShortcutConfig, ParsedCommandLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope, Events, EventMap } from './context'
 import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig } from './database'
 import { updateActivity, showSuggestions } from './utils'
-import { Meta, MessageMeta, ContextType } from './meta'
-import { simplify, capitalize } from 'koishi-utils'
+import { Meta, MessageMeta } from './meta'
+import { simplify } from 'koishi-utils'
 import * as errors from './errors'
 
 export interface AppOptions {
@@ -181,8 +181,8 @@ export class App extends Context {
   }
 
   async start () {
-    const tasks: Promise<any>[] = []
     this.receiver.emit('before-connect')
+    const tasks: Promise<any>[] = []
     if (this.database) {
       for (const type in this.options.database) {
         tasks.push(this.database[type]?.start?.())
@@ -198,10 +198,10 @@ export class App extends Context {
       this._isReady = true
     }
     this.receiver.emit('connect')
-    this.receiver.emit('connected')
   }
 
   async stop () {
+    this.receiver.emit('before-disconnect')
     const tasks: Promise<any>[] = []
     if (this.database) {
       for (const type in this.options.database) {
@@ -213,125 +213,11 @@ export class App extends Context {
       this.server.close()
     }
     showLog('stopped')
-  }
-
-  async dispatchMeta (meta: Meta, emitEvents = true) {
-    // prepare prefix
-    let ctxType: ContextType, ctxId: number
-    if (meta.groupId) {
-      ctxType = 'group'
-      ctxId = meta.groupId
-    } else if (meta.discussId) {
-      ctxType = 'discuss'
-      ctxId = meta.discussId
-    } else if (meta.userId) {
-      ctxType = 'user'
-      ctxId = meta.userId
-    }
-
-    // polyfill CQHTTP 3.x events
-    // https://cqhttp.cc/docs/4.12/#/UpgradeGuide
-    /* eslint-disable dot-notation */
-    if (typeof meta.anonymous === 'string') {
-      meta.anonymous = {
-        name: meta.anonymous,
-        flag: meta['anonymousFlag'],
-      }
-      delete meta['anonymousFlag']
-    // @ts-ignore
-    } else if (meta.postType === 'event') {
-      meta.postType = 'notice'
-      meta.noticeType = meta['event']
-      delete meta['event']
-    } else if (meta.postType === 'request') {
-      meta.comment = meta.message
-      delete meta.message
-    }
-    /* eslint-enable dot-notation */
-
-    // prepare events
-    const events: string[] = []
-    if (meta.postType === 'message' || meta.postType === 'send') {
-      events.push(meta.postType)
-    } else if (meta.postType === 'request') {
-      events.push('request/' + meta.requestType)
-    } else if (meta.postType === 'notice') {
-      events.push(meta.noticeType)
-    } else {
-      events.push(meta.metaEventType)
-    }
-    if (meta.subType) events.unshift(events[0] + '/' + meta.subType)
-
-    // generate path
-    const path = (ctxType ? `/${ctxType}/${ctxId}/` : '/') + events[0]
-    Object.defineProperty(meta, '$path', { value: path })
-    Object.defineProperty(meta, '$ctxId', { value: ctxId })
-    Object.defineProperty(meta, '$ctxType', { value: ctxType })
-    showReceiverLog('path %s', path)
-
-    // add context properties
-    if (meta.postType === 'message') {
-      if (meta.messageType === 'group') {
-        if (this.database) {
-          Object.defineProperty(meta, '$group', {
-            value: await this.database.getGroup(meta.groupId),
-            writable: true,
-          })
-        }
-        meta.$delete = async () => {
-          if (meta.$response) return meta.$response({ delete: true })
-          return this.sender.deleteMsgAsync(meta.messageId)
-        }
-        meta.$ban = async (duration = 30 * 60) => {
-          if (meta.$response) return meta.$response({ ban: true, banDuration: duration })
-          return meta.anonymous
-            ? this.sender.setGroupAnonymousBanAsync(meta.groupId, meta.anonymous.flag, duration)
-            : this.sender.setGroupBanAsync(meta.groupId, meta.userId, duration)
-        }
-        meta.$kick = async () => {
-          if (meta.$response) return meta.$response({ kick: true })
-          if (meta.anonymous) return
-          return this.sender.setGroupKickAsync(meta.groupId, meta.userId)
-        }
-      }
-      meta.$send = async (message, autoEscape = false) => {
-        if (meta.$response) {
-          this.emitEvent(meta, 'before-send', {
-            postType: 'send',
-            sendType: meta.messageType,
-            $path: `/${ctxType}/${ctxId}/send/`,
-            $ctxId: ctxId,
-            $ctxType: ctxType,
-            [ctxType + 'Id']: ctxId,
-            message,
-          })
-          return meta.$response({ reply: message, autoEscape, atSender: false })
-        }
-        return this.sender[`send${capitalize(meta.messageType)}MsgAsync`](ctxId, message, autoEscape)
-      }
-    } else if (meta.postType === 'request') {
-      meta.$approve = async (remark = '') => {
-        if (meta.$response) return meta.$response({ approve: true, remark })
-        return meta.requestType === 'friend'
-          ? this.sender.setFriendAddRequestAsync(meta.flag, true, remark)
-          : this.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, true)
-      }
-      meta.$reject = async (reason = '') => {
-        if (meta.$response) return meta.$response({ approve: false, reason })
-        return meta.requestType === 'friend'
-          ? this.sender.setFriendAddRequestAsync(meta.flag, false)
-          : this.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, false, reason)
-      }
-    }
-
-    // emit events
-    if (!emitEvents) return
-    for (const event of events) {
-      this.emitEvent(meta, event as any, meta)
-    }
+    this.receiver.emit('disconnect')
   }
 
   emitEvent <K extends Events> (meta: Meta, event: K, ...payload: Parameters<EventMap[K]>) {
+    showReceiverLog('path %s', meta.$path)
     for (const path in this._contexts) {
       const context = this._contexts[path]
       if (!context.match(meta)) continue
@@ -467,17 +353,14 @@ export class App extends Context {
     let index = 0
     const next = async (fallback?: NextFunction) => {
       if (!this._middlewareSet.has(counter)) {
-        return this.emitEvent(meta, 'error', new Error(errors.ISOLATED_NEXT))
+        return this.receiver.emit('error', new Error(errors.ISOLATED_NEXT))
       }
       if (fallback) middlewares.push((_, next) => fallback(next))
-      const middleware = middlewares[index++]
-      if (middleware) {
-        try {
-          return middleware(meta, next)
-        } catch (error) {
-          this.emitEvent(meta, 'error/middleware', error)
-          this.emitEvent(meta, 'error', error)
-        }
+      try {
+        return middlewares[index++]?.(meta, next)
+      } catch (error) {
+        this.receiver.emit('error/middleware', error)
+        this.receiver.emit('error', error)
       }
     }
     await next()
