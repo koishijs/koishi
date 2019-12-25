@@ -57,7 +57,7 @@ export default function apply (ctx: Context, options: RepeaterOptions) {
   options = { ...defaultOptions, ...options }
   ctx = ctx.intersect(ctx.app.groups)
 
-  ctx.receiver.on('send', ({ groupId, message }) => {
+  ctx.receiver.on('before-send', ({ groupId, message }) => {
     const state = getState(groupId)
     state.repeated = true
     if (state.message === message) {

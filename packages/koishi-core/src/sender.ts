@@ -85,17 +85,6 @@ export class Sender {
       : this.get(action + '_async', params)
   }
 
-  private async _dispatchSendMeta (type: ContextType, subId: number, message: string, messageId?: number) {
-    const meta: Meta<'send'> = {
-      postType: 'send',
-      sendType: type === 'user' ? 'private' : type as any,
-      messageId,
-      message,
-    }
-    meta[type + 'Id'] = subId
-    await this.app.dispatchMeta(meta)
-  }
-
   private _assertInteger (name: string, value: any) {
     if (!isInteger(value)) throw new Error('missing or invalid argument: ' + name)
   }
@@ -110,49 +99,69 @@ export class Sender {
     }
   }
 
+  private _createSendMeta ($ctxType: ContextType, $ctxId: number, message: string) {
+    const sendType = $ctxType === 'user' ? 'private' : $ctxType as any
+    const $path = `/${$ctxType}/${$ctxId}/send/`
+    return {
+      $path,
+      $ctxId,
+      $ctxType,
+      message,
+      sendType,
+      postType: 'send',
+      [$ctxType + 'Id']: $ctxId,
+    } as Meta<'send'>
+  }
+
   async sendGroupMsg (groupId: number, message: string, autoEscape?: boolean) {
     this._assertInteger('groupId', groupId)
     if (!message) return
+    const meta = this._createSendMeta('group', groupId, message)
+    this.app.emitEvent(meta, 'before-send', meta)
     const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message, autoEscape })
-    await this._dispatchSendMeta('group', groupId, message, messageId)
+    meta.messageId = messageId
+    this.app.emitEvent(meta, 'send', meta)
     return messageId
   }
 
   async sendGroupMsgAsync (groupId: number, message: string, autoEscape?: boolean) {
     this._assertInteger('groupId', groupId)
     if (!message) return
-    await this.get('send_group_msg_async', { groupId, message, autoEscape })
-    return this._dispatchSendMeta('group', groupId, message)
+    return this.get<void>('send_group_msg_async', { groupId, message, autoEscape })
   }
 
   async sendDiscussMsg (discussId: number, message: string, autoEscape?: boolean) {
     this._assertInteger('discussId', discussId)
     if (!message) return
+    const meta = this._createSendMeta('discuss', discussId, message)
+    this.app.emitEvent(meta, 'before-send', meta)
     const { messageId } = await this.get<MessageResponse>('send_discuss_msg', { discussId, message, autoEscape })
-    await this._dispatchSendMeta('discuss', discussId, message, messageId)
+    meta.messageId = messageId
+    this.app.emitEvent(meta, 'send', meta)
     return messageId
   }
 
   async sendDiscussMsgAsync (discussId: number, message: string, autoEscape?: boolean) {
     this._assertInteger('discussId', discussId)
     if (!message) return
-    await this.get('send_discuss_msg_async', { discussId, message, autoEscape })
-    return this._dispatchSendMeta('discuss', discussId, message)
+    return this.get<void>('send_discuss_msg_async', { discussId, message, autoEscape })
   }
 
   async sendPrivateMsg (userId: number, message: string, autoEscape?: boolean) {
     this._assertInteger('userId', userId)
     if (!message) return
+    const meta = this._createSendMeta('user', userId, message)
+    this.app.emitEvent(meta, 'before-send', meta)
     const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message, autoEscape })
-    await this._dispatchSendMeta('user', userId, message, messageId)
+    meta.messageId = messageId
+    this.app.emitEvent(meta, 'send', meta)
     return messageId
   }
 
   async sendPrivateMsgAsync (userId: number, message: string, autoEscape?: boolean) {
     this._assertInteger('userId', userId)
     if (!message) return
-    await this.get('send_private_msg_async', { userId, message, autoEscape })
-    return this._dispatchSendMeta('user', userId, message)
+    return this.get<void>('send_private_msg_async', { userId, message, autoEscape })
   }
 
   async deleteMsg (messageId: number) {

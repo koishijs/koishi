@@ -94,6 +94,7 @@ export class App extends Context {
   _shortcutMap: Record<string, Command> = {}
   _middlewares: [Context, Middleware][] = []
 
+  private _isReady = false
   private _middlewareCounter = 0
   private _middlewareSet = new Set<number>()
   private _contexts: Record<string, Context> = { [appIdentifier]: this }
@@ -131,7 +132,13 @@ export class App extends Context {
   }
 
   _registerSelfId (selfId?: number) {
-    if (selfId) this.options.selfId = selfId
+    if (selfId) {
+      this.options.selfId = selfId
+      if (!this._isReady && this.server?.isListening) {
+        this.receiver.emit('ready')
+        this._isReady = true
+      }
+    }
     appMap[this.selfId] = this
     selfIds.push(this.selfId)
     if (this.options.type) this.server.appMap[this.selfId] = this
@@ -175,6 +182,7 @@ export class App extends Context {
 
   async start () {
     const tasks: Promise<any>[] = []
+    this.receiver.emit('before-connect')
     if (this.database) {
       for (const type in this.options.database) {
         tasks.push(this.database[type]?.start?.())
@@ -185,6 +193,12 @@ export class App extends Context {
     }
     await Promise.all(tasks)
     showLog('started')
+    if (this.selfId && !this._isReady) {
+      this.receiver.emit('ready')
+      this._isReady = true
+    }
+    this.receiver.emit('connect')
+    this.receiver.emit('connected')
   }
 
   async stop () {
@@ -281,7 +295,18 @@ export class App extends Context {
         }
       }
       meta.$send = async (message, autoEscape = false) => {
-        if (meta.$response) return meta.$response({ reply: message, autoEscape, atSender: false })
+        if (meta.$response) {
+          this.emitEvent(meta, 'before-send', {
+            postType: 'send',
+            sendType: meta.messageType,
+            $path: `/${ctxType}/${ctxId}/send/`,
+            $ctxId: ctxId,
+            $ctxType: ctxType,
+            [ctxType + 'Id']: ctxId,
+            message,
+          })
+          return meta.$response({ reply: message, autoEscape, atSender: false })
+        }
         return this.sender[`send${capitalize(meta.messageType)}MsgAsync`](ctxId, message, autoEscape)
       }
     } else if (meta.postType === 'request') {

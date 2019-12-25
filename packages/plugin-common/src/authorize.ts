@@ -59,12 +59,7 @@ export default function apply (ctx: Context, config: AuthorizeConfig) {
     }
   }
 
-  app.receiver.once('connected', async () => {
-    if (!app.selfId) {
-      const info = await app.sender.getLoginInfo()
-      app._registerSelfId(info.userId)
-    }
-
+  app.receiver.once('ready', async () => {
     await Promise.all([
       ...Object.keys(authorityMap).map(async (key) => {
         await updateAuthorizeInfo(+key, authorityMap[key])

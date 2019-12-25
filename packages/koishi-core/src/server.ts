@@ -17,7 +17,7 @@ export abstract class Server {
   public appList: App[] = []
   public version: VersionInfo
   public appMap: Record<number, App> = {}
-  private _isListening = false
+  public isListening = false
 
   protected abstract _listen (): Promise<void>
   abstract close (): void
@@ -54,20 +54,16 @@ export abstract class Server {
   }
 
   async listen () {
-    if (this._isListening) return
-    this._isListening = true
+    if (this.isListening) return
     await this._listen()
+    this.isListening = true
     if (this.versionLessThan(3)) {
       throw new Error(errors.UNSUPPORTED_CQHTTP_VERSION)
     } else if (this.versionLessThan(3, 4)) {
-      const anonymous = this.appList.filter(app => app.options.type && !app.selfId)
-      if (anonymous.length > 1) throw new Error(errors.MULTIPLE_ANONYMOUS_BOTS)
-      const info = await anonymous[0].sender.getLoginInfo()
-      anonymous[0]._registerSelfId(info.userId)
-    }
-    for (const app of this.appList) {
-      app.receiver.emit('connect')
-      app.receiver.emit('connected')
+      const apps = this.appList.filter(app => app.options.type && !app.selfId)
+      if (apps.length > 1) throw new Error(errors.MULTIPLE_ANONYMOUS_BOTS)
+      const info = await apps[0].sender.getLoginInfo()
+      apps[0]._registerSelfId(info.userId)
     }
   }
 }

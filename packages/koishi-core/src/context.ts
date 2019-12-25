@@ -242,11 +242,14 @@ export interface EventMap {
   'lifecycle/enable' (meta: Meta<'meta_event'>): any
   'lifecycle/disable' (meta: Meta<'meta_event'>): any
   'send' (meta: Meta<'send'>): any
+  'before-send' (meta: Meta<'send'>): any
   'error' (error: Error): any
   'error/command' (error: Error): any
   'error/middleware' (error: Error): any
+  'ready' (): any
   'connect' (): any
   'connected' (): any
+  'before-connect' (): any
 }
 
 export type Events = keyof EventMap
@@ -254,5 +257,8 @@ export type Events = keyof EventMap
 export interface Receiver extends EventEmitter {
   on <K extends Events> (event: K, listener: EventMap[K]): this
   once <K extends Events> (event: K, listener: EventMap[K]): this
+  off <K extends Events> (event: K, listener: EventMap[K]): this
+  addListener <K extends Events> (event: K, listener: EventMap[K]): this
+  removeListener <K extends Events> (event: K, listener: EventMap[K]): this
   emit <K extends Events> (event: K, ...args: Parameters<EventMap[K]>): boolean
 }
