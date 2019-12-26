@@ -329,4 +329,29 @@ describe('Sender API', () => {
       pluginPatchVersion: 3,
     })
   })
+
+  test('getStatus', async () => {
+    await expectReqResToBe(() => sender.setRestart(true, false, false), {}, '_set_restart', { clean_log: 'true', clean_cache: 'false', clean_event: 'false' })
+    await expectReqResToBe(() => sender.setRestart(false, true, false), {}, '_set_restart', { clean_log: 'false', clean_cache: 'true', clean_event: 'false' })
+    await expectReqResToBe(() => sender.setRestart(false, false, true), {}, '_set_restart', { clean_log: 'false', clean_cache: 'false', clean_event: 'true' })
+  })
+
+  test('setRestartPlugin', async () => {
+    await expectReqResToBe(() => sender.setRestartPlugin(10), {}, 'set_restart_plugin', { delay: '10' })
+  })
+
+  test('cleanDataDir', async () => {
+    await expect(sender.cleanDataDir(undefined)).rejects.toHaveProperty('message', 'missing argument: dataDir')
+    await expect(sender.cleanDataDir('foo' as any)).rejects.toHaveProperty('message', 'invalid argument: dataDir')
+    await expect(sender.cleanDataDirAsync(undefined)).rejects.toHaveProperty('message', 'missing argument: dataDir')
+    await expect(sender.cleanDataDirAsync('foo' as any)).rejects.toHaveProperty('message', 'invalid argument: dataDir')
+
+    await expectReqResToBe(() => sender.cleanDataDir('image'), {}, 'clean_data_dir', { data_dir: 'image' })
+    await expectReqResToBe(() => sender.cleanDataDirAsync('image'), {}, 'clean_data_dir_async', { data_dir: 'image' })
+  })
+
+  test('cleanPluginLog', async () => {
+    await expectReqResToBe(() => sender.cleanPluginLog(), {}, 'clean_plugin_log', {})
+    await expectReqResToBe(() => sender.cleanPluginLogAsync(), {}, 'clean_plugin_log_async', {})
+  })
 })

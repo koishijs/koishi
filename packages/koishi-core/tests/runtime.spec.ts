@@ -1,5 +1,6 @@
 import { createApp, createServer, ServerSession, createMeta } from 'koishi-test-utils'
-import { messages } from '../src/messages'
+import { errors, messages } from '../src/messages'
+import { App } from '../src'
 import { format } from 'util'
 
 const app = createApp()
@@ -32,6 +33,15 @@ app.command('err')
 
 const session1 = new ServerSession('private', 'friend', { userId: 456 })
 const session2 = new ServerSession('private', 'friend', { userId: 789 })
+
+describe('configurations', () => {
+  test('server', () => {
+    expect(() => new App({ type: 123 as any })).toThrow(errors.UNSUPPORTED_SERVER_TYPE)
+    expect(() => new App({ type: 'foo' as any })).toThrow(errors.UNSUPPORTED_SERVER_TYPE)
+    expect(() => new App({ type: 'http' })).toThrow(format(errors.MISSING_CONFIGURATION, 'port'))
+    expect(() => new App({ type: 'ws' })).toThrow(format(errors.MISSING_CONFIGURATION, 'server'))
+  })
+})
 
 describe('command execution', () => {
   const mock = jest.fn()

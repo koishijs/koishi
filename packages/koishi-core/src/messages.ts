@@ -11,7 +11,7 @@ export const messages = {
   COMMAND_SUGGESTION_PREFIX: '没有此命令。',
   COMMAND_SUGGESTION_SUFFIX: '发送空行以调用推测的指令。',
   SUGGESTION_TEXT: '你要找的是不是%s？',
-}
+} as const
 
 export const errors = {
   DUPLICATE_COMMAND: 'duplicate command names',
@@ -22,6 +22,7 @@ export const errors = {
   INVALID_SUBCOMMAND: 'invalid subcommand',
   ISOLATED_NEXT: 'isolated next function',
   UNSUPPORTED_SERVER_TYPE: 'unsupported server type, expect "http" or "ws"',
+  MISSING_CONFIGURATION: 'missing configuration "%s"',
   UNSUPPORTED_CQHTTP_VERSION: 'your cqhttp version is not compatible with koishi, please upgrade your cqhttp to 3.0 or above',
   MULTIPLE_ANONYMOUS_BOTS: 'your cqhttp version does not support multiple anonymous bots, please upgrade your cqhttp to 3.4 or above',
-}
+} as const

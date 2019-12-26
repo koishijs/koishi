@@ -7,6 +7,7 @@ import { camelCase, snakeCase, capitalize, paramCase } from 'koishi-utils'
 import { Meta, VersionInfo, ContextType } from './meta'
 import { App, AppOptions } from './app'
 import { CQResponse } from './sender'
+import { format } from 'util'
 
 const showServerLog = debug('koishi:server')
 
@@ -348,7 +349,7 @@ export function createServer (app: App) {
   const [key, serverMap, Server] = serverTypes[app.options.type]
   const value = app.options[key] as any
   if (!value) {
-    throw new Error(`missing configuration "${key}"`)
+    throw new Error(format(errors.MISSING_CONFIGURATION, key))
   }
   if (value in serverMap) {
     return serverMap[value].bind(app)

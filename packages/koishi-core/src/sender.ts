@@ -484,7 +484,7 @@ export class Sender {
     await this.get('_set_restart', { cleanLog, cleanCache, cleanEvent })
   }
 
-  async setRestartPlugin (delay = 0) {
+  async setRestartPlugin (delay?: number) {
     this._assertVersion('sender.setRestartPlugin()', 3, 2)
     await this.get('set_restart_plugin', { delay })
   }
