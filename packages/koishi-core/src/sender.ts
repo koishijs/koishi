@@ -358,30 +358,26 @@ export class Sender {
     }
   }
 
-  getLoginInfo (): Promise<AccountInfo> {
+  async getLoginInfo (): Promise<AccountInfo> {
     return this.get('get_login_info')
   }
 
-  getVipInfo (): Promise<VipInfo> {
+  async getVipInfo (): Promise<VipInfo> {
     this._assertVersion('sender.getVipInfo()', 4, 3, 1)
     return this.get('_get_vip_info')
   }
 
-  getStrangerInfo (userId: number, noCache = false): Promise<StrangerInfo> {
+  async getStrangerInfo (userId: number, noCache?: boolean): Promise<StrangerInfo> {
     this._assertInteger('userId', userId)
     return this.get('get_stranger_info', { userId, noCache })
   }
 
-  getFriendList (): Promise<FriendInfo[]> {
+  async getFriendList (): Promise<FriendInfo[]> {
     this._assertVersion('sender.getFriendList()', 4, 12)
     return this.get('get_friend_list')
   }
 
-  getGroupList (): Promise<ListedGroupInfo[]> {
-    return this.get('get_group_list')
-  }
-
-  getGroupInfo (groupId: string, noCache = false): Promise<GroupInfo> {
+  async getGroupInfo (groupId: number, noCache?: boolean): Promise<GroupInfo> {
     this._assertInteger('groupId', groupId)
     this._assertVersion('sender.getGroupInfo()', 4, 0, 1)
     return this.app.server.versionLessThan(4, 12)
@@ -389,18 +385,22 @@ export class Sender {
       : this.get('get_group_info', { groupId, noCache })
   }
 
-  getGroupMemberInfo (groupId: number, userId: number, noCache = false): Promise<GroupMemberInfo> {
+  async getGroupList (): Promise<ListedGroupInfo[]> {
+    return this.get('get_group_list')
+  }
+
+  async getGroupMemberInfo (groupId: number, userId: number, noCache?: boolean): Promise<GroupMemberInfo> {
     this._assertInteger('groupId', groupId)
     this._assertInteger('userId', userId)
     return this.get('get_group_member_info', { groupId, userId, noCache })
   }
 
-  getGroupMemberList (groupId: number): Promise<GroupMemberInfo[]> {
+  async getGroupMemberList (groupId: number): Promise<GroupMemberInfo[]> {
     this._assertInteger('groupId', groupId)
     return this.get('get_group_member_list', { groupId })
   }
 
-  getGroupNotice (groupId: number): Promise<GroupNoticeInfo[]> {
+  async getGroupNotice (groupId: number): Promise<GroupNoticeInfo[]> {
     this._assertInteger('groupId', groupId)
     this._assertVersion('sender.getGroupNotice()', 4, 9)
     return this.get('_get_group_notice', { groupId })
@@ -408,12 +408,16 @@ export class Sender {
 
   async sendGroupNotice (groupId: number, title: string, content: string) {
     this._assertInteger('groupId', groupId)
+    if (!title) throw new Error('missing argument: title')
+    if (!content) throw new Error('missing argument: content')
     this._assertVersion('sender.sendGroupNotice()', 4, 9)
     await this.get('_send_group_notice', { groupId, title, content })
   }
 
   async sendGroupNoticeAsync (groupId: number, title: string, content: string) {
     this._assertInteger('groupId', groupId)
+    if (!title) throw new Error('missing argument: title')
+    if (!content) throw new Error('missing argument: content')
     this._assertVersion('sender.sendGroupNotice()', 4, 9)
     return this.getAsync('_send_group_notice', { groupId, title, content })
   }
@@ -428,31 +432,34 @@ export class Sender {
     return token
   }
 
-  getCredentials (): Promise<Credentials> {
+  async getCredentials (): Promise<Credentials> {
     return this.get('get_credentials')
   }
 
-  async getRecord (file: string, outFormat: RecordFormat, fullPath = false) {
+  async getRecord (file: string, outFormat: RecordFormat, fullPath?: boolean) {
+    if (!file) throw new Error('missing argument: file')
+    this._assertElement('outFormat', outFormat, ['mp3', 'amr', 'wma', 'm4a', 'spx', 'ogg', 'wav', 'flac'])
     this._assertVersion('sender.getRecord()', 3, 3)
     const response = await this.get('get_record', { file, outFormat, fullPath })
     return response.file as string
   }
 
   async getImage (file: string) {
+    if (!file) throw new Error('missing argument: file')
     this._assertVersion('sender.getImage()', 4, 8)
     const response = await this.get('get_image', { file })
     return response.file as string
   }
 
-  async canSendImage () {
-    this._assertVersion('sender.canSendImage()', 4, 8)
-    const { yes } = await this.get('can_send_image')
-    return yes as boolean
-  }
-
   async canSendRecord () {
     this._assertVersion('sender.canSendRecord()', 4, 8)
     const { yes } = await this.get('can_send_record')
+    return yes as boolean
+  }
+
+  async canSendImage () {
+    this._assertVersion('sender.canSendImage()', 4, 8)
+    const { yes } = await this.get('can_send_image')
     return yes as boolean
   }
 

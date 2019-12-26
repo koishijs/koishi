@@ -131,14 +131,14 @@ export abstract class Server {
       meta.$approve = async (remark = '') => {
         if (meta.$response) return meta.$response({ approve: true, remark })
         return meta.requestType === 'friend'
-          ? app.sender.setFriendAddRequestAsync(meta.flag, true, remark)
+          ? app.sender.setFriendAddRequestAsync(meta.flag, remark)
           : app.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, true)
       }
       meta.$reject = async (reason = '') => {
         if (meta.$response) return meta.$response({ approve: false, reason })
         return meta.requestType === 'friend'
           ? app.sender.setFriendAddRequestAsync(meta.flag, false)
-          : app.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, false, reason)
+          : app.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, reason)
       }
     }
 

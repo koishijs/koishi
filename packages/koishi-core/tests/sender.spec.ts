@@ -213,11 +213,120 @@ describe('Sender API', () => {
     await expectReqResToBe(() => sender.setGroupAddRequestAsync('foo', 'add', 'bar'), {}, 'set_group_add_request_async', { flag: 'foo', sub_type: 'add', approve: 'false', reason: 'bar' })
   })
 
+  const user_info = { user_id: 321 }
+  const userInfo = { userId: 321 }
+  const group_info = { group_id: 654 }
+  const groupInfo = { groupId: 654 }
+
   test('getLoginInfo', async () => {
-    await expectReqResToBe(() => sender.getLoginInfo(), {}, 'get_login_info', {})
+    await expectReqResToBe(() => sender.getLoginInfo(), user_info, 'get_login_info', {}, userInfo)
   })
 
   test('getVipInfo', async () => {
-    await expectReqResToBe(() => sender.getVipInfo(), {}, 'get_vip_info', {})
+    await expectReqResToBe(() => sender.getVipInfo(), user_info, '_get_vip_info', {}, userInfo)
+  })
+
+  test('getStrangerInfo', async () => {
+    await expect(sender.getStrangerInfo(undefined)).rejects.toHaveProperty('message', 'missing argument: userId')
+
+    await expectReqResToBe(() => sender.getStrangerInfo(123), user_info, 'get_stranger_info', { user_id: '123' }, userInfo)
+    await expectReqResToBe(() => sender.getStrangerInfo(123, true), user_info, 'get_stranger_info', { user_id: '123', no_cache: 'true' }, userInfo)
+  })
+
+  test('getFriendList', async () => {
+    await expectReqResToBe(() => sender.getFriendList(), [user_info], 'get_friend_list', {}, [userInfo])
+  })
+
+  test('getGroupInfo', async () => {
+    await expect(sender.getGroupInfo(undefined)).rejects.toHaveProperty('message', 'missing argument: groupId')
+
+    await expectReqResToBe(() => sender.getGroupInfo(456), group_info, 'get_group_info', { group_id: '456' }, groupInfo)
+    await expectReqResToBe(() => sender.getGroupInfo(456, true), group_info, 'get_group_info', { group_id: '456', no_cache: 'true' }, groupInfo)
+  })
+
+  test('getGroupList', async () => {
+    await expectReqResToBe(() => sender.getGroupList(), [group_info], 'get_group_list', {}, [groupInfo])
+  })
+
+  test('getGroupMemberInfo', async () => {
+    await expect(sender.getGroupMemberInfo(undefined, 123)).rejects.toHaveProperty('message', 'missing argument: groupId')
+    await expect(sender.getGroupMemberInfo(456, undefined)).rejects.toHaveProperty('message', 'missing argument: userId')
+
+    await expectReqResToBe(() => sender.getGroupMemberInfo(456, 123), user_info, 'get_group_member_info', { group_id: '456', user_id: '123' }, userInfo)
+    await expectReqResToBe(() => sender.getGroupMemberInfo(456, 123, true), user_info, 'get_group_member_info', { group_id: '456', user_id: '123', no_cache: 'true' }, userInfo)
+  })
+
+  test('getGroupMemberList', async () => {
+    await expect(sender.getGroupMemberList(undefined)).rejects.toHaveProperty('message', 'missing argument: groupId')
+
+    await expectReqResToBe(() => sender.getGroupMemberList(456), [user_info], 'get_group_member_list', { group_id: '456' }, [userInfo])
+  })
+
+  test('getGroupNotice', async () => {
+    await expect(sender.getGroupNotice(undefined)).rejects.toHaveProperty('message', 'missing argument: groupId')
+
+    await expectReqResToBe(() => sender.getGroupNotice(456), group_info, '_get_group_notice', { group_id: '456' }, groupInfo)
+  })
+
+  test('sendGroupNotice', async () => {
+    await expect(sender.sendGroupNotice(undefined, 'foo', 'bar')).rejects.toHaveProperty('message', 'missing argument: groupId')
+    await expect(sender.sendGroupNotice(456, undefined, 'bar')).rejects.toHaveProperty('message', 'missing argument: title')
+    await expect(sender.sendGroupNotice(456, 'foo', undefined)).rejects.toHaveProperty('message', 'missing argument: content')
+    await expect(sender.sendGroupNoticeAsync(undefined, 'foo', 'bar')).rejects.toHaveProperty('message', 'missing argument: groupId')
+    await expect(sender.sendGroupNoticeAsync(456, undefined, 'bar')).rejects.toHaveProperty('message', 'missing argument: title')
+    await expect(sender.sendGroupNoticeAsync(456, 'foo', undefined)).rejects.toHaveProperty('message', 'missing argument: content')
+
+    await expectReqResToBe(() => sender.sendGroupNotice(456, 'foo', 'bar'), {}, '_send_group_notice', { group_id: '456', title: 'foo', content: 'bar' })
+    await expectReqResToBe(() => sender.sendGroupNoticeAsync(456, 'foo', 'bar'), {}, '_send_group_notice_async', { group_id: '456', title: 'foo', content: 'bar' })
+  })
+
+  test('getCookies', async () => {
+    await expectReqResToBe(() => sender.getCookies(), { cookies: 'baz' }, 'get_cookies', {}, 'baz')
+    await expectReqResToBe(() => sender.getCookies('foo'), { cookies: 'baz' }, 'get_cookies', { domain: 'foo' }, 'baz')
+  })
+
+  test('getCsrfToken', async () => {
+    await expectReqResToBe(() => sender.getCsrfToken(), { token: 'baz' }, 'get_csrf_token', {}, 'baz')
+  })
+
+  test('getCredentials', async () => {
+    const credentials = { cookies: 'baz', token: 'bar' }
+    await expectReqResToBe(() => sender.getCredentials(), credentials, 'get_credentials', {}, credentials)
+  })
+
+  test('getRecord', async () => {
+    await expect(sender.getRecord(undefined, 'mp3')).rejects.toHaveProperty('message', 'missing argument: file')
+    await expect(sender.getRecord('foo', undefined)).rejects.toHaveProperty('message', 'missing argument: outFormat')
+
+    await expectReqResToBe(() => sender.getRecord('foo', 'mp3'), { file: 'bar' }, 'get_record', { file: 'foo', out_format: 'mp3' }, 'bar')
+    await expectReqResToBe(() => sender.getRecord('foo', 'mp3', true), { file: 'bar' }, 'get_record', { file: 'foo', out_format: 'mp3', full_path: 'true' }, 'bar')
+  })
+
+  test('getImage', async () => {
+    await expect(sender.getImage(undefined)).rejects.toHaveProperty('message', 'missing argument: file')
+
+    await expectReqResToBe(() => sender.getImage('foo'), { file: 'bar' }, 'get_image', { file: 'foo' }, 'bar')
+  })
+
+  test('canSendRecord', async () => {
+    await expectReqResToBe(() => sender.canSendRecord(), { yes: true }, 'can_send_record', {}, true)
+  })
+
+  test('canSendImage', async () => {
+    await expectReqResToBe(() => sender.canSendImage(), { yes: true }, 'can_send_image', {}, true)
+  })
+
+  test('getStatus', async () => {
+    const status = { good: true }
+    await expectReqResToBe(() => sender.getStatus(), status, 'get_status', {}, status)
+  })
+
+  test('getVersionInfo', async () => {
+    await expectReqResToBe(() => sender.getVersionInfo(), { plugin_version: '4.12.3' }, 'get_version_info', {}, {
+      pluginVersion: '4.12.3',
+      pluginMajorVersion: 4,
+      pluginMinorVersion: 12,
+      pluginPatchVersion: 3,
+    })
   })
 })
