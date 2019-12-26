@@ -142,4 +142,82 @@ describe('Sender API', () => {
     await expectReqResToBe(() => sender.setGroupAnonymousAsync(456), {}, 'set_group_anonymous_async', { group_id: '456', enable: 'true' })
     await expectReqResToBe(() => sender.setGroupAnonymousAsync(456, false), {}, 'set_group_anonymous_async', { group_id: '456', enable: 'false' })
   })
+
+  test('setGroupCard', async () => {
+    await expect(sender.setGroupCard(undefined, 123)).rejects.toHaveProperty('message', 'missing argument: groupId')
+    await expect(sender.setGroupCard(456, undefined)).rejects.toHaveProperty('message', 'missing argument: userId')
+    await expect(sender.setGroupCardAsync(undefined, 123)).rejects.toHaveProperty('message', 'missing argument: groupId')
+    await expect(sender.setGroupCardAsync(456, undefined)).rejects.toHaveProperty('message', 'missing argument: userId')
+
+    await expectReqResToBe(() => sender.setGroupCard(456, 123), {}, 'set_group_card', { user_id: '123', group_id: '456', card: '' })
+    await expectReqResToBe(() => sender.setGroupCard(456, 123, 'foo'), {}, 'set_group_card', { user_id: '123', group_id: '456', card: 'foo' })
+    await expectReqResToBe(() => sender.setGroupCardAsync(456, 123), {}, 'set_group_card_async', { user_id: '123', group_id: '456', card: '' })
+    await expectReqResToBe(() => sender.setGroupCardAsync(456, 123, 'foo'), {}, 'set_group_card_async', { user_id: '123', group_id: '456', card: 'foo' })
+  })
+
+  test('setGroupSpecialTitle', async () => {
+    await expect(sender.setGroupSpecialTitle(undefined, 123)).rejects.toHaveProperty('message', 'missing argument: groupId')
+    await expect(sender.setGroupSpecialTitle(456, undefined)).rejects.toHaveProperty('message', 'missing argument: userId')
+    await expect(sender.setGroupSpecialTitleAsync(undefined, 123)).rejects.toHaveProperty('message', 'missing argument: groupId')
+    await expect(sender.setGroupSpecialTitleAsync(456, undefined)).rejects.toHaveProperty('message', 'missing argument: userId')
+
+    await expectReqResToBe(() => sender.setGroupSpecialTitle(456, 123), {}, 'set_group_special_title', { user_id: '123', group_id: '456', special_title: '' })
+    await expectReqResToBe(() => sender.setGroupSpecialTitle(456, 123, 'foo'), {}, 'set_group_special_title', { user_id: '123', group_id: '456', special_title: 'foo' })
+    await expectReqResToBe(() => sender.setGroupSpecialTitleAsync(456, 123), {}, 'set_group_special_title_async', { user_id: '123', group_id: '456', special_title: '' })
+    await expectReqResToBe(() => sender.setGroupSpecialTitleAsync(456, 123, 'foo'), {}, 'set_group_special_title_async', { user_id: '123', group_id: '456', special_title: 'foo' })
+  })
+
+  test('setGroupLeave', async () => {
+    await expect(sender.setGroupLeave(undefined)).rejects.toHaveProperty('message', 'missing argument: groupId')
+    await expect(sender.setGroupLeaveAsync(undefined)).rejects.toHaveProperty('message', 'missing argument: groupId')
+
+    await expectReqResToBe(() => sender.setGroupLeave(456), {}, 'set_group_leave', { group_id: '456' })
+    await expectReqResToBe(() => sender.setGroupLeave(456, true), {}, 'set_group_leave', { group_id: '456', is_dismiss: 'true' })
+    await expectReqResToBe(() => sender.setGroupLeaveAsync(456), {}, 'set_group_leave_async', { group_id: '456' })
+    await expectReqResToBe(() => sender.setGroupLeaveAsync(456, true), {}, 'set_group_leave_async', { group_id: '456', is_dismiss: 'true' })
+  })
+
+  test('setDiscussLeave', async () => {
+    await expect(sender.setDiscussLeave(undefined)).rejects.toHaveProperty('message', 'missing argument: discussId')
+    await expect(sender.setDiscussLeaveAsync(undefined)).rejects.toHaveProperty('message', 'missing argument: discussId')
+
+    await expectReqResToBe(() => sender.setDiscussLeave(456), {}, 'set_discuss_leave', { discuss_id: '456' })
+    await expectReqResToBe(() => sender.setDiscussLeaveAsync(456), {}, 'set_discuss_leave_async', { discuss_id: '456' })
+  })
+
+  test('setFriendAddRequest', async () => {
+    await expect(sender.setFriendAddRequest(undefined)).rejects.toHaveProperty('message', 'missing argument: flag')
+    await expect(sender.setFriendAddRequestAsync(undefined)).rejects.toHaveProperty('message', 'missing argument: flag')
+
+    await expectReqResToBe(() => sender.setFriendAddRequest('foo'), {}, 'set_friend_add_request', { flag: 'foo', approve: 'true' })
+    await expectReqResToBe(() => sender.setFriendAddRequest('foo', false), {}, 'set_friend_add_request', { flag: 'foo', approve: 'false' })
+    await expectReqResToBe(() => sender.setFriendAddRequest('foo', 'bar'), {}, 'set_friend_add_request', { flag: 'foo', approve: 'true', remark: 'bar' })
+    await expectReqResToBe(() => sender.setFriendAddRequestAsync('foo'), {}, 'set_friend_add_request_async', { flag: 'foo', approve: 'true' })
+    await expectReqResToBe(() => sender.setFriendAddRequestAsync('foo', false), {}, 'set_friend_add_request_async', { flag: 'foo', approve: 'false' })
+    await expectReqResToBe(() => sender.setFriendAddRequestAsync('foo', 'bar'), {}, 'set_friend_add_request_async', { flag: 'foo', approve: 'true', remark: 'bar' })
+  })
+
+  test('setGroupAddRequest', async () => {
+    await expect(sender.setGroupAddRequest(undefined, 'add')).rejects.toHaveProperty('message', 'missing argument: flag')
+    await expect(sender.setGroupAddRequest('foo', undefined)).rejects.toHaveProperty('message', 'missing argument: subType')
+    await expect(sender.setGroupAddRequest('foo', 'bar' as any)).rejects.toHaveProperty('message', 'invalid argument: subType')
+    await expect(sender.setGroupAddRequestAsync(undefined, 'add')).rejects.toHaveProperty('message', 'missing argument: flag')
+    await expect(sender.setGroupAddRequestAsync('foo', undefined)).rejects.toHaveProperty('message', 'missing argument: subType')
+    await expect(sender.setGroupAddRequestAsync('foo', 'bar' as any)).rejects.toHaveProperty('message', 'invalid argument: subType')
+
+    await expectReqResToBe(() => sender.setGroupAddRequest('foo', 'add'), {}, 'set_group_add_request', { flag: 'foo', sub_type: 'add', approve: 'true' })
+    await expectReqResToBe(() => sender.setGroupAddRequest('foo', 'add', false), {}, 'set_group_add_request', { flag: 'foo', sub_type: 'add', approve: 'false' })
+    await expectReqResToBe(() => sender.setGroupAddRequest('foo', 'add', 'bar'), {}, 'set_group_add_request', { flag: 'foo', sub_type: 'add', approve: 'false', reason: 'bar' })
+    await expectReqResToBe(() => sender.setGroupAddRequestAsync('foo', 'add'), {}, 'set_group_add_request_async', { flag: 'foo', sub_type: 'add', approve: 'true' })
+    await expectReqResToBe(() => sender.setGroupAddRequestAsync('foo', 'add', false), {}, 'set_group_add_request_async', { flag: 'foo', sub_type: 'add', approve: 'false' })
+    await expectReqResToBe(() => sender.setGroupAddRequestAsync('foo', 'add', 'bar'), {}, 'set_group_add_request_async', { flag: 'foo', sub_type: 'add', approve: 'false', reason: 'bar' })
+  })
+
+  test('getLoginInfo', async () => {
+    await expectReqResToBe(() => sender.getLoginInfo(), {}, 'get_login_info', {})
+  })
+
+  test('getVipInfo', async () => {
+    await expectReqResToBe(() => sender.getVipInfo(), {}, 'get_vip_info', {})
+  })
 })

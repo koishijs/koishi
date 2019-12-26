@@ -1,12 +1,6 @@
-import { CLIENT_PORT, createServer, SERVER_URL, ServerSession } from 'koishi-test-utils'
-import { App } from 'koishi-core/src'
+import { createApp, createServer, ServerSession } from 'koishi-test-utils'
 
-const app = new App({
-  type: 'http',
-  port: CLIENT_PORT,
-  server: SERVER_URL,
-})
-
+const app = createApp()
 const server = createServer()
 
 jest.setTimeout(1000)
@@ -28,8 +22,8 @@ app.command('fooo [text]')
     return meta.$send('fooo' + bar)
   })
 
-const session1 = new ServerSession('private', 'friend', { selfId: 123, userId: 456 })
-const session2 = new ServerSession('private', 'friend', { selfId: 123, userId: 789 })
+const session1 = new ServerSession('private', 'friend', { userId: 456 })
+const session2 = new ServerSession('private', 'friend', { userId: 789 })
 
 describe('suggestions', () => {
   test('execute command', async () => {

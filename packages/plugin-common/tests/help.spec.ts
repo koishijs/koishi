@@ -1,22 +1,20 @@
-import { CLIENT_PORT, createServer, SERVER_URL, ServerSession } from 'koishi-test-utils'
-import { App } from 'koishi-core/src'
+import { createApp, createServer, ServerSession } from 'koishi-test-utils'
+import { Server } from 'http'
 import help from '../src/help'
 
-const app = new App({
-  type: 'http',
-  port: CLIENT_PORT,
-  server: SERVER_URL,
-})
-
-const server = createServer()
+let server: Server
+const app = createApp()
 
 jest.setTimeout(1000)
 
-beforeAll(() => app.start())
+beforeAll(() => {
+  server = createServer()
+  return app.start()
+})
 
 afterAll(() => {
-  app.stop()
   server.close()
+  return app.stop()
 })
 
 app.plugin(help)
@@ -27,7 +25,7 @@ app.command('help/bar', 'BAR')
   .example('example 2')
 app.command('bar.baz', 'BAZ')
 
-const session = new ServerSession('private', 'friend', { selfId: 123, userId: 456 })
+const session = new ServerSession('private', 'friend', { userId: 456 })
 
 describe('help command', () => {
   test('show command help', async () => {

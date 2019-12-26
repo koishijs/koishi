@@ -80,9 +80,11 @@ export class Sender {
   }
 
   private async getAsync (action: string, params?: object): Promise<void> {
-    this.app.server.versionLessThan(4)
-      ? await this.get(action, params, true)
-      : await this.get(action + '_async', params)
+    if (this.app.server.versionLessThan(4)) {
+      await this.get(action, params, true)
+    } else {
+      await this.get(action + '_async', params)
+    }
   }
 
   private _assertInteger (name: string, value: any) {
@@ -91,7 +93,8 @@ export class Sender {
   }
 
   private _assertElement (name: string, value: any, array: any[]) {
-    if (!array.includes(value)) throw new Error('missing or invalid argument: ' + name)
+    if (value === undefined) throw new Error('missing argument: ' + name)
+    if (!array.includes(value)) throw new Error('invalid argument: ' + name)
   }
 
   private _assertVersion (label: string, major: number, minor: number = 0, patch: number = 0) {
@@ -268,23 +271,13 @@ export class Sender {
   async setGroupCard (groupId: number, userId: number, card = '') {
     this._assertInteger('groupId', groupId)
     this._assertInteger('userId', userId)
-    await this.get('set_group_admin', { groupId, userId, card })
+    await this.get('set_group_card', { groupId, userId, card })
   }
 
   async setGroupCardAsync (groupId: number, userId: number, card = '') {
     this._assertInteger('groupId', groupId)
     this._assertInteger('userId', userId)
-    return this.getAsync('set_group_admin', { groupId, userId, card })
-  }
-
-  async setGroupLeave (groupId: number, isDismiss = false) {
-    this._assertInteger('groupId', groupId)
-    await this.get('set_group_leave', { groupId, isDismiss })
-  }
-
-  async setGroupLeaveAsync (groupId: number, isDismiss = false) {
-    this._assertInteger('groupId', groupId)
-    return this.getAsync('set_group_leave', { groupId, isDismiss })
+    return this.getAsync('set_group_card', { groupId, userId, card })
   }
 
   async setGroupSpecialTitle (groupId: number, userId: number, specialTitle = '', duration = -1) {
@@ -299,6 +292,16 @@ export class Sender {
     return this.getAsync('set_group_special_title', { groupId, userId, specialTitle, duration })
   }
 
+  async setGroupLeave (groupId: number, isDismiss?: boolean) {
+    this._assertInteger('groupId', groupId)
+    await this.get('set_group_leave', { groupId, isDismiss })
+  }
+
+  async setGroupLeaveAsync (groupId: number, isDismiss?: boolean) {
+    this._assertInteger('groupId', groupId)
+    return this.getAsync('set_group_leave', { groupId, isDismiss })
+  }
+
   async setDiscussLeave (discussId: number) {
     this._assertInteger('discussId', discussId)
     await this.get('set_discuss_leave', { discussId })
@@ -309,26 +312,50 @@ export class Sender {
     return this.getAsync('set_discuss_leave', { discussId })
   }
 
-  async setFriendAddRequest (flag: string, approve = true, remark = '') {
+  setFriendAddRequest (flag: string, approve?: boolean): Promise<void>
+  setFriendAddRequest (flag: string, remark?: string): Promise<void>
+  async setFriendAddRequest (flag: string, info: string | boolean = true) {
     if (!flag) throw new Error('missing argument: flag')
-    await this.get('set_friend_add_request', { flag, approve, remark })
+    if (typeof info === 'string') {
+      await this.get('set_friend_add_request', { flag, approve: true, remark: info })
+    } else {
+      await this.get('set_friend_add_request', { flag, approve: info })
+    }
   }
 
-  async setFriendAddRequestAsync (flag: string, approve = true, remark = '') {
+  setFriendAddRequestAsync (flag: string, approve?: boolean): Promise<void>
+  setFriendAddRequestAsync (flag: string, remark?: string): Promise<void>
+  async setFriendAddRequestAsync (flag: string, info: string | boolean = true) {
     if (!flag) throw new Error('missing argument: flag')
-    return this.getAsync('set_friend_add_request', { flag, approve, remark })
+    if (typeof info === 'string') {
+      return this.getAsync('set_friend_add_request', { flag, approve: true, remark: info })
+    } else {
+      return this.getAsync('set_friend_add_request', { flag, approve: info })
+    }
   }
 
-  async setGroupAddRequest (flag: string, subType: 'add' | 'invite', approve = true, reason = '') {
+  setGroupAddRequest (flag: string, subType: 'add' | 'invite', approve?: boolean): Promise<void>
+  setGroupAddRequest (flag: string, subType: 'add' | 'invite', reason?: string): Promise<void>
+  async setGroupAddRequest (flag: string, subType: 'add' | 'invite', info: string | boolean = true) {
     if (!flag) throw new Error('missing argument: flag')
     this._assertElement('subType', subType, ['add', 'invite'])
-    await this.get('set_group_add_request', { flag, subType, approve, reason })
+    if (typeof info === 'string') {
+      await this.get('set_group_add_request', { flag, subType, approve: false, reason: info })
+    } else {
+      await this.get('set_group_add_request', { flag, subType, approve: info })
+    }
   }
 
-  async setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', approve = true, reason = '') {
+  setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', approve?: boolean): Promise<void>
+  setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', reason?: string): Promise<void>
+  async setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', info: string | boolean = true) {
     if (!flag) throw new Error('missing argument: flag')
     this._assertElement('subType', subType, ['add', 'invite'])
-    return this.getAsync('set_group_add_request', { flag, subType, approve, reason })
+    if (typeof info === 'string') {
+      return this.getAsync('set_group_add_request', { flag, subType, approve: false, reason: info })
+    } else {
+      return this.getAsync('set_group_add_request', { flag, subType, approve: info })
+    }
   }
 
   getLoginInfo (): Promise<AccountInfo> {

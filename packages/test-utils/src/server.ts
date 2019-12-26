@@ -92,6 +92,7 @@ export class ServerSession {
   action: string
 
   constructor (public type: MetaTypeMap['message'], subType: SubTypeMap['message'], public meta?: Meta<'message'>) {
+    if (!meta.selfId) meta.selfId = 514
     meta.postType = 'message'
     meta.messageType = type
     meta.subType = subType
