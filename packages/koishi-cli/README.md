@@ -49,6 +49,7 @@ Koishi 在开发时借助了下面的工具：
 - 使用 [TypeScript](http://www.typescriptlang.org/) 编写
 - 使用 [Jest](https://jestjs.io/) 进行单元测试
 - 使用 [Eslint](https://eslint.org/) 进行代码风格检查
+- 使用 [Codecov](https://codecov.io) 进行覆盖率检测
 - 使用 [GitHub Actions](https://github.com/features/actions) 进行持续集成
 
 这保证了其代码的正确性和可读性。
