@@ -1,7 +1,7 @@
 import WebSocket from 'ws'
 import debug from 'debug'
 import * as http from 'http'
-import * as errors from './errors'
+import { errors } from './messages'
 import { createHmac } from 'crypto'
 import { camelCase, snakeCase, capitalize, paramCase } from 'koishi-utils'
 import { Meta, VersionInfo, ContextType } from './meta'

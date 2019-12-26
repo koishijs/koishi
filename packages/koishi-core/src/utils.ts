@@ -2,6 +2,8 @@ import { isInteger } from 'koishi-utils'
 import { NextFunction, Middleware } from './context'
 import { Command } from './command'
 import { MessageMeta } from './meta'
+import { messages } from './messages'
+import { format } from 'util'
 import leven from 'leven'
 
 export function getSenderName (meta: MessageMeta) {
@@ -45,7 +47,7 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
   if (!suggestions.length) return next()
 
   return next(async () => {
-    let message = `${prefix}你要找的是不是${suggestions.map(name => `“${name}”`).join('或')}？`
+    let message = prefix + format(messages.SUGGESTION_TEXT, suggestions.map(name => `“${name}”`).join('或'))
     if (suggestions.length === 1) {
       const [suggestion] = suggestions
       const command = typeof options.command === 'function'

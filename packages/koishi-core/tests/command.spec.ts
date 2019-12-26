@@ -1,5 +1,5 @@
 import { App } from '../src'
-import * as errors from '../src/errors'
+import { errors } from '../src/messages'
 
 let app: App
 

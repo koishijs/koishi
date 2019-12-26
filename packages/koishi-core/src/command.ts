@@ -1,10 +1,9 @@
 import { Context, NextFunction } from './context'
 import { UserData, UserField } from './database'
+import { messages, errors } from './messages'
 import { noop } from 'koishi-utils'
 import { MessageMeta } from './meta'
 import { format } from 'util'
-import * as messages from './messages'
-import * as errors from './errors'
 import debug from 'debug'
 
 import {
@@ -77,10 +76,9 @@ export class Command {
   _examples: string[] = []
   _shortcuts: Record<string, ShortcutConfig> = {}
   _userFields = new Set<UserField>()
-
-  private _argsDef: CommandArgument[]
-  private _optsDef: Record<string, CommandOption> = {}
-  private _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
+  _argsDef: CommandArgument[]
+  _optsDef: Record<string, CommandOption> = {}
+  _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
 
   constructor (public name: string, public declaration: string, public context: Context, config: CommandConfig = {}) {
     if (!name) throw new Error(errors.EXPECT_COMMAND_NAME)
@@ -226,11 +224,11 @@ export class Command {
 
     // check required options
     if (this.config.checkRequired) {
-      const absent = this._options.filter((option) => {
+      const absent = this._options.find((option) => {
         return option.required && !(option.camels[0] in options)
       })
-      if (absent.length) {
-        return meta.$send(format(messages.REQUIRED_OPTIONS, absent.join(', ')))
+      if (absent) {
+        return meta.$send(format(messages.REQUIRED_OPTIONS, absent.rawName))
       }
     }
 

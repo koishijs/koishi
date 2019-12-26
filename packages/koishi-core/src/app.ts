@@ -8,7 +8,7 @@ import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig } from '
 import { showSuggestions } from './utils'
 import { Meta, MessageMeta } from './meta'
 import { simplify } from 'koishi-utils'
-import * as errors from './errors'
+import { errors } from './messages'
 
 export interface AppOptions {
   port?: number

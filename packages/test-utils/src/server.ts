@@ -109,6 +109,10 @@ export class ServerSession {
     return expect(this.waitForResponse(message)).resolves.toMatchSnapshot(message)
   }
 
+  shouldHaveResponse (message: string, response: string) {
+    return expect(this.waitForResponse(message)).resolves.toBe(response)
+  }
+
   async shouldHaveNoResponse (message: string): Promise<void> {
     await postMeta({ ...this.meta, message })
     return new Promise((resolve, reject) => {

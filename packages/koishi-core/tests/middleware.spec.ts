@@ -2,7 +2,7 @@ import { SERVER_URL, CLIENT_PORT, createServer, postMeta } from 'koishi-test-uti
 import { App, Meta } from '../src'
 import { Server } from 'http'
 import { sleep } from 'koishi-utils'
-import * as errors from '../src/errors'
+import { errors } from '../src/messages'
 
 let app: App
 let server: Server

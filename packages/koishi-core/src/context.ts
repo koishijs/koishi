@@ -1,12 +1,11 @@
 import { contain, union, intersection, difference, noop } from 'koishi-utils'
-import { MessageMeta, Meta, contextTypes } from './meta'
 import { Command, CommandConfig, ParsedCommandLine } from './command'
+import { MessageMeta, Meta, contextTypes } from './meta'
 import { EventEmitter } from 'events'
 import { Sender } from './sender'
 import { App } from './app'
 import { Database } from './database'
-import * as messages from './messages'
-import * as errors from './errors'
+import { messages, errors } from './messages'
 
 export type NextFunction = (next?: NextFunction) => any
 export type Middleware = (meta: MessageMeta, next: NextFunction) => any
@@ -198,7 +197,8 @@ export class Context {
     if (!command || !command.context.match(meta) || command.getConfig('disable', meta)) {
       return meta.$send(messages.COMMAND_NOT_FOUND)
     }
-    return command.execute({ meta, command, args, options, rest, unknown: [] })
+    const unknown = Object.keys(options).filter(key => !command._optsDef[key])
+    return command.execute({ meta, command, args, options, rest, unknown })
   }
 
   end () {
