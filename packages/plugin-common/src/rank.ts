@@ -1,5 +1,5 @@
 import { Meta, GroupMemberInfo, UserData, Context, UserField, CommandConfig } from 'koishi-core'
-import { getDateNumber, simplify } from 'koishi-utils'
+import { simplify } from 'koishi-utils'
 
 export interface Rank {
   names: string[]
@@ -18,23 +18,6 @@ const rankMap: Record<string, Rank> = {}
 export function registerRank (name: string, rank: Rank) {
   rankMap[name] = rank
 }
-
-registerRank('talkativeness', {
-  names: ['发言', '聊天'],
-  options: { offset: 1 },
-  groupOnly: true,
-  title (meta, options) {
-    const key = getDateNumber() - options.offset
-    const date = new Date(key * 86400000).toLocaleDateString()
-    return `本群 ${date} 的发言排行为：`
-  },
-  value (user, meta, options) {
-    const key = getDateNumber() - options.offset
-    return (user.talkativeness[key] || {})[meta.groupId] || 0
-  },
-  fields: ['talkativeness'],
-  format: value => value + ' 条',
-})
 
 export default function apply (ctx: Context, options: CommandConfig) {
   ctx.command('rank <type>', '显示排行', options)

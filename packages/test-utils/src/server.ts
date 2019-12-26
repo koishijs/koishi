@@ -3,7 +3,7 @@ import debug from 'debug'
 import express, { Express } from 'express'
 import { EventEmitter } from 'events'
 import { createHmac } from 'crypto'
-import { Meta, PostType, MetaTypeMap, SubTypeMap } from 'koishi-core'
+import { Meta, PostType, MetaTypeMap, SubTypeMap, App, AppOptions } from 'koishi-core'
 import { camelCase, snakeCase, sleep } from 'koishi-utils'
 
 export const SERVER_PORT = 15700
@@ -15,14 +15,41 @@ let app: Express
 const emitter = new EventEmitter()
 const showLog = debug('koishi:test')
 
+export function createApp (options: AppOptions = {}) {
+  return new App({
+    port: CLIENT_PORT,
+    server: SERVER_URL,
+    selfId: 514,
+    ...options,
+  })
+}
+
+let handler = {}
+
+export function expectReqResToBe (callback: () => Promise<any>, data: object, method: string, query: any, response?: any) {
+  return expect(new Promise((resolve) => {
+    handler = data
+    let method, query
+    emitter.once('*', (_method, _query) => {
+      method = _method
+      query = _query
+    })
+    callback().then((response) => {
+      resolve([method, query, response])
+      handler = {}
+    })
+  })).resolves.toMatchObject([method, query, response])
+}
+
 export function createServer () {
   app = express()
 
   app.get('/:method', (req, res) => {
     showLog('receive', req.params.method, req.query)
+    emitter.emit('*', req.params.method, req.query)
     emitter.emit(req.params.method.replace(/_async$/, ''), req.query)
     res.status(200).send({
-      data: {},
+      data: handler,
       retcode: 0,
     })
   })

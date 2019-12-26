@@ -79,14 +79,15 @@ export class Sender {
     }
   }
 
-  private getAsync (action: string, params?: object): Promise<void> {
-    return this.app.server.versionLessThan(4)
-      ? this.get(action, params, true)
-      : this.get(action + '_async', params)
+  private async getAsync (action: string, params?: object): Promise<void> {
+    this.app.server.versionLessThan(4)
+      ? await this.get(action, params, true)
+      : await this.get(action + '_async', params)
   }
 
   private _assertInteger (name: string, value: any) {
-    if (!isInteger(value)) throw new Error('missing or invalid argument: ' + name)
+    if (value === undefined) throw new Error('missing argument: ' + name)
+    if (!isInteger(value)) throw new Error('invalid argument: ' + name)
   }
 
   private _assertElement (name: string, value: any, array: any[]) {
@@ -127,7 +128,7 @@ export class Sender {
   async sendGroupMsgAsync (groupId: number, message: string, autoEscape?: boolean) {
     this._assertInteger('groupId', groupId)
     if (!message) return
-    return this.get<void>('send_group_msg_async', { groupId, message, autoEscape })
+    await this.get('send_group_msg_async', { groupId, message, autoEscape })
   }
 
   async sendDiscussMsg (discussId: number, message: string, autoEscape?: boolean) {
@@ -144,7 +145,7 @@ export class Sender {
   async sendDiscussMsgAsync (discussId: number, message: string, autoEscape?: boolean) {
     this._assertInteger('discussId', discussId)
     if (!message) return
-    return this.get<void>('send_discuss_msg_async', { discussId, message, autoEscape })
+    await this.get('send_discuss_msg_async', { discussId, message, autoEscape })
   }
 
   async sendPrivateMsg (userId: number, message: string, autoEscape?: boolean) {
@@ -161,13 +162,13 @@ export class Sender {
   async sendPrivateMsgAsync (userId: number, message: string, autoEscape?: boolean) {
     this._assertInteger('userId', userId)
     if (!message) return
-    return this.get<void>('send_private_msg_async', { userId, message, autoEscape })
+    await this.get('send_private_msg_async', { userId, message, autoEscape })
   }
 
   async deleteMsg (messageId: number) {
     this._assertInteger('messageId', messageId)
     this._assertVersion('sender.deleteMsg()', 3, 3)
-    return this.get<void>('delete_msg', { messageId })
+    await this.get('delete_msg', { messageId })
   }
 
   async deleteMsgAsync (messageId: number) {
@@ -188,25 +189,25 @@ export class Sender {
     return this.getAsync('send_like', { userId, times })
   }
 
-  async setGroupKick (groupId: number, userId: number, rejectAddRequest = false) {
+  async setGroupKick (groupId: number, userId: number, rejectAddRequest?: boolean) {
     this._assertInteger('groupId', groupId)
     this._assertInteger('userId', userId)
     await this.get('set_group_kick', { groupId, userId, rejectAddRequest })
   }
 
-  async setGroupKickAsync (groupId: number, userId: number, rejectAddRequest = false) {
+  async setGroupKickAsync (groupId: number, userId: number, rejectAddRequest?: boolean) {
     this._assertInteger('groupId', groupId)
     this._assertInteger('userId', userId)
     return this.getAsync('set_group_kick', { groupId, userId, rejectAddRequest })
   }
 
-  async setGroupBan (groupId: number, userId: number, duration = 30 * 60) {
+  async setGroupBan (groupId: number, userId: number, duration?: number) {
     this._assertInteger('groupId', groupId)
     this._assertInteger('userId', userId)
     await this.get('set_group_ban', { groupId, userId, duration })
   }
 
-  async setGroupBanAsync (groupId: number, userId: number, duration = 30 * 60) {
+  async setGroupBanAsync (groupId: number, userId: number, duration?: number) {
     this._assertInteger('groupId', groupId)
     this._assertInteger('userId', userId)
     return this.getAsync('set_group_ban', { groupId, userId, duration })
@@ -214,21 +215,21 @@ export class Sender {
 
   setGroupAnonymousBan (groupId: number, anonymous: object, duration?: number): Promise<void>
   setGroupAnonymousBan (groupId: number, flag: string, duration?: number): Promise<void>
-  async setGroupAnonymousBan (groupId: number, meta: object | string, duration = 30 * 60) {
+  async setGroupAnonymousBan (groupId: number, meta: object | string, duration?: number) {
     this._assertInteger('groupId', groupId)
     if (!meta) throw new Error('missing argument: anonymous or flag')
     const args = { groupId, duration } as any
-    args[typeof meta === 'string' ? 'flag' : 'anomymous'] = meta
+    args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
     await this.get('set_group_anonymous_ban', args)
   }
 
   setGroupAnonymousBanAsync (groupId: number, anonymous: object, duration?: number): Promise<void>
   setGroupAnonymousBanAsync (groupId: number, flag: string, duration?: number): Promise<void>
-  async setGroupAnonymousBanAsync (groupId: number, meta: object | string, duration = 30 * 60) {
+  async setGroupAnonymousBanAsync (groupId: number, meta: object | string, duration?: number) {
     this._assertInteger('groupId', groupId)
     if (!meta) throw new Error('missing argument: anonymous or flag')
     const args = { groupId, duration } as any
-    args[typeof meta === 'string' ? 'flag' : 'anomymous'] = meta
+    args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
     return this.getAsync('set_group_anonymous_ban', args)
   }
 
@@ -242,24 +243,24 @@ export class Sender {
     return this.getAsync('set_group_whole_ban', { groupId, enable })
   }
 
-  async setGroupAdmin (groupId: number, userId: number, enable: boolean) {
+  async setGroupAdmin (groupId: number, userId: number, enable = true) {
     this._assertInteger('groupId', groupId)
     this._assertInteger('userId', userId)
     await this.get('set_group_admin', { groupId, userId, enable })
   }
 
-  async setGroupAdminAsync (groupId: number, userId: number, enable: boolean) {
+  async setGroupAdminAsync (groupId: number, userId: number, enable = true) {
     this._assertInteger('groupId', groupId)
     this._assertInteger('userId', userId)
     return this.getAsync('set_group_admin', { groupId, userId, enable })
   }
 
-  async setGroupAnonymous (groupId: number, enable: boolean) {
+  async setGroupAnonymous (groupId: number, enable = true) {
     this._assertInteger('groupId', groupId)
     await this.get('set_group_anonymous', { groupId, enable })
   }
 
-  async setGroupAnonymousAsync (groupId: number, enable: boolean) {
+  async setGroupAnonymousAsync (groupId: number, enable = true) {
     this._assertInteger('groupId', groupId)
     return this.getAsync('set_group_anonymous', { groupId, enable })
   }

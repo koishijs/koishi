@@ -5,8 +5,9 @@ import { MessageMeta } from './meta'
 import leven from 'leven'
 
 export function getSenderName (meta: MessageMeta) {
-  if (!meta.sender || meta.$user && meta.$user.name !== String(meta.userId)) return meta.$user.name
-  return meta.sender.card || meta.sender.nickname
+  const userId = '' + meta.userId
+  return meta.$user && meta.$user.name !== userId ? meta.$user.name
+    : meta.sender ? meta.sender.card || meta.sender.nickname : userId
 }
 
 export function getTargetId (target: string) {

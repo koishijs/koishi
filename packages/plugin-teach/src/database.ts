@@ -1,13 +1,9 @@
-import { injectMethods, extendUser, Activity } from 'koishi-core'
+import { injectMethods } from 'koishi-core'
 import deepEqual from 'fast-deep-equal'
 import {} from 'koishi-database-mysql'
 import {} from 'koishi-database-level'
 
 declare module 'koishi-core/dist/database' {
-  interface UserData {
-    interactiveness: Activity
-  }
-
   interface TableMethods {
     dialogue: DialogueMethods
   }
@@ -26,8 +22,6 @@ interface DialogueMethods {
   removeDialogues (ids: number[]): Promise<any>
   getDialogueCount (test: DialogueTest): Promise<DialogueCount>
 }
-
-extendUser(() => ({ interactiveness: {} }))
 
 export interface DialogueCount {
   questions: number
