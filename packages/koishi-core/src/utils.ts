@@ -69,7 +69,7 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
           return next()
         }
       }
-      command.context.premiddleware(middleware)
+      command.context.prependMiddleware(middleware)
       message += suffix
     }
     await meta.$send(message)

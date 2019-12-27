@@ -120,7 +120,7 @@ export class Context {
     return this
   }
 
-  premiddleware (middleware: Middleware) {
+  prependMiddleware (middleware: Middleware) {
     this.app._middlewares.unshift([this, middleware])
     return this
   }

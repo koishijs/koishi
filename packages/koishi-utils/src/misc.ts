@@ -1,4 +1,4 @@
-export function noop () {}
+export function noop (): any {}
 
 export function isInteger (source: any) {
   return typeof source === 'number' && Math.floor(source) === source

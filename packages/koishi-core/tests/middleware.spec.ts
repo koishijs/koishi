@@ -58,7 +58,7 @@ describe('middleware', () => {
       return next(next => (flag |= 1 << 5, next(() => (flag |= 1 << 6, undefined))))
     })
 
-    app.premiddleware((_, next) => {
+    app.prependMiddleware((_, next) => {
       flag |= 1 << 0
       return next()
     })

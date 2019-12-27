@@ -4,6 +4,9 @@ dist
 /bots
 /coverage
 
+/packages/plugin-*
+!/packages/plugin-common
+
 yarn.lock
 node_modules/
 npm-debug.log

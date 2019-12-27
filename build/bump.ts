@@ -80,19 +80,15 @@ class Package {
 const packages: Record<string, Package> = {}
 
 const nameMap = {
-  cli: 'koishi-cli',
-  core: 'koishi-core',
-  utils: 'koishi-utils',
   test: 'test-utils',
-  level: 'database-level',
-  mysql: 'database-mysql',
-  common: 'plugin-common',
-  teach: 'plugin-teach',
-  monitor: 'plugin-monitor',
 }
 
 function getPackage (name: string) {
-  return packages['packages/' + nameMap[name]]
+  name = nameMap[name] || name
+  return packages[`packages/${name}`]
+    || packages[`packages/koishi-${name}`]
+    || packages[`packages/database-${name}`]
+    || packages[`packages/plugin-${name}`]
 }
 
 function each <T> (callback: (pkg: Package, name: string) => T) {

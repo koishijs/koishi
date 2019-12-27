@@ -69,7 +69,7 @@ export default function apply (ctx: Context, options: RepeaterOptions) {
     }
   })
 
-  ctx.premiddleware(({ message, groupId, userId, $send, $group }, next) => {
+  ctx.prependMiddleware(({ message, groupId, userId, $send, $group }, next) => {
     const state = getState(groupId)
     if (!$group || $group.assignee !== ctx.app.options.selfId) return next()
     if (message === state.message) {
