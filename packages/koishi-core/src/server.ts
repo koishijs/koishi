@@ -21,7 +21,7 @@ export abstract class Server {
   public isListening = false
 
   protected abstract _listen (): Promise<void>
-  abstract close (): void
+  protected abstract _close (): void
 
   constructor (app: App) {
     this.bind(app)
@@ -68,7 +68,7 @@ export abstract class Server {
       meta.postType = 'notice'
       meta.noticeType = meta['event']
       delete meta['event']
-    } else if (meta.postType === 'request') {
+    } else if (meta.postType === 'request' && meta.message) {
       meta.comment = meta.message
       delete meta.message
     }
@@ -176,6 +176,11 @@ export abstract class Server {
       apps[0].prepare(info.userId)
     }
   }
+
+  close () {
+    this.isListening = false
+    this._close()
+  }
 }
 
 export class HttpServer extends Server {
@@ -252,7 +257,7 @@ export class HttpServer extends Server {
     showServerLog('listen to port', port)
   }
 
-  close () {
+  _close () {
     if (this.server) this.server.close()
     showServerLog('http server closed')
   }
@@ -325,7 +330,7 @@ export class WsClient extends Server {
     })
   }
 
-  close () {
+  _close () {
     if (this.socket) this.socket.close()
     showServerLog('ws client closed')
   }

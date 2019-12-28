@@ -82,7 +82,7 @@ describe('HTTP Server', () => {
 })
 
 describe('Quick Operations', () => {
-  beforeAll(() => app1.options.quickOperationTimeout = 1000)
+  beforeAll(() => app1.options.quickOperationTimeout = 100)
   afterAll(() => app1.options.quickOperationTimeout = 0)
 
   test('message event', async () => {
@@ -131,4 +131,12 @@ describe('Quick Operations', () => {
     app1.receiver.once('request/group/add', meta => meta.$reject('bar'))
     await expect(postMeta(meta)).resolves.toMatchObject({ data: { approve: false, reason: 'bar' } })
   })
+
+  test('operation timeout', async () => {
+    await expect(postMeta({
+      postType: 'request',
+      requestType: 'friend',
+      userId: 30000,
+    })).resolves.toMatchObject({ data: {} })
+  }, 200)
 })

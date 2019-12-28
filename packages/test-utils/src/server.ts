@@ -12,7 +12,7 @@ export const CLIENT_PORT = 17070
 export const SERVER_URL = `http://localhost:${SERVER_PORT}`
 
 let app: Express
-const emitter = new EventEmitter()
+export const emitter = new EventEmitter()
 const showLog = debug('koishi:test')
 
 export function createApp (options: AppOptions = {}) {
@@ -24,11 +24,12 @@ export function createApp (options: AppOptions = {}) {
   })
 }
 
-let handler = {}
+let _data = {}
+let _retcode = 0
 
 export function expectReqResToBe (callback: () => Promise<any>, data: object, method: string, query: any, response?: any) {
   return expect(new Promise((resolve) => {
-    handler = data
+    _data = data
     let method, query
     emitter.once('*', (_method, _query) => {
       method = _method
@@ -36,9 +37,14 @@ export function expectReqResToBe (callback: () => Promise<any>, data: object, me
     })
     callback().then((response) => {
       resolve([method, query, response])
-      handler = {}
+      _data = {}
     })
   })).resolves.toMatchObject([method, query, response])
+}
+
+export function setResponse (data = {}, retcode = 0) {
+  _data = data
+  _retcode = retcode
 }
 
 export function createServer () {
@@ -48,10 +54,9 @@ export function createServer () {
     showLog('receive', req.params.method, req.query)
     emitter.emit('*', req.params.method, req.query)
     emitter.emit(req.params.method.replace(/_async$/, ''), req.query)
-    res.status(200).send({
-      data: handler,
-      retcode: 0,
-    })
+    res.status(200).send({ data: _data, retcode: _retcode })
+    _data = {}
+    _retcode = 0
   })
 
   return app.listen(SERVER_PORT)

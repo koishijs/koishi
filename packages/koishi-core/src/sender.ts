@@ -469,12 +469,12 @@ export class Sender {
 
   async getVersionInfo () {
     const data = await this.get<VersionInfo>('get_version_info')
-    const match = /^(\d+)\.(\d+)\.(\d+)/.exec(data.pluginVersion)
+    const match = /^(\d+)(?:\.(\d+)(?:\.(\d+)?))?/.exec(data.pluginVersion)
     if (match) {
       const [, major, minor, patch] = match
       data.pluginMajorVersion = +major
-      data.pluginMinorVersion = +minor
-      data.pluginPatchVersion = +patch
+      data.pluginMinorVersion = +minor || 0
+      data.pluginPatchVersion = +patch || 0
     }
     return data
   }
