@@ -71,7 +71,7 @@ function prepareApp (config: AppConfig) {
     loadPlugins(app, config.plugins)
   } else if (config.plugins && typeof config.plugins === 'object') {
     for (const path in config.plugins) {
-      const ctx = app._createContext(path)
+      const ctx = app.createContext(path)
       loadPlugins(ctx, config.plugins[path])
     }
   }

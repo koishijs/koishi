@@ -16,7 +16,6 @@ export interface UserData {
   id: number
   name: string
   flag: number
-  ignoreEnd: number
   authority: number
   usage: Record<string, Usage>
 }
@@ -37,7 +36,6 @@ extendUser((id, authority) => ({
   id,
   authority,
   flag: 0,
-  ignoreEnd: 0,
   name: String(id),
   usage: {},
 }))

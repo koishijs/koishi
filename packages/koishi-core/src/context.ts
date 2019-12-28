@@ -57,13 +57,13 @@ export class Context {
   }
 
   inverse () {
-    return this.app._createContext(this._scope.map(([include, exclude]) => {
+    return this.app.createContext(this._scope.map(([include, exclude]) => {
       return include ? [null, include.slice()] : [exclude.slice(), []]
     }))
   }
 
   plus (ctx: Context) {
-    return this.app._createContext(this._scope.map(([include1, exclude1], index) => {
+    return this.app.createContext(this._scope.map(([include1, exclude1], index) => {
       const [include2, exclude2] = ctx._scope[index]
       return include1
         ? include2 ? [union(include1, include2), null] : [null, difference(exclude2, include1)]
@@ -72,7 +72,7 @@ export class Context {
   }
 
   minus (ctx: Context) {
-    return this.app._createContext(this._scope.map(([include1, exclude1], index) => {
+    return this.app.createContext(this._scope.map(([include1, exclude1], index) => {
       const [include2, exclude2] = ctx._scope[index]
       return include1
         ? [include2 ? difference(include1, include2) : intersection(include1, exclude2), null]
@@ -81,7 +81,7 @@ export class Context {
   }
 
   intersect (ctx: Context) {
-    return this.app._createContext(this._scope.map(([include1, exclude1], index) => {
+    return this.app.createContext(this._scope.map(([include1, exclude1], index) => {
       const [include2, exclude2] = ctx._scope[index]
       return include1
         ? [include2 ? intersection(include1, include2) : difference(include1, exclude2), null]

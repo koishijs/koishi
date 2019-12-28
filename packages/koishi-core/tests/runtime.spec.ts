@@ -131,8 +131,10 @@ describe('nickname prefix', () => {
 
     await session2.shouldHaveResponse('koishi, foo bar', 'foobar')
     await session3.shouldHaveResponse('koishi, foo bar', 'foobar')
-    await session2.shouldHaveResponse('koishi \n foo bar', 'foobar')
-    await session3.shouldHaveResponse('koishi \n foo bar', 'foobar')
+    await session2.shouldHaveResponse('koishi\n foo bar', 'foobar')
+    await session3.shouldHaveResponse('koishi\n foo bar', 'foobar')
+    await session2.shouldHaveResponse('@koishi foo bar', 'foobar')
+    await session3.shouldHaveResponse('@koishi foo bar', 'foobar')
     await session2.shouldHaveNoResponse('komeiji, foo bar')
     await session3.shouldHaveNoResponse('komeiji, foo bar')
   })

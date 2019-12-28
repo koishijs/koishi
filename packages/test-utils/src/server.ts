@@ -80,7 +80,7 @@ export async function waitFor (method: string, timeout = MAX_TIMEOUT) {
       clearTimeout(timer)
       resolve(query)
     }
-    emitter.on(method, listener)
+    emitter.once(method, listener)
     const timer = setTimeout(() => {
       emitter.off(method, listener)
       reject(new Error('timeout'))

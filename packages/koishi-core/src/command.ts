@@ -284,8 +284,7 @@ export class Command {
         }
 
         if (usage.count >= maxUsage && isUsage) {
-          await meta.$send(messages.USAGE_EXHAUSTED)
-          return
+          return meta.$send(messages.USAGE_EXHAUSTED)
         } else {
           usage.count++
         }

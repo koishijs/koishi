@@ -4,7 +4,7 @@ import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig, ParsedCommandLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope, Events, EventMap } from './context'
-import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig } from './database'
+import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, User } from './database'
 import { showSuggestions } from './utils'
 import { Meta, MessageMeta } from './meta'
 import { simplify } from 'koishi-utils'
@@ -77,8 +77,8 @@ const appScope: ContextScope = [[null, []], [null, []], [null, []]]
 const appIdentifier = ContextScope.stringify(appScope)
 
 const nicknameSuffix = '([,，]\\s*|\\s+)'
-function createLeadingRE (patterns: string[], suffix = '') {
-  return patterns.length ? new RegExp(`^(${patterns.map(escapeRegex).join('|')})${suffix}`) : /^/
+function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
+  return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegex).join('|')})${suffix}`) : /^/
 }
 
 const defaultOptions: AppOptions = {
@@ -125,12 +125,12 @@ export class App extends Context {
     if (this.selfId) this.prepare()
     this.receiver.on('message', this._applyMiddlewares)
     this.middleware(this._preprocess)
-    this.users = this._createContext([[null, []], [[], null], [[], null]]) as MajorContext
-    this.groups = this._createContext([[[], null], [null, []], [[], null]]) as MajorContext
-    this.discusses = this._createContext([[[], null], [[], null], [null, []]]) as MajorContext
-    this.users.except = (...ids) => this._createContext([[null, ids], [[], null], [[], null]])
-    this.groups.except = (...ids) => this._createContext([[[], null], [null, ids], [[], null]])
-    this.discusses.except = (...ids) => this._createContext([[[], null], [[], null], [null, ids]])
+    this.users = this.createContext([[null, []], [[], null], [[], null]]) as MajorContext
+    this.groups = this.createContext([[[], null], [null, []], [[], null]]) as MajorContext
+    this.discusses = this.createContext([[[], null], [[], null], [null, []]]) as MajorContext
+    this.users.except = (...ids) => this.createContext([[null, ids], [[], null], [[], null]])
+    this.groups.except = (...ids) => this.createContext([[[], null], [null, ids], [[], null]])
+    this.discusses.except = (...ids) => this.createContext([[[], null], [[], null], [null, ids]])
   }
 
   get selfId () {
@@ -158,11 +158,11 @@ export class App extends Context {
     const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
     const prefixes = Array.isArray(commandPrefix) ? commandPrefix : [commandPrefix || '']
     this.atMeRE = new RegExp(`^\\[CQ:at,qq=${this.selfId}\\]${nicknameSuffix}`)
-    this.nicknameRE = createLeadingRE(nicknames, nicknameSuffix)
+    this.nicknameRE = createLeadingRE(nicknames, '@?', nicknameSuffix)
     this.prefixRE = createLeadingRE(prefixes)
   }
 
-  _createContext (scope: string | ContextScope) {
+  createContext (scope: string | ContextScope) {
     if (typeof scope === 'string') scope = ContextScope.parse(scope)
     scope = scope.map(([include, exclude]) => {
       return include ? [include.sort(), exclude] : [include, exclude.sort()]
@@ -178,15 +178,15 @@ export class App extends Context {
   }
 
   discuss (...ids: number[]) {
-    return this._createContext([[[], null], [[], null], [ids, null]])
+    return this.createContext([[[], null], [[], null], [ids, null]])
   }
 
   group (...ids: number[]) {
-    return this._createContext([[[], null], [ids, null], [[], null]])
+    return this.createContext([[[], null], [ids, null], [[], null]])
   }
 
   user (...ids: number[]) {
-    return this._createContext([[ids, null], [[], null], [[], null]])
+    return this.createContext([[ids, null], [[], null], [[], null]])
   }
 
   async start () {
@@ -285,7 +285,6 @@ export class App extends Context {
     // generate fields
     if (!fields.includes('name')) fields.push('name')
     if (!fields.includes('flag')) fields.push('flag')
-    if (!fields.includes('ignoreEnd')) fields.push('ignoreEnd')
     if (parsedArgv) {
       if (!fields.includes('usage')) fields.push('usage')
       if (!fields.includes('authority')) fields.push('authority')
@@ -305,19 +304,14 @@ export class App extends Context {
         const isAssignee = meta.$group.assignee === this.selfId
         const noCommand = meta.$group.flag & GroupFlag.noCommand
         const noResponse = meta.$group.flag & GroupFlag.noResponse || !isAssignee
-        const originalNext = next
-        next = (fallback?: NextFunction) => noResponse as never || originalNext(fallback)
         if (noCommand && parsedArgv) return
         if (noResponse && !atMe) return
+        const originalNext = next
+        next = (fallback?: NextFunction) => noResponse as never || originalNext(fallback)
       }
 
       // ignore some user calls
       if (user.flag & UserFlag.ignore) return
-      if (user.ignoreEnd) {
-        const time = Date.now() / 1000
-        if (user.ignoreEnd >= time) return
-        user.ignoreEnd = 0
-      }
     }
 
     // execute command
