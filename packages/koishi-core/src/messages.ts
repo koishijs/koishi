@@ -20,10 +20,10 @@ export const errors = {
   INVALID_CONTEXT: 'invalid context path',
   INVALID_IDENTIFIER: 'invalid context identifier',
   INVALID_SUBCOMMAND: 'invalid subcommand',
-  ISOLATED_NEXT: 'isolated next function',
+  ISOLATED_NEXT: 'isolated next function detected',
   UNSUPPORTED_SERVER_TYPE: 'unsupported server type, expect "http" or "ws"',
   MISSING_CONFIGURATION: 'missing configuration "%s"',
-  MAX_MIDDLEWARES: 'max middleware count (%d) exceeded',
+  MAX_MIDDLEWARES: 'max middleware count (%d) exceeded, which may be caused by a memory leak',
   UNSUPPORTED_CQHTTP_VERSION: 'your cqhttp version is not compatible with koishi, please upgrade your cqhttp to 3.0 or above',
   MULTIPLE_ANONYMOUS_BOTS: 'your cqhttp version does not support multiple anonymous bots, please upgrade your cqhttp to 3.4 or above',
 } as const

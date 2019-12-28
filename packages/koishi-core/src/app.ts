@@ -116,13 +116,13 @@ export class App extends Context {
       this.database = createDatabase(options.database)
     }
     if (!options.type && typeof options.server === 'string') {
-      options.type = options.server.split(':', 1)[0] as any
+      this.options.type = this.options.server.split(':', 1)[0] as any
     }
-    if (options.type) {
+    if (this.options.type) {
       this.server = createServer(this)
       this.sender = new Sender(this)
     }
-    if (options.selfId) this.prepare()
+    if (this.selfId) this.prepare()
     this.receiver.on('message', this._applyMiddlewares)
     this.middleware(this._preprocess)
     this.users = this._createContext([[null, []], [[], null], [[], null]]) as MajorContext
