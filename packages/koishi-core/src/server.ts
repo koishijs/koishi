@@ -35,7 +35,7 @@ export abstract class Server {
     } else if (!this.appMap[meta.selfId]) {
       const app = this.appList.find(app => !app.options.selfId)
       if (!app) return
-      app._registerSelfId(meta.selfId)
+      app.prepare(meta.selfId)
     }
     return meta
   }
@@ -173,7 +173,7 @@ export abstract class Server {
       const apps = this.appList.filter(app => app.options.type && !app.selfId)
       if (apps.length > 1) throw new Error(errors.MULTIPLE_ANONYMOUS_BOTS)
       const info = await apps[0].sender.getLoginInfo()
-      apps[0]._registerSelfId(info.userId)
+      apps[0].prepare(info.userId)
     }
   }
 }

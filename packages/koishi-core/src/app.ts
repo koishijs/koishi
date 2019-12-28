@@ -12,14 +12,14 @@ import { errors } from './messages'
 
 export interface AppOptions {
   port?: number
-  name?: string
   token?: string
   secret?: string
   selfId?: number
   server?: string
   type?: ServerType
   database?: DatabaseConfig
-  commandPrefix?: string
+  nickname?: string | string[]
+  commandPrefix?: string | string[]
   quickOperationTimeout?: number
   similarityCoefficient?: number
 }
@@ -27,7 +27,7 @@ export interface AppOptions {
 const showLog = debug('koishi')
 const showReceiverLog = debug('koishi:receiver')
 
-const selfIds: number[] = []
+const selfIds = new Set<number>()
 export const appMap: Record<number, App> = {}
 export const appList: App[] = []
 
@@ -61,11 +61,11 @@ export async function getSelfIds () {
     getSelfIdsPromise = Promise.all(appList.map(async (app) => {
       if (app.selfId || !app.options.type) return
       const info = await app.sender.getLoginInfo()
-      app._registerSelfId(info.userId)
+      app.prepare(info.userId)
     }))
   }
   await getSelfIdsPromise
-  return selfIds
+  return Array.from(selfIds)
 }
 
 export interface MajorContext extends Context {
@@ -75,15 +75,17 @@ export interface MajorContext extends Context {
 const appScope: ContextScope = [[null, []], [null, []], [null, []]]
 const appIdentifier = ContextScope.stringify(appScope)
 
-function createPrefixRegExp (...patterns: string[]) {
-  return new RegExp(`^(${patterns.join('|')})`)
+const nicknameSuffix = '([,，]\\s*|\\s+)'
+function createLeadingRE (patterns: string[], suffix = '') {
+  return patterns.length ? new RegExp(`^(${patterns.map(escapeRegex).join('|')})${suffix}`) : /^/
 }
 
 export class App extends Context {
   app = this
   server: Server
+  atMeRE: RegExp
   prefixRE: RegExp
-  userPrefixRE: RegExp
+  nicknameRE: RegExp
   users: MajorContext
   groups: MajorContext
   discusses: MajorContext
@@ -112,7 +114,7 @@ export class App extends Context {
       this.server = createServer(this)
       this.sender = new Sender(this)
     }
-    if (options.selfId) this._registerSelfId()
+    if (options.selfId) this.prepare()
     this.receiver.on('message', this._applyMiddlewares)
     this.middleware(this._preprocess)
     this.users = this._createContext([[null, []], [[], null], [[], null]]) as MajorContext
@@ -131,7 +133,7 @@ export class App extends Context {
     return this.server?.version
   }
 
-  _registerSelfId (selfId?: number) {
+  prepare (selfId?: number) {
     if (selfId) {
       this.options.selfId = selfId
       if (!this._isReady && this.server?.isListening) {
@@ -140,17 +142,16 @@ export class App extends Context {
       }
     }
     appMap[this.selfId] = this
-    selfIds.push(this.selfId)
-    if (this.options.type) this.server.appMap[this.selfId] = this
-    const patterns: string[] = []
-    if (this.app.options.name) {
-      patterns.push(`@?${escapeRegex(this.app.options.name)}([,，]\\s*|\\s+)`)
+    selfIds.add(this.selfId)
+    if (this.server) {
+      this.server.appMap[this.selfId] = this
     }
-    if (this.app.options.commandPrefix) {
-      patterns.push(escapeRegex(this.app.options.commandPrefix))
-    }
-    this.prefixRE = createPrefixRegExp(...patterns, `\\[CQ:at,qq=${this.selfId}\\] *`)
-    this.userPrefixRE = createPrefixRegExp(...patterns)
+    const { nickname, commandPrefix } = this.options
+    const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
+    const prefixes = Array.isArray(commandPrefix) ? commandPrefix : [commandPrefix || '']
+    this.atMeRE = new RegExp(`^\\[CQ:at,qq=${this.selfId}\\]${nicknameSuffix}`)
+    this.nicknameRE = createLeadingRE(nicknames, nicknameSuffix)
+    this.prefixRE = createLeadingRE(prefixes)
   }
 
   _createContext (scope: string | ContextScope) {
@@ -228,31 +229,37 @@ export class App extends Context {
 
   private _preprocess = async (meta: MessageMeta, next: NextFunction) => {
     // strip prefix
-    let message = meta.message.trim()
-    let prefix = ''
-    if (meta.messageType === 'group') {
-      const capture = message.match(this.prefixRE)
-      if (capture) {
-        prefix = capture[0]
-        message = message.slice(prefix.length)
-      }
-    } else {
-      message = message.replace(this.userPrefixRE, '')
+    const fields: UserField[] = []
+    let capture: RegExpMatchArray
+    let atMe = false, nickname = false, prefix: string = null
+    let message = simplify(meta.message.trim())
+    let parsedArgv: ParsedCommandLine
+
+    if (meta.messageType !== 'private' && (capture = message.match(this.atMeRE))) {
+      atMe = true
+      nickname = true
+      message = message.slice(capture[0].length)
     }
 
-    message = simplify(message)
-    const fields: UserField[] = []
-    let parsedArgv: ParsedCommandLine
-    const canBeCommand = meta.messageType === 'private' || prefix
-    const canBeShortcut = prefix !== '.'
-    // parse as command
-    if (canBeCommand && (parsedArgv = this.parseCommandLine(message, meta))) {
+    if ((capture = message.match(this.nicknameRE))?.[0].length) {
+      nickname = true
+      message = message.slice(capture[0].length)
+    }
+
+    // eslint-disable-next-line no-cond-assign
+    if (capture = message.match(this.prefixRE)) {
+      prefix = capture[0]
+      message = message.slice(capture[0].length)
+    }
+
+    if ((prefix !== null || nickname || meta.messageType === 'private') && (parsedArgv = this.parseCommandLine(message, meta))) {
+      // parse as command
       fields.push(...parsedArgv.command._userFields)
-    } else if (canBeShortcut) {
+    } else if (!prefix) {
       // parse as shortcut
       for (const shortcut of this._shortcuts) {
         const { name, fuzzy, command, oneArg } = shortcut
-        if (shortcut.prefix && !canBeCommand) continue
+        if (shortcut.prefix && !nickname) continue
         if (!fuzzy && message !== name) continue
         if (message.startsWith(name)) {
           let _message = message.slice(name.length)
@@ -293,7 +300,7 @@ export class App extends Context {
         const originalNext = next
         next = (fallback?: NextFunction) => noResponse as never || originalNext(fallback)
         if (noCommand && parsedArgv) return
-        if (noResponse && !prefix.includes(`[CQ:at,qq=${this.app.options.selfId}]`)) return
+        if (noResponse && !atMe) return
       }
 
       // ignore some user calls
@@ -310,7 +317,7 @@ export class App extends Context {
 
     // show suggestions
     const target = message.split(/\s/, 1)[0].toLowerCase()
-    if (!target || !canBeCommand) return next()
+    if (!target || !capture) return next()
 
     return showSuggestions({
       target,

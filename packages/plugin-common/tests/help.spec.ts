@@ -25,7 +25,7 @@ app.command('help/bar', 'BAR')
   .example('example 2')
 app.command('bar.baz', 'BAZ')
 
-const session = new ServerSession('private', 'friend', { userId: 456 })
+const session = new ServerSession('private', 456)
 
 describe('help command', () => {
   test('show command help', async () => {

@@ -31,8 +31,9 @@ app.command('err')
     throw new Error('command error')
   })
 
-const session1 = new ServerSession('private', 'friend', { userId: 456 })
-const session2 = new ServerSession('private', 'friend', { userId: 789 })
+const session1 = new ServerSession('private', 456)
+const session2 = new ServerSession('private', 789)
+const session3 = new ServerSession('group', 456, { groupId: 321 })
 
 describe('configurations', () => {
   test('server', () => {
@@ -40,6 +41,114 @@ describe('configurations', () => {
     expect(() => new App({ type: 'foo' as any })).toThrow(errors.UNSUPPORTED_SERVER_TYPE)
     expect(() => new App({ type: 'http' })).toThrow(format(errors.MISSING_CONFIGURATION, 'port'))
     expect(() => new App({ type: 'ws' })).toThrow(format(errors.MISSING_CONFIGURATION, 'server'))
+  })
+})
+
+describe('command prefix', () => {
+  beforeAll(() => {
+    app.options.similarityCoefficient = 0
+  })
+
+  afterAll(() => {
+    app.options.commandPrefix = null
+    app.options.similarityCoefficient = 0.4
+    app.prepare()
+  })
+
+  test('no prefix', async () => {
+    app.options.commandPrefix = null
+    app.prepare()
+
+    await session2.shouldHaveResponse('foo bar', 'foobar')
+    await session3.shouldHaveResponse('foo bar', 'foobar')
+    await session2.shouldHaveNoResponse('!foo bar')
+    await session3.shouldHaveNoResponse('!foo bar')
+    await session2.shouldHaveNoResponse('.foo bar')
+    await session3.shouldHaveNoResponse('.foo bar')
+  })
+
+  test('single prefix', async () => {
+    app.options.commandPrefix = '!'
+    app.prepare()
+
+    await session2.shouldHaveResponse('foo bar', 'foobar')
+    await session3.shouldHaveNoResponse('foo bar')
+    await session2.shouldHaveResponse('!foo bar', 'foobar')
+    await session3.shouldHaveResponse('!foo bar', 'foobar')
+    await session2.shouldHaveNoResponse('.foo bar')
+    await session3.shouldHaveNoResponse('.foo bar')
+  })
+
+  test('multiple prefixes', async () => {
+    app.options.commandPrefix = ['!', '.']
+    app.prepare()
+
+    await session2.shouldHaveResponse('foo bar', 'foobar')
+    await session3.shouldHaveNoResponse('foo bar')
+    await session2.shouldHaveResponse('!foo bar', 'foobar')
+    await session3.shouldHaveResponse('!foo bar', 'foobar')
+    await session2.shouldHaveResponse('.foo bar', 'foobar')
+    await session3.shouldHaveResponse('.foo bar', 'foobar')
+  })
+
+  test('optional prefix', async () => {
+    app.options.commandPrefix = ['.', '']
+    app.prepare()
+
+    await session2.shouldHaveResponse('foo bar', 'foobar')
+    await session3.shouldHaveResponse('foo bar', 'foobar')
+    await session2.shouldHaveNoResponse('!foo bar')
+    await session3.shouldHaveNoResponse('!foo bar')
+    await session2.shouldHaveResponse('.foo bar', 'foobar')
+    await session3.shouldHaveResponse('.foo bar', 'foobar')
+  })
+})
+
+describe('nickname prefix', () => {
+  beforeAll(() => {
+    app.options.similarityCoefficient = 0
+    app.options.commandPrefix = '-'
+    app.prepare()
+  })
+
+  afterAll(() => {
+    app.options.similarityCoefficient = 0.4
+    app.options.commandPrefix = null
+    app.prepare()
+  })
+
+  test('no nickname', async () => {
+    await session2.shouldHaveResponse('foo bar', 'foobar')
+    await session3.shouldHaveNoResponse('foo bar')
+    await session2.shouldHaveResponse('-foo bar', 'foobar')
+    await session3.shouldHaveResponse('-foo bar', 'foobar')
+    await session3.shouldHaveResponse(`[CQ:at,qq=${app.selfId}] foo bar`, 'foobar')
+  })
+
+  test('single nickname', async () => {
+    app.options.nickname = 'koishi'
+    app.prepare()
+
+    await session2.shouldHaveResponse('koishi, foo bar', 'foobar')
+    await session3.shouldHaveResponse('koishi, foo bar', 'foobar')
+    await session2.shouldHaveResponse('koishi \n foo bar', 'foobar')
+    await session3.shouldHaveResponse('koishi \n foo bar', 'foobar')
+    await session2.shouldHaveNoResponse('komeiji, foo bar')
+    await session3.shouldHaveNoResponse('komeiji, foo bar')
+  })
+
+  test('multiple nicknames', async () => {
+    app.options.nickname = ['komeiji', 'koishi']
+    app.prepare()
+
+    await session2.shouldHaveResponse('foo bar', 'foobar')
+    await session3.shouldHaveNoResponse('foo bar')
+    await session2.shouldHaveResponse('-foo bar', 'foobar')
+    await session3.shouldHaveResponse('-foo bar', 'foobar')
+    await session2.shouldHaveResponse('koishi, foo bar', 'foobar')
+    await session3.shouldHaveResponse('koishi, foo bar', 'foobar')
+    await session2.shouldHaveResponse('komeiji foo bar', 'foobar')
+    await session3.shouldHaveResponse('komeiji foo bar', 'foobar')
   })
 })
 

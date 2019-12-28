@@ -91,11 +91,14 @@ export async function waitFor (method: string, timeout = MAX_TIMEOUT) {
 export class ServerSession {
   action: string
 
-  constructor (public type: MetaTypeMap['message'], subType: SubTypeMap['message'], public meta?: Meta<'message'>) {
+  constructor (public type: MetaTypeMap['message'], userId: number, public meta: Meta<'message'> = {}) {
     if (!meta.selfId) meta.selfId = 514
     meta.postType = 'message'
     meta.messageType = type
-    meta.subType = subType
+    meta.userId = userId
+    meta.subType = type === 'private' ? 'friend' : type === 'group' ? 'normal' : undefined
+    meta.$ctxType = type === 'private' ? 'user' : type
+    meta.$ctxId = meta[`${meta.$ctxType}Id`]
     this.action = `send_${this.type}_msg`
   }
 
@@ -116,7 +119,7 @@ export class ServerSession {
   async shouldHaveNoResponse (message: string): Promise<void> {
     await postMeta({ ...this.meta, message })
     return new Promise((resolve, reject) => {
-      const listener = () => reject(new Error('has response'))
+      const listener = meta => reject(new Error('has response: ' + JSON.stringify(meta)))
       emitter.once(this.action, listener)
       sleep(0).then(() => {
         resolve()

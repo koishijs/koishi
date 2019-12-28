@@ -79,8 +79,10 @@ export default function apply (ctx: Context, options: CommandConfig) {
     })
 
   ctx.middleware((meta, next) => {
-    let message = simplify(meta.message).trim()
-    message = message.replace(ctx.app.prefixRE, '').trim()
+    let message = simplify(meta.message).trimStart()
+      .replace(ctx.app.atMeRE, '')
+      .replace(ctx.app.nicknameRE, '')
+      .trim()
     if (!message.endsWith('排行')) return next()
     message = message.slice(0, -2)
     let global = false
