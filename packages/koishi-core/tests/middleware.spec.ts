@@ -1,8 +1,9 @@
 import { SERVER_URL, CLIENT_PORT, createServer, postMeta } from 'koishi-test-utils'
 import { App, Meta } from '../src'
 import { Server } from 'http'
-import { sleep } from 'koishi-utils'
+import { sleep, noop } from 'koishi-utils'
 import { errors } from '../src/messages'
+import { format } from 'util'
 
 let app: App
 let server: Server
@@ -170,5 +171,33 @@ describe('runtime checks', () => {
     expect(errorCallback).toBeCalledWith(errorMessage)
     expect(middlewareErrorCallback).toBeCalledTimes(1)
     expect(middlewareErrorCallback).toBeCalledWith(errorMessage)
+  })
+
+  test('max middlewares', () => {
+    const mock = jest.fn()
+    app.receiver.on('error', mock)
+
+    const extraCalls = 7
+    for (let index = 0; index < 63 + extraCalls; ++index) {
+      app.middleware(noop)
+    }
+
+    expect(app._middlewares.length).toBe(64)
+    expect(mock).toBeCalledTimes(extraCalls)
+    expect(mock.mock.calls[0][0]).toHaveProperty('message', format(errors.MAX_MIDDLEWARES, 64))
+  })
+
+  test('max prepended middlewares', () => {
+    const mock = jest.fn()
+    app.receiver.on('error', mock)
+
+    const extraCalls = 7
+    for (let index = 0; index < 63 + extraCalls; ++index) {
+      app.prependMiddleware(noop)
+    }
+
+    expect(app._middlewares.length).toBe(64)
+    expect(mock).toBeCalledTimes(extraCalls)
+    expect(mock.mock.calls[0][0]).toHaveProperty('message', format(errors.MAX_MIDDLEWARES, 64))
   })
 })

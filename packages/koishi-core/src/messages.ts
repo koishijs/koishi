@@ -23,6 +23,7 @@ export const errors = {
   ISOLATED_NEXT: 'isolated next function',
   UNSUPPORTED_SERVER_TYPE: 'unsupported server type, expect "http" or "ws"',
   MISSING_CONFIGURATION: 'missing configuration "%s"',
+  MAX_MIDDLEWARES: 'max middleware count (%d) exceeded',
   UNSUPPORTED_CQHTTP_VERSION: 'your cqhttp version is not compatible with koishi, please upgrade your cqhttp to 3.0 or above',
   MULTIPLE_ANONYMOUS_BOTS: 'your cqhttp version does not support multiple anonymous bots, please upgrade your cqhttp to 3.4 or above',
 } as const

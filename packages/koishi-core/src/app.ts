@@ -19,6 +19,7 @@ export interface AppOptions {
   type?: ServerType
   database?: DatabaseConfig
   nickname?: string | string[]
+  maxMiddlewares?: number
   commandPrefix?: string | string[]
   quickOperationTimeout?: number
   similarityCoefficient?: number
@@ -80,8 +81,14 @@ function createLeadingRE (patterns: string[], suffix = '') {
   return patterns.length ? new RegExp(`^(${patterns.map(escapeRegex).join('|')})${suffix}`) : /^/
 }
 
+const defaultOptions: AppOptions = {
+  maxMiddlewares: 64,
+  similarityCoefficient: 0.4,
+}
+
 export class App extends Context {
   app = this
+  options: AppOptions
   server: Server
   atMeRE: RegExp
   prefixRE: RegExp
@@ -101,8 +108,9 @@ export class App extends Context {
   private _middlewareSet = new Set<number>()
   private _contexts: Record<string, Context> = { [appIdentifier]: this }
 
-  constructor (public options: AppOptions = {}) {
+  constructor (options: AppOptions = {}) {
     super(appIdentifier, appScope)
+    this.options = { ...defaultOptions, ...options }
     appList.push(this)
     if (options.database && Object.keys(options.database).length) {
       this.database = createDatabase(options.database)

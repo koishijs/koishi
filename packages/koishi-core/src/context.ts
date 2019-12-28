@@ -6,6 +6,7 @@ import { Sender } from './sender'
 import { App } from './app'
 import { Database } from './database'
 import { messages, errors } from './messages'
+import { format } from 'util'
 
 export type NextFunction = (next?: NextFunction) => any
 export type Middleware = (meta: MessageMeta, next: NextFunction) => any
@@ -116,12 +117,22 @@ export class Context {
   }
 
   middleware (middleware: Middleware) {
-    this.app._middlewares.push([this, middleware])
+    const { maxMiddlewares } = this.app.options
+    if (this.app._middlewares.length >= maxMiddlewares) {
+      this.app.receiver.emit('error', new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
+    } else {
+      this.app._middlewares.push([this, middleware])
+    }
     return this
   }
 
   prependMiddleware (middleware: Middleware) {
-    this.app._middlewares.unshift([this, middleware])
+    const { maxMiddlewares } = this.app.options
+    if (this.app._middlewares.length >= maxMiddlewares) {
+      this.app.receiver.emit('error', new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
+    } else {
+      this.app._middlewares.unshift([this, middleware])
+    }
     return this
   }
 
