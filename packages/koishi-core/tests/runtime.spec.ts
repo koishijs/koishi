@@ -166,6 +166,18 @@ describe('command execution', () => {
     expect(mock).toBeCalledWith('foobar')
   })
 
+  test('command error', () => {
+    const mock1 = jest.fn()
+    const mock2 = jest.fn()
+    app.receiver.on('error', mock1)
+    app.receiver.on('error/command', mock2)
+    app.runCommand('err', meta)
+    expect(mock1).toBeCalledTimes(1)
+    expect(mock1.mock.calls[0][0]).toHaveProperty('message', 'command error')
+    expect(mock2).toBeCalledTimes(1)
+    expect(mock2.mock.calls[0][0]).toHaveProperty('message', 'command error')
+  })
+
   test('command not found', () => {
     app.runCommand('bar', meta, ['foo'])
     expect(mock).toBeCalledTimes(1)

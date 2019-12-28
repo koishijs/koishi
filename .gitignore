@@ -7,6 +7,7 @@ temp
 
 /packages/plugin-*
 !/packages/plugin-common
+!/packages/plugin-teach
 
 todo.md
 yarn.lock
