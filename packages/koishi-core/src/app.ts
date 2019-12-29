@@ -162,6 +162,18 @@ export class App extends Context {
     this.prefixRE = createLeadingRE(prefixes)
   }
 
+  destroy () {
+    const index = appList.indexOf(this)
+    if (index >= 0) appList.splice(index, 1)
+    delete appMap[this.selfId]
+    selfIds.delete(this.selfId)
+    if (this.server) {
+      const index = this.server.appList.indexOf(this)
+      if (index >= 0) this.server.appList.splice(index, 1)
+      delete this.server.appMap[this.selfId]
+    }
+  }
+
   createContext (scope: string | ContextScope) {
     if (typeof scope === 'string') scope = ContextScope.parse(scope)
     scope = scope.map(([include, exclude]) => {
@@ -266,15 +278,16 @@ export class App extends Context {
     } else if (!prefix) {
       // parse as shortcut
       for (const shortcut of this._shortcuts) {
-        const { name, fuzzy, command, oneArg } = shortcut
-        if (shortcut.prefix && !nickname) continue
+        const { name, fuzzy, command, oneArg, prefix, options, args = [] } = shortcut
+        if (prefix && !nickname) continue
         if (!fuzzy && message !== name) continue
         if (message.startsWith(name)) {
           let _message = message.slice(name.length)
-          if (fuzzy && !shortcut.prefix && _message.match(/^\S/)) continue
+          if (fuzzy && !nickname && _message.match(/^\S/)) continue
           if (oneArg) _message = `'${_message.trim()}'`
           const result = command.parse(_message)
-          Object.assign(result.options, shortcut.options)
+          result.options = { ...options, ...result.options }
+          result.args.unshift(...args)
           fields.push(...command._userFields)
           parsedArgv = { meta, command, ...result }
           break

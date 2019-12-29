@@ -16,11 +16,17 @@ afterAll(() => {
 })
 
 app.command('foo <text>', { checkArgCount: true })
+  // make coverage happy
+  .userFields(['name', 'flag', 'authority', 'usage'])
+  .shortcut('bar1', { args: ['bar'] })
+  .shortcut('bar4', { oneArg: true, fuzzy: true })
   .action(({ meta }, bar) => {
     return meta.$send('foo' + bar)
   })
 
-app.command('fooo [text]', { checkUnknown: true, checkRequired: true })
+app.command('fooo', { checkUnknown: true, checkRequired: true })
+  .shortcut('bar2', { options: { text: 'bar' } })
+  .shortcut('bar3', { prefix: true, fuzzy: true })
   .option('-t, --text <bar>')
   .action(({ meta, options }) => {
     return meta.$send('fooo' + options.text)
@@ -206,6 +212,26 @@ describe('command execution', () => {
     app.runCommand('fooo', meta)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith(format(messages.REQUIRED_OPTIONS, '-t, --text <bar>'))
+  })
+})
+
+describe('shortcuts', () => {
+  test('single shortcut', async () => {
+    await session3.shouldHaveResponse(' bar1 ', 'foobar')
+    await session3.shouldHaveResponse(' bar2 ', 'fooobar')
+    await session3.shouldHaveNoResponse('bar1 bar')
+    await session3.shouldHaveNoResponse('bar2 -t bar')
+  })
+
+  test('prefix & fuzzy', async () => {
+    await session3.shouldHaveNoResponse('bar3 -t baz')
+    await session3.shouldHaveResponse(`[CQ:at,qq=${app.selfId}] bar3 -t baz`, 'fooobaz')
+  })
+
+  test('oneArg & fuzzy', async () => {
+    await session3.shouldHaveResponse('bar4 bar baz', 'foobar baz')
+    await session3.shouldHaveNoResponse('bar4bar baz')
+    await session3.shouldHaveResponse(`[CQ:at,qq=${app.selfId}] bar4bar baz`, 'foobar baz')
   })
 })
 

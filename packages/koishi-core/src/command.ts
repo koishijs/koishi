@@ -61,6 +61,7 @@ export interface ShortcutConfig {
   hidden?: boolean
   prefix?: boolean
   fuzzy?: boolean
+  args?: string[]
   oneArg?: boolean
   options?: Record<string, any>
 }
@@ -225,7 +226,7 @@ export class Command {
     // check required options
     if (this.config.checkRequired) {
       const absent = this._options.find((option) => {
-        return option.required && !(option.camels[0] in options)
+        return option.required && !(option.longest in options)
       })
       if (absent) {
         return meta.$send(format(messages.REQUIRED_OPTIONS, absent.rawName))

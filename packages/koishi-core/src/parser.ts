@@ -70,17 +70,17 @@ export function parseOption (rawName: string, description: string, config: Optio
   const camels: string[] = []
   let required = false, isBoolean = false, longest = ''
   const names = removeBrackets(rawName).split(',').map((name: string) => {
-    name = name.trim()
-    if (name.length > longest.length) longest = name
-    name = name.replace(/^-{1,2}/, '')
+    name = name.trim().replace(/^-{1,2}/, '')
+    let camel: string
     if (name.startsWith('no-') && !config.noNegated && !optsDef[name.slice(3)]) {
       name = name.slice(3)
-      const camel = camelCase(name)
+      camel = camelCase(name)
       negated.push(camel)
-      camels.push(camel)
     } else {
-      camels.push(camelCase(name))
+      camel = camelCase(name)
     }
+    camels.push(camel)
+    if (camel.length > longest.length) longest = camel
     return name
   })
 
