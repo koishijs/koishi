@@ -13,7 +13,7 @@ module.exports = {
     "koishi-(test-utils|database-[\\w-]+)": "<rootDir>/packages/$1/src",
     "koishi-[\\w-]+": "<rootDir>/packages/$0/src",
   },
-  coverageReporters: ['text', 'json'],
+  coverageReporters: ['text', 'lcov'],
   coveragePathIgnorePatterns: [
     'test-utils/',
     'tests/',

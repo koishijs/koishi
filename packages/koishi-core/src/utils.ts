@@ -35,9 +35,7 @@ interface SuggestOptions {
   execute: (suggestion: string, meta: MessageMeta, next: NextFunction) => any
 }
 
-const SIMILARITY_COEFFICIENT = 0.4
-
-function findSimilar (target: string, coefficient = SIMILARITY_COEFFICIENT) {
+function findSimilar (target: string, coefficient: number) {
   return (name: string) => name.length > 2 && leven(name, target) <= name.length * coefficient
 }
 
