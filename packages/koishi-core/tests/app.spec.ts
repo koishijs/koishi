@@ -58,6 +58,9 @@ describe('Startup Checks', () => {
     await expect(app1.start()).resolves.toBeUndefined()
     expect(app2.version.pluginVersion).toBe('3.3')
     expect(app2.selfId).toBe(415)
+    app2.destroy()
+    // make coverage happy
+    app2.destroy()
   })
 
   test('get selfIds manually', async () => {
@@ -70,6 +73,13 @@ describe('Startup Checks', () => {
     expect(mock).toBeCalledTimes(0)
     await expect(getSelfIds()).resolves.toMatchObject([514, 415])
     expect(mock).toBeCalledTimes(1)
+    await expect(getSelfIds()).resolves.toMatchObject([514, 415])
+    expect(mock).toBeCalledTimes(1)
+    await app2.stop()
+    // make coverage happy
+    app2.prepare(415)
+    expect(mock).toBeCalledTimes(1)
+    app2.destroy()
   })
 
   test('authorization failed', async () => {

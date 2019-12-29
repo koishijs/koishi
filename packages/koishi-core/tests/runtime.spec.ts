@@ -221,6 +221,16 @@ describe('command execution', () => {
 })
 
 describe('shortcuts', () => {
+  beforeAll(() => {
+    app.options.commandPrefix = '#'
+    app.prepare()
+  })
+
+  afterAll(() => {
+    app.options.commandPrefix = null
+    app.prepare()
+  })
+
   test('single shortcut', async () => {
     await session3.shouldHaveResponse(' bar1 ', 'foobar')
     await session3.shouldHaveResponse(' bar2 ', 'fooobar')
@@ -228,12 +238,19 @@ describe('shortcuts', () => {
     await session3.shouldHaveNoResponse('bar2 -t bar')
   })
 
-  test('prefix & fuzzy', async () => {
+  test('no command prefix', async () => {
+    await session3.shouldHaveNoResponse('#bar1')
+    await session3.shouldHaveNoResponse('#bar2')
+    await session3.shouldHaveNoResponse('#bar3')
+    await session3.shouldHaveNoResponse('#baz')
+  })
+
+  test('nickname prefix & fuzzy', async () => {
     await session3.shouldHaveNoResponse('bar3 -t baz')
     await session3.shouldHaveResponse(`[CQ:at,qq=${app.selfId}] bar3 -t baz`, 'fooobaz')
   })
 
-  test('oneArg & fuzzy', async () => {
+  test('one argument & fuzzy', async () => {
     await session3.shouldHaveResponse('bar4 bar baz', 'foobar baz')
     await session3.shouldHaveNoResponse('bar4bar baz')
     await session3.shouldHaveResponse(`[CQ:at,qq=${app.selfId}] bar4bar baz`, 'foobar baz')
@@ -247,6 +264,12 @@ describe('suggestions', () => {
     messages.COMMAND_SUGGESTION_SUFFIX,
   ].join('')
 
+  const expectedSuggestionText2 = [
+    messages.COMMAND_SUGGESTION_PREFIX,
+    format(messages.SUGGESTION_TEXT, '“fooo”'),
+    messages.COMMAND_SUGGESTION_SUFFIX,
+  ].join('')
+
   test('execute command', async () => {
     await session1.shouldHaveResponse('foo bar', 'foobar')
     await session1.shouldHaveNoResponse(' ')
@@ -256,10 +279,17 @@ describe('suggestions', () => {
     await session1.shouldHaveNoResponse('bar foo')
   })
 
-  test('apply suggestions', async () => {
+  test('apply suggestions 1', async () => {
     await session1.shouldHaveResponse('fo bar', expectedSuggestionText)
     await session2.waitForResponse('fooo -t bar')
     await session1.shouldHaveResponse(' ', 'foobar')
+    await session1.shouldHaveNoResponse(' ')
+  })
+
+  test('apply suggestions 2', async () => {
+    await session1.shouldHaveResponse('foooo -t bar', expectedSuggestionText2)
+    await session2.waitForResponse('foo bar')
+    await session1.shouldHaveResponse(' ', 'fooobar')
     await session1.shouldHaveNoResponse(' ')
   })
 

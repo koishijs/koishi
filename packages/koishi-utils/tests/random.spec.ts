@@ -2,25 +2,35 @@ import { randomId, randomBool, randomReal, randomInt, randomPick, randomSplice, 
 
 describe('Random Manipulations', () => {
   test('randomId', () => {
+    expect(randomId()).toHaveLength(8)
     expect(randomId(10)).toHaveLength(10)
   })
 
   test('randomBool', () => {
-    const value = randomBool(0.5)
-    expect(typeof value).toBe('boolean')
+    for (let i = 0; i < 10; ++i) {
+      expect(typeof randomBool(0.5)).toBe('boolean')
+      expect(randomBool(0)).toBe(false)
+      expect(randomBool(1)).toBe(true)
+    }
   })
 
   test('randomReal', () => {
+    let value: number
     for (let i = 0; i < 10; ++i) {
-      const value = randomReal(2, 5)
+      value = randomReal(2, 5)
       expect(value < 5 && value >= 2).toBe(true)
+      value = randomReal(5)
+      expect(value < 5 && value >= 0).toBe(true)
     }
   })
 
   test('randomInt', () => {
+    let value: number
     for (let i = 0; i < 10; ++i) {
-      const value = randomInt(2, 5.9)
+      value = randomInt(2, 5.9)
       expect(value <= 5 && value >= 2 && isInteger(value)).toBe(true)
+      value = randomInt(5.9)
+      expect(value <= 5 && value >= 0 && isInteger(value)).toBe(true)
     }
   })
 

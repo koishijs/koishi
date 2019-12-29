@@ -48,9 +48,7 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
     let message = prefix + format(messages.SUGGESTION_TEXT, suggestions.map(name => `“${name}”`).join('或'))
     if (suggestions.length === 1) {
       const [suggestion] = suggestions
-      const command = typeof options.command === 'function'
-        ? options.command(suggestion)
-        : options.command
+      const command = typeof options.command === 'function' ? options.command(suggestion) : options.command
       const identifier = meta.userId + meta.$ctxType + meta.$ctxId
       const fields = Array.from(command._userFields)
       if (!fields.includes('name')) fields.push('name')

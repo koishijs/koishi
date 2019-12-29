@@ -17,7 +17,7 @@ export function randomReal (end: number): number
 export function randomReal (start: number, end: number): number
 export function randomReal (...args: [number, number?]): number {
   const start = args.length > 1 ? args[0] : 0
-  const end = args[args.length - 1] || 1
+  const end = args[args.length - 1]
   return Math.random() * (end - start) + start
 }
 
