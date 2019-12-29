@@ -2,6 +2,7 @@ import { onStart, onStop, startAll, stopAll, App, getSelfIds } from '../src'
 import { createApp, createServer, emitter, setResponse } from 'koishi-test-utils'
 import { errors } from '../src/messages'
 
+let app1: App, app2: App
 const server = createServer()
 
 afterAll(() => {
@@ -9,8 +10,6 @@ afterAll(() => {
 })
 
 describe('Lifecycle', () => {
-  let app1: App, app2: App
-
   beforeAll(() => {
     app1 = new App()
     app2 = new App()
@@ -19,6 +18,10 @@ describe('Lifecycle', () => {
   afterAll(() => {
     app1.destroy()
     app2.destroy()
+  })
+
+  test('app.version', () => {
+    expect(app1.version).toBeUndefined()
   })
 
   test('onStart', async () => {
@@ -38,21 +41,21 @@ describe('Lifecycle', () => {
 })
 
 describe('Startup Checks', () => {
-  let app: App
-  beforeAll(() => app = createApp())
-  afterEach(() => app.stop())
-  afterAll(() => app.destroy())
+  // @ts-ignore
+  beforeAll(() => app1 = createApp())
+  afterEach(() => app1.stop())
+  afterAll(() => app1.destroy())
 
   test('< 3.0', async () => {
     emitter.once('get_version_info', () => setResponse({ plugin_version: '2.9' }))
-    await expect(app.start()).rejects.toHaveProperty('message', errors.UNSUPPORTED_CQHTTP_VERSION)
+    await expect(app1.start()).rejects.toHaveProperty('message', errors.UNSUPPORTED_CQHTTP_VERSION)
   })
 
   test('< 3.4', async () => {
     const app2 = createApp({ selfId: undefined })
     emitter.once('get_version_info', () => setResponse({ plugin_version: '3.3' }))
     emitter.once('get_login_info', () => setResponse({ user_id: 415 }))
-    await expect(app.start()).resolves.toBeUndefined()
+    await expect(app1.start()).resolves.toBeUndefined()
     expect(app2.version.pluginVersion).toBe('3.3')
     expect(app2.selfId).toBe(415)
   })
@@ -71,6 +74,6 @@ describe('Startup Checks', () => {
 
   test('authorization failed', async () => {
     emitter.once('get_version_info', () => setResponse({}, 401))
-    await expect(app.start()).rejects.toHaveProperty('message', 'authorization failed')
+    await expect(app1.start()).rejects.toHaveProperty('message', 'authorization failed')
   })
 })

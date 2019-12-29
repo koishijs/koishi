@@ -17,6 +17,7 @@ export const errors = {
   DUPLICATE_COMMAND: 'duplicate command names',
   DUPLICATE_OPTION: 'duplicate option names',
   EXPECT_COMMAND_NAME: 'expect a command name',
+  INVALID_PLUGIN: 'invalid plugin, expect function or object with a "apply" method',
   INVALID_CONTEXT: 'invalid context path',
   INVALID_IDENTIFIER: 'invalid context identifier',
   INVALID_SUBCOMMAND: 'invalid subcommand',

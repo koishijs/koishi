@@ -178,6 +178,7 @@ export abstract class Server {
   }
 
   close () {
+    this.version = undefined
     this.isListening = false
     this._close()
   }

@@ -166,6 +166,11 @@ describe('command execution', () => {
 
   beforeEach(() => mock.mockClear())
 
+  test('get command', () => {
+    expect(app.getCommand('foo', meta)).toBe(app.command('foo'))
+    expect(app.getCommand('fo', meta)).toBeUndefined()
+  })
+
   test('excute command', () => {
     app.runCommand('foo', meta, ['bar'])
     expect(mock).toBeCalledTimes(1)

@@ -1,6 +1,21 @@
 import { App } from '../src'
+import { errors } from '../src/messages'
 
 const app = new App()
+
+describe('Context API', () => {
+  test('create context', () => {
+    expect(app.createContext('user')).toBe(app.users)
+    expect(app.createContext('group+123,456')).toBe(app.group(123, 456))
+    expect(app.createContext('discuss-123,456')).toBe(app.discusses.except(123, 456))
+    expect(app.createContext('user;group+123')).toBe(app.users.plus(app.group(123)))
+    expect(() => app.createContext('')).toThrowError(errors.INVALID_IDENTIFIER)
+  })
+
+  test('call chaining', () => {
+    expect(app.users.except(123).plus(app.discuss(456)).end()).toBe(app)
+  })
+})
 
 describe('Composition API', () => {
   test('directly generated context', () => {
@@ -76,11 +91,5 @@ describe('Composition API', () => {
     expect(ctx.contain(app.group(789))).toBe(true)
     expect(ctx.contain(app.discuss(123))).toBe(false)
     expect(ctx.contain(app.discuss(789))).toBe(false)
-  })
-})
-
-describe('Context API', () => {
-  test('context.prototype.end', () => {
-    expect(app.users.except(123).plus(app.discuss(456)).end()).toBe(app)
   })
 })

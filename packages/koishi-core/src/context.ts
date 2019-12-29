@@ -24,17 +24,17 @@ export namespace ContextScope {
       const type = contextTypes[index]
       const sign = include ? '+' : '-'
       const idList = include || exclude
-      return `${sign}${type}:${idList.join(',')}`
+      return `${type}${sign}${idList.join(',')}`
     }).filter(a => a).join(';')
   }
 
   export function parse (identifier: string) {
     const scope = noopScope.slice()
     identifier.split(';').forEach((segment) => {
-      const capture = /^([+-])(user|group|discuss):(.+)$/.exec(segment)
+      const capture = /^(user|group|discuss)(?:([+-])(\d+(?:,\d+)*))?$/.exec(segment)
       if (!capture) throw new Error(errors.INVALID_IDENTIFIER)
-      const [_, sign, type, list] = capture
-      const idList = list.split(',').map(n => +n)
+      const [_, type, sign = '-', list] = capture
+      const idList = list ? list.split(',').map(n => +n) : []
       scope[contextTypes[type]] = sign === '+' ? [idList, null] : [null, idList]
     })
     return scope
@@ -112,6 +112,8 @@ export class Context {
       plugin(app, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
       plugin.apply(app, options)
+    } else {
+      throw new Error(errors.INVALID_PLUGIN)
     }
     return this
   }
@@ -151,9 +153,10 @@ export class Context {
     const config = { description, ...args[0] as CommandConfig }
     const [path] = rawName.split(' ', 1)
     const declaration = rawName.slice(path.length)
+    const segments = path.toLowerCase().split(/(?=[\\./])/)
 
     let parent: Command = null
-    path.toLowerCase().split(/(?=[\\./])/).forEach((segment) => {
+    segments.forEach((segment) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
       let command = this.app._commandMap[name]
@@ -188,6 +191,7 @@ export class Context {
     })
 
     Object.assign(parent.config, config)
+    if (config.noHelpOption) parent.removeOption('help')
     return parent
   }
 
@@ -199,8 +203,7 @@ export class Context {
 
   getCommand (name: string, meta: MessageMeta) {
     const command = this._getCommandByRawName(name)
-    if (!command || !command.context.match(meta) || command.getConfig('disable', meta)) return
-    return command
+    if (command && command.context.match(meta) && !command.getConfig('disable', meta)) return command
   }
 
   runCommand (name: string, meta: MessageMeta, args: string[] = [], options: Record<string, any> = {}, rest = '') {

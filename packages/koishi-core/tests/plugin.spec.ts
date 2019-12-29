@@ -1,5 +1,6 @@
 import { App } from '../src'
 import { noop } from 'koishi-utils'
+import { errors } from '../src/messages'
 
 const app = new App()
 
@@ -45,5 +46,11 @@ describe('plugin', () => {
     app.plugin(plugin, false)
 
     expect(callback).toBeCalledTimes(0)
+  })
+
+  test('apply invalid plugin', () => {
+    expect(() => app.plugin(undefined)).toThrowError(errors.INVALID_PLUGIN)
+    expect(() => app.plugin({} as any)).toThrowError(errors.INVALID_PLUGIN)
+    expect(() => app.plugin({ apply: {} } as any)).toThrowError(errors.INVALID_PLUGIN)
   })
 })

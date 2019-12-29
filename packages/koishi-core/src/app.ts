@@ -144,7 +144,7 @@ export class App extends Context {
   prepare (selfId?: number) {
     if (selfId) {
       this.options.selfId = selfId
-      if (!this._isReady && this.server?.isListening) {
+      if (!this._isReady && this.server.isListening) {
         this.receiver.emit('ready')
         this._isReady = true
       }

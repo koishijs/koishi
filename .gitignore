@@ -18,6 +18,7 @@ yarn-error.log
 package-lock.json
 tsconfig.tsbuildinfo
 
+.eslintcache
 .DS_Store
 .idea
 .vscode

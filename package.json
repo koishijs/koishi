@@ -10,13 +10,13 @@
     "bump": "ts-node build/bump",
     "docs": "cd docs & yarn dev",
     "jest": "jest .*\\.spec\\.ts --runInBand",
-    "lint": "eslint packages/*/src/**/*.ts",
-    "start:kira": "yarn workspace bot-kira koishi run",
-    "start:shiki": "yarn workspace bot-shiki koishi run"
+    "lint": "eslint packages/*/src/**/*.ts --cache",
+    "start": "ts-node build/start"
   },
   "version": "1.0.0",
   "license": "MIT",
   "devDependencies": {
+    "@types/cross-spawn": "^6.0.1",
     "@types/fs-extra": "^8.0.1",
     "@types/jest": "^24.0.23",
     "@types/node": "^13.1.0",
@@ -24,6 +24,7 @@
     "@typescript-eslint/eslint-plugin": "^2.11.0",
     "@typescript-eslint/parser": "^2.11.0",
     "cac": "^6.5.3",
+    "cross-spawn": "^7.0.1",
     "del": "^5.1.0",
     "eslint": "^6.7.1",
     "eslint-config-standard": "^14.1.0",

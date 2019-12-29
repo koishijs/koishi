@@ -87,9 +87,7 @@ export class Command {
     this.config = { ...defaultConfig, ...config }
     this._registerAlias(this.name)
     context.app._commands.push(this)
-    if (!config.noHelpOption) {
-      this.option('-h, --help', messages.SHOW_THIS_MESSAGE)
-    }
+    this.option('-h, --help', messages.SHOW_THIS_MESSAGE)
   }
 
   get app () {
@@ -166,6 +164,17 @@ export class Command {
       this._optsDef[name] = option
     }
     return this
+  }
+
+  removeOption (name: string) {
+    const option = this._optsDef[name]
+    if (!option) return false
+    for (const name of option.names) {
+      delete this._optsDef[name]
+    }
+    const index = this._options.indexOf(option)
+    this._options.splice(index, 1)
+    return true
   }
 
   action (callback: (this: this, options: ParsedCommandLine, ...args: string[]) => any) {

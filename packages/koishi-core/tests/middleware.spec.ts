@@ -200,4 +200,14 @@ describe('runtime checks', () => {
     expect(mock).toBeCalledTimes(extraCalls)
     expect(mock.mock.calls[0][0]).toHaveProperty('message', format(errors.MAX_MIDDLEWARES, 64))
   })
+
+  test('remove middlewares', () => {
+    const fn = () => {}
+    app.middleware(fn)
+    expect(app._middlewares.length).toBe(2)
+    expect(app.removeMiddleware(fn)).toBeTruthy()
+    expect(app._middlewares.length).toBe(1)
+    expect(app.removeMiddleware(fn)).toBeFalsy()
+    expect(app._middlewares.length).toBe(1)
+  })
 })

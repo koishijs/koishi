@@ -8,6 +8,10 @@ jest.setTimeout(1000)
 describe('register commands', () => {
   beforeAll(() => app = new App())
 
+  test('constructor checks', () => {
+    expect(() => app.command('')).toThrowError(errors.EXPECT_COMMAND_NAME)
+  })
+
   test('context.command', () => {
     app.command('a')
     app.user(10000).command('b')
@@ -52,6 +56,17 @@ describe('register commands', () => {
       app.command('g').alias('y')
       app.command('h').alias('y')
     }).toThrow(errors.DUPLICATE_COMMAND)
+  })
+
+  test('remove options', () => {
+    const cmd = app.command('command-with-option').option('-a, --alpha')
+    expect(cmd._optsDef.alpha).toBeTruthy()
+    expect(cmd.removeOption('a')).toBe(true)
+    expect(cmd._optsDef.alpha).toBeFalsy()
+    expect(cmd.removeOption('a')).toBe(false)
+
+    expect(app.command('command-with-help')._optsDef.help).toBeTruthy()
+    expect(app.command('command-without-help', { noHelpOption: true })._optsDef.help).toBeFalsy()
   })
 })
 
