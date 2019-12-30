@@ -4,7 +4,7 @@ import { MessageMeta, Meta, contextTypes } from './meta'
 import { EventEmitter } from 'events'
 import { Sender } from './sender'
 import { App } from './app'
-import { Database } from './database'
+import { Database, UserField, GroupField, User, Group } from './database'
 import { messages, errors } from './messages'
 import { format } from 'util'
 
@@ -203,7 +203,7 @@ export class Context {
 
   getCommand (name: string, meta: MessageMeta) {
     const command = this._getCommandByRawName(name)
-    if (command && command.context.match(meta) && !command.getConfig('disable', meta)) return command
+    if (command?.context.match(meta) && !command.getConfig('disable', meta)) return command
   }
 
   runCommand (name: string, meta: MessageMeta, args: string[] = [], options: Record<string, any> = {}, rest = '') {
@@ -251,6 +251,9 @@ export interface EventMap {
   'lifecycle' (meta: Meta<'meta_event'>): any
   'lifecycle/enable' (meta: Meta<'meta_event'>): any
   'lifecycle/disable' (meta: Meta<'meta_event'>): any
+  'before-user' (fields: Set<UserField>, argv: ParsedCommandLine): any
+  'before-group' (fields: Set<GroupField>, argv: ParsedCommandLine): any
+  'attach' (meta: Meta<'message'>): any
   'send' (meta: Meta<'send'>): any
   'before-send' (meta: Meta<'send'>): any
   'before-command' (argv: ParsedCommandLine): any

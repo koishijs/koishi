@@ -4,7 +4,7 @@ import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig, ParsedCommandLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope, Events, EventMap } from './context'
-import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, User } from './database'
+import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField } from './database'
 import { showSuggestions } from './utils'
 import { Meta, MessageMeta } from './meta'
 import { simplify } from 'koishi-utils'
@@ -110,8 +110,10 @@ export class App extends Context {
 
   constructor (options: AppOptions = {}) {
     super(appIdentifier, appScope)
-    this.options = { ...defaultOptions, ...options }
     appList.push(this)
+
+    // resolve options
+    this.options = { ...defaultOptions, ...options }
     if (options.database && Object.keys(options.database).length) {
       this.database = createDatabase(options.database)
     }
@@ -123,8 +125,14 @@ export class App extends Context {
       this.sender = new Sender(this)
     }
     if (this.selfId) this.prepare()
+
+    // bind built-in event listeners
     this.receiver.on('message', this._applyMiddlewares)
+    this.receiver.on('before-user', Command.attachUserFields)
+    this.receiver.on('before-group', Command.attachGroupFields)
     this.middleware(this._preprocess)
+
+    // create built-in contexts
     this.users = this.createContext([[null, []], [[], null], [[], null]]) as MajorContext
     this.groups = this.createContext([[[], null], [null, []], [[], null]]) as MajorContext
     this.discusses = this.createContext([[[], null], [[], null], [null, []]]) as MajorContext
@@ -249,7 +257,6 @@ export class App extends Context {
 
   private _preprocess = async (meta: MessageMeta, next: NextFunction) => {
     // strip prefix
-    const fields: UserField[] = []
     let capture: RegExpMatchArray
     let atMe = false, nickname = false, prefix: string = null
     let message = simplify(meta.message.trim())
@@ -272,11 +279,13 @@ export class App extends Context {
       message = message.slice(capture[0].length)
     }
 
-    if ((prefix !== null || nickname || meta.messageType === 'private') && (parsedArgv = this.parseCommandLine(message, meta))) {
-      // parse as command
-      fields.push(...parsedArgv.command._userFields)
-    } else if (!prefix) {
-      // parse as shortcut
+    // parse as command
+    if (prefix !== null || nickname || meta.messageType === 'private') {
+      parsedArgv = this.parseCommandLine(message, meta)
+    }
+
+    // parse as shortcut
+    if (!parsedArgv && !prefix) {
       for (const shortcut of this._shortcuts) {
         const { name, fuzzy, command, oneArg, prefix, options, args = [] } = shortcut
         if (prefix && !nickname) continue
@@ -288,43 +297,41 @@ export class App extends Context {
           const result = command.parse(_message)
           result.options = { ...options, ...result.options }
           result.args.unshift(...args)
-          fields.push(...command._userFields)
           parsedArgv = { meta, command, ...result }
           break
         }
       }
     }
 
-    // generate fields
-    if (!fields.includes('name')) fields.push('name')
-    if (!fields.includes('flag')) fields.push('flag')
-    if (parsedArgv) {
-      if (!fields.includes('usage')) fields.push('usage')
-      if (!fields.includes('authority')) fields.push('authority')
-    }
-
     if (this.database) {
-      // attach user data
-      const user = await this.app.database.observeUser(meta.userId, 0, fields)
-      Object.defineProperty(meta, '$user', {
-        value: user,
-        writable: true,
-      })
-
-      // update talkativeness
-      // ignore some group calls
       if (meta.messageType === 'group') {
-        const isAssignee = meta.$group.assignee === this.selfId
-        const noCommand = meta.$group.flag & GroupFlag.noCommand
-        const noResponse = meta.$group.flag & GroupFlag.noResponse || !isAssignee
+        // attach group data
+        const groupFields = new Set<GroupField>(['flag', 'assignee'])
+        this.receiver.emit('before-group', groupFields, parsedArgv || { meta })
+        const group = await this.database.observeGroup(meta.groupId, 0, Array.from(groupFields))
+        Object.defineProperty(meta, '$group', { value: group, writable: true })
+
+        // ignore some group calls
+        const isAssignee = group.assignee === this.selfId
+        const noCommand = group.flag & GroupFlag.noCommand
+        const noResponse = group.flag & GroupFlag.noResponse || !isAssignee
         if (noCommand && parsedArgv) return
         if (noResponse && !atMe) return
         const originalNext = next
         next = (fallback?: NextFunction) => noResponse as never || originalNext(fallback)
       }
 
+      // attach user data
+      const userFields = new Set<UserField>(['name', 'flag'])
+      this.receiver.emit('before-user', userFields, parsedArgv || { meta })
+      const user = await this.database.observeUser(meta.userId, 0, Array.from(userFields))
+      Object.defineProperty(meta, '$user', { value: user, writable: true })
+
       // ignore some user calls
       if (user.flag & UserFlag.ignore) return
+
+      // emit attach event
+      this.receiver.emit('attach', meta)
     }
 
     // execute command

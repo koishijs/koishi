@@ -99,12 +99,6 @@ export abstract class Server {
     // add context properties
     if (meta.postType === 'message') {
       if (meta.messageType === 'group') {
-        if (app.database) {
-          Object.defineProperty(meta, '$group', {
-            value: await app.database.getGroup(meta.groupId),
-            writable: true,
-          })
-        }
         meta.$delete = async () => {
           if (meta.$response) return meta.$response({ delete: true })
           return app.sender.deleteMsgAsync(meta.messageId)

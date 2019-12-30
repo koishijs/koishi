@@ -1,5 +1,5 @@
 import { Context, NextFunction } from './context'
-import { UserData, UserField } from './database'
+import { UserData, UserField, GroupField } from './database'
 import { messages, errors } from './messages'
 import { noop } from 'koishi-utils'
 import { MessageMeta } from './meta'
@@ -18,9 +18,9 @@ import {
 
 const showCommandLog = debug('koishi:command')
 
-export interface ParsedCommandLine extends ParsedLine {
+export interface ParsedCommandLine extends Partial<ParsedLine> {
   meta: MessageMeta
-  command: Command
+  command?: Command
   next?: NextFunction
 }
 
@@ -77,9 +77,38 @@ export class Command {
   _examples: string[] = []
   _shortcuts: Record<string, ShortcutConfig> = {}
   _userFields = new Set<UserField>()
+  _groupFields = new Set<GroupField>()
   _argsDef: CommandArgument[]
   _optsDef: Record<string, CommandOption> = {}
   _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
+
+  static attachUserFields (userFields: Set<UserField>, { command, options }: ParsedCommandLine) {
+    if (!command) return
+    for (const field of command._userFields) {
+      userFields.add(field)
+    }
+
+    const { maxUsage, minInterval, authority } = command.config
+    let shouldFetchAuthority = !userFields.has('authority') && authority > 0
+    let shouldFetchUsage = !userFields.has('usage') && (
+      typeof maxUsage === 'number' && maxUsage < Infinity ||
+      typeof minInterval === 'number' && minInterval > 0)
+    for (const option of command._options) {
+      if (option.camels[0] in options) {
+        if (option.authority > 0) shouldFetchAuthority = true
+        if (option.notUsage) shouldFetchUsage = false
+      }
+    }
+    if (shouldFetchAuthority) userFields.add('authority')
+    if (shouldFetchUsage) userFields.add('usage')
+  }
+
+  static attachGroupFields (groupFields: Set<GroupField>, { command }: ParsedCommandLine) {
+    if (!command) return
+    for (const field of command._groupFields) {
+      groupFields.add(field)
+    }
+  }
 
   constructor (public name: string, public declaration: string, public context: Context, config: CommandConfig = {}) {
     if (!name) throw new Error(errors.EXPECT_COMMAND_NAME)
