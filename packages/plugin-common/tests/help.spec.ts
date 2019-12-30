@@ -1,4 +1,4 @@
-import { createApp, createServer, ServerSession } from 'koishi-test-utils'
+import { createApp, createServer, ServerSession } from 'koishi-test-utils/src/http-server'
 import { Server } from 'http'
 import help from '../src/help'
 

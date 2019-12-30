@@ -1,4 +1,4 @@
-import { createApp, createServer, ServerSession } from 'koishi-test-utils'
+import { createApp, createServer, ServerSession } from 'koishi-test-utils/src/http-server'
 import { UserFlag, GroupFlag } from '../src'
 import { messages } from '../src/messages'
 import { resolve } from 'path'

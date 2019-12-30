@@ -1,4 +1,4 @@
-import { SERVER_URL, CLIENT_PORT, createServer, postMeta } from 'koishi-test-utils'
+import { SERVER_URL, CLIENT_PORT, createServer, postMeta } from 'koishi-test-utils/src/http-server'
 import { App, startAll, stopAll, Meta } from '../src'
 
 const server = createServer()
@@ -85,58 +85,57 @@ describe('Quick Operations', () => {
   beforeAll(() => app1.options.quickOperationTimeout = 100)
   afterAll(() => app1.options.quickOperationTimeout = 0)
 
-  test('message event', async () => {
-    const meta: Meta = {
-      postType: 'message',
-      userId: 10000,
-      groupId: 20000,
-      messageType: 'group',
-      subType: 'normal',
-      message: 'Hello',
-    }
+  const messageMeta: Meta = {
+    postType: 'message',
+    userId: 10000,
+    groupId: 20000,
+    messageType: 'group',
+    subType: 'normal',
+    message: 'Hello',
+  }
 
+  const frientRequestMeta: Meta = {
+    postType: 'request',
+    requestType: 'friend',
+    userId: 30000,
+  }
+
+  const groupRequestMeta: Meta = {
+    ...frientRequestMeta,
+    requestType: 'group',
+    subType: 'add',
+    groupId: 40000,
+  }
+
+  test('message event', async () => {
     app1.receiver.once('message', meta => meta.$send('foo'))
-    await expect(postMeta(meta)).resolves.toMatchObject({ data: { reply: 'foo' } })
+    await expect(postMeta(messageMeta)).resolves.toMatchObject({ data: { reply: 'foo' } })
 
     app1.groups.receiver.once('message', meta => meta.$ban())
-    await expect(postMeta(meta)).resolves.toMatchObject({ data: { ban: true } })
+    await expect(postMeta(messageMeta)).resolves.toMatchObject({ data: { ban: true } })
 
     app1.groups.receiver.once('message', meta => meta.$delete())
-    await expect(postMeta(meta)).resolves.toMatchObject({ data: { delete: true } })
+    await expect(postMeta(messageMeta)).resolves.toMatchObject({ data: { delete: true } })
 
     app1.groups.receiver.once('message', meta => meta.$kick())
-    await expect(postMeta(meta)).resolves.toMatchObject({ data: { kick: true } })
+    await expect(postMeta(messageMeta)).resolves.toMatchObject({ data: { kick: true } })
   })
 
   test('request event', async () => {
-    const meta: Meta = {
-      postType: 'request',
-      requestType: 'friend',
-      userId: 30000,
-    }
-
     app1.receiver.once('request/friend', meta => meta.$approve('foo'))
-    await expect(postMeta(meta)).resolves.toMatchObject({ data: { approve: true, remark: 'foo' } })
+    await expect(postMeta(frientRequestMeta)).resolves.toMatchObject({ data: { approve: true, remark: 'foo' } })
 
     app1.receiver.once('request/friend', meta => meta.$reject('bar'))
-    await expect(postMeta(meta)).resolves.toMatchObject({ data: { approve: false, reason: 'bar' } })
-
-    meta.requestType = 'group'
-    meta.subType = 'add'
-    meta.groupId = 40000
+    await expect(postMeta(frientRequestMeta)).resolves.toMatchObject({ data: { approve: false, reason: 'bar' } })
 
     app1.receiver.once('request/group/add', meta => meta.$approve('foo'))
-    await expect(postMeta(meta)).resolves.toMatchObject({ data: { approve: true, remark: 'foo' } })
+    await expect(postMeta(groupRequestMeta)).resolves.toMatchObject({ data: { approve: true, remark: 'foo' } })
 
     app1.receiver.once('request/group/add', meta => meta.$reject('bar'))
-    await expect(postMeta(meta)).resolves.toMatchObject({ data: { approve: false, reason: 'bar' } })
+    await expect(postMeta(groupRequestMeta)).resolves.toMatchObject({ data: { approve: false, reason: 'bar' } })
   })
 
   test('operation timeout', async () => {
-    await expect(postMeta({
-      postType: 'request',
-      requestType: 'friend',
-      userId: 30000,
-    })).resolves.toMatchObject({ data: {} })
+    await expect(postMeta(frientRequestMeta)).resolves.toMatchObject({ data: {} })
   }, 200)
 })

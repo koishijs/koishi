@@ -1,4 +1,4 @@
-import { createApp, createServer, ServerSession, createMeta } from 'koishi-test-utils'
+import { createApp, createServer, ServerSession, createMeta } from 'koishi-test-utils/src/http-server'
 import { errors, messages } from '../src/messages'
 import { App } from '../src'
 import { format } from 'util'

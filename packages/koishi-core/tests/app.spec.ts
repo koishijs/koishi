@@ -1,5 +1,5 @@
 import { onStart, onStop, startAll, stopAll, App, getSelfIds } from '../src'
-import { createApp, createServer, emitter, setResponse } from 'koishi-test-utils'
+import { createApp, createServer, emitter, setResponse } from 'koishi-test-utils/src/http-server'
 import { errors } from '../src/messages'
 
 let app1: App, app2: App
@@ -61,6 +61,15 @@ describe('Startup Checks', () => {
     app2.destroy()
     // make coverage happy
     app2.destroy()
+  })
+
+  test('multiple anonymous bots', async () => {
+    const app2 = createApp({ selfId: undefined })
+    const app3 = createApp({ selfId: undefined })
+    emitter.once('get_version_info', () => setResponse({ plugin_version: '3.3' }))
+    await expect(app1.start()).rejects.toHaveProperty('message', errors.MULTIPLE_ANONYMOUS_BOTS)
+    app2.destroy()
+    app3.destroy()
   })
 
   test('get selfIds manually', async () => {

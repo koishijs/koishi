@@ -1,4 +1,4 @@
-import { createApp, createServer, expectReqResToBe } from 'koishi-test-utils'
+import { createApp, createServer, expectReqResToBe } from 'koishi-test-utils/src/http-server'
 import { Server } from 'http'
 
 let server: Server

@@ -225,7 +225,6 @@ export class HttpServer extends Server {
             meta.$response = null
           }
           const timer = setTimeout(() => {
-            if (!meta.$response) return
             res.end()
             meta.$response = null
           }, app.options.quickOperationTimeout)
@@ -242,18 +241,16 @@ export class HttpServer extends Server {
   async _listen () {
     const { port } = this.appList[0].options
     this.server.listen(port)
-    if (this.appList[0].options.server) {
-      try {
-        this.version = await this.appList[0].sender.getVersionInfo()
-      } catch (error) {
-        throw new Error('authorization failed')
-      }
+    try {
+      this.version = await this.appList[0].sender.getVersionInfo()
+    } catch (error) {
+      throw new Error('authorization failed')
     }
     showServerLog('listen to port', port)
   }
 
   _close () {
-    if (this.server) this.server.close()
+    this.server.close()
     showServerLog('http server closed')
   }
 }
@@ -303,7 +300,7 @@ export class WsClient extends Server {
           try {
             parsed = JSON.parse(data)
           } catch (error) {
-            throw new Error(data)
+            return reject(data)
           }
           if (!resolved) {
             resolved = true
@@ -326,7 +323,7 @@ export class WsClient extends Server {
   }
 
   _close () {
-    if (this.socket) this.socket.close()
+    this.socket.close()
     showServerLog('ws client closed')
   }
 }
