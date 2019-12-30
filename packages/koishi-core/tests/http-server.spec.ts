@@ -125,11 +125,11 @@ describe('Quick Operations', () => {
     app1.receiver.once('request/friend', meta => meta.$approve('foo'))
     await expect(postMeta(frientRequestMeta)).resolves.toMatchObject({ data: { approve: true, remark: 'foo' } })
 
-    app1.receiver.once('request/friend', meta => meta.$reject('bar'))
-    await expect(postMeta(frientRequestMeta)).resolves.toMatchObject({ data: { approve: false, reason: 'bar' } })
+    app1.receiver.once('request/friend', meta => meta.$reject())
+    await expect(postMeta(frientRequestMeta)).resolves.toMatchObject({ data: { approve: false } })
 
-    app1.receiver.once('request/group/add', meta => meta.$approve('foo'))
-    await expect(postMeta(groupRequestMeta)).resolves.toMatchObject({ data: { approve: true, remark: 'foo' } })
+    app1.receiver.once('request/group/add', meta => meta.$approve())
+    await expect(postMeta(groupRequestMeta)).resolves.toMatchObject({ data: { approve: true } })
 
     app1.receiver.once('request/group/add', meta => meta.$reject('bar'))
     await expect(postMeta(groupRequestMeta)).resolves.toMatchObject({ data: { approve: false, reason: 'bar' } })

@@ -7,7 +7,7 @@ import debug from 'debug'
 const showLog = debug('koishi:test')
 
 export const SERVER_PORT = 15700
-export const MAX_TIMEOUT = 1000
+export const MAX_TIMEOUT = 100
 export const CLIENT_PORT = 17070
 export const SERVER_URL = `ws://localhost:${SERVER_PORT}`
 export const emitter = new EventEmitter()
@@ -37,6 +37,8 @@ export function createServer (port = SERVER_PORT, fail = false) {
     if (fail) return socket.send('authorization failed')
     socket.on('message', (data) => {
       const parsed = JSON.parse(data.toString())
+      emitter.emit(parsed.action, parsed.params)
+      emitter.emit('*', parsed)
       socket.send(JSON.stringify({
         echo: parsed.echo,
         retcode: _retcode,
@@ -46,6 +48,20 @@ export function createServer (port = SERVER_PORT, fail = false) {
   })
 
   return _server
+}
+
+export function nextTick () {
+  return new Promise((resolve, reject) => {
+    const listener = () => {
+      clearTimeout(timer)
+      resolve()
+    }
+    emitter.once('*', listener)
+    const timer = setTimeout(() => {
+      emitter.off('*', listener)
+      reject()
+    }, MAX_TIMEOUT)
+  })
 }
 
 export function postMeta (meta: Meta) {
