@@ -141,6 +141,13 @@ export class Command {
     return this
   }
 
+  groupFields (fields: Iterable<GroupField>) {
+    for (const field of fields) {
+      this._groupFields.add(field)
+    }
+    return this
+  }
+
   alias (...names: string[]) {
     for (const name of names) {
       this._registerAlias(name)
@@ -196,6 +203,7 @@ export class Command {
   }
 
   removeOption (name: string) {
+    name = name.replace(/^-+/, '')
     const option = this._optsDef[name]
     if (!option) return false
     for (const name of option.names) {
@@ -236,7 +244,6 @@ export class Command {
 
   async execute (argv: ParsedCommandLine, next: NextFunction = noop) {
     const { meta, options, args, unknown } = argv
-    if (!argv.next) argv.next = next
     this.app.emitEvent(meta, 'before-command', argv)
 
     // show help when use `-h, --help` or when there is no action
@@ -276,9 +283,16 @@ export class Command {
 
     showCommandLog('execute %s', this.name)
     this.app.emitEvent(meta, 'command', argv)
+
+    let skipped = false
+    argv.next = (_next) => {
+      skipped = true
+      return next(_next)
+    }
+
     try {
       await this._action(argv, ...args)
-      this.app.emitEvent(meta, 'after-command', argv)
+      if (!skipped) this.app.emitEvent(meta, 'after-command', argv)
     } catch (error) {
       this.app.receiver.emit('error/command', error)
       this.app.receiver.emit('error', error)
