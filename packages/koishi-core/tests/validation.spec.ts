@@ -93,6 +93,6 @@ describe('command validation', () => {
 
   test('check frequency', async () => {
     await session2.shouldHaveResponse('cmd2', '2:456')
-    await session2.shouldHaveResponse('cmd2 --baz', messages.TOO_FREQUENT)
+    await session2.shouldHaveResponse('cmd2', messages.TOO_FREQUENT)
   })
 })

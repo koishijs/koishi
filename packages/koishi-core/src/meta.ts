@@ -1,4 +1,4 @@
-import { GroupData, User } from './database'
+import { User, Group } from './database'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
 
@@ -33,7 +33,7 @@ export type ContextType = keyof typeof contextTypes
 export interface Meta <T extends PostType = PostType> {
   $path?: string
   $user?: User
-  $group?: GroupData
+  $group?: Group
   $ctxId?: number
   $ctxType?: ContextType
   $response?: (data: any) => void

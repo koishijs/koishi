@@ -150,7 +150,7 @@ describe('Quick Operations', () => {
     mock.mockClear()
     app1.groups.receiver.once('message', meta => meta.$kick())
     await postMeta(anonymousMeta)
-    await expect(nextTick()).rejects.toBeUndefined()
+    await expect(nextTick()).rejects.toBeTruthy()
   })
 
   test('request event', async () => {

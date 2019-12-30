@@ -59,7 +59,7 @@ export function nextTick () {
     emitter.once('*', listener)
     const timer = setTimeout(() => {
       emitter.off('*', listener)
-      reject()
+      reject(new Error('timeout'))
     }, MAX_TIMEOUT)
   })
 }

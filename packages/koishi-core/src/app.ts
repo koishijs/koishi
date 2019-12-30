@@ -394,7 +394,8 @@ export class App extends Context {
     // update middleware set
     this._middlewareSet.delete(counter)
 
-    // flush user data
-    if (meta.$user) await meta.$user._update()
+    // flush user & group data
+    await meta.$user?._update()
+    await meta.$group?._update()
   }
 }
