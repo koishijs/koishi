@@ -13,7 +13,7 @@ const { args, options } = CAC()
   .option('-o, --only', '')
   .parse()
 
-type BumpType = 'major' | 'minor' | 'patch'
+type BumpType = 'major' | 'minor' | 'patch' | 'auto'
 
 interface PackageJSON {
   name: string
@@ -52,15 +52,22 @@ class Package {
   bump (flag: BumpType) {
     if (this.meta.private) return
     const newVersion = new SemVer(this.oldVersion)
-    if (flag === 'patch' && newVersion.prerelease.length) {
-      const prerelease = newVersion.prerelease.slice() as [string, number]
-      prerelease[1] += 1
-      newVersion.prerelease = prerelease
+    if (flag === 'auto') {
+      if (newVersion.prerelease.length) {
+        const prerelease = newVersion.prerelease.slice() as [string, number]
+        prerelease[1] += 1
+        newVersion.prerelease = prerelease
+      } else {
+        newVersion.patch += 1
+      }
     } else {
-      newVersion[flag] += 1
-      newVersion.prerelease = []
-      if (flag !== 'patch') newVersion.patch = 0
-      if (flag === 'major') newVersion.minor = 0
+      if (newVersion.prerelease.length) {
+        newVersion.prerelease = []
+      } else {
+        newVersion[flag] += 1
+        if (flag !== 'patch') newVersion.patch = 0
+        if (flag === 'major') newVersion.minor = 0
+      }
     }
     if (gt(newVersion, this.version)) {
       this.dirty = true
@@ -122,7 +129,7 @@ function bumpPkg (source: Package, flag: BumpType, stop = false) {
   dependents.forEach(dep => bumpPkg(dep, flag))
 }
 
-const flag: BumpType = options.major ? 'major' : options.minor ? 'minor' : 'patch'
+const flag = options.major ? 'major' : options.minor ? 'minor' : options.patch ? 'patch' : 'auto'
 
 ;(async () => {
   const folders = await globby(require('../package').workspaces, {
