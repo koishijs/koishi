@@ -1,5 +1,7 @@
-import { createApp, createServer, postMeta, SERVER_PORT, emitter, nextTick } from 'koishi-test-utils/src/ws-client'
+import { wsClient } from 'koishi-test-utils'
 import { Meta } from '../src'
+
+const { createApp, createServer, postMeta, SERVER_PORT, emitter, nextTick } = wsClient
 
 const server2 = createServer(SERVER_PORT + 1, true)
 const server = createServer()

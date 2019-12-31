@@ -1,9 +1,11 @@
-import { SERVER_URL, CLIENT_PORT, createServer, postMeta } from 'koishi-test-utils/src/http-server'
+import { httpServer } from 'koishi-test-utils'
 import { App, Meta } from '../src'
 import { Server } from 'http'
 import { sleep, noop } from 'koishi-utils'
 import { errors } from '../src/messages'
 import { format } from 'util'
+
+const { SERVER_URL, CLIENT_PORT, createServer, postMeta } = httpServer
 
 let app: App
 let server: Server

@@ -1,5 +1,7 @@
-import { createApp, createServer, expectReqResToBe } from 'koishi-test-utils/src/http-server'
+import { httpServer } from 'koishi-test-utils'
 import { Server } from 'http'
+
+const { createApp, createServer, expectReqResToBe } = httpServer
 
 let server: Server
 const app = createApp()

@@ -1,6 +1,8 @@
 import { onStart, onStop, startAll, stopAll, App, getSelfIds } from '../src'
-import { createApp, createServer, emitter, setResponse } from 'koishi-test-utils/src/http-server'
+import { httpServer } from 'koishi-test-utils'
 import { errors } from '../src/messages'
+
+const { createApp, createServer, emitter, setResponse } = httpServer
 
 let app1: App, app2: App
 const server = createServer()

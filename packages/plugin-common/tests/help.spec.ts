@@ -1,4 +1,6 @@
-import { createApp, createServer, ServerSession } from 'koishi-test-utils/src/http-server'
+import { httpServer } from 'koishi-test-utils'
+
+const  { createApp, createServer, ServerSession } = httpServer
 import { Server } from 'http'
 import help from '../src/help'
 

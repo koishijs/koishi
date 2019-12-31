@@ -1,7 +1,9 @@
-import { createApp, createServer, ServerSession, createMeta } from 'koishi-test-utils/src/http-server'
+import { httpServer } from 'koishi-test-utils'
 import { errors, messages } from '../src/messages'
 import { App } from '../src'
 import { format } from 'util'
+
+const { createApp, createServer, ServerSession, createMeta } = httpServer
 
 const app = createApp()
 const server = createServer()

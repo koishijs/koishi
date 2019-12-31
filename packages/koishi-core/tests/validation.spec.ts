@@ -1,9 +1,11 @@
-import { createApp, createServer, ServerSession } from 'koishi-test-utils/src/http-server'
+import { httpServer } from 'koishi-test-utils'
 import { UserFlag, GroupFlag } from '../src'
 import { messages } from '../src/messages'
 import { resolve } from 'path'
 import 'koishi-database-level'
 import del from 'del'
+
+const { createApp, createServer, ServerSession } = httpServer
 
 const path = resolve(__dirname, '../temp')
 

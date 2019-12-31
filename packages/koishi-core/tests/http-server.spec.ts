@@ -1,5 +1,7 @@
-import { SERVER_URL, CLIENT_PORT, createServer, postMeta } from 'koishi-test-utils/src/http-server'
+import { httpServer } from 'koishi-test-utils'
 import { App, startAll, stopAll, Meta } from '../src'
+
+const { SERVER_URL, CLIENT_PORT, createServer, postMeta } = httpServer
 
 const server = createServer()
 
