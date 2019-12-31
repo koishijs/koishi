@@ -76,19 +76,26 @@ export class LevelDatabase {
   }
 
   async create <K extends TableType> (table: K, data: Partial<TableData[K]>) {
-    const id = 1 + await new Promise<number>((resolve, reject) => {
-      this.tables[table].createKeyStream({ reverse: true, limit: 1 })
-        .on('data', key => resolve(key))
-        .on('error', error => reject(error))
-        .on('end', () => resolve(0))
-    })
-    if (!data.id) data.id = id
-    await (this.tables[table] as any).put(id, data)
+    if (typeof data.id !== 'number') {
+      data.id = 1 + await new Promise<number>((resolve, reject) => {
+        this.tables[table].createKeyStream({ reverse: true, limit: 1 })
+          .on('data', key => resolve(key))
+          .on('error', error => reject(error))
+          .on('end', () => resolve(0))
+      })
+    }
+    await (this.tables[table] as any).put(data.id, data)
     return data as TableData[K]
   }
 
   async remove <K extends TableType> (table: K, id: number) {
     return this.tables[table].del(id)
+  }
+
+  async update <K extends TableType> (table: K, id: number, data: Partial<TableData[K]>) {
+    const sub = this.tables[table] as LevelUp
+    const originalData = await sub.get(id)
+    return sub.put(id, { ...originalData, ...data })
   }
 
   count (table: TableType) {

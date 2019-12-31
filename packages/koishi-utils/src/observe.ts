@@ -8,7 +8,7 @@ const builtinClasses = ['Date', 'RegExp', 'Set', 'Map', 'WeakSet', 'WeakMap', 'A
 const refs: Record<string | number, any> = {}
 
 function observeObject <T extends object> (target: T, label: string, update?: () => void): T {
-  Object.defineProperty(target, '_proxy', { value: {} })
+  Object.defineProperty(target, '__proxyGetters__', { value: {} })
 
   if (!update) {
     Object.defineProperty(target, '_diff', {
@@ -19,20 +19,20 @@ function observeObject <T extends object> (target: T, label: string, update?: ()
 
   return new Proxy(target as Observed<T, any>, {
     get (target, key) {
-      if (key in target._proxy) return target._proxy[key]
+      if (key in target.__proxyGetters__) return target.__proxyGetters__[key]
       const value = target[key]
       if (!value || staticTypes.includes(typeof value) || typeof key === 'string' && key.startsWith('_')) return value
       const _update = update || (() => {
         const hasKey = key in target._diff
-        target._diff[key] = target._proxy[key]
+        target._diff[key] = target.__proxyGetters__[key]
         if (!hasKey && label) {
           showObserverLog(`[diff] ${label}: ${String(key)} (deep)`)
         }
       })
       if (Array.isArray(value)) {
-        return target._proxy[key] = observeArray(value, label, _update)
+        return target.__proxyGetters__[key] = observeArray(value, label, _update)
       } else {
-        return target._proxy[key] = observeObject(value, label, _update)
+        return target.__proxyGetters__[key] = observeObject(value, label, _update)
       }
     },
     set (target, key, value) {
@@ -42,7 +42,7 @@ function observeObject <T extends object> (target: T, label: string, update?: ()
         } else if (typeof key !== 'string' || !key.startsWith('_')) {
           const hasKey = key in target._diff
           target._diff[key] = value
-          delete target._proxy[key]
+          delete target.__proxyGetters__[key]
           if (!hasKey && label) {
             showObserverLog(`[diff] ${label}: ${String(key)}`)
           }
@@ -95,9 +95,10 @@ function observeArray <T> (target: T[], label: string, update: () => void) {
 
 export type Observed <T, R = any> = T & {
   _diff: Partial<T>
-  _proxy: Partial<T>
   _update: () => R
-  _merge: (value: Partial<T>) => Observed <T, R>
+  _merge: (value: Partial<T>) => Observed<T, R>
+  __proxyGetters__: Partial<T>
+  __updateCallback__: UpdateFunction<T, R>
 }
 
 type UpdateFunction <T, R> = (diff: Partial<T>) => R
@@ -120,7 +121,12 @@ export function observe <T extends object, R> (target: T, ...args: [(string | nu
   if (typeof args[0] === 'function') update = args.shift() as UpdateFunction<T, R>
   if (typeof args[0] === 'string') label = args[0]
 
-  if (label && label in refs) return refs[label]._merge(target)
+  if (label && label in refs) {
+    refs[label].__updateCallback__ = update
+    return refs[label]._merge(target)
+  }
+
+  Object.defineProperty(target, '__updateCallback__', { value: update, writable: true })
 
   Object.defineProperty(target, '_update', {
     value (this: Observed<T, R>) {
@@ -129,7 +135,7 @@ export function observe <T extends object, R> (target: T, ...args: [(string | nu
       if (fields.length) {
         if (label) showObserverLog(`[update] ${label}: ${fields.join(', ')}`)
         this._diff = {}
-        return update(diff)
+        return this.__updateCallback__(diff)
       }
     },
   })
@@ -139,7 +145,7 @@ export function observe <T extends object, R> (target: T, ...args: [(string | nu
       for (const key in value) {
         if (!(key in this._diff)) {
           target[key] = value[key]
-          delete this._proxy[key]
+          delete this.__proxyGetters__[key]
         }
       }
       return this

@@ -1,4 +1,4 @@
-import { getSelfIds, injectMethods, GroupData, createGroup } from 'koishi-core'
+import { getSelfIds, injectMethods, GroupData, createGroup, Group } from 'koishi-core'
 import { noop, observe } from 'koishi-utils'
 import {} from './database'
 
@@ -35,20 +35,20 @@ injectMethods('level', 'group', {
   },
 
   async setGroup (groupId, data) {
-    const originalData = await this.tables.group.get(groupId)
-    const newData: GroupData = { ...originalData, ...data }
-    await this.tables.group.put(groupId, newData)
+    return this.update('group', groupId, data)
   },
 
   async observeGroup (group, selfId) {
     if (typeof group === 'number') {
-      selfId = typeof selfId === 'number' ? selfId : 0
       const data = await this.getGroup(group, selfId)
       return data && observe(data, diff => this.setGroup(group, diff), `group ${group}`)
-    } else if ('_diff' in group) {
-      return group
+    }
+
+    const data = await this.getGroup(group.id, selfId)
+    if ('_diff' in group) {
+      return (group as Group)._merge(data)
     } else {
-      return observe(group, diff => this.setGroup(group.id, diff), `group ${group.id}`)
+      return observe(Object.assign(group, data), diff => this.setGroup(group.id, diff), `group ${group.id}`)
     }
   },
 

@@ -1,4 +1,4 @@
-import { App, DatabaseConfig, createUser, createGroup } from 'koishi-core'
+import { App, DatabaseConfig, createUser, createGroup, GroupData, UserData } from 'koishi-core'
 import { createArray } from './utils'
 
 type TestHook = (app: App) => any
@@ -95,6 +95,7 @@ export function testDatabase (config: DatabaseConfig, options: TestDatabaseOptio
       await expect(db.getUsers([48], ['id'])).resolves.toHaveLength(0)
       await expect(db.getUsers([49], ['id'])).resolves.toHaveLength(1)
       await expect(db.getUsers([1, 2, 3, 4])).resolves.toHaveLength(3)
+      await expect(db.getUsers([])).resolves.toHaveLength(0)
     })
 
     test('observeUser update', async () => {
@@ -107,6 +108,16 @@ export function testDatabase (config: DatabaseConfig, options: TestDatabaseOptio
       const user = await db.getUser(id)
       expect(user.id).toBe(id)
       expect(user.flag).toBe(flag)
+    })
+
+    test('observeUser merge', async () => {
+      const user: UserData = { id: 1000, flag: 3, name: '', authority: 1, usage: {} }
+      const observedUser = await db.observeUser(user, 1)
+      expect(observedUser).toMatchObject(user)
+      observedUser.flag = 5
+      await observedUser._update()
+      await expect(db.observeUser(observedUser)).resolves.toBe(observedUser)
+      await expect(db.getUser(user.id)).resolves.toMatchObject({ flag: 5 })
     })
   })
 
@@ -183,6 +194,16 @@ export function testDatabase (config: DatabaseConfig, options: TestDatabaseOptio
       const group = await db.getGroup(id)
       expect(group.id).toBe(id)
       expect(group.flag).toBe(flag)
+    })
+
+    test('observeGroup merge', async () => {
+      const group: GroupData = { id: 5, flag: 3, assignee: 2 }
+      const observedGroup = await db.observeGroup(group, 1)
+      expect(observedGroup).toMatchObject(group)
+      observedGroup.flag = 5
+      await observedGroup._update()
+      await expect(db.observeGroup(observedGroup)).resolves.toBe(observedGroup)
+      await expect(db.getGroup(group.id)).resolves.toMatchObject({ flag: 5 })
     })
   })
 

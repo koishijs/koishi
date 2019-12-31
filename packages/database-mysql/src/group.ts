@@ -1,5 +1,5 @@
 import { contain, observe, difference, Observed } from 'koishi-utils'
-import { getSelfIds, injectMethods, GroupData, createGroup, groupFields, GroupField } from 'koishi-core'
+import { getSelfIds, injectMethods, GroupData, createGroup, groupFields, GroupField, Group } from 'koishi-core'
 
 declare module './database' {
   interface MysqlDatabaseConfig {
@@ -79,7 +79,7 @@ injectMethods('mysql', 'group', {
       ? await this.getGroup(group.id, selfId, difference(fields, Object.keys(group)))
       : {} as Partial<GroupData>
     if ('_diff' in group) {
-      return (group as Observed<GroupData>)._merge(additionalData)
+      return (group as Group)._merge(additionalData)
     } else {
       return observe(Object.assign(group, additionalData), diff => this.setGroup(group.id, diff), `group ${group.id}`)
     }

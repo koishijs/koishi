@@ -1,4 +1,4 @@
-import { injectMethods, UserData, createUser } from 'koishi-core'
+import { injectMethods, UserData, createUser, User } from 'koishi-core'
 import { observe, noop } from 'koishi-utils'
 import {} from './database'
 
@@ -21,7 +21,7 @@ injectMethods('level', 'user', {
   },
 
   async getUsers (...args) {
-    if (args.length > 1 || args.length && typeof args[0][0] === 'number') {
+    if (args.length > 1 || args.length && typeof args[0][0] !== 'string') {
       if (!args[0].length) return []
       const users = await Promise.all(args[0].map(id => this.tables.user.get(id).catch(noop)))
       return users.filter(Boolean) as UserData[]
@@ -36,20 +36,20 @@ injectMethods('level', 'user', {
   },
 
   async setUser (userId, data) {
-    const originalData = await this.getUser(userId)
-    const newData: UserData = { ...originalData, ...data }
-    await this.tables.user.put(userId, newData)
+    return this.update('user', userId, data)
   },
 
   async observeUser (user, authority) {
     if (typeof user === 'number') {
-      authority = typeof authority === 'number' ? authority : 0
-      const dasDatum = await this.getUser(user, authority)
-      return dasDatum && observe(dasDatum, diff => this.setUser(user, diff), `user ${user}`)
-    } else if ('_diff' in user) {
-      return user
+      const data = await this.getUser(user, authority)
+      return data && observe(data, diff => this.setUser(user, diff), `user ${user}`)
+    }
+
+    const data = await this.getUser(user.id, authority)
+    if ('_diff' in user) {
+      return (user as User)._merge(data)
     } else {
-      return observe(user, diff => this.setUser(user.id, diff), `user ${user}`)
+      return observe(Object.assign(user, data), diff => this.setUser(user.id, diff), `user ${user.id}`)
     }
   },
 
