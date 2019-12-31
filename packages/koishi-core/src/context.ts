@@ -4,7 +4,7 @@ import { MessageMeta, Meta, contextTypes } from './meta'
 import { EventEmitter } from 'events'
 import { Sender } from './sender'
 import { App } from './app'
-import { Database, UserField, GroupField, User, Group } from './database'
+import { Database, UserField, GroupField } from './database'
 import { messages, errors } from './messages'
 import { format } from 'util'
 

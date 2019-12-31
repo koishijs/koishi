@@ -312,7 +312,7 @@ export class App extends Context {
         Object.defineProperty(meta, '$group', { value: group, writable: true })
 
         // ignore some group calls
-        const isAssignee = group.assignee === this.selfId
+        const isAssignee = !group.assignee || group.assignee === this.selfId
         const noCommand = group.flag & GroupFlag.noCommand
         const noResponse = group.flag & GroupFlag.noResponse || !isAssignee
         if (noCommand && parsedArgv) return

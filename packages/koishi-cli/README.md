@@ -18,11 +18,11 @@ Koishi 高度配置化的 CLI 命令可以让你无需写代码就搭建属于�
 
 Koishi 的 API 包括下面几个部分：
 
-- [Receiver](https://koishijs.github.io/guide/receive-and-send.html#接收器-receiver)：将收到的信息转化为事件进行分发，且同时支持 HTTP 和 WebSocket
-- [Sender](https://koishijs.github.io/guide/receive-and-send.html#发送器-sender)：完美契合 CQHTTP API 的一套异步发送器，同样支持 HTTP 和 WebSocket
-- [Middleware](https://koishijs.github.io/guide/receive-and-send.html#中间件-middleware)：支持异步操作的中间件系统，可以让你高效地处理每一条信息
+- [Receiver](https://koishijs.github.io/guide/receive-and-send.html#接收器)：将收到的信息转化为事件进行分发，且同时支持 HTTP 和 WebSocket
+- [Sender](https://koishijs.github.io/guide/receive-and-send.html#发送器)：完美契合 CQHTTP API 的一套异步发送器，同样支持 HTTP 和 WebSocket
+- [Middleware](https://koishijs.github.io/guide/receive-and-send.html#中间件)：支持异步操作的中间件系统，可以让你高效地处理每一条信息
 - [Context](https://koishijs.github.io/guide/plugin-and-context.html#创建上下文)：用上下文描述了机器人可能的运行环境，让你得以对不同的群进行不同的处理
-- [Plugin](https://koishijs.github.io/guide/plugin-and-context.html#使用插件-api)：将逻辑以插件的形式封装，可以实现更好的模块化和配置化
+- [Plugin](https://koishijs.github.io/guide/plugin-and-context.html#使用插件)：将逻辑以插件的形式封装，可以实现更好的模块化和配置化
 - [Command](https://koishijs.github.io/guide/command-system.html)：Koishi 的核心功能之一，使用链式调用轻松创建指令，同时提供了大量的实用特性
 - [Database](https://koishijs.github.io/guide/using-database.html)：内置的数据库系统，但并不依赖具体的数据库实现，无论何种数据库都可以在 Koishi 中使用
 

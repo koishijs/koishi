@@ -281,6 +281,7 @@ export class Command {
     // check authority and usage
     if (!this._checkUser(meta, options)) return
 
+    // execute command
     showCommandLog('execute %s', this.name)
     this.app.emitEvent(meta, 'command', argv)
 
@@ -311,7 +312,12 @@ export class Command {
     }
     for (const option of this._options) {
       if (option.camels[0] in options) {
-        if (option.authority > user.authority) return meta.$send(messages.LOW_AUTHORITY)
+        if (option.authority > user.authority) {
+          if (this.config.showWarning) {
+            await meta.$send(messages.LOW_AUTHORITY)
+          }
+          return
+        }
         if (option.notUsage) isUsage = false
       }
     }
@@ -337,7 +343,10 @@ export class Command {
         }
 
         if (usage.count >= maxUsage && isUsage) {
-          return meta.$send(messages.USAGE_EXHAUSTED)
+          if (this.config.showWarning) {
+            await meta.$send(messages.USAGE_EXHAUSTED)
+          }
+          return
         } else {
           usage.count++
         }

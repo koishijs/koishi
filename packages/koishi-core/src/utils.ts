@@ -30,7 +30,7 @@ interface SuggestOptions {
   next: NextFunction
   prefix: string
   suffix: string
-  coefficient?: number
+  coefficient: number
   command: Command | ((suggestion: string) => Command)
   execute: (suggestion: string, meta: MessageMeta, next: NextFunction) => any
 }

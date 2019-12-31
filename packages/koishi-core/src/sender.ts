@@ -432,8 +432,8 @@ export class Sender {
     return token
   }
 
-  async getCredentials (): Promise<Credentials> {
-    return this.get('get_credentials')
+  getCredentials (domain?: string) {
+    return this.get<Credentials>('get_credentials', { domain })
   }
 
   async getRecord (file: string, outFormat: RecordFormat, fullPath?: boolean) {
