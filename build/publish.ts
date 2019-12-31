@@ -12,7 +12,7 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
 }
 
 const github = new Octokit({
-  auth: process.env.GH_TOKEN,
+  auth: process.env.GITHUB_TOKEN,
 })
 
 const cwd = resolve(__dirname, '..')
