@@ -52,6 +52,7 @@ const defaultConfig: CommandConfig = {
   authority: 1,
   maxUsage: Infinity,
   minInterval: 0,
+  showWarning: true,
 }
 
 export interface ShortcutConfig {

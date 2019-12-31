@@ -65,7 +65,7 @@ Koishi 在开发时借助了下面的工具：
 
 ### 对比
 
-| 特性 | koishi<br>1.0.0-alpha.6 | cqhttp<br>1.1.1 | cq-websocket<br>2.0.2 | lemon-bot<br>0.5.1 | @ionjs/core<br>0.6.5 |
+| 特性 | koishi<br>1.0.0 | cqhttp<br>1.1.1 | cq-websocket<br>2.0.2 | lemon-bot<br>0.5.1 | @ionjs/core<br>0.6.5 |
 |:--:|:--:|:--:|:--:|:--:|:--:|
 | 依赖数量 | [17](http://npm.anvaka.com/#/view/2d/koishi/1.0.0-alpha.6) | [63](http://npm.anvaka.com/#/view/2d/cqhttp/1.1.1) | [37](http://npm.anvaka.com/#/view/2d/cq-websocket/2.0.2) | [55](http://npm.anvaka.com/#/view/2d/lemon-bot/0.5.1) | [73](http://npm.anvaka.com/#/view/2d/%2540ionjs%252Fcore/0.6.5) |
 | HTTP | ✔️ | ✔️ | ❌ | ✔️ | ✔️ |
