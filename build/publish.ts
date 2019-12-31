@@ -11,11 +11,8 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
   process.exit(0)
 }
 
-const github = new Octokit()
-
-github.authenticate({
-  type: 'oauth',
-  token: process.env.GH_TOKEN,
+const github = new Octokit({
+  auth: process.env.GH_TOKEN,
 })
 
 const cwd = resolve(__dirname, '..')
