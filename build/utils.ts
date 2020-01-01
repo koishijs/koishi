@@ -1,11 +1,23 @@
 import * as cp from 'child_process'
+import * as path from 'path'
+import globby from 'globby'
 
-export interface PackageJSON {
+export const cwd = path.resolve(__dirname, '..')
+
+export function getWorkspaces () {
+  return globby(require('../package').workspaces, {
+    cwd,
+    deep: 0,
+    onlyDirectories: true,
+  })
+}
+
+export type DependencyType = 'dependencies' | 'devDependencies' | 'peerDependencies' | 'optionalDependencies'
+
+export interface PackageJson extends Record<DependencyType, Record<string, string>> {
   name: string
   private?: boolean
   version: string
-  dependencies: Record<string, string>
-  devDependencies: Record<string, string>
 }
 
 interface ExecOptions extends cp.ExecOptions {

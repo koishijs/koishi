@@ -1,8 +1,7 @@
-import { PackageJSON, exec } from './utils'
-import { resolve } from 'path'
+import { PackageJson, exec, cwd, getWorkspaces } from './utils'
 import { lte } from 'semver'
+import latest from 'latest-version'
 import Octokit from '@octokit/rest'
-import globby from 'globby'
 
 const { CI, GITHUB_EVENT_NAME, GITHUB_REF } = process.env
 
@@ -15,27 +14,19 @@ const github = new Octokit({
   auth: process.env.GITHUB_TOKEN,
 })
 
-const cwd = resolve(__dirname, '..')
-
 ;(async () => {
-  const folders = await globby(require('../package').workspaces, {
-    cwd,
-    deep: 0,
-    onlyDirectories: true,
-  })
-
-  for (const name of folders) {
+  for (const name of await getWorkspaces()) {
     try {
-      const meta: PackageJSON = require(`../${name}/package`)
+      const meta: PackageJson = require(`../${name}/package`)
       if (meta.private) continue
-      const version = await exec(`npm show ${meta.name} version`)
+      const version = await latest(meta.name)
       if (lte(meta.version, version)) continue
       console.log(`publishing ${name}@${meta.version} ...`)
       await exec(`yarn publish ${name}`, { cwd }).catch(() => {})
     } catch {}
   }
 
-  const { version } = require('../packages/koishi-cli/package') as PackageJSON
+  const { version } = require('../packages/koishi-cli/package') as PackageJson
   const tags = await exec('git tag -l')
   if (tags.split(/\r?\n/).includes(version)) return console.log(`Tag ${version} already exists.`)
 

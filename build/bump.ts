@@ -1,8 +1,8 @@
 import { writeJson } from 'fs-extra'
 import { resolve } from 'path'
-import { exec } from './utils'
 import { SemVer, gt } from 'semver'
 import { cyan, green } from 'kleur'
+import latest from 'latest-version'
 import globby from 'globby'
 import CAC from 'cac'
 
@@ -35,11 +35,7 @@ class Package {
       const pkg = packages[path] = new Package(path)
       pkg.oldVersion = pkg.meta.version
       if (pkg.meta.private) return
-      const version = await exec(`npm view ${pkg.name} version`, {
-        cwd: resolve(__dirname, `../${path}`),
-        silent: true,
-      })
-      pkg.oldVersion = version.trim()
+      pkg.oldVersion = await latest(pkg.name)
     } catch { /* pass */ }
   }
 
