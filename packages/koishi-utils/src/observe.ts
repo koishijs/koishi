@@ -117,16 +117,16 @@ export function observe <T extends object, R> (target: T, ...args: [(string | nu
     }
   }
 
-  let label = '', update: UpdateFunction<T, R> = noop
+  let label = '', update: UpdateFunction<T, R>
   if (typeof args[0] === 'function') update = args.shift() as UpdateFunction<T, R>
   if (typeof args[0] === 'string') label = args[0]
 
   if (label && label in refs) {
-    refs[label].__updateCallback__ = update
+    refs[label].__updateCallback__ = update || refs[label].__updateCallback__
     return refs[label]._merge(target)
   }
 
-  Object.defineProperty(target, '__updateCallback__', { value: update, writable: true })
+  Object.defineProperty(target, '__updateCallback__', { value: update || noop, writable: true })
 
   Object.defineProperty(target, '_update', {
     value (this: Observed<T, R>) {
