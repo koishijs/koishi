@@ -6,12 +6,12 @@ import { logger } from './utils'
 import prompts from 'prompts'
 import CAC from 'cac/types/CAC'
 
-function createConfig (options): Promise<AppOptions> {
-  return prompts([{
+async function createConfig (options): Promise<AppOptions> {
+  let succeed = true
+  const data = await prompts([{
     name: 'type',
-    type: 'autocomplete',
+    type: 'select',
     message: 'Connection Type',
-    initial: 'http',
     choices: [
       { title: 'HTTP', value: 'http' },
       { title: 'WebSocket', value: 'ws' },
@@ -43,7 +43,10 @@ function createConfig (options): Promise<AppOptions> {
     name: 'token',
     type: 'text',
     message: 'Token for CoolQ Server',
-  }])
+  }], {
+    onCancel: () => succeed = false,
+  })
+  return succeed && data
 }
 
 export default function (cli: CAC) {
@@ -52,10 +55,14 @@ export default function (cli: CAC) {
     .action(async (file, options) => {
       const path = resolve(process.cwd(), String(file || 'koishi.config.js'))
       if (!options.forced && existsSync(path)) {
-        logger.error(`${options.output} already exists. If you want to overwrite the current file, use ${yellow('koishi init -f')}.`)
+        logger.error(`${options.output} already exists. If you want to overwrite the current file, use ${yellow('koishi init -f')}`)
         process.exit(1)
       }
       const config = await createConfig(options)
+      if (!config) {
+        logger.error('initialization was canceled')
+        process.exit(0)
+      }
       const output: string[] = ['module.exports = {']
       output.push(`  type: "${config.type}",`)
       if (config.port) output.push(`  port: ${config.port},`)
@@ -68,7 +75,7 @@ export default function (cli: CAC) {
       output.push('  ],')
       output.push('}\n')
       writeFileSync(path, output.join('\n'))
-      logger.success(`created config file: ${path}.`)
+      logger.success(`created config file: ${path}`)
       process.exit(0)
     })
 }
