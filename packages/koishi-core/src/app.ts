@@ -8,7 +8,7 @@ import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupFi
 import { showSuggestions } from './utils'
 import { Meta, MessageMeta } from './meta'
 import { simplify } from 'koishi-utils'
-import { errors } from './messages'
+import { errors, messages } from './messages'
 
 export interface AppOptions {
   port?: number
@@ -365,6 +365,13 @@ export class App extends Context {
       const result = command.parse(message.slice(name.length).trimStart())
       return { meta, command, ...result }
     }
+  }
+
+  executeCommandLine (message: string, meta: MessageMeta, next?: NextFunction) {
+    if (!meta.$path) this.server.parseMeta(meta)
+    const argv = this.parseCommandLine(message, meta)
+    if (argv) return argv.command.execute(argv, next)
+    if (next) return next()
   }
 
   private _applyMiddlewares = async (meta: MessageMeta) => {

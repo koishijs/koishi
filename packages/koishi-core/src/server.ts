@@ -40,7 +40,7 @@ export abstract class Server {
     return meta
   }
 
-  async dispatchMeta (meta: Meta) {
+  parseMeta (meta: Meta) {
     // prepare prefix
     let ctxType: ContextType, ctxId: number
     if (meta.groupId) {
@@ -94,7 +94,7 @@ export abstract class Server {
     Object.defineProperty(meta, '$ctxType', { value: ctxType })
 
     const app = this.appMap[meta.selfId]
-    if (!app) return
+    if (!app) return events
 
     // add context properties
     if (meta.postType === 'message') {
@@ -137,7 +137,12 @@ export abstract class Server {
       }
     }
 
-    // emit events
+    return events
+  }
+
+  dispatchMeta (meta: Meta) {
+    const app = this.appMap[meta.selfId]
+    const events = this.parseMeta(meta)
     for (const event of events) {
       app.emitEvent(meta, paramCase(event) as any, meta)
     }
