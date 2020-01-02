@@ -39,7 +39,6 @@ export interface CommandConfig {
   description?: string
   /** min authority */
   authority?: number
-  authorityHint?: string
   disable?: UserType<boolean>
   maxUsage?: UserType<number>
   maxUsageText?: string
