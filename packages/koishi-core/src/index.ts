@@ -1,3 +1,4 @@
+export * from 'koishi-utils'
 export * from './app'
 export * from './command'
 export * from './context'
