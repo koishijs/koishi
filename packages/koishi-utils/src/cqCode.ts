@@ -16,10 +16,10 @@ namespace CQCode {
 
   export function unescape (source: string) {
     return String(source)
-      .replace(/&amp;/g, '&')
       .replace(/&#91;/g, '[')
       .replace(/&#93;/g, ']')
       .replace(/&#44;/g, ',')
+      .replace(/&amp;/g, '&')
   }
 
   export function stringify (type: string, data: Record<string, any>) {

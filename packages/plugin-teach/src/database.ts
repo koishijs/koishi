@@ -1,5 +1,4 @@
 import { injectMethods } from 'koishi-core'
-import deepEqual from 'fast-deep-equal'
 import {} from 'koishi-database-mysql'
 import {} from 'koishi-database-level'
 

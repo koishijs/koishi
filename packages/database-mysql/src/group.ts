@@ -1,4 +1,4 @@
-import { contain, observe, difference, Observed } from 'koishi-utils'
+import { contain, observe, difference } from 'koishi-utils'
 import { getSelfIds, injectMethods, GroupData, createGroup, groupFields, GroupField, Group } from 'koishi-core'
 
 declare module './database' {
