@@ -1,8 +1,8 @@
-import * as cp from 'child_process'
-import * as path from 'path'
+import { resolve } from 'path'
 import globby from 'globby'
+import spawn from 'cross-spawn'
 
-export const cwd = path.resolve(__dirname, '..')
+export const cwd = resolve(__dirname, '..')
 
 export function getWorkspaces () {
   return globby(require('../package').workspaces, {
@@ -14,40 +14,19 @@ export function getWorkspaces () {
 
 export type DependencyType = 'dependencies' | 'devDependencies' | 'peerDependencies' | 'optionalDependencies'
 
-export interface PackageJson extends Record<DependencyType, Record<string, string>> {
-  name: string
+export interface PackageJson extends Partial<Record<DependencyType, Record<string, string>>> {
+  name?: string
   private?: boolean
-  version: string
+  version?: string
 }
 
-interface ExecOptions extends cp.ExecOptions {
-  silent?: boolean
-}
-
-export function exec (command: string, options: ExecOptions = {}): Promise<string> {
-  const { silent } = options
-  return new Promise((resolve, reject) => {
-    let stdout = '', stderr = ''
-    if (!silent) console.log(`$ ${command}`)
-    const child = cp.exec(command, options)
-
-    child.stdout.on('data', (data) => {
-      stdout += data
-      if (!silent) process.stdout.write(data)
-    })
-
-    child.stderr.on('data', (data) => {
-      stderr += data
-      if (!silent) process.stderr.write(data)
-    })
-
-    child.on('close', (code) => {
-      if (!silent) console.log()
-      if (code) {
-        reject(stderr)
-      } else {
-        resolve(stdout)
-      }
-    })
-  })
+export function spawnSync (command: string, silent?: boolean) {
+  if (!silent) console.log(`$ ${command}`)
+  const result = spawn.sync(command + ' --color', { encoding: 'utf8' })
+  if (result.status) {
+    throw new Error(result.stderr)
+  } else {
+    if (!silent) console.log(result.stdout)
+    return result.stdout.trim()
+  }
 }
