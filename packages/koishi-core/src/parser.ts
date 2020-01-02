@@ -63,7 +63,7 @@ export interface CommandOption extends OptionConfig {
   description: string
 }
 
-export function parseOption (rawName: string, description: string, config: OptionConfig = {}, optsDef: Record<string, CommandOption>): CommandOption {
+export function parseOption (rawName: string, description: string, config: OptionConfig, optsDef: Record<string, CommandOption>): CommandOption {
   config = { authority: 0, ...config }
 
   const negated: string[] = []

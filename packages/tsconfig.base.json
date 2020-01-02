@@ -7,6 +7,5 @@
     "esModuleInterop": true,
     "moduleResolution": "node",
     "declaration": true,
-    "preserveSymlinks": true,
   },
 }

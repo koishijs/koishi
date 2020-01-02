@@ -37,79 +37,79 @@ afterAll(() => {
 describe('meta.$path', () => {
   test('user/*/message/friend', async () => {
     const meta = createMeta('message', 'private', 'friend', { userId: 10000 })
-    await app.server.dispatchMeta(meta)
+    app.server.parseMeta(meta)
     expect(meta.$path).toBe('/user/10000/message/friend')
   })
 
   test('user/*/friend_add', async () => {
     const meta = createMeta('notice', 'friend_add', null, { userId: 10000 })
-    await app.server.dispatchMeta(meta)
+    app.server.parseMeta(meta)
     expect(meta.$path).toBe('/user/10000/friend_add')
   })
 
   test('user/*/request/friend', async () => {
     const meta = createMeta('request', 'friend', null, { userId: 10000 })
-    await app.server.dispatchMeta(meta)
+    app.server.parseMeta(meta)
     expect(meta.$path).toBe('/user/10000/request/friend')
   })
 
   test('group/*/message/normal', async () => {
     const meta = createMeta('message', 'group', 'normal', { groupId: 20000 })
-    await app.server.dispatchMeta(meta)
+    app.server.parseMeta(meta)
     expect(meta.$path).toBe('/group/20000/message/normal')
   })
 
   test('group/*/group_upload', async () => {
     const meta = createMeta('notice', 'group_upload', null, { groupId: 20000 })
-    await app.server.dispatchMeta(meta)
+    app.server.parseMeta(meta)
     expect(meta.$path).toBe('/group/20000/group_upload')
   })
 
   test('group/*/group_admin/unset', async () => {
     const meta = createMeta('notice', 'group_admin', 'unset', { groupId: 20000 })
-    await app.server.dispatchMeta(meta)
+    app.server.parseMeta(meta)
     expect(meta.$path).toBe('/group/20000/group_admin/unset')
   })
 
   test('group/*/group_decrease/kick', async () => {
     const meta = createMeta('notice', 'group_decrease', 'kick', { groupId: 20000 })
-    await app.server.dispatchMeta(meta)
+    app.server.parseMeta(meta)
     expect(meta.$path).toBe('/group/20000/group_decrease/kick')
   })
 
   test('group/*/group_increase/invite', async () => {
     const meta = createMeta('notice', 'group_increase', 'invite', { groupId: 20000 })
-    await app.server.dispatchMeta(meta)
+    app.server.parseMeta(meta)
     expect(meta.$path).toBe('/group/20000/group_increase/invite')
   })
 
   test('group/*/group_ban/ban', async () => {
     const meta = createMeta('notice', 'group_ban', 'ban', { groupId: 20000 })
-    await app.server.dispatchMeta(meta)
+    app.server.parseMeta(meta)
     expect(meta.$path).toBe('/group/20000/group_ban/ban')
   })
 
   test('group/*/request/group/invite', async () => {
     const meta = createMeta('request', 'group', 'invite', { groupId: 20000 })
-    await app.server.dispatchMeta(meta)
+    app.server.parseMeta(meta)
     expect(meta.$path).toBe('/group/20000/request/group/invite')
   })
 
   test('discuss/*/message', async () => {
     const meta = createMeta('message', 'discuss', null, { discussId: 30000 })
-    await app.server.dispatchMeta(meta)
+    app.server.parseMeta(meta)
     expect(meta.$path).toBe('/discuss/30000/message')
   })
 
   test('lifecycle/enable', async () => {
     const meta = createMeta('meta_event', 'lifecycle', 'enable')
-    await app.server.dispatchMeta(meta)
+    app.server.parseMeta(meta)
     expect(meta.$path).toBe('/lifecycle/enable')
   })
 
   test('heartbeat', async () => {
     const meta = createMeta('meta_event', 'heartbeat', null)
-    await app.server.dispatchMeta(meta)
+    app.server.parseMeta(meta)
     expect(meta.$path).toBe('/heartbeat')
   })
 })

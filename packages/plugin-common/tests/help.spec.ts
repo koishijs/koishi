@@ -6,7 +6,7 @@ import del from 'del'
 import help from '../src/help'
 import 'koishi-database-level'
 
-const  { createApp, createServer, ServerSession } = httpServer
+const { createApp, createServer, ServerSession } = httpServer
 
 const path = resolve(__dirname, '../temp')
 

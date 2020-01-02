@@ -1,5 +1,5 @@
 import { createPool, Pool, PoolConfig, escape, escapeId } from 'mysql'
-import { registerDatabase, AbstractDatabase } from 'koishi-core'
+import { registerDatabase, AbstractDatabase, TableType, TableData } from 'koishi-core'
 import { types } from 'util'
 
 declare module 'koishi-core/dist/database' {
@@ -102,7 +102,7 @@ export class MysqlDatabase implements AbstractDatabase {
     return this.query<T>(`SELECT ${this.joinKeys(fields)} FROM ?? ${conditional ? ' WHERE ' + conditional : ''}`, [table, ...values])
   }
 
-  create = async <T extends {}> (table: string, data: Partial<T>): Promise<T> => {
+  async create <K extends TableType> (table: K, data: Partial<TableData[K]>): Promise<TableData[K]> {
     const keys = Object.keys(data)
     if (!keys.length) return
     const header = await this.query<OkPacket>(
@@ -112,7 +112,7 @@ export class MysqlDatabase implements AbstractDatabase {
     return { ...data, id: header.insertId } as any
   }
 
-  update = async (table: string, id: number | string, data: object) => {
+  async update <K extends TableType> (table: K, id: number | string, data: Partial<TableData[K]>) {
     const keys = Object.keys(data)
     if (!keys.length) return
     const header = await this.query(
@@ -122,7 +122,7 @@ export class MysqlDatabase implements AbstractDatabase {
     return header as OkPacket
   }
 
-  count = async (table: string) => {
+  async count <K extends TableType> (table: K) {
     const [{ 'COUNT(*)': count }] = await this.query('SELECT COUNT(*) FROM ??', [table])
     return count as number
   }

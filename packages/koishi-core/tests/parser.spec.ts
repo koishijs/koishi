@@ -1,5 +1,5 @@
-import { App, Command } from '../src'
-import { errors } from '../src/messages'
+import { App, Command, errors } from '../src'
+import { ParsedLine } from '../src/parser'
 
 const app = new App()
 
@@ -12,8 +12,8 @@ const cmd2 = app
   .command('cmd2 [foo] [bar...]')
   .option('-a [alpha]', '', { isString: true })
   .option('-b [beta]', '', { default: 1000 })
-  .option('-C, --no-gamma')
-  .option('-D, --no-delta')
+  .option('--no-gamma, -C')
+  .option('--no-delta, -D')
 
 describe('arguments', () => {
   test('sufficient arguments', () => {
@@ -45,6 +45,8 @@ describe('arguments', () => {
 })
 
 describe('options', () => {
+  let result: ParsedLine
+
   test('duplicate options', () => {
     expect(() => app
       .command('cmd-duplicate-options')
@@ -54,35 +56,39 @@ describe('options', () => {
   })
 
   test('option without parameter', () => {
-    const result = cmd1.parse('--alpha a')
+    result = cmd1.parse('--alpha a')
     expect(result.args).toMatchObject(['a'])
     expect(result.options).toMatchObject({ a: true, alpha: true })
   })
 
   test('option with parameter', () => {
-    const result = cmd1.parse('--beta 10')
+    result = cmd1.parse('--beta 10')
+    expect(result.options).toMatchObject({ b: 10, beta: 10 })
+    result = cmd1.parse('--beta=10')
     expect(result.options).toMatchObject({ b: 10, beta: 10 })
   })
 
   test('quoted parameter', () => {
-    const result = cmd1.parse('-c "" -d')
+    result = cmd1.parse('-c "" -d')
     expect(result.options).toMatchObject({ c: '', d: true })
   })
 
   test('unknown options', () => {
-    const result = cmd1.parse('--unknown-gamma c -de 10')
+    result = cmd1.parse('--unknown-gamma b --unknown-gamma c -de 10')
     expect(result.unknown).toMatchObject(['unknown-gamma', 'd', 'e'])
     expect(result.options).toMatchObject({ unknownGamma: 'c', d: true, e: 10 })
   })
 
   test('negated options', () => {
-    const result = cmd2.parse('-C --no-delta -E --no-epsilon')
+    result = cmd2.parse('-C --no-delta -E --no-epsilon')
     expect(result.options).toMatchObject({ C: true, gamma: false, D: true, delta: false, E: true, epsilon: false })
   })
 
   test('option configuration', () => {
-    const result = cmd2.parse('-a 123 -d 456')
-    expect(result.options).toMatchObject({ a: '123', b: 1000, d: 456 })
+    result = cmd2.parse('-ba 123')
+    expect(result.options).toMatchObject({ a: '123', b: 1000 })
+    result = cmd2.parse('-ad 456')
+    expect(result.options).toMatchObject({ a: '', b: 1000, d: 456 })
   })
 })
 
@@ -93,6 +99,15 @@ describe('user fields', () => {
   expect(cmd._userFields).toHaveProperty('size', 2)
   cmd.userFields(new Set(['id', 'authority']))
   expect(cmd._userFields).toHaveProperty('size', 3)
+})
+
+describe('group fields', () => {
+  const cmd = app.command('cmd-group-fields')
+  expect(cmd._groupFields).toHaveProperty('size', 0)
+  cmd.groupFields(['id', 'assignee'])
+  expect(cmd._groupFields).toHaveProperty('size', 2)
+  cmd.groupFields(new Set(['id', 'flag']))
+  expect(cmd._groupFields).toHaveProperty('size', 3)
 })
 
 describe('edge cases', () => {
