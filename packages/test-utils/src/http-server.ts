@@ -113,12 +113,14 @@ export class ServerSession {
     return response.message
   }
 
-  testSnapshot (message: string) {
-    return expect(this.waitForResponse(message)).resolves.toMatchSnapshot(message)
+  async testSnapshot (message: string) {
+    await expect(this.waitForResponse(message)).resolves.toMatchSnapshot(message)
+    await sleep(0)
   }
 
-  shouldHaveResponse (message: string, response: string) {
-    return expect(this.waitForResponse(message)).resolves.toBe(response)
+  async shouldHaveResponse (message: string, response: string) {
+    await expect(this.waitForResponse(message)).resolves.toBe(response)
+    await sleep(0)
   }
 
   async shouldHaveNoResponse (message: string): Promise<void> {

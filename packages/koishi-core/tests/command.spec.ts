@@ -56,6 +56,11 @@ describe('register commands', () => {
       app.command('g').alias('y')
       app.command('h').alias('y')
     }).toThrow(errors.DUPLICATE_COMMAND)
+
+    expect(() => {
+      app.command('i').alias('z')
+      app.command('i').alias('z')
+    }).not.toThrow()
   })
 
   test('remove options', () => {

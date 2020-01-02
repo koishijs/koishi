@@ -174,7 +174,7 @@ describe('command execution', () => {
   })
 
   test('excute command', () => {
-    app.runCommand('foo', meta, ['bar'])
+    app.executeCommandLine('foo bar', meta)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith('foobar')
   })
@@ -184,7 +184,7 @@ describe('command execution', () => {
     const mock2 = jest.fn()
     app.receiver.on('error', mock1)
     app.receiver.on('error/command', mock2)
-    app.runCommand('err', meta)
+    app.executeCommandLine('err', meta)
     expect(mock1).toBeCalledTimes(1)
     expect(mock1.mock.calls[0][0]).toHaveProperty('message', 'command error')
     expect(mock2).toBeCalledTimes(1)
@@ -195,16 +195,18 @@ describe('command execution', () => {
     app.runCommand('bar', meta, ['foo'])
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith(messages.COMMAND_NOT_FOUND)
+    app.executeCommandLine('bar', meta, mock)
+    expect(mock).toBeCalledTimes(2)
   })
 
   test('insufficient arguments', () => {
-    app.runCommand('foo', meta)
+    app.executeCommandLine('foo', meta)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith(messages.INSUFFICIENT_ARGUMENTS)
   })
 
   test('redunant arguments', () => {
-    app.runCommand('foo', meta, ['bar', 'baz'])
+    app.executeCommandLine('foo bar baz', meta)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith(messages.REDUNANT_ARGUMENTS)
   })

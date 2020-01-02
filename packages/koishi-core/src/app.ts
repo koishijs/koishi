@@ -7,7 +7,7 @@ import { Context, Middleware, NextFunction, ContextScope, Events, EventMap } fro
 import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField } from './database'
 import { showSuggestions } from './utils'
 import { Meta, MessageMeta } from './meta'
-import { simplify } from 'koishi-utils'
+import { simplify, noop } from 'koishi-utils'
 import { errors, messages } from './messages'
 
 export interface AppOptions {
@@ -367,11 +367,11 @@ export class App extends Context {
     }
   }
 
-  executeCommandLine (message: string, meta: MessageMeta, next?: NextFunction) {
+  executeCommandLine (message: string, meta: MessageMeta, next: NextFunction = noop) {
     if (!meta.$path) this.server.parseMeta(meta)
     const argv = this.parseCommandLine(message, meta)
     if (argv) return argv.command.execute(argv, next)
-    if (next) return next()
+    return next()
   }
 
   private _applyMiddlewares = async (meta: MessageMeta) => {
