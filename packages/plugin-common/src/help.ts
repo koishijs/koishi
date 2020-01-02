@@ -32,7 +32,7 @@ function getCommands (context: Context, meta: MessageMeta, parent?: Command) {
     : context.app._commands.filter(cmd => cmd.context.match(meta))
   return commands
     .filter(cmd => !meta.$user || cmd.config.authority <= meta.$user.authority)
-    .sort((a, b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0)
+    .sort((a, b) => a.name > b.name ? 1 : -1)
 }
 
 function showGlobalShortcut (context: Context, meta: MessageMeta) {
@@ -82,8 +82,8 @@ async function showCommandHelp (command: Command, meta: MessageMeta, options: an
     meta.$user = await command.context.database.observeUser(meta.userId)
   }
 
-  if (command._aliases.length) {
-    output.push(`中文别名：${Array.from(command._aliases).join('，')}。`)
+  if (command._aliases.length > 1) {
+    output.push(`中文别名：${Array.from(command._aliases.slice(1)).join('，')}。`)
   }
   const shortcuts = getShortcuts(command, meta.$user)
   if (shortcuts.length) {
@@ -93,7 +93,7 @@ async function showCommandHelp (command: Command, meta: MessageMeta, options: an
   const maxUsage = command.getConfig('maxUsage', meta)
   const minInterval = command.getConfig('minInterval', meta)
   if (meta.$user) {
-    const { authority, maxUsageText, authorityHint } = command.config
+    const { authority, maxUsageText } = command.config
     const usage = command.updateUsage(meta.$user)
     if (maxUsage !== Infinity) {
       output.push(`已调用次数：${Math.min(usage.count, maxUsage)}/${maxUsageText || maxUsage}。`)
@@ -103,9 +103,7 @@ async function showCommandHelp (command: Command, meta: MessageMeta, options: an
       output.push(`距离下次调用还需：${nextUsage}/${minInterval / 1000} 秒。`)
     }
 
-    if (authorityHint) {
-      output.push(authorityHint)
-    } else if (authority > 1) {
+    if (authority > 1) {
       output.push(`最低权限：${authority} 级。`)
     }
   }
