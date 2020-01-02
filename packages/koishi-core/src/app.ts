@@ -222,11 +222,11 @@ export class App extends Context {
     }
     await Promise.all(tasks)
     showLog('started')
+    this.receiver.emit('connect')
     if (this.selfId && !this._isReady) {
       this.receiver.emit('ready')
       this._isReady = true
     }
-    this.receiver.emit('connect')
   }
 
   async stop () {
