@@ -46,8 +46,8 @@ injectMethods('mysql', 'schedule', {
     let queryString = 'SELECT * FROM `schedule`'
     if (!assignees) assignees = await getSelfIds()
     queryString += ` WHERE \`assignee\` IN (${assignees.join(',')})`
-    return await this.query(queryString)
-  }
+    return this.query(queryString)
+  },
 })
 
 injectMethods('level', 'schedule', {
