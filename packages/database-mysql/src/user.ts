@@ -2,13 +2,13 @@ import { injectMethods, userFields, UserData, createUser, User, UserField } from
 import { observe, difference } from 'koishi-utils'
 import { arrayTypes } from './database'
 
-arrayTypes.push('users.endings', 'users.achievement', 'users.inference')
+arrayTypes.push('user.endings', 'user.achievement', 'user.inference')
 
 injectMethods('mysql', 'user', {
   async getUser (userId, ...args) {
     const authority = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] as never || userFields
-    const [data] = await this.select<UserData[]>('users', fields, '`id` = ?', [userId])
+    const [data] = await this.select<UserData[]>('user', fields, '`id` = ?', [userId])
     let fallback: UserData
     if (data) {
       data.id = userId
@@ -18,8 +18,8 @@ injectMethods('mysql', 'user', {
       fallback = createUser(userId, authority)
       if (authority) {
         await this.query(
-          'INSERT INTO `users` (' + this.joinKeys(userFields) + ') VALUES (' + userFields.map(() => '?').join(', ') + ')',
-          this.formatValues('users', fallback, userFields),
+          'INSERT INTO `user` (' + this.joinKeys(userFields) + ') VALUES (' + userFields.map(() => '?').join(', ') + ')',
+          this.formatValues('user', fallback, userFields),
         )
       }
     }
@@ -38,11 +38,11 @@ injectMethods('mysql', 'user', {
       fields = args[0] as any
     }
     if (ids && !ids.length) return []
-    return this.select('users', fields, ids && `\`id\` IN (${ids.join(', ')})`)
+    return this.select('user', fields, ids && `\`id\` IN (${ids.join(', ')})`)
   },
 
   async setUser (userId, data) {
-    return this.update('users', userId, data)
+    return this.update('user', userId, data)
   },
 
   async observeUser (user, ...args) {
@@ -65,6 +65,6 @@ injectMethods('mysql', 'user', {
   },
 
   async getUserCount () {
-    return this.count('users')
+    return this.count('user')
   },
 })
