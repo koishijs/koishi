@@ -190,7 +190,11 @@ export class Command {
    * @param description option description
    * @param config option config
    */
-  option (rawName: string, description = '', config?: OptionConfig) {
+  option (rawName: string, config?: OptionConfig): this
+  option (rawName: string, description: string, config?: OptionConfig): this
+  option (rawName: string, ...args: [OptionConfig?] | [string, OptionConfig?]) {
+    const description = typeof args[0] === 'string' ? args.shift() as string : undefined
+    const config = args[0] as CommandConfig || {}
     const option = parseOption(rawName, description, config, this._optsDef)
     this._options.push(option)
     for (const name of option.names) {

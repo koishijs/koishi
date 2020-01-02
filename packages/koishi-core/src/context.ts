@@ -151,7 +151,7 @@ export class Context {
   command (rawName: string, ...args: [CommandConfig?] | [string, CommandConfig?]) {
     const description = typeof args[0] === 'string' ? args.shift() as string : undefined
     const config = args[0] as CommandConfig || {}
-    config.description = description ?? config.description
+    if (description !== undefined) config.description = description
     const [path] = rawName.split(' ', 1)
     const declaration = rawName.slice(path.length)
     const segments = path.toLowerCase().split(/(?=[\\./])/)

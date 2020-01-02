@@ -4,13 +4,6 @@ import { resolve } from 'path'
 import del from 'del'
 import '../src'
 
-// workaround levelup's poor typings
-declare module 'levelup' {
-  interface LevelUp {
-    clear (): Promise<void>
-  }
-}
-
 declare module 'koishi-core/dist/database' {
   interface TableMethods {
     foo: FooMethods
