@@ -53,7 +53,7 @@ const headerMap = {
 
   const updates = { fix: '', feat: '' }
   const lastTag = tags[tags.length - 1]
-  const commits = spawnSync(`git log ${lastTag}..HEAD --format="%H%s"`).split(/\r?\n/).reverse()
+  const commits = spawnSync(`git log ${lastTag}..HEAD --format=%H%s`).split(/\r?\n/).reverse()
   for (const commit of commits) {
     const hash = commit.slice(0, 40)
     const details = /^(fix|feat)(?:\((\S+)\))?: (.+)$/.exec(commit.slice(40))
@@ -66,7 +66,7 @@ const headerMap = {
   let body = ''
   for (const type in headerMap) {
     if (!updates[type]) continue
-    body += `# ${headerMap[type]}\n\n${updates[type]}\n`
+    body += `## ${headerMap[type]}\n\n${updates[type]}\n`
   }
 
   const github = new Octokit({

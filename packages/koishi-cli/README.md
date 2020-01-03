@@ -96,6 +96,10 @@ koishi run
 
 完整的文档在 [这里](https://koishijs.github.io/guide/getting-started.html)。
 
+## 更新日志
+
+参见 [releases](https://github.com/koishijs/koishi/releases)。
+
 ## 贡献
 
 如果想对 Koishi 做出贡献，可以参考下面的指南：
