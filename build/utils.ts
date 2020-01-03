@@ -20,9 +20,9 @@ export interface PackageJson extends Partial<Record<DependencyType, Record<strin
   version?: string
 }
 
-export function spawnSync (command: string, silent?: boolean) {
+export function spawnSync (command: string, args: string[], silent?: boolean) {
   if (!silent) console.log(`$ ${command}`)
-  const result = spawn.sync(command + ' --color', { cwd, encoding: 'utf8' })
+  const result = spawn.sync(command, [...args, '--color'], { cwd, encoding: 'utf8' })
   if (result.status) {
     throw new Error(result.stderr)
   } else {
@@ -32,7 +32,7 @@ export function spawnSync (command: string, silent?: boolean) {
 }
 
 export function spawnAsync (command: string, args: string[] = []) {
-  const child = spawn(command, { stdio: 'inherit' })
+  const child = spawn(command, args, { stdio: 'inherit' })
   return new Promise((resolve, reject) => {
     child.on('close', resolve)
   })

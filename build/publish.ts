@@ -46,14 +46,14 @@ const headerMap = {
   }
 
   const { version } = require('../packages/koishi-cli/package') as PackageJson
-  const tags = spawnSync('git tag -l').split(/\r?\n/)
+  const tags = spawnSync('git', ['tag', '-l']).split(/\r?\n/)
   if (tags.includes(version)) {
     return console.log(`Tag ${version} already exists.`)
   }
 
   const updates = { fix: '', feat: '' }
   const lastTag = tags[tags.length - 1]
-  const commits = spawnSync(`git log ${lastTag}..HEAD --format="%H%s"`).split(/\r?\n/).reverse()
+  const commits = spawnSync('git', ['log', `${lastTag}..HEAD`, '--format="%H%s"']).split(/\r?\n/).reverse()
   for (const commit of commits) {
     const hash = commit.slice(0, 40)
     const details = /^(fix|feat)(?:\((\S+)\))?: (.+)$/.exec(commit.slice(40))
