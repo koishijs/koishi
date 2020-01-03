@@ -79,7 +79,7 @@ const headerMap = {
     owner: 'koishijs',
     tag_name: version,
     name: `Koishi ${version}`,
-    prerelease: !!prerelease(version).length,
+    prerelease: !!prerelease(version),
     body,
   })
   console.log('Release created successfully.')
