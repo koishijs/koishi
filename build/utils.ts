@@ -22,11 +22,18 @@ export interface PackageJson extends Partial<Record<DependencyType, Record<strin
 
 export function spawnSync (command: string, silent?: boolean) {
   if (!silent) console.log(`$ ${command}`)
-  const result = spawn.sync(command + ' --color', { encoding: 'utf8' })
+  const result = spawn.sync(command + ' --color', { cwd, encoding: 'utf8' })
   if (result.status) {
     throw new Error(result.stderr)
   } else {
     if (!silent) console.log(result.stdout)
     return result.stdout.trim()
   }
+}
+
+export function spawnAsync (command: string, args: string[] = []) {
+  const child = spawn(command, { stdio: 'inherit' })
+  return new Promise((resolve, reject) => {
+    child.on('close', resolve)
+  })
 }

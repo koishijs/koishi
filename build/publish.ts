@@ -1,7 +1,6 @@
-import { PackageJson, cwd, getWorkspaces, spawnSync } from './utils'
+import { PackageJson, cwd, getWorkspaces, spawnAsync, spawnSync } from './utils'
 import { gt, prerelease } from 'semver'
 import ora from 'ora'
-import spawn from 'cross-spawn'
 import latest from 'latest-version'
 import Octokit from '@octokit/rest'
 
@@ -42,7 +41,7 @@ const headerMap = {
   if (Object.keys(bumpMap).length) {
     for (const name in bumpMap) {
       console.log(`publishing ${name}@${bumpMap[name]} ...`)
-      await spawn(`yarn publish ${name}`, { cwd, stdio: 'inherit' })
+      await spawnAsync('yarn', ['publish', name])
     }
   }
 
