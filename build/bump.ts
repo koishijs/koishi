@@ -65,7 +65,7 @@ class Package {
         if (flag === 'major') newVersion.minor = 0
       }
     }
-    if (gt(newVersion, this.version)) {
+    if (gt(newVersion.format(), this.version.format())) {
       this.dirty = true
       this.version = newVersion
       return this.meta.version = newVersion.format()
@@ -102,10 +102,10 @@ function each <T> (callback: (pkg: Package, name: string) => T) {
   return results
 }
 
-function bumpPkg (source: Package, flag: BumpType, stop = false) {
+function bumpPkg (source: Package, flag: BumpType, depth: number) {
   if (!source) return
   const newVersion = source.bump(flag)
-  if (!newVersion) return
+  if (depth <= 0 || !newVersion) return
   const dependents = new Set<Package>()
   each((target) => {
     const { meta } = target
@@ -121,8 +121,7 @@ function bumpPkg (source: Package, flag: BumpType, stop = false) {
       dependents.add(target)
     })
   })
-  if (stop) return
-  dependents.forEach(dep => bumpPkg(dep, flag))
+  dependents.forEach(dep => bumpPkg(dep, flag, depth - 1))
 }
 
 const flag = options.major ? 'major' : options.minor ? 'minor' : options.patch ? 'patch' : 'auto'
@@ -135,7 +134,7 @@ const flag = options.major ? 'major' : options.minor ? 'minor' : options.patch ?
 
   await Promise.all(folders.map(path => Package.from(path)))
 
-  args.forEach(name => bumpPkg(getPackage(name), flag, options.only))
+  args.forEach(name => bumpPkg(getPackage(name), flag, options.only ? 0 : Infinity))
 
   await Promise.all(each((pkg) => {
     if (!pkg.dirty) return
