@@ -83,7 +83,6 @@ function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
 
 const defaultOptions: AppOptions = {
   maxMiddlewares: 64,
-  similarityCoefficient: 0.4,
 }
 
 export class App extends Context {

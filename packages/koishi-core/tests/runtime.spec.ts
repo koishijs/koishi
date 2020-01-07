@@ -1,13 +1,10 @@
-import { Session, createMeta } from 'koishi-test-utils'
-import { App, messages } from 'koishi-core'
+import { Session, createMeta, createApp } from 'koishi-test-utils'
+import { messages } from 'koishi-core'
 import { format } from 'util'
 
-const app = new App({
-  selfId: 514,
-})
-
-beforeAll(() => app.start())
-afterAll(() => app.stop())
+const app = createApp()
+const session2 = new Session(app, 'user', 789)
+const session3 = new Session(app, 'group', 456, 321)
 
 app.command('foo <text>', { checkArgCount: true })
   .shortcut('bar1', { args: ['bar'] })
@@ -23,15 +20,6 @@ app.command('fooo', { checkUnknown: true, checkRequired: true })
   .action(({ meta, options }) => {
     return meta.$send('fooo' + options.text)
   })
-
-app.command('err')
-  .action(() => {
-    throw new Error('command error')
-  })
-
-const session1 = new Session(app, 'user', 456)
-const session2 = new Session(app, 'user', 789)
-const session3 = new Session(app, 'group', 456, 321)
 
 describe('command prefix', () => {
   beforeAll(() => {
@@ -161,15 +149,17 @@ describe('command execution', () => {
   })
 
   test('command error', async () => {
-    const mock1 = jest.fn()
-    const mock2 = jest.fn()
-    app.receiver.on('error', mock1)
-    app.receiver.on('error/command', mock2)
-    await app.executeCommandLine('err', meta)
-    expect(mock1).toBeCalledTimes(1)
-    expect(mock1.mock.calls[0][0]).toHaveProperty('message', 'command error')
-    expect(mock2).toBeCalledTimes(1)
-    expect(mock2.mock.calls[0][0]).toHaveProperty('message', 'command error')
+    const error = new Error('command error')
+    app.command('error-command').action(() => { throw error })
+    const errorCallback = jest.fn()
+    const errorCommandCallback = jest.fn()
+    app.receiver.on('error', errorCallback)
+    app.receiver.on('error/command', errorCommandCallback)
+    await app.executeCommandLine('error-command', meta)
+    expect(errorCallback).toBeCalledTimes(1)
+    expect(errorCallback).toBeCalledWith(error)
+    expect(errorCommandCallback).toBeCalledTimes(1)
+    expect(errorCommandCallback).toBeCalledWith(error)
   })
 
   test('command events', async () => {
@@ -250,62 +240,5 @@ describe('shortcuts', () => {
     await session3.shouldHaveReply('bar4 bar baz', 'foobar baz')
     await session3.shouldHaveNoResponse('bar4bar baz')
     await session3.shouldHaveReply(`[CQ:at,qq=${app.selfId}] bar4bar baz`, 'foobar baz')
-  })
-})
-
-describe('suggestions', () => {
-  const expectedSuggestionText = [
-    messages.COMMAND_SUGGESTION_PREFIX,
-    format(messages.SUGGESTION_TEXT, '“foo”'),
-    messages.COMMAND_SUGGESTION_SUFFIX,
-  ].join('')
-
-  const expectedSuggestionText2 = [
-    messages.COMMAND_SUGGESTION_PREFIX,
-    format(messages.SUGGESTION_TEXT, '“fooo”'),
-    messages.COMMAND_SUGGESTION_SUFFIX,
-  ].join('')
-
-  test('execute command', async () => {
-    await session1.shouldHaveReply('foo bar', 'foobar')
-    await session1.shouldHaveNoResponse(' ')
-  })
-
-  test('no suggestions found', async () => {
-    await session1.shouldHaveNoResponse('bar foo')
-  })
-
-  test('apply suggestions 1', async () => {
-    await session1.shouldHaveReply('fo bar', expectedSuggestionText)
-    await session2.shouldHaveReply('fooo -t bar')
-    await session1.shouldHaveReply(' ', 'foobar')
-    await session1.shouldHaveNoResponse(' ')
-  })
-
-  test('apply suggestions 2', async () => {
-    await session1.shouldHaveReply('foooo -t bar', expectedSuggestionText2)
-    await session2.shouldHaveReply('foo bar')
-    await session1.shouldHaveReply(' ', 'fooobar')
-    await session1.shouldHaveNoResponse(' ')
-  })
-
-  test('ignore suggestions 1', async () => {
-    await session1.shouldHaveReply('fo bar', expectedSuggestionText)
-    await session1.shouldHaveNoResponse('bar foo')
-    await session1.shouldHaveNoResponse(' ')
-  })
-
-  test('ignore suggestions 2', async () => {
-    await session1.shouldHaveReply('fo bar', expectedSuggestionText)
-    await session1.shouldHaveReply('foo bar')
-    await session1.shouldHaveNoResponse(' ')
-  })
-
-  test('multiple suggestions', async () => {
-    await session1.shouldHaveReply('fool bar', [
-      messages.COMMAND_SUGGESTION_PREFIX,
-      format(messages.SUGGESTION_TEXT, '“foo”或“fooo”'),
-    ].join(''))
-    await session1.shouldHaveNoResponse(' ')
   })
 })
