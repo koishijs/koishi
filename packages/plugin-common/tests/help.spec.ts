@@ -1,17 +1,9 @@
 import { Session } from 'koishi-test-utils'
-import { resolve } from 'path'
 import { App } from 'koishi-core'
 import { noop } from 'koishi-utils'
-import del from 'del'
 import help from '../src/help'
-import 'koishi-database-level'
 
-const path = resolve(__dirname, '../temp')
 const MESSAGE_COMMAND_CALLED = 'command called'
-
-let app: App
-
-afterAll(() => del(path))
 
 function prepare (app: App) {
   app.plugin(help)
@@ -30,12 +22,12 @@ function prepare (app: App) {
 }
 
 describe('help command', () => {
-  let session1: Session, session2: Session
+  let app: App, session1: Session, session2: Session
 
   beforeAll(async () => {
     app = new App({
       selfId: 514,
-      database: { level: { path } },
+      database: { memory: {} },
     })
     prepare(app)
     await app.start()
@@ -76,7 +68,7 @@ describe('help command', () => {
 })
 
 test('help without database', async () => {
-  app = new App({
+  const app = new App({
     selfId: 514,
   })
   prepare(app)
