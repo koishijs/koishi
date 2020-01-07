@@ -22,7 +22,7 @@ app.command('cmd1', { authority: 2, maxUsage: 1 })
   .option('--baz', '', { notUsage: true })
   .action(({ meta }) => meta.$send('1:' + meta.$user.id))
 
-app.command('cmd2', { minInterval: 100, showWarning: true })
+app.command('cmd2', { minInterval: () => 100 })
   .option('--bar', '', { authority: 3 })
   .option('--baz', '', { notUsage: true })
   .action(({ meta }) => meta.$send('2:' + meta.$user.id))
@@ -89,7 +89,7 @@ describe('command validation', () => {
     await session2.shouldHaveResponse('cmd1', messages.LOW_AUTHORITY)
     await session1.shouldHaveResponse('cmd1 --bar', messages.LOW_AUTHORITY)
     app.command('cmd1', { showWarning: false })
-    await session2.shouldHaveNoResponse('cmd1')
+    await session1.shouldHaveNoResponse('cmd1 --bar')
   })
 
   test('check usage', async () => {
@@ -107,6 +107,6 @@ describe('command validation', () => {
     await session2.shouldHaveResponse('cmd2', '2:456')
     await session2.shouldHaveResponse('cmd2', messages.TOO_FREQUENT)
     app.command('cmd2', { showWarning: false })
-    await session1.shouldHaveNoResponse('cmd2')
+    await session2.shouldHaveNoResponse('cmd2')
   })
 })

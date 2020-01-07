@@ -283,7 +283,7 @@ export class Command {
     }
 
     // check authority and usage
-    if (!this._checkUser(meta, options)) return
+    if (!await this._checkUser(meta, options)) return
 
     // execute command
     showCommandLog('execute %s', this.name)

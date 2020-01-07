@@ -171,40 +171,51 @@ describe('command execution', () => {
     expect(app.getCommand('fo', meta)).toBeUndefined()
   })
 
-  test('excute command', () => {
-    app.executeCommandLine('foo bar', meta)
+  test('excute command', async () => {
+    await app.executeCommandLine('foo bar', meta)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith('foobar')
   })
 
-  test('command error', () => {
+  test('command error', async () => {
     const mock1 = jest.fn()
     const mock2 = jest.fn()
     app.receiver.on('error', mock1)
     app.receiver.on('error/command', mock2)
-    app.executeCommandLine('err', meta)
+    await app.executeCommandLine('err', meta)
     expect(mock1).toBeCalledTimes(1)
     expect(mock1.mock.calls[0][0]).toHaveProperty('message', 'command error')
     expect(mock2).toBeCalledTimes(1)
     expect(mock2.mock.calls[0][0]).toHaveProperty('message', 'command error')
   })
 
-  test('command not found', () => {
+  test('command events', async () => {
+    app.command('skipped-command').action(({ next }) => next())
+    const beforeCommandCallback = jest.fn()
+    const afterCommandCallback = jest.fn()
+    app.receiver.on('before-command', beforeCommandCallback)
+    app.receiver.on('after-command', afterCommandCallback)
+    app.runCommand('skipped-command', meta)
+    expect(beforeCommandCallback).toBeCalledTimes(1)
+    expect(afterCommandCallback).toBeCalledTimes(0)
+  })
+
+  test('command not found', async () => {
     app.runCommand('bar', meta, ['foo'])
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith(messages.COMMAND_NOT_FOUND)
-    app.executeCommandLine('bar', meta, mock)
+    await app.executeCommandLine('bar', meta, mock)
     expect(mock).toBeCalledTimes(2)
   })
 
-  test('insufficient arguments', () => {
-    app.executeCommandLine('foo', meta)
+  test('insufficient arguments', async () => {
+    await app.executeCommandLine('foo', meta)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith(messages.INSUFFICIENT_ARGUMENTS)
   })
 
-  test('redunant arguments', () => {
-    app.executeCommandLine('foo bar baz', meta)
+  test('redunant arguments', async () => {
+    await app.executeCommandLine('foo bar baz', meta)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith(messages.REDUNANT_ARGUMENTS)
   })
