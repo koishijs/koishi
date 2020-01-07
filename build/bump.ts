@@ -2,6 +2,7 @@ import { writeJson } from 'fs-extra'
 import { resolve } from 'path'
 import { SemVer, gt } from 'semver'
 import { cyan, green } from 'kleur'
+import { PackageJson } from './utils'
 import latest from 'latest-version'
 import globby from 'globby'
 import CAC from 'cac'
@@ -15,17 +16,9 @@ const { args, options } = CAC()
 
 type BumpType = 'major' | 'minor' | 'patch' | 'auto'
 
-interface PackageJSON {
-  name: string
-  private?: boolean
-  version: string
-  dependencies: Record<string, string>
-  devDependencies: Record<string, string>
-}
-
 class Package {
   name: string
-  meta: PackageJSON
+  meta: PackageJson
   oldVersion: string
   version: SemVer
   dirty: boolean
@@ -113,6 +106,10 @@ function bumpPkg (source: Package, flag: BumpType, depth: number) {
     Object.keys(meta.devDependencies || {}).forEach((name) => {
       if (name !== source.name) return
       meta.devDependencies[name] = '^' + newVersion
+    })
+    Object.keys(meta.peerDependencies || {}).forEach((name) => {
+      if (name !== source.name) return
+      meta.peerDependencies[name] = '^' + newVersion
       dependents.add(target)
     })
     Object.keys(meta.dependencies || {}).forEach((name) => {

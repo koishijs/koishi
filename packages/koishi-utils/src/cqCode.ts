@@ -1,10 +1,13 @@
+type CQCodeData = Record<string, string | number>
+
 interface CQCode {
   type: string
-  data: Record<string, string | number>
+  data: CQCodeData
+  capture?: RegExpMatchArray
 }
 
 namespace CQCode {
-  export function escape (source: string, insideCQ = false) {
+  export function escape (source: any, insideCQ = false) {
     const result = String(source)
       .replace(/&/g, '&amp;')
       .replace(/\[/g, '&#91;')
@@ -22,7 +25,8 @@ namespace CQCode {
       .replace(/&amp;/g, '&')
   }
 
-  export function stringify (type: string, data: Record<string, any>) {
+  export function stringify (type: string, data: CQCodeData) {
+    if (type === 'text') return data.text
     let output = '[CQ:' + type
     for (const key in data) {
       if (data[key]) output += `,${key}=${escape(data[key], true)}`
@@ -30,18 +34,37 @@ namespace CQCode {
     return output + ']'
   }
 
+  export function stringifyAll (codes: CQCode[]) {
+    return codes.map(code => stringify(code.type, code.data)).join('')
+  }
+
   const regexp = /\[CQ:(\w+)((,\w+=[^,\]]*)+)\]/
 
-  export function parse (source: string) {
-    const result = source.match(regexp)
-    if (!result) return null
-    const [_, type, attrs] = result
+  export function parse (source: string): CQCode {
+    const capture = source.match(regexp)
+    if (!capture) return null
+    const [_, type, attrs] = capture
     const data: Record<string, string | number> = {}
     attrs.slice(1).split(/,/g).forEach((str) => {
       const [_, key, value] = str.match(/^(\w+)=(.+)$/)
       data[key] = unescape(value)
     })
-    return { type, data }
+    return { type, data, capture }
+  }
+
+  export function parseAll (source: string) {
+    const codes: CQCode[] = []
+    let result: CQCode
+    while ((result = parse(source))) {
+      const { capture } = result
+      if (capture.index) {
+        codes.push({ type: 'text', data: { text: source.slice(0, capture.index) } })
+      }
+      codes.push(result)
+      source = source.slice(capture.index + capture[0].length)
+    }
+    if (source) codes.push({ type: 'text', data: { text: source } })
+    return codes
   }
 }
 
