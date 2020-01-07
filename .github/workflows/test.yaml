@@ -25,7 +25,7 @@ jobs:
     - name: Install
       run: yarn
     - name: Build
-      run: yarn build --listFiles
+      run: yarn build --listEmittedFiles
     - name: Lint
       run: yarn lint
     - name: Unit Test

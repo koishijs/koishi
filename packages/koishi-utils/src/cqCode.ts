@@ -26,7 +26,7 @@ namespace CQCode {
   }
 
   export function stringify (type: string, data: CQCodeData) {
-    if (type === 'text') return data.text
+    if (type === 'text') return '' + data.text
     let output = '[CQ:' + type
     for (const key in data) {
       if (data[key]) output += `,${key}=${escape(data[key], true)}`
