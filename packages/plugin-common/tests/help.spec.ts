@@ -1,7 +1,7 @@
 import { httpServer } from 'koishi-test-utils'
 import { resolve } from 'path'
 import { App } from 'koishi-core'
-import { sleep } from 'koishi-utils'
+import { sleep, noop } from 'koishi-utils'
 import del from 'del'
 import help from '../src/help'
 import 'koishi-database-level'
@@ -22,6 +22,7 @@ afterAll(() => {
 
 const COMMAND_CALLED = 'command called'
 const session1 = new ServerSession('private', 123)
+const session2 = new ServerSession('private', 456)
 
 function prepare (app: App) {
   app.plugin(help)
@@ -29,6 +30,7 @@ function prepare (app: App) {
     .option('-o [value]', 'option', { authority: 2, notUsage: true })
     .action(({ meta }) => meta.$send(COMMAND_CALLED))
   app.command('help.foo', 'command without options', { authority: 2, noHelpOption: true })
+    .action(noop)
   app.command('help/bar', 'command with usage and examples')
     .usage('usage text')
     .example('example 1')
@@ -60,8 +62,8 @@ describe('help command', () => {
     await session1.testSnapshot('bar -h')
     await session1.testSnapshot('foo -h')
     await session1.testSnapshot('help help -e')
-    await session1.shouldHaveNoResponse('help.foo -h')
-    await session1.testSnapshot('help help.foo')
+    await session2.shouldHaveNoResponse('help.foo -h')
+    await session2.testSnapshot('help help.foo')
   })
 
   test('alias and shortcut', async () => {

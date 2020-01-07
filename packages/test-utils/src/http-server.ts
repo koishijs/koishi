@@ -126,7 +126,7 @@ export class ServerSession {
     return new Promise((resolve, reject) => {
       const listener = meta => reject(new Error('has response: ' + JSON.stringify(meta)))
       emitter.once(this.action, listener)
-      sleep(0).then(() => {
+      sleep(100).then(() => {
         resolve()
         emitter.off(this.action, listener)
       })
