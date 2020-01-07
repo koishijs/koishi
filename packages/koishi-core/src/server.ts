@@ -3,7 +3,7 @@ import debug from 'debug'
 import * as http from 'http'
 import { errors } from './messages'
 import { createHmac } from 'crypto'
-import { camelCase, snakeCase, capitalize, paramCase } from 'koishi-utils'
+import { camelCase, snakeCase, capitalize, paramCase, CQCode } from 'koishi-utils'
 import { Meta, VersionInfo, ContextType } from './meta'
 import { App, AppOptions } from './app'
 import { CQResponse } from './sender'
@@ -57,12 +57,17 @@ export abstract class Server {
     // polyfill CQHTTP 3.x events
     // https://cqhttp.cc/docs/4.12/#/UpgradeGuide
     /* eslint-disable dot-notation */
-    if (typeof meta.anonymous === 'string') {
-      meta.anonymous = {
-        name: meta.anonymous,
-        flag: meta['anonymousFlag'],
+    if (meta.postType === 'message') {
+      if (typeof meta.anonymous === 'string') {
+        meta.anonymous = {
+          name: meta.anonymous,
+          flag: meta['anonymousFlag'],
+        }
+        delete meta['anonymousFlag']
       }
-      delete meta['anonymousFlag']
+      if (Array.isArray(meta.message)) {
+        meta.message = CQCode.stringifyAll(meta.message)
+      }
     // @ts-ignore
     } else if (meta.postType === 'event') {
       meta.postType = 'notice'

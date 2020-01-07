@@ -66,6 +66,7 @@ describe('WebSocket Server', () => {
   })
 
   test('make polyfills', async () => {
+    await postMeta({ postType: 'message', groupId: 123, message: [{ type: 'text', data: { text: 'foo' } }] as any })
     await postMeta({ postType: 'message', groupId: 123, message: '', anonymous: 'foo' as any, ['anonymousFlag' as any]: 'bar' })
     await postMeta({ postType: 'request', userId: 123, requestType: 'friend', message: 'baz' })
     await postMeta({ postType: 'event' as any, userId: 123, ['event' as any]: 'frient_add' })

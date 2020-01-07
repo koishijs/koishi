@@ -12,14 +12,12 @@ jest.setTimeout(1000)
 
 beforeAll(() => app.start())
 
-afterAll(() => {
-  app.stop()
+afterAll(async () => {
+  await app.stop()
   server.close()
 })
 
 app.command('foo <text>', { checkArgCount: true })
-  // make coverage happy
-  .userFields(['name', 'flag', 'authority', 'usage'])
   .shortcut('bar1', { args: ['bar'] })
   .shortcut('bar4', { oneArg: true, fuzzy: true })
   .action(({ meta }, bar) => {

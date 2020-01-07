@@ -11,10 +11,13 @@ const path = resolve(__dirname, '../temp')
 
 const server = createServer()
 const app = createApp({
-  database: { level: { path } }
+  database: { level: { path } },
 })
 
 app.command('cmd1', { authority: 2, maxUsage: 1 })
+  // make coverage happy
+  .userFields(['name', 'flag', 'authority', 'usage'])
+  .groupFields(['id', 'flag', 'assignee'])
   .option('--bar', '', { authority: 3 })
   .option('--baz', '', { notUsage: true })
   .action(({ meta }) => meta.$send('1:' + meta.$user.id))
@@ -82,19 +85,28 @@ describe('middleware validation', () => {
 
 describe('command validation', () => {
   test('check authority', async () => {
+    app.command('cmd1', { showWarning: true })
     await session2.shouldHaveResponse('cmd1', messages.LOW_AUTHORITY)
     await session1.shouldHaveResponse('cmd1 --bar', messages.LOW_AUTHORITY)
+    app.command('cmd1', { showWarning: false })
+    await session2.shouldHaveNoResponse('cmd1')
   })
 
   test('check usage', async () => {
+    app.command('cmd1', { showWarning: true })
     await session1.shouldHaveResponse('cmd1', '1:123')
     await session1.shouldHaveResponse('cmd1 --baz', '1:123')
     await session1.shouldHaveResponse('cmd1', messages.USAGE_EXHAUSTED)
     await session1.shouldHaveResponse('cmd1 --baz', '1:123')
+    app.command('cmd1', { showWarning: false })
+    await session1.shouldHaveNoResponse('cmd1')
   })
 
   test('check frequency', async () => {
+    app.command('cmd2', { showWarning: true })
     await session2.shouldHaveResponse('cmd2', '2:456')
     await session2.shouldHaveResponse('cmd2', messages.TOO_FREQUENT)
+    app.command('cmd2', { showWarning: false })
+    await session1.shouldHaveNoResponse('cmd2')
   })
 })
