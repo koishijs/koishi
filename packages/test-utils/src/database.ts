@@ -10,7 +10,7 @@ export interface TestDatabaseOptions {
   afterEachGroup?: TestHook
 }
 
-export function testDatabase (config: DatabaseConfig, options: TestDatabaseOptions = {}) {
+export function testDatabase (config: DatabaseConfig, options: TestDatabaseOptions) {
   const app = new App({ database: config, selfId: 2 })
   const { database: db } = app
 

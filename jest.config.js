@@ -15,7 +15,9 @@ module.exports = {
   },
   coverageReporters: ['text', 'lcov'],
   coveragePathIgnorePatterns: [
-    'test-utils/',
+    'test-utils/src/http-server',
+    'test-utils/src/ws-client',
+    'test-utils/src/utils',
     'tests/',
     'dist/',
   ],

@@ -6,15 +6,12 @@ injectMethods('level', 'group', {
   async getGroup (groupId, selfId): Promise<GroupData> {
     selfId = typeof selfId === 'number' ? selfId : 0
     const data = await this.tables.group.get(groupId).catch(noop) as GroupData | void
-    let fallback: GroupData
-    if (!data) {
-      fallback = createGroup(groupId, selfId)
-      if (selfId && groupId) {
-        await this.tables.group.put(groupId, fallback)
-      }
+    if (data) return data
+    const fallback = createGroup(groupId, selfId)
+    if (selfId && groupId) {
+      await this.tables.group.put(groupId, fallback)
     }
-
-    return data || fallback
+    return fallback
   },
 
   async getAllGroups (...args) {
@@ -45,11 +42,8 @@ injectMethods('level', 'group', {
     }
 
     const data = await this.getGroup(group.id, selfId)
-    if ('_diff' in group) {
-      return (group as Group)._merge(data)
-    } else {
-      return observe(Object.assign(group, data), diff => this.setGroup(group.id, diff), `group ${group.id}`)
-    }
+    if ('_diff' in group) return (group as Group)._merge(data)
+    return observe(Object.assign(group, data), diff => this.setGroup(group.id, diff), `group ${group.id}`)
   },
 
   getGroupCount () {
