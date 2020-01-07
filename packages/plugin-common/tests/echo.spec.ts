@@ -1,7 +1,7 @@
-import { httpServer } from 'koishi-test-utils'
+import { httpServer, createMeta } from 'koishi-test-utils'
 import echo from '../src/echo'
 
-const { createApp, createServer, postMeta, createMeta, waitFor } = httpServer
+const { createApp, createServer, postMeta, waitFor } = httpServer
 
 const server = createServer()
 const app = createApp()

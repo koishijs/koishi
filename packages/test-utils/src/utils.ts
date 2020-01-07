@@ -1,4 +1,15 @@
-import { SenderInfo } from 'koishi-core'
+import { SenderInfo, PostType, MetaTypeMap, SubTypeMap, Meta } from 'koishi-core'
+import { camelCase } from 'koishi-utils'
+import debug from 'debug'
+
+export const showTestLog = debug('koishi:test')
+
+export function createMeta <T extends PostType> (postType: T, type: MetaTypeMap[T], subType: SubTypeMap[T], meta: Meta<T> = {}) {
+  meta.postType = postType
+  meta[camelCase(postType) + 'Type'] = type
+  meta.subType = subType
+  return meta
+}
 
 export function createArray <T> (length: number, create: (index: number) => T) {
   return Array(length).fill(undefined).map((_, index) => create(index))

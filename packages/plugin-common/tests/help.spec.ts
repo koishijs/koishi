@@ -1,7 +1,9 @@
-import { Session } from 'koishi-test-utils'
+import { Session, registerMemoryDatabase } from 'koishi-test-utils'
 import { App } from 'koishi-core'
 import { noop } from 'koishi-utils'
 import help from '../src/help'
+
+registerMemoryDatabase()
 
 const MESSAGE_COMMAND_CALLED = 'command called'
 
@@ -62,7 +64,7 @@ describe('help command', () => {
   })
 
   test('show help with usage', async () => {
-    await session1.expectReply('foo').toBe(MESSAGE_COMMAND_CALLED)
+    await session1.shouldHaveReply('foo', MESSAGE_COMMAND_CALLED)
     await session1.shouldMatchSnapshot('help foo')
   })
 })

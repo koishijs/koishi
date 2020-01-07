@@ -1,21 +1,13 @@
-import { httpServer } from 'koishi-test-utils'
-import { errors, messages } from '../src/messages'
-import { App } from '../src'
+import { Session, createMeta } from 'koishi-test-utils'
+import { App, messages } from 'koishi-core'
 import { format } from 'util'
 
-const { createApp, createServer, ServerSession, createMeta } = httpServer
-
-const app = createApp()
-const server = createServer()
-
-jest.setTimeout(1000)
+const app = new App({
+  selfId: 514,
+})
 
 beforeAll(() => app.start())
-
-afterAll(async () => {
-  await app.stop()
-  server.close()
-})
+afterAll(() => app.stop())
 
 app.command('foo <text>', { checkArgCount: true })
   .shortcut('bar1', { args: ['bar'] })
@@ -37,18 +29,9 @@ app.command('err')
     throw new Error('command error')
   })
 
-const session1 = new ServerSession('private', 456)
-const session2 = new ServerSession('private', 789)
-const session3 = new ServerSession('group', 456, { groupId: 321 })
-
-describe('configurations', () => {
-  test('server', () => {
-    expect(() => new App({ type: 123 as any })).toThrow(errors.UNSUPPORTED_SERVER_TYPE)
-    expect(() => new App({ type: 'foo' as any })).toThrow(errors.UNSUPPORTED_SERVER_TYPE)
-    expect(() => new App({ type: 'http' })).toThrow(format(errors.MISSING_CONFIGURATION, 'port'))
-    expect(() => new App({ type: 'ws' })).toThrow(format(errors.MISSING_CONFIGURATION, 'server'))
-  })
-})
+const session1 = new Session(app, 'user', 456)
+const session2 = new Session(app, 'user', 789)
+const session3 = new Session(app, 'group', 456, 321)
 
 describe('command prefix', () => {
   beforeAll(() => {
@@ -65,8 +48,8 @@ describe('command prefix', () => {
     app.options.commandPrefix = null
     app.prepare()
 
-    await session2.shouldHaveResponse('foo bar', 'foobar')
-    await session3.shouldHaveResponse('foo bar', 'foobar')
+    await session2.shouldHaveReply('foo bar', 'foobar')
+    await session3.shouldHaveReply('foo bar', 'foobar')
     await session2.shouldHaveNoResponse('!foo bar')
     await session3.shouldHaveNoResponse('!foo bar')
     await session2.shouldHaveNoResponse('.foo bar')
@@ -77,10 +60,10 @@ describe('command prefix', () => {
     app.options.commandPrefix = '!'
     app.prepare()
 
-    await session2.shouldHaveResponse('foo bar', 'foobar')
+    await session2.shouldHaveReply('foo bar', 'foobar')
     await session3.shouldHaveNoResponse('foo bar')
-    await session2.shouldHaveResponse('!foo bar', 'foobar')
-    await session3.shouldHaveResponse('!foo bar', 'foobar')
+    await session2.shouldHaveReply('!foo bar', 'foobar')
+    await session3.shouldHaveReply('!foo bar', 'foobar')
     await session2.shouldHaveNoResponse('.foo bar')
     await session3.shouldHaveNoResponse('.foo bar')
   })
@@ -89,24 +72,24 @@ describe('command prefix', () => {
     app.options.commandPrefix = ['!', '.']
     app.prepare()
 
-    await session2.shouldHaveResponse('foo bar', 'foobar')
+    await session2.shouldHaveReply('foo bar', 'foobar')
     await session3.shouldHaveNoResponse('foo bar')
-    await session2.shouldHaveResponse('!foo bar', 'foobar')
-    await session3.shouldHaveResponse('!foo bar', 'foobar')
-    await session2.shouldHaveResponse('.foo bar', 'foobar')
-    await session3.shouldHaveResponse('.foo bar', 'foobar')
+    await session2.shouldHaveReply('!foo bar', 'foobar')
+    await session3.shouldHaveReply('!foo bar', 'foobar')
+    await session2.shouldHaveReply('.foo bar', 'foobar')
+    await session3.shouldHaveReply('.foo bar', 'foobar')
   })
 
   test('optional prefix', async () => {
     app.options.commandPrefix = ['.', '']
     app.prepare()
 
-    await session2.shouldHaveResponse('foo bar', 'foobar')
-    await session3.shouldHaveResponse('foo bar', 'foobar')
+    await session2.shouldHaveReply('foo bar', 'foobar')
+    await session3.shouldHaveReply('foo bar', 'foobar')
     await session2.shouldHaveNoResponse('!foo bar')
     await session3.shouldHaveNoResponse('!foo bar')
-    await session2.shouldHaveResponse('.foo bar', 'foobar')
-    await session3.shouldHaveResponse('.foo bar', 'foobar')
+    await session2.shouldHaveReply('.foo bar', 'foobar')
+    await session3.shouldHaveReply('.foo bar', 'foobar')
   })
 })
 
@@ -124,23 +107,23 @@ describe('nickname prefix', () => {
   })
 
   test('no nickname', async () => {
-    await session2.shouldHaveResponse('foo bar', 'foobar')
+    await session2.shouldHaveReply('foo bar', 'foobar')
     await session3.shouldHaveNoResponse('foo bar')
-    await session2.shouldHaveResponse('-foo bar', 'foobar')
-    await session3.shouldHaveResponse('-foo bar', 'foobar')
-    await session3.shouldHaveResponse(`[CQ:at,qq=${app.selfId}] foo bar`, 'foobar')
+    await session2.shouldHaveReply('-foo bar', 'foobar')
+    await session3.shouldHaveReply('-foo bar', 'foobar')
+    await session3.shouldHaveReply(`[CQ:at,qq=${app.selfId}] foo bar`, 'foobar')
   })
 
   test('single nickname', async () => {
     app.options.nickname = 'koishi'
     app.prepare()
 
-    await session2.shouldHaveResponse('koishi, foo bar', 'foobar')
-    await session3.shouldHaveResponse('koishi, foo bar', 'foobar')
-    await session2.shouldHaveResponse('koishi\n foo bar', 'foobar')
-    await session3.shouldHaveResponse('koishi\n foo bar', 'foobar')
-    await session2.shouldHaveResponse('@koishi foo bar', 'foobar')
-    await session3.shouldHaveResponse('@koishi foo bar', 'foobar')
+    await session2.shouldHaveReply('koishi, foo bar', 'foobar')
+    await session3.shouldHaveReply('koishi, foo bar', 'foobar')
+    await session2.shouldHaveReply('koishi\n foo bar', 'foobar')
+    await session3.shouldHaveReply('koishi\n foo bar', 'foobar')
+    await session2.shouldHaveReply('@koishi foo bar', 'foobar')
+    await session3.shouldHaveReply('@koishi foo bar', 'foobar')
     await session2.shouldHaveNoResponse('komeiji, foo bar')
     await session3.shouldHaveNoResponse('komeiji, foo bar')
   })
@@ -149,14 +132,14 @@ describe('nickname prefix', () => {
     app.options.nickname = ['komeiji', 'koishi']
     app.prepare()
 
-    await session2.shouldHaveResponse('foo bar', 'foobar')
+    await session2.shouldHaveReply('foo bar', 'foobar')
     await session3.shouldHaveNoResponse('foo bar')
-    await session2.shouldHaveResponse('-foo bar', 'foobar')
-    await session3.shouldHaveResponse('-foo bar', 'foobar')
-    await session2.shouldHaveResponse('koishi, foo bar', 'foobar')
-    await session3.shouldHaveResponse('koishi, foo bar', 'foobar')
-    await session2.shouldHaveResponse('komeiji foo bar', 'foobar')
-    await session3.shouldHaveResponse('komeiji foo bar', 'foobar')
+    await session2.shouldHaveReply('-foo bar', 'foobar')
+    await session3.shouldHaveReply('-foo bar', 'foobar')
+    await session2.shouldHaveReply('koishi, foo bar', 'foobar')
+    await session3.shouldHaveReply('koishi, foo bar', 'foobar')
+    await session2.shouldHaveReply('komeiji foo bar', 'foobar')
+    await session3.shouldHaveReply('komeiji foo bar', 'foobar')
   })
 })
 
@@ -245,8 +228,8 @@ describe('shortcuts', () => {
   })
 
   test('single shortcut', async () => {
-    await session3.shouldHaveResponse(' bar1 ', 'foobar')
-    await session3.shouldHaveResponse(' bar2 ', 'fooobar')
+    await session3.shouldHaveReply(' bar1 ', 'foobar')
+    await session3.shouldHaveReply(' bar2 ', 'fooobar')
     await session3.shouldHaveNoResponse('bar1 bar')
     await session3.shouldHaveNoResponse('bar2 -t bar')
   })
@@ -260,13 +243,13 @@ describe('shortcuts', () => {
 
   test('nickname prefix & fuzzy', async () => {
     await session3.shouldHaveNoResponse('bar3 -t baz')
-    await session3.shouldHaveResponse(`[CQ:at,qq=${app.selfId}] bar3 -t baz`, 'fooobaz')
+    await session3.shouldHaveReply(`[CQ:at,qq=${app.selfId}] bar3 -t baz`, 'fooobaz')
   })
 
   test('one argument & fuzzy', async () => {
-    await session3.shouldHaveResponse('bar4 bar baz', 'foobar baz')
+    await session3.shouldHaveReply('bar4 bar baz', 'foobar baz')
     await session3.shouldHaveNoResponse('bar4bar baz')
-    await session3.shouldHaveResponse(`[CQ:at,qq=${app.selfId}] bar4bar baz`, 'foobar baz')
+    await session3.shouldHaveReply(`[CQ:at,qq=${app.selfId}] bar4bar baz`, 'foobar baz')
   })
 })
 
@@ -284,7 +267,7 @@ describe('suggestions', () => {
   ].join('')
 
   test('execute command', async () => {
-    await session1.shouldHaveResponse('foo bar', 'foobar')
+    await session1.shouldHaveReply('foo bar', 'foobar')
     await session1.shouldHaveNoResponse(' ')
   })
 
@@ -293,33 +276,33 @@ describe('suggestions', () => {
   })
 
   test('apply suggestions 1', async () => {
-    await session1.shouldHaveResponse('fo bar', expectedSuggestionText)
-    await session2.waitForResponse('fooo -t bar')
-    await session1.shouldHaveResponse(' ', 'foobar')
+    await session1.shouldHaveReply('fo bar', expectedSuggestionText)
+    await session2.shouldHaveReply('fooo -t bar')
+    await session1.shouldHaveReply(' ', 'foobar')
     await session1.shouldHaveNoResponse(' ')
   })
 
   test('apply suggestions 2', async () => {
-    await session1.shouldHaveResponse('foooo -t bar', expectedSuggestionText2)
-    await session2.waitForResponse('foo bar')
-    await session1.shouldHaveResponse(' ', 'fooobar')
+    await session1.shouldHaveReply('foooo -t bar', expectedSuggestionText2)
+    await session2.shouldHaveReply('foo bar')
+    await session1.shouldHaveReply(' ', 'fooobar')
     await session1.shouldHaveNoResponse(' ')
   })
 
   test('ignore suggestions 1', async () => {
-    await session1.shouldHaveResponse('fo bar', expectedSuggestionText)
+    await session1.shouldHaveReply('fo bar', expectedSuggestionText)
     await session1.shouldHaveNoResponse('bar foo')
     await session1.shouldHaveNoResponse(' ')
   })
 
   test('ignore suggestions 2', async () => {
-    await session1.shouldHaveResponse('fo bar', expectedSuggestionText)
-    await session1.waitForResponse('foo bar')
+    await session1.shouldHaveReply('fo bar', expectedSuggestionText)
+    await session1.shouldHaveReply('foo bar')
     await session1.shouldHaveNoResponse(' ')
   })
 
   test('multiple suggestions', async () => {
-    await session1.shouldHaveResponse('fool bar', [
+    await session1.shouldHaveReply('fool bar', [
       messages.COMMAND_SUGGESTION_PREFIX,
       format(messages.SUGGESTION_TEXT, '“foo”或“fooo”'),
     ].join(''))

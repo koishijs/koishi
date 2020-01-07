@@ -1,5 +1,7 @@
 import { App, Meta, ContextType, Server, ResponsePayload, Sender } from 'koishi-core'
 
+const refs = new WeakSet<App>()
+
 class SessionServer extends Server {
   _close () {}
   async _listen () {}
@@ -7,14 +9,17 @@ class SessionServer extends Server {
 
 export class Session {
   meta: Meta
-  server: Server
 
   constructor (app: App, type: 'user', userId: number)
   constructor (app: App, type: 'group', userId: number, groupId: number)
   constructor (app: App, type: 'discuss', userId: number, discussId: number)
   constructor (public app: App, type: ContextType, userId: number, ctxId: number = userId) {
-    app.sender = new Sender(app)
-    this.server = new SessionServer(app)
+    if (!refs.has(app)) {
+      refs.add(app)
+      app.sender = new Sender(app)
+      app.server = new SessionServer(app)
+    }
+
     this.meta = {
       userId,
       selfId: app.selfId,
@@ -27,8 +32,12 @@ export class Session {
   receive (message: string): Promise<ResponsePayload> {
     return new Promise((resolve) => {
       let payload: ResponsePayload = null
+      function $response (data: ResponsePayload) {
+        payload = data
+      }
+
       this.app.receiver.once('after-middlewares', () => resolve(payload))
-      this.server.dispatchMeta({ ...this.meta, message, $response: data => payload = data })
+      this.app.server.dispatchMeta({ ...this.meta, message, $response })
     })
   }
 
@@ -37,15 +46,19 @@ export class Session {
     return response && response.reply
   }
 
+  shouldHaveReply (message: string, reply?: string) {
+    if (reply) {
+      return expect(this.getReply(message)).resolves.toBe(reply)
+    } else {
+      return expect(this.getReply(message)).resolves.toBeTruthy()
+    }
+  }
+
   shouldHaveNoResponse (message: string) {
     return expect(this.receive(message)).resolves.toBeNull()
   }
 
   shouldMatchSnapshot (message: string) {
-    return this.expectReply(message).toMatchSnapshot(message)
-  }
-
-  expectReply (message: string) {
-    return expect(this.getReply(message)).resolves
+    return expect(this.getReply(message)).resolves.toMatchSnapshot(message)
   }
 }

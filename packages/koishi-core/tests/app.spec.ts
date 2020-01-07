@@ -1,6 +1,6 @@
-import { onStart, onStop, startAll, stopAll, App, getSelfIds } from '../src'
+import { onStart, onStop, startAll, stopAll, App, getSelfIds, errors } from 'koishi-core'
 import { httpServer } from 'koishi-test-utils'
-import { errors } from '../src/messages'
+import { format } from 'util'
 
 const { createApp, createServer, emitter, setResponse } = httpServer
 
@@ -9,6 +9,15 @@ const server = createServer()
 
 afterAll(() => {
   server.close()
+})
+
+describe('Configurations', () => {
+  test('server', () => {
+    expect(() => new App({ type: 123 as any })).toThrow(errors.UNSUPPORTED_SERVER_TYPE)
+    expect(() => new App({ type: 'foo' as any })).toThrow(errors.UNSUPPORTED_SERVER_TYPE)
+    expect(() => new App({ type: 'http' })).toThrow(format(errors.MISSING_CONFIGURATION, 'port'))
+    expect(() => new App({ type: 'ws' })).toThrow(format(errors.MISSING_CONFIGURATION, 'server'))
+  })
 })
 
 describe('Lifecycle', () => {

@@ -110,7 +110,6 @@ export class App extends Context {
 
   constructor (options: AppOptions = {}) {
     super(appIdentifier, appScope)
-    appList.push(this)
 
     // resolve options
     this.options = { ...defaultOptions, ...options }
@@ -124,6 +123,9 @@ export class App extends Context {
       this.server = createServer(this)
       this.sender = new Sender(this)
     }
+
+    // register application
+    appList.push(this)
     if (this.selfId) this.prepare()
 
     // bind built-in event listeners
