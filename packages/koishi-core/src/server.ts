@@ -168,14 +168,20 @@ export abstract class Server {
   async listen () {
     if (this.isListening) return
     this.isListening = true
-    await this._listen()
-    if (this.versionLessThan(3)) {
-      throw new Error(errors.UNSUPPORTED_CQHTTP_VERSION)
-    } else if (this.versionLessThan(3, 4)) {
-      const apps = this.appList.filter(app => app.options.type && !app.selfId)
-      if (apps.length > 1) throw new Error(errors.MULTIPLE_ANONYMOUS_BOTS)
-      const info = await apps[0].sender.getLoginInfo()
-      apps[0].prepare(info.userId)
+    try {
+      await this._listen()
+      if (this.versionLessThan(3)) {
+        throw new Error(errors.UNSUPPORTED_CQHTTP_VERSION)
+      } else if (this.versionLessThan(3, 4)) {
+        const apps = this.appList.filter(app => app.options.type && !app.selfId)
+        if (apps.length > 1) throw new Error(errors.MULTIPLE_ANONYMOUS_BOTS)
+        const info = await apps[0].sender.getLoginInfo()
+        apps[0].prepare(info.userId)
+      }
+    } catch (error) {
+      this.isListening = false
+      this._close()
+      throw error
     }
   }
 

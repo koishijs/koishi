@@ -27,6 +27,9 @@
     "koishi",
     "plugin"
   ],
+  "devDependencies": {
+    "koishi-test-utils": "^1.1.0"
+  },
   "dependencies": {
     "koishi-core": "^1.1.1",
     "koishi-utils": "^1.0.2"

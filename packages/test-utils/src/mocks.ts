@@ -1,6 +1,6 @@
 import { BASE_SELF_ID } from './utils'
 import { snakeCase, sleep } from 'koishi-utils'
-import { AppOptions, App, Sender, Server, ContextType, ResponsePayload, MessageMeta } from 'koishi-core'
+import { AppOptions, App, Sender, Server, ContextType, ResponsePayload, MessageMeta, Meta } from 'koishi-core'
 
 class MockedServer extends Server {
   constructor (app: App) {
@@ -9,7 +9,10 @@ class MockedServer extends Server {
   }
 
   _close () {}
-  async _listen () {}
+
+  async _listen () {
+    this.version = {} as any
+  }
 }
 
 export type RequestInfo = readonly [string, Record<string, any>]
@@ -40,17 +43,30 @@ export class MockedApp extends App {
     this.server = new MockedServer(this)
   }
 
-  receive (meta: MessageMeta): Promise<void> {
-    this.server.dispatchMeta(meta)
+  receive (meta: Meta): Promise<void> {
+    this.server.dispatchMeta({
+      selfId: this.selfId,
+      ...meta,
+    })
     return sleep(0)
+  }
+
+  clearRequests () {
+    this.sender.requests = []
+  }
+
+  shouldHaveNoRequests () {
+    expect(this.sender.requests).toHaveLength(0)
   }
 
   shouldHaveLastRequest (action: string, params: Record<string, any> = {}) {
     expect(this.sender.requests[0]).toMatchObject([action, snakeCase(params)])
+    this.clearRequests()
   }
 
   shouldHaveLastRequests (requests: RequestInfo[]) {
     expect(this.sender.requests.slice(0, requests.length)).toMatchObject(requests.map(snakeCase).reverse())
+    this.clearRequests()
   }
 
   createSession (type: 'user', userId: number): Session
@@ -81,7 +97,7 @@ export class Session {
 
   async getReply (message: string) {
     const response = await this.send(message)
-    return response && response.reply
+    return response?.reply
   }
 
   shouldHaveReply (message: string, reply?: string) {

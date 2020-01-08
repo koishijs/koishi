@@ -50,18 +50,20 @@ export class Sender {
   constructor (public app: App) {
     const { type } = app.options
     if (type === 'http') {
-      const headers = {} as any
-      if (app.options.token) {
-        headers.Authorization = `Token ${app.options.token}`
-      }
       this._get = async (action, params = {}) => {
+        const headers = {} as any
+        if (app.options.token) {
+          headers.Authorization = `Token ${app.options.token}`
+        }
         const uri = new URL(action, this.app.options.server).href
         const { data } = await axios.get(uri, { params, headers })
         return data
       }
     } else if (type === 'ws') {
-      const server = app.server as WsClient
-      this._get = (action, params = {}) => server.send({ action, params })
+      this._get = (action, params = {}) => {
+        const server = app.server as WsClient
+        return server.send({ action, params })
+      }
     }
   }
 

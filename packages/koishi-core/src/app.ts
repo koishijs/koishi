@@ -218,7 +218,7 @@ export class App extends Context {
         tasks.push(this.database[type]?.start?.())
       }
     }
-    if (this.options.type) {
+    if (this.server) {
       tasks.push(this.server.listen())
     }
     await Promise.all(tasks)
@@ -239,7 +239,7 @@ export class App extends Context {
       }
     }
     await Promise.all(tasks)
-    if (this.options.type) {
+    if (this.server) {
       this.server.close()
     }
     showLog('stopped')

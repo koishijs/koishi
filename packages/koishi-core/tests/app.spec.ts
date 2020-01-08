@@ -105,6 +105,8 @@ describe('Startup Checks', () => {
   test('authorization', async () => {
     server.token = 'token'
     await expect(app1.start()).rejects.toHaveProperty('message', 'authorization failed')
+    app1.options.token = 'nekot'
+    await expect(app1.start()).rejects.toHaveProperty('message', 'authorization failed')
     app1.options.token = 'token'
     await expect(app1.start()).resolves.toBeUndefined()
   })
