@@ -1,8 +1,7 @@
 import { httpServer } from 'koishi-test-utils'
-import { App, Meta } from '../src'
-import { Server } from 'http'
+import { App, Meta, errors } from 'koishi-core'
 import { sleep, noop } from 'koishi-utils'
-import { errors } from '../src/messages'
+import { Server } from 'http'
 import { format } from 'util'
 
 const { SERVER_URL, CLIENT_PORT, createServer, postMeta } = httpServer

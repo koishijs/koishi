@@ -1,5 +1,5 @@
 import { httpServer } from 'koishi-test-utils'
-import { App, startAll, stopAll, Meta } from '../src'
+import { App, startAll, stopAll, Meta } from 'koishi-core'
 
 const { SERVER_URL, CLIENT_PORT, createServer, postMeta } = httpServer
 

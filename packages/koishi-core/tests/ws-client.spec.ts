@@ -1,5 +1,5 @@
 import { wsClient } from 'koishi-test-utils'
-import { Meta } from '../src'
+import { Meta } from 'koishi-core'
 
 const { createApp, createServer, postMeta, SERVER_PORT, emitter, nextTick } = wsClient
 

@@ -1,9 +1,6 @@
-import { App } from '../src'
-import { errors } from '../src/messages'
+import { App, errors } from 'koishi-core'
 
 let app: App
-
-jest.setTimeout(1000)
 
 describe('register commands', () => {
   beforeAll(() => app = new App())

@@ -1,6 +1,6 @@
-import { App, registerDatabase, injectMethods, createUser, extendUser, createGroup, extendGroup } from '../src'
+import { App, registerDatabase, injectMethods, createUser, extendUser, createGroup, extendGroup } from 'koishi-core'
 
-declare module '../src/database' {
+declare module 'koishi-core/dist/database' {
   interface Subdatabases {
     foo?: FooDatabase
     bar?: BarDatabase

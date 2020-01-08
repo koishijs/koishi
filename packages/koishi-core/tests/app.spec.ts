@@ -52,7 +52,6 @@ describe('Lifecycle', () => {
 })
 
 describe('Startup Checks', () => {
-  // @ts-ignore
   beforeAll(() => app1 = createApp())
   afterEach(() => app1.stop())
   afterAll(() => app1.destroy())
