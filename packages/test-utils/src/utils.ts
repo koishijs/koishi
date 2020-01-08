@@ -1,17 +1,23 @@
-import { SenderInfo, PostType, MetaTypeMap, SubTypeMap, Meta, AppOptions, App } from 'koishi-core'
+import { SenderInfo, PostType, MetaTypeMap, SubTypeMap, Meta } from 'koishi-core'
 import { camelCase } from 'koishi-utils'
 import debug from 'debug'
 
+export const BASE_SELF_ID = 514
 export const showTestLog = debug('koishi:test')
 
-export function createApp (options: AppOptions = {}) {
-  const app = new App({ selfId: 514, ...options })
-  beforeAll(() => app.start())
-  afterAll(() => app.stop())
-  return app
+/**
+ * polyfill for node < 12.0
+ */
+export function fromEntries <T> (entries: Iterable<readonly [string, T]>) {
+  const result: Record<string, T> = {}
+  for (const [key, value] of entries) {
+    result[key] = value
+  }
+  return result
 }
 
 export function createMeta <T extends PostType> (postType: T, type: MetaTypeMap[T], subType: SubTypeMap[T], meta: Meta<T> = {}) {
+  if (!meta.selfId) meta.selfId = BASE_SELF_ID
   meta.postType = postType
   meta[camelCase(postType) + 'Type'] = type
   meta.subType = subType

@@ -1,4 +1,4 @@
-import { Session, registerMemoryDatabase } from 'koishi-test-utils'
+import { Session, registerMemoryDatabase, MockedApp } from 'koishi-test-utils'
 import { App } from 'koishi-core'
 import { noop } from 'koishi-utils'
 import help from '../src/help'
@@ -24,19 +24,16 @@ function prepare (app: App) {
 }
 
 describe('help command', () => {
-  let app: App, session1: Session, session2: Session
+  let app: MockedApp, session1: Session, session2: Session
 
   beforeAll(async () => {
-    app = new App({
-      selfId: 514,
-      database: { memory: {} },
-    })
+    app = new MockedApp({ database: { memory: {} } })
     prepare(app)
     await app.start()
     await app.database.getUser(123, 1)
     await app.database.getUser(456, 2)
-    session1 = new Session(app, 'user', 123)
-    session2 = new Session(app, 'user', 456)
+    session1 = app.createSession('user', 123)
+    session2 = app.createSession('user', 456)
   })
 
   afterAll(() => app.stop())
@@ -70,11 +67,9 @@ describe('help command', () => {
 })
 
 test('help without database', async () => {
-  const app = new App({
-    selfId: 514,
-  })
+  const app = new MockedApp()
   prepare(app)
-  const session = new Session(app, 'user', 123)
+  const session = app.createSession('user', 123)
   await app.start()
   await session.shouldMatchSnapshot('help foo')
   await app.stop()

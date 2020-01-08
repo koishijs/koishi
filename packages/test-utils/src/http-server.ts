@@ -1,128 +1,92 @@
-import axios from 'axios'
-import debug from 'debug'
-import express, { Express } from 'express'
-import { EventEmitter } from 'events'
 import { createHmac } from 'crypto'
-import { Meta, MetaTypeMap, App, AppOptions } from 'koishi-core'
-import { snakeCase, sleep } from 'koishi-utils'
+import { Meta, App, AppOptions } from 'koishi-core'
+import { snakeCase, randomInt, camelCase } from 'koishi-utils'
+import { Server, createServer } from 'http'
+import { showTestLog, fromEntries, BASE_SELF_ID } from './utils'
+import getPort from 'get-port'
+import axios from 'axios'
 
-export const SERVER_PORT = 15700
-export const MAX_TIMEOUT = 1000
-export const CLIENT_PORT = 17070
-export const SERVER_URL = `http://localhost:${SERVER_PORT}`
-
-let app: Express
-export const emitter = new EventEmitter()
-const showLog = debug('koishi:test')
-
-export function createApp (options: AppOptions = {}) {
-  return new App({
-    port: CLIENT_PORT,
-    server: SERVER_URL,
-    selfId: 514,
-    ...options,
-  })
+export async function createHttpServer (token?: string) {
+  const cqhttpPort = await getPort({ port: randomInt(16384, 49152) })
+  const koishiPort = await getPort({ port: randomInt(16384, 49152) })
+  return new HttpServer(cqhttpPort, koishiPort, token)
 }
 
-let _data = {}
-let _retcode = 0
+export class HttpServer {
+  appList: App[] = []
+  server: Server
+  requests: [string, Record<string, string>][] = []
+  responses: Record<string, [Record<string, any>, number]> = {}
 
-export function expectReqResToBe (callback: () => Promise<any>, data: object, method: string, query: any, response?: any) {
-  return expect(new Promise((resolve) => {
-    _data = data
-    let method, query
-    emitter.once('*', (_method, _query) => {
-      method = _method
-      query = _query
-    })
-    callback().then((response) => {
-      resolve([method, query, response])
-      _data = {}
-    })
-  })).resolves.toMatchObject([method, query, response])
-}
+  constructor (public cqhttpPort: number, public koishiPort: number, public token?: string) {
+    this.server = createServer((req, res) => {
+      let body = ''
+      req.on('data', chunk => body += chunk)
+      req.on('end', () => {
+        showTestLog('[http]', req.url)
 
-export function setResponse (data = {}, retcode = 0) {
-  _data = data
-  _retcode = retcode
-}
+        if (this.token) {
+          // no signature
+          const signature = req.headers.authorization
+          if (!signature) {
+            res.statusCode = 401
+            return res.end()
+          }
 
-export function createServer () {
-  app = express()
+          // invalid signature
+          if (signature !== `Token ${this.token}`) {
+            res.statusCode = 403
+            return res.end()
+          }
+        }
 
-  app.get('/:method', (req, res) => {
-    showLog('receive', req.params.method, req.query)
-    emitter.emit('*', req.params.method, req.query)
-    emitter.emit(req.params.method.replace(/_async$/, ''), req.query)
-    res.status(200).send({ data: _data, retcode: _retcode })
-    _data = {}
-    _retcode = 0
-  })
-
-  return app.listen(SERVER_PORT)
-}
-
-export async function postMeta (meta: Meta, port = CLIENT_PORT, secret?: string) {
-  const data = snakeCase(meta)
-  const headers: object = {}
-  if (secret) {
-    headers['X-Signature'] = 'sha1=' + createHmac('sha1', secret).update(JSON.stringify(data)).digest('hex')
-  }
-  showLog('post', data)
-  return axios.post(`http://localhost:${port}`, data, { headers })
-}
-
-export async function waitFor (method: string, timeout = MAX_TIMEOUT) {
-  return new Promise((resolve, reject) => {
-    const listener = (query: any) => {
-      clearTimeout(timer)
-      resolve(query)
-    }
-    emitter.once(method, listener)
-    const timer = setTimeout(() => {
-      emitter.off(method, listener)
-      reject(new Error('timeout'))
-    }, timeout)
-  })
-}
-
-export class ServerSession {
-  action: string
-
-  constructor (public type: MetaTypeMap['message'], userId: number, public meta: Meta<'message'> = {}) {
-    if (!meta.selfId) meta.selfId = 514
-    meta.postType = 'message'
-    meta.messageType = type
-    meta.userId = userId
-    meta.subType = type === 'private' ? 'friend' : type === 'group' ? 'normal' : undefined
-    meta.$ctxType = type === 'private' ? 'user' : type
-    meta.$ctxId = meta[`${meta.$ctxType}Id`]
-    this.action = `send_${this.type}_msg`
-  }
-
-  async waitForResponse (message: string) {
-    await postMeta({ ...this.meta, message })
-    const response = await waitFor(this.action) as any
-    return response.message
-  }
-
-  async testSnapshot (message: string) {
-    await expect(this.waitForResponse(message)).resolves.toMatchSnapshot(message)
-  }
-
-  async shouldHaveResponse (message: string, response: string) {
-    await expect(this.waitForResponse(message)).resolves.toBe(response)
-  }
-
-  async shouldHaveNoResponse (message: string): Promise<void> {
-    await postMeta({ ...this.meta, message })
-    return new Promise((resolve, reject) => {
-      const listener = meta => reject(new Error('has response: ' + JSON.stringify(meta)))
-      emitter.once(this.action, listener)
-      sleep(100).then(() => {
-        resolve()
-        emitter.off(this.action, listener)
+        res.statusCode = 200
+        const url = new URL(req.url, `http://${req.headers.host}`)
+        const path = url.pathname.slice(1)
+        const params = fromEntries(url.searchParams.entries())
+        this.requests.unshift([path, camelCase(params)])
+        const [data, retcode] = this.responses[path] || [{}, 0]
+        res.write(JSON.stringify({ data, retcode }))
+        res.end()
       })
+    }).listen(cqhttpPort)
+  }
+
+  async close () {
+    await Promise.all(this.appList.map(app => app.stop()))
+    this.server.close()
+  }
+
+  shouldHaveLastRequest (method: string, params: Record<string, string>) {
+    expect(this.requests[0]).toMatchObject([method, params])
+  }
+
+  post (meta: Meta, port = this.koishiPort, secret?: string) {
+    const data = snakeCase(meta)
+    const headers: any = {}
+    if (secret) {
+      headers['X-Signature'] = 'sha1=' + createHmac('sha1', secret).update(JSON.stringify(data)).digest('hex')
+    }
+    showTestLog('[post]', data)
+    return axios.post(`http://localhost:${port}`, data, { headers })
+  }
+
+  setResponse (event: string, data: Record<string, any>, retcode = 0) {
+    if (!data) {
+      this.responses[event] = null
+    } else {
+      this.responses[event] = [snakeCase(data), retcode]
+    }
+  }
+
+  createBoundApp (options: AppOptions = {}) {
+    const app = new App({
+      port: this.koishiPort,
+      server: `http://localhost:${this.cqhttpPort}`,
+      selfId: BASE_SELF_ID,
+      ...options,
     })
+    this.appList.push(app)
+    return app
   }
 }

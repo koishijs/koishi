@@ -44,8 +44,8 @@
     "axios": "^0.19.0",
     "debug": "^4.1.1",
     "express": "^4.17.1",
+    "get-port": "^5.1.0",
     "koishi-core": "^1.1.1",
-    "koishi-utils": "^1.0.2",
-    "get-port": "^5.1.0"
+    "koishi-utils": "^1.0.2"
   }
 }

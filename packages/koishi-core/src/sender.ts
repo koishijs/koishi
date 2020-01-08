@@ -45,7 +45,7 @@ interface MessageResponse {
 }
 
 export class Sender {
-  private _get: (api: string, args?: object) => Promise<CQResponse>
+  protected _get: (action: string, params?: Record<string, any>) => Promise<CQResponse>
 
   constructor (public app: App) {
     const { type } = app.options
@@ -65,7 +65,7 @@ export class Sender {
     }
   }
 
-  async get <T = any> (action: string, params?: object, silent = false): Promise<T> {
+  async get <T = any> (action: string, params?: Record<string, any>, silent = false): Promise<T> {
     showSenderLog('request %s %o', action, params)
     const response = await this._get(action, snakeCase(params))
     showSenderLog('response %o', response)
@@ -79,7 +79,7 @@ export class Sender {
     }
   }
 
-  private async getAsync (action: string, params?: object): Promise<void> {
+  async getAsync (action: string, params?: Record<string, any>): Promise<void> {
     if (this.app.server.versionLessThan(4)) {
       await this.get(action, params, true)
     } else {
@@ -105,9 +105,7 @@ export class Sender {
 
   _createSendMeta ($ctxType: ContextType, $ctxId: number, message: string) {
     const sendType = $ctxType === 'user' ? 'private' : $ctxType as any
-    const $path = `/${$ctxType}/${$ctxId}/send/`
     return {
-      $path,
       $ctxId,
       $ctxType,
       message,

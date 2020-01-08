@@ -93,8 +93,6 @@ export abstract class Server {
     if (meta.subType) events.unshift(events[0] + '/' + meta.subType)
 
     // generate path
-    const path = (ctxType ? `/${ctxType}/${ctxId}/` : '/') + events[0]
-    Object.defineProperty(meta, '$path', { value: path })
     Object.defineProperty(meta, '$ctxId', { value: ctxId })
     Object.defineProperty(meta, '$ctxType', { value: ctxType })
 

@@ -247,7 +247,6 @@ export class App extends Context {
   }
 
   emitEvent <K extends Events> (meta: Meta, event: K, ...payload: Parameters<EventMap[K]>) {
-    showReceiverLog('path %s', meta.$path)
     for (const path in this._contexts) {
       const context = this._contexts[path]
       if (!context.match(meta)) continue
@@ -369,7 +368,7 @@ export class App extends Context {
   }
 
   executeCommandLine (message: string, meta: MessageMeta, next: NextFunction = noop) {
-    if (!meta.$path) this.server.parseMeta(meta)
+    if (!('$ctxType' in meta)) this.server.parseMeta(meta)
     const argv = this.parseCommandLine(message, meta)
     if (argv) return argv.command.execute(argv, next)
     return next()

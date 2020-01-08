@@ -1,13 +1,13 @@
-import { Session, createApp, registerMemoryDatabase } from 'koishi-test-utils'
+import { MockedApp, registerMemoryDatabase } from 'koishi-test-utils'
 import { messages, showSuggestions } from 'koishi-core'
 import { format } from 'util'
 
 registerMemoryDatabase()
 
 describe('Command Suggestions', () => {
-  const app = createApp()
-  const session1 = new Session(app, 'user', 456)
-  const session2 = new Session(app, 'group', 789, 987)
+  const app = new MockedApp()
+  const session1 = app.createSession('user', 456)
+  const session2 = app.createSession('group', 789, 987)
   
   app.command('foo <text>', { checkArgCount: true })
     .action(({ meta }, bar) => {
@@ -77,8 +77,8 @@ describe('Command Suggestions', () => {
 })
 
 describe('Custom Suggestions', () => {
-  const app = createApp({ database: { memory: {} } })
-  const session = new Session(app, 'group', 123, 456)
+  const app = new MockedApp({ database: { memory: {} } })
+  const session = app.createSession('group', 123, 456)
   const command = app.command('echo [message]', { authority: 0 })
     .action(({ meta }, message) => meta.$send('text:' + message))
 
@@ -93,7 +93,10 @@ describe('Custom Suggestions', () => {
     execute: (suggestion, meta) => command.execute({ args: [suggestion], meta }),
   }))
 
-  beforeEach(() => app.database.getGroup(456, 514))
+  beforeAll(async () => {
+    await app.start()
+    await app.database.getGroup(456, 514)
+  })
 
   test('show suggestions', async () => {
     await session.shouldHaveNoResponse(' ')

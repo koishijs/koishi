@@ -1,12 +1,14 @@
-import { Session, registerMemoryDatabase } from 'koishi-test-utils'
-import { App, UserFlag, GroupFlag, messages } from 'koishi-core'
+import { MockedApp, registerMemoryDatabase } from 'koishi-test-utils'
+import { UserFlag, GroupFlag, messages } from 'koishi-core'
 
 registerMemoryDatabase()
 
-const app = new App({
-  selfId: 514,
-  database: { memory: {} },
-})
+const app = new MockedApp({ database: { memory: {} } })
+const session1 = app.createSession('user', 123)
+const session2 = app.createSession('user', 456)
+const session3 = app.createSession('user', 789)
+const session4 = app.createSession('group', 123, 321)
+const session5 = app.createSession('group', 123, 654)
 
 app.command('cmd1', { authority: 2, maxUsage: 1 })
   // make coverage happy
@@ -36,12 +38,6 @@ beforeAll(async () => {
 })
 
 afterAll(() => app.stop())
-
-const session1 = new Session(app, 'user', 123)
-const session2 = new Session(app, 'user', 456)
-const session3 = new Session(app, 'user', 789)
-const session4 = new Session(app, 'group', 123, 321)
-const session5 = new Session(app, 'group', 123, 654)
 
 describe('middleware validation', () => {
   test('user.flag.ignore', async () => {
