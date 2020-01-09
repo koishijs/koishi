@@ -1,4 +1,4 @@
-import { BASE_SELF_ID } from './utils'
+import { BASE_SELF_ID, RequestData } from './utils'
 import { snakeCase, sleep } from 'koishi-utils'
 import { AppOptions, App, Sender, Server, ContextType, ResponsePayload, MessageMeta, Meta } from 'koishi-core'
 
@@ -15,10 +15,8 @@ class MockedServer extends Server {
   }
 }
 
-export type RequestInfo = readonly [string, Record<string, any>]
-
 class MockedSender extends Sender {
-  requests: RequestInfo[] = []
+  requests: RequestData[] = []
 
   constructor (app: App) {
     super(app)
