@@ -1,7 +1,7 @@
 {
   "name": "koishi",
   "description": "A QQ bot framework based on CQHTTP",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
