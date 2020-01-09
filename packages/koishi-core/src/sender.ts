@@ -45,27 +45,29 @@ interface MessageResponse {
 }
 
 export class Sender {
-  private _get: (api: string, args?: object) => Promise<CQResponse>
+  protected _get: (action: string, params: Record<string, any>) => Promise<CQResponse>
 
   constructor (public app: App) {
     const { type } = app.options
     if (type === 'http') {
-      const headers = {} as any
-      if (app.options.token) {
-        headers.Authorization = `Token ${app.options.token}`
-      }
-      this._get = async (action, params = {}) => {
+      this._get = async (action, params) => {
+        const headers = {} as any
+        if (app.options.token) {
+          headers.Authorization = `Token ${app.options.token}`
+        }
         const uri = new URL(action, this.app.options.server).href
         const { data } = await axios.get(uri, { params, headers })
         return data
       }
     } else if (type === 'ws') {
-      const server = app.server as WsClient
-      this._get = (action, params = {}) => server.send({ action, params })
+      this._get = (action, params) => {
+        const server = app.server as WsClient
+        return server.send({ action, params })
+      }
     }
   }
 
-  async get <T = any> (action: string, params?: object, silent = false): Promise<T> {
+  async get <T = any> (action: string, params: Record<string, any> = {}, silent = false): Promise<T> {
     showSenderLog('request %s %o', action, params)
     const response = await this._get(action, snakeCase(params))
     showSenderLog('response %o', response)
@@ -79,7 +81,7 @@ export class Sender {
     }
   }
 
-  private async getAsync (action: string, params?: object): Promise<void> {
+  async getAsync (action: string, params: Record<string, any> = {}): Promise<void> {
     if (this.app.server.versionLessThan(4)) {
       await this.get(action, params, true)
     } else {
@@ -97,17 +99,15 @@ export class Sender {
     if (!array.includes(value)) throw new Error('invalid argument: ' + name)
   }
 
-  private _assertVersion (label: string, major: number, minor: number = 0, patch: number = 0) {
+  private _assertVersion (label: string, major: number, minor: number, patch: number = 0) {
     if (this.app.server.versionLessThan(major, minor, patch)) {
-      throw new Error(`${label} requires CQHTTP version >= ${major}.${minor}`)
+      throw new Error(`${label} requires CQHTTP version >= ${major}.${minor}.${patch}`)
     }
   }
 
   _createSendMeta ($ctxType: ContextType, $ctxId: number, message: string) {
     const sendType = $ctxType === 'user' ? 'private' : $ctxType as any
-    const $path = `/${$ctxType}/${$ctxId}/send/`
     return {
-      $path,
       $ctxId,
       $ctxType,
       message,

@@ -1,41 +1,37 @@
-import { wsClient } from 'koishi-test-utils'
-import { Meta } from '../src'
+import { createWsServer, WsServer, BASE_SELF_ID } from 'koishi-test-utils'
+import { App, Meta } from 'koishi-core'
 
-const { createApp, createServer, postMeta, SERVER_PORT, emitter, nextTick } = wsClient
+let server: WsServer
+let app1: App, app2: App
 
-const server2 = createServer(SERVER_PORT + 1, true)
-const server = createServer()
-
-const app1 = createApp()
-const app2 = createApp({ selfId: 515 })
-
-jest.setTimeout(1000)
-
-beforeAll(() => {
-  return Promise.all([
-    app1.start(),
-    app2.start(),
-  ])
+beforeAll(async () => {
+  server = await createWsServer()
+  app1 = server.createBoundApp()
+  app2 = server.createBoundApp({ selfId: BASE_SELF_ID + 1 })
 })
 
-afterAll(() => {
-  server.close()
-  server2.close()
-
-  return Promise.all([
-    app1.stop(),
-    app2.stop(),
-  ])
-})
+afterAll(() => server.close())
 
 describe('WebSocket Server', () => {
-  const mocks: jest.Mock[] = []
-  for (let index = 0; index < 3; ++index) {
-    mocks.push(jest.fn())
-  }
+  const app1MessageCallback = jest.fn()
+  const app2MessageCallback = jest.fn()
 
-  app1.receiver.on('message', mocks[0])
-  app2.receiver.on('message', mocks[1])
+  beforeAll(() => {
+    app1.receiver.on('message', app1MessageCallback)
+    app2.receiver.on('message', app2MessageCallback)
+  })
+
+  test('authorization', async () => {
+    server.token = 'token'
+    await expect(app1.start()).rejects.toHaveProperty('message', 'authorization failed')
+    app1.options.token = 'nekot'
+    await expect(app1.start()).rejects.toHaveProperty('message', 'authorization failed')
+    app1.options.token = 'token'
+    await expect(app1.start()).resolves.toBeUndefined()
+    server.token = null
+    await app1.stop()
+    await expect(app1.start()).resolves.toBeUndefined()
+  })
 
   const meta: Meta = {
     postType: 'message',
@@ -45,31 +41,25 @@ describe('WebSocket Server', () => {
     message: 'Hello',
   }
 
-  test('authorization failed', async () => {
-    const app = createApp({ server: `ws://localhost:${SERVER_PORT + 1}` })
-    await expect(app.start()).rejects.toBe('authorization failed')
-    await app.stop()
-  })
-
   test('app binding', async () => {
-    await postMeta({ ...meta, selfId: 514 })
-    expect(mocks[0]).toBeCalledTimes(1)
-    expect(mocks[1]).toBeCalledTimes(0)
+    await server.post({ ...meta, selfId: BASE_SELF_ID })
+    expect(app1MessageCallback).toBeCalledTimes(1)
+    expect(app2MessageCallback).toBeCalledTimes(0)
 
-    await postMeta({ ...meta, selfId: 515 })
-    expect(mocks[0]).toBeCalledTimes(1)
-    expect(mocks[1]).toBeCalledTimes(1)
+    await server.post({ ...meta, selfId: BASE_SELF_ID + 1 })
+    expect(app1MessageCallback).toBeCalledTimes(1)
+    expect(app2MessageCallback).toBeCalledTimes(1)
 
-    await postMeta({ ...meta, selfId: 516 })
-    expect(mocks[0]).toBeCalledTimes(1)
-    expect(mocks[1]).toBeCalledTimes(1)
+    await server.post({ ...meta, selfId: BASE_SELF_ID + 2 })
+    expect(app1MessageCallback).toBeCalledTimes(1)
+    expect(app2MessageCallback).toBeCalledTimes(1)
   })
 
   test('make polyfills', async () => {
-    await postMeta({ postType: 'message', groupId: 123, message: [{ type: 'text', data: { text: 'foo' } }] as any })
-    await postMeta({ postType: 'message', groupId: 123, message: '', anonymous: 'foo' as any, ['anonymousFlag' as any]: 'bar' })
-    await postMeta({ postType: 'request', userId: 123, requestType: 'friend', message: 'baz' })
-    await postMeta({ postType: 'event' as any, userId: 123, ['event' as any]: 'frient_add' })
+    await server.post({ postType: 'message', groupId: 123, message: [{ type: 'text', data: { text: 'foo' } }] as any })
+    await server.post({ postType: 'message', groupId: 123, message: '', anonymous: 'foo' as any, ['anonymousFlag' as any]: 'bar' })
+    await server.post({ postType: 'request', userId: 123, requestType: 'friend', message: 'baz' })
+    await server.post({ postType: 'event' as any, userId: 123, ['event' as any]: 'frient_add' })
   })
 })
 
@@ -112,81 +102,63 @@ describe('Quick Operations', () => {
   test('message event', async () => {
     mock.mockClear()
     app1.receiver.once('message', meta => meta.$send('foo'))
-    emitter.once('send_group_msg_async', mock)
-    await postMeta(messageMeta)
-    await nextTick()
-    expect(mock).toBeCalledTimes(1)
-    expect(mock.mock.calls[0][0]).toMatchObject({ group_id: 20000, message: 'foo' })
+    await server.post(messageMeta)
+    await server.nextTick()
+    server.shouldHaveLastRequest('send_group_msg_async', { groupId: 20000, message: 'foo' })
 
     mock.mockClear()
     app1.groups.receiver.once('message', meta => meta.$ban())
-    emitter.once('set_group_ban_async', mock)
-    await postMeta(messageMeta)
-    await nextTick()
-    expect(mock).toBeCalledTimes(1)
-    expect(mock.mock.calls[0][0]).toMatchObject({ group_id: 20000, user_id: 10000 })
+    await server.post(messageMeta)
+    await server.nextTick()
+    server.shouldHaveLastRequest('set_group_ban_async', { groupId: 20000, userId: 10000 })
 
     mock.mockClear()
     app1.groups.receiver.once('message', meta => meta.$delete())
-    emitter.once('delete_msg_async', mock)
-    await postMeta(messageMeta)
-    await nextTick()
-    expect(mock).toBeCalledTimes(1)
-    expect(mock.mock.calls[0][0]).toMatchObject({ message_id: 99999 })
+    await server.post(messageMeta)
+    await server.nextTick()
+    server.shouldHaveLastRequest('delete_msg_async', { messageId: 99999 })
 
     mock.mockClear()
     app1.groups.receiver.once('message', meta => meta.$kick())
-    emitter.once('set_group_kick_async', mock)
-    await postMeta(messageMeta)
-    await nextTick()
-    expect(mock).toBeCalledTimes(1)
-    expect(mock.mock.calls[0][0]).toMatchObject({ group_id: 20000, user_id: 10000 })
+    await server.post(messageMeta)
+    await server.nextTick()
+    server.shouldHaveLastRequest('set_group_kick_async', { groupId: 20000, userId: 10000 })
 
     mock.mockClear()
     app1.groups.receiver.once('message', meta => meta.$ban())
-    emitter.once('set_group_anonymous_ban_async', mock)
-    await postMeta(anonymousMeta)
-    await nextTick()
-    expect(mock).toBeCalledTimes(1)
-    expect(mock.mock.calls[0][0]).toMatchObject({ group_id: 20000, flag: 'flag' })
+    await server.post(anonymousMeta)
+    await server.nextTick()
+    server.shouldHaveLastRequest('set_group_anonymous_ban_async', { groupId: 20000, flag: 'flag' })
 
     mock.mockClear()
     app1.groups.receiver.once('message', meta => meta.$kick())
-    await postMeta(anonymousMeta)
-    await expect(nextTick()).rejects.toBeTruthy()
+    await server.post(anonymousMeta)
+    // should have no response, just make coverage happy
   })
 
   test('request event', async () => {
     mock.mockClear()
     app1.receiver.once('request/friend', meta => meta.$approve('foo'))
-    emitter.once('set_friend_add_request_async', mock)
-    await postMeta(frientRequestMeta)
-    await nextTick()
-    expect(mock).toBeCalledTimes(1)
-    expect(mock.mock.calls[0][0]).toMatchObject({ flag: 'foo', remark: 'foo', approve: true })
+    await server.post(frientRequestMeta)
+    await server.nextTick()
+    server.shouldHaveLastRequest('set_friend_add_request_async', { flag: 'foo', remark: 'foo', approve: true })
 
     mock.mockClear()
     app1.receiver.once('request/friend', meta => meta.$reject())
-    emitter.once('set_friend_add_request_async', mock)
-    await postMeta(frientRequestMeta)
-    await nextTick()
-    expect(mock).toBeCalledTimes(1)
-    expect(mock.mock.calls[0][0]).toMatchObject({ flag: 'foo', approve: false })
+    await server.post(frientRequestMeta)
+    await server.nextTick()
+    server.shouldHaveLastRequest('set_friend_add_request_async', { flag: 'foo', approve: false })
 
     mock.mockClear()
     app1.receiver.once('request/group/add', meta => meta.$approve())
-    emitter.once('set_group_add_request_async', mock)
-    await postMeta(groupRequestMeta)
-    await nextTick()
-    expect(mock).toBeCalledTimes(1)
-    expect(mock.mock.calls[0][0]).toMatchObject({ flag: 'bar', approve: true })
+    await server.post(groupRequestMeta)
+    await server.nextTick()
+    server.shouldHaveLastRequest('set_group_add_request_async', { flag: 'bar', approve: true })
 
     mock.mockClear()
     app1.receiver.once('request/group/add', meta => meta.$reject('bar'))
-    emitter.once('set_group_add_request_async', mock)
-    await postMeta(groupRequestMeta)
-    await nextTick()
-    expect(mock).toBeCalledTimes(1)
-    expect(mock.mock.calls[0][0]).toMatchObject({ flag: 'bar', reason: 'bar', approve: false })
+    await server.post(groupRequestMeta)
+    await server.nextTick()
+    server.shouldHaveLastRequest('set_group_add_request_async', { flag: 'bar', reason: 'bar', approve: false })
   })
 })

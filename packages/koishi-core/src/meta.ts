@@ -29,14 +29,26 @@ export enum contextTypes {
 export type MessageMeta = Meta<'message'>
 export type ContextType = keyof typeof contextTypes
 
+export interface ResponsePayload {
+  delete?: boolean
+  ban?: boolean
+  banDuration?: number
+  kick?: boolean
+  reply?: string
+  autoEscape?: boolean
+  atSender?: boolean
+  approve?: boolean
+  remark?: string
+  reason?: string
+}
+
 /** CQHTTP Meta Information */
 export interface Meta <T extends PostType = PostType> {
-  $path?: string
   $user?: User
   $group?: Group
   $ctxId?: number
   $ctxType?: ContextType
-  $response?: (data: any) => void
+  $response?: (payload: ResponsePayload) => void
   $delete?: () => Promise<void>
   $kick?: () => Promise<void>
   $ban?: (duration?: number) => Promise<void>

@@ -15,7 +15,6 @@ module.exports = {
   },
   coverageReporters: ['text', 'lcov'],
   coveragePathIgnorePatterns: [
-    'test-utils/',
     'tests/',
     'dist/',
   ],

@@ -93,13 +93,10 @@ export abstract class Server {
     if (meta.subType) events.unshift(events[0] + '/' + meta.subType)
 
     // generate path
-    const path = (ctxType ? `/${ctxType}/${ctxId}/` : '/') + events[0]
-    Object.defineProperty(meta, '$path', { value: path })
     Object.defineProperty(meta, '$ctxId', { value: ctxId })
     Object.defineProperty(meta, '$ctxType', { value: ctxType })
 
     const app = this.appMap[meta.selfId]
-    if (!app) return events
 
     // add context properties
     if (meta.postType === 'message') {
@@ -170,14 +167,19 @@ export abstract class Server {
   async listen () {
     if (this.isListening) return
     this.isListening = true
-    await this._listen()
-    if (this.versionLessThan(3)) {
-      throw new Error(errors.UNSUPPORTED_CQHTTP_VERSION)
-    } else if (this.versionLessThan(3, 4)) {
-      const apps = this.appList.filter(app => app.options.type && !app.selfId)
-      if (apps.length > 1) throw new Error(errors.MULTIPLE_ANONYMOUS_BOTS)
-      const info = await apps[0].sender.getLoginInfo()
-      apps[0].prepare(info.userId)
+    try {
+      await this._listen()
+      if (this.versionLessThan(3)) {
+        throw new Error(errors.UNSUPPORTED_CQHTTP_VERSION)
+      } else if (this.versionLessThan(3, 4)) {
+        const apps = this.appList.filter(app => app.options.type && !app.selfId)
+        if (apps.length > 1) throw new Error(errors.MULTIPLE_ANONYMOUS_BOTS)
+        const info = await apps[0].sender.getLoginInfo()
+        apps[0].prepare(info.userId)
+      }
+    } catch (error) {
+      this.close()
+      throw error
     }
   }
 
@@ -249,6 +251,7 @@ export class HttpServer extends Server {
   }
 
   async _listen () {
+    showServerLog('http server opening')
     const { port } = this.appList[0].options
     this.server.listen(port)
     try {
@@ -256,7 +259,7 @@ export class HttpServer extends Server {
     } catch (error) {
       throw new Error('authorization failed')
     }
-    showServerLog('listen to port', port)
+    showServerLog('http server listen to', port)
   }
 
   _close () {
@@ -271,16 +274,6 @@ export class WsClient extends Server {
   public socket: WebSocket
   private _listeners: Record<number, (response: CQResponse) => void> = {}
 
-  constructor (app: App) {
-    super(app)
-
-    this.socket = new WebSocket(app.options.server, {
-      headers: {
-        Authorization: `Bearer ${app.options.token}`,
-      },
-    })
-  }
-
   send (data: any): Promise<CQResponse> {
     data.echo = ++counter
     return new Promise((resolve, reject) => {
@@ -293,6 +286,12 @@ export class WsClient extends Server {
 
   _listen (): Promise<void> {
     return new Promise((resolve, reject) => {
+      showServerLog('websocket client opening')
+      const headers: Record<string, string> = {}
+      const { token, server } = this.appList[0].options
+      if (token) headers.Authorization = `Bearer ${token}`
+      this.socket = new WebSocket(server, { headers })
+
       this.socket.once('error', reject)
 
       this.socket.once('open', () => {
@@ -306,11 +305,12 @@ export class WsClient extends Server {
         let resolved = false
         this.socket.on('message', (data) => {
           data = data.toString()
+          showServerLog('receive', data)
           let parsed: any
           try {
             parsed = JSON.parse(data)
           } catch (error) {
-            return reject(data)
+            return reject(new Error(data))
           }
           if (!resolved) {
             resolved = true
@@ -334,32 +334,36 @@ export class WsClient extends Server {
 
   _close () {
     this.socket.close()
-    showServerLog('ws client closed')
+    showServerLog('websocket client closed')
   }
 }
 
 export type ServerType = 'http' | 'ws' // 'ws-reverse'
 
-const serverTypes: Record<ServerType, [keyof AppOptions, Record<keyof any, Server>, new (app: App) => Server]> = {
-  http: ['port', {}, HttpServer],
-  ws: ['server', {}, WsClient],
-}
+export const serverMap: Record<ServerType, Record<keyof any, Server>> = { http: {}, ws: {} }
 
 export function createServer (app: App) {
   if (typeof app.options.type !== 'string') {
     throw new Error(errors.UNSUPPORTED_SERVER_TYPE)
   }
   app.options.type = app.options.type.toLowerCase() as any
-  if (!serverTypes[app.options.type]) {
+  let key: keyof any, Server: new (app: App) => Server
+  if (app.options.type === 'http') {
+    key = 'port'
+    Server = HttpServer
+  } else if (app.options.type === 'ws') {
+    key = 'server'
+    Server = WsClient
+  } else {
     throw new Error(errors.UNSUPPORTED_SERVER_TYPE)
   }
-  const [key, serverMap, Server] = serverTypes[app.options.type]
-  const value = app.options[key] as any
+  const servers = serverMap[app.options.type]
+  const value = app.options[key]
   if (!value) {
     throw new Error(format(errors.MISSING_CONFIGURATION, key))
   }
-  if (value in serverMap) {
-    return serverMap[value].bind(app)
+  if (value in servers) {
+    return servers[value].bind(app)
   }
-  return serverMap[value] = new Server(app)
+  return servers[value] = new Server(app)
 }

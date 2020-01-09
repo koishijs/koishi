@@ -10,10 +10,12 @@ export interface HandlerConfig {
 
 const defaultHandlers: HandlerConfig = {
   async handleFriend (meta, app) {
+    if (!app.database) return
     const user = await app.database.getUser(meta.userId, 0, ['authority'])
     if (user.authority >= 1) return true
   },
   async handleGroupInvite (meta, app) {
+    if (!app.database) return
     const user = await app.database.getUser(meta.userId, 0, ['authority'])
     if (user.authority >= 4) return true
   },

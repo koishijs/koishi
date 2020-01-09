@@ -83,7 +83,6 @@ function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
 
 const defaultOptions: AppOptions = {
   maxMiddlewares: 64,
-  similarityCoefficient: 0.4,
 }
 
 export class App extends Context {
@@ -110,7 +109,6 @@ export class App extends Context {
 
   constructor (options: AppOptions = {}) {
     super(appIdentifier, appScope)
-    appList.push(this)
 
     // resolve options
     this.options = { ...defaultOptions, ...options }
@@ -124,6 +122,9 @@ export class App extends Context {
       this.server = createServer(this)
       this.sender = new Sender(this)
     }
+
+    // register application
+    appList.push(this)
     if (this.selfId) this.prepare()
 
     // bind built-in event listeners
@@ -217,7 +218,7 @@ export class App extends Context {
         tasks.push(this.database[type]?.start?.())
       }
     }
-    if (this.options.type) {
+    if (this.server) {
       tasks.push(this.server.listen())
     }
     await Promise.all(tasks)
@@ -238,7 +239,7 @@ export class App extends Context {
       }
     }
     await Promise.all(tasks)
-    if (this.options.type) {
+    if (this.server) {
       this.server.close()
     }
     showLog('stopped')
@@ -246,7 +247,6 @@ export class App extends Context {
   }
 
   emitEvent <K extends Events> (meta: Meta, event: K, ...payload: Parameters<EventMap[K]>) {
-    showReceiverLog('path %s', meta.$path)
     for (const path in this._contexts) {
       const context = this._contexts[path]
       if (!context.match(meta)) continue
@@ -345,8 +345,8 @@ export class App extends Context {
       target,
       meta,
       next,
-      prefix: '没有此命令。',
-      suffix: '发送空行以调用推测的指令。',
+      prefix: messages.COMMAND_SUGGESTION_PREFIX,
+      suffix: messages.COMMAND_SUGGESTION_SUFFIX,
       items: Object.keys(this._commandMap),
       coefficient: this.options.similarityCoefficient,
       command: suggestion => this._commandMap[suggestion],
@@ -368,7 +368,7 @@ export class App extends Context {
   }
 
   executeCommandLine (message: string, meta: MessageMeta, next: NextFunction = noop) {
-    if (!meta.$path) this.server.parseMeta(meta)
+    if (!('$ctxType' in meta)) this.server.parseMeta(meta)
     const argv = this.parseCommandLine(message, meta)
     if (argv) return argv.command.execute(argv, next)
     return next()

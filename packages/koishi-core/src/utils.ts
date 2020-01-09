@@ -1,4 +1,5 @@
-import { isInteger } from 'koishi-utils'
+import { isInteger, noop } from 'koishi-utils'
+import { UserField, GroupField } from './database'
 import { NextFunction, Middleware } from './context'
 import { Command } from './command'
 import { MessageMeta } from './meta'
@@ -30,7 +31,7 @@ interface SuggestOptions {
   next: NextFunction
   prefix: string
   suffix: string
-  coefficient: number
+  coefficient?: number
   command: Command | ((suggestion: string) => Command)
   execute: (suggestion: string, meta: MessageMeta, next: NextFunction) => any
 }
@@ -40,7 +41,7 @@ function findSimilar (target: string, coefficient: number) {
 }
 
 export function showSuggestions (options: SuggestOptions): Promise<void> {
-  const { target, items, meta, next, prefix, suffix, execute, coefficient } = options
+  const { target, items, meta, next, prefix, suffix, execute, coefficient = 0.4 } = options
   const suggestions = items.filter(findSimilar(target, coefficient))
   if (!suggestions.length) return next()
 
@@ -50,16 +51,19 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
       const [suggestion] = suggestions
       const command = typeof options.command === 'function' ? options.command(suggestion) : options.command
       const identifier = meta.userId + meta.$ctxType + meta.$ctxId
-      const fields = Array.from(command._userFields)
-      if (!fields.includes('name')) fields.push('name')
-      if (!fields.includes('usage')) fields.push('usage')
-      if (!fields.includes('authority')) fields.push('authority')
+      const userFields = new Set<UserField>(['name'])
+      const groupFields = new Set<GroupField>()
+      Command.attachUserFields(userFields, { command, meta })
+      Command.attachGroupFields(groupFields, { command, meta })
 
       const middleware: Middleware = async (meta, next) => {
         if (meta.userId + meta.$ctxType + meta.$ctxId !== identifier) return next()
         command.context.removeMiddleware(middleware)
         if (!meta.message.trim()) {
-          meta.$user = await command.context.database?.observeUser(meta.userId, 0, fields)
+          meta.$user = await command.context.database?.observeUser(meta.userId, Array.from(userFields))
+          if (meta.messageType === 'group') {
+            meta.$group = await command.context.database?.observeGroup(meta.groupId, Array.from(groupFields))
+          }
           return execute(suggestions[0], meta, next)
         } else {
           return next()

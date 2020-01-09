@@ -153,13 +153,15 @@ export interface AbstractDatabase {
   stop? (): void | Promise<void>
 }
 
+const unknownMethods: { [K in SubdatabaseType]?: DatabaseInjections<K> } = {}
+const unknownOptions: { [K in SubdatabaseType]?: TableConfig<K> } = {}
 const subdatabases: { [K in SubdatabaseType]?: Subdatabase<K> } = {}
 const existingDatabases: { [K in SubdatabaseType]?: DatabaseMap } = {}
 
 export function registerDatabase <K extends SubdatabaseType> (name: K, subdatabase: Subdatabase<K, {}>) {
   subdatabases[name] = subdatabase as any
-  subdatabase._methods = {}
-  subdatabase._options = {}
+  subdatabase._methods = unknownMethods[name] ?? {}
+  subdatabase._options = unknownOptions[name] ?? {}
 }
 
 export type DatabaseInjections <K extends SubdatabaseType, T extends TableType = TableType> = {
@@ -175,24 +177,26 @@ export function injectMethods <K extends SubdatabaseType, T extends TableType> (
   options?: TableConfig<K>,
 ) {
   const Subdatabase = subdatabases[name] as Subdatabase<K>
-  if (!Subdatabase) return
-  if (Subdatabase._manager) {
-    const config = Subdatabase._manager.config[name]
-    if (!config) return
-    if (!Subdatabase._manager.database[name]) {
-      Subdatabase._manager.createSubdatabase(name, config)
-    }
-    Subdatabase._manager.injectMethods(name, table, methods)
+  let methodMap: Partial<Record<TableType, DatabaseInjections<K, T>>>
+  let optionMap: Partial<Record<TableType, TableConfig<K>>>
+
+  // inject before subdatabase was registered
+  if (!Subdatabase) {
+    methodMap = unknownMethods[name] || (unknownMethods[name] = {} as never)
+    optionMap = unknownOptions[name] || (unknownOptions[name] = {} as never)
   } else {
-    Subdatabase._methods[table] = {
-      ...Subdatabase._methods[table] as any,
-      ...methods as any,
+    optionMap = Subdatabase._options
+    if (Subdatabase._manager) {
+      // inject after application was created
+      Subdatabase._manager.injectMethods(name, table, methods)
+      methodMap = {} as any
+    } else {
+      methodMap = Subdatabase._methods
     }
   }
-  Subdatabase._options[table] = {
-    ...Subdatabase._options[table] as any,
-    ...options as any,
-  }
+
+  methodMap[table] = { ...methodMap[table], ...methods }
+  optionMap[table] = { ...optionMap[table] as any, ...options as any }
 }
 
 class DatabaseManager {

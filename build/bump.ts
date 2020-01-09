@@ -6,12 +6,14 @@ import { PackageJson } from './utils'
 import latest from 'latest-version'
 import globby from 'globby'
 import CAC from 'cac'
+import ora from 'ora'
 
 const { args, options } = CAC()
   .option('-1, --major', '')
   .option('-2, --minor', '')
   .option('-3, --patch', '')
   .option('-o, --only', '')
+  .help()
   .parse()
 
 type BumpType = 'major' | 'minor' | 'patch' | 'auto'
@@ -95,10 +97,10 @@ function each <T> (callback: (pkg: Package, name: string) => T) {
   return results
 }
 
-function bumpPkg (source: Package, flag: BumpType, depth: number) {
+function bumpPkg (source: Package, flag: BumpType, only = false) {
   if (!source) return
   const newVersion = source.bump(flag)
-  if (depth <= 0 || !newVersion) return
+  if (!newVersion) return
   const dependents = new Set<Package>()
   each((target) => {
     const { meta } = target
@@ -106,19 +108,23 @@ function bumpPkg (source: Package, flag: BumpType, depth: number) {
     Object.keys(meta.devDependencies || {}).forEach((name) => {
       if (name !== source.name) return
       meta.devDependencies[name] = '^' + newVersion
+      target.dirty = true
     })
     Object.keys(meta.peerDependencies || {}).forEach((name) => {
       if (name !== source.name) return
       meta.peerDependencies[name] = '^' + newVersion
+      target.dirty = true
       dependents.add(target)
     })
     Object.keys(meta.dependencies || {}).forEach((name) => {
       if (name !== source.name) return
       meta.dependencies[name] = '^' + newVersion
+      target.dirty = true
       dependents.add(target)
     })
   })
-  dependents.forEach(dep => bumpPkg(dep, flag, depth - 1))
+  if (only) return
+  dependents.forEach(dep => bumpPkg(dep, flag))
 }
 
 const flag = options.major ? 'major' : options.minor ? 'minor' : options.patch ? 'patch' : 'auto'
@@ -129,9 +135,16 @@ const flag = options.major ? 'major' : options.minor ? 'minor' : options.patch ?
     onlyDirectories: true,
   })
 
-  await Promise.all(folders.map(path => Package.from(path)))
+  const spinner = ora()
+  let progress = 0
+  spinner.start(`loading packages 0/${folders.length}`)
+  await Promise.all(folders.map(async (path) => {
+    await Package.from(path)
+    spinner.text = `loading packages ${++progress}/${folders.length}`
+  }))
+  spinner.succeed()
 
-  args.forEach(name => bumpPkg(getPackage(name), flag, options.only ? 0 : Infinity))
+  args.forEach(name => bumpPkg(getPackage(name), flag, options.only))
 
   await Promise.all(each((pkg) => {
     if (!pkg.dirty) return

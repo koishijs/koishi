@@ -5,19 +5,14 @@ import {} from './database'
 injectMethods('level', 'user', {
   async getUser (userId, authority) {
     authority = typeof authority === 'number' ? authority : 0
-    const dasDatum = await this.tables.user.get(userId).catch(noop) as UserData
-    let fallback: UserData
-    if (dasDatum) {
-      return dasDatum
-    } else if (authority < 0) {
-      return null
-    } else {
-      fallback = createUser(userId, authority)
-      if (authority) {
-        await this.tables.user.put(userId, fallback)
-      }
+    const data = await this.tables.user.get(userId).catch(noop) as UserData
+    if (data) return data
+    if (authority < 0) return null
+    const fallback = createUser(userId, authority)
+    if (authority) {
+      await this.tables.user.put(userId, fallback)
     }
-    return dasDatum || fallback
+    return fallback
   },
 
   async getUsers (...args) {
@@ -46,11 +41,8 @@ injectMethods('level', 'user', {
     }
 
     const data = await this.getUser(user.id, authority)
-    if ('_diff' in user) {
-      return (user as User)._merge(data)
-    } else {
-      return observe(Object.assign(user, data), diff => this.setUser(user.id, diff), `user ${user.id}`)
-    }
+    if ('_diff' in user) return (user as User)._merge(data)
+    return observe(Object.assign(user, data), diff => this.setUser(user.id, diff), `user ${user.id}`)
   },
 
   getUserCount () {

@@ -1,4 +1,4 @@
-import { getSenderName, createUser, getTargetId } from '../src'
+import { getSenderName, createUser, getTargetId } from 'koishi-core'
 import { createSender } from 'koishi-test-utils'
 import { observe } from 'koishi-utils'
 

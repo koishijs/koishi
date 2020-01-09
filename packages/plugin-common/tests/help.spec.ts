@@ -1,34 +1,19 @@
-import { httpServer } from 'koishi-test-utils'
-import { resolve } from 'path'
-import { App } from 'koishi-core'
-import { sleep } from 'koishi-utils'
-import del from 'del'
+import { Session, MemoryDatabase, MockedApp } from 'koishi-test-utils'
+import { App, registerDatabase } from 'koishi-core'
+import { noop } from 'koishi-utils'
 import help from '../src/help'
-import 'koishi-database-level'
 
-const { createApp, createServer, ServerSession } = httpServer
+registerDatabase('memory', MemoryDatabase)
 
-const path = resolve(__dirname, '../temp')
-
-const server = createServer()
-let app: App
-
-jest.setTimeout(1000)
-
-afterAll(() => {
-  server.close()
-  return del(path)
-})
-
-const COMMAND_CALLED = 'command called'
-const session1 = new ServerSession('private', 123)
+const MESSAGE_COMMAND_CALLED = 'command called'
 
 function prepare (app: App) {
   app.plugin(help)
   app.command('foo', 'command with options', { maxUsage: 100, minInterval: 1000 })
     .option('-o [value]', 'option', { authority: 2, notUsage: true })
-    .action(({ meta }) => meta.$send(COMMAND_CALLED))
+    .action(({ meta }) => meta.$send(MESSAGE_COMMAND_CALLED))
   app.command('help.foo', 'command without options', { authority: 2, noHelpOption: true })
+    .action(noop)
   app.command('help/bar', 'command with usage and examples')
     .usage('usage text')
     .example('example 1')
@@ -39,55 +24,53 @@ function prepare (app: App) {
 }
 
 describe('help command', () => {
+  let app: MockedApp, session1: Session, session2: Session
+
   beforeAll(async () => {
-    app = createApp({
-      database: { level: { path } }
-    })
+    app = new MockedApp({ database: { memory: {} } })
     prepare(app)
     await app.start()
     await app.database.getUser(123, 1)
     await app.database.getUser(456, 2)
+    session1 = app.createSession('user', 123)
+    session2 = app.createSession('user', 456)
   })
 
-  afterAll(async () => {
-    await app.stop()
-    app.destroy()
-  })
+  afterAll(() => app.stop())
 
   test('show command help', async () => {
-    await session1.testSnapshot('help -h')
-    await session1.testSnapshot('help help')
-    await session1.testSnapshot('bar -h')
-    await session1.testSnapshot('foo -h')
-    await session1.testSnapshot('help help -e')
-    await session1.shouldHaveNoResponse('help.foo -h')
-    await session1.testSnapshot('help help.foo')
+    await session1.shouldMatchSnapshot('help -h')
+    await session1.shouldMatchSnapshot('help help')
+    await session1.shouldMatchSnapshot('bar -h')
+    await session1.shouldMatchSnapshot('foo -h')
+    await session1.shouldMatchSnapshot('help help -e')
+    await session2.shouldHaveNoResponse('help.foo -h')
+    await session2.shouldMatchSnapshot('help help.foo')
   })
 
   test('alias and shortcut', async () => {
-    await session1.testSnapshot('help baz-shortcut')
-    await session1.testSnapshot('help baz-alias')
-    await session1.testSnapshot('help baz')
+    await session1.shouldMatchSnapshot('help baz-shortcut')
+    await session1.shouldMatchSnapshot('help baz-alias')
+    await session1.shouldMatchSnapshot('help baz')
   })
 
   test('global help message', async () => {
-    await session1.testSnapshot('help')
-    await session1.testSnapshot('help -e')
-    await session1.testSnapshot('help -s')
+    await session1.shouldMatchSnapshot('help')
+    await session1.shouldMatchSnapshot('help -e')
+    await session1.shouldMatchSnapshot('help -s')
   })
 
   test('show help with usage', async () => {
-    await session1.shouldHaveResponse('foo', COMMAND_CALLED)
-    await session1.testSnapshot('help foo')
-    await sleep(0)
+    await session1.shouldHaveReply('foo', MESSAGE_COMMAND_CALLED)
+    await session1.shouldMatchSnapshot('help foo')
   })
 })
 
 test('help without database', async () => {
-  app = createApp()
+  const app = new MockedApp()
   prepare(app)
+  const session = app.createSession('user', 123)
   await app.start()
-  await session1.testSnapshot('help foo')
+  await session.shouldMatchSnapshot('help foo')
   await app.stop()
-  app.destroy()
 })

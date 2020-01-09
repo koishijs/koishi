@@ -82,7 +82,7 @@ export class Command {
   _optsDef: Record<string, CommandOption> = {}
   _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
 
-  static attachUserFields (userFields: Set<UserField>, { command, options }: ParsedCommandLine) {
+  static attachUserFields (userFields: Set<UserField>, { command, options = {} }: ParsedCommandLine) {
     if (!command) return
     for (const field of command._userFields) {
       userFields.add(field)
@@ -247,7 +247,7 @@ export class Command {
   }
 
   async execute (argv: ParsedCommandLine, next: NextFunction = noop) {
-    const { meta, options, args, unknown } = argv
+    const { meta, options = {}, args = [], unknown = [] } = argv
     this.app.emitEvent(meta, 'before-command', argv)
 
     // show help when use `-h, --help` or when there is no action

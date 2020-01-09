@@ -1,4 +1,4 @@
-import { PackageJson, cwd, getWorkspaces, spawnAsync, spawnSync } from './utils'
+import { PackageJson, getWorkspaces, spawnAsync, spawnSync } from './utils'
 import { gt, prerelease } from 'semver'
 import ora from 'ora'
 import latest from 'latest-version'

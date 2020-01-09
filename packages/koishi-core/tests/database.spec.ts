@@ -1,6 +1,6 @@
-import { App, registerDatabase, injectMethods, createUser, extendUser, createGroup, extendGroup } from '../src'
+import { App, registerDatabase, injectMethods, createUser, extendUser, createGroup, extendGroup } from 'koishi-core'
 
-declare module '../src/database' {
+declare module 'koishi-core/dist/database' {
   interface Subdatabases {
     foo?: FooDatabase
     bar?: BarDatabase
@@ -53,9 +53,6 @@ class BarDatabase {
   constructor (public options: BarOptions) {}
 }
 
-registerDatabase('foo', FooDatabase)
-registerDatabase('bar', BarDatabase)
-
 injectMethods('foo', 'user', {
   myUserFunc1 () {
     return 'my-foo-user-func'
@@ -67,6 +64,9 @@ injectMethods('foo', 'user', {
     return this.myUserFunc1() + '-' + this.myFunc(1)
   },
 })
+
+registerDatabase('foo', FooDatabase)
+registerDatabase('bar', BarDatabase)
 
 injectMethods('bar', 'user', {
   myUserFunc1 () {
@@ -117,7 +117,8 @@ describe('multiple databases', () => {
     expect(() => new App({
       database: {
         foo: { value: 1 },
-        bar: {},
+        // make coverage happy
+        bar: { identifier: 'id' },
       },
     })).toThrow()
   })

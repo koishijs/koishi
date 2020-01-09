@@ -1,42 +1,17 @@
-import { httpServer } from 'koishi-test-utils'
-import { App, Meta } from '../src'
-import { Server } from 'http'
+import { MockedApp } from 'koishi-test-utils'
+import { errors, MessageMeta } from 'koishi-core'
 import { sleep, noop } from 'koishi-utils'
-import { errors } from '../src/messages'
 import { format } from 'util'
 
-const { SERVER_URL, CLIENT_PORT, createServer, postMeta } = httpServer
+const app = new MockedApp()
 
-let app: App
-let server: Server
-
-jest.setTimeout(1000)
-
-const shared: Meta = {
+const shared: MessageMeta = {
   postType: 'message',
   userId: 10000,
   selfId: 514,
 }
 
-beforeAll(() => {
-  server = createServer()
-
-  app = new App({
-    type: 'http',
-    port: CLIENT_PORT,
-    server: SERVER_URL,
-    selfId: 514,
-  })
-
-  app.start()
-})
-
-afterAll(() => {
-  server.close()
-  app.stop()
-})
-
-describe('middleware', () => {
+describe('Middleware API', () => {
   let flag: number
 
   beforeEach(() => flag = 0)
@@ -68,7 +43,7 @@ describe('middleware', () => {
   })
 
   test('middleware-1', async () => {
-    await postMeta({
+    await app.receive({
       ...shared,
       messageType: 'private',
       subType: 'friend',
@@ -79,7 +54,7 @@ describe('middleware', () => {
   })
 
   test('middleware-2', async () => {
-    await postMeta({
+    await app.receive({
       ...shared,
       messageType: 'group',
       subType: 'normal',
@@ -91,7 +66,7 @@ describe('middleware', () => {
   })
 
   test('middleware-3', async () => {
-    await postMeta({
+    await app.receive({
       ...shared,
       messageType: 'private',
       subType: 'friend',
@@ -102,7 +77,7 @@ describe('middleware', () => {
   })
 
   test('middleware-4', async () => {
-    await postMeta({
+    await app.receive({
       ...shared,
       messageType: 'group',
       subType: 'normal',
@@ -116,7 +91,7 @@ describe('middleware', () => {
 
 describe('runtime checks', () => {
   beforeEach(() => {
-    // @ts-ignore
+    // @ts-ignore remove all middlewares
     app._middlewares = [[app, app._preprocess]]
   })
 
@@ -135,7 +110,7 @@ describe('runtime checks', () => {
       next()
     })
 
-    await postMeta({
+    await app.receive({
       ...shared,
       messageType: 'group',
       subType: 'normal',
@@ -160,14 +135,12 @@ describe('runtime checks', () => {
       throw new Error(errorMessage)
     })
 
-    await postMeta({
+    await app.receive({
       ...shared,
       messageType: 'group',
       subType: 'normal',
       message: 'bar',
     })
-
-    await sleep(0)
 
     expect(errorCallback).toBeCalledTimes(1)
     expect(errorCallback).toBeCalledWith(errorMessage)
