@@ -10,7 +10,7 @@
     "bump": "ts-node build/bump",
     "dep": "ts-node build/dep",
     "docs": "cd docs & yarn dev",
-    "jest": "jest .*\\.spec\\.ts --coverage --runInBand",
+    "jest": "jest .*\\.spec\\.ts --coverage",
     "lint": "eslint packages/*/src/**/*.ts --cache",
     "start": "ts-node build/start"
   },

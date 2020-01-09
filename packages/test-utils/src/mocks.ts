@@ -71,18 +71,22 @@ export class MockedApp extends App {
   createSession (type: 'group', userId: number, groupId: number): Session
   createSession (type: 'discuss', userId: number, discussId: number): Session
   createSession (type: ContextType, userId: number, ctxId: number = userId) {
-    return new Session(this, {
-      userId,
-      selfId: this.selfId,
-      postType: 'message',
-      messageType: type === 'user' ? 'private' : type,
-      [`${type}Id`]: ctxId,
-    })
+    return new Session(this, type, userId, ctxId)
   }
 }
 
 export class Session {
-  constructor (public app: MockedApp, public meta: MessageMeta) {}
+  meta: MessageMeta
+
+  constructor (public app: MockedApp, public type: ContextType, public userId: number, public ctxId: number) {
+    this.meta = {
+      userId,
+      selfId: app.selfId,
+      postType: 'message',
+      messageType: type === 'user' ? 'private' : type,
+      [`${type}Id`]: ctxId,
+    }
+  }
 
   async send (message: string) {
     let payload: ResponsePayload = null

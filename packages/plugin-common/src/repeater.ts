@@ -8,38 +8,24 @@ interface State {
   users: Set<number>
 }
 
-const states: Record<number, State> = {}
-
-function getState (groupId: number) {
-  if (!states[groupId]) {
-    states[groupId] = {
-      message: '',
-      repeated: false,
-      times: 0,
-      users: new Set(),
-    }
-  }
-  return states[groupId]
-}
-
 type SessionSwitch = boolean | ((repeated: boolean, times: number) => boolean)
 type SessionText = string | ((userId: number, message: string) => string)
 
 export interface RepeaterOptions {
-  repeat: SessionSwitch
-  interrupt: SessionSwitch
-  repeatCheck: SessionSwitch
-  interruptCheck: SessionSwitch
-  interruptText: SessionText
-  repeatCheckText: SessionText
-  interruptCheckText: SessionText
+  repeat?: SessionSwitch
+  interrupt?: SessionSwitch
+  repeatCheck?: SessionSwitch
+  interruptCheck?: SessionSwitch
+  interruptText?: SessionText
+  repeatCheckText?: SessionText
+  interruptCheckText?: SessionText
 }
 
 const defaultOptions: RepeaterOptions = {
   repeat: (repeated, times) => !repeated && randomBool(1 - 1 / times),
   interrupt: false,
   interruptText: '打断复读！',
-  repeatCheck: (repeated, times) => randomBool(1 - 1 / times),
+  repeatCheck: (_, times) => randomBool(1 - 1 / times),
   repeatCheckText: (userId) => `[CQ:at,qq=${userId}] 在？为什么重复复读？`,
   interruptCheck: (repeated, times) => repeated && randomBool(1 - 3 / times),
   interruptCheckText: (userId) => `[CQ:at,qq=${userId}] 在？为什么打断复读？`,
@@ -56,6 +42,20 @@ function getText (sessionText: SessionText, userId: number, message: string) {
 export default function apply (ctx: Context, options: RepeaterOptions) {
   options = { ...defaultOptions, ...options }
   ctx = ctx.intersect(ctx.app.groups)
+  
+  const states: Record<number, State> = {}
+  
+  function getState (groupId: number) {
+    if (!states[groupId]) {
+      states[groupId] = {
+        message: '',
+        repeated: false,
+        times: 0,
+        users: new Set(),
+      }
+    }
+    return states[groupId]
+  }
 
   ctx.receiver.on('before-send', ({ groupId, message }) => {
     const state = getState(groupId)
@@ -69,9 +69,8 @@ export default function apply (ctx: Context, options: RepeaterOptions) {
     }
   })
 
-  ctx.prependMiddleware(({ message, groupId, userId, $send, $group }, next) => {
+  ctx.prependMiddleware(({ message, groupId, userId, $send }, next) => {
     const state = getState(groupId)
-    if (!$group || $group.assignee !== ctx.app.options.selfId) return next()
     if (message === state.message) {
       if (state.users.has(userId) && getSwitch(options.repeatCheck, state.repeated, state.times)) {
         return next(() => $send(getText(options.repeatCheckText, userId, message)))

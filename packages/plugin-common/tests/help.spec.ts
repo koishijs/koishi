@@ -1,9 +1,9 @@
-import { Session, registerMemoryDatabase, MockedApp } from 'koishi-test-utils'
-import { App } from 'koishi-core'
+import { Session, MemoryDatabase, MockedApp } from 'koishi-test-utils'
+import { App, registerDatabase } from 'koishi-core'
 import { noop } from 'koishi-utils'
 import help from '../src/help'
 
-registerMemoryDatabase()
+registerDatabase('memory', MemoryDatabase)
 
 const MESSAGE_COMMAND_CALLED = 'command called'
 

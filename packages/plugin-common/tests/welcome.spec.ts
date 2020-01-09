@@ -1,8 +1,8 @@
-import { MockedApp, registerMemoryDatabase } from 'koishi-test-utils'
-import { Meta } from 'koishi-core'
+import { MockedApp, MemoryDatabase } from 'koishi-test-utils'
+import { Meta, registerDatabase } from 'koishi-core'
 import welcome from '../src/welcome'
 
-registerMemoryDatabase()
+registerDatabase('memory', MemoryDatabase)
 
 const shared: Meta = {
   postType: 'notice',

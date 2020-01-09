@@ -1,7 +1,7 @@
-import { MockedApp, registerMemoryDatabase } from 'koishi-test-utils'
-import { UserFlag, GroupFlag, messages } from 'koishi-core'
+import { MockedApp, MemoryDatabase } from 'koishi-test-utils'
+import { UserFlag, GroupFlag, messages, registerDatabase } from 'koishi-core'
 
-registerMemoryDatabase()
+registerDatabase('memory', MemoryDatabase)
 
 const app = new MockedApp({ database: { memory: {} } })
 const session1 = app.createSession('user', 123)
