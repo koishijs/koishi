@@ -20,7 +20,7 @@ class MockedSender extends Sender {
 
   constructor (app: App) {
     super(app)
-    this._get = async (action: string, params: Record<string, any> = {}) => {
+    this._get = async (action: string, params: Record<string, any>) => {
       this.requests.unshift([action, params])
       return { status: 'succeed', retcode: 0, data: {} }
     }

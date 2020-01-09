@@ -19,8 +19,17 @@ export default class TestServer extends EventEmitter {
     this.server.close()
   }
 
+  clearRequests () {
+    this.requests = []
+  }
+
   shouldHaveLastRequest (method: string, params: Record<string, any>) {
     expect(this.requests[0]).toMatchObject([method, params])
+    this.clearRequests()
+  }
+
+  shouldHaveNoRequests () {
+    expect(this.requests).toHaveLength(0)
   }
 
   setResponse (event: string, data: Record<string, any>, retcode = 0) {

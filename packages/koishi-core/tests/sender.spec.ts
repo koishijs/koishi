@@ -14,6 +14,43 @@ beforeAll(async () => {
 afterAll(() => server.close())
 
 describe('Sender API', () => {
+  beforeEach(() => {
+    server.clearRequests()
+    sender.app.server.version = {} as any
+  })
+
+  const foo = { foo: 'foo' }
+  const bar = { bar: 'bar' }
+
+  test('get', async () => {
+    server.setResponse('bar', bar)
+    await expect(sender.get('bar')).resolves.toMatchObject(bar)
+
+    server.setResponse('bar', bar, 102)
+    await expect(sender.get('bar')).rejects.toHaveProperty('name', 'SenderError')
+
+    server.setResponse('bar', bar, -99)
+    await expect(sender.get('bar')).rejects.toHaveProperty('name', 'SenderError')
+  })
+
+  test('getAsync', async () => {
+    server.setResponse('foo_async', foo, 1)
+    await expect(sender.getAsync('foo')).resolves.toBeUndefined()
+
+    server.setResponse('foo_async', foo, 102)
+    await expect(sender.getAsync('foo')).rejects.toHaveProperty('name', 'SenderError')
+
+    // < 4.0.0
+    sender.app.version.pluginMajorVersion = 3
+    sender.app.version.pluginMinorVersion = 4
+
+    server.setResponse('foo', foo)
+    await expect(sender.getAsync('foo')).resolves.toBeUndefined()
+
+    server.setResponse('foo', foo, -99)
+    await expect(sender.getAsync('foo')).resolves.toBeUndefined()
+  })
+
   const messageId = 456
 
   test('sendGroupMsg', async () => {
@@ -21,10 +58,14 @@ describe('Sender API', () => {
     await expect(sender.sendGroupMsgAsync(undefined, undefined)).rejects.toHaveProperty('message', 'missing argument: groupId')
 
     server.setResponse('send_group_msg', { messageId })
+    await expect(sender.sendGroupMsg(123, '')).resolves.toBeUndefined()
+    server.shouldHaveNoRequests()
     await expect(sender.sendGroupMsg(123, 'foo')).resolves.toBe(messageId)
     server.shouldHaveLastRequest('send_group_msg', { groupId: '123', message: 'foo' })
     await expect(sender.sendGroupMsg(123, 'foo', true)).resolves.toBe(messageId)
     server.shouldHaveLastRequest('send_group_msg', { groupId: '123', message: 'foo', autoEscape: 'true' })
+    await expect(sender.sendGroupMsgAsync(123, '')).resolves.toBeUndefined()
+    server.shouldHaveNoRequests()
     await expect(sender.sendGroupMsgAsync(123, 'foo')).resolves.toBeUndefined()
     server.shouldHaveLastRequest('send_group_msg_async', { groupId: '123', message: 'foo' })
     await expect(sender.sendGroupMsgAsync(123, 'foo', true)).resolves.toBeUndefined()
@@ -36,11 +77,14 @@ describe('Sender API', () => {
     await expect(sender.sendDiscussMsgAsync(undefined, undefined)).rejects.toHaveProperty('message', 'missing argument: discussId')
 
     server.setResponse('send_discuss_msg', { messageId })
-
+    await expect(sender.sendDiscussMsg(123, '')).resolves.toBeUndefined()
+    server.shouldHaveNoRequests()
     await expect(sender.sendDiscussMsg(123, 'foo')).resolves.toBe(messageId)
     server.shouldHaveLastRequest('send_discuss_msg', { discussId: '123', message: 'foo' })
     await expect(sender.sendDiscussMsg(123, 'foo', true)).resolves.toBe(messageId)
     server.shouldHaveLastRequest('send_discuss_msg', { discussId: '123', message: 'foo', autoEscape: 'true' })
+    await expect(sender.sendDiscussMsgAsync(123, '')).resolves.toBeUndefined()
+    server.shouldHaveNoRequests()
     await expect(sender.sendDiscussMsgAsync(123, 'foo')).resolves.toBeUndefined()
     server.shouldHaveLastRequest('send_discuss_msg_async', { discussId: '123', message: 'foo' })
     await expect(sender.sendDiscussMsgAsync(123, 'foo', true)).resolves.toBeUndefined()
@@ -52,11 +96,14 @@ describe('Sender API', () => {
     await expect(sender.sendPrivateMsgAsync(undefined, undefined)).rejects.toHaveProperty('message', 'missing argument: userId')
 
     server.setResponse('send_private_msg', { messageId })
-
+    await expect(sender.sendPrivateMsg(123, '')).resolves.toBeUndefined()
+    server.shouldHaveNoRequests()
     await expect(sender.sendPrivateMsg(123, 'foo')).resolves.toBe(messageId)
     server.shouldHaveLastRequest('send_private_msg', { userId: '123', message: 'foo' })
     await expect(sender.sendPrivateMsg(123, 'foo', true)).resolves.toBe(messageId)
     server.shouldHaveLastRequest('send_private_msg', { userId: '123', message: 'foo', autoEscape: 'true' })
+    await expect(sender.sendPrivateMsgAsync(123, '')).resolves.toBeUndefined()
+    server.shouldHaveNoRequests()
     await expect(sender.sendPrivateMsgAsync(123, 'foo')).resolves.toBeUndefined()
     server.shouldHaveLastRequest('send_private_msg_async', { userId: '123', message: 'foo' })
     await expect(sender.sendPrivateMsgAsync(123, 'foo', true)).resolves.toBeUndefined()
@@ -327,6 +374,20 @@ describe('Sender API', () => {
     server.shouldHaveLastRequest('get_group_info', { groupId: '456' })
     await expect(sender.getGroupInfo(456, true)).resolves.toMatchObject(groupInfo)
     server.shouldHaveLastRequest('get_group_info', { groupId: '456', noCache: 'true' })
+
+    // < 4.12.0
+    sender.app.version.pluginMajorVersion = 4
+    sender.app.version.pluginMinorVersion = 11
+    server.setResponse('_get_group_info', groupInfo)
+    await expect(sender.getGroupInfo(456)).resolves.toMatchObject(groupInfo)
+    server.shouldHaveLastRequest('_get_group_info', { groupId: '456' })
+    await expect(sender.getGroupInfo(456, true)).resolves.toMatchObject(groupInfo)
+    server.shouldHaveLastRequest('_get_group_info', { groupId: '456', noCache: 'true' })
+
+    // < 4.0.1
+    sender.app.version.pluginMajorVersion = 3
+    sender.app.version.pluginMinorVersion = 4
+    await expect(sender.getGroupInfo(456)).rejects.toHaveProperty('message', 'sender.getGroupInfo() requires CQHTTP version >= 4.0.1')
   })
 
   test('getGroupList', async () => {

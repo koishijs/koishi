@@ -45,12 +45,12 @@ interface MessageResponse {
 }
 
 export class Sender {
-  protected _get: (action: string, params?: Record<string, any>) => Promise<CQResponse>
+  protected _get: (action: string, params: Record<string, any>) => Promise<CQResponse>
 
   constructor (public app: App) {
     const { type } = app.options
     if (type === 'http') {
-      this._get = async (action, params = {}) => {
+      this._get = async (action, params) => {
         const headers = {} as any
         if (app.options.token) {
           headers.Authorization = `Token ${app.options.token}`
@@ -60,14 +60,14 @@ export class Sender {
         return data
       }
     } else if (type === 'ws') {
-      this._get = (action, params = {}) => {
+      this._get = (action, params) => {
         const server = app.server as WsClient
         return server.send({ action, params })
       }
     }
   }
 
-  async get <T = any> (action: string, params?: Record<string, any>, silent = false): Promise<T> {
+  async get <T = any> (action: string, params: Record<string, any> = {}, silent = false): Promise<T> {
     showSenderLog('request %s %o', action, params)
     const response = await this._get(action, snakeCase(params))
     showSenderLog('response %o', response)
@@ -81,7 +81,7 @@ export class Sender {
     }
   }
 
-  async getAsync (action: string, params?: Record<string, any>): Promise<void> {
+  async getAsync (action: string, params: Record<string, any> = {}): Promise<void> {
     if (this.app.server.versionLessThan(4)) {
       await this.get(action, params, true)
     } else {
@@ -99,9 +99,9 @@ export class Sender {
     if (!array.includes(value)) throw new Error('invalid argument: ' + name)
   }
 
-  private _assertVersion (label: string, major: number, minor: number = 0, patch: number = 0) {
+  private _assertVersion (label: string, major: number, minor: number, patch: number = 0) {
     if (this.app.server.versionLessThan(major, minor, patch)) {
-      throw new Error(`${label} requires CQHTTP version >= ${major}.${minor}`)
+      throw new Error(`${label} requires CQHTTP version >= ${major}.${minor}.${patch}`)
     }
   }
 
