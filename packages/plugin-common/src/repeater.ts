@@ -42,9 +42,9 @@ function getText (sessionText: SessionText, userId: number, message: string) {
 export default function apply (ctx: Context, options: RepeaterOptions) {
   options = { ...defaultOptions, ...options }
   ctx = ctx.intersect(ctx.app.groups)
-  
+
   const states: Record<number, State> = {}
-  
+
   function getState (groupId: number) {
     if (!states[groupId]) {
       states[groupId] = {

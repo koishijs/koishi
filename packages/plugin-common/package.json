@@ -31,7 +31,7 @@
     "koishi-test-utils": "^1.1.0"
   },
   "dependencies": {
-    "koishi-core": "^1.1.1",
+    "koishi-core": "^1.2.0",
     "koishi-utils": "^1.0.2"
   }
 }
