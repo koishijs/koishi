@@ -106,18 +106,17 @@ function bumpPkg (source: Package, flag: BumpType, only = false) {
     const { meta, name: targetName } = target
     const { devDependencies, peerDependencies, dependencies } = meta
     const { name: sourceName } = source
-    if (targetName !== sourceName) {
-      Object.entries({ devDependencies, peerDependencies, dependencies })
-        .filter(([_type, depend = {}]) => depend[sourceName])
-        .map(([type]) => type)
-        .forEach(type => {
-          meta[type][sourceName] = '^' + newVersion
-          target.dirty = true
-          if (type !== 'devDependencies') {
-            dependents.add(target)
-          }
-        })
-    }
+    if (targetName === sourceName) return
+    Object.entries({ devDependencies, peerDependencies, dependencies })
+      .filter(([_type, depend = {}]) => depend[sourceName])
+      .map(([type]) => type)
+      .forEach(type => {
+        meta[type][sourceName] = '^' + newVersion
+        target.dirty = true
+        if (type !== 'devDependencies') {
+          dependents.add(target)
+        }
+      })
   })
   if (only) return
   dependents.forEach(dep => bumpPkg(dep, flag))
