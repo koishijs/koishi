@@ -3,7 +3,14 @@ temp
 
 /docs
 /bots
+/coverage
 
+/packages/plugin-*
+!/packages/plugin-common
+!/packages/plugin-schedule
+!/packages/plugin-teach
+
+todo.md
 yarn.lock
 node_modules/
 npm-debug.log
@@ -12,6 +19,7 @@ yarn-error.log
 package-lock.json
 tsconfig.tsbuildinfo
 
+.eslintcache
 .DS_Store
 .idea
 .vscode

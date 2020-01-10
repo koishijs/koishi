@@ -32,7 +32,7 @@ function getCommands (context: Context, meta: MessageMeta, parent?: Command) {
     : context.app._commands.filter(cmd => cmd.context.match(meta))
   return commands
     .filter(cmd => !meta.$user || cmd.config.authority <= meta.$user.authority)
-    .sort((a, b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0)
+    .sort((a, b) => a.name > b.name ? 1 : -1)
 }
 
 function showGlobalShortcut (context: Context, meta: MessageMeta) {
@@ -60,14 +60,19 @@ function getCommandList (context: Context, meta: MessageMeta, parent: Command, e
   return output
 }
 
+export const GLOBAL_HELP_PROLOGUE = '当前可用的指令有（括号内为对应的最低权限等级，标有星号的表示含有子指令）：'
+export const GLOBAL_HELP_EPILOGUE = [
+  '群聊普通指令可以通过“@我+指令名”的方式进行触发。',
+  '私聊或全局指令则不需要添加上述前缀，直接输入指令名即可触发。',
+  '输入“全局指令”查看全部可用的全局指令。',
+  '输入“帮助+指令名”查看特定指令的语法和使用示例。',
+].join('\n')
+
 function showGlobalHelp (context: Context, meta: MessageMeta, options: any) {
   return meta.$send([
-    '当前可用的指令有（括号内为对应的最低权限等级，标有星号的表示含有子指令）：',
+    GLOBAL_HELP_PROLOGUE,
     ...getCommandList(context, meta, null, options.expand),
-    '群聊普通指令可以通过“@我+指令名”的方式进行触发。',
-    '私聊或全局指令则不需要添加上述前缀，直接输入指令名即可触发。',
-    '输入“全局指令”查看全部可用的全局指令。',
-    '输入“帮助+指令名”查看特定指令的语法和使用示例。',
+    GLOBAL_HELP_EPILOGUE,
   ].join('\n'))
 }
 
@@ -77,8 +82,8 @@ async function showCommandHelp (command: Command, meta: MessageMeta, options: an
     meta.$user = await command.context.database.observeUser(meta.userId)
   }
 
-  if (command._aliases.length) {
-    output.push(`中文别名：${Array.from(command._aliases).join('，')}。`)
+  if (command._aliases.length > 1) {
+    output.push(`中文别名：${Array.from(command._aliases.slice(1)).join('，')}。`)
   }
   const shortcuts = getShortcuts(command, meta.$user)
   if (shortcuts.length) {
@@ -88,7 +93,7 @@ async function showCommandHelp (command: Command, meta: MessageMeta, options: an
   const maxUsage = command.getConfig('maxUsage', meta)
   const minInterval = command.getConfig('minInterval', meta)
   if (meta.$user) {
-    const { authority, maxUsageText, authorityHint } = command.config
+    const { authority, maxUsageText } = command.config
     const usage = command.updateUsage(meta.$user)
     if (maxUsage !== Infinity) {
       output.push(`已调用次数：${Math.min(usage.count, maxUsage)}/${maxUsageText || maxUsage}。`)
@@ -98,9 +103,7 @@ async function showCommandHelp (command: Command, meta: MessageMeta, options: an
       output.push(`距离下次调用还需：${nextUsage}/${minInterval / 1000} 秒。`)
     }
 
-    if (authorityHint) {
-      output.push(authorityHint)
-    } else if (authority > 1) {
+    if (authority > 1) {
       output.push(`最低权限：${authority} 级。`)
     }
   }
@@ -125,8 +128,6 @@ async function showCommandHelp (command: Command, meta: MessageMeta, options: an
       }
       output.push(line)
     })
-  } else if (command._options.length) {
-    output.push(`输入“help ${command.name} -o”查看完整的选项列表。`)
   }
 
   if (command._examples.length) {

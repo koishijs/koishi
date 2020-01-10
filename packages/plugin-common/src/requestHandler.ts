@@ -1,19 +1,21 @@
 import { App, Meta } from 'koishi-core'
 
-type RequestHandler = boolean | ((meta: Meta<'request'>, app: App) => boolean | void | Promise<boolean | void>)
+type RequestHandler = boolean | ((meta: Meta<'request'>, app: App) => string | boolean | void | Promise<string | boolean | void>)
 
-export interface HandlerOptions {
+export interface HandlerConfig {
   handleFriend?: RequestHandler
   handleGroupAdd?: RequestHandler
   handleGroupInvite?: RequestHandler
 }
 
-const defaultHandlers: HandlerOptions = {
+const defaultHandlers: HandlerConfig = {
   async handleFriend (meta, app) {
+    if (!app.database) return
     const user = await app.database.getUser(meta.userId, 0, ['authority'])
     if (user.authority >= 1) return true
   },
   async handleGroupInvite (meta, app) {
+    if (!app.database) return
     const user = await app.database.getUser(meta.userId, 0, ['authority'])
     if (user.authority >= 4) return true
   },
@@ -23,27 +25,33 @@ async function getHandleResult (handler: RequestHandler, meta: Meta<'request'>, 
   return typeof handler === 'function' ? handler(meta, ctx) : handler
 }
 
-export default function apply (ctx: App, options: HandlerOptions = {}) {
+export default function apply (ctx: App, options: HandlerConfig = {}) {
   const { handleFriend, handleGroupAdd, handleGroupInvite } = { ...defaultHandlers, ...options }
 
-  ctx.users.receiver.on('request', async (meta) => {
+  ctx.users.receiver.on('request/friend', async (meta) => {
     const result = await getHandleResult(handleFriend, meta, ctx)
     if (typeof result === 'boolean') {
-      await ctx.sender.setFriendAddRequest(meta.flag, result)
+      return result ? meta.$approve() : meta.$reject()
+    } else if (typeof result === 'string') {
+      return meta.$approve(result)
     }
   })
 
-  ctx.groups.receiver.on('request/add', async (meta) => {
+  ctx.groups.receiver.on('request/group/add', async (meta) => {
     const result = await getHandleResult(handleGroupAdd, meta, ctx)
     if (typeof result === 'boolean') {
-      await ctx.sender.setGroupAddRequest(meta.flag, 'add', result)
+      return result ? meta.$approve() : meta.$reject()
+    } else if (typeof result === 'string') {
+      return meta.$reject(result)
     }
   })
 
-  ctx.groups.receiver.on('request/invite', async (meta) => {
+  ctx.groups.receiver.on('request/group/invite', async (meta) => {
     const result = await getHandleResult(handleGroupInvite, meta, ctx)
     if (typeof result === 'boolean') {
-      await ctx.sender.setGroupAddRequest(meta.flag, 'invite', result)
+      return result ? meta.$approve() : meta.$reject()
+    } else if (typeof result === 'string') {
+      return meta.$reject(result)
     }
   })
 }

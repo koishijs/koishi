@@ -1,10 +1,9 @@
 import { Context, NextFunction } from './context'
-import { UserData, UserField } from './database'
+import { UserData, UserField, GroupField } from './database'
+import { messages, errors } from './messages'
 import { noop } from 'koishi-utils'
 import { MessageMeta } from './meta'
 import { format } from 'util'
-import * as messages from './messages'
-import * as errors from './errors'
 import debug from 'debug'
 
 import {
@@ -19,9 +18,9 @@ import {
 
 const showCommandLog = debug('koishi:command')
 
-export interface ParsedCommandLine extends ParsedLine {
+export interface ParsedCommandLine extends Partial<ParsedLine> {
   meta: MessageMeta
-  command: Command
+  command?: Command
   next?: NextFunction
 }
 
@@ -40,7 +39,6 @@ export interface CommandConfig {
   description?: string
   /** min authority */
   authority?: number
-  authorityHint?: string
   disable?: UserType<boolean>
   maxUsage?: UserType<number>
   maxUsageText?: string
@@ -53,6 +51,7 @@ const defaultConfig: CommandConfig = {
   authority: 1,
   maxUsage: Infinity,
   minInterval: 0,
+  showWarning: true,
 }
 
 export interface ShortcutConfig {
@@ -62,6 +61,7 @@ export interface ShortcutConfig {
   hidden?: boolean
   prefix?: boolean
   fuzzy?: boolean
+  args?: string[]
   oneArg?: boolean
   options?: Record<string, any>
 }
@@ -77,10 +77,38 @@ export class Command {
   _examples: string[] = []
   _shortcuts: Record<string, ShortcutConfig> = {}
   _userFields = new Set<UserField>()
+  _groupFields = new Set<GroupField>()
+  _argsDef: CommandArgument[]
+  _optsDef: Record<string, CommandOption> = {}
+  _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
 
-  private _argsDef: CommandArgument[]
-  private _optsDef: Record<string, CommandOption> = {}
-  private _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
+  static attachUserFields (userFields: Set<UserField>, { command, options = {} }: ParsedCommandLine) {
+    if (!command) return
+    for (const field of command._userFields) {
+      userFields.add(field)
+    }
+
+    const { maxUsage, minInterval, authority } = command.config
+    let shouldFetchAuthority = !userFields.has('authority') && authority > 0
+    let shouldFetchUsage = !userFields.has('usage') && (
+      typeof maxUsage === 'number' && maxUsage < Infinity ||
+      typeof minInterval === 'number' && minInterval > 0)
+    for (const option of command._options) {
+      if (option.camels[0] in options) {
+        if (option.authority > 0) shouldFetchAuthority = true
+        if (option.notUsage) shouldFetchUsage = false
+      }
+    }
+    if (shouldFetchAuthority) userFields.add('authority')
+    if (shouldFetchUsage) userFields.add('usage')
+  }
+
+  static attachGroupFields (groupFields: Set<GroupField>, { command }: ParsedCommandLine) {
+    if (!command) return
+    for (const field of command._groupFields) {
+      groupFields.add(field)
+    }
+  }
 
   constructor (public name: string, public declaration: string, public context: Context, config: CommandConfig = {}) {
     if (!name) throw new Error(errors.EXPECT_COMMAND_NAME)
@@ -88,17 +116,19 @@ export class Command {
     this.config = { ...defaultConfig, ...config }
     this._registerAlias(this.name)
     context.app._commands.push(this)
-    if (!config.noHelpOption) {
-      this.option('-h, --help', messages.SHOW_THIS_MESSAGE)
-    }
+    this.option('-h, --help', messages.SHOW_THIS_MESSAGE)
+  }
+
+  get app () {
+    return this.context.app
   }
 
   private _registerAlias (name: string) {
     name = name.toLowerCase()
     this._aliases.push(name)
-    const previous = this.context.app._commandMap[name]
+    const previous = this.app._commandMap[name]
     if (!previous) {
-      this.context.app._commandMap[name] = this
+      this.app._commandMap[name] = this
     } else if (previous !== this) {
       throw new Error(errors.DUPLICATE_COMMAND)
     }
@@ -107,6 +137,13 @@ export class Command {
   userFields (fields: Iterable<UserField>) {
     for (const field of fields) {
       this._userFields.add(field)
+    }
+    return this
+  }
+
+  groupFields (fields: Iterable<GroupField>) {
+    for (const field of fields) {
+      this._groupFields.add(field)
     }
     return this
   }
@@ -132,8 +169,8 @@ export class Command {
       authority: this.config.authority,
       ...config,
     }
-    this.context.app._shortcutMap[name] = this
-    this.context.app._shortcuts.push(config)
+    this.app._shortcutMap[name] = this
+    this.app._shortcuts.push(config)
     return this
   }
 
@@ -153,7 +190,11 @@ export class Command {
    * @param description option description
    * @param config option config
    */
-  option (rawName: string, description = '', config?: OptionConfig) {
+  option (rawName: string, config?: OptionConfig): this
+  option (rawName: string, description: string, config?: OptionConfig): this
+  option (rawName: string, ...args: [OptionConfig?] | [string, OptionConfig?]) {
+    const description = typeof args[0] === 'string' ? args.shift() as string : undefined
+    const config = args[0] as CommandConfig || {}
     const option = parseOption(rawName, description, config, this._optsDef)
     this._options.push(option)
     for (const name of option.names) {
@@ -163,6 +204,18 @@ export class Command {
       this._optsDef[name] = option
     }
     return this
+  }
+
+  removeOption (name: string) {
+    name = name.replace(/^-+/, '')
+    const option = this._optsDef[name]
+    if (!option) return false
+    for (const name of option.names) {
+      delete this._optsDef[name]
+    }
+    const index = this._options.indexOf(option)
+    this._options.splice(index, 1)
+    return true
   }
 
   action (callback: (this: this, options: ParsedCommandLine, ...args: string[]) => any) {
@@ -193,9 +246,9 @@ export class Command {
     return parseLine(source, this._argsDef, this._optsDef)
   }
 
-  async execute (config: ParsedCommandLine, next: NextFunction = noop) {
-    const { meta, options, args, unknown } = config
-    if (!config.next) config.next = next
+  async execute (argv: ParsedCommandLine, next: NextFunction = noop) {
+    const { meta, options = {}, args = [], unknown = [] } = argv
+    this.app.emitEvent(meta, 'before-command', argv)
 
     // show help when use `-h, --help` or when there is no action
     if (!this._action || options.help && !this.config.noHelpOption) {
@@ -205,7 +258,7 @@ export class Command {
     // check argument count
     if (this.config.checkArgCount) {
       const nextArg = this._argsDef[args.length]
-      if (nextArg && nextArg.required) {
+      if (nextArg?.required) {
         return meta.$send(messages.INSUFFICIENT_ARGUMENTS)
       }
       const finalArg = this._argsDef[this._argsDef.length - 1]
@@ -221,17 +274,33 @@ export class Command {
 
     // check required options
     if (this.config.checkRequired) {
-      const absent = this._options.filter((option) => {
-        return option.required && !(option.camels[0] in options)
+      const absent = this._options.find((option) => {
+        return option.required && !(option.longest in options)
       })
-      if (absent.length) {
-        return meta.$send(format(messages.REQUIRED_OPTIONS, absent.join(', ')))
+      if (absent) {
+        return meta.$send(format(messages.REQUIRED_OPTIONS, absent.rawName))
       }
     }
 
-    if (this._checkUser(meta, options)) {
-      showCommandLog('execute %s', this.name)
-      return this._action(config, ...args)
+    // check authority and usage
+    if (!await this._checkUser(meta, options)) return
+
+    // execute command
+    showCommandLog('execute %s', this.name)
+    this.app.emitEvent(meta, 'command', argv)
+
+    let skipped = false
+    argv.next = (_next) => {
+      skipped = true
+      return next(_next)
+    }
+
+    try {
+      await this._action(argv, ...args)
+      if (!skipped) this.app.emitEvent(meta, 'after-command', argv)
+    } catch (error) {
+      this.app.receiver.emit('error/command', error)
+      this.app.receiver.emit('error', error)
     }
   }
 
@@ -247,7 +316,12 @@ export class Command {
     }
     for (const option of this._options) {
       if (option.camels[0] in options) {
-        if (option.authority > user.authority) return meta.$send(messages.LOW_AUTHORITY)
+        if (option.authority > user.authority) {
+          if (this.config.showWarning) {
+            await meta.$send(messages.LOW_AUTHORITY)
+          }
+          return
+        }
         if (option.notUsage) isUsage = false
       }
     }
@@ -273,7 +347,9 @@ export class Command {
         }
 
         if (usage.count >= maxUsage && isUsage) {
-          await meta.$send(messages.USAGE_EXHAUSTED)
+          if (this.config.showWarning) {
+            await meta.$send(messages.USAGE_EXHAUSTED)
+          }
           return
         } else {
           usage.count++

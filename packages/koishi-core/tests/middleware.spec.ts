@@ -1,39 +1,17 @@
-import { SERVER_URL, CLIENT_PORT, createServer, postMeta } from 'koishi-test-utils'
-import { App, Meta } from '../src'
-import { Server } from 'http'
-import { sleep } from 'koishi-utils'
-import * as errors from '../src/errors'
+import { MockedApp } from 'koishi-test-utils'
+import { errors, MessageMeta } from 'koishi-core'
+import { sleep, noop } from 'koishi-utils'
+import { format } from 'util'
 
-let app: App
-let server: Server
+const app = new MockedApp()
 
-jest.setTimeout(1000)
-
-const shared: Meta = {
+const shared: MessageMeta = {
   postType: 'message',
   userId: 10000,
   selfId: 514,
 }
 
-beforeAll(() => {
-  server = createServer()
-
-  app = new App({
-    type: 'http',
-    port: CLIENT_PORT,
-    server: SERVER_URL,
-    selfId: 514,
-  })
-
-  app.start()
-})
-
-afterAll(() => {
-  server.close()
-  app.stop()
-})
-
-describe('middleware', () => {
+describe('Middleware API', () => {
   let flag: number
 
   beforeEach(() => flag = 0)
@@ -58,14 +36,14 @@ describe('middleware', () => {
       return next(next => (flag |= 1 << 5, next(() => (flag |= 1 << 6, undefined))))
     })
 
-    app.premiddleware((_, next) => {
+    app.prependMiddleware((_, next) => {
       flag |= 1 << 0
       return next()
     })
   })
 
   test('middleware-1', async () => {
-    await postMeta({
+    await app.receive({
       ...shared,
       messageType: 'private',
       subType: 'friend',
@@ -76,7 +54,7 @@ describe('middleware', () => {
   })
 
   test('middleware-2', async () => {
-    await postMeta({
+    await app.receive({
       ...shared,
       messageType: 'group',
       subType: 'normal',
@@ -88,7 +66,7 @@ describe('middleware', () => {
   })
 
   test('middleware-3', async () => {
-    await postMeta({
+    await app.receive({
       ...shared,
       messageType: 'private',
       subType: 'friend',
@@ -99,7 +77,7 @@ describe('middleware', () => {
   })
 
   test('middleware-4', async () => {
-    await postMeta({
+    await app.receive({
       ...shared,
       messageType: 'group',
       subType: 'normal',
@@ -112,16 +90,17 @@ describe('middleware', () => {
 })
 
 describe('runtime checks', () => {
-  let fn: jest.Mock
-
   beforeEach(() => {
-    fn = jest.fn()
-    // @ts-ignore
+    // @ts-ignore remove all middlewares
     app._middlewares = [[app, app._preprocess]]
-    app.receiver.on('warning', error => fn(error.message))
   })
 
   test('isolated next function', async () => {
+    const errorCallback = jest.fn()
+    const middlewareErrorCallback = jest.fn()
+    app.receiver.on('error', error => errorCallback(error.message))
+    app.receiver.on('error/middleware', error => middlewareErrorCallback(error.message))
+
     app.middleware(async (_, next) => {
       next()
     })
@@ -131,7 +110,7 @@ describe('runtime checks', () => {
       next()
     })
 
-    await postMeta({
+    await app.receive({
       ...shared,
       messageType: 'group',
       subType: 'normal',
@@ -140,6 +119,70 @@ describe('runtime checks', () => {
 
     await sleep(0)
 
-    expect(fn).toBeCalledWith(errors.ISOLATED_NEXT)
+    expect(errorCallback).toBeCalledTimes(1)
+    expect(errorCallback).toBeCalledWith(errors.ISOLATED_NEXT)
+    expect(middlewareErrorCallback).toBeCalledTimes(0)
+  })
+
+  test('middleware error', async () => {
+    const errorCallback = jest.fn()
+    const middlewareErrorCallback = jest.fn()
+    app.receiver.on('error', error => errorCallback(error.message))
+    app.receiver.on('error/middleware', error => middlewareErrorCallback(error.message))
+
+    const errorMessage = 'error message'
+    app.middleware(() => {
+      throw new Error(errorMessage)
+    })
+
+    await app.receive({
+      ...shared,
+      messageType: 'group',
+      subType: 'normal',
+      message: 'bar',
+    })
+
+    expect(errorCallback).toBeCalledTimes(1)
+    expect(errorCallback).toBeCalledWith(errorMessage)
+    expect(middlewareErrorCallback).toBeCalledTimes(1)
+    expect(middlewareErrorCallback).toBeCalledWith(errorMessage)
+  })
+
+  test('max middlewares', () => {
+    const mock = jest.fn()
+    app.receiver.on('error', mock)
+
+    const extraCalls = 7
+    for (let index = 0; index < 63 + extraCalls; ++index) {
+      app.middleware(noop)
+    }
+
+    expect(app._middlewares.length).toBe(64)
+    expect(mock).toBeCalledTimes(extraCalls)
+    expect(mock.mock.calls[0][0]).toHaveProperty('message', format(errors.MAX_MIDDLEWARES, 64))
+  })
+
+  test('max prepended middlewares', () => {
+    const mock = jest.fn()
+    app.receiver.on('error', mock)
+
+    const extraCalls = 7
+    for (let index = 0; index < 63 + extraCalls; ++index) {
+      app.prependMiddleware(noop)
+    }
+
+    expect(app._middlewares.length).toBe(64)
+    expect(mock).toBeCalledTimes(extraCalls)
+    expect(mock.mock.calls[0][0]).toHaveProperty('message', format(errors.MAX_MIDDLEWARES, 64))
+  })
+
+  test('remove middlewares', () => {
+    const fn = () => {}
+    app.middleware(fn)
+    expect(app._middlewares.length).toBe(2)
+    expect(app.removeMiddleware(fn)).toBeTruthy()
+    expect(app._middlewares.length).toBe(1)
+    expect(app.removeMiddleware(fn)).toBeFalsy()
+    expect(app._middlewares.length).toBe(1)
   })
 })

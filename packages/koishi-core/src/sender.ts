@@ -1,9 +1,24 @@
 import debug from 'debug'
 import axios from 'axios'
-import { snakeCase, camelCase } from 'koishi-utils'
-import { GroupMemberInfo, StatusInfo, VersionInfo, Meta, FriendInfo, GroupInfo, Credentials, AccountInfo, StrangerInfo, ListedGroupInfo } from './meta'
+import { snakeCase, camelCase, isInteger } from 'koishi-utils'
 import { WsClient } from './server'
 import { App } from './app'
+
+import {
+  GroupMemberInfo,
+  StatusInfo,
+  VersionInfo,
+  Meta,
+  FriendInfo,
+  GroupInfo,
+  Credentials,
+  AccountInfo,
+  StrangerInfo,
+  ListedGroupInfo,
+  VipInfo,
+  GroupNoticeInfo,
+  ContextType,
+} from './meta'
 
 const showSenderLog = debug('koishi:sender')
 
@@ -25,245 +40,474 @@ export interface CQResponse {
   echo?: number
 }
 
+interface MessageResponse {
+  messageId: number
+}
+
 export class Sender {
-  private _messages = new Array(61).fill(0)
-  private _timer: NodeJS.Timeout
-  private _post: (api: string, args?: object) => Promise<CQResponse>
+  protected _get: (action: string, params: Record<string, any>) => Promise<CQResponse>
 
   constructor (public app: App) {
     const { type } = app.options
     if (type === 'http') {
-      const headers = {} as any
-      if (app.options.token) {
-        headers.Authorization = `Token ${app.options.token}`
-      }
-      this._post = async (action, params = {}) => {
+      this._get = async (action, params) => {
+        const headers = {} as any
+        if (app.options.token) {
+          headers.Authorization = `Token ${app.options.token}`
+        }
         const uri = new URL(action, this.app.options.server).href
-        const { data } = await axios.get<CQResponse>(uri, { params, headers })
+        const { data } = await axios.get(uri, { params, headers })
         return data
       }
     } else if (type === 'ws') {
-      const server = app.server as WsClient
-      this._post = (action, params = {}) => server.send({ action, params })
+      this._get = (action, params) => {
+        const server = app.server as WsClient
+        return server.send({ action, params })
+      }
     }
   }
 
-  private async post (action: string, params?: object) {
+  async get <T = any> (action: string, params: Record<string, any> = {}, silent = false): Promise<T> {
     showSenderLog('request %s %o', action, params)
-    const response = await this._post(action, snakeCase(params))
+    const response = await this._get(action, snakeCase(params))
     showSenderLog('response %o', response)
     const { data, retcode } = response
-    if (retcode === 0) {
+    if (retcode === 0 && !silent) {
       return camelCase(data)
-    } else {
+    } else if (retcode < 0 && !silent) {
+      throw new SenderError(params, action, retcode)
+    } else if (retcode > 1) {
       throw new SenderError(params, action, retcode)
     }
   }
 
-  start () {
-    this._timer = setInterval(() => {
-      this._messages.unshift(0)
-      this._messages.splice(-1, 1)
-    }, 1000)
-  }
-
-  stop () {
-    clearInterval(this._timer)
-  }
-
-  async sendContextMsg (contextId: string, message: string, autoEscape?: boolean) {
-    const type = contextId[0]
-    const id = parseInt(contextId.slice(1))
-    switch (type) {
-      case 'g': return this.sendGroupMsg(id, message, autoEscape)
-      case 'p': return this.sendPrivateMsg(id, message, autoEscape)
-      case 'd': return this.sendDiscussMsg(id, message, autoEscape)
+  async getAsync (action: string, params: Record<string, any> = {}): Promise<void> {
+    if (this.app.server.versionLessThan(4)) {
+      await this.get(action, params, true)
+    } else {
+      await this.get(action + '_async', params)
     }
+  }
+
+  private _assertInteger (name: string, value: any) {
+    if (value === undefined) throw new Error('missing argument: ' + name)
+    if (!isInteger(value)) throw new Error('invalid argument: ' + name)
+  }
+
+  private _assertElement (name: string, value: any, array: any[]) {
+    if (value === undefined) throw new Error('missing argument: ' + name)
+    if (!array.includes(value)) throw new Error('invalid argument: ' + name)
+  }
+
+  private _assertVersion (label: string, major: number, minor: number, patch: number = 0) {
+    if (this.app.server.versionLessThan(major, minor, patch)) {
+      throw new Error(`${label} requires CQHTTP version >= ${major}.${minor}.${patch}`)
+    }
+  }
+
+  _createSendMeta ($ctxType: ContextType, $ctxId: number, message: string) {
+    const sendType = $ctxType === 'user' ? 'private' : $ctxType as any
+    return {
+      $ctxId,
+      $ctxType,
+      message,
+      sendType,
+      postType: 'send',
+      [$ctxType + 'Id']: $ctxId,
+    } as Meta<'send'>
   }
 
   async sendGroupMsg (groupId: number, message: string, autoEscape?: boolean) {
-    if (!groupId || !message) return
-    const response = await this.post('send_group_msg', { groupId, message, autoEscape })
-    const meta: Meta<'send'> = {
-      $path: `/group/${groupId}/send`,
-      postType: 'send',
-      sendType: 'group',
-      message,
-      groupId,
-    }
-    await this.app.dispatchMeta(meta)
-    return response.messageId as number
+    this._assertInteger('groupId', groupId)
+    if (!message) return
+    const meta = this._createSendMeta('group', groupId, message)
+    this.app.emitEvent(meta, 'before-send', meta)
+    const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message, autoEscape })
+    meta.messageId = messageId
+    this.app.emitEvent(meta, 'send', meta)
+    return messageId
+  }
+
+  async sendGroupMsgAsync (groupId: number, message: string, autoEscape?: boolean) {
+    this._assertInteger('groupId', groupId)
+    if (!message) return
+    await this.get('send_group_msg_async', { groupId, message, autoEscape })
   }
 
   async sendDiscussMsg (discussId: number, message: string, autoEscape?: boolean) {
-    if (!discussId || !message) return
-    this._messages[0] += 1
-    const response = await this.post('send_discuss_msg', { discussId, message, autoEscape })
-    const meta: Meta<'send'> = {
-      $path: `/discuss/${discussId}/send`,
-      postType: 'send',
-      sendType: 'discuss',
-      message,
-      discussId,
-    }
-    await this.app.dispatchMeta(meta)
-    return response.messageId as number
+    this._assertInteger('discussId', discussId)
+    if (!message) return
+    const meta = this._createSendMeta('discuss', discussId, message)
+    this.app.emitEvent(meta, 'before-send', meta)
+    const { messageId } = await this.get<MessageResponse>('send_discuss_msg', { discussId, message, autoEscape })
+    meta.messageId = messageId
+    this.app.emitEvent(meta, 'send', meta)
+    return messageId
+  }
+
+  async sendDiscussMsgAsync (discussId: number, message: string, autoEscape?: boolean) {
+    this._assertInteger('discussId', discussId)
+    if (!message) return
+    await this.get('send_discuss_msg_async', { discussId, message, autoEscape })
   }
 
   async sendPrivateMsg (userId: number, message: string, autoEscape?: boolean) {
-    if (!userId || !message) return
-    this._messages[0] += 1
-    const response = await this.post('send_private_msg', { userId, message, autoEscape })
-    const meta: Meta<'send'> = {
-      $path: `/user/${userId}/send`,
-      postType: 'send',
-      sendType: 'private',
-      message,
-      userId,
-    }
-    await this.app.dispatchMeta(meta)
-    return response.messageId as number
+    this._assertInteger('userId', userId)
+    if (!message) return
+    const meta = this._createSendMeta('user', userId, message)
+    this.app.emitEvent(meta, 'before-send', meta)
+    const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message, autoEscape })
+    meta.messageId = messageId
+    this.app.emitEvent(meta, 'send', meta)
+    return messageId
+  }
+
+  async sendPrivateMsgAsync (userId: number, message: string, autoEscape?: boolean) {
+    this._assertInteger('userId', userId)
+    if (!message) return
+    await this.get('send_private_msg_async', { userId, message, autoEscape })
   }
 
   async deleteMsg (messageId: number) {
-    await this.post('delete_msg', { messageId })
+    this._assertInteger('messageId', messageId)
+    this._assertVersion('sender.deleteMsg()', 3, 3)
+    await this.get('delete_msg', { messageId })
+  }
+
+  async deleteMsgAsync (messageId: number) {
+    this._assertInteger('messageId', messageId)
+    this._assertVersion('sender.deleteMsgAsync()', 3, 3)
+    return this.getAsync('delete_msg', { messageId })
   }
 
   async sendLike (userId: number, times = 1) {
-    await this.post('send_like', { userId, times })
+    this._assertInteger('userId', userId)
+    this._assertInteger('times', times)
+    await this.get('send_like', { userId, times })
   }
 
-  async setGroupKick (groupId: number, userId: number, rejectAddRequest = false) {
-    await this.post('set_group_kick', { groupId, userId, rejectAddRequest })
+  async sendLikeAsync (userId: number, times = 1) {
+    this._assertInteger('userId', userId)
+    this._assertInteger('times', times)
+    return this.getAsync('send_like', { userId, times })
   }
 
-  async setGroupBan (groupId: number, userId: number, duration = 36 * 60) {
-    await this.post('set_group_ban', { groupId, userId, duration })
+  async setGroupKick (groupId: number, userId: number, rejectAddRequest?: boolean) {
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    await this.get('set_group_kick', { groupId, userId, rejectAddRequest })
   }
 
-  setGroupAnonymousBan (groupId: number, anonymous: object, duration: number): Promise<void>
-  setGroupAnonymousBan (groupId: number, flag: string, duration: number): Promise<void>
-  async setGroupAnonymousBan (groupId: number, meta: object | string, duration = 36 * 60) {
+  async setGroupKickAsync (groupId: number, userId: number, rejectAddRequest?: boolean) {
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    return this.getAsync('set_group_kick', { groupId, userId, rejectAddRequest })
+  }
+
+  async setGroupBan (groupId: number, userId: number, duration?: number) {
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    await this.get('set_group_ban', { groupId, userId, duration })
+  }
+
+  async setGroupBanAsync (groupId: number, userId: number, duration?: number) {
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    return this.getAsync('set_group_ban', { groupId, userId, duration })
+  }
+
+  setGroupAnonymousBan (groupId: number, anonymous: object, duration?: number): Promise<void>
+  setGroupAnonymousBan (groupId: number, flag: string, duration?: number): Promise<void>
+  async setGroupAnonymousBan (groupId: number, meta: object | string, duration?: number) {
+    this._assertInteger('groupId', groupId)
+    if (!meta) throw new Error('missing argument: anonymous or flag')
     const args = { groupId, duration } as any
-    args[typeof meta === 'string' ? 'flag' : 'anomymous'] = meta
-    await this.post('set_group_anonymous_ban', args)
+    args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
+    await this.get('set_group_anonymous_ban', args)
+  }
+
+  setGroupAnonymousBanAsync (groupId: number, anonymous: object, duration?: number): Promise<void>
+  setGroupAnonymousBanAsync (groupId: number, flag: string, duration?: number): Promise<void>
+  async setGroupAnonymousBanAsync (groupId: number, meta: object | string, duration?: number) {
+    this._assertInteger('groupId', groupId)
+    if (!meta) throw new Error('missing argument: anonymous or flag')
+    const args = { groupId, duration } as any
+    args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
+    return this.getAsync('set_group_anonymous_ban', args)
   }
 
   async setGroupWholeBan (groupId: number, enable = true) {
-    await this.post('set_group_whole_ban', { groupId, enable })
+    this._assertInteger('groupId', groupId)
+    await this.get('set_group_whole_ban', { groupId, enable })
   }
 
-  async setGroupAdmin (groupId: number, userId: number, enable: boolean) {
-    await this.post('set_group_admin', { groupId, userId, enable })
+  async setGroupWholeBanAsync (groupId: number, enable = true) {
+    this._assertInteger('groupId', groupId)
+    return this.getAsync('set_group_whole_ban', { groupId, enable })
   }
 
-  async setGroupAnonymous (groupId: number, enable: boolean) {
-    await this.post('set_group_anonymous', { groupId, enable })
+  async setGroupAdmin (groupId: number, userId: number, enable = true) {
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    await this.get('set_group_admin', { groupId, userId, enable })
+  }
+
+  async setGroupAdminAsync (groupId: number, userId: number, enable = true) {
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    return this.getAsync('set_group_admin', { groupId, userId, enable })
+  }
+
+  async setGroupAnonymous (groupId: number, enable = true) {
+    this._assertInteger('groupId', groupId)
+    await this.get('set_group_anonymous', { groupId, enable })
+  }
+
+  async setGroupAnonymousAsync (groupId: number, enable = true) {
+    this._assertInteger('groupId', groupId)
+    return this.getAsync('set_group_anonymous', { groupId, enable })
   }
 
   async setGroupCard (groupId: number, userId: number, card = '') {
-    await this.post('set_group_admin', { groupId, userId, card })
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    await this.get('set_group_card', { groupId, userId, card })
   }
 
-  async setGroupLeave (groupId: number, isDismiss = false) {
-    await this.post('set_group_leave', { groupId, isDismiss })
+  async setGroupCardAsync (groupId: number, userId: number, card = '') {
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    return this.getAsync('set_group_card', { groupId, userId, card })
   }
 
   async setGroupSpecialTitle (groupId: number, userId: number, specialTitle = '', duration = -1) {
-    await this.post('set_group_special_title', { groupId, userId, specialTitle, duration })
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    await this.get('set_group_special_title', { groupId, userId, specialTitle, duration })
+  }
+
+  async setGroupSpecialTitleAsync (groupId: number, userId: number, specialTitle = '', duration = -1) {
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    return this.getAsync('set_group_special_title', { groupId, userId, specialTitle, duration })
+  }
+
+  async setGroupLeave (groupId: number, isDismiss?: boolean) {
+    this._assertInteger('groupId', groupId)
+    await this.get('set_group_leave', { groupId, isDismiss })
+  }
+
+  async setGroupLeaveAsync (groupId: number, isDismiss?: boolean) {
+    this._assertInteger('groupId', groupId)
+    return this.getAsync('set_group_leave', { groupId, isDismiss })
   }
 
   async setDiscussLeave (discussId: number) {
-    await this.post('set_discuss_leave', { discussId })
+    this._assertInteger('discussId', discussId)
+    await this.get('set_discuss_leave', { discussId })
   }
 
-  async setFriendAddRequest (flag: string, approve = true, remark = '') {
-    await this.post('set_friend_add_request', { flag, approve, remark })
+  async setDiscussLeaveAsync (discussId: number) {
+    this._assertInteger('discussId', discussId)
+    return this.getAsync('set_discuss_leave', { discussId })
   }
 
-  async setGroupAddRequest (flag: string, subType: 'add' | 'invite', approve = true, reason = '') {
-    await this.post('set_group_add_request', { flag, subType, approve, reason })
+  setFriendAddRequest (flag: string, approve?: boolean): Promise<void>
+  setFriendAddRequest (flag: string, remark?: string): Promise<void>
+  async setFriendAddRequest (flag: string, info: string | boolean = true) {
+    if (!flag) throw new Error('missing argument: flag')
+    if (typeof info === 'string') {
+      await this.get('set_friend_add_request', { flag, approve: true, remark: info })
+    } else {
+      await this.get('set_friend_add_request', { flag, approve: info })
+    }
   }
 
-  getLoginInfo (): Promise<AccountInfo> {
-    return this.post('get_login_info')
+  setFriendAddRequestAsync (flag: string, approve?: boolean): Promise<void>
+  setFriendAddRequestAsync (flag: string, remark?: string): Promise<void>
+  async setFriendAddRequestAsync (flag: string, info: string | boolean = true) {
+    if (!flag) throw new Error('missing argument: flag')
+    if (typeof info === 'string') {
+      return this.getAsync('set_friend_add_request', { flag, approve: true, remark: info })
+    } else {
+      return this.getAsync('set_friend_add_request', { flag, approve: info })
+    }
   }
 
-  getStrangerInfo (userId: number, noCache = false): Promise<StrangerInfo> {
-    return this.post('get_stranger_info', { userId, noCache })
+  setGroupAddRequest (flag: string, subType: 'add' | 'invite', approve?: boolean): Promise<void>
+  setGroupAddRequest (flag: string, subType: 'add' | 'invite', reason?: string): Promise<void>
+  async setGroupAddRequest (flag: string, subType: 'add' | 'invite', info: string | boolean = true) {
+    if (!flag) throw new Error('missing argument: flag')
+    this._assertElement('subType', subType, ['add', 'invite'])
+    if (typeof info === 'string') {
+      await this.get('set_group_add_request', { flag, subType, approve: false, reason: info })
+    } else {
+      await this.get('set_group_add_request', { flag, subType, approve: info })
+    }
   }
 
-  getFriendList (): Promise<FriendInfo[]> {
-    return this.post('get_friend_list')
+  setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', approve?: boolean): Promise<void>
+  setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', reason?: string): Promise<void>
+  async setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', info: string | boolean = true) {
+    if (!flag) throw new Error('missing argument: flag')
+    this._assertElement('subType', subType, ['add', 'invite'])
+    if (typeof info === 'string') {
+      return this.getAsync('set_group_add_request', { flag, subType, approve: false, reason: info })
+    } else {
+      return this.getAsync('set_group_add_request', { flag, subType, approve: info })
+    }
   }
 
-  getGroupList (): Promise<ListedGroupInfo[]> {
-    return this.post('get_group_list')
+  async getLoginInfo (): Promise<AccountInfo> {
+    return this.get('get_login_info')
   }
 
-  getGroupInfo (groupId: string, noCache = false): Promise<GroupInfo> {
-    return this.post('get_group_info', { groupId, noCache })
+  async getVipInfo (): Promise<VipInfo> {
+    this._assertVersion('sender.getVipInfo()', 4, 3, 1)
+    return this.get('_get_vip_info')
   }
 
-  getGroupMemberInfo (groupId: number, userId: number, noCache = false): Promise<GroupMemberInfo> {
-    return this.post('get_group_member_info', { groupId, userId, noCache })
+  async getStrangerInfo (userId: number, noCache?: boolean): Promise<StrangerInfo> {
+    this._assertInteger('userId', userId)
+    return this.get('get_stranger_info', { userId, noCache })
   }
 
-  getGroupMemberList (groupId: number): Promise<GroupMemberInfo[]> {
-    return this.post('get_group_member_list', { groupId })
+  async getFriendList (): Promise<FriendInfo[]> {
+    this._assertVersion('sender.getFriendList()', 4, 12)
+    return this.get('get_friend_list')
+  }
+
+  async getGroupInfo (groupId: number, noCache?: boolean): Promise<GroupInfo> {
+    this._assertInteger('groupId', groupId)
+    this._assertVersion('sender.getGroupInfo()', 4, 0, 1)
+    return this.app.server.versionLessThan(4, 12)
+      ? this.get('_get_group_info', { groupId, noCache })
+      : this.get('get_group_info', { groupId, noCache })
+  }
+
+  async getGroupList (): Promise<ListedGroupInfo[]> {
+    return this.get('get_group_list')
+  }
+
+  async getGroupMemberInfo (groupId: number, userId: number, noCache?: boolean): Promise<GroupMemberInfo> {
+    this._assertInteger('groupId', groupId)
+    this._assertInteger('userId', userId)
+    return this.get('get_group_member_info', { groupId, userId, noCache })
+  }
+
+  async getGroupMemberList (groupId: number): Promise<GroupMemberInfo[]> {
+    this._assertInteger('groupId', groupId)
+    return this.get('get_group_member_list', { groupId })
+  }
+
+  async getGroupNotice (groupId: number): Promise<GroupNoticeInfo[]> {
+    this._assertInteger('groupId', groupId)
+    this._assertVersion('sender.getGroupNotice()', 4, 9)
+    return this.get('_get_group_notice', { groupId })
+  }
+
+  async sendGroupNotice (groupId: number, title: string, content: string) {
+    this._assertInteger('groupId', groupId)
+    if (!title) throw new Error('missing argument: title')
+    if (!content) throw new Error('missing argument: content')
+    this._assertVersion('sender.sendGroupNotice()', 4, 9)
+    await this.get('_send_group_notice', { groupId, title, content })
+  }
+
+  async sendGroupNoticeAsync (groupId: number, title: string, content: string) {
+    this._assertInteger('groupId', groupId)
+    if (!title) throw new Error('missing argument: title')
+    if (!content) throw new Error('missing argument: content')
+    this._assertVersion('sender.sendGroupNotice()', 4, 9)
+    return this.getAsync('_send_group_notice', { groupId, title, content })
   }
 
   async getCookies (domain?: string): Promise<string> {
-    const { cookies } = await this.post('get_cookies', { domain })
+    const { cookies } = await this.get('get_cookies', { domain })
     return cookies
   }
 
   async getCsrfToken (): Promise<number> {
-    const { token } = await this.post('get_csrf_token')
+    const { token } = await this.get('get_csrf_token')
     return token
   }
 
-  getCredentials (): Promise<Credentials> {
-    return this.post('get_credentials')
+  getCredentials (domain?: string) {
+    return this.get<Credentials>('get_credentials', { domain })
   }
 
-  async getRecord (file: string, outFormat: RecordFormat, fullPath = false) {
-    const response = await this.post('get_record', { file, outFormat, fullPath })
+  async getRecord (file: string, outFormat: RecordFormat, fullPath?: boolean) {
+    if (!file) throw new Error('missing argument: file')
+    this._assertElement('outFormat', outFormat, ['mp3', 'amr', 'wma', 'm4a', 'spx', 'ogg', 'wav', 'flac'])
+    this._assertVersion('sender.getRecord()', 3, 3)
+    const response = await this.get('get_record', { file, outFormat, fullPath })
     return response.file as string
   }
 
   async getImage (file: string) {
-    const response = await this.post('get_image', { file })
+    if (!file) throw new Error('missing argument: file')
+    this._assertVersion('sender.getImage()', 4, 8)
+    const response = await this.get('get_image', { file })
     return response.file as string
   }
 
-  async canSendImage () {
-    const { yes } = await this.post('can_send_image')
-    return yes as boolean
-  }
-
   async canSendRecord () {
-    const { yes } = await this.post('can_send_record')
+    this._assertVersion('sender.canSendRecord()', 4, 8)
+    const { yes } = await this.get('can_send_record')
     return yes as boolean
   }
 
-  getStatus (): Promise<StatusInfo> {
-    return this.post('get_status')
+  async canSendImage () {
+    this._assertVersion('sender.canSendImage()', 4, 8)
+    const { yes } = await this.get('can_send_image')
+    return yes as boolean
   }
 
-  getVersionInfo (): Promise<VersionInfo> {
-    return this.post('get_version_info')
+  getStatus () {
+    return this.get<StatusInfo>('get_status')
   }
 
-  async setRestartPlugin (delay = 0) {
-    await this.post('set_restart_plugin', { delay })
+  async getVersionInfo () {
+    const data = await this.get<VersionInfo>('get_version_info')
+    const match = /^(\d+)(?:\.(\d+)(?:\.(\d+)?))?/.exec(data.pluginVersion)
+    if (match) {
+      const [, major, minor, patch] = match
+      data.pluginMajorVersion = +major
+      data.pluginMinorVersion = +minor || 0
+      data.pluginPatchVersion = +patch || 0
+    }
+    return data
+  }
+
+  async setRestart (cleanLog = false, cleanCache = false, cleanEvent = false) {
+    this._assertVersion('sender.setRestart()', 3, 0, 2)
+    await this.get('_set_restart', { cleanLog, cleanCache, cleanEvent })
+  }
+
+  async setRestartPlugin (delay?: number) {
+    this._assertVersion('sender.setRestartPlugin()', 3, 2)
+    await this.get('set_restart_plugin', { delay })
   }
 
   async cleanDataDir (dataDir: DataDirectoryType) {
-    await this.post('clean_data_dir', { dataDir })
+    this._assertElement('dataDir', dataDir, ['bface', 'image', 'record', 'show'])
+    this._assertVersion('sender.cleanDataDir()', 3, 3, 4)
+    await this.get('clean_data_dir', { dataDir })
+  }
+
+  async cleanDataDirAsync (dataDir: DataDirectoryType) {
+    this._assertElement('dataDir', dataDir, ['bface', 'image', 'record', 'show'])
+    this._assertVersion('sender.cleanDataDirAsync()', 3, 3, 4)
+    return this.getAsync('clean_data_dir', { dataDir })
   }
 
   async cleanPluginLog () {
-    await this.post('clean_plugin_log')
+    this._assertVersion('sender.cleanPluginLog()', 4, 1)
+    await this.get('clean_plugin_log')
+  }
+
+  async cleanPluginLogAsync () {
+    this._assertVersion('sender.cleanPluginLogAsync()', 4, 1)
+    await this.get('clean_plugin_log_async')
   }
 }

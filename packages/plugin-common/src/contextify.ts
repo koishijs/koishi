@@ -1,5 +1,4 @@
 import { Context, CommandConfig } from 'koishi-core'
-import { CQCode } from 'koishi-utils'
 
 export default function apply (ctx: Context, config: CommandConfig = {}) {
   ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3, ...config })
@@ -47,8 +46,6 @@ export default function apply (ctx: Context, config: CommandConfig = {}) {
         newMeta.subType = options.type || 'other'
       }
 
-      newMeta.message = message
-      newMeta.rawMessage = CQCode.unescape(message)
-      await ctx.app.dispatchMeta(newMeta)
+      return ctx.app.executeCommandLine(message, newMeta)
     })
 }

@@ -11,6 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
     - name: Check out
@@ -24,10 +25,16 @@ jobs:
     - name: Install
       run: yarn
     - name: Build
-      run: yarn build
+      run: yarn build --listEmittedFiles
     - name: Lint
       run: yarn lint
-    - name: Jest
-      run: yarn jest
+    - name: Unit Test
+      run: yarn jest --runInBand
+    - name: Report Coverage
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage/lcov.info
+        name: codecov
     - name: Publish
       run: npx ts-node build/publish

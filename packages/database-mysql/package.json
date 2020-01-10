@@ -1,6 +1,7 @@
 {
   "name": "koishi-database-mysql",
-  "version": "1.0.0-alpha.3",
+  "description": "MySQL support for Koishi",
+  "version": "1.0.3",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -20,12 +21,22 @@
     "url": "https://github.com/koishijs/koishi/issues"
   },
   "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-mysql#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "database",
+    "mysql"
+  ],
   "devDependencies": {
     "@types/mysql": "^2.15.8"
   },
   "dependencies": {
-    "koishi-core": "^1.0.0-alpha.3",
-    "koishi-utils": "^1.0.0-alpha.1",
+    "koishi-core": "^1.2.0",
+    "koishi-utils": "^1.0.2",
     "mysql": "^2.17.1"
   }
 }

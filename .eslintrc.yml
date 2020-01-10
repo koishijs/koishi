@@ -2,6 +2,11 @@ root: true
 
 parser: '@typescript-eslint/parser'
 
+parserOptions:
+  project:
+    - ./tsconfig.json
+    - ./packages/*/tsconfig.json
+
 extends: standard
 
 plugins:
@@ -25,4 +30,9 @@ rules:
   no-useless-constructor: off
   one-var: off
   operator-linebreak: off
-  '@typescript-eslint/explicit-function-return-type': off
+  space-before-function-paren: off
+  '@typescript-eslint/no-unused-expressions': warn
+  '@typescript-eslint/prefer-nullish-coalescing': warn
+  '@typescript-eslint/prefer-optional-chain': warn
+  '@typescript-eslint/space-before-function-paren': warn
+  '@typescript-eslint/type-annotation-spacing': warn

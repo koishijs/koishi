@@ -1,12 +1,12 @@
-import { contain, union, intersection, difference } from 'koishi-utils'
+import { contain, union, intersection, difference, noop } from 'koishi-utils'
+import { Command, CommandConfig, ParsedCommandLine } from './command'
 import { MessageMeta, Meta, contextTypes } from './meta'
-import { Command, CommandConfig } from './command'
 import { EventEmitter } from 'events'
 import { Sender } from './sender'
 import { App } from './app'
-import { Database } from './database'
-import * as messages from './messages'
-import * as errors from './errors'
+import { Database, UserField, GroupField } from './database'
+import { messages, errors } from './messages'
+import { format } from 'util'
 
 export type NextFunction = (next?: NextFunction) => any
 export type Middleware = (meta: MessageMeta, next: NextFunction) => any
@@ -24,17 +24,17 @@ export namespace ContextScope {
       const type = contextTypes[index]
       const sign = include ? '+' : '-'
       const idList = include || exclude
-      return `${sign}${type}:${idList.join(',')}`
+      return `${type}${sign}${idList.join(',')}`
     }).filter(a => a).join(';')
   }
 
   export function parse (identifier: string) {
     const scope = noopScope.slice()
     identifier.split(';').forEach((segment) => {
-      const capture = /^([+-])(user|group|discuss):(.+)$/.exec(segment)
+      const capture = /^(user|group|discuss)(?:([+-])(\d+(?:,\d+)*))?$/.exec(segment)
       if (!capture) throw new Error(errors.INVALID_IDENTIFIER)
-      const [_, sign, type, list] = capture
-      const idList = list.split(',').map(n => +n)
+      const [_, type, sign = '-', list] = capture
+      const idList = list ? list.split(',').map(n => +n) : []
       scope[contextTypes[type]] = sign === '+' ? [idList, null] : [null, idList]
     })
     return scope
@@ -48,18 +48,22 @@ export class Context {
   public app: App
   public sender: Sender
   public database: Database
-  public receiver = new EventEmitter()
+  public receiver: Receiver = new EventEmitter()
 
-  constructor (public readonly identifier: string, private readonly _scope: ContextScope) {}
+  constructor (public readonly identifier: string, private readonly _scope: ContextScope) {
+    // prevent event emitter from crashing
+    // https://nodejs.org/api/events.html#events_error_events
+    this.receiver.on('error', noop)
+  }
 
   inverse () {
-    return this.app._createContext(this._scope.map(([include, exclude]) => {
+    return this.app.createContext(this._scope.map(([include, exclude]) => {
       return include ? [null, include.slice()] : [exclude.slice(), []]
     }))
   }
 
   plus (ctx: Context) {
-    return this.app._createContext(this._scope.map(([include1, exclude1], index) => {
+    return this.app.createContext(this._scope.map(([include1, exclude1], index) => {
       const [include2, exclude2] = ctx._scope[index]
       return include1
         ? include2 ? [union(include1, include2), null] : [null, difference(exclude2, include1)]
@@ -68,7 +72,7 @@ export class Context {
   }
 
   minus (ctx: Context) {
-    return this.app._createContext(this._scope.map(([include1, exclude1], index) => {
+    return this.app.createContext(this._scope.map(([include1, exclude1], index) => {
       const [include2, exclude2] = ctx._scope[index]
       return include1
         ? [include2 ? difference(include1, include2) : intersection(include1, exclude2), null]
@@ -77,7 +81,7 @@ export class Context {
   }
 
   intersect (ctx: Context) {
-    return this.app._createContext(this._scope.map(([include1, exclude1], index) => {
+    return this.app.createContext(this._scope.map(([include1, exclude1], index) => {
       const [include2, exclude2] = ctx._scope[index]
       return include1
         ? [include2 ? intersection(include1, include2) : difference(include1, exclude2), null]
@@ -86,8 +90,8 @@ export class Context {
   }
 
   match (meta: Meta) {
-    const [include, exclude] = this._scope[+contextTypes[meta.$type]]
-    return include ? include.includes(meta.$subId) : !exclude.includes(meta.$subId)
+    const [include, exclude] = this._scope[contextTypes[meta.$ctxType]]
+    return include ? include.includes(meta.$ctxId) : !exclude.includes(meta.$ctxId)
   }
 
   contain (ctx: Context) {
@@ -108,20 +112,29 @@ export class Context {
       plugin(app, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
       plugin.apply(app, options)
-      if ('name' in plugin) {
-        this.app.receiver.emit('plugin', plugin.name)
-      }
+    } else {
+      throw new Error(errors.INVALID_PLUGIN)
     }
     return this
   }
 
   middleware (middleware: Middleware) {
-    this.app._middlewares.push([this, middleware])
+    const { maxMiddlewares } = this.app.options
+    if (this.app._middlewares.length >= maxMiddlewares) {
+      this.app.receiver.emit('error', new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
+    } else {
+      this.app._middlewares.push([this, middleware])
+    }
     return this
   }
 
-  premiddleware (middleware: Middleware) {
-    this.app._middlewares.unshift([this, middleware])
+  prependMiddleware (middleware: Middleware) {
+    const { maxMiddlewares } = this.app.options
+    if (this.app._middlewares.length >= maxMiddlewares) {
+      this.app.receiver.emit('error', new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
+    } else {
+      this.app._middlewares.unshift([this, middleware])
+    }
     return this
   }
 
@@ -137,12 +150,14 @@ export class Context {
   command (rawName: string, description: string, config?: CommandConfig): Command
   command (rawName: string, ...args: [CommandConfig?] | [string, CommandConfig?]) {
     const description = typeof args[0] === 'string' ? args.shift() as string : undefined
-    const config = { description, ...args[0] as CommandConfig }
+    const config = args[0] as CommandConfig || {}
+    if (description !== undefined) config.description = description
     const [path] = rawName.split(' ', 1)
     const declaration = rawName.slice(path.length)
+    const segments = path.toLowerCase().split(/(?=[\\./])/)
 
     let parent: Command = null
-    path.toLowerCase().split(/(?=[\\./])/).forEach((segment) => {
+    segments.forEach((segment) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
       let command = this.app._commandMap[name]
@@ -177,6 +192,7 @@ export class Context {
     })
 
     Object.assign(parent.config, config)
+    if (config.noHelpOption) parent.removeOption('help')
     return parent
   }
 
@@ -188,7 +204,7 @@ export class Context {
 
   getCommand (name: string, meta: MessageMeta) {
     const command = this._getCommandByRawName(name)
-    return command && command.context.match(meta) && !command.getConfig('disable', meta) && command
+    if (command?.context.match(meta) && !command.getConfig('disable', meta)) return command
   }
 
   runCommand (name: string, meta: MessageMeta, args: string[] = [], options: Record<string, any> = {}, rest = '') {
@@ -196,7 +212,8 @@ export class Context {
     if (!command || !command.context.match(meta) || command.getConfig('disable', meta)) {
       return meta.$send(messages.COMMAND_NOT_FOUND)
     }
-    return command.execute({ meta, command, args, options, rest, unknown: [] })
+    const unknown = Object.keys(options).filter(key => !command._optsDef[key])
+    return command.execute({ meta, command, args, options, rest, unknown })
   }
 
   end () {
@@ -204,59 +221,62 @@ export class Context {
   }
 }
 
-type UserMessageEvent = 'message' | 'message/friend' | 'message/group' | 'message/discuss' | 'message/other'
-type GroupMessageEvent = 'message' | 'message/normal' | 'message/notice' | 'message/anonymous'
-type DiscussMessageEvent = 'message'
-type UserNoticeEvent = 'friend_add'
-type GroupNoticeEvent = 'group_increase' | 'group_increase/approve' | 'group_increase/invite'
-  | 'group_decrease' | 'group_decrease/leave' | 'group_decrease/kick' | 'group_decrease/kick_me'
-  | 'group_upload' | 'group_admin' | 'group_admin/unset' | 'group_admin/set' | 'group_ban'
-type UserRequestEvent = 'request'
-type GroupRequestEvent = 'request' | 'request/add' | 'request/invite'
-
-export type MessageEvent = UserMessageEvent | GroupMessageEvent | DiscussMessageEvent
-export type NoticeEvent = UserNoticeEvent | GroupNoticeEvent
-export type RequestEvent = UserRequestEvent | GroupRequestEvent
-export type MetaEventEvent = 'meta_event' | 'meta_event/heartbeat'
-  | 'meta_event/lifecycle' | 'meta_event/lifecycle/enable' | 'meta_event/lifecycle/disable'
-
-interface UserReceiver extends EventEmitter {
-  on (event: 'send', listener: (meta: Meta<'send'>) => any): this
-  on (event: UserNoticeEvent, listener: (meta: Meta<'notice'>) => any): this
-  on (event: UserMessageEvent, listener: (meta: Meta<'message'>) => any): this
-  on (event: UserRequestEvent, listener: (meta: Meta<'request'>) => any): this
-  once (event: 'send', listener: (meta: Meta<'send'>) => any): this
-  once (event: UserNoticeEvent, listener: (meta: Meta<'notice'>) => any): this
-  once (event: UserMessageEvent, listener: (meta: Meta<'message'>) => any): this
-  once (event: UserRequestEvent, listener: (meta: Meta<'request'>) => any): this
+export interface EventMap {
+  'message' (meta: Meta<'message'>): any
+  'message/normal' (meta: Meta<'message'>): any
+  'message/notice' (meta: Meta<'message'>): any
+  'message/anonymous' (meta: Meta<'message'>): any
+  'message/friend' (meta: Meta<'message'>): any
+  'message/group' (meta: Meta<'message'>): any
+  'message/discuss' (meta: Meta<'message'>): any
+  'message/other' (meta: Meta<'message'>): any
+  'friend-add' (meta: Meta<'notice'>): any
+  'group-increase' (meta: Meta<'notice'>): any
+  'group-increase/invite' (meta: Meta<'notice'>): any
+  'group-increase/approve' (meta: Meta<'notice'>): any
+  'group-decrease' (meta: Meta<'notice'>): any
+  'group-decrease/leave' (meta: Meta<'notice'>): any
+  'group-decrease/kick' (meta: Meta<'notice'>): any
+  'group-decrease/kick-me' (meta: Meta<'notice'>): any
+  'group-upload' (meta: Meta<'notice'>): any
+  'group-admin' (meta: Meta<'notice'>): any
+  'group-admin/set' (meta: Meta<'notice'>): any
+  'group-admin/unset' (meta: Meta<'notice'>): any
+  'group-ban' (meta: Meta<'notice'>): any
+  'group-ban/ban' (meta: Meta<'notice'>): any
+  'group-ban/lift-ban' (meta: Meta<'notice'>): any
+  'request/friend' (meta: Meta<'request'>): any
+  'request/group/add' (meta: Meta<'request'>): any
+  'request/group/invite' (meta: Meta<'request'>): any
+  'heartbeat' (meta: Meta<'meta_event'>): any
+  'lifecycle' (meta: Meta<'meta_event'>): any
+  'lifecycle/enable' (meta: Meta<'meta_event'>): any
+  'lifecycle/disable' (meta: Meta<'meta_event'>): any
+  'before-user' (fields: Set<UserField>, argv: ParsedCommandLine): any
+  'before-group' (fields: Set<GroupField>, argv: ParsedCommandLine): any
+  'attach' (meta: Meta<'message'>): any
+  'send' (meta: Meta<'send'>): any
+  'before-send' (meta: Meta<'send'>): any
+  'before-command' (argv: ParsedCommandLine): any
+  'command' (argv: ParsedCommandLine): any
+  'after-command' (argv: ParsedCommandLine): any
+  'error' (error: Error): any
+  'error/command' (error: Error): any
+  'error/middleware' (error: Error): any
+  'ready' (): any
+  'before-connect' (): any
+  'connect' (): any
+  'before-disconnect' (): any
+  'disconnect' (): any
 }
 
-interface GroupReceiver extends EventEmitter {
-  on (event: 'send', listener: (meta: Meta<'send'>) => any): this
-  on (event: GroupNoticeEvent, listener: (meta: Meta<'notice'>) => any): this
-  on (event: GroupMessageEvent, listener: (meta: Meta<'message'>) => any): this
-  on (event: GroupRequestEvent, listener: (meta: Meta<'request'>) => any): this
-  once (event: 'send', listener: (meta: Meta<'send'>) => any): this
-  once (event: GroupNoticeEvent, listener: (meta: Meta<'notice'>) => any): this
-  once (event: GroupMessageEvent, listener: (meta: Meta<'message'>) => any): this
-  once (event: GroupRequestEvent, listener: (meta: Meta<'request'>) => any): this
-}
+export type Events = keyof EventMap
 
-export interface DiscussReceiver extends EventEmitter {
-  on (event: 'send', listener: (meta: Meta<'send'>) => any): this
-  on (event: DiscussMessageEvent, listener: (meta: Meta<'message'>) => any): this
-  once (event: 'send', listener: (meta: Meta<'send'>) => any): this
-  once (event: DiscussMessageEvent, listener: (meta: Meta<'message'>) => any): this
-}
-
-export interface UserContext extends Context {
-  receiver: UserReceiver
-}
-
-export interface GroupContext extends Context {
-  receiver: GroupReceiver
-}
-
-export interface DiscussContext extends Context {
-  receiver: DiscussReceiver
+export interface Receiver extends EventEmitter {
+  on <K extends Events> (event: K, listener: EventMap[K]): this
+  once <K extends Events> (event: K, listener: EventMap[K]): this
+  off <K extends Events> (event: K, listener: EventMap[K]): this
+  addListener <K extends Events> (event: K, listener: EventMap[K]): this
+  removeListener <K extends Events> (event: K, listener: EventMap[K]): this
+  emit <K extends Events> (event: K, ...args: Parameters<EventMap[K]>): boolean
 }

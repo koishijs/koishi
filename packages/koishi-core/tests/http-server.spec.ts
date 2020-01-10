@@ -1,118 +1,135 @@
-import { SERVER_URL, CLIENT_PORT, createServer, postMeta } from 'koishi-test-utils'
-import { App, startAll, stopAll } from '../src'
-import { Server } from 'http'
+import { HttpServer, createHttpServer, BASE_SELF_ID } from 'koishi-test-utils'
+import { App, startAll, Meta } from 'koishi-core'
+import getPort from 'get-port'
 
-let app1: App, app2: App, app3: App
-let server: Server
+let server: HttpServer
+let app1: App, app2: App
+let port1: number, port2: number
 
-jest.setTimeout(1000)
+const app1MessageCallback = jest.fn()
+const app2MessageCallback = jest.fn()
+const app1ConnectCallback = jest.fn()
+const app2ConnectCallback = jest.fn()
+const app1ReadyCallback = jest.fn()
+const app2ReadyCallback = jest.fn()
 
-beforeAll(() => {
-  server = createServer()
+beforeAll(async () => {
+  server = await createHttpServer()
+  port1 = server.koishiPort
+  port2 = await getPort({ port: port1 + 1 })
 
-  app1 = new App({
-    type: 'http',
-    port: CLIENT_PORT,
-    server: SERVER_URL,
-    selfId: 514,
-  })
-
-  app2 = new App({
-    type: 'http',
-    port: CLIENT_PORT,
-    server: SERVER_URL,
-    selfId: 515,
-  })
-
-  app3 = new App({
-    type: 'http',
-    port: CLIENT_PORT + 1,
-    server: SERVER_URL,
-    selfId: 516,
+  app1 = server.createBoundApp()
+  app2 = server.createBoundApp({ selfId: undefined })
+  server.createBoundApp({
+    port: port2,
+    selfId: BASE_SELF_ID + 2,
     secret: 'secret',
   })
 
-  startAll()
+  app1.receiver.on('message', app1MessageCallback)
+  app2.receiver.on('message', app2MessageCallback)
+  app1.receiver.on('connect', app1ConnectCallback)
+  app2.receiver.on('connect', app2ConnectCallback)
+  app1.receiver.on('ready', app1ReadyCallback)
+  app2.receiver.on('ready', app2ReadyCallback)
+
+  await startAll()
 })
 
-afterAll(() => {
-  stopAll()
-  server.close()
-})
+afterAll(() => server.close())
 
-describe('http server', () => {
-  const mocks: jest.Mock[] = []
-  for (let index = 0; index < 3; ++index) {
-    mocks.push(jest.fn())
-  }
+const shared: Meta = {
+  postType: 'message',
+  userId: 10000,
+  messageType: 'private',
+  subType: 'friend',
+  message: 'Hello',
+}
 
-  beforeAll(() => {
-    app1.receiver.on('message', mocks[0])
-    app2.receiver.on('message', mocks[1])
-    app3.receiver.on('message', mocks[2])
+describe('HTTP Server', () => {
+  test('connect event', async () => {
+    expect(app1ConnectCallback).toBeCalledTimes(1)
+    expect(app2ConnectCallback).toBeCalledTimes(1)
+    expect(app1ReadyCallback).toBeCalledTimes(1)
+    expect(app2ReadyCallback).toBeCalledTimes(0)
   })
 
   test('request validation', async () => {
-    await expect(postMeta({
-      postType: 'message',
-      userId: 10000,
-      selfId: 516,
-      messageType: 'private',
-      subType: 'friend',
-      message: 'Hello',
-    }, CLIENT_PORT + 1)).rejects.toHaveProperty('message', 'Request failed with status code 401')
-
-    await expect(postMeta({
-      postType: 'message',
-      userId: 10000,
-      selfId: 516,
-      messageType: 'private',
-      subType: 'friend',
-      message: 'Hello',
-    }, CLIENT_PORT + 1, 'foobar')).rejects.toHaveProperty('message', 'Request failed with status code 403')
-
-    await expect(postMeta({
-      postType: 'message',
-      userId: 10000,
-      selfId: 516,
-      messageType: 'private',
-      subType: 'friend',
-      message: 'Hello',
-    }, CLIENT_PORT + 1, 'secret')).resolves.toHaveProperty('status', 200)
+    await expect(server.post({ ...shared, selfId: BASE_SELF_ID + 2 }, port2)).rejects.toHaveProperty('response.status', 401)
+    await expect(server.post({ ...shared, selfId: BASE_SELF_ID + 2 }, port2, 'foobar')).rejects.toHaveProperty('response.status', 403)
+    await expect(server.post({ ...shared, selfId: BASE_SELF_ID - 1 }, port2, 'secret')).rejects.toHaveProperty('response.status', 403)
+    await expect(server.post({ ...shared, selfId: BASE_SELF_ID + 2 }, port2, 'secret')).resolves.toHaveProperty('status', 200)
   })
 
   test('app binding', async () => {
-    await postMeta({
-      postType: 'message',
-      userId: 10000,
-      selfId: 514,
-      messageType: 'private',
-      subType: 'friend',
-      message: 'Hello',
-    })
+    await server.post(shared)
+    expect(app1MessageCallback).toBeCalledTimes(1)
+    expect(app2MessageCallback).toBeCalledTimes(0)
 
-    expect(mocks[0]).toBeCalledTimes(1)
-    expect(mocks[1]).toBeCalledTimes(0)
-
-    await postMeta({
-      postType: 'message',
-      userId: 10000,
-      selfId: 515,
-      messageType: 'private',
-      subType: 'friend',
-      message: 'Hello',
-    })
-
-    expect(mocks[0]).toBeCalledTimes(1)
-    expect(mocks[1]).toBeCalledTimes(1)
-
-    await expect(postMeta({
-      postType: 'message',
-      userId: 10000,
-      selfId: 516,
-      messageType: 'private',
-      subType: 'friend',
-      message: 'Hello',
-    })).rejects.toHaveProperty('message', 'Request failed with status code 403')
+    expect(app2.selfId).toBeFalsy()
+    await server.post({ ...shared, selfId: BASE_SELF_ID + 1 })
+    expect(app1MessageCallback).toBeCalledTimes(1)
+    expect(app2MessageCallback).toBeCalledTimes(1)
+    expect(app2.selfId).toBe(BASE_SELF_ID + 1)
+    expect(app2ReadyCallback).toBeCalledTimes(1)
   })
+})
+
+describe('Quick Operations', () => {
+  beforeAll(() => app1.options.quickOperationTimeout = 50)
+  afterAll(() => app1.options.quickOperationTimeout = 0)
+
+  const messageMeta: Meta = {
+    postType: 'message',
+    userId: 10000,
+    groupId: 20000,
+    messageType: 'group',
+    subType: 'normal',
+    message: 'Hello',
+  }
+
+  const frientRequestMeta: Meta = {
+    postType: 'request',
+    requestType: 'friend',
+    userId: 30000,
+  }
+
+  const groupRequestMeta: Meta = {
+    ...frientRequestMeta,
+    requestType: 'group',
+    subType: 'add',
+    groupId: 40000,
+  }
+
+  test('message event', async () => {
+    app1.receiver.once('message', meta => meta.$send('foo'))
+    await expect(server.post(messageMeta)).resolves.toMatchObject({ data: { reply: 'foo' } })
+
+    app1.groups.receiver.once('message', meta => meta.$ban())
+    await expect(server.post(messageMeta)).resolves.toMatchObject({ data: { ban: true } })
+
+    app1.groups.receiver.once('message', meta => meta.$delete())
+    await expect(server.post(messageMeta)).resolves.toMatchObject({ data: { delete: true } })
+
+    app1.groups.receiver.once('message', meta => meta.$kick())
+    await expect(server.post(messageMeta)).resolves.toMatchObject({ data: { kick: true } })
+  })
+
+  test('request event', async () => {
+    app1.receiver.once('request/friend', meta => meta.$approve('foo'))
+    await expect(server.post(frientRequestMeta)).resolves.toMatchObject({ data: { approve: true, remark: 'foo' } })
+
+    app1.receiver.once('request/friend', meta => meta.$reject())
+    await expect(server.post(frientRequestMeta)).resolves.toMatchObject({ data: { approve: false } })
+
+    app1.receiver.once('request/group/add', meta => meta.$approve())
+    await expect(server.post(groupRequestMeta)).resolves.toMatchObject({ data: { approve: true } })
+
+    app1.receiver.once('request/group/add', meta => meta.$reject('bar'))
+    await expect(server.post(groupRequestMeta)).resolves.toMatchObject({ data: { approve: false, reason: 'bar' } })
+  })
+
+  test('operation timeout', async () => {
+    await expect(server.post(frientRequestMeta)).resolves.toMatchObject({ data: {} })
+  }, 100)
 })

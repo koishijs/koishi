@@ -1,6 +1,6 @@
-import { App, registerDatabase, injectMethods, AbstractDatabase } from '../src'
+import { App, registerDatabase, injectMethods, createUser, extendUser, createGroup, extendGroup } from 'koishi-core'
 
-declare module '../src/database' {
+declare module 'koishi-core/dist/database' {
   interface Subdatabases {
     foo?: FooDatabase
     bar?: BarDatabase
@@ -11,12 +11,22 @@ declare module '../src/database' {
     bar?: BarOptions
   }
 
-  interface UserTable {
+  interface UserData {
+    foo: string
+    bar: number[]
+  }
+
+  interface GroupData {
+    bar: string
+    foo: number[]
+  }
+
+  interface UserMethods {
     myUserFunc1?: () => string
     myUserFunc2?: () => string
   }
 
-  interface Tables {
+  interface TableMethods {
     baz: TableBaz
   }
 }
@@ -30,7 +40,6 @@ interface FooOptions {
 }
 
 class FooDatabase {
-  public identifier = 'foo'
   constructor (public options: FooOptions) {}
 
   myFunc (value: number) {
@@ -40,23 +49,24 @@ class FooDatabase {
 
 interface BarOptions {}
 
-class BarDatabase implements AbstractDatabase {
-  public identifier = 'bar'
+class BarDatabase {
   constructor (public options: BarOptions) {}
 }
-
-registerDatabase('foo', FooDatabase)
-registerDatabase('bar', BarDatabase)
 
 injectMethods('foo', 'user', {
   myUserFunc1 () {
     return 'my-foo-user-func'
   },
+})
 
+injectMethods('foo', 'user', {
   myUserFunc2 () {
     return this.myUserFunc1() + '-' + this.myFunc(1)
   },
 })
+
+registerDatabase('foo', FooDatabase)
+registerDatabase('bar', BarDatabase)
 
 injectMethods('bar', 'user', {
   myUserFunc1 () {
@@ -107,7 +117,8 @@ describe('multiple databases', () => {
     expect(() => new App({
       database: {
         foo: { value: 1 },
-        bar: {},
+        // make coverage happy
+        bar: { identifier: 'id' },
       },
     })).toThrow()
   })
@@ -135,5 +146,35 @@ describe('multiple databases', () => {
     expect(app.database.myUserFunc1()).toBe('my-foo-user-func')
     expect(app.database.myUserFunc2()).toBe('my-foo-user-func-2')
     expect(app.database.myBazFunc()).toBe('my-bar-baz-func')
+  })
+})
+
+describe('extend fields', () => {
+  test('extend user fields', () => {
+    const id = 123
+    const authority = 4
+    const user = createUser(id, authority)
+
+    const extension = { foo: 'foo', bar: [0] }
+    extendUser(() => ({ ...extension }))
+
+    expect(createUser(id, authority)).toMatchObject({
+      ...user,
+      ...extension,
+    })
+  })
+
+  test('extend group fields', () => {
+    const id = 12345
+    const assignee = 54321
+    const user = createGroup(id, assignee)
+
+    const extension = { bar: 'bar', foo: [0] }
+    extendGroup(() => ({ ...extension }))
+
+    expect(createGroup(id, assignee)).toMatchObject({
+      ...user,
+      ...extension,
+    })
   })
 })

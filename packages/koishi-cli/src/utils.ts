@@ -1,19 +1,19 @@
-import chalk from 'chalk'
+import kleur from 'kleur'
 
 export namespace logger {
   export function info (...args: any[]) {
-    console.log(`${chalk.blueBright('info')}`, ...args)
+    console.log(`${kleur.blue('info')}`, ...args)
   }
 
   export function error (...args: any[]) {
-    console.log(`${chalk.redBright('error')}`, ...args)
+    console.log(`${kleur.red('error')}`, ...args)
   }
 
   export function warning (...args: any[]) {
-    console.log(`${chalk.yellowBright('warning')}`, ...args)
+    console.log(`${kleur.yellow('warning')}`, ...args)
   }
 
   export function success (...args: any[]) {
-    console.log(`${chalk.greenBright('success')}`, ...args)
+    console.log(`${kleur.green('success')}`, ...args)
   }
 }

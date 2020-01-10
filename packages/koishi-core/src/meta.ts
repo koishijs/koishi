@@ -1,4 +1,4 @@
-import { GroupData, User } from './database'
+import { User, Group } from './database'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
 
@@ -29,14 +29,32 @@ export enum contextTypes {
 export type MessageMeta = Meta<'message'>
 export type ContextType = keyof typeof contextTypes
 
+export interface ResponsePayload {
+  delete?: boolean
+  ban?: boolean
+  banDuration?: number
+  kick?: boolean
+  reply?: string
+  autoEscape?: boolean
+  atSender?: boolean
+  approve?: boolean
+  remark?: string
+  reason?: string
+}
+
 /** CQHTTP Meta Information */
 export interface Meta <T extends PostType = PostType> {
-  $path?: string
   $user?: User
-  $group?: GroupData
-  $type?: ContextType
-  $subId?: number
-  $send?: (message: string) => Promise<number>
+  $group?: Group
+  $ctxId?: number
+  $ctxType?: ContextType
+  $response?: (payload: ResponsePayload) => void
+  $delete?: () => Promise<void>
+  $kick?: () => Promise<void>
+  $ban?: (duration?: number) => Promise<void>
+  $approve?: (remark?: string) => Promise<void>
+  $reject?: (reason?: string) => Promise<void>
+  $send?: (message: string, autoEscape?: boolean) => Promise<void>
   postType?: T
   messageType?: MetaTypeMap[T & 'message']
   noticeType?: MetaTypeMap[T & 'notice']
@@ -135,8 +153,38 @@ export interface StatusInfo {
 
 export interface VersionInfo {
   coolqDirectory: string
-  coolqEdition: string
+  coolqEdition: 'air' | 'pro'
   pluginVersion: string
+  pluginMajorVersion: number
+  pluginMinorVersion: number
+  pluginPatchVersion: number
   pluginBuildNumber: number
-  pluginBuildConfiguration: string
+  pluginBuildConfiguration: 'debug' | 'release'
+}
+
+export interface VipInfo extends AccountInfo {
+  level: number
+  levelSpeed: number
+  vipLevel: number
+  vipGrowthSpeed: number
+  vipGrowthTotal: string
+}
+
+export interface GroupNoticeInfo {
+  cn: number
+  fid: string
+  fn: number
+  msg: {
+    text: string
+    textFace: string
+    title: string
+  }
+  pubt: number
+  readNum: number
+  settings: {
+    isShowEditCard: number
+    remindTs: number
+  }
+  u: number
+  vn: number
 }

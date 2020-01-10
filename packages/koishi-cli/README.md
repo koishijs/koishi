@@ -18,11 +18,11 @@ Koishi 高度配置化的 CLI 命令可以让你无需写代码就搭建属于�
 
 Koishi 的 API 包括下面几个部分：
 
-- [Receiver](https://koishijs.github.io/guide/receive-and-send.html#接收器-receiver)：将收到的信息转化为事件进行分发，且同时支持 HTTP 和 WebSocket
-- [Sender](https://koishijs.github.io/guide/receive-and-send.html#发送器-sender)：完美契合 CQHTTP API 的一套异步发送器，同样支持 HTTP 和 WebSocket
-- [Middleware](https://koishijs.github.io/guide/receive-and-send.html#中间件-middleware)：支持异步操作的中间件系统，可以让你高效地处理每一条信息
+- [Receiver](https://koishijs.github.io/guide/receive-and-send.html#接收器)：将收到的信息转化为事件进行分发，且同时支持 HTTP 和 WebSocket
+- [Sender](https://koishijs.github.io/guide/receive-and-send.html#发送器)：完美契合 CQHTTP API 的一套异步发送器，同样支持 HTTP 和 WebSocket
+- [Middleware](https://koishijs.github.io/guide/receive-and-send.html#中间件)：支持异步操作的中间件系统，可以让你高效地处理每一条信息
 - [Context](https://koishijs.github.io/guide/plugin-and-context.html#创建上下文)：用上下文描述了机器人可能的运行环境，让你得以对不同的群进行不同的处理
-- [Plugin](https://koishijs.github.io/guide/plugin-and-context.html#使用插件-api)：将逻辑以插件的形式封装，可以实现更好的模块化和配置化
+- [Plugin](https://koishijs.github.io/guide/plugin-and-context.html#使用插件)：将逻辑以插件的形式封装，可以实现更好的模块化和配置化
 - [Command](https://koishijs.github.io/guide/command-system.html)：Koishi 的核心功能之一，使用链式调用轻松创建指令，同时提供了大量的实用特性
 - [Database](https://koishijs.github.io/guide/using-database.html)：内置的数据库系统，但并不依赖具体的数据库实现，无论何种数据库都可以在 Koishi 中使用
 
@@ -49,9 +49,25 @@ Koishi 在开发时借助了下面的工具：
 - 使用 [TypeScript](http://www.typescriptlang.org/) 编写
 - 使用 [Jest](https://jestjs.io/) 进行单元测试
 - 使用 [Eslint](https://eslint.org/) 进行代码风格检查
+- 使用 [Codecov](https://codecov.io) 进行覆盖率检测
 - 使用 [GitHub Actions](https://github.com/features/actions) 进行持续集成
 
 这保证了其代码的正确性和可读性。
+
+### 对比
+
+| 特性 | koishi<br>1.0.0 | cqhttp<br>1.1.1 | cq-websocket<br>2.0.2 | lemon-bot<br>0.5.1 | @ionjs/core<br>0.6.5 |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| 依赖数量 | [17](http://npm.anvaka.com/#/view/2d/koishi/1.0.0-alpha.6) | [63](http://npm.anvaka.com/#/view/2d/cqhttp/1.1.1) | [37](http://npm.anvaka.com/#/view/2d/cq-websocket/2.0.2) | [55](http://npm.anvaka.com/#/view/2d/lemon-bot/0.5.1) | [73](http://npm.anvaka.com/#/view/2d/%2540ionjs%252Fcore/0.6.5) |
+| HTTP | ✔️ | ✔️ | ❌ | ✔️ | ✔️ |
+| WebSocket | ✔️ | ❌ | ✔️ | ❌ | ❌ |
+| 反向 WebSocket | ❌ | ❌ | ❌ | ❌ | ❌ |
+| 监听器 | ✔️ | ✔️ | ✔️ | ❌ | ✔️ |
+| 上下文 | ✔️ | ❌ | ❌ | ✔️ | ✔️ |
+| 中间件 | ✔️ | ❌ | ❌ | ❌ | ✔️ |
+| 命令行 | ✔️ | ❌ | ❌ | ❌ | ❌ |
+| 指令 | ✔️ | ❌ | ❌ | ✔️ | ❌ |
+| 会话 | ❌ | ❌ | ❌ | ✔️ | ✔️ |
 
 ## 安装
 
@@ -75,3 +91,37 @@ koishi run
 > echo hello world
 < hello world
 ```
+
+**注意:** Koishi 要求您的 Node.js 的版本不小于 10，CQHTTP 的版本不小于 3.0。过低的 CQHTTP 版本将不会支持 Koishi 的某些功能。因此，我们建议您保持较新的 CQHTTP 版本以确保所有功能可用。
+
+完整的文档在 [这里](https://koishijs.github.io/guide/getting-started.html)。
+
+## 更新日志
+
+参见 [releases](https://github.com/koishijs/koishi/releases)。
+
+## 贡献
+
+如果想对 Koishi 做出贡献，可以参考下面的指南：
+
+### 向本项目提交代码
+
+1. Fork 本项目并下载到你的本地
+2. 提交代码
+3. 从你的分支发起 PR 到 master 分支
+
+### 完善 Koishi 的文档
+
+与上面类似，但是针对的是 [这个项目](https://github.com/koishijs/koishijs.github.io)。
+
+### 开发 Koishi 插件
+
+我们欢迎开发 Koishi 插件并发布到 NPM 供大家使用。如果愿意的话我们也会邀请插件开发者成为 Koishi 团队成员。
+
+### 编写基于 Koishi 的机器人
+
+我们欢迎编写基于 Koishi 的机器人。如果有得意的作品也可以告诉我们，我们将在未来提供专门用于展示社区机器人的地方。
+
+### 支持项目作者
+
+<img src="./.github/wechat.png" alt="wechat" width="320">

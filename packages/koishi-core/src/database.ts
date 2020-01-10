@@ -1,5 +1,4 @@
 import { Observed } from 'koishi-utils'
-import { Activity } from './utils'
 
 export interface Usage {
   last?: number
@@ -17,10 +16,8 @@ export interface UserData {
   id: number
   name: string
   flag: number
-  ignoreEnd: number
   authority: number
   usage: Record<string, Usage>
-  talkativeness: Activity
 }
 
 export type User<K extends UserField = UserField> = Observed<Pick<UserData, K | 'id'>>
@@ -39,10 +36,8 @@ extendUser((id, authority) => ({
   id,
   authority,
   flag: 0,
-  ignoreEnd: 0,
   name: String(id),
   usage: {},
-  talkativeness: {},
 }))
 
 export function createUser (id: number, authority: number) {
@@ -91,7 +86,7 @@ export function createGroup (id: number, assignee: number) {
   return result
 }
 
-export interface UserTable {
+export interface UserMethods {
   getUser <K extends UserField> (userId: number, fields?: K[]): Promise<Pick<UserData, K | 'id'>>
   getUser <K extends UserField> (userId: number, defaultAuthority?: number, fields?: K[]): Promise<Pick<UserData, K | 'id'>>
   getUsers <K extends UserField> (fields?: K[]): Promise<Pick<UserData, K>[]>
@@ -102,7 +97,7 @@ export interface UserTable {
   getUserCount (): Promise<number>
 }
 
-export interface GroupTable {
+export interface GroupMethods {
   getGroup <K extends GroupField> (groupId: number, fields?: K[]): Promise<Pick<GroupData, K | 'id'>>
   getGroup <K extends GroupField> (groupId: number, selfId?: number, fields?: K[]): Promise<Pick<GroupData, K | 'id'>>
   getAllGroups <K extends GroupField> (assignees?: number[]): Promise<Pick<GroupData, K>[]>
@@ -113,9 +108,9 @@ export interface GroupTable {
   getGroupCount (): Promise<number>
 }
 
-export interface Tables {
-  user: UserTable
-  group: GroupTable
+export interface TableMethods {
+  user: UserMethods
+  group: GroupMethods
 }
 
 export interface TableData {
@@ -123,74 +118,136 @@ export interface TableData {
   group: GroupData
 }
 
-export type TableType = keyof Tables
+export type TableType = keyof TableMethods
+type TableMap = Partial<Record<TableType, SubdatabaseType>>
 
 type UnionToIntersection <U> = (U extends any ? (key: U) => void : never) extends (key: infer I) => void ? I : never
-type ExtendValues <T extends Record<keyof any, any>, V> = { [K in keyof T]?: T[K] & V }
 
-export type Database = ExtendValues<Subdatabases, AbstractDatabase> & UnionToIntersection<Tables[TableType]>
+export type Database = Subdatabases & UnionToIntersection<TableMethods[TableType]>
 
 export interface DatabaseConfig {
-  $tables?: Partial<Record<TableType, SubdatabaseType>>
+  $tables?: TableMap
 }
 
 export interface Subdatabases {}
 
-type SubdatabaseType = keyof Subdatabases
+export interface InjectOptions {}
 
-interface Subdatabase <K extends SubdatabaseType = SubdatabaseType> {
-  new (config: K extends keyof DatabaseConfig ? DatabaseConfig[K] : void): Subdatabases[K] & AbstractDatabase
-  _injections?: Partial<Record<TableType, {}>>
+type SubdatabaseType = keyof Subdatabases
+type DatabaseMap = Record<string | number, AbstractDatabase>
+type InjectionMap <S extends SubdatabaseType> = Partial<Record<TableType, DatabaseInjections<S>>>
+
+export type TableConfig <K extends SubdatabaseType> = K extends keyof InjectOptions ? InjectOptions[K] : never
+export type InjectConfig <K extends SubdatabaseType> = Partial<Record<TableType, TableConfig<K>>>
+
+interface Subdatabase <T extends SubdatabaseType = SubdatabaseType, A extends AbstractDatabase = AbstractDatabase> {
+  new (config: DatabaseConfig[T], injectConfig?: InjectConfig<T>): A
+  identify? (config: DatabaseConfig[T]): string | number
+  _methods?: InjectionMap<T>
+  _options?: InjectConfig<T>
+  _manager?: DatabaseManager
 }
 
 export interface AbstractDatabase {
-  identifier: string
-  start? (): Promise<void>
-  stop? (): void
+  start? (): void | Promise<void>
+  stop? (): void | Promise<void>
 }
 
+const unknownMethods: { [K in SubdatabaseType]?: DatabaseInjections<K> } = {}
+const unknownOptions: { [K in SubdatabaseType]?: TableConfig<K> } = {}
 const subdatabases: { [K in SubdatabaseType]?: Subdatabase<K> } = {}
+const existingDatabases: { [K in SubdatabaseType]?: DatabaseMap } = {}
 
-export function registerDatabase <K extends SubdatabaseType> (name: K, subdatabase: Subdatabase<K>) {
+export function registerDatabase <K extends SubdatabaseType> (name: K, subdatabase: Subdatabase<K, {}>) {
   subdatabases[name] = subdatabase as any
-  subdatabase._injections = {}
+  subdatabase._methods = unknownMethods[name] ?? {}
+  subdatabase._options = unknownOptions[name] ?? {}
 }
 
-type DatabaseInjections <K extends SubdatabaseType, T extends TableType> = {
-  [M in keyof Tables[T]]?:
-    Tables[T][M] extends (...args: infer P) => infer R ? (this: DatabaseInjections<K, T> & Subdatabases[K], ...args: P) => R : never
+export type DatabaseInjections <K extends SubdatabaseType, T extends TableType = TableType> = {
+  [M in keyof TableMethods[T]]?: TableMethods[T][M] extends (...args: infer P) => infer R
+    ? (this: DatabaseInjections<K, T> & Subdatabases[K], ...args: P) => R
+    : never
 }
 
-export function injectMethods <K extends SubdatabaseType, T extends TableType> (name: K, table: T, methods: DatabaseInjections<K, T>) {
-  const subdatabase = subdatabases[name] as Subdatabase<K>
-  if (!subdatabase) return
-  const injections = subdatabase._injections
-  if (!injections[table]) injections[table] = {}
-  Object.assign(injections[table], methods)
-}
+export function injectMethods <K extends SubdatabaseType, T extends TableType> (
+  name: K,
+  table: T,
+  methods: DatabaseInjections<K, T>,
+  options?: TableConfig<K>,
+) {
+  const Subdatabase = subdatabases[name] as Subdatabase<K>
+  let methodMap: Partial<Record<TableType, DatabaseInjections<K, T>>>
+  let optionMap: Partial<Record<TableType, TableConfig<K>>>
 
-export function createDatabase (config: DatabaseConfig) {
-  const database = {} as Database
-  const explicitTables = config.$tables || {}
-  const implicitTables = {} as Partial<Record<TableType, SubdatabaseType>>
-  for (const table in explicitTables) {
-    const name = explicitTables[table]
-    if (!config[name]) throw new Error(`database "${name}" not configurated`)
+  // inject before subdatabase was registered
+  if (!Subdatabase) {
+    methodMap = unknownMethods[name] || (unknownMethods[name] = {} as never)
+    optionMap = unknownOptions[name] || (unknownOptions[name] = {} as never)
+  } else {
+    optionMap = Subdatabase._options
+    if (Subdatabase._manager) {
+      // inject after application was created
+      Subdatabase._manager.injectMethods(name, table, methods)
+      methodMap = {} as any
+    } else {
+      methodMap = Subdatabase._methods
+    }
   }
-  for (const type in subdatabases) {
-    if (!config[type]) continue
-    const injections = (subdatabases[type] as Subdatabase)._injections
-    const subdatabase = database[type] = new subdatabases[type](config[type])
-    for (const table in injections) {
-      if (!explicitTables[table] && implicitTables[table]) {
-        throw new Error(`database "${implicitTables[table]}" and "${type}" conflict on table "${table}"`)
-      } else if (!explicitTables[table] || explicitTables[table] === type) {
-        implicitTables[table] = type
-        for (const name in injections[table]) {
-          subdatabase[name] = database[name] = injections[table][name].bind(subdatabase)
-        }
+
+  methodMap[table] = { ...methodMap[table], ...methods }
+  optionMap[table] = { ...optionMap[table] as any, ...options as any }
+}
+
+class DatabaseManager {
+  public database = {} as Database
+  private explicitTables: TableMap
+  private implicitTables: TableMap = {}
+
+  constructor (public config: DatabaseConfig) {
+    this.explicitTables = config.$tables || {}
+    for (const table in this.explicitTables) {
+      const name = this.explicitTables[table]
+      if (!config[name]) throw new Error(`database "${name}" not configurated`)
+    }
+    for (const type in subdatabases) {
+      this.bindSubdatabase(type as SubdatabaseType, config[type])
+    }
+  }
+
+  createSubdatabase <S extends SubdatabaseType> (sub: S, config: any) {
+    const Subdatabase: Subdatabase<S> = subdatabases[sub]
+    const identifier = config.identifier ?? (config.identifier = Subdatabase.identify?.(config))
+    const databases: DatabaseMap = existingDatabases[sub] || (existingDatabases[sub] = {} as never)
+    return identifier in databases
+      ? databases[identifier]
+      : databases[identifier] = new Subdatabase({ identifier, ...config }, Subdatabase._options)
+  }
+
+  bindSubdatabase <S extends SubdatabaseType> (type: S, config: any) {
+    if (!config) return
+    const Subdatabase: Subdatabase<S> = subdatabases[type]
+    const subdatabase = this.createSubdatabase(type, config)
+    this.database[type] = subdatabase as never
+    Subdatabase._manager = this
+    for (const table in Subdatabase._methods) {
+      this.injectMethods(type, table as any, Subdatabase._methods[table])
+    }
+  }
+
+  injectMethods <S extends SubdatabaseType, T extends TableType> (sub: S, table: T, methods: any) {
+    const subdatabase = this.database[sub] as AbstractDatabase
+    if (!this.explicitTables[table] && this.implicitTables[table]) {
+      throw new Error(`database "${this.implicitTables[table]}" and "${sub}" conflict on table "${table}"`)
+    } else if (!this.explicitTables[table] || this.explicitTables[table] === sub) {
+      this.implicitTables[table] = sub
+      for (const name in methods) {
+        subdatabase[name] = this.database[name] = methods[name].bind(subdatabase)
       }
     }
   }
-  return database
+}
+
+export function createDatabase (config: DatabaseConfig) {
+  return new DatabaseManager(config).database
 }

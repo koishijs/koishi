@@ -1,45 +1,36 @@
 import { writeJson } from 'fs-extra'
 import { resolve } from 'path'
-import { exec } from './utils'
 import { SemVer, gt } from 'semver'
-import chalk from 'chalk'
+import { cyan, green } from 'kleur'
+import { PackageJson } from './utils'
+import latest from 'latest-version'
 import globby from 'globby'
 import CAC from 'cac'
+import ora from 'ora'
 
 const { args, options } = CAC()
   .option('-1, --major', '')
   .option('-2, --minor', '')
   .option('-3, --patch', '')
   .option('-o, --only', '')
+  .help()
   .parse()
 
-type BumpType = 'major' | 'minor' | 'patch'
-
-interface PackageJSON {
-  name: string
-  private?: boolean
-  version: string
-  dependencies: Record<string, string>
-  devDependencies: Record<string, string>
-}
+type BumpType = 'major' | 'minor' | 'patch' | 'auto'
 
 class Package {
   name: string
-  meta: PackageJSON
+  meta: PackageJson
   oldVersion: string
   version: SemVer
   dirty: boolean
 
   static async from (path: string) {
-    const pkg = packages[path] = new Package(path)
-    pkg.oldVersion = pkg.meta.version
-    if (pkg.meta.private) return
     try {
-      const version = await exec(`npm view ${pkg.name} version`, {
-        cwd: resolve(__dirname, `../${path}`),
-        silent: true,
-      })
-      pkg.oldVersion = version.trim()
+      const pkg = packages[path] = new Package(path)
+      pkg.oldVersion = pkg.meta.version
+      if (pkg.meta.private) return
+      pkg.oldVersion = await latest(pkg.name)
     } catch { /* pass */ }
   }
 
@@ -52,17 +43,24 @@ class Package {
   bump (flag: BumpType) {
     if (this.meta.private) return
     const newVersion = new SemVer(this.oldVersion)
-    if (flag === 'patch' && newVersion.prerelease.length) {
-      const prerelease = newVersion.prerelease.slice() as [string, number]
-      prerelease[1] += 1
-      newVersion.prerelease = prerelease
+    if (flag === 'auto') {
+      if (newVersion.prerelease.length) {
+        const prerelease = newVersion.prerelease.slice() as [string, number]
+        prerelease[1] += 1
+        newVersion.prerelease = prerelease
+      } else {
+        newVersion.patch += 1
+      }
     } else {
-      newVersion[flag] += 1
-      newVersion.prerelease = []
-      if (flag !== 'patch') newVersion.patch = 0
-      if (flag === 'major') newVersion.minor = 0
+      if (newVersion.prerelease.length) {
+        newVersion.prerelease = []
+      } else {
+        newVersion[flag] += 1
+        if (flag !== 'patch') newVersion.patch = 0
+        if (flag === 'major') newVersion.minor = 0
+      }
     }
-    if (gt(newVersion, this.version)) {
+    if (gt(newVersion.format(), this.version.format())) {
       this.dirty = true
       this.version = newVersion
       return this.meta.version = newVersion.format()
@@ -73,26 +71,22 @@ class Package {
     return writeJson(resolve(__dirname, `../${this.path}/package.json`), {
       ...this.meta,
       version: this.version.format(),
-    })
+    }, { spaces: 2 })
   }
 }
 
 const packages: Record<string, Package> = {}
 
 const nameMap = {
-  cli: 'koishi-cli',
-  core: 'koishi-core',
-  utils: 'koishi-utils',
   test: 'test-utils',
-  level: 'database-level',
-  mysql: 'database-mysql',
-  common: 'plugin-common',
-  teach: 'plugin-teach',
-  monitor: 'plugin-monitor',
 }
 
 function getPackage (name: string) {
-  return packages['packages/' + nameMap[name]]
+  name = nameMap[name] || name
+  return packages[`packages/${name}`]
+    || packages[`packages/koishi-${name}`]
+    || packages[`packages/database-${name}`]
+    || packages[`packages/plugin-${name}`]
 }
 
 function each <T> (callback: (pkg: Package, name: string) => T) {
@@ -103,7 +97,7 @@ function each <T> (callback: (pkg: Package, name: string) => T) {
   return results
 }
 
-function bumpPkg (source: Package, flag: BumpType, stop = false) {
+function bumpPkg (source: Package, flag: BumpType, only = false) {
   if (!source) return
   const newVersion = source.bump(flag)
   if (!newVersion) return
@@ -114,19 +108,26 @@ function bumpPkg (source: Package, flag: BumpType, stop = false) {
     Object.keys(meta.devDependencies || {}).forEach((name) => {
       if (name !== source.name) return
       meta.devDependencies[name] = '^' + newVersion
+      target.dirty = true
+    })
+    Object.keys(meta.peerDependencies || {}).forEach((name) => {
+      if (name !== source.name) return
+      meta.peerDependencies[name] = '^' + newVersion
+      target.dirty = true
       dependents.add(target)
     })
     Object.keys(meta.dependencies || {}).forEach((name) => {
       if (name !== source.name) return
       meta.dependencies[name] = '^' + newVersion
+      target.dirty = true
       dependents.add(target)
     })
   })
-  if (stop) return
+  if (only) return
   dependents.forEach(dep => bumpPkg(dep, flag))
 }
 
-const flag: BumpType = options.major ? 'major' : options.minor ? 'minor' : 'patch'
+const flag = options.major ? 'major' : options.minor ? 'minor' : options.patch ? 'patch' : 'auto'
 
 ;(async () => {
   const folders = await globby(require('../package').workspaces, {
@@ -134,13 +135,20 @@ const flag: BumpType = options.major ? 'major' : options.minor ? 'minor' : 'patc
     onlyDirectories: true,
   })
 
-  await Promise.all(folders.map(path => Package.from(path)))
+  const spinner = ora()
+  let progress = 0
+  spinner.start(`loading packages 0/${folders.length}`)
+  await Promise.all(folders.map(async (path) => {
+    await Package.from(path)
+    spinner.text = `loading packages ${++progress}/${folders.length}`
+  }))
+  spinner.succeed()
 
   args.forEach(name => bumpPkg(getPackage(name), flag, options.only))
 
   await Promise.all(each((pkg) => {
     if (!pkg.dirty) return
-    console.log(`- ${pkg.name}: ${chalk.cyanBright(pkg.oldVersion)} => ${chalk.yellowBright(pkg.meta.version)}`)
+    console.log(`- ${pkg.name}: ${cyan(pkg.oldVersion)} => ${green(pkg.meta.version)}`)
     return pkg.save()
   }))
 })()

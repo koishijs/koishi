@@ -1,9 +1,5 @@
-export function randomSign () {
-  return Math.floor(Math.random() * 2) * 2 - 1 as 1 | -1
-}
-
 const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-export function randomId (length = 16) {
+export function randomId (length = 8) {
   let output = ''
   for (let index = length; index > 0; --index) {
     output += chars[Math.floor(Math.random() * 62)]
@@ -21,7 +17,7 @@ export function randomReal (end: number): number
 export function randomReal (start: number, end: number): number
 export function randomReal (...args: [number, number?]): number {
   const start = args.length > 1 ? args[0] : 0
-  const end = args[args.length - 1] || 1
+  const end = args[args.length - 1]
   return Math.random() * (end - start) + start
 }
 
@@ -57,7 +53,7 @@ export function randomMultiPick <T> (source: T[], count: number) {
   return result
 }
 
-export function randomWeightedPick <T extends keyof any> (weights: Record<T, number>, value = Math.random()): T {
+export function randomWeightedPick <T extends string> (weights: Record<T, number>, value = Math.random()): T {
   const total = Object.entries(weights).reduce((prev, [_, curr]) => prev + (curr as number), 0)
   const pointer = value * total
   let counter = 0
@@ -67,7 +63,8 @@ export function randomWeightedPick <T extends keyof any> (weights: Record<T, num
   }
 }
 
-export function randomFraction (denominator: number, numerator: number) {
-  if (numerator <= 0) return false
-  return Math.random() * denominator <= numerator
+export function randomBool (probability: number) {
+  if (probability >= 1) return true
+  if (probability <= 0) return false
+  return Math.random() / probability < 1
 }

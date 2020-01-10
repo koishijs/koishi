@@ -1,50 +1,16 @@
-import { isInteger, getDateNumber } from 'koishi-utils'
+import { isInteger } from 'koishi-utils'
+import { UserField, GroupField } from './database'
 import { NextFunction, Middleware } from './context'
 import { Command } from './command'
 import { MessageMeta } from './meta'
+import { messages } from './messages'
+import { format } from 'util'
 import leven from 'leven'
 
-export type Activity = Record<number, Record<number, number>>
-
-const PRESERVE_ACTIVITY = 7
-
-export function updateActivity (activity: Activity, groupId: number) {
-  const date = getDateNumber()
-  if (!activity[date]) {
-    activity[date] = {}
-    const dates = Object.keys(activity)
-    dates.slice(0, -PRESERVE_ACTIVITY).forEach(date => delete activity[date])
-  }
-  if (!activity[date][groupId]) {
-    activity[date][groupId] = 1
-  } else {
-    activity[date][groupId] += 1
-  }
-}
-
-function getMaxActivity (activity: Record<number, number> = {}) {
-  return Math.max(0, ...Object.keys(activity).map(k => activity[k]))
-}
-
-export function getAverageActivity (activity: Activity, date: number) {
-  return getMaxActivity(activity[date - 1]) / 2
-    + getMaxActivity(activity[date - 2]) / 3
-    + getMaxActivity(activity[date - 3]) / 6
-}
-
 export function getSenderName (meta: MessageMeta) {
-  if (meta.$user && meta.$user.name !== String(meta.userId)) return meta.$user.name
-  return meta.sender.card || meta.sender.nickname
-}
-
-export function getContextId (meta: MessageMeta) {
-  if (meta.messageType === 'group') {
-    return 'g' + meta.groupId
-  } else if (meta.messageType === 'discuss') {
-    return 'd' + meta.discussId
-  } else {
-    return 'p' + meta.userId
-  }
+  const userId = '' + meta.userId
+  return meta.$user && meta.$user.name !== userId ? meta.$user.name
+    : meta.sender ? meta.sender.card || meta.sender.nickname : userId
 }
 
 export function getTargetId (target: string) {
@@ -70,42 +36,40 @@ interface SuggestOptions {
   execute: (suggestion: string, meta: MessageMeta, next: NextFunction) => any
 }
 
-const SIMILARITY_COEFFICIENT = 0.4
-
-function findSimilar (target: string, coefficient = SIMILARITY_COEFFICIENT) {
+function findSimilar (target: string, coefficient: number) {
   return (name: string) => name.length > 2 && leven(name, target) <= name.length * coefficient
 }
 
 export function showSuggestions (options: SuggestOptions): Promise<void> {
-  const { target, items, meta, next, prefix, suffix, execute, coefficient } = options
+  const { target, items, meta, next, prefix, suffix, execute, coefficient = 0.4 } = options
   const suggestions = items.filter(findSimilar(target, coefficient))
   if (!suggestions.length) return next()
 
   return next(async () => {
-    let message = `${prefix}你要找的是不是${suggestions.map(name => `“${name}”`).join('或')}？`
+    let message = prefix + format(messages.SUGGESTION_TEXT, suggestions.map(name => `“${name}”`).join('或'))
     if (suggestions.length === 1) {
       const [suggestion] = suggestions
-      const command = typeof options.command === 'function'
-        ? options.command(suggestion)
-        : options.command
-      const userId = meta.userId
-      const contextId = getContextId(meta)
-      const fields = Array.from(command._userFields)
-      if (!fields.includes('name')) fields.push('name')
-      if (!fields.includes('usage')) fields.push('usage')
-      if (!fields.includes('authority')) fields.push('authority')
+      const command = typeof options.command === 'function' ? options.command(suggestion) : options.command
+      const identifier = meta.userId + meta.$ctxType + meta.$ctxId
+      const userFields = new Set<UserField>(['name'])
+      const groupFields = new Set<GroupField>()
+      Command.attachUserFields(userFields, { command, meta })
+      Command.attachGroupFields(groupFields, { command, meta })
 
       const middleware: Middleware = async (meta, next) => {
-        if (getContextId(meta) !== contextId || meta.userId !== userId) return next()
+        if (meta.userId + meta.$ctxType + meta.$ctxId !== identifier) return next()
         command.context.removeMiddleware(middleware)
         if (!meta.message.trim()) {
-          meta.$user = await command.context.database.observeUser(userId, 0, fields)
+          meta.$user = await command.context.database?.observeUser(meta.userId, Array.from(userFields))
+          if (meta.messageType === 'group') {
+            meta.$group = await command.context.database?.observeGroup(meta.groupId, Array.from(groupFields))
+          }
           return execute(suggestions[0], meta, next)
         } else {
           return next()
         }
       }
-      command.context.premiddleware(middleware)
+      command.context.prependMiddleware(middleware)
       message += suffix
     }
     await meta.$send(message)

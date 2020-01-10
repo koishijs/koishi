@@ -63,24 +63,24 @@ export interface CommandOption extends OptionConfig {
   description: string
 }
 
-export function parseOption (rawName: string, description: string, config: OptionConfig = {}, optsDef: Record<string, CommandOption>): CommandOption {
+export function parseOption (rawName: string, description: string, config: OptionConfig, optsDef: Record<string, CommandOption>): CommandOption {
   config = { authority: 0, ...config }
 
   const negated: string[] = []
   const camels: string[] = []
   let required = false, isBoolean = false, longest = ''
   const names = removeBrackets(rawName).split(',').map((name: string) => {
-    name = name.trim()
-    if (name.length > longest.length) longest = name
-    name = name.replace(/^-{1,2}/, '')
+    name = name.trim().replace(/^-{1,2}/, '')
+    let camel: string
     if (name.startsWith('no-') && !config.noNegated && !optsDef[name.slice(3)]) {
       name = name.slice(3)
-      const camel = camelCase(name)
+      camel = camelCase(name)
       negated.push(camel)
-      camels.push(camel)
     } else {
-      camels.push(camelCase(name))
+      camel = camelCase(name)
     }
+    camels.push(camel)
+    if (camel.length > longest.length) longest = camel
     return name
   })
 
@@ -124,17 +124,17 @@ function parseArg0 (source: string): ParsedArg0 {
   return { content, quoted: false, rest: source.slice(content.length).trimLeft() }
 }
 
-export function parseValue (source: string | true, quoted: boolean, config: CommandOption) {
+export function parseValue (source: string | true, quoted: boolean, config = {} as CommandOption) {
   // quoted empty string
   if (source === '' && quoted) return ''
   // no explicit parameter
   if (source === true || source === '') {
-    if (config && config.default !== undefined) return config.default
-    if (config && config.isString) return ''
+    if (config.default !== undefined) return config.default
+    if (config.isString) return ''
     return true
   }
   // default behavior
-  if (config && config.isString) return source
+  if (config.isString) return source
   const n = +source
   return n * 0 === 0 ? n : source
 }

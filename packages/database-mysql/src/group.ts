@@ -1,5 +1,5 @@
-import { contain, observe, difference, Observed } from 'koishi-utils'
-import { getSelfIds, injectMethods, GroupData, createGroup, groupFields, GroupField } from 'koishi-core'
+import { contain, observe, difference } from 'koishi-utils'
+import { getSelfIds, injectMethods, GroupData, createGroup, groupFields, GroupField, Group } from 'koishi-core'
 
 declare module './database' {
   interface MysqlDatabaseConfig {
@@ -21,14 +21,14 @@ injectMethods('mysql', 'group', {
     const upToDate = timestamp - cache._timestamp < (this.config.groupRefreshInterval ?? defaultRefreshInterval)
     if (cache && contain(Object.keys(cache), fields) && upToDate) return cache
 
-    const [data] = await this.select<GroupData[]>('groups', fields, '`id` = ?', [groupId])
+    const [data] = await this.select<GroupData[]>('group', fields, '`id` = ?', [groupId])
     let fallback: GroupData
     if (!data) {
       fallback = createGroup(groupId, selfId)
       if (selfId && groupId) {
         await this.query(
-          'INSERT INTO `groups` (' + this.joinKeys(groupFields) + ') VALUES (' + groupFields.map(() => '?').join(', ') + ')',
-          this.formatValues('groups', fallback, groupFields),
+          'INSERT INTO `group` (' + this.joinKeys(groupFields) + ') VALUES (' + groupFields.map(() => '?').join(', ') + ')',
+          this.formatValues('group', fallback, groupFields),
         )
       }
     } else {
@@ -53,11 +53,11 @@ injectMethods('mysql', 'group', {
       assignees = await getSelfIds()
     }
     if (!assignees.length) return []
-    return this.select('groups', fields, `\`assignee\` IN (${assignees.join(',')})`)
+    return this.select('group', fields, `\`assignee\` IN (${assignees.join(',')})`)
   },
 
   async setGroup (groupId, data) {
-    const result = await this.update('groups', groupId, data)
+    const result = await this.update('group', groupId, data)
     if (!groupCache[groupId]) {
       groupCache[groupId] = {} as CachedGroupData
       Object.defineProperty(groupCache[groupId], '_timestamp', { value: Date.now() })
@@ -79,13 +79,13 @@ injectMethods('mysql', 'group', {
       ? await this.getGroup(group.id, selfId, difference(fields, Object.keys(group)))
       : {} as Partial<GroupData>
     if ('_diff' in group) {
-      return (group as Observed<GroupData>)._merge(additionalData)
+      return (group as Group)._merge(additionalData)
     } else {
       return observe(Object.assign(group, additionalData), diff => this.setGroup(group.id, diff), `group ${group.id}`)
     }
   },
 
   async getGroupCount () {
-    return this.count('groups')
+    return this.count('group')
   },
 })
