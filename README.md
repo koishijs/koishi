@@ -106,6 +106,21 @@ koishi run
 
 完整的文档在 [这里](https://koishijs.github.io/guide/getting-started.html)。
 
+## 最新版本
+
+| 包名 | 版本 |
+|:-:|:-:|
+| [koishi](https://github.com/koishijs/koishi/tree/master/packages/koishi-cli) | [![npm](https://img.shields.io/npm/v/koishi?style=flat-square)](https://www.npmjs.com/package/koishi) |
+| [koishi-core](https://github.com/koishijs/koishi/tree/master/packages/koishi-core) | [![npm](https://img.shields.io/npm/v/koishi-core?style=flat-square)](https://www.npmjs.com/package/koishi-core) |
+| [koishi-utils](https://github.com/koishijs/koishi/tree/master/packages/koishi-utils) | [![npm](https://img.shields.io/npm/v/koishi-utils?style=flat-square)](https://www.npmjs.com/package/koishi-utils) |
+| [koishi-test-utils](https://github.com/koishijs/koishi/tree/master/packages/test-utils) | [![npm](https://img.shields.io/npm/v/koishi-test-utils?style=flat-square)](https://www.npmjs.com/package/koishi-test-utils) |
+| [koishi-database-level](https://github.com/koishijs/koishi/tree/master/packages/database-level) | [![npm](https://img.shields.io/npm/v/koishi-database-level?style=flat-square)](https://www.npmjs.com/package/koishi-database-level) |
+| [koishi-database-mysql](https://github.com/koishijs/koishi/tree/master/packages/database-mysql) | [![npm](https://img.shields.io/npm/v/koishi-database-mysql?style=flat-square)](https://www.npmjs.com/package/koishi-database-mysql) |
+| [koishi-database-sqlite](https://github.com/koishijs/koishi/tree/master/packages/database-sqlite) | [![npm](https://img.shields.io/npm/v/koishi-database-sqlite?style=flat-square)](https://www.npmjs.com/package/koishi-database-sqlite) |
+| [koishi-plugin-common](https://github.com/koishijs/koishi/tree/master/packages/plugin-common) | [![npm](https://img.shields.io/npm/v/koishi-plugin-common?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-common) |
+| [koishi-plugin-schedule](https://github.com/koishijs/koishi/tree/master/packages/plugin-schedule) | [![npm](https://img.shields.io/npm/v/koishi-plugin-schedule?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-schedule) |
+| [koishi-plugin-teach](https://github.com/koishijs/koishi/tree/master/packages/plugin-teach) | [![npm](https://img.shields.io/npm/v/koishi-plugin-teach?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-teach) |
+
 ## 更新日志
 
 参见 [releases](https://github.com/koishijs/koishi/releases)。

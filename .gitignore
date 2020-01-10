@@ -4,11 +4,7 @@ temp
 /docs
 /bots
 /coverage
-
-/packages/plugin-*
-!/packages/plugin-common
-!/packages/plugin-schedule
-!/packages/plugin-teach
+/plugins
 
 todo.md
 yarn.lock

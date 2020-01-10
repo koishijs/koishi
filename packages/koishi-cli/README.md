@@ -1,5 +1,8 @@
 <img width="160" src="https://koishijs.github.io/koishi.png" alt="logo">
 
+[![Status](https://img.shields.io/github/workflow/status/koishijs/koishi/CI/master?style=flat-square)](https://github.com/koishijs/koishi/actions?query=workflow:CI)
+[![npm](https://img.shields.io/npm/v/koishi?style=flat-square)](https://www.npmjs.com/package/koishi)
+
 # Koishi
 
 Koishi 是一个在 [Node.js](https://nodejs.org/) 环境下运行，基于 [CoolQ](https://cqp.cc) 和 [CQHTTP](https://cqhttp.cc) 的 QQ 机器人框架。
