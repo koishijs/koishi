@@ -1,4 +1,4 @@
-import { observe, difference, Observed } from 'koishi-utils'
+import { observe, Observed } from 'koishi-utils'
 import { getSelfIds, injectMethods, GroupData, createGroup, groupFields, GroupField } from 'koishi-core'
 import {} from './database'
 

@@ -1,5 +1,5 @@
 import { injectMethods, userFields, UserData, createUser, User, UserField } from 'koishi-core'
-import { observe, difference } from 'koishi-utils'
+import { observe } from 'koishi-utils'
 import { arrayTypes } from './database'
 
 arrayTypes.push('user.endings', 'user.achievement', 'user.inference')

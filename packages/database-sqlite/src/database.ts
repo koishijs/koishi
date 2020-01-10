@@ -105,16 +105,6 @@ export class SqliteDatabase implements AbstractDatabase {
     return data.map(d => typeCast(table, d))
   }
 
-  async create <T extends {}> (table: string, data: Partial<T>): Promise<T> {
-    const keys = Object.keys(data)
-    if (!keys.length) return
-    await this.get(
-      `INSERT INTO "${table}" (${this.joinKeys(keys)}) VALUES (${'?, '.repeat(keys.length - 1)}?)`,
-      [table, ...this.formatValues(table, data, keys)],
-    )
-    // TODO: add return value
-  }
-
   async update (table: string, id: number | string, data: object) {
     const keys = Object.keys(data)
     if (!keys.length) return
@@ -130,7 +120,7 @@ export class SqliteDatabase implements AbstractDatabase {
     return data['COUNT(*)'] as number
   }
 
-  close () {
+  stop () {
     this.db.close()
   }
 }
