@@ -104,12 +104,12 @@ function bumpPkg (source: Package, flag: BumpType, only = false) {
   const dependents = new Set<Package>()
   each((target) => {
     const { devDependencies, peerDependencies, dependencies } = target.meta
-    const { name: sourceName } = source
-    if (target.name === sourceName) return
+    const { name } = source
+    if (target.name === name) return
     Object.entries({ devDependencies, peerDependencies, dependencies })
-      .filter(([_, depend = {}]) => depend[sourceName])
+      .filter(([_, depend = {}]) => depend[name])
       .forEach(([type]) => {
-        target.meta[type][sourceName] = '^' + newVersion
+        target.meta[type][name] = '^' + newVersion
         target.dirty = true
         if (type !== 'devDependencies') {
           dependents.add(target)
