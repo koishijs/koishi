@@ -21,11 +21,12 @@
   },
   "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-sqlite#readme",
   "devDependencies": {
-    "@types/sqlite3": "^3.1.5"
+    "@types/sqlite3": "^3.1.5",
+    "koishi-test-utils": "^1.1.0"
   },
   "dependencies": {
-    "koishi-core": "^1.0.0-alpha.3",
-    "koishi-utils": "^1.0.0-alpha.1",
+    "koishi-core": "^1.2.0",
+    "koishi-utils": "^1.0.2",
     "sqlite3": "^4.1.1"
   }
 }

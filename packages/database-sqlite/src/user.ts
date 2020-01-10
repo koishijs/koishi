@@ -32,7 +32,7 @@ injectMethods('sqlite', 'user', {
     if (args.length > 1) {
       ids = args[0]
       fields = args[1]
-    } else if (args.length && typeof args[0][0] === 'number') {
+    } else if (args.length && typeof args[0][0] !== 'string') {
       ids = args[0]
       fields = userFields
     } else {
@@ -54,15 +54,11 @@ injectMethods('sqlite', 'user', {
 
     const authority = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] as never || userFields
-    const additionalFields = difference(fields, Object.keys(user))
-    const additionalData = additionalFields.length
-      ? await this.getUser(user.id, authority, difference(fields, Object.keys(user)))
+    const additionalData = fields.length
+      ? await this.getUser(user.id, authority, fields)
       : {} as Partial<UserData>
-    if ('_diff' in user) {
-      return (user as User)._merge(additionalData)
-    } else {
-      return observe(Object.assign(user, additionalData), diff => this.setUser(user.id, diff), `user ${user.id}`)
-    }
+    if ('_diff' in user) return (user as User)._merge(additionalData)
+    return observe(Object.assign(user, additionalData), diff => this.setUser(user.id, diff), `user ${user.id}`)
   },
 
   async getUserCount () {

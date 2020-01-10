@@ -28,10 +28,8 @@ export const pragma: Pragma = {
     id: 'BIGINT',
     name: 'VARCHAR(64)',
     flag: 'INT',
-    ignoreEnd: 'BIGINT',
     authority: 'INT',
     usage: 'TEXT',
-    talkativeness: 'TEXT',
   },
   group: {
     id: 'BIGINT',

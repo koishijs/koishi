@@ -51,15 +51,11 @@ injectMethods('sqlite', 'group', {
 
     const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] as never || groupFields
-    const additionalFields = difference(fields, Object.keys(group))
-    const additionalData = additionalFields.length
-      ? await this.getGroup(group.id, selfId, difference(fields, Object.keys(group)))
+    const additionalData = fields.length
+      ? await this.getGroup(group.id, selfId, fields)
       : {} as Partial<GroupData>
-    if ('_diff' in group) {
-      return (group as Observed<GroupData>)._merge(additionalData)
-    } else {
-      return observe(Object.assign(group, additionalData), diff => this.setGroup(group.id, diff), `group ${group.id}`)
-    }
+    if ('_diff' in group) return (group as Observed<GroupData>)._merge(additionalData)
+    return observe(Object.assign(group, additionalData), diff => this.setGroup(group.id, diff), `group ${group.id}`)
   },
 
   async getGroupCount () {
