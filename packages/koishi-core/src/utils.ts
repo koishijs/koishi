@@ -1,4 +1,4 @@
-import { isInteger, noop } from 'koishi-utils'
+import { isInteger } from 'koishi-utils'
 import { UserField, GroupField } from './database'
 import { NextFunction, Middleware } from './context'
 import { Command } from './command'

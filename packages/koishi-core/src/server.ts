@@ -5,7 +5,7 @@ import { errors } from './messages'
 import { createHmac } from 'crypto'
 import { camelCase, snakeCase, capitalize, paramCase, CQCode } from 'koishi-utils'
 import { Meta, VersionInfo, ContextType } from './meta'
-import { App, AppOptions } from './app'
+import { App } from './app'
 import { CQResponse } from './sender'
 import { format } from 'util'
 
