@@ -109,8 +109,7 @@ function bumpPkg (source: Package, flag: BumpType, only = false) {
     if (targetName === sourceName) return
     Object.entries({ devDependencies, peerDependencies, dependencies })
       .filter(([_type, depend = {}]) => depend[sourceName])
-      .map(([type]) => type)
-      .forEach(type => {
+      .forEach(([type]) => {
         meta[type][sourceName] = '^' + newVersion
         target.dirty = true
         if (type !== 'devDependencies') {
