@@ -1,6 +1,7 @@
 import { Context, appMap, Database, CommandConfig } from 'koishi-core'
 import { Schedule } from './database'
-import './database'
+
+export * from './database'
 
 function inspectSchedule ({ id, assignee, meta, interval, command, time }: Schedule) {
   if (!appMap[assignee]) return
