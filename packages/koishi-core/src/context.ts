@@ -1,4 +1,4 @@
-import { contain, union, intersection, difference, noop } from 'koishi-utils'
+import { contain, union, intersection, difference } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine } from './command'
 import { MessageMeta, Meta, contextTypes } from './meta'
 import { EventEmitter } from 'events'
@@ -44,16 +44,35 @@ export namespace ContextScope {
 const noopScope: ContextScope = [[[], null], [[], null], [[], null]]
 const noopIdentifier = ContextScope.stringify(noopScope)
 
+export interface Logger {
+  warn: (format: any, ...param: any) => void
+  info: (format: any, ...param: any) => void
+  debug: (format: any, ...param: any) => void
+  success: (format: any, ...param: any) => void
+  error: (format: any, ...param: any) => void
+}
+
+export const logTypes: (keyof Logger)[] = ['warn', 'info', 'debug', 'success', 'error']
+
 export class Context {
   public app: App
   public sender: Sender
   public database: Database
+  public logger: (scope?: string) => Logger
   public receiver: Receiver = new EventEmitter()
 
   constructor (public readonly identifier: string, private readonly _scope: ContextScope) {
-    // prevent event emitter from crashing
-    // https://nodejs.org/api/events.html#events_error_events
-    this.receiver.on('error', noop)
+    this.receiver.on('error', (error) => {
+      this.logger().warn(error)
+    })
+
+    this.logger = (scope = '') => {
+      const logger = {} as Logger
+      for (const type of logTypes) {
+        logger[type] = (...args) => this.app.receiver.emit(`logger/${type}` as any, scope, format(...args))
+      }
+      return logger
+    }
   }
 
   inverse () {
@@ -263,6 +282,11 @@ export interface EventMap {
   'error' (error: Error): any
   'error/command' (error: Error): any
   'error/middleware' (error: Error): any
+  'logger/debug' (scope: string, message: string): any
+  'logger/info' (scope: string, message: string): any
+  'logger/error' (scope: string, message: string): any
+  'logger/warn' (scope: string, message: string): any
+  'logger/success' (scope: string, message: string): any
   'ready' (): any
   'before-connect' (): any
   'connect' (): any
