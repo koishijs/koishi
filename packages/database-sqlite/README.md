@@ -7,5 +7,5 @@ sqlite implementation for Koishi.
 
 ## Usage
 
-- [Using Database with Koishi](https://koishijs.github.io/guide/using-database.html)
-- [Full API Reference](https://koishijs.github.io/api/database.html)
+- [Using Database with Koishi](https://koishi.js.org/guide/using-database.html)
+- [Full API Reference](https://koishi.js.org/api/database.html)

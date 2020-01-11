@@ -1,4 +1,4 @@
-<img width="160" src="https://koishijs.github.io/koishi.png" alt="logo">
+<img width="160" src="https://koishi.js.org/koishi.png" alt="logo">
 
 [![Status](https://img.shields.io/github/workflow/status/koishijs/koishi/CI/master?style=flat-square)](https://github.com/koishijs/koishi/actions?query=workflow:CI)
 [![npm](https://img.shields.io/npm/v/koishi?style=flat-square)](https://www.npmjs.com/package/koishi)
@@ -15,35 +15,35 @@ Koishi 是一个在 [Node.js](https://nodejs.org/) 环境下运行，基于 [Coo
 
 Koishi 高度配置化的 CLI 命令可以让你无需写代码就搭建属于你的机器人。与此同时，CLI 还配备了丰富和人性化的提示，进一步提高调试体验。
 
-参见：[快速上手](https://koishijs.github.io/guide/getting-started.html) / [配置文件](https://koishijs.github.io/guide/config-file.html)
+参见：[快速上手](https://koishi.js.org/guide/getting-started.html) / [配置文件](https://koishi.js.org/guide/config-file.html)
 
 ### 功能强大的 API
 
 Koishi 的 API 包括下面几个部分：
 
-- [Receiver](https://koishijs.github.io/guide/receive-and-send.html#接收器)：将收到的信息转化为事件进行分发，且同时支持 HTTP 和 WebSocket
-- [Sender](https://koishijs.github.io/guide/receive-and-send.html#发送器)：完美契合 CQHTTP API 的一套异步发送器，同样支持 HTTP 和 WebSocket
-- [Middleware](https://koishijs.github.io/guide/receive-and-send.html#中间件)：支持异步操作的中间件系统，可以让你高效地处理每一条信息
-- [Context](https://koishijs.github.io/guide/plugin-and-context.html#创建上下文)：用上下文描述了机器人可能的运行环境，让你得以对不同的群进行不同的处理
-- [Plugin](https://koishijs.github.io/guide/plugin-and-context.html#使用插件)：将逻辑以插件的形式封装，可以实现更好的模块化和配置化
-- [Command](https://koishijs.github.io/guide/command-system.html)：Koishi 的核心功能之一，使用链式调用轻松创建指令，同时提供了大量的实用特性
-- [Database](https://koishijs.github.io/guide/using-database.html)：内置的数据库系统，但并不依赖具体的数据库实现，无论何种数据库都可以在 Koishi 中使用
+- [Receiver](https://koishi.js.org/guide/receive-and-send.html#接收器)：将收到的信息转化为事件进行分发，且同时支持 HTTP 和 WebSocket
+- [Sender](https://koishi.js.org/guide/receive-and-send.html#发送器)：完美契合 CQHTTP API 的一套异步发送器，同样支持 HTTP 和 WebSocket
+- [Middleware](https://koishi.js.org/guide/receive-and-send.html#中间件)：支持异步操作的中间件系统，可以让你高效地处理每一条信息
+- [Context](https://koishi.js.org/guide/plugin-and-context.html#创建上下文)：用上下文描述了机器人可能的运行环境，让你得以对不同的群进行不同的处理
+- [Plugin](https://koishi.js.org/guide/plugin-and-context.html#使用插件)：将逻辑以插件的形式封装，可以实现更好的模块化和配置化
+- [Command](https://koishi.js.org/guide/command-system.html)：Koishi 的核心功能之一，使用链式调用轻松创建指令，同时提供了大量的实用特性
+- [Database](https://koishi.js.org/guide/using-database.html)：内置的数据库系统，但并不依赖具体的数据库实现，无论何种数据库都可以在 Koishi 中使用
 
 每一个部分都经过了精心的编写，可以让你轻松实现任何需求。
 
-参见：[API 文档](https://koishijs.github.io/api/index.html)
+参见：[API 文档](https://koishi.js.org/api/index.html)
 
 ### 丰富的生态系统
 
 Koishi 在编写时，也同样编写了大量的官方插件作为补充。它们有些 Koishi 的基础功能，有些则为 Koishi 的使用提供了许多便利。更重要的是，这数十个插件都可以作为 Koishi 插件开发的极好示范。
 
-参见：[官方插件](https://koishijs.github.io/plugins/common.html)
+参见：[官方插件](https://koishi.js.org/plugins/common.html)
 
 ### 多机器人支持
 
 Koishi 原生地支持了多机器人开发，同时为这些机器人之间互通数据、共用服务器、保证数据安全提供了原生的解决方案，这有助于在保持高性能的同时，将腾讯风控造成的影响降低到最小。
 
-参见：[多机器人开发](https://koishijs.github.io/guide/multiple-bots.html)
+参见：[多机器人开发](https://koishi.js.org/guide/multiple-bots.html)
 
 ### 类型与单元测试
 
@@ -97,7 +97,7 @@ koishi run
 
 **注意:** Koishi 要求您的 Node.js 的版本不小于 10，CQHTTP 的版本不小于 3.0。过低的 CQHTTP 版本将不会支持 Koishi 的某些功能。因此，我们建议您保持较新的 CQHTTP 版本以确保所有功能可用。
 
-完整的文档在 [这里](https://koishijs.github.io/guide/getting-started.html)。
+完整的文档在 [这里](https://koishi.js.org/guide/getting-started.html)。
 
 ## 更新日志
 
@@ -115,7 +115,7 @@ koishi run
 
 ### 完善 Koishi 的文档
 
-与上面类似，但是针对的是 [这个项目](https://github.com/koishijs/koishijs.github.io)。
+与上面类似，但是针对的是 [这个项目](https://github.com/koishijs/koishi.js.org)。
 
 ### 开发 Koishi 插件
 

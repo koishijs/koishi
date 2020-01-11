@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "bots/*",
-    "packages/*"
+    "packages/*",
+    "plugins/*"
   ],
   "scripts": {
     "build": "tsc -b",

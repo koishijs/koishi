@@ -23,7 +23,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://github.com/koishijs/koishi#readme",
+  "homepage": "https://koishi.js.org",
   "keywords": [
     "bot",
     "qqbot",

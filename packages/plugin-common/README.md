@@ -5,4 +5,4 @@
 
 Common plugins for Koishi.
 
-# [Documentation](https://koishijs.github.io/plugins/common.html)
+# [Documentation](https://koishi.js.org/plugins/common.html)
