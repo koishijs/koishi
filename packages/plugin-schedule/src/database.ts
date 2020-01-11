@@ -1,6 +1,7 @@
 import { MessageMeta, getSelfIds, injectMethods } from 'koishi-core'
 import {} from 'koishi-database-mysql'
 import {} from 'koishi-database-level'
+import { Schedule } from '.'
 
 declare module 'koishi-core/dist/database' {
   interface TableMethods {
@@ -17,15 +18,6 @@ interface ScheduleMethods {
   removeSchedule (id: number): Promise<any>
   getSchedule (id: number): Promise<Schedule>
   getAllSchedules (assignees?: number[]): Promise<Schedule[]>
-}
-
-export interface Schedule {
-  id: number
-  assignee: number
-  time: number
-  interval: number
-  command: string
-  meta: MessageMeta
 }
 
 injectMethods('mysql', 'schedule', {

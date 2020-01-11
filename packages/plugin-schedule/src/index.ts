@@ -1,7 +1,14 @@
-import { Context, appMap, Database, CommandConfig } from 'koishi-core'
-import { Schedule } from './database'
+import { Context, appMap, Database, CommandConfig, MessageMeta } from 'koishi-core'
+import './database'
 
-export * from './database'
+export interface Schedule {
+  id: number
+  assignee: number
+  time: number
+  interval: number
+  command: string
+  meta: MessageMeta
+}
 
 function inspectSchedule ({ id, assignee, meta, interval, command, time }: Schedule) {
   if (!appMap[assignee]) return
