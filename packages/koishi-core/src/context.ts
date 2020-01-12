@@ -54,6 +54,8 @@ export interface Logger {
 
 export const logTypes: (keyof Logger)[] = ['warn', 'info', 'debug', 'success', 'error']
 
+export type LogEvents = 'logger/warn' | 'logger/info' | 'logger/debug' | 'logger/success' | 'logger/error'
+
 export class Context {
   public app: App
   public sender: Sender
@@ -69,7 +71,7 @@ export class Context {
     this.logger = (scope = '') => {
       const logger = {} as Logger
       for (const type of logTypes) {
-        logger[type] = (...args) => this.app.receiver.emit(`logger/${type}` as any, scope, format(...args))
+        logger[type] = (...args) => this.app.receiver.emit(`logger/${type}` as LogEvents, scope, format(...args))
       }
       return logger
     }

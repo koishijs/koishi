@@ -1,4 +1,4 @@
-import { App, startAll, AppOptions, onStart, Context, appList } from 'koishi-core'
+import { App, startAll, AppOptions, onStart, Context, appList, logTypes, LogEvents } from 'koishi-core'
 import { capitalize } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { cyan } from 'kleur'
@@ -125,21 +125,11 @@ onStart(() => {
 appList.forEach((app) => {
   const { logLevel = 0, logFilter = {} } = app.options as AppConfig
 
-  app.receiver.on('logger/warn', (scope, message) => {
-    logger.warn(message, Math.min(logFilter[scope] ?? logLevel, baseLogLevel))
-  })
-  app.receiver.on('logger/error', (scope, message) => {
-    logger.error(message, Math.min(logFilter[scope] ?? logLevel, baseLogLevel))
-  })
-  app.receiver.on('logger/debug', (scope, message) => {
-    logger.debug(message, Math.min(logFilter[scope] ?? logLevel, baseLogLevel))
-  })
-  app.receiver.on('logger/info', (scope, message) => {
-    logger.info(message, Math.min(logFilter[scope] ?? logLevel, baseLogLevel))
-  })
-  app.receiver.on('logger/success', (scope, message) => {
-    logger.success(message, Math.min(logFilter[scope] ?? logLevel, baseLogLevel))
-  })
+  for (const type of logTypes) {
+    app.receiver.on(`logger/${type}` as LogEvents, (scope, message) => {
+      logger[type](message, Math.min(logFilter[scope] ?? logLevel, baseLogLevel))
+    })
+  }
 })
 
 startAll().catch((error) => {
