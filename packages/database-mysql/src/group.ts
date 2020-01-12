@@ -18,8 +18,8 @@ injectMethods('mysql', 'group', {
     const fields = args[0] as never || groupFields
     const timestamp = Date.now()
     const cache = groupCache[groupId]
-    const upToDate = timestamp - cache._timestamp < (this.config.groupRefreshInterval ?? defaultRefreshInterval)
-    if (cache && contain(Object.keys(cache), fields) && upToDate) return cache
+    if (cache && contain(Object.keys(cache), fields)
+      && timestamp - cache._timestamp < (this.config.groupRefreshInterval ?? defaultRefreshInterval)) return cache
 
     const [data] = await this.select<GroupData[]>('group', fields, '`id` = ?', [groupId])
     let fallback: GroupData
