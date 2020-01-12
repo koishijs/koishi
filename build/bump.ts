@@ -22,12 +22,14 @@ class Package {
   name: string
   meta: PackageJson
   oldVersion: string
+  metaVersion: string
   version: SemVer
   dirty: boolean
 
   static async from (path: string) {
     try {
       const pkg = packages[path] = new Package(path)
+      pkg.metaVersion = pkg.meta.version
       pkg.oldVersion = pkg.meta.version
       if (pkg.meta.private) return
       pkg.oldVersion = await latest(pkg.name)
@@ -141,7 +143,11 @@ const flag = options.major ? 'major' : options.minor ? 'minor' : options.patch ?
 
   await Promise.all(each((pkg) => {
     if (!pkg.dirty) return
-    console.log(`- ${pkg.name}: ${cyan(pkg.oldVersion)} => ${green(pkg.meta.version)}`)
+    if (pkg.metaVersion === pkg.meta.version) {
+      console.log(`- ${pkg.name}: updated`)
+    } else {
+      console.log(`- ${pkg.name}: ${cyan(pkg.oldVersion)} => ${green(pkg.meta.version)}`)
+    }
     return pkg.save()
   }))
 })()

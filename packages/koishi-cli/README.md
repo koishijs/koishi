@@ -59,9 +59,9 @@ Koishi 在开发时借助了下面的工具：
 
 ### 对比
 
-| 特性 | koishi<br>1.0.0 | cqhttp<br>1.1.1 | cq-websocket<br>2.0.2 | lemon-bot<br>0.5.1 | @ionjs/core<br>0.6.5 |
+| 特性 | koishi<br>1.3.0 | cqhttp<br>1.1.1 | cq-websocket<br>2.0.2 | lemon-bot<br>0.5.1 | @ionjs/core<br>0.6.5 |
 |:--:|:--:|:--:|:--:|:--:|:--:|
-| 依赖数量 | [17](http://npm.anvaka.com/#/view/2d/koishi/1.0.0-alpha.6) | [63](http://npm.anvaka.com/#/view/2d/cqhttp/1.1.1) | [37](http://npm.anvaka.com/#/view/2d/cq-websocket/2.0.2) | [55](http://npm.anvaka.com/#/view/2d/lemon-bot/0.5.1) | [73](http://npm.anvaka.com/#/view/2d/%2540ionjs%252Fcore/0.6.5) |
+| 依赖数量 | [22](http://npm.anvaka.com/#/view/2d/koishi/1.3.0) / [10](http://npm.anvaka.com/#/view/2d/koishi-core/1.3.0)<sup>i</sup> | [63](http://npm.anvaka.com/#/view/2d/cqhttp/1.1.1) | [37](http://npm.anvaka.com/#/view/2d/cq-websocket/2.0.2) | [55](http://npm.anvaka.com/#/view/2d/lemon-bot/0.5.1) | [73](http://npm.anvaka.com/#/view/2d/%2540ionjs%252Fcore/0.6.5) |
 | HTTP | ✔️ | ✔️ | ❌ | ✔️ | ✔️ |
 | WebSocket | ✔️ | ❌ | ✔️ | ❌ | ❌ |
 | 反向 WebSocket | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -71,6 +71,8 @@ Koishi 在开发时借助了下面的工具：
 | 命令行 | ✔️ | ❌ | ❌ | ❌ | ❌ |
 | 指令 | ✔️ | ❌ | ❌ | ✔️ | ❌ |
 | 会话 | ❌ | ❌ | ❌ | ✔️ | ✔️ |
+
+i: 如果你不希望使用 Koishi 的命令行，你可以使用更精简的 `koishi-core`。
 
 ## 安装
 
