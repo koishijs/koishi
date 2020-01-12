@@ -64,7 +64,7 @@ export default function (cli: CAC) {
     .option('-f, --forced', 'overwrite config file if it exists')
     .action(async (file, options) => {
       // resolve file path
-      const path = resolve(process.cwd(), String(file || 'koishi.config.json'))
+      const path = resolve(process.cwd(), String(file || 'koishi.config.js'))
       if (!options.forced && existsSync(path)) {
         logger.error(`${options.output} already exists. If you want to overwrite the current file, use ${yellow('koishi init -f')}`)
         process.exit(1)
