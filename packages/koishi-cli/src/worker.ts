@@ -4,6 +4,7 @@ import { performance } from 'perf_hooks'
 import { cyan } from 'kleur'
 import { resolve } from 'path'
 import { logger } from './utils'
+import { format } from 'util'
 
 const { version } = require('../package')
 
@@ -120,6 +121,10 @@ onStart(() => {
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
   logger.success(`bot started successfully in ${time} ms`, baseLogLevel)
   process.send({ type: 'start' })
+})
+
+process.on('unhandledRejection', (error) => {
+  logger.warn(format(error), baseLogLevel)
 })
 
 appList.forEach((app) => {
