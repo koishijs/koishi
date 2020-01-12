@@ -1,10 +1,12 @@
-import { App, startAll, AppOptions, onStart, Context, appList, logTypes, LogEvents } from 'koishi-core'
+import { App, startAll, AppOptions, onStart, Context, Plugin, appList, logTypes, LogEvents } from 'koishi-core'
+import { resolve, extname } from 'path'
 import { capitalize } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { cyan } from 'kleur'
-import { resolve } from 'path'
 import { logger } from './utils'
 import { format } from 'util'
+import { readFileSync } from 'fs'
+import { safeLoad } from 'js-yaml'
 
 const { version } = require('../package')
 
@@ -17,50 +19,44 @@ process.on('uncaughtException', ({ message }) => {
   })
 })
 
-const noModule = new Set<string>()
-
-function loadFromModules (modules: string[], message: string) {
-  for (const name of modules) {
-    if (noModule.has(name)) continue
-    try {
-      return require(name)
-    } catch (e) {
-      noModule.add(name)
-    }
-  }
-  throw new Error(message)
-}
-
-const base = process.env.KOISHI_BASE_PATH
+const cwd = process.cwd()
 
 function loadEcosystem (type: string, name: string) {
-  let depName: string
+  const modules = [resolve(cwd, name)]
   const prefix = `koishi-${type}-`
   if (name.includes(prefix)) {
-    depName = name
+    modules.unshift(name)
   } else {
     const index = name.lastIndexOf('/')
-    depName = name.slice(0, index + 1) + prefix + name.slice(index + 1)
+    modules.unshift(name.slice(0, index + 1) + prefix + name.slice(index + 1))
   }
-  return loadFromModules([
-    depName,
-    resolve(base, name),
-  ], `cannot resolve ${type} ${name}`)
+  for (const name of modules) {
+    try {
+      return require(name)
+    } catch {}
+  }
+  throw new Error(`cannot resolve ${type} ${name}`)
 }
 
-type PluginConfig = [Plugin, any][]
+type PluginConfig = (string | [string | Plugin, any])[]
 
-interface AppConfig extends AppOptions {
+export interface AppConfig extends AppOptions {
   plugins?: PluginConfig | Record<string, PluginConfig>
   logLevel?: number
   logFilter?: Record<string, number>
 }
 
 function loadPlugins (ctx: Context, plugins: PluginConfig) {
-  for (const [plugin, options] of plugins) {
-    const resolved = typeof plugin === 'string' ? loadEcosystem('plugin', plugin) : plugin
-    ctx.plugin(resolved, options)
-    if (resolved.name) logger.info(`apply plugin ${cyan(resolved.name)}`, baseLogLevel)
+  for (const item of plugins) {
+    let plugin: Plugin, options
+    if (typeof item === 'string') {
+      plugin = loadEcosystem('plugin', item)
+    } else {
+      plugin = typeof item[0] === 'string' ? loadEcosystem('plugin', item[0]) : item[0]
+      options = item[1]
+    }
+    ctx.plugin(plugin, options)
+    if (plugin.name) logger.info(`apply plugin ${cyan(plugin.name)}`, baseLogLevel)
   }
 }
 
@@ -80,14 +76,30 @@ function prepareApp (config: AppConfig) {
   }
 }
 
-const config: AppConfig | AppConfig[] = loadFromModules([
-  resolve(base, 'koishi.config'),
-  base,
-], 'config file not found.')
+const configFile = resolve(cwd, process.env.KOISHI_CONFIG_FILE || 'koishi.config')
+const extension = extname(configFile)
+let config: AppConfig | AppConfig[]
+
+function tryCallback <T> (callback: () => T) {
+  try {
+    return callback()
+  } catch {}
+}
+
+if (['.js', '.json'].includes(extension)) {
+  config = tryCallback(() => require(configFile))
+} else if (['.yaml', '.yml'].includes(extension)) {
+  config = tryCallback(() => safeLoad(readFileSync(configFile, 'utf8')))
+} else {
+  config = tryCallback(() => require(configFile))
+    || tryCallback(() => safeLoad(readFileSync(configFile + '.yml', 'utf8')))
+    || tryCallback(() => safeLoad(readFileSync(configFile + '.yaml', 'utf8')))
+}
+
+if (!config) throw new Error('config file not found.')
 
 let baseLogLevel = 3
-
-if (process.env.KOISHI_LOG_LEVEL) {
+if (process.env.KOISHI_LOG_LEVEL !== undefined) {
   baseLogLevel = +process.env.KOISHI_LOG_LEVEL
 }
 

@@ -1,12 +1,13 @@
 import { existsSync, writeFileSync } from 'fs'
-import { AppOptions } from 'koishi-core'
 import { yellow } from 'kleur'
-import { resolve } from 'path'
+import { resolve, extname } from 'path'
 import { logger } from './utils'
+import { safeDump } from 'js-yaml'
+import { AppConfig } from './worker'
 import prompts from 'prompts'
 import CAC from 'cac/types/CAC'
 
-async function createConfig (options): Promise<AppOptions> {
+async function createConfig (options) {
   let succeed = true
   const data = await prompts([{
     name: 'type',
@@ -46,35 +47,59 @@ async function createConfig (options): Promise<AppOptions> {
   }], {
     onCancel: () => succeed = false,
   })
-  return succeed && data
+  if (!succeed) return
+  const config = {} as AppConfig
+  for (const key in data) {
+    if (data[key]) config[key] = data[key]
+  }
+  config.plugins = ['common', 'schedule']
+  return config
 }
 
+type ConfigFileType = 'js' | 'json' | 'yml' | 'yaml'
+const supportedTypes: ConfigFileType[] = ['js', 'json', 'yml', 'yaml']
+
 export default function (cli: CAC) {
-  cli.command('init [file]', 'initialize a koishi.config.js file')
+  cli.command('init [file]', 'initialize a koishi configuration file')
     .option('-f, --forced', 'overwrite config file if it exists')
     .action(async (file, options) => {
-      const path = resolve(process.cwd(), String(file || 'koishi.config.js'))
+      // resolve file path
+      const path = resolve(process.cwd(), String(file || 'koishi.config.json'))
       if (!options.forced && existsSync(path)) {
         logger.error(`${options.output} already exists. If you want to overwrite the current file, use ${yellow('koishi init -f')}`)
         process.exit(1)
       }
+
+      // parse extension
+      const extension = extname(path).slice(1) as ConfigFileType
+      if (!extension) {
+        logger.error(`configuration file should have an extension, received "${file}"`)
+        process.exit(1)
+      } else if (!supportedTypes.includes(extension)) {
+        logger.error(`configuration file type "${extension}" is currently not supported`)
+        process.exit(1)
+      }
+
+      // create configurations
       const config = await createConfig(options)
       if (!config) {
         logger.error('initialization was canceled')
         process.exit(0)
       }
-      const output: string[] = ['module.exports = {']
-      output.push(`  type: "${config.type}",`)
-      if (config.port) output.push(`  port: ${config.port},`)
-      output.push(`  server: ${JSON.stringify(config.server)},`)
-      if (config.selfId) output.push(`  selfId: ${config.selfId},`)
-      if (config.secret) output.push(`  secret: ${JSON.stringify(config.secret)},`)
-      if (config.token) output.push(`  token: ${JSON.stringify(config.token)},`)
-      output.push('  plugins: [')
-      output.push('    ["common"],')
-      output.push('  ],')
-      output.push('}\n')
-      writeFileSync(path, output.join('\n'))
+
+      // generate output
+      let output: string
+      switch (extension) {
+        case 'yml': case 'yaml': output = safeDump(config); break
+        default:
+          output = JSON.stringify(config, null, 2)
+          if (extension === 'js') {
+            output = 'module.exports = ' + output.replace(/^(\s+)"([\w$]+)":/mg, '$1$2:')
+          }
+      }
+
+      // write to file
+      writeFileSync(path, output)
       logger.success(`created config file: ${path}`)
       process.exit(0)
     })
