@@ -51,7 +51,7 @@ export default function (cli: CAC) {
         }
         process.env.KOISHI_LOG_LEVEL = '' + logLevel
       }
-      process.env.KOISHI_CONFIG_FILE = file
+      process.env.KOISHI_CONFIG_FILE = file || ''
       createWorker()
     })
 }
