@@ -1,4 +1,5 @@
 import { MessageMeta, getSelfIds, injectMethods } from 'koishi-core'
+import { noop } from 'koishi-utils'
 import {} from 'koishi-database-mysql'
 import {} from 'koishi-database-level'
 import { Schedule } from '.'
@@ -52,7 +53,7 @@ injectMethods('level', 'schedule', {
   },
 
   getSchedule (id) {
-    return this.tables.schedule.get(id)
+    return this.tables.schedule.get(id).catch(noop)
   },
 
   async getAllSchedules (assignees) {
