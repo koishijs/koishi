@@ -61,7 +61,8 @@ Koishi 在开发时借助了下面的工具：
 
 | 特性 | [koishi<br>1.3.0](https://www.npmjs.com/package/koishi/v/1.3.0) | [cqhttp<br>1.2.0](https://www.npmjs.com/package/cqhttp/v/1.2.0) | [cq-websocket<br>2.0.2](https://www.npmjs.com/package/cq-websocket/v/2.0.2) | [lemon-bot<br>0.6.0](https://www.npmjs.com/package/lemon-bot/v/0.6.0) | [@ionjs/core<br>0.6.5](https://www.npmjs.com/package/@ionjs/core/v/0.6.5) |
 |:--:|:--:|:--:|:--:|:--:|:--:|
-| 依赖数量 | [22](http://npm.anvaka.com/#/view/2d/koishi/1.3.0) / [10](http://npm.anvaka.com/#/view/2d/koishi-core/1.3.0) | [62](http://npm.anvaka.com/#/view/2d/cqhttp/1.1.1) | [37](http://npm.anvaka.com/#/view/2d/cq-websocket/2.0.2) | [65](http://npm.anvaka.com/#/view/2d/lemon-bot/0.6.0) | [73](http://npm.anvaka.com/#/view/2d/%2540ionjs%252Fcore/0.6.5) |
+| 依赖数量 | [10](http://npm.anvaka.com/#/view/2d/koishi-core/1.3.0) / [21](http://npm.anvaka.com/#/view/2d/koishi/1.3.0) | [62](http://npm.anvaka.com/#/view/2d/cqhttp/1.1.1) | [37](http://npm.anvaka.com/#/view/2d/cq-websocket/2.0.2) | [65](http://npm.anvaka.com/#/view/2d/lemon-bot/0.6.0) | [73](http://npm.anvaka.com/#/view/2d/%2540ionjs%252Fcore/0.6.5) |
+| 安装体积 (MB) | [0.78](https://packagephobia.now.sh/result?p=koishi-core@1.3.0) / [2.14](https://packagephobia.now.sh/result?p=koishi@1.3.0) | [1.86](https://packagephobia.now.sh/result?p=cqhttp@1.1.1) | [2.82](https://packagephobia.now.sh/result?p=cq-websocket) | [2.56](https://packagephobia.now.sh/result?p=lemon-bot) | [2.32](https://packagephobia.now.sh/result?p=@ionjs/core) |
 | HTTP | ✔️ | ✔️ | ❌ | ✔️ | ✔️ |
 | WebSocket | ✔️ | ❌ | ✔️ | ❌ | ❌ |
 | 反向 WebSocket | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -71,7 +72,7 @@ Koishi 在开发时借助了下面的工具：
 | 命令行 | ✔️ | ❌ | ❌ | ❌ | ❌ |
 | 指令 | ✔️ | ❌ | ❌ | ✔️ | ❌ |
 
-注：依赖数量如果表示为 X/Y，则 X 表示命令行工具依赖数量， Y 表示核心库依赖数量。
+注：依赖数量如果表示为 X/Y，则 X 表示核心库依赖数量，Y 表示命令行工具依赖数量。
 
 ## 安装
 
