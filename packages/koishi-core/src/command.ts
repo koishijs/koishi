@@ -4,7 +4,6 @@ import { messages, errors } from './messages'
 import { noop } from 'koishi-utils'
 import { MessageMeta } from './meta'
 import { format } from 'util'
-import debug from 'debug'
 
 import {
   CommandOption,
@@ -15,8 +14,6 @@ import {
   parseLine,
   ParsedLine,
 } from './parser'
-
-const showCommandLog = debug('koishi:command')
 
 export interface ParsedCommandLine extends Partial<ParsedLine> {
   meta: MessageMeta
@@ -286,7 +283,7 @@ export class Command {
     if (!await this._checkUser(meta, options)) return
 
     // execute command
-    showCommandLog('execute %s', this.name)
+    this.context.logger('command').debug('execute %s', this.name)
     this.app.emitEvent(meta, 'command', argv)
 
     let skipped = false
