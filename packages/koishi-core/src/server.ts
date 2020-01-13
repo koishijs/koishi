@@ -1,18 +1,12 @@
 import WebSocket from 'ws'
-import debug from 'debug'
 import * as http from 'http'
 import { errors } from './messages'
 import { createHmac } from 'crypto'
 import { camelCase, snakeCase, capitalize, paramCase, CQCode } from 'koishi-utils'
 import { Meta, VersionInfo, ContextType } from './meta'
-import { App, AppOptions } from './app'
+import { App } from './app'
 import { CQResponse } from './sender'
 import { format } from 'util'
-
-const showServerLog = debug('koishi:server')
-
-// @ts-ignore: @types/debug does not include the property
-showServerLog.inspectOpts.depth = 0
 
 export abstract class Server {
   public appList: App[] = []
@@ -27,11 +21,22 @@ export abstract class Server {
     this.bind(app)
   }
 
+  /**
+   * representative app
+   */
+  get app () {
+    return this.appList[0]
+  }
+
+  protected debug (format: any, ...params: any[]) {
+    this.app?.logger('sender').debug(format, ...params)
+  }
+
   protected prepareMeta (data: any) {
     const meta = camelCase<Meta>(data)
     if (!meta.selfId) {
       // below version 3.4
-      meta.selfId = this.appList[0].selfId
+      meta.selfId = this.app.selfId
     } else if (!this.appMap[meta.selfId]) {
       const app = this.appList.find(app => !app.options.selfId)
       if (!app) return
@@ -219,7 +224,7 @@ export class HttpServer extends Server {
 
         // no matched application
         const data = JSON.parse(body)
-        showServerLog('receive %o', data)
+        this.debug('receive %o', data)
         const meta = this.prepareMeta(data)
         if (!meta) {
           res.statusCode = 403
@@ -251,20 +256,20 @@ export class HttpServer extends Server {
   }
 
   async _listen () {
-    showServerLog('http server opening')
-    const { port } = this.appList[0].options
+    this.debug('http server opening')
+    const { port } = this.app.options
     this.server.listen(port)
     try {
-      this.version = await this.appList[0].sender.getVersionInfo()
+      this.version = await this.app.sender.getVersionInfo()
     } catch (error) {
       throw new Error('authorization failed')
     }
-    showServerLog('http server listen to', port)
+    this.debug('http server listen to', port)
   }
 
   _close () {
     this.server.close()
-    showServerLog('http server closed')
+    this.debug('http server closed')
   }
 }
 
@@ -286,9 +291,9 @@ export class WsClient extends Server {
 
   _listen (): Promise<void> {
     return new Promise((resolve, reject) => {
-      showServerLog('websocket client opening')
+      this.debug('websocket client opening')
       const headers: Record<string, string> = {}
-      const { token, server } = this.appList[0].options
+      const { token, server } = this.app.options
       if (token) headers.Authorization = `Bearer ${token}`
       this.socket = new WebSocket(server, { headers })
 
@@ -305,7 +310,7 @@ export class WsClient extends Server {
         let resolved = false
         this.socket.on('message', (data) => {
           data = data.toString()
-          showServerLog('receive', data)
+          this.debug('receive', data)
           let parsed: any
           try {
             parsed = JSON.parse(data)
@@ -314,8 +319,7 @@ export class WsClient extends Server {
           }
           if (!resolved) {
             resolved = true
-            const { server } = this.appList[0].options
-            showServerLog('connect to ws server:', server)
+            this.debug('connect to ws server:', this.app.options.server)
             resolve()
           }
           if ('post_type' in parsed) {
@@ -334,7 +338,7 @@ export class WsClient extends Server {
 
   _close () {
     this.socket.close()
-    showServerLog('websocket client closed')
+    this.debug('websocket client closed')
   }
 }
 

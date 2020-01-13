@@ -8,7 +8,7 @@ interface State {
   users: Set<number>
 }
 
-type SessionSwitch = boolean | ((repeated: boolean, times: number) => boolean)
+type SessionSwitch = boolean | ((repeated: boolean, times: number, message: string) => boolean)
 type SessionText = string | ((userId: number, message: string) => string)
 
 export interface RepeaterOptions {
@@ -31,8 +31,8 @@ const defaultOptions: RepeaterOptions = {
   interruptCheckText: (userId) => `[CQ:at,qq=${userId}] 在？为什么打断复读？`,
 }
 
-function getSwitch (sessionSwitch: SessionSwitch, repeated: boolean, times: number) {
-  return typeof sessionSwitch === 'boolean' ? sessionSwitch : sessionSwitch(repeated, times)
+function getSwitch (sessionSwitch: SessionSwitch, repeated: boolean, times: number, message: string) {
+  return typeof sessionSwitch === 'boolean' ? sessionSwitch : sessionSwitch(repeated, times, message)
 }
 
 function getText (sessionText: SessionText, userId: number, message: string) {
@@ -72,19 +72,19 @@ export default function apply (ctx: Context, options: RepeaterOptions) {
   ctx.prependMiddleware(({ message, groupId, userId, $send }, next) => {
     const state = getState(groupId)
     if (message === state.message) {
-      if (state.users.has(userId) && getSwitch(options.repeatCheck, state.repeated, state.times)) {
+      if (state.users.has(userId) && getSwitch(options.repeatCheck, state.repeated, state.times, message)) {
         return next(() => $send(getText(options.repeatCheckText, userId, message)))
       }
       state.times += 1
       state.users.add(userId)
-      if (getSwitch(options.interrupt, state.repeated, state.times)) {
+      if (getSwitch(options.interrupt, state.repeated, state.times, message)) {
         return next(() => $send(getText(options.interruptText, userId, message)))
       }
-      if (getSwitch(options.repeat, state.repeated, state.times)) {
+      if (getSwitch(options.repeat, state.repeated, state.times, message)) {
         return next(() => $send(message))
       }
     } else {
-      if (getSwitch(options.interruptCheck, state.repeated, state.times)) {
+      if (getSwitch(options.interruptCheck, state.repeated, state.times, message)) {
         return next(() => $send(getText(options.interruptCheckText, userId, message)))
       }
       state.message = message

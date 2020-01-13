@@ -9,10 +9,12 @@ import update from './update'
 export * from './database'
 export { TeachConfig }
 
+export const name = 'teach'
+
 export function apply (ctx: Context, config: TeachConfig = {}) {
   ctx.plugin(receiver, config)
 
-  const command = ctx.command('teach <question> <answer>', '教四季酱说话', { authority: 2, checkUnknown: true, ...config })
+  const command = ctx.command('teach <question> <answer>', '添加教学对话', { authority: 2, checkUnknown: true, ...config })
     .alias('教学')
     .shortcut('教学信息', { options: { info: true } })
     .shortcut('全局教学信息', { options: { info: true, allEnv: true } })

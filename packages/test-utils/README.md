@@ -7,5 +7,5 @@
 
 ## 使用方法
 
-- 使用指南：https://koishijs.github.io/guide/unit-tests.html
-- API 文档：https://koishijs.github.io/api/test-utils.html
+- 使用指南：https://koishi.js.org/guide/unit-tests.html
+- API 文档：https://koishi.js.org/api/test-utils.html

@@ -1,14 +1,15 @@
 import { injectMethods, userFields, UserData, createUser, User, UserField } from 'koishi-core'
 import { observe } from 'koishi-utils'
-import { arrayTypes } from './database'
+import { arrayTypes, jsonTypes } from './database'
 
 arrayTypes.push('user.endings', 'user.achievement', 'user.inference')
+jsonTypes.push('user.talkativeness', 'user.usage')
 
-injectMethods('mysql', 'user', {
+injectMethods('sqlite', 'user', {
   async getUser (userId, ...args) {
     const authority = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] as never || userFields
-    const [data] = await this.select<UserData[]>('user', fields, '`id` = ?', [userId])
+    const [data] = await this.select<UserData>('user', fields, '`id` = ' + userId)
     let fallback: UserData
     if (data) {
       data.id = userId
@@ -17,7 +18,7 @@ injectMethods('mysql', 'user', {
     } else {
       fallback = createUser(userId, authority)
       if (authority) {
-        await this.query(
+        await this.get(
           'INSERT INTO `user` (' + this.joinKeys(userFields) + ') VALUES (' + userFields.map(() => '?').join(', ') + ')',
           this.formatValues('user', fallback, userFields),
         )

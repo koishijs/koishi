@@ -24,7 +24,6 @@ export interface AuthorizeConfig {
 }
 
 interface AuthorizeInfo {
-  todo: number[]
   insert: Set<number>
   update: Set<number>
 }
@@ -32,23 +31,30 @@ interface AuthorizeInfo {
 export default function apply (ctx: Context, config: AuthorizeConfig) {
   const { app, database } = ctx
   const { authorizeUser = {}, authorizeGroup = {} } = config
+  const logger = ctx.logger('authorize')
   const authorityMap: Record<number, AuthorizeInfo> = []
 
+  /**
+   * an inversed map of `config.authorizeUser`
+   * - key: authority
+   * - value: list of ids
+   */
+  const authorizeUserInverseMap: Record<number, number[]> = []
   for (const id in authorizeUser) {
-    if (authorityMap[authorizeUser[id]]) {
-      authorityMap[authorizeUser[id]].todo.push(+id)
+    const authority = authorizeUser[id]
+    if (authorizeUserInverseMap[authority]) {
+      authorizeUserInverseMap[authority].push(+id)
     } else {
-      authorityMap[authorizeUser[id]] = {
-        todo: [+id],
-        insert: new Set(),
-        update: new Set(),
-      }
+      authorizeUserInverseMap[authority] = [+id]
     }
   }
 
   async function updateAuthorizeInfo (authority: number, ids: number[]) {
-    const info = authorityMap[authority]
     const users = await database.getUsers(ids, ['id', 'authority'])
+    const info = authorityMap[authority] || (authorityMap[authority] = {
+      insert: new Set(),
+      update: new Set(),
+    })
     for (const id of ids) {
       const user = users.find(u => u.id === id)
       if (!user) {
@@ -60,10 +66,9 @@ export default function apply (ctx: Context, config: AuthorizeConfig) {
   }
 
   app.receiver.once('ready', async () => {
+    logger.info('foo bar')
     await Promise.all([
-      ...Object.keys(authorityMap).map(async (key) => {
-        await updateAuthorizeInfo(+key, authorityMap[key])
-      }),
+      ...Object.keys(authorizeUserInverseMap).map(key => updateAuthorizeInfo(+key, authorizeUserInverseMap[+key])),
       ...Object.entries(authorizeGroup).map(async ([key, value]) => {
         const groupId = +key
         const config = typeof value === 'number' ? { member: value } : value

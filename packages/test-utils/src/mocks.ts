@@ -62,7 +62,7 @@ export class MockedApp extends App {
     this.clearRequests()
   }
 
-  shouldHaveLastRequests (requests: RequestInfo[]) {
+  shouldHaveLastRequests (requests: RequestData[]) {
     expect(this.sender.requests.slice(0, requests.length)).toMatchObject(requests.map(snakeCase).reverse())
     this.clearRequests()
   }

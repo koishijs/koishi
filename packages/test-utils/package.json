@@ -34,7 +34,7 @@
   ],
   "peerDependencies": {
     "jest": "^24.9.0",
-    "koishi-core": "^1.2.0"
+    "koishi-core": "^1.3.0"
   },
   "devDependencies": {
     "@types/debug": "^4.1.5",

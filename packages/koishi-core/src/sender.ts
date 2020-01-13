@@ -1,4 +1,3 @@
-import debug from 'debug'
 import axios from 'axios'
 import { snakeCase, camelCase, isInteger } from 'koishi-utils'
 import { WsClient } from './server'
@@ -19,8 +18,6 @@ import {
   GroupNoticeInfo,
   ContextType,
 } from './meta'
-
-const showSenderLog = debug('koishi:sender')
 
 export class SenderError extends Error {
   readonly name = 'SenderError'
@@ -68,9 +65,9 @@ export class Sender {
   }
 
   async get <T = any> (action: string, params: Record<string, any> = {}, silent = false): Promise<T> {
-    showSenderLog('request %s %o', action, params)
+    this.app.logger('sender').debug('request %s %o', action, params)
     const response = await this._get(action, snakeCase(params))
-    showSenderLog('response %o', response)
+    this.app.logger('sender').debug('response %o', response)
     const { data, retcode } = response
     if (retcode === 0 && !silent) {
       return camelCase(data)

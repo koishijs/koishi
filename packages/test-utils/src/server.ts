@@ -8,7 +8,7 @@ import * as ws from 'ws'
 import getPort from 'get-port'
 import axios from 'axios'
 
-export default class TestServer extends EventEmitter {
+export class TestServer extends EventEmitter {
   appList: App[] = []
   requests: RequestData[] = []
   server: { close: () => void }
