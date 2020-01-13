@@ -45,11 +45,11 @@ const noopScope: ContextScope = [[[], null], [[], null], [[], null]]
 const noopIdentifier = ContextScope.stringify(noopScope)
 
 export interface Logger {
-  warn: (format: any, ...param: any) => void
-  info: (format: any, ...param: any) => void
-  debug: (format: any, ...param: any) => void
-  success: (format: any, ...param: any) => void
-  error: (format: any, ...param: any) => void
+  warn (format: any, ...param: any): void
+  info (format: any, ...param: any): void
+  debug (format: any, ...param: any): void
+  success (format: any, ...param: any): void
+  error (format: any, ...param: any): void
 }
 
 export const logTypes: (keyof Logger)[] = ['warn', 'info', 'debug', 'success', 'error']
@@ -71,7 +71,10 @@ export class Context {
     this.logger = (scope = '') => {
       const logger = {} as Logger
       for (const type of logTypes) {
-        logger[type] = (...args) => this.app.receiver.emit(`logger/${type}` as LogEvents, scope, format(...args))
+        logger[type] = (...args) => {
+          this.app.receiver.emit('logger', scope, format(...args), type)
+          this.app.receiver.emit(`logger/${type}` as LogEvents, scope, format(...args))
+        }
       }
       return logger
     }
@@ -284,6 +287,7 @@ export interface EventMap {
   'error' (error: Error): any
   'error/command' (error: Error): any
   'error/middleware' (error: Error): any
+  'logger' (scope: string, message: string, type: keyof Logger): any
   'logger/debug' (scope: string, message: string): any
   'logger/info' (scope: string, message: string): any
   'logger/error' (scope: string, message: string): any
