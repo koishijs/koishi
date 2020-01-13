@@ -10,13 +10,14 @@ import { safeLoad } from 'js-yaml'
 
 const { version } = require('../package')
 
+let baseLogLevel = 3
+if (process.env.KOISHI_LOG_LEVEL !== undefined) {
+  baseLogLevel = +process.env.KOISHI_LOG_LEVEL
+}
+
 process.on('uncaughtException', ({ message }) => {
-  process.send({
-    type: 'error',
-    message,
-  }, () => {
-    process.exit(-1)
-  })
+  logger.error(message, baseLogLevel)
+  process.exit(-1)
 })
 
 const cwd = process.cwd()
@@ -98,11 +99,6 @@ if (['.js', '.json'].includes(extension)) {
 
 if (!config) throw new Error('config file not found.')
 
-let baseLogLevel = 3
-if (process.env.KOISHI_LOG_LEVEL !== undefined) {
-  baseLogLevel = +process.env.KOISHI_LOG_LEVEL
-}
-
 if (Array.isArray(config)) {
   config.forEach(conf => prepareApp(conf))
 } else {
@@ -150,6 +146,6 @@ appList.forEach((app) => {
 })
 
 startAll().catch((error) => {
-  logger.error(error)
+  logger.error(error, baseLogLevel)
   process.exit(-1)
 })

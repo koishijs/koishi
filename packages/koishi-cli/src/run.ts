@@ -14,8 +14,6 @@ function createWorker () {
   child.on('message', (data: any) => {
     if (data.type === 'start') {
       started = true
-    } else if (data.type === 'error') {
-      logger.error(data.message)
     }
   })
 
