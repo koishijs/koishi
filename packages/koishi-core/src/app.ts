@@ -288,7 +288,7 @@ export class App extends Context {
         if (prefix && !nickname) continue
         if (!fuzzy && message !== name) continue
         if (message.startsWith(name)) {
-          let _message = message.slice(name.length)
+          const _message = message.slice(name.length)
           if (fuzzy && !nickname && _message.match(/^\S/)) continue
           const result: ParsedLine = oneArg
             ? { rest: '', options: {}, unknown: [], args: [_message.trim()] }
