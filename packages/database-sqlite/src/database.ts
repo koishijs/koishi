@@ -8,7 +8,7 @@ declare module 'koishi-core/dist/database' {
   }
 
   interface DatabaseConfig {
-    sqlite: SqliteConfig
+    sqlite?: SqliteConfig
   }
 }
 
