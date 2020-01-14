@@ -122,13 +122,13 @@ injectMethods('level', 'dialogue', {
   _testDialogue (test, data) {
     if (test.keyword) {
       if (test.question && !data.question.includes(test.question)) return
-      if (test.answer && !data.question.includes(test.answer)) return
+      if (test.answer && !data.answer.includes(test.answer)) return
     } else if (data.flag & DialogueFlag.keyword) {
       if (test.question && !test.question.includes(data.question)) return
-      if (test.answer && !test.question.includes(data.answer)) return
+      if (test.answer && !test.answer.includes(data.answer)) return
     } else {
       if (test.question && data.question !== test.question) return
-      if (test.answer && data.question !== test.answer) return
+      if (test.answer && data.answer !== test.answer) return
     }
     if (test.envMode === 2) {
       // TODO:
