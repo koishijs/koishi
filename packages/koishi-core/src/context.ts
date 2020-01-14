@@ -145,7 +145,7 @@ export class Context {
   middleware (middleware: Middleware) {
     const { maxMiddlewares } = this.app.options
     if (this.app._middlewares.length >= maxMiddlewares) {
-      this.app.receiver.emit('error', new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
+      this.logger().warn(new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
     } else {
       this.app._middlewares.push([this, middleware])
     }
@@ -155,7 +155,7 @@ export class Context {
   prependMiddleware (middleware: Middleware) {
     const { maxMiddlewares } = this.app.options
     if (this.app._middlewares.length >= maxMiddlewares) {
-      this.app.receiver.emit('error', new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
+      this.logger().warn(new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
     } else {
       this.app._middlewares.unshift([this, middleware])
     }

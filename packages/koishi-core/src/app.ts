@@ -382,7 +382,7 @@ export class App extends Context {
     let index = 0
     const next = async (fallback?: NextFunction) => {
       if (!this._middlewareSet.has(counter)) {
-        return this.receiver.emit('error', new Error(errors.ISOLATED_NEXT))
+        return this.logger().warn(new Error(errors.ISOLATED_NEXT))
       }
       if (fallback) middlewares.push((_, next) => fallback(next))
       try {
