@@ -284,6 +284,7 @@ export interface EventMap {
   'before-command' (argv: ParsedCommandLine): any
   'command' (argv: ParsedCommandLine): any
   'after-command' (argv: ParsedCommandLine): any
+  'after-middleware' (meta: Meta<'message'>): any
   'error' (error: Error): any
   'error/command' (error: Error): any
   'error/middleware' (error: Error): any
