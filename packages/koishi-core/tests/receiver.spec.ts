@@ -1,6 +1,16 @@
-import { createMeta, MockedApp } from 'koishi-test-utils'
+import { MockedApp, BASE_SELF_ID } from 'koishi-test-utils'
+import { PostType, MetaTypeMap, SubTypeMap, Meta } from '../dist'
+import { camelCase } from 'koishi-utils'
 
 const app = new MockedApp()
+
+function createMeta <T extends PostType> (postType: T, type: MetaTypeMap[T], subType: SubTypeMap[T], meta: Meta<T> = {}) {
+  if (!meta.selfId) meta.selfId = BASE_SELF_ID
+  meta.postType = postType
+  meta[camelCase(postType) + 'Type'] = type
+  meta.subType = subType
+  return meta
+}
 
 describe('Receiver API', () => {
   test('user/*/message/friend', async () => {

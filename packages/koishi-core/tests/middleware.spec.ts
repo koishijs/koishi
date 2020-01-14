@@ -43,48 +43,22 @@ describe('Middleware API', () => {
   })
 
   test('middleware-1', async () => {
-    await app.receive({
-      ...shared,
-      messageType: 'private',
-      subType: 'friend',
-      message: 'foo',
-    })
-
+    await app.receiveMessage('user', 'foo', 10000)
     expect(flag.toString(2).split('').reverse().join('')).toBe('1101')
   })
 
   test('middleware-2', async () => {
-    await app.receive({
-      ...shared,
-      messageType: 'group',
-      subType: 'normal',
-      message: 'bar',
-      groupId: 20000,
-    })
-
+    await app.receiveMessage('group', 'bar', 10000, 20000)
     expect(flag.toString(2).split('').reverse().join('')).toBe('1011')
   })
 
   test('middleware-3', async () => {
-    await app.receive({
-      ...shared,
-      messageType: 'private',
-      subType: 'friend',
-      message: 'baz',
-    })
-
+    await app.receiveMessage('user', 'baz', 10000)
     expect(flag.toString(2).split('').reverse().join('')).toBe('1101011')
   })
 
   test('middleware-4', async () => {
-    await app.receive({
-      ...shared,
-      messageType: 'group',
-      subType: 'normal',
-      message: 'baz',
-      groupId: 20000,
-    })
-
+    await app.receiveMessage('group', 'baz', 10000, 20000)
     expect(flag.toString(2).split('').reverse().join('')).toBe('10111')
   })
 })
@@ -110,14 +84,7 @@ describe('runtime checks', () => {
       next()
     })
 
-    await app.receive({
-      ...shared,
-      messageType: 'group',
-      subType: 'normal',
-      message: 'bar',
-    })
-
-    await sleep(0)
+    await app.receiveMessage('group', 'bar', 10000, 20000)
 
     expect(errorCallback).toBeCalledTimes(1)
     expect(errorCallback).toBeCalledWith(errors.ISOLATED_NEXT)
@@ -135,12 +102,7 @@ describe('runtime checks', () => {
       throw new Error(errorMessage)
     })
 
-    await app.receive({
-      ...shared,
-      messageType: 'group',
-      subType: 'normal',
-      message: 'bar',
-    })
+    await app.receiveMessage('group', 'bar', 10000, 20000)
 
     expect(errorCallback).toBeCalledTimes(1)
     expect(errorCallback).toBeCalledWith(errorMessage)

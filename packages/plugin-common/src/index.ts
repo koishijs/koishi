@@ -11,7 +11,7 @@ import info from './info'
 import likeme, { LikemeOptions } from './likeme'
 import rank from './rank'
 import repeater, { RepeaterOptions } from './repeater'
-import requestHandler, { HandlerConfig } from './requestHandler'
+import requestHandler, { HandlerConfig } from './request-handler'
 import respondent, { Respondent } from './respondent'
 import welcome, { WelcomeMessage } from './welcome'
 
