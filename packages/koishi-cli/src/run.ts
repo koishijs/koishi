@@ -35,13 +35,13 @@ function createWorker () {
 export default function (cli: CAC) {
   cli.command('run [file]', 'start a koishi bot')
     .alias('start')
-    .option('--log-level <level>', 'specify log level (default: 3)')
+    .option('--log-level <level>', 'specify log level (default: 2)')
     .option('--silent', 'use log level 0 (print no message)')
-    .option('--debug', 'use log level 4 (print all messages)')
+    .option('--debug', 'use log level 3 (print all messages)')
     .action((file, options) => {
       let logLevel = options.logLevel
       if (options.silent) logLevel = 0
-      if (options.debug) logLevel = 4
+      if (options.debug) logLevel = 3
       if (logLevel !== undefined) {
         if (!isInteger(logLevel) || logLevel < 0) {
           logger.error('log level should be a positive integer.')
