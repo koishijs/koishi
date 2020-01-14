@@ -16,25 +16,12 @@ describe('support string', () => {
   })
 
   test('friend add', async () => {
-    await app.receive({
-      postType: 'request',
-      requestType: 'friend',
-      flag: 'flag',
-      userId: 321,
-    })
-
+    await app.receiveFriendRequest(321)
     app.shouldHaveLastRequest('set_friend_add_request', { approve: true, remark: 'foo' })
   })
 
   test('group add', async () => {
-    await app.receive({
-      postType: 'request',
-      requestType: 'group',
-      subType: 'add',
-      flag: 'flag',
-      userId: 321,
-    })
-
+    await app.receiveGroupRequest(321, 'add')
     app.shouldHaveLastRequest('set_group_add_request', { approve: false, reason: 'bar' })
   })
 })
@@ -49,25 +36,12 @@ describe('support boolean', () => {
   })
 
   test('friend add', async () => {
-    await app.receive({
-      postType: 'request',
-      requestType: 'friend',
-      flag: 'flag',
-      userId: 321,
-    })
-
+    await app.receiveFriendRequest(321)
     app.shouldHaveLastRequest('set_friend_add_request', { approve: false })
   })
 
   test('group invite', async () => {
-    await app.receive({
-      postType: 'request',
-      requestType: 'group',
-      subType: 'invite',
-      flag: 'flag',
-      userId: 321,
-    })
-
+    await app.receiveGroupRequest(321, 'invite')
     app.shouldHaveLastRequest('set_group_add_request', { approve: false })
   })
 })
@@ -79,37 +53,17 @@ describe('default behaviour without database', () => {
   })
 
   test('friend add', async () => {
-    await app.receive({
-      postType: 'request',
-      requestType: 'friend',
-      flag: 'flag',
-      userId: 321,
-    })
-
+    await app.receiveFriendRequest(321)
     app.shouldHaveNoRequests()
   })
 
   test('group invite', async () => {
-    await app.receive({
-      postType: 'request',
-      requestType: 'group',
-      subType: 'invite',
-      flag: 'flag',
-      userId: 654,
-    })
-  
+    await app.receiveGroupRequest(654, 'invite')
     app.shouldHaveNoRequests()
   })
 
   test('group add', async () => {
-    await app.receive({
-      postType: 'request',
-      requestType: 'group',
-      subType: 'add',
-      flag: 'flag',
-      userId: 456,
-    })
-
+    await app.receiveGroupRequest(456, 'add')
     app.shouldHaveNoRequests()
   })
 })
@@ -126,60 +80,27 @@ describe('default behaviour with database', () => {
   })
 
   test('friend add with authority 0', async () => {
-    await app.receive({
-      postType: 'request',
-      requestType: 'friend',
-      flag: 'flag',
-      userId: 321,
-    })
-
+    await app.receiveFriendRequest(321)
     app.shouldHaveNoRequests()
   })
 
   test('friend add with authority 1', async () => {
-    await app.receive({
-      postType: 'request',
-      requestType: 'friend',
-      flag: 'flag',
-      userId: 123,
-    })
-  
+    await app.receiveFriendRequest(123)
     app.shouldHaveLastRequest('set_friend_add_request', { approve: true })
   })
 
   test('group invite with authority 3', async () => {
-    await app.receive({
-      postType: 'request',
-      requestType: 'group',
-      subType: 'invite',
-      flag: 'flag',
-      userId: 654,
-    })
-  
+    await app.receiveGroupRequest(654, 'invite')
     app.shouldHaveNoRequests()
   })
 
   test('group invite with authority 4', async () => {
-    await app.receive({
-      postType: 'request',
-      requestType: 'group',
-      subType: 'invite',
-      flag: 'flag',
-      userId: 456,
-    })
-
+    await app.receiveGroupRequest(456, 'invite')
     app.shouldHaveLastRequest('set_group_add_request', { approve: true, subType: 'invite' })
   })
 
   test('group add with authority 4', async () => {
-    await app.receive({
-      postType: 'request',
-      requestType: 'group',
-      subType: 'add',
-      flag: 'flag',
-      userId: 456,
-    })
-
+    await app.receiveGroupRequest(456, 'add')
     app.shouldHaveNoRequests()
   })
 })
