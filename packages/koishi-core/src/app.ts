@@ -1,4 +1,3 @@
-import debug from 'debug'
 import escapeRegex from 'escape-string-regexp'
 import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
@@ -24,9 +23,6 @@ export interface AppOptions {
   quickOperationTimeout?: number
   similarityCoefficient?: number
 }
-
-const showLog = debug('koishi')
-const showReceiverLog = debug('koishi:receiver')
 
 const selfIds = new Set<number>()
 export const appMap: Record<number, App> = {}
@@ -222,7 +218,7 @@ export class App extends Context {
       tasks.push(this.server.listen())
     }
     await Promise.all(tasks)
-    showLog('started')
+    this.logger('app').debug('started')
     this.receiver.emit('connect')
     if (this.selfId && !this._isReady) {
       this.receiver.emit('ready')
@@ -242,7 +238,7 @@ export class App extends Context {
     if (this.server) {
       this.server.close()
     }
-    showLog('stopped')
+    this.logger('app').debug('stopped')
     this.receiver.emit('disconnect')
   }
 
@@ -250,7 +246,7 @@ export class App extends Context {
     for (const path in this._contexts) {
       const context = this._contexts[path]
       if (!context.match(meta)) continue
-      showReceiverLog(path, 'emits', event)
+      this.logger('receiver').debug(path, 'emits', event)
       context.receiver.emit(event, ...payload)
     }
   }

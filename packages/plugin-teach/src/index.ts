@@ -9,6 +9,8 @@ import update from './update'
 export * from './database'
 export { TeachConfig }
 
+export const name = 'teach'
+
 export function apply (ctx: Context, config: TeachConfig = {}) {
   ctx.plugin(receiver, config)
 
