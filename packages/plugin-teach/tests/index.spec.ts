@@ -15,6 +15,8 @@ app.plugin(help)
 
 beforeAll(async () => {
   await app.start()
+  await app.database.getUser(123, 3)
+  await app.database.getGroup(456, app.selfId)
 })
 
 afterAll(async () => {
