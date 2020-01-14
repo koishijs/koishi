@@ -1,13 +1,9 @@
 import { MockedApp } from 'koishi-test-utils'
-import { resolve } from 'path'
 import { help } from 'koishi-plugin-common'
-import 'koishi-database-level'
 import * as teach from '../src'
-import del from 'del'
+import './memory'
 
-const path = resolve(__dirname, '../temp')
-
-const app = new MockedApp({ database: { level: { path } } })
+const app = new MockedApp({ database: { memory: {} } })
 const session = app.createSession('group', 123, 456)
 
 app.plugin(teach)
@@ -17,11 +13,6 @@ beforeAll(async () => {
   await app.start()
   await app.database.getUser(123, 3)
   await app.database.getGroup(456, app.selfId)
-})
-
-afterAll(async () => {
-  await app.stop()
-  await del(path)
 })
 
 test('basic support', async () => {
