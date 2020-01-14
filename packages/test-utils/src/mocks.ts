@@ -1,6 +1,7 @@
 import { BASE_SELF_ID, RequestData } from './utils'
 import { snakeCase, sleep } from 'koishi-utils'
 import { AppOptions, App, Sender, Server, ContextType, ResponsePayload, MessageMeta, Meta } from 'koishi-core'
+import debug from 'debug'
 
 class MockedServer extends Server {
   constructor (app: App) {
@@ -39,6 +40,9 @@ export class MockedApp extends App {
     super({ selfId: BASE_SELF_ID, ...options })
     this.sender = new MockedSender(this)
     this.server = new MockedServer(this)
+    this.receiver.on('logger', (scope, message) => {
+      debug('koishi:' + scope)(message)
+    })
   }
 
   receive (meta: Meta): Promise<void> {
