@@ -306,7 +306,7 @@ export class App extends Context {
         // attach group data
         const groupFields = new Set<GroupField>(['flag', 'assignee'])
         this.receiver.emit('before-group', groupFields, parsedArgv || { meta })
-        const group = await this.database.observeGroup(meta.groupId, 0, Array.from(groupFields))
+        const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
         Object.defineProperty(meta, '$group', { value: group, writable: true })
 
         // ignore some group calls
@@ -322,7 +322,7 @@ export class App extends Context {
       // attach user data
       const userFields = new Set<UserField>(['name', 'flag'])
       this.receiver.emit('before-user', userFields, parsedArgv || { meta })
-      const user = await this.database.observeUser(meta.userId, 0, Array.from(userFields))
+      const user = await this.database.observeUser(meta.userId, Array.from(userFields))
       Object.defineProperty(meta, '$user', { value: user, writable: true })
 
       // ignore some user calls
