@@ -1,6 +1,7 @@
 import { MockedApp, MemoryDatabase } from 'koishi-test-utils'
-import requestHandler, { HandlerConfig } from '../src/request-handler'
 import { registerDatabase } from 'koishi-core'
+import { sleep } from 'koishi-utils'
+import requestHandler, { HandlerConfig } from '../src/request-handler'
 
 registerDatabase('memory', MemoryDatabase)
 
@@ -16,12 +17,14 @@ describe('support string', () => {
   })
 
   test('friend add', async () => {
-    await app.receiveFriendRequest(321)
+    app.receiveFriendRequest(321)
+    await sleep(0)
     app.shouldHaveLastRequest('set_friend_add_request', { approve: true, remark: 'foo' })
   })
 
   test('group add', async () => {
-    await app.receiveGroupRequest(321, 'add')
+    app.receiveGroupRequest(321, 'add')
+    await sleep(0)
     app.shouldHaveLastRequest('set_group_add_request', { approve: false, reason: 'bar' })
   })
 })
@@ -36,12 +39,14 @@ describe('support boolean', () => {
   })
 
   test('friend add', async () => {
-    await app.receiveFriendRequest(321)
+    app.receiveFriendRequest(321)
+    await sleep(0)
     app.shouldHaveLastRequest('set_friend_add_request', { approve: false })
   })
 
   test('group invite', async () => {
-    await app.receiveGroupRequest(321, 'invite')
+    app.receiveGroupRequest(321, 'invite')
+    await sleep(0)
     app.shouldHaveLastRequest('set_group_add_request', { approve: false })
   })
 })
@@ -53,17 +58,20 @@ describe('default behaviour without database', () => {
   })
 
   test('friend add', async () => {
-    await app.receiveFriendRequest(321)
+    app.receiveFriendRequest(321)
+    await sleep(0)
     app.shouldHaveNoRequests()
   })
 
   test('group invite', async () => {
-    await app.receiveGroupRequest(654, 'invite')
+    app.receiveGroupRequest(654, 'invite')
+    await sleep(0)
     app.shouldHaveNoRequests()
   })
 
   test('group add', async () => {
-    await app.receiveGroupRequest(456, 'add')
+    app.receiveGroupRequest(456, 'add')
+    await sleep(0)
     app.shouldHaveNoRequests()
   })
 })
@@ -80,27 +88,32 @@ describe('default behaviour with database', () => {
   })
 
   test('friend add with authority 0', async () => {
-    await app.receiveFriendRequest(321)
+    app.receiveFriendRequest(321)
+    await sleep(0)
     app.shouldHaveNoRequests()
   })
 
   test('friend add with authority 1', async () => {
-    await app.receiveFriendRequest(123)
+    app.receiveFriendRequest(123)
+    await sleep(0)
     app.shouldHaveLastRequest('set_friend_add_request', { approve: true })
   })
 
   test('group invite with authority 3', async () => {
-    await app.receiveGroupRequest(654, 'invite')
+    app.receiveGroupRequest(654, 'invite')
+    await sleep(0)
     app.shouldHaveNoRequests()
   })
 
   test('group invite with authority 4', async () => {
-    await app.receiveGroupRequest(456, 'invite')
+    app.receiveGroupRequest(456, 'invite')
+    await sleep(0)
     app.shouldHaveLastRequest('set_group_add_request', { approve: true, subType: 'invite' })
   })
 
   test('group add with authority 4', async () => {
-    await app.receiveGroupRequest(456, 'add')
+    app.receiveGroupRequest(456, 'add')
+    await sleep(0)
     app.shouldHaveNoRequests()
   })
 })

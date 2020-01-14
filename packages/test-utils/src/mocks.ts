@@ -1,6 +1,6 @@
 import { BASE_SELF_ID, RequestData } from './utils'
-import { snakeCase, sleep } from 'koishi-utils'
-import { AppOptions, App, Sender, Server, ContextType, ResponsePayload, MessageMeta, Meta, MetaTypeMap } from 'koishi-core'
+import { snakeCase } from 'koishi-utils'
+import { AppOptions, App, Sender, Server, ContextType, ResponsePayload, Meta } from 'koishi-core'
 import debug from 'debug'
 
 class MockedServer extends Server {
@@ -50,11 +50,10 @@ export class MockedApp extends App {
       selfId: this.selfId,
       ...meta,
     })
-    return sleep(0)
   }
 
   receiveFriendRequest (userId: number, flag = 'flag') {
-    return this.receive({
+    this.receive({
       postType: 'request',
       requestType: 'friend',
       userId,
@@ -63,7 +62,7 @@ export class MockedApp extends App {
   }
 
   receiveGroupRequest (userId: number, subType: 'add' | 'invite', groupId = 10000, flag = 'flag') {
-    return this.receive({
+    this.receive({
       postType: 'request',
       requestType: 'group',
       subType,
@@ -76,13 +75,18 @@ export class MockedApp extends App {
   receiveMessage (type: 'user', message: string, userId: number): Promise<void>
   receiveMessage (type: 'group', message: string, userId: number, groupId: number): Promise<void>
   receiveMessage (type: 'discuss', message: string, userId: number, discussId: number): Promise<void>
-  receiveMessage (ctxType: ContextType, message: string, userId: number, ctxId?: number) {
-    return this.receive({
-      [ctxType + 'Id']: ctxId,
-      postType: 'message',
-      messageType: ctxType === 'user' ? 'private' : ctxType,
-      message,
-      userId,
+  receiveMessage (type: ContextType, message: string, userId: number, ctxId: number, meta: Meta): Promise<void>
+  receiveMessage (type: ContextType, message: string, userId: number, ctxId?: number, meta?: Meta) {
+    return new Promise((resolve) => {
+      this.receiver.once('after-middleware', () => resolve())
+      this.receive({
+        [type + 'Id']: ctxId,
+        postType: 'message',
+        messageType: type === 'user' ? 'private' : type,
+        message,
+        userId,
+        ...meta,
+      })
     })
   }
 
@@ -113,24 +117,14 @@ export class MockedApp extends App {
 }
 
 export class Session {
-  meta: MessageMeta
-
-  constructor (public app: MockedApp, public type: ContextType, public userId: number, public ctxId: number) {
-    this.meta = {
-      userId,
-      selfId: app.selfId,
-      postType: 'message',
-      messageType: type === 'user' ? 'private' : type,
-      [`${type}Id`]: ctxId,
-    }
-  }
+  constructor (public app: MockedApp, public type: ContextType, public userId: number, public ctxId: number) {}
 
   async send (message: string) {
     let payload: ResponsePayload = null
     function $response (data: ResponsePayload) {
       payload = data
     }
-    await this.app.receive({ ...this.meta, message, $response })
+    await this.app.receiveMessage(this.type, message, this.userId, this.ctxId, { $response })
     return payload
   }
 
