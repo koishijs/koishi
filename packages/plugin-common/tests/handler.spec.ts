@@ -1,9 +1,7 @@
-import { MockedApp, MemoryDatabase } from 'koishi-test-utils'
-import { registerDatabase } from 'koishi-core'
+import { MockedApp } from 'koishi-test-utils'
 import { sleep } from 'koishi-utils'
 import requestHandler, { HandlerConfig } from '../src/request-handler'
-
-registerDatabase('memory', MemoryDatabase)
+import 'koishi-database-memory'
 
 let app: MockedApp
 

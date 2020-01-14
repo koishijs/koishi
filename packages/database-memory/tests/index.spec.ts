@@ -1,7 +1,5 @@
-import { testDatabase, MemoryDatabase } from 'koishi-test-utils'
-import { registerDatabase } from 'koishi-core'
-
-registerDatabase('memory', MemoryDatabase)
+import { testDatabase } from 'koishi-test-utils'
+import '../src'
 
 testDatabase({
   memory: {},
