@@ -8,6 +8,7 @@ import { showSuggestions } from './utils'
 import { Meta, MessageMeta } from './meta'
 import { simplify, noop } from 'koishi-utils'
 import { errors, messages } from './messages'
+import { ParsedLine } from './parser'
 
 export interface AppOptions {
   port?: number
@@ -290,7 +291,9 @@ export class App extends Context {
           let _message = message.slice(name.length)
           if (fuzzy && !nickname && _message.match(/^\S/)) continue
           if (oneArg) _message = `'${_message.trim()}'`
-          const result = command.parse(_message)
+          const result: ParsedLine = oneArg
+            ? { rest: '', options: {}, unknown: [], args: [_message.trim()] }
+            : command.parse(_message)
           result.options = { ...options, ...result.options }
           result.args.unshift(...args)
           parsedArgv = { meta, command, ...result }
