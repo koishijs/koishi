@@ -35,7 +35,7 @@
     "@types/debug": "^4.1.5",
     "@types/ws": "^6.0.4",
     "get-port": "^5.1.0",
-    "koishi-test-utils": "^1.2.0"
+    "koishi-test-utils": "^2.0.0"
   },
   "dependencies": {
     "axios": "^0.19.1",
