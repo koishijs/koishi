@@ -290,7 +290,6 @@ export class App extends Context {
         if (message.startsWith(name)) {
           let _message = message.slice(name.length)
           if (fuzzy && !nickname && _message.match(/^\S/)) continue
-          if (oneArg) _message = `'${_message.trim()}'`
           const result: ParsedLine = oneArg
             ? { rest: '', options: {}, unknown: [], args: [_message.trim()] }
             : command.parse(_message)
