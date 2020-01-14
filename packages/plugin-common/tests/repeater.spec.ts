@@ -1,8 +1,6 @@
-import { MockedApp, MemoryDatabase } from 'koishi-test-utils'
-import { registerDatabase } from 'koishi-core'
+import { MockedApp } from 'koishi-test-utils'
 import repeater, { RepeaterOptions } from '../src/repeater'
-
-registerDatabase('memory', MemoryDatabase)
+import 'koishi-database-memory'
 
 test('repeat', async () => {
   const app = new MockedApp()

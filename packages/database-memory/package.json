@@ -1,9 +1,12 @@
 {
-  "name": "koishi-plugin-common",
-  "description": "Common plugins for Koishi",
-  "version": "1.0.4",
+  "name": "koishi-database-memory",
+  "description": "An in-memory database implementation for Koishi",
+  "version": "1.0.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
   "scripts": {
@@ -17,20 +20,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://github.com/koishijs/koishi/tree/master/packages/plugin-common#readme",
-  "keywords": [
-    "bot",
-    "qqbot",
-    "cqhttp",
-    "coolq",
-    "chatbot",
-    "koishi",
-    "plugin"
-  ],
-  "devDependencies": {
-    "koishi-database-memory": "^1.0.0",
-    "koishi-test-utils": "^2.0.0"
-  },
+  "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-memory#readme",
   "dependencies": {
     "koishi-core": "^1.3.0",
     "koishi-utils": "^1.0.2"

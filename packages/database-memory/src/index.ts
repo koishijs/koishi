@@ -1,4 +1,4 @@
-import { injectMethods, TableType, TableData, createUser, User, createGroup, getSelfIds, Group, InjectConfig } from 'koishi-core'
+import { injectMethods, TableType, TableData, createUser, User, createGroup, getSelfIds, Group, InjectConfig, registerDatabase } from 'koishi-core'
 import { observe } from 'koishi-utils'
 
 declare module 'koishi-core/dist/database' {
@@ -24,6 +24,8 @@ export class MemoryDatabase {
     }
   }
 }
+
+registerDatabase('memory', MemoryDatabase)
 
 function clone <T> (source: T): T {
   return JSON.parse(JSON.stringify(source))

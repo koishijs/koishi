@@ -1,8 +1,7 @@
-import { MockedApp, MemoryDatabase } from 'koishi-test-utils'
-import { messages, showSuggestions, registerDatabase } from 'koishi-core'
+import { MockedApp } from 'koishi-test-utils'
+import { messages, showSuggestions } from 'koishi-core'
 import { format } from 'util'
-
-registerDatabase('memory', MemoryDatabase)
+import 'koishi-database-memory'
 
 describe('Command Suggestions', () => {
   const app = new MockedApp()
