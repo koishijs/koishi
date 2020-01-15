@@ -56,8 +56,8 @@ async function createConfig (options) {
   return config
 }
 
-type ConfigFileType = 'js' | 'json' | 'yml' | 'yaml'
-const supportedTypes: ConfigFileType[] = ['js', 'json', 'yml', 'yaml']
+const supportedTypes = ['js', 'json', 'ts', 'yml', 'yaml'] as const
+type ConfigFileType = typeof supportedTypes[number]
 
 export default function (cli: CAC) {
   cli.command('init [file]', 'initialize a koishi configuration file')
@@ -95,6 +95,8 @@ export default function (cli: CAC) {
           output = JSON.stringify(config, null, 2)
           if (extension === 'js') {
             output = 'module.exports = ' + output.replace(/^(\s+)"([\w$]+)":/mg, '$1$2:')
+          } else if (extension === 'ts') {
+            output = 'export = ' + output.replace(/^(\s+)"([\w$]+)":/mg, '$1$2:')
           }
       }
 
