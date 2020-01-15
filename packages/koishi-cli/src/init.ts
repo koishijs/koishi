@@ -1,6 +1,6 @@
-import { existsSync, writeFileSync } from 'fs'
+import { existsSync, writeFileSync, mkdirSync } from 'fs'
 import { yellow } from 'kleur'
-import { resolve, extname } from 'path'
+import { resolve, extname, dirname } from 'path'
 import { logger } from './utils'
 import { safeDump } from 'js-yaml'
 import { AppConfig } from './worker'
@@ -101,6 +101,8 @@ export default function (cli: CAC) {
       }
 
       // write to file
+      const folder = dirname(path)
+      if (!existsSync(folder)) mkdirSync(folder, { recursive: true })
       writeFileSync(path, output)
       logger.success(`created config file: ${path}`)
       process.exit(0)
