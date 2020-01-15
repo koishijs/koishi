@@ -1,6 +1,7 @@
 import { BASE_SELF_ID, RequestData } from './utils'
 import { snakeCase, sleep } from 'koishi-utils'
-import { AppOptions, App, Sender, Server, ContextType, ResponsePayload, MessageMeta, Meta } from 'koishi-core'
+import { AppOptions, App, Sender, Server, ContextType, ResponsePayload, MessageMeta, Meta, MetaTypeMap } from 'koishi-core'
+import debug from 'debug'
 
 class MockedServer extends Server {
   constructor (app: App) {
@@ -39,14 +40,50 @@ export class MockedApp extends App {
     super({ selfId: BASE_SELF_ID, ...options })
     this.sender = new MockedSender(this)
     this.server = new MockedServer(this)
+    this.receiver.on('logger', (scope, message) => {
+      debug('koishi:' + scope)(message)
+    })
   }
 
-  receive (meta: Meta): Promise<void> {
+  receive (meta: Meta) {
     this.server.dispatchMeta({
       selfId: this.selfId,
       ...meta,
     })
     return sleep(0)
+  }
+
+  receiveFriendRequest (userId: number, flag = 'flag') {
+    return this.receive({
+      postType: 'request',
+      requestType: 'friend',
+      userId,
+      flag,
+    })
+  }
+
+  receiveGroupRequest (userId: number, subType: 'add' | 'invite', groupId = 10000, flag = 'flag') {
+    return this.receive({
+      postType: 'request',
+      requestType: 'group',
+      subType,
+      userId,
+      groupId,
+      flag,
+    })
+  }
+
+  receiveMessage (type: 'user', message: string, userId: number): Promise<void>
+  receiveMessage (type: 'group', message: string, userId: number, groupId: number): Promise<void>
+  receiveMessage (type: 'discuss', message: string, userId: number, discussId: number): Promise<void>
+  receiveMessage (ctxType: ContextType, message: string, userId: number, ctxId?: number) {
+    return this.receive({
+      [ctxType + 'Id']: ctxId,
+      postType: 'message',
+      messageType: ctxType === 'user' ? 'private' : ctxType,
+      message,
+      userId,
+    })
   }
 
   clearRequests () {
