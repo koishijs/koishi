@@ -1,6 +1,10 @@
+import * as commonPlugin from 'koishi-plugin-common'
+import * as schedulePlugin from 'koishi-plugin-schedule'
+export { commonPlugin, schedulePlugin }
+
 export * from 'koishi-core'
 export * from 'koishi-utils'
-export { AppConfig } from './worker'
+export { AppConfig, PluginConfig } from './worker'
 
 const { version } = require('../package')
 export { version }
