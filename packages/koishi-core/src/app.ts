@@ -8,6 +8,7 @@ import { showSuggestions } from './utils'
 import { Meta, MessageMeta } from './meta'
 import { simplify, noop } from 'koishi-utils'
 import { errors, messages } from './messages'
+import { ParsedLine } from './parser'
 
 export interface AppOptions {
   port?: number
@@ -287,10 +288,11 @@ export class App extends Context {
         if (prefix && !nickname) continue
         if (!fuzzy && message !== name) continue
         if (message.startsWith(name)) {
-          let _message = message.slice(name.length)
+          const _message = message.slice(name.length)
           if (fuzzy && !nickname && _message.match(/^\S/)) continue
-          if (oneArg) _message = `'${_message.trim()}'`
-          const result = command.parse(_message)
+          const result: ParsedLine = oneArg
+            ? { rest: '', options: {}, unknown: [], args: [_message.trim()] }
+            : command.parse(_message)
           result.options = { ...options, ...result.options }
           result.args.unshift(...args)
           parsedArgv = { meta, command, ...result }
@@ -304,7 +306,7 @@ export class App extends Context {
         // attach group data
         const groupFields = new Set<GroupField>(['flag', 'assignee'])
         this.receiver.emit('before-group', groupFields, parsedArgv || { meta })
-        const group = await this.database.observeGroup(meta.groupId, 0, Array.from(groupFields))
+        const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
         Object.defineProperty(meta, '$group', { value: group, writable: true })
 
         // ignore some group calls
@@ -320,7 +322,7 @@ export class App extends Context {
       // attach user data
       const userFields = new Set<UserField>(['name', 'flag'])
       this.receiver.emit('before-user', userFields, parsedArgv || { meta })
-      const user = await this.database.observeUser(meta.userId, 0, Array.from(userFields))
+      const user = await this.database.observeUser(meta.userId, Array.from(userFields))
       Object.defineProperty(meta, '$user', { value: user, writable: true })
 
       // ignore some user calls

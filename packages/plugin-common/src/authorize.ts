@@ -66,7 +66,6 @@ export default function apply (ctx: Context, config: AuthorizeConfig) {
   }
 
   app.receiver.once('ready', async () => {
-    logger.info('foo bar')
     await Promise.all([
       ...Object.keys(authorizeUserInverseMap).map(key => updateAuthorizeInfo(+key, authorizeUserInverseMap[+key])),
       ...Object.entries(authorizeGroup).map(async ([key, value]) => {
