@@ -39,7 +39,7 @@ function loadEcosystem (type: string, name: string) {
   throw new Error(`cannot resolve ${type} ${name}`)
 }
 
-export type PluginConfig = (string | [string | Plugin, any])[]
+export type PluginConfig = (string | [string | Plugin, any?])[]
 
 export interface AppConfig extends AppOptions {
   plugins?: PluginConfig | Record<string, PluginConfig>
