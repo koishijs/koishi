@@ -2,6 +2,7 @@ import { Context, Command, UserData, CommandConfig, MessageMeta } from 'koishi-c
 
 export default function apply (ctx: Context, options: CommandConfig) {
   ctx.command('help [command]', '显示帮助信息', { authority: 0, ...options })
+    .userFields(['authority', 'usage'])
     .shortcut('帮助', { fuzzy: true })
     .shortcut('全局指令', { options: { shortcut: true } })
     .option('-e, --expand', '展开指令列表')

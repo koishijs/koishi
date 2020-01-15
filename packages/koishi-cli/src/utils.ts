@@ -2,7 +2,7 @@ import kleur from 'kleur'
 
 export namespace logger {
   export function info (message: string, logLevel?: number) {
-    if (logLevel < 3) return
+    if (logLevel < 2) return
     console.log(`${kleur.blue('info')}`, message)
   }
 
@@ -22,7 +22,7 @@ export namespace logger {
   }
 
   export function debug (message: string, logLevel?: number) {
-    if (logLevel < 4) return
+    if (logLevel < 3) return
     console.log(`${kleur.magenta('debug')}`, message)
   }
 }

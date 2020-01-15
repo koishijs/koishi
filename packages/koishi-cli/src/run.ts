@@ -7,8 +7,14 @@ import CAC from 'cac/types/CAC'
 
 process.env.KOISHI_START_TIME = '' + performance.now()
 
-function createWorker () {
-  const child = fork(resolve(__dirname, 'worker'))
+interface WorkerOptions {
+  '--'?: string[]
+}
+
+function createWorker (options: WorkerOptions) {
+  const child = fork(resolve(__dirname, 'worker'), [], {
+    execArgv: options['--'],
+  })
   let started = false
 
   child.on('message', (data: any) => {
@@ -28,20 +34,20 @@ function createWorker () {
     } else {
       logger.warn('an error was encounted. restarting...')
     }
-    createWorker()
+    createWorker(options)
   })
 }
 
 export default function (cli: CAC) {
   cli.command('run [file]', 'start a koishi bot')
     .alias('start')
-    .option('--log-level <level>', 'specify log level (default: 3)')
+    .option('--log-level <level>', 'specify log level (default: 2)')
     .option('--silent', 'use log level 0 (print no message)')
-    .option('--debug', 'use log level 4 (print all messages)')
+    .option('--debug', 'use log level 3 (print all messages)')
     .action((file, options) => {
       let logLevel = options.logLevel
       if (options.silent) logLevel = 0
-      if (options.debug) logLevel = 4
+      if (options.debug) logLevel = 3
       if (logLevel !== undefined) {
         if (!isInteger(logLevel) || logLevel < 0) {
           logger.error('log level should be a positive integer.')
@@ -50,6 +56,6 @@ export default function (cli: CAC) {
         process.env.KOISHI_LOG_LEVEL = '' + logLevel
       }
       process.env.KOISHI_CONFIG_FILE = file || ''
-      createWorker()
+      createWorker(options)
     })
 }

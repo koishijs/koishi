@@ -60,6 +60,8 @@ export enum GroupFlag {
   noEmit = 4,
 }
 
+export const groupFlags: (keyof typeof GroupFlag)[] = ['noCommand', 'noResponse', 'noEmit']
+
 export type Group<K extends GroupField = GroupField> = Observed<Pick<GroupData, K | 'id'>>
 export type GroupField = keyof GroupData
 export const groupFields: GroupField[] = []
