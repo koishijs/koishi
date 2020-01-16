@@ -13,11 +13,11 @@ export function getSenderName (meta: MessageMeta) {
     : meta.sender ? meta.sender.card || meta.sender.nickname : userId
 }
 
-export function getTargetId (target: string) {
-  if (!target) return
+export function getTargetId (target: string | number) {
+  if (typeof target !== 'string' && typeof target !== 'number') return
   let qq = +target
   if (!qq) {
-    const capture = /\[CQ:at,qq=(\d+)\]/.exec(target)
+    const capture = /\[CQ:at,qq=(\d+)\]/.exec(target as any)
     if (capture) qq = +capture[1]
   }
   if (!isInteger(qq)) return

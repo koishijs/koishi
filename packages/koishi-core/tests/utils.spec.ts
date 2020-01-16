@@ -46,6 +46,7 @@ describe('getTargetId', () => {
 
   test('wrong syntax', () => {
     expect(getTargetId('')).toBeFalsy()
+    expect(getTargetId(true as any)).toBeFalsy()
     expect(getTargetId('[CQ:at,qq=]')).toBeFalsy()
     expect(getTargetId('foo123')).toBeFalsy()
   })
