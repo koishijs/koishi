@@ -1,6 +1,6 @@
-import { MockedApp, MemoryDatabase } from 'koishi-test-utils'
+import { MockedApp, MemoryDatabase, Session } from 'koishi-test-utils'
 import { registerDatabase } from 'koishi-core'
-import info, { registerUserInfo } from '../src/info'
+import info, { registerUserInfo, InfoConfig } from '../src/info'
 
 registerDatabase('memory', MemoryDatabase)
 
@@ -8,22 +8,44 @@ registerDatabase('memory', MemoryDatabase)
 registerUserInfo(() => '')
 registerUserInfo(() => 'foo', ['flag'])
 
-const app = new MockedApp({ database: { memory: {} } })
-const session = app.createSession('user', 123)
+let app: MockedApp, session: Session
 
-app.plugin(info)
-
-beforeAll(async () => {
+beforeEach(async () => {
+  app = new MockedApp({ database: { memory: {} } })
+  session = app.createSession('user', 123)
   await app.start()
   await app.database.getUser(123, 3)
   await app.database.getUser(456, 4)
 })
 
-afterAll(() => app.stop())
+afterEach(() => app.stop())
 
 test('basic support', async () => {
+  app.plugin(info)
+
+  session.meta.sender = {
+    userId: 123,
+    nickname: 'nick',
+    card: '',
+    sex: 'unknown',
+    age: 20,
+  }
+
+  await session.shouldHaveReply('info', 'nick，您的权限为 3 级。\nfoo')
+  await session.shouldHaveReply('info -u', '未找到用户。')
+  await session.shouldHaveReply('info -u 654', '未找到用户。')
+  await session.shouldHaveReply('info -u 456', '456 的权限为 4 级。\nfoo')
+})
+
+test('getSenderName', async () => {
+  app.plugin<InfoConfig>(info, {
+    getSenderName (user, meta) {
+      if (user.id !== meta.userId) return 'bar'
+    },
+  })
+
   await session.shouldHaveReply('info', '123，您的权限为 3 级。\nfoo')
   await session.shouldHaveReply('info -u', '未找到用户。')
   await session.shouldHaveReply('info -u 654', '未找到用户。')
-  await session.shouldHaveReply('info -u 456', '用户 456 的权限为 4 级。\nfoo')
+  await session.shouldHaveReply('info -u 456', 'bar (456) 的权限为 4 级。\nfoo')
 })
