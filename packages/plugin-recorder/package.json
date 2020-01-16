@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-recorder",
   "description": "Save Chat Records for Koishi",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -29,6 +29,10 @@
     "record",
     "recorder"
   ],
+  "devDependencies": {
+    "del": "^5.1.0",
+    "koishi-test-utils": "^1.2.1"
+  },
   "dependencies": {
     "koishi-core": "^1.3.0",
     "koishi-utils": "^1.0.2"
