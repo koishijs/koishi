@@ -9,7 +9,6 @@ import exit from './exit'
 import help from './help'
 import info from './info'
 import likeme, { LikemeOptions } from './likeme'
-import rank from './rank'
 import repeater, { RepeaterOptions } from './repeater'
 import requestHandler, { HandlerConfig } from './request-handler'
 import respondent, { Respondent } from './respondent'
@@ -17,7 +16,6 @@ import welcome, { WelcomeMessage } from './welcome'
 
 export * from './admin'
 export * from './info'
-export * from './rank'
 
 export {
   admin,
@@ -30,7 +28,6 @@ export {
   help,
   info,
   likeme,
-  rank,
   repeater,
   requestHandler,
   respondent,
@@ -74,6 +71,5 @@ export function apply (ctx: Context, options: CommonPluginConfig = {}) {
       .plugin(broadcast, options.broadcast)
       .plugin(callme, options.callme)
       .plugin(info, options.info)
-      .plugin(rank, options.rank)
   }
 }
