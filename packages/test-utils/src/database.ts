@@ -111,7 +111,7 @@ export function testDatabase (config: DatabaseConfig, options: TestDatabaseOptio
     })
 
     test('observeUser merge', async () => {
-      const user: UserData = { id: 1000, flag: 3, name: '', authority: 1, usage: {} }
+      const user: UserData = { id: 1000, flag: 3, authority: 1, usage: {} }
       const observedUser = await db.observeUser(user, 1)
       expect(observedUser).toMatchObject(user)
       observedUser.flag = 5

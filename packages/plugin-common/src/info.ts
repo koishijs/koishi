@@ -12,11 +12,11 @@ export function registerUserInfo <K extends UserField> (callback: UserInfoCallba
   }
 }
 
-export interface InfoConfig extends CommandConfig {
+export interface InfoOptions extends CommandConfig {
   getSenderName? (user: UserData, meta: Meta<'message'>): string
 }
 
-const defaultConfig: InfoConfig = {
+const defaultConfig: InfoOptions = {
   authority: 0,
   getSenderName (user, meta) {
     if (meta.userId === user.id && meta.sender) {
@@ -25,7 +25,7 @@ const defaultConfig: InfoConfig = {
   },
 }
 
-export default function apply (ctx: Context, config: InfoConfig = {}) {
+export default function apply (ctx: Context, config: InfoOptions = {}) {
   config = { ...defaultConfig, ...config }
   ctx.command('info', '查看用户信息', config)
     .alias('i')

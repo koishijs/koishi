@@ -327,7 +327,7 @@ export class App extends Context {
       }
 
       // attach user data
-      const userFields = new Set<UserField>(['name', 'flag'])
+      const userFields = new Set<UserField>(['flag'])
       this.receiver.emit('before-user', userFields, parsedArgv || { meta })
       const user = await this.database.observeUser(meta.userId, Array.from(userFields))
       Object.defineProperty(meta, '$user', { value: user, writable: true })

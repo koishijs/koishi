@@ -1,6 +1,6 @@
 import { MockedApp, MemoryDatabase, Session } from 'koishi-test-utils'
 import { registerDatabase } from 'koishi-core'
-import info, { registerUserInfo, InfoConfig } from '../src/info'
+import info, { registerUserInfo, InfoOptions } from '../src/info'
 
 registerDatabase('memory', MemoryDatabase)
 
@@ -38,7 +38,7 @@ test('basic support', async () => {
 })
 
 test('getSenderName', async () => {
-  app.plugin<InfoConfig>(info, {
+  app.plugin<InfoOptions>(info, {
     getSenderName (user, meta) {
       if (user.id !== meta.userId) return 'bar'
     },

@@ -14,7 +14,6 @@ export const userFlags: (keyof typeof UserFlag)[] = ['ignore']
 
 export interface UserData {
   id: number
-  name: string
   flag: number
   authority: number
   usage: Record<string, Usage>

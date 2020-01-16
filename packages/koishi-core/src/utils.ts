@@ -7,12 +7,6 @@ import { messages } from './messages'
 import { format } from 'util'
 import leven from 'leven'
 
-export function getSenderName (meta: MessageMeta) {
-  const userId = '' + meta.userId
-  return meta.$user && meta.$user.name !== userId ? meta.$user.name
-    : meta.sender ? meta.sender.card || meta.sender.nickname : userId
-}
-
 export function getTargetId (target: string | number) {
   if (typeof target !== 'string' && typeof target !== 'number') return
   let qq = +target
@@ -51,7 +45,7 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
       const [suggestion] = suggestions
       const command = typeof options.command === 'function' ? options.command(suggestion) : options.command
       const identifier = meta.userId + meta.$ctxType + meta.$ctxId
-      const userFields = new Set<UserField>(['name'])
+      const userFields = new Set<UserField>()
       const groupFields = new Set<GroupField>()
       Command.attachUserFields(userFields, { command, meta })
       Command.attachGroupFields(groupFields, { command, meta })

@@ -31,7 +31,6 @@ interface AuthorizeInfo {
 export default function apply (ctx: Context, config: AuthorizeConfig) {
   const { app, database } = ctx
   const { authorizeUser = {}, authorizeGroup = {} } = config
-  const logger = ctx.logger('authorize')
   const authorityMap: Record<number, AuthorizeInfo> = []
 
   /**
