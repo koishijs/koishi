@@ -35,7 +35,6 @@ extendUser((id, authority) => ({
   id,
   authority,
   flag: 0,
-  name: String(id),
   usage: {},
 }))
 
