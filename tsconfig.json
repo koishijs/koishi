@@ -8,8 +8,6 @@
   "references": [
     { "path": "./packages/koishi-utils" },
     { "path": "./packages/koishi-core" },
-    { "path": "./packages/koishi-cli" },
-    { "path": "./packages/test-utils" },
     { "path": "./packages/database-level" },
     { "path": "./packages/database-mysql" },
     { "path": "./packages/database-sqlite" },
@@ -17,6 +15,8 @@
     { "path": "./packages/plugin-recorder" },
     { "path": "./packages/plugin-schedule" },
     { "path": "./packages/plugin-teach" },
+    { "path": "./packages/test-utils" },
+    { "path": "./packages/koishi-cli" },
   ],
   "files": [],
 }
