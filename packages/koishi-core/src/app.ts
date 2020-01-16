@@ -41,16 +41,10 @@ export function onStop (hook: (...app: App[]) => void) {
 
 export async function startAll () {
   await Promise.all(appList.map(async app => app.start()))
-  for (const hook of onStartHooks) {
-    hook(...appList)
-  }
 }
 
 export async function stopAll () {
   await Promise.all(appList.map(async app => app.stop()))
-  for (const hook of onStopHooks) {
-    hook(...appList)
-  }
 }
 
 let getSelfIdsPromise: Promise<any>
@@ -82,6 +76,8 @@ const defaultOptions: AppOptions = {
   maxMiddlewares: 64,
 }
 
+export enum Status { closed, opening, open, closing }
+
 export class App extends Context {
   app = this
   options: AppOptions
@@ -99,6 +95,7 @@ export class App extends Context {
   _shortcutMap: Record<string, Command> = {}
   _middlewares: [Context, Middleware][] = []
 
+  private status = Status.closed
   private _isReady = false
   private _middlewareCounter = 0
   private _middlewareSet = new Set<number>()
@@ -208,6 +205,7 @@ export class App extends Context {
   }
 
   async start () {
+    this.status = Status.opening
     this.receiver.emit('before-connect')
     const tasks: Promise<any>[] = []
     if (this.database) {
@@ -219,15 +217,20 @@ export class App extends Context {
       tasks.push(this.server.listen())
     }
     await Promise.all(tasks)
+    this.status = Status.open
     this.logger('app').debug('started')
     this.receiver.emit('connect')
     if (this.selfId && !this._isReady) {
       this.receiver.emit('ready')
       this._isReady = true
     }
+    if (appList.every(app => app.status === Status.open)) {
+      onStartHooks.forEach(hook => hook(...appList))
+    }
   }
 
   async stop () {
+    this.status = Status.closing
     this.receiver.emit('before-disconnect')
     const tasks: Promise<any>[] = []
     if (this.database) {
@@ -239,8 +242,12 @@ export class App extends Context {
     if (this.server) {
       this.server.close()
     }
+    this.status = Status.closed
     this.logger('app').debug('stopped')
     this.receiver.emit('disconnect')
+    if (appList.every(app => app.status === Status.closed)) {
+      onStopHooks.forEach(hook => hook(...appList))
+    }
   }
 
   emitEvent <K extends Events> (meta: Meta, event: K, ...payload: Parameters<EventMap[K]>) {
