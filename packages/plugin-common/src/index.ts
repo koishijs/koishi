@@ -8,7 +8,6 @@ import echo from './echo'
 import exit from './exit'
 import help from './help'
 import info from './info'
-import likeme, { LikemeOptions } from './likeme'
 import repeater, { RepeaterOptions } from './repeater'
 import requestHandler, { HandlerConfig } from './request-handler'
 import respondent, { Respondent } from './respondent'
@@ -27,7 +26,6 @@ export {
   exit,
   help,
   info,
-  likeme,
   repeater,
   requestHandler,
   respondent,
@@ -43,8 +41,6 @@ interface CommonPluginConfig extends HandlerConfig, AuthorizeConfig {
   exit?: false | CommandConfig
   help?: false | CommandConfig
   info?: false | CommandConfig
-  likeme?: false | LikemeOptions
-  rank?: false | CommandConfig
   repeater?: false | RepeaterOptions
   respondent?: Respondent[]
   welcome?: false | WelcomeMessage
@@ -58,7 +54,6 @@ export function apply (ctx: Context, options: CommonPluginConfig = {}) {
     .plugin(echo, options.echo)
     .plugin(exit, options.exit)
     .plugin(help, options.help)
-    .plugin(likeme, options.likeme)
     .plugin(repeater, options.repeater)
     .plugin(requestHandler, options)
     .plugin(respondent, options.respondent)
