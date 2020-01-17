@@ -27,7 +27,7 @@ export default function apply (ctx: Context, options: BroadcastOptions = {}) {
         const { sender } = appMap[id]
         for (let index = 0; index < groups.length; index++) {
           if (index) await sleep(options.broadcastInterval)
-          await sender.sendGroupMsg(groups[index], message)
+          sender.sendGroupMsgAsync(groups[index], message)
         }
       })
     })

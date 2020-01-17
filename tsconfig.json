@@ -11,6 +11,7 @@
     { "path": "./packages/database-level" },
     { "path": "./packages/database-mysql" },
     { "path": "./packages/database-sqlite" },
+    { "path": "./packages/database-memory" },
     { "path": "./packages/plugin-common" },
     { "path": "./packages/plugin-recorder" },
     { "path": "./packages/plugin-schedule" },

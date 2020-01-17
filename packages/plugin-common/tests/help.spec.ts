@@ -1,13 +1,11 @@
-import { Session, MemoryDatabase, MockedApp } from 'koishi-test-utils'
-import { App, registerDatabase } from 'koishi-core'
+import { Session, MockedApp } from 'koishi-test-utils'
 import { noop } from 'koishi-utils'
 import help from '../src/help'
-
-registerDatabase('memory', MemoryDatabase)
+import 'koishi-database-memory'
 
 const MESSAGE_COMMAND_CALLED = 'command called'
 
-function prepare (app: App) {
+function prepare (app: MockedApp) {
   app.plugin(help)
   app.command('foo', 'command with options', { maxUsage: 100, minInterval: 1000 })
     .option('-o [value]', 'option', { authority: 2, notUsage: true })

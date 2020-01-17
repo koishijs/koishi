@@ -1,8 +1,8 @@
-import { MockedApp, MemoryDatabase } from 'koishi-test-utils'
-import { Meta, registerDatabase } from 'koishi-core'
+import { MockedApp } from 'koishi-test-utils'
+import { Meta } from 'koishi-core'
+import { sleep } from 'koishi-utils'
 import welcome from '../src/welcome'
-
-registerDatabase('memory', MemoryDatabase)
+import 'koishi-database-memory'
 
 const shared: Meta = {
   postType: 'notice',
@@ -16,7 +16,8 @@ test('basic support', async () => {
   const app = new MockedApp()
   app.plugin(welcome)
 
-  await app.receive(shared)
+  app.receive(shared)
+  await sleep(0)
   app.shouldHaveLastRequest('send_group_msg', { groupId: 123, message: `欢迎新大佬 [CQ:at,qq=456]！` })
 })
 
@@ -27,10 +28,12 @@ test('check assignee', async () => {
   await app.start()
   await app.database.getGroup(123, app.selfId)
 
-  await app.receive({ ...shared, groupId: 321 })
+  app.receive({ ...shared, groupId: 321 })
+  await sleep(0)
   app.shouldHaveNoRequests()
 
-  await app.receive(shared)
+  app.receive(shared)
+  await sleep(0)
   app.shouldHaveLastRequest('send_group_msg', { groupId: 123, message: 'welcome' })
 
   await app.stop()

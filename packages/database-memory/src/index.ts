@@ -1,4 +1,4 @@
-import { injectMethods, TableType, TableData, createUser, User, createGroup, getSelfIds, Group, InjectConfig } from 'koishi-core'
+import { injectMethods, TableType, TableData, createUser, User, createGroup, getSelfIds, Group, InjectConfig, registerDatabase } from 'koishi-core'
 import { observe } from 'koishi-utils'
 
 declare module 'koishi-core/dist/database' {
@@ -23,7 +23,31 @@ export class MemoryDatabase {
       this.store[key] = []
     }
   }
+
+  async create <K extends TableType> (table: K, data: Partial<TableData[K]>) {
+    const store = this.store[table]
+    if (typeof data.id !== 'number') {
+      let index = 1
+      while (index in store) index++
+      data.id = index
+    }
+    return store[data.id] = data as TableData[K]
+  }
+
+  async remove <K extends TableType> (table: K, id: number) {
+    delete this.store[table][id]
+  }
+
+  async update <K extends TableType> (table: K, id: number, data: Partial<TableData[K]>) {
+    Object.assign(this.store[table][id], clone(data))
+  }
+
+  async count (table: TableType) {
+    return Object.keys(this.store[table]).length
+  }
 }
+
+registerDatabase('memory', MemoryDatabase)
 
 function clone <T> (source: T): T {
   return JSON.parse(JSON.stringify(source))
@@ -32,24 +56,26 @@ function clone <T> (source: T): T {
 injectMethods('memory', 'user', {
   async getUser (userId, authority) {
     authority = typeof authority === 'number' ? authority : 0
-    const data = this.store.user.find(u => u.id === userId)
+    const data = this.store.user[userId]
     if (data) return clone(data)
     if (authority < 0) return null
     const fallback = createUser(userId, authority)
-    if (authority) this.store.user.push(fallback)
+    if (authority) this.store.user[userId] = fallback
     return clone(fallback)
   },
 
   async getUsers (...args) {
     if (args.length > 1 || args.length && typeof args[0][0] !== 'string') {
-      return this.store.user.filter(u => args[0].includes(u.id)).map(clone)
+      return Object.keys(this.store.user)
+        .filter(id => args[0].includes(+id))
+        .map(id => clone(this.store.user[id]))
     } else {
-      return this.store.user.slice()
+      return Object.values(this.store.user)
     }
   },
 
   async setUser (userId, data) {
-    Object.assign(this.store.user.find(u => u.id === userId), clone(data))
+    return this.update('user', userId, data)
   },
 
   async observeUser (user, authority) {
@@ -63,18 +89,18 @@ injectMethods('memory', 'user', {
     return observe(Object.assign(user, clone(data)), diff => this.setUser(user.id, diff), `user ${user.id}`)
   },
 
-  async getUserCount () {
-    return this.store.user.length
+  getUserCount () {
+    return this.count('user')
   },
 })
 
 injectMethods('memory', 'group', {
   async getGroup (groupId, selfId) {
     selfId = typeof selfId === 'number' ? selfId : 0
-    const data = this.store.group.find(g => g.id === groupId)
+    const data = this.store.group[groupId]
     if (data) return clone(data)
     const fallback = createGroup(groupId, selfId)
-    if (selfId && groupId) this.store.group.push(fallback)
+    if (selfId && groupId) this.store.group[groupId] = fallback
     return clone(fallback)
   },
 
@@ -83,11 +109,13 @@ injectMethods('memory', 'group', {
       : args.length && typeof args[0][0] === 'number' ? args[0] as never
         : await getSelfIds()
     if (!assignees.length) return []
-    return this.store.group.filter(g => assignees.includes(g.assignee)).map(clone)
+    return Object.keys(this.store.group)
+      .filter(id => assignees.includes(this.store.group[id].assignee))
+      .map(id => clone(this.store.group[id]))
   },
 
   async setGroup (groupId, data) {
-    Object.assign(this.store.group.find(u => u.id === groupId), clone(data))
+    return this.update('group', groupId, data)
   },
 
   async observeGroup (group, selfId) {
@@ -102,6 +130,6 @@ injectMethods('memory', 'group', {
   },
 
   async getGroupCount () {
-    return this.store.group.length
+    return this.count('group')
   },
 })

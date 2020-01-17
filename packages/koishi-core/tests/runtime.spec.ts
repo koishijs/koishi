@@ -132,7 +132,13 @@ describe('nickname prefix', () => {
 })
 
 describe('Command Execution', () => {
-  const meta: MessageMeta = Object.create(session1.meta)
+  const meta: MessageMeta = {
+    userId: 789,
+    selfId: app.selfId,
+    postType: 'message',
+    messageType: 'private',
+  }
+
   // make coverage happy
   // equal to: app.server.parseMeta(meta)
   app.executeCommandLine('', meta)

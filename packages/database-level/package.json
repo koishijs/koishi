@@ -33,7 +33,7 @@
     "leveldb"
   ],
   "devDependencies": {
-    "koishi-test-utils": "^1.2.2"
+    "koishi-test-utils": "^2.0.0"
   },
   "dependencies": {
     "@types/leveldown": "^4.0.2",
