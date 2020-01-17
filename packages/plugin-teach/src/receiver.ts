@@ -1,7 +1,6 @@
 import { Context, getSenderName, Meta } from 'koishi-core'
 import { randomPick, CQCode, sleep } from 'koishi-utils'
-import { simplifyQuestion, TeachConfig } from './utils'
-import { DialogueTest, Dialogue } from './database'
+import { simplifyQuestion, TeachConfig, DialogueTest, Dialogue } from './utils'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -22,7 +21,8 @@ export default function (ctx: Context, config: TeachConfig) {
 
     const test: DialogueTest = { question }
     if (config.useEnvironment) {
-      test.envMode = 1
+      test.partial = true
+      test.reversed = false
       test.groups = [groupId]
     }
 

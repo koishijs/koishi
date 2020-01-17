@@ -1,4 +1,4 @@
-import { TeachOptions } from './utils'
+import { ParsedTeachLine } from './utils'
 
 function formatAnswer (source: string) {
   const lines = source.split(/(\r?\n|\$n)/g)
@@ -6,7 +6,7 @@ function formatAnswer (source: string) {
   return output.replace(/\[CQ:image,[^\]]+\]/g, '[图片]')
 }
 
-export default async function (parsedOptions: TeachOptions) {
+export default async function (parsedOptions: ParsedTeachLine) {
   const { ctx, meta, options, config } = parsedOptions
   const question = options.all ? undefined : options.question
   const answer = options.all ? undefined : options.answer

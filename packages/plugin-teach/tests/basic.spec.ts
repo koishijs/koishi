@@ -1,5 +1,4 @@
 import { MockedApp } from 'koishi-test-utils'
-import { help } from 'koishi-plugin-common'
 import * as teach from '../src'
 import './memory'
 
@@ -7,12 +6,15 @@ const app = new MockedApp({ database: { memory: {} } })
 const session = app.createSession('group', 123, 456)
 
 app.plugin(teach)
-app.plugin(help)
 
 beforeAll(async () => {
   await app.start()
   await app.database.getUser(123, 3)
   await app.database.getGroup(456, app.selfId)
+})
+
+afterAll(async () => {
+  await app.stop()
 })
 
 test('basic support', async () => {
@@ -23,7 +25,11 @@ test('basic support', async () => {
 
 test('check options', async () => {
   await session.shouldHaveReply('teach -c 50', '参数 -c, --chance 应为不超过 1 的正数。')
+  await session.shouldHaveReply('teach foo', '缺少问题或回答，请检查指令语法。')
+  await session.shouldHaveReply('teach foo bar baz', '存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
   await session.shouldHaveReply('teach -q [CQ:image,file=0.png]', '问题不能包含图片。')
+  await session.shouldHaveReply('teach [CQ:image,file=0.png] ans', '问题不能包含图片。')
+  await session.shouldHaveReply('teach foo bar', '问答已存在，编号为 1，如要修改请尝试使用 -u 指令。')
 })
 
 test('show info', async () => {
@@ -63,4 +69,15 @@ test('search answer by keyword', async () => {
 test('search question and answer by keyword', async () => {
   await session.shouldHaveReply('teach -kq f -a f', '没有搜索到含有关键词“f”“f”的问答。')
   await session.shouldHaveReply('teach -kq f -a b', '问答关键词“f”“b”的搜索结果如下：\n1. 问题：“foo”，回答：“bar”\n2. 问题：“foo”，回答：“baz”')
+})
+
+test('search dialogue by id', async () => {
+  await session.shouldHaveReply('teach -u 1 foo', '存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
+  await session.shouldHaveReply('teach -u foo', '参数 -u, --update 错误，请检查指令语法。')
+  await session.shouldHaveReply('teach -u 10', '没有搜索到编号为 10 的问答。')
+  await session.shouldHaveReply('teach -u 1', '编号为 1 的问答信息：\n问题：foo\n回答：bar')
+})
+
+test('modify dialogue', async () => {
+  await session.shouldHaveReply('teach -u 1,2 -q fooo', '问答 1, 2 已修改。')
 })

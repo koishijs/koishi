@@ -1,6 +1,7 @@
 import { injectMethods } from 'koishi-core'
 import {} from 'koishi-database-mysql'
 import {} from 'koishi-database-level'
+import { Dialogue, DialogueTest } from './utils'
 
 declare module 'koishi-core/dist/database' {
   interface TableMethods {
@@ -25,34 +26,6 @@ interface DialogueMethods {
 export interface DialogueCount {
   questions: number
   answers: number
-}
-
-export interface Dialogue {
-  id?: number
-  question: string
-  answer: string
-  writer: number
-  groups: string
-  flag: number
-  probability: number
-}
-
-export enum DialogueFlag {
-  frozen = 1,
-  regexp = 2,
-  keyword = 4,
-  appellation = 8,
-}
-
-export interface DialogueTest {
-  envMode?: -2 | -1 | 0 | 1 | 2
-  groups?: number[]
-  question?: string
-  answer?: string
-  writer?: number
-  keyword?: boolean
-  strict?: boolean
-  frozen?: boolean
 }
 
 injectMethods('mysql', 'dialogue', {
@@ -123,7 +96,7 @@ injectMethods('level', 'dialogue', {
     if (test.keyword) {
       if (test.question && !data.question.includes(test.question)) return
       if (test.answer && !data.answer.includes(test.answer)) return
-    } else if (data.flag & DialogueFlag.keyword) {
+    } else if (data.flag & Dialogue.Flags.keyword) {
       if (test.question && !test.question.includes(data.question)) return
       if (test.answer && !test.answer.includes(data.answer)) return
     } else {

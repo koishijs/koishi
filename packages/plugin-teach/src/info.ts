@@ -1,6 +1,6 @@
-import { TeachOptions } from './utils'
+import { ParsedTeachLine } from './utils'
 
-export default async function apply ({ envMode, groups, ctx, meta, options, config }: TeachOptions) {
+export default async function apply ({ envMode, groups, ctx, meta, options, config }: ParsedTeachLine) {
   if (config.useEnvironment && !envMode && !options.allEnv) {
     envMode = 1
     groups = [meta.groupId]

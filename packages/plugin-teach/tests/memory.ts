@@ -1,6 +1,8 @@
 import { injectMethods } from 'koishi-core'
 import { DialogueFlag } from '../src'
 import 'koishi-database-memory'
+import { contain } from 'koishi-utils'
+import { splitEnv } from '../src/utils'
 
 injectMethods('memory', 'dialogue', {
   _testDialogue (test, data) {
@@ -14,7 +16,9 @@ injectMethods('memory', 'dialogue', {
       if (test.question && data.question !== test.question) return
       if (test.answer && data.answer !== test.answer) return
     }
-    if (test.envMode === 2) {
+    if (test.envMode === 1) {
+      if (data.groups)
+      if (!contain(splitEnv(data.groups), test.groups)) return
       // TODO:
     }
     if (test.frozen === true) {

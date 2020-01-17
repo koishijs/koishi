@@ -1,7 +1,7 @@
-import { Context, ParsedCommandLine, Meta, CommandConfig } from 'koishi-core'
-import { simplify, isInteger } from 'koishi-utils'
+import { Context, Meta } from 'koishi-core'
+import { simplify, contain, intersection, union, difference } from 'koishi-utils'
 
-export interface TeachConfig extends CommandConfig {
+export interface TeachConfig {
   useWriter?: boolean
   useFrozen?: boolean
   useEnvironment?: boolean
@@ -36,11 +36,30 @@ export function simplifyAnswer (source: string) {
   return (String(source || '')).trim()
 }
 
-export function splitIds (source: string) {
-  return source ? source.split(',').map(i => parseInt(i)) : []
+export interface Dialogue {
+  id?: number
+  question: string
+  answer: string
+  writer: number
+  groups: number[]
+  flag: number
+  probability: number
 }
 
-export interface TeachOptions {
+export interface DialogueTest {
+  groups?: number[]
+  question?: string
+  answer?: string
+  writer?: number
+  regexp?: boolean
+  keyword?: boolean
+  strict?: boolean
+  frozen?: boolean
+  reversed?: boolean
+  partial?: boolean
+}
+
+export interface ParsedTeachLine {
   ctx: Context
   meta: Meta
   args: string[]
@@ -49,59 +68,45 @@ export interface TeachOptions {
   config: TeachConfig
   writer?: number
   groups?: number[]
-  envMode?: -2 | -1 | 0 | 1 | 2
+  partial?: boolean
+  reversed?: boolean
 }
 
-export default async function parseOptions (ctx: Context, config: TeachConfig, argv: ParsedCommandLine) {
-  const { options, meta, args } = argv
-  const argc = args.length
+export enum DialogueFlag {
+  frozen = 1,
+  regexp = 2,
+  keyword = 4,
+  appellation = 8,
+  reversed = 16,
+}
 
-  if (typeof options.chance === 'number' && (options.chance <= 0 || options.chance > 1)) {
-    return meta.$send('参数 -c, --chance 应为不超过 1 的正数。')
+export namespace DialogueEnv {
+  export function split (source: string) {
+    return source ? source.split(',').map(i => parseInt(i)) : []
   }
 
-  const parsedOptions: TeachOptions = { ctx, meta, argc, args, options, config }
+  export function join (source: number[], separator = ',') {
+    return source.sort((a, b) => a - b).join(separator)
+  }
 
-  if (config.useWriter) {
-    if (options.noWriter) {
-      parsedOptions.writer = 0
-    } else if (options.writer) {
-      if (isInteger(options.writer) && options.writer > 0) {
-        parsedOptions.writer = options.writer
-      } else {
-        return meta.$send('参数 -w, --writer 错误，请检查指令语法。')
-      }
+  export function test (data: Dialogue, test: DialogueTest) {
+    if (!test.groups) return true
+    const sameFlag = !(data.flag & DialogueFlag.reversed) !== test.reversed
+    if (test.partial) {
+      return sameFlag ? contain(data.groups, test.groups) : !intersection(data.groups, test.groups).length
+    } else {
+      return sameFlag && join(test.groups) === join(data.groups)
     }
   }
 
-  if (config.useEnvironment) {
-    if (options.globalEnv) {
-      parsedOptions.envMode = -2
-      parsedOptions.groups = []
-    } else if (options.noEnv) {
-      parsedOptions.envMode = 2
-      parsedOptions.groups = []
-    } else if (typeof options.env === 'string') {
-      if (options.env.match(/^(\*?(\d{9}(,\d{9})*)?|[#~]\d{9}(,\d{9})*)$/)) {
-        parsedOptions.groups = splitIds(options.env.replace(/^[#~*]/, '')).sort()
-        parsedOptions.envMode = options.env.startsWith('*') ? -2
-          : options.env.startsWith('#') ? 1
-            : options.env.startsWith('~') ? -1
-              : 2
-      } else {
-        return meta.$send('参数 -e, --env 错误，请检查指令语法。')
-      }
+  export function modify (data: Dialogue, config: ParsedTeachLine) {
+    const sameFlag = !(data.flag & DialogueFlag.reversed) !== config.reversed
+    if (config.partial) {
+      data.groups = sameFlag ? union(data.groups, config.groups) : difference(data.groups, config.groups)
+    } else {
+      data.flag &= ~DialogueFlag.reversed
+      data.flag |= +config.reversed * DialogueFlag.reversed
+      data.groups = config.groups.slice()
     }
   }
-
-  if (String(options.question).includes('[CQ:image,')) {
-    return meta.$send('问题不能包含图片。')
-  }
-
-  options.question = simplifyQuestion(options.question)
-  if (!options.question) delete options.question
-  options.answer = simplifyAnswer(options.answer)
-  if (!options.answer) delete options.answer
-
-  return parsedOptions
 }

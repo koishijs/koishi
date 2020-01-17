@@ -1,18 +1,18 @@
 import { Dialogue, DialogueFlag } from './database'
-import { splitIds, TeachOptions } from './utils'
+import { splitEnv, ParsedTeachLine, joinEnv } from './utils'
 
-export default async function (parsedOptions: TeachOptions) {
+export default async function (parsedOptions: ParsedTeachLine) {
   const { ctx, meta, argc, options, config } = parsedOptions
   if (argc) return meta.$send('存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
   if (!/^\d+(,\d+)*$/.exec(options.update)) return meta.$send('参数 -u, --update 错误，请检查指令语法。')
 
-  const ids: number[] = splitIds(options.update)
+  const ids: number[] = splitEnv(options.update)
   const dialogues = await ctx.database.getDialogues(ids)
   const actualIds = dialogues.map(d => d.id)
   const restIds = ids.filter(id => !actualIds.includes(id))
   const output: string[] = []
   if (restIds.length) {
-    output.push(`没有搜索到编号为 ${restIds.join(', ')} 问答。`)
+    output.push(`没有搜索到编号为 ${restIds.join(', ')} 的问答。`)
   }
 
   if (options.delete) {
@@ -81,7 +81,7 @@ export default async function (parsedOptions: TeachOptions) {
       if (newFlag !== dialogue.flag) updates.flag = newFlag
 
       if (parsedOptions.envMode) {
-        const oldGroups = splitIds(dialogue.groups.replace(/^\*/, ''))
+        const oldGroups = splitEnv(dialogue.groups.replace(/^\*/, ''))
         let { groups, envMode } = parsedOptions
         if (Math.abs(parsedOptions.envMode) === 1) {
           envMode = dialogue.groups.startsWith('*') ? -2 : 2
@@ -115,17 +115,19 @@ export default async function (parsedOptions: TeachOptions) {
       }
     }
 
-    if (skipSet.size) output.push(`问答 ${Array.from(skipSet).sort((a, b) => a > b ? 1 : -1).join(', ')} 修改时发生错误或权限不足。`)
+    if (skipSet.size) output.push(`问答 ${joinEnv(Array.from(skipSet), ', ')} 修改时发生错误或权限不足。`)
     if (updateSet.size) {
-      output.push(`问答 ${Array.from(updateSet).sort((a, b) => a > b ? 1 : -1).join(', ')} 已修改。`)
+      output.push(`问答 ${joinEnv(Array.from(updateSet), ', ')} 已修改。`)
     } else {
       output.push('没有问题被修改。')
     }
     return meta.$send(output.join('\n'))
   }
 
+  await meta.$send(output.join('\n'))
+
   for (const dialogue of dialogues) {
-    const groups = splitIds(dialogue.groups.replace(/^\*/, ''))
+    const groups = splitEnv(dialogue.groups.replace(/^\*/, ''))
     const output = [
       `编号为 ${dialogue.id} 的问答信息：`,
       `问题：${dialogue.question}`,
