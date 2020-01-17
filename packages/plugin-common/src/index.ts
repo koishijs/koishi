@@ -30,7 +30,7 @@ export {
   welcome,
 }
 
-interface CommonPluginConfig extends HandlerConfig, AuthorizeConfig {
+interface CommonPluginConfig extends HandlerConfig, AuthorizeConfig, InfoOptions {
   admin?: false | CommandConfig
   broadcast?: false | BroadcastOptions
   contextify?: false | CommandConfig
@@ -61,6 +61,6 @@ export function apply (ctx: Context, options: CommonPluginConfig = {}) {
       .plugin(admin, options.admin)
       .plugin(authorize, options)
       .plugin(broadcast, options.broadcast)
-      .plugin(info, options.info)
+      .plugin(info, options)
   }
 }
