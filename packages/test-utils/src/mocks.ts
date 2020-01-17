@@ -1,6 +1,6 @@
 import { BASE_SELF_ID, RequestData } from './utils'
 import { snakeCase } from 'koishi-utils'
-import { AppOptions, App, Sender, Server, ContextType, ResponsePayload, Meta } from 'koishi-core'
+import { AppOptions, App, Sender, Server, ContextType, ResponsePayload, Meta, MessageMeta } from 'koishi-core'
 import debug from 'debug'
 
 class MockedServer extends Server {
@@ -31,6 +31,14 @@ class MockedSender extends Sender {
     return this.get(action, params)
   }
 }
+
+const createMessageMeta = (type: ContextType, message: string, userId: number, ctxId: number): MessageMeta => ({
+  [type + 'Id']: ctxId,
+  postType: 'message',
+  messageType: type === 'user' ? 'private' : type,
+  message,
+  userId,
+})
 
 export class MockedApp extends App {
   sender: MockedSender
@@ -72,21 +80,14 @@ export class MockedApp extends App {
     })
   }
 
+  receiveMessage (meta: Meta): Promise<void>
   receiveMessage (type: 'user', message: string, userId: number): Promise<void>
   receiveMessage (type: 'group', message: string, userId: number, groupId: number): Promise<void>
   receiveMessage (type: 'discuss', message: string, userId: number, discussId: number): Promise<void>
-  receiveMessage (type: ContextType, message: string, userId: number, ctxId: number, meta: Meta): Promise<void>
-  receiveMessage (type: ContextType, message: string, userId: number, ctxId?: number, meta?: Meta) {
+  receiveMessage (type: ContextType | Meta, message?: string, userId?: number, ctxId: number = userId) {
     return new Promise((resolve) => {
       this.receiver.once('after-middleware', () => resolve())
-      this.receive({
-        [type + 'Id']: ctxId,
-        postType: 'message',
-        messageType: type === 'user' ? 'private' : type,
-        message,
-        userId,
-        ...meta,
-      })
+      this.receive(typeof type === 'string' ? createMessageMeta(type, message, userId, ctxId) : type)
     })
   }
 
@@ -117,14 +118,18 @@ export class MockedApp extends App {
 }
 
 export class Session {
-  constructor (public app: MockedApp, public type: ContextType, public userId: number, public ctxId: number) {}
+  meta: MessageMeta
+
+  constructor (public app: MockedApp, public type: ContextType, public userId: number, public ctxId: number) {
+    this.meta = createMessageMeta(type, null, userId, ctxId)
+  }
 
   async send (message: string) {
     let payload: ResponsePayload = null
     function $response (data: ResponsePayload) {
       payload = data
     }
-    await this.app.receiveMessage(this.type, message, this.userId, this.ctxId, { $response })
+    await this.app.receiveMessage({ ...this.meta, message, $response })
     return payload
   }
 

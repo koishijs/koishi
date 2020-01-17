@@ -1,8 +1,6 @@
-import { MockedApp, MemoryDatabase, Session } from 'koishi-test-utils'
-import { registerDatabase } from 'koishi-core'
+import { MockedApp, Session } from 'koishi-test-utils'
 import info, { registerUserInfo, InfoOptions } from '../src/info'
-
-registerDatabase('memory', MemoryDatabase)
+import 'koishi-database-memory'
 
 // make coverage happy
 registerUserInfo(() => '')
@@ -37,9 +35,9 @@ test('basic support', async () => {
   await session.shouldHaveReply('info -u 456', '456 的权限为 4 级。\nfoo')
 })
 
-test('getSenderName', async () => {
+test('getUserName', async () => {
   app.plugin<InfoOptions>(info, {
-    getSenderName (user, meta) {
+    getUserName (user, meta) {
       if (user.id !== meta.userId) return 'bar'
     },
   })
