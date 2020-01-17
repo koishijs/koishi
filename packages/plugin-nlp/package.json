@@ -30,10 +30,10 @@
     "jieba"
   ],
   "devDependencies": {
-    "koishi-test-utils": "^1.2.1"
+    "koishi-test-utils": "^1.2.2"
   },
   "dependencies": {
-    "koishi-core": "^1.3.0",
+    "koishi-core": "^1.4.0",
     "koishi-utils": "^1.0.2",
     "nodejieba": "^2.4.0"
   }
