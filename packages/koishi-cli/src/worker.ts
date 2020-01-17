@@ -1,4 +1,4 @@
-import { App, startAll, AppOptions, onStart, Context, Plugin, appList, logTypes, LogEvents } from 'koishi-core'
+import { App, startAll, AppOptions, onStart, Context, Plugin, appList } from 'koishi-core'
 import { resolve, extname } from 'path'
 import { capitalize } from 'koishi-utils'
 import { performance } from 'perf_hooks'
@@ -39,7 +39,7 @@ function loadEcosystem (type: string, name: string) {
   throw new Error(`cannot resolve ${type} ${name}`)
 }
 
-type PluginConfig = (string | [string | Plugin, any])[]
+export type PluginConfig = (string | [string | Plugin, any?])[]
 
 export interface AppConfig extends AppOptions {
   plugins?: PluginConfig | Record<string, PluginConfig>
@@ -87,7 +87,7 @@ function tryCallback <T> (callback: () => T) {
   } catch {}
 }
 
-if (['.js', '.json'].includes(extension)) {
+if (['.js', '.json', '.ts'].includes(extension)) {
   config = tryCallback(() => require(configFile))
 } else if (['.yaml', '.yml'].includes(extension)) {
   config = tryCallback(() => safeLoad(readFileSync(configFile, 'utf8')))

@@ -14,7 +14,6 @@ export const userFlags: (keyof typeof UserFlag)[] = ['ignore']
 
 export interface UserData {
   id: number
-  name: string
   flag: number
   authority: number
   usage: Record<string, Usage>
@@ -36,7 +35,6 @@ extendUser((id, authority) => ({
   id,
   authority,
   flag: 0,
-  name: String(id),
   usage: {},
 }))
 

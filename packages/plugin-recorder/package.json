@@ -1,7 +1,7 @@
 {
-  "name": "koishi-plugin-teach",
-  "description": "Teach plugin for Koishi",
-  "version": "0.1.11",
+  "name": "koishi-plugin-recorder",
+  "description": "Save Chat Records for Koishi",
+  "version": "1.0.0-alpha.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -17,7 +17,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://github.com/koishijs/koishi/packages/plugin-teach#readme",
+  "homepage": "https://github.com/koishijs/koishi/packages/plugin-recorder#readme",
   "keywords": [
     "bot",
     "qqbot",
@@ -26,13 +26,11 @@
     "chatbot",
     "koishi",
     "plugin",
-    "teach",
-    "dialogue",
-    "conversation"
+    "record",
+    "recorder"
   ],
   "devDependencies": {
-    "koishi-database-level": "^1.0.6",
-    "koishi-database-mysql": "^1.0.6",
+    "del": "^5.1.0",
     "koishi-test-utils": "^1.2.2"
   },
   "dependencies": {

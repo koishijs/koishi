@@ -1,0 +1,7 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`check content 1`] = `
+"{\\"$ctxType\\":\\"group\\",\\"$ctxId\\":321,\\"userId\\":123,\\"message\\":\\"foo\\"}
+{\\"$ctxType\\":\\"group\\",\\"$ctxId\\":321,\\"userId\\":789,\\"message\\":\\"baz\\"}
+"
+`;

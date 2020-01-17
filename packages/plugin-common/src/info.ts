@@ -1,4 +1,4 @@
-import { Context, getSenderName, UserField, UserData, getTargetId, CommandConfig } from 'koishi-core'
+import { Context, UserField, UserData, getTargetId, CommandConfig, Meta } from 'koishi-core'
 
 type UserInfoCallback <K extends UserField = UserField> = (user: Pick<UserData, K>) => string
 
@@ -12,8 +12,22 @@ export function registerUserInfo <K extends UserField> (callback: UserInfoCallba
   }
 }
 
-export default function apply (ctx: Context, config: CommandConfig = {}) {
-  ctx.command('info', '查看用户信息', { authority: 0, ...config })
+export interface InfoOptions extends CommandConfig {
+  getSenderName? (user: UserData, meta: Meta<'message'>): string
+}
+
+const defaultConfig: InfoOptions = {
+  authority: 0,
+  getSenderName (user, meta) {
+    if (meta.userId === user.id && meta.sender) {
+      return meta.sender.card || meta.sender.nickname
+    }
+  },
+}
+
+export default function apply (ctx: Context, config: InfoOptions = {}) {
+  config = { ...defaultConfig, ...config }
+  ctx.command('info', '查看用户信息', config)
     .alias('i')
     .shortcut('我的信息')
     .option('-u, --user [target]', '指定目标', { authority: 3 })
@@ -25,10 +39,15 @@ export default function apply (ctx: Context, config: CommandConfig = {}) {
         if (!id) return meta.$send('未找到用户。')
         user = await ctx.database.getUser(id, -1, Array.from(infoFields))
         if (!user) return meta.$send('未找到用户。')
-        output.push(`用户 ${id} 的权限为 ${user.authority} 级。`)
+        const name = config.getSenderName(user, meta)
+        if (!name) {
+          output.push(`${id} 的权限为 ${user.authority} 级。`)
+        } else {
+          output.push(`${name} (${id}) 的权限为 ${user.authority} 级。`)
+        }
       } else {
-        user = await ctx.database.getUser(meta.userId, 0, Array.from(infoFields))
-        output.push(`${getSenderName(meta)}，您的权限为 ${user.authority} 级。`)
+        user = await ctx.database.getUser(meta.userId, Array.from(infoFields))
+        output.push(`${config.getSenderName(user, meta) || meta.userId}，您的权限为 ${user.authority} 级。`)
       }
 
       for (const callback of infoCallbacks) {

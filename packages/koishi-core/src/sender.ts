@@ -110,6 +110,7 @@ export class Sender {
       message,
       sendType,
       postType: 'send',
+      userId: this.app.selfId,
       [$ctxType + 'Id']: $ctxId,
     } as Meta<'send'>
   }

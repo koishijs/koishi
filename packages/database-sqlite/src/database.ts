@@ -26,7 +26,6 @@ export type Pragma = {
 export const pragma: Pragma = {
   user: {
     id: 'BIGINT',
-    name: 'VARCHAR(64)',
     flag: 'INT',
     authority: 'INT',
     usage: 'TEXT',
