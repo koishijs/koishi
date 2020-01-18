@@ -26,6 +26,7 @@ const defaultConfig: InfoOptions = {
 
 export default function apply (ctx: Context, config: InfoOptions = {}) {
   config = { ...defaultConfig, ...config }
+
   ctx.command('info', '查看用户信息', { authority: 0 })
     .alias('i')
     .shortcut('我的信息')

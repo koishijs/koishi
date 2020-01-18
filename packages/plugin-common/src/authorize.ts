@@ -18,7 +18,7 @@ export async function updateAuthority (database: Database, users: AuthorizedUser
   }
 }
 
-export interface AuthorizeConfig {
+export interface AuthorizeOptions {
   authorizeUser?: Record<number, number>
   authorizeGroup?: Record<number, number | Partial<Record<GroupRole, number>>>
 }
@@ -28,7 +28,7 @@ interface AuthorizeInfo {
   update: Set<number>
 }
 
-export default function apply (ctx: Context, config: AuthorizeConfig) {
+export default function apply (ctx: Context, config: AuthorizeOptions) {
   const { app, database } = ctx
   const { authorizeUser = {}, authorizeGroup = {} } = config
   const authorityMap: Record<number, AuthorizeInfo> = []

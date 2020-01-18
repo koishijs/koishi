@@ -1,7 +1,7 @@
-import { Context, CommandConfig } from 'koishi-core'
+import { Context } from 'koishi-core'
 
-export default function apply (ctx: Context, config: CommandConfig = {}) {
-  ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3, ...config })
+export default function apply (ctx: Context) {
+  ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3 })
     .alias('ctxf')
     .option('-u, --user [id]', '使用私聊上下文')
     .option('-d, --discuss [id]', '使用讨论组上下文')

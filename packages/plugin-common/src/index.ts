@@ -1,6 +1,6 @@
-import { Context, CommandConfig } from 'koishi-core'
+import { Context } from 'koishi-core'
 import admin from './admin'
-import authorize, { AuthorizeConfig } from './authorize'
+import authorize, { AuthorizeOptions } from './authorize'
 import broadcast, { BroadcastOptions } from './broadcast'
 import contextify from './contextify'
 import echo from './echo'
@@ -8,7 +8,7 @@ import exit from './exit'
 import help from './help'
 import info, { InfoOptions } from './info'
 import repeater, { RepeaterOptions } from './repeater'
-import requestHandler, { HandlerConfig } from './request-handler'
+import requestHandler, { HandlerOptions } from './request-handler'
 import respondent, { Respondent } from './respondent'
 import welcome, { WelcomeMessage } from './welcome'
 
@@ -30,37 +30,37 @@ export {
   welcome,
 }
 
-interface CommonPluginConfig extends HandlerConfig, AuthorizeConfig, InfoOptions {
-  admin?: false | CommandConfig
-  broadcast?: false | BroadcastOptions
-  contextify?: false | CommandConfig
-  echo?: false | CommandConfig
-  exit?: false | CommandConfig
-  help?: false | CommandConfig
-  info?: false | InfoOptions
-  repeater?: false | RepeaterOptions
+interface CommonPluginConfig extends AuthorizeOptions, BroadcastOptions, HandlerOptions, InfoOptions {
+  admin?: boolean
+  broadcast?: boolean
+  contextify?: boolean
+  echo?: boolean
+  exit?: boolean
+  help?: boolean
+  info?: boolean
+  repeater?: RepeaterOptions
   respondent?: Respondent[]
-  welcome?: false | WelcomeMessage
+  welcomeMessage?: WelcomeMessage
 }
 
 export const name = 'common'
 
 export function apply (ctx: Context, options: CommonPluginConfig = {}) {
-  ctx
-    .plugin(contextify, options.contextify)
-    .plugin(echo, options.echo)
-    .plugin(exit, options.exit)
-    .plugin(help, options.help)
-    .plugin(repeater, options.repeater)
-    .plugin(requestHandler, options)
-    .plugin(respondent, options.respondent)
-    .plugin(welcome, options.welcome)
+  ctx.plugin(requestHandler, options)
+  ctx.plugin(respondent, options.respondent)
+  ctx.plugin(welcome, options.welcomeMessage)
+
+  if (options.contextify !== false) ctx.plugin(contextify)
+  if (options.echo !== false) ctx.plugin(echo)
+  if (options.exit !== false) ctx.plugin(exit)
+  if (options.help !== false) ctx.plugin(help)
+  if (options.repeater) ctx.plugin(repeater, options.repeater)
 
   if (ctx.database) {
-    ctx
-      .plugin(admin, options.admin)
-      .plugin(authorize, options)
-      .plugin(broadcast, options.broadcast)
-      .plugin(info, options)
+    ctx.plugin(authorize, options)
+
+    if (options.admin !== false) ctx.plugin(admin)
+    if (options.broadcast !== false) ctx.plugin(broadcast, options)
+    if (options.info !== false) ctx.plugin(info, options)
   }
 }

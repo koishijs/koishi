@@ -1,5 +1,9 @@
-import { Context, User, userFlags, UserFlag, Meta, UserField, getTargetId, CommandConfig, GroupField, UserData, GroupData, GroupFlag, groupFlags, Group, userFields, groupFields } from 'koishi-core'
 import { isInteger, difference, Observed, paramCase } from 'koishi-utils'
+import {
+  Context, Meta, getTargetId,
+  User, UserData, userFlags, UserFlag, userFields, UserField,
+  Group, GroupData, groupFlags, GroupFlag, groupFields, GroupField,
+} from 'koishi-core'
 
 type ActionCallback <T extends {}, K extends keyof T> =
   (this: Context, meta: Meta, target: Observed<Pick<T, K>>, ...args: string[]) => Promise<any>
@@ -104,11 +108,11 @@ registerGroupAction('unsetFlag', async (meta, group, ...flags) => {
   return meta.$send('群信息已修改。')
 }, ['flag'])
 
-export default function apply (ctx: Context, options: CommandConfig) {
+export default function apply (ctx: Context) {
   const userActions = Object.keys(userActionMap).map(paramCase).join(', ')
   const groupActions = Object.keys(groupActionMap).map(paramCase).join(', ')
 
-  ctx.command('admin <action> [...args]', '管理用户', { authority: 4, ...options })
+  ctx.command('admin <action> [...args]', '管理用户', { authority: 4 })
     .option('-u, --user [user]', '指定目标用户')
     .option('-g, --group [group]', '指定目标群')
     .option('-G, --this-group', '指定目标群为本群')
