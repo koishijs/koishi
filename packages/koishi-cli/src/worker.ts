@@ -7,6 +7,7 @@ import { logger } from './utils'
 import { format } from 'util'
 import { readFileSync } from 'fs'
 import { safeLoad } from 'js-yaml'
+import { yellow } from 'kleur'
 
 const { version } = require('../package')
 
@@ -97,7 +98,7 @@ if (['.js', '.json', '.ts'].includes(extension)) {
     || tryCallback(() => safeLoad(readFileSync(configFile + '.yaml', 'utf8')))
 }
 
-if (!config) throw new Error('config file not found.')
+if (!config) throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
 
 if (Array.isArray(config)) {
   config.forEach(conf => prepareApp(conf))
@@ -127,7 +128,7 @@ onStart(() => {
     }
   }
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
-  logger.success(`bot started successfully in ${time} ms`, baseLogLevel)
+  logger.success(`bot started successfully in ${time} ms.`, baseLogLevel)
   process.send({ type: 'start' })
 })
 
