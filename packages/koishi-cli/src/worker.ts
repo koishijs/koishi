@@ -43,7 +43,7 @@ function loadEcosystem (type: string, name: string) {
   throw new Error(`cannot resolve ${type} ${name}`)
 }
 
-export type PluginConfig = (string | [string | Plugin, any?])[]
+export type PluginConfig = (string | Plugin | [string | Plugin, any?])[]
 
 export interface AppConfig extends AppOptions {
   plugins?: PluginConfig | Record<string, PluginConfig>
@@ -54,11 +54,13 @@ export interface AppConfig extends AppOptions {
 function loadPlugins (ctx: Context, plugins: PluginConfig) {
   for (const item of plugins) {
     let plugin: Plugin, options
-    if (typeof item === 'string') {
-      plugin = loadEcosystem('plugin', item)
-    } else {
+    if (Array.isArray(item)) {
       plugin = typeof item[0] === 'string' ? loadEcosystem('plugin', item[0]) : item[0]
       options = item[1]
+    } else if (typeof item === 'string') {
+      plugin = loadEcosystem('plugin', item)
+    } else {
+      plugin = item
     }
     ctx.plugin(plugin, options)
     if (plugin.name) logger.info(`apply plugin ${cyan(plugin.name)}`, baseLogLevel)
