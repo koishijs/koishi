@@ -4,7 +4,7 @@ import { capitalize } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { cyan } from 'kleur'
 import { logger } from './utils'
-import { format } from 'util'
+import { format, types } from 'util'
 import { readFileSync } from 'fs'
 import { safeLoad } from 'js-yaml'
 import { yellow } from 'kleur'
@@ -16,10 +16,13 @@ if (process.env.KOISHI_LOG_LEVEL !== undefined) {
   baseLogLevel = +process.env.KOISHI_LOG_LEVEL
 }
 
-process.on('uncaughtException', ({ message }) => {
+function handleException (error: any) {
+  const message = types.isNativeError(error) ? error.stack : String(error)
   logger.error(message, baseLogLevel)
-  process.exit(-1)
-})
+  process.exit(1)
+}
+
+process.on('uncaughtException', handleException)
 
 const cwd = process.cwd()
 
@@ -144,7 +147,4 @@ appList.forEach((app) => {
   })
 })
 
-startAll().catch((error) => {
-  logger.error(error, baseLogLevel)
-  process.exit(-1)
-})
+startAll().catch(handleException)

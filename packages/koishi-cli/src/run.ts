@@ -15,25 +15,9 @@ function createWorker (options: WorkerOptions) {
   const child = fork(resolve(__dirname, 'worker'), [], {
     execArgv: options['--'],
   })
-  let started = false
-
-  child.on('message', (data: any) => {
-    if (data.type === 'start') {
-      started = true
-    }
-  })
 
   child.on('exit', (code) => {
-    if (!started) process.exit(1)
-    if (!code) {
-      logger.info('bot was stopped manually.')
-      process.exit(0)
-    }
-    if (code === 1) {
-      logger.info('bot was restarted manually.')
-    } else {
-      logger.warn('an error was encounted. restarting...')
-    }
+    if (code >= 0) process.exit(code)
     createWorker(options)
   })
 }
