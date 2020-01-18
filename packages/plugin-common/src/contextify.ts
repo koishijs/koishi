@@ -18,13 +18,14 @@ export default function apply (ctx: Context) {
       if (!message) return meta.$send('请输入要发送的文本。')
       if (!options.user && !options.group && !options.discuss) return meta.$send('请提供新的上下文。')
 
+      let user = meta.$user
       if (options.user) {
         const id = +options.user
-        if (id !== meta.userId) {
-          const user = await ctx.database.getUser(id, -1, ['authority'])
-          if (!user) return meta.$send('未找到用户。')
-          if (meta.$user.authority <= user.authority) return meta.$send('权限不足。')
+        user = await ctx.database.observeUser(id)
+        if (meta.$user.authority <= user.authority) {
+          return meta.$send('权限不足。')
         }
+
         newMeta.userId = id
         newMeta.sender = {
           sex: 'unknown',
@@ -34,14 +35,21 @@ export default function apply (ctx: Context) {
         }
       }
 
+      Object.defineProperty(newMeta, '$user', { value: user, writable: true })
+
       if (options.discuss) {
         newMeta.discussId = +options.discuss
         newMeta.messageType = 'discuss'
       } else if (options.group) {
-        newMeta.groupId = +options.group
+        const id = +options.group
+        newMeta.groupId = id
         newMeta.messageType = 'group'
         newMeta.subType = options.type || 'normal'
-      } else if (options.user) {
+        Object.defineProperty(newMeta, '$group', {
+          value: await ctx.database.observeGroup(id),
+          writable: true,
+        })
+      } else {
         newMeta.messageType = 'private'
         newMeta.subType = options.type || 'other'
       }

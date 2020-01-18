@@ -12,13 +12,13 @@ const mock = process.exit = jest.fn<never, [number?]>()
 beforeEach(() => mock.mockClear())
 afterAll(() => process.exit = processExit)
 
-test('basic support', async () => {
+test('terminate', async () => {
   await session.shouldHaveNoResponse(`koishi, 关机`)
   expect(mock).toBeCalledTimes(1)
   expect(mock).toBeCalledWith(0)
 })
 
-test('basic support', async () => {
+test('restart', async () => {
   await session.shouldHaveNoResponse(`koishi, 重启`)
   expect(mock).toBeCalledTimes(1)
   expect(mock).toBeCalledWith(-1)
