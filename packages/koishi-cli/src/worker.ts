@@ -2,12 +2,11 @@ import { App, startAll, AppOptions, onStart, Context, Plugin, appList } from 'ko
 import { resolve, extname } from 'path'
 import { capitalize } from 'koishi-utils'
 import { performance } from 'perf_hooks'
-import { cyan } from 'kleur'
+import { cyan, yellow } from 'kleur'
 import { logger } from './utils'
 import { format, types } from 'util'
 import { readFileSync } from 'fs'
 import { safeLoad } from 'js-yaml'
-import { yellow } from 'kleur'
 
 const { version } = require('../package')
 
