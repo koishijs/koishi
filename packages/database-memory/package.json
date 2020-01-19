@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-memory#readme",
   "dependencies": {
-    "koishi-core": "^1.3.0",
+    "koishi-core": "^1.5.0",
     "koishi-utils": "^1.0.2"
   }
 }
