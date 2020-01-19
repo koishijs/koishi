@@ -4,6 +4,7 @@ import authorize, { AuthorizeOptions } from './authorize'
 import broadcast, { BroadcastOptions } from './broadcast'
 import contextify from './contextify'
 import echo from './echo'
+import exec from './exec'
 import exit from './exit'
 import help from './help'
 import info, { InfoOptions } from './info'
@@ -21,6 +22,7 @@ export {
   broadcast,
   contextify,
   echo,
+  exec,
   exit,
   help,
   info,
@@ -42,6 +44,7 @@ export interface CommonPluginConfig extends AuthorizeOptions, BroadcastOptions, 
   broadcast?: boolean
   contextify?: boolean
   echo?: boolean
+  exec?: boolean
   exit?: boolean
   help?: boolean
   info?: boolean
@@ -58,6 +61,7 @@ export function apply (ctx: Context, options: CommonPluginConfig = {}) {
   ctx.plugin(welcome, options.welcomeMessage)
 
   if (options.echo !== false) ctx.plugin(echo)
+  if (options.exec !== false) ctx.plugin(exec)
   if (options.exit !== false) ctx.plugin(exit)
   if (options.help !== false) ctx.plugin(help)
   if (options.repeater) ctx.plugin(repeater, options.repeater)

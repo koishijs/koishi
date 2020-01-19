@@ -9,6 +9,7 @@ test('basic support', () => {
   expect(app._commandMap.admin).toBeFalsy()
   expect(app._commandMap.broadcast).toBeFalsy()
   expect(app._commandMap.echo).toBeTruthy()
+  expect(app._commandMap.exec).toBeTruthy()
   expect(app._commandMap.exit).toBeTruthy()
   expect(app._commandMap.contextify).toBeFalsy()
   expect(app._commandMap.help).toBeTruthy()
@@ -22,6 +23,7 @@ test('skip database commands', () => {
   expect(app._commandMap.admin).toBeTruthy()
   expect(app._commandMap.broadcast).toBeTruthy()
   expect(app._commandMap.echo).toBeTruthy()
+  expect(app._commandMap.exec).toBeTruthy()
   expect(app._commandMap.exit).toBeTruthy()
   expect(app._commandMap.contextify).toBeTruthy()
   expect(app._commandMap.help).toBeTruthy()
@@ -36,6 +38,7 @@ test('disable commands', () => {
     broadcast: false,
     contextify: false,
     echo: false,
+    exec: false,
     exit: false,
     help: false,
     info: false,
@@ -44,6 +47,7 @@ test('disable commands', () => {
   expect(app._commandMap.admin).toBeFalsy()
   expect(app._commandMap.broadcast).toBeFalsy()
   expect(app._commandMap.echo).toBeFalsy()
+  expect(app._commandMap.exec).toBeFalsy()
   expect(app._commandMap.exit).toBeFalsy()
   expect(app._commandMap.contextify).toBeFalsy()
   expect(app._commandMap.help).toBeFalsy()
