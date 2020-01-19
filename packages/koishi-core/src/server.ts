@@ -59,7 +59,7 @@ export abstract class Server {
       ctxId = meta.userId
     }
 
-    // polyfill CQHTTP 3.x events
+    // polyfill CQHTTP 3.x events and array form of message
     // https://cqhttp.cc/docs/4.12/#/UpgradeGuide
     /* eslint-disable dot-notation */
     if (meta.postType === 'message') {

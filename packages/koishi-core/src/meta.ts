@@ -44,10 +44,15 @@ export interface ResponsePayload {
 
 /** CQHTTP Meta Information */
 export interface Meta <T extends PostType = PostType> {
+  // database bindings
   $user?: User
   $group?: Group
+
+  // context identifier
   $ctxId?: number
   $ctxType?: ContextType
+
+  // quick operations
   $response?: (payload: ResponsePayload) => void
   $delete?: () => Promise<void>
   $kick?: () => Promise<void>
@@ -55,6 +60,8 @@ export interface Meta <T extends PostType = PostType> {
   $approve?: (remark?: string) => Promise<void>
   $reject?: (reason?: string) => Promise<void>
   $send?: (message: string, autoEscape?: boolean) => Promise<void>
+
+  // basic properties
   postType?: T
   messageType?: MetaTypeMap[T & 'message']
   noticeType?: MetaTypeMap[T & 'notice']
@@ -62,21 +69,30 @@ export interface Meta <T extends PostType = PostType> {
   metaEventType?: MetaTypeMap[T & 'meta_event']
   sendType?: MetaTypeMap[T & 'send']
   subType?: SubTypeMap[T]
-  messageId?: number
-  userId?: number
   selfId?: number
+  userId?: number
   groupId?: number
   discussId?: number
-  operatorId?: number
+  time?: number
+
+  // message event
+  messageId?: number
   message?: string
   rawMessage?: string
   font?: number
   sender?: SenderInfo
   anonymous?: AnonymousInfo
+
+  // notice event
+  operatorId?: number
+  duration?: number
   file?: FileInfo
+
+  // request event
   comment?: string
   flag?: string
-  time?: number
+
+  // metaEvent event
   status?: StatusInfo
   interval?: number
 }
