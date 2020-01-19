@@ -74,12 +74,8 @@ class MockedAppSender extends Sender {
   constructor (app: App) {
     super(app)
     this._get = async (action, params) => {
-      return this.mock.receive(action, params)
+      return this.mock.receive(action.replace(/_async$/, ''), params)
     }
-  }
-
-  getAsync (action: string, params?: RequestParams) {
-    return this.get(action, params)
   }
 }
 

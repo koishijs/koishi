@@ -27,7 +27,7 @@ async function nextTick () {
 
 test('basic support', async () => {
   await app.receiveMessage('user', 'broadcast foo bar', 123)
-  app.shouldHaveLastRequest('send_group_msg_async', { message: 'foo bar', groupId: 321 })
+  app.shouldHaveLastRequest('send_group_msg', { message: 'foo bar', groupId: 321 })
   await nextTick()
-  app.shouldHaveLastRequest('send_group_msg_async', { message: 'foo bar', groupId: 654 })
+  app.shouldHaveLastRequest('send_group_msg', { message: 'foo bar', groupId: 654 })
 })
