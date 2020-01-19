@@ -72,7 +72,7 @@ const createGroupIncrease = (userId: number, groupId: number): Meta => ({
 
 describe('handle group_increase', () => {
   test('create new user', async () => {
-    app.receive(createGroupIncrease(456, 123))
+    app.receive(createGroupIncrease(456, 231))
     await sleep(0)
     await expect(app.database.getUser(456)).resolves.toHaveProperty('authority', 1)
   })
@@ -94,4 +94,17 @@ describe('handle group_increase', () => {
     await sleep(0)
     await expect(app.database.getUser(789)).resolves.toHaveProperty('authority', 0)
   })
+})
+
+test('handle group-admin/set', async () => {
+  app.receive({
+    postType: 'notice',
+    noticeType: 'group_admin',
+    subType: 'set',
+    userId: 456,
+    groupId: 231,
+  })
+
+  await sleep(0)
+  await expect(app.database.getUser(456)).resolves.toHaveProperty('authority', 2)
 })

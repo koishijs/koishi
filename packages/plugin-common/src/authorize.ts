@@ -82,12 +82,19 @@ export default function apply (ctx: Context, config: AuthorizeOptions = {}) {
           await updateAuthorizeInfo(authority, memberIds)
         }
 
-        ctx.receiver.on('group-increase', async ({ userId }) => {
-          const authority = config.member
+        async function handleUpdate (userId: number, authority: number) {
           const user = await database.getUser(userId, authority)
           if (user.authority < authority) {
             return database.setUser(userId, { authority })
           }
+        }
+
+        ctx.receiver.on('group-increase', ({ userId }) => {
+          return handleUpdate(userId, config.member)
+        })
+
+        ctx.receiver.on('group-admin/set', ({ userId }) => {
+          return handleUpdate(userId, config.admin)
         })
       }),
     ])
