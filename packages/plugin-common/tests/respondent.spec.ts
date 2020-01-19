@@ -1,5 +1,5 @@
 import { MockedApp } from 'koishi-test-utils'
-import respondent, { Respondent } from '../src/respondent'
+import { respondent, Respondent } from '../src'
 
 const app = new MockedApp()
 const session = app.createSession('user', 123)

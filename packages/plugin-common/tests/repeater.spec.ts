@@ -1,5 +1,5 @@
 import { MockedApp } from 'koishi-test-utils'
-import repeater, { RepeaterOptions } from '../src/repeater'
+import { apply, repeater, RepeaterOptions } from '../src'
 import 'koishi-database-memory'
 
 test('repeat', async () => {
@@ -77,7 +77,7 @@ test('default behavior', async () => {
   const session2 = app.createSession('group', 456, 123)
   const session3 = app.createSession('group', 789, 123)
 
-  app.plugin(repeater)
+  app.plugin(apply, { repeater: {} })
 
   await session1.send('foo')
   await session2.send('foo')

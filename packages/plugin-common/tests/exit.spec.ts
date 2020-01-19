@@ -1,5 +1,5 @@
 import { MockedApp } from 'koishi-test-utils'
-import exit from '../src/exit'
+import { exit } from '../src'
 
 const app = new MockedApp({ nickname: 'koishi' })
 const session = app.createSession('user', 123)

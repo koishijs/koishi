@@ -1,5 +1,5 @@
 import { MockedApp } from 'koishi-test-utils'
-import contextify from '../src/contextify'
+import { contextify } from '../src'
 import 'koishi-database-memory'
 
 const app = new MockedApp({ database: { memory: {} } })

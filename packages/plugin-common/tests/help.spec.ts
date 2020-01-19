@@ -1,6 +1,6 @@
 import { Session, MockedApp } from 'koishi-test-utils'
 import { noop } from 'koishi-utils'
-import help from '../src/help'
+import { help } from '../src'
 import 'koishi-database-memory'
 
 const MESSAGE_COMMAND_CALLED = 'command called'

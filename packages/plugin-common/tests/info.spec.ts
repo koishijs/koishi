@@ -1,5 +1,5 @@
 import { MockedApp, Session } from 'koishi-test-utils'
-import info, { registerUserInfo, InfoOptions } from '../src/info'
+import { info, registerUserInfo, InfoOptions } from '../src'
 import 'koishi-database-memory'
 
 // make coverage happy

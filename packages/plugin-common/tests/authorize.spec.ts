@@ -1,8 +1,8 @@
 import { MockedApp } from 'koishi-test-utils'
-import authorize, { AuthorizeOptions } from '../src/authorize'
-import 'koishi-database-memory'
 import { sleep } from 'koishi-utils'
-import { createUser, MetaTypeMap, SubTypeMap, Meta } from 'koishi-core'
+import { createUser, Meta } from 'koishi-core'
+import { authorize, AuthorizeOptions } from '../src'
+import 'koishi-database-memory'
 
 const app = new MockedApp({ database: { memory: {} } })
 

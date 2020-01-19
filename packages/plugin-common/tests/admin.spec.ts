@@ -1,6 +1,6 @@
 import { MockedApp } from 'koishi-test-utils'
 import { userFlags, groupFlags, UserFlag, GroupFlag } from 'koishi-core'
-import admin, { registerUserAction, registerGroupAction } from '../src/admin'
+import { admin, registerUserAction, registerGroupAction } from '../src'
 import 'koishi-database-memory'
 
 const app = new MockedApp({ database: { memory: {} } })

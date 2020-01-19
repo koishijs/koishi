@@ -1,7 +1,7 @@
 import { MockedApp } from 'koishi-test-utils'
-import broadcast from '../src/broadcast'
-import 'koishi-database-memory'
 import { sleep } from 'koishi-utils'
+import { broadcast } from '../src'
+import 'koishi-database-memory'
 
 const app = new MockedApp({ database: { memory: {} } })
 

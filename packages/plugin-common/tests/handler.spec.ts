@@ -1,6 +1,6 @@
 import { MockedApp } from 'koishi-test-utils'
 import { sleep } from 'koishi-utils'
-import requestHandler, { HandlerConfig } from '../src/request-handler'
+import { requestHandler, HandlerOptions } from '../src'
 import 'koishi-database-memory'
 
 let app: MockedApp
@@ -8,7 +8,7 @@ let app: MockedApp
 describe('support string', () => {
   beforeAll(async () => {
     app = new MockedApp()
-    app.plugin<HandlerConfig>(requestHandler, {
+    app.plugin<HandlerOptions>(requestHandler, {
       handleFriend: 'foo',
       handleGroupAdd: 'bar',
     })
@@ -30,7 +30,7 @@ describe('support string', () => {
 describe('support boolean', () => {
   beforeAll(async () => {
     app = new MockedApp()
-    app.plugin<HandlerConfig>(requestHandler, {
+    app.plugin<HandlerOptions>(requestHandler, {
       handleFriend: false,
       handleGroupInvite: false,
     })
@@ -52,7 +52,7 @@ describe('support boolean', () => {
 describe('default behaviour without database', () => {
   beforeAll(async () => {
     app = new MockedApp()
-    app.plugin<HandlerConfig>(requestHandler)
+    app.plugin<HandlerOptions>(requestHandler)
   })
 
   test('friend add', async () => {
@@ -77,7 +77,7 @@ describe('default behaviour without database', () => {
 describe('default behaviour with database', () => {
   beforeAll(async () => {
     app = new MockedApp({ database: { memory: {} } })
-    app.plugin<HandlerConfig>(requestHandler)
+    app.plugin<HandlerOptions>(requestHandler)
 
     await app.start()
     await app.database.getUser(123, 1)

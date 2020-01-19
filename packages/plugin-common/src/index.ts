@@ -28,9 +28,16 @@ export {
   requestHandler,
   respondent,
   welcome,
+  AuthorizeOptions,
+  BroadcastOptions,
+  HandlerOptions,
+  InfoOptions,
+  RepeaterOptions,
+  Respondent,
+  WelcomeMessage,
 }
 
-interface CommonPluginConfig extends AuthorizeOptions, BroadcastOptions, HandlerOptions, InfoOptions {
+export interface CommonPluginConfig extends AuthorizeOptions, BroadcastOptions, HandlerOptions, InfoOptions {
   admin?: boolean
   broadcast?: boolean
   contextify?: boolean
@@ -50,7 +57,6 @@ export function apply (ctx: Context, options: CommonPluginConfig = {}) {
   ctx.plugin(respondent, options.respondent)
   ctx.plugin(welcome, options.welcomeMessage)
 
-  if (options.contextify !== false) ctx.plugin(contextify)
   if (options.echo !== false) ctx.plugin(echo)
   if (options.exit !== false) ctx.plugin(exit)
   if (options.help !== false) ctx.plugin(help)
@@ -60,6 +66,7 @@ export function apply (ctx: Context, options: CommonPluginConfig = {}) {
     ctx.plugin(authorize, options)
 
     if (options.admin !== false) ctx.plugin(admin)
+    if (options.contextify !== false) ctx.plugin(contextify)
     if (options.broadcast !== false) ctx.plugin(broadcast, options)
     if (options.info !== false) ctx.plugin(info, options)
   }
