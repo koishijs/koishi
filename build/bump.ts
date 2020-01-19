@@ -2,9 +2,8 @@ import { writeJson } from 'fs-extra'
 import { resolve } from 'path'
 import { SemVer, gt } from 'semver'
 import { cyan, green } from 'kleur'
-import { PackageJson } from './utils'
+import { PackageJson, getWorkspaces } from './utils'
 import latest from 'latest-version'
-import globby from 'globby'
 import CAC from 'cac'
 import ora from 'ora'
 
@@ -126,11 +125,7 @@ function bumpPkg (source: Package, flag: BumpType, only = false) {
 const flag = options.major ? 'major' : options.minor ? 'minor' : options.patch ? 'patch' : 'auto'
 
 ;(async () => {
-  const folders = await globby(require('../package').workspaces, {
-    deep: 0,
-    onlyDirectories: true,
-  })
-
+  const folders = await getWorkspaces()
   const spinner = ora()
   let progress = 0
   spinner.start(`loading packages 0/${folders.length}`)
