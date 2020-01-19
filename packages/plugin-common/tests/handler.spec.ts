@@ -5,13 +5,41 @@ import 'koishi-database-memory'
 
 let app: MockedApp
 
-describe('support string', () => {
+describe('type: undefined', () => {
+  beforeAll(async () => {
+    app = new MockedApp()
+    app.plugin<HandlerOptions>(requestHandler)
+    await app.start()
+  })
+
+  test('friend add', async () => {
+    app.receiveFriendRequest(321)
+    await sleep(0)
+    app.shouldHaveNoRequests()
+  })
+
+  test('group add', async () => {
+    app.receiveGroupRequest(321, 'add')
+    await sleep(0)
+    app.shouldHaveNoRequests()
+  })
+
+  test('group invite', async () => {
+    app.receiveGroupRequest(321, 'invite')
+    await sleep(0)
+    app.shouldHaveNoRequests()
+  })
+})
+
+describe('type: string', () => {
   beforeAll(async () => {
     app = new MockedApp()
     app.plugin<HandlerOptions>(requestHandler, {
       handleFriend: 'foo',
       handleGroupAdd: 'bar',
+      handleGroupInvite: 'baz',
     })
+    await app.start()
   })
 
   test('friend add', async () => {
@@ -25,21 +53,35 @@ describe('support string', () => {
     await sleep(0)
     app.shouldHaveLastRequest('set_group_add_request', { approve: false, reason: 'bar' })
   })
+
+  test('group invite', async () => {
+    app.receiveGroupRequest(321, 'invite')
+    await sleep(0)
+    app.shouldHaveLastRequest('set_group_add_request', { approve: false, reason: 'baz' })
+  })
 })
 
-describe('support boolean', () => {
+describe('type: boolean', () => {
   beforeAll(async () => {
     app = new MockedApp()
     app.plugin<HandlerOptions>(requestHandler, {
       handleFriend: false,
+      handleGroupAdd: false,
       handleGroupInvite: false,
     })
+    await app.start()
   })
 
   test('friend add', async () => {
     app.receiveFriendRequest(321)
     await sleep(0)
     app.shouldHaveLastRequest('set_friend_add_request', { approve: false })
+  })
+
+  test('group add', async () => {
+    app.receiveGroupRequest(321, 'add')
+    await sleep(0)
+    app.shouldHaveLastRequest('set_group_add_request', { approve: false })
   })
 
   test('group invite', async () => {
@@ -49,69 +91,32 @@ describe('support boolean', () => {
   })
 })
 
-describe('default behaviour without database', () => {
+describe('type: function', () => {
   beforeAll(async () => {
     app = new MockedApp()
-    app.plugin<HandlerOptions>(requestHandler)
+    app.plugin<HandlerOptions>(requestHandler, {
+      handleFriend: () => true,
+      handleGroupAdd: () => true,
+      handleGroupInvite: () => true,
+    })
+    await app.start()
   })
 
   test('friend add', async () => {
     app.receiveFriendRequest(321)
     await sleep(0)
-    app.shouldHaveNoRequests()
-  })
-
-  test('group invite', async () => {
-    app.receiveGroupRequest(654, 'invite')
-    await sleep(0)
-    app.shouldHaveNoRequests()
-  })
-
-  test('group add', async () => {
-    app.receiveGroupRequest(456, 'add')
-    await sleep(0)
-    app.shouldHaveNoRequests()
-  })
-})
-
-describe('default behaviour with database', () => {
-  beforeAll(async () => {
-    app = new MockedApp({ database: { memory: {} } })
-    app.plugin<HandlerOptions>(requestHandler)
-
-    await app.start()
-    await app.database.getUser(123, 1)
-    await app.database.getUser(456, 4)
-    await app.database.getUser(654, 3)
-  })
-
-  test('friend add with authority 0', async () => {
-    app.receiveFriendRequest(321)
-    await sleep(0)
-    app.shouldHaveNoRequests()
-  })
-
-  test('friend add with authority 1', async () => {
-    app.receiveFriendRequest(123)
-    await sleep(0)
     app.shouldHaveLastRequest('set_friend_add_request', { approve: true })
   })
 
-  test('group invite with authority 3', async () => {
-    app.receiveGroupRequest(654, 'invite')
+  test('group add', async () => {
+    app.receiveGroupRequest(321, 'add')
     await sleep(0)
-    app.shouldHaveNoRequests()
+    app.shouldHaveLastRequest('set_group_add_request', { approve: true })
   })
 
-  test('group invite with authority 4', async () => {
-    app.receiveGroupRequest(456, 'invite')
+  test('group invite', async () => {
+    app.receiveGroupRequest(321, 'invite')
     await sleep(0)
-    app.shouldHaveLastRequest('set_group_add_request', { approve: true, subType: 'invite' })
-  })
-
-  test('group add with authority 4', async () => {
-    app.receiveGroupRequest(456, 'add')
-    await sleep(0)
-    app.shouldHaveNoRequests()
+    app.shouldHaveLastRequest('set_group_add_request', { approve: true })
   })
 })

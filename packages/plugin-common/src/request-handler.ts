@@ -8,19 +8,6 @@ export interface HandlerOptions {
   handleGroupInvite?: RequestHandler
 }
 
-const defaultHandlers: HandlerOptions = {
-  async handleFriend (meta, app) {
-    if (!app.database) return
-    const user = await app.database.getUser(meta.userId, ['authority'])
-    if (user.authority >= 1) return true
-  },
-  async handleGroupInvite (meta, app) {
-    if (!app.database) return
-    const user = await app.database.getUser(meta.userId, ['authority'])
-    if (user.authority >= 4) return true
-  },
-}
-
 async function getHandleResult (handler: RequestHandler, meta: Meta<'request'>, ctx: App) {
   return typeof handler === 'function' ? handler(meta, ctx) : handler
 }
@@ -42,7 +29,7 @@ function setGroupResult (meta: Meta, result: string | boolean | void) {
 }
 
 export default function apply (ctx: App, options: HandlerOptions = {}) {
-  const { handleFriend, handleGroupAdd, handleGroupInvite } = { ...defaultHandlers, ...options }
+  const { handleFriend, handleGroupAdd, handleGroupInvite } = options
 
   ctx.receiver.on('request/friend', async (meta) => {
     const result = await getHandleResult(handleFriend, meta, ctx)

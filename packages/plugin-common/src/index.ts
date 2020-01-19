@@ -57,6 +57,7 @@ export const name = 'common'
 
 export function apply (ctx: Context, options: CommonPluginConfig = {}) {
   ctx.plugin(requestHandler, options)
+  ctx.plugin(repeater, options.repeater)
   ctx.plugin(respondent, options.respondent)
   ctx.plugin(welcome, options.welcomeMessage)
 
@@ -64,7 +65,6 @@ export function apply (ctx: Context, options: CommonPluginConfig = {}) {
   if (options.exec !== false) ctx.plugin(exec)
   if (options.exit !== false) ctx.plugin(exit)
   if (options.help !== false) ctx.plugin(help)
-  if (options.repeater) ctx.plugin(repeater, options.repeater)
 
   if (ctx.database) {
     ctx.plugin(authorize, options)
