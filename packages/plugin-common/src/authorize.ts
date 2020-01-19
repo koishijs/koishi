@@ -1,22 +1,4 @@
-import { UserData, Database, Context, GroupRole } from 'koishi-core'
-import { difference } from 'koishi-utils'
-
-type AuthorizedUsers = Pick<UserData, 'id' | 'authority'>[]
-
-export async function updateAuthority (database: Database, users: AuthorizedUsers, ids: number[], authority: number) {
-  const userIds = users.map(u => u.id)
-  const insertIds = difference(ids, userIds)
-  const updateIds = ids.filter((id) => {
-    const user = users.find(u => u.id === id)
-    return user && user.authority < authority
-  })
-  for (const id of insertIds) {
-    await database.getUser(id, authority)
-  }
-  for (const id of updateIds) {
-    await database.setUser(id, { authority })
-  }
-}
+import { Context, GroupRole } from 'koishi-core'
 
 export interface AuthorizeOptions {
   authorizeUser?: Record<number, number>
@@ -28,33 +10,49 @@ interface AuthorizeInfo {
   update: Set<number>
 }
 
-export default function apply (ctx: Context, config: AuthorizeOptions) {
+export default function apply (ctx: Context, config: AuthorizeOptions = {}) {
   const { app, database } = ctx
   const { authorizeUser = {}, authorizeGroup = {} } = config
-  const authorityMap: Record<number, AuthorizeInfo> = []
 
   /**
-   * an inversed map of `config.authorizeUser`
-   * - key: authority
-   * - value: list of ids
+   * array of `AuthorizeInfo`
    */
-  const authorizeUserInverseMap: Record<number, number[]> = []
+  const authorizeInfoList: AuthorizeInfo[] = []
+
+  /**
+   * a map of users' authority (buffered)
+   * to make sure every user gets maximum possible authority
+   */
+  const userAuthorityMap: Record<number, number> = {}
+
+  /**
+   * inversion of `config.authorizeUser`
+   */
+  const inversedUserMap: number[][] = []
+
   for (const id in authorizeUser) {
     const authority = authorizeUser[id]
-    if (authorizeUserInverseMap[authority]) {
-      authorizeUserInverseMap[authority].push(+id)
+    if (inversedUserMap[authority]) {
+      inversedUserMap[authority].push(+id)
     } else {
-      authorizeUserInverseMap[authority] = [+id]
+      inversedUserMap[authority] = [+id]
     }
   }
 
   async function updateAuthorizeInfo (authority: number, ids: number[]) {
     const users = await database.getUsers(ids, ['id', 'authority'])
-    const info = authorityMap[authority] || (authorityMap[authority] = {
+    const info = authorizeInfoList[authority] || (authorizeInfoList[authority] = {
       insert: new Set(),
       update: new Set(),
     })
     for (const id of ids) {
+      const oldAuthority = userAuthorityMap[id]
+      if (oldAuthority) {
+        if (oldAuthority >= authority) continue
+        authorizeInfoList[oldAuthority].insert.delete(id)
+        authorizeInfoList[oldAuthority].update.delete(id)
+      }
+      userAuthorityMap[id] = authority
       const user = users.find(u => u.id === id)
       if (!user) {
         info.insert.add(id)
@@ -66,15 +64,15 @@ export default function apply (ctx: Context, config: AuthorizeOptions) {
 
   app.receiver.once('ready', async () => {
     await Promise.all([
-      ...Object.keys(authorizeUserInverseMap).map(key => updateAuthorizeInfo(+key, authorizeUserInverseMap[+key])),
+      ...Object.keys(inversedUserMap).map(key => updateAuthorizeInfo(+key, inversedUserMap[+key])),
       ...Object.entries(authorizeGroup).map(async ([key, value]) => {
         const groupId = +key
         const config = typeof value === 'number' ? { member: value } : value
         const ctx = app.group(groupId)
 
-        if (!('memberAuthority' in config)) config.member = 1
-        if (!('adminAuthority' in config)) config.admin = config.member
-        if (!('ownerAuthority' in config)) config.owner = config.admin
+        if (!('member' in config)) config.member = 1
+        if (!('admin' in config)) config.admin = config.member
+        if (!('owner' in config)) config.owner = config.admin
 
         await database.getGroup(groupId, app.selfId)
         const memberList = await ctx.sender.getGroupMemberList(groupId)
@@ -94,9 +92,9 @@ export default function apply (ctx: Context, config: AuthorizeOptions) {
       }),
     ])
 
-    for (const key in authorityMap) {
+    for (const key in authorizeInfoList) {
       const authority = +key
-      const { insert, update } = authorityMap[key]
+      const { insert, update } = authorizeInfoList[key]
       for (const id of insert) {
         await database.getUser(id, authority)
       }
