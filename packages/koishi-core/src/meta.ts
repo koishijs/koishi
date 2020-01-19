@@ -42,6 +42,13 @@ export interface ResponsePayload {
   reason?: string
 }
 
+export interface StrippedMessage {
+  atMe?: boolean
+  nickname?: string
+  prefix?: string
+  message?: string
+}
+
 /** CQHTTP Meta Information */
 export interface Meta <T extends PostType = PostType> {
   // database bindings
@@ -51,6 +58,9 @@ export interface Meta <T extends PostType = PostType> {
   // context identifier
   $ctxId?: number
   $ctxType?: ContextType
+
+  // other properties
+  $stripped?: StrippedMessage
 
   // quick operations
   $response?: (payload: ResponsePayload) => void
