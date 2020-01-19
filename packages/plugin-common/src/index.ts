@@ -39,7 +39,7 @@ export {
   WelcomeMessage,
 }
 
-export interface CommonPluginConfig extends AuthorizeOptions, BroadcastOptions, HandlerOptions, InfoOptions {
+export interface Config extends AuthorizeOptions, BroadcastOptions, HandlerOptions, InfoOptions {
   admin?: boolean
   broadcast?: boolean
   contextify?: boolean
@@ -55,7 +55,7 @@ export interface CommonPluginConfig extends AuthorizeOptions, BroadcastOptions, 
 
 export const name = 'common'
 
-export function apply (ctx: Context, options: CommonPluginConfig = {}) {
+export function apply (ctx: Context, options: Config = {}) {
   ctx.plugin(requestHandler, options)
   ctx.plugin(repeater, options.repeater)
   ctx.plugin(respondent, options.respondent)

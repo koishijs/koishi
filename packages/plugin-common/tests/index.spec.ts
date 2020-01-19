@@ -4,7 +4,7 @@ import 'koishi-database-memory'
 
 test('basic support', () => {
   const app = new MockedApp()
-  app.plugin<common.CommonPluginConfig>(common)
+  app.plugin<common.Config>(common)
 
   expect(app._commandMap.admin).toBeFalsy()
   expect(app._commandMap.broadcast).toBeFalsy()
@@ -18,7 +18,7 @@ test('basic support', () => {
 
 test('skip database commands', () => {
   const app = new MockedApp({ database: { memory: {} } })
-  app.plugin<common.CommonPluginConfig>(common)
+  app.plugin<common.Config>(common)
 
   expect(app._commandMap.admin).toBeTruthy()
   expect(app._commandMap.broadcast).toBeTruthy()
@@ -33,7 +33,7 @@ test('skip database commands', () => {
 test('disable commands', () => {
   const app = new MockedApp({ database: { memory: {} } })
 
-  app.plugin<common.CommonPluginConfig>(common, {
+  app.plugin<common.Config>(common, {
     admin: false,
     broadcast: false,
     contextify: false,
