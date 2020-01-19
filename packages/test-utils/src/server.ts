@@ -1,45 +1,13 @@
 import { createHmac } from 'crypto'
 import { EventEmitter } from 'events'
 import { Meta, App, AppOptions, WsClient } from 'koishi-core'
-import { RequestData, showTestLog, fromEntries, BASE_SELF_ID } from './utils'
-import { snakeCase, randomInt, camelCase } from 'koishi-utils'
+import { showTestLog, fromEntries, BASE_SELF_ID } from './utils'
+import { snakeCase, randomInt } from 'koishi-utils'
+import { MockedServer } from './mocks'
 import * as http from 'http'
 import * as ws from 'ws'
 import getPort from 'get-port'
 import axios from 'axios'
-
-export class TestServer extends EventEmitter {
-  appList: App[] = []
-  requests: RequestData[] = []
-  server: { close: () => void }
-  responses: Record<string, [Record<string, any>, number]> = {}
-
-  async close () {
-    await Promise.all(this.appList.map(app => app.stop()))
-    this.server.close()
-  }
-
-  clearRequests () {
-    this.requests = []
-  }
-
-  shouldHaveLastRequest (method: string, params: Record<string, any>) {
-    expect(this.requests[0]).toMatchObject([method, params])
-    this.clearRequests()
-  }
-
-  shouldHaveNoRequests () {
-    expect(this.requests).toHaveLength(0)
-  }
-
-  setResponse (event: string, data: Record<string, any>, retcode = 0) {
-    if (!data) {
-      this.responses[event] = null
-    } else {
-      this.responses[event] = [snakeCase(data), retcode]
-    }
-  }
-}
 
 export async function createHttpServer (token?: string) {
   const cqhttpPort = await getPort({ port: randomInt(16384, 49152) })
@@ -47,8 +15,9 @@ export async function createHttpServer (token?: string) {
   return new HttpServer(cqhttpPort, koishiPort, token)
 }
 
-export class HttpServer extends TestServer {
+export class HttpServer extends MockedServer {
   server: http.Server
+  appList: App[] = []
 
   constructor (public cqhttpPort: number, public koishiPort: number, public token?: string) {
     super()
@@ -77,9 +46,7 @@ export class HttpServer extends TestServer {
         const url = new URL(req.url, `http://${req.headers.host}`)
         const path = url.pathname.slice(1)
         const params = fromEntries(url.searchParams.entries())
-        this.requests.unshift([path, camelCase(params)])
-        const [data, retcode] = this.responses[path] || [{}, 0]
-        res.write(JSON.stringify({ data, retcode }))
+        res.write(JSON.stringify(this.receive(path, params)))
         res.end()
       })
     }).listen(cqhttpPort)
@@ -105,6 +72,11 @@ export class HttpServer extends TestServer {
     this.appList.push(app)
     return app
   }
+
+  async close () {
+    await Promise.all(this.appList.map(app => app.stop()))
+    this.server.close()
+  }
 }
 
 export async function createWsServer (token?: string) {
@@ -112,8 +84,10 @@ export async function createWsServer (token?: string) {
   return new WsServer(cqhttpPort, token)
 }
 
-export class WsServer extends TestServer {
+export class WsServer extends MockedServer {
   server: ws.Server
+  appList: App[] = []
+  emitter = new EventEmitter()
 
   constructor (public cqhttpPort: number, public token?: string) {
     super()
@@ -127,18 +101,16 @@ export class WsServer extends TestServer {
       }
 
       socket.on('message', (raw) => {
-        this.emit('message')
+        this.emitter.emit('message')
         const parsed = JSON.parse(raw.toString())
         const { action, params, echo } = parsed
-        this.requests.unshift([action, camelCase(params)] as any)
-        const [data, retcode] = this.responses[action] || [{}, 0]
-        socket.send(JSON.stringify({ data, retcode, echo }))
+        socket.send(JSON.stringify({ echo, ...this.receive(action, params) }))
       })
     })
   }
 
   nextTick (): Promise<void> {
-    return new Promise(resolve => this.on('message', resolve))
+    return new Promise(resolve => this.emitter.on('message', resolve))
   }
 
   async post (meta: Meta) {
@@ -161,5 +133,10 @@ export class WsServer extends TestServer {
     })
     this.appList.push(app)
     return app
+  }
+
+  async close () {
+    await Promise.all(this.appList.map(app => app.stop()))
+    this.server.close()
   }
 }

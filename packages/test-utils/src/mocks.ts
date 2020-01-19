@@ -1,9 +1,61 @@
-import { BASE_SELF_ID, RequestData } from './utils'
+import { BASE_SELF_ID } from './utils'
 import { snakeCase } from 'koishi-utils'
-import { AppOptions, App, Sender, Server, ContextType, ResponsePayload, Meta, MessageMeta } from 'koishi-core'
+import { AppOptions, App, Sender, Server, ContextType, ResponsePayload, Meta, MessageMeta, CQResponse } from 'koishi-core'
 import debug from 'debug'
 
-class MockedServer extends Server {
+type RequestParams = Record<string, any>
+type RequestData = readonly [string, RequestParams]
+type RequestHandler = (params: RequestParams) => Partial<CQResponse>
+
+export class MockedServer {
+  requests: RequestData[] = []
+  responses: Record<string, RequestHandler> = {}
+
+  clearRequests () {
+    this.requests = []
+  }
+
+  shouldHaveNoRequests () {
+    expect(this.requests).toHaveLength(0)
+  }
+
+  shouldHaveLastRequest (action: string, params: RequestParams = {}) {
+    expect(this.requests[0]).toMatchObject([action, snakeCase(params)])
+    this.clearRequests()
+  }
+
+  shouldHaveLastRequests (requests: RequestData[]) {
+    expect(this.requests.slice(0, requests.length)).toMatchObject(requests.map(snakeCase).reverse())
+    this.clearRequests()
+  }
+
+  receive (action: string, params: RequestParams = {}): CQResponse {
+    this.requests.unshift([action, snakeCase(params)])
+    const response = this.responses[action]?.(params)
+    return {
+      status: 'succeed',
+      retcode: 0,
+      data: {},
+      ...response,
+    }
+  }
+
+  setResponse (event: string, hanlder: RequestHandler): void
+  setResponse (event: string, data: RequestParams, retcode?: number): void
+  setResponse (event: string, ...args: [RequestHandler] | [RequestParams, number?]) {
+    if (typeof args[0] === 'function') {
+      this.responses[event] = args[0] as RequestHandler
+    } else {
+      this.responses[event] = () => ({
+        data: snakeCase(args[0]),
+        retcode: args[1] || 0,
+        status: args[1] ? 'failed' : 'succeed',
+      })
+    }
+  }
+}
+
+class MockedAppServer extends Server {
   constructor (app: App) {
     super(app)
     this.appMap[app.selfId] = app
@@ -16,18 +68,17 @@ class MockedServer extends Server {
   }
 }
 
-class MockedSender extends Sender {
-  requests: RequestData[] = []
+class MockedAppSender extends Sender {
+  mock = new MockedServer()
 
   constructor (app: App) {
     super(app)
-    this._get = async (action: string, params: Record<string, any>) => {
-      this.requests.unshift([action, params])
-      return { status: 'succeed', retcode: 0, data: {} }
+    this._get = async (action, params) => {
+      return this.mock.receive(action, params)
     }
   }
 
-  getAsync (action: string, params?: Record<string, any>) {
+  getAsync (action: string, params?: RequestParams) {
     return this.get(action, params)
   }
 }
@@ -41,13 +92,13 @@ const createMessageMeta = (type: ContextType, message: string, userId: number, c
 })
 
 export class MockedApp extends App {
-  sender: MockedSender
-  server: MockedServer
+  sender: MockedAppSender
+  server: MockedAppServer
 
   constructor (options: AppOptions = {}) {
     super({ selfId: BASE_SELF_ID, ...options })
-    this.sender = new MockedSender(this)
-    this.server = new MockedServer(this)
+    this.sender = new MockedAppSender(this)
+    this.server = new MockedAppServer(this)
     this.receiver.on('logger', (scope, message) => {
       debug('koishi:' + scope)(message)
     })
@@ -92,21 +143,25 @@ export class MockedApp extends App {
   }
 
   clearRequests () {
-    this.sender.requests = []
+    this.sender.mock.clearRequests()
   }
 
   shouldHaveNoRequests () {
-    expect(this.sender.requests).toHaveLength(0)
+    this.sender.mock.shouldHaveNoRequests()
   }
 
-  shouldHaveLastRequest (action: string, params: Record<string, any> = {}) {
-    expect(this.sender.requests[0]).toMatchObject([action, snakeCase(params)])
-    this.clearRequests()
+  shouldHaveLastRequest (action: string, params: RequestParams = {}) {
+    this.sender.mock.shouldHaveLastRequest(action, params)
   }
 
   shouldHaveLastRequests (requests: RequestData[]) {
-    expect(this.sender.requests.slice(0, requests.length)).toMatchObject(requests.map(snakeCase).reverse())
-    this.clearRequests()
+    this.sender.mock.shouldHaveLastRequests(requests)
+  }
+
+  setResponse (event: string, hanlder: RequestHandler): void
+  setResponse (event: string, data: RequestParams, retcode?: number): void
+  setResponse (event: string, arg1: any, arg2?: any) {
+    this.sender.mock.setResponse(event, arg1, arg2)
   }
 
   createSession (type: 'user', userId: number): Session

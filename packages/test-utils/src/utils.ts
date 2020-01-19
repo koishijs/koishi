@@ -3,8 +3,6 @@ import debug from 'debug'
 export const BASE_SELF_ID = 514
 export const showTestLog = debug('koishi:test')
 
-export type RequestData = readonly [string, Record<string, any>]
-
 /**
  * polyfill for node < 12.0
  */
