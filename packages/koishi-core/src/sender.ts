@@ -115,7 +115,7 @@ export class Sender {
     } as Meta<'send'>
   }
 
-  async sendGroupMsg (groupId: number, message: string, autoEscape?: boolean) {
+  async sendGroupMsg (groupId: number, message: string, autoEscape = false) {
     this._assertInteger('groupId', groupId)
     if (!message) return
     const meta = this._createSendMeta('group', groupId, message)
@@ -126,13 +126,13 @@ export class Sender {
     return messageId
   }
 
-  async sendGroupMsgAsync (groupId: number, message: string, autoEscape?: boolean) {
+  async sendGroupMsgAsync (groupId: number, message: string, autoEscape = false) {
     this._assertInteger('groupId', groupId)
     if (!message) return
     await this.get('send_group_msg_async', { groupId, message, autoEscape })
   }
 
-  async sendDiscussMsg (discussId: number, message: string, autoEscape?: boolean) {
+  async sendDiscussMsg (discussId: number, message: string, autoEscape = false) {
     this._assertInteger('discussId', discussId)
     if (!message) return
     const meta = this._createSendMeta('discuss', discussId, message)
@@ -143,13 +143,13 @@ export class Sender {
     return messageId
   }
 
-  async sendDiscussMsgAsync (discussId: number, message: string, autoEscape?: boolean) {
+  async sendDiscussMsgAsync (discussId: number, message: string, autoEscape = false) {
     this._assertInteger('discussId', discussId)
     if (!message) return
     await this.get('send_discuss_msg_async', { discussId, message, autoEscape })
   }
 
-  async sendPrivateMsg (userId: number, message: string, autoEscape?: boolean) {
+  async sendPrivateMsg (userId: number, message: string, autoEscape = false) {
     this._assertInteger('userId', userId)
     if (!message) return
     const meta = this._createSendMeta('user', userId, message)
@@ -160,7 +160,7 @@ export class Sender {
     return messageId
   }
 
-  async sendPrivateMsgAsync (userId: number, message: string, autoEscape?: boolean) {
+  async sendPrivateMsgAsync (userId: number, message: string, autoEscape = false) {
     this._assertInteger('userId', userId)
     if (!message) return
     await this.get('send_private_msg_async', { userId, message, autoEscape })

@@ -95,7 +95,7 @@ describe('options', () => {
 describe('user fields', () => {
   const cmd = app.command('cmd-user-fields')
   expect(cmd._userFields).toHaveProperty('size', 0)
-  cmd.userFields(['id', 'name'])
+  cmd.userFields(['id'])
   expect(cmd._userFields).toHaveProperty('size', 2)
   cmd.userFields(new Set(['id', 'authority']))
   expect(cmd._userFields).toHaveProperty('size', 3)
