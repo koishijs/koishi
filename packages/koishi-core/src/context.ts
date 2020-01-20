@@ -131,11 +131,11 @@ export class Context {
   plugin <U> (plugin: PluginObject<this, U>, options?: U): this
   plugin <U> (plugin: Plugin<this, U>, options: any) {
     if (options === false) return
-    const app = Object.create(this)
+    const ctx = Object.create(this)
     if (typeof plugin === 'function') {
-      plugin(app, options)
+      plugin(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
-      plugin.apply(app, options)
+      plugin.apply(ctx, options)
     } else {
       throw new Error(errors.INVALID_PLUGIN)
     }

@@ -85,9 +85,7 @@ export class App extends Context {
   atMeRE: RegExp
   prefixRE: RegExp
   nicknameRE: RegExp
-  users: MajorContext
-  groups: MajorContext
-  discusses: MajorContext
+  status = Status.closed
 
   _commands: Command[] = []
   _commandMap: Record<string, Command> = {}
@@ -95,7 +93,9 @@ export class App extends Context {
   _shortcutMap: Record<string, Command> = {}
   _middlewares: [Context, Middleware][] = []
 
-  private status = Status.closed
+  private _users: MajorContext
+  private _groups: MajorContext
+  private _discusses: MajorContext
   private _isReady = false
   private _middlewareCounter = 0
   private _middlewareSet = new Set<number>()
@@ -126,14 +126,27 @@ export class App extends Context {
     this.receiver.on('before-user', Command.attachUserFields)
     this.receiver.on('before-group', Command.attachGroupFields)
     this.middleware(this._preprocess)
+  }
 
-    // create built-in contexts
-    this.users = this.createContext([[null, []], [[], null], [[], null]]) as MajorContext
-    this.groups = this.createContext([[[], null], [null, []], [[], null]]) as MajorContext
-    this.discusses = this.createContext([[[], null], [[], null], [null, []]]) as MajorContext
-    this.users.except = (...ids) => this.createContext([[null, ids], [[], null], [[], null]])
-    this.groups.except = (...ids) => this.createContext([[[], null], [null, ids], [[], null]])
-    this.discusses.except = (...ids) => this.createContext([[[], null], [[], null], [null, ids]])
+  get users () {
+    if (this._users) return this._users
+    const users = this.createContext([[null, []], [[], null], [[], null]]) as MajorContext
+    users.except = (...ids) => this.createContext([[null, ids], [[], null], [[], null]])
+    return this._users = users
+  }
+
+  get groups () {
+    if (this._groups) return this._groups
+    const groups = this.createContext([[[], null], [null, []], [[], null]]) as MajorContext
+    groups.except = (...ids) => this.createContext([[[], null], [null, ids], [[], null]])
+    return this._groups = groups
+  }
+
+  get discusses () {
+    if (this._discusses) return this._discusses
+    const discusses = this.createContext([[[], null], [[], null], [null, []]]) as MajorContext
+    discusses.except = (...ids) => this.createContext([[[], null], [[], null], [null, ids]])
+    return this._discusses = discusses
   }
 
   get selfId () {
