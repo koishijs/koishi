@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-common",
   "description": "Common plugins for Koishi",
-  "version": "1.0.6",
+  "version": "2.0.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -28,10 +28,11 @@
     "plugin"
   ],
   "devDependencies": {
-    "koishi-test-utils": "^1.2.2"
+    "koishi-database-memory": "^1.0.0",
+    "koishi-test-utils": "^2.0.0"
   },
   "dependencies": {
-    "koishi-core": "^1.4.0",
+    "koishi-core": "^1.5.0",
     "koishi-utils": "^1.0.2"
   }
 }

@@ -1,7 +1,7 @@
-import { Context, Command, UserData, CommandConfig, MessageMeta } from 'koishi-core'
+import { Context, Command, UserData, MessageMeta } from 'koishi-core'
 
-export default function apply (ctx: Context, options: CommandConfig) {
-  ctx.command('help [command]', '显示帮助信息', { authority: 0, ...options })
+export default function apply (ctx: Context) {
+  ctx.command('help [command]', '显示帮助信息', { authority: 0 })
     .userFields(['authority', 'usage'])
     .shortcut('帮助', { fuzzy: true })
     .shortcut('全局指令', { options: { shortcut: true } })

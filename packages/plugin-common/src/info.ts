@@ -1,4 +1,4 @@
-import { Context, UserField, UserData, getTargetId, CommandConfig, Meta } from 'koishi-core'
+import { Context, UserField, UserData, getTargetId, Meta } from 'koishi-core'
 
 type UserInfoCallback <K extends UserField = UserField> = (user: Pick<UserData, K>) => string
 
@@ -12,13 +12,12 @@ export function registerUserInfo <K extends UserField> (callback: UserInfoCallba
   }
 }
 
-export interface InfoOptions extends CommandConfig {
-  getSenderName? (user: UserData, meta: Meta<'message'>): string
+export interface InfoOptions {
+  getUserName? (user: UserData, meta: Meta<'message'>): string
 }
 
 const defaultConfig: InfoOptions = {
-  authority: 0,
-  getSenderName (user, meta) {
+  getUserName (user, meta) {
     if (meta.userId === user.id && meta.sender) {
       return meta.sender.card || meta.sender.nickname
     }
@@ -27,7 +26,8 @@ const defaultConfig: InfoOptions = {
 
 export default function apply (ctx: Context, config: InfoOptions = {}) {
   config = { ...defaultConfig, ...config }
-  ctx.command('info', '查看用户信息', config)
+
+  ctx.command('info', '查看用户信息', { authority: 0 })
     .alias('i')
     .shortcut('我的信息')
     .option('-u, --user [target]', '指定目标', { authority: 3 })
@@ -39,7 +39,7 @@ export default function apply (ctx: Context, config: InfoOptions = {}) {
         if (!id) return meta.$send('未找到用户。')
         user = await ctx.database.getUser(id, -1, Array.from(infoFields))
         if (!user) return meta.$send('未找到用户。')
-        const name = config.getSenderName(user, meta)
+        const name = config.getUserName(user, meta)
         if (!name) {
           output.push(`${id} 的权限为 ${user.authority} 级。`)
         } else {
@@ -47,7 +47,7 @@ export default function apply (ctx: Context, config: InfoOptions = {}) {
         }
       } else {
         user = await ctx.database.getUser(meta.userId, Array.from(infoFields))
-        output.push(`${config.getSenderName(user, meta) || meta.userId}，您的权限为 ${user.authority} 级。`)
+        output.push(`${config.getUserName(user, meta) || meta.userId}，您的权限为 ${user.authority} 级。`)
       }
 
       for (const callback of infoCallbacks) {

@@ -68,7 +68,7 @@ interface Dependency {
     for (const { name, type } of dependents) {
       const workspace = workspaces[name]
       const oldVersion = workspace.meta[type][dep]
-      if (gt(version, oldVersion.slice(1))) {
+      if (gt(version, oldVersion.replace(/^[~^]/, ''))) {
         let update: boolean
         const message = `${name} > ${yellow(dep)}: ${cyan(oldVersion)} -> ${green(version)}`
         if (!satisfies(version, oldVersion)) {

@@ -2,9 +2,9 @@ import { App, startAll, AppOptions, onStart, Context, Plugin, appList } from 'ko
 import { resolve, extname } from 'path'
 import { capitalize } from 'koishi-utils'
 import { performance } from 'perf_hooks'
-import { cyan } from 'kleur'
+import { cyan, yellow } from 'kleur'
 import { logger } from './utils'
-import { format } from 'util'
+import { format, types } from 'util'
 import { readFileSync } from 'fs'
 import { safeLoad } from 'js-yaml'
 
@@ -15,10 +15,13 @@ if (process.env.KOISHI_LOG_LEVEL !== undefined) {
   baseLogLevel = +process.env.KOISHI_LOG_LEVEL
 }
 
-process.on('uncaughtException', ({ message }) => {
+function handleException (error: any) {
+  const message = types.isNativeError(error) ? error.stack : String(error)
   logger.error(message, baseLogLevel)
-  process.exit(-1)
-})
+  process.exit(1)
+}
+
+process.on('uncaughtException', handleException)
 
 const cwd = process.cwd()
 
@@ -39,7 +42,7 @@ function loadEcosystem (type: string, name: string) {
   throw new Error(`cannot resolve ${type} ${name}`)
 }
 
-export type PluginConfig = (string | [string | Plugin, any?])[]
+export type PluginConfig = (string | Plugin | [string | Plugin, any?])[]
 
 export interface AppConfig extends AppOptions {
   plugins?: PluginConfig | Record<string, PluginConfig>
@@ -50,11 +53,13 @@ export interface AppConfig extends AppOptions {
 function loadPlugins (ctx: Context, plugins: PluginConfig) {
   for (const item of plugins) {
     let plugin: Plugin, options
-    if (typeof item === 'string') {
-      plugin = loadEcosystem('plugin', item)
-    } else {
+    if (Array.isArray(item)) {
       plugin = typeof item[0] === 'string' ? loadEcosystem('plugin', item[0]) : item[0]
       options = item[1]
+    } else if (typeof item === 'string') {
+      plugin = loadEcosystem('plugin', item)
+    } else {
+      plugin = item
     }
     ctx.plugin(plugin, options)
     if (plugin.name) logger.info(`apply plugin ${cyan(plugin.name)}`, baseLogLevel)
@@ -97,7 +102,7 @@ if (['.js', '.json', '.ts'].includes(extension)) {
     || tryCallback(() => safeLoad(readFileSync(configFile + '.yaml', 'utf8')))
 }
 
-if (!config) throw new Error('config file not found.')
+if (!config) throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
 
 if (Array.isArray(config)) {
   config.forEach(conf => prepareApp(conf))
@@ -127,7 +132,7 @@ onStart(() => {
     }
   }
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
-  logger.success(`bot started successfully in ${time} ms`, baseLogLevel)
+  logger.success(`bot started successfully in ${time} ms.`, baseLogLevel)
   process.send({ type: 'start' })
 })
 
@@ -143,7 +148,4 @@ appList.forEach((app) => {
   })
 })
 
-startAll().catch((error) => {
-  logger.error(error, baseLogLevel)
-  process.exit(-1)
-})
+startAll().catch(handleException)

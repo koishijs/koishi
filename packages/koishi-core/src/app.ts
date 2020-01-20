@@ -262,18 +262,18 @@ export class App extends Context {
   private _preprocess = async (meta: MessageMeta, next: NextFunction) => {
     // strip prefix
     let capture: RegExpMatchArray
-    let atMe = false, nickname = false, prefix: string = null
+    let atMe = false, nickname = '', prefix: string = null
     let message = simplify(meta.message.trim())
     let parsedArgv: ParsedCommandLine
 
     if (meta.messageType !== 'private' && (capture = message.match(this.atMeRE))) {
       atMe = true
-      nickname = true
+      nickname = capture[0]
       message = message.slice(capture[0].length)
     }
 
     if ((capture = message.match(this.nicknameRE))?.[0].length) {
-      nickname = true
+      nickname = capture[0]
       message = message.slice(capture[0].length)
     }
 
@@ -282,6 +282,9 @@ export class App extends Context {
       prefix = capture[0]
       message = message.slice(capture[0].length)
     }
+
+    // store parsed message
+    meta.$stripped = { atMe, nickname, prefix, message }
 
     // parse as command
     if (prefix !== null || nickname || meta.messageType === 'private') {
@@ -391,7 +394,7 @@ export class App extends Context {
     let index = 0
     const next = async (fallback?: NextFunction) => {
       if (!this._middlewareSet.has(counter)) {
-        return this.receiver.emit('error', new Error(errors.ISOLATED_NEXT))
+        return this.logger().warn(new Error(errors.ISOLATED_NEXT))
       }
       if (fallback) middlewares.push((_, next) => fallback(next))
       try {
@@ -405,6 +408,7 @@ export class App extends Context {
 
     // update middleware set
     this._middlewareSet.delete(counter)
+    this.emitEvent(meta, 'after-middleware', meta)
 
     // flush user & group data
     await meta.$user?._update()

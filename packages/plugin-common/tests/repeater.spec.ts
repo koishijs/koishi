@@ -1,8 +1,6 @@
-import { MockedApp, MemoryDatabase } from 'koishi-test-utils'
-import { registerDatabase } from 'koishi-core'
-import repeater, { RepeaterOptions } from '../src/repeater'
-
-registerDatabase('memory', MemoryDatabase)
+import { MockedApp } from 'koishi-test-utils'
+import { apply, repeater, RepeaterOptions } from '../src'
+import 'koishi-database-memory'
 
 test('repeat', async () => {
   const app = new MockedApp()
@@ -70,24 +68,4 @@ test('interrupt check', async () => {
   await session1.shouldHaveNoResponse('bar')
   await session1.shouldHaveReply('bar', 'bar')
   await session1.shouldHaveReply('foo', `[CQ:at,qq=${session1.userId}] 在？为什么打断复读？`)
-})
-
-// make coverage happy
-test('default behavior', async () => {
-  const app = new MockedApp()
-  const session1 = app.createSession('group', 123, 123)
-  const session2 = app.createSession('group', 456, 123)
-  const session3 = app.createSession('group', 789, 123)
-
-  app.plugin(repeater)
-
-  await session1.send('foo')
-  await session2.send('foo')
-  await session3.send('foo')
-  await session1.send('foo')
-
-  await session1.send('bar')
-  await session2.send('bar')
-  await session3.send('bar')
-  await session1.send('foo')
 })

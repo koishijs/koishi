@@ -1,6 +1,7 @@
 {
-  "name": "koishi-database-sqlite",
-  "version": "1.0.0-alpha.3",
+  "name": "koishi-database-memory",
+  "description": "An in-memory database implementation for Koishi",
+  "version": "1.0.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -19,14 +20,9 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-sqlite#readme",
-  "devDependencies": {
-    "@types/sqlite3": "^3.1.6",
-    "koishi-test-utils": "^2.0.0"
-  },
+  "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-memory#readme",
   "dependencies": {
     "koishi-core": "^1.5.0",
-    "koishi-utils": "^1.0.2",
-    "sqlite3": "^4.1.1"
+    "koishi-utils": "^1.0.2"
   }
 }

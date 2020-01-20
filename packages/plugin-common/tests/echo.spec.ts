@@ -1,5 +1,5 @@
 import { MockedApp } from 'koishi-test-utils'
-import echo from '../src/echo'
+import { echo } from '../src'
 
 const app = new MockedApp()
 

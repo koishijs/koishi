@@ -1,9 +1,10 @@
 import { MockedApp, BASE_SELF_ID } from 'koishi-test-utils'
 import { startAll, stopAll } from 'koishi-core'
-import * as recorder from '../src'
-import del from 'del'
 import { readFileSync } from 'fs-extra'
 import { resolve } from 'path'
+import { sleep } from 'koishi-utils'
+import * as recorder from '../src'
+import del from 'del'
 
 const app1 = new MockedApp()
 const app2 = new MockedApp({ selfId: BASE_SELF_ID + 1 })
@@ -35,5 +36,6 @@ test('private message', async () => {
 
 test('check content', async () => {
   await stopAll()
+  await sleep(100)
   expect(readFileSync(resolve(outFolder, '321.txt'), 'utf8')).toMatchSnapshot()
 })
