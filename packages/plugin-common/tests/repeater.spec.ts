@@ -1,5 +1,5 @@
 import { MockedApp } from 'koishi-test-utils'
-import { apply, repeater, RepeaterOptions } from '../src'
+import { repeater, RepeaterOptions } from '../src'
 import 'koishi-database-memory'
 
 test('repeat', async () => {
