@@ -15,6 +15,7 @@
     "jest": "jest .*\\.spec\\.ts --coverage",
     "lint": "eslint packages/*/src/**/*.ts --cache",
     "pub": "ts-node build/publish",
+    "pub:plugins": "yarn pub plugins",
     "start": "ts-node build/start"
   },
   "version": "1.0.0",

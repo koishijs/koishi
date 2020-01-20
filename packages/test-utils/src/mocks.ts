@@ -24,6 +24,11 @@ export class MockedServer {
     this.clearRequests()
   }
 
+  shouldHaveLastRequestMatchSnapshot (name?: string) {
+    expect(this.requests[0]).toMatchSnapshot(name)
+    this.clearRequests()
+  }
+
   shouldHaveLastRequests (requests: RequestData[]) {
     expect(this.requests.slice(0, requests.length)).toMatchObject(requests.map(snakeCase).reverse())
     this.clearRequests()
@@ -152,6 +157,10 @@ export class MockedApp extends App {
 
   shouldHaveLastRequests (requests: RequestData[]) {
     this.sender.mock.shouldHaveLastRequests(requests)
+  }
+
+  shouldHaveLastRequestMatchSnapshot (name?: string) {
+    this.sender.mock.shouldHaveLastRequestMatchSnapshot(name)
   }
 
   setResponse (event: string, hanlder: RequestHandler): void
