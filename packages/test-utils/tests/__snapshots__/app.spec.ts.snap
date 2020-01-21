@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Mocked Server Implementation shouldMatchSnapshot 1`] = `
+Array [
+  "send_private_msg",
+  Object {
+    "auto_escape": false,
+    "message": "foo",
+    "user_id": 123,
+  },
+]
+`;

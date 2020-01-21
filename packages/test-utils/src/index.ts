@@ -1,3 +1,4 @@
+export * from './app'
 export * from './database'
 export * from './mocks'
 export * from './utils'
