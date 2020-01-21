@@ -1,6 +1,6 @@
 import { contain, union, intersection, difference } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine } from './command'
-import { MessageMeta, Meta, contextTypes } from './meta'
+import { Meta, contextTypes } from './meta'
 import { EventEmitter } from 'events'
 import { Sender } from './sender'
 import { App } from './app'
@@ -9,7 +9,7 @@ import { messages, errors } from './messages'
 import { format } from 'util'
 
 export type NextFunction = (next?: NextFunction) => any
-export type Middleware = (meta: MessageMeta, next: NextFunction) => any
+export type Middleware = (meta: Meta<'message'>, next: NextFunction) => any
 
 type PluginFunction <T extends Context, U> = (ctx: T, options: U) => void
 type PluginObject <T extends Context, U> = { name?: string, apply: PluginFunction<T, U> }
@@ -240,12 +240,12 @@ export class Context {
     return this.app._commandMap[name.slice(index + 1).toLowerCase()]
   }
 
-  getCommand (name: string, meta: MessageMeta) {
+  getCommand (name: string, meta: Meta<'message'>) {
     const command = this._getCommandByRawName(name)
     if (command?.context.match(meta) && !command.getConfig('disable', meta)) return command
   }
 
-  runCommand (name: string, meta: MessageMeta, args: string[] = [], options: Record<string, any> = {}, rest = '') {
+  runCommand (name: string, meta: Meta<'message'>, args: string[] = [], options: Record<string, any> = {}, rest = '') {
     const command = this._getCommandByRawName(name)
     if (!command || !command.context.match(meta) || command.getConfig('disable', meta)) {
       return meta.$send(messages.COMMAND_NOT_FOUND)

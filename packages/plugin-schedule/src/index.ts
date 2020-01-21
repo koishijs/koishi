@@ -1,4 +1,4 @@
-import { Context, appMap, Database, CommandConfig, MessageMeta } from 'koishi-core'
+import { Context, appMap, Database, CommandConfig, Meta } from 'koishi-core'
 import ms from 'ms'
 import './database'
 
@@ -8,7 +8,7 @@ export interface Schedule {
   time: number
   interval: number
   command: string
-  meta: MessageMeta
+  meta: Meta<'message'>
 }
 
 function inspectSchedule ({ id, assignee, meta, interval, command, time }: Schedule) {

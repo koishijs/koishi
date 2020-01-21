@@ -26,7 +26,6 @@ export enum contextTypes {
   discuss = 2,
 }
 
-export type MessageMeta = Meta<'message'>
 export type ContextType = keyof typeof contextTypes
 
 export interface ResponsePayload {

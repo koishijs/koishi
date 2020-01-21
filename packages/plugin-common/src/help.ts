@@ -1,4 +1,4 @@
-import { Context, Command, UserData, MessageMeta, getUsage } from 'koishi-core'
+import { Context, Command, UserData, Meta, getUsage } from 'koishi-core'
 
 export default function apply (ctx: Context) {
   ctx.command('help [command]', '显示帮助信息', { authority: 0 })
@@ -27,7 +27,7 @@ function getShortcuts (command: Command, user: UserData) {
   })
 }
 
-function getCommands (context: Context, meta: MessageMeta, parent?: Command) {
+function getCommands (context: Context, meta: Meta<'message'>, parent?: Command) {
   const commands = parent
     ? parent.children
     : context.app._commands.filter(cmd => cmd.context.match(meta))
@@ -36,13 +36,13 @@ function getCommands (context: Context, meta: MessageMeta, parent?: Command) {
     .sort((a, b) => a.name > b.name ? 1 : -1)
 }
 
-function showGlobalShortcut (context: Context, meta: MessageMeta) {
+function showGlobalShortcut (context: Context, meta: Meta<'message'>) {
   const commands = getCommands(context, meta)
   const shortcuts = [].concat(...commands.map(command => getShortcuts(command, meta.$user)))
   return meta.$send(`当前可用的全局指令有：${shortcuts.join('，')}。`)
 }
 
-function getCommandList (context: Context, meta: MessageMeta, parent: Command, expand: boolean) {
+function getCommandList (context: Context, meta: Meta<'message'>, parent: Command, expand: boolean) {
   let commands = getCommands(context, meta, parent)
   if (!expand) {
     commands = commands.filter(cmd => cmd.parent === parent)
@@ -69,7 +69,7 @@ export const GLOBAL_HELP_EPILOGUE = [
   '输入“帮助+指令名”查看特定指令的语法和使用示例。',
 ].join('\n')
 
-function showGlobalHelp (context: Context, meta: MessageMeta, options: any) {
+function showGlobalHelp (context: Context, meta: Meta<'message'>, options: any) {
   return meta.$send([
     GLOBAL_HELP_PROLOGUE,
     ...getCommandList(context, meta, null, options.expand),
@@ -77,7 +77,7 @@ function showGlobalHelp (context: Context, meta: MessageMeta, options: any) {
   ].join('\n'))
 }
 
-async function showCommandHelp (command: Command, meta: MessageMeta, options: any) {
+async function showCommandHelp (command: Command, meta: Meta<'message'>, options: any) {
   const output = [command.name + command.declaration, command.config.description]
   if (command.context.database) {
     meta.$user = await command.context.database.observeUser(meta.userId)

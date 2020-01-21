@@ -5,7 +5,7 @@ import { Command, ShortcutConfig, ParsedCommandLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope, Events, EventMap } from './context'
 import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField } from './database'
 import { showSuggestions } from './utils'
-import { Meta, MessageMeta } from './meta'
+import { Meta } from './meta'
 import { simplify, noop } from 'koishi-utils'
 import { errors, messages } from './messages'
 import { ParsedLine } from './parser'
@@ -272,7 +272,7 @@ export class App extends Context {
     }
   }
 
-  private _preprocess = async (meta: MessageMeta, next: NextFunction) => {
+  private _preprocess = async (meta: Meta<'message'>, next: NextFunction) => {
     // strip prefix
     let capture: RegExpMatchArray
     let atMe = false, nickname = '', prefix: string = null
@@ -379,7 +379,7 @@ export class App extends Context {
     })
   }
 
-  parseCommandLine (message: string, meta: MessageMeta): ParsedCommandLine {
+  parseCommandLine (message: string, meta: Meta<'message'>): ParsedCommandLine {
     const name = message.split(/\s/, 1)[0].toLowerCase()
     const command = this._commandMap[name]
     if (command?.context.match(meta)) {
@@ -388,14 +388,14 @@ export class App extends Context {
     }
   }
 
-  executeCommandLine (message: string, meta: MessageMeta, next: NextFunction = noop) {
+  executeCommandLine (message: string, meta: Meta<'message'>, next: NextFunction = noop) {
     if (!('$ctxType' in meta)) this.server.parseMeta(meta)
     const argv = this.parseCommandLine(message, meta)
     if (argv) return argv.command.execute(argv, next)
     return next()
   }
 
-  private _applyMiddlewares = async (meta: MessageMeta) => {
+  private _applyMiddlewares = async (meta: Meta<'message'>) => {
     // preparation
     const counter = this._middlewareCounter++
     this._middlewareSet.add(counter)

@@ -2,7 +2,7 @@ import { isInteger } from 'koishi-utils'
 import { UserField, GroupField, UserData } from './database'
 import { NextFunction } from './context'
 import { Command } from './command'
-import { MessageMeta } from './meta'
+import { Meta } from './meta'
 import { messages } from './messages'
 import { format } from 'util'
 import leven from 'leven'
@@ -53,13 +53,13 @@ export function updateUsage (name: string, user: UserData, maxUsage: number, min
 interface SuggestOptions {
   target: string
   items: string[]
-  meta: MessageMeta
+  meta: Meta<'message'>
   next: NextFunction
   prefix: string
   suffix: string
   coefficient?: number
   command: Command | ((suggestion: string) => Command)
-  execute: (suggestion: string, meta: MessageMeta, next: NextFunction) => any
+  execute: (suggestion: string, meta: Meta<'message'>, next: NextFunction) => any
 }
 
 function findSimilar (target: string, coefficient: number) {
