@@ -12,7 +12,7 @@
     "bump": "ts-node build/bump",
     "dep": "ts-node build/dep",
     "docs": "cd docs & yarn dev",
-    "jest": "jest .*\\.spec\\.ts --coverage",
+    "jest": "jest packages/.*\\.spec\\.ts --coverage",
     "lint": "eslint packages/*/src/**/*.ts --cache",
     "pub": "ts-node build/publish",
     "pub:plugins": "yarn pub plugins",
