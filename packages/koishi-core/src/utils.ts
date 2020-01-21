@@ -1,6 +1,6 @@
 import { isInteger } from 'koishi-utils'
-import { UserField, GroupField } from './database'
-import { NextFunction, Middleware } from './context'
+import { UserField, GroupField, UserData } from './database'
+import { NextFunction } from './context'
 import { Command } from './command'
 import { MessageMeta } from './meta'
 import { messages } from './messages'
@@ -16,6 +16,38 @@ export function getTargetId (target: string | number) {
   }
   if (!isInteger(qq)) return
   return qq
+}
+
+export function getUsage (name: string, user: UserData, time = new Date()) {
+  if (!user.usage[name]) {
+    user.usage[name] = {}
+  }
+  const usage = user.usage[name]
+  const date = time.toLocaleDateString()
+  if (date !== usage.date) {
+    usage.count = 0
+    usage.date = date
+  }
+  return usage
+}
+
+export function updateUsage (name: string, user: UserData, maxUsage: number, minInterval: number) {
+  const date = new Date()
+  const usage = getUsage(name, user, date)
+
+  if (minInterval > 0) {
+    const now = date.valueOf()
+    if (now - usage.last <= minInterval) {
+      return messages.TOO_FREQUENT
+    }
+    usage.last = now
+  }
+
+  if (usage.count >= maxUsage) {
+    return messages.USAGE_EXHAUSTED
+  } else {
+    usage.count++
+  }
 }
 
 interface SuggestOptions {

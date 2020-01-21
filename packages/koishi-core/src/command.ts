@@ -4,6 +4,7 @@ import { messages, errors } from './messages'
 import { noop } from 'koishi-utils'
 import { MessageMeta } from './meta'
 import { format } from 'util'
+import { updateUsage } from './utils'
 
 import {
   CommandOption,
@@ -120,6 +121,10 @@ export class Command {
     return this.context.app
   }
 
+  get usageName () {
+    return this.config.usageName || this.name
+  }
+
   private _registerAlias (name: string) {
     name = name.toLowerCase()
     this._aliases.push(name)
@@ -225,20 +230,6 @@ export class Command {
     return typeof value === 'function' ? value(meta.$user) : value
   }
 
-  updateUsage (user: UserData, time = new Date()) {
-    const name = this.config.usageName || this.name
-    if (!user.usage[name]) {
-      user.usage[name] = {}
-    }
-    const usage = user.usage[name]
-    const date = time.toLocaleDateString()
-    if (date !== usage.date) {
-      usage.count = 0
-      usage.date = date
-    }
-    return usage
-  }
-
   parse (source: string) {
     return parseLine(source, this._argsDef, this._optsDef)
   }
@@ -326,30 +317,15 @@ export class Command {
     // check usage
     const minInterval = this.getConfig('minInterval', meta)
     if (isUsage || minInterval > 0) {
-      const maxUsage = this.getConfig('maxUsage', meta)
+      const maxUsage = isUsage ? this.getConfig('maxUsage', meta) : Infinity
 
       if (maxUsage < Infinity || minInterval > 0) {
-        const date = new Date()
-        const usage = this.updateUsage(user, date)
-
-        if (minInterval > 0) {
-          const now = date.valueOf()
-          if (now - usage.last <= minInterval) {
-            if (this.config.showWarning) {
-              await meta.$send(messages.TOO_FREQUENT)
-            }
-            return
-          }
-          usage.last = now
-        }
-
-        if (usage.count >= maxUsage && isUsage) {
+        const message = updateUsage(this.usageName, user, maxUsage, minInterval)
+        if (message) {
           if (this.config.showWarning) {
-            await meta.$send(messages.USAGE_EXHAUSTED)
+            await meta.$send(message)
           }
           return
-        } else {
-          usage.count++
         }
       }
     }

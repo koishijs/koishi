@@ -1,4 +1,4 @@
-import { Context, Command, UserData, MessageMeta } from 'koishi-core'
+import { Context, Command, UserData, MessageMeta, getUsage } from 'koishi-core'
 
 export default function apply (ctx: Context) {
   ctx.command('help [command]', '显示帮助信息', { authority: 0 })
@@ -95,7 +95,7 @@ async function showCommandHelp (command: Command, meta: MessageMeta, options: an
   const minInterval = command.getConfig('minInterval', meta)
   if (meta.$user) {
     const { authority, maxUsageText } = command.config
-    const usage = command.updateUsage(meta.$user)
+    const usage = getUsage(command.usageName, meta.$user)
     if (maxUsage !== Infinity) {
       output.push(`已调用次数：${Math.min(usage.count, maxUsage)}/${maxUsageText || maxUsage}。`)
     }
