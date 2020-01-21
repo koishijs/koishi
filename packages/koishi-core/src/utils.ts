@@ -44,15 +44,11 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
     if (suggestions.length === 1) {
       const [suggestion] = suggestions
       const command = typeof options.command === 'function' ? options.command(suggestion) : options.command
-      const identifier = meta.userId + meta.$ctxType + meta.$ctxId
       const userFields = new Set<UserField>()
       const groupFields = new Set<GroupField>()
       Command.attachUserFields(userFields, { command, meta })
       Command.attachGroupFields(groupFields, { command, meta })
-
-      const middleware: Middleware = async (meta, next) => {
-        if (meta.userId + meta.$ctxType + meta.$ctxId !== identifier) return next()
-        command.context.removeMiddleware(middleware)
+      command.context.onceMiddleware(async (meta, next) => {
         if (!meta.message.trim()) {
           meta.$user = await command.context.database?.observeUser(meta.userId, Array.from(userFields))
           if (meta.messageType === 'group') {
@@ -62,8 +58,7 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
         } else {
           return next()
         }
-      }
-      command.context.prependMiddleware(middleware)
+      }, meta)
       message += suffix
     }
     await meta.$send(message)

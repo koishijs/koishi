@@ -152,6 +152,10 @@ export class Context {
     return this
   }
 
+  addMiddleware (middleware: Middleware) {
+    return this.middleware(middleware)
+  }
+
   prependMiddleware (middleware: Middleware) {
     const { maxMiddlewares } = this.app.options
     if (this.app._middlewares.length >= maxMiddlewares) {
@@ -168,6 +172,16 @@ export class Context {
       this.app._middlewares.splice(index, 1)
       return true
     }
+  }
+
+  onceMiddleware (middleware: Middleware, meta?: Meta) {
+    const identifier = meta ? meta.$ctxId + meta.$ctxType + meta.userId : undefined
+    const listener: Middleware = async (meta, next) => {
+      if (identifier && meta.$ctxId + meta.$ctxType + meta.userId !== identifier) return next()
+      this.removeMiddleware(listener)
+      return middleware(meta, next)
+    }
+    return this.prependMiddleware(listener)
   }
 
   command (rawName: string, config?: CommandConfig): Command
