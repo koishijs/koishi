@@ -10,7 +10,7 @@ module.exports = {
   testEnvironment: 'node',
   moduleFileExtensions: ['ts', 'js', 'json'],
   moduleNameMapper: {
-    "koishi-(test-utils|(database|plugin)-[\\w-]+)": "<rootDir>/packages/$1/src",
+    "koishi-(test-utils|(database|plugin)-[\\w-]+)(/dist)?": "<rootDir>/packages/$1/src",
     "koishi-[\\w-]+": "<rootDir>/packages/$0/src",
   },
   coverageReporters: ['text', 'lcov'],
