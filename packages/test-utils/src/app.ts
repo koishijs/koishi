@@ -1,4 +1,4 @@
-import { AppOptions, App, Sender, Server, ContextType, Meta } from 'koishi-core'
+import { AppOptions, App, Sender, Server, ContextType, Meta, FileInfo } from 'koishi-core'
 import { MockedServer, RequestParams, RequestData, RequestHandler } from './mocks'
 import { Session, createMessageMeta } from './session'
 import { BASE_SELF_ID } from './utils'
@@ -49,23 +49,35 @@ export class MockedApp extends App {
   }
 
   receiveFriendRequest (userId: number, flag = 'flag') {
-    this.receive({
-      postType: 'request',
-      requestType: 'friend',
-      userId,
-      flag,
-    })
+    this.receive({ postType: 'request', requestType: 'friend', userId, flag })
   }
 
   receiveGroupRequest (userId: number, subType: 'add' | 'invite', groupId = 10000, flag = 'flag') {
-    this.receive({
-      postType: 'request',
-      requestType: 'group',
-      subType,
-      userId,
-      groupId,
-      flag,
-    })
+    this.receive({ postType: 'request', requestType: 'group', subType, userId, groupId, flag })
+  }
+
+  receiveGroupUpload (file: FileInfo, userId: number, groupId = 10000) {
+    this.receive({ postType: 'notice', noticeType: 'group_upload', file, userId, groupId })
+  }
+
+  receiveGroupAdmin (subType: 'set' | 'unset', userId: number, groupId = 10000) {
+    this.receive({ postType: 'notice', noticeType: 'group_admin', subType, userId, groupId })
+  }
+
+  receiveGroupIncrease (subType: 'approve' | 'invite', userId: number, groupId = 10000, operatorId = 1000) {
+    this.receive({ postType: 'notice', noticeType: 'group_increase', subType, userId, groupId, operatorId })
+  }
+
+  receiveGroupDecrease (subType: 'leave' | 'kick' | 'kick_me', userId: number, groupId = 10000, operatorId = 1000) {
+    this.receive({ postType: 'notice', noticeType: 'group_decrease', subType, userId, groupId, operatorId })
+  }
+
+  receiveGroupBan (subType: 'ban' | 'lift_ban', duration: number, userId: number, groupId = 10000, operatorId = 1000) {
+    this.receive({ postType: 'notice', noticeType: 'group_ban', subType, userId, groupId, operatorId, duration })
+  }
+
+  receiveFriendAdd (userId: number) {
+    this.receive({ postType: 'notice', noticeType: 'friend_add', userId })
   }
 
   receiveMessage (meta: Meta): Promise<void>

@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Mocked Server Implementation shouldMatchSnapshot 1`] = `
+exports[`Sender shouldMatchSnapshot 1`] = `
 Array [
   "send_private_msg",
   Object {
