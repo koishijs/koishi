@@ -31,7 +31,7 @@ export function getUsage (name: string, user: UserData, time = new Date()) {
   return usage
 }
 
-export function updateUsage (name: string, user: UserData, maxUsage: number, minInterval: number) {
+export function updateUsage (name: string, user: UserData, maxUsage: number, minInterval?: number) {
   const date = new Date()
   const usage = getUsage(name, user, date)
 
