@@ -1,5 +1,5 @@
 import { Command, Meta, Context, ParsedLine, ParsedCommandLine } from 'koishi-core'
-import { tag } from 'nodejieba'
+import { tag, load } from 'nodejieba'
 import { resolve } from 'path'
 
 declare module 'koishi-core/dist/command' {
@@ -10,8 +10,8 @@ declare module 'koishi-core/dist/command' {
 }
 
 declare module 'koishi-core/dist/meta' {
-  interface Meta {
-    $tags?: TagResult[]
+  interface ParsedMessage {
+    tags?: TagResult[]
   }
 }
 
@@ -65,6 +65,7 @@ export function apply (ctx: Context, options: NlpConfig = {}) {
   options.idfDict = resolvePathConfig(options.idfDict)
   options.userDict = resolvePathConfig(options.userDict)
   options.stopWordDict = resolvePathConfig(options.stopWordDict)
+  load(options)
 
   ctx.middleware((meta, next) => {
     let max = options.threshold
@@ -76,7 +77,7 @@ export function apply (ctx: Context, options: NlpConfig = {}) {
       if (!keyword) continue
 
       // attach word tags
-      if (!meta.$tags) meta.$tags = tag(meta.message)
+      if (!meta.$parsed.tags) meta.$parsed.tags = tag(meta.message)
 
       // generate intension
       const intension = callback(meta, keyword)

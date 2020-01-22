@@ -41,7 +41,7 @@ export interface ResponsePayload {
   reason?: string
 }
 
-export interface StrippedMessage {
+export interface ParsedMessage {
   atMe?: boolean
   nickname?: string
   prefix?: string
@@ -59,7 +59,7 @@ export interface Meta <T extends PostType = PostType> {
   $ctxType?: ContextType
 
   // other properties
-  $stripped?: StrippedMessage
+  $parsed?: ParsedMessage
 
   // quick operations
   $response?: (payload: ResponsePayload) => void

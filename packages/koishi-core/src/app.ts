@@ -297,7 +297,7 @@ export class App extends Context {
     }
 
     // store parsed message
-    meta.$stripped = { atMe, nickname, prefix, message }
+    meta.$parsed = { atMe, nickname, prefix, message }
 
     // parse as command
     if (prefix !== null || nickname || meta.messageType === 'private') {

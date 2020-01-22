@@ -9,6 +9,7 @@
   "scripts": {
     "build": "tsc -b",
     "build:extend": "tsc -b tsconfig.extend.json",
+    "build:dict": "ts-node bots/shiki/build/dict",
     "bump": "ts-node build/bump",
     "dep": "ts-node build/dep",
     "docs": "cd docs & yarn dev",
