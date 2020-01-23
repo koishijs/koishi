@@ -315,9 +315,9 @@ export class Command {
     }
 
     // check usage
-    const minInterval = this.getConfig('minInterval', meta)
-    if (isUsage || minInterval > 0) {
-      const maxUsage = isUsage ? this.getConfig('maxUsage', meta) : Infinity
+    if (isUsage) {
+      const minInterval = this.getConfig('minInterval', meta)
+      const maxUsage = this.getConfig('maxUsage', meta)
 
       if (maxUsage < Infinity || minInterval > 0) {
         const message = updateUsage(this.usageName, user, maxUsage, minInterval)
