@@ -1,7 +1,7 @@
 {
   "name": "koishi-database-level",
   "description": "Leveldb support for Koishi",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "main": "dist/index.js",
   "files": [
     "dist"
@@ -33,12 +33,12 @@
     "leveldb"
   ],
   "devDependencies": {
-    "koishi-test-utils": "^2.0.0"
+    "koishi-test-utils": "^2.1.0"
   },
   "dependencies": {
     "@types/leveldown": "^4.0.2",
     "@types/levelup": "^4.3.0",
-    "koishi-core": "^1.5.0",
+    "koishi-core": "^1.6.0",
     "koishi-utils": "^1.0.2",
     "leveldown": "^5.4.1",
     "levelup": "^4.3.2",
