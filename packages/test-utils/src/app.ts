@@ -124,3 +124,5 @@ export class MockedApp extends App {
     return new Session(this, type, userId, ctxId)
   }
 }
+
+export { MockedApp as App }

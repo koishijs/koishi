@@ -1,4 +1,4 @@
-import * as utils from './random'
+import * as utils from './koishi'
 
 export { utils }
 
@@ -11,6 +11,6 @@ export * from './session'
 
 jest.mock('koishi-utils', () => {
   const utils1 = jest.requireActual('koishi-utils')
-  const utils2 = jest.requireActual('./random')
+  const utils2 = jest.requireActual('./koishi')
   return { ...utils1, ...utils2 }
 })

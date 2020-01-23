@@ -46,14 +46,14 @@ export class Sender {
   protected _get: (action: string, params: Record<string, any>) => Promise<CQResponse>
 
   constructor (public app: App) {
-    const { type } = app.options
+    const { type, token, server } = app.options
     if (type === 'http') {
       this._get = async (action, params) => {
         const headers = {} as any
-        if (app.options.token) {
-          headers.Authorization = `Token ${app.options.token}`
+        if (token) {
+          headers.Authorization = `Token ${token}`
         }
-        const uri = new URL(action, this.app.options.server).href
+        const uri = new URL(action, server).href
         const { data } = await axios.get(uri, { params, headers })
         return data
       }
