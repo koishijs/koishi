@@ -39,7 +39,7 @@
     "koishi-test-utils": "^2.1.0"
   },
   "dependencies": {
-    "axios": "^0.19.1",
+    "axios": "^0.19.2",
     "escape-string-regexp": "^2.0.0",
     "koishi-utils": "^1.0.2",
     "leven": "^3.1.0",

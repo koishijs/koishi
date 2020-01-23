@@ -7,6 +7,7 @@ export * from './database'
 export * from './mocks'
 export * from './utils'
 export * from './server'
+export * from './session'
 
 jest.mock('koishi-utils', () => {
   const utils1 = jest.requireActual('koishi-utils')
