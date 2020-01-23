@@ -77,7 +77,9 @@ export function apply (ctx: Context, options: NlpConfig = {}) {
       if (!keyword) continue
 
       // attach word tags
-      if (!meta.$parsed.tags) meta.$parsed.tags = tag(meta.message)
+      if (!meta.$parsed.tags) {
+        meta.$parsed.tags = tag(meta.$parsed.message)
+      }
 
       // generate intension
       const intension = callback(meta, keyword)
