@@ -28,7 +28,7 @@ const cwd = process.cwd()
 function loadEcosystem (type: string, name: string) {
   const modules = [resolve(cwd, name)]
   const prefix = `koishi-${type}-`
-  if (name.includes(prefix)) {
+  if (name.includes(prefix) || name.startsWith('.')) {
     modules.unshift(name)
   } else {
     const index = name.lastIndexOf('/')
@@ -37,7 +37,11 @@ function loadEcosystem (type: string, name: string) {
   for (const name of modules) {
     try {
       return require(name)
-    } catch {}
+    } catch (error) {
+      if (error.code !== 'MODULE_NOT_FOUND') {
+        throw error
+      }
+    }
   }
   throw new Error(`cannot resolve ${type} ${name}`)
 }
