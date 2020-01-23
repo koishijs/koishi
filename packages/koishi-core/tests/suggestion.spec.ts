@@ -75,7 +75,7 @@ describe('Command Suggestions', () => {
   })
 })
 
-describe('Custom Suggestions', () => {
+describe('Custom Suggestions with Arguments', () => {
   const app = new MockedApp({ database: { memory: {} } })
   const session = app.createSession('group', 123, 456)
   const command = app.command('echo [message]', { authority: 0 })
@@ -89,7 +89,37 @@ describe('Custom Suggestions', () => {
     prefix: 'prefix',
     suffix: 'suffix',
     command,
-    execute: (suggestion, meta) => command.execute({ args: [suggestion], meta }),
+    execute: (message, meta) => command.execute({ args: [message], meta }),
+  }))
+
+  beforeAll(async () => {
+    await app.start()
+    await app.database.getGroup(456, 514)
+  })
+
+  test('show suggestions', async () => {
+    await session.shouldHaveNoResponse(' ')
+    await session.shouldHaveReply('for', `prefix${format(messages.SUGGESTION_TEXT, '“foo”')}suffix`)
+    await session.shouldHaveReply(' ', 'text:foo')
+  })
+})
+
+describe('Custom Suggestions with Options', () => {
+  const app = new MockedApp({ database: { memory: {} } })
+  const session = app.createSession('group', 123, 456)
+  const command = app.command('echo', { authority: 0 })
+    .option('-m, --message <message>')
+    .action(({ meta, options }) => meta.$send('text:' + options.message))
+
+  app.middleware((meta, next) => showSuggestions({
+    target: meta.message,
+    items: ['foo', 'bar'],
+    meta,
+    next,
+    prefix: 'prefix',
+    suffix: 'suffix',
+    command,
+    execute: (message, meta) => command.execute({ options: { message }, meta }),
   }))
 
   beforeAll(async () => {

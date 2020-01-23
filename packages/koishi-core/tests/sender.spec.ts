@@ -53,6 +53,37 @@ describe('Sender API', () => {
 
   const messageId = 456
 
+  test('sendMsg', async () => {
+    await expect(sender.sendMsg(undefined, undefined, undefined)).rejects.toHaveProperty('message', 'missing argument: type')
+    await expect(sender.sendMsg('foo' as any, undefined, undefined)).rejects.toHaveProperty('message', 'invalid argument: type')
+    await expect(sender.sendMsg('private', undefined, undefined)).rejects.toHaveProperty('message', 'missing argument: userId')
+    await expect(sender.sendMsg('group', undefined, undefined)).rejects.toHaveProperty('message', 'missing argument: groupId')
+    await expect(sender.sendMsg('discuss', undefined, undefined)).rejects.toHaveProperty('message', 'missing argument: discussId')
+    await expect(sender.sendMsgAsync(undefined, undefined, undefined)).rejects.toHaveProperty('message', 'missing argument: type')
+    await expect(sender.sendMsgAsync('foo' as any, undefined, undefined)).rejects.toHaveProperty('message', 'invalid argument: type')
+    await expect(sender.sendMsgAsync('private', undefined, undefined)).rejects.toHaveProperty('message', 'missing argument: userId')
+    await expect(sender.sendMsgAsync('group', undefined, undefined)).rejects.toHaveProperty('message', 'missing argument: groupId')
+    await expect(sender.sendMsgAsync('discuss', undefined, undefined)).rejects.toHaveProperty('message', 'missing argument: discussId')
+
+    server.setResponse('send_msg', { messageId })
+    await expect(sender.sendMsg('group', 123, '')).resolves.toBeUndefined()
+    server.shouldHaveNoRequests()
+    await expect(sender.sendMsg('group', 123, 'foo')).resolves.toBe(messageId)
+    server.shouldHaveLastRequest('send_msg', { groupId: '123', message: 'foo' })
+    await expect(sender.sendMsg('private', 123, 'foo')).resolves.toBe(messageId)
+    server.shouldHaveLastRequest('send_msg', { userId: '123', message: 'foo' })
+    await expect(sender.sendMsg('private', 123, 'foo', true)).resolves.toBe(messageId)
+    server.shouldHaveLastRequest('send_msg', { userId: '123', message: 'foo', autoEscape: 'true' })
+    await expect(sender.sendMsgAsync('group', 123, '')).resolves.toBeUndefined()
+    server.shouldHaveNoRequests()
+    await expect(sender.sendMsgAsync('group', 123, 'foo')).resolves.toBeUndefined()
+    server.shouldHaveLastRequest('send_msg_async', { groupId: '123', message: 'foo' })
+    await expect(sender.sendMsgAsync('private', 123, 'foo')).resolves.toBeUndefined()
+    server.shouldHaveLastRequest('send_msg_async', { userId: '123', message: 'foo' })
+    await expect(sender.sendMsgAsync('private', 123, 'foo', true)).resolves.toBeUndefined()
+    server.shouldHaveLastRequest('send_msg_async', { userId: '123', message: 'foo', autoEscape: 'true' })
+  })
+
   test('sendGroupMsg', async () => {
     await expect(sender.sendGroupMsg(undefined, undefined)).rejects.toHaveProperty('message', 'missing argument: groupId')
     await expect(sender.sendGroupMsgAsync(undefined, undefined)).rejects.toHaveProperty('message', 'missing argument: groupId')

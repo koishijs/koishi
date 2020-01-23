@@ -1,9 +1,10 @@
 import { User, Group } from './database'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
+export type MessageType = 'private' | 'group' | 'discuss'
 
 export interface MetaTypeMap {
-  message: 'private' | 'group' | 'discuss'
+  message: MessageType
   notice: 'group_upload' | 'group_admin' | 'group_increase' | 'group_decrease' | 'group_ban' | 'friend_add'
   request: 'friend' | 'group'
   // eslint-disable-next-line camelcase
@@ -26,7 +27,6 @@ export enum contextTypes {
   discuss = 2,
 }
 
-export type MessageMeta = Meta<'message'>
 export type ContextType = keyof typeof contextTypes
 
 export interface ResponsePayload {
@@ -42,7 +42,7 @@ export interface ResponsePayload {
   reason?: string
 }
 
-export interface StrippedMessage {
+export interface ParsedMessage {
   atMe?: boolean
   nickname?: string
   prefix?: string
@@ -60,7 +60,7 @@ export interface Meta <T extends PostType = PostType> {
   $ctxType?: ContextType
 
   // other properties
-  $stripped?: StrippedMessage
+  $parsed?: ParsedMessage
 
   // quick operations
   $response?: (payload: ResponsePayload) => void

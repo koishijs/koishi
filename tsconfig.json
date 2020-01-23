@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "es2019",
     "module": "commonjs",
+    "composite": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
   },
@@ -13,6 +14,7 @@
     { "path": "./packages/database-sqlite" },
     { "path": "./packages/database-memory" },
     { "path": "./packages/plugin-common" },
+    { "path": "./packages/plugin-nlp" },
     { "path": "./packages/plugin-recorder" },
     { "path": "./packages/plugin-schedule" },
     { "path": "./packages/plugin-teach" },

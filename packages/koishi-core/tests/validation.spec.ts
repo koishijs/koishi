@@ -11,7 +11,7 @@ const session5 = app.createSession('group', 123, 654)
 
 app.command('cmd1', { authority: 2, maxUsage: 1 })
   // make coverage happy
-  .userFields(['name', 'flag', 'authority', 'usage'])
+  .userFields(['flag', 'authority', 'usage'])
   .groupFields(['id', 'flag', 'assignee'])
   .option('--bar', '', { authority: 3 })
   .option('--baz', '', { notUsage: true })

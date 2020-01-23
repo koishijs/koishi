@@ -38,7 +38,8 @@ interface Dependency {
 
     for (const type of ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'] as DependencyType[]) {
       for (const dep in meta[type] || {}) {
-        if (workspaces[dep]) continue
+        // skip workspaces and symlinks
+        if (workspaces[dep] || meta[type][dep].startsWith('file:')) continue
         if (!dependencies[dep]) dependencies[dep] = { dependents: [] }
         dependencies[dep].dependents.push({ name, type })
       }

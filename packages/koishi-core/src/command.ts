@@ -2,8 +2,9 @@ import { Context, NextFunction } from './context'
 import { UserData, UserField, GroupField } from './database'
 import { messages, errors } from './messages'
 import { noop } from 'koishi-utils'
-import { MessageMeta } from './meta'
+import { Meta } from './meta'
 import { format } from 'util'
+import { updateUsage } from './utils'
 
 import {
   CommandOption,
@@ -16,7 +17,7 @@ import {
 } from './parser'
 
 export interface ParsedCommandLine extends Partial<ParsedLine> {
-  meta: MessageMeta
+  meta: Meta<'message'>
   command?: Command
   next?: NextFunction
 }
@@ -120,6 +121,10 @@ export class Command {
     return this.context.app
   }
 
+  get usageName () {
+    return this.config.usageName || this.name
+  }
+
   private _registerAlias (name: string) {
     name = name.toLowerCase()
     this._aliases.push(name)
@@ -220,23 +225,9 @@ export class Command {
     return this
   }
 
-  getConfig <K extends keyof CommandConfig> (key: K, meta: MessageMeta): Exclude<CommandConfig[K], (user: UserData) => any> {
+  getConfig <K extends keyof CommandConfig> (key: K, meta: Meta<'message'>): Exclude<CommandConfig[K], (user: UserData) => any> {
     const value = this.config[key] as any
     return typeof value === 'function' ? value(meta.$user) : value
-  }
-
-  updateUsage (user: UserData, time = new Date()) {
-    const name = this.config.usageName || this.name
-    if (!user.usage[name]) {
-      user.usage[name] = {}
-    }
-    const usage = user.usage[name]
-    const date = time.toLocaleDateString()
-    if (date !== usage.date) {
-      usage.count = 0
-      usage.date = date
-    }
-    return usage
   }
 
   parse (source: string) {
@@ -302,7 +293,7 @@ export class Command {
   }
 
   /** check authority and usage */
-  private async _checkUser (meta: MessageMeta, options: Record<string, any>) {
+  private async _checkUser (meta: Meta<'message'>, options: Record<string, any>) {
     const user = meta.$user
     if (!user) return true
     let isUsage = true
@@ -324,32 +315,17 @@ export class Command {
     }
 
     // check usage
-    const minInterval = this.getConfig('minInterval', meta)
-    if (isUsage || minInterval > 0) {
+    if (isUsage) {
+      const minInterval = this.getConfig('minInterval', meta)
       const maxUsage = this.getConfig('maxUsage', meta)
 
       if (maxUsage < Infinity || minInterval > 0) {
-        const date = new Date()
-        const usage = this.updateUsage(user, date)
-
-        if (minInterval > 0) {
-          const now = date.valueOf()
-          if (now - usage.last <= minInterval) {
-            if (this.config.showWarning) {
-              await meta.$send(messages.TOO_FREQUENT)
-            }
-            return
-          }
-          usage.last = now
-        }
-
-        if (usage.count >= maxUsage && isUsage) {
+        const message = updateUsage(this.usageName, user, maxUsage, minInterval)
+        if (message) {
           if (this.config.showWarning) {
-            await meta.$send(messages.USAGE_EXHAUSTED)
+            await meta.$send(message)
           }
           return
-        } else {
-          usage.count++
         }
       }
     }

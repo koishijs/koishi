@@ -5,7 +5,7 @@ import { Command, ShortcutConfig, ParsedCommandLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope, Events, EventMap } from './context'
 import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField } from './database'
 import { showSuggestions } from './utils'
-import { Meta, MessageMeta } from './meta'
+import { Meta } from './meta'
 import { simplify, noop } from 'koishi-utils'
 import { errors, messages } from './messages'
 import { ParsedLine } from './parser'
@@ -85,9 +85,7 @@ export class App extends Context {
   atMeRE: RegExp
   prefixRE: RegExp
   nicknameRE: RegExp
-  users: MajorContext
-  groups: MajorContext
-  discusses: MajorContext
+  status = Status.closed
 
   _commands: Command[] = []
   _commandMap: Record<string, Command> = {}
@@ -95,7 +93,9 @@ export class App extends Context {
   _shortcutMap: Record<string, Command> = {}
   _middlewares: [Context, Middleware][] = []
 
-  private status = Status.closed
+  private _users: MajorContext
+  private _groups: MajorContext
+  private _discusses: MajorContext
   private _isReady = false
   private _middlewareCounter = 0
   private _middlewareSet = new Set<number>()
@@ -126,14 +126,27 @@ export class App extends Context {
     this.receiver.on('before-user', Command.attachUserFields)
     this.receiver.on('before-group', Command.attachGroupFields)
     this.middleware(this._preprocess)
+  }
 
-    // create built-in contexts
-    this.users = this.createContext([[null, []], [[], null], [[], null]]) as MajorContext
-    this.groups = this.createContext([[[], null], [null, []], [[], null]]) as MajorContext
-    this.discusses = this.createContext([[[], null], [[], null], [null, []]]) as MajorContext
-    this.users.except = (...ids) => this.createContext([[null, ids], [[], null], [[], null]])
-    this.groups.except = (...ids) => this.createContext([[[], null], [null, ids], [[], null]])
-    this.discusses.except = (...ids) => this.createContext([[[], null], [[], null], [null, ids]])
+  get users () {
+    if (this._users) return this._users
+    const users = this.createContext([[null, []], [[], null], [[], null]]) as MajorContext
+    users.except = (...ids) => this.createContext([[null, ids], [[], null], [[], null]])
+    return this._users = users
+  }
+
+  get groups () {
+    if (this._groups) return this._groups
+    const groups = this.createContext([[[], null], [null, []], [[], null]]) as MajorContext
+    groups.except = (...ids) => this.createContext([[[], null], [null, ids], [[], null]])
+    return this._groups = groups
+  }
+
+  get discusses () {
+    if (this._discusses) return this._discusses
+    const discusses = this.createContext([[[], null], [[], null], [null, []]]) as MajorContext
+    discusses.except = (...ids) => this.createContext([[[], null], [[], null], [null, ids]])
+    return this._discusses = discusses
   }
 
   get selfId () {
@@ -259,7 +272,7 @@ export class App extends Context {
     }
   }
 
-  private _preprocess = async (meta: MessageMeta, next: NextFunction) => {
+  private _preprocess = async (meta: Meta<'message'>, next: NextFunction) => {
     // strip prefix
     let capture: RegExpMatchArray
     let atMe = false, nickname = '', prefix: string = null
@@ -284,7 +297,7 @@ export class App extends Context {
     }
 
     // store parsed message
-    meta.$stripped = { atMe, nickname, prefix, message }
+    meta.$parsed = { atMe, nickname, prefix, message }
 
     // parse as command
     if (prefix !== null || nickname || meta.messageType === 'private') {
@@ -366,7 +379,7 @@ export class App extends Context {
     })
   }
 
-  parseCommandLine (message: string, meta: MessageMeta): ParsedCommandLine {
+  parseCommandLine (message: string, meta: Meta<'message'>): ParsedCommandLine {
     const name = message.split(/\s/, 1)[0].toLowerCase()
     const command = this._commandMap[name]
     if (command?.context.match(meta)) {
@@ -375,14 +388,14 @@ export class App extends Context {
     }
   }
 
-  executeCommandLine (message: string, meta: MessageMeta, next: NextFunction = noop) {
+  executeCommandLine (message: string, meta: Meta<'message'>, next: NextFunction = noop) {
     if (!('$ctxType' in meta)) this.server.parseMeta(meta)
     const argv = this.parseCommandLine(message, meta)
     if (argv) return argv.command.execute(argv, next)
     return next()
   }
 
-  private _applyMiddlewares = async (meta: MessageMeta) => {
+  private _applyMiddlewares = async (meta: Meta<'message'>) => {
     // preparation
     const counter = this._middlewareCounter++
     this._middlewareSet.add(counter)

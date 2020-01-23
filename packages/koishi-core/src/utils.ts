@@ -1,8 +1,8 @@
 import { isInteger } from 'koishi-utils'
-import { UserField, GroupField } from './database'
-import { NextFunction, Middleware } from './context'
+import { UserField, GroupField, UserData } from './database'
+import { NextFunction } from './context'
 import { Command } from './command'
-import { MessageMeta } from './meta'
+import { Meta } from './meta'
 import { messages } from './messages'
 import { format } from 'util'
 import leven from 'leven'
@@ -18,16 +18,48 @@ export function getTargetId (target: string | number) {
   return qq
 }
 
+export function getUsage (name: string, user: UserData, time = new Date()) {
+  if (!user.usage[name]) {
+    user.usage[name] = {}
+  }
+  const usage = user.usage[name]
+  const date = time.toLocaleDateString()
+  if (date !== usage.date) {
+    usage.count = 0
+    usage.date = date
+  }
+  return usage
+}
+
+export function updateUsage (name: string, user: UserData, maxUsage: number, minInterval?: number) {
+  const date = new Date()
+  const usage = getUsage(name, user, date)
+
+  if (minInterval > 0) {
+    const now = date.valueOf()
+    if (now - usage.last <= minInterval) {
+      return messages.TOO_FREQUENT
+    }
+    usage.last = now
+  }
+
+  if (usage.count >= maxUsage) {
+    return messages.USAGE_EXHAUSTED
+  } else {
+    usage.count++
+  }
+}
+
 interface SuggestOptions {
   target: string
   items: string[]
-  meta: MessageMeta
+  meta: Meta<'message'>
   next: NextFunction
   prefix: string
   suffix: string
   coefficient?: number
   command: Command | ((suggestion: string) => Command)
-  execute: (suggestion: string, meta: MessageMeta, next: NextFunction) => any
+  execute: (suggestion: string, meta: Meta<'message'>, next: NextFunction) => any
 }
 
 function findSimilar (target: string, coefficient: number) {
@@ -44,15 +76,11 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
     if (suggestions.length === 1) {
       const [suggestion] = suggestions
       const command = typeof options.command === 'function' ? options.command(suggestion) : options.command
-      const identifier = meta.userId + meta.$ctxType + meta.$ctxId
       const userFields = new Set<UserField>()
       const groupFields = new Set<GroupField>()
       Command.attachUserFields(userFields, { command, meta })
       Command.attachGroupFields(groupFields, { command, meta })
-
-      const middleware: Middleware = async (meta, next) => {
-        if (meta.userId + meta.$ctxType + meta.$ctxId !== identifier) return next()
-        command.context.removeMiddleware(middleware)
+      command.context.onceMiddleware(async (meta, next) => {
         if (!meta.message.trim()) {
           meta.$user = await command.context.database?.observeUser(meta.userId, Array.from(userFields))
           if (meta.messageType === 'group') {
@@ -62,8 +90,7 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
         } else {
           return next()
         }
-      }
-      command.context.prependMiddleware(middleware)
+      }, meta)
       message += suffix
     }
     await meta.$send(message)

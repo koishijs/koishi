@@ -1,5 +1,5 @@
 import { MockedApp } from 'koishi-test-utils'
-import { messages, MessageMeta } from 'koishi-core'
+import { messages, Meta } from 'koishi-core'
 import { format } from 'util'
 
 const app = new MockedApp()
@@ -132,7 +132,7 @@ describe('nickname prefix', () => {
 })
 
 describe('Command Execution', () => {
-  const meta: MessageMeta = {
+  const meta: Meta<'message'> = {
     userId: 789,
     selfId: app.selfId,
     postType: 'message',
