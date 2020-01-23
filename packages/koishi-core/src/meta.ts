@@ -1,9 +1,10 @@
 import { User, Group } from './database'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
+export type MessageType = 'private' | 'group' | 'discuss'
 
 export interface MetaTypeMap {
-  message: 'private' | 'group' | 'discuss'
+  message: MessageType
   notice: 'group_upload' | 'group_admin' | 'group_increase' | 'group_decrease' | 'group_ban' | 'friend_add'
   request: 'friend' | 'group'
   // eslint-disable-next-line camelcase
