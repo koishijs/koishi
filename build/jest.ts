@@ -4,13 +4,17 @@ import { resolve } from 'path'
 
 const args = ['jest', '--coverage']
 
-if (process.argv[2]) {
-  args.push(process.argv[2])
-  if (process.argv[3]) {
-    args.push('--collectCoverageFrom', `**/${process.argv[3]}/**/*.ts`)
+const [,, argv2, argv3] = process.argv
+
+if (argv2 && !argv2.startsWith('-')) {
+  args.push(argv2)
+  if (argv3 && !argv3.startsWith('-')) {
+    args.push('--collectCoverageFrom', `**/${argv3}/**/*.ts`, ...process.argv.slice(3))
+  } else {
+    args.push(...process.argv.slice(3))
   }
 } else {
-  args.push('packages/.+\\.spec\\.ts')
+  args.push('packages/.+\\.spec\\.ts', ...process.argv.slice(2))
 }
 
 const child = spawn('npx', args, { stdio: 'inherit' })
