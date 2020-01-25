@@ -2,11 +2,21 @@ import { Context, UserField, UserData, getTargetId, Meta } from 'koishi-core'
 
 type UserInfoCallback <K extends UserField = UserField> = (user: Pick<UserData, K>) => string
 
-const infoFields = new Set<UserField>(['authority'])
-const infoCallbacks: UserInfoCallback[] = []
+interface Info <K extends UserField = UserField> {
+  order: number
+  callback: (user: Pick<UserData, K>) => string
+}
 
-export function registerUserInfo <K extends UserField> (callback: UserInfoCallback<K>, fields: Iterable<K> = []) {
-  infoCallbacks.push(callback)
+const infoFields = new Set<UserField>(['authority'])
+const infoList: Info[] = []
+
+export function registerUserInfo <K extends UserField> (callback: UserInfoCallback<K>, fields: Iterable<K> = [], order = 0) {
+  const index = infoList.findIndex(a => a.order > order)
+  if (index >= 0) {
+    infoList.splice(index, 0, { order, callback })
+  } else {
+    infoList.push({ order, callback })
+  }
   for (const field of fields) {
     infoFields.add(field)
   }
@@ -50,7 +60,7 @@ export default function apply (ctx: Context, config: InfoOptions = {}) {
         output.push(`${config.getUserName(user, meta) || meta.userId}，您的权限为 ${user.authority} 级。`)
       }
 
-      for (const callback of infoCallbacks) {
+      for (const { callback } of infoList) {
         const result = callback(user)
         if (result) output.push(result)
       }
