@@ -311,11 +311,11 @@ export class App extends Context {
         if (prefix && !nickname) continue
         if (!fuzzy && message !== name) continue
         if (message.startsWith(name)) {
-          const _message = message.slice(name.length).trim()
+          const _message = message.slice(name.length)
           if (fuzzy && !nickname && _message.match(/^\S/)) continue
           const result: ParsedLine = oneArg
             ? { rest: '', options: {}, unknown: [], args: [_message.trim()] }
-            : command.parse(_message)
+            : command.parse(_message.trim())
           result.options = { ...options, ...result.options }
           result.args.unshift(...args)
           parsedArgv = { meta, command, ...result }
