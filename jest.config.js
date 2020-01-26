@@ -17,6 +17,7 @@ module.exports = {
     "shiki-universe": "<rootDir>/bots/shiki/lib/shiki-universe/src",
     "inference-puzzles": "<rootDir>/bots/shiki/lib/inference-puzzles/src",
   },
+  coverageProvider: 'v8',
   coverageReporters: ['text', 'lcov'],
   coveragePathIgnorePatterns: [
     'tests/',

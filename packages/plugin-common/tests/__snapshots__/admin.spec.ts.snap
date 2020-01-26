@@ -1,9 +1,25 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`group operations list actions: admin -G 1`] = `"当前的可用指令有：set-flag, unset-flag。"`;
+exports[`group operations list actions: admin -G 1`] = `
+Array [
+  "当前的可用指令有：set-flag, unset-flag。",
+]
+`;
 
-exports[`group operations list actions: admin -G foo 1`] = `"指令未找到。当前的可用指令有：set-flag, unset-flag。"`;
+exports[`group operations list actions: admin -G foo 1`] = `
+Array [
+  "指令未找到。当前的可用指令有：set-flag, unset-flag。",
+]
+`;
 
-exports[`user operations list actions: admin 1`] = `"当前的可用指令有：set-auth, set-flag, unset-flag, clear-usage, show-usage。"`;
+exports[`user operations list actions: admin 1`] = `
+Array [
+  "当前的可用指令有：set-auth, set-flag, unset-flag, clear-usage, show-usage。",
+]
+`;
 
-exports[`user operations list actions: admin foo 1`] = `"指令未找到。当前的可用指令有：set-auth, set-flag, unset-flag, clear-usage, show-usage。"`;
+exports[`user operations list actions: admin foo 1`] = `
+Array [
+  "指令未找到。当前的可用指令有：set-auth, set-flag, unset-flag, clear-usage, show-usage。",
+]
+`;
