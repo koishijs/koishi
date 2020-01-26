@@ -17,7 +17,7 @@ export class Session {
   }
 
   async send (message: string) {
-    let replies: string[] = []
+    const replies: string[] = []
     function $response (data: ResponsePayload) {
       if (data.reply) replies.push(data.reply)
     }

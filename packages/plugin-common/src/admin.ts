@@ -109,7 +109,6 @@ registerGroupAction('unsetFlag', async (meta, group, ...flags) => {
 }, ['flag'])
 
 export default function apply (ctx: Context) {
-
   ctx.command('admin <action> [...args]', '管理用户', { authority: 4 })
     .option('-u, --user [user]', '指定目标用户')
     .option('-g, --group [group]', '指定目标群')
