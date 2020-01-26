@@ -107,7 +107,7 @@ export class MockedApp extends App {
     this.sender.mock.shouldHaveLastRequests(requests)
   }
 
-  shouldMatchSnapshot (name?: string) {
+  shouldMatchSnapshot (name = '') {
     this.sender.mock.shouldMatchSnapshot(name)
   }
 

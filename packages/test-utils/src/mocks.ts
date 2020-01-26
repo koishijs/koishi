@@ -22,7 +22,7 @@ export class MockedServer {
     this.clearRequests()
   }
 
-  shouldMatchSnapshot (name?: string) {
+  shouldMatchSnapshot (name = '') {
     expect(this.requests[0]).toMatchSnapshot(name)
     this.clearRequests()
   }
