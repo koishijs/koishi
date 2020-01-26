@@ -4,7 +4,7 @@ import 'koishi-database-memory'
 
 // make coverage happy
 registerUserInfo(() => '')
-registerUserInfo(() => 'foo', ['flag'])
+registerUserInfo(() => 'foo', ['flag'], -1)
 
 let app: MockedApp, session: Session
 
