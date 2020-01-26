@@ -13,10 +13,10 @@ test('repeat', async () => {
     interruptCheck: false,
   })
 
-  await session1.shouldHaveNoResponse('foo')
+  await session1.shouldHaveNoReply('foo')
   await session1.shouldHaveReply('foo', 'foo')
-  await session1.shouldHaveNoResponse('foo')
-  await session1.shouldHaveNoResponse('foo')
+  await session1.shouldHaveNoReply('foo')
+  await session1.shouldHaveNoReply('foo')
 })
 
 test('interrupt', async () => {
@@ -30,7 +30,7 @@ test('interrupt', async () => {
     interruptCheck: false,
   })
 
-  await session1.shouldHaveNoResponse('foo')
+  await session1.shouldHaveNoReply('foo')
   await session1.shouldHaveReply('foo', 'foo')
   await session1.shouldHaveReply('foo', '打断复读！')
 })
@@ -47,7 +47,7 @@ test('repeat check', async () => {
     interruptCheck: false,
   })
 
-  await session1.shouldHaveNoResponse('foo')
+  await session1.shouldHaveNoReply('foo')
   await session1.shouldHaveReply('foo', 'foo')
   await session2.shouldHaveReply('foo', 'foo')
   await session2.shouldHaveReply('foo', `[CQ:at,qq=${session2.userId}] 在？为什么重复复读？`)
@@ -64,8 +64,8 @@ test('interrupt check', async () => {
     interruptCheck: (_, times) => times >= 2,
   })
 
-  await session1.shouldHaveNoResponse('foo')
-  await session1.shouldHaveNoResponse('bar')
+  await session1.shouldHaveNoReply('foo')
+  await session1.shouldHaveNoReply('bar')
   await session1.shouldHaveReply('bar', 'bar')
   await session1.shouldHaveReply('foo', `[CQ:at,qq=${session1.userId}] 在？为什么打断复读？`)
 })

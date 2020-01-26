@@ -35,7 +35,7 @@ export class Session {
     }
   }
 
-  shouldHaveNoReplies (message: string) {
+  shouldHaveNoReply (message: string) {
     return expect(this.send(message)).resolves.toHaveLength(0)
   }
 

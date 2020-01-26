@@ -33,37 +33,37 @@ describe('Command Suggestions', () => {
 
   test('execute command', async () => {
     await session1.shouldHaveReply('foo bar', 'foobar')
-    await session1.shouldHaveNoResponse(' ')
+    await session1.shouldHaveNoReply(' ')
   })
 
   test('no suggestions found', async () => {
-    await session1.shouldHaveNoResponse('bar foo')
+    await session1.shouldHaveNoReply('bar foo')
   })
 
   test('apply suggestions 1', async () => {
     await session1.shouldHaveReply('fo bar', expectedSuggestionText)
     await session2.shouldHaveReply('fooo -t bar')
     await session1.shouldHaveReply(' ', 'foobar')
-    await session1.shouldHaveNoResponse(' ')
+    await session1.shouldHaveNoReply(' ')
   })
 
   test('apply suggestions 2', async () => {
     await session2.shouldHaveReply('foooo -t bar', expectedSuggestionText2)
     await session1.shouldHaveReply('foo bar')
     await session2.shouldHaveReply(' ', 'fooobar')
-    await session2.shouldHaveNoResponse(' ')
+    await session2.shouldHaveNoReply(' ')
   })
 
   test('ignore suggestions 1', async () => {
     await session1.shouldHaveReply('fo bar', expectedSuggestionText)
-    await session1.shouldHaveNoResponse('bar foo')
-    await session1.shouldHaveNoResponse(' ')
+    await session1.shouldHaveNoReply('bar foo')
+    await session1.shouldHaveNoReply(' ')
   })
 
   test('ignore suggestions 2', async () => {
     await session2.shouldHaveReply('fo bar', expectedSuggestionText)
     await session2.shouldHaveReply('foo bar')
-    await session2.shouldHaveNoResponse(' ')
+    await session2.shouldHaveNoReply(' ')
   })
 
   test('multiple suggestions', async () => {
@@ -71,7 +71,7 @@ describe('Command Suggestions', () => {
       messages.COMMAND_SUGGESTION_PREFIX,
       format(messages.SUGGESTION_TEXT, '“foo”或“fooo”'),
     ].join(''))
-    await session1.shouldHaveNoResponse(' ')
+    await session1.shouldHaveNoReply(' ')
   })
 })
 
@@ -98,7 +98,7 @@ describe('Custom Suggestions with Arguments', () => {
   })
 
   test('show suggestions', async () => {
-    await session.shouldHaveNoResponse(' ')
+    await session.shouldHaveNoReply(' ')
     await session.shouldHaveReply('for', `prefix${format(messages.SUGGESTION_TEXT, '“foo”')}suffix`)
     await session.shouldHaveReply(' ', 'text:foo')
   })
@@ -128,7 +128,7 @@ describe('Custom Suggestions with Options', () => {
   })
 
   test('show suggestions', async () => {
-    await session.shouldHaveNoResponse(' ')
+    await session.shouldHaveNoReply(' ')
     await session.shouldHaveReply('for', `prefix${format(messages.SUGGESTION_TEXT, '“foo”')}suffix`)
     await session.shouldHaveReply(' ', 'text:foo')
   })
