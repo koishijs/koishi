@@ -7,7 +7,7 @@ const session = app.createSession('user', 123)
 app.plugin(exec)
 
 test('no input', async () => {
-  await session.shouldHaveNoResponse('$')
+  await session.shouldHaveNoReply('$')
 })
 
 test('stdout', async () => {

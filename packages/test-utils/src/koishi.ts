@@ -20,6 +20,7 @@ interface MockedRandomMultiPick extends RealRandomMultiPick, jest.Mock<any, [rea
   mockIndicesOnce (...indices: number[]): this
 }
 
+export const sleep = jest.fn(_utils.sleep)
 export const randomBool = jest.fn(_utils.randomBool)
 export const randomId = jest.fn(_utils.randomId)
 export const randomReal = jest.fn(_utils.randomReal)

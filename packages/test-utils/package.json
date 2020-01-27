@@ -1,7 +1,7 @@
 {
   "name": "koishi-test-utils",
   "description": "Test utilities for Koishi",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -33,17 +33,17 @@
     "utilities"
   ],
   "peerDependencies": {
-    "jest": "^24.9.0"
+    "jest": "^25.1.0"
   },
   "devDependencies": {
     "@types/debug": "^4.1.5",
-    "@types/jest": "^24.9.0"
+    "@types/jest": "^24.9.1"
   },
   "dependencies": {
     "axios": "^0.19.2",
     "debug": "^4.1.1",
     "get-port": "^5.1.1",
-    "koishi-core": "^1.6.0",
+    "koishi-core": "^1.7.0",
     "koishi-utils": "^1.0.2"
   }
 }

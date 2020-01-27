@@ -13,13 +13,13 @@ beforeEach(() => mock.mockClear())
 afterAll(() => process.exit = processExit)
 
 test('terminate', async () => {
-  await session.shouldHaveNoResponse(`koishi, 关机`)
+  await session.shouldHaveNoReply(`koishi, 关机`)
   expect(mock).toBeCalledTimes(1)
   expect(mock).toBeCalledWith(0)
 })
 
 test('restart', async () => {
-  await session.shouldHaveNoResponse(`koishi, 重启`)
+  await session.shouldHaveNoReply(`koishi, 重启`)
   expect(mock).toBeCalledTimes(1)
   expect(mock).toBeCalledWith(-1)
 })

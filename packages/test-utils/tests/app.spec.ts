@@ -66,7 +66,7 @@ describe('Receiver', () => {
   test('receiveGroupRequest', async () => {
     const mock = jest.fn()
     app.receiver.on('request/group/add', mock)
-    app.receiveGroupRequest(123, 'add')
+    app.receiveGroupRequest('add', 123)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith({
       $approve: expect.anything(),

@@ -17,5 +17,5 @@ app.plugin<Respondent[]>(respondent, [{
 test('basic support', async () => {
   await session.shouldHaveReply('挖坑一时爽', '填坑火葬场')
   await session.shouldHaveReply('填坑一时爽', '一直填坑一直爽')
-  await session.shouldHaveNoResponse('填坑一直爽')
+  await session.shouldHaveNoReply('填坑一直爽')
 })

@@ -17,32 +17,29 @@ export class Session {
   }
 
   async send (message: string) {
-    let payload: ResponsePayload = null
+    const replies: string[] = []
     function $response (data: ResponsePayload) {
-      payload = data
+      if (data.reply) replies.push(data.reply)
     }
     await this.app.receiveMessage({ ...this.meta, message, $response })
-    return payload
+    return replies
   }
 
-  async getReply (message: string) {
-    const response = await this.send(message)
-    return response?.reply
-  }
-
-  shouldHaveReply (message: string, reply?: string) {
+  async shouldHaveReply (message: string, reply?: string) {
+    const replies = await this.send(message)
+    const lastReply = replies[replies.length - 1]
     if (reply) {
-      return expect(this.getReply(message)).resolves.toBe(reply)
+      return expect(lastReply).toBe(reply)
     } else {
-      return expect(this.getReply(message)).resolves.toBeTruthy()
+      return expect(lastReply).toBeTruthy()
     }
   }
 
-  shouldHaveNoResponse (message: string) {
-    return expect(this.send(message)).resolves.toBeNull()
+  shouldHaveNoReply (message: string) {
+    return expect(this.send(message)).resolves.toHaveLength(0)
   }
 
   shouldMatchSnapshot (message: string) {
-    return expect(this.getReply(message)).resolves.toMatchSnapshot(message)
+    return expect(this.send(message)).resolves.toMatchSnapshot(message)
   }
 }

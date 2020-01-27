@@ -315,7 +315,7 @@ export class App extends Context {
           if (fuzzy && !nickname && _message.match(/^\S/)) continue
           const result: ParsedLine = oneArg
             ? { rest: '', options: {}, unknown: [], args: [_message.trim()] }
-            : command.parse(_message)
+            : command.parse(_message.trim())
           result.options = { ...options, ...result.options }
           result.args.unshift(...args)
           parsedArgv = { meta, command, ...result }
@@ -328,7 +328,7 @@ export class App extends Context {
       if (meta.messageType === 'group') {
         // attach group data
         const groupFields = new Set<GroupField>(['flag', 'assignee'])
-        this.receiver.emit('before-group', groupFields, parsedArgv || { meta })
+        this.emitEvent(meta, 'before-group', groupFields, parsedArgv || { meta })
         const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
         Object.defineProperty(meta, '$group', { value: group, writable: true })
 
@@ -344,7 +344,7 @@ export class App extends Context {
 
       // attach user data
       const userFields = new Set<UserField>(['flag'])
-      this.receiver.emit('before-user', userFields, parsedArgv || { meta })
+      this.emitEvent(meta, 'before-user', userFields, parsedArgv || { meta })
       const user = await this.database.observeUser(meta.userId, Array.from(userFields))
       Object.defineProperty(meta, '$user', { value: user, writable: true })
 
@@ -352,7 +352,7 @@ export class App extends Context {
       if (user.flag & UserFlag.ignore) return
 
       // emit attach event
-      this.receiver.emit('attach', meta)
+      this.emitEvent(meta, 'attach', meta)
     }
 
     // execute command

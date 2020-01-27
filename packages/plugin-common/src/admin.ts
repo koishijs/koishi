@@ -109,9 +109,6 @@ registerGroupAction('unsetFlag', async (meta, group, ...flags) => {
 }, ['flag'])
 
 export default function apply (ctx: Context) {
-  const userActions = Object.keys(userActionMap).map(paramCase).join(', ')
-  const groupActions = Object.keys(groupActionMap).map(paramCase).join(', ')
-
   ctx.command('admin <action> [...args]', '管理用户', { authority: 4 })
     .option('-u, --user [user]', '指定目标用户')
     .option('-g, --group [group]', '指定目标群')
@@ -120,8 +117,8 @@ export default function apply (ctx: Context) {
       const isGroup = 'g' in options || 'G' in options
       if ('user' in options && isGroup) return meta.$send('不能同时目标为指定用户和群。')
 
-      const actionList = isGroup ? groupActions : userActions
       const actionMap = isGroup ? groupActionMap : userActionMap
+      const actionList = Object.keys(actionMap).map(paramCase).join(', ')
       if (!name) return meta.$send(`当前的可用指令有：${actionList}。`)
 
       const action = actionMap[paramCase(name)]

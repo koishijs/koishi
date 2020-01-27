@@ -1,11 +1,11 @@
-import { Command, Meta, Context, ParsedLine, ParsedCommandLine } from 'koishi-core'
+import { Command, Meta, Context, ParsedLine, ParsedCommandLine, App } from 'koishi-core'
 import { tag, load } from 'nodejieba'
 import { resolve } from 'path'
 
 declare module 'koishi-core/dist/command' {
   interface Command {
-    intend (keyword: string, callback: IntenderCallback): void
-    intend (keywords: string[], callback: IntenderCallback): void
+    intend (keyword: string, callback: IntenderCallback): this
+    intend (keywords: string[], callback: IntenderCallback): this
   }
 }
 
@@ -48,6 +48,7 @@ const intenders: Intender[] = []
 Command.prototype.intend = function (this: Command, arg0: string | string[], callback: IntenderCallback) {
   const keywords = typeof arg0 === 'string' ? [arg0] : arg0
   intenders.push({ command: this, keywords, callback })
+  return this
 }
 
 export const name = 'nlp'
@@ -77,7 +78,9 @@ export function apply (ctx: Context, options: NlpConfig = {}) {
       if (!keyword) continue
 
       // attach word tags
-      if (!meta.$parsed.tags) meta.$parsed.tags = tag(meta.message)
+      if (!meta.$parsed.tags) {
+        meta.$parsed.tags = tag(meta.$parsed.message)
+      }
 
       // generate intension
       const intension = callback(meta, keyword)

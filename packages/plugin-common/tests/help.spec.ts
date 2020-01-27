@@ -42,7 +42,7 @@ describe('help command', () => {
     await session1.shouldMatchSnapshot('bar -h')
     await session1.shouldMatchSnapshot('foo -h')
     await session1.shouldMatchSnapshot('help help -e')
-    await session2.shouldHaveNoResponse('help.foo -h')
+    await session2.shouldHaveNoReply('help.foo -h')
     await session2.shouldMatchSnapshot('help help.foo')
   })
 

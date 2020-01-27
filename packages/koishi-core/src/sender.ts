@@ -53,7 +53,7 @@ export class Sender {
         if (app.options.token) {
           headers.Authorization = `Token ${app.options.token}`
         }
-        const uri = new URL(action, this.app.options.server).href
+        const uri = new URL(action, app.options.server).href
         const { data } = await axios.get(uri, { params, headers })
         return data
       }
