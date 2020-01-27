@@ -20,6 +20,7 @@ tsconfig.tsbuildinfo
 .DS_Store
 .idea
 .vscode
+.yarn
 *.suo
 *.ntvs*
 *.njsproj
