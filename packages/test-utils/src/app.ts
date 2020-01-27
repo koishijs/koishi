@@ -52,7 +52,7 @@ export class MockedApp extends App {
     this.receive({ postType: 'request', requestType: 'friend', userId, flag })
   }
 
-  receiveGroupRequest (userId: number, subType: 'add' | 'invite', groupId = 10000, flag = 'flag') {
+  receiveGroupRequest (subType: 'add' | 'invite', userId: number, groupId = 10000, flag = 'flag') {
     this.receive({ postType: 'request', requestType: 'group', subType, userId, groupId, flag })
   }
 

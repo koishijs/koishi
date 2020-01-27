@@ -19,13 +19,13 @@ describe('type: undefined', () => {
   })
 
   test('group add', async () => {
-    app.receiveGroupRequest(321, 'add')
+    app.receiveGroupRequest('add', 321)
     await sleep(0)
     app.shouldHaveNoRequests()
   })
 
   test('group invite', async () => {
-    app.receiveGroupRequest(321, 'invite')
+    app.receiveGroupRequest('invite', 321)
     await sleep(0)
     app.shouldHaveNoRequests()
   })
@@ -49,13 +49,13 @@ describe('type: string', () => {
   })
 
   test('group add', async () => {
-    app.receiveGroupRequest(321, 'add')
+    app.receiveGroupRequest('add', 321)
     await sleep(0)
     app.shouldHaveLastRequest('set_group_add_request', { approve: false, reason: 'bar' })
   })
 
   test('group invite', async () => {
-    app.receiveGroupRequest(321, 'invite')
+    app.receiveGroupRequest('invite', 321)
     await sleep(0)
     app.shouldHaveLastRequest('set_group_add_request', { approve: false, reason: 'baz' })
   })
@@ -79,13 +79,13 @@ describe('type: boolean', () => {
   })
 
   test('group add', async () => {
-    app.receiveGroupRequest(321, 'add')
+    app.receiveGroupRequest('add', 321)
     await sleep(0)
     app.shouldHaveLastRequest('set_group_add_request', { approve: false })
   })
 
   test('group invite', async () => {
-    app.receiveGroupRequest(321, 'invite')
+    app.receiveGroupRequest('invite', 321)
     await sleep(0)
     app.shouldHaveLastRequest('set_group_add_request', { approve: false })
   })
@@ -109,13 +109,13 @@ describe('type: function', () => {
   })
 
   test('group add', async () => {
-    app.receiveGroupRequest(321, 'add')
+    app.receiveGroupRequest('add', 321)
     await sleep(0)
     app.shouldHaveLastRequest('set_group_add_request', { approve: true })
   })
 
   test('group invite', async () => {
-    app.receiveGroupRequest(321, 'invite')
+    app.receiveGroupRequest('invite', 321)
     await sleep(0)
     app.shouldHaveLastRequest('set_group_add_request', { approve: true })
   })
