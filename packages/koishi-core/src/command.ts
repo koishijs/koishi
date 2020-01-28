@@ -114,7 +114,7 @@ export class Command {
     this.config = { ...defaultConfig, ...config }
     this._registerAlias(this.name)
     context.app._commands.push(this)
-    this.option('-h, --help', messages.SHOW_THIS_MESSAGE)
+    this.option('-h, --help', messages.SHOW_THIS_MESSAGE, { hidden: true })
   }
 
   get app () {
