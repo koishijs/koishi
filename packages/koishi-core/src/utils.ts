@@ -18,7 +18,7 @@ export function getTargetId (target: string | number) {
   return qq
 }
 
-export function getUsage (name: string, user: UserData, time = new Date()) {
+export function getUsage (name: string, user: Pick<UserData, 'usage'>, time = new Date()) {
   if (!user.usage[name]) {
     user.usage[name] = {}
   }
@@ -31,7 +31,7 @@ export function getUsage (name: string, user: UserData, time = new Date()) {
   return usage
 }
 
-export function updateUsage (name: string, user: UserData, maxUsage: number, minInterval?: number) {
+export function updateUsage (name: string, user: Pick<UserData, 'usage'>, maxUsage: number, minInterval?: number) {
   const date = new Date()
   const usage = getUsage(name, user, date)
 
