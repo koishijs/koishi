@@ -1,4 +1,4 @@
-import { isInteger } from 'koishi-utils'
+import { isInteger, getDateNumber } from 'koishi-utils'
 import { UserField, GroupField, UserData } from './database'
 import { NextFunction } from './context'
 import { Command } from './command'
@@ -19,16 +19,14 @@ export function getTargetId (target: string | number) {
 }
 
 export function getUsage (name: string, user: Pick<UserData, 'usage'>, time = new Date()) {
+  const _date = getDateNumber(time)
+  if (user.usage._date !== _date) {
+    user.usage = { _date } as any
+  }
   if (!user.usage[name]) {
-    user.usage[name] = {}
+    user.usage[name] = { count: 0 }
   }
-  const usage = user.usage[name]
-  const date = time.toLocaleDateString()
-  if (date !== usage.date) {
-    usage.count = 0
-    usage.date = date
-  }
-  return usage
+  return user.usage[name]
 }
 
 export function updateUsage (name: string, user: Pick<UserData, 'usage'>, maxUsage: number, minInterval?: number) {
