@@ -13,6 +13,7 @@ interface AuthorizeInfo {
 export default function apply (ctx: Context, config: AuthorizeOptions = {}) {
   const { app, database } = ctx
   const { authorizeUser = {}, authorizeGroup = {} } = config
+  const logger = ctx.logger('authorize')
 
   /**
    * array of `AuthorizeInfo`
@@ -20,10 +21,16 @@ export default function apply (ctx: Context, config: AuthorizeOptions = {}) {
   const authorizeInfoList: AuthorizeInfo[] = []
 
   /**
-   * a map of users' authority (buffered)
+   * a map of users' new authority
    * to make sure every user gets maximum possible authority
    */
-  const userAuthorityMap: Record<number, number> = {}
+  const newAuthorityMap = new Map<number, number>()
+
+  /**
+   * a map of users' old authority
+   * to prevent from duplicate data fetching
+   */
+  const oldAuthorityMap = new Map<number, number>()
 
   /**
    * inversion of `config.authorizeUser`
@@ -40,23 +47,28 @@ export default function apply (ctx: Context, config: AuthorizeOptions = {}) {
   }
 
   async function updateAuthorizeInfo (authority: number, ids: number[]) {
-    const users = await database.getUsers(ids, ['id', 'authority'])
+    const idsToFetch = ids.filter(id => !oldAuthorityMap.has(id))
+    const users = await database.getUsers(idsToFetch, ['id', 'authority'])
+    users.forEach((user) => oldAuthorityMap.set(user.id, user.authority))
+
     const info = authorizeInfoList[authority] || (authorizeInfoList[authority] = {
       insert: new Set(),
       update: new Set(),
     })
+
     for (const id of ids) {
-      const oldAuthority = userAuthorityMap[id]
-      if (oldAuthority) {
-        if (oldAuthority >= authority) continue
-        authorizeInfoList[oldAuthority].insert.delete(id)
-        authorizeInfoList[oldAuthority].update.delete(id)
+      const newAuthority = newAuthorityMap.get(id)
+      if (newAuthority) {
+        if (newAuthority >= authority) continue
+        authorizeInfoList[newAuthority].insert.delete(id)
+        authorizeInfoList[newAuthority].update.delete(id)
       }
-      userAuthorityMap[id] = authority
-      const user = users.find(u => u.id === id)
-      if (!user) {
+      newAuthorityMap.set(id, authority)
+
+      const oldAuthority = oldAuthorityMap.get(id)
+      if (!oldAuthority) {
         info.insert.add(id)
-      } else if (user.authority !== authority) {
+      } else if (oldAuthority < authority) {
         info.update.add(id)
       }
     }
@@ -64,7 +76,9 @@ export default function apply (ctx: Context, config: AuthorizeOptions = {}) {
 
   app.receiver.once('ready', async () => {
     await Promise.all([
-      ...Object.keys(inversedUserMap).map(key => updateAuthorizeInfo(+key, inversedUserMap[+key])),
+      ...Object.keys(inversedUserMap).map(async (key) => {
+        await updateAuthorizeInfo(+key, inversedUserMap[+key])
+      }),
       ...Object.entries(authorizeGroup).map(async ([key, value]) => {
         const groupId = +key
         const config = typeof value === 'number' ? { member: value } : value
@@ -98,6 +112,10 @@ export default function apply (ctx: Context, config: AuthorizeOptions = {}) {
         })
       }),
     ])
+
+    authorizeInfoList.forEach((info, authority) => {
+      logger.info(info)
+    })
 
     for (const key in authorizeInfoList) {
       const authority = +key
