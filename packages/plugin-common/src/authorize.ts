@@ -117,12 +117,12 @@ export default function apply (ctx: Context, config: AuthorizeOptions = {}) {
 
     await Promise.all(tasks.map(task => task.catch(logger.warn)))
 
-    let totalInsert = 0, totalUpdate = 0
+    let insertTotal = 0, updateTotal = 0
     for (const key in authorizeInfoList) {
       const authority = +key
       const { insert, update } = authorizeInfoList[key]
-      totalInsert += insert.size
-      totalUpdate += update.size
+      insertTotal += insert.size
+      updateTotal += update.size
       for (const id of insert) {
         await database.getUser(id, authority)
         logger.debug(`inserted ${id} with authority ${authority}`)
@@ -133,6 +133,13 @@ export default function apply (ctx: Context, config: AuthorizeOptions = {}) {
       }
     }
 
-    logger.info(`inserted ${totalInsert} user(s) and updated ${totalUpdate} user(s)`)
+    const output: string[] = []
+    if (insertTotal) output.push(`inserted ${insertTotal} user${insertTotal > 1 ? 's' : ''}`)
+    if (updateTotal) output.push(`updated ${updateTotal} user${updateTotal > 1 ? 's' : ''}`)
+    if (!output.length) {
+      logger.info('all users are up to date')
+    } else {
+      logger.info(output.join(' and '))
+    }
   })
 }

@@ -25,7 +25,7 @@ test('authorize user', async () => {
 
   app.receiver.on('connect', () => {
     app.database.memory.store.user[231] = createUser(231, 3)
-    app.database.memory.store.user[312] = createUser(312, 2)
+    app.database.memory.store.user[312] = createUser(312, 1)
   })
 
   await app.start()
@@ -47,11 +47,13 @@ test('authorize group 1', async () => {
 
   app.receiver.on('connect', () => {
     app.database.memory.store.user[231] = createUser(231, 3)
+    app.database.memory.store.user[312] = createUser(312, 1)
   })
 
   app.setResponse('get_group_member_list', [
     { userId: 123, role: 'member' },
     { userId: 231, role: 'member' },
+    { userId: 312, role: 'member' },
   ])
 
   await app.start()
@@ -60,6 +62,7 @@ test('authorize group 1', async () => {
   await expect(app.database.getGroup(456)).resolves.toHaveProperty('assignee', app.selfId)
   await expect(app.database.getUser(123)).resolves.toHaveProperty('authority', 2)
   await expect(app.database.getUser(231)).resolves.toHaveProperty('authority', 3)
+  await expect(app.database.getUser(312)).resolves.toHaveProperty('authority', 2)
 })
 
 test('authorize group 2', async () => {
@@ -190,11 +193,13 @@ test('mixed usage', async () => {
 
   app.receiver.on('connect', () => {
     app.database.memory.store.user[231] = createUser(231, 2)
+    app.database.memory.store.user[312] = createUser(312, 1)
   })
 
   app.setResponse('get_group_member_list', [
     { userId: 123, role: 'member' },
     { userId: 231, role: 'member' },
+    { userId: 312, role: 'member' },
   ])
 
   await app.start()
@@ -202,4 +207,5 @@ test('mixed usage', async () => {
 
   await expect(app.database.getUser(123)).resolves.toHaveProperty('authority', 3)
   await expect(app.database.getUser(231)).resolves.toHaveProperty('authority', 3)
+  await expect(app.database.getUser(312)).resolves.toHaveProperty('authority', 3)
 })
