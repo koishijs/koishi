@@ -35,7 +35,7 @@
     "@types/prompts": "^2.0.3"
   },
   "dependencies": {
-    "cac": "^6.5.5",
+    "cac": "^6.5.6",
     "js-yaml": "^3.13.1",
     "kleur": "^3.0.3",
     "koishi-core": "^1.7.0",
