@@ -1,6 +1,7 @@
 import { Context, Meta } from 'koishi-core'
 import { randomPick, CQCode, sleep } from 'koishi-utils'
-import { simplifyQuestion, TeachConfig, DialogueTest, Dialogue } from './utils'
+import { DialogueTest, Dialogue } from './database'
+import { simplifyQuestion, TeachConfig } from './utils'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -36,10 +37,10 @@ export default function (ctx: Context, config: TeachConfig) {
 
     const answers = dialogue.answer
       .replace(/\$\$/g, '@@__DOLLARS_PLACEHOLDER__@@')
-      .replace(/\$a/g, `[CQ:at,qq=${meta.userId}]`)
-      .replace(/\$A/g, '[CQ:at,qq=all]')
+      .replace(/\$A/g, CQCode.stringify('at', { qq: 'all' }))
+      .replace(/\$a/g, CQCode.stringify('at', { qq: meta.userId }))
       .replace(/\$m/g, CQCode.stringify('at', { qq: meta.selfId }))
-      .replace(/\$s/g, escapeAnswer(meta.sender.card || meta.sender.nickname)) // TODO: name support
+      .replace(/\$s/g, escapeAnswer(config.getUserName(meta)))
       .replace(/\$0/g, escapeAnswer(meta.message))
       .split('$n')
       .map(str => str.trim().replace(/@@__DOLLARS_PLACEHOLDER__@@/g, '$'))

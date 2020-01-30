@@ -7,23 +7,19 @@ function formatAnswer (source: string) {
 }
 
 export default async function (parsedOptions: ParsedTeachLine) {
-  const { ctx, meta, options, config } = parsedOptions
+  const { ctx, meta, options } = parsedOptions
   const question = options.all ? undefined : options.question
   const answer = options.all ? undefined : options.answer
-  let { envMode, groups, writer } = parsedOptions
+  let { reversed, partial, groups, writer } = parsedOptions
   const { keyword } = options
-
-  if (config.useEnvironment && !envMode && !options.allEnv) {
-    envMode = 1
-    groups = [meta.groupId]
-  }
 
   const dialogues = await ctx.database.getDialogues({
     writer,
     keyword,
     question,
     answer,
-    envMode,
+    reversed,
+    partial,
     groups,
     frozen: options.unFrozen ? false : options.frozen,
   })

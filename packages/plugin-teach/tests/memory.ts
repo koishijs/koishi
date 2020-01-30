@@ -1,11 +1,11 @@
 import { injectMethods } from 'koishi-core'
 import { DialogueFlag } from '../src'
+import { testGroups } from '../src/utils'
 import 'koishi-database-memory'
-import { contain } from 'koishi-utils'
-import { splitEnv } from '../src/utils'
 
 injectMethods('memory', 'dialogue', {
   _testDialogue (test, data) {
+    // match question and answer
     if (test.keyword) {
       if (test.question && !data.question.includes(test.question)) return
       if (test.answer && !data.answer.includes(test.answer)) return
@@ -16,17 +16,13 @@ injectMethods('memory', 'dialogue', {
       if (test.question && data.question !== test.question) return
       if (test.answer && data.answer !== test.answer) return
     }
-    if (test.envMode === 1) {
-      if (data.groups)
-      if (!contain(splitEnv(data.groups), test.groups)) return
-      // TODO:
-    }
-    if (test.frozen === true) {
-      if (!(data.flag & 1)) return
-    } else if (test.frozen === false) {
-      if (data.flag & 1) return
-    }
+
+    // match environment
+    if (!testGroups(data, test)) return
+
+    if (test.frozen !== undefined && test.frozen === !(data.flag & DialogueFlag.frozen)) return
     if (test.writer && data.writer !== test.writer) return
+
     return true
   },
 
@@ -37,7 +33,7 @@ injectMethods('memory', 'dialogue', {
   async getDialogues (test) {
     if (Array.isArray(test)) {
       if (!test.length) return []
-      return test.map(id => this.store.dialogue[id]).filter(Boolean)
+      return test.map(id => this.store.dialogue[id]).filter(d => d)
     }
 
     return Object.keys(this.store.dialogue)

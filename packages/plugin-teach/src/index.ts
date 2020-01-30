@@ -1,6 +1,6 @@
 import { isInteger } from 'koishi-utils'
 import { Context, ParsedCommandLine, getTargetId } from 'koishi-core'
-import { TeachConfig, simplifyQuestion, simplifyAnswer, ParsedTeachLine, DialogueEnv } from './utils'
+import { TeachConfig, simplifyQuestion, simplifyAnswer, ParsedTeachLine, splitGroups } from './utils'
 import info from './info'
 import receiver from './receiver'
 import search from './search'
@@ -101,9 +101,10 @@ async function parseOptions (ctx: Context, config: TeachConfig, argv: ParsedComm
       parsed.partial = false
       parsed.groups = []
     }
+
     if (options.groups) {
       if (/^\d+(,\d+)*$/.test(options.groups)) {
-        parsed.groups = DialogueEnv.split(options.groups)
+        parsed.groups = splitGroups(options.groups)
       } else {
         return meta.$send('参数 -g, --groups 错误，请检查指令语法。')
       }

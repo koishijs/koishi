@@ -1,10 +1,12 @@
 import { Context, Meta } from 'koishi-core'
 import { simplify, contain, intersection, union, difference } from 'koishi-utils'
+import { Dialogue, DialogueTest } from './database'
 
 export interface TeachConfig {
   useWriter?: boolean
   useFrozen?: boolean
   useEnvironment?: boolean
+  getUserName? (meta: Meta<'message'>): string
 }
 
 const prefixPunctuation = /^([()\]]|\[(?!cq:))*/
@@ -36,29 +38,6 @@ export function simplifyAnswer (source: string) {
   return (String(source || '')).trim()
 }
 
-export interface Dialogue {
-  id?: number
-  question: string
-  answer: string
-  writer: number
-  groups: number[]
-  flag: number
-  probability: number
-}
-
-export interface DialogueTest {
-  groups?: number[]
-  question?: string
-  answer?: string
-  writer?: number
-  regexp?: boolean
-  keyword?: boolean
-  strict?: boolean
-  frozen?: boolean
-  reversed?: boolean
-  partial?: boolean
-}
-
 export interface ParsedTeachLine {
   ctx: Context
   meta: Meta
@@ -80,33 +59,34 @@ export enum DialogueFlag {
   reversed = 16,
 }
 
-export namespace DialogueEnv {
-  export function split (source: string) {
-    return source ? source.split(',').map(i => parseInt(i)) : []
-  }
+export function splitGroups (source: string) {
+  return source ? source.split(',').map(i => parseInt(i)) : []
+}
 
-  export function join (source: number[], separator = ',') {
-    return source.sort((a, b) => a - b).join(separator)
-  }
+export function joinGroups (source: number[], separator = ',') {
+  return source.sort((a, b) => a - b).join(separator)
+}
 
-  export function test (data: Dialogue, test: DialogueTest) {
-    if (!test.groups) return true
-    const sameFlag = !(data.flag & DialogueFlag.reversed) !== test.reversed
-    if (test.partial) {
-      return sameFlag ? contain(data.groups, test.groups) : !intersection(data.groups, test.groups).length
-    } else {
-      return sameFlag && join(test.groups) === join(data.groups)
-    }
+export function testGroups (data: Dialogue, test: DialogueTest) {
+  if (!test.groups) return true
+  const sameFlag = !(data.flag & DialogueFlag.reversed) !== test.reversed
+  if (test.partial) {
+    return sameFlag
+      ? contain(data.groups, test.groups)
+      : !intersection(data.groups, test.groups).length
+  } else {
+    return sameFlag && joinGroups(test.groups) === joinGroups(data.groups)
   }
+}
 
-  export function modify (data: Dialogue, config: ParsedTeachLine) {
-    const sameFlag = !(data.flag & DialogueFlag.reversed) !== config.reversed
-    if (config.partial) {
-      data.groups = sameFlag ? union(data.groups, config.groups) : difference(data.groups, config.groups)
-    } else {
-      data.flag &= ~DialogueFlag.reversed
-      data.flag |= +config.reversed * DialogueFlag.reversed
-      data.groups = config.groups.slice()
-    }
+export function modifyGroups (data: Dialogue, config: ParsedTeachLine) {
+  if (config.partial) {
+    data.groups = !(data.flag & DialogueFlag.reversed) !== config.reversed
+      ? union(data.groups, config.groups)
+      : difference(data.groups, config.groups)
+  } else {
+    data.flag &= ~DialogueFlag.reversed
+    data.flag |= +config.reversed * DialogueFlag.reversed
+    data.groups = config.groups.slice()
   }
 }
