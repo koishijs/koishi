@@ -56,17 +56,18 @@ interface SuggestOptions {
   prefix: string
   suffix: string
   coefficient?: number
+  disable?: (name: string) => boolean
   command: Command | ((suggestion: string) => Command)
   execute: (suggestion: string, meta: Meta<'message'>, next: NextFunction) => any
 }
 
-function findSimilar (target: string, coefficient: number) {
-  return (name: string) => name.length > 2 && leven(name, target) <= name.length * coefficient
-}
-
 export function showSuggestions (options: SuggestOptions): Promise<void> {
-  const { target, items, meta, next, prefix, suffix, execute, coefficient = 0.4 } = options
-  const suggestions = items.filter(findSimilar(target, coefficient))
+  const { target, items, meta, next, prefix, suffix, execute, disable, coefficient = 0.4 } = options
+  const suggestions = items.filter((name) => {
+    return name.length > 2
+      && leven(name, target) <= name.length * coefficient
+      && !disable?.(name)
+  })
   if (!suggestions.length) return next()
 
   return next(async () => {

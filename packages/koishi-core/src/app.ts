@@ -275,7 +275,9 @@ export class App extends Context {
   private _preprocess = async (meta: Meta<'message'>, next: NextFunction) => {
     // strip prefix
     let capture: RegExpMatchArray
-    let atMe = false, nickname = '', prefix: string = null
+    let atMe = false
+    let nickname = ''
+    let prefix: string = null
     let message = simplify(meta.message.trim())
     let parsedArgv: ParsedCommandLine
 
@@ -356,12 +358,15 @@ export class App extends Context {
     }
 
     // execute command
-    if (parsedArgv) return parsedArgv.command.execute(parsedArgv, next)
+    if (parsedArgv && !parsedArgv.command.getConfig('disable', meta)) {
+      return parsedArgv.command.execute(parsedArgv, next)
+    }
 
     // show suggestions
     const target = message.split(/\s/, 1)[0].toLowerCase()
-    if (!target || !capture) return next()
+    if (!target || !capture || parsedArgv) return next()
 
+    const executableMap = new Map<Command, boolean>()
     return showSuggestions({
       target,
       meta,
@@ -371,18 +376,27 @@ export class App extends Context {
       items: Object.keys(this._commandMap),
       coefficient: this.options.similarityCoefficient,
       command: suggestion => this._commandMap[suggestion],
+      disable: (name) => {
+        const command = this._commandMap[name]
+        let disabled = executableMap.get(command)
+        if (disabled === undefined) {
+          disabled = !!command.getConfig('disable', meta)
+          executableMap.set(command, disabled)
+        }
+        return disabled
+      },
       execute: async (suggestion, meta, next) => {
         const newMessage = suggestion + message.slice(target.length)
-        const parsedArgv = this.parseCommandLine(newMessage, meta)
-        return parsedArgv.command.execute(parsedArgv, next)
+        const argv = this.parseCommandLine(newMessage, meta)
+        return argv.command.execute(argv, next)
       },
     })
   }
 
   parseCommandLine (message: string, meta: Meta<'message'>): ParsedCommandLine {
-    const name = message.split(/\s/, 1)[0].toLowerCase()
-    const command = this.getCommand(name, meta)
-    if (command) {
+    const name = message.split(/\s/, 1)[0]
+    const command = this._getCommandByRawName(name)
+    if (command?.context.match(meta)) {
       const result = command.parse(message.slice(name.length).trimStart())
       return { meta, command, ...result }
     }
@@ -391,7 +405,9 @@ export class App extends Context {
   executeCommandLine (message: string, meta: Meta<'message'>, next: NextFunction = noop) {
     if (!('$ctxType' in meta)) this.server.parseMeta(meta)
     const argv = this.parseCommandLine(message, meta)
-    if (argv) return argv.command.execute(argv, next)
+    if (argv && !argv.command.getConfig('disable', meta)) {
+      return argv.command.execute(argv, next)
+    }
     return next()
   }
 

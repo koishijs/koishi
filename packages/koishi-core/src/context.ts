@@ -234,7 +234,7 @@ export class Context {
     return parent
   }
 
-  private _getCommandByRawName (name: string) {
+  protected _getCommandByRawName (name: string) {
     const index = name.lastIndexOf('/')
     return this.app._commandMap[name.slice(index + 1).toLowerCase()]
   }
