@@ -1,6 +1,6 @@
 import { Session, MockedApp } from 'koishi-test-utils'
 import { noop } from 'koishi-utils'
-import help from '../src/help'
+import { help } from '../src'
 import 'koishi-database-memory'
 
 const MESSAGE_COMMAND_CALLED = 'command called'
@@ -42,7 +42,7 @@ describe('help command', () => {
     await session1.shouldMatchSnapshot('bar -h')
     await session1.shouldMatchSnapshot('foo -h')
     await session1.shouldMatchSnapshot('help help -e')
-    await session2.shouldHaveNoResponse('help.foo -h')
+    await session2.shouldHaveNoReply('help.foo -h')
     await session2.shouldMatchSnapshot('help help.foo')
   })
 

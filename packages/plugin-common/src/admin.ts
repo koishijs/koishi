@@ -1,5 +1,9 @@
-import { Context, User, userFlags, UserFlag, Meta, UserField, getTargetId, CommandConfig, GroupField, UserData, GroupData, GroupFlag, groupFlags, Group, userFields, groupFields } from 'koishi-core'
 import { isInteger, difference, Observed, paramCase } from 'koishi-utils'
+import {
+  Context, Meta, getTargetId,
+  User, UserData, userFlags, UserFlag, userFields, UserField,
+  Group, GroupData, groupFlags, GroupFlag, groupFields, GroupField,
+} from 'koishi-core'
 
 type ActionCallback <T extends {}, K extends keyof T> =
   (this: Context, meta: Meta, target: Observed<Pick<T, K>>, ...args: string[]) => Promise<any>
@@ -74,7 +78,7 @@ registerUserAction('clearUsage', async (meta, user, ...commands) => {
 
 registerUserAction('showUsage', async (meta, user, ...commands) => {
   const { usage } = user
-  if (!commands.length) commands = Object.keys(usage)
+  if (!commands.length) commands = Object.keys(usage).filter(k => !k.startsWith('_'))
   if (!commands.length) return meta.$send('用户今日没有调用过指令。')
   return meta.$send([
     '用户今日各指令的调用次数为：',
@@ -104,11 +108,8 @@ registerGroupAction('unsetFlag', async (meta, group, ...flags) => {
   return meta.$send('群信息已修改。')
 }, ['flag'])
 
-export default function apply (ctx: Context, options: CommandConfig) {
-  const userActions = Object.keys(userActionMap).map(paramCase).join(', ')
-  const groupActions = Object.keys(groupActionMap).map(paramCase).join(', ')
-
-  ctx.command('admin <action> [...args]', '管理用户', { authority: 4, ...options })
+export default function apply (ctx: Context) {
+  ctx.command('admin <action> [...args]', '管理用户', { authority: 4 })
     .option('-u, --user [user]', '指定目标用户')
     .option('-g, --group [group]', '指定目标群')
     .option('-G, --this-group', '指定目标群为本群')
@@ -116,8 +117,8 @@ export default function apply (ctx: Context, options: CommandConfig) {
       const isGroup = 'g' in options || 'G' in options
       if ('user' in options && isGroup) return meta.$send('不能同时目标为指定用户和群。')
 
-      const actionList = isGroup ? groupActions : userActions
       const actionMap = isGroup ? groupActionMap : userActionMap
+      const actionList = Object.keys(actionMap).map(paramCase).join(', ')
       if (!name) return meta.$send(`当前的可用指令有：${actionList}。`)
 
       const action = actionMap[paramCase(name)]

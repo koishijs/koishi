@@ -1,10 +1,10 @@
-import { App, startAll, AppOptions, onStart, Context, Plugin, appList, logTypes, LogEvents } from 'koishi-core'
+import { App, startAll, AppOptions, onStart, Context, Plugin, appList } from 'koishi-core'
 import { resolve, extname } from 'path'
 import { capitalize } from 'koishi-utils'
 import { performance } from 'perf_hooks'
-import { cyan } from 'kleur'
+import { cyan, yellow } from 'kleur'
 import { logger } from './utils'
-import { format } from 'util'
+import { format, types } from 'util'
 import { readFileSync } from 'fs'
 import { safeLoad } from 'js-yaml'
 
@@ -15,17 +15,20 @@ if (process.env.KOISHI_LOG_LEVEL !== undefined) {
   baseLogLevel = +process.env.KOISHI_LOG_LEVEL
 }
 
-process.on('uncaughtException', ({ message }) => {
+function handleException (error: any) {
+  const message = types.isNativeError(error) ? error.stack : String(error)
   logger.error(message, baseLogLevel)
-  process.exit(-1)
-})
+  process.exit(1)
+}
+
+process.on('uncaughtException', handleException)
 
 const cwd = process.cwd()
 
 function loadEcosystem (type: string, name: string) {
   const modules = [resolve(cwd, name)]
   const prefix = `koishi-${type}-`
-  if (name.includes(prefix)) {
+  if (name.includes(prefix) || name.startsWith('.')) {
     modules.unshift(name)
   } else {
     const index = name.lastIndexOf('/')
@@ -34,12 +37,16 @@ function loadEcosystem (type: string, name: string) {
   for (const name of modules) {
     try {
       return require(name)
-    } catch {}
+    } catch (error) {
+      if (error.code !== 'MODULE_NOT_FOUND') {
+        throw error
+      }
+    }
   }
   throw new Error(`cannot resolve ${type} ${name}`)
 }
 
-type PluginConfig = (string | [string | Plugin, any])[]
+export type PluginConfig = (string | Plugin | [string | Plugin, any?])[]
 
 export interface AppConfig extends AppOptions {
   plugins?: PluginConfig | Record<string, PluginConfig>
@@ -50,11 +57,13 @@ export interface AppConfig extends AppOptions {
 function loadPlugins (ctx: Context, plugins: PluginConfig) {
   for (const item of plugins) {
     let plugin: Plugin, options
-    if (typeof item === 'string') {
-      plugin = loadEcosystem('plugin', item)
-    } else {
+    if (Array.isArray(item)) {
       plugin = typeof item[0] === 'string' ? loadEcosystem('plugin', item[0]) : item[0]
       options = item[1]
+    } else if (typeof item === 'string') {
+      plugin = loadEcosystem('plugin', item)
+    } else {
+      plugin = item
     }
     ctx.plugin(plugin, options)
     if (plugin.name) logger.info(`apply plugin ${cyan(plugin.name)}`, baseLogLevel)
@@ -87,7 +96,7 @@ function tryCallback <T> (callback: () => T) {
   } catch {}
 }
 
-if (['.js', '.json'].includes(extension)) {
+if (['.js', '.json', '.ts'].includes(extension)) {
   config = tryCallback(() => require(configFile))
 } else if (['.yaml', '.yml'].includes(extension)) {
   config = tryCallback(() => safeLoad(readFileSync(configFile, 'utf8')))
@@ -97,7 +106,7 @@ if (['.js', '.json'].includes(extension)) {
     || tryCallback(() => safeLoad(readFileSync(configFile + '.yaml', 'utf8')))
 }
 
-if (!config) throw new Error('config file not found.')
+if (!config) throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
 
 if (Array.isArray(config)) {
   config.forEach(conf => prepareApp(conf))
@@ -127,7 +136,7 @@ onStart(() => {
     }
   }
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
-  logger.success(`bot started successfully in ${time} ms`, baseLogLevel)
+  logger.success(`bot started successfully in ${time} ms.`, baseLogLevel)
   process.send({ type: 'start' })
 })
 
@@ -139,11 +148,8 @@ appList.forEach((app) => {
   const { logLevel = 2, logFilter = {} } = app.options as AppConfig
 
   app.receiver.on('logger', (scope, message, type) => {
-    logger[type](message, Math.min(logFilter[scope] ?? logLevel, baseLogLevel))
+    logger[type](message, Math.min(logFilter[scope] ?? logLevel, baseLogLevel), scope)
   })
 })
 
-startAll().catch((error) => {
-  logger.error(error, baseLogLevel)
-  process.exit(-1)
-})
+startAll().catch(handleException)

@@ -1,9 +1,10 @@
 import { User, Group } from './database'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
+export type MessageType = 'private' | 'group' | 'discuss'
 
 export interface MetaTypeMap {
-  message: 'private' | 'group' | 'discuss'
+  message: MessageType
   notice: 'group_upload' | 'group_admin' | 'group_increase' | 'group_decrease' | 'group_ban' | 'friend_add'
   request: 'friend' | 'group'
   // eslint-disable-next-line camelcase
@@ -26,7 +27,6 @@ export enum contextTypes {
   discuss = 2,
 }
 
-export type MessageMeta = Meta<'message'>
 export type ContextType = keyof typeof contextTypes
 
 export interface ResponsePayload {
@@ -42,12 +42,27 @@ export interface ResponsePayload {
   reason?: string
 }
 
+export interface ParsedMessage {
+  atMe?: boolean
+  nickname?: string
+  prefix?: string
+  message?: string
+}
+
 /** CQHTTP Meta Information */
 export interface Meta <T extends PostType = PostType> {
+  // database bindings
   $user?: User
   $group?: Group
+
+  // context identifier
   $ctxId?: number
   $ctxType?: ContextType
+
+  // other properties
+  $parsed?: ParsedMessage
+
+  // quick operations
   $response?: (payload: ResponsePayload) => void
   $delete?: () => Promise<void>
   $kick?: () => Promise<void>
@@ -55,6 +70,8 @@ export interface Meta <T extends PostType = PostType> {
   $approve?: (remark?: string) => Promise<void>
   $reject?: (reason?: string) => Promise<void>
   $send?: (message: string, autoEscape?: boolean) => Promise<void>
+
+  // basic properties
   postType?: T
   messageType?: MetaTypeMap[T & 'message']
   noticeType?: MetaTypeMap[T & 'notice']
@@ -62,21 +79,30 @@ export interface Meta <T extends PostType = PostType> {
   metaEventType?: MetaTypeMap[T & 'meta_event']
   sendType?: MetaTypeMap[T & 'send']
   subType?: SubTypeMap[T]
-  messageId?: number
-  userId?: number
   selfId?: number
+  userId?: number
   groupId?: number
   discussId?: number
-  operatorId?: number
+  time?: number
+
+  // message event
+  messageId?: number
   message?: string
   rawMessage?: string
   font?: number
   sender?: SenderInfo
   anonymous?: AnonymousInfo
+
+  // notice event
+  operatorId?: number
+  duration?: number
   file?: FileInfo
+
+  // request event
   comment?: string
   flag?: string
-  time?: number
+
+  // metaEvent event
   status?: StatusInfo
   interval?: number
 }

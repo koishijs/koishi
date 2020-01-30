@@ -135,8 +135,9 @@ export default async function (parsedOptions: ParsedTeachLine) {
     ]
 
     if (config.useWriter && dialogue.writer) {
-      const user = await ctx.database.getUser(dialogue.writer, 0, ['id', 'name'])
-      output.push(`来源：${user.name}`)
+      // TODO: name support
+      const user = await ctx.database.getUser(dialogue.writer, 0, ['id'])
+      output.push(`来源：${user.id}`)
     }
 
     if (config.useEnvironment) {

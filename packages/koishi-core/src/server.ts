@@ -59,7 +59,7 @@ export abstract class Server {
       ctxId = meta.userId
     }
 
-    // polyfill CQHTTP 3.x events
+    // polyfill CQHTTP 3.x events and array form of message
     // https://cqhttp.cc/docs/4.12/#/UpgradeGuide
     /* eslint-disable dot-notation */
     if (meta.postType === 'message') {
@@ -124,7 +124,7 @@ export abstract class Server {
       }
       meta.$send = async (message, autoEscape = false) => {
         if (meta.$response) {
-          app.emitEvent(meta, 'before-send', app.sender._createSendMeta(ctxType, ctxId, message))
+          app.emitEvent(meta, 'before-send', app.sender._createSendMeta(meta.messageType, ctxType, ctxId, message))
           return meta.$response({ reply: message, autoEscape, atSender: false })
         }
         return app.sender[`send${capitalize(meta.messageType)}MsgAsync`](ctxId, message, autoEscape)

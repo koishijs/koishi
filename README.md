@@ -120,6 +120,8 @@ koishi run
 | [koishi-database-mysql](https://github.com/koishijs/koishi/tree/master/packages/database-mysql) | [![npm](https://img.shields.io/npm/v/koishi-database-mysql?style=flat-square)](https://www.npmjs.com/package/koishi-database-mysql) |
 | [koishi-database-sqlite](https://github.com/koishijs/koishi/tree/master/packages/database-sqlite) | [![npm](https://img.shields.io/npm/v/koishi-database-sqlite?style=flat-square)](https://www.npmjs.com/package/koishi-database-sqlite) |
 | [koishi-plugin-common](https://github.com/koishijs/koishi/tree/master/packages/plugin-common) | [![npm](https://img.shields.io/npm/v/koishi-plugin-common?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-common) |
+| [koishi-plugin-nlp](https://github.com/koishijs/koishi/tree/master/packages/plugin-nlp) | [![npm](https://img.shields.io/npm/v/koishi-plugin-nlp?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-nlp) |
+| [koishi-plugin-recorder](https://github.com/koishijs/koishi/tree/master/packages/plugin-recorder) | [![npm](https://img.shields.io/npm/v/koishi-plugin-recorder?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-recorder) |
 | [koishi-plugin-schedule](https://github.com/koishijs/koishi/tree/master/packages/plugin-schedule) | [![npm](https://img.shields.io/npm/v/koishi-plugin-schedule?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-schedule) |
 | [koishi-plugin-teach](https://github.com/koishijs/koishi/tree/master/packages/plugin-teach) | [![npm](https://img.shields.io/npm/v/koishi-plugin-teach?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-teach) |
 

@@ -1,79 +1,77 @@
-import { Context, CommandConfig } from 'koishi-core'
+import { Context } from 'koishi-core'
 import admin from './admin'
-import authorize, { AuthorizeConfig } from './authorize'
+import authorize, { AuthorizeOptions } from './authorize'
 import broadcast, { BroadcastOptions } from './broadcast'
-import callme, { CallmeOptions } from './callme'
 import contextify from './contextify'
 import echo from './echo'
+import exec from './exec'
 import exit from './exit'
 import help from './help'
-import info from './info'
-import likeme, { LikemeOptions } from './likeme'
-import rank from './rank'
+import info, { InfoOptions } from './info'
 import repeater, { RepeaterOptions } from './repeater'
-import requestHandler, { HandlerConfig } from './request-handler'
+import requestHandler, { HandlerOptions } from './request-handler'
 import respondent, { Respondent } from './respondent'
 import welcome, { WelcomeMessage } from './welcome'
 
 export * from './admin'
 export * from './info'
-export * from './rank'
 
 export {
   admin,
   authorize,
   broadcast,
-  callme,
   contextify,
   echo,
+  exec,
   exit,
   help,
   info,
-  likeme,
-  rank,
   repeater,
   requestHandler,
   respondent,
   welcome,
+  AuthorizeOptions,
+  BroadcastOptions,
+  HandlerOptions,
+  InfoOptions,
+  RepeaterOptions,
+  Respondent,
+  WelcomeMessage,
 }
 
-interface CommonPluginConfig extends HandlerConfig, AuthorizeConfig {
-  admin?: false | CommandConfig
-  broadcast?: false | BroadcastOptions
-  callme?: false | CallmeOptions
-  contextify?: false | CommandConfig
-  echo?: false | CommandConfig
-  exit?: false | CommandConfig
-  help?: false | CommandConfig
-  info?: false | CommandConfig
-  likeme?: false | LikemeOptions
-  rank?: false | CommandConfig
-  repeater?: false | RepeaterOptions
+export interface Config extends AuthorizeOptions, BroadcastOptions, HandlerOptions, InfoOptions {
+  admin?: boolean
+  broadcast?: boolean
+  contextify?: boolean
+  echo?: boolean
+  exec?: boolean
+  exit?: boolean
+  help?: boolean
+  info?: boolean
+  repeater?: RepeaterOptions
   respondent?: Respondent[]
-  welcome?: false | WelcomeMessage
+  welcomeMessage?: WelcomeMessage
 }
 
 export const name = 'common'
 
-export function apply (ctx: Context, options: CommonPluginConfig = {}) {
-  ctx
-    .plugin(contextify, options.contextify)
-    .plugin(echo, options.echo)
-    .plugin(exit, options.exit)
-    .plugin(help, options.help)
-    .plugin(likeme, options.likeme)
-    .plugin(repeater, options.repeater)
-    .plugin(requestHandler, options)
-    .plugin(respondent, options.respondent)
-    .plugin(welcome, options.welcome)
+export function apply (ctx: Context, options: Config = {}) {
+  ctx.plugin(requestHandler, options)
+  ctx.plugin(repeater, options.repeater)
+  ctx.plugin(respondent, options.respondent)
+  ctx.plugin(welcome, options.welcomeMessage)
+
+  if (options.echo !== false) ctx.plugin(echo)
+  if (options.exec !== false) ctx.plugin(exec)
+  if (options.exit !== false) ctx.plugin(exit)
+  if (options.help !== false) ctx.plugin(help)
 
   if (ctx.database) {
-    ctx
-      .plugin(admin, options.admin)
-      .plugin(authorize, options)
-      .plugin(broadcast, options.broadcast)
-      .plugin(callme, options.callme)
-      .plugin(info, options.info)
-      .plugin(rank, options.rank)
+    ctx.plugin(authorize, options)
+
+    if (options.admin !== false) ctx.plugin(admin)
+    if (options.contextify !== false) ctx.plugin(contextify)
+    if (options.broadcast !== false) ctx.plugin(broadcast, options)
+    if (options.info !== false) ctx.plugin(info, options)
   }
 }

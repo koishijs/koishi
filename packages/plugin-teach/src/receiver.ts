@@ -1,4 +1,4 @@
-import { Context, getSenderName, Meta } from 'koishi-core'
+import { Context, Meta } from 'koishi-core'
 import { randomPick, CQCode, sleep } from 'koishi-utils'
 import { simplifyQuestion, TeachConfig, DialogueTest, Dialogue } from './utils'
 
@@ -39,7 +39,7 @@ export default function (ctx: Context, config: TeachConfig) {
       .replace(/\$a/g, `[CQ:at,qq=${meta.userId}]`)
       .replace(/\$A/g, '[CQ:at,qq=all]')
       .replace(/\$m/g, CQCode.stringify('at', { qq: meta.selfId }))
-      .replace(/\$s/g, escapeAnswer(getSenderName(meta)))
+      .replace(/\$s/g, escapeAnswer(meta.sender.card || meta.sender.nickname)) // TODO: name support
       .replace(/\$0/g, escapeAnswer(meta.message))
       .split('$n')
       .map(str => str.trim().replace(/@@__DOLLARS_PLACEHOLDER__@@/g, '$'))

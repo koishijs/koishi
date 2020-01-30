@@ -1,7 +1,6 @@
 import { MockedApp, createArray } from 'koishi-test-utils'
-import { errors, Middleware, NextFunction } from 'koishi-core'
+import { Middleware, NextFunction } from 'koishi-core'
 import { sleep, noop } from 'koishi-utils'
-import { format } from 'util'
 
 let callSequence: jest.Mock[]
 const app = new MockedApp()
@@ -25,7 +24,7 @@ describe('Middleware API', () => {
   test('max middlewares', async () => {
     const warnCallback = jest.fn()
     app.receiver.on('logger/warn', warnCallback)
-    createArray(64 + extraCalls, () => app.middleware(noop))
+    createArray(64 + extraCalls, () => app.addMiddleware(noop))
     expect(app._middlewares.length).toBe(64)
     expect(warnCallback).toBeCalledTimes(extraCalls)
   })
@@ -39,7 +38,7 @@ describe('Middleware API', () => {
   })
 
   test('remove middlewares', () => {
-    app.middleware(noop)
+    app.addMiddleware(noop)
     expect(app._middlewares.length).toBe(1)
     expect(app.removeMiddleware(noop)).toBeTruthy()
     expect(app._middlewares.length).toBe(0)
@@ -52,8 +51,8 @@ describe('Middleware Runtime', () => {
   test('run asynchronously', async () => {
     const mid1 = wrap<Middleware>((_, next) => sleep(0).then(() => next()))
     const mid2 = wrap<Middleware>((_, next) => next())
-    app.middleware(mid1)
-    app.middleware(mid2)
+    app.addMiddleware(mid1)
+    app.addMiddleware(mid2)
     await app.receiveMessage('user', 'foo', 123)
     expect(callSequence).toEqual([mid1, mid2])
   })
@@ -61,18 +60,18 @@ describe('Middleware Runtime', () => {
   test('stop when no next is called', async () => {
     const mid1 = wrap<Middleware>(noop)
     const mid2 = wrap<Middleware>((_, next) => next())
-    app.middleware(mid1)
-    app.middleware(mid2)
+    app.addMiddleware(mid1)
+    app.addMiddleware(mid2)
     expect(callSequence).toEqual([])
     await app.receiveMessage('user', 'foo', 123)
     expect(callSequence).toEqual([mid1])
   })
 
-  test('prepend middleware', async () => {
+  test('prepend addMiddleware', async () => {
     const mid1 = wrap<Middleware>((_, next) => next())
     const mid2 = wrap<Middleware>((_, next) => next())
     const mid3 = wrap<Middleware>((_, next) => next())
-    app.middleware(mid1)
+    app.addMiddleware(mid1)
     app.prependMiddleware(mid2)
     app.prependMiddleware(mid3)
     await app.receiveMessage('user', 'foo', 123)
@@ -85,10 +84,21 @@ describe('Middleware Runtime', () => {
     const mid3 = wrap<NextFunction>((next) => next(mid5))
     const mid4 = wrap<NextFunction>((next) => next())
     const mid5 = wrap<NextFunction>((next) => next())
-    app.middleware(mid1)
-    app.middleware(mid2)
+    app.addMiddleware(mid1)
+    app.addMiddleware(mid2)
     await app.receiveMessage('user', 'foo', 123)
     expect(callSequence).toEqual([mid1, mid2, mid3, mid4, mid5])
+  })
+
+  test('once middleware', async () => {
+    const mid1 = wrap<Middleware>((_, next) => next())
+    const mid2 = wrap<Middleware>((_, next) => next())
+    app.addMiddleware(mid1)
+    app.onceMiddleware(mid2)
+    await app.receiveMessage('user', 'foo', 123)
+    expect(callSequence).toEqual([mid2, mid1])
+    await app.receiveMessage('user', 'foo', 123)
+    expect(callSequence).toEqual([mid2, mid1, mid1])
   })
 
   test('middleware error', async () => {
@@ -97,7 +107,7 @@ describe('Middleware Runtime', () => {
     app.receiver.on('error', error => errorCallback(error.message))
     app.receiver.on('error/middleware', error => middlewareErrorCallback(error.message))
     const errorMessage = 'error message'
-    app.middleware(() => { throw new Error(errorMessage) })
+    app.addMiddleware(() => { throw new Error(errorMessage) })
     await app.receiveMessage('user', 'foo', 123)
     expect(errorCallback).toBeCalledTimes(1)
     expect(errorCallback).toBeCalledWith(errorMessage)
@@ -108,8 +118,8 @@ describe('Middleware Runtime', () => {
   test('isolated next function', async () => {
     const warnCallback = jest.fn()
     app.receiver.on('logger/warn', warnCallback)
-    app.middleware((_, next) => (next(), undefined))
-    app.middleware((_, next) => sleep(0).then(() => next()))
+    app.addMiddleware((_, next) => (next(), undefined))
+    app.addMiddleware((_, next) => sleep(0).then(() => next()))
     await app.receiveMessage('user', 'foo', 123)
     await sleep(0)
     expect(warnCallback).toBeCalledTimes(1)

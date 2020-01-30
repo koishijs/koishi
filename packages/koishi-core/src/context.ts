@@ -1,6 +1,6 @@
 import { contain, union, intersection, difference } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine } from './command'
-import { MessageMeta, Meta, contextTypes } from './meta'
+import { Meta, contextTypes } from './meta'
 import { EventEmitter } from 'events'
 import { Sender } from './sender'
 import { App } from './app'
@@ -9,7 +9,7 @@ import { messages, errors } from './messages'
 import { format } from 'util'
 
 export type NextFunction = (next?: NextFunction) => any
-export type Middleware = (meta: MessageMeta, next: NextFunction) => any
+export type Middleware = (meta: Meta<'message'>, next: NextFunction) => any
 
 type PluginFunction <T extends Context, U> = (ctx: T, options: U) => void
 type PluginObject <T extends Context, U> = { name?: string, apply: PluginFunction<T, U> }
@@ -131,11 +131,11 @@ export class Context {
   plugin <U> (plugin: PluginObject<this, U>, options?: U): this
   plugin <U> (plugin: Plugin<this, U>, options: any) {
     if (options === false) return
-    const app = Object.create(this)
+    const ctx = Object.create(this)
     if (typeof plugin === 'function') {
-      plugin(app, options)
+      plugin(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
-      plugin.apply(app, options)
+      plugin.apply(ctx, options)
     } else {
       throw new Error(errors.INVALID_PLUGIN)
     }
@@ -150,6 +150,10 @@ export class Context {
       this.app._middlewares.push([this, middleware])
     }
     return this
+  }
+
+  addMiddleware (middleware: Middleware) {
+    return this.middleware(middleware)
   }
 
   prependMiddleware (middleware: Middleware) {
@@ -168,6 +172,16 @@ export class Context {
       this.app._middlewares.splice(index, 1)
       return true
     }
+  }
+
+  onceMiddleware (middleware: Middleware, meta?: Meta) {
+    const identifier = meta ? meta.$ctxId + meta.$ctxType + meta.userId : undefined
+    const listener: Middleware = async (meta, next) => {
+      if (identifier && meta.$ctxId + meta.$ctxType + meta.userId !== identifier) return next()
+      this.removeMiddleware(listener)
+      return middleware(meta, next)
+    }
+    return this.prependMiddleware(listener)
   }
 
   command (rawName: string, config?: CommandConfig): Command
@@ -220,18 +234,19 @@ export class Context {
     return parent
   }
 
-  private _getCommandByRawName (name: string) {
-    name = name.split(' ', 1)[0]
+  protected _getCommandByRawName (name: string) {
     const index = name.lastIndexOf('/')
     return this.app._commandMap[name.slice(index + 1).toLowerCase()]
   }
 
-  getCommand (name: string, meta: MessageMeta) {
+  getCommand (name: string, meta: Meta<'message'>) {
     const command = this._getCommandByRawName(name)
-    if (command?.context.match(meta) && !command.getConfig('disable', meta)) return command
+    if (command?.context.match(meta) && !command.getConfig('disable', meta)) {
+      return command
+    }
   }
 
-  runCommand (name: string, meta: MessageMeta, args: string[] = [], options: Record<string, any> = {}, rest = '') {
+  runCommand (name: string, meta: Meta<'message'>, args: string[] = [], options: Record<string, any> = {}, rest = '') {
     const command = this._getCommandByRawName(name)
     if (!command || !command.context.match(meta) || command.getConfig('disable', meta)) {
       return meta.$send(messages.COMMAND_NOT_FOUND)

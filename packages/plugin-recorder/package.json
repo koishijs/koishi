@@ -1,0 +1,40 @@
+{
+  "name": "koishi-plugin-recorder",
+  "description": "Save Chat Records for Koishi",
+  "version": "1.0.0-alpha.3",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi/packages/plugin-recorder#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "record",
+    "recorder"
+  ],
+  "devDependencies": {
+    "del": "^5.1.0",
+    "koishi-test-utils": "^3.0.0"
+  },
+  "dependencies": {
+    "koishi-core": "^1.7.0",
+    "koishi-utils": "^1.0.2"
+  }
+}

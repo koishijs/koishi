@@ -2,23 +2,10 @@ import { App, Meta } from 'koishi-core'
 
 type RequestHandler = string | boolean | ((meta: Meta<'request'>, app: App) => string | boolean | void | Promise<string | boolean | void>)
 
-export interface HandlerConfig {
+export interface HandlerOptions {
   handleFriend?: RequestHandler
   handleGroupAdd?: RequestHandler
   handleGroupInvite?: RequestHandler
-}
-
-const defaultHandlers: HandlerConfig = {
-  async handleFriend (meta, app) {
-    if (!app.database) return
-    const user = await app.database.getUser(meta.userId, ['authority'])
-    if (user.authority >= 1) return true
-  },
-  async handleGroupInvite (meta, app) {
-    if (!app.database) return
-    const user = await app.database.getUser(meta.userId, ['authority'])
-    if (user.authority >= 4) return true
-  },
 }
 
 async function getHandleResult (handler: RequestHandler, meta: Meta<'request'>, ctx: App) {
@@ -41,8 +28,8 @@ function setGroupResult (meta: Meta, result: string | boolean | void) {
   }
 }
 
-export default function apply (ctx: App, options: HandlerConfig = {}) {
-  const { handleFriend, handleGroupAdd, handleGroupInvite } = { ...defaultHandlers, ...options }
+export default function apply (ctx: App, options: HandlerOptions = {}) {
+  const { handleFriend, handleGroupAdd, handleGroupInvite } = options
 
   ctx.receiver.on('request/friend', async (meta) => {
     const result = await getHandleResult(handleFriend, meta, ctx)

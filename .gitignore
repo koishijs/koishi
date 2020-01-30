@@ -5,6 +5,7 @@ temp
 /bots
 /coverage
 /plugins
+/tsconfig.extend.json
 
 todo.md
 yarn.lock
@@ -19,6 +20,7 @@ tsconfig.tsbuildinfo
 .DS_Store
 .idea
 .vscode
+.yarn
 *.suo
 *.ntvs*
 *.njsproj

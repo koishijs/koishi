@@ -1,5 +1,5 @@
 import { MockedApp } from 'koishi-test-utils'
-import { messages, MessageMeta } from 'koishi-core'
+import { messages, Meta } from 'koishi-core'
 import { format } from 'util'
 
 const app = new MockedApp()
@@ -38,10 +38,10 @@ describe('command prefix', () => {
 
     await session1.shouldHaveReply('foo bar', 'foobar')
     await session2.shouldHaveReply('foo bar', 'foobar')
-    await session1.shouldHaveNoResponse('!foo bar')
-    await session2.shouldHaveNoResponse('!foo bar')
-    await session1.shouldHaveNoResponse('.foo bar')
-    await session2.shouldHaveNoResponse('.foo bar')
+    await session1.shouldHaveNoReply('!foo bar')
+    await session2.shouldHaveNoReply('!foo bar')
+    await session1.shouldHaveNoReply('.foo bar')
+    await session2.shouldHaveNoReply('.foo bar')
   })
 
   test('single prefix', async () => {
@@ -49,11 +49,11 @@ describe('command prefix', () => {
     app.prepare()
 
     await session1.shouldHaveReply('foo bar', 'foobar')
-    await session2.shouldHaveNoResponse('foo bar')
+    await session2.shouldHaveNoReply('foo bar')
     await session1.shouldHaveReply('!foo bar', 'foobar')
     await session2.shouldHaveReply('!foo bar', 'foobar')
-    await session1.shouldHaveNoResponse('.foo bar')
-    await session2.shouldHaveNoResponse('.foo bar')
+    await session1.shouldHaveNoReply('.foo bar')
+    await session2.shouldHaveNoReply('.foo bar')
   })
 
   test('multiple prefixes', async () => {
@@ -61,7 +61,7 @@ describe('command prefix', () => {
     app.prepare()
 
     await session1.shouldHaveReply('foo bar', 'foobar')
-    await session2.shouldHaveNoResponse('foo bar')
+    await session2.shouldHaveNoReply('foo bar')
     await session1.shouldHaveReply('!foo bar', 'foobar')
     await session2.shouldHaveReply('!foo bar', 'foobar')
     await session1.shouldHaveReply('.foo bar', 'foobar')
@@ -74,8 +74,8 @@ describe('command prefix', () => {
 
     await session1.shouldHaveReply('foo bar', 'foobar')
     await session2.shouldHaveReply('foo bar', 'foobar')
-    await session1.shouldHaveNoResponse('!foo bar')
-    await session2.shouldHaveNoResponse('!foo bar')
+    await session1.shouldHaveNoReply('!foo bar')
+    await session2.shouldHaveNoReply('!foo bar')
     await session1.shouldHaveReply('.foo bar', 'foobar')
     await session2.shouldHaveReply('.foo bar', 'foobar')
   })
@@ -96,7 +96,7 @@ describe('nickname prefix', () => {
 
   test('no nickname', async () => {
     await session1.shouldHaveReply('foo bar', 'foobar')
-    await session2.shouldHaveNoResponse('foo bar')
+    await session2.shouldHaveNoReply('foo bar')
     await session1.shouldHaveReply('-foo bar', 'foobar')
     await session2.shouldHaveReply('-foo bar', 'foobar')
     await session2.shouldHaveReply(`[CQ:at,qq=${app.selfId}] foo bar`, 'foobar')
@@ -112,8 +112,8 @@ describe('nickname prefix', () => {
     await session2.shouldHaveReply('koishi\n foo bar', 'foobar')
     await session1.shouldHaveReply('@koishi foo bar', 'foobar')
     await session2.shouldHaveReply('@koishi foo bar', 'foobar')
-    await session1.shouldHaveNoResponse('komeiji, foo bar')
-    await session2.shouldHaveNoResponse('komeiji, foo bar')
+    await session1.shouldHaveNoReply('komeiji, foo bar')
+    await session2.shouldHaveNoReply('komeiji, foo bar')
   })
 
   test('multiple nicknames', async () => {
@@ -121,7 +121,7 @@ describe('nickname prefix', () => {
     app.prepare()
 
     await session1.shouldHaveReply('foo bar', 'foobar')
-    await session2.shouldHaveNoResponse('foo bar')
+    await session2.shouldHaveNoReply('foo bar')
     await session1.shouldHaveReply('-foo bar', 'foobar')
     await session2.shouldHaveReply('-foo bar', 'foobar')
     await session1.shouldHaveReply('koishi, foo bar', 'foobar')
@@ -132,7 +132,7 @@ describe('nickname prefix', () => {
 })
 
 describe('Command Execution', () => {
-  const meta: MessageMeta = {
+  const meta: Meta<'message'> = {
     userId: 789,
     selfId: app.selfId,
     postType: 'message',
@@ -218,25 +218,25 @@ describe('shortcuts', () => {
   test('single shortcut', async () => {
     await session2.shouldHaveReply(' bar1 ', 'foobar')
     await session2.shouldHaveReply(' bar2 ', 'fooobar')
-    await session2.shouldHaveNoResponse('bar1 bar')
-    await session2.shouldHaveNoResponse('bar2 -t bar')
+    await session2.shouldHaveNoReply('bar1 bar')
+    await session2.shouldHaveNoReply('bar2 -t bar')
   })
 
   test('no command prefix', async () => {
-    await session2.shouldHaveNoResponse('#bar1')
-    await session2.shouldHaveNoResponse('#bar2')
-    await session2.shouldHaveNoResponse('#bar3')
-    await session2.shouldHaveNoResponse('#baz')
+    await session2.shouldHaveNoReply('#bar1')
+    await session2.shouldHaveNoReply('#bar2')
+    await session2.shouldHaveNoReply('#bar3')
+    await session2.shouldHaveNoReply('#baz')
   })
 
   test('nickname prefix & fuzzy', async () => {
-    await session2.shouldHaveNoResponse('bar3 -t baz')
+    await session2.shouldHaveNoReply('bar3 -t baz')
     await session2.shouldHaveReply(`[CQ:at,qq=${app.selfId}] bar3 -t baz`, 'fooobaz')
   })
 
   test('one argument & fuzzy', async () => {
     await session2.shouldHaveReply('bar4 bar baz', 'foobar baz')
-    await session2.shouldHaveNoResponse('bar4bar baz')
+    await session2.shouldHaveNoReply('bar4bar baz')
     await session2.shouldHaveReply(`[CQ:at,qq=${app.selfId}] bar4bar baz`, 'foobar baz')
   })
 })

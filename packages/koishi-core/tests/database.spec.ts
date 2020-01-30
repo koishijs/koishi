@@ -178,3 +178,11 @@ describe('extend fields', () => {
     })
   })
 })
+
+test('Open & Close', async () => {
+  const app = new App({
+    database: { $tables: {} },
+  })
+  await expect(app.start()).resolves.toBeUndefined()
+  await expect(app.stop()).resolves.toBeUndefined()
+})

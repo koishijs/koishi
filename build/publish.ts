@@ -4,7 +4,7 @@ import ora from 'ora'
 import latest from 'latest-version'
 import Octokit from '@octokit/rest'
 
-const { CI, GITHUB_EVENT_NAME, GITHUB_REF } = process.env
+const { CI, GITHUB_EVENT_NAME, GITHUB_REF, GITHUB_TOKEN } = process.env
 
 if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) {
   console.log('publish skipped.')
@@ -17,7 +17,11 @@ const headerMap = {
 }
 
 ;(async () => {
-  const folders = await getWorkspaces()
+  let folders = await getWorkspaces()
+  if (process.argv[2]) {
+    folders = folders.filter(path => path.startsWith(process.argv[2]))
+  }
+
   const spinner = ora()
   const bumpMap: Record<string, string> = {}
 
@@ -45,6 +49,11 @@ const headerMap = {
     }
   }
 
+  if (!GITHUB_TOKEN) return
+  const github = new Octokit({
+    auth: GITHUB_TOKEN,
+  })
+
   const { version } = require('../packages/koishi-cli/package') as PackageJson
   const tags = spawnSync('git tag -l').split(/\r?\n/)
   if (tags.includes(version)) {
@@ -68,10 +77,6 @@ const headerMap = {
     if (!updates[type]) continue
     body += `## ${headerMap[type]}\n\n${updates[type]}\n`
   }
-
-  const github = new Octokit({
-    auth: process.env.GITHUB_TOKEN,
-  })
 
   console.log(`Start to release a new version with tag ${version} ...`)
   await github.repos.createRelease({

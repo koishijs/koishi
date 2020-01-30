@@ -5,7 +5,7 @@ import { Command, ShortcutConfig, ParsedCommandLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope, Events, EventMap } from './context'
 import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField } from './database'
 import { showSuggestions } from './utils'
-import { Meta, MessageMeta } from './meta'
+import { Meta } from './meta'
 import { simplify, noop } from 'koishi-utils'
 import { errors, messages } from './messages'
 import { ParsedLine } from './parser'
@@ -41,16 +41,10 @@ export function onStop (hook: (...app: App[]) => void) {
 
 export async function startAll () {
   await Promise.all(appList.map(async app => app.start()))
-  for (const hook of onStartHooks) {
-    hook(...appList)
-  }
 }
 
 export async function stopAll () {
   await Promise.all(appList.map(async app => app.stop()))
-  for (const hook of onStopHooks) {
-    hook(...appList)
-  }
 }
 
 let getSelfIdsPromise: Promise<any>
@@ -82,6 +76,8 @@ const defaultOptions: AppOptions = {
   maxMiddlewares: 64,
 }
 
+export enum Status { closed, opening, open, closing }
+
 export class App extends Context {
   app = this
   options: AppOptions
@@ -89,9 +85,7 @@ export class App extends Context {
   atMeRE: RegExp
   prefixRE: RegExp
   nicknameRE: RegExp
-  users: MajorContext
-  groups: MajorContext
-  discusses: MajorContext
+  status = Status.closed
 
   _commands: Command[] = []
   _commandMap: Record<string, Command> = {}
@@ -99,6 +93,9 @@ export class App extends Context {
   _shortcutMap: Record<string, Command> = {}
   _middlewares: [Context, Middleware][] = []
 
+  private _users: MajorContext
+  private _groups: MajorContext
+  private _discusses: MajorContext
   private _isReady = false
   private _middlewareCounter = 0
   private _middlewareSet = new Set<number>()
@@ -129,14 +126,27 @@ export class App extends Context {
     this.receiver.on('before-user', Command.attachUserFields)
     this.receiver.on('before-group', Command.attachGroupFields)
     this.middleware(this._preprocess)
+  }
 
-    // create built-in contexts
-    this.users = this.createContext([[null, []], [[], null], [[], null]]) as MajorContext
-    this.groups = this.createContext([[[], null], [null, []], [[], null]]) as MajorContext
-    this.discusses = this.createContext([[[], null], [[], null], [null, []]]) as MajorContext
-    this.users.except = (...ids) => this.createContext([[null, ids], [[], null], [[], null]])
-    this.groups.except = (...ids) => this.createContext([[[], null], [null, ids], [[], null]])
-    this.discusses.except = (...ids) => this.createContext([[[], null], [[], null], [null, ids]])
+  get users () {
+    if (this._users) return this._users
+    const users = this.createContext([[null, []], [[], null], [[], null]]) as MajorContext
+    users.except = (...ids) => this.createContext([[null, ids], [[], null], [[], null]])
+    return this._users = users
+  }
+
+  get groups () {
+    if (this._groups) return this._groups
+    const groups = this.createContext([[[], null], [null, []], [[], null]]) as MajorContext
+    groups.except = (...ids) => this.createContext([[[], null], [null, ids], [[], null]])
+    return this._groups = groups
+  }
+
+  get discusses () {
+    if (this._discusses) return this._discusses
+    const discusses = this.createContext([[[], null], [[], null], [null, []]]) as MajorContext
+    discusses.except = (...ids) => this.createContext([[[], null], [[], null], [null, ids]])
+    return this._discusses = discusses
   }
 
   get selfId () {
@@ -208,6 +218,7 @@ export class App extends Context {
   }
 
   async start () {
+    this.status = Status.opening
     this.receiver.emit('before-connect')
     const tasks: Promise<any>[] = []
     if (this.database) {
@@ -219,15 +230,20 @@ export class App extends Context {
       tasks.push(this.server.listen())
     }
     await Promise.all(tasks)
+    this.status = Status.open
     this.logger('app').debug('started')
     this.receiver.emit('connect')
     if (this.selfId && !this._isReady) {
       this.receiver.emit('ready')
       this._isReady = true
     }
+    if (appList.every(app => app.status === Status.open)) {
+      onStartHooks.forEach(hook => hook(...appList))
+    }
   }
 
   async stop () {
+    this.status = Status.closing
     this.receiver.emit('before-disconnect')
     const tasks: Promise<any>[] = []
     if (this.database) {
@@ -239,8 +255,12 @@ export class App extends Context {
     if (this.server) {
       this.server.close()
     }
+    this.status = Status.closed
     this.logger('app').debug('stopped')
     this.receiver.emit('disconnect')
+    if (appList.every(app => app.status === Status.closed)) {
+      onStopHooks.forEach(hook => hook(...appList))
+    }
   }
 
   emitEvent <K extends Events> (meta: Meta, event: K, ...payload: Parameters<EventMap[K]>) {
@@ -252,21 +272,23 @@ export class App extends Context {
     }
   }
 
-  private _preprocess = async (meta: MessageMeta, next: NextFunction) => {
+  private _preprocess = async (meta: Meta<'message'>, next: NextFunction) => {
     // strip prefix
     let capture: RegExpMatchArray
-    let atMe = false, nickname = false, prefix: string = null
+    let atMe = false
+    let nickname = ''
+    let prefix: string = null
     let message = simplify(meta.message.trim())
     let parsedArgv: ParsedCommandLine
 
     if (meta.messageType !== 'private' && (capture = message.match(this.atMeRE))) {
       atMe = true
-      nickname = true
+      nickname = capture[0]
       message = message.slice(capture[0].length)
     }
 
     if ((capture = message.match(this.nicknameRE))?.[0].length) {
-      nickname = true
+      nickname = capture[0]
       message = message.slice(capture[0].length)
     }
 
@@ -275,6 +297,9 @@ export class App extends Context {
       prefix = capture[0]
       message = message.slice(capture[0].length)
     }
+
+    // store parsed message
+    meta.$parsed = { atMe, nickname, prefix, message }
 
     // parse as command
     if (prefix !== null || nickname || meta.messageType === 'private') {
@@ -292,7 +317,7 @@ export class App extends Context {
           if (fuzzy && !nickname && _message.match(/^\S/)) continue
           const result: ParsedLine = oneArg
             ? { rest: '', options: {}, unknown: [], args: [_message.trim()] }
-            : command.parse(_message)
+            : command.parse(_message.trim())
           result.options = { ...options, ...result.options }
           result.args.unshift(...args)
           parsedArgv = { meta, command, ...result }
@@ -305,7 +330,7 @@ export class App extends Context {
       if (meta.messageType === 'group') {
         // attach group data
         const groupFields = new Set<GroupField>(['flag', 'assignee'])
-        this.receiver.emit('before-group', groupFields, parsedArgv || { meta })
+        this.emitEvent(meta, 'before-group', groupFields, parsedArgv || { meta })
         const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
         Object.defineProperty(meta, '$group', { value: group, writable: true })
 
@@ -320,25 +345,28 @@ export class App extends Context {
       }
 
       // attach user data
-      const userFields = new Set<UserField>(['name', 'flag'])
-      this.receiver.emit('before-user', userFields, parsedArgv || { meta })
+      const userFields = new Set<UserField>(['flag'])
+      this.emitEvent(meta, 'before-user', userFields, parsedArgv || { meta })
       const user = await this.database.observeUser(meta.userId, Array.from(userFields))
       Object.defineProperty(meta, '$user', { value: user, writable: true })
 
+      // emit attach event
+      this.emitEvent(meta, 'attach', meta)
+
       // ignore some user calls
       if (user.flag & UserFlag.ignore) return
-
-      // emit attach event
-      this.receiver.emit('attach', meta)
     }
 
     // execute command
-    if (parsedArgv) return parsedArgv.command.execute(parsedArgv, next)
+    if (parsedArgv && !parsedArgv.command.getConfig('disable', meta)) {
+      return parsedArgv.command.execute(parsedArgv, next)
+    }
 
     // show suggestions
     const target = message.split(/\s/, 1)[0].toLowerCase()
-    if (!target || !capture) return next()
+    if (!target || !capture || parsedArgv) return next()
 
+    const executableMap = new Map<Command, boolean>()
     return showSuggestions({
       target,
       meta,
@@ -348,31 +376,42 @@ export class App extends Context {
       items: Object.keys(this._commandMap),
       coefficient: this.options.similarityCoefficient,
       command: suggestion => this._commandMap[suggestion],
+      disable: (name) => {
+        const command = this._commandMap[name]
+        let disabled = executableMap.get(command)
+        if (disabled === undefined) {
+          disabled = !!command.getConfig('disable', meta)
+          executableMap.set(command, disabled)
+        }
+        return disabled
+      },
       execute: async (suggestion, meta, next) => {
         const newMessage = suggestion + message.slice(target.length)
-        const parsedArgv = this.parseCommandLine(newMessage, meta)
-        return parsedArgv.command.execute(parsedArgv, next)
+        const argv = this.parseCommandLine(newMessage, meta)
+        return argv.command.execute(argv, next)
       },
     })
   }
 
-  parseCommandLine (message: string, meta: MessageMeta): ParsedCommandLine {
-    const name = message.split(/\s/, 1)[0].toLowerCase()
-    const command = this._commandMap[name]
+  parseCommandLine (message: string, meta: Meta<'message'>): ParsedCommandLine {
+    const name = message.split(/\s/, 1)[0]
+    const command = this._getCommandByRawName(name)
     if (command?.context.match(meta)) {
       const result = command.parse(message.slice(name.length).trimStart())
       return { meta, command, ...result }
     }
   }
 
-  executeCommandLine (message: string, meta: MessageMeta, next: NextFunction = noop) {
+  executeCommandLine (message: string, meta: Meta<'message'>, next: NextFunction = noop) {
     if (!('$ctxType' in meta)) this.server.parseMeta(meta)
     const argv = this.parseCommandLine(message, meta)
-    if (argv) return argv.command.execute(argv, next)
+    if (argv && !argv.command.getConfig('disable', meta)) {
+      return argv.command.execute(argv, next)
+    }
     return next()
   }
 
-  private _applyMiddlewares = async (meta: MessageMeta) => {
+  private _applyMiddlewares = async (meta: Meta<'message'>) => {
     // preparation
     const counter = this._middlewareCounter++
     this._middlewareSet.add(counter)
