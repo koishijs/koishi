@@ -1,5 +1,5 @@
 import { App, startAll, AppOptions, onStart, Context, Plugin, appList } from 'koishi-core'
-import { resolve, extname } from 'path'
+import { resolve, extname, dirname } from 'path'
 import { capitalize } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { cyan, yellow } from 'kleur'
@@ -23,16 +23,47 @@ function handleException (error: any) {
 
 process.on('uncaughtException', handleException)
 
-const cwd = process.cwd()
+export type PluginConfig = (string | Plugin | [string | Plugin, any?])[]
+
+export interface AppConfig extends AppOptions {
+  plugins?: PluginConfig | Record<string, PluginConfig>
+  logLevel?: number
+  logFilter?: Record<string, number>
+}
+
+const configFile = resolve(process.cwd(), process.env.KOISHI_CONFIG_FILE || 'koishi.config')
+const extension = extname(configFile)
+const configDir = dirname(configFile)
+let config: AppConfig | AppConfig[]
+
+function tryCallback <T> (callback: () => T) {
+  try {
+    return callback()
+  } catch {}
+}
+
+if (['.js', '.json', '.ts'].includes(extension)) {
+  config = tryCallback(() => require(configFile))
+} else if (['.yaml', '.yml'].includes(extension)) {
+  config = tryCallback(() => safeLoad(readFileSync(configFile, 'utf8')))
+} else {
+  config = tryCallback(() => require(configFile))
+    || tryCallback(() => safeLoad(readFileSync(configFile + '.yml', 'utf8')))
+    || tryCallback(() => safeLoad(readFileSync(configFile + '.yaml', 'utf8')))
+}
+
+if (!config) {
+  throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
+}
 
 function loadEcosystem (type: string, name: string) {
-  const modules = [resolve(cwd, name)]
+  const modules = [resolve(configDir, name)]
   const prefix = `koishi-${type}-`
-  if (name.includes(prefix) || name.startsWith('.')) {
-    modules.unshift(name)
+  if (name.includes(prefix)) {
+    modules.push(name)
   } else {
     const index = name.lastIndexOf('/')
-    modules.unshift(name.slice(0, index + 1) + prefix + name.slice(index + 1))
+    modules.push(name.slice(0, index + 1) + prefix + name.slice(index + 1))
   }
   for (const name of modules) {
     try {
@@ -44,14 +75,6 @@ function loadEcosystem (type: string, name: string) {
     }
   }
   throw new Error(`cannot resolve ${type} ${name}`)
-}
-
-export type PluginConfig = (string | Plugin | [string | Plugin, any?])[]
-
-export interface AppConfig extends AppOptions {
-  plugins?: PluginConfig | Record<string, PluginConfig>
-  logLevel?: number
-  logFilter?: Record<string, number>
 }
 
 function loadPlugins (ctx: Context, plugins: PluginConfig) {
@@ -85,28 +108,6 @@ function prepareApp (config: AppConfig) {
     }
   }
 }
-
-const configFile = resolve(cwd, process.env.KOISHI_CONFIG_FILE || 'koishi.config')
-const extension = extname(configFile)
-let config: AppConfig | AppConfig[]
-
-function tryCallback <T> (callback: () => T) {
-  try {
-    return callback()
-  } catch {}
-}
-
-if (['.js', '.json', '.ts'].includes(extension)) {
-  config = tryCallback(() => require(configFile))
-} else if (['.yaml', '.yml'].includes(extension)) {
-  config = tryCallback(() => safeLoad(readFileSync(configFile, 'utf8')))
-} else {
-  config = tryCallback(() => require(configFile))
-    || tryCallback(() => safeLoad(readFileSync(configFile + '.yml', 'utf8')))
-    || tryCallback(() => safeLoad(readFileSync(configFile + '.yaml', 'utf8')))
-}
-
-if (!config) throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
 
 if (Array.isArray(config)) {
   config.forEach(conf => prepareApp(conf))
