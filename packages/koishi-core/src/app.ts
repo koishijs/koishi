@@ -348,11 +348,11 @@ export class App extends Context {
       const user = await this.database.observeUser(meta.userId, Array.from(userFields))
       Object.defineProperty(meta, '$user', { value: user, writable: true })
 
-      // ignore some user calls
-      if (user.flag & UserFlag.ignore) return
-
       // emit attach event
       this.emitEvent(meta, 'attach', meta)
+
+      // ignore some user calls
+      if (user.flag & UserFlag.ignore) return
     }
 
     // execute command
@@ -381,8 +381,8 @@ export class App extends Context {
 
   parseCommandLine (message: string, meta: Meta<'message'>): ParsedCommandLine {
     const name = message.split(/\s/, 1)[0].toLowerCase()
-    const command = this._commandMap[name]
-    if (command?.context.match(meta)) {
+    const command = this.getCommand(name, meta)
+    if (command) {
       const result = command.parse(message.slice(name.length).trimStart())
       return { meta, command, ...result }
     }

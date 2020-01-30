@@ -235,14 +235,15 @@ export class Context {
   }
 
   private _getCommandByRawName (name: string) {
-    name = name.split(' ', 1)[0]
     const index = name.lastIndexOf('/')
     return this.app._commandMap[name.slice(index + 1).toLowerCase()]
   }
 
   getCommand (name: string, meta: Meta<'message'>) {
     const command = this._getCommandByRawName(name)
-    if (command?.context.match(meta) && !command.getConfig('disable', meta)) return command
+    if (command?.context.match(meta) && !command.getConfig('disable', meta)) {
+      return command
+    }
   }
 
   runCommand (name: string, meta: Meta<'message'>, args: string[] = [], options: Record<string, any> = {}, rest = '') {
