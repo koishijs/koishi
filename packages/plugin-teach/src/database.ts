@@ -51,6 +51,14 @@ export interface DialogueTest {
   frozen?: boolean
 }
 
+export enum DialogueFlag {
+  frozen = 1,
+  regexp = 2,
+  keyword = 4,
+  appellation = 8,
+  reversed = 16,
+}
+
 // injectMethods('mysql', 'dialogue', {
 //   _getDialogueTest (test) {
 //     const conditionals: string[] = []

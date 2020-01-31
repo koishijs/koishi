@@ -1,11 +1,8 @@
 import { Context, Meta } from 'koishi-core'
 import { simplify, contain, intersection, union, difference } from 'koishi-utils'
-import { Dialogue, DialogueTest } from './database'
+import { Dialogue, DialogueTest, DialogueFlag } from './database'
 
 export interface TeachConfig {
-  useWriter?: boolean
-  useFrozen?: boolean
-  useEnvironment?: boolean
   getUserName? (meta: Meta<'message'>): string
 }
 
@@ -49,14 +46,6 @@ export interface ParsedTeachLine {
   groups?: number[]
   partial?: boolean
   reversed?: boolean
-}
-
-export enum DialogueFlag {
-  frozen = 1,
-  regexp = 2,
-  keyword = 4,
-  appellation = 8,
-  reversed = 16,
 }
 
 export function splitGroups (source: string) {
