@@ -35,10 +35,12 @@
   "devDependencies": {
     "koishi-test-utils": "^3.0.0"
   },
+  "peerDependencies": {
+    "koishi-core": "^1.7.0"
+  },
   "dependencies": {
     "@types/leveldown": "^4.0.2",
     "@types/levelup": "^4.3.0",
-    "koishi-core": "^1.7.0",
     "koishi-utils": "^1.0.2",
     "leveldown": "^5.4.1",
     "levelup": "^4.3.2",

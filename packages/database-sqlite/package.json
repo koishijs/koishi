@@ -24,8 +24,10 @@
     "@types/sqlite3": "^3.1.6",
     "koishi-test-utils": "^3.0.0"
   },
+  "peerDependencies": {
+    "koishi-core": "^1.7.0"
+  },
   "dependencies": {
-    "koishi-core": "^1.7.0",
     "koishi-utils": "^1.0.2",
     "sqlite3": "^4.1.1"
   }
