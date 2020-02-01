@@ -2,7 +2,6 @@ import { AppOptions, App, Sender, Server, ContextType, Meta, FileInfo } from 'ko
 import { MockedServer, RequestParams, RequestData, RequestHandler } from './mocks'
 import { Session, createMessageMeta } from './session'
 import { BASE_SELF_ID } from './utils'
-import debug from 'debug'
 
 class MockedAppServer extends Server {
   constructor (app: App) {
