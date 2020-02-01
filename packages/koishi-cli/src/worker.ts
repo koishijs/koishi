@@ -39,7 +39,11 @@ let config: AppConfig | AppConfig[]
 function tryCallback <T> (callback: () => T) {
   try {
     return callback()
-  } catch {}
+  } catch (error) {
+    if (error.code !== 'MODULE_NOT_FOUND' && error.code !== 'ENOENT') {
+      throw error
+    }
+  }
 }
 
 if (['.js', '.json', '.ts'].includes(extension)) {
