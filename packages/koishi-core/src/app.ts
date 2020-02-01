@@ -1,3 +1,4 @@
+import debug from 'debug'
 import escapeRegex from 'escape-string-regexp'
 import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
@@ -126,6 +127,12 @@ export class App extends Context {
     this.receiver.on('before-user', Command.attachUserFields)
     this.receiver.on('before-group', Command.attachGroupFields)
     this.middleware(this._preprocess)
+
+    this.receiver.on('logger', (scope, message) => {
+      if (this.receiver.listenerCount('logger') === 1) {
+        debug('koishi:' + scope)(message)
+      }
+    })
   }
 
   get users () {

@@ -40,6 +40,7 @@
   },
   "dependencies": {
     "axios": "^0.19.2",
+    "debug": "^4.1.1",
     "escape-string-regexp": "^2.0.0",
     "koishi-utils": "^1.0.2",
     "leven": "^3.1.0",

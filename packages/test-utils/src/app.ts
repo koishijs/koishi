@@ -36,9 +36,6 @@ export class MockedApp extends App {
     super({ selfId: BASE_SELF_ID, ...options })
     this.sender = new MockedAppSender(this)
     this.server = new MockedAppServer(this)
-    this.receiver.on('logger', (scope, message) => {
-      debug('koishi:' + scope)(message)
-    })
   }
 
   receive (meta: Meta) {
