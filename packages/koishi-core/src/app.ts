@@ -264,6 +264,12 @@ export class App extends Context {
   }
 
   emitEvent <K extends Events> (meta: Meta, event: K, ...payload: Parameters<EventMap[K]>) {
+    if (!meta.$ctxType) {
+      this.logger('receiver').debug('/', 'emits', event)
+      this.receiver.emit(event, ...payload)
+      return
+    }
+
     for (const path in this._contexts) {
       const context = this._contexts[path]
       if (!context.match(meta)) continue
