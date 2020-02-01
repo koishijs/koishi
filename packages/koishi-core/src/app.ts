@@ -129,9 +129,7 @@ export class App extends Context {
     this.middleware(this._preprocess)
 
     this.receiver.on('logger', (scope, message) => {
-      if (this.receiver.listenerCount('logger') === 1) {
-        debug('koishi:' + scope)(message)
-      }
+      debug('koishi:' + scope)(message)
     })
   }
 
