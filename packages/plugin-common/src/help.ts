@@ -113,15 +113,15 @@ async function showCommandHelp (command: Command, meta: Meta<'message'>, options
     output.push(command._usage)
   }
 
-  if (command._options.length) {
-    const options = command._options.filter(option => !option.hidden)
-    if (options.some(o => o.authority)) {
+  const _options = command._options.filter(option => !option.hidden)
+  if (_options.length) {
+    if (_options.some(o => o.authority)) {
       output.push('可用的选项有（括号内为额外要求的权限等级）：')
     } else {
       output.push('可用的选项有：')
     }
 
-    command._options.filter(option => !option.hidden).forEach((option) => {
+    _options.forEach((option) => {
       const authority = option.authority ? `(${option.authority}) ` : ''
       let line = `    ${authority}${option.rawName}  ${option.description}`
       if (option.notUsage && maxUsage !== Infinity) {

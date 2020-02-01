@@ -1,4 +1,4 @@
-import { isInteger } from 'koishi-utils'
+import { isInteger, getDateNumber } from 'koishi-utils'
 import { UserField, GroupField, UserData } from './database'
 import { NextFunction } from './context'
 import { Command } from './command'
@@ -18,20 +18,18 @@ export function getTargetId (target: string | number) {
   return qq
 }
 
-export function getUsage (name: string, user: UserData, time = new Date()) {
+export function getUsage (name: string, user: Pick<UserData, 'usage'>, time = new Date()) {
+  const _date = getDateNumber(time)
+  if (user.usage._date !== _date) {
+    user.usage = { _date } as any
+  }
   if (!user.usage[name]) {
-    user.usage[name] = {}
+    user.usage[name] = { count: 0 }
   }
-  const usage = user.usage[name]
-  const date = time.toLocaleDateString()
-  if (date !== usage.date) {
-    usage.count = 0
-    usage.date = date
-  }
-  return usage
+  return user.usage[name]
 }
 
-export function updateUsage (name: string, user: UserData, maxUsage: number, minInterval?: number) {
+export function updateUsage (name: string, user: Pick<UserData, 'usage'>, maxUsage: number, minInterval?: number) {
   const date = new Date()
   const usage = getUsage(name, user, date)
 
@@ -58,17 +56,18 @@ interface SuggestOptions {
   prefix: string
   suffix: string
   coefficient?: number
+  disable?: (name: string) => boolean
   command: Command | ((suggestion: string) => Command)
   execute: (suggestion: string, meta: Meta<'message'>, next: NextFunction) => any
 }
 
-function findSimilar (target: string, coefficient: number) {
-  return (name: string) => name.length > 2 && leven(name, target) <= name.length * coefficient
-}
-
 export function showSuggestions (options: SuggestOptions): Promise<void> {
-  const { target, items, meta, next, prefix, suffix, execute, coefficient = 0.4 } = options
-  const suggestions = items.filter(findSimilar(target, coefficient))
+  const { target, items, meta, next, prefix, suffix, execute, disable, coefficient = 0.4 } = options
+  const suggestions = items.filter((name) => {
+    return name.length > 2
+      && leven(name, target) <= name.length * coefficient
+      && !disable?.(name)
+  })
   if (!suggestions.length) return next()
 
   return next(async () => {

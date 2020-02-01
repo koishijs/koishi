@@ -9,7 +9,13 @@ const [,, argv2, argv3] = process.argv
 if (argv2 && !argv2.startsWith('-')) {
   args.push(argv2)
   if (argv3 && !argv3.startsWith('-')) {
-    args.push('--collectCoverageFrom', `**/${argv3}/**/*.ts`, ...process.argv.slice(3))
+    args.push('--collectCoverageFrom')
+    if (argv3.endsWith('.ts')) {
+      args.push(`**/${argv3}`)
+    } else {
+      args.push(`**/${argv3}/**/*.ts`)
+    }
+    args.push(...process.argv.slice(4))
   } else {
     args.push(...process.argv.slice(3))
   }
@@ -17,8 +23,4 @@ if (argv2 && !argv2.startsWith('-')) {
   args.push('packages/.+\\.spec\\.ts', ...process.argv.slice(2))
 }
 
-const child = spawn('npx', args, { stdio: 'inherit' })
-
-child.on('close', () => {
-  open(resolve(__dirname, '../coverage/lcov-report/index.html'))
-})
+spawn('npx', args, { stdio: 'inherit' })

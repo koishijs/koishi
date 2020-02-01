@@ -36,10 +36,10 @@ interface Dependency {
     workspaces[name] = { meta, path }
     delete dependencies[name]
 
-    for (const type of ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'] as DependencyType[]) {
+    for (const type of ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'] as const) {
       for (const dep in meta[type] || {}) {
         // skip workspaces and symlinks
-        if (workspaces[dep] || meta[type][dep].startsWith('file:')) continue
+        if (workspaces[dep] || meta[type][dep].includes(':')) continue
         if (!dependencies[dep]) dependencies[dep] = { dependents: [] }
         dependencies[dep].dependents.push({ name, type })
       }
@@ -63,30 +63,35 @@ interface Dependency {
   }, { concurrency: 10 })
   spinner.succeed()
 
+  const bumpMap = new Map<string, boolean>()
+  async function shouldBump (name: string, dep: string, version: string, oldVersion: string) {
+    if (!gt(version, oldVersion.replace(/^[~^]/, ''))) return
+    const message = `${name} > ${yellow(dep)}: ${cyan(oldVersion)} -> ${green(version)}`
+    if (satisfies(version, oldVersion)) return message
+    let result = bumpMap.get(dep)
+    if (result === undefined) {
+      const data = await prompts({
+        name: 'value',
+        type: 'confirm',
+        message,
+      })
+      result = data.value
+      bumpMap.set(dep, result)
+    }
+    return result && message
+  }
+
   const output: string[] = []
   for (const dep in dependencies) {
     const { version, dependents } = dependencies[dep]
     for (const { name, type } of dependents) {
       const workspace = workspaces[name]
       const oldVersion = workspace.meta[type][dep]
-      if (gt(version, oldVersion.replace(/^[~^]/, ''))) {
-        let update: boolean
-        const message = `${name} > ${yellow(dep)}: ${cyan(oldVersion)} -> ${green(version)}`
-        if (!satisfies(version, oldVersion)) {
-          const result = await prompts({
-            name: 'value',
-            type: 'confirm',
-            message,
-          })
-          update = result.value
-        } else {
-          update = true
-        }
-        if (update) {
-          workspace.dirty = true
-          workspace.meta[type][dep] = '^' + version
-          output.push(message)
-        }
+      const message = await shouldBump(name, dep, version, oldVersion)
+      if (message) {
+        workspace.dirty = true
+        workspace.meta[type][dep] = '^' + version
+        output.push(message)
       }
     }
   }

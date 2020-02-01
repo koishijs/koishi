@@ -12,8 +12,9 @@ describe('Command Suggestions', () => {
     .action(({ meta }, bar) => {
       return meta.$send('foo' + bar)
     })
-  
+
   app.command('fooo', { checkUnknown: true, checkRequired: true })
+    .alias('bool')
     .option('-t, --text <bar>')
     .action(({ meta, options }) => {
       return meta.$send('fooo' + options.text)
@@ -69,7 +70,7 @@ describe('Command Suggestions', () => {
   test('multiple suggestions', async () => {
     await session1.shouldHaveReply('fool bar', [
       messages.COMMAND_SUGGESTION_PREFIX,
-      format(messages.SUGGESTION_TEXT, '“foo”或“fooo”'),
+      format(messages.SUGGESTION_TEXT, '“foo”或“fooo”或“bool”'),
     ].join(''))
     await session1.shouldHaveNoReply(' ')
   })

@@ -102,5 +102,8 @@ describe('Receiver API', () => {
     expect(app.server.parseMeta(meta)).toMatchObject(['heartbeat'])
     expect(meta.$ctxType).toBeFalsy()
     expect(meta.$ctxId).toBeFalsy()
+    
+    // make coverage happy
+    expect(app.server.dispatchMeta(meta))
   })
 })

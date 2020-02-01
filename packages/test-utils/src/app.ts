@@ -2,7 +2,6 @@ import { AppOptions, App, Sender, Server, ContextType, Meta, FileInfo } from 'ko
 import { MockedServer, RequestParams, RequestData, RequestHandler } from './mocks'
 import { Session, createMessageMeta } from './session'
 import { BASE_SELF_ID } from './utils'
-import debug from 'debug'
 
 class MockedAppServer extends Server {
   constructor (app: App) {
@@ -36,9 +35,6 @@ export class MockedApp extends App {
     super({ selfId: BASE_SELF_ID, ...options })
     this.sender = new MockedAppSender(this)
     this.server = new MockedAppServer(this)
-    this.receiver.on('logger', (scope, message) => {
-      debug('koishi:' + scope)(message)
-    })
   }
 
   receive (meta: Meta) {

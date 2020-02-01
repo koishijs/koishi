@@ -1,3 +1,4 @@
+import debug from 'debug'
 import escapeRegex from 'escape-string-regexp'
 import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
@@ -126,6 +127,10 @@ export class App extends Context {
     this.receiver.on('before-user', Command.attachUserFields)
     this.receiver.on('before-group', Command.attachGroupFields)
     this.middleware(this._preprocess)
+
+    this.receiver.on('logger', (scope, message) => {
+      debug('koishi:' + scope)(message)
+    })
   }
 
   get users () {
@@ -264,6 +269,12 @@ export class App extends Context {
   }
 
   emitEvent <K extends Events> (meta: Meta, event: K, ...payload: Parameters<EventMap[K]>) {
+    if (!meta.$ctxType) {
+      this.logger('receiver').debug('/', 'emits', event)
+      this.receiver.emit(event, ...payload)
+      return
+    }
+
     for (const path in this._contexts) {
       const context = this._contexts[path]
       if (!context.match(meta)) continue
@@ -275,7 +286,9 @@ export class App extends Context {
   private _preprocess = async (meta: Meta<'message'>, next: NextFunction) => {
     // strip prefix
     let capture: RegExpMatchArray
-    let atMe = false, nickname = '', prefix: string = null
+    let atMe = false
+    let nickname = ''
+    let prefix: string = null
     let message = simplify(meta.message.trim())
     let parsedArgv: ParsedCommandLine
 
@@ -348,20 +361,23 @@ export class App extends Context {
       const user = await this.database.observeUser(meta.userId, Array.from(userFields))
       Object.defineProperty(meta, '$user', { value: user, writable: true })
 
-      // ignore some user calls
-      if (user.flag & UserFlag.ignore) return
-
       // emit attach event
       this.emitEvent(meta, 'attach', meta)
+
+      // ignore some user calls
+      if (user.flag & UserFlag.ignore) return
     }
 
     // execute command
-    if (parsedArgv) return parsedArgv.command.execute(parsedArgv, next)
+    if (parsedArgv && !parsedArgv.command.getConfig('disable', meta)) {
+      return parsedArgv.command.execute(parsedArgv, next)
+    }
 
     // show suggestions
     const target = message.split(/\s/, 1)[0].toLowerCase()
-    if (!target || !capture) return next()
+    if (!target || !capture || parsedArgv) return next()
 
+    const executableMap = new Map<Command, boolean>()
     return showSuggestions({
       target,
       meta,
@@ -371,17 +387,26 @@ export class App extends Context {
       items: Object.keys(this._commandMap),
       coefficient: this.options.similarityCoefficient,
       command: suggestion => this._commandMap[suggestion],
+      disable: (name) => {
+        const command = this._commandMap[name]
+        let disabled = executableMap.get(command)
+        if (disabled === undefined) {
+          disabled = !!command.getConfig('disable', meta)
+          executableMap.set(command, disabled)
+        }
+        return disabled
+      },
       execute: async (suggestion, meta, next) => {
         const newMessage = suggestion + message.slice(target.length)
-        const parsedArgv = this.parseCommandLine(newMessage, meta)
-        return parsedArgv.command.execute(parsedArgv, next)
+        const argv = this.parseCommandLine(newMessage, meta)
+        return argv.command.execute(argv, next)
       },
     })
   }
 
   parseCommandLine (message: string, meta: Meta<'message'>): ParsedCommandLine {
-    const name = message.split(/\s/, 1)[0].toLowerCase()
-    const command = this._commandMap[name]
+    const name = message.split(/\s/, 1)[0]
+    const command = this._getCommandByRawName(name)
     if (command?.context.match(meta)) {
       const result = command.parse(message.slice(name.length).trimStart())
       return { meta, command, ...result }
@@ -391,7 +416,9 @@ export class App extends Context {
   executeCommandLine (message: string, meta: Meta<'message'>, next: NextFunction = noop) {
     if (!('$ctxType' in meta)) this.server.parseMeta(meta)
     const argv = this.parseCommandLine(message, meta)
-    if (argv) return argv.command.execute(argv, next)
+    if (argv && !argv.command.getConfig('disable', meta)) {
+      return argv.command.execute(argv, next)
+    }
     return next()
   }
 

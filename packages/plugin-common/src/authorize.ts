@@ -13,6 +13,7 @@ interface AuthorizeInfo {
 export default function apply (ctx: Context, config: AuthorizeOptions = {}) {
   const { app, database } = ctx
   const { authorizeUser = {}, authorizeGroup = {} } = config
+  const logger = ctx.logger('authorize')
 
   /**
    * array of `AuthorizeInfo`
@@ -20,10 +21,16 @@ export default function apply (ctx: Context, config: AuthorizeOptions = {}) {
   const authorizeInfoList: AuthorizeInfo[] = []
 
   /**
-   * a map of users' authority (buffered)
+   * a map of users' new authority
    * to make sure every user gets maximum possible authority
    */
-  const userAuthorityMap: Record<number, number> = {}
+  const newAuthorityMap = new Map<number, number>()
+
+  /**
+   * a map of users' old authority
+   * to prevent from duplicate data fetching
+   */
+  const oldAuthorityMap = new Map<number, number>()
 
   /**
    * inversion of `config.authorizeUser`
@@ -40,74 +47,99 @@ export default function apply (ctx: Context, config: AuthorizeOptions = {}) {
   }
 
   async function updateAuthorizeInfo (authority: number, ids: number[]) {
-    const users = await database.getUsers(ids, ['id', 'authority'])
+    const idsToFetch = ids.filter(id => !oldAuthorityMap.has(id))
+    const users = await database.getUsers(idsToFetch, ['id', 'authority'])
+    users.forEach((user) => oldAuthorityMap.set(user.id, user.authority))
+
     const info = authorizeInfoList[authority] || (authorizeInfoList[authority] = {
       insert: new Set(),
       update: new Set(),
     })
+
     for (const id of ids) {
-      const oldAuthority = userAuthorityMap[id]
-      if (oldAuthority) {
-        if (oldAuthority >= authority) continue
-        authorizeInfoList[oldAuthority].insert.delete(id)
-        authorizeInfoList[oldAuthority].update.delete(id)
+      const newAuthority = newAuthorityMap.get(id)
+      if (newAuthority) {
+        if (newAuthority >= authority) continue
+        authorizeInfoList[newAuthority].insert.delete(id)
+        authorizeInfoList[newAuthority].update.delete(id)
       }
-      userAuthorityMap[id] = authority
-      const user = users.find(u => u.id === id)
-      if (!user) {
+      newAuthorityMap.set(id, authority)
+
+      const oldAuthority = oldAuthorityMap.get(id)
+      if (!oldAuthority) {
         info.insert.add(id)
-      } else if (user.authority !== authority) {
+      } else if (oldAuthority < authority) {
         info.update.add(id)
       }
     }
   }
 
   app.receiver.once('ready', async () => {
-    await Promise.all([
-      ...Object.keys(inversedUserMap).map(key => updateAuthorizeInfo(+key, inversedUserMap[+key])),
-      ...Object.entries(authorizeGroup).map(async ([key, value]) => {
-        const groupId = +key
-        const config = typeof value === 'number' ? { member: value } : value
-        const ctx = app.group(groupId)
+    const tasks: Promise<void>[] = []
 
-        if (!('member' in config)) config.member = 1
-        if (!('admin' in config)) config.admin = config.member
-        if (!('owner' in config)) config.owner = config.admin
+    tasks.push(...Object.keys(inversedUserMap).map(async (key) => {
+      const id = +key
+      await updateAuthorizeInfo(id, inversedUserMap[id])
+    }))
 
-        await database.getGroup(groupId, app.selfId)
-        const memberList = await ctx.sender.getGroupMemberList(groupId)
-        for (const role of ['member', 'admin', 'owner'] as GroupRole[]) {
-          const authority = config[role]
-          const memberIds = memberList.filter(m => m.role === role).map(m => m.userId)
-          await updateAuthorizeInfo(authority, memberIds)
+    tasks.push(...Object.entries(authorizeGroup).map(async ([key, value]) => {
+      const id = +key
+      const ctx = app.group(id)
+      const config = typeof value === 'number' ? { member: value } : value
+
+      if (!('member' in config)) config.member = 1
+      if (!('admin' in config)) config.admin = config.member
+      if (!('owner' in config)) config.owner = config.admin
+
+      await database.getGroup(id, app.selfId)
+      const memberList = await ctx.sender.getGroupMemberList(id)
+      for (const role of ['member', 'admin', 'owner'] as GroupRole[]) {
+        const authority = config[role]
+        const memberIds = memberList.filter(m => m.role === role).map(m => m.userId)
+        await updateAuthorizeInfo(authority, memberIds)
+      }
+
+      async function handleUpdate (userId: number, authority: number) {
+        const user = await database.getUser(userId, authority)
+        if (user.authority < authority) {
+          return database.setUser(userId, { authority })
         }
+      }
 
-        async function handleUpdate (userId: number, authority: number) {
-          const user = await database.getUser(userId, authority)
-          if (user.authority < authority) {
-            return database.setUser(userId, { authority })
-          }
-        }
+      ctx.receiver.on('group-increase', ({ userId }) => {
+        return handleUpdate(userId, config.member)
+      })
 
-        ctx.receiver.on('group-increase', ({ userId }) => {
-          return handleUpdate(userId, config.member)
-        })
+      ctx.receiver.on('group-admin/set', ({ userId }) => {
+        return handleUpdate(userId, config.admin)
+      })
+    }))
 
-        ctx.receiver.on('group-admin/set', ({ userId }) => {
-          return handleUpdate(userId, config.admin)
-        })
-      }),
-    ])
+    await Promise.all(tasks.map(task => task.catch(logger.warn)))
 
+    let insertTotal = 0, updateTotal = 0
     for (const key in authorizeInfoList) {
       const authority = +key
       const { insert, update } = authorizeInfoList[key]
+      insertTotal += insert.size
+      updateTotal += update.size
       for (const id of insert) {
         await database.getUser(id, authority)
+        logger.debug(`inserted ${id} with authority ${authority}`)
       }
       for (const id of update) {
         await database.setUser(id, { authority })
+        logger.debug(`update ${id}'s authority: ${oldAuthorityMap.get(id)} -> ${authority}`)
       }
+    }
+
+    const output: string[] = []
+    if (insertTotal) output.push(`inserted ${insertTotal} user${insertTotal > 1 ? 's' : ''}`)
+    if (updateTotal) output.push(`updated ${updateTotal} user${updateTotal > 1 ? 's' : ''}`)
+    if (!output.length) {
+      logger.info('all users are up to date')
+    } else {
+      logger.info(output.join(' and '))
     }
   })
 }

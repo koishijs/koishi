@@ -101,6 +101,8 @@ koishi run
 
 完整的文档在 [这里](https://koishi.js.org/guide/getting-started.html)。
 
+此外，我们还准备了一个模板仓库供参考：https://github.com/koishijs/boilerplate。
+
 ## 更新日志
 
 参见 [releases](https://github.com/koishijs/koishi/releases)。

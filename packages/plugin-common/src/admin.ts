@@ -78,7 +78,7 @@ registerUserAction('clearUsage', async (meta, user, ...commands) => {
 
 registerUserAction('showUsage', async (meta, user, ...commands) => {
   const { usage } = user
-  if (!commands.length) commands = Object.keys(usage)
+  if (!commands.length) commands = Object.keys(usage).filter(k => !k.startsWith('_'))
   if (!commands.length) return meta.$send('用户今日没有调用过指令。')
   return meta.$send([
     '用户今日各指令的调用次数为：',
