@@ -70,28 +70,28 @@ describe('middleware validation', () => {
 
 describe('command validation', () => {
   test('check authority', async () => {
-    app.command('cmd1', { showWarning: true })
+    app.command('cmd1', { showWarning: -1 })
     await session2.shouldHaveReply('cmd1', messages.LOW_AUTHORITY)
     await session1.shouldHaveReply('cmd1 --bar', messages.LOW_AUTHORITY)
-    app.command('cmd1', { showWarning: false })
+    app.command('cmd1', { showWarning: 0 })
     await session1.shouldHaveNoReply('cmd1 --bar')
   })
 
   test('check usage', async () => {
-    app.command('cmd1', { showWarning: true })
+    app.command('cmd1', { showWarning: -1 })
     await session1.shouldHaveReply('cmd1', 'cmd1:123')
     await session1.shouldHaveReply('cmd1 --baz', 'cmd1:123')
     await session1.shouldHaveReply('cmd1', messages.USAGE_EXHAUSTED)
     await session1.shouldHaveReply('cmd1 --baz', 'cmd1:123')
-    app.command('cmd1', { showWarning: false })
+    app.command('cmd1', { showWarning: 0 })
     await session1.shouldHaveNoReply('cmd1')
   })
 
   test('check frequency', async () => {
-    app.command('cmd2', { showWarning: true })
+    app.command('cmd2', { showWarning: -1 })
     await session2.shouldHaveReply('cmd2', 'cmd2:456')
     await session2.shouldHaveReply('cmd2', messages.TOO_FREQUENT)
-    app.command('cmd2', { showWarning: false })
+    app.command('cmd2', { showWarning: 0 })
     await session2.shouldHaveNoReply('cmd2')
   })
 })
