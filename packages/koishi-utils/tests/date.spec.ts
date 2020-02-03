@@ -4,6 +4,7 @@ describe('Date Manipulations', () => {
   test('getDateNumber', () => {
     getDateNumber() /* make coverage happy */
     expect(getDateNumber(new Date(2020, 0))).toBe(18262)
+    expect(getDateNumber(1577808000000)).toBe(18262)
   })
 
   test('fromDateNumber', () => {
