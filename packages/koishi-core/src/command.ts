@@ -272,7 +272,6 @@ export class Command {
 
     // check authority and usage
     const code = this._checkUser(meta, options)
-    this.context.logger('test').info(code)
     if (code) return this._sendHint(code, meta)
 
     // execute command
