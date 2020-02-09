@@ -1,8 +1,8 @@
 import { PackageJson, getWorkspaces, spawnAsync, spawnSync } from './utils'
 import { gt, prerelease } from 'semver'
-import ora from 'ora'
+import { Octokit } from '@octokit/rest'
 import latest from 'latest-version'
-import Octokit from '@octokit/rest'
+import ora from 'ora'
 
 const { CI, GITHUB_EVENT_NAME, GITHUB_REF, GITHUB_TOKEN } = process.env
 

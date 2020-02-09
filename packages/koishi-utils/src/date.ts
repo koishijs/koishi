@@ -1,4 +1,5 @@
-export function getDateNumber (date = new Date()) {
+export function getDateNumber (date: number | Date = new Date()) {
+  if (typeof date === 'number') date = new Date(date)
   return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000)
 }
 

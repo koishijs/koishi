@@ -1,7 +1,7 @@
 import { isInteger, getDateNumber } from 'koishi-utils'
 import { UserField, GroupField, UserData } from './database'
 import { NextFunction } from './context'
-import { Command } from './command'
+import { Command, CommandHint } from './command'
 import { Meta } from './meta'
 import { messages } from './messages'
 import { format } from 'util'
@@ -18,31 +18,47 @@ export function getTargetId (target: string | number) {
   return qq
 }
 
-export function getUsage (name: string, user: Pick<UserData, 'usage'>, time = new Date()) {
-  const _date = getDateNumber(time)
-  if (user.usage._date !== _date) {
-    user.usage = { _date } as any
+const ONE_DAY = 86400000
+
+export function getUsage (name: string, user: Pick<UserData, 'usage'>, time = Date.now()) {
+  const $date = getDateNumber(time)
+  if (user.usage.$date !== $date) {
+    const oldUsage = user.usage
+    const newUsage = { $date } as any
+    for (const key in oldUsage) {
+      if (key === '$date') continue
+      const { last } = oldUsage[key]
+      if (time.valueOf() - last < ONE_DAY) {
+        newUsage[key] = { last, count: 0 }
+      }
+    }
+    user.usage = newUsage
   }
+
   if (!user.usage[name]) {
     user.usage[name] = { count: 0 }
   }
   return user.usage[name]
 }
 
-export function updateUsage (name: string, user: Pick<UserData, 'usage'>, maxUsage: number, minInterval?: number) {
-  const date = new Date()
-  const usage = getUsage(name, user, date)
+interface UsageOptions {
+  maxUsage?: number
+  minInterval?: number
+  timestamp?: number
+}
 
-  if (minInterval > 0) {
-    const now = date.valueOf()
-    if (now - usage.last <= minInterval) {
-      return messages.TOO_FREQUENT
-    }
-    usage.last = now
+export function updateUsage (name: string, user: Pick<UserData, 'usage'>, options: UsageOptions = {}) {
+  const now = Date.now()
+  const { maxUsage = Infinity, minInterval = 0, timestamp = now } = options
+  const usage = getUsage(name, user, now)
+
+  if (now - usage.last <= minInterval) {
+    return CommandHint.TOO_FREQUENT
   }
+  usage.last = timestamp
 
   if (usage.count >= maxUsage) {
-    return messages.USAGE_EXHAUSTED
+    return CommandHint.USAGE_EXHAUSTED
   } else {
     usage.count++
   }

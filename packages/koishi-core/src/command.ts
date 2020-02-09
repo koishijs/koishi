@@ -41,7 +41,7 @@ export interface CommandConfig {
   maxUsage?: UserType<number>
   maxUsageText?: string
   minInterval?: UserType<number>
-  showWarning?: boolean
+  showWarning?: boolean | number
   noHelpOption?: boolean
 }
 
@@ -62,6 +62,16 @@ export interface ShortcutConfig {
   args?: string[]
   oneArg?: boolean
   options?: Record<string, any>
+}
+
+export enum CommandHint {
+  USAGE_EXHAUSTED = 1,
+  TOO_FREQUENT = 2,
+  LOW_AUTHORITY = 4,
+  INSUFFICIENT_ARGUMENTS = 8,
+  REDUNANT_ARGUMENTS = 16,
+  UNKNOWN_OPTIONS = 32,
+  REQUIRED_OPTIONS = 64,
 }
 
 export class Command {
@@ -247,17 +257,17 @@ export class Command {
     if (this.config.checkArgCount) {
       const nextArg = this._argsDef[args.length]
       if (nextArg?.required) {
-        return meta.$send(messages.INSUFFICIENT_ARGUMENTS)
+        return this._sendHint(CommandHint.INSUFFICIENT_ARGUMENTS, meta)
       }
       const finalArg = this._argsDef[this._argsDef.length - 1]
       if (args.length > this._argsDef.length && !finalArg.noSegment && !finalArg.variadic) {
-        return meta.$send(messages.REDUNANT_ARGUMENTS)
+        return this._sendHint(CommandHint.REDUNANT_ARGUMENTS, meta)
       }
     }
 
     // check unknown options
     if (this.config.checkUnknown && unknown.length) {
-      return meta.$send(format(messages.UNKNOWN_OPTIONS, unknown.join(', ')))
+      return this._sendHint(CommandHint.UNKNOWN_OPTIONS, meta, unknown.join(', '))
     }
 
     // check required options
@@ -266,12 +276,13 @@ export class Command {
         return option.required && !(option.longest in options)
       })
       if (absent) {
-        return meta.$send(format(messages.REQUIRED_OPTIONS, absent.rawName))
+        return this._sendHint(CommandHint.REQUIRED_OPTIONS, meta, absent.rawName)
       }
     }
 
     // check authority and usage
-    if (!await this._checkUser(meta, options)) return
+    const code = this._checkUser(meta, options)
+    if (code) return this._sendHint(code, meta)
 
     // execute command
     this.context.logger('command').debug('execute %s', this.name)
@@ -292,23 +303,30 @@ export class Command {
     }
   }
 
+  private _sendHint (code: CommandHint, meta: Meta<'message'>, ...param: any[]) {
+    let { showWarning } = this.config
+    if (typeof showWarning === 'boolean') {
+      showWarning = -showWarning
+    }
+    if (showWarning & code) {
+      return meta.$send(format(messages[CommandHint[code]], ...param))
+    }
+  }
+
   /** check authority and usage */
-  private async _checkUser (meta: Meta<'message'>, options: Record<string, any>) {
+  private _checkUser (meta: Meta<'message'>, options: Record<string, any>) {
     const user = meta.$user
-    if (!user) return true
+    if (!user) return
     let isUsage = true
 
     // check authority
     if (this.config.authority > user.authority) {
-      return meta.$send(messages.LOW_AUTHORITY)
+      return CommandHint.LOW_AUTHORITY
     }
     for (const option of this._options) {
       if (option.camels[0] in options) {
         if (option.authority > user.authority) {
-          if (this.config.showWarning) {
-            await meta.$send(messages.LOW_AUTHORITY)
-          }
-          return
+          return CommandHint.LOW_AUTHORITY
         }
         if (option.notUsage) isUsage = false
       }
@@ -320,17 +338,9 @@ export class Command {
       const maxUsage = this.getConfig('maxUsage', meta)
 
       if (maxUsage < Infinity || minInterval > 0) {
-        const message = updateUsage(this.usageName, user, maxUsage, minInterval)
-        if (message) {
-          if (this.config.showWarning) {
-            await meta.$send(message)
-          }
-          return
-        }
+        return updateUsage(this.usageName, user, { maxUsage, minInterval })
       }
     }
-
-    return true
   }
 
   end () {

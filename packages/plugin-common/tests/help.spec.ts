@@ -1,4 +1,4 @@
-import { Session, MockedApp } from 'koishi-test-utils'
+import { Session, MockedApp, utils } from 'koishi-test-utils'
 import { noop } from 'koishi-utils'
 import { help } from '../src'
 import 'koishi-database-memory'
@@ -20,6 +20,8 @@ function prepare (app: MockedApp) {
     .alias('baz-alias')
     .shortcut('baz-shortcut')
 }
+
+utils.getDateNumber.mockReturnValue(10000)
 
 describe('help command', () => {
   let app: MockedApp, session1: Session, session2: Session
