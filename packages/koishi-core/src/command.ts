@@ -64,6 +64,16 @@ export interface ShortcutConfig {
   options?: Record<string, any>
 }
 
+export enum CommandHint {
+  USAGE_EXHAUSTED = 1,
+  TOO_FREQUENT = 2,
+  LOW_AUTHORITY = 4,
+  INSUFFICIENT_ARGUMENTS = 8,
+  REDUNANT_ARGUMENTS = 16,
+  UNKNOWN_OPTIONS = 32,
+  REQUIRED_OPTIONS = 64,
+}
+
 export class Command {
   config: CommandConfig
   children: Command[] = []
@@ -336,14 +346,4 @@ export class Command {
   end () {
     return this.context
   }
-}
-
-export enum CommandHint {
-  USAGE_EXHAUSTED = 1,
-  TOO_FREQUENT = 2,
-  LOW_AUTHORITY = 4,
-  INSUFFICIENT_ARGUMENTS = 8,
-  REDUNANT_ARGUMENTS = 16,
-  UNKNOWN_OPTIONS = 32,
-  REQUIRED_OPTIONS = 64,
 }
