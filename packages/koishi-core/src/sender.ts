@@ -21,10 +21,14 @@ import {
 } from './meta'
 
 export class SenderError extends Error {
-  readonly name = 'SenderError'
-
-  constructor (readonly args: Record<string, any>, readonly url: string, readonly retcode: number) {
+  constructor (args: Record<string, any>, url: string, retcode: number) {
     super(`Error when trying to send to ${url}, args: ${JSON.stringify(args)}, retcode: ${retcode}`)
+    Object.defineProperties(this, {
+      name: { value: 'SenderError' },
+      code: { value: retcode },
+      args: { value: args },
+      url: { value: url },
+    })
   }
 }
 
