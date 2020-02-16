@@ -11,8 +11,8 @@ import { format } from 'util'
 export type NextFunction = (next?: NextFunction) => any
 export type Middleware = (meta: Meta<'message'>, next: NextFunction) => any
 
-type PluginFunction <T extends Context, U> = (ctx: T, options: U) => void
-type PluginObject <T extends Context, U> = { name?: string, apply: PluginFunction<T, U> }
+type PluginFunction <T extends Context, U = any> = (ctx: T, options: U) => void
+type PluginObject <T extends Context, U = any> = { name?: string, apply: PluginFunction<T, U> }
 export type Plugin <T extends Context = Context, U = any> = PluginFunction<T, U> | PluginObject<T, U>
 
 type Subscope = [number[], number[]]
@@ -127,15 +127,13 @@ export class Context {
     })
   }
 
-  plugin <U> (plugin: PluginFunction<this, U>, options?: U): this
-  plugin <U> (plugin: PluginObject<this, U>, options?: U): this
-  plugin <U> (plugin: Plugin<this, U>, options: any) {
+  plugin <T extends Plugin<this>> (plugin: T, options?: T extends Plugin<this, infer U> ? U : never) {
     if (options === false) return
     const ctx = Object.create(this)
     if (typeof plugin === 'function') {
-      plugin(ctx, options)
+      (plugin as PluginFunction<this>)(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
-      plugin.apply(ctx, options)
+      (plugin as PluginObject<this>).apply(ctx, options)
     } else {
       throw new Error(errors.INVALID_PLUGIN)
     }
