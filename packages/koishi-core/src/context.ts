@@ -291,6 +291,7 @@ export interface EventMap {
   'lifecycle' (meta: Meta<'meta_event'>): any
   'lifecycle/enable' (meta: Meta<'meta_event'>): any
   'lifecycle/disable' (meta: Meta<'meta_event'>): any
+  'lifecycle/connect' (meta: Meta<'meta_event'>): any
   'before-user' (fields: Set<UserField>, argv: ParsedCommandLine): any
   'before-group' (fields: Set<GroupField>, argv: ParsedCommandLine): any
   'attach' (meta: Meta<'message'>): any

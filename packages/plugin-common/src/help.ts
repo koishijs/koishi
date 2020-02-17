@@ -94,18 +94,18 @@ async function showCommandHelp (command: Command, meta: Meta<'message'>, options
   const maxUsage = command.getConfig('maxUsage', meta)
   const minInterval = command.getConfig('minInterval', meta)
   if (meta.$user) {
-    const { authority, maxUsageText } = command.config
     const usage = getUsage(command.usageName, meta.$user)
     if (maxUsage !== Infinity) {
-      output.push(`已调用次数：${Math.min(usage.count, maxUsage)}/${maxUsageText || maxUsage}。`)
+      output.push(`已调用次数：${Math.min(usage.count || 0, maxUsage)}/${maxUsage}。`)
     }
+
     if (minInterval > 0) {
       const nextUsage = usage.last ? (Math.max(0, minInterval + usage.last - Date.now()) / 1000).toFixed() : 0
       output.push(`距离下次调用还需：${nextUsage}/${minInterval / 1000} 秒。`)
     }
 
-    if (authority > 1) {
-      output.push(`最低权限：${authority} 级。`)
+    if (command.config.authority > 1) {
+      output.push(`最低权限：${command.config.authority} 级。`)
     }
   }
 
