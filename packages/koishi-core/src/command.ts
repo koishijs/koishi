@@ -39,7 +39,6 @@ export interface CommandConfig {
   authority?: number
   disable?: UserType<boolean>
   maxUsage?: UserType<number>
-  maxUsageText?: string
   minInterval?: UserType<number>
   showWarning?: boolean | number
   noHelpOption?: boolean

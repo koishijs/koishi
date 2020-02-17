@@ -29,16 +29,13 @@ export function getUsage (name: string, user: Pick<UserData, 'usage'>, time = Da
       if (key === '$date') continue
       const { last } = oldUsage[key]
       if (time.valueOf() - last < ONE_DAY) {
-        newUsage[key] = { last, count: 0 }
+        newUsage[key] = { last }
       }
     }
     user.usage = newUsage
   }
 
-  if (!user.usage[name]) {
-    user.usage[name] = { count: 0 }
-  }
-  return user.usage[name]
+  return user.usage[name] || (user.usage[name] = {})
 }
 
 interface UsageOptions {
@@ -52,15 +49,16 @@ export function updateUsage (name: string, user: Pick<UserData, 'usage'>, option
   const { maxUsage = Infinity, minInterval = 0, timestamp = now } = options
   const usage = getUsage(name, user, now)
 
-  if (now - usage.last <= minInterval) {
+  if (now - usage.last < minInterval) {
     return CommandHint.TOO_FREQUENT
+  } else if (options.minInterval || options.timestamp) {
+    usage.last = timestamp
   }
-  usage.last = timestamp
 
   if (usage.count >= maxUsage) {
     return CommandHint.USAGE_EXHAUSTED
-  } else {
-    usage.count++
+  } else if (options.maxUsage) {
+    usage.count = (usage.count || 0) + 1
   }
 }
 

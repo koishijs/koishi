@@ -19,7 +19,6 @@ describe('getTargetId', () => {
 })
 
 const user = createUser(123, 1)
-const realDateNow = Date.now
 const timestamp = 123456789
 const mockedDateNow = Date.now = jest.fn().mockReturnValue(timestamp)
 
@@ -27,29 +26,39 @@ describe('getUsage', () => {
   test('empty usage', () => {
     utils.getDateNumber.mockReturnValue(10000)
     const usage = getUsage('foo', user)
-    expect(usage.count).toBe(0)
-    expect(usage.last).toBeUndefined()
+    expect(usage).toEqual({})
   })
 
   test('update usage', () => {
+    expect(updateUsage('foo', user, { maxUsage: 1, minInterval: 1000 })).toBeFalsy()
+    const usage = getUsage('foo', user)
+    expect(usage).toEqual({ count: 1, last: timestamp })
+  })
+
+  test('too frequent', () => {
+    mockedDateNow.mockReturnValue(timestamp - 1000)
+    expect(updateUsage('foo', user)).toBeTruthy()
+    const usage = getUsage('foo', user)
+    expect(usage).toEqual({ count: 1, last: timestamp })
+  })
+
+  test('update usage 2', () => {
+    mockedDateNow.mockReturnValue(timestamp)
     expect(updateUsage('foo', user)).toBeFalsy()
     const usage = getUsage('foo', user)
-    expect(usage.count).toBe(1)
-    expect(usage.last).toBe(timestamp)
+    expect(usage).toEqual({ count: 1, last: timestamp })
   })
 
   test('another day', () => {
     utils.getDateNumber.mockReturnValue(10001)
     const usage = getUsage('foo', user)
-    expect(usage.count).toBe(0)
-    expect(usage.last).toBe(timestamp)
+    expect(usage).toEqual({ last: timestamp })
   })
 
   test('10 days later', () => {
     utils.getDateNumber.mockReturnValue(10010)
     mockedDateNow.mockReturnValue(864000000 + timestamp)
     const usage = getUsage('foo', user)
-    expect(usage.count).toBe(0)
-    expect(usage.last).toBeUndefined()
+    expect(usage).toEqual({})
   })
 })
