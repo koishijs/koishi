@@ -284,7 +284,7 @@ export class Command {
     if (code) return this._sendHint(code, meta)
 
     // execute command
-    this.context.logger('command').debug('execute %s', this.name)
+    this.context.logger('koishi:command').debug('execute %s', this.name)
     this.app.emitEvent(meta, 'command', argv)
 
     let skipped = false

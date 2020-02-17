@@ -65,7 +65,7 @@ export class Context {
 
   constructor (public readonly identifier: string, private readonly _scope: ContextScope) {
     this.receiver.on('error', (error) => {
-      this.logger().warn(error)
+      this.logger('koishi').warn(error)
     })
 
     this.logger = (scope = '') => {
@@ -145,7 +145,7 @@ export class Context {
   middleware (middleware: Middleware) {
     const { maxMiddlewares } = this.app.options
     if (this.app._middlewares.length >= maxMiddlewares) {
-      this.logger().warn(new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
+      this.logger('koishi').warn(new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
     } else {
       this.app._middlewares.push([this, middleware])
     }
@@ -159,7 +159,7 @@ export class Context {
   prependMiddleware (middleware: Middleware) {
     const { maxMiddlewares } = this.app.options
     if (this.app._middlewares.length >= maxMiddlewares) {
-      this.logger().warn(new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
+      this.logger('koishi').warn(new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
     } else {
       this.app._middlewares.unshift([this, middleware])
     }

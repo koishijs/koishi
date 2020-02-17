@@ -128,9 +128,8 @@ export class App extends Context {
     this.receiver.on('before-group', Command.attachGroupFields)
     this.middleware(this._preprocess)
 
-    this.receiver.on('logger', (scope, message) => {
-      debug('koishi:' + scope)(message)
-    })
+    // apply default logger
+    this.receiver.on('logger', (scope, message) => debug(scope)(message))
   }
 
   get users () {
@@ -236,7 +235,7 @@ export class App extends Context {
     }
     await Promise.all(tasks)
     this.status = Status.open
-    this.logger('app').debug('started')
+    this.logger('koishi:app').debug('started')
     this.receiver.emit('connect')
     if (this.selfId && !this._isReady) {
       this.receiver.emit('ready')
@@ -261,7 +260,7 @@ export class App extends Context {
       this.server.close()
     }
     this.status = Status.closed
-    this.logger('app').debug('stopped')
+    this.logger('koishi:app').debug('stopped')
     this.receiver.emit('disconnect')
     if (appList.every(app => app.status === Status.closed)) {
       onStopHooks.forEach(hook => hook(...appList))
@@ -270,7 +269,7 @@ export class App extends Context {
 
   emitEvent <K extends Events> (meta: Meta, event: K, ...payload: Parameters<EventMap[K]>) {
     if (!meta.$ctxType) {
-      this.logger('receiver').debug('/', 'emits', event)
+      this.logger('koishi:receiver').debug('/', 'emits', event)
       this.receiver.emit(event, ...payload)
       return
     }
@@ -278,7 +277,7 @@ export class App extends Context {
     for (const path in this._contexts) {
       const context = this._contexts[path]
       if (!context.match(meta)) continue
-      this.logger('receiver').debug(path, 'emits', event)
+      this.logger('koishi:receiver').debug(path, 'emits', event)
       context.receiver.emit(event, ...payload)
     }
   }
@@ -434,7 +433,7 @@ export class App extends Context {
     let index = 0
     const next = async (fallback?: NextFunction) => {
       if (!this._middlewareSet.has(counter)) {
-        return this.logger().warn(new Error(errors.ISOLATED_NEXT))
+        return this.logger('koishi').warn(new Error(errors.ISOLATED_NEXT))
       }
       if (fallback) middlewares.push((_, next) => fallback(next))
       try {
