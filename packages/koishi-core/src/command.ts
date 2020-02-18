@@ -23,6 +23,7 @@ export interface ParsedCommandLine extends Partial<ParsedLine> {
 }
 
 export type UserType <T> = T | ((user: UserData) => T)
+export type CommandUsage = string | ((this: Command, meta: Meta) => string | Promise<string>)
 
 export interface CommandConfig {
   /** disallow unknown options */
@@ -80,7 +81,7 @@ export class Command {
 
   _aliases: string[] = []
   _options: CommandOption[] = []
-  _usage?: string
+  _usage?: CommandUsage
   _examples: string[] = []
   _shortcuts: Record<string, ShortcutConfig> = {}
   _userFields = new Set<UserField>()
@@ -185,7 +186,7 @@ export class Command {
     return this
   }
 
-  usage (text: string) {
+  usage (text: CommandUsage) {
     this._usage = text
     return this
   }

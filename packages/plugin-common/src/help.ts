@@ -69,15 +69,15 @@ export const GLOBAL_HELP_EPILOGUE = [
   '输入“帮助+指令名”查看特定指令的语法和使用示例。',
 ].join('\n')
 
-function showGlobalHelp (context: Context, meta: Meta<'message'>, options: any) {
+function showGlobalHelp (context: Context, meta: Meta<'message'>, config: any) {
   return meta.$send([
     GLOBAL_HELP_PROLOGUE,
-    ...getCommandList(context, meta, null, options.expand),
+    ...getCommandList(context, meta, null, config.expand),
     GLOBAL_HELP_EPILOGUE,
   ].join('\n'))
 }
 
-async function showCommandHelp (command: Command, meta: Meta<'message'>, options: any) {
+async function showCommandHelp (command: Command, meta: Meta<'message'>, config: any) {
   const output = [command.name + command.declaration, command.config.description]
   if (command.context.database) {
     meta.$user = await command.context.database.observeUser(meta.userId)
@@ -109,19 +109,20 @@ async function showCommandHelp (command: Command, meta: Meta<'message'>, options
     }
   }
 
-  if (command._usage) {
-    output.push(command._usage)
+  const usage = command._usage
+  if (usage) {
+    output.push(typeof usage === 'string' ? usage : await usage.call(command, meta))
   }
 
-  const _options = command._options.filter(option => !option.hidden)
-  if (_options.length) {
-    if (_options.some(o => o.authority)) {
+  const options = command._options.filter(option => !option.hidden)
+  if (options.length) {
+    if (options.some(o => o.authority)) {
       output.push('可用的选项有（括号内为额外要求的权限等级）：')
     } else {
       output.push('可用的选项有：')
     }
 
-    _options.forEach((option) => {
+    options.forEach((option) => {
       const authority = option.authority ? `(${option.authority}) ` : ''
       let line = `    ${authority}${option.rawName}  ${option.description}`
       if (option.notUsage && maxUsage !== Infinity) {
@@ -138,7 +139,7 @@ async function showCommandHelp (command: Command, meta: Meta<'message'>, options
   if (command.children.length) {
     output.push(
       '可用的子指令有（括号内为对应的最低权限等级，标有星号的表示含有子指令）：',
-      ...getCommandList(command.context, meta, command, options.expand),
+      ...getCommandList(command.context, meta, command, config.expand),
     )
   }
 
