@@ -42,6 +42,6 @@
     "koishi-plugin-common": "^2.1.2",
     "koishi-plugin-schedule": "^1.0.7",
     "koishi-utils": "^1.0.3",
-    "prompts": "^2.3.0"
+    "prompts": "^2.3.1"
   }
 }
