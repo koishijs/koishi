@@ -143,7 +143,7 @@ koishi run
 
 ### 完善 Koishi 的文档
 
-与上面类似，但是针对的是 [这个项目](https://github.com/koishijs/koishi.js.org)。
+与上面类似，但是针对的是 [这个项目](https://github.com/koishijs/koishijs.github.io)。
 
 ### 开发 Koishi 插件
 
