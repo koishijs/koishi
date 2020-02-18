@@ -28,7 +28,7 @@ injectMethods('sqlite', 'user', {
   },
 
   async getUsers (...args) {
-    let ids: number[], fields: UserField[]
+    let ids: readonly number[], fields: readonly UserField[]
     if (args.length > 1) {
       ids = args[0]
       fields = args[1]
