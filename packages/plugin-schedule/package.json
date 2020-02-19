@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-schedule",
   "description": "Schedule plugin for Koishi",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -31,12 +31,12 @@
   ],
   "devDependencies": {
     "@types/ms": "^0.7.31",
-    "koishi-database-level": "^1.1.1",
-    "koishi-database-mysql": "^1.1.1",
-    "koishi-test-utils": "^3.1.0"
+    "koishi-database-level": "^1.1.2",
+    "koishi-database-mysql": "^1.1.2",
+    "koishi-test-utils": "^3.1.1"
   },
   "dependencies": {
-    "koishi-core": "^1.8.1",
+    "koishi-core": "^1.9.0",
     "koishi-utils": "^1.0.3",
     "ms": "^2.1.2"
   }
