@@ -1,4 +1,4 @@
-import { Context } from 'koishi-core'
+import { Context, getTargetId } from 'koishi-core'
 
 export default function apply (ctx: Context) {
   ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3 })
@@ -31,7 +31,8 @@ export default function apply (ctx: Context) {
       const newMeta = { ...meta }
       let user = meta.$user
       if (options.user) {
-        const id = +options.user
+        const id = getTargetId(options.user)
+        if (!id) return meta.$send('未指定目标。')
         user = await ctx.database.observeUser(id)
         if (meta.$user.authority <= user.authority) {
           return meta.$send('权限不足。')

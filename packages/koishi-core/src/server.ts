@@ -29,7 +29,7 @@ export abstract class Server {
   }
 
   protected debug (format: any, ...params: any[]) {
-    this.app?.logger('sender').debug(format, ...params)
+    this.app?.logger('koishi:sender').debug(format, ...params)
   }
 
   protected prepareMeta (data: any) {

@@ -29,16 +29,13 @@ export function getUsage (name: string, user: Pick<UserData, 'usage'>, time = Da
       if (key === '$date') continue
       const { last } = oldUsage[key]
       if (time.valueOf() - last < ONE_DAY) {
-        newUsage[key] = { last, count: 0 }
+        newUsage[key] = { last }
       }
     }
     user.usage = newUsage
   }
 
-  if (!user.usage[name]) {
-    user.usage[name] = { count: 0 }
-  }
-  return user.usage[name]
+  return user.usage[name] || (user.usage[name] = {})
 }
 
 interface UsageOptions {
@@ -52,15 +49,16 @@ export function updateUsage (name: string, user: Pick<UserData, 'usage'>, option
   const { maxUsage = Infinity, minInterval = 0, timestamp = now } = options
   const usage = getUsage(name, user, now)
 
-  if (now - usage.last <= minInterval) {
+  if (now - usage.last < minInterval) {
     return CommandHint.TOO_FREQUENT
+  } else if (options.minInterval || options.timestamp) {
+    usage.last = timestamp
   }
-  usage.last = timestamp
 
   if (usage.count >= maxUsage) {
     return CommandHint.USAGE_EXHAUSTED
-  } else {
-    usage.count++
+  } else if (options.maxUsage) {
+    usage.count = (usage.count || 0) + 1
   }
 }
 
@@ -86,28 +84,23 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
   })
   if (!suggestions.length) return next()
 
-  return next(async () => {
-    let message = prefix + format(messages.SUGGESTION_TEXT, suggestions.map(name => `“${name}”`).join('或'))
-    if (suggestions.length === 1) {
-      const [suggestion] = suggestions
-      const command = typeof options.command === 'function' ? options.command(suggestion) : options.command
-      const userFields = new Set<UserField>()
-      const groupFields = new Set<GroupField>()
-      Command.attachUserFields(userFields, { command, meta })
-      Command.attachGroupFields(groupFields, { command, meta })
-      command.context.onceMiddleware(async (meta, next) => {
-        if (!meta.message.trim()) {
-          meta.$user = await command.context.database?.observeUser(meta.userId, Array.from(userFields))
-          if (meta.messageType === 'group') {
-            meta.$group = await command.context.database?.observeGroup(meta.groupId, Array.from(groupFields))
-          }
-          return execute(suggestions[0], meta, next)
-        } else {
-          return next()
-        }
-      }, meta)
-      message += suffix
-    }
-    await meta.$send(message)
+  return next(() => {
+    const message = prefix + format(messages.SUGGESTION_TEXT, suggestions.map(name => `“${name}”`).join('或'))
+    if (suggestions.length > 1) return meta.$send(message)
+
+    const command = typeof options.command === 'function' ? options.command(suggestions[0]) : options.command
+    const userFields = new Set<UserField>()
+    const groupFields = new Set<GroupField>()
+    Command.attachUserFields(userFields, { command, meta })
+    Command.attachGroupFields(groupFields, { command, meta })
+    command.context.onceMiddleware(async (meta, next) => {
+      if (meta.message.trim()) return next()
+      meta.$user = await command.context.database?.observeUser(meta.userId, Array.from(userFields))
+      if (meta.messageType === 'group') {
+        meta.$group = await command.context.database?.observeGroup(meta.groupId, Array.from(groupFields))
+      }
+      return execute(suggestions[0], meta, next)
+    }, meta)
+    return meta.$send(message + suffix)
   })
 }

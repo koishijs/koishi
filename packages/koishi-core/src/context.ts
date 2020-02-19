@@ -11,8 +11,8 @@ import { format } from 'util'
 export type NextFunction = (next?: NextFunction) => any
 export type Middleware = (meta: Meta<'message'>, next: NextFunction) => any
 
-type PluginFunction <T extends Context, U> = (ctx: T, options: U) => void
-type PluginObject <T extends Context, U> = { name?: string, apply: PluginFunction<T, U> }
+type PluginFunction <T extends Context, U = any> = (ctx: T, options: U) => void
+type PluginObject <T extends Context, U = any> = { name?: string, apply: PluginFunction<T, U> }
 export type Plugin <T extends Context = Context, U = any> = PluginFunction<T, U> | PluginObject<T, U>
 
 type Subscope = [number[], number[]]
@@ -65,7 +65,7 @@ export class Context {
 
   constructor (public readonly identifier: string, private readonly _scope: ContextScope) {
     this.receiver.on('error', (error) => {
-      this.logger().warn(error)
+      this.logger('koishi').warn(error)
     })
 
     this.logger = (scope = '') => {
@@ -127,15 +127,15 @@ export class Context {
     })
   }
 
-  plugin <U> (plugin: PluginFunction<this, U>, options?: U): this
-  plugin <U> (plugin: PluginObject<this, U>, options?: U): this
-  plugin <U> (plugin: Plugin<this, U>, options: any) {
+  plugin <T extends PluginFunction<this>> (plugin: T, options?: T extends PluginFunction<this, infer U> ? U : never): this
+  plugin <T extends PluginObject<this>> (plugin: T, options?: T extends PluginObject<this, infer U> ? U : never): this
+  plugin <T extends Plugin<this>> (plugin: T, options?: T extends Plugin<this, infer U> ? U : never) {
     if (options === false) return
     const ctx = Object.create(this)
     if (typeof plugin === 'function') {
-      plugin(ctx, options)
+      (plugin as PluginFunction<this>)(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
-      plugin.apply(ctx, options)
+      (plugin as PluginObject<this>).apply(ctx, options)
     } else {
       throw new Error(errors.INVALID_PLUGIN)
     }
@@ -145,7 +145,7 @@ export class Context {
   middleware (middleware: Middleware) {
     const { maxMiddlewares } = this.app.options
     if (this.app._middlewares.length >= maxMiddlewares) {
-      this.logger().warn(new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
+      this.logger('koishi').warn(new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
     } else {
       this.app._middlewares.push([this, middleware])
     }
@@ -159,7 +159,7 @@ export class Context {
   prependMiddleware (middleware: Middleware) {
     const { maxMiddlewares } = this.app.options
     if (this.app._middlewares.length >= maxMiddlewares) {
-      this.logger().warn(new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
+      this.logger('koishi').warn(new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
     } else {
       this.app._middlewares.unshift([this, middleware])
     }
@@ -291,6 +291,7 @@ export interface EventMap {
   'lifecycle' (meta: Meta<'meta_event'>): any
   'lifecycle/enable' (meta: Meta<'meta_event'>): any
   'lifecycle/disable' (meta: Meta<'meta_event'>): any
+  'lifecycle/connect' (meta: Meta<'meta_event'>): any
   'before-user' (fields: Set<UserField>, argv: ParsedCommandLine): any
   'before-group' (fields: Set<GroupField>, argv: ParsedCommandLine): any
   'attach' (meta: Meta<'message'>): any

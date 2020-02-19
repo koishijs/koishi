@@ -17,7 +17,7 @@ export interface SubTypeMap {
   notice: 'set' | 'unset' | 'approve' | 'invite' | 'leave' | 'kick' | 'kick_me' | 'ban' | 'lift_ban'
   request: 'add' | 'invite'
   // eslint-disable-next-line camelcase
-  meta_event: 'enable' | 'disable'
+  meta_event: 'enable' | 'disable' | 'connect'
   send: never
 }
 

@@ -23,6 +23,7 @@ export interface ParsedCommandLine extends Partial<ParsedLine> {
 }
 
 export type UserType <T> = T | ((user: UserData) => T)
+export type CommandUsage = string | ((this: Command, meta: Meta) => string | Promise<string>)
 
 export interface CommandConfig {
   /** disallow unknown options */
@@ -39,7 +40,6 @@ export interface CommandConfig {
   authority?: number
   disable?: UserType<boolean>
   maxUsage?: UserType<number>
-  maxUsageText?: string
   minInterval?: UserType<number>
   showWarning?: boolean | number
   noHelpOption?: boolean
@@ -81,7 +81,7 @@ export class Command {
 
   _aliases: string[] = []
   _options: CommandOption[] = []
-  _usage?: string
+  _usage?: CommandUsage
   _examples: string[] = []
   _shortcuts: Record<string, ShortcutConfig> = {}
   _userFields = new Set<UserField>()
@@ -186,7 +186,7 @@ export class Command {
     return this
   }
 
-  usage (text: string) {
+  usage (text: CommandUsage) {
     this._usage = text
     return this
   }
@@ -285,7 +285,7 @@ export class Command {
     if (code) return this._sendHint(code, meta)
 
     // execute command
-    this.context.logger('command').debug('execute %s', this.name)
+    this.context.logger('koishi:command').debug('execute %s', this.name)
     this.app.emitEvent(meta, 'command', argv)
 
     let skipped = false

@@ -1,6 +1,4 @@
 import spawn from 'cross-spawn'
-import open from 'open'
-import { resolve } from 'path'
 
 const args = ['jest', '--coverage']
 

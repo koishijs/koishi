@@ -1,4 +1,4 @@
-import { Command, Meta, Context, ParsedLine, ParsedCommandLine, App } from 'koishi-core'
+import { Command, Meta, Context, ParsedLine, ParsedCommandLine } from 'koishi-core'
 import { tag, load } from 'nodejieba'
 import { resolve } from 'path'
 

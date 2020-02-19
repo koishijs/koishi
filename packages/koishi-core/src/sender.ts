@@ -21,10 +21,14 @@ import {
 } from './meta'
 
 export class SenderError extends Error {
-  readonly name = 'SenderError'
-
-  constructor (readonly args: Record<string, any>, readonly url: string, readonly retcode: number) {
+  constructor (args: Record<string, any>, url: string, retcode: number) {
     super(`Error when trying to send to ${url}, args: ${JSON.stringify(args)}, retcode: ${retcode}`)
+    Object.defineProperties(this, {
+      name: { value: 'SenderError' },
+      code: { value: retcode },
+      args: { value: args },
+      url: { value: url },
+    })
   }
 }
 
@@ -66,9 +70,9 @@ export class Sender {
   }
 
   async get <T = any> (action: string, params: Record<string, any> = {}, silent = false): Promise<T> {
-    this.app.logger('sender').debug('request %s %o', action, params)
+    this.app.logger('koishi:sender').debug('request %s %o', action, params)
     const response = await this._get(action, snakeCase(params))
-    this.app.logger('sender').debug('response %o', response)
+    this.app.logger('koishi:sender').debug('response %o', response)
     const { data, retcode } = response
     if (retcode === 0 && !silent) {
       return camelCase(data)

@@ -22,6 +22,7 @@ beforeAll(async () => {
 
 test('check input', async () => {
   await session1.shouldHaveReply('ctxf -u 456', '请输入要发送的文本。')
+  await session2.shouldHaveReply('ctxf -m foo show-context', '未指定目标。')
   await session1.shouldHaveReply('ctxf show-context', '请提供新的上下文。')
   await session1.shouldHaveReply('ctxf -u 789 show-context', '权限不足。')
   await session1.shouldHaveReply('ctxf -m 456 show-context', '无法在私聊上下文使用 --member 选项。')

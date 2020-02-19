@@ -41,7 +41,7 @@ injectMethods('mysql', 'group', {
   },
 
   async getAllGroups (...args) {
-    let assignees: number[], fields: GroupField[]
+    let assignees: readonly number[], fields: readonly GroupField[]
     if (args.length > 1) {
       fields = args[0]
       assignees = args[1]
