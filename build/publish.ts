@@ -14,7 +14,11 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
 const headerMap = {
   feat: 'Features',
   fix: 'Bug Fixes',
+  dep: 'Dependencies',
 }
+
+const prefixes = Object.keys(headerMap)
+const prefixRegExp = new RegExp(`^(${prefixes.join('|')})(?:\\((\\S+)\\))?: (.+)$`)
 
 ;(async () => {
   let folders = await getWorkspaces()
@@ -60,15 +64,16 @@ const headerMap = {
     return console.log(`Tag ${version} already exists.`)
   }
 
-  const updates = { fix: '', feat: '' }
+  const updates = {}
   const lastTag = tags[tags.length - 1]
   const commits = spawnSync(`git log ${lastTag}..HEAD --format=%H%s`).split(/\r?\n/).reverse()
   for (const commit of commits) {
     const hash = commit.slice(0, 40)
-    const details = /^(fix|feat)(?:\((\S+)\))?: (.+)$/.exec(commit.slice(40))
+    const details = prefixRegExp.exec(commit.slice(40))
     if (!details) continue
     let message = details[3]
     if (details[2]) message = `**${details[2]}:** ${message}`
+    if (!updates[details[1]]) updates[details[1]] = ''
     updates[details[1]] += `- ${message} (${hash})\n`
   }
 
