@@ -42,7 +42,7 @@ function showGlobalShortcut (context: Context, meta: Meta<'message'>) {
   return meta.$send(`当前可用的全局指令有：${shortcuts.join('，')}。`)
 }
 
-function getCommandList (context: Context, meta: Meta<'message'>, parent: Command, expand: boolean) {
+function getCommandList (prefix: string, context: Context, meta: Meta<'message'>, parent: Command, expand: boolean) {
   let commands = getCommands(context, meta, parent)
   if (!expand) {
     commands = commands.filter(cmd => cmd.parent === parent)
@@ -54,26 +54,23 @@ function getCommandList (context: Context, meta: Meta<'message'>, parent: Comman
           || cmd.children.find(cmd => cmd.name.includes('.', startPosition)))
     })
   }
+  let hasSubcommand = false
   const output = commands.map(({ name, config, children }) => {
+    if (children.length) hasSubcommand = true
     return `    ${name} (${config.authority}${children.length ? '*' : ''})  ${config.description}`
   })
+  output.unshift(`${prefix}（括号内为对应的最低权限等级${hasSubcommand ? '，标有星号的表示含有子指令' : ''}）：`)
   if (expand) output.push('注：部分指令组已展开，故不再显示。')
   return output
 }
 
-export const GLOBAL_HELP_PROLOGUE = '当前可用的指令有（括号内为对应的最低权限等级，标有星号的表示含有子指令）：'
-export const GLOBAL_HELP_EPILOGUE = [
-  '群聊普通指令可以通过“@我+指令名”的方式进行触发。',
-  '私聊或全局指令则不需要添加上述前缀，直接输入指令名即可触发。',
-  '输入“全局指令”查看全部可用的全局指令。',
-  '输入“帮助+指令名”查看特定指令的语法和使用示例。',
-].join('\n')
-
 function showGlobalHelp (context: Context, meta: Meta<'message'>, config: any) {
   return meta.$send([
-    GLOBAL_HELP_PROLOGUE,
-    ...getCommandList(context, meta, null, config.expand),
-    GLOBAL_HELP_EPILOGUE,
+    ...getCommandList('当前可用的指令有', context, meta, null, config.expand),
+    '群聊普通指令可以通过“@我+指令名”的方式进行触发。',
+    '私聊或全局指令则不需要添加上述前缀，直接输入指令名即可触发。',
+    '输入“全局指令”查看全部可用的全局指令。',
+    '输入“帮助+指令名”查看特定指令的语法和使用示例。',
   ].join('\n'))
 }
 
@@ -137,10 +134,7 @@ async function showCommandHelp (command: Command, meta: Meta<'message'>, config:
   }
 
   if (command.children.length) {
-    output.push(
-      '可用的子指令有（括号内为对应的最低权限等级，标有星号的表示含有子指令）：',
-      ...getCommandList(command.context, meta, command, config.expand),
-    )
+    output.push(...getCommandList('可用的子指令有', command.context, meta, command, config.expand))
   }
 
   return meta.$send(output.join('\n'))

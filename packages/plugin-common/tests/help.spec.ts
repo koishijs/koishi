@@ -17,6 +17,7 @@ function prepare (app: MockedApp) {
     .example('example 1')
     .example('example 2')
   app.command('bar.baz', 'command with alias and shortcut')
+    .usage(() => 'usage text')
     .alias('baz-alias')
     .shortcut('baz-shortcut')
 }
