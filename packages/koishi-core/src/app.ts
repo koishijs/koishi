@@ -359,6 +359,9 @@ export class App extends Context {
         const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
         Object.defineProperty(meta, '$group', { value: group, writable: true })
 
+        // emit attach event
+        this.emitEvent(meta, 'attach-group', meta)
+
         // ignore some group calls
         const isAssignee = !group.assignee || group.assignee === this.selfId
         const noCommand = group.flag & GroupFlag.noCommand
@@ -377,6 +380,7 @@ export class App extends Context {
 
       // emit attach event
       this.emitEvent(meta, 'attach', meta)
+      this.emitEvent(meta, 'attach-user', meta)
 
       // ignore some user calls
       if (user.flag & UserFlag.ignore) return

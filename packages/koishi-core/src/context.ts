@@ -294,7 +294,8 @@ export interface EventMap {
   'lifecycle/connect' (meta: Meta<'meta_event'>): any
   'before-user' (fields: Set<UserField>, argv: ParsedCommandLine): any
   'before-group' (fields: Set<GroupField>, argv: ParsedCommandLine): any
-  'attach' (meta: Meta<'message'>): any
+  'attach-user' (meta: Meta<'message'>): any
+  'attach-group' (meta: Meta<'message'>): any
   'send' (meta: Meta<'send'>): any
   'before-send' (meta: Meta<'send'>): any
   'before-command' (argv: ParsedCommandLine): any
@@ -315,6 +316,9 @@ export interface EventMap {
   'connect' (): any
   'before-disconnect' (): any
   'disconnect' (): any
+
+  // TODO: deprecated events
+  'attach' (meta: Meta<'message'>): any
 }
 
 export type Events = keyof EventMap
