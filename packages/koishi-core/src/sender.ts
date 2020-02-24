@@ -116,6 +116,7 @@ export class Sender {
       postType: 'send',
       userId: this.app.selfId,
       [$ctxType + 'Id']: $ctxId,
+      time: Math.round(Date.now() / 1000),
     } as Meta<'send'>
   }
 
