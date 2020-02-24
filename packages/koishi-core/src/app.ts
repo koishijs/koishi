@@ -289,7 +289,6 @@ export class App extends Context {
     let nickname = ''
     let prefix: string = null
     let message = simplify(meta.message.trim())
-    let parsedArgv: ParsedCommandLine
 
     if (meta.messageType !== 'private' && (capture = message.match(this.atMeRE))) {
       atMe = true
@@ -309,15 +308,20 @@ export class App extends Context {
     }
 
     // store parsed message
-    meta.$parsed = { atMe, nickname, prefix, message }
+    Object.defineProperty(meta, '$parsed', {
+      value: { atMe, nickname, prefix, message },
+    })
 
     // parse as command
-    if (prefix !== null || nickname || meta.messageType === 'private') {
-      parsedArgv = this.parseCommandLine(message, meta)
+    if (!meta.$argv && (prefix !== null || nickname || meta.messageType === 'private')) {
+      Object.defineProperty(meta, '$argv', {
+        configurable: true,
+        value: this.parseCommandLine(message, meta),
+      })
     }
 
     // parse as shortcut
-    if (!parsedArgv && !prefix) {
+    if (!meta.$argv && !prefix) {
       for (const shortcut of this._shortcuts) {
         const { name, fuzzy, command, oneArg, prefix, options, args = [] } = shortcut
         if (prefix && !nickname) continue
@@ -330,17 +334,28 @@ export class App extends Context {
             : command.parse(_message.trim())
           result.options = { ...options, ...result.options }
           result.args.unshift(...args)
-          parsedArgv = { meta, command, ...result }
+          Object.defineProperty(meta, '$argv', {
+            configurable: true,
+            value: { meta, command, ...result },
+          })
           break
         }
       }
     }
 
+    if (!meta.$argv) {
+      Object.defineProperty(meta, '$argv', {
+        configurable: true,
+        value: { meta },
+      })
+    }
+
+    const { command } = meta.$argv
     if (this.database) {
       if (meta.messageType === 'group') {
         // attach group data
         const groupFields = new Set<GroupField>(['flag', 'assignee'])
-        this.emitEvent(meta, 'before-group', groupFields, parsedArgv || { meta })
+        this.emitEvent(meta, 'before-group', groupFields, meta.$argv)
         const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
         Object.defineProperty(meta, '$group', { value: group, writable: true })
 
@@ -348,7 +363,7 @@ export class App extends Context {
         const isAssignee = !group.assignee || group.assignee === this.selfId
         const noCommand = group.flag & GroupFlag.noCommand
         const noResponse = group.flag & GroupFlag.noResponse || !isAssignee
-        if (noCommand && parsedArgv) return
+        if (noCommand && command) return
         if (noResponse && !atMe) return
         const originalNext = next
         next = (fallback?: NextFunction) => noResponse as never || originalNext(fallback)
@@ -356,7 +371,7 @@ export class App extends Context {
 
       // attach user data
       const userFields = new Set<UserField>(['flag'])
-      this.emitEvent(meta, 'before-user', userFields, parsedArgv || { meta })
+      this.emitEvent(meta, 'before-user', userFields, meta.$argv)
       const user = await this.database.observeUser(meta.userId, Array.from(userFields))
       Object.defineProperty(meta, '$user', { value: user, writable: true })
 
@@ -368,13 +383,13 @@ export class App extends Context {
     }
 
     // execute command
-    if (parsedArgv && !parsedArgv.command.getConfig('disable', meta)) {
-      return parsedArgv.command.execute(parsedArgv, next)
+    if (command && !command.getConfig('disable', meta)) {
+      return command.execute(meta.$argv, next)
     }
 
     // show suggestions
     const target = message.split(/\s/, 1)[0].toLowerCase()
-    if (!target || !capture || parsedArgv) return next()
+    if (!target || !capture || command) return next()
 
     const executableMap = new Map<Command, boolean>()
     return showSuggestions({
