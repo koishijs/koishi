@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-nlp",
   "description": "Natural Language Processor for Koishi",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -30,11 +30,11 @@
     "jieba"
   ],
   "devDependencies": {
-    "koishi-test-utils": "^3.1.1"
+    "koishi-test-utils": "^3.1.2"
   },
   "dependencies": {
-    "koishi-core": "^1.9.0",
-    "koishi-utils": "^1.0.3",
+    "koishi-core": "^1.10.0",
+    "koishi-utils": "^1.0.4",
     "nodejieba": "^2.4.0"
   }
 }
