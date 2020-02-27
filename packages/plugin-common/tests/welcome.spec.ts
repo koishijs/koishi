@@ -1,7 +1,7 @@
 import { MockedApp } from 'koishi-test-utils'
 import { Meta } from 'koishi-core'
 import { sleep } from 'koishi-utils'
-import { welcome, WelcomeMessage } from '../src'
+import { welcome } from '../src'
 import 'koishi-database-memory'
 
 const shared: Meta = {
@@ -23,7 +23,7 @@ test('basic support', async () => {
 
 test('check assignee', async () => {
   const app = new MockedApp({ database: { memory: {} } })
-  app.plugin<WelcomeMessage>(welcome, 'welcome')
+  app.plugin(welcome, 'welcome')
 
   await app.start()
   await app.database.getGroup(123, app.selfId)

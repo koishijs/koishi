@@ -1,7 +1,7 @@
 import { App } from 'koishi-test-utils'
 import { sleep } from 'koishi-utils'
 import { createUser } from 'koishi-core'
-import { authorize, AuthorizeOptions } from '../src'
+import { authorize } from '../src'
 import 'koishi-database-memory'
 
 let counter = 0
@@ -15,7 +15,7 @@ test('authorize user', async () => {
 
   // make coverage happy
   app.plugin(authorize)
-  app.plugin<AuthorizeOptions>(authorize, {
+  app.plugin(authorize, {
     authorizeUser: {
       123: 2,
       231: 2,
@@ -39,7 +39,7 @@ test('authorize user', async () => {
 test('authorize group 1', async () => {
   const app = createApp()
 
-  app.plugin<AuthorizeOptions>(authorize, {
+  app.plugin(authorize, {
     authorizeGroup: {
       456: 2,
     },
@@ -68,7 +68,7 @@ test('authorize group 1', async () => {
 test('authorize group 2', async () => {
   const app = createApp()
 
-  app.plugin<AuthorizeOptions>(authorize, {
+  app.plugin(authorize, {
     authorizeGroup: {
       456: { admin: 2, owner: 3 },
     },
@@ -92,7 +92,7 @@ test('authorize group 2', async () => {
 describe('handle group increase', () => {
   const app = createApp()
 
-  app.plugin<AuthorizeOptions>(authorize, {
+  app.plugin(authorize, {
     authorizeGroup: {
       456: 2,
     },
@@ -138,7 +138,7 @@ describe('handle group increase', () => {
 describe('handle group admin set', () => {
   const app = createApp()
 
-  app.plugin<AuthorizeOptions>(authorize, {
+  app.plugin(authorize, {
     authorizeGroup: {
       456: { admin: 2 },
     },
@@ -181,7 +181,7 @@ describe('handle group admin set', () => {
 test('mixed usage', async () => {
   const app = createApp()
 
-  app.plugin<AuthorizeOptions>(authorize, {
+  app.plugin(authorize, {
     authorizeUser: {
       123: 2,
     },
