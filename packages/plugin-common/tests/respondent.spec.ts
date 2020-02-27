@@ -1,12 +1,12 @@
 import { MockedApp } from 'koishi-test-utils'
-import { respondent, Respondent } from '../src'
+import { respondent } from '../src'
 
 const app = new MockedApp()
 const session = app.createSession('user', 123)
 
 // make coverage happy
 app.plugin(respondent)
-app.plugin<Respondent[]>(respondent, [{
+app.plugin(respondent, [{
   match: '挖坑一时爽',
   reply: '填坑火葬场',
 }, {

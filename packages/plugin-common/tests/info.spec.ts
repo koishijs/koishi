@@ -1,5 +1,5 @@
 import { MockedApp, Session } from 'koishi-test-utils'
-import { info, registerUserInfo, InfoOptions } from '../src'
+import { info, registerUserInfo } from '../src'
 import 'koishi-database-memory'
 
 // make coverage happy
@@ -36,7 +36,7 @@ test('basic support', async () => {
 })
 
 test('getUserName', async () => {
-  app.plugin<InfoOptions>(info, {
+  app.plugin(info, {
     getUserName (user, meta) {
       if (user.id !== meta.userId) return 'bar'
     },

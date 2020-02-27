@@ -1,33 +1,39 @@
-import { MockedApp } from 'koishi-test-utils'
-import { sleep } from 'koishi-utils'
+import { MockedApp, BASE_SELF_ID } from 'koishi-test-utils'
+import { startAll, stopAll } from 'koishi-core'
 import { broadcast } from '../src'
 import 'koishi-database-memory'
 
-const app = new MockedApp({ database: { memory: {} } })
+const app1 = new MockedApp({ database: { memory: {} } })
+const app2 = new MockedApp({ database: { memory: {} }, selfId: BASE_SELF_ID + 1 })
 
-app.plugin(broadcast)
-
-jest.useFakeTimers()
+app1.plugin(broadcast)
 
 beforeAll(async () => {
-  await app.start()
-  await app.database.getUser(123, 4)
-  await app.database.getGroup(321, app.selfId)
-  await app.database.getGroup(654, app.selfId)
+  await startAll()
+  await app1.database.getUser(123, 4)
+  await app1.database.getGroup(321, app1.selfId)
+  await app1.database.getGroup(654, app1.selfId)
+  await app2.database.getGroup(987, app2.selfId)
 })
 
-afterAll(() => app.stop())
-
-async function nextTick () {
-  jest.advanceTimersToNextTimer()
-  jest.useRealTimers()
-  await sleep(0)
-  jest.useFakeTimers()
-}
+afterAll(() => stopAll())
 
 test('basic support', async () => {
-  await app.receiveMessage('user', 'broadcast foo bar', 123)
-  app.shouldHaveLastRequest('send_group_msg', { message: 'foo bar', groupId: 321 })
-  await nextTick()
-  app.shouldHaveLastRequest('send_group_msg', { message: 'foo bar', groupId: 654 })
+  await app1.receiveMessage('user', 'broadcast foo bar', 123)
+  app1.shouldHaveLastRequests([
+    ['send_group_msg', { message: 'foo bar', groupId: 321 }],
+    ['send_group_msg', { message: 'foo bar', groupId: 654 }],
+  ])
+  app2.shouldHaveLastRequests([
+    ['send_group_msg', { message: 'foo bar', groupId: 987 }],
+  ])
+})
+
+test('self only', async () => {
+  await app1.receiveMessage('user', 'broadcast -o foo bar', 123)
+  app1.shouldHaveLastRequests([
+    ['send_group_msg', { message: 'foo bar', groupId: 321 }],
+    ['send_group_msg', { message: 'foo bar', groupId: 654 }],
+  ])
+  app2.shouldHaveNoRequests()
 })

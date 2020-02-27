@@ -46,8 +46,8 @@ namespace CQCode {
     const [_, type, attrs] = capture
     const data: Record<string, string | number> = {}
     attrs.slice(1).split(/,/g).forEach((str) => {
-      const [_, key, value] = str.match(/^(\w+)=(.+)$/)
-      data[key] = unescape(value)
+      const index = str.indexOf('=')
+      data[str.slice(0, index)] = unescape(str.slice(index + 1))
     })
     return { type, data, capture }
   }

@@ -11,7 +11,8 @@ Array [
   "bar.baz
 command with alias and shortcut
 中文别名：baz-alias。
-相关全局指令：baz-shortcut。",
+相关全局指令：baz-shortcut。
+usage text",
 ]
 `;
 
@@ -20,7 +21,8 @@ Array [
   "bar.baz
 command with alias and shortcut
 中文别名：baz-alias。
-相关全局指令：baz-shortcut。",
+相关全局指令：baz-shortcut。
+usage text",
 ]
 `;
 
@@ -64,7 +66,7 @@ usage text
 使用示例：
     example 1
     example 2
-可用的子指令有（括号内为对应的最低权限等级，标有星号的表示含有子指令）：
+可用的子指令有（括号内为对应的最低权限等级）：
     bar.baz (1)  command with alias and shortcut",
 ]
 `;
@@ -101,7 +103,7 @@ Array [
 可用的选项有：
     -e, --expand  展开指令列表
     -s, --shortcut  查看全局指令列表
-可用的子指令有（括号内为对应的最低权限等级，标有星号的表示含有子指令）：
+可用的子指令有（括号内为对应的最低权限等级）：
 注：部分指令组已展开，故不再显示。",
 ]
 `;

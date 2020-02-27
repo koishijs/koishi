@@ -1,12 +1,12 @@
 import { MockedApp } from 'koishi-test-utils'
-import { repeater, RepeaterOptions } from '../src'
+import { repeater } from '../src'
 import 'koishi-database-memory'
 
 test('repeat', async () => {
   const app = new MockedApp()
   const session1 = app.createSession('group', 123, 123)
 
-  app.plugin<RepeaterOptions>(repeater, {
+  app.plugin(repeater, {
     repeat: (repeated, times) => !repeated && times >= 2,
     interrupt: false,
     repeatCheck: false,
@@ -23,7 +23,7 @@ test('interrupt', async () => {
   const app = new MockedApp()
   const session1 = app.createSession('group', 123, 123)
 
-  app.plugin<RepeaterOptions>(repeater, {
+  app.plugin(repeater, {
     repeat: (_, times) => times >= 2,
     interrupt: (_, times) => times >= 4,
     repeatCheck: false,
@@ -40,7 +40,7 @@ test('repeat check', async () => {
   const session1 = app.createSession('group', 123, 123)
   const session2 = app.createSession('group', 456, 123)
 
-  app.plugin<RepeaterOptions>(repeater, {
+  app.plugin(repeater, {
     repeat: (_, times) => times >= 2,
     interrupt: false,
     repeatCheck: (_, times) => times >= 2,
@@ -57,7 +57,7 @@ test('interrupt check', async () => {
   const app = new MockedApp()
   const session1 = app.createSession('group', 123, 123)
 
-  app.plugin<RepeaterOptions>(repeater, {
+  app.plugin(repeater, {
     repeat: (_, times) => times >= 2,
     interrupt: false,
     repeatCheck: false,
