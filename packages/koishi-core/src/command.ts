@@ -245,29 +245,32 @@ export class Command {
   }
 
   async execute (argv: ParsedCommandLine, next: NextFunction = noop) {
-    const { meta, options = {}, args = [], unknown = [] } = argv
-    this.app.emitEvent(meta, 'before-command', argv)
+    const options = argv.options || (argv.options = {})
+    const unknown = argv.unknown || (argv.unknown = [])
+    const args = argv.args || (argv.args = [])
+
+    this.app.emitEvent(argv.meta, 'before-command', argv)
 
     // show help when use `-h, --help` or when there is no action
     if (!this._action || options.help && !this.config.noHelpOption) {
-      return this.context.runCommand('help', meta, [this.name])
+      return this.context.runCommand('help', argv.meta, [this.name])
     }
 
     // check argument count
     if (this.config.checkArgCount) {
       const nextArg = this._argsDef[args.length]
       if (nextArg?.required) {
-        return this._sendHint(CommandHint.INSUFFICIENT_ARGUMENTS, meta)
+        return this._sendHint(CommandHint.INSUFFICIENT_ARGUMENTS, argv.meta)
       }
       const finalArg = this._argsDef[this._argsDef.length - 1]
       if (args.length > this._argsDef.length && !finalArg.noSegment && !finalArg.variadic) {
-        return this._sendHint(CommandHint.REDUNANT_ARGUMENTS, meta)
+        return this._sendHint(CommandHint.REDUNANT_ARGUMENTS, argv.meta)
       }
     }
 
     // check unknown options
     if (this.config.checkUnknown && unknown.length) {
-      return this._sendHint(CommandHint.UNKNOWN_OPTIONS, meta, unknown.join(', '))
+      return this._sendHint(CommandHint.UNKNOWN_OPTIONS, argv.meta, unknown.join(', '))
     }
 
     // check required options
@@ -276,17 +279,17 @@ export class Command {
         return option.required && !(option.longest in options)
       })
       if (absent) {
-        return this._sendHint(CommandHint.REQUIRED_OPTIONS, meta, absent.rawName)
+        return this._sendHint(CommandHint.REQUIRED_OPTIONS, argv.meta, absent.rawName)
       }
     }
 
     // check authority and usage
-    const code = this._checkUser(meta, options)
-    if (code) return this._sendHint(code, meta)
+    const code = this._checkUser(argv.meta, options)
+    if (code) return this._sendHint(code, argv.meta)
 
     // execute command
     this.context.logger('koishi:command').debug('execute %s', this.name)
-    this.app.emitEvent(meta, 'command', argv)
+    this.app.emitEvent(argv.meta, 'command', argv)
 
     let skipped = false
     argv.next = (_next) => {
@@ -296,7 +299,7 @@ export class Command {
 
     try {
       await this._action(argv, ...args)
-      if (!skipped) this.app.emitEvent(meta, 'after-command', argv)
+      if (!skipped) this.app.emitEvent(argv.meta, 'after-command', argv)
     } catch (error) {
       this.app.receiver.emit('error/command', error)
       this.app.receiver.emit('error', error)

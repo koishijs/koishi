@@ -144,7 +144,7 @@ interface Subdatabase <T extends SubdatabaseType = SubdatabaseType, A extends Ab
   identify? (config: DatabaseConfig[T]): string | number
   _methods?: InjectionMap<T>
   _options?: InjectConfig<T>
-  _manager?: DatabaseManager
+  _managers?: DatabaseManager[]
 }
 
 export interface AbstractDatabase {
@@ -161,6 +161,7 @@ export function registerDatabase <K extends SubdatabaseType> (name: K, subdataba
   subdatabases[name] = subdatabase as any
   subdatabase._methods = unknownMethods[name] ?? {}
   subdatabase._options = unknownOptions[name] ?? {}
+  subdatabase._managers = []
 }
 
 export type DatabaseInjections <K extends SubdatabaseType, T extends TableType = TableType> = {
@@ -185,13 +186,8 @@ export function injectMethods <K extends SubdatabaseType, T extends TableType> (
     optionMap = unknownOptions[name] || (unknownOptions[name] = {} as never)
   } else {
     optionMap = Subdatabase._options
-    if (Subdatabase._manager) {
-      // inject after application was created
-      Subdatabase._manager.injectMethods(name, table, methods)
-      methodMap = {} as any
-    } else {
-      methodMap = Subdatabase._methods
-    }
+    methodMap = Subdatabase._methods
+    Subdatabase._managers.forEach(manager => manager.injectMethods(name, table, methods))
   }
 
   methodMap[table] = { ...methodMap[table], ...methods }
@@ -228,7 +224,7 @@ class DatabaseManager {
     const Subdatabase: Subdatabase<S> = subdatabases[type]
     const subdatabase = this.createSubdatabase(type, config)
     this.database[type] = subdatabase as never
-    Subdatabase._manager = this
+    Subdatabase._managers.push(this)
     for (const table in Subdatabase._methods) {
       this.injectMethods(type, table as any, Subdatabase._methods[table])
     }

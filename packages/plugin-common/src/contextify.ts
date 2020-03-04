@@ -1,4 +1,4 @@
-import { Context, getTargetId } from 'koishi-core'
+import { Context, getTargetId, ContextType } from 'koishi-core'
 
 export default function apply (ctx: Context) {
   ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3 })
@@ -52,22 +52,29 @@ export default function apply (ctx: Context) {
       delete newMeta.groupId
       delete newMeta.discussId
 
+      let ctxType: ContextType, ctxId: number
       if (options.discuss) {
-        newMeta.discussId = +options.discuss
+        newMeta.discussId = ctxId = +options.discuss
         newMeta.messageType = 'discuss'
+        newMeta.messageType = ctxType = 'discuss'
       } else if (options.group) {
-        const id = +options.group
-        newMeta.groupId = id
-        newMeta.messageType = 'group'
+        newMeta.groupId = ctxId = +options.group
+        newMeta.messageType = ctxType = 'group'
         newMeta.subType = options.type || 'normal'
         Object.defineProperty(newMeta, '$group', {
-          value: await ctx.database.observeGroup(id),
+          value: await ctx.database.observeGroup(ctxId),
           writable: true,
         })
       } else {
+        ctxId = newMeta.userId
+        ctxType = 'user'
         newMeta.messageType = 'private'
         newMeta.subType = options.type || 'other'
       }
+
+      // generate path
+      Object.defineProperty(newMeta, '$ctxId', { value: ctxId })
+      Object.defineProperty(newMeta, '$ctxType', { value: ctxType })
 
       return ctx.app.executeCommandLine(message, newMeta)
     })
