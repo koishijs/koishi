@@ -1,7 +1,7 @@
 import { contain, union, intersection, difference } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine } from './command'
 import { Meta, contextTypes } from './meta'
-import { EventEmitter } from 'events'
+import { Emitter } from './emitter'
 import { Sender } from './sender'
 import { App } from './app'
 import { Database, UserField, GroupField } from './database'
@@ -56,24 +56,22 @@ export const logTypes: (keyof Logger)[] = ['warn', 'info', 'debug', 'success', '
 
 export type LogEvents = 'logger/warn' | 'logger/info' | 'logger/debug' | 'logger/success' | 'logger/error'
 
-export class Context {
+export class Context extends Emitter<EventMap> {
   public app: App
   public sender: Sender
   public database: Database
   public logger: (scope?: string) => Logger
-  public receiver: Receiver = new EventEmitter()
 
   constructor (public readonly identifier: string, private readonly _scope: ContextScope) {
-    this.receiver.on('error', (error) => {
-      this.logger('koishi').warn(error)
-    })
+    super()
 
+    this.on('error', this.logger().warn)
     this.logger = (scope = '') => {
       const logger = {} as Logger
       for (const type of logTypes) {
         logger[type] = (...args) => {
-          this.app.receiver.emit('logger', scope, format(...args), type)
-          this.app.receiver.emit(`logger/${type}` as LogEvents, scope, format(...args))
+          this.app.emit('logger', scope, format(...args), type)
+          this.app.emit(`logger/${type}` as LogEvents, scope, format(...args))
         }
       }
       return logger
@@ -316,18 +314,6 @@ export interface EventMap {
   'connect' (): any
   'before-disconnect' (): any
   'disconnect' (): any
-
-  // TODO: deprecated events
-  'attach' (meta: Meta<'message'>): any
 }
 
 export type Events = keyof EventMap
-
-export interface Receiver extends EventEmitter {
-  on <K extends Events> (event: K, listener: EventMap[K]): this
-  once <K extends Events> (event: K, listener: EventMap[K]): this
-  off <K extends Events> (event: K, listener: EventMap[K]): this
-  addListener <K extends Events> (event: K, listener: EventMap[K]): this
-  removeListener <K extends Events> (event: K, listener: EventMap[K]): this
-  emit <K extends Events> (event: K, ...args: Parameters<EventMap[K]>): boolean
-}

@@ -123,13 +123,13 @@ export class App extends Context {
     if (this.selfId) this.prepare()
 
     // bind built-in event listeners
-    this.receiver.on('message', this._applyMiddlewares)
-    this.receiver.on('before-user', Command.attachUserFields)
-    this.receiver.on('before-group', Command.attachGroupFields)
+    this.on('message', this._applyMiddlewares)
+    this.on('before-user', Command.attachUserFields)
+    this.on('before-group', Command.attachGroupFields)
     this.middleware(this._preprocess)
 
     // apply default logger
-    this.receiver.on('logger', (scope, message) => debug(scope)(message))
+    this.on('logger', (scope, message) => debug(scope)(message))
   }
 
   get users () {
@@ -165,7 +165,7 @@ export class App extends Context {
     if (selfId) {
       this.options.selfId = selfId
       if (!this._isReady && this.server.isListening) {
-        this.receiver.emit('ready')
+        this.emit('ready')
         this._isReady = true
       }
     }
@@ -223,7 +223,7 @@ export class App extends Context {
 
   async start () {
     this.status = Status.opening
-    this.receiver.emit('before-connect')
+    this.emit('before-connect')
     const tasks: Promise<any>[] = []
     if (this.database) {
       for (const type in this.options.database) {
@@ -236,9 +236,9 @@ export class App extends Context {
     await Promise.all(tasks)
     this.status = Status.open
     this.logger('koishi:app').debug('started')
-    this.receiver.emit('connect')
+    this.emit('connect')
     if (this.selfId && !this._isReady) {
-      this.receiver.emit('ready')
+      this.emit('ready')
       this._isReady = true
     }
     if (appList.every(app => app.status === Status.open)) {
@@ -248,7 +248,7 @@ export class App extends Context {
 
   async stop () {
     this.status = Status.closing
-    this.receiver.emit('before-disconnect')
+    this.emit('before-disconnect')
     const tasks: Promise<any>[] = []
     if (this.database) {
       for (const type in this.options.database) {
@@ -261,7 +261,7 @@ export class App extends Context {
     }
     this.status = Status.closed
     this.logger('koishi:app').debug('stopped')
-    this.receiver.emit('disconnect')
+    this.emit('disconnect')
     if (appList.every(app => app.status === Status.closed)) {
       onStopHooks.forEach(hook => hook(...appList))
     }
@@ -270,7 +270,7 @@ export class App extends Context {
   emitEvent <K extends Events> (meta: Meta, event: K, ...payload: Parameters<EventMap[K]>) {
     if (!meta.$ctxType) {
       this.logger('koishi:receiver').debug('/', 'emits', event)
-      this.receiver.emit(event, ...payload)
+      this.emit(event, ...payload)
       return
     }
 
@@ -278,7 +278,7 @@ export class App extends Context {
       const context = this._contexts[path]
       if (!context.match(meta)) continue
       this.logger('koishi:receiver').debug(path, 'emits', event)
-      context.receiver.emit(event, ...payload)
+      context.emit(event, ...payload)
     }
   }
 
@@ -379,7 +379,6 @@ export class App extends Context {
       Object.defineProperty(meta, '$user', { value: user, writable: true })
 
       // emit attach event
-      this.emitEvent(meta, 'attach', meta)
       this.emitEvent(meta, 'attach-user', meta)
 
       // ignore some user calls
@@ -458,8 +457,8 @@ export class App extends Context {
       try {
         return middlewares[index++]?.(meta, next)
       } catch (error) {
-        this.receiver.emit('error/middleware', error)
-        this.receiver.emit('error', error)
+        this.emit('error/middleware', error)
+        this.emit('error', error)
       }
     }
     await next()

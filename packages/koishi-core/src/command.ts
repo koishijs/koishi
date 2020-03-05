@@ -301,8 +301,8 @@ export class Command {
       await this._action(argv, ...args)
       if (!skipped) this.app.emitEvent(argv.meta, 'after-command', argv)
     } catch (error) {
-      this.app.receiver.emit('error/command', error)
-      this.app.receiver.emit('error', error)
+      this.app.emit('error/command', error)
+      this.app.emit('error', error)
     }
   }
 
