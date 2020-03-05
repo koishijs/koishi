@@ -7,6 +7,7 @@ import { Meta, VersionInfo, ContextType } from './meta'
 import { App } from './app'
 import { CQResponse } from './sender'
 import { format } from 'util'
+import ms from 'ms'
 
 export abstract class Server {
   public appList: App[] = []
@@ -29,7 +30,7 @@ export abstract class Server {
   }
 
   protected debug (format: any, ...params: any[]) {
-    this.app?.logger('koishi:sender').debug(format, ...params)
+    this.app?.logger('koishi:server').debug(format, ...params)
   }
 
   protected prepareMeta (data: any) {
@@ -277,6 +278,7 @@ let counter = 0
 
 export class WsClient extends Server {
   public socket: WebSocket
+  private _retryCount = 0
   private _listeners: Record<number, (response: CQResponse) => void> = {}
 
   send (data: any): Promise<CQResponse> {
@@ -290,14 +292,21 @@ export class WsClient extends Server {
   }
 
   _listen (): Promise<void> {
-    return new Promise((resolve, reject) => {
+    const connect = (resolve: () => void, reject: (reason: Error) => void) => {
       this.debug('websocket client opening')
       const headers: Record<string, string> = {}
-      const { token, server } = this.app.options
+      const { token, server, retryTimeout, retryTimes } = this.app.options
       if (token) headers.Authorization = `Bearer ${token}`
       this.socket = new WebSocket(server, { headers })
 
-      this.socket.once('error', reject)
+      this.socket.once('error', (error: Error) => {
+        if (!retryTimeout) reject(error)
+        if (this._retryCount >= retryTimes) reject(error)
+        this._retryCount++
+        this.debug(error)
+        this.app?.logger('koishi').warn(`failed to connect to ${server}, will retry in ${ms(this.app.options.retryTimeout)}...`)
+        setTimeout(() => connect(resolve, reject), this.app.options.retryTimeout)
+      })
 
       this.socket.once('open', () => {
         this.socket.send(JSON.stringify({
@@ -306,7 +315,7 @@ export class WsClient extends Server {
         }), (error) => {
           if (error) reject(error)
         })
-
+  
         let resolved = false
         this.socket.on('message', (data) => {
           data = data.toString()
@@ -333,7 +342,8 @@ export class WsClient extends Server {
           }
         })
       })
-    })
+    }
+    return new Promise(connect)
   }
 
   _close () {
