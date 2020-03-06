@@ -299,23 +299,33 @@ export class WsClient extends Server {
       if (token) headers.Authorization = `Bearer ${token}`
       this.socket = new WebSocket(server, { headers })
 
-      this.socket.once('error', (error: Error) => {
-        if (!retryTimeout) reject(error)
-        if (this._retryCount >= retryTimes) reject(error)
+      this.socket.on('error', error => this.debug(error))
+
+      this.socket.once('close', (code: number) => {
+        if (code === 1000) {
+          return reject(new Error('connection was closed manually'))
+        }
+
+        const message = `failed to connect to ${server}`
+        if (!retryTimeout || this._retryCount >= retryTimes) {
+          return reject(new Error(message))
+        }
+
         this._retryCount++
-        this.debug(error)
-        this.app?.logger('koishi').warn(`failed to connect to ${server}, will retry in ${ms(this.app.options.retryTimeout)}...`)
-        setTimeout(() => connect(resolve, reject), this.app.options.retryTimeout)
+        this.app?.logger('koishi').warn(`${message}, will retry in ${ms(retryTimeout)}...`)
+        setTimeout(() => connect(resolve, reject), retryTimeout)
       })
 
       this.socket.once('open', () => {
+        this._retryCount = 0
+
         this.socket.send(JSON.stringify({
           action: 'get_version_info',
           echo: -1,
         }), (error) => {
           if (error) reject(error)
         })
-  
+
         let resolved = false
         this.socket.on('message', (data) => {
           data = data.toString()
@@ -326,11 +336,13 @@ export class WsClient extends Server {
           } catch (error) {
             return reject(new Error(data))
           }
+
           if (!resolved) {
             resolved = true
             this.debug('connect to ws server:', this.app.options.server)
             resolve()
           }
+
           if ('post_type' in parsed) {
             const meta = this.prepareMeta(parsed)
             if (meta) this.dispatchMeta(meta)
@@ -347,7 +359,7 @@ export class WsClient extends Server {
   }
 
   _close () {
-    this.socket.close()
+    this.socket.close(1000)
     this.debug('websocket client closed')
   }
 }
