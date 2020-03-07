@@ -145,9 +145,6 @@ export class WsServer extends MockedServer {
 
   async close () {
     await Promise.all(this.appList.map(app => app.stop()))
-    for (const client of this.server.clients) {
-      client.close()
-    }
     this.server.close()
   }
 }

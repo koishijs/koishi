@@ -295,7 +295,7 @@ export class WsClient extends Server {
     const connect = (resolve: () => void, reject: (reason: Error) => void) => {
       this.debug('websocket client opening')
       const headers: Record<string, string> = {}
-      const { token, server, retryTimeout, retryTimes } = this.app.options
+      const { token, server, retryInterval, retryTimes } = this.app.options
       if (token) headers.Authorization = `Bearer ${token}`
       this.socket = new WebSocket(server, { headers })
 
@@ -305,13 +305,15 @@ export class WsClient extends Server {
         if (!this.isListening || code === 1005) return
 
         const message = `failed to connect to ${server}`
-        if (!retryTimeout || this._retryCount >= retryTimes) {
+        if (!retryInterval || this._retryCount >= retryTimes) {
           return reject(new Error(message))
         }
 
         this._retryCount++
-        this.app?.logger('koishi').warn(`${message}, will retry in ${ms(retryTimeout)}...`)
-        setTimeout(() => connect(resolve, reject), retryTimeout)
+        this.debug(`${message}, will retry in ${ms(retryInterval)}...`)
+        setTimeout(() => {
+          if (this.isListening) connect(resolve, reject)
+        }, retryInterval)
       })
 
       this.socket.once('open', () => {
@@ -358,6 +360,7 @@ export class WsClient extends Server {
 
   _close () {
     this.socket.close()
+    this._retryCount = 0
     this.debug('websocket client closed')
   }
 }
