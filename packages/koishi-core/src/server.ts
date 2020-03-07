@@ -7,6 +7,7 @@ import { Meta, VersionInfo, ContextType } from './meta'
 import { App } from './app'
 import { CQResponse } from './sender'
 import { format } from 'util'
+import ms from 'ms'
 
 export abstract class Server {
   public appList: App[] = []
@@ -29,7 +30,7 @@ export abstract class Server {
   }
 
   protected debug (format: any, ...params: any[]) {
-    this.app?.logger('koishi:sender').debug(format, ...params)
+    this.app?.logger('koishi:server').debug(format, ...params)
   }
 
   protected prepareMeta (data: any) {
@@ -277,6 +278,7 @@ let counter = 0
 
 export class WsClient extends Server {
   public socket: WebSocket
+  private _retryCount = 0
   private _listeners: Record<number, (response: CQResponse) => void> = {}
 
   send (data: any): Promise<CQResponse> {
@@ -290,16 +292,33 @@ export class WsClient extends Server {
   }
 
   _listen (): Promise<void> {
-    return new Promise((resolve, reject) => {
+    const connect = (resolve: () => void, reject: (reason: Error) => void) => {
       this.debug('websocket client opening')
       const headers: Record<string, string> = {}
-      const { token, server } = this.app.options
+      const { token, server, retryInterval, retryTimes } = this.app.options
       if (token) headers.Authorization = `Bearer ${token}`
       this.socket = new WebSocket(server, { headers })
 
-      this.socket.once('error', reject)
+      this.socket.on('error', error => this.debug(error))
+
+      this.socket.once('close', (code) => {
+        if (!this.isListening || code === 1005) return
+
+        const message = `failed to connect to ${server}`
+        if (!retryInterval || this._retryCount >= retryTimes) {
+          return reject(new Error(message))
+        }
+
+        this._retryCount++
+        this.debug(`${message}, will retry in ${ms(retryInterval)}...`)
+        setTimeout(() => {
+          if (this.isListening) connect(resolve, reject)
+        }, retryInterval)
+      })
 
       this.socket.once('open', () => {
+        this._retryCount = 0
+
         this.socket.send(JSON.stringify({
           action: 'get_version_info',
           echo: -1,
@@ -317,11 +336,13 @@ export class WsClient extends Server {
           } catch (error) {
             return reject(new Error(data))
           }
+
           if (!resolved) {
             resolved = true
             this.debug('connect to ws server:', this.app.options.server)
             resolve()
           }
+
           if ('post_type' in parsed) {
             const meta = this.prepareMeta(parsed)
             if (meta) this.dispatchMeta(meta)
@@ -333,11 +354,13 @@ export class WsClient extends Server {
           }
         })
       })
-    })
+    }
+    return new Promise(connect)
   }
 
   _close () {
     this.socket.close()
+    this._retryCount = 0
     this.debug('websocket client closed')
   }
 }

@@ -16,8 +16,7 @@ if (process.env.KOISHI_LOG_LEVEL !== undefined) {
 }
 
 function handleException (error: any) {
-  const message = types.isNativeError(error) ? error.stack : String(error)
-  logger.error(message, baseLogLevel)
+  logger.error(error, baseLogLevel)
   process.exit(1)
 }
 

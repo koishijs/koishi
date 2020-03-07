@@ -20,6 +20,8 @@ export interface AppOptions {
   type?: ServerType
   database?: DatabaseConfig
   nickname?: string | string[]
+  retryTimes?: number
+  retryInterval?: number
   maxMiddlewares?: number
   commandPrefix?: string | string[]
   quickOperationTimeout?: number
@@ -75,6 +77,7 @@ function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
 
 const defaultOptions: AppOptions = {
   maxMiddlewares: 64,
+  retryInterval: 5000,
 }
 
 export enum Status { closed, opening, open, closing }
