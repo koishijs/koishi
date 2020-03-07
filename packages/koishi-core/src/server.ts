@@ -301,10 +301,8 @@ export class WsClient extends Server {
 
       this.socket.on('error', error => this.debug(error))
 
-      this.socket.once('close', (code: number) => {
-        if (code === 1000) {
-          return reject(new Error('connection was closed manually'))
-        }
+      this.socket.once('close', (code) => {
+        if (!this.isListening || code === 1005) return
 
         const message = `failed to connect to ${server}`
         if (!retryTimeout || this._retryCount >= retryTimes) {
@@ -359,7 +357,7 @@ export class WsClient extends Server {
   }
 
   _close () {
-    this.socket.close(1000)
+    this.socket.close()
     this.debug('websocket client closed')
   }
 }

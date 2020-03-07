@@ -77,7 +77,7 @@ function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
 
 const defaultOptions: AppOptions = {
   maxMiddlewares: 64,
-  retryTimeout: 15000,
+  retryTimeout: 3000,
 }
 
 export enum Status { closed, opening, open, closing }
