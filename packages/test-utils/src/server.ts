@@ -21,6 +21,10 @@ export class HttpServer extends MockedServer {
 
   constructor (public cqhttpPort: number, public koishiPort: number, public token?: string) {
     super()
+    this.open()
+  }
+
+  open () {
     this.server = http.createServer((req, res) => {
       let body = ''
       req.on('data', chunk => body += chunk)
@@ -49,7 +53,7 @@ export class HttpServer extends MockedServer {
         res.write(JSON.stringify(this.receive(path, params)))
         res.end()
       })
-    }).listen(cqhttpPort)
+    }).listen(this.cqhttpPort)
   }
 
   post (meta: Meta, port = this.koishiPort, secret?: string) {
@@ -91,7 +95,11 @@ export class WsServer extends MockedServer {
 
   constructor (public cqhttpPort: number, public token?: string) {
     super()
-    this.server = new ws.Server({ port: cqhttpPort })
+    this.open()
+  }
+
+  open () {
+    this.server = new ws.Server({ port: this.cqhttpPort })
     this.server.on('connection', (socket, req) => {
       if (this.token) {
         const signature = req.headers.authorization
