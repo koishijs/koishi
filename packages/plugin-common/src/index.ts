@@ -1,6 +1,5 @@
 import { Context } from 'koishi-core'
 import admin from './admin'
-import authorize, { AuthorizeOptions } from './authorize'
 import broadcast, { BroadcastOptions } from './broadcast'
 import contextify from './contextify'
 import echo from './echo'
@@ -18,7 +17,6 @@ export * from './info'
 
 export {
   admin,
-  authorize,
   broadcast,
   contextify,
   echo,
@@ -30,7 +28,6 @@ export {
   requestHandler,
   respondent,
   welcome,
-  AuthorizeOptions,
   BroadcastOptions,
   HandlerOptions,
   InfoOptions,
@@ -39,7 +36,7 @@ export {
   WelcomeMessage,
 }
 
-export interface Config extends AuthorizeOptions, BroadcastOptions, HandlerOptions, InfoOptions {
+export interface Config extends BroadcastOptions, HandlerOptions, InfoOptions {
   admin?: boolean
   broadcast?: boolean
   contextify?: boolean
@@ -67,8 +64,6 @@ export function apply (ctx: Context, options: Config = {}) {
   if (options.help !== false) ctx.plugin(help)
 
   if (ctx.database) {
-    ctx.plugin(authorize, options)
-
     if (options.admin !== false) ctx.plugin(admin)
     if (options.contextify !== false) ctx.plugin(contextify)
     if (options.broadcast !== false) ctx.plugin(broadcast, options)
