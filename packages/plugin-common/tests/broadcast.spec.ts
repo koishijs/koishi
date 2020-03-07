@@ -21,21 +21,48 @@ afterAll(() => stopAll())
 
 utils.sleep.mockResolvedValue()
 
+beforeEach(() => utils.sleep.mockClear())
+
 test('check message', async () => {
   await app1.receiveMessage('user', 'broadcast', 123)
+  expect(utils.sleep).toBeCalledTimes(0)
   app1.shouldHaveLastRequests([
     ['send_private_msg', { message: '请输入要发送的文本。', userId: 123 }],
   ])
+  app2.shouldHaveNoRequests()
 })
 
 test('basic support', async () => {
   await app1.receiveMessage('user', 'broadcast foo bar', 123)
+  expect(utils.sleep).toBeCalledTimes(0)
   app1.shouldHaveLastRequests([
     ['send_group_msg', { message: 'foo bar', groupId: 321 }],
   ])
   app2.shouldHaveLastRequests([
     ['send_group_msg', { message: 'foo bar', groupId: 987 }],
   ])
+})
+
+test('self only', async () => {
+  await app1.receiveMessage('user', 'broadcast -o foo bar', 123)
+  expect(utils.sleep).toBeCalledTimes(0)
+  app1.shouldHaveLastRequests([
+    ['send_group_msg', { message: 'foo bar', groupId: 321 }],
+  ])
+  app2.shouldHaveNoRequests()
+})
+
+test('force emit', async () => {
+  await app1.receiveMessage('user', 'broadcast -f foo bar', 123)
+  expect(utils.sleep).toBeCalledTimes(1)
+  app1.shouldHaveLastRequests([
+    ['send_group_msg', { message: 'foo bar', groupId: 321 }],
+    ['send_group_msg', { message: 'foo bar', groupId: 654 }],
+  ])
+  app2.shouldHaveLastRequests([
+    ['send_group_msg', { message: 'foo bar', groupId: 987 }],
+  ])
+  app2.shouldHaveNoRequests()
 })
 
 test('self only & force emit', async () => {
