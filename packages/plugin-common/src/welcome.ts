@@ -5,7 +5,7 @@ export type WelcomeMessage = string | ((meta: Meta<'notice'>) => string | Promis
 const defaultMessage = (meta: Meta<'notice'>) => `欢迎新大佬 [CQ:at,qq=${meta.userId}]！`
 
 export default function apply (ctx: Context, message: WelcomeMessage = defaultMessage) {
-  ctx.receiver.on('group-increase', async (meta) => {
+  ctx.on('group-increase', async (meta) => {
     if (ctx.database) {
       const group = await ctx.database.getGroup(meta.groupId, 0, ['assignee'])
       if (group.assignee !== ctx.app.selfId) return

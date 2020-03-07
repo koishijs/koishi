@@ -82,7 +82,7 @@ export class MockedApp extends App {
   receiveMessage (type: 'discuss', message: string, userId: number, discussId: number): Promise<void>
   receiveMessage (type: ContextType | Meta, message?: string, userId?: number, ctxId: number = userId) {
     return new Promise((resolve) => {
-      this.receiver.once('after-middleware', () => resolve())
+      this.once('after-middleware', () => resolve())
       this.receive(typeof type === 'string' ? createMessageMeta(type, message, userId, ctxId) : type)
     })
   }

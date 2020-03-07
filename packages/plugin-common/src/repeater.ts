@@ -56,7 +56,7 @@ export default function apply (ctx: Context, options: RepeaterOptions) {
     return states[groupId]
   }
 
-  ctx.receiver.on('before-send', ({ groupId, message }) => {
+  ctx.on('before-send', ({ groupId, message }) => {
     const state = getState(groupId)
     state.repeated = true
     if (state.message === message) {

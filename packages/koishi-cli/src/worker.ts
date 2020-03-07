@@ -151,7 +151,7 @@ process.on('unhandledRejection', (error) => {
 appList.forEach((app) => {
   const { logLevel = 2, logFilter = {} } = app.options as AppConfig
 
-  app.receiver.on('logger', (scope, message, type) => {
+  app.on('logger', (scope, message, type) => {
     logger[type](message, Math.min(logFilter[scope] ?? logLevel, baseLogLevel), scope)
   })
 })

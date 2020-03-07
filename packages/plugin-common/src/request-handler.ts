@@ -31,17 +31,17 @@ function setGroupResult (meta: Meta, result: string | boolean | void) {
 export default function apply (ctx: App, options: HandlerOptions = {}) {
   const { handleFriend, handleGroupAdd, handleGroupInvite } = options
 
-  ctx.receiver.on('request/friend', async (meta) => {
+  ctx.on('request/friend', async (meta) => {
     const result = await getHandleResult(handleFriend, meta, ctx)
     return setFriendResult(meta, result)
   })
 
-  ctx.receiver.on('request/group/add', async (meta) => {
+  ctx.on('request/group/add', async (meta) => {
     const result = await getHandleResult(handleGroupAdd, meta, ctx)
     return setGroupResult(meta, result)
   })
 
-  ctx.receiver.on('request/group/invite', async (meta) => {
+  ctx.on('request/group/invite', async (meta) => {
     const result = await getHandleResult(handleGroupInvite, meta, ctx)
     return setGroupResult(meta, result)
   })
