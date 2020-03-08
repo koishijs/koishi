@@ -1,7 +1,6 @@
 import { contain, union, intersection, difference } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine } from './command'
 import { Meta, contextTypes } from './meta'
-import { Emitter } from './emitter'
 import { Sender } from './sender'
 import { App } from './app'
 import { Database, UserField, GroupField } from './database'
@@ -56,22 +55,20 @@ export const logTypes: (keyof Logger)[] = ['warn', 'info', 'debug', 'success', '
 
 export type LogEvents = 'logger/warn' | 'logger/info' | 'logger/debug' | 'logger/success' | 'logger/error'
 
-export class Context extends Emitter<EventMap> {
+export class Context {
   public app: App
   public sender: Sender
   public database: Database
   public logger: (scope?: string) => Logger
 
   constructor (public readonly identifier: string, private readonly _scope: ContextScope) {
-    super()
-
     this.on('error', this.logger().warn)
     this.logger = (scope = '') => {
       const logger = {} as Logger
       for (const type of logTypes) {
         logger[type] = (...args) => {
-          this.app.emit('logger', scope, format(...args), type)
-          this.app.emit(`logger/${type}` as LogEvents, scope, format(...args))
+          this.app.parallelize('logger', scope, format(...args), type)
+          this.app.parallelize(`logger/${type}` as LogEvents, scope, format(...args))
         }
       }
       return logger
@@ -112,6 +109,7 @@ export class Context extends Emitter<EventMap> {
   }
 
   match (meta: Meta) {
+    if (!meta || !meta.$ctxType) return true
     const [include, exclude] = this._scope[contextTypes[meta.$ctxType]]
     return include ? include.includes(meta.$ctxId) : !exclude.includes(meta.$ctxId)
   }
@@ -140,36 +138,56 @@ export class Context extends Emitter<EventMap> {
     return this
   }
 
-  middleware (middleware: Middleware) {
-    const { maxMiddlewares } = this.app.options
-    if (this.app._middlewares.length >= maxMiddlewares) {
-      this.logger('koishi').warn(new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
-    } else {
-      this.app._middlewares.push([this, middleware])
+  on <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
+    return this.addListener(name, listener)
+  }
+
+  addListener <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
+    this.app._hooks[name] = this.app._hooks[name] || []
+    this.app._hooks[name].push([this, listener])
+    return () => this.off(name, listener)
+  }
+
+  prependListener <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
+    this.app._hooks[name] = this.app._hooks[name] || []
+    this.app._hooks[name].unshift([this, listener])
+    return () => this.off(name, listener)
+  }
+
+  once <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
+    const unsubscribe = this.on(name, (...args: any[]) => {
+      unsubscribe()
+      return listener.apply(this, args)
+    })
+    return unsubscribe
+  }
+
+  off <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
+    return this.removeListener(name, listener)
+  }
+
+  removeListener <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
+    const index = (this.app._hooks[name] || []).findIndex(([context, callback]) => context === this && callback === listener)
+    if (index >= 0) {
+      this.app._hooks[name].splice(index, 1)
+      return true
     }
-    return this
+  }
+
+  middleware (middleware: Middleware) {
+    return this.addListener(MIDDLEWARE_EVENT, middleware)
   }
 
   addMiddleware (middleware: Middleware) {
-    return this.middleware(middleware)
+    return this.addListener(MIDDLEWARE_EVENT, middleware)
   }
 
   prependMiddleware (middleware: Middleware) {
-    const { maxMiddlewares } = this.app.options
-    if (this.app._middlewares.length >= maxMiddlewares) {
-      this.logger('koishi').warn(new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
-    } else {
-      this.app._middlewares.unshift([this, middleware])
-    }
-    return this
+    return this.prependListener(MIDDLEWARE_EVENT, middleware)
   }
 
   removeMiddleware (middleware: Middleware) {
-    const index = this.app._middlewares.findIndex(([c, m]) => c === this && m === middleware)
-    if (index >= 0) {
-      this.app._middlewares.splice(index, 1)
-      return true
-    }
+    return this.removeListener(MIDDLEWARE_EVENT, middleware)
   }
 
   onceMiddleware (middleware: Middleware, meta?: Meta) {
@@ -258,7 +276,10 @@ export class Context extends Emitter<EventMap> {
   }
 }
 
+const MIDDLEWARE_EVENT: unique symbol = Symbol('mid')
+
 export interface EventMap {
+  [MIDDLEWARE_EVENT]: Middleware
   'message' (meta: Meta<'message'>): any
   'message/normal' (meta: Meta<'message'>): any
   'message/notice' (meta: Meta<'message'>): any

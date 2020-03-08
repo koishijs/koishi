@@ -125,7 +125,8 @@ export abstract class Server {
       }
       meta.$send = async (message, autoEscape = false) => {
         if (meta.$response) {
-          app.emitEvent(meta, 'before-send', app.sender._createSendMeta(meta.messageType, ctxType, ctxId, message))
+          const _meta = app.sender._createSendMeta(meta.messageType, ctxType, ctxId, message)
+          if (await app.serialize(meta, 'before-send', _meta)) return
           return meta.$response({ reply: message, autoEscape, atSender: false })
         }
         return app.sender[`send${capitalize(meta.messageType)}MsgAsync`](ctxId, message, autoEscape)
@@ -152,7 +153,7 @@ export abstract class Server {
     const app = this.appMap[meta.selfId]
     const events = this.parseMeta(meta)
     for (const event of events) {
-      app.emitEvent(meta, paramCase(event) as any, meta)
+      app.parallelize(meta, paramCase(event) as any, meta)
     }
   }
 

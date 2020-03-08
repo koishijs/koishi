@@ -127,10 +127,10 @@ export class Sender {
     this._assertInteger(ctxIdKey, ctxId)
     if (!message) return
     const meta = this._createSendMeta(type, ctxType, ctxId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (await this.app.serialize(meta, 'before-send', meta)) return
     const { messageId } = await this.get<MessageResponse>('send_msg', { [ctxIdKey]: ctxId, message, autoEscape })
     meta.messageId = messageId
-    this.app.emitEvent(meta, 'send', meta)
+    this.app.parallelize(meta, 'send', meta)
     return messageId
   }
 
@@ -141,7 +141,7 @@ export class Sender {
     this._assertInteger(ctxIdKey, ctxId)
     if (!message) return
     const meta = this._createSendMeta(type, ctxType, ctxId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (await this.app.serialize(meta, 'before-send', meta)) return
     await this.get('send_msg_async', { [ctxIdKey]: ctxId, message, autoEscape })
   }
 
@@ -149,10 +149,10 @@ export class Sender {
     this._assertInteger('groupId', groupId)
     if (!message) return
     const meta = this._createSendMeta('group', 'group', groupId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (await this.app.serialize(meta, 'before-send', meta)) return
     const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message, autoEscape })
     meta.messageId = messageId
-    this.app.emitEvent(meta, 'send', meta)
+    this.app.parallelize(meta, 'send', meta)
     return messageId
   }
 
@@ -160,7 +160,7 @@ export class Sender {
     this._assertInteger('groupId', groupId)
     if (!message) return
     const meta = this._createSendMeta('group', 'group', groupId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (await this.app.serialize(meta, 'before-send', meta)) return
     await this.get('send_group_msg_async', { groupId, message, autoEscape })
   }
 
@@ -168,10 +168,10 @@ export class Sender {
     this._assertInteger('discussId', discussId)
     if (!message) return
     const meta = this._createSendMeta('discuss', 'discuss', discussId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (await this.app.serialize(meta, 'before-send', meta)) return
     const { messageId } = await this.get<MessageResponse>('send_discuss_msg', { discussId, message, autoEscape })
     meta.messageId = messageId
-    this.app.emitEvent(meta, 'send', meta)
+    this.app.parallelize(meta, 'send', meta)
     return messageId
   }
 
@@ -179,7 +179,7 @@ export class Sender {
     this._assertInteger('discussId', discussId)
     if (!message) return
     const meta = this._createSendMeta('discuss', 'discuss', discussId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (await this.app.serialize(meta, 'before-send', meta)) return
     await this.get('send_discuss_msg_async', { discussId, message, autoEscape })
   }
 
@@ -187,10 +187,10 @@ export class Sender {
     this._assertInteger('userId', userId)
     if (!message) return
     const meta = this._createSendMeta('private', 'user', userId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (await this.app.serialize(meta, 'before-send', meta)) return
     const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message, autoEscape })
     meta.messageId = messageId
-    this.app.emitEvent(meta, 'send', meta)
+    this.app.parallelize(meta, 'send', meta)
     return messageId
   }
 
@@ -198,7 +198,7 @@ export class Sender {
     this._assertInteger('userId', userId)
     if (!message) return
     const meta = this._createSendMeta('private', 'user', userId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (await this.app.serialize(meta, 'before-send', meta)) return
     await this.get('send_private_msg_async', { userId, message, autoEscape })
   }
 

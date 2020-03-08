@@ -249,7 +249,7 @@ export class Command {
     const unknown = argv.unknown || (argv.unknown = [])
     const args = argv.args || (argv.args = [])
 
-    this.app.emitEvent(argv.meta, 'before-command', argv)
+    if (await this.app.serialize('before-command', argv)) return
 
     // show help when use `-h, --help` or when there is no action
     if (!this._action || options.help && !this.config.noHelpOption) {
@@ -289,7 +289,7 @@ export class Command {
 
     // execute command
     this.context.logger('koishi:command').debug('execute %s', this.name)
-    this.app.emitEvent(argv.meta, 'command', argv)
+    this.app.parallelize(argv.meta, 'command', argv)
 
     let skipped = false
     argv.next = (_next) => {
@@ -299,10 +299,10 @@ export class Command {
 
     try {
       await this._action(argv, ...args)
-      if (!skipped) this.app.emitEvent(argv.meta, 'after-command', argv)
+      if (!skipped) this.app.parallelize(argv.meta, 'after-command', argv)
     } catch (error) {
-      this.app.emit('error/command', error)
-      this.app.emit('error', error)
+      this.app.parallelize('error/command', error)
+      this.app.parallelize('error', error)
     }
   }
 

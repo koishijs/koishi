@@ -96,6 +96,7 @@ export class App extends Context {
   _shortcuts: ShortcutConfig[] = []
   _shortcutMap: Record<string, Command> = {}
   _middlewares: [Context, Middleware][] = []
+  _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
 
   private _users: MajorContext
   private _groups: MajorContext
@@ -164,11 +165,38 @@ export class App extends Context {
     return this.server?.version
   }
 
+  private *_getMatchedHooks (args: any[]) {
+    const meta = typeof args[0] === 'object' ? args.shift() : null
+    const name = args.shift()
+    for (const [context, callback] of this._hooks[name] || []) {
+      if (context.match(meta)) yield callback
+    }
+  }
+
+  async parallelize <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<void>
+  async parallelize <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
+  async parallelize (...args: any[]) {
+    const tasks: Promise<any>[] = []
+    for (const callback of this._getMatchedHooks(args)) {
+      tasks.push(callback.apply(this, args))
+    }
+    await Promise.all(tasks)
+  }
+
+  async serialize <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
+  async serialize <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
+  async serialize (...args: any[]) {
+    for (const callback of this._getMatchedHooks(args)) {
+      const result = await callback.apply(this, args)
+      if (result) return result
+    }
+  }
+
   prepare (selfId?: number) {
     if (selfId) {
       this.options.selfId = selfId
       if (!this._isReady && this.server.isListening) {
-        this.emit('ready')
+        this.parallelize('ready')
         this._isReady = true
       }
     }
@@ -226,7 +254,7 @@ export class App extends Context {
 
   async start () {
     this.status = Status.opening
-    this.emit('before-connect')
+    this.parallelize('before-connect')
     const tasks: Promise<any>[] = []
     if (this.database) {
       for (const type in this.options.database) {
@@ -239,9 +267,9 @@ export class App extends Context {
     await Promise.all(tasks)
     this.status = Status.open
     this.logger('koishi:app').debug('started')
-    this.emit('connect')
+    this.parallelize('connect')
     if (this.selfId && !this._isReady) {
-      this.emit('ready')
+      this.parallelize('ready')
       this._isReady = true
     }
     if (appList.every(app => app.status === Status.open)) {
@@ -251,7 +279,7 @@ export class App extends Context {
 
   async stop () {
     this.status = Status.closing
-    this.emit('before-disconnect')
+    this.parallelize('before-disconnect')
     const tasks: Promise<any>[] = []
     if (this.database) {
       for (const type in this.options.database) {
@@ -264,24 +292,9 @@ export class App extends Context {
     }
     this.status = Status.closed
     this.logger('koishi:app').debug('stopped')
-    this.emit('disconnect')
+    this.parallelize('disconnect')
     if (appList.every(app => app.status === Status.closed)) {
       onStopHooks.forEach(hook => hook(...appList))
-    }
-  }
-
-  emitEvent <K extends Events> (meta: Meta, event: K, ...payload: Parameters<EventMap[K]>) {
-    if (!meta.$ctxType) {
-      this.logger('koishi:receiver').debug('/', 'emits', event)
-      this.emit(event, ...payload)
-      return
-    }
-
-    for (const path in this._contexts) {
-      const context = this._contexts[path]
-      if (!context.match(meta)) continue
-      this.logger('koishi:receiver').debug(path, 'emits', event)
-      context.emit(event, ...payload)
     }
   }
 
@@ -358,12 +371,12 @@ export class App extends Context {
       if (meta.messageType === 'group') {
         // attach group data
         const groupFields = new Set<GroupField>(['flag', 'assignee'])
-        this.emitEvent(meta, 'before-group', groupFields, meta.$argv)
+        await this.parallelize(meta, 'before-group', groupFields, meta.$argv)
         const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
         Object.defineProperty(meta, '$group', { value: group, writable: true })
 
         // emit attach event
-        this.emitEvent(meta, 'attach-group', meta)
+        if (this.serialize(meta, 'attach-group', meta)) return
 
         // ignore some group calls
         const isAssignee = !group.assignee || group.assignee === this.selfId
@@ -377,12 +390,12 @@ export class App extends Context {
 
       // attach user data
       const userFields = new Set<UserField>(['flag'])
-      this.emitEvent(meta, 'before-user', userFields, meta.$argv)
+      await this.parallelize(meta, 'before-user', userFields, meta.$argv)
       const user = await this.database.observeUser(meta.userId, Array.from(userFields))
       Object.defineProperty(meta, '$user', { value: user, writable: true })
 
       // emit attach event
-      this.emitEvent(meta, 'attach-user', meta)
+      if (this.serialize(meta, 'attach-user', meta)) return
 
       // ignore some user calls
       if (user.flag & UserFlag.ignore) return
@@ -460,15 +473,15 @@ export class App extends Context {
       try {
         return middlewares[index++]?.(meta, next)
       } catch (error) {
-        this.emit('error/middleware', error)
-        this.emit('error', error)
+        this.parallelize('error/middleware', error)
+        this.parallelize('error', error)
       }
     }
     await next()
 
     // update middleware set
     this._middlewareSet.delete(counter)
-    this.emitEvent(meta, 'after-middleware', meta)
+    this.parallelize(meta, 'after-middleware', meta)
 
     // flush user & group data
     await meta.$user?._update()

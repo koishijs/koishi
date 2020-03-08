@@ -48,21 +48,21 @@ export function apply (ctx: Context, options: RecorderOptions = {}) {
       if (!existsSync(folder)) mkdirSync(folder, { recursive: true })
       streams[path] = createWriteStream(path, { flags: 'a' })
       streams[path].on('close', () => delete streams[path])
-      ctx.app.receiver.emit('record-opened', streams[path], path)
+      ctx.app.parallelize('record-opened', streams[path], path)
     }
-    ctx.app.receiver.emit('record-writing', output, meta)
+    ctx.app.parallelize('record-writing', output, meta)
     streams[path].write(output, () => {
-      ctx.app.receiver.emit('record-written', output, meta)
+      ctx.app.parallelize('record-written', output, meta)
     })
   }
 
   onStop(() => {
     for (const key in streams) {
-      ctx.app.receiver.emit('record-closing', streams[key], key)
+      ctx.app.parallelize('record-closing', streams[key], key)
       streams[key].close()
     }
   })
 
-  ctx.receiver.on('message', handleMessage)
-  ctx.receiver.on('before-send', handleMessage)
+  ctx.on('message', handleMessage)
+  ctx.on('before-send', handleMessage)
 }
