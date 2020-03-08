@@ -1,4 +1,4 @@
-import { TeachOptions } from './utils'
+import { ParsedTeachLine } from './utils'
 
 function formatAnswer (source: string) {
   const lines = source.split(/(\r?\n|\$n)/g)
@@ -6,24 +6,20 @@ function formatAnswer (source: string) {
   return output.replace(/\[CQ:image,[^\]]+\]/g, '[图片]')
 }
 
-export default async function (parsedOptions: TeachOptions) {
-  const { ctx, meta, options, config } = parsedOptions
+export default async function (parsedOptions: ParsedTeachLine) {
+  const { ctx, meta, options } = parsedOptions
   const question = options.all ? undefined : options.question
   const answer = options.all ? undefined : options.answer
-  let { envMode, groups, writer } = parsedOptions
+  let { reversed, partial, groups, writer } = parsedOptions
   const { keyword } = options
-
-  if (config.useEnvironment && !envMode && !options.allEnv) {
-    envMode = 1
-    groups = [meta.groupId]
-  }
 
   const dialogues = await ctx.database.getDialogues({
     writer,
     keyword,
     question,
     answer,
-    envMode,
+    reversed,
+    partial,
     groups,
     frozen: options.unFrozen ? false : options.frozen,
   })
@@ -48,18 +44,18 @@ export default async function (parsedOptions: TeachOptions) {
       return meta.$send(output.join('\n'))
     } else {
       if (!dialogues.length) return meta.$send(`没有搜索到问答“${question}”“${answer}”，请尝试使用关键词匹配。`)
-      return meta.$send(`问答“${question}”“${answer}”的编号为：${dialogues.map(({ id }) => id).join(', ')}。`)
+      return meta.$send(`问答“${question}”“${answer}”的编号为 ${dialogues[0].id}。`)
     }
   } else {
     const output = dialogues.map(({ id, question, answer }) => `${id}. 问题：“${question}”，回答：“${formatAnswer(answer)}”`)
     if (!options.question) {
-      if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${answer}”的的回答。`)
+      if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${answer}”的回答。`)
       output.unshift(`回答关键词“${answer}”的搜索结果如下：`)
     } else if (!options.answer) {
-      if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${question}”的的问题。`)
+      if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${question}”的问题。`)
       output.unshift(`问题关键词“${question}”的搜索结果如下：`)
     } else {
-      if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${question}”“${answer}”的的问答。`)
+      if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${question}”“${answer}”的问答。`)
       output.unshift(`问答关键词“${question}”“${answer}”的搜索结果如下：`)
     }
     return meta.$send(output.join('\n'))

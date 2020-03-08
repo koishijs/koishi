@@ -1,7 +1,7 @@
 import { DialogueFlag, Dialogue } from './database'
-import { simplifyQuestion, simplifyAnswer, TeachOptions } from './utils'
+import { simplifyQuestion, simplifyAnswer, ParsedTeachLine } from './utils'
 
-export default async function (parsedOptions: TeachOptions, question: string, answer: string) {
+export default async function (parsedOptions: ParsedTeachLine, question: string, answer: string) {
   const { argc, meta, ctx, options, config } = parsedOptions
   if (String(question).includes('[CQ:image,')) return meta.$send('问题不能包含图片。')
   question = simplifyQuestion(question)
