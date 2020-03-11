@@ -32,7 +32,7 @@
   ],
   "devDependencies": {
     "@types/js-yaml": "^3.12.2",
-    "@types/prompts": "^2.0.4"
+    "@types/prompts": "^2.0.5"
   },
   "dependencies": {
     "cac": "^6.5.7",

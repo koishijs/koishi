@@ -1,3 +1,4 @@
+import ms from 'ms'
 import WebSocket from 'ws'
 import * as http from 'http'
 import { errors } from './messages'
@@ -7,7 +8,6 @@ import { Meta, VersionInfo, ContextType } from './meta'
 import { App } from './app'
 import { CQResponse } from './sender'
 import { format } from 'util'
-import ms from 'ms'
 
 export abstract class Server {
   public appList: App[] = []
