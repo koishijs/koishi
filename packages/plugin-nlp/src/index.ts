@@ -1,5 +1,5 @@
 import { Command, Meta, Context, ParsedLine, ParsedCommandLine } from 'koishi-core'
-import { tag, load } from 'nodejieba'
+import { tag, load, TagResult, LoadOptions } from 'nodejieba'
 import { resolve } from 'path'
 
 declare module 'koishi-core/dist/command' {
@@ -21,25 +21,13 @@ export interface Intension extends Partial<ParsedLine> {
 
 export type IntenderCallback = (meta: Meta, keyword: string) => Intension
 
-// TODO: pending nodejieba typings
-interface TagResult {
-  word: string
-  tag: string
-}
-
 export interface Intender {
   command: Command
   keywords: string[]
   callback: IntenderCallback
 }
 
-export interface NlpConfig {
-  // TODO: pending nodejieba typings
-  dict?: string
-  hmmDict?: string
-  userDict?: string
-  idfDict?: string
-  stopWordDict?: string
+export interface NlpConfig extends LoadOptions {
   threshold?: number
 }
 

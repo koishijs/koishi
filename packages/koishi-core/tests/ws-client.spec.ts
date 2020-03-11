@@ -6,8 +6,13 @@ let app1: App, app2: App
 
 beforeAll(async () => {
   server = await createWsServer()
-  app1 = server.createBoundApp()
-  app2 = server.createBoundApp({ selfId: BASE_SELF_ID + 1 })
+  app1 = server.createBoundApp({
+    retryTimes: 1,
+    retryInterval: 100,
+  })
+  app2 = server.createBoundApp({
+    selfId: BASE_SELF_ID + 1,
+  })
 })
 
 afterAll(() => server.close())
@@ -28,8 +33,10 @@ describe('WebSocket Server', () => {
     await expect(app1.start()).rejects.toHaveProperty('message', 'authorization failed')
     app1.options.token = 'token'
     await expect(app1.start()).resolves.toBeUndefined()
+    await server.close()
+    await expect(app1.start()).rejects.toHaveProperty('message')
     server.token = null
-    await app1.stop()
+    server.open()
     await expect(app1.start()).resolves.toBeUndefined()
   })
 

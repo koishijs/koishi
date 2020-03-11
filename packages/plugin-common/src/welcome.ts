@@ -6,6 +6,7 @@ const defaultMessage = (meta: Meta<'notice'>) => `欢迎新大佬 [CQ:at,qq=${me
 
 export default function apply (ctx: Context, message: WelcomeMessage = defaultMessage) {
   ctx.receiver.on('group-increase', async (meta) => {
+    if (meta.userId === ctx.app.selfId) return
     if (ctx.database) {
       const group = await ctx.database.getGroup(meta.groupId, 0, ['assignee'])
       if (group.assignee !== ctx.app.selfId) return
