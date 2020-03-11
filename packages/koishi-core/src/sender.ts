@@ -21,10 +21,11 @@ import {
 } from './meta'
 
 export class SenderError extends Error {
-  constructor (args: Record<string, any>, url: string, retcode: number) {
+  constructor (args: Record<string, any>, url: string, retcode: number, selfId: number) {
     super(`Error when trying to send to ${url}, args: ${JSON.stringify(args)}, retcode: ${retcode}`)
     Object.defineProperties(this, {
       name: { value: 'SenderError' },
+      selfId: { value: selfId },
       code: { value: retcode },
       args: { value: args },
       url: { value: url },
@@ -77,9 +78,9 @@ export class Sender {
     if (retcode === 0 && !silent) {
       return camelCase(data)
     } else if (retcode < 0 && !silent) {
-      throw new SenderError(params, action, retcode)
+      throw new SenderError(params, action, retcode, this.app.selfId)
     } else if (retcode > 1) {
-      throw new SenderError(params, action, retcode)
+      throw new SenderError(params, action, retcode, this.app.selfId)
     }
   }
 
