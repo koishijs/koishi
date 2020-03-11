@@ -63,6 +63,9 @@ export interface Meta <T extends PostType = PostType> {
   // other properties
   $argv?: ParsedCommandLine
   $parsed?: ParsedMessage
+  $userFields?: Set<UserField>
+  $groupFields?: Set<GroupField>
+  $defaultAuthority?: number
 
   // quick operations
   $response?: (payload: ResponsePayload) => void

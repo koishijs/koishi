@@ -2,13 +2,12 @@ import debug from 'debug'
 import escapeRegex from 'escape-string-regexp'
 import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
-import { Command, ShortcutConfig, ParsedCommandLine } from './command'
+import { Command, ShortcutConfig, ParsedCommandLine, ParsedLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
 import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField } from './database'
 import { Meta } from './meta'
 import { simplify, noop } from 'koishi-utils'
 import { errors } from './messages'
-import { ParsedLine } from './parser'
 import checker from './plugins/checker'
 import help from './plugins/help'
 import suggestion from './plugins/suggestion'
@@ -80,6 +79,10 @@ function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
 const defaultOptions: AppOptions = {
   maxMiddlewares: 64,
   retryInterval: 5000,
+}
+
+function defineProperty <T, K extends keyof T> (object: T, key: K, value: T[K]) {
+  Object.defineProperty(object, key, { writable: true, value })
 }
 
 export enum Status { closed, opening, open, closing }
@@ -304,16 +307,11 @@ export class App extends Context {
     }
 
     // store parsed message
-    Object.defineProperty(meta, '$parsed', {
-      value: { atMe, nickname, prefix, message },
-    })
+    defineProperty(meta, '$parsed', { atMe, nickname, prefix, message })
 
     // parse as command
     if (!meta.$argv && (prefix !== null || nickname || meta.messageType === 'private')) {
-      Object.defineProperty(meta, '$argv', {
-        configurable: true,
-        value: this.parseCommandLine(message, meta),
-      })
+      defineProperty(meta, '$argv', this.parseCommandLine(message, meta))
     }
 
     // parse as shortcut
@@ -330,33 +328,30 @@ export class App extends Context {
             : command.parse(_message.trim())
           result.options = { ...options, ...result.options }
           result.args.unshift(...args)
-          Object.defineProperty(meta, '$argv', {
-            configurable: true,
-            value: { meta, command, ...result },
-          })
+          defineProperty(meta, '$argv', { meta, command, ...result })
           break
         }
       }
     }
 
     if (!meta.$argv) {
-      Object.defineProperty(meta, '$argv', {
-        configurable: true,
-        value: { meta },
-      })
+      defineProperty(meta, '$argv', { meta })
     }
 
     const { command } = meta.$argv
     if (this.database) {
+      defineProperty(meta, '$defaultAuthority', 0)
+      defineProperty(meta, '$userFields', new Set<UserField>(['flag']))
+
       if (meta.messageType === 'group') {
         // attach group data
-        const groupFields = new Set<GroupField>(['flag', 'assignee'])
-        this.parallelize(meta, 'before-attach-group', meta, groupFields)
-        const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
-        Object.defineProperty(meta, '$group', { value: group, writable: true })
+        defineProperty(meta, '$groupFields', new Set<GroupField>(['flag', 'assignee']))
+        this.parallelize(meta, 'before-attach-group', meta)
+        const group = await this.database.observeGroup(meta.groupId, Array.from(meta.$groupFields))
+        defineProperty(meta, '$group', group)
 
         // emit attach event
-        if (this.serialize(meta, 'attach-group', meta)) return
+        if (await this.serialize(meta, 'attach-group', meta)) return
 
         // ignore some group calls
         const isAssignee = !group.assignee || group.assignee === this.selfId
@@ -369,13 +364,12 @@ export class App extends Context {
       }
 
       // attach user data
-      const userFields = new Set<UserField>(['flag'])
-      this.parallelize(meta, 'before-attach-user', meta, userFields)
-      const user = await this.database.observeUser(meta.userId, Array.from(userFields))
-      Object.defineProperty(meta, '$user', { value: user, writable: true })
+      this.parallelize(meta, 'before-attach-user', meta)
+      const user = await this.database.observeUser(meta.userId, Array.from(meta.$userFields))
+      defineProperty(meta, '$user', user)
 
       // emit attach event
-      if (this.serialize(meta, 'attach-user', meta)) return
+      if (await this.serialize(meta, 'attach-user', meta)) return
 
       // ignore some user calls
       if (user.flag & UserFlag.ignore) return

@@ -148,16 +148,6 @@ export interface ShortcutConfig {
   options?: Record<string, any>
 }
 
-export enum CommandHint {
-  USAGE_EXHAUSTED = 1,
-  TOO_FREQUENT = 2,
-  LOW_AUTHORITY = 4,
-  INSUFFICIENT_ARGUMENTS = 8,
-  REDUNANT_ARGUMENTS = 16,
-  UNKNOWN_OPTIONS = 32,
-  REQUIRED_OPTIONS = 64,
-}
-
 export class Command {
   config: CommandConfig
   children: Command[] = []
@@ -169,20 +159,20 @@ export class Command {
   _userFields = new Set<UserField>()
   _groupFields = new Set<GroupField>()
 
-  private _argsDef: CommandArgument[]
-  private _optsDef: Record<string, CommandOption> = {}
-  private _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
+  _argsDef: CommandArgument[]
+  _optsDef: Record<string, CommandOption> = {}
+  _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
 
-  static attachUserFields (meta: Meta<'message'>, userFields: Set<UserField>) {
+  static attachUserFields (meta: Meta<'message'>) {
     const { command, options = {} } = meta.$argv
     if (!command) return
     for (const field of command._userFields) {
-      userFields.add(field)
+      meta.$userFields.add(field)
     }
 
     const { maxUsage, minInterval, authority } = command.config
-    let shouldFetchAuthority = !userFields.has('authority') && authority > 0
-    let shouldFetchUsage = !userFields.has('usage') && (
+    let shouldFetchAuthority = !meta.$userFields.has('authority') && authority > 0
+    let shouldFetchUsage = !meta.$userFields.has('usage') && (
       typeof maxUsage === 'number' && maxUsage < Infinity ||
       typeof minInterval === 'number' && minInterval > 0)
     for (const option of command._options) {
@@ -191,14 +181,14 @@ export class Command {
         if (option.notUsage) shouldFetchUsage = false
       }
     }
-    if (shouldFetchAuthority) userFields.add('authority')
-    if (shouldFetchUsage) userFields.add('usage')
+    if (shouldFetchAuthority) meta.$userFields.add('authority')
+    if (shouldFetchUsage) meta.$userFields.add('usage')
   }
 
-  static attachGroupFields (meta: Meta<'message'>, groupFields: Set<GroupField>) {
+  static attachGroupFields (meta: Meta<'message'>) {
     if (!meta.$argv.command) return
     for (const field of meta.$argv.command._groupFields) {
-      groupFields.add(field)
+      meta.$groupFields.add(field)
     }
   }
 

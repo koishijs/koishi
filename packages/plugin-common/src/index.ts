@@ -5,7 +5,7 @@ import contextify from './contextify'
 import echo from './echo'
 import exec from './exec'
 import exit from './exit'
-import info, { InfoOptions } from './info'
+import info from './info'
 import repeater, { RepeaterOptions } from './repeater'
 import requestHandler, { HandlerOptions } from './request-handler'
 import respondent, { Respondent } from './respondent'
@@ -28,13 +28,12 @@ export {
   welcome,
   BroadcastOptions,
   HandlerOptions,
-  InfoOptions,
   RepeaterOptions,
   Respondent,
   WelcomeMessage,
 }
 
-export interface Config extends BroadcastOptions, HandlerOptions, InfoOptions {
+export interface Config extends BroadcastOptions, HandlerOptions {
   admin?: boolean
   broadcast?: boolean
   contextify?: boolean
