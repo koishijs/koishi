@@ -7,9 +7,11 @@ import { Context, Middleware, NextFunction, ContextScope } from './context'
 import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField } from './database'
 import { Meta } from './meta'
 import { simplify, noop } from 'koishi-utils'
-import { errors, messages } from './messages'
+import { errors } from './messages'
 import { ParsedLine } from './parser'
+import checker from './plugins/checker'
 import help from './plugins/help'
+import suggestion from './plugins/suggestion'
 
 export interface AppOptions {
   port?: number
@@ -136,7 +138,9 @@ export class App extends Context {
     this.on('logger', (scope, message) => debug(scope)(message))
 
     // apply internal plugins
+    this.plugin(checker)
     this.plugin(help)
+    this.plugin(suggestion)
   }
 
   get users () {

@@ -1,18 +1,114 @@
 import { Context, NextFunction } from './context'
 import { UserData, UserField, GroupField } from './database'
 import { errors } from './messages'
-import { noop } from 'koishi-utils'
+import { noop, camelCase } from 'koishi-utils'
 import { Meta } from './meta'
 
-import {
-  CommandOption,
-  CommandArgument,
-  OptionConfig,
-  parseArguments,
-  parseOption,
-  parseLine,
-  ParsedLine,
-} from './parser'
+const ANGLED_BRACKET_REGEXP = /<([^>]+)>/g
+const SQUARE_BRACKET_REGEXP = /\[([^\]]+)\]/g
+
+export function removeBrackets (source: string) {
+  return source.replace(/[<[].+/, '').trim()
+}
+
+function parseBracket (name: string, required: boolean): CommandArgument {
+  let variadic = false, noSegment = false
+  if (name.startsWith('...')) {
+    name = name.slice(3)
+    variadic = true
+  } else if (name.endsWith('...')) {
+    name = name.slice(0, -3)
+    noSegment = true
+  }
+  return {
+    name,
+    required,
+    variadic,
+    noSegment,
+  }
+}
+
+export interface CommandArgument {
+  required: boolean
+  variadic: boolean
+  noSegment: boolean
+  name: string
+}
+
+export function parseArguments (source: string) {
+  let capture: RegExpExecArray
+  const result: CommandArgument[] = []
+  while ((capture = ANGLED_BRACKET_REGEXP.exec(source))) {
+    result.push(parseBracket(capture[1], true))
+  }
+  while ((capture = SQUARE_BRACKET_REGEXP.exec(source))) {
+    result.push(parseBracket(capture[1], false))
+  }
+  return result
+}
+
+export interface OptionConfig {
+  default?: any
+  hidden?: boolean
+  authority?: number
+  notUsage?: boolean
+  isString?: boolean
+  noNegated?: boolean
+}
+
+export interface CommandOption extends OptionConfig {
+  rawName: string
+  longest: string
+  names: string[]
+  camels: string[]
+  negated: string[]
+  required: boolean
+  isBoolean: boolean
+  description: string
+}
+
+interface ParsedArg0 {
+  rest: string
+  content: string
+  quoted: boolean
+}
+
+function parseArg0 (source: string): ParsedArg0 {
+  const char0 = source[0]
+  if (char0 === '"' || char0 === "'" || char0 === '“' || char0 === '”') {
+    const [content] = source.slice(1).split(/["'“”](?=\s|$)/, 1)
+    return {
+      quoted: true,
+      content,
+      rest: source.slice(2 + content.length).trimLeft(),
+    }
+  }
+
+  const [content] = source.split(/\s/, 1)
+  return { content, quoted: false, rest: source.slice(content.length).trimLeft() }
+}
+
+export function parseValue (source: string | true, quoted: boolean, config = {} as CommandOption) {
+  // quoted empty string
+  if (source === '' && quoted) return ''
+  // no explicit parameter
+  if (source === true || source === '') {
+    if (config.default !== undefined) return config.default
+    if (config.isString) return ''
+    return true
+  }
+  // default behavior
+  if (config.isString) return source
+  const n = +source
+  return n * 0 === 0 ? n : source
+}
+
+export interface ParsedLine {
+  rest: string
+  args: string[]
+  unknown: string[]
+  options: Record<string, any>
+}
 
 export interface ParsedCommandLine extends Partial<ParsedLine> {
   meta: Meta<'message'>
@@ -72,9 +168,10 @@ export class Command {
   _shortcuts: Record<string, ShortcutConfig> = {}
   _userFields = new Set<UserField>()
   _groupFields = new Set<GroupField>()
-  _argsDef: CommandArgument[]
-  _optsDef: Record<string, CommandOption> = {}
-  _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
+
+  private _argsDef: CommandArgument[]
+  private _optsDef: Record<string, CommandOption> = {}
+  private _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
 
   static attachUserFields (meta: Meta<'message'>, userFields: Set<UserField>) {
     const { command, options = {} } = meta.$argv
@@ -183,10 +280,47 @@ export class Command {
   option (rawName: string, description: string, config?: OptionConfig): this
   option (rawName: string, ...args: [OptionConfig?] | [string, OptionConfig?]) {
     const description = typeof args[0] === 'string' ? args.shift() as string : undefined
-    const config = args[0] as CommandConfig || {}
-    const option = parseOption(rawName, description, config, this._optsDef)
+    const config = args[0] as OptionConfig || {}
+    const negated: string[] = []
+    const camels: string[] = []
+
+    let required = false, isBoolean = false, longest = ''
+    const names = removeBrackets(rawName).split(',').map((name: string) => {
+      name = name.trim().replace(/^-{1,2}/, '')
+      let camel: string
+      if (name.startsWith('no-') && !config.noNegated && !this._optsDef[name.slice(3)]) {
+        name = name.slice(3)
+        camel = camelCase(name)
+        negated.push(camel)
+      } else {
+        camel = camelCase(name)
+      }
+      camels.push(camel)
+      if (camel.length > longest.length) longest = camel
+      return name
+    })
+  
+    if (rawName.includes('<')) {
+      required = true
+    } else if (!rawName.includes('[')) {
+      isBoolean = true
+    }
+  
+    const option: CommandOption = {
+      authority: 0,
+      ...config,
+      rawName,
+      longest,
+      names,
+      camels,
+      negated,
+      required,
+      isBoolean,
+      description,
+    }
+
     this._options.push(option)
-    for (const name of option.names) {
+    for (const name of names) {
       if (name in this._optsDef) {
         throw new Error(errors.DUPLICATE_OPTION)
       }
@@ -218,7 +352,94 @@ export class Command {
   }
 
   parse (source: string) {
-    return parseLine(source, this._argsDef, this._optsDef)
+    let arg: string, name: string, arg0: ParsedArg0, rest = ''
+    const args: string[] = []
+    const unknown: string[] = []
+    const options: Record<string, any> = {}
+  
+    function handleOption (name: string, knownValue: any, unknownValue: any) {
+      const config = this._optsDef[name]
+      if (config) {
+        for (const alias of config.camels) {
+          options[alias] = !config.negated.includes(alias) && knownValue
+        }
+      } else {
+        // unknown option name
+        options[camelCase(name)] = unknownValue
+        if (!unknown.includes(name)) {
+          unknown.push(name)
+        }
+      }
+    }
+  
+    while (source) {
+      // long argument
+      if (source[0] !== '-' && this._argsDef[args.length] && this._argsDef[args.length].noSegment) {
+        args.push(source)
+        break
+      }
+  
+      // parse argv0
+      arg0 = parseArg0(source)
+      arg = arg0.content
+      source = arg0.rest
+      if (arg[0] !== '-' || arg0.quoted) {
+        // normal argument
+        args.push(arg)
+        continue
+      } else if (arg === '--') {
+        // rest part
+        rest = arg0.rest
+        break
+      }
+  
+      // find -
+      let i = 0
+      for (; i < arg.length; ++i) {
+        if (arg.charCodeAt(i) !== 45) break
+      }
+      if (arg.slice(i, i + 3) === 'no-') {
+        name = arg.slice(i + 3)
+        handleOption(name, true, false)
+        continue
+      }
+  
+      // find =
+      let j = i + 1
+      for (; j < arg.length; j++) {
+        if (arg.charCodeAt(j) === 61) break
+      }
+      name = arg.slice(i, j)
+      const names = i === 2 ? [name] : name
+  
+      // get parameter
+      let quoted = false
+      let param: any = arg.slice(++j)
+      const lastConfig = this._optsDef[names[names.length - 1]]
+      if (!param && source.charCodeAt(0) !== 45 && (!lastConfig || !lastConfig.isBoolean)) {
+        arg0 = parseArg0(source)
+        param = arg0.content
+        quoted = arg0.quoted
+        source = arg0.rest
+      }
+  
+      // handle each name
+      for (j = 0; j < names.length; j++) {
+        name = names[j]
+        const config = this._optsDef[name]
+        const value = parseValue((j + 1 < names.length) || param, quoted, config)
+        handleOption(name, value, value)
+      }
+    }
+  
+    // assign default values
+    for (const name in this._optsDef) {
+      if (this._optsDef[name].default !== undefined && !(name in options)) {
+        options[name] = this._optsDef[name].default
+      }
+    }
+  
+    return { options, rest, unknown, args } as ParsedLine
   }
 
   async execute (argv: ParsedCommandLine, next: NextFunction = noop) {
