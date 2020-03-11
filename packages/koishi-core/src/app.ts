@@ -24,6 +24,7 @@ export interface AppOptions {
   retryInterval?: number
   maxMiddlewares?: number
   commandPrefix?: string | string[]
+  defaultAuthority?: number | ((meta: Meta) => number)
   quickOperationTimeout?: number
   similarityCoefficient?: number
 }
@@ -378,7 +379,10 @@ export class App extends Context {
       // attach user data
       const userFields = new Set<UserField>(['flag'])
       this.emitEvent(meta, 'before-user', userFields, meta.$argv)
-      const user = await this.database.observeUser(meta.userId, Array.from(userFields))
+      const defaultAuthority = typeof this.options.defaultAuthority === 'function'
+        ? this.options.defaultAuthority(meta)
+        : this.options.defaultAuthority || 0
+      const user = await this.database.observeUser(meta.userId, defaultAuthority, Array.from(userFields))
       Object.defineProperty(meta, '$user', { value: user, writable: true })
 
       // emit attach event
