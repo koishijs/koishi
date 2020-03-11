@@ -138,20 +138,15 @@ export class Context {
     return this
   }
 
-  private *_getMatchedHooks (args: any[]) {
-    const meta = typeof args[0] === 'object' ? args.shift() : null
-    const name = args.shift()
-    for (const [context, callback] of this.app._hooks[name] || []) {
-      if (context.match(meta)) yield callback
-    }
-  }
-
   async parallelize <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<void>
   async parallelize <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
   async parallelize (...args: any[]) {
     const tasks: Promise<any>[] = []
-    for (const callback of this._getMatchedHooks(args)) {
-      tasks.push(callback.apply(this, args))
+    const meta = typeof args[0] === 'object' ? args.shift() : null
+    const name = args.shift()
+    for (const [context, callback] of this.app._hooks[name] || []) {
+      if (!context.match(meta)) continue
+      tasks.push(callback.apply(meta, args))
     }
     await Promise.all(tasks)
   }
@@ -159,7 +154,10 @@ export class Context {
   async serialize <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
   async serialize <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
   async serialize (...args: any[]) {
-    for (const callback of this._getMatchedHooks(args)) {
+    const meta = typeof args[0] === 'object' ? args.shift() : null
+    const name = args.shift()
+    for (const [context, callback] of this.app._hooks[name] || []) {
+      if (!context.match(meta)) continue
       const result = await callback.apply(this, args)
       if (result) return result
     }
@@ -173,6 +171,10 @@ export class Context {
     this.app._hooks[name] = this.app._hooks[name] || []
     this.app._hooks[name].push([this, listener])
     return () => this.off(name, listener)
+  }
+
+  before <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
+    return this.prependListener(name, listener)
   }
 
   prependListener <K extends keyof EventMap> (name: K, listener: EventMap[K]) {

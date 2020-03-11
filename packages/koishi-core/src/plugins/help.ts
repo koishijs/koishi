@@ -1,4 +1,5 @@
-import { Command, Context, UserData, Meta, getUsage } from '..'
+import { Command, Context, UserData, Meta } from '..'
+import { getUsage } from './checker'
 
 export type CommandUsage = string | ((this: Command, meta: Meta) => string | Promise<string>)
 
@@ -27,7 +28,7 @@ export default function apply (ctx: Context) {
     cmd.option('-h, --help', '显示此信息', { hidden: true })
   })
 
-  ctx.on('before-command', async (argv) => {
+  ctx.before('before-command', async (argv) => {
     // show help when use `-h, --help` or when there is no action
     if (!argv.command._action || argv.options.help) {
       await ctx.runCommand('help', argv.meta, [argv.command.name])

@@ -1,10 +1,8 @@
 import { Context, NextFunction } from './context'
 import { UserData, UserField, GroupField } from './database'
-import { errors, messages } from './messages'
+import { errors } from './messages'
 import { noop } from 'koishi-utils'
 import { Meta } from './meta'
-import { format } from 'util'
-import { updateUsage } from './utils'
 
 import {
   CommandOption,
@@ -25,12 +23,6 @@ export interface ParsedCommandLine extends Partial<ParsedLine> {
 export type UserType <T> = T | ((user: UserData) => T)
 
 export interface CommandConfig {
-  /** disallow unknown options */
-  checkUnknown?: boolean
-  /** check required options */
-  checkRequired?: boolean
-  /** check argument count */
-  checkArgCount?: boolean
   /** usage identifier */
   usageName?: string
   /** description */
@@ -40,14 +32,12 @@ export interface CommandConfig {
   disable?: UserType<boolean>
   maxUsage?: UserType<number>
   minInterval?: UserType<number>
-  showWarning?: boolean
 }
 
-const defaultConfig: CommandConfig = {
+export const defaultConfig: CommandConfig = {
   authority: 1,
   maxUsage: Infinity,
   minInterval: 0,
-  showWarning: true,
 }
 
 export interface ShortcutConfig {
@@ -232,42 +222,11 @@ export class Command {
   }
 
   async execute (argv: ParsedCommandLine, next: NextFunction = noop) {
-    const options = argv.options || (argv.options = {})
-    const unknown = argv.unknown || (argv.unknown = [])
-    const args = argv.args || (argv.args = [])
+    if (!argv.options) argv.options = {}
+    if (!argv.unknown) argv.unknown = []
+    if (!argv.args) argv.args = []
 
     if (await this.app.serialize(argv.meta, 'before-command', argv)) return
-
-    // check argument count
-    if (this.config.checkArgCount) {
-      const nextArg = this._argsDef[args.length]
-      if (nextArg?.required) {
-        return this._sendHint(argv.meta, messages.INSUFFICIENT_ARGUMENTS)
-      }
-      const finalArg = this._argsDef[this._argsDef.length - 1]
-      if (args.length > this._argsDef.length && !finalArg.noSegment && !finalArg.variadic) {
-        return this._sendHint(argv.meta, messages.REDUNANT_ARGUMENTS)
-      }
-    }
-
-    // check unknown options
-    if (this.config.checkUnknown && unknown.length) {
-      return this._sendHint(argv.meta, messages.UNKNOWN_OPTIONS, unknown.join(', '))
-    }
-
-    // check required options
-    if (this.config.checkRequired) {
-      const absent = this._options.find((option) => {
-        return option.required && !(option.longest in options)
-      })
-      if (absent) {
-        return this._sendHint(argv.meta, messages.REQUIRED_OPTIONS, absent.rawName)
-      }
-    }
-
-    // check authority and usage
-    const message = this._checkUser(argv.meta, options)
-    if (message) return this._sendHint(argv.meta, message)
 
     // execute command
     this.context.logger('koishi:command').debug('execute %s', this.name)
@@ -279,45 +238,9 @@ export class Command {
       return next(_next)
     }
 
-    await this._action(argv, ...args)
+    await this._action(argv, ...argv.args)
     if (!skipped) {
       return this.app.parallelize(argv.meta, 'after-command', argv)
-    }
-  }
-
-  private _sendHint (meta: Meta<'message'>, message: string, ...param: any[]) {
-    if (this.config.showWarning) {
-      return meta.$send(format(message, ...param))
-    }
-  }
-
-  /** check authority and usage */
-  private _checkUser (meta: Meta<'message'>, options: Record<string, any>) {
-    const user = meta.$user
-    if (!user) return
-    let isUsage = true
-
-    // check authority
-    if (this.config.authority > user.authority) {
-      return messages.LOW_AUTHORITY
-    }
-    for (const option of this._options) {
-      if (option.camels[0] in options) {
-        if (option.authority > user.authority) {
-          return messages.LOW_AUTHORITY
-        }
-        if (option.notUsage) isUsage = false
-      }
-    }
-
-    // check usage
-    if (isUsage) {
-      const minInterval = this.getConfig('minInterval', meta)
-      const maxUsage = this.getConfig('maxUsage', meta)
-
-      if (maxUsage < Infinity || minInterval > 0) {
-        return updateUsage(this.usageName, user, { maxUsage, minInterval })
-      }
     }
   }
 

@@ -3,9 +3,8 @@ import escapeRegex from 'escape-string-regexp'
 import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig, ParsedCommandLine } from './command'
-import { Context, Middleware, NextFunction, ContextScope, EventMap } from './context'
+import { Context, Middleware, NextFunction, ContextScope } from './context'
 import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField } from './database'
-import { showSuggestions } from './utils'
 import { Meta } from './meta'
 import { simplify, noop } from 'koishi-utils'
 import { errors, messages } from './messages'
@@ -379,39 +378,11 @@ export class App extends Context {
     }
 
     // execute command
-    if (command && !command.getConfig('disable', meta)) {
+    if (command) {
       return command.execute(meta.$argv, next)
     }
 
-    // show suggestions
-    const target = message.split(/\s/, 1)[0].toLowerCase()
-    if (!target || !capture || command) return next()
-
-    const executableMap = new Map<Command, boolean>()
-    return showSuggestions({
-      target,
-      meta,
-      next,
-      prefix: messages.COMMAND_SUGGESTION_PREFIX,
-      suffix: messages.COMMAND_SUGGESTION_SUFFIX,
-      items: Object.keys(this._commandMap),
-      coefficient: this.options.similarityCoefficient,
-      command: suggestion => this._commandMap[suggestion],
-      disable: (name) => {
-        const command = this._commandMap[name]
-        let disabled = executableMap.get(command)
-        if (disabled === undefined) {
-          disabled = !!command.getConfig('disable', meta)
-          executableMap.set(command, disabled)
-        }
-        return disabled
-      },
-      execute: async (suggestion, meta, next) => {
-        const newMessage = suggestion + message.slice(target.length)
-        const argv = this.parseCommandLine(newMessage, meta)
-        return argv.command.execute(argv, next)
-      },
-    })
+    return next()
   }
 
   parseCommandLine (message: string, meta: Meta<'message'>): ParsedCommandLine {
