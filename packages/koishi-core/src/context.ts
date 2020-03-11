@@ -343,8 +343,8 @@ export interface EventMap {
   'lifecycle/connect' (meta: Meta<'meta_event'>): any
 
   // Koishi events
-  'before-attach-user' (meta: Meta<'message'>): any
-  'before-attach-group' (meta: Meta<'message'>): any
+  'before-attach-user' (meta: Meta<'message'>, fields: Set<UserField>): any
+  'before-attach-group' (meta: Meta<'message'>, fields: Set<GroupField>): any
   'attach-user' (meta: Meta<'message'>): any
   'attach-group' (meta: Meta<'message'>): any
   'send' (meta: Meta<'send'>): any

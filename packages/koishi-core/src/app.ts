@@ -10,7 +10,8 @@ import { simplify, noop } from 'koishi-utils'
 import { errors } from './messages'
 import checker from './plugins/checker'
 import help from './plugins/help'
-import suggestion from './plugins/suggestion'
+import suggest from './plugins/suggest'
+import throttle from './plugins/throttle'
 
 export interface AppOptions {
   port?: number
@@ -25,6 +26,7 @@ export interface AppOptions {
   retryInterval?: number
   maxMiddlewares?: number
   commandPrefix?: string | string[]
+  defaultAffinity?: number | ((meta: Meta) => number)
   quickOperationTimeout?: number
   similarityCoefficient?: number
 }
@@ -143,7 +145,8 @@ export class App extends Context {
     // apply internal plugins
     this.plugin(checker)
     this.plugin(help)
-    this.plugin(suggestion)
+    this.plugin(suggest)
+    this.plugin(throttle)
   }
 
   get users () {
@@ -340,14 +343,11 @@ export class App extends Context {
 
     const { command } = meta.$argv
     if (this.database) {
-      defineProperty(meta, '$defaultAuthority', 0)
-      defineProperty(meta, '$userFields', new Set<UserField>(['flag']))
-
       if (meta.messageType === 'group') {
         // attach group data
-        defineProperty(meta, '$groupFields', new Set<GroupField>(['flag', 'assignee']))
-        this.parallelize(meta, 'before-attach-group', meta)
-        const group = await this.database.observeGroup(meta.groupId, Array.from(meta.$groupFields))
+        const groupFields = new Set<GroupField>(['flag', 'assignee'])
+        this.parallelize(meta, 'before-attach-group', meta, groupFields)
+        const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
         defineProperty(meta, '$group', group)
 
         // emit attach event
@@ -364,8 +364,12 @@ export class App extends Context {
       }
 
       // attach user data
-      this.parallelize(meta, 'before-attach-user', meta)
-      const user = await this.database.observeUser(meta.userId, Array.from(meta.$userFields))
+      const userFields = new Set<UserField>(['flag'])
+      this.parallelize(meta, 'before-attach-user', meta, userFields)
+      const defaultAffinity = typeof this.options.defaultAffinity === 'function'
+        ? this.options.defaultAffinity(meta)
+        : this.options.defaultAffinity || 0
+      const user = await this.database.observeUser(meta.userId, defaultAffinity, Array.from(userFields))
       defineProperty(meta, '$user', user)
 
       // emit attach event

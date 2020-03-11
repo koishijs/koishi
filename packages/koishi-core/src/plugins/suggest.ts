@@ -1,4 +1,4 @@
-import { NextFunction, Command, Meta, Context } from '..'
+import { NextFunction, Command, Meta, Context, UserField, GroupField } from '..'
 import { messages } from '../messages'
 import { format } from 'util'
 import leven from 'leven'
@@ -65,13 +65,15 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
 
     const command = typeof options.command === 'function' ? options.command(suggestions[0]) : options.command
     meta.$argv = { command, meta }
-    Command.attachUserFields(meta)
-    Command.attachGroupFields(meta)
+    const userFields = new Set<UserField>(['flag'])
+    const groupFields = new Set<GroupField>(['flag', 'assignee'])
+    Command.attachUserFields(meta, userFields)
+    Command.attachGroupFields(meta, groupFields)
     command.context.onceMiddleware(async (meta, next) => {
       if (meta.message.trim()) return next()
-      meta.$user = await command.context.database?.observeUser(meta.userId, Array.from(meta.$userFields))
+      meta.$user = await command.context.database?.observeUser(meta.userId, Array.from(userFields))
       if (meta.messageType === 'group') {
-        meta.$group = await command.context.database?.observeGroup(meta.groupId, Array.from(meta.$groupFields))
+        meta.$group = await command.context.database?.observeGroup(meta.groupId, Array.from(groupFields))
       }
       return execute(suggestions[0], meta, next)
     }, meta)

@@ -1,8 +1,6 @@
 import { Context, Meta } from 'koishi-core'
 import { simplify, contain, intersection, union, difference, randomId } from 'koishi-utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
-import { createHmac } from 'crypto'
-import axios from 'axios'
 
 export interface ThrottleConfig {
   interval: number

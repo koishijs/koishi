@@ -163,16 +163,16 @@ export class Command {
   _optsDef: Record<string, CommandOption> = {}
   _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
 
-  static attachUserFields (meta: Meta<'message'>) {
+  static attachUserFields (meta: Meta<'message'>, fields: Set<UserField>) {
     const { command, options = {} } = meta.$argv
     if (!command) return
     for (const field of command._userFields) {
-      meta.$userFields.add(field)
+      fields.add(field)
     }
 
     const { maxUsage, minInterval, authority } = command.config
-    let shouldFetchAuthority = !meta.$userFields.has('authority') && authority > 0
-    let shouldFetchUsage = !meta.$userFields.has('usage') && (
+    let shouldFetchAuthority = !fields.has('authority') && authority > 0
+    let shouldFetchUsage = !fields.has('usage') && (
       typeof maxUsage === 'number' && maxUsage < Infinity ||
       typeof minInterval === 'number' && minInterval > 0)
     for (const option of command._options) {
@@ -181,14 +181,14 @@ export class Command {
         if (option.notUsage) shouldFetchUsage = false
       }
     }
-    if (shouldFetchAuthority) meta.$userFields.add('authority')
-    if (shouldFetchUsage) meta.$userFields.add('usage')
+    if (shouldFetchAuthority) fields.add('authority')
+    if (shouldFetchUsage) fields.add('usage')
   }
 
-  static attachGroupFields (meta: Meta<'message'>) {
+  static attachGroupFields (meta: Meta<'message'>, fields: Set<GroupField>) {
     if (!meta.$argv.command) return
     for (const field of meta.$argv.command._groupFields) {
-      meta.$groupFields.add(field)
+      fields.add(field)
     }
   }
 
