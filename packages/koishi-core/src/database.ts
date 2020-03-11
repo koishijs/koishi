@@ -15,6 +15,7 @@ export interface UserData {
   id: number
   flag: number
   authority: number
+  name: string
   usage: Record<string, Usage> & { $date?: number }
 }
 
@@ -35,6 +36,7 @@ extendUser((id, authority) => ({
   authority,
   flag: 0,
   usage: {},
+  name: '' + id,
 }))
 
 export function createUser (id: number, authority: number) {

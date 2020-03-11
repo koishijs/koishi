@@ -1,11 +1,20 @@
 import { isInteger, getDateNumber } from 'koishi-utils'
 import { UserField, GroupField, UserData } from './database'
 import { NextFunction } from './context'
-import { Command, CommandHint } from './command'
+import { Command } from './command'
 import { Meta } from './meta'
 import { messages } from './messages'
 import { format } from 'util'
 import leven from 'leven'
+
+export function getSenderName (meta: Meta<'message'>) {
+  const idString = '' + meta.$user.id
+  return meta.$user && idString !== meta.$user.name
+    ? meta.$user.name
+    : meta.sender
+      ? meta.sender.card || meta.sender.nickname
+      : idString
+}
 
 export function getTargetId (target: string | number) {
   if (typeof target !== 'string' && typeof target !== 'number') return
@@ -91,8 +100,9 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
     const command = typeof options.command === 'function' ? options.command(suggestions[0]) : options.command
     const userFields = new Set<UserField>()
     const groupFields = new Set<GroupField>()
-    Command.attachUserFields(userFields, { command, meta })
-    Command.attachGroupFields(groupFields, { command, meta })
+    meta.$argv = { command, meta }
+    Command.attachUserFields(meta, userFields)
+    Command.attachGroupFields(meta, groupFields)
     command.context.onceMiddleware(async (meta, next) => {
       if (meta.message.trim()) return next()
       meta.$user = await command.context.database?.observeUser(meta.userId, Array.from(userFields))

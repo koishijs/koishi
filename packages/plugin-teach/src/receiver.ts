@@ -1,4 +1,5 @@
-import { Context, CQCode, sleep, UserField } from 'koishi'
+import { Context, UserField, getSenderName } from 'koishi-core'
+import { CQCode, sleep } from 'koishi-utils'
 import { simplifyQuestion, TeachConfig, LoopConfig } from './utils'
 import { Dialogue } from './database'
 
@@ -79,7 +80,7 @@ export default function (ctx: Context, config: TeachConfig) {
     const userFields = new Set<UserField>(['name'])
     ctx.app.parallelize(meta, 'dialogue/before-attach-user', meta, userFields)
     meta.$user = await ctx.database.observeUser(meta.$user, Array.from(userFields))
-    if (await ctx.app.serialize(meta, 'dialogue/attach-user', meta)) return
+    if (await ctx.app.serialize(meta, 'dialogue/attach-user', meta)) return next()
 
     // pick dialogue
     let dialogue: Dialogue

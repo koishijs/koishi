@@ -1,4 +1,4 @@
-import { Context, UserField, UserData, getTargetId, Meta } from 'koishi-core'
+import { Context, UserField, UserData, getTargetId, getSenderName } from 'koishi-core'
 
 type UserInfoCallback <K extends UserField = UserField> = (user: Pick<UserData, K>) => string
 
@@ -22,21 +22,7 @@ export function registerUserInfo <K extends UserField> (callback: UserInfoCallba
   }
 }
 
-export interface InfoOptions {
-  getUserName? (user: UserData, meta: Meta<'message'>): string
-}
-
-const defaultConfig: InfoOptions = {
-  getUserName (user, meta) {
-    if (meta.userId === user.id && meta.sender) {
-      return meta.sender.card || meta.sender.nickname
-    }
-  },
-}
-
-export default function apply (ctx: Context, config: InfoOptions = {}) {
-  config = { ...defaultConfig, ...config }
-
+export default function apply (ctx: Context) {
   ctx.command('info', '查看用户信息', { authority: 0 })
     .alias('i')
     .shortcut('我的信息')
@@ -49,15 +35,14 @@ export default function apply (ctx: Context, config: InfoOptions = {}) {
         if (!id) return meta.$send('未找到用户。')
         user = await ctx.database.getUser(id, -1, Array.from(infoFields))
         if (!user) return meta.$send('未找到用户。')
-        const name = config.getUserName(user, meta)
-        if (!name) {
+        if (+user.name === id) {
           output.push(`${id} 的权限为 ${user.authority} 级。`)
         } else {
-          output.push(`${name} (${id}) 的权限为 ${user.authority} 级。`)
+          output.push(`${user.name} (${id}) 的权限为 ${user.authority} 级。`)
         }
       } else {
         user = await ctx.database.getUser(meta.userId, Array.from(infoFields))
-        output.push(`${config.getUserName(user, meta) || meta.userId}，您的权限为 ${user.authority} 级。`)
+        output.push(`${getSenderName(meta)}，您的权限为 ${user.authority} 级。`)
       }
 
       for (const { callback } of infoList) {
