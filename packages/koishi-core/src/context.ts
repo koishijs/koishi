@@ -138,6 +138,33 @@ export class Context {
     return this
   }
 
+  private *_getMatchedHooks (args: any[]) {
+    const meta = typeof args[0] === 'object' ? args.shift() : null
+    const name = args.shift()
+    for (const [context, callback] of this.app._hooks[name] || []) {
+      if (context.match(meta)) yield callback
+    }
+  }
+
+  async parallelize <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<void>
+  async parallelize <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
+  async parallelize (...args: any[]) {
+    const tasks: Promise<any>[] = []
+    for (const callback of this._getMatchedHooks(args)) {
+      tasks.push(callback.apply(this, args))
+    }
+    await Promise.all(tasks)
+  }
+
+  async serialize <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
+  async serialize <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
+  async serialize (...args: any[]) {
+    for (const callback of this._getMatchedHooks(args)) {
+      const result = await callback.apply(this, args)
+      if (result) return result
+    }
+  }
+
   on <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
     return this.addListener(name, listener)
   }
@@ -279,6 +306,8 @@ const MIDDLEWARE_EVENT: unique symbol = Symbol('mid')
 
 export interface EventMap {
   [MIDDLEWARE_EVENT]: Middleware
+
+  // CQHTTP events
   'message' (meta: Meta<'message'>): any
   'message/normal' (meta: Meta<'message'>): any
   'message/notice' (meta: Meta<'message'>): any
@@ -310,8 +339,10 @@ export interface EventMap {
   'lifecycle/enable' (meta: Meta<'meta_event'>): any
   'lifecycle/disable' (meta: Meta<'meta_event'>): any
   'lifecycle/connect' (meta: Meta<'meta_event'>): any
-  'before-user' (fields: Set<UserField>, argv: ParsedCommandLine): any
-  'before-group' (fields: Set<GroupField>, argv: ParsedCommandLine): any
+
+  // Koishi events
+  'before-attach-user' (meta: Meta<'message'>, userFields: Set<UserField>): any
+  'before-attach-group' (meta: Meta<'message'>, groupFields: Set<GroupField>): any
   'attach-user' (meta: Meta<'message'>): any
   'attach-group' (meta: Meta<'message'>): any
   'send' (meta: Meta<'send'>): any

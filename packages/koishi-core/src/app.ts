@@ -3,13 +3,14 @@ import escapeRegex from 'escape-string-regexp'
 import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig, ParsedCommandLine } from './command'
-import { Context, Middleware, NextFunction, ContextScope, Events, EventMap } from './context'
+import { Context, Middleware, NextFunction, ContextScope, EventMap } from './context'
 import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField } from './database'
 import { showSuggestions } from './utils'
 import { Meta } from './meta'
 import { simplify, noop } from 'koishi-utils'
 import { errors, messages } from './messages'
 import { ParsedLine } from './parser'
+import help from './plugins/help'
 
 export interface AppOptions {
   port?: number
@@ -128,12 +129,15 @@ export class App extends Context {
 
     // bind built-in event listeners
     this.on('message', this._applyMiddlewares)
-    this.on('before-user', Command.attachUserFields)
-    this.on('before-group', Command.attachGroupFields)
+    this.on('before-attach-user', Command.attachUserFields)
+    this.on('before-attach-group', Command.attachGroupFields)
     this.middleware(this._preprocess)
 
     // apply default logger
     this.on('logger', (scope, message) => debug(scope)(message))
+
+    // apply internal plugins
+    this.plugin(help)
   }
 
   get users () {
@@ -163,33 +167,6 @@ export class App extends Context {
 
   get version () {
     return this.server?.version
-  }
-
-  private *_getMatchedHooks (args: any[]) {
-    const meta = typeof args[0] === 'object' ? args.shift() : null
-    const name = args.shift()
-    for (const [context, callback] of this._hooks[name] || []) {
-      if (context.match(meta)) yield callback
-    }
-  }
-
-  async parallelize <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<void>
-  async parallelize <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
-  async parallelize (...args: any[]) {
-    const tasks: Promise<any>[] = []
-    for (const callback of this._getMatchedHooks(args)) {
-      tasks.push(callback.apply(this, args))
-    }
-    await Promise.all(tasks)
-  }
-
-  async serialize <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
-  async serialize <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
-  async serialize (...args: any[]) {
-    for (const callback of this._getMatchedHooks(args)) {
-      const result = await callback.apply(this, args)
-      if (result) return result
-    }
   }
 
   prepare (selfId?: number) {
@@ -371,7 +348,7 @@ export class App extends Context {
       if (meta.messageType === 'group') {
         // attach group data
         const groupFields = new Set<GroupField>(['flag', 'assignee'])
-        await this.parallelize(meta, 'before-group', groupFields, meta.$argv)
+        this.parallelize(meta, 'before-attach-group', meta, groupFields)
         const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
         Object.defineProperty(meta, '$group', { value: group, writable: true })
 
@@ -390,7 +367,7 @@ export class App extends Context {
 
       // attach user data
       const userFields = new Set<UserField>(['flag'])
-      await this.parallelize(meta, 'before-user', userFields, meta.$argv)
+      this.parallelize(meta, 'before-attach-user', meta, userFields)
       const user = await this.database.observeUser(meta.userId, Array.from(userFields))
       Object.defineProperty(meta, '$user', { value: user, writable: true })
 

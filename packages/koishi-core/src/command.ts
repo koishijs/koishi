@@ -86,7 +86,8 @@ export class Command {
   _optsDef: Record<string, CommandOption> = {}
   _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
 
-  static attachUserFields (userFields: Set<UserField>, { command, options = {} }: ParsedCommandLine) {
+  static attachUserFields (meta: Meta<'message'>, userFields: Set<UserField>) {
+    const { command, options = {} } = meta.$argv
     if (!command) return
     for (const field of command._userFields) {
       userFields.add(field)
@@ -107,9 +108,9 @@ export class Command {
     if (shouldFetchUsage) userFields.add('usage')
   }
 
-  static attachGroupFields (groupFields: Set<GroupField>, { command }: ParsedCommandLine) {
-    if (!command) return
-    for (const field of command._groupFields) {
+  static attachGroupFields (meta: Meta<'message'>, groupFields: Set<GroupField>) {
+    if (!meta.$argv.command) return
+    for (const field of meta.$argv.command._groupFields) {
       groupFields.add(field)
     }
   }

@@ -1,4 +1,4 @@
-import { User, Group } from './database'
+import { User, Group, UserField, GroupField } from './database'
 import { ParsedCommandLine } from './command'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'

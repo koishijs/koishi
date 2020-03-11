@@ -3,7 +3,7 @@ import { Command, Context, UserData, Meta, getUsage } from '..'
 export type CommandUsage = string | ((this: Command, meta: Meta) => string | Promise<string>)
 
 declare module '../command' {
-  interface Command {
+  export interface Command {
     _usage?: CommandUsage
     _examples: string[]
     usage (text: CommandUsage): this
@@ -21,7 +21,7 @@ Command.prototype.example = function (example) {
   return this
 }
 
-export function apply (ctx: Context) {
+export default function apply (ctx: Context) {
   ctx.on('new-command', (cmd) => {
     cmd._examples = []
     cmd.option('-h, --help', '显示此信息', { hidden: true })
