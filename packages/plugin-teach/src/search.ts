@@ -1,4 +1,5 @@
-import { ParsedTeachLine } from './utils'
+import { TeachArgv } from './utils'
+import { sendDetail } from './update'
 
 function formatAnswer (source: string) {
   const lines = source.split(/(\r?\n|\$n)/g)
@@ -6,12 +7,10 @@ function formatAnswer (source: string) {
   return output.replace(/\[CQ:image,[^\]]+\]/g, '[图片]')
 }
 
-export default async function (parsedOptions: ParsedTeachLine) {
-  const { ctx, meta, options } = parsedOptions
-  const question = options.all ? undefined : options.question
-  const answer = options.all ? undefined : options.answer
-  let { reversed, partial, groups, writer } = parsedOptions
-  const { keyword } = options
+export default async function (argv: TeachArgv) {
+  const { ctx, meta, options, reversed, partial, groups } = argv
+  const { keyword, writer, frozen, question, answer, page = 1 } = options
+  const { itemsPerPage = 20 } = argv.config
 
   const dialogues = await ctx.database.getDialogues({
     writer,
@@ -21,43 +20,66 @@ export default async function (parsedOptions: ParsedTeachLine) {
     reversed,
     partial,
     groups,
-    frozen: options.unFrozen ? false : options.frozen,
+    frozen,
   })
 
-  if (!options.question && !options.answer) {
-    if (!dialogues.length) return meta.$send('没有搜索到任何回答，尝试切换到其他环境。')
-    const output = dialogues.map(({ id, question, answer }) => `${id}. 问题：“${question}”，回答：“${formatAnswer(answer)}”`)
-    output.unshift('全部问答如下：')
+  function sendResult (title: string, output: string[]) {
+    if (output.length <= itemsPerPage) {
+      output.unshift(title + '：')
+    } else {
+      const pageCount = Math.ceil(output.length / itemsPerPage)
+      output = output.slice((page - 1) * itemsPerPage, page * itemsPerPage)
+      output.unshift(title + `（第 ${page}/${pageCount} 页）：`)
+      output.push('可以使用 -P, --page 调整输出的条目页数。')
+    }
     return meta.$send(output.join('\n'))
   }
 
+  if (!question && !answer) {
+    if (!dialogues.length) return meta.$send('没有搜索到任何回答，尝试切换到其他环境。')
+    const output = dialogues.map(({ id, original, answer }) => `${id}. 问题：“${original}”，回答：“${formatAnswer(answer)}”`)
+    return sendResult('全部问答如下', output)
+  }
+
   if (!options.keyword) {
-    if (!options.question) {
+    if (!question) {
       if (!dialogues.length) return meta.$send(`没有搜索到回答“${answer}”，请尝试使用关键词匹配。`)
-      const output = dialogues.map(({ id, question }) => `${id}. ${question}`)
-      output.unshift(`回答“${answer}”的问题如下：`)
-      return meta.$send(output.join('\n'))
-    } else if (!options.answer) {
+      const output = dialogues.map(({ id, original, probability }) => `${id}. ${probability < 1 ? `[${probability}] ` : ''}${original}`)
+      return sendResult(`回答“${answer}”的问题如下`, output)
+    } else if (!answer) {
       if (!dialogues.length) return meta.$send(`没有搜索到问题“${question}”，请尝试使用关键词匹配。`)
-      const output = dialogues.map(({ id, answer }) => `${id}. ${formatAnswer(answer)}`)
-      output.unshift(`问题“${question}”的回答如下：`)
-      return meta.$send(output.join('\n'))
+      const output = dialogues.map(({ id, answer, probability }) => `${id}. ${probability < 1 ? `[${probability}] ` : ''}${formatAnswer(answer)}`)
+      return sendResult(`问题“${question}”的回答如下`, output)
     } else {
-      if (!dialogues.length) return meta.$send(`没有搜索到问答“${question}”“${answer}”，请尝试使用关键词匹配。`)
-      return meta.$send(`问答“${question}”“${answer}”的编号为 ${dialogues[0].id}。`)
+      const [dialogue] = dialogues
+      if (!dialogue) return meta.$send(`没有搜索到问答“${question}”“${answer}”，请尝试使用关键词匹配。`)
+      return sendDetail(dialogue, meta)
     }
   } else {
-    const output = dialogues.map(({ id, question, answer }) => `${id}. 问题：“${question}”，回答：“${formatAnswer(answer)}”`)
-    if (!options.question) {
+    let output: string[]
+    if (!options.autoMerge || question && answer) {
+      output = dialogues.map(({ id, original, answer }) => `${id}. 问题：“${original}”，回答：“${formatAnswer(answer)}”`)
+    } else {
+      const idMap: Record<string, number[]> = {}
+      for (const dialogue of dialogues) {
+        const key = question ? dialogue.original : dialogue.answer
+        if (!idMap[key]) idMap[key] = []
+        idMap[key].push(dialogue.id)
+      }
+      output = Object.keys(idMap).map((key) => {
+        const { length } = idMap[key]
+        return `${key} (${length === 1 ? `#${idMap[key][0]}` : `共 ${length} 个${question ? '回答' : '问题'}`})`
+      })
+    }
+    if (!question) {
       if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${answer}”的回答。`)
-      output.unshift(`回答关键词“${answer}”的搜索结果如下：`)
-    } else if (!options.answer) {
+      return sendResult(`回答关键词“${answer}”的搜索结果如下`, output)
+    } else if (!answer) {
       if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${question}”的问题。`)
-      output.unshift(`问题关键词“${question}”的搜索结果如下：`)
+      return sendResult(`问题关键词“${question}”的搜索结果如下`, output)
     } else {
       if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${question}”“${answer}”的问答。`)
-      output.unshift(`问答关键词“${question}”“${answer}”的搜索结果如下：`)
+      return sendResult(`问答关键词“${question}”“${answer}”的搜索结果如下`, output)
     }
-    return meta.$send(output.join('\n'))
   }
 }

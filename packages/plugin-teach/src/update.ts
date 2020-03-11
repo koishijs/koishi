@@ -1,157 +1,140 @@
-import { Dialogue, DialogueFlag } from './database'
-import { splitEnv, ParsedTeachLine, joinEnv } from './utils'
+import { DialogueFlag, Dialogue } from './database'
+import { TeachArgv, modifyDialogue, deleteDuplicate, checkAuthority } from './utils'
+import { difference, observe, Meta } from 'koishi'
 
-export default async function (parsedOptions: ParsedTeachLine) {
-  const { ctx, meta, argc, options, config } = parsedOptions
-  if (argc) return meta.$send('存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
-  if (!/^\d+(,\d+)*$/.exec(options.update)) return meta.$send('参数 -u, --update 错误，请检查指令语法。')
+// TODO: 支持 pred
+// TODO: 删问题时删 pred
 
-  const ids: number[] = splitEnv(options.update)
-  const dialogues = await ctx.database.getDialogues(ids)
-  const actualIds = dialogues.map(d => d.id)
-  const restIds = ids.filter(id => !actualIds.includes(id))
+export async function sendDetail (dialogue: Dialogue, meta: Meta, name?: string) {
+  const groups = dialogue.groups
+  const output = [
+    `编号为 ${dialogue.id} 的问答信息：`,
+    `问题：${dialogue.original}`,
+    `回答：${dialogue.answer}`,
+  ]
+
+  if (dialogue.writer) {
+    output.push(name ? `来源：${name} (${dialogue.writer})` : `来源：${dialogue.writer}`)
+  }
+
+  output.push(`生效环境：${dialogue.flag & DialogueFlag.reversed
+    ? groups.includes('' + meta.groupId)
+      ? groups.length - 1 ? `除本群等 ${groups.length} 个群外的所有群` : '除本群'
+      : groups.length ? `除 ${groups.length} 个群外的所有群` : '全局'
+    : groups.includes('' + meta.groupId)
+      ? groups.length - 1 ? `本群等 ${groups.length} 个群` : '本群'
+      : groups.length ? `${groups.length} 个群` : '全局禁止'}`)
+
+  if (dialogue.probability < 1) output.push(`触发权重：${dialogue.probability}`)
+  if (dialogue.minAffinity > 0) output.push(`最低好感度：${dialogue.minAffinity}`)
+  if (dialogue.maxAffinity < 32768) output.push(`最高好感度：${dialogue.maxAffinity}`)
+  if (dialogue.successors.length) output.push(`后继问题：${dialogue.successors.join(', ')}`)
+  if (dialogue.flag & DialogueFlag.frozen) output.push('此问题已锁定。')
+
+  await meta.$send(output.join('\n'))
+}
+
+export default async function (argv: TeachArgv) {
+  const { ctx, meta, options, target } = argv
+  const logger = ctx.logger('teach')
+
+  const dialogues = await ctx.database.getDialogues([...target])
+  const actualIds = dialogues.map(d => '' + d.id)
+  const restIds = difference(target, actualIds)
   const output: string[] = []
   if (restIds.length) {
     output.push(`没有搜索到编号为 ${restIds.join(', ')} 的问答。`)
   }
 
-  if (options.delete) {
-    const predicate: (dialogue: Dialogue) => boolean =
-      meta.$user.authority > 3 ? () => false :
-        meta.$user.authority > 2 ? d => !!(d.flag & DialogueFlag.frozen) :
-          d => !!(d.flag & DialogueFlag.frozen) || d.writer !== meta.userId
-    const removable = dialogues.filter(d => !predicate(d)).map(d => d.id)
-    const unremovable = dialogues.filter(predicate).map(d => d.id)
+  if (!Object.keys(options).length) {
+    await meta.$send(output.join('\n'))
 
-    await ctx.database.removeDialogues(removable)
-    if (removable.length) output.push(`已删除编号为 ${removable.join(', ')} 的问题。`)
-    if (unremovable.length) output.push(`编号为 ${unremovable.join(', ')} 的问题因权限过低无法删除。`)
-    return meta.$send(output.join('\n'))
-  }
+    let hasUnnamed = false
+    const writers = deleteDuplicate(dialogues.map(d => d.writer).filter(Boolean))
+    const users = await ctx.database.getUsers(writers, ['id', 'name'])
+    const userMap: Record<number, string> = {}
+    for (const user of users) {
+      if (user.id === +user.name) {
+        if (user.id === meta.userId) {
+          user.name = meta.sender.card || meta.sender.nickname
+        } else {
+          hasUnnamed = true
+        }
+      } else {
+        userMap[user.id] = user.name
+      }
+    }
 
-  if (options.disable) {
-    parsedOptions.envMode = -1
-    parsedOptions.groups = [meta.groupId]
-  }
-
-  const hasUpdates = Object.keys(parsedOptions).length - 6
-    || options.answer
-    || options.question
-    || options.frozen
-    || options.noFrozen
-    || options.chance
-
-  if (hasUpdates) {
-    const updateSet = new Set<number>()
-    const skipSet = new Set<number>()
+    if (hasUnnamed && meta.messageType === 'group') {
+      try {
+        const members = await ctx.sender.getGroupMemberList(meta.groupId)
+        for (const { userId, nickname, card } of members) {
+          if (!userMap[userId]) {
+            userMap[userId] = card || nickname
+          }
+        }
+      } catch {}
+    }
 
     for (const dialogue of dialogues) {
-      const updates = {} as Dialogue
+      await sendDetail(dialogue, meta, userMap[dialogue.writer])
+    }
+    return
+  }
 
-      if (dialogue.writer !== meta.userId && meta.$user.authority < 3 && typeof parsedOptions.writer === 'number') {
-        skipSet.add(dialogue.id)
-        continue
-      }
+  const [uneditable, targets] = checkAuthority(meta, dialogues)
 
-      function updateValue <K extends keyof Dialogue> (key: K, type: 'string' | 'number', value: Dialogue[K]) {
-        // eslint-disable-next-line valid-typeof
-        if (typeof value === type && value !== dialogue[key]) {
-          updates[key] = value
-        }
-      }
-
-      updateValue('answer', 'string', options.answer)
-      updateValue('question', 'string', options.question)
-      updateValue('writer', 'number', parsedOptions.writer)
-      updateValue('probability', 'number', options.chance)
-
-      let newFlag = dialogue.flag
-      if (options.frozen) {
-        newFlag |= DialogueFlag.frozen
-      } else if (options.noFrozen) {
-        newFlag &= ~DialogueFlag.frozen
-      }
-
-      if (options.keyword) {
-        newFlag |= DialogueFlag.keyword
-      } else if (options.noKeyword) {
-        newFlag &= ~DialogueFlag.keyword
-      }
-
-      if (newFlag !== dialogue.flag) updates.flag = newFlag
-
-      if (parsedOptions.envMode) {
-        const oldGroups = splitEnv(dialogue.groups.replace(/^\*/, ''))
-        let { groups, envMode } = parsedOptions
-        if (Math.abs(parsedOptions.envMode) === 1) {
-          envMode = dialogue.groups.startsWith('*') ? -2 : 2
-          if (parsedOptions.envMode * envMode > 0) {
-            groups = Array.from(new Set([...oldGroups, ...parsedOptions.groups])).sort()
-          } else {
-            if (meta.$user.authority < 3 && dialogue.id !== meta.userId) {
-              skipSet.add(dialogue.id)
-              continue
-            }
-            groups = oldGroups.filter(id => !parsedOptions.groups.includes(id))
-          }
-        }
-        const newGroups = (envMode === -2 ? '*' : '') + groups.join(',')
-        if (newGroups !== dialogue.groups) {
-          if (dialogue.writer !== meta.userId && meta.$user.authority < 3) {
-            skipSet.add(dialogue.id)
-            continue
-          }
-          updates.groups = newGroups
-        }
-      }
-
-      if (Object.keys(updates).length) {
-        try {
-          await ctx.database.setDialogue(dialogue.id, updates)
-          updateSet.add(dialogue.id)
-        } catch (error) {
-          skipSet.add(dialogue.id)
-        }
-      }
+  if (options.remove) {
+    if (uneditable.length) {
+      output.push(`问答 ${uneditable.join(', ')} 因权限过低无法删除。`)
+    }
+    if (targets.length) {
+      const editable = targets.map(d => d.id)
+      await ctx.database.removeDialogues(editable)
+      output.push(`已删除问答 ${editable.join(', ')}。`)
     }
 
-    if (skipSet.size) output.push(`问答 ${joinEnv(Array.from(skipSet), ', ')} 修改时发生错误或权限不足。`)
-    if (updateSet.size) {
-      output.push(`问答 ${joinEnv(Array.from(updateSet), ', ')} 已修改。`)
-    } else {
-      output.push('没有问题被修改。')
-    }
     return meta.$send(output.join('\n'))
   }
 
-  await meta.$send(output.join('\n'))
-
-  for (const dialogue of dialogues) {
-    const groups = splitEnv(dialogue.groups.replace(/^\*/, ''))
-    const output = [
-      `编号为 ${dialogue.id} 的问答信息：`,
-      `问题：${dialogue.question}`,
-      `回答：${dialogue.answer}`,
-    ]
-
-    if (config.useWriter && dialogue.writer) {
-      // TODO: name support
-      const user = await ctx.database.getUser(dialogue.writer, 0, ['id'])
-      output.push(`来源：${user.id}`)
-    }
-
-    if (config.useEnvironment) {
-      output.push(`生效环境：${dialogue.groups.startsWith('*')
-        ? groups.includes(meta.groupId)
-          ? groups.length - 1 ? `除本群等 ${groups.length} 个群外的所有群` : '除本群'
-          : groups.length ? `除 ${groups.length} 个群外的所有群` : '全局'
-        : groups.includes(meta.groupId)
-          ? groups.length - 1 ? `本群等 ${groups.length} 个群` : '本群'
-          : groups.length ? `${groups.length} 个群` : '全局禁止'}`)
-    }
-
-    if (dialogue.probability < 1) output.push(`触发概率：${dialogue.probability}`)
-    if (dialogue.flag & DialogueFlag.frozen) output.push('此问题已锁定')
-    await meta.$send(output.join('\n'))
+  if (uneditable.length) {
+    output.push(`问答 ${uneditable.join(', ')} 因权限过低无法修改。`)
   }
+
+  const updated: number[] = []
+  const skipped: number[] = []
+  const failed: number[] = []
+
+  if (await ctx.app.serialize('dialogue/modify', argv)) return
+
+  for (const data of targets) {
+    const { id } = data
+    const dialogue = observe(data, `dialogue ${id}`)
+
+    modifyDialogue(dialogue, argv)
+
+    if (Object.keys(dialogue._diff).length) {
+      try {
+        await ctx.database.setDialogue(id, dialogue._diff)
+        updated.push(id)
+      } catch (error) {
+        logger.warn(error)
+        failed.push(id)
+      }
+    } else {
+      skipped.push(id)
+    }
+  }
+
+  if (failed.length) {
+    output.push(`问答 ${failed.join(', ')} 修改时发生错误。`)
+  }
+  if (skipped.length) {
+    output.push(`问答 ${skipped.join(', ')} 没有发生改动。`)
+  }
+  if (updated.length) {
+    output.push(`问答 ${updated.join(', ')} 已成功修改。`)
+  }
+
+  return meta.$send(output.join('\n'))
 }

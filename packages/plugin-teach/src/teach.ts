@@ -1,43 +1,132 @@
-import { DialogueFlag, Dialogue } from './database'
-import { simplifyQuestion, simplifyAnswer, ParsedTeachLine } from './utils'
+import { DialogueFlag } from './database'
+import { TeachArgv, modifyDialogue, checkAuthority } from './utils'
+import { observe, difference } from 'koishi'
 
-export default async function (parsedOptions: ParsedTeachLine, question: string, answer: string) {
-  const { argc, meta, ctx, options, config } = parsedOptions
-  if (String(question).includes('[CQ:image,')) return meta.$send('问题不能包含图片。')
-  question = simplifyQuestion(question)
-  answer = simplifyAnswer(answer)
+export default async function (argv: TeachArgv) {
+  const { meta, ctx, groups, options, successors = [], predecessors = [], predOverwrite } = argv
 
-  if (!answer) return meta.$send('缺少问题或回答，请检查指令语法。')
-  if (argc > 2) return meta.$send('存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
+  if (await ctx.app.serialize('dialogue/modify', argv)) return
 
-  const [dialogue] = await ctx.database.getDialogues({ question, answer })
-  if (dialogue) return meta.$send(`问答已存在，编号为 ${dialogue.id}，如要修改请尝试使用 -u 指令。`)
+  const {
+    answer,
+    question,
+    original,
+    probability = 1,
+    minAffinity = 0,
+    maxAffinity = 32768,
+    writer = meta.userId,
+  } = options
 
-  let { envMode, groups, writer } = parsedOptions
+  if (!question || !answer) return meta.$send('缺少问题或回答，请检查指令语法。')
 
-  if (config.useEnvironment) {
-    if (!envMode) {
-      envMode = 2
-      groups = [meta.groupId]
-    } else if (Math.abs(envMode) === 1) {
-      return meta.$send('参数 -e, --env 错误，请检查指令语法。')
+  const output: string[] = []
+  const uneditable: number[] = []
+  const updated: number[] = []
+  const skipped: number[] = []
+  const failed: number[] = []
+
+  const dialogues = await ctx.database.getDialogues(predecessors)
+  if (dialogues.length < predecessors.length) {
+    const diff = difference(predecessors, dialogues.map(d => '' + d.id))
+    output.push(`无法添加前置问题：没有搜索到编号为 ${diff.join(', ')} 的问答。`)
+  }
+
+  async function addPredecessors (id: number) {
+    const successor = '' + id
+    const [_uneditable, targets] = checkAuthority(meta, dialogues)
+    uneditable.push(..._uneditable)
+
+    for (const { id, successors } of targets) {
+      if (successors.includes(successor)) {
+        skipped.push(id)
+        continue
+      }
+
+      try {
+        successors.push(successor)
+        await ctx.database.setDialogue(id, { successors })
+        updated.push(id)
+      } catch (error) {
+        failed.push(id)
+      }
     }
   }
 
-  if (config.useWriter && writer === undefined) {
-    writer = meta.userId
+  async function removeNonpredecessors (id: number) {
+    const successor = '' + id
+    const dialogues = await ctx.database.getDialogues({ successors: [successor] })
+    const [_uneditable, targets] = checkAuthority(meta, dialogues.filter(d => !predecessors.includes('' + d.id)))
+    uneditable.push(..._uneditable)
+
+    for (const { id, successors } of targets) {
+      const index = successors.indexOf(successor)
+      if (index === -1) {
+        skipped.push(id)
+        continue
+      }
+
+      try {
+        successors.splice(index, 1)
+        await ctx.database.setDialogue(id, { successors })
+        updated.push(id)
+      } catch (error) {
+        failed.push(id)
+      }
+    }
   }
 
-  const { chance: probability = 1 } = options
+  async function sendResult (message: string) {
+    output.unshift(message)
+    if (uneditable.length) {
+      output.push(`问答 ${uneditable.join(', ')} 因权限过低无法修改。`)
+    }
+    if (failed.length) {
+      output.push(`问答 ${failed.join(', ')} 修改时发生错误。`)
+    }
+    if (skipped.length) {
+      output.push(`问答 ${skipped.join(', ')} 没有发生改动。`)
+    }
+    if (updated.length) {
+      output.push(`问答 ${updated.join(', ')} 已成功修改。`)
+    }
+    return meta.$send(output.join('\n'))
+  }
 
-  const flag = Number(!!options.frozen) * DialogueFlag.frozen
-    + Number(!!options.regexp) * DialogueFlag.regexp
-    + Number(!!options.keyword) * DialogueFlag.keyword
-    + Number(!!options.appellation) * DialogueFlag.appellation
+  const [data] = await ctx.database.getDialogues({ question, answer })
+  if (data) {
+    if (predOverwrite) await removeNonpredecessors(data.id)
+    await addPredecessors(data.id)
 
-  const data = { question, answer, writer, flag, probability } as Dialogue
-  data.groups = config.useEnvironment ? (envMode === 2 ? '' : '*') + groups.join(',') : '*'
-  const { id } = await ctx.database.createDialogue(data)
+    const dialogue = observe(data, diff => ctx.database.setDialogue(data.id, diff), `dialogue ${data.id}`)
+    modifyDialogue(dialogue, argv)
+    if (Object.keys(dialogue._diff).length) {
+      if (checkAuthority(meta, [data])[0].length) {
+        return sendResult(`问答已存在，编号为 ${data.id}，且因权限过低无法修改。`)
+      }
+      await dialogue._update()
+      return sendResult(`修改了已存在的问答，编号为 ${data.id}。`)
+    } else {
+      return sendResult(`问答已存在，编号为 ${data.id}，如要修改请尝试使用 #${data.id} 指令。`)
+    }
+  }
 
-  return meta.$send(`问答已添加，编号为 ${id}。`)
+  const flag = ~~options.frozen * DialogueFlag.frozen
+    + ~~options.keyword * DialogueFlag.keyword
+    + ~~argv.reversed * DialogueFlag.reversed
+
+  const { id } = await ctx.database.createDialogue({
+    question,
+    answer,
+    writer,
+    flag,
+    probability,
+    groups,
+    minAffinity,
+    maxAffinity,
+    original,
+    successors,
+  })
+
+  await addPredecessors(id)
+  return sendResult(`问答已添加，编号为 ${id}。`)
 }

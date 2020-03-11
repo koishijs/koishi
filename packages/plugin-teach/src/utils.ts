@@ -1,9 +1,27 @@
 import { Context, Meta } from 'koishi-core'
-import { simplify, contain, intersection, union, difference } from 'koishi-utils'
+import { simplify, contain, intersection, union, difference, randomId } from 'koishi-utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
+import { createHmac } from 'crypto'
+import axios from 'axios'
+
+export interface ThrottleConfig {
+  interval: number
+  responses: number
+}
+
+export interface LoopConfig {
+  participants: number
+  length: number
+}
 
 export interface TeachConfig {
-  getUserName? (meta: Meta<'message'>): string
+  key?: string
+  imageServer?: string
+  uploadServer?: string
+  itemsPerPage?: number
+  successorTimeout?: number
+  preventLoop?: number | LoopConfig | LoopConfig[]
+  throttle?: ThrottleConfig | ThrottleConfig[]
 }
 
 const prefixPunctuation = /^([()\]]|\[(?!cq:))*/
@@ -35,25 +53,45 @@ export function simplifyAnswer (source: string) {
   return (String(source || '')).trim()
 }
 
-export interface ParsedTeachLine {
+export interface TeachArgv {
   ctx: Context
-  meta: Meta
+  meta: Meta<'message'>
   args: string[]
-  argc: number
-  options: Record<string, any>
   config: TeachConfig
-  writer?: number
-  groups?: number[]
+  groups?: string[]
   partial?: boolean
   reversed?: boolean
+  target?: string[]
+  predecessors?: string[]
+  successors?: string[]
+  predOverwrite?: boolean
+  succOverwrite?: boolean
+  options: {
+    original?: string
+    question?: string
+    answer?: string
+    remove?: boolean
+    frozen?: boolean
+    keyword?: boolean
+    autoMerge?: boolean
+    writer?: number
+    page?: number
+    probability?: number
+    minAffinity?: number
+    maxAffinity?: number
+  }
 }
 
-export function splitGroups (source: string) {
-  return source ? source.split(',').map(i => parseInt(i)) : []
+export function deleteDuplicate <T> (array: T[]) {
+  return [...new Set(array)]
 }
 
-export function joinGroups (source: number[], separator = ',') {
-  return source.sort((a, b) => a - b).join(separator)
+export function idSplit (source: string) {
+  return source ? source.split(',') : []
+}
+
+export function idEqual (array1: string[], array2: string[]) {
+  return array1.sort().join() === array2.sort().join()
 }
 
 export function testGroups (data: Dialogue, test: DialogueTest) {
@@ -64,18 +102,75 @@ export function testGroups (data: Dialogue, test: DialogueTest) {
       ? contain(data.groups, test.groups)
       : !intersection(data.groups, test.groups).length
   } else {
-    return sameFlag && joinGroups(test.groups) === joinGroups(data.groups)
+    return sameFlag && idEqual(test.groups, data.groups)
   }
 }
 
-export function modifyGroups (data: Dialogue, config: ParsedTeachLine) {
-  if (config.partial) {
-    data.groups = !(data.flag & DialogueFlag.reversed) !== config.reversed
-      ? union(data.groups, config.groups)
-      : difference(data.groups, config.groups)
-  } else {
-    data.flag &= ~DialogueFlag.reversed
-    data.flag |= +config.reversed * DialogueFlag.reversed
-    data.groups = config.groups.slice()
+export function testDialogue (data: Dialogue, test: DialogueTest) {
+  if (test.frozen !== undefined && test.frozen === !(data.flag & DialogueFlag.frozen)) return
+  if (test.writer && data.writer !== test.writer) return
+  if (test.successors && !contain(data.successors, test.successors)) return
+  return true
+}
+
+export function modifyDialogue (data: Dialogue, argv: TeachArgv) {
+  const { partial, reversed, groups, options, successors, succOverwrite } = argv
+
+  if (groups) {
+    if (partial) {
+      const newGroups = !(data.flag & DialogueFlag.reversed) === reversed
+        ? difference(data.groups, groups)
+        : union(data.groups, groups)
+      if (!idEqual(data.groups, newGroups)) {
+        data.groups = newGroups
+      }
+    } else {
+      data.flag = data.flag & ~DialogueFlag.reversed | (+reversed * DialogueFlag.reversed)
+      if (!idEqual(data.groups, groups)) {
+        data.groups = groups.slice()
+      }
+    }
   }
+
+  if (options.answer) {
+    data.answer = options.answer
+  }
+
+  if (options.question) {
+    data.question = options.question
+    data.original = options.original
+  }
+
+  if (options.writer !== undefined) data.writer = options.writer
+  if (options.probability !== undefined) data.probability = options.probability
+  if (options.minAffinity !== undefined) data.minAffinity = options.minAffinity
+  if (options.maxAffinity !== undefined) data.maxAffinity = options.maxAffinity
+
+  if (options.keyword !== undefined) {
+    data.flag &= ~DialogueFlag.keyword
+    data.flag |= +options.keyword * DialogueFlag.keyword
+  }
+
+  if (options.frozen !== undefined) {
+    data.flag &= ~DialogueFlag.frozen
+    data.flag |= +options.frozen * DialogueFlag.frozen
+  }
+
+  if (successors) {
+    if (succOverwrite) {
+      if (!idEqual(data.successors, successors)) data.successors = successors
+    } else {
+      if (!contain(data.successors, successors)) data.successors = union(data.successors, successors)
+    }
+  }
+}
+
+export function checkAuthority (meta: Meta, dialogues: Dialogue[]) {
+  const predicate: (dialogue: Dialogue) => boolean =
+    meta.$user.authority > 3 ? () => true :
+      meta.$user.authority > 2 ? d => !(d.flag & DialogueFlag.frozen) :
+        d => !(d.flag & DialogueFlag.frozen) && (!d.writer || d.writer === meta.userId)
+  const targets = dialogues.filter(predicate)
+  const uneditable = difference(dialogues, targets).map(d => d.id)
+  return [uneditable, targets] as const
 }
