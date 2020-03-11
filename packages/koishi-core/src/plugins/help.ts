@@ -1,6 +1,40 @@
-import { Context, Command, UserData, Meta, getUsage } from 'koishi-core'
+import { Command, Context, UserData, Meta, getUsage } from '..'
 
-export default function apply (ctx: Context) {
+export type CommandUsage = string | ((this: Command, meta: Meta) => string | Promise<string>)
+
+declare module '../command' {
+  interface Command {
+    _usage?: CommandUsage
+    _examples: string[]
+    usage (text: CommandUsage): this
+    example (example: string): this
+  }
+}
+
+Command.prototype.usage = function (text) {
+  this._usage = text
+  return this
+}
+
+Command.prototype.example = function (example) {
+  this._examples.push(example)
+  return this
+}
+
+export function apply (ctx: Context) {
+  ctx.on('new-command', (cmd) => {
+    cmd._examples = []
+    cmd.option('-h, --help', '显示此信息', { hidden: true })
+  })
+
+  ctx.on('before-command', async (argv) => {
+    // show help when use `-h, --help` or when there is no action
+    if (!argv.command._action || argv.options.help) {
+      await ctx.runCommand('help', argv.meta, [argv.command.name])
+      return true
+    }
+  })
+
   ctx.command('help [command]', '显示帮助信息', { authority: 0 })
     .userFields(['authority', 'usage'])
     .shortcut('帮助', { fuzzy: true })
@@ -12,15 +46,13 @@ export default function apply (ctx: Context) {
         const command = ctx.getCommand(name, meta) || ctx.app._shortcutMap[name]
         if (!command) return meta.$send('指令未找到。')
         return showCommandHelp(command, meta, options)
-      } else if (options.shortcut) {
-        return showGlobalShortcut(ctx, meta)
       } else {
         return showGlobalHelp(ctx, meta, options)
       }
     })
 }
 
-function getShortcuts (command: Command, user: UserData) {
+function getShortcuts (command: Command, user: Pick<UserData, 'authority'>) {
   return Object.keys(command._shortcuts).filter((key) => {
     const shortcut = command._shortcuts[key]
     return !shortcut.hidden && !shortcut.prefix && (!shortcut.authority || !user || shortcut.authority <= user.authority)
@@ -34,12 +66,6 @@ function getCommands (context: Context, meta: Meta<'message'>, parent?: Command)
   return commands
     .filter(cmd => !meta.$user || cmd.config.authority <= meta.$user.authority)
     .sort((a, b) => a.name > b.name ? 1 : -1)
-}
-
-function showGlobalShortcut (context: Context, meta: Meta<'message'>) {
-  const commands = getCommands(context, meta)
-  const shortcuts = [].concat(...commands.map(command => getShortcuts(command, meta.$user)))
-  return meta.$send(`当前可用的全局指令有：${shortcuts.join('，')}。`)
 }
 
 function getCommandList (prefix: string, context: Context, meta: Meta<'message'>, parent: Command, expand: boolean) {

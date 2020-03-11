@@ -50,13 +50,13 @@ export function updateUsage (name: string, user: Pick<UserData, 'usage'>, option
   const usage = getUsage(name, user, now)
 
   if (now - usage.last < minInterval) {
-    return CommandHint.TOO_FREQUENT
+    return messages.TOO_FREQUENT
   } else if (options.minInterval || options.timestamp) {
     usage.last = timestamp
   }
 
   if (usage.count >= maxUsage) {
-    return CommandHint.USAGE_EXHAUSTED
+    return messages.USAGE_EXHAUSTED
   } else if (options.maxUsage) {
     usage.count = (usage.count || 0) + 1
   }

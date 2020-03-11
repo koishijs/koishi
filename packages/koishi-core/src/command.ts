@@ -1,6 +1,6 @@
 import { Context, NextFunction } from './context'
 import { UserData, UserField, GroupField } from './database'
-import { messages, errors } from './messages'
+import { errors, messages } from './messages'
 import { noop } from 'koishi-utils'
 import { Meta } from './meta'
 import { format } from 'util'
@@ -23,7 +23,6 @@ export interface ParsedCommandLine extends Partial<ParsedLine> {
 }
 
 export type UserType <T> = T | ((user: UserData) => T)
-export type CommandUsage = string | ((this: Command, meta: Meta) => string | Promise<string>)
 
 export interface CommandConfig {
   /** disallow unknown options */
@@ -41,8 +40,7 @@ export interface CommandConfig {
   disable?: UserType<boolean>
   maxUsage?: UserType<number>
   minInterval?: UserType<number>
-  showWarning?: boolean | number
-  noHelpOption?: boolean
+  showWarning?: boolean
 }
 
 const defaultConfig: CommandConfig = {
@@ -81,8 +79,6 @@ export class Command {
 
   _aliases: string[] = []
   _options: CommandOption[] = []
-  _usage?: CommandUsage
-  _examples: string[] = []
   _shortcuts: Record<string, ShortcutConfig> = {}
   _userFields = new Set<UserField>()
   _groupFields = new Set<GroupField>()
@@ -124,7 +120,7 @@ export class Command {
     this.config = { ...defaultConfig, ...config }
     this._registerAlias(this.name)
     context.app._commands.push(this)
-    this.option('-h, --help', messages.SHOW_THIS_MESSAGE, { hidden: true })
+    context.app.parallelize('new-command', this)
   }
 
   get app () {
@@ -186,16 +182,6 @@ export class Command {
     return this
   }
 
-  usage (text: CommandUsage) {
-    this._usage = text
-    return this
-  }
-
-  example (example: string) {
-    this._examples.push(example)
-    return this
-  }
-
   /**
    * Add a option for this command
    * @param rawName raw option name(s)
@@ -249,28 +235,23 @@ export class Command {
     const unknown = argv.unknown || (argv.unknown = [])
     const args = argv.args || (argv.args = [])
 
-    if (await this.app.serialize('before-command', argv)) return
-
-    // show help when use `-h, --help` or when there is no action
-    if (!this._action || options.help && !this.config.noHelpOption) {
-      return this.context.runCommand('help', argv.meta, [this.name])
-    }
+    if (await this.app.serialize(argv.meta, 'before-command', argv)) return
 
     // check argument count
     if (this.config.checkArgCount) {
       const nextArg = this._argsDef[args.length]
       if (nextArg?.required) {
-        return this._sendHint(CommandHint.INSUFFICIENT_ARGUMENTS, argv.meta)
+        return this._sendHint(argv.meta, messages.INSUFFICIENT_ARGUMENTS)
       }
       const finalArg = this._argsDef[this._argsDef.length - 1]
       if (args.length > this._argsDef.length && !finalArg.noSegment && !finalArg.variadic) {
-        return this._sendHint(CommandHint.REDUNANT_ARGUMENTS, argv.meta)
+        return this._sendHint(argv.meta, messages.REDUNANT_ARGUMENTS)
       }
     }
 
     // check unknown options
     if (this.config.checkUnknown && unknown.length) {
-      return this._sendHint(CommandHint.UNKNOWN_OPTIONS, argv.meta, unknown.join(', '))
+      return this._sendHint(argv.meta, messages.UNKNOWN_OPTIONS, unknown.join(', '))
     }
 
     // check required options
@@ -279,17 +260,17 @@ export class Command {
         return option.required && !(option.longest in options)
       })
       if (absent) {
-        return this._sendHint(CommandHint.REQUIRED_OPTIONS, argv.meta, absent.rawName)
+        return this._sendHint(argv.meta, messages.REQUIRED_OPTIONS, absent.rawName)
       }
     }
 
     // check authority and usage
-    const code = this._checkUser(argv.meta, options)
-    if (code) return this._sendHint(code, argv.meta)
+    const message = this._checkUser(argv.meta, options)
+    if (message) return this._sendHint(argv.meta, message)
 
     // execute command
     this.context.logger('koishi:command').debug('execute %s', this.name)
-    this.app.parallelize(argv.meta, 'command', argv)
+    await this.app.parallelize(argv.meta, 'command', argv)
 
     let skipped = false
     argv.next = (_next) => {
@@ -297,22 +278,15 @@ export class Command {
       return next(_next)
     }
 
-    try {
-      await this._action(argv, ...args)
-      if (!skipped) this.app.parallelize(argv.meta, 'after-command', argv)
-    } catch (error) {
-      this.app.parallelize('error/command', error)
-      this.app.parallelize('error', error)
+    await this._action(argv, ...args)
+    if (!skipped) {
+      return this.app.parallelize(argv.meta, 'after-command', argv)
     }
   }
 
-  private _sendHint (code: CommandHint, meta: Meta<'message'>, ...param: any[]) {
-    let { showWarning } = this.config
-    if (typeof showWarning === 'boolean') {
-      showWarning = -showWarning
-    }
-    if (showWarning & code) {
-      return meta.$send(format(messages[CommandHint[code]], ...param))
+  private _sendHint (meta: Meta<'message'>, message: string, ...param: any[]) {
+    if (this.config.showWarning) {
+      return meta.$send(format(message, ...param))
     }
   }
 
@@ -324,12 +298,12 @@ export class Command {
 
     // check authority
     if (this.config.authority > user.authority) {
-      return CommandHint.LOW_AUTHORITY
+      return messages.LOW_AUTHORITY
     }
     for (const option of this._options) {
       if (option.camels[0] in options) {
         if (option.authority > user.authority) {
-          return CommandHint.LOW_AUTHORITY
+          return messages.LOW_AUTHORITY
         }
         if (option.notUsage) isUsage = false
       }

@@ -246,7 +246,6 @@ export class Context {
     })
 
     Object.assign(parent.config, config)
-    if (config.noHelpOption) parent.removeOption('help')
     return parent
   }
 
@@ -330,6 +329,7 @@ export interface EventMap {
   'logger/error' (scope: string, message: string): any
   'logger/warn' (scope: string, message: string): any
   'logger/success' (scope: string, message: string): any
+  'new-command' (cmd: Command): any
   'ready' (): any
   'before-connect' (): any
   'connect' (): any

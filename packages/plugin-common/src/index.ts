@@ -5,7 +5,6 @@ import contextify from './contextify'
 import echo from './echo'
 import exec from './exec'
 import exit from './exit'
-import help from './help'
 import info, { InfoOptions } from './info'
 import repeater, { RepeaterOptions } from './repeater'
 import requestHandler, { HandlerOptions } from './request-handler'
@@ -22,7 +21,6 @@ export {
   echo,
   exec,
   exit,
-  help,
   info,
   repeater,
   requestHandler,
@@ -61,7 +59,6 @@ export function apply (ctx: Context, options: Config = {}) {
   if (options.echo !== false) ctx.plugin(echo)
   if (options.exec !== false) ctx.plugin(exec)
   if (options.exit !== false) ctx.plugin(exit)
-  if (options.help !== false) ctx.plugin(help)
 
   if (ctx.database) {
     if (options.admin !== false) ctx.plugin(admin)
