@@ -31,7 +31,7 @@
   ],
   "devDependencies": {
     "del": "^5.1.0",
-    "koishi-test-utils": "^3.1.4"
+    "koishi-test-utils": "^3.2.0"
   },
   "dependencies": {
     "koishi-core": "^1.11.0",

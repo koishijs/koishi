@@ -22,7 +22,7 @@
   "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-sqlite#readme",
   "devDependencies": {
     "@types/sqlite3": "^3.1.6",
-    "koishi-test-utils": "^3.1.4"
+    "koishi-test-utils": "^3.2.0"
   },
   "peerDependencies": {
     "koishi-core": "^1.11.0"

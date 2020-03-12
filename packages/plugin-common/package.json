@@ -29,7 +29,7 @@
   ],
   "devDependencies": {
     "koishi-database-memory": "^1.1.5",
-    "koishi-test-utils": "^3.1.4"
+    "koishi-test-utils": "^3.2.0"
   },
   "dependencies": {
     "koishi-core": "^1.11.0",

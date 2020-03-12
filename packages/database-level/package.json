@@ -33,7 +33,7 @@
     "leveldb"
   ],
   "devDependencies": {
-    "koishi-test-utils": "^3.1.4"
+    "koishi-test-utils": "^3.2.0"
   },
   "peerDependencies": {
     "koishi-core": "^1.11.0"

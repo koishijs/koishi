@@ -36,7 +36,7 @@
     "@types/ws": "^7.2.2",
     "get-port": "^5.1.1",
     "koishi-database-memory": "^1.1.5",
-    "koishi-test-utils": "^3.1.4"
+    "koishi-test-utils": "^3.2.0"
   },
   "dependencies": {
     "axios": "^0.19.2",
