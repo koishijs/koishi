@@ -26,7 +26,7 @@ export interface AppOptions {
   retryInterval?: number
   maxMiddlewares?: number
   commandPrefix?: string | string[]
-  defaultAffinity?: number | ((meta: Meta) => number)
+  defaultAuthority?: number | ((meta: Meta) => number)
   quickOperationTimeout?: number
   similarityCoefficient?: number
 }
@@ -366,11 +366,11 @@ export class App extends Context {
       // attach user data
       const userFields = new Set<UserField>(['flag'])
       this.parallelize(meta, 'before-attach-user', meta, userFields)
-      const defaultAffinity = typeof this.options.defaultAffinity === 'function'
-        ? this.options.defaultAffinity(meta)
-        : this.options.defaultAffinity || 0
-      const user = await this.database.observeUser(meta.userId, defaultAffinity, Array.from(userFields))
       defineProperty(meta, '$user', user)
+      const user = await this.database.observeUser(meta.userId, defaultAuthority, Array.from(userFields))
+        : this.options.defaultAuthority || 0
+        ? this.options.defaultAuthority(meta)
+      const defaultAuthority = typeof this.options.defaultAuthority === 'function'
 
       // emit attach event
       if (await this.serialize(meta, 'attach-user', meta)) return

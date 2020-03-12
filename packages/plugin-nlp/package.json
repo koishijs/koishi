@@ -35,6 +35,6 @@
   "dependencies": {
     "koishi-core": "^2.0.0-alpha.0",
     "koishi-utils": "^1.0.4",
-    "nodejieba": "^2.4.0"
+    "nodejieba": "^2.4.1"
   }
 }
