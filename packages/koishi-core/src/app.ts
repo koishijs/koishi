@@ -353,10 +353,7 @@ export class App extends Context {
     if (this.database) {
       if (meta.messageType === 'group') {
         // attach group data
-        const groupFields = new Set<GroupField>(['flag', 'assignee'])
-        this.parallelize(meta, 'before-attach-group', meta, groupFields)
-        const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
-        defineProperty(meta, '$group', group)
+        const group = await this._attachGroup(meta)
 
         // emit attach event
         if (await this.serialize(meta, 'attach-group', meta)) return
@@ -372,13 +369,7 @@ export class App extends Context {
       }
 
       // attach user data
-      const userFields = new Set<UserField>(['flag'])
-      this.parallelize(meta, 'before-attach-user', meta, userFields)
-      const defaultAuthority = typeof this.options.defaultAuthority === 'function'
-        ? this.options.defaultAuthority(meta)
-        : this.options.defaultAuthority || 0
-      const user = await this.database.observeUser(meta.userId, defaultAuthority, Array.from(userFields))
-      defineProperty(meta, '$user', user)
+      const user = await this._attachUser(meta)
 
       // emit attach event
       if (await this.serialize(meta, 'attach-user', meta)) return
@@ -404,13 +395,43 @@ export class App extends Context {
     }
   }
 
-  executeCommandLine (message: string, meta: Meta<'message'>, next: NextFunction = noop) {
+  private async _attachGroup (meta: Meta<'message'>) {
+    const groupFields = new Set<GroupField>(['flag', 'assignee'])
+    this.parallelize(meta, 'before-attach-group', meta, groupFields)
+    const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
+    defineProperty(meta, '$group', group)
+    return group
+  }
+
+  private async _attachUser (meta: Meta<'message'>) {
+    const userFields = new Set<UserField>(['flag'])
+    this.parallelize(meta, 'before-attach-user', meta, userFields)
+    const defaultAuthority = typeof this.options.defaultAuthority === 'function'
+      ? this.options.defaultAuthority(meta)
+      : this.options.defaultAuthority || 0
+    const user = await this.database.observeUser(meta.userId, defaultAuthority, Array.from(userFields))
+    defineProperty(meta, '$user', user)
+    return user
+  }
+
+  async executeCommandLine (message: string, meta: Meta<'message'>, next: NextFunction = noop) {
     if (!('$ctxType' in meta)) this.server.parseMeta(meta)
     const argv = this.parseCommandLine(message, meta)
-    if (argv && !argv.command.getConfig('disable', meta)) {
-      return argv.command.execute(argv, next)
+    if (!argv) return next()
+    Object.defineProperty(meta, '$argv', {
+      writable: true,
+      value: argv,
+    })
+
+    if (this.database) {
+      if (meta.messageType === 'group') {
+        await this._attachGroup(meta)
+      }
+      await this._attachUser(meta)
     }
-    return next()
+
+    if (argv.command.getConfig('disable', meta)) return next()
+    return argv.command.execute(argv, next)
   }
 
   private _applyMiddlewares = async (meta: Meta<'message'>) => {

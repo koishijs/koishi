@@ -14,7 +14,7 @@ export default function apply (ctx: Context) {
       '讨论组聊天没有子类型。',
     ].join('\n'))
     .action(async ({ meta, options }, message) => {
-      if (!message) return meta.$send('请输入要发送的文本。')
+      if (!message) return meta.$send('请输入要触发的指令。')
 
       if (options.member) {
         if (meta.messageType === 'private') {

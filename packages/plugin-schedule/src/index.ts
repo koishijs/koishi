@@ -44,7 +44,7 @@ export const name = 'schedule'
 export function apply (ctx: Context, config: CommandConfig = {}) {
   const { database } = ctx.app
 
-  ctx.app.receiver.on('connect', async () => {
+  ctx.on('connect', async () => {
     if (!database || databases.has(database) || !database.getAllSchedules) return
     databases.add(database)
     const schedules = await database.getAllSchedules()
