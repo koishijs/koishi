@@ -359,7 +359,7 @@ export class App extends Context {
     if (this.database) {
       if (meta.messageType === 'group') {
         // attach group data
-        const group = await this._attachGroup(meta)
+        const group = await this._attachGroup(meta, new Set(['flag', 'assignee']))
 
         // emit attach event
         this.emitEvent(meta, 'attach-group', meta)
@@ -375,7 +375,7 @@ export class App extends Context {
       }
 
       // attach user data
-      const user = await this._attachUser(meta)
+      const user = await this._attachUser(meta, new Set(['flag']))
 
       // emit attach event
       this.emitEvent(meta, 'attach', meta)
@@ -430,16 +430,14 @@ export class App extends Context {
     }
   }
 
-  private async _attachGroup (meta: Meta<'message'>) {
-    const groupFields = new Set<GroupField>()
+  private async _attachGroup (meta: Meta<'message'>, groupFields = new Set<GroupField>()) {
     this.emitEvent(meta, 'before-group', groupFields, meta.$argv)
     const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
     Object.defineProperty(meta, '$group', { value: group, writable: true })
     return group
   }
 
-  private async _attachUser (meta: Meta<'message'>) {
-    const userFields = new Set<UserField>()
+  private async _attachUser (meta: Meta<'message'>, userFields = new Set<UserField>()) {
     this.emitEvent(meta, 'before-user', userFields, meta.$argv)
     const defaultAuthority = typeof this.options.defaultAuthority === 'function'
       ? this.options.defaultAuthority(meta)
