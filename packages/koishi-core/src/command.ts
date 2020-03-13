@@ -119,21 +119,11 @@ export interface ParsedCommandLine extends Partial<ParsedLine> {
 export type UserType <T> = T | ((user: UserData) => T)
 
 export interface CommandConfig {
-  /** usage identifier */
-  usageName?: string
   /** description */
   description?: string
   /** min authority */
   authority?: number
   disable?: UserType<boolean>
-  maxUsage?: UserType<number>
-  minInterval?: UserType<number>
-}
-
-export const defaultConfig: CommandConfig = {
-  authority: 1,
-  maxUsage: Infinity,
-  minInterval: 0,
 }
 
 export interface ShortcutConfig {
@@ -163,39 +153,18 @@ export class Command {
   _optsDef: Record<string, CommandOption> = {}
   _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
 
-  static attachUserFields (meta: Meta<'message'>, fields: Set<UserField>) {
-    const { command, options = {} } = meta.$argv
-    if (!command) return
-    for (const field of command._userFields) {
-      fields.add(field)
-    }
-
-    const { maxUsage, minInterval, authority } = command.config
-    let shouldFetchAuthority = !fields.has('authority') && authority > 0
-    let shouldFetchUsage = !fields.has('usage') && (
-      typeof maxUsage === 'number' && maxUsage < Infinity ||
-      typeof minInterval === 'number' && minInterval > 0)
-    for (const option of command._options) {
-      if (option.camels[0] in options) {
-        if (option.authority > 0) shouldFetchAuthority = true
-        if (option.notUsage) shouldFetchUsage = false
-      }
-    }
-    if (shouldFetchAuthority) fields.add('authority')
-    if (shouldFetchUsage) fields.add('usage')
+  static defaultCommandConfig: CommandConfig = {
+    authority: 1,
   }
 
-  static attachGroupFields (meta: Meta<'message'>, fields: Set<GroupField>) {
-    if (!meta.$argv.command) return
-    for (const field of meta.$argv.command._groupFields) {
-      fields.add(field)
-    }
+  static defaultOptionConfig: OptionConfig = {
+    authority: 0,
   }
 
   constructor (public name: string, public declaration: string, public context: Context, config: CommandConfig = {}) {
     if (!name) throw new Error(errors.EXPECT_COMMAND_NAME)
     this._argsDef = parseArguments(declaration)
-    this.config = { ...defaultConfig, ...config }
+    this.config = { ...Command.defaultCommandConfig, ...config }
     this._registerAlias(this.name)
     context.app._commands.push(this)
     context.app.parallelize('new-command', this)
@@ -203,10 +172,6 @@ export class Command {
 
   get app () {
     return this.context.app
-  }
-
-  get usageName () {
-    return this.config.usageName || this.name
   }
 
   private _registerAlias (name: string) {
@@ -297,7 +262,7 @@ export class Command {
     }
   
     const option: CommandOption = {
-      authority: 0,
+      ...Command.defaultOptionConfig,
       ...config,
       rawName,
       longest,

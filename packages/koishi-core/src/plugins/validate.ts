@@ -1,4 +1,4 @@
-import { Context, Meta, defaultConfig, UserData } from '..'
+import { Context, Meta, UserData, Command } from '..'
 import { messages } from '../messages'
 import { format } from 'util'
 import { getDateNumber } from 'koishi-utils'
@@ -13,11 +13,43 @@ declare module '../command' {
     checkArgCount?: boolean
     /** show command warnings */
     showWarning?: boolean
+    /** usage identifier */
+    usageName?: string
+    /** max usage per day */
+    maxUsage?: UserType<number>
+    /** min interval */
+    minInterval?: UserType<number>
   }
 }
 
+export function getUsageName (command: Command) {
+  return command.config.usageName || command.name
+}
+
 export default function apply (ctx: Context) {
-  defaultConfig.showWarning = true
+  Object.assign(Command.defaultCommandConfig, {
+    showWarning: true,
+    maxUsage: Infinity,
+    minInterval: 0,
+  })
+
+  ctx.on('before-attach-user', (meta, fields) => {
+    if (!meta.$argv) return
+    const { command, options = {} } = meta.$argv
+    const { maxUsage, minInterval, authority } = command.config
+    let shouldFetchAuthority = !fields.has('authority') && authority > 0
+    let shouldFetchUsage = !fields.has('usage') && (
+      typeof maxUsage === 'number' && maxUsage < Infinity ||
+      typeof minInterval === 'number' && minInterval > 0)
+    for (const option of command._options) {
+      if (option.camels[0] in options) {
+        if (option.authority > 0) shouldFetchAuthority = true
+        if (option.notUsage) shouldFetchUsage = false
+      }
+    }
+    if (shouldFetchAuthority) fields.add('authority')
+    if (shouldFetchUsage) fields.add('usage')
+  })
 
   ctx.on('before-command', ({ meta, args, unknown, options, command }) => {
     async function sendHint (meta: Meta<'message'>, message: string, ...param: any[]) {
@@ -78,7 +110,7 @@ export default function apply (ctx: Context) {
       const maxUsage = command.getConfig('maxUsage', meta)
   
       if (maxUsage < Infinity || minInterval > 0) {
-        const message = updateUsage(command.usageName, meta.$user, { maxUsage, minInterval })
+        const message = updateUsage(getUsageName(command), meta.$user, { maxUsage, minInterval })
         if (message) return sendHint(meta, message)
       }
     }

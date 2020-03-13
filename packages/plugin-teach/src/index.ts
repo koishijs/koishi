@@ -34,11 +34,7 @@ export function apply (ctx: Context, config: TeachConfig = {}) {
   ctx.plugin(shortcut, config)
   ctx.plugin(receiver, config)
 
-  ctx.command('teach', '添加教学对话', {
-    authority: 2,
-    checkUnknown: true,
-    maxUsage: user => user.authority === 2 ? 20 : Infinity,
-  })
+  ctx.command('teach', '添加教学对话', { authority: 2, checkUnknown: true })
     .userFields(['usage', 'authority'])
     .alias('教学')
     .option('-q, --question <question>', '问题', { isString: true, hidden: true })
@@ -70,10 +66,6 @@ export function apply (ctx: Context, config: TeachConfig = {}) {
     .option('--add-succ <ids>', '添加后继问题 (>)', { isString: true, hidden: true })
     .usage('输入 # 查看教学系统用法示例。')
     .action(async ({ options, meta, args }) => {
-      if (!meta.message.startsWith('#') && !updateUsage('$teachHint', meta.$user, { maxUsage: 1 })) {
-        return meta.$send('四季酱 v2 已经实装了全新的教学语法，详见：https://Shigma.github.io/shiki-v2/teach')
-      }
-
       if (args.length) {
         return meta.$send('存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
       }

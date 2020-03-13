@@ -1,5 +1,5 @@
 import { Command, Context, UserData, Meta } from '..'
-import { getUsage } from './checker'
+import { getUsage, getUsageName } from './validate'
 
 export type CommandUsage = string | ((this: Command, meta: Meta) => string | Promise<string>)
 
@@ -118,7 +118,7 @@ async function showCommandHelp (command: Command, meta: Meta<'message'>, config:
   const maxUsage = command.getConfig('maxUsage', meta)
   const minInterval = command.getConfig('minInterval', meta)
   if (meta.$user) {
-    const usage = getUsage(command.usageName, meta.$user)
+    const usage = getUsage(getUsageName(command), meta.$user)
     if (maxUsage !== Infinity) {
       output.push(`已调用次数：${Math.min(usage.count || 0, maxUsage)}/${maxUsage}。`)
     }

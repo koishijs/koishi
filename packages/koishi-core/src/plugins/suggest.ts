@@ -67,8 +67,8 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
     meta.$argv = { command, meta }
     const userFields = new Set<UserField>(['flag'])
     const groupFields = new Set<GroupField>(['flag', 'assignee'])
-    Command.attachUserFields(meta, userFields)
-    Command.attachGroupFields(meta, groupFields)
+    command.context.parallelize('before-attach-user', meta, userFields)
+    command.context.parallelize('before-attach-group', meta, groupFields)
     command.context.onceMiddleware(async (meta, next) => {
       if (meta.message.trim()) return next()
       meta.$user = await command.context.database?.observeUser(meta.userId, Array.from(userFields))

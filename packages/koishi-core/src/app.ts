@@ -8,10 +8,10 @@ import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupFi
 import { Meta } from './meta'
 import { simplify, noop } from 'koishi-utils'
 import { errors } from './messages'
-import checker from './plugins/checker'
 import help from './plugins/help'
 import suggest from './plugins/suggest'
 import throttle from './plugins/throttle'
+import validate from './plugins/validate'
 
 export interface AppOptions {
   port?: number
@@ -135,18 +135,30 @@ export class App extends Context {
 
     // bind built-in event listeners
     this.on('message', this._applyMiddlewares)
-    this.on('before-attach-user', Command.attachUserFields)
-    this.on('before-attach-group', Command.attachGroupFields)
-    this.middleware(this._preprocess)
 
-    // apply default logger
     this.on('logger', (scope, message) => debug(scope)(message))
 
+    this.on('before-attach-user', (meta, fields) => {
+      if (!meta.$argv) return
+      for (const field of meta.$argv.command._userFields) {
+        fields.add(field)
+      }
+    })
+
+    this.on('before-attach-group', (meta, fields) => {
+      if (!meta.$argv) return
+      for (const field of meta.$argv.command._groupFields) {
+        fields.add(field)
+      }
+    })
+
+    this.middleware(this._preprocess)
+
     // apply internal plugins
-    this.plugin(checker)
     this.plugin(help)
     this.plugin(suggest)
     this.plugin(throttle)
+    this.plugin(validate)
   }
 
   get users () {
@@ -337,11 +349,7 @@ export class App extends Context {
       }
     }
 
-    if (!meta.$argv) {
-      defineProperty(meta, '$argv', { meta })
-    }
-
-    const { command } = meta.$argv
+    const command = meta.$argv?.command
     if (this.database) {
       if (meta.messageType === 'group') {
         // attach group data
