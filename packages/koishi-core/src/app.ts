@@ -366,11 +366,11 @@ export class App extends Context {
       // attach user data
       const userFields = new Set<UserField>(['flag'])
       this.parallelize(meta, 'before-attach-user', meta, userFields)
-      defineProperty(meta, '$user', user)
-      const user = await this.database.observeUser(meta.userId, defaultAuthority, Array.from(userFields))
-        : this.options.defaultAuthority || 0
-        ? this.options.defaultAuthority(meta)
       const defaultAuthority = typeof this.options.defaultAuthority === 'function'
+        ? this.options.defaultAuthority(meta)
+        : this.options.defaultAuthority || 0
+      const user = await this.database.observeUser(meta.userId, defaultAuthority, Array.from(userFields))
+      defineProperty(meta, '$user', user)
 
       // emit attach event
       if (await this.serialize(meta, 'attach-user', meta)) return
