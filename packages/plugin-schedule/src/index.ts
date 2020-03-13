@@ -5,7 +5,7 @@ import './database'
 export interface Schedule {
   id: number
   assignee: number
-  time: number
+  time: Date
   interval: number
   command: string
   meta: Meta<'message'>
@@ -14,31 +14,27 @@ export interface Schedule {
 function inspectSchedule ({ id, assignee, meta, interval, command, time }: Schedule) {
   if (!appMap[assignee]) return
   const now = Date.now()
+  const date = time.valueOf()
   const app = appMap[assignee]
 
   if (!interval) {
-    if (time < now) {
-      return app.database.removeSchedule(id)
-    } else {
-      setTimeout(async () => {
-        if (!await app.database.getSchedule(id)) return
-        app.executeCommandLine(command, meta)
-        app.database.removeSchedule(id)
-      }, time - now)
-    }
-  } else {
-    const timeout = time < now ? interval - (now - time) % interval : time - now
-    setTimeout(async () => {
+    if (date < now) return app.database.removeSchedule(id)
+    return setTimeout(async () => {
       if (!await app.database.getSchedule(id)) return
-      const timer = setInterval(async () => {
-        if (!await app.database.getSchedule(id)) {
-          return clearInterval(timer)
-        }
-        app.executeCommandLine(command, meta)
-      }, interval)
       app.executeCommandLine(command, meta)
-    }, timeout)
+      app.database.removeSchedule(id)
+    }, date - now)
   }
+
+  const timeout = date < now ? interval - (now - date) % interval : date - now
+  setTimeout(async () => {
+    if (!await app.database.getSchedule(id)) return
+    const timer = setInterval(async () => {
+      if (!await app.database.getSchedule(id)) return clearInterval(timer)
+      app.executeCommandLine(command, meta)
+    }, interval)
+    app.executeCommandLine(command, meta)
+  }, timeout)
 }
 
 const databases = new Set<Database>()
@@ -78,8 +74,11 @@ export function apply (ctx: Context, config: CommandConfig = {}) {
       if (/^\d{1,2}(:\d{1,2}){1,2}$/.exec(date)) {
         date = `${new Date().toLocaleDateString()} ${date}`
       }
-      const time = date ? new Date(date).valueOf() : Date.now()
-      if (Number.isNaN(time)) return meta.$send('请输入合法的日期。')
+      const time = date ? new Date(date) : new Date()
+      if (Number.isNaN(+time)) {
+        return meta.$send('请输入合法的日期。')
+      }
+
       const schedule = await database.createSchedule(time, ctx.app.selfId, options.interval * 1000, rest, meta)
       await meta.$send(`日程已创建，编号为 ${schedule.id}。`)
       return inspectSchedule(schedule)
