@@ -313,13 +313,14 @@ export class App extends Context {
 
     // store parsed message
     Object.defineProperty(meta, '$parsed', {
+      writable: true,
       value: { atMe, nickname, prefix, message },
     })
 
     // parse as command
     if (!meta.$argv && (prefix !== null || nickname || meta.messageType === 'private')) {
       Object.defineProperty(meta, '$argv', {
-        configurable: true,
+        writable: true,
         value: this.parseCommandLine(message, meta),
       })
     }
@@ -339,7 +340,7 @@ export class App extends Context {
           result.options = { ...options, ...result.options }
           result.args.unshift(...args)
           Object.defineProperty(meta, '$argv', {
-            configurable: true,
+            writable: true,
             value: { meta, command, ...result },
           })
           break
@@ -349,7 +350,7 @@ export class App extends Context {
 
     if (!meta.$argv) {
       Object.defineProperty(meta, '$argv', {
-        configurable: true,
+        writable: true,
         value: { meta },
       })
     }
@@ -358,10 +359,7 @@ export class App extends Context {
     if (this.database) {
       if (meta.messageType === 'group') {
         // attach group data
-        const groupFields = new Set<GroupField>(['flag', 'assignee'])
-        this.emitEvent(meta, 'before-group', groupFields, meta.$argv)
-        const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
-        Object.defineProperty(meta, '$group', { value: group, writable: true })
+        const group = await this._attachGroup(meta)
 
         // emit attach event
         this.emitEvent(meta, 'attach-group', meta)
@@ -377,13 +375,7 @@ export class App extends Context {
       }
 
       // attach user data
-      const userFields = new Set<UserField>(['flag'])
-      this.emitEvent(meta, 'before-user', userFields, meta.$argv)
-      const defaultAuthority = typeof this.options.defaultAuthority === 'function'
-        ? this.options.defaultAuthority(meta)
-        : this.options.defaultAuthority || 0
-      const user = await this.database.observeUser(meta.userId, defaultAuthority, Array.from(userFields))
-      Object.defineProperty(meta, '$user', { value: user, writable: true })
+      const user = await this._attachUser(meta)
 
       // emit attach event
       this.emitEvent(meta, 'attach', meta)
@@ -438,13 +430,43 @@ export class App extends Context {
     }
   }
 
-  executeCommandLine (message: string, meta: Meta<'message'>, next: NextFunction = noop) {
+  private async _attachGroup (meta: Meta<'message'>) {
+    const groupFields = new Set<GroupField>()
+    this.emitEvent(meta, 'before-group', groupFields, meta.$argv)
+    const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
+    Object.defineProperty(meta, '$group', { value: group, writable: true })
+    return group
+  }
+
+  private async _attachUser (meta: Meta<'message'>) {
+    const userFields = new Set<UserField>()
+    this.emitEvent(meta, 'before-user', userFields, meta.$argv)
+    const defaultAuthority = typeof this.options.defaultAuthority === 'function'
+      ? this.options.defaultAuthority(meta)
+      : this.options.defaultAuthority || 0
+    const user = await this.database.observeUser(meta.userId, defaultAuthority, Array.from(userFields))
+    Object.defineProperty(meta, '$user', { value: user, writable: true })
+    return user
+  }
+
+  async executeCommandLine (message: string, meta: Meta<'message'>, next: NextFunction = noop) {
     if (!('$ctxType' in meta)) this.server.parseMeta(meta)
     const argv = this.parseCommandLine(message, meta)
-    if (argv && !argv.command.getConfig('disable', meta)) {
-      return argv.command.execute(argv, next)
+    if (!argv) return next()
+    Object.defineProperty(meta, '$argv', {
+      writable: true,
+      value: argv,
+    })
+
+    if (this.database) {
+      if (meta.messageType === 'group') {
+        await this._attachGroup(meta)
+      }
+      await this._attachUser(meta)
     }
-    return next()
+
+    if (argv.command.getConfig('disable', meta)) return next()
+    return argv.command.execute(argv, next)
   }
 
   private _applyMiddlewares = async (meta: Meta<'message'>) => {
