@@ -13,6 +13,7 @@
     "build:dict": "ts-node bots/shiki/build/dict",
     "bump": "ts-node build/bump",
     "dep": "ts-node build/dep",
+    "dev": "ts-node build/dev",
     "docs": "cd docs & yarn dev",
     "jest": "ts-node build/jest",
     "lint": "eslint packages/*/src/**/*.ts --cache",

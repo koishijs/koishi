@@ -4,7 +4,7 @@ import { format } from 'util'
 import leven from 'leven'
 
 export default function apply (koishi: Koishi) {
-  koishi.on('app', (app) => {
+  koishi.onApp((app) => {
     app.middleware((meta, next) => {
       const { message, prefix, nickname } = meta.$parsed
       const target = meta.$parsed.message.split(/\s/, 1)[0].toLowerCase()

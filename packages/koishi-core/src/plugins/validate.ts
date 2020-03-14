@@ -27,8 +27,8 @@ export function getUsageName (command: Command) {
 }
 
 export default function apply (koishi: Koishi) {
-  koishi.on('app', (app) => {
-    Object.assign(Command.defaultCommandConfig, {
+  koishi.onApp((app) => {
+    Object.assign(koishi.Command.defaultConfig, {
       showWarning: true,
       maxUsage: Infinity,
       minInterval: 0,

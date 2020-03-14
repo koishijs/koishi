@@ -17,13 +17,13 @@ export default function apply (koishi: Koishi) {
     this._usage = text
     return this
   }
-  
+
   koishi.Command.prototype.example = function (example) {
     this._examples.push(example)
     return this
   }
 
-  koishi.on('app', (app) => {
+  koishi.onApp((app) => {
     app.on('new-command', (cmd) => {
       cmd._examples = []
       cmd.option('-h, --help', '显示此信息', { hidden: true })

@@ -12,7 +12,7 @@ declare module '../app' {
 }
 
 export default function apply (koishi: Koishi) {
-  koishi.on('app', (app) => {
+  koishi.onApp((app) => {
     const { throttle } = app.options
     const throttleConfig = !throttle ? [] : Array.isArray(throttle) ? throttle : [throttle]
   

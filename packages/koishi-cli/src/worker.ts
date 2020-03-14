@@ -1,10 +1,10 @@
-import { App, startAll, AppOptions, onStart, Context, Plugin, appList } from 'koishi-core'
+import { App, AppOptions, Context, Plugin, appList, startAll, onStart } from 'koishi-core'
 import { resolve, extname, dirname } from 'path'
 import { capitalize } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { cyan, yellow } from 'kleur'
 import { logger } from './utils'
-import { format, types } from 'util'
+import { format } from 'util'
 import { readFileSync } from 'fs'
 import { safeLoad } from 'js-yaml'
 
@@ -22,7 +22,7 @@ function handleException (error: any) {
 
 process.on('uncaughtException', handleException)
 
-export type PluginConfig = (string | Plugin | [string | Plugin, any?])[]
+export type PluginConfig = (string | Plugin<Context> | [string | Plugin<Context>, any?])[]
 
 export interface AppConfig extends AppOptions {
   plugins?: PluginConfig | Record<string, PluginConfig>
@@ -82,7 +82,7 @@ function loadEcosystem (type: string, name: string) {
 
 function loadPlugins (ctx: Context, plugins: PluginConfig) {
   for (const item of plugins) {
-    let plugin: Plugin, options
+    let plugin: Plugin<Context>, options
     if (Array.isArray(item)) {
       plugin = typeof item[0] === 'string' ? loadEcosystem('plugin', item[0]) : item[0]
       options = item[1]

@@ -153,7 +153,7 @@ export class Command {
   _optsDef: Record<string, CommandOption> = {}
   _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
 
-  static defaultCommandConfig: CommandConfig = {
+  static defaultConfig: CommandConfig = {
     authority: 1,
   }
 
@@ -164,7 +164,7 @@ export class Command {
   constructor (public name: string, public declaration: string, public context: Context, config: CommandConfig = {}) {
     if (!name) throw new Error(errors.EXPECT_COMMAND_NAME)
     this._argsDef = parseArguments(declaration)
-    this.config = { ...Command.defaultCommandConfig, ...config }
+    this.config = { ...Command.defaultConfig, ...config }
     this._registerAlias(this.name)
     context.app._commands.push(this)
     context.app.parallelize('new-command', this)
