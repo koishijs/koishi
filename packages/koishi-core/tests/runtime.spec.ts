@@ -1,6 +1,7 @@
 import { MockedApp } from 'koishi-test-utils'
-import { messages, Meta } from 'koishi-core'
+import { Meta } from 'koishi-core'
 import { format } from 'util'
+import { messages } from '../src/messages'
 
 const app = new MockedApp()
 const session1 = app.createSession('user', 789)

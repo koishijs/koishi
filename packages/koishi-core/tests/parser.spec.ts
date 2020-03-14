@@ -1,5 +1,5 @@
-import { App, Command, errors } from 'koishi-core'
-import { ParsedLine } from '../src/parser'
+import { App, Command, ParsedLine } from 'koishi-core'
+import { errors } from '../src/messages'
 
 const app = new App()
 

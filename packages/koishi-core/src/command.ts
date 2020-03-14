@@ -3,6 +3,7 @@ import { UserData, UserField, GroupField } from './database'
 import { errors } from './messages'
 import { noop, camelCase } from 'koishi-utils'
 import { Meta } from './meta'
+import { inspect } from 'util'
 
 const ANGLED_BRACKET_REGEXP = /<([^>]+)>/g
 const SQUARE_BRACKET_REGEXP = /\[([^\]]+)\]/g
@@ -185,6 +186,10 @@ export class Command {
     }
   }
 
+  [inspect.custom] () {
+    return `Command <${this.name}>`
+  }
+
   userFields (fields: Iterable<UserField>) {
     for (const field of fields) {
       this._userFields.add(field)
@@ -312,7 +317,7 @@ export class Command {
     const unknown: string[] = []
     const options: Record<string, any> = {}
   
-    function handleOption (name: string, knownValue: any, unknownValue: any) {
+    const handleOption = (name: string, knownValue: any, unknownValue: any) => {
       const config = this._optsDef[name]
       if (config) {
         for (const alias of config.camels) {

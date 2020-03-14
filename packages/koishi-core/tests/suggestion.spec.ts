@@ -1,6 +1,7 @@
 import { MockedApp } from 'koishi-test-utils'
-import { messages, showSuggestions } from 'koishi-core'
+import { showSuggestions } from 'koishi-core'
 import { format } from 'util'
+import { messages } from '../src/messages'
 import 'koishi-database-memory'
 
 describe('Command Suggestions', () => {

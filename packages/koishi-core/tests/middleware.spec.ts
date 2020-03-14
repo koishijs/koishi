@@ -1,9 +1,10 @@
 import { MockedApp, createArray } from 'koishi-test-utils'
-import { Middleware, NextFunction } from 'koishi-core'
+import { Middleware, NextFunction, Context } from 'koishi-core'
 import { sleep, noop } from 'koishi-utils'
 
-let callSequence: jest.Mock[]
 const app = new MockedApp()
+let callSequence: jest.Mock[]
+let middlewares: [Context, Middleware][]
 
 function wrap <T extends (...args: any[]) => any> (callback: T) {
   const wrapper = jest.fn(((...args: Parameters<T>) => {
@@ -14,7 +15,7 @@ function wrap <T extends (...args: any[]) => any> (callback: T) {
 }
 
 beforeEach(() => {
-  app._middlewares = []
+  middlewares = app._hooks[Context.MIDDLEWARE_EVENT as any] = []
   callSequence = []
 })
 
@@ -25,7 +26,7 @@ describe('Middleware API', () => {
     const warnCallback = jest.fn()
     app.on('logger/warn', warnCallback)
     createArray(64 + extraCalls, () => app.addMiddleware(noop))
-    expect(app._middlewares.length).toBe(64)
+    expect(middlewares.length).toBe(64)
     expect(warnCallback).toBeCalledTimes(extraCalls)
   })
 
@@ -33,17 +34,17 @@ describe('Middleware API', () => {
     const warnCallback = jest.fn()
     app.on('logger/warn', warnCallback)
     createArray(64 + extraCalls, () => app.prependMiddleware(noop))
-    expect(app._middlewares.length).toBe(64)
+    expect(middlewares.length).toBe(64)
     expect(warnCallback).toBeCalledTimes(extraCalls)
   })
 
   test('remove middlewares', () => {
     app.addMiddleware(noop)
-    expect(app._middlewares.length).toBe(1)
+    expect(middlewares.length).toBe(1)
     expect(app.removeMiddleware(noop)).toBeTruthy()
-    expect(app._middlewares.length).toBe(0)
+    expect(middlewares.length).toBe(0)
     expect(app.removeMiddleware(noop)).toBeFalsy()
-    expect(app._middlewares.length).toBe(0)
+    expect(middlewares.length).toBe(0)
   })
 })
 

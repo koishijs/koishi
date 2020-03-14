@@ -41,7 +41,6 @@ describe('Lifecycle', () => {
     onStart(mock)
     await startAll()
     expect(mock).toBeCalledTimes(1)
-    expect(mock).toBeCalledWith(app1, app2)
   })
 
   test('onStop', async () => {
