@@ -1,4 +1,4 @@
-
+import { Meta } from 'koishi-core'
 
 const second = 1000
 const minute = second * 60
@@ -16,6 +16,18 @@ export function parseTime (source: string) {
     + (parseFloat(capture[3]) * hour || 0)
     + (parseFloat(capture[4]) * minute || 0)
     + (parseFloat(capture[5]) * second || 0)
+}
+
+export function parseDate (date: string) {
+  let parsed: number
+  if (parsed = parseTime(date)) {
+    date = Date.now() + parsed as any
+  } else if (/^\d{1,2}(:\d{1,2}){1,2}$/.test(date)) {
+    date = `${new Date().toLocaleDateString()}-${date}`
+  } else if (/^\d{1,2}-\d{1,2}-\d{1,2}(:\d{1,2}){1,2}$/.test(date)) {
+    date = `${new Date().getFullYear()}-${date}`
+  }
+  return date ? new Date(date) : new Date()
 }
 
 export function formatTime (ms: number) {
@@ -42,4 +54,10 @@ export function formatTime (ms: number) {
     result = Math.round(ms / second) + ' 秒'
   }
   return result
+}
+
+export function formatContext (meta: Meta<'message'>) {
+  return meta.messageType === 'private' ? `私聊 ${meta.userId}`
+    : meta.messageType === 'group' ? `群聊 ${meta.groupId}`
+    : `讨论组 ${meta.discussId}`
 }

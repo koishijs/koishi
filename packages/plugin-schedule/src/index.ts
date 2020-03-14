@@ -1,5 +1,5 @@
 import { Context, appMap, Meta, onStart, appList } from 'koishi-core'
-import { formatTime, parseTime } from './utils'
+import { formatTime, parseTime, parseDate, formatContext } from './utils'
 import './database'
 
 export * from './utils'
@@ -50,7 +50,7 @@ export const name = 'schedule'
 export function apply (ctx: Context) {
   const { database } = ctx.app
 
-  ctx.command('schedule [time] -- <command>', '设置定时命令', { authority: 3 })
+  ctx.command('schedule [time] -- <command>', '设置定时命令', { authority: 3, checkUnknown: true })
     .option('-i, --interval <interval>', '设置触发的间隔秒数', { authority: 4, isString: true })
     .option('-l, --list', '查看已经设置的日程')
     .option('-d, --delete <id>', '删除已经设置的日程')
@@ -63,26 +63,16 @@ export function apply (ctx: Context) {
       if (options.list) {
         const schedules = await database.getAllSchedules([ctx.app.selfId])
         if (!schedules.length) return meta.$send('当前没有等待执行的日程。')
-        return meta.$send(schedules.map(({ id, time, interval, command }) => {
+        return meta.$send(schedules.map(({ id, time, interval, command, meta }) => {
           let output = `${id}. 起始时间：${time.toLocaleString()}，`
           if (interval) output += `间隔时间：${formatTime(interval)}，`
-          return output + `指令：${command}`
+          return output + `指令：${command}，上下文：${formatContext(meta)}`
         }).join('\n'))
       }
 
       if (!rest) return meta.$send('请输入要执行的指令。')
 
-      let parsed: number
-      let date: string | number = dateSegments.join('-')
-      if (parsed = parseTime(date)) {
-        date = Date.now() + parsed
-      } else if (/^\d{1,2}(:\d{1,2}){1,2}$/.test(date)) {
-        date = `${new Date().toLocaleDateString()}-${date}`
-      } else if (/^\d{1,2}-\d{1,2}-\d{1,2}(:\d{1,2}){1,2}$/.test(date)) {
-        date = `${new Date().getFullYear()}-${date}`
-      }
-
-      const time = date ? new Date(date) : new Date()
+      const time = parseDate(dateSegments.join('-'))
       if (Number.isNaN(+time)) {
         return meta.$send('请输入合法的日期。')
       }
