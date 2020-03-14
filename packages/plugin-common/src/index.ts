@@ -3,8 +3,6 @@ import admin from './admin'
 import broadcast, { BroadcastOptions } from './broadcast'
 import contextify from './contextify'
 import echo from './echo'
-import exec from './exec'
-import exit from './exit'
 import info from './info'
 import repeater, { RepeaterOptions } from './repeater'
 import requestHandler, { HandlerOptions } from './request-handler'
@@ -19,8 +17,6 @@ export {
   broadcast,
   contextify,
   echo,
-  exec,
-  exit,
   info,
   repeater,
   requestHandler,
@@ -56,8 +52,6 @@ export function apply (ctx: Context, options: Config = {}) {
   ctx.plugin(welcome, options.welcomeMessage)
 
   if (options.echo !== false) ctx.plugin(echo)
-  if (options.exec !== false) ctx.plugin(exec)
-  if (options.exit !== false) ctx.plugin(exit)
 
   if (ctx.database) {
     if (options.admin !== false) ctx.plugin(admin)
