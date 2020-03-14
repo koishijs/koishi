@@ -9,6 +9,7 @@ import { Meta } from './meta'
 import { simplify, noop } from 'koishi-utils'
 import { errors } from './messages'
 import { EventEmitter } from 'events'
+import { types } from 'util'
 
 export interface AppOptions {
   port?: number
@@ -126,25 +127,10 @@ export class App extends Context {
 
     // bind built-in event listeners
     this.on('message', this._applyMiddlewares)
-
     this.on('logger', (scope, message) => debug(scope)(message))
-
-    this.on('before-attach-user', (meta, fields) => {
-      if (!meta.$argv) return
-      for (const field of meta.$argv.command._userFields) {
-        fields.add(field)
-      }
-    })
-
-    this.on('before-attach-group', (meta, fields) => {
-      if (!meta.$argv) return
-      for (const field of meta.$argv.command._groupFields) {
-        fields.add(field)
-      }
-    })
-
+    this.on('before-attach-user', Command.attachUserFields)
+    this.on('before-attach-group', Command.attachGroupFields)
     this.middleware(this._preprocess)
-
     emitter.emit('app', this)
   }
 
@@ -431,16 +417,26 @@ export class App extends Context {
 
     // execute middlewares
     let index = 0
+    const stack: string[] = []
     const next = async (fallback?: NextFunction) => {
-      if (!this._middlewareSet.has(counter)) {
-        return this.logger('koishi').warn(new Error(errors.ISOLATED_NEXT))
-      }
-      if (fallback) middlewares.push((_, next) => fallback(next))
+      const lines = new Error().stack.split('\n', 4)
+      // `    at Array.<anonymous> (`
+      if (index) stack.push(lines[2].slice(26, -1))
+      const rest = lines[3]
+
       try {
+        if (!this._middlewareSet.has(counter)) {
+          throw new Error(errors.ISOLATED_NEXT)
+        }
+        if (fallback) middlewares.push((_, next) => fallback(next))
         return middlewares[index++]?.(meta, next)
       } catch (error) {
-        this.parallelize('error/middleware', error)
-        this.parallelize('error', error)
+        if (!types.isNativeError(error)) {
+          error = new Error(error as any)
+        }
+        const index = error.stack.indexOf(rest)
+        const message = error.stack.slice(0, index) + 'Middleware stack:\n  - ' + stack.join('\n  - ')
+        this.logger('').warn(message)
       }
     }
     await next()

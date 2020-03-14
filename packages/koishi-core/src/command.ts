@@ -139,6 +139,8 @@ export interface ShortcutConfig {
   options?: Record<string, any>
 }
 
+type ArgvInferred <T> = T | ((argv: ParsedCommandLine) => T)
+
 export class Command {
   config: CommandConfig
   children: Command[] = []
@@ -147,8 +149,9 @@ export class Command {
   _aliases: string[] = []
   _options: CommandOption[] = []
   _shortcuts: Record<string, ShortcutConfig> = {}
-  _userFields = new Set<UserField>()
-  _groupFields = new Set<GroupField>()
+
+  private _userFields: ArgvInferred<Iterable<UserField>>[] = []
+  private _groupFields: ArgvInferred<Iterable<GroupField>>[] = []
 
   _argsDef: CommandArgument[]
   _optsDef: Record<string, CommandOption> = {}
@@ -160,6 +163,24 @@ export class Command {
 
   static defaultOptionConfig: OptionConfig = {
     authority: 0,
+  }
+
+  static attachUserFields (meta: Meta<'message'>, fields: Set<UserField>) {
+    if (!meta.$argv) return
+    for (const item of meta.$argv.command._userFields) {
+      for (const field of typeof item === 'function' ? item(meta.$argv) : item) {
+        fields.add(field)
+      }
+    }
+  }
+
+  static attachGroupFields (meta: Meta<'message'>, fields: Set<GroupField>) {
+    if (!meta.$argv) return
+    for (const item of meta.$argv.command._groupFields) {
+      for (const field of typeof item === 'function' ? item(meta.$argv) : item) {
+        fields.add(field)
+      }
+    }
   }
 
   constructor (public name: string, public declaration: string, public context: Context, config: CommandConfig = {}) {
@@ -190,17 +211,13 @@ export class Command {
     return `Command <${this.name}>`
   }
 
-  userFields (fields: Iterable<UserField>) {
-    for (const field of fields) {
-      this._userFields.add(field)
-    }
+  userFields (fields: ArgvInferred<Iterable<UserField>>) {
+    this._userFields.push(fields)
     return this
   }
 
-  groupFields (fields: Iterable<GroupField>) {
-    for (const field of fields) {
-      this._groupFields.add(field)
-    }
+  groupFields (fields: ArgvInferred<Iterable<GroupField>>) {
+    this._groupFields.push(fields)
     return this
   }
 

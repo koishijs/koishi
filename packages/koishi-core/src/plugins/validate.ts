@@ -33,7 +33,7 @@ export default function apply (koishi: Koishi) {
       maxUsage: Infinity,
       minInterval: 0,
     })
-  
+
     app.on('before-attach-user', (meta, fields) => {
       if (!meta.$argv) return
       const { command, options = {} } = meta.$argv
@@ -59,9 +59,9 @@ export default function apply (koishi: Koishi) {
           return true
         }
       }
-  
+
       if (command.getConfig('disable', meta)) return
-  
+
       // check argument count
       if (command.config.checkArgCount) {
         const nextArg = command._argsDef[args.length]
@@ -73,12 +73,12 @@ export default function apply (koishi: Koishi) {
           return sendHint(meta, messages.REDUNANT_ARGUMENTS)
         }
       }
-  
+
       // check unknown options
       if (command.config.checkUnknown && unknown.length) {
         return sendHint(meta, messages.UNKNOWN_OPTIONS, unknown.join(', '))
       }
-  
+
       // check required options
       if (command.config.checkRequired) {
         const absent = command._options.find((option) => {
@@ -88,10 +88,10 @@ export default function apply (koishi: Koishi) {
           return sendHint(meta, messages.REQUIRED_OPTIONS, absent.rawName)
         }
       }
-  
+
       if (!meta.$user) return
       let isUsage = true
-    
+
       // check authority
       if (command.config.authority > meta.$user.authority) {
         return sendHint(meta, messages.LOW_AUTHORITY)
@@ -104,7 +104,7 @@ export default function apply (koishi: Koishi) {
           if (option.notUsage) isUsage = false
         }
       }
-    
+
       // check usage
       if (isUsage) {
         const minInterval = command.getConfig('minInterval', meta)
