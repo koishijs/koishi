@@ -19,6 +19,10 @@ test('basic support', async () => {
   app.receive(shared)
   await sleep(0)
   app.shouldHaveLastRequest('send_group_msg', { groupId: 123, message: `欢迎新大佬 [CQ:at,qq=456]！` })
+
+  app.receive({ ...shared, userId: app.selfId })
+  await sleep(0)
+  app.shouldHaveNoRequests()
 })
 
 test('check assignee', async () => {

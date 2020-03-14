@@ -232,7 +232,7 @@ class DatabaseManager {
 
   injectMethods <S extends SubdatabaseType, T extends TableType> (sub: S, table: T, methods: any) {
     const subdatabase = this.database[sub] as AbstractDatabase
-    if (!this.explicitTables[table] && this.implicitTables[table]) {
+    if (!this.explicitTables[table] && this.implicitTables[table] && this.implicitTables[table] !== sub) {
       throw new Error(`database "${this.implicitTables[table]}" and "${sub}" conflict on table "${table}"`)
     } else if (!this.explicitTables[table] || this.explicitTables[table] === sub) {
       this.implicitTables[table] = sub
