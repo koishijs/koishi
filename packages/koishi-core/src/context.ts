@@ -1,7 +1,7 @@
 import { contain, union, intersection, difference } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine } from './command'
 import { PluginFunction, PluginObject, Plugin } from './plugin'
-import { Meta, contextTypes } from './meta'
+import { Meta, contextTypes, getSessionId } from './meta'
 import { Sender } from './sender'
 import { App } from './app'
 import { Database, UserField, GroupField } from './database'
@@ -59,7 +59,6 @@ export class Context {
   public logger: (scope?: string) => Logger
 
   constructor (public readonly identifier: string, private readonly _scope: ContextScope) {
-    this.on('error', this.logger().warn)
     this.logger = (scope = '') => {
       const logger = {} as Logger
       for (const type of logTypes) {
@@ -70,7 +69,6 @@ export class Context {
       }
       return logger
     }
-    console.log(this.logger)
   }
 
   inverse () {
@@ -218,9 +216,9 @@ export class Context {
   }
 
   onceMiddleware (middleware: Middleware, meta?: Meta) {
-    const identifier = meta ? meta.$ctxId + meta.$ctxType + meta.userId : undefined
+    const identifier = meta ? getSessionId(meta) : undefined
     const listener: Middleware = async (meta, next) => {
-      if (identifier && meta.$ctxId + meta.$ctxType + meta.userId !== identifier) return next()
+      if (identifier && getSessionId(meta) !== identifier) return next()
       this.removeMiddleware(listener)
       return middleware(meta, next)
     }
