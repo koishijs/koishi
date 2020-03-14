@@ -22,8 +22,8 @@ describe('WebSocket Server', () => {
   const app2MessageCallback = jest.fn()
 
   beforeAll(() => {
-    app1.receiver.on('message', app1MessageCallback)
-    app2.receiver.on('message', app2MessageCallback)
+    app1.on('message', app1MessageCallback)
+    app2.on('message', app2MessageCallback)
   })
 
   test('authorization', async () => {
@@ -108,62 +108,62 @@ describe('Quick Operations', () => {
 
   test('message event', async () => {
     mock.mockClear()
-    app1.receiver.once('message', meta => meta.$send('foo'))
+    app1.once('message', meta => meta.$send('foo'))
     await server.post(messageMeta)
     await server.nextTick()
     server.shouldHaveLastRequest('send_group_msg_async', { groupId: 20000, message: 'foo' })
 
     mock.mockClear()
-    app1.groups.receiver.once('message', meta => meta.$ban())
+    app1.groups.once('message', meta => meta.$ban())
     await server.post(messageMeta)
     await server.nextTick()
     server.shouldHaveLastRequest('set_group_ban_async', { groupId: 20000, userId: 10000 })
 
     mock.mockClear()
-    app1.groups.receiver.once('message', meta => meta.$delete())
+    app1.groups.once('message', meta => meta.$delete())
     await server.post(messageMeta)
     await server.nextTick()
     server.shouldHaveLastRequest('delete_msg_async', { messageId: 99999 })
 
     mock.mockClear()
-    app1.groups.receiver.once('message', meta => meta.$kick())
+    app1.groups.once('message', meta => meta.$kick())
     await server.post(messageMeta)
     await server.nextTick()
     server.shouldHaveLastRequest('set_group_kick_async', { groupId: 20000, userId: 10000 })
 
     mock.mockClear()
-    app1.groups.receiver.once('message', meta => meta.$ban())
+    app1.groups.once('message', meta => meta.$ban())
     await server.post(anonymousMeta)
     await server.nextTick()
     server.shouldHaveLastRequest('set_group_anonymous_ban_async', { groupId: 20000, flag: 'flag' })
 
     mock.mockClear()
-    app1.groups.receiver.once('message', meta => meta.$kick())
+    app1.groups.once('message', meta => meta.$kick())
     await server.post(anonymousMeta)
     // should have no response, just make coverage happy
   })
 
   test('request event', async () => {
     mock.mockClear()
-    app1.receiver.once('request/friend', meta => meta.$approve('foo'))
+    app1.once('request/friend', meta => meta.$approve('foo'))
     await server.post(frientRequestMeta)
     await server.nextTick()
     server.shouldHaveLastRequest('set_friend_add_request_async', { flag: 'foo', remark: 'foo', approve: true })
 
     mock.mockClear()
-    app1.receiver.once('request/friend', meta => meta.$reject())
+    app1.once('request/friend', meta => meta.$reject())
     await server.post(frientRequestMeta)
     await server.nextTick()
     server.shouldHaveLastRequest('set_friend_add_request_async', { flag: 'foo', approve: false })
 
     mock.mockClear()
-    app1.receiver.once('request/group/add', meta => meta.$approve())
+    app1.once('request/group/add', meta => meta.$approve())
     await server.post(groupRequestMeta)
     await server.nextTick()
     server.shouldHaveLastRequest('set_group_add_request_async', { flag: 'bar', approve: true })
 
     mock.mockClear()
-    app1.receiver.once('request/group/add', meta => meta.$reject('bar'))
+    app1.once('request/group/add', meta => meta.$reject('bar'))
     await server.post(groupRequestMeta)
     await server.nextTick()
     server.shouldHaveLastRequest('set_group_add_request_async', { flag: 'bar', reason: 'bar', approve: false })

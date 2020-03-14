@@ -6,7 +6,7 @@ import { Sender } from './sender'
 import { App } from './app'
 import { Database, UserField, GroupField } from './database'
 import { messages, errors } from './messages'
-import { format } from 'util'
+import { format, inspect } from 'util'
 
 export type NextFunction = (next?: NextFunction) => any
 export type Middleware = (meta: Meta<'message'>, next: NextFunction) => any
@@ -58,6 +58,8 @@ export class Context {
   public database: Database
   public logger: (scope?: string) => Logger
 
+  static readonly MIDDLEWARE_EVENT: unique symbol = Symbol('mid')
+
   constructor (public readonly identifier: string, private readonly _scope: ContextScope) {
     this.logger = (scope = '') => {
       const logger = {} as Logger
@@ -69,6 +71,10 @@ export class Context {
       }
       return logger
     }
+  }
+
+  [inspect.custom] () {
+    return `Context <${this.identifier}>`
   }
 
   inverse () {
@@ -200,19 +206,19 @@ export class Context {
   }
 
   middleware (middleware: Middleware) {
-    return this.addListener(MIDDLEWARE_EVENT, middleware)
+    return this.addListener(Context.MIDDLEWARE_EVENT, middleware)
   }
 
   addMiddleware (middleware: Middleware) {
-    return this.addListener(MIDDLEWARE_EVENT, middleware)
+    return this.addListener(Context.MIDDLEWARE_EVENT, middleware)
   }
 
   prependMiddleware (middleware: Middleware) {
-    return this.prependListener(MIDDLEWARE_EVENT, middleware)
+    return this.prependListener(Context.MIDDLEWARE_EVENT, middleware)
   }
 
   removeMiddleware (middleware: Middleware) {
-    return this.removeListener(MIDDLEWARE_EVENT, middleware)
+    return this.removeListener(Context.MIDDLEWARE_EVENT, middleware)
   }
 
   onceMiddleware (middleware: Middleware, meta?: Meta) {
@@ -300,10 +306,8 @@ export class Context {
   }
 }
 
-const MIDDLEWARE_EVENT: unique symbol = Symbol('mid')
-
 export interface EventMap {
-  [MIDDLEWARE_EVENT]: Middleware
+  [Context.MIDDLEWARE_EVENT]: Middleware
 
   // CQHTTP events
   'message' (meta: Meta<'message'>): any

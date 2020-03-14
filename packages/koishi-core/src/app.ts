@@ -32,8 +32,8 @@ export const appMap: Record<number, App> = {}
 export const appList: App[] = []
 const emitter = new EventEmitter()
 
-export const onStart = (callback: (...apps: App[]) => any) => emitter.on('start', callback)
-export const onStop = (callback: (...apps: App[]) => any) => emitter.on('stop', callback)
+export const onStart = (callback: () => any) => emitter.on('start', callback)
+export const onStop = (callback: () => any) => emitter.on('stop', callback)
 export const onApp = (callback: (app: App) => any) => emitter.on('app', callback)
 
 export async function startAll () {
@@ -94,7 +94,6 @@ export class App extends Context {
   _commandMap: Record<string, Command> = {}
   _shortcuts: ShortcutConfig[] = []
   _shortcutMap: Record<string, Command> = {}
-  _middlewares: [Context, Middleware][] = []
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
 
   private _users: MajorContext
@@ -259,7 +258,7 @@ export class App extends Context {
       this._isReady = true
     }
     if (appList.every(app => app.status === Status.open)) {
-      emitter.emit('all-open')
+      emitter.emit('start')
     }
   }
 
@@ -280,7 +279,7 @@ export class App extends Context {
     this.logger('koishi:app').debug('stopped')
     this.parallelize('disconnect')
     if (appList.every(app => app.status === Status.closed)) {
-      emitter.emit('all-closed')
+      emitter.emit('stop')
     }
   }
 
@@ -426,7 +425,7 @@ export class App extends Context {
     // preparation
     const counter = this._middlewareCounter++
     this._middlewareSet.add(counter)
-    const middlewares: Middleware[] = this._middlewares
+    const middlewares: Middleware[] = this._hooks[Context.MIDDLEWARE_EVENT as any]
       .filter(([context]) => context.match(meta))
       .map(([_, middleware]) => middleware)
 
