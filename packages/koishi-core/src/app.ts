@@ -353,7 +353,7 @@ export class App extends Context {
     if (this.database) {
       if (meta.messageType === 'group') {
         // attach group data
-        const group = await this._attachGroup(meta)
+        const group = await this._attachGroup(meta, ['flag', 'assignee'])
 
         // emit attach event
         if (await this.serialize(meta, 'attach-group', meta)) return
@@ -369,7 +369,7 @@ export class App extends Context {
       }
 
       // attach user data
-      const user = await this._attachUser(meta)
+      const user = await this._attachUser(meta, ['flag'])
 
       // emit attach event
       if (await this.serialize(meta, 'attach-user', meta)) return
@@ -395,16 +395,16 @@ export class App extends Context {
     }
   }
 
-  private async _attachGroup (meta: Meta<'message'>) {
-    const groupFields = new Set<GroupField>(['flag', 'assignee'])
+  private async _attachGroup (meta: Meta<'message'>, fields: Iterable<GroupField> = []) {
+    const groupFields = new Set<GroupField>(fields)
     this.parallelize(meta, 'before-attach-group', meta, groupFields)
     const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
     defineProperty(meta, '$group', group)
     return group
   }
 
-  private async _attachUser (meta: Meta<'message'>) {
-    const userFields = new Set<UserField>(['flag'])
+  private async _attachUser (meta: Meta<'message'>, fields: Iterable<UserField> = []) {
+    const userFields = new Set<UserField>(fields)
     this.parallelize(meta, 'before-attach-user', meta, userFields)
     const defaultAuthority = typeof this.options.defaultAuthority === 'function'
       ? this.options.defaultAuthority(meta)
