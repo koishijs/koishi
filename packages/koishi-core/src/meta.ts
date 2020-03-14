@@ -1,5 +1,6 @@
 import { User, Group, UserField, GroupField } from './database'
 import { ParsedCommandLine } from './command'
+import { isInteger } from 'koishi-utils'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
 export type MessageType = 'private' | 'group' | 'discuss'
@@ -215,4 +216,32 @@ export interface GroupNoticeInfo {
   }
   u: number
   vn: number
+}
+
+export function getSenderName (meta: Meta<'message'>) {
+  const idString = '' + meta.$user.id
+  return meta.$user && idString !== meta.$user.name
+    ? meta.$user.name
+    : meta.sender
+      ? meta.sender.card || meta.sender.nickname
+      : idString
+}
+
+export function getContextId (meta: Meta) {
+  return meta.$ctxId + meta.$ctxType
+}
+
+export function getSessionId (meta: Meta) {
+  return meta.$ctxId + meta.$ctxType + meta.userId
+}
+
+export function getTargetId (target: string | number) {
+  if (typeof target !== 'string' && typeof target !== 'number') return
+  let qq = +target
+  if (!qq) {
+    const capture = /\[CQ:at,qq=(\d+)\]/.exec(target as any)
+    if (capture) qq = +capture[1]
+  }
+  if (!isInteger(qq)) return
+  return qq
 }
