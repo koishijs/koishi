@@ -100,7 +100,6 @@ function each <T> (callback: (pkg: Package, name: string) => T) {
 }
 
 function bumpPkg (source: Package, flag: BumpType, only = false) {
-  if (!source) return
   const newVersion = source.bump(flag)
   if (!newVersion) return
   const dependents = new Set<Package>()
@@ -135,7 +134,11 @@ const flag = options.major ? 'major' : options.minor ? 'minor' : options.patch ?
   }))
   spinner.succeed()
 
-  args.forEach(name => bumpPkg(getPackage(name), flag, options.only))
+  args.forEach((name) => {
+    const pkg = getPackage(name)
+    if (!pkg) throw new Error(`${name} not found`)
+    bumpPkg(pkg, flag, options.only)
+  })
 
   await Promise.all(each((pkg) => {
     if (!pkg.dirty) return
