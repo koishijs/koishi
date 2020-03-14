@@ -34,14 +34,12 @@
     "task"
   ],
   "devDependencies": {
-    "@types/ms": "^0.7.31",
     "koishi-database-level": "^2.0.0-alpha.0",
     "koishi-database-mysql": "^2.0.0-alpha.0",
     "koishi-test-utils": "^4.0.0-alpha.0"
   },
   "dependencies": {
     "koishi-core": "^2.0.0-alpha.0",
-    "koishi-utils": "^1.0.4",
-    "ms": "^2.1.2"
+    "koishi-utils": "^1.0.4"
   }
 }
