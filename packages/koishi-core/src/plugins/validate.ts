@@ -1,4 +1,4 @@
-import { Context, Meta, UserData, Command } from '..'
+import { Koishi, Meta, UserData, Command } from '..'
 import { messages } from '../messages'
 import { format } from 'util'
 import { getDateNumber } from 'koishi-utils'
@@ -26,94 +26,96 @@ export function getUsageName (command: Command) {
   return command.config.usageName || command.name
 }
 
-export default function apply (ctx: Context) {
-  Object.assign(Command.defaultCommandConfig, {
-    showWarning: true,
-    maxUsage: Infinity,
-    minInterval: 0,
-  })
-
-  ctx.on('before-attach-user', (meta, fields) => {
-    if (!meta.$argv) return
-    const { command, options = {} } = meta.$argv
-    const { maxUsage, minInterval, authority } = command.config
-    let shouldFetchAuthority = !fields.has('authority') && authority > 0
-    let shouldFetchUsage = !fields.has('usage') && (
-      typeof maxUsage === 'number' && maxUsage < Infinity ||
-      typeof minInterval === 'number' && minInterval > 0)
-    for (const option of command._options) {
-      if (option.camels[0] in options) {
-        if (option.authority > 0) shouldFetchAuthority = true
-        if (option.notUsage) shouldFetchUsage = false
-      }
-    }
-    if (shouldFetchAuthority) fields.add('authority')
-    if (shouldFetchUsage) fields.add('usage')
-  })
-
-  ctx.on('before-command', ({ meta, args, unknown, options, command }) => {
-    async function sendHint (meta: Meta<'message'>, message: string, ...param: any[]) {
-      if (command.config.showWarning) {
-        await meta.$send(format(message, ...param))
-        return true
-      }
-    }
-
-    if (command.getConfig('disable', meta)) return
-
-    // check argument count
-    if (command.config.checkArgCount) {
-      const nextArg = command._argsDef[args.length]
-      if (nextArg?.required) {
-        return sendHint(meta, messages.INSUFFICIENT_ARGUMENTS)
-      }
-      const finalArg = command._argsDef[command._argsDef.length - 1]
-      if (args.length > command._argsDef.length && !finalArg.noSegment && !finalArg.variadic) {
-        return sendHint(meta, messages.REDUNANT_ARGUMENTS)
-      }
-    }
-
-    // check unknown options
-    if (command.config.checkUnknown && unknown.length) {
-      return sendHint(meta, messages.UNKNOWN_OPTIONS, unknown.join(', '))
-    }
-
-    // check required options
-    if (command.config.checkRequired) {
-      const absent = command._options.find((option) => {
-        return option.required && !(option.longest in options)
-      })
-      if (absent) {
-        return sendHint(meta, messages.REQUIRED_OPTIONS, absent.rawName)
-      }
-    }
-
-    if (!meta.$user) return
-    let isUsage = true
+export default function apply (koishi: Koishi) {
+  koishi.on('app', (app) => {
+    Object.assign(Command.defaultCommandConfig, {
+      showWarning: true,
+      maxUsage: Infinity,
+      minInterval: 0,
+    })
   
-    // check authority
-    if (command.config.authority > meta.$user.authority) {
-      return sendHint(meta, messages.LOW_AUTHORITY)
-    }
-    for (const option of command._options) {
-      if (option.camels[0] in options) {
-        if (option.authority > meta.$user.authority) {
-          return sendHint(meta, messages.LOW_AUTHORITY)
+    app.on('before-attach-user', (meta, fields) => {
+      if (!meta.$argv) return
+      const { command, options = {} } = meta.$argv
+      const { maxUsage, minInterval, authority } = command.config
+      let shouldFetchAuthority = !fields.has('authority') && authority > 0
+      let shouldFetchUsage = !fields.has('usage') && (
+        typeof maxUsage === 'number' && maxUsage < Infinity ||
+        typeof minInterval === 'number' && minInterval > 0)
+      for (const option of command._options) {
+        if (option.camels[0] in options) {
+          if (option.authority > 0) shouldFetchAuthority = true
+          if (option.notUsage) shouldFetchUsage = false
         }
-        if (option.notUsage) isUsage = false
       }
-    }
+      if (shouldFetchAuthority) fields.add('authority')
+      if (shouldFetchUsage) fields.add('usage')
+    })
   
-    // check usage
-    if (isUsage) {
-      const minInterval = command.getConfig('minInterval', meta)
-      const maxUsage = command.getConfig('maxUsage', meta)
-  
-      if (maxUsage < Infinity || minInterval > 0) {
-        const message = updateUsage(getUsageName(command), meta.$user, { maxUsage, minInterval })
-        if (message) return sendHint(meta, message)
+    app.on('before-command', ({ meta, args, unknown, options, command }) => {
+      async function sendHint (meta: Meta<'message'>, message: string, ...param: any[]) {
+        if (command.config.showWarning) {
+          await meta.$send(format(message, ...param))
+          return true
+        }
       }
-    }
+  
+      if (command.getConfig('disable', meta)) return
+  
+      // check argument count
+      if (command.config.checkArgCount) {
+        const nextArg = command._argsDef[args.length]
+        if (nextArg?.required) {
+          return sendHint(meta, messages.INSUFFICIENT_ARGUMENTS)
+        }
+        const finalArg = command._argsDef[command._argsDef.length - 1]
+        if (args.length > command._argsDef.length && !finalArg.noSegment && !finalArg.variadic) {
+          return sendHint(meta, messages.REDUNANT_ARGUMENTS)
+        }
+      }
+  
+      // check unknown options
+      if (command.config.checkUnknown && unknown.length) {
+        return sendHint(meta, messages.UNKNOWN_OPTIONS, unknown.join(', '))
+      }
+  
+      // check required options
+      if (command.config.checkRequired) {
+        const absent = command._options.find((option) => {
+          return option.required && !(option.longest in options)
+        })
+        if (absent) {
+          return sendHint(meta, messages.REQUIRED_OPTIONS, absent.rawName)
+        }
+      }
+  
+      if (!meta.$user) return
+      let isUsage = true
+    
+      // check authority
+      if (command.config.authority > meta.$user.authority) {
+        return sendHint(meta, messages.LOW_AUTHORITY)
+      }
+      for (const option of command._options) {
+        if (option.camels[0] in options) {
+          if (option.authority > meta.$user.authority) {
+            return sendHint(meta, messages.LOW_AUTHORITY)
+          }
+          if (option.notUsage) isUsage = false
+        }
+      }
+    
+      // check usage
+      if (isUsage) {
+        const minInterval = command.getConfig('minInterval', meta)
+        const maxUsage = command.getConfig('maxUsage', meta)
+    
+        if (maxUsage < Infinity || minInterval > 0) {
+          const message = updateUsage(getUsageName(command), meta.$user, { maxUsage, minInterval })
+          if (message) return sendHint(meta, message)
+        }
+      }
+    })
   })
 }
 

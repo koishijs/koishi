@@ -1,5 +1,6 @@
 import { contain, union, intersection, difference } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine } from './command'
+import { PluginFunction, PluginObject, Plugin } from './plugin'
 import { Meta, contextTypes } from './meta'
 import { Sender } from './sender'
 import { App } from './app'
@@ -9,10 +10,6 @@ import { format } from 'util'
 
 export type NextFunction = (next?: NextFunction) => any
 export type Middleware = (meta: Meta<'message'>, next: NextFunction) => any
-
-type PluginFunction <T extends Context, U = any> = (ctx: T, options: U) => void
-type PluginObject <T extends Context, U = any> = { name?: string, apply: PluginFunction<T, U> }
-export type Plugin <T extends Context = Context, U = any> = PluginFunction<T, U> | PluginObject<T, U>
 
 type Subscope = [number[], number[]]
 export type ContextScope = Subscope[]
@@ -73,6 +70,7 @@ export class Context {
       }
       return logger
     }
+    console.log(this.logger)
   }
 
   inverse () {

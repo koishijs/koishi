@@ -1,5 +1,6 @@
 import debug from 'debug'
 import escapeRegex from 'escape-string-regexp'
+import manager from './manager'
 import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig, ParsedCommandLine, ParsedLine } from './command'
@@ -8,10 +9,6 @@ import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupFi
 import { Meta } from './meta'
 import { simplify, noop } from 'koishi-utils'
 import { errors } from './messages'
-import help from './plugins/help'
-import suggest from './plugins/suggest'
-import throttle from './plugins/throttle'
-import validate from './plugins/validate'
 
 export interface AppOptions {
   port?: number
@@ -29,41 +26,6 @@ export interface AppOptions {
   defaultAuthority?: number | ((meta: Meta) => number)
   quickOperationTimeout?: number
   similarityCoefficient?: number
-}
-
-const selfIds = new Set<number>()
-export const appMap: Record<number, App> = {}
-export const appList: App[] = []
-
-const onStartHooks = new Set<(...app: App[]) => void>()
-export function onStart (hook: (...app: App[]) => void) {
-  onStartHooks.add(hook)
-}
-
-const onStopHooks = new Set<(...app: App[]) => void>()
-export function onStop (hook: (...app: App[]) => void) {
-  onStopHooks.add(hook)
-}
-
-export async function startAll () {
-  await Promise.all(appList.map(async app => app.start()))
-}
-
-export async function stopAll () {
-  await Promise.all(appList.map(async app => app.stop()))
-}
-
-let getSelfIdsPromise: Promise<any>
-export async function getSelfIds () {
-  if (!getSelfIdsPromise) {
-    getSelfIdsPromise = Promise.all(appList.map(async (app) => {
-      if (app.selfId || !app.options.type) return
-      const info = await app.sender.getLoginInfo()
-      app.prepare(info.userId)
-    }))
-  }
-  await getSelfIdsPromise
-  return Array.from(selfIds)
 }
 
 export interface MajorContext extends Context {
@@ -130,7 +92,7 @@ export class App extends Context {
     }
 
     // register application
-    appList.push(this)
+    manager.appList.push(this)
     if (this.selfId) this.prepare()
 
     // bind built-in event listeners
@@ -154,11 +116,7 @@ export class App extends Context {
 
     this.middleware(this._preprocess)
 
-    // apply internal plugins
-    this.plugin(help)
-    this.plugin(suggest)
-    this.plugin(throttle)
-    this.plugin(validate)
+    manager.emit('app', this)
   }
 
   get users () {
@@ -198,8 +156,8 @@ export class App extends Context {
         this._isReady = true
       }
     }
-    appMap[this.selfId] = this
-    selfIds.add(this.selfId)
+    manager.appMap[this.selfId] = this
+    manager.selfIds.add(this.selfId)
     if (this.server) {
       this.server.appMap[this.selfId] = this
     }
@@ -212,10 +170,10 @@ export class App extends Context {
   }
 
   destroy () {
-    const index = appList.indexOf(this)
-    if (index >= 0) appList.splice(index, 1)
-    delete appMap[this.selfId]
-    selfIds.delete(this.selfId)
+    const index = manager.appList.indexOf(this)
+    if (index >= 0) manager.appList.splice(index, 1)
+    delete manager.appMap[this.selfId]
+    manager.selfIds.delete(this.selfId)
     if (this.server) {
       const index = this.server.appList.indexOf(this)
       if (index >= 0) this.server.appList.splice(index, 1)
@@ -270,8 +228,8 @@ export class App extends Context {
       this.parallelize('ready')
       this._isReady = true
     }
-    if (appList.every(app => app.status === Status.open)) {
-      onStartHooks.forEach(hook => hook(...appList))
+    if (manager.appList.every(app => app.status === Status.open)) {
+      manager.emit('all-open')
     }
   }
 
@@ -291,8 +249,8 @@ export class App extends Context {
     this.status = Status.closed
     this.logger('koishi:app').debug('stopped')
     this.parallelize('disconnect')
-    if (appList.every(app => app.status === Status.closed)) {
-      onStopHooks.forEach(hook => hook(...appList))
+    if (manager.appList.every(app => app.status === Status.closed)) {
+      manager.emit('all-closed')
     }
   }
 

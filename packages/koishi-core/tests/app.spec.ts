@@ -1,5 +1,6 @@
-import { onStart, onStop, startAll, stopAll, App, getSelfIds, errors } from 'koishi-core'
+import { onStart, onStop, startAll, stopAll, App, getSelfIds } from 'koishi-core'
 import { HttpServer, createHttpServer } from 'koishi-test-utils'
+import { errors } from '../src/messages'
 import { format } from 'util'
 
 let app1: App, app2: App
@@ -86,7 +87,7 @@ describe('Startup Checks', () => {
   test('= 4.0: get selfIds manually', async () => {
     const readyCallback = jest.fn()
     const app2 = server.createBoundApp({ selfId: undefined })
-    app2.receiver.on('ready', readyCallback)
+    app2.on('ready', readyCallback)
     server.setResponse('get_version_info', { pluginVersion: '4.0' })
     server.setResponse('get_login_info', { userId: 415 })
     await expect(app2.start()).resolves.toBeUndefined()

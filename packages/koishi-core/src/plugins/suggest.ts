@@ -1,38 +1,40 @@
-import { NextFunction, Command, Meta, Context, UserField, GroupField } from '..'
+import { NextFunction, Command, Meta, UserField, GroupField, Koishi } from '..'
 import { messages } from '../messages'
 import { format } from 'util'
 import leven from 'leven'
 
-export default function apply (ctx: Context) {
-  ctx.middleware((meta, next) => {
-    const { message, prefix, nickname } = meta.$parsed
-    const target = meta.$parsed.message.split(/\s/, 1)[0].toLowerCase()
-    if (!target || !(prefix !== null || nickname || meta.messageType === 'private')) return next()
-
-    const executableMap = new Map<Command, boolean>()
-    return showSuggestions({
-      target,
-      meta,
-      next,
-      prefix: messages.COMMAND_SUGGESTION_PREFIX,
-      suffix: messages.COMMAND_SUGGESTION_SUFFIX,
-      items: Object.keys(this._commandMap),
-      coefficient: this.options.similarityCoefficient,
-      command: suggestion => this._commandMap[suggestion],
-      disable: (name) => {
-        const command = this._commandMap[name]
-        let disabled = executableMap.get(command)
-        if (disabled === undefined) {
-          disabled = !!command.getConfig('disable', meta)
-          executableMap.set(command, disabled)
-        }
-        return disabled
-      },
-      execute: async (suggestion, meta, next) => {
-        const newMessage = suggestion + message.slice(target.length)
-        const argv = this.parseCommandLine(newMessage, meta)
-        return argv.command.execute(argv, next)
-      },
+export default function apply (koishi: Koishi) {
+  koishi.on('app', (app) => {
+    app.middleware((meta, next) => {
+      const { message, prefix, nickname } = meta.$parsed
+      const target = meta.$parsed.message.split(/\s/, 1)[0].toLowerCase()
+      if (!target || !(prefix !== null || nickname || meta.messageType === 'private')) return next()
+  
+      const executableMap = new Map<Command, boolean>()
+      return showSuggestions({
+        target,
+        meta,
+        next,
+        prefix: messages.COMMAND_SUGGESTION_PREFIX,
+        suffix: messages.COMMAND_SUGGESTION_SUFFIX,
+        items: Object.keys(this._commandMap),
+        coefficient: this.options.similarityCoefficient,
+        command: suggestion => this._commandMap[suggestion],
+        disable: (name) => {
+          const command = this._commandMap[name]
+          let disabled = executableMap.get(command)
+          if (disabled === undefined) {
+            disabled = !!command.getConfig('disable', meta)
+            executableMap.set(command, disabled)
+          }
+          return disabled
+        },
+        execute: async (suggestion, meta, next) => {
+          const newMessage = suggestion + message.slice(target.length)
+          const argv = this.parseCommandLine(newMessage, meta)
+          return argv.command.execute(argv, next)
+        },
+      })
     })
   })
 }

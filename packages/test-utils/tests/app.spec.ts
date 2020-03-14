@@ -49,7 +49,7 @@ describe('Sender', () => {
 describe('Receiver', () => {
   test('receiveFriendRequest', async () => {
     const mock = jest.fn()
-    app.receiver.on('request/friend', mock)
+    app.on('request/friend', mock)
     app.receiveFriendRequest(123)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith({
@@ -65,7 +65,7 @@ describe('Receiver', () => {
 
   test('receiveGroupRequest', async () => {
     const mock = jest.fn()
-    app.receiver.on('request/group/add', mock)
+    app.on('request/group/add', mock)
     app.receiveGroupRequest('add', 123)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith({
@@ -83,7 +83,7 @@ describe('Receiver', () => {
 
   test('receiveGroupUpload', async () => {
     const mock = jest.fn()
-    app.receiver.on('group-upload', mock)
+    app.on('group-upload', mock)
     app.receiveGroupUpload({} as any, 123)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith({
@@ -98,7 +98,7 @@ describe('Receiver', () => {
 
   test('receiveGroupAdmin', async () => {
     const mock = jest.fn()
-    app.receiver.on('group-admin/set', mock)
+    app.on('group-admin/set', mock)
     app.receiveGroupAdmin('set', 123)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith({
@@ -113,7 +113,7 @@ describe('Receiver', () => {
 
   test('receiveGroupIncrease', async () => {
     const mock = jest.fn()
-    app.receiver.on('group-increase/invite', mock)
+    app.on('group-increase/invite', mock)
     app.receiveGroupIncrease('invite', 123)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith({
@@ -129,7 +129,7 @@ describe('Receiver', () => {
 
   test('receiveGroupDecrease', async () => {
     const mock = jest.fn()
-    app.receiver.on('group-decrease/kick', mock)
+    app.on('group-decrease/kick', mock)
     app.receiveGroupDecrease('kick', 123)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith({
@@ -145,7 +145,7 @@ describe('Receiver', () => {
 
   test('receiveGroupBan', async () => {
     const mock = jest.fn()
-    app.receiver.on('group-ban/ban', mock)
+    app.on('group-ban/ban', mock)
     app.receiveGroupBan('ban', 60, 123)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith({
@@ -162,7 +162,7 @@ describe('Receiver', () => {
 
   test('receiveFriendAdd', async () => {
     const mock = jest.fn()
-    app.receiver.on('friend-add', mock)
+    app.on('friend-add', mock)
     app.receiveFriendAdd(123)
     expect(mock).toBeCalledTimes(1)
     expect(mock).toBeCalledWith({
