@@ -17,11 +17,11 @@ export default function apply (koishi: Koishi) {
         next,
         prefix: messages.COMMAND_SUGGESTION_PREFIX,
         suffix: messages.COMMAND_SUGGESTION_SUFFIX,
-        items: Object.keys(this._commandMap),
-        coefficient: this.options.similarityCoefficient,
-        command: suggestion => this._commandMap[suggestion],
+        items: Object.keys(app._commandMap),
+        coefficient: app.options.similarityCoefficient,
+        command: suggestion => app._commandMap[suggestion],
         disable: (name) => {
-          const command = this._commandMap[name]
+          const command = app._commandMap[name]
           let disabled = executableMap.get(command)
           if (disabled === undefined) {
             disabled = !!command.getConfig('disable', meta)
@@ -31,7 +31,7 @@ export default function apply (koishi: Koishi) {
         },
         execute: async (suggestion, meta, next) => {
           const newMessage = suggestion + message.slice(target.length)
-          const argv = this.parseCommandLine(newMessage, meta)
+          const argv = app.parseCommandLine(newMessage, meta)
           return argv.command.execute(argv, next)
         },
       })

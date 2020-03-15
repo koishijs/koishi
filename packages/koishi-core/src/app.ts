@@ -419,10 +419,9 @@ export class App extends Context {
     let index = 0
     const stack: string[] = []
     const next = async (fallback?: NextFunction) => {
-      const lines = new Error().stack.split('\n', 4)
-      // `    at Array.<anonymous> (`
-      if (index) stack.push(lines[2].slice(26, -1))
-      const rest = lines[3]
+      const lines = new Error().stack.split('\n', 3)
+      const lastCall = lines[2]
+      if (index) stack.unshift(lastCall.match(/\((.+)\)/)[1])
 
       try {
         if (!this._middlewareSet.has(counter)) {
@@ -434,7 +433,7 @@ export class App extends Context {
         if (!types.isNativeError(error)) {
           error = new Error(error as any)
         }
-        const index = error.stack.indexOf(rest)
+        const index = error.stack.indexOf(lastCall)
         const message = error.stack.slice(0, index) + 'Middleware stack:\n  - ' + stack.join('\n  - ')
         this.logger('').warn(message)
       }
