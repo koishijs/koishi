@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "target": "es2019",
+    "module": "commonjs",
+    "composite": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "declaration": true,
+  },
+  "include": [
+    "src",
+  ],
+}

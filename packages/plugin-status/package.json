@@ -1,0 +1,44 @@
+{
+  "name": "koishi-plugin-status",
+  "description": "Show Status of Koishi",
+  "version": "2.0.0-alpha.0",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts",
+    "prepack": "tsc -b"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/plugins.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/plugins/issues"
+  },
+  "homepage": "https://github.com/koishijs/plugins/plugin-status#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "status"
+  ],
+  "devDependencies": {
+    "@types/cross-spawn": "^6.0.1",
+    "koishi-test-utils": "^4.0.0-alpha.0",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "cross-spawn": "^7.0.1",
+    "koishi-core": "^2.0.0-alpha.0",
+    "koishi-utils": "^1.0.4"
+  }
+}
