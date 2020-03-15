@@ -56,6 +56,20 @@ export function formatTime (ms: number) {
   return result
 }
 
+const dayMap = ['天', '一', '二', '三', '四', '五', '六']
+
+export function formatTimeAndInterval (time: Date, interval: number) {
+  if (!interval) {
+    return time.toLocaleString()
+  } else if (interval === day) {
+    return `每天 ${time.toLocaleTimeString()}`
+  } else if (interval === week) {
+    return `每周${dayMap[time.getDay()]} ${time.toLocaleTimeString()}`
+  } else {
+    return `${time.toLocaleString()} 起每隔 ${formatTime(interval)}`
+  }
+}
+
 export function formatContext (meta: Meta<'message'>) {
   return meta.messageType === 'private' ? `私聊 ${meta.userId}`
     : meta.messageType === 'group' ? `群聊 ${meta.groupId}`
