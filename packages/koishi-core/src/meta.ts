@@ -227,8 +227,9 @@ export function getSenderName (meta: Meta<'message'>) {
       : idString
 }
 
-export function getContextId (meta: Meta) {
-  return meta.$ctxId + meta.$ctxType
+export function getContextId (meta: Meta<'message'>) {
+  const type = meta.messageType === 'private' ? 'user' : meta.messageType
+  return type + meta[`${type}Id`]
 }
 
 export function getSessionId (meta: Meta) {

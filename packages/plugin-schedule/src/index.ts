@@ -1,4 +1,4 @@
-import { Context, appMap, Meta, onStart, appList } from 'koishi-core'
+import { Context, appMap, Meta, onStart, appList, getContextId } from 'koishi-core'
 import { parseTime, parseDate, formatContext, formatTimeAndInterval } from './utils'
 import './database'
 
@@ -44,11 +44,6 @@ onStart(async () => {
   const schedules = await database.getAllSchedules()
   schedules.forEach(schedule => inspectSchedule(schedule))
 })
-
-function getContextId (meta: Meta<'message'>) {
-  const type = meta.messageType === 'private' ? 'user' : meta.messageType
-  return type + meta[`${type}Id`]
-}
 
 export const name = 'schedule'
 
