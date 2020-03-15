@@ -17,6 +17,7 @@
     { "path": "./packages/plugin-nlp" },
     { "path": "./packages/plugin-recorder" },
     { "path": "./packages/plugin-schedule" },
+    { "path": "./packages/plugin-status" },
     { "path": "./packages/plugin-teach" },
     { "path": "./packages/test-utils" },
     { "path": "./packages/koishi-cli" },

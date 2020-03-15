@@ -160,8 +160,6 @@ export async function apply (ctx: Context, options: StatusOptions = {}) {
 
       output.push(
         `启动时间：${startTime}`,
-        `已载入指令：${app._commands.length}`,
-        `已载入中间件：${app._middlewares.length}`,
         `CPU 使用率：${(appRate * 100).toFixed()}% / ${(usedRate * 100).toFixed()}%`,
         `内存使用率：${(memory.app * 100).toFixed()}% / ${(memory.total * 100).toFixed()}%`,
       )

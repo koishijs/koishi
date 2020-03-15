@@ -421,7 +421,10 @@ export class App extends Context {
     const next = async (fallback?: NextFunction) => {
       const lines = new Error().stack.split('\n', 3)
       const lastCall = lines[2]
-      if (index) stack.unshift(lastCall.match(/\((.+)\)/)[1])
+      if (index) {
+        const capture = lastCall.match(/\((.+)\)/)
+        stack.unshift(capture ? capture[1] : lastCall.slice(7))
+      }
 
       try {
         if (!this._middlewareSet.has(counter)) {
