@@ -1,5 +1,5 @@
 import { Context, appMap, Meta, onStart, appList } from 'koishi-core'
-import { formatTime, parseTime, parseDate, formatContext } from './utils'
+import { parseTime, parseDate, formatContext, formatTimeAndInterval } from './utils'
 import './database'
 
 export * from './utils'
@@ -64,9 +64,9 @@ export function apply (ctx: Context) {
         const schedules = await database.getAllSchedules([ctx.app.selfId])
         if (!schedules.length) return meta.$send('当前没有等待执行的日程。')
         return meta.$send(schedules.map(({ id, time, interval, command, meta }) => {
-          let output = `${id}. 起始时间：${time.toLocaleString()}，`
-          if (interval) output += `间隔时间：${formatTime(interval)}，`
-          return output + `指令：${command}，上下文：${formatContext(meta)}`
+          let output = `${id}. 触发时间：${formatTimeAndInterval(time, interval)}，指令：${command}`
+          if (options.fullList) output += `，上下文：${formatContext(meta)}`
+          return output
         }).join('\n'))
       }
 
