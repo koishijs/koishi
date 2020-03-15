@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-schedule",
   "description": "Schedule plugin for Koishi",
-  "version": "2.0.0-alpha.1",
+  "version": "2.0.0-alpha.2",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
