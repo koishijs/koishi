@@ -1,6 +1,6 @@
 import { Context, UserField, getSenderName, Meta } from 'koishi-core'
 import { CQCode, sleep } from 'koishi-utils'
-import { simplifyQuestion, TeachConfig, LoopConfig } from './utils'
+import { simplifyQuestion, TeachConfig, LoopConfig, getDialogues } from './utils'
 import { Dialogue } from './database'
 
 declare module 'koishi-core/dist/context' {
@@ -18,13 +18,13 @@ declare module 'koishi-core/dist/meta' {
   }
 }
 
-interface State {
+export interface SessionState {
   initiators: number[]
   counters: Record<number, number>
   predecessors: Record<number, number>
 }
 
-const states: Record<number, State> = {}
+const states: Record<number, SessionState> = {}
 
 function escapeAnswer (message: string) {
   return message.replace(/\$/g, '@@__DOLLARS_PLACEHOLDER__@@')
@@ -83,17 +83,17 @@ export default function (ctx: Context, config: TeachConfig) {
     }
 
     // fetch dialogues
-    meta.$dialogues = await ctx.database.getSessionDialogues({
+    meta.$dialogues = await getDialogues(ctx, {
       question,
       partial: true,
       reversed: false,
       groups: ['' + groupId],
-    }, Object.keys(state.predecessors))
+    }, state)
     if (!meta.$dialogues.length) return next()
 
     // fetch user
     const userFields = new Set<UserField>(['name'])
-    ctx.app.parallelize(meta, 'dialogue/before-attach-user', meta, userFields)
+    ctx.app.emit(meta, 'dialogue/before-attach-user', meta, userFields)
     meta.$user = await ctx.database.observeUser(meta.$user, Array.from(userFields))
     if (await ctx.app.serialize(meta, 'dialogue/attach-user', meta)) return next()
 

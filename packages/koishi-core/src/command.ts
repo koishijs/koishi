@@ -189,7 +189,7 @@ export class Command {
     this.config = { ...Command.defaultConfig, ...config }
     this._registerAlias(this.name)
     context.app._commands.push(this)
-    context.app.parallelize('new-command', this)
+    context.app.emit('new-command', this)
   }
 
   get app () {

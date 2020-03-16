@@ -153,7 +153,7 @@ export abstract class Server {
     const app = this.appMap[meta.selfId]
     const events = this.parseMeta(meta)
     for (const event of events) {
-      app.parallelize(meta, paramCase(event) as any, meta)
+      app.emit(meta, paramCase(event) as any, meta)
     }
   }
 

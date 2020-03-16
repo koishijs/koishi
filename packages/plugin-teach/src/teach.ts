@@ -1,5 +1,5 @@
 import { DialogueFlag, Dialogue } from './database'
-import { TeachArgv, modifyDialogue, checkAuthority } from './utils'
+import { TeachArgv, modifyDialogue, checkAuthority, getDialogues } from './utils'
 import { observe, difference } from 'koishi-utils'
 
 export default async function (argv: TeachArgv) {
@@ -67,11 +67,11 @@ export default async function (argv: TeachArgv) {
     return meta.$send(output.join('\n'))
   }
 
-  const [data] = await ctx.database.getDialogues({ question, answer })
+  const [data] = await getDialogues(ctx, { question, answer })
   if (data) {
     if (predOverwrite) {
       const successor = '' + data.id
-      const dialogues = await ctx.database.getDialogues({ successors: [successor] })
+      const dialogues = await getDialogues(ctx, { successors: [successor] })
       const [_uneditable, targets] = checkAuthority(meta, dialogues.filter(d => !predecessors.includes('' + d.id)))
       uneditable.push(..._uneditable)
 
@@ -121,7 +121,7 @@ export default async function (argv: TeachArgv) {
     successors,
   }
 
-  ctx.parallelize('dialogue/modify', argv, dialogue)
+  ctx.emit('dialogue/modify', argv, dialogue)
 
   const { id } = await ctx.database.createDialogue(dialogue)
 

@@ -67,8 +67,8 @@ export class Context {
       const logger = {} as Logger
       for (const type of logTypes) {
         logger[type] = (...args) => {
-          this.app.parallelize('logger', scope, format(...args), type)
-          this.app.parallelize(`logger/${type}` as LogEvents, scope, format(...args))
+          this.app.emit('logger', scope, format(...args), type)
+          this.app.emit(`logger/${type}` as LogEvents, scope, format(...args))
         }
       }
       return logger
@@ -155,6 +155,12 @@ export class Context {
     await Promise.all(tasks)
   }
 
+  emit <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): void
+  emit <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): void
+  emit (...args: [any, ...any[]]) {
+    this.emit(...args)
+  }
+
   async serialize <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
   async serialize <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
   async serialize (...args: any[]) {
@@ -163,6 +169,18 @@ export class Context {
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(meta)) continue
       const result = await callback.apply(this, args)
+      if (result) return result
+    }
+  }
+
+  bail <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
+  bail <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
+  bail (...args: any[]) {
+    const meta = typeof args[0] === 'object' ? args.shift() : null
+    const name = args.shift()
+    for (const [context, callback] of this.app._hooks[name] || []) {
+      if (!context.match(meta)) continue
+      const result = callback.apply(this, args)
       if (result) return result
     }
   }

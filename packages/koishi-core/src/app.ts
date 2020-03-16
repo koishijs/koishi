@@ -167,7 +167,7 @@ export class App extends Context {
     if (selfId) {
       this.options.selfId = selfId
       if (!this._isReady && this.server.isListening) {
-        this.parallelize('ready')
+        this.emit('ready')
         this._isReady = true
       }
     }
@@ -225,7 +225,7 @@ export class App extends Context {
 
   async start () {
     this.status = Status.opening
-    this.parallelize('before-connect')
+    this.emit('before-connect')
     const tasks: Promise<any>[] = []
     if (this.database) {
       for (const type in this.options.database) {
@@ -238,9 +238,9 @@ export class App extends Context {
     await Promise.all(tasks)
     this.status = Status.open
     this.logger('koishi:app').debug('started')
-    this.parallelize('connect')
+    this.emit('connect')
     if (this.selfId && !this._isReady) {
-      this.parallelize('ready')
+      this.emit('ready')
       this._isReady = true
     }
     if (appList.every(app => app.status === Status.open)) {
@@ -250,7 +250,7 @@ export class App extends Context {
 
   async stop () {
     this.status = Status.closing
-    this.parallelize('before-disconnect')
+    this.emit('before-disconnect')
     const tasks: Promise<any>[] = []
     if (this.database) {
       for (const type in this.options.database) {
@@ -263,7 +263,7 @@ export class App extends Context {
     }
     this.status = Status.closed
     this.logger('koishi:app').debug('stopped')
-    this.parallelize('disconnect')
+    this.emit('disconnect')
     if (appList.every(app => app.status === Status.closed)) {
       emitter.emit('stop')
     }
@@ -370,7 +370,7 @@ export class App extends Context {
 
   private async _attachGroup (meta: Meta<'message'>, fields: Iterable<GroupField> = []) {
     const groupFields = new Set<GroupField>(fields)
-    this.parallelize(meta, 'before-attach-group', meta, groupFields)
+    this.emit(meta, 'before-attach-group', meta, groupFields)
     const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
     defineProperty(meta, '$group', group)
     return group
@@ -378,7 +378,7 @@ export class App extends Context {
 
   private async _attachUser (meta: Meta<'message'>, fields: Iterable<UserField> = []) {
     const userFields = new Set<UserField>(fields)
-    this.parallelize(meta, 'before-attach-user', meta, userFields)
+    this.emit(meta, 'before-attach-user', meta, userFields)
     const defaultAuthority = typeof this.options.defaultAuthority === 'function'
       ? this.options.defaultAuthority(meta)
       : this.options.defaultAuthority || 0
@@ -445,7 +445,7 @@ export class App extends Context {
 
     // update middleware set
     this._middlewareSet.delete(counter)
-    this.parallelize(meta, 'after-middleware', meta)
+    this.emit(meta, 'after-middleware', meta)
 
     // flush user & group data
     await meta.$user?._update()

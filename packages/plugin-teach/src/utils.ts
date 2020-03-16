@@ -1,12 +1,14 @@
 import { Context, Meta } from 'koishi-core'
-import { simplify, contain, intersection, union, difference } from 'koishi-utils'
+import { simplify, contain, union, difference } from 'koishi-utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
+import { SessionState } from './receiver'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/before-modify' (argv: TeachArgv): any
     'dialogue/modify' (argv: TeachArgv, dialogue: Dialogue): any
     'dialogue/detail' (dialogue: Dialogue, output: string[]): any
+    'dialogue/filter' (dialogue: Dialogue, test: DialogueTest, state?: SessionState): boolean
   }
 }
 
@@ -101,23 +103,11 @@ export function idEqual (array1: string[], array2: string[]) {
   return array1.sort().join() === array2.sort().join()
 }
 
-export function testGroups (data: Dialogue, test: DialogueTest) {
-  if (!test.groups) return true
-  const sameFlag = !(data.flag & DialogueFlag.reversed) !== test.reversed
-  if (test.partial) {
-    return sameFlag
-      ? contain(data.groups, test.groups)
-      : !intersection(data.groups, test.groups).length
-  } else {
-    return sameFlag && idEqual(test.groups, data.groups)
-  }
-}
-
-export function testDialogue (data: Dialogue, test: DialogueTest) {
-  if (test.frozen !== undefined && test.frozen === !(data.flag & DialogueFlag.frozen)) return
-  if (test.writer && data.writer !== test.writer) return
-  if (test.successors && !contain(data.successors, test.successors)) return
-  return true
+export async function getDialogues (ctx: Context, test: DialogueTest, state?: SessionState) {
+  const dialogues = await ctx.database.getDialoguesByTest(test)
+  return dialogues.filter((dialogue) => {
+    return !ctx.bail('dialogue/filter', dialogue, test, state)
+  })
 }
 
 export function modifyDialogue (data: Dialogue, argv: TeachArgv) {
@@ -151,7 +141,7 @@ export function modifyDialogue (data: Dialogue, argv: TeachArgv) {
   if (options.writer !== undefined) data.writer = options.writer
   if (options.probability !== undefined) data.probability = options.probability
 
-  ctx.parallelize('dialogue/modify', argv, data)
+  ctx.emit('dialogue/modify', argv, data)
 
   if (options.keyword !== undefined) {
     data.flag &= ~DialogueFlag.keyword
@@ -203,7 +193,7 @@ export async function sendDetail (ctx: Context, dialogue: Dialogue, meta: Meta, 
       : groups.length ? `${groups.length} 个群` : '全局禁止'}`)
 
   if (dialogue.probability < 1) output.push(`触发权重：${dialogue.probability}`)
-  ctx.parallelize('dialogue/detail', dialogue, output)
+  ctx.emit('dialogue/detail', dialogue, output)
   if (dialogue.successors.length) output.push(`后继问题：${dialogue.successors.join(', ')}`)
   if (dialogue.flag & DialogueFlag.frozen) output.push('此问题已锁定。')
 

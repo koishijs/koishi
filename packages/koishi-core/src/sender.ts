@@ -131,7 +131,7 @@ export class Sender {
     if (await this.app.serialize(meta, 'before-send', meta)) return
     const { messageId } = await this.get<MessageResponse>('send_msg', { [ctxIdKey]: ctxId, message, autoEscape })
     meta.messageId = messageId
-    this.app.parallelize(meta, 'send', meta)
+    this.app.emit(meta, 'send', meta)
     return messageId
   }
 
@@ -153,7 +153,7 @@ export class Sender {
     if (await this.app.serialize(meta, 'before-send', meta)) return
     const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message, autoEscape })
     meta.messageId = messageId
-    this.app.parallelize(meta, 'send', meta)
+    this.app.emit(meta, 'send', meta)
     return messageId
   }
 
@@ -172,7 +172,7 @@ export class Sender {
     if (await this.app.serialize(meta, 'before-send', meta)) return
     const { messageId } = await this.get<MessageResponse>('send_discuss_msg', { discussId, message, autoEscape })
     meta.messageId = messageId
-    this.app.parallelize(meta, 'send', meta)
+    this.app.emit(meta, 'send', meta)
     return messageId
   }
 
@@ -191,7 +191,7 @@ export class Sender {
     if (await this.app.serialize(meta, 'before-send', meta)) return
     const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message, autoEscape })
     meta.messageId = messageId
-    this.app.parallelize(meta, 'send', meta)
+    this.app.emit(meta, 'send', meta)
     return messageId
   }
 

@@ -1,4 +1,4 @@
-import { TeachArgv, sendDetail } from './utils'
+import { TeachArgv, sendDetail, getDialogues } from './utils'
 import { Dialogue } from './database'
 
 declare module 'koishi-core/dist/context' {
@@ -18,7 +18,7 @@ export default async function (argv: TeachArgv) {
   const { keyword, writer, frozen, question, answer, page = 1 } = options
   const { itemsPerPage = 20, mergeThreshold = 5 } = argv.config
 
-  const dialogues = await ctx.database.getDialogues({
+  const dialogues = await getDialogues(ctx, {
     writer,
     keyword,
     question,
@@ -32,7 +32,7 @@ export default async function (argv: TeachArgv) {
   function formatPrefix (dialogue: Dialogue) {
     const output: string[] = []
     if (dialogue.probability < 1) output.push(`p=${dialogue.probability}`)
-    ctx.parallelize('dialogue/detail-short', dialogue, output)
+    ctx.emit('dialogue/detail-short', dialogue, output)
     return `${dialogue.id}. ${output.length ? `[${output.join(', ')}] ` : ''}`
   }
 
