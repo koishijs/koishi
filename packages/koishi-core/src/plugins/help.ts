@@ -108,7 +108,7 @@ async function showCommandHelp (command: Command, meta: Meta<'message'>, config:
   }
 
   if (command._aliases.length > 1) {
-    output.push(`中文别名：${Array.from(command._aliases.slice(1)).join('，')}。`)
+    output.push(`别名：${Array.from(command._aliases.slice(1)).join('，')}。`)
   }
   const shortcuts = getShortcuts(command, meta.$user)
   if (shortcuts.length) {

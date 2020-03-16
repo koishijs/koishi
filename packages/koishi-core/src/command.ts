@@ -155,7 +155,7 @@ export class Command {
 
   _argsDef: CommandArgument[]
   _optsDef: Record<string, CommandOption> = {}
-  _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
+  _action?: (this: this, config: ParsedCommandLine, ...args: string[]) => any
 
   static defaultConfig: CommandConfig = {
     authority: 1,

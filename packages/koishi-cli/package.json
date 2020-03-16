@@ -40,6 +40,7 @@
     "kleur": "^3.0.3",
     "koishi-core": "^2.0.0-alpha.0",
     "koishi-plugin-common": "^3.0.0-alpha.0",
+    "koishi-plugin-record": "^2.0.0-alpha.0",
     "koishi-plugin-schedule": "^2.0.0-alpha.2",
     "koishi-plugin-status": "^2.0.0-alpha.0",
     "koishi-plugin-teach": "^1.0.0-alpha.0",

@@ -7,7 +7,7 @@ import { Database, UserField, GroupField } from './database'
 import { messages, errors } from './messages'
 import { format, inspect } from 'util'
 
-export type NextFunction = (next?: NextFunction) => any
+export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (meta: Meta<'message'>, next: NextFunction) => any
 export type PluginFunction <T, U = any> = (ctx: T, options: U) => void
 export type PluginObject <T, U = any> = { name?: string, apply: PluginFunction<T, U> }
