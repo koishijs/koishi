@@ -1,7 +1,6 @@
-import { injectMethods, extendUser } from 'koishi-core'
+import { injectMethods } from 'koishi-core'
 import { arrayTypes } from 'koishi-database-mysql'
 import { testDialogue, testGroups } from './utils'
-import { Activity } from 'shiki-core'
 
 declare module 'koishi-core/dist/database' {
   interface TableMethods {
@@ -11,15 +10,7 @@ declare module 'koishi-core/dist/database' {
   interface TableData {
     dialogue: Dialogue
   }
-
-  interface UserData {
-    interactiveness: Activity
-  }
 }
-
-extendUser(() => ({
-  interactiveness: {},
-}))
 
 interface DialogueMethods {
   _testQuestionAnswer (test: DialogueTest): string

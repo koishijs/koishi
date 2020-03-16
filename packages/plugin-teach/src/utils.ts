@@ -1,5 +1,5 @@
 import { Context, Meta } from 'koishi-core'
-import { simplify, contain, intersection, union, difference, randomId } from 'koishi-utils'
+import { simplify, contain, intersection, union, difference } from 'koishi-utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 
 export interface ThrottleConfig {

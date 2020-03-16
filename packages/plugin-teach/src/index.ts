@@ -14,7 +14,7 @@ export * from './utils'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/modify' (argv: TeachArgv): any
+    'dialogue/before-modify' (argv: TeachArgv): any
     'dialogue/before-attach-user' (meta: Meta<'message'>, userFields: Set<UserField>): any
     'dialogue/attach-user' (meta: Meta<'message'>): any
     'dialogue/before-send' (meta: Meta<'message'>): any

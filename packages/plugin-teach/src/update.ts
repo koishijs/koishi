@@ -1,6 +1,7 @@
 import { DialogueFlag, Dialogue } from './database'
 import { TeachArgv, modifyDialogue, deleteDuplicate, checkAuthority } from './utils'
-import { difference, observe, Meta } from 'koishi'
+import { difference, observe } from 'koishi-utils'
+import { Meta } from 'koishi-core'
 
 // TODO: 支持 pred
 // TODO: 删问题时删 pred
@@ -105,7 +106,7 @@ export default async function (argv: TeachArgv) {
   const skipped: number[] = []
   const failed: number[] = []
 
-  if (await ctx.app.serialize('dialogue/modify', argv)) return
+  if (await ctx.app.serialize('dialogue/before-modify', argv)) return
 
   for (const data of targets) {
     const { id } = data

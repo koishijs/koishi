@@ -1,4 +1,4 @@
-import { Context, removeBrackets } from 'koishi'
+import { Context, removeBrackets } from 'koishi-core'
 import { TeachConfig } from './utils'
 
 export default function (ctx: Context, config: TeachConfig) {

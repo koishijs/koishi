@@ -1,11 +1,11 @@
 import { DialogueFlag } from './database'
 import { TeachArgv, modifyDialogue, checkAuthority } from './utils'
-import { observe, difference } from 'koishi'
+import { observe, difference } from 'koishi-utils'
 
 export default async function (argv: TeachArgv) {
   const { meta, ctx, groups, options, successors = [], predecessors = [], predOverwrite } = argv
 
-  if (await ctx.app.serialize('dialogue/modify', argv)) return
+  if (await ctx.app.serialize('dialogue/before-modify', argv)) return
 
   const {
     answer,
@@ -52,29 +52,6 @@ export default async function (argv: TeachArgv) {
     }
   }
 
-  async function removeNonpredecessors (id: number) {
-    const successor = '' + id
-    const dialogues = await ctx.database.getDialogues({ successors: [successor] })
-    const [_uneditable, targets] = checkAuthority(meta, dialogues.filter(d => !predecessors.includes('' + d.id)))
-    uneditable.push(..._uneditable)
-
-    for (const { id, successors } of targets) {
-      const index = successors.indexOf(successor)
-      if (index === -1) {
-        skipped.push(id)
-        continue
-      }
-
-      try {
-        successors.splice(index, 1)
-        await ctx.database.setDialogue(id, { successors })
-        updated.push(id)
-      } catch (error) {
-        failed.push(id)
-      }
-    }
-  }
-
   async function sendResult (message: string) {
     output.unshift(message)
     if (uneditable.length) {
@@ -94,7 +71,28 @@ export default async function (argv: TeachArgv) {
 
   const [data] = await ctx.database.getDialogues({ question, answer })
   if (data) {
-    if (predOverwrite) await removeNonpredecessors(data.id)
+    if (predOverwrite) {
+      const successor = '' + data.id
+      const dialogues = await ctx.database.getDialogues({ successors: [successor] })
+      const [_uneditable, targets] = checkAuthority(meta, dialogues.filter(d => !predecessors.includes('' + d.id)))
+      uneditable.push(..._uneditable)
+
+      for (const { id, successors } of targets) {
+        const index = successors.indexOf(successor)
+        if (index === -1) {
+          skipped.push(id)
+          continue
+        }
+
+        try {
+          successors.splice(index, 1)
+          await ctx.database.setDialogue(id, { successors })
+          updated.push(id)
+        } catch (error) {
+          failed.push(id)
+        }
+      }
+    }
     await addPredecessors(data.id)
 
     const dialogue = observe(data, diff => ctx.database.setDialogue(data.id, diff), `dialogue ${data.id}`)
