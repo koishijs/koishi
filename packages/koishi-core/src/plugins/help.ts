@@ -1,4 +1,4 @@
-import { Command, Context, UserData, Meta, Koishi } from '..'
+import { Command, Context, UserData, Meta, onApp } from '..'
 import { getUsage, getUsageName } from './validate'
 
 export type CommandUsage = string | ((this: Command, meta: Meta) => string | Promise<string>)
@@ -12,48 +12,46 @@ declare module '../command' {
   }
 }
 
-export default function apply (koishi: Koishi) {
-  koishi.Command.prototype.usage = function (text) {
-    this._usage = text
-    return this
-  }
+Command.prototype.usage = function (text) {
+  this._usage = text
+  return this
+}
 
-  koishi.Command.prototype.example = function (example) {
-    this._examples.push(example)
-    return this
-  }
+Command.prototype.example = function (example) {
+  this._examples.push(example)
+  return this
+}
 
-  koishi.onApp((app) => {
-    app.on('new-command', (cmd) => {
-      cmd._examples = []
-      cmd.option('-h, --help', '显示此信息', { hidden: true })
-    })
+onApp((app) => {
+  app.on('new-command', (cmd) => {
+    cmd._examples = []
+    cmd.option('-h, --help', '显示此信息', { hidden: true })
+  })
 
-    app.before('before-command', async (argv) => {
-      // show help when use `-h, --help` or when there is no action
-      if (!argv.command._action || argv.options.help) {
-        await app.runCommand('help', argv.meta, [argv.command.name])
-        return true
+  app.before('before-command', async (argv) => {
+    // show help when use `-h, --help` or when there is no action
+    if (!argv.command._action || argv.options.help) {
+      await app.runCommand('help', argv.meta, [argv.command.name])
+      return true
+    }
+  })
+
+  app.command('help [command]', '显示帮助信息', { authority: 0 })
+    .userFields(['authority', 'usage'])
+    .shortcut('帮助', { fuzzy: true })
+    .shortcut('全局指令', { options: { shortcut: true } })
+    .option('-e, --expand', '展开指令列表')
+    .option('-s, --shortcut', '查看全局指令列表')
+    .action(async ({ meta, options }, name: string) => {
+      if (name) {
+        const command = app.getCommand(name, meta) || app.app._shortcutMap[name]
+        if (!command) return meta.$send('指令未找到。')
+        return showCommandHelp(command, meta, options)
+      } else {
+        return showGlobalHelp(app, meta, options)
       }
     })
-
-    app.command('help [command]', '显示帮助信息', { authority: 0 })
-      .userFields(['authority', 'usage'])
-      .shortcut('帮助', { fuzzy: true })
-      .shortcut('全局指令', { options: { shortcut: true } })
-      .option('-e, --expand', '展开指令列表')
-      .option('-s, --shortcut', '查看全局指令列表')
-      .action(async ({ meta, options }, name: string) => {
-        if (name) {
-          const command = app.getCommand(name, meta) || app.app._shortcutMap[name]
-          if (!command) return meta.$send('指令未找到。')
-          return showCommandHelp(command, meta, options)
-        } else {
-          return showGlobalHelp(app, meta, options)
-        }
-      })
-  })
-}
+})
 
 function getShortcuts (command: Command, user: Pick<UserData, 'authority'>) {
   return Object.keys(command._shortcuts).filter((key) => {

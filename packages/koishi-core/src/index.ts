@@ -1,12 +1,16 @@
-import { use } from './plugin'
-import help from './plugins/help'
-import suggest from './plugins/suggest'
-import throttle from './plugins/throttle'
-import validate from './plugins/validate'
+export * from './app'
+export * from './command'
+export * from './context'
+export * from './database'
+export * from './meta'
+export * from './sender'
+export * from './server'
+export * from './plugins/help'
+export * from './plugins/suggest'
+export * from './plugins/throttle'
+export * from './plugins/validate'
 
-use(help)
-use(suggest)
-use(throttle)
-use(validate)
-
-export * from './koishi'
+import './plugins/help'
+import './plugins/suggest'
+import './plugins/throttle'
+import './plugins/validate'

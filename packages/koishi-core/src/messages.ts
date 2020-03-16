@@ -9,7 +9,7 @@ export const messages = {
   UNKNOWN_OPTIONS: '存在未知属性 %s，请检查指令语法。',
   USAGE_EXHAUSTED: '调用次数已达上限。',
   COMMAND_SUGGESTION_PREFIX: '没有此命令。',
-  COMMAND_SUGGESTION_SUFFIX: '发送空行以调用推测的指令。',
+  COMMAND_SUGGESTION_SUFFIX: '发送空行或句号以调用推测的指令。',
   SUGGESTION_TEXT: '你要找的是不是%s？',
 } as const
 

@@ -1,43 +1,30 @@
-import { NextFunction, Command, Meta, UserField, GroupField, Koishi } from '..'
+import { NextFunction, Command, Meta, onApp } from '..'
 import { messages } from '../messages'
 import { format } from 'util'
 import leven from 'leven'
 
-export default function apply (koishi: Koishi) {
-  koishi.onApp((app) => {
-    app.middleware((meta, next) => {
-      const { message, prefix, nickname } = meta.$parsed
-      const target = meta.$parsed.message.split(/\s/, 1)[0].toLowerCase()
-      if (!target || !(prefix !== null || nickname || meta.messageType === 'private')) return next()
-  
-      const executableMap = new Map<Command, boolean>()
-      return showSuggestions({
-        target,
-        meta,
-        next,
-        prefix: messages.COMMAND_SUGGESTION_PREFIX,
-        suffix: messages.COMMAND_SUGGESTION_SUFFIX,
-        items: Object.keys(app._commandMap),
-        coefficient: app.options.similarityCoefficient,
-        command: suggestion => app._commandMap[suggestion],
-        disable: (name) => {
-          const command = app._commandMap[name]
-          let disabled = executableMap.get(command)
-          if (disabled === undefined) {
-            disabled = !!command.getConfig('disable', meta)
-            executableMap.set(command, disabled)
-          }
-          return disabled
-        },
-        execute: async (suggestion, meta, next) => {
-          const newMessage = suggestion + message.slice(target.length)
-          const argv = app.parseCommandLine(newMessage, meta)
-          return argv.command.execute(argv, next)
-        },
-      })
+onApp((app) => {
+  app.middleware((meta, next) => {
+    const { message, prefix, nickname } = meta.$parsed
+    const target = meta.$parsed.message.split(/\s/, 1)[0].toLowerCase()
+    if (!target || !(prefix !== null || nickname || meta.messageType === 'private')) return next()
+
+    return showSuggestions({
+      target,
+      meta,
+      next,
+      prefix: messages.COMMAND_SUGGESTION_PREFIX,
+      suffix: messages.COMMAND_SUGGESTION_SUFFIX,
+      items: Object.keys(app._commandMap),
+      coefficient: app.options.similarityCoefficient,
+      command: suggestion => app._commandMap[suggestion],
+      async execute (suggestion, meta, next) {
+        const newMessage = suggestion + message.slice(target.length)
+        return app.executeCommandLine(newMessage, meta, next)
+      },
     })
   })
-}
+})
 
 interface SuggestOptions {
   target: string
@@ -47,17 +34,14 @@ interface SuggestOptions {
   prefix: string
   suffix: string
   coefficient?: number
-  disable?: (name: string) => boolean
   command: Command | ((suggestion: string) => Command)
   execute: (suggestion: string, meta: Meta<'message'>, next: NextFunction) => any
 }
 
 export function showSuggestions (options: SuggestOptions): Promise<void> {
-  const { target, items, meta, next, prefix, suffix, execute, disable, coefficient = 0.4 } = options
+  const { target, items, meta, next, prefix, suffix, execute, coefficient = 0.4 } = options
   const suggestions = items.filter((name) => {
-    return name.length > 2
-      && leven(name, target) <= name.length * coefficient
-      && !disable?.(name)
+    return name.length > 2 && leven(name, target) <= name.length * coefficient
   })
   if (!suggestions.length) return next()
 
@@ -66,17 +50,9 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
     if (suggestions.length > 1) return meta.$send(message)
 
     const command = typeof options.command === 'function' ? options.command(suggestions[0]) : options.command
-    meta.$argv = { command, meta }
-    const userFields = new Set<UserField>(['flag'])
-    const groupFields = new Set<GroupField>(['flag', 'assignee'])
-    command.context.parallelize('before-attach-user', meta, userFields)
-    command.context.parallelize('before-attach-group', meta, groupFields)
     command.context.onceMiddleware(async (meta, next) => {
-      if (meta.message.trim()) return next()
-      meta.$user = await command.context.database?.observeUser(meta.userId, Array.from(userFields))
-      if (meta.messageType === 'group') {
-        meta.$group = await command.context.database?.observeGroup(meta.groupId, Array.from(groupFields))
-      }
+      const message = meta.message.trim()
+      if (message && message !== '.' && message !== '。') return next()
       return execute(suggestions[0], meta, next)
     }, meta)
     return meta.$send(message + suffix)

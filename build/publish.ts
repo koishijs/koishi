@@ -36,7 +36,9 @@ const prefixRegExp = new RegExp(`^(${prefixes.join('|')})(?:\\((\\S+)\\))?: (.+)
     try {
       meta = require(`../${name}/package`)
       if (!meta.private) {
-        const version = await latest(meta.name)
+        const version = prerelease(meta.version)
+          ? await latest(meta.name, { version: 'next' }).catch(() => latest(meta.name))
+          : await latest(meta.name)
         if (gt(meta.version, version)) {
           bumpMap[name] = meta.version
         }
@@ -49,7 +51,7 @@ const prefixRegExp = new RegExp(`^(${prefixes.join('|')})(?:\\((\\S+)\\))?: (.+)
   if (Object.keys(bumpMap).length) {
     for (const name in bumpMap) {
       console.log(`publishing ${name}@${bumpMap[name]} ...`)
-      await spawnAsync(`yarn publish ${name}`)
+      await spawnAsync(`yarn publish ${name} --tag ${prerelease(bumpMap[name]) ? 'next' : 'latest'}`)
     }
   }
 

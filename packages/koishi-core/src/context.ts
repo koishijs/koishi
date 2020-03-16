@@ -1,6 +1,5 @@
 import { contain, union, intersection, difference } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine } from './command'
-import { PluginFunction, PluginObject, Plugin } from './plugin'
 import { Meta, contextTypes, getSessionId } from './meta'
 import { Sender } from './sender'
 import { App } from './app'
@@ -10,6 +9,9 @@ import { format, inspect } from 'util'
 
 export type NextFunction = (next?: NextFunction) => any
 export type Middleware = (meta: Meta<'message'>, next: NextFunction) => any
+export type PluginFunction <T, U = any> = (ctx: T, options: U) => void
+export type PluginObject <T, U = any> = { name?: string, apply: PluginFunction<T, U> }
+export type Plugin <T, U = any> = PluginFunction<T, U> | PluginObject<T, U>
 
 type Subscope = [number[], number[]]
 export type ContextScope = Subscope[]
