@@ -1,4 +1,4 @@
-import { DialogueFlag } from './database'
+import { DialogueFlag, Dialogue } from './database'
 import { TeachArgv, modifyDialogue, checkAuthority } from './utils'
 import { observe, difference } from 'koishi-utils'
 
@@ -12,8 +12,6 @@ export default async function (argv: TeachArgv) {
     question,
     original,
     probability = 1,
-    minAffinity = 0,
-    maxAffinity = 32768,
     writer = meta.userId,
   } = options
 
@@ -112,18 +110,20 @@ export default async function (argv: TeachArgv) {
     + ~~options.keyword * DialogueFlag.keyword
     + ~~argv.reversed * DialogueFlag.reversed
 
-  const { id } = await ctx.database.createDialogue({
+  const dialogue: Dialogue = {
     question,
     answer,
     writer,
     flag,
     probability,
     groups,
-    minAffinity,
-    maxAffinity,
     original,
     successors,
-  })
+  }
+
+  ctx.parallelize('dialogue/modify', argv, dialogue)
+
+  const { id } = await ctx.database.createDialogue(dialogue)
 
   await addPredecessors(id)
   return sendResult(`问答已添加，编号为 ${id}。`)

@@ -1,7 +1,22 @@
-import { Context, UserField, getSenderName } from 'koishi-core'
+import { Context, UserField, getSenderName, Meta } from 'koishi-core'
 import { CQCode, sleep } from 'koishi-utils'
 import { simplifyQuestion, TeachConfig, LoopConfig } from './utils'
 import { Dialogue } from './database'
+
+declare module 'koishi-core/dist/context' {
+  interface EventMap {
+    'dialogue/before-attach-user' (meta: Meta<'message'>, userFields: Set<UserField>): any
+    'dialogue/attach-user' (meta: Meta<'message'>): any
+    'dialogue/before-send' (meta: Meta<'message'>): any
+    'dialogue/after-send' (meta: Meta<'message'>): any
+  }
+}
+
+declare module 'koishi-core/dist/meta' {
+  interface Meta {
+    $dialogues?: Dialogue[]
+  }
+}
 
 interface State {
   initiators: number[]

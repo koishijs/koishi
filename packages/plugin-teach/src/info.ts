@@ -6,12 +6,12 @@ interface ImageServerStatus {
   count: number
 }
 
-export default async function apply ({ groups, reversed, ctx, meta, config }: TeachArgv) {
+export default async function apply ({ ctx, meta, config }: TeachArgv) {
   const [
     { questions, answers },
     { data: { size, count } },
   ] = await Promise.all([
-    ctx.database.getDialogueCount({ groups, reversed }),
+    ctx.database.getDialogueCount(),
     axios.get<ImageServerStatus>(config.uploadServer + '/status'),
   ])
 

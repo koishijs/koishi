@@ -1,39 +1,8 @@
-import { DialogueFlag, Dialogue } from './database'
-import { TeachArgv, modifyDialogue, deleteDuplicate, checkAuthority } from './utils'
+import { TeachArgv, modifyDialogue, deleteDuplicate, checkAuthority, sendDetail } from './utils'
 import { difference, observe } from 'koishi-utils'
-import { Meta } from 'koishi-core'
 
 // TODO: 支持 pred
 // TODO: 删问题时删 pred
-
-export async function sendDetail (dialogue: Dialogue, meta: Meta, name?: string) {
-  const groups = dialogue.groups
-  const output = [
-    `编号为 ${dialogue.id} 的问答信息：`,
-    `问题：${dialogue.original}`,
-    `回答：${dialogue.answer}`,
-  ]
-
-  if (dialogue.writer) {
-    output.push(name ? `来源：${name} (${dialogue.writer})` : `来源：${dialogue.writer}`)
-  }
-
-  output.push(`生效环境：${dialogue.flag & DialogueFlag.reversed
-    ? groups.includes('' + meta.groupId)
-      ? groups.length - 1 ? `除本群等 ${groups.length} 个群外的所有群` : '除本群'
-      : groups.length ? `除 ${groups.length} 个群外的所有群` : '全局'
-    : groups.includes('' + meta.groupId)
-      ? groups.length - 1 ? `本群等 ${groups.length} 个群` : '本群'
-      : groups.length ? `${groups.length} 个群` : '全局禁止'}`)
-
-  if (dialogue.probability < 1) output.push(`触发权重：${dialogue.probability}`)
-  if (dialogue.minAffinity > 0) output.push(`最低好感度：${dialogue.minAffinity}`)
-  if (dialogue.maxAffinity < 32768) output.push(`最高好感度：${dialogue.maxAffinity}`)
-  if (dialogue.successors.length) output.push(`后继问题：${dialogue.successors.join(', ')}`)
-  if (dialogue.flag & DialogueFlag.frozen) output.push('此问题已锁定。')
-
-  await meta.$send(output.join('\n'))
-}
 
 export default async function (argv: TeachArgv) {
   const { ctx, meta, options, target } = argv
@@ -78,7 +47,7 @@ export default async function (argv: TeachArgv) {
     }
 
     for (const dialogue of dialogues) {
-      await sendDetail(dialogue, meta, userMap[dialogue.writer])
+      await sendDetail(ctx, dialogue, meta, userMap[dialogue.writer])
     }
     return
   }

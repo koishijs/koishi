@@ -2,6 +2,14 @@ import { Context, Meta } from 'koishi-core'
 import { simplify, contain, intersection, union, difference } from 'koishi-utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 
+declare module 'koishi-core/dist/context' {
+  interface EventMap {
+    'dialogue/before-modify' (argv: TeachArgv): any
+    'dialogue/modify' (argv: TeachArgv, dialogue: Dialogue): any
+    'dialogue/detail' (dialogue: Dialogue, output: string[]): any
+  }
+}
+
 export interface ThrottleConfig {
   interval: number
   responses: number
@@ -20,6 +28,7 @@ export interface TeachConfig {
   successorTimeout?: number
   preventLoop?: number | LoopConfig | LoopConfig[]
   throttle?: ThrottleConfig | ThrottleConfig[]
+  mergeThreshold?: number
 }
 
 const prefixPunctuation = /^([()\]]|\[(?!cq:))*/
@@ -51,6 +60,19 @@ export function simplifyAnswer (source: string) {
   return (String(source || '')).trim()
 }
 
+export interface TeachOptions {
+  original?: string
+  question?: string
+  answer?: string
+  remove?: boolean
+  frozen?: boolean
+  keyword?: boolean
+  autoMerge?: boolean
+  writer?: number
+  page?: number
+  probability?: number
+}
+
 export interface TeachArgv {
   ctx: Context
   meta: Meta<'message'>
@@ -64,20 +86,7 @@ export interface TeachArgv {
   successors?: string[]
   predOverwrite?: boolean
   succOverwrite?: boolean
-  options: {
-    original?: string
-    question?: string
-    answer?: string
-    remove?: boolean
-    frozen?: boolean
-    keyword?: boolean
-    autoMerge?: boolean
-    writer?: number
-    page?: number
-    probability?: number
-    minAffinity?: number
-    maxAffinity?: number
-  }
+  options: TeachOptions
 }
 
 export function deleteDuplicate <T> (array: T[]) {
@@ -112,7 +121,7 @@ export function testDialogue (data: Dialogue, test: DialogueTest) {
 }
 
 export function modifyDialogue (data: Dialogue, argv: TeachArgv) {
-  const { partial, reversed, groups, options, successors, succOverwrite } = argv
+  const { ctx, partial, reversed, groups, options, successors, succOverwrite } = argv
 
   if (groups) {
     if (partial) {
@@ -141,8 +150,8 @@ export function modifyDialogue (data: Dialogue, argv: TeachArgv) {
 
   if (options.writer !== undefined) data.writer = options.writer
   if (options.probability !== undefined) data.probability = options.probability
-  if (options.minAffinity !== undefined) data.minAffinity = options.minAffinity
-  if (options.maxAffinity !== undefined) data.maxAffinity = options.maxAffinity
+
+  ctx.parallelize('dialogue/modify', argv, data)
 
   if (options.keyword !== undefined) {
     data.flag &= ~DialogueFlag.keyword
@@ -171,4 +180,32 @@ export function checkAuthority (meta: Meta, dialogues: Dialogue[]) {
   const targets = dialogues.filter(predicate)
   const uneditable = difference(dialogues, targets).map(d => d.id)
   return [uneditable, targets] as const
+}
+
+export async function sendDetail (ctx: Context, dialogue: Dialogue, meta: Meta, name?: string) {
+  const groups = dialogue.groups
+  const output = [
+    `编号为 ${dialogue.id} 的问答信息：`,
+    `问题：${dialogue.original}`,
+    `回答：${dialogue.answer}`,
+  ]
+
+  if (dialogue.writer) {
+    output.push(name ? `来源：${name} (${dialogue.writer})` : `来源：${dialogue.writer}`)
+  }
+
+  output.push(`生效环境：${dialogue.flag & DialogueFlag.reversed
+    ? groups.includes('' + meta.groupId)
+      ? groups.length - 1 ? `除本群等 ${groups.length} 个群外的所有群` : '除本群'
+      : groups.length ? `除 ${groups.length} 个群外的所有群` : '全局'
+    : groups.includes('' + meta.groupId)
+      ? groups.length - 1 ? `本群等 ${groups.length} 个群` : '本群'
+      : groups.length ? `${groups.length} 个群` : '全局禁止'}`)
+
+  if (dialogue.probability < 1) output.push(`触发权重：${dialogue.probability}`)
+  ctx.parallelize('dialogue/detail', dialogue, output)
+  if (dialogue.successors.length) output.push(`后继问题：${dialogue.successors.join(', ')}`)
+  if (dialogue.flag & DialogueFlag.frozen) output.push('此问题已锁定。')
+
+  await meta.$send(output.join('\n'))
 }

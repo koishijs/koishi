@@ -2,6 +2,12 @@ import { WriteStream, createWriteStream, existsSync, mkdirSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { Meta, Context } from 'koishi-core'
 
+declare module 'koishi-core/dist/context' {
+  interface EventMap {
+    'before-record' (meta: Meta<'message' | 'send'>): any
+  }
+}
+
 function pick <T, K extends keyof T> (source: T, keys: K[]): Pick<T, K> {
   return keys.reduce((prev, curr) => (prev[curr] = source[curr], prev), {} as Pick<T, K>)
 }
@@ -17,8 +23,9 @@ const cwd = process.cwd()
 export const name = 'recorder'
 
 export function apply (ctx: Context, options: RecorderOptions = {}) {
-  function handleMessage (meta: Meta) {
+  async function handleMessage (meta: Meta<'message' | 'send'>) {
     if (meta.$ctxType !== 'group' || meta.postType === 'message' && meta.$group.assignee !== ctx.app.selfId) return
+    if (await ctx.serialize('before-record', meta)) return
     const output = JSON.stringify(pick(meta, ['time', 'userId', 'message'])) + '\n'
     const path = resolve(cwd, options.folder || 'messages', `${meta.groupId}.txt`)
     if (!streams[path]) {

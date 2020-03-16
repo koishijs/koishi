@@ -1,5 +1,5 @@
 import { isInteger } from 'koishi-utils'
-import { Context, getTargetId, updateUsage, Meta, UserField } from 'koishi-core'
+import { Context, getTargetId } from 'koishi-core'
 import { TeachConfig, simplifyQuestion, simplifyAnswer, TeachArgv, idSplit, deleteDuplicate } from './utils'
 import info from './info'
 import receiver from './receiver'
@@ -7,24 +7,17 @@ import search from './search'
 import shortcut from './shortcut'
 import teach from './teach'
 import update from './update'
-import { Dialogue } from './database'
 
 export * from './database'
+export * from './receiver'
+export * from './search'
+export * from './shortcut'
+export * from './update'
 export * from './utils'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/before-modify' (argv: TeachArgv): any
-    'dialogue/before-attach-user' (meta: Meta<'message'>, userFields: Set<UserField>): any
-    'dialogue/attach-user' (meta: Meta<'message'>): any
-    'dialogue/before-send' (meta: Meta<'message'>): any
-    'dialogue/after-send' (meta: Meta<'message'>): any
-  }
-}
-
-declare module 'koishi-core/dist/meta' {
-  interface Meta {
-    $dialogues?: Dialogue[]
+    'dialogue/validate' (argv: TeachArgv): any
   }
 }
 
@@ -57,8 +50,6 @@ export function apply (ctx: Context, config: TeachConfig = {}) {
     .option('-G, --global', '无视上下文搜索', { hidden: true })
     .option('-p, --probability <prob>', '设置问题的触发权重', { hidden: true })
     .option('-P, --page <page>', '设置搜索结果的页码', { hidden: true })
-    .option('-m, --min-affinity <aff>', '设置最小好感度', { hidden: true })
-    .option('-M, --max-affinity <aff>', '设置最大好感度', { hidden: true })
     .option('--auto-merge', '自动合并相同的问题和回答', { hidden: true })
     .option('--set-pred <ids>', '设置前置问题 (<<)', { isString: true, hidden: true })
     .option('--add-pred <ids>', '添加前置问题 (<)', { isString: true, hidden: true })
@@ -90,15 +81,7 @@ export function apply (ctx: Context, config: TeachConfig = {}) {
         return meta.$send('参数 -p, --probability 应为不超过 1 的正数。')
       }
 
-      const minAff = options.minAffinity
-      if (minAff !== undefined && !(isInteger(minAff) && minAff >= 0 && minAff <= 32768)) {
-        return meta.$send('参数 -m, --min-affinity 应为非负整数。')
-      }
-
-      const maxAff = options.maxAffinity
-      if (maxAff !== undefined && !(isInteger(maxAff) && maxAff >= 0 && maxAff <= 32768)) {
-        return meta.$send('参数 -M, --max-affinity 应为正整数。')
-      }
+      if (await ctx.serialize('dialogue/validate', argv)) return
 
       if (options.anonymous) {
         options.writer = 0
