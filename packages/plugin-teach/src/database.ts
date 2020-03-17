@@ -30,31 +30,18 @@ export interface Dialogue {
   question: string
   answer: string
   original: string
-  writer: number
-  groups: string[]
   flag: number
   probability: number
-  successors: string[]
 }
 
 arrayTypes.push('dialogue.groups', 'dialogue.successors')
 
 export interface DialogueTest {
-  groups?: string[]
-  reversed?: boolean
-  partial?: boolean
-
   question?: string
   answer?: string
   keyword?: boolean
-
-  writer?: number
   regexp?: boolean
-  frozen?: boolean
   appellation?: boolean
-
-  successors?: string[]
-  predecessors?: string[]
 }
 
 export enum DialogueFlag {

@@ -7,6 +7,13 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
+declare module './utils' {
+  interface TeachConfig {
+    itemsPerPage?: number
+    mergeThreshold?: number
+  }
+}
+
 function formatAnswer (source: string) {
   const lines = source.split(/(\r?\n|\$n)/g)
   const output = lines.length > 1 ? lines[0].trim() + '……' : lines[0]
@@ -66,7 +73,8 @@ export default async function (argv: TeachArgv) {
     } else {
       const [dialogue] = dialogues
       if (!dialogue) return meta.$send(`没有搜索到问答“${question}”“${answer}”，请尝试使用关键词匹配。`)
-      return sendDetail(ctx, dialogue, meta)
+      await ctx.serialize('dialogue/before-detail', argv)
+      return sendDetail(ctx, dialogue, argv)
     }
   }
 

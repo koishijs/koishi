@@ -1,36 +1,24 @@
-import { Context, Meta } from 'koishi-core'
-import { simplify, contain, union, difference } from 'koishi-utils'
+import { Context, Meta, User } from 'koishi-core'
+import { simplify, difference } from 'koishi-utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import { SessionState } from './receiver'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/before-modify' (argv: TeachArgv): any
-    'dialogue/modify' (argv: TeachArgv, dialogue: Dialogue): any
-    'dialogue/detail' (dialogue: Dialogue, output: string[]): any
+    'dialogue/before-modify' (argv: TeachArgv): void | boolean | Promise<void | boolean>
+    'dialogue/modify' (argv: TeachArgv, dialogue: Dialogue): void
+    'dialogue/after-modify' (argv: TeachArgv): any
+    'dialogue/before-detail' (argv: TeachArgv): void | Promise<void>
+    'dialogue/detail' (dialogue: Dialogue, output: string[], argv: TeachArgv): void
     'dialogue/filter' (dialogue: Dialogue, test: DialogueTest, state?: SessionState): boolean
+    'dialogue/permit' (user: User, dialogue: Dialogue): boolean
   }
-}
-
-export interface ThrottleConfig {
-  interval: number
-  responses: number
-}
-
-export interface LoopConfig {
-  participants: number
-  length: number
 }
 
 export interface TeachConfig {
   key?: string
   imageServer?: string
   uploadServer?: string
-  itemsPerPage?: number
-  successorTimeout?: number
-  preventLoop?: number | LoopConfig | LoopConfig[]
-  throttle?: ThrottleConfig | ThrottleConfig[]
-  mergeThreshold?: number
 }
 
 const prefixPunctuation = /^([()\]]|\[(?!cq:))*/
@@ -62,17 +50,8 @@ export function simplifyAnswer (source: string) {
   return (String(source || '')).trim()
 }
 
-export interface TeachOptions {
-  original?: string
-  question?: string
-  answer?: string
-  remove?: boolean
-  frozen?: boolean
-  keyword?: boolean
-  autoMerge?: boolean
-  writer?: number
-  page?: number
-  probability?: number
+export function deleteDuplicate <T> (array: T[]) {
+  return [...new Set(array)]
 }
 
 export interface TeachArgv {
@@ -80,19 +59,36 @@ export interface TeachArgv {
   meta: Meta<'message'>
   args: string[]
   config: TeachConfig
-  groups?: string[]
-  partial?: boolean
-  reversed?: boolean
   target?: string[]
-  predecessors?: string[]
-  successors?: string[]
-  predOverwrite?: boolean
-  succOverwrite?: boolean
-  options: TeachOptions
+  options: Record<string, any>
+
+  // modify status
+  dialogues?: Dialogue[]
+  unknown?: string[]
+  uneditable?: number[]
+  updated?: number[]
+  skipped?: number[]
+  failed?: number[]
 }
 
-export function deleteDuplicate <T> (array: T[]) {
-  return [...new Set(array)]
+export function sendResult (argv: TeachArgv, message?: string) {
+  const output = message ? [message] : []
+  if (argv.unknown.length) {
+    output.push(`没有搜索到编号为 ${argv.unknown.join(', ')} 的问答。`)
+  }
+  if (argv.uneditable.length) {
+    output.push(`问答 ${argv.uneditable.join(', ')} 因权限过低无法修改。`)
+  }
+  if (argv.failed.length) {
+    output.push(`问答 ${argv.failed.join(', ')} 修改时发生错误。`)
+  }
+  if (argv.skipped.length) {
+    output.push(`问答 ${argv.skipped.join(', ')} 没有发生改动。`)
+  }
+  if (argv.updated.length) {
+    output.push(`问答 ${argv.updated.join(', ')} 已成功修改。`)
+  }
+  return argv.meta.$send(output.join('\n'))
 }
 
 export function idSplit (source: string) {
@@ -111,23 +107,7 @@ export async function getDialogues (ctx: Context, test: DialogueTest, state?: Se
 }
 
 export function modifyDialogue (data: Dialogue, argv: TeachArgv) {
-  const { ctx, partial, reversed, groups, options, successors, succOverwrite } = argv
-
-  if (groups) {
-    if (partial) {
-      const newGroups = !(data.flag & DialogueFlag.reversed) === reversed
-        ? difference(data.groups, groups)
-        : union(data.groups, groups)
-      if (!idEqual(data.groups, newGroups)) {
-        data.groups = newGroups
-      }
-    } else {
-      data.flag = data.flag & ~DialogueFlag.reversed | (+reversed * DialogueFlag.reversed)
-      if (!idEqual(data.groups, groups)) {
-        data.groups = groups.slice()
-      }
-    }
-  }
+  const { ctx, options } = argv
 
   if (options.answer) {
     data.answer = options.answer
@@ -138,64 +118,33 @@ export function modifyDialogue (data: Dialogue, argv: TeachArgv) {
     data.original = options.original
   }
 
-  if (options.writer !== undefined) data.writer = options.writer
   if (options.probability !== undefined) data.probability = options.probability
-
-  ctx.emit('dialogue/modify', argv, data)
 
   if (options.keyword !== undefined) {
     data.flag &= ~DialogueFlag.keyword
     data.flag |= +options.keyword * DialogueFlag.keyword
   }
 
-  if (options.frozen !== undefined) {
-    data.flag &= ~DialogueFlag.frozen
-    data.flag |= +options.frozen * DialogueFlag.frozen
-  }
-
-  if (successors) {
-    if (succOverwrite) {
-      if (!idEqual(data.successors, successors)) data.successors = successors
-    } else {
-      if (!contain(data.successors, successors)) data.successors = union(data.successors, successors)
-    }
-  }
+  ctx.emit('dialogue/modify', argv, data)
 }
 
-export function checkAuthority (meta: Meta, dialogues: Dialogue[]) {
-  const predicate: (dialogue: Dialogue) => boolean =
-    meta.$user.authority > 3 ? () => true :
-      meta.$user.authority > 2 ? d => !(d.flag & DialogueFlag.frozen) :
-        d => !(d.flag & DialogueFlag.frozen) && (!d.writer || d.writer === meta.userId)
-  const targets = dialogues.filter(predicate)
-  const uneditable = difference(dialogues, targets).map(d => d.id)
-  return [uneditable, targets] as const
+export function checkAuthority (argv: TeachArgv, dialogues: Dialogue[]) {
+  const targets = dialogues.filter((dialogue) => {
+    return !argv.ctx.bail('dialogue/permit', argv.meta.$user, dialogue)
+  })
+  argv.uneditable.unshift(...difference(dialogues, targets).map(d => d.id))
+  return targets
 }
 
-export async function sendDetail (ctx: Context, dialogue: Dialogue, meta: Meta, name?: string) {
-  const groups = dialogue.groups
+export async function sendDetail (ctx: Context, dialogue: Dialogue, argv: TeachArgv) {
   const output = [
     `编号为 ${dialogue.id} 的问答信息：`,
     `问题：${dialogue.original}`,
     `回答：${dialogue.answer}`,
   ]
 
-  if (dialogue.writer) {
-    output.push(name ? `来源：${name} (${dialogue.writer})` : `来源：${dialogue.writer}`)
-  }
-
-  output.push(`生效环境：${dialogue.flag & DialogueFlag.reversed
-    ? groups.includes('' + meta.groupId)
-      ? groups.length - 1 ? `除本群等 ${groups.length} 个群外的所有群` : '除本群'
-      : groups.length ? `除 ${groups.length} 个群外的所有群` : '全局'
-    : groups.includes('' + meta.groupId)
-      ? groups.length - 1 ? `本群等 ${groups.length} 个群` : '本群'
-      : groups.length ? `${groups.length} 个群` : '全局禁止'}`)
-
   if (dialogue.probability < 1) output.push(`触发权重：${dialogue.probability}`)
-  ctx.emit('dialogue/detail', dialogue, output)
-  if (dialogue.successors.length) output.push(`后继问题：${dialogue.successors.join(', ')}`)
-  if (dialogue.flag & DialogueFlag.frozen) output.push('此问题已锁定。')
+  ctx.emit('dialogue/detail', dialogue, output, argv)
 
-  await meta.$send(output.join('\n'))
+  await argv.meta.$send(output.join('\n'))
 }

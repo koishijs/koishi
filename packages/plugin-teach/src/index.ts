@@ -7,6 +7,12 @@ import search from './search'
 import shortcut from './shortcut'
 import teach from './teach'
 import update from './update'
+import context from './plugins/context'
+import freeze from './plugins/freeze'
+import throttle from './plugins/throttle'
+import preventLoop from './plugins/preventLoop'
+import successor from './plugins/successor'
+import writer from './plugins/writer'
 
 export * from './database'
 export * from './receiver'
@@ -14,6 +20,12 @@ export * from './search'
 export * from './shortcut'
 export * from './update'
 export * from './utils'
+export * from './plugins/context'
+export * from './plugins/freeze'
+export * from './plugins/throttle'
+export * from './plugins/preventLoop'
+export * from './plugins/successor'
+export * from './plugins/writer'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -28,7 +40,6 @@ export function apply (ctx: Context, config: TeachConfig = {}) {
   ctx.plugin(receiver, config)
 
   ctx.command('teach', '添加教学对话', { authority: 2, checkUnknown: true })
-    .userFields(['usage', 'authority'])
     .alias('教学')
     .option('-q, --question <question>', '问题', { isString: true, hidden: true })
     .option('-a, --answer <answer>', '回答', { isString: true, hidden: true })
@@ -38,23 +49,9 @@ export function apply (ctx: Context, config: TeachConfig = {}) {
     .option('--info', '查看教学信息', { notUsage: true, hidden: true })
     .option('-k, --keyword', '使用关键词匹配', { hidden: true })
     // .option('-K, --no-keyword', '取消使用关键词匹配')
-    .option('-f, --frozen', '锁定这个问答', { authority: 4, hidden: true })
-    .option('-F, --no-frozen', '解锁这个问答', { authority: 4, noNegated: true, hidden: true })
-    .option('-w, --writer <uid>', '添加或设置问题的作者', { hidden: true })
-    .option('-W, --anonymous', '添加或设置匿名问题', { hidden: true })
-    .option('-d, --disable', '在当前环境下禁用问答', { hidden: true })
-    .option('-D, --disable-global', '在所有环境下禁用问答', { hidden: true })
-    .option('-e, --enable', '在当前环境下启用问答', { hidden: true })
-    .option('-E, --enable-global', '在所有环境下启用问答', { hidden: true })
-    .option('-g, --groups <gids>', '设置具体的生效环境', { isString: true, hidden: true })
-    .option('-G, --global', '无视上下文搜索', { hidden: true })
     .option('-p, --probability <prob>', '设置问题的触发权重', { hidden: true })
     .option('-P, --page <page>', '设置搜索结果的页码', { hidden: true })
     .option('--auto-merge', '自动合并相同的问题和回答', { hidden: true })
-    .option('--set-pred <ids>', '设置前置问题 (<<)', { isString: true, hidden: true })
-    .option('--add-pred <ids>', '添加前置问题 (<)', { isString: true, hidden: true })
-    .option('--set-succ <ids>', '设置后继问题 (>>)', { isString: true, hidden: true })
-    .option('--add-succ <ids>', '添加后继问题 (>)', { isString: true, hidden: true })
     .usage('输入 # 查看教学系统用法示例。')
     .action(async ({ options, meta, args }) => {
       if (args.length) {
@@ -81,83 +78,8 @@ export function apply (ctx: Context, config: TeachConfig = {}) {
         return meta.$send('参数 -p, --probability 应为不超过 1 的正数。')
       }
 
-      if (await ctx.serialize('dialogue/validate', argv)) return
-
-      if (options.anonymous) {
-        options.writer = 0
-      } else if (options.writer) {
-        const writer = getTargetId(options.writer)
-        if (!isInteger(writer) || writer <= 0) {
-          return meta.$send('参数 -w, --writer 错误，请检查指令语法。')
-        }
-        options.writer = writer
-      }
-
-      function parseOption (key: string, fullname: string, prop = key) {
-        if (/^\d+(,\d+)*$/.test(options[key])) {
-          argv[prop] = idSplit(options[key])
-        } else {
-          return meta.$send(`参数 ${fullname} 错误，请检查指令语法。`)
-        }
-      }
-
-      let errorPromise: Promise<void>
-
-      if ('setPred' in options) {
-        if ('addPred' in options) {
-          return meta.$send('选项 --set-pred, --add-pred 不能同时使用。')
-        } else {
-          if (errorPromise = parseOption('setPred', '--set-pred', 'predecessors')) return errorPromise
-          argv.predOverwrite = true
-        }
-      } else if ('addPred' in options) {
-        if (errorPromise = parseOption('addPred', '--add-pred', 'predecessors')) return errorPromise
-        argv.predOverwrite = false
-      }
-
-      if ('setSucc' in options) {
-        if ('addSucc' in options) {
-          return meta.$send('选项 --set-succ, --add-succ 不能同时使用。')
-        } else {
-          if (errorPromise = parseOption('setSucc', '--set-succ', 'successors')) return errorPromise
-          argv.succOverwrite = true
-        }
-      } else if ('addSucc' in options) {
-        if (errorPromise = parseOption('addSucc', '--add-succ', 'successors')) return errorPromise
-        argv.succOverwrite = false
-      }
-
-      let noDisableEnable = false
-      if (options.disable) {
-        argv.reversed = true
-        argv.partial = true
-        argv.groups = ['' + meta.groupId]
-      } else if (options.disableGlobal) {
-        argv.reversed = !!options.groups
-        argv.partial = false
-        argv.groups = []
-      } else if (options.enableGlobal) {
-        argv.reversed = !options.groups
-        argv.partial = false
-        argv.groups = []
-      } else {
-        noDisableEnable = !options.enable
-        if (options.target ? options.enable : !options.global) {
-          argv.reversed = false
-          argv.partial = true
-          argv.groups = ['' + meta.groupId]
-        }
-      }
-
-      if ('groups' in options) {
-        if (noDisableEnable) {
-          return meta.$send('参数 -g, --groups 必须与 -d/-D/-e/-E 之一同时使用。')
-        } else if (errorPromise = parseOption('groups', '-g, --groups')) {
-          return errorPromise
-        }
-      } else if (meta.messageType !== 'group' && argv.partial) {
-        return meta.$send('非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --groups 参数。')
-      }
+      const result = ctx.bail('dialogue/validate', argv)
+      if (result) return result
 
       if (String(options.question).includes('[CQ:image,')) {
         return meta.$send('问题不能包含图片。')
@@ -187,4 +109,11 @@ export function apply (ctx: Context, config: TeachConfig = {}) {
 
       return teach(argv)
     })
+
+  ctx.plugin(context, config)
+  ctx.plugin(freeze, config)
+  ctx.plugin(throttle, config)
+  ctx.plugin(preventLoop, config)
+  ctx.plugin(successor, config)
+  ctx.plugin(writer, config)
 }

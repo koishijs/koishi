@@ -1,130 +1,58 @@
 import { DialogueFlag, Dialogue } from './database'
-import { TeachArgv, modifyDialogue, checkAuthority, getDialogues } from './utils'
-import { observe, difference } from 'koishi-utils'
+import { TeachArgv, modifyDialogue, checkAuthority, getDialogues, sendResult } from './utils'
+import { observe } from 'koishi-utils'
 
 export default async function (argv: TeachArgv) {
-  const { meta, ctx, groups, options, successors = [], predecessors = [], predOverwrite } = argv
-
-  if (await ctx.app.serialize('dialogue/before-modify', argv)) return
+  const { meta, ctx, options } = argv
 
   const {
     answer,
     question,
     original,
     probability = 1,
-    writer = meta.userId,
   } = options
 
   if (!question || !answer) return meta.$send('缺少问题或回答，请检查指令语法。')
 
-  const output: string[] = []
-  const uneditable: number[] = []
-  const updated: number[] = []
-  const skipped: number[] = []
-  const failed: number[] = []
+  if (await ctx.app.serialize('dialogue/before-modify', argv)) return
 
-  const dialogues = await ctx.database.getDialogues(predecessors)
-  if (dialogues.length < predecessors.length) {
-    const diff = difference(predecessors, dialogues.map(d => '' + d.id))
-    output.push(`无法添加前置问题：没有搜索到编号为 ${diff.join(', ')} 的问答。`)
-  }
+  argv.unknown = []
+  argv.uneditable = []
+  argv.updated = []
+  argv.skipped = []
+  argv.failed = []
+  argv.dialogues = await getDialogues(ctx, { question, answer })
 
-  async function addPredecessors (id: number) {
-    const successor = '' + id
-    const [_uneditable, targets] = checkAuthority(meta, dialogues)
-    uneditable.push(..._uneditable)
-
-    for (const { id, successors } of targets) {
-      if (successors.includes(successor)) {
-        skipped.push(id)
-        continue
-      }
-
-      try {
-        successors.push(successor)
-        await ctx.database.setDialogue(id, { successors })
-        updated.push(id)
-      } catch (error) {
-        failed.push(id)
-      }
-    }
-  }
-
-  async function sendResult (message: string) {
-    output.unshift(message)
-    if (uneditable.length) {
-      output.push(`问答 ${uneditable.join(', ')} 因权限过低无法修改。`)
-    }
-    if (failed.length) {
-      output.push(`问答 ${failed.join(', ')} 修改时发生错误。`)
-    }
-    if (skipped.length) {
-      output.push(`问答 ${skipped.join(', ')} 没有发生改动。`)
-    }
-    if (updated.length) {
-      output.push(`问答 ${updated.join(', ')} 已成功修改。`)
-    }
-    return meta.$send(output.join('\n'))
-  }
-
-  const [data] = await getDialogues(ctx, { question, answer })
-  if (data) {
-    if (predOverwrite) {
-      const successor = '' + data.id
-      const dialogues = await getDialogues(ctx, { successors: [successor] })
-      const [_uneditable, targets] = checkAuthority(meta, dialogues.filter(d => !predecessors.includes('' + d.id)))
-      uneditable.push(..._uneditable)
-
-      for (const { id, successors } of targets) {
-        const index = successors.indexOf(successor)
-        if (index === -1) {
-          skipped.push(id)
-          continue
-        }
-
-        try {
-          successors.splice(index, 1)
-          await ctx.database.setDialogue(id, { successors })
-          updated.push(id)
-        } catch (error) {
-          failed.push(id)
-        }
-      }
-    }
-    await addPredecessors(data.id)
-
+  if (argv.dialogues.length) {
+    const [data] = argv.dialogues
     const dialogue = observe(data, diff => ctx.database.setDialogue(data.id, diff), `dialogue ${data.id}`)
     modifyDialogue(dialogue, argv)
+    await ctx.serialize('dialogue/after-modify', argv)
     if (Object.keys(dialogue._diff).length) {
-      if (checkAuthority(meta, [data])[0].length) {
-        return sendResult(`问答已存在，编号为 ${data.id}，且因权限过低无法修改。`)
+      checkAuthority(argv, [data])
+      if (argv.uneditable[0] === data.id) {
+        argv.uneditable.shift()
+        return sendResult(argv, `问答已存在，编号为 ${data.id}，且因权限过低无法修改。`)
       }
       await dialogue._update()
-      return sendResult(`修改了已存在的问答，编号为 ${data.id}。`)
+      return sendResult(argv, `修改了已存在的问答，编号为 ${data.id}。`)
     } else {
-      return sendResult(`问答已存在，编号为 ${data.id}，如要修改请尝试使用 #${data.id} 指令。`)
+      return sendResult(argv, `问答已存在，编号为 ${data.id}，如要修改请尝试使用 #${data.id} 指令。`)
     }
   }
 
-  const flag = ~~options.frozen * DialogueFlag.frozen
-    + ~~options.keyword * DialogueFlag.keyword
-    + ~~argv.reversed * DialogueFlag.reversed
+  const flag = ~~options.keyword * DialogueFlag.keyword
 
-  const dialogue: Dialogue = {
+  const dialogue = {
     question,
     answer,
-    writer,
     flag,
     probability,
-    groups,
     original,
-    successors,
-  }
+  } as Dialogue
 
   ctx.emit('dialogue/modify', argv, dialogue)
-
-  const { id } = await ctx.database.createDialogue(dialogue)
-
-  await addPredecessors(id)
-  return sendResult(`问答已添加，编号为 ${id}。`)
+  argv.dialogues = [await ctx.database.createDialogue(dialogue)]
+  await ctx.serialize('dialogue/after-modify', argv)
+  return sendResult(argv, `问答已添加，编号为 ${argv.dialogues[0].id}。`)
 }
