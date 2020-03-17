@@ -60,7 +60,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     return ctx.bail('dialogue/filter-stateless', data, test)
   })
 
-  ctx.on('dialogue/validate', async (argv) => {
+  ctx.on('dialogue/validate', (argv) => {
     const { options, meta } = argv
     function parseOption (key: string, fullname: string, prop = key) {
       if (/^\d+(,\d+)*$/.test(options[key])) {
@@ -98,8 +98,8 @@ export default function apply (ctx: Context, config: TeachConfig) {
   })
 
   ctx.on('dialogue/modify', ({ succOverwrite, successors }, data) => {
-    if (!successors) return
     if (!data.successors) data.successors = []
+    if (!successors) return
     if (succOverwrite) {
       if (!idEqual(data.successors, successors)) data.successors = successors
     } else {

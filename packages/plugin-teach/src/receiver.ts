@@ -82,8 +82,6 @@ export default function (ctx: Context) {
     logger.debug(question, '->', dialogue.answer)
     if (ctx.app.bail(meta, 'dialogue/before-send', meta, dialogue, state)) return next()
 
-    // update initiators
-
     ctx.app.emit(meta, 'dialogue/send', meta, dialogue, state)
 
     // send answers

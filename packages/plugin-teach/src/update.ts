@@ -1,9 +1,30 @@
-import { TeachArgv, modifyDialogue, checkAuthority, sendDetail, sendResult } from './utils'
+import { TeachArgv, checkAuthority, sendDetail, sendResult, deleteDuplicate, idSplit } from './utils'
 import { difference, observe } from 'koishi-utils'
+import { Context } from 'koishi-core'
 
 // TODO: 删问题时删 pred
 
-export default async function (argv: TeachArgv) {
+export default function apply (ctx: Context) {
+  ctx.command('teach')
+    .option('-t, --target <ids>', '查看或修改已有问题', { isString: true, hidden: true })
+    .option('-r, --remove', '彻底删除问答', { hidden: true })
+
+  ctx.on('dialogue/validate', ({ options, meta }) => {
+    if (options.target && !/^\d+(,\d+)*$/.exec(options.target)) {
+      return meta.$send('参数 -t, --target 错误，请检查指令语法。')
+    }
+  })
+
+  ctx.before('dialogue/execute', (argv) => {
+    if (!argv.options.target) return
+    argv.target = deleteDuplicate(idSplit(argv.options.target))
+    delete argv.options.target
+    delete argv.options.t
+    return update(argv)
+  })
+}
+
+async function update (argv: TeachArgv) {
   const { ctx, meta, options, target } = argv
   const logger = ctx.logger('teach')
 
@@ -51,7 +72,7 @@ export default async function (argv: TeachArgv) {
     const { id } = data
     const dialogue = observe(data, `dialogue ${id}`)
 
-    modifyDialogue(dialogue, argv)
+    ctx.emit('dialogue/modify', argv, dialogue)
 
     if (Object.keys(dialogue._diff).length) {
       try {

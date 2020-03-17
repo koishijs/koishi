@@ -44,7 +44,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
-  ctx.on('dialogue/validate', async (argv) => {
+  ctx.on('dialogue/validate', (argv) => {
     const { options, meta } = argv
     function parseOption (key: string, fullname: string, prop = key) {
       if (/^\d+(,\d+)*$/.test(options[key])) {
@@ -107,14 +107,20 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
-  ctx.on('dialogue/detail', (dialogue, output, argv) => {
-    const groups = dialogue.groups
-    output.push(`生效环境：${dialogue.flag & DialogueFlag.reversed
-      ? groups.includes('' + argv.meta.groupId)
+  ctx.on('dialogue/detail', ({ groups, flag }, output, { meta }) => {
+    const thisGroup = meta.messageType === 'group' && groups.includes('' + meta.groupId)
+    output.push(`生效环境：${flag & DialogueFlag.reversed
+      ? thisGroup
         ? groups.length - 1 ? `除本群等 ${groups.length} 个群外的所有群` : '除本群'
         : groups.length ? `除 ${groups.length} 个群外的所有群` : '全局'
-      : groups.includes('' + argv.meta.groupId)
+      : thisGroup
         ? groups.length - 1 ? `本群等 ${groups.length} 个群` : '本群'
         : groups.length ? `${groups.length} 个群` : '全局禁止'}`)
+  })
+
+  ctx.on('dialogue/detail-short', ({ groups, flag }, output, argv) => {
+    if (!argv.groups && argv.meta.messageType === 'group') {
+      output.push(!(flag & DialogueFlag.reversed) === groups.includes('' + argv.meta.groupId) ? '√' : '×')
+    }
   })
 }

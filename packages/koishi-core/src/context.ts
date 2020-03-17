@@ -158,7 +158,7 @@ export class Context {
   emit <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): void
   emit <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): void
   emit (...args: [any, ...any[]]) {
-    this.emit(...args)
+    this.parallelize(...args)
   }
 
   async serialize <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>

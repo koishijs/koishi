@@ -1,11 +1,7 @@
 import { TeachArgv, sendDetail, getDialogues } from './utils'
 import { Dialogue } from './database'
-
-declare module 'koishi-core/dist/context' {
-  interface EventMap {
-    'dialogue/detail-short' (dialogue: Dialogue, output: string[]): any
-  }
-}
+import { Context } from 'koishi-core'
+import { isInteger } from 'koishi-utils'
 
 declare module './utils' {
   interface TeachConfig {
@@ -20,7 +16,25 @@ function formatAnswer (source: string) {
   return output.replace(/\[CQ:image,[^\]]+\]/g, '[图片]')
 }
 
-export default async function (argv: TeachArgv) {
+export default function apply (ctx: Context) {
+  ctx.command('teach')
+    .option('-s, --search', '搜索已有问答', { notUsage: true, isString: true, hidden: true })
+    .option('-P, --page <page>', '设置搜索结果的页码', { hidden: true })
+    .option('--auto-merge', '自动合并相同的问题和回答', { hidden: true })
+
+  ctx.on('dialogue/validate', ({ options, meta }) => {
+    const page = options.page
+    if (page !== undefined && !(isInteger(page) && page > 0)) {
+      return meta.$send('参数 -P, --page 应为正整数。')
+    }
+  })
+
+  ctx.before('dialogue/execute', (argv) => {
+    if (argv.options.search) return search(argv)
+  })
+}
+
+async function search (argv: TeachArgv) {
   const { ctx, meta, options, reversed, partial, groups } = argv
   const { keyword, writer, frozen, question, answer, page = 1 } = options
   const { itemsPerPage = 20, mergeThreshold = 5 } = argv.config
@@ -39,7 +53,7 @@ export default async function (argv: TeachArgv) {
   function formatPrefix (dialogue: Dialogue) {
     const output: string[] = []
     if (dialogue.probability < 1) output.push(`p=${dialogue.probability}`)
-    ctx.emit('dialogue/detail-short', dialogue, output)
+    ctx.emit('dialogue/detail-short', dialogue, output, argv)
     return `${dialogue.id}. ${output.length ? `[${output.join(', ')}] ` : ''}`
   }
 

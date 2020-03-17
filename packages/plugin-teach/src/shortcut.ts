@@ -2,6 +2,8 @@ import { Context, removeBrackets } from 'koishi-core'
 import { TeachConfig } from './utils'
 
 export default function (ctx: Context, config: TeachConfig) {
+  ctx.command('teach').usage('输入 # 查看教学系统用法示例。')
+
   ctx.prependMiddleware((meta, next) => {
     const capture = meta.message.match(/^#(#{0,2}|\d+(,\d+)*)(\s+|$)/)
     if (!capture) return next()
@@ -93,8 +95,10 @@ export default function (ctx: Context, config: TeachConfig) {
     }
 
     Object.defineProperty(meta, '$argv', {
+      writable: true,
       value: { options, args, unknown, meta, command },
     })
+
     return next()
   })
 }

@@ -1,6 +1,6 @@
 import { Context, Meta, User } from 'koishi-core'
 import { simplify, difference } from 'koishi-utils'
-import { Dialogue, DialogueTest, DialogueFlag } from './database'
+import { Dialogue, DialogueTest } from './database'
 import { SessionState } from './receiver'
 
 declare module 'koishi-core/dist/context' {
@@ -10,6 +10,7 @@ declare module 'koishi-core/dist/context' {
     'dialogue/after-modify' (argv: TeachArgv): any
     'dialogue/before-detail' (argv: TeachArgv): void | Promise<void>
     'dialogue/detail' (dialogue: Dialogue, output: string[], argv: TeachArgv): void
+    'dialogue/detail-short' (dialogue: Dialogue, output: string[], argv: TeachArgv): any
     'dialogue/filter' (dialogue: Dialogue, test: DialogueTest, state?: SessionState): boolean
     'dialogue/permit' (user: User, dialogue: Dialogue): boolean
   }
@@ -104,28 +105,6 @@ export async function getDialogues (ctx: Context, test: DialogueTest, state?: Se
   return dialogues.filter((dialogue) => {
     return !ctx.bail('dialogue/filter', dialogue, test, state)
   })
-}
-
-export function modifyDialogue (data: Dialogue, argv: TeachArgv) {
-  const { ctx, options } = argv
-
-  if (options.answer) {
-    data.answer = options.answer
-  }
-
-  if (options.question) {
-    data.question = options.question
-    data.original = options.original
-  }
-
-  if (options.probability !== undefined) data.probability = options.probability
-
-  if (options.keyword !== undefined) {
-    data.flag &= ~DialogueFlag.keyword
-    data.flag |= +options.keyword * DialogueFlag.keyword
-  }
-
-  ctx.emit('dialogue/modify', argv, data)
 }
 
 export function checkAuthority (argv: TeachArgv, dialogues: Dialogue[]) {
