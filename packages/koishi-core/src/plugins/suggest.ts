@@ -9,13 +9,16 @@ onApp((app) => {
     const target = meta.$parsed.message.split(/\s/, 1)[0].toLowerCase()
     if (!target || !(prefix !== null || nickname || meta.messageType === 'private')) return next()
 
+    const items = Object.keys(app._commandMap)
+      .filter(name => app._commandMap[name].context.match(meta))
+
     return showSuggestions({
       target,
       meta,
       next,
+      items,
       prefix: messages.COMMAND_SUGGESTION_PREFIX,
       suffix: messages.COMMAND_SUGGESTION_SUFFIX,
-      items: Object.keys(app._commandMap),
       coefficient: app.options.similarityCoefficient,
       command: suggestion => app._commandMap[suggestion],
       async execute (suggestion, meta, next) {
