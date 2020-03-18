@@ -61,11 +61,9 @@ function getShortcuts (command: Command, user: Pick<UserData, 'authority'>) {
 }
 
 function getCommands (context: Context, meta: Meta<'message'>, parent?: Command) {
-  const commands = parent
-    ? parent.children
-    : context.app._commands.filter(cmd => cmd.context.match(meta))
+  const commands = parent ? parent.children : context.app._commands
   return commands
-    .filter(cmd => !meta.$user || cmd.config.authority <= meta.$user.authority)
+    .filter(cmd => cmd.context.match(meta) && (!meta.$user || cmd.config.authority <= meta.$user.authority))
     .sort((a, b) => a.name > b.name ? 1 : -1)
 }
 

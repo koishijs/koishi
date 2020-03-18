@@ -46,15 +46,6 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/validate', (argv) => {
     const { options, meta } = argv
-    function parseOption (key: string, fullname: string, prop = key) {
-      if (/^\d+(,\d+)*$/.test(options[key])) {
-        argv[prop] = idSplit(options[key])
-      } else {
-        return meta.$send(`参数 ${fullname} 错误，请检查指令语法。`)
-      }
-    }
-
-    let errorPromise: Promise<void>
 
     let noDisableEnable = false
     if (options.disable) {
@@ -81,8 +72,10 @@ export default function apply (ctx: Context, config: TeachConfig) {
     if ('groups' in options) {
       if (noDisableEnable) {
         return meta.$send('参数 -g, --groups 必须与 -d/-D/-e/-E 之一同时使用。')
-      } else if (errorPromise = parseOption('groups', '-g, --groups')) {
-        return errorPromise
+      } else if (/^\d+(,\d+)*$/.test(options.groups)) {
+        argv.groups = idSplit(options.groups)
+      } else {
+        return meta.$send(`参数 -g, --groups 错误，请检查指令语法。`)
       }
     } else if (meta.messageType !== 'group' && argv.partial) {
       return meta.$send('非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --groups 参数。')
@@ -107,6 +100,12 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
+  ctx.on('dialogue/before-search', ({ reversed, partial, groups }, test) => {
+    test.partial = partial
+    test.reversed = reversed
+    test.groups = groups
+  })
+
   ctx.on('dialogue/detail', ({ groups, flag }, output, { meta }) => {
     const thisGroup = meta.messageType === 'group' && groups.includes('' + meta.groupId)
     output.push(`生效环境：${flag & DialogueFlag.reversed
@@ -120,7 +119,13 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/detail-short', ({ groups, flag }, output, argv) => {
     if (!argv.groups && argv.meta.messageType === 'group') {
-      output.push(!(flag & DialogueFlag.reversed) === groups.includes('' + argv.meta.groupId) ? '√' : '×')
+      output.unshift(!(flag & DialogueFlag.reversed) === groups.includes('' + argv.meta.groupId) ? '√' : '×')
     }
+  })
+
+  ctx.on('dialogue/receive', ({ groupId }, test) => {
+    test.partial = true
+    test.reversed = false
+    test.groups = ['' + groupId]
   })
 }

@@ -1,6 +1,6 @@
 import { writeJson } from 'fs-extra'
 import { resolve } from 'path'
-import { SemVer, gt } from 'semver'
+import { SemVer, gt, prerelease } from 'semver'
 import { cyan, green } from 'kleur'
 import { PackageJson, getWorkspaces } from './utils'
 import latest from 'latest-version'
@@ -31,7 +31,9 @@ class Package {
       pkg.metaVersion = pkg.meta.version
       pkg.oldVersion = pkg.meta.version
       if (pkg.meta.private) return
-      pkg.oldVersion = await latest(pkg.name)
+      pkg.oldVersion = prerelease(pkg.meta.version)
+        ? await latest(pkg.name, { version: 'next' }).catch(() => latest(pkg.name))
+        : await latest(pkg.name)
     } catch { /* pass */ }
   }
 

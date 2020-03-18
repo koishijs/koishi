@@ -1,12 +1,12 @@
 import { Context, UserField, getSenderName, Meta } from 'koishi-core'
 import { CQCode, sleep } from 'koishi-utils'
 import { simplifyQuestion, getDialogues } from './utils'
-import { Dialogue } from './database'
+import { Dialogue, DialogueTest } from './database'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/state' (state: SessionState): void
-    'dialogue/receive' (meta: Meta<'message'>, state: SessionState): boolean
+    'dialogue/receive' (meta: Meta<'message'>, test: DialogueTest, state: SessionState): void | boolean
     'dialogue/before-attach-user' (meta: Meta<'message'>, userFields: Set<UserField>): void
     'dialogue/attach-user' (meta: Meta<'message'>): boolean
     'dialogue/before-send' (meta: Meta<'message'>, dialogue: Dialogue, state: SessionState): boolean
@@ -38,25 +38,18 @@ export default function (ctx: Context) {
 
   ctx.intersect(ctx.app.groups).middleware(async (meta, next) => {
     const { groupId } = meta
-    const question = simplifyQuestion(meta.message)
-    if (!question || question.includes('[cq:image,')) {
-      return next()
-    }
 
     if (!states[groupId]) {
       ctx.emit('dialogue/state', states[groupId] = {} as SessionState)
     }
     const state = states[groupId]
+    const test: DialogueTest = {}
 
-    if (ctx.bail('dialogue/receive', meta, state)) return next()
+    if (ctx.bail('dialogue/receive', meta, test, state)) return next()
 
     // fetch dialogues
-    meta.$dialogues = await getDialogues(ctx, {
-      question,
-      partial: true,
-      reversed: false,
-      groups: ['' + groupId],
-    }, state)
+    const question = simplifyQuestion(meta.message)
+    meta.$dialogues = await getDialogues(ctx, test, state)
     if (!meta.$dialogues.length) return next()
 
     // fetch user

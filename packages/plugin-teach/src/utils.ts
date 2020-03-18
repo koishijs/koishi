@@ -10,7 +10,8 @@ declare module 'koishi-core/dist/context' {
     'dialogue/after-modify' (argv: TeachArgv): any
     'dialogue/before-detail' (argv: TeachArgv): void | Promise<void>
     'dialogue/detail' (dialogue: Dialogue, output: string[], argv: TeachArgv): void
-    'dialogue/detail-short' (dialogue: Dialogue, output: string[], argv: TeachArgv): any
+    'dialogue/detail-short' (dialogue: Dialogue, output: string[], argv: TeachArgv): void
+    'dialogue/before-search' (argv: TeachArgv, test: DialogueTest): void | boolean | Promise<void | boolean>
     'dialogue/filter' (dialogue: Dialogue, test: DialogueTest, state?: SessionState): boolean
     'dialogue/permit' (user: User, dialogue: Dialogue): boolean
   }

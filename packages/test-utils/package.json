@@ -1,7 +1,7 @@
 {
   "name": "koishi-test-utils",
   "description": "Test utilities for Koishi",
-  "version": "4.0.0-alpha.0",
+  "version": "4.0.0-alpha.1",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -43,7 +43,7 @@
     "axios": "^0.19.2",
     "debug": "^4.1.1",
     "get-port": "^5.1.1",
-    "koishi-core": "^2.0.0-alpha.0",
+    "koishi-core": "^2.0.0-alpha.1",
     "koishi-utils": "^1.0.4"
   }
 }

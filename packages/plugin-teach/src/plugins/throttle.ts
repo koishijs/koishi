@@ -33,7 +33,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     state.counters = { ...counters }
   })
 
-  ctx.on('dialogue/receive', (meta, state) => {
+  ctx.on('dialogue/receive', (meta, test, state) => {
     for (const interval in state.counters) {
       if (state.counters[interval] <= 0) return true
     }

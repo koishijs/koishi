@@ -1,5 +1,5 @@
 import { TeachArgv, sendDetail, getDialogues } from './utils'
-import { Dialogue } from './database'
+import { Dialogue, DialogueTest } from './database'
 import { Context } from 'koishi-core'
 import { isInteger } from 'koishi-utils'
 
@@ -35,20 +35,13 @@ export default function apply (ctx: Context) {
 }
 
 async function search (argv: TeachArgv) {
-  const { ctx, meta, options, reversed, partial, groups } = argv
-  const { keyword, writer, frozen, question, answer, page = 1 } = options
+  const { ctx, meta, options } = argv
+  const { keyword, question, answer, page = 1 } = options
   const { itemsPerPage = 20, mergeThreshold = 5 } = argv.config
 
-  const dialogues = await getDialogues(ctx, {
-    writer,
-    keyword,
-    question,
-    answer,
-    reversed,
-    partial,
-    groups,
-    frozen,
-  })
+  const test: DialogueTest = { question, answer, keyword }
+  if (await ctx.serialize('dialogue/before-search', argv, test)) return
+  const dialogues = await getDialogues(ctx, test)
 
   function formatPrefix (dialogue: Dialogue) {
     const output: string[] = []

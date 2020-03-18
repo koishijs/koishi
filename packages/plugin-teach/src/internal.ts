@@ -67,4 +67,9 @@ export default function apply (ctx: Context) {
       data.flag |= +options.keyword * DialogueFlag.keyword
     }  
   })
+
+  ctx.on('dialogue/receive', (meta, test) => {
+    if (meta.message.includes('[CQ:image,')) return true
+    test.question = simplifyQuestion(meta.message)
+  })
 }

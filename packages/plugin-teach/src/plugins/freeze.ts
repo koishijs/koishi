@@ -27,6 +27,10 @@ export default function apply (ctx: Context) {
     }
   })
 
+  ctx.on('dialogue/before-search', ({ options }, test) => {
+    test.frozen = options.frozen
+  })
+
   ctx.on('dialogue/detail', (dialogue, output) => {
     if (dialogue.flag & DialogueFlag.frozen) output.push('此问题已锁定。')
   })

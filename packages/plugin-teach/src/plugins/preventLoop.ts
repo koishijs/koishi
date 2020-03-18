@@ -31,7 +31,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     state.initiators = []
   })
 
-  ctx.on('dialogue/receive', (meta, state) => {
+  ctx.on('dialogue/receive', (meta, test, state) => {
     for (const { participants, length } of preventLoopConfig) {
       if (state.initiators.length < length) break
       const initiators = new Set(state.initiators.slice(0, length))
