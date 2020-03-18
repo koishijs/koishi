@@ -78,7 +78,11 @@ async function search (argv: TeachArgv) {
       if (!dialogues.length) return meta.$send(`没有搜索到问题“${question}”，请尝试使用关键词匹配。`)
       const output = dialogues.map(d => `${formatPrefix(d)}${formatAnswer(d.answer)}`)
       const total = dialogues.reduce((prev, curr) => prev + curr.probability, 0)
-      return sendResult(`问题“${question}”的回答如下`, output, total < 1 ? `总触发概率：${total.toFixed(3)}。` : '')
+      return sendResult(`问题“${question}”的回答如下`, output, total < 1
+        ? `总触发概率：${+total.toFixed(3)}。`
+        : dialogues.length > 1 && total > 1
+          ? `总触发概率：${+total.toFixed(3)}，实际运行时会将各项概率标准化。`
+          : '')
     } else {
       const [dialogue] = dialogues
       if (!dialogue) return meta.$send(`没有搜索到问答“${question}”“${answer}”，请尝试使用关键词匹配。`)
