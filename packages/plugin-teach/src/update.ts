@@ -2,8 +2,6 @@ import { TeachArgv, checkAuthority, sendDetail, sendResult, deleteDuplicate, idS
 import { difference, observe } from 'koishi-utils'
 import { Context } from 'koishi-core'
 
-// TODO: 删问题时删 pred
-
 export default function apply (ctx: Context) {
   ctx.command('teach')
     .option('-t, --target <ids>', '查看或修改已有问题', { isString: true, hidden: true })
@@ -63,6 +61,7 @@ async function update (argv: TeachArgv) {
       await ctx.database.removeDialogues(editable)
       output.unshift(`已删除问答 ${editable.join(', ')}。`)
     }
+    await ctx.serialize('dialogue/after-modify', argv)
     return meta.$send(output.join('\n'))
   }
 

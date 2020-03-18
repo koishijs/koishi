@@ -108,6 +108,11 @@ export default function apply (ctx: Context, config: TeachConfig) {
   })
 
   ctx.on('dialogue/after-modify', async (argv) => {
+    if (argv.options.remove) {
+      argv.predOverwrite = true
+      argv.predecessors = []
+    }
+
     const { predOverwrite, predecessors, dialogues, skipped, updated, failed } = argv
     if (!predecessors) return
     const successors = dialogues.map(dialogue => '' + dialogue.id)
