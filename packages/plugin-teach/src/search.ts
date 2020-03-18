@@ -45,18 +45,19 @@ async function search (argv: TeachArgv) {
 
   function formatPrefix (dialogue: Dialogue) {
     const output: string[] = []
-    if (dialogue.probability < 1) output.push(`p=${dialogue.probability}`)
     ctx.emit('dialogue/detail-short', dialogue, output, argv)
     return `${dialogue.id}. ${output.length ? `[${output.join(', ')}] ` : ''}`
   }
 
-  function sendResult (title: string, output: string[]) {
+  function sendResult (title: string, output: string[], suffix?: string) {
     if (output.length <= itemsPerPage) {
       output.unshift(title + '：')
+      if (suffix) output.push(suffix)
     } else {
       const pageCount = Math.ceil(output.length / itemsPerPage)
       output = output.slice((page - 1) * itemsPerPage, page * itemsPerPage)
       output.unshift(title + `（第 ${page}/${pageCount} 页）：`)
+      if (suffix) output.push(suffix)
       output.push('可以使用 -P, --page 调整输出的条目页数。')
     }
     return meta.$send(output.join('\n'))
@@ -76,7 +77,8 @@ async function search (argv: TeachArgv) {
     } else if (!answer) {
       if (!dialogues.length) return meta.$send(`没有搜索到问题“${question}”，请尝试使用关键词匹配。`)
       const output = dialogues.map(d => `${formatPrefix(d)}${formatAnswer(d.answer)}`)
-      return sendResult(`问题“${question}”的回答如下`, output)
+      const total = dialogues.reduce((prev, curr) => prev + curr.probability, 0)
+      return sendResult(`问题“${question}”的回答如下`, output, total < 1 ? `总触发概率：${total.toFixed(3)}。` : '')
     } else {
       const [dialogue] = dialogues
       if (!dialogue) return meta.$send(`没有搜索到问答“${question}”“${answer}”，请尝试使用关键词匹配。`)

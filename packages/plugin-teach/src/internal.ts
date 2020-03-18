@@ -15,24 +15,24 @@ export default function apply (ctx: Context) {
       return meta.$send('存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
     }
 
-    if (String(options.question).includes('[CQ:image,')) {
+    const { question, answer, probability } = options
+    if (String(question).includes('[CQ:image,')) {
       return meta.$send('问题不能包含图片。')
     }
 
-    options.question = simplifyQuestion(options.question)
+    options.question = simplifyQuestion(question)
     if (options.question) {
-      options.original = options.question
+      options.original = question
     } else {
       delete options.question
     }
 
-    options.answer = simplifyAnswer(options.answer)
+    options.answer = simplifyAnswer(answer)
     if (!options.answer) {
       delete options.answer
     }
 
-    const prob = options.probability
-    if (prob !== undefined && !(prob > 0 && prob <= 1)) {
+    if (probability !== undefined && !(probability > 0 && probability <= 1)) {
       return meta.$send('参数 -p, --probability 应为不超过 1 的正数。')
     }
   })
@@ -66,6 +66,10 @@ export default function apply (ctx: Context) {
       data.flag &= ~DialogueFlag.keyword
       data.flag |= +options.keyword * DialogueFlag.keyword
     }  
+  })
+
+  ctx.on('dialogue/detail-short', (dialogue, output) => {
+    if (dialogue.probability < 1) output.push(`p=${dialogue.probability}`)
   })
 
   ctx.on('dialogue/receive', (meta, test) => {

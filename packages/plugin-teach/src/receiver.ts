@@ -48,7 +48,6 @@ export default function (ctx: Context) {
     if (ctx.bail('dialogue/receive', meta, test, state)) return next()
 
     // fetch dialogues
-    const question = simplifyQuestion(meta.message)
     meta.$dialogues = await getDialogues(ctx, test, state)
     if (!meta.$dialogues.length) return next()
 
@@ -72,7 +71,7 @@ export default function (ctx: Context) {
     }
     if (!dialogue) return next()
 
-    logger.debug(question, '->', dialogue.answer)
+    logger.debug(meta.message, '->', dialogue.answer)
     if (ctx.app.bail(meta, 'dialogue/before-send', meta, dialogue, state)) return next()
 
     ctx.app.emit(meta, 'dialogue/send', meta, dialogue, state)
