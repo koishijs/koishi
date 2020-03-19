@@ -1,4 +1,4 @@
-import { User, Group, UserField, GroupField } from './database'
+import { User, Group } from './database'
 import { ParsedCommandLine } from './command'
 import { isInteger } from 'koishi-utils'
 

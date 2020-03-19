@@ -1,6 +1,35 @@
 import { Context } from 'koishi-core'
 import { DialogueFlag } from './database'
-import { simplifyQuestion, simplifyAnswer } from './utils'
+import { simplify } from 'koishi-utils'
+
+const prefixPunctuation = /^([()\]]|\[(?!cq:))*/
+const suffixPunctuation = /([.,?!()[~]|(?<!\[cq:[^\]]+)\])*$/
+
+export function stripPunctuation (source: string) {
+  source = source.toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/，/g, ',')
+    .replace(/、/g, ',')
+    .replace(/。/g, '.')
+    .replace(/？/g, '?')
+    .replace(/！/g, '!')
+    .replace(/（/g, '(')
+    .replace(/）/g, ')')
+    .replace(/【/g, '[')
+    .replace(/】/g, ']')
+    .replace(/～/g, '~')
+  return source
+    .replace(prefixPunctuation, '')
+    .replace(suffixPunctuation, '') || source
+}
+
+export function simplifyQuestion (source: string) {
+  return simplify(stripPunctuation(String(source || '')))
+}
+
+export function simplifyAnswer (source: string) {
+  return (String(source || '')).trim()
+}
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
@@ -75,5 +104,6 @@ export default function apply (ctx: Context) {
   ctx.on('dialogue/receive', (meta, test) => {
     if (meta.message.includes('[CQ:image,')) return true
     test.question = simplifyQuestion(meta.message)
+    return !test.question
   })
 }

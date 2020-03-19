@@ -1,5 +1,5 @@
 import { Context, Meta, User } from 'koishi-core'
-import { simplify, difference } from 'koishi-utils'
+import { difference } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './database'
 import { SessionState } from './receiver'
 
@@ -17,40 +17,7 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-export interface TeachConfig {
-  key?: string
-  imageServer?: string
-  uploadServer?: string
-}
-
-const prefixPunctuation = /^([()\]]|\[(?!cq:))*/
-const suffixPunctuation = /([.,?!()[~]|(?<!\[cq:[^\]]+)\])*$/
-
-export function stripPunctuation (source: string) {
-  source = source.toLowerCase()
-    .replace(/\s+/g, '')
-    .replace(/，/g, ',')
-    .replace(/、/g, ',')
-    .replace(/。/g, '.')
-    .replace(/？/g, '?')
-    .replace(/！/g, '!')
-    .replace(/（/g, '(')
-    .replace(/）/g, ')')
-    .replace(/【/g, '[')
-    .replace(/】/g, ']')
-    .replace(/～/g, '~')
-  return source
-    .replace(prefixPunctuation, '')
-    .replace(suffixPunctuation, '') || source
-}
-
-export function simplifyQuestion (source: string) {
-  return simplify(stripPunctuation(String(source || '')))
-}
-
-export function simplifyAnswer (source: string) {
-  return (String(source || '')).trim()
-}
+export interface TeachConfig {}
 
 export function deleteDuplicate <T> (array: T[]) {
   return [...new Set(array)]

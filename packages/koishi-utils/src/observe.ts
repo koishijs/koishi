@@ -8,13 +8,12 @@ const builtinClasses = ['Date', 'RegExp', 'Set', 'Map', 'WeakSet', 'WeakMap', 'A
 const refs: Record<string | number, any> = {}
 
 function observeObject <T extends object> (target: T, label: string, update?: () => void): T {
-  Object.defineProperty(target, '__proxyGetters__', { value: {} })
+  if (!target['__proxyGetters__']) {
+    Object.defineProperty(target, '__proxyGetters__', { value: {} })
+  }
 
   if (!update) {
-    Object.defineProperty(target, '_diff', {
-      value: {},
-      writable: true,
-    })
+    Object.defineProperty(target, '_diff', { value: {}, writable: true })
   }
 
   return new Proxy(target as Observed<T, any>, {

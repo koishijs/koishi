@@ -1,6 +1,6 @@
 import { Context, UserField, getSenderName, Meta } from 'koishi-core'
 import { CQCode, sleep } from 'koishi-utils'
-import { simplifyQuestion, getDialogues } from './utils'
+import { getDialogues } from './utils'
 import { Dialogue, DialogueTest } from './database'
 
 declare module 'koishi-core/dist/context' {
