@@ -117,13 +117,14 @@ export interface ParsedCommandLine extends Partial<ParsedLine> {
   next?: NextFunction
 }
 
-export type UserType <T> = T | ((user: UserData) => T)
+export type UserType <T> = T extends (...args: any) => any ? never : T | ((user: UserData) => T)
 
 export interface CommandConfig {
   /** description */
   description?: string
   /** min authority */
   authority?: number
+  /** whether to disable */
   disable?: UserType<boolean>
 }
 

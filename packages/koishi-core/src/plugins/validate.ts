@@ -38,9 +38,7 @@ onApp((app) => {
     const { command, options = {} } = meta.$argv
     const { maxUsage, minInterval, authority } = command.config
     let shouldFetchAuthority = !fields.has('authority') && authority > 0
-    let shouldFetchUsage = !fields.has('usage') && (
-      typeof maxUsage === 'number' && maxUsage < Infinity ||
-      typeof minInterval === 'number' && minInterval > 0)
+    let shouldFetchUsage = !(fields.has('usage') || !maxUsage && !minInterval)
     for (const option of command._options) {
       if (option.camels[0] in options) {
         if (option.authority > 0) shouldFetchAuthority = true
