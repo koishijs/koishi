@@ -59,7 +59,7 @@ onApp((app) => {
       }
     }
 
-    if (command.getConfig('disable', meta)) return
+    if (command.getConfig('disable', meta)) return true
 
     // check argument count
     if (command.config.checkArgCount) {

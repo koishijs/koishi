@@ -1,7 +1,7 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference, intersection } from 'koishi-utils'
 import { DialogueTest, Dialogue } from '../database'
-import { idEqual, idSplit, TeachConfig, checkAuthority, getDialogues } from '../utils'
+import { equal, split, TeachConfig, checkAuthority, getDialogues } from '../utils'
 
 declare module '../utils' {
   interface TeachConfig {
@@ -64,7 +64,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     const { options, meta } = argv
     function parseOption (key: string, fullname: string, prop = key) {
       if (/^\d+(,\d+)*$/.test(options[key])) {
-        argv[prop] = idSplit(options[key])
+        argv[prop] = split(options[key])
       } else {
         return meta.$send(`参数 ${fullname} 错误，请检查指令语法。`)
       }
@@ -101,7 +101,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     if (!data.successors) data.successors = []
     if (!successors) return
     if (succOverwrite) {
-      if (!idEqual(data.successors, successors)) data.successors = successors
+      if (!equal(data.successors, successors)) data.successors = successors
     } else {
       if (!contain(data.successors, successors)) data.successors = union(data.successors, successors)
     }

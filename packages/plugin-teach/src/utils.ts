@@ -19,10 +19,6 @@ declare module 'koishi-core/dist/context' {
 
 export interface TeachConfig {}
 
-export function deleteDuplicate <T> (array: T[]) {
-  return [...new Set(array)]
-}
-
 export interface TeachArgv {
   ctx: Context
   meta: Meta<'message'>
@@ -60,11 +56,11 @@ export function sendResult (argv: TeachArgv, message?: string) {
   return argv.meta.$send(output.join('\n'))
 }
 
-export function idSplit (source: string) {
+export function split (source: string) {
   return source ? source.split(',') : []
 }
 
-export function idEqual (array1: string[], array2: string[]) {
+export function equal (array1: string[], array2: string[]) {
   return array1.sort().join() === array2.sort().join()
 }
 

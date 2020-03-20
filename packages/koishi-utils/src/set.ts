@@ -13,3 +13,7 @@ export function difference <S> (array1: readonly S[], array2: readonly any[]) {
 export function union <T> (array1: readonly T[], array2: readonly T[]) {
   return Array.from(new Set([...array1, ...array2]))
 }
+
+export function deduplicate <T> (array: T[]) {
+  return [...new Set(array)]
+}

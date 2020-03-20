@@ -1,6 +1,5 @@
 import { Context, getTargetId } from 'koishi-core'
-import { isInteger } from 'koishi-utils'
-import { deleteDuplicate } from '../utils'
+import { isInteger, deduplicate } from 'koishi-utils'
 
 declare module '../database' {
   interface DialogueTest {
@@ -46,7 +45,7 @@ export default function apply (ctx: Context) {
   ctx.on('dialogue/before-detail', async (argv) => {
     argv.userMap = {}
     const { userMap, meta, dialogues } = argv
-    const writers = deleteDuplicate(dialogues.map(d => d.writer).filter(Boolean))
+    const writers = deduplicate(dialogues.map(d => d.writer).filter(Boolean))
     const users = await ctx.database.getUsers(writers, ['id', 'name'])
 
     let hasUnnamed = false

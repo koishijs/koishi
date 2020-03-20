@@ -74,7 +74,7 @@ export default function (ctx: Context) {
     logger.debug(meta.message, '->', dialogue.answer)
     if (ctx.app.bail(meta, 'dialogue/before-send', meta, dialogue, state)) return next()
 
-    ctx.app.emit(meta, 'dialogue/send', meta, dialogue, state)
+    await ctx.app.parallelize(meta, 'dialogue/send', meta, dialogue, state)
 
     // send answers
     const answers = dialogue.answer
@@ -92,6 +92,6 @@ export default function (ctx: Context) {
       await meta.$send(answer)
     }
 
-    ctx.app.emit(meta, 'dialogue/after-send', meta, dialogue, state)
+    await ctx.app.parallelize(meta, 'dialogue/after-send', meta, dialogue, state)
   })
 }

@@ -1,5 +1,5 @@
-import { TeachArgv, checkAuthority, sendDetail, sendResult, deleteDuplicate, idSplit } from './utils'
-import { difference, observe } from 'koishi-utils'
+import { TeachArgv, checkAuthority, sendDetail, sendResult, split } from './utils'
+import { difference, observe, deduplicate } from 'koishi-utils'
 import { Context } from 'koishi-core'
 
 export default function apply (ctx: Context) {
@@ -15,7 +15,7 @@ export default function apply (ctx: Context) {
 
   ctx.before('dialogue/execute', (argv) => {
     if (!argv.options.target) return
-    argv.target = deleteDuplicate(idSplit(argv.options.target))
+    argv.target = deduplicate(split(argv.options.target))
     delete argv.options.target
     delete argv.options.t
     return update(argv)

@@ -436,7 +436,11 @@ export class Command {
       return next(_next)
     }
 
-    await this._action(argv, ...argv.args)
+    try {
+      await this._action(argv, ...argv.args)
+    } catch (error) {
+      this.context.logger('').warn(error)
+    }
     if (!skipped) {
       return this.app.parallelize(argv.meta, 'after-command', argv)
     }

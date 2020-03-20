@@ -1,7 +1,7 @@
 import { Context } from 'koishi-core'
 import { contain, intersection, union, difference } from 'koishi-utils'
 import { DialogueFlag } from '../database'
-import { idEqual, idSplit, TeachConfig } from '../utils'
+import { equal, split, TeachConfig } from '../utils'
 
 declare module '../utils' {
   interface TeachArgv {
@@ -40,7 +40,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
         ? !contain(data.groups, test.groups)
         : !!intersection(data.groups, test.groups).length
     } else {
-      return !sameFlag || !idEqual(test.groups, data.groups)
+      return !sameFlag || !equal(test.groups, data.groups)
     }
   })
 
@@ -73,7 +73,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
       if (noDisableEnable) {
         return meta.$send('参数 -g, --groups 必须与 -d/-D/-e/-E 之一同时使用。')
       } else if (/^\d+(,\d+)*$/.test(options.groups)) {
-        argv.groups = idSplit(options.groups)
+        argv.groups = split(options.groups)
       } else {
         return meta.$send(`参数 -g, --groups 错误，请检查指令语法。`)
       }
@@ -89,12 +89,12 @@ export default function apply (ctx: Context, config: TeachConfig) {
       const newGroups = !(data.flag & DialogueFlag.reversed) === reversed
         ? difference(data.groups, groups)
         : union(data.groups, groups)
-      if (!idEqual(data.groups, newGroups)) {
+      if (!equal(data.groups, newGroups)) {
         data.groups = newGroups
       }
     } else {
       data.flag = data.flag & ~DialogueFlag.reversed | (+reversed * DialogueFlag.reversed)
-      if (!idEqual(data.groups, groups)) {
+      if (!equal(data.groups, groups)) {
         data.groups = groups.slice()
       }
     }
