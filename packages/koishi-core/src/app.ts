@@ -332,7 +332,7 @@ export class App extends Context {
         if (await this.serialize(meta, 'attach-group', meta)) return
 
         // ignore some group calls
-        const isAssignee = !group.assignee || group.assignee === this.selfId
+        const isAssignee = group.assignee === this.selfId
         const noCommand = group.flag & GroupFlag.noCommand
         const noResponse = group.flag & GroupFlag.noResponse || !isAssignee
         if (noCommand && command) return
