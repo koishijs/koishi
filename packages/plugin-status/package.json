@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-status",
   "description": "Show Status of Koishi",
-  "version": "2.0.0-alpha.3",
+  "version": "2.0.0-alpha.4",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -33,13 +33,13 @@
   ],
   "devDependencies": {
     "@types/cross-spawn": "^6.0.1",
-    "koishi-database-mysql": "^2.0.0-alpha.3",
-    "koishi-test-utils": "^4.0.0-alpha.3",
+    "koishi-database-mysql": "^2.0.0-alpha.4",
+    "koishi-test-utils": "^4.0.0-alpha.4",
     "typescript": "^3.8.3"
   },
   "dependencies": {
     "cross-spawn": "^7.0.1",
-    "koishi-core": "^2.0.0-alpha.3",
+    "koishi-core": "^2.0.0-alpha.4",
     "koishi-utils": "^1.0.5"
   }
 }

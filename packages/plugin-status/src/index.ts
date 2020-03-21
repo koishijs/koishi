@@ -51,14 +51,12 @@ export async function apply (ctx: Context, options: StatusOptions = {}) {
     .shortcut('运行情况', { prefix: true })
     .shortcut('运行状态', { prefix: true })
     .action(async ({ meta }) => {
-      const { apps, groupCount, userCount, cpu, memory } = await getStatus()
+      const { apps, cpu, memory } = await getStatus()
 
       const output = apps.sort(options.sort).map(({ label, selfId, good, rate }) => {
         return `${label || selfId}：${good ? `工作中（${rate}/min）` : '无法连接'}`
       })
 
-      const goodCount = apps.filter(a => a.good).length
-      output.unshift(`${goodCount} 名四季酱正在为 ${groupCount} 个群提供服务，日活用户数量 ${userCount}。`)
       output.push('==========')
 
       const commitTime = await commitTimePromise

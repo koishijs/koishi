@@ -61,6 +61,7 @@ onStart(() => {
   server = createServer(async (req, res) => {
     res.writeHead(200, {
       'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
     })
     res.write(JSON.stringify(await getStatus()))
     res.end()
@@ -111,6 +112,7 @@ export interface Status {
   groupCount: number
   memory: Rate
   cpu: Rate
+  timestamp: number
 }
 
 export interface AppStatus {
@@ -120,7 +122,12 @@ export interface AppStatus {
   rate?: number
 }
 
+let status: Status
+let timestamp: number
+
 export async function getStatus (): Promise<Status> {
+  const now = Date.now()
+  if (now - timestamp < 60000) return status
   const [apps, userCount, groupCount] = await Promise.all([
     Promise.all(appList.map<Promise<AppStatus>>(async (app) => ({
       label: app.options.label,
@@ -133,5 +140,6 @@ export async function getStatus (): Promise<Status> {
   ])
   const memory = memoryRate()
   const cpu = { app: appRate, total: usedRate }
-  return { apps, userCount, groupCount, memory, cpu }
+  timestamp = now
+  return status = { apps, userCount, groupCount, memory, cpu, timestamp }
 }
