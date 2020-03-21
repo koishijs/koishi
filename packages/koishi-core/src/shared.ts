@@ -1,3 +1,7 @@
+import { EventEmitter } from 'events'
+
+export const emitter = new EventEmitter()
+
 export const messages = {
   COMMAND_NOT_FOUND: '指令未找到。',
   LOW_AUTHORITY: '权限不足。',

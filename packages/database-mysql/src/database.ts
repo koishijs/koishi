@@ -122,8 +122,8 @@ export class MysqlDatabase implements AbstractDatabase {
     return header as OkPacket
   }
 
-  async count <K extends TableType> (table: K) {
-    const [{ 'COUNT(*)': count }] = await this.query('SELECT COUNT(*) FROM ??', [table])
+  async count <K extends TableType> (table: K, conditional?: string) {
+    const [{ 'COUNT(*)': count }] = await this.query(`SELECT COUNT(*) FROM ?? ${conditional ? 'WHERE ' + conditional : ''}`, [table])
     return count as number
   }
 

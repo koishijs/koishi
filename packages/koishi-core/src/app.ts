@@ -7,8 +7,7 @@ import { Context, Middleware, NextFunction, ContextScope } from './context'
 import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField } from './database'
 import { Meta } from './meta'
 import { simplify, noop } from 'koishi-utils'
-import { errors } from './messages'
-import { EventEmitter } from 'events'
+import { emitter, errors } from './shared'
 import { types } from 'util'
 
 export interface AppOptions {
@@ -31,7 +30,6 @@ export interface AppOptions {
 
 export const appMap: Record<number, App> = {}
 export const appList: App[] = []
-const emitter = new EventEmitter()
 
 export const onStart = (callback: () => any) => emitter.on('start', callback)
 export const onStop = (callback: () => any) => emitter.on('stop', callback)
@@ -74,6 +72,7 @@ function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
 const defaultOptions: AppOptions = {
   maxMiddlewares: 64,
   retryInterval: 5000,
+  quickOperationTimeout: 100,
 }
 
 function defineProperty <T, K extends keyof T> (object: T, key: K, value: T[K]) {

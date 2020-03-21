@@ -57,8 +57,4 @@ injectMethods('sqlite', 'group', {
     if ('_diff' in group) return (group as Observed<GroupData>)._merge(additionalData)
     return observe(Object.assign(group, additionalData), diff => this.setGroup(group.id, diff), `group ${group.id}`)
   },
-
-  async getGroupCount () {
-    return this.count('group')
-  },
 })

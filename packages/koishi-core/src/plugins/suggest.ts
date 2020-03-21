@@ -1,5 +1,5 @@
 import { NextFunction, Command, Meta, onApp } from '..'
-import { messages } from '../messages'
+import { messages } from '../shared'
 import { format } from 'util'
 import leven from 'leven'
 

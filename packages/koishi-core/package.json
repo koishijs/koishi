@@ -33,6 +33,7 @@
   ],
   "devDependencies": {
     "@types/debug": "^4.1.5",
+    "@types/ms": "^2.0.0",
     "@types/ws": "^7.2.2",
     "get-port": "^5.1.1",
     "koishi-database-memory": "^2.0.0-alpha.3",

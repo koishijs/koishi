@@ -1,13 +1,16 @@
 import ms from 'ms'
 import WebSocket from 'ws'
 import * as http from 'http'
-import { errors } from './messages'
+import { emitter, errors } from './shared'
 import { createHmac } from 'crypto'
 import { camelCase, snakeCase, capitalize, paramCase, CQCode } from 'koishi-utils'
 import { Meta, VersionInfo, ContextType } from './meta'
 import { App } from './app'
 import { CQResponse } from './sender'
 import { format } from 'util'
+
+export const onHttpServer = (callback: (server: http.Server) => any) => emitter.on('http-server', callback)
+export const onWsClient = (callback: (socket: WebSocket) => any) => emitter.on('ws-client', callback)
 
 export abstract class Server {
   public appList: App[] = []
@@ -205,6 +208,7 @@ export class HttpServer extends Server {
 
     const { secret } = app.options
     this.server = http.createServer((req, res) => {
+      if (req.url !== '/') return
       let body = ''
       req.on('data', chunk => body += chunk)
       req.on('end', () => {
@@ -234,7 +238,9 @@ export class HttpServer extends Server {
         }
 
         // handle quick operations
-        res.statusCode = 200
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+        })
         const app = this.appMap[meta.selfId]
         if (app.options.quickOperationTimeout > 0) {
           meta.$response = (data) => {
@@ -255,6 +261,7 @@ export class HttpServer extends Server {
         this.dispatchMeta(meta)
       })
     })
+    emitter.emit('http-server', this.server)
   }
 
   async _listen () {
@@ -341,6 +348,7 @@ export class WsClient extends Server {
           if (!resolved) {
             resolved = true
             this.debug('connect to ws server:', this.app.options.server)
+            emitter.emit('ws-client', this.socket)
             resolve()
           }
 

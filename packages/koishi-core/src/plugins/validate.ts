@@ -1,5 +1,5 @@
 import { onApp, Meta, UserData, Command } from '..'
-import { messages } from '../messages'
+import { messages } from '../shared'
 import { format } from 'util'
 import { getDateNumber } from 'koishi-utils'
 

@@ -59,8 +59,4 @@ injectMethods('mysql', 'user', {
     if ('_diff' in user) return (user as User)._merge(additionalData)
     return observe(Object.assign(user, additionalData), diff => this.setUser(user.id, diff), `user ${user.id}`)
   },
-
-  async getUserCount () {
-    return this.count('user')
-  },
 })

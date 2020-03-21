@@ -1,6 +1,6 @@
 import { Context, NextFunction } from './context'
 import { UserData, UserField, GroupField } from './database'
-import { errors } from './messages'
+import { errors } from './shared'
 import { noop, camelCase } from 'koishi-utils'
 import { Meta } from './meta'
 import { inspect } from 'util'

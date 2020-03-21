@@ -88,10 +88,6 @@ injectMethods('memory', 'user', {
     if ('_diff' in user) return (user as User)._merge(clone(data))
     return observe(Object.assign(user, clone(data)), diff => this.setUser(user.id, diff), `user ${user.id}`)
   },
-
-  getUserCount () {
-    return this.count('user')
-  },
 })
 
 injectMethods('memory', 'group', {
@@ -127,9 +123,5 @@ injectMethods('memory', 'group', {
     const data = await this.getGroup(group.id, selfId)
     if ('_diff' in group) return (group as Group)._merge(clone(data))
     return observe(Object.assign(group, clone(data)), diff => this.setGroup(group.id, diff), `group ${group.id}`)
-  },
-
-  async getGroupCount () {
-    return this.count('group')
   },
 })

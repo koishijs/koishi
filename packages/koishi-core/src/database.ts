@@ -95,7 +95,6 @@ export interface UserMethods {
   setUser (userId: number, data: Partial<UserData>): Promise<any>
   observeUser <K extends UserField> (user: number | UserData, fields?: readonly K[]): Promise<User<K>>
   observeUser <K extends UserField> (user: number | UserData, defaultAuthority?: number, fields?: readonly K[]): Promise<User<K>>
-  getUserCount (): Promise<number>
 }
 
 export interface GroupMethods {
@@ -106,7 +105,6 @@ export interface GroupMethods {
   setGroup (groupId: number, data: Partial<GroupData>): Promise<any>
   observeGroup <K extends GroupField> (group: number | GroupData, fields?: readonly K[]): Promise<Group<K>>
   observeGroup <K extends GroupField> (group: number | GroupData, selfId?: number, fields?: readonly K[]): Promise<Group<K>>
-  getGroupCount (): Promise<number>
 }
 
 export interface TableMethods {

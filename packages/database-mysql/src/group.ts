@@ -80,8 +80,4 @@ injectMethods('mysql', 'group', {
     if ('_diff' in group) return (group as Group)._merge(additionalData)
     return observe(Object.assign(group, additionalData), diff => this.setGroup(group.id, diff), `group ${group.id}`)
   },
-
-  async getGroupCount () {
-    return this.count('group')
-  },
 })

@@ -45,8 +45,4 @@ injectMethods('level', 'group', {
     if ('_diff' in group) return (group as Group)._merge(data)
     return observe(Object.assign(group, data), diff => this.setGroup(group.id, diff), `group ${group.id}`)
   },
-
-  getGroupCount () {
-    return this.count('group')
-  },
 })

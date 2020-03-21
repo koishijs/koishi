@@ -44,8 +44,4 @@ injectMethods('level', 'user', {
     if ('_diff' in user) return (user as User)._merge(data)
     return observe(Object.assign(user, data), diff => this.setUser(user.id, diff), `user ${user.id}`)
   },
-
-  getUserCount () {
-    return this.count('user')
-  },
 })

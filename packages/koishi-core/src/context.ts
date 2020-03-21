@@ -4,7 +4,7 @@ import { Meta, contextTypes, getSessionId } from './meta'
 import { Sender } from './sender'
 import { App } from './app'
 import { Database, UserField, GroupField } from './database'
-import { messages, errors } from './messages'
+import { messages, errors } from './shared'
 import { format, inspect } from 'util'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
