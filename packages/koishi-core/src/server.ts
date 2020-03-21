@@ -334,7 +334,6 @@ export class WsClient extends Server {
           if (error) reject(error)
         })
 
-        let resolved = false
         this.socket.on('message', (data) => {
           data = data.toString()
           this.debug('receive', data)
@@ -345,20 +344,15 @@ export class WsClient extends Server {
             return reject(new Error(data))
           }
 
-          if (!resolved) {
-            resolved = true
-            this.debug('connect to ws server:', this.app.options.server)
-            emitter.emit('ws-client', this.socket)
-            resolve()
-          }
-
           if ('post_type' in parsed) {
             const meta = this.prepareMeta(parsed)
             if (meta) this.dispatchMeta(meta)
+          } else if (parsed.echo === -1) {
+            this.version = camelCase(parsed.data)
+            this.debug('connect to ws server:', this.app.options.server)
+            emitter.emit('ws-client', this.socket)
+            resolve()
           } else {
-            if (parsed.echo === -1) {
-              this.version = camelCase(parsed.data)
-            }
             this._listeners[parsed.echo]?.(parsed)
           }
         })
