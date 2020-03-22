@@ -2,6 +2,7 @@ import { Context, Meta } from 'koishi-core'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
+    'repeater' (meta: Meta<'message'>, state: State): void
     'repeater/repeat' (meta: Meta<'message'>, state: State): void
     'repeater/interrupt' (meta: Meta<'message'>, state: State): void
     'repeater/check-repeat' (meta: Meta<'message'>, state: State): void
@@ -84,6 +85,7 @@ export default function apply (ctx: Context, options: RepeaterOptions) {
       if (state.users.has(userId) && getSwitch(options.repeatCheck, state.repeated, state.times, message)) {
         return next(() => {
           ctx.emit('repeater/check-repeat', meta, state)
+          ctx.emit('repeater', meta, state)
           return $send(getText(options.repeatCheckText, userId, message))
         })
       }
@@ -92,12 +94,14 @@ export default function apply (ctx: Context, options: RepeaterOptions) {
       if (getSwitch(options.interrupt, state.repeated, state.times, message)) {
         return next(() => {
           ctx.emit('repeater/interrupt', meta, state)
+          ctx.emit('repeater', meta, state)
           return $send(getText(options.interruptText, userId, message))
         })
       }
       if (getSwitch(options.repeat, state.repeated, state.times, message)) {
         return next(() => {
           ctx.emit('repeater/repeat', meta, state)
+          ctx.emit('repeater', meta, state)
           return $send(message)
         })
       }
@@ -105,6 +109,7 @@ export default function apply (ctx: Context, options: RepeaterOptions) {
       if (getSwitch(options.interruptCheck, state.repeated, state.times, message)) {
         return next(() => {
           ctx.emit('repeater/check-interrupt', meta, state)
+          ctx.emit('repeater', meta, state)
           return $send(getText(options.interruptCheckText, userId, message))
         })
       }

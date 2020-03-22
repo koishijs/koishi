@@ -11,6 +11,7 @@ import welcome, { WelcomeMessage } from './welcome'
 
 export * from './admin'
 export * from './info'
+export * from './repeater'
 
 export {
   admin,

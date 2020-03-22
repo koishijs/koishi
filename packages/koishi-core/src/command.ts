@@ -432,8 +432,9 @@ export class Command {
     await this.app.parallelize(argv.meta, 'command', argv)
 
     let skipped = false
-    argv.next = (_next) => {
+    argv.next = async (_next) => {
       skipped = true
+      await this.app.parallelize(argv.meta, 'after-command', argv)
       return next(_next)
     }
 
