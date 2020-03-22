@@ -424,6 +424,7 @@ export class Command {
     if (!argv.options) argv.options = {}
     if (!argv.unknown) argv.unknown = []
     if (!argv.args) argv.args = []
+    argv.command = this
 
     if (await this.app.serialize(argv.meta, 'before-command', argv)) return
 
