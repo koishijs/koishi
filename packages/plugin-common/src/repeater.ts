@@ -1,4 +1,13 @@
-import { Context } from 'koishi-core'
+import { Context, Meta } from 'koishi-core'
+
+declare module 'koishi-core/dist/context' {
+  interface EventMap {
+    'repeater/repeat' (meta: Meta<'message'>, state: State): void
+    'repeater/interrupt' (meta: Meta<'message'>, state: State): void
+    'repeater/check-repeat' (meta: Meta<'message'>, state: State): void
+    'repeater/check-interrupt' (meta: Meta<'message'>, state: State): void
+  }
+}
 
 interface State {
   message: string
@@ -68,23 +77,36 @@ export default function apply (ctx: Context, options: RepeaterOptions) {
     }
   })
 
-  ctx.prependMiddleware(({ message, groupId, userId, $send }, next) => {
+  ctx.prependMiddleware((meta, next) => {
+    const { message, groupId, userId, $send } = meta
     const state = getState(groupId)
     if (message === state.message) {
       if (state.users.has(userId) && getSwitch(options.repeatCheck, state.repeated, state.times, message)) {
-        return next(() => $send(getText(options.repeatCheckText, userId, message)))
+        return next(() => {
+          ctx.emit('repeater/check-repeat', meta, state)
+          return $send(getText(options.repeatCheckText, userId, message))
+        })
       }
       state.times += 1
       state.users.add(userId)
       if (getSwitch(options.interrupt, state.repeated, state.times, message)) {
-        return next(() => $send(getText(options.interruptText, userId, message)))
+        return next(() => {
+          ctx.emit('repeater/interrupt', meta, state)
+          return $send(getText(options.interruptText, userId, message))
+        })
       }
       if (getSwitch(options.repeat, state.repeated, state.times, message)) {
-        return next(() => $send(message))
+        return next(() => {
+          ctx.emit('repeater/repeat', meta, state)
+          return $send(message)
+        })
       }
     } else {
       if (getSwitch(options.interruptCheck, state.repeated, state.times, message)) {
-        return next(() => $send(getText(options.interruptCheckText, userId, message)))
+        return next(() => {
+          ctx.emit('repeater/check-interrupt', meta, state)
+          return $send(getText(options.interruptCheckText, userId, message))
+        })
       }
       state.message = message
       state.repeated = false
