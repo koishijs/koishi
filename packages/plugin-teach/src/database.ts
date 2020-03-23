@@ -17,7 +17,6 @@ interface DialogueMethods {
   getDialoguesByTest (test: DialogueTest): Promise<Dialogue[]>
   setDialogue (id: number, data: Partial<Dialogue>): Promise<any>
   removeDialogues (ids: number[]): Promise<any>
-  getDialogueCount (): Promise<DialogueCount>
 }
 
 export interface DialogueCount {
@@ -83,13 +82,5 @@ injectMethods('mysql', 'dialogue', {
   removeDialogues (ids) {
     if (!ids.length) return
     return this.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
-  },
-
-  async getDialogueCount () {
-    const [{
-      'COUNT(DISTINCT `question`)': questions,
-      'COUNT(*)': answers,
-    }] = await this.query('SELECT COUNT(DISTINCT `question`), COUNT(*) FROM `dialogue`')
-    return { questions, answers }
   },
 })

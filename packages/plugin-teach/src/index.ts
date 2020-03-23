@@ -16,6 +16,7 @@ import writer from './plugins/writer'
 export * from './database'
 export * from './receiver'
 export * from './search'
+export * from './shortcut'
 export * from './utils'
 export * from './plugins/context'
 export * from './plugins/freeze'
@@ -42,7 +43,7 @@ const cheetSheet = `\
 　删除问答：#id -r
 搜索选项：
 　使用关键词搜索：　-k
-　设置搜索结果页码：-P
+　设置搜索结果页码：##p, ###p
 　关键词搜索，自动合并搜索结果：###
 上下文选项：
 　允许本群：　　　-e
@@ -60,6 +61,10 @@ const cheetSheet = `\
 　设置为匿名：　　-W
 　设置最小好感度：-m aff
 　设置最大好感度：-M aff
+重定向：
+　重定向到问题：# 问题 => 问题
+　重定向为指令调用：# 问题 -c 指令
+　取消重定向：-C
 特殊语法：
 　$$：一个普通的 $ 字符
 　$0：收到的原文本

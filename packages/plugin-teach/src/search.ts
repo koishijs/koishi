@@ -19,13 +19,13 @@ function formatAnswer (source: string) {
 export default function apply (ctx: Context) {
   ctx.command('teach')
     .option('-s, --search', '搜索已有问答', { notUsage: true, isString: true, hidden: true })
-    .option('-P, --page <page>', '设置搜索结果的页码', { hidden: true })
+    .option('--page <page>', '设置搜索结果的页码', { hidden: true })
     .option('--auto-merge', '自动合并相同的问题和回答', { hidden: true })
 
   ctx.on('dialogue/validate', ({ options, meta }) => {
     const page = options.page
     if (page !== undefined && !(isInteger(page) && page > 0)) {
-      return meta.$send('参数 -P, --page 应为正整数。')
+      return meta.$send('参数 --page 应为正整数。')
     }
   })
 

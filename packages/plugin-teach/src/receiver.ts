@@ -81,10 +81,18 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, next
   }
   if (!dialogue) return next()
 
+  const answer = dialogue.answer
+    .replace(/\$\$/g, '@@__DOLLARS_PLACEHOLDER__@@')
+    .replace(/\$A/g, CQCode.stringify('at', { qq: 'all' }))
+    .replace(/\$a/g, CQCode.stringify('at', { qq: meta.userId }))
+    .replace(/\$m/g, CQCode.stringify('at', { qq: meta.selfId }))
+    .replace(/\$s/g, escapeAnswer(getSenderName(meta)))
+    .replace(/\$0/g, escapeAnswer(meta.message))
+
   if (dialogue.flag & DialogueFlag.redirect) {
     meta.$_redirected = (meta.$_redirected || 0) + 1
     ctx.logger('dialogue').debug(meta.message, '=>', dialogue.answer)
-    return ctx.app.executeCommandLine(dialogue.answer, meta, next)
+    return ctx.app.executeCommandLine(unescapeAnswer(answer), meta, next)
   }
 
   ctx.logger('dialogue').debug(meta.message, '->', dialogue.answer)
@@ -92,15 +100,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, next
   await ctx.app.parallelize(meta, 'dialogue/send', meta, dialogue, state)
 
   // send answers
-  const answers = dialogue.answer
-    .replace(/\$\$/g, '@@__DOLLARS_PLACEHOLDER__@@')
-    .replace(/\$A/g, CQCode.stringify('at', { qq: 'all' }))
-    .replace(/\$a/g, CQCode.stringify('at', { qq: meta.userId }))
-    .replace(/\$m/g, CQCode.stringify('at', { qq: meta.selfId }))
-    .replace(/\$s/g, escapeAnswer(getSenderName(meta)))
-    .replace(/\$0/g, escapeAnswer(meta.message))
-    .split('$n')
-    .map(unescapeAnswer)
+  const answers = answer.split('$n').map(unescapeAnswer)
 
   for (const answer of answers) {
     await sleep(answer.length * 50)

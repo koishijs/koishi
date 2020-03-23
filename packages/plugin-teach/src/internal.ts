@@ -1,6 +1,7 @@
 import { Context } from 'koishi-core'
-import { DialogueFlag } from './database'
 import { simplify } from 'koishi-utils'
+import { DialogueFlag } from './database'
+import { attachOption } from './shortcut'
 
 const prefixPunctuation = /^([()\]]|\[(?!cq:))*/
 const suffixPunctuation = /([.,?!()[~]|(?<!\[cq:[^\]]+)\])*$/
@@ -41,6 +42,10 @@ export default function apply (ctx: Context) {
     .option('-c, --redirect', { hidden: true })
     .option('-C, --no-redirect', { hidden: true })
     .option('--redirect-dialogue', { hidden: true })
+
+  ctx.on('dialogue/shortcut', (argv) => {
+    return attachOption(argv, '=>', 'redirect-dialogue')
+  })
 
   ctx.before('dialogue/validate', ({ options, meta, args }) => {
     if (args.length) {

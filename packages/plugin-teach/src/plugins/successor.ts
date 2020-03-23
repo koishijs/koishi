@@ -1,5 +1,6 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference, intersection } from 'koishi-utils'
+import { attachOption } from '../shortcut'
 import { DialogueTest, Dialogue } from '../database'
 import { equal, split, TeachConfig, checkAuthority, getDialogues } from '../utils'
 
@@ -47,6 +48,13 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('--add-pred <ids>', '添加前置问题 (<)', { isString: true, hidden: true })
     .option('--set-succ <ids>', '设置后继问题 (>>)', { isString: true, hidden: true })
     .option('--add-succ <ids>', '添加后继问题 (>)', { isString: true, hidden: true })
+
+  ctx.on('dialogue/shortcut', (argv) => {
+    return attachOption(argv, '<<', 'set-pred')
+      || attachOption(argv, '<', 'add-pred')
+      || attachOption(argv, '>>', 'set-succ')
+      || attachOption(argv, '>', 'add-succ')
+  })
 
   ctx.on('dialogue/filter', (data, test, state) => {
     if (test.successors) {
