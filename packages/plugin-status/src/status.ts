@@ -59,11 +59,16 @@ onStart(() => {
 
   if (!statusPort) return
   server = createServer(async (req, res) => {
+    const status = await getStatus().catch((error) => {
+      appList[0].logger('status').warn(error)
+      return null as Status
+    })
+    if (!status) return res.writeHead(500).end()
     res.writeHead(200, {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
     })
-    res.write(JSON.stringify(await getStatus()))
+    res.write(JSON.stringify(status))
     res.end()
   }).listen(statusPort)
   appList[0].logger('status').info(`server listening at ${cyan(statusPort)}`)
@@ -122,24 +127,34 @@ export interface AppStatus {
   rate?: number
 }
 
-let status: Status
+let cachedStatus: Status
 let timestamp: number
+
+type StatusGetter = () => Partial<Status> | Promise<Partial<Status>>
+const statusGetters: StatusGetter[] = []
+
+export function extendStatus (callback: StatusGetter) {
+  statusGetters.push(callback)
+}
 
 export async function getStatus (): Promise<Status> {
   const now = Date.now()
-  if (now - timestamp < 60000) return status
-  const [apps, userCount, groupCount] = await Promise.all([
+  if (now - timestamp < 60000) return cachedStatus
+  const [userCount, groupCount, apps, data] = await Promise.all([
+    appList[0].database.getActiveUserCount(),
+    appList[0].database.getActiveGroupCount(),
     Promise.all(appList.map<Promise<AppStatus>>(async (app) => ({
       label: app.options.label,
       selfId: app.options.selfId,
       good: await app.sender.getStatus().then(status => status.good, () => false),
       rate: (sendEventCounter.get(app) || []).slice(1).reduce((prev, curr) => prev + curr, 0),
     }))),
-    appList[0].database.getActiveUserCount(),
-    appList[0].database.getActiveGroupCount(),
+    Promise.all(statusGetters.map(getter => getter())),
   ])
   const memory = memoryRate()
   const cpu = { app: appRate, total: usedRate }
   timestamp = now
-  return status = { apps, userCount, groupCount, memory, cpu, timestamp }
+  cachedStatus = { apps, userCount, groupCount, memory, cpu, timestamp }
+  data.forEach(status => Object.assign(cachedStatus, status))
+  return cachedStatus
 }
