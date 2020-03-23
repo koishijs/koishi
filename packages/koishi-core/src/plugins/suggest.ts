@@ -5,6 +5,7 @@ import leven from 'leven'
 
 onApp((app) => {
   app.middleware((meta, next) => {
+    if (meta.$argv) return next()
     const { message, prefix, nickname } = meta.$parsed
     const target = meta.$parsed.message.split(/\s/, 1)[0].toLowerCase()
     if (!target || !(prefix !== null || nickname || meta.messageType === 'private')) return next()

@@ -38,13 +38,16 @@ export default function apply (ctx: Context) {
     .option('-p, --probability <prob>', '设置问题的触发权重', { hidden: true })
     .option('-k, --keyword', '使用关键词匹配', { hidden: true })
     // .option('-K, --no-keyword', '取消使用关键词匹配')
+    .option('-c, --redirect', { hidden: true })
+    .option('-C, --no-redirect', { hidden: true })
+    .option('--redirect-dialogue', { hidden: true })
 
   ctx.before('dialogue/validate', ({ options, meta, args }) => {
     if (args.length) {
       return meta.$send('存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
     }
 
-    const { question, answer, probability } = options
+    const { question, answer, probability, redirectDialogue } = options
     if (String(question).includes('[CQ:image,')) {
       return meta.$send('问题不能包含图片。')
     }
@@ -59,6 +62,9 @@ export default function apply (ctx: Context) {
     options.answer = simplifyAnswer(answer)
     if (!options.answer) {
       delete options.answer
+    } else if (redirectDialogue) {
+      options.redirect = true
+      options.answer = 'dialogue ' + options.answer
     }
 
     if (probability !== undefined && !(probability > 0 && probability <= 1)) {
@@ -94,7 +100,24 @@ export default function apply (ctx: Context) {
     if (options.keyword !== undefined) {
       data.flag &= ~DialogueFlag.keyword
       data.flag |= +options.keyword * DialogueFlag.keyword
-    }  
+    }
+
+    if (options.redirect !== undefined) {
+      data.flag &= ~DialogueFlag.redirect
+      data.flag |= +options.redirect * DialogueFlag.redirect
+    }
+  })
+
+  ctx.on('dialogue/detail', (dialogue, output) => {
+    output.push(`问题：${dialogue.original}`)
+    if (!(dialogue.flag & DialogueFlag.redirect)) {
+      output.push(`回答：${dialogue.answer}`)
+    } else if (dialogue.answer.startsWith('dialogue ')) {
+      output.push(`重定向到问题：${dialogue.answer.slice(9).trimStart()}`)
+    } else {
+      output.push(`重定向到指令：${dialogue.answer}`)
+    }
+    if (dialogue.probability < 1) output.push(`触发权重：${dialogue.probability}`)
   })
 
   ctx.on('dialogue/detail-short', (dialogue, output) => {

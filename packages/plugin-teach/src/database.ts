@@ -49,6 +49,7 @@ export enum DialogueFlag {
   regexp = 2,
   keyword = 4,
   reversed = 16,
+  redirect = 32,
 }
 
 injectMethods('mysql', 'dialogue', {

@@ -42,6 +42,7 @@ export default function (ctx: Context, config: TeachConfig) {
     if (attachOption('<', 'add-pred')) return
     if (attachOption('>>', 'set-succ')) return
     if (attachOption('>', 'add-succ')) return
+    if (attachOption('=>', 'redirect-dialogue')) return
 
     function parseArgument () {
       if (!args.length) return
@@ -51,7 +52,7 @@ export default function (ctx: Context, config: TeachConfig) {
     }
 
     options.question = parseArgument()
-    options.answer = parseArgument()
+    options.answer = options.redirectDialogue || parseArgument()
 
     Object.defineProperty(meta, '$argv', {
       writable: true,

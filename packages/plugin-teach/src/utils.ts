@@ -80,14 +80,7 @@ export function checkAuthority (argv: TeachArgv, dialogues: Dialogue[]) {
 }
 
 export async function sendDetail (ctx: Context, dialogue: Dialogue, argv: TeachArgv) {
-  const output = [
-    `编号为 ${dialogue.id} 的问答信息：`,
-    `问题：${dialogue.original}`,
-    `回答：${dialogue.answer}`,
-  ]
-
-  if (dialogue.probability < 1) output.push(`触发权重：${dialogue.probability}`)
+  const output = [`编号为 ${dialogue.id} 的问答信息：`]
   ctx.emit('dialogue/detail', dialogue, output, argv)
-
   await argv.meta.$send(output.join('\n'))
 }
