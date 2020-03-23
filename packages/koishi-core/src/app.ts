@@ -307,6 +307,7 @@ export class App extends Context {
         const { name, fuzzy, command, oneArg, prefix, options, args = [] } = shortcut
         if (prefix && !nickname) continue
         if (!fuzzy && message !== name) continue
+        if (!command.context.match(meta)) continue
         if (message.startsWith(name)) {
           const _message = message.slice(name.length)
           if (fuzzy && !nickname && _message.match(/^\S/)) continue

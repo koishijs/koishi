@@ -78,11 +78,13 @@ export default function apply (ctx: Context) {
   })
 
   ctx.on('dialogue/before-modify', async ({ options, meta, target }) => {
+    if (target) return
+
     if (options.probability === undefined) {
       options.probability = 1
     }
 
-    if (!target && !(options.question && options.answer)) {
+    if (!options.question || !options.answer) {
       await meta.$send('缺少问题或回答，请检查指令语法。')
       return true
     }

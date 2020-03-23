@@ -86,6 +86,7 @@ async function search (argv: TeachArgv) {
     } else {
       const [dialogue] = dialogues
       if (!dialogue) return meta.$send(`没有搜索到问答“${question}”“${answer}”，请尝试使用关键词匹配。`)
+      argv.dialogues = dialogues
       await ctx.serialize('dialogue/before-detail', argv)
       return sendDetail(ctx, dialogue, argv)
     }
