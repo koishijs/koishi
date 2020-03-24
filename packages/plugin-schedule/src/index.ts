@@ -58,7 +58,7 @@ export function apply (ctx: Context) {
     .action(async ({ meta, options, rest }, ...dateSegments) => {
       if (options.delete) {
         await database.removeSchedule(options.delete)
-        return meta.$send('日程已删除。')
+        return meta.$send(`日程 ${options.delete} 已删除。`)
       }
 
       if (options.list || options.fullList) {

@@ -56,7 +56,7 @@ export function formatTime (ms: number) {
   return result
 }
 
-const dayMap = ['天', '一', '二', '三', '四', '五', '六']
+const dayMap = ['日', '一', '二', '三', '四', '五', '六']
 
 export function formatTimeAndInterval (time: Date, interval: number) {
   if (!interval) {
