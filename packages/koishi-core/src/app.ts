@@ -359,15 +359,6 @@ export class App extends Context {
     return next()
   }
 
-  parseCommandLine (message: string, meta: Meta<'message'>): ParsedCommandLine {
-    const name = message.split(/\s/, 1)[0]
-    const command = this._getCommandByRawName(name)
-    if (command?.context.match(meta)) {
-      const result = command.parse(message.slice(name.length).trimStart())
-      return { meta, command, ...result }
-    }
-  }
-
   private async _attachGroup (meta: Meta<'message'>, fields: Iterable<GroupField> = []) {
     const groupFields = new Set<GroupField>(fields)
     this.emit(meta, 'before-attach-group', meta, groupFields)
@@ -387,10 +378,23 @@ export class App extends Context {
     return user
   }
 
-  async executeCommandLine (message: string, meta: Meta<'message'>, next: NextFunction = noop) {
+  parseCommandLine (message: string, meta: Meta<'message'>): ParsedCommandLine {
+    const name = message.split(/\s/, 1)[0]
+    const command = this._getCommandByRawName(name)
+    if (command?.context.match(meta)) {
+      const result = command.parse(message.slice(name.length).trimStart())
+      return { meta, command, ...result }
+    }
+  }
+
+  executeCommandLine (argv: ParsedCommandLine): Promise<void>
+  executeCommandLine (message: string, meta: Meta<'message'>, next?: NextFunction): Promise<void>
+  async executeCommandLine (arg: string | ParsedCommandLine, meta?: Meta<'message'>, next: NextFunction = noop) {
+    if (!meta) meta = (arg as ParsedCommandLine).meta
     if (!('$ctxType' in meta)) this.server.parseMeta(meta)
-    const argv = this.parseCommandLine(message, meta)
+    const argv = typeof arg === 'string' ? this.parseCommandLine(arg, meta) : arg
     if (!argv) return next()
+
     Object.defineProperty(meta, '$argv', {
       writable: true,
       value: argv,
@@ -403,7 +407,6 @@ export class App extends Context {
       await this._attachUser(meta)
     }
 
-    if (argv.command.getConfig('disable', meta)) return next()
     return argv.command.execute(argv, next)
   }
 
