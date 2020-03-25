@@ -47,15 +47,25 @@ export default function apply (ctx: Context, config: TeachConfig) {
   ctx.on('dialogue/validate', (argv) => {
     const { options, meta } = argv
 
+    if (options.disable && options.enable) {
+      return meta.$send('选项 -d, -e 不能同时使用。')
+    } else if (options.disableGlobal && options.enableGlobal) {
+      return meta.$send('选项 -D, -E 不能同时使用。')
+    } else if (options.disableGlobal && options.disable) {
+      return meta.$send('选项 -d, -D 不能同时使用。')
+    } else if (options.enable && options.enableGlobal) {
+      return meta.$send('选项 -e, -E 不能同时使用。')
+    }
+
     let noDisableEnable = false
     if (options.disable) {
       argv.reversed = true
-      argv.partial = true
+      argv.partial = !options.enableGlobal
       argv.groups = ['' + meta.groupId]
     } else if (options.disableGlobal) {
       argv.reversed = !!options.groups
       argv.partial = false
-      argv.groups = []
+      argv.groups = options.enable ? ['' + meta.groupId] : []
     } else if (options.enableGlobal) {
       argv.reversed = !options.groups
       argv.partial = false

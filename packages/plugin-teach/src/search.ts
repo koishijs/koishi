@@ -36,7 +36,7 @@ export default function apply (ctx: Context) {
 
 async function search (argv: TeachArgv) {
   const { ctx, meta, options } = argv
-  const { keyword, question, answer, page = 1 } = options
+  const { keyword, question, answer, page = 1, original } = options
   const { itemsPerPage = 20, mergeThreshold = 5 } = argv.config
 
   const test: DialogueTest = { question, answer, keyword }
@@ -58,7 +58,7 @@ async function search (argv: TeachArgv) {
       output = output.slice((page - 1) * itemsPerPage, page * itemsPerPage)
       output.unshift(title + `（第 ${page}/${pageCount} 页）：`)
       if (suffix) output.push(suffix)
-      output.push('可以使用 -P, --page 调整输出的条目页数。')
+      output.push('可以使用 --page 或 ##page 调整输出的条目页数。')
     }
     return meta.$send(output.join('\n'))
   }
@@ -75,17 +75,17 @@ async function search (argv: TeachArgv) {
       const output = dialogues.map(d => `${formatPrefix(d)}${d.original}`)
       return sendResult(`回答“${answer}”的问题如下`, output)
     } else if (!answer) {
-      if (!dialogues.length) return meta.$send(`没有搜索到问题“${question}”，请尝试使用关键词匹配。`)
+      if (!dialogues.length) return meta.$send(`没有搜索到问题“${original}”，请尝试使用关键词匹配。`)
       const output = dialogues.map(d => `${formatPrefix(d)}${formatAnswer(d.answer)}`)
       const total = dialogues.reduce((prev, curr) => prev + curr.probability, 0)
-      return sendResult(`问题“${question}”的回答如下`, output, total < 1
+      return sendResult(`问题“${original}”的回答如下`, output, total < 1
         ? `总触发概率：${+total.toFixed(3)}。`
         : dialogues.length > 1 && total > 1
           ? `总触发概率：${+total.toFixed(3)}，实际运行时会将各项概率标准化。`
           : '')
     } else {
       const [dialogue] = dialogues
-      if (!dialogue) return meta.$send(`没有搜索到问答“${question}”“${answer}”，请尝试使用关键词匹配。`)
+      if (!dialogue) return meta.$send(`没有搜索到问答“${original}”“${answer}”，请尝试使用关键词匹配。`)
       argv.dialogues = dialogues
       await ctx.serialize('dialogue/before-detail', argv)
       return sendDetail(ctx, dialogue, argv)
@@ -114,10 +114,10 @@ async function search (argv: TeachArgv) {
     if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${answer}”的回答。`)
     return sendResult(`回答关键词“${answer}”的搜索结果如下`, output)
   } else if (!answer) {
-    if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${question}”的问题。`)
-    return sendResult(`问题关键词“${question}”的搜索结果如下`, output)
+    if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${original}”的问题。`)
+    return sendResult(`问题关键词“${original}”的搜索结果如下`, output)
   } else {
-    if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${question}”“${answer}”的问答。`)
-    return sendResult(`问答关键词“${question}”“${answer}”的搜索结果如下`, output)
+    if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${original}”“${answer}”的问答。`)
+    return sendResult(`问答关键词“${original}”“${answer}”的搜索结果如下`, output)
   }
 }
