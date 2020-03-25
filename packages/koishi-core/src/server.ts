@@ -149,6 +149,7 @@ export abstract class Server {
       }
     }
 
+    app.emit(meta, 'parse', meta)
     return events
   }
 
