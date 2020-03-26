@@ -31,6 +31,8 @@ export interface Dialogue {
   original: string
   flag: number
   probability: number
+  probabilityA: number
+  _probability?: number
 }
 
 arrayTypes.push('dialogue.groups', 'dialogue.successors')

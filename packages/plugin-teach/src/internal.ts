@@ -36,7 +36,7 @@ export default function apply (ctx: Context) {
     .option('--question <question>', '问题', { isString: true })
     .option('--answer <answer>', '回答', { isString: true })
     .option('-p, --probability <prob>', '设置问题的触发权重')
-    .option('-P, --probability-of-appellation <prob>', '设置被称呼时问题的触发权重')
+    .option('-P, --probability-appellation <prob>', '设置被称呼时问题的触发权重')
     .option('-k, --keyword', '使用关键词匹配')
     // .option('-K, --no-keyword', '取消使用关键词匹配')
     .option('-c, --redirect', '使用指令重定向')
@@ -48,7 +48,7 @@ export default function apply (ctx: Context) {
       return meta.$send('存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
     }
 
-    const { question, answer, probability, redirectDialogue } = options
+    const { question, answer, probability, probabilityAppellation, redirectDialogue } = options
     if (String(question).includes('[CQ:image,')) {
       return meta.$send('问题不能包含图片。')
     }
@@ -68,8 +68,12 @@ export default function apply (ctx: Context) {
       options.answer = 'dialogue ' + options.answer
     }
 
-    if (probability !== undefined && !(probability > 0 && probability <= 1)) {
+    if (probability !== undefined && !(probability >= 0 && probability <= 1)) {
       return meta.$send('参数 -p, --probability 应为不超过 1 的正数。')
+    }
+
+    if (probabilityAppellation !== undefined && !(probabilityAppellation >= 0 && probabilityAppellation <= 1)) {
+      return meta.$send('参数 -P, --probability-appellation 应为不超过 1 的正数。')
     }
   })
 
@@ -78,6 +82,10 @@ export default function apply (ctx: Context) {
 
     if (options.probability === undefined) {
       options.probability = 1
+    }
+
+    if (options.probabilityAppellation === undefined) {
+      options.probabilityAppellation = 0
     }
 
     if (!options.question || !options.answer) {
@@ -100,6 +108,10 @@ export default function apply (ctx: Context) {
       data.probability = options.probability
     }
 
+    if (options.probabilityAppellation !== undefined) {
+      data.probabilityA = options.probabilityAppellation
+    }
+
     if (options.keyword !== undefined) {
       data.flag &= ~DialogueFlag.keyword
       data.flag |= +options.keyword * DialogueFlag.keyword
@@ -111,20 +123,42 @@ export default function apply (ctx: Context) {
     }
   })
 
-  ctx.on('dialogue/detail', (dialogue, output) => {
-    output.push(`问题：${dialogue.original}`)
-    if (!(dialogue.flag & DialogueFlag.redirect)) {
-      output.push(`回答：${dialogue.answer}`)
-    } else if (dialogue.answer.startsWith('dialogue ')) {
-      output.push(`重定向到问题：${dialogue.answer.slice(9).trimStart()}`)
+  ctx.on('dialogue/detail', ({ original, flag, answer, probability: probabilityS, probabilityA }, output) => {
+    output.push(`问题：${original}`)
+
+    if (!(flag & DialogueFlag.redirect)) {
+      output.push(`回答：${answer}`)
+    } else if (answer.startsWith('dialogue ')) {
+      output.push(`重定向到问题：${answer.slice(9).trimStart()}`)
     } else {
-      output.push(`重定向到指令：${dialogue.answer}`)
+      output.push(`重定向到指令：${answer}`)
     }
-    if (dialogue.probability < 1) output.push(`触发权重：${dialogue.probability}`)
+
+    if (!probabilityS) {
+      if (probabilityA === 1) {
+        output.push('必须带称呼触发。')
+      } else if (probabilityA) {
+        output.push(`必须带称呼触发，权重：${probabilityA}`)
+      } else {
+        output.push('权重为零，无法触发。')
+      }
+    } else if (probabilityS === 1) {
+      if (probabilityA === 1) {
+        output.push('允许带称呼触发。')
+      } else if (probabilityA) {
+        output.push(`允许带称呼触发，权重：${probabilityA}`)
+      }
+    } else {
+      if (probabilityA) {
+        output.push(`不带称呼/带称呼触发权重：${probabilityS}/${probabilityA}`)
+      } else {
+        output.push(`触发权重：${probabilityS}`)
+      }
+    }
   })
 
-  ctx.on('dialogue/detail-short', (dialogue, output) => {
-    if (dialogue.probability < 1) output.push(`p=${dialogue.probability}`)
+  ctx.on('dialogue/detail-short', ({ probability: probabilityS, probabilityA }, output) => {
+    if (probabilityS < 1 || probabilityA > 0) output.push(`p=${probabilityS}`, `P=${probabilityA}`)
   })
 
   ctx.on('dialogue/receive', (meta, test) => {
