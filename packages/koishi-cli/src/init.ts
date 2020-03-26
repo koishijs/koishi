@@ -56,7 +56,7 @@ async function createConfig (options) {
   return config
 }
 
-const supportedTypes = ['js', 'json', 'ts', 'yml', 'yaml'] as const
+const supportedTypes = ['js', 'ts', 'json'] as const
 type ConfigFileType = typeof supportedTypes[number]
 
 export default function (cli: CAC) {
@@ -88,16 +88,14 @@ export default function (cli: CAC) {
       }
 
       // generate output
-      let output: string
-      switch (extension) {
-        case 'yml': case 'yaml': output = safeDump(config); break
-        default:
-          output = JSON.stringify(config, null, 2)
-          if (extension === 'js') {
-            output = 'module.exports = ' + output.replace(/^(\s+)"([\w$]+)":/mg, '$1$2:')
-          } else if (extension === 'ts') {
-            output = 'export = ' + output.replace(/^(\s+)"([\w$]+)":/mg, '$1$2:')
-          }
+      let output = JSON.stringify(config, null, 2)
+      if (extension !== 'json') {
+        output = output.replace(/^(\s+)"([\w$]+)":/mg, '$1$2:')
+        if (extension === 'js') {
+          output = 'module.exports = ' + output
+        } else if (extension === 'ts') {
+          output = 'export = ' + output
+        }
       }
 
       // write to file

@@ -1,12 +1,10 @@
 import { App, AppOptions, Context, Plugin, appList, startAll, onStart } from 'koishi-core'
-import { resolve, extname, dirname } from 'path'
+import { resolve, dirname } from 'path'
 import { capitalize } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { cyan, yellow } from 'kleur'
 import { logger } from './utils'
 import { format } from 'util'
-import { readFileSync } from 'fs'
-import { safeLoad } from 'js-yaml'
 
 const { version } = require('../package')
 
@@ -31,9 +29,7 @@ export interface AppConfig extends AppOptions {
 }
 
 const configFile = resolve(process.cwd(), process.env.KOISHI_CONFIG_FILE || 'koishi.config')
-const extension = extname(configFile)
 const configDir = dirname(configFile)
-let config: AppConfig | AppConfig[]
 
 function tryCallback <T> (callback: () => T) {
   try {
@@ -45,15 +41,7 @@ function tryCallback <T> (callback: () => T) {
   }
 }
 
-if (['.js', '.json', '.ts'].includes(extension)) {
-  config = tryCallback(() => require(configFile))
-} else if (['.yaml', '.yml'].includes(extension)) {
-  config = tryCallback(() => safeLoad(readFileSync(configFile, 'utf8')))
-} else {
-  config = tryCallback(() => require(configFile))
-    || tryCallback(() => safeLoad(readFileSync(configFile + '.yml', 'utf8')))
-    || tryCallback(() => safeLoad(readFileSync(configFile + '.yaml', 'utf8')))
-}
+const config: AppConfig | AppConfig[] = tryCallback(() => require(configFile))
 
 if (!config) {
   throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
