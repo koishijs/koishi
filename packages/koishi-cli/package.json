@@ -31,17 +31,17 @@
     "koishi"
   ],
   "devDependencies": {
-    "@types/js-yaml": "^3.12.2",
+    "@types/js-yaml": "^3.12.3",
     "@types/prompts": "^2.0.5"
   },
   "dependencies": {
-    "cac": "^6.5.7",
+    "cac": "^6.5.8",
     "js-yaml": "^3.13.1",
     "kleur": "^3.0.3",
     "koishi-core": "^1.11.2",
     "koishi-plugin-common": "^2.1.8",
     "koishi-plugin-schedule": "^1.0.13",
     "koishi-utils": "^1.0.4",
-    "prompts": "^2.3.1"
+    "prompts": "^2.3.2"
   }
 }
