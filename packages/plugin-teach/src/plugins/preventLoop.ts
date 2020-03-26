@@ -4,6 +4,7 @@ import { TeachConfig } from '../utils'
 export interface LoopConfig {
   participants: number
   length: number
+  debounce?: number
 }
 
 declare module '../utils' {
@@ -15,6 +16,7 @@ declare module '../utils' {
 declare module '../receiver' {
   interface SessionState {
     initiators: number[]
+    loopTimestamp: number
   }
 }
 
@@ -32,15 +34,22 @@ export default function apply (ctx: Context, config: TeachConfig) {
   })
 
   ctx.on('dialogue/receive', (meta, test, state) => {
-    for (const { participants, length } of preventLoopConfig) {
+    const timestamp = Date.now()
+    for (const { participants, length, debounce } of preventLoopConfig) {
       if (state.initiators.length < length) break
       const initiators = new Set(state.initiators.slice(0, length))
-      if (initiators.size <= participants && initiators.has(meta.userId)) return true
+      if (initiators.size <= participants
+        && initiators.has(meta.userId)
+        && !(debounce > timestamp - state.loopTimestamp)) {
+        state.loopTimestamp = timestamp
+        return true
+      }
     }
   })
 
   ctx.on('dialogue/send', (meta, dialogue, state) => {
     state.initiators.unshift(meta.userId)
     state.initiators.splice(initiatorCount, Infinity)
+    state.loopTimestamp = null
   })
 }

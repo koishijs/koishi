@@ -8,14 +8,14 @@ export default function apply (ctx: Context) {
     const { ctx, options } = argv
     const { question, answer } = options
     if (await ctx.app.serialize('dialogue/before-modify', argv)) return
-  
+
     argv.unknown = []
     argv.uneditable = []
     argv.updated = []
     argv.skipped = []
     argv.failed = []
     argv.dialogues = await getDialogues(ctx, { question, answer })
-  
+
     if (argv.dialogues.length) {
       const [data] = argv.dialogues
       const dialogue = observe(data, diff => ctx.database.setDialogue(data.id, diff), `dialogue ${data.id}`)
@@ -33,7 +33,7 @@ export default function apply (ctx: Context) {
         return sendResult(argv, `问答已存在，编号为 ${data.id}，如要修改请尝试使用 #${data.id} 指令。`)
       }
     }
-  
+
     const dialogue = { flag: 0 } as Dialogue
     ctx.emit('dialogue/modify', argv, dialogue)
     argv.dialogues = [await ctx.database.createDialogue(dialogue)]
