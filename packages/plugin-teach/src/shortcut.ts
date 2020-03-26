@@ -7,19 +7,6 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-export function attachOption (argv: ParsedCommandLine, keyword: string, key: string) {
-  const option = argv.command._optsDef[key]
-  const fullname = removeBrackets(option.rawName)
-  const index = argv.args.indexOf(keyword)
-  if (index >= 0) {
-    const [_, value] = argv.args.splice(index, 2)
-    if (!value) return argv.meta.$send(`选项 ${fullname} 缺少参数。`)
-    for (const name of option.camels) {
-      argv.options[name] = value
-    }
-  }
-}
-
 export default function (ctx: Context, config: TeachConfig) {
   ctx.prependMiddleware((meta, next) => {
     const capture = meta.message.match(/^#((\d+(?:,\d+)*)?|##?(\d*))(\s+|$)/)

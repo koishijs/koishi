@@ -61,12 +61,12 @@ onApp((app) => {
 
     // check argument count
     if (command.config.checkArgCount) {
-      const nextArg = command._argsDef[args.length]
+      const nextArg = command._arguments[args.length]
       if (nextArg?.required) {
         return sendHint(meta, messages.INSUFFICIENT_ARGUMENTS)
       }
-      const finalArg = command._argsDef[command._argsDef.length - 1]
-      if (args.length > command._argsDef.length && !finalArg.noSegment && !finalArg.variadic) {
+      const finalArg = command._arguments[command._arguments.length - 1]
+      if (args.length > command._arguments.length && !finalArg.noSegment && !finalArg.variadic) {
         return sendHint(meta, messages.REDUNANT_ARGUMENTS)
       }
     }

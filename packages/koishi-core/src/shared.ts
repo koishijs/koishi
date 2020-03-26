@@ -18,8 +18,8 @@ export const messages = {
 } as const
 
 export const errors = {
-  DUPLICATE_COMMAND: 'duplicate command names',
-  DUPLICATE_OPTION: 'duplicate option names',
+  DUPLICATE_COMMAND: 'duplicate command names: "%s"',
+  DUPLICATE_OPTION: 'duplicate option names: "%s"',
   EXPECT_COMMAND_NAME: 'expect a command name',
   INVALID_PLUGIN: 'invalid plugin, expect function or object with a "apply" method',
   INVALID_CONTEXT: 'invalid context path',

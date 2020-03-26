@@ -317,8 +317,7 @@ export class Context {
     if (!command || !command.context.match(meta) || command.getConfig('disable', meta)) {
       return meta.$send(messages.COMMAND_NOT_FOUND)
     }
-    const unknown = Object.keys(options).filter(key => !command._optsDef[key])
-    return command.execute({ meta, command, args, options, rest, unknown })
+    return command.execute({ meta, args, options, rest })
   }
 
   end () {

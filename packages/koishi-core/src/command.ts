@@ -3,13 +3,13 @@ import { UserData, UserField, GroupField } from './database'
 import { errors } from './shared'
 import { noop, camelCase } from 'koishi-utils'
 import { Meta } from './meta'
-import { inspect } from 'util'
+import { inspect, format } from 'util'
 
 const ANGLED_BRACKET_REGEXP = /<([^>]+)>/g
 const SQUARE_BRACKET_REGEXP = /\[([^\]]+)\]/g
 
 export function removeBrackets (source: string) {
-  return source.replace(/[<[].+/, '').trim()
+  return source.replace(/(<[^<]+>|\[[^[]+\]).*/, '').trim()
 }
 
 function parseBracket (name: string, required: boolean): CommandArgument {
@@ -62,6 +62,7 @@ export interface CommandOption extends OptionConfig {
   longest: string
   names: string[]
   camels: string[]
+  aliases: string[]
   negated: string[]
   required: boolean
   isBoolean: boolean
@@ -76,17 +77,21 @@ interface ParsedArg0 {
 
 function parseArg0 (source: string): ParsedArg0 {
   const char0 = source[0]
-  if (char0 === '"' || char0 === "'" || char0 === '“' || char0 === '”') {
-    const [content] = source.slice(1).split(/["'“”](?=\s|$)/, 1)
+  if (char0 === '"' || char0 === "'" || char0 === '“' || char0 === '”' || char0 === '‘' || char0 === '’') {
+    const [content] = source.slice(1).split(/["'“”‘’](?=\s|$)/, 1)
     return {
-      quoted: true,
       content,
+      quoted: true,
       rest: source.slice(2 + content.length).trimLeft(),
     }
   }
 
   const [content] = source.split(/\s/, 1)
-  return { content, quoted: false, rest: source.slice(content.length).trimLeft() }
+  return {
+    content,
+    quoted: false,
+    rest: source.slice(content.length).trimLeft(),
+  }
 }
 
 export function parseValue (source: string | true, quoted: boolean, config = {} as CommandOption) {
@@ -148,14 +153,15 @@ export class Command {
   parent: Command = null
 
   _aliases: string[] = []
+  _arguments: CommandArgument[]
   _options: CommandOption[] = []
   _shortcuts: Record<string, ShortcutConfig> = {}
 
+  private _optionMap: Record<string, CommandOption> = {}
+  private _optionAliasMap: Record<string, CommandOption> = {}
   private _userFields: ArgvInferred<Iterable<UserField>>[] = []
   private _groupFields: ArgvInferred<Iterable<GroupField>>[] = []
 
-  _argsDef: CommandArgument[]
-  _optsDef: Record<string, CommandOption> = {}
   _action?: (this: this, config: ParsedCommandLine, ...args: string[]) => any
 
   static defaultConfig: CommandConfig = {
@@ -186,7 +192,7 @@ export class Command {
 
   constructor (public name: string, public declaration: string, public context: Context, config: CommandConfig = {}) {
     if (!name) throw new Error(errors.EXPECT_COMMAND_NAME)
-    this._argsDef = parseArguments(declaration)
+    this._arguments = parseArguments(declaration)
     this.config = { ...Command.defaultConfig, ...config }
     this._registerAlias(this.name)
     context.app._commands.push(this)
@@ -204,7 +210,7 @@ export class Command {
     if (!previous) {
       this.app._commandMap[name] = this
     } else if (previous !== this) {
-      throw new Error(errors.DUPLICATE_COMMAND)
+      throw new Error(format(errors.DUPLICATE_COMMAND, name))
     }
   }
 
@@ -263,10 +269,17 @@ export class Command {
     const camels: string[] = []
 
     let required = false, isBoolean = false, longest = ''
-    const names = removeBrackets(rawName).split(',').map((name: string) => {
-      name = name.trim().replace(/^-{1,2}/, '')
+    const names: string[] = [], aliases: string[] = []
+    for (let name of removeBrackets(rawName).split(',')) {
+      name = name.trim()
+      if (name && !name.startsWith('-')) {
+        aliases.push(name)
+        continue
+      }
+
+      name = name.replace(/^-{1,2}/, '')
       let camel: string
-      if (name.startsWith('no-') && !config.noNegated && !this._optsDef[name.slice(3)]) {
+      if (name.startsWith('no-') && !config.noNegated && !this._optionMap[name.slice(3)]) {
         name = name.slice(3)
         camel = camelCase(name)
         negated.push(camel)
@@ -275,8 +288,8 @@ export class Command {
       }
       camels.push(camel)
       if (camel.length > longest.length) longest = camel
-      return name
-    })
+      names.push(name)
+    }
   
     if (rawName.includes('<')) {
       required = true
@@ -290,6 +303,7 @@ export class Command {
       rawName,
       longest,
       names,
+      aliases,
       camels,
       negated,
       required,
@@ -298,21 +312,26 @@ export class Command {
     }
 
     this._options.push(option)
-    for (const name of names) {
-      if (name in this._optsDef) {
-        throw new Error(errors.DUPLICATE_OPTION)
-      }
-      this._optsDef[name] = option
-    }
+    this._registerOption(option, names, this._optionMap)
+    this._registerOption(option, aliases, this._optionAliasMap)
     return this
+  }
+
+  private _registerOption (option: CommandOption, names: string[], optionMap: Record<string, CommandOption>) {
+    for (const name of names) {
+      if (name in optionMap) {
+        throw new Error(format(errors.DUPLICATE_OPTION, name))
+      }
+      optionMap[name] = option
+    }
   }
 
   removeOption (name: string) {
     name = name.replace(/^-+/, '')
-    const option = this._optsDef[name]
+    const option = this._optionMap[name]
     if (!option) return false
     for (const name of option.names) {
-      delete this._optsDef[name]
+      delete this._optionMap[name]
     }
     const index = this._options.indexOf(option)
     this._options.splice(index, 1)
@@ -330,13 +349,13 @@ export class Command {
   }
 
   parse (source: string) {
-    let arg: string, name: string, arg0: ParsedArg0, rest = ''
+    let rest = ''
     const args: string[] = []
     const unknown: string[] = []
     const options: Record<string, any> = {}
-  
+
     const handleOption = (name: string, knownValue: any, unknownValue: any) => {
-      const config = this._optsDef[name]
+      const config = this._optionMap[name]
       if (config) {
         for (const alias of config.camels) {
           options[alias] = !config.negated.includes(alias) && knownValue
@@ -349,82 +368,95 @@ export class Command {
         }
       }
     }
-  
+
     while (source) {
       // long argument
-      if (source[0] !== '-' && this._argsDef[args.length] && this._argsDef[args.length].noSegment) {
+      if (source[0] !== '-' && this._arguments[args.length]?.noSegment) {
         args.push(source)
         break
       }
-  
+
       // parse argv0
-      arg0 = parseArg0(source)
-      arg = arg0.content
+      let arg0 = parseArg0(source)
+      let arg = arg0.content
       source = arg0.rest
-      if (arg[0] !== '-' || arg0.quoted) {
+
+      let option = this._optionAliasMap[arg]
+      let names: string | string[]
+      let param: any
+      if (option && !arg0.quoted) {
+        names = [option.names[0]]
+      } else {
         // normal argument
-        args.push(arg)
-        continue
-      } else if (arg === '--') {
+        if (arg[0] !== '-' || arg0.quoted) {
+          args.push(arg)
+          continue
+        }
+  
         // rest part
-        rest = arg0.rest
-        break
+        if (arg === '--') {
+          rest = arg0.rest
+          break
+        }
+
+        // find -
+        let i = 0
+        let name: string
+        for (; i < arg.length; ++i) {
+          if (arg.charCodeAt(i) !== 45) break
+        }
+        if (arg.slice(i, i + 3) === 'no-') {
+          name = arg.slice(i + 3)
+          handleOption(name, true, false)
+          continue
+        }
+
+        // find =
+        let j = i + 1
+        for (; j < arg.length; j++) {
+          if (arg.charCodeAt(j) === 61) break
+        }
+        name = arg.slice(i, j)
+        names = i > 1 ? [name] : name
+        param = arg.slice(++j)
+        option = this._optionMap[names[names.length - 1]]
       }
-  
-      // find -
-      let i = 0
-      for (; i < arg.length; ++i) {
-        if (arg.charCodeAt(i) !== 45) break
-      }
-      if (arg.slice(i, i + 3) === 'no-') {
-        name = arg.slice(i + 3)
-        handleOption(name, true, false)
-        continue
-      }
-  
-      // find =
-      let j = i + 1
-      for (; j < arg.length; j++) {
-        if (arg.charCodeAt(j) === 61) break
-      }
-      name = arg.slice(i, j)
-      const names = i === 2 ? [name] : name
-  
+
       // get parameter
       let quoted = false
-      let param: any = arg.slice(++j)
-      const lastConfig = this._optsDef[names[names.length - 1]]
-      if (!param && source.charCodeAt(0) !== 45 && (!lastConfig || !lastConfig.isBoolean)) {
+      if (!param && source.charCodeAt(0) !== 45 && (!option || !option.isBoolean)) {
         arg0 = parseArg0(source)
         param = arg0.content
         quoted = arg0.quoted
         source = arg0.rest
       }
-  
+
       // handle each name
-      for (j = 0; j < names.length; j++) {
-        name = names[j]
-        const config = this._optsDef[name]
-        const value = parseValue((j + 1 < names.length) || param, quoted, config)
+      for (let j = 0; j < names.length; j++) {
+        const name = names[j]
+        const config = this._optionMap[name]
+        const value = parseValue(j + 1 < names.length || param, quoted, config)
         handleOption(name, value, value)
       }
     }
-  
+
     // assign default values
-    for (const name in this._optsDef) {
-      if (this._optsDef[name].default !== undefined && !(name in options)) {
-        options[name] = this._optsDef[name].default
+    for (const name in this._optionMap) {
+      if (this._optionMap[name].default !== undefined && !(name in options)) {
+        options[name] = this._optionMap[name].default
       }
     }
-  
+
     return { options, rest, unknown, args } as ParsedLine
   }
 
   async execute (argv: ParsedCommandLine, next: NextFunction = noop) {
-    if (!argv.options) argv.options = {}
-    if (!argv.unknown) argv.unknown = []
-    if (!argv.args) argv.args = []
     argv.command = this
+    if (!argv.options) argv.options = {}
+    if (!argv.args) argv.args = []
+    if (!argv.unknown) {
+      argv.unknown = Object.keys(argv.options).filter(key => !this._optionMap[key])
+    }
 
     if (await this.app.serialize(argv.meta, 'before-command', argv)) return
 
