@@ -76,7 +76,7 @@ const cheetSheet = `\
 export const name = 'teach'
 
 export function apply (ctx: Context, config: TeachConfig = {}) {
-  ctx.command('teach', '添加教学对话', { authority: 2, checkUnknown: true })
+  ctx.command('teach', '添加教学对话', { authority: 2, checkUnknown: true, hideOptions: true })
     .usage(cheetSheet)
     .action(async ({ options, meta, args }) => {
       const argv: TeachArgv = { ctx, meta, args, config, options }

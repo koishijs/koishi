@@ -33,14 +33,15 @@ export function simplifyAnswer (source: string) {
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
-    .option('--question <question>', '问题', { isString: true, hidden: true })
-    .option('--answer <answer>', '回答', { isString: true, hidden: true })
-    .option('-p, --probability <prob>', '设置问题的触发权重', { hidden: true })
-    .option('-k, --keyword', '使用关键词匹配', { hidden: true })
+    .option('--question <question>', '问题', { isString: true })
+    .option('--answer <answer>', '回答', { isString: true })
+    .option('-p, --probability <prob>', '设置问题的触发权重')
+    .option('-P, --probability-of-appellation <prob>', '设置被称呼时问题的触发权重')
+    .option('-k, --keyword', '使用关键词匹配')
     // .option('-K, --no-keyword', '取消使用关键词匹配')
-    .option('-c, --redirect', { hidden: true })
-    .option('-C, --no-redirect', { hidden: true })
-    .option('=>, --redirect-dialogue', { hidden: true })
+    .option('-c, --redirect', '使用指令重定向')
+    .option('-C, --no-redirect', '取消使用指令重定向')
+    .option('=>, --redirect-dialogue', '重定向到其他问答')
 
   ctx.before('dialogue/validate', ({ options, meta, args }) => {
     if (args.length) {

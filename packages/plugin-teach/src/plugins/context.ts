@@ -25,12 +25,12 @@ declare module '../database' {
 
 export default function apply (ctx: Context, config: TeachConfig) {
   ctx.command('teach')
-    .option('-d, --disable', '在当前环境下禁用问答', { hidden: true })
-    .option('-D, --disable-global', '在所有环境下禁用问答', { hidden: true })
-    .option('-e, --enable', '在当前环境下启用问答', { hidden: true })
-    .option('-E, --enable-global', '在所有环境下启用问答', { hidden: true })
-    .option('-g, --groups <gids>', '设置具体的生效环境', { isString: true, hidden: true })
-    .option('-G, --global', '无视上下文搜索', { hidden: true })
+    .option('-d, --disable', '在当前环境下禁用问答')
+    .option('-D, --disable-global', '在所有环境下禁用问答')
+    .option('-e, --enable', '在当前环境下启用问答')
+    .option('-E, --enable-global', '在所有环境下启用问答')
+    .option('-g, --groups <gids>', '设置具体的生效环境', { isString: true })
+    .option('-G, --global', '无视上下文搜索')
 
   ctx.on('dialogue/filter-stateless', (data, test) => {
     if (!test.groups) return

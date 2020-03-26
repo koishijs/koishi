@@ -10,6 +10,16 @@ declare module '../command' {
     usage (text: CommandUsage): this
     example (example: string): this
   }
+
+  export interface CommandConfig {
+    /** hide all options by default */
+    hideOptions?: boolean
+  }
+
+  export interface OptionConfig {
+    /** hide the option by default */
+    hidden?: boolean
+  }
 }
 
 Command.prototype.usage = function (text) {
@@ -20,6 +30,11 @@ Command.prototype.usage = function (text) {
 Command.prototype.example = function (example) {
   this._examples.push(example)
   return this
+}
+
+interface HelpConfig {
+  expand: boolean
+  options: boolean
 }
 
 onApp((app) => {
@@ -39,16 +54,15 @@ onApp((app) => {
   app.command('help [command]', '显示帮助信息', { authority: 0 })
     .userFields(['authority', 'usage'])
     .shortcut('帮助', { fuzzy: true })
-    .shortcut('全局指令', { options: { shortcut: true } })
     .option('-e, --expand', '展开指令列表')
-    .option('-s, --shortcut', '查看全局指令列表')
-    .action(async ({ meta, options }, name: string) => {
+    .option('-o, --options', '查看全部选项（包括隐藏）')
+    .action(async ({ meta, options }, name) => {
       if (name) {
         const command = app.getCommand(name, meta) || app.app._shortcutMap[name]
         if (!command) return meta.$send('指令未找到。')
-        return showCommandHelp(command, meta, options)
+        return showCommandHelp(command, meta, options as HelpConfig)
       } else {
-        return showGlobalHelp(app, meta, options)
+        return showGlobalHelp(app, meta, options as HelpConfig)
       }
     })
 })
@@ -89,7 +103,7 @@ function getCommandList (prefix: string, context: Context, meta: Meta<'message'>
   return output
 }
 
-function showGlobalHelp (context: Context, meta: Meta<'message'>, config: any) {
+function showGlobalHelp (context: Context, meta: Meta<'message'>, config: HelpConfig) {
   return meta.$send([
     ...getCommandList('当前可用的指令有', context, meta, null, config.expand),
     '群聊普通指令可以通过“@我+指令名”的方式进行触发。',
@@ -99,8 +113,37 @@ function showGlobalHelp (context: Context, meta: Meta<'message'>, config: any) {
   ].join('\n'))
 }
 
-async function showCommandHelp (command: Command, meta: Meta<'message'>, config: any) {
+function getOptions (command: Command, maxUsage: number, config: HelpConfig) {
+  if (command.config.hideOptions && !config.options) return []
+  const options = config.options
+    ? command._options
+    : command._options.filter(option => !option.hidden)
+  if (!options.length) return []
+
+  const output = options.some(o => o.authority)
+    ? ['可用的选项有（括号内为额外要求的权限等级）：']
+    : ['可用的选项有：']
+
+  options.forEach((option) => {
+    const authority = option.authority ? `(${option.authority}) ` : ''
+    let line = `    ${authority}${option.rawName}  ${option.description}`
+    if (option.notUsage && maxUsage !== Infinity) {
+      line += '（不计入总次数）'
+    }
+    output.push(line)
+  })
+
+  return output
+}
+
+async function showCommandHelp (command: Command, meta: Meta<'message'>, config: HelpConfig) {
   const output = [command.name + command.declaration, command.config.description]
+  if (config.options) {
+    const output = getOptions(command, Infinity, config)
+    if (!output.length) return meta.$send('该指令没有可用的选项。')
+    return meta.$send(output.join('\n'))
+  }
+
   if (command.context.database) {
     meta.$user = await command.context.database.observeUser(meta.userId)
   }
@@ -136,23 +179,7 @@ async function showCommandHelp (command: Command, meta: Meta<'message'>, config:
     output.push(typeof usage === 'string' ? usage : await usage.call(command, meta))
   }
 
-  const options = command._options.filter(option => !option.hidden)
-  if (options.length) {
-    if (options.some(o => o.authority)) {
-      output.push('可用的选项有（括号内为额外要求的权限等级）：')
-    } else {
-      output.push('可用的选项有：')
-    }
-
-    options.forEach((option) => {
-      const authority = option.authority ? `(${option.authority}) ` : ''
-      let line = `    ${authority}${option.rawName}  ${option.description}`
-      if (option.notUsage && maxUsage !== Infinity) {
-        line += '（不计入总次数）'
-      }
-      output.push(line)
-    })
-  }
+  output.push(...getOptions(command, maxUsage, config))
 
   if (command._examples.length) {
     output.push('使用示例：', ...command._examples.map(example => '    ' + example))

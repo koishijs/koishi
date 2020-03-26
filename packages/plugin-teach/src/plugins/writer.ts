@@ -19,8 +19,8 @@ declare module '../utils' {
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
-    .option('-w, --writer <uid>', '添加或设置问题的作者', { hidden: true })
-    .option('-W, --anonymous', '添加或设置匿名问题', { hidden: true })
+    .option('-w, --writer <uid>', '添加或设置问题的作者')
+    .option('-W, --anonymous', '添加或设置匿名问题')
 
   ctx.on('dialogue/filter', (data, test) => {
     if (test.writer && data.writer !== test.writer) return true

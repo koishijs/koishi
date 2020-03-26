@@ -18,9 +18,9 @@ function formatAnswer (source: string) {
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
-    .option('-s, --search', '搜索已有问答', { notUsage: true, isString: true, hidden: true })
-    .option('--page <page>', '设置搜索结果的页码', { hidden: true })
-    .option('--auto-merge', '自动合并相同的问题和回答', { hidden: true })
+    .option('-s, --search', '搜索已有问答', { notUsage: true, isString: true })
+    .option('--page <page>', '设置搜索结果的页码')
+    .option('--auto-merge', '自动合并相同的问题和回答')
 
   ctx.on('dialogue/validate', ({ options, meta }) => {
     const page = options.page

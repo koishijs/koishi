@@ -9,8 +9,8 @@ declare module '../database' {
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
-    .option('-f, --frozen', '锁定这个问答', { authority: 4, hidden: true })
-    .option('-F, --no-frozen', '解锁这个问答', { authority: 4, noNegated: true, hidden: true })
+    .option('-f, --frozen', '锁定这个问答', { authority: 4 })
+    .option('-F, --no-frozen', '解锁这个问答', { authority: 4, noNegated: true })
 
   ctx.on('dialogue/filter', (data, test) => {
     if (test.frozen !== undefined && test.frozen === !(data.flag & DialogueFlag.frozen)) return true

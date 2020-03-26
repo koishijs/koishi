@@ -50,7 +50,6 @@ export function parseArguments (source: string) {
 
 export interface OptionConfig {
   default?: any
-  hidden?: boolean
   authority?: number
   notUsage?: boolean
   isString?: boolean

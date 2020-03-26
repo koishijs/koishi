@@ -43,10 +43,10 @@ export default function apply (ctx: Context, config: TeachConfig) {
   const { successorTimeout = 20000 } = config
 
   ctx.command('teach')
-    .option('<<, --set-pred <ids>', '设置前置问题', { isString: true, hidden: true })
-    .option('<, --add-pred <ids>', '添加前置问题', { isString: true, hidden: true })
-    .option('>>, --set-succ <ids>', '设置后继问题', { isString: true, hidden: true })
-    .option('>, --add-succ <ids>', '添加后继问题', { isString: true, hidden: true })
+    .option('<<, --set-pred <ids>', '设置前置问题', { isString: true })
+    .option('<, --add-pred <ids>', '添加前置问题', { isString: true })
+    .option('>>, --set-succ <ids>', '设置后继问题', { isString: true })
+    .option('>, --add-succ <ids>', '添加后继问题', { isString: true })
 
   ctx.on('dialogue/filter', (data, test, state) => {
     if (test.successors) {

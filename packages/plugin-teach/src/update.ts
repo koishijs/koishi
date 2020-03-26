@@ -4,8 +4,8 @@ import { Context } from 'koishi-core'
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
-    .option('-t, --target <ids>', '查看或修改已有问题', { isString: true, hidden: true })
-    .option('-r, --remove', '彻底删除问答', { hidden: true })
+    .option('-t, --target <ids>', '查看或修改已有问题', { isString: true })
+    .option('-r, --remove', '彻底删除问答')
 
   ctx.on('dialogue/validate', ({ options, meta }) => {
     if (options.target && !/^\d+(,\d+)*$/.exec(options.target)) {
