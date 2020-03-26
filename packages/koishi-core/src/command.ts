@@ -98,9 +98,7 @@ export class Command {
 
     const { maxUsage, minInterval, authority } = command.config
     let shouldFetchAuthority = !userFields.has('authority') && authority > 0
-    let shouldFetchUsage = !userFields.has('usage') && (
-      typeof maxUsage === 'number' && maxUsage < Infinity ||
-      typeof minInterval === 'number' && minInterval > 0)
+    let shouldFetchUsage = !(userFields.has('usage') || !maxUsage && !minInterval)
     for (const option of command._options) {
       if (option.camels[0] in options) {
         if (option.authority > 0) shouldFetchAuthority = true
