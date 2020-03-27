@@ -1,6 +1,7 @@
 import { Context } from 'koishi-core'
 import { simplify } from 'koishi-utils'
 import { DialogueFlag } from './database'
+import { TeachConfig, isZeroToOne } from './utils'
 
 const prefixPunctuation = /^([()\]]|\[(?!cq:))*/
 const suffixPunctuation = /([.,?!()[~]|(?<!\[cq:[^\]]+)\])*$/
@@ -31,12 +32,12 @@ export function simplifyAnswer (source: string) {
   return (String(source || '')).trim()
 }
 
-export default function apply (ctx: Context) {
+export default function apply (ctx: Context, config: TeachConfig) {
   ctx.command('teach')
     .option('--question <question>', '问题', { isString: true })
     .option('--answer <answer>', '回答', { isString: true })
-    .option('-p, --probability <prob>', '设置问题的触发权重')
-    .option('-P, --probability-appellation <prob>', '设置被称呼时问题的触发权重')
+    .option('-p, --probability <prob>', '设置问题的触发权重', { validate: isZeroToOne })
+    .option('-P, --probability-appellation <prob>', '设置被称呼时问题的触发权重', { validate: isZeroToOne })
     .option('-k, --keyword', '使用关键词匹配')
     // .option('-K, --no-keyword', '取消使用关键词匹配')
     .option('-c, --redirect', '使用指令重定向')
@@ -48,12 +49,16 @@ export default function apply (ctx: Context) {
       return meta.$send('存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
     }
 
-    const { question, answer, probability, probabilityAppellation, redirectDialogue } = options
+    const { question, answer, redirectDialogue } = options
     if (String(question).includes('[CQ:image,')) {
       return meta.$send('问题不能包含图片。')
     }
 
     options.question = simplifyQuestion(question)
+    const capture = config.nicknameRE.exec(options.question)
+    if (capture && capture[0].length < options.question.length) {
+      options.question = options.question.slice(capture[0].length)
+    }
     if (options.question) {
       options.original = question
     } else {
@@ -67,28 +72,10 @@ export default function apply (ctx: Context) {
       options.redirect = true
       options.answer = 'dialogue ' + options.answer
     }
-
-    if (probability !== undefined && !(probability >= 0 && probability <= 1)) {
-      return meta.$send('参数 -p, --probability 应为不超过 1 的正数。')
-    }
-
-    if (probabilityAppellation !== undefined && !(probabilityAppellation >= 0 && probabilityAppellation <= 1)) {
-      return meta.$send('参数 -P, --probability-appellation 应为不超过 1 的正数。')
-    }
   })
 
   ctx.on('dialogue/before-modify', async ({ options, meta, target }) => {
-    if (target) return
-
-    if (options.probability === undefined) {
-      options.probability = 1
-    }
-
-    if (options.probabilityAppellation === undefined) {
-      options.probabilityAppellation = 0
-    }
-
-    if (!options.question || !options.answer) {
+    if (!target && !(options.question && options.answer)) {
       await meta.$send('缺少问题或回答，请检查指令语法。')
       return true
     }

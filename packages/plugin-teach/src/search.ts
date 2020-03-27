@@ -1,7 +1,6 @@
-import { TeachArgv, sendDetail, getDialogues } from './utils'
+import { TeachArgv, sendDetail, getDialogues, isPositiveInteger } from './utils'
 import { Dialogue, DialogueTest } from './database'
 import { Context } from 'koishi-core'
-import { isInteger } from 'koishi-utils'
 
 declare module './utils' {
   interface TeachConfig {
@@ -19,15 +18,8 @@ function formatAnswer (source: string) {
 export default function apply (ctx: Context) {
   ctx.command('teach')
     .option('-s, --search', '搜索已有问答', { notUsage: true, isString: true })
-    .option('--page <page>', '设置搜索结果的页码')
+    .option('--page <page>', '设置搜索结果的页码', { validate: isPositiveInteger })
     .option('--auto-merge', '自动合并相同的问题和回答')
-
-  ctx.on('dialogue/validate', ({ options, meta }) => {
-    const page = options.page
-    if (page !== undefined && !(isInteger(page) && page > 0)) {
-      return meta.$send('参数 --page 应为正整数。')
-    }
-  })
 
   ctx.before('dialogue/execute', (argv) => {
     if (argv.options.search) return search(argv)

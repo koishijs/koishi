@@ -126,7 +126,7 @@ function getOptions (command: Command, maxUsage: number, config: HelpConfig) {
 
   options.forEach((option) => {
     const authority = option.authority ? `(${option.authority}) ` : ''
-    let line = `    ${authority}${option.rawName}  ${option.description}`
+    let line = `    ${authority}${option.fullName}  ${option.description}`
     if (option.notUsage && maxUsage !== Infinity) {
       line += '（不计入总次数）'
     }

@@ -4,7 +4,7 @@ import { format } from 'util'
 import { getDateNumber } from 'koishi-utils'
 
 declare module '../command' {
-  export interface CommandConfig {
+  interface CommandConfig {
     /** disallow unknown options */
     checkUnknown?: boolean
     /** check required options */
@@ -19,6 +19,10 @@ declare module '../command' {
     maxUsage?: UserType<number>
     /** min interval */
     minInterval?: UserType<number>
+  }
+
+  interface OptionConfig {
+    validate? (value: any): void | string | boolean
   }
 }
 
@@ -83,6 +87,14 @@ onApp((app) => {
       })
       if (absent) {
         return sendHint(meta, messages.REQUIRED_OPTIONS, absent.rawName)
+      }
+    }
+
+    for (const option of command._options) {
+      if (!option.validate || !(option.longest in options)) continue
+      const result = option.validate(options[option.longest])
+      if (result) {
+        return sendHint(meta, messages.INVALID_OPTION, option.rawName, result === true ? messages.CHECK_SYNTAX : result)
       }
     }
 

@@ -4,14 +4,8 @@ import { Context } from 'koishi-core'
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
-    .option('-t, --target <ids>', '查看或修改已有问题', { isString: true })
+    .option('-t, --target <ids>', '查看或修改已有问题', { isString: true, validate: val => !/^\d+(,\d+)*$/.test(val) })
     .option('-r, --remove', '彻底删除问答')
-
-  ctx.on('dialogue/validate', ({ options, meta }) => {
-    if (options.target && !/^\d+(,\d+)*$/.exec(options.target)) {
-      return meta.$send('参数 -t, --target 错误，请检查指令语法。')
-    }
-  })
 
   ctx.before('dialogue/execute', (argv) => {
     if (!argv.options.target) return

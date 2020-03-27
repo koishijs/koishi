@@ -1,5 +1,5 @@
 import { Context, Meta, User } from 'koishi-core'
-import { difference } from 'koishi-utils'
+import { difference, isInteger } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './database'
 import { SessionState } from './receiver'
 
@@ -83,4 +83,16 @@ export async function sendDetail (ctx: Context, dialogue: Dialogue, argv: TeachA
   const output = [`编号为 ${dialogue.id} 的问答信息：`]
   ctx.emit('dialogue/detail', dialogue, output, argv)
   await argv.meta.$send(output.join('\n'))
+}
+
+export function isPositiveInteger (value: any) {
+  return isInteger(value) && value > 0 ? '' : '应为正整数。'
+}
+
+export function isZeroToOne (value: number) {
+  return value < 0 || value > 1 ? '应为不超过 1 的正数。' : ''
+}
+
+export function isIdList (value: any) {
+  return !/^\d+(,\d+)*$/.test(value)
 }

@@ -57,6 +57,7 @@ export interface OptionConfig {
 }
 
 export interface CommandOption extends OptionConfig {
+  fullName: string
   rawName: string
   longest: string
   names: string[]
@@ -255,13 +256,13 @@ export class Command {
 
   /**
    * Add a option for this command
-   * @param rawName raw option name(s)
+   * @param fullName raw option name(s)
    * @param description option description
    * @param config option config
    */
-  option (rawName: string, config?: OptionConfig): this
-  option (rawName: string, description: string, config?: OptionConfig): this
-  option (rawName: string, ...args: [OptionConfig?] | [string, OptionConfig?]) {
+  option (fullName: string, config?: OptionConfig): this
+  option (fullName: string, description: string, config?: OptionConfig): this
+  option (fullName: string, ...args: [OptionConfig?] | [string, OptionConfig?]) {
     const description = typeof args[0] === 'string' ? args.shift() as string : undefined
     const config = args[0] as OptionConfig || {}
     const negated: string[] = []
@@ -269,7 +270,8 @@ export class Command {
 
     let required = false, isBoolean = false, longest = ''
     const names: string[] = [], aliases: string[] = []
-    for (let name of removeBrackets(rawName).split(',')) {
+    const rawName = removeBrackets(fullName)
+    for (let name of rawName.split(',')) {
       name = name.trim()
       if (name && !name.startsWith('-')) {
         aliases.push(name)
@@ -290,15 +292,17 @@ export class Command {
       names.push(name)
     }
   
-    if (rawName.includes('<')) {
+    const brackets = fullName.slice(rawName.length)
+    if (brackets.includes('<')) {
       required = true
-    } else if (!rawName.includes('[')) {
+    } else if (!brackets.includes('[')) {
       isBoolean = true
     }
   
     const option: CommandOption = {
       ...Command.defaultOptionConfig,
       ...config,
+      fullName,
       rawName,
       longest,
       names,

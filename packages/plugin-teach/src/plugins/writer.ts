@@ -84,12 +84,6 @@ export default function apply (ctx: Context) {
     test.writer = options.writer
   })
 
-  ctx.on('dialogue/before-modify', ({ options, meta, target }) => {
-    if (options.writer === undefined && !target) {
-      options.writer = meta.userId
-    }
-  })
-
   ctx.on('dialogue/modify', ({ options }, data) => {
     if (options.writer !== undefined) {
       data.writer = options.writer

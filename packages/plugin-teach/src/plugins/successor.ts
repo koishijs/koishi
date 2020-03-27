@@ -1,7 +1,7 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference, intersection } from 'koishi-utils'
 import { DialogueTest, Dialogue } from '../database'
-import { equal, split, TeachConfig, checkAuthority, getDialogues } from '../utils'
+import { equal, split, TeachConfig, checkAuthority, getDialogues, isIdList } from '../utils'
 
 declare module '../utils' {
   interface TeachConfig {
@@ -43,10 +43,10 @@ export default function apply (ctx: Context, config: TeachConfig) {
   const { successorTimeout = 20000 } = config
 
   ctx.command('teach')
-    .option('<<, --set-pred <ids>', '设置前置问题', { isString: true })
-    .option('<, --add-pred <ids>', '添加前置问题', { isString: true })
-    .option('>>, --set-succ <ids>', '设置后继问题', { isString: true })
-    .option('>, --add-succ <ids>', '添加后继问题', { isString: true })
+    .option('<<, --set-pred <ids>', '设置前置问题', { isString: true, validate: isIdList })
+    .option('<, --add-pred <ids>', '添加前置问题', { isString: true, validate: isIdList })
+    .option('>>, --set-succ <ids>', '设置后继问题', { isString: true, validate: isIdList })
+    .option('>, --add-succ <ids>', '添加后继问题', { isString: true, validate: isIdList })
 
   ctx.on('dialogue/filter', (data, test, state) => {
     if (test.successors) {
@@ -62,25 +62,16 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/validate', (argv) => {
     const { options, meta } = argv
-    function parseOption (key: string, fullname: string, prop = key) {
-      if (/^\d+(,\d+)*$/.test(options[key])) {
-        argv[prop] = split(options[key])
-      } else {
-        return meta.$send(`参数 ${fullname} 错误，请检查指令语法。`)
-      }
-    }
-
-    let errorPromise: Promise<void>
 
     if ('setPred' in options) {
       if ('addPred' in options) {
         return meta.$send('选项 --set-pred, --add-pred 不能同时使用。')
       } else {
-        if (errorPromise = parseOption('setPred', '--set-pred', 'predecessors')) return errorPromise
+        argv.predecessors = split(options.setPred)
         argv.predOverwrite = true
       }
     } else if ('addPred' in options) {
-      if (errorPromise = parseOption('addPred', '--add-pred', 'predecessors')) return errorPromise
+      argv.predecessors = split(options.addPred)
       argv.predOverwrite = false
     }
 
@@ -88,11 +79,11 @@ export default function apply (ctx: Context, config: TeachConfig) {
       if ('addSucc' in options) {
         return meta.$send('选项 --set-succ, --add-succ 不能同时使用。')
       } else {
-        if (errorPromise = parseOption('setSucc', '--set-succ', 'successors')) return errorPromise
+        argv.successors = split(options.setSucc)
         argv.succOverwrite = true
       }
     } else if ('addSucc' in options) {
-      if (errorPromise = parseOption('addSucc', '--add-succ', 'successors')) return errorPromise
+      argv.successors = split(options.addSucc)
       argv.succOverwrite = false
     }
   })
