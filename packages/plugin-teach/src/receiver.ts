@@ -139,13 +139,11 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
 }
 
 export default function (ctx: Context, config: TeachConfig) {
-  const { maxRedirections = 3, nickname } = config
-  if (!config.nicknameRE) {
-    const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
-    config.nicknameRE = nicknames.length
-      ? new RegExp(`^@?(${nicknames.map(escapeRegex).join('|')})([,，]\\s*|\\s+)`)
-      : /^/
-  }
+  const { maxRedirections = 3, nickname = ctx.app.options.nickname } = config
+  const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
+  config.nicknameRE = nicknames.length
+    ? new RegExp(`^@?(${nicknames.map(escapeRegex).join('|')})([,，]\\s*|\\s+)`)
+    : /^/
 
   ctx.command('dialogue <message...>', '触发教学对话')
     .option('-g, --group [id]', '设置要触发问答的群号')

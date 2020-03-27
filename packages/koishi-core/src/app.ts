@@ -18,11 +18,11 @@ export interface AppOptions {
   server?: string
   type?: ServerType
   database?: DatabaseConfig
+  prefix?: string | string[]
   nickname?: string | string[]
   retryTimes?: number
   retryInterval?: number
   maxMiddlewares?: number
-  commandPrefix?: string | string[]
   defaultAuthority?: number | ((meta: Meta) => number)
   quickOperationTimeout?: number
   similarityCoefficient?: number
@@ -175,9 +175,9 @@ export class App extends Context {
     if (this.server) {
       this.server.appMap[this.selfId] = this
     }
-    const { nickname, commandPrefix } = this.options
+    const { nickname, prefix } = this.options
     const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
-    const prefixes = Array.isArray(commandPrefix) ? commandPrefix : [commandPrefix || '']
+    const prefixes = Array.isArray(prefix) ? prefix : [prefix || '']
     this.atMeRE = new RegExp(`^\\[CQ:at,qq=${this.selfId}\\]${nicknameSuffix}`)
     this.nicknameRE = createLeadingRE(nicknames, '@?', nicknameSuffix)
     this.prefixRE = createLeadingRE(prefixes)
