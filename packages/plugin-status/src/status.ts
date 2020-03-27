@@ -127,20 +127,15 @@ export interface AppStatus {
   rate?: number
 }
 
-let cachedStatus: Status
-let timestamp: number
+type StatusModifier = (status: Status) => void | Promise<void>
+const statusModifiers: StatusModifier[] = []
 
-type StatusGetter = () => Partial<Status> | Promise<Partial<Status>>
-const statusGetters: StatusGetter[] = []
-
-export function extendStatus (callback: StatusGetter) {
-  statusGetters.push(callback)
+export function extendStatus (callback: StatusModifier) {
+  statusModifiers.push(callback)
 }
 
-export async function getStatus (): Promise<Status> {
-  const now = Date.now()
-  if (now - timestamp < 60000) return cachedStatus
-  const [userCount, groupCount, apps, data] = await Promise.all([
+async function _getStatus () {
+  const [userCount, groupCount, apps] = await Promise.all([
     appList[0].database.getActiveUserCount(),
     appList[0].database.getActiveGroupCount(),
     Promise.all(appList.map<Promise<AppStatus>>(async (app) => ({
@@ -149,12 +144,22 @@ export async function getStatus (): Promise<Status> {
       good: await app.sender.getStatus().then(status => status.good, () => false),
       rate: (sendEventCounter.get(app) || []).slice(1).reduce((prev, curr) => prev + curr, 0),
     }))),
-    Promise.all(statusGetters.map(getter => getter())),
   ])
   const memory = memoryRate()
   const cpu = { app: appRate, total: usedRate }
+  const status: Status = { apps, userCount, groupCount, memory, cpu, timestamp }
+  for (const modifier of statusModifiers) {
+    await modifier(status)
+  }
+  return status
+}
+
+let cachedStatus: Promise<Status>
+let timestamp: number
+
+export async function getStatus (): Promise<Status> {
+  const now = Date.now()
+  if (now - timestamp < 60000) return cachedStatus
   timestamp = now
-  cachedStatus = { apps, userCount, groupCount, memory, cpu, timestamp }
-  data.forEach(status => Object.assign(cachedStatus, status))
-  return cachedStatus
+  return cachedStatus = _getStatus()
 }
