@@ -1,32 +1,6 @@
 import { Context } from 'koishi-core'
-import { simplify } from 'koishi-utils'
 import { DialogueFlag } from './database'
 import { TeachConfig, isZeroToOne } from './utils'
-
-const prefixPunctuation = /^([()\]]|\[(?!cq:))*/
-const suffixPunctuation = /([.,?!()[~]|(?<!\[cq:[^\]]+)\])*$/
-
-export function stripPunctuation (source: string) {
-  source = source.toLowerCase()
-    .replace(/\s+/g, '')
-    .replace(/，/g, ',')
-    .replace(/、/g, ',')
-    .replace(/。/g, '.')
-    .replace(/？/g, '?')
-    .replace(/！/g, '!')
-    .replace(/（/g, '(')
-    .replace(/）/g, ')')
-    .replace(/【/g, '[')
-    .replace(/】/g, ']')
-    .replace(/～/g, '~')
-  return source
-    .replace(prefixPunctuation, '')
-    .replace(suffixPunctuation, '') || source
-}
-
-export function simplifyQuestion (source: string) {
-  return simplify(stripPunctuation(String(source || '')))
-}
 
 export function simplifyAnswer (source: string) {
   return (String(source || '')).trim()
@@ -36,8 +10,8 @@ export default function apply (ctx: Context, config: TeachConfig) {
   ctx.command('teach')
     .option('--question <question>', '问题', { isString: true })
     .option('--answer <answer>', '回答', { isString: true })
-    .option('-p, --probability <prob>', '设置问题的触发权重', { validate: isZeroToOne })
-    .option('-P, --probability-appellation <prob>', '设置被称呼时问题的触发权重', { validate: isZeroToOne })
+    .option('-p, --probability-strict <prob>', '设置问题的触发权重', { validate: isZeroToOne })
+    .option('-P, --probability-appellative <prob>', '设置被称呼时问题的触发权重', { validate: isZeroToOne })
     .option('-k, --keyword', '使用关键词匹配')
     // .option('-K, --no-keyword', '取消使用关键词匹配')
     .option('-c, --redirect', '使用指令重定向')
@@ -49,23 +23,19 @@ export default function apply (ctx: Context, config: TeachConfig) {
       return meta.$send('存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
     }
 
-    const { question, answer, redirectDialogue } = options
-    if (String(question).includes('[CQ:image,')) {
+    const { answer, redirectDialogue } = options
+    if (String(options.question).includes('[CQ:image,')) {
       return meta.$send('问题不能包含图片。')
     }
 
-    options.question = simplifyQuestion(question)
-    const capture = config.nicknameRE.exec(options.question)
-    if (capture && capture[0].length < options.question.length) {
-      options.question = options.question.slice(capture[0].length)
-    }
+    options.question = config._stripQuestion(options.question)[0]
     if (options.question) {
-      options.original = question
+      options.original = options.question
     } else {
       delete options.question
     }
 
-    options.answer = simplifyAnswer(answer)
+    options.answer = (String(answer || '')).trim()
     if (!options.answer) {
       delete options.answer
     } else if (redirectDialogue) {
@@ -91,12 +61,12 @@ export default function apply (ctx: Context, config: TeachConfig) {
       data.original = options.original
     }
 
-    if (options.probability !== undefined) {
-      data.probability = options.probability
+    if (options.probabilityStrict !== undefined) {
+      data.probS = options.probabilityStrict
     }
 
-    if (options.probabilityAppellation !== undefined) {
-      data.probabilityA = options.probabilityAppellation
+    if (options.probabilityAppellative !== undefined) {
+      data.probA = options.probabilityAppellative
     }
 
     if (options.keyword !== undefined) {
@@ -110,7 +80,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
-  ctx.on('dialogue/detail', ({ original, flag, answer, probability: probabilityS, probabilityA }, output) => {
+  ctx.on('dialogue/detail', ({ original, flag, answer, probS, probA }, output) => {
     output.push(`问题：${original}`)
 
     if (!(flag & DialogueFlag.redirect)) {
@@ -121,36 +91,38 @@ export default function apply (ctx: Context, config: TeachConfig) {
       output.push(`重定向到指令：${answer}`)
     }
 
-    if (!probabilityS) {
-      if (probabilityA === 1) {
+    if (!probS) {
+      if (probA === 1) {
         output.push('必须带称呼触发。')
-      } else if (probabilityA) {
-        output.push(`必须带称呼触发，权重：${probabilityA}`)
+      } else if (probA) {
+        output.push(`必须带称呼触发，权重：${probA}`)
       } else {
         output.push('权重为零，无法触发。')
       }
-    } else if (probabilityS === 1) {
-      if (probabilityA === 1) {
+    } else if (probS === 1) {
+      if (probA === 1) {
         output.push('允许带称呼触发。')
-      } else if (probabilityA) {
-        output.push(`允许带称呼触发，权重：${probabilityA}`)
+      } else if (probA) {
+        output.push(`允许带称呼触发，权重：${probA}`)
       }
     } else {
-      if (probabilityA) {
-        output.push(`不带称呼/带称呼触发权重：${probabilityS}/${probabilityA}`)
+      if (probA) {
+        output.push(`不带称呼/带称呼触发权重：${probS}/${probA}`)
       } else {
-        output.push(`触发权重：${probabilityS}`)
+        output.push(`触发权重：${probS}`)
       }
     }
   })
 
-  ctx.on('dialogue/detail-short', ({ probability: probabilityS, probabilityA }, output) => {
-    if (probabilityS < 1 || probabilityA > 0) output.push(`p=${probabilityS}`, `P=${probabilityA}`)
+  ctx.on('dialogue/detail-short', ({ probS, probA }, output) => {
+    if (probS < 1 || probA > 0) output.push(`p=${probS}`, `P=${probA}`)
   })
 
   ctx.on('dialogue/receive', (meta, test) => {
     if (meta.message.includes('[CQ:image,')) return true
-    test.question = simplifyQuestion(meta.message)
-    return !test.question
+    const [question, appellative] = config._stripQuestion(meta.message)
+    test.question = question
+    test.appellative = appellative
+    return !question
   })
 }

@@ -30,19 +30,21 @@ export interface Dialogue {
   answer: string
   original: string
   flag: number
-  probability: number
-  probabilityA: number
-  _probability?: number
+  probS: number
+  probA: number
+  _prob?: number
 }
 
 arrayTypes.push('dialogue.groups', 'dialogue.successors')
+
+export enum AppellationType { normal, appellative, activated }
 
 export interface DialogueTest {
   question?: string
   answer?: string
   keyword?: boolean
   regexp?: boolean
-  appellation?: boolean
+  appellative?: AppellationType
 }
 
 export enum DialogueFlag {

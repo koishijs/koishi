@@ -56,7 +56,8 @@ const cheetSheet = `\
 　添加前置问题：　< id
 　设置后继问题：　>> id
 　添加后继问题：　> id
-　设置触发权重：　-p prob
+　严格匹配权重：　-p probS
+　称呼匹配权重：　-P probA
 　设置问题作者：　-w uid
 　设置为匿名：　　-W
 　设置最小好感度：-m aff

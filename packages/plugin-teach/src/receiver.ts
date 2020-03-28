@@ -1,7 +1,7 @@
 import { Context, UserField, getSenderName, Meta, NextFunction } from 'koishi-core'
-import { CQCode, sleep, isInteger } from 'koishi-utils'
+import { CQCode, sleep, isInteger, simplify } from 'koishi-utils'
 import { getDialogues, TeachConfig } from './utils'
-import { Dialogue, DialogueTest, DialogueFlag } from './database'
+import { Dialogue, DialogueTest, DialogueFlag, AppellationType } from './database'
 import escapeRegex from 'escape-string-regexp'
 
 declare module 'koishi-core/dist/context' {
@@ -25,8 +25,9 @@ declare module 'koishi-core/dist/meta' {
 declare module './utils' {
   interface TeachConfig {
     nickname?: string | string[]
-    nicknameRE?: RegExp
+    appellationTimeout?: number
     maxRedirections?: number
+    _stripQuestion? (source: string): [string, AppellationType]
   }
 }
 
@@ -36,7 +37,9 @@ declare module './database' {
   }
 }
 
-export interface SessionState {}
+export interface SessionState {
+  activated: Record<number, number>
+}
 
 const states: Record<number, SessionState> = {}
 
@@ -48,41 +51,29 @@ function unescapeAnswer (message: string) {
   return message.trim().replace(/@@__DOLLARS_PLACEHOLDER__@@/g, '$')
 }
 
-export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, config: TeachConfig, next: NextFunction) {
+export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, { appellationTimeout = 20000 }: TeachConfig, next: NextFunction) {
   const { groupId } = meta
-  const { nicknameRE } = config
 
   if (!states[groupId]) {
-    ctx.emit('dialogue/state', states[groupId] = {} as SessionState)
+    ctx.emit('dialogue/state', states[groupId] = { activated: {} } as SessionState)
   }
   const state = states[groupId]
   const test: DialogueTest = {}
 
   if (ctx.bail('dialogue/receive', meta, test, state)) return next()
 
-  // fetch appellative dialogues
-  let dialoguesWithAppellation: Dialogue[] = []
-  const capture = nicknameRE.exec(test.question)
-  if (capture && capture[0].length < test.question.length) {
-    const question = test.question.slice(capture[0].length)
-    const testWithAppellation = { ...test, question }
-    dialoguesWithAppellation = await getDialogues(ctx, testWithAppellation, state)
-  }
-
-  // fetch strict matched dialogues and merge results
+  // fetch matched dialogues
   const dialogues = await getDialogues(ctx, test, state)
-  dialogues.forEach(d => d._probability = d.probability)
-  dialoguesWithAppellation.forEach((dialogueA) => {
-    const dialogue = dialogues.find(({ id }) => dialogueA.id === id)
-    if (!dialogue) {
-      dialogueA._probability = dialogueA.probabilityA
-      dialogues.push(dialogueA)
-    } else {
-      dialogue._probability = Math.max(dialogue._probability, dialogueA.probabilityA)
-    }
+  const isActivated = meta.userId in state.activated
+  dialogues.forEach((dialogue) => {
+    dialogue._prob = isActivated
+      ? Math.max(dialogue.probS, dialogue.probA)
+      : test.appellative === AppellationType.appellative
+        ? dialogue.probA
+        : dialogue.probS
   })
 
-  if (dialogues.every(d => !d._probability)) return next()
+  if (dialogues.every(d => !d._prob)) return next()
 
   // fetch user
   const userFields = new Set<UserField>(['name'])
@@ -92,11 +83,11 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
 
   // pick dialogue
   let dialogue: Dialogue
-  const total = dialogues.reduce((prev, curr) => prev + curr._probability, 0)
+  const total = dialogues.reduce((prev, curr) => prev + curr._prob, 0)
   const target = Math.random() * Math.max(1, total)
   let pointer = 0
   for (const _dialogue of dialogues) {
-    pointer += _dialogue._probability
+    pointer += _dialogue._prob
     if (target < pointer) {
       dialogue = _dialogue
       break
@@ -135,15 +126,39 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
     await meta.$send(answer)
   }
 
+  if (test.appellative === AppellationType.activated) {
+    const time = state.activated[meta.userId] = Date.now()
+
+    setTimeout(() => {
+      if (state.activated[meta.userId] === time) {
+        delete state.activated[meta.userId]
+      }
+    }, appellationTimeout)
+  }
+
   await ctx.app.parallelize(meta, 'dialogue/after-send', meta, dialogue, state)
 }
 
 export default function (ctx: Context, config: TeachConfig) {
   const { maxRedirections = 3, nickname = ctx.app.options.nickname } = config
   const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
-  config.nicknameRE = nicknames.length
-    ? new RegExp(`^@?(${nicknames.map(escapeRegex).join('|')})([,，]\\s*|\\s+)`)
-    : /^/
+  nicknames.push(`[cq:at,qq=${ctx.app.selfId}]`)
+  const nicknameRE = new RegExp(`^((${nicknames.map(escapeRegex).join('|')})[,，]?\\s*)+`)
+
+  config._stripQuestion = (source) => {
+    source = simplify(stripPunctuation(String(source || '')))
+    const original = source
+    const capture = nicknameRE.exec(source)
+    if (capture) source = source.slice(capture[0].length)
+    return [
+      source || original,
+      source === original
+        ? AppellationType.normal
+        : source
+          ? AppellationType.appellative
+          : AppellationType.activated,
+    ]
+  }
 
   ctx.command('dialogue <message...>', '触发教学对话')
     .option('-g, --group [id]', '设置要触发问答的群号')
@@ -168,4 +183,25 @@ export default function (ctx: Context, config: TeachConfig) {
   ctx.intersect(ctx.app.groups).middleware(async (meta, next) => {
     return triggerDialogue(ctx, meta, config, next)
   })
+}
+
+const prefixPunctuation = /^([()\]]|\[(?!cq:))*/
+const suffixPunctuation = /([.,?!()[~]|(?<!\[cq:[^\]]+)\])*$/
+
+function stripPunctuation (source: string) {
+  source = source.toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/，/g, ',')
+    .replace(/、/g, ',')
+    .replace(/。/g, '.')
+    .replace(/？/g, '?')
+    .replace(/！/g, '!')
+    .replace(/（/g, '(')
+    .replace(/）/g, ')')
+    .replace(/【/g, '[')
+    .replace(/】/g, ']')
+    .replace(/～/g, '~')
+  return source
+    .replace(prefixPunctuation, '')
+    .replace(suffixPunctuation, '') || source
 }
