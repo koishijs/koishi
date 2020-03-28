@@ -1,17 +1,16 @@
-import { TeachArgv, prepareTargets, sendDetail, sendResult, split } from './utils'
+import { TeachArgv, prepareTargets, sendDetail, sendResult, split, isIdList } from './utils'
 import { difference, deduplicate } from 'koishi-utils'
 import { Context } from 'koishi-core'
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
-    .option('-t, --target <ids>', '查看或修改已有问题', { isString: true, validate: val => !/^\d+(,\d+)*$/.test(val) })
+    .option('--target <ids>', '查看或修改已有问题', { isString: true, validate: isIdList })
     .option('-r, --remove', '彻底删除问答')
 
   ctx.before('dialogue/execute', (argv) => {
     if (!argv.options.target) return
     argv.target = deduplicate(split(argv.options.target))
     delete argv.options.target
-    delete argv.options.t
     try {
       return update(argv)
     } catch (err) {

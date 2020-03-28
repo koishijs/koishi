@@ -66,6 +66,7 @@ export interface CommandOption extends OptionConfig {
   negated: string[]
   required: boolean
   isBoolean: boolean
+  noSegment: boolean
   description: string
 }
 
@@ -291,14 +292,15 @@ export class Command {
       if (camel.length > longest.length) longest = camel
       names.push(name)
     }
-  
+
     const brackets = fullName.slice(rawName.length)
     if (brackets.includes('<')) {
       required = true
     } else if (!brackets.includes('[')) {
       isBoolean = true
     }
-  
+    const noSegment = brackets.includes('...')
+
     const option: CommandOption = {
       ...Command.defaultOptionConfig,
       ...config,
@@ -310,6 +312,7 @@ export class Command {
       camels,
       negated,
       required,
+      noSegment,
       isBoolean,
       description,
     }
@@ -395,7 +398,7 @@ export class Command {
           args.push(arg)
           continue
         }
-  
+
         // rest part
         if (arg === '--') {
           rest = arg0.rest
@@ -427,7 +430,10 @@ export class Command {
 
       // get parameter
       let quoted = false
-      if (!param && source.charCodeAt(0) !== 45 && (!option || !option.isBoolean)) {
+      if (!param && option && option.noSegment) {
+        param = arg0.rest
+        source = ''
+      } else if (!param && source.charCodeAt(0) !== 45 && (!option || !option.isBoolean)) {
         arg0 = parseArg0(source)
         param = arg0.content
         quoted = arg0.quoted

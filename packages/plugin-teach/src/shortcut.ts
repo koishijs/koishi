@@ -1,4 +1,4 @@
-import { Context, removeBrackets, ParsedCommandLine } from 'koishi-core'
+import { Context, ParsedCommandLine } from 'koishi-core'
 import { TeachConfig } from './utils'
 
 declare module 'koishi-core/dist/context' {

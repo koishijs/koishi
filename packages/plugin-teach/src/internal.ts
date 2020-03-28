@@ -107,7 +107,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
       }
     } else {
       if (probA) {
-        output.push(`不带称呼/带称呼触发权重：${probS}/${probA}`)
+        output.push(`触发权重：p=${probS}/P=${probA}`)
       } else {
         output.push(`触发权重：${probS}`)
       }

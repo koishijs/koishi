@@ -103,6 +103,9 @@ injectMethods('mysql', 'dialogue', {
       }
     }
     await this.update('dialogue', data)
+    for (const dialogue of dialogues) {
+      dialogue._diff = {}
+    }
   },
 
   removeDialogues (ids) {

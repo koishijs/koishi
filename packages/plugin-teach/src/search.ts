@@ -17,9 +17,10 @@ function formatAnswer (source: string) {
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
-    .option('-s, --search', '搜索已有问答', { notUsage: true, isString: true })
+    .option('--search', '搜索已有问答', { notUsage: true, isString: true })
     .option('--page <page>', '设置搜索结果的页码', { validate: isPositiveInteger })
     .option('--auto-merge', '自动合并相同的问题和回答')
+    .option('|, --pipe <op...>', '对每个搜索结果执行操作', { authority: 3 })
 
   ctx.before('dialogue/execute', (argv) => {
     if (argv.options.search) return search(argv)
@@ -28,12 +29,20 @@ export default function apply (ctx: Context) {
 
 async function search (argv: TeachArgv) {
   const { ctx, meta, options } = argv
-  const { keyword, question, answer, page = 1, original } = options
+  const { keyword, question, answer, page = 1, original, pipe } = options
   const { itemsPerPage = 20, mergeThreshold = 5 } = argv.config
 
   const test: DialogueTest = { question, answer, keyword }
   if (await ctx.serialize('dialogue/before-search', argv, test)) return
   const dialogues = await getDialogues(ctx, test)
+
+  if (pipe) {
+    if (!dialogues.length) return meta.$send('没有搜索到任何问答。')
+    const command = ctx.getCommand('teach', meta)
+    Object.assign(meta.$argv, command.parse(pipe))
+    meta.$argv.options.target = dialogues.map(d => d.id).join(',')
+    return command.execute(meta.$argv)
+  }
 
   function formatPrefix (dialogue: Dialogue) {
     const output: string[] = []
