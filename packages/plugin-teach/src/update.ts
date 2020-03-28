@@ -1,5 +1,5 @@
-import { TeachArgv, checkAuthority, sendDetail, sendResult, split } from './utils'
-import { difference, observe, deduplicate } from 'koishi-utils'
+import { TeachArgv, prepareTargets, sendDetail, sendResult, split } from './utils'
+import { difference, deduplicate } from 'koishi-utils'
 import { Context } from 'koishi-core'
 
 export default function apply (ctx: Context) {
@@ -12,18 +12,21 @@ export default function apply (ctx: Context) {
     argv.target = deduplicate(split(argv.options.target))
     delete argv.options.target
     delete argv.options.t
-    return update(argv)
+    try {
+      return update(argv)
+    } catch (err) {
+      ctx.logger('teach').warn(err)
+      return argv.meta.$send('修改问答时出现问题。')
+    }
   })
 }
 
 async function update (argv: TeachArgv) {
   const { ctx, meta, options, target } = argv
-  const logger = ctx.logger('teach')
 
   argv.uneditable = []
   argv.updated = []
   argv.skipped = []
-  argv.failed = []
   argv.dialogues = await ctx.database.getDialogues(target)
 
   const actualIds = argv.dialogues.map(d => '' + d.id)
@@ -40,7 +43,7 @@ async function update (argv: TeachArgv) {
     return
   }
 
-  const targets = checkAuthority(argv, argv.dialogues)
+  const targets = prepareTargets(argv, argv.dialogues)
 
   if (options.remove) {
     const output: string[] = []
@@ -61,24 +64,11 @@ async function update (argv: TeachArgv) {
 
   if (await ctx.app.serialize('dialogue/before-modify', argv)) return
 
-  for (const data of targets) {
-    const { id } = data
-    const dialogue = observe(data, `dialogue ${id}`)
-
+  for (const dialogue of targets) {
     ctx.emit('dialogue/modify', argv, dialogue)
-
-    if (Object.keys(dialogue._diff).length) {
-      try {
-        await ctx.database.setDialogue(id, dialogue._diff)
-        argv.updated.push(id)
-      } catch (error) {
-        logger.warn(error)
-        argv.failed.push(id)
-      }
-    } else {
-      argv.skipped.push(id)
-    }
   }
+
+  await ctx.database.setDialogues(targets, argv)
 
   await ctx.serialize('dialogue/after-modify', argv)
   return sendResult(argv)

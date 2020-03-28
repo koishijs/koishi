@@ -106,18 +106,32 @@ export class MysqlDatabase implements AbstractDatabase {
     const keys = Object.keys(data)
     if (!keys.length) return
     const header = await this.query<OkPacket>(
-      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${'?, '.repeat(keys.length - 1)}?)`,
+      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(_ => '?').join(', ')})`,
       [table, ...this.formatValues(table, data, keys)],
     )
     return { ...data, id: header.insertId } as any
   }
 
-  async update <K extends TableType> (table: K, id: number | string, data: Partial<TableData[K]>) {
+  async update <K extends TableType> (table: K, data: Partial<TableData[K]>[]): Promise<OkPacket>
+  async update <K extends TableType> (table: K, id: number | string, data: Partial<TableData[K]>): Promise<OkPacket>
+  async update <K extends TableType> (table: K, arg1: number | string | TableData[K][], data?: Partial<TableData[K]>) {
+    if (typeof arg1 === 'object') {
+      if (!arg1.length) return
+      const keys = Object.keys(arg1[0])
+      const placeholder = `(${keys.map(_ => '?').join(', ')})`
+      const header = await this.query(
+        `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES ${arg1.map(_ => placeholder).join(', ')}
+        ON DUPLICATE KEY UPDATE ${keys.filter(key => key !== 'id').map(key => `\`${key}\` = VALUES(\`${key}\`)`).join(', ')}`,
+        [table, ...[].concat(...arg1.map(data => this.formatValues(table, data, keys)))],
+      )
+      return header as OkPacket
+    }
+
     const keys = Object.keys(data)
     if (!keys.length) return
     const header = await this.query(
       'UPDATE ?? SET ' + keys.map(key => `\`${key}\` = ?`).join(', ') + ' WHERE `id` = ?',
-      [table, ...this.formatValues(table, data, keys), id],
+      [table, ...this.formatValues(table, data, keys), arg1],
     )
     return header as OkPacket
   }

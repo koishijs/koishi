@@ -1,5 +1,6 @@
 import { injectMethods } from 'koishi-core'
 import { arrayTypes } from 'koishi-database-mysql'
+import { Observed } from 'koishi-utils'
 
 declare module 'koishi-core/dist/database' {
   interface TableMethods {
@@ -11,11 +12,19 @@ declare module 'koishi-core/dist/database' {
   }
 }
 
+export namespace Dialogue {
+  export interface UpdateContext {
+    skipped?: number[]
+    updated?: number[]
+  }
+}
+
 interface DialogueMethods {
   createDialogue (options: Dialogue): Promise<Dialogue>
-  getDialogues (test: string[]): Promise<Dialogue[]>
+  getDialogues (ids: string[]): Promise<Dialogue[]>
   getDialoguesByTest (test: DialogueTest): Promise<Dialogue[]>
   setDialogue (id: number, data: Partial<Dialogue>): Promise<any>
+  setDialogues (data: Observed<Dialogue>[], ctx: Dialogue.UpdateContext): Promise<void>
   removeDialogues (ids: number[]): Promise<any>
 }
 
@@ -81,6 +90,19 @@ injectMethods('mysql', 'dialogue', {
 
   setDialogue (id, data) {
     return this.update('dialogue', id, data)
+  },
+
+  async setDialogues (dialogues, ctx) {
+    const data: Partial<Dialogue>[] = []
+    for (const { id, _diff } of dialogues) {
+      if (!Object.keys(_diff).length) {
+        ctx.skipped.push(id)
+      } else {
+        ctx.updated.push(id)
+        data.push({ id, ..._diff })
+      }
+    }
+    await this.update('dialogue', data)
   },
 
   removeDialogues (ids) {

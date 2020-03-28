@@ -1,5 +1,5 @@
 import { Context, Meta, User } from 'koishi-core'
-import { difference, isInteger } from 'koishi-utils'
+import { difference, isInteger, observe } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './database'
 import { SessionState } from './receiver'
 
@@ -19,7 +19,7 @@ declare module 'koishi-core/dist/context' {
 
 export interface TeachConfig {}
 
-export interface TeachArgv {
+export interface TeachArgv extends Dialogue.UpdateContext {
   ctx: Context
   meta: Meta<'message'>
   args: string[]
@@ -31,9 +31,6 @@ export interface TeachArgv {
   dialogues?: Dialogue[]
   unknown?: string[]
   uneditable?: number[]
-  updated?: number[]
-  skipped?: number[]
-  failed?: number[]
 }
 
 export function sendResult (argv: TeachArgv, message?: string) {
@@ -43,9 +40,6 @@ export function sendResult (argv: TeachArgv, message?: string) {
   }
   if (argv.uneditable.length) {
     output.push(`问答 ${argv.uneditable.join(', ')} 因权限过低无法修改。`)
-  }
-  if (argv.failed.length) {
-    output.push(`问答 ${argv.failed.join(', ')} 修改时发生错误。`)
   }
   if (argv.skipped.length) {
     output.push(`问答 ${argv.skipped.join(', ')} 没有发生改动。`)
@@ -71,12 +65,12 @@ export async function getDialogues (ctx: Context, test: DialogueTest, state?: Se
   })
 }
 
-export function checkAuthority (argv: TeachArgv, dialogues: Dialogue[]) {
+export function prepareTargets (argv: TeachArgv, dialogues: Dialogue[]) {
   const targets = dialogues.filter((dialogue) => {
     return !argv.ctx.bail('dialogue/permit', argv.meta.$user, dialogue)
   })
   argv.uneditable.unshift(...difference(dialogues, targets).map(d => d.id))
-  return targets
+  return targets.map(data => observe(data, `dialogue ${data.id}`))
 }
 
 export async function sendDetail (ctx: Context, dialogue: Dialogue, argv: TeachArgv) {

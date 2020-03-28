@@ -50,7 +50,7 @@ async function search (argv: TeachArgv) {
       output = output.slice((page - 1) * itemsPerPage, page * itemsPerPage)
       output.unshift(title + `（第 ${page}/${pageCount} 页）：`)
       if (suffix) output.push(suffix)
-      output.push('可以使用 --page 或 ##page 调整输出的条目页数。')
+      output.push('可以使用 --page 或在 ## 之后加上页码以调整输出的条目页数。')
     }
     return meta.$send(output.join('\n'))
   }

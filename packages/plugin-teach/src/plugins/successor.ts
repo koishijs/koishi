@@ -1,7 +1,7 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference, intersection } from 'koishi-utils'
 import { DialogueTest, Dialogue } from '../database'
-import { equal, split, TeachConfig, checkAuthority, getDialogues, isIdList } from '../utils'
+import { equal, split, TeachConfig, prepareTargets, getDialogues, isIdList } from '../utils'
 
 declare module '../utils' {
   interface TeachConfig {
@@ -104,7 +104,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
       argv.predecessors = []
     }
 
-    const { predOverwrite, predecessors, dialogues, skipped, updated, failed } = argv
+    const { predOverwrite, predecessors, dialogues } = argv
     if (!predecessors) return
     const successors = dialogues.map(dialogue => '' + dialogue.id)
     const predDialogues = await ctx.database.getDialogues(predecessors)
@@ -121,28 +121,17 @@ export default function apply (ctx: Context, config: TeachConfig) {
       }
     }
 
-    const targets = checkAuthority(argv, predDialogues)
+    const targets = prepareTargets(argv, predDialogues)
 
     for (const data of targets) {
-      if (predecessorIds.includes(data.id)) {
-        if (contain(data.successors, successors)) {
-          skipped.push(data.id)
-          continue
-        } else {
-          data.successors = union(data.successors, successors)
-        }
-      } else {
+      if (!predecessorIds.includes(data.id)) {
         data.successors = difference(data.successors, successors)
-      }
-
-      try {
-        const { id, successors } = data
-        await ctx.database.setDialogue(id, { successors })
-        updated.push(id)
-      } catch (error) {
-        failed.push(data.id)
+      } else if (!contain(data.successors, successors)) {
+        data.successors = union(data.successors, successors)
       }
     }
+
+    await ctx.database.setDialogues(targets, argv)
   })
 
   ctx.on('dialogue/detail', (dialogue, output) => {
