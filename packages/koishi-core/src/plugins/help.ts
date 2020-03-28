@@ -3,20 +3,26 @@ import { getUsage, getUsageName } from './validate'
 
 export type CommandUsage = string | ((this: Command, meta: Meta) => string | Promise<string>)
 
+declare module '../app' {
+  interface AppOptions {
+    globalHelpMessage?: string
+  }
+}
+
 declare module '../command' {
-  export interface Command {
+  interface Command {
     _usage?: CommandUsage
     _examples: string[]
     usage (text: CommandUsage): this
     example (example: string): this
   }
 
-  export interface CommandConfig {
+  interface CommandConfig {
     /** hide all options by default */
     hideOptions?: boolean
   }
 
-  export interface OptionConfig {
+  interface OptionConfig {
     /** hide the option by default */
     hidden?: boolean
   }
@@ -104,13 +110,16 @@ function getCommandList (prefix: string, context: Context, meta: Meta<'message'>
 }
 
 function showGlobalHelp (context: Context, meta: Meta<'message'>, config: HelpConfig) {
-  return meta.$send([
+  const output = [
     ...getCommandList('当前可用的指令有', context, meta, null, config.expand),
     '群聊普通指令可以通过“@我+指令名”的方式进行触发。',
     '私聊或全局指令则不需要添加上述前缀，直接输入指令名即可触发。',
-    '输入“全局指令”查看全部可用的全局指令。',
     '输入“帮助+指令名”查看特定指令的语法和使用示例。',
-  ].join('\n'))
+  ]
+  if (context.app.options.globalHelpMessage) {
+    output.push(context.app.options.globalHelpMessage)
+  }
+  return meta.$send(output.join('\n'))
 }
 
 function getOptions (command: Command, maxUsage: number, config: HelpConfig) {
