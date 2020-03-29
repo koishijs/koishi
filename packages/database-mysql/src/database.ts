@@ -74,7 +74,7 @@ export class MysqlDatabase implements AbstractDatabase {
   }
 
   joinKeys = (keys: readonly string[]) => {
-    return keys.map(key => `\`${key}\``).join(',')
+    return keys ? keys.map(key => `\`${key}\``).join(',') : '*'
   }
 
   formatValues = (prefix: string, data: object, keys: readonly string[]) => {

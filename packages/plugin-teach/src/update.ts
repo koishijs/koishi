@@ -26,7 +26,7 @@ async function update (argv: TeachArgv) {
   argv.uneditable = []
   argv.updated = []
   argv.skipped = []
-  argv.dialogues = await ctx.database.getDialogues(target)
+  argv.dialogues = await ctx.database.getDialoguesById(target)
 
   const actualIds = argv.dialogues.map(d => '' + d.id)
   argv.unknown = difference(target, actualIds)

@@ -19,13 +19,15 @@ export namespace Dialogue {
   }
 }
 
+export type DialogueField = keyof Dialogue
+
 interface DialogueMethods {
   createDialogue (options: Dialogue): Promise<Dialogue>
-  getDialogues (ids: string[]): Promise<Dialogue[]>
+  getDialoguesById <K extends DialogueField> (ids: string[], keys?: readonly K[]): Promise<Pick<Dialogue, K>[]>
   getDialoguesByTest (test: DialogueTest): Promise<Dialogue[]>
-  setDialogue (id: number, data: Partial<Dialogue>): Promise<any>
+  setDialogue (id: number, data: Partial<Dialogue>): Promise<void>
   setDialogues (data: Observed<Dialogue>[], ctx: Dialogue.UpdateContext): Promise<void>
-  removeDialogues (ids: number[]): Promise<any>
+  removeDialogues (ids: number[]): Promise<void>
 }
 
 export interface DialogueCount {
@@ -69,9 +71,9 @@ injectMethods('mysql', 'dialogue', {
     return this.create('dialogue', options)
   },
 
-  async getDialogues (ids) {
+  async getDialoguesById (ids, keys) {
     if (!ids.length) return []
-    return this.query(`SELECT * FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
+    return this.select('dialogue', keys, `\`id\` IN (${ids.join(',')})`)
   },
 
   async getDialoguesByTest (test) {
@@ -88,8 +90,8 @@ injectMethods('mysql', 'dialogue', {
     return this.query<Dialogue[]>(query)
   },
 
-  setDialogue (id, data) {
-    return this.update('dialogue', id, data)
+  async setDialogue (id, data) {
+    await this.update('dialogue', id, data)
   },
 
   async setDialogues (dialogues, ctx) {
@@ -108,8 +110,8 @@ injectMethods('mysql', 'dialogue', {
     }
   },
 
-  removeDialogues (ids) {
+  async removeDialogues (ids) {
     if (!ids.length) return
-    return this.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
+    await this.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
   },
 })

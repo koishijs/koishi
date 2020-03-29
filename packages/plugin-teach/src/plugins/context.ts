@@ -8,6 +8,7 @@ declare module '../utils' {
     groups?: string[]
     partial?: boolean
     reversed?: boolean
+    noContextOptions?: boolean
   }
 }
 
@@ -26,11 +27,11 @@ declare module '../database' {
 export default function apply (ctx: Context, config: TeachConfig) {
   ctx.command('teach')
     .option('-d, --disable', '在当前环境下禁用问答')
-    .option('-D, --disable-global', '在所有环境下禁用问答')
+    .option('-D, --disable-global', '在所有环境下禁用问答', { authority: 3 })
     .option('-e, --enable', '在当前环境下启用问答')
-    .option('-E, --enable-global', '在所有环境下启用问答')
-    .option('-g, --groups <gids>', '设置具体的生效环境', { isString: true, validate: isIdList })
-    .option('-G, --global', '无视上下文搜索')
+    .option('-E, --enable-global', '在所有环境下启用问答', { authority: 3 })
+    .option('-g, --groups <gids>', '设置具体的生效环境', { authority: 3, isString: true, validate: isIdList })
+    .option('-G, --global', '无视上下文搜索', { authority: 3 })
 
   ctx.on('dialogue/filter-stateless', (data, test) => {
     if (!test.groups) return
@@ -57,7 +58,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
       return meta.$send('选项 -e, -E 不能同时使用。')
     }
 
-    let noDisableEnable = false
+    argv.noContextOptions = false
     if (options.disable) {
       argv.reversed = true
       argv.partial = !options.enableGlobal
@@ -71,7 +72,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
       argv.partial = false
       argv.groups = []
     } else {
-      noDisableEnable = !options.enable
+      argv.noContextOptions = !options.enable
       if (options.target ? options.enable : !options.global) {
         argv.reversed = false
         argv.partial = true
@@ -80,7 +81,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
 
     if ('groups' in options) {
-      if (noDisableEnable) {
+      if (argv.noContextOptions) {
         return meta.$send('参数 -g, --groups 必须与 -d/-D/-e/-E 之一同时使用。')
       } else {
         argv.groups = split(options.groups)
@@ -127,7 +128,10 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/detail-short', ({ groups, flag }, output, argv) => {
     if (!argv.groups && argv.meta.messageType === 'group') {
-      output.unshift(!(flag & DialogueFlag.reversed) === groups.includes('' + argv.meta.groupId) ? '√' : '×')
+      const isReversed = flag & DialogueFlag.reversed
+      const hasGroup = groups.includes('' + argv.meta.groupId)
+      // output.unshift(hasGroup ? isReversed ? 'D' : 'e' : isReversed ? 'E' : 'd')
+      output.unshift(!isReversed === hasGroup ? '√' : '×')
     }
   })
 

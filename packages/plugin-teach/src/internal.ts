@@ -107,7 +107,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
       }
     } else {
       if (probA) {
-        output.push(`触发权重：p=${probS}/P=${probA}`)
+        output.push(`触发权重：p=${probS}, P=${probA}`)
       } else {
         output.push(`触发权重：${probS}`)
       }

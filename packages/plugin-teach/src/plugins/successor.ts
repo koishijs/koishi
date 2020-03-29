@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference, intersection } from 'koishi-utils'
-import { DialogueTest, Dialogue } from '../database'
+import { DialogueTest, Dialogue, DialogueFlag } from '../database'
 import { equal, split, TeachConfig, prepareTargets, getDialogues, isIdList } from '../utils'
 
 declare module '../utils' {
@@ -43,10 +43,10 @@ export default function apply (ctx: Context, config: TeachConfig) {
   const { successorTimeout = 20000 } = config
 
   ctx.command('teach')
-    .option('<<, --set-pred <ids>', '设置前置问题', { isString: true, validate: isIdList })
-    .option('<, --add-pred <ids>', '添加前置问题', { isString: true, validate: isIdList })
-    .option('>>, --set-succ <ids>', '设置后继问题', { isString: true, validate: isIdList })
-    .option('>, --add-succ <ids>', '添加后继问题', { isString: true, validate: isIdList })
+    .option('<, --set-pred <ids>', '设置前置问题', { isString: true, validate: isIdList })
+    .option('<<, --add-pred <ids>', '添加前置问题', { isString: true, validate: isIdList })
+    .option('>, --set-succ <ids>', '设置后继问题', { isString: true, validate: isIdList })
+    .option('>>, --add-succ <ids>', '添加后继问题', { isString: true, validate: isIdList })
 
   ctx.on('dialogue/filter', (data, test, state) => {
     if (test.successors) {
@@ -88,7 +88,14 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
-  ctx.on('dialogue/modify', ({ succOverwrite, successors }, data) => {
+  ctx.on('dialogue/modify', ({ succOverwrite, successors, predecessors, noContextOptions }, data) => {
+    // fallback to --disable-global when there are predecessors
+    if (predecessors.length && noContextOptions) {
+      if (data.groups.length) data.groups = []
+      data.flag |= DialogueFlag.reversed
+    }
+
+    // merge successors
     if (!data.successors) data.successors = []
     if (!successors) return
     if (succOverwrite) {
@@ -107,7 +114,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     const { predOverwrite, predecessors, dialogues } = argv
     if (!predecessors) return
     const successors = dialogues.map(dialogue => '' + dialogue.id)
-    const predDialogues = await ctx.database.getDialogues(predecessors)
+    const predDialogues = await ctx.database.getDialoguesById(predecessors)
     const newTargets = predDialogues.map(d => d.id)
     const predecessorIds = predecessors.map(Number)
     argv.unknown = difference(predecessors, newTargets.map(String))
