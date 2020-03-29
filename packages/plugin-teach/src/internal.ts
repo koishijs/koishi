@@ -16,7 +16,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     // .option('-K, --no-keyword', '取消使用关键词匹配')
     .option('-c, --redirect', '使用指令重定向')
     .option('-C, --no-redirect', '取消使用指令重定向')
-    .option('=>, --redirect-dialogue', '重定向到其他问答')
+    .option('=>, --redirect-dialogue <answer>', '重定向到其他问答')
 
   ctx.before('dialogue/validate', ({ options, meta, args }) => {
     if (args.length) {

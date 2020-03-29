@@ -90,7 +90,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/modify', ({ succOverwrite, successors, predecessors, noContextOptions }, data) => {
     // fallback to --disable-global when there are predecessors
-    if (predecessors.length && noContextOptions) {
+    if (predecessors && predecessors.length && noContextOptions) {
       if (data.groups.length) data.groups = []
       data.flag |= DialogueFlag.reversed
     }
