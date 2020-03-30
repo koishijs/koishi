@@ -66,6 +66,14 @@ export enum DialogueFlag {
   redirect = 32,
 }
 
+function pick <T, K extends keyof T> (source: T, keys: Iterable<K>): Pick<T, K> {
+  const result = {} as Pick<T, K>
+  for (const key of keys) {
+    result[key] = source[key]
+  }
+  return result
+}
+
 injectMethods('mysql', 'dialogue', {
   createDialogue (options) {
     return this.create('dialogue', options)
@@ -96,18 +104,22 @@ injectMethods('mysql', 'dialogue', {
 
   async setDialogues (dialogues, ctx) {
     const data: Partial<Dialogue>[] = []
-    for (const { id, _diff } of dialogues) {
-      if (!Object.keys(_diff).length) {
-        ctx.skipped.push(id)
+    const fields = new Set<DialogueField>(['id'])
+    for (const { _diff } of dialogues) {
+      for (const key in _diff) {
+        fields.add(key as DialogueField)
+      }
+    }
+    for (const dialogue of dialogues) {
+      if (!Object.keys(dialogue._diff).length) {
+        ctx.skipped.push(dialogue.id)
       } else {
-        ctx.updated.push(id)
-        data.push({ id, ..._diff })
+        dialogue._diff = {}
+        ctx.updated.push(dialogue.id)
+        data.push(pick(dialogue, fields))
       }
     }
     await this.update('dialogue', data)
-    for (const dialogue of dialogues) {
-      dialogue._diff = {}
-    }
   },
 
   async removeDialogues (ids) {

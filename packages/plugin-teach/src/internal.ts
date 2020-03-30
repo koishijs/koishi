@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { DialogueFlag } from './database'
+import { DialogueFlag, AppellationType } from './database'
 import { TeachConfig, isZeroToOne } from './utils'
 
 export function simplifyAnswer (source: string) {
@@ -28,11 +28,17 @@ export default function apply (ctx: Context, config: TeachConfig) {
       return meta.$send('问题不能包含图片。')
     }
 
-    options.question = config._stripQuestion(options.question)[0]
+    const [question, appellative] = config._stripQuestion(options.question)
+    options.question = question
     if (options.question) {
       options.original = options.question
     } else {
       delete options.question
+    }
+
+    if (appellative === AppellationType.appellative && !options.target) {
+      if (options.probabilityAppellative === undefined) options.probabilityAppellative = 1
+      if (options.probabilityStrict === undefined) options.probabilityStrict = 0
     }
 
     options.answer = (String(answer || '')).trim()
