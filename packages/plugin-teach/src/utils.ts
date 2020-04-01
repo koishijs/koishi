@@ -26,6 +26,7 @@ export interface TeachArgv extends Dialogue.UpdateContext {
   config: TeachConfig
   target?: string[]
   options: Record<string, any>
+  appellative?: boolean
 
   // modify status
   dialogues?: Dialogue[]

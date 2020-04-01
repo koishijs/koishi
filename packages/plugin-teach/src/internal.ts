@@ -18,7 +18,8 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('-C, --no-redirect', '取消使用指令重定向')
     .option('=>, --redirect-dialogue <answer>', '重定向到其他问答')
 
-  ctx.before('dialogue/validate', ({ options, meta, args }) => {
+  ctx.before('dialogue/validate', (argv) => {
+    const { options, meta, args } = argv
     if (args.length) {
       return meta.$send('存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
     }
@@ -29,16 +30,12 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
 
     const [question, appellative] = config._stripQuestion(options.question)
+    argv.appellative = appellative === AppellationType.appellative
     options.question = question
     if (options.question) {
       options.original = options.question
     } else {
       delete options.question
-    }
-
-    if (appellative === AppellationType.appellative && !options.target) {
-      if (options.probabilityAppellative === undefined) options.probabilityAppellative = 1
-      if (options.probabilityStrict === undefined) options.probabilityStrict = 0
     }
 
     options.answer = (String(answer || '')).trim()
@@ -57,7 +54,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
-  ctx.before('dialogue/modify', ({ options }, data) => {
+  ctx.before('dialogue/modify', ({ options, target, appellative }, data) => {
     if (options.answer) {
       data.answer = options.answer
     }
@@ -67,12 +64,16 @@ export default function apply (ctx: Context, config: TeachConfig) {
       data.original = options.original
     }
 
-    if (options.probabilityStrict !== undefined) {
-      data.probS = options.probabilityStrict
-    }
-
-    if (options.probabilityAppellative !== undefined) {
-      data.probA = options.probabilityAppellative
+    if (!target && appellative) {
+      data.probS = options.probabilityStrict ?? 0
+      data.probS = options.probabilityAppellative ?? 1
+    } else {
+      if (options.probabilityStrict !== undefined) {
+        data.probS = options.probabilityStrict
+      }
+      if (options.probabilityAppellative !== undefined) {
+        data.probA = options.probabilityAppellative
+      }
     }
 
     if (options.keyword !== undefined) {
