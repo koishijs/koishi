@@ -31,9 +31,9 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
     const [question, appellative] = config._stripQuestion(options.question)
     argv.appellative = appellative === AppellationType.appellative
-    options.question = question
-    if (options.question) {
+    if (question) {
       options.original = options.question
+      options.question = question
     } else {
       delete options.question
     }
@@ -98,27 +98,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
       output.push(`重定向到指令：${answer}`)
     }
 
-    if (!probS) {
-      if (probA === 1) {
-        output.push('必须带称呼触发。')
-      } else if (probA) {
-        output.push(`必须带称呼触发，权重：${probA}`)
-      } else {
-        output.push('权重为零，无法触发。')
-      }
-    } else if (probS === 1) {
-      if (probA === 1) {
-        output.push('允许带称呼触发。')
-      } else if (probA) {
-        output.push(`允许带称呼触发，权重：${probA}`)
-      }
-    } else {
-      if (probA) {
-        output.push(`触发权重：p=${probS}, P=${probA}`)
-      } else {
-        output.push(`触发权重：${probS}`)
-      }
-    }
+    output.push(`触发权重：p=${probS}, P=${probA}`)
   })
 
   ctx.on('dialogue/detail-short', ({ probS, probA }, output) => {
