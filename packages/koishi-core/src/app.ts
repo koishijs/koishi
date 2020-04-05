@@ -23,6 +23,7 @@ export interface AppOptions {
   retryTimes?: number
   retryInterval?: number
   maxMiddlewares?: number
+  acceptAnonymous?: boolean
   defaultAuthority?: number | ((meta: Meta) => number)
   quickOperationTimeout?: number
   similarityCoefficient?: number
@@ -269,6 +270,8 @@ export class App extends Context {
   }
 
   private _preprocess = async (meta: Meta<'message'>, next: NextFunction) => {
+    if (!this.options.acceptAnonymous) return
+
     // strip prefix
     let capture: RegExpMatchArray
     let atMe = false
