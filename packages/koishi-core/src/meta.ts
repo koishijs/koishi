@@ -222,9 +222,11 @@ export function getSenderName (meta: Meta<'message'>) {
   const idString = '' + meta.$user.id
   return meta.$user && idString !== meta.$user.name
     ? meta.$user.name
-    : meta.sender
-      ? meta.sender.card || meta.sender.nickname
-      : idString
+    : meta.anonymous
+      ? meta.anonymous.name
+      : meta.sender
+        ? meta.sender.card || meta.sender.nickname
+        : idString
 }
 
 export function getContextId (meta: Meta<'message'>) {

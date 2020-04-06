@@ -4,9 +4,9 @@ import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig, ParsedCommandLine, ParsedLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
-import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField } from './database'
+import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField, createUser } from './database'
 import { Meta } from './meta'
-import { simplify, noop } from 'koishi-utils'
+import { simplify, noop, observe } from 'koishi-utils'
 import { emitter, errors } from './shared'
 import { types } from 'util'
 
@@ -23,7 +23,6 @@ export interface AppOptions {
   retryTimes?: number
   retryInterval?: number
   maxMiddlewares?: number
-  acceptAnonymous?: boolean
   defaultAuthority?: number | ((meta: Meta) => number)
   quickOperationTimeout?: number
   similarityCoefficient?: number
@@ -270,8 +269,6 @@ export class App extends Context {
   }
 
   private _preprocess = async (meta: Meta<'message'>, next: NextFunction) => {
-    if (!this.options.acceptAnonymous) return
-
     // strip prefix
     let capture: RegExpMatchArray
     let atMe = false
@@ -376,7 +373,9 @@ export class App extends Context {
     const defaultAuthority = typeof this.options.defaultAuthority === 'function'
       ? this.options.defaultAuthority(meta)
       : this.options.defaultAuthority || 0
-    const user = await this.database.observeUser(meta.userId, defaultAuthority, Array.from(userFields))
+    const user = meta.anonymous
+      ? observe(createUser(meta.userId, defaultAuthority))
+      : await this.database.observeUser(meta.userId, defaultAuthority, Array.from(userFields))
     defineProperty(meta, '$user', user)
     return user
   }

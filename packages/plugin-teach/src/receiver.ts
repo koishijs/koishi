@@ -51,8 +51,9 @@ function unescapeAnswer (message: string) {
   return message.trim().replace(/@@__DOLLARS_PLACEHOLDER__@@/g, '$')
 }
 
-export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, { appellationTimeout = 20000 }: TeachConfig, next: NextFunction) {
+export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, config: TeachConfig, next: NextFunction) {
   const { groupId } = meta
+  const { appellationTimeout = 20000 } = config
 
   if (!states[groupId]) {
     ctx.emit('dialogue/state', states[groupId] = { activated: {} } as SessionState)
@@ -63,8 +64,9 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, { ap
   if (ctx.bail('dialogue/receive', meta, test, state)) return next()
 
   // fetch matched dialogues
+  const uid = meta.anonymous ? -meta.anonymous.id : meta.userId
   const dialogues = await getDialogues(ctx, test, state)
-  const isActivated = meta.userId in state.activated
+  const isActivated = uid in state.activated
   dialogues.forEach((dialogue) => {
     dialogue._prob = isActivated
       ? Math.max(dialogue.probS, dialogue.probA)
@@ -127,11 +129,11 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, { ap
   }
 
   if (test.appellative === AppellationType.activated) {
-    const time = state.activated[meta.userId] = Date.now()
+    const time = state.activated[uid] = Date.now()
 
     setTimeout(() => {
-      if (state.activated[meta.userId] === time) {
-        delete state.activated[meta.userId]
+      if (state.activated[uid] === time) {
+        delete state.activated[uid]
       }
     }, appellationTimeout)
   }
