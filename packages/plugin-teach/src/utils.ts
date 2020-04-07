@@ -34,8 +34,9 @@ export interface TeachArgv extends Dialogue.UpdateContext {
   uneditable?: number[]
 }
 
-export function sendResult (argv: TeachArgv, message?: string) {
-  const output = message ? [message] : []
+export function sendResult (argv: TeachArgv, prefix?: string, suffix?: string) {
+  const output = []
+  if (prefix) output.push(prefix)
   if (argv.unknown.length) {
     output.push(`没有搜索到编号为 ${argv.unknown.join(', ')} 的问答。`)
   }
@@ -48,6 +49,7 @@ export function sendResult (argv: TeachArgv, message?: string) {
   if (argv.updated.length) {
     output.push(`问答 ${argv.updated.join(', ')} 已成功修改。`)
   }
+  if (suffix) output.push(suffix)
   return argv.meta.$send(output.join('\n'))
 }
 

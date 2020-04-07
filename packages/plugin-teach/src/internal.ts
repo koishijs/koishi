@@ -44,6 +44,11 @@ export default function apply (ctx: Context, config: TeachConfig) {
     } else if (redirectDialogue) {
       options.redirect = true
       options.answer = 'dialogue ' + options.answer
+    } else if (options.redirect) {
+      const [name] = options.answer.split(' ', 1)
+      if (!ctx.app._commandMap[name]) {
+        return meta.$send('没有重定向到合法的指令。')
+      }
     }
   })
 
@@ -98,10 +103,12 @@ export default function apply (ctx: Context, config: TeachConfig) {
       output.push(`重定向到指令：${answer}`)
     }
 
-    output.push(`触发权重：p=${probS}, P=${probA}`)
+    if (probS < 1 || probA > 0) {
+      output.push(`触发权重：p=${probS}, P=${probA}`)
+    }
   })
 
-  ctx.on('dialogue/detail-short', ({ probS, probA }, output) => {
+  ctx.on('dialogue/detail-short', ({ probS, probA, flag }, output) => {
     if (probS < 1 || probA > 0) output.push(`p=${probS}`, `P=${probA}`)
   })
 

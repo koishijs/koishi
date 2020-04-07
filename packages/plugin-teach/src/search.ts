@@ -1,5 +1,5 @@
 import { TeachArgv, sendDetail, getDialogues, isPositiveInteger } from './utils'
-import { Dialogue, DialogueTest } from './database'
+import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import { Context } from 'koishi-core'
 
 declare module './utils' {
@@ -50,6 +50,13 @@ async function search (argv: TeachArgv) {
     return `${dialogue.id}. ${output.length ? `[${output.join(', ')}] ` : ''}`
   }
 
+  function formatQuestionAnswer (dialogues: Dialogue[]) {
+    return dialogues.map((d) => {
+      const type = d.flag & DialogueFlag.redirect ? '重定向' : '回答'
+      return `${formatPrefix(d)}问题：“${d.original}”，${type}：“${formatAnswer(d.answer)}”`
+    })
+  }
+
   function sendResult (title: string, output: string[], suffix?: string) {
     if (output.length <= itemsPerPage) {
       output.unshift(title + '：')
@@ -66,8 +73,7 @@ async function search (argv: TeachArgv) {
 
   if (!question && !answer) {
     if (!dialogues.length) return meta.$send('没有搜索到任何回答，尝试切换到其他环境。')
-    const output = dialogues.map(d => `${formatPrefix(d)}问题：“${d.original}”，回答：“${formatAnswer(d.answer)}”`)
-    return sendResult('全部问答如下', output)
+    return sendResult('全部问答如下', formatQuestionAnswer(dialogues))
   }
 
   if (!options.keyword) {
@@ -77,7 +83,10 @@ async function search (argv: TeachArgv) {
       return sendResult(`回答“${answer}”的问题如下`, output)
     } else if (!answer) {
       if (!dialogues.length) return meta.$send(`没有搜索到问题“${original}”，请尝试使用关键词匹配。`)
-      const output = dialogues.map(d => `${formatPrefix(d)}${formatAnswer(d.answer)}`)
+      const output = dialogues.map(d => {
+        const type = d.flag & DialogueFlag.redirect ? '[重定向] ' : ''
+        return `${formatPrefix(d)}${type}${formatAnswer(d.answer)}`
+      })
       const totalS = dialogues.reduce((prev, curr) => prev + curr.probS, 0)
       const totalA = dialogues.reduce((prev, curr) => prev + curr.probA, 0)
       return sendResult(`问题“${original}”的回答如下`, output, dialogues.length > 1
@@ -94,7 +103,7 @@ async function search (argv: TeachArgv) {
 
   let output: string[]
   if (!options.autoMerge || question && answer) {
-    output = dialogues.map(d => `${formatPrefix(d)}问题：“${d.original}”，回答：“${formatAnswer(d.answer)}”`)
+    output = formatQuestionAnswer(dialogues)
   } else {
     const idMap: Record<string, number[]> = {}
     for (const dialogue of dialogues) {

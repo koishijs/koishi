@@ -130,7 +130,6 @@ export default function apply (ctx: Context, config: TeachConfig) {
     if (!argv.groups && argv.meta.messageType === 'group') {
       const isReversed = flag & DialogueFlag.reversed
       const hasGroup = groups.includes('' + argv.meta.groupId)
-      // output.unshift(hasGroup ? isReversed ? 'D' : 'e' : isReversed ? 'E' : 'd')
       output.unshift(!isReversed === hasGroup ? '√' : '×')
     }
   })
