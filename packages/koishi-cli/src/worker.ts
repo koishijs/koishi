@@ -60,7 +60,7 @@ function loadEcosystem (type: string, name: string) {
     try {
       return require(name)
     } catch (error) {
-      if (error.code !== 'MODULE_NOT_FOUND') {
+      if (error.code !== 'MODULE_NOT_FOUND' || error.requireStack[0] !== __filename) {
         throw error
       }
     }
