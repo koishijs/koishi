@@ -1,6 +1,7 @@
 import { User, Group } from './database'
 import { ParsedCommandLine } from './command'
 import { isInteger } from 'koishi-utils'
+import { App } from './app'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
 export type MessageType = 'private' | 'group' | 'discuss'
@@ -62,6 +63,7 @@ export interface Meta <T extends PostType = PostType> {
   $ctxType?: ContextType
 
   // other properties
+  $app?: App
   $argv?: ParsedCommandLine
   $parsed?: ParsedMessage
 

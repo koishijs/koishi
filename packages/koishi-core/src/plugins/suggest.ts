@@ -21,7 +21,6 @@ onApp((app) => {
       prefix: messages.COMMAND_SUGGESTION_PREFIX,
       suffix: messages.COMMAND_SUGGESTION_SUFFIX,
       coefficient: app.options.similarityCoefficient,
-      command: suggestion => app._commandMap[suggestion],
       async execute (suggestion, meta, next) {
         const newMessage = suggestion + message.slice(target.length)
         return app.executeCommandLine(newMessage, meta, next)
@@ -38,7 +37,6 @@ interface SuggestOptions {
   prefix: string
   suffix: string
   coefficient?: number
-  command: Command | ((suggestion: string) => Command)
   execute: (suggestion: string, meta: Meta<'message'>, next: NextFunction) => any
 }
 
@@ -53,8 +51,7 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
     const message = prefix + format(messages.SUGGESTION_TEXT, suggestions.map(name => `“${name}”`).join('或'))
     if (suggestions.length > 1) return meta.$send(message)
 
-    const command = typeof options.command === 'function' ? options.command(suggestions[0]) : options.command
-    command.context.onceMiddleware(async (meta, next) => {
+    meta.$app.onceMiddleware(async (meta, next) => {
       const message = meta.message.trim()
       if (message && message !== '.' && message !== '。') return next()
       return execute(suggestions[0], meta, next)

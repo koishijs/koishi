@@ -8,6 +8,5 @@
     "moduleResolution": "node",
     "declaration": true,
     "sourceMap": true,
-    "declarationMap": true,
   },
 }
