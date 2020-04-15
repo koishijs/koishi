@@ -22,6 +22,8 @@ export default function (ctx: Context, config: TeachConfig) {
       if (capture[1].startsWith('##')) {
         options.keyword = true
         options.autoMerge = true
+      } else if (!options.noRedirect) {
+        options.redirect = true
       }
       if (capture[3]) {
         options.page = +capture[3]

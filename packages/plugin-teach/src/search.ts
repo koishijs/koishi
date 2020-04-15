@@ -2,22 +2,23 @@ import { TeachArgv, sendDetail, getDialogues, isPositiveInteger } from './utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import { Context } from 'koishi-core'
 
+declare module './database' {
+  interface Dialogue {
+    _redirections: Dialogue[]
+  }
+}
+
 declare module './utils' {
   interface TeachConfig {
     itemsPerPage?: number
     mergeThreshold?: number
+    maxAnswerLength?: number
   }
-}
-
-function formatAnswer (source: string) {
-  const lines = source.split(/(\r?\n|\$n)/g)
-  const output = lines.length > 1 ? lines[0].trim() + '……' : lines[0]
-  return output.replace(/\[CQ:image,[^\]]+\]/g, '[图片]')
 }
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
-    .option('--search', '搜索已有问答', { notUsage: true, isString: true })
+    .option('--search', '搜索已有问答', { notUsage: true })
     .option('--page <page>', '设置搜索结果的页码', { validate: isPositiveInteger })
     .option('--auto-merge', '自动合并相同的问题和回答')
     .option('|, --pipe <op...>', '对每个搜索结果执行操作', { authority: 3 })
@@ -29,8 +30,8 @@ export default function apply (ctx: Context) {
 
 async function search (argv: TeachArgv) {
   const { ctx, meta, options } = argv
-  const { keyword, question, answer, page = 1, original, pipe } = options
-  const { itemsPerPage = 20, mergeThreshold = 5 } = argv.config
+  const { keyword, question, answer, page = 1, original, pipe, redirect } = options
+  const { itemsPerPage = 20, mergeThreshold = 5, maxAnswerLength = 100 } = argv.config
 
   const test: DialogueTest = { question, answer, keyword }
   if (await ctx.serialize('dialogue/before-search', argv, test)) return
@@ -44,16 +45,70 @@ async function search (argv: TeachArgv) {
     return command.execute(meta.$argv)
   }
 
+  if (redirect) {
+    const idSet = new Set()
+    await getRedirections(dialogues)
+
+    async function getRedirections (dialogues: Dialogue[]) {
+      for (const dialogue of dialogues) {
+        const { id, flag, answer } = dialogue
+        if (idSet.has(id) || !(flag & DialogueFlag.redirect) || !answer.startsWith('dialogue ')) continue
+        idSet.add(id)
+        const redirections = await getDialogues(ctx, {
+          ...test,
+          keyword: false,
+          question: answer.slice(9).trimStart(),
+        })
+        Object.defineProperty(dialogue, '_redirections', { writable: true, value: redirections })
+        await getRedirections(redirections)
+      }
+    }
+  }
+
+  function formatAnswer (source: string) {
+    let trimmed = false
+    const lines = source.split(/(\r?\n|\$n)/g)
+    if (lines.length > 1) {
+      trimmed = true
+      source = lines[0].trim()
+    }
+    if (source.length > maxAnswerLength) {
+      trimmed = true
+      source = source.slice(0, maxAnswerLength)
+    }
+    if (trimmed && !source.endsWith('……')) {
+      if (source.endsWith('…')) {
+        source += '…'
+      } else {
+        source += '……'
+      }
+    }
+    return source.replace(/\[CQ:image,[^\]]+\]/g, '[图片]')
+  }
+
   function formatPrefix (dialogue: Dialogue) {
     const output: string[] = []
     ctx.emit('dialogue/detail-short', dialogue, output, argv)
     return `${dialogue.id}. ${output.length ? `[${output.join(', ')}] ` : ''}`
   }
 
-  function formatQuestionAnswer (dialogues: Dialogue[]) {
-    return dialogues.map((d) => {
-      const type = d.flag & DialogueFlag.redirect ? '重定向' : '回答'
-      return `${formatPrefix(d)}问题：“${d.original}”，${type}：“${formatAnswer(d.answer)}”`
+  function formatAnswers (dialogues: Dialogue[], padding = 0) {
+    return dialogues.map((dialogue) => {
+      const { flag, answer, _redirections } = dialogue
+      const type = flag & DialogueFlag.redirect ? '[重定向] ' : ''
+      const output = `${'=> '.repeat(padding)}${formatPrefix(dialogue)}${type}${formatAnswer(answer)}`
+      if (!_redirections) return output
+      return [output, ...formatAnswers(_redirections, padding + 1)].join('\n')
+    })
+  }
+
+  function formatQuestionAnswers (dialogues: Dialogue[]) {
+    return dialogues.map((dialogue) => {
+      const { flag, original, answer, _redirections } = dialogue
+      const type = flag & DialogueFlag.redirect ? '重定向' : '回答'
+      const output = `${formatPrefix(dialogue)}问题：“${original}”，${type}：“${formatAnswer(answer)}”`
+      if (!_redirections) return output
+      return [output, ...formatAnswers(_redirections, 2)].join('\n')
     })
   }
 
@@ -73,7 +128,7 @@ async function search (argv: TeachArgv) {
 
   if (!question && !answer) {
     if (!dialogues.length) return meta.$send('没有搜索到任何回答，尝试切换到其他环境。')
-    return sendResult('全部问答如下', formatQuestionAnswer(dialogues))
+    return sendResult('全部问答如下', formatQuestionAnswers(dialogues))
   }
 
   if (!options.keyword) {
@@ -83,10 +138,7 @@ async function search (argv: TeachArgv) {
       return sendResult(`回答“${answer}”的问题如下`, output)
     } else if (!answer) {
       if (!dialogues.length) return meta.$send(`没有搜索到问题“${original}”，请尝试使用关键词匹配。`)
-      const output = dialogues.map(d => {
-        const type = d.flag & DialogueFlag.redirect ? '[重定向] ' : ''
-        return `${formatPrefix(d)}${type}${formatAnswer(d.answer)}`
-      })
+      const output = formatAnswers(dialogues)
       const totalS = dialogues.reduce((prev, curr) => prev + curr.probS, 0)
       const totalA = dialogues.reduce((prev, curr) => prev + curr.probA, 0)
       return sendResult(`问题“${original}”的回答如下`, output, dialogues.length > 1
@@ -103,7 +155,7 @@ async function search (argv: TeachArgv) {
 
   let output: string[]
   if (!options.autoMerge || question && answer) {
-    output = formatQuestionAnswer(dialogues)
+    output = formatQuestionAnswers(dialogues)
   } else {
     const idMap: Record<string, number[]> = {}
     for (const dialogue of dialogues) {
