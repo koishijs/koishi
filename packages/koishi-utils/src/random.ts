@@ -8,6 +8,75 @@ export function randomId (length = 8) {
 }
 
 /**
+ * random operations
+ */
+export class Random {
+  constructor (private value = Math.random()) {}
+
+  bool (probability: number) {
+    if (probability >= 1) return true
+    if (probability <= 0) return false
+    return this.value < probability
+  }
+
+  /**
+   * random real
+   * @param start start number
+   * @param end end number
+   * @returns a random real in the interval [start, end)
+   */
+  real (end: number): number
+  real (start: number, end: number): number
+  real (...args: [number, number?]): number {
+    const start = args.length > 1 ? args[0] : 0
+    const end = args[args.length - 1]
+    return this.value * (end - start) + start
+  }
+
+  /**
+   * random integer
+   * @param start start number
+   * @param end end number
+   * @returns a random integer in the interval [start, end)
+   */
+  int (end: number): number
+  int (start: number, end: number): number
+  int (...args: [number, number?]): number {
+    return Math.floor(this.real(...args))
+  }
+
+  pick <T> (source: readonly T[]) {
+    return source[Math.floor(this.value * source.length)]
+  }
+
+  splice <T> (source: T[]) {
+    return source.splice(Math.floor(this.value * source.length), 1)[0]
+  }
+
+  multiPick <T> (source: T[], count: number) {
+    source = source.slice()
+    const result: T[] = []
+    const length = Math.min(source.length, count)
+    for (let i = 0; i < length; i += 1) {
+      const index = Math.floor(this.value * source.length)
+      const [item] = source.splice(index, 1)
+      result.push(item)
+    }
+    return result
+  }
+
+  weightedPick <T extends string> (weights: Record<T, number>): T {
+    const total = Object.entries(weights).reduce((prev, [_, curr]) => prev + (curr as number), 0)
+    const pointer = this.value * total
+    let counter = 0
+    for (const key in weights) {
+      counter += weights[key]
+      if (pointer < counter) return key
+    }
+  }
+}
+
+/**
  * random real
  * @param start start number
  * @param end end number
@@ -16,9 +85,7 @@ export function randomId (length = 8) {
 export function randomReal (end: number): number
 export function randomReal (start: number, end: number): number
 export function randomReal (...args: [number, number?]): number {
-  const start = args.length > 1 ? args[0] : 0
-  const end = args[args.length - 1]
-  return Math.random() * (end - start) + start
+  return new Random().real(...args)
 }
 
 /**
@@ -30,41 +97,25 @@ export function randomReal (...args: [number, number?]): number {
 export function randomInt (end: number): number
 export function randomInt (start: number, end: number): number
 export function randomInt (...args: [number, number?]): number {
-  return Math.floor(randomReal(...args))
+  return new Random().int(...args)
 }
 
 export function randomPick <T> (source: readonly T[]) {
-  return source[Math.floor(Math.random() * source.length)]
+  return new Random().pick(source)
 }
 
 export function randomSplice <T> (source: T[]) {
-  return source.splice(Math.floor(Math.random() * source.length), 1)[0]
+  return new Random().splice(source)
 }
 
 export function randomMultiPick <T> (source: T[], count: number) {
-  source = source.slice()
-  const result: T[] = []
-  const length = Math.min(source.length, count)
-  for (let i = 0; i < length; i += 1) {
-    const index = Math.floor(Math.random() * source.length)
-    const [item] = source.splice(index, 1)
-    result.push(item)
-  }
-  return result
+  return new Random().multiPick(source, count)
 }
 
-export function randomWeightedPick <T extends string> (weights: Record<T, number>, value = Math.random()): T {
-  const total = Object.entries(weights).reduce((prev, [_, curr]) => prev + (curr as number), 0)
-  const pointer = value * total
-  let counter = 0
-  for (const key in weights) {
-    counter += weights[key]
-    if (pointer < counter) return key
-  }
+export function randomWeightedPick <T extends string> (weights: Record<T, number>): T {
+  return new Random().weightedPick(weights)
 }
 
 export function randomBool (probability: number) {
-  if (probability >= 1) return true
-  if (probability <= 0) return false
-  return Math.random() / probability < 1
+  return new Random().bool(probability)
 }

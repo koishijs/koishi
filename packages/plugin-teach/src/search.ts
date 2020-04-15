@@ -108,7 +108,7 @@ async function search (argv: TeachArgv) {
       const type = flag & DialogueFlag.redirect ? '重定向' : '回答'
       const output = `${formatPrefix(dialogue)}问题：“${original}”，${type}：“${formatAnswer(answer)}”`
       if (!_redirections) return output
-      return [output, ...formatAnswers(_redirections, 2)].join('\n')
+      return [output, ...formatAnswers(_redirections, 1)].join('\n')
     })
   }
 
