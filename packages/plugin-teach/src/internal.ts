@@ -44,7 +44,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     } else if (redirectDialogue) {
       options.redirect = true
       options.answer = 'dialogue ' + options.answer
-    } else if (options.redirect) {
+    } else if (options.redirect && !options.search) {
       const [name] = options.answer.split(' ', 1)
       if (!ctx.app._commandMap[name]) {
         return meta.$send('没有重定向到合法的指令。')
