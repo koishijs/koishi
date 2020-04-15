@@ -150,7 +150,7 @@ export function getUsage (name: string, user: Pick<UserData, 'usage'>, time = Da
     user.usage = newUsage
   }
 
-  return user.usage[name] || (user.usage[name] = {})
+  return user.usage[name] || {}
 }
 
 export function updateUsage (name: string, user: Pick<UserData, 'usage'>, options: UsageOptions = {}) {
@@ -168,5 +168,9 @@ export function updateUsage (name: string, user: Pick<UserData, 'usage'>, option
     return messages.USAGE_EXHAUSTED
   } else if (options.maxUsage) {
     usage.count = (usage.count || 0) + 1
+  }
+
+  if (!user.usage[name] && (usage.count || usage.last)) {
+    user.usage[name] = usage
   }
 }

@@ -108,7 +108,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
-  ctx.on('dialogue/detail-short', ({ probS, probA, flag }, output) => {
+  ctx.on('dialogue/detail-short', ({ probS, probA }, output) => {
     if (probS < 1 || probA > 0) output.push(`p=${probS}`, `P=${probA}`)
   })
 
