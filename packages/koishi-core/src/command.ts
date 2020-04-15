@@ -76,9 +76,15 @@ interface ParsedArg0 {
   quoted: boolean
 }
 
+const quotes = `"'“”‘’`
+
+function parseRest (source: string) {
+  if (quotes.includes(source[0]) && quotes.includes(source[source.length - 1])) return source.slice(1, -1)
+  return source
+}
+
 function parseArg0 (source: string): ParsedArg0 {
-  const char0 = source[0]
-  if (char0 === '"' || char0 === "'" || char0 === '“' || char0 === '”' || char0 === '‘' || char0 === '’') {
+  if (quotes.includes(source[0])) {
     const [content] = source.slice(1).split(/["'“”‘’](?=\s|$)/, 1)
     return {
       content,
@@ -378,7 +384,7 @@ export class Command {
     while (source) {
       // long argument
       if (source[0] !== '-' && this._arguments[args.length]?.noSegment) {
-        args.push(source)
+        args.push(parseRest(source))
         break
       }
 
@@ -401,7 +407,7 @@ export class Command {
 
         // rest part
         if (arg === '--') {
-          rest = arg0.rest
+          rest = parseRest(arg0.rest)
           break
         }
 
@@ -431,7 +437,7 @@ export class Command {
       // get parameter
       let quoted = false
       if (!param && option && option.noSegment) {
-        param = arg0.rest
+        param = parseRest(arg0.rest)
         source = ''
       } else if (!param && source.charCodeAt(0) !== 45 && (!option || !option.isBoolean)) {
         arg0 = parseArg0(source)
