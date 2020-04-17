@@ -9,6 +9,8 @@ const defaultOptions: BroadcastOptions = {
   broadcastInterval: 1000,
 }
 
+const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
+
 export default function apply (ctx: Context, config: BroadcastOptions = {}) {
   config = { ...defaultOptions, ...config }
 
@@ -25,6 +27,16 @@ export default function apply (ctx: Context, config: BroadcastOptions = {}) {
     .option('-o, --only', '仅向当前 Bot 负责的群进行广播')
     .action(async ({ options, meta }, message) => {
       if (!message) return meta.$send('请输入要发送的文本。')
+
+      let output = ''
+      let capture: RegExpExecArray
+      while (capture = imageRE.exec(message)) {
+        const [text, _, url] = capture
+        output += message.slice(0, capture.index)
+        message = message.slice(capture.index + text.length)
+        output += `[CQ:image,file=${url}]`
+      }
+      message = output + message
 
       if (options.only) {
         let groups = await ctx.database.getAllGroups(['id', 'flag'], [ctx.app.selfId])
