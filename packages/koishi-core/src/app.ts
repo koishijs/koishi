@@ -4,10 +4,10 @@ import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig, ParsedCommandLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope, Events, EventMap } from './context'
-import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField } from './database'
+import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField, createUser } from './database'
 import { showSuggestions } from './utils'
 import { Meta } from './meta'
-import { simplify, noop } from 'koishi-utils'
+import { simplify, noop, observe } from 'koishi-utils'
 import { errors, messages } from './messages'
 import { ParsedLine } from './parser'
 
@@ -444,7 +444,9 @@ export class App extends Context {
     const defaultAuthority = typeof this.options.defaultAuthority === 'function'
       ? this.options.defaultAuthority(meta)
       : this.options.defaultAuthority || 0
-    const user = await this.database.observeUser(meta.userId, defaultAuthority, Array.from(userFields))
+    const user = meta.anonymous
+      ? observe(createUser(meta.userId, defaultAuthority))
+      : await this.database.observeUser(meta.userId, defaultAuthority, Array.from(userFields))
     Object.defineProperty(meta, '$user', { value: user, writable: true })
     return user
   }

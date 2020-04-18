@@ -1,4 +1,4 @@
-type CQCodeData = Record<string, string | number>
+type CQCodeData = Record<string, string | number | boolean>
 
 interface CQCode {
   type: string
@@ -25,7 +25,7 @@ namespace CQCode {
       .replace(/&amp;/g, '&')
   }
 
-  export function stringify (type: string, data: CQCodeData) {
+  export function stringify (type: string, data: CQCodeData = {}) {
     if (type === 'text') return '' + data.text
     let output = '[CQ:' + type
     for (const key in data) {

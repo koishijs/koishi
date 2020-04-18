@@ -47,6 +47,7 @@ export default function apply (ctx: Context) {
         }
       }
 
+      Object.defineProperty(newMeta, '$app', { value: ctx.app })
       Object.defineProperty(newMeta, '$user', { value: user, writable: true })
 
       delete newMeta.groupId
@@ -70,6 +71,14 @@ export default function apply (ctx: Context) {
         ctxType = 'user'
         newMeta.messageType = 'private'
         newMeta.subType = options.type || 'other'
+      }
+
+      if (options.group) {
+        const info = await ctx.sender.getGroupMemberInfo(ctxId, newMeta.userId).catch(() => ({}))
+        Object.assign(newMeta.sender, info)
+      } else if (options.user) {
+        const info = await ctx.sender.getStrangerInfo(newMeta.userId).catch(() => ({}))
+        Object.assign(newMeta.sender, info)
       }
 
       // generate path
