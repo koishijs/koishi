@@ -109,9 +109,15 @@ interface ParsedArg0 {
   quoted: boolean
 }
 
+const quotes = `"'“”‘’`
+
+function parseRest (source: string) {
+  if (quotes.includes(source[0]) && quotes.includes(source[source.length - 1])) return source.slice(1, -1)
+  return source
+}
+
 function parseArg0 (source: string): ParsedArg0 {
-  const char0 = source[0]
-  if (char0 === '"' || char0 === "'" || char0 === '“' || char0 === '”') {
+  if (quotes.includes(source[0])) {
     const [content] = source.slice(1).split(/["'“”](?=\s|$)/, 1)
     return {
       quoted: true,
@@ -170,7 +176,7 @@ export function parseLine (source: string, argsDef: CommandArgument[], optsDef: 
   while (source) {
     // long argument
     if (source[0] !== '-' && argsDef[args.length] && argsDef[args.length].noSegment) {
-      args.push(source)
+      args.push(parseRest(source))
       break
     }
 
@@ -184,7 +190,7 @@ export function parseLine (source: string, argsDef: CommandArgument[], optsDef: 
       continue
     } else if (arg === '--') {
       // rest part
-      rest = arg0.rest
+      rest = parseRest(arg0.rest)
       break
     }
 
