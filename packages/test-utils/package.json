@@ -33,7 +33,7 @@
     "utilities"
   ],
   "peerDependencies": {
-    "jest": "^25.2.7"
+    "jest": "^25.3.0"
   },
   "devDependencies": {
     "@types/debug": "^4.1.5",
