@@ -343,6 +343,7 @@ export class WsClient extends Server {
             this.version = camelCase(parsed.data)
             this.debug('connect to ws server:', this.app.options.server)
             resolve()
+          } else {
             this._listeners[parsed.echo]?.(parsed)
           }
         })
