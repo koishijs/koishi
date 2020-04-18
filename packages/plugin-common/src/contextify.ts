@@ -47,6 +47,7 @@ export default function apply (ctx: Context) {
         }
       }
 
+      Object.defineProperty(newMeta, '$app', { value: ctx.app })
       Object.defineProperty(newMeta, '$user', { value: user, writable: true })
 
       delete newMeta.groupId

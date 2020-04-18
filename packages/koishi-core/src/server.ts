@@ -103,6 +103,7 @@ export abstract class Server {
     Object.defineProperty(meta, '$ctxType', { value: ctxType })
 
     const app = this.appMap[meta.selfId]
+    Object.defineProperty(meta, '$app', { value: app })
 
     // add context properties
     if (meta.postType === 'message') {
