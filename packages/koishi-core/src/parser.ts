@@ -109,6 +109,7 @@ interface ParsedArg0 {
   quoted: boolean
 }
 
+// eslint-disable-next-line quotes
 const quotes = `"'“”‘’`
 
 function parseRest (source: string) {
