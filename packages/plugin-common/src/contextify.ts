@@ -72,6 +72,14 @@ export default function apply (ctx: Context) {
         newMeta.subType = options.type || 'other'
       }
 
+      if (options.group) {
+        const info = await ctx.sender.getGroupMemberInfo(ctxId, newMeta.userId).catch(() => ({}))
+        Object.assign(newMeta.sender, info)
+      } else if (options.user) {
+        const info = await ctx.sender.getStrangerInfo(newMeta.userId).catch(() => ({}))
+        Object.assign(newMeta.sender, info)
+      }
+
       // generate path
       Object.defineProperty(newMeta, '$ctxId', { value: ctxId })
       Object.defineProperty(newMeta, '$ctxType', { value: ctxType })
