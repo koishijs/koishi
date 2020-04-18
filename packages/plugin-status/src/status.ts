@@ -121,9 +121,9 @@ export interface Status {
 }
 
 export interface AppStatus {
-  label: string
+  label?: string
   selfId: number
-  good: boolean
+  code: number
   rate?: number
 }
 
@@ -141,7 +141,7 @@ async function _getStatus () {
     Promise.all(appList.map<Promise<AppStatus>>(async (app) => ({
       label: app.options.label,
       selfId: app.options.selfId,
-      good: await app.sender.getStatus().then(status => status.good, () => false),
+      code: await app.sender.getStatus().then(status => status.good ? 0 : 1, () => 2),
       rate: (sendEventCounter.get(app) || []).slice(1).reduce((prev, curr) => prev + curr, 0),
     }))),
   ])

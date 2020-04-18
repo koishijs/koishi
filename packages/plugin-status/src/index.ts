@@ -53,8 +53,8 @@ export async function apply (ctx: Context, options: StatusOptions = {}) {
     .action(async ({ meta }) => {
       const { apps, cpu, memory } = await getStatus()
 
-      const output = apps.sort(options.sort).map(({ label, selfId, good, rate }) => {
-        return `${label || selfId}：${good ? `工作中（${rate}/min）` : '无法连接'}`
+      const output = apps.sort(options.sort).map(({ label, selfId, code, rate }) => {
+        return `${label || selfId}：${code ? '无法连接' : `工作中（${rate}/min）`}`
       })
 
       output.push('==========')
