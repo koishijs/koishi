@@ -193,7 +193,7 @@ export function parseLine (source: string, argsDef: CommandArgument[], optsDef: 
     for (; i < arg.length; ++i) {
       if (arg.charCodeAt(i) !== 45) break
     }
-    if (arg.slice(i, i + 3) === 'no-') {
+    if (arg.slice(i, i + 3) === 'no-' && !optsDef[arg.slice(i + 3)]) {
       name = arg.slice(i + 3)
       handleOption(name, true, false)
       continue
