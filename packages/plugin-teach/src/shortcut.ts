@@ -9,7 +9,7 @@ declare module 'koishi-core/dist/context' {
 
 export default function (ctx: Context, config: TeachConfig) {
   ctx.prependMiddleware((meta, next) => {
-    const capture = meta.message.match(/^#((\d+(?:,\d+)*)?|##?(\d*))(\s+|$)/)
+    const capture = meta.message.match(/^#((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|##?(\d*))(\s+|$)/)
     if (!capture) return next()
 
     const command = ctx.getCommand('teach', meta)

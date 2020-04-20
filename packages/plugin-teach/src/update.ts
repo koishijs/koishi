@@ -1,10 +1,10 @@
-import { TeachArgv, prepareTargets, sendDetail, sendResult, split, isIdList } from './utils'
+import { TeachArgv, prepareTargets, sendDetail, sendResult, split, isDialogueIdList } from './utils'
 import { difference, deduplicate } from 'koishi-utils'
 import { Context } from 'koishi-core'
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
-    .option('--target <ids>', '查看或修改已有问题', { isString: true, validate: isIdList })
+    .option('--target <ids>', '查看或修改已有问题', { isString: true, validate: isDialogueIdList })
     .option('-r, --remove', '彻底删除问答')
 
   ctx.before('dialogue/execute', (argv) => {
@@ -28,7 +28,7 @@ async function update (argv: TeachArgv) {
   argv.skipped = []
   argv.dialogues = await ctx.database.getDialoguesById(target)
 
-  const actualIds = argv.dialogues.map(d => '' + d.id)
+  const actualIds = argv.dialogues.map(d => d.id)
   argv.unknown = difference(target, actualIds)
 
   if (!Object.keys(options).length) {

@@ -1,7 +1,7 @@
 import { Context } from 'koishi-core'
 import { contain, intersection, union, difference } from 'koishi-utils'
 import { DialogueFlag } from '../database'
-import { equal, split, TeachConfig, isIdList } from '../utils'
+import { equal, TeachConfig, isGroupIdList } from '../utils'
 
 declare module '../utils' {
   interface TeachArgv {
@@ -30,7 +30,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('-D, --disable-global', '在所有环境下禁用问答', { authority: 3 })
     .option('-e, --enable', '在当前环境下启用问答')
     .option('-E, --enable-global', '在所有环境下启用问答', { authority: 3 })
-    .option('-g, --groups <gids>', '设置具体的生效环境', { authority: 3, isString: true, validate: isIdList })
+    .option('-g, --groups <gids>', '设置具体的生效环境', { authority: 3, isString: true, validate: isGroupIdList })
     .option('-G, --global', '无视上下文搜索', { authority: 3 })
 
   ctx.on('dialogue/filter-stateless', (data, test) => {
@@ -84,7 +84,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
       if (argv.noContextOptions) {
         return meta.$send('参数 -g, --groups 必须与 -d/-D/-e/-E 之一同时使用。')
       } else {
-        argv.groups = split(options.groups)
+        argv.groups = options.groups ? options.groups.split(',') : []
       }
     } else if (meta.messageType !== 'group' && argv.partial) {
       return meta.$send('非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --groups 参数。')

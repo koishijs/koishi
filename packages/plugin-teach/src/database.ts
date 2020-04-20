@@ -23,7 +23,7 @@ export type DialogueField = keyof Dialogue
 
 interface DialogueMethods {
   createDialogue (options: Dialogue): Promise<Dialogue>
-  getDialoguesById <K extends DialogueField> (ids: string[], keys?: readonly K[]): Promise<Pick<Dialogue, K>[]>
+  getDialoguesById <K extends DialogueField> (ids: (string | number)[], keys?: readonly K[]): Promise<Pick<Dialogue, K>[]>
   getDialoguesByTest (test: DialogueTest): Promise<Dialogue[]>
   setDialogue (id: number, data: Partial<Dialogue>): Promise<void>
   setDialogues (data: Observed<Dialogue>[], ctx: Dialogue.UpdateContext): Promise<void>

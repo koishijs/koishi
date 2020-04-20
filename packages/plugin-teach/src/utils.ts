@@ -24,13 +24,13 @@ export interface TeachArgv extends Dialogue.UpdateContext {
   meta: Meta<'message'>
   args: string[]
   config: TeachConfig
-  target?: string[]
+  target?: number[]
   options: Record<string, any>
   appellative?: boolean
 
   // modify status
   dialogues?: Dialogue[]
-  unknown?: string[]
+  unknown?: number[]
   uneditable?: number[]
 }
 
@@ -54,10 +54,17 @@ export function sendResult (argv: TeachArgv, prefix?: string, suffix?: string) {
 }
 
 export function split (source: string) {
-  return source ? source.split(',') : []
+  if (!source) return []
+  return source.split(',').flatMap((value) => {
+    if (!value.includes('..')) return +value
+    const capture = value.split('..')
+    const start = +capture[0], end = +capture[1]
+    if (end < start) return []
+    return new Array(end - start + 1).fill(0).map((_, index) => start + index)
+  })
 }
 
-export function equal (array1: string[], array2: string[]) {
+export function equal (array1: (string | number)[], array2: (string | number)[]) {
   return array1.sort().join() === array2.sort().join()
 }
 
@@ -90,6 +97,10 @@ export function isZeroToOne (value: number) {
   return value < 0 || value > 1 ? '应为不超过 1 的正数。' : ''
 }
 
-export function isIdList (value: any) {
+export function isGroupIdList (value: any) {
   return !/^\d+(,\d+)*$/.test(value)
+}
+
+export function isDialogueIdList (value: any) {
+  return !/^\d+(\.\.\d+)?(,\d+(\.\.\d+)?)*$/.test(value)
 }

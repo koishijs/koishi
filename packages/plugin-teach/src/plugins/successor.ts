@@ -1,7 +1,7 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference, intersection } from 'koishi-utils'
 import { DialogueTest, Dialogue, DialogueFlag } from '../database'
-import { equal, split, TeachConfig, prepareTargets, getDialogues, isIdList } from '../utils'
+import { equal, split, TeachConfig, prepareTargets, getDialogues, isDialogueIdList } from '../utils'
 
 declare module '../utils' {
   interface TeachConfig {
@@ -9,8 +9,8 @@ declare module '../utils' {
   }
 
   interface TeachArgv {
-    predecessors?: string[]
-    successors?: string[]
+    predecessors?: number[]
+    successors?: number[]
     predOverwrite?: boolean
     succOverwrite?: boolean
   }
@@ -43,10 +43,10 @@ export default function apply (ctx: Context, config: TeachConfig) {
   const { successorTimeout = 20000 } = config
 
   ctx.command('teach')
-    .option('<, --set-pred <ids>', '设置前置问题', { isString: true, validate: isIdList })
-    .option('<<, --add-pred <ids>', '添加前置问题', { isString: true, validate: isIdList })
-    .option('>, --set-succ <ids>', '设置后继问题', { isString: true, validate: isIdList })
-    .option('>>, --add-succ <ids>', '添加后继问题', { isString: true, validate: isIdList })
+    .option('<, --set-pred <ids>', '设置前置问题', { isString: true, validate: isDialogueIdList })
+    .option('<<, --add-pred <ids>', '添加前置问题', { isString: true, validate: isDialogueIdList })
+    .option('>, --set-succ <ids>', '设置后继问题', { isString: true, validate: isDialogueIdList })
+    .option('>>, --add-succ <ids>', '添加后继问题', { isString: true, validate: isDialogueIdList })
 
   ctx.on('dialogue/filter', (data, test, state) => {
     if (test.successors) {
@@ -99,9 +99,9 @@ export default function apply (ctx: Context, config: TeachConfig) {
     if (!data.successors) data.successors = []
     if (!successors) return
     if (succOverwrite) {
-      if (!equal(data.successors, successors)) data.successors = successors
+      if (!equal(data.successors, successors)) data.successors = successors.map(String)
     } else {
-      if (!contain(data.successors, successors)) data.successors = union(data.successors, successors)
+      if (!contain(data.successors, successors)) data.successors = union(data.successors, successors.map(String))
     }
   })
 
@@ -116,8 +116,8 @@ export default function apply (ctx: Context, config: TeachConfig) {
     const successors = dialogues.map(dialogue => '' + dialogue.id)
     const predDialogues = await ctx.database.getDialoguesById(predecessors)
     const newTargets = predDialogues.map(d => d.id)
-    const predecessorIds = predecessors.map(Number)
-    argv.unknown = difference(predecessors, newTargets.map(String))
+    const predecessorIds = predecessors
+    argv.unknown = difference(predecessors, newTargets)
 
     if (predOverwrite) {
       for (const dialogue of await getDialogues(ctx, { successors, matchAnyOf: true })) {

@@ -39,7 +39,7 @@ export default function apply (ctx: Context) {
   })
 
   ctx.on('dialogue/permit', (user, dialogue) => {
-    return dialogue.writer && dialogue.writer !== user.id && user.authority < 3
+    return dialogue.writer !== user.id && user.authority < 3
   })
 
   ctx.on('dialogue/before-detail', async (argv) => {

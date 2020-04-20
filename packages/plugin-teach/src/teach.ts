@@ -17,7 +17,7 @@ export default function apply (ctx: Context) {
 
     if (argv.dialogues.length) {
       const [data] = argv.dialogues
-      argv.target = ['' + data.id]
+      argv.target = [data.id]
       const dialogue = observe(data, diff => ctx.database.setDialogue(data.id, diff), `dialogue ${data.id}`)
       ctx.emit('dialogue/modify', argv, dialogue)
       await ctx.serialize('dialogue/after-modify', argv)
