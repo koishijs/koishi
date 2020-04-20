@@ -1,7 +1,7 @@
 {
   "name": "koishi",
   "description": "A QQ bot framework based on CQHTTP",
-  "version": "2.0.0-alpha.19",
+  "version": "2.0.0-alpha.20",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -43,7 +43,7 @@
     "koishi-plugin-recorder": "^2.0.0-alpha.13",
     "koishi-plugin-schedule": "^2.0.0-alpha.15",
     "koishi-plugin-status": "^2.0.0-alpha.15",
-    "koishi-plugin-teach": "^1.0.0-alpha.18",
+    "koishi-plugin-teach": "^1.0.0-alpha.19",
     "koishi-utils": "^1.1.0",
     "prompts": "^2.3.2"
   }
