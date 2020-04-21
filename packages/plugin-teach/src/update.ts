@@ -4,7 +4,6 @@ import { Context } from 'koishi-core'
 
 declare module './utils' {
   interface TeachConfig {
-    maxModifiedDialogues?: number
     maxShownDialogues?: number
   }
 }
@@ -29,14 +28,10 @@ export default function apply (ctx: Context) {
 
 async function update (argv: TeachArgv) {
   const { ctx, meta, options, target, config } = argv
-  const { maxModifiedDialogues = 10, maxShownDialogues = 10 } = config
+  const { maxShownDialogues = 10 } = config
 
-  if (!Object.keys(options).length) {
-    if (target.length > maxShownDialogues) {
-      return meta.$send(`一次最多同时预览 ${maxShownDialogues} 个问答。`)
-    }
-  } else if (target.length > maxModifiedDialogues) {
-    return meta.$send(`一次最多同时修改 ${maxModifiedDialogues} 个问答。`)
+  if (!Object.keys(options).length && target.length > maxShownDialogues) {
+    return meta.$send(`一次最多同时预览 ${maxShownDialogues} 个问答。`)
   }
 
   argv.uneditable = []
