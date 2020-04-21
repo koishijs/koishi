@@ -83,12 +83,6 @@ export function prepareTargets (argv: TeachArgv, dialogues: Dialogue[]) {
   return targets.map(data => observe(data, `dialogue ${data.id}`))
 }
 
-export async function sendDetail (ctx: Context, dialogue: Dialogue, argv: TeachArgv) {
-  const output = [`编号为 ${dialogue.id} 的问答信息：`]
-  ctx.emit('dialogue/detail', dialogue, output, argv)
-  await argv.meta.$send(output.join('\n'))
-}
-
 export function isPositiveInteger (value: any) {
   return isInteger(value) && value > 0 ? '' : '应为正整数。'
 }

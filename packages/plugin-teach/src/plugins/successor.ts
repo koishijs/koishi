@@ -111,8 +111,8 @@ export default function apply (ctx: Context, config: TeachConfig) {
       argv.predecessors = []
     }
 
-    const { predOverwrite, predecessors, dialogues } = argv
-    if (!predecessors) return
+    const { predOverwrite, predecessors, dialogues, target } = argv
+    if (!target || !predecessors) return
     const successors = dialogues.map(dialogue => '' + dialogue.id)
     const predDialogues = await ctx.database.getDialoguesById(predecessors)
     const newTargets = predDialogues.map(d => d.id)

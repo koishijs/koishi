@@ -1,11 +1,18 @@
-import { TeachArgv, prepareTargets, sendDetail, sendResult, split, isDialogueIdList } from './utils'
+import { TeachArgv, prepareTargets, sendResult, split, isDialogueIdList } from './utils'
 import { difference, deduplicate } from 'koishi-utils'
 import { Context } from 'koishi-core'
+
+declare module './utils' {
+  interface TeachConfig {
+    maxModifiedDialogues?: number
+    maxShownDialogues?: number
+  }
+}
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
     .option('--target <ids>', '查看或修改已有问题', { isString: true, validate: isDialogueIdList })
-    .option('-r, --remove', '彻底删除问答')
+    .option('--remove', '彻底删除问答')
 
   ctx.before('dialogue/execute', (argv) => {
     if (!argv.options.target) return
@@ -21,7 +28,16 @@ export default function apply (ctx: Context) {
 }
 
 async function update (argv: TeachArgv) {
-  const { ctx, meta, options, target } = argv
+  const { ctx, meta, options, target, config } = argv
+  const { maxModifiedDialogues = 10, maxShownDialogues = 10 } = config
+
+  if (!Object.keys(options).length) {
+    if (target.length > maxShownDialogues) {
+      return meta.$send(`一次最多同时预览 ${maxShownDialogues} 个问答。`)
+    }
+  } else if (target.length > maxModifiedDialogues) {
+    return meta.$send(`一次最多同时修改 ${maxModifiedDialogues} 个问答。`)
+  }
 
   argv.uneditable = []
   argv.updated = []
@@ -37,7 +53,9 @@ async function update (argv: TeachArgv) {
     }
     await ctx.serialize('dialogue/before-detail', argv)
     for (const dialogue of argv.dialogues) {
-      await sendDetail(ctx, dialogue, argv)
+      const output = [`编号为 ${dialogue.id} 的问答信息：`]
+      ctx.emit('dialogue/detail', dialogue, output, argv)
+      await meta.$send(output.join('\n'))
     }
     return
   }

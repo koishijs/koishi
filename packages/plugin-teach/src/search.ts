@@ -1,4 +1,4 @@
-import { TeachArgv, sendDetail, getDialogues, isPositiveInteger } from './utils'
+import { TeachArgv, getDialogues, isPositiveInteger } from './utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import { Context } from 'koishi-core'
 
@@ -145,11 +145,9 @@ async function search (argv: TeachArgv) {
         ? `总触发概率：p=${+totalS.toFixed(3)}, P=${+totalA.toFixed(3)}。`
         : '')
     } else {
-      const [dialogue] = dialogues
-      if (!dialogue) return meta.$send(`没有搜索到问答“${original}”“${answer}”，请尝试使用关键词匹配。`)
-      argv.dialogues = dialogues
-      await ctx.serialize('dialogue/before-detail', argv)
-      return sendDetail(ctx, dialogue, argv)
+      if (!dialogues.length) return meta.$send(`没有搜索到问答“${original}”“${answer}”，请尝试使用关键词匹配。`)
+      const output = [dialogues.map(d => d.id).join(', ')]
+      return sendResult(`“${original}”“${answer}”匹配的回答如下`, output)
     }
   }
 
