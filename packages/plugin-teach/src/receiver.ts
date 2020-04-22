@@ -9,8 +9,8 @@ declare module 'koishi-core/dist/context' {
     'dialogue/state' (state: SessionState): void
     'dialogue/receive' (meta: Meta<'message'>, test: DialogueTest, state: SessionState): void | boolean
     'dialogue/before-attach-user' (meta: Meta<'message'>, userFields: Set<UserField>): void
-    'dialogue/attach-user' (meta: Meta<'message'>, dialogues: Dialogue[]): boolean
-    'dialogue/before-send' (meta: Meta<'message'>, dialogue: Dialogue, state: SessionState): boolean
+    'dialogue/attach-user' (meta: Meta<'message'>, dialogues: Dialogue[]): void | boolean
+    'dialogue/before-send' (meta: Meta<'message'>, dialogue: Dialogue, state: SessionState): void | boolean
     'dialogue/send' (meta: Meta<'message'>, dialogue: Dialogue, state: SessionState): void
     'dialogue/after-send' (meta: Meta<'message'>, dialogue: Dialogue, state: SessionState): void
   }

@@ -11,6 +11,7 @@ import freeze from './plugins/freeze'
 import throttle from './plugins/throttle'
 import preventLoop from './plugins/preventLoop'
 import successor from './plugins/successor'
+import time from './plugins/time'
 import writer from './plugins/writer'
 
 export * from './database'
@@ -23,6 +24,7 @@ export * from './plugins/freeze'
 export * from './plugins/throttle'
 export * from './plugins/preventLoop'
 export * from './plugins/successor'
+export * from './plugins/time'
 export * from './plugins/writer'
 
 declare module 'koishi-core/dist/context' {
@@ -99,5 +101,6 @@ export function apply (ctx: Context, config: TeachConfig = {}) {
   ctx.plugin(throttle, config)
   ctx.plugin(preventLoop, config)
   ctx.plugin(successor, config)
+  ctx.plugin(time, config)
   ctx.plugin(writer, config)
 }
