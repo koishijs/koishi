@@ -46,7 +46,7 @@ export interface Dialogue {
   _prob?: number
 }
 
-arrayTypes.push('dialogue.groups', 'dialogue.successors')
+arrayTypes.push('dialogue.groups', 'dialogue.predecessors')
 
 export enum AppellationType { normal, appellative, activated }
 

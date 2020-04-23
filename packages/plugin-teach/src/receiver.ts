@@ -14,6 +14,10 @@ declare module 'koishi-core/dist/context' {
     'dialogue/send' (meta: Meta<'message'>, dialogue: Dialogue, state: SessionState): void
     'dialogue/after-send' (meta: Meta<'message'>, dialogue: Dialogue, state: SessionState): void
   }
+
+  interface Context {
+    getSessionState (this: Context, meta: Meta<'message'>): SessionState
+  }
 }
 
 declare module 'koishi-core/dist/meta' {
@@ -51,14 +55,18 @@ function unescapeAnswer (message: string) {
   return message.trim().replace(/@@__DOLLARS_PLACEHOLDER__@@/g, '$')
 }
 
-export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, config: TeachConfig, next: NextFunction) {
+Context.prototype.getSessionState = function (meta) {
   const { groupId } = meta
+  if (!states[groupId]) {
+    this.emit('dialogue/state', states[groupId] = { activated: {} } as SessionState)
+  }
+  return states[groupId]
+}
+
+export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, config: TeachConfig, next: NextFunction) {
   const { appellationTimeout = 20000 } = config
 
-  if (!states[groupId]) {
-    ctx.emit('dialogue/state', states[groupId] = { activated: {} } as SessionState)
-  }
-  const state = states[groupId]
+  const state = ctx.getSessionState(meta)
   const test: DialogueTest = {}
 
   if (ctx.bail('dialogue/receive', meta, test, state)) return next()

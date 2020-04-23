@@ -1,7 +1,6 @@
-import { Context } from 'koishi-core'
+import { Context, Meta } from 'koishi-core'
 import { contain, union, difference, intersection } from 'koishi-utils'
-import { DialogueTest, Dialogue, DialogueFlag } from '../database'
-import { equal, split, TeachConfig, prepareTargets, getDialogues, isDialogueIdList } from '../utils'
+import { equal, split, TeachConfig, prepareTargets, getDialogues, isDialogueIdList, parseTeachArgs } from '../utils'
 
 declare module '../utils' {
   interface TeachConfig {
@@ -24,18 +23,12 @@ declare module '../receiver' {
 
 declare module '../database' {
   interface DialogueTest {
-    successors?: string[]
-    matchAnyOf?: boolean
+    everyPredecessors?: string[]
+    somePredecessors?: string[]
   }
 
   interface Dialogue {
-    successors: string[]
-  }
-}
-
-declare module 'koishi-core/dist/context' {
-  interface EventMap {
-    'dialogue/filter-stateless' (dialogue: Dialogue, test: DialogueTest): boolean
+    predecessors: string[]
   }
 }
 
@@ -47,17 +40,15 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('<<, --add-pred <ids>', '添加前置问题', { isString: true, validate: isDialogueIdList })
     .option('>, --set-succ <ids>', '设置后继问题', { isString: true, validate: isDialogueIdList })
     .option('>>, --add-succ <ids>', '添加后继问题', { isString: true, validate: isDialogueIdList })
+    .option('>#, --create-successor <op...>', '创建并添加后继问题')
 
   ctx.on('dialogue/filter', (data, test, state) => {
-    if (test.successors) {
-      if (test.matchAnyOf) {
-        if (!intersection(data.successors, test.successors).length) return true
-      } else {
-        if (!contain(data.successors, test.successors)) return true
-      }
+    if (state && data.predecessors.length) {
+      test.somePredecessors = Object.keys(state.predecessors)
     }
-    if (state && Object.keys(state.predecessors).includes('' + data.id)) return
-    return ctx.bail('dialogue/filter-stateless', data, test)
+
+    if (test.somePredecessors && !intersection(data.predecessors, test.somePredecessors).length) return true
+    if (test.everyPredecessors && !contain(data.predecessors, test.everyPredecessors)) return true
   })
 
   ctx.on('dialogue/validate', (argv) => {
@@ -88,81 +79,77 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
-  ctx.on('dialogue/modify', ({ succOverwrite, successors, predecessors, noContextOptions }, data) => {
-    // fallback to --disable-global when there are predecessors
-    if (predecessors && predecessors.length && noContextOptions) {
-      if (data.groups.length) data.groups = []
-      data.flag |= DialogueFlag.reversed
-    }
-
-    // merge successors
-    if (!data.successors) data.successors = []
-    if (!successors) return
-    if (succOverwrite) {
-      if (!equal(data.successors, successors)) data.successors = successors.map(String)
+  ctx.on('dialogue/modify', ({ predOverwrite, predecessors }, data) => {
+    // merge predecessors
+    if (!data.predecessors) data.predecessors = []
+    if (!predecessors) return
+    if (predOverwrite) {
+      if (!equal(data.predecessors, predecessors)) data.predecessors = predecessors.map(String)
     } else {
-      if (!contain(data.successors, successors)) data.successors = union(data.successors, successors.map(String))
+      if (!contain(data.predecessors, predecessors)) data.predecessors = union(data.predecessors, predecessors.map(String))
     }
   })
 
   ctx.on('dialogue/after-modify', async (argv) => {
-    if (argv.options.remove) {
-      argv.predOverwrite = true
-      argv.predecessors = []
-    }
+    // modify successors
+    const { succOverwrite, successors, dialogues } = argv
+    if (!successors) return
+    const predecessors = dialogues.map(dialogue => '' + dialogue.id)
+    const successorDialogues = await ctx.database.getDialoguesById(successors)
+    const newTargets = successorDialogues.map(d => d.id)
+    argv.unknown = difference(successors, newTargets)
 
-    const { predOverwrite, predecessors, dialogues, target } = argv
-    if (!target || !predecessors) return
-    const successors = dialogues.map(dialogue => '' + dialogue.id)
-    const predDialogues = await ctx.database.getDialoguesById(predecessors)
-    const newTargets = predDialogues.map(d => d.id)
-    const predecessorIds = predecessors
-    argv.unknown = difference(predecessors, newTargets)
-
-    if (predOverwrite) {
-      for (const dialogue of await getDialogues(ctx, { successors, matchAnyOf: true })) {
+    if (succOverwrite) {
+      for (const dialogue of await getDialogues(ctx, { somePredecessors: predecessors })) {
         if (!newTargets.includes(dialogue.id)) {
           newTargets.push(dialogue.id)
-          predDialogues.push(dialogue)
+          successorDialogues.push(dialogue)
         }
       }
     }
 
-    const targets = prepareTargets(argv, predDialogues)
+    const targets = prepareTargets(argv, successorDialogues)
 
     for (const data of targets) {
-      if (!predecessorIds.includes(data.id)) {
-        data.successors = difference(data.successors, successors)
-      } else if (!contain(data.successors, successors)) {
-        data.successors = union(data.successors, successors)
+      if (!successors.includes(data.id)) {
+        data.predecessors = difference(data.predecessors, predecessors)
+      } else if (!contain(data.predecessors, predecessors)) {
+        data.predecessors = union(data.predecessors, predecessors)
       }
     }
 
     await ctx.database.setDialogues(targets, argv)
   })
 
+  ctx.on('dialogue/after-modify', ({ options, dialogues, meta }) => {
+    // ># shortcut
+    if (!options.createSuccessor) return
+    if (!dialogues.length) return meta.$send('没有搜索到任何问答。')
+    const command = ctx.getCommand('teach', meta)
+    parseTeachArgs(Object.assign(meta.$argv, command.parse(options.createSuccessor)))
+    meta.$argv.options.setPred = dialogues.map(d => d.id).join(',')
+    return command.execute(meta.$argv)
+  })
+
   ctx.on('dialogue/detail', (dialogue, output) => {
-    if (dialogue.successors.length) output.push(`后继问题：${dialogue.successors.join(', ')}`)
+    if (dialogue.predecessors.length) output.push(`前置问答：${dialogue.predecessors.join(', ')}`)
+  })
+
+  ctx.on('dialogue/detail-short', (dialogue, output) => {
+    if (dialogue.predecessors.length) output.push(`存在前置`)
   })
 
   ctx.on('dialogue/state', (state) => {
     state.predecessors = {}
   })
 
-  ctx.on('dialogue/after-send', (meta, dialogue, state) => {
-    if (!dialogue.successors.length) return
-
+  ctx.on('dialogue/after-send', (meta, { id }, { predecessors }) => {
     const time = Date.now()
-    for (const id of dialogue.successors) {
-      state.predecessors[id] = time
-    }
+    predecessors[id] = time
 
     setTimeout(() => {
-      const { predecessors } = state
-      for (const id of dialogue.successors) {
-        if (predecessors[id] === time) {
-          delete predecessors[id]
-        }
+      if (predecessors[id] === time) {
+        delete predecessors[id]
       }
     }, successorTimeout)
   })

@@ -1,5 +1,5 @@
 import { Context, ParsedCommandLine } from 'koishi-core'
-import { TeachConfig } from './utils'
+import { TeachConfig, parseTeachArgs } from './utils'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -37,15 +37,7 @@ export default function (ctx: Context, config: TeachConfig) {
     const result = ctx.bail('dialogue/shortcut', argv)
     if (result) return result
 
-    function parseArgument () {
-      if (!args.length) return
-      const [arg] = args.splice(0, 1)
-      if (!arg || arg === '~') return
-      return arg
-    }
-
-    options.question = parseArgument()
-    options.answer = options.redirectDialogue || parseArgument()
+    parseTeachArgs(argv)
 
     Object.defineProperty(meta, '$argv', {
       writable: true,

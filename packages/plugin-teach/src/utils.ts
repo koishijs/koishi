@@ -1,4 +1,4 @@
-import { Context, Meta, User } from 'koishi-core'
+import { Context, Meta, User, ParsedLine } from 'koishi-core'
 import { difference, isInteger, observe } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './database'
 import { SessionState } from './receiver'
@@ -81,6 +81,18 @@ export function prepareTargets (argv: TeachArgv, dialogues: Dialogue[]) {
   })
   argv.uneditable.unshift(...difference(dialogues, targets).map(d => d.id))
   return targets.map(data => observe(data, `dialogue ${data.id}`))
+}
+
+export function parseTeachArgs ({ args, options }: Partial<ParsedLine>) {
+  function parseArgument () {
+    if (!args.length) return
+    const [arg] = args.splice(0, 1)
+    if (!arg || arg === '~') return
+    return arg
+  }
+
+  options.question = parseArgument()
+  options.answer = options.redirectDialogue || parseArgument()
 }
 
 export function isPositiveInteger (value: any) {

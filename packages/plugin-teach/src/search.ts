@@ -1,4 +1,4 @@
-import { TeachArgv, getDialogues, isPositiveInteger } from './utils'
+import { TeachArgv, getDialogues, isPositiveInteger, parseTeachArgs } from './utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import { Context } from 'koishi-core'
 
@@ -21,7 +21,7 @@ export default function apply (ctx: Context) {
     .option('--search', '搜索已有问答', { notUsage: true })
     .option('--page <page>', '设置搜索结果的页码', { validate: isPositiveInteger })
     .option('--auto-merge', '自动合并相同的问题和回答')
-    .option('|, --pipe <op...>', '对每个搜索结果执行操作', { authority: 3 })
+    .option('|, --pipe <op...>', '对每个搜索结果执行操作')
 
   ctx.before('dialogue/execute', (argv) => {
     if (argv.options.search) return search(argv)
@@ -31,7 +31,7 @@ export default function apply (ctx: Context) {
 async function search (argv: TeachArgv) {
   const { ctx, meta, options } = argv
   const { keyword, question, answer, page = 1, original, pipe, redirect } = options
-  const { itemsPerPage = 20, mergeThreshold = 5, maxAnswerLength = 100 } = argv.config
+  const { itemsPerPage = 20, mergeThreshold = 5, maxAnswerLength = 100, _stripQuestion } = argv.config
 
   const test: DialogueTest = { question, answer, keyword }
   if (await ctx.serialize('dialogue/before-search', argv, test)) return
@@ -40,7 +40,7 @@ async function search (argv: TeachArgv) {
   if (pipe) {
     if (!dialogues.length) return meta.$send('没有搜索到任何问答。')
     const command = ctx.getCommand('teach', meta)
-    Object.assign(meta.$argv, command.parse(pipe))
+    parseTeachArgs(Object.assign(meta.$argv, command.parse(pipe)))
     meta.$argv.options.target = dialogues.map(d => d.id).join(',')
     return command.execute(meta.$argv)
   }
@@ -54,10 +54,11 @@ async function search (argv: TeachArgv) {
         const { id, flag, answer } = dialogue
         if (idSet.has(id) || !(flag & DialogueFlag.redirect) || !answer.startsWith('dialogue ')) continue
         idSet.add(id)
+        const [question] = _stripQuestion(answer.slice(9).trimStart())
         const redirections = await getDialogues(ctx, {
           ...test,
           keyword: false,
-          question: answer.slice(9).trimStart(),
+          question,
         })
         Object.defineProperty(dialogue, '_redirections', { writable: true, value: redirections })
         await getRedirections(redirections)

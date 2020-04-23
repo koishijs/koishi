@@ -33,7 +33,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('-g, --groups <gids>', '设置具体的生效环境', { authority: 3, isString: true, validate: isGroupIdList })
     .option('-G, --global', '无视上下文搜索', { authority: 3 })
 
-  ctx.on('dialogue/filter-stateless', (data, test) => {
+  ctx.on('dialogue/filter', (data, test) => {
     if (!test.groups) return
     const sameFlag = !(data.flag & DialogueFlag.reversed) !== test.reversed
     if (test.partial) {
