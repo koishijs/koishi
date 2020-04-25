@@ -108,7 +108,7 @@ async function search (argv: TeachArgv) {
     return dialogues.map((dialogue) => {
       const { flag, original, answer, _redirections } = dialogue
       const type = flag & DialogueFlag.redirect ? '重定向' : '回答'
-      const output = `${formatPrefix(dialogue)}问题：“${original}”，${type}：“${formatAnswer(answer)}”`
+      const output = `${formatPrefix(dialogue)}问题：${original}，${type}：${formatAnswer(answer)}`
       if (!_redirections) return output
       return [output, ...formatAnswers(_redirections, 1)].join('\n')
     })

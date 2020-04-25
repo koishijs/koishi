@@ -150,10 +150,6 @@ export abstract class Server {
       }
     }
 
-    Object.defineProperty(meta, '$nickname', {
-      get: () => app.options.getSenderName(meta),
-    })
-
     app.emit(meta, 'parse', meta)
     return events
   }

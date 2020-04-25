@@ -42,13 +42,13 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('>>, --add-succ <ids>', '添加后继问题', { isString: true, validate: isDialogueIdList })
     .option('>#, --create-successor <op...>', '创建并添加后继问题')
 
-  ctx.on('dialogue/filter', (data, test, state) => {
+  ctx.on('dialogue/filter', (data, { somePredecessors, everyPredecessors }, state) => {
     if (state && data.predecessors.length) {
-      test.somePredecessors = Object.keys(state.predecessors)
+      somePredecessors = Object.keys(state.predecessors)
     }
 
-    if (test.somePredecessors && !intersection(data.predecessors, test.somePredecessors).length) return true
-    if (test.everyPredecessors && !contain(data.predecessors, test.everyPredecessors)) return true
+    if (somePredecessors && !intersection(data.predecessors, somePredecessors).length) return true
+    if (everyPredecessors && !contain(data.predecessors, everyPredecessors)) return true
   })
 
   ctx.on('dialogue/validate', (argv) => {

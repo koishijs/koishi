@@ -85,6 +85,7 @@ export default function apply (ctx: Context) {
       Object.defineProperty(newMeta, '$ctxId', { value: ctxId })
       Object.defineProperty(newMeta, '$ctxType', { value: ctxType })
 
+      ctx.app.emit(newMeta, 'parse', newMeta)
       return ctx.app.executeCommandLine(message, newMeta)
     })
 }

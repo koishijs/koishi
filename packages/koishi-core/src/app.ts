@@ -131,6 +131,11 @@ export class App extends Context {
     this.on('logger', (scope, message) => debug(scope)(message))
     this.on('before-attach-user', Command.attachUserFields)
     this.on('before-attach-group', Command.attachGroupFields)
+    this.on('parse', (meta) => {
+      Object.defineProperty(meta, '$nickname', {
+        get: () => options.getSenderName(meta),
+      })
+    })
     this.middleware(this._preprocess)
     emitter.emit('app', this)
   }
