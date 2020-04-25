@@ -29,8 +29,8 @@ export * from './plugins/writer'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/validate' (argv: TeachArgv): any
-    'dialogue/execute' (argv: TeachArgv): any
+    'dialogue/validate' (argv: TeachArgv): void | Promise<void>
+    'dialogue/execute' (argv: TeachArgv): void | Promise<void>
   }
 }
 

@@ -73,6 +73,7 @@ async function search (argv: TeachArgv) {
       trimmed = true
       source = lines[0].trim()
     }
+    source = source.replace(/\[CQ:image,[^\]]+\]/g, '[图片]')
     if (source.length > maxAnswerLength) {
       trimmed = true
       source = source.slice(0, maxAnswerLength)
@@ -84,7 +85,7 @@ async function search (argv: TeachArgv) {
         source += '……'
       }
     }
-    return source.replace(/\[CQ:image,[^\]]+\]/g, '[图片]')
+    return source
   }
 
   function formatPrefix (dialogue: Dialogue) {

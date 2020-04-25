@@ -35,14 +35,14 @@
     "conversation"
   ],
   "devDependencies": {
-    "koishi-database-level": "^2.0.0-alpha.13",
-    "koishi-database-memory": "^2.0.0-alpha.13",
-    "koishi-database-mysql": "^2.0.0-alpha.13",
-    "koishi-test-utils": "^4.0.0-alpha.13"
+    "koishi-database-level": "^2.0.0-alpha.14",
+    "koishi-database-memory": "^2.0.0-alpha.14",
+    "koishi-database-mysql": "^2.0.0-alpha.14",
+    "koishi-test-utils": "^4.0.0-alpha.14"
   },
   "dependencies": {
     "escape-string-regexp": "^3.0.0",
-    "koishi-core": "^2.0.0-alpha.13",
+    "koishi-core": "^2.0.0-alpha.14",
     "koishi-utils": "^1.1.0"
   }
 }
