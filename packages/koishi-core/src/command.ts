@@ -482,7 +482,6 @@ export class Command {
     let skipped = false
     argv.next = async (_next) => {
       skipped = true
-      await this.app.parallelize(argv.meta, 'after-command', argv)
       return next(_next)
     }
 
@@ -492,7 +491,7 @@ export class Command {
       this.context.logger('').warn(error)
     }
     if (!skipped) {
-      return this.app.parallelize(argv.meta, 'after-command', argv)
+      return this.app.serialize(argv.meta, 'after-command', argv)
     }
   }
 

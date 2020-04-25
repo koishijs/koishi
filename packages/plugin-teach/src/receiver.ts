@@ -1,4 +1,4 @@
-import { Context, UserField, getSenderName, Meta, NextFunction } from 'koishi-core'
+import { Context, UserField, Meta, NextFunction } from 'koishi-core'
 import { CQCode, sleep, isInteger, simplify } from 'koishi-utils'
 import { getDialogues, TeachConfig } from './utils'
 import { Dialogue, DialogueTest, DialogueFlag, AppellationType } from './database'
@@ -111,7 +111,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
     .replace(/\$A/g, CQCode.stringify('at', { qq: 'all' }))
     .replace(/\$a/g, CQCode.stringify('at', { qq: meta.userId }))
     .replace(/\$m/g, CQCode.stringify('at', { qq: meta.selfId }))
-    .replace(/\$s/g, escapeAnswer(getSenderName(meta)))
+    .replace(/\$s/g, escapeAnswer(meta.$nickname))
     .replace(/\$0/g, escapeAnswer(meta.message))
 
   // redirect dialogue to command execution

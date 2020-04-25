@@ -5,7 +5,7 @@ import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig, ParsedCommandLine, ParsedLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
 import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField, createUser } from './database'
-import { Meta } from './meta'
+import { Meta, getSenderName } from './meta'
 import { simplify, noop, observe } from 'koishi-utils'
 import { emitter, errors } from './shared'
 import { types } from 'util'
@@ -22,6 +22,7 @@ export interface AppOptions {
   nickname?: string | string[]
   retryTimes?: number
   retryInterval?: number
+  getSenderName? (meta: Meta): string | void
   maxMiddlewares?: number
   defaultAuthority?: number | ((meta: Meta) => number)
   quickOperationTimeout?: number
@@ -73,6 +74,7 @@ const defaultOptions: AppOptions = {
   maxMiddlewares: 64,
   retryInterval: 5000,
   quickOperationTimeout: 100,
+  getSenderName,
 }
 
 function defineProperty <T, K extends keyof T> (object: T, key: K, value: T[K]) {

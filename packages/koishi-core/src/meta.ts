@@ -57,6 +57,7 @@ export interface Meta <T extends PostType = PostType> {
   // database bindings
   $user?: User
   $group?: Group
+  $nickname?: string
 
   // context identifier
   $ctxId?: number
@@ -220,9 +221,9 @@ export interface GroupNoticeInfo {
   vn: number
 }
 
-export function getSenderName (meta: Meta<'message'>) {
-  const idString = '' + meta.$user.id
-  return meta.$user && idString !== meta.$user.name
+export function getSenderName (meta: Meta) {
+  const idString = '' + meta.userId
+  return meta.$user && meta.$user.name && idString !== meta.$user.name
     ? meta.$user.name
     : meta.anonymous
       ? meta.anonymous.name

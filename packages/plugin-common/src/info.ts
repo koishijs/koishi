@@ -1,4 +1,4 @@
-import { Context, UserField, UserData, getTargetId, getSenderName } from 'koishi-core'
+import { Context, UserField, UserData, getTargetId } from 'koishi-core'
 
 type UserInfoCallback <K extends UserField = UserField> = (user: Pick<UserData, K>) => string
 
@@ -43,7 +43,7 @@ export default function apply (ctx: Context) {
         }
       } else {
         user = await ctx.database.getUser(meta.userId, Array.from(infoFields))
-        output.push(`${getSenderName(meta)}，您的权限为 ${user.authority} 级。`)
+        output.push(`${meta.$nickname}，您的权限为 ${user.authority} 级。`)
       }
 
       for (const { callback } of infoList) {

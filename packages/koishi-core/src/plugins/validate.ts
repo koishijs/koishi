@@ -154,6 +154,7 @@ export function getUsage (name: string, user: Pick<UserData, 'usage'>, time = Da
 }
 
 export function updateUsage (name: string, user: Pick<UserData, 'usage'>, options: UsageOptions = {}) {
+  if (!user || !user.usage) return
   const now = Date.now()
   const { maxUsage = Infinity, minInterval = 0, timestamp = now } = options
   const usage = getUsage(name, user, now)
