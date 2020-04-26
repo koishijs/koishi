@@ -31,11 +31,15 @@ export interface AppConfig extends AppOptions {
 const configFile = resolve(process.cwd(), process.env.KOISHI_CONFIG_FILE || 'koishi.config')
 const configDir = dirname(configFile)
 
+function isErrorModule (error: any) {
+  return error.code !== 'MODULE_NOT_FOUND' || error.requireStack && error.requireStack[0] !== __filename
+}
+
 function tryCallback <T> (callback: () => T) {
   try {
     return callback()
   } catch (error) {
-    if (error.code !== 'MODULE_NOT_FOUND' && error.code !== 'ENOENT') {
+    if (isErrorModule(error) && error.code !== 'ENOENT') {
       throw error
     }
   }
@@ -60,7 +64,7 @@ function loadEcosystem (type: string, name: string) {
     try {
       return require(name)
     } catch (error) {
-      if (error.code !== 'MODULE_NOT_FOUND' || error.requireStack[0] !== __filename) {
+      if (isErrorModule(error)) {
         throw error
       }
     }
