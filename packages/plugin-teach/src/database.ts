@@ -46,8 +46,6 @@ export interface Dialogue {
 
 arrayTypes.push('dialogue.groups', 'dialogue.predecessors')
 
-export enum AppellationType { normal, appellative, activated }
-
 export interface DialogueTest {
   question?: string
   answer?: string

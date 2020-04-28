@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { DialogueFlag, AppellationType } from './database'
+import { DialogueFlag } from './database'
 import { TeachConfig } from './utils'
 
 export function simplifyAnswer (source: string) {

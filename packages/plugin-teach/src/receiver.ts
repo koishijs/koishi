@@ -1,7 +1,7 @@
 import { Context, UserField, Meta, NextFunction } from 'koishi-core'
 import { CQCode, sleep, simplify } from 'koishi-utils'
 import { getDialogues, TeachConfig } from './utils'
-import { Dialogue, DialogueTest, AppellationType } from './database'
+import { Dialogue, DialogueTest } from './database'
 import escapeRegex from 'escape-string-regexp'
 
 declare module 'koishi-core/dist/context' {
