@@ -33,16 +33,16 @@ export default function apply (ctx: Context, config: TeachConfig) {
     state.counters = { ...counters }
   })
 
-  ctx.on('dialogue/receive', (meta, test, state) => {
-    for (const interval in state.counters) {
-      if (state.counters[interval] <= 0) return true
+  ctx.on('dialogue/receive', ({ counters }) => {
+    for (const interval in counters) {
+      if (counters[interval] <= 0) return true
     }
   })
 
-  ctx.on('dialogue/send', (meta, dialogue, state) => {
+  ctx.on('dialogue/before-send', ({ counters }) => {
     for (const { interval } of throttleConfig) {
-      state.counters[interval]--
-      setTimeout(() => state.counters[interval]++, interval)
+      counters[interval]--
+      setTimeout(() => counters[interval]++, interval)
     }
   })
 }

@@ -41,9 +41,7 @@ export interface Dialogue {
   answer: string
   original: string
   flag: number
-  probS: number
-  probA: number
-  _prob?: number
+  _weight?: number
 }
 
 arrayTypes.push('dialogue.groups', 'dialogue.predecessors')
@@ -55,7 +53,8 @@ export interface DialogueTest {
   answer?: string
   keyword?: boolean
   regexp?: boolean
-  appellative?: AppellationType
+  activated?: boolean
+  appellative?: boolean
 }
 
 export enum DialogueFlag {

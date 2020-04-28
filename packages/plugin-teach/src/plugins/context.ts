@@ -127,16 +127,16 @@ export default function apply (ctx: Context, config: TeachConfig) {
   })
 
   ctx.on('dialogue/detail-short', ({ groups, flag }, output, argv) => {
-    if (argv.meta.messageType === 'group') {
+    if (!argv.groups && argv.meta.messageType === 'group') {
       const isReversed = flag & DialogueFlag.reversed
       const hasGroup = groups.includes('' + argv.meta.groupId)
       output.unshift(!isReversed === hasGroup ? isReversed ? 'E' : 'e' : isReversed ? 'D' : 'd')
     }
   })
 
-  ctx.on('dialogue/receive', ({ groupId }, test) => {
+  ctx.on('dialogue/receive', ({ meta, test }) => {
     test.partial = true
     test.reversed = false
-    test.groups = ['' + groupId]
+    test.groups = ['' + meta.groupId]
   })
 }

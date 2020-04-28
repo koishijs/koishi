@@ -71,6 +71,7 @@ export function equal (array1: (string | number)[], array2: (string | number)[])
 export async function getDialogues (ctx: Context, test: DialogueTest, state?: SessionState) {
   const dialogues = await ctx.database.getDialoguesByTest(test)
   return dialogues.filter((dialogue) => {
+    dialogue._weight = 1
     return !ctx.bail('dialogue/filter', dialogue, test, state)
   })
 }

@@ -33,13 +33,13 @@ export default function apply (ctx: Context, config: TeachConfig) {
     state.initiators = []
   })
 
-  ctx.on('dialogue/receive', (meta, test, state) => {
+  ctx.on('dialogue/receive', (state) => {
     const timestamp = Date.now()
     for (const { participants, length, debounce } of preventLoopConfig) {
       if (state.initiators.length < length) break
       const initiators = new Set(state.initiators.slice(0, length))
       if (initiators.size <= participants
-        && initiators.has(meta.userId)
+        && initiators.has(state.meta.userId)
         && !(debounce > timestamp - state.loopTimestamp)) {
         state.loopTimestamp = timestamp
         return true
@@ -47,8 +47,8 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
-  ctx.on('dialogue/send', (meta, dialogue, state) => {
-    state.initiators.unshift(meta.userId)
+  ctx.on('dialogue/before-send', (state) => {
+    state.initiators.unshift(state.meta.userId)
     state.initiators.splice(initiatorCount, Infinity)
     state.loopTimestamp = null
   })

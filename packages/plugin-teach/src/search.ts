@@ -1,6 +1,7 @@
 import { TeachArgv, getDialogues, isPositiveInteger, parseTeachArgs } from './utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import { Context } from 'koishi-core'
+import { getTotalWeight } from './receiver'
 
 declare module './database' {
   interface Dialogue {
@@ -46,22 +47,23 @@ async function search (argv: TeachArgv) {
   }
 
   if (redirect) {
-    const idSet = new Set()
+    const idSet = new Set<number>()
     await getRedirections(dialogues)
 
     async function getRedirections (dialogues: Dialogue[]) {
+      for (const { id } of dialogues) idSet.add(id)
       for (const dialogue of dialogues) {
-        const { id, flag, answer } = dialogue
-        if (idSet.has(id) || !(flag & DialogueFlag.redirect) || !answer.startsWith('dialogue ')) continue
-        idSet.add(id)
+        const { flag, answer } = dialogue
+        if (!(flag & DialogueFlag.redirect) || !answer.startsWith('dialogue ')) continue
         const [question] = _stripQuestion(answer.slice(9).trimStart())
+        if (question === test.question) continue
         const redirections = await getDialogues(ctx, {
           ...test,
           keyword: false,
           question,
         })
         Object.defineProperty(dialogue, '_redirections', { writable: true, value: redirections })
-        await getRedirections(redirections)
+        await getRedirections(redirections.filter(d => !idSet.has(d.id)))
       }
     }
   }
@@ -141,11 +143,12 @@ async function search (argv: TeachArgv) {
     } else if (!answer) {
       if (!dialogues.length) return meta.$send(`没有搜索到问题“${original}”，请尝试使用关键词匹配。`)
       const output = formatAnswers(dialogues)
-      const totalS = dialogues.reduce((prev, curr) => prev + curr.probS, 0)
-      const totalA = dialogues.reduce((prev, curr) => prev + curr.probA, 0)
-      return sendResult(`问题“${original}”的回答如下`, output, dialogues.length > 1
-        ? `总触发概率：p=${+totalS.toFixed(3)}, P=${+totalA.toFixed(3)}。`
-        : '')
+      const state = ctx.getSessionState(meta)
+      state.isSearch = true
+      state.test = test
+      state.dialogues = dialogues
+      const total = await getTotalWeight(ctx, state)
+      return sendResult(`问题“${original}”的回答如下`, output, dialogues.length > 1 ? `实际触发概率：${+Math.min(total, 1).toFixed(3)}` : '')
     } else {
       if (!dialogues.length) return meta.$send(`没有搜索到问答“${original}”“${answer}”，请尝试使用关键词匹配。`)
       const output = [dialogues.map(d => d.id).join(', ')]

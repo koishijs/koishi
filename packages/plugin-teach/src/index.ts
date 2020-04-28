@@ -6,10 +6,13 @@ import search from './search'
 import shortcut from './shortcut'
 import teach from './teach'
 import update from './update'
+import affinity from './plugins/affinity'
 import context from './plugins/context'
 import freeze from './plugins/freeze'
 import throttle from './plugins/throttle'
 import preventLoop from './plugins/preventLoop'
+import probability from './plugins/probability'
+import redirect from './plugins/redirect'
 import successor from './plugins/successor'
 import time from './plugins/time'
 import writer from './plugins/writer'
@@ -19,10 +22,13 @@ export * from './receiver'
 export * from './search'
 export * from './shortcut'
 export * from './utils'
+export * from './plugins/affinity'
 export * from './plugins/context'
 export * from './plugins/freeze'
 export * from './plugins/throttle'
 export * from './plugins/preventLoop'
+export * from './plugins/probability'
+export * from './plugins/redirect'
 export * from './plugins/successor'
 export * from './plugins/time'
 export * from './plugins/writer'
@@ -65,14 +71,14 @@ const cheetSheet = `\
 　称呼匹配权重：　-P probA
 　设置问题作者：　-w uid
 　设置为匿名：　　-W
-　设置最小好感度：-m aff
-　设置最大好感度：-M aff
+　设置最小好感度：-a aff
+　设置最大好感度：-A aff
 　设置起始时间：　-t time
 　设置结束时间：　-T time
 重定向：
 　重定向到问题：# 问题 => 问题
-　重定向为指令调用：# 问题 -c 指令
-　取消重定向：-C
+　重定向为指令调用：# 问题 -r 指令
+　取消重定向：-R
 特殊语法：
 　$$：一个普通的 $ 字符
 　$0：收到的原文本
@@ -101,10 +107,13 @@ export function apply (ctx: Context, config: TeachConfig = {}) {
 
   // options
   ctx.plugin(internal, config)
+  ctx.plugin(affinity, config)
   ctx.plugin(context, config)
   ctx.plugin(freeze, config)
   ctx.plugin(throttle, config)
   ctx.plugin(preventLoop, config)
+  ctx.plugin(probability, config)
+  ctx.plugin(redirect, config)
   ctx.plugin(successor, config)
   ctx.plugin(time, config)
   ctx.plugin(writer, config)

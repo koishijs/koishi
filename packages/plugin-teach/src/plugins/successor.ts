@@ -1,4 +1,4 @@
-import { Context, Meta } from 'koishi-core'
+import { Context } from 'koishi-core'
 import { contain, union, difference, intersection } from 'koishi-utils'
 import { equal, split, TeachConfig, prepareTargets, getDialogues, isDialogueIdList, parseTeachArgs } from '../utils'
 
@@ -17,7 +17,7 @@ declare module '../utils' {
 
 declare module '../receiver' {
   interface SessionState {
-    predecessors: Record<number, number>
+    predecessors: Record<number, Record<number, number>>
   }
 }
 
@@ -40,11 +40,11 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('<<, --add-pred <ids>', '添加前置问题', { isString: true, validate: isDialogueIdList })
     .option('>, --set-succ <ids>', '设置后继问题', { isString: true, validate: isDialogueIdList })
     .option('>>, --add-succ <ids>', '添加后继问题', { isString: true, validate: isDialogueIdList })
-    .option('>#, --create-successor <op...>', '创建并添加后继问题')
+    .option('>#, --create-successor <op...>', '创建并添加后继问答')
 
   ctx.on('dialogue/filter', (data, { somePredecessors, everyPredecessors }, state) => {
     if (state && data.predecessors.length) {
-      somePredecessors = Object.keys(state.predecessors)
+      somePredecessors = Object.keys(state.predecessors[state.userId] || {})
     }
 
     if (somePredecessors && !intersection(data.predecessors, somePredecessors).length) return true
@@ -143,13 +143,20 @@ export default function apply (ctx: Context, config: TeachConfig) {
     state.predecessors = {}
   })
 
-  ctx.on('dialogue/after-send', (meta, { id }, { predecessors }) => {
-    const time = Date.now()
-    predecessors[id] = time
+  ctx.on('dialogue/before-attach-user', ({ dialogues, isSearch }) => {
+    if (!isSearch) return
+    for (const dialogue of dialogues) {
+      if (dialogue.predecessors.length) dialogue._weight = 0
+    }
+  })
 
+  ctx.on('dialogue/before-send', ({ dialogue, predecessors, userId }) => {
+    const time = Date.now()
+    const predMap = predecessors[userId] || (predecessors[userId] = {})
+    predMap[dialogue.id] = time
     setTimeout(() => {
-      if (predecessors[id] === time) {
-        delete predecessors[id]
+      if (predMap[dialogue.id] === time) {
+        delete predMap[dialogue.id]
       }
     }, successorTimeout)
   })

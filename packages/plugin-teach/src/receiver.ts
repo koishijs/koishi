@@ -1,18 +1,17 @@
 import { Context, UserField, Meta, NextFunction } from 'koishi-core'
-import { CQCode, sleep, isInteger, simplify } from 'koishi-utils'
+import { CQCode, sleep, simplify } from 'koishi-utils'
 import { getDialogues, TeachConfig } from './utils'
-import { Dialogue, DialogueTest, DialogueFlag, AppellationType } from './database'
+import { Dialogue, DialogueTest, AppellationType } from './database'
 import escapeRegex from 'escape-string-regexp'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/state' (state: SessionState): void
-    'dialogue/receive' (meta: Meta<'message'>, test: DialogueTest, state: SessionState): void | boolean
-    'dialogue/before-attach-user' (meta: Meta<'message'>, userFields: Set<UserField>): void
-    'dialogue/attach-user' (meta: Meta<'message'>, dialogues: Dialogue[]): void | boolean
-    'dialogue/before-send' (meta: Meta<'message'>, dialogue: Dialogue, state: SessionState): void | boolean
-    'dialogue/send' (meta: Meta<'message'>, dialogue: Dialogue, state: SessionState): void
-    'dialogue/after-send' (meta: Meta<'message'>, dialogue: Dialogue, state: SessionState): void
+    'dialogue/receive' (state: SessionState): void | boolean
+    'dialogue/before-attach-user' (state: SessionState, userFields: Set<UserField>): void
+    'dialogue/attach-user' (state: SessionState): void | boolean
+    'dialogue/before-send' (state: SessionState): any
+    'dialogue/send' (state: SessionState): void
   }
 
   interface Context {
@@ -31,7 +30,7 @@ declare module './utils' {
     nickname?: string | string[]
     appellationTimeout?: number
     maxRedirections?: number
-    _stripQuestion? (source: string): [string, AppellationType]
+    _stripQuestion? (source: string): [string, boolean, boolean]
   }
 }
 
@@ -42,62 +41,66 @@ declare module './database' {
 }
 
 export interface SessionState {
-  activated: Record<number, number>
+  userId: number
+  groupId: number
+  answer?: string
+  meta?: Meta<'message'>
+  test?: DialogueTest
+  dialogue?: Dialogue
+  dialogues?: Dialogue[]
+  next?: NextFunction
+  isSearch?: boolean
 }
 
 const states: Record<number, SessionState> = {}
 
-function escapeAnswer (message: string) {
+export function escapeAnswer (message: string) {
   return message.replace(/\$/g, '@@__DOLLARS_PLACEHOLDER__@@')
 }
 
-function unescapeAnswer (message: string) {
+export function unescapeAnswer (message: string) {
   return message.trim().replace(/@@__DOLLARS_PLACEHOLDER__@@/g, '$')
 }
 
 Context.prototype.getSessionState = function (meta) {
-  const { groupId } = meta
+  const { groupId, anonymous, userId } = meta
   if (!states[groupId]) {
-    this.emit('dialogue/state', states[groupId] = { activated: {} } as SessionState)
+    this.emit('dialogue/state', states[groupId] = { groupId } as SessionState)
   }
-  return states[groupId]
+  const state = Object.create(states[groupId])
+  state.meta = meta
+  state.userId = anonymous ? -anonymous.id : userId
+  return state
 }
 
-export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, config: TeachConfig, next: NextFunction) {
-  const { appellationTimeout = 20000 } = config
+export async function getTotalWeight (ctx: Context, state: SessionState) {
+  const { meta, dialogues } = state
+  const userFields = new Set<UserField>(['name'])
+  ctx.app.emit(meta, 'dialogue/before-attach-user', state, userFields)
+  if (dialogues.every(d => !d._weight)) return 0
+  meta.$user = await ctx.database.observeUser(meta.$user, Array.from(userFields))
+  if (ctx.app.bail(meta, 'dialogue/attach-user', state)) return 0
+  return dialogues.reduce((prev, curr) => prev + curr._weight, 0)
+}
 
+export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, next: NextFunction) {
   const state = ctx.getSessionState(meta)
-  const test: DialogueTest = {}
+  state.next = next
+  state.test = {}
 
-  if (ctx.bail('dialogue/receive', meta, test, state)) return next()
+  if (ctx.bail('dialogue/receive', state)) return next()
 
   // fetch matched dialogues
-  const uid = meta.anonymous ? -meta.anonymous.id : meta.userId
-  const dialogues = await getDialogues(ctx, test, state)
-  const isActivated = uid in state.activated
-  dialogues.forEach((dialogue) => {
-    dialogue._prob = isActivated
-      ? Math.max(dialogue.probS, dialogue.probA)
-      : test.appellative === AppellationType.appellative
-        ? dialogue.probA
-        : dialogue.probS
-  })
-
-  if (dialogues.every(d => !d._prob)) return next()
-
-  // fetch user
-  const userFields = new Set<UserField>(['name'])
-  ctx.app.emit(meta, 'dialogue/before-attach-user', meta, userFields)
-  meta.$user = await ctx.database.observeUser(meta.$user, Array.from(userFields))
-  if (ctx.app.bail(meta, 'dialogue/attach-user', meta, dialogues)) return next()
+  const dialogues = await getDialogues(ctx, state.test, state)
+  state.dialogues = dialogues
 
   // pick dialogue
   let dialogue: Dialogue
-  const total = dialogues.reduce((prev, curr) => prev + curr._prob, 0)
+  const total = await getTotalWeight(ctx, state)
   const target = Math.random() * Math.max(1, total)
   let pointer = 0
   for (const _dialogue of dialogues) {
-    pointer += _dialogue._prob
+    pointer += _dialogue._weight
     if (target < pointer) {
       dialogue = _dialogue
       break
@@ -106,7 +109,8 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
   if (!dialogue) return next()
 
   // parse answer
-  const answer = dialogue.answer
+  state.dialogue = dialogue
+  state.answer = dialogue.answer
     .replace(/\$\$/g, '@@__DOLLARS_PLACEHOLDER__@@')
     .replace(/\$A/g, CQCode.stringify('at', { qq: 'all' }))
     .replace(/\$a/g, CQCode.stringify('at', { qq: meta.userId }))
@@ -114,43 +118,23 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
     .replace(/\$s/g, escapeAnswer(meta.$nickname))
     .replace(/\$0/g, escapeAnswer(meta.message))
 
-  // redirect dialogue to command execution
-  if (dialogue.flag & DialogueFlag.redirect) {
-    Object.defineProperty(meta, '$_redirected', {
-      writable: true,
-      value: (meta.$_redirected || 0) + 1,
-    })
-    ctx.logger('dialogue').debug(meta.message, '=>', dialogue.answer)
-    return ctx.app.executeCommandLine(unescapeAnswer(answer), meta, next)
-  }
-
-  ctx.logger('dialogue').debug(meta.message, '->', dialogue.answer)
-  if (ctx.app.bail(meta, 'dialogue/before-send', meta, dialogue, state)) return next()
-  await ctx.app.parallelize(meta, 'dialogue/send', meta, dialogue, state)
+  const result = ctx.app.bail(meta, 'dialogue/before-send', state)
+  if (result) return result
 
   // send answers
-  const answers = answer.split('$n').map(unescapeAnswer)
+  ctx.logger('dialogue').debug(meta.message, '->', dialogue.answer)
+  const answers = state.answer.split('$n').map(unescapeAnswer)
 
   for (const answer of answers) {
     await sleep(answer.length * 50)
     await meta.$send(answer)
   }
 
-  if (test.appellative === AppellationType.activated) {
-    const time = state.activated[uid] = Date.now()
-
-    setTimeout(() => {
-      if (state.activated[uid] === time) {
-        delete state.activated[uid]
-      }
-    }, appellationTimeout)
-  }
-
-  await ctx.app.parallelize(meta, 'dialogue/after-send', meta, dialogue, state)
+  await ctx.app.parallelize(meta, 'dialogue/send', state)
 }
 
 export default function (ctx: Context, config: TeachConfig) {
-  const { maxRedirections = 3, nickname = ctx.app.options.nickname } = config
+  const { nickname = ctx.app.options.nickname } = config
   const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
   nicknames.push(`[cq:at,qq=${ctx.app.selfId}]`)
   const nicknameRE = new RegExp(`^((${nicknames.map(escapeRegex).join('|')})[,，]?\\s*)+`)
@@ -162,36 +146,13 @@ export default function (ctx: Context, config: TeachConfig) {
     if (capture) source = source.slice(capture[0].length)
     return [
       source || original,
-      source === original
-        ? AppellationType.normal
-        : source
-          ? AppellationType.appellative
-          : AppellationType.activated,
+      source && source !== original,
+      !source && source !== original,
     ]
   }
 
-  ctx.command('dialogue <message...>', '触发教学对话')
-    .option('-g, --group [id]', '设置要触发问答的群号')
-    .action(async ({ meta, options, next }, message) => {
-      if (meta.$_redirected > maxRedirections) return next()
-
-      if (options.group !== undefined) {
-        if (!isInteger(options.group) || options.group <= 0) {
-          return meta.$send('选项 -g, --group 应为正整数。')
-        }
-        meta.groupId = options.group
-      }
-
-      if (meta.messageType !== 'group' && !options.group) {
-        return meta.$send('请输入要触发问答的群号。')
-      }
-
-      meta.message = message
-      return triggerDialogue(ctx, meta, config, next)
-    })
-
   ctx.intersect(ctx.app.groups).middleware(async (meta, next) => {
-    return triggerDialogue(ctx, meta, config, next)
+    return triggerDialogue(ctx, meta, next)
   })
 }
 

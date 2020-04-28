@@ -1,7 +1,6 @@
 import { Context } from 'koishi-core'
 import { Dialogue } from '../database'
 
-
 declare module '../database' {
   interface DialogueTest {
     matchTime?: number
@@ -66,7 +65,7 @@ export default function apply (ctx: Context) {
     output.push(`${formatTime(dialogue.startTime)}-${formatTime(dialogue.endTime)}`)
   })
 
-  ctx.on('dialogue/attach-user', (meta, dialogues) => {
+  ctx.on('dialogue/attach-user', ({ dialogues }) => {
     const date = new Date()
     const time = date.getHours() * 60 + date.getMinutes()
     dialogues.splice(0, Infinity, ...dialogues.filter(getTimeMatcher(time)))
