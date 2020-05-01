@@ -29,7 +29,7 @@ export default function apply (ctx: Context) {
     }
   })
 
-  ctx.on('dialogue/before-search', ({ options }, test) => {
+  ctx.on('dialogue/search', ({ options }, test) => {
     test.frozen = options.frozen
   })
 

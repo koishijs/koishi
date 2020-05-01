@@ -1,17 +1,12 @@
 import { Context, Meta, ParsedLine } from 'koishi-core'
 import { difference, isInteger, observe } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './database'
-import { SessionState } from './receiver'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/before-modify' (argv: TeachArgv): void | boolean | Promise<void | boolean>
     'dialogue/modify' (argv: TeachArgv, dialogue: Dialogue): void
-    'dialogue/after-modify' (argv: TeachArgv): any
-    'dialogue/before-detail' (argv: TeachArgv): void | Promise<void>
-    'dialogue/detail' (dialogue: Dialogue, output: string[], argv: TeachArgv): void
-    'dialogue/detail-short' (dialogue: Dialogue, output: SearchDetails, argv: TeachArgv): void
-    'dialogue/before-search' (argv: TeachArgv, test: DialogueTest): void | boolean | Promise<void | boolean>
+    'dialogue/after-modify' (argv: TeachArgv): void | Promise<void>
     'dialogue/before-fetch' (test: DialogueTest, conditionals?: string[]): void
     'dialogue/fetch' (dialogue: Dialogue, test: DialogueTest): boolean
     'dialogue/permit' (argv: TeachArgv, dialogue: Dialogue): boolean

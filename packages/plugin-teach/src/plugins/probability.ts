@@ -39,7 +39,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     state.activated = {}
   })
 
-  ctx.on('dialogue/before-search', (argv, test) => {
+  ctx.on('dialogue/search', (argv, test) => {
     test.appellative = argv.appellative
   })
 

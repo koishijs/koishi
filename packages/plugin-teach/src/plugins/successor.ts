@@ -120,14 +120,14 @@ export default function apply (ctx: Context, config: TeachConfig) {
     await ctx.database.setDialogues(targets, argv)
   })
 
-  ctx.on('dialogue/after-modify', ({ options, dialogues, meta }) => {
+  ctx.on('dialogue/after-modify', async ({ options, dialogues, meta }) => {
     // ># shortcut
     if (!options.createSuccessor) return
     if (!dialogues.length) return meta.$send('没有搜索到任何问答。')
     const command = ctx.getCommand('teach', meta)
     parseTeachArgs(Object.assign(meta.$argv, command.parse(options.createSuccessor)))
     meta.$argv.options.setPred = dialogues.map(d => d.id).join(',')
-    return command.execute(meta.$argv)
+    await command.execute(meta.$argv)
   })
 
   ctx.on('dialogue/detail', (dialogue, output) => {

@@ -29,7 +29,7 @@ export default function apply (ctx: Context) {
     return +hours * 60 + +minutes
   }
 
-  ctx.on('dialogue/before-search', ({ options }, test) => {
+  ctx.on('dialogue/search', ({ options }, test) => {
     if (options.matchTime !== undefined) test.matchTime = parseTime(options.matchTime)
     if (options.mismatchTime !== undefined) test.mismatchTime = parseTime(options.mismatchTime)
   })

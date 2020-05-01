@@ -3,6 +3,13 @@ import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import { Context } from 'koishi-core'
 import { getTotalWeight } from './receiver'
 
+declare module 'koishi-core/dist/context' {
+  interface EventMap {
+    'dialogue/detail-short' (dialogue: Dialogue, output: SearchDetails, argv: TeachArgv): void
+    'dialogue/search' (argv: TeachArgv, test: DialogueTest): void | boolean
+  }
+}
+
 declare module './database' {
   interface Dialogue {
     _redirections: Dialogue[]
@@ -35,7 +42,7 @@ async function search (argv: TeachArgv) {
   const { itemsPerPage = 20, mergeThreshold = 5, maxAnswerLength = 100, _stripQuestion } = argv.config
 
   const test: DialogueTest = { question, answer, keyword }
-  if (await ctx.serialize('dialogue/before-search', argv, test)) return
+  if (ctx.bail('dialogue/search', argv, test)) return
   const dialogues = await getDialogues(ctx, test)
 
   if (pipe) {

@@ -1,6 +1,14 @@
 import { TeachArgv, prepareTargets, sendResult, split, isDialogueIdList } from './utils'
 import { difference, deduplicate } from 'koishi-utils'
 import { Context } from 'koishi-core'
+import { Dialogue } from './database'
+
+declare module 'koishi-core/dist/context' {
+  interface EventMap {
+    'dialogue/before-detail' (argv: TeachArgv): void | Promise<void>
+    'dialogue/detail' (dialogue: Dialogue, output: string[], argv: TeachArgv): void
+  }
+}
 
 declare module './utils' {
   interface TeachConfig {
