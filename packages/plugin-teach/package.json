@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-teach",
   "description": "Teach plugin for Koishi",
-  "version": "1.0.0-alpha.22",
+  "version": "1.0.0-alpha.23",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [

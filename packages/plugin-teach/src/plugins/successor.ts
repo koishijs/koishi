@@ -153,6 +153,9 @@ export default function apply (ctx: Context, config: TeachConfig) {
   ctx.on('dialogue/before-send', ({ dialogue, predecessors, userId }) => {
     const time = Date.now()
     const predMap = predecessors[userId] || (predecessors[userId] = {})
+    for (const id of dialogue.predecessors) {
+      delete predMap[id]
+    }
     predMap[dialogue.id] = time
     setTimeout(() => {
       if (predMap[dialogue.id] === time) {
