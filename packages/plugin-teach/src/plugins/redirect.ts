@@ -64,6 +64,12 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
+  ctx.on('dialogue/detail-short', ({ flag }, output) => {
+    if (flag & DialogueFlag.redirect) {
+      output.answerType = '重定向'
+    }
+  })
+
   ctx.on('dialogue/detail', ({ flag, answer }, output) => {
     if (flag & DialogueFlag.redirect) {
       const index = output.findIndex(text => text.startsWith('回答：'))

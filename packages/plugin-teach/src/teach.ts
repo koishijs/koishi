@@ -34,8 +34,12 @@ export default function apply (ctx: Context) {
       }
     }
 
+    const dialogue = { flag: 0 } as Dialogue
+    if (ctx.bail('dialogue/permit', argv, dialogue)) {
+      return argv.meta.$send('权限不足。')
+    }
+
     try {
-      const dialogue = { flag: 0 } as Dialogue
       ctx.emit('dialogue/modify', argv, dialogue)
       argv.dialogues = [await ctx.database.createDialogue(dialogue)]
 

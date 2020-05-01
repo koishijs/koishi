@@ -1,5 +1,4 @@
 import { Context } from 'koishi-core'
-import { Dialogue } from '../database'
 
 declare module '../database' {
   interface DialogueTest {
@@ -35,13 +34,22 @@ export default function apply (ctx: Context) {
     if (options.mismatchTime !== undefined) test.mismatchTime = parseTime(options.mismatchTime)
   })
 
-  const getTimeMatcher = (time: number) => ({ startTime, endTime }: Dialogue) => {
-    return startTime === endTime || startTime <= time && endTime > time
+  ctx.on('dialogue/receive', (state) => {
+    const date = new Date()
+    state.test.matchTime = date.getHours() * 60 + date.getMinutes()
+  })
+
+  function getProduct (time: number) {
+    return `(\`startTime\`-${time})*(${time}-\`endTime\`)*(\`endTime\`-\`startTime\`)`
   }
 
-  ctx.on('dialogue/filter', (dialogue, test) => {
-    if (test.matchTime !== undefined && !getTimeMatcher(test.matchTime)(dialogue)) return true
-    if (test.mismatchTime !== undefined && getTimeMatcher(test.mismatchTime)(dialogue)) return true
+  ctx.on('dialogue/before-fetch', (test, conditionals) => {
+    if (test.matchTime !== undefined) {
+      conditionals.push(getProduct(test.matchTime) + '>=0')
+    }
+    if (test.mismatchTime !== undefined) {
+      conditionals.push(getProduct(test.matchTime) + '<0')
+    }
   })
 
   ctx.on('dialogue/modify', async ({ options }, data) => {
@@ -63,11 +71,5 @@ export default function apply (ctx: Context) {
   ctx.on('dialogue/detail-short', (dialogue, output) => {
     if (dialogue.startTime === dialogue.endTime) return
     output.push(`${formatTime(dialogue.startTime)}-${formatTime(dialogue.endTime)}`)
-  })
-
-  ctx.on('dialogue/attach-user', ({ dialogues }) => {
-    const date = new Date()
-    const time = date.getHours() * 60 + date.getMinutes()
-    dialogues.splice(0, Infinity, ...dialogues.filter(getTimeMatcher(time)))
   })
 }

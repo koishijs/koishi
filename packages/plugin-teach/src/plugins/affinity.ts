@@ -42,13 +42,17 @@ export default function apply (ctx: Context, config: TeachConfig) {
     if (options.mismatchAffinity !== undefined) test.mismatchAffinity = options.mismatchAffinity
   })
 
-  function matchAffinity (dialogue: Dialogue, affinity: number) {
-    return dialogue.minAffinity <= affinity && dialogue.maxAffinity > affinity
+  function matchAffinity (affinity: number) {
+    return `(\`maxAffinity\` > ${affinity} && \`minAffinity\` <= ${affinity})`
   }
 
-  ctx.on('dialogue/filter', (dialogue, test) => {
-    if (test.matchAffinity !== undefined && !matchAffinity(dialogue, test.matchAffinity)) return true
-    if (test.mismatchAffinity !== undefined && matchAffinity(dialogue, test.mismatchAffinity)) return true
+  ctx.on('dialogue/before-fetch', (test, conditionals) => {
+    if (test.matchAffinity !== undefined) {
+      conditionals.push(matchAffinity(test.matchAffinity))
+    }
+    if (test.mismatchAffinity !== undefined) {
+      conditionals.push('!' + matchAffinity(test.mismatchAffinity))
+    }
   })
 
   ctx.on('dialogue/modify', async ({ options }, data) => {

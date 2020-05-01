@@ -1,4 +1,4 @@
-import { Context, Meta, User, ParsedLine } from 'koishi-core'
+import { Context, Meta, ParsedLine } from 'koishi-core'
 import { difference, isInteger, observe } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './database'
 import { SessionState } from './receiver'
@@ -10,10 +10,11 @@ declare module 'koishi-core/dist/context' {
     'dialogue/after-modify' (argv: TeachArgv): any
     'dialogue/before-detail' (argv: TeachArgv): void | Promise<void>
     'dialogue/detail' (dialogue: Dialogue, output: string[], argv: TeachArgv): void
-    'dialogue/detail-short' (dialogue: Dialogue, output: string[], argv: TeachArgv): void
+    'dialogue/detail-short' (dialogue: Dialogue, output: SearchDetails, argv: TeachArgv): void
     'dialogue/before-search' (argv: TeachArgv, test: DialogueTest): void | boolean | Promise<void | boolean>
-    'dialogue/filter' (dialogue: Dialogue, test: DialogueTest, state?: SessionState): boolean
-    'dialogue/permit' (user: User, dialogue: Dialogue): boolean
+    'dialogue/before-fetch' (test: DialogueTest, conditionals?: string[]): void
+    'dialogue/fetch' (dialogue: Dialogue, test: DialogueTest): boolean
+    'dialogue/permit' (argv: TeachArgv, dialogue: Dialogue): boolean
   }
 }
 
@@ -32,6 +33,11 @@ export interface TeachArgv extends Dialogue.UpdateContext {
   dialogues?: Dialogue[]
   unknown?: number[]
   uneditable?: number[]
+}
+
+export interface SearchDetails extends Array<string> {
+  questionType?: string
+  answerType?: string
 }
 
 export function sendResult (argv: TeachArgv, prefix?: string, suffix?: string) {
@@ -68,17 +74,21 @@ export function equal (array1: (string | number)[], array2: (string | number)[])
   return array1.sort().join() === array2.sort().join()
 }
 
-export async function getDialogues (ctx: Context, test: DialogueTest, state?: SessionState) {
-  const dialogues = await ctx.database.getDialoguesByTest(test)
+export async function getDialogues (ctx: Context, test: DialogueTest) {
+  let query = 'SELECT * FROM `dialogue`'
+  const conditionals: string[] = []
+  ctx.emit('dialogue/before-fetch', test, conditionals)
+  if (conditionals.length) query += ' WHERE ' + conditionals.join(' && ')
+  const dialogues = await ctx.database.mysql.query<Dialogue[]>(query)
   return dialogues.filter((dialogue) => {
     dialogue._weight = 1
-    return !ctx.bail('dialogue/filter', dialogue, test, state)
+    return !ctx.bail('dialogue/fetch', dialogue, test)
   })
 }
 
 export function prepareTargets (argv: TeachArgv, dialogues: Dialogue[]) {
   const targets = dialogues.filter((dialogue) => {
-    return !argv.ctx.bail('dialogue/permit', argv.meta.$user, dialogue)
+    return !argv.ctx.bail('dialogue/permit', argv, dialogue)
   })
   argv.uneditable.unshift(...difference(dialogues, targets).map(d => d.id))
   return targets.map(data => observe(data, `dialogue ${data.id}`))

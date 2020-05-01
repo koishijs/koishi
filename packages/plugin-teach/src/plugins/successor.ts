@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { contain, union, difference, intersection } from 'koishi-utils'
+import { contain, union, difference } from 'koishi-utils'
 import { equal, split, TeachConfig, prepareTargets, getDialogues, isDialogueIdList, parseTeachArgs } from '../utils'
 
 declare module '../utils' {
@@ -23,8 +23,7 @@ declare module '../receiver' {
 
 declare module '../database' {
   interface DialogueTest {
-    everyPredecessors?: string[]
-    somePredecessors?: string[]
+    predecessors?: string[]
   }
 
   interface Dialogue {
@@ -42,13 +41,13 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('>>, --add-succ <ids>', '添加后继问题', { isString: true, validate: isDialogueIdList })
     .option('>#, --create-successor <op...>', '创建并添加后继问答')
 
-  ctx.on('dialogue/filter', (data, { somePredecessors, everyPredecessors }, state) => {
-    if (state && data.predecessors.length) {
-      somePredecessors = Object.keys(state.predecessors[state.userId] || {})
+  ctx.on('dialogue/before-fetch', ({ predecessors }, conditionals) => {
+    if (predecessors !== undefined) {
+      conditionals.push(`(${[
+        '!`predecessors`',
+        ...predecessors.map(id => `FIND_IN_SET(${id}, \`predecessors\`)`),
+      ].join('||')})`)
     }
-
-    if (somePredecessors && !intersection(data.predecessors, somePredecessors).length) return true
-    if (everyPredecessors && !contain(data.predecessors, everyPredecessors)) return true
   })
 
   ctx.on('dialogue/validate', (argv) => {
@@ -100,7 +99,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     argv.unknown = difference(successors, newTargets)
 
     if (succOverwrite) {
-      for (const dialogue of await getDialogues(ctx, { somePredecessors: predecessors })) {
+      for (const dialogue of await getDialogues(ctx, { predecessors: predecessors })) {
         if (!newTargets.includes(dialogue.id)) {
           newTargets.push(dialogue.id)
           successorDialogues.push(dialogue)
@@ -141,6 +140,10 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/state', (state) => {
     state.predecessors = {}
+  })
+
+  ctx.on('dialogue/receive', ({ test, predecessors, userId }) => {
+    test.predecessors = Object.keys(predecessors[userId] || {})
   })
 
   ctx.on('dialogue/before-attach-user', ({ dialogues, isSearch }) => {

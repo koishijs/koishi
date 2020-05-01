@@ -91,7 +91,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, next
   if (ctx.bail('dialogue/receive', state)) return next()
 
   // fetch matched dialogues
-  const dialogues = await getDialogues(ctx, state.test, state)
+  const dialogues = await getDialogues(ctx, state.test)
   state.dialogues = dialogues
 
   // pick dialogue

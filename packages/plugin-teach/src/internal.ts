@@ -11,7 +11,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('--question <question>', '问题', { isString: true })
     .option('--answer <answer>', '回答', { isString: true })
     .option('-k, --keyword', '使用关键词匹配')
-    // .option('-K, --no-keyword', '取消使用关键词匹配')
+    .option('-K, --no-keyword', '取消使用关键词匹配')
 
   ctx.before('dialogue/validate', (argv) => {
     const { options, meta, args } = argv
@@ -37,6 +37,30 @@ export default function apply (ctx: Context, config: TeachConfig) {
     if (!options.answer) delete options.answer
   })
 
+  ctx.on('dialogue/permit', ({ meta, options }) => {
+    return options.keyword !== undefined && meta.$user.authority < 3
+  })
+
+  ctx.on('dialogue/before-fetch', (test, conditionals) => {
+    const { escape } = ctx.database.mysql
+    if (test.keyword) {
+      if (test.answer !== undefined) conditionals.push('`answer` LIKE ' + escape(`%${test.answer}%`))
+      if (test.question !== undefined) conditionals.push('`question` LIKE ' + escape(`%${test.question}%`))
+    } else {
+      if (test.answer !== undefined) conditionals.push('`answer` = ' + escape(test.answer))
+      if (test.question !== undefined) {
+        if (test.keyword !== false) {
+          conditionals.push(`(
+            \`question\` = ${escape(test.question)} ||
+            \`flag\` & ${DialogueFlag.keyword} && LOCATE(\`question\`, ${escape(test.question)})
+          )`)
+        } else {
+          conditionals.push('`question` = ' + escape(test.question))
+        }
+      }
+    }
+  })
+
   ctx.on('dialogue/before-modify', async ({ options, meta, target }) => {
     if (!target && !(options.question && options.answer)) {
       await meta.$send('缺少问题或回答，请检查指令语法。')
@@ -60,8 +84,13 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
-  ctx.on('dialogue/detail', ({ original, answer }, output) => {
-    output.push(`问题：${original}`, `回答：${answer}`)
+  ctx.on('dialogue/detail', ({ original, answer, flag }, output) => {
+    if (flag & DialogueFlag.keyword) {
+      output.push(`关键词：${original}`)
+    } else {
+      output.push(`问题：${original}`)
+    }
+    output.push(`回答：${answer}`)
   })
 
   ctx.on('dialogue/receive', ({ meta, test }) => {
@@ -70,6 +99,5 @@ export default function apply (ctx: Context, config: TeachConfig) {
     test.question = question
     test.activated = activated
     test.appellative = appellative
-    return !question
   })
 }

@@ -1,4 +1,4 @@
-import { TeachArgv, getDialogues, isPositiveInteger, parseTeachArgs } from './utils'
+import { TeachArgv, getDialogues, isPositiveInteger, parseTeachArgs, SearchDetails } from './utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import { Context } from 'koishi-core'
 import { getTotalWeight } from './receiver'
@@ -90,17 +90,29 @@ async function search (argv: TeachArgv) {
     return source
   }
 
-  function formatPrefix (dialogue: Dialogue) {
-    const output: string[] = []
-    ctx.emit('dialogue/detail-short', dialogue, output, argv)
-    return `${dialogue.id}. ${output.length ? `[${output.join(', ')}] ` : ''}`
+  function getDetails (dialogue: Dialogue) {
+    const details: SearchDetails = []
+    ctx.emit('dialogue/detail-short', dialogue, details, argv)
+    if (dialogue.flag & DialogueFlag.keyword) details.questionType = '关键词'
+    return details
+  }
+
+  function formatDetails (dialogue: Dialogue, details: SearchDetails) {
+    return `${dialogue.id}. ${details.length ? `[${details.join(', ')}] ` : ''}`
+  }
+
+  function formatPrefix (dialogue: Dialogue, showQuestionType = false, showAnswerType = false) {
+    const details = getDetails(dialogue)
+    let result = formatDetails(dialogue, details)
+    if (showQuestionType && details.questionType) result += `[${details.questionType}] `
+    if (showAnswerType && details.answerType) result += `[${details.answerType}] `
+    return result
   }
 
   function formatAnswers (dialogues: Dialogue[], padding = 0) {
     return dialogues.map((dialogue) => {
-      const { flag, answer, _redirections } = dialogue
-      const type = flag & DialogueFlag.redirect ? '[重定向] ' : ''
-      const output = `${'=> '.repeat(padding)}${formatPrefix(dialogue)}${type}${formatAnswer(answer)}`
+      const { answer, _redirections } = dialogue
+      const output = `${'=> '.repeat(padding)}${formatPrefix(dialogue, true, true)}${formatAnswer(answer)}`
       if (!_redirections) return output
       return [output, ...formatAnswers(_redirections, padding + 1)].join('\n')
     })
@@ -108,9 +120,10 @@ async function search (argv: TeachArgv) {
 
   function formatQuestionAnswers (dialogues: Dialogue[]) {
     return dialogues.map((dialogue) => {
-      const { flag, original, answer, _redirections } = dialogue
-      const type = flag & DialogueFlag.redirect ? '重定向' : '回答'
-      const output = `${formatPrefix(dialogue)}问题：${original}，${type}：${formatAnswer(answer)}`
+      const details = getDetails(dialogue)
+      const { questionType = '问题', answerType = '回答' } = details
+      const { original, answer, _redirections } = dialogue
+      const output = `${formatDetails(dialogue, details)}${questionType}：${original}，${answerType}：${formatAnswer(answer)}`
       if (!_redirections) return output
       return [output, ...formatAnswers(_redirections, 1)].join('\n')
     })
@@ -138,7 +151,7 @@ async function search (argv: TeachArgv) {
   if (!options.keyword) {
     if (!question) {
       if (!dialogues.length) return meta.$send(`没有搜索到回答“${answer}”，请尝试使用关键词匹配。`)
-      const output = dialogues.map(d => `${formatPrefix(d)}${d.original}`)
+      const output = dialogues.map(d => `${formatPrefix(d, true)}${d.original}`)
       return sendResult(`回答“${answer}”的问题如下`, output)
     } else if (!answer) {
       if (!dialogues.length) return meta.$send(`没有搜索到问题“${original}”，请尝试使用关键词匹配。`)

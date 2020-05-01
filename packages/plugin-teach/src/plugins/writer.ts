@@ -22,8 +22,8 @@ export default function apply (ctx: Context) {
     .option('-w, --writer <uid>', '添加或设置问题的作者')
     .option('-W, --anonymous', '添加或设置匿名问题')
 
-  ctx.on('dialogue/filter', (data, test) => {
-    if (test.writer && data.writer !== test.writer) return true
+  ctx.on('dialogue/before-fetch', (test, conditionals) => {
+    if (test.writer !== undefined) conditionals.push(`\`writer\` = ${test.writer}`)
   })
 
   ctx.on('dialogue/validate', ({ options, meta }) => {
@@ -38,8 +38,8 @@ export default function apply (ctx: Context) {
     }
   })
 
-  ctx.on('dialogue/permit', (user, dialogue) => {
-    return dialogue.writer !== user.id && user.authority < 3
+  ctx.on('dialogue/permit', ({ meta }, dialogue) => {
+    return dialogue.writer !== meta.$user.id && meta.$user.authority < 3
   })
 
   ctx.on('dialogue/before-detail', async (argv) => {

@@ -24,7 +24,6 @@ export type DialogueField = keyof Dialogue
 interface DialogueMethods {
   createDialogue (options: Dialogue): Promise<Dialogue>
   getDialoguesById <K extends DialogueField> (ids: (string | number)[], keys?: readonly K[]): Promise<Pick<Dialogue, K>[]>
-  getDialoguesByTest (test: DialogueTest): Promise<Dialogue[]>
   setDialogue (id: number, data: Partial<Dialogue>): Promise<void>
   setDialogues (data: Observed<Dialogue>[], ctx: Dialogue.UpdateContext): Promise<void>
   removeDialogues (ids: number[]): Promise<void>
@@ -79,20 +78,6 @@ injectMethods('mysql', 'dialogue', {
   async getDialoguesById (ids, keys) {
     if (!ids.length) return []
     return this.select('dialogue', keys, `\`id\` IN (${ids.join(',')})`)
-  },
-
-  async getDialoguesByTest (test) {
-    let query = 'SELECT * FROM `dialogue`'
-    const conditionals: string[] = []
-    if (test.keyword) {
-      if (test.question) conditionals.push('`question` LIKE ' + this.escape(`%${test.question}%`))
-      if (test.answer) conditionals.push('`answer` LIKE ' + this.escape(`%${test.answer}%`))
-    } else {
-      if (test.question) conditionals.push('`question` = ' + this.escape(test.question))
-      if (test.answer) conditionals.push('`answer` = ' + this.escape(test.answer))
-    }
-    if (conditionals.length) query += ' WHERE ' + conditionals.join(' AND ')
-    return this.query<Dialogue[]>(query)
   },
 
   async setDialogue (id, data) {

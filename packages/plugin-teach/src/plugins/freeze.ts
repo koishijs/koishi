@@ -10,14 +10,16 @@ declare module '../database' {
 export default function apply (ctx: Context) {
   ctx.command('teach')
     .option('-f, --frozen', '锁定这个问答', { authority: 4 })
-    .option('-F, --no-frozen', '解锁这个问答', { authority: 4, noNegated: true })
+    .option('-F, --no-frozen', '解锁这个问答', { authority: 4 })
 
-  ctx.on('dialogue/filter', (data, test) => {
-    if (test.frozen !== undefined && test.frozen === !(data.flag & DialogueFlag.frozen)) return true
+  ctx.on('dialogue/before-fetch', (test, conditionals) => {
+    if (test.frozen !== undefined) {
+      conditionals.push(`!(\`flag\` & ${DialogueFlag.frozen}) = !${test.frozen}`)
+    }
   })
 
-  ctx.on('dialogue/permit', (user, dialogue) => {
-    return (dialogue.flag & DialogueFlag.frozen) && user.authority < 4
+  ctx.on('dialogue/permit', ({ meta }, dialogue) => {
+    return (dialogue.flag & DialogueFlag.frozen) && meta.$user.authority < 4
   })
 
   ctx.on('dialogue/modify', ({ options }, data) => {
@@ -33,5 +35,9 @@ export default function apply (ctx: Context) {
 
   ctx.on('dialogue/detail', (dialogue, output) => {
     if (dialogue.flag & DialogueFlag.frozen) output.push('此问题已锁定。')
+  })
+
+  ctx.on('dialogue/detail-short', (dialogue, output) => {
+    if (dialogue.flag & DialogueFlag.frozen) output.push('锁定')
   })
 }

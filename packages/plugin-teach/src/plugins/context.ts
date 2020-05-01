@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { contain, intersection, union, difference } from 'koishi-utils'
+import { union, difference } from 'koishi-utils'
 import { DialogueFlag } from '../database'
 import { equal, TeachConfig, isGroupIdList } from '../utils'
 
@@ -33,16 +33,17 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('-g, --groups <gids>', '设置具体的生效环境', { authority: 3, isString: true, validate: isGroupIdList })
     .option('-G, --global', '无视上下文搜索', { authority: 3 })
 
-  ctx.on('dialogue/filter', (data, test) => {
-    if (!test.groups) return
-    const sameFlag = !(data.flag & DialogueFlag.reversed) !== test.reversed
-    if (test.partial) {
-      return sameFlag
-        ? !contain(data.groups, test.groups)
-        : !!intersection(data.groups, test.groups).length
-    } else {
-      return !sameFlag || !equal(test.groups, data.groups)
-    }
+  ctx.on('dialogue/before-fetch', (test, conditionals) => {
+    if (!test.groups || !test.groups.length) return
+    conditionals.push(`(
+      !(\`flag\` & ${DialogueFlag.reversed}) != ${test.reversed} && ${test.groups.map(id => `FIND_IN_SET(${id}, \`groups\`)`).join(' && ')} ||
+      !(\`flag\` & ${DialogueFlag.reversed}) = ${test.reversed} && ${test.groups.map(id => `!FIND_IN_SET(${id}, \`groups\`)`).join(' && ')}
+    )`)
+  })
+
+  ctx.on('dialogue/fetch', (data, test) => {
+    if (!test.groups || test.partial) return
+    return !(data.flag & DialogueFlag.reversed) === test.reversed || !equal(test.groups, data.groups)
   })
 
   ctx.on('dialogue/validate', (argv) => {
