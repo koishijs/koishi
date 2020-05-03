@@ -6,7 +6,7 @@ import { Dialogue } from './database'
 declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/before-detail' (argv: TeachArgv): void | Promise<void>
-    'dialogue/detail' (dialogue: Dialogue, output: string[], argv: TeachArgv): void
+    'dialogue/detail' (dialogue: Dialogue, output: string[], argv: TeachArgv): void | Promise<void>
   }
 }
 
@@ -57,7 +57,7 @@ async function update (argv: TeachArgv) {
     await ctx.serialize('dialogue/before-detail', argv)
     for (const dialogue of argv.dialogues) {
       const output = [`编号为 ${dialogue.id} 的问答信息：`]
-      ctx.emit('dialogue/detail', dialogue, output, argv)
+      await ctx.serialize('dialogue/detail', dialogue, output, argv)
       await meta.$send(output.join('\n'))
     }
     return

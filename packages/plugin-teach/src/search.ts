@@ -1,4 +1,4 @@
-import { TeachArgv, getDialogues, isPositiveInteger, parseTeachArgs, SearchDetails } from './utils'
+import { TeachArgv, getDialogues, isPositiveInteger, parseTeachArgs, SearchDetails, TeachConfig } from './utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import { Context } from 'koishi-core'
 import { getTotalWeight } from './receiver'
@@ -36,10 +36,71 @@ export default function apply (ctx: Context) {
   })
 }
 
+function formatAnswer (source: string, { maxAnswerLength = 100 }: TeachConfig) {
+  let trimmed = false
+  const lines = source.split(/(\r?\n|\$n)/g)
+  if (lines.length > 1) {
+    trimmed = true
+    source = lines[0].trim()
+  }
+  source = source.replace(/\[CQ:image,[^\]]+\]/g, '[图片]')
+  if (source.length > maxAnswerLength) {
+    trimmed = true
+    source = source.slice(0, maxAnswerLength)
+  }
+  if (trimmed && !source.endsWith('……')) {
+    if (source.endsWith('…')) {
+      source += '…'
+    } else {
+      source += '……'
+    }
+  }
+  return source
+}
+
+function getDetails (argv: TeachArgv, dialogue: Dialogue) {
+  const details: SearchDetails = []
+  argv.ctx.emit('dialogue/detail-short', dialogue, details, argv)
+  if (dialogue.flag & DialogueFlag.keyword) details.questionType = '关键词'
+  return details
+}
+
+function formatDetails (dialogue: Dialogue, details: SearchDetails) {
+  return `${dialogue.id}. ${details.length ? `[${details.join(', ')}] ` : ''}`
+}
+
+function formatPrefix (argv: TeachArgv, dialogue: Dialogue, showAnswerType = false) {
+  const details = getDetails(argv, dialogue)
+  let result = formatDetails(dialogue, details)
+  if (details.questionType) result += `[${details.questionType}] `
+  if (showAnswerType && details.answerType) result += `[${details.answerType}] `
+  return result
+}
+
+export function formatAnswers (argv: TeachArgv, dialogues: Dialogue[], padding = 0) {
+  return dialogues.map((dialogue) => {
+    const { answer, _redirections } = dialogue
+    const output = `${'=> '.repeat(padding)}${formatPrefix(argv, dialogue, true)}${formatAnswer(answer, argv.config)}`
+    if (!_redirections) return output
+    return [output, ...formatAnswers(argv, _redirections, padding + 1)].join('\n')
+  })
+}
+
+export function formatQuestionAnswers (argv: TeachArgv, dialogues: Dialogue[]) {
+  return dialogues.map((dialogue) => {
+    const details = getDetails(argv, dialogue)
+    const { questionType = '问题', answerType = '回答' } = details
+    const { original, answer, _redirections } = dialogue
+    const output = `${formatDetails(dialogue, details)}${questionType}：${original}，${answerType}：${formatAnswer(answer, argv.config)}`
+    if (!_redirections) return output
+    return [output, ...formatAnswers(argv, _redirections, 1)].join('\n')
+  })
+}
+
 async function search (argv: TeachArgv) {
   const { ctx, meta, options } = argv
   const { keyword, question, answer, page = 1, original, pipe, redirect } = options
-  const { itemsPerPage = 20, mergeThreshold = 5, maxAnswerLength = 100, _stripQuestion } = argv.config
+  const { itemsPerPage = 20, mergeThreshold = 5, _stripQuestion } = argv.config
 
   const test: DialogueTest = { question, answer, keyword }
   if (ctx.bail('dialogue/search', argv, test)) return
@@ -75,67 +136,6 @@ async function search (argv: TeachArgv) {
     }
   }
 
-  function formatAnswer (source: string) {
-    let trimmed = false
-    const lines = source.split(/(\r?\n|\$n)/g)
-    if (lines.length > 1) {
-      trimmed = true
-      source = lines[0].trim()
-    }
-    source = source.replace(/\[CQ:image,[^\]]+\]/g, '[图片]')
-    if (source.length > maxAnswerLength) {
-      trimmed = true
-      source = source.slice(0, maxAnswerLength)
-    }
-    if (trimmed && !source.endsWith('……')) {
-      if (source.endsWith('…')) {
-        source += '…'
-      } else {
-        source += '……'
-      }
-    }
-    return source
-  }
-
-  function getDetails (dialogue: Dialogue) {
-    const details: SearchDetails = []
-    ctx.emit('dialogue/detail-short', dialogue, details, argv)
-    if (dialogue.flag & DialogueFlag.keyword) details.questionType = '关键词'
-    return details
-  }
-
-  function formatDetails (dialogue: Dialogue, details: SearchDetails) {
-    return `${dialogue.id}. ${details.length ? `[${details.join(', ')}] ` : ''}`
-  }
-
-  function formatPrefix (dialogue: Dialogue, showQuestionType = false, showAnswerType = false) {
-    const details = getDetails(dialogue)
-    let result = formatDetails(dialogue, details)
-    if (showQuestionType && details.questionType) result += `[${details.questionType}] `
-    if (showAnswerType && details.answerType) result += `[${details.answerType}] `
-    return result
-  }
-
-  function formatAnswers (dialogues: Dialogue[], padding = 0) {
-    return dialogues.map((dialogue) => {
-      const { answer, _redirections } = dialogue
-      const output = `${'=> '.repeat(padding)}${formatPrefix(dialogue, true, true)}${formatAnswer(answer)}`
-      if (!_redirections) return output
-      return [output, ...formatAnswers(_redirections, padding + 1)].join('\n')
-    })
-  }
-
-  function formatQuestionAnswers (dialogues: Dialogue[]) {
-    return dialogues.map((dialogue) => {
-      const details = getDetails(dialogue)
-      const { questionType = '问题', answerType = '回答' } = details
-      const { original, answer, _redirections } = dialogue
-      const output = `${formatDetails(dialogue, details)}${questionType}：${original}，${answerType}：${formatAnswer(answer)}`
-      if (!_redirections) return output
-      return [output, ...formatAnswers(_redirections, 1)].join('\n')
-    })
-  }
-
   function sendResult (title: string, output: string[], suffix?: string) {
     if (output.length <= itemsPerPage) {
       output.unshift(title + '：')
@@ -152,17 +152,17 @@ async function search (argv: TeachArgv) {
 
   if (!question && !answer) {
     if (!dialogues.length) return meta.$send('没有搜索到任何回答，尝试切换到其他环境。')
-    return sendResult('全部问答如下', formatQuestionAnswers(dialogues))
+    return sendResult('全部问答如下', formatQuestionAnswers(argv, dialogues))
   }
 
   if (!options.keyword) {
     if (!question) {
       if (!dialogues.length) return meta.$send(`没有搜索到回答“${answer}”，请尝试使用关键词匹配。`)
-      const output = dialogues.map(d => `${formatPrefix(d, true)}${d.original}`)
+      const output = dialogues.map(d => `${formatPrefix(argv, d)}${d.original}`)
       return sendResult(`回答“${answer}”的问题如下`, output)
     } else if (!answer) {
       if (!dialogues.length) return meta.$send(`没有搜索到问题“${original}”，请尝试使用关键词匹配。`)
-      const output = formatAnswers(dialogues)
+      const output = formatAnswers(argv, dialogues)
       const state = ctx.getSessionState(meta)
       state.isSearch = true
       state.test = test
@@ -178,7 +178,7 @@ async function search (argv: TeachArgv) {
 
   let output: string[]
   if (!options.autoMerge || question && answer) {
-    output = formatQuestionAnswers(dialogues)
+    output = formatQuestionAnswers(argv, dialogues)
   } else {
     const idMap: Record<string, number[]> = {}
     for (const dialogue of dialogues) {

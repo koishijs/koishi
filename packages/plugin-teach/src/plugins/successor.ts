@@ -1,6 +1,8 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference } from 'koishi-utils'
 import { equal, split, TeachConfig, prepareTargets, getDialogues, isDialogueIdList, parseTeachArgs } from '../utils'
+import { Dialogue } from '../database'
+import { formatQuestionAnswers } from '../search'
 
 declare module '../utils' {
   interface TeachConfig {
@@ -23,11 +25,14 @@ declare module '../receiver' {
 
 declare module '../database' {
   interface DialogueTest {
-    predecessors?: string[]
+    stateful?: boolean
+    predecessors?: (string | number)[]
   }
 
   interface Dialogue {
     predecessors: string[]
+    _predecessors: Dialogue[]
+    _successors: Dialogue[]
   }
 }
 
@@ -41,12 +46,14 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('>>, --add-succ <ids>', '添加后继问题', { isString: true, validate: isDialogueIdList })
     .option('>#, --create-successor <op...>', '创建并添加后继问答')
 
-  ctx.on('dialogue/before-fetch', ({ predecessors }, conditionals) => {
+  ctx.on('dialogue/before-fetch', ({ predecessors, stateful }, conditionals) => {
     if (predecessors !== undefined) {
-      conditionals.push(`(${[
-        '!`predecessors`',
-        ...predecessors.map(id => `FIND_IN_SET(${id}, \`predecessors\`)`),
-      ].join('||')})`)
+      const segments = predecessors.map(id => `FIND_IN_SET(${id}, \`predecessors\`)`)
+      if (stateful) {
+        conditionals.push(`(${['!`predecessors`', ...segments].join('||')})`)
+      } else if (predecessors.length) {
+        conditionals.push(`(${segments.join('||')})`)
+      }
     }
   })
 
@@ -99,7 +106,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     argv.unknown = difference(successors, newTargets)
 
     if (succOverwrite) {
-      for (const dialogue of await getDialogues(ctx, { predecessors: predecessors })) {
+      for (const dialogue of await getDialogues(ctx, { predecessors })) {
         if (!newTargets.includes(dialogue.id)) {
           newTargets.push(dialogue.id)
           successorDialogues.push(dialogue)
@@ -130,8 +137,50 @@ export default function apply (ctx: Context, config: TeachConfig) {
     await command.execute(meta.$argv)
   })
 
-  ctx.on('dialogue/detail', (dialogue, output) => {
-    if (dialogue.predecessors.length) output.push(`前置问答：${dialogue.predecessors.join(', ')}`)
+  ctx.on('dialogue/before-detail', async ({ dialogues, ctx }) => {
+    // get predecessors
+    const predecessors = new Set<string>()
+    for (const dialogue of dialogues) {
+      for (const id of dialogue.predecessors) {
+        predecessors.add(id)
+      }
+    }
+    const dialogueMap: Record<string, Dialogue> = {}
+    for (const dialogue of await ctx.database.getDialoguesById([...predecessors])) {
+      dialogueMap[dialogue.id] = dialogue
+    }
+    for (const dialogue of dialogues) {
+      const predecessors = dialogue.predecessors.map(id => dialogueMap[id] || { id })
+      Object.defineProperty(dialogue, '_predecessors', { writable: true, value: predecessors })
+    }
+  })
+
+  ctx.on('dialogue/before-detail', async ({ dialogues }) => {
+    // get successors
+    const dialogueMap: Record<number, Dialogue> = {}
+    const predecessors = dialogues.filter((dialogue) => {
+      if (dialogueMap[dialogue.id]) return
+      dialogueMap[dialogue.id] = dialogue
+      Object.defineProperty(dialogue, '_successors', { writable: true, value: [] })
+      return true
+    }).map(d => d.id)
+    if (!predecessors.length) return
+    for (const dialogue of await getDialogues(ctx, { predecessors })) {
+      for (const id of dialogue.predecessors) {
+        if (id in dialogueMap) {
+          dialogueMap[id]._successors.push(dialogue)
+        }
+      }
+    }
+  })
+
+  ctx.on('dialogue/detail', async (dialogue, output, argv) => {
+    if (dialogue._predecessors.length) {
+      output.push('前置问答：', ...formatQuestionAnswers(argv, dialogue._predecessors))
+    }
+    if (dialogue._successors.length) {
+      output.push('后置问答：', ...formatQuestionAnswers(argv, dialogue._successors))
+    }
   })
 
   ctx.on('dialogue/detail-short', (dialogue, output) => {
@@ -143,6 +192,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
   })
 
   ctx.on('dialogue/receive', ({ test, predecessors, userId }) => {
+    test.stateful = true
     test.predecessors = Object.keys(predecessors[userId] || {})
   })
 
