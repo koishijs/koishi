@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference } from 'koishi-utils'
-import { equal, split, TeachConfig, prepareTargets, getDialogues, isDialogueIdList, parseTeachArgs } from '../utils'
+import { equal, split, TeachConfig, prepareTargets, getDialogues, isDialogueIdList, parseTeachArgs, isPositiveInteger } from '../utils'
 import { Dialogue } from '../database'
 import { formatQuestionAnswers } from '../search'
 
@@ -31,6 +31,7 @@ declare module '../database' {
 
   interface Dialogue {
     predecessors: string[]
+    successorTimeout: number
     _predecessors: Dialogue[]
     _successors: Dialogue[]
   }
@@ -45,6 +46,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('>, --set-succ <ids>', '设置后继问题', { isString: true, validate: isDialogueIdList })
     .option('>>, --add-succ <ids>', '添加后继问题', { isString: true, validate: isDialogueIdList })
     .option('>#, --create-successor <op...>', '创建并添加后继问答')
+    .option('-z, --sucessor-timeout [time]', '设置允许触发后置的时间', { validate: isPositiveInteger })
 
   ctx.on('dialogue/before-fetch', ({ predecessors, stateful }, conditionals) => {
     if (predecessors !== undefined) {
@@ -93,6 +95,13 @@ export default function apply (ctx: Context, config: TeachConfig) {
       if (!equal(data.predecessors, predecessors)) data.predecessors = predecessors.map(String)
     } else {
       if (!contain(data.predecessors, predecessors)) data.predecessors = union(data.predecessors, predecessors.map(String))
+    }
+  })
+
+  ctx.before('dialogue/modify', ({ options, target }, data) => {
+    // set successor timeout
+    if (!target && options.successorTimeout) {
+      data.successorTimeout = options.successorTimeout * 1000
     }
   })
 
@@ -175,6 +184,9 @@ export default function apply (ctx: Context, config: TeachConfig) {
   })
 
   ctx.on('dialogue/detail', async (dialogue, output, argv) => {
+    if ((dialogue.successorTimeout || successorTimeout) !== successorTimeout) {
+      output.push(`可触发后置时间：${(+dialogue.successorTimeout / 1000).toFixed(3)} 秒`)
+    }
     if (dialogue._predecessors.length) {
       output.push('前置问答：', ...formatQuestionAnswers(argv, dialogue._predecessors))
     }
@@ -184,6 +196,9 @@ export default function apply (ctx: Context, config: TeachConfig) {
   })
 
   ctx.on('dialogue/detail-short', (dialogue, output) => {
+    if ((dialogue.successorTimeout || successorTimeout) !== successorTimeout) {
+      output.push(`z=${dialogue.successorTimeout}`)
+    }
     if (dialogue.predecessors.length) output.push(`存在前置`)
   })
 
@@ -214,6 +229,6 @@ export default function apply (ctx: Context, config: TeachConfig) {
       if (predMap[dialogue.id] === time) {
         delete predMap[dialogue.id]
       }
-    }, successorTimeout)
+    }, dialogue.successorTimeout || successorTimeout)
   })
 }

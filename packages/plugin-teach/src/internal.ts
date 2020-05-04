@@ -11,7 +11,8 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('--question <question>', '问题', { isString: true })
     .option('--answer <answer>', '回答', { isString: true })
     .option('-k, --keyword', '使用关键词匹配')
-    .option('-K, --no-keyword', '取消使用关键词匹配')
+    .option('-x, --regexp', '使用正则表达式匹配')
+    .option('-X, --no-regexp', '取消使用正则表达式匹配')
 
   ctx.before('dialogue/validate', (argv) => {
     const { options, meta, args } = argv
@@ -38,7 +39,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
   })
 
   ctx.on('dialogue/permit', ({ meta, options }) => {
-    return options.keyword !== undefined && meta.$user.authority < 3
+    return options.regexp !== undefined && meta.$user.authority < 3
   })
 
   ctx.on('dialogue/before-fetch', (test, conditionals) => {
@@ -49,14 +50,10 @@ export default function apply (ctx: Context, config: TeachConfig) {
     } else {
       if (test.answer !== undefined) conditionals.push('`answer` = ' + escape(test.answer))
       if (test.question !== undefined) {
-        if (test.keyword !== false) {
-          conditionals.push(`(
-            \`question\` = ${escape(test.question)} ||
-            \`flag\` & ${DialogueFlag.keyword} && LOCATE(\`question\`, ${escape(test.question)})
-          )`)
-        } else {
-          conditionals.push('`question` = ' + escape(test.question))
-        }
+        conditionals.push(`(
+          \`question\` = ${escape(test.question)} ||
+          \`flag\` & ${DialogueFlag.regexp} && ${escape(test.question)} REGEXP \`question\`
+        )`)
       }
     }
   })
@@ -78,15 +75,15 @@ export default function apply (ctx: Context, config: TeachConfig) {
       data.original = options.original
     }
 
-    if (options.keyword !== undefined) {
-      data.flag &= ~DialogueFlag.keyword
-      data.flag |= +options.keyword * DialogueFlag.keyword
+    if (options.regexp !== undefined) {
+      data.flag &= ~DialogueFlag.regexp
+      data.flag |= +options.regexp * DialogueFlag.regexp
     }
   })
 
   ctx.on('dialogue/detail', ({ original, answer, flag }, output) => {
-    if (flag & DialogueFlag.keyword) {
-      output.push(`关键词：${original}`)
+    if (flag & DialogueFlag.regexp) {
+      output.push(`正则：${original}`)
     } else {
       output.push(`问题：${original}`)
     }

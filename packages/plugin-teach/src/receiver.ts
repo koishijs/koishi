@@ -1,7 +1,7 @@
 import { Context, UserField, Meta, NextFunction } from 'koishi-core'
 import { CQCode, sleep, simplify } from 'koishi-utils'
 import { getDialogues, TeachConfig } from './utils'
-import { Dialogue, DialogueTest } from './database'
+import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import escapeRegex from 'escape-string-regexp'
 
 declare module 'koishi-core/dist/context' {
@@ -117,6 +117,15 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, next
     .replace(/\$m/g, CQCode.stringify('at', { qq: meta.selfId }))
     .replace(/\$s/g, escapeAnswer(meta.$nickname))
     .replace(/\$0/g, escapeAnswer(meta.message))
+
+  if (dialogue.flag & DialogueFlag.regexp) {
+    const capture = new RegExp(dialogue.question).exec(state.test.question) || [] as string[]
+    capture.map((segment, index) => {
+      if (index && index <= 9) {
+        state.answer = state.answer.replace(new RegExp(`\\$${index}`, 'g'), segment)
+      }
+    })
+  }
 
   const result = ctx.app.bail(meta, 'dialogue/before-send', state)
   if (result) return result

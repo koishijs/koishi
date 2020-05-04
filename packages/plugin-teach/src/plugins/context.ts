@@ -100,12 +100,12 @@ export default function apply (ctx: Context, config: TeachConfig) {
         ? difference(data.groups, groups)
         : union(data.groups, groups)
       if (!equal(data.groups, newGroups)) {
-        data.groups = newGroups
+        data.groups = newGroups.sort()
       }
     } else {
       data.flag = data.flag & ~DialogueFlag.reversed | (+reversed * DialogueFlag.reversed)
       if (!equal(data.groups, groups)) {
-        data.groups = groups.slice()
+        data.groups = groups.sort()
       }
     }
   })
