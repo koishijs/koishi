@@ -1,5 +1,5 @@
 import { Context, UserField, Meta, NextFunction } from 'koishi-core'
-import { CQCode, sleep, simplify } from 'koishi-utils'
+import { CQCode, sleep, simplify, noop } from 'koishi-utils'
 import { getDialogues, TeachConfig } from './utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import escapeRegex from 'escape-string-regexp'
@@ -83,7 +83,7 @@ export async function getTotalWeight (ctx: Context, state: SessionState) {
   return dialogues.reduce((prev, curr) => prev + curr._weight, 0)
 }
 
-export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, next: NextFunction) {
+export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, next: NextFunction = noop) {
   const state = ctx.getSessionState(meta)
   state.next = next
   state.test = {}

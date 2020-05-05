@@ -46,7 +46,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('>, --set-succ <ids>', '设置后继问题', { isString: true, validate: isDialogueIdList })
     .option('>>, --add-succ <ids>', '添加后继问题', { isString: true, validate: isDialogueIdList })
     .option('>#, --create-successor <op...>', '创建并添加后继问答')
-    .option('-z, --sucessor-timeout [time]', '设置允许触发后置的时间', { validate: isPositiveInteger })
+    .option('-z, --successor-timeout [time]', '设置允许触发后置的时间', { validate: isPositiveInteger })
 
   ctx.on('dialogue/before-fetch', ({ predecessors, stateful }, conditionals) => {
     if (predecessors !== undefined) {
@@ -98,9 +98,9 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
-  ctx.before('dialogue/modify', ({ options, target }, data) => {
+  ctx.on('dialogue/modify', ({ options }, data) => {
     // set successor timeout
-    if (!target && options.successorTimeout) {
+    if (options.successorTimeout) {
       data.successorTimeout = options.successorTimeout * 1000
     }
   })
@@ -185,7 +185,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/detail', async (dialogue, output, argv) => {
     if ((dialogue.successorTimeout || successorTimeout) !== successorTimeout) {
-      output.push(`可触发后置时间：${(+dialogue.successorTimeout / 1000).toFixed(3)} 秒`)
+      output.push(`可触发后置时间：${dialogue.successorTimeout / 1000} 秒`)
     }
     if (dialogue._predecessors.length) {
       output.push('前置问答：', ...formatQuestionAnswers(argv, dialogue._predecessors))
@@ -197,7 +197,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/detail-short', (dialogue, output) => {
     if ((dialogue.successorTimeout || successorTimeout) !== successorTimeout) {
-      output.push(`z=${dialogue.successorTimeout}`)
+      output.push(`z=${dialogue.successorTimeout / 1000}`)
     }
     if (dialogue.predecessors.length) output.push(`存在前置`)
   })
