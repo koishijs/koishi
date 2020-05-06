@@ -1,4 +1,5 @@
 import debug from 'debug'
+import { types } from 'util'
 import { noop } from './misc'
 
 const showObserverLog = debug('koishi:observer')
@@ -6,6 +7,16 @@ const staticTypes = ['number', 'string', 'bigint', 'boolean', 'symbol', 'functio
 const builtinClasses = ['Date', 'RegExp', 'Set', 'Map', 'WeakSet', 'WeakMap', 'Array']
 
 const refs: Record<string | number, any> = {}
+
+function observeProperty (value: any, proxy: any, key: any, label: string, update: any) {
+  if (types.isDate(value)) {
+    return proxy[key] = observeDate(value, update)
+  } else if (Array.isArray(value)) {
+    return proxy[key] = observeArray(value, label, update)
+  } else {
+    return proxy[key] = observeObject(value, label, update)
+  }
+}
 
 function observeObject <T extends object> (target: T, label: string, update?: () => void): T {
   if (!target['__proxyGetters__']) {
@@ -28,11 +39,7 @@ function observeObject <T extends object> (target: T, label: string, update?: ()
           showObserverLog(`[diff] ${label}: ${String(key)} (deep)`)
         }
       })
-      if (Array.isArray(value)) {
-        return target.__proxyGetters__[key] = observeArray(value, label, _update)
-      } else {
-        return target.__proxyGetters__[key] = observeObject(value, label, _update)
-      }
+      return observeProperty(value, target.__proxyGetters__, key, label, _update)
     },
     set (target, key, value) {
       if (target[key] !== value) {
@@ -80,17 +87,28 @@ function observeArray <T> (target: T[], label: string, update: () => void) {
       if (key in proxy) return proxy[key]
       const value = target[key]
       if (!value || staticTypes.includes(typeof value) || typeof key === 'symbol' || isNaN(key as any)) return value
-      if (Array.isArray(value)) {
-        return proxy[key] = observeArray(value, label, update)
-      } else {
-        return proxy[key] = observeObject(value, label, update)
-      }
+      return observeProperty(value, proxy, key, label, update)
     },
     set (target, key, value) {
       if (typeof key !== 'symbol' && !isNaN(key as any) && target[key] !== value) update()
       return Reflect.set(target, key, value)
     },
   })
+}
+
+function observeDate (target: Date, update: () => void) {
+  for (const method in Date.prototype) {
+    if (!method.startsWith('set')) continue
+    Object.defineProperty(target, method, {
+      writable: true,
+      value (...args: any[]) {
+        update()
+        return Array.prototype[method].apply(this, args)
+      },
+    })
+  }
+
+  return target
 }
 
 export type Observed <T, R = any> = T & {

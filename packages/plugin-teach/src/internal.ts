@@ -81,6 +81,12 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
+  ctx.on('dialogue/detail-short', ({ flag }, output) => {
+    if (flag & DialogueFlag.regexp) {
+      output.questionType = '正则'
+    }
+  })
+
   ctx.on('dialogue/detail', ({ original, answer, flag }, output) => {
     if (flag & DialogueFlag.regexp) {
       output.push(`正则：${original}`)
