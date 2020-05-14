@@ -115,25 +115,25 @@ async function search (argv: TeachArgv) {
   }
 
   if (redirect) {
-    const idSet = new Set<number>()
-    await getRedirections(dialogues)
+    const questions: Record<string, Dialogue[]> = {
+      [test.question]: dialogues,
+    }
 
-    async function getRedirections (dialogues: Dialogue[]) {
-      for (const { id } of dialogues) idSet.add(id)
+    await (async function getRedirections (dialogues: Dialogue[]) {
       for (const dialogue of dialogues) {
         const { flag, answer } = dialogue
         if (!(flag & DialogueFlag.redirect) || !answer.startsWith('dialogue ')) continue
         const [question] = _stripQuestion(answer.slice(9).trimStart())
-        if (question === test.question) continue
-        const redirections = await getDialogues(ctx, {
+        if (question in questions) continue
+        questions[question] = await getDialogues(ctx, {
           ...test,
           keyword: false,
           question,
         })
-        Object.defineProperty(dialogue, '_redirections', { writable: true, value: redirections })
-        await getRedirections(redirections.filter(d => !idSet.has(d.id)))
+        Object.defineProperty(dialogue, '_redirections', { writable: true, value: questions[question] })
+        await getRedirections(questions[question])
       }
-    }
+    })(dialogues)
   }
 
   function sendResult (title: string, output: string[], suffix?: string) {
