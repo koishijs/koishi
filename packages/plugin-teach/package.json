@@ -41,7 +41,7 @@
     "koishi-test-utils": "^4.0.0-alpha.15"
   },
   "dependencies": {
-    "escape-string-regexp": "^3.0.0",
+    "escape-string-regexp": "^4.0.0",
     "koishi-core": "^2.0.0-alpha.15",
     "koishi-utils": "^1.1.1"
   }
