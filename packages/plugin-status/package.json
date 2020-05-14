@@ -35,7 +35,7 @@
     "@types/cross-spawn": "^6.0.1",
     "koishi-database-mysql": "^2.0.0-alpha.15",
     "koishi-test-utils": "^4.0.0-alpha.15",
-    "typescript": "^3.8.3"
+    "typescript": "^3.9.2"
   },
   "dependencies": {
     "cross-spawn": "^7.0.2",

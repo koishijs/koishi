@@ -29,6 +29,6 @@
   },
   "dependencies": {
     "koishi-utils": "^1.1.1",
-    "sqlite3": "^4.1.1"
+    "sqlite3": "^4.2.0"
   }
 }
