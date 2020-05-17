@@ -66,8 +66,8 @@ export default function apply (ctx: Context, config: TeachConfig) {
   })
 
   ctx.on('dialogue/detail-short', (dialogue, output) => {
-    if (dialogue.minAffinity > 0) output.push(`m=${dialogue.minAffinity}`)
-    if (dialogue.maxAffinity < 32768) output.push(`M=${dialogue.maxAffinity}`)
+    if (dialogue.minAffinity > 0) output.push(`a=${dialogue.minAffinity}`)
+    if (dialogue.maxAffinity < 32768) output.push(`A=${dialogue.maxAffinity}`)
   })
 
   ctx.on('dialogue/attach-user', ({ meta, dialogues }) => {

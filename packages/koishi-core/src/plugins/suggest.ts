@@ -1,4 +1,4 @@
-import { NextFunction, Command, Meta, onApp } from '..'
+import { NextFunction, Meta, onApp } from '..'
 import { messages } from '../shared'
 import { format } from 'util'
 import leven from 'leven'
