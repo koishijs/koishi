@@ -29,7 +29,7 @@ export default function apply (ctx: Context) {
     .option('--search', '搜索已有问答', { notUsage: true })
     .option('--page <page>', '设置搜索结果的页码', { validate: isPositiveInteger })
     .option('--auto-merge', '自动合并相同的问题和回答')
-    .option('--recursive', '递归查询相关问答')
+    .option('-R, --no-recursive', '禁用递归查询')
     .option('|, --pipe <op...>', '对每个搜索结果执行操作')
 
   ctx.before('dialogue/execute', (argv) => {
@@ -78,12 +78,12 @@ function formatPrefix (argv: TeachArgv, dialogue: Dialogue, showAnswerType = fal
   return result
 }
 
-export function formatAnswers (argv: TeachArgv, dialogues: Dialogue[], padding = 0) {
+export function formatAnswers (argv: TeachArgv, dialogues: Dialogue[], prefix = '') {
   return dialogues.map((dialogue) => {
     const { answer, _redirections } = dialogue
-    const output = `${'=> '.repeat(padding)}${formatPrefix(argv, dialogue, true)}${formatAnswer(answer, argv.config)}`
+    const output = `${prefix}${formatPrefix(argv, dialogue, true)}${formatAnswer(answer, argv.config)}`
     if (!_redirections) return output
-    return [output, ...formatAnswers(argv, _redirections, padding + 1)].join('\n')
+    return [output, ...formatAnswers(argv, _redirections, prefix + '=> ')].join('\n')
   })
 }
 
@@ -94,13 +94,13 @@ export function formatQuestionAnswers (argv: TeachArgv, dialogues: Dialogue[]) {
     const { original, answer, _redirections } = dialogue
     const output = `${formatDetails(dialogue, details)}${questionType}：${original}，${answerType}：${formatAnswer(answer, argv.config)}`
     if (!_redirections) return output
-    return [output, ...formatAnswers(argv, _redirections, 1)].join('\n')
+    return [output, ...formatAnswers(argv, _redirections, '=> ')].join('\n')
   })
 }
 
 async function search (argv: TeachArgv) {
   const { ctx, meta, options } = argv
-  const { keyword, question, answer, page = 1, original, pipe, recursive } = options
+  const { keyword, question, answer, page = 1, original, pipe, recursive, autoMerge } = options
   const { itemsPerPage = 20, mergeThreshold = 5, _stripQuestion } = argv.config
 
   const test: DialogueTest = { question, answer, keyword }
@@ -115,7 +115,7 @@ async function search (argv: TeachArgv) {
     return command.execute(meta.$argv)
   }
 
-  if (recursive) {
+  if (recursive && !autoMerge) {
     const questions: Record<string, Dialogue[]> = {
       [test.question]: dialogues,
     }
@@ -178,7 +178,7 @@ async function search (argv: TeachArgv) {
   }
 
   let output: string[]
-  if (!options.autoMerge || question && answer) {
+  if (!autoMerge || question && answer) {
     output = formatQuestionAnswers(argv, dialogues)
   } else {
     const idMap: Record<string, number[]> = {}

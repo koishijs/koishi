@@ -142,6 +142,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
     state.answer = state.answer.slice(index + 2)
     if (char === 'n') {
       await meta.$sendQueued(buffer, Math.max(buffer.length * charDelay, textDelay))
+      buffer = ''
     } else {
       let end = state.answer.indexOf('}')
       if (end < 0) end = Infinity
@@ -154,6 +155,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
       }
       meta.$send = sendBuffered
       meta.$sendQueued = async (message, ms) => {
+        if (!message) return
         meta.$send = send
         await sendQueued(buffer + message, ms)
         buffer = ''
