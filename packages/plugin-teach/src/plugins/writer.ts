@@ -80,7 +80,7 @@ export default function apply (ctx: Context) {
     }
   })
 
-  ctx.on('dialogue/search', ({ options }, test) => {
+  ctx.on('dialogue/before-search', ({ options }, test) => {
     test.writer = options.writer
   })
 

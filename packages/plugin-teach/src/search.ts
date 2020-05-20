@@ -5,8 +5,10 @@ import { getTotalWeight } from './receiver'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
+    'dialogue/list' (dialogue: Dialogue, output: string[], prefix: string, argv: TeachArgv): void
     'dialogue/detail-short' (dialogue: Dialogue, output: SearchDetails, argv: TeachArgv): void
-    'dialogue/search' (argv: TeachArgv, test: DialogueTest): void | boolean
+    'dialogue/before-search' (argv: TeachArgv, test: DialogueTest): void | boolean
+    'dialogue/search' (argv: TeachArgv, test: DialogueTest, dialogue: Dialogue[]): Promise<void>
   }
 }
 
@@ -29,11 +31,18 @@ export default function apply (ctx: Context) {
     .option('--search', '搜索已有问答', { notUsage: true })
     .option('--page <page>', '设置搜索结果的页码', { validate: isPositiveInteger })
     .option('--auto-merge', '自动合并相同的问题和回答')
-    .option('-R, --no-recursive', '禁用递归查询')
+    .option('-R, --no-recursive', '禁用递归查询', { default: true })
     .option('|, --pipe <op...>', '对每个搜索结果执行操作')
 
   ctx.before('dialogue/execute', (argv) => {
     if (argv.options.search) return search(argv)
+  })
+
+  ctx.before('dialogue/validate', (argv) => {
+    if (!argv.options.search) {
+      delete argv.options.R
+      delete argv.options.recursive
+    }
   })
 }
 
@@ -80,31 +89,31 @@ function formatPrefix (argv: TeachArgv, dialogue: Dialogue, showAnswerType = fal
 
 export function formatAnswers (argv: TeachArgv, dialogues: Dialogue[], prefix = '') {
   return dialogues.map((dialogue) => {
-    const { answer, _redirections } = dialogue
-    const output = `${prefix}${formatPrefix(argv, dialogue, true)}${formatAnswer(answer, argv.config)}`
-    if (!_redirections) return output
-    return [output, ...formatAnswers(argv, _redirections, prefix + '=> ')].join('\n')
+    const { answer } = dialogue
+    const output = [`${prefix}${formatPrefix(argv, dialogue, true)}${formatAnswer(answer, argv.config)}`]
+    argv.ctx.emit('dialogue/list', dialogue, output, prefix, argv)
+    return output.join('\n')
   })
 }
 
-export function formatQuestionAnswers (argv: TeachArgv, dialogues: Dialogue[]) {
+export function formatQuestionAnswers (argv: TeachArgv, dialogues: Dialogue[], prefix = '') {
   return dialogues.map((dialogue) => {
     const details = getDetails(argv, dialogue)
     const { questionType = '问题', answerType = '回答' } = details
-    const { original, answer, _redirections } = dialogue
-    const output = `${formatDetails(dialogue, details)}${questionType}：${original}，${answerType}：${formatAnswer(answer, argv.config)}`
-    if (!_redirections) return output
-    return [output, ...formatAnswers(argv, _redirections, '=> ')].join('\n')
+    const { original, answer } = dialogue
+    const output = [`${prefix}${formatDetails(dialogue, details)}${questionType}：${original}，${answerType}：${formatAnswer(answer, argv.config)}`]
+    argv.ctx.emit('dialogue/list', dialogue, output, prefix, argv)
+    return output.join('\n')
   })
 }
 
 async function search (argv: TeachArgv) {
   const { ctx, meta, options } = argv
   const { keyword, question, answer, page = 1, original, pipe, recursive, autoMerge } = options
-  const { itemsPerPage = 20, mergeThreshold = 5, _stripQuestion } = argv.config
+  const { itemsPerPage = 20, mergeThreshold = 5 } = argv.config
 
   const test: DialogueTest = { question, answer, keyword }
-  if (ctx.bail('dialogue/search', argv, test)) return
+  if (ctx.bail('dialogue/before-search', argv, test)) return
   const dialogues = await getDialogues(ctx, test)
 
   if (pipe) {
@@ -116,25 +125,7 @@ async function search (argv: TeachArgv) {
   }
 
   if (recursive && !autoMerge) {
-    const questions: Record<string, Dialogue[]> = {
-      [test.question]: dialogues,
-    }
-
-    await (async function getRedirections (dialogues: Dialogue[]) {
-      for (const dialogue of dialogues) {
-        const { answer } = dialogue
-        if (!answer.startsWith('${dialogue ')) continue
-        const [question] = _stripQuestion(answer.slice(11, -1).trimStart())
-        if (question in questions) continue
-        questions[question] = await getDialogues(ctx, {
-          ...test,
-          keyword: false,
-          question,
-        })
-        Object.defineProperty(dialogue, '_redirections', { writable: true, value: questions[question] })
-        await getRedirections(questions[question])
-      }
-    })(dialogues)
+    await argv.ctx.parallelize('dialogue/search', argv, test, dialogues)
   }
 
   function sendResult (title: string, output: string[], suffix?: string) {

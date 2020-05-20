@@ -14,6 +14,7 @@ declare module '../utils' {
     successors?: number[]
     predOverwrite?: boolean
     succOverwrite?: boolean
+    dialogueMap?: Record<number, Dialogue>
   }
 }
 
@@ -164,23 +165,27 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
-  ctx.on('dialogue/before-detail', async ({ dialogues }) => {
-    // get successors
-    const dialogueMap: Record<number, Dialogue> = {}
+  async function attachSuccessors (dialogues: Dialogue[], dialogueMap: Record<number, Dialogue> = {}) {
     const predecessors = dialogues.filter((dialogue) => {
       if (dialogueMap[dialogue.id]) return
       dialogueMap[dialogue.id] = dialogue
       Object.defineProperty(dialogue, '_successors', { writable: true, value: [] })
       return true
     }).map(d => d.id)
-    if (!predecessors.length) return
-    for (const dialogue of await getDialogues(ctx, { predecessors })) {
+    if (!predecessors.length) return []
+    const successors = await getDialogues(ctx, { predecessors })
+    for (const dialogue of successors) {
       for (const id of dialogue.predecessors) {
         if (id in dialogueMap) {
           dialogueMap[id]._successors.push(dialogue)
         }
       }
     }
+    return successors
+  }
+
+  ctx.on('dialogue/before-detail', async ({ dialogues }) => {
+    await attachSuccessors(dialogues)
   })
 
   ctx.on('dialogue/detail', async (dialogue, output, argv) => {
@@ -200,6 +205,16 @@ export default function apply (ctx: Context, config: TeachConfig) {
       output.push(`z=${dialogue.successorTimeout / 1000}`)
     }
     if (dialogue.predecessors.length) output.push(`存在前置`)
+  })
+
+  ctx.on('dialogue/search', async (argv, test, dialogues) => {
+    if (!argv.dialogueMap) argv.dialogueMap = {}
+    while ((dialogues = await attachSuccessors(dialogues, argv.dialogueMap)).length) {}
+  })
+
+  ctx.on('dialogue/list', ({ _successors }, output, prefix, argv) => {
+    if (!_successors) return
+    output.push(...formatQuestionAnswers(argv, _successors, prefix + '> '))
   })
 
   ctx.on('dialogue/state', (state) => {

@@ -110,7 +110,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
-  ctx.on('dialogue/search', ({ reversed, partial, groups }, test) => {
+  ctx.on('dialogue/before-search', ({ reversed, partial, groups }, test) => {
     test.partial = partial
     test.reversed = reversed
     test.groups = groups

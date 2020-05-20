@@ -37,7 +37,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     if (options.maxAffinity === 0) options.maxAffinity = 32768
   })
 
-  ctx.on('dialogue/search', ({ options }, test) => {
+  ctx.on('dialogue/before-search', ({ options }, test) => {
     if (options.matchAffinity !== undefined) test.matchAffinity = options.matchAffinity
     if (options.mismatchAffinity !== undefined) test.mismatchAffinity = options.mismatchAffinity
   })

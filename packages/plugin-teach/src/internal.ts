@@ -1,6 +1,13 @@
 import { Context } from 'koishi-core'
-import { DialogueFlag } from './database'
-import { TeachConfig } from './utils'
+import { DialogueFlag, Dialogue } from './database'
+import { TeachConfig, getDialogues } from './utils'
+import { formatAnswers } from './search'
+
+declare module './utils' {
+  interface TeachArgv {
+    questionMap?: Record<string, Dialogue[]>
+  }
+}
 
 export function simplifyAnswer (source: string) {
   return (String(source || '')).trim()
@@ -95,6 +102,30 @@ export default function apply (ctx: Context, config: TeachConfig) {
       output.push(`问题：${original}`)
     }
     output.push(`回答：${answer}`)
+  })
+
+  ctx.on('dialogue/list', ({ _redirections }, output, prefix, argv) => {
+    if (!_redirections) return
+    output.push(...formatAnswers(argv, _redirections, prefix + '= '))
+  })
+
+  ctx.on('dialogue/search', async (argv, test, dialogues) => {
+    if (!argv.questionMap) {
+      argv.questionMap = { [test.question]: dialogues }
+    }
+    for (const dialogue of dialogues) {
+      const { answer } = dialogue
+      if (!answer.startsWith('${dialogue ')) continue
+      const [question] = argv.config._stripQuestion(answer.slice(11, -1).trimStart())
+      if (question in argv.questionMap) continue
+      argv.questionMap[question] = await getDialogues(ctx, {
+        ...test,
+        keyword: false,
+        question,
+      })
+      Object.defineProperty(dialogue, '_redirections', { writable: true, value: argv.questionMap[question] })
+      await argv.ctx.parallelize('dialogue/search', argv, test, dialogues)
+    }
   })
 
   ctx.on('dialogue/receive', ({ meta, test }) => {
