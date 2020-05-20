@@ -1,7 +1,7 @@
 {
   "name": "koishi-database-mysql",
   "description": "MySQL support for Koishi",
-  "version": "2.0.0-alpha.15",
+  "version": "2.0.0-alpha.16",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -35,7 +35,7 @@
     "@types/mysql": "^2.15.10"
   },
   "peerDependencies": {
-    "koishi-core": "^2.0.0-alpha.15"
+    "koishi-core": "^2.0.0-alpha.16"
   },
   "dependencies": {
     "koishi-utils": "^1.1.1",

@@ -59,7 +59,6 @@ export enum DialogueFlag {
   regexp = 2,
   keyword = 4,
   reversed = 16,
-  redirect = 32,
 }
 
 function pick <T, K extends keyof T> (source: T, keys: Iterable<K>): Pick<T, K> {

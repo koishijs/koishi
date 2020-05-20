@@ -29,6 +29,7 @@ export default function apply (ctx: Context) {
     .option('--search', '搜索已有问答', { notUsage: true })
     .option('--page <page>', '设置搜索结果的页码', { validate: isPositiveInteger })
     .option('--auto-merge', '自动合并相同的问题和回答')
+    .option('--recursive', '递归查询相关问答')
     .option('|, --pipe <op...>', '对每个搜索结果执行操作')
 
   ctx.before('dialogue/execute', (argv) => {
@@ -99,7 +100,7 @@ export function formatQuestionAnswers (argv: TeachArgv, dialogues: Dialogue[]) {
 
 async function search (argv: TeachArgv) {
   const { ctx, meta, options } = argv
-  const { keyword, question, answer, page = 1, original, pipe, redirect } = options
+  const { keyword, question, answer, page = 1, original, pipe, recursive } = options
   const { itemsPerPage = 20, mergeThreshold = 5, _stripQuestion } = argv.config
 
   const test: DialogueTest = { question, answer, keyword }
@@ -114,16 +115,16 @@ async function search (argv: TeachArgv) {
     return command.execute(meta.$argv)
   }
 
-  if (redirect) {
+  if (recursive) {
     const questions: Record<string, Dialogue[]> = {
       [test.question]: dialogues,
     }
 
     await (async function getRedirections (dialogues: Dialogue[]) {
       for (const dialogue of dialogues) {
-        const { flag, answer } = dialogue
-        if (!(flag & DialogueFlag.redirect) || !answer.startsWith('dialogue ')) continue
-        const [question] = _stripQuestion(answer.slice(9).trimStart())
+        const { answer } = dialogue
+        if (!answer.startsWith('${dialogue ')) continue
+        const [question] = _stripQuestion(answer.slice(11, -1).trimStart())
         if (question in questions) continue
         questions[question] = await getDialogues(ctx, {
           ...test,

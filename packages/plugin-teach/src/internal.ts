@@ -13,6 +13,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('-k, --keyword', '使用关键词匹配')
     .option('-x, --regexp', '使用正则表达式匹配')
     .option('-X, --no-regexp', '取消使用正则表达式匹配')
+    .option('=>, --redirect-dialogue <answer>', '重定向到其他问答')
 
   ctx.before('dialogue/validate', (argv) => {
     const { options, meta, args } = argv
@@ -102,5 +103,18 @@ export default function apply (ctx: Context, config: TeachConfig) {
     test.question = question
     test.activated = activated
     test.appellative = appellative
+  })
+
+  ctx.on('dialogue/validate', ({ options }) => {
+    if (options.redirectDialogue) {
+      options.answer = `\${dialogue ${options.answer}}`
+    }
+  })
+
+  ctx.on('dialogue/before-send', ({ meta }) => {
+    Object.defineProperty(meta, '$_redirected', {
+      writable: true,
+      value: (meta.$_redirected || 0) + 1,
+    })
   })
 }

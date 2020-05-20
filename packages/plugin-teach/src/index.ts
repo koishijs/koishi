@@ -12,7 +12,6 @@ import freeze from './plugins/freeze'
 import throttle from './plugins/throttle'
 import preventLoop from './plugins/preventLoop'
 import probability from './plugins/probability'
-import redirect from './plugins/redirect'
 import successor from './plugins/successor'
 import time from './plugins/time'
 import writer from './plugins/writer'
@@ -28,7 +27,6 @@ export * from './plugins/freeze'
 export * from './plugins/throttle'
 export * from './plugins/preventLoop'
 export * from './plugins/probability'
-export * from './plugins/redirect'
 export * from './plugins/successor'
 export * from './plugins/time'
 export * from './plugins/writer'
@@ -75,10 +73,7 @@ const cheetSheet = `\
 　设置最大好感度：-A aff
 　设置起始时间：　-t time
 　设置结束时间：　-T time
-重定向：
-　重定向到问题：# 问题 => 问题
-　重定向为指令调用：# 问题 -r 指令
-　取消重定向：-R
+  重定向：# 问题 => 问题
 特殊语法：
 　$$：一个普通的 $ 字符
 　$0：收到的原文本
@@ -113,7 +108,6 @@ export function apply (ctx: Context, config: TeachConfig = {}) {
   ctx.plugin(throttle, config)
   ctx.plugin(preventLoop, config)
   ctx.plugin(probability, config)
-  ctx.plugin(redirect, config)
   ctx.plugin(successor, config)
   ctx.plugin(time, config)
   ctx.plugin(writer, config)

@@ -1,5 +1,5 @@
 import { Context, UserField, Meta, NextFunction } from 'koishi-core'
-import { CQCode, sleep, simplify, noop } from 'koishi-utils'
+import { CQCode, simplify, noop, isInteger } from 'koishi-utils'
 import { getDialogues, TeachConfig } from './utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import escapeRegex from 'escape-string-regexp'
@@ -27,16 +27,12 @@ declare module 'koishi-core/dist/meta' {
 
 declare module './utils' {
   interface TeachConfig {
+    charDelay?: number
+    textDelay?: number
     nickname?: string | string[]
     appellationTimeout?: number
     maxRedirections?: number
     _stripQuestion? (source: string): [string, boolean, boolean]
-  }
-}
-
-declare module './database' {
-  interface DialogueTest {
-    redirect?: boolean
   }
 }
 
@@ -83,7 +79,7 @@ export async function getTotalWeight (ctx: Context, state: SessionState) {
   return dialogues.reduce((prev, curr) => prev + curr._weight, 0)
 }
 
-export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, next: NextFunction = noop) {
+export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, config: TeachConfig, next: NextFunction = noop) {
   const state = ctx.getSessionState(meta)
   state.next = next
   state.test = {}
@@ -131,19 +127,51 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, next
   if (result) return result
 
   // send answers
+  const { textDelay = 1000, charDelay = 200 } = config
   ctx.logger('dialogue').debug(meta.message, '->', dialogue.answer)
-  const answers = state.answer.split('$n').map(unescapeAnswer)
 
-  for (const answer of answers) {
-    await sleep(answer.length * 50)
-    await meta.$send(answer)
+  let buffer = ''
+  let index: number
+  while ((index = state.answer.indexOf('$')) >= 0) {
+    const char = state.answer[index + 1]
+    if (!'n{'.includes(char)) {
+      buffer += unescapeAnswer(state.answer.slice(0, index + 2))
+      continue
+    }
+    buffer += unescapeAnswer(state.answer.slice(0, index))
+    state.answer = state.answer.slice(index + 2)
+    if (char === 'n') {
+      await meta.$sendQueued(buffer, Math.max(buffer.length * charDelay, textDelay))
+    } else {
+      let end = state.answer.indexOf('}')
+      if (end < 0) end = Infinity
+      const command = unescapeAnswer(state.answer.slice(0, end))
+      state.answer = state.answer.slice(end + 1)
+      const send = meta.$send
+      const sendQueued = meta.$sendQueued
+      async function sendBuffered (message: string) {
+        buffer += message
+      }
+      meta.$send = sendBuffered
+      meta.$sendQueued = async (message, ms) => {
+        meta.$send = send
+        await sendQueued(buffer + message, ms)
+        buffer = ''
+        meta.$send = sendBuffered
+      }
+      await ctx.app.executeCommandLine(command, meta)
+      meta.$sendQueued = sendQueued
+      meta.$send = send
+    }
   }
+  buffer += unescapeAnswer(state.answer)
+  await meta.$sendQueued(buffer, 0)
 
   await ctx.app.parallelize(meta, 'dialogue/send', state)
 }
 
 export default function (ctx: Context, config: TeachConfig) {
-  const { nickname = ctx.app.options.nickname } = config
+  const { nickname = ctx.app.options.nickname, maxRedirections = 3 } = config
   const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
   nicknames.push(`[cq:at,qq=${ctx.app.selfId}]`)
   const nicknameRE = new RegExp(`^((${nicknames.map(escapeRegex).join('|')})[,，]?\\s*)+`)
@@ -161,8 +189,28 @@ export default function (ctx: Context, config: TeachConfig) {
   }
 
   ctx.intersect(ctx.app.groups).middleware(async (meta, next) => {
-    return triggerDialogue(ctx, meta, next)
+    return triggerDialogue(ctx, meta, config, next)
   })
+
+  ctx.command('teach/dialogue <message...>', '触发教学对话')
+    .option('-g, --group [id]', '设置要触发问答的群号')
+    .action(async ({ meta, options, next }, message) => {
+      if (meta.$_redirected > maxRedirections) return next()
+
+      if (options.group !== undefined) {
+        if (!isInteger(options.group) || options.group <= 0) {
+          return meta.$send('选项 -g, --group 应为正整数。')
+        }
+        meta.groupId = options.group
+      }
+
+      if (meta.messageType !== 'group' && !options.group) {
+        return meta.$send('请输入要触发问答的群号。')
+      }
+
+      meta.message = message
+      return triggerDialogue(ctx, meta, config, next)
+    })
 }
 
 const prefixPunctuation = /^([()\]]|\[(?!cq:))*/

@@ -1,4 +1,4 @@
-import { Context } from '..'
+import { onApp } from '..'
 
 declare module '../meta' {
   interface Meta {
@@ -8,8 +8,8 @@ declare module '../meta' {
   }
 }
 
-export default function apply (ctx: Context) {
-  ctx.on('parse', (meta) => {
+onApp((app) => {
+  app.on('parse', (meta) => {
     if (meta.postType !== 'message') return
 
     const hooks: (() => void)[] = []
@@ -35,4 +35,4 @@ export default function apply (ctx: Context) {
       })
     }
   })
-}
+})
