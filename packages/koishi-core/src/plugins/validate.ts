@@ -3,6 +3,12 @@ import { messages } from '../shared'
 import { format } from 'util'
 import { getDateNumber } from 'koishi-utils'
 
+declare module '../context' {
+  interface EventMap {
+    'usage-exhausted' (meta: Meta): void
+  }
+}
+
 declare module '../command' {
   interface CommandConfig {
     /** disallow unknown options */
@@ -121,7 +127,10 @@ onApp((app) => {
   
       if (maxUsage < Infinity || minInterval > 0) {
         const message = updateUsage(getUsageName(command), meta.$user, { maxUsage, minInterval })
-        if (message) return sendHint(meta, message)
+        if (message) {
+          app.emit(meta, 'usage-exhausted', meta)
+          return sendHint(meta, message)
+        }
       }
     }
   })
