@@ -48,6 +48,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
   })
 
   ctx.on('dialogue/before-send', (state) => {
+    if (state.meta.$_redirected) return
     state.initiators.unshift(state.meta.userId)
     state.initiators.splice(initiatorCount, Infinity)
     state.loopTimestamp = null

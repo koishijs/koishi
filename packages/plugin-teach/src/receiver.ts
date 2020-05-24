@@ -130,6 +130,11 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
   const { textDelay = 1000, charDelay = 200 } = config
   ctx.logger('dialogue').debug(meta.message, '->', dialogue.answer)
 
+  Object.defineProperty(meta, '$_redirected', {
+    writable: true,
+    value: (meta.$_redirected || 0) + 1,
+  })
+
   let buffer = ''
   let index: number
   while ((index = state.answer.indexOf('$')) >= 0) {
@@ -148,22 +153,23 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
       if (end < 0) end = Infinity
       const command = unescapeAnswer(state.answer.slice(0, end))
       state.answer = state.answer.slice(end + 1)
+      let useOriginal = false
       const send = meta.$send
       const sendQueued = meta.$sendQueued
-      async function sendBuffered (message: string) {
+      meta.$send = async (message: string) => {
+        if (useOriginal) return send(message)
         buffer += message
       }
-      meta.$send = sendBuffered
       meta.$sendQueued = async (message, ms) => {
+        if (useOriginal) return sendQueued(message, ms)
         if (!message) return
-        meta.$send = send
+        useOriginal = true
         await sendQueued(buffer + message, ms)
         buffer = ''
-        meta.$send = sendBuffered
+        useOriginal = false
       }
       await ctx.app.executeCommandLine(command, meta)
-      meta.$sendQueued = sendQueued
-      meta.$send = send
+      useOriginal = true
     }
   }
   buffer += unescapeAnswer(state.answer)
