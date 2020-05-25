@@ -232,11 +232,21 @@ export function getSenderName (meta: Meta) {
         : idString
 }
 
+/**
+ * get context unique id
+ * @example
+ * getContextId(meta) // user123, group456, discuss789
+ */
 export function getContextId (meta: Meta<'message'>) {
   const type = meta.messageType === 'private' ? 'user' : meta.messageType
   return type + meta[`${type}Id`]
 }
 
+/**
+ * get session unique id
+ * @example
+ * getSessionId(meta) // 123user123, 123group456, 123discuss789
+ */
 export function getSessionId (meta: Meta) {
   return meta.$ctxId + meta.$ctxType + meta.userId
 }

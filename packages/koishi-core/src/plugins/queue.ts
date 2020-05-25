@@ -3,7 +3,7 @@ import { onApp } from '..'
 declare module '../meta' {
   interface Meta {
     $_sleep?: number
-    $cancelQueued?(): void
+    $cancelQueued?(ms?: number): void
     $sendQueued?(message: string | void, ms?: number): Promise<void>
   }
 }
@@ -13,8 +13,9 @@ onApp((app) => {
     if (meta.postType !== 'message') return
 
     const hooks: (() => void)[] = []
-    meta.$cancelQueued = () => {
+    meta.$cancelQueued = (ms = 0) => {
       hooks.forEach(Reflect.apply)
+      meta.$_sleep = ms
     }
 
     meta.$sendQueued = async (message, ms) => {
@@ -29,7 +30,7 @@ onApp((app) => {
         hooks.push(hook)
         const timer = setTimeout(async () => {
           await meta.$send(message.replace(/\$s/g, meta.$nickname))
-          Object.defineProperty(meta, '$_sleep', { value: ms, writable: true })
+          meta.$_sleep = ms
           hook()
         }, meta.$_sleep || 0)
       })
