@@ -175,6 +175,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     if (!predecessors.length) return []
     const successors = await getDialogues(ctx, { predecessors })
     for (const dialogue of successors) {
+      if (predecessors.includes(dialogue.id)) continue
       for (const id of dialogue.predecessors) {
         if (id in dialogueMap) {
           dialogueMap[id]._successors.push(dialogue)

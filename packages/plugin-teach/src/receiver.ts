@@ -202,7 +202,7 @@ export default function (ctx: Context, config: TeachConfig) {
 
   ctx.command('teach/dialogue <message...>', '触发教学对话')
     .option('-g, --group [id]', '设置要触发问答的群号')
-    .action(async ({ meta, options, next }, message) => {
+    .action(async ({ meta, options, next }, message = '') => {
       if (meta.$_redirected > maxRedirections) return next()
 
       if (options.group !== undefined) {

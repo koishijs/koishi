@@ -124,7 +124,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
         question,
       })
       Object.defineProperty(dialogue, '_redirections', { writable: true, value: argv.questionMap[question] })
-      await argv.ctx.parallelize('dialogue/search', argv, test, dialogues)
+      await argv.ctx.parallelize('dialogue/search', argv, test, argv.questionMap[question])
     }
   })
 
