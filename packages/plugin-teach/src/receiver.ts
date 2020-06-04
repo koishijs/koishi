@@ -93,6 +93,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
   // pick dialogue
   let dialogue: Dialogue
   const total = await getTotalWeight(ctx, state)
+  if (!total) return next()
   const target = Math.random() * Math.max(1, total)
   let pointer = 0
   for (const _dialogue of dialogues) {
@@ -118,7 +119,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
     const capture = new RegExp(dialogue.question).exec(state.test.question) || [] as string[]
     capture.map((segment, index) => {
       if (index && index <= 9) {
-        state.answer = state.answer.replace(new RegExp(`\\$${index}`, 'g'), segment)
+        state.answer = state.answer.replace(new RegExp(`\\$${index}`, 'g'), segment || '')
       }
     })
   }

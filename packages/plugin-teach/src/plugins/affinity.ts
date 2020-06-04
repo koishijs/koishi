@@ -1,5 +1,4 @@
 import { Context, UserData } from 'koishi-core'
-import { Dialogue } from '../database'
 import { isInteger } from 'koishi-utils'
 import { TeachConfig } from '../utils'
 

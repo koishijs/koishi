@@ -51,7 +51,7 @@ export function apply (ctx: Context) {
   const { database } = ctx.app
 
   ctx.command('schedule [time] -- <command>', '设置定时命令', { authority: 3, checkUnknown: true })
-    .option('-i, --interval <interval>', '设置触发的间隔秒数', { authority: 4, isString: true })
+    .option('/, --interval <interval>', '设置触发的间隔秒数', { authority: 4, isString: true })
     .option('-l, --list', '查看已经设置的日程')
     .option('-L, --full-list', '查看全部上下文中已经设置的日程', { authority: 4 })
     .option('-d, --delete <id>', '删除已经设置的日程')
