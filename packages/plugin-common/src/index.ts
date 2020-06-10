@@ -7,6 +7,7 @@ import info from './info'
 import repeater, { RepeaterOptions } from './repeater'
 import requestHandler, { HandlerOptions } from './request-handler'
 import respondent, { Respondent } from './respondent'
+import usage from './usage'
 import welcome, { WelcomeMessage } from './welcome'
 
 export * from './admin'
@@ -22,6 +23,7 @@ export {
   repeater,
   requestHandler,
   respondent,
+  usage,
   welcome,
   BroadcastOptions,
   HandlerOptions,
@@ -41,6 +43,7 @@ export interface Config extends BroadcastOptions, HandlerOptions {
   info?: boolean
   repeater?: RepeaterOptions
   respondent?: Respondent[]
+  usage?: boolean
   welcomeMessage?: WelcomeMessage
 }
 
@@ -59,5 +62,6 @@ export function apply (ctx: Context, options: Config = {}) {
     if (options.contextify !== false) ctx.plugin(contextify)
     if (options.broadcast !== false) ctx.plugin(broadcast, options)
     if (options.info !== false) ctx.plugin(info, options)
+    if (options.usage !== false) ctx.plugin(usage, options)
   }
 }

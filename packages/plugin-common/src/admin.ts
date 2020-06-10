@@ -76,16 +76,6 @@ registerUserAction('clearUsage', async (meta, user, ...commands) => {
   return meta.$send('用户信息已修改。')
 }, ['usage'])
 
-registerUserAction('showUsage', async (meta, user, ...commands) => {
-  const { usage } = user
-  if (!commands.length) commands = Object.keys(usage).filter(k => !k.startsWith('$'))
-  if (!commands.length) return meta.$send('用户今日没有调用过指令。')
-  return meta.$send([
-    '用户今日各指令的调用次数为：',
-    ...commands.sort().map(name => `${name}：${usage[name] ? usage[name].count : 0} 次`),
-  ].join('\n'))
-}, ['usage'])
-
 registerGroupAction('setFlag', async (meta, group, ...flags) => {
   if (!flags.length) return meta.$send(`可用的标记有 ${groupFlags.join(', ')}。`)
   const notFound = difference(flags, groupFlags)
