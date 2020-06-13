@@ -32,13 +32,12 @@
     "status"
   ],
   "devDependencies": {
-    "@types/cross-spawn": "^6.0.1",
+    "@types/cross-spawn": "^6.0.2",
     "koishi-database-mysql": "^2.0.0-alpha.17",
-    "koishi-test-utils": "^4.0.0-alpha.17",
-    "typescript": "~3.8.3"
+    "koishi-test-utils": "^4.0.0-alpha.17"
   },
   "dependencies": {
-    "cross-spawn": "^7.0.2",
+    "cross-spawn": "^7.0.3",
     "koishi-core": "^2.0.0-alpha.17",
     "koishi-utils": "^1.1.1"
   }

@@ -3,7 +3,7 @@ import { isInteger } from 'koishi-utils'
 import { fork } from 'child_process'
 import { resolve } from 'path'
 import { logger } from './utils'
-import CAC from 'cac/types/CAC'
+import { CAC } from 'cac'
 
 process.env.KOISHI_START_TIME = '' + performance.now()
 

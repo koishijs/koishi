@@ -2,10 +2,9 @@ import { existsSync, writeFileSync, mkdirSync } from 'fs'
 import { yellow } from 'kleur'
 import { resolve, extname, dirname } from 'path'
 import { logger } from './utils'
-import { safeDump } from 'js-yaml'
 import { AppConfig } from './worker'
 import prompts from 'prompts'
-import CAC from 'cac/types/CAC'
+import { CAC } from 'cac'
 
 async function createConfig (options) {
   let succeed = true
