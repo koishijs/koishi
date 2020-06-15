@@ -2,12 +2,28 @@ import { injectMethods, userFields, UserData, createUser, User, UserField } from
 import { observe } from 'koishi-utils'
 import { arrayTypes } from './database'
 
+declare module 'koishi-core/dist/database' {
+  interface UserMethods {
+    defineMysqlUserGetter (getters: Record<string, () => string>): void
+  }
+}
+
 arrayTypes.push('user.endings', 'user.achievement', 'user.inference')
 
+const getters: Record<string, () => string> = {}
+
+function inferFields (keys: readonly string[]) {
+  return keys.map(key => key in getters ? getters[key]() : key) as UserField[]
+}
+
 injectMethods('mysql', 'user', {
+  defineMysqlUserGetter (_getters) {
+    Object.assign(getters, _getters)
+  },
+
   async getUser (userId, ...args) {
     const authority = typeof args[0] === 'number' ? args.shift() as number : 0
-    const fields = args[0] as never || userFields
+    const fields = args[0] ? inferFields(args[0] as any) : userFields
     const [data] = await this.select<UserData[]>('user', fields, '`id` = ?', [userId])
     let fallback: UserData
     if (data) {
@@ -30,12 +46,12 @@ injectMethods('mysql', 'user', {
     let ids: readonly number[], fields: readonly UserField[]
     if (args.length > 1) {
       ids = args[0]
-      fields = args[1]
+      fields = inferFields(args[1])
     } else if (args.length && typeof args[0][0] !== 'string') {
       ids = args[0]
       fields = userFields
     } else {
-      fields = args[0] as any
+      fields = inferFields(args[0] as any)
     }
     if (ids && !ids.length) return []
     return this.select('user', fields, ids && `\`id\` IN (${ids.join(', ')})`)

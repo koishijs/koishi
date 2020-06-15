@@ -18,7 +18,7 @@ export const arrayTypes: string[] = []
 
 const defaultConfig: MysqlDatabaseConfig = {
   typeCast (field, next) {
-    const identifier = `${field.table}.${field.name}`
+    const identifier = `${field['packet'].orgTable}.${field.name}`
     if (arrayTypes.includes(identifier)) {
       const source = field.string()
       return source ? source.split(',') : []
@@ -74,7 +74,7 @@ export class MysqlDatabase implements AbstractDatabase {
   }
 
   joinKeys = (keys: readonly string[]) => {
-    return keys ? keys.map(key => `\`${key}\``).join(',') : '*'
+    return keys ? keys.map(key => key.includes('`') ? key : `\`${key}\``).join(',') : '*'
   }
 
   formatValues = (prefix: string, data: object, keys: readonly string[]) => {
@@ -99,7 +99,7 @@ export class MysqlDatabase implements AbstractDatabase {
   }
 
   select = <T extends {}> (table: string, fields: readonly string[], conditional?: string, values: readonly any[] = []) => {
-    return this.query<T>(`SELECT ${this.joinKeys(fields)} FROM ?? ${conditional ? ' WHERE ' + conditional : ''}`, [table, ...values])
+    return this.query<T>(`SELECT ${this.joinKeys(fields)} FROM \`${table}\` _${table} ${conditional ? ' WHERE ' + conditional : ''}`, values)
   }
 
   async create <K extends TableType> (table: K, data: Partial<TableData[K]>): Promise<TableData[K]> {
