@@ -93,7 +93,7 @@ export function parseTeachArgs ({ args, options }: Partial<ParsedLine>) {
   function parseArgument () {
     if (!args.length) return
     const [arg] = args.splice(0, 1)
-    if (!arg || arg === '~') return
+    if (!arg || arg === '~' || arg === '～') return
     return arg
   }
 
