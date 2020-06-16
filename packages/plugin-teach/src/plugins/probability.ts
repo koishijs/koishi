@@ -1,5 +1,6 @@
 import { Context } from 'koishi-core'
 import { isZeroToOne, TeachConfig } from '../utils'
+import { DialogueFlag } from '../database'
 
 declare module '../database' {
   interface Dialogue {
@@ -39,15 +40,18 @@ export default function apply (ctx: Context, config: TeachConfig) {
     state.activated = {}
   })
 
-  ctx.on('dialogue/before-search', (argv, test) => {
-    test.appellative = argv.appellative
-  })
-
   ctx.on('dialogue/before-attach-user', ({ test, userId, dialogues, activated }) => {
     dialogues.forEach((dialogue) => {
-      dialogue._weight = userId in activated
-        ? Math.max(dialogue.probS, dialogue.probA)
-        : test.appellative ? dialogue.probA : dialogue.probS
+      if (userId in activated) {
+        // 如果已经是激活状态，采用两个概率的最大值
+        dialogue._weight = Math.max(dialogue.probS, dialogue.probA)
+      } else if (!test.appellative || !(dialogue.flag & DialogueFlag.regexp)) {
+        // 如果不是正则表达式，或肯定无称呼，则根据是否有称呼决定概率
+        dialogue._weight = test.appellative ? dialogue.probA : dialogue.probS
+      } else {
+        // 对于有称呼的正则表达式，需要判断正则表达式是否含有称呼
+        dialogue._weight = dialogue._strict ? dialogue.probS : dialogue.probA
+      }
     })
   })
 

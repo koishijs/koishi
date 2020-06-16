@@ -112,7 +112,7 @@ async function search (argv: TeachArgv) {
   const { keyword, question, answer, page = 1, original, pipe, recursive, autoMerge } = options
   const { itemsPerPage = 20, mergeThreshold = 5 } = argv.config
 
-  const test: DialogueTest = { question, answer, keyword }
+  const test: DialogueTest = { question, answer, keyword, original: options._original }
   if (ctx.bail('dialogue/before-search', argv, test)) return
   const dialogues = await getDialogues(ctx, test)
 

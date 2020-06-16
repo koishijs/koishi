@@ -32,7 +32,7 @@ declare module './utils' {
     nickname?: string | string[]
     appellationTimeout?: number
     maxRedirections?: number
-    _stripQuestion? (source: string): [string, boolean, boolean]
+    _stripQuestion? (source: string): [string, string, boolean, boolean]
   }
 }
 
@@ -116,8 +116,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
     .replace(/\$0/g, escapeAnswer(meta.message))
 
   if (dialogue.flag & DialogueFlag.regexp) {
-    const capture = new RegExp(dialogue.question).exec(state.test.question) || [] as string[]
-    capture.map((segment, index) => {
+    dialogue._capture.map((segment, index) => {
       if (index && index <= 9) {
         state.answer = state.answer.replace(new RegExp(`\\$${index}`, 'g'), segment || '')
       }
@@ -192,6 +191,7 @@ export default function (ctx: Context, config: TeachConfig) {
     if (capture) source = source.slice(capture[0].length)
     return [
       source || original,
+      original,
       source && source !== original,
       !source && source !== original,
     ]

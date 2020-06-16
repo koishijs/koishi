@@ -33,8 +33,9 @@ export default function apply (ctx: Context, config: TeachConfig) {
       return meta.$send('问题不能包含图片。')
     }
 
-    const [question, appellative] = config._stripQuestion(options.question)
+    const [question, original, appellative] = config._stripQuestion(options.question)
     argv.appellative = appellative
+    options._original = original
     if (question) {
       options.original = options.question
       options.question = question
@@ -59,10 +60,20 @@ export default function apply (ctx: Context, config: TeachConfig) {
       if (test.answer !== undefined) conditionals.push('`answer` = ' + escape(test.answer))
       if (test.question !== undefined) {
         conditionals.push(`(
-          \`question\` = ${escape(test.question)} ||
-          \`flag\` & ${DialogueFlag.regexp} && ${escape(test.question)} REGEXP \`question\`
+          !(\`flag\` & ${DialogueFlag.regexp}) && \`question\` = ${escape(test.question)} ||
+          \`flag\` & ${DialogueFlag.regexp} && (${escape(test.question)} REGEXP \`question\` || ${escape(test.original)} REGEXP \`question\`)
         )`)
       }
+    }
+  })
+
+  ctx.on('dialogue/fetch', (dialogue, test) => {
+    if (!(dialogue.flag & DialogueFlag.regexp)) return
+
+    dialogue._capture = new RegExp(dialogue.question).exec(test.question)
+    if (!dialogue._capture) {
+      dialogue._capture = new RegExp(dialogue.question).exec(test.original)
+      dialogue._strict = true
     }
   })
 
@@ -116,12 +127,13 @@ export default function apply (ctx: Context, config: TeachConfig) {
     for (const dialogue of dialogues) {
       const { answer } = dialogue
       if (!answer.startsWith('${dialogue ')) continue
-      const [question] = argv.config._stripQuestion(answer.slice(11, -1).trimStart())
+      const [question, original] = argv.config._stripQuestion(answer.slice(11, -1).trimStart())
       if (question in argv.questionMap) continue
       argv.questionMap[question] = await getDialogues(ctx, {
         ...test,
         keyword: false,
         question,
+        original,
       })
       Object.defineProperty(dialogue, '_redirections', { writable: true, value: argv.questionMap[question] })
       await argv.ctx.parallelize('dialogue/search', argv, test, argv.questionMap[question])
@@ -130,10 +142,15 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/receive', ({ meta, test }) => {
     if (meta.message.includes('[CQ:image,')) return true
-    const [question, appellative, activated] = config._stripQuestion(meta.message)
+    const [question, original, appellative, activated] = config._stripQuestion(meta.message)
     test.question = question
+    test.original = original
     test.activated = activated
     test.appellative = appellative
+  })
+
+  ctx.on('dialogue/before-search', (argv, test) => {
+    test.appellative = argv.appellative
   })
 
   ctx.on('dialogue/validate', ({ options }) => {

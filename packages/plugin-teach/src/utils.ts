@@ -8,7 +8,7 @@ declare module 'koishi-core/dist/context' {
     'dialogue/modify' (argv: TeachArgv, dialogue: Dialogue): void
     'dialogue/after-modify' (argv: TeachArgv): void | Promise<void>
     'dialogue/before-fetch' (test: DialogueTest, conditionals?: string[]): void
-    'dialogue/fetch' (dialogue: Dialogue, test: DialogueTest): boolean
+    'dialogue/fetch' (dialogue: Dialogue, test: DialogueTest): boolean | void
     'dialogue/permit' (argv: TeachArgv, dialogue: Dialogue): boolean
   }
 }

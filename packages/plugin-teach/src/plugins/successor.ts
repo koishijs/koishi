@@ -228,9 +228,16 @@ export default function apply (ctx: Context, config: TeachConfig) {
   })
 
   ctx.on('dialogue/before-attach-user', ({ dialogues, isSearch }) => {
-    if (!isSearch) return
-    for (const dialogue of dialogues) {
-      if (dialogue.predecessors.length) dialogue._weight = 0
+    if (isSearch) {
+      // 搜索模式下，存在前置的问答不计权重
+      for (const dialogue of dialogues) {
+        if (dialogue.predecessors.length) dialogue._weight = 0
+      }
+    } else if (dialogues.some(d => d.predecessors.length)) {
+      // 正常情况下，如果已有存在前置的问答，则优先触发
+      for (const dialogue of dialogues) {
+        if (!dialogue.predecessors.length) dialogue._weight = 0
+      }
     }
   })
 

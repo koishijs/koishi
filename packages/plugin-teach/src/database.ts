@@ -41,11 +41,14 @@ export interface Dialogue {
   original: string
   flag: number
   _weight?: number
+  _capture?: RegExpExecArray
+  _strict?: boolean
 }
 
 arrayTypes.push('dialogue.groups', 'dialogue.predecessors')
 
 export interface DialogueTest {
+  original?: string
   question?: string
   answer?: string
   keyword?: boolean

@@ -41,6 +41,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     )`)
   })
 
+  // TODO: ???
   ctx.on('dialogue/fetch', (data, test) => {
     if (!test.groups || test.partial) return
     return !(data.flag & DialogueFlag.reversed) === test.reversed || !equal(test.groups, data.groups)
