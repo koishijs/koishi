@@ -55,7 +55,7 @@ export function escapeAnswer (message: string) {
 }
 
 export function unescapeAnswer (message: string) {
-  return message.trim().replace(/@@__DOLLARS_PLACEHOLDER__@@/g, '$')
+  return message.replace(/@@__DOLLARS_PLACEHOLDER__@@/g, '$')
 }
 
 Context.prototype.getSessionState = function (meta) {
@@ -137,6 +137,8 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
 
   let buffer = ''
   let index: number
+  const send = meta.$send
+  const sendQueued = meta.$sendQueued
   while ((index = state.answer.indexOf('$')) >= 0) {
     const char = state.answer[index + 1]
     if (!'n{'.includes(char)) {
@@ -146,7 +148,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
     buffer += unescapeAnswer(state.answer.slice(0, index))
     state.answer = state.answer.slice(index + 2)
     if (char === 'n') {
-      await meta.$sendQueued(buffer, Math.max(buffer.length * charDelay, textDelay))
+      await meta.$sendQueued(buffer.trim(), Math.max(buffer.length * charDelay, textDelay))
       buffer = ''
     } else {
       let end = state.answer.indexOf('}')
@@ -154,8 +156,6 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
       const command = unescapeAnswer(state.answer.slice(0, end))
       state.answer = state.answer.slice(end + 1)
       let useOriginal = false
-      const send = meta.$send
-      const sendQueued = meta.$sendQueued
       meta.$send = async (message: string) => {
         if (useOriginal) return send(message)
         buffer += message
@@ -164,16 +164,17 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
         if (useOriginal) return sendQueued(message, ms)
         if (!message) return
         useOriginal = true
-        await sendQueued(buffer + message, ms)
+        await sendQueued((buffer + message).trim(), ms)
         buffer = ''
         useOriginal = false
       }
       await ctx.app.executeCommandLine(command, meta)
-      useOriginal = true
+      meta.$sendQueued = sendQueued
+      meta.$send = send
     }
   }
   buffer += unescapeAnswer(state.answer)
-  await meta.$sendQueued(buffer, 0)
+  await sendQueued(buffer.trim(), 0)
 
   await ctx.app.parallelize(meta, 'dialogue/send', state)
 }

@@ -2,6 +2,7 @@ import { Context } from 'koishi-core'
 
 export default function apply (ctx: Context) {
   ctx.command('usage [...commands]', '查看指令的调用次数')
+    .shortcut('调用次数', { fuzzy: true })
     .action(async ({ meta }, ...commands) => {
       const { usage } = meta.$user
       if (!commands.length) commands = Object.keys(usage)

@@ -35,7 +35,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
     const [question, original, appellative] = config._stripQuestion(options.question)
     argv.appellative = appellative
-    options._original = original
+    Object.defineProperty(options, '_original', { value: original })
     if (question) {
       options.original = options.question
       options.question = question

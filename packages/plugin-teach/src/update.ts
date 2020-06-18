@@ -12,6 +12,7 @@ declare module 'koishi-core/dist/context' {
 
 declare module './utils' {
   interface TeachConfig {
+    detailInterval?: number
     maxShownDialogues?: number
   }
 }
@@ -36,7 +37,7 @@ export default function apply (ctx: Context) {
 
 async function update (argv: TeachArgv) {
   const { ctx, meta, options, target, config } = argv
-  const { maxShownDialogues = 10 } = config
+  const { maxShownDialogues = 10, detailInterval = 500 } = config
 
   if (!Object.keys(options).length && target.length > maxShownDialogues) {
     return meta.$send(`一次最多同时预览 ${maxShownDialogues} 个问答。`)
@@ -58,7 +59,7 @@ async function update (argv: TeachArgv) {
     for (const dialogue of argv.dialogues) {
       const output = [`编号为 ${dialogue.id} 的问答信息：`]
       await ctx.serialize('dialogue/detail', dialogue, output, argv)
-      await meta.$send(output.join('\n'))
+      await meta.$sendQueued(output.join('\n'), detailInterval)
     }
     return
   }
