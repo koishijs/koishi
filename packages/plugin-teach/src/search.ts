@@ -110,7 +110,7 @@ export function formatQuestionAnswers (argv: TeachArgv, dialogues: Dialogue[], p
 async function search (argv: TeachArgv) {
   const { ctx, meta, options } = argv
   const { keyword, question, answer, page = 1, original, pipe, recursive, autoMerge } = options
-  const { itemsPerPage = 20, mergeThreshold = 5 } = argv.config
+  const { itemsPerPage = 30, mergeThreshold = 5 } = argv.config
 
   const test: DialogueTest = { question, answer, keyword, original: options._original }
   if (ctx.bail('dialogue/before-search', argv, test)) return

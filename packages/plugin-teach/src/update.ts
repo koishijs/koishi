@@ -1,5 +1,5 @@
 import { TeachArgv, prepareTargets, sendResult, split, isDialogueIdList } from './utils'
-import { difference, deduplicate } from 'koishi-utils'
+import { difference, deduplicate, sleep } from 'koishi-utils'
 import { Context } from 'koishi-core'
 import { Dialogue } from './database'
 
@@ -56,10 +56,11 @@ async function update (argv: TeachArgv) {
       await meta.$send(`没有搜索到编号为 ${argv.unknown.join(', ')} 的问答。`)
     }
     await ctx.serialize('dialogue/before-detail', argv)
-    for (const dialogue of argv.dialogues) {
-      const output = [`编号为 ${dialogue.id} 的问答信息：`]
-      await ctx.serialize('dialogue/detail', dialogue, output, argv)
-      await meta.$sendQueued(output.join('\n'), detailInterval)
+    for (let index = 0; index < argv.dialogues.length; index++) {
+      const output = [`编号为 ${argv.dialogues[index].id} 的问答信息：`]
+      await ctx.serialize('dialogue/detail', argv.dialogues[index], output, argv)
+      if (index) await sleep(detailInterval)
+      await meta.$send(output.join('\n'))
     }
     return
   }
