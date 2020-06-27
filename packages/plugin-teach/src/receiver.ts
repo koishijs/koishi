@@ -135,10 +135,32 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
     value: (meta.$_redirected || 0) + 1,
   })
 
+  // wrapper for meta.$send
   let buffer = ''
-  let index: number
+  let useOriginal = false
   const send = meta.$send
   const sendQueued = meta.$sendQueued
+
+  meta.$send = async (message: string) => {
+    if (useOriginal) return send(message)
+    buffer += message
+  }
+
+  meta.$sendQueued = async (message, ms) => {
+    if (useOriginal) return sendQueued(message, ms)
+    if (!message) return
+    return sendBuffered(buffer + message, ms)
+  }
+
+  async function sendBuffered (message: string, ms: number) {
+    useOriginal = true
+    await sendQueued(message.trim(), ms)
+    buffer = ''
+    useOriginal = false
+  }
+
+  // parse answer
+  let index: number
   while ((index = state.answer.indexOf('$')) >= 0) {
     const char = state.answer[index + 1]
     if (!'n{'.includes(char)) {
@@ -148,33 +170,23 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
     buffer += unescapeAnswer(state.answer.slice(0, index))
     state.answer = state.answer.slice(index + 2)
     if (char === 'n') {
-      await meta.$sendQueued(buffer.trim(), Math.max(buffer.length * charDelay, textDelay))
-      buffer = ''
+      await sendBuffered(buffer, Math.max(buffer.length * charDelay, textDelay))
     } else {
       let end = state.answer.indexOf('}')
       if (end < 0) end = Infinity
       const command = unescapeAnswer(state.answer.slice(0, end))
       state.answer = state.answer.slice(end + 1)
-      let useOriginal = false
-      meta.$send = async (message: string) => {
-        if (useOriginal) return send(message)
-        buffer += message
-      }
-      meta.$sendQueued = async (message, ms) => {
-        if (useOriginal) return sendQueued(message, ms)
-        if (!message) return
-        useOriginal = true
-        await sendQueued((buffer + message).trim(), ms)
-        buffer = ''
-        useOriginal = false
-      }
+      useOriginal = false
+      const send = meta.$send
+      const sendQueued = meta.$sendQueued
       await ctx.app.executeCommandLine(command, meta)
       meta.$sendQueued = sendQueued
       meta.$send = send
+      useOriginal = true
     }
   }
-  buffer += unescapeAnswer(state.answer)
-  await sendQueued(buffer.trim(), 0)
+  await sendBuffered(buffer + unescapeAnswer(state.answer), 0)
+  useOriginal = true
 
   await ctx.app.parallelize(meta, 'dialogue/send', state)
 }
