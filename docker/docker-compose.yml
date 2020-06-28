@@ -13,6 +13,15 @@ services:
       CQHTTP_POST_URL: http://koishi:8080
       CQHTTP_SERVE_DATA_FILES: "true"
 
+  mysql:
+    image: mysql:latest
+    volumes:
+      - ./mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: myPassword  # change it
+      MYSQL_DATABASE: koishi
+    command: ['mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_general_ci']
+
   koishi:
     image: koishijs/koishi:latest
     volumes:
