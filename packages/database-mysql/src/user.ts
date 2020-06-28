@@ -1,14 +1,11 @@
 import { injectMethods, userFields, UserData, createUser, User, UserField } from 'koishi-core'
 import { observe } from 'koishi-utils'
-import { arrayTypes } from './database'
 
 declare module 'koishi-core/dist/database' {
   interface UserMethods {
     defineMysqlUserGetter (getters: Record<string, () => string>): void
   }
 }
-
-arrayTypes.push('user.endings', 'user.achievement', 'user.inference')
 
 const getters: Record<string, () => string> = {}
 
