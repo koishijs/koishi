@@ -58,7 +58,7 @@ onApp((app) => {
   })
 
   app.command('help [command]', '显示帮助信息', { authority: 0 })
-    .userFields(['authority', 'usage'])
+    .userFields(['authority', 'usage', 'timers'])
     .shortcut('帮助', { fuzzy: true })
     .option('-e, --expand', '展开指令列表')
     .option('-o, --options', '查看全部选项（包括隐藏）')
@@ -165,16 +165,18 @@ async function showCommandHelp (command: Command, meta: Meta<'message'>, config:
     output.push(`相关全局指令：${shortcuts.join('，')}。`)
   }
 
+  const name = getUsageName(command)
   const maxUsage = command.getConfig('maxUsage', meta)
   const minInterval = command.getConfig('minInterval', meta)
   if (meta.$user) {
-    const usage = getUsage(getUsageName(command), meta.$user)
-    if (maxUsage !== Infinity) {
-      output.push(`已调用次数：${Math.min(usage.count || 0, maxUsage)}/${maxUsage}。`)
+    const count = getUsage(name, meta.$user)
+    if (maxUsage < Infinity) {
+      output.push(`已调用次数：${Math.min(count, maxUsage)}/${maxUsage}。`)
     }
 
+    const due = meta.$user.timers[name]
     if (minInterval > 0) {
-      const nextUsage = usage.last ? (Math.max(0, minInterval + usage.last - Date.now()) / 1000).toFixed() : 0
+      const nextUsage = due ? (Math.max(0, due - Date.now()) / 1000).toFixed() : 0
       output.push(`距离下次调用还需：${nextUsage}/${minInterval / 1000} 秒。`)
     }
 

@@ -2,8 +2,7 @@ import { injectMethods, userFields, UserData, createUser, User, UserField } from
 import { observe } from 'koishi-utils'
 import { arrayTypes, jsonTypes } from './database'
 
-arrayTypes.push('user.endings', 'user.achievement', 'user.inference')
-jsonTypes.push('user.talkativeness', 'user.usage')
+jsonTypes.push('user.usage')
 
 injectMethods('sqlite', 'user', {
   async getUser (userId, ...args) {

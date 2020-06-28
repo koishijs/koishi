@@ -1,10 +1,5 @@
 import { Observed } from 'koishi-utils'
 
-export interface Usage {
-  last?: number
-  count?: number
-}
-
 export enum UserFlag {
   ignore = 1,
 }
@@ -16,7 +11,8 @@ export interface UserData {
   flag: number
   authority: number
   name: string
-  usage: Record<string, Usage> & { $date?: number }
+  usage: Record<string, number>
+  timers: Record<string, number>
 }
 
 export type User<K extends UserField = UserField> = Observed<Pick<UserData, K | 'id'>>
@@ -36,6 +32,7 @@ extendUser((id, authority) => ({
   authority,
   flag: 0,
   usage: {},
+  timers: {},
   name: '' + id,
 }))
 
