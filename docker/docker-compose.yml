@@ -4,20 +4,17 @@ services:
   cqhttp:
     image: richardchien/cqhttp:latest
     ports:
-      - 9000:9000
-      - 5700:5700
+      - 9000:9000  # VNC port
     volumes:
       - ./coolq:/home/user/coolq
     environment:
-      VNC_PASSWD: MAX8char
+      VNC_PASSWD: MAX8char  # change it
       COOLQ_URL: http://dlsec.cqp.me/cqa-tuling  # 'cqa-tuling' for CoolQ Air and 'cqp-tuling' for CoolQ Pro
       CQHTTP_POST_URL: http://koishi:8080
       CQHTTP_SERVE_DATA_FILES: "true"
 
   koishi:
     image: koishijs/koishi:latest
-    ports:
-      - 8080:8080
     volumes:
       - ./koishi:/config
     environment:
