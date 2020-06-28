@@ -36,15 +36,15 @@ export default function apply (ctx: Context, config: TeachConfig) {
   ctx.on('dialogue/before-fetch', (test, conditionals) => {
     if (!test.groups || !test.groups.length) return
     conditionals.push(`(
-      !(\`flag\` & ${DialogueFlag.reversed}) != ${test.reversed} && ${test.groups.map(id => `FIND_IN_SET(${id}, \`groups\`)`).join(' && ')} ||
-      !(\`flag\` & ${DialogueFlag.reversed}) = ${test.reversed} && ${test.groups.map(id => `!FIND_IN_SET(${id}, \`groups\`)`).join(' && ')}
+      !(\`flag\` & ${DialogueFlag.complement}) != ${test.reversed} && ${test.groups.map(id => `FIND_IN_SET(${id}, \`groups\`)`).join(' && ')} ||
+      !(\`flag\` & ${DialogueFlag.complement}) = ${test.reversed} && ${test.groups.map(id => `!FIND_IN_SET(${id}, \`groups\`)`).join(' && ')}
     )`)
   })
 
   // TODO: ???
   ctx.on('dialogue/fetch', (data, test) => {
     if (!test.groups || test.partial) return
-    return !(data.flag & DialogueFlag.reversed) === test.reversed || !equal(test.groups, data.groups)
+    return !(data.flag & DialogueFlag.complement) === test.reversed || !equal(test.groups, data.groups)
   })
 
   ctx.on('dialogue/validate', (argv) => {
@@ -97,14 +97,14 @@ export default function apply (ctx: Context, config: TeachConfig) {
     if (!groups) return
     if (!data.groups) data.groups = []
     if (partial) {
-      const newGroups = !(data.flag & DialogueFlag.reversed) === reversed
+      const newGroups = !(data.flag & DialogueFlag.complement) === reversed
         ? difference(data.groups, groups)
         : union(data.groups, groups)
       if (!equal(data.groups, newGroups)) {
         data.groups = newGroups.sort()
       }
     } else {
-      data.flag = data.flag & ~DialogueFlag.reversed | (+reversed * DialogueFlag.reversed)
+      data.flag = data.flag & ~DialogueFlag.complement | (+reversed * DialogueFlag.complement)
       if (!equal(data.groups, groups)) {
         data.groups = groups.sort()
       }
@@ -119,7 +119,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/detail', ({ groups, flag }, output, { meta }) => {
     const thisGroup = meta.messageType === 'group' && groups.includes('' + meta.groupId)
-    output.push(`生效环境：${flag & DialogueFlag.reversed
+    output.push(`生效环境：${flag & DialogueFlag.complement
       ? thisGroup
         ? groups.length - 1 ? `除本群等 ${groups.length} 个群外的所有群` : '除本群'
         : groups.length ? `除 ${groups.length} 个群外的所有群` : '全局'
@@ -130,7 +130,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/detail-short', ({ groups, flag }, output, argv) => {
     if (!argv.groups && argv.meta.messageType === 'group') {
-      const isReversed = flag & DialogueFlag.reversed
+      const isReversed = flag & DialogueFlag.complement
       const hasGroup = groups.includes('' + argv.meta.groupId)
       output.unshift(!isReversed === hasGroup ? isReversed ? 'E' : 'e' : isReversed ? 'd' : 'D')
     }
