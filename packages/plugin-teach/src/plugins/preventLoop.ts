@@ -39,7 +39,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
       if (state.initiators.length < length) break
       const initiators = new Set(state.initiators.slice(0, length))
       if (initiators.size <= participants
-        && initiators.has(state.meta.userId)
+        && initiators.has(state.userId)
         && !(debounce > timestamp - state.loopTimestamp)) {
         state.loopTimestamp = timestamp
         return true
@@ -49,7 +49,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/before-send', (state) => {
     if (state.meta.$_redirected) return
-    state.initiators.unshift(state.meta.userId)
+    state.initiators.unshift(state.userId)
     state.initiators.splice(initiatorCount, Infinity)
     state.loopTimestamp = null
   })
