@@ -1,7 +1,7 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference } from 'koishi-utils'
 import { equal, split, TeachConfig, prepareTargets, getDialogues, isDialogueIdList, parseTeachArgs, isPositiveInteger } from '../utils'
-import { Dialogue } from '../database'
+import { Dialogue, DialogueFlag } from '../database'
 import { formatQuestionAnswers } from '../search'
 
 declare module '../utils' {
@@ -47,7 +47,9 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('>, --set-succ <ids>', '设置后继问题', { isString: true, validate: isDialogueIdList })
     .option('>>, --add-succ <ids>', '添加后继问题', { isString: true, validate: isDialogueIdList })
     .option('>#, --create-successor <op...>', '创建并添加后继问答')
-    .option('-z, --successor-timeout [time]', '设置允许触发后置的时间', { validate: isPositiveInteger })
+    .option('-z, --successor-timeout [time]', '设置允许触发后继的时间', { validate: isPositiveInteger })
+    .option('-i, --indefinite', '允许后继问答被任何人触发')
+    .option('-I, --no-indefinite', '后继问答只能被同一人触发')
 
   ctx.on('dialogue/before-fetch', ({ predecessors, stateful }, conditionals) => {
     if (predecessors !== undefined) {
@@ -103,6 +105,11 @@ export default function apply (ctx: Context, config: TeachConfig) {
     // set successor timeout
     if (options.successorTimeout) {
       data.successorTimeout = options.successorTimeout * 1000
+    }
+
+    if (options.indefinite !== undefined) {
+      data.flag &= ~DialogueFlag.indefinite
+      data.flag |= +options.indefinite * DialogueFlag.indefinite
     }
   })
 
@@ -190,14 +197,17 @@ export default function apply (ctx: Context, config: TeachConfig) {
   })
 
   ctx.on('dialogue/detail', async (dialogue, output, argv) => {
+    if (dialogue.flag & DialogueFlag.indefinite) {
+      output.push('后继问答可以被上下文内任何人触发')
+    }
     if ((dialogue.successorTimeout || successorTimeout) !== successorTimeout) {
-      output.push(`可触发后置时间：${dialogue.successorTimeout / 1000} 秒`)
+      output.push(`可触发后继时间：${dialogue.successorTimeout / 1000} 秒`)
     }
     if (dialogue._predecessors.length) {
       output.push('前置问答：', ...formatQuestionAnswers(argv, dialogue._predecessors))
     }
     if (dialogue._successors.length) {
-      output.push('后置问答：', ...formatQuestionAnswers(argv, dialogue._successors))
+      output.push('后继问答：', ...formatQuestionAnswers(argv, dialogue._successors))
     }
   })
 
@@ -206,6 +216,9 @@ export default function apply (ctx: Context, config: TeachConfig) {
       output.push(`z=${dialogue.successorTimeout / 1000}`)
     }
     if (dialogue.predecessors.length) output.push(`存在前置`)
+    if (dialogue.flag & DialogueFlag.indefinite) {
+      output.push('i')
+    }
   })
 
   ctx.on('dialogue/search', async (argv, test, dialogues) => {
@@ -224,7 +237,10 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/receive', ({ test, predecessors, userId }) => {
     test.stateful = true
-    test.predecessors = Object.keys(predecessors[userId] || {})
+    test.predecessors = Object.keys({
+      ...predecessors[0],
+      ...predecessors[userId],
+    })
   })
 
   ctx.on('dialogue/before-attach-user', ({ dialogues, isSearch }) => {
@@ -243,6 +259,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/before-send', ({ dialogue, predecessors, userId }) => {
     const time = Date.now()
+    if (dialogue.flag & DialogueFlag.indefinite) userId = 0
     const predMap = predecessors[userId] || (predecessors[userId] = {})
     for (const id of dialogue.predecessors) {
       delete predMap[id]

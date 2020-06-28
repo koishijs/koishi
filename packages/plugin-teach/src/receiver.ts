@@ -10,7 +10,7 @@ declare module 'koishi-core/dist/context' {
     'dialogue/receive' (state: SessionState): void | boolean
     'dialogue/before-attach-user' (state: SessionState, userFields: Set<UserField>): void
     'dialogue/attach-user' (state: SessionState): void | boolean
-    'dialogue/before-send' (state: SessionState): any
+    'dialogue/before-send' (state: SessionState): void | boolean | Promise<void | boolean>
     'dialogue/send' (state: SessionState): void
   }
 
@@ -123,8 +123,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
     })
   }
 
-  const result = ctx.app.bail(meta, 'dialogue/before-send', state)
-  if (result) return result
+  if (await ctx.app.serialize(meta, 'dialogue/before-send', state)) return
 
   // send answers
   const { textDelay = 1000, charDelay = 200 } = config
