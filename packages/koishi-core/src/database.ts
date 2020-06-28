@@ -1,10 +1,5 @@
 import { Observed } from 'koishi-utils'
 
-export interface Usage {
-  last?: number
-  count?: number
-}
-
 export enum UserFlag {
   ignore = 1,
 }
@@ -37,6 +32,7 @@ extendUser((id, authority) => ({
   authority,
   flag: 0,
   usage: {},
+  timers: {},
   name: '' + id,
 }))
 
