@@ -48,7 +48,7 @@ onApp((app) => {
     const { command, options = {} } = meta.$argv
     const { maxUsage, minInterval, authority } = command.config
     let shouldFetchAuthority = !fields.has('authority') && authority > 0
-    let shouldFetchUsage = !(fields.has('usage') || !maxUsage && !minInterval)
+    let shouldFetchUsage = !!(maxUsage || minInterval)
     for (const option of command._options) {
       if (option.camels[0] in options) {
         if (option.authority > 0) shouldFetchAuthority = true
@@ -56,7 +56,10 @@ onApp((app) => {
       }
     }
     if (shouldFetchAuthority) fields.add('authority')
-    if (shouldFetchUsage) fields.add('usage')
+    if (shouldFetchUsage) {
+      if (maxUsage) fields.add('usage')
+      if (minInterval) fields.add('timers')
+    }
   })
 
   app.on('before-command', ({ meta, args, unknown, options, command }) => {
@@ -122,65 +125,50 @@ onApp((app) => {
 
     // check usage
     if (isUsage) {
+      const name = getUsageName(command)
       const minInterval = command.getConfig('minInterval', meta)
       const maxUsage = command.getConfig('maxUsage', meta)
-  
-      if (maxUsage < Infinity || minInterval > 0) {
-        const message = updateUsage(getUsageName(command), meta.$user, { maxUsage, minInterval })
-        if (message) {
-          app.emit(meta, 'usage-exhausted', meta)
-          return sendHint(meta, message)
-        }
+
+      if (maxUsage < Infinity && checkUsage(name, meta.$user, maxUsage)) {
+        app.emit(meta, 'usage-exhausted', meta)
+        return sendHint(meta, messages.USAGE_EXHAUSTED)
+      }
+
+      if (minInterval > 0 && checkTimer(name, meta.$user, minInterval)) {
+        return sendHint(meta, messages.TOO_FREQUENT)
       }
     }
   })
 })
 
-interface UsageOptions {
-  maxUsage?: number
-  minInterval?: number
-  timestamp?: number
-}
-
-const ONE_DAY = 86400000
-
-export function getUsage (name: string, user: Pick<UserData, 'usage'>, time = Date.now()) {
-  const $date = getDateNumber(time)
+export function getUsage (name: string, user: Pick<UserData, 'usage'>) {
+  const $date = getDateNumber()
   if (user.usage.$date !== $date) {
-    const oldUsage = user.usage
-    const newUsage = { $date } as any
-    for (const key in oldUsage) {
-      if (key === '$date') continue
-      const { last } = oldUsage[key]
-      if (time.valueOf() - last < ONE_DAY) {
-        newUsage[key] = { last }
-      }
-    }
-    user.usage = newUsage
+    user.usage = { $date }
   }
-
-  return user.usage[name] || {}
+  return user.usage[name] || 0
 }
 
-export function updateUsage (name: string, user: Pick<UserData, 'usage'>, options: UsageOptions = {}) {
-  if (!user || !user.usage) return
+export function checkUsage (name: string, user: Pick<UserData, 'usage'>, maxUsage?: number) {
+  const count = getUsage(name, user)
+  if (count >= maxUsage) return true
+  if (maxUsage) {
+    user.usage[name] = count + 1
+  }
+}
+
+const UPDATE_INTERVAL = 86400000
+
+export function checkTimer (name: string, { timers }: Pick<UserData, 'timers'>, timestamp?: number) {
   const now = Date.now()
-  const { maxUsage = Infinity, minInterval = 0, timestamp = now } = options
-  const usage = getUsage(name, user, now)
-
-  if (now - usage.last < minInterval) {
-    return messages.TOO_FREQUENT
-  } else if (options.minInterval || options.timestamp) {
-    usage.last = timestamp
+  if (!(now <= timers.$date)) {
+    for (const key in timers) {
+      if (now > timers[key]) delete timers[key]
+    }
+    timers.$date = now + UPDATE_INTERVAL
   }
-
-  if (usage.count >= maxUsage) {
-    return messages.USAGE_EXHAUSTED
-  } else if (options.maxUsage) {
-    usage.count = (usage.count || 0) + 1
-  }
-
-  if (!user.usage[name] && (usage.count || usage.last)) {
-    user.usage[name] = usage
+  if (now <= timers[name]) return true
+  if (timestamp) {
+    timers[name] = timestamp
   }
 }

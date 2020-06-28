@@ -16,7 +16,8 @@ export interface UserData {
   flag: number
   authority: number
   name: string
-  usage: Record<string, Usage> & { $date?: number }
+  usage: Record<string, number>
+  timers: Record<string, number>
 }
 
 export type User<K extends UserField = UserField> = Observed<Pick<UserData, K | 'id'>>
