@@ -15,7 +15,7 @@ services:
       CQHTTP_SERVE_DATA_FILES: "true"
 
   koishi:
-    image: koishi
+    image: koishijs/koishi:latest
     ports:
       - 8080:8080
     volumes:
