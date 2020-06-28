@@ -1,9 +1,10 @@
 FROM node:lts-alpine
 
-WORKDIR /config
-RUN npm i koishi -g
-
 EXPOSE 8080
 VOLUME [ "/config" ]
 
-CMD [ "koishi", "run" ]
+WORKDIR /config
+RUN npm i koishi -g
+COPY ./start.js /utilities/start.js
+
+CMD [ "node", "/utilities/start.js" ]
