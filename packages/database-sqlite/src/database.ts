@@ -29,6 +29,7 @@ export const pragma: Pragma = {
     flag: 'INT',
     authority: 'INT',
     usage: 'TEXT',
+    timers: 'TEXT',
     name: 'TEXT',
   },
   group: {

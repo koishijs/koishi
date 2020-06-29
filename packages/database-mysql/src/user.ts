@@ -1,23 +1,18 @@
 import { injectMethods, userFields, UserData, createUser, User, UserField } from 'koishi-core'
 import { observe } from 'koishi-utils'
 
-declare module 'koishi-core/dist/database' {
-  interface UserMethods {
-    defineMysqlUserGetter (getters: Record<string, () => string>): void
-  }
-}
-
-const getters: Record<string, () => string> = {}
+export const userGetters: Record<string, () => string> = {}
+export const userPrototype: Partial<User> = {}
 
 function inferFields (keys: readonly string[]) {
-  return keys.map(key => key in getters ? getters[key]() : key) as UserField[]
+  return keys.map(key => key in userGetters ? userGetters[key]() : key) as UserField[]
+}
+
+function construct (data: Partial<UserData>) {
+  return Object.assign(Object.create(userPrototype), data)
 }
 
 injectMethods('mysql', 'user', {
-  defineMysqlUserGetter (_getters) {
-    Object.assign(getters, _getters)
-  },
-
   async getUser (userId, ...args) {
     const authority = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] ? inferFields(args[0] as any) : userFields
@@ -36,7 +31,7 @@ injectMethods('mysql', 'user', {
         )
       }
     }
-    return data || fallback
+    return construct(data || fallback)
   },
 
   async getUsers (...args) {
@@ -51,7 +46,7 @@ injectMethods('mysql', 'user', {
       fields = inferFields(args[0] as any)
     }
     if (ids && !ids.length) return []
-    return this.select('user', fields, ids && `\`id\` IN (${ids.join(', ')})`)
+    return (await this.select<UserData[]>('user', fields, ids && `\`id\` IN (${ids.join(', ')})`)).map(construct)
   },
 
   async setUser (userId, data) {
