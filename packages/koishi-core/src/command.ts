@@ -465,33 +465,49 @@ export class Command {
     return { options, rest, unknown, args } as ParsedLine
   }
 
+  stringify (argv: ParsedCommandLine) {
+    let output = this.name
+    const optionSet = new Set<string>()
+    for (let key in argv.options) {
+      if (key in this._optionMap) key = this._optionMap[key].longest
+      if (optionSet.has(key)) continue
+      optionSet.add(key)
+      const value = argv.options[key]
+      if (value === true) {
+        output += ` --${key}`
+      } else if (value === false) {
+        output += ` --no-${key}`
+      } else {
+        output += ` --${key} ${value}`
+      }
+    }
+    for (const arg of argv.args) {
+      output += ` "${arg}"`
+    }
+    if (argv.next) output += ` -- ${argv.next}`
+    return output
+  }
+
   async execute (argv: ParsedCommandLine, next: NextFunction = noop) {
     argv.command = this
+    argv.next = next
     if (!argv.options) argv.options = {}
     if (!argv.args) argv.args = []
     if (!argv.unknown) {
       argv.unknown = Object.keys(argv.options).filter(key => !this._optionMap[key])
     }
 
-    if (await this.app.serialize(argv.meta, 'before-command', argv)) return
-
-    // execute command
-    this.context.logger('koishi:command').debug('execute %s', this.name)
-    await this.app.parallelize(argv.meta, 'command', argv)
-
-    let skipped = false
-    argv.next = async (_next) => {
-      skipped = true
-      return next(_next)
-    }
-
+    let state = 'before command'
     try {
+      if (await this.app.serialize(argv.meta, 'before-command', argv)) return
+      this.context.logger('koishi:command').debug('execute %s', this.name)
+      await this.app.parallelize(argv.meta, 'command', argv)
+      state = 'executing command'
       await this._action(argv, ...argv.args)
-    } catch (error) {
-      this.context.logger('').warn(error)
-    }
-    if (!skipped) {
+      state = 'after command'
       return this.app.serialize(argv.meta, 'after-command', argv)
+    } catch (error) {
+      this.context.logger('').warn(`${state}: ${this.stringify(argv)}\n${error.stack}`)
     }
   }
 
