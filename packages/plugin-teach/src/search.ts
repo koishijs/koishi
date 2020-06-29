@@ -71,7 +71,6 @@ function formatAnswer (source: string, { maxAnswerLength = 100 }: TeachConfig) {
 function getDetails (argv: TeachArgv, dialogue: Dialogue) {
   const details: SearchDetails = []
   argv.ctx.emit('dialogue/detail-short', dialogue, details, argv)
-  if (dialogue.flag & DialogueFlag.keyword) details.questionType = '关键词'
   return details
 }
 

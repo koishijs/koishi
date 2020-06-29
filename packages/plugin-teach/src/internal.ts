@@ -20,6 +20,8 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('-k, --keyword', '使用关键词匹配')
     .option('-x, --regexp', '使用正则表达式匹配')
     .option('-X, --no-regexp', '取消使用正则表达式匹配')
+    .option('-s, --substitute', '由教学者完成回答的执行')
+    .option('-S, --no-substitute', '由触发者完成回答的执行')
     .option('=>, --redirect-dialogue <answer>', '重定向到其他问答')
 
   ctx.before('dialogue/validate', (argv) => {
@@ -98,9 +100,18 @@ export default function apply (ctx: Context, config: TeachConfig) {
       data.flag &= ~DialogueFlag.regexp
       data.flag |= +options.regexp * DialogueFlag.regexp
     }
+
+    if (options.substitute !== undefined) {
+      data.flag &= ~DialogueFlag.substitute
+      data.flag |= +options.substitute * DialogueFlag.substitute
+    }
   })
 
   ctx.on('dialogue/detail-short', ({ flag }, output) => {
+    if (flag & DialogueFlag.substitute) {
+      output.push('s')
+    }
+
     if (flag & DialogueFlag.regexp) {
       output.questionType = '正则'
     }
@@ -113,6 +124,9 @@ export default function apply (ctx: Context, config: TeachConfig) {
       output.push(`问题：${original}`)
     }
     output.push(`回答：${answer}`)
+    if (flag & DialogueFlag.substitute) {
+      output.push('回答中的指令由教学者代行。')
+    }
   })
 
   ctx.on('dialogue/list', ({ _redirections }, output, prefix, argv) => {
@@ -164,5 +178,12 @@ export default function apply (ctx: Context, config: TeachConfig) {
       writable: true,
       value: (meta.$_redirected || 0) + 1,
     })
+  })
+
+  ctx.on('dialogue/before-send', async ({ dialogue, meta }) => {
+    if (dialogue.flag & DialogueFlag.substitute && meta.userId !== dialogue.writer) {
+      meta.userId = dialogue.writer
+      meta.$user = await ctx.database.observeUser(dialogue.writer)
+    }
   })
 }
