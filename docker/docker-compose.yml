@@ -3,6 +3,7 @@ version: '2'
 services:
   cqhttp:
     image: richardchien/cqhttp:latest
+    container_name: koishi_cqhttp
     ports:
       - 9000:9000  # VNC port
     volumes:
@@ -15,6 +16,7 @@ services:
 
   mysql:
     image: mysql:5.7
+    container_name: koishi_mysql
     volumes:
       - ./mysql:/var/lib/mysql
     environment:
@@ -24,13 +26,9 @@ services:
 
   koishi:
     image: koishijs/koishi:latest
+    container_name: koishi
     volumes:
       - ./koishi:/config
     environment:
       TYPE: http
       SERVER: http://cqhttp:5700
-      MYSQL_HOST: mysql
-      MYSQL_PORT: 3306
-      MYSQL_USER: root
-      MYSQL_PASSWORD: myPassword  # change it
-      MYSQL_DATABASE: koishi
