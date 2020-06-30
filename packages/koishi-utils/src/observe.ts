@@ -6,6 +6,12 @@ const showObserverLog = debug('koishi:observer')
 const staticTypes = ['number', 'string', 'bigint', 'boolean', 'symbol', 'function']
 const builtinClasses = ['Date', 'RegExp', 'Set', 'Map', 'WeakSet', 'WeakMap', 'Array']
 
+export function defineProperty <T, K extends keyof T> (object: T, key: K, value: T[K]): void
+export function defineProperty <T, K extends keyof any> (object: T, key: K, value: any): void
+export function defineProperty <T, K extends keyof any> (object: T, key: K, value: K extends keyof T ? T[K] : any) {
+  Object.defineProperty(object, key, { writable: true, value })
+}
+
 function observeProperty (value: any, proxy: any, key: any, label: string, update: any) {
   if (types.isDate(value)) {
     return proxy[key] = observeDate(value, update)
@@ -25,7 +31,7 @@ function observeObject <T extends object> (target: T, label: string, update?: ()
     Object.defineProperty(target, '_diff', { value: {}, writable: true })
   }
 
-  return new Proxy(target as Observed<T, any>, {
+  return new Proxy(target as Observed<T>, {
     get (target, key) {
       if (key in target.__proxyGetters__) return target.__proxyGetters__[key]
       const value = target[key]
@@ -65,18 +71,15 @@ function observeObject <T extends object> (target: T, label: string, update?: ()
   })
 }
 
-const arrayProxyMethods = ['pop', 'shift', 'splice']
+const arrayProxyMethods = ['pop', 'shift', 'splice', 'sort']
 
 function observeArray <T> (target: T[], label: string, update: () => void) {
   const proxy: Record<number, T> = {}
 
   for (const method of arrayProxyMethods) {
-    Object.defineProperty(target, method, {
-      writable: true,
-      value (...args: any[]) {
-        update()
-        return Array.prototype[method].apply(this, args)
-      },
+    defineProperty(target, method, function (...args: any[]) {
+      update()
+      return Array.prototype[method].apply(this, args)
     })
   }
 
@@ -96,25 +99,21 @@ function observeArray <T> (target: T[], label: string, update: () => void) {
 
 function observeDate (target: Date, update: () => void) {
   for (const method in Date.prototype) {
-    if (!method.startsWith('set')) continue
-    Object.defineProperty(target, method, {
-      writable: true,
-      value (...args: any[]) {
-        update()
-        return Array.prototype[method].apply(this, args)
-      },
+    defineProperty(target, method, function (...args: any[]) {
+      const oldValue = target.valueOf()
+      const result = Date.prototype[method].apply(this, args)
+      if (target.valueOf() !== oldValue) update()
+      return result
     })
   }
-
   return target
 }
 
 export type Observed <T, R = any> = T & {
   _diff: Partial<T>
   _update: () => R
-  _merge: (value: Partial<T>) => Observed<T, R>
+  _merge: (value: Partial<T>) => Observed<T>
   __proxyGetters__: Partial<T>
-  __updateCallback__: UpdateFunction<T, R>
 }
 
 type UpdateFunction <T, R> = (diff: Partial<T>) => R
@@ -123,7 +122,7 @@ export function observe <T extends object> (target: T, label?: string | number):
 export function observe <T extends object, R> (target: T, update: UpdateFunction<T, R>, label?: string | number): Observed<T, R>
 export function observe <T extends object, R> (target: T, ...args: [(string | number)?] | [UpdateFunction<T, R>, (string | number)?]) {
   if (staticTypes.includes(typeof target)) {
-    throw new Error(`cannot observe type "${typeof target}"`)
+    throw new Error(`cannot observe immutable type "${typeof target}"`)
   } else if (!target) {
     throw new Error('cannot observe null or undefined')
   } else {
@@ -133,38 +132,34 @@ export function observe <T extends object, R> (target: T, ...args: [(string | nu
     }
   }
 
-  let label = '', update: UpdateFunction<T, R>
-  if (typeof args[0] === 'function') update = args.shift() as UpdateFunction<T, R>
+  if (target['_diff']) {
+    console.log('diff found')
+  }
+
+  let label = '', update: UpdateFunction<T, R> = noop
+  if (typeof args[0] === 'function') update = args.shift() as any
   if (typeof args[0] === 'string') label = args[0]
 
-  Object.defineProperty(target, '__updateCallback__', { value: update || noop, writable: true })
-
-  Object.defineProperty(target, '_update', {
-    writable: true,
-    value (this: Observed<T, R>) {
-      const diff = this._diff
-      const fields = Object.keys(diff)
-      if (fields.length) {
-        if (label) showObserverLog(`[update] ${label}: ${fields.join(', ')}`)
-        this._diff = {}
-        return this.__updateCallback__(diff)
-      }
-    },
+  defineProperty(target, '_update', function (this: Observed<T>) {
+    const diff = this._diff
+    const fields = Object.keys(diff)
+    if (fields.length) {
+      if (label) showObserverLog(`[update] ${label}: ${fields.join(', ')}`)
+      this._diff = {}
+      return update(diff)
+    }
   })
 
-  Object.defineProperty(target, '_merge', {
-    writable: true,
-    value (this: Observed<T, R>, value: Partial<T>) {
-      for (const key in value) {
-        if (!(key in this._diff)) {
-          target[key] = value[key]
-          delete this.__proxyGetters__[key]
-        }
+  defineProperty(target, '_merge', function (this: Observed<T>, value: Partial<T>) {
+    for (const key in value) {
+      if (!(key in this._diff)) {
+        target[key] = value[key]
+        delete this.__proxyGetters__[key]
       }
-      return this
-    },
+    }
+    return this
   })
 
-  const observer = observeObject(target, label, null) as Observed<T, R>
+  const observer = observeObject(target, label, null) as Observed<T>
   return observer
 }

@@ -1,4 +1,4 @@
-import { Context } from 'koishi-core'
+import { Context, UserField } from 'koishi-core'
 import { DialogueFlag, Dialogue } from './database'
 import { TeachConfig, getDialogues } from './utils'
 import { formatAnswers } from './search'
@@ -180,10 +180,13 @@ export default function apply (ctx: Context, config: TeachConfig) {
     })
   })
 
-  ctx.on('dialogue/before-send', async ({ dialogue, meta }) => {
+  ctx.on('dialogue/before-send', async (state) => {
+    const { dialogue, meta } = state
     if (dialogue.flag & DialogueFlag.substitute && meta.userId !== dialogue.writer) {
+      const userFields = new Set<UserField>()
+      ctx.app.emit(meta, 'dialogue/before-attach-user', state, userFields)
       meta.userId = dialogue.writer
-      meta.$user = await ctx.database.observeUser(dialogue.writer)
+      await ctx.observeUser(meta)
     }
   })
 }

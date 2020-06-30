@@ -90,8 +90,6 @@ export interface UserMethods {
   getUsers <K extends UserField> (fields?: K[]): Promise<Pick<UserData, K>[]>
   getUsers <K extends UserField> (ids: readonly number[], fields?: readonly K[]): Promise<Pick<UserData, K>[]>
   setUser (userId: number, data: Partial<UserData>): Promise<any>
-  observeUser <K extends UserField> (user: number | UserData, fields?: readonly K[]): Promise<User<K>>
-  observeUser <K extends UserField> (user: number | UserData, defaultAuthority?: number, fields?: readonly K[]): Promise<User<K>>
 }
 
 export interface GroupMethods {
@@ -100,8 +98,6 @@ export interface GroupMethods {
   getAllGroups <K extends GroupField> (assignees?: readonly number[]): Promise<Pick<GroupData, K>[]>
   getAllGroups <K extends GroupField> (fields?: readonly K[], assignees?: readonly number[]): Promise<Pick<GroupData, K>[]>
   setGroup (groupId: number, data: Partial<GroupData>): Promise<any>
-  observeGroup <K extends GroupField> (group: number | GroupData, fields?: readonly K[]): Promise<Group<K>>
-  observeGroup <K extends GroupField> (group: number | GroupData, selfId?: number, fields?: readonly K[]): Promise<Group<K>>
 }
 
 export interface TableMethods {

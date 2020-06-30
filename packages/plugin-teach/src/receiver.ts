@@ -73,7 +73,6 @@ export async function getTotalWeight (ctx: Context, state: SessionState) {
   const { meta, dialogues } = state
   const userFields = new Set<UserField>(['name'])
   ctx.app.emit(meta, 'dialogue/before-attach-user', state, userFields)
-  if (dialogues.every(d => !d._weight)) return 0
   await ctx.observeUser(meta, userFields)
   if (ctx.app.bail(meta, 'dialogue/attach-user', state)) return 0
   return dialogues.reduce((prev, curr) => prev + curr._weight, 0)
@@ -107,6 +106,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
 
   // parse answer
   state.dialogue = dialogue
+  state.dialogues = [dialogue]
   state.answer = dialogue.answer
     .replace(/\$\$/g, '@@__DOLLARS_PLACEHOLDER__@@')
     .replace(/\$A/g, CQCode.stringify('at', { qq: 'all' }))
@@ -215,8 +215,8 @@ export default function (ctx: Context, config: TeachConfig) {
 
   // 预判要获取的用户字段
   ctx.on('dialogue/before-attach-user', ({ dialogues, meta }, userFields) => {
-    for (const dialogue of dialogues) {
-      const capture = dialogue.answer.match(/\$\{.+?\}/g)
+    for (const data of dialogues) {
+      const capture = data.answer.match(/\$\{.+?\}/g)
       for (const message of capture || []) {
         const argv = ctx.parse(message.slice(2, -1), meta)
         Command.collectFields(argv, 'user', userFields)

@@ -29,21 +29,19 @@ export default function apply (ctx: Context) {
       }
 
       const newMeta = { ...meta }
+      Object.defineProperty(newMeta, '$argv', { value: ctx.parse(message, newMeta), writable: true })
+
       let user = meta.$user
       if (options.user) {
         const id = getTargetId(options.user)
         if (!id) return meta.$send('未指定目标。')
-        user = await ctx.database.observeUser(id)
-        if (meta.$user.authority <= user.authority) {
-          return meta.$send('权限不足。')
-        }
 
         newMeta.userId = id
-        newMeta.sender = {
-          sex: 'unknown',
-          nickname: '',
-          userId: id,
-          age: 0,
+        newMeta.sender.userId = id
+
+        user = await ctx.observeUser(newMeta)
+        if (meta.$user.authority <= user.authority) {
+          return meta.$send('权限不足。')
         }
       }
 
@@ -62,10 +60,7 @@ export default function apply (ctx: Context) {
         newMeta.groupId = ctxId = +options.group
         newMeta.messageType = ctxType = 'group'
         newMeta.subType = options.type || 'normal'
-        Object.defineProperty(newMeta, '$group', {
-          value: await ctx.database.observeGroup(ctxId),
-          writable: true,
-        })
+        await ctx.observeGroup(newMeta)
       } else {
         ctxId = newMeta.userId
         ctxType = 'user'
@@ -86,6 +81,6 @@ export default function apply (ctx: Context) {
       Object.defineProperty(newMeta, '$ctxType', { value: ctxType })
 
       ctx.app.emit(newMeta, 'parse', newMeta)
-      return ctx.execute(message, newMeta)
+      return ctx.execute(newMeta.$argv)
     })
 }

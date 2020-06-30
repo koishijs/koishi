@@ -2,7 +2,7 @@ import { injectMethods, userFields, UserData, createUser, User, UserField } from
 import { observe } from 'koishi-utils'
 
 export const userGetters: Record<string, () => string> = {}
-export const userPrototype: Partial<User> = {}
+export const userPrototype: Partial<UserData> = {}
 
 function inferFields (keys: readonly string[]) {
   return keys.map(key => key in userGetters ? userGetters[key]() : key) as UserField[]
@@ -50,21 +50,6 @@ injectMethods('mysql', 'user', {
   },
 
   async setUser (userId, data) {
-    return this.update('user', userId, data)
-  },
-
-  async observeUser (user, ...args) {
-    if (typeof user === 'number') {
-      const data = await this.getUser(user, ...args)
-      return data && observe(data, diff => this.setUser(user, diff), `user ${user}`)
-    }
-
-    const authority = typeof args[0] === 'number' ? args.shift() as number : 0
-    const fields = args[0] as never || userFields
-    const additionalData = fields.length
-      ? await this.getUser(user.id, authority, fields)
-      : {} as Partial<UserData>
-    if ('_diff' in user) return (user as User)._merge(additionalData)
-    return observe(Object.assign(user, additionalData), diff => this.setUser(user.id, diff), `user ${user.id}`)
+    await this.update('user', userId, data)
   },
 })

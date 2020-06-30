@@ -39,22 +39,7 @@ injectMethods('sqlite', 'group', {
     return this.select('group', fields, `\`assignee\` IN (${assignees.join(',')})`)
   },
 
-  setGroup (groupId, data) {
-    return this.update('group', groupId, data)
-  },
-
-  async observeGroup (group, ...args) {
-    if (typeof group === 'number') {
-      const data = await this.getGroup(group, ...args)
-      return data && observe(data, diff => this.setGroup(group, diff), `group ${group}`)
-    }
-
-    const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
-    const fields = args[0] as never || groupFields
-    const additionalData = fields.length
-      ? await this.getGroup(group.id, selfId, fields)
-      : {} as Partial<GroupData>
-    if ('_diff' in group) return (group as Observed<GroupData>)._merge(additionalData)
-    return observe(Object.assign(group, additionalData), diff => this.setGroup(group.id, diff), `group ${group.id}`)
+  async setGroup (groupId, data) {
+    await this.update('group', groupId, data)
   },
 })

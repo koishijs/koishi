@@ -1,5 +1,6 @@
 import { Command, Context, UserData, Meta, onApp } from '..'
 import { getUsage, getUsageName } from './validate'
+import { userFields } from '../database'
 
 export type CommandUsage = string | ((this: Command, meta: Meta) => string | Promise<string>)
 
@@ -157,7 +158,7 @@ async function showCommandHelp (command: Command, meta: Meta<'message'>, config:
   }
 
   if (command.context.database) {
-    meta.$user = await command.context.database.observeUser(meta.userId)
+    await command.context.observeUser(meta, ['authority', 'timers', 'usage'])
   }
 
   if (command._aliases.length > 1) {

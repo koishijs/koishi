@@ -77,17 +77,6 @@ injectMethods('memory', 'user', {
   async setUser (userId, data) {
     return this.update('user', userId, data)
   },
-
-  async observeUser (user, authority) {
-    if (typeof user === 'number') {
-      const data = await this.getUser(user, authority)
-      return data && observe(clone(data), diff => this.setUser(user, diff), `user ${user}`)
-    }
-
-    const data = await this.getUser(user.id, authority)
-    if ('_diff' in user) return (user as User)._merge(clone(data))
-    return observe(Object.assign(user, clone(data)), diff => this.setUser(user.id, diff), `user ${user.id}`)
-  },
 })
 
 injectMethods('memory', 'group', {
@@ -112,16 +101,5 @@ injectMethods('memory', 'group', {
 
   async setGroup (groupId, data) {
     return this.update('group', groupId, data)
-  },
-
-  async observeGroup (group, selfId) {
-    if (typeof group === 'number') {
-      const data = await this.getGroup(group, selfId)
-      return data && observe(clone(data), diff => this.setGroup(group, diff), `group ${group}`)
-    }
-
-    const data = await this.getGroup(group.id, selfId)
-    if ('_diff' in group) return (group as Group)._merge(clone(data))
-    return observe(Object.assign(group, clone(data)), diff => this.setGroup(group.id, diff), `group ${group.id}`)
   },
 })

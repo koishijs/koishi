@@ -1,4 +1,4 @@
-import { contain, union, intersection, difference, observe, noop } from 'koishi-utils'
+import { contain, union, intersection, difference, observe, noop, Observed } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine, InputArgv } from './command'
 import { Meta, contextTypes, getSessionId } from './meta'
 import { Sender } from './sender'

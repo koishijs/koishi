@@ -32,17 +32,6 @@ injectMethods('level', 'group', {
   },
 
   async setGroup (groupId, data) {
-    return this.update('group', groupId, data)
-  },
-
-  async observeGroup (group, selfId) {
-    if (typeof group === 'number') {
-      const data = await this.getGroup(group, selfId)
-      return data && observe(data, diff => this.setGroup(group, diff), `group ${group}`)
-    }
-
-    const data = await this.getGroup(group.id, selfId)
-    if ('_diff' in group) return (group as Group)._merge(data)
-    return observe(Object.assign(group, data), diff => this.setGroup(group.id, diff), `group ${group.id}`)
+    await this.update('group', groupId, data)
   },
 })
