@@ -14,7 +14,7 @@ services:
       CQHTTP_SERVE_DATA_FILES: "true"
 
   mysql:
-    image: mysql:latest
+    image: mysql:5.7
     volumes:
       - ./mysql:/var/lib/mysql
     environment:
@@ -29,3 +29,8 @@ services:
     environment:
       TYPE: http
       SERVER: http://cqhttp:5700
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: myPassword  # change it
+      MYSQL_DATABASE: koishi
