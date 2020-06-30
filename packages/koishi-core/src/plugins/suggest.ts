@@ -23,7 +23,7 @@ onApp((app) => {
       coefficient: app.options.similarityCoefficient,
       async execute (suggestion, meta, next) {
         const newMessage = suggestion + message.slice(target.length)
-        return app.executeCommandLine(newMessage, meta, next)
+        return app.execute(newMessage, meta, next)
       },
     })
   })

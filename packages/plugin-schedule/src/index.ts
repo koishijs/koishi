@@ -23,7 +23,7 @@ function inspectSchedule ({ id, assignee, meta, interval, command, time }: Sched
     if (date < now) return app.database.removeSchedule(id)
     return setTimeout(async () => {
       if (!await app.database.getSchedule(id)) return
-      app.executeCommandLine(command, meta)
+      app.execute(command, meta)
       app.database.removeSchedule(id)
     }, date - now)
   }
@@ -33,9 +33,9 @@ function inspectSchedule ({ id, assignee, meta, interval, command, time }: Sched
     if (!await app.database.getSchedule(id)) return
     const timer = setInterval(async () => {
       if (!await app.database.getSchedule(id)) return clearInterval(timer)
-      app.executeCommandLine(command, meta)
+      app.execute(command, meta)
     }, interval)
-    app.executeCommandLine(command, meta)
+    app.execute(command, meta)
   }, timeout)
 }
 

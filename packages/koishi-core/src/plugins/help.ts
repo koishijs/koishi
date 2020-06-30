@@ -49,12 +49,15 @@ onApp((app) => {
     cmd.option('-h, --help', '显示此信息', { hidden: true })
   })
 
-  app.before('before-command', async (argv) => {
-    // show help when use `-h, --help` or when there is no action
-    if (!argv.command._action || argv.options.help) {
-      await app.runCommand('help', argv.meta, [argv.command.name])
-      return true
-    }
+  // show help when use `-h, --help` or when there is no action
+  app.before('before-command', async ({ command, meta, options }) => {
+    if (command._action && !options.help) return
+    await app.execute({
+      command: app.command('help'),
+      args: [command.name],
+      meta,
+    })
+    return true
   })
 
   app.command('help [command]', '显示帮助信息', { authority: 0 })

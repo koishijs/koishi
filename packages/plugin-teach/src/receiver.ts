@@ -178,7 +178,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
       useOriginal = false
       const send = meta.$send
       const sendQueued = meta.$sendQueued
-      await ctx.app.executeCommandLine(command, meta)
+      await ctx.app.execute(command, meta)
       meta.$sendQueued = sendQueued
       meta.$send = send
       useOriginal = true

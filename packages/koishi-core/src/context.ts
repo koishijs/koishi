@@ -1,10 +1,10 @@
-import { contain, union, intersection, difference } from 'koishi-utils'
-import { Command, CommandConfig, ParsedCommandLine } from './command'
+import { contain, union, intersection, difference, observe, noop } from 'koishi-utils'
+import { Command, CommandConfig, ParsedCommandLine, InputArgv } from './command'
 import { Meta, contextTypes, getSessionId } from './meta'
 import { Sender } from './sender'
 import { App } from './app'
-import { Database, UserField, GroupField } from './database'
-import { messages, errors } from './shared'
+import { Database, UserField, GroupField, User, createUser } from './database'
+import { errors, defineProperty } from './shared'
 import { format, inspect } from 'util'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
@@ -312,12 +312,106 @@ export class Context {
     }
   }
 
-  runCommand (name: string, meta: Meta<'message'>, args: string[] = [], options: Record<string, any> = {}, rest = '') {
-    const command = this._getCommandByRawName(name)
-    if (!command || !command.context.match(meta) || command.getConfig('disable', meta)) {
-      return meta.$send(messages.COMMAND_NOT_FOUND)
+  /** 在元数据上绑定一个可观测群实例 */
+  async observeGroup (meta: Meta<'message'>, fields: Iterable<GroupField> = []) {
+    const groupFields = new Set<GroupField>(fields)
+    this.emit(meta, 'before-attach-group', meta, groupFields)
+
+    // 对于已经绑定可观测群的，判断字段是否需要自动补充
+    if (meta.$group) {
+      for (const key in meta.$group) {
+        groupFields.delete(key as any)
+      }
+      if (groupFields.size) {
+        meta.$group._merge(await this.database.getGroup(meta.groupId, [...groupFields]))
+      }
+      return meta.$group
     }
-    return command.execute({ meta, args, options, rest })
+
+    // 其他情况下绑定一个新的可观测群实例
+    const data = await this.database.getGroup(meta.groupId, [...groupFields])
+    const group = observe(data, diff => this.database.setGroup(meta.groupId, diff), `group ${meta.groupId}`)
+    defineProperty(meta, '$group', group)
+    return group
+  }
+
+  /** 在元数据上绑定一个可观测用户实例 */
+  async observeUser (meta: Meta<'message'>, fields: Iterable<UserField> = []) {
+    const userFields = new Set<UserField>(fields)
+    this.emit(meta, 'before-attach-user', meta, userFields)
+
+    // 对于已经绑定可观测用户的，判断字段是否需要自动补充
+    if (meta.$user && !meta.anonymous) {
+      for (const key in meta.$user) {
+        userFields.delete(key as any)
+      }
+      if (userFields.size) {
+        meta.$user._merge(await this.database.getUser(meta.userId, [...userFields]))
+      }
+    }
+
+    if (meta.$user) return meta.$user
+
+    // 其他情况下绑定一个新的可观测用户实例
+    let user: User
+    const defaultAuthority = typeof this.app.options.defaultAuthority === 'function'
+      ? this.app.options.defaultAuthority(meta)
+      : this.app.options.defaultAuthority || 0
+
+    // 确保匿名消息不会写回数据库
+    if (meta.anonymous) {
+      user = observe(createUser(meta.userId, defaultAuthority))
+    } else {
+      const data = await this.database.getUser(meta.userId, defaultAuthority, [...userFields])
+      user = observe(data, diff => this.database.setUser(meta.userId, diff), `user ${meta.userId}`)
+    }
+
+    defineProperty(meta, '$user', user)
+    return user
+  }
+
+  parse (message: string, meta: Meta<'message'>, next: NextFunction = noop): ParsedCommandLine {
+    if (!message) return
+    const name = message.split(/\s/, 1)[0]
+    const command = this._getCommandByRawName(name)
+    if (command?.context.match(meta)) {
+      const result = command.parse(message.slice(name.length).trimStart())
+      return { meta, command, next, ...result }
+    }
+  }
+
+  execute (argv: InputArgv): Promise<void>
+  execute (message: string, meta: Meta<'message'>, next?: NextFunction): Promise<void>
+  async execute (...args: [InputArgv] | [string, Meta<'message'>, NextFunction?]) {
+    const meta = typeof args[0] === 'string' ? args[1] : args[0].meta
+    if (!('$ctxType' in meta)) this.app.server.parseMeta(meta)
+    let argv: ParsedCommandLine, next: NextFunction = noop
+    if (typeof args[0] === 'string') {
+      const name = args[0].split(/\s/, 1)[0]
+      const command = this._getCommandByRawName(name)
+      next = args[2] || noop
+      if (!command?.context.match(meta)) return next()
+      const result = command.parse(args[0].slice(name.length).trimStart())
+      argv = { meta, command, ...result }
+    } else {
+      argv = args[0] as any
+      next = argv.next || noop
+      if (typeof argv.command === 'string') {
+        argv.command = this.command(argv.command)
+      }
+      if (!argv.command?.context.match(meta)) return next()
+    }
+
+    defineProperty(meta, '$argv', argv)
+
+    if (this.database) {
+      if (meta.messageType === 'group') {
+        await this.observeGroup(meta)
+      }
+      await this.observeUser(meta)
+    }
+
+    return argv.command.execute(argv, next)
   }
 
   end () {

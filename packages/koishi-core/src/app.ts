@@ -2,12 +2,12 @@ import debug from 'debug'
 import escapeRegex from 'escape-string-regexp'
 import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
-import { Command, ShortcutConfig, ParsedCommandLine, ParsedLine } from './command'
+import { Command, ShortcutConfig, ParsedLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
-import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField, createUser } from './database'
+import { GroupFlag, UserFlag, createDatabase, DatabaseConfig } from './database'
 import { Meta, getSenderName } from './meta'
-import { simplify, noop, observe } from 'koishi-utils'
-import { emitter, errors } from './shared'
+import { simplify } from 'koishi-utils'
+import { emitter, errors, defineProperty } from './shared'
 import { types } from 'util'
 
 export interface AppOptions {
@@ -77,10 +77,6 @@ const defaultOptions: AppOptions = {
   getSenderName,
 }
 
-function defineProperty <T, K extends keyof T> (object: T, key: K, value: T[K]) {
-  Object.defineProperty(object, key, { writable: true, value })
-}
-
 export enum Status { closed, opening, open, closing }
 
 export class App extends Context {
@@ -129,8 +125,8 @@ export class App extends Context {
     // bind built-in event listeners
     this.on('message', this._applyMiddlewares)
     this.on('logger', (scope, message) => debug(scope)(message))
-    this.on('before-attach-user', Command.attachUserFields)
-    this.on('before-attach-group', Command.attachGroupFields)
+    this.on('before-attach-user', (meta, fields) => Command.collectFields(meta.$argv, 'user', fields))
+    this.on('before-attach-group',(meta, fields) => Command.collectFields(meta.$argv, 'group', fields))
     this.on('parse', (meta) => {
       Object.defineProperty(meta, '$nickname', {
         get: () => options.getSenderName(meta),
@@ -305,7 +301,7 @@ export class App extends Context {
 
     // parse as command
     if (!meta.$argv && (prefix !== null || nickname || meta.messageType === 'private')) {
-      defineProperty(meta, '$argv', this.parseCommandLine(message, meta))
+      defineProperty(meta, '$argv', this.parse(message, meta))
     }
 
     // parse as shortcut
@@ -333,7 +329,7 @@ export class App extends Context {
     if (this.database) {
       if (meta.messageType === 'group') {
         // attach group data
-        const group = await this._attachGroup(meta, ['flag', 'assignee'])
+        const group = await this.observeGroup(meta, ['flag', 'assignee'])
 
         // emit attach event
         if (await this.serialize(meta, 'attach-group', meta)) return
@@ -349,7 +345,7 @@ export class App extends Context {
       }
 
       // attach user data
-      const user = await this._attachUser(meta, ['flag'])
+      const user = await this.observeUser(meta, ['flag'])
 
       // emit attach event
       if (await this.serialize(meta, 'attach-user', meta)) return
@@ -364,59 +360,6 @@ export class App extends Context {
     }
 
     return next()
-  }
-
-  private async _attachGroup (meta: Meta<'message'>, fields: Iterable<GroupField> = []) {
-    const groupFields = new Set<GroupField>(fields)
-    this.emit(meta, 'before-attach-group', meta, groupFields)
-    const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
-    defineProperty(meta, '$group', group)
-    return group
-  }
-
-  private async _attachUser (meta: Meta<'message'>, fields: Iterable<UserField> = []) {
-    const userFields = new Set<UserField>(fields)
-    this.emit(meta, 'before-attach-user', meta, userFields)
-    const defaultAuthority = typeof this.options.defaultAuthority === 'function'
-      ? this.options.defaultAuthority(meta)
-      : this.options.defaultAuthority || 0
-    const user = meta.anonymous
-      ? observe(createUser(meta.userId, defaultAuthority))
-      : await this.database.observeUser(meta.userId, defaultAuthority, Array.from(userFields))
-    defineProperty(meta, '$user', user)
-    return user
-  }
-
-  parseCommandLine (message: string, meta: Meta<'message'>): ParsedCommandLine {
-    const name = message.split(/\s/, 1)[0]
-    const command = this._getCommandByRawName(name)
-    if (command?.context.match(meta)) {
-      const result = command.parse(message.slice(name.length).trimStart())
-      return { meta, command, ...result }
-    }
-  }
-
-  executeCommandLine (argv: ParsedCommandLine): Promise<void>
-  executeCommandLine (message: string, meta: Meta<'message'>, next?: NextFunction): Promise<void>
-  async executeCommandLine (arg: string | ParsedCommandLine, meta?: Meta<'message'>, next: NextFunction = noop) {
-    if (!meta) meta = (arg as ParsedCommandLine).meta
-    if (!('$ctxType' in meta)) this.server.parseMeta(meta)
-    const argv = typeof arg === 'string' ? this.parseCommandLine(arg, meta) : arg
-    if (!argv) return next()
-
-    Object.defineProperty(meta, '$argv', {
-      writable: true,
-      value: argv,
-    })
-
-    if (this.database) {
-      if (meta.messageType === 'group') {
-        await this._attachGroup(meta)
-      }
-      await this._attachUser(meta)
-    }
-
-    return argv.command.execute(argv, next)
   }
 
   private _applyMiddlewares = async (meta: Meta<'message'>) => {

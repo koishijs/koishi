@@ -1,5 +1,5 @@
 import { Context, NextFunction } from './context'
-import { UserData, UserField, GroupField } from './database'
+import { UserData, UserField, GroupField, TableData } from './database'
 import { errors } from './shared'
 import { noop, camelCase } from 'koishi-utils'
 import { Meta } from './meta'
@@ -125,7 +125,13 @@ export interface ParsedLine {
 
 export interface ParsedCommandLine extends Partial<ParsedLine> {
   meta: Meta<'message'>
-  command?: Command
+  command: Command
+  next?: NextFunction
+}
+
+export interface InputArgv extends Partial<ParsedLine> {
+  meta: Meta<'message'>
+  command?: String | Command
   next?: NextFunction
 }
 
@@ -179,22 +185,14 @@ export class Command {
     authority: 0,
   }
 
-  static attachUserFields (meta: Meta<'message'>, fields: Set<UserField>) {
-    if (!meta.$argv) return
-    for (const item of meta.$argv.command._userFields) {
-      for (const field of typeof item === 'function' ? item(meta.$argv) : item) {
+  static collectFields <T extends keyof TableData> (argv: ParsedCommandLine, key: T, fields = new Set<keyof TableData[T]>()) {
+    if (!argv) return
+    for (const item of argv.command[`_${key}Fields`] as ArgvInferred<Iterable<keyof TableData[T]>>[]) {
+      for (const field of typeof item === 'function' ? item(argv) : item) {
         fields.add(field)
       }
     }
-  }
-
-  static attachGroupFields (meta: Meta<'message'>, fields: Set<GroupField>) {
-    if (!meta.$argv) return
-    for (const item of meta.$argv.command._groupFields) {
-      for (const field of typeof item === 'function' ? item(meta.$argv) : item) {
-        fields.add(field)
-      }
-    }
+    return fields
   }
 
   constructor (public name: string, public declaration: string, public context: Context, config: CommandConfig = {}) {
