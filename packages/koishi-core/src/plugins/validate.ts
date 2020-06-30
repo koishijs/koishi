@@ -157,7 +157,7 @@ export function checkUsage (name: string, user: Pick<UserData, 'usage'>, maxUsag
 
 const UPDATE_INTERVAL = 86400000
 
-export function checkTimer (name: string, { timers }: Pick<UserData, 'timers'>, timestamp?: number) {
+export function checkTimer (name: string, { timers }: Pick<UserData, 'timers'>, offset?: number) {
   const now = Date.now()
   if (!(now <= timers.$date)) {
     for (const key in timers) {
@@ -166,7 +166,7 @@ export function checkTimer (name: string, { timers }: Pick<UserData, 'timers'>, 
     timers.$date = now + UPDATE_INTERVAL
   }
   if (now <= timers[name]) return true
-  if (timestamp) {
-    timers[name] = timestamp
+  if (offset !== undefined) {
+    timers[name] = now + offset
   }
 }

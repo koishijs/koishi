@@ -1,6 +1,5 @@
 import { Command, Context, UserData, Meta, onApp } from '..'
 import { getUsage, getUsageName } from './validate'
-import { userFields } from '../database'
 
 export type CommandUsage = string | ((this: Command, meta: Meta) => string | Promise<string>)
 
@@ -87,7 +86,7 @@ function getShortcuts (command: Command, user: Pick<UserData, 'authority'>) {
 function getCommands (context: Context, meta: Meta<'message'>, parent?: Command) {
   const commands = parent ? parent.children : context.app._commands
   return commands
-    .filter(cmd => cmd.context.match(meta) && (!meta.$user || cmd.config.authority <= meta.$user.authority))
+    .filter(cmd => cmd.context.match(meta) && cmd.config.authority <= meta.$user.authority)
     .sort((a, b) => a.name > b.name ? 1 : -1)
 }
 
@@ -126,11 +125,11 @@ function showGlobalHelp (context: Context, meta: Meta<'message'>, config: HelpCo
   return meta.$send(output.join('\n'))
 }
 
-function getOptions (command: Command, maxUsage: number, config: HelpConfig) {
+function getOptions (command: Command, meta: Meta<'message'>, maxUsage: number, config: HelpConfig) {
   if (command.config.hideOptions && !config.options) return []
   const options = config.options
     ? command._options
-    : command._options.filter(option => !option.hidden)
+    : command._options.filter(option => !option.hidden && option.authority <= meta.$user.authority)
   if (!options.length) return []
 
   const output = options.some(o => o.authority)
@@ -152,7 +151,7 @@ function getOptions (command: Command, maxUsage: number, config: HelpConfig) {
 async function showCommandHelp (command: Command, meta: Meta<'message'>, config: HelpConfig) {
   const output = [command.name + command.declaration, command.config.description]
   if (config.options) {
-    const output = getOptions(command, Infinity, config)
+    const output = getOptions(command, meta, Infinity, config)
     if (!output.length) return meta.$send('该指令没有可用的选项。')
     return meta.$send(output.join('\n'))
   }
@@ -194,7 +193,7 @@ async function showCommandHelp (command: Command, meta: Meta<'message'>, config:
     output.push(typeof usage === 'string' ? usage : await usage.call(command, meta))
   }
 
-  output.push(...getOptions(command, maxUsage, config))
+  output.push(...getOptions(command, meta, maxUsage, config))
 
   if (command._examples.length) {
     output.push('使用示例：', ...command._examples.map(example => '    ' + example))
