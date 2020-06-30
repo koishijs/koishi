@@ -8,7 +8,7 @@ const builtinClasses = ['Date', 'RegExp', 'Set', 'Map', 'WeakSet', 'WeakMap', 'A
 
 export function defineProperty <T, K extends keyof T> (object: T, key: K, value: T[K]): void
 export function defineProperty <T, K extends keyof any> (object: T, key: K, value: any): void
-export function defineProperty <T, K extends keyof any> (object: T, key: K, value: K extends keyof T ? T[K] : any) {
+export function defineProperty <T, K extends keyof any> (object: T, key: K, value: any) {
   Object.defineProperty(object, key, { writable: true, value })
 }
 
@@ -27,32 +27,32 @@ function observeObject <T extends object> (target: T, label: string, update?: ()
     Object.defineProperty(target, '__proxyGetters__', { value: {} })
   }
 
-  if (!update) {
-    Object.defineProperty(target, '_diff', { value: {}, writable: true })
-  }
+  const diff = {}
+  const getters = target['__proxyGetters__']
+  if (!update) defineProperty(target, '_diff', diff)
 
-  return new Proxy(target as Observed<T>, {
+  const proxy = new Proxy(target as Observed<T>, {
     get (target, key) {
-      if (key in target.__proxyGetters__) return target.__proxyGetters__[key]
+      if (key in getters) return getters[key]
       const value = target[key]
       if (!value || staticTypes.includes(typeof value) || typeof key === 'string' && key.startsWith('_')) return value
       const _update = update || (() => {
-        const hasKey = key in target._diff
-        target._diff[key] = target.__proxyGetters__[key]
+        const hasKey = key in diff
+        diff[key] = getters[key]
         if (!hasKey && label) {
           showObserverLog(`[diff] ${label}: ${String(key)} (deep)`)
         }
       })
-      return observeProperty(value, target.__proxyGetters__, key, label, _update)
+      return observeProperty(value, getters, key, label, _update)
     },
     set (target, key, value) {
-      if (target[key] !== value) {
+      if (target[key] !== value && (typeof key !== 'string' || !key.startsWith('_'))) {
         if (update) {
           update()
-        } else if (typeof key !== 'string' || !key.startsWith('_')) {
-          const hasKey = key in target._diff
-          target._diff[key] = value
-          delete target.__proxyGetters__[key]
+        } else {
+          const hasKey = key in diff
+          diff[key] = value
+          delete getters[key]
           if (!hasKey && label) {
             showObserverLog(`[diff] ${label}: ${String(key)}`)
           }
@@ -64,11 +64,13 @@ function observeObject <T extends object> (target: T, label: string, update?: ()
       if (update) {
         update()
       } else {
-        delete target._diff[key]
+        delete diff[key]
       }
       return Reflect.deleteProperty(target, key)
     },
   })
+
+  return proxy
 }
 
 const arrayProxyMethods = ['pop', 'shift', 'splice', 'sort']
@@ -113,7 +115,6 @@ export type Observed <T, R = any> = T & {
   _diff: Partial<T>
   _update: () => R
   _merge: (value: Partial<T>) => Observed<T>
-  __proxyGetters__: Partial<T>
 }
 
 type UpdateFunction <T, R> = (diff: Partial<T>) => R
@@ -125,41 +126,41 @@ export function observe <T extends object, R> (target: T, ...args: [(string | nu
     throw new Error(`cannot observe immutable type "${typeof target}"`)
   } else if (!target) {
     throw new Error('cannot observe null or undefined')
-  } else {
-    const type = Object.prototype.toString.call(target).slice(8, -1)
-    if (builtinClasses.includes(type)) {
-      throw new Error(`cannot observe instance of type "${type}"`)
-    }
   }
 
-  if (target['_diff']) {
-    console.log('diff found')
+  const type = Object.prototype.toString.call(target).slice(8, -1)
+  if (builtinClasses.includes(type)) {
+    throw new Error(`cannot observe instance of type "${type}"`)
   }
 
   let label = '', update: UpdateFunction<T, R> = noop
   if (typeof args[0] === 'function') update = args.shift() as any
   if (typeof args[0] === 'string') label = args[0]
 
-  defineProperty(target, '_update', function (this: Observed<T>) {
-    const diff = this._diff
+  const observer = observeObject(target, label, null) as Observed<T>
+
+  defineProperty(observer, '_update', function (this: Observed<T>) {
+    const diff = { ...this._diff }
     const fields = Object.keys(diff)
     if (fields.length) {
       if (label) showObserverLog(`[update] ${label}: ${fields.join(', ')}`)
-      this._diff = {}
+      for (const key in this._diff) {
+        delete this._diff[key]
+      }
       return update(diff)
     }
   })
 
-  defineProperty(target, '_merge', function (this: Observed<T>, value: Partial<T>) {
+  defineProperty(observer, '_merge', function (this: Observed<T>, value: Partial<T>) {
     for (const key in value) {
-      if (!(key in this._diff)) {
-        target[key] = value[key]
-        delete this.__proxyGetters__[key]
+      if (key in this._diff) {
+        throw new Error(`unresolved diff key "${key}"`)
       }
+      target[key] = value[key]
+      delete this['__proxyGetters__'][key]
     }
     return this
   })
 
-  const observer = observeObject(target, label, null) as Observed<T>
   return observer
 }

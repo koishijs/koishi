@@ -1,26 +1,9 @@
-import { contain, observe } from 'koishi-utils'
-import { getSelfIds, injectMethods, GroupData, createGroup, groupFields, GroupField, Group } from 'koishi-core'
-
-declare module './database' {
-  interface MysqlDatabaseConfig {
-    groupRefreshInterval?: number
-  }
-}
-
-type CachedGroupData = GroupData & { _timestamp: number }
-
-const defaultRefreshInterval = 60 * 1000
-const groupCache: Record<number, CachedGroupData> = {}
+import { getSelfIds, injectMethods, GroupData, createGroup, groupFields, GroupField } from 'koishi-core'
 
 injectMethods('mysql', 'group', {
   async getGroup (groupId, ...args) {
     const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] as never || groupFields
-    const timestamp = Date.now()
-    const cache = groupCache[groupId]
-    if (cache && contain(Object.keys(cache), fields)
-      && timestamp - cache._timestamp < (this.config.groupRefreshInterval ?? defaultRefreshInterval)) return cache
-
     const [data] = await this.select<GroupData[]>('group', fields, '`id` = ?', [groupId])
     let fallback: GroupData
     if (!data) {
@@ -34,10 +17,7 @@ injectMethods('mysql', 'group', {
     } else {
       data.id = groupId
     }
-
-    const group = groupCache[groupId] = (data || fallback) as CachedGroupData
-    Object.defineProperty(group, '_timestamp', { value: timestamp })
-    return group
+    return data || fallback
   },
 
   async getAllGroups (...args) {
@@ -58,10 +38,5 @@ injectMethods('mysql', 'group', {
 
   async setGroup (groupId, data) {
     await this.update('group', groupId, data)
-    if (!groupCache[groupId]) {
-      groupCache[groupId] = {} as CachedGroupData
-      Object.defineProperty(groupCache[groupId], '_timestamp', { value: Date.now() })
-    }
-    Object.assign(groupCache[groupId], data)
   },
 })

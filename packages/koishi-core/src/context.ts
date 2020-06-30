@@ -1,10 +1,10 @@
-import { contain, union, intersection, difference, observe, noop, Observed } from 'koishi-utils'
+import { contain, union, intersection, difference, observe, noop, defineProperty } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine, InputArgv } from './command'
 import { Meta, contextTypes, getSessionId } from './meta'
 import { Sender } from './sender'
 import { App } from './app'
-import { Database, UserField, GroupField, User, createUser } from './database'
-import { errors, defineProperty } from './shared'
+import { Database, UserField, GroupField, User, createUser, GroupData, UserData } from './database'
+import { errors } from './shared'
 import { format, inspect } from 'util'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
@@ -41,6 +41,9 @@ export namespace ContextScope {
 
 const noopScope: ContextScope = [[[], null], [[], null], [[], null]]
 const noopIdentifier = ContextScope.stringify(noopScope)
+
+const userCache: Record<number, UserData> = {}
+const groupCache: Record<number, GroupData> = {}
 
 export interface Logger {
   warn (format: any, ...param: any): void
@@ -314,45 +317,67 @@ export class Context {
 
   /** 在元数据上绑定一个可观测群实例 */
   async observeGroup (meta: Meta<'message'>, fields: Iterable<GroupField> = []) {
-    const groupFields = new Set<GroupField>(fields)
-    if (meta.$argv) Command.collectFields(meta.$argv, 'group', groupFields)
+    const fieldSet = new Set<GroupField>(fields)
+    const { groupId, $argv, $group } = meta
+    if ($argv) Command.collectFields($argv, 'group', fieldSet)
 
     // 对于已经绑定可观测群的，判断字段是否需要自动补充
-    if (meta.$group) {
-      for (const key in meta.$group) {
-        groupFields.delete(key as any)
+    if ($group) {
+      for (const key in $group) {
+        fieldSet.delete(key as any)
       }
-      if (groupFields.size) {
-        meta.$group._merge(await this.database.getGroup(meta.groupId, [...groupFields]))
+      if (fieldSet.size) {
+        const data = await this.database.getGroup(groupId, [...fieldSet])
+        $group._merge(data)
+        data._timestamp = Date.now()
+        groupCache[groupId] = data
       }
-      return meta.$group
+      return $group
     }
 
-    // 其他情况下绑定一个新的可观测群实例
-    const data = await this.database.getGroup(meta.groupId, [...groupFields])
-    const group = observe(data, diff => this.database.setGroup(meta.groupId, diff), `group ${meta.groupId}`)
+    // 如果存在满足可用的缓存数据，使用缓存代替数据获取
+    const cache = groupCache[groupId]
+    const fieldArray = [...fieldSet]
+    const timestamp = Date.now()
+    const isActiveCache = cache
+      && contain(Object.keys(cache), fieldArray)
+      && timestamp - cache._timestamp < this.app.options.groupCacheTimeout
+    let data: GroupData
+    if (isActiveCache) {
+      data = cache
+    } else {
+      data = await this.database.getGroup(groupId, fieldArray)
+      data._timestamp = timestamp
+      groupCache[groupId] = data
+    }
+
+    // 绑定一个新的可观测群实例
+    const group = observe(data, diff => this.database.setGroup(groupId, diff), `group ${groupId}`)
     defineProperty(meta, '$group', group)
     return group
   }
 
   /** 在元数据上绑定一个可观测用户实例 */
   async observeUser (meta: Meta<'message'>, fields: Iterable<UserField> = []) {
-    const userFields = new Set<UserField>(fields)
-    if (meta.$argv) Command.collectFields(meta.$argv, 'user', userFields)
+    const fieldSet = new Set<UserField>(fields)
+    const { userId, $argv, $user } = meta
+    if ($argv) Command.collectFields($argv, 'user', fieldSet)
 
     // 对于已经绑定可观测用户的，判断字段是否需要自动补充
-    if (meta.$user && !meta.anonymous) {
-      for (const key in meta.$user) {
-        userFields.delete(key as any)
+    if ($user && !meta.anonymous) {
+      for (const key in $user) {
+        fieldSet.delete(key as any)
       }
-      if (userFields.size) {
-        meta.$user._merge(await this.database.getUser(meta.userId, [...userFields]))
+      if (fieldSet.size) {
+        const data = await this.database.getUser(userId, [...fieldSet])
+        $user._merge(data)
+        data._timestamp = Date.now()
+        userCache[userId] = data
       }
     }
 
-    if (meta.$user) return meta.$user
+    if ($user) return meta.$user
 
-    // 其他情况下绑定一个新的可观测用户实例
     let user: User
     const defaultAuthority = typeof this.app.options.defaultAuthority === 'function'
       ? this.app.options.defaultAuthority(meta)
@@ -360,10 +385,26 @@ export class Context {
 
     // 确保匿名消息不会写回数据库
     if (meta.anonymous) {
-      user = observe(createUser(meta.userId, defaultAuthority))
+      user = observe(createUser(userId, defaultAuthority))
     } else {
-      const data = await this.database.getUser(meta.userId, defaultAuthority, [...userFields])
-      user = observe(data, diff => this.database.setUser(meta.userId, diff), `user ${meta.userId}`)
+      // 如果存在满足可用的缓存数据，使用缓存代替数据获取
+      const cache = userCache[userId]
+      const fieldArray = [...fieldSet]
+      const timestamp = Date.now()
+      const isActiveCache = cache
+        && contain(Object.keys(cache), fieldArray)
+        && timestamp - cache._timestamp < this.app.options.userCacheTimeout
+      let data: UserData
+      if (isActiveCache) {
+        data = cache
+      } else {
+        data = await this.database.getUser(userId, defaultAuthority, fieldArray)
+        data._timestamp = timestamp
+        userCache[userId] = data
+      }
+
+      // 绑定一个新的可观测用户实例
+      user = observe(data, diff => this.database.setUser(userId, diff), `user ${userId}`)
     }
 
     defineProperty(meta, '$user', user)
@@ -460,6 +501,7 @@ export interface EventMap {
   'before-attach-group' (meta: Meta<'message'>, fields: Set<GroupField>): any
   'attach-user' (meta: Meta<'message'>): any
   'attach-group' (meta: Meta<'message'>): any
+  'attach' (meta: Meta<'message'>): any
   'send' (meta: Meta<'send'>): any
   'before-send' (meta: Meta<'send'>): any
   'before-command' (argv: ParsedCommandLine): any

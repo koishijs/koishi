@@ -44,6 +44,6 @@
     "debug": "^4.1.1",
     "get-port": "^5.1.1",
     "koishi-core": "^2.0.0-alpha.21",
-    "koishi-utils": "^1.1.2"
+    "koishi-utils": "^2.0.0"
   }
 }

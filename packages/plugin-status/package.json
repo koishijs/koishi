@@ -39,6 +39,6 @@
   "dependencies": {
     "cross-spawn": "^7.0.3",
     "koishi-core": "^2.0.0-alpha.21",
-    "koishi-utils": "^1.1.2"
+    "koishi-utils": "^2.0.0"
   }
 }

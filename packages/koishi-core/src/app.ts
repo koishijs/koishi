@@ -6,8 +6,8 @@ import { Command, ShortcutConfig, ParsedLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
 import { GroupFlag, UserFlag, createDatabase, DatabaseConfig, GroupField, UserField } from './database'
 import { Meta, getSenderName } from './meta'
-import { simplify } from 'koishi-utils'
-import { emitter, errors, defineProperty } from './shared'
+import { simplify, defineProperty } from 'koishi-utils'
+import { emitter, errors } from './shared'
 import { types } from 'util'
 
 export interface AppOptions {
@@ -27,6 +27,8 @@ export interface AppOptions {
   defaultAuthority?: number | ((meta: Meta) => number)
   quickOperationTimeout?: number
   similarityCoefficient?: number
+  userCacheTimeout?: number
+  groupCacheTimeout?: number
 }
 
 export const appMap: Record<number, App> = {}
@@ -73,6 +75,8 @@ function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
 const defaultOptions: AppOptions = {
   maxMiddlewares: 64,
   retryInterval: 5000,
+  userCacheTimeout: 60000,
+  groupCacheTimeout: 300000,
   quickOperationTimeout: 100,
   getSenderName,
 }
@@ -355,6 +359,8 @@ export class App extends Context {
       // ignore some user calls
       if (user.flag & UserFlag.ignore) return
     }
+
+    await this.parallelize(meta, 'attach', meta)
 
     // execute command
     if (command) {

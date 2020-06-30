@@ -1,9 +1,5 @@
 import { EventEmitter } from 'events'
 
-export function defineProperty <T, K extends keyof T> (object: T, key: K, value: T[K]) {
-  Object.defineProperty(object, key, { writable: true, value })
-}
-
 export const emitter = new EventEmitter()
 
 export const messages = {

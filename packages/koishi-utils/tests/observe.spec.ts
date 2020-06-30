@@ -21,7 +21,9 @@ describe('Observer API', () => {
   })
 
   test('observe property', () => {
-    const object = observe<Record<string, number>>({ a: 1, b: 2 })
+    const target: Record<string, number> = { a: 1, b: 2 }
+    const object = observe(target)
+    expect(target._diff).toBeUndefined()
     expect(object._diff).toMatchObject({})
 
     object.a = 1
@@ -111,29 +113,8 @@ describe('Observer API', () => {
     expect(object).toMatchObject({ a: 2, b: 3 })
     expect(object._diff).toMatchObject({ a: 2 })
 
-    object._merge({ a: 3 })
+    expect(() => object._merge({ a: 3 })).toThrow()
     expect(object).toMatchObject({ a: 2, b: 3 })
     expect(object._diff).toMatchObject({ a: 2 })
-  })
-
-  test('reference sharing', () => {
-    const object1 = observe({ a: { b: 1 } }, 'a')
-    expect(object1._diff).toMatchObject({})
-
-    const object2 = observe({ a: { b: 2 } }, 'a')
-    expect(object1).toBe(object2)
-    expect(object1).toMatchObject({ a: { b: 2 } })
-
-    object2.a.b = 3
-    expect(object1).toMatchObject({ a: { b: 3 } })
-    expect(object1._diff).toMatchObject({ a: { b: 3 } })
-
-    object2._update()
-    expect(object1).toMatchObject({ a: { b: 3 } })
-    expect(object1._diff).toMatchObject({})
-
-    object1.a = { b: 4 }
-    expect(object1).toMatchObject({ a: { b: 4 } })
-    expect(object1._diff).toMatchObject({ a: { b: 4 } })
   })
 })

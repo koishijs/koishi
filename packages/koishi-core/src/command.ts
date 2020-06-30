@@ -503,7 +503,7 @@ export class Command {
     for (const arg of argv.args) {
       output += ` "${arg}"`
     }
-    if (argv.next) output += ` -- ${argv.next}`
+    if (argv.rest) output += ` -- ${argv.rest}`
     return output
   }
 
