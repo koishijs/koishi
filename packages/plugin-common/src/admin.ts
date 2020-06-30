@@ -137,7 +137,7 @@ export default function apply (ctx: Context) {
           if (qq !== meta.$user.id && meta.$user.authority <= data.authority) return meta.$send('权限不足。')
           user = observe(data, diff => ctx.database.setUser(qq, diff), `user ${qq}`)
         } else {
-          user = await ctx.database.observeUser(meta.$user, 0, fields)
+          user = await ctx.observeUser(meta, fields)
         }
         return action.callback.call(ctx, meta, user, ...args)
       }

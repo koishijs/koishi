@@ -31,23 +31,6 @@ export default function apply (ctx: Context) {
       const newMeta = { ...meta }
       Object.defineProperty(newMeta, '$argv', { value: ctx.parse(message, newMeta), writable: true })
 
-      let user = meta.$user
-      if (options.user) {
-        const id = getTargetId(options.user)
-        if (!id) return meta.$send('未指定目标。')
-
-        newMeta.userId = id
-        newMeta.sender.userId = id
-
-        user = await ctx.observeUser(newMeta)
-        if (meta.$user.authority <= user.authority) {
-          return meta.$send('权限不足。')
-        }
-      }
-
-      Object.defineProperty(newMeta, '$app', { value: ctx.app })
-      Object.defineProperty(newMeta, '$user', { value: user, writable: true })
-
       delete newMeta.groupId
       delete newMeta.discussId
 
@@ -67,6 +50,23 @@ export default function apply (ctx: Context) {
         newMeta.messageType = 'private'
         newMeta.subType = options.type || 'other'
       }
+
+      let user = meta.$user
+      if (options.user) {
+        const id = getTargetId(options.user)
+        if (!id) return meta.$send('未指定目标。')
+
+        newMeta.userId = id
+        newMeta.sender.userId = id
+
+        user = await ctx.observeUser(newMeta)
+        if (meta.$user.authority <= user.authority) {
+          return meta.$send('权限不足。')
+        }
+      }
+
+      Object.defineProperty(newMeta, '$app', { value: ctx.app })
+      Object.defineProperty(newMeta, '$user', { value: user, writable: true })
 
       if (options.group) {
         const info = await ctx.sender.getGroupMemberInfo(ctxId, newMeta.userId).catch(() => ({}))
