@@ -501,11 +501,10 @@ export class Command {
     try {
       if (await this.app.serialize(argv.meta, 'before-command', argv)) return
       this.context.logger('koishi:command').debug('execute %s', this.name)
-      await this.app.parallelize(argv.meta, 'command', argv)
       state = 'executing command'
       await this._action(argv, ...argv.args)
       state = 'after command'
-      return this.app.serialize(argv.meta, 'after-command', argv)
+      return this.app.serialize(argv.meta, 'command', argv)
     } catch (error) {
       this.context.logger('').warn(`${state}: ${this.stringify(argv)}\n${error.stack}`)
     }

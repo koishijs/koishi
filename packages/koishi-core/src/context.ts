@@ -370,7 +370,6 @@ export interface EventMap {
   'before-send' (meta: Meta<'send'>): any
   'before-command' (argv: ParsedCommandLine): any
   'command' (argv: ParsedCommandLine): any
-  'after-command' (argv: ParsedCommandLine): any
   'after-middleware' (meta: Meta<'message'>): any
   'error' (error: Error): any
   'error/command' (error: Error): any

@@ -26,7 +26,7 @@ onApp((app) => {
     statusPort = app.options.statusPort
   }
 
-  app.on('after-command', (argv) => {
+  app.on('command', (argv) => {
     argv.meta.$user.lastCall = new Date()
   })
 
