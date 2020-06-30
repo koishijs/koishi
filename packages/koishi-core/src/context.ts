@@ -315,7 +315,7 @@ export class Context {
   /** 在元数据上绑定一个可观测群实例 */
   async observeGroup (meta: Meta<'message'>, fields: Iterable<GroupField> = []) {
     const groupFields = new Set<GroupField>(fields)
-    this.emit(meta, 'before-attach-group', meta, groupFields)
+    if (meta.$argv) Command.collectFields(meta.$argv, 'group', groupFields)
 
     // 对于已经绑定可观测群的，判断字段是否需要自动补充
     if (meta.$group) {
@@ -338,7 +338,7 @@ export class Context {
   /** 在元数据上绑定一个可观测用户实例 */
   async observeUser (meta: Meta<'message'>, fields: Iterable<UserField> = []) {
     const userFields = new Set<UserField>(fields)
-    this.emit(meta, 'before-attach-user', meta, userFields)
+    if (meta.$argv) Command.collectFields(meta.$argv, 'user', userFields)
 
     // 对于已经绑定可观测用户的，判断字段是否需要自动补充
     if (meta.$user && !meta.anonymous) {

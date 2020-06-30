@@ -36,32 +36,30 @@ export function getUsageName (command: Command) {
   return command.config.usageName || command.name
 }
 
+Object.assign(Command.defaultConfig, {
+  showWarning: true,
+  maxUsage: Infinity,
+  minInterval: 0,
+})
+
+Command.userFields(({ command, options = {} }, fields) => {
+  const { maxUsage, minInterval, authority } = command.config
+  let shouldFetchAuthority = !fields.has('authority') && authority > 0
+  let shouldFetchUsage = !!(maxUsage || minInterval)
+  for (const option of command._options) {
+    if (option.camels[0] in options) {
+      if (option.authority > 0) shouldFetchAuthority = true
+      if (option.notUsage) shouldFetchUsage = false
+    }
+  }
+  if (shouldFetchAuthority) fields.add('authority')
+  if (shouldFetchUsage) {
+    if (maxUsage) fields.add('usage')
+    if (minInterval) fields.add('timers')
+  }
+})
+
 onApp((app) => {
-  Object.assign(Command.defaultConfig, {
-    showWarning: true,
-    maxUsage: Infinity,
-    minInterval: 0,
-  })
-
-  app.on('before-attach-user', (meta, fields) => {
-    if (!meta.$argv) return
-    const { command, options = {} } = meta.$argv
-    const { maxUsage, minInterval, authority } = command.config
-    let shouldFetchAuthority = !fields.has('authority') && authority > 0
-    let shouldFetchUsage = !!(maxUsage || minInterval)
-    for (const option of command._options) {
-      if (option.camels[0] in options) {
-        if (option.authority > 0) shouldFetchAuthority = true
-        if (option.notUsage) shouldFetchUsage = false
-      }
-    }
-    if (shouldFetchAuthority) fields.add('authority')
-    if (shouldFetchUsage) {
-      if (maxUsage) fields.add('usage')
-      if (minInterval) fields.add('timers')
-    }
-  })
-
   app.on('before-command', ({ meta, args, unknown, options, command }) => {
     async function sendHint (meta: Meta<'message'>, message: string, ...param: any[]) {
       if (command.config.showWarning) {

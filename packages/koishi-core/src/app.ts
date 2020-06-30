@@ -4,7 +4,7 @@ import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig, ParsedLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
-import { GroupFlag, UserFlag, createDatabase, DatabaseConfig } from './database'
+import { GroupFlag, UserFlag, createDatabase, DatabaseConfig, GroupField, UserField } from './database'
 import { Meta, getSenderName } from './meta'
 import { simplify } from 'koishi-utils'
 import { emitter, errors, defineProperty } from './shared'
@@ -125,8 +125,6 @@ export class App extends Context {
     // bind built-in event listeners
     this.on('message', this._applyMiddlewares)
     this.on('logger', (scope, message) => debug(scope)(message))
-    this.on('before-attach-user', (meta, fields) => Command.collectFields(meta.$argv, 'user', fields))
-    this.on('before-attach-group',(meta, fields) => Command.collectFields(meta.$argv, 'group', fields))
     this.on('parse', (meta) => {
       Object.defineProperty(meta, '$nickname', {
         get: () => options.getSenderName(meta),
@@ -329,7 +327,9 @@ export class App extends Context {
     if (this.database) {
       if (meta.messageType === 'group') {
         // attach group data
-        const group = await this.observeGroup(meta, ['flag', 'assignee'])
+        const groupFields = new Set<GroupField>(['flag', 'assignee'])
+        this.emit('before-attach-group', meta, groupFields)
+        const group = await this.observeGroup(meta, groupFields)
 
         // emit attach event
         if (await this.serialize(meta, 'attach-group', meta)) return
@@ -345,6 +345,8 @@ export class App extends Context {
       }
 
       // attach user data
+      const userFields = new Set<UserField>(['flag'])
+      this.emit('before-attach-user', meta, userFields)
       const user = await this.observeUser(meta, ['flag'])
 
       // emit attach event

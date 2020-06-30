@@ -158,7 +158,7 @@ export interface ShortcutConfig {
   options?: Record<string, any>
 }
 
-type ArgvInferred <T> = T | ((argv: ParsedCommandLine) => T)
+type ArgvInferred <T> = Iterable<T> | ((argv: ParsedCommandLine, fields: Set<T>) => void)
 
 export class Command {
   config: CommandConfig
@@ -172,8 +172,8 @@ export class Command {
 
   private _optionMap: Record<string, CommandOption> = {}
   private _optionAliasMap: Record<string, CommandOption> = {}
-  private _userFields: ArgvInferred<Iterable<UserField>>[] = []
-  private _groupFields: ArgvInferred<Iterable<GroupField>>[] = []
+  private _userFields: ArgvInferred<UserField>[] = []
+  private _groupFields: ArgvInferred<GroupField>[] = []
 
   _action?: (this: this, config: ParsedCommandLine, ...args: string[]) => any
 
@@ -185,11 +185,32 @@ export class Command {
     authority: 0,
   }
 
+  private static _userFields: ArgvInferred<UserField>[] = []
+  private static _groupFields: ArgvInferred<GroupField>[] = []
+
+  static userFields (fields: ArgvInferred<UserField>) {
+    this._userFields.push(fields)
+    return this
+  }
+
+  static groupFields (fields: ArgvInferred<GroupField>) {
+    this._groupFields.push(fields)
+    return this
+  }
+
   static collectFields <T extends keyof TableData> (argv: ParsedCommandLine, key: T, fields = new Set<keyof TableData[T]>()) {
     if (!argv) return
-    for (const item of argv.command[`_${key}Fields`] as ArgvInferred<Iterable<keyof TableData[T]>>[]) {
-      for (const field of typeof item === 'function' ? item(argv) : item) {
-        fields.add(field)
+    const values: ArgvInferred<keyof TableData[T]>[] = [
+      ...this[`_${key}Fields`],
+      ...argv.command[`_${key}Fields`],
+    ]
+    for (const value of values) {
+      if (typeof value === 'function') {
+        value(argv, fields)
+      } else {
+        for (const field of value) {
+          fields.add(field)
+        }
       }
     }
     return fields
@@ -223,12 +244,12 @@ export class Command {
     return `Command <${this.name}>`
   }
 
-  userFields (fields: ArgvInferred<Iterable<UserField>>) {
+  userFields (fields: ArgvInferred<UserField>) {
     this._userFields.push(fields)
     return this
   }
 
-  groupFields (fields: ArgvInferred<Iterable<GroupField>>) {
+  groupFields (fields: ArgvInferred<GroupField>) {
     this._groupFields.push(fields)
     return this
   }

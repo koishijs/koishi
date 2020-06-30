@@ -6,8 +6,6 @@ const showObserverLog = debug('koishi:observer')
 const staticTypes = ['number', 'string', 'bigint', 'boolean', 'symbol', 'function']
 const builtinClasses = ['Date', 'RegExp', 'Set', 'Map', 'WeakSet', 'WeakMap', 'Array']
 
-const refs: Record<string | number, any> = {}
-
 function observeProperty (value: any, proxy: any, key: any, label: string, update: any) {
   if (types.isDate(value)) {
     return proxy[key] = observeDate(value, update)
@@ -139,14 +137,10 @@ export function observe <T extends object, R> (target: T, ...args: [(string | nu
   if (typeof args[0] === 'function') update = args.shift() as UpdateFunction<T, R>
   if (typeof args[0] === 'string') label = args[0]
 
-  if (label && label in refs) {
-    refs[label].__updateCallback__ = update || refs[label].__updateCallback__
-    return refs[label]._merge(target)
-  }
-
   Object.defineProperty(target, '__updateCallback__', { value: update || noop, writable: true })
 
   Object.defineProperty(target, '_update', {
+    writable: true,
     value (this: Observed<T, R>) {
       const diff = this._diff
       const fields = Object.keys(diff)
@@ -159,6 +153,7 @@ export function observe <T extends object, R> (target: T, ...args: [(string | nu
   })
 
   Object.defineProperty(target, '_merge', {
+    writable: true,
     value (this: Observed<T, R>, value: Partial<T>) {
       for (const key in value) {
         if (!(key in this._diff)) {
@@ -171,6 +166,5 @@ export function observe <T extends object, R> (target: T, ...args: [(string | nu
   })
 
   const observer = observeObject(target, label, null) as Observed<T, R>
-  if (label) refs[label] = observer
   return observer
 }

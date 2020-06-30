@@ -1,4 +1,4 @@
-import { Context, UserField, Meta, NextFunction } from 'koishi-core'
+import { Context, UserField, Meta, NextFunction, userFields, Command } from 'koishi-core'
 import { CQCode, simplify, noop, isInteger } from 'koishi-utils'
 import { getDialogues, TeachConfig } from './utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
@@ -74,7 +74,7 @@ export async function getTotalWeight (ctx: Context, state: SessionState) {
   const userFields = new Set<UserField>(['name'])
   ctx.app.emit(meta, 'dialogue/before-attach-user', state, userFields)
   if (dialogues.every(d => !d._weight)) return 0
-  meta.$user = await ctx.database.observeUser(meta.$user, Array.from(userFields))
+  await ctx.observeUser(meta, userFields)
   if (ctx.app.bail(meta, 'dialogue/attach-user', state)) return 0
   return dialogues.reduce((prev, curr) => prev + curr._weight, 0)
 }
@@ -178,7 +178,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, conf
       useOriginal = false
       const send = meta.$send
       const sendQueued = meta.$sendQueued
-      await ctx.app.execute(command, meta)
+      await ctx.execute(command, meta)
       meta.$sendQueued = sendQueued
       meta.$send = send
       useOriginal = true
@@ -211,6 +211,17 @@ export default function (ctx: Context, config: TeachConfig) {
 
   ctx.intersect(ctx.app.groups).middleware(async (meta, next) => {
     return triggerDialogue(ctx, meta, config, next)
+  })
+
+  // 预判要获取的用户字段
+  ctx.on('dialogue/before-attach-user', ({ dialogues, meta }, userFields) => {
+    for (const dialogue of dialogues) {
+      const capture = dialogue.answer.match(/\$\{.+?\}/g)
+      for (const message of capture || []) {
+        const argv = ctx.parse(message.slice(2, -1), meta)
+        Command.collectFields(argv, 'user', userFields)
+      }
+    }
   })
 
   ctx.command('teach/dialogue <message...>', '触发教学对话')
