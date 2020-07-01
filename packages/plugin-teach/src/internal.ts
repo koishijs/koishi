@@ -61,10 +61,16 @@ export default function apply (ctx: Context, config: TeachConfig) {
     } else {
       if (test.answer !== undefined) conditionals.push('`answer` = ' + escape(test.answer))
       if (test.question !== undefined) {
-        conditionals.push(`(
-          !(\`flag\` & ${DialogueFlag.regexp}) && \`question\` = ${escape(test.question)} ||
-          \`flag\` & ${DialogueFlag.regexp} && (${escape(test.question)} REGEXP \`question\` || ${escape(test.original)} REGEXP \`question\`)
-        )`)
+        if (test.regexp === false) {
+          conditionals.push(`\`question\` = ${escape(test.question)}`)
+        } else {
+          conditionals.push(`(
+            !(\`flag\` & ${DialogueFlag.regexp}) && \`question\` = ${escape(test.question)} ||
+            \`flag\` & ${DialogueFlag.regexp} && (
+              ${escape(test.question)} REGEXP \`question\` || ${escape(test.original)} REGEXP \`question\`
+            )
+          )`)
+        }
       }
     }
   })

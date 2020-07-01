@@ -1,4 +1,4 @@
-import { Context, UserField, Meta, NextFunction, userFields, Command } from 'koishi-core'
+import { Context, UserField, Meta, NextFunction, Command } from 'koishi-core'
 import { CQCode, simplify, noop, isInteger } from 'koishi-utils'
 import { getDialogues, TeachConfig } from './utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'

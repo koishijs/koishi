@@ -46,7 +46,8 @@ async function update (argv: TeachArgv) {
   argv.uneditable = []
   argv.updated = []
   argv.skipped = []
-  argv.dialogues = await ctx.database.getDialoguesById(target)
+  const dialogues = argv.dialogues = await Dialogue.fromIds(target)
+  argv.dialogueMap = Object.fromEntries(dialogues.map(d => [d.id, { ...d }]))
 
   const actualIds = argv.dialogues.map(d => d.id)
   argv.unknown = difference(target, actualIds)
@@ -56,16 +57,16 @@ async function update (argv: TeachArgv) {
       await meta.$send(`没有搜索到编号为 ${argv.unknown.join(', ')} 的问答。`)
     }
     await ctx.serialize('dialogue/before-detail', argv)
-    for (let index = 0; index < argv.dialogues.length; index++) {
-      const output = [`编号为 ${argv.dialogues[index].id} 的问答信息：`]
-      await ctx.serialize('dialogue/detail', argv.dialogues[index], output, argv)
+    for (let index = 0; index < dialogues.length; index++) {
+      const output = [`编号为 ${dialogues[index].id} 的问答信息：`]
+      await ctx.serialize('dialogue/detail', dialogues[index], output, argv)
       if (index) await sleep(detailInterval)
       await meta.$send(output.join('\n'))
     }
     return
   }
 
-  const targets = prepareTargets(argv, argv.dialogues)
+  const targets = prepareTargets(argv, dialogues)
 
   if (options.remove) {
     const output: string[] = []
@@ -77,7 +78,7 @@ async function update (argv: TeachArgv) {
     }
     if (targets.length) {
       const editable = targets.map(d => d.id)
-      await ctx.database.removeDialogues(editable)
+      Dialogue.remove(editable, argv)
       output.unshift(`已删除问答 ${editable.join(', ')}。`)
     }
     await ctx.serialize('dialogue/after-modify', argv)
@@ -90,7 +91,7 @@ async function update (argv: TeachArgv) {
     ctx.emit('dialogue/modify', argv, dialogue)
   }
 
-  await ctx.database.setDialogues(targets, argv)
+  await Dialogue.update(targets, argv)
 
   await ctx.serialize('dialogue/after-modify', argv)
   return sendResult(argv)

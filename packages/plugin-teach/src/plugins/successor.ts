@@ -14,7 +14,6 @@ declare module '../utils' {
     successors?: number[]
     predOverwrite?: boolean
     succOverwrite?: boolean
-    dialogueMap?: Record<number, Dialogue>
   }
 }
 
@@ -118,7 +117,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     const { succOverwrite, successors, dialogues } = argv
     if (!successors) return
     const predecessors = dialogues.map(dialogue => '' + dialogue.id)
-    const successorDialogues = await ctx.database.getDialoguesById(successors)
+    const successorDialogues = await Dialogue.fromIds(successors)
     const newTargets = successorDialogues.map(d => d.id)
     argv.unknown = difference(successors, newTargets)
 
@@ -141,7 +140,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
       }
     }
 
-    await ctx.database.setDialogues(targets, argv)
+    await Dialogue.update(targets, argv)
   })
 
   ctx.on('dialogue/after-modify', async ({ options, dialogues, meta }) => {
@@ -154,16 +153,16 @@ export default function apply (ctx: Context, config: TeachConfig) {
     await command.execute(meta.$argv)
   })
 
-  ctx.on('dialogue/before-detail', async ({ dialogues, ctx }) => {
+  ctx.on('dialogue/before-detail', async ({ dialogues }) => {
     // get predecessors
-    const predecessors = new Set<string>()
+    const predecessors = new Set<number>()
     for (const dialogue of dialogues) {
       for (const id of dialogue.predecessors) {
-        predecessors.add(id)
+        predecessors.add(+id)
       }
     }
     const dialogueMap: Record<string, Dialogue> = {}
-    for (const dialogue of await ctx.database.getDialoguesById([...predecessors])) {
+    for (const dialogue of await Dialogue.fromIds([...predecessors])) {
       dialogueMap[dialogue.id] = dialogue
     }
     for (const dialogue of dialogues) {

@@ -1,6 +1,7 @@
 import { injectMethods } from 'koishi-core'
 import { arrayTypes } from 'koishi-database-mysql'
-import { Observed } from 'koishi-utils'
+import { Observed, pick } from 'koishi-utils'
+import { TeachArgv } from './utils'
 
 declare module 'koishi-core/dist/database' {
   interface TableMethods {
@@ -13,20 +14,64 @@ declare module 'koishi-core/dist/database' {
 }
 
 export namespace Dialogue {
+  const history: Record<number, Dialogue> = []
+
   export interface UpdateContext {
     skipped?: number[]
     updated?: number[]
+  }
+
+  export async function fromIds (ids: number[]) {
+    if (!ids.length) return []
+    return this.select('dialogue', [], `\`id\` IN (${ids.join(',')})`)
+  }
+
+  export async function create (dialogue: Dialogue, argv: TeachArgv) {
+    const timestamp = Date.now()
+    dialogue = await argv.ctx.database.mysql.create('dialogue', dialogue)
+    history[dialogue.id] = dialogue
+    dialogue._timestamp = timestamp
+    dialogue._operator = argv.meta.userId
+    dialogue._state = 'created'
+    return dialogue
+  }
+
+  export async function update (dialogues: Observed<Dialogue>[], argv: TeachArgv) {
+    const data: Partial<Dialogue>[] = []
+    const fields = new Set<DialogueField>(['id'])
+    for (const { _diff } of dialogues) {
+      for (const key in _diff) {
+        fields.add(key as DialogueField)
+      }
+    }
+    for (const dialogue of dialogues) {
+      if (!Object.keys(dialogue._diff).length) {
+        argv.skipped.push(dialogue.id)
+      } else {
+        dialogue._diff = {}
+        argv.updated.push(dialogue.id)
+        data.push(pick(dialogue, fields))
+      }
+    }
+    await this.update('dialogue', data)
+  }
+
+  export async function remove (ids: number[], argv: TeachArgv) {
+    const timestamp = Date.now()
+    await argv.ctx.database.mysql.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
+    for (const id of ids) {
+      const dialogue = history[id] = argv.dialogueMap[id]
+      dialogue._timestamp = timestamp
+      dialogue._operator = argv.meta.userId
+      dialogue._state = 'removed'
+    }
   }
 }
 
 export type DialogueField = keyof Dialogue
 
 interface DialogueMethods {
-  createDialogue (options: Dialogue): Promise<Dialogue>
-  getDialoguesById <K extends DialogueField> (ids: (string | number)[], keys?: readonly K[]): Promise<Pick<Dialogue, K>[]>
   setDialogue (id: number, data: Partial<Dialogue>): Promise<void>
-  setDialogues (data: Observed<Dialogue>[], ctx: Dialogue.UpdateContext): Promise<void>
-  removeDialogues (ids: number[]): Promise<void>
 }
 
 export interface DialogueCount {
@@ -43,6 +88,9 @@ export interface Dialogue {
   _weight?: number
   _capture?: RegExpExecArray
   _strict?: boolean
+  _state?: 'created' | 'edited' | 'removed'
+  _operator?: number
+  _timestamp?: number
 }
 
 arrayTypes.push('dialogue.groups', 'dialogue.predecessors')
@@ -58,6 +106,7 @@ export interface DialogueTest {
 }
 
 export enum DialogueFlag {
+  /** 冻结：只有 4 级以上权限者可修改 */
   frozen = 1,
   /** 正则：使用正则表达式进行匹配 */
   regexp = 2,
@@ -69,50 +118,8 @@ export enum DialogueFlag {
   complement = 16,
 }
 
-function pick <T, K extends keyof T> (source: T, keys: Iterable<K>): Pick<T, K> {
-  const result = {} as Pick<T, K>
-  for (const key of keys) {
-    result[key] = source[key]
-  }
-  return result
-}
-
 injectMethods('mysql', 'dialogue', {
-  createDialogue (options) {
-    return this.create('dialogue', options)
-  },
-
-  async getDialoguesById (ids, keys) {
-    if (!ids.length) return []
-    return this.select('dialogue', keys, `\`id\` IN (${ids.join(',')})`)
-  },
-
   async setDialogue (id, data) {
     await this.update('dialogue', id, data)
-  },
-
-  async setDialogues (dialogues, ctx) {
-    const data: Partial<Dialogue>[] = []
-    const fields = new Set<DialogueField>(['id'])
-    for (const { _diff } of dialogues) {
-      for (const key in _diff) {
-        fields.add(key as DialogueField)
-      }
-    }
-    for (const dialogue of dialogues) {
-      if (!Object.keys(dialogue._diff).length) {
-        ctx.skipped.push(dialogue.id)
-      } else {
-        dialogue._diff = {}
-        ctx.updated.push(dialogue.id)
-        data.push(pick(dialogue, fields))
-      }
-    }
-    await this.update('dialogue', data)
-  },
-
-  async removeDialogues (ids) {
-    if (!ids.length) return
-    await this.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
   },
 })

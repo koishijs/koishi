@@ -26,6 +26,7 @@ export interface TeachArgv extends Dialogue.UpdateContext {
 
   // modify status
   dialogues?: Dialogue[]
+  dialogueMap?: Record<number, Dialogue>
   unknown?: number[]
   uneditable?: number[]
 }
