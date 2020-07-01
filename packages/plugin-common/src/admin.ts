@@ -76,6 +76,18 @@ registerUserAction('clearUsage', async (meta, user, ...commands) => {
   return meta.$send('用户信息已修改。')
 }, ['usage'])
 
+registerUserAction('clearTimer', async (meta, user, ...commands) => {
+  if (commands.length) {
+    for (const command of commands) {
+      delete user.timers[command]
+    }
+  } else {
+    user.timers = {}
+  }
+  await user._update()
+  return meta.$send('用户信息已修改。')
+}, ['timers'])
+
 registerGroupAction('setFlag', async (meta, group, ...flags) => {
   if (!flags.length) return meta.$send(`可用的标记有 ${groupFlags.join(', ')}。`)
   const notFound = difference(flags, groupFlags)

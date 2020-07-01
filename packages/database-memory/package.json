@@ -1,7 +1,7 @@
 {
   "name": "koishi-database-memory",
   "description": "An in-memory database implementation for Koishi",
-  "version": "2.0.0-alpha.21",
+  "version": "2.0.0-alpha.22",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -22,9 +22,9 @@
   },
   "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-memory#readme",
   "peerDependencies": {
-    "koishi-core": "^2.0.0-alpha.21"
+    "koishi-core": "^2.0.0-alpha.22"
   },
   "dependencies": {
-    "koishi-utils": "^2.0.0"
+    "koishi-utils": "^2.0.1"
   }
 }
