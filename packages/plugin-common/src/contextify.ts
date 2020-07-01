@@ -1,4 +1,4 @@
-import { Context, getTargetId, ContextType } from 'koishi-core'
+import { Context, getTargetId, ContextType, groupFields, userFields } from 'koishi-core'
 
 export default function apply (ctx: Context) {
   ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3 })
@@ -43,7 +43,7 @@ export default function apply (ctx: Context) {
         newMeta.groupId = ctxId = +options.group
         newMeta.messageType = ctxType = 'group'
         newMeta.subType = options.type || 'normal'
-        await ctx.observeGroup(newMeta)
+        await ctx.observeGroup(newMeta, groupFields)
       } else {
         ctxId = newMeta.userId
         ctxType = 'user'
@@ -59,7 +59,7 @@ export default function apply (ctx: Context) {
         newMeta.userId = id
         newMeta.sender.userId = id
 
-        user = await ctx.observeUser(newMeta)
+        user = await ctx.observeUser(newMeta, userFields)
         if (meta.$user.authority <= user.authority) {
           return meta.$send('权限不足。')
         }
