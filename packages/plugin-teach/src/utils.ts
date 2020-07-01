@@ -17,7 +17,7 @@ export interface TeachConfig {}
 
 export interface TeachArgv extends Dialogue.UpdateContext {
   ctx: Context
-  meta: Meta
+  meta: Meta<'authority'>
   args: string[]
   config: TeachConfig
   target?: number[]

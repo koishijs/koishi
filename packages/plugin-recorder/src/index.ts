@@ -23,7 +23,7 @@ const cwd = process.cwd()
 export const name = 'recorder'
 
 export function apply (ctx: Context, options: RecorderOptions = {}) {
-  async function handleMessage (meta: Meta) {
+  async function handleMessage (meta: Meta<never, 'assignee'>) {
     if (meta.$ctxType !== 'group' || meta.postType === 'message' && meta.$group.assignee !== ctx.app.selfId) return
     if (await ctx.serialize('before-record', meta)) return
     const output = JSON.stringify(pick(meta, ['time', 'userId', 'message'])) + '\n'

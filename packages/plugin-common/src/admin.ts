@@ -6,7 +6,7 @@ import {
 } from 'koishi-core'
 
 type ActionCallback <T extends {}, K extends keyof T> =
-  (this: Context, meta: Meta, target: Observed<Pick<T, K>>, ...args: string[]) => Promise<any>
+  (this: Context, meta: Meta<'authority'>, target: Observed<Pick<T, K>>, ...args: string[]) => Promise<any>
 
 export interface UserAction {
   callback: ActionCallback<UserData, UserField>
@@ -21,11 +21,11 @@ export interface GroupAction {
 const userActionMap: Record<string, UserAction> = {}
 const groupActionMap: Record<string, GroupAction> = {}
 
-export function registerUserAction <K extends UserField> (name: string, callback: ActionCallback<UserData, K>, fields?: K[]) {
+export function registerUserAction <K extends UserField = never> (name: string, callback: ActionCallback<UserData, K>, fields?: K[]) {
   userActionMap[paramCase(name)] = { callback, fields }
 }
 
-export function registerGroupAction <K extends GroupField> (name: string, callback: ActionCallback<GroupData, K>, fields?: K[]) {
+export function registerGroupAction <K extends GroupField = never> (name: string, callback: ActionCallback<GroupData, K>, fields?: K[]) {
   groupActionMap[paramCase(name)] = { callback, fields }
 }
 
@@ -112,10 +112,11 @@ registerGroupAction('unsetFlag', async (meta, group, ...flags) => {
 
 export default function apply (ctx: Context) {
   ctx.command('admin <action> [...args]', '管理用户', { authority: 4 })
+    .userFields(['authority'])
     .option('-u, --user [user]', '指定目标用户')
     .option('-g, --group [group]', '指定目标群')
     .option('-G, --this-group', '指定目标群为本群')
-    .action(async ({ meta, options }, name: string, ...args: string[]) => {
+    .action(async ({ meta, options }, name, ...args) => {
       const isGroup = 'g' in options || 'G' in options
       if ('user' in options && isGroup) return meta.$send('不能同时目标为指定用户和群。')
 

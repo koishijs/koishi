@@ -16,7 +16,7 @@ declare module '../database' {
 
 declare module '../utils' {
   interface TeachConfig {
-    getAffinity? (user: UserData): number
+    getAffinity? (user: Partial<UserData>): number
   }
 }
 

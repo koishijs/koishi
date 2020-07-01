@@ -303,13 +303,13 @@ export class Context {
     return parent
   }
 
-  protected _getCommandByRawName (name: string) {
+  private _getCommandByRawName <U extends UserField = never, G extends GroupField = never> (name: string) {
     const index = name.lastIndexOf('/')
-    return this.app._commandMap[name.slice(index + 1).toLowerCase()] as Command<UserField, GroupField>
+    return this.app._commandMap[name.slice(index + 1).toLowerCase()] as Command<U, G>
   }
 
-  getCommand (name: string, meta: Meta) {
-    const command = this._getCommandByRawName(name)
+  getCommand <U extends UserField = never, G extends GroupField = never> (name: string, meta: Meta) {
+    const command = this._getCommandByRawName<U, G>(name)
     if (command?.context.match(meta) && !command.getConfig('disable', meta)) {
       return command
     }
@@ -414,7 +414,7 @@ export class Context {
   parse <U extends UserField, G extends GroupField> (message: string, meta: Meta<U, G>, next: NextFunction = noop): ParsedCommandLine<U, G> {
     if (!message) return
     const name = message.split(/\s/, 1)[0]
-    const command = this._getCommandByRawName(name)
+    const command = this._getCommandByRawName<U, G>(name)
     if (command?.context.match(meta)) {
       const result = command.parse(message.slice(name.length).trimStart())
       return { meta, command, next, ...result }

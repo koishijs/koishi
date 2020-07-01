@@ -40,7 +40,7 @@ export interface SessionState {
   userId: number
   groupId: number
   answer?: string
-  meta?: Meta
+  meta?: Meta<UserField>
   test?: DialogueTest
   dialogue?: Dialogue
   dialogues?: Dialogue[]

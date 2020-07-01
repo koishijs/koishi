@@ -1,4 +1,4 @@
-import { injectMethods } from 'koishi-core'
+import { injectMethods, Context } from 'koishi-core'
 import { arrayTypes } from 'koishi-database-mysql'
 import { Observed, pick } from 'koishi-utils'
 import { TeachArgv } from './utils'
@@ -21,9 +21,9 @@ export namespace Dialogue {
     updated?: number[]
   }
 
-  export async function fromIds (ids: number[], argv: TeachArgv) {
+  export async function fromIds <T extends DialogueField> (ids: number[], ctx: Context, fields?: T[]) {
     if (!ids.length) return []
-    return argv.ctx.database.mysql.select<Dialogue[]>('dialogue', null, `\`id\` IN (${ids.join(',')})`)
+    return ctx.database.mysql.select<Pick<Dialogue, T>[]>('dialogue', fields, `\`id\` IN (${ids.join(',')})`)
   }
 
   export async function create (dialogue: Dialogue, argv: TeachArgv) {

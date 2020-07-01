@@ -1,7 +1,7 @@
-import { Command, Context, UserData, Meta, onApp } from '..'
+import { Command, Context, UserData, Meta, onApp, UserField, GroupField } from '..'
 import { getUsage, getUsageName, ValidationField } from './validate'
 
-export type CommandUsage = string | ((this: Command, meta: Meta) => string | Promise<string>)
+export type CommandUsage <U extends UserField, G extends GroupField> = string | ((this: Command<U, G>, meta: Meta<U, G>) => string | Promise<string>)
 
 declare module '../app' {
   interface AppOptions {
@@ -10,10 +10,10 @@ declare module '../app' {
 }
 
 declare module '../command' {
-  interface Command {
-    _usage?: CommandUsage
+  interface Command <U, G> {
+    _usage?: CommandUsage<U, G>
     _examples: string[]
-    usage (text: CommandUsage): this
+    usage (text: CommandUsage<U, G>): this
     example (example: string): this
   }
 
