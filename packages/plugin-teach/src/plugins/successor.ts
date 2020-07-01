@@ -50,8 +50,10 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('-i, --indefinite', '允许后继问答被任何人触发')
     .option('-I, --no-indefinite', '后继问答只能被同一人触发')
 
-  ctx.on('dialogue/before-fetch', ({ predecessors, stateful }, conditionals) => {
-    if (predecessors !== undefined) {
+  ctx.on('dialogue/before-fetch', ({ predecessors, stateful, noRecursive }, conditionals) => {
+    if (noRecursive) {
+      conditionals.push('!`predecessors`')
+    } else if (predecessors !== undefined) {
       const segments = predecessors.map(id => `FIND_IN_SET(${id}, \`predecessors\`)`)
       if (stateful) {
         conditionals.push(`(${['!`predecessors`', ...segments].join('||')})`)
@@ -63,6 +65,8 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/validate', (argv) => {
     const { options, meta } = argv
+
+    if (options.noIndefinite) options.indefinite = false
 
     if ('setPred' in options) {
       if ('addPred' in options) {
@@ -117,7 +121,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     const { succOverwrite, successors, dialogues } = argv
     if (!successors) return
     const predecessors = dialogues.map(dialogue => '' + dialogue.id)
-    const successorDialogues = await Dialogue.fromIds(successors)
+    const successorDialogues = await Dialogue.fromIds(successors, argv)
     const newTargets = successorDialogues.map(d => d.id)
     argv.unknown = difference(successors, newTargets)
 
@@ -153,19 +157,19 @@ export default function apply (ctx: Context, config: TeachConfig) {
     await command.execute(meta.$argv)
   })
 
-  ctx.on('dialogue/before-detail', async ({ dialogues }) => {
+  ctx.on('dialogue/before-detail', async (argv) => {
     // get predecessors
     const predecessors = new Set<number>()
-    for (const dialogue of dialogues) {
+    for (const dialogue of argv.dialogues) {
       for (const id of dialogue.predecessors) {
         predecessors.add(+id)
       }
     }
     const dialogueMap: Record<string, Dialogue> = {}
-    for (const dialogue of await Dialogue.fromIds([...predecessors])) {
+    for (const dialogue of await Dialogue.fromIds([...predecessors], argv)) {
       dialogueMap[dialogue.id] = dialogue
     }
-    for (const dialogue of dialogues) {
+    for (const dialogue of argv.dialogues) {
       const predecessors = dialogue.predecessors.map(id => dialogueMap[id] || { id })
       Object.defineProperty(dialogue, '_predecessors', { writable: true, value: predecessors })
     }

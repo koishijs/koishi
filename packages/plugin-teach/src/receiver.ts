@@ -221,6 +221,9 @@ export default function (ctx: Context, config: TeachConfig) {
         const argv = ctx.parse(message.slice(2, -1), meta)
         Command.collectFields(argv, 'user', userFields)
       }
+      if (capture || data.answer.includes('$n')) {
+        userFields.add('timers')
+      }
     }
   })
 

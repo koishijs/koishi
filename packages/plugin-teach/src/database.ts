@@ -21,9 +21,9 @@ export namespace Dialogue {
     updated?: number[]
   }
 
-  export async function fromIds (ids: number[]) {
+  export async function fromIds (ids: number[], argv: TeachArgv) {
     if (!ids.length) return []
-    return this.select('dialogue', [], `\`id\` IN (${ids.join(',')})`)
+    return argv.ctx.database.mysql.select<Dialogue[]>('dialogue', null, `\`id\` IN (${ids.join(',')})`)
   }
 
   export async function create (dialogue: Dialogue, argv: TeachArgv) {
@@ -53,7 +53,7 @@ export namespace Dialogue {
         data.push(pick(dialogue, fields))
       }
     }
-    await this.update('dialogue', data)
+    await argv.ctx.database.mysql.update('dialogue', data)
   }
 
   export async function remove (ids: number[], argv: TeachArgv) {
@@ -99,10 +99,10 @@ export interface DialogueTest {
   original?: string
   question?: string
   answer?: string
-  keyword?: boolean
   regexp?: boolean
   activated?: boolean
   appellative?: boolean
+  noRecursive?: boolean
 }
 
 export enum DialogueFlag {

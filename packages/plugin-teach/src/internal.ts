@@ -17,7 +17,6 @@ export default function apply (ctx: Context, config: TeachConfig) {
   ctx.command('teach')
     .option('--question <question>', '问题', { isString: true })
     .option('--answer <answer>', '回答', { isString: true })
-    .option('-k, --keyword', '使用关键词匹配')
     .option('-x, --regexp', '使用正则表达式匹配')
     .option('-X, --no-regexp', '取消使用正则表达式匹配')
     .option('-s, --substitute', '由教学者完成回答的执行')
@@ -29,6 +28,9 @@ export default function apply (ctx: Context, config: TeachConfig) {
     if (args.length) {
       return meta.$send('存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
     }
+
+    if (options.noRegexp) options.regexp = false
+    if (options.noSubstitute) options.substitute = false
 
     const { answer } = options
     if (String(options.question).includes('[CQ:image,')) {
@@ -50,24 +52,24 @@ export default function apply (ctx: Context, config: TeachConfig) {
   })
 
   ctx.on('dialogue/permit', ({ meta, options }) => {
-    return options.regexp !== undefined && meta.$user.authority < 3
+    return (options.regexp !== undefined || options.substitute !== undefined) && meta.$user.authority < 3
   })
 
-  ctx.on('dialogue/before-fetch', (test, conditionals) => {
+  ctx.on('dialogue/before-fetch', ({ regexp, answer, question, original }, conditionals) => {
     const { escape } = ctx.database.mysql
-    if (test.keyword) {
-      if (test.answer !== undefined) conditionals.push('`answer` LIKE ' + escape(`%${test.answer}%`))
-      if (test.question !== undefined) conditionals.push('`question` LIKE ' + escape(`%${test.question}%`))
+    if (regexp) {
+      if (answer !== undefined) conditionals.push('`answer` REGEXP ' + escape(answer))
+      if (question !== undefined) conditionals.push('`question` REGEXP ' + escape(question))
     } else {
-      if (test.answer !== undefined) conditionals.push('`answer` = ' + escape(test.answer))
-      if (test.question !== undefined) {
-        if (test.regexp === false) {
-          conditionals.push(`\`question\` = ${escape(test.question)}`)
+      if (answer !== undefined) conditionals.push('`answer` = ' + escape(answer))
+      if (question !== undefined) {
+        if (regexp === false) {
+          conditionals.push('`question` = ' + escape(question))
         } else {
           conditionals.push(`(
-            !(\`flag\` & ${DialogueFlag.regexp}) && \`question\` = ${escape(test.question)} ||
+            !(\`flag\` & ${DialogueFlag.regexp}) && \`question\` = ${escape(question)} ||
             \`flag\` & ${DialogueFlag.regexp} && (
-              ${escape(test.question)} REGEXP \`question\` || ${escape(test.original)} REGEXP \`question\`
+              ${escape(question)} REGEXP \`question\` || ${escape(original)} REGEXP \`question\`
             )
           )`)
         }
@@ -151,7 +153,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
       if (question in argv.questionMap) continue
       argv.questionMap[question] = await getDialogues(ctx, {
         ...test,
-        keyword: false,
+        regexp: null,
         question,
         original,
       })
@@ -188,11 +190,12 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/before-send', async (state) => {
     const { dialogue, meta } = state
-    if (dialogue.flag & DialogueFlag.substitute && meta.userId !== dialogue.writer) {
+    if (dialogue.flag & DialogueFlag.substitute && dialogue.writer && meta.userId !== dialogue.writer) {
       const userFields = new Set<UserField>()
       ctx.app.emit(meta, 'dialogue/before-attach-user', state, userFields)
       meta.userId = dialogue.writer
-      await ctx.observeUser(meta)
+      meta.$user = null
+      await ctx.observeUser(meta, userFields)
     }
   })
 }

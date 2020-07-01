@@ -1,5 +1,5 @@
 import { TeachArgv, getDialogues, isPositiveInteger, parseTeachArgs, SearchDetails, TeachConfig } from './utils'
-import { Dialogue, DialogueTest, DialogueFlag } from './database'
+import { Dialogue, DialogueTest } from './database'
 import { Context } from 'koishi-core'
 import { getTotalWeight } from './receiver'
 
@@ -43,6 +43,10 @@ export default function apply (ctx: Context) {
       delete argv.options.R
       delete argv.options.recursive
     }
+  })
+
+  ctx.on('dialogue/before-search', ({ options }, test) => {
+    test.noRecursive = !options.recursive
   })
 }
 
@@ -108,10 +112,10 @@ export function formatQuestionAnswers (argv: TeachArgv, dialogues: Dialogue[], p
 
 async function search (argv: TeachArgv) {
   const { ctx, meta, options } = argv
-  const { keyword, question, answer, page = 1, original, pipe, recursive, autoMerge } = options
+  const { regexp, question, answer, page = 1, original, pipe, recursive, autoMerge } = options
   const { itemsPerPage = 30, mergeThreshold = 5 } = argv.config
 
-  const test: DialogueTest = { question, answer, keyword, original: options._original }
+  const test: DialogueTest = { question, answer, regexp, original: options._original }
   if (ctx.bail('dialogue/before-search', argv, test)) return
   const dialogues = await getDialogues(ctx, test)
 
@@ -146,13 +150,13 @@ async function search (argv: TeachArgv) {
     return sendResult('全部问答如下', formatQuestionAnswers(argv, dialogues))
   }
 
-  if (!options.keyword) {
+  if (!options.regexp) {
     if (!question) {
-      if (!dialogues.length) return meta.$send(`没有搜索到回答“${answer}”，请尝试使用关键词匹配。`)
+      if (!dialogues.length) return meta.$send(`没有搜索到回答“${answer}”，请尝试使用正则表达式匹配。`)
       const output = dialogues.map(d => `${formatPrefix(argv, d)}${d.original}`)
       return sendResult(`回答“${answer}”的问题如下`, output)
     } else if (!answer) {
-      if (!dialogues.length) return meta.$send(`没有搜索到问题“${original}”，请尝试使用关键词匹配。`)
+      if (!dialogues.length) return meta.$send(`没有搜索到问题“${original}”，请尝试使用正则表达式匹配。`)
       const output = formatAnswers(argv, dialogues)
       const state = ctx.getSessionState(meta)
       state.isSearch = true
@@ -161,7 +165,7 @@ async function search (argv: TeachArgv) {
       const total = await getTotalWeight(ctx, state)
       return sendResult(`问题“${original}”的回答如下`, output, dialogues.length > 1 ? `实际触发概率：${+Math.min(total, 1).toFixed(3)}` : '')
     } else {
-      if (!dialogues.length) return meta.$send(`没有搜索到问答“${original}”“${answer}”，请尝试使用关键词匹配。`)
+      if (!dialogues.length) return meta.$send(`没有搜索到问答“${original}”“${answer}”，请尝试使用正则表达式匹配。`)
       const output = [dialogues.map(d => d.id).join(', ')]
       return sendResult(`“${original}”“${answer}”匹配的回答如下`, output)
     }
@@ -186,13 +190,13 @@ async function search (argv: TeachArgv) {
   }
 
   if (!question) {
-    if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${answer}”的回答。`)
-    return sendResult(`回答关键词“${answer}”的搜索结果如下`, output)
+    if (!dialogues.length) return meta.$send(`没有搜索到含有正则表达式“${answer}”的回答。`)
+    return sendResult(`回答正则表达式“${answer}”的搜索结果如下`, output)
   } else if (!answer) {
-    if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${original}”的问题。`)
-    return sendResult(`问题关键词“${original}”的搜索结果如下`, output)
+    if (!dialogues.length) return meta.$send(`没有搜索到含有正则表达式“${original}”的问题。`)
+    return sendResult(`问题正则表达式“${original}”的搜索结果如下`, output)
   } else {
-    if (!dialogues.length) return meta.$send(`没有搜索到含有关键词“${original}”“${answer}”的问答。`)
-    return sendResult(`问答关键词“${original}”“${answer}”的搜索结果如下`, output)
+    if (!dialogues.length) return meta.$send(`没有搜索到含有正则表达式“${original}”“${answer}”的问答。`)
+    return sendResult(`问答正则表达式“${original}”“${answer}”的搜索结果如下`, output)
   }
 }

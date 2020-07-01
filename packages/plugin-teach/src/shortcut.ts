@@ -20,7 +20,6 @@ export default function (ctx: Context, config: TeachConfig) {
     if (capture[1].startsWith('#')) {
       options.search = true
       if (capture[1].startsWith('##')) {
-        options.keyword = true
         options.autoMerge = true
       }
       if (capture[3]) {

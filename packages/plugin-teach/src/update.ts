@@ -46,7 +46,7 @@ async function update (argv: TeachArgv) {
   argv.uneditable = []
   argv.updated = []
   argv.skipped = []
-  const dialogues = argv.dialogues = await Dialogue.fromIds(target)
+  const dialogues = argv.dialogues = await Dialogue.fromIds(target, argv)
   argv.dialogueMap = Object.fromEntries(dialogues.map(d => [d.id, { ...d }]))
 
   const actualIds = argv.dialogues.map(d => d.id)

@@ -12,6 +12,10 @@ export default function apply (ctx: Context) {
     .option('-f, --frozen', '锁定这个问答', { authority: 4 })
     .option('-F, --no-frozen', '解锁这个问答', { authority: 4 })
 
+  ctx.on('dialogue/validate', ({ options }) => {
+    if (options.noFrozen) options.frozen = false
+  })
+
   ctx.on('dialogue/before-fetch', (test, conditionals) => {
     if (test.frozen !== undefined) {
       conditionals.push(`!(\`flag\` & ${DialogueFlag.frozen}) = !${test.frozen}`)
@@ -34,7 +38,7 @@ export default function apply (ctx: Context) {
   })
 
   ctx.on('dialogue/detail', (dialogue, output) => {
-    if (dialogue.flag & DialogueFlag.frozen) output.push('此问题已锁定。')
+    if (dialogue.flag & DialogueFlag.frozen) output.push('此问答已锁定。')
   })
 
   ctx.on('dialogue/detail-short', (dialogue, output) => {
