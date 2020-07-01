@@ -4,7 +4,7 @@ import { Meta, Context } from 'koishi-core'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'before-record' (meta: Meta<'message' | 'send'>): any
+    'before-record' (meta: Meta): any
   }
 }
 
@@ -23,7 +23,7 @@ const cwd = process.cwd()
 export const name = 'recorder'
 
 export function apply (ctx: Context, options: RecorderOptions = {}) {
-  async function handleMessage (meta: Meta<'message' | 'send'>) {
+  async function handleMessage (meta: Meta) {
     if (meta.$ctxType !== 'group' || meta.postType === 'message' && meta.$group.assignee !== ctx.app.selfId) return
     if (await ctx.serialize('before-record', meta)) return
     const output = JSON.stringify(pick(meta, ['time', 'userId', 'message'])) + '\n'

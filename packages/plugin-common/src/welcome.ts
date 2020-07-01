@@ -1,8 +1,8 @@
 import { Meta, Context } from 'koishi-core'
 
-export type WelcomeMessage = string | ((meta: Meta<'notice'>) => string | Promise<string>)
+export type WelcomeMessage = string | ((meta: Meta) => string | Promise<string>)
 
-const defaultMessage = (meta: Meta<'notice'>) => `欢迎新大佬 [CQ:at,qq=${meta.userId}]！`
+const defaultMessage = (meta: Meta) => `欢迎新大佬 [CQ:at,qq=${meta.userId}]！`
 
 export default function apply (ctx: Context, message: WelcomeMessage = defaultMessage) {
   ctx.on('group-increase', async (meta) => {

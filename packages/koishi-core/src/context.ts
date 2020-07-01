@@ -3,12 +3,12 @@ import { Command, CommandConfig, ParsedCommandLine, InputArgv } from './command'
 import { Meta, contextTypes, getSessionId } from './meta'
 import { Sender } from './sender'
 import { App } from './app'
-import { Database, UserField, GroupField, User, createUser, GroupData, UserData } from './database'
+import { Database, UserField, GroupField, User, createUser, GroupData, UserData, Group } from './database'
 import { errors } from './shared'
 import { format, inspect } from 'util'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
-export type Middleware = (meta: Meta<'message'>, next: NextFunction) => any
+export type Middleware = (meta: Meta, next: NextFunction) => any
 export type PluginFunction <T, U = any> = (ctx: T, options: U) => void
 export type PluginObject <T, U = any> = { name?: string, apply: PluginFunction<T, U> }
 export type Plugin <T, U = any> = PluginFunction<T, U> | PluginObject<T, U>
@@ -305,10 +305,10 @@ export class Context {
 
   protected _getCommandByRawName (name: string) {
     const index = name.lastIndexOf('/')
-    return this.app._commandMap[name.slice(index + 1).toLowerCase()]
+    return this.app._commandMap[name.slice(index + 1).toLowerCase()] as Command<UserField, GroupField>
   }
 
-  getCommand (name: string, meta: Meta<'message'>) {
+  getCommand (name: string, meta: Meta) {
     const command = this._getCommandByRawName(name)
     if (command?.context.match(meta) && !command.getConfig('disable', meta)) {
       return command
@@ -316,7 +316,7 @@ export class Context {
   }
 
   /** 在元数据上绑定一个可观测群实例 */
-  async observeGroup (meta: Meta<'message'>, fields: Iterable<GroupField> = []) {
+  async observeGroup <T extends GroupField> (meta: Meta, fields: Iterable<T> = []): Promise<Group<T>> {
     const fieldSet = new Set<GroupField>(fields)
     const { groupId, $argv, $group } = meta
     if ($argv) Command.collectFields($argv, 'group', fieldSet)
@@ -332,7 +332,7 @@ export class Context {
         data._timestamp = Date.now()
         groupCache[groupId] = data
       }
-      return $group
+      return $group as any
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
@@ -358,7 +358,7 @@ export class Context {
   }
 
   /** 在元数据上绑定一个可观测用户实例 */
-  async observeUser (meta: Meta<'message'>, fields: Iterable<UserField> = []) {
+  async observeUser <T extends UserField> (meta: Meta, fields: Iterable<T> = []): Promise<User<T>> {
     const fieldSet = new Set<UserField>(fields)
     const { userId, $argv, $user } = meta
     if ($argv) Command.collectFields($argv, 'user', fieldSet)
@@ -376,7 +376,7 @@ export class Context {
       }
     }
 
-    if ($user) return meta.$user
+    if ($user) return meta.$user as any
 
     let user: User
     const defaultAuthority = typeof this.app.options.defaultAuthority === 'function'
@@ -411,7 +411,7 @@ export class Context {
     return user
   }
 
-  parse (message: string, meta: Meta<'message'>, next: NextFunction = noop): ParsedCommandLine {
+  parse <U extends UserField, G extends GroupField> (message: string, meta: Meta<U, G>, next: NextFunction = noop): ParsedCommandLine<U, G> {
     if (!message) return
     const name = message.split(/\s/, 1)[0]
     const command = this._getCommandByRawName(name)
@@ -422,8 +422,8 @@ export class Context {
   }
 
   execute (argv: InputArgv): Promise<void>
-  execute (message: string, meta: Meta<'message'>, next?: NextFunction): Promise<void>
-  async execute (...args: [InputArgv] | [string, Meta<'message'>, NextFunction?]) {
+  execute (message: string, meta: Meta, next?: NextFunction): Promise<void>
+  async execute (...args: [InputArgv] | [string, Meta, NextFunction?]) {
     const meta = typeof args[0] === 'string' ? args[1] : args[0].meta
     if (!('$ctxType' in meta)) this.app.server.parseMeta(meta)
     let argv: ParsedCommandLine, next: NextFunction = noop
@@ -464,49 +464,49 @@ export interface EventMap {
   [Context.MIDDLEWARE_EVENT]: Middleware
 
   // CQHTTP events
-  'message' (meta: Meta<'message'>): any
-  'message/normal' (meta: Meta<'message'>): any
-  'message/notice' (meta: Meta<'message'>): any
-  'message/anonymous' (meta: Meta<'message'>): any
-  'message/friend' (meta: Meta<'message'>): any
-  'message/group' (meta: Meta<'message'>): any
-  'message/discuss' (meta: Meta<'message'>): any
-  'message/other' (meta: Meta<'message'>): any
-  'friend-add' (meta: Meta<'notice'>): any
-  'group-increase' (meta: Meta<'notice'>): any
-  'group-increase/invite' (meta: Meta<'notice'>): any
-  'group-increase/approve' (meta: Meta<'notice'>): any
-  'group-decrease' (meta: Meta<'notice'>): any
-  'group-decrease/leave' (meta: Meta<'notice'>): any
-  'group-decrease/kick' (meta: Meta<'notice'>): any
-  'group-decrease/kick-me' (meta: Meta<'notice'>): any
-  'group-upload' (meta: Meta<'notice'>): any
-  'group-admin' (meta: Meta<'notice'>): any
-  'group-admin/set' (meta: Meta<'notice'>): any
-  'group-admin/unset' (meta: Meta<'notice'>): any
-  'group-ban' (meta: Meta<'notice'>): any
-  'group-ban/ban' (meta: Meta<'notice'>): any
-  'group-ban/lift-ban' (meta: Meta<'notice'>): any
-  'request/friend' (meta: Meta<'request'>): any
-  'request/group/add' (meta: Meta<'request'>): any
-  'request/group/invite' (meta: Meta<'request'>): any
-  'heartbeat' (meta: Meta<'meta_event'>): any
-  'lifecycle' (meta: Meta<'meta_event'>): any
-  'lifecycle/enable' (meta: Meta<'meta_event'>): any
-  'lifecycle/disable' (meta: Meta<'meta_event'>): any
-  'lifecycle/connect' (meta: Meta<'meta_event'>): any
+  'message' (meta: Meta): any
+  'message/normal' (meta: Meta): any
+  'message/notice' (meta: Meta): any
+  'message/anonymous' (meta: Meta): any
+  'message/friend' (meta: Meta): any
+  'message/group' (meta: Meta): any
+  'message/discuss' (meta: Meta): any
+  'message/other' (meta: Meta): any
+  'friend-add' (meta: Meta): any
+  'group-increase' (meta: Meta): any
+  'group-increase/invite' (meta: Meta): any
+  'group-increase/approve' (meta: Meta): any
+  'group-decrease' (meta: Meta): any
+  'group-decrease/leave' (meta: Meta): any
+  'group-decrease/kick' (meta: Meta): any
+  'group-decrease/kick-me' (meta: Meta): any
+  'group-upload' (meta: Meta): any
+  'group-admin' (meta: Meta): any
+  'group-admin/set' (meta: Meta): any
+  'group-admin/unset' (meta: Meta): any
+  'group-ban' (meta: Meta): any
+  'group-ban/ban' (meta: Meta): any
+  'group-ban/lift-ban' (meta: Meta): any
+  'request/friend' (meta: Meta): any
+  'request/group/add' (meta: Meta): any
+  'request/group/invite' (meta: Meta): any
+  'heartbeat' (meta: Meta): any
+  'lifecycle' (meta: Meta): any
+  'lifecycle/enable' (meta: Meta): any
+  'lifecycle/disable' (meta: Meta): any
+  'lifecycle/connect' (meta: Meta): any
 
   // Koishi events
-  'before-attach-user' (meta: Meta<'message'>, fields: Set<UserField>): any
-  'before-attach-group' (meta: Meta<'message'>, fields: Set<GroupField>): any
-  'attach-user' (meta: Meta<'message'>): any
-  'attach-group' (meta: Meta<'message'>): any
-  'attach' (meta: Meta<'message'>): any
-  'send' (meta: Meta<'send'>): any
-  'before-send' (meta: Meta<'send'>): any
+  'before-attach-user' (meta: Meta, fields: Set<UserField>): any
+  'before-attach-group' (meta: Meta, fields: Set<GroupField>): any
+  'attach-user' (meta: Meta): any
+  'attach-group' (meta: Meta): any
+  'attach' (meta: Meta): any
+  'send' (meta: Meta): any
+  'before-send' (meta: Meta): any
   'before-command' (argv: ParsedCommandLine): any
   'command' (argv: ParsedCommandLine): any
-  'after-middleware' (meta: Meta<'message'>): any
+  'after-middleware' (meta: Meta): any
   'error' (error: Error): any
   'error/command' (error: Error): any
   'error/middleware' (error: Error): any

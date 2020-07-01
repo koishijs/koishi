@@ -2,11 +2,11 @@ import { Context, Meta } from 'koishi-core'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'repeater' (meta: Meta<'message'>, state: State): void
-    'repeater/repeat' (meta: Meta<'message'>, state: State): void
-    'repeater/interrupt' (meta: Meta<'message'>, state: State): void
-    'repeater/check-repeat' (meta: Meta<'message'>, state: State): void
-    'repeater/check-interrupt' (meta: Meta<'message'>, state: State): void
+    'repeater' (meta: Meta, state: State): void
+    'repeater/repeat' (meta: Meta, state: State): void
+    'repeater/interrupt' (meta: Meta, state: State): void
+    'repeater/check-repeat' (meta: Meta, state: State): void
+    'repeater/check-interrupt' (meta: Meta, state: State): void
   }
 }
 

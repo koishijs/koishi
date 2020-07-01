@@ -32,12 +32,12 @@ onApp((app) => {
 interface SuggestOptions {
   target: string
   items: string[]
-  meta: Meta<'message'>
+  meta: Meta
   next: NextFunction
   prefix: string
   suffix: string
   coefficient?: number
-  execute: (suggestion: string, meta: Meta<'message'>, next: NextFunction) => any
+  execute: (suggestion: string, meta: Meta, next: NextFunction) => any
 }
 
 export function showSuggestions (options: SuggestOptions): Promise<void> {

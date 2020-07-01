@@ -1,6 +1,6 @@
 import { App, Meta } from 'koishi-core'
 
-type RequestHandler = string | boolean | ((meta: Meta<'request'>, app: App) => string | boolean | void | Promise<string | boolean | void>)
+type RequestHandler = string | boolean | ((meta: Meta, app: App) => string | boolean | void | Promise<string | boolean | void>)
 
 export interface HandlerOptions {
   handleFriend?: RequestHandler
@@ -8,7 +8,7 @@ export interface HandlerOptions {
   handleGroupInvite?: RequestHandler
 }
 
-async function getHandleResult (handler: RequestHandler, meta: Meta<'request'>, ctx: App) {
+async function getHandleResult (handler: RequestHandler, meta: Meta, ctx: App) {
   return typeof handler === 'function' ? handler(meta, ctx) : handler
 }
 

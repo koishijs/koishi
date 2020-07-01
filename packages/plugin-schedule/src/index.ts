@@ -10,7 +10,7 @@ export interface Schedule {
   time: Date
   interval: number
   command: string
-  meta: Meta<'message'>
+  meta: Meta
 }
 
 function inspectSchedule ({ id, assignee, meta, interval, command, time }: Schedule) {

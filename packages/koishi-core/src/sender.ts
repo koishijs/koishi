@@ -118,7 +118,7 @@ export class Sender {
       selfId: this.app.selfId,
       [$ctxType + 'Id']: $ctxId,
       time: Math.round(Date.now() / 1000),
-    } as Meta<'send'>
+    } as Meta
   }
 
   async sendMsg (type: MessageType, ctxId: number, message: string, autoEscape = false) {

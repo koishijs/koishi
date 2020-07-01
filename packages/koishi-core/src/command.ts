@@ -123,14 +123,14 @@ export interface ParsedLine {
   options: Record<string, any>
 }
 
-export interface ParsedCommandLine extends Partial<ParsedLine> {
-  meta: Meta<'message'>
-  command: Command
+export interface ParsedCommandLine <U extends UserField = never, G extends GroupField = never> extends Partial<ParsedLine> {
+  meta: Meta<U, G>
+  command: Command<U, G>
   next?: NextFunction
 }
 
 export interface InputArgv extends Partial<ParsedLine> {
-  meta: Meta<'message'>
+  meta: Meta
   command?: String | Command
   next?: NextFunction
 }
@@ -159,8 +159,9 @@ export interface ShortcutConfig {
 }
 
 type ArgvInferred <T> = Iterable<T> | ((argv: ParsedCommandLine, fields: Set<T>) => void)
+type CommandAction <U extends UserField, G extends GroupField> = (this: Command<U, G>, config: ParsedCommandLine<U, G>, ...args: string[]) => any
 
-export class Command {
+export class Command<U extends UserField = never, G extends GroupField = never> {
   config: CommandConfig
   children: Command[] = []
   parent: Command = null
@@ -175,7 +176,7 @@ export class Command {
   private _userFields: ArgvInferred<UserField>[] = []
   private _groupFields: ArgvInferred<GroupField>[] = []
 
-  _action?: (this: this, config: ParsedCommandLine, ...args: string[]) => any
+  _action?: CommandAction<U, G>
 
   static defaultConfig: CommandConfig = {
     authority: 1,
@@ -244,14 +245,14 @@ export class Command {
     return `Command <${this.name}>`
   }
 
-  userFields (fields: ArgvInferred<UserField>) {
+  userFields <T extends UserField = never> (fields: ArgvInferred<T>) {
     this._userFields.push(fields)
-    return this
+    return this as Command<U | T, G>
   }
 
-  groupFields (fields: ArgvInferred<GroupField>) {
+  groupFields <T extends GroupField = never> (fields: ArgvInferred<T>) {
     this._groupFields.push(fields)
-    return this
+    return this as Command<U, G | T>
   }
 
   alias (...names: string[]) {
@@ -369,12 +370,12 @@ export class Command {
     return true
   }
 
-  action (callback: (this: this, options: ParsedCommandLine, ...args: string[]) => any) {
+  action (callback: CommandAction<U, G>) {
     this._action = callback
     return this
   }
 
-  getConfig <K extends keyof CommandConfig> (key: K, meta: Meta<'message'>): Exclude<CommandConfig[K], (user: UserData) => any> {
+  getConfig <K extends keyof CommandConfig> (key: K, meta: Meta): Exclude<CommandConfig[K], (user: UserData) => any> {
     const value = this.config[key] as any
     return typeof value === 'function' ? value(meta.$user) : value
   }
@@ -507,7 +508,7 @@ export class Command {
     return output
   }
 
-  async execute (argv: ParsedCommandLine, next: NextFunction = noop) {
+  async execute (argv: ParsedCommandLine<U, G>, next: NextFunction = noop) {
     argv.command = this
     argv.next = next
     if (!argv.options) argv.options = {}

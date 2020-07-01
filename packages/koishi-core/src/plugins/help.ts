@@ -1,5 +1,5 @@
 import { Command, Context, UserData, Meta, onApp } from '..'
-import { getUsage, getUsageName } from './validate'
+import { getUsage, getUsageName, ValidationField } from './validate'
 
 export type CommandUsage = string | ((this: Command, meta: Meta) => string | Promise<string>)
 
@@ -83,14 +83,14 @@ function getShortcuts (command: Command, user: Pick<UserData, 'authority'>) {
   })
 }
 
-function getCommands (context: Context, meta: Meta<'message'>, parent?: Command) {
+function getCommands (context: Context, meta: Meta<ValidationField>, parent?: Command) {
   const commands = parent ? parent.children : context.app._commands
   return commands
     .filter(cmd => cmd.context.match(meta) && cmd.config.authority <= meta.$user.authority)
     .sort((a, b) => a.name > b.name ? 1 : -1)
 }
 
-function getCommandList (prefix: string, context: Context, meta: Meta<'message'>, parent: Command, expand: boolean) {
+function getCommandList (prefix: string, context: Context, meta: Meta<ValidationField>, parent: Command, expand: boolean) {
   let commands = getCommands(context, meta, parent)
   if (!expand) {
     commands = commands.filter(cmd => cmd.parent === parent)
@@ -112,7 +112,7 @@ function getCommandList (prefix: string, context: Context, meta: Meta<'message'>
   return output
 }
 
-function showGlobalHelp (context: Context, meta: Meta<'message'>, config: HelpConfig) {
+function showGlobalHelp (context: Context, meta: Meta<'authority' | 'timers' | 'usage'>, config: HelpConfig) {
   const output = [
     ...getCommandList('当前可用的指令有', context, meta, null, config.expand),
     '群聊普通指令可以通过“@我+指令名”的方式进行触发。',
@@ -125,7 +125,7 @@ function showGlobalHelp (context: Context, meta: Meta<'message'>, config: HelpCo
   return meta.$send(output.join('\n'))
 }
 
-function getOptions (command: Command, meta: Meta<'message'>, maxUsage: number, config: HelpConfig) {
+function getOptions (command: Command, meta: Meta<ValidationField>, maxUsage: number, config: HelpConfig) {
   if (command.config.hideOptions && !config.options) return []
   const options = config.options
     ? command._options
@@ -148,7 +148,7 @@ function getOptions (command: Command, meta: Meta<'message'>, maxUsage: number, 
   return output
 }
 
-async function showCommandHelp (command: Command, meta: Meta<'message'>, config: HelpConfig) {
+async function showCommandHelp (command: Command, meta: Meta<ValidationField>, config: HelpConfig) {
   const output = [command.name + command.declaration, command.config.description]
   if (config.options) {
     const output = getOptions(command, meta, Infinity, config)

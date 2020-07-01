@@ -2,6 +2,7 @@ import { onApp, Meta, UserData, Command } from '..'
 import { messages } from '../shared'
 import { format } from 'util'
 import { getDateNumber } from 'koishi-utils'
+import { ParsedCommandLine } from '../command'
 
 declare module '../context' {
   interface EventMap {
@@ -36,6 +37,8 @@ export function getUsageName (command: Command) {
   return command.config.usageName || command.name
 }
 
+export type ValidationField = 'authority' | 'usage' | 'timers'
+
 Object.assign(Command.defaultConfig, {
   showWarning: true,
   maxUsage: Infinity,
@@ -60,8 +63,8 @@ Command.userFields(({ command, options = {} }, fields) => {
 })
 
 onApp((app) => {
-  app.on('before-command', ({ meta, args, unknown, options, command }) => {
-    async function sendHint (meta: Meta<'message'>, message: string, ...param: any[]) {
+  app.on('before-command', ({ meta, args, unknown, options, command }: ParsedCommandLine<ValidationField>) => {
+    async function sendHint (meta: Meta, message: string, ...param: any[]) {
       if (command.config.showWarning) {
         await meta.$send(format(message, ...param))
         return true

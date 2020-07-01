@@ -70,7 +70,7 @@ export function formatTimeAndInterval (time: Date, interval: number) {
   }
 }
 
-export function formatContext (meta: Meta<'message'>) {
+export function formatContext (meta: Meta) {
   return meta.messageType === 'private' ? `私聊 ${meta.userId}`
     : meta.messageType === 'group' ? `群聊 ${meta.groupId}`
     : `讨论组 ${meta.discussId}`

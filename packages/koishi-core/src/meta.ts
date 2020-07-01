@@ -1,4 +1,4 @@
-import { User, Group } from './database'
+import { User, Group, UserField, GroupField } from './database'
 import { ParsedCommandLine } from './command'
 import { isInteger } from 'koishi-utils'
 import { App } from './app'
@@ -52,11 +52,19 @@ export interface ParsedMessage {
   message?: string
 }
 
+export namespace Meta {
+  interface DefaultUserData { flag: null }
+  interface DefaultGroupData { flag: null, assignee: null }
+
+  export type UserField = keyof DefaultUserData
+  export type GroupField = keyof DefaultGroupData
+}
+
 /** CQHTTP Meta Information */
-export interface Meta <T extends PostType = PostType> {
+export interface Meta <U extends UserField = never, G extends GroupField = never> {
   // database bindings
-  $user?: User
-  $group?: Group
+  $user?: User<U>
+  $group?: Group<G>
   $nickname?: string
 
   // context identifier
@@ -78,13 +86,13 @@ export interface Meta <T extends PostType = PostType> {
   $send?: (message: string, autoEscape?: boolean) => Promise<void>
 
   // basic properties
-  postType?: T
-  messageType?: MetaTypeMap[T & 'message']
-  noticeType?: MetaTypeMap[T & 'notice']
-  requestType?: MetaTypeMap[T & 'request']
-  metaEventType?: MetaTypeMap[T & 'meta_event']
-  sendType?: MetaTypeMap[T & 'send']
-  subType?: SubTypeMap[T]
+  postType?: keyof MetaTypeMap
+  messageType?: MetaTypeMap['message']
+  noticeType?: MetaTypeMap['notice']
+  requestType?: MetaTypeMap['request']
+  metaEventType?: MetaTypeMap['meta_event']
+  sendType?: MetaTypeMap['send']
+  subType?: SubTypeMap[keyof SubTypeMap]
   selfId?: number
   userId?: number
   groupId?: number
@@ -221,7 +229,7 @@ export interface GroupNoticeInfo {
   vn: number
 }
 
-export function getSenderName (meta: Meta) {
+export function getSenderName (meta: Meta<'name'>) {
   const idString = '' + meta.userId
   return meta.$user && meta.$user.name && idString !== meta.$user.name
     ? meta.$user.name
@@ -237,7 +245,7 @@ export function getSenderName (meta: Meta) {
  * @example
  * getContextId(meta) // user123, group456, discuss789
  */
-export function getContextId (meta: Meta<'message'>) {
+export function getContextId (meta: Meta) {
   const type = meta.messageType === 'private' ? 'user' : meta.messageType
   return type + meta[`${type}Id`]
 }

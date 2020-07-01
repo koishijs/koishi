@@ -4,7 +4,7 @@ import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig, ParsedLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
-import { GroupFlag, UserFlag, createDatabase, DatabaseConfig, GroupField, UserField } from './database'
+import { GroupFlag, UserFlag, createDatabase, DatabaseConfig, GroupField, UserField, Group, User } from './database'
 import { Meta, getSenderName } from './meta'
 import { simplify, defineProperty } from 'koishi-utils'
 import { emitter, errors } from './shared'
@@ -22,7 +22,8 @@ export interface AppOptions {
   nickname?: string | string[]
   retryTimes?: number
   retryInterval?: number
-  getSenderName? (meta: Meta): string | void
+  // FIXME: typings
+  getSenderName? (meta: Meta<UserField>): string | void
   maxMiddlewares?: number
   defaultAuthority?: number | ((meta: Meta) => number)
   quickOperationTimeout?: number
@@ -131,6 +132,7 @@ export class App extends Context {
     this.on('logger', (scope, message) => debug(scope)(message))
     this.on('parse', (meta) => {
       Object.defineProperty(meta, '$nickname', {
+        // @ts-ignore FIXME: typings
         get: () => options.getSenderName(meta),
       })
     })
@@ -273,7 +275,7 @@ export class App extends Context {
     }
   }
 
-  private _preprocess = async (meta: Meta<'message'>, next: NextFunction) => {
+  private _preprocess = async (meta: Meta<Meta.UserField, Meta.GroupField>, next: NextFunction) => {
     // strip prefix
     let capture: RegExpMatchArray
     let atMe = false
@@ -370,7 +372,7 @@ export class App extends Context {
     return next()
   }
 
-  private _applyMiddlewares = async (meta: Meta<'message'>) => {
+  private _applyMiddlewares = async (meta: Meta) => {
     // preparation
     const counter = this._middlewareCounter++
     this._middlewareSet.add(counter)

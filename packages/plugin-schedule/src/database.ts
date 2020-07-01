@@ -15,7 +15,7 @@ declare module 'koishi-core/dist/database' {
 }
 
 interface ScheduleMethods {
-  createSchedule (time: Date, assignee: number, interval: number, command: string, meta: Meta<'message'>): Promise<Schedule>
+  createSchedule (time: Date, assignee: number, interval: number, command: string, meta: Meta): Promise<Schedule>
   removeSchedule (id: number): Promise<any>
   getSchedule (id: number): Promise<Schedule>
   getAllSchedules (assignees?: number[]): Promise<Schedule[]>

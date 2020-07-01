@@ -15,7 +15,7 @@ declare module 'koishi-core/dist/context' {
   }
 
   interface Context {
-    getSessionState (this: Context, meta: Meta<'message'>): SessionState
+    getSessionState (this: Context, meta: Meta): SessionState
   }
 }
 
@@ -40,7 +40,7 @@ export interface SessionState {
   userId: number
   groupId: number
   answer?: string
-  meta?: Meta<'message'>
+  meta?: Meta
   test?: DialogueTest
   dialogue?: Dialogue
   dialogues?: Dialogue[]
@@ -78,7 +78,7 @@ export async function getTotalWeight (ctx: Context, state: SessionState) {
   return dialogues.reduce((prev, curr) => prev + curr._weight, 0)
 }
 
-export async function triggerDialogue (ctx: Context, meta: Meta<'message'>, config: TeachConfig, next: NextFunction = noop) {
+export async function triggerDialogue (ctx: Context, meta: Meta, config: TeachConfig, next: NextFunction = noop) {
   const state = ctx.getSessionState(meta)
   state.next = next
   state.test = {}
