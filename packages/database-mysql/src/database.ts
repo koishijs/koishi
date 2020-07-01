@@ -88,7 +88,7 @@ export class MysqlDatabase implements AbstractDatabase {
 
   query = <T extends {}> (sql: string, values?: any): Promise<T> => {
     return new Promise((resolve, reject) => {
-      this.pool.query(sql, values, (error, results, fields) => {
+      this.pool.query(sql, values, (error, results) => {
         if (error) {
           reject(error)
         } else {

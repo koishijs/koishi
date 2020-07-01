@@ -1,5 +1,4 @@
-import { injectMethods, userFields, UserData, createUser, User, UserField } from 'koishi-core'
-import { observe } from 'koishi-utils'
+import { injectMethods, userFields, UserData, createUser, UserField } from 'koishi-core'
 
 export const userGetters: Record<string, () => string> = {}
 export const userPrototype: Partial<UserData> = {}
