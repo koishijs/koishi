@@ -1,4 +1,4 @@
-import { contain, union, intersection, difference, observe, noop, defineProperty } from 'koishi-utils'
+import { contain, union, intersection, difference, observe, Observed, noop, defineProperty } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine, InputArgv } from './command'
 import { Meta, contextTypes, getSessionId } from './meta'
 import { Sender } from './sender'
@@ -42,8 +42,8 @@ export namespace ContextScope {
 const noopScope: ContextScope = [[[], null], [[], null], [[], null]]
 const noopIdentifier = ContextScope.stringify(noopScope)
 
-const userCache: Record<number, UserData> = {}
-const groupCache: Record<number, GroupData> = {}
+const userCache: Record<number, Observed<Partial<UserData>>> = {}
+const groupCache: Record<number, Observed<Partial<GroupData>>> = {}
 
 export interface Logger {
   warn (format: any, ...param: any): void
@@ -320,6 +320,7 @@ export class Context {
     const fieldSet = new Set<GroupField>(fields)
     const { groupId, $argv, $group } = meta
     if ($argv) Command.collectFields($argv, 'group', fieldSet)
+    if (!fieldSet.size) return
 
     // 对于已经绑定可观测群的，判断字段是否需要自动补充
     if ($group) {
@@ -328,9 +329,8 @@ export class Context {
       }
       if (fieldSet.size) {
         const data = await this.database.getGroup(groupId, [...fieldSet])
-        $group._merge(data)
+        groupCache[groupId] = $group._merge(data)
         data._timestamp = Date.now()
-        groupCache[groupId] = data
       }
       return $group as any
     }
@@ -342,17 +342,15 @@ export class Context {
     const isActiveCache = cache
       && contain(Object.keys(cache), fieldArray)
       && timestamp - cache._timestamp < this.app.options.groupCacheTimeout
-    let data: GroupData
     if (isActiveCache) {
-      data = cache
-    } else {
-      data = await this.database.getGroup(groupId, fieldArray)
-      data._timestamp = timestamp
-      groupCache[groupId] = data
+      defineProperty(meta, '$group', cache)
+      return cache as any
     }
 
     // 绑定一个新的可观测群实例
-    const group = observe(data, diff => this.database.setGroup(groupId, diff), `group ${groupId}`)
+    const data = await this.database.getGroup(groupId, fieldArray)
+    data._timestamp = timestamp
+    const group = groupCache[groupId] = observe(data, diff => this.database.setGroup(groupId, diff), `group ${groupId}`)
     defineProperty(meta, '$group', group)
     return group
   }
@@ -362,6 +360,7 @@ export class Context {
     const fieldSet = new Set<UserField>(fields)
     const { userId, $argv, $user } = meta
     if ($argv) Command.collectFields($argv, 'user', fieldSet)
+    if (!fieldSet.size) return
 
     // 对于已经绑定可观测用户的，判断字段是否需要自动补充
     if ($user && !meta.anonymous) {
@@ -370,43 +369,40 @@ export class Context {
       }
       if (fieldSet.size) {
         const data = await this.database.getUser(userId, [...fieldSet])
-        $user._merge(data)
+        userCache[userId] = $user._merge(data)
         data._timestamp = Date.now()
-        userCache[userId] = data
       }
     }
 
     if ($user) return meta.$user as any
 
-    let user: User
     const defaultAuthority = typeof this.app.options.defaultAuthority === 'function'
       ? this.app.options.defaultAuthority(meta)
       : this.app.options.defaultAuthority || 0
 
     // 确保匿名消息不会写回数据库
     if (meta.anonymous) {
-      user = observe(createUser(userId, defaultAuthority))
-    } else {
-      // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-      const cache = userCache[userId]
-      const fieldArray = [...fieldSet]
-      const timestamp = Date.now()
-      const isActiveCache = cache
-        && contain(Object.keys(cache), fieldArray)
-        && timestamp - cache._timestamp < this.app.options.userCacheTimeout
-      let data: UserData
-      if (isActiveCache) {
-        data = cache
-      } else {
-        data = await this.database.getUser(userId, defaultAuthority, fieldArray)
-        data._timestamp = timestamp
-        userCache[userId] = data
-      }
-
-      // 绑定一个新的可观测用户实例
-      user = observe(data, diff => this.database.setUser(userId, diff), `user ${userId}`)
+      const user = observe(createUser(userId, defaultAuthority))
+      defineProperty(meta, '$user', user)
+      return user
     }
 
+    // 如果存在满足可用的缓存数据，使用缓存代替数据获取
+    const cache = userCache[userId]
+    const fieldArray = [...fieldSet]
+    const timestamp = Date.now()
+    const isActiveCache = cache
+      && contain(Object.keys(cache), fieldArray)
+      && timestamp - cache._timestamp < this.app.options.userCacheTimeout
+    if (isActiveCache) {
+      defineProperty(meta, '$user', cache)
+      return cache as any
+    }
+
+    // 绑定一个新的可观测用户实例
+    const data = await this.database.getUser(userId, defaultAuthority, fieldArray)
+    data._timestamp = timestamp
+    const user = userCache[userId] = observe(data, diff => this.database.setUser(userId, diff), `user ${userId}`)
     defineProperty(meta, '$user', user)
     return user
   }

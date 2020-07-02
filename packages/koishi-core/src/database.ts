@@ -16,7 +16,7 @@ export interface UserData {
   _timestamp: number
 }
 
-export type User<K extends UserField = UserField> = Observed<Pick<UserData, K | 'id'>>
+export type User<K extends UserField = UserField> = Observed<Pick<UserData, K>>
 export type UserField = keyof UserData
 export const userFields: UserField[] = []
 
@@ -60,7 +60,7 @@ export enum GroupFlag {
 
 export const groupFlags: (keyof typeof GroupFlag)[] = ['noCommand', 'noResponse', 'noEmit']
 
-export type Group<K extends GroupField = GroupField> = Observed<Pick<GroupData, K | 'id'>>
+export type Group<K extends GroupField = GroupField> = Observed<Pick<GroupData, K>>
 export type GroupField = keyof GroupData
 export const groupFields: GroupField[] = []
 
