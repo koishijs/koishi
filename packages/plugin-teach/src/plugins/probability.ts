@@ -40,7 +40,8 @@ export default function apply (ctx: Context, config: TeachConfig) {
     state.activated = {}
   })
 
-  ctx.on('dialogue/attach-user', ({ test, userId, dialogues, activated }) => {
+  ctx.on('dialogue/before-attach-user', ({ test, userId, dialogue, dialogues, activated }) => {
+    if (dialogue) return
     dialogues.forEach((dialogue) => {
       if (userId in activated) {
         // 如果已经是激活状态，采用两个概率的最大值

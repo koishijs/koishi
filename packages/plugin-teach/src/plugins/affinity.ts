@@ -1,4 +1,4 @@
-import { Context, UserData } from 'koishi-core'
+import { Context, UserData, UserField } from 'koishi-core'
 import { isInteger } from 'koishi-utils'
 import { TeachConfig } from '../utils'
 
@@ -16,7 +16,14 @@ declare module '../database' {
 
 declare module '../utils' {
   interface TeachConfig {
+    affinityFields?: Iterable<UserField>
     getAffinity? (user: Partial<UserData>): number
+  }
+}
+
+declare module '../receiver' {
+  interface SessionState {
+    noAffinityTest?: boolean
   }
 }
 
@@ -25,7 +32,7 @@ export function isShortInteger (value: any) {
 }
 
 export default function apply (ctx: Context, config: TeachConfig) {
-  const { getAffinity } = config
+  const { getAffinity, affinityFields = [] } = config
   if (!getAffinity) return
 
   ctx.command('teach')
@@ -69,7 +76,16 @@ export default function apply (ctx: Context, config: TeachConfig) {
     if (dialogue.maxAffinity < 32768) output.push(`A=${dialogue.maxAffinity}`)
   })
 
-  ctx.on('dialogue/attach-user', ({ meta, dialogues }) => {
+  ctx.on('dialogue/before-attach-user', (state, fields) => {
+    if (state.dialogue) return
+    if (state.noAffinityTest = state.dialogues.every(d => d.minAffinity === 0 && d.maxAffinity === 32768)) return
+    for (const field of affinityFields) {
+      fields.add(field)
+    }
+  })
+
+  ctx.on('dialogue/attach-user', ({ meta, dialogues, noAffinityTest }) => {
+    if (noAffinityTest) return
     const affinity = getAffinity(meta.$user)
     dialogues.forEach((dialogue) => {
       if (dialogue.minAffinity <= affinity && dialogue.maxAffinity > affinity) return
