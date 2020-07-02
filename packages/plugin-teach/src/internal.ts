@@ -59,7 +59,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     const { escape } = ctx.database.mysql
     if (regexp) {
       if (answer !== undefined) conditionals.push('`answer` REGEXP ' + escape(answer))
-      if (question !== undefined) conditionals.push('`question` REGEXP ' + escape(question))
+      if (question !== undefined) conditionals.push('`question` REGEXP ' + escape(original))
     } else {
       if (answer !== undefined) conditionals.push('`answer` = ' + escape(answer))
       if (question !== undefined) {
