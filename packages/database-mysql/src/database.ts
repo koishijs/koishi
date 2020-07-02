@@ -1,6 +1,9 @@
 import { createPool, Pool, PoolConfig, escape, escapeId } from 'mysql'
 import { registerDatabase, AbstractDatabase, TableType, TableData } from 'koishi-core'
 import { types } from 'util'
+import debug from 'debug'
+
+const showLog = debug('koishi:mysql')
 
 declare module 'koishi-core/dist/database' {
   interface Subdatabases {
@@ -99,12 +102,14 @@ export class MysqlDatabase implements AbstractDatabase {
   }
 
   select = <T extends {}> (table: string, fields: readonly string[], conditional?: string, values: readonly any[] = []) => {
+    showLog(`[select] ${table}: ${fields.join(', ')}`)
     return this.query<T>(`SELECT ${this.joinKeys(fields)} FROM \`${table}\` _${table} ${conditional ? ' WHERE ' + conditional : ''}`, values)
   }
 
   async create <K extends TableType> (table: K, data: Partial<TableData[K]>): Promise<TableData[K]> {
     const keys = Object.keys(data)
     if (!keys.length) return
+    showLog(`[create] ${table}: ${data}`)
     const header = await this.query<OkPacket>(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(_ => '?').join(', ')})`,
       [table, ...this.formatValues(table, data, keys)],
