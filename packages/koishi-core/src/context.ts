@@ -42,8 +42,8 @@ export namespace ContextScope {
 const noopScope: ContextScope = [[[], null], [[], null], [[], null]]
 const noopIdentifier = ContextScope.stringify(noopScope)
 
-const userCache: Record<number, Observed<Partial<UserData>>> = {}
-const groupCache: Record<number, Observed<Partial<GroupData>>> = {}
+const userCache: Record<number, Observed<Partial<UserData & { _timestamp: number }>>> = {}
+const groupCache: Record<number, Observed<Partial<GroupData & { _timestamp: number }>>> = {}
 
 export interface Logger {
   warn (format: any, ...param: any): void
@@ -330,7 +330,7 @@ export class Context {
       if (fieldSet.size) {
         const data = await this.database.getGroup(groupId, [...fieldSet])
         groupCache[groupId] = $group._merge(data)
-        data._timestamp = Date.now()
+        groupCache[groupId]._timestamp = Date.now()
       }
       return $group as any
     }
@@ -349,8 +349,8 @@ export class Context {
 
     // 绑定一个新的可观测群实例
     const data = await this.database.getGroup(groupId, fieldArray)
-    data._timestamp = timestamp
     const group = groupCache[groupId] = observe(data, diff => this.database.setGroup(groupId, diff), `group ${groupId}`)
+    groupCache[groupId]._timestamp = timestamp
     defineProperty(meta, '$group', group)
     return group
   }
@@ -370,7 +370,7 @@ export class Context {
       if (fieldSet.size) {
         const data = await this.database.getUser(userId, [...fieldSet])
         userCache[userId] = $user._merge(data)
-        data._timestamp = Date.now()
+        userCache[userId]._timestamp = Date.now()
       }
     }
 
@@ -401,8 +401,8 @@ export class Context {
 
     // 绑定一个新的可观测用户实例
     const data = await this.database.getUser(userId, defaultAuthority, fieldArray)
-    data._timestamp = timestamp
     const user = userCache[userId] = observe(data, diff => this.database.setUser(userId, diff), `user ${userId}`)
+    userCache[userId]._timestamp = timestamp
     defineProperty(meta, '$user', user)
     return user
   }

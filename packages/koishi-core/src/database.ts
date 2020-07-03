@@ -13,7 +13,6 @@ export interface UserData {
   name: string
   usage: Record<string, number>
   timers: Record<string, number>
-  _timestamp: number
 }
 
 export type User<K extends UserField = UserField> = Observed<Pick<UserData, K>>
@@ -49,7 +48,6 @@ export interface GroupData {
   id: number
   flag: number
   assignee: number
-  _timestamp: number
 }
 
 export enum GroupFlag {
