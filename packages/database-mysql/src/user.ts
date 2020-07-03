@@ -4,7 +4,7 @@ export const userGetters: Record<string, () => string> = {}
 export const userPrototype: Partial<UserData> = {}
 
 function inferFields (keys: readonly string[]) {
-  return keys.map(key => key in userGetters ? userGetters[key]() : key) as UserField[]
+  return keys.map(key => key in userGetters ? `${userGetters[key]()} AS ${key}` : key) as UserField[]
 }
 
 function construct (data: Partial<UserData>) {

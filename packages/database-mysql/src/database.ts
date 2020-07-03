@@ -102,7 +102,7 @@ export class MysqlDatabase implements AbstractDatabase {
   }
 
   select = <T extends {}> (table: string, fields: readonly string[], conditional?: string, values: readonly any[] = []) => {
-    showLog(`[select] ${table}: ${fields.join(', ')}`)
+    showLog(`[select] ${table}: ${fields ? fields.join(', ') : '*'}`)
     return this.query<T>(`SELECT ${this.joinKeys(fields)} FROM \`${table}\` _${table} ${conditional ? ' WHERE ' + conditional : ''}`, values)
   }
 
