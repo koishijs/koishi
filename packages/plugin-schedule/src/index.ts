@@ -1,8 +1,6 @@
 import { Context, appMap, Meta, onStart, appList, getContextId } from 'koishi-core'
-import { parseTime, parseDate, formatContext, formatTimeAndInterval } from './utils'
+import { parseTime, parseDate, formatTimeInterval } from 'koishi-utils'
 import './database'
-
-export * from './utils'
 
 export interface Schedule {
   id: number
@@ -39,6 +37,12 @@ function inspectSchedule ({ id, assignee, meta, interval, command, time }: Sched
   }, timeout)
 }
 
+function formatContext (meta: Meta) {
+  return meta.messageType === 'private' ? `私聊 ${meta.userId}`
+    : meta.messageType === 'group' ? `群聊 ${meta.groupId}`
+    : `讨论组 ${meta.discussId}`
+}
+
 onStart(async () => {
   const { database } = appList[0]
   const schedules = await database.getAllSchedules()
@@ -68,7 +72,7 @@ export function apply (ctx: Context) {
         }
         if (!schedules.length) return meta.$send('当前没有等待执行的日程。')
         return meta.$send(schedules.map(({ id, time, interval, command, meta }) => {
-          let output = `${id}. 触发时间：${formatTimeAndInterval(time, interval)}，指令：${command}`
+          let output = `${id}. 触发时间：${formatTimeInterval(time, interval)}，指令：${command}`
           if (options.fullList) output += `，上下文：${formatContext(meta)}`
           return output
         }).join('\n'))

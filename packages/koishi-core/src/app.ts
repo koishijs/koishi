@@ -353,7 +353,7 @@ export class App extends Context {
       // attach user data
       const userFields = new Set<UserField>(['flag'])
       this.emit('before-attach-user', meta, userFields)
-      const user = await this.observeUser(meta, ['flag'])
+      const user = await this.observeUser(meta, userFields)
 
       // emit attach event
       if (await this.serialize(meta, 'attach-user', meta)) return
