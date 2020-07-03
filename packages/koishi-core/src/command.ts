@@ -135,7 +135,7 @@ export interface InputArgv extends Partial<ParsedLine> {
   next?: NextFunction
 }
 
-export type UserType <T> = T | ((user: UserData) => T)
+export type UserType <T, U extends UserField = UserField> = T | ((user: Pick<UserData, U>) => T)
 
 export interface CommandConfig {
   /** description */
@@ -159,7 +159,8 @@ export interface ShortcutConfig {
 }
 
 type ArgvInferred <T> = Iterable<T> | ((argv: ParsedCommandLine, fields: Set<T>) => void)
-type CommandAction <U extends UserField, G extends GroupField> = (this: Command<U, G>, config: ParsedCommandLine<U, G>, ...args: string[]) => any
+type CommandAction <U extends UserField, G extends GroupField> =
+  (this: Command<U, G>, config: ParsedCommandLine<U, G>, ...args: string[]) => any
 
 export class Command<U extends UserField = never, G extends GroupField = never> {
   config: CommandConfig

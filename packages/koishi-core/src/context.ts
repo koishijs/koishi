@@ -310,9 +310,7 @@ export class Context {
 
   getCommand <U extends UserField = never, G extends GroupField = never> (name: string, meta: Meta) {
     const command = this._getCommandByRawName<U, G>(name)
-    if (command?.context.match(meta) && !command.getConfig('disable', meta)) {
-      return command
-    }
+    if (command?.context.match(meta)) return command
   }
 
   /** 在元数据上绑定一个可观测群实例 */
