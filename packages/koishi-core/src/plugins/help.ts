@@ -53,7 +53,7 @@ onApp((app) => {
   app.before('before-command', async ({ command, meta, options }) => {
     if (command._action && !options.help) return
     await app.execute({
-      command: app.command('help'),
+      command: 'help',
       args: [command.name],
       meta,
     })
@@ -160,19 +160,24 @@ async function showCommandHelp (command: Command, meta: Meta<ValidationField>, c
     await command.context.observeUser(meta, ['authority', 'timers', 'usage'])
   }
 
+  const disabled = command.getConfig('disable', meta)
+  if (disabled) output[1] += '（指令已禁用）'
+
   if (command._aliases.length > 1) {
     output.push(`别名：${Array.from(command._aliases.slice(1)).join('，')}。`)
   }
+
   const shortcuts = getShortcuts(command, meta.$user)
   if (shortcuts.length) {
     output.push(`相关全局指令：${shortcuts.join('，')}。`)
   }
 
-  const name = getUsageName(command)
   const maxUsage = command.getConfig('maxUsage', meta)
-  const minInterval = command.getConfig('minInterval', meta)
-  if (meta.$user) {
+  if (!disabled && meta.$user) {
+    const name = getUsageName(command)
+    const minInterval = command.getConfig('minInterval', meta)
     const count = getUsage(name, meta.$user)
+
     if (maxUsage < Infinity) {
       output.push(`已调用次数：${Math.min(count, maxUsage)}/${maxUsage}。`)
     }

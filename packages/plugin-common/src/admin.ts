@@ -82,8 +82,8 @@ UserAction.add('clearUsage', async (meta, user, ...commands) => {
 UserAction.add('setTimer', async (meta, user, name, offset) => {
   if (!name || !offset) return meta.$send('参数不足。')
   const timestamp = parseTime(offset)
-  if (!timestamp) return meta.$send('请输入合法的时间间隔。')
-  user.timers[name] = timestamp
+  if (!timestamp) return meta.$send('请输入合法的时间。')
+  user.timers[name] = Date.now() + timestamp
   await user._update()
   return meta.$send('用户信息已修改。')
 }, ['timers'])
