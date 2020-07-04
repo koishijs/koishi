@@ -1,7 +1,7 @@
 {
   "name": "koishi",
   "description": "A QQ bot framework based on CQHTTP",
-  "version": "2.0.0-alpha.44",
+  "version": "2.0.0-alpha.45",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -38,13 +38,13 @@
     "cac": "^6.5.10",
     "js-yaml": "^3.14.0",
     "kleur": "^3.0.3",
-    "koishi-core": "^2.0.0-alpha.25",
-    "koishi-plugin-common": "^3.0.0-alpha.26",
-    "koishi-plugin-recorder": "^2.0.0-alpha.25",
-    "koishi-plugin-schedule": "^2.0.0-alpha.27",
-    "koishi-plugin-status": "^2.0.0-alpha.27",
-    "koishi-plugin-teach": "^1.0.0-alpha.42",
-    "koishi-utils": "^2.0.2",
+    "koishi-core": "^2.0.0-alpha.26",
+    "koishi-plugin-common": "^3.0.0-alpha.27",
+    "koishi-plugin-recorder": "^2.0.0-alpha.26",
+    "koishi-plugin-schedule": "^2.0.0-alpha.28",
+    "koishi-plugin-status": "^2.0.0-alpha.28",
+    "koishi-plugin-teach": "^1.0.0-alpha.43",
+    "koishi-utils": "^2.0.3",
     "prompts": "^2.3.2"
   }
 }
