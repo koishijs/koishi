@@ -53,18 +53,6 @@ export class Random {
     return source.splice(Math.floor(this.value * source.length), 1)[0]
   }
 
-  multiPick <T> (source: T[], count: number) {
-    source = source.slice()
-    const result: T[] = []
-    const length = Math.min(source.length, count)
-    for (let i = 0; i < length; i += 1) {
-      const index = Math.floor(this.value * source.length)
-      const [item] = source.splice(index, 1)
-      result.push(item)
-    }
-    return result
-  }
-
   weightedPick <T extends string> (weights: Record<T, number>): T {
     const total = Object.entries(weights).reduce((prev, [_, curr]) => prev + (curr as number), 0)
     const pointer = this.value * total
@@ -109,7 +97,15 @@ export function randomSplice <T> (source: T[]) {
 }
 
 export function randomMultiPick <T> (source: T[], count: number) {
-  return new Random().multiPick(source, count)
+  source = source.slice()
+  const result: T[] = []
+  const length = Math.min(source.length, count)
+  for (let i = 0; i < length; i += 1) {
+    const index = Math.floor(Math.random() * source.length)
+    const [item] = source.splice(index, 1)
+    result.push(item)
+  }
+  return result
 }
 
 export function randomWeightedPick <T extends string> (weights: Record<T, number>): T {
