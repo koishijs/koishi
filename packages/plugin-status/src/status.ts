@@ -1,4 +1,4 @@
-import { appList, onStart, onStop, onApp, App } from 'koishi-core'
+import { appList, onStart, onStop, onApp, App, Command, ParsedCommandLine } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
 import { Server, createServer } from 'http'
 import { cyan } from 'kleur'
@@ -9,6 +9,8 @@ declare module 'koishi-core/dist/app' {
     statusPort?: number
   }
 }
+
+Command.userFields(['lastCall'])
 
 let usage = getCpuUsage()
 let appRate: number
@@ -26,8 +28,8 @@ onApp((app) => {
     statusPort = app.options.statusPort
   }
 
-  app.on('command', (argv) => {
-    argv.meta.$user.lastCall = new Date()
+  app.on('before-command', ({ meta }: ParsedCommandLine<'lastCall'>) => {
+    meta.$user.lastCall = new Date()
   })
 
   app.on('before-send', () => {
