@@ -122,6 +122,14 @@ GroupAction.add('unsetFlag', async (meta, group, ...flags) => {
   return meta.$send('群信息已修改。')
 }, ['flag'])
 
+GroupAction.add('setAssignee', async (meta, group, _assignee) => {
+  const assignee = _assignee ? +_assignee : meta.selfId
+  if (!isInteger(assignee) || assignee < 0) return meta.$send('参数错误。')
+  group.assignee = assignee
+  await group._update()
+  return meta.$send('群信息已修改。')
+}, ['assignee'])
+
 export default function apply (ctx: Context) {
   ctx.command('admin <action> [...args]', '管理用户', { authority: 4 })
     .userFields(['authority'])

@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-common",
   "description": "Common plugins for Koishi",
-  "version": "3.0.0-alpha.27",
+  "version": "3.0.0-alpha.28",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
