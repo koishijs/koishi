@@ -27,6 +27,8 @@ declare module 'koishi-core/dist/database' {
 
 type DialogueField = keyof Dialogue
 
+type ModifyType = '添加' | '修改' | '删除'
+
 export interface Dialogue {
   id?: number
   question: string
@@ -35,9 +37,9 @@ export interface Dialogue {
   flag: number
   _weight?: number
   _capture?: RegExpExecArray
-  _state?: 'created' | 'edited' | 'removed'
+  _type?: ModifyType
   _operator?: number
-  _timestamp?: number
+  _date?: number
 }
 
 export interface DialogueTest {
@@ -66,14 +68,11 @@ export enum DialogueFlag {
 export namespace Dialogue {
   export const history: Record<number, Dialogue> = []
 
-  export interface UpdateContext {
-    skipped?: number[]
-    updated?: number[]
+  export interface Config {
+    preserveHistory?: number
   }
-
-  export interface Config {}
   
-  export interface Argv extends UpdateContext {
+  export interface Argv {
     ctx: Context
     meta: Meta<'authority' | 'id'>
     args: string[]
@@ -85,6 +84,8 @@ export namespace Dialogue {
     // modify status
     dialogues?: Dialogue[]
     dialogueMap?: Record<number, Dialogue>
+    skipped?: number[]
+    updated?: number[]
     unknown?: number[]
     uneditable?: number[]
   }
@@ -103,13 +104,21 @@ export namespace Dialogue {
     return dialogues.filter((dialogue) => !ctx.bail('dialogue/fetch', dialogue, test))
   }
 
-  export async function create (dialogue: Dialogue, argv: Dialogue.Argv) {
-    const timestamp = Date.now()
-    dialogue = await argv.ctx.database.mysql.create('dialogue', dialogue)
-    history[dialogue.id] = dialogue
-    dialogue._timestamp = timestamp
+  function addHistory (dialogue: Dialogue, type: ModifyType, argv: Dialogue.Argv, target = history) {
+    target[dialogue.id] = dialogue
+    const time = dialogue._date = Date.now()
     dialogue._operator = argv.meta.userId
-    dialogue._state = 'created'
+    dialogue._type = type
+    setTimeout(() => {
+      if (history[dialogue.id]?._date === time) {
+        delete history[dialogue.id]
+      }
+    }, argv.config.preserveHistory || 600000)
+  }
+
+  export async function create (dialogue: Dialogue, argv: Dialogue.Argv) {
+    dialogue = await argv.ctx.database.mysql.create('dialogue', dialogue)
+    addHistory(dialogue, '添加', argv)
     return dialogue
   }
 
@@ -121,6 +130,7 @@ export namespace Dialogue {
         fields.add(key as DialogueField)
       }
     }
+    const temp: Record<number, Dialogue> = {}
     for (const dialogue of dialogues) {
       if (!Object.keys(dialogue._diff).length) {
         argv.skipped.push(dialogue.id)
@@ -128,21 +138,29 @@ export namespace Dialogue {
         dialogue._diff = {}
         argv.updated.push(dialogue.id)
         data.push(pick(dialogue, fields))
+        addHistory(clone(dialogue), '修改', argv, temp)
       }
     }
     await argv.ctx.database.mysql.update('dialogue', data)
+    Object.assign(history, temp)
   }
 
   export async function remove (ids: number[], argv: Dialogue.Argv) {
-    const timestamp = Date.now()
     await argv.ctx.database.mysql.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
     for (const id of ids) {
-      const dialogue = history[id] = argv.dialogueMap[id]
-      dialogue._timestamp = timestamp
-      dialogue._operator = argv.meta.userId
-      dialogue._state = 'removed'
+      addHistory(argv.dialogueMap[id], '删除', argv)
     }
   }
+}
+
+const primitives = ['number', 'string', 'bigint', 'boolean', 'symbol']
+
+function clone <T> (source: T): T {
+  return primitives.includes(typeof source)
+    ? source
+    : Array.isArray(source)
+    ? source.map(clone) as any
+    : Object.fromEntries(Object.entries(source).map(([key, value]) => [key, clone(value)]))
 }
 
 export function sendResult (argv: Dialogue.Argv, prefix?: string, suffix?: string) {

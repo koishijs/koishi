@@ -2,6 +2,7 @@ import { Context } from 'koishi-core'
 import { Dialogue } from './database'
 import internal from './internal'
 import receiver from './receiver'
+import revert from './revert'
 import search from './search'
 import shortcut from './shortcut'
 import teach from './teach'
@@ -18,6 +19,7 @@ import writer from './plugins/writer'
 
 export * from './database'
 export * from './receiver'
+export * from './revert'
 export * from './search'
 export * from './shortcut'
 export * from './plugins/affinity'
@@ -100,6 +102,7 @@ export function apply (ctx: Context, config: Dialogue.Config = {}) {
   // features
   ctx.plugin(shortcut, config)
   ctx.plugin(receiver, config)
+  ctx.plugin(revert, config)
   ctx.plugin(search, config)
   ctx.plugin(update, config)
   ctx.plugin(teach, config)

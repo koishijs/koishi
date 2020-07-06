@@ -93,7 +93,7 @@ export default function apply (ctx: Context) {
   })
 }
 
-function formatAnswer (source: string, { maxAnswerLength = 100 }: Dialogue.Config) {
+export function formatAnswer (source: string, { maxAnswerLength = 100 }: Dialogue.Config) {
   let trimmed = false
   const lines = source.split(/(\r?\n|\$n)/g)
   if (lines.length > 1) {
@@ -115,13 +115,13 @@ function formatAnswer (source: string, { maxAnswerLength = 100 }: Dialogue.Confi
   return source
 }
 
-function getDetails (argv: Dialogue.Argv, dialogue: Dialogue) {
+export function getDetails (argv: Dialogue.Argv, dialogue: Dialogue) {
   const details: SearchDetails = []
   argv.ctx.emit('dialogue/detail-short', dialogue, details, argv)
   return details
 }
 
-function formatDetails (dialogue: Dialogue, details: SearchDetails) {
+export function formatDetails (dialogue: Dialogue, details: SearchDetails) {
   return `${dialogue.id}. ${details.length ? `[${details.join(', ')}] ` : ''}`
 }
 
