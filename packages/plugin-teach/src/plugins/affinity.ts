@@ -78,7 +78,8 @@ export default function apply (ctx: Context, config: TeachConfig) {
 
   ctx.on('dialogue/before-attach-user', (state, fields) => {
     if (state.dialogue) return
-    if (state.noAffinityTest = state.dialogues.every(d => d.minAffinity === 0 && d.maxAffinity === 32768)) return
+    // 如果所有可能触发的问答都不涉及好感度，则无需获取好感度字段
+    if (state.noAffinityTest = state.dialogues.every(d => !d._weight || !d.minAffinity && d.maxAffinity === 32768)) return
     for (const field of affinityFields) {
       fields.add(field)
     }

@@ -246,7 +246,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     })
   })
 
-  ctx.on('dialogue/attach-user', ({ dialogues, isSearch }) => {
+  ctx.on('dialogue/prepare', ({ dialogues, isSearch }) => {
     if (isSearch) {
       // 搜索模式下，存在前置的问答不计权重
       for (const dialogue of dialogues) {

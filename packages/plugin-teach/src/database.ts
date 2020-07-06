@@ -87,7 +87,6 @@ export interface Dialogue {
   flag: number
   _weight?: number
   _capture?: RegExpExecArray
-  _strict?: boolean
   _state?: 'created' | 'edited' | 'removed'
   _operator?: number
   _timestamp?: number

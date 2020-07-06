@@ -40,18 +40,30 @@ export default function apply (ctx: Context, config: TeachConfig) {
     state.activated = {}
   })
 
-  ctx.on('dialogue/before-attach-user', ({ test, userId, dialogue, dialogues, activated }) => {
-    if (dialogue) return
+  ctx.before('dialogue/prepare', ({ test, userId, dialogues, activated }) => {
+    const hasNormal = dialogues.some(d => !(d.flag & DialogueFlag.regexp))
     dialogues.forEach((dialogue) => {
-      if (userId in activated) {
+      if (hasNormal && (dialogue.flag & DialogueFlag.regexp)) {
+        // 如果存在普通匹配的问答，则所有正则匹配的问答不会触发
+        dialogue._weight = 0
+      } else if (userId in activated) {
         // 如果已经是激活状态，采用两个概率的最大值
         dialogue._weight = Math.max(dialogue.probS, dialogue.probA)
       } else if (!test.appellative || !(dialogue.flag & DialogueFlag.regexp)) {
-        // 如果不是正则表达式，或肯定无称呼，则根据是否有称呼决定概率
+        // 如果不是正则表达式，或问题不含称呼，则根据是否有称呼决定概率
         dialogue._weight = test.appellative ? dialogue.probA : dialogue.probS
       } else {
-        // 对于有称呼的正则表达式，需要判断正则表达式是否含有称呼
-        dialogue._weight = dialogue._strict ? dialogue.probS : dialogue.probA
+        // 对于含有称呼的正则表达式，需要判断正则表达式是否使用了称呼
+        // 优先匹配概率更高的版本，如果概率相同则优先匹配 probA 的版本
+        const regexp = new RegExp(dialogue.question)
+        const queue = dialogue.probS >= dialogue.probA
+          ? [[test.original, dialogue.probS], [test.question, dialogue.probA]] as const
+          : [[test.question, dialogue.probA], [test.original, dialogue.probS]] as const
+        for (const [question, weight] of queue) {
+          dialogue._capture = regexp.exec(question)
+          dialogue._weight = weight
+          if (dialogue._capture) break
+        }
       }
     })
   })

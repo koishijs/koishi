@@ -76,10 +76,7 @@ export async function getDialogues (ctx: Context, test: DialogueTest) {
   ctx.emit('dialogue/before-fetch', test, conditionals)
   if (conditionals.length) query += ' WHERE ' + conditionals.join(' && ')
   const dialogues = await ctx.database.mysql.query<Dialogue[]>(query)
-  return dialogues.filter((dialogue) => {
-    dialogue._weight = 1
-    return !ctx.bail('dialogue/fetch', dialogue, test)
-  })
+  return dialogues.filter((dialogue) => !ctx.bail('dialogue/fetch', dialogue, test))
 }
 
 export function prepareTargets (argv: TeachArgv, dialogues: Dialogue[]) {

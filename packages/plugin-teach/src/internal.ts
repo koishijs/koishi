@@ -70,16 +70,6 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
-  ctx.on('dialogue/fetch', (dialogue, test) => {
-    if (!(dialogue.flag & DialogueFlag.regexp)) return
-
-    dialogue._capture = new RegExp(dialogue.question).exec(test.question)
-    if (!dialogue._capture) {
-      dialogue._capture = new RegExp(dialogue.question).exec(test.original)
-      dialogue._strict = true
-    }
-  })
-
   ctx.on('dialogue/before-modify', async ({ options, meta, target }) => {
     if (!target && !(options.question && options.answer)) {
       await meta.$send('缺少问题或回答，请检查指令语法。')

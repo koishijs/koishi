@@ -8,6 +8,7 @@ declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/state' (state: SessionState): void
     'dialogue/receive' (state: SessionState): void | boolean
+    'dialogue/prepare' (state: SessionState): void
     'dialogue/before-attach-user' (state: SessionState, userFields: Set<UserField>): void
     'dialogue/attach-user' (state: SessionState): void | boolean
     'dialogue/before-send' (state: SessionState): void | boolean | Promise<void | boolean>
@@ -71,6 +72,7 @@ Context.prototype.getSessionState = function (meta) {
 
 export async function getTotalWeight (ctx: Context, state: SessionState) {
   const { meta, dialogues } = state
+  ctx.app.emit(meta, 'dialogue/prepare', state)
   const userFields = new Set<UserField>(['name'])
   ctx.app.emit(meta, 'dialogue/before-attach-user', state, userFields)
   await ctx.observeUser(meta, userFields)
