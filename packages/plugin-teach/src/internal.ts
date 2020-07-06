@@ -1,7 +1,6 @@
 import { Context, UserField } from 'koishi-core'
 import { DialogueFlag, Dialogue } from './database'
-import { TeachConfig, getDialogues } from './utils'
-import { formatAnswers } from './search'
+import { TeachConfig } from './utils'
 
 declare module './utils' {
   interface TeachArgv {
@@ -34,12 +33,12 @@ export default function apply (ctx: Context, config: TeachConfig) {
       return meta.$send('问题不能包含图片。')
     }
 
-    const [question, original, appellative] = config._stripQuestion(options.question)
+    const { unprefixed, prefixed, appellative } = config._stripQuestion(options.question)
     argv.appellative = appellative
-    Object.defineProperty(options, '_original', { value: original })
-    if (question) {
+    Object.defineProperty(options, '_original', { value: prefixed })
+    if (unprefixed) {
       options.original = options.question
-      options.question = question
+      options.question = unprefixed
     } else {
       delete options.question
     }
@@ -108,40 +107,6 @@ export default function apply (ctx: Context, config: TeachConfig) {
     output.push(`回答：${answer}`)
   })
 
-  ctx.on('dialogue/list', ({ _redirections }, output, prefix, argv) => {
-    if (!_redirections) return
-    output.push(...formatAnswers(argv, _redirections, prefix + '= '))
-  })
-
-  ctx.on('dialogue/search', async (argv, test, dialogues) => {
-    if (!argv.questionMap) {
-      argv.questionMap = { [test.question]: dialogues }
-    }
-    for (const dialogue of dialogues) {
-      const { answer } = dialogue
-      if (!answer.startsWith('${dialogue ')) continue
-      const [question, original] = argv.config._stripQuestion(answer.slice(11, -1).trimStart())
-      if (question in argv.questionMap) continue
-      argv.questionMap[question] = await getDialogues(ctx, {
-        ...test,
-        regexp: null,
-        question,
-        original,
-      })
-      Object.defineProperty(dialogue, '_redirections', { writable: true, value: argv.questionMap[question] })
-      await argv.ctx.parallelize('dialogue/search', argv, test, argv.questionMap[question])
-    }
-  })
-
-  ctx.on('dialogue/receive', ({ meta, test }) => {
-    if (meta.message.includes('[CQ:image,')) return true
-    const [question, original, appellative, activated] = config._stripQuestion(meta.message)
-    test.question = question
-    test.original = original
-    test.activated = activated
-    test.appellative = appellative
-  })
-
   ctx.on('dialogue/before-search', (argv, test) => {
     test.appellative = argv.appellative
   })
@@ -150,12 +115,5 @@ export default function apply (ctx: Context, config: TeachConfig) {
     if (options.redirectDialogue) {
       options.answer = `\${dialogue ${options.answer}}`
     }
-  })
-
-  ctx.on('dialogue/before-send', ({ meta }) => {
-    Object.defineProperty(meta, '$_redirected', {
-      writable: true,
-      value: (meta.$_redirected || 0) + 1,
-    })
   })
 }

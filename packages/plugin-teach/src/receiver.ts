@@ -26,6 +26,17 @@ declare module 'koishi-core/dist/meta' {
   }
 }
 
+interface Question {
+  /** 去除句首句尾标点符号，句中空格后的句子 */
+  prefixed: string
+  /** 去除句首句尾标点符号，句中空格和句首称呼的句子 */
+  unprefixed: string
+  /** 是否含有称呼 */
+  appellative: boolean
+  /** 是否仅含有称呼 */
+  activated: boolean
+}
+
 declare module './utils' {
   interface TeachConfig {
     charDelay?: number
@@ -33,7 +44,7 @@ declare module './utils' {
     nickname?: string | string[]
     appellationTimeout?: number
     maxRedirections?: number
-    _stripQuestion? (source: string): [string, string, boolean, boolean]
+    _stripQuestion? (source: string): Question
   }
 }
 
@@ -203,16 +214,25 @@ export default function (ctx: Context, config: TeachConfig) {
     const original = source
     const capture = nicknameRE.exec(source)
     if (capture) source = source.slice(capture[0].length)
-    return [
-      source || original,
-      original,
-      source && source !== original,
-      !source && source !== original,
-    ]
+    return {
+      prefixed: original,
+      unprefixed: source || original,
+      appellative: source && source !== original,
+      activated: !source && source !== original,
+    }
   }
 
   ctx.intersect(ctx.app.groups).middleware(async (meta, next) => {
     return triggerDialogue(ctx, meta, config, next)
+  })
+
+  ctx.on('dialogue/receive', ({ meta, test }) => {
+    if (meta.message.includes('[CQ:image,')) return true
+    const { unprefixed, prefixed, appellative, activated } = config._stripQuestion(meta.message)
+    test.question = unprefixed
+    test.original = prefixed
+    test.activated = activated
+    test.appellative = appellative
   })
 
   // 预判要获取的用户字段
@@ -227,6 +247,13 @@ export default function (ctx: Context, config: TeachConfig) {
         userFields.add('timers')
       }
     }
+  })
+
+  ctx.on('dialogue/before-send', ({ meta }) => {
+    Object.defineProperty(meta, '$_redirected', {
+      writable: true,
+      value: (meta.$_redirected || 0) + 1,
+    })
   })
 
   ctx.command('teach/dialogue <message...>', '触发教学对话')

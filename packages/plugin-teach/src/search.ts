@@ -45,8 +45,33 @@ export default function apply (ctx: Context) {
     }
   })
 
+  ctx.on('dialogue/list', ({ _redirections }, output, prefix, argv) => {
+    if (!_redirections) return
+    output.push(...formatAnswers(argv, _redirections, prefix + '= '))
+  })
+
   ctx.on('dialogue/before-search', ({ options }, test) => {
     test.noRecursive = !options.recursive
+  })
+
+  ctx.on('dialogue/search', async (argv, test, dialogues) => {
+    if (!argv.questionMap) {
+      argv.questionMap = { [test.question]: dialogues }
+    }
+    for (const dialogue of dialogues) {
+      const { answer } = dialogue
+      if (!answer.startsWith('${dialogue ')) continue
+      const { prefixed, unprefixed } = argv.config._stripQuestion(answer.slice(11, -1).trimStart())
+      if (unprefixed in argv.questionMap) continue
+      argv.questionMap[unprefixed] = await getDialogues(ctx, {
+        ...test,
+        regexp: null,
+        question: unprefixed,
+        original: prefixed,
+      })
+      Object.defineProperty(dialogue, '_redirections', { writable: true, value: argv.questionMap[unprefixed] })
+      await argv.ctx.parallelize('dialogue/search', argv, test, argv.questionMap[unprefixed])
+    }
   })
 }
 
