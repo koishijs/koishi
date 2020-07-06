@@ -1,7 +1,7 @@
 import { TeachArgv, prepareTargets, sendResult, split, isDialogueIdList } from './utils'
 import { difference, deduplicate, sleep } from 'koishi-utils'
 import { Context } from 'koishi-core'
-import { Dialogue } from './database'
+import { Dialogue, DialogueFlag } from './database'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -33,6 +33,15 @@ export default function apply (ctx: Context) {
       return argv.meta.$send('修改问答时出现问题。')
     }
   })
+
+  ctx.on('dialogue/detail', ({ original, answer, flag }, output) => {
+    if (flag & DialogueFlag.regexp) {
+      output.push(`正则：${original}`)
+    } else {
+      output.push(`问题：${original}`)
+    }
+    output.push(`回答：${answer}`)
+  })
 }
 
 async function update (argv: TeachArgv) {
@@ -51,12 +60,12 @@ async function update (argv: TeachArgv) {
 
   const actualIds = argv.dialogues.map(d => d.id)
   argv.unknown = difference(target, actualIds)
+  await ctx.serialize('dialogue/before-detail', argv)
 
   if (!Object.keys(options).length) {
     if (argv.unknown.length) {
       await meta.$send(`没有搜索到编号为 ${argv.unknown.join(', ')} 的问答。`)
     }
-    await ctx.serialize('dialogue/before-detail', argv)
     for (let index = 0; index < dialogues.length; index++) {
       const output = [`编号为 ${dialogues[index].id} 的问答信息：`]
       await ctx.serialize('dialogue/detail', dialogues[index], output, argv)

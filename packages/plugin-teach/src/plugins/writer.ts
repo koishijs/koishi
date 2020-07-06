@@ -5,6 +5,7 @@ import { DialogueFlag } from '../database'
 declare module '../database' {
   interface DialogueTest {
     writer?: number
+    substitute?: boolean
   }
 
   interface Dialogue {
@@ -15,6 +16,7 @@ declare module '../database' {
 declare module '../utils' {
   interface TeachArgv {
     userMap?: Record<number, string>
+    authMap?: Record<number, number>
   }
 }
 
@@ -27,6 +29,11 @@ export default function apply (ctx: Context) {
 
   ctx.on('dialogue/before-fetch', (test, conditionals) => {
     if (test.writer !== undefined) conditionals.push(`\`writer\` = ${test.writer}`)
+    if (test.substitute) {
+      conditionals.push(`(\`flag\` & ${DialogueFlag.substitute})`)
+    } else if (test.substitute === false) {
+      conditionals.push(`!(\`flag\` & ${DialogueFlag.substitute})`)
+    }
   })
 
   ctx.on('dialogue/validate', ({ options, meta }) => {
@@ -43,30 +50,34 @@ export default function apply (ctx: Context) {
     }
   })
 
-  ctx.on('dialogue/permit', ({ meta, target }, dialogue) => {
-    return target && dialogue.writer !== meta.$user.id && meta.$user.authority < 3
-  })
-
-  ctx.on('dialogue/permit', ({ meta, options }) => {
-    return (options.regexp !== undefined || options.substitute !== undefined) && meta.$user.authority < 3
+  ctx.on('dialogue/permit', ({ meta, target, options, authMap = {} }, dialogue) => {
+    // 当修改问答时，如果问答的作者不是本人，需要 3 级权限
+    // 当添加和修改问答时，如果问答本身是代行模式或要将问答设置成代行模式，则需要权限高于问答原作者
+    // 如果原问答是匿名则视为 2 级权限（本身 2 级权限的代行模式无意义，可认定代行模式需要 3 级权限）
+    return dialogue.writer !== meta.$user.id && (
+      (target && meta.$user.authority < 3) || (
+        (options.substitute || dialogue.flag & DialogueFlag.substitute) && 
+        meta.$user.authority <= (authMap[dialogue.writer] || 2)
+      )
+    )
   })
 
   ctx.on('dialogue/before-detail', async (argv) => {
     argv.userMap = {}
-    const { userMap, meta, dialogues } = argv
+    argv.authMap = {}
+    const { userMap, meta, dialogues, authMap } = argv
     const writers = deduplicate(dialogues.map(d => d.writer).filter(Boolean))
-    const users = await ctx.database.getUsers(writers, ['id', 'name'])
+    const users = await ctx.database.getUsers(writers, ['id', 'name', 'authority'])
 
     let hasUnnamed = false
     for (const user of users) {
-      if (user.id === +user.name) {
-        if (user.id === meta.userId) {
-          user.name = meta.sender.card || meta.sender.nickname
-        } else {
-          hasUnnamed = true
-        }
-      } else {
+      authMap[user.id] = user.authority
+      if (user.id !== +user.name) {
         userMap[user.id] = user.name
+      } else if (user.id === meta.userId) {
+        userMap[user.id] = meta.sender.card || meta.sender.nickname
+      } else {
+        hasUnnamed = true
       }
     }
 
@@ -86,7 +97,6 @@ export default function apply (ctx: Context) {
     if (writer) {
       const name = argv.userMap[writer]
       output.push(name ? `来源：${name} (${writer})` : `来源：${writer}`)
-      // TODO: 匿名 -s 检测
       if (flag & DialogueFlag.substitute) {
         output.push('回答中的指令由教学者代行。')
       }
@@ -95,12 +105,13 @@ export default function apply (ctx: Context) {
 
   ctx.on('dialogue/detail-short', ({ flag }, output) => {
     if (flag & DialogueFlag.substitute) {
-      output.push('s')
+      output.push('教学者执行')
     }
   })
 
   ctx.on('dialogue/before-search', ({ options }, test) => {
     test.writer = options.writer
+    test.substitute = options.substitute
   })
 
   ctx.on('dialogue/modify', ({ options, target, meta }, data) => {

@@ -1,4 +1,4 @@
-import { Context, UserField } from 'koishi-core'
+import { Context } from 'koishi-core'
 import { DialogueFlag, Dialogue } from './database'
 import { TeachConfig } from './utils'
 
@@ -92,23 +92,8 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
   })
 
-  ctx.on('dialogue/detail-short', ({ flag }, output) => {
-    if (flag & DialogueFlag.regexp) {
-      output.questionType = '正则'
-    }
-  })
-
-  ctx.on('dialogue/detail', ({ original, answer, flag }, output) => {
-    if (flag & DialogueFlag.regexp) {
-      output.push(`正则：${original}`)
-    } else {
-      output.push(`问题：${original}`)
-    }
-    output.push(`回答：${answer}`)
-  })
-
-  ctx.on('dialogue/before-search', (argv, test) => {
-    test.appellative = argv.appellative
+  ctx.on('dialogue/permit', ({ meta, options }) => {
+    return options.regexp !== undefined && meta.$user.authority < 3
   })
 
   ctx.on('dialogue/validate', ({ options }) => {

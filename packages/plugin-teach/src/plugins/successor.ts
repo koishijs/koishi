@@ -26,6 +26,7 @@ declare module '../receiver' {
 declare module '../database' {
   interface DialogueTest {
     stateful?: boolean
+    indefinite?: boolean
     predecessors?: (string | number)[]
   }
 
@@ -50,7 +51,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     .option('-i, --indefinite', '允许后继问答被任何人触发')
     .option('-I, --no-indefinite', '后继问答只能被同一人触发')
 
-  ctx.on('dialogue/before-fetch', ({ predecessors, stateful, noRecursive }, conditionals) => {
+  ctx.on('dialogue/before-fetch', ({ predecessors, stateful, noRecursive, indefinite }, conditionals) => {
     if (noRecursive) {
       conditionals.push('!`predecessors`')
     } else if (predecessors !== undefined) {
@@ -60,6 +61,12 @@ export default function apply (ctx: Context, config: TeachConfig) {
       } else if (predecessors.length) {
         conditionals.push(`(${segments.join('||')})`)
       }
+    }
+
+    if (indefinite) {
+      conditionals.push(`(\`flag\` & ${DialogueFlag.indefinite})`)
+    } else if (indefinite === false) {
+      conditionals.push(`!(\`flag\` & ${DialogueFlag.indefinite})`)
     }
   })
 
@@ -157,22 +164,29 @@ export default function apply (ctx: Context, config: TeachConfig) {
     await command.execute(meta.$argv)
   })
 
-  ctx.on('dialogue/before-detail', async (argv) => {
-    // get predecessors
+  // get predecessors
+  ctx.on('dialogue/before-detail', async ({ options, dialogues, ctx }) => {
+    if (Object.keys(options).length) return
     const predecessors = new Set<number>()
-    for (const dialogue of argv.dialogues) {
+    for (const dialogue of dialogues) {
       for (const id of dialogue.predecessors) {
         predecessors.add(+id)
       }
     }
     const dialogueMap: Record<string, Dialogue> = {}
-    for (const dialogue of await Dialogue.fromIds([...predecessors], argv.ctx)) {
+    for (const dialogue of await Dialogue.fromIds([...predecessors], ctx)) {
       dialogueMap[dialogue.id] = dialogue
     }
-    for (const dialogue of argv.dialogues) {
+    for (const dialogue of dialogues) {
       const predecessors = dialogue.predecessors.map(id => dialogueMap[id] || { id })
       Object.defineProperty(dialogue, '_predecessors', { writable: true, value: predecessors })
     }
+  })
+
+  // get successors
+  ctx.on('dialogue/before-detail', async ({ options, dialogues }) => {
+    if (Object.keys(options).length) return
+    await attachSuccessors(dialogues)
   })
 
   async function attachSuccessors (dialogues: Dialogue[], dialogueMap: Record<number, Dialogue> = {}) {
@@ -195,10 +209,6 @@ export default function apply (ctx: Context, config: TeachConfig) {
     return successors
   }
 
-  ctx.on('dialogue/before-detail', async ({ dialogues }) => {
-    await attachSuccessors(dialogues)
-  })
-
   ctx.on('dialogue/detail', async (dialogue, output, argv) => {
     if (dialogue.flag & DialogueFlag.indefinite) {
       output.push('后继问答可以被上下文内任何人触发')
@@ -220,8 +230,12 @@ export default function apply (ctx: Context, config: TeachConfig) {
     }
     if (dialogue.predecessors.length) output.push(`存在前置`)
     if (dialogue.flag & DialogueFlag.indefinite) {
-      output.push('i')
+      output.push('上下文后置')
     }
+  })
+
+  ctx.on('dialogue/before-search', ({ options }, test) => {
+    test.indefinite = options.indefinite
   })
 
   ctx.on('dialogue/search', async (argv, test, dialogues) => {

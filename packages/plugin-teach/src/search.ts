@@ -1,5 +1,5 @@
 import { TeachArgv, getDialogues, isPositiveInteger, parseTeachArgs, SearchDetails, TeachConfig } from './utils'
-import { Dialogue, DialogueTest } from './database'
+import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import { Context } from 'koishi-core'
 import { getTotalWeight } from './receiver'
 
@@ -50,8 +50,18 @@ export default function apply (ctx: Context) {
     output.push(...formatAnswers(argv, _redirections, prefix + '= '))
   })
 
+  ctx.on('dialogue/detail-short', ({ flag }, output) => {
+    if (flag & DialogueFlag.regexp) {
+      output.questionType = '正则'
+    }
+  })
+
   ctx.on('dialogue/before-search', ({ options }, test) => {
     test.noRecursive = !options.recursive
+  })
+
+  ctx.on('dialogue/before-search', (argv, test) => {
+    test.appellative = argv.appellative
   })
 
   ctx.on('dialogue/search', async (argv, test, dialogues) => {
