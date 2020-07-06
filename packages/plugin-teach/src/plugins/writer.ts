@@ -1,5 +1,6 @@
-import { Context, getTargetId } from 'koishi-core'
+import { Context, getTargetId, UserField } from 'koishi-core'
 import { isInteger, deduplicate } from 'koishi-utils'
+import { DialogueFlag } from '../database'
 
 declare module '../database' {
   interface DialogueTest {
@@ -21,12 +22,16 @@ export default function apply (ctx: Context) {
   ctx.command('teach')
     .option('-w, --writer <uid>', '添加或设置问题的作者')
     .option('-W, --anonymous', '添加或设置匿名问题')
+    .option('-s, --substitute', '由教学者完成回答的执行')
+    .option('-S, --no-substitute', '由触发者完成回答的执行')
 
   ctx.on('dialogue/before-fetch', (test, conditionals) => {
     if (test.writer !== undefined) conditionals.push(`\`writer\` = ${test.writer}`)
   })
 
   ctx.on('dialogue/validate', ({ options, meta }) => {
+    if (options.noSubstitute) options.substitute = false
+
     if (options.anonymous) {
       options.writer = 0
     } else if (options.writer) {
@@ -40,6 +45,10 @@ export default function apply (ctx: Context) {
 
   ctx.on('dialogue/permit', ({ meta, target }, dialogue) => {
     return target && dialogue.writer !== meta.$user.id && meta.$user.authority < 3
+  })
+
+  ctx.on('dialogue/permit', ({ meta, options }) => {
+    return (options.regexp !== undefined || options.substitute !== undefined) && meta.$user.authority < 3
   })
 
   ctx.on('dialogue/before-detail', async (argv) => {
@@ -73,10 +82,20 @@ export default function apply (ctx: Context) {
     }
   })
 
-  ctx.on('dialogue/detail', (dialogue, output, argv) => {
-    if (dialogue.writer) {
-      const name = argv.userMap[dialogue.writer]
-      output.push(name ? `来源：${name} (${dialogue.writer})` : `来源：${dialogue.writer}`)
+  ctx.on('dialogue/detail', ({ writer, flag }, output, argv) => {
+    if (writer) {
+      const name = argv.userMap[writer]
+      output.push(name ? `来源：${name} (${writer})` : `来源：${writer}`)
+      // TODO: 匿名 -s 检测
+      if (flag & DialogueFlag.substitute) {
+        output.push('回答中的指令由教学者代行。')
+      }
+    }
+  })
+
+  ctx.on('dialogue/detail-short', ({ flag }, output) => {
+    if (flag & DialogueFlag.substitute) {
+      output.push('s')
     }
   })
 
@@ -89,6 +108,22 @@ export default function apply (ctx: Context) {
       data.writer = options.writer
     } else if (!target) {
       data.writer = meta.userId
+    }
+
+    if (options.substitute !== undefined) {
+      data.flag &= ~DialogueFlag.substitute
+      data.flag |= +options.substitute * DialogueFlag.substitute
+    }
+  })
+
+  ctx.on('dialogue/before-send', async (state) => {
+    const { dialogue, meta } = state
+    if (dialogue.flag & DialogueFlag.substitute && dialogue.writer && meta.userId !== dialogue.writer) {
+      const userFields = new Set<UserField>()
+      ctx.app.emit(meta, 'dialogue/before-attach-user', state, userFields)
+      meta.userId = dialogue.writer
+      meta.$user = null
+      await ctx.observeUser(meta, userFields)
     }
   })
 }
