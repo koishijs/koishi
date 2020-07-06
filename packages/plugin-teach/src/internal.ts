@@ -1,18 +1,11 @@
 import { Context } from 'koishi-core'
 import { DialogueFlag, Dialogue } from './database'
-import { TeachConfig } from './utils'
-
-declare module './utils' {
-  interface TeachArgv {
-    questionMap?: Record<string, Dialogue[]>
-  }
-}
 
 export function simplifyAnswer (source: string) {
   return (String(source || '')).trim()
 }
 
-export default function apply (ctx: Context, config: TeachConfig) {
+export default function apply (ctx: Context, config: Dialogue.Config) {
   ctx.command('teach')
     .option('--question <question>', '问题', { isString: true })
     .option('--answer <answer>', '回答', { isString: true })

@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { TeachConfig } from '../utils'
+import { Dialogue } from '../database'
 
 export interface LoopConfig {
   participants: number
@@ -7,9 +7,11 @@ export interface LoopConfig {
   debounce?: number
 }
 
-declare module '../utils' {
-  interface TeachConfig {
-    preventLoop?: number | LoopConfig | LoopConfig[]
+declare module '../database' {
+  namespace Dialogue {
+    interface Config {
+      preventLoop?: number | LoopConfig | LoopConfig[]
+    }
   }
 }
 
@@ -20,7 +22,7 @@ declare module '../receiver' {
   }
 }
 
-export default function apply (ctx: Context, config: TeachConfig) {
+export default function apply (ctx: Context, config: Dialogue.Config) {
   const { preventLoop } = config
 
   const preventLoopConfig: LoopConfig[] = !preventLoop ? []

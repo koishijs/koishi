@@ -1,6 +1,6 @@
 import { Context, UserData, UserField } from 'koishi-core'
 import { isInteger } from 'koishi-utils'
-import { TeachConfig } from '../utils'
+import { Dialogue } from '../database'
 
 declare module '../database' {
   interface DialogueTest {
@@ -12,12 +12,12 @@ declare module '../database' {
     minAffinity: number
     maxAffinity: number
   }
-}
 
-declare module '../utils' {
-  interface TeachConfig {
-    affinityFields?: Iterable<UserField>
-    getAffinity? (user: Partial<UserData>): number
+  namespace Dialogue {
+    interface Config {
+      affinityFields?: Iterable<UserField>
+      getAffinity? (user: Partial<UserData>): number
+    }
   }
 }
 
@@ -31,7 +31,7 @@ export function isShortInteger (value: any) {
   return isInteger(value) && value >= 0 ? '' : '应为正整数。'
 }
 
-export default function apply (ctx: Context, config: TeachConfig) {
+export default function apply (ctx: Context, config: Dialogue.Config) {
   const { getAffinity, affinityFields = [] } = config
   if (!getAffinity) return
 

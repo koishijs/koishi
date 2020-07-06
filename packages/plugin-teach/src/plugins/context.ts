@@ -1,16 +1,6 @@
 import { Context } from 'koishi-core'
 import { union, difference } from 'koishi-utils'
-import { DialogueFlag } from '../database'
-import { equal, TeachConfig, isGroupIdList } from '../utils'
-
-declare module '../utils' {
-  interface TeachArgv {
-    groups?: string[]
-    partial?: boolean
-    reversed?: boolean
-    noContextOptions?: boolean
-  }
-}
+import { DialogueFlag, Dialogue, equal, isGroupIdList } from '../database'
 
 declare module '../database' {
   interface DialogueTest {
@@ -22,9 +12,18 @@ declare module '../database' {
   interface Dialogue {
     groups: string[]
   }
+
+  namespace Dialogue {
+    interface Argv {
+      groups?: string[]
+      partial?: boolean
+      reversed?: boolean
+      noContextOptions?: boolean
+    }
+  }
 }
 
-export default function apply (ctx: Context, config: TeachConfig) {
+export default function apply (ctx: Context, config: Dialogue.Config) {
   ctx.command('teach')
     .option('-d, --disable', '在当前环境下禁用问答')
     .option('-D, --disable-global', '在所有环境下禁用问答', { authority: 3 })

@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { TeachConfig, TeachArgv } from './utils'
+import { Dialogue } from './database'
 import internal from './internal'
 import receiver from './receiver'
 import search from './search'
@@ -20,7 +20,6 @@ export * from './database'
 export * from './receiver'
 export * from './search'
 export * from './shortcut'
-export * from './utils'
 export * from './plugins/affinity'
 export * from './plugins/context'
 export * from './plugins/freeze'
@@ -33,8 +32,8 @@ export * from './plugins/writer'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/validate' (argv: TeachArgv): void | Promise<void>
-    'dialogue/execute' (argv: TeachArgv): void | Promise<void>
+    'dialogue/validate' (argv: Dialogue.Argv): void | Promise<void>
+    'dialogue/execute' (argv: Dialogue.Argv): void | Promise<void>
   }
 }
 
@@ -88,12 +87,12 @@ const cheetSheet = `\
 
 export const name = 'teach'
 
-export function apply (ctx: Context, config: TeachConfig = {}) {
+export function apply (ctx: Context, config: Dialogue.Config = {}) {
   ctx.command('teach', '添加教学对话', { authority: 2, checkUnknown: true, hideOptions: true })
     .usage(cheetSheet)
     .userFields(['authority', 'id'])
     .action(async ({ options, meta, args }) => {
-      const argv: TeachArgv = { ctx, meta, args, config, options }
+      const argv: Dialogue.Argv = { ctx, meta, args, config, options }
       return ctx.bail('dialogue/validate', argv)
         || ctx.bail('dialogue/execute', argv)
     })

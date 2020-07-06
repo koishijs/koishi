@@ -1,6 +1,5 @@
 import { Context, UserField, Meta, NextFunction, Command } from 'koishi-core'
 import { CQCode, simplify, noop, isInteger } from 'koishi-utils'
-import { getDialogues, TeachConfig } from './utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import escapeRegex from 'escape-string-regexp'
 
@@ -37,14 +36,16 @@ interface Question {
   activated: boolean
 }
 
-declare module './utils' {
-  interface TeachConfig {
-    charDelay?: number
-    textDelay?: number
-    nickname?: string | string[]
-    appellationTimeout?: number
-    maxRedirections?: number
-    _stripQuestion? (source: string): Question
+declare module './database' {
+  namespace Dialogue {
+    interface Config {
+      charDelay?: number
+      textDelay?: number
+      nickname?: string | string[]
+      appellationTimeout?: number
+      maxRedirections?: number
+      _stripQuestion? (source: string): Question
+    }
   }
 }
 
@@ -91,7 +92,7 @@ export async function getTotalWeight (ctx: Context, state: SessionState) {
   return dialogues.reduce((prev, curr) => prev + curr._weight, 0)
 }
 
-export async function triggerDialogue (ctx: Context, meta: Meta, config: TeachConfig, next: NextFunction = noop) {
+export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogue.Config, next: NextFunction = noop) {
   const state = ctx.getSessionState(meta)
   state.next = next
   state.test = {}
@@ -99,7 +100,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: TeachCo
   if (ctx.bail('dialogue/receive', state)) return next()
 
   // fetch matched dialogues
-  const dialogues = await getDialogues(ctx, state.test)
+  const dialogues = await Dialogue.fromTest(ctx, state.test)
   state.dialogues = dialogues
 
   // pick dialogue
@@ -203,7 +204,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: TeachCo
   await ctx.app.parallelize(meta, 'dialogue/send', state)
 }
 
-export default function (ctx: Context, config: TeachConfig) {
+export default function (ctx: Context, config: Dialogue.Config) {
   const { nickname = ctx.app.options.nickname, maxRedirections = 3 } = config
   const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
   nicknames.push(`[cq:at,qq=${ctx.app.selfId}]`)

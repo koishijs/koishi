@@ -1,14 +1,18 @@
-import { TeachArgv, getDialogues, isPositiveInteger, parseTeachArgs, SearchDetails, TeachConfig } from './utils'
-import { Dialogue, DialogueTest, DialogueFlag } from './database'
+import { isPositiveInteger, parseTeachArgs, Dialogue, DialogueTest, DialogueFlag } from './database'
 import { Context } from 'koishi-core'
 import { getTotalWeight } from './receiver'
 
+export interface SearchDetails extends Array<string> {
+  questionType?: string
+  answerType?: string
+}
+
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/list' (dialogue: Dialogue, output: string[], prefix: string, argv: TeachArgv): void
-    'dialogue/detail-short' (dialogue: Dialogue, output: SearchDetails, argv: TeachArgv): void
-    'dialogue/before-search' (argv: TeachArgv, test: DialogueTest): void | boolean
-    'dialogue/search' (argv: TeachArgv, test: DialogueTest, dialogue: Dialogue[]): Promise<void>
+    'dialogue/list' (dialogue: Dialogue, output: string[], prefix: string, argv: Dialogue.Argv): void
+    'dialogue/detail-short' (dialogue: Dialogue, output: SearchDetails, argv: Dialogue.Argv): void
+    'dialogue/before-search' (argv: Dialogue.Argv, test: DialogueTest): void | boolean
+    'dialogue/search' (argv: Dialogue.Argv, test: DialogueTest, dialogue: Dialogue[]): Promise<void>
   }
 }
 
@@ -16,13 +20,17 @@ declare module './database' {
   interface Dialogue {
     _redirections: Dialogue[]
   }
-}
 
-declare module './utils' {
-  interface TeachConfig {
-    itemsPerPage?: number
-    mergeThreshold?: number
-    maxAnswerLength?: number
+  namespace Dialogue {
+    interface Config {
+      itemsPerPage?: number
+      mergeThreshold?: number
+      maxAnswerLength?: number
+    }
+
+    interface Argv {
+      questionMap?: Record<string, Dialogue[]>
+    }
   }
 }
 
@@ -73,7 +81,7 @@ export default function apply (ctx: Context) {
       if (!answer.startsWith('${dialogue ')) continue
       const { prefixed, unprefixed } = argv.config._stripQuestion(answer.slice(11, -1).trimStart())
       if (unprefixed in argv.questionMap) continue
-      argv.questionMap[unprefixed] = await getDialogues(ctx, {
+      argv.questionMap[unprefixed] = await Dialogue.fromTest(ctx, {
         ...test,
         regexp: null,
         question: unprefixed,
@@ -85,7 +93,7 @@ export default function apply (ctx: Context) {
   })
 }
 
-function formatAnswer (source: string, { maxAnswerLength = 100 }: TeachConfig) {
+function formatAnswer (source: string, { maxAnswerLength = 100 }: Dialogue.Config) {
   let trimmed = false
   const lines = source.split(/(\r?\n|\$n)/g)
   if (lines.length > 1) {
@@ -107,7 +115,7 @@ function formatAnswer (source: string, { maxAnswerLength = 100 }: TeachConfig) {
   return source
 }
 
-function getDetails (argv: TeachArgv, dialogue: Dialogue) {
+function getDetails (argv: Dialogue.Argv, dialogue: Dialogue) {
   const details: SearchDetails = []
   argv.ctx.emit('dialogue/detail-short', dialogue, details, argv)
   return details
@@ -117,7 +125,7 @@ function formatDetails (dialogue: Dialogue, details: SearchDetails) {
   return `${dialogue.id}. ${details.length ? `[${details.join(', ')}] ` : ''}`
 }
 
-function formatPrefix (argv: TeachArgv, dialogue: Dialogue, showAnswerType = false) {
+function formatPrefix (argv: Dialogue.Argv, dialogue: Dialogue, showAnswerType = false) {
   const details = getDetails(argv, dialogue)
   let result = formatDetails(dialogue, details)
   if (details.questionType) result += `[${details.questionType}] `
@@ -125,7 +133,7 @@ function formatPrefix (argv: TeachArgv, dialogue: Dialogue, showAnswerType = fal
   return result
 }
 
-export function formatAnswers (argv: TeachArgv, dialogues: Dialogue[], prefix = '') {
+export function formatAnswers (argv: Dialogue.Argv, dialogues: Dialogue[], prefix = '') {
   return dialogues.map((dialogue) => {
     const { answer } = dialogue
     const output = [`${prefix}${formatPrefix(argv, dialogue, true)}${formatAnswer(answer, argv.config)}`]
@@ -134,7 +142,7 @@ export function formatAnswers (argv: TeachArgv, dialogues: Dialogue[], prefix = 
   })
 }
 
-export function formatQuestionAnswers (argv: TeachArgv, dialogues: Dialogue[], prefix = '') {
+export function formatQuestionAnswers (argv: Dialogue.Argv, dialogues: Dialogue[], prefix = '') {
   return dialogues.map((dialogue) => {
     const details = getDetails(argv, dialogue)
     const { questionType = '问题', answerType = '回答' } = details
@@ -145,14 +153,14 @@ export function formatQuestionAnswers (argv: TeachArgv, dialogues: Dialogue[], p
   })
 }
 
-async function search (argv: TeachArgv) {
+async function search (argv: Dialogue.Argv) {
   const { ctx, meta, options } = argv
   const { regexp, question, answer, page = 1, original, pipe, recursive, autoMerge } = options
   const { itemsPerPage = 30, mergeThreshold = 5 } = argv.config
 
   const test: DialogueTest = { question, answer, regexp, original: options._original }
   if (ctx.bail('dialogue/before-search', argv, test)) return
-  const dialogues = await getDialogues(ctx, test)
+  const dialogues = await Dialogue.fromTest(ctx, test)
 
   if (pipe) {
     if (!dialogues.length) return meta.$send('没有搜索到任何问答。')

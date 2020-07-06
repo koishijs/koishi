@@ -1,14 +1,16 @@
 import { Context } from 'koishi-core'
-import { TeachConfig } from '../utils'
+import { Dialogue } from '../database'
 
 export interface ThrottleConfig {
   interval: number
   responses: number
 }
 
-declare module '../utils' {
-  interface TeachConfig {
-    throttle?: ThrottleConfig | ThrottleConfig[]
+declare module '../database' {
+  namespace Dialogue {
+    interface Config {
+      throttle?: ThrottleConfig | ThrottleConfig[]
+    }
   }
 }
 
@@ -18,7 +20,7 @@ declare module '../receiver' {
   }
 }
 
-export default function apply (ctx: Context, config: TeachConfig) {
+export default function apply (ctx: Context, config: Dialogue.Config) {
   const { throttle } = config
 
   const throttleConfig = !throttle ? []

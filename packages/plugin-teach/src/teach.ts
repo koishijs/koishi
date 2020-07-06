@@ -1,5 +1,4 @@
-import { Dialogue } from './database'
-import { prepareTargets, getDialogues, sendResult } from './utils'
+import { Dialogue, prepareTargets, sendResult } from './database'
 import { observe } from 'koishi-utils'
 import { Context } from 'koishi-core'
 
@@ -13,7 +12,7 @@ export default function apply (ctx: Context) {
     argv.uneditable = []
     argv.updated = []
     argv.skipped = []
-    argv.dialogues = await getDialogues(ctx, { question, answer, regexp: false })
+    argv.dialogues = await Dialogue.fromTest(ctx, { question, answer, regexp: false })
 
     if (argv.dialogues.length) {
       const [data] = argv.dialogues

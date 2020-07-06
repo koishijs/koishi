@@ -11,12 +11,12 @@ declare module '../database' {
   interface Dialogue {
     writer: number
   }
-}
-
-declare module '../utils' {
-  interface TeachArgv {
-    userMap?: Record<number, string>
-    authMap?: Record<number, number>
+  
+  namespace Dialogue {
+    interface Argv {
+      userMap?: Record<number, string>
+      authMap?: Record<number, number>
+    }
   }
 }
 

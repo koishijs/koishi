@@ -1,19 +1,20 @@
-import { TeachArgv, prepareTargets, sendResult, split, isDialogueIdList } from './utils'
-import { difference, deduplicate, sleep } from 'koishi-utils'
 import { Context } from 'koishi-core'
-import { Dialogue, DialogueFlag } from './database'
+import { difference, deduplicate, sleep } from 'koishi-utils'
+import { Dialogue, DialogueFlag, prepareTargets, sendResult, split, isDialogueIdList } from './database'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/before-detail' (argv: TeachArgv): void | Promise<void>
-    'dialogue/detail' (dialogue: Dialogue, output: string[], argv: TeachArgv): void | Promise<void>
+    'dialogue/before-detail' (argv: Dialogue.Argv): void | Promise<void>
+    'dialogue/detail' (dialogue: Dialogue, output: string[], argv: Dialogue.Argv): void | Promise<void>
   }
 }
 
-declare module './utils' {
-  interface TeachConfig {
-    detailInterval?: number
-    maxShownDialogues?: number
+declare module './database' {
+  namespace Dialogue {
+    interface Config {
+      detailInterval?: number
+      maxShownDialogues?: number
+    }
   }
 }
 
@@ -44,7 +45,7 @@ export default function apply (ctx: Context) {
   })
 }
 
-async function update (argv: TeachArgv) {
+async function update (argv: Dialogue.Argv) {
   const { ctx, meta, options, target, config } = argv
   const { maxShownDialogues = 10, detailInterval = 500 } = config
 

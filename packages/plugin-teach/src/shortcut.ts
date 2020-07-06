@@ -1,5 +1,5 @@
 import { Context, ParsedCommandLine } from 'koishi-core'
-import { TeachConfig, parseTeachArgs } from './utils'
+import { parseTeachArgs } from './database'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -7,7 +7,7 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-export default function (ctx: Context, config: TeachConfig) {
+export default function (ctx: Context) {
   ctx.prependMiddleware((meta, next) => {
     const capture = meta.message.match(/^#((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|##?(\d*))(\s+|$)/)
     if (!capture) return next()

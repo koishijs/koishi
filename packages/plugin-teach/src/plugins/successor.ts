@@ -1,21 +1,7 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference } from 'koishi-utils'
-import { equal, split, TeachConfig, prepareTargets, getDialogues, isDialogueIdList, parseTeachArgs, isPositiveInteger } from '../utils'
-import { Dialogue, DialogueFlag } from '../database'
+import { equal, split, prepareTargets, isDialogueIdList, parseTeachArgs, isPositiveInteger, Dialogue, DialogueFlag } from '../database'
 import { formatQuestionAnswers } from '../search'
-
-declare module '../utils' {
-  interface TeachConfig {
-    successorTimeout?: number
-  }
-
-  interface TeachArgv {
-    predecessors?: number[]
-    successors?: number[]
-    predOverwrite?: boolean
-    succOverwrite?: boolean
-  }
-}
 
 declare module '../receiver' {
   interface SessionState {
@@ -36,9 +22,22 @@ declare module '../database' {
     _predecessors: Dialogue[]
     _successors: Dialogue[]
   }
+
+  namespace Dialogue {
+    interface Config {
+      successorTimeout?: number
+    }
+
+    interface Argv {
+      predecessors?: number[]
+      successors?: number[]
+      predOverwrite?: boolean
+      succOverwrite?: boolean
+    }
+  }
 }
 
-export default function apply (ctx: Context, config: TeachConfig) {
+export default function apply (ctx: Context, config: Dialogue.Config) {
   const { successorTimeout = 20000 } = config
 
   ctx.command('teach')
@@ -133,7 +132,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
     argv.unknown = difference(successors, newTargets)
 
     if (succOverwrite) {
-      for (const dialogue of await getDialogues(ctx, { predecessors })) {
+      for (const dialogue of await Dialogue.fromTest(ctx, { predecessors })) {
         if (!newTargets.includes(dialogue.id)) {
           newTargets.push(dialogue.id)
           successorDialogues.push(dialogue)
@@ -197,7 +196,7 @@ export default function apply (ctx: Context, config: TeachConfig) {
       return true
     }).map(d => d.id)
     if (!predecessors.length) return []
-    const successors = await getDialogues(ctx, { predecessors })
+    const successors = await Dialogue.fromTest(ctx, { predecessors })
     for (const dialogue of successors) {
       if (predecessors.includes(dialogue.id)) continue
       for (const id of dialogue.predecessors) {

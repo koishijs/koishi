@@ -1,6 +1,5 @@
 import { Context } from 'koishi-core'
-import { isZeroToOne, TeachConfig } from '../utils'
-import { DialogueFlag } from '../database'
+import { DialogueFlag, Dialogue, isZeroToOne } from '../database'
 
 declare module '../database' {
   interface Dialogue {
@@ -15,7 +14,7 @@ declare module '../receiver' {
   }
 }
 
-export default function apply (ctx: Context, config: TeachConfig) {
+export default function apply (ctx: Context, config: Dialogue.Config) {
   const { appellationTimeout = 20000 } = config
 
   ctx.command('teach')
