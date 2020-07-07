@@ -37,7 +37,7 @@ declare module './database' {
 export default function apply (ctx: Context) {
   ctx.command('teach')
     .option('--search', '搜索已有问答', { notUsage: true })
-    .option('--page <page>', '设置搜索结果的页码', { validate: isPositiveInteger })
+    .option('/, --page <page>', '设置搜索结果的页码', { validate: isPositiveInteger })
     .option('--auto-merge', '自动合并相同的问题和回答')
     .option('-R, --no-recursive', '禁用递归查询', { default: true })
     .option('|, --pipe <op...>', '对每个搜索结果执行操作')
@@ -183,7 +183,7 @@ async function search (argv: Dialogue.Argv) {
       output = output.slice((page - 1) * itemsPerPage, page * itemsPerPage)
       output.unshift(title + `（第 ${page}/${pageCount} 页）：`)
       if (suffix) output.push(suffix)
-      output.push('可以使用 --page 或在 ## 之后加上页码以调整输出的条目页数。')
+      output.push('可以使用 /+页码 以调整输出的条目页数。')
     }
     return meta.$send(output.join('\n'))
   }

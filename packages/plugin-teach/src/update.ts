@@ -21,7 +21,7 @@ declare module './database' {
 export default function apply (ctx: Context) {
   ctx.command('teach')
     .option('--target <ids>', '查看或修改已有问题', { isString: true, validate: isDialogueIdList })
-    .option('--remove', '彻底删除问答')
+    .option('-r, --remove', '彻底删除问答')
 
   ctx.before('dialogue/execute', (argv) => {
     const { remove, revert, target } = argv.options

@@ -9,7 +9,7 @@ declare module 'koishi-core/dist/context' {
 
 export default function (ctx: Context) {
   ctx.prependMiddleware((meta, next) => {
-    const capture = meta.message.match(/^#((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|##?(\d*))(\s+|$)/)
+    const capture = meta.message.match(/^#((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|##?)(\s+|$)/)
     if (!capture) return next()
 
     const command = ctx.getCommand('teach', meta)
@@ -21,9 +21,7 @@ export default function (ctx: Context) {
       options.search = true
       if (capture[1].startsWith('##')) {
         options.autoMerge = true
-      }
-      if (capture[3]) {
-        options.page = +capture[3]
+        options.regexp = true
       }
     } else if (capture[1]) {
       options.target = capture[1]
