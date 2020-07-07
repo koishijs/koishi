@@ -1,6 +1,6 @@
 import { Context, Meta, ParsedLine } from 'koishi-core'
 import { arrayTypes } from 'koishi-database-mysql'
-import { Observed, pick, difference, observe, isInteger } from 'koishi-utils'
+import { Observed, pick, difference, observe, isInteger, defineProperty } from 'koishi-utils'
 
 arrayTypes.push('dialogue.groups', 'dialogue.predecessors')
 
@@ -39,7 +39,8 @@ export interface Dialogue {
   _capture?: RegExpExecArray
   _type?: ModifyType
   _operator?: number
-  _date?: number
+  _timestamp?: number
+  _backup?: Readonly<Dialogue>
 }
 
 export interface DialogueTest {
@@ -92,7 +93,9 @@ export namespace Dialogue {
 
   export async function fromIds <T extends DialogueField> (ids: number[], ctx: Context, fields?: T[]) {
     if (!ids.length) return []
-    return ctx.database.mysql.select<Dialogue[]>('dialogue', fields, `\`id\` IN (${ids.join(',')})`)
+    const dialogues = await ctx.database.mysql.select<Dialogue[]>('dialogue', fields, `\`id\` IN (${ids.join(',')})`)
+    dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
+    return dialogues
   }
 
   export async function fromTest (ctx: Context, test: DialogueTest) {
@@ -100,29 +103,32 @@ export namespace Dialogue {
     const conditionals: string[] = []
     ctx.emit('dialogue/before-fetch', test, conditionals)
     if (conditionals.length) query += ' WHERE ' + conditionals.join(' && ')
-    const dialogues = await ctx.database.mysql.query<Dialogue[]>(query)
-    return dialogues.filter((dialogue) => !ctx.bail('dialogue/fetch', dialogue, test))
+    const dialogues = (await ctx.database.mysql.query<Dialogue[]>(query))
+      .filter((dialogue) => !ctx.bail('dialogue/fetch', dialogue, test))
+    dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
+    return dialogues
   }
 
   function addHistory (dialogue: Dialogue, type: ModifyType, argv: Dialogue.Argv, target = history) {
     target[dialogue.id] = dialogue
-    const time = dialogue._date = Date.now()
-    dialogue._operator = argv.meta.userId
-    dialogue._type = type
+    const time = Date.now()
+    defineProperty(dialogue, '_timestamp', time)
+    defineProperty(dialogue, '_operator', argv.meta.userId)
+    defineProperty(dialogue, '_type', type)
     setTimeout(() => {
-      if (history[dialogue.id]?._date === time) {
+      if (history[dialogue.id]?._timestamp === time) {
         delete history[dialogue.id]
       }
     }, argv.config.preserveHistory || 600000)
   }
 
-  export async function create (dialogue: Dialogue, argv: Dialogue.Argv) {
+  export async function create (dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
     dialogue = await argv.ctx.database.mysql.create('dialogue', dialogue)
-    addHistory(dialogue, '添加', argv)
+    if (!revert) addHistory(dialogue, '添加', argv)
     return dialogue
   }
 
-  export async function update (dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
+  export async function update (dialogues: Observed<Dialogue>[], argv: Dialogue.Argv, revert = false) {
     const data: Partial<Dialogue>[] = []
     const fields = new Set<DialogueField>(['id'])
     for (const { _diff } of dialogues) {
@@ -138,15 +144,17 @@ export namespace Dialogue {
         dialogue._diff = {}
         argv.updated.push(dialogue.id)
         data.push(pick(dialogue, fields))
-        addHistory(clone(dialogue), '修改', argv, temp)
+        if (!revert) addHistory(dialogue._backup, '修改', argv, temp)
       }
     }
     await argv.ctx.database.mysql.update('dialogue', data)
     Object.assign(history, temp)
   }
 
-  export async function remove (ids: number[], argv: Dialogue.Argv) {
+  export async function remove (ids: number[], argv: Dialogue.Argv, revert = false) {
+    if (!ids.length) return
     await argv.ctx.database.mysql.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
+    if (revert) return
     for (const id of ids) {
       addHistory(argv.dialogueMap[id], '删除', argv)
     }
