@@ -81,7 +81,7 @@ async function update (argv: Dialogue.Argv) {
     return
   }
 
-  const targets = prepareTargets(argv, dialogues)
+  const targets = prepareTargets(argv)
 
   if (revert) {
     const message = targets.length ? await Dialogue.revert(targets, argv) : ''

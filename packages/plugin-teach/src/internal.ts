@@ -51,11 +51,11 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
         if (regexp === false) {
           conditionals.push('`question` = ' + escape(question))
         } else {
-          conditionals.push(`(
-            !(\`flag\` & ${DialogueFlag.regexp}) && \`question\` = ${escape(question)} ||
-            \`flag\` & ${DialogueFlag.regexp} && (
-              ${escape(question)} REGEXP \`question\` || ${escape(original)} REGEXP \`question\`
-            )
+          conditionals.push(`(\
+            !(\`flag\` & ${DialogueFlag.regexp}) && \`question\` = ${escape(question)} ||\
+            \`flag\` & ${DialogueFlag.regexp} && (\
+              ${escape(question)} REGEXP \`question\` || ${escape(original)} REGEXP \`question\`\
+            )\
           )`)
         }
       }

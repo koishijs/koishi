@@ -35,7 +35,7 @@ async function revert (dialogues: Dialogue[], argv: Dialogue.Argv) {
   try {
     return argv.meta.$send(await Dialogue.revert(dialogues, argv))
   } catch (err) {
-    console.error(err)
+    argv.ctx.logger('teach').warn(err)
     return argv.meta.$send('回退问答中出现问题。')
   }
 }
@@ -68,9 +68,9 @@ export default function apply (ctx: Context) {
       return true
     })
 
+    if (!options.review && !options.revert) return
     if (!dialogues.length) return meta.$send('没有搜索到满足条件的教学操作。')
-    if (options.review) return review(dialogues, argv)
-    if (options.revert) return revert(dialogues, argv)
+    return options.review ? review(dialogues, argv) : revert(dialogues, argv)
   })
 
   ctx.on('dialogue/detail-short', ({ _type, _timestamp }, output, argv) => {
