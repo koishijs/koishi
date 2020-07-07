@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { difference, deduplicate, sleep } from 'koishi-utils'
+import { difference, deduplicate, sleep, pick } from 'koishi-utils'
 import { Dialogue, DialogueFlag, prepareTargets, sendResult, split, isDialogueIdList } from './database'
 
 declare module 'koishi-core/dist/context' {
@@ -24,14 +24,15 @@ export default function apply (ctx: Context) {
     .option('--remove', '彻底删除问答')
 
   ctx.before('dialogue/execute', (argv) => {
-    if (!argv.options.target) return
-    argv.target = deduplicate(split(argv.options.target))
+    const { remove, revert, target } = argv.options
+    if (!target) return
+    argv.target = deduplicate(split(target))
     delete argv.options.target
     try {
       return update(argv)
     } catch (err) {
       ctx.logger('teach').warn(err)
-      return argv.meta.$send('修改问答时出现问题。')
+      return argv.meta.$send(`${revert ? '回退' : remove ? '删除' : '修改'}问答时出现问题。`)
     }
   })
 
@@ -48,27 +49,31 @@ export default function apply (ctx: Context) {
 async function update (argv: Dialogue.Argv) {
   const { ctx, meta, options, target, config } = argv
   const { maxShownDialogues = 10, detailInterval = 500 } = config
+  const { revert, review, remove } = options
 
-  if (!Object.keys(options).length && target.length > maxShownDialogues) {
+  const modify = !review && Object.keys(options).length
+  if (!modify && target.length > maxShownDialogues) {
     return meta.$send(`一次最多同时预览 ${maxShownDialogues} 个问答。`)
   }
 
   argv.uneditable = []
   argv.updated = []
   argv.skipped = []
-  const dialogues = argv.dialogues = await Dialogue.fromIds(target, argv.ctx)
+  const dialogues = argv.dialogues = revert || review
+    ? Object.values(pick(Dialogue.history, target))
+    : await Dialogue.fromIds(target, argv.ctx)
   argv.dialogueMap = Object.fromEntries(dialogues.map(d => [d.id, { ...d }]))
 
   const actualIds = argv.dialogues.map(d => d.id)
   argv.unknown = difference(target, actualIds)
   await ctx.serialize('dialogue/before-detail', argv)
 
-  if (!Object.keys(options).length) {
+  if (!modify) {
     if (argv.unknown.length) {
-      await meta.$send(`没有搜索到编号为 ${argv.unknown.join(', ')} 的问答。`)
+      await meta.$send(`${review ? '最近无人修改过' : '没有搜索到'}编号为 ${argv.unknown.join(', ')} 的问答。`)
     }
     for (let index = 0; index < dialogues.length; index++) {
-      const output = [`编号为 ${dialogues[index].id} 的问答信息：`]
+      const output = [`编号为 ${dialogues[index].id} 的${review ? '历史版本' : '问答信息'}：`]
       await ctx.serialize('dialogue/detail', dialogues[index], output, argv)
       if (index) await sleep(detailInterval)
       await meta.$send(output.join('\n'))
@@ -78,21 +83,20 @@ async function update (argv: Dialogue.Argv) {
 
   const targets = prepareTargets(argv, dialogues)
 
-  if (options.remove) {
-    const output: string[] = []
-    if (argv.unknown.length) {
-      output.push(`没有搜索到编号为 ${argv.unknown.join(', ')} 的问答。`)
-    }
-    if (argv.uneditable.length) {
-      output.push(`问答 ${argv.uneditable.join(', ')} 因权限过低无法删除。`)
-    }
+  if (revert) {
+    const message = targets.length ? await Dialogue.revert(targets, argv) : ''
+    return sendResult(argv, message)
+  }
+
+  if (remove) {
+    let message = ''
     if (targets.length) {
       const editable = targets.map(d => d.id)
-      Dialogue.remove(editable, argv)
-      output.unshift(`已删除问答 ${editable.join(', ')}。`)
+      await Dialogue.remove(editable, argv)
+      message = `问答 ${editable.join(', ')} 已成功删除。`
     }
     await ctx.serialize('dialogue/after-modify', argv)
-    return meta.$send(output.join('\n'))
+    return sendResult(argv, message)
   }
 
   if (await ctx.app.serialize('dialogue/before-modify', argv)) return

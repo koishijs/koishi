@@ -109,7 +109,8 @@ export namespace Dialogue {
     return dialogues
   }
 
-  function addHistory (dialogue: Dialogue, type: ModifyType, argv: Dialogue.Argv, target = history) {
+  function addHistory (dialogue: Dialogue, type: ModifyType, argv: Dialogue.Argv, revert: boolean, target = history) {
+    if (revert) return delete target[dialogue.id]
     target[dialogue.id] = dialogue
     const time = Date.now()
     defineProperty(dialogue, '_timestamp', time)
@@ -124,11 +125,27 @@ export namespace Dialogue {
 
   export async function create (dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
     dialogue = await argv.ctx.database.mysql.create('dialogue', dialogue)
-    if (!revert) addHistory(dialogue, '添加', argv)
+    addHistory(dialogue, '添加', argv, revert)
     return dialogue
   }
 
-  export async function update (dialogues: Observed<Dialogue>[], argv: Dialogue.Argv, revert = false) {
+  export async function revert (dialogues: Dialogue[], argv: Dialogue.Argv) {
+    const created = dialogues.filter(d => d._type === '添加')
+    const edited = dialogues.filter(d => d._type !== '添加')
+    await Dialogue.remove(created.map(d => d.id), argv, true)
+    await Dialogue.rewrite(edited, argv)
+    return `问答 ${dialogues.map(d => d.id).sort((a, b) => a - b)} 已回退完成。`
+  }
+
+  export async function rewrite (dialogues: Dialogue[], argv: Dialogue.Argv) {
+    if (!dialogues.length) return
+    await argv.ctx.database.mysql.update('dialogue', dialogues)
+    for (const dialogue of dialogues) {
+      addHistory(dialogue, '修改', argv, true)
+    }
+  }
+
+  export async function update (dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
     const data: Partial<Dialogue>[] = []
     const fields = new Set<DialogueField>(['id'])
     for (const { _diff } of dialogues) {
@@ -144,7 +161,7 @@ export namespace Dialogue {
         dialogue._diff = {}
         argv.updated.push(dialogue.id)
         data.push(pick(dialogue, fields))
-        if (!revert) addHistory(dialogue._backup, '修改', argv, temp)
+        addHistory(dialogue._backup, '修改', argv, false, temp)
       }
     }
     await argv.ctx.database.mysql.update('dialogue', data)
@@ -154,9 +171,8 @@ export namespace Dialogue {
   export async function remove (ids: number[], argv: Dialogue.Argv, revert = false) {
     if (!ids.length) return
     await argv.ctx.database.mysql.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
-    if (revert) return
     for (const id of ids) {
-      addHistory(argv.dialogueMap[id], '删除', argv)
+      addHistory(argv.dialogueMap[id], '删除', argv, revert)
     }
   }
 }
@@ -172,22 +188,24 @@ function clone <T> (source: T): T {
 }
 
 export function sendResult (argv: Dialogue.Argv, prefix?: string, suffix?: string) {
+  const { meta, options, uneditable, unknown, skipped, updated } = argv
+  const { remove, revert } = options
   const output = []
   if (prefix) output.push(prefix)
-  if (argv.unknown.length) {
-    output.push(`没有搜索到编号为 ${argv.unknown.join(', ')} 的问答。`)
+  if (updated.length) {
+    output.push(`问答 ${updated.join(', ')} 已成功修改。`)
   }
-  if (argv.uneditable.length) {
-    output.push(`问答 ${argv.uneditable.join(', ')} 因权限过低无法修改。`)
+  if (skipped.length) {
+    output.push(`问答 ${skipped.join(', ')} 没有发生改动。`)
   }
-  if (argv.skipped.length) {
-    output.push(`问答 ${argv.skipped.join(', ')} 没有发生改动。`)
+  if (uneditable.length) {
+    output.push(`问答 ${uneditable.join(', ')} 因权限过低无法${revert ? '回退' : remove ? '删除' : '修改'}。`)
   }
-  if (argv.updated.length) {
-    output.push(`问答 ${argv.updated.join(', ')} 已成功修改。`)
+  if (unknown.length) {
+    output.push(`${revert ? '最近无人修改过' : '没有搜索到'}编号为 ${unknown.join(', ')} 的问答。`)
   }
   if (suffix) output.push(suffix)
-  return argv.meta.$send(output.join('\n'))
+  return meta.$send(output.join('\n'))
 }
 
 export function split (source: string) {
