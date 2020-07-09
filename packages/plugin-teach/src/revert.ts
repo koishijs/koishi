@@ -49,22 +49,22 @@ export default function apply (ctx: Context) {
   ctx.command('teach')
     .option('-v, --review', '查看最近的修改')
     .option('-V, --revert', '回退最近的修改')
-    .option('-l, --last [count]', { isString: true, validate: isIntegerOrInterval })
-    .option('-L, --except-last [count]', { isString: true, validate: isIntegerOrInterval })
+    .option('-l, --include-last [count]', { isString: true, validate: isIntegerOrInterval })
+    .option('-L, --exclude-last [count]', { isString: true, validate: isIntegerOrInterval })
 
   ctx.before('dialogue/execute', (argv) => {
     const { options, meta } = argv
-    const { last, exceptLast } = options
-    const now = Date.now(), lastTime = parseTime(last), exceptTime = parseTime(exceptLast)
+    const { includeLast, excludeLast } = options
+    const now = Date.now(), includeTime = parseTime(includeLast), excludeTime = parseTime(excludeLast)
     const dialogues = Object.values(Dialogue.history).filter((dialogue) => {
       if (dialogue._operator !== meta.userId) return
       const offset = now - dialogue._timestamp
-      if (lastTime && offset >= lastTime) return
-      if (exceptTime && offset < exceptTime) return
+      if (includeTime && offset >= includeTime) return
+      if (excludeTime && offset < excludeTime) return
       return true
     }).sort((d1, d2) => d2._timestamp - d1._timestamp).filter((_, index, temp) => {
-      if (!lastTime && last && index >= +last) return
-      if (!exceptTime && exceptLast && index < temp.length - +exceptLast) return
+      if (!includeTime && includeLast && index >= +includeLast) return
+      if (!excludeTime && excludeLast && index < temp.length - +excludeLast) return
       return true
     })
 

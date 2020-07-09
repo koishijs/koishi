@@ -165,7 +165,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
 
   // get predecessors
   ctx.on('dialogue/before-detail', async ({ options, dialogues, ctx }) => {
-    if (Object.keys(options).length) return
+    if (options.modify) return
     const predecessors = new Set<number>()
     for (const dialogue of dialogues) {
       for (const id of dialogue.predecessors) {
@@ -184,7 +184,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
 
   // get successors
   ctx.on('dialogue/before-detail', async ({ options, dialogues }) => {
-    if (Object.keys(options).length) return
+    if (options.modify) return
     await attachSuccessors(dialogues)
   })
 

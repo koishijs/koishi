@@ -51,8 +51,8 @@ async function update (argv: Dialogue.Argv) {
   const { maxShownDialogues = 10, detailInterval = 500 } = config
   const { revert, review, remove } = options
 
-  const modify = !review && Object.keys(options).length
-  if (!modify && target.length > maxShownDialogues) {
+  options.modify = !review && Object.keys(options).length
+  if (!options.modify && target.length > maxShownDialogues) {
     return meta.$send(`一次最多同时预览 ${maxShownDialogues} 个问答。`)
   }
 
@@ -60,7 +60,7 @@ async function update (argv: Dialogue.Argv) {
   argv.updated = []
   argv.skipped = []
   const dialogues = argv.dialogues = revert || review
-    ? Object.values(pick(Dialogue.history, target))
+    ? Object.values(pick(Dialogue.history, target)).filter(Boolean)
     : await Dialogue.fromIds(target, argv.ctx)
   argv.dialogueMap = Object.fromEntries(dialogues.map(d => [d.id, { ...d }]))
 
@@ -68,7 +68,7 @@ async function update (argv: Dialogue.Argv) {
   argv.unknown = difference(target, actualIds)
   await ctx.serialize('dialogue/before-detail', argv)
 
-  if (!modify) {
+  if (!options.modify) {
     if (argv.unknown.length) {
       await meta.$send(`${review ? '最近无人修改过' : '没有搜索到'}编号为 ${argv.unknown.join(', ')} 的问答。`)
     }

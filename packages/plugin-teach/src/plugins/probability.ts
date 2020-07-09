@@ -54,6 +54,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
       } else {
         // 对于含有称呼的正则表达式，需要判断正则表达式是否使用了称呼
         // 优先匹配概率更高的版本，如果概率相同则优先匹配 probA 的版本
+        // 这里匹配的结果会被存储下来，后面 receiver 用得着
         const regexp = new RegExp(dialogue.question)
         const queue = dialogue.probS >= dialogue.probA
           ? [[test.original, dialogue.probS], [test.question, dialogue.probA]] as const

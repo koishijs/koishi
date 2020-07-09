@@ -194,12 +194,13 @@ async function search (argv: Dialogue.Argv) {
   }
 
   if (!options.regexp) {
+    const suffix = options.regexp !== false ? '，请尝试使用正则表达式匹配' : ''
     if (!question) {
-      if (!dialogues.length) return meta.$send(`没有搜索到回答“${answer}”，请尝试使用正则表达式匹配。`)
+      if (!dialogues.length) return meta.$send(`没有搜索到回答“${answer}”${suffix}。`)
       const output = dialogues.map(d => `${formatPrefix(argv, d)}${d.original}`)
       return sendResult(`回答“${answer}”的问题如下`, output)
     } else if (!answer) {
-      if (!dialogues.length) return meta.$send(`没有搜索到问题“${original}”，请尝试使用正则表达式匹配。`)
+      if (!dialogues.length) return meta.$send(`没有搜索到问题“${original}”${suffix}。`)
       const output = formatAnswers(argv, dialogues)
       const state = ctx.getSessionState(meta)
       state.isSearch = true
@@ -208,7 +209,7 @@ async function search (argv: Dialogue.Argv) {
       const total = await getTotalWeight(ctx, state)
       return sendResult(`问题“${original}”的回答如下`, output, dialogues.length > 1 ? `实际触发概率：${+Math.min(total, 1).toFixed(3)}` : '')
     } else {
-      if (!dialogues.length) return meta.$send(`没有搜索到问答“${original}”“${answer}”，请尝试使用正则表达式匹配。`)
+      if (!dialogues.length) return meta.$send(`没有搜索到问答“${original}”“${answer}”${suffix}。`)
       const output = [dialogues.map(d => d.id).join(', ')]
       return sendResult(`“${original}”“${answer}”匹配的回答如下`, output)
     }

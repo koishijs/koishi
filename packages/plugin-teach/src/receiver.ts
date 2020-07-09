@@ -130,7 +130,8 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
     .replace(/\$0/g, escapeAnswer(meta.message))
 
   if (dialogue.flag & DialogueFlag.regexp) {
-    dialogue._capture.map((segment, index) => {
+    const capture = dialogue._capture || new RegExp(dialogue.question).exec(state.test.question)
+    capture.map((segment, index) => {
       if (index && index <= 9) {
         state.answer = state.answer.replace(new RegExp(`\\$${index}`, 'g'), segment || '')
       }
