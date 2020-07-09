@@ -67,8 +67,8 @@ onApp((app) => {
     .option('-o, --options', '查看全部选项（包括隐藏）')
     .action(async ({ meta, options }, name) => {
       if (name) {
-        const command = app.getCommand(name, meta) || app.app._shortcutMap[name]
-        if (!command) return meta.$send('指令未找到。')
+        const command = app._commandMap[name] || app._shortcutMap[name]
+        if (!command?.context.match(meta)) return meta.$send('指令未找到。')
         return showCommandHelp(command, meta, options as HelpConfig)
       } else {
         return showGlobalHelp(app, meta, options as HelpConfig)

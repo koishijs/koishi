@@ -308,11 +308,6 @@ export class Context {
     return this.app._commandMap[name.slice(index + 1).toLowerCase()] as Command<U, G>
   }
 
-  getCommand <U extends UserField = never, G extends GroupField = never> (name: string, meta: Meta) {
-    const command = this._getCommandByRawName<U, G>(name)
-    if (command?.context.match(meta)) return command
-  }
-
   /** 在元数据上绑定一个可观测群实例 */
   async observeGroup <T extends GroupField> (meta: Meta, fields: Iterable<T> = []): Promise<Group<T>> {
     const fieldSet = new Set<GroupField>(fields)

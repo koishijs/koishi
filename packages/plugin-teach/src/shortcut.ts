@@ -12,7 +12,7 @@ export default function (ctx: Context) {
     const capture = meta.message.match(/^#((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|##?)(\s+|$)/)
     if (!capture) return next()
 
-    const command = ctx.getCommand('teach', meta)
+    const command = ctx.command('teach')
     const message = meta.message.slice(capture[0].length)
     const { options, args, unknown } = command.parse(message)
     const argv: ParsedCommandLine = { options, args, unknown, meta, command }

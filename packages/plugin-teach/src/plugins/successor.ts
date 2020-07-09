@@ -157,7 +157,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     // ># shortcut
     if (!options.createSuccessor) return
     if (!dialogues.length) return meta.$send('没有搜索到任何问答。')
-    const command = ctx.getCommand('teach', meta)
+    const command = ctx.command('teach')
     parseTeachArgs(Object.assign(meta.$argv, command.parse(options.createSuccessor)))
     meta.$argv.options.setPred = dialogues.map(d => d.id).join(',')
     await command.execute(meta.$argv)
