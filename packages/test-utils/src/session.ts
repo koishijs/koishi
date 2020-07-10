@@ -1,7 +1,7 @@
 import { Meta, ContextType, ResponsePayload } from 'koishi-core'
 import { MockedApp } from './app'
 
-export const createMessageMeta = (type: ContextType, message: string, userId: number, ctxId: number): Meta<'message'> => ({
+export const createMessageMeta = (type: ContextType, message: string, userId: number, ctxId: number): Meta => ({
   [type + 'Id']: ctxId,
   postType: 'message',
   messageType: type === 'user' ? 'private' : type,
@@ -10,7 +10,7 @@ export const createMessageMeta = (type: ContextType, message: string, userId: nu
 })
 
 export class Session {
-  meta: Meta<'message'>
+  meta: Meta
 
   constructor (public app: MockedApp, public type: ContextType, public userId: number, public ctxId: number) {
     this.meta = createMessageMeta(type, null, userId, ctxId)
