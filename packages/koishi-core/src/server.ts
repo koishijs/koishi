@@ -66,30 +66,10 @@ export abstract class Server {
       ctxId = meta.userId
     }
 
-    // polyfill CQHTTP 3.x events and array form of message
-    // https://cqhttp.cc/docs/4.12/#/UpgradeGuide
-    /* eslint-disable dot-notation */
-    if (meta.postType === 'message') {
-      if (typeof meta.anonymous === 'string') {
-        meta.anonymous = {
-          name: meta.anonymous,
-          flag: meta['anonymousFlag'],
-        }
-        delete meta['anonymousFlag']
-      }
-      if (Array.isArray(meta.message)) {
-        meta.message = CQCode.stringifyAll(meta.message)
-      }
-    // @ts-ignore
-    } else if (meta.postType === 'event') {
-      meta.postType = 'notice'
-      meta.noticeType = meta['event']
-      delete meta['event']
-    } else if (meta.postType === 'request' && meta.message) {
-      meta.comment = meta.message
-      delete meta.message
+    // polyfill array format of post message
+    if (Array.isArray(meta.message)) {
+      meta.message = CQCode.stringifyAll(meta.message)
     }
-    /* eslint-enable dot-notation */
 
     // prepare events
     const events: string[] = []
@@ -139,13 +119,8 @@ export abstract class Server {
     this.isListening = true
     try {
       await this._listen()
-      if (this.versionLessThan(3)) {
+      if (this.versionLessThan(4)) {
         throw new Error(errors.UNSUPPORTED_CQHTTP_VERSION)
-      } else if (this.versionLessThan(3, 4)) {
-        const apps = this.appList.filter(app => app.options.type && !app.selfId)
-        if (apps.length > 1) throw new Error(errors.MULTIPLE_ANONYMOUS_BOTS)
-        const info = await apps[0].sender.getLoginInfo()
-        apps[0].prepare(info.userId)
       }
     } catch (error) {
       this.close()

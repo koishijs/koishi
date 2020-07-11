@@ -205,13 +205,11 @@ export class Sender {
 
   async deleteMsg (messageId: number) {
     this._assertInteger('messageId', messageId)
-    this._assertVersion('sender.deleteMsg()', 3, 3)
     await this.get('delete_msg', { messageId })
   }
 
   async deleteMsgAsync (messageId: number) {
     this._assertInteger('messageId', messageId)
-    this._assertVersion('sender.deleteMsgAsync()', 3, 3)
     return this.getAsync('delete_msg', { messageId })
   }
 
@@ -474,7 +472,6 @@ export class Sender {
   async getRecord (file: string, outFormat: RecordFormat, fullPath?: boolean) {
     if (!file) throw new Error('missing argument: file')
     this._assertElement('outFormat', outFormat, ['mp3', 'amr', 'wma', 'm4a', 'spx', 'ogg', 'wav', 'flac'])
-    this._assertVersion('sender.getRecord()', 3, 3)
     const response = await this.get('get_record', { file, outFormat, fullPath })
     return response.file as string
   }
@@ -515,24 +512,20 @@ export class Sender {
   }
 
   async setRestart (cleanLog = false, cleanCache = false, cleanEvent = false) {
-    this._assertVersion('sender.setRestart()', 3, 0, 2)
     await this.get('_set_restart', { cleanLog, cleanCache, cleanEvent })
   }
 
   async setRestartPlugin (delay?: number) {
-    this._assertVersion('sender.setRestartPlugin()', 3, 2)
     await this.get('set_restart_plugin', { delay })
   }
 
   async cleanDataDir (dataDir: DataDirectoryType) {
     this._assertElement('dataDir', dataDir, ['bface', 'image', 'record', 'show'])
-    this._assertVersion('sender.cleanDataDir()', 3, 3, 4)
     await this.get('clean_data_dir', { dataDir })
   }
 
   async cleanDataDirAsync (dataDir: DataDirectoryType) {
     this._assertElement('dataDir', dataDir, ['bface', 'image', 'record', 'show'])
-    this._assertVersion('sender.cleanDataDirAsync()', 3, 3, 4)
     return this.getAsync('clean_data_dir', { dataDir })
   }
 
