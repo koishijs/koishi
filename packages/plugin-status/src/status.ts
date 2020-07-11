@@ -1,10 +1,17 @@
-import { appList, App, Command } from 'koishi-core'
+import { appList, App, Command, getSelfIds } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
+import {} from 'koishi-database-mysql'
 
 declare module 'koishi-core/dist/app' {
   interface AppOptions {
     label?: string
     statusPort?: number
+  }
+}
+
+declare module 'koishi-core/dist/database' {
+  interface UserData {
+    lastCall: Date
   }
 }
 
@@ -79,9 +86,12 @@ export function extendStatus (callback: StatusModifier) {
 }
 
 async function _getStatus () {
-  const [userCount, groupCount, apps] = await Promise.all([
-    appList[0].database.getActiveUserCount(),
-    appList[0].database.getActiveGroupCount(),
+  const assignees = await getSelfIds()
+  const [[[{ 'COUNT(*)': userCount }], [{ 'COUNT(*)': groupCount }]], apps] = await Promise.all([
+    appList[0].database.mysql.query<[{ 'COUNT(*)': number }][]>([
+      `SELECT COUNT(*) FROM \`user\` WHERE 'CURRENT_TIMESTAMP() - \`lastCall\` < 1000 * 3600 * 24'`,
+      `SELECT COUNT(*) FROM \`group\` WHERE \`assignee\` IN (${assignees.join(',')})`,
+    ].join(';')),
     Promise.all(appList.map<Promise<AppStatus>>(async (app) => ({
       label: app.options.label,
       selfId: app.options.selfId,

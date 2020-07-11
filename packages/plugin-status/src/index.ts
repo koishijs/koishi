@@ -4,7 +4,6 @@ import { resolve } from 'path'
 import { noop } from 'koishi-utils'
 import plugin, { AppStatus, getStatus } from './status'
 import spawn from 'cross-spawn'
-import './database'
 
 export * from './status'
 
