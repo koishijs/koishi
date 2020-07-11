@@ -151,7 +151,7 @@ export default function apply (ctx: Context) {
         const fields = action.fields ? action.fields.slice() as GroupField[] : groupFields
         let group: Group
         if (options.thisGroup) {
-          group = await ctx.observeGroup(meta, fields)
+          group = await meta.observeGroup(fields)
         } else if (isInteger(options.group) && options.group > 0) {
           const data = await ctx.database.getGroup(options.group, fields)
           if (!data) return meta.$send('未找到指定的群。')
@@ -168,14 +168,14 @@ export default function apply (ctx: Context) {
           const data = await ctx.database.getUser(qq, -1, fields)
           if (!data) return meta.$send('未找到指定的用户。')
           if (qq === meta.userId) {
-            user = await ctx.observeUser(meta, fields)
+            user = await meta.observeUser(fields)
           } else if (meta.$user.authority <= data.authority) {
             return meta.$send('权限不足。')
           } else {
             user = observe(data, diff => ctx.database.setUser(qq, diff), `user ${qq}`)
           }
         } else {
-          user = await ctx.observeUser(meta, fields)
+          user = await meta.observeUser(fields)
         }
         return action.callback.call(ctx, meta, user, ...args)
       }

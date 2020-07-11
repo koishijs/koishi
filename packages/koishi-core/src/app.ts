@@ -295,11 +295,11 @@ export class App extends Context {
     }
 
     // store parsed message
-    defineProperty(meta, '$parsed', { atMe, nickname, prefix, message })
+    meta.$parsed = { atMe, nickname, prefix, message }
 
     // parse as command
     if (!meta.$argv && (prefix !== null || nickname || meta.messageType === 'private')) {
-      defineProperty(meta, '$argv', this.parse(message, meta))
+      meta.$argv = this.parse(message, meta)
     }
 
     // parse as shortcut
@@ -317,7 +317,7 @@ export class App extends Context {
             : command.parse(_message.trim())
           result.options = { ...options, ...result.options }
           result.args.unshift(...args)
-          defineProperty(meta, '$argv', { meta, command, ...result })
+          meta.$argv = { meta, command, ...result }
           break
         }
       }
@@ -329,7 +329,7 @@ export class App extends Context {
         // attach group data
         const groupFields = new Set<GroupField>(['flag', 'assignee'])
         this.emit('before-attach-group', meta, groupFields)
-        const group = await this.observeGroup(meta, groupFields)
+        const group = await meta.observeGroup(groupFields)
 
         // emit attach event
         if (await this.serialize(meta, 'attach-group', meta)) return
@@ -347,7 +347,7 @@ export class App extends Context {
       // attach user data
       const userFields = new Set<UserField>(['flag'])
       this.emit('before-attach-user', meta, userFields)
-      const user = await this.observeUser(meta, userFields)
+      const user = await meta.observeUser(userFields)
 
       // emit attach event
       if (await this.serialize(meta, 'attach-user', meta)) return

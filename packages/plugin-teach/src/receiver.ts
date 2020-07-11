@@ -87,7 +87,7 @@ export async function getTotalWeight (ctx: Context, state: SessionState) {
   ctx.app.emit(meta, 'dialogue/prepare', state)
   const userFields = new Set<UserField>(['name'])
   ctx.app.emit(meta, 'dialogue/before-attach-user', state, userFields)
-  await ctx.observeUser(meta, userFields)
+  await meta.observeUser(userFields)
   if (ctx.app.bail(meta, 'dialogue/attach-user', state)) return 0
   return dialogues.reduce((prev, curr) => prev + curr._weight, 0)
 }
@@ -143,11 +143,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
   // send answers
   const { textDelay = 1000, charDelay = 200 } = config
   ctx.logger('dialogue').debug(meta.message, '->', dialogue.answer)
-
-  Object.defineProperty(meta, '$_redirected', {
-    writable: true,
-    value: (meta.$_redirected || 0) + 1,
-  })
+  meta.$_redirected = (meta.$_redirected || 0) + 1
 
   // wrapper for meta.$send
   let buffer = ''
@@ -249,13 +245,6 @@ export default function (ctx: Context, config: Dialogue.Config) {
         userFields.add('timers')
       }
     }
-  })
-
-  ctx.on('dialogue/before-send', ({ meta }) => {
-    Object.defineProperty(meta, '$_redirected', {
-      writable: true,
-      value: (meta.$_redirected || 0) + 1,
-    })
   })
 
   ctx.command('teach/dialogue <message...>', '触发教学对话')

@@ -1,9 +1,9 @@
-import { contain, union, intersection, difference, observe, Observed, noop, defineProperty } from 'koishi-utils'
+import { contain, union, intersection, difference, noop, defineProperty } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine, InputArgv } from './command'
 import { Meta, contextTypes, getSessionId } from './meta'
 import { Sender } from './sender'
 import { App } from './app'
-import { Database, UserField, GroupField, User, createUser, GroupData, UserData, Group } from './database'
+import { Database, UserField, GroupField } from './database'
 import { errors } from './shared'
 import { format, inspect } from 'util'
 
@@ -41,9 +41,6 @@ export namespace ContextScope {
 
 const noopScope: ContextScope = [[[], null], [[], null], [[], null]]
 const noopIdentifier = ContextScope.stringify(noopScope)
-
-const userCache: Record<number, Observed<Partial<UserData & { _timestamp: number }>>> = {}
-const groupCache: Record<number, Observed<Partial<GroupData & { _timestamp: number }>>> = {}
 
 export interface Logger {
   warn (format: any, ...param: any): void
@@ -308,98 +305,6 @@ export class Context {
     return this.app._commandMap[name.slice(index + 1).toLowerCase()] as Command<U, G>
   }
 
-  /** 在元数据上绑定一个可观测群实例 */
-  async observeGroup <T extends GroupField> (meta: Meta, fields: Iterable<T> = []): Promise<Group<T>> {
-    const fieldSet = new Set<GroupField>(fields)
-    const { groupId, $argv, $group } = meta
-    if ($argv) Command.collectFields($argv, 'group', fieldSet)
-    if (!fieldSet.size) return
-
-    // 对于已经绑定可观测群的，判断字段是否需要自动补充
-    if ($group) {
-      for (const key in $group) {
-        fieldSet.delete(key as any)
-      }
-      if (fieldSet.size) {
-        const data = await this.database.getGroup(groupId, [...fieldSet])
-        groupCache[groupId] = $group._merge(data)
-        groupCache[groupId]._timestamp = Date.now()
-      }
-      return $group as any
-    }
-
-    // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    const cache = groupCache[groupId]
-    const fieldArray = [...fieldSet]
-    const timestamp = Date.now()
-    const isActiveCache = cache
-      && contain(Object.keys(cache), fieldArray)
-      && timestamp - cache._timestamp < this.app.options.groupCacheTimeout
-    if (isActiveCache) {
-      defineProperty(meta, '$group', cache)
-      return cache as any
-    }
-
-    // 绑定一个新的可观测群实例
-    const data = await this.database.getGroup(groupId, fieldArray)
-    const group = groupCache[groupId] = observe(data, diff => this.database.setGroup(groupId, diff), `group ${groupId}`)
-    groupCache[groupId]._timestamp = timestamp
-    defineProperty(meta, '$group', group)
-    return group
-  }
-
-  /** 在元数据上绑定一个可观测用户实例 */
-  async observeUser <T extends UserField> (meta: Meta, fields: Iterable<T> = []): Promise<User<T>> {
-    const fieldSet = new Set<UserField>(fields)
-    const { userId, $argv, $user } = meta
-    if ($argv) Command.collectFields($argv, 'user', fieldSet)
-    if (!fieldSet.size) return
-
-    // 对于已经绑定可观测用户的，判断字段是否需要自动补充
-    if ($user && !meta.anonymous) {
-      for (const key in $user) {
-        fieldSet.delete(key as any)
-      }
-      if (fieldSet.size) {
-        const data = await this.database.getUser(userId, [...fieldSet])
-        userCache[userId] = $user._merge(data)
-        userCache[userId]._timestamp = Date.now()
-      }
-    }
-
-    if ($user) return meta.$user as any
-
-    const defaultAuthority = typeof this.app.options.defaultAuthority === 'function'
-      ? this.app.options.defaultAuthority(meta)
-      : this.app.options.defaultAuthority || 0
-
-    // 确保匿名消息不会写回数据库
-    if (meta.anonymous) {
-      const user = observe(createUser(userId, defaultAuthority))
-      defineProperty(meta, '$user', user)
-      return user
-    }
-
-    // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    const cache = userCache[userId]
-    const fieldArray = [...fieldSet]
-    const timestamp = Date.now()
-    const isActiveCache = cache
-      && contain(Object.keys(cache), fieldArray)
-      && timestamp - cache._timestamp < this.app.options.userCacheTimeout
-    if (isActiveCache) {
-      defineProperty(meta, '$user', cache)
-      return cache as any
-    }
-
-    // 绑定一个新的可观测用户实例
-    const data = await this.database.getUser(userId, defaultAuthority, fieldArray)
-    const user = userCache[userId] = observe(data, diff => this.database.setUser(userId, diff), `user ${userId}`)
-    userCache[userId]._timestamp = timestamp
-    defineProperty(meta, '$user', user)
-    return user
-  }
-
   parse <U extends UserField, G extends GroupField> (message: string, meta: Meta<U, G>, next: NextFunction = noop): ParsedCommandLine<U, G> {
     if (!message) return
     const name = message.split(/\s/, 1)[0]
@@ -432,13 +337,13 @@ export class Context {
       if (!argv.command?.context.match(meta)) return next()
     }
 
-    defineProperty(meta, '$argv', argv)
+    meta.$argv = argv
 
     if (this.database) {
       if (meta.messageType === 'group') {
-        await this.observeGroup(meta)
+        await meta.observeGroup()
       }
-      await this.observeUser(meta)
+      await meta.observeUser()
     }
 
     return argv.command.execute(argv, next)

@@ -34,10 +34,7 @@ export default function (ctx: Context) {
 
     parseTeachArgs(argv)
 
-    Object.defineProperty(meta, '$argv', {
-      writable: true,
-      value: argv,
-    })
+    meta.$argv = argv
 
     return next()
   })

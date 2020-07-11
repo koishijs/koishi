@@ -30,7 +30,7 @@ export default function apply (ctx: Context) {
       }
 
       const newMeta = new Meta(meta)
-      Object.defineProperty(newMeta, '$argv', { value: ctx.parse(message, newMeta), writable: true })
+      newMeta.$argv = ctx.parse(message, newMeta)
 
       delete newMeta.groupId
       delete newMeta.discussId
@@ -44,7 +44,8 @@ export default function apply (ctx: Context) {
         newMeta.groupId = ctxId = +options.group
         newMeta.messageType = ctxType = 'group'
         newMeta.subType = options.type || 'normal'
-        await ctx.observeGroup(newMeta, groupFields)
+        delete newMeta.$group
+        await newMeta.observeGroup(groupFields)
       } else {
         ctxId = newMeta.userId
         ctxType = 'user'
@@ -52,7 +53,6 @@ export default function apply (ctx: Context) {
         newMeta.subType = options.type || 'other'
       }
 
-      let user = meta.$user
       if (options.user) {
         const id = getTargetId(options.user)
         if (!id) return meta.$send('未指定目标。')
@@ -60,14 +60,12 @@ export default function apply (ctx: Context) {
         newMeta.userId = id
         newMeta.sender.userId = id
 
-        user = await ctx.observeUser(newMeta, userFields)
+        delete newMeta.$user
+        const user = await newMeta.observeUser(userFields)
         if (meta.$user.authority <= user.authority) {
           return meta.$send('权限不足。')
         }
       }
-
-      Object.defineProperty(newMeta, '$app', { value: ctx.app })
-      Object.defineProperty(newMeta, '$user', { value: user, writable: true })
 
       if (options.group) {
         const info = await ctx.sender.getGroupMemberInfo(ctxId, newMeta.userId).catch(() => ({}))
@@ -77,9 +75,8 @@ export default function apply (ctx: Context) {
         Object.assign(newMeta.sender, info)
       }
 
-      // generate path
-      Object.defineProperty(newMeta, '$ctxId', { value: ctxId })
-      Object.defineProperty(newMeta, '$ctxType', { value: ctxType })
+      newMeta.$ctxId = ctxId
+      newMeta.$ctxType = ctxType
 
       return ctx.execute(newMeta.$argv)
     })

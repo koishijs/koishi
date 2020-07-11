@@ -157,7 +157,7 @@ async function showCommandHelp (command: Command, meta: Meta<ValidationField>, c
   }
 
   if (command.context.database) {
-    await command.context.observeUser(meta, ['authority', 'timers', 'usage'])
+    await meta.observeUser(['authority', 'timers', 'usage'])
   }
 
   const disabled = command.getConfig('disable', meta)

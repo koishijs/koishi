@@ -134,7 +134,7 @@ export default function apply (ctx: Context) {
       ctx.app.emit(meta, 'dialogue/before-attach-user', state, userFields)
       meta.userId = dialogue.writer
       meta.$user = null
-      await ctx.observeUser(meta, userFields)
+      await meta.observeUser(userFields)
     }
   })
 }

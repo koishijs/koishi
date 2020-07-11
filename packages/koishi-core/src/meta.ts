@@ -1,6 +1,6 @@
-import { User, Group, UserField, GroupField } from './database'
-import { ParsedCommandLine } from './command'
-import { isInteger } from 'koishi-utils'
+import { User, Group, UserField, GroupField, createUser, UserData, GroupData } from './database'
+import { ParsedCommandLine, Command } from './command'
+import { isInteger, contain, observe, Observed } from 'koishi-utils'
 import { App } from './app'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
@@ -182,7 +182,97 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
       ? this.$app.sender.setFriendAddRequestAsync(this.flag, false)
       : this.$app.sender.setGroupAddRequestAsync(this.flag, this.subType as any, reason)
   }
+
+  /** 在元数据上绑定一个可观测群实例 */
+  async observeGroup <T extends GroupField = never> (fields: Iterable<T> = []): Promise<Group<T | G>> {
+    const fieldSet = new Set<GroupField>(fields)
+    const { groupId, $argv, $group } = this
+    if ($argv) Command.collectFields($argv, 'group', fieldSet)
+    if (!fieldSet.size) return
+
+    // 对于已经绑定可观测群的，判断字段是否需要自动补充
+    if ($group) {
+      for (const key in $group) {
+        fieldSet.delete(key as any)
+      }
+      if (fieldSet.size) {
+        const data = await this.$app.database.getGroup(groupId, [...fieldSet])
+        groupCache[groupId] = $group._merge(data)
+        groupCache[groupId]._timestamp = Date.now()
+      }
+      return $group as any
+    }
+
+    // 如果存在满足可用的缓存数据，使用缓存代替数据获取
+    const cache = groupCache[groupId]
+    const fieldArray = [...fieldSet]
+    const timestamp = Date.now()
+    const isActiveCache = cache
+      && contain(Object.keys(cache), fieldArray)
+      && timestamp - cache._timestamp < this.$app.options.groupCacheTimeout
+    if (isActiveCache) {
+      return this.$group = cache as any
+    }
+
+    // 绑定一个新的可观测群实例
+    const data = await this.$app.database.getGroup(groupId, fieldArray)
+    const group = groupCache[groupId] = observe(data, diff => this.$app.database.setGroup(groupId, diff), `group ${groupId}`)
+    groupCache[groupId]._timestamp = timestamp
+    return this.$group = group
+  }
+
+  /** 在元数据上绑定一个可观测用户实例 */
+  async observeUser <T extends UserField = never> (fields: Iterable<T> = []): Promise<User<T | U>> {
+    const fieldSet = new Set<UserField>(fields)
+    const { userId, $argv, $user } = this
+    if ($argv) Command.collectFields($argv, 'user', fieldSet)
+    if (!fieldSet.size) return
+
+    // 对于已经绑定可观测用户的，判断字段是否需要自动补充
+    if ($user && !this.anonymous) {
+      for (const key in $user) {
+        fieldSet.delete(key as any)
+      }
+      if (fieldSet.size) {
+        const data = await this.$app.database.getUser(userId, [...fieldSet])
+        userCache[userId] = $user._merge(data)
+        userCache[userId]._timestamp = Date.now()
+      }
+    }
+
+    if ($user) return $user as any
+
+    const defaultAuthority = typeof this.$app.options.defaultAuthority === 'function'
+      ? this.$app.options.defaultAuthority(this)
+      : this.$app.options.defaultAuthority || 0
+
+    // 确保匿名消息不会写回数据库
+    if (this.anonymous) {
+      const user = observe(createUser(userId, defaultAuthority))
+      return this.$user = user
+    }
+
+    // 如果存在满足可用的缓存数据，使用缓存代替数据获取
+    const cache = userCache[userId]
+    const fieldArray = [...fieldSet]
+    const timestamp = Date.now()
+    const isActiveCache = cache
+      && contain(Object.keys(cache), fieldArray)
+      && timestamp - cache._timestamp < this.$app.options.userCacheTimeout
+    if (isActiveCache) {
+      return this.$user = cache as any
+    }
+
+    // 绑定一个新的可观测用户实例
+    const data = await this.$app.database.getUser(userId, defaultAuthority, fieldArray)
+    const user = userCache[userId] = observe(data, diff => this.$app.database.setUser(userId, diff), `user ${userId}`)
+    userCache[userId]._timestamp = timestamp
+    return this.$user = user
+  }
 }
+
+const userCache: Record<number, Observed<Partial<UserData & { _timestamp: number }>>> = {}
+const groupCache: Record<number, Observed<Partial<GroupData & { _timestamp: number }>>> = {}
 
 export interface AnonymousInfo {
   id?: number

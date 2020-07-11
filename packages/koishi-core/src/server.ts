@@ -105,11 +105,9 @@ export abstract class Server {
     if (meta.subType) events.unshift(events[0] + '/' + meta.subType)
 
     // generate path
-    Object.defineProperty(meta, '$ctxId', { value: ctxId })
-    Object.defineProperty(meta, '$ctxType', { value: ctxType })
-
-    const app = this.appMap[meta.selfId]
-    Object.defineProperty(meta, '$app', { value: app })
+    meta.$ctxId = ctxId
+    meta.$ctxType = ctxType
+    meta.$app = this.appMap[meta.selfId]
 
     return events
   }
