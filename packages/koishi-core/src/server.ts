@@ -49,7 +49,7 @@ export abstract class Server {
       if (!app) return
       app.prepare(meta.selfId)
     }
-    return Object.setPrototypeOf(meta, Meta.prototype) as Meta
+    return new Meta(meta)
   }
 
   parseMeta (meta: Meta) {

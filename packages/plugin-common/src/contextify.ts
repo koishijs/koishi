@@ -29,7 +29,7 @@ export default function apply (ctx: Context) {
         return meta.$send('请提供新的上下文。')
       }
 
-      const newMeta: Meta = Object.setPrototypeOf({ ...meta }, Meta.prototype)
+      const newMeta = new Meta(meta)
       Object.defineProperty(newMeta, '$argv', { value: ctx.parse(message, newMeta), writable: true })
 
       delete newMeta.groupId
@@ -81,7 +81,6 @@ export default function apply (ctx: Context) {
       Object.defineProperty(newMeta, '$ctxId', { value: ctxId })
       Object.defineProperty(newMeta, '$ctxType', { value: ctxType })
 
-      ctx.app.emit(newMeta, 'parse', newMeta)
       return ctx.execute(newMeta.$argv)
     })
 }

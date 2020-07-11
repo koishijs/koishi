@@ -53,23 +53,7 @@ export interface ParsedMessage {
 }
 
 /** CQHTTP Meta Information */
-export class Meta <U extends UserField = never, G extends GroupField = never> {
-  // database bindings
-  $user?: User<U>
-  $group?: Group<G>
-
-  // context identifier
-  $ctxId?: number
-  $ctxType?: ContextType
-
-  // other properties
-  $app?: App
-  $argv?: ParsedCommandLine
-  $parsed?: ParsedMessage
-
-  // quick operations
-  $response?: (payload: ResponsePayload) => void
-
+export interface Meta {
   // basic properties
   postType?: keyof MetaTypeMap
   messageType?: MetaTypeMap['message']
@@ -104,6 +88,27 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
   // metaEvent event
   status?: StatusInfo
   interval?: number
+}
+
+export class Meta <U extends UserField = never, G extends GroupField = never> {
+  $user?: User<U>
+  $group?: Group<G>
+  $ctxId?: number
+  $ctxType?: ContextType
+  $app?: App
+  $argv?: ParsedCommandLine
+  $parsed?: ParsedMessage
+  $response?: (payload: ResponsePayload) => void
+
+  constructor (meta: Partial<Meta>) {
+    Object.assign(this, meta)
+  }
+
+  toJSON () {
+    return Object.fromEntries(Object.entries(this).filter(([key]) => {
+      return !key.startsWith('_') && !key.startsWith('$')
+    }))
+  }
 
   /** @deprecated */
   get $nickname () {
@@ -113,12 +118,12 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
   $_sleep?: number
   $_hooks?: (() => void)[]
 
-  $cancelQueued (ms = 0) {
+  $cancelQueued = (ms = 0) => {
     this.$_hooks?.forEach(Reflect.apply)
     this.$_sleep = ms
   }
 
-  async $sendQueued (message: string | void, ms = 0) {
+  $sendQueued = async (message: string | void, ms = 0) => {
     if (!message) return
     return new Promise<void>(async (resolve) => {
       const hooks = this.$_hooks || (this.$_hooks = [])
@@ -137,25 +142,25 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
     })
   }
 
-  async $delete () {
+  $delete = async () => {
     if (this.$response) return this.$response({ delete: true })
     return this.$app.sender.deleteMsgAsync(this.messageId)
   }
 
-  async $ban (duration = 30 * 60) {
+  $ban = async (duration = 30 * 60) => {
     if (this.$response) return this.$response({ ban: true, banDuration: duration })
     return this.anonymous
       ? this.$app.sender.setGroupAnonymousBanAsync(this.groupId, this.anonymous.flag, duration)
       : this.$app.sender.setGroupBanAsync(this.groupId, this.userId, duration)
   }
 
-  async $kick () {
+  $kick = async () => {
     if (this.$response) return this.$response({ kick: true })
     if (this.anonymous) return
     return this.$app.sender.setGroupKickAsync(this.groupId, this.userId)
   }
 
-  async $send (message: string, autoEscape = false) {
+  $send = async (message: string, autoEscape = false) => {
     if (this.$response) {
       const _meta = this.$app.sender._createSendMeta(this.messageType, this.$ctxType, this.$ctxId, message)
       if (await this.$app.serialize(this, 'before-send', _meta)) return
@@ -164,14 +169,14 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
     return this.$app.sender.sendMsgAsync(this.messageType, this.$ctxId, message, autoEscape)
   }
 
-  async $approve (remark = '') {
+  $approve = async (remark = '') => {
     if (this.$response) return this.$response({ approve: true, remark })
     return this.requestType === 'friend'
       ? this.$app.sender.setFriendAddRequestAsync(this.flag, remark)
       : this.$app.sender.setGroupAddRequestAsync(this.flag, this.subType as any, true)
   }
 
-  async $reject (reason = '') {
+  $reject = async (reason = '') => {
     if (this.$response) return this.$response({ approve: false, reason })
     return this.requestType === 'friend'
       ? this.$app.sender.setFriendAddRequestAsync(this.flag, false)
