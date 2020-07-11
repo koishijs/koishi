@@ -1,6 +1,6 @@
 {
   "name": "koishi-database-sqlite",
-  "version": "2.0.0-alpha.25",
+  "version": "2.0.0-alpha.26",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -22,10 +22,10 @@
   "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-sqlite#readme",
   "devDependencies": {
     "@types/sqlite3": "^3.1.6",
-    "koishi-test-utils": "^4.0.0-alpha.26"
+    "koishi-test-utils": "^4.0.0-alpha.27"
   },
   "peerDependencies": {
-    "koishi-core": "^2.0.0-alpha.26"
+    "koishi-core": "^2.0.0-alpha.27"
   },
   "dependencies": {
     "koishi-utils": "^2.0.3",
