@@ -1,4 +1,4 @@
-import { Context, getTargetId, ContextType, groupFields, userFields } from 'koishi-core'
+import { Context, getTargetId, ContextType, groupFields, userFields, Meta } from 'koishi-core'
 
 export default function apply (ctx: Context) {
   ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3 })
@@ -29,7 +29,7 @@ export default function apply (ctx: Context) {
         return meta.$send('请提供新的上下文。')
       }
 
-      const newMeta = { ...meta }
+      const newMeta: Meta = Object.setPrototypeOf({ ...meta }, Meta.prototype)
       Object.defineProperty(newMeta, '$argv', { value: ctx.parse(message, newMeta), writable: true })
 
       delete newMeta.groupId

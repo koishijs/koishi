@@ -52,20 +52,11 @@ export interface ParsedMessage {
   message?: string
 }
 
-export namespace Meta {
-  interface DefaultUserData { flag: null }
-  interface DefaultGroupData { flag: null, assignee: null }
-
-  export type UserField = keyof DefaultUserData
-  export type GroupField = keyof DefaultGroupData
-}
-
 /** CQHTTP Meta Information */
-export interface Meta <U extends UserField = never, G extends GroupField = never> {
+export class Meta <U extends UserField = never, G extends GroupField = never> {
   // database bindings
   $user?: User<U>
   $group?: Group<G>
-  $nickname?: string
 
   // context identifier
   $ctxId?: number
@@ -78,12 +69,6 @@ export interface Meta <U extends UserField = never, G extends GroupField = never
 
   // quick operations
   $response?: (payload: ResponsePayload) => void
-  $delete?: () => Promise<void>
-  $kick?: () => Promise<void>
-  $ban?: (duration?: number) => Promise<void>
-  $approve?: (remark?: string) => Promise<void>
-  $reject?: (reason?: string) => Promise<void>
-  $send?: (message: string, autoEscape?: boolean) => Promise<void>
 
   // basic properties
   postType?: keyof MetaTypeMap
@@ -119,6 +104,79 @@ export interface Meta <U extends UserField = never, G extends GroupField = never
   // metaEvent event
   status?: StatusInfo
   interval?: number
+
+  /** @deprecated */
+  get $nickname () {
+    return this.$app.options.getSenderName(this)
+  }
+
+  $_sleep?: number
+  $_hooks?: (() => void)[]
+
+  $cancelQueued (ms = 0) {
+    this.$_hooks?.forEach(Reflect.apply)
+    this.$_sleep = ms
+  }
+
+  async $sendQueued (message: string | void, ms = 0) {
+    if (!message) return
+    return new Promise<void>(async (resolve) => {
+      const hooks = this.$_hooks || (this.$_hooks = [])
+      function hook () {
+        resolve()
+        clearTimeout(timer)
+        const index = hooks.indexOf(hook)
+        if (index >= 0) hooks.splice(index, 1)
+      }
+      hooks.push(hook)
+      const timer = setTimeout(async () => {
+        await this.$send(message.replace(/\$s/g, this.$nickname))
+        this.$_sleep = ms
+        hook()
+      }, this.$_sleep || 0)
+    })
+  }
+
+  async $delete () {
+    if (this.$response) return this.$response({ delete: true })
+    return this.$app.sender.deleteMsgAsync(this.messageId)
+  }
+
+  async $ban (duration = 30 * 60) {
+    if (this.$response) return this.$response({ ban: true, banDuration: duration })
+    return this.anonymous
+      ? this.$app.sender.setGroupAnonymousBanAsync(this.groupId, this.anonymous.flag, duration)
+      : this.$app.sender.setGroupBanAsync(this.groupId, this.userId, duration)
+  }
+
+  async $kick () {
+    if (this.$response) return this.$response({ kick: true })
+    if (this.anonymous) return
+    return this.$app.sender.setGroupKickAsync(this.groupId, this.userId)
+  }
+
+  async $send (message: string, autoEscape = false) {
+    if (this.$response) {
+      const _meta = this.$app.sender._createSendMeta(this.messageType, this.$ctxType, this.$ctxId, message)
+      if (await this.$app.serialize(this, 'before-send', _meta)) return
+      return this.$response({ reply: message, autoEscape, atSender: false })
+    }
+    return this.$app.sender.sendMsgAsync(this.messageType, this.$ctxId, message, autoEscape)
+  }
+
+  async $approve (remark = '') {
+    if (this.$response) return this.$response({ approve: true, remark })
+    return this.requestType === 'friend'
+      ? this.$app.sender.setFriendAddRequestAsync(this.flag, remark)
+      : this.$app.sender.setGroupAddRequestAsync(this.flag, this.subType as any, true)
+  }
+
+  async $reject (reason = '') {
+    if (this.$response) return this.$response({ approve: false, reason })
+    return this.requestType === 'friend'
+      ? this.$app.sender.setFriendAddRequestAsync(this.flag, false)
+      : this.$app.sender.setGroupAddRequestAsync(this.flag, this.subType as any, reason)
+  }
 }
 
 export interface AnonymousInfo {

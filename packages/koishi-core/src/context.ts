@@ -506,7 +506,6 @@ export interface EventMap {
   'logger/warn' (scope: string, message: string): any
   'logger/success' (scope: string, message: string): any
   'new-command' (cmd: Command): any
-  'parse' (meta: Meta): any
   'ready' (): any
   'before-connect' (): any
   'connect' (): any

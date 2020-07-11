@@ -1,7 +1,5 @@
-import { appList, onStart, onStop, onApp, App, Command, ParsedCommandLine } from 'koishi-core'
+import { appList, App, Command } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
-import { Server, createServer } from 'http'
-import { cyan } from 'kleur'
 
 declare module 'koishi-core/dist/app' {
   interface AppOptions {
@@ -15,71 +13,8 @@ Command.userFields(['lastCall'])
 let usage = getCpuUsage()
 let appRate: number
 let usedRate: number
-let timer: NodeJS.Timeout
-let server: Server
-let statusPort: number
 
 const sendEventCounter = new WeakMap<App, number[]>()
-
-onApp((app) => {
-  sendEventCounter.set(app, new Array(61).fill(0))
-
-  if (app.options.statusPort) {
-    statusPort = app.options.statusPort
-  }
-
-  app.on('before-command', ({ meta }: ParsedCommandLine<'lastCall'>) => {
-    meta.$user.lastCall = new Date()
-  })
-
-  app.on('before-send', () => {
-    const messages = sendEventCounter.get(app)
-    messages[0] += 1
-  })
-
-  let timer: NodeJS.Timeout
-  app.on('before-connect', () => {
-    timer = setInterval(() => {
-      const messages = sendEventCounter.get(app)
-      messages.unshift(0)
-      messages.splice(-1, 1)
-    }, 1000)
-  })
-
-  app.on('before-disconnect', () => {
-    clearInterval(timer)
-  })
-})
-
-onStart(() => {
-  timer = setInterval(function() {
-    let newUsage = getCpuUsage()
-    const totalDifference = newUsage.total - usage.total
-    appRate = (newUsage.app - usage.app) / totalDifference
-    usedRate = (newUsage.used - usage.used) / totalDifference
-  }, 1000)
-
-  if (!statusPort) return
-  server = createServer(async (req, res) => {
-    const status = await getStatus().catch((error) => {
-      appList[0].logger('status').warn(error)
-      return null as Status
-    })
-    if (!status) return res.writeHead(500).end()
-    res.writeHead(200, {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-    })
-    res.write(JSON.stringify(status))
-    res.end()
-  }).listen(statusPort)
-  appList[0].logger('status').info(`server listening at ${cyan(statusPort)}`)
-})
-
-onStop(() => {
-  clearInterval(timer)
-  if (server) server.close()
-})
 
 function memoryRate () {
   const totalMemory = totalmem()
@@ -106,6 +41,13 @@ function getCpuUsage() {
     used: (totalTick - totalIdle) / cpuInfo.length,
     total: totalTick / cpuInfo.length,
   }
+}
+
+function updateCpuUsage () {
+  const newUsage = getCpuUsage()
+  const totalDifference = newUsage.total - usage.total
+  appRate = (newUsage.app - usage.app) / totalDifference
+  usedRate = (newUsage.used - usage.used) / totalDifference
 }
 
 export interface Rate {
@@ -164,4 +106,42 @@ export async function getStatus (): Promise<Status> {
   if (now - timestamp < 60000) return cachedStatus
   timestamp = now
   return cachedStatus = _getStatus()
+}
+
+export default function apply (app: App) {
+  app.on('before-command', ({ meta }) => {
+    meta.$user['lastCall'] = new Date()
+  })
+
+  app.on('before-send', () => {
+    const messages = sendEventCounter.get(app)
+    messages[0] += 1
+  })
+
+  let timer: NodeJS.Timeout
+  app.on('connect', () => {
+    sendEventCounter.set(app, new Array(61).fill(0))
+    timer = setInterval(() => {
+      const messages = sendEventCounter.get(app)
+      messages.unshift(0)
+      messages.splice(-1, 1)
+      updateCpuUsage()
+    }, 1000)
+
+    app.server.koa.use(async (ctx, next) => {
+      if (ctx.path !== '/status') return next()
+      const status = await getStatus().catch<Status>((error) => {
+        appList[0].logger('status').warn(error)
+        return null
+      })
+      if (!status) return ctx.status = 500
+      ctx.set('Content-Type', 'application/json')
+      ctx.set('Access-Control-Allow-Origin', '*')
+      ctx.body = status
+    })
+  })
+
+  app.on('before-disconnect', () => {
+    clearInterval(timer)
+  })
 }

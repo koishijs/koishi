@@ -109,7 +109,7 @@ export class Sender {
   }
 
   _createSendMeta (sendType: MessageType, $ctxType: ContextType, $ctxId: number, message: string) {
-    return {
+    return Object.setPrototypeOf({
       $ctxId,
       $ctxType,
       message,
@@ -118,7 +118,7 @@ export class Sender {
       selfId: this.app.selfId,
       [$ctxType + 'Id']: $ctxId,
       time: Math.round(Date.now() / 1000),
-    } as Meta
+    }, Meta.prototype) as Meta
   }
 
   async sendMsg (type: MessageType, ctxId: number, message: string, autoEscape = false) {

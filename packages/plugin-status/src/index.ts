@@ -2,7 +2,7 @@ import { Context } from 'koishi-core'
 import { SpawnOptions } from 'child_process'
 import { resolve } from 'path'
 import { noop } from 'koishi-utils'
-import { AppStatus, getStatus } from './status'
+import plugin, { AppStatus, getStatus } from './status'
 import spawn from 'cross-spawn'
 import './database'
 
@@ -44,6 +44,8 @@ export async function apply (ctx: Context, options: StatusOptions = {}) {
       return new Date(parseInt(stdout) * 1000).toLocaleString()
     }).catch<string>(noop)
   }
+
+  ctx.app.plugin(plugin)
 
   ctx.command('status', '查看机器人运行状态')
     .shortcut('你的状态', { prefix: true })

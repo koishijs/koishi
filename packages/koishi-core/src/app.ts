@@ -4,7 +4,7 @@ import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig, ParsedLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
-import { GroupFlag, UserFlag, createDatabase, DatabaseConfig, GroupField, UserField, Group, User } from './database'
+import { GroupFlag, UserFlag, createDatabase, DatabaseConfig, GroupField, UserField } from './database'
 import { Meta, getSenderName } from './meta'
 import { simplify, defineProperty } from 'koishi-utils'
 import { emitter, errors } from './shared'
@@ -17,13 +17,13 @@ export interface AppOptions {
   selfId?: number
   server?: string
   type?: ServerType
+  path?: string
   database?: DatabaseConfig
   prefix?: string | string[]
   nickname?: string | string[]
   retryTimes?: number
   retryInterval?: number
-  // FIXME: typings
-  getSenderName? (meta: Meta<UserField>): string | void
+  getSenderName? (meta: Meta<any>): string
   maxMiddlewares?: number
   defaultAuthority?: number | ((meta: Meta) => number)
   quickOperationTimeout?: number
@@ -130,12 +130,6 @@ export class App extends Context {
     // bind built-in event listeners
     this.on('message', this._applyMiddlewares)
     this.on('logger', (scope, message) => debug(scope)(message))
-    this.on('parse', (meta) => {
-      Object.defineProperty(meta, '$nickname', {
-        // @ts-ignore FIXME: typings
-        get: () => options.getSenderName(meta),
-      })
-    })
     this.middleware(this._preprocess)
     emitter.emit('app', this)
   }
@@ -275,7 +269,7 @@ export class App extends Context {
     }
   }
 
-  private _preprocess = async (meta: Meta<Meta.UserField, Meta.GroupField>, next: NextFunction) => {
+  private _preprocess = async (meta: Meta, next: NextFunction) => {
     // strip prefix
     let capture: RegExpMatchArray
     let atMe = false

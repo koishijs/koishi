@@ -1,22 +1,25 @@
 import ms from 'ms'
 import WebSocket from 'ws'
-import * as http from 'http'
+import Koa from 'koa'
+import bodyParser from 'koa-bodyparser'
+import { Server as _Server } from 'http'
 import { emitter, errors } from './shared'
 import { createHmac } from 'crypto'
-import { camelCase, snakeCase, capitalize, paramCase, CQCode } from 'koishi-utils'
+import { camelCase, snakeCase, paramCase, CQCode } from 'koishi-utils'
 import { Meta, VersionInfo, ContextType } from './meta'
 import { App } from './app'
 import { CQResponse } from './sender'
 import { format } from 'util'
-
-export const onHttpServer = (callback: (server: http.Server) => any) => emitter.on('http-server', callback)
-export const onWsClient = (callback: (socket: WebSocket) => any) => emitter.on('ws-client', callback)
 
 export abstract class Server {
   public appList: App[] = []
   public version: VersionInfo
   public appMap: Record<number, App> = {}
   public isListening = false
+
+  public koa?: Koa
+  public server?: _Server
+  public socket?: WebSocket
 
   protected abstract _listen (): Promise<void>
   protected abstract _close (): void
@@ -46,7 +49,7 @@ export abstract class Server {
       if (!app) return
       app.prepare(meta.selfId)
     }
-    return meta
+    return Object.setPrototypeOf(meta, Meta.prototype) as Meta
   }
 
   parseMeta (meta: Meta) {
@@ -108,49 +111,6 @@ export abstract class Server {
     const app = this.appMap[meta.selfId]
     Object.defineProperty(meta, '$app', { value: app })
 
-    // add context properties
-    if (meta.postType === 'message') {
-      if (meta.messageType === 'group') {
-        meta.$delete = async () => {
-          if (meta.$response) return meta.$response({ delete: true })
-          return app.sender.deleteMsgAsync(meta.messageId)
-        }
-        meta.$ban = async (duration = 30 * 60) => {
-          if (meta.$response) return meta.$response({ ban: true, banDuration: duration })
-          return meta.anonymous
-            ? app.sender.setGroupAnonymousBanAsync(meta.groupId, meta.anonymous.flag, duration)
-            : app.sender.setGroupBanAsync(meta.groupId, meta.userId, duration)
-        }
-        meta.$kick = async () => {
-          if (meta.$response) return meta.$response({ kick: true })
-          if (meta.anonymous) return
-          return app.sender.setGroupKickAsync(meta.groupId, meta.userId)
-        }
-      }
-      meta.$send = async (message, autoEscape = false) => {
-        if (meta.$response) {
-          const _meta = app.sender._createSendMeta(meta.messageType, ctxType, ctxId, message)
-          if (await app.serialize(meta, 'before-send', _meta)) return
-          return meta.$response({ reply: message, autoEscape, atSender: false })
-        }
-        return app.sender[`send${capitalize(meta.messageType)}MsgAsync`](ctxId, message, autoEscape)
-      }
-    } else if (meta.postType === 'request') {
-      meta.$approve = async (remark = '') => {
-        if (meta.$response) return meta.$response({ approve: true, remark })
-        return meta.requestType === 'friend'
-          ? app.sender.setFriendAddRequestAsync(meta.flag, remark)
-          : app.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, true)
-      }
-      meta.$reject = async (reason = '') => {
-        if (meta.$response) return meta.$response({ approve: false, reason })
-        return meta.requestType === 'friend'
-          ? app.sender.setFriendAddRequestAsync(meta.flag, false)
-          : app.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, reason)
-      }
-    }
-
-    app.emit(meta, 'parse', meta)
     return events
   }
 
@@ -203,73 +163,57 @@ export abstract class Server {
 }
 
 export class HttpServer extends Server {
-  public server: http.Server
-
   constructor (app: App) {
     super(app)
 
-    const { secret } = app.options
-    this.server = http.createServer((req, res) => {
-      if (req.url !== '/') return
-      let body = ''
-      req.on('data', chunk => body += chunk)
-      req.on('end', () => {
-        if (secret) {
-          // no signature
-          const signature = req.headers['x-signature']
-          if (!signature) {
-            res.statusCode = 401
-            return res.end()
-          }
+    const { secret, path = '/' } = app.options
+    this.koa = new Koa()
+    this.koa.use(bodyParser())
+    this.koa.use((ctx, next) => {
+      if (ctx.url !== path) return next()
+      if (secret) {
+        // no signature
+        const signature = ctx.headers['x-signature']
+        if (!signature) return ctx.status = 401
 
-          // invalid signature
-          const sig = createHmac('sha1', secret).update(body).digest('hex')
-          if (signature !== `sha1=${sig}`) {
-            res.statusCode = 403
-            return res.end()
-          }
-        }
+        // invalid signature
+        const sig = createHmac('sha1', secret).update(ctx.request.rawBody).digest('hex')
+        if (signature !== `sha1=${sig}`) return ctx.status = 403
+      }
 
-        // no matched application
-        const data = JSON.parse(body)
-        this.debug('receive %o', data)
-        const meta = this.prepareMeta(data)
-        if (!meta) {
-          res.statusCode = 403
-          return res.end()
-        }
+      // no matched application
+      this.debug('receive %o', ctx.request.body)
+      const meta = this.prepareMeta(ctx.request.body)
+      if (!meta) return ctx.status = 403
 
-        // handle quick operations
-        res.writeHead(200, {
+      const { quickOperationTimeout } = this.appMap[meta.selfId].options
+      if (quickOperationTimeout > 0) {
+        // bypass koa's built-in response handling for quick operations
+        ctx.respond = false
+        ctx.res.writeHead(200, {
           'Content-Type': 'application/json',
         })
-        const app = this.appMap[meta.selfId]
-        if (app.options.quickOperationTimeout > 0) {
-          meta.$response = (data) => {
-            clearTimeout(timer)
-            res.write(JSON.stringify(snakeCase(data)))
-            res.end()
-            meta.$response = null
-          }
-          const timer = setTimeout(() => {
-            res.end()
-            meta.$response = null
-          }, app.options.quickOperationTimeout)
-        } else {
-          res.end()
+        meta.$response = (data) => {
+          clearTimeout(timer)
+          ctx.res.write(JSON.stringify(snakeCase(data)))
+          ctx.res.end()
+          meta.$response = null
         }
+        const timer = setTimeout(() => {
+          ctx.res.end()
+          meta.$response = null
+        }, quickOperationTimeout)
+      }
 
-        // dispatch events
-        this.dispatchMeta(meta)
-      })
+      // dispatch events
+      this.dispatchMeta(meta)
     })
-    emitter.emit('http-server', this.server)
   }
 
   async _listen () {
     this.debug('http server opening')
     const { port } = this.app.options
-    this.server.listen(port)
+    this.server = this.koa.listen(port)
     try {
       this.version = await this.app.sender.getVersionInfo()
     } catch (error) {
@@ -287,7 +231,6 @@ export class HttpServer extends Server {
 let counter = 0
 
 export class WsClient extends Server {
-  public socket: WebSocket
   private _retryCount = 0
   private _listeners: Record<number, (response: CQResponse) => void> = {}
 
