@@ -31,13 +31,13 @@
     "koishi"
   ],
   "devDependencies": {
-    "@types/js-yaml": "^3.12.4",
+    "@types/js-yaml": "^3.12.5",
     "@types/prompts": "^2.0.8"
   },
   "dependencies": {
-    "cac": "^6.5.10",
+    "cac": "^6.5.12",
     "js-yaml": "^3.14.0",
-    "kleur": "^3.0.3",
+    "kleur": "^4.0.2",
     "koishi-core": "^2.0.0-alpha.27",
     "koishi-plugin-common": "^3.0.0-alpha.29",
     "koishi-plugin-recorder": "^2.0.0-alpha.27",

@@ -33,7 +33,7 @@
   ],
   "devDependencies": {
     "@types/debug": "^4.1.5",
-    "@types/mysql": "^2.15.13"
+    "@types/mysql": "^2.15.14"
   },
   "peerDependencies": {
     "koishi-core": "^2.0.0-alpha.27"
