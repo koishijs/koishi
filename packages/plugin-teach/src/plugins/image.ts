@@ -6,6 +6,12 @@ import { existsSync, writeFile, readdirSync, stat } from 'fs-extra'
 import { Dialogue } from '../database'
 import axios from 'axios'
 
+declare module 'koishi-core/dist/sender' {
+  interface Sender {
+    getImageServerStatus (): Promise<ImageServerStatus>
+  }
+}
+
 declare module '../database' {
   namespace Dialogue {
     interface Config {
@@ -16,6 +22,11 @@ declare module '../database' {
       uploadServer?: string
     }
   }
+}
+
+interface ImageServerStatus {
+  totalSize: number
+  totalCount: number
 }
 
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
@@ -57,6 +68,11 @@ export default function apply (app: App, config: Dialogue.Config) {
       }
       await axios.get(uploadServer, { params })
     }
+
+    app.sender.getImageServerStatus = async () => {
+      const { data } = await axios.get(uploadServer)
+      return data
+    }
   }
 
   if (imagePath && uploadPath) {
@@ -79,18 +95,15 @@ export default function apply (app: App, config: Dialogue.Config) {
       totalSize += size
     }))
 
-    app.on('connect', () => {
-      app.server.koa.use(async (ctx, next) => {
-        if (!ctx.path.startsWith(uploadPath)) return next()
-        const { salt, sign, url, file } = ctx.query
+    const getStatus = app.sender.getImageServerStatus = async () => {
+      await statPromise
+      return { totalCount, totalSize }
+    }
 
-        if (!file) {
-          await statPromise
-          return ctx.body = {
-            count: totalCount,
-            size: totalSize,
-          }
-        }
+    app.on('connect', () => {
+      app.server.router.get(uploadPath, async (ctx) => {
+        const { salt, sign, url, file } = ctx.query
+        if (!file) return ctx.body = await getStatus()
 
         if (uploadKey) {
           if (!salt || !sign) return ctx.status = 400

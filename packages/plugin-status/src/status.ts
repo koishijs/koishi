@@ -138,8 +138,8 @@ export default function apply (app: App) {
       updateCpuUsage()
     }, 1000)
 
-    app.server.koa.use(async (ctx, next) => {
-      if (ctx.path !== '/status') return next()
+    if (!app.server.router) return
+    app.server.router.get('/status', async (ctx) => {
       const status = await getStatus().catch<Status>((error) => {
         appList[0].logger('status').warn(error)
         return null

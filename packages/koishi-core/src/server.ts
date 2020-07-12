@@ -1,7 +1,8 @@
 import ms from 'ms'
-import WebSocket from 'ws'
-import Koa from 'koa'
-import bodyParser from 'koa-bodyparser'
+import type WebSocket from 'ws'
+import type Koa from 'koa'
+import type Router from 'koa-router'
+import {} from 'koa-bodyparser'
 import { Server as _Server } from 'http'
 import { emitter, errors } from './shared'
 import { createHmac } from 'crypto'
@@ -18,6 +19,7 @@ export abstract class Server {
   public isListening = false
 
   public koa?: Koa
+  public router?: Router
   public server?: _Server
   public socket?: WebSocket
 
@@ -140,10 +142,11 @@ export class HttpServer extends Server {
     super(app)
 
     const { secret, path = '/' } = app.options
-    this.koa = new Koa()
-    this.koa.use(bodyParser())
-    this.koa.use((ctx, next) => {
-      if (ctx.url !== path) return next()
+    this.koa = new (require('koa'))()
+    this.koa.use((require('koa-bodyparser'))())
+    this.router = new (require('koa-router'))()
+    this.koa.use(this.router.routes())
+    this.router.use(path, (ctx) => {
       if (secret) {
         // no signature
         const signature = ctx.headers['x-signature']
@@ -223,7 +226,7 @@ export class WsClient extends Server {
       const headers: Record<string, string> = {}
       const { token, server, retryInterval, retryTimes } = this.app.options
       if (token) headers.Authorization = `Bearer ${token}`
-      this.socket = new WebSocket(server, { headers })
+      this.socket = new (require('ws'))(server, { headers })
 
       this.socket.on('error', error => this.debug(error))
 
