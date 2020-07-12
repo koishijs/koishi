@@ -3,7 +3,8 @@ import { getSelfIds, injectMethods, GroupData, createGroup, groupFields, GroupFi
 injectMethods('mysql', 'group', {
   async getGroup (groupId, ...args) {
     const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
-    const fields = args[0] as never || groupFields
+    const fields = args[0] as any || groupFields
+    if (fields && !fields.length) return {} as any
     const [data] = await this.select<GroupData[]>('group', fields, '`id` = ?', [groupId])
     let fallback: GroupData
     if (!data) {

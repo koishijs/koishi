@@ -185,7 +185,6 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
     const fieldSet = new Set<GroupField>(fields)
     const { groupId, $argv, $group } = this
     if ($argv) Command.collectFields($argv, 'group', fieldSet)
-    if (!fieldSet.size) return
 
     // 对于已经绑定可观测群的，判断字段是否需要自动补充
     if ($group) {
@@ -223,7 +222,6 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
     const fieldSet = new Set<UserField>(fields)
     const { userId, $argv, $user } = this
     if ($argv) Command.collectFields($argv, 'user', fieldSet)
-    if (!fieldSet.size) return
 
     // 对于已经绑定可观测用户的，判断字段是否需要自动补充
     if ($user && !this.anonymous) {

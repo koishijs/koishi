@@ -15,6 +15,7 @@ injectMethods('mysql', 'user', {
   async getUser (userId, ...args) {
     const authority = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] ? inferFields(args[0] as any) : userFields
+    if (fields && !fields.length) return {} as any
     const [data] = await this.select<UserData[]>('user', fields, '`id` = ?', [userId])
     let fallback: UserData
     if (data) {

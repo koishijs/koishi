@@ -34,28 +34,6 @@ const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
 export default function apply (app: App, config: Dialogue.Config) {
   const logger = app.logger('teach')
   const { uploadKey, imagePath, imageServer, uploadPath, uploadServer } = config
-  if (!imageServer) return
-
-  app.on('dialogue/before-modify', async ({ options, meta }) => {
-    let { answer } = options
-    if (!answer) return
-    try {
-      let output = ''
-      let capture: RegExpExecArray
-      while (capture = imageRE.exec(answer)) {
-        const [text, file, url] = capture
-        output += answer.slice(0, capture.index)
-        answer = answer.slice(capture.index + text.length)
-        await downloadFile(file, url)
-        output += `[CQ:image,file=${imageServer}/${file}]`
-      }
-      options.answer = output + answer
-    } catch (error) {
-      logger.warn(error.message)
-      await meta.$send('上传图片时发生错误。')
-      return true
-    }
-  })
 
   let downloadFile: (file: string, url: string) => Promise<void>
 
@@ -114,6 +92,29 @@ export default function apply (app: App, config: Dialogue.Config) {
         await downloadFile(file, url)
         return ctx.status = 200
       })
+    })
+  }
+
+  if (imageServer && downloadFile) {
+    app.on('dialogue/before-modify', async ({ options, meta }) => {
+      let { answer } = options
+      if (!answer) return
+      try {
+        let output = ''
+        let capture: RegExpExecArray
+        while (capture = imageRE.exec(answer)) {
+          const [text, file, url] = capture
+          output += answer.slice(0, capture.index)
+          answer = answer.slice(capture.index + text.length)
+          await downloadFile(file, url)
+          output += `[CQ:image,file=${imageServer}/${file}]`
+        }
+        options.answer = output + answer
+      } catch (error) {
+        logger.warn(error.message)
+        await meta.$send('上传图片时发生错误。')
+        return true
+      }
     })
   }
 }

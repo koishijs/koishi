@@ -143,10 +143,11 @@ export class HttpServer extends Server {
 
     const { secret, path = '/' } = app.options
     this.koa = new (require('koa'))()
-    this.koa.use((require('koa-bodyparser'))())
     this.router = new (require('koa-router'))()
+    this.koa.use(require('koa-bodyparser')())
     this.koa.use(this.router.routes())
-    this.router.use(path, (ctx) => {
+    this.koa.use(this.router.allowedMethods())
+    this.router.post(path, (ctx) => {
       if (secret) {
         // no signature
         const signature = ctx.headers['x-signature']
