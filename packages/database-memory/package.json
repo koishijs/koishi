@@ -1,7 +1,7 @@
 {
   "name": "koishi-database-memory",
   "description": "An in-memory database implementation for Koishi",
-  "version": "2.0.0-alpha.27",
+  "version": "2.0.0-alpha.31",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -11,7 +11,7 @@
   "license": "MIT",
   "scripts": {
     "lint": "eslint src --ext .ts",
-    "prepack": "rimraf dist & tsc -b"
+    "prepack": "tsc -b"
   },
   "repository": {
     "type": "git",
@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-memory#readme",
   "peerDependencies": {
-    "koishi-core": "^2.0.0-alpha.27"
+    "koishi-core": "^2.0.0-alpha.31"
   },
   "dependencies": {
     "koishi-utils": "^2.0.3"

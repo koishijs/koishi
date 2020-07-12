@@ -1,7 +1,7 @@
 {
   "name": "koishi-database-level",
   "description": "Leveldb support for Koishi",
-  "version": "2.0.0-alpha.27",
+  "version": "2.0.0-alpha.31",
   "main": "dist/index.js",
   "files": [
     "dist"
@@ -9,7 +9,7 @@
   "scripts": {
     "jest": "jest tests/.*\\.spec\\.ts",
     "lint": "eslint src --ext .ts",
-    "prepack": "rimraf dist & tsc -b"
+    "prepack": "tsc -b"
   },
   "repository": {
     "type": "git",
@@ -33,10 +33,10 @@
     "leveldb"
   ],
   "devDependencies": {
-    "koishi-test-utils": "^4.0.0-alpha.27"
+    "koishi-test-utils": "^4.0.0-alpha.31"
   },
   "peerDependencies": {
-    "koishi-core": "^2.0.0-alpha.27"
+    "koishi-core": "^2.0.0-alpha.31"
   },
   "dependencies": {
     "@types/leveldown": "^4.0.2",

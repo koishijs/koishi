@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-teach",
   "description": "Teach plugin for Koishi",
-  "version": "1.0.0-alpha.46",
+  "version": "1.0.0-alpha.50",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -12,7 +12,7 @@
   "scripts": {
     "build": "tsc -b",
     "lint": "eslint src --ext .ts",
-    "prepack": "rimraf dist & tsc -b"
+    "prepack": "tsc -b"
   },
   "repository": {
     "type": "git",
@@ -35,14 +35,14 @@
     "conversation"
   ],
   "devDependencies": {
-    "koishi-database-level": "^2.0.0-alpha.27",
-    "koishi-database-memory": "^2.0.0-alpha.27",
-    "koishi-database-mysql": "^2.0.0-alpha.27",
-    "koishi-test-utils": "^4.0.0-alpha.27"
+    "koishi-database-level": "^2.0.0-alpha.31",
+    "koishi-database-memory": "^2.0.0-alpha.31",
+    "koishi-database-mysql": "^2.0.0-alpha.31",
+    "koishi-test-utils": "^4.0.0-alpha.31"
   },
   "dependencies": {
     "escape-string-regexp": "^4.0.0",
-    "koishi-core": "^2.0.0-alpha.27",
+    "koishi-core": "^2.0.0-alpha.31",
     "koishi-utils": "^2.0.3"
   }
 }

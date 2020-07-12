@@ -1,7 +1,7 @@
 {
   "name": "koishi-core",
   "description": "Core features for Koishi",
-  "version": "2.0.0-alpha.27",
+  "version": "2.0.0-alpha.31",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -13,7 +13,7 @@
     "jest": "jest tests/.*\\.spec\\.ts --runInBand",
     "lint": "eslint src --ext .ts",
     "precommit": "yarn lint",
-    "prepack": "rimraf dist & tsc -b"
+    "prepack": "tsc -b"
   },
   "repository": {
     "type": "git",
@@ -39,8 +39,8 @@
     "@types/ms": "^0.7.31",
     "@types/ws": "^7.2.6",
     "get-port": "^5.1.1",
-    "koishi-database-memory": "^2.0.0-alpha.27",
-    "koishi-test-utils": "^4.0.0-alpha.27"
+    "koishi-database-memory": "^2.0.0-alpha.31",
+    "koishi-test-utils": "^4.0.0-alpha.31"
   },
   "dependencies": {
     "axios": "^0.19.2",

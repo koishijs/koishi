@@ -1,7 +1,7 @@
 import { Meta, ContextType, ResponsePayload } from 'koishi-core'
 import { MockedApp } from './app'
 
-export const createMessageMeta = (type: ContextType, message: string, userId: number, ctxId: number): Meta => ({
+export const createMessageMeta = (type: ContextType, message: string, userId: number, ctxId: number) => new Meta({
   [type + 'Id']: ctxId,
   postType: 'message',
   messageType: type === 'user' ? 'private' : type,
@@ -21,7 +21,7 @@ export class Session {
     function $response (data: ResponsePayload) {
       if (data.reply) replies.push(data.reply)
     }
-    await this.app.receiveMessage({ ...this.meta, message, $response })
+    await this.app.receiveMessage(new Meta({ ...this.meta, message, $response }))
     return replies
   }
 

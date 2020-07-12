@@ -37,11 +37,11 @@ export class MockedApp extends App {
     this.server = new MockedAppServer(this)
   }
 
-  receive (meta: Meta) {
-    this.server.dispatchMeta({
+  receive (meta: Partial<Meta>) {
+    this.server.dispatchMeta(new Meta({
       selfId: this.selfId,
       ...meta,
-    })
+    }))
   }
 
   receiveFriendRequest (userId: number, flag = 'flag') {
