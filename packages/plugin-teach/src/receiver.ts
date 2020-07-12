@@ -175,6 +175,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
     const char = state.answer[index + 1]
     if (!'n{'.includes(char)) {
       buffer += unescapeAnswer(state.answer.slice(0, index + 2))
+      state.answer = state.answer.slice(index + 2)
       continue
     }
     buffer += unescapeAnswer(state.answer.slice(0, index))
