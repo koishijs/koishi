@@ -10,6 +10,7 @@ import update from './update'
 import affinity from './plugins/affinity'
 import context from './plugins/context'
 import freeze from './plugins/freeze'
+import image from './plugins/image'
 import throttle from './plugins/throttle'
 import preventLoop from './plugins/preventLoop'
 import probability from './plugins/probability'
@@ -25,6 +26,7 @@ export * from './shortcut'
 export * from './plugins/affinity'
 export * from './plugins/context'
 export * from './plugins/freeze'
+export * from './plugins/image'
 export * from './plugins/throttle'
 export * from './plugins/preventLoop'
 export * from './plugins/probability'
@@ -120,6 +122,7 @@ export function apply (ctx: Context, config: Dialogue.Config = {}) {
   ctx.plugin(affinity, config)
   ctx.plugin(context, config)
   ctx.plugin(freeze, config)
+  ctx.plugin(image, config)
   ctx.plugin(throttle, config)
   ctx.plugin(preventLoop, config)
   ctx.plugin(probability, config)
