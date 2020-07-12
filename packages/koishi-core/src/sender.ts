@@ -108,13 +108,14 @@ export class Sender {
     }
   }
 
-  _createSendMeta (sendType: MessageType, $ctxType: ContextType, $ctxId: number, message: string) {
+  _createSendMeta (messageType: MessageType, $ctxType: ContextType, $ctxId: number, message: string) {
     return new Meta({
       $ctxId,
       $ctxType,
       message,
-      sendType,
+      messageType,
       postType: 'send',
+      $app: this.app,
       selfId: this.app.selfId,
       [$ctxType + 'Id']: $ctxId,
       time: Math.round(Date.now() / 1000),

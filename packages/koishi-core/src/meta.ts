@@ -12,7 +12,6 @@ export interface MetaTypeMap {
   request: 'friend' | 'group'
   // eslint-disable-next-line camelcase
   meta_event: 'lifecycle' | 'heartbeat'
-  send: 'private' | 'group' | 'discuss'
 }
 
 export interface SubTypeMap {
@@ -21,7 +20,6 @@ export interface SubTypeMap {
   request: 'add' | 'invite'
   // eslint-disable-next-line camelcase
   meta_event: 'enable' | 'disable' | 'connect'
-  send: never
 }
 
 export enum contextTypes {
@@ -55,12 +53,11 @@ export interface ParsedMessage {
 /** CQHTTP Meta Information */
 export interface Meta {
   // basic properties
-  postType?: keyof MetaTypeMap
+  postType?: PostType
   messageType?: MetaTypeMap['message']
   noticeType?: MetaTypeMap['notice']
   requestType?: MetaTypeMap['request']
   metaEventType?: MetaTypeMap['meta_event']
-  sendType?: MetaTypeMap['send']
   subType?: SubTypeMap[keyof SubTypeMap]
   selfId?: number
   userId?: number
