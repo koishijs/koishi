@@ -13,7 +13,7 @@
     "jest": "jest tests/.*\\.spec\\.ts --runInBand",
     "lint": "eslint src --ext .ts",
     "precommit": "yarn lint",
-    "prepack": "tsc -b"
+    "prepack": "rimraf dist & tsc -b"
   },
   "repository": {
     "type": "git",

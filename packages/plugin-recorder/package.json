@@ -12,7 +12,7 @@
   "scripts": {
     "build": "tsc -b",
     "lint": "eslint src --ext .ts",
-    "prepack": "tsc -b"
+    "prepack": "rimraf dist & tsc -b"
   },
   "repository": {
     "type": "git",

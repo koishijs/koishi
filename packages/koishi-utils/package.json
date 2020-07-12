@@ -13,7 +13,7 @@
   "scripts": {
     "jest": "jest tests/.*\\.spec\\.ts",
     "lint": "eslint src --ext .ts",
-    "prepack": "tsc -b"
+    "prepack": "rimraf dist & tsc -b"
   },
   "repository": {
     "type": "git",
