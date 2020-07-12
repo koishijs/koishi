@@ -46,7 +46,10 @@ function formatContext (meta: Meta) {
 onStart(async () => {
   const { database } = appList[0]
   const schedules = await database.getAllSchedules()
-  schedules.forEach(schedule => inspectSchedule(schedule))
+  schedules.forEach((schedule) => {
+    schedule.meta = new Meta(schedule.meta)
+    inspectSchedule(schedule)
+  })
 })
 
 export const name = 'schedule'
