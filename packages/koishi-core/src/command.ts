@@ -60,6 +60,7 @@ export interface CommandOption extends OptionConfig {
   fullName: string
   rawName: string
   longest: string
+  shortest: string
   names: string[]
   camels: string[]
   aliases: string[]
@@ -296,11 +297,12 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
     const negated: string[] = []
     const camels: string[] = []
 
-    let required = false, isBoolean = false, longest = ''
+    let required = false, isBoolean = false, longest = '', shortest = ''
     const names: string[] = [], aliases: string[] = []
     const rawName = removeBrackets(fullName)
     for (let name of rawName.split(',')) {
       name = name.trim()
+      if (!shortest || name.length < shortest.length) shortest = name
       if (name && !name.startsWith('-')) {
         aliases.push(name)
         continue
@@ -334,6 +336,7 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
       fullName,
       rawName,
       longest,
+      shortest,
       names,
       aliases,
       camels,
@@ -490,20 +493,18 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
     let output = this.name
     const optionSet = new Set<string>()
     for (let key in argv.options) {
-      if (key in this._optionMap) key = this._optionMap[key].longest
+      if (key in this._optionMap) key = this._optionMap[key].shortest
       if (optionSet.has(key)) continue
       optionSet.add(key)
       const value = argv.options[key]
       if (value === true) {
-        output += ` --${key}`
-      } else if (value === false) {
-        output += ` --no-${key}`
+        output += ` ${key}`
       } else {
-        output += ` --${key} ${value}`
+        output += ` ${key} ${value}`
       }
     }
     for (const arg of argv.args) {
-      output += ` "${arg}"`
+      output += arg.includes(' ') ? ` "${arg}"` : ` ${arg}`
     }
     if (argv.rest) output += ` -- ${argv.rest}`
     return output
