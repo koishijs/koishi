@@ -30,7 +30,6 @@ export default function apply (ctx: Context) {
       }
 
       const newMeta = new Meta(meta)
-      newMeta.$argv = ctx.parse(message, newMeta)
 
       delete newMeta.groupId
       delete newMeta.discussId
@@ -78,6 +77,6 @@ export default function apply (ctx: Context) {
       newMeta.$ctxId = ctxId
       newMeta.$ctxType = ctxType
 
-      return ctx.execute(newMeta.$argv)
+      return ctx.execute(message, newMeta)
     })
 }
