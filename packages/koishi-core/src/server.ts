@@ -51,6 +51,7 @@ export abstract class Server {
       if (!app) return
       app.prepare(meta.selfId)
     }
+    meta.$app = this.appMap[meta.selfId]
     return new Meta(meta)
   }
 
@@ -89,7 +90,6 @@ export abstract class Server {
     // generate path
     meta.$ctxId = ctxId
     meta.$ctxType = ctxType
-    meta.$app = this.appMap[meta.selfId]
 
     return events
   }

@@ -126,7 +126,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
     .replace(/\$A/g, CQCode.stringify('at', { qq: 'all' }))
     .replace(/\$a/g, CQCode.stringify('at', { qq: meta.userId }))
     .replace(/\$m/g, CQCode.stringify('at', { qq: meta.selfId }))
-    .replace(/\$s/g, escapeAnswer(meta.$nickname))
+    .replace(/\$s/g, escapeAnswer(meta.$username))
     .replace(/\$0/g, escapeAnswer(meta.message))
 
   if (dialogue.flag & DialogueFlag.regexp) {

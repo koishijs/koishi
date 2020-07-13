@@ -99,6 +99,7 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
 
   constructor (meta: Partial<Meta>) {
     Object.assign(this, meta)
+    this.$app.emit(this, 'session', this)
   }
 
   toJSON () {
@@ -107,9 +108,15 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
     }))
   }
 
-  /** @deprecated */
-  get $nickname () {
-    return this.$app.options.getSenderName(this)
+  get $username (): string {
+    const idString = '' + this.userId
+    return this.$user && this.$user['name'] && idString !== this.$user['name']
+      ? this.$user['name']
+      : this.anonymous
+        ? this.anonymous.name
+        : this.sender
+          ? this.sender.card || this.sender.nickname
+          : idString
   }
 
   $_sleep?: number
@@ -132,7 +139,7 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
       }
       hooks.push(hook)
       const timer = setTimeout(async () => {
-        await this.$send(message.replace(/\$s/g, this.$nickname))
+        await this.$send(message.replace(/\$s/g, this.$username))
         this.$_sleep = ms
         hook()
       }, this.$_sleep || 0)
@@ -375,17 +382,6 @@ export interface GroupNoticeInfo {
   }
   u: number
   vn: number
-}
-
-export function getSenderName (meta: Meta<'name'>) {
-  const idString = '' + meta.userId
-  return meta.$user && meta.$user.name && idString !== meta.$user.name
-    ? meta.$user.name
-    : meta.anonymous
-      ? meta.anonymous.name
-      : meta.sender
-        ? meta.sender.card || meta.sender.nickname
-        : idString
 }
 
 /**

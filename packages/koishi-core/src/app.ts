@@ -5,8 +5,8 @@ import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig, ParsedLine } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
 import { GroupFlag, UserFlag, createDatabase, DatabaseConfig, GroupField, UserField } from './database'
-import { Meta, getSenderName } from './meta'
-import { simplify, defineProperty } from 'koishi-utils'
+import { Meta } from './meta'
+import { simplify } from 'koishi-utils'
 import { emitter, errors } from './shared'
 import { types } from 'util'
 
@@ -23,7 +23,6 @@ export interface AppOptions {
   nickname?: string | string[]
   retryTimes?: number
   retryInterval?: number
-  getSenderName? (meta: Meta<any>): string
   maxMiddlewares?: number
   defaultAuthority?: number | ((meta: Meta) => number)
   quickOperationTimeout?: number
@@ -79,7 +78,6 @@ const defaultOptions: AppOptions = {
   userCacheTimeout: 60000,
   groupCacheTimeout: 300000,
   quickOperationTimeout: 100,
-  getSenderName,
 }
 
 export enum Status { closed, opening, open, closing }

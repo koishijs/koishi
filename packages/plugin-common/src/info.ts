@@ -42,7 +42,7 @@ export default function apply (ctx: Context) {
         }
       } else {
         user = await ctx.database.getUser(meta.userId, Array.from(infoFields))
-        output.push(`${meta.$nickname}，您的权限为 ${user.authority} 级。`)
+        output.push(`${meta.$username}，您的权限为 ${user.authority} 级。`)
       }
 
       for (const { callback } of infoList) {
