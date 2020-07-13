@@ -12,7 +12,6 @@ export interface Schedule {
 }
 
 function inspectSchedule ({ id, assignee, meta, interval, command, time }: Schedule) {
-  if (!appMap[assignee]) return
   const now = Date.now()
   const date = time.valueOf()
   const app = appMap[assignee]
@@ -47,8 +46,10 @@ onStart(async () => {
   const { database } = appList[0]
   const schedules = await database.getAllSchedules()
   schedules.forEach((schedule) => {
-    schedule.meta = new Meta(schedule.meta)
-    inspectSchedule(schedule)
+    if (schedule.meta.$app = appMap[schedule.assignee]) {
+      schedule.meta = new Meta(schedule.meta)
+      inspectSchedule(schedule)
+    }
   })
 })
 
