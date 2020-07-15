@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import admin from './admin'
-import broadcast, { BroadcastOptions } from './broadcast'
+import broadcast from './broadcast'
 import contextify from './contextify'
 import echo from './echo'
 import info from './info'
@@ -11,28 +11,18 @@ import usage from './usage'
 import welcome, { WelcomeMessage } from './welcome'
 
 export * from './admin'
+export * from './broadcast'
 export * from './info'
 export * from './repeater'
 
 export {
-  admin,
-  broadcast,
-  contextify,
-  echo,
-  info,
-  repeater,
-  requestHandler,
-  respondent,
-  usage,
-  welcome,
-  BroadcastOptions,
   HandlerOptions,
   RepeaterOptions,
   Respondent,
   WelcomeMessage,
 }
 
-export interface Config extends BroadcastOptions, HandlerOptions {
+export interface Config extends HandlerOptions {
   admin?: boolean
   broadcast?: boolean
   contextify?: boolean

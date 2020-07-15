@@ -1,9 +1,12 @@
 {
   "name": "koishi-plugin-common",
   "description": "Common plugins for Koishi",
-  "version": "3.0.0-alpha.35",
+  "version": "3.0.0-alpha.36",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
   "scripts": {
@@ -32,6 +35,7 @@
     "koishi-test-utils": "^4.0.0-alpha.32"
   },
   "dependencies": {
+    "axios": "^0.19.2",
     "koishi-core": "^2.0.0-alpha.32",
     "koishi-utils": "^2.0.3"
   }
