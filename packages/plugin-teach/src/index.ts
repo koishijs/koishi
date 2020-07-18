@@ -1,10 +1,9 @@
-import { Context } from 'koishi-core'
-import { Dialogue } from './database'
+import { Context, ParsedCommandLine, Meta } from 'koishi-core'
+import { Dialogue, parseTeachArgs } from './database'
 import internal from './internal'
 import receiver from './receiver'
 import revert from './revert'
 import search from './search'
-import shortcut from './shortcut'
 import teach from './teach'
 import update from './update'
 import affinity from './plugins/affinity'
@@ -22,7 +21,6 @@ export * from './database'
 export * from './receiver'
 export * from './revert'
 export * from './search'
-export * from './shortcut'
 export * from './plugins/affinity'
 export * from './plugins/context'
 export * from './plugins/freeze'
@@ -41,7 +39,7 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-const cheetSheet = `\
+const cheatSheet = ({ $user: { authority } }: Meta<'authority'>) => `\
 教学系统基本用法：
 　添加问答：# 问题 回答
 　搜索回答：## 问题
@@ -57,19 +55,19 @@ const cheetSheet = `\
 　正则+合并结果：###
 上下文选项：
 　允许本群：　　　-e
+　禁止本群：　　　-d${authority >= 3 ? `
 　全局允许：　　　-E
-　禁止本群：　　　-d
 　全局禁止：　　　-D
 　设置群号：　　　-g id
-　无视上下文搜索：-G
-问答选项：
+　无视上下文搜索：-G` : ''}
+问答选项：${authority >= 3 ? `
 　锁定问答：　　　-f/-F
-　教学者代行：　　-s/-S
+　教学者代行：　　-s/-S` : ''}
 　设置问题作者：　-w uid
 　设置为匿名：　　-W
 　重定向：　　　　=>
-匹配规则：
-　正则表达式：　　-x/-X
+匹配规则：${authority >= 3 ? `
+　正则表达式：　　-x/-X` : ''}
 　严格匹配权重：　-p prob
 　称呼匹配权重：　-P prob
 　设置最小好感度：-a aff
@@ -100,9 +98,35 @@ const cheetSheet = `\
 export const name = 'teach'
 
 export function apply (ctx: Context, config: Dialogue.Config = {}) {
+  ctx.on('before-attach', (meta) => {
+    if (meta.$argv || meta.$parsed.prefix) return
+    const capture = meta.$parsed.message.match(/^#((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|##?)(\s+|$)/)
+    if (!capture) return
+
+    const command = ctx.command('teach')
+    const message = meta.$parsed.message.slice(capture[0].length)
+    const { options, args, unknown } = command.parse(message)
+    const argv: ParsedCommandLine = { options, args, unknown, meta, command }
+
+    if (capture[1].startsWith('#')) {
+      options.search = true
+      if (capture[1].startsWith('##')) {
+        options.autoMerge = true
+        options.regexp = true
+      }
+    } else if (capture[1]) {
+      options.target = capture[1]
+    } else if (!message) {
+      options.help = true
+    }
+
+    parseTeachArgs(argv)
+    meta.$argv = argv
+  })
+
   ctx.command('teach', '添加教学对话', { authority: 2, checkUnknown: true, hideOptions: true })
-    .usage(cheetSheet)
     .userFields(['authority', 'id'])
+    .usage(cheatSheet)
     .action(async ({ options, meta, args }) => {
       const argv: Dialogue.Argv = { ctx, meta, args, config, options }
       return ctx.bail('dialogue/validate', argv)
@@ -110,7 +134,6 @@ export function apply (ctx: Context, config: Dialogue.Config = {}) {
     })
 
   // features
-  ctx.plugin(shortcut, config)
   ctx.plugin(receiver, config)
   ctx.plugin(revert, config)
   ctx.plugin(search, config)

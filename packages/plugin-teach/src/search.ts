@@ -43,7 +43,8 @@ export default function apply (ctx: Context) {
     .option('|, --pipe <op...>', '对每个搜索结果执行操作')
 
   ctx.before('dialogue/execute', (argv) => {
-    if (argv.options.search) return search(argv)
+    const { search, noArgs } = argv.options
+    if (search) return noArgs ? showInfo(argv) : showSearch(argv)
   })
 
   ctx.before('dialogue/validate', (argv) => {
@@ -153,7 +154,7 @@ export function formatQuestionAnswers (argv: Dialogue.Argv, dialogues: Dialogue[
   })
 }
 
-async function search (argv: Dialogue.Argv) {
+async function showSearch (argv: Dialogue.Argv) {
   const { ctx, meta, options } = argv
   const { regexp, question, answer, page = 1, original, pipe, recursive, autoMerge } = options
   const { itemsPerPage = 30, mergeThreshold = 5 } = argv.config
@@ -243,4 +244,19 @@ async function search (argv: Dialogue.Argv) {
     if (!dialogues.length) return meta.$send(`没有搜索到含有正则表达式“${original}”“${answer}”的问答。`)
     return sendResult(`问答正则表达式“${original}”“${answer}”的搜索结果如下`, output)
   }
+}
+
+async function showInfo ({ ctx, meta }: Dialogue.Argv) {
+  const [[{
+    'COUNT(DISTINCT `question`)': questions,
+    'COUNT(*)': answers,
+  }], { totalSize, totalCount }] = await Promise.all([
+    ctx.database.mysql.query<any>('SELECT COUNT(DISTINCT `question`), COUNT(*) FROM `dialogue`'),
+    ctx.sender.getImageServerStatus(),
+  ])
+
+  return meta.$send([
+    `共收录了 ${questions} 个问题和 ${answers} 个回答。`,
+    `收录图片 ${totalCount} 张，总体积 ${(totalSize / (1 << 20)).toFixed(1)} MB。`,
+  ].join('\n'))
 }
