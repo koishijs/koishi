@@ -55,8 +55,8 @@ export enum DialogueFlag {
   frozen = 1,
   /** 正则：使用正则表达式进行匹配 */
   regexp = 2,
-  /** 任意人：后继问答可以被上下文内任何人触发 */
-  indefinite = 4,
+  /** 上下文：后继问答可以被上下文内任何人触发 */
+  context = 4,
   /** 代行者：由教学者完成回答的执行 */
   substitute = 8,
   /** 补集：上下文匹配时取补集 */

@@ -76,7 +76,7 @@ const cheatSheet = ({ $user: { authority } }: Meta<'authority'>) => `\
 　添加前置问题：　<< id
 　设置后继问题：　> id
 　添加后继问题：　>> id
-　任意人触发后继：-i/-I
+　上下文触发后继：-c/-C
 　前置生效时间：　-z secs
 　创建新问答并作为后继：>#
 回退功能：

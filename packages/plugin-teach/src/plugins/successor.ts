@@ -12,7 +12,7 @@ declare module '../receiver' {
 declare module '../database' {
   interface DialogueTest {
     stateful?: boolean
-    indefinite?: boolean
+    context?: boolean
     predecessors?: (string | number)[]
   }
 
@@ -47,10 +47,10 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     .option('>>, --add-succ <ids>', '添加后继问题', { isString: true, validate: isDialogueIdList })
     .option('>#, --create-successor <op...>', '创建并添加后继问答')
     .option('-z, --successor-timeout [time]', '设置允许触发后继的时间', { validate: isPositiveInteger })
-    .option('-i, --indefinite', '允许后继问答被任何人触发')
-    .option('-I, --no-indefinite', '后继问答只能被同一人触发')
+    .option('-c, --context', '允许后继问答被任何人触发')
+    .option('-C, --no-context', '后继问答只能被同一人触发')
 
-  ctx.on('dialogue/before-fetch', ({ predecessors, stateful, noRecursive, indefinite }, conditionals) => {
+  ctx.on('dialogue/before-fetch', ({ predecessors, stateful, noRecursive, context }, conditionals) => {
     if (noRecursive) {
       conditionals.push('!`predecessors`')
     } else if (predecessors !== undefined) {
@@ -62,17 +62,17 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
       }
     }
 
-    if (indefinite) {
-      conditionals.push(`(\`flag\` & ${DialogueFlag.indefinite})`)
-    } else if (indefinite === false) {
-      conditionals.push(`!(\`flag\` & ${DialogueFlag.indefinite})`)
+    if (context) {
+      conditionals.push(`(\`flag\` & ${DialogueFlag.context})`)
+    } else if (context === false) {
+      conditionals.push(`!(\`flag\` & ${DialogueFlag.context})`)
     }
   })
 
   ctx.on('dialogue/validate', (argv) => {
     const { options, meta } = argv
 
-    if (options.noIndefinite) options.indefinite = false
+    if (options.noContext) options.context = false
 
     if ('setPred' in options) {
       if ('addPred' in options) {
@@ -121,9 +121,9 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
       data.successorTimeout = options.successorTimeout * 1000
     }
 
-    if (options.indefinite !== undefined) {
-      data.flag &= ~DialogueFlag.indefinite
-      data.flag |= +options.indefinite * DialogueFlag.indefinite
+    if (options.context !== undefined) {
+      data.flag &= ~DialogueFlag.context
+      data.flag |= +options.context * DialogueFlag.context
     }
   })
 
@@ -214,7 +214,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   }
 
   ctx.on('dialogue/detail', async (dialogue, output, argv) => {
-    if (dialogue.flag & DialogueFlag.indefinite) {
+    if (dialogue.flag & DialogueFlag.context) {
       output.push('后继问答可以被上下文内任何人触发')
     }
     if ((dialogue.successorTimeout || successorTimeout) !== successorTimeout) {
@@ -233,13 +233,13 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
       output.push(`z=${dialogue.successorTimeout / 1000}`)
     }
     if (dialogue.predecessors.length) output.push(`存在前置`)
-    if (dialogue.flag & DialogueFlag.indefinite) {
+    if (dialogue.flag & DialogueFlag.context) {
       output.push('上下文后置')
     }
   })
 
   ctx.on('dialogue/before-search', ({ options }, test) => {
-    test.indefinite = options.indefinite
+    test.context = options.context
   })
 
   ctx.on('dialogue/search', async (argv, test, dialogues) => {
@@ -280,7 +280,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/before-send', ({ dialogue, predecessors, userId }) => {
     const time = Date.now()
-    if (dialogue.flag & DialogueFlag.indefinite) userId = 0
+    if (dialogue.flag & DialogueFlag.context) userId = 0
     const predMap = predecessors[userId] || (predecessors[userId] = {})
     for (const id of dialogue.predecessors) {
       delete predMap[id]
