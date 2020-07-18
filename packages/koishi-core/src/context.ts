@@ -1,4 +1,4 @@
-import { contain, union, intersection, difference, noop, defineProperty } from 'koishi-utils'
+import { contain, union, intersection, difference, noop } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine, InputArgv } from './command'
 import { Meta, contextTypes, getSessionId } from './meta'
 import { Sender } from './sender'
@@ -392,6 +392,7 @@ export interface EventMap {
 
   // Koishi events
   'session' (meta: Meta): any
+  'before-attach' (meta: Meta): any
   'before-attach-user' (meta: Meta, fields: Set<UserField>): any
   'before-attach-group' (meta: Meta, fields: Set<GroupField>): any
   'attach-user' (meta: Meta): any

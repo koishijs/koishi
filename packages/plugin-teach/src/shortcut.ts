@@ -8,12 +8,13 @@ declare module 'koishi-core/dist/context' {
 }
 
 export default function (ctx: Context) {
-  ctx.prependMiddleware((meta, next) => {
-    const capture = meta.message.match(/^#((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|##?)(\s+|$)/)
-    if (!capture) return next()
+  ctx.on('before-attach', (meta) => {
+    if (meta.$argv || meta.$parsed.prefix) return
+    const capture = meta.$parsed.message.match(/^#((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|##?)(\s+|$)/)
+    if (!capture) return
 
     const command = ctx.command('teach')
-    const message = meta.message.slice(capture[0].length)
+    const message = meta.$parsed.message.slice(capture[0].length)
     const { options, args, unknown } = command.parse(message)
     const argv: ParsedCommandLine = { options, args, unknown, meta, command }
 
@@ -33,9 +34,6 @@ export default function (ctx: Context) {
     if (result) return result
 
     parseTeachArgs(argv)
-
     meta.$argv = argv
-
-    return next()
   })
 }

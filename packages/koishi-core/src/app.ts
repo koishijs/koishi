@@ -2,7 +2,7 @@ import debug from 'debug'
 import escapeRegex from 'escape-string-regexp'
 import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
-import { Command, ShortcutConfig, ParsedLine } from './command'
+import { Command, ShortcutConfig } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
 import { GroupFlag, UserFlag, createDatabase, DatabaseConfig, GroupField, UserField } from './database'
 import { Meta } from './meta'
@@ -300,26 +300,7 @@ export class App extends Context {
       meta.$argv = this.parse(message, meta)
     }
 
-    // parse as shortcut
-    if (!meta.$argv && !prefix) {
-      for (const shortcut of this._shortcuts) {
-        const { name, fuzzy, command, oneArg, prefix, options, args = [] } = shortcut
-        if (prefix && !nickname) continue
-        if (!fuzzy && message !== name) continue
-        if (!command.context.match(meta)) continue
-        if (message.startsWith(name)) {
-          const _message = message.slice(name.length)
-          if (fuzzy && !nickname && _message.match(/^\S/)) continue
-          const result: ParsedLine = oneArg
-            ? { rest: '', options: {}, unknown: [], args: [_message.trim()] }
-            : command.parse(_message.trim())
-          result.options = { ...options, ...result.options }
-          result.args.unshift(...args)
-          meta.$argv = { meta, command, ...result }
-          break
-        }
-      }
-    }
+    this.emit(meta, 'before-attach', meta)
 
     const command = meta.$argv?.command
     if (this.database) {
