@@ -38,13 +38,13 @@
     "cac": "^6.5.12",
     "js-yaml": "^3.14.0",
     "kleur": "^4.0.2",
-    "koishi-core": "^2.0.0-alpha.32",
+    "koishi-core": "^2.0.0-alpha.33",
     "koishi-plugin-common": "^3.0.0-alpha.36",
-    "koishi-plugin-recorder": "^2.0.0-alpha.32",
-    "koishi-plugin-schedule": "^2.0.0-alpha.36",
-    "koishi-plugin-status": "^2.0.0-alpha.34",
-    "koishi-plugin-teach": "^1.0.0-alpha.51",
-    "koishi-utils": "^2.0.3",
+    "koishi-plugin-recorder": "^2.0.0-alpha.33",
+    "koishi-plugin-schedule": "^2.0.0-alpha.37",
+    "koishi-plugin-status": "^2.0.0-alpha.35",
+    "koishi-plugin-teach": "^1.0.0-alpha.52",
+    "koishi-utils": "^2.1.0",
     "prompts": "^2.3.2"
   }
 }
