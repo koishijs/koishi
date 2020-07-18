@@ -36,12 +36,6 @@ const defaultConfig: MysqlDatabaseConfig = {
   },
 }
 
-export function includes (key: string, value: string) {
-  key = escapeId(key)
-  value = escape(value).slice(1, -1)
-  return `${key} LIKE '${value}' OR ${key} LIKE '%,${value}' OR ${key} LIKE '${value},%' OR ${key} LIKE '%,${value},%'`
-}
-
 export interface OkPacket {
   fieldCount: number
   affectedRows: number

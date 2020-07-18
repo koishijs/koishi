@@ -97,6 +97,11 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
       argv.successors = split(options.addSucc)
       argv.succOverwrite = false
     }
+
+    if (options.remove) {
+      argv.successors = []
+      argv.succOverwrite = true
+    }
   })
 
   ctx.on('dialogue/modify', ({ predOverwrite, predecessors }, data) => {
@@ -123,7 +128,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/after-modify', async (argv) => {
-    // modify successors
+    // 修改后置问答
     const { succOverwrite, successors, dialogues } = argv
     if (!successors) return
     const predecessors = dialogues.map(dialogue => '' + dialogue.id)
@@ -154,7 +159,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/after-modify', async ({ options, dialogues, meta }) => {
-    // ># shortcut
+    // 当存在 ># 时自动添加新问答并将当前处理的问答作为其前置
     if (!options.createSuccessor) return
     if (!dialogues.length) return meta.$send('没有搜索到任何问答。')
     const command = ctx.command('teach')
@@ -177,7 +182,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
       dialogueMap[dialogue.id] = dialogue
     }
     for (const dialogue of dialogues) {
-      const predecessors = dialogue.predecessors.map(id => dialogueMap[id] || { id })
+      const predecessors = dialogue.predecessors.map(id => dialogueMap[id])
       Object.defineProperty(dialogue, '_predecessors', { writable: true, value: predecessors })
     }
   })
