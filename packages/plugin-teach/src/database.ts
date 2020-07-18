@@ -6,9 +6,6 @@ arrayTypes.push('dialogue.groups', 'dialogue.predecessors')
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/before-modify' (argv: Dialogue.Argv): void | boolean | Promise<void | boolean>
-    'dialogue/modify' (argv: Dialogue.Argv, dialogue: Dialogue): void
-    'dialogue/after-modify' (argv: Dialogue.Argv): void | Promise<void>
     'dialogue/before-fetch' (test: DialogueTest, conditionals?: string[]): void
     'dialogue/fetch' (dialogue: Dialogue, test: DialogueTest): boolean | void
     'dialogue/permit' (argv: Dialogue.Argv, dialogue: Dialogue): boolean

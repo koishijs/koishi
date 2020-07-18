@@ -2,10 +2,8 @@ import { Context, ParsedCommandLine, Meta } from 'koishi-core'
 import { Dialogue, parseTeachArgs } from './database'
 import internal from './internal'
 import receiver from './receiver'
-import revert from './revert'
 import search from './search'
-import teach from './teach'
-import update from './update'
+import update, { teach } from './update'
 import affinity from './plugins/affinity'
 import context from './plugins/context'
 import freeze from './plugins/freeze'
@@ -19,7 +17,6 @@ import writer from './plugins/writer'
 
 export * from './database'
 export * from './receiver'
-export * from './revert'
 export * from './search'
 export * from './plugins/affinity'
 export * from './plugins/context'
@@ -129,16 +126,15 @@ export function apply (ctx: Context, config: Dialogue.Config = {}) {
     .usage(cheatSheet)
     .action(async ({ options, meta, args }) => {
       const argv: Dialogue.Argv = { ctx, meta, args, config, options }
-      return ctx.bail('dialogue/validate', argv)
-        || ctx.bail('dialogue/execute', argv)
+      if (ctx.bail('dialogue/validate', argv)) return
+      if (ctx.bail('dialogue/execute', argv)) return
+      return teach(argv)
     })
 
   // features
   ctx.plugin(receiver, config)
-  ctx.plugin(revert, config)
   ctx.plugin(search, config)
   ctx.plugin(update, config)
-  ctx.plugin(teach, config)
 
   // options
   ctx.plugin(internal, config)
