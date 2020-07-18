@@ -126,7 +126,7 @@ async function revert (dialogues: Dialogue[], argv: Dialogue.Argv) {
   }
 }
 
-async function update (argv: Dialogue.Argv) {
+export async function update (argv: Dialogue.Argv) {
   const { ctx, meta, options, target, config } = argv
   const { maxShownDialogues = 10, detailInterval = 500 } = config
   const { revert, review, remove } = options

@@ -236,7 +236,7 @@ export function parseTeachArgs ({ args, options }: Partial<ParsedLine>) {
     return arg
   }
 
-  options.noArgs = !args.length
+  defineProperty(options, 'noArgs', !args.length)
   options.question = parseArgument()
   options.answer = options.redirectDialogue || parseArgument()
 }

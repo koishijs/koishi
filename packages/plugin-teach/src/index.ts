@@ -62,6 +62,7 @@ const cheatSheet = ({ $user: { authority } }: Meta<'authority'>) => `\
 　教学者代行：　　-s/-S` : ''}
 　设置问题作者：　-w uid
 　设置为匿名：　　-W
+　忽略智能提示：　-i
 　重定向：　　　　=>
 匹配规则：${authority >= 3 ? `
 　正则表达式：　　-x/-X` : ''}
