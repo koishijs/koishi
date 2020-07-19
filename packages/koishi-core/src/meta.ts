@@ -101,7 +101,6 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
 
   constructor (meta: Partial<Meta>) {
     Object.assign(this, meta)
-    this.$app.emit(this, 'session', this)
   }
 
   toJSON () {

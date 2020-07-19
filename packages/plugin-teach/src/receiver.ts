@@ -1,5 +1,5 @@
 import { Context, UserField, Meta, NextFunction, Command } from 'koishi-core'
-import { CQCode, simplify, noop, isInteger } from 'koishi-utils'
+import { CQCode, simplify, noop } from 'koishi-utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import escapeRegex from 'escape-string-regexp'
 

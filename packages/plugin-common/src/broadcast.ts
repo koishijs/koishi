@@ -11,6 +11,7 @@ declare module 'koishi-core/dist/app' {
 declare module 'koishi-core/dist/sender' {
   interface Sender {
     sendGroupMsgAsync (groups: number[], message: string, autoEscape?: boolean): Promise<void>
+    sendGroupMsgAsync (groupId: number | number[], message: string, autoEscape?: boolean): Promise<void>
   }
 }
 

@@ -4,8 +4,6 @@ export enum UserFlag {
   ignore = 1,
 }
 
-export const userFlags: (keyof typeof UserFlag)[] = ['ignore']
-
 export interface UserData {
   id: number
   flag: number
@@ -51,12 +49,9 @@ export interface GroupData {
 }
 
 export enum GroupFlag {
-  noCommand = 1,
-  noResponse = 2,
+  ignore = 1,
   noEmit = 4,
 }
-
-export const groupFlags: (keyof typeof GroupFlag)[] = ['noCommand', 'noResponse', 'noEmit']
 
 export type Group<K extends GroupField = GroupField> = Observed<Pick<GroupData, K>>
 export type GroupField = keyof GroupData

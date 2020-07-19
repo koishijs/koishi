@@ -1,8 +1,8 @@
 import { isInteger, difference, Observed, paramCase, observe, parseTime } from 'koishi-utils'
 import {
   Context, Meta, getTargetId,
-  User, UserData, userFlags, UserFlag, userFields, UserField,
-  Group, GroupData, groupFlags, GroupFlag, groupFields, GroupField,
+  User, UserData, UserFlag, userFields, UserField,
+  Group, GroupData, GroupFlag, groupFields, GroupField,
 } from 'koishi-core'
 
 type ActionCallback <T extends {}, K extends keyof T> =
@@ -24,6 +24,10 @@ export class Action <T extends {}> {
 export const UserAction = new Action<UserData>()
 export const GroupAction = new Action<GroupData>()
 
+function getFlags (data: Record<string, any>): string[] {
+  return Object.values(data).filter(value => typeof value === 'string')
+}
+
 UserAction.add('setAuth', async (meta, user, value) => {
   const authority = Number(value)
   if (!isInteger(authority) || authority < 0) return meta.$send('参数错误。')
@@ -38,6 +42,7 @@ UserAction.add('setAuth', async (meta, user, value) => {
 }, ['authority'])
 
 UserAction.add('setFlag', async (meta, user, ...flags) => {
+  const userFlags = getFlags(UserFlag)
   if (!flags.length) return meta.$send(`可用的标记有 ${userFlags.join(', ')}。`)
   const notFound = difference(flags, userFlags)
   if (notFound.length) return meta.$send(`未找到标记 ${notFound.join(', ')}。`)
@@ -49,6 +54,7 @@ UserAction.add('setFlag', async (meta, user, ...flags) => {
 }, ['flag'])
 
 UserAction.add('unsetFlag', async (meta, user, ...flags) => {
+  const userFlags = getFlags(UserFlag)
   if (!flags.length) return meta.$send(`可用的标记有 ${userFlags.join(', ')}。`)
   const notFound = difference(flags, userFlags)
   if (notFound.length) return meta.$send(`未找到标记 ${notFound.join(', ')}。`)
@@ -101,6 +107,7 @@ UserAction.add('clearTimer', async (meta, user, ...commands) => {
 }, ['timers'])
 
 GroupAction.add('setFlag', async (meta, group, ...flags) => {
+  const groupFlags = getFlags(GroupFlag)
   if (!flags.length) return meta.$send(`可用的标记有 ${groupFlags.join(', ')}。`)
   const notFound = difference(flags, groupFlags)
   if (notFound.length) return meta.$send(`未找到标记 ${notFound.join(', ')}。`)
@@ -112,6 +119,7 @@ GroupAction.add('setFlag', async (meta, group, ...flags) => {
 }, ['flag'])
 
 GroupAction.add('unsetFlag', async (meta, group, ...flags) => {
+  const groupFlags = getFlags(GroupFlag)
   if (!flags.length) return meta.$send(`可用的标记有 ${groupFlags.join(', ')}。`)
   const notFound = difference(flags, groupFlags)
   if (notFound.length) return meta.$send(`未找到标记 ${notFound.join(', ')}。`)
@@ -157,7 +165,7 @@ export default function apply (ctx: Context) {
           if (!data) return meta.$send('未找到指定的群。')
           group = observe(data, diff => ctx.database.setGroup(options.group, diff), `group ${options.group}`)
         }
-        return action.callback.call(ctx, meta, group, ...args)
+        return (action as ActionItem<GroupData>).callback.call(ctx, meta, group, ...args)
       } else {
         const fields = action.fields ? action.fields.slice() as UserField[] : userFields
         if (!fields.includes('authority')) fields.push('authority')
@@ -177,7 +185,7 @@ export default function apply (ctx: Context) {
         } else {
           user = await meta.observeUser(fields)
         }
-        return action.callback.call(ctx, meta, user, ...args)
+        return (action as ActionItem<UserData>).callback.call(ctx, meta, user, ...args)
       }
     })
 }
