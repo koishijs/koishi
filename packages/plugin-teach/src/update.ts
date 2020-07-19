@@ -191,7 +191,7 @@ export async function update (argv: Dialogue.Argv) {
   return sendResult(argv)
 }
 
-export async function teach (argv: Dialogue.Argv) {
+export async function create (argv: Dialogue.Argv) {
   const { ctx, options } = argv
   options.create = true
   const { question, answer } = options

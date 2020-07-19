@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { DialogueFlag } from '../database'
+import { DialogueFlag, useFlag } from '../database'
 
 declare module '../database' {
   interface DialogueTest {
@@ -12,29 +12,10 @@ export default function apply (ctx: Context) {
     .option('-f, --frozen', '锁定这个问答', { authority: 4 })
     .option('-F, --no-frozen', '解锁这个问答', { authority: 4 })
 
-  ctx.on('dialogue/validate', ({ options }) => {
-    if (options.noFrozen) options.frozen = false
-  })
-
-  ctx.on('dialogue/before-fetch', (test, conditionals) => {
-    if (test.frozen !== undefined) {
-      conditionals.push(`!(\`flag\` & ${DialogueFlag.frozen}) = !${test.frozen}`)
-    }
-  })
+  useFlag(ctx, 'frozen')
 
   ctx.on('dialogue/permit', ({ meta }, dialogue) => {
     return (dialogue.flag & DialogueFlag.frozen) && meta.$user.authority < 4
-  })
-
-  ctx.on('dialogue/modify', ({ options }, data) => {
-    if (options.frozen !== undefined) {
-      data.flag &= ~DialogueFlag.frozen
-      data.flag |= +options.frozen * DialogueFlag.frozen
-    }
-  })
-
-  ctx.on('dialogue/before-search', ({ options }, test) => {
-    test.frozen = options.frozen
   })
 
   ctx.on('dialogue/detail', (dialogue, output) => {

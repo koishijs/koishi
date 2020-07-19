@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference } from 'koishi-utils'
-import { equal, split, prepareTargets, isDialogueIdList, parseTeachArgs, isPositiveInteger, Dialogue, DialogueFlag } from '../database'
+import { equal, split, prepareTargets, isDialogueIdList, parseTeachArgs, isPositiveInteger, Dialogue, DialogueFlag, useFlag } from '../database'
 import { formatQuestionAnswers } from '../search'
 
 declare module '../receiver' {
@@ -50,6 +50,8 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     .option('-c, --context', '允许后继问答被任何人触发')
     .option('-C, --no-context', '后继问答只能被同一人触发')
 
+  useFlag(ctx, 'context')
+
   ctx.on('dialogue/before-fetch', ({ predecessors, stateful, noRecursive, context }, conditionals) => {
     if (noRecursive) {
       conditionals.push('!`predecessors`')
@@ -61,18 +63,10 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
         conditionals.push(`(${segments.join('||')})`)
       }
     }
-
-    if (context) {
-      conditionals.push(`(\`flag\` & ${DialogueFlag.context})`)
-    } else if (context === false) {
-      conditionals.push(`!(\`flag\` & ${DialogueFlag.context})`)
-    }
   })
 
   ctx.on('dialogue/validate', (argv) => {
     const { options, meta } = argv
-
-    if (options.noContext) options.context = false
 
     if ('setPred' in options) {
       if ('addPred' in options) {
@@ -119,11 +113,6 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     // set successor timeout
     if (options.successorTimeout) {
       data.successorTimeout = options.successorTimeout * 1000
-    }
-
-    if (options.context !== undefined) {
-      data.flag &= ~DialogueFlag.context
-      data.flag |= +options.context * DialogueFlag.context
     }
   })
 
@@ -236,10 +225,6 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     if (dialogue.flag & DialogueFlag.context) {
       output.push('上下文后置')
     }
-  })
-
-  ctx.on('dialogue/before-search', ({ options }, test) => {
-    test.context = options.context
   })
 
   ctx.on('dialogue/search', async (argv, test, dialogues) => {

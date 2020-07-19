@@ -1,6 +1,6 @@
 import { Context, Meta, ParsedLine } from 'koishi-core'
 import { arrayTypes } from 'koishi-database-mysql'
-import { Observed, pick, difference, observe, isInteger, defineProperty } from 'koishi-utils'
+import { Observed, pick, difference, observe, isInteger, defineProperty, capitalize } from 'koishi-utils'
 
 arrayTypes.push('dialogue.groups', 'dialogue.predecessors')
 
@@ -226,6 +226,29 @@ export function prepareTargets (argv: Dialogue.Argv, dialogues = argv.dialogues)
   })
   argv.uneditable.unshift(...difference(dialogues, targets).map(d => d.id))
   return targets.map(data => observe(data, `dialogue ${data.id}`))
+}
+
+export function useFlag (ctx: Context, flag: keyof typeof DialogueFlag, test = true) {
+  test && ctx.on('dialogue/before-fetch', (test, conditionals) => {
+    if (test[flag] !== undefined) {
+      conditionals.push(`!(\`flag\` & ${DialogueFlag[flag]}) = !${test[flag]}`)
+    }
+  })
+
+  test && ctx.on('dialogue/before-search', ({ options }, test) => {
+    test[flag] = options[flag]
+  })
+
+  ctx.on('dialogue/validate', ({ options }) => {
+    if (options['no' + capitalize(flag)]) options[flag] = false
+  })
+
+  ctx.on('dialogue/modify', ({ options }: Dialogue.Argv, data: Dialogue) => {
+    if (options[flag] !== undefined) {
+      data.flag &= ~DialogueFlag[flag]
+      data.flag |= +options[flag] * DialogueFlag[flag]
+    }
+  })
 }
 
 export function parseTeachArgs ({ args, options }: Partial<ParsedLine>) {

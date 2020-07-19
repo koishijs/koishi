@@ -1,6 +1,6 @@
 import { Context, getTargetId, UserField } from 'koishi-core'
 import { isInteger, deduplicate } from 'koishi-utils'
-import { DialogueFlag } from '../database'
+import { DialogueFlag, useFlag } from '../database'
 
 declare module '../database' {
   interface DialogueTest {
@@ -27,18 +27,13 @@ export default function apply (ctx: Context) {
     .option('-s, --substitute', '由教学者完成回答的执行')
     .option('-S, --no-substitute', '由触发者完成回答的执行')
 
+  useFlag(ctx, 'substitute')
+
   ctx.on('dialogue/before-fetch', (test, conditionals) => {
     if (test.writer !== undefined) conditionals.push(`\`writer\` = ${test.writer}`)
-    if (test.substitute) {
-      conditionals.push(`(\`flag\` & ${DialogueFlag.substitute})`)
-    } else if (test.substitute === false) {
-      conditionals.push(`!(\`flag\` & ${DialogueFlag.substitute})`)
-    }
   })
 
   ctx.on('dialogue/validate', ({ options, meta }) => {
-    if (options.noSubstitute) options.substitute = false
-
     if (options.anonymous) {
       options.writer = 0
     } else if (options.writer) {
@@ -111,7 +106,13 @@ export default function apply (ctx: Context) {
 
   ctx.on('dialogue/before-search', ({ options }, test) => {
     test.writer = options.writer
-    test.substitute = options.substitute
+  })
+
+  ctx.on('dialogue/before-modify', async ({ meta, options, authMap }) => {
+    if (options.writer && !(options.writer in authMap)) {
+      await meta.$send('指定的目标用户不存在。')
+      return true
+    }
   })
 
   ctx.on('dialogue/modify', ({ options, target, meta }, data) => {
@@ -120,13 +121,9 @@ export default function apply (ctx: Context) {
     } else if (!target) {
       data.writer = meta.userId
     }
-
-    if (options.substitute !== undefined) {
-      data.flag &= ~DialogueFlag.substitute
-      data.flag |= +options.substitute * DialogueFlag.substitute
-    }
   })
 
+  // 触发代行者模式
   ctx.on('dialogue/before-send', async (state) => {
     const { dialogue, meta } = state
     if (dialogue.flag & DialogueFlag.substitute && dialogue.writer && meta.userId !== dialogue.writer) {

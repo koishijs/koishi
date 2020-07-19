@@ -3,7 +3,7 @@ import { Dialogue, parseTeachArgs } from './database'
 import internal from './internal'
 import receiver from './receiver'
 import search from './search'
-import update, { teach } from './update'
+import update, { create } from './update'
 import affinity from './plugins/affinity'
 import context from './plugins/context'
 import freeze from './plugins/freeze'
@@ -129,7 +129,7 @@ export function apply (ctx: Context, config: Dialogue.Config = {}) {
       const argv: Dialogue.Argv = { ctx, meta, args, config, options }
       if (ctx.bail('dialogue/validate', argv)) return
       if (ctx.bail('dialogue/execute', argv)) return
-      return teach(argv)
+      return create(argv)
     })
 
   // features
