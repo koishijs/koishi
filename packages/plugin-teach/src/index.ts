@@ -46,8 +46,8 @@ const cheatSheet = ({ $user: { authority } }: Meta<'authority'>) => `\
 搜索选项：
 　管道语法：　　　|
 　结果页码：　　　/ page
-　禁用递归查询：　-R
-　正则+合并结果：###
+　禁用递归查询：　-R${authority >= 3 ? `
+　正则+合并结果：###` : ''}
 上下文选项：
 　允许本群：　　　-e
 　禁止本群：　　　-d${authority >= 3 ? `
@@ -108,7 +108,7 @@ export function apply (ctx: Context, config: Dialogue.Config = {}) {
       options.search = true
       if (capture[1].startsWith('##')) {
         options.autoMerge = true
-        options.regexp = true
+        options.x = options.regexp = true
       }
     } else if (capture[1]) {
       options.target = capture[1]

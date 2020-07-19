@@ -248,22 +248,9 @@ export default function (ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.command('teach/dialogue <message...>', '触发教学对话')
-    .option('-g, --group [id]', '设置要触发问答的群号')
-    .action(async ({ meta, options, next }, message = '') => {
+  ctx.intersect(ctx.app.groups).command('teach/dialogue <message...>', '触发教学对话')
+    .action(async ({ meta, next }, message = '') => {
       if (meta.$_redirected > maxRedirections) return next()
-
-      if (options.group !== undefined) {
-        if (!isInteger(options.group) || options.group <= 0) {
-          return meta.$send('选项 -g, --group 应为正整数。')
-        }
-        meta.groupId = options.group
-      }
-
-      if (meta.messageType !== 'group' && !options.group) {
-        return meta.$send('请输入要触发问答的群号。')
-      }
-
       meta.message = message
       return triggerDialogue(ctx, meta, config, next)
     })
