@@ -7,6 +7,7 @@ declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/before-modify' (argv: Dialogue.Argv): void | boolean | Promise<void | boolean>
     'dialogue/modify' (argv: Dialogue.Argv, dialogue: Dialogue): void
+    'dialogue/before-create' (argv: Dialogue.Argv): void | boolean | Promise<void | boolean>
     'dialogue/after-modify' (argv: Dialogue.Argv): void | Promise<void>
     'dialogue/before-detail' (argv: Dialogue.Argv): void | Promise<void>
     'dialogue/detail' (dialogue: Dialogue, output: string[], argv: Dialogue.Argv): void | Promise<void>
@@ -193,15 +194,17 @@ export async function update (argv: Dialogue.Argv) {
 
 export async function create (argv: Dialogue.Argv) {
   const { ctx, options } = argv
-  options.create = true
+  options.create = options.modify = true
   const { question, answer } = options
-  if (await ctx.app.serialize('dialogue/before-modify', argv)) return
+  if (await ctx.app.serialize('dialogue/before-create', argv)) return
 
   argv.unknown = []
   argv.uneditable = []
   argv.updated = []
   argv.skipped = []
   argv.dialogues = await Dialogue.fromTest(ctx, { question, answer, regexp: false })
+  await ctx.serialize('dialogue/before-detail', argv)
+  if (await ctx.app.serialize('dialogue/before-modify', argv)) return
 
   if (argv.dialogues.length) {
     argv.target = argv.dialogues.map(d => d.id)
@@ -216,7 +219,7 @@ export async function create (argv: Dialogue.Argv) {
 
   const dialogue = { flag: 0 } as Dialogue
   if (ctx.bail('dialogue/permit', argv, dialogue)) {
-    return argv.meta.$send('权限不足。')
+    return argv.meta.$send('该问答因权限过低无法添加。')
   }
 
   try {

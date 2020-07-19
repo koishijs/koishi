@@ -89,9 +89,11 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
       await meta.$send('四推测你想修改的是回答而不是问题。发送空行或句号以修改回答，添加 -i 选项以忽略本提示。')
       return true
     }
+  })
 
+  ctx.on('dialogue/before-create', async ({ options, meta, target }) => {
     // 添加问答时缺少问题或回答
-    if (!target && !(question && answer)) {
+    if (!target && !(options.question && options.answer)) {
       await meta.$send('缺少问题或回答，请检查指令语法。')
       return true
     }
@@ -111,10 +113,6 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
       data.flag &= ~DialogueFlag.regexp
       data.flag |= +options.regexp * DialogueFlag.regexp
     }
-  })
-
-  ctx.on('dialogue/permit', ({ meta, options }) => {
-    return options.regexp !== undefined && meta.$user.authority < 3
   })
 
   ctx.on('dialogue/validate', ({ options }) => {

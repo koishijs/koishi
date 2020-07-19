@@ -5,6 +5,7 @@ import { DialogueFlag, useFlag } from '../database'
 declare module '../database' {
   interface DialogueTest {
     writer?: number
+    frozen?: boolean
     substitute?: boolean
   }
 
@@ -15,6 +16,7 @@ declare module '../database' {
   namespace Dialogue {
     interface Argv {
       userMap?: Record<number, string>
+      /** 用于保存用户权限的键值对，键的范围包括目标问答列表的全体作者以及 -w 参数 */
       authMap?: Record<number, number>
     }
   }
@@ -22,11 +24,14 @@ declare module '../database' {
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
+    .option('-f, --frozen', '锁定这个问答', { authority: 4 })
+    .option('-F, --no-frozen', '解锁这个问答', { authority: 4 })
     .option('-w, --writer <uid>', '添加或设置问题的作者')
     .option('-W, --anonymous', '添加或设置匿名问题')
     .option('-s, --substitute', '由教学者完成回答的执行')
     .option('-S, --no-substitute', '由触发者完成回答的执行')
 
+  useFlag(ctx, 'frozen')
   useFlag(ctx, 'substitute')
 
   ctx.on('dialogue/before-fetch', (test, conditionals) => {
@@ -45,28 +50,20 @@ export default function apply (ctx: Context) {
     }
   })
 
-  ctx.on('dialogue/permit', ({ meta, target, options, authMap = {} }, dialogue) => {
-    // 当修改问答时，如果问答的作者不是本人，需要 3 级权限
-    // 当添加和修改问答时，如果问答本身是代行模式或要将问答设置成代行模式，则需要权限高于问答原作者
-    // 如果原问答是匿名则视为 2 级权限（本身 2 级权限的代行模式无意义，可认定代行模式需要 3 级权限）
-    return dialogue.writer !== meta.$user.id && (
-      (target && meta.$user.authority < 3) || (
-        (options.substitute || dialogue.flag & DialogueFlag.substitute) && 
-        meta.$user.authority <= (authMap[dialogue.writer] || 2)
-      )
-    )
-  })
-
   ctx.on('dialogue/before-detail', async (argv) => {
     argv.userMap = {}
     argv.authMap = {}
-    const { userMap, meta, dialogues, authMap } = argv
+    const { options, userMap, meta, dialogues, authMap } = argv
     const writers = deduplicate(dialogues.map(d => d.writer).filter(Boolean))
-    const users = await ctx.database.getUsers(writers, ['id', 'name', 'authority'])
+    const fields: ('id' | 'name' | 'authority')[] = ['id', 'authority']
+    if (options.writer && !writers.includes(options.writer)) writers.push(options.writer)
+    if (!options.modify) fields.push('name')
+    const users = await ctx.database.getUsers(writers, fields)
 
     let hasUnnamed = false
     for (const user of users) {
       authMap[user.id] = user.authority
+      if (options.modify) continue
       if (user.id !== +user.name) {
         userMap[user.id] = user.name
       } else if (user.id === meta.userId) {
@@ -76,7 +73,7 @@ export default function apply (ctx: Context) {
       }
     }
 
-    if (hasUnnamed && meta.messageType === 'group') {
+    if (!options.modify && hasUnnamed && meta.messageType === 'group') {
       try {
         const members = await ctx.sender.getGroupMemberList(meta.groupId)
         for (const { userId, nickname, card } of members) {
@@ -89,6 +86,7 @@ export default function apply (ctx: Context) {
   })
 
   ctx.on('dialogue/detail', ({ writer, flag }, output, argv) => {
+    if (flag & DialogueFlag.frozen) output.push('此问答已锁定。')
     if (writer) {
       const name = argv.userMap[writer]
       output.push(name ? `来源：${name} (${writer})` : `来源：${writer}`)
@@ -98,10 +96,27 @@ export default function apply (ctx: Context) {
     }
   })
 
+  // 当修改问答时，如果问答的作者不是本人，需要 3 级权限
+  // 当添加和修改问答时，如果问答本身是代行模式或要将问答设置成代行模式，则需要权限高于问答原作者
+  // 当使用 -w 时需要原作者权限高于目标用户
+  // 锁定的问答需要 4 级权限才能修改
+  ctx.on('dialogue/permit', ({ meta, target, options, authMap }, { writer, flag }) => {
+    const { substitute, writer: newWriter } = options, { authority } = meta.$user
+    return (
+      (newWriter && authority <= authMap[newWriter]) ||
+      ((flag & DialogueFlag.frozen) && authority < 4) ||
+      (writer !== meta.$user.id && (
+        (target && authority < 3) || (
+          (substitute || (flag & DialogueFlag.substitute)) && 
+          (authority <= (authMap[writer] || 2))
+        )
+      ))
+    )
+  })
+
   ctx.on('dialogue/detail-short', ({ flag }, output) => {
-    if (flag & DialogueFlag.substitute) {
-      output.push('教学者执行')
-    }
+    if (flag & DialogueFlag.frozen) output.push('锁定')
+    if (flag & DialogueFlag.substitute) output.push('教学者执行')
   })
 
   ctx.on('dialogue/before-search', ({ options }, test) => {
