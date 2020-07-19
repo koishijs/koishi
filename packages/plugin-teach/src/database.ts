@@ -228,14 +228,14 @@ export function prepareTargets (argv: Dialogue.Argv, dialogues = argv.dialogues)
   return targets.map(data => observe(data, `dialogue ${data.id}`))
 }
 
-export function useFlag (ctx: Context, flag: keyof typeof DialogueFlag, test = true) {
-  test && ctx.on('dialogue/before-fetch', (test, conditionals) => {
+export function useFlag (ctx: Context, flag: keyof typeof DialogueFlag) {
+  ctx.on('dialogue/before-fetch', (test, conditionals) => {
     if (test[flag] !== undefined) {
       conditionals.push(`!(\`flag\` & ${DialogueFlag[flag]}) = !${test[flag]}`)
     }
   })
 
-  test && ctx.on('dialogue/before-search', ({ options }, test) => {
+  ctx.on('dialogue/before-search', ({ options }, test) => {
     test[flag] = options[flag]
   })
 

@@ -12,8 +12,8 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     .option('--question <question>', '问题', { isString: true })
     .option('--answer <answer>', '回答', { isString: true })
     .option('-i, --ignore-hint', '忽略智能提示')
-    .option('-x, --regexp', '使用正则表达式匹配')
-    .option('-X, --no-regexp', '取消使用正则表达式匹配')
+    .option('-x, --regexp', '使用正则表达式匹配', { authority: 3 })
+    .option('-X, --no-regexp', '取消使用正则表达式匹配', { authority: 3 })
     .option('=>, --redirect-dialogue <answer>', '重定向到其他问答')
 
   ctx.before('dialogue/validate', (argv) => {

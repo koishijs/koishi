@@ -30,7 +30,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     .option('-e, --enable', '在当前环境下启用问答')
     .option('-E, --enable-global', '在所有环境下启用问答', { authority: 3 })
     .option('-g, --groups <gids>', '设置具体的生效环境', { authority: 3, isString: true, validate: isGroupIdList })
-    .option('-G, --global', '无视上下文搜索', { authority: 3 })
+    .option('-G, --global', '无视上下文搜索')
 
   ctx.on('dialogue/before-fetch', (test, conditionals) => {
     if (!test.groups || !test.groups.length) return
