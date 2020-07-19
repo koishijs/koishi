@@ -25,8 +25,8 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     if (options.noRegexp) options.regexp = false
 
     const { answer } = options
-    if (String(options.question).includes('[CQ:image,')) {
-      return meta.$send('问题不能包含图片。')
+    if (String(options.question).includes('[CQ:')) {
+      return meta.$send('问题必须是纯文本。')
     }
 
     const { unprefixed, prefixed, appellative } = config._stripQuestion(options.question)

@@ -205,11 +205,10 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
 export default function (ctx: Context, config: Dialogue.Config) {
   const { nickname = ctx.app.options.nickname, maxRedirections = 3 } = config
   const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
-  nicknames.push(`[cq:at,qq=${ctx.app.selfId}]`)
   const nicknameRE = new RegExp(`^((${nicknames.map(escapeRegex).join('|')})[,，]?\\s*)+`)
 
   config._stripQuestion = (source) => {
-    source = simplify(stripPunctuation(String(source || '')))
+    source = prepareSource(source)
     const original = source
     const capture = nicknameRE.exec(source)
     if (capture) source = source.slice(capture[0].length)
@@ -256,23 +255,25 @@ export default function (ctx: Context, config: Dialogue.Config) {
     })
 }
 
-const prefixPunctuation = /^([()\]]|\[(?!cq:))*/
-const suffixPunctuation = /([.,?!()[~]|(?<!\[cq:[^\]]+)\])*$/
-
-function stripPunctuation (source: string) {
-  source = source.toLowerCase()
-    .replace(/\s+/g, '')
-    .replace(/，/g, ',')
-    .replace(/、/g, ',')
-    .replace(/。/g, '.')
-    .replace(/？/g, '?')
-    .replace(/！/g, '!')
-    .replace(/（/g, '(')
-    .replace(/）/g, ')')
-    .replace(/【/g, '[')
-    .replace(/】/g, ']')
-    .replace(/～/g, '~')
-  return source
-    .replace(prefixPunctuation, '')
-    .replace(suffixPunctuation, '') || source
+function prepareSource (source: string) {
+  return CQCode.stringifyAll(CQCode.parseAll(source || '').map((code, index, arr) => {
+    if (typeof code !== 'string') return code
+    let message = simplify(CQCode.unescape('' + code))
+      .toLowerCase()
+      .replace(/\s+/g, '')
+      .replace(/，/g, ',')
+      .replace(/、/g, ',')
+      .replace(/。/g, '.')
+      .replace(/？/g, '?')
+      .replace(/！/g, '!')
+      .replace(/（/g, '(')
+      .replace(/）/g, ')')
+      .replace(/【/g, '[')
+      .replace(/】/g, ']')
+      .replace(/～/g, '~')
+      .replace(/…/g, '...')
+    if (index === 0) message = message.replace(/^[()\[\]]*/, '')
+    if (index === arr.length - 1) message = message.replace(/[\.,?!()\[\]~]*$/, '')
+    return message
+  }))
 }
