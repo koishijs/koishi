@@ -320,6 +320,7 @@ export class Context {
   async execute (...args: [InputArgv] | [string, Meta, NextFunction?]) {
     const meta = typeof args[0] === 'string' ? args[1] : args[0].meta
     if (!('$ctxType' in meta)) this.app.server.parseMeta(meta)
+
     let argv: ParsedCommandLine, next: NextFunction = noop
     if (typeof args[0] === 'string') {
       const name = args[0].split(/\s/, 1)[0]

@@ -79,14 +79,14 @@ export default function apply (ctx: Context, options: RepeaterOptions) {
   })
 
   ctx.prependMiddleware((meta, next) => {
-    const { message, groupId, userId, $send } = meta
+    const { message, groupId, userId } = meta
     const state = getState(groupId)
     if (message === state.message) {
       if (state.users.has(userId) && getSwitch(options.repeatCheck, state.repeated, state.times, message)) {
         return next(() => {
           ctx.emit('repeater/check-repeat', meta, state)
           ctx.emit('repeater', meta, state)
-          return $send(getText(options.repeatCheckText, userId, message))
+          return meta.$send(getText(options.repeatCheckText, userId, message))
         })
       }
       state.times += 1
@@ -95,14 +95,14 @@ export default function apply (ctx: Context, options: RepeaterOptions) {
         return next(() => {
           ctx.emit('repeater/interrupt', meta, state)
           ctx.emit('repeater', meta, state)
-          return $send(getText(options.interruptText, userId, message))
+          return meta.$send(getText(options.interruptText, userId, message))
         })
       }
       if (getSwitch(options.repeat, state.repeated, state.times, message)) {
         return next(() => {
           ctx.emit('repeater/repeat', meta, state)
           ctx.emit('repeater', meta, state)
-          return $send(message)
+          return meta.$send(message)
         })
       }
     } else {
@@ -110,7 +110,7 @@ export default function apply (ctx: Context, options: RepeaterOptions) {
         return next(() => {
           ctx.emit('repeater/check-interrupt', meta, state)
           ctx.emit('repeater', meta, state)
-          return $send(getText(options.interruptCheckText, userId, message))
+          return meta.$send(getText(options.interruptCheckText, userId, message))
         })
       }
       state.message = message

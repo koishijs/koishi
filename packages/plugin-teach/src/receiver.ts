@@ -148,8 +148,8 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
   // wrapper for meta.$send
   let buffer = ''
   let useOriginal = false
-  const send = meta.$send
-  const sendQueued = meta.$sendQueued
+  const send = meta.$send.bind(meta)
+  const sendQueued = meta.$sendQueued.bind(meta)
 
   meta.$send = async (message: string) => {
     if (useOriginal) return send(message)

@@ -12,37 +12,21 @@ async function getHandleResult (handler: RequestHandler, meta: Meta, ctx: App) {
   return typeof handler === 'function' ? handler(meta, ctx) : handler
 }
 
-function setFriendResult (meta: Meta, result: string | boolean | void) {
-  if (typeof result === 'boolean') {
-    return result ? meta.$approve() : meta.$reject()
-  } else if (typeof result === 'string') {
-    return meta.$approve(result)
-  }
-}
-
-function setGroupResult (meta: Meta, result: string | boolean | void) {
-  if (typeof result === 'boolean') {
-    return result ? meta.$approve() : meta.$reject()
-  } else if (typeof result === 'string') {
-    return meta.$reject(result)
-  }
-}
-
 export default function apply (ctx: App, options: HandlerOptions = {}) {
   const { handleFriend, handleGroupAdd, handleGroupInvite } = options
 
   ctx.on('request/friend', async (meta) => {
     const result = await getHandleResult(handleFriend, meta, ctx)
-    return setFriendResult(meta, result)
+    return result !== undefined && ctx.sender.setFriendAddRequestAsync(meta.flag, result as any)
   })
 
   ctx.on('request/group/add', async (meta) => {
     const result = await getHandleResult(handleGroupAdd, meta, ctx)
-    return setGroupResult(meta, result)
+    return result !== undefined && ctx.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, result as any)
   })
 
   ctx.on('request/group/invite', async (meta) => {
     const result = await getHandleResult(handleGroupInvite, meta, ctx)
-    return setGroupResult(meta, result)
+    return result !== undefined && ctx.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, result as any)
   })
 }
