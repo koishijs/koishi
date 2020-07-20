@@ -78,12 +78,12 @@ export function apply (ctx: Context, options: NlpConfig = {}) {
       const confidence = intension.confidence ?? 1
       if (confidence > max) {
         max = confidence
-        bestFit = { meta, command, ...intension }
+        bestFit = { meta, command, next, ...intension }
       }
     }
 
     if (bestFit) {
-      return bestFit.command.execute(bestFit, next)
+      return bestFit.command.execute(bestFit)
     } else {
       return next()
     }

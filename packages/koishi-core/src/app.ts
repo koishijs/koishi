@@ -332,7 +332,8 @@ export class App extends Context {
 
     // execute command
     if (command) {
-      return command.execute(meta.$argv, next)
+      meta.$argv.next = next
+      return command.execute(meta.$argv)
     }
 
     return next()
@@ -347,14 +348,12 @@ export class App extends Context {
       .map(([_, middleware]) => middleware)
 
     // execute middlewares
-    let index = 0
-    const stack: string[] = []
+    let index = 0, stack = ''
     const next = async (fallback?: NextFunction) => {
-      const lines = new Error().stack.split('\n', 3)
-      const lastCall = lines[2]
+      const lastCall = new Error().stack.split('\n', 3)[2]
       if (index) {
         const capture = lastCall.match(/\((.+)\)/)
-        stack.unshift(capture ? capture[1] : lastCall.slice(7))
+        stack = '\n  - ' + (capture ? capture[1] : lastCall.slice(7)) + stack
       }
 
       try {
@@ -368,8 +367,7 @@ export class App extends Context {
           error = new Error(error as any)
         }
         const index = error.stack.indexOf(lastCall)
-        const message = error.stack.slice(0, index) + 'Middleware stack:\n  - ' + stack.join('\n  - ')
-        this.logger('').warn(message)
+        this.logger('middleware').warn(`${meta.message}\n${error.stack.slice(0, index)}Middleware stack:${stack}`)
       }
     }
     await next()

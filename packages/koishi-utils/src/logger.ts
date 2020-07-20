@@ -45,7 +45,7 @@ export class Logger {
   private constructor (private name: string) {
     let hash = 0
     for (let i = 0; i < name.length; i++) {
-      hash = ((hash << 4) - hash) + name.charCodeAt(i)
+      hash = ((hash << 3) - hash) + name.charCodeAt(i)
       hash |= 0
     }
     this.colorCode = colors[Math.abs(hash) % colors.length]
@@ -99,7 +99,7 @@ export class Logger {
         index -= 1
       }
       return match
-    })
+    }).split('\n').join('\n    ')
 
     return format(...args)
   }

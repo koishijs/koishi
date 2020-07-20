@@ -3,7 +3,7 @@ import { UserData, UserField, GroupField, TableData } from './database'
 import { errors } from './shared'
 import { noop, camelCase } from 'koishi-utils'
 import { Meta } from './meta'
-import { inspect, format } from 'util'
+import { inspect, format, types } from 'util'
 
 const ANGLED_BRACKET_REGEXP = /<([^>]+)>/g
 const SQUARE_BRACKET_REGEXP = /\[([^\]]+)\]/g
@@ -510,9 +510,8 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
     return output
   }
 
-  async execute (argv: ParsedCommandLine<U, G>, next: NextFunction = noop) {
+  async execute (argv: ParsedCommandLine<U, G>) {
     argv.command = this
-    argv.next = next
     if (!argv.options) argv.options = {}
     if (!argv.args) argv.args = []
     if (!argv.unknown) {
@@ -520,15 +519,30 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
     }
 
     let state = 'before command'
+    const raw = this.stringify(argv)
+    const { next = noop } = argv
+    argv.next = async (fallback) => {
+      const oldState = state
+      state = ''
+      await next(fallback)
+      state = oldState
+    }
+
+    const lastCall = new Error().stack.split('\n', 4)[3]
     try {
       if (await this.app.serialize(argv.meta, 'before-command', argv)) return
-      this.context.logger('command').debug('execute %s', this.name)
+      this.context.logger('command').debug(raw)
       state = 'executing command'
       await this._action(argv, ...argv.args)
       state = 'after command'
       return this.app.serialize(argv.meta, 'command', argv)
     } catch (error) {
-      this.context.logger('').warn(`${state}: ${this.stringify(argv)}\n${error.stack}`)
+      if (!state) throw error
+      if (!types.isNativeError(error)) {
+        error = new Error(error as any)
+      }
+      const index = error.stack.indexOf(lastCall)
+      this.context.logger('command').warn(`${state}: ${raw}\n${error.stack.slice(0, index)}`)
     }
   }
 

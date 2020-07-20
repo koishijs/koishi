@@ -308,7 +308,7 @@ export class Context {
       next = args[2] || noop
       if (!command?.context.match(meta)) return next()
       const result = command.parse(args[0].slice(name.length).trimStart())
-      argv = { meta, command, ...result }
+      argv = { meta, command, next, ...result }
     } else {
       argv = args[0] as any
       next = argv.next || noop
@@ -327,7 +327,7 @@ export class Context {
       await meta.observeUser()
     }
 
-    return argv.command.execute(argv, next)
+    return argv.command.execute(argv)
   }
 
   end () {
