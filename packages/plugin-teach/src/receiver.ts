@@ -129,16 +129,11 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
     .replace(/\$s/g, escapeAnswer(meta.$username))
     .replace(/\$0/g, escapeAnswer(meta.message))
 
-  if (dialogue.flag & DialogueFlag.regexp) {
-    const capture = dialogue._capture || new RegExp(dialogue.question).exec(state.test.question)
-    capture.map((segment, index) => {
-      if (index && index <= 9) {
-        state.answer = state.answer.replace(new RegExp(`\\$${index}`, 'g'), segment || '')
-      }
-    })
-  }
-
   if (await ctx.app.serialize(meta, 'dialogue/before-send', state)) return
+
+  const capture = dialogue.flag & DialogueFlag.regexp
+    ? dialogue._capture || new RegExp(dialogue.question).exec(state.test.question)
+    : [] as string[]
 
   // send answers
   const { textDelay = 1000, charDelay = 200 } = config
@@ -173,7 +168,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
   let index: number
   while ((index = state.answer.indexOf('$')) >= 0) {
     const char = state.answer[index + 1]
-    if (!'n{'.includes(char)) {
+    if (!'n{123456789'.includes(char)) {
       buffer += unescapeAnswer(state.answer.slice(0, index + 2))
       state.answer = state.answer.slice(index + 2)
       continue
@@ -182,7 +177,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
     state.answer = state.answer.slice(index + 2)
     if (char === 'n') {
       await sendBuffered(buffer, Math.max(buffer.length * charDelay, textDelay))
-    } else {
+    } else if (char === '{') {
       let end = state.answer.indexOf('}')
       if (end < 0) end = Infinity
       const command = unescapeAnswer(state.answer.slice(0, end))
@@ -194,6 +189,8 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
       meta.$sendQueued = sendQueued
       meta.$send = send
       useOriginal = true
+    } else {
+      buffer += capture[char] || ''
     }
   }
   await sendBuffered(buffer + unescapeAnswer(state.answer), 0)
