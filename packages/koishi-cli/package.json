@@ -36,7 +36,6 @@
   },
   "dependencies": {
     "cac": "^6.5.12",
-    "js-yaml": "^3.14.0",
     "kleur": "^4.0.2",
     "koishi-core": "^2.0.0-alpha.34",
     "koishi-plugin-common": "^3.0.0-alpha.37",

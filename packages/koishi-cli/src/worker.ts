@@ -2,14 +2,18 @@ import { App, AppOptions, Context, Plugin, appList, startAll, onStart } from 'ko
 import { resolve, dirname } from 'path'
 import { capitalize, Logger } from 'koishi-utils'
 import { performance } from 'perf_hooks'
-import { cyan, yellow } from 'kleur'
+import { yellow } from 'kleur'
 import { format } from 'util'
 
 const logger = Logger.create('app')
 const { version } = require('../package')
 
-if (process.env.KOISHI_LOG_LEVEL !== undefined) {
+if (process.env.KOISHI_LOG_LEVEL) {
   Logger.baseLevel = +process.env.KOISHI_LOG_LEVEL
+}
+
+if (process.env.KOISHI_DEBUG) {
+  Logger.levels = Object.fromEntries(process.env.KOISHI_DEBUG.split(',').map(name => [name, 3]))
 }
 
 function handleException (error: any) {
@@ -83,7 +87,7 @@ function loadPlugins (ctx: Context, plugins: PluginConfig) {
       plugin = item
     }
     ctx.plugin(plugin, options)
-    if (plugin.name) logger.info(`apply plugin ${cyan(plugin.name)}`)
+    if (plugin.name) logger.info('apply plugin %c', plugin.name)
   }
 }
 
@@ -95,7 +99,7 @@ function prepareApp (config: AppConfig) {
 
   for (const name in config.database || {}) {
     const resolved = loadEcosystem('database', name)
-    if (resolved) logger.info(`apply database ${cyan(name)}`)
+    if (resolved) logger.info('apply database %c', name)
   }
   const app = new App(config)
   if (Array.isArray(config.plugins)) {
@@ -124,10 +128,10 @@ onStart(() => {
     const { coolqEdition, pluginVersion } = app.version
     versions.add(`Koishi/${version} CoolQ/${capitalize(coolqEdition)} CQHTTP/${pluginVersion} `)
     if (type === 'http') {
-      httpPorts.add(`server listening at ${cyan(port)}`)
-      if (server) httpServers.add(`connected to ${cyan(server)}`)
+      httpPorts.add(logger.format('server listening at %c', port))
+      if (server) httpServers.add(logger.format('connected to %c', server))
     } else {
-      wsServers.add(`connected to ${cyan(server.replace(/^http/, 'ws'))}`)
+      wsServers.add(logger.format('connected to %c', server.replace(/^http/, 'ws')))
     }
   })
   for (const textSet of [versions, httpPorts, wsServers, httpServers]) {

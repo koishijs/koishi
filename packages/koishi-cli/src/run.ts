@@ -25,20 +25,16 @@ function createWorker (options: WorkerOptions) {
 export default function (cli: CAC) {
   cli.command('run [file]', 'start a koishi bot')
     .alias('start')
-    .option('--log-level <level>', 'specify log level (default: 2)')
-    .option('--silent', 'use log level 0 (print no message)')
-    .option('--debug', 'use log level 3 (print all messages)')
+    .option('--debug [names]', 'specify debug names')
+    .option('--level [level]', 'specify log level (default: 2)')
     .action((file, options) => {
-      let logLevel = options.logLevel
-      if (options.silent) logLevel = 0
-      if (options.debug) logLevel = 3
-      if (logLevel !== undefined) {
-        if (!isInteger(logLevel) || logLevel < 0) {
-          console.warn(`${kleur.red('error')} log level should be a positive integer.`)
-          process.exit(1)
-        }
-        process.env.KOISHI_LOG_LEVEL = '' + logLevel
+      const { level } = options
+      if (level !== undefined && (!isInteger(level) || level < 0)) {
+        console.warn(`${kleur.red('error')} log level should be a positive integer.`)
+        process.exit(1)
       }
+      process.env.KOISHI_LOG_LEVEL = level || ''
+      process.env.KOISHI_DEBUG = options.debug || ''
       process.env.KOISHI_CONFIG_FILE = file || ''
       createWorker(options)
     })

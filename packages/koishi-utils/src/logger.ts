@@ -1,14 +1,10 @@
+import { inspect, InspectOptions, format } from 'util'
 import { stderr } from 'supports-color'
-import * as tty from 'tty'
-import * as util from 'util'
+import { isatty } from 'tty'
 
-const isTTY = tty.isatty(process.stderr['fd'])
+const isTTY = isatty(process.stderr['fd'])
 
-export const inspectOptions: util.InspectOptions = {
-  colors: isTTY,
-}
-
-const colors = stderr.level >= 2 ? [6, 2, 3, 4, 5, 1] : [
+const colors = stderr.level < 2 ? [6, 2, 3, 4, 5, 1] : [
   20, 21, 26, 27, 32, 33, 38, 39, 40, 41, 42, 43, 44, 45, 56, 57, 62,
   63, 68, 69, 74, 75, 76, 77, 78, 79, 80, 81, 92, 93, 98, 99, 112, 113,
   129, 134, 135, 148, 149, 160, 161, 162, 163, 164, 165, 166, 167, 168,
@@ -16,34 +12,65 @@ const colors = stderr.level >= 2 ? [6, 2, 3, 4, 5, 1] : [
   201, 202, 203, 204, 205, 206, 207, 208, 209, 214, 215, 220, 221,
 ]
 
-export const formatters: Record<string, (value: any) => string> = {
-  o: value => util.inspect(value, inspectOptions).replace(/\s*\n\s*/g, ' '),
-  O: value => util.inspect(value, inspectOptions),
-}
-
-function pickColor (namespace: string): number | string {
-  let hash = 0
-  for (let i = 0; i < namespace.length; i++) {
-    hash = ((hash << 5) - hash) + namespace.charCodeAt(i)
-    hash |= 0
-  }
-  return colors[Math.abs(hash) % colors.length]
-}
-
 const instances: Record<string, Logger> = {}
+
+type LogFunction = (format: any, ...param: any[]) => void
 
 export class Logger {
   static baseLevel = 2
   static levels: Record<string, number> = {}
 
+  static options: InspectOptions = {
+    colors: isTTY,
+  }
+
+  static formatters: Record<string, (this: Logger, value: any) => string> = {
+    c: Logger.prototype.wrapColor,
+    o: value => inspect(value, Logger.options).replace(/\s*\n\s*/g, ' '),
+  }
+
   static create (name = '') {
     return instances[name] || new Logger(name)
   }
 
-  color = pickColor(this.name)
+  private colorCode: number
+  private displayName: string
+
+  public success: LogFunction
+  public error: LogFunction
+  public info: LogFunction
+  public warn: LogFunction
+  public debug: LogFunction
 
   private constructor (private name: string) {
+    let hash = 0
+    for (let i = 0; i < name.length; i++) {
+      hash = ((hash << 4) - hash) + name.charCodeAt(i)
+      hash |= 0
+    }
+    this.colorCode = colors[Math.abs(hash) % colors.length]
     instances[this.name] = this
+    this.displayName = name
+    if (name) this.displayName += ' '
+    if (isTTY) this.displayName = this.wrapColor(this.displayName, ';1')
+    this.createMethod('success', '[S] ', 1)
+    this.createMethod('error', '[E] ', 1)
+    this.createMethod('info', '[I] ', 2)
+    this.createMethod('warn', '[W] ', 2)
+    this.createMethod('debug', '[D] ', 3)
+  }
+
+  private wrapColor (value: any, decoration = '') {
+    if (!Logger.options.colors) return '' + value
+    const code = this.colorCode
+    return `\u001B[3${code < 8 ? code : '8;5;' + code}${decoration}m${value}\u001B[0m`
+  }
+
+  private createMethod (name: string, prefix: string, minLevel: number) {
+    this[name] = (...args: [any, ...any[]]) => {
+      if (this.level < minLevel) return
+      process.stderr.write(prefix + this.displayName + this.format(...args) + '\n')
+    }
   }
 
   get level () {
@@ -54,33 +81,7 @@ export class Logger {
     return Logger.create(`${this.name}:${namespace}`)
   }
 
-  success = (format: any, ...param: any[]) => {
-    if (this.level < 1) return
-    return this.log('[S] ', format, ...param)
-  }
-
-  error = (format: any, ...param: any[]) => {
-    if (this.level < 1) return
-    return this.log('[E] ', format, ...param)
-  }
-
-  info = (format: any, ...param: any[]) => {
-    if (this.level < 2) return
-    return this.log('[I] ', format, ...param)
-  }
-
-  warn = (format: any, ...param: any[]) => {
-    if (this.level < 2) return
-    return this.log('[W] ', format, ...param)
-  }
-
-  debug = (format: any, ...param: any[]) => {
-    if (this.level < 3) return
-    return this.log('[D] ', format, ...param)
-  }
-
-  private log (prefix: string, format: any, ...param: any[]): void
-  private log (prefix: string, ...args: [any, ...any[]]) {
+  format: (format: any, ...param: any[]) => string = (...args) => {
     if (args[0] instanceof Error) {
       args[0] = args[0].stack || args[0].message
     } else if (typeof args[0] !== 'string') {
@@ -91,23 +92,15 @@ export class Logger {
     args[0] = (args[0] as string).replace(/%([a-zA-Z%])/g, (match, format) => {
       if (match === '%%') return match
       index += 1
-      const formatter = formatters[format]
+      const formatter = Logger.formatters[format]
       if (typeof formatter === 'function') {
-        match = formatter(args[index])
+        match = formatter.call(this, args[index])
         args.splice(index, 1)
         index -= 1
       }
       return match
     })
 
-    const name = this.name ? this.name + ' ' : ''
-    if (isTTY) {
-      const code = '\u001B[3' + (this.color < 8 ? this.color : '8;5;' + this.color)
-      args[0] = `${prefix}${code};1m${name}\u001B[0m${args[0]}`
-    } else {
-      args[0] = `${prefix}${name}${args[0]}`
-    }
-
-    return process.stderr.write(util.format(...args) + '\n')
+    return format(...args)
   }
 }
