@@ -15,6 +15,10 @@ declare module 'koishi-core/dist/database' {
   }
 }
 
+export interface StatusOptions {
+  sort?: (a: AppStatus, b: AppStatus) => number
+}
+
 Command.userFields(['lastCall'])
 
 let usage = getCpuUsage()
@@ -78,14 +82,14 @@ export interface AppStatus {
   rate?: number
 }
 
-type StatusModifier = (status: Status) => void | Promise<void>
+type StatusModifier = (status: Status, config: StatusOptions) => void | Promise<void>
 const statusModifiers: StatusModifier[] = []
 
 export function extendStatus (callback: StatusModifier) {
   statusModifiers.push(callback)
 }
 
-async function _getStatus () {
+async function _getStatus (config: StatusOptions) {
   const assignees = await getSelfIds()
   const [[[{ 'COUNT(*)': userCount }], [{ 'COUNT(*)': groupCount }]], apps] = await Promise.all([
     appList[0].database.mysql.query<[{ 'COUNT(*)': number }][]>([
@@ -103,7 +107,7 @@ async function _getStatus () {
   const cpu = { app: appRate, total: usedRate }
   const status: Status = { apps, userCount, groupCount, memory, cpu, timestamp }
   for (const modifier of statusModifiers) {
-    await modifier(status)
+    await modifier(status, config)
   }
   return status
 }
@@ -111,14 +115,14 @@ async function _getStatus () {
 let cachedStatus: Promise<Status>
 let timestamp: number
 
-export async function getStatus (): Promise<Status> {
+export async function getStatus (config: StatusOptions): Promise<Status> {
   const now = Date.now()
   if (now - timestamp < 60000) return cachedStatus
   timestamp = now
-  return cachedStatus = _getStatus()
+  return cachedStatus = _getStatus(config)
 }
 
-export default function apply (app: App) {
+export default function apply (app: App, config: StatusOptions = {}) {
   app.on('before-command', ({ meta }) => {
     meta.$user['lastCall'] = new Date()
   })
@@ -140,7 +144,7 @@ export default function apply (app: App) {
 
     if (!app.server.router) return
     app.server.router.get('/status', async (ctx) => {
-      const status = await getStatus().catch<Status>((error) => {
+      const status = await getStatus(config).catch<Status>((error) => {
         appList[0].logger('status').warn(error)
         return null
       })

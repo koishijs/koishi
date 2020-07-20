@@ -55,15 +55,14 @@ if (!config) {
 }
 
 function loadEcosystem (type: string, name: string) {
-  const modules = [resolve(configDir, name)]
+  const modules = [resolve(configDir, name), name]
   const prefix = `koishi-${type}-`
-  if (name.includes(prefix)) {
-    modules.push(name)
-  } else {
+  if (!name.includes(prefix)) {
     const index = name.lastIndexOf('/')
     modules.push(name.slice(0, index + 1) + prefix + name.slice(index + 1))
   }
   for (const name of modules) {
+    logger.debug('resolving %c', name)
     try {
       return require(name)
     } catch (error) {

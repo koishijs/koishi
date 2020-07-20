@@ -1,4 +1,4 @@
-import { createPool, Pool, PoolConfig, escape, escapeId } from 'mysql'
+import { createPool, Pool, PoolConfig, escape, escapeId, format } from 'mysql'
 import { registerDatabase, AbstractDatabase, TableType, TableData } from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { types } from 'util'
@@ -83,9 +83,11 @@ export class MysqlDatabase implements AbstractDatabase {
     })
   }
 
-  query = <T extends {}> (sql: string, values?: any): Promise<T> => {
+  query = <T extends {}> (source: string, values?: any): Promise<T> => {
     return new Promise((resolve, reject) => {
-      this.pool.query(sql, values, (error, results) => {
+      const sql = format(source, values)
+      logger.debug(`[sql]`, sql)
+      this.pool.query(sql, (error, results) => {
         if (error) {
           reject(error)
         } else {

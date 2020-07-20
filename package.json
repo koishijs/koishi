@@ -2,15 +2,16 @@
   "name": "koishi-workspace",
   "private": true,
   "workspaces": [
-    "bots/*",
+    "shiki",
+    "shiki/core",
+    "shiki/cosmos",
+    "shiki/games",
     "packages/*",
     "plugins/*"
   ],
   "scripts": {
     "build": "tsc -b",
     "build:extend": "tsc -b tsconfig.extend.json",
-    "build:shiki": "ts-node bots/shiki/build",
-    "build:dict": "ts-node bots/shiki/build/dict",
     "bump": "ts-node build/bump",
     "dep": "ts-node build/dep",
     "dev": "ts-node build/dev",
@@ -19,7 +20,7 @@
     "lint": "eslint packages/*/src/**/*.ts --cache",
     "pub": "ts-node build/publish",
     "pub:plugins": "yarn pub plugins",
-    "start": "ts-node build/start"
+    "shiki": "yarn workspace bot-shiki"
   },
   "version": "1.0.0",
   "license": "MIT",
