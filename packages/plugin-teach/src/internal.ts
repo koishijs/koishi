@@ -4,13 +4,38 @@ import { update } from './update'
 import { RegExpValidator } from 'regexpp'
 import leven from 'leven'
 
-export function simplifyAnswer (source: string) {
-  return (String(source || '')).trim()
+class RegExpError extends Error {
+  name = 'RegExpError'
 }
 
 const validator = new RegExpValidator({
-  onEscapeCharacterSet: () => { throw new Error('unsupported syntax') },
-  onWordBoundaryAssertion: () => { throw new Error('unsupported syntax') },
+  onEscapeCharacterSet (start, end, kind, negate) {
+    if (kind === 'space') throw negate
+      ? new RegExpError('四季酱会自动删除问题中的空白字符，你无需使用 \\s。')
+      : new RegExpError('四季酱会自动删除问题中的空白字符，请使用 . 代替 \\S。')
+    let chars = kind === 'digit' ? '0-9' : '_0-9a-z'
+    let source = kind === 'digit' ? 'd' : 'w'
+    if (negate) {
+      chars = '^' + chars
+      source = source.toUpperCase()
+    }
+    throw new RegExpError(`目前不支持在正则表达式中使用 \\${source}，请使用 [${chars}] 代替。`)
+  },
+  onQuantifier (start, end, min, max, greedy) {
+    if (!greedy) throw new RegExpError('目前不支持在正则表达式中使用非贪婪匹配语法。')
+  },
+  onWordBoundaryAssertion () {
+    throw new RegExpError('目前不支持在正则表达式中使用单词边界。')
+  },
+  onLookaroundAssertionEnter () {
+    throw new RegExpError('目前不支持在正则表达式中使用断言。')
+  },
+  onGroupEnter () {
+    throw new RegExpError('目前不支持在正则表达式中使用非捕获组。')
+  },
+  onCapturingGroupEnter (start, name) {
+    throw new RegExpError('目前不支持在正则表达式中使用具名组。')
+  },
 })
 
 export default function apply (ctx: Context, config: Dialogue.Config) {
@@ -88,7 +113,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
       try {
         validator.validatePattern(question)
       } catch (err) {
-        await meta.$send('问题含有错误的或不支持的正则表达式语法。')
+        await meta.$send(err.name === 'RegExpError' ? err.message : '问题含有错误的或不支持的正则表达式语法。')
         return true
       }
     }
@@ -120,14 +145,14 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
       data.answer = options.answer
     }
 
-    if (options.question) {
-      data.question = options.question
-      data.original = options.original
-    }
-
     if (options.regexp !== undefined) {
       data.flag &= ~DialogueFlag.regexp
       data.flag |= +options.regexp * DialogueFlag.regexp
+    }
+
+    if (options.question) {
+      data.question = options.question
+      data.original = options.original
     }
   })
 
