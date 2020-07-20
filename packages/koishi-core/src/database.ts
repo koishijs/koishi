@@ -68,7 +68,7 @@ export function extendGroup (getter: GroupGetter) {
 extendGroup((id, assignee) => ({
   id,
   assignee,
-  flag: assignee ? 0 : 3,
+  flag: assignee ? 0 : GroupFlag.ignore | GroupFlag.noEmit,
 }))
 
 export function createGroup (id: number, assignee: number) {

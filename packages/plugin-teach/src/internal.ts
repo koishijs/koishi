@@ -34,7 +34,7 @@ const validator = new RegExpValidator({
     throw new RegExpError('目前不支持在正则表达式中使用非捕获组。')
   },
   onCapturingGroupEnter (start, name) {
-    throw new RegExpError('目前不支持在正则表达式中使用具名组。')
+    if (name) throw new RegExpError('目前不支持在正则表达式中使用具名组。')
   },
 })
 
@@ -56,7 +56,8 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     if (options.noRegexp) options.regexp = false
 
     const { answer } = options
-    if (String(options.question).includes('[CQ:')) {
+    const question = options.question || ''
+    if (/\[CQ:(?!face)/.test(question)) {
       return meta.$send('问题必须是纯文本。')
     }
 
@@ -113,6 +114,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
       try {
         validator.validatePattern(question)
       } catch (err) {
+        console.log(err)
         await meta.$send(err.name === 'RegExpError' ? err.message : '问题含有错误的或不支持的正则表达式语法。')
         return true
       }
