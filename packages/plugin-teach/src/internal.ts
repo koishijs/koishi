@@ -1,11 +1,17 @@
 import { Context } from 'koishi-core'
 import { DialogueFlag, Dialogue } from './database'
 import { update } from './update'
+import { RegExpValidator } from 'regexpp'
 import leven from 'leven'
 
 export function simplifyAnswer (source: string) {
   return (String(source || '')).trim()
 }
+
+const validator = new RegExpValidator({
+  onEscapeCharacterSet: () => { throw new Error('unsupported syntax') },
+  onWordBoundaryAssertion: () => { throw new Error('unsupported syntax') },
+})
 
 export default function apply (ctx: Context, config: Dialogue.Config) {
   ctx.command('teach')
@@ -75,7 +81,17 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/before-modify', async (argv) => {
     const { options, meta, target, dialogues } = argv
-    const { question, answer, ignoreHint } = options
+    const { question, answer, ignoreHint, regexp } = options
+
+    // 错误的或不支持的正则表达式语法
+    if (regexp || regexp !== false && question) {
+      try {
+        validator.validatePattern(question)
+      } catch (err) {
+        await meta.$send('问题含有错误的或不支持的正则表达式语法。')
+        return true
+      }
+    }
 
     // 修改问答时发现可能想改回答但是改了问题
     if (target && !ignoreHint && question && !answer && isCloserToAnswer(dialogues, question)) {
@@ -86,7 +102,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
         delete options.question
         return update(argv)
       }, meta)
-      await meta.$send('四推测你想修改的是回答而不是问题。发送空行或句号以修改回答，添加 -i 选项以忽略本提示。')
+      await meta.$send('推测你想修改的是回答而不是问题。发送空行或句号以修改回答，添加 -i 选项以忽略本提示。')
       return true
     }
   })

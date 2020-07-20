@@ -180,15 +180,15 @@ export async function update (argv: Dialogue.Argv) {
     return sendResult(argv, message)
   }
 
-  if (await ctx.app.serialize('dialogue/before-modify', argv)) return
-
-  for (const dialogue of targets) {
-    ctx.emit('dialogue/modify', argv, dialogue)
+  if (targets.length) {
+    if (await ctx.app.serialize('dialogue/before-modify', argv)) return
+    for (const dialogue of targets) {
+      ctx.emit('dialogue/modify', argv, dialogue)
+    }
+    await Dialogue.update(targets, argv)
+    await ctx.serialize('dialogue/after-modify', argv)
   }
 
-  await Dialogue.update(targets, argv)
-
-  await ctx.serialize('dialogue/after-modify', argv)
   return sendResult(argv)
 }
 
