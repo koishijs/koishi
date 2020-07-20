@@ -19,6 +19,7 @@
     { "path": "./packages/plugin-schedule" },
     { "path": "./packages/plugin-status" },
     { "path": "./packages/plugin-teach" },
+    { "path": "./packages/plugin-puppeteer" },
     { "path": "./packages/test-utils" },
     { "path": "./packages/koishi-cli" },
   ],
