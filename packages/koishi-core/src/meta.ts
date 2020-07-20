@@ -136,7 +136,7 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
       }
       this.$_hooks.push(hook)
       const timer = setTimeout(async () => {
-        await this.$send(message.replace(/\$s/g, this.$username))
+        await this.$send(message)
         this.$_sleep = ms
         hook()
       }, this.$_sleep || 0)
