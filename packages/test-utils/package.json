@@ -41,7 +41,6 @@
   },
   "dependencies": {
     "axios": "^0.19.2",
-    "debug": "^4.1.1",
     "get-port": "^5.1.1",
     "koishi-core": "^2.0.0-alpha.34",
     "koishi-utils": "^2.1.1"

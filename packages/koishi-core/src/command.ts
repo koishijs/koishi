@@ -522,7 +522,7 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
     let state = 'before command'
     try {
       if (await this.app.serialize(argv.meta, 'before-command', argv)) return
-      this.context.logger('koishi:command').debug('execute %s', this.name)
+      this.context.logger('command').debug('execute %s', this.name)
       state = 'executing command'
       await this._action(argv, ...argv.args)
       state = 'after command'

@@ -6,11 +6,13 @@ import {} from 'koa-bodyparser'
 import { Server as _Server } from 'http'
 import { emitter, errors } from './shared'
 import { createHmac } from 'crypto'
-import { camelCase, snakeCase, paramCase, CQCode } from 'koishi-utils'
+import { camelCase, snakeCase, paramCase, CQCode, Logger } from 'koishi-utils'
 import { Meta, VersionInfo, ContextType } from './meta'
 import { App } from './app'
 import { CQResponse } from './sender'
 import { format } from 'util'
+
+const logger = Logger.create('server')
 
 export abstract class Server {
   public appList: App[] = []
@@ -35,10 +37,6 @@ export abstract class Server {
    */
   get app () {
     return this.appList[0]
-  }
-
-  protected debug (format: any, ...params: any[]) {
-    this.app?.logger('koishi:server').debug(format, ...params)
   }
 
   protected prepareMeta (data: any) {
@@ -159,7 +157,7 @@ export class HttpServer extends Server {
       }
 
       // no matched application
-      this.debug('receive %o', ctx.request.body)
+      logger.debug('receive %o', ctx.request.body)
       const meta = this.prepareMeta(ctx.request.body)
       if (!meta) return ctx.status = 403
 
@@ -188,7 +186,7 @@ export class HttpServer extends Server {
   }
 
   async _listen () {
-    this.debug('http server opening')
+    logger.debug('http server opening')
     const { port } = this.app.options
     this.server = this.koa.listen(port)
     try {
@@ -196,12 +194,12 @@ export class HttpServer extends Server {
     } catch (error) {
       throw new Error('authorization failed')
     }
-    this.debug('http server listen to', port)
+    logger.debug('http server listen to', port)
   }
 
   _close () {
     this.server.close()
-    this.debug('http server closed')
+    logger.debug('http server closed')
   }
 }
 
@@ -223,13 +221,13 @@ export class WsClient extends Server {
 
   _listen (): Promise<void> {
     const connect = (resolve: () => void, reject: (reason: Error) => void) => {
-      this.debug('websocket client opening')
+      logger.debug('websocket client opening')
       const headers: Record<string, string> = {}
       const { token, server, retryInterval, retryTimes } = this.app.options
       if (token) headers.Authorization = `Bearer ${token}`
       this.socket = new (require('ws'))(server, { headers })
 
-      this.socket.on('error', error => this.debug(error))
+      this.socket.on('error', error => logger.debug(error))
 
       this.socket.once('close', (code) => {
         if (!this.isListening || code === 1005) return
@@ -240,7 +238,7 @@ export class WsClient extends Server {
         }
 
         this._retryCount++
-        this.debug(`${message}, will retry in ${ms(retryInterval)}...`)
+        logger.debug(`${message}, will retry in ${ms(retryInterval)}...`)
         setTimeout(() => {
           if (this.isListening) connect(resolve, reject)
         }, retryInterval)
@@ -258,7 +256,7 @@ export class WsClient extends Server {
 
         this.socket.on('message', (data) => {
           data = data.toString()
-          this.debug('receive', data)
+          logger.debug('receive', data)
           let parsed: any
           try {
             parsed = JSON.parse(data)
@@ -271,7 +269,7 @@ export class WsClient extends Server {
             if (meta) this.dispatchMeta(meta)
           } else if (parsed.echo === -1) {
             this.version = camelCase(parsed.data)
-            this.debug('connect to ws server:', this.app.options.server)
+            logger.debug('connect to ws server:', this.app.options.server)
             emitter.emit('ws-client', this.socket)
             resolve()
           } else {
@@ -286,7 +284,7 @@ export class WsClient extends Server {
   _close () {
     this.socket.close()
     this._retryCount = 0
-    this.debug('websocket client closed')
+    logger.debug('websocket client closed')
   }
 }
 

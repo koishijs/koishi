@@ -1,7 +1,7 @@
-import debug from 'debug'
+import { Logger } from 'koishi-utils'
 
 export const BASE_SELF_ID = 514
-export const showTestLog = debug('koishi:test')
+export const showTestLog = Logger.create('test').debug
 
 /**
  * polyfill for node < 12.0

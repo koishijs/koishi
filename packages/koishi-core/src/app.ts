@@ -1,4 +1,3 @@
-import debug from 'debug'
 import escapeRegex from 'escape-string-regexp'
 import { Sender } from './sender'
 import { Server, createServer, ServerType } from './server'
@@ -127,7 +126,6 @@ export class App extends Context {
 
     // bind built-in event listeners
     this.on('message', this._applyMiddlewares)
-    this.on('logger', (scope, message) => debug(scope)(message))
     this.middleware(this._preprocess)
     emitter.emit('app', this)
   }
@@ -235,7 +233,7 @@ export class App extends Context {
     }
     await Promise.all(tasks)
     this.status = Status.open
-    this.logger('koishi:app').debug('started')
+    this.logger('app').debug('started')
     this.emit('connect')
     if (this.selfId && !this._isReady) {
       this.emit('ready')
@@ -260,7 +258,7 @@ export class App extends Context {
       this.server.close()
     }
     this.status = Status.closed
-    this.logger('koishi:app').debug('stopped')
+    this.logger('app').debug('stopped')
     this.emit('disconnect')
     if (appList.every(app => app.status === Status.closed)) {
       emitter.emit('stop')

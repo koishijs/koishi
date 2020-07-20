@@ -2,8 +2,8 @@ import { performance } from 'perf_hooks'
 import { isInteger } from 'koishi-utils'
 import { fork } from 'child_process'
 import { resolve } from 'path'
-import { logger } from './utils'
 import { CAC } from 'cac'
+import kleur from 'kleur'
 
 process.env.KOISHI_START_TIME = '' + performance.now()
 
@@ -34,7 +34,7 @@ export default function (cli: CAC) {
       if (options.debug) logLevel = 3
       if (logLevel !== undefined) {
         if (!isInteger(logLevel) || logLevel < 0) {
-          logger.error('log level should be a positive integer.')
+          console.warn(`${kleur.red('error')} log level should be a positive integer.`)
           process.exit(1)
         }
         process.env.KOISHI_LOG_LEVEL = '' + logLevel

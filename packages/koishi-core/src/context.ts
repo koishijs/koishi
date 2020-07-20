@@ -1,11 +1,11 @@
-import { contain, union, intersection, difference, noop } from 'koishi-utils'
+import { contain, union, intersection, difference, noop, Logger } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine, InputArgv } from './command'
 import { Meta, contextTypes, getSessionId } from './meta'
 import { Sender } from './sender'
 import { App } from './app'
 import { Database, UserField, GroupField } from './database'
 import { errors } from './shared'
-import { format, inspect } from 'util'
+import { inspect } from 'util'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (meta: Meta, next: NextFunction) => any
@@ -42,41 +42,21 @@ export namespace ContextScope {
 const noopScope: ContextScope = [[[], null], [[], null], [[], null]]
 const noopIdentifier = ContextScope.stringify(noopScope)
 
-export interface Logger {
-  warn (format: any, ...param: any): void
-  info (format: any, ...param: any): void
-  debug (format: any, ...param: any): void
-  success (format: any, ...param: any): void
-  error (format: any, ...param: any): void
-}
-
-export const logTypes: (keyof Logger)[] = ['warn', 'info', 'debug', 'success', 'error']
-
-export type LogEvents = 'logger/warn' | 'logger/info' | 'logger/debug' | 'logger/success' | 'logger/error'
-
 export class Context {
   public app: App
   public sender: Sender
   public database: Database
-  public logger: (scope?: string) => Logger
 
   static readonly MIDDLEWARE_EVENT: unique symbol = Symbol('mid')
 
-  constructor (public readonly identifier: string, private readonly _scope: ContextScope) {
-    this.logger = (scope = '') => {
-      const logger = {} as Logger
-      for (const type of logTypes) {
-        logger[type] = (...args) => {
-          this.app.emit('logger', scope, format(...args), type)
-          this.app.emit(`logger/${type}` as LogEvents, scope, format(...args))
-        }
-      }
-      return logger
-    }
-  }
+  constructor (public readonly identifier: string, private readonly _scope: ContextScope) {}
 
   [inspect.custom] () {
     return `Context <${this.identifier}>`
+  }
+
+  logger (name: string) {
+    return Logger.create(name)
   }
 
   inverse () {
@@ -406,12 +386,6 @@ export interface EventMap {
   'error' (error: Error): any
   'error/command' (error: Error): any
   'error/middleware' (error: Error): any
-  'logger' (scope: string, message: string, type: keyof Logger): any
-  'logger/debug' (scope: string, message: string): any
-  'logger/info' (scope: string, message: string): any
-  'logger/error' (scope: string, message: string): any
-  'logger/warn' (scope: string, message: string): any
-  'logger/success' (scope: string, message: string): any
   'new-command' (cmd: Command): any
   'ready' (): any
   'before-connect' (): any

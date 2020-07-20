@@ -1,9 +1,9 @@
 import { existsSync, writeFileSync, mkdirSync } from 'fs'
 import { yellow } from 'kleur'
 import { resolve, extname, dirname } from 'path'
-import { logger } from './utils'
 import { AppConfig } from './worker'
 import prompts from 'prompts'
+import kleur from 'kleur'
 import { CAC } from 'cac'
 
 async function createConfig (options) {
@@ -59,30 +59,33 @@ const supportedTypes = ['js', 'ts', 'json'] as const
 type ConfigFileType = typeof supportedTypes[number]
 
 export default function (cli: CAC) {
+  const error = kleur.red('error')
+  const success = kleur.green('success')
+
   cli.command('init [file]', 'initialize a koishi configuration file')
     .option('-f, --forced', 'overwrite config file if it exists')
     .action(async (file, options) => {
       // resolve file path
       const path = resolve(process.cwd(), String(file || 'koishi.config.js'))
       if (!options.forced && existsSync(path)) {
-        logger.error(`${options.output} already exists. If you want to overwrite the current file, use ${yellow('koishi init -f')}`)
+        console.warn(`${error} ${options.output} already exists. If you want to overwrite the current file, use ${yellow('koishi init -f')}`)
         process.exit(1)
       }
 
       // parse extension
       const extension = extname(path).slice(1) as ConfigFileType
       if (!extension) {
-        logger.error(`configuration file should have an extension, received "${file}"`)
+        console.warn(`${error} configuration file should have an extension, received "${file}"`)
         process.exit(1)
       } else if (!supportedTypes.includes(extension)) {
-        logger.error(`configuration file type "${extension}" is currently not supported`)
+        console.warn(`${error} configuration file type "${extension}" is currently not supported`)
         process.exit(1)
       }
 
       // create configurations
       const config = await createConfig(options)
       if (!config) {
-        logger.error('initialization was canceled')
+        console.warn(`${error} initialization was canceled`)
         process.exit(0)
       }
 
@@ -101,7 +104,7 @@ export default function (cli: CAC) {
       const folder = dirname(path)
       if (!existsSync(folder)) mkdirSync(folder, { recursive: true })
       writeFileSync(path, output)
-      logger.success(`created config file: ${path}`)
+      console.warn(`${success} created config file: ${path}`)
       process.exit(0)
     })
 }

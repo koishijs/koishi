@@ -44,7 +44,6 @@
   },
   "dependencies": {
     "axios": "^0.19.2",
-    "debug": "^4.1.1",
     "escape-string-regexp": "^4.0.0",
     "koa": "^2.13.0",
     "koa-bodyparser": "^4.3.0",

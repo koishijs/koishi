@@ -98,10 +98,11 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
   state.test = {}
 
   if (ctx.bail('dialogue/receive', state)) return next()
+  const logger = ctx.logger('dialogue')
+  logger.debug('[receive]', meta.messageId, meta.message)
 
   // fetch matched dialogues
-  const dialogues = await Dialogue.fromTest(ctx, state.test)
-  state.dialogues = dialogues
+  const dialogues = state.dialogues = await Dialogue.fromTest(ctx, state.test)
 
   // pick dialogue
   let dialogue: Dialogue
@@ -117,6 +118,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
     }
   }
   if (!dialogue) return next()
+  logger.debug('[attach]', meta.messageId)
 
   // parse answer
   state.dialogue = dialogue
@@ -130,6 +132,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
     .replace(/\$0/g, escapeAnswer(meta.message))
 
   if (await ctx.app.serialize(meta, 'dialogue/before-send', state)) return
+  logger.debug('[send]', meta.messageId, '->', dialogue.answer)
 
   const capture = dialogue.flag & DialogueFlag.regexp
     ? dialogue._capture || new RegExp(dialogue.question).exec(state.test.question)
@@ -137,7 +140,6 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
 
   // send answers
   const { textDelay = 1000, charDelay = 200 } = config
-  ctx.logger('dialogue').debug(meta.message, '->', dialogue.answer)
   meta.$_redirected = (meta.$_redirected || 0) + 1
 
   // wrapper for meta.$send

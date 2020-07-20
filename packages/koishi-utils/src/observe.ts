@@ -1,8 +1,8 @@
-import debug from 'debug'
 import { types } from 'util'
 import { noop } from './misc'
+import { Logger } from './logger'
 
-const showObserverLog = debug('koishi:observer')
+const logger = Logger.create('observer')
 const staticTypes = ['number', 'string', 'bigint', 'boolean', 'symbol', 'function']
 const builtinClasses = ['Date', 'RegExp', 'Set', 'Map', 'WeakSet', 'WeakMap', 'Array']
 
@@ -48,7 +48,7 @@ function observeObject <T extends object> (target: T, label: string, update?: ()
         const hasKey = key in diff
         diff[key] = getters[key]
         if (!hasKey && label) {
-          showObserverLog(`[diff] ${label}: ${String(key)} (deep)`)
+          logger.debug(`[diff] ${label}: ${String(key)} (deep)`)
         }
       })
       return observeProperty(value, getters, key, label, _update)
@@ -62,7 +62,7 @@ function observeObject <T extends object> (target: T, label: string, update?: ()
           diff[key] = value
           delete getters[key]
           if (!hasKey && label) {
-            showObserverLog(`[diff] ${label}: ${String(key)}`)
+            logger.debug(`[diff] ${label}: ${String(key)}`)
           }
         }
       }
@@ -151,7 +151,7 @@ export function observe <T extends object, R> (target: T, ...args: [(string | nu
     const diff = { ...this._diff }
     const fields = Object.keys(diff)
     if (fields.length) {
-      if (label) showObserverLog(`[update] ${label}: ${fields.join(', ')}`)
+      if (label) logger.debug(`[update] ${label}: ${fields.join(', ')}`)
       for (const key in this._diff) {
         delete this._diff[key]
       }

@@ -1,20 +1,19 @@
 import { App, AppOptions, Context, Plugin, appList, startAll, onStart } from 'koishi-core'
 import { resolve, dirname } from 'path'
-import { capitalize } from 'koishi-utils'
+import { capitalize, Logger } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { cyan, yellow } from 'kleur'
-import { logger } from './utils'
 import { format } from 'util'
 
+const logger = Logger.create('app')
 const { version } = require('../package')
 
-let baseLogLevel = 3
 if (process.env.KOISHI_LOG_LEVEL !== undefined) {
-  baseLogLevel = +process.env.KOISHI_LOG_LEVEL
+  Logger.baseLevel = +process.env.KOISHI_LOG_LEVEL
 }
 
 function handleException (error: any) {
-  logger.error(error, baseLogLevel)
+  logger.error(error)
   process.exit(1)
 }
 
@@ -74,7 +73,7 @@ function loadEcosystem (type: string, name: string) {
 
 function loadPlugins (ctx: Context, plugins: PluginConfig) {
   for (const item of plugins) {
-    let plugin: Plugin<Context>, options
+    let plugin: Plugin<Context>, options: any
     if (Array.isArray(item)) {
       plugin = typeof item[0] === 'string' ? loadEcosystem('plugin', item[0]) : item[0]
       options = item[1]
@@ -84,14 +83,19 @@ function loadPlugins (ctx: Context, plugins: PluginConfig) {
       plugin = item
     }
     ctx.plugin(plugin, options)
-    if (plugin.name) logger.info(`apply plugin ${cyan(plugin.name)}`, baseLogLevel)
+    if (plugin.name) logger.info(`apply plugin ${cyan(plugin.name)}`)
   }
 }
 
 function prepareApp (config: AppConfig) {
+  Object.assign(Logger.levels, config.logFilter)
+  if (config.logLevel && !process.env.KOISHI_LOG_LEVEL) {
+    Logger.baseLevel = config.logLevel
+  }
+
   for (const name in config.database || {}) {
     const resolved = loadEcosystem('database', name)
-    if (resolved) logger.info(`apply database ${cyan(name)}`, baseLogLevel)
+    if (resolved) logger.info(`apply database ${cyan(name)}`)
   }
   const app = new App(config)
   if (Array.isArray(config.plugins)) {
@@ -128,24 +132,16 @@ onStart(() => {
   })
   for (const textSet of [versions, httpPorts, wsServers, httpServers]) {
     for (const text of textSet) {
-      logger.info(text, baseLogLevel)
+      logger.info(text)
     }
   }
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
-  logger.success(`bot started successfully in ${time} ms.`, baseLogLevel)
+  logger.success(`bot started successfully in ${time} ms.`)
   process.send({ type: 'start' })
 })
 
 process.on('unhandledRejection', (error) => {
-  logger.warn(format(error), baseLogLevel)
-})
-
-appList.forEach((app) => {
-  const { logLevel = 2, logFilter = {} } = app.options as AppConfig
-
-  app.on('logger', (scope, message, type) => {
-    logger[type](message, Math.min(logFilter[scope] ?? logLevel, baseLogLevel), scope)
-  })
+  logger.warn(format(error))
 })
 
 startAll().catch(handleException)

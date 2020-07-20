@@ -71,9 +71,9 @@ export class Sender {
   }
 
   async get <T = any> (action: string, params: Record<string, any> = {}, silent = false): Promise<T> {
-    this.app.logger('koishi:sender').debug('request %s %o', action, params)
+    this.app.logger('sender').debug('[request] %s %o', action, params)
     const response = await this._get(action, snakeCase(params))
-    this.app.logger('koishi:sender').debug('response %o', response)
+    this.app.logger('sender').debug('[response] %o', response)
     const { data, retcode } = response
     if (retcode === 0 && !silent) {
       return camelCase(data)
