@@ -64,11 +64,11 @@ export interface SessionState {
 const states: Record<number, SessionState> = {}
 
 export function escapeAnswer (message: string) {
-  return message.replace(/&/g, '@@__PLACEHOLDER__@@')
+  return message.replace(/%/g, '@@__PLACEHOLDER__@@')
 }
 
 export function unescapeAnswer (message: string) {
-  return message.replace(/@@__PLACEHOLDER__@@/g, '&')
+  return message.replace(/@@__PLACEHOLDER__@@/g, '%')
 }
 
 Context.prototype.getSessionState = function (meta) {
@@ -124,12 +124,12 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
   state.dialogue = dialogue
   state.dialogues = [dialogue]
   state.answer = dialogue.answer
-    .replace(/&&/g, '@@__PLACEHOLDER__@@')
-    .replace(/&A/g, CQCode.stringify('at', { qq: 'all' }))
-    .replace(/&a/g, CQCode.stringify('at', { qq: meta.userId }))
-    .replace(/&m/g, CQCode.stringify('at', { qq: meta.selfId }))
-    .replace(/&s/g, escapeAnswer(meta.$username))
-    .replace(/&0/g, escapeAnswer(meta.message))
+    .replace(/%%/g, '@@__PLACEHOLDER__@@')
+    .replace(/%A/g, CQCode.stringify('at', { qq: 'all' }))
+    .replace(/%a/g, CQCode.stringify('at', { qq: meta.userId }))
+    .replace(/%m/g, CQCode.stringify('at', { qq: meta.selfId }))
+    .replace(/%s/g, escapeAnswer(meta.$username))
+    .replace(/%0/g, escapeAnswer(meta.message))
 
   if (await ctx.app.serialize(meta, 'dialogue/before-send', state)) return
   logger.debug('[send]', meta.messageId, '->', dialogue.answer)
@@ -168,7 +168,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
 
   // parse answer
   let index: number
-  while ((index = state.answer.indexOf('&')) >= 0) {
+  while ((index = state.answer.indexOf('%')) >= 0) {
     const char = state.answer[index + 1]
     if (!'n{123456789'.includes(char)) {
       buffer += unescapeAnswer(state.answer.slice(0, index + 2))
@@ -235,12 +235,12 @@ export default function (ctx: Context, config: Dialogue.Config) {
   // 预判要获取的用户字段
   ctx.on('dialogue/before-attach-user', ({ dialogues, meta }, userFields) => {
     for (const data of dialogues) {
-      const capture = data.answer.match(/&\{.+?\}/g)
+      const capture = data.answer.match(/%\{.+?\}/g)
       for (const message of capture || []) {
         const argv = ctx.parse(message.slice(2, -1), meta)
         Command.collectFields(argv, 'user', userFields)
       }
-      if (capture || data.answer.includes('&n')) {
+      if (capture || data.answer.includes('%n')) {
         userFields.add('timers')
       }
     }
