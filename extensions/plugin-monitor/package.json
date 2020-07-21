@@ -1,0 +1,40 @@
+{
+  "name": "koishi-plugin-monitor",
+  "version": "1.0.0-alpha.34",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "lint": "eslint src --ext .ts",
+    "prepack": "tsc -b"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi-plugin-monitor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi-plugin-monitor/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi-plugin-monitor#readme",
+  "devDependencies": {
+    "@types/node": "^14.0.22",
+    "@typescript-eslint/eslint-plugin": "^3.6.0",
+    "@typescript-eslint/parser": "^3.6.0",
+    "eslint": "^7.4.0",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
+    "koishi-database-mysql": "^2.0.0-alpha.35",
+    "typescript": "^3.9.6"
+  },
+  "dependencies": {
+    "koishi-core": "^2.0.0-alpha.35",
+    "koishi-utils": "^2.1.1"
+  }
+}
