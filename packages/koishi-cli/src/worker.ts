@@ -57,7 +57,7 @@ if (!config) {
 const cacheMap: Record<string, any> = {}
 
 function loadEcosystem (type: string, name: string) {
-  const cache = cacheMap[type + name]
+  const cache = cacheMap[`${type}_${name}`]
   if (cache) return cache
 
   const modules = [resolve(configDir, name), name]
@@ -66,10 +66,10 @@ function loadEcosystem (type: string, name: string) {
     const index = name.lastIndexOf('/')
     modules.push(name.slice(0, index + 1) + prefix + name.slice(index + 1))
   }
-  for (const name of modules) {
-    logger.debug('resolving %c', name)
+  for (const path of modules) {
+    logger.debug('resolving %c', path)
     try {
-      return cacheMap[type + name] = require(name)
+      return cacheMap[`${type}_${name}`] = require(path)
     } catch (error) {
       if (isErrorModule(error)) {
         throw error

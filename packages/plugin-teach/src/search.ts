@@ -79,7 +79,7 @@ export default function apply (ctx: Context) {
     }
     for (const dialogue of dialogues) {
       const { answer } = dialogue
-      if (!answer.startsWith('${dialogue ')) continue
+      if (!answer.startsWith('%{dialogue ')) continue
       const { prefixed, unprefixed } = argv.config._stripQuestion(answer.slice(11, -1).trimStart())
       if (unprefixed in argv.questionMap) continue
       argv.questionMap[unprefixed] = await Dialogue.fromTest(ctx, {
