@@ -379,7 +379,7 @@ export interface EventMap {
   'attach-group' (meta: Meta): any
   'attach' (meta: Meta): any
   'send' (meta: Meta): any
-  'before-send' (meta: Meta): any
+  'before-send' (meta: Meta): void | boolean
   'before-command' (argv: ParsedCommandLine): any
   'command' (argv: ParsedCommandLine): any
   'after-middleware' (meta: Meta): any

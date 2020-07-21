@@ -164,7 +164,7 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
   async $send (message: string, autoEscape = false) {
     if (this.$response) {
       const _meta = this.$app.sender._createSendMeta(this.messageType, this.$ctxType, this.$ctxId, message)
-      if (await this.$app.serialize(this, 'before-send', _meta)) return
+      if (this.$app.bail(this, 'before-send', _meta)) return
       return this.$response({ reply: message, autoEscape, atSender: false })
     }
     return this.$app.sender.sendMsgAsync(this.messageType, this.$ctxId, message, autoEscape)

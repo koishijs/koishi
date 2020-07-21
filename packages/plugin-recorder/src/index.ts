@@ -38,6 +38,11 @@ export function apply (ctx: Context, options: RecorderOptions = {}) {
     streams[path].write(output)
   }
 
-  ctx.on('attach-group', handleMessage)
-  ctx.on('before-send', handleMessage)
+  ctx.on('attach-group', (meta: Meta<never, 'assignee'>) => {
+    handleMessage(meta)
+  })
+
+  ctx.on('before-send', (meta: Meta<never, 'assignee'>) => {
+    handleMessage(meta)
+  })
 }
