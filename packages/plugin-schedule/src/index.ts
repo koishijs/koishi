@@ -1,6 +1,8 @@
 import { Context, appMap, Meta, onStart, appList, getContextId } from 'koishi-core'
-import { parseTime, parseDate, formatTimeInterval } from 'koishi-utils'
+import { parseTime, parseDate, formatTimeInterval, Logger } from 'koishi-utils'
 import './database'
+
+const logger = Logger.create('schedule')
 
 export interface Schedule {
   id: number
@@ -15,6 +17,7 @@ function inspectSchedule ({ id, assignee, meta, interval, command, time }: Sched
   const now = Date.now()
   const date = time.valueOf()
   const app = appMap[assignee]
+  logger.debug('inspect', command)
 
   if (!interval) {
     if (date < now) return app.database.removeSchedule(id)

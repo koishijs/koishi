@@ -1,5 +1,6 @@
 import { launch, LaunchOptions, Browser, Page } from 'puppeteer-core'
 import { onStart, appList, Context } from 'koishi-core'
+import { Logger } from 'koishi-utils'
 
 declare module 'koishi-core/dist/app' {
   interface AppOptions {
@@ -14,6 +15,7 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
+const logger = Logger.create('puppeteer')
 let browserPromise: Promise<Browser>
 const idlePages: Page[] = []
 
@@ -23,6 +25,7 @@ export async function getPage () {
   }
 
   const browser = await browserPromise
+  logger.debug('create new page')
   return browser.newPage()
 }
 
@@ -34,10 +37,9 @@ Context.prototype.getPage = getPage
 Context.prototype.freePage = freePage
 
 onStart(() => {
-  const logger = appList[0].logger('puppeteer')
   browserPromise = launch(appList[0].options.puppeteer)
   browserPromise.then(
-    () => logger.info('browser launched'),
+    () => logger.debug('browser launched'),
     (error) => logger.warn(error),
   )
 })
