@@ -6,6 +6,7 @@
     "shiki/core",
     "shiki/cosmos",
     "shiki/games",
+    "extensions/*",
     "packages/*",
     "plugins/*"
   ],

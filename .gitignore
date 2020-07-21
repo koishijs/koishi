@@ -5,7 +5,6 @@ temp
 /shiki
 /coverage
 /plugins
-/tsconfig.extend.json
 
 todo.md
 yarn.lock

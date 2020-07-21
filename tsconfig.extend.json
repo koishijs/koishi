@@ -1,0 +1,7 @@
+{
+  "references": [
+    { "path": "." },
+    { "path": "./extensions" },
+  ],
+  "files": [],
+}
