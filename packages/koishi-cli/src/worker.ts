@@ -54,7 +54,12 @@ if (!config) {
   throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
 }
 
+const cacheMap: Record<string, any> = {}
+
 function loadEcosystem (type: string, name: string) {
+  const cache = cacheMap[type + name]
+  if (cache) return cache
+
   const modules = [resolve(configDir, name), name]
   const prefix = `koishi-${type}-`
   if (!name.includes(prefix)) {
@@ -64,7 +69,7 @@ function loadEcosystem (type: string, name: string) {
   for (const name of modules) {
     logger.debug('resolving %c', name)
     try {
-      return require(name)
+      return cacheMap[type + name] = require(name)
     } catch (error) {
       if (isErrorModule(error)) {
         throw error

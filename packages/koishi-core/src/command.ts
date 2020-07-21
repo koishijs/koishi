@@ -542,7 +542,7 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
         error = new Error(error as any)
       }
       const index = error.stack.indexOf(lastCall)
-      this.context.logger('command').warn(`${state}: ${raw}\n${error.stack.slice(0, index)}`)
+      this.context.logger('command').warn(`${state}: ${raw}\n${error.stack.slice(0, index - 1)}`)
     }
   }
 
