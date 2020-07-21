@@ -2,6 +2,8 @@ import { Context } from 'koishi-core'
 import { DialogueFlag, Dialogue } from './database'
 import { update } from './update'
 import { RegExpValidator } from 'regexpp'
+import { Logger } from 'koishi-utils'
+import { types } from 'util'
 import leven from 'leven'
 
 class RegExpError extends Error {
@@ -39,6 +41,8 @@ const validator = new RegExpValidator({
 })
 
 export default function apply (ctx: Context, config: Dialogue.Config) {
+  const logger = Logger.create('teach')
+
   ctx.command('teach')
     .option('--question <question>', '问题', { isString: true })
     .option('--answer <answer>', '回答', { isString: true })
@@ -97,7 +101,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  function isCloserToAnswer (dialogues: Dialogue[], question: string) {
+  function maybeAnswer (question: string, dialogues: Dialogue[]) {
     return dialogues.every(dialogue => {
       const dist = leven(question, dialogue.answer)
       return dist < dialogue.answer.length / 2
@@ -105,23 +109,16 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     })
   }
 
+  function maybeRegExp (question: string) {
+    return question.startsWith('^') || question.endsWith('$')
+  }
+
   ctx.on('dialogue/before-modify', async (argv) => {
     const { options, meta, target, dialogues } = argv
     const { question, answer, ignoreHint, regexp } = options
 
-    // 错误的或不支持的正则表达式语法
-    if (regexp || regexp !== false && question) {
-      try {
-        validator.validatePattern(question)
-      } catch (err) {
-        console.log(err)
-        await meta.$send(err.name === 'RegExpError' ? err.message : '问题含有错误的或不支持的正则表达式语法。')
-        return true
-      }
-    }
-
     // 修改问答时发现可能想改回答但是改了问题
-    if (target && !ignoreHint && question && !answer && isCloserToAnswer(dialogues, question)) {
+    if (target && !ignoreHint && question && !answer && maybeAnswer(question, dialogues)) {
       meta.$app.onceMiddleware(async (meta, next) => {
         const message = meta.message.trim()
         if (message && message !== '.' && message !== '。') return next()
@@ -129,8 +126,40 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
         delete options.question
         return update(argv)
       }, meta)
-      await meta.$send('推测你想修改的是回答而不是问题。发送空行或句号以修改回答，添加 -i 选项以忽略本提示。')
+      await meta.$send('推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -i 选项以忽略本提示。')
       return true
+    }
+
+    // 如果问题疑似正则表达式但原问答不是正则匹配，提示添加 -x 选项
+    if (question && !regexp && maybeRegExp(question) && !ignoreHint && (!target || !dialogues.every(d => d.flag & DialogueFlag.regexp))) {
+      meta.$app.onceMiddleware(async (meta, next) => {
+        const message = meta.message.trim()
+        if (message && message !== '.' && message !== '。') return next()
+        options.regexp = true
+      }, meta)
+      await meta.$send(`推测你想${target ? '修改' : '添加'}的问题是正则表达式。发送空行或句号以添加 -x 选项，使用 -i 选项以忽略本提示。`)
+      return true
+    }
+
+    // 检测正则表达式的合法性
+    if (regexp || regexp !== false && question && dialogues.some(d => d.flag & DialogueFlag.regexp)) {
+      const questions = question ? [question as string] : dialogues.map(d => d.question)
+      try {
+        questions.map(q => validator.validatePattern(q))
+      } catch (error) {
+        if (!types.isNativeError(error)) {
+          logger.warn(question, error)
+          await meta.$send('问题含有错误的或不支持的正则表达式语法。')
+        } else if (error.name === 'RegExpError') {
+          await meta.$send(error.message)
+        } else {
+          if (!error.message.startsWith('SyntaxError')) {
+            logger.warn(question, error.stack)
+          }
+          await meta.$send('问题含有错误的或不支持的正则表达式语法。')
+        }
+        return true
+      }
     }
   })
 
@@ -160,7 +189,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/validate', ({ options }) => {
     if (options.redirectDialogue) {
-      options.answer = `\${dialogue ${options.answer}}`
+      options.answer = `%{dialogue ${options.answer}}`
     }
   })
 }
