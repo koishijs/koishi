@@ -1,5 +1,5 @@
 import { contain, union, intersection, difference, noop, Logger } from 'koishi-utils'
-import { Command, CommandConfig, ParsedCommandLine, InputArgv } from './command'
+import { Command, CommandConfig, ParsedCommandLine, ParsedLine } from './command'
 import { Meta, contextTypes, getSessionId } from './meta'
 import { Sender } from './sender'
 import { App } from './app'
@@ -280,45 +280,35 @@ export class Context {
     return parent
   }
 
-  private _getCommandByRawName <U extends UserField = never, G extends GroupField = never> (name: string) {
-    const index = name.lastIndexOf('/')
-    return this.app._commandMap[name.slice(index + 1).toLowerCase()] as Command<U, G>
-  }
-
-  parse <U extends UserField, G extends GroupField> (message: string, meta: Meta<U, G>, next: NextFunction = noop): ParsedCommandLine<U, G> {
-    if (!message) return
-    const name = message.split(/\s/, 1)[0]
-    const command = this._getCommandByRawName<U, G>(name)
-    if (command?.context.match(meta)) {
-      const result = command.parse(message.slice(name.length).trimStart())
-      return { meta, command, next, ...result }
+  private resolve (argv: ParsedArgv, meta: Meta, next: NextFunction) {
+    if (typeof argv.command === 'string') {
+      argv.command = this.app._commandMap[argv.command]
     }
+    if (!argv.command?.context.match(meta)) return
+    return { meta, next, ...argv } as ParsedCommandLine
   }
 
-  execute (argv: InputArgv): Promise<void>
+  parse (message: string, meta: Meta, next: NextFunction = noop, forced = false): ParsedCommandLine {
+    if (!message) return
+    const argv = this.bail(meta, 'parse', message, meta, forced)
+    if (argv) return this.resolve(argv, meta, next)
+  }
+
+  execute (argv: ExecuteArgv): Promise<void>
   execute (message: string, meta: Meta, next?: NextFunction): Promise<void>
-  async execute (...args: [InputArgv] | [string, Meta, NextFunction?]) {
+  async execute (...args: [ExecuteArgv] | [string, Meta, NextFunction?]) {
     const meta = typeof args[0] === 'string' ? args[1] : args[0].meta
     if (!('$ctxType' in meta)) this.app.server.parseMeta(meta)
 
-    let argv: ParsedCommandLine, next: NextFunction = noop
+    let argv: ParsedCommandLine, next: NextFunction
     if (typeof args[0] === 'string') {
-      const name = args[0].split(/\s/, 1)[0]
-      const command = this._getCommandByRawName(name)
-      next = args[2] || noop
-      if (!command?.context.match(meta)) return next()
-      const result = command.parse(args[0].slice(name.length).trimStart())
-      argv = { meta, command, next, ...result }
+      const next = args[2] || noop
+      argv = this.parse(args[0], meta, next)
     } else {
-      argv = args[0] as any
-      next = argv.next || noop
-      if (typeof argv.command === 'string') {
-        argv.command = this.command(argv.command)
-      }
-      if (!argv.command?.context.match(meta)) return next()
+      const next = args[0].next || noop
+      argv = this.resolve(args[0], meta, next)
     }
-
-    meta.$argv = argv
+    if (!argv) return next()
 
     if (this.database) {
       if (meta.messageType === 'group') {
@@ -333,6 +323,16 @@ export class Context {
   end () {
     return this.app
   }
+}
+
+export interface ParsedArgv extends Partial<ParsedLine> {
+  command: string | Command
+  meta?: Meta
+  next?: NextFunction
+}
+
+export interface ExecuteArgv extends ParsedArgv {
+  meta: Meta
 }
 
 export interface EventMap {
@@ -372,7 +372,7 @@ export interface EventMap {
   'lifecycle/connect' (meta: Meta): any
 
   // Koishi events
-  'before-attach' (meta: Meta): any
+  'parse' (message: string, meta: Meta, forced: boolean): undefined | ParsedArgv
   'before-attach-user' (meta: Meta, fields: Set<UserField>): any
   'before-attach-group' (meta: Meta, fields: Set<GroupField>): any
   'attach-user' (meta: Meta): any

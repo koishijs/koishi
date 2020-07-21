@@ -128,6 +128,16 @@ export class App extends Context {
     this.on('message', this._applyMiddlewares)
     this.middleware(this._preprocess)
     emitter.emit('app', this)
+
+    this.on('parse', (message, { $parsed, messageType }, forced) => {
+      if (forced && $parsed.prefix === null && !$parsed.nickname && messageType !== 'private') return
+      const name = message.split(/\s/, 1)[0]
+      const index = name.lastIndexOf('/')
+      const command = this.app._commandMap[name.slice(index + 1).toLowerCase()]
+      if (!command) return
+      const result = command.parse(message.slice(name.length).trimStart())
+      return { command, ...result }
+    })
   }
 
   get users () {
@@ -292,15 +302,8 @@ export class App extends Context {
 
     // store parsed message
     meta.$parsed = { atMe, nickname, prefix, message }
+    meta.$argv = this.parse(message, meta, next, true)
 
-    // parse as command
-    if (!meta.$argv && (prefix !== null || nickname || meta.messageType === 'private')) {
-      meta.$argv = this.parse(message, meta)
-    }
-
-    this.emit(meta, 'before-attach', meta)
-
-    const command = meta.$argv?.command
     if (this.database) {
       if (meta.messageType === 'group') {
         // attach group data
@@ -331,12 +334,8 @@ export class App extends Context {
     await this.parallelize(meta, 'attach', meta)
 
     // execute command
-    if (command) {
-      meta.$argv.next = next
-      return command.execute(meta.$argv)
-    }
-
-    return next()
+    if (!meta.$argv) return next()
+    return meta.$argv.command.execute(meta.$argv)
   }
 
   private _applyMiddlewares = async (meta: Meta) => {

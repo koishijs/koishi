@@ -125,15 +125,9 @@ export interface ParsedLine {
 }
 
 export interface ParsedCommandLine <U extends UserField = never, G extends GroupField = never> extends Partial<ParsedLine> {
-  meta: Meta<U, G>
   command: Command<U, G>
-  next?: NextFunction
-}
-
-export interface InputArgv extends Partial<ParsedLine> {
-  meta: Meta
-  command?: String | Command
-  next?: NextFunction
+  meta: Meta<U, G>
+  next: NextFunction
 }
 
 export type UserType <T, U extends UserField = UserField> = T | ((user: Pick<UserData, U>) => T)

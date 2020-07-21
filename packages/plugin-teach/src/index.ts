@@ -1,4 +1,4 @@
-import { Context, ParsedCommandLine, Meta } from 'koishi-core'
+import { Context, ParsedArgv, Meta } from 'koishi-core'
 import { Dialogue, parseTeachArgs } from './database'
 import internal from './internal'
 import receiver from './receiver'
@@ -94,15 +94,15 @@ const cheatSheet = ({ $user: { authority } }: Meta<'authority'>) => `\
 export const name = 'teach'
 
 export function apply (ctx: Context, config: Dialogue.Config = {}) {
-  ctx.on('before-attach', (meta) => {
-    if (meta.$argv || meta.$parsed.prefix) return
-    const capture = meta.$parsed.message.match(/^#((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|##?)(\s+|$)/)
+  ctx.on('parse', (message, meta, forced) => {
+    if (forced && meta.$parsed.prefix) return
+    const capture = message.match(/^#((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|##?)(\s+|$)/)
     if (!capture) return
 
     const command = ctx.command('teach')
-    const message = meta.$parsed.message.slice(capture[0].length)
+    message = message.slice(capture[0].length)
     const { options, args, unknown } = command.parse(message)
-    const argv: ParsedCommandLine = { options, args, unknown, meta, command }
+    const argv: ParsedArgv = { options, args, unknown, meta, command }
 
     if (capture[1].startsWith('#')) {
       options.search = true
@@ -117,7 +117,7 @@ export function apply (ctx: Context, config: Dialogue.Config = {}) {
     }
 
     parseTeachArgs(argv)
-    meta.$argv = argv
+    return argv
   })
 
   ctx.command('teach', '添加教学对话', { authority: 2, checkUnknown: true, hideOptions: true })

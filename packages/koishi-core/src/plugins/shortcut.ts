@@ -1,14 +1,13 @@
 import { onApp, ParsedLine } from '..'
 
 onApp((app) => {
-  app.on('before-attach', (meta) => {
-    const { prefix, nickname, message } = meta.$parsed
-    if (meta.$argv || prefix) return
+  app.on('parse', (message, { $parsed }, forced) => {
+    if (forced && $parsed.prefix) return
+    const nickname = !forced || $parsed.nickname
     for (const shortcut of app._shortcuts) {
       const { name, fuzzy, command, oneArg, prefix, options, args = [] } = shortcut
       if (prefix && !nickname) continue
       if (!fuzzy && message !== name) continue
-      if (!command.context.match(meta)) continue
       if (message.startsWith(name)) {
         const _message = message.slice(name.length)
         if (fuzzy && !nickname && _message.match(/^\S/)) continue
@@ -17,8 +16,7 @@ onApp((app) => {
           : command.parse(_message.trim())
         result.options = { ...options, ...result.options }
         result.args.unshift(...args)
-        meta.$argv = { meta, command, ...result }
-        break
+        return { command, ...result }
       }
     }
   })
