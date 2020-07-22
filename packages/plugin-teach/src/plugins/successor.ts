@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference } from 'koishi-utils'
-import { equal, split, prepareTargets, isDialogueIdList, parseTeachArgs, isPositiveInteger, Dialogue, DialogueFlag, useFlag } from '../database'
+import { equal, split, prepareTargets, isDialogueIdList, parseTeachArgs, isPositiveInteger, Dialogue, DialogueFlag, useFlag, DialogueTest } from '../database'
 import { formatQuestionAnswers } from '../search'
 
 declare module '../receiver' {
@@ -179,29 +179,35 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   })
 
   // get successors
-  ctx.on('dialogue/before-detail', async ({ options, dialogues }) => {
-    if (options.modify) return
-    await attachSuccessors(dialogues)
+  ctx.on('dialogue/before-detail', async (argv) => {
+    if (argv.options.modify) return
+    await attachSuccessors(argv, argv.dialogues)
   })
 
-  async function attachSuccessors (dialogues: Dialogue[], dialogueMap: Record<number, Dialogue> = {}) {
+  async function attachSuccessors (argv: Dialogue.Argv, dialogues: Dialogue[], test: DialogueTest = {}) {
+    const dMap = argv.dialogueMap
     const predecessors = dialogues.filter((dialogue) => {
-      if (dialogueMap[dialogue.id]) return
-      dialogueMap[dialogue.id] = dialogue
+      if (dialogue._successors) return
+      dMap[dialogue.id] = dialogue
       Object.defineProperty(dialogue, '_successors', { writable: true, value: [] })
       return true
     }).map(d => d.id)
     if (!predecessors.length) return []
-    const successors = await Dialogue.fromTest(ctx, { predecessors })
+
+    const successors = (await Dialogue.fromTest(ctx, {
+      ...test,
+      question: undefined,
+      answer: undefined,
+      predecessors,
+    })).filter(d => !predecessors.includes(d.id))
+
     for (const dialogue of successors) {
-      if (predecessors.includes(dialogue.id)) continue
       for (const id of dialogue.predecessors) {
-        if (id in dialogueMap) {
-          dialogueMap[id]._successors.push(dialogue)
-        }
+        dMap[id]?._successors.push(dialogue)
       }
     }
-    return successors
+
+    await argv.ctx.parallelize('dialogue/search', argv, test, successors)
   }
 
   ctx.on('dialogue/detail', async (dialogue, output, argv) => {
@@ -231,7 +237,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/search', async (argv, test, dialogues) => {
     if (!argv.dialogueMap) argv.dialogueMap = {}
-    while ((dialogues = await attachSuccessors(dialogues, argv.dialogueMap)).length) {}
+    await attachSuccessors(argv, dialogues, test)
   })
 
   ctx.on('dialogue/list', ({ _successors }, output, prefix, argv) => {

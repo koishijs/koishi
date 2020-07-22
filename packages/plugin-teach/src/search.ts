@@ -82,14 +82,14 @@ export default function apply (ctx: Context) {
       if (!answer.startsWith('%{dialogue ')) continue
       const { prefixed, unprefixed } = argv.config._stripQuestion(answer.slice(11, -1).trimStart())
       if (unprefixed in argv.questionMap) continue
-      argv.questionMap[unprefixed] = await Dialogue.fromTest(ctx, {
+      const dialogues = argv.questionMap[unprefixed] = await Dialogue.fromTest(ctx, {
         ...test,
         regexp: null,
         question: unprefixed,
         original: prefixed,
       })
-      Object.defineProperty(dialogue, '_redirections', { writable: true, value: argv.questionMap[unprefixed] })
-      await argv.ctx.parallelize('dialogue/search', argv, test, argv.questionMap[unprefixed])
+      Object.defineProperty(dialogue, '_redirections', { writable: true, value: dialogues })
+      await argv.ctx.parallelize('dialogue/search', argv, test, dialogues)
     }
   })
 }
