@@ -166,9 +166,11 @@ async function showSearch (argv: Dialogue.Argv) {
   if (pipe) {
     if (!dialogues.length) return meta.$send('没有搜索到任何问答。')
     const command = ctx.command('teach')
-    parseTeachArgs(Object.assign(meta.$argv, command.parse(pipe)))
-    meta.$argv.options.target = dialogues.map(d => d.id).join(',')
-    return command.execute(meta.$argv)
+    const argv = { ...command.parse(pipe), meta, command }
+    const target = argv.options.target = dialogues.map(d => d.id).join(',')
+    argv.source = `#${target} ${pipe}`
+    parseTeachArgs(argv)
+    return command.execute(argv)
   }
 
   if (recursive && !autoMerge) {

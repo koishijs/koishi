@@ -94,15 +94,15 @@ const cheatSheet = ({ $user: { authority } }: Meta<'authority'>) => `\
 export const name = 'teach'
 
 export function apply (ctx: Context, config: Dialogue.Config = {}) {
-  ctx.on('parse', (message, meta, forced) => {
+  ctx.on('parse', (source, meta, forced) => {
     if (forced && meta.$parsed.prefix) return
-    const capture = message.match(/^#((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|##?)(\s+|$)/)
+    const capture = source.match(/^#((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|##?)(\s+|$)/)
     if (!capture) return
 
     const command = ctx.command('teach')
-    message = message.slice(capture[0].length)
+    const message = source.slice(capture[0].length)
     const { options, args, unknown } = command.parse(message)
-    const argv: ParsedArgv = { options, args, unknown, meta, command }
+    const argv: ParsedArgv = { options, args, unknown, meta, command, source }
 
     if (capture[1].startsWith('#')) {
       options.search = true
@@ -125,9 +125,9 @@ export function apply (ctx: Context, config: Dialogue.Config = {}) {
     .usage(cheatSheet)
     .action(async ({ options, meta, args }) => {
       const argv: Dialogue.Argv = { ctx, meta, args, config, options }
-      if (ctx.bail('dialogue/validate', argv)) return
-      if (ctx.bail('dialogue/execute', argv)) return
-      return create(argv)
+      return ctx.bail('dialogue/validate', argv)
+        || ctx.bail('dialogue/execute', argv)
+        || create(argv)
     })
 
   // features

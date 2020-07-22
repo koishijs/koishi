@@ -147,13 +147,15 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     await Dialogue.update(targets, argv)
   })
 
-  ctx.on('dialogue/after-modify', async ({ options, dialogues, meta }) => {
+  ctx.on('dialogue/after-modify', async ({ options: { createSuccessor }, dialogues, meta }) => {
     // 当存在 ># 时自动添加新问答并将当前处理的问答作为其前置
-    if (!options.createSuccessor) return
+    if (!createSuccessor) return
     if (!dialogues.length) return meta.$send('没有搜索到任何问答。')
     const command = ctx.command('teach')
-    parseTeachArgs(Object.assign(meta.$argv, command.parse(options.createSuccessor)))
-    meta.$argv.options.setPred = dialogues.map(d => d.id).join(',')
+    const argv = { ...command.parse(createSuccessor), meta, command }
+    const target = argv.options.setPred = dialogues.map(d => d.id).join(',')
+    argv.source = `# ${createSuccessor} < ${target}`
+    parseTeachArgs(argv)
     await command.execute(meta.$argv)
   })
 

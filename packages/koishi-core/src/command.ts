@@ -118,6 +118,7 @@ export function parseValue (source: string | true, quoted: boolean, config = {} 
 }
 
 export interface ParsedLine {
+  source?: string
   rest: string
   args: string[]
   unknown: string[]
@@ -127,7 +128,7 @@ export interface ParsedLine {
 export interface ParsedCommandLine <U extends UserField = never, G extends GroupField = never> extends Partial<ParsedLine> {
   command: Command<U, G>
   meta: Meta<U, G>
-  next: NextFunction
+  next?: NextFunction
 }
 
 export type UserType <T, U extends UserField = UserField> = T | ((user: Pick<UserData, U>) => T)
@@ -378,8 +379,9 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
     return typeof value === 'function' ? value(meta.$user) : value
   }
 
-  parse (source: string) {
+  parse (message: string): ParsedLine {
     let rest = ''
+    const source = `${this.name} ${message}`
     const args: string[] = []
     const unknown: string[] = []
     const options: Record<string, any> = {}
@@ -399,17 +401,17 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
       }
     }
 
-    while (source) {
+    while (message) {
       // long argument
-      if (source[0] !== '-' && this._arguments[args.length]?.noSegment) {
-        args.push(parseRest(source))
+      if (message[0] !== '-' && this._arguments[args.length]?.noSegment) {
+        args.push(parseRest(message))
         break
       }
 
       // parse argv0
-      let arg0 = parseArg0(source)
+      let arg0 = parseArg0(message)
       let arg = arg0.content
-      source = arg0.rest
+      message = arg0.rest
 
       let option = this._optionAliasMap[arg]
       let names: string | string[]
@@ -456,12 +458,12 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
       let quoted = false
       if (!param && option && option.noSegment) {
         param = parseRest(arg0.rest)
-        source = ''
-      } else if (!param && source.charCodeAt(0) !== 45 && (!option || !option.isBoolean)) {
-        arg0 = parseArg0(source)
+        message = ''
+      } else if (!param && message.charCodeAt(0) !== 45 && (!option || !option.isBoolean)) {
+        arg0 = parseArg0(message)
         param = arg0.content
         quoted = arg0.quoted
-        source = arg0.rest
+        message = arg0.rest
       }
 
       // handle each name
@@ -480,7 +482,7 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
       }
     }
 
-    return { options, rest, unknown, args } as ParsedLine
+    return { options, rest, unknown, args, source }
   }
 
   stringify (argv: ParsedCommandLine) {
@@ -513,7 +515,6 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
     }
 
     let state = 'before command'
-    const raw = this.stringify(argv)
     const { next = noop } = argv
     argv.next = async (fallback) => {
       const oldState = state
@@ -522,10 +523,11 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
       state = oldState
     }
 
+    const { source = this.stringify(argv) } = argv
+    this.context.logger('command').debug(source)
     const lastCall = new Error().stack.split('\n', 4)[3]
     try {
       if (await this.app.serialize(argv.meta, 'before-command', argv)) return
-      this.context.logger('command').debug(raw)
       state = 'executing command'
       await this._action(argv, ...argv.args)
       state = 'after command'
@@ -536,7 +538,7 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
         error = new Error(error as any)
       }
       const index = error.stack.indexOf(lastCall)
-      this.context.logger('command').warn(`${state}: ${raw}\n${error.stack.slice(0, index - 1)}`)
+      this.context.logger('command').warn(`${state}: ${source}\n${error.stack.slice(0, index - 1)}`)
     }
   }
 
