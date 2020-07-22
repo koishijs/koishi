@@ -169,14 +169,14 @@ export class HttpServer extends Server {
           'Content-Type': 'application/json',
         })
         meta.$response = (data) => {
+          meta.$response = null
           clearTimeout(timer)
           ctx.res.write(JSON.stringify(snakeCase(data)))
           ctx.res.end()
-          meta.$response = null
         }
         const timer = setTimeout(() => {
-          ctx.res.end()
           meta.$response = null
+          ctx.res.end()
         }, quickOperationTimeout)
       }
 
