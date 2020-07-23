@@ -188,7 +188,7 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
   async observeGroup <T extends GroupField = never> (fields: Iterable<T> = []): Promise<Group<T | G>> {
     const fieldSet = new Set<GroupField>(fields)
     const { groupId, $argv, $group } = this
-    if ($argv) Command.collectFields($argv, 'group', fieldSet)
+    if ($argv) Command.collect($argv, 'group', fieldSet)
 
     // 对于已经绑定可观测群的，判断字段是否需要自动补充
     if ($group) {
@@ -225,7 +225,7 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
   async observeUser <T extends UserField = never> (fields: Iterable<T> = []): Promise<User<T | U>> {
     const fieldSet = new Set<UserField>(fields)
     const { userId, $argv, $user } = this
-    if ($argv) Command.collectFields($argv, 'user', fieldSet)
+    if ($argv) Command.collect($argv, 'user', fieldSet)
 
     // 对于已经绑定可观测用户的，判断字段是否需要自动补充
     if ($user && !this.anonymous) {

@@ -1,4 +1,4 @@
-import { Command, Context, UserData, Meta, onApp, UserField, GroupField } from '..'
+import { Command, Context, UserData, Meta, onApp, UserField, GroupField, ParsedCommandLine, TableData } from '..'
 import { getUsage, getUsageName, ValidationField } from './validate'
 
 export type CommandUsage <U extends UserField, G extends GroupField> = string | ((this: Command<U, G>, meta: Meta<U, G>) => string | Promise<string>)
@@ -60,8 +60,19 @@ onApp((app) => {
     return true
   })
 
+  function createCollector <T extends keyof TableData> (key: T) {
+    return function* (argv: ParsedCommandLine, fields: Set<keyof TableData[T]>) {
+      const { args: [name] } = argv
+      const command = app._commandMap[name] || app._shortcutMap[name]
+      if (!command) return
+      yield *Command.collect({ ...argv, args: [], rest: '', options: { help: true } }, key, fields)
+    }
+  }
+
   app.command('help [command]', '显示帮助信息', { authority: 0 })
-    .userFields(['authority', 'usage', 'timers'])
+    .userFields(['authority'])
+    .userFields(createCollector('user'))
+    .groupFields(createCollector('group'))
     .shortcut('帮助', { fuzzy: true })
     .option('-e, --expand', '展开指令列表')
     .option('-o, --options', '查看全部选项（包括隐藏）')

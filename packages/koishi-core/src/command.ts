@@ -154,7 +154,7 @@ export interface ShortcutConfig {
   options?: Record<string, any>
 }
 
-type ArgvInferred <T> = Iterable<T> | ((argv: ParsedCommandLine, fields: Set<T>) => void)
+type ArgvInferred <T> = Iterable<T> | ((argv: ParsedCommandLine, fields: Set<T>) => Iterable<T>)
 type CommandAction <U extends UserField, G extends GroupField> =
   (this: Command<U, G>, config: ParsedCommandLine<U, G>, ...args: string[]) => any
 
@@ -196,19 +196,18 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
     return this
   }
 
-  static collectFields <T extends keyof TableData> (argv: ParsedCommandLine, key: T, fields = new Set<keyof TableData[T]>()) {
+  static collect <T extends keyof TableData> (argv: ParsedCommandLine, key: T, fields = new Set<keyof TableData[T]>()) {
     if (!argv) return
     const values: ArgvInferred<keyof TableData[T]>[] = [
       ...this[`_${key}Fields`],
       ...argv.command[`_${key}Fields`],
     ]
-    for (const value of values) {
+    for (let value of values) {
       if (typeof value === 'function') {
-        value(argv, fields)
-      } else {
-        for (const field of value) {
-          fields.add(field)
-        }
+        value = value(argv, fields)
+      }
+      for (const field of value) {
+        fields.add(field)
       }
     }
     return fields
@@ -242,14 +241,18 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
     return `Command <${this.name}>`
   }
 
-  userFields <T extends UserField = never> (fields: ArgvInferred<T>) {
+  userFields <T extends UserField = never> (fields: Iterable<T>): Command<U | T, G>
+  userFields <T extends UserField = never> (fields: (argv: ParsedCommandLine, fields: Set<UserField>) => Iterable<T>): Command<U | T, G>
+  userFields (fields: ArgvInferred<UserField>) {
     this._userFields.push(fields)
-    return this as Command<U | T, G>
+    return this
   }
 
-  groupFields <T extends GroupField = never> (fields: ArgvInferred<T>) {
+  groupFields <T extends GroupField = never> (fields: Iterable<T>): Command<U, G | T>
+  groupFields <T extends GroupField = never> (fields: (argv: ParsedCommandLine, fields: Set<GroupField>) => Iterable<T>): Command<U, G | T>
+  groupFields (fields: ArgvInferred<GroupField>) {
     this._groupFields.push(fields)
-    return this as Command<U, G | T>
+    return this
   }
 
   alias (...names: string[]) {

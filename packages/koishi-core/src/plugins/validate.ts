@@ -45,7 +45,7 @@ Object.assign(Command.defaultConfig, {
   minInterval: 0,
 })
 
-Command.userFields(({ command, options = {} }, fields) => {
+Command.userFields(function* ({ command, options = {} }, fields) {
   const { maxUsage, minInterval, authority } = command.config
   let shouldFetchAuthority = !fields.has('authority') && authority > 0
   let shouldFetchUsage = !!(maxUsage || minInterval)
@@ -55,10 +55,10 @@ Command.userFields(({ command, options = {} }, fields) => {
       if (option.notUsage) shouldFetchUsage = false
     }
   }
-  if (shouldFetchAuthority) fields.add('authority')
+  if (shouldFetchAuthority) yield 'authority'
   if (shouldFetchUsage) {
-    if (maxUsage) fields.add('usage')
-    if (minInterval) fields.add('timers')
+    if (maxUsage) yield 'usage'
+    if (minInterval) yield 'timers'
   }
 })
 
