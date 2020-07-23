@@ -6,7 +6,7 @@ import {} from 'koa-bodyparser'
 import { Server as _Server } from 'http'
 import { emitter, errors } from './shared'
 import { createHmac } from 'crypto'
-import { camelCase, snakeCase, paramCase, CQCode, Logger } from 'koishi-utils'
+import { camelCase, snakeCase, paramCase, CQCode, Logger, defineProperty } from 'koishi-utils'
 import { Meta, VersionInfo, ContextType } from './meta'
 import { App } from './app'
 import { CQResponse } from './sender'
@@ -168,12 +168,13 @@ export class HttpServer extends Server {
         ctx.res.writeHead(200, {
           'Content-Type': 'application/json',
         })
-        meta.$response = (data) => {
+        // use defineProperty to avoid meta duplication
+        defineProperty(meta, '$response', (data) => {
           meta.$response = null
           clearTimeout(timer)
           ctx.res.write(JSON.stringify(snakeCase(data)))
           ctx.res.end()
-        }
+        })
         const timer = setTimeout(() => {
           meta.$response = null
           ctx.res.end()
