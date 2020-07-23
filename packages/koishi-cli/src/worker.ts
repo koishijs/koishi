@@ -69,7 +69,9 @@ function loadEcosystem (type: string, name: string) {
   for (const path of modules) {
     logger.debug('resolving %c', path)
     try {
-      return cacheMap[`${type}_${name}`] = require(path)
+      const result = require(path)
+      logger.info('apply %s %c', type, result && result.name || name)
+      return cacheMap[`${type}_${name}`] = result
     } catch (error) {
       if (isErrorModule(error)) {
         throw error
@@ -91,7 +93,6 @@ function loadPlugins (ctx: Context, plugins: PluginConfig) {
       plugin = item
     }
     ctx.plugin(plugin, options)
-    if (plugin.name) logger.info('apply plugin %c', plugin.name)
   }
 }
 
@@ -102,8 +103,7 @@ function prepareApp (config: AppConfig) {
   }
 
   for (const name in config.database || {}) {
-    const resolved = loadEcosystem('database', name)
-    if (resolved) logger.info('apply database %c', name)
+    loadEcosystem('database', name)
   }
   const app = new App(config)
   if (Array.isArray(config.plugins)) {
