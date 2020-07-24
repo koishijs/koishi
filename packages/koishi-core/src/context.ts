@@ -302,10 +302,10 @@ export class Context {
 
     let argv: ParsedCommandLine, next: NextFunction
     if (typeof args[0] === 'string') {
-      const next = args[2] || noop
+      next = args[2] || noop
       argv = this.parse(args[0], meta, next)
     } else {
-      const next = args[0].next || noop
+      next = args[0].next || noop
       argv = this.resolve(args[0], meta, next)
     }
     if (!argv) return next()

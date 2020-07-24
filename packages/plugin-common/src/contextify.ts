@@ -30,6 +30,8 @@ export default function apply (ctx: Context) {
       }
 
       const newMeta = new Meta(meta)
+      newMeta.$send = meta.$send.bind(meta)
+      newMeta.$sendQueued = meta.$sendQueued.bind(meta)
 
       delete newMeta.groupId
       delete newMeta.discussId
