@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-monitor",
-  "version": "1.0.0-alpha.35",
+  "version": "1.0.0-alpha.36",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -30,11 +30,11 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
-    "koishi-database-mysql": "^2.0.0-alpha.36",
+    "koishi-database-mysql": "^2.0.0-alpha.37",
     "typescript": "^3.9.7"
   },
   "dependencies": {
-    "koishi-core": "^2.0.0-alpha.36",
+    "koishi-core": "^2.0.0-alpha.37",
     "koishi-utils": "^2.1.1"
   }
 }

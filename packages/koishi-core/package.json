@@ -1,7 +1,7 @@
 {
   "name": "koishi-core",
   "description": "Core features for Koishi",
-  "version": "2.0.0-alpha.36",
+  "version": "2.0.0-alpha.37",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -38,8 +38,8 @@
     "@types/ms": "^0.7.31",
     "@types/ws": "^7.2.6",
     "get-port": "^5.1.1",
-    "koishi-database-memory": "^2.0.0-alpha.36",
-    "koishi-test-utils": "^4.0.0-alpha.36"
+    "koishi-database-memory": "^2.0.0-alpha.37",
+    "koishi-test-utils": "^4.0.0-alpha.37"
   },
   "dependencies": {
     "@types/koa-bodyparser": "^4.3.0",
