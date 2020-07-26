@@ -94,15 +94,11 @@ export interface ParsedCommandLine <U extends UserField = never, G extends Group
   next?: NextFunction
 }
 
-export type UserType <T, U extends UserField = UserField> = T | ((user: Pick<UserData, U>) => T)
-
-export interface CommandConfig {
+export interface CommandConfig <U extends UserField = never, G extends GroupField = never> {
   /** description */
   description?: string
   /** min authority */
   authority?: number
-  /** whether to disable */
-  disable?: UserType<boolean>
 }
 
 export interface ShortcutConfig {
@@ -121,8 +117,8 @@ type ArgvInferred <T> = Iterable<T> | ((argv: ParsedCommandLine, fields: Set<T>)
 type CommandAction <U extends UserField, G extends GroupField> =
   (this: Command<U, G>, config: ParsedCommandLine<U, G>, ...args: string[]) => any
 
-export class Command<U extends UserField = never, G extends GroupField = never> {
-  config: CommandConfig
+export class Command <U extends UserField = never, G extends GroupField = never> {
+  config: CommandConfig<U, G>
   children: Command[] = []
   parent: Command = null
 
@@ -340,11 +336,6 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
     return this
   }
 
-  getConfig <K extends keyof CommandConfig> (key: K, meta: Meta): Exclude<CommandConfig[K], (user: UserData) => any> {
-    const value = this.config[key] as any
-    return typeof value === 'function' ? value(meta.$user) : value
-  }
-
   /**
    * some examples:
    * - `foo bar baz` -> `foo` + `bar baz`
@@ -446,7 +437,7 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
     while (message) {
       // long argument
       if (message[0] !== '-' && this._arguments[args.length]?.noSegment) {
-        const arg0 = this.parseRest(source, terminator)
+        const arg0 = this.parseRest(message, terminator)
         args.push(arg0.content)
         rest = arg0.rest
         break

@@ -171,7 +171,7 @@ async function showCommandHelp (command: Command, meta: Meta<ValidationField>, c
     await meta.observeUser(['authority', 'timers', 'usage'])
   }
 
-  const disabled = command.getConfig('disable', meta)
+  const disabled = command._checkers.some(checker => checker(meta))
   if (disabled) output[1] += '（指令已禁用）'
 
   if (command._aliases.length > 1) {

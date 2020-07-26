@@ -1,8 +1,7 @@
-import { onApp, Meta, UserData, Command } from '..'
+import { onApp, Meta, UserData, Command, UserField, ParsedCommandLine, CommandConfig } from '..'
 import { messages } from '../shared'
 import { format } from 'util'
 import { getDateNumber } from 'koishi-utils'
-import { ParsedCommandLine } from '../command'
 
 declare module '../context' {
   interface EventMap {
@@ -10,8 +9,16 @@ declare module '../context' {
   }
 }
 
+export type UserType <T, U extends UserField = UserField> = T | ((user: Pick<UserData, U>) => T)
+
 declare module '../command' {
-  interface CommandConfig {
+  interface Command <U, G> {
+    _checkers: ((meta: Meta<U, G>) => string | boolean)[]
+    before (checker: (meta: Meta<U, G>) => string | boolean): this
+    getConfig <K extends keyof CommandConfig> (key: K, meta: Meta): Exclude<CommandConfig[K], (user: UserData) => any>
+  }
+
+  interface CommandConfig <U, G> {
     /** disallow unknown options */
     checkUnknown?: boolean
     /** check required options */
@@ -62,6 +69,16 @@ Command.userFields(function* ({ command, options = {} }, fields) {
   }
 })
 
+Command.prototype.getConfig = function (key: string, meta: Meta) {
+  const value = this.config[key]
+  return typeof value === 'function' ? value(meta.$user) : value
+}
+
+Command.prototype.before = function (this: Command, checker) {
+  this._checkers.push(checker)
+  return this
+}
+
 onApp((app) => {
   app.on('before-command', ({ meta, args, options, command }: ParsedCommandLine<ValidationField>) => {
     async function sendHint (meta: Meta, message: string, ...param: any[]) {
@@ -71,7 +88,10 @@ onApp((app) => {
       }
     }
 
-    if (command.getConfig('disable', meta)) return true
+    for (const checker of command._checkers) {
+      const result = checker(meta)
+      if (result) return sendHint(meta, result === true ? '' : result)
+    }
 
     // check argument count
     if (command.config.checkArgCount) {
