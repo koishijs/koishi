@@ -1,4 +1,4 @@
-import { Context, Meta } from 'koishi-core'
+import { Context, Meta, GroupFlag } from 'koishi-core'
 import ascii2d from './ascii2d'
 import saucenao from './saucenao'
 
@@ -42,11 +42,17 @@ export const name = 'image-search'
 export function apply (ctx: Context, config: ImageSearchConfig = {}) {
   const command = ctx.command('image-search <...images>', '搜图片')
     .alias('搜图')
+    .groupFields(['flag'])
+    .before(meta => !!(meta.$group.flag & GroupFlag.noImage))
     .action(({ meta }) => searchImage(ctx, meta, url => mixedSearch(url, meta, config)))
 
   command.subcommand('saucenao <...images>', '使用 saucenao 搜图')
+    .groupFields(['flag'])
+    .before(meta => !!(meta.$group.flag & GroupFlag.noImage))
     .action(({ meta }) => searchImage(ctx, meta, url => saucenao(url, meta, config)))
 
   command.subcommand('ascii2d <...images>', '使用 ascii2d 搜图')
+    .groupFields(['flag'])
+    .before(meta => !!(meta.$group.flag & GroupFlag.noImage))
     .action(({ meta }) => searchImage(ctx, meta, url => ascii2d(url, meta)))
 }

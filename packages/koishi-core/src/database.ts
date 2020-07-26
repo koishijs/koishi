@@ -50,6 +50,7 @@ export interface GroupData {
 
 export enum GroupFlag {
   ignore = 1,
+  noImage = 2,
   noEmit = 4,
 }
 

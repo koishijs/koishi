@@ -195,7 +195,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/detail', async (dialogue, output, argv) => {
-    if (dialogue._redirections.length) {
+    if (dialogue._redirections?.length) {
       output.push('重定向到：', ...formatQuestionAnswers(argv, dialogue._redirections))
     }
   })
