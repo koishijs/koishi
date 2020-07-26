@@ -80,6 +80,10 @@ Command.prototype.before = function (this: Command, checker) {
 }
 
 onApp((app) => {
+  app.on('new-command', (cmd) => {
+    cmd._checkers = []
+  })
+
   app.on('before-command', ({ meta, args, options, command }: ParsedCommandLine<ValidationField>) => {
     async function sendHint (meta: Meta, message: string, ...param: any[]) {
       if (command.config.showWarning) {
