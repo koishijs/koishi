@@ -294,8 +294,8 @@ export class Context {
     if (argv) return this.resolve(argv, meta, next)
   }
 
-  execute (argv: ExecuteArgv): Promise<void>
-  execute (message: string, meta: Meta, next?: NextFunction): Promise<void>
+  execute (argv: ExecuteArgv): Promise<ParsedCommandLine>
+  execute (message: string, meta: Meta, next?: NextFunction): Promise<ParsedCommandLine>
   async execute (...args: [ExecuteArgv] | [string, Meta, NextFunction?]) {
     const meta = typeof args[0] === 'string' ? args[1] : args[0].meta
     if (!('$ctxType' in meta)) this.app.server.parseMeta(meta)
@@ -317,7 +317,8 @@ export class Context {
       await meta.observeUser()
     }
 
-    return argv.command.execute(argv)
+    await argv.command.execute(argv)
+    return argv
   }
 
   end () {
@@ -339,59 +340,56 @@ export interface EventMap {
   [Context.MIDDLEWARE_EVENT]: Middleware
 
   // CQHTTP events
-  'message' (meta: Meta): any
-  'message/normal' (meta: Meta): any
-  'message/notice' (meta: Meta): any
-  'message/anonymous' (meta: Meta): any
-  'message/friend' (meta: Meta): any
-  'message/group' (meta: Meta): any
-  'message/discuss' (meta: Meta): any
-  'message/other' (meta: Meta): any
-  'friend-add' (meta: Meta): any
-  'group-increase' (meta: Meta): any
-  'group-increase/invite' (meta: Meta): any
-  'group-increase/approve' (meta: Meta): any
-  'group-decrease' (meta: Meta): any
-  'group-decrease/leave' (meta: Meta): any
-  'group-decrease/kick' (meta: Meta): any
-  'group-decrease/kick-me' (meta: Meta): any
-  'group-upload' (meta: Meta): any
-  'group-admin' (meta: Meta): any
-  'group-admin/set' (meta: Meta): any
-  'group-admin/unset' (meta: Meta): any
-  'group-ban' (meta: Meta): any
-  'group-ban/ban' (meta: Meta): any
-  'group-ban/lift-ban' (meta: Meta): any
-  'request/friend' (meta: Meta): any
-  'request/group/add' (meta: Meta): any
-  'request/group/invite' (meta: Meta): any
-  'heartbeat' (meta: Meta): any
-  'lifecycle' (meta: Meta): any
-  'lifecycle/enable' (meta: Meta): any
-  'lifecycle/disable' (meta: Meta): any
-  'lifecycle/connect' (meta: Meta): any
+  'message' (meta: Meta): void
+  'message/normal' (meta: Meta): void
+  'message/notice' (meta: Meta): void
+  'message/anonymous' (meta: Meta): void
+  'message/friend' (meta: Meta): void
+  'message/group' (meta: Meta): void
+  'message/discuss' (meta: Meta): void
+  'message/other' (meta: Meta): void
+  'friend-add' (meta: Meta): void
+  'group-increase' (meta: Meta): void
+  'group-increase/invite' (meta: Meta): void
+  'group-increase/approve' (meta: Meta): void
+  'group-decrease' (meta: Meta): void
+  'group-decrease/leave' (meta: Meta): void
+  'group-decrease/kick' (meta: Meta): void
+  'group-decrease/kick-me' (meta: Meta): void
+  'group-upload' (meta: Meta): void
+  'group-admin' (meta: Meta): void
+  'group-admin/set' (meta: Meta): void
+  'group-admin/unset' (meta: Meta): void
+  'group-ban' (meta: Meta): void
+  'group-ban/ban' (meta: Meta): void
+  'group-ban/lift-ban' (meta: Meta): void
+  'request/friend' (meta: Meta): void
+  'request/group/add' (meta: Meta): void
+  'request/group/invite' (meta: Meta): void
+  'heartbeat' (meta: Meta): void
+  'lifecycle' (meta: Meta): void
+  'lifecycle/enable' (meta: Meta): void
+  'lifecycle/disable' (meta: Meta): void
+  'lifecycle/connect' (meta: Meta): void
 
   // Koishi events
   'parse' (message: string, meta: Meta, forced: boolean): undefined | ParsedArgv
-  'before-attach-user' (meta: Meta, fields: Set<UserField>): any
-  'before-attach-group' (meta: Meta, fields: Set<GroupField>): any
-  'attach-user' (meta: Meta): any
-  'attach-group' (meta: Meta): any
-  'attach' (meta: Meta): any
-  'send' (meta: Meta): any
+  'before-attach-user' (meta: Meta, fields: Set<UserField>): void
+  'before-attach-group' (meta: Meta, fields: Set<GroupField>): void
+  'attach-user' (meta: Meta): void | boolean | Promise<void | boolean>
+  'attach-group' (meta: Meta): void | boolean | Promise<void | boolean>
+  'attach' (meta: Meta): void | Promise<void>
+  'send' (meta: Meta): void | Promise<void>
   'before-send' (meta: Meta): void | boolean
-  'before-command' (argv: ParsedCommandLine): any
-  'command' (argv: ParsedCommandLine): any
-  'after-middleware' (meta: Meta): any
-  'error' (error: Error): any
-  'error/command' (error: Error): any
-  'error/middleware' (error: Error): any
-  'new-command' (cmd: Command): any
-  'ready' (): any
-  'before-connect' (): any
-  'connect' (): any
-  'before-disconnect' (): any
-  'disconnect' (): any
+  'before-command' (argv: ParsedCommandLine): void | boolean | Promise<void | boolean>
+  'command' (argv: ParsedCommandLine): void | Promise<void>
+  'after-middleware' (meta: Meta): void
+  'new-command' (cmd: Command): void
+  'ready' (): void
+  'before-connect' (): void
+  'connect' (): void
+  'before-disconnect' (): void
+  'disconnect' (): void
 }
 
 export type Events = keyof EventMap

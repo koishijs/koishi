@@ -65,7 +65,7 @@ onApp((app) => {
       const { args: [name] } = argv
       const command = app._commandMap[name] || app._shortcutMap[name]
       if (!command) return
-      yield *Command.collect({ ...argv, args: [], rest: '', options: { help: true } }, key, fields)
+      yield* Command.collect({ ...argv, args: [], options: { help: true } }, key, fields)
     }
   }
 

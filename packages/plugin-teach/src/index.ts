@@ -101,8 +101,8 @@ export function apply (ctx: Context, config: Dialogue.Config = {}) {
 
     const command = ctx.command('teach')
     const message = source.slice(capture[0].length)
-    const { options, args, unknown } = command.parse(message)
-    const argv: ParsedArgv = { options, args, unknown, meta, command, source }
+    const { options, args, rest } = command.parse(message)
+    const argv: ParsedArgv = { options, args, meta, command, source, rest }
 
     if (capture[1].startsWith('#')) {
       options.search = true

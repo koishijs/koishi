@@ -63,7 +63,7 @@ Command.userFields(function* ({ command, options = {} }, fields) {
 })
 
 onApp((app) => {
-  app.on('before-command', ({ meta, args, unknown, options, command }: ParsedCommandLine<ValidationField>) => {
+  app.on('before-command', ({ meta, args, options, command }: ParsedCommandLine<ValidationField>) => {
     async function sendHint (meta: Meta, message: string, ...param: any[]) {
       if (command.config.showWarning) {
         await meta.$send(format(message, ...param))
@@ -86,8 +86,11 @@ onApp((app) => {
     }
 
     // check unknown options
-    if (command.config.checkUnknown && unknown.length) {
-      return sendHint(meta, messages.UNKNOWN_OPTIONS, unknown.join(', '))
+    if (command.config.checkUnknown) {
+      const unknown = Object.keys(options).filter(key => !command['_optionMap'][key])
+      if (unknown.length) {
+        return sendHint(meta, messages.UNKNOWN_OPTIONS, unknown.join(', '))
+      }
     }
 
     // check required options

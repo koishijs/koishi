@@ -4,6 +4,7 @@ import { errors } from './shared'
 import { noop, camelCase } from 'koishi-utils'
 import { Meta } from './meta'
 import { inspect, format, types } from 'util'
+import escapeRegex from 'escape-string-regexp'
 
 const ANGLED_BRACKET_REGEXP = /<([^>]+)>/g
 const SQUARE_BRACKET_REGEXP = /\[([^\]]+)\]/g
@@ -71,57 +72,19 @@ export interface CommandOption extends OptionConfig {
   description: string
 }
 
-interface ParsedArg0 {
+interface ParsedArg {
   rest: string
   content: string
   quoted: boolean
 }
 
-const quotes = `"'“”‘’`
-
-function parseRest (source: string) {
-  if (quotes.includes(source[0]) && quotes.includes(source[source.length - 1])) return source.slice(1, -1)
-  return source
-}
-
-function parseArg0 (source: string): ParsedArg0 {
-  if (quotes.includes(source[0])) {
-    const [content] = source.slice(1).split(/["'“”‘’](?=\s|$)/, 1)
-    return {
-      content,
-      quoted: true,
-      rest: source.slice(2 + content.length).trimLeft(),
-    }
-  }
-
-  const [content] = source.split(/\s/, 1)
-  return {
-    content,
-    quoted: false,
-    rest: source.slice(content.length).trimLeft(),
-  }
-}
-
-export function parseValue (source: string | true, quoted: boolean, config = {} as CommandOption) {
-  // quoted empty string
-  if (source === '' && quoted) return ''
-  // no explicit parameter
-  if (source === true || source === '') {
-    if (config.default !== undefined) return config.default
-    if (config.isString) return ''
-    return true
-  }
-  // default behavior
-  if (config.isString) return source
-  const n = +source
-  return n * 0 === 0 ? n : source
-}
+const quoteStart = `"'“‘`
+const quoteEnd = `"'”’`
 
 export interface ParsedLine {
   source?: string
   rest: string
   args: string[]
-  unknown: string[]
   options: Record<string, any>
 }
 
@@ -382,11 +345,91 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
     return typeof value === 'function' ? value(meta.$user) : value
   }
 
-  parse (message: string): ParsedLine {
+  /**
+   * some examples:
+   * - `foo bar baz` -> `foo` + `bar baz`
+   * - `"foo bar" baz` -> `foo bar` + `baz`
+   * - `"foo bar "baz` -> `"foo` + `bar "baz`
+   * - `foo" bar" baz` -> `foo"` + `bar" baz`
+   * - `foo;bar baz` -> `foo` + `;bar baz`
+   * - `"foo;bar";baz` -> `foo;bar` + `;baz`
+   */
+  private parseArg (source: string, terminator: string): ParsedArg {
+    const quoteIndex = quoteStart.indexOf(source[0])
+    if (quoteIndex >= 0) {
+      const capture = new RegExp(`${quoteEnd[quoteIndex]}(?=[\\s${escapeRegex(terminator)}]|$)`).exec(source.slice(1))
+      if (capture) {
+        return {
+          quoted: true,
+          content: source.slice(1, 1 + capture.index),
+          rest: source.slice(2 + capture.index).trimLeft(),
+        }
+      }
+    }
+
+    const [content] = source.split(new RegExp(`[\\s${escapeRegex(terminator)}]`), 1)
+    return {
+      content,
+      quoted: false,
+      rest: source.slice(content.length).trimLeft(),
+    }
+  }
+
+  /**
+   * some examples:
+   * - `foo bar baz` -> `foo bar baz` + ` `
+   * - `"foo bar" baz` -> `"foo bar" baz` + ` `
+   * - `"foo bar baz"` -> `foo bar baz` + ` `
+   * - `foo;bar baz` -> `foo` + `bar baz`
+   * - `"foo;bar" baz` -> `"foo` + `bar" baz`
+   * - `"foo;bar";baz` -> `foo;bar` + `baz`
+   */
+  private parseRest (source: string, terminator: string): ParsedArg {
+    const quoteIndex = quoteStart.indexOf(source[0])
+    if (quoteIndex >= 0) {
+      const index = terminator && source.slice(1).indexOf(quoteEnd[quoteIndex] + terminator)
+      if (index >= 0) {
+        return {
+          quoted: true,
+          content: source.slice(1, index + 1),
+          rest: source.slice(index + 3).trimLeft(),
+        }
+      } else if (source.endsWith(quoteEnd[quoteIndex])) {
+        return {
+          quoted: true,
+          content: source.slice(1, -1),
+          rest: '',
+        }
+      }
+    }
+
+    const [content] = source.split(';', 1)
+    return {
+      content,
+      quoted: false,
+      rest: source.slice(content.length + 1).trimLeft(),
+    }
+  }
+
+  private parseValue (source: string | true, quoted: boolean, config = {} as CommandOption) {
+    // quoted empty string
+    if (source === '' && quoted) return ''
+    // no explicit parameter
+    if (source === true || source === '') {
+      if (config.default !== undefined) return config.default
+      if (config.isString) return ''
+      return true
+    }
+    // default behavior
+    if (config.isString) return source
+    const n = +source
+    return n * 0 === 0 ? n : source
+  }
+
+  parse (message: string, terminator = ''): ParsedLine {
     let rest = ''
     const source = `${this.name} ${message}`
     const args: string[] = []
-    const unknown: string[] = []
     const options: Record<string, any> = {}
 
     const handleOption = (name: string, knownValue: any, unknownValue: any) => {
@@ -396,23 +439,21 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
           options[alias] = !config.negated.includes(alias) && knownValue
         }
       } else {
-        // unknown option name
         options[camelCase(name)] = unknownValue
-        if (!unknown.includes(name)) {
-          unknown.push(name)
-        }
       }
     }
 
     while (message) {
       // long argument
       if (message[0] !== '-' && this._arguments[args.length]?.noSegment) {
-        args.push(parseRest(message))
+        const arg0 = this.parseRest(source, terminator)
+        args.push(arg0.content)
+        rest = arg0.rest
         break
       }
 
       // parse argv0
-      let arg0 = parseArg0(message)
+      let arg0 = this.parseArg(message, terminator)
       let arg = arg0.content
       message = arg0.rest
 
@@ -426,12 +467,6 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
         if (arg[0] !== '-' || arg0.quoted) {
           args.push(arg)
           continue
-        }
-
-        // rest part
-        if (arg === '--') {
-          rest = parseRest(arg0.rest)
-          break
         }
 
         // find -
@@ -460,10 +495,12 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
       // get parameter
       let quoted = false
       if (!param && option && option.noSegment) {
-        param = parseRest(arg0.rest)
+        arg0 = this.parseRest(arg0.rest, terminator)
+        param = arg0.content
+        rest = arg0.rest
         message = ''
       } else if (!param && message.charCodeAt(0) !== 45 && (!option || !option.isBoolean)) {
-        arg0 = parseArg0(message)
+        arg0 = this.parseArg(message, terminator)
         param = arg0.content
         quoted = arg0.quoted
         message = arg0.rest
@@ -473,7 +510,7 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
       for (let j = 0; j < names.length; j++) {
         const name = names[j]
         const config = this._optionMap[name]
-        const value = parseValue(j + 1 < names.length || param, quoted, config)
+        const value = this.parseValue(j + 1 < names.length || param, quoted, config)
         handleOption(name, value, value)
       }
     }
@@ -485,14 +522,18 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
       }
     }
 
-    return { options, rest, unknown, args, source }
+    return { rest, options, args, source }
   }
 
   stringify (argv: ParsedCommandLine) {
     let output = this.name
     const optionSet = new Set<string>()
     for (let key in argv.options) {
-      if (key in this._optionMap) key = this._optionMap[key].shortest
+      if (key === 'rest') {
+        key = '--'
+      } else if (key in this._optionMap) {
+        key = this._optionMap[key].shortest
+      }
       if (optionSet.has(key)) continue
       optionSet.add(key)
       const value = argv.options[key]
@@ -505,7 +546,6 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
     for (const arg of argv.args) {
       output += arg.includes(' ') ? ` "${arg}"` : ` ${arg}`
     }
-    if (argv.rest) output += ` -- ${argv.rest}`
     return output
   }
 
@@ -513,9 +553,6 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
     argv.command = this
     if (!argv.options) argv.options = {}
     if (!argv.args) argv.args = []
-    if (!argv.unknown) {
-      argv.unknown = Object.keys(argv.options).filter(key => !this._optionMap[key])
-    }
 
     let state = 'before command'
     const { next = noop } = argv
@@ -534,7 +571,7 @@ export class Command<U extends UserField = never, G extends GroupField = never> 
       state = 'executing command'
       await this._action(argv, ...argv.args)
       state = 'after command'
-      return this.app.serialize(argv.meta, 'command', argv)
+      await this.app.serialize(argv.meta, 'command', argv)
     } catch (error) {
       if (!state) throw error
       if (!types.isNativeError(error)) {

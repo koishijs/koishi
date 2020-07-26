@@ -61,12 +61,13 @@ export const name = 'schedule'
 export function apply (ctx: Context) {
   const { database } = ctx.app
 
-  ctx.command('schedule [time] -- <command>', '设置定时命令', { authority: 3, checkUnknown: true })
+  ctx.command('schedule [time]', '设置定时命令', { authority: 3, checkUnknown: true })
+    .option('--, --rest <command...>', '要执行的指令')
     .option('/, --interval <interval>', '设置触发的间隔秒数', { authority: 4, isString: true })
     .option('-l, --list', '查看已经设置的日程')
     .option('-L, --full-list', '查看全部上下文中已经设置的日程', { authority: 4 })
     .option('-d, --delete <id>', '删除已经设置的日程')
-    .action(async ({ meta, options, rest }, ...dateSegments) => {
+    .action(async ({ meta, options }, ...dateSegments) => {
       if (options.delete) {
         await database.removeSchedule(options.delete)
         return meta.$send(`日程 ${options.delete} 已删除。`)
@@ -85,7 +86,7 @@ export function apply (ctx: Context) {
         }).join('\n'))
       }
 
-      if (!rest) return meta.$send('请输入要执行的指令。')
+      if (!options.rest) return meta.$send('请输入要执行的指令。')
 
       const time = parseDate(dateSegments.join('-'))
       if (Number.isNaN(+time)) {
@@ -97,7 +98,7 @@ export function apply (ctx: Context) {
         return meta.$send('请输入合法的时间间隔。')
       }
 
-      const schedule = await database.createSchedule(time, ctx.app.selfId, interval, rest, meta)
+      const schedule = await database.createSchedule(time, ctx.app.selfId, interval, options.rest, meta)
       await meta.$send(`日程已创建，编号为 ${schedule.id}。`)
       return inspectSchedule(schedule)
     })

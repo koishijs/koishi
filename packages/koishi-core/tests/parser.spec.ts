@@ -1,5 +1,5 @@
 import { App, Command, ParsedLine } from 'koishi-core'
-import { errors } from '../src/messages'
+import { errors } from '../src/shared'
 
 const app = new App()
 
@@ -90,24 +90,6 @@ describe('options', () => {
     result = cmd2.parse('-ad 456')
     expect(result.options).toMatchObject({ a: '', b: 1000, d: 456 })
   })
-})
-
-describe('user fields', () => {
-  const cmd = app.command('cmd-user-fields')
-  expect(cmd._userFields).toHaveProperty('size', 0)
-  cmd.userFields(['id'])
-  expect(cmd._userFields).toHaveProperty('size', 1)
-  cmd.userFields(new Set(['id', 'authority']))
-  expect(cmd._userFields).toHaveProperty('size', 2)
-})
-
-describe('group fields', () => {
-  const cmd = app.command('cmd-group-fields')
-  expect(cmd._groupFields).toHaveProperty('size', 0)
-  cmd.groupFields(['id', 'assignee'])
-  expect(cmd._groupFields).toHaveProperty('size', 2)
-  cmd.groupFields(new Set(['id', 'flag']))
-  expect(cmd._groupFields).toHaveProperty('size', 3)
 })
 
 describe('edge cases', () => {
