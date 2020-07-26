@@ -66,6 +66,11 @@ export default function apply (ctx: Context) {
     return options.review ? review(dialogues, argv) : revert(dialogues, argv)
   })
 
+  ctx.on('dialogue/before-detail', async (argv) => {
+    if (argv.options.modify) return
+    await argv.ctx.parallelize('dialogue/search', argv, {}, argv.dialogues)
+  })
+
   ctx.on('dialogue/detail-short', ({ _type, _timestamp }, output) => {
     if (_type) {
       output.unshift(`${_type}-${formatTimeShort(Date.now() - _timestamp)}`)

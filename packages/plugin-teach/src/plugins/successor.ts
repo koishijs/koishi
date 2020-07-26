@@ -178,12 +178,6 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  // get successors
-  ctx.on('dialogue/before-detail', async (argv) => {
-    if (argv.options.modify) return
-    await attachSuccessors(argv, argv.dialogues)
-  })
-
   async function attachSuccessors (argv: Dialogue.Argv, dialogues: Dialogue[], test: DialogueTest = {}) {
     const dMap = argv.dialogueMap
     const predecessors = dialogues.filter((dialogue) => {

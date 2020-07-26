@@ -91,6 +91,8 @@ export function apply (ctx: Context) {
       const time = parseDate(dateSegments.join('-'))
       if (Number.isNaN(+time)) {
         return meta.$send('请输入合法的日期。')
+      } else if (!options.interval && +time <= Date.now()) {
+        return meta.$send('不能指定过去的时间为起始时间。')
       }
 
       const interval = parseTime(options.interval)

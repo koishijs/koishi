@@ -5,6 +5,7 @@ import { RegExpValidator } from 'regexpp'
 import { Logger } from 'koishi-utils'
 import { types } from 'util'
 import leven from 'leven'
+import { formatQuestionAnswers } from './search'
 
 class RegExpError extends Error {
   name = 'RegExpError'
@@ -190,6 +191,12 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   ctx.on('dialogue/validate', ({ options }) => {
     if (options.redirectDialogue) {
       options.answer = `%{dialogue ${options.answer}}`
+    }
+  })
+
+  ctx.on('dialogue/detail', async (dialogue, output, argv) => {
+    if (dialogue._redirections.length) {
+      output.push('重定向到：', ...formatQuestionAnswers(argv, dialogue._redirections))
     }
   })
 }

@@ -128,6 +128,7 @@ export class Context {
     const tasks: Promise<any>[] = []
     const meta = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
+    this.logger('hook').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(meta)) continue
       tasks.push(callback.apply(meta, args))
@@ -146,6 +147,7 @@ export class Context {
   async serialize (...args: any[]) {
     const meta = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
+    this.logger('hook').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(meta)) continue
       const result = await callback.apply(this, args)
