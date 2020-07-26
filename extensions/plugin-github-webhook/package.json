@@ -33,11 +33,11 @@
     "webhook"
   ],
   "devDependencies": {
-    "@types/node": "^14.0.22",
-    "@types/jest": "^26.0.4",
-    "@typescript-eslint/eslint-plugin": "^3.6.0",
-    "@typescript-eslint/parser": "^3.6.0",
-    "eslint": "^7.4.0",
+    "@types/node": "^14.0.26",
+    "@types/jest": "^26.0.7",
+    "@typescript-eslint/eslint-plugin": "^3.7.0",
+    "@typescript-eslint/parser": "^3.7.0",
+    "eslint": "^7.5.0",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-node": "^11.1.0",
@@ -45,13 +45,13 @@
     "eslint-plugin-standard": "^4.0.1",
     "jest": "^26.1.0",
     "koishi-test-utils": "^4.0.0-alpha.36",
-    "ts-jest": "^26.1.1",
-    "typescript": "^3.9.6"
+    "ts-jest": "^26.1.3",
+    "typescript": "^3.9.7"
   },
   "peerDependencies": {
     "koishi-core": "^2.0.0-alpha.36"
   },
   "dependencies": {
-    "@octokit/webhooks": "^7.6.4"
+    "@octokit/webhooks": "^7.6.5"
   }
 }

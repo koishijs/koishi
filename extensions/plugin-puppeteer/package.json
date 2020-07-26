@@ -42,6 +42,6 @@
   "dependencies": {
     "koishi-core": "^2.0.0-alpha.36",
     "koishi-utils": "^2.1.1",
-    "puppeteer-core": "^5.0.0"
+    "puppeteer-core": "^5.2.1"
   }
 }
