@@ -1,6 +1,6 @@
 import { performance } from 'perf_hooks'
 import { isInteger } from 'koishi-utils'
-import { fork } from 'child_process'
+import { fork, ChildProcess } from 'child_process'
 import { resolve } from 'path'
 import { CAC } from 'cac'
 import kleur from 'kleur'
@@ -11,8 +11,18 @@ interface WorkerOptions {
   '--'?: string[]
 }
 
+let child: ChildProcess
+
+process.on('SIGINT', () => {
+  if (child) {
+    child.emit('SIGINT')
+  } else {
+    process.exit()
+  }
+})
+
 function createWorker (options: WorkerOptions) {
-  const child = fork(resolve(__dirname, 'worker'), [], {
+  child = fork(resolve(__dirname, 'worker'), [], {
     execArgv: options['--'],
   })
 
