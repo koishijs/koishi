@@ -1,7 +1,7 @@
-import { onApp, Meta, UserData, Command, UserField, ParsedCommandLine, CommandConfig } from '..'
+import { onApp, Meta, UserData, Command, UserField, ParsedCommandLine } from '..'
 import { messages } from '../shared'
 import { format } from 'util'
-import { getDateNumber } from 'koishi-utils'
+import { getDateNumber, hyphenate } from 'koishi-utils'
 
 declare module '../context' {
   interface EventMap {
@@ -111,7 +111,7 @@ onApp((app) => {
 
     // check unknown options
     if (command.config.checkUnknown) {
-      const unknown = Object.keys(options).filter(key => !command['_optionMap'][key])
+      const unknown = Object.keys(options).map(hyphenate).filter(key => !command['_optionMap'][key])
       if (unknown.length) {
         return sendHint(meta, messages.UNKNOWN_OPTIONS, unknown.join(', '))
       }
