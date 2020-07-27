@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import { difference, deduplicate, sleep, pick, isInteger, parseTime, formatTime } from 'koishi-utils'
-import { Dialogue, DialogueFlag, prepareTargets, sendResult, split, isDialogueIdList } from './database'
+import { Dialogue, DialogueFlag, prepareTargets, sendResult, split, RE_DIALOGUES } from './database'
 import { getDetails, formatDetails, formatAnswer, formatQuestionAnswers } from './search'
 
 declare module 'koishi-core/dist/context' {
@@ -29,7 +29,7 @@ export default function apply (ctx: Context) {
     .option('-V, --revert', '回退最近的修改')
     .option('-l, --include-last [count]', { isString: true, validate: isIntegerOrInterval })
     .option('-L, --exclude-last [count]', { isString: true, validate: isIntegerOrInterval })
-    .option('--target <ids>', '查看或修改已有问题', { isString: true, validate: isDialogueIdList })
+    .option('--target <ids>', '查看或修改已有问题', { isString: true, validate: RE_DIALOGUES })
     .option('-r, --remove', '彻底删除问答')
 
   ctx.before('dialogue/execute', (argv) => {

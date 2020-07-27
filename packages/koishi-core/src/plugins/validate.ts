@@ -36,7 +36,7 @@ declare module '../command' {
   }
 
   interface OptionConfig {
-    validate? (value: any): void | string | boolean
+    validate?: RegExp | ((value: any) => void | string | boolean)
   }
 }
 
@@ -129,7 +129,9 @@ onApp((app) => {
 
     for (const option of command._options) {
       if (!option.validate || !(option.longest in options)) continue
-      const result = option.validate(options[option.longest])
+      const result = typeof option.validate !== 'function'
+        ? !option.validate.test(options[option.longest])
+        : option.validate(options[option.longest])
       if (result) {
         return sendHint(meta, messages.INVALID_OPTION, option.rawName, result === true ? messages.CHECK_SYNTAX : result)
       }

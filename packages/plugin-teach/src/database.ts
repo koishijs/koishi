@@ -272,10 +272,5 @@ export function isZeroToOne (value: number) {
   return value < 0 || value > 1 ? '应为不超过 1 的正数。' : ''
 }
 
-export function isGroupIdList (value: any) {
-  return !/^\d+(,\d+)*$/.test(value)
-}
-
-export function isDialogueIdList (value: any) {
-  return !/^\d+(\.\.\d+)?(,\d+(\.\.\d+)?)*$/.test(value)
-}
+export const RE_GROUPS = /^\d+(,\d+)*$/
+export const RE_DIALOGUES = /^\d+(\.\.\d+)?(,\d+(\.\.\d+)?)*$/

@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference } from 'koishi-utils'
-import { equal, split, prepareTargets, isDialogueIdList, parseTeachArgs, isPositiveInteger, Dialogue, DialogueFlag, useFlag, DialogueTest } from '../database'
+import { equal, split, prepareTargets, RE_DIALOGUES, parseTeachArgs, isPositiveInteger, Dialogue, DialogueFlag, useFlag, DialogueTest } from '../database'
 import { formatQuestionAnswers } from '../search'
 
 declare module '../receiver' {
@@ -41,10 +41,10 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   const { successorTimeout = 20000 } = config
 
   ctx.command('teach')
-    .option('<, --set-pred <ids>', '设置前置问题', { isString: true, validate: isDialogueIdList })
-    .option('<<, --add-pred <ids>', '添加前置问题', { isString: true, validate: isDialogueIdList })
-    .option('>, --set-succ <ids>', '设置后继问题', { isString: true, validate: isDialogueIdList })
-    .option('>>, --add-succ <ids>', '添加后继问题', { isString: true, validate: isDialogueIdList })
+    .option('<, --set-pred <ids>', '设置前置问题', { isString: true, validate: RE_DIALOGUES })
+    .option('<<, --add-pred <ids>', '添加前置问题', { isString: true, validate: RE_DIALOGUES })
+    .option('>, --set-succ <ids>', '设置后继问题', { isString: true, validate: RE_DIALOGUES })
+    .option('>>, --add-succ <ids>', '添加后继问题', { isString: true, validate: RE_DIALOGUES })
     .option('>#, --create-successor <op...>', '创建并添加后继问答')
     .option('-z, --successor-timeout [time]', '设置允许触发后继的时间', { validate: isPositiveInteger })
     .option('-c, --context', '允许后继问答被任何人触发')
