@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-chess",
   "description": "Chess Plugin for Koishi",
-  "version": "2.0.0-alpha.36",
+  "version": "2.0.0-alpha.37",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -32,9 +32,9 @@
     "chess",
     "game"
   ],
-  "dependencies": {
-    "koishi-core": "^2.0.0-alpha.38",
-    "koishi-plugin-puppeteer": "^1.0.0-alpha.37",
-    "koishi-utils": "^2.1.1"
+  "peerDependencies": {
+    "koishi-core": "^2.0.0-alpha.39",
+    "koishi-plugin-puppeteer": "^1.0.0-alpha.38",
+    "koishi-utils": "^2.1.2"
   }
 }

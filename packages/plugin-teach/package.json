@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-teach",
   "description": "Teach plugin for Koishi",
-  "version": "1.0.0-alpha.58",
+  "version": "1.0.0-alpha.59",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -36,14 +36,14 @@
   ],
   "devDependencies": {
     "koishi-database-level": "^2.0.0-alpha.38",
-    "koishi-database-memory": "^2.0.0-alpha.38",
-    "koishi-database-mysql": "^2.0.0-alpha.38",
-    "koishi-test-utils": "^4.0.0-alpha.38"
+    "koishi-database-memory": "^2.0.0-alpha.39",
+    "koishi-database-mysql": "^2.0.0-alpha.39",
+    "koishi-test-utils": "^4.0.0-alpha.39"
   },
   "dependencies": {
     "escape-string-regexp": "^4.0.0",
-    "koishi-core": "^2.0.0-alpha.38",
-    "koishi-utils": "^2.1.1",
+    "koishi-core": "^2.0.0-alpha.39",
+    "koishi-utils": "^2.1.2",
     "leven": "^3.1.0",
     "regexpp": "^3.1.0"
   }
