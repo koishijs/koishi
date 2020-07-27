@@ -217,7 +217,7 @@ export function split (source: string) {
 }
 
 export function equal (array1: (string | number)[], array2: (string | number)[]) {
-  return array1.sort().join() === array2.sort().join()
+  return array1.slice().sort().join() === array2.slice().sort().join()
 }
 
 export function prepareTargets (argv: Dialogue.Argv, dialogues = argv.dialogues) {

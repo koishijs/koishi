@@ -93,10 +93,13 @@ const cheatSheet = ({ $user: { authority } }: Meta<'authority'>) => `\
 
 export const name = 'teach'
 
+//                      $1  $2
+const teachRegExp = /^#(#?)((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|#?)(\s+|$)/
+
 export function apply (ctx: Context, config: Dialogue.Config = {}) {
   ctx.on('parse', (source, meta, forced) => {
     if (forced && meta.$parsed.prefix) return
-    const capture = source.match(/^#((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|##?)(\s+|$)/)
+    const capture = source.match(teachRegExp)
     if (!capture) return
 
     const command = ctx.command('teach')
@@ -104,16 +107,18 @@ export function apply (ctx: Context, config: Dialogue.Config = {}) {
     const { options, args, rest } = command.parse(message)
     const argv: ParsedArgv = { options, args, meta, command, source, rest }
 
-    if (capture[1].startsWith('#')) {
+    if (capture[1] === '#') {
       options.search = true
-      if (capture[1].startsWith('##')) {
+      if (capture[2] === '#') {
         options.autoMerge = true
         options.x = options.regexp = true
       }
-    } else if (capture[1]) {
-      options.target = capture[1]
-    } else if (!message) {
+    } else if (!capture[2] && !message) {
       options.help = true
+    }
+
+    if (capture[2] && capture[2] !== '#') {
+      options.target = capture[2]
     }
 
     parseTeachArgs(argv)

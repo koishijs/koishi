@@ -1,7 +1,7 @@
 import { Context } from 'koishi-core'
 import { difference, deduplicate, sleep, pick, isInteger, parseTime, formatTime } from 'koishi-utils'
 import { Dialogue, DialogueFlag, prepareTargets, sendResult, split, isDialogueIdList } from './database'
-import { getDetails, formatDetails, formatAnswer } from './search'
+import { getDetails, formatDetails, formatAnswer, formatQuestionAnswers } from './search'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -135,10 +135,10 @@ async function revert (dialogues: Dialogue[], argv: Dialogue.Argv) {
 export async function update (argv: Dialogue.Argv) {
   const { ctx, meta, options, target, config } = argv
   const { maxShownDialogues = 10, detailInterval = 500 } = config
-  const { revert, review, remove } = options
+  const { revert, review, remove, search } = options
 
-  options.modify = !review && Object.keys(options).length
-  if (!options.modify && target.length > maxShownDialogues) {
+  options.modify = !review && !search && Object.keys(options).length
+  if (!options.modify && !search && target.length > maxShownDialogues) {
     return meta.$send(`一次最多同时预览 ${maxShownDialogues} 个问答。`)
   }
 
@@ -149,6 +149,10 @@ export async function update (argv: Dialogue.Argv) {
     ? Object.values(pick(Dialogue.history, target)).filter(Boolean)
     : await Dialogue.fromIds(target, argv.ctx)
   argv.dialogueMap = Object.fromEntries(dialogues.map(d => [d.id, { ...d }]))
+
+  if (search) {
+    return meta.$send(formatQuestionAnswers(argv, dialogues).join('\n'))
+  }
 
   const actualIds = argv.dialogues.map(d => d.id)
   argv.unknown = difference(target, actualIds)

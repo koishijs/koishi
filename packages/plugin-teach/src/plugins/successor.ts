@@ -235,8 +235,9 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/list', ({ _successors }, output, prefix, argv) => {
-    if (!_successors) return
-    output.push(...formatQuestionAnswers(argv, _successors, prefix + '> '))
+    if (_successors) {
+      output.push(...formatQuestionAnswers(argv, _successors, prefix + '> '))
+    }
   })
 
   ctx.on('dialogue/state', (state) => {
