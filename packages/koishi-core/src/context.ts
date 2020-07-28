@@ -128,7 +128,7 @@ export class Context {
     const tasks: Promise<any>[] = []
     const meta = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    this.logger('hook').debug(name)
+    this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(meta)) continue
       tasks.push(callback.apply(meta, args))
@@ -147,7 +147,7 @@ export class Context {
   async serialize (...args: any[]) {
     const meta = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    this.logger('hook').debug(name)
+    this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(meta)) continue
       const result = await callback.apply(this, args)
@@ -160,6 +160,7 @@ export class Context {
   bail (...args: any[]) {
     const meta = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
+    this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(meta)) continue
       const result = callback.apply(this, args)
@@ -174,6 +175,7 @@ export class Context {
   addListener <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
     this.app._hooks[name] = this.app._hooks[name] || []
     this.app._hooks[name].push([this, listener])
+    this.logger('hook').debug(name, this.app._hooks[name].length)
     return () => this.off(name, listener)
   }
 
@@ -184,6 +186,7 @@ export class Context {
   prependListener <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
     this.app._hooks[name] = this.app._hooks[name] || []
     this.app._hooks[name].unshift([this, listener])
+    this.logger('hook').debug(name, this.app._hooks[name].length)
     return () => this.off(name, listener)
   }
 
