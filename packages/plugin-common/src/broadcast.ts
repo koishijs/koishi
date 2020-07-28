@@ -1,4 +1,4 @@
-import { Context, appMap, GroupFlag, Sender, appList } from 'koishi-core'
+import { Context, GroupFlag, CQSender } from 'koishi-core'
 import { sleep } from 'koishi-utils'
 import axios from 'axios'
 
@@ -8,15 +8,21 @@ declare module 'koishi-core/dist/app' {
   }
 }
 
+declare module 'koishi-core/dist/context' {
+  interface Context {
+    broadcast (message: string, forced?: boolean): Promise<void>
+  }
+}
+
 declare module 'koishi-core/dist/sender' {
-  interface Sender {
+  interface CQSender {
     sendGroupMsgAsync (groups: number[], message: string, autoEscape?: boolean): Promise<void>
     sendGroupMsgAsync (groupId: number | number[], message: string, autoEscape?: boolean): Promise<void>
   }
 }
 
-const { sendGroupMsgAsync } = Sender.prototype
-Sender.prototype.sendGroupMsgAsync = async function (this: Sender, group: number | number[], message: string, autoEscape = false) {
+const { sendGroupMsgAsync } = CQSender.prototype
+CQSender.prototype.sendGroupMsgAsync = async function (this: CQSender, group: number | number[], message: string, autoEscape = false) {
   if (typeof group === 'number') return sendGroupMsgAsync.call(this, group, message, autoEscape)
   const { broadcastInterval = 1000 } = this.app.options
   for (let index = 0; index < group.length; index++) {
@@ -25,7 +31,7 @@ Sender.prototype.sendGroupMsgAsync = async function (this: Sender, group: number
   }
 }
 
-export async function broadcast (message: string, forced = false) {
+Context.prototype.broadcast = async function (this: Context, message, forced) {
   let output = ''
   let capture: RegExpExecArray
   while (capture = imageRE.exec(message)) {
@@ -37,7 +43,7 @@ export async function broadcast (message: string, forced = false) {
   }
   message = output + message
 
-  const groups = await appList[0].database.getAllGroups(['id', 'assignee', 'flag'])
+  const groups = await this.database.getAllGroups(['id', 'assignee', 'flag'])
   const assignMap: Record<number, number[]> = {}
   for (const { id, assignee, flag } of groups) {
     if (!forced && (flag & GroupFlag.noEmit)) continue
@@ -48,7 +54,9 @@ export async function broadcast (message: string, forced = false) {
     }
   }
 
-  await Promise.all(Object.entries(assignMap).map(([id, groups]) => appMap[+id].sender.sendGroupMsgAsync(groups, message)))
+  await Promise.all(Object.entries(assignMap).map(([id, groups]) => {
+    return this.app.bots[+id].sender.sendGroupMsgAsync(groups, message)
+  }))
 }
 
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
@@ -61,13 +69,13 @@ export default function apply (ctx: Context) {
       if (!message) return meta.$send('请输入要发送的文本。')
 
       if (options.only) {
-        let groups = await ctx.database.getAllGroups(['id', 'flag'], [ctx.app.selfId])
+        let groups = await ctx.database.getAllGroups(['id', 'flag'], [meta.selfId])
         if (!options.forced) {
           groups = groups.filter(g => !(g.flag & GroupFlag.noEmit))
         }
-        return ctx.sender.sendGroupMsgAsync(groups.map(g => g.id), message)
+        return ctx.sender(meta.selfId).sendGroupMsgAsync(groups.map(g => g.id), message)
       }
 
-      return broadcast(message, options.forced)
+      return ctx.broadcast(message, options.forced)
     })
 }

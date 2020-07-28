@@ -17,16 +17,16 @@ export default function apply (ctx: App, options: HandlerOptions = {}) {
 
   ctx.on('request/friend', async (meta) => {
     const result = await getHandleResult(handleFriend, meta, ctx)
-    return result !== undefined && ctx.sender.setFriendAddRequestAsync(meta.flag, result as any)
+    return result !== undefined && ctx.sender(meta.selfId).setFriendAddRequestAsync(meta.flag, result as any)
   })
 
   ctx.on('request/group/add', async (meta) => {
     const result = await getHandleResult(handleGroupAdd, meta, ctx)
-    return result !== undefined && ctx.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, result as any)
+    return result !== undefined && ctx.sender(meta.selfId).setGroupAddRequestAsync(meta.flag, meta.subType as any, result as any)
   })
 
   ctx.on('request/group/invite', async (meta) => {
     const result = await getHandleResult(handleGroupInvite, meta, ctx)
-    return result !== undefined && ctx.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, result as any)
+    return result !== undefined && ctx.sender(meta.selfId).setGroupAddRequestAsync(meta.flag, meta.subType as any, result as any)
   })
 }

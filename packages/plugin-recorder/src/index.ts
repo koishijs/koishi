@@ -24,7 +24,7 @@ export const name = 'recorder'
 
 export function apply (ctx: Context, options: RecorderOptions = {}) {
   async function handleMessage (meta: Meta<never, 'assignee'>) {
-    if (meta.$ctxType !== 'group' || meta.postType === 'message' && meta.$group.assignee !== ctx.app.selfId) return
+    if (meta.$ctxType !== 'group' || meta.postType === 'message' && meta.$group.assignee !== meta.selfId) return
     if (await ctx.serialize('before-record', meta)) return
     const output = JSON.stringify(pick(meta, ['time', 'userId', 'message'])) + '\n'
     const path = resolve(cwd, options.folder || 'messages', `${meta.groupId}.txt`)
