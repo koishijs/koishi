@@ -1,7 +1,7 @@
 import escapeRegex from 'escape-string-regexp'
 import { Command, ShortcutConfig } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
-import { GroupFlag, UserFlag, createDatabase, DatabaseConfig, GroupField, UserField } from './database'
+import { GroupFlag, UserFlag, GroupField, UserField, Database } from './database'
 import { Bot, BotOptions, CQServer } from './server'
 import { Meta } from './meta'
 import { simplify } from 'koishi-utils'
@@ -14,7 +14,6 @@ export interface AppOptions {
   path?: string
   type?: CQServer.Type
   bots?: BotOptions[]
-  database?: DatabaseConfig
   prefix?: string | string[]
   nickname?: string | string[]
   retryTimes?: number
@@ -61,6 +60,7 @@ export class App extends Context {
   nicknameRE: RegExp
   status = Status.closed
 
+  _database: Database
   _commands: Command[] = []
   _commandMap: Record<string, Command> = {}
   _shortcuts: ShortcutConfig[] = []
@@ -79,12 +79,8 @@ export class App extends Context {
   constructor (options: AppOptions = {}) {
     super(appIdentifier, appScope)
     this.bots = options.bots
-
-    // resolve options
     options = this.options = { ...defaultOptions, ...options }
-    if (options.database && Object.keys(options.database).length) {
-      this.database = createDatabase(options.database)
-    }
+
     if (!options.type) {
       const { server } = options.bots[0]
       if (server) {
@@ -94,6 +90,7 @@ export class App extends Context {
         options.type = 'ws-reverse' as any
       }
     }
+
     const Server = CQServer.types[options.type]
     if (!Server) {
       throw new Error(
@@ -190,38 +187,24 @@ export class App extends Context {
     return this.createContext([[ids, null], [[], null], [[], null]])
   }
 
-  async start () {
-    this.status = Status.opening
-    await this.parallelize('before-connect')
-    const tasks: Promise<any>[] = []
-    if (this.database) {
-      for (const type in this.options.database) {
-        tasks.push(this.database[type]?.start?.())
-      }
-    }
-    await Promise.all(tasks)
-    this.status = Status.open
-    this.logger('app').debug('started')
-    this.emit('connect')
-    this._ready()
-  }
-
   _ready () {
     if (this._isReady || !this.bots.every(bot => bot.selfId)) return
     this._isReady = true
     this.emit('ready')
   }
 
+  async start () {
+    this.status = Status.opening
+    await this.parallelize('before-connect')
+    this.status = Status.open
+    this.logger('app').debug('started')
+    this.emit('connect')
+    this._ready()
+  }
+
   async stop () {
     this.status = Status.closing
     await this.parallelize('before-disconnect')
-    const tasks: Promise<any>[] = []
-    if (this.database) {
-      for (const type in this.options.database) {
-        tasks.push(this.database[type]?.stop?.())
-      }
-    }
-    await Promise.all(tasks)
     this.status = Status.closed
     this.logger('app').debug('stopped')
     this.emit('disconnect')

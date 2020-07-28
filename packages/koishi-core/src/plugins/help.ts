@@ -1,4 +1,4 @@
-import { Command, Context, UserData, Meta, onApp, UserField, GroupField, ParsedCommandLine, TableData } from '..'
+import { Command, Context, UserData, Meta, onApp, UserField, GroupField, ParsedCommandLine, Tables, TableType } from '..'
 import { getUsage, getUsageName, ValidationField } from './validate'
 
 export type CommandUsage <U extends UserField, G extends GroupField> = string | ((this: Command<U, G>, meta: Meta<U, G>) => string | Promise<string>)
@@ -60,8 +60,8 @@ onApp((app) => {
     return true
   })
 
-  function createCollector <T extends keyof TableData> (key: T) {
-    return function* (argv: ParsedCommandLine, fields: Set<keyof TableData[T]>) {
+  function createCollector <T extends TableType> (key: T) {
+    return function* (argv: ParsedCommandLine, fields: Set<keyof Tables[T]>) {
       const { args: [name] } = argv
       const command = app._commandMap[name] || app._shortcutMap[name]
       if (!command) return

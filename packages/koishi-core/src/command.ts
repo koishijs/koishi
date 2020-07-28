@@ -1,5 +1,5 @@
 import { Context, NextFunction } from './context'
-import { UserField, GroupField, TableData } from './database'
+import { UserField, GroupField, Tables, TableType } from './database'
 import { errors } from './shared'
 import { noop, camelCase } from 'koishi-utils'
 import { Meta } from './meta'
@@ -155,9 +155,9 @@ export class Command <U extends UserField = never, G extends GroupField = never>
     return this
   }
 
-  static collect <T extends keyof TableData> (argv: ParsedCommandLine, key: T, fields = new Set<keyof TableData[T]>()) {
+  static collect <T extends TableType> (argv: ParsedCommandLine, key: T, fields = new Set<keyof Tables[T]>()) {
     if (!argv) return
-    const values: ArgvInferred<keyof TableData[T]>[] = [
+    const values: ArgvInferred<keyof Tables[T]>[] = [
       ...this[`_${key}Fields`],
       ...argv.command[`_${key}Fields`],
     ]

@@ -43,11 +43,14 @@ const noopIdentifier = ContextScope.stringify(noopScope)
 
 export class Context {
   public app: App
-  public database: Database
 
   static readonly MIDDLEWARE_EVENT: unique symbol = Symbol('mid')
 
   constructor (public readonly identifier: string, private readonly _scope: ContextScope) {}
+
+  get database () {
+    return this.app._database
+  }
 
   [inspect.custom] () {
     return `Context <${this.identifier}>`
