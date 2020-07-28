@@ -1,55 +1,59 @@
 import ms from 'ms'
+import axios from 'axios'
 import type WebSocket from 'ws'
 import type Koa from 'koa'
 import type Router from 'koa-router'
 import {} from 'koa-bodyparser'
-import { Server as _Server } from 'http'
-import { emitter, errors } from './shared'
+import { Server } from 'http'
 import { createHmac } from 'crypto'
-import { camelCase, snakeCase, paramCase, CQCode, Logger, defineProperty } from 'koishi-utils'
-import { Meta, VersionInfo, ContextType } from './meta'
+import { camelCase, snakeCase, paramCase, Logger, defineProperty } from 'koishi-utils'
+import { Meta, ContextType } from './meta'
 import { App } from './app'
-import { CQResponse } from './sender'
-import { format } from 'util'
+import { CQSender, CQResponse } from './sender'
 
 const logger = Logger.create('server')
 
-export abstract class Server {
-  public appList: App[] = []
-  public version: VersionInfo
-  public appMap: Record<number, App> = {}
+export interface BotOptions {
+  token?: string
+  server?: string
+  selfId?: number
+}
+
+export interface Bot extends BotOptions {
+  sender?: CQSender
+}
+
+export abstract class CQServer {
+  public bots: Record<number, Bot> = {}
   public isListening = false
 
   public koa?: Koa
   public router?: Router
-  public server?: _Server
+  public server?: Server
   public socket?: WebSocket
 
   protected abstract _listen (): Promise<void>
   protected abstract _close (): void
 
-  constructor (app: App) {
-    this.bind(app)
-  }
-
-  /**
-   * representative app
-   */
-  get app () {
-    return this.appList[0]
+  constructor (public app: App) {
+    app.on('before-connect', this.listen.bind(this))
+    app.on('before-disconnect', this.close.bind(this))
+    for (const bot of app.options.bots) {
+      if (bot.selfId) {
+        this.bots[bot.selfId] = bot
+      }
+    }
   }
 
   protected prepareMeta (data: any) {
     const meta = camelCase<Meta>(data)
-    if (!meta.selfId) {
-      // below version 3.4
-      meta.selfId = this.app.selfId
-    } else if (!this.appMap[meta.selfId]) {
-      const app = this.appList.find(app => !app.options.selfId)
-      if (!app) return
-      app.prepare(meta.selfId)
+    if (!this.bots[meta.selfId]) {
+      const bot = this.app.bots.find(bot => !bot.selfId)
+      if (!bot) return
+      bot.selfId = meta.selfId
+      this.app.prepare()
+      this.app._ready()
     }
-    meta.$app = this.appMap[meta.selfId]
     return new Meta(meta)
   }
 
@@ -67,11 +71,6 @@ export abstract class Server {
       ctxId = meta.userId
     }
 
-    // polyfill array format of post message
-    if (Array.isArray(meta.message)) {
-      meta.message = CQCode.stringifyAll(meta.message)
-    }
-
     // prepare events
     const events: string[] = []
     if (meta.postType === 'message' || meta.postType === 'send') {
@@ -83,9 +82,12 @@ export abstract class Server {
     } else {
       events.push(meta.metaEventType)
     }
-    if (meta.subType) events.unshift(events[0] + '/' + meta.subType)
+    if (meta.subType) {
+      events.unshift(events[0] + '/' + meta.subType)
+    }
 
     // generate path
+    meta.$app = this.app
     meta.$ctxId = ctxId
     meta.$ctxType = ctxType
 
@@ -93,25 +95,10 @@ export abstract class Server {
   }
 
   dispatchMeta (meta: Meta) {
-    const app = this.appMap[meta.selfId]
     const events = this.parseMeta(meta)
     for (const event of events) {
-      app.emit(meta, paramCase(event) as any, meta)
+      this.app.emit(meta, paramCase<any>(event), meta)
     }
-  }
-
-  bind (app: App) {
-    this.appList.push(app)
-    if (app.options.selfId) {
-      this.appMap[app.options.selfId] = app
-    }
-    return this
-  }
-
-  versionLessThan (major: number, minor: number = 0, patch: number = 0) {
-    const { pluginMajorVersion, pluginMinorVersion, pluginPatchVersion } = this.version
-    return pluginMajorVersion < major || pluginMajorVersion === major &&
-      (pluginMinorVersion < minor || pluginMinorVersion === minor && pluginPatchVersion < patch)
   }
 
   async listen () {
@@ -119,9 +106,6 @@ export abstract class Server {
     this.isListening = true
     try {
       await this._listen()
-      if (this.versionLessThan(4)) {
-        throw new Error(errors.UNSUPPORTED_CQHTTP_VERSION)
-      }
     } catch (error) {
       this.close()
       throw error
@@ -129,13 +113,12 @@ export abstract class Server {
   }
 
   close () {
-    this.version = undefined
     this.isListening = false
     this._close()
   }
 }
 
-export class HttpServer extends Server {
+class HttpServer extends CQServer {
   constructor (app: App) {
     super(app)
 
@@ -156,12 +139,11 @@ export class HttpServer extends Server {
         if (signature !== `sha1=${sig}`) return ctx.status = 403
       }
 
-      // no matched application
       logger.debug('receive %o', ctx.request.body)
       const meta = this.prepareMeta(ctx.request.body)
       if (!meta) return ctx.status = 403
 
-      const { quickOperationTimeout } = this.appMap[meta.selfId].options
+      const { quickOperationTimeout } = this.app.options
       if (quickOperationTimeout > 0) {
         // bypass koa's built-in response handling for quick operations
         ctx.respond = false
@@ -190,11 +172,24 @@ export class HttpServer extends Server {
     logger.debug('http server opening')
     const { port } = this.app.options
     this.server = this.koa.listen(port)
-    try {
-      this.version = await this.app.sender.getVersionInfo()
-    } catch (error) {
-      throw new Error('authorization failed')
-    }
+    await Promise.all(this.app.bots.map(async (bot) => {
+      const sender = new CQSender(this.app, bot)
+      sender._get = async (action, params) => {
+        const headers = {} as any
+        if (bot.token) {
+          headers.Authorization = `Token ${bot.token}`
+        }
+        const uri = new URL(action, bot.server).href
+        const { data } = await axios.get(uri, { params, headers })
+        return data
+      }
+      sender.info = await sender.getVersionInfo()
+      if (sender.versionLessThan(4)) {
+        throw new Error(
+          `your cqhttp version (${sender.info.pluginVersion}) is not compatible ` +
+          `with koishi, please upgrade your cqhttp to 4.0.0 or above.`)
+      }
+    }))
     logger.debug('http server listen to', port)
   }
 
@@ -206,7 +201,7 @@ export class HttpServer extends Server {
 
 let counter = 0
 
-export class WsClient extends Server {
+class WsClient extends CQServer {
   private _retryCount = 0
   private _listeners: Record<number, (response: CQResponse) => void> = {}
 
@@ -220,66 +215,76 @@ export class WsClient extends Server {
     })
   }
 
-  _listen (): Promise<void> {
-    const connect = (resolve: () => void, reject: (reason: Error) => void) => {
-      logger.debug('websocket client opening')
-      const headers: Record<string, string> = {}
-      const { token, server, retryInterval, retryTimes } = this.app.options
-      if (token) headers.Authorization = `Bearer ${token}`
-      this.socket = new (require('ws'))(server, { headers })
-
-      this.socket.on('error', error => logger.debug(error))
-
-      this.socket.once('close', (code) => {
-        if (!this.isListening || code === 1005) return
-
-        const message = `failed to connect to ${server}`
-        if (!retryInterval || this._retryCount >= retryTimes) {
-          return reject(new Error(message))
-        }
-
-        this._retryCount++
-        logger.debug(`${message}, will retry in ${ms(retryInterval)}...`)
-        setTimeout(() => {
-          if (this.isListening) connect(resolve, reject)
-        }, retryInterval)
-      })
-
-      this.socket.once('open', () => {
-        this._retryCount = 0
-
-        this.socket.send(JSON.stringify({
-          action: 'get_version_info',
-          echo: -1,
-        }), (error) => {
-          if (error) reject(error)
-        })
-
-        this.socket.on('message', (data) => {
-          data = data.toString()
-          logger.debug('receive', data)
-          let parsed: any
-          try {
-            parsed = JSON.parse(data)
-          } catch (error) {
-            return reject(new Error(data))
+  async _listen () {
+    await Promise.all(this.app.bots.map((bot) => {
+      const connect = (resolve: () => void, reject: (reason: Error) => void) => {
+        logger.debug('websocket client opening')
+        const headers: Record<string, string> = {}
+        const { token, server } = bot
+        const { retryInterval, retryTimes } = this.app.options
+        if (token) headers.Authorization = `Bearer ${token}`
+        this.socket = new (require('ws'))(server, { headers })
+  
+        this.socket.on('error', error => logger.debug(error))
+  
+        this.socket.once('close', (code) => {
+          if (!this.isListening || code === 1005) return
+  
+          const message = `failed to connect to ${server}`
+          if (!retryInterval || this._retryCount >= retryTimes) {
+            return reject(new Error(message))
           }
-
-          if ('post_type' in parsed) {
-            const meta = this.prepareMeta(parsed)
-            if (meta) this.dispatchMeta(meta)
-          } else if (parsed.echo === -1) {
-            this.version = camelCase(parsed.data)
-            logger.debug('connect to ws server:', this.app.options.server)
-            emitter.emit('ws-client', this.socket)
-            resolve()
-          } else {
-            this._listeners[parsed.echo]?.(parsed)
-          }
+  
+          this._retryCount++
+          logger.debug(`${message}, will retry in ${ms(retryInterval)}...`)
+          setTimeout(() => {
+            if (this.isListening) connect(resolve, reject)
+          }, retryInterval)
         })
-      })
-    }
-    return new Promise(connect)
+  
+        this.socket.once('open', () => {
+          this._retryCount = 0
+  
+          this.socket.send(JSON.stringify({
+            action: 'get_version_info',
+            echo: -1,
+          }), (error) => {
+            if (error) reject(error)
+          })
+  
+          this.socket.on('message', (data) => {
+            data = data.toString()
+            logger.debug('receive', data)
+            let parsed: any
+            try {
+              parsed = JSON.parse(data)
+            } catch (error) {
+              return reject(new Error(data))
+            }
+  
+            if ('post_type' in parsed) {
+              const meta = this.prepareMeta(parsed)
+              if (meta) this.dispatchMeta(meta)
+            } else if (parsed.echo === -1) {
+              const sender = bot.sender = new CQSender(this.app, bot)
+              sender.info = camelCase(parsed.data)
+              sender._get = (action, params) => this.send({ action, params })
+              if (sender.versionLessThan(4)) {
+                throw new Error(
+                  `your cqhttp version (${sender.info.pluginVersion}) is not compatible ` +
+                  `with koishi, please upgrade your cqhttp to 4.0.0 or above.`)
+              }
+              // TODO: check version
+              logger.debug('connect to ws server:', bot.server)
+              resolve()
+            } else {
+              this._listeners[parsed.echo]?.(parsed)
+            }
+          })
+        })
+      }
+      return new Promise(connect)
+    }))
   }
 
   _close () {
@@ -289,32 +294,11 @@ export class WsClient extends Server {
   }
 }
 
-export type ServerType = 'http' | 'ws' // 'ws-reverse'
+export namespace CQServer {
+  export type Type = keyof typeof types
 
-export const serverMap: Record<ServerType, Record<keyof any, Server>> = { http: {}, ws: {} }
-
-export function createServer (app: App) {
-  if (typeof app.options.type !== 'string') {
-    throw new Error(errors.UNSUPPORTED_SERVER_TYPE)
+  export const types = {
+    http: HttpServer,
+    ws: WsClient,
   }
-  app.options.type = app.options.type.toLowerCase() as any
-  let key: keyof any, Server: new (app: App) => Server
-  if (app.options.type === 'http') {
-    key = 'port'
-    Server = HttpServer
-  } else if (app.options.type === 'ws') {
-    key = 'server'
-    Server = WsClient
-  } else {
-    throw new Error(errors.UNSUPPORTED_SERVER_TYPE)
-  }
-  const servers = serverMap[app.options.type]
-  const value = app.options[key]
-  if (!value) {
-    throw new Error(format(errors.MISSING_CONFIGURATION, key))
-  }
-  if (value in servers) {
-    return servers[value].bind(app)
-  }
-  return servers[value] = new Server(app)
 }

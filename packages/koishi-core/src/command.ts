@@ -1,5 +1,5 @@
 import { Context, NextFunction } from './context'
-import { UserData, UserField, GroupField, TableData } from './database'
+import { UserField, GroupField, TableData } from './database'
 import { errors } from './shared'
 import { noop, camelCase } from 'koishi-utils'
 import { Meta } from './meta'

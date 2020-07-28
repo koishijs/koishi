@@ -1,7 +1,6 @@
 import { contain, union, intersection, difference, noop, Logger } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine, ParsedLine } from './command'
 import { Meta, contextTypes, getSessionId } from './meta'
-import { Sender } from './sender'
 import { App } from './app'
 import { Database, UserField, GroupField } from './database'
 import { errors } from './shared'
@@ -44,7 +43,6 @@ const noopIdentifier = ContextScope.stringify(noopScope)
 
 export class Context {
   public app: App
-  public sender: Sender
   public database: Database
 
   static readonly MIDDLEWARE_EVENT: unique symbol = Symbol('mid')
@@ -57,6 +55,10 @@ export class Context {
 
   logger (name: string) {
     return Logger.create(name)
+  }
+
+  sender (id: number) {
+    return this.app.server.bots[id].sender
   }
 
   inverse () {
@@ -303,7 +305,8 @@ export class Context {
   execute (message: string, meta: Meta, next?: NextFunction): Promise<ParsedCommandLine>
   async execute (...args: [ExecuteArgv] | [string, Meta, NextFunction?]) {
     const meta = typeof args[0] === 'string' ? args[1] : args[0].meta
-    if (!('$ctxType' in meta)) this.app.server.parseMeta(meta)
+    // TODO!
+    // if (!('$ctxType' in meta)) this.app.server.parseMeta(meta)
 
     let argv: ParsedCommandLine, next: NextFunction
     if (typeof args[0] === 'string') {
@@ -391,9 +394,9 @@ export interface EventMap {
   'after-middleware' (meta: Meta): void
   'new-command' (cmd: Command): void
   'ready' (): void
-  'before-connect' (): void
+  'before-connect' (): void | Promise<void>
   'connect' (): void
-  'before-disconnect' (): void
+  'before-disconnect' (): void | Promise<void>
   'disconnect' (): void
 }
 

@@ -1,9 +1,8 @@
-import { App, AppOptions, Context, Plugin, appList, startAll, onStart } from 'koishi-core'
+import { App, AppOptions, Context, Plugin } from 'koishi-core'
 import { resolve, dirname } from 'path'
 import { capitalize, Logger } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
-import { format } from 'util'
 
 const logger = Logger.create('app')
 const { version } = require('../package')
@@ -23,14 +22,6 @@ function handleException (error: any) {
 
 process.on('uncaughtException', handleException)
 
-export type PluginConfig = (string | Plugin<Context> | [string | Plugin<Context>, any?])[]
-
-export interface AppConfig extends AppOptions {
-  plugins?: PluginConfig | Record<string, PluginConfig>
-  logLevel?: number
-  logFilter?: Record<string, number>
-}
-
 const configFile = resolve(process.cwd(), process.env.KOISHI_CONFIG_FILE || 'koishi.config')
 const configDir = dirname(configFile)
 
@@ -48,7 +39,15 @@ function tryCallback <T> (callback: () => T) {
   }
 }
 
-const config: AppConfig | AppConfig[] = tryCallback(() => require(configFile))
+export type PluginConfig = (string | Plugin<Context> | [string | Plugin<Context>, any?])[]
+
+export interface AppConfig extends AppOptions {
+  plugins?: PluginConfig | Record<string, PluginConfig>
+  logLevel?: number
+  logFilter?: Record<string, number>
+}
+
+const config: AppConfig = tryCallback(() => require(configFile))
 
 if (!config) {
   throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
@@ -96,60 +95,42 @@ function loadPlugins (ctx: Context, plugins: PluginConfig) {
   }
 }
 
-function prepareApp (config: AppConfig) {
-  Object.assign(Logger.levels, config.logFilter)
-  if (config.logLevel && !process.env.KOISHI_LOG_LEVEL) {
-    Logger.baseLevel = config.logLevel
-  }
-
-  for (const name in config.database || {}) {
-    loadEcosystem('database', name)
-  }
-  const app = new App(config)
-  if (Array.isArray(config.plugins)) {
-    loadPlugins(app, config.plugins)
-  } else if (config.plugins && typeof config.plugins === 'object') {
-    for (const path in config.plugins) {
-      const ctx = app.createContext(path)
-      loadPlugins(ctx, config.plugins[path])
-    }
-  }
+Object.assign(Logger.levels, config.logFilter)
+if (config.logLevel && !process.env.KOISHI_LOG_LEVEL) {
+  Logger.baseLevel = config.logLevel
 }
 
-if (Array.isArray(config)) {
-  config.forEach(conf => prepareApp(conf))
-} else {
-  prepareApp(config)
+for (const name in config.database || {}) {
+  loadEcosystem('database', name)
 }
 
-onStart(() => {
-  const versions = new Set<string>()
-  const httpPorts = new Set<string>()
-  const wsServers = new Set<string>()
-  const httpServers = new Set<string>()
-  appList.forEach((app) => {
-    const { type, port, server } = app.options
-    const { coolqEdition, pluginVersion } = app.version
-    versions.add(`Koishi/${version} CoolQ/${capitalize(coolqEdition)} CQHTTP/${pluginVersion} `)
+const app = new App(config)
+
+// TODO: object format
+if (Array.isArray(config.plugins)) {
+  loadPlugins(app, config.plugins)
+}
+
+process.on('unhandledRejection', (error) => {
+  logger.warn(error)
+})
+
+app.start().then(() => {
+  const { type, port } = app.options
+  if (port) logger.info('server listening at %c', port)
+
+  app.bots.forEach((bot) => {
+    const { server } = bot
+    const { coolqEdition, pluginVersion } = bot.sender.info
     if (type === 'http') {
-      httpPorts.add(logger.format('server listening at %c', port))
-      if (server) httpServers.add(logger.format('connected to %c', server))
+      logger.info('connected to %c', server)
     } else {
-      wsServers.add(logger.format('connected to %c', server.replace(/^http/, 'ws')))
+      logger.info('connected to %c', server.replace(/^http/, 'ws'))
     }
+    logger.info(`Koishi/${version} CoolQ/${capitalize(coolqEdition)} CQHTTP/${pluginVersion}`)
   })
-  for (const textSet of [versions, httpPorts, wsServers, httpServers]) {
-    for (const text of textSet) {
-      logger.info(text)
-    }
-  }
+
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
   logger.success(`bot started successfully in ${time} ms.`)
   process.send({ type: 'start' })
-})
-
-process.on('unhandledRejection', (error) => {
-  logger.warn(format(error))
-})
-
-startAll().catch(handleException)
+}, handleException)

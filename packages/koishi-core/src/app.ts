@@ -1,9 +1,8 @@
 import escapeRegex from 'escape-string-regexp'
-import { Sender } from './sender'
-import { Server, createServer, ServerType } from './server'
 import { Command, ShortcutConfig } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
 import { GroupFlag, UserFlag, createDatabase, DatabaseConfig, GroupField, UserField } from './database'
+import { Bot, BotOptions, CQServer } from './server'
 import { Meta } from './meta'
 import { simplify } from 'koishi-utils'
 import { emitter, errors } from './shared'
@@ -11,12 +10,10 @@ import { types } from 'util'
 
 export interface AppOptions {
   port?: number
-  token?: string
   secret?: string
-  selfId?: number
-  server?: string
-  type?: ServerType
   path?: string
+  type?: CQServer.Type
+  bots?: BotOptions[]
   database?: DatabaseConfig
   prefix?: string | string[]
   nickname?: string | string[]
@@ -30,34 +27,7 @@ export interface AppOptions {
   groupCacheTimeout?: number
 }
 
-export const appMap: Record<number, App> = {}
-export const appList: App[] = []
-
-export const onStart = (callback: () => any) => emitter.on('start', callback)
-export const onStop = (callback: () => any) => emitter.on('stop', callback)
 export const onApp = (callback: (app: App) => any) => emitter.on('app', callback)
-
-export async function startAll () {
-  await Promise.all(appList.map(async app => app.start()))
-}
-
-export async function stopAll () {
-  await Promise.all(appList.map(async app => app.stop()))
-}
-
-const selfIds = new Set<number>()
-let getSelfIdsPromise: Promise<any>
-export async function getSelfIds () {
-  if (!getSelfIdsPromise) {
-    getSelfIdsPromise = Promise.all(appList.map(async (app) => {
-      if (app.selfId || !app.options.type) return
-      const info = await app.sender.getLoginInfo()
-      app.prepare(info.userId)
-    }))
-  }
-  await getSelfIdsPromise
-  return Array.from(selfIds)
-}
 
 export interface MajorContext extends Context {
   except (...ids: number[]): Context
@@ -83,8 +53,9 @@ export enum Status { closed, opening, open, closing }
 
 export class App extends Context {
   app = this
+  bots: Bot[]
   options: AppOptions
-  server: Server
+  server: CQServer
   atMeRE: RegExp
   prefixRE: RegExp
   nicknameRE: RegExp
@@ -103,26 +74,40 @@ export class App extends Context {
   private _middlewareCounter = 0
   private _middlewareSet = new Set<number>()
   private _contexts: Record<string, Context> = { [appIdentifier]: this }
+  private _getSelfIdsPromise: Promise<any>
 
   constructor (options: AppOptions = {}) {
     super(appIdentifier, appScope)
+    this.bots = options.bots
 
     // resolve options
-    this.options = { ...defaultOptions, ...options }
+    options = this.options = { ...defaultOptions, ...options }
     if (options.database && Object.keys(options.database).length) {
       this.database = createDatabase(options.database)
     }
-    if (!options.type && typeof options.server === 'string') {
-      this.options.type = this.options.server.split(':', 1)[0] as any
+    if (!options.type) {
+      const { server } = options.bots[0]
+      if (server) {
+        options.type = server.split(':', 1)[0] as any
+      } else if (options.port) {
+        // TODO ws reverse support
+        options.type = 'ws-reverse' as any
+      }
     }
-    if (this.options.type) {
-      this.server = createServer(this)
-      this.sender = new Sender(this)
+    const Server = CQServer.types[options.type]
+    if (!Server) {
+      throw new Error(
+        `unsupported server type "${options.type}", expect ` +
+        Object.keys(CQServer.types).map(type => `"${type}"`).join(', '))
     }
+    this.server = new Server(this)
 
-    // register application
-    appList.push(this)
-    if (this.selfId) this.prepare()
+    const { nickname, prefix } = this.options
+    const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
+    const prefixes = Array.isArray(prefix) ? prefix : [prefix || '']
+    this.nicknameRE = createLeadingRE(nicknames, '@?', nicknameSuffix)
+    this.prefixRE = createLeadingRE(prefixes)
+    this.prepare()
 
     // bind built-in event listeners
     this.on('message', this._applyMiddlewares)
@@ -138,6 +123,19 @@ export class App extends Context {
       const result = command.parse(message.slice(name.length).trimStart())
       return { command, ...result }
     })
+  }
+
+  async getSelfIds () {
+    if (!this._getSelfIdsPromise) {
+      this._getSelfIdsPromise = Promise.all(this.bots.map(async (bot) => {
+        if (bot.selfId) return
+        const info = await bot.sender.getLoginInfo()
+        bot.selfId = info.userId
+        this.prepare()
+      }))
+    }
+    await this._getSelfIdsPromise
+    return this.bots.map(bot => bot.selfId)
   }
 
   get users () {
@@ -161,45 +159,9 @@ export class App extends Context {
     return this._discusses = discusses
   }
 
-  get selfId () {
-    return this.options.selfId
-  }
-
-  get version () {
-    return this.server?.version
-  }
-
-  prepare (selfId?: number) {
-    if (selfId) {
-      this.options.selfId = selfId
-      if (!this._isReady && this.server.isListening) {
-        this.emit('ready')
-        this._isReady = true
-      }
-    }
-    appMap[this.selfId] = this
-    selfIds.add(this.selfId)
-    if (this.server) {
-      this.server.appMap[this.selfId] = this
-    }
-    const { nickname, prefix } = this.options
-    const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
-    const prefixes = Array.isArray(prefix) ? prefix : [prefix || '']
-    this.atMeRE = new RegExp(`^\\[CQ:at,qq=${this.selfId}\\]${nicknameSuffix}`)
-    this.nicknameRE = createLeadingRE(nicknames, '@?', nicknameSuffix)
-    this.prefixRE = createLeadingRE(prefixes)
-  }
-
-  destroy () {
-    const index = appList.indexOf(this)
-    if (index >= 0) appList.splice(index, 1)
-    delete appMap[this.selfId]
-    selfIds.delete(this.selfId)
-    if (this.server) {
-      const index = this.server.appList.indexOf(this)
-      if (index >= 0) this.server.appList.splice(index, 1)
-      delete this.server.appMap[this.selfId]
-    }
+  prepare () {
+    const selfIds = this.bots.filter(bot => bot.selfId).map(bot => `[CQ:at,qq=${bot.selfId}]`)
+    this.atMeRE = createLeadingRE(selfIds)
   }
 
   createContext (scope: string | ContextScope) {
@@ -211,7 +173,6 @@ export class App extends Context {
     if (!this._contexts[identifier]) {
       const ctx = this._contexts[identifier] = new Context(identifier, scope)
       ctx.database = this.database
-      ctx.sender = this.sender
       ctx.app = this
     }
     return this._contexts[identifier]
@@ -231,32 +192,29 @@ export class App extends Context {
 
   async start () {
     this.status = Status.opening
-    this.emit('before-connect')
+    await this.parallelize('before-connect')
     const tasks: Promise<any>[] = []
     if (this.database) {
       for (const type in this.options.database) {
         tasks.push(this.database[type]?.start?.())
       }
     }
-    if (this.server) {
-      tasks.push(this.server.listen())
-    }
     await Promise.all(tasks)
     this.status = Status.open
     this.logger('app').debug('started')
     this.emit('connect')
-    if (this.selfId && !this._isReady) {
-      this.emit('ready')
-      this._isReady = true
-    }
-    if (appList.every(app => app.status === Status.open)) {
-      emitter.emit('start')
-    }
+    this._ready()
+  }
+
+  _ready () {
+    if (this._isReady || !this.bots.every(bot => bot.selfId)) return
+    this._isReady = true
+    this.emit('ready')
   }
 
   async stop () {
     this.status = Status.closing
-    this.emit('before-disconnect')
+    await this.parallelize('before-disconnect')
     const tasks: Promise<any>[] = []
     if (this.database) {
       for (const type in this.options.database) {
@@ -264,15 +222,9 @@ export class App extends Context {
       }
     }
     await Promise.all(tasks)
-    if (this.server) {
-      this.server.close()
-    }
     this.status = Status.closed
     this.logger('app').debug('stopped')
     this.emit('disconnect')
-    if (appList.every(app => app.status === Status.closed)) {
-      emitter.emit('stop')
-    }
   }
 
   private _preprocess = async (meta: Meta, next: NextFunction) => {
@@ -316,7 +268,7 @@ export class App extends Context {
 
         // ignore some group calls
         if (group.flag & GroupFlag.ignore) return
-        if (group.assignee !== this.selfId && !atMe) return
+        if (group.assignee !== meta.selfId && !atMe) return
       }
 
       // attach user data

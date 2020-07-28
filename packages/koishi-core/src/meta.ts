@@ -145,43 +145,43 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
 
   async $delete () {
     if (this.$response) return this.$response({ delete: true })
-    return this.$app.sender.deleteMsgAsync(this.messageId)
+    return this.$app.sender(this.selfId).deleteMsgAsync(this.messageId)
   }
 
   async $ban (duration = 30 * 60) {
     if (this.$response) return this.$response({ ban: true, banDuration: duration })
     return this.anonymous
-      ? this.$app.sender.setGroupAnonymousBanAsync(this.groupId, this.anonymous.flag, duration)
-      : this.$app.sender.setGroupBanAsync(this.groupId, this.userId, duration)
+      ? this.$app.sender(this.selfId).setGroupAnonymousBanAsync(this.groupId, this.anonymous.flag, duration)
+      : this.$app.sender(this.selfId).setGroupBanAsync(this.groupId, this.userId, duration)
   }
 
   async $kick () {
     if (this.$response) return this.$response({ kick: true })
     if (this.anonymous) return
-    return this.$app.sender.setGroupKickAsync(this.groupId, this.userId)
+    return this.$app.sender(this.selfId).setGroupKickAsync(this.groupId, this.userId)
   }
 
   async $send (message: string, autoEscape = false) {
     if (this.$response) {
-      const _meta = this.$app.sender._createSendMeta(this.messageType, this.$ctxType, this.$ctxId, message)
+      const _meta = this.$app.sender(this.selfId)._createSendMeta(this.messageType, this.$ctxType, this.$ctxId, message)
       if (this.$app.bail(this, 'before-send', _meta)) return
       return this.$response({ reply: message, autoEscape, atSender: false })
     }
-    return this.$app.sender.sendMsgAsync(this.messageType, this.$ctxId, message, autoEscape)
+    return this.$app.sender(this.selfId).sendMsgAsync(this.messageType, this.$ctxId, message, autoEscape)
   }
 
   async $approve (remark = '') {
     if (this.$response) return this.$response({ approve: true, remark })
     return this.requestType === 'friend'
-      ? this.$app.sender.setFriendAddRequestAsync(this.flag, remark)
-      : this.$app.sender.setGroupAddRequestAsync(this.flag, this.subType as any, true)
+      ? this.$app.sender(this.selfId).setFriendAddRequestAsync(this.flag, remark)
+      : this.$app.sender(this.selfId).setGroupAddRequestAsync(this.flag, this.subType as any, true)
   }
 
   async $reject (reason = '') {
     if (this.$response) return this.$response({ approve: false, reason })
     return this.requestType === 'friend'
-      ? this.$app.sender.setFriendAddRequestAsync(this.flag, false)
-      : this.$app.sender.setGroupAddRequestAsync(this.flag, this.subType as any, reason)
+      ? this.$app.sender(this.selfId).setFriendAddRequestAsync(this.flag, false)
+      : this.$app.sender(this.selfId).setGroupAddRequestAsync(this.flag, this.subType as any, reason)
   }
 
   /** 在元数据上绑定一个可观测群实例 */

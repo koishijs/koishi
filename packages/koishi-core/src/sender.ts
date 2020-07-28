@@ -1,6 +1,5 @@
-import axios from 'axios'
 import { snakeCase, camelCase, isInteger } from 'koishi-utils'
-import { WsClient } from './server'
+import { BotOptions } from './server'
 import { App } from './app'
 
 import {
@@ -47,27 +46,20 @@ interface MessageResponse {
   messageId: number
 }
 
-export class Sender {
-  protected _get: (action: string, params: Record<string, any>) => Promise<CQResponse>
+export class CQSender {
+  public info?: VersionInfo
 
-  constructor (public app: App) {
-    const { type } = app.options
-    if (type === 'http') {
-      this._get = async (action, params) => {
-        const headers = {} as any
-        if (app.options.token) {
-          headers.Authorization = `Token ${app.options.token}`
-        }
-        const uri = new URL(action, app.options.server).href
-        const { data } = await axios.get(uri, { params, headers })
-        return data
-      }
-    } else if (type === 'ws') {
-      this._get = (action, params) => {
-        const server = app.server as WsClient
-        return server.send({ action, params })
-      }
-    }
+  _get?: (action: string, params: Record<string, any>) => Promise<CQResponse>
+
+  constructor (public app: App, public bot: BotOptions) {}
+
+  versionLessThan (major: number, minor: number = 0, patch: number = 0) {
+    const match = /^(\d+)(?:\.(\d+)(?:\.(\d+)?))?/.exec(this.info.pluginVersion)
+    if (match) return
+    const maj = +match[1]
+    const min = +match[2] || 0
+    const pat = +match[3] || 0
+    return maj < major || maj === major && (min < minor || min === minor && pat < patch)
   }
 
   async get <T = any> (action: string, params: Record<string, any> = {}, silent = false): Promise<T> {
@@ -78,14 +70,14 @@ export class Sender {
     if (retcode === 0 && !silent) {
       return camelCase(data)
     } else if (retcode < 0 && !silent) {
-      throw new SenderError(params, action, retcode, this.app.selfId)
+      throw new SenderError(params, action, retcode, this.bot.selfId)
     } else if (retcode > 1) {
-      throw new SenderError(params, action, retcode, this.app.selfId)
+      throw new SenderError(params, action, retcode, this.bot.selfId)
     }
   }
 
   async getAsync (action: string, params: Record<string, any> = {}): Promise<void> {
-    if (this.app.server.versionLessThan(4)) {
+    if (this.versionLessThan(4)) {
       await this.get(action, params, true)
     } else {
       await this.get(action + '_async', params)
@@ -103,7 +95,7 @@ export class Sender {
   }
 
   private _assertVersion (label: string, major: number, minor: number, patch: number = 0) {
-    if (this.app.server.versionLessThan(major, minor, patch)) {
+    if (this.versionLessThan(major, minor, patch)) {
       throw new Error(`${label} requires CQHTTP version >= ${major}.${minor}.${patch}`)
     }
   }
@@ -116,7 +108,7 @@ export class Sender {
       messageType,
       postType: 'send',
       $app: this.app,
-      selfId: this.app.selfId,
+      selfId: this.bot.selfId,
       [$ctxType + 'Id']: $ctxId,
       time: Math.round(Date.now() / 1000),
     })
@@ -414,7 +406,7 @@ export class Sender {
   async getGroupInfo (groupId: number, noCache?: boolean): Promise<GroupInfo> {
     this._assertInteger('groupId', groupId)
     this._assertVersion('sender.getGroupInfo()', 4, 0, 1)
-    return this.app.server.versionLessThan(4, 12)
+    return this.versionLessThan(4, 12)
       ? this.get('_get_group_info', { groupId, noCache })
       : this.get('get_group_info', { groupId, noCache })
   }
@@ -501,15 +493,7 @@ export class Sender {
   }
 
   async getVersionInfo () {
-    const data = await this.get<VersionInfo>('get_version_info')
-    const match = /^(\d+)(?:\.(\d+)(?:\.(\d+)?))?/.exec(data.pluginVersion)
-    if (match) {
-      const [, major, minor, patch] = match
-      data.pluginMajorVersion = +major
-      data.pluginMinorVersion = +minor || 0
-      data.pluginPatchVersion = +patch || 0
-    }
-    return data
+    return this.get<VersionInfo>('get_version_info')
   }
 
   async setRestart (cleanLog = false, cleanCache = false, cleanEvent = false) {

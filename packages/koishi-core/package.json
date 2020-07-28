@@ -32,7 +32,6 @@
     "koishi"
   ],
   "devDependencies": {
-    "@types/debug": "^4.1.5",
     "@types/koa": "^2.11.3",
     "@types/koa-router": "^7.4.1",
     "@types/ms": "^0.7.31",
