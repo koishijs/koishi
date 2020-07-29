@@ -253,8 +253,8 @@ async function showInfo ({ ctx, meta }: Dialogue.Argv) {
     'COUNT(DISTINCT `question`)': questions,
     'COUNT(*)': answers,
   }], { totalSize, totalCount }] = await Promise.all([
-    ctx.database.mysql.query<any>('SELECT COUNT(DISTINCT `question`), COUNT(*) FROM `dialogue`'),
-    ctx.sender.getImageServerStatus(),
+    ctx.database.query<any>('SELECT COUNT(DISTINCT `question`), COUNT(*) FROM `dialogue`'),
+    ctx.app.getImageServerStatus(),
   ])
 
   return meta.$send([

@@ -75,7 +75,7 @@ export default function apply (ctx: Context) {
 
     if (!options.modify && hasUnnamed && meta.messageType === 'group') {
       try {
-        const members = await ctx.sender.getGroupMemberList(meta.groupId)
+        const members = await ctx.sender(meta.selfId).getGroupMemberList(meta.groupId)
         for (const { userId, nickname, card } of members) {
           if (!userMap[userId]) {
             userMap[userId] = card || nickname

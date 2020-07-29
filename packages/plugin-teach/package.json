@@ -37,7 +37,7 @@
   "devDependencies": {
     "koishi-database-level": "^2.0.0-alpha.38",
     "koishi-database-memory": "^2.0.0-alpha.39",
-    "koishi-database-mysql": "^2.0.0-alpha.39",
+    "koishi-plugin-mysql": "^2.0.0-alpha.39",
     "koishi-test-utils": "^4.0.0-alpha.39"
   },
   "dependencies": {

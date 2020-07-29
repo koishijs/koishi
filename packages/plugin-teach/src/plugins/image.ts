@@ -6,8 +6,8 @@ import { existsSync, writeFile, readdirSync, stat } from 'fs-extra'
 import { Dialogue } from '../database'
 import axios from 'axios'
 
-declare module 'koishi-core/dist/sender' {
-  interface Sender {
+declare module 'koishi-core/dist/app' {
+  interface App {
     getImageServerStatus (): Promise<ImageServerStatus>
   }
 }
@@ -47,7 +47,7 @@ export default function apply (app: App, config: Dialogue.Config) {
       await axios.get(uploadServer, { params })
     }
 
-    app.sender.getImageServerStatus = async () => {
+    app.getImageServerStatus = async () => {
       const { data } = await axios.get(uploadServer)
       return data
     }
@@ -73,7 +73,7 @@ export default function apply (app: App, config: Dialogue.Config) {
       totalSize += size
     }))
 
-    const getStatus = app.sender.getImageServerStatus = async () => {
+    const getStatus = app.getImageServerStatus = async () => {
       await statPromise
       return { totalCount, totalSize }
     }

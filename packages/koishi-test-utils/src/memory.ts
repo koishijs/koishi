@@ -90,5 +90,5 @@ class MemoryDatabase implements Database {
 }
 
 export function apply (app: App, config: MemoryConfig = {}) {
-  app.database = new MemoryDatabase(app, config)
+  app._database = new MemoryDatabase(app, config)
 }

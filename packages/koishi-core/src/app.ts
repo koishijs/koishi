@@ -169,7 +169,6 @@ export class App extends Context {
     const identifier = ContextScope.stringify(scope)
     if (!this._contexts[identifier]) {
       const ctx = this._contexts[identifier] = new Context(identifier, scope)
-      ctx.database = this.database
       ctx.app = this
     }
     return this._contexts[identifier]

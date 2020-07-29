@@ -1,27 +1,31 @@
-import { Meta, getSelfIds, injectMethods } from 'koishi-core'
-import {} from 'koishi-database-mysql'
-import { Schedule } from '.'
+import { Meta, extendDatabase } from 'koishi-core'
+import type MysqlDatabase from 'koishi-plugin-mysql'
 
 declare module 'koishi-core/dist/database' {
-  interface TableMethods {
-    schedule?: ScheduleMethods
+  interface Database {
+    createSchedule (time: Date, interval: number, command: string, meta: Meta): Promise<Schedule>
+    removeSchedule (id: number): Promise<any>
+    getSchedule (id: number): Promise<Schedule>
+    getAllSchedules (assignees?: number[]): Promise<Schedule[]>
   }
 
-  interface TableData {
-    schedule?: Schedule
+  interface Tables {
+    schedule: Schedule
   }
 }
 
-interface ScheduleMethods {
-  createSchedule (time: Date, assignee: number, interval: number, command: string, meta: Meta): Promise<Schedule>
-  removeSchedule (id: number): Promise<any>
-  getSchedule (id: number): Promise<Schedule>
-  getAllSchedules (assignees?: number[]): Promise<Schedule[]>
+export interface Schedule {
+  id: number
+  assignee: number
+  time: Date
+  interval: number
+  command: string
+  meta: Meta
 }
 
-injectMethods('mysql', 'schedule', {
-  createSchedule (time, assignee, interval, command, meta) {
-    return this.create('schedule', { time, assignee, interval, command, meta })
+extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
+  createSchedule (time, interval, command, meta) {
+    return this.create('schedule', { time, assignee: meta.selfId, interval, command, meta })
   },
 
   removeSchedule (id) {
@@ -35,7 +39,7 @@ injectMethods('mysql', 'schedule', {
 
   async getAllSchedules (assignees) {
     let queryString = 'SELECT * FROM `schedule`'
-    if (!assignees) assignees = await getSelfIds()
+    if (!assignees) assignees = await this.app.getSelfIds()
     queryString += ` WHERE \`assignee\` IN (${assignees.join(',')})`
     return this.query(queryString)
   },

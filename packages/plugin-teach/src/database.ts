@@ -1,5 +1,5 @@
 import { Context, Meta, ParsedLine } from 'koishi-core'
-import { arrayTypes } from 'koishi-database-mysql'
+import { arrayTypes } from 'koishi-plugin-mysql'
 import { Observed, pick, difference, observe, isInteger, defineProperty, capitalize } from 'koishi-utils'
 
 arrayTypes.push('dialogue.groups', 'dialogue.predecessors')
@@ -13,11 +13,7 @@ declare module 'koishi-core/dist/context' {
 }
 
 declare module 'koishi-core/dist/database' {
-  interface TableMethods {
-    dialogue: {}
-  }
-
-  interface TableData {
+  interface Tables {
     dialogue: Dialogue
   }
 }
@@ -90,7 +86,7 @@ export namespace Dialogue {
 
   export async function fromIds <T extends DialogueField> (ids: number[], ctx: Context, fields?: T[]) {
     if (!ids.length) return []
-    const dialogues = await ctx.database.mysql.select<Dialogue[]>('dialogue', fields, `\`id\` IN (${ids.join(',')})`)
+    const dialogues = await ctx.database.select<Dialogue[]>('dialogue', fields, `\`id\` IN (${ids.join(',')})`)
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
     return dialogues
   }
@@ -100,7 +96,7 @@ export namespace Dialogue {
     const conditionals: string[] = []
     ctx.emit('dialogue/before-fetch', test, conditionals)
     if (conditionals.length) query += ' WHERE ' + conditionals.join(' && ')
-    const dialogues = (await ctx.database.mysql.query<Dialogue[]>(query))
+    const dialogues = (await ctx.database.query<Dialogue[]>(query))
       .filter((dialogue) => !ctx.bail('dialogue/fetch', dialogue, test))
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
     return dialogues
@@ -121,7 +117,7 @@ export namespace Dialogue {
   }
 
   export async function create (dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
-    dialogue = await argv.ctx.database.mysql.create('dialogue', dialogue)
+    dialogue = await argv.ctx.database.create('dialogue', dialogue)
     addHistory(dialogue, '添加', argv, revert)
     return dialogue
   }
@@ -136,7 +132,7 @@ export namespace Dialogue {
 
   export async function rewrite (dialogues: Dialogue[], argv: Dialogue.Argv) {
     if (!dialogues.length) return
-    await argv.ctx.database.mysql.update('dialogue', dialogues)
+    await argv.ctx.database.update('dialogue', dialogues)
     for (const dialogue of dialogues) {
       addHistory(dialogue, '修改', argv, true)
     }
@@ -161,13 +157,13 @@ export namespace Dialogue {
         addHistory(dialogue._backup, '修改', argv, false, temp)
       }
     }
-    await argv.ctx.database.mysql.update('dialogue', data)
+    await argv.ctx.database.update('dialogue', data)
     Object.assign(history, temp)
   }
 
   export async function remove (ids: number[], argv: Dialogue.Argv, revert = false) {
     if (!ids.length) return
-    await argv.ctx.database.mysql.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
+    await argv.ctx.database.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
     for (const id of ids) {
       addHistory(argv.dialogueMap[id], '删除', argv, revert)
     }

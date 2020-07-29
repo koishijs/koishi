@@ -1,4 +1,4 @@
-import { createPool, Pool, PoolConfig, escape, escapeId, format } from 'mysql'
+import { createPool, Pool, PoolConfig, escape, escapeId, format, OkPacket } from 'mysql'
 import { TableType, Tables, App, UserField, UserData, userFields, createUser, GroupData, groupFields, createGroup, GroupField, Database } from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { types } from 'util'
@@ -6,7 +6,7 @@ import { types } from 'util'
 const logger = Logger.create('mysql')
 
 declare module 'koishi-core/dist/database' {
-  interface Database extends MysqlDatabase {}
+  interface Database extends Omit<MysqlDatabase, keyof Database> {}
 }
 
 export interface MysqlConfig extends PoolConfig {}
@@ -30,24 +30,15 @@ const defaultConfig: MysqlConfig = {
   },
 }
 
-export interface OkPacket {
-  fieldCount: number
-  affectedRows: number
-  insertId: number
-  serverStatus: number
-  warningCount: number
-  message: string
-  protocol41: boolean
-  changedRows: number
-}
-
 export const userGetters: Record<string, () => string> = {}
 
 function inferFields (keys: readonly string[]) {
   return keys.map(key => key in userGetters ? `${userGetters[key]()} AS ${key}` : key) as UserField[]
 }
 
-class MysqlDatabase implements Database {
+export default interface MysqlDatabase extends Database {}
+
+export default class MysqlDatabase {
   public pool: Pool
 
   escape = escape
@@ -222,6 +213,8 @@ class MysqlDatabase implements Database {
   }
 }
 
+export const name = 'mysql'
+
 export function apply (app: App, config: MysqlConfig = {}) {
-  app.database = new MysqlDatabase(app, config)
+  app._database = new MysqlDatabase(app, config)
 }

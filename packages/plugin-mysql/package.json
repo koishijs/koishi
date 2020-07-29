@@ -1,6 +1,6 @@
 {
-  "name": "koishi-database-memory",
-  "description": "An in-memory database implementation for Koishi",
+  "name": "koishi-plugin-mysql",
+  "description": "MySQL support for Koishi",
   "version": "2.0.0-alpha.39",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -20,11 +20,26 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-memory#readme",
+  "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-mysql#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "database",
+    "mysql"
+  ],
+  "devDependencies": {
+    "@types/debug": "^4.1.5",
+    "@types/mysql": "^2.15.15"
+  },
   "peerDependencies": {
     "koishi-core": "^2.0.0-alpha.39"
   },
   "dependencies": {
-    "koishi-utils": "^2.1.2"
+    "koishi-utils": "^2.1.2",
+    "mysql": "^2.18.1"
   }
 }

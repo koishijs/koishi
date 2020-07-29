@@ -5,6 +5,7 @@ import { RegExpValidator } from 'regexpp'
 import { Logger } from 'koishi-utils'
 import { types } from 'util'
 import leven from 'leven'
+import { escape } from 'mysql'
 import { formatQuestionAnswers } from './search'
 
 class RegExpError extends Error {
@@ -81,23 +82,23 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/before-fetch', ({ regexp, answer, question, original }, conditionals) => {
-    const { escape } = ctx.database.mysql
     if (regexp) {
       if (answer !== undefined) conditionals.push('`answer` REGEXP ' + escape(answer))
       if (question !== undefined) conditionals.push('`question` REGEXP ' + escape(original))
-    } else {
-      if (answer !== undefined) conditionals.push('`answer` = ' + escape(answer))
-      if (question !== undefined) {
-        if (regexp === false) {
-          conditionals.push('`question` = ' + escape(question))
-        } else {
-          conditionals.push(`(\
-            !(\`flag\` & ${DialogueFlag.regexp}) && \`question\` = ${escape(question)} ||\
-            \`flag\` & ${DialogueFlag.regexp} && (\
-              ${escape(question)} REGEXP \`question\` || ${escape(original)} REGEXP \`question\`\
-            )\
-          )`)
-        }
+      return
+    }
+
+    if (answer !== undefined) conditionals.push('`answer` = ' + escape(answer))
+    if (question !== undefined) {
+      if (regexp === false) {
+        conditionals.push('`question` = ' + escape(question))
+      } else {
+        conditionals.push(`(\
+          !(\`flag\` & ${DialogueFlag.regexp}) && \`question\` = ${escape(question)} ||\
+          \`flag\` & ${DialogueFlag.regexp} && (\
+            ${escape(question)} REGEXP \`question\` || ${escape(original)} REGEXP \`question\`\
+          )\
+        )`)
       }
     }
   })

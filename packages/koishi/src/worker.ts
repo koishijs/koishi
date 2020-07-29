@@ -55,12 +55,12 @@ if (!config) {
 
 const cacheMap: Record<string, any> = {}
 
-function loadEcosystem (type: string, name: string) {
-  const cache = cacheMap[`${type}_${name}`]
+function loadEcosystem (name: string) {
+  const cache = cacheMap[name]
   if (cache) return cache
 
   const modules = [resolve(configDir, name), name]
-  const prefix = `koishi-${type}-`
+  const prefix = `koishi-plugin-`
   if (!name.includes(prefix)) {
     const index = name.lastIndexOf('/')
     modules.push(name.slice(0, index + 1) + prefix + name.slice(index + 1))
@@ -69,25 +69,25 @@ function loadEcosystem (type: string, name: string) {
     logger.debug('resolving %c', path)
     try {
       const result = require(path)
-      logger.info('apply %s %c', type, result && result.name || name)
-      return cacheMap[`${type}_${name}`] = result
+      logger.info('apply plugin %c', result && result.name || name)
+      return cacheMap[name] = result
     } catch (error) {
       if (isErrorModule(error)) {
         throw error
       }
     }
   }
-  throw new Error(`cannot resolve ${type} ${name}`)
+  throw new Error(`cannot resolve plugin ${name}`)
 }
 
 function loadPlugins (ctx: Context, plugins: PluginConfig) {
   for (const item of plugins) {
     let plugin: Plugin<Context>, options: any
     if (Array.isArray(item)) {
-      plugin = typeof item[0] === 'string' ? loadEcosystem('plugin', item[0]) : item[0]
+      plugin = typeof item[0] === 'string' ? loadEcosystem(item[0]) : item[0]
       options = item[1]
     } else if (typeof item === 'string') {
-      plugin = loadEcosystem('plugin', item)
+      plugin = loadEcosystem(item)
     } else {
       plugin = item
     }
@@ -98,10 +98,6 @@ function loadPlugins (ctx: Context, plugins: PluginConfig) {
 Object.assign(Logger.levels, config.logFilter)
 if (config.logLevel && !process.env.KOISHI_LOG_LEVEL) {
   Logger.baseLevel = config.logLevel
-}
-
-for (const name in config.database || {}) {
-  loadEcosystem('database', name)
 }
 
 const app = new App(config)

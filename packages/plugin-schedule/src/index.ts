@@ -1,41 +1,34 @@
-import { Context, appMap, Meta, onStart, appList, getContextId } from 'koishi-core'
+import { Context, Meta, getContextId } from 'koishi-core'
 import { parseTime, parseDate, formatTimeInterval, Logger } from 'koishi-utils'
-import './database'
+import { Schedule } from './database'
+
+export * from './database'
 
 const logger = Logger.create('schedule')
 
-export interface Schedule {
-  id: number
-  assignee: number
-  time: Date
-  interval: number
-  command: string
-  meta: Meta
-}
-
-function inspectSchedule ({ id, assignee, meta, interval, command, time }: Schedule) {
+function inspectSchedule ({ id, meta, interval, command, time }: Schedule) {
   const now = Date.now()
   const date = time.valueOf()
-  const app = appMap[assignee]
+  const { database } = meta.$app
   logger.debug('inspect', command)
 
   if (!interval) {
-    if (date < now) return app.database.removeSchedule(id)
+    if (date < now) return database.removeSchedule(id)
     return setTimeout(async () => {
-      if (!await app.database.getSchedule(id)) return
-      app.execute(command, meta)
-      app.database.removeSchedule(id)
+      if (!await database.getSchedule(id)) return
+      meta.$app.execute(command, meta)
+      database.removeSchedule(id)
     }, date - now)
   }
 
   const timeout = date < now ? interval - (now - date) % interval : date - now
   setTimeout(async () => {
-    if (!await app.database.getSchedule(id)) return
+    if (!await database.getSchedule(id)) return
     const timer = setInterval(async () => {
-      if (!await app.database.getSchedule(id)) return clearInterval(timer)
-      app.execute(command, meta)
+      if (!await database.getSchedule(id)) return clearInterval(timer)
+      meta.$app.execute(command, meta)
     }, interval)
-    app.execute(command, meta)
+    meta.$app.execute(command, meta)
   }, timeout)
 }
 
@@ -45,21 +38,20 @@ function formatContext (meta: Meta) {
     : `讨论组 ${meta.discussId}`
 }
 
-onStart(async () => {
-  const { database } = appList[0]
-  const schedules = await database.getAllSchedules()
-  schedules.forEach((schedule) => {
-    if (schedule.meta.$app = appMap[schedule.assignee]) {
-      schedule.meta = new Meta(schedule.meta)
-      inspectSchedule(schedule)
-    }
-  })
-})
-
 export const name = 'schedule'
 
 export function apply (ctx: Context) {
-  const { database } = ctx.app
+  const { database } = ctx
+
+  ctx.app.on('connect', async () => {
+    const schedules = await database.getAllSchedules()
+    schedules.forEach((schedule) => {
+      if (!ctx.app.server.bots[schedule.assignee]) return
+      schedule.meta = new Meta(schedule.meta)
+      schedule.meta.$app = ctx.app
+      inspectSchedule(schedule)
+    })
+  })
 
   ctx.command('schedule [time]', '设置定时命令', { authority: 3, checkUnknown: true })
     .option('--, --rest <command...>', '要执行的指令')
@@ -74,7 +66,7 @@ export function apply (ctx: Context) {
       }
 
       if (options.list || options.fullList) {
-        let schedules = await database.getAllSchedules([ctx.app.selfId])
+        let schedules = await database.getAllSchedules([meta.selfId])
         if (!options.fullList) {
           schedules = schedules.filter(s => getContextId(meta) === getContextId(s.meta))
         }
@@ -100,7 +92,7 @@ export function apply (ctx: Context) {
         return meta.$send('请输入合法的时间间隔。')
       }
 
-      const schedule = await database.createSchedule(time, ctx.app.selfId, interval, options.rest, meta)
+      const schedule = await database.createSchedule(time, interval, options.rest, meta)
       await meta.$send(`日程已创建，编号为 ${schedule.id}。`)
       return inspectSchedule(schedule)
     })

@@ -1,4 +1,4 @@
-import { arrayTypes, OkPacket } from 'koishi-database-mysql'
+import { arrayTypes, OkPacket } from 'koishi-plugin-mysql'
 import { injectMethods, extendGroup } from 'koishi-core'
 
 declare module 'koishi-core/dist/database' {

@@ -100,3 +100,14 @@ export interface Database {
   getAllGroups <K extends GroupField> (fields?: readonly K[], assignees?: readonly number[]): Promise<Pick<GroupData, K>[]>
   setGroup (groupId: number, data: Partial<GroupData>): Promise<any>
 }
+
+type DatabaseExtension <T extends {}> = {
+  [K in keyof Database]?: Database[K] extends (...args: infer R) => infer S ? (this: T & Database, ...args: R) => S : never
+}
+
+export function extendDatabase <T extends {}> (module: string, extension: DatabaseExtension<T>) {
+  try {
+    const Database = require(module).default
+    Object.assign(Database.prototype, extension)
+  } catch (error) {}
+}
