@@ -61,7 +61,7 @@ export class Context {
   }
 
   sender (id: number) {
-    return this.app.server.bots[id].sender
+    return this.app.bots[id].sender
   }
 
   inverse () {

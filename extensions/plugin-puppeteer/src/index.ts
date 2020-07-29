@@ -31,9 +31,11 @@ export function freePage (page: Page) {
 Context.prototype.getPage = getPage
 Context.prototype.freePage = freePage
 
+export interface Options extends LaunchOptions {}
+
 export const name = 'pupperteer'
 
-export function apply (ctx: Context, config: LaunchOptions = {}) {
+export function apply (ctx: Context, config: Options = {}) {
   const logger = ctx.logger('puppeteer')
 
   ctx.on('connect', () => {

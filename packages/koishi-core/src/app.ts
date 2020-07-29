@@ -2,13 +2,13 @@ import escapeRegex from 'escape-string-regexp'
 import { Command, ShortcutConfig } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
 import { GroupFlag, UserFlag, GroupField, UserField, Database } from './database'
-import { Bot, BotOptions, CQServer } from './server'
+import { BotOptions, CQServer } from './server'
 import { Meta } from './meta'
 import { simplify } from 'koishi-utils'
 import { emitter, errors } from './shared'
 import { types } from 'util'
 
-export interface AppOptions {
+export interface AppOptions extends BotOptions {
   port?: number
   secret?: string
   path?: string
@@ -52,7 +52,6 @@ export enum Status { closed, opening, open, closing }
 
 export class App extends Context {
   app = this
-  bots: Bot[]
   options: AppOptions
   server: CQServer
   atMeRE: RegExp
@@ -78,8 +77,8 @@ export class App extends Context {
 
   constructor (options: AppOptions = {}) {
     super(appIdentifier, appScope)
-    this.bots = options.bots
     options = this.options = { ...defaultOptions, ...options }
+    if (!options.bots) options.bots = [options]
 
     if (!options.type) {
       const { server } = options.bots[0]
@@ -120,6 +119,10 @@ export class App extends Context {
       const result = command.parse(message.slice(name.length).trimStart())
       return { command, ...result }
     })
+  }
+
+  get bots () {
+    return this.server.bots
   }
 
   async getSelfIds () {

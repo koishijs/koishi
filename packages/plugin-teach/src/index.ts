@@ -27,6 +27,8 @@ export * from './plugins/successor'
 export * from './plugins/time'
 export * from './plugins/writer'
 
+export type Options = Dialogue.Config
+
 declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/validate' (argv: Dialogue.Argv): void | Promise<void>

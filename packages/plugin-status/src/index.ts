@@ -19,7 +19,7 @@ declare module 'koishi-core/dist/database' {
 }
 
 export interface StatusOptions {
-  sort?: (a: AppStatus, b: AppStatus) => number
+  sort?: (a: BotStatus, b: BotStatus) => number
 }
 
 let usage = getCpuUsage()
@@ -66,7 +66,7 @@ export interface Rate {
 }
 
 export interface Status {
-  apps: AppStatus[]
+  bots: BotStatus[]
   userCount: number
   groupCount: number
   memory: Rate
@@ -75,7 +75,7 @@ export interface Status {
   startTime: number
 }
 
-export interface AppStatus {
+export interface BotStatus {
   label?: string
   selfId: number
   code: number
@@ -106,13 +106,16 @@ export function apply (ctx: Context, config: StatusOptions) {
   })
 
   app.on('before-send', (meta) => {
-    const { counter } = app.server.bots[meta.selfId]
+    const { counter } = app.bots[meta.selfId]
     counter[0] += 1
   })
 
   let timer: NodeJS.Timeout
-  app.on('connect', () => {
+  app.on('connect', async () => {
+    await app.getSelfIds()
+
     app.bots.forEach((bot) => {
+      bot.label = bot.label || '' + bot.selfId
       bot.counter = new Array(61).fill(0)
     })
 
@@ -147,7 +150,7 @@ export function apply (ctx: Context, config: StatusOptions) {
     .shortcut('运行情况', { prefix: true })
     .shortcut('运行状态', { prefix: true })
     .action(async ({ meta }) => {
-      const { apps, cpu, memory, startTime, userCount, groupCount } = await getStatus(config)
+      const { bots: apps, cpu, memory, startTime, userCount, groupCount } = await getStatus(config)
 
       const output = apps.sort(config.sort).map(({ label, selfId, code, rate }) => {
         return `${label || selfId}：${code ? '无法连接' : `工作中（${rate}/min）`}`
@@ -167,21 +170,21 @@ export function apply (ctx: Context, config: StatusOptions) {
     })
 
   async function _getStatus (config: StatusOptions, extend: boolean) {
-    const [[[{ 'COUNT(*)': userCount }], [{ 'COUNT(*)': groupCount }]], apps] = await Promise.all([
+    const [[[{ 'COUNT(*)': userCount }], [{ 'COUNT(*)': groupCount }]], bots] = await Promise.all([
       app.database.query<[{ 'COUNT(*)': number }][]>([
         `SELECT COUNT(*) FROM \`user\` WHERE CURRENT_TIMESTAMP() - \`lastCall\` < 1000 * 3600 * 24`,
         `SELECT COUNT(*) FROM \`group\` WHERE \`assignee\``,
       ].join(';')),
-      Promise.all(app.bots.map(async (bot): Promise<AppStatus> => ({
+      Promise.all(app.bots.map(async (bot): Promise<BotStatus> => ({
         selfId: bot.selfId,
-        label: bot.label || '' + bot.selfId,
+        label: bot.label,
         code: await bot.sender.getStatus().then(status => status.good ? 0 : 1, () => 2),
         rate: (bot.counter || []).slice(1).reduce((prev, curr) => prev + curr, 0),
       }))),
     ])
     const memory = memoryRate()
     const cpu = { app: appRate, total: usedRate }
-    const status: Status = { apps, userCount, groupCount, memory, cpu, timestamp, startTime }
+    const status: Status = { bots, userCount, groupCount, memory, cpu, timestamp, startTime }
     if (extend) {
       await Promise.all(statusModifiers.map(modifier => modifier.call(app, status, config)))
     }

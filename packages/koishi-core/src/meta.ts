@@ -109,6 +109,10 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
     }))
   }
 
+  get $sender () {
+    return this.$app.sender(this.selfId)
+  }
+
   get $username (): string {
     const idString = '' + this.userId
     return this.$user && this.$user['name'] && idString !== this.$user['name']

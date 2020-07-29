@@ -23,8 +23,23 @@ export interface Bot extends BotOptions {
   sender?: CQSender
 }
 
+function createBotsProxy (bots: Bot[]) {
+  return new Proxy(bots, {
+    get (target, prop) {
+      return typeof prop === 'symbol' || +prop * 0 !== 0
+        ? Reflect.get(target, prop)
+        : target[prop] || target.find(bot => bot.selfId === +prop)
+    },
+    set (target, prop, value) {
+      return typeof prop === 'symbol' || +prop * 0 !== 0
+        ? Reflect.set(target, prop, value)
+        : false
+    },
+  })
+}
+
 export abstract class CQServer {
-  public bots: Record<number, Bot> = {}
+  public bots: Bot[]
   public isListening = false
 
   public koa?: Koa
@@ -36,19 +51,15 @@ export abstract class CQServer {
   protected abstract _close (): void
 
   constructor (public app: App) {
+    this.bots = createBotsProxy(app.options.bots)
     app.on('before-connect', this.listen.bind(this))
     app.on('before-disconnect', this.close.bind(this))
-    for (const bot of app.options.bots) {
-      if (bot.selfId) {
-        this.bots[bot.selfId] = bot
-      }
-    }
   }
 
   protected prepareMeta (data: any) {
     const meta = camelCase<Meta>(data)
     if (!this.bots[meta.selfId]) {
-      const bot = this.app.bots.find(bot => !bot.selfId)
+      const bot = this.bots.find(bot => !bot.selfId)
       if (!bot) return
       bot.selfId = meta.selfId
       this.app.prepare()
@@ -150,6 +161,7 @@ class HttpServer extends CQServer {
         ctx.res.writeHead(200, {
           'Content-Type': 'application/json',
         })
+
         // use defineProperty to avoid meta duplication
         defineProperty(meta, '$response', (data) => {
           meta.$response = null
@@ -157,6 +169,7 @@ class HttpServer extends CQServer {
           ctx.res.write(JSON.stringify(snakeCase(data)))
           ctx.res.end()
         })
+
         const timer = setTimeout(() => {
           meta.$response = null
           ctx.res.end()
@@ -168,28 +181,32 @@ class HttpServer extends CQServer {
     })
   }
 
+  private async __listen (bot: Bot) {
+    if (!bot.server) return
+    const sender = new CQSender(this.app, bot)
+    sender._get = async (action, params) => {
+      const headers = {} as any
+      if (bot.token) {
+        headers.Authorization = `Token ${bot.token}`
+      }
+      const uri = new URL(action, bot.server).href
+      const { data } = await axios.get(uri, { params, headers })
+      return data
+    }
+    sender.info = await sender.getVersionInfo()
+    if (sender.versionLessThan(4)) {
+      throw new Error(
+        `your cqhttp version (${sender.info.pluginVersion}) is not compatible ` +
+        `with koishi, please upgrade your cqhttp to 4.0.0 or above.`)
+    }
+  }
+
   async _listen () {
     logger.debug('http server opening')
     const { port } = this.app.options
+    if (!port) return
     this.server = this.koa.listen(port)
-    await Promise.all(this.app.bots.map(async (bot) => {
-      const sender = new CQSender(this.app, bot)
-      sender._get = async (action, params) => {
-        const headers = {} as any
-        if (bot.token) {
-          headers.Authorization = `Token ${bot.token}`
-        }
-        const uri = new URL(action, bot.server).href
-        const { data } = await axios.get(uri, { params, headers })
-        return data
-      }
-      sender.info = await sender.getVersionInfo()
-      if (sender.versionLessThan(4)) {
-        throw new Error(
-          `your cqhttp version (${sender.info.pluginVersion}) is not compatible ` +
-          `with koishi, please upgrade your cqhttp to 4.0.0 or above.`)
-      }
-    }))
+    await Promise.all(this.bots.map(bot => this.__listen(bot)))
     logger.debug('http server listen to', port)
   }
 
@@ -215,76 +232,78 @@ class WsClient extends CQServer {
     })
   }
 
-  async _listen () {
-    await Promise.all(this.app.bots.map((bot) => {
-      const connect = (resolve: () => void, reject: (reason: Error) => void) => {
-        logger.debug('websocket client opening')
-        const headers: Record<string, string> = {}
-        const { token, server } = bot
-        const { retryInterval, retryTimes } = this.app.options
-        if (token) headers.Authorization = `Bearer ${token}`
-        this.socket = new (require('ws'))(server, { headers })
-  
-        this.socket.on('error', error => logger.debug(error))
-  
-        this.socket.once('close', (code) => {
-          if (!this.isListening || code === 1005) return
-  
-          const message = `failed to connect to ${server}`
-          if (!retryInterval || this._retryCount >= retryTimes) {
-            return reject(new Error(message))
+  private async __listen (bot: Bot) {
+    const connect = (resolve: () => void, reject: (reason: Error) => void) => {
+      logger.debug('websocket client opening')
+      const headers: Record<string, string> = {}
+      const { token, server } = bot
+      if (!server) return
+      const { retryInterval, retryTimes } = this.app.options
+      if (token) headers.Authorization = `Bearer ${token}`
+      this.socket = new (require('ws'))(server, { headers })
+
+      this.socket.on('error', error => logger.debug(error))
+
+      this.socket.once('close', (code) => {
+        if (!this.isListening || code === 1005) return
+
+        const message = `failed to connect to ${server}`
+        if (!retryInterval || this._retryCount >= retryTimes) {
+          return reject(new Error(message))
+        }
+
+        this._retryCount++
+        logger.debug(`${message}, will retry in ${ms(retryInterval)}...`)
+        setTimeout(() => {
+          if (this.isListening) connect(resolve, reject)
+        }, retryInterval)
+      })
+
+      this.socket.once('open', () => {
+        this._retryCount = 0
+
+        this.socket.send(JSON.stringify({
+          action: 'get_version_info',
+          echo: -1,
+        }), (error) => {
+          if (error) reject(error)
+        })
+
+        this.socket.on('message', (data) => {
+          data = data.toString()
+          logger.debug('receive', data)
+          let parsed: any
+          try {
+            parsed = JSON.parse(data)
+          } catch (error) {
+            return reject(new Error(data))
           }
-  
-          this._retryCount++
-          logger.debug(`${message}, will retry in ${ms(retryInterval)}...`)
-          setTimeout(() => {
-            if (this.isListening) connect(resolve, reject)
-          }, retryInterval)
-        })
-  
-        this.socket.once('open', () => {
-          this._retryCount = 0
-  
-          this.socket.send(JSON.stringify({
-            action: 'get_version_info',
-            echo: -1,
-          }), (error) => {
-            if (error) reject(error)
-          })
-  
-          this.socket.on('message', (data) => {
-            data = data.toString()
-            logger.debug('receive', data)
-            let parsed: any
-            try {
-              parsed = JSON.parse(data)
-            } catch (error) {
-              return reject(new Error(data))
+
+          if ('post_type' in parsed) {
+            const meta = this.prepareMeta(parsed)
+            if (meta) this.dispatchMeta(meta)
+          } else if (parsed.echo === -1) {
+            const sender = bot.sender = new CQSender(this.app, bot)
+            sender.info = camelCase(parsed.data)
+            sender._get = (action, params) => this.send({ action, params })
+            if (sender.versionLessThan(4)) {
+              throw new Error(
+                `your cqhttp version (${sender.info.pluginVersion}) is not compatible ` +
+                `with koishi, please upgrade your cqhttp to 4.0.0 or above.`)
             }
-  
-            if ('post_type' in parsed) {
-              const meta = this.prepareMeta(parsed)
-              if (meta) this.dispatchMeta(meta)
-            } else if (parsed.echo === -1) {
-              const sender = bot.sender = new CQSender(this.app, bot)
-              sender.info = camelCase(parsed.data)
-              sender._get = (action, params) => this.send({ action, params })
-              if (sender.versionLessThan(4)) {
-                throw new Error(
-                  `your cqhttp version (${sender.info.pluginVersion}) is not compatible ` +
-                  `with koishi, please upgrade your cqhttp to 4.0.0 or above.`)
-              }
-              // TODO: check version
-              logger.debug('connect to ws server:', bot.server)
-              resolve()
-            } else {
-              this._listeners[parsed.echo]?.(parsed)
-            }
-          })
+            logger.debug('connect to ws server:', bot.server)
+            resolve()
+          } else {
+            this._listeners[parsed.echo]?.(parsed)
+          }
         })
-      }
-      return new Promise(connect)
-    }))
+      })
+    }
+    return new Promise(connect)
+  }
+
+  async _listen () {
+    await Promise.all(this.bots.map(bot => this.__listen(bot)))
   }
 
   _close () {

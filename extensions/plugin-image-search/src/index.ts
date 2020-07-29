@@ -2,7 +2,7 @@ import { Context, Meta, GroupFlag } from 'koishi-core'
 import ascii2d from './ascii2d'
 import saucenao from './saucenao'
 
-export interface ImageSearchConfig {
+export interface Options {
   lowSimilarity?: number
   highSimilarity?: number
 }
@@ -33,13 +33,13 @@ function searchImage (ctx: Context, meta: Meta, callback: (url: string) => Promi
   return meta.$send('请发送图片。')
 }
 
-async function mixedSearch (url: string, meta: Meta, config: ImageSearchConfig) {
+async function mixedSearch (url: string, meta: Meta, config: Options) {
   return await saucenao(url, meta, config, true) && ascii2d(url, meta)
 }
 
 export const name = 'image-search'
 
-export function apply (ctx: Context, config: ImageSearchConfig = {}) {
+export function apply (ctx: Context, config: Options = {}) {
   const command = ctx.command('image-search <...images>', '搜图片')
     .alias('搜图')
     .groupFields(['flag'])

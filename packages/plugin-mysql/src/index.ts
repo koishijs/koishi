@@ -9,11 +9,11 @@ declare module 'koishi-core/dist/database' {
   interface Database extends Omit<MysqlDatabase, keyof Database> {}
 }
 
-export interface MysqlConfig extends PoolConfig {}
+export interface Options extends PoolConfig {}
 
 export const arrayTypes: string[] = []
 
-const defaultConfig: MysqlConfig = {
+const defaultConfig: Options = {
   typeCast (field, next) {
     const identifier = `${field['packet'].orgTable}.${field.name}`
     if (arrayTypes.includes(identifier)) {
@@ -44,7 +44,7 @@ export default class MysqlDatabase {
   escape = escape
   escapeId = escapeId
 
-  constructor (public app: App, public config: MysqlConfig) {
+  constructor (public app: App, public config: Options) {
     this.config = {
       ...defaultConfig,
       ...config,
@@ -215,6 +215,6 @@ export default class MysqlDatabase {
 
 export const name = 'mysql'
 
-export function apply (app: App, config: MysqlConfig = {}) {
+export function apply (app: App, config: Options = {}) {
   app._database = new MysqlDatabase(app, config)
 }

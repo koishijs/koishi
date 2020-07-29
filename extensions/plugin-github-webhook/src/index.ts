@@ -1,15 +1,11 @@
 import type { Context } from 'koishi-core'
 import { Webhooks } from '@octokit/webhooks'
 
-export interface WebhookOptions {
-  port?: number
-  secret?: string
-  path?: string
+export type Options = Partial<ConstructorParameters<typeof Webhooks>[0]> & {
   repos?: Record<string, number[]>
 }
 
-const defaultOptions: WebhookOptions = {
-  port: 12140,
+const defaultOptions: Options = {
   secret: '',
   path: '/webhook',
   repos: {},
@@ -21,7 +17,7 @@ interface RepositoryPayload {
 
 export const name = 'github-webhook'
 
-export function apply (ctx: Context, config: WebhookOptions = {}) {
+export function apply (ctx: Context, config: Options = {}) {
   config = { ...defaultOptions, ...config }
   const webhook = new Webhooks(config as any)
 
