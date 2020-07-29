@@ -1,27 +1,24 @@
-import { arrayTypes, OkPacket } from 'koishi-plugin-mysql'
-import { injectMethods, extendGroup } from 'koishi-core'
+import { arrayTypes } from 'koishi-plugin-mysql'
+import { extendGroup, extendDatabase } from 'koishi-core'
+import { OkPacket } from 'mysql'
 
 declare module 'koishi-core/dist/database' {
   interface GroupData {
     subscribe: Record<number, number[]>
   }
 
-  interface TableData {
+  interface Tables {
     subscribe: Subscribe
   }
 
-  interface TableMethods {
-    subscribe: SubscribeMethods
+  interface Database {
+    getSubscribes (ids?: number[], keys?: SubscribeField[]): Promise<Subscribe[]>
+    findSubscribe (name: string[], keys?: SubscribeField[]): Promise<Subscribe[]>
+    findSubscribe (name: string, keys?: SubscribeField[]): Promise<Subscribe>
+    setSubscribe (id: number, data: Partial<Subscribe>): Promise<any>
+    createSubscribe (options: SubscribeOptions): Promise<Subscribe>
+    removeSubscribe (name: string): Promise<boolean>
   }
-}
-
-interface SubscribeMethods {
-  getSubscribes (ids?: number[], keys?: SubscribeField[]): Promise<Subscribe[]>
-  findSubscribe (name: string[], keys?: SubscribeField[]): Promise<Subscribe[]>
-  findSubscribe (name: string, keys?: SubscribeField[]): Promise<Subscribe>
-  setSubscribe (id: number, data: Partial<Subscribe>): Promise<any>
-  createSubscribe (options: SubscribeOptions): Promise<Subscribe>
-  removeSubscribe (name: string): Promise<boolean>
 }
 
 extendGroup(() => ({ subscribe: {} }))
@@ -51,7 +48,7 @@ const subscribeKeys = [
   'twitCasting', 'twitCastingStatus',
 ] as SubscribeField[]
 
-injectMethods('mysql', 'subscribe', {
+extendDatabase('koishi-plugin-mysql', {
   async getSubscribes (ids, keys = subscribeKeys) {
     if (!ids) return this.query(`SELECT * FROM \`subscribe\``)
     if (!ids.length) return []
@@ -66,7 +63,7 @@ injectMethods('mysql', 'subscribe', {
   },
 
   async removeSubscribe (name) {
-    const { changedRows } = await this.query('DELETE FROM `subscribe` WHERE FIND_IN_SET(?, `names`)', [name]) as OkPacket
+    const { changedRows } = await this.query<OkPacket>('DELETE FROM `subscribe` WHERE FIND_IN_SET(?, `names`)', [name])
     return !!changedRows
   },
 

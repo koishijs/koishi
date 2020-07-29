@@ -1,26 +1,18 @@
-import { Context, onStart, onStop } from 'koishi-core'
-import { Server, createServer } from 'http'
+import type { Context } from 'koishi-core'
 import { Webhooks } from '@octokit/webhooks'
 
-declare module 'koishi-core/dist/app' {
-  export interface AppOptions {
-    githubWebhook?: WebhookConfig
-  }
-}
-
-export interface WebhookConfig {
+export interface WebhookOptions {
   port?: number
   secret?: string
   path?: string
+  repos?: Record<string, number[]>
 }
 
-export const webhooks: Record<string, Webhooks> = {}
-export const servers: Record<number, Server> = {}
-
-const defaultOptions: WebhookConfig = {
+const defaultOptions: WebhookOptions = {
   port: 12140,
   secret: '',
-  path: '/',
+  path: '/webhook',
+  repos: {},
 }
 
 interface RepositoryPayload {
@@ -29,36 +21,27 @@ interface RepositoryPayload {
 
 export const name = 'github-webhook'
 
-export function apply (ctx: Context, options: Record<string, number[]> = {}) {
-  ctx = ctx.intersect(ctx.app.groups)
+export function apply (ctx: Context, config: WebhookOptions = {}) {
+  config = { ...defaultOptions, ...config }
+  const webhook = new Webhooks(config as any)
 
-  const config = ctx.app.options.githubWebhook = {
-    ...defaultOptions,
-    ...ctx.app.options.githubWebhook,
-  }
-
-  const key = config.path + config.secret + config.port
-  if (!webhooks[key]) {
-    webhooks[key] = new Webhooks(config as any)
-  }
-  const webhook = webhooks[key]
-
-  if (!servers[config.port]) {
-    const server = servers[config.port] = createServer(webhooks[key].middleware)
-    onStart(() => server.listen(config.port))
-    onStop(() => server.close())
-  }
+  ctx.app.server.router.post(config.path, (ctx, next) => {
+    return webhook.middleware(ctx.req, ctx.res, next)
+  })
 
   function wrapHandler <T extends RepositoryPayload> (handler: (event: T) => void | string | Promise<void | string>) {
     return async (event: Webhooks.WebhookEvent<T>) => {
       const { repository } = event.payload
-      const groups = options[repository.full_name]
-      if (!groups) return
+      const ids = config.repos[repository.full_name]
+      if (!ids) return
 
       const message = await handler(event.payload)
       if (!message) return
-      for (const id of groups) {
-        await ctx.sender.sendGroupMsgAsync(id, message)
+      const groups = await ctx.database.getAllGroups(['id', 'assignee'])
+      for (const { id, assignee } of groups) {
+        if (ids.includes(id)) {
+          await ctx.sender(assignee).sendGroupMsgAsync(id, message)
+        }
       }
     }
   }

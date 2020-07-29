@@ -1,13 +1,13 @@
 {
   "references": [
-    { "path": "./database-level" },
-    { "path": "./database-sqlite" },
+    // { "path": "./database-level" },
+    // { "path": "./database-sqlite" },
     { "path": "./plugin-puppeteer" },
     { "path": "./plugin-chess" },
     { "path": "./plugin-github-webhook" },
     { "path": "./plugin-image-search" },
     { "path": "./plugin-monitor" },
-    { "path": "./plugin-nlp" },
+    // { "path": "./plugin-nlp" },
   ],
   "files": [],
 }

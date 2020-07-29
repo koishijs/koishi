@@ -1,4 +1,4 @@
-import { onStart, Context, observe, appList } from 'koishi'
+import { Context, observe } from 'koishi'
 import { Monitor, INTERVAL } from './monitor'
 import './database'
 
@@ -7,26 +7,25 @@ export * from './monitor'
 
 const monitors: Record<number | string, Monitor> = {}
 
-onStart(async () => {
-  const { database } = appList[0]
-  const groups = await database.getAllGroups(['subscribe'])
-  const idSet = new Set<number>()
-  for (const { subscribe } of groups) {
-    for (const uid in subscribe) {
-      idSet.add(Number(uid))
-    }
-  }
-
-  const subscribes = await database.getSubscribes(Array.from(idSet))
-  subscribes.forEach((subscribe, index) => {
-    const monitor = monitors[subscribe.id] = new Monitor(subscribe, database)
-    setTimeout(() => monitor.start(), index * INTERVAL / subscribes.length)
-  })
-})
-
 export const name = 'monitor'
 
 export function apply (ctx: Context) {
+  ctx.on('connect', async () => {
+    const groups = await ctx.database.getAllGroups(['subscribe'])
+    const idSet = new Set<number>()
+    for (const { subscribe } of groups) {
+      for (const uid in subscribe) {
+        idSet.add(Number(uid))
+      }
+    }
+
+    const subscribes = await ctx.database.getSubscribes(Array.from(idSet))
+    subscribes.forEach((subscribe, index) => {
+      const monitor = monitors[subscribe.id] = new Monitor(subscribe, ctx.app)
+      setTimeout(() => monitor.start(), index * INTERVAL / subscribes.length)
+    })
+  })
+
   ctx = ctx.intersect(ctx.app.groups)
 
   async function checkNames (names: string[]) {
@@ -44,9 +43,9 @@ export function apply (ctx: Context) {
     return usedNames
   }
 
-  const command = ctx.command('monitor', '直播监测器')
+  const cmd = ctx.command('monitor', '直播监测器')
 
-  command.subcommand('.create <...names>', '添加新的监测账号', { authority: 3 })
+  cmd.subcommand('.create <...names>', '添加新的监测账号', { authority: 3 })
     .option('-b, --bilibili <id>', '设置 Bilibili 账号')
     .option('-m, --mirrativ <id>', '设置 Mirrativ 账号')
     .option('-t, --twitcasting <id>', '设置 TwitCasting 账号', { isString: true })
@@ -70,7 +69,7 @@ export function apply (ctx: Context) {
       }
     })
 
-  command.subcommand('.search <name>', '查找账号信息')
+  cmd.subcommand('.search <name>', '查找账号信息')
     .alias('搜索主播')
     .action(async ({ meta, options }, name: string) => {
       if (!name) return meta.$send('请输入账号。')
@@ -85,7 +84,7 @@ export function apply (ctx: Context) {
       return meta.$send(output.join('\n'))
     })
 
-  command.subcommand('.remove <name>', '删除已有的检测账号', { authority: 3 })
+  cmd.subcommand('.remove <name>', '删除已有的检测账号', { authority: 3 })
     .action(async ({ meta }, name) => {
       if (!name) return meta.$send('请输入账号。')
       name = String(name)
@@ -94,7 +93,7 @@ export function apply (ctx: Context) {
       return meta.$send(`未找到名为“${name}”的账号。`)
     })
 
-  command.subcommand('.update <name>', '修改已有账号信息', { authority: 3 })
+  cmd.subcommand('.update <name>', '修改已有账号信息', { authority: 3 })
     .option('-n, --add-name <name>', '添加账号名', { isString: true, default: '' })
     .option('-N, --remove-name <name>', '删除账号名', { isString: true, default: '' })
     .option('-b, --bilibili <id>', '设置 Bilibili 账号', { isString: true })
@@ -146,7 +145,7 @@ export function apply (ctx: Context) {
       return meta.$send('账号修改成功。')
     })
 
-  command.subcommand('.check', '查看当前直播状态')
+  cmd.subcommand('.check', '查看当前直播状态')
     .groupFields(['subscribe'])
     .shortcut('查看单推列表')
     .shortcut('查看直播状态', { options: { group: true }})
@@ -184,7 +183,7 @@ export function apply (ctx: Context) {
       return meta.$send(output.join('\n'))
     })
 
-  command.subcommand('.subscribe <name>', '设置关注账号')
+  cmd.subcommand('.subscribe <name>', '设置关注账号')
     .shortcut('单推', { prefix: true, fuzzy: true })
     .shortcut('关注', { prefix: true, fuzzy: true })
     .shortcut('取消单推', { prefix: true, fuzzy: true, options: { delete: true } })
@@ -243,7 +242,7 @@ export function apply (ctx: Context) {
       }
       subscribe[id].push(userId)
       if (!monitors[id]) {
-        monitors[id] = new Monitor(account, ctx.database)
+        monitors[id] = new Monitor(account, ctx.app)
         monitors[id].start()
       }
       await meta.$group._update()

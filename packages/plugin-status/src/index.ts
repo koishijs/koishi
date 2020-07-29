@@ -1,4 +1,4 @@
-import { Context } from 'koishi-core'
+import { Context, App } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
 import {} from 'koishi-plugin-mysql'
 
@@ -82,7 +82,7 @@ export interface AppStatus {
   rate?: number
 }
 
-type StatusModifier = (status: Status, config: StatusOptions) => void | Promise<void>
+type StatusModifier = (this: App, status: Status, config: StatusOptions) => void | Promise<void>
 const statusModifiers: StatusModifier[] = []
 
 export function extendStatus (callback: StatusModifier) {
@@ -183,7 +183,7 @@ export function apply (ctx: Context, config: StatusOptions) {
     const cpu = { app: appRate, total: usedRate }
     const status: Status = { apps, userCount, groupCount, memory, cpu, timestamp, startTime }
     if (extend) {
-      await Promise.all(statusModifiers.map(modifier => modifier(status, config)))
+      await Promise.all(statusModifiers.map(modifier => modifier.call(app, status, config)))
     }
     return status
   }

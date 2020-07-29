@@ -1,4 +1,4 @@
-import { Context, extendGroup, onStart, appList } from 'koishi-core'
+import { Context, extendGroup } from 'koishi-core'
 import { isInteger } from 'koishi-utils'
 import { State, MoveResult, StateData } from './state'
 import * as go from './go'
@@ -29,23 +29,22 @@ extendGroup(() => ({
 
 const states: Record<number, State> = {}
 
-onStart(async () => {
-  const { database } = appList[0]
-  const groups = await database.getAllGroups(['id', 'chess'])
-  for (const { id, chess } of groups) {
-    if (chess) {
-      states[id] = State.from(chess)
-      states[id].update = rules[chess.rule].update
-    }
-  }
-})
-
 export * from './state'
 
 export const name = 'chess'
 
 export function apply (ctx: Context) {
   ctx = ctx.intersect(ctx.app.groups)
+
+  ctx.on('connect', async () => {
+    const groups = await ctx.database.getAllGroups(['id', 'chess'])
+    for (const { id, chess } of groups) {
+      if (chess) {
+        states[id] = State.from(chess)
+        states[id].update = rules[chess.rule].update
+      }
+    }
+  })
 
   ctx.command('chess [position]', '棋类游戏')
     .userFields(['name'])

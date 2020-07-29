@@ -1,4 +1,4 @@
-import { getPage, freePage } from './puppeteer'
+import { getPage, freePage } from '.'
 
 interface Attributes {
   [key: string]: string | number | boolean

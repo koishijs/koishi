@@ -1,4 +1,4 @@
-import { appMap, GroupFlag, Database, CQCode, Logger } from 'koishi'
+import { GroupFlag, CQCode, Logger, App, GroupData } from 'koishi'
 import { Subscribe } from './database'
 import bilibili from './bilibili'
 import twitCasting from './twitCasting'
@@ -7,7 +7,7 @@ import axios from 'axios'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'monitor/send' (info: LiveInfo, groupId: number): void
+    'monitor/before-send' (info: LiveInfo, group: Pick<GroupData, 'id' | 'flag' | 'assignee' | 'subscribe'>): void | boolean
   }
 }
 
@@ -34,7 +34,7 @@ export class Monitor {
   public running = false
   public daemons: Partial<Record<LiveType, Daemon>> = {}
 
-  constructor (public config: Subscribe, public database: Database) {
+  constructor (public config: Subscribe, public app: App) {
     for (const key in platforms) {
       if (key in config) {
         this.daemons[key] = new Daemon(key as LiveType, config, this)
@@ -85,7 +85,7 @@ export class Daemon {
     this._status.unshift(value)
     this._status = this._status.slice(0, 5)
     if (status !== value) {
-      this.monitor.database.setSubscribe(this.config.id, { [this._statusKey]: value })
+      this.monitor.app.database.setSubscribe(this.config.id, { [this._statusKey]: value })
     }
   }
 
@@ -119,25 +119,26 @@ export class Daemon {
     if (this.isLive) return
     this.isLive = true
     const { url, content, image, title } = info
-    const groups = await this.monitor.database.getAllGroups(['id', 'flag', 'assignee', 'subscribe'])
-    groups.forEach(async ({ id, flag, assignee, subscribe }) => {
-      if (!subscribe[this.config.id] || flag & GroupFlag.noEmit) return;
-      const app = appMap[assignee];
-      const output = [`[直播提示] ${this.config.names[0]} 正在 ${this._displayType} 上直播：${url}`];
+    const app = this.monitor.app
+    const groups = await app.database.getAllGroups(['id', 'flag', 'assignee', 'subscribe'])
+    groups.forEach(async (group) => {
+      const { id, flag, assignee, subscribe } = group
+      if (app.bail('monitor/before-send', info, group)) return
+      if (!subscribe[this.config.id] || flag & GroupFlag.noEmit) return
+      const output = [`[直播提示] ${this.config.names[0]} 正在 ${this._displayType} 上直播：${url}`]
       // at subscibers
       try {
-        const users = await app.sender.getGroupMemberList(id);
-        const subscribers = subscribe[this.config.id].filter(id => !id || users.some(user => user.userId === id));
-        subscribe[this.config.id] = subscribers;
+        const users = await app.sender(assignee).getGroupMemberList(id)
+        const subscribers = subscribe[this.config.id].filter(id => !id || users.some(user => user.userId === id))
+        subscribe[this.config.id] = subscribers
       } catch {}
-      const subscribers = subscribe[this.config.id].filter(x => x);
+      const subscribers = subscribe[this.config.id].filter(x => x)
       if (subscribers.length) {
-        output.push(subscribers.map(x => `[CQ:at,qq=${x}]`).join(''));
+        output.push(subscribers.map(x => `[CQ:at,qq=${x}]`).join(''))
       }
-      app.emit('monitor/send', info, id);
-      await app.sender.sendGroupMsgAsync(id, output.join('\n'));
+      await app.sender(assignee).sendGroupMsgAsync(id, output.join('\n'))
       if (title || image) {
-        await app.sender.sendGroupMsgAsync(id, CQCode.stringify('share', { url, image, title, content }));
+        await app.sender(assignee).sendGroupMsgAsync(id, CQCode.stringify('share', { url, image, title, content }))
       }
     })
   }
