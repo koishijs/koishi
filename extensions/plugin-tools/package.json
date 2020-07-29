@@ -1,5 +1,5 @@
 {
-  "name": "koishi-plugin-monitor",
+  "name": "koishi-plugin-tools",
   "version": "1.0.0-alpha.38",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -14,12 +14,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/koishi-plugin-monitor.git"
+    "url": "git+https://github.com/koishijs/koishi-plugin-tools.git"
   },
   "bugs": {
-    "url": "https://github.com/koishijs/koishi-plugin-monitor/issues"
+    "url": "https://github.com/koishijs/koishi-plugin-tools/issues"
   },
-  "homepage": "https://github.com/koishijs/koishi-plugin-monitor#readme",
+  "homepage": "https://github.com/koishijs/koishi-plugin-tools#readme",
   "peerDependencies": {
     "koishi-core": "^2.0.0-alpha.39",
     "koishi-utils": "^2.1.2"
