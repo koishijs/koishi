@@ -1,13 +1,13 @@
 import { Context } from 'koishi-core'
 import { CQCode } from 'koishi-utils'
 
-export interface BrainFuckOptions {
+export interface BrainfuckOptions {
   cellSize?: number
   memorySize?: number
   maxSteps?: number
 }
 
-const defaultOptions: BrainFuckOptions = {
+const defaultOptions: BrainfuckOptions = {
   cellSize: 8,
   memorySize: 1024,
   maxSteps: 16384,
@@ -18,13 +18,13 @@ class BFError extends Error {
 }
 
 class BrainFuck {
-  options: Required<BrainFuckOptions>
+  options: Required<BrainfuckOptions>
   data = [0]
   pointer = 0
   mask: number
   map: Record<number, number> = {}
 
-  constructor (public source: string, options: BrainFuckOptions = {}) {
+  constructor (public source: string, options: BrainfuckOptions = {}) {
     this.options = { ...defaultOptions, ...options } as any
     this.mask = (1 << this.options.cellSize) - 1
   }
@@ -112,10 +112,8 @@ class BrainFuck {
   }
 }
 
-export const name = 'brainfuck'
-
-export function apply (ctx: Context, config: BrainFuckOptions) {
-  ctx.command('brainfuck <source>', '运行 brainfuck 代码')
+export default function apply (ctx: Context, config: BrainfuckOptions = {}) {
+  ctx.command('tools/brainfuck <source>', '运行 brainfuck 代码')
     .alias('bf')
     .option('-i, --input <input>', '设置输入', { isString: true, default: '' })
     .usage('语言介绍：http://www.muppetlabs.com/~breadbox/bf')

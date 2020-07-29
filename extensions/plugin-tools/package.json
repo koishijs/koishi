@@ -22,6 +22,17 @@
   "homepage": "https://github.com/koishijs/koishi-plugin-tools#readme",
   "peerDependencies": {
     "koishi-core": "^2.0.0-alpha.39",
+    "koishi-plugin-puppeteer": "^1.0.0-alpha.0",
     "koishi-utils": "^2.1.2"
+  },
+  "dependencies": {
+    "axios": "^0.19.2",
+    "cheerio": "^1.0.0-rc.3",
+    "qrcode": "^1.4.4",
+    "xml-js": "^1.6.11"
+  },
+  "devDependencies": {
+    "@types/cheerio": "^0.22.21",
+    "@types/qrcode": "^1.3.4"
   }
 }

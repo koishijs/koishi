@@ -33,7 +33,7 @@ Context.prototype.freePage = freePage
 
 export interface Options extends LaunchOptions {}
 
-export const name = 'pupperteer'
+export const name = 'puppeteer'
 
 export function apply (ctx: Context, config: Options = {}) {
   const logger = ctx.logger('puppeteer')
