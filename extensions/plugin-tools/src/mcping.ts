@@ -11,7 +11,7 @@ function itob (n: number, length: number) {
   return result
 }
 
-export default function apply (ctx: Context) {
+export function apply (ctx: Context) {
   ctx.command('tools/mcping <server>', '查看 Minecraft 服务器信息')
     .action(async ({ meta }, address) => {
       if (!address) return meta.$send('请输入正确的网址。')

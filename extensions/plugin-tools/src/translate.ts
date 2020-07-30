@@ -23,7 +23,7 @@ export interface TranslateOptions {
   youdaoSecret?: string
 }
 
-export default function apply (ctx: Context, config: TranslateOptions) {
+export function apply (ctx: Context, config: TranslateOptions) {
   const { youdaoAppKey: appKey, youdaoSecret: secret } = config
   if (!secret) throw new Error('missing configuration "youdaoSecret"')
 

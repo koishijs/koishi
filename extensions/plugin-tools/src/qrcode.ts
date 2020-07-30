@@ -1,7 +1,7 @@
 import { Context } from 'koishi-core'
 import { toDataURL } from 'qrcode'
 
-export default function apply (ctx: Context) {
+export function apply (ctx: Context) {
   ctx.command('tools/qrcode <text...>', '生成二维码')
     .option('-m, --margin <margin>', '边界尺寸', { default: 4 })
     .option('-s, --scale <scale>', '比例系数', { default: 4 })

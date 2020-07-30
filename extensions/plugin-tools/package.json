@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-tools",
-  "version": "1.0.0-alpha.38",
+  "version": "1.0.0-alpha.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",

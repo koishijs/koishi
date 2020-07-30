@@ -5,7 +5,7 @@ const lang = 'zh-CN'
 const unit = 'metric'
 const products = ['astro', 'civil', 'civillight', 'meteo', 'two']
 
-export default function apply (ctx: Context) {
+export function apply (ctx: Context) {
   ctx.command('tools/weather <longitude> <latitude>', '查询天气')
     .option('-p, --product <product>', `晴天钟产品选择，可为 ${products.join(', ')}`, { default: 'civil' })
     .action(async ({ meta, options }, lon, lat) => {

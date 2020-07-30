@@ -17,7 +17,7 @@ export interface AlphaOptions {
   wolframAlphaAppId?: string
 }
 
-export default function apply (ctx: Context, config: AlphaOptions) {
+export function apply (ctx: Context, config: AlphaOptions) {
   const { wolframAlphaAppId: appid } = config
   ctx.command('tools/alpha <expression...>', '调用 WolframAlpha 查询', { maxUsage: 10 })
     .example('alpha int(sinx)')

@@ -2,7 +2,7 @@ import { Context } from 'koishi-core'
 import {} from 'koishi-plugin-puppeteer'
 import axios from 'axios'
 
-export default function apply (ctx: Context) {
+export function apply (ctx: Context) {
   // ensure that peer dependency exist
   try {
     require('koishi-plugin-puppeteer')

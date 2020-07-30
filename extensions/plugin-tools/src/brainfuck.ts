@@ -112,7 +112,7 @@ class BrainFuck {
   }
 }
 
-export default function apply (ctx: Context, config: BrainfuckOptions = {}) {
+export function apply (ctx: Context, config: BrainfuckOptions = {}) {
   ctx.command('tools/brainfuck <source>', '运行 brainfuck 代码')
     .alias('bf')
     .option('-i, --input <input>', '设置输入', { isString: true, default: '' })

@@ -59,11 +59,15 @@ function loadEcosystem (name: string) {
   const cache = cacheMap[name]
   if (cache) return cache
 
-  const modules = [resolve(configDir, name), name]
-  const prefix = `koishi-plugin-`
-  if (!name.includes(prefix)) {
+  const prefix = 'koishi-plugin-'
+  const modules: string[] = []
+  if (name.startsWith('.')) {
+    modules.push(resolve(configDir, name))
+  } else if (!name.includes(prefix)) {
     const index = name.lastIndexOf('/')
-    modules.push(name.slice(0, index + 1) + prefix + name.slice(index + 1))
+    modules.push(name.slice(0, index + 1) + prefix + name.slice(index + 1), name)
+  } else {
+    modules.push(name)
   }
   for (const path of modules) {
     logger.debug('resolving %c', path)
@@ -117,6 +121,7 @@ app.start().then(() => {
 
   app.bots.forEach((bot) => {
     const { server } = bot
+    if (!server) return
     const { coolqEdition, pluginVersion } = bot.sender.info
     if (type === 'http') {
       logger.info('connected to %c', server)

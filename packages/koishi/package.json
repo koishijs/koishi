@@ -39,7 +39,7 @@
     "kleur": "^4.0.2",
     "koishi-core": "^2.0.0-alpha.39",
     "koishi-plugin-common": "^3.0.0-alpha.42",
-    "koishi-plugin-recorder": "^2.0.0-alpha.39",
+    "koishi-plugin-mysql": "^2.0.0-alpha.39",
     "koishi-plugin-schedule": "^2.0.0-alpha.43",
     "koishi-plugin-status": "^2.0.0-alpha.41",
     "koishi-plugin-teach": "^1.0.0-alpha.59",

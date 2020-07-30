@@ -8,6 +8,7 @@
     { "path": "./plugin-image-search" },
     { "path": "./plugin-monitor" },
     { "path": "./plugin-tools" },
+    { "path": "./plugin-vm" },
     // { "path": "./plugin-nlp" },
   ],
   "files": [],

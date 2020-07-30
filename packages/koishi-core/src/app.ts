@@ -69,7 +69,6 @@ export class App extends Context {
   private _users: MajorContext
   private _groups: MajorContext
   private _discusses: MajorContext
-  private _isReady = false
   private _middlewareCounter = 0
   private _middlewareSet = new Set<number>()
   private _contexts: Record<string, Context> = { [appIdentifier]: this }
@@ -126,8 +125,9 @@ export class App extends Context {
   }
 
   async getSelfIds () {
+    const bots = this.server.bots.filter(bot => bot.sender)
     if (!this._getSelfIdsPromise) {
-      this._getSelfIdsPromise = Promise.all(this.bots.map(async (bot) => {
+      this._getSelfIdsPromise = Promise.all(bots.map(async (bot) => {
         if (bot.selfId) return
         const info = await bot.sender.getLoginInfo()
         bot.selfId = info.userId
@@ -135,7 +135,7 @@ export class App extends Context {
       }))
     }
     await this._getSelfIdsPromise
-    return this.bots.map(bot => bot.selfId)
+    return bots.map(bot => bot.selfId)
   }
 
   get users () {
@@ -160,7 +160,9 @@ export class App extends Context {
   }
 
   prepare () {
-    const selfIds = this.bots.filter(bot => bot.selfId).map(bot => `[CQ:at,qq=${bot.selfId}]`)
+    const selfIds = this.bots
+      .filter(bot => bot.selfId && bot.sender)
+      .map(bot => `[CQ:at,qq=${bot.selfId}]`)
     this.atMeRE = createLeadingRE(selfIds)
   }
 
@@ -189,19 +191,13 @@ export class App extends Context {
     return this.createContext([[ids, null], [[], null], [[], null]])
   }
 
-  _ready () {
-    if (this._isReady || !this.bots.every(bot => bot.selfId)) return
-    this._isReady = true
-    this.emit('ready')
-  }
-
   async start () {
     this.status = Status.opening
     await this.parallelize('before-connect')
     this.status = Status.open
     this.logger('app').debug('started')
     this.emit('connect')
-    this._ready()
+    this.server.ready()
   }
 
   async stop () {

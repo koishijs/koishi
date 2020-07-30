@@ -105,9 +105,11 @@ type DatabaseExtension <T extends {}> = {
   [K in keyof Database]?: Database[K] extends (...args: infer R) => infer S ? (this: T & Database, ...args: R) => S : never
 }
 
-export function extendDatabase <T extends {}> (module: string, extension: DatabaseExtension<T>) {
+export function extendDatabase <T extends {}> (module: string, extension: DatabaseExtension<T>): void
+export function extendDatabase <T extends {}> (module: { prototype: T }, extension: DatabaseExtension<T>): void
+export function extendDatabase (module: any, extension: {}) {
   try {
-    const Database = require(module).default
+    const Database = typeof module === 'string' ? require(module).default : module
     Object.assign(Database.prototype, extension)
   } catch (error) {}
 }

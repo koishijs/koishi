@@ -38,7 +38,7 @@ export const name = 'puppeteer'
 export function apply (ctx: Context, config: Options = {}) {
   const logger = ctx.logger('puppeteer')
 
-  ctx.on('connect', () => {
+  ctx.on('before-connect', () => {
     browserPromise = launch(config)
     browserPromise.then(
       () => logger.debug('browser launched'),

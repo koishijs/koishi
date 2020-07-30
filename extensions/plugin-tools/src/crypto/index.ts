@@ -5,7 +5,7 @@ import FourSquare from './algorithms/four-square'
 import { Context } from 'koishi-core'
 import { CQCode } from 'koishi-utils'
 
-export default function apply (ctx: Context) {
+export function apply (ctx: Context) {
   ctx.command('tools/crypto <algorithm> <text>', '加密解密工具')
     .option('-e, --encrypt', '加密模式（默认）')
     .option('-d, --decrypt', '解密模式')

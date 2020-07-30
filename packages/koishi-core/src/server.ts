@@ -40,12 +40,13 @@ function createBotsProxy (bots: Bot[]) {
 
 export abstract class CQServer {
   public bots: Bot[]
-  public isListening = false
-
   public koa?: Koa
   public router?: Router
   public server?: Server
   public socket?: WebSocket
+
+  protected _isListening = false
+  protected _isReady = false
 
   protected abstract _listen (): Promise<void>
   protected abstract _close (): void
@@ -63,7 +64,7 @@ export abstract class CQServer {
       if (!bot) return
       bot.selfId = meta.selfId
       this.app.prepare()
-      this.app._ready()
+      this.ready()
     }
     return new Meta(meta)
   }
@@ -113,8 +114,8 @@ export abstract class CQServer {
   }
 
   async listen () {
-    if (this.isListening) return
-    this.isListening = true
+    if (this._isListening) return
+    this._isListening = true
     try {
       await this._listen()
     } catch (error) {
@@ -124,8 +125,14 @@ export abstract class CQServer {
   }
 
   close () {
-    this.isListening = false
+    this._isListening = false
     this._close()
+  }
+
+  ready () {
+    if (this._isReady || !this.bots.every(bot => bot.selfId || !bot.sender)) return
+    this._isReady = true
+    this.app.emit('ready')
   }
 }
 
@@ -183,7 +190,7 @@ class HttpServer extends CQServer {
 
   private async __listen (bot: Bot) {
     if (!bot.server) return
-    const sender = new CQSender(this.app, bot)
+    const sender = bot.sender = new CQSender(this.app, bot)
     sender._get = async (action, params) => {
       const headers = {} as any
       if (bot.token) {
@@ -245,7 +252,7 @@ class WsClient extends CQServer {
       this.socket.on('error', error => logger.debug(error))
 
       this.socket.once('close', (code) => {
-        if (!this.isListening || code === 1005) return
+        if (!this._isListening || code === 1005) return
 
         const message = `failed to connect to ${server}`
         if (!retryInterval || this._retryCount >= retryTimes) {
@@ -255,7 +262,7 @@ class WsClient extends CQServer {
         this._retryCount++
         logger.debug(`${message}, will retry in ${ms(retryInterval)}...`)
         setTimeout(() => {
-          if (this.isListening) connect(resolve, reject)
+          if (this._isListening) connect(resolve, reject)
         }, retryInterval)
       })
 

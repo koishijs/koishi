@@ -1,12 +1,12 @@
 import { createPool, Pool, PoolConfig, escape, escapeId, format, OkPacket } from 'mysql'
-import { TableType, Tables, App, UserField, UserData, userFields, createUser, GroupData, groupFields, createGroup, GroupField, Database } from 'koishi-core'
+import { TableType, Tables, App, UserField, UserData, userFields, createUser, GroupData, groupFields, createGroup, GroupField, Database, extendDatabase, Context } from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { types } from 'util'
 
 const logger = Logger.create('mysql')
 
 declare module 'koishi-core/dist/database' {
-  interface Database extends Omit<MysqlDatabase, keyof Database> {}
+  interface Database extends MysqlDatabase {}
 }
 
 export interface Options extends PoolConfig {}
@@ -35,8 +35,6 @@ export const userGetters: Record<string, () => string> = {}
 function inferFields (keys: readonly string[]) {
   return keys.map(key => key in userGetters ? `${userGetters[key]()} AS ${key}` : key) as UserField[]
 }
-
-export default interface MysqlDatabase extends Database {}
 
 export default class MysqlDatabase {
   public pool: Pool
@@ -130,7 +128,9 @@ export default class MysqlDatabase {
   stop () {
     this.pool.end()
   }
+}
 
+extendDatabase(MysqlDatabase, {
   async getUser (userId, ...args) {
     const authority = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] ? inferFields(args[0] as any) : userFields
@@ -151,7 +151,7 @@ export default class MysqlDatabase {
       }
     }
     return data || fallback
-  }
+  },
 
   async getUsers (...args) {
     let ids: readonly number[], fields: readonly UserField[]
@@ -166,11 +166,11 @@ export default class MysqlDatabase {
     }
     if (ids && !ids.length) return []
     return this.select<UserData[]>('user', fields, ids && `\`id\` IN (${ids.join(', ')})`)
-  }
+  },
 
   async setUser (userId, data) {
     await this.update('user', userId, data)
-  }
+  },
 
   async getGroup (groupId, ...args) {
     const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
@@ -190,7 +190,7 @@ export default class MysqlDatabase {
       data.id = groupId
     }
     return data || fallback
-  }
+  },
 
   async getAllGroups (...args) {
     let assignees: readonly number[], fields: readonly GroupField[]
@@ -206,15 +206,18 @@ export default class MysqlDatabase {
     }
     if (!assignees.length) return []
     return this.select<GroupData[]>('group', fields, `\`assignee\` IN (${assignees.join(',')})`)
-  }
+  },
 
   async setGroup (groupId, data) {
     await this.update('group', groupId, data)
-  }
-}
+  },
+})
 
 export const name = 'mysql'
 
-export function apply (app: App, config: Options = {}) {
-  app._database = new MysqlDatabase(app, config)
+export function apply (ctx: Context, config: Options = {}) {
+  const db = new MysqlDatabase(ctx.app, config)
+  ctx.database = db as Database
+  ctx.on('before-connect', () => db.start())
+  ctx.on('before-disconnect', () => db.stop())
 }

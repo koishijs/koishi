@@ -233,7 +233,7 @@ class MayaDate {
   }
 }
 
-export default function apply (ctx: Context) {
+export function apply (ctx: Context) {
   ctx.command('tools/maya <YYYY-MM-DD> [BC|AD]', '玛雅日历换算')
     .example('maya 2012-12-21')
     .action(({ meta }, date, hint) => {

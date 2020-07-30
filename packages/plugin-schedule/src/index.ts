@@ -43,7 +43,7 @@ export const name = 'schedule'
 export function apply (ctx: Context) {
   const { database } = ctx
 
-  ctx.app.on('connect', async () => {
+  ctx.on('connect', async () => {
     const schedules = await database.getAllSchedules()
     schedules.forEach((schedule) => {
       if (!ctx.app.bots[schedule.assignee]) return

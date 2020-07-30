@@ -1,8 +1,8 @@
 import { contain, union, intersection, difference, noop, Logger } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine, ParsedLine } from './command'
 import { Meta, contextTypes, getSessionId } from './meta'
+import { UserField, GroupField, Database } from './database'
 import { App } from './app'
-import { Database, UserField, GroupField } from './database'
 import { errors } from './shared'
 import { inspect } from 'util'
 
@@ -50,6 +50,13 @@ export class Context {
 
   get database () {
     return this.app._database
+  }
+
+  set database (database: Database) {
+    if (this.app._database && this.app._database !== database) {
+      this.logger('app').warn('ctx.database is overwritten, which may lead to errors.')
+    }
+    this.app._database = database
   }
 
   [inspect.custom] () {
@@ -304,12 +311,11 @@ export class Context {
     if (argv) return this.resolve(argv, meta, next)
   }
 
-  execute (argv: ExecuteArgv): Promise<ParsedCommandLine>
-  execute (message: string, meta: Meta, next?: NextFunction): Promise<ParsedCommandLine>
+  execute (argv: ExecuteArgv): Promise<void>
+  execute (message: string, meta: Meta, next?: NextFunction): Promise<void>
   async execute (...args: [ExecuteArgv] | [string, Meta, NextFunction?]) {
     const meta = typeof args[0] === 'string' ? args[1] : args[0].meta
-    // TODO!
-    // if (!('$ctxType' in meta)) this.app.server.parseMeta(meta)
+    if (!('$ctxType' in meta)) this.app.server.parseMeta(meta)
 
     let argv: ParsedCommandLine, next: NextFunction
     if (typeof args[0] === 'string') {
@@ -328,8 +334,7 @@ export class Context {
       await meta.observeUser()
     }
 
-    await argv.command.execute(argv)
-    return argv
+    return argv.command.execute(argv)
   }
 
   end () {
