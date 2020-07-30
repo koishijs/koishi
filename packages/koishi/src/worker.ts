@@ -133,5 +133,5 @@ app.start().then(() => {
 
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
   logger.success(`bot started successfully in ${time} ms.`)
-  process.send({ type: 'start' })
+  process.send('start')
 }, handleException)

@@ -11,6 +11,11 @@ interface WorkerOptions {
   '--'?: string[]
 }
 
+const codes = [
+  134, // heap out of memory
+  514, // preserved for koishi
+]
+
 let child: ChildProcess
 
 process.on('SIGINT', () => {
@@ -26,8 +31,18 @@ function createWorker (options: WorkerOptions) {
     execArgv: options['--'],
   })
 
+  let started = false
+
+  child.on('message', (data) => {
+    if (data === 'start') {
+      started = true
+    }
+  })
+
   child.on('exit', (code) => {
-    if (code >= 0) process.exit(code)
+    if (!started || !codes.includes(code)) {
+      process.exit(code)
+    }
     createWorker(options)
   })
 }

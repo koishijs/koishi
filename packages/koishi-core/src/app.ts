@@ -35,9 +35,8 @@ export interface MajorContext extends Context {
 const appScope: ContextScope = [[null, []], [null, []], [null, []]]
 const appIdentifier = ContextScope.stringify(appScope)
 
-const nicknameSuffix = '([,，]\\s*|\\s+)'
 function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
-  return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegex).join('|')})${suffix}`) : /^/
+  return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegex).join('|')})${suffix}`) : /^$/
 }
 
 const defaultOptions: AppOptions = {
@@ -54,9 +53,6 @@ export class App extends Context {
   app = this
   options: AppOptions
   server: CQServer
-  atMeRE: RegExp
-  prefixRE: RegExp
-  nicknameRE: RegExp
   status = Status.closed
 
   _database: Database
@@ -66,6 +62,9 @@ export class App extends Context {
   _shortcutMap: Record<string, Command> = {}
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
 
+  private _atMeRE: RegExp
+  private _nameRE: RegExp
+  private _prefixRE: RegExp
   private _users: MajorContext
   private _groups: MajorContext
   private _discusses: MajorContext
@@ -100,9 +99,8 @@ export class App extends Context {
     const { nickname, prefix } = this.options
     const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
     const prefixes = Array.isArray(prefix) ? prefix : [prefix || '']
-    this.nicknameRE = createLeadingRE(nicknames, '@?', nicknameSuffix)
-    this.prefixRE = createLeadingRE(prefixes)
-    this.prepare()
+    this._nameRE = createLeadingRE(nicknames, '@?', '([,，]\\s*|\\s+)')
+    this._prefixRE = createLeadingRE(prefixes)
 
     // bind built-in event listeners
     this.on('message', this._applyMiddlewares)
@@ -128,7 +126,7 @@ export class App extends Context {
     const bots = this.server.bots.filter(bot => bot.sender)
     if (!this._getSelfIdsPromise) {
       this._getSelfIdsPromise = Promise.all(bots.map(async (bot) => {
-        if (bot.selfId) return
+        if (bot.selfId || !bot.sender) return
         const info = await bot.sender.getLoginInfo()
         bot.selfId = info.userId
         this.prepare()
@@ -160,10 +158,10 @@ export class App extends Context {
   }
 
   prepare () {
-    const selfIds = this.bots
+    const selfIds = this.server.bots
       .filter(bot => bot.selfId && bot.sender)
-      .map(bot => `[CQ:at,qq=${bot.selfId}]`)
-    this.atMeRE = createLeadingRE(selfIds)
+      .map(bot => '' + bot.selfId)
+    this._atMeRE = createLeadingRE(selfIds, '\\[CQ:at,qq=', '\\]\\s*')
   }
 
   createContext (scope: string | ContextScope) {
@@ -216,19 +214,19 @@ export class App extends Context {
     let prefix: string = null
     let message = simplify(meta.message.trim())
 
-    if (meta.messageType !== 'private' && (capture = message.match(this.atMeRE))) {
+    if (meta.messageType !== 'private' && (capture = message.match(this._atMeRE))) {
       atMe = true
       nickname = capture[0]
       message = message.slice(capture[0].length)
     }
 
-    if ((capture = message.match(this.nicknameRE))?.[0].length) {
+    if ((capture = message.match(this._nameRE))?.[0].length) {
       nickname = capture[0]
       message = message.slice(capture[0].length)
     }
 
     // eslint-disable-next-line no-cond-assign
-    if (capture = message.match(this.prefixRE)) {
+    if (capture = message.match(this._prefixRE)) {
       prefix = capture[0]
       message = message.slice(capture[0].length)
     }

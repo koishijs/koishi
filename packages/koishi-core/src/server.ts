@@ -118,6 +118,7 @@ export abstract class CQServer {
     this._isListening = true
     try {
       await this._listen()
+      this.app.prepare()
     } catch (error) {
       this.close()
       throw error
