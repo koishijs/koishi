@@ -1,3 +1,7 @@
+import help from './plugins/help'
+import shortcut from './plugins/shortcut'
+import suggest from './plugins/suggest'
+import validate from './plugins/validate'
 import escapeRegex from 'escape-string-regexp'
 import { Command } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
@@ -5,7 +9,6 @@ import { GroupFlag, UserFlag, GroupField, UserField, Database } from './database
 import { BotOptions, CQServer } from './server'
 import { Meta } from './meta'
 import { simplify } from 'koishi-utils'
-import { emitter, errors } from './shared'
 import { types } from 'util'
 
 export interface AppOptions extends BotOptions {
@@ -25,8 +28,6 @@ export interface AppOptions extends BotOptions {
   userCacheTimeout?: number
   groupCacheTimeout?: number
 }
-
-export const onApp = (callback: (app: App) => any) => emitter.on('app', callback)
 
 export interface MajorContext extends Context {
   except (...ids: number[]): Context
@@ -103,7 +104,6 @@ export class App extends Context {
     // bind built-in event listeners
     this.on('message', this._applyMiddlewares)
     this.middleware(this._preprocess)
-    emitter.emit('app', this)
 
     this.on('parse', (message, { $parsed, messageType }, forced) => {
       if (forced && $parsed.prefix === null && !$parsed.nickname && messageType !== 'private') return
@@ -114,6 +114,11 @@ export class App extends Context {
       const result = command.parse(message.slice(name.length).trimStart())
       return { command, ...result }
     })
+
+    this.plugin(validate)
+    this.plugin(suggest)
+    this.plugin(shortcut)
+    this.plugin(help)
   }
 
   get bots () {
@@ -286,7 +291,7 @@ export class App extends Context {
 
       try {
         if (!this._middlewareSet.has(counter)) {
-          throw new Error(errors.ISOLATED_NEXT)
+          throw new Error('isolated next function detected')
         }
         if (fallback) middlewares.push((_, next) => fallback(next))
         return middlewares[index++]?.(meta, next)

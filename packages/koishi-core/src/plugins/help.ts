@@ -1,4 +1,4 @@
-import { Command, Context, UserData, Meta, onApp, UserField, GroupField, ParsedCommandLine, Tables, TableType } from '..'
+import { Command, Context, UserData, Meta, App, UserField, GroupField, ParsedCommandLine, Tables, TableType } from '..'
 import { getUsage, getUsageName, ValidationField } from './validate'
 
 export type CommandUsage <U extends UserField, G extends GroupField> = string | ((this: Command<U, G>, meta: Meta<U, G>) => string | Promise<string>)
@@ -43,7 +43,7 @@ interface HelpConfig {
   options: boolean
 }
 
-onApp((app) => {
+export default function apply (app: App) {
   app.on('new-command', (cmd) => {
     cmd._examples = []
     cmd.option('-h, --help', '显示此信息', { hidden: true })
@@ -85,7 +85,7 @@ onApp((app) => {
         return showGlobalHelp(app, meta, options as HelpConfig)
       }
     })
-})
+}
 
 function getShortcuts (command: Command, user: Pick<UserData, 'authority'>) {
   return Object.keys(command._shortcuts).filter((key) => {

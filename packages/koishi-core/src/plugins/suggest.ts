@@ -1,9 +1,7 @@
-import { NextFunction, Meta, onApp } from '..'
-import { messages } from '../shared'
-import { format } from 'util'
+import { NextFunction, Meta, App } from '..'
 import leven from 'leven'
 
-onApp((app) => {
+export default function apply (app: App) {
   app.middleware((meta, next) => {
     if (meta.$argv) return next()
     const { message, prefix, nickname } = meta.$parsed
@@ -18,8 +16,8 @@ onApp((app) => {
       meta,
       next,
       items,
-      prefix: messages.COMMAND_SUGGESTION_PREFIX,
-      suffix: messages.COMMAND_SUGGESTION_SUFFIX,
+      prefix: '没有此命令。',
+      suffix: '发送空行或句号以调用推测的指令。',
       coefficient: app.options.similarityCoefficient,
       async execute (suggestion, meta, next) {
         const newMessage = suggestion + message.slice(target.length)
@@ -27,7 +25,7 @@ onApp((app) => {
       },
     })
   })
-})
+}
 
 interface SuggestOptions {
   target: string
@@ -48,7 +46,7 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
   if (!suggestions.length) return next()
 
   return next(() => {
-    const message = prefix + format(messages.SUGGESTION_TEXT, suggestions.map(name => `“${name}”`).join('或'))
+    const message = prefix + `你要找的是不是${suggestions.map(name => `“${name}”`).join('或')}？`
     if (suggestions.length > 1) return meta.$send(message)
 
     meta.$app.onceMiddleware(async (meta, next) => {

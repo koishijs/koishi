@@ -1,4 +1,4 @@
-import { onApp, ParsedLine, Command } from '..'
+import { App, ParsedLine, Command } from '..'
 
 declare module '../app' {
   interface App {
@@ -38,7 +38,7 @@ Command.prototype.shortcut = function (this: Command, name, config) {
   return this
 }
 
-onApp((app) => {
+export default function apply (app: App) {
   app._shortcuts = []
   app._shortcutMap = {}
 
@@ -65,4 +65,4 @@ onApp((app) => {
       }
     }
   })
-})
+}
