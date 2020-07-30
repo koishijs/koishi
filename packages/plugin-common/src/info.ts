@@ -22,10 +22,12 @@ export function registerUserInfo <K extends UserField> (callback: UserInfoCallba
   }
 }
 
-export default function apply (ctx: Context) {
+export function apply (ctx: Context) {
   ctx.command('info', '查看用户信息', { authority: 0 })
+    .alias('profile')
     .shortcut('我的信息')
     .userFields(['name'])
+    .before(meta => !meta.$app.database)
     .option('-u, --user [target]', '指定目标', { authority: 3 })
     .action(async ({ meta, options }) => {
       let user: UserData

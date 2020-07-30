@@ -1,9 +1,10 @@
 import { Context, getTargetId, ContextType, groupFields, userFields, Meta } from 'koishi-core'
 
-export default function apply (ctx: Context) {
+export function apply (ctx: Context) {
   ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3 })
     .alias('ctxf')
     .userFields(['authority'])
+    .before(meta => !meta.$app.database)
     .option('-u, --user [id]', '使用私聊上下文')
     .option('-d, --discuss [id]', '使用讨论组上下文')
     .option('-g, --group [id]', '使用群聊上下文')

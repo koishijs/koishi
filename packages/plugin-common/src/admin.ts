@@ -138,9 +138,10 @@ GroupAction.add('setAssignee', async (meta, group, _assignee) => {
   return meta.$send('群信息已修改。')
 }, ['assignee'])
 
-export default function apply (ctx: Context) {
+export function apply (ctx: Context) {
   ctx.command('admin <action> [...args]', '管理用户', { authority: 4 })
     .userFields(['authority'])
+    .before(meta => !meta.$app.database)
     .option('-u, --user [user]', '指定目标用户')
     .option('-g, --group [group]', '指定目标群')
     .option('-G, --this-group', '指定目标群为本群')

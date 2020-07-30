@@ -61,8 +61,9 @@ Context.prototype.broadcast = async function (this: Context, message, forced) {
 
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
 
-export default function apply (ctx: Context) {
+export function apply (ctx: Context) {
   ctx.command('broadcast <message...>', '全服广播', { authority: 4 })
+    .before(meta => !meta.$app.database)
     .option('-f, --forced', '无视 noEmit 标签进行广播')
     .option('-o, --only', '仅向当前 Bot 负责的群进行广播')
     .action(async ({ options, meta }, message) => {
