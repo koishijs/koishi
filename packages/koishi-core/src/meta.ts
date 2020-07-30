@@ -8,7 +8,7 @@ export type MessageType = 'private' | 'group' | 'discuss'
 
 export interface MetaTypeMap {
   message: MessageType
-  notice: 'group_upload' | 'group_admin' | 'group_increase' | 'group_decrease' | 'group_ban' | 'friend_add'
+  notice: 'group_upload' | 'group_admin' | 'group_increase' | 'group_decrease' | 'group_ban' | 'friend_add' | 'group_recall'
   request: 'friend' | 'group'
   // eslint-disable-next-line camelcase
   meta_event: 'lifecycle' | 'heartbeat'
@@ -295,10 +295,6 @@ export interface AccountInfo {
   nickname: string
 }
 
-export interface FriendInfo extends AccountInfo {
-  remark: string
-}
-
 export interface StrangerInfo extends AccountInfo {
   sex: 'male' | 'female' | 'unknown'
   age: number
@@ -314,30 +310,6 @@ export interface SenderInfo extends StrangerInfo {
   title?: string
 }
 
-export interface GroupMemberInfo extends SenderInfo {
-  cardChangeable: boolean
-  groupId: number
-  joinTime: number
-  lastSentTime: number
-  titleExpireTime: number
-  unfriendly: boolean
-}
-
-export interface ListedGroupInfo {
-  groupId: number
-  groupName: string
-}
-
-export interface GroupInfo extends ListedGroupInfo {
-  memberCount: number
-  maxMemberCount: number
-}
-
-export interface Credentials {
-  cookies: string
-  csrfToken: number
-}
-
 export interface StatusInfo {
   appInitialized: boolean
   appEnabled: boolean
@@ -345,44 +317,6 @@ export interface StatusInfo {
   appGood: boolean
   online: boolean
   good: boolean
-}
-
-export interface VersionInfo {
-  coolqDirectory: string
-  coolqEdition: 'air' | 'pro'
-  pluginVersion: string
-  pluginMajorVersion: number
-  pluginMinorVersion: number
-  pluginPatchVersion: number
-  pluginBuildNumber: number
-  pluginBuildConfiguration: 'debug' | 'release'
-}
-
-export interface VipInfo extends AccountInfo {
-  level: number
-  levelSpeed: number
-  vipLevel: number
-  vipGrowthSpeed: number
-  vipGrowthTotal: string
-}
-
-export interface GroupNoticeInfo {
-  cn: number
-  fid: string
-  fn: number
-  msg: {
-    text: string
-    textFace: string
-    title: string
-  }
-  pubt: number
-  readNum: number
-  settings: {
-    isShowEditCard: number
-    remindTs: number
-  }
-  u: number
-  vn: number
 }
 
 /**

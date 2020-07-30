@@ -379,6 +379,7 @@ export interface EventMap {
   'group-ban' (meta: Meta): void
   'group-ban/ban' (meta: Meta): void
   'group-ban/lift-ban' (meta: Meta): void
+  'group_recall' (meta: Meta): void
   'request/friend' (meta: Meta): void
   'request/group/add' (meta: Meta): void
   'request/group/invite' (meta: Meta): void
