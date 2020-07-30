@@ -101,18 +101,6 @@ export interface CommandConfig <U extends UserField = never, G extends GroupFiel
   authority?: number
 }
 
-export interface ShortcutConfig {
-  name?: string
-  command?: Command
-  authority?: number
-  hidden?: boolean
-  prefix?: boolean
-  fuzzy?: boolean
-  args?: string[]
-  oneArg?: boolean
-  options?: Record<string, any>
-}
-
 type ArgvInferred <T> = Iterable<T> | ((argv: ParsedCommandLine, fields: Set<T>) => Iterable<T>)
 type CommandAction <U extends UserField, G extends GroupField> =
   (this: Command<U, G>, config: ParsedCommandLine<U, G>, ...args: string[]) => any
@@ -125,7 +113,6 @@ export class Command <U extends UserField = never, G extends GroupField = never>
   _aliases: string[] = []
   _arguments: CommandArgument[]
   _options: CommandOption[] = []
-  _shortcuts: Record<string, ShortcutConfig> = {}
 
   private _optionMap: Record<string, CommandOption> = {}
   private _optionAliasMap: Record<string, CommandOption> = {}
@@ -226,18 +213,6 @@ export class Command <U extends UserField = never, G extends GroupField = never>
   subcommand (rawName: string, ...args: [CommandConfig?] | [string, CommandConfig?]) {
     rawName = this.name + (rawName.charCodeAt(0) === 46 ? '' : '/') + rawName
     return this.context.command(rawName, ...args as any)
-  }
-
-  shortcut (name: string, config: ShortcutConfig = {}) {
-    config = this._shortcuts[name] = {
-      name,
-      command: this,
-      authority: this.config.authority,
-      ...config,
-    }
-    this.app._shortcutMap[name] = this
-    this.app._shortcuts.push(config)
-    return this
   }
 
   /**

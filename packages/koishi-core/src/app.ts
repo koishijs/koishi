@@ -1,5 +1,5 @@
 import escapeRegex from 'escape-string-regexp'
-import { Command, ShortcutConfig } from './command'
+import { Command } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
 import { GroupFlag, UserFlag, GroupField, UserField, Database } from './database'
 import { BotOptions, CQServer } from './server'
@@ -58,8 +58,6 @@ export class App extends Context {
   _database: Database
   _commands: Command[] = []
   _commandMap: Record<string, Command> = {}
-  _shortcuts: ShortcutConfig[] = []
-  _shortcutMap: Record<string, Command> = {}
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
 
   private _atMeRE: RegExp
