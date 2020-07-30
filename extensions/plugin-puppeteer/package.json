@@ -34,6 +34,7 @@
     "puppeteer"
   ],
   "devDependencies": {
+    "@types/puppeteer-core": "^2.0.0",
     "koishi-test-utils": "^4.0.0-alpha.39"
   },
   "peerDependencies": {

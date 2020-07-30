@@ -22,7 +22,6 @@
   "homepage": "https://github.com/koishijs/koishi-plugin-tools#readme",
   "peerDependencies": {
     "koishi-core": "^2.0.0-alpha.39",
-    "koishi-plugin-puppeteer": "^1.0.0-alpha.0",
     "koishi-utils": "^2.1.2"
   },
   "dependencies": {

@@ -1,4 +1,4 @@
-import { getPage, freePage } from '.'
+import { Context } from 'koishi-core'
 
 interface Attributes {
   [key: string]: string | number | boolean
@@ -130,8 +130,8 @@ export class SVG extends Tag {
     return this
   }
 
-  async toCQCode () {
-    const page = await getPage()
+  async render (ctx: Context) {
+    const page = await ctx.getPage()
     await page.setContent(this.outer)
     const base64 = await page.screenshot({
       encoding: 'base64',
@@ -142,7 +142,7 @@ export class SVG extends Tag {
         height: this.height,
       },
     })
-    freePage(page)
+    ctx.freePage(page)
     return `[CQ:image,file=base64://${base64}]`
   }
 }

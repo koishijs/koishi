@@ -9,7 +9,6 @@ export interface Options extends AlphaOptions, TranslateOptions {
   brainfuck?: false | BrainfuckOptions
   bvid?: false
   crypto?: false
-  latex?: false
   magi?: false
   maya?: false
   mcping?: false
@@ -29,7 +28,6 @@ export function apply (ctx: Context, config: Options = {}) {
   if (config.brainfuck !== false) ctx.plugin(require('./brainfuck'), config.brainfuck)
   if (config.bvid !== false) ctx.plugin(require('./bvid'))
   if (config.crypto !== false) ctx.plugin(require('./crypto'))
-  if (config.latex !== false) ctx.plugin(require('./latex'))
   if (config.magi !== false) ctx.plugin(require('./magi'))
   if (config.maya !== false) ctx.plugin(require('./maya'))
   if (config.mcping !== false) ctx.plugin(require('./mcping'))

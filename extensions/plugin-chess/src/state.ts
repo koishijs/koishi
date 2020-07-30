@@ -1,5 +1,5 @@
 import { SVG } from 'koishi-plugin-puppeteer'
-import { Meta } from 'koishi-core'
+import { Meta, App } from 'koishi-core'
 
 const numbers = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
 const alphabet = 'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ'
@@ -24,7 +24,7 @@ export class State {
   imageMode = true
   update: (x: number, y: number, value: 1 | -1) => MoveResult
 
-  constructor (public readonly rule: string, public readonly size: number, public readonly placement: 'cross' | 'grid') {
+  constructor (public app: App, public readonly rule: string, public readonly size: number, public readonly placement: 'cross' | 'grid') {
     this.area = BigInt(size * size)
     this.full = (1n << this.area) - 1n
   }
@@ -143,7 +143,7 @@ export class State {
   }
 
   drawImage (x?: number, y?: number) {
-    return this.drawSvg(x, y).toCQCode()
+    return this.drawSvg(x, y).render(this.app)
   }
 
   drawText (x?: number, y?: number) {
@@ -209,8 +209,8 @@ export class State {
     return { rule, size, placement, p1, p2, next, history: history.join(',') }
   }
 
-  static from (data: StateData) {
-    const state = new State(data.rule, data.size, data.placement)
+  static from (app: App, data: StateData) {
+    const state = new State(app, data.rule, data.size, data.placement)
     state.p1 = data.p1
     state.p2 = data.p2
     state.next = data.next

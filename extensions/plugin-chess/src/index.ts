@@ -40,7 +40,7 @@ export function apply (ctx: Context) {
     const groups = await ctx.database.getAllGroups(['id', 'chess'])
     for (const { id, chess } of groups) {
       if (chess) {
-        states[id] = State.from(chess)
+        states[id] = State.from(ctx.app, chess)
         states[id].update = rules[chess.rule].update
       }
     }
@@ -85,7 +85,7 @@ export function apply (ctx: Context) {
         const rule = rules[options.rule]
         if (!rule) return meta.$send('没有找到对应的规则。')
 
-        const state = new State(options.rule, options.size, rule.placement || 'cross')
+        const state = new State(ctx.app, options.rule, options.size, rule.placement || 'cross')
         state.p1 = meta.userId
 
         if (options.textMode) state.imageMode = false
