@@ -95,6 +95,13 @@ const defaultConfig: StatusOptions = {
   sort: () => 0,
 }
 
+export enum StatusCode {
+  GOOD,
+  CQ_ERROR,
+  NET_ERROR,
+  IDLE,
+}
+
 export const name = 'status'
 
 export function apply (ctx: Context, config: StatusOptions) {
@@ -178,8 +185,11 @@ export function apply (ctx: Context, config: StatusOptions) {
       Promise.all(app.bots.map(async (bot): Promise<BotStatus> => ({
         selfId: bot.selfId,
         label: bot.label,
-        code: await bot.sender.getStatus().then(status => status.good ? 0 : 1, () => 2),
-        rate: (bot.counter || []).slice(1).reduce((prev, curr) => prev + curr, 0),
+        code: bot.sender ? await bot.sender.getStatus().then(
+          ({ good }) => good ? StatusCode.GOOD : StatusCode.CQ_ERROR,
+          () => StatusCode.NET_ERROR,
+        ) : StatusCode.IDLE,
+        rate: bot.counter.slice(1).reduce((prev, curr) => prev + curr, 0),
       }))),
     ])
     const memory = memoryRate()
