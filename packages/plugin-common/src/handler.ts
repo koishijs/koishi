@@ -18,10 +18,10 @@ export type RequestHandler = string | boolean | ((meta: Meta) => Awaited<string 
 export type WelcomeMessage = string | ((meta: Meta) => string | Promise<string>)
 
 export interface HandlerOptions {
+  onFriend?: RequestHandler
+  onGroupAdd?: RequestHandler
+  onGroupInvite?: RequestHandler
   blackList?: string[]
-  handleFriend?: RequestHandler
-  handleGroupAdd?: RequestHandler
-  handleGroupInvite?: RequestHandler
   respondents?: Respondent[]
   throttle?: ThrottleConfig | ThrottleConfig[]
   welcome?: WelcomeMessage
@@ -35,17 +35,17 @@ async function getHandleResult (handler: RequestHandler, meta: Meta) {
 
 export default function apply (ctx: App, options: HandlerOptions = {}) {
   ctx.on('request/friend', async (meta) => {
-    const result = await getHandleResult(options.handleFriend, meta)
+    const result = await getHandleResult(options.onFriend, meta)
     return result !== undefined && ctx.sender(meta.selfId).setFriendAddRequest(meta.flag, result as any)
   })
 
   ctx.on('request/group/add', async (meta) => {
-    const result = await getHandleResult(options.handleGroupAdd, meta)
+    const result = await getHandleResult(options.onGroupAdd, meta)
     return result !== undefined && ctx.sender(meta.selfId).setGroupAddRequest(meta.flag, meta.subType as any, result as any)
   })
 
   ctx.on('request/group/invite', async (meta) => {
-    const result = await getHandleResult(options.handleGroupInvite, meta)
+    const result = await getHandleResult(options.onGroupInvite, meta)
     return result !== undefined && ctx.sender(meta.selfId).setGroupAddRequest(meta.flag, meta.subType as any, result as any)
   })
 

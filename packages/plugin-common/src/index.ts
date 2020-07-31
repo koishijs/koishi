@@ -7,14 +7,13 @@ export * from './broadcast'
 export * from './info'
 export * from './repeater'
 
-export interface Options extends HandlerOptions {
+export interface Options extends HandlerOptions, RepeaterOptions {
   admin?: false
   broadcast?: false
   contextify?: false
   echo?: false
   exit?: false
   info?: false
-  repeater?: RepeaterOptions
   usage?: false
 }
 
@@ -22,7 +21,7 @@ export const name = 'common'
 
 export function apply (ctx: Context, options: Options = {}) {
   ctx.plugin(handler, options)
-  ctx.plugin(repeater, options.repeater)
+  ctx.plugin(repeater, options)
 
   if (options.echo !== false) ctx.plugin(require('./echo'))
   if (options.admin !== false) ctx.plugin(require('./admin'))

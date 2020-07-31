@@ -67,7 +67,7 @@ export class VM extends EventEmitter {
   setGlobals (values: object) {
     for (const name in values) {
       if (Object.prototype.hasOwnProperty.call(values, name)) {
-        this._internal.setGlobal(name, values[name])
+        this._internal.protect(values[name], name)
       }
     }
     return this

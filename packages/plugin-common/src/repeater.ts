@@ -2,122 +2,89 @@ import { Context, Meta } from 'koishi-core'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'repeater' (meta: Meta, state: State): void
-    'repeater/repeat' (meta: Meta, state: State): void
-    'repeater/interrupt' (meta: Meta, state: State): void
-    'repeater/check-repeat' (meta: Meta, state: State): void
-    'repeater/check-interrupt' (meta: Meta, state: State): void
+    'repeater' (meta: Meta, state: RepeatState): void
   }
 }
 
-interface State {
+interface RepeatState {
   message: string
   repeated: boolean
   times: number
-  users: Set<number>
+  assignee: number
+  users: Record<number, number>
 }
 
-type SessionSwitch = boolean | ((repeated: boolean, times: number, message: string) => boolean)
-type SessionText = string | ((userId: number, message: string) => string)
+type RepeatHandler = (state: RepeatState, message: string, userId: number) => void | string
 
 export interface RepeaterOptions {
-  repeat?: SessionSwitch
-  interrupt?: SessionSwitch
-  repeatCheck?: SessionSwitch
-  interruptCheck?: SessionSwitch
-  interruptText?: SessionText
-  repeatCheckText?: SessionText
-  interruptCheckText?: SessionText
+  onRepeat?: RepeatHandler
+  onDuplicateRepeat?: RepeatHandler
+  onInterruptRepeat?: RepeatHandler
 }
 
-const defaultOptions: RepeaterOptions = {
-  repeat: false,
-  interrupt: false,
-  interruptText: '打断复读！',
-  repeatCheck: false,
-  repeatCheckText: (userId) => `[CQ:at,qq=${userId}] 在？为什么重复复读？`,
-  interruptCheck: false,
-  interruptCheckText: (userId) => `[CQ:at,qq=${userId}] 在？为什么打断复读？`,
-}
-
-function getSwitch (sessionSwitch: SessionSwitch, repeated: boolean, times: number, message: string) {
-  return typeof sessionSwitch === 'boolean' ? sessionSwitch : sessionSwitch(repeated, times, message)
-}
-
-function getText (sessionText: SessionText, userId: number, message: string) {
-  return typeof sessionText === 'string' ? sessionText : sessionText(userId, message)
-}
-
-export default function apply (ctx: Context, options: RepeaterOptions) {
-  options = { ...defaultOptions, ...options }
+export default function apply (ctx: Context, options: RepeaterOptions = {}) {
   ctx = ctx.intersect(ctx.app.groups)
 
-  const states: Record<number, State> = {}
+  const states: Record<number, RepeatState> = {}
 
-  function getState (groupId: number) {
-    if (!states[groupId]) {
-      states[groupId] = {
-        message: '',
-        repeated: false,
-        times: 0,
-        users: new Set(),
-      }
-    }
-    return states[groupId]
+  function getState (groupId: number, assignee: number) {
+    return states[groupId] || (states[groupId] = {
+      message: '',
+      repeated: false,
+      times: 0,
+      assignee,
+      users: {},
+    })
   }
 
-  ctx.on('before-send', ({ groupId, message }) => {
-    const state = getState(groupId)
+  ctx.on('before-send', ({ groupId, message, selfId }) => {
+    const state = getState(groupId, selfId)
     state.repeated = true
     if (state.message === message) {
       state.times += 1
     } else {
       state.message = message
       state.times = 1
-      state.users.clear()
+      state.users = {}
     }
   })
 
   ctx.prependMiddleware((meta, next) => {
-    const { message, groupId, userId } = meta
-    const state = getState(groupId)
+    const { message, groupId, userId, selfId } = meta
+
+    // never respond to messages from self
+    if (ctx.app.bots[userId]) return
+
+    const state = getState(groupId, selfId)
+    const check = (handle: RepeatHandler) => {
+      const text = handle && handle(state, message, userId)
+      return text && next(() => {
+        ctx.emit('repeater', meta, state)
+        return meta.$send(text)
+      })
+    }
+
     if (message === state.message) {
-      if (state.users.has(userId) && getSwitch(options.repeatCheck, state.repeated, state.times, message)) {
-        return next(() => {
-          ctx.emit('repeater/check-repeat', meta, state)
-          ctx.emit('repeater', meta, state)
-          return meta.$send(getText(options.repeatCheckText, userId, message))
-        })
+      // avoid duplicate counting
+      if (state.assignee === selfId) {
+        state.times += 1
+        state.users[userId] = (state.users[userId] || 0) + 1
       }
-      state.times += 1
-      state.users.add(userId)
-      if (getSwitch(options.interrupt, state.repeated, state.times, message)) {
-        return next(() => {
-          ctx.emit('repeater/interrupt', meta, state)
-          ctx.emit('repeater', meta, state)
-          return meta.$send(getText(options.interruptText, userId, message))
-        })
-      }
-      if (getSwitch(options.repeat, state.repeated, state.times, message)) {
-        return next(() => {
-          ctx.emit('repeater/repeat', meta, state)
-          ctx.emit('repeater', meta, state)
-          return meta.$send(message)
-        })
-      }
+
+      // duplicate repeating & normal repeating
+      return state.users[userId] > 1 && check(options.onDuplicateRepeat)
+        || state.times > 1 && check(options.onRepeat)
+        || next()
     } else {
-      if (getSwitch(options.interruptCheck, state.repeated, state.times, message)) {
-        return next(() => {
-          ctx.emit('repeater/check-interrupt', meta, state)
-          ctx.emit('repeater', meta, state)
-          return meta.$send(getText(options.interruptCheckText, userId, message))
-        })
-      }
+      // interrupt repeating
+      const result = check(options.onInterruptRepeat)
+      if (result) return result
+
+      // unrepeated message
       state.message = message
       state.repeated = false
       state.times = 1
-      state.users = new Set([userId])
+      state.users = { [userId]: 1 }
     }
-    return next()
   })
 }

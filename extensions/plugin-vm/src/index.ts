@@ -66,8 +66,7 @@ export function apply (ctx: Context, options: Options = {}) {
     })
   })
 
-  ctx.command('vm <expression...>', '执行 JavaScript 脚本', { authority: 3 })
-    .alias('eval')
+  ctx.command('eval <expression...>', '执行 JavaScript 脚本', { authority: 3 })
     .userFields(userFields)
     .shortcut('>', { oneArg: true, fuzzy: true })
     .shortcut('>>', { oneArg: true, fuzzy: true, options: { output: true } })
