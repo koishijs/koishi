@@ -90,7 +90,7 @@ function getPackage (name: string) {
     || packages[`packages/koishi-${name}`]
     || packages[`packages/database-${name}`]
     || packages[`packages/plugin-${name}`]
-    || packages[`plugins/plugin-${name}`]
+    || packages[`extensions/plugin-${name}`]
 }
 
 function each <T> (callback: (pkg: Package, name: string) => T) {
