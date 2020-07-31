@@ -1,10 +1,7 @@
 import { Context, Meta, userFields, getUsage, UserField } from 'koishi-core'
 import { CQCode, defineProperty } from 'koishi-utils'
-import { readFileSync } from 'fs'
 import { formatWithOptions, InspectOptions } from 'util'
 import { VM } from './vm'
-
-const script = readFileSync(__dirname + '/../script.js', 'utf8')
 
 export interface Options {
   maxLogCount?: number
@@ -14,7 +11,7 @@ export interface Options {
 
 const defaultOptions: Options = {
   maxLogCount: 4,
-  timeout: 5000,
+  timeout: 1000,
   inspect: {
     depth: 0,
   },
@@ -67,8 +64,6 @@ export function apply (ctx: Context, options: Options = {}) {
       timeout,
       sandbox,
     })
-
-    vm.run(script)
   })
 
   ctx.command('vm <expression...>', '执行 JavaScript 脚本', { authority: 3 })
