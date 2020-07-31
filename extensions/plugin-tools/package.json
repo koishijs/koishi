@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-tools",
-  "version": "1.0.0-alpha.0",
+  "version": "1.0.0-alpha.1",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/koishijs/koishi-plugin-tools#readme",
   "peerDependencies": {
-    "koishi-core": "^2.0.0-alpha.39",
+    "koishi-core": "^2.0.0-alpha.40",
     "koishi-utils": "^2.1.2"
   },
   "dependencies": {
