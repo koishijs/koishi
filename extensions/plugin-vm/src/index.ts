@@ -2,7 +2,7 @@ import { Context, Meta, userFields, getUsage, UserField } from 'koishi-core'
 import { CQCode, defineProperty } from 'koishi-utils'
 import { readFileSync } from 'fs'
 import { formatWithOptions, InspectOptions } from 'util'
-import { VM } from 'vm2'
+import { VM } from './vm'
 
 const script = readFileSync(__dirname + '/../script.js', 'utf8')
 
@@ -14,7 +14,7 @@ export interface Options {
 
 const defaultOptions: Options = {
   maxLogCount: 4,
-  timeout: 10000,
+  timeout: 5000,
   inspect: {
     depth: 0,
   },
@@ -72,6 +72,7 @@ export function apply (ctx: Context, options: Options = {}) {
   })
 
   ctx.command('vm <expression...>', '执行 JavaScript 脚本', { authority: 3 })
+    .alias('eval')
     .userFields(userFields)
     .shortcut('>', { oneArg: true, fuzzy: true })
     .shortcut('>>', { oneArg: true, fuzzy: true, options: { output: true } })

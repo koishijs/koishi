@@ -133,6 +133,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
 
   if (dialogue.flag & DialogueFlag.regexp) {
     const capture = dialogue._capture || new RegExp(dialogue.question).exec(state.test.question)
+    if (!capture) console.log(dialogue.question, state.test.question)
     capture.map((segment, index) => {
       if (index && index <= 9) {
         state.answer = state.answer.replace(new RegExp(`%${index}`, 'g'), escapeAnswer(segment || ''))
