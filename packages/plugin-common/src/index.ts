@@ -2,11 +2,10 @@ import { Context } from 'koishi-core'
 import repeater, { RepeaterOptions } from './repeater'
 import handler, { HandlerOptions } from './handler'
 
-// include typings
-import {} from './admin'
-import {} from './broadcast'
-import {} from './info'
-import {} from './repeater'
+export * from './admin'
+export * from './broadcast'
+export * from './info'
+export * from './repeater'
 
 export interface Options extends HandlerOptions {
   admin?: false

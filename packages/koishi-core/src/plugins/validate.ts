@@ -1,6 +1,9 @@
-import { App, Meta, UserData, Command, UserField, ParsedCommandLine } from '..'
 import { format } from 'util'
 import { getDateNumber, hyphenate } from 'koishi-utils'
+import { Meta } from '../meta'
+import { UserField, UserData } from '../database'
+import { Command, ParsedCommandLine } from '../command'
+import { App } from '../app'
 
 declare module '../context' {
   interface EventMap {

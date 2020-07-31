@@ -1,4 +1,6 @@
-import { NextFunction, Meta, App } from '..'
+import { App } from '../app'
+import { NextFunction } from '../context'
+import { Meta } from '../meta'
 import leven from 'leven'
 
 export default function apply (app: App) {

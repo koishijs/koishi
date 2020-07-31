@@ -1,4 +1,5 @@
-import { App, ParsedLine, Command } from '..'
+import { App } from '../app'
+import { Command, ParsedLine } from '../command'
 
 declare module '../app' {
   interface App {

@@ -1,7 +1,3 @@
-import help from './plugins/help'
-import shortcut from './plugins/shortcut'
-import suggest from './plugins/suggest'
-import validate from './plugins/validate'
 import escapeRegex from 'escape-string-regexp'
 import { Command } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
@@ -10,6 +6,10 @@ import { BotOptions, CQServer } from './server'
 import { Meta } from './meta'
 import { simplify } from 'koishi-utils'
 import { types } from 'util'
+import help from './plugins/help'
+import shortcut from './plugins/shortcut'
+import suggest from './plugins/suggest'
+import validate from './plugins/validate'
 
 export interface AppOptions extends BotOptions {
   port?: number

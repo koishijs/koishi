@@ -123,13 +123,12 @@ export class Context {
   plugin <T extends PluginObject<this>> (plugin: T, options?: T extends PluginObject<this, infer U> ? U : never): this
   plugin <T extends Plugin<this>> (plugin: T, options?: T extends Plugin<this, infer U> ? U : never) {
     if (options === false) return
-    const ctx = Object.create(this)
     if (typeof plugin === 'function') {
-      (plugin as PluginFunction<this>)(ctx, options)
+      (plugin as PluginFunction<this>)(this, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
-      (plugin as PluginObject<this>).apply(ctx, options)
+      (plugin as PluginObject<this>).apply(this, options)
     } else {
-      throw new Error(errors.INVALID_PLUGIN)
+      throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
     return this
   }
