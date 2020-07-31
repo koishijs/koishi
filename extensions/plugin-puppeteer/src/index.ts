@@ -43,6 +43,7 @@ export const name = 'puppeteer'
 
 export function apply (ctx: Context, config: Options = {}) {
   const logger = ctx.logger('puppeteer')
+  ctx.app._idlePages = []
 
   ctx.on('before-connect', () => {
     (ctx.app._browser = launch(config)).then(
