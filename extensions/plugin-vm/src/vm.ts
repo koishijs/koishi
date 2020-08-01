@@ -57,6 +57,7 @@ export class VM extends EventEmitter {
     contextifyScript
       .runInContext(this._context, { displayErrors: false })
       .call(this._context, Host, this._internal)
+
     this.setGlobals(sandbox)
   }
 
