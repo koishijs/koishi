@@ -8,24 +8,6 @@ import { EventEmitter } from 'events'
 import { INSPECT_MAX_BYTES } from 'buffer'
 import type * as Internal from './internal'
 
-const timeoutContext = createContext()
-const timeoutScript = new Script('fn()', {
-  filename: 'timeout_bridge.js',
-  displayErrors: false,
-})
-
-function doWithTimeout (fn: Function, timeout: number) {
-  timeoutContext.fn = fn
-  try {
-    return timeoutScript.runInContext(timeoutContext, {
-      displayErrors: false,
-      timeout,
-    })
-  } finally {
-    timeoutContext.fn = null
-  }
-}
-
 const filename = resolve(__dirname, 'internal.js')
 const data = readFileSync(filename, 'utf8')
 const contextifyScript = new Script(`(function(host, exports) {${data}\n})`, {
@@ -35,21 +17,18 @@ const contextifyScript = new Script(`(function(host, exports) {${data}\n})`, {
 
 export interface VMOptions {
   sandbox: any
-  timeout: number
   strings?: boolean
   wasm?: boolean
 }
 
 export class VM extends EventEmitter {
-  readonly timeout: number
   private readonly _context: object
   private readonly _internal: typeof Internal = Object.create(null)
 
   constructor(options: VMOptions) {
     super()
 
-    const {	timeout, sandbox, strings = true, wasm = false } = options
-    this.timeout = timeout
+    const {	sandbox, strings = true, wasm = false } = options
     this._context = createContext(undefined, {
       codeGeneration: { strings, wasm },
     })
@@ -60,7 +39,7 @@ export class VM extends EventEmitter {
 
     for (const name in sandbox) {
       if (Object.prototype.hasOwnProperty.call(sandbox, name)) {
-        this._internal.protect(sandbox[name], name)
+        this._internal.setGlobal(name, sandbox[name])
       }
     }
   }
@@ -70,7 +49,7 @@ export class VM extends EventEmitter {
   }
 
   setGlobal (name: string, value: any) {
-    this._internal.setGlobal(name, value)
+    this._internal.setGlobal(name, value, true)
     return this
   }
 
@@ -96,13 +75,11 @@ export class VM extends EventEmitter {
       displayErrors: false,
     })
 
-    return doWithTimeout(() => {
-      try {
-        return this._internal.value(script.runInContext(this._context, { displayErrors: false }))
-      } catch (e) {
-        throw this._internal.value(e)
-      }
-    }, this.timeout)
+    try {
+      return this._internal.value(script.runInContext(this._context, { displayErrors: false }))
+    } catch (e) {
+      throw this._internal.value(e)
+    }
   }
 }
 

@@ -1,18 +1,15 @@
 import { InspectOptions, formatWithOptions } from 'util'
 import { Meta, UserField, getUsage, App, UserData } from 'koishi-core'
-import { parentPort, workerData, ResourceLimits } from 'worker_threads'
-import { expose, wrap, Remote } from './comlink'
+import { parentPort, workerData } from 'worker_threads'
+import { expose, Remote } from './comlink'
 import { VM } from './vm'
 import { defineProperty } from 'koishi-utils'
 
-export interface Options extends ResourceLimits {
-  timeout?: number
+export interface WorkerConfig {
   inspect?: InspectOptions
 }
 
-const config: Options = {
-  timeout: 1000,
-  ...workerData,
+const config: WorkerConfig = {
   inspect: {
     depth: 0,
     ...workerData.inspect,
@@ -20,7 +17,7 @@ const config: Options = {
 }
 
 export default class Global {
-  main: Remote<MainAPI>
+  api: Remote<EvalAPI>
 
   constructor () {
     for (const key of Object.getOwnPropertyNames(Global.prototype)) {
@@ -30,11 +27,11 @@ export default class Global {
   }
 
   exec (message: string) {
-    return this.main.execute(message)
+    return this.api.execute(message)
   }
 
   log (format: string, ...param: any[]) {
-    return this.main.send(formatWithOptions(config.inspect, format, ...param))
+    return this.api.send(formatWithOptions(config.inspect, format, ...param))
   }
 
   // usage (name: string) {
@@ -42,26 +39,28 @@ export default class Global {
   // }
 }
 
-interface MainAPI {
-  user: UserData
+interface EvalOptions {
+  user: string
+  output: boolean
+  source: string
+}
+
+interface EvalAPI {
   send (message: string): Promise<void>
   execute (message: string): Promise<void>
 }
 
-const { timeout } = config
-
 const sandbox = new Global()
 
-const vm = new VM({
-  timeout,
-  sandbox,
-})
+const vm = new VM({ sandbox })
 
 export class WorkerAPI {
-  async eval (expression: string, main: MainAPI, output = false) {
-    defineProperty(sandbox, 'main', main)
+  async eval (options: EvalOptions, main: EvalAPI) {
+    const { source, user, output } = options
+    defineProperty(sandbox, 'api', main)
+    vm.setGlobal('user', JSON.parse(user))
     try {
-      const result = await vm.run(expression, 'stdin')
+      const result = await vm.run(source, 'stdin')
       if (result !== undefined && output) await sandbox.log(result)
     } catch (error) {
       if (error.message === 'Script execution timed out.') {

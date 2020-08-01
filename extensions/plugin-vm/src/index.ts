@@ -1,20 +1,45 @@
 import { Context, userFields } from 'koishi-core'
 import { CQCode } from 'koishi-utils'
-import { Worker } from 'worker_threads'
+import { Worker, ResourceLimits } from 'worker_threads'
 import { wrap, Remote, proxy } from './comlink'
-import { WorkerAPI, Options } from './worker'
+import { WorkerAPI, WorkerConfig } from './worker'
+
+export interface Config extends WorkerConfig {
+  timeout?: number
+  resourceLimits?: ResourceLimits
+}
+
+const defaultConfig: Config = {
+  timeout: 1000,
+}
 
 export const name = 'vm'
 
-export function apply (ctx: Context, options: Options = {}) {
-  let api: Remote<WorkerAPI>
+export function apply (ctx: Context, config: Config = {}) {
+  let worker: Worker
+  let remote: Remote<WorkerAPI>
+  const logger = ctx.logger('worker')
+  config = { ...defaultConfig, ...config }
+  const resourceLimits = {
+    ...defaultConfig.resourceLimits,
+    ...config.resourceLimits,
+  }
 
-  ctx.on('before-connect', async () => {
-    const worker = new Worker(__dirname + '/worker.js', {
-      workerData: options,
-      resourceLimits: options,
+  function createWorker () {
+    worker = new Worker(__dirname + '/worker.js', {
+      workerData: config,
+      resourceLimits,
     })
-    api = wrap(worker)
+    remote = wrap(worker)
+    logger.info('started')
+    worker.on('exit', (code) => {
+      logger.info('exited with code', code)
+      createWorker()
+    })
+  }
+
+  ctx.on('before-connect', () => {
+    createWorker()
   })
 
   ctx.command('eval <expression...>', '执行 JavaScript 脚本', { authority: 3 })
@@ -25,10 +50,24 @@ export function apply (ctx: Context, options: Options = {}) {
     .action(async ({ meta, options }, expression) => {
       if (!expression) return
 
-      await api.eval(CQCode.unescape(expression), proxy({
-        user: meta.$user,
-        send: (message: string) => meta.$send(message),
-        execute: (message: string) => meta.$app.execute(message, meta),
-      }), options.output)
+      return new Promise((resolve) => {
+        const timer = setTimeout(async () => {
+          await worker.terminate()
+          await meta.$send('计算超时。')
+          resolve()
+        }, config.timeout)
+
+        remote.eval({
+          user: JSON.stringify(meta.$user),
+          output: options.output,
+          source: CQCode.unescape(expression),
+        }, proxy({
+          send: (message: string) => meta.$send(message),
+          execute: (message: string) => meta.$app.execute(message, meta),
+        })).then(() => {
+          clearTimeout(timer)
+          resolve()
+        })
+      })
     })
 }

@@ -159,7 +159,7 @@ function doPreventExtensions(target, object, doProxy) {
           __proto__: null,
           configurable: true,
           enumerable: desc.enumerable,
-          writeable: true,
+          writable: true,
           value: null
         }
       } else {
@@ -340,7 +340,7 @@ Decontextify.object = (object, traps, deepTraps, flags, mock) => {
     if (!desc.configurable) {
       try {
         def = host.Object.getOwnPropertyDescriptor(target, prop)
-        if (!def || def.configurable) {
+        if (!def || def.configurable || def.writable !== desc.writable) {
           local.Reflect.defineProperty(target, prop, desc)
         }
       } catch (e) {
@@ -378,7 +378,7 @@ Decontextify.object = (object, traps, deepTraps, flags, mock) => {
     } catch (e) {
       throw Decontextify.value(e)
     }
-    if (success && descriptor.configurable) {
+    if (success && !descriptor.configurable) {
       try {
         local.Reflect.defineProperty(target, key, descriptor)
       } catch (e) {
@@ -731,7 +731,7 @@ Contextify.object = (object, traps, deepTraps, flags, mock) => {
     if (!desc.configurable) {
       try {
         def = host.Object.getOwnPropertyDescriptor(target, prop)
-        if (!def || def.configurable) {
+        if (!def || def.configurable || def.writable !== desc.writable) {
           local.Reflect.defineProperty(target, prop, desc)
         }
       } catch (e) {
@@ -777,7 +777,7 @@ Contextify.object = (object, traps, deepTraps, flags, mock) => {
     } catch (e) {
       throw Contextify.value(e)
     }
-    if (success && descriptor.configurable) {
+    if (success && !descriptor.configurable) {
       try {
         local.Reflect.defineProperty(target, key, descriptor)
       } catch (e) {
@@ -863,6 +863,7 @@ Contextify.object = (object, traps, deepTraps, flags, mock) => {
   Contextified.set(proxy, object)
   return proxy
 }
+
 Contextify.value = (value, traps, deepTraps, flags, mock) => {
   try {
     if (Decontextified.has(value)) {
@@ -917,12 +918,13 @@ Contextify.value = (value, traps, deepTraps, flags, mock) => {
   }
 }
 
-export function setGlobal (name: string, value: any) {
+export function setGlobal (name: string, value: any, writable = false) {
   const prop = Contextify.value(name)
   try {
     Object.defineProperty(GLOBAL, prop, {
       value: Contextify.value(value),
       enumerable: true,
+      writable,
     })
   } catch (e) {
     throw Decontextify.value(e)
