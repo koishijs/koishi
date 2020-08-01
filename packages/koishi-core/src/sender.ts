@@ -416,17 +416,28 @@ export interface VersionInfo {
 export interface GroupMessage {
   messageId: number
   realId: number
-  sender: SenderInfo
+  sender: AccountInfo
   time: number
   content: string
 }
 
 export interface ForwardMessage {
   messages: {
-    sender: SenderInfo
+    sender: AccountInfo
     time: number
     content: string
   }[]
+}
+
+interface CQNode {
+  type: 'node'
+  data: {
+    id: number
+  } | {
+    name: string
+    uin: number
+    content: string
+  }
 }
 
 export interface CQSender {
@@ -434,8 +445,8 @@ export interface CQSender {
   setGroupNameAsync (groupId: number, name: string): Promise<void>
   getGroupMsg (messageId: number): Promise<GroupMessage>
   getForwardMsg (messageId: number): Promise<ForwardMessage>
-  sendGroupForwardMsg (groupId: number, messages: []): Promise<void>
-  sendGroupForwardMsgAsync (groupId: number, messages: []): Promise<void>
+  sendGroupForwardMsg (groupId: number, messages: CQNode[]): Promise<void>
+  sendGroupForwardMsgAsync (groupId: number, messages: CQNode[]): Promise<void>
 }
 
 defineAsync('set_group_name', 'group_id', 'name')
