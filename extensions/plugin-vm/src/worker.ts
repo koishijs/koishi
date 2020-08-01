@@ -1,7 +1,7 @@
 import { InspectOptions, formatWithOptions } from 'util'
 import { Meta, UserField, getUsage, App, UserData } from 'koishi-core'
-import { parentPort } from 'worker_threads'
-import { expose, wrap, Remote, releaseProxy } from './comlink'
+import { parentPort, workerData } from 'worker_threads'
+import { expose, wrap, Remote } from './comlink'
 import { VM } from './vm'
 import { defineProperty } from 'koishi-utils'
 
@@ -10,16 +10,16 @@ export interface Options {
   inspect?: InspectOptions
 }
 
-const defaultOptions: Options = {
+const config: Options = {
   timeout: 1000,
+  ...workerData,
   inspect: {
     depth: 0,
-  },
+    ...workerData.inspect,
+  }
 }
 
 export default class Global {
-  static config: Options
-
   main: Remote<MainAPI>
 
   constructor () {
@@ -29,16 +29,17 @@ export default class Global {
     }
   }
 
-  // exec (message: string) {
-  //   return this.app.execute(message, this.meta)
-  // }
+  exec (message: string) {
+    return this.main.execute(message)
+  }
 
   log (format: string, ...param: any[]) {
-    return this.main.send(formatWithOptions(Global.config.inspect, format, ...param))
+    console.log('log!')
+    return this.main.send(formatWithOptions(config.inspect, format, ...param))
   }
 
   // usage (name: string) {
-  //   return getUsage(name, this.meta.$user)
+  //   return getUsage(name, this.main.$user)
   // }
 }
 
@@ -48,33 +49,21 @@ interface MainAPI {
   execute (message: string): Promise<void>
 }
 
+const { timeout } = config
+
+const sandbox = new Global()
+
+const vm = new VM({
+  timeout,
+  sandbox,
+})
+
 export class WorkerAPI {
-  vm: VM
-  sandbox: any
-
-  init (options: Options) {
-    const { timeout } = Global.config = {
-      ...defaultOptions,
-      ...options,
-      inspect: {
-        ...defaultOptions.inspect,
-        ...options.inspect,
-      }
-    }
-
-    const sandbox = this.sandbox = new Global()
-
-    this.vm = new VM({
-      timeout,
-      sandbox,
-    })
-  }
-
   async eval (expression: string, main: MainAPI, output = false) {
-    defineProperty(this.sandbox, 'main', main)
+    defineProperty(sandbox, 'main', main)
     try {
-      const result = await this.vm.run(expression, 'stdin')
-      if (result !== undefined && output) await this.sandbox.log(result)
+      const result = await vm.run(expression, 'stdin')
+      if (result !== undefined && output) await sandbox.log(result)
     } catch (error) {
       if (error.message === 'Script execution timed out.') {
         return main.send('执行超时。')

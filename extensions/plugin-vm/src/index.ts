@@ -9,11 +9,12 @@ export const name = 'vm'
 export function apply (ctx: Context, options: Options = {}) {
   let api: Remote<WorkerAPI>
   ctx.on('before-connect', async () => {
-    const worker = new Worker(__dirname + '/worker.js')
+    const worker = new Worker(__dirname + '/worker.js', {
+      workerData: options,
+    })
     api = wrap(worker)
-    await api.init(options)
   })
-  
+
   ctx.command('eval <expression...>', '执行 JavaScript 脚本', { authority: 3 })
     .userFields(userFields)
     .shortcut('>', { oneArg: true, fuzzy: true })
