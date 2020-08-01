@@ -278,16 +278,13 @@ export const transferHandlers = new Map<
   ["throw", throwTransferHandler],
 ]);
 
-export function expose(obj: any, ep: Endpoint) {
-  ep.on("message", function callback(ev: MessageEvent) {
-    if (!ev || !ev.data) {
-      return;
-    }
+export function expose (obj: any, ep: Endpoint) {
+  ep.on('message', function callback (data: Message) {
     const { id, type, path } = {
       path: [] as string[],
-      ...(ev.data as Message),
+      ...(data as Message),
     };
-    const argumentList = (ev.data.argumentList || []).map(fromWireValue);
+    const argumentList = (data.argumentList || []).map(fromWireValue);
     let returnValue;
     try {
       const parent = path.slice(0, -1).reduce((obj, prop) => obj[prop], obj);
@@ -300,7 +297,7 @@ export function expose(obj: any, ep: Endpoint) {
           break;
         case MessageType.SET:
           {
-            parent[path.slice(-1)[0]] = fromWireValue(ev.data.value);
+            parent[path.slice(-1)[0]] = fromWireValue(data.value);
             returnValue = true;
           }
           break;
@@ -344,10 +341,7 @@ export function expose(obj: any, ep: Endpoint) {
           closeEndPoint(ep);
         }
       });
-  } as any);
-  if (ep.start) {
-    ep.start();
-  }
+  });
 }
 
 function isMessagePort(endpoint: Endpoint): endpoint is MessagePort {
@@ -513,12 +507,9 @@ function requestResponseMessage(
 ): Promise<WireValue> {
   return new Promise((resolve) => {
     const id = generateUUID();
-    ep.on("message", function l(ev: MessageEvent) {
-      if (!ev.data || !ev.data.id || ev.data.id !== id) {
-        return;
-      }
+    ep.on("message", function l(data) {
       ep.off("message", l as any);
-      resolve(ev.data);
+      resolve(data);
     } as any);
     if (ep.start) {
       ep.start();
@@ -572,48 +563,10 @@ export const enum MessageType {
   RELEASE,
 }
 
-export interface GetMessage {
+export interface Message {
   id?: MessageID;
-  type: MessageType.GET;
-  path: string[];
+  type: MessageType;
+  path?: string[]
+  value?: WireValue;
+  argumentList?: WireValue[];
 }
-
-export interface SetMessage {
-  id?: MessageID;
-  type: MessageType.SET;
-  path: string[];
-  value: WireValue;
-}
-
-export interface ApplyMessage {
-  id?: MessageID;
-  type: MessageType.APPLY;
-  path: string[];
-  argumentList: WireValue[];
-}
-
-export interface ConstructMessage {
-  id?: MessageID;
-  type: MessageType.CONSTRUCT;
-  path: string[];
-  argumentList: WireValue[];
-}
-
-export interface EndpointMessage {
-  id?: MessageID;
-  type: MessageType.ENDPOINT;
-}
-
-export interface ReleaseMessage {
-  id?: MessageID;
-  type: MessageType.RELEASE;
-  path: string[];
-}
-
-export type Message =
-  | GetMessage
-  | SetMessage
-  | ApplyMessage
-  | ConstructMessage
-  | EndpointMessage
-  | ReleaseMessage;

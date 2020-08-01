@@ -58,20 +58,15 @@ export class VM extends EventEmitter {
       .runInContext(this._context, { displayErrors: false })
       .call(this._context, Host, this._internal)
 
-    this.setGlobals(sandbox)
+    for (const name in sandbox) {
+      if (Object.prototype.hasOwnProperty.call(sandbox, name)) {
+        this._internal.protect(sandbox[name], name)
+      }
+    }
   }
 
   get sandbox () {
     return this._internal.sandbox
-  }
-
-  setGlobals (values: object) {
-    for (const name in values) {
-      if (Object.prototype.hasOwnProperty.call(values, name)) {
-        this._internal.protect(values[name], name)
-      }
-    }
-    return this
   }
 
   setGlobal (name: string, value: any) {

@@ -1,11 +1,11 @@
 import { InspectOptions, formatWithOptions } from 'util'
 import { Meta, UserField, getUsage, App, UserData } from 'koishi-core'
-import { parentPort, workerData } from 'worker_threads'
+import { parentPort, workerData, ResourceLimits } from 'worker_threads'
 import { expose, wrap, Remote } from './comlink'
 import { VM } from './vm'
 import { defineProperty } from 'koishi-utils'
 
-export interface Options {
+export interface Options extends ResourceLimits {
   timeout?: number
   inspect?: InspectOptions
 }
@@ -34,7 +34,6 @@ export default class Global {
   }
 
   log (format: string, ...param: any[]) {
-    console.log('log!')
     return this.main.send(formatWithOptions(config.inspect, format, ...param))
   }
 
