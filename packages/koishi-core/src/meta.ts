@@ -95,9 +95,10 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
   $app?: App
   $argv?: ParsedCommandLine
   $parsed?: ParsedMessage
-  $_sleep?: number
-  $_hooks?: (() => void)[] = []
   $response?: (payload: ResponsePayload) => void
+
+  private $_delay?: number
+  private $_hooks?: (() => void)[] = []
 
   constructor (meta: Partial<Meta>) {
     Object.assign(this, meta)
@@ -124,13 +125,26 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
           : idString
   }
 
-  $cancelQueued (ms = 0) {
-    this.$_hooks.forEach(Reflect.apply)
-    this.$_sleep = ms
+  async $send (message: string, autoEscape = false) {
+    if (this.$response) {
+      const _meta = this.$app.sender(this.selfId)._createSendMeta(this.messageType, this.$ctxType, this.$ctxId, message)
+      if (this.$app.bail(this, 'before-send', _meta)) return
+      return this.$response({ reply: message, autoEscape, atSender: false })
+    }
+    return this.$app.sender(this.selfId).sendMsgAsync(this.messageType, this.$ctxId, message, autoEscape)
   }
 
-  async $sendQueued (message: string | void, ms = 0) {
+  $cancelQueued (delay = 0) {
+    this.$_hooks.forEach(Reflect.apply)
+    this.$_delay = delay
+  }
+
+  async $sendQueued (message: string | void, delay?: number) {
     if (!message) return
+    if (typeof delay === 'undefined') {
+      const { flushDelay = 100 } = this.$app.options
+      delay = typeof flushDelay === 'function' ? flushDelay(message, this) : flushDelay
+    }
     return new Promise<void>(async (resolve) => {
       const hook = () => {
         resolve()
@@ -141,51 +155,10 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
       this.$_hooks.push(hook)
       const timer = setTimeout(async () => {
         await this.$send(message)
-        this.$_sleep = ms
+        this.$_delay = delay
         hook()
-      }, this.$_sleep || 0)
+      }, this.$_delay || 0)
     })
-  }
-
-  async $delete () {
-    if (this.$response) return this.$response({ delete: true })
-    return this.$app.sender(this.selfId).deleteMsgAsync(this.messageId)
-  }
-
-  async $ban (duration = 30 * 60) {
-    if (this.$response) return this.$response({ ban: true, banDuration: duration })
-    return this.anonymous
-      ? this.$app.sender(this.selfId).setGroupAnonymousBanAsync(this.groupId, this.anonymous.flag, duration)
-      : this.$app.sender(this.selfId).setGroupBanAsync(this.groupId, this.userId, duration)
-  }
-
-  async $kick () {
-    if (this.$response) return this.$response({ kick: true })
-    if (this.anonymous) return
-    return this.$app.sender(this.selfId).setGroupKickAsync(this.groupId, this.userId)
-  }
-
-  async $send (message: string, autoEscape = false) {
-    if (this.$response) {
-      const _meta = this.$app.sender(this.selfId)._createSendMeta(this.messageType, this.$ctxType, this.$ctxId, message)
-      if (this.$app.bail(this, 'before-send', _meta)) return
-      return this.$response({ reply: message, autoEscape, atSender: false })
-    }
-    return this.$app.sender(this.selfId).sendMsgAsync(this.messageType, this.$ctxId, message, autoEscape)
-  }
-
-  async $approve (remark = '') {
-    if (this.$response) return this.$response({ approve: true, remark })
-    return this.requestType === 'friend'
-      ? this.$app.sender(this.selfId).setFriendAddRequestAsync(this.flag, remark)
-      : this.$app.sender(this.selfId).setGroupAddRequestAsync(this.flag, this.subType as any, true)
-  }
-
-  async $reject (reason = '') {
-    if (this.$response) return this.$response({ approve: false, reason })
-    return this.requestType === 'friend'
-      ? this.$app.sender(this.selfId).setFriendAddRequestAsync(this.flag, false)
-      : this.$app.sender(this.selfId).setGroupAddRequestAsync(this.flag, this.subType as any, reason)
   }
 
   /** 在元数据上绑定一个可观测群实例 */
@@ -276,6 +249,74 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
 
 const userCache: Record<number, Observed<Partial<UserData & { _timestamp: number }>>> = {}
 const groupCache: Record<number, Observed<Partial<GroupData & { _timestamp: number }>>> = {}
+
+export class MessageBuffer {
+  private buffer = ''
+  private original = false
+
+  public hasSent = false
+  public send: Meta['$send']
+  public sendQueued: Meta['$sendQueued']
+
+  constructor (private meta: Meta) {
+    this.send = meta.$send.bind(meta)
+    this.sendQueued = meta.$sendQueued.bind(meta)
+
+    meta.$send = async (message: string) => {
+      if (!message) return
+      if (this.original) {
+        this.hasSent = true
+        return this.send(message)
+      }
+      this.buffer += message
+    }
+
+    meta.$sendQueued = async (message, delay) => {
+      if (!message) return
+      if (this.original) {
+        this.hasSent = true
+        return this.sendQueued(message, delay)
+      }
+      return this._flush(this.buffer + message, delay)
+    }
+  }
+
+  write (message: string) {
+    this.buffer += message
+  }
+
+  private async _flush (message: string, delay?: number) {
+    this.original = true
+    message = message.trim()
+    if (message) this.hasSent = true
+    await this.sendQueued(message, delay)
+    this.buffer = ''
+    this.original = false
+  }
+
+  flush () {
+    return this._flush(this.buffer)
+  }
+
+  async run <T> (callback: () => T | Promise<T>) {
+    this.original = false
+    const send = this.meta.$send
+    const sendQueued = this.meta.$sendQueued
+    const result = await callback()
+    this.meta.$sendQueued = sendQueued
+    this.meta.$send = send
+    this.original = true
+    return result
+  }
+
+  async end (message = '') {
+    this.buffer += message
+    await this.flush()
+    this.original = true
+    delete this.meta.$send
+    delete this.meta.$sendQueued
+  }
+}
 
 export interface AnonymousInfo {
   id?: number

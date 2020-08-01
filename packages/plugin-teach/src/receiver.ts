@@ -1,4 +1,4 @@
-import { Context, UserField, Meta, NextFunction, Command } from 'koishi-core'
+import { Context, UserField, Meta, NextFunction, Command, MessageBuffer } from 'koishi-core'
 import { CQCode, simplify, noop } from 'koishi-utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import escapeRegex from 'escape-string-regexp'
@@ -39,8 +39,6 @@ interface Question {
 declare module './database' {
   namespace Dialogue {
     interface Config {
-      charDelay?: number
-      textDelay?: number
       nickname?: string | string[]
       appellationTimeout?: number
       maxRedirections?: number
@@ -132,7 +130,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
     .replace(/%0/g, escapeAnswer(meta.message))
 
   if (dialogue.flag & DialogueFlag.regexp) {
-    const capture = dialogue._capture || new RegExp(dialogue.question).exec(state.test.question)
+    const capture = dialogue._capture || new RegExp(dialogue.question, 'i').exec(state.test.question)
     if (!capture) console.log(dialogue.question, state.test.question)
     capture.map((segment, index) => {
       if (index && index <= 9) {
@@ -145,63 +143,31 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
   logger.debug('[send]', meta.messageId, '->', dialogue.answer)
 
   // send answers
-  const { textDelay = 1000, charDelay = 200 } = config
+  const buffer = new MessageBuffer(meta)
   meta.$_redirected = (meta.$_redirected || 0) + 1
-
-  // wrapper for meta.$send
-  let buffer = ''
-  let useOriginal = false
-  const send = meta.$send.bind(meta)
-  const sendQueued = meta.$sendQueued.bind(meta)
-
-  meta.$send = async (message: string) => {
-    if (useOriginal) return send(message)
-    buffer += message
-  }
-
-  meta.$sendQueued = async (message, ms) => {
-    if (useOriginal) return sendQueued(message, ms)
-    if (!message) return
-    return sendBuffered(buffer + message, ms)
-  }
-
-  async function sendBuffered (message: string, ms: number) {
-    useOriginal = true
-    await sendQueued(message.trim(), ms)
-    buffer = ''
-    useOriginal = false
-  }
 
   // parse answer
   let index: number
   while ((index = state.answer.indexOf('%')) >= 0) {
     const char = state.answer[index + 1]
     if (!'n{'.includes(char)) {
-      buffer += unescapeAnswer(state.answer.slice(0, index + 2))
+      buffer.write(unescapeAnswer(state.answer.slice(0, index + 2)))
       state.answer = state.answer.slice(index + 2)
       continue
     }
-    buffer += unescapeAnswer(state.answer.slice(0, index))
+    buffer.write(unescapeAnswer(state.answer.slice(0, index)))
     state.answer = state.answer.slice(index + 2)
     if (char === 'n') {
-      await sendBuffered(buffer, Math.max(buffer.length * charDelay, textDelay))
+      await buffer.flush()
     } else if (char === '{') {
       let end = state.answer.indexOf('}')
       if (end < 0) end = Infinity
       const command = unescapeAnswer(state.answer.slice(0, end))
       state.answer = state.answer.slice(end + 1)
-      useOriginal = false
-      const send = meta.$send
-      const sendQueued = meta.$sendQueued
-      await ctx.execute(command, meta)
-      meta.$sendQueued = sendQueued
-      meta.$send = send
-      useOriginal = true
+      await buffer.run(() => ctx.execute(command, meta))
     }
   }
-  await sendBuffered(buffer + unescapeAnswer(state.answer), 0)
-  useOriginal = true
-
+  await buffer.end(unescapeAnswer(state.answer))
   await ctx.app.parallelize(meta, 'dialogue/send', state)
 }
 

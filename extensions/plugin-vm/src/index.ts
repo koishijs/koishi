@@ -1,4 +1,4 @@
-import { Context, userFields } from 'koishi-core'
+import { Context, userFields, MessageBuffer } from 'koishi-core'
 import { CQCode } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { wrap, Remote, proxy } from './comlink'
@@ -50,10 +50,14 @@ export function apply (ctx: Context, config: Config = {}) {
     .action(async ({ meta, options }, expression) => {
       if (!expression) return
 
+      const buffer = new MessageBuffer(meta)
       return new Promise((resolve) => {
         const timer = setTimeout(async () => {
           await worker.terminate()
-          await meta.$send('计算超时。')
+          await buffer.end()
+          if (!buffer.hasSent) {
+            await meta.$send('计算超时。')
+          }
           resolve()
         }, config.timeout)
 
@@ -64,8 +68,9 @@ export function apply (ctx: Context, config: Config = {}) {
         }, proxy({
           send: (message: string) => meta.$send(message),
           execute: (message: string) => meta.$app.execute(message, meta),
-        })).then(() => {
+        })).then(async () => {
           clearTimeout(timer)
+          await buffer.end()
           resolve()
         })
       })
