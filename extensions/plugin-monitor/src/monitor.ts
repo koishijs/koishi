@@ -123,7 +123,6 @@ export class Daemon {
     const groups = await app.database.getAllGroups(['id', 'flag', 'assignee', 'subscribe'])
     groups.forEach(async (group) => {
       const { id, flag, assignee, subscribe } = group
-      if (app.bail('monitor/before-send', info, group)) return
       if (!subscribe[this.config.id] || flag & GroupFlag.noEmit) return
       const output = [`[直播提示] ${this.config.names[0]} 正在 ${this._displayType} 上直播：${url}`]
       // at subscibers
@@ -136,9 +135,14 @@ export class Daemon {
       if (subscribers.length) {
         output.push(subscribers.map(x => `[CQ:at,qq=${x}]`).join(''))
       }
-      await app.sender(assignee).sendGroupMsgAsync(id, output.join('\n'))
+      const sender = app.sender(assignee)
+      const messages = [output.join('\n')]
       if (title || image) {
-        await app.sender(assignee).sendGroupMsgAsync(id, CQCode.stringify('share', { url, image, title, content }))
+        messages.push(CQCode.stringify('share', { url, image, title, content }))
+      }
+      if (app.bail('monitor/before-send', info, group)) return
+      for (const message of messages) {
+        await sender.sendGroupMsgAsync(id, message)
       }
     })
   }
