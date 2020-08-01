@@ -142,8 +142,8 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
   async $sendQueued (message: string | void, delay?: number) {
     if (!message) return
     if (typeof delay === 'undefined') {
-      const { flushDelay = 100 } = this.$app.options
-      delay = typeof flushDelay === 'function' ? flushDelay(message, this) : flushDelay
+      const { queueDelay = 100 } = this.$app.options
+      delay = typeof queueDelay === 'function' ? queueDelay(message, this) : queueDelay
     }
     return new Promise<void>(async (resolve) => {
       const hook = () => {

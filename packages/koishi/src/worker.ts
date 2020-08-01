@@ -122,13 +122,17 @@ app.start().then(() => {
   app.bots.forEach((bot) => {
     const { server } = bot
     if (!server) return
-    const { coolqEdition, pluginVersion } = bot.sender.info
+    const { coolqEdition, pluginVersion, goCqhttp, runtimeVersion } = bot.sender.info
     if (type === 'http') {
       logger.info('connected to %c', server)
     } else {
       logger.info('connected to %c', server.replace(/^http/, 'ws'))
     }
-    logger.info(`Koishi/${version} CoolQ/${capitalize(coolqEdition)} CQHTTP/${pluginVersion}`)
+    if (goCqhttp) {
+      logger.info(`Koishi/${version} Go-cqhttp (Go/${runtimeVersion.slice(2)})`)
+    } else {
+      logger.info(`Koishi/${version} CoolQ/${capitalize(coolqEdition)} cqhttp/${pluginVersion}`)
+    }
   })
 
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
