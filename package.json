@@ -7,8 +7,7 @@
     "shiki/cosmos",
     "shiki/games",
     "extensions/*",
-    "packages/*",
-    "plugins/*"
+    "packages/*"
   ],
   "scripts": {
     "build": "tsc -b",

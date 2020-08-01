@@ -85,6 +85,7 @@ export default function apply (ctx: Context, options: RepeaterOptions = {}) {
       state.repeated = false
       state.times = 1
       state.users = { [userId]: 1 }
+      return next()
     }
   })
 }
