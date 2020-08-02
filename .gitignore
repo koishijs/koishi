@@ -2,10 +2,9 @@ dist
 temp
 
 /docs
-/bots
+/shiki
 /coverage
 /plugins
-/tsconfig.extend.json
 
 todo.md
 yarn.lock

@@ -9,6 +9,7 @@ export function getWorkspaces () {
     cwd,
     deep: 0,
     onlyDirectories: true,
+    expandDirectories: false,
   })
 }
 

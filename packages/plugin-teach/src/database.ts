@@ -1,185 +1,272 @@
-import { injectMethods } from 'koishi-core'
-import {} from 'koishi-database-mysql'
-import {} from 'koishi-database-level'
+import { Context, Meta, ParsedLine } from 'koishi-core'
+import { arrayTypes } from 'koishi-plugin-mysql'
+import { Observed, pick, difference, observe, isInteger, defineProperty, capitalize } from 'koishi-utils'
+
+arrayTypes.push('dialogue.groups', 'dialogue.predecessors')
+
+declare module 'koishi-core/dist/context' {
+  interface EventMap {
+    'dialogue/before-fetch' (test: DialogueTest, conditionals?: string[]): void
+    'dialogue/fetch' (dialogue: Dialogue, test: DialogueTest): boolean | void
+    'dialogue/permit' (argv: Dialogue.Argv, dialogue: Dialogue): boolean
+  }
+}
 
 declare module 'koishi-core/dist/database' {
-  interface TableMethods {
-    dialogue: DialogueMethods
-  }
-
-  interface TableData {
+  interface Tables {
     dialogue: Dialogue
   }
 }
 
-interface DialogueMethods {
-  _getDialogueTest (test: DialogueTest): string
-  _testDialogue (test: DialogueTest, data: Dialogue): boolean
-  createDialogue (options: Dialogue): Promise<Dialogue>
-  getDialogues (test: number[] | DialogueTest): Promise<Dialogue[]>
-  setDialogue (id: number, data: Partial<Dialogue>): Promise<any>
-  removeDialogues (ids: number[]): Promise<any>
-  getDialogueCount (test: DialogueTest): Promise<DialogueCount>
-}
+type DialogueField = keyof Dialogue
 
-export interface DialogueCount {
-  questions: number
-  answers: number
-}
+type ModifyType = '添加' | '修改' | '删除'
 
 export interface Dialogue {
   id?: number
   question: string
   answer: string
-  writer: number
-  groups: string
+  original: string
   flag: number
-  probability: number
-}
-
-export enum DialogueFlag {
-  frozen = 1,
-  regexp = 2,
-  keyword = 4,
-  appellation = 8,
+  _weight?: number
+  _capture?: RegExpExecArray
+  _type?: ModifyType
+  _operator?: number
+  _timestamp?: number
+  _backup?: Readonly<Dialogue>
 }
 
 export interface DialogueTest {
-  envMode?: -2 | -1 | 0 | 1 | 2
-  groups?: number[]
+  original?: string
   question?: string
   answer?: string
-  writer?: number
-  keyword?: boolean
-  strict?: boolean
-  frozen?: boolean
+  regexp?: boolean
+  activated?: boolean
+  appellative?: boolean
+  noRecursive?: boolean
 }
 
-injectMethods('mysql', 'dialogue', {
-  _getDialogueTest (test) {
+export enum DialogueFlag {
+  /** 冻结：只有 4 级以上权限者可修改 */
+  frozen = 1,
+  /** 正则：使用正则表达式进行匹配 */
+  regexp = 2,
+  /** 上下文：后继问答可以被上下文内任何人触发 */
+  context = 4,
+  /** 代行者：由教学者完成回答的执行 */
+  substitute = 8,
+  /** 补集：上下文匹配时取补集 */
+  complement = 16,
+}
+
+export namespace Dialogue {
+  export const history: Record<number, Dialogue> = []
+
+  export interface Config {
+    preserveHistory?: number
+  }
+  
+  export interface Argv {
+    ctx: Context
+    meta: Meta<'authority' | 'id'>
+    args: string[]
+    config: Config
+    target?: number[]
+    options: Record<string, any>
+    appellative?: boolean
+  
+    // modify status
+    dialogues?: Dialogue[]
+    dialogueMap?: Record<number, Dialogue>
+    skipped?: number[]
+    updated?: number[]
+    unknown?: number[]
+    uneditable?: number[]
+  }
+
+  export async function fromIds <T extends DialogueField> (ids: number[], ctx: Context, fields?: T[]) {
+    if (!ids.length) return []
+    const dialogues = await ctx.database.select<Dialogue[]>('dialogue', fields, `\`id\` IN (${ids.join(',')})`)
+    dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
+    return dialogues
+  }
+
+  export async function fromTest (ctx: Context, test: DialogueTest) {
+    let query = 'SELECT * FROM `dialogue`'
     const conditionals: string[] = []
-    if (test.keyword) {
-      if (test.question) conditionals.push('`question` LIKE ' + this.escape(`%${test.question}%`))
-      if (test.answer) conditionals.push('`answer` LIKE ' + this.escape(`%${test.answer}%`))
-    } else {
-      // TODO: support dialogue.keyword in mysql
-      if (test.question) conditionals.push('`question` = ' + this.escape(test.question))
-      if (test.answer) conditionals.push('`answer` = ' + this.escape(test.answer))
+    ctx.emit('dialogue/before-fetch', test, conditionals)
+    if (conditionals.length) query += ' WHERE ' + conditionals.join(' && ')
+    const dialogues = (await ctx.database.query<Dialogue[]>(query))
+      .filter((dialogue) => !ctx.bail('dialogue/fetch', dialogue, test))
+    dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
+    return dialogues
+  }
+
+  function addHistory (dialogue: Dialogue, type: ModifyType, argv: Dialogue.Argv, revert: boolean, target = history) {
+    if (revert) return delete target[dialogue.id]
+    target[dialogue.id] = dialogue
+    const time = Date.now()
+    defineProperty(dialogue, '_timestamp', time)
+    defineProperty(dialogue, '_operator', argv.meta.userId)
+    defineProperty(dialogue, '_type', type)
+    setTimeout(() => {
+      if (history[dialogue.id]?._timestamp === time) {
+        delete history[dialogue.id]
+      }
+    }, argv.config.preserveHistory || 600000)
+  }
+
+  export async function create (dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
+    dialogue = await argv.ctx.database.create('dialogue', dialogue)
+    addHistory(dialogue, '添加', argv, revert)
+    return dialogue
+  }
+
+  export async function revert (dialogues: Dialogue[], argv: Dialogue.Argv) {
+    const created = dialogues.filter(d => d._type === '添加')
+    const edited = dialogues.filter(d => d._type !== '添加')
+    await Dialogue.remove(created.map(d => d.id), argv, true)
+    await Dialogue.rewrite(edited, argv)
+    return `问答 ${dialogues.map(d => d.id).sort((a, b) => a - b)} 已回退完成。`
+  }
+
+  export async function rewrite (dialogues: Dialogue[], argv: Dialogue.Argv) {
+    if (!dialogues.length) return
+    await argv.ctx.database.update('dialogue', dialogues)
+    for (const dialogue of dialogues) {
+      addHistory(dialogue, '修改', argv, true)
     }
-    let envConditional = ''
-    if (test.envMode === 2) {
-      envConditional = `\`groups\` = "${test.groups.join(',')}"`
-    } else if (test.envMode === -2) {
-      envConditional = `\`groups\` = "*${test.groups.join(',')}"`
-    } else if (test.envMode === 1) {
-      envConditional = `\`groups\` NOT LIKE "*%" AND \`groups\` LIKE "%${test.groups.join(',%')}%" OR \`groups\` LIKE "*%" AND ${test.groups.map(id => `\`groups\` NOT LIKE "%${id}%"`).join(' AND ')}`
-    } else if (test.envMode === -1) {
-      envConditional = `\`groups\` LIKE "*%${test.groups.join(',%')}%" OR \`groups\` NOT LIKE "*%" AND ${test.groups.map(id => `\`groups\` NOT LIKE "%${id}%"`).join(' AND ')}`
+  }
+
+  export async function update (dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
+    const data: Partial<Dialogue>[] = []
+    const fields = new Set<DialogueField>(['id'])
+    for (const { _diff } of dialogues) {
+      for (const key in _diff) {
+        fields.add(key as DialogueField)
+      }
     }
-    if (envConditional) {
-      conditionals.push(`(${envConditional})`)
+    const temp: Record<number, Dialogue> = {}
+    for (const dialogue of dialogues) {
+      if (!Object.keys(dialogue._diff).length) {
+        argv.skipped.push(dialogue.id)
+      } else {
+        dialogue._diff = {}
+        argv.updated.push(dialogue.id)
+        data.push(pick(dialogue, fields))
+        addHistory(dialogue._backup, '修改', argv, false, temp)
+      }
     }
-    if (test.frozen === true) {
-      conditionals.push('(`flag` & 1)')
-    } else if (test.frozen === false) {
-      conditionals.push('!(`flag` & 1)')
+    await argv.ctx.database.update('dialogue', data)
+    Object.assign(history, temp)
+  }
+
+  export async function remove (ids: number[], argv: Dialogue.Argv, revert = false) {
+    if (!ids.length) return
+    await argv.ctx.database.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
+    for (const id of ids) {
+      addHistory(argv.dialogueMap[id], '删除', argv, revert)
     }
-    if (test.writer) conditionals.push('`writer` = ' + test.writer)
-    if (!conditionals.length) return ''
-    return ' WHERE ' + conditionals.join(' AND ')
-  },
+  }
+}
 
-  createDialogue (options) {
-    return this.create('dialogue', options)
-  },
+const primitives = ['number', 'string', 'bigint', 'boolean', 'symbol']
 
-  async getDialogues (test) {
-    if (Array.isArray(test)) {
-      if (!test.length) return []
-      return this.query(`SELECT * FROM \`dialogue\` WHERE \`id\` IN (${test.join(',')})`)
+function clone <T> (source: T): T {
+  return primitives.includes(typeof source)
+    ? source
+    : Array.isArray(source)
+    ? source.map(clone) as any
+    : Object.fromEntries(Object.entries(source).map(([key, value]) => [key, clone(value)]))
+}
+
+export function sendResult (argv: Dialogue.Argv, prefix?: string, suffix?: string) {
+  const { meta, options, uneditable, unknown, skipped, updated, target } = argv
+  const { remove, revert, create } = options
+  const output = []
+  if (prefix) output.push(prefix)
+  if (updated.length) {
+    output.push(create ? `修改了已存在的问答，编号为 ${updated.join(', ')}。` : `问答 ${updated.join(', ')} 已成功修改。`)
+  }
+  if (skipped.length) {
+    output.push(create ? `问答已存在，编号为 ${target.join(', ')}，如要修改请尝试使用 #${skipped.join(',')} 指令。` : `问答 ${skipped.join(', ')} 没有发生改动。`)
+  }
+  if (uneditable.length) {
+    output.push(`问答 ${uneditable.join(', ')} 因权限过低无法${revert ? '回退' : remove ? '删除' : '修改'}。`)
+  }
+  if (unknown.length) {
+    output.push(`${revert ? '最近无人修改过' : '没有搜索到'}编号为 ${unknown.join(', ')} 的问答。`)
+  }
+  if (suffix) output.push(suffix)
+  return meta.$send(output.join('\n'))
+}
+
+export function split (source: string) {
+  if (!source) return []
+  return source.split(',').flatMap((value) => {
+    if (!value.includes('..')) return +value
+    const capture = value.split('..')
+    const start = +capture[0], end = +capture[1]
+    if (end < start) return []
+    return new Array(end - start + 1).fill(0).map((_, index) => start + index)
+  })
+}
+
+export function equal (array1: (string | number)[], array2: (string | number)[]) {
+  return array1.slice().sort().join() === array2.slice().sort().join()
+}
+
+export function prepareTargets (argv: Dialogue.Argv, dialogues = argv.dialogues) {
+  const targets = dialogues.filter((dialogue) => {
+    return !argv.ctx.bail('dialogue/permit', argv, dialogue)
+  })
+  argv.uneditable.unshift(...difference(dialogues, targets).map(d => d.id))
+  return targets.map(data => observe(data, `dialogue ${data.id}`))
+}
+
+export function useFlag (ctx: Context, flag: keyof typeof DialogueFlag) {
+  ctx.on('dialogue/before-fetch', (test, conditionals) => {
+    if (test[flag] !== undefined) {
+      conditionals.push(`!(\`flag\` & ${DialogueFlag[flag]}) = !${test[flag]}`)
     }
-    return this.query('SELECT * FROM `dialogue`' + this._getDialogueTest(test))
-  },
+  })
 
-  setDialogue (id, data) {
-    return this.update('dialogue', id, data)
-  },
+  ctx.on('dialogue/before-search', ({ options }, test) => {
+    test[flag] = options[flag]
+  })
 
-  removeDialogues (ids) {
-    return this.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
-  },
+  ctx.on('dialogue/validate', ({ options }) => {
+    if (options['no' + capitalize(flag)]) options[flag] = false
+  })
 
-  async getDialogueCount (test) {
-    const [{
-      'COUNT(DISTINCT `question`)': questions,
-      'COUNT(*)': answers,
-    }] = await this.query('SELECT COUNT(DISTINCT `question`), COUNT(*) FROM `dialogue`' + this._getDialogueTest(test))
-    return { questions, answers }
-  },
-})
-
-injectMethods('level', 'dialogue', {
-  _testDialogue (test, data) {
-    if (test.keyword) {
-      if (test.question && !data.question.includes(test.question)) return
-      if (test.answer && !data.question.includes(test.answer)) return
-    } else if (data.flag & DialogueFlag.keyword) {
-      if (test.question && !test.question.includes(data.question)) return
-      if (test.answer && !test.question.includes(data.answer)) return
-    } else {
-      if (test.question && data.question !== test.question) return
-      if (test.answer && data.question !== test.answer) return
+  ctx.on('dialogue/modify', ({ options }: Dialogue.Argv, data: Dialogue) => {
+    if (options[flag] !== undefined) {
+      data.flag &= ~DialogueFlag[flag]
+      data.flag |= +options[flag] * DialogueFlag[flag]
     }
-    if (test.envMode === 2) {
-      // TODO:
-    }
-    if (test.frozen === true) {
-      if (!(data.flag & 1)) return
-    } else if (test.frozen === false) {
-      if (data.flag & 1) return
-    }
-    if (test.writer && data.writer !== test.writer) return
-    return true
-  },
+  })
+}
 
-  createDialogue (options) {
-    return this.create('dialogue', options)
-  },
+export function parseTeachArgs ({ args, options }: Partial<ParsedLine>) {
+  function parseArgument () {
+    if (!args.length) return
+    const [arg] = args.splice(0, 1)
+    if (!arg || arg === '~' || arg === '～') return
+    return arg
+  }
 
-  async getDialogues (test) {
-    if (Array.isArray(test)) {
-      if (!test.length) return []
-      const data = await Promise.all(test.map(id => this.tables.dialogue.get(id)))
-      return data.filter(Boolean)
-    }
+  defineProperty(options, 'noArgs', !args.length)
+  options.question = parseArgument()
+  options.answer = options.redirectDialogue || parseArgument()
+}
 
-    return new Promise((resolve, reject) => {
-      const dialogues: Dialogue[] = []
-      this.tables.dialogue.createValueStream()
-        .on('data', data => this._testDialogue(test, data) && dialogues.push(data))
-        .on('error', error => reject(error))
-        .on('end', () => resolve(dialogues))
-    })
-  },
+export function isPositiveInteger (value: any) {
+  return isInteger(value) && value > 0 ? '' : '应为正整数。'
+}
 
-  async setDialogue (id, data) {
-    const originalData = await this.tables.dialogue.get(id)
-    const newData: Dialogue = { ...originalData, ...data }
-    return this.tables.dialogue.put(id, newData)
-  },
+export function isZeroToOne (value: number) {
+  return value < 0 || value > 1 ? '应为不超过 1 的正数。' : ''
+}
 
-  removeDialogues (ids) {
-    return Promise.all(ids.map(id => this.remove('dialogue', id)))
-  },
-
-  async getDialogueCount (test) {
-    return new Promise((resolve, reject) => {
-      const questionSet = new Set<string>()
-      let answers = 0
-      this.tables.dialogue.createValueStream()
-        .on('data', data => this._testDialogue(test, data) && (questionSet.add(data.question), ++answers))
-        .on('error', error => reject(error))
-        .on('end', () => resolve({ questions: questionSet.size, answers }))
-    })
-  },
-})
+export const RE_GROUPS = /^\d+(,\d+)*$/
+export const RE_DIALOGUES = /^\d+(\.\.\d+)?(,\d+(\.\.\d+)?)*$/

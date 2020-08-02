@@ -26,12 +26,12 @@ beforeAll(async () => {
     secret: 'secret',
   })
 
-  app1.receiver.on('message', app1MessageCallback)
-  app2.receiver.on('message', app2MessageCallback)
-  app1.receiver.on('connect', app1ConnectCallback)
-  app2.receiver.on('connect', app2ConnectCallback)
-  app1.receiver.on('ready', app1ReadyCallback)
-  app2.receiver.on('ready', app2ReadyCallback)
+  app1.on('message', app1MessageCallback)
+  app2.on('message', app2MessageCallback)
+  app1.on('connect', app1ConnectCallback)
+  app2.on('connect', app2ConnectCallback)
+  app1.on('ready', app1ReadyCallback)
+  app2.on('ready', app2ReadyCallback)
 
   await startAll()
 })
@@ -102,30 +102,30 @@ describe('Quick Operations', () => {
   }
 
   test('message event', async () => {
-    app1.receiver.once('message', meta => meta.$send('foo'))
+    app1.once('message', meta => meta.$send('foo'))
     await expect(server.post(messageMeta)).resolves.toMatchObject({ data: { reply: 'foo' } })
 
-    app1.groups.receiver.once('message', meta => meta.$ban())
+    app1.groups.once('message', meta => meta.$ban())
     await expect(server.post(messageMeta)).resolves.toMatchObject({ data: { ban: true } })
 
-    app1.groups.receiver.once('message', meta => meta.$delete())
+    app1.groups.once('message', meta => meta.$delete())
     await expect(server.post(messageMeta)).resolves.toMatchObject({ data: { delete: true } })
 
-    app1.groups.receiver.once('message', meta => meta.$kick())
+    app1.groups.once('message', meta => meta.$kick())
     await expect(server.post(messageMeta)).resolves.toMatchObject({ data: { kick: true } })
   })
 
   test('request event', async () => {
-    app1.receiver.once('request/friend', meta => meta.$approve('foo'))
+    app1.once('request/friend', meta => meta.$approve('foo'))
     await expect(server.post(frientRequestMeta)).resolves.toMatchObject({ data: { approve: true, remark: 'foo' } })
 
-    app1.receiver.once('request/friend', meta => meta.$reject())
+    app1.once('request/friend', meta => meta.$reject())
     await expect(server.post(frientRequestMeta)).resolves.toMatchObject({ data: { approve: false } })
 
-    app1.receiver.once('request/group/add', meta => meta.$approve())
+    app1.once('request/group/add', meta => meta.$approve())
     await expect(server.post(groupRequestMeta)).resolves.toMatchObject({ data: { approve: true } })
 
-    app1.receiver.once('request/group/add', meta => meta.$reject('bar'))
+    app1.once('request/group/add', meta => meta.$reject('bar'))
     await expect(server.post(groupRequestMeta)).resolves.toMatchObject({ data: { approve: false, reason: 'bar' } })
   })
 

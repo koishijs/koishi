@@ -34,8 +34,8 @@ namespace CQCode {
     return output + ']'
   }
 
-  export function stringifyAll (codes: CQCode[]) {
-    return codes.map(code => stringify(code.type, code.data)).join('')
+  export function stringifyAll (codes: (string | CQCode)[]) {
+    return codes.map(code => typeof code === 'string' ? code : stringify(code.type, code.data)).join('')
   }
 
   const regexp = /\[CQ:(\w+)((,\w+=[^,\]]*)+)\]/
@@ -53,17 +53,17 @@ namespace CQCode {
   }
 
   export function parseAll (source: string) {
-    const codes: CQCode[] = []
+    const codes: (CQCode | string)[] = []
     let result: CQCode
     while ((result = parse(source))) {
       const { capture } = result
       if (capture.index) {
-        codes.push({ type: 'text', data: { text: source.slice(0, capture.index) } })
+        codes.push(source.slice(0, capture.index))
       }
       codes.push(result)
       source = source.slice(capture.index + capture[0].length)
     }
-    if (source) codes.push({ type: 'text', data: { text: source } })
+    if (source) codes.push(source)
     return codes
   }
 }

@@ -1,77 +1,33 @@
 import { Context } from 'koishi-core'
-import admin from './admin'
-import authorize, { AuthorizeOptions } from './authorize'
-import broadcast, { BroadcastOptions } from './broadcast'
-import contextify from './contextify'
-import echo from './echo'
-import exec from './exec'
-import exit from './exit'
-import help from './help'
-import info, { InfoOptions } from './info'
 import repeater, { RepeaterOptions } from './repeater'
-import requestHandler, { HandlerOptions } from './request-handler'
-import respondent, { Respondent } from './respondent'
-import welcome, { WelcomeMessage } from './welcome'
+import handler, { HandlerOptions } from './handler'
 
 export * from './admin'
+export * from './broadcast'
 export * from './info'
+export * from './repeater'
 
-export {
-  admin,
-  authorize,
-  broadcast,
-  contextify,
-  echo,
-  exec,
-  exit,
-  help,
-  info,
-  repeater,
-  requestHandler,
-  respondent,
-  welcome,
-  AuthorizeOptions,
-  BroadcastOptions,
-  HandlerOptions,
-  InfoOptions,
-  RepeaterOptions,
-  Respondent,
-  WelcomeMessage,
-}
-
-export interface Config extends AuthorizeOptions, BroadcastOptions, HandlerOptions, InfoOptions {
-  admin?: boolean
-  broadcast?: boolean
-  contextify?: boolean
-  echo?: boolean
-  exec?: boolean
-  exit?: boolean
-  help?: boolean
-  info?: boolean
-  repeater?: RepeaterOptions
-  respondent?: Respondent[]
-  welcomeMessage?: WelcomeMessage
+export interface Options extends HandlerOptions, RepeaterOptions {
+  admin?: false
+  broadcast?: false
+  contextify?: false
+  echo?: false
+  exit?: false
+  info?: false
+  usage?: false
 }
 
 export const name = 'common'
 
-export function apply (ctx: Context, options: Config = {}) {
-  ctx.plugin(requestHandler, options)
-  ctx.plugin(repeater, options.repeater)
-  ctx.plugin(respondent, options.respondent)
-  ctx.plugin(welcome, options.welcomeMessage)
+export function apply (ctx: Context, options: Options = {}) {
+  ctx.plugin(handler, options)
+  ctx.plugin(repeater, options)
 
-  if (options.echo !== false) ctx.plugin(echo)
-  if (options.exec !== false) ctx.plugin(exec)
-  if (options.exit !== false) ctx.plugin(exit)
-  if (options.help !== false) ctx.plugin(help)
-
-  if (ctx.database) {
-    ctx.plugin(authorize, options)
-
-    if (options.admin !== false) ctx.plugin(admin)
-    if (options.contextify !== false) ctx.plugin(contextify)
-    if (options.broadcast !== false) ctx.plugin(broadcast, options)
-    if (options.info !== false) ctx.plugin(info, options)
-  }
+  if (options.echo !== false) ctx.plugin(require('./echo'))
+  if (options.admin !== false) ctx.plugin(require('./admin'))
+  if (options.contextify !== false) ctx.plugin(require('./contextify'))
+  if (options.broadcast !== false) ctx.plugin(require('./broadcast'))
+  if (options.exit !== false) ctx.plugin(require('./exit'))
+  if (options.info !== false) ctx.plugin(require('./info'))
+  if (options.usage !== false) ctx.plugin(require('./usage'))
 }

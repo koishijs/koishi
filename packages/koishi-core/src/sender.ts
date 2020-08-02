@@ -1,24 +1,9 @@
-import axios from 'axios'
-import { snakeCase, camelCase, isInteger } from 'koishi-utils'
-import { WsClient } from './server'
+import { SenderInfo, StatusInfo, Meta, AccountInfo, StrangerInfo, ContextType, MessageType } from './meta'
+import { snakeCase, camelCase, Logger } from 'koishi-utils'
+import { BotOptions } from './server'
 import { App } from './app'
 
-import {
-  GroupMemberInfo,
-  StatusInfo,
-  VersionInfo,
-  Meta,
-  FriendInfo,
-  GroupInfo,
-  Credentials,
-  AccountInfo,
-  StrangerInfo,
-  ListedGroupInfo,
-  VipInfo,
-  GroupNoticeInfo,
-  ContextType,
-  MessageType,
-} from './meta'
+const logger = Logger.create('sender')
 
 export class SenderError extends Error {
   constructor (args: Record<string, any>, url: string, retcode: number, selfId: number) {
@@ -33,9 +18,6 @@ export class SenderError extends Error {
   }
 }
 
-export type RecordFormat = 'mp3' | 'amr' | 'wma' | 'm4a' | 'spx' | 'ogg' | 'wav' | 'flac'
-export type DataDirectoryType = 'image' | 'record' | 'show' | 'bface'
-
 export interface CQResponse {
   status: string
   retcode: number
@@ -47,215 +29,124 @@ interface MessageResponse {
   messageId: number
 }
 
-export class Sender {
-  protected _get: (action: string, params: Record<string, any>) => Promise<CQResponse>
+export interface CQSender extends BotOptions {}
 
-  constructor (public app: App) {
-    const { type } = app.options
-    if (type === 'http') {
-      this._get = async (action, params) => {
-        const headers = {} as any
-        if (app.options.token) {
-          headers.Authorization = `Token ${app.options.token}`
-        }
-        const uri = new URL(action, app.options.server).href
-        const { data } = await axios.get(uri, { params, headers })
-        return data
-      }
-    } else if (type === 'ws') {
-      this._get = (action, params) => {
-        const server = app.server as WsClient
-        return server.send({ action, params })
-      }
-    }
+export class CQSender {
+  public version?: VersionInfo
+
+  _get?: (action: string, params: Record<string, any>) => Promise<CQResponse>
+
+  constructor (public app: App, public bot: BotOptions) {
+    Object.assign(this, bot)
   }
 
   async get <T = any> (action: string, params: Record<string, any> = {}, silent = false): Promise<T> {
-    this.app.logger('koishi:sender').debug('request %s %o', action, params)
+    logger.debug('[request] %s %o', action, params)
     const response = await this._get(action, snakeCase(params))
-    this.app.logger('koishi:sender').debug('response %o', response)
+    logger.debug('[response] %o', response)
     const { data, retcode } = response
     if (retcode === 0 && !silent) {
       return camelCase(data)
     } else if (retcode < 0 && !silent) {
-      throw new SenderError(params, action, retcode, this.app.selfId)
+      throw new SenderError(params, action, retcode, this.bot.selfId)
     } else if (retcode > 1) {
-      throw new SenderError(params, action, retcode, this.app.selfId)
+      throw new SenderError(params, action, retcode, this.bot.selfId)
     }
   }
 
   async getAsync (action: string, params: Record<string, any> = {}): Promise<void> {
-    if (this.app.server.versionLessThan(4)) {
-      await this.get(action, params, true)
-    } else {
-      await this.get(action + '_async', params)
-    }
+    await this.get(action + '_async', params)
   }
 
-  private _assertInteger (name: string, value: any) {
-    if (value === undefined) throw new Error('missing argument: ' + name)
-    if (!isInteger(value)) throw new Error('invalid argument: ' + name)
-  }
-
-  private _assertElement (name: string, value: any, array: any[]) {
-    if (value === undefined) throw new Error('missing argument: ' + name)
-    if (!array.includes(value)) throw new Error('invalid argument: ' + name)
-  }
-
-  private _assertVersion (label: string, major: number, minor: number, patch: number = 0) {
-    if (this.app.server.versionLessThan(major, minor, patch)) {
-      throw new Error(`${label} requires CQHTTP version >= ${major}.${minor}.${patch}`)
-    }
-  }
-
-  _createSendMeta (sendType: MessageType, $ctxType: ContextType, $ctxId: number, message: string) {
-    return {
+  _createSendMeta (messageType: MessageType, $ctxType: ContextType, $ctxId: number, message: string) {
+    return new Meta({
       $ctxId,
       $ctxType,
       message,
-      sendType,
+      messageType,
       postType: 'send',
-      userId: this.app.selfId,
+      $app: this.app,
+      selfId: this.bot.selfId,
       [$ctxType + 'Id']: $ctxId,
       time: Math.round(Date.now() / 1000),
-    } as Meta<'send'>
+    })
   }
 
   async sendMsg (type: MessageType, ctxId: number, message: string, autoEscape = false) {
-    this._assertElement('type', type, ['private', 'group', 'discuss'])
     const ctxType = type === 'private' ? 'user' : type
     const ctxIdKey = ctxType + 'Id'
-    this._assertInteger(ctxIdKey, ctxId)
     if (!message) return
     const meta = this._createSendMeta(type, ctxType, ctxId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (this.app.bail(meta, 'before-send', meta)) return
     const { messageId } = await this.get<MessageResponse>('send_msg', { [ctxIdKey]: ctxId, message, autoEscape })
     meta.messageId = messageId
-    this.app.emitEvent(meta, 'send', meta)
+    this.app.emit(meta, 'send', meta)
     return messageId
   }
 
   async sendMsgAsync (type: MessageType, ctxId: number, message: string, autoEscape = false) {
-    this._assertElement('type', type, ['private', 'group', 'discuss'])
     const ctxType = type === 'private' ? 'user' : type
     const ctxIdKey = ctxType + 'Id'
-    this._assertInteger(ctxIdKey, ctxId)
     if (!message) return
     const meta = this._createSendMeta(type, ctxType, ctxId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (this.app.bail(meta, 'before-send', meta)) return
     await this.get('send_msg_async', { [ctxIdKey]: ctxId, message, autoEscape })
   }
 
   async sendGroupMsg (groupId: number, message: string, autoEscape = false) {
-    this._assertInteger('groupId', groupId)
     if (!message) return
     const meta = this._createSendMeta('group', 'group', groupId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (this.app.bail(meta, 'before-send', meta)) return
     const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message, autoEscape })
     meta.messageId = messageId
-    this.app.emitEvent(meta, 'send', meta)
+    this.app.emit(meta, 'send', meta)
     return messageId
   }
 
   async sendGroupMsgAsync (groupId: number, message: string, autoEscape = false) {
-    this._assertInteger('groupId', groupId)
     if (!message) return
     const meta = this._createSendMeta('group', 'group', groupId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (this.app.bail(meta, 'before-send', meta)) return
     await this.get('send_group_msg_async', { groupId, message, autoEscape })
   }
 
   async sendDiscussMsg (discussId: number, message: string, autoEscape = false) {
-    this._assertInteger('discussId', discussId)
     if (!message) return
     const meta = this._createSendMeta('discuss', 'discuss', discussId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (this.app.bail(meta, 'before-send', meta)) return
     const { messageId } = await this.get<MessageResponse>('send_discuss_msg', { discussId, message, autoEscape })
     meta.messageId = messageId
-    this.app.emitEvent(meta, 'send', meta)
+    this.app.emit(meta, 'send', meta)
     return messageId
   }
 
   async sendDiscussMsgAsync (discussId: number, message: string, autoEscape = false) {
-    this._assertInteger('discussId', discussId)
     if (!message) return
     const meta = this._createSendMeta('discuss', 'discuss', discussId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (this.app.bail(meta, 'before-send', meta)) return
     await this.get('send_discuss_msg_async', { discussId, message, autoEscape })
   }
 
   async sendPrivateMsg (userId: number, message: string, autoEscape = false) {
-    this._assertInteger('userId', userId)
     if (!message) return
     const meta = this._createSendMeta('private', 'user', userId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (this.app.bail(meta, 'before-send', meta)) return
     const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message, autoEscape })
     meta.messageId = messageId
-    this.app.emitEvent(meta, 'send', meta)
+    this.app.emit(meta, 'send', meta)
     return messageId
   }
 
   async sendPrivateMsgAsync (userId: number, message: string, autoEscape = false) {
-    this._assertInteger('userId', userId)
     if (!message) return
     const meta = this._createSendMeta('private', 'user', userId, message)
-    this.app.emitEvent(meta, 'before-send', meta)
+    if (this.app.bail(meta, 'before-send', meta)) return
     await this.get('send_private_msg_async', { userId, message, autoEscape })
-  }
-
-  async deleteMsg (messageId: number) {
-    this._assertInteger('messageId', messageId)
-    this._assertVersion('sender.deleteMsg()', 3, 3)
-    await this.get('delete_msg', { messageId })
-  }
-
-  async deleteMsgAsync (messageId: number) {
-    this._assertInteger('messageId', messageId)
-    this._assertVersion('sender.deleteMsgAsync()', 3, 3)
-    return this.getAsync('delete_msg', { messageId })
-  }
-
-  async sendLike (userId: number, times = 1) {
-    this._assertInteger('userId', userId)
-    this._assertInteger('times', times)
-    await this.get('send_like', { userId, times })
-  }
-
-  async sendLikeAsync (userId: number, times = 1) {
-    this._assertInteger('userId', userId)
-    this._assertInteger('times', times)
-    return this.getAsync('send_like', { userId, times })
-  }
-
-  async setGroupKick (groupId: number, userId: number, rejectAddRequest?: boolean) {
-    this._assertInteger('groupId', groupId)
-    this._assertInteger('userId', userId)
-    await this.get('set_group_kick', { groupId, userId, rejectAddRequest })
-  }
-
-  async setGroupKickAsync (groupId: number, userId: number, rejectAddRequest?: boolean) {
-    this._assertInteger('groupId', groupId)
-    this._assertInteger('userId', userId)
-    return this.getAsync('set_group_kick', { groupId, userId, rejectAddRequest })
-  }
-
-  async setGroupBan (groupId: number, userId: number, duration?: number) {
-    this._assertInteger('groupId', groupId)
-    this._assertInteger('userId', userId)
-    await this.get('set_group_ban', { groupId, userId, duration })
-  }
-
-  async setGroupBanAsync (groupId: number, userId: number, duration?: number) {
-    this._assertInteger('groupId', groupId)
-    this._assertInteger('userId', userId)
-    return this.getAsync('set_group_ban', { groupId, userId, duration })
   }
 
   setGroupAnonymousBan (groupId: number, anonymous: object, duration?: number): Promise<void>
   setGroupAnonymousBan (groupId: number, flag: string, duration?: number): Promise<void>
   async setGroupAnonymousBan (groupId: number, meta: object | string, duration?: number) {
-    this._assertInteger('groupId', groupId)
-    if (!meta) throw new Error('missing argument: anonymous or flag')
     const args = { groupId, duration } as any
     args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
     await this.get('set_group_anonymous_ban', args)
@@ -264,93 +155,14 @@ export class Sender {
   setGroupAnonymousBanAsync (groupId: number, anonymous: object, duration?: number): Promise<void>
   setGroupAnonymousBanAsync (groupId: number, flag: string, duration?: number): Promise<void>
   async setGroupAnonymousBanAsync (groupId: number, meta: object | string, duration?: number) {
-    this._assertInteger('groupId', groupId)
-    if (!meta) throw new Error('missing argument: anonymous or flag')
     const args = { groupId, duration } as any
     args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
     return this.getAsync('set_group_anonymous_ban', args)
   }
 
-  async setGroupWholeBan (groupId: number, enable = true) {
-    this._assertInteger('groupId', groupId)
-    await this.get('set_group_whole_ban', { groupId, enable })
-  }
-
-  async setGroupWholeBanAsync (groupId: number, enable = true) {
-    this._assertInteger('groupId', groupId)
-    return this.getAsync('set_group_whole_ban', { groupId, enable })
-  }
-
-  async setGroupAdmin (groupId: number, userId: number, enable = true) {
-    this._assertInteger('groupId', groupId)
-    this._assertInteger('userId', userId)
-    await this.get('set_group_admin', { groupId, userId, enable })
-  }
-
-  async setGroupAdminAsync (groupId: number, userId: number, enable = true) {
-    this._assertInteger('groupId', groupId)
-    this._assertInteger('userId', userId)
-    return this.getAsync('set_group_admin', { groupId, userId, enable })
-  }
-
-  async setGroupAnonymous (groupId: number, enable = true) {
-    this._assertInteger('groupId', groupId)
-    await this.get('set_group_anonymous', { groupId, enable })
-  }
-
-  async setGroupAnonymousAsync (groupId: number, enable = true) {
-    this._assertInteger('groupId', groupId)
-    return this.getAsync('set_group_anonymous', { groupId, enable })
-  }
-
-  async setGroupCard (groupId: number, userId: number, card = '') {
-    this._assertInteger('groupId', groupId)
-    this._assertInteger('userId', userId)
-    await this.get('set_group_card', { groupId, userId, card })
-  }
-
-  async setGroupCardAsync (groupId: number, userId: number, card = '') {
-    this._assertInteger('groupId', groupId)
-    this._assertInteger('userId', userId)
-    return this.getAsync('set_group_card', { groupId, userId, card })
-  }
-
-  async setGroupSpecialTitle (groupId: number, userId: number, specialTitle = '', duration = -1) {
-    this._assertInteger('groupId', groupId)
-    this._assertInteger('userId', userId)
-    await this.get('set_group_special_title', { groupId, userId, specialTitle, duration })
-  }
-
-  async setGroupSpecialTitleAsync (groupId: number, userId: number, specialTitle = '', duration = -1) {
-    this._assertInteger('groupId', groupId)
-    this._assertInteger('userId', userId)
-    return this.getAsync('set_group_special_title', { groupId, userId, specialTitle, duration })
-  }
-
-  async setGroupLeave (groupId: number, isDismiss?: boolean) {
-    this._assertInteger('groupId', groupId)
-    await this.get('set_group_leave', { groupId, isDismiss })
-  }
-
-  async setGroupLeaveAsync (groupId: number, isDismiss?: boolean) {
-    this._assertInteger('groupId', groupId)
-    return this.getAsync('set_group_leave', { groupId, isDismiss })
-  }
-
-  async setDiscussLeave (discussId: number) {
-    this._assertInteger('discussId', discussId)
-    await this.get('set_discuss_leave', { discussId })
-  }
-
-  async setDiscussLeaveAsync (discussId: number) {
-    this._assertInteger('discussId', discussId)
-    return this.getAsync('set_discuss_leave', { discussId })
-  }
-
   setFriendAddRequest (flag: string, approve?: boolean): Promise<void>
   setFriendAddRequest (flag: string, remark?: string): Promise<void>
   async setFriendAddRequest (flag: string, info: string | boolean = true) {
-    if (!flag) throw new Error('missing argument: flag')
     if (typeof info === 'string') {
       await this.get('set_friend_add_request', { flag, approve: true, remark: info })
     } else {
@@ -361,7 +173,6 @@ export class Sender {
   setFriendAddRequestAsync (flag: string, approve?: boolean): Promise<void>
   setFriendAddRequestAsync (flag: string, remark?: string): Promise<void>
   async setFriendAddRequestAsync (flag: string, info: string | boolean = true) {
-    if (!flag) throw new Error('missing argument: flag')
     if (typeof info === 'string') {
       return this.getAsync('set_friend_add_request', { flag, approve: true, remark: info })
     } else {
@@ -372,8 +183,6 @@ export class Sender {
   setGroupAddRequest (flag: string, subType: 'add' | 'invite', approve?: boolean): Promise<void>
   setGroupAddRequest (flag: string, subType: 'add' | 'invite', reason?: string): Promise<void>
   async setGroupAddRequest (flag: string, subType: 'add' | 'invite', info: string | boolean = true) {
-    if (!flag) throw new Error('missing argument: flag')
-    this._assertElement('subType', subType, ['add', 'invite'])
     if (typeof info === 'string') {
       await this.get('set_group_add_request', { flag, subType, approve: false, reason: info })
     } else {
@@ -384,165 +193,253 @@ export class Sender {
   setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', approve?: boolean): Promise<void>
   setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', reason?: string): Promise<void>
   async setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', info: string | boolean = true) {
-    if (!flag) throw new Error('missing argument: flag')
-    this._assertElement('subType', subType, ['add', 'invite'])
     if (typeof info === 'string') {
       return this.getAsync('set_group_add_request', { flag, subType, approve: false, reason: info })
     } else {
       return this.getAsync('set_group_add_request', { flag, subType, approve: info })
     }
   }
+}
 
-  async getLoginInfo (): Promise<AccountInfo> {
-    return this.get('get_login_info')
-  }
-
-  async getVipInfo (): Promise<VipInfo> {
-    this._assertVersion('sender.getVipInfo()', 4, 3, 1)
-    return this.get('_get_vip_info')
-  }
-
-  async getStrangerInfo (userId: number, noCache?: boolean): Promise<StrangerInfo> {
-    this._assertInteger('userId', userId)
-    return this.get('get_stranger_info', { userId, noCache })
-  }
-
-  async getFriendList (): Promise<FriendInfo[]> {
-    this._assertVersion('sender.getFriendList()', 4, 12)
-    return this.get('get_friend_list')
-  }
-
-  async getGroupInfo (groupId: number, noCache?: boolean): Promise<GroupInfo> {
-    this._assertInteger('groupId', groupId)
-    this._assertVersion('sender.getGroupInfo()', 4, 0, 1)
-    return this.app.server.versionLessThan(4, 12)
-      ? this.get('_get_group_info', { groupId, noCache })
-      : this.get('get_group_info', { groupId, noCache })
-  }
-
-  async getGroupList (): Promise<ListedGroupInfo[]> {
-    return this.get('get_group_list')
-  }
-
-  async getGroupMemberInfo (groupId: number, userId: number, noCache?: boolean): Promise<GroupMemberInfo> {
-    this._assertInteger('groupId', groupId)
-    this._assertInteger('userId', userId)
-    return this.get('get_group_member_info', { groupId, userId, noCache })
-  }
-
-  async getGroupMemberList (groupId: number): Promise<GroupMemberInfo[]> {
-    this._assertInteger('groupId', groupId)
-    return this.get('get_group_member_list', { groupId })
-  }
-
-  async getGroupNotice (groupId: number): Promise<GroupNoticeInfo[]> {
-    this._assertInteger('groupId', groupId)
-    this._assertVersion('sender.getGroupNotice()', 4, 9)
-    return this.get('_get_group_notice', { groupId })
-  }
-
-  async sendGroupNotice (groupId: number, title: string, content: string) {
-    this._assertInteger('groupId', groupId)
-    if (!title) throw new Error('missing argument: title')
-    if (!content) throw new Error('missing argument: content')
-    this._assertVersion('sender.sendGroupNotice()', 4, 9)
-    await this.get('_send_group_notice', { groupId, title, content })
-  }
-
-  async sendGroupNoticeAsync (groupId: number, title: string, content: string) {
-    this._assertInteger('groupId', groupId)
-    if (!title) throw new Error('missing argument: title')
-    if (!content) throw new Error('missing argument: content')
-    this._assertVersion('sender.sendGroupNotice()', 4, 9)
-    return this.getAsync('_send_group_notice', { groupId, title, content })
-  }
-
-  async getCookies (domain?: string): Promise<string> {
-    const { cookies } = await this.get('get_cookies', { domain })
-    return cookies
-  }
-
-  async getCsrfToken (): Promise<number> {
-    const { token } = await this.get('get_csrf_token')
-    return token
-  }
-
-  getCredentials (domain?: string) {
-    return this.get<Credentials>('get_credentials', { domain })
-  }
-
-  async getRecord (file: string, outFormat: RecordFormat, fullPath?: boolean) {
-    if (!file) throw new Error('missing argument: file')
-    this._assertElement('outFormat', outFormat, ['mp3', 'amr', 'wma', 'm4a', 'spx', 'ogg', 'wav', 'flac'])
-    this._assertVersion('sender.getRecord()', 3, 3)
-    const response = await this.get('get_record', { file, outFormat, fullPath })
-    return response.file as string
-  }
-
-  async getImage (file: string) {
-    if (!file) throw new Error('missing argument: file')
-    this._assertVersion('sender.getImage()', 4, 8)
-    const response = await this.get('get_image', { file })
-    return response.file as string
-  }
-
-  async canSendRecord () {
-    this._assertVersion('sender.canSendRecord()', 4, 8)
-    const { yes } = await this.get('can_send_record')
-    return yes as boolean
-  }
-
-  async canSendImage () {
-    this._assertVersion('sender.canSendImage()', 4, 8)
-    const { yes } = await this.get('can_send_image')
-    return yes as boolean
-  }
-
-  getStatus () {
-    return this.get<StatusInfo>('get_status')
-  }
-
-  async getVersionInfo () {
-    const data = await this.get<VersionInfo>('get_version_info')
-    const match = /^(\d+)(?:\.(\d+)(?:\.(\d+)?))?/.exec(data.pluginVersion)
-    if (match) {
-      const [, major, minor, patch] = match
-      data.pluginMajorVersion = +major
-      data.pluginMinorVersion = +minor || 0
-      data.pluginPatchVersion = +patch || 0
-    }
-    return data
-  }
-
-  async setRestart (cleanLog = false, cleanCache = false, cleanEvent = false) {
-    this._assertVersion('sender.setRestart()', 3, 0, 2)
-    await this.get('_set_restart', { cleanLog, cleanCache, cleanEvent })
-  }
-
-  async setRestartPlugin (delay?: number) {
-    this._assertVersion('sender.setRestartPlugin()', 3, 2)
-    await this.get('set_restart_plugin', { delay })
-  }
-
-  async cleanDataDir (dataDir: DataDirectoryType) {
-    this._assertElement('dataDir', dataDir, ['bface', 'image', 'record', 'show'])
-    this._assertVersion('sender.cleanDataDir()', 3, 3, 4)
-    await this.get('clean_data_dir', { dataDir })
-  }
-
-  async cleanDataDirAsync (dataDir: DataDirectoryType) {
-    this._assertElement('dataDir', dataDir, ['bface', 'image', 'record', 'show'])
-    this._assertVersion('sender.cleanDataDirAsync()', 3, 3, 4)
-    return this.getAsync('clean_data_dir', { dataDir })
-  }
-
-  async cleanPluginLog () {
-    this._assertVersion('sender.cleanPluginLog()', 4, 1)
-    await this.get('clean_plugin_log')
-  }
-
-  async cleanPluginLogAsync () {
-    this._assertVersion('sender.cleanPluginLogAsync()', 4, 1)
-    await this.get('clean_plugin_log_async')
+function defineSync (name: string, ...params: string[]) {
+  const prop = camelCase(name.replace(/^_/, ''))
+  CQSender.prototype[prop] = function (this: CQSender, ...args: any[]) {
+    return this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
   }
 }
+
+function defineAsync (name: string, ...params: string[]) {
+  const prop = camelCase(name.replace(/^_/, ''))
+  CQSender.prototype[prop] = async function (this: CQSender, ...args: any[]) {
+    await this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
+  }
+  CQSender.prototype[prop + 'Async'] = async function (this: CQSender, ...args: any[]) {
+    await this.getAsync(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
+  }
+}
+
+function defineExtract (name: string, key: string, ...params: string[]) {
+  const prop = camelCase(name.replace(/^_/, ''))
+  CQSender.prototype[prop] = async function (this: CQSender, ...args: any[]) {
+    const data = await this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
+    return data[key]
+  }
+}
+
+export type RecordFormat = 'mp3' | 'amr' | 'wma' | 'm4a' | 'spx' | 'ogg' | 'wav' | 'flac'
+export type DataDirectory = 'image' | 'record' | 'show' | 'bface'
+
+export interface FriendInfo extends AccountInfo {
+  remark: string
+}
+
+export interface ListedGroupInfo {
+  groupId: number
+  groupName: string
+}
+
+export interface GroupInfo extends ListedGroupInfo {
+  memberCount: number
+  maxMemberCount: number
+}
+
+export interface GroupMemberInfo extends SenderInfo {
+  cardChangeable: boolean
+  groupId: number
+  joinTime: number
+  lastSentTime: number
+  titleExpireTime: number
+  unfriendly: boolean
+}
+
+export interface Credentials {
+  cookies: string
+  csrfToken: number
+}
+
+export interface ImageInfo {
+  file: string
+}
+
+export interface RecordInfo {
+  file: string
+}
+
+export interface VersionInfo {
+  coolqDirectory: string
+  coolqEdition: 'air' | 'pro'
+  pluginVersion: string
+  pluginBuildNumber: number
+  pluginBuildConfiguration: 'debug' | 'release'
+}
+
+export interface CQSender {
+  deleteMsg (messageId: number): Promise<void>
+  deleteMsgAsync (messageId: number): Promise<void>
+  sendLike (userId: number, times?: number): Promise<void>
+  sendLikeAsync (userId: number, times?: number): Promise<void>
+  setGroupKick (groupId: number, userId: number, rejectAddRequest?: boolean): Promise<void>
+  setGroupKickAsync (groupId: number, userId: number, rejectAddRequest?: boolean): Promise<void>
+  setGroupBan (groupId: number, userId: number, duration?: number): Promise<void>
+  setGroupBanAsync (groupId: number, userId: number, duration?: number): Promise<void>
+  setGroupWholeBan (groupId: number, enable?: boolean): Promise<void>
+  setGroupWholeBanAsync (groupId: number, enable?: boolean): Promise<void>
+  setGroupAdmin (groupId: number, userId: number, enable?: boolean): Promise<void>
+  setGroupAdminAsync (groupId: number, userId: number, enable?: boolean): Promise<void>
+  setGroupAnonymous (groupId: number, enable?: boolean): Promise<void>
+  setGroupAnonymousAsync (groupId: number, enable?: boolean): Promise<void>
+  setGroupCard (groupId: number, userId: number, card?: string): Promise<void>
+  setGroupCardAsync (groupId: number, userId: number, card?: string): Promise<void>
+  setGroupLeave (groupId: number, isDismiss?: boolean): Promise<void>
+  setGroupLeaveAsync (groupId: number, isDismiss?: boolean): Promise<void>
+  setGroupSpecialTitle (groupId: number, userId: number, specialTitle?: string, duration?: number): Promise<void>
+  setGroupSpecialTitleAsync (groupId: number, userId: number, specialTitle?: string, duration?: number): Promise<void>
+  setDiscussLeave (discussId: number): Promise<void>
+  setDiscussLeaveAsync (discussId: number): Promise<void>
+  getLoginInfo (): Promise<AccountInfo>
+  getStrangerInfo (userId: number, noCache?: boolean): Promise<StrangerInfo>
+  getFriendList (): Promise<FriendInfo[]>
+  getGroupList (): Promise<ListedGroupInfo[]>
+  getGroupInfo (groupId: number, noCache?: boolean): Promise<GroupInfo>
+  getGroupMemberInfo (groupId: number, userId: number, noCache?: boolean): Promise<GroupMemberInfo>
+  getGroupMemberList (groupId: number): Promise<GroupMemberInfo[]>
+  getCookies (domain?: string): Promise<string>
+  getCsrfToken (): Promise<number>
+  getCredentials (domain?: string): Promise<Credentials>
+  getRecord (file: string, outFormat: RecordFormat, fullPath?: boolean): Promise<RecordInfo>
+  getImage (file: string): Promise<ImageInfo>
+  canSendImage (): Promise<boolean>
+  canSendRecord (): Promise<boolean>
+  getStatus (): Promise<StatusInfo>
+  getVersionInfo (): Promise<VersionInfo>
+  setRestartPlugin (delay?: number): Promise<void>
+  cleanDataDir (dataDir: DataDirectory): Promise<void>
+  cleanDataDirAsync (dataDir: DataDirectory): Promise<void>
+  cleanPluginLog (): Promise<void>
+  cleanPluginLogAsync (): Promise<void>
+}
+
+defineAsync('delete_msg', 'message_id')
+defineAsync('send_like', 'user_id', 'times')
+defineAsync('set_group_kick', 'group_id', 'user_id', 'reject_add_request')
+defineAsync('set_group_ban', 'group_id', 'user_id', 'duration')
+defineAsync('set_group_whole_ban', 'group_id', 'enable')
+defineAsync('set_group_admin', 'group_id', 'user_id', 'enable')
+defineAsync('set_group_anonymous', 'group_id', 'enable')
+defineAsync('set_group_card', 'group_id', 'user_id', 'card')
+defineAsync('set_group_leave', 'group_id', 'is_dismiss')
+defineAsync('set_group_special_title', 'group_id', 'user_id', 'special_title', 'duration')
+defineAsync('set_discuss_leave', 'discuss_id')
+defineSync('get_login_info')
+defineSync('get_stranger_info', 'user_id', 'no_cache')
+defineSync('get_friend_list')
+defineSync('get_group_list')
+defineSync('get_group_info', 'group_id', 'no_cache')
+defineSync('get_group_member_info', 'group_id', 'user_id', 'no_cache')
+defineSync('get_group_member_list', 'group_id')
+defineExtract('get_cookies', 'cookies', 'domain')
+defineExtract('get_csrf_token', 'token')
+defineSync('get_credentials', 'domain')
+defineSync('get_record', 'file', 'out_format', 'full_path')
+defineSync('get_image', 'file')
+defineExtract('can_send_image', 'yes')
+defineExtract('can_send_record', 'yes')
+defineSync('get_status')
+defineSync('get_version_info')
+defineSync('set_restart_plugin', 'delay')
+defineAsync('clean_data_dir', 'data_dir')
+defineAsync('clean_plugin_log', 'group_id', 'name')
+
+// experimental api
+
+export interface VipInfo extends AccountInfo {
+  level: number
+  levelSpeed: number
+  vipLevel: number
+  vipGrowthSpeed: number
+  vipGrowthTotal: string
+}
+
+export interface GroupNotice {
+  cn: number
+  fid: string
+  fn: number
+  msg: {
+    text: string
+    textFace: string
+    title: string
+  }
+  pubt: number
+  readNum: number
+  settings: {
+    isShowEditCard: number
+    remindTs: number
+  }
+  u: number
+  vn: number
+}
+
+export interface CQSender {
+  getVipInfo (): Promise<VipInfo>
+  getGroupNotice (groupId: number): Promise<GroupNotice[]>
+  sendGroupNotice (groupId: number, title: string, content: string): Promise<void>
+  sendGroupNoticeAsync (groupId: number, title: string, content: string): Promise<void>
+  setRestart (cleanLog?: boolean, cleanCache?: boolean, cleanEvent?: boolean): Promise<void>
+}
+
+defineSync('_get_vip_info')
+defineSync('_get_group_notice', 'group_id')
+defineAsync('_send_group_notice', 'group_id', 'title', 'content')
+defineSync('_set_restart', 'clean_log', 'clean_cache', 'clean_event')
+
+// go-cqhttp extension
+
+export interface ImageInfo {
+  size?: number
+  filename?: string
+  url?: string
+}
+
+export interface VersionInfo {
+  goCqhttp?: boolean
+  runtimeVersion?: string
+  runtimeOs?: string
+}
+
+export interface GroupMessage {
+  messageId: number
+  realId: number
+  sender: AccountInfo
+  time: number
+  content: string
+}
+
+export interface ForwardMessage {
+  messages: {
+    sender: AccountInfo
+    time: number
+    content: string
+  }[]
+}
+
+interface CQNode {
+  type: 'node'
+  data: {
+    id: number
+  } | {
+    name: string
+    uin: number
+    content: string
+  }
+}
+
+export interface CQSender {
+  setGroupName (groupId: number, name: string): Promise<void>
+  setGroupNameAsync (groupId: number, name: string): Promise<void>
+  getGroupMsg (messageId: number): Promise<GroupMessage>
+  getForwardMsg (messageId: number): Promise<ForwardMessage>
+  sendGroupForwardMsg (groupId: number, messages: CQNode[]): Promise<void>
+  sendGroupForwardMsgAsync (groupId: number, messages: CQNode[]): Promise<void>
+}
+
+defineAsync('set_group_name', 'group_id', 'name')

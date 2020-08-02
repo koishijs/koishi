@@ -20,7 +20,7 @@ afterAll(() => del(outFolder))
 
 test('group message', async () => {
   const mock = jest.fn()
-  app1.receiver.on('record-writing', mock)
+  app1.on('record-writing', mock)
   await app1.receiveMessage('group', 'foo', 123, 321)
   await app1.receiveMessage('group', 'bar', 456, 654)
   await app1.receiveMessage('group', 'baz', 789, 321)
@@ -29,7 +29,7 @@ test('group message', async () => {
 
 test('private message', async () => {
   const mock = jest.fn()
-  app1.receiver.on('record-writing', mock)
+  app1.on('record-writing', mock)
   await app1.receiveMessage('user', 'foo', 123)
   expect(mock).toBeCalledTimes(0)
 })

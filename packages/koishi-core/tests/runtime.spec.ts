@@ -1,6 +1,7 @@
 import { MockedApp } from 'koishi-test-utils'
-import { messages, Meta } from 'koishi-core'
+import { Meta } from 'koishi-core'
 import { format } from 'util'
+import { messages } from '../src/messages'
 
 const app = new MockedApp()
 const session1 = app.createSession('user', 789)
@@ -163,8 +164,8 @@ describe('Command Execution', () => {
     app.command('error-command').action(() => { throw error })
     const errorCallback = jest.fn()
     const errorCommandCallback = jest.fn()
-    app.receiver.on('error', errorCallback)
-    app.receiver.on('error/command', errorCommandCallback)
+    app.on('error', errorCallback)
+    app.on('error/command', errorCommandCallback)
     await app.executeCommandLine('error-command', meta)
     expect(errorCallback).toBeCalledTimes(1)
     expect(errorCallback).toBeCalledWith(error)
@@ -176,8 +177,8 @@ describe('Command Execution', () => {
     app.command('skipped-command').action(({ next }) => next())
     const beforeCommandCallback = jest.fn()
     const afterCommandCallback = jest.fn()
-    app.receiver.on('before-command', beforeCommandCallback)
-    app.receiver.on('after-command', afterCommandCallback)
+    app.on('before-command', beforeCommandCallback)
+    app.on('after-command', afterCommandCallback)
     await app.executeCommandLine('skipped-command', meta)
     expect(beforeCommandCallback).toBeCalledTimes(1)
     expect(afterCommandCallback).toBeCalledTimes(0)

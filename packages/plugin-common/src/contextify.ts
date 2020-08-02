@@ -1,8 +1,10 @@
-import { Context, getTargetId, ContextType } from 'koishi-core'
+import { Context, getTargetId, ContextType, groupFields, userFields, Meta } from 'koishi-core'
 
-export default function apply (ctx: Context) {
+export function apply (ctx: Context) {
   ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3 })
     .alias('ctxf')
+    .userFields(['authority'])
+    .before(meta => !meta.$app.database)
     .option('-u, --user [id]', '使用私聊上下文')
     .option('-d, --discuss [id]', '使用讨论组上下文')
     .option('-g, --group [id]', '使用群聊上下文')
@@ -28,27 +30,9 @@ export default function apply (ctx: Context) {
         return meta.$send('请提供新的上下文。')
       }
 
-      const newMeta = { ...meta }
-      let user = meta.$user
-      if (options.user) {
-        const id = getTargetId(options.user)
-        if (!id) return meta.$send('未指定目标。')
-        user = await ctx.database.observeUser(id)
-        if (meta.$user.authority <= user.authority) {
-          return meta.$send('权限不足。')
-        }
-
-        newMeta.userId = id
-        newMeta.sender = {
-          sex: 'unknown',
-          nickname: '',
-          userId: id,
-          age: 0,
-        }
-      }
-
-      Object.defineProperty(newMeta, '$app', { value: ctx.app })
-      Object.defineProperty(newMeta, '$user', { value: user, writable: true })
+      const newMeta = new Meta(meta)
+      newMeta.$send = meta.$send.bind(meta)
+      newMeta.$sendQueued = meta.$sendQueued.bind(meta)
 
       delete newMeta.groupId
       delete newMeta.discussId
@@ -62,10 +46,8 @@ export default function apply (ctx: Context) {
         newMeta.groupId = ctxId = +options.group
         newMeta.messageType = ctxType = 'group'
         newMeta.subType = options.type || 'normal'
-        Object.defineProperty(newMeta, '$group', {
-          value: await ctx.database.observeGroup(ctxId),
-          writable: true,
-        })
+        delete newMeta.$group
+        await newMeta.observeGroup(groupFields)
       } else {
         ctxId = newMeta.userId
         ctxType = 'user'
@@ -73,18 +55,31 @@ export default function apply (ctx: Context) {
         newMeta.subType = options.type || 'other'
       }
 
+      if (options.user) {
+        const id = getTargetId(options.user)
+        if (!id) return meta.$send('未指定目标。')
+
+        newMeta.userId = id
+        newMeta.sender.userId = id
+
+        delete newMeta.$user
+        const user = await newMeta.observeUser(userFields)
+        if (meta.$user.authority <= user.authority) {
+          return meta.$send('权限不足。')
+        }
+      }
+
       if (options.group) {
-        const info = await ctx.sender.getGroupMemberInfo(ctxId, newMeta.userId).catch(() => ({}))
+        const info = await meta.$bot.getGroupMemberInfo(ctxId, newMeta.userId).catch(() => ({}))
         Object.assign(newMeta.sender, info)
       } else if (options.user) {
-        const info = await ctx.sender.getStrangerInfo(newMeta.userId).catch(() => ({}))
+        const info = await meta.$bot.getStrangerInfo(newMeta.userId).catch(() => ({}))
         Object.assign(newMeta.sender, info)
       }
 
-      // generate path
-      Object.defineProperty(newMeta, '$ctxId', { value: ctxId })
-      Object.defineProperty(newMeta, '$ctxType', { value: ctxType })
+      newMeta.$ctxId = ctxId
+      newMeta.$ctxType = ctxType
 
-      return ctx.app.executeCommandLine(message, newMeta)
+      return ctx.execute(message, newMeta)
     })
 }

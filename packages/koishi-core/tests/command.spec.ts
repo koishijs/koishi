@@ -1,4 +1,5 @@
-import { App, errors } from 'koishi-core'
+import { App } from 'koishi-core'
+import { errors } from '../src/messages'
 
 let app: App
 
@@ -14,7 +15,8 @@ describe('register commands', () => {
     app.user(10000).command('b')
     app.group(10000).command('c')
 
-    expect(app._commands).toHaveLength(3)
+    // a, b, c, help
+    expect(app._commands).toHaveLength(4)
     expect(app._commandMap.a.context).toBe(app)
     expect(app._commandMap.b.context).toBe(app.user(10000))
     expect(app._commandMap.c.context).toBe(app.group(10000))
@@ -66,9 +68,6 @@ describe('register commands', () => {
     expect(cmd.removeOption('a')).toBe(true)
     expect(cmd._optsDef.alpha).toBeFalsy()
     expect(cmd.removeOption('a')).toBe(false)
-
-    expect(app.command('command-with-help')._optsDef.help).toBeTruthy()
-    expect(app.command('command-without-help', { noHelpOption: true })._optsDef.help).toBeFalsy()
   })
 })
 

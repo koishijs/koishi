@@ -1,5 +1,6 @@
 import { MockedApp } from 'koishi-test-utils'
-import { UserFlag, GroupFlag, messages } from 'koishi-core'
+import { UserFlag, GroupFlag } from 'koishi-core'
+import { messages } from '../src/messages'
 import 'koishi-database-memory'
 
 const app = new MockedApp({ database: { memory: {} } })
@@ -70,28 +71,28 @@ describe('middleware validation', () => {
 
 describe('command validation', () => {
   test('check authority', async () => {
-    app.command('cmd1', { showWarning: -1 })
+    app.command('cmd1', { showWarning: true })
     await session2.shouldHaveReply('cmd1', messages.LOW_AUTHORITY)
     await session1.shouldHaveReply('cmd1 --bar', messages.LOW_AUTHORITY)
-    app.command('cmd1', { showWarning: 0 })
+    app.command('cmd1', { showWarning: false })
     await session1.shouldHaveNoReply('cmd1 --bar')
   })
 
   test('check usage', async () => {
-    app.command('cmd1', { showWarning: -1 })
+    app.command('cmd1', { showWarning: true })
     await session1.shouldHaveReply('cmd1', 'cmd1:123')
     await session1.shouldHaveReply('cmd1 --baz', 'cmd1:123')
     await session1.shouldHaveReply('cmd1', messages.USAGE_EXHAUSTED)
     await session1.shouldHaveReply('cmd1 --baz', 'cmd1:123')
-    app.command('cmd1', { showWarning: 0 })
+    app.command('cmd1', { showWarning: false })
     await session1.shouldHaveNoReply('cmd1')
   })
 
   test('check frequency', async () => {
-    app.command('cmd2', { showWarning: -1 })
+    app.command('cmd2', { showWarning: true })
     await session2.shouldHaveReply('cmd2', 'cmd2:456')
     await session2.shouldHaveReply('cmd2', messages.TOO_FREQUENT)
-    app.command('cmd2', { showWarning: 0 })
+    app.command('cmd2', { showWarning: false })
     await session2.shouldHaveNoReply('cmd2')
   })
 })
