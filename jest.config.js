@@ -20,6 +20,7 @@ module.exports = {
   coverageProvider: 'v8',
   coverageReporters: ['text', 'lcov'],
   coveragePathIgnorePatterns: [
+    'node_modules/',
     'tests/',
     'dist/',
   ],

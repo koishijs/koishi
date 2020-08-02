@@ -2,7 +2,7 @@ import escapeRegex from 'escape-string-regexp'
 import { Command } from './command'
 import { Context, Middleware, NextFunction, ContextScope } from './context'
 import { GroupFlag, UserFlag, GroupField, UserField, Database } from './database'
-import { BotOptions, CQServer } from './server'
+import { BotOptions, CQServer, ServerTypes } from './server'
 import { Meta } from './meta'
 import { simplify } from 'koishi-utils'
 import { types } from 'util'
@@ -15,7 +15,7 @@ export interface AppOptions extends BotOptions {
   port?: number
   secret?: string
   path?: string
-  type?: CQServer.Type
+  type?: keyof ServerTypes
   bots?: BotOptions[]
   prefix?: string | string[]
   nickname?: string | string[]

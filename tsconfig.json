@@ -9,8 +9,7 @@
   "references": [
     { "path": "./packages/koishi-utils" },
     { "path": "./packages/koishi-core" },
-    // TODO upgrade test utils
-    // { "path": "./packages/koishi-test-utils" },
+    { "path": "./packages/koishi-test-utils" },
     { "path": "./packages/plugin-mysql" },
     { "path": "./packages/plugin-common" },
     { "path": "./packages/plugin-recorder" },

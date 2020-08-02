@@ -1,5 +1,9 @@
 import { App, createUser, createGroup } from 'koishi-core'
-import { createArray } from './utils'
+import { BASE_SELF_ID } from './app'
+
+export function createArray <T> (length: number, create: (index: number) => T) {
+  return Array(length).fill(undefined).map((_, index) => create(index))
+}
 
 type TestHook = (app: App) => any
 
@@ -36,16 +40,12 @@ export function testDatabase (app: App, options: TestDatabaseOptions) {
       const id = 2
       const user = await db.getUser(id)
       expect(user).toMatchObject(createUser(id, 0))
-      // const count = await db.getUserCount()
-      // expect(count).toBe(0)
     })
 
     test('getUser with authority 1', async () => {
       const id = 3
       const user = await db.getUser(id, 1)
       expect(user).toMatchObject(createUser(id, 1))
-      // const count = await db.getUserCount()
-      // expect(count).toBe(1)
     })
 
     test('setUser with data', async () => {
@@ -68,8 +68,6 @@ export function testDatabase (app: App, options: TestDatabaseOptions) {
     test('getUserCount', async () => {
       const length = 100
       await Promise.all(createArray(length, i => db.getUser(i, i % 4)))
-      // const count = await db.getUserCount()
-      // expect(count).toBe(length * 3 / 4)
     })
 
     test('getUsers without arguments', async () => {
@@ -107,8 +105,6 @@ export function testDatabase (app: App, options: TestDatabaseOptions) {
       const selfId = 456
       const group = await db.getGroup(id, selfId)
       expect(group).toMatchObject(createGroup(id, selfId))
-      // const count = await db.getGroupCount()
-      // expect(count).toBe(1)
     })
 
     test('getGroup with fields', async () => {
@@ -116,8 +112,6 @@ export function testDatabase (app: App, options: TestDatabaseOptions) {
       const group = await db.getGroup(id, ['assignee'])
       expect(group.id).toBe(id)
       expect(group.assignee).toBe(0)
-      // const count = await db.getGroupCount()
-      // expect(count).toBe(0)
     })
 
     test('setGroup with data', async () => {
@@ -141,23 +135,19 @@ export function testDatabase (app: App, options: TestDatabaseOptions) {
     test('getGroupCount', async () => {
       const length = 200
       await Promise.all(createArray(length, i => db.getGroup(i, i)))
-      // const count = await db.getGroupCount()
-      // expect(count).toBe(length - 1)
     })
 
     test('getAllGroups with assignees', async () => {
-      const length = 300
-      await Promise.all(createArray(length, i => db.getGroup(i, i % 3)))
+      await Promise.all(createArray(300, i => db.getGroup(i, i % 3)))
       await expect(db.getAllGroups([0])).resolves.toHaveLength(0)
       await expect(db.getAllGroups([1])).resolves.toHaveLength(100)
       await expect(db.getAllGroups([1, 2])).resolves.toHaveLength(200)
     })
 
     test('getAllGroups with fields', async () => {
-      const length = 300
-      await Promise.all(createArray(length, i => db.getGroup(i, i % 3)))
+      await Promise.all(createArray(300, i => db.getGroup(i, BASE_SELF_ID + i % 3)))
       await expect(db.getAllGroups(['id'])).resolves.toHaveLength(100)
-      await expect(db.getAllGroups(['id'], [1])).resolves.toHaveLength(100)
+      await expect(db.getAllGroups(['id'], [BASE_SELF_ID + 1])).resolves.toHaveLength(100)
       await expect(db.getAllGroups(['id'], [])).resolves.toHaveLength(0)
     })
   })

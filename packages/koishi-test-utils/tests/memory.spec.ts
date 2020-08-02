@@ -1,5 +1,5 @@
-import { App, extendDatabase } from 'koishi-core'
-import { MemoryDatabase, testDatabase, memory } from '../src'
+import { extendDatabase } from 'koishi-core'
+import { MemoryDatabase, testDatabase, memory, MockedApp } from '../src'
 
 declare module 'koishi-core/dist/database' {
   interface Database {
@@ -32,7 +32,7 @@ extendDatabase(MemoryDatabase, {
   }
 })
 
-const app = testDatabase(new App().plugin(memory), {
+const app = testDatabase(new MockedApp().plugin(memory), {
   beforeEachUser: app => app.database.store.user = [],
   beforeEachGroup: app => app.database.store.group = [],
 })

@@ -72,7 +72,7 @@ extendDatabase(MemoryDatabase, {
     const data = this.store.group[groupId]
     if (data) return clone(data)
     const fallback = createGroup(groupId, selfId)
-    if (selfId && groupId) this.store.group[groupId] = fallback
+    if (selfId) this.store.group[groupId] = fallback
     return clone(fallback)
   },
 

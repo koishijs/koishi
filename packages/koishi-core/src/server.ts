@@ -302,10 +302,13 @@ class WsClient extends CQServer {
   }
 }
 
-export namespace CQServer {
-  export type Type = keyof typeof types
+export interface ServerTypes {
+  http: typeof HttpServer
+  ws: typeof WsClient
+}
 
-  export const types = {
+export namespace CQServer {
+  export const types: ServerTypes = {
     http: HttpServer,
     ws: WsClient,
   }
