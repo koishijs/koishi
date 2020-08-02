@@ -46,7 +46,7 @@ export function apply (ctx: Context) {
   ctx.on('connect', async () => {
     const schedules = await database.getAllSchedules()
     schedules.forEach((schedule) => {
-      if (!ctx.app.bots[schedule.assignee]) return
+      if (!ctx.bots[schedule.assignee]) return
       schedule.meta = new Meta(schedule.meta)
       schedule.meta.$app = ctx.app
       inspectSchedule(schedule)

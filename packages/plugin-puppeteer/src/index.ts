@@ -1,12 +1,12 @@
 import { launch, LaunchOptions, Browser, Page } from 'puppeteer-core'
 import { Context } from 'koishi-core'
-import { Logger, noop } from 'koishi-utils'
+import { Logger, defineProperty } from 'koishi-utils'
 import { escape } from 'querystring'
 export * from './svg'
 
 declare module 'koishi-core/dist/app' {
   interface App {
-    _browser: Promise<Browser>
+    browser: Browser
     _idlePages: Page[]
   }
 }
@@ -25,9 +25,8 @@ Context.prototype.getPage = async function getPage (this: Context) {
     return this.app._idlePages.pop()
   }
 
-  const browser = await this.app._browser
   logger.debug('create new page')
-  return browser.newPage()
+  return this.app.browser.newPage()
 }
 
 Context.prototype.freePage = function freePage (this: Context, page: Page) {
@@ -43,18 +42,15 @@ export const name = 'puppeteer'
 
 export function apply (ctx: Context, config: Options = {}) {
   const logger = ctx.logger('puppeteer')
-  ctx.app._idlePages = []
+  defineProperty(ctx.app, '_idlePages', [])
 
-  ctx.on('before-connect', () => {
-    (ctx.app._browser = launch(config)).then(
-      () => logger.debug('browser launched'),
-      (error) => logger.warn(error),
-    )
+  ctx.on('before-connect', async () => {
+    ctx.app.browser = await launch(config)
+    logger.info('browser launched')
   })
 
   ctx.on('before-disconnect', async () => {
-    const browser = await ctx.app._browser.catch<null>(noop)
-    if (browser) await browser.close()
+    await ctx.app.browser?.close()
   })
 
   ctx.command('screenshot <url>', '网页截图', { authority: 2 })

@@ -90,7 +90,7 @@ export default function apply (ctx: App, options: HandlerOptions = {}) {
   }
 
   ctx.on('group-increase', async (meta) => {
-    if (ctx.app.bots[meta.userId]) return
+    if (ctx.bots[meta.userId]) return
     if (ctx.database) {
       const group = await ctx.database.getGroup(meta.groupId, 0, ['assignee'])
       if (group.assignee !== meta.selfId) return
