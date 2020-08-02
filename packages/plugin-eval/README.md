@@ -1,3 +1,3 @@
-# koishi-plugin-vm
+# koishi-plugin-eval
 
 Execute JavaScript in Koishi.

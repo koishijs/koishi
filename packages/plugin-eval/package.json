@@ -1,5 +1,5 @@
 {
-  "name": "koishi-plugin-vm",
+  "name": "koishi-plugin-eval",
   "version": "2.0.0-alpha.1",
   "description": "Execute JavaScript in Koishi",
   "main": "dist/index.js",
@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/plugins/issues"
   },
-  "homepage": "https://github.com/koishijs/plugins/plugin-vm#readme",
+  "homepage": "https://github.com/koishijs/plugins/plugin-eval#readme",
   "keywords": [
     "bot",
     "qqbot",
@@ -25,7 +25,7 @@
     "chatbot",
     "koishi",
     "plugin",
-    "vm",
+    "eval",
     "runner",
     "code"
   ],
