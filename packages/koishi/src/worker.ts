@@ -122,7 +122,7 @@ app.start().then(() => {
   app.bots.forEach((bot) => {
     const { server } = bot
     if (!server) return
-    const { coolqEdition, pluginVersion, goCqhttp, runtimeVersion } = bot.sender.info
+    const { coolqEdition, pluginVersion, goCqhttp, runtimeVersion } = bot.version
     if (type === 'http') {
       logger.info('connected to %c', server)
     } else {

@@ -6,8 +6,10 @@ declare module 'koishi-core/dist/server' {
   interface BotOptions {
     label?: string
   }
+}
 
-  interface Bot {
+declare module 'koishi-core/dist/sender' {
+  interface CQSender {
     counter: number[]
   }
 }
@@ -185,7 +187,7 @@ export function apply (ctx: Context, config: StatusOptions) {
       Promise.all(app.bots.map(async (bot): Promise<BotStatus> => ({
         selfId: bot.selfId,
         label: bot.label,
-        code: bot.sender ? await bot.sender.getStatus().then(
+        code: bot._get ? await bot.getStatus().then(
           ({ good }) => good ? StatusCode.GOOD : StatusCode.CQ_ERROR,
           () => StatusCode.NET_ERROR,
         ) : StatusCode.IDLE,

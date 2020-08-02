@@ -47,7 +47,7 @@ const defaultOptions: AppOptions = {
   retryInterval: 5000,
   userCacheTimeout: 60000,
   groupCacheTimeout: 300000,
-  quickOperationTimeout: 100,
+  quickOperationTimeout: 500,
 }
 
 export enum Status { closed, opening, open, closing }

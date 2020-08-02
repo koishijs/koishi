@@ -32,7 +32,7 @@ interface MessageResponse {
 export interface CQSender extends BotOptions {}
 
 export class CQSender {
-  public info?: VersionInfo
+  public version?: VersionInfo
 
   _get?: (action: string, params: Record<string, any>) => Promise<CQResponse>
 

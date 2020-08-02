@@ -193,7 +193,7 @@ class HttpServer extends CQServer {
       const { data } = await axios.get(uri, { params, headers })
       return data
     }
-    bot.info = await bot.getVersionInfo()
+    bot.version = await bot.getVersionInfo()
   }
 
   async _listen () {
@@ -278,7 +278,7 @@ class WsClient extends CQServer {
             const meta = this.prepareMeta(parsed)
             if (meta) this.dispatchMeta(meta)
           } else if (parsed.echo === -1) {
-            bot.info = camelCase(parsed.data)
+            bot.version = camelCase(parsed.data)
             bot._get = (action, params) => this.send({ action, params })
             logger.debug('connect to ws server:', bot.server)
             resolve()
