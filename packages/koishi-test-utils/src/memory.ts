@@ -1,4 +1,4 @@
-import { createUser, createGroup, Tables, TableType, Database, App } from 'koishi-core'
+import { createUser, createGroup, Tables, TableType, App, extendDatabase } from 'koishi-core'
 
 declare module 'koishi-core/dist/database' {
   interface Database extends MemoryDatabase {}
@@ -8,10 +8,10 @@ function clone <T> (source: T): T {
   return JSON.parse(JSON.stringify(source))
 }
 
-interface MemoryConfig {}
+export interface MemoryConfig {}
 
-class MemoryDatabase implements Database {
-  private store: { [T in TableType]?: Tables[T][] } = {}
+export class MemoryDatabase {
+  store: { [T in TableType]?: Tables[T][] } = {}
 
   constructor (public app: App, public config: MemoryConfig) {}
 
@@ -40,7 +40,9 @@ class MemoryDatabase implements Database {
   async count (table: TableType) {
     return Object.keys(this.table(table)).length
   }
+}
 
+extendDatabase(MemoryDatabase, {
   async getUser (userId: number, authority?: any) {
     authority = typeof authority === 'number' ? authority : 0
     const data = this.store.user[userId]
@@ -49,7 +51,7 @@ class MemoryDatabase implements Database {
     const fallback = createUser(userId, authority)
     if (authority) this.store.user[userId] = fallback
     return clone(fallback)
-  }
+  },
 
   async getUsers (...args: any[][]) {
     if (args.length > 1 || args.length && typeof args[0][0] !== 'string') {
@@ -59,20 +61,20 @@ class MemoryDatabase implements Database {
     } else {
       return Object.values(this.store.user)
     }
-  }
+  },
 
   async setUser (userId: number, data: any) {
     return this.update('user', userId, data)
-  }
+  },
 
   async getGroup (groupId: number, selfId: any) {
     selfId = typeof selfId === 'number' ? selfId : 0
     const data = this.store.group[groupId]
     if (data) return clone(data)
     const fallback = createGroup(groupId, selfId)
-    if (selfId && groupId) this.store.group[groupId] = fallback
+    if (selfId) this.store.group[groupId] = fallback
     return clone(fallback)
-  }
+  },
 
   async getAllGroups (...args: any[][]) {
     const assignees = args.length > 1 ? args[1]
@@ -82,13 +84,13 @@ class MemoryDatabase implements Database {
     return Object.keys(this.store.group)
       .filter(id => assignees.includes(this.store.group[id].assignee))
       .map(id => clone(this.store.group[id]))
-  }
+  },
 
   async setGroup (groupId: number, data: any) {
     return this.update('group', groupId, data)
-  }
-}
+  },
+})
 
 export function apply (app: App, config: MemoryConfig = {}) {
-  app._database = new MemoryDatabase(app, config)
+  app.database = new MemoryDatabase(app, config) as any
 }

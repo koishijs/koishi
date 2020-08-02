@@ -1,45 +1,43 @@
-import { AppOptions, App, Sender, Server, ContextType, Meta, FileInfo } from 'koishi-core'
+import { AppOptions, App, CQServer, ContextType, Meta, FileInfo, BotOptions } from 'koishi-core'
 import { MockedServer, RequestParams, RequestData, RequestHandler } from './mocks'
 import { Session, createMessageMeta } from './session'
-import { BASE_SELF_ID } from './utils'
 
-class MockedAppServer extends Server {
+export const BASE_SELF_ID = 514
+
+declare module 'koishi-core/dist/server' {
+  interface ServerTypes {
+    mock: typeof MockedAppServer
+  }
+}
+
+class MockedAppServer extends CQServer {
+  mock = new MockedServer()
+
   constructor (app: App) {
     super(app)
-    this.appMap[app.selfId] = app
   }
 
   _close () {}
 
   async _listen () {
-    this.version = {} as any
-  }
-}
-
-class MockedAppSender extends Sender {
-  mock = new MockedServer()
-
-  constructor (app: App) {
-    super(app)
-    this._get = async (action, params) => {
+    this.bots[0]._get = async (action, params) => {
       return this.mock.receive(action.replace(/_async$/, ''), params)
     }
   }
 }
 
+CQServer.types.mock = MockedAppServer
+
 export class MockedApp extends App {
-  sender: MockedAppSender
   server: MockedAppServer
 
   constructor (options: AppOptions = {}) {
-    super({ selfId: BASE_SELF_ID, ...options })
-    this.sender = new MockedAppSender(this)
-    this.server = new MockedAppServer(this)
+    super({ selfId: BASE_SELF_ID, type: 'mock', ...options })
   }
 
   receive (meta: Partial<Meta>) {
     this.server.dispatchMeta(new Meta({
-      selfId: this.selfId,
+      selfId: this.bots[0].selfId,
       ...meta,
     }))
   }
@@ -88,29 +86,29 @@ export class MockedApp extends App {
   }
 
   clearRequests () {
-    this.sender.mock.clearRequests()
+    this.server.mock.clearRequests()
   }
 
   shouldHaveNoRequests () {
-    this.sender.mock.shouldHaveNoRequests()
+    this.server.mock.shouldHaveNoRequests()
   }
 
   shouldHaveLastRequest (action: string, params: RequestParams = {}) {
-    this.sender.mock.shouldHaveLastRequest(action, params)
+    this.server.mock.shouldHaveLastRequest(action, params)
   }
 
   shouldHaveLastRequests (requests: RequestData[]) {
-    this.sender.mock.shouldHaveLastRequests(requests)
+    this.server.mock.shouldHaveLastRequests(requests)
   }
 
   shouldMatchSnapshot (name = '') {
-    this.sender.mock.shouldMatchSnapshot(name)
+    this.server.mock.shouldMatchSnapshot(name)
   }
 
   setResponse (event: string, hanlder: RequestHandler): void
   setResponse (event: string, data: RequestParams, retcode?: number): void
   setResponse (event: string, arg1: any, arg2?: any) {
-    this.sender.mock.setResponse(event, arg1, arg2)
+    this.server.mock.setResponse(event, arg1, arg2)
   }
 
   createSession (type: 'user', userId: number): Session

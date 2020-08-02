@@ -36,17 +36,17 @@ async function getHandleResult (handler: RequestHandler, meta: Meta) {
 export default function apply (ctx: App, options: HandlerOptions = {}) {
   ctx.on('request/friend', async (meta) => {
     const result = await getHandleResult(options.onFriend, meta)
-    return result !== undefined && ctx.sender(meta.selfId).setFriendAddRequest(meta.flag, result as any)
+    return result !== undefined && meta.$bot.setFriendAddRequest(meta.flag, result as any)
   })
 
   ctx.on('request/group/add', async (meta) => {
     const result = await getHandleResult(options.onGroupAdd, meta)
-    return result !== undefined && ctx.sender(meta.selfId).setGroupAddRequest(meta.flag, meta.subType as any, result as any)
+    return result !== undefined && meta.$bot.setGroupAddRequest(meta.flag, meta.subType as any, result as any)
   })
 
   ctx.on('request/group/invite', async (meta) => {
     const result = await getHandleResult(options.onGroupInvite, meta)
-    return result !== undefined && ctx.sender(meta.selfId).setGroupAddRequest(meta.flag, meta.subType as any, result as any)
+    return result !== undefined && meta.$bot.setGroupAddRequest(meta.flag, meta.subType as any, result as any)
   })
 
   const { blackList = [], respondents = [], throttle, welcome = defaultMessage } = options
@@ -96,6 +96,6 @@ export default function apply (ctx: App, options: HandlerOptions = {}) {
       if (group.assignee !== meta.selfId) return
     }
     const output = typeof welcome === 'string' ? welcome : await welcome(meta)
-    await ctx.sender(meta.selfId).sendGroupMsg(meta.groupId, output)
+    await meta.$bot.sendGroupMsg(meta.groupId, output)
   })
 }

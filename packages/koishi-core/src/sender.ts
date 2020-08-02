@@ -1,7 +1,9 @@
 import { SenderInfo, StatusInfo, Meta, AccountInfo, StrangerInfo, ContextType, MessageType } from './meta'
-import { snakeCase, camelCase } from 'koishi-utils'
+import { snakeCase, camelCase, Logger } from 'koishi-utils'
 import { BotOptions } from './server'
 import { App } from './app'
+
+const logger = Logger.create('sender')
 
 export class SenderError extends Error {
   constructor (args: Record<string, any>, url: string, retcode: number, selfId: number) {
@@ -27,26 +29,21 @@ interface MessageResponse {
   messageId: number
 }
 
+export interface CQSender extends BotOptions {}
+
 export class CQSender {
-  public info?: VersionInfo
+  public version?: VersionInfo
 
   _get?: (action: string, params: Record<string, any>) => Promise<CQResponse>
 
-  constructor (public app: App, public bot: BotOptions) {}
-
-  versionLessThan (major: number, minor: number = 0, patch: number = 0) {
-    const match = /^(\d+)(?:\.(\d+)(?:\.(\d+)?))?/.exec(this.info.pluginVersion)
-    if (match) return
-    const maj = +match[1]
-    const min = +match[2] || 0
-    const pat = +match[3] || 0
-    return maj < major || maj === major && (min < minor || min === minor && pat < patch)
+  constructor (public app: App, public bot: BotOptions) {
+    Object.assign(this, bot)
   }
 
   async get <T = any> (action: string, params: Record<string, any> = {}, silent = false): Promise<T> {
-    this.app.logger('sender').debug('[request] %s %o', action, params)
+    logger.debug('[request] %s %o', action, params)
     const response = await this._get(action, snakeCase(params))
-    this.app.logger('sender').debug('[response] %o', response)
+    logger.debug('[response] %o', response)
     const { data, retcode } = response
     if (retcode === 0 && !silent) {
       return camelCase(data)
@@ -58,11 +55,7 @@ export class CQSender {
   }
 
   async getAsync (action: string, params: Record<string, any> = {}): Promise<void> {
-    if (this.versionLessThan(4)) {
-      await this.get(action, params, true)
-    } else {
-      await this.get(action + '_async', params)
-    }
+    await this.get(action + '_async', params)
   }
 
   _createSendMeta (messageType: MessageType, $ctxType: ContextType, $ctxId: number, message: string) {

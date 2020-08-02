@@ -110,8 +110,8 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
     }))
   }
 
-  get $sender () {
-    return this.$app.sender(this.selfId)
+  get $bot () {
+    return this.$app.bots[this.selfId]
   }
 
   get $username (): string {
@@ -126,12 +126,16 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
   }
 
   async $send (message: string, autoEscape = false) {
+    if (this.$app.options.preferSync) {
+      await this.$bot.sendMsg(this.messageType, this.$ctxId, message, autoEscape)
+      return
+    }
     if (this.$response) {
-      const _meta = this.$app.sender(this.selfId)._createSendMeta(this.messageType, this.$ctxType, this.$ctxId, message)
+      const _meta = this.$bot._createSendMeta(this.messageType, this.$ctxType, this.$ctxId, message)
       if (this.$app.bail(this, 'before-send', _meta)) return
       return this.$response({ reply: message, autoEscape, atSender: false })
     }
-    return this.$app.sender(this.selfId).sendMsgAsync(this.messageType, this.$ctxId, message, autoEscape)
+    return this.$bot.sendMsgAsync(this.messageType, this.$ctxId, message, autoEscape)
   }
 
   $cancelQueued (delay = 0) {

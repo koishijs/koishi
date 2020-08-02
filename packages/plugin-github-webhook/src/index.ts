@@ -1,11 +1,11 @@
 import type { Context } from 'koishi-core'
 import { Webhooks } from '@octokit/webhooks'
 
-export type Options = Partial<ConstructorParameters<typeof Webhooks>[0]> & {
+export interface Config extends Partial<ConstructorParameters<typeof Webhooks>[0]> {
   repos?: Record<string, number[]>
 }
 
-const defaultOptions: Options = {
+const defaultOptions: Config = {
   secret: '',
   path: '/webhook',
   repos: {},
@@ -17,7 +17,7 @@ interface RepositoryPayload {
 
 export const name = 'github-webhook'
 
-export function apply (ctx: Context, config: Options = {}) {
+export function apply (ctx: Context, config: Config = {}) {
   config = { ...defaultOptions, ...config }
   const webhook = new Webhooks(config as any)
 
@@ -36,7 +36,7 @@ export function apply (ctx: Context, config: Options = {}) {
       const groups = await ctx.database.getAllGroups(['id', 'assignee'])
       for (const { id, assignee } of groups) {
         if (ids.includes(id)) {
-          await ctx.sender(assignee).sendGroupMsgAsync(id, message)
+          await ctx.bots[assignee].sendGroupMsgAsync(id, message)
         }
       }
     }

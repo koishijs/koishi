@@ -9,14 +9,23 @@
   "references": [
     { "path": "./packages/koishi-utils" },
     { "path": "./packages/koishi-core" },
-    // TODO upgrade test utils
-    // { "path": "./packages/koishi-test-utils" },
+    { "path": "./packages/koishi-test-utils" },
+
     { "path": "./packages/plugin-mysql" },
+    { "path": "./packages/plugin-puppeteer" },
+
+    { "path": "./packages/plugin-chess" },
     { "path": "./packages/plugin-common" },
+    { "path": "./packages/plugin-eval" },
+    { "path": "./packages/plugin-github-webhook" },
+    { "path": "./packages/plugin-image-search" },
+    { "path": "./packages/plugin-monitor" },
     { "path": "./packages/plugin-recorder" },
     { "path": "./packages/plugin-schedule" },
     { "path": "./packages/plugin-status" },
     { "path": "./packages/plugin-teach" },
+    { "path": "./packages/plugin-tools" },
+
     { "path": "./packages/koishi" },
   ],
   "files": [],

@@ -70,10 +70,10 @@ export function apply (ctx: Context) {
       }
 
       if (options.group) {
-        const info = await ctx.sender(meta.selfId).getGroupMemberInfo(ctxId, newMeta.userId).catch(() => ({}))
+        const info = await meta.$bot.getGroupMemberInfo(ctxId, newMeta.userId).catch(() => ({}))
         Object.assign(newMeta.sender, info)
       } else if (options.user) {
-        const info = await ctx.sender(meta.selfId).getStrangerInfo(newMeta.userId).catch(() => ({}))
+        const info = await meta.$bot.getStrangerInfo(newMeta.userId).catch(() => ({}))
         Object.assign(newMeta.sender, info)
       }
 

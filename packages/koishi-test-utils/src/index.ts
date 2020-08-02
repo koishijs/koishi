@@ -1,11 +1,12 @@
 import * as utils from './koishi'
+import * as memory from './memory'
 
-export { utils }
+export { utils, memory }
 
 export * from './app'
 export * from './database'
+export * from './memory'
 export * from './mocks'
-export * from './utils'
 export * from './server'
 export * from './session'
 

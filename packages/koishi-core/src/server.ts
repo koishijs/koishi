@@ -19,27 +19,8 @@ export interface BotOptions {
   selfId?: number
 }
 
-export interface Bot extends BotOptions {
-  sender?: CQSender
-}
-
-function createBotsProxy (bots: Bot[]) {
-  return new Proxy(bots, {
-    get (target, prop) {
-      return typeof prop === 'symbol' || +prop * 0 !== 0
-        ? Reflect.get(target, prop)
-        : target[prop] || target.find(bot => bot.selfId === +prop)
-    },
-    set (target, prop, value) {
-      return typeof prop === 'symbol' || +prop * 0 !== 0
-        ? Reflect.set(target, prop, value)
-        : false
-    },
-  })
-}
-
 export abstract class CQServer {
-  public bots: Bot[]
+  public bots: CQSender[]
   public koa?: Koa
   public router?: Router
   public server?: Server
@@ -52,9 +33,21 @@ export abstract class CQServer {
   protected abstract _close (): void
 
   constructor (public app: App) {
-    this.bots = createBotsProxy(app.options.bots)
     app.on('before-connect', this.listen.bind(this))
     app.on('before-disconnect', this.close.bind(this))
+    const senders = app.options.bots.map(bot => new CQSender(app, bot))
+    this.bots = new Proxy(senders, {
+      get (target, prop) {
+        return typeof prop === 'symbol' || +prop * 0 !== 0
+          ? Reflect.get(target, prop)
+          : target[prop] || target.find(bot => bot.selfId === +prop)
+      },
+      set (target, prop, value) {
+        return typeof prop === 'symbol' || +prop * 0 !== 0
+          ? Reflect.set(target, prop, value)
+          : false
+      },
+    })
   }
 
   protected prepareMeta (data: any) {
@@ -131,7 +124,7 @@ export abstract class CQServer {
   }
 
   ready () {
-    if (this._isReady || !this.bots.every(bot => bot.selfId || !bot.sender)) return
+    if (this._isReady || !this.bots.every(bot => bot.selfId || !bot._get)) return
     this._isReady = true
     this.app.emit('ready')
   }
@@ -189,10 +182,9 @@ class HttpServer extends CQServer {
     })
   }
 
-  private async __listen (bot: Bot) {
+  private async __listen (bot: CQSender) {
     if (!bot.server) return
-    const sender = bot.sender = new CQSender(this.app, bot)
-    sender._get = async (action, params) => {
+    bot._get = async (action, params) => {
       const headers = {} as any
       if (bot.token) {
         headers.Authorization = `Token ${bot.token}`
@@ -201,12 +193,7 @@ class HttpServer extends CQServer {
       const { data } = await axios.get(uri, { params, headers })
       return data
     }
-    sender.info = await sender.getVersionInfo()
-    if (sender.versionLessThan(4)) {
-      throw new Error(
-        `your cqhttp version (${sender.info.pluginVersion}) is not compatible ` +
-        `with koishi, please upgrade your cqhttp to 4.0.0 or above.`)
-    }
+    bot.version = await bot.getVersionInfo()
   }
 
   async _listen () {
@@ -240,7 +227,7 @@ class WsClient extends CQServer {
     })
   }
 
-  private async __listen (bot: Bot) {
+  private async __listen (bot: CQSender) {
     const connect = (resolve: () => void, reject: (reason: Error) => void) => {
       logger.debug('websocket client opening')
       const headers: Record<string, string> = {}
@@ -291,14 +278,8 @@ class WsClient extends CQServer {
             const meta = this.prepareMeta(parsed)
             if (meta) this.dispatchMeta(meta)
           } else if (parsed.echo === -1) {
-            const sender = bot.sender = new CQSender(this.app, bot)
-            sender.info = camelCase(parsed.data)
-            sender._get = (action, params) => this.send({ action, params })
-            if (sender.versionLessThan(4)) {
-              throw new Error(
-                `your cqhttp version (${sender.info.pluginVersion}) is not compatible ` +
-                `with koishi, please upgrade your cqhttp to 4.0.0 or above.`)
-            }
+            bot.version = camelCase(parsed.data)
+            bot._get = (action, params) => this.send({ action, params })
             logger.debug('connect to ws server:', bot.server)
             resolve()
           } else {
@@ -321,10 +302,13 @@ class WsClient extends CQServer {
   }
 }
 
-export namespace CQServer {
-  export type Type = keyof typeof types
+export interface ServerTypes {
+  http: typeof HttpServer
+  ws: typeof WsClient
+}
 
-  export const types = {
+export namespace CQServer {
+  export const types: ServerTypes = {
     http: HttpServer,
     ws: WsClient,
   }

@@ -2,7 +2,7 @@ import escapeRegex from 'escape-string-regexp'
 import { Command } from './command'
 import { Context, Middleware, NextFunction } from './context'
 import { GroupFlag, UserFlag, GroupField, UserField, Database } from './database'
-import { BotOptions, CQServer } from './server'
+import { BotOptions, CQServer, ServerTypes } from './server'
 import { Meta } from './meta'
 import { simplify } from 'koishi-utils'
 import { types } from 'util'
@@ -15,13 +15,14 @@ export interface AppOptions extends BotOptions {
   port?: number
   secret?: string
   path?: string
-  type?: CQServer.Type
+  type?: keyof ServerTypes
   bots?: BotOptions[]
   prefix?: string | string[]
   nickname?: string | string[]
   retryTimes?: number
   retryInterval?: number
   maxMiddlewares?: number
+  preferSync?: boolean
   queueDelay?: number | ((message: string, meta: Meta) => number)
   defaultAuthority?: number | ((meta: Meta) => number)
   quickOperationTimeout?: number
@@ -43,7 +44,7 @@ const defaultOptions: AppOptions = {
   retryInterval: 5000,
   userCacheTimeout: 60000,
   groupCacheTimeout: 300000,
-  quickOperationTimeout: 100,
+  quickOperationTimeout: 500,
 }
 
 export enum Status { closed, opening, open, closing }
@@ -121,16 +122,12 @@ export class App extends Context {
     this.plugin(help)
   }
 
-  get bots () {
-    return this.server.bots
-  }
-
   async getSelfIds () {
-    const bots = this.server.bots.filter(bot => bot.sender)
+    const bots = this.server.bots.filter(bot => bot._get)
     if (!this._getSelfIdsPromise) {
       this._getSelfIdsPromise = Promise.all(bots.map(async (bot) => {
-        if (bot.selfId || !bot.sender) return
-        const info = await bot.sender.getLoginInfo()
+        if (bot.selfId || !bot._get) return
+        const info = await bot.getLoginInfo()
         bot.selfId = info.userId
         this.prepare()
       }))
@@ -141,7 +138,7 @@ export class App extends Context {
 
   prepare () {
     const selfIds = this.server.bots
-      .filter(bot => bot.selfId && bot.sender)
+      .filter(bot => bot.selfId && bot._get)
       .map(bot => '' + bot.selfId)
     this._atMeRE = createLeadingRE(selfIds, '\\[CQ:at,qq=', '\\]\\s*')
   }

@@ -1,13 +1,15 @@
 import { createHmac } from 'crypto'
 import { EventEmitter } from 'events'
-import { Meta, App, AppOptions, WsClient } from 'koishi-core'
-import { showTestLog, fromEntries, BASE_SELF_ID } from './utils'
-import { snakeCase, randomInt } from 'koishi-utils'
+import { Meta, App, AppOptions, CQServer } from 'koishi-core'
+import { BASE_SELF_ID } from './app'
+import { snakeCase, randomInt, Logger } from 'koishi-utils'
 import { MockedServer } from './mocks'
 import * as http from 'http'
 import * as ws from 'ws'
 import getPort from 'get-port'
 import axios from 'axios'
+
+export const showTestLog = Logger.create('test').debug
 
 export async function createHttpServer (token?: string) {
   const cqhttpPort = await getPort({ port: randomInt(16384, 49152) })
@@ -49,7 +51,7 @@ export class HttpServer extends MockedServer {
         res.statusCode = 200
         const url = new URL(req.url, `http://${req.headers.host}`)
         const path = url.pathname.slice(1)
-        const params = fromEntries(url.searchParams.entries())
+        const params = Object.fromEntries(url.searchParams.entries())
         res.write(JSON.stringify(this.receive(path, params)))
         res.end()
       })
@@ -129,7 +131,7 @@ export class WsServer extends MockedServer {
       socket.send(JSON.stringify(data))
     })
     await Promise.all(this.appList.map(app => new Promise((resolve) => {
-      (app.server as WsClient).socket.once('message', resolve)
+      (app.server as CQServer).socket.once('message', resolve)
     })))
   }
 
