@@ -7,6 +7,12 @@ export const createMessageMeta = (type: ContextType, message: string, userId: nu
   messageType: type === 'user' ? 'private' : type,
   message,
   userId,
+  sender: {
+    sex: 'unknown',
+    age: 0,
+    userId,
+    nickname: '' + userId,
+  },
 })
 
 export class Session {

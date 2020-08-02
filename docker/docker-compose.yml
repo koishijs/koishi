@@ -1,0 +1,34 @@
+version: '2'
+
+services:
+  cqhttp:
+    image: richardchien/cqhttp:latest
+    container_name: koishi_cqhttp
+    ports:
+      - 9000:9000  # VNC port
+    volumes:
+      - ./coolq:/home/user/coolq
+    environment:
+      VNC_PASSWD: MAX8char  # change it
+      COOLQ_URL: http://dlsec.cqp.me/cqa-tuling  # 'cqa-tuling' for CoolQ Air and 'cqp-tuling' for CoolQ Pro
+      CQHTTP_POST_URL: http://koishi:8080
+      CQHTTP_SERVE_DATA_FILES: "true"
+
+  mysql:
+    image: mysql:5.7
+    container_name: koishi_mysql
+    volumes:
+      - ./mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: myPassword  # change it
+      MYSQL_DATABASE: koishi
+    command: ['mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_general_ci']
+
+  koishi:
+    image: koishijs/koishi:latest
+    container_name: koishi
+    volumes:
+      - ./koishi:/config
+    environment:
+      TYPE: http
+      SERVER: http://cqhttp:5700
