@@ -42,7 +42,7 @@ export function apply (ctx: Context, config: Config = {}) {
     createWorker()
   })
 
-  ctx.command('eval <expression...>', '执行 JavaScript 脚本', { authority: 3 })
+  ctx.command('eval <expression...>', '执行 JavaScript 脚本', { authority: 2 })
     .userFields(userFields)
     .shortcut('>', { oneArg: true, fuzzy: true })
     .shortcut('>>', { oneArg: true, fuzzy: true, options: { output: true } })
@@ -67,11 +67,14 @@ export function apply (ctx: Context, config: Config = {}) {
           source: CQCode.unescape(expression),
         }, proxy({
           send: (message: string) => meta.$send(message),
+          // TODO never use vm inside another vm
           execute: (message: string) => meta.$app.execute(message, meta),
         })).then(async () => {
           clearTimeout(timer)
           await buffer.end()
           resolve()
+        }, () => {
+          // TODO catch callback
         })
       })
     })
