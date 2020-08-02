@@ -101,6 +101,7 @@ export class Context {
     } else {
       throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
+    this._disposables.push(() => ctx.dispose())
     return this
   }
 

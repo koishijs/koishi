@@ -1,8 +1,14 @@
 import { Context, userFields, MessageBuffer } from 'koishi-core'
-import { CQCode, Logger } from 'koishi-utils'
+import { CQCode, Logger, defineProperty } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { wrap, Remote, proxy } from './comlink'
 import { WorkerAPI, WorkerConfig } from './worker'
+
+declare module 'koishi-core/dist/meta' {
+  interface Meta {
+    _eval: boolean
+  }
+}
 
 export interface Config extends WorkerConfig {
   timeout?: number
@@ -49,10 +55,13 @@ export function apply (ctx: Context, config: Config = {}) {
     .shortcut('>>', { oneArg: true, fuzzy: true, options: { output: true } })
     .option('-o, --output', '输出最后的结果')
     .action(async ({ meta, options }, expression) => {
-      if (!expression) return
+      if (!expression) return meta.$send('请输入要执行的脚本。')
+      if (meta._eval) return meta.$send('不能在 eval 中嵌套调用本指令。')
 
       const buffer = new MessageBuffer(meta)
       return new Promise((resolve) => {
+        defineProperty(meta, '_eval', true)
+
         const timer = setTimeout(async () => {
           await worker.terminate()
           await buffer.end()
@@ -68,7 +77,7 @@ export function apply (ctx: Context, config: Config = {}) {
           source: CQCode.unescape(expression),
         }, proxy({
           send: (message: string) => meta.$send(message),
-          // TODO never use vm inside another vm
+          execute: (message: string) => buffer.run(() => meta.$app.execute(message, meta)),
           execute: (message: string) => meta.$app.execute(message, meta),
         })).then(async () => {
           clearTimeout(timer)
@@ -77,6 +86,8 @@ export function apply (ctx: Context, config: Config = {}) {
         }, () => {
           // TODO catch callback
         })
+      }).finally(() => {
+        meta._eval = false
       })
     })
 }
