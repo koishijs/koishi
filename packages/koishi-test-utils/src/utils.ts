@@ -3,17 +3,6 @@ import { Logger } from 'koishi-utils'
 export const BASE_SELF_ID = 514
 export const showTestLog = Logger.create('test').debug
 
-/**
- * polyfill for node < 12.0
- */
-export function fromEntries <T> (entries: Iterable<readonly [string, T]>) {
-  const result: Record<string, T> = {}
-  for (const [key, value] of entries) {
-    result[key] = value
-  }
-  return result
-}
-
 export function createArray <T> (length: number, create: (index: number) => T) {
   return Array(length).fill(undefined).map((_, index) => create(index))
 }

@@ -55,7 +55,7 @@ Context.prototype.broadcast = async function (this: Context, message, forced) {
   }
 
   await Promise.all(Object.entries(assignMap).map(([id, groups]) => {
-    return this.app.bots[+id].sender.sendGroupMsgAsync(groups, message)
+    return this.app.bots[+id].sendGroupMsgAsync(groups, message)
   }))
 }
 
@@ -74,7 +74,7 @@ export function apply (ctx: Context) {
         if (!options.forced) {
           groups = groups.filter(g => !(g.flag & GroupFlag.noEmit))
         }
-        return ctx.sender(meta.selfId).sendGroupMsgAsync(groups.map(g => g.id), message)
+        return meta.$bot.sendGroupMsgAsync(groups.map(g => g.id), message)
       }
 
       return ctx.broadcast(message, options.forced)

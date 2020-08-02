@@ -124,10 +124,11 @@ export class Daemon {
     groups.forEach(async (group) => {
       const { id, flag, assignee, subscribe } = group
       if (!subscribe[this.config.id] || flag & GroupFlag.noEmit) return
+      const bot = app.bots[assignee]
       const output = [`[直播提示] ${this.config.names[0]} 正在 ${this._displayType} 上直播：${url}`]
       // at subscibers
       try {
-        const users = await app.sender(assignee).getGroupMemberList(id)
+        const users = await bot.getGroupMemberList(id)
         const subscribers = subscribe[this.config.id].filter(id => !id || users.some(user => user.userId === id))
         subscribe[this.config.id] = subscribers
       } catch {}
@@ -135,14 +136,13 @@ export class Daemon {
       if (subscribers.length) {
         output.push(subscribers.map(x => `[CQ:at,qq=${x}]`).join(''))
       }
-      const sender = app.sender(assignee)
       const messages = [output.join('\n')]
       if (title || image) {
         messages.push(CQCode.stringify('share', { url, image, title, content }))
       }
       if (app.bail('monitor/before-send', info, group)) return
       for (const message of messages) {
-        await sender.sendGroupMsgAsync(id, message)
+        await bot.sendGroupMsgAsync(id, message)
       }
     })
   }

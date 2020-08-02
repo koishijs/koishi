@@ -1,4 +1,4 @@
-import { App, DatabaseConfig, createUser, createGroup, GroupData, UserData } from 'koishi-core'
+import { App, createUser, createGroup } from 'koishi-core'
 import { createArray } from './utils'
 
 type TestHook = (app: App) => any
@@ -10,8 +10,7 @@ export interface TestDatabaseOptions {
   afterEachGroup?: TestHook
 }
 
-export function testDatabase (config: DatabaseConfig, options: TestDatabaseOptions) {
-  const app = new App({ database: config, selfId: 2 })
+export function testDatabase (app: App, options: TestDatabaseOptions) {
   const { database: db } = app
 
   function registerLifecycle (lifecycle: jest.Lifecycle, hook: TestHook) {

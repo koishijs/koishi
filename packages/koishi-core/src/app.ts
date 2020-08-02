@@ -123,16 +123,12 @@ export class App extends Context {
     this.plugin(help)
   }
 
-  get bots () {
-    return this.server.bots
-  }
-
   async getSelfIds () {
-    const bots = this.server.bots.filter(bot => bot.sender)
+    const bots = this.server.bots.filter(bot => bot._get)
     if (!this._getSelfIdsPromise) {
       this._getSelfIdsPromise = Promise.all(bots.map(async (bot) => {
-        if (bot.selfId || !bot.sender) return
-        const info = await bot.sender.getLoginInfo()
+        if (bot.selfId || !bot._get) return
+        const info = await bot.getLoginInfo()
         bot.selfId = info.userId
         this.prepare()
       }))
@@ -164,7 +160,7 @@ export class App extends Context {
 
   prepare () {
     const selfIds = this.server.bots
-      .filter(bot => bot.selfId && bot.sender)
+      .filter(bot => bot.selfId && bot._get)
       .map(bot => '' + bot.selfId)
     this._atMeRE = createLeadingRE(selfIds, '\\[CQ:at,qq=', '\\]\\s*')
   }

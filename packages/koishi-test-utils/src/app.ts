@@ -1,26 +1,24 @@
-import { AppOptions, App, Sender, Server, ContextType, Meta, FileInfo } from 'koishi-core'
+import { AppOptions, App, CQSender, CQServer, ContextType, Meta, FileInfo, BotOptions } from 'koishi-core'
 import { MockedServer, RequestParams, RequestData, RequestHandler } from './mocks'
 import { Session, createMessageMeta } from './session'
 import { BASE_SELF_ID } from './utils'
 
-class MockedAppServer extends Server {
+class MockedAppServer extends CQServer {
   constructor (app: App) {
     super(app)
-    this.appMap[app.selfId] = app
   }
 
   _close () {}
 
   async _listen () {
-    this.version = {} as any
   }
 }
 
-class MockedAppSender extends Sender {
+class MockedAppSender extends CQSender {
   mock = new MockedServer()
 
-  constructor (app: App) {
-    super(app)
+  constructor (app: App, bot: BotOptions) {
+    super(app, bot)
     this._get = async (action, params) => {
       return this.mock.receive(action.replace(/_async$/, ''), params)
     }
@@ -28,13 +26,17 @@ class MockedAppSender extends Sender {
 }
 
 export class MockedApp extends App {
-  sender: MockedAppSender
   server: MockedAppServer
 
   constructor (options: AppOptions = {}) {
     super({ selfId: BASE_SELF_ID, ...options })
-    this.sender = new MockedAppSender(this)
     this.server = new MockedAppServer(this)
+  }
+
+  get sender () {}
+
+  get selfId () {
+    return this.bots[0].selfId
   }
 
   receive (meta: Partial<Meta>) {

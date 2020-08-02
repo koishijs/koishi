@@ -36,7 +36,7 @@ koishi run
 < hello world
 ```
 
-**注意:** Koishi 要求您的 Node.js 的版本不小于 10，CQHTTP 的版本不小于 4.0。过低的 CQHTTP 版本将不会支持 Koishi 的某些功能。因此，我们建议您保持较新的 CQHTTP 版本以确保所有功能可用。
+**注意:** Koishi 要求您的 Node.js 的版本不小于 12，CQHTTP 的版本不小于 4.0。过低的 CQHTTP 版本将不会支持 Koishi 的某些功能。因此，我们建议您保持较新的 CQHTTP 版本以确保所有功能可用。
 
 ## 新版本特性
 
@@ -73,7 +73,8 @@ ctx.execute(message)
 Koishi v2 的元信息对象将真正拥有会话控制能力。
 
 ```ts
-meta.$sender
+meta.$app
+meta.$bot
 meta.$username
 meta.$sendQueued()
 meta.$cancelQueued()

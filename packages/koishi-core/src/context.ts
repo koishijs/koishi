@@ -67,8 +67,8 @@ export class Context {
     return Logger.create(name)
   }
 
-  sender (id: number) {
-    return this.app.bots[id].sender
+  get bots () {
+    return this.app.server.bots
   }
 
   inverse () {

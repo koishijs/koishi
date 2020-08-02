@@ -34,11 +34,10 @@ export function apply (ctx: Context) {
       }
 
       // send messages
-      const sender = ctx.sender(meta.selfId)
       return Promise.all([
-        ...channels.private.map(id => sender.sendPrivateMsgAsync(+id, message)),
-        ...channels.group.map(id => sender.sendGroupMsgAsync(+id, message)),
-        ...channels.discuss.map(id => sender.sendDiscussMsgAsync(+id, message)),
+        ...channels.private.map(id => meta.$bot.sendPrivateMsgAsync(+id, message)),
+        ...channels.group.map(id => meta.$bot.sendGroupMsgAsync(+id, message)),
+        ...channels.discuss.map(id => meta.$bot.sendDiscussMsgAsync(+id, message)),
       ])
     })
 }
