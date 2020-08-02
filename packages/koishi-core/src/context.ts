@@ -1,6 +1,6 @@
 import { contain, union, intersection, difference, noop, Logger } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine, ParsedLine } from './command'
-import { Meta, contextTypes, getSessionId } from './meta'
+import { Meta, contextTypes, getSessionId, GroupRole } from './meta'
 import { UserField, GroupField, Database } from './database'
 import { App } from './app'
 import { errors } from './shared'
@@ -12,41 +12,34 @@ export type PluginFunction <T, U = any> = (ctx: T, options: U) => void
 export type PluginObject <T, U = any> = { name?: string, apply: PluginFunction<T, U> }
 export type Plugin <T, U = any> = PluginFunction<T, U> | PluginObject<T, U>
 
-type Subscope = [number[], number[]]
-export type ContextScope = Subscope[]
-
-export namespace ContextScope {
-  export function stringify (scope: ContextScope) {
-    return scope.map(([include, exclude], index) => {
-      const type = contextTypes[index]
-      const sign = include ? '+' : '-'
-      const idList = include || exclude
-      return `${type}${sign}${idList.join(',')}`
-    }).filter(a => a).join(';')
-  }
-
-  export function parse (identifier: string) {
-    const scope = noopScope.slice()
-    identifier.split(';').forEach((segment) => {
-      const capture = /^(user|group|discuss)(?:([+-])(\d+(?:,\d+)*))?$/.exec(segment)
-      if (!capture) throw new Error(errors.INVALID_IDENTIFIER)
-      const [_, type, sign = '-', list] = capture
-      const idList = list ? list.split(',').map(n => +n) : []
-      scope[contextTypes[type]] = sign === '+' ? [idList, null] : [null, idList]
-    })
-    return scope
-  }
+interface ScopeSet extends Array<number> {
+  positive?: boolean
 }
 
-const noopScope: ContextScope = [[[], null], [[], null], [[], null]]
-const noopIdentifier = ContextScope.stringify(noopScope)
+interface Scope {
+  bots: ScopeSet
+  groups: ScopeSet
+  users: ScopeSet
+  roles: GroupRole[]
+  private: boolean
+}
+
+namespace Scope {
+  export function intersect (base: ScopeSet, ids: number[]) {
+    const result: ScopeSet = !ids.length ? [...base]
+      : base.positive ? intersection(ids, base)
+      : difference(ids, base)
+    result.positive = true
+    return result
+  }
+}
 
 export class Context {
   public app: App
 
   static readonly MIDDLEWARE_EVENT: unique symbol = Symbol('mid')
 
-  constructor (public readonly identifier: string, private readonly _scope: ContextScope) {}
+  constructor (public scope: Scope) {}
 
   get database () {
     return this.app._database
@@ -59,10 +52,6 @@ export class Context {
     this.app._database = database
   }
 
-  [inspect.custom] () {
-    return `Context <${this.identifier}>`
-  }
-
   logger (name: string) {
     return Logger.create(name)
   }
@@ -71,37 +60,31 @@ export class Context {
     return this.app.bots[id].sender
   }
 
-  inverse () {
-    return this.app.createContext(this._scope.map(([include, exclude]) => {
-      return include ? [null, include.slice()] : [exclude.slice(), []]
-    }))
+  group (...ids: number[]) {
+    const scope = { ...this.scope }
+    scope.groups = Scope.intersect(scope.groups, ids)
+    scope.private = false
+    return new Context(scope)
   }
 
-  plus (ctx: Context) {
-    return this.app.createContext(this._scope.map(([include1, exclude1], index) => {
-      const [include2, exclude2] = ctx._scope[index]
-      return include1
-        ? include2 ? [union(include1, include2), null] : [null, difference(exclude2, include1)]
-        : [null, include2 ? difference(exclude1, include2) : intersection(exclude1, exclude2)]
-    }))
+  user (...ids: number[]) {
+    const scope = { ...this.scope }
+    scope.users = Scope.intersect(scope.users, ids)
+    return new Context(scope)
   }
 
-  minus (ctx: Context) {
-    return this.app.createContext(this._scope.map(([include1, exclude1], index) => {
-      const [include2, exclude2] = ctx._scope[index]
-      return include1
-        ? [include2 ? difference(include1, include2) : intersection(include1, exclude2), null]
-        : include2 ? [null, union(include2, exclude1)] : [difference(exclude2, exclude1), null]
-    }))
+  private (...ids: number[]) {
+    const scope = { ...this.scope }
+    scope.users = Scope.intersect(scope.users, ids)
+    scope.groups.positive = true
+    scope.groups = []
+    return new Context(scope)
   }
 
-  intersect (ctx: Context) {
-    return this.app.createContext(this._scope.map(([include1, exclude1], index) => {
-      const [include2, exclude2] = ctx._scope[index]
-      return include1
-        ? [include2 ? intersection(include1, include2) : difference(include1, exclude2), null]
-        : include2 ? [difference(include2, exclude1), null] : [null, union(exclude1, exclude2)]
-    }))
+  bot (...ids: number[]) {
+    const scope = { ...this.scope }
+    scope.bots = Scope.intersect(scope.bots, ids)
+    return new Context(scope)
   }
 
   match (meta: Meta) {

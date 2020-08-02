@@ -1,6 +1,6 @@
 import escapeRegex from 'escape-string-regexp'
 import { Command } from './command'
-import { Context, Middleware, NextFunction, ContextScope } from './context'
+import { Context, Middleware, NextFunction } from './context'
 import { GroupFlag, UserFlag, GroupField, UserField, Database } from './database'
 import { BotOptions, CQServer } from './server'
 import { Meta } from './meta'
@@ -34,9 +34,6 @@ export interface MajorContext extends Context {
   except (...ids: number[]): Context
 }
 
-const appScope: ContextScope = [[null, []], [null, []], [null, []]]
-const appIdentifier = ContextScope.stringify(appScope)
-
 function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegex).join('|')})${suffix}`) : /^$/
 }
@@ -65,16 +62,18 @@ export class App extends Context {
   private _atMeRE: RegExp
   private _nameRE: RegExp
   private _prefixRE: RegExp
-  private _users: MajorContext
-  private _groups: MajorContext
-  private _discusses: MajorContext
   private _middlewareCounter = 0
   private _middlewareSet = new Set<number>()
-  private _contexts: Record<string, Context> = { [appIdentifier]: this }
   private _getSelfIdsPromise: Promise<any>
 
   constructor (options: AppOptions = {}) {
-    super(appIdentifier, appScope)
+    super({
+      groups: [],
+      users: [],
+      bots: [],
+      private: true,
+      roles: ['owner', 'member', 'admin'],
+    })
     options = this.options = { ...defaultOptions, ...options }
     if (!options.bots) options.bots = [options]
 
@@ -140,57 +139,11 @@ export class App extends Context {
     return bots.map(bot => bot.selfId)
   }
 
-  get users () {
-    if (this._users) return this._users
-    const users = this.createContext([[null, []], [[], null], [[], null]]) as MajorContext
-    users.except = (...ids) => this.createContext([[null, ids], [[], null], [[], null]])
-    return this._users = users
-  }
-
-  get groups () {
-    if (this._groups) return this._groups
-    const groups = this.createContext([[[], null], [null, []], [[], null]]) as MajorContext
-    groups.except = (...ids) => this.createContext([[[], null], [null, ids], [[], null]])
-    return this._groups = groups
-  }
-
-  get discusses () {
-    if (this._discusses) return this._discusses
-    const discusses = this.createContext([[[], null], [[], null], [null, []]]) as MajorContext
-    discusses.except = (...ids) => this.createContext([[[], null], [[], null], [null, ids]])
-    return this._discusses = discusses
-  }
-
   prepare () {
     const selfIds = this.server.bots
       .filter(bot => bot.selfId && bot.sender)
       .map(bot => '' + bot.selfId)
     this._atMeRE = createLeadingRE(selfIds, '\\[CQ:at,qq=', '\\]\\s*')
-  }
-
-  createContext (scope: string | ContextScope) {
-    if (typeof scope === 'string') scope = ContextScope.parse(scope)
-    scope = scope.map(([include, exclude]) => {
-      return include ? [include.sort(), exclude] : [include, exclude.sort()]
-    })
-    const identifier = ContextScope.stringify(scope)
-    if (!this._contexts[identifier]) {
-      const ctx = this._contexts[identifier] = new Context(identifier, scope)
-      ctx.app = this
-    }
-    return this._contexts[identifier]
-  }
-
-  discuss (...ids: number[]) {
-    return this.createContext([[[], null], [[], null], [ids, null]])
-  }
-
-  group (...ids: number[]) {
-    return this.createContext([[[], null], [ids, null], [[], null]])
-  }
-
-  user (...ids: number[]) {
-    return this.createContext([[ids, null], [[], null], [[], null]])
   }
 
   async start () {
