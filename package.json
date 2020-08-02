@@ -11,7 +11,6 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "build:extend": "tsc -b tsconfig.extend.json",
     "bump": "ts-node build/bump",
     "dep": "ts-node build/dep",
     "dev": "ts-node build/dev",

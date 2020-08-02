@@ -1,6 +1,5 @@
 import { Context, NextFunction } from './context'
 import { UserField, GroupField, Tables, TableType } from './database'
-import { errors } from './shared'
 import { noop, camelCase } from 'koishi-utils'
 import { Meta } from './meta'
 import { inspect, format, types } from 'util'
@@ -160,7 +159,7 @@ export class Command <U extends UserField = never, G extends GroupField = never>
   }
 
   constructor (public name: string, public declaration: string, public context: Context, config: CommandConfig = {}) {
-    if (!name) throw new Error(errors.EXPECT_COMMAND_NAME)
+    if (!name) throw new Error('expect a command name')
     this._arguments = parseArguments(declaration)
     this.config = { ...Command.defaultConfig, ...config }
     this._registerAlias(this.name)
@@ -179,7 +178,7 @@ export class Command <U extends UserField = never, G extends GroupField = never>
     if (!previous) {
       this.app._commandMap[name] = this
     } else if (previous !== this) {
-      throw new Error(format(errors.DUPLICATE_COMMAND, name))
+      throw new Error(format('duplicate command names: "%s"', name))
     }
   }
 
@@ -288,7 +287,7 @@ export class Command <U extends UserField = never, G extends GroupField = never>
   private _registerOption (option: CommandOption, names: string[], optionMap: Record<string, CommandOption>) {
     for (const name of names) {
       if (name in optionMap) {
-        throw new Error(format(errors.DUPLICATE_OPTION, name))
+        throw new Error(format('duplicate option names: "%s"', name))
       }
       optionMap[name] = option
     }

@@ -189,7 +189,7 @@ export default function (ctx: Context, config: Dialogue.Config) {
     }
   }
 
-  ctx.intersect(ctx.app.groups).middleware(async (meta, next) => {
+  ctx.group().middleware(async (meta, next) => {
     return triggerDialogue(ctx, meta, config, next)
   })
 
@@ -216,7 +216,7 @@ export default function (ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.intersect(ctx.app.groups).command('teach/dialogue <message...>', '触发教学对话')
+  ctx.group().command('teach/dialogue <message...>', '触发教学对话')
     .action(async ({ meta, next }, message = '') => {
       if (meta.$_redirected > maxRedirections) return next()
       meta.message = message

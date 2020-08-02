@@ -4,7 +4,7 @@ import { Context, Middleware, NextFunction } from './context'
 import { GroupFlag, UserFlag, GroupField, UserField, Database } from './database'
 import { BotOptions, CQServer, ServerTypes } from './server'
 import { Meta } from './meta'
-import { simplify } from 'koishi-utils'
+import { simplify, defineProperty } from 'koishi-utils'
 import { types } from 'util'
 import help from './plugins/help'
 import shortcut from './plugins/shortcut'
@@ -21,7 +21,7 @@ export interface AppOptions extends BotOptions {
   nickname?: string | string[]
   retryTimes?: number
   retryInterval?: number
-  maxMiddlewares?: number
+  maxListeners?: number
   preferSync?: boolean
   queueDelay?: number | ((message: string, meta: Meta) => number)
   defaultAuthority?: number | ((meta: Meta) => number)
@@ -40,7 +40,7 @@ function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
 }
 
 const defaultOptions: AppOptions = {
-  maxMiddlewares: 64,
+  maxListeners: 64,
   retryInterval: 5000,
   userCacheTimeout: 60000,
   groupCacheTimeout: 300000,
@@ -68,15 +68,12 @@ export class App extends Context {
   private _getSelfIdsPromise: Promise<any>
 
   constructor (options: AppOptions = {}) {
-    super({
-      groups: [],
-      users: [],
-      bots: [],
-      private: true,
-      roles: ['owner', 'member', 'admin'],
-    })
+    super({ groups: [], users: [], private: true })
+    this.app = this
     options = this.options = { ...defaultOptions, ...options }
     if (!options.bots) options.bots = [options]
+
+    defineProperty(this, '_commandMap', {})
 
     if (!options.type) {
       const { server } = options.bots[0]
@@ -103,8 +100,8 @@ export class App extends Context {
     this._prefixRE = createLeadingRE(prefixes)
 
     // bind built-in event listeners
-    this.on('message', this._applyMiddlewares)
-    this.middleware(this._preprocess)
+    this.on('message', this._applyMiddlewares.bind(this))
+    this.middleware(this._preprocess.bind(this))
 
     this.on('parse', (message, { $parsed, messageType }, forced) => {
       if (forced && $parsed.prefix === null && !$parsed.nickname && messageType !== 'private') return
@@ -160,7 +157,7 @@ export class App extends Context {
     this.emit('disconnect')
   }
 
-  private _preprocess = async (meta: Meta, next: NextFunction) => {
+  private async _preprocess (meta: Meta, next: NextFunction) {
     // strip prefix
     let capture: RegExpMatchArray
     let atMe = false
@@ -223,7 +220,7 @@ export class App extends Context {
     return meta.$argv.command.execute(meta.$argv)
   }
 
-  private _applyMiddlewares = async (meta: Meta) => {
+  private async _applyMiddlewares(meta: Meta) {
     // preparation
     const counter = this._middlewareCounter++
     this._middlewareSet.add(counter)

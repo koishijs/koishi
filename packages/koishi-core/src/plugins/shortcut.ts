@@ -1,5 +1,6 @@
 import { App } from '../app'
 import { Command, ParsedLine } from '../command'
+import { defineProperty } from 'koishi-utils'
 
 declare module '../app' {
   interface App {
@@ -40,8 +41,8 @@ Command.prototype.shortcut = function (this: Command, name, config) {
 }
 
 export default function apply (app: App) {
-  app._shortcuts = []
-  app._shortcutMap = {}
+  defineProperty(app, '_shortcuts', [])
+  defineProperty(app, '_shortcutMap', {})
 
   app.on('new-command', (cmd) => {
     cmd._shortcuts = {}

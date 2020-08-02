@@ -23,7 +23,7 @@ export interface RepeaterOptions {
 }
 
 export default function apply (ctx: Context, options: RepeaterOptions = {}) {
-  ctx = ctx.intersect(ctx.app.groups)
+  ctx = ctx.group()
 
   const states: Record<number, RepeatState> = {}
 

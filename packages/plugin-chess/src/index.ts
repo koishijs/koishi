@@ -34,7 +34,7 @@ export * from './state'
 export const name = 'chess'
 
 export function apply (ctx: Context) {
-  ctx = ctx.intersect(ctx.app.groups)
+  ctx = ctx.group()
 
   ctx.on('connect', async () => {
     const groups = await ctx.database.getAllGroups(['id', 'chess'])

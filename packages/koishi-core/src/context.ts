@@ -1,10 +1,8 @@
-import { contain, union, intersection, difference, noop, Logger } from 'koishi-utils'
+import { intersection, difference, noop, Logger } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine, ParsedLine } from './command'
-import { Meta, contextTypes, getSessionId, GroupRole } from './meta'
+import { Meta, getSessionId } from './meta'
 import { UserField, GroupField, Database } from './database'
 import { App } from './app'
-import { errors } from './shared'
-import { inspect } from 'util'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (meta: Meta, next: NextFunction) => any
@@ -17,37 +15,35 @@ interface ScopeSet extends Array<number> {
 }
 
 interface Scope {
-  bots: ScopeSet
   groups: ScopeSet
   users: ScopeSet
-  roles: GroupRole[]
   private: boolean
 }
 
-namespace Scope {
-  export function intersect (base: ScopeSet, ids: number[]) {
-    const result: ScopeSet = !ids.length ? [...base]
-      : base.positive ? intersection(ids, base)
-      : difference(ids, base)
-    result.positive = true
-    return result
-  }
+function joinScope (base: ScopeSet, ids: number[]) {
+  const result: ScopeSet = !ids.length ? [...base]
+    : base.positive ? intersection(ids, base) : difference(ids, base)
+  result.positive = !ids.length ? base.positive : true
+  return result
+}
+
+function matchScope (base: ScopeSet, id: number) {
+  // @ts-ignore
+  return !id || !(base.positive ^ base.includes(id))
 }
 
 export class Context {
-  public app: App
-
   static readonly MIDDLEWARE_EVENT: unique symbol = Symbol('mid')
 
-  constructor (public scope: Scope) {}
+  constructor (public scope: Scope, public app?: App) {}
 
-  get database () {
+  get database (): Database {
     return this.app._database
   }
 
   set database (database: Database) {
     if (this.app._database && this.app._database !== database) {
-      this.logger('app').warn('ctx.database is overwritten, which may lead to errors.')
+      this.logger('app').warn('ctx.database is overwritten.')
     }
     this.app._database = database
   }
@@ -62,44 +58,30 @@ export class Context {
 
   group (...ids: number[]) {
     const scope = { ...this.scope }
-    scope.groups = Scope.intersect(scope.groups, ids)
+    scope.groups = joinScope(scope.groups, ids)
     scope.private = false
-    return new Context(scope)
+    return new Context(scope, this.app)
   }
 
   user (...ids: number[]) {
     const scope = { ...this.scope }
-    scope.users = Scope.intersect(scope.users, ids)
-    return new Context(scope)
+    scope.users = joinScope(scope.users, ids)
+    return new Context(scope, this.app)
   }
 
   private (...ids: number[]) {
     const scope = { ...this.scope }
-    scope.users = Scope.intersect(scope.users, ids)
+    scope.users = joinScope(scope.users, ids)
     scope.groups.positive = true
     scope.groups = []
-    return new Context(scope)
-  }
-
-  bot (...ids: number[]) {
-    const scope = { ...this.scope }
-    scope.bots = Scope.intersect(scope.bots, ids)
-    return new Context(scope)
+    return new Context(scope, this.app)
   }
 
   match (meta: Meta) {
-    if (!meta || !meta.$ctxType) return true
-    const [include, exclude] = this._scope[contextTypes[meta.$ctxType]]
-    return include ? include.includes(meta.$ctxId) : !exclude.includes(meta.$ctxId)
-  }
-
-  contain (ctx: Context) {
-    return this._scope.every(([include1, exclude1], index) => {
-      const [include2, exclude2] = ctx._scope[index]
-      return include1
-        ? include2 && contain(include1, include2)
-        : include2 ? !intersection(include2, exclude1).length : contain(exclude2, exclude1)
-    })
+    if (!meta) return true
+    return matchScope(this.scope.groups, meta.groupId)
+      && matchScope(this.scope.users, meta.userId)
+      && (this.scope.private || meta.messageType !== 'private')
   }
 
   plugin <T extends PluginFunction<this>> (plugin: T, options?: T extends PluginFunction<this, infer U> ? U : never): this
@@ -162,15 +144,21 @@ export class Context {
     }
   }
 
+  private getHooks <K extends keyof EventMap> (name: K) {
+    const hooks = this.app._hooks[name] || (this.app._hooks[name] = [])
+    if (hooks.length >= this.app.options.maxListeners) {
+      throw new Error('max middleware count (%d) exceeded, which may be caused by a memory leak')
+    }
+    return hooks
+  }
+
   on <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
     return this.addListener(name, listener)
   }
 
   addListener <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
-    this.app._hooks[name] = this.app._hooks[name] || []
-    this.app._hooks[name].push([this, listener])
-    this.logger('hook').debug(name, this.app._hooks[name].length)
-    return () => this.off(name, listener)
+    this.getHooks(name).push([this, listener])
+    return () => this.removeListener(name, listener)
   }
 
   before <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
@@ -178,10 +166,8 @@ export class Context {
   }
 
   prependListener <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
-    this.app._hooks[name] = this.app._hooks[name] || []
-    this.app._hooks[name].unshift([this, listener])
-    this.logger('hook').debug(name, this.app._hooks[name].length)
-    return () => this.off(name, listener)
+    this.getHooks(name).unshift([this, listener])
+    return () => this.removeListener(name, listener)
   }
 
   once <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
@@ -248,26 +234,20 @@ export class Context {
       if (command) {
         if (parent) {
           if (command === parent) {
-            throw new Error(errors.INVALID_SUBCOMMAND)
+            throw new Error('cannot set a command as its own subcommand')
           }
           if (command.parent) {
             if (command.parent !== parent) {
-              throw new Error(errors.INVALID_SUBCOMMAND)
+              throw new Error('already has subcommand')
             }
-          } else if (parent.context.contain(command.context)) {
+          } else {
             command.parent = parent
             parent.children.push(command)
-          } else {
-            throw new Error(errors.INVALID_CONTEXT)
           }
         }
         return parent = command
       }
-      const context = parent ? this.intersect(parent.context) : this
-      if (context.identifier === noopIdentifier) {
-        throw new Error(errors.INVALID_CONTEXT)
-      }
-      command = new Command(name, declaration, context)
+      command = new Command(name, declaration, this)
       if (parent) {
         command.parent = parent
         parent.children.push(command)

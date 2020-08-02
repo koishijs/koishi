@@ -10,6 +10,8 @@ const monitors: Record<number | string, Monitor> = {}
 export const name = 'monitor'
 
 export function apply (ctx: Context) {
+  ctx = ctx.group()
+
   ctx.on('connect', async () => {
     const groups = await ctx.database.getAllGroups(['subscribe'])
     const idSet = new Set<number>()
@@ -25,8 +27,6 @@ export function apply (ctx: Context) {
       setTimeout(() => monitor.start(), index * INTERVAL / subscribes.length)
     })
   })
-
-  ctx = ctx.intersect(ctx.app.groups)
 
   async function checkNames (names: string[]) {
     const accounts = await ctx.database.findSubscribe(names, ['names'])
