@@ -1,5 +1,5 @@
 import { Context, userFields, MessageBuffer } from 'koishi-core'
-import { CQCode } from 'koishi-utils'
+import { CQCode, Logger } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { wrap, Remote, proxy } from './comlink'
 import { WorkerAPI, WorkerConfig } from './worker'
@@ -13,12 +13,13 @@ const defaultConfig: Config = {
   timeout: 1000,
 }
 
-export const name = 'vm'
+const logger = Logger.create('eval')
+
+export const name = 'eval'
 
 export function apply (ctx: Context, config: Config = {}) {
   let worker: Worker
   let remote: Remote<WorkerAPI>
-  const logger = ctx.logger('worker')
   config = { ...defaultConfig, ...config }
   const resourceLimits = {
     ...defaultConfig.resourceLimits,
@@ -31,7 +32,7 @@ export function apply (ctx: Context, config: Config = {}) {
       resourceLimits,
     })
     remote = wrap(worker)
-    logger.info('started')
+    logger.info('worker started')
     worker.on('exit', (code) => {
       logger.info('exited with code', code)
       createWorker()

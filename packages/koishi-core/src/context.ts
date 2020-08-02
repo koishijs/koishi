@@ -1,4 +1,4 @@
-import { intersection, difference, noop, Logger } from 'koishi-utils'
+import { intersection, difference, noop, Logger, defineProperty } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine, ParsedLine } from './command'
 import { Meta, getSessionId } from './meta'
 import { UserField, GroupField, Database } from './database'
@@ -35,7 +35,11 @@ function matchScope (base: ScopeSet, id: number) {
 export class Context {
   static readonly MIDDLEWARE_EVENT: unique symbol = Symbol('mid')
 
-  constructor (public scope: Scope, public app?: App) {}
+  private _disposables: (() => void)[]
+
+  constructor (public scope: Scope, public app?: App) {
+    defineProperty(this, '_disposables', [])
+  }
 
   get database (): Database {
     return this.app._database
@@ -88,10 +92,12 @@ export class Context {
   plugin <T extends PluginObject<this>> (plugin: T, options?: T extends PluginObject<this, infer U> ? U : never): this
   plugin <T extends Plugin<this>> (plugin: T, options?: T extends Plugin<this, infer U> ? U : never) {
     if (options === false) return
+    const ctx: this = Object.create(this)
+    defineProperty(ctx, '_disposables', [])
     if (typeof plugin === 'function') {
-      (plugin as PluginFunction<this>)(this, options)
+      (plugin as PluginFunction<this>)(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
-      (plugin as PluginObject<this>).apply(this, options)
+      (plugin as PluginObject<this>).apply(ctx, options)
     } else {
       throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
@@ -158,7 +164,9 @@ export class Context {
 
   addListener <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
     this.getHooks(name).push([this, listener])
-    return () => this.removeListener(name, listener)
+    const dispose = () => this.removeListener(name, listener)
+    this._disposables.push(dispose)
+    return dispose
   }
 
   before <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
@@ -167,15 +175,17 @@ export class Context {
 
   prependListener <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
     this.getHooks(name).unshift([this, listener])
-    return () => this.removeListener(name, listener)
+    const dispose = () => this.removeListener(name, listener)
+    this._disposables.push(dispose)
+    return dispose
   }
 
   once <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
-    const unsubscribe = this.on(name, (...args: any[]) => {
-      unsubscribe()
+    const dispose = this.addListener(name, (...args: any[]) => {
+      dispose()
       return listener.apply(this, args)
     })
-    return unsubscribe
+    return dispose
   }
 
   off <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
@@ -256,6 +266,7 @@ export class Context {
     })
 
     Object.assign(parent.config, config)
+    this._disposables.push(() => parent.dispose())
     return parent
   }
 
@@ -299,8 +310,8 @@ export class Context {
     return argv.command.execute(argv)
   }
 
-  end () {
-    return this.app
+  dispose () {
+    this._disposables.forEach(dispose => dispose())
   }
 }
 
@@ -364,6 +375,7 @@ export interface EventMap {
   'command' (argv: ParsedCommandLine): void | Promise<void>
   'after-middleware' (meta: Meta): void
   'new-command' (cmd: Command): void
+  'remove-command' (cmd: Command): void
   'ready' (): void
   'before-connect' (): void | Promise<void>
   'connect' (): void

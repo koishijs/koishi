@@ -1,4 +1,4 @@
-import { App } from '../app'
+import { Context } from '../context'
 import { Command, ParsedLine } from '../command'
 import { defineProperty } from 'koishi-utils'
 
@@ -40,18 +40,26 @@ Command.prototype.shortcut = function (this: Command, name, config) {
   return this
 }
 
-export default function apply (app: App) {
-  defineProperty(app, '_shortcuts', [])
-  defineProperty(app, '_shortcutMap', {})
+export default function apply (ctx: Context) {
+  defineProperty(ctx.app, '_shortcuts', [])
+  defineProperty(ctx.app, '_shortcutMap', {})
 
-  app.on('new-command', (cmd) => {
+  ctx.on('new-command', (cmd) => {
     cmd._shortcuts = {}
   })
 
-  app.on('parse', (message, { $parsed }, forced) => {
+  ctx.on('remove-command', (cmd) => {
+    for (const name in cmd._shortcuts) {
+      delete ctx.app._shortcutMap[name]
+      const index = ctx.app._shortcuts.indexOf(cmd._shortcuts[name])
+      ctx.app._shortcuts.splice(index, 1)
+    }
+  })
+
+  ctx.on('parse', (message, { $parsed }, forced) => {
     if (forced && $parsed.prefix) return
     const nickname = !forced || $parsed.nickname
-    for (const shortcut of app._shortcuts) {
+    for (const shortcut of ctx.app._shortcuts) {
       const { name, fuzzy, command, oneArg, prefix, options, args = [] } = shortcut
       if (prefix && !nickname) continue
       if (!fuzzy && message !== name) continue

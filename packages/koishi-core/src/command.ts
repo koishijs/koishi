@@ -547,7 +547,17 @@ export class Command <U extends UserField = never, G extends GroupField = never>
     }
   }
 
-  end () {
-    return this.context
+  dispose () {
+    for (const cmd of this.children) {
+      cmd.dispose()
+    }
+    this.context.emit('remove-command', this)
+    this._aliases.forEach(name => delete this.app._commandMap[name])
+    const index = this.app._commands.indexOf(this)
+    this.app._commands.splice(index, 1)
+    if (this.parent) {
+      const index = this.parent.children.indexOf(this)
+      this.parent.children.splice(index, 1)
+    }
   }
 }
