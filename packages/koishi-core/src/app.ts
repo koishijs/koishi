@@ -22,6 +22,7 @@ export interface AppOptions extends BotOptions {
   retryTimes?: number
   retryInterval?: number
   maxMiddlewares?: number
+  preferSync?: boolean
   queueDelay?: number | ((message: string, meta: Meta) => number)
   defaultAuthority?: number | ((meta: Meta) => number)
   quickOperationTimeout?: number
