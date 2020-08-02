@@ -38,6 +38,72 @@ koishi run
 
 **注意:** Koishi 要求您的 Node.js 的版本不小于 10，CQHTTP 的版本不小于 4.0。过低的 CQHTTP 版本将不会支持 Koishi 的某些功能。因此，我们建议您保持较新的 CQHTTP 版本以确保所有功能可用。
 
+## 新版本特性
+
+### Hook API
+
+Koishi v2 使用新的钩子系统取代过去的 receiver：
+
+```ts
+ctx.emit()
+ctx.parallel()
+ctx.bail()
+ctx.serial()
+
+ctx.on()
+ctx.once()
+ctx.off()
+ctx.before()
+```
+
+### Command API
+
+Koishi v2 为指令系统提供了各种新的接口：
+
+```ts
+ctx.on('parse', callback)
+ctx.parse(message)
+ctx.execute(message)
+```
+
+我们还将实现多条指令的连续触发，如 `echo 1; echo 2`。
+
+### Session API
+
+Koishi v2 的元信息对象将真正拥有会话控制能力。
+
+```ts
+meta.$sender
+meta.$username
+meta.$sendQueued()
+meta.$cancelQueued()
+meta.$question()
+```
+
+### Multiple Bots
+
+与上个版本不同，Koishi v2 允许直接向单一 App 实例传入多个机器人配置：
+
+```ts
+new App({
+  bots: [
+    { selfId: 123456, server: 'http://localhost:5701' },
+    { selfId: 654321, server: 'http://localhost:5702' },
+  ],
+})
+```
+
+### Better Logger
+
+我们为 Koishi v2 编写了一套专用的 Logger API，它将带来更好的控制台输出：
+
+```ts
+const logger = Logger.create('satori')
+logger.info('hello world!')
+```
+
+同时，对于各种场景下的报错信息，Koishi v2 也进行了优化，这将大幅降低调试难度。
+
 ## 最新版本
 
 | 包名 | 版本 |
