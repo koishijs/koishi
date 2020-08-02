@@ -1,14 +1,14 @@
 {
   "name": "koishi-test-utils",
   "description": "Test utilities for Koishi",
-  "version": "4.0.0-alpha.40",
+  "version": "4.0.0-beta.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
-  "license": "MIT",
+  "license": "LGPL-3.0-or-later",
   "scripts": {
     "lint": "eslint src --ext .ts",
     "prepack": "tsc -b"
@@ -33,11 +33,11 @@
     "utilities"
   ],
   "peerDependencies": {
-    "jest": "^26.1.0"
+    "jest": "^26.2.2"
   },
   "devDependencies": {
     "@types/debug": "^4.1.5",
-    "@types/jest": "^26.0.7"
+    "@types/jest": "^26.0.8"
   },
   "dependencies": {
     "axios": "^0.19.2",

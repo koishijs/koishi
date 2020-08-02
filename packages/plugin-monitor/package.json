@@ -1,10 +1,10 @@
 {
   "name": "koishi-plugin-monitor",
-  "version": "1.0.0-alpha.39",
+  "version": "1.0.0-beta.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
-  "license": "MIT",
+  "license": "LGPL-3.0-or-later",
   "files": [
     "dist"
   ],
@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/koishijs/koishi-plugin-monitor#readme",
   "peerDependencies": {
-    "koishi-core": "^2.0.0-alpha.40",
+    "koishi-core": "^2.0.0-beta.0",
     "koishi-utils": "^2.1.2"
   }
 }

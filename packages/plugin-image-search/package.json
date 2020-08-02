@@ -8,7 +8,7 @@
     "dist"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
-  "license": "MIT",
+  "license": "LGPL-3.0-or-later",
   "scripts": {
     "lint": "eslint src --ext .ts",
     "prepack": "tsc -b"
@@ -37,7 +37,7 @@
     "pixiv"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.0.0-alpha.40",
+    "koishi-core": "^2.0.0-beta.0",
     "koishi-utils": "^2.1.2"
   },
   "dependencies": {

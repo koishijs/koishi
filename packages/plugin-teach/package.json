@@ -1,14 +1,14 @@
 {
   "name": "koishi-plugin-teach",
   "description": "Teach plugin for Koishi",
-  "version": "1.0.0-alpha.60",
+  "version": "1.0.0-beta.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
-  "license": "MIT",
+  "license": "LGPL-3.0-or-later",
   "scripts": {
     "build": "tsc -b",
     "lint": "eslint src --ext .ts",
@@ -35,14 +35,14 @@
     "conversation"
   ],
   "devDependencies": {
-    "koishi-database-level": "^2.0.0-alpha.38",
-    "koishi-database-memory": "^2.0.0-alpha.39",
-    "koishi-plugin-mysql": "^2.0.0-alpha.40",
-    "koishi-test-utils": "^4.0.0-alpha.40"
+    "koishi-database-level": "^2.0.0-beta.0",
+    "koishi-database-memory": "^2.0.0-beta.0",
+    "koishi-plugin-mysql": "^2.0.0-beta.0",
+    "koishi-test-utils": "^4.0.0-beta.0"
   },
   "dependencies": {
     "escape-string-regexp": "^4.0.0",
-    "koishi-core": "^2.0.0-alpha.40",
+    "koishi-core": "^2.0.0-beta.0",
     "koishi-utils": "^2.1.2",
     "leven": "^3.1.0",
     "regexpp": "^3.1.0"

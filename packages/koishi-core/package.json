@@ -1,14 +1,14 @@
 {
   "name": "koishi-core",
   "description": "Core features for Koishi",
-  "version": "2.0.0-alpha.40",
+  "version": "2.0.0-beta.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
-  "license": "MIT",
+  "license": "LGPL-3.0-or-later",
   "scripts": {
     "jest": "jest tests/.*\\.spec\\.ts --runInBand",
     "lint": "eslint src --ext .ts",
@@ -37,8 +37,8 @@
     "@types/ms": "^0.7.31",
     "@types/ws": "^7.2.6",
     "get-port": "^5.1.1",
-    "koishi-database-memory": "^2.0.0-alpha.39",
-    "koishi-test-utils": "^4.0.0-alpha.40"
+    "koishi-database-memory": "^2.0.0-beta.0",
+    "koishi-test-utils": "^4.0.0-beta.0"
   },
   "dependencies": {
     "@types/koa-bodyparser": "^4.3.0",

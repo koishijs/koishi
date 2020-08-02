@@ -1,14 +1,14 @@
 {
   "name": "koishi-plugin-github-webhook",
   "description": "GitHub webhook plugin for Koishi",
-  "version": "2.0.0-alpha.37",
+  "version": "2.0.0-beta.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
-  "license": "MIT",
+  "license": "LGPL-3.0-or-later",
   "scripts": {
     "lint": "eslint src --ext .ts",
     "prepack": "tsc -b"
@@ -33,12 +33,12 @@
     "webhook"
   ],
   "devDependencies": {
-    "koishi-test-utils": "^4.0.0-alpha.40"
+    "koishi-test-utils": "^4.0.0-beta.0"
   },
   "peerDependencies": {
-    "koishi-core": "^2.0.0-alpha.40"
+    "koishi-core": "^2.0.0-beta.0"
   },
   "dependencies": {
-    "@octokit/webhooks": "^7.6.5"
+    "@octokit/webhooks": "^7.8.1"
   }
 }
