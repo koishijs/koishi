@@ -16,6 +16,8 @@ Koishi 是一个在 [Node.js](https://nodejs.org/) 环境下运行，基于 [Coo
 
 这个项目的名字和图标来源于东方 Project 中的角色古明地恋（Komeiji Koishi）。
 
+**Koishi v2 已经进入 beta 阶段，欢迎前往 [next](https://github.com/koishijs/koishi/tree/next) 分支查看新版本的特性！**
+
 ## 特性
 
 ### 开箱即用的 CLI
