@@ -1,7 +1,11 @@
 {
   "name": "koishi-core",
   "description": "Core features for Koishi",
+<<<<<<< HEAD
   "version": "2.0.0-beta.1",
+=======
+  "version": "1.12.0",
+>>>>>>> develop
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -32,21 +36,35 @@
     "koishi"
   ],
   "devDependencies": {
+<<<<<<< HEAD
     "@types/koa": "^2.11.3",
     "@types/koa-router": "^7.4.1",
     "@types/ms": "^0.7.31",
     "@types/ws": "^7.2.6",
     "get-port": "^5.1.1",
     "koishi-test-utils": "^4.0.0-beta.0"
+=======
+    "@types/debug": "^4.1.5",
+    "@types/ws": "^7.2.4",
+    "get-port": "^5.1.1",
+    "koishi-database-memory": "^1.2.0",
+    "koishi-test-utils": "^3.3.0"
+>>>>>>> develop
   },
   "dependencies": {
     "@types/koa-bodyparser": "^4.3.0",
     "axios": "^0.19.2",
+<<<<<<< HEAD
     "escape-string-regexp": "^4.0.0",
     "koa": "^2.13.0",
     "koa-bodyparser": "^4.3.0",
     "koa-router": "^9.1.0",
     "koishi-utils": "^2.1.2",
+=======
+    "debug": "^4.1.1",
+    "escape-string-regexp": "^3.0.0",
+    "koishi-utils": "^1.0.4",
+>>>>>>> develop
     "leven": "^3.1.0",
     "ms": "^2.1.2",
     "ws": "^7.3.1"

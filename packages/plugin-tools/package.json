@@ -1,6 +1,11 @@
 {
+<<<<<<< HEAD:packages/plugin-tools/package.json
   "name": "koishi-plugin-tools",
   "version": "1.0.0-beta.0",
+=======
+  "name": "koishi-database-sqlite",
+  "version": "1.0.0",
+>>>>>>> develop:packages/database-sqlite/package.json
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -17,12 +22,25 @@
     "url": "git+https://github.com/koishijs/koishi-plugin-tools.git"
   },
   "bugs": {
+<<<<<<< HEAD:packages/plugin-tools/package.json
     "url": "https://github.com/koishijs/koishi-plugin-tools/issues"
+=======
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-sqlite#readme",
+  "devDependencies": {
+    "@types/sqlite3": "^3.1.6",
+    "koishi-test-utils": "^3.3.0"
+>>>>>>> develop:packages/database-sqlite/package.json
   },
   "homepage": "https://github.com/koishijs/koishi-plugin-tools#readme",
   "peerDependencies": {
+<<<<<<< HEAD:packages/plugin-tools/package.json
     "koishi-core": "^2.0.0-beta.1",
     "koishi-utils": "^2.1.2"
+=======
+    "koishi-core": "^1.12.0"
+>>>>>>> develop:packages/database-sqlite/package.json
   },
   "dependencies": {
     "axios": "^0.19.2",

@@ -92,9 +92,58 @@ export abstract class CQServer {
     }
 
     // generate path
+<<<<<<< HEAD
     meta.$app = this.app
     meta.$ctxId = ctxId
     meta.$ctxType = ctxType
+=======
+    Object.defineProperty(meta, '$ctxId', { value: ctxId })
+    Object.defineProperty(meta, '$ctxType', { value: ctxType })
+
+    const app = this.appMap[meta.selfId]
+    Object.defineProperty(meta, '$app', { value: app })
+
+    // add context properties
+    if (meta.postType === 'message') {
+      if (meta.messageType === 'group') {
+        meta.$delete = async () => {
+          if (meta.$response) return meta.$response({ delete: true })
+          return app.sender.deleteMsgAsync(meta.messageId)
+        }
+        meta.$ban = async (duration = 30 * 60) => {
+          if (meta.$response) return meta.$response({ ban: true, banDuration: duration })
+          return meta.anonymous
+            ? app.sender.setGroupAnonymousBanAsync(meta.groupId, meta.anonymous.flag, duration)
+            : app.sender.setGroupBanAsync(meta.groupId, meta.userId, duration)
+        }
+        meta.$kick = async () => {
+          if (meta.$response) return meta.$response({ kick: true })
+          if (meta.anonymous) return
+          return app.sender.setGroupKickAsync(meta.groupId, meta.userId)
+        }
+      }
+      meta.$send = async (message, autoEscape = false) => {
+        if (meta.$response) {
+          app.emitEvent(meta, 'before-send', app.sender._createSendMeta(meta.messageType, ctxType, ctxId, message))
+          return meta.$response({ reply: message, autoEscape, atSender: false })
+        }
+        return app.sender[`send${capitalize(meta.messageType)}MsgAsync`](ctxId, message, autoEscape)
+      }
+    } else if (meta.postType === 'request') {
+      meta.$approve = async (remark = '') => {
+        if (meta.$response) return meta.$response({ approve: true, remark })
+        return meta.requestType === 'friend'
+          ? app.sender.setFriendAddRequestAsync(meta.flag, remark)
+          : app.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, true)
+      }
+      meta.$reject = async (reason = '') => {
+        if (meta.$response) return meta.$response({ approve: false, reason })
+        return meta.requestType === 'friend'
+          ? app.sender.setFriendAddRequestAsync(meta.flag, false)
+          : app.sender.setGroupAddRequestAsync(meta.flag, meta.subType as any, reason)
+      }
+    }
+>>>>>>> develop
 
     return events
   }
@@ -278,9 +327,14 @@ class WsClient extends CQServer {
             const meta = this.prepareMeta(parsed)
             if (meta) this.dispatchMeta(meta)
           } else if (parsed.echo === -1) {
+<<<<<<< HEAD
             bot.version = camelCase(parsed.data)
             bot._get = (action, params) => this.send({ action, params })
             logger.debug('connect to ws server:', bot.server)
+=======
+            this.version = camelCase(parsed.data)
+            this.debug('connect to ws server:', this.app.options.server)
+>>>>>>> develop
             resolve()
           } else {
             this._listeners[parsed.echo]?.(parsed)
