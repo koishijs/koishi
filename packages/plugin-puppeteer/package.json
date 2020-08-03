@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-puppeteer",
   "description": "Take Screenshots in Koishi",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -35,10 +35,10 @@
   ],
   "devDependencies": {
     "@types/puppeteer-core": "^2.0.0",
-    "koishi-test-utils": "^4.0.0-beta.0"
+    "koishi-test-utils": "^4.0.0-beta.1"
   },
   "peerDependencies": {
-    "koishi-core": "^2.0.0-beta.1",
+    "koishi-core": "^2.0.0-beta.2",
     "koishi-utils": "^2.1.2"
   },
   "dependencies": {
