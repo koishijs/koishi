@@ -1,12 +1,6 @@
 {
-<<<<<<< HEAD:packages/plugin-monitor/package.json
   "name": "koishi-plugin-monitor",
   "version": "1.0.0-beta.0",
-=======
-  "name": "koishi-database-memory",
-  "description": "An in-memory database implementation for Koishi",
-  "version": "1.2.0",
->>>>>>> develop:packages/database-memory/package.json
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -27,14 +21,7 @@
   },
   "homepage": "https://github.com/koishijs/koishi-plugin-monitor#readme",
   "peerDependencies": {
-<<<<<<< HEAD:packages/plugin-monitor/package.json
     "koishi-core": "^2.0.0-beta.1",
     "koishi-utils": "^2.1.2"
-=======
-    "koishi-core": "^1.12.0"
-  },
-  "dependencies": {
-    "koishi-utils": "^1.0.4"
->>>>>>> develop:packages/database-memory/package.json
   }
 }

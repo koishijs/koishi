@@ -30,33 +30,9 @@ export function apply (ctx: Context) {
         return meta.$send('请提供新的上下文。')
       }
 
-<<<<<<< HEAD
       const newMeta = new Meta(meta)
       newMeta.$send = meta.$send.bind(meta)
       newMeta.$sendQueued = meta.$sendQueued.bind(meta)
-=======
-      const newMeta = { ...meta }
-      let user = meta.$user
-      if (options.user) {
-        const id = getTargetId(options.user)
-        if (!id) return meta.$send('未指定目标。')
-        user = await ctx.database.observeUser(id)
-        if (meta.$user.authority <= user.authority) {
-          return meta.$send('权限不足。')
-        }
-
-        newMeta.userId = id
-        newMeta.sender = {
-          sex: 'unknown',
-          nickname: '',
-          userId: id,
-          age: 0,
-        }
-      }
-
-      Object.defineProperty(newMeta, '$app', { value: ctx.app })
-      Object.defineProperty(newMeta, '$user', { value: user, writable: true })
->>>>>>> develop
 
       delete newMeta.groupId
       delete newMeta.discussId
@@ -79,7 +55,6 @@ export function apply (ctx: Context) {
         newMeta.subType = options.type || 'other'
       }
 
-<<<<<<< HEAD
       if (options.user) {
         const id = getTargetId(options.user)
         if (!id) return meta.$send('未指定目标。')
@@ -104,19 +79,6 @@ export function apply (ctx: Context) {
 
       newMeta.$ctxId = ctxId
       newMeta.$ctxType = ctxType
-=======
-      if (options.group) {
-        const info = await ctx.sender.getGroupMemberInfo(ctxId, newMeta.userId).catch(() => ({}))
-        Object.assign(newMeta.sender, info)
-      } else if (options.user) {
-        const info = await ctx.sender.getStrangerInfo(newMeta.userId).catch(() => ({}))
-        Object.assign(newMeta.sender, info)
-      }
-
-      // generate path
-      Object.defineProperty(newMeta, '$ctxId', { value: ctxId })
-      Object.defineProperty(newMeta, '$ctxType', { value: ctxType })
->>>>>>> develop
 
       return ctx.execute(message, newMeta)
     })

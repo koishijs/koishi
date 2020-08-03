@@ -1,5 +1,4 @@
 import escapeRegex from 'escape-string-regexp'
-<<<<<<< HEAD
 import { Command } from './command'
 import { Context, Middleware, NextFunction } from './context'
 import { Group, User, Database } from './database'
@@ -13,20 +12,6 @@ import suggest from './plugins/suggest'
 import validate from './plugins/validate'
 
 export interface AppOptions extends BotOptions {
-=======
-import { Sender } from './sender'
-import { Server, createServer, ServerType } from './server'
-import { Command, ShortcutConfig, ParsedCommandLine } from './command'
-import { Context, Middleware, NextFunction, ContextScope, Events, EventMap } from './context'
-import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField, createUser } from './database'
-import { showSuggestions } from './utils'
-import { Meta } from './meta'
-import { simplify, noop, observe } from 'koishi-utils'
-import { errors, messages } from './messages'
-import { ParsedLine } from './parser'
-
-export interface AppOptions {
->>>>>>> develop
   port?: number
   secret?: string
   path?: string
@@ -228,38 +213,7 @@ export class App extends Context {
       if (user.flag & User.Flag.ignore) return
     }
 
-<<<<<<< HEAD
     await this.parallelize(meta, 'attach', meta)
-=======
-  private async _attachUser (meta: Meta<'message'>, fields: Iterable<UserField> = []) {
-    const userFields = new Set<UserField>(fields)
-    this.emitEvent(meta, 'before-user', userFields, meta.$argv)
-    const defaultAuthority = typeof this.options.defaultAuthority === 'function'
-      ? this.options.defaultAuthority(meta)
-      : this.options.defaultAuthority || 0
-    const user = meta.anonymous
-      ? observe(createUser(meta.userId, defaultAuthority))
-      : await this.database.observeUser(meta.userId, defaultAuthority, Array.from(userFields))
-    Object.defineProperty(meta, '$user', { value: user, writable: true })
-    return user
-  }
-
-  async executeCommandLine (message: string, meta: Meta<'message'>, next: NextFunction = noop) {
-    if (!('$ctxType' in meta)) this.server.parseMeta(meta)
-    const argv = this.parseCommandLine(message, meta)
-    if (!argv) return next()
-    Object.defineProperty(meta, '$argv', {
-      writable: true,
-      value: argv,
-    })
-
-    if (this.database) {
-      if (meta.messageType === 'group') {
-        await this._attachGroup(meta)
-      }
-      await this._attachUser(meta)
-    }
->>>>>>> develop
 
     // execute command
     if (!meta.$argv) return next()

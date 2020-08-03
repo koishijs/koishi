@@ -1,10 +1,6 @@
 import { User, Group } from './database'
-<<<<<<< HEAD
 import { ParsedCommandLine, Command } from './command'
 import { isInteger, contain, observe, Observed } from 'koishi-utils'
-=======
-import { ParsedCommandLine } from './command'
->>>>>>> develop
 import { App } from './app'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
@@ -55,33 +51,7 @@ export interface ParsedMessage {
 }
 
 /** CQHTTP Meta Information */
-<<<<<<< HEAD
 export interface Meta {
-=======
-export interface Meta <T extends PostType = PostType> {
-  // database bindings
-  $user?: User
-  $group?: Group
-
-  // context identifier
-  $ctxId?: number
-  $ctxType?: ContextType
-
-  // other properties
-  $app?: App
-  $argv?: ParsedCommandLine
-  $parsed?: ParsedMessage
-
-  // quick operations
-  $response?: (payload: ResponsePayload) => void
-  $delete?: () => Promise<void>
-  $kick?: () => Promise<void>
-  $ban?: (duration?: number) => Promise<void>
-  $approve?: (remark?: string) => Promise<void>
-  $reject?: (reason?: string) => Promise<void>
-  $send?: (message: string, autoEscape?: boolean) => Promise<void>
-
->>>>>>> develop
   // basic properties
   postType?: PostType
   messageType?: MetaTypeMap['message']

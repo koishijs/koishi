@@ -113,7 +113,6 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
   _arguments: CommandArgument[]
   _options: CommandOption[] = []
 
-<<<<<<< HEAD
   private _optionMap: Record<string, CommandOption> = {}
   private _optionAliasMap: Record<string, CommandOption> = {}
   private _userFields: ArgvInferred<User.Field>[] = []
@@ -135,19 +134,6 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
   static userFields (fields: ArgvInferred<User.Field>) {
     this._userFields.push(fields)
     return this
-=======
-    const { maxUsage, minInterval, authority } = command.config
-    let shouldFetchAuthority = !userFields.has('authority') && authority > 0
-    let shouldFetchUsage = !(userFields.has('usage') || !maxUsage && !minInterval)
-    for (const option of command._options) {
-      if (option.camels[0] in options) {
-        if (option.authority > 0) shouldFetchAuthority = true
-        if (option.notUsage) shouldFetchUsage = false
-      }
-    }
-    if (shouldFetchAuthority) userFields.add('authority')
-    if (shouldFetchUsage) userFields.add('usage')
->>>>>>> develop
   }
 
   static groupFields (fields: ArgvInferred<Group.Field>) {
