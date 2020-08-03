@@ -1,4 +1,4 @@
-import { Context, getTargetId, UserField } from 'koishi-core'
+import { Context, getTargetId, User } from 'koishi-core'
 import { isInteger, deduplicate } from 'koishi-utils'
 import { DialogueFlag, useFlag } from '../database'
 
@@ -142,7 +142,7 @@ export default function apply (ctx: Context) {
   ctx.on('dialogue/before-send', async (state) => {
     const { dialogue, meta } = state
     if (dialogue.flag & DialogueFlag.substitute && dialogue.writer && meta.userId !== dialogue.writer) {
-      const userFields = new Set<UserField>()
+      const userFields = new Set<User.Field>()
       ctx.app.emit(meta, 'dialogue/before-attach-user', state, userFields)
       meta.userId = dialogue.writer
       meta.$user = null

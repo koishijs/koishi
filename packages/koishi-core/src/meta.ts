@@ -1,4 +1,4 @@
-import { User, Group, UserField, GroupField, createUser, UserData, GroupData } from './database'
+import { User, Group } from './database'
 import { ParsedCommandLine, Command } from './command'
 import { isInteger, contain, observe, Observed } from 'koishi-utils'
 import { App } from './app'
@@ -87,9 +87,9 @@ export interface Meta {
   interval?: number
 }
 
-export class Meta <U extends UserField = never, G extends GroupField = never> {
-  $user?: User<U>
-  $group?: Group<G>
+export class Meta <U extends User.Field = never, G extends Group.Field = never> {
+  $user?: User.Observed<U>
+  $group?: Group.Observed<G>
   $ctxId?: number
   $ctxType?: ContextType
   $app?: App
@@ -166,8 +166,8 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
   }
 
   /** 在元数据上绑定一个可观测群实例 */
-  async observeGroup <T extends GroupField = never> (fields: Iterable<T> = []): Promise<Group<T | G>> {
-    const fieldSet = new Set<GroupField>(fields)
+  async observeGroup <T extends Group.Field = never> (fields: Iterable<T> = []): Promise<Group.Observed<T | G>> {
+    const fieldSet = new Set<Group.Field>(fields)
     const { groupId, $argv, $group } = this
     if ($argv) Command.collect($argv, 'group', fieldSet)
 
@@ -203,8 +203,8 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
   }
 
   /** 在元数据上绑定一个可观测用户实例 */
-  async observeUser <T extends UserField = never> (fields: Iterable<T> = []): Promise<User<T | U>> {
-    const fieldSet = new Set<UserField>(fields)
+  async observeUser <T extends User.Field = never> (fields: Iterable<T> = []): Promise<User.Observed<T | U>> {
+    const fieldSet = new Set<User.Field>(fields)
     const { userId, $argv, $user } = this
     if ($argv) Command.collect($argv, 'user', fieldSet)
 
@@ -228,7 +228,7 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
 
     // 确保匿名消息不会写回数据库
     if (this.anonymous) {
-      const user = observe(createUser(userId, defaultAuthority))
+      const user = observe(User.create(userId, defaultAuthority))
       return this.$user = user
     }
 
@@ -251,8 +251,8 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
   }
 }
 
-const userCache: Record<number, Observed<Partial<UserData & { _timestamp: number }>>> = {}
-const groupCache: Record<number, Observed<Partial<GroupData & { _timestamp: number }>>> = {}
+const userCache: Record<number, Observed<Partial<User & { _timestamp: number }>>> = {}
+const groupCache: Record<number, Observed<Partial<Group & { _timestamp: number }>>> = {}
 
 export class MessageBuffer {
   private buffer = ''

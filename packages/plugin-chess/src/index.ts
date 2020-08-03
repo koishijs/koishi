@@ -1,4 +1,4 @@
-import { Context, extendGroup } from 'koishi-core'
+import { Context, Group } from 'koishi-core'
 import { isInteger } from 'koishi-utils'
 import { State, MoveResult, StateData } from './state'
 import * as go from './go'
@@ -18,12 +18,12 @@ const rules: Record<string, Rule> = {
 }
 
 declare module 'koishi-core/dist/database' {
-  interface GroupData {
+  interface Group {
     chess: StateData
   }
 }
 
-extendGroup(() => ({
+Group.extend(() => ({
   chess: null,
 }))
 

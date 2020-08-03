@@ -1,9 +1,9 @@
 import { arrayTypes } from 'koishi-plugin-mysql'
-import { extendGroup, extendDatabase } from 'koishi-core'
+import { Group, extendDatabase } from 'koishi-core'
 import { OkPacket } from 'mysql'
 
 declare module 'koishi-core/dist/database' {
-  interface GroupData {
+  interface Group {
     subscribe: Record<number, number[]>
   }
 
@@ -21,7 +21,7 @@ declare module 'koishi-core/dist/database' {
   }
 }
 
-extendGroup(() => ({ subscribe: {} }))
+Group.extend(() => ({ subscribe: {} }))
 
 arrayTypes.push('subscribe.names')
 

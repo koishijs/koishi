@@ -1,7 +1,7 @@
 import escapeRegex from 'escape-string-regexp'
 import { Command } from './command'
 import { Context, Middleware, NextFunction } from './context'
-import { GroupFlag, UserFlag, GroupField, UserField, Database } from './database'
+import { Group, User, Database } from './database'
 import { BotOptions, CQServer, ServerTypes } from './server'
 import { Meta } from './meta'
 import { simplify, defineProperty } from 'koishi-utils'
@@ -189,7 +189,7 @@ export class App extends Context {
     if (this.database) {
       if (meta.messageType === 'group') {
         // attach group data
-        const groupFields = new Set<GroupField>(['flag', 'assignee'])
+        const groupFields = new Set<Group.Field>(['flag', 'assignee'])
         this.emit('before-attach-group', meta, groupFields)
         const group = await meta.observeGroup(groupFields)
 
@@ -197,12 +197,12 @@ export class App extends Context {
         if (await this.serialize(meta, 'attach-group', meta)) return
 
         // ignore some group calls
-        if (group.flag & GroupFlag.ignore) return
+        if (group.flag & Group.Flag.ignore) return
         if (group.assignee !== meta.selfId && !atMe) return
       }
 
       // attach user data
-      const userFields = new Set<UserField>(['flag'])
+      const userFields = new Set<User.Field>(['flag'])
       this.emit('before-attach-user', meta, userFields)
       const user = await meta.observeUser(userFields)
 
@@ -210,7 +210,7 @@ export class App extends Context {
       if (await this.serialize(meta, 'attach-user', meta)) return
 
       // ignore some user calls
-      if (user.flag & UserFlag.ignore) return
+      if (user.flag & User.Flag.ignore) return
     }
 
     await this.parallelize(meta, 'attach', meta)

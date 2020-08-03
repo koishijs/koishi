@@ -1,5 +1,5 @@
 import { InspectOptions, formatWithOptions } from 'util'
-import { Meta, UserField, getUsage, App, UserData } from 'koishi-core'
+import { Meta, User, getUsage, App } from 'koishi-core'
 import { parentPort, workerData } from 'worker_threads'
 import { expose, Remote } from './comlink'
 import { VM } from './vm'
@@ -19,7 +19,7 @@ const config: WorkerConfig = {
 }
 
 export default class Global {
-  private user: UserData
+  private user: User
   private meta: Meta
   private main: Remote<MainAPI>
 

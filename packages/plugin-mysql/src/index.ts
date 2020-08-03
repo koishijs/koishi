@@ -1,5 +1,5 @@
 import { createPool, Pool, PoolConfig, escape, escapeId, format, OkPacket } from 'mysql'
-import { TableType, Tables, App, UserField, UserData, userFields, createUser, GroupData, groupFields, createGroup, GroupField, Database, extendDatabase, Context } from 'koishi-core'
+import { TableType, Tables, App, User, Group, Database, extendDatabase, Context } from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { types } from 'util'
 
@@ -33,7 +33,7 @@ const defaultConfig: Options = {
 export const userGetters: Record<string, () => string> = {}
 
 function inferFields (keys: readonly string[]) {
-  return keys.map(key => key in userGetters ? `${userGetters[key]()} AS ${key}` : key) as UserField[]
+  return keys.map(key => key in userGetters ? `${userGetters[key]()} AS ${key}` : key) as User.Field[]
 }
 
 export default class MysqlDatabase {
@@ -133,20 +133,20 @@ export default class MysqlDatabase {
 extendDatabase(MysqlDatabase, {
   async getUser (userId, ...args) {
     const authority = typeof args[0] === 'number' ? args.shift() as number : 0
-    const fields = args[0] ? inferFields(args[0] as any) : userFields
+    const fields = args[0] ? inferFields(args[0] as any) : User.fields
     if (fields && !fields.length) return {} as any
-    const [data] = await this.select<UserData[]>('user', fields, '`id` = ?', [userId])
-    let fallback: UserData
+    const [data] = await this.select<User[]>('user', fields, '`id` = ?', [userId])
+    let fallback: User
     if (data) {
       data.id = userId
     } else if (authority < 0) {
       return null
     } else {
-      fallback = createUser(userId, authority)
+      fallback = User.create(userId, authority)
       if (authority) {
         await this.query(
-          'INSERT INTO `user` (' + this.joinKeys(userFields) + ') VALUES (' + userFields.map(() => '?').join(', ') + ')',
-          this.formatValues('user', fallback, userFields),
+          'INSERT INTO `user` (' + this.joinKeys(User.fields) + ') VALUES (' + User.fields.map(() => '?').join(', ') + ')',
+          this.formatValues('user', fallback, User.fields),
         )
       }
     }
@@ -154,18 +154,18 @@ extendDatabase(MysqlDatabase, {
   },
 
   async getUsers (...args) {
-    let ids: readonly number[], fields: readonly UserField[]
+    let ids: readonly number[], fields: readonly User.Field[]
     if (args.length > 1) {
       ids = args[0]
       fields = inferFields(args[1])
     } else if (args.length && typeof args[0][0] !== 'string') {
       ids = args[0]
-      fields = userFields
+      fields = User.fields
     } else {
       fields = inferFields(args[0] as any)
     }
     if (ids && !ids.length) return []
-    return this.select<UserData[]>('user', fields, ids && `\`id\` IN (${ids.join(', ')})`)
+    return this.select<User[]>('user', fields, ids && `\`id\` IN (${ids.join(', ')})`)
   },
 
   async setUser (userId, data) {
@@ -174,16 +174,16 @@ extendDatabase(MysqlDatabase, {
 
   async getGroup (groupId, ...args) {
     const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
-    const fields = args[0] as any || groupFields
+    const fields = args[0] as any || Group.fields
     if (fields && !fields.length) return {} as any
-    const [data] = await this.select<GroupData[]>('group', fields, '`id` = ?', [groupId])
-    let fallback: GroupData
+    const [data] = await this.select<Group[]>('group', fields, '`id` = ?', [groupId])
+    let fallback: Group
     if (!data) {
-      fallback = createGroup(groupId, selfId)
+      fallback = Group.create(groupId, selfId)
       if (selfId && groupId) {
         await this.query(
-          'INSERT INTO `group` (' + this.joinKeys(groupFields) + ') VALUES (' + groupFields.map(() => '?').join(', ') + ')',
-          this.formatValues('group', fallback, groupFields),
+          'INSERT INTO `group` (' + this.joinKeys(Group.fields) + ') VALUES (' + Group.fields.map(() => '?').join(', ') + ')',
+          this.formatValues('group', fallback, Group.fields),
         )
       }
     } else {
@@ -193,19 +193,19 @@ extendDatabase(MysqlDatabase, {
   },
 
   async getAllGroups (...args) {
-    let assignees: readonly number[], fields: readonly GroupField[]
+    let assignees: readonly number[], fields: readonly Group.Field[]
     if (args.length > 1) {
       fields = args[0]
       assignees = args[1]
     } else if (args.length && typeof args[0][0] === 'number') {
-      fields = groupFields
+      fields = Group.fields
       assignees = args[0] as any
     } else {
-      fields = args[0] || groupFields
+      fields = args[0] || Group.fields
       assignees = await this.app.getSelfIds()
     }
     if (!assignees.length) return []
-    return this.select<GroupData[]>('group', fields, `\`assignee\` IN (${assignees.join(',')})`)
+    return this.select<Group[]>('group', fields, `\`assignee\` IN (${assignees.join(',')})`)
   },
 
   async setGroup (groupId, data) {

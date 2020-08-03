@@ -1,4 +1,4 @@
-import { GroupFlag, CQCode, Logger, App, GroupData } from 'koishi'
+import { Group, CQCode, Logger, App } from 'koishi'
 import { Subscribe } from './database'
 import bilibili from './bilibili'
 import twitCasting from './twitCasting'
@@ -7,7 +7,7 @@ import axios from 'axios'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'monitor/before-send' (info: LiveInfo, group: Pick<GroupData, 'id' | 'flag' | 'assignee' | 'subscribe'>): void | boolean
+    'monitor/before-send' (info: LiveInfo, group: Pick<Group, 'id' | 'flag' | 'assignee' | 'subscribe'>): void | boolean
   }
 }
 
@@ -123,7 +123,7 @@ export class Daemon {
     const groups = await app.database.getAllGroups(['id', 'flag', 'assignee', 'subscribe'])
     groups.forEach(async (group) => {
       const { id, flag, assignee, subscribe } = group
-      if (!subscribe[this.config.id] || flag & GroupFlag.noEmit) return
+      if (!subscribe[this.config.id] || flag & Group.Flag.noEmit) return
       const bot = app.bots[assignee]
       const output = [`[直播提示] ${this.config.names[0]} 正在 ${this._displayType} 上直播：${url}`]
       // at subscibers

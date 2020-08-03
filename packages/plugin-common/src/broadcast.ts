@@ -1,4 +1,4 @@
-import { Context, GroupFlag, CQSender } from 'koishi-core'
+import { Context, Group, CQSender } from 'koishi-core'
 import { sleep } from 'koishi-utils'
 import axios from 'axios'
 
@@ -46,7 +46,7 @@ Context.prototype.broadcast = async function (this: Context, message, forced) {
   const groups = await this.database.getAllGroups(['id', 'assignee', 'flag'])
   const assignMap: Record<number, number[]> = {}
   for (const { id, assignee, flag } of groups) {
-    if (!forced && (flag & GroupFlag.noEmit)) continue
+    if (!forced && (flag & Group.Flag.noEmit)) continue
     if (assignMap[assignee]) {
       assignMap[assignee].push(id)
     } else {
@@ -72,7 +72,7 @@ export function apply (ctx: Context) {
       if (options.only) {
         let groups = await ctx.database.getAllGroups(['id', 'flag'], [meta.selfId])
         if (!options.forced) {
-          groups = groups.filter(g => !(g.flag & GroupFlag.noEmit))
+          groups = groups.filter(g => !(g.flag & Group.Flag.noEmit))
         }
         return meta.$bot.sendGroupMsgAsync(groups.map(g => g.id), message)
       }

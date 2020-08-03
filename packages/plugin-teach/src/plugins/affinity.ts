@@ -1,4 +1,4 @@
-import { Context, UserData, UserField } from 'koishi-core'
+import { Context, User } from 'koishi-core'
 import { isInteger } from 'koishi-utils'
 import { Dialogue } from '../database'
 
@@ -15,8 +15,8 @@ declare module '../database' {
 
   namespace Dialogue {
     interface Config {
-      affinityFields?: Iterable<UserField>
-      getAffinity? (user: Partial<UserData>): number
+      affinityFields?: Iterable<User.Field>
+      getAffinity? (user: Partial<User>): number
     }
   }
 }

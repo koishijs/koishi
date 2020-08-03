@@ -1,4 +1,4 @@
-import { Context, UserField, Meta, NextFunction, Command, MessageBuffer } from 'koishi-core'
+import { Context, User, Meta, NextFunction, Command, MessageBuffer } from 'koishi-core'
 import { CQCode, simplify, noop } from 'koishi-utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import escapeRegex from 'escape-string-regexp'
@@ -8,7 +8,7 @@ declare module 'koishi-core/dist/context' {
     'dialogue/state' (state: SessionState): void
     'dialogue/receive' (state: SessionState): void | boolean
     'dialogue/prepare' (state: SessionState): void
-    'dialogue/before-attach-user' (state: SessionState, userFields: Set<UserField>): void
+    'dialogue/before-attach-user' (state: SessionState, userFields: Set<User.Field>): void
     'dialogue/attach-user' (state: SessionState): void | boolean
     'dialogue/before-send' (state: SessionState): void | boolean | Promise<void | boolean>
     'dialogue/send' (state: SessionState): void
@@ -51,7 +51,7 @@ export interface SessionState {
   userId: number
   groupId: number
   answer?: string
-  meta?: Meta<UserField>
+  meta?: Meta<User.Field>
   test?: DialogueTest
   dialogue?: Dialogue
   dialogues?: Dialogue[]
@@ -83,7 +83,7 @@ Context.prototype.getSessionState = function (meta) {
 export async function getTotalWeight (ctx: Context, state: SessionState) {
   const { meta, dialogues } = state
   ctx.app.emit(meta, 'dialogue/prepare', state)
-  const userFields = new Set<UserField>(['name'])
+  const userFields = new Set<User.Field>(['name'])
   ctx.app.emit(meta, 'dialogue/before-attach-user', state, userFields)
   await meta.observeUser(userFields)
   if (ctx.app.bail(meta, 'dialogue/attach-user', state)) return 0

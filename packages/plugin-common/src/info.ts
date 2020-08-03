@@ -1,16 +1,16 @@
-import { Context, UserField, UserData, getTargetId } from 'koishi-core'
+import { Context, User, getTargetId } from 'koishi-core'
 
-type UserInfoCallback <K extends UserField = UserField> = (user: Pick<UserData, K>) => string
+type UserInfoCallback <K extends User.Field = User.Field> = (user: Pick<User, K>) => string
 
-interface Info <K extends UserField = UserField> {
+interface Info <K extends User.Field = User.Field> {
   order: number
-  callback: (user: Pick<UserData, K>) => string
+  callback: (user: Pick<User, K>) => string
 }
 
-const infoFields = new Set<UserField>(['authority'])
+const infoFields = new Set<User.Field>(['authority'])
 const infoList: Info[] = []
 
-export function registerUserInfo <K extends UserField> (callback: UserInfoCallback<K>, fields: Iterable<K> = [], order = 0) {
+export function registerUserInfo <K extends User.Field> (callback: UserInfoCallback<K>, fields: Iterable<K> = [], order = 0) {
   const index = infoList.findIndex(a => a.order > order)
   if (index >= 0) {
     infoList.splice(index, 0, { order, callback })
@@ -30,7 +30,7 @@ export function apply (ctx: Context) {
     .before(meta => !meta.$app.database)
     .option('-u, --user [target]', '指定目标', { authority: 3 })
     .action(async ({ meta, options }) => {
-      let user: UserData
+      let user: User
       const output = []
       if (options.user) {
         const id = getTargetId(options.user)

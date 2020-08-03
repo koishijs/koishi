@@ -1,4 +1,4 @@
-import { Context, userFields, Meta } from 'koishi-core'
+import { Context, User, Meta } from 'koishi-core'
 import { CQCode, Logger, defineProperty } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { wrap, Remote, proxy } from './comlink'
@@ -82,7 +82,8 @@ export function apply (ctx: Context, config: Config = {}) {
   })
 
   ctx.command('eval <expression...>', '执行 JavaScript 脚本', { authority: 2 })
-    .userFields(userFields)
+    // TODO can it be on demand?
+    .userFields(User.fields)
     .shortcut('>', { oneArg: true, fuzzy: true })
     .shortcut('>>', { oneArg: true, fuzzy: true, options: { output: true } })
     .option('-o, --output', '输出最后的结果')

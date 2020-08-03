@@ -1,11 +1,11 @@
 import { getUsage, getUsageName, ValidationField } from './validate'
-import { UserField, GroupField, TableType, Tables, UserData } from '../database'
+import { User, Group, TableType, Tables } from '../database'
 import { Command, ParsedCommandLine } from '../command'
 import { Meta } from '../meta'
 import { App } from '../app'
 import { Context } from '../context'
 
-export type CommandUsage <U extends UserField, G extends GroupField> = string | ((this: Command<U, G>, meta: Meta<U, G>) => string | Promise<string>)
+export type CommandUsage <U extends User.Field, G extends Group.Field> = string | ((this: Command<U, G>, meta: Meta<U, G>) => string | Promise<string>)
 
 declare module '../app' {
   interface AppOptions {
@@ -91,7 +91,7 @@ export default function apply (app: App) {
     })
 }
 
-function getShortcuts (command: Command, user: Pick<UserData, 'authority'>) {
+function getShortcuts (command: Command, user: Pick<User, 'authority'>) {
   return Object.keys(command._shortcuts).filter((key) => {
     const shortcut = command._shortcuts[key]
     return !shortcut.hidden && !shortcut.prefix && (!shortcut.authority || !user || shortcut.authority <= user.authority)

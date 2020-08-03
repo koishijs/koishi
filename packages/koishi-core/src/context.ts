@@ -1,7 +1,7 @@
 import { intersection, difference, noop, Logger, defineProperty } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine, ParsedLine } from './command'
 import { Meta, getSessionId } from './meta'
-import { UserField, GroupField, Database } from './database'
+import { User, Group, Database } from './database'
 import { App } from './app'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
@@ -155,7 +155,7 @@ export class Context {
   private getHooks <K extends keyof EventMap> (name: K) {
     const hooks = this.app._hooks[name] || (this.app._hooks[name] = [])
     if (hooks.length >= this.app.options.maxListeners) {
-      throw new Error('max middleware count (%d) exceeded, which may be caused by a memory leak')
+      throw new Error('max listener count (%d) exceeded, which may be caused by a memory leak')
     }
     return hooks
   }
@@ -366,8 +366,8 @@ export interface EventMap {
 
   // Koishi events
   'parse' (message: string, meta: Meta, forced: boolean): undefined | ParsedArgv
-  'before-attach-user' (meta: Meta, fields: Set<UserField>): void
-  'before-attach-group' (meta: Meta, fields: Set<GroupField>): void
+  'before-attach-user' (meta: Meta, fields: Set<User.Field>): void
+  'before-attach-group' (meta: Meta, fields: Set<Group.Field>): void
   'attach-user' (meta: Meta): void | boolean | Promise<void | boolean>
   'attach-group' (meta: Meta): void | boolean | Promise<void | boolean>
   'attach' (meta: Meta): void | Promise<void>

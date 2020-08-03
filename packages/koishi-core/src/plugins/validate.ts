@@ -1,7 +1,7 @@
 import { format } from 'util'
 import { getDateNumber, hyphenate } from 'koishi-utils'
 import { Meta } from '../meta'
-import { UserField, UserData } from '../database'
+import { User } from '../database'
 import { Command, ParsedCommandLine } from '../command'
 import { App } from '../app'
 
@@ -11,13 +11,13 @@ declare module '../context' {
   }
 }
 
-export type UserType <T, U extends UserField = UserField> = T | ((user: Pick<UserData, U>) => T)
+export type UserType <T, U extends User.Field = User.Field> = T | ((user: Pick<User, U>) => T)
 
 declare module '../command' {
   interface Command <U, G> {
     _checkers: ((meta: Meta<U, G>) => string | boolean)[]
     before (checker: (meta: Meta<U, G>) => string | boolean): this
-    getConfig <K extends keyof CommandConfig> (key: K, meta: Meta): Exclude<CommandConfig[K], (user: UserData) => any>
+    getConfig <K extends keyof CommandConfig> (key: K, meta: Meta): Exclude<CommandConfig[K], (user: User) => any>
   }
 
   interface CommandConfig <U, G> {
@@ -186,7 +186,7 @@ export default function apply (app: App) {
   })
 }
 
-export function getUsage (name: string, user: Pick<UserData, 'usage'>) {
+export function getUsage (name: string, user: Pick<User, 'usage'>) {
   const $date = getDateNumber()
   if (user.usage.$date !== $date) {
     user.usage = { $date }
@@ -194,7 +194,7 @@ export function getUsage (name: string, user: Pick<UserData, 'usage'>) {
   return user.usage[name] || 0
 }
 
-export function checkUsage (name: string, user: Pick<UserData, 'usage'>, maxUsage?: number) {
+export function checkUsage (name: string, user: Pick<User, 'usage'>, maxUsage?: number) {
   const count = getUsage(name, user)
   if (count >= maxUsage) return true
   if (maxUsage) {
@@ -204,7 +204,7 @@ export function checkUsage (name: string, user: Pick<UserData, 'usage'>, maxUsag
 
 const UPDATE_INTERVAL = 86400000
 
-export function checkTimer (name: string, { timers }: Pick<UserData, 'timers'>, offset?: number) {
+export function checkTimer (name: string, { timers }: Pick<User, 'timers'>, offset?: number) {
   const now = Date.now()
   if (!(now <= timers.$date)) {
     for (const key in timers) {

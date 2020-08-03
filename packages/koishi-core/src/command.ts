@@ -1,5 +1,5 @@
 import { Context, NextFunction } from './context'
-import { UserField, GroupField, Tables, TableType } from './database'
+import { User, Group, Tables, TableType } from './database'
 import { noop, camelCase } from 'koishi-utils'
 import { Meta } from './meta'
 import { inspect, format, types } from 'util'
@@ -87,13 +87,13 @@ export interface ParsedLine {
   options: Record<string, any>
 }
 
-export interface ParsedCommandLine <U extends UserField = never, G extends GroupField = never> extends Partial<ParsedLine> {
+export interface ParsedCommandLine <U extends User.Field = never, G extends Group.Field = never> extends Partial<ParsedLine> {
   command: Command<U, G>
   meta: Meta<U, G>
   next?: NextFunction
 }
 
-export interface CommandConfig <U extends UserField = never, G extends GroupField = never> {
+export interface CommandConfig <U extends User.Field = never, G extends Group.Field = never> {
   /** description */
   description?: string
   /** min authority */
@@ -101,10 +101,10 @@ export interface CommandConfig <U extends UserField = never, G extends GroupFiel
 }
 
 type ArgvInferred <T> = Iterable<T> | ((argv: ParsedCommandLine, fields: Set<T>) => Iterable<T>)
-type CommandAction <U extends UserField, G extends GroupField> =
+type CommandAction <U extends User.Field, G extends Group.Field> =
   (this: Command<U, G>, config: ParsedCommandLine<U, G>, ...args: string[]) => any
 
-export class Command <U extends UserField = never, G extends GroupField = never> {
+export class Command <U extends User.Field = never, G extends Group.Field = never> {
   config: CommandConfig<U, G>
   children: Command[] = []
   parent: Command = null
@@ -115,8 +115,8 @@ export class Command <U extends UserField = never, G extends GroupField = never>
 
   private _optionMap: Record<string, CommandOption> = {}
   private _optionAliasMap: Record<string, CommandOption> = {}
-  private _userFields: ArgvInferred<UserField>[] = []
-  private _groupFields: ArgvInferred<GroupField>[] = []
+  private _userFields: ArgvInferred<User.Field>[] = []
+  private _groupFields: ArgvInferred<Group.Field>[] = []
 
   _action?: CommandAction<U, G>
 
@@ -128,15 +128,15 @@ export class Command <U extends UserField = never, G extends GroupField = never>
     authority: 0,
   }
 
-  private static _userFields: ArgvInferred<UserField>[] = []
-  private static _groupFields: ArgvInferred<GroupField>[] = []
+  private static _userFields: ArgvInferred<User.Field>[] = []
+  private static _groupFields: ArgvInferred<Group.Field>[] = []
 
-  static userFields (fields: ArgvInferred<UserField>) {
+  static userFields (fields: ArgvInferred<User.Field>) {
     this._userFields.push(fields)
     return this
   }
 
-  static groupFields (fields: ArgvInferred<GroupField>) {
+  static groupFields (fields: ArgvInferred<Group.Field>) {
     this._groupFields.push(fields)
     return this
   }
@@ -186,16 +186,16 @@ export class Command <U extends UserField = never, G extends GroupField = never>
     return `Command <${this.name}>`
   }
 
-  userFields <T extends UserField = never> (fields: Iterable<T>): Command<U | T, G>
-  userFields <T extends UserField = never> (fields: (argv: ParsedCommandLine, fields: Set<UserField>) => Iterable<T>): Command<U | T, G>
-  userFields (fields: ArgvInferred<UserField>) {
+  userFields <T extends User.Field = never> (fields: Iterable<T>): Command<U | T, G>
+  userFields <T extends User.Field = never> (fields: (argv: ParsedCommandLine, fields: Set<User.Field>) => Iterable<T>): Command<U | T, G>
+  userFields (fields: ArgvInferred<User.Field>) {
     this._userFields.push(fields)
     return this
   }
 
-  groupFields <T extends GroupField = never> (fields: Iterable<T>): Command<U, G | T>
-  groupFields <T extends GroupField = never> (fields: (argv: ParsedCommandLine, fields: Set<GroupField>) => Iterable<T>): Command<U, G | T>
-  groupFields (fields: ArgvInferred<GroupField>) {
+  groupFields <T extends Group.Field = never> (fields: Iterable<T>): Command<U, G | T>
+  groupFields <T extends Group.Field = never> (fields: (argv: ParsedCommandLine, fields: Set<Group.Field>) => Iterable<T>): Command<U, G | T>
+  groupFields (fields: ArgvInferred<Group.Field>) {
     this._groupFields.push(fields)
     return this
   }

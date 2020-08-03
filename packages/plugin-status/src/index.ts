@@ -15,7 +15,7 @@ declare module 'koishi-core/dist/sender' {
 }
 
 declare module 'koishi-core/dist/database' {
-  interface UserData {
+  interface User {
     lastCall: Date
   }
 }

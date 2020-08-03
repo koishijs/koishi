@@ -1,9 +1,5 @@
 import { isInteger, difference, Observed, paramCase, observe, parseTime } from 'koishi-utils'
-import {
-  Context, Meta, getTargetId,
-  User, UserData, UserFlag, userFields, UserField,
-  Group, GroupData, GroupFlag, groupFields, GroupField,
-} from 'koishi-core'
+import { Context, Meta, getTargetId, User, Group } from 'koishi-core'
 
 type ActionCallback <T extends {}, K extends keyof T> =
   (this: Context, meta: Meta<'authority'>, target: Observed<Pick<T, K>>, ...args: string[]) => Promise<any>
@@ -21,8 +17,8 @@ export class Action <T extends {}> {
   }
 }
 
-export const UserAction = new Action<UserData>()
-export const GroupAction = new Action<GroupData>()
+export const UserAction = new Action<User>()
+export const GroupAction = new Action<Group>()
 
 function getFlags (data: Record<string, any>): string[] {
   return Object.values(data).filter(value => typeof value === 'string')
@@ -42,24 +38,24 @@ UserAction.add('setAuth', async (meta, user, value) => {
 }, ['authority'])
 
 UserAction.add('setFlag', async (meta, user, ...flags) => {
-  const userFlags = getFlags(UserFlag)
+  const userFlags = getFlags(User.Flag)
   if (!flags.length) return meta.$send(`可用的标记有 ${userFlags.join(', ')}。`)
   const notFound = difference(flags, userFlags)
   if (notFound.length) return meta.$send(`未找到标记 ${notFound.join(', ')}。`)
   for (const name of flags) {
-    user.flag |= UserFlag[name]
+    user.flag |= User.Flag[name]
   }
   await user._update()
   return meta.$send('用户信息已修改。')
 }, ['flag'])
 
 UserAction.add('unsetFlag', async (meta, user, ...flags) => {
-  const userFlags = getFlags(UserFlag)
+  const userFlags = getFlags(User.Flag)
   if (!flags.length) return meta.$send(`可用的标记有 ${userFlags.join(', ')}。`)
   const notFound = difference(flags, userFlags)
   if (notFound.length) return meta.$send(`未找到标记 ${notFound.join(', ')}。`)
   for (const name of flags) {
-    user.flag &= ~UserFlag[name]
+    user.flag &= ~User.Flag[name]
   }
   await user._update()
   return meta.$send('用户信息已修改。')
@@ -107,24 +103,24 @@ UserAction.add('clearTimer', async (meta, user, ...commands) => {
 }, ['timers'])
 
 GroupAction.add('setFlag', async (meta, group, ...flags) => {
-  const groupFlags = getFlags(GroupFlag)
+  const groupFlags = getFlags(Group.Flag)
   if (!flags.length) return meta.$send(`可用的标记有 ${groupFlags.join(', ')}。`)
   const notFound = difference(flags, groupFlags)
   if (notFound.length) return meta.$send(`未找到标记 ${notFound.join(', ')}。`)
   for (const name of flags) {
-    group.flag |= GroupFlag[name]
+    group.flag |= Group.Flag[name]
   }
   await group._update()
   return meta.$send('群信息已修改。')
 }, ['flag'])
 
 GroupAction.add('unsetFlag', async (meta, group, ...flags) => {
-  const groupFlags = getFlags(GroupFlag)
+  const groupFlags = getFlags(Group.Flag)
   if (!flags.length) return meta.$send(`可用的标记有 ${groupFlags.join(', ')}。`)
   const notFound = difference(flags, groupFlags)
   if (notFound.length) return meta.$send(`未找到标记 ${notFound.join(', ')}。`)
   for (const name of flags) {
-    group.flag &= ~GroupFlag[name]
+    group.flag &= ~Group.Flag[name]
   }
   await group._update()
   return meta.$send('群信息已修改。')
@@ -157,8 +153,8 @@ export function apply (ctx: Context) {
       if (!action) return meta.$send(`指令未找到。当前的可用指令有：${actionList}。`)
 
       if (isGroup) {
-        const fields = action.fields ? action.fields.slice() as GroupField[] : groupFields
-        let group: Group
+        const fields = action.fields ? action.fields.slice() as Group.Field[] : Group.fields
+        let group: Group.Observed
         if (options.thisGroup) {
           group = await meta.observeGroup(fields)
         } else if (isInteger(options.group) && options.group > 0) {
@@ -166,11 +162,11 @@ export function apply (ctx: Context) {
           if (!data) return meta.$send('未找到指定的群。')
           group = observe(data, diff => ctx.database.setGroup(options.group, diff), `group ${options.group}`)
         }
-        return (action as ActionItem<GroupData>).callback.call(ctx, meta, group, ...args)
+        return (action as ActionItem<Group>).callback.call(ctx, meta, group, ...args)
       } else {
-        const fields = action.fields ? action.fields.slice() as UserField[] : userFields
+        const fields = action.fields ? action.fields.slice() as User.Field[] : User.fields
         if (!fields.includes('authority')) fields.push('authority')
-        let user: User
+        let user: User.Observed
         if (options.user) {
           const qq = getTargetId(options.user)
           if (!qq) return meta.$send('未指定目标。')
@@ -186,7 +182,7 @@ export function apply (ctx: Context) {
         } else {
           user = await meta.observeUser(fields)
         }
-        return (action as ActionItem<UserData>).callback.call(ctx, meta, user, ...args)
+        return (action as ActionItem<User>).callback.call(ctx, meta, user, ...args)
       }
     })
 }
