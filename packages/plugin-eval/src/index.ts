@@ -1,4 +1,4 @@
-import { Context, userFields, MessageBuffer } from 'koishi-core'
+import { Context, userFields, Meta } from 'koishi-core'
 import { CQCode, Logger, defineProperty } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { wrap, Remote, proxy } from './comlink'
@@ -12,33 +12,65 @@ declare module 'koishi-core/dist/meta' {
 
 export interface Config extends WorkerConfig {
   timeout?: number
+  maxLogs?: number
   resourceLimits?: ResourceLimits
 }
 
 const defaultConfig: Config = {
   timeout: 1000,
+  maxLogs: 10,
+  resourceLimits: {
+    maxOldGenerationSizeMb: 64,
+    maxYoungGenerationSizeMb: 64,
+  }
 }
 
 const logger = Logger.create('eval')
 
+export class MainAPI {
+  static config: Config
+
+  public logCount = 0
+
+  constructor (private meta: Meta) {
+
+  }
+
+  send (message: string) {
+    if (MainAPI.config.maxLogs > this.logCount++) {
+      return this.meta.$send(message)
+    }
+  }
+
+  async execute (message: string) {
+    const send = this.meta.$send
+    const sendQueued = this.meta.$sendQueued
+    await this.meta.$app.execute(message, this.meta)
+    this.meta.$sendQueued = sendQueued
+    this.meta.$send = send
+  }
+}
+
 export const name = 'eval'
 
 export function apply (ctx: Context, config: Config = {}) {
-  let worker: Worker
-  let remote: Remote<WorkerAPI>
-  config = { ...defaultConfig, ...config }
+  MainAPI.config = config = { ...defaultConfig, ...config }
   const resourceLimits = {
     ...defaultConfig.resourceLimits,
     ...config.resourceLimits,
   }
 
+  let worker: Worker
+  let remote: Remote<WorkerAPI>
   function createWorker () {
     worker = new Worker(__dirname + '/worker.js', {
       workerData: config,
       resourceLimits,
     })
+
     remote = wrap(worker)
     logger.info('worker started')
+
     worker.on('exit', (code) => {
       logger.info('exited with code', code)
       createWorker()
@@ -54,41 +86,56 @@ export function apply (ctx: Context, config: Config = {}) {
     .shortcut('>', { oneArg: true, fuzzy: true })
     .shortcut('>>', { oneArg: true, fuzzy: true, options: { output: true } })
     .option('-o, --output', '输出最后的结果')
+    .option('-r, --restart', '重启子线程')
     .action(async ({ meta, options }, expression) => {
-      if (!expression) return meta.$send('请输入要执行的脚本。')
-      if (meta._eval) return meta.$send('不能在 eval 中嵌套调用本指令。')
+      if (options.restart) {
+        await worker.terminate()
+        return meta.$send('子线程已重启。')
+      }
 
-      const buffer = new MessageBuffer(meta)
-      return new Promise((resolve) => {
+      if (!expression) return meta.$send('请输入要执行的脚本。')
+      if (meta._eval) return meta.$send('不能嵌套调用本指令。')
+
+      return new Promise((_resolve) => {
         defineProperty(meta, '_eval', true)
 
+        const main = new MainAPI(meta)
         const timer = setTimeout(async () => {
           await worker.terminate()
-          if (!buffer.hasData) {
-            buffer.write('执行超时。')
-          }
           resolve()
+          if (!main.logCount) {
+            return meta.$send('执行超时。')
+          }
         }, config.timeout)
 
+        const listener = (error: Error) => {
+          let message = ERROR_CODES[error['code']]
+          if (!message) {
+            logger.warn(error)
+            message = '执行过程中遇到错误。'
+          }
+          resolve()
+          return meta.$send(message)
+        }
+        worker.on('error', listener)
+
         remote.eval({
+          meta: JSON.stringify(meta),
           user: JSON.stringify(meta.$user),
           output: options.output,
           source: CQCode.unescape(expression),
-        }, proxy({
-          send: (message: string) => (buffer.write(message), buffer.flush()),
-          execute: (message: string) => buffer.run(() => meta.$app.execute(message, meta)),
-        })).catch((error) => {
-          logger.warn(error)
-          if (!buffer.hasData) {
-            buffer.write('执行过程中遇到错误。')
-          }
-        }).then(() => {
+        }, proxy(main)).then(resolve)
+
+        function resolve () {
           clearTimeout(timer)
-          resolve()
-        })
-      }).finally(() => {
-        meta._eval = false
-        return buffer.end()
+          worker.off('error', listener)
+          meta._eval = false
+          _resolve()
+        }
       })
     })
+}
+
+const ERROR_CODES = {
+  ERR_WORKER_OUT_OF_MEMORY: '内存超出限制。',
 }

@@ -8,15 +8,8 @@ import { EventEmitter } from 'events'
 import { INSPECT_MAX_BYTES } from 'buffer'
 import type * as Internal from './internal'
 
-const filename = resolve(__dirname, 'internal.js')
-const data = readFileSync(filename, 'utf8')
-const contextifyScript = new Script(`(function(host, exports) {${data}\n})`, {
-  filename,
-  displayErrors: false,
-})
-
 export interface VMOptions {
-  sandbox: any
+  sandbox?: any
   strings?: boolean
   wasm?: boolean
 }
@@ -25,15 +18,22 @@ export class VM extends EventEmitter {
   private readonly _context: object
   private readonly _internal: typeof Internal = Object.create(null)
 
-  constructor(options: VMOptions) {
+  constructor(options: VMOptions = {}) {
     super()
 
-    const {	sandbox, strings = true, wasm = false } = options
+    const {	sandbox = {}, strings = true, wasm = false } = options
     this._context = createContext(undefined, {
       codeGeneration: { strings, wasm },
     })
 
-    contextifyScript
+    const filename = resolve(__dirname, 'internal.js')
+    const data = readFileSync(filename, 'utf8')
+    const script = new Script(`(function(host, exports) {${data}\n})`, {
+      filename,
+      displayErrors: false,
+    })
+
+    script
       .runInContext(this._context, { displayErrors: false })
       .call(this._context, Host, this._internal)
 

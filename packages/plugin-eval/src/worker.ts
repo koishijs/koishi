@@ -3,7 +3,9 @@ import { Meta, UserField, getUsage, App, UserData } from 'koishi-core'
 import { parentPort, workerData } from 'worker_threads'
 import { expose, Remote } from './comlink'
 import { VM } from './vm'
+import { MainAPI } from '.'
 import { defineProperty } from 'koishi-utils'
+import { getHeapStatistics } from 'v8'
 
 export interface WorkerConfig {
   inspect?: InspectOptions
@@ -17,7 +19,9 @@ const config: WorkerConfig = {
 }
 
 export default class Global {
-  api: Remote<EvalAPI>
+  private user: UserData
+  private meta: Meta
+  private main: Remote<MainAPI>
 
   constructor () {
     for (const key of Object.getOwnPropertyNames(Global.prototype)) {
@@ -27,11 +31,11 @@ export default class Global {
   }
 
   exec (message: string) {
-    return this.api.execute(message)
+    return this.main.execute(message)
   }
 
   log (format: string, ...param: any[]) {
-    return this.api.send(formatWithOptions(config.inspect, format, ...param))
+    return this.main.send(formatWithOptions(config.inspect, format, ...param))
   }
 
   // usage (name: string) {
@@ -40,14 +44,10 @@ export default class Global {
 }
 
 interface EvalOptions {
+  meta: string
   user: string
   output: boolean
   source: string
-}
-
-interface EvalAPI {
-  send (message: string): Promise<void>
-  execute (message: string): Promise<void>
 }
 
 const sandbox = new Global()
@@ -55,10 +55,11 @@ const sandbox = new Global()
 const vm = new VM({ sandbox })
 
 export class WorkerAPI {
-  async eval (options: EvalOptions, main: EvalAPI) {
-    const { source, user, output } = options
-    defineProperty(sandbox, 'api', main)
+  async eval (options: EvalOptions, main: MainAPI) {
+    const { meta, source, user, output } = options
+    defineProperty(sandbox, 'main', main)
     vm.setGlobal('user', JSON.parse(user))
+    vm.setGlobal('meta', JSON.parse(meta))
     try {
       const result = await vm.run(source, 'stdin')
       if (result !== undefined && output) await sandbox.log(result)
