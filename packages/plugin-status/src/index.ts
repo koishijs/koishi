@@ -110,12 +110,12 @@ export function apply (ctx: Context, config: StatusOptions) {
   const app = ctx.app
   config = { ...defaultConfig, ...config }
 
-  app.on('before-command', ({ meta }) => {
-    meta.$user['lastCall'] = new Date()
+  app.on('before-command', ({ session }) => {
+    session.$user['lastCall'] = new Date()
   })
 
-  app.on('before-send', (meta) => {
-    const { counter } = app.bots[meta.selfId]
+  app.on('before-send', (session) => {
+    const { counter } = app.bots[session.selfId]
     counter[0] += 1
   })
 
@@ -158,7 +158,7 @@ export function apply (ctx: Context, config: StatusOptions) {
     .shortcut('你的状况', { prefix: true })
     .shortcut('运行情况', { prefix: true })
     .shortcut('运行状态', { prefix: true })
-    .action(async ({ meta }) => {
+    .action(async ({ session }) => {
       const { bots: apps, cpu, memory, startTime, userCount, groupCount } = await getStatus(config)
 
       const output = apps.sort(config.sort).map(({ label, selfId, code, rate }) => {
@@ -175,7 +175,7 @@ export function apply (ctx: Context, config: StatusOptions) {
         `内存使用率：${(memory.app * 100).toFixed()}% / ${(memory.total * 100).toFixed()}%`,
       )
 
-      return meta.$send(output.join('\n'))
+      return session.$send(output.join('\n'))
     })
 
   async function _getStatus (config: StatusOptions, extend: boolean) {

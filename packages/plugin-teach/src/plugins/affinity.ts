@@ -85,9 +85,9 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.on('dialogue/attach-user', ({ meta, dialogues, noAffinityTest }) => {
+  ctx.on('dialogue/attach-user', ({ session, dialogues, noAffinityTest }) => {
     if (noAffinityTest) return
-    const affinity = getAffinity(meta.$user)
+    const affinity = getAffinity(session.$user)
     dialogues.forEach((dialogue) => {
       if (dialogue.minAffinity <= affinity && dialogue.maxAffinity > affinity) return
       dialogue._weight = 0

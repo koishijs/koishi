@@ -1,4 +1,4 @@
-import { SenderInfo, StatusInfo, Meta, AccountInfo, StrangerInfo, ContextType, MessageType } from './meta'
+import { SenderInfo, StatusInfo, Session, AccountInfo, StrangerInfo, ContextType, MessageType } from './session'
 import { snakeCase, camelCase, Logger } from 'koishi-utils'
 import { BotOptions } from './server'
 import { App } from './app'
@@ -59,7 +59,7 @@ export class CQSender {
   }
 
   _createSendMeta (messageType: MessageType, $ctxType: ContextType, $ctxId: number, message: string) {
-    return new Meta({
+    return new Session({
       $ctxId,
       $ctxType,
       message,

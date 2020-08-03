@@ -1,7 +1,7 @@
 import { Context, NextFunction } from './context'
 import { User, Group, Tables, TableType } from './database'
 import { noop, camelCase } from 'koishi-utils'
-import { Meta } from './meta'
+import { Session } from './session'
 import { inspect, format, types } from 'util'
 import escapeRegex from 'escape-string-regexp'
 
@@ -89,7 +89,7 @@ export interface ParsedLine {
 
 export interface ParsedCommandLine <U extends User.Field = never, G extends Group.Field = never> extends Partial<ParsedLine> {
   command: Command<U, G>
-  meta: Meta<U, G>
+  session: Session<U, G>
   next?: NextFunction
 }
 
@@ -532,11 +532,11 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     this.context.logger('command').debug(source)
     const lastCall = new Error().stack.split('\n', 4)[3]
     try {
-      if (await this.app.serialize(argv.meta, 'before-command', argv)) return
+      if (await this.app.serialize(argv.session, 'before-command', argv)) return
       state = 'executing command'
       await this._action(argv, ...argv.args)
       state = 'after command'
-      await this.app.serialize(argv.meta, 'command', argv)
+      await this.app.serialize(argv.session, 'command', argv)
     } catch (error) {
       if (!state) throw error
       if (!types.isNativeError(error)) {

@@ -1,6 +1,6 @@
 import { createHmac } from 'crypto'
 import { EventEmitter } from 'events'
-import { Meta, App, AppOptions, CQServer } from 'koishi-core'
+import { Session as Meta, App, AppOptions, CQServer } from 'koishi-core'
 import { BASE_SELF_ID } from './app'
 import { snakeCase, randomInt, Logger } from 'koishi-utils'
 import { MockedServer } from './mocks'

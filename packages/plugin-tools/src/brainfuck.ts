@@ -117,15 +117,15 @@ export function apply (ctx: Context, config: BrainfuckOptions = {}) {
     .alias('bf')
     .option('-i, --input <input>', '设置输入', { isString: true, default: '' })
     .usage('语言介绍：http://www.muppetlabs.com/~breadbox/bf')
-    .action(async ({ meta, options }, source) => {
-      if (!source) return meta.$send('请输入源代码。')
+    .action(async ({ session, options }, source) => {
+      if (!source) return session.$send('请输入源代码。')
       source = CQCode.unescape(source)
       const input = CQCode.unescape(options.input)
       try {
-        return meta.$send(new BrainFuck(source, config).exec(input), true)
+        return session.$send(new BrainFuck(source, config).exec(input), true)
       } catch (error) {
         if (error.name === 'BFError') {
-          return meta.$send(error.message)
+          return session.$send(error.message)
         }
       }
     })

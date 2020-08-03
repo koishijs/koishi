@@ -50,8 +50,8 @@ export interface ParsedMessage {
   message?: string
 }
 
-/** CQHTTP Meta Information */
-export interface Meta {
+/** CQHTTP Session Information */
+export interface Session {
   // basic properties
   postType?: PostType
   messageType?: MetaTypeMap['message']
@@ -87,7 +87,7 @@ export interface Meta {
   interval?: number
 }
 
-export class Meta <U extends User.Field = never, G extends Group.Field = never> {
+export class Session <U extends User.Field = never, G extends Group.Field = never> {
   $user?: User.Observed<U>
   $group?: Group.Observed<G>
   $ctxId?: number
@@ -100,8 +100,8 @@ export class Meta <U extends User.Field = never, G extends Group.Field = never> 
   private $_delay?: number
   private $_hooks?: (() => void)[] = []
 
-  constructor (meta: Partial<Meta>) {
-    Object.assign(this, meta)
+  constructor (session: Partial<Session>) {
+    Object.assign(this, session)
   }
 
   toJSON () {
@@ -259,14 +259,14 @@ export class MessageBuffer {
   private original = false
 
   public hasData = false
-  public send: Meta['$send']
-  public sendQueued: Meta['$sendQueued']
+  public send: Session['$send']
+  public sendQueued: Session['$sendQueued']
 
-  constructor (private meta: Meta) {
-    this.send = meta.$send.bind(meta)
-    this.sendQueued = meta.$sendQueued.bind(meta)
+  constructor (private session: Session) {
+    this.send = session.$send.bind(session)
+    this.sendQueued = session.$sendQueued.bind(session)
 
-    meta.$send = async (message: string) => {
+    session.$send = async (message: string) => {
       if (!message) return
       this.hasData = true
       if (this.original) {
@@ -275,7 +275,7 @@ export class MessageBuffer {
       this.buffer += message
     }
 
-    meta.$sendQueued = async (message, delay) => {
+    session.$sendQueued = async (message, delay) => {
       if (!message) return
       this.hasData = true
       if (this.original) {
@@ -305,11 +305,11 @@ export class MessageBuffer {
 
   async run <T> (callback: () => T | Promise<T>) {
     this.original = false
-    const send = this.meta.$send
-    const sendQueued = this.meta.$sendQueued
+    const send = this.session.$send
+    const sendQueued = this.session.$sendQueued
     const result = await callback()
-    this.meta.$sendQueued = sendQueued
-    this.meta.$send = send
+    this.session.$sendQueued = sendQueued
+    this.session.$send = send
     this.original = true
     return result
   }
@@ -318,8 +318,8 @@ export class MessageBuffer {
     this.write(message)
     await this.flush()
     this.original = true
-    delete this.meta.$send
-    delete this.meta.$sendQueued
+    delete this.session.$send
+    delete this.session.$sendQueued
   }
 }
 
@@ -368,20 +368,20 @@ export interface StatusInfo {
 /**
  * get context unique id
  * @example
- * getContextId(meta) // user123, group456, discuss789
+ * getContextId(session) // user123, group456, discuss789
  */
-export function getContextId (meta: Meta) {
-  const type = meta.messageType === 'private' ? 'user' : meta.messageType
-  return type + meta[`${type}Id`]
+export function getContextId (session: Session) {
+  const type = session.messageType === 'private' ? 'user' : session.messageType
+  return type + session[`${type}Id`]
 }
 
 /**
  * get session unique id
  * @example
- * getSessionId(meta) // 123user123, 123group456, 123discuss789
+ * getSessionId(session) // 123user123, 123group456, 123discuss789
  */
-export function getSessionId (meta: Meta) {
-  return meta.$ctxId + meta.$ctxType + meta.userId
+export function getSessionId (session: Session) {
+  return session.$ctxId + session.$ctxType + session.userId
 }
 
 export function getTargetId (target: string | number) {

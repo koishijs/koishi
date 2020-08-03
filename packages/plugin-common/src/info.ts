@@ -27,30 +27,30 @@ export function apply (ctx: Context) {
     .alias('profile')
     .shortcut('我的信息')
     .userFields(['name'])
-    .before(meta => !meta.$app.database)
+    .before(session => !session.$app.database)
     .option('-u, --user [target]', '指定目标', { authority: 3 })
-    .action(async ({ meta, options }) => {
+    .action(async ({ session, options }) => {
       let user: User
       const output = []
       if (options.user) {
         const id = getTargetId(options.user)
-        if (!id) return meta.$send('未找到用户。')
+        if (!id) return session.$send('未找到用户。')
         user = await ctx.database.getUser(id, -1, Array.from(infoFields))
-        if (!user) return meta.$send('未找到用户。')
+        if (!user) return session.$send('未找到用户。')
         if (+user.name === id) {
           output.push(`${id} 的权限为 ${user.authority} 级。`)
         } else {
           output.push(`${user.name} (${id}) 的权限为 ${user.authority} 级。`)
         }
       } else {
-        user = await ctx.database.getUser(meta.userId, Array.from(infoFields))
-        output.push(`${meta.$username}，您的权限为 ${user.authority} 级。`)
+        user = await ctx.database.getUser(session.userId, Array.from(infoFields))
+        output.push(`${session.$username}，您的权限为 ${user.authority} 级。`)
       }
 
       for (const { callback } of infoList) {
         const result = callback(user)
         if (result) output.push(result)
       }
-      return meta.$send(output.join('\n'))
+      return session.$send(output.join('\n'))
     })
 }

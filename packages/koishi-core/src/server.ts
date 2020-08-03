@@ -7,7 +7,7 @@ import {} from 'koa-bodyparser'
 import { Server } from 'http'
 import { createHmac } from 'crypto'
 import { camelCase, snakeCase, paramCase, Logger, defineProperty } from 'koishi-utils'
-import { Meta, ContextType } from './meta'
+import { Session, ContextType } from './session'
 import { App } from './app'
 import { CQSender, CQResponse } from './sender'
 
@@ -51,7 +51,7 @@ export abstract class CQServer {
   }
 
   protected prepareMeta (data: any) {
-    const meta = camelCase<Meta>(data)
+    const meta = camelCase<Session>(data)
     if (!this.bots[meta.selfId]) {
       const bot = this.bots.find(bot => !bot.selfId)
       if (!bot) return
@@ -59,50 +59,50 @@ export abstract class CQServer {
       this.app.prepare()
       this.ready()
     }
-    return new Meta(meta)
+    return new Session(meta)
   }
 
-  parseMeta (meta: Meta) {
+  parseMeta (session: Session) {
     // prepare prefix
     let ctxType: ContextType, ctxId: number
-    if (meta.groupId) {
+    if (session.groupId) {
       ctxType = 'group'
-      ctxId = meta.groupId
-    } else if (meta.discussId) {
+      ctxId = session.groupId
+    } else if (session.discussId) {
       ctxType = 'discuss'
-      ctxId = meta.discussId
-    } else if (meta.userId) {
+      ctxId = session.discussId
+    } else if (session.userId) {
       ctxType = 'user'
-      ctxId = meta.userId
+      ctxId = session.userId
     }
 
     // prepare events
     const events: string[] = []
-    if (meta.postType === 'message' || meta.postType === 'send') {
-      events.push(meta.postType)
-    } else if (meta.postType === 'request') {
-      events.push('request/' + meta.requestType)
-    } else if (meta.postType === 'notice') {
-      events.push(meta.noticeType)
+    if (session.postType === 'message' || session.postType === 'send') {
+      events.push(session.postType)
+    } else if (session.postType === 'request') {
+      events.push('request/' + session.requestType)
+    } else if (session.postType === 'notice') {
+      events.push(session.noticeType)
     } else {
-      events.push(meta.metaEventType)
+      events.push(session.metaEventType)
     }
-    if (meta.subType) {
-      events.unshift(events[0] + '/' + meta.subType)
+    if (session.subType) {
+      events.unshift(events[0] + '/' + session.subType)
     }
 
     // generate path
-    meta.$app = this.app
-    meta.$ctxId = ctxId
-    meta.$ctxType = ctxType
+    session.$app = this.app
+    session.$ctxId = ctxId
+    session.$ctxType = ctxType
 
     return events
   }
 
-  dispatchMeta (meta: Meta) {
-    const events = this.parseMeta(meta)
+  dispatchMeta (session: Session) {
+    const events = this.parseMeta(session)
     for (const event of events) {
-      this.app.emit(meta, paramCase<any>(event), meta)
+      this.app.emit(session, paramCase<any>(event), session)
     }
   }
 

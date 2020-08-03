@@ -2,7 +2,7 @@ import axios from 'axios'
 import nhentai from './nhentai'
 import danbooru from './danbooru'
 import konachan from './konachan'
-import { Meta } from 'koishi-core'
+import { Session } from 'koishi-core'
 import { noop, Logger } from 'koishi-utils'
 import { getShareText } from './utils'
 import { Options } from '.'
@@ -65,7 +65,7 @@ export interface SaucenaoResponse {
 
 const logger = Logger.create('image')
 
-export default async function saucenao (sourceUrl: string, meta: Meta, config: Options, mixedMode = false) {
+export default async function saucenao (sourceUrl: string, session: Session, config: Options, mixedMode = false) {
   let data: SaucenaoResponse
 
   try {
@@ -79,21 +79,21 @@ export default async function saucenao (sourceUrl: string, meta: Meta, config: O
   } catch (err) {
     if (!('response' in err)) {
       logger.warn(`[error] saucenao: ${err}`)
-      return meta.$send('访问失败。')
+      return session.$send('访问失败。')
     } else if (err.response.status === 429) {
-      return meta.$send('搜索次数已达单位时间上限，请稍候再试。')
+      return session.$send('搜索次数已达单位时间上限，请稍候再试。')
     } else {
       logger.warn(`[error] saucenao: ${err.response.data}`)
-      return meta.$send('由于未知原因搜索失败。')
+      return session.$send('由于未知原因搜索失败。')
     }
   }
 
   if (!data.results?.length) {
     if (data.header.message) {
-      return meta.$send(data.header.message)
+      return session.$send(data.header.message)
     } else {
       logger.warn(`[error] saucenao: ${data}`)
-      return meta.$send('由于未知原因搜索失败。')
+      return session.$send('由于未知原因搜索失败。')
     }
   }
 
@@ -173,6 +173,6 @@ export default async function saucenao (sourceUrl: string, meta: Meta, config: O
     output.push(`注意：24h 内搜图次数仅剩 ${long_remaining} 次。`)
   }
 
-  await meta.$send(output.join('\n'))
+  await session.$send(output.join('\n'))
   return !highSimilarity && mixedMode
 }

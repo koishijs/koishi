@@ -1,4 +1,4 @@
-import { AppOptions, App, CQServer, ContextType, Meta, FileInfo, BotOptions } from 'koishi-core'
+import { AppOptions, App, CQServer, ContextType, Session as Meta, FileInfo } from 'koishi-core'
 import { MockedServer, RequestParams, RequestData, RequestHandler } from './mocks'
 import { Session, createMessageMeta } from './session'
 

@@ -236,15 +236,15 @@ class MayaDate {
 export function apply (ctx: Context) {
   ctx.command('tools/maya <YYYY-MM-DD> [BC|AD]', '玛雅日历换算')
     .example('maya 2012-12-21')
-    .action(({ meta }, date, hint) => {
-      if (!date) return meta.$send('请输入正确的日期。')
+    .action(({ session }, date, hint) => {
+      if (!date) return session.$send('请输入正确的日期。')
       const match = date.match(/^(\d+)[-\.](\d+)[-\.](\d+)\.?$/)
-      if (!match) return meta.$send('请输入正确的日期。')
+      if (!match) return session.$send('请输入正确的日期。')
       const year = parseInt(match[1]) * (hint === 'BC' ? -1 : 1)
       const month = parseInt(match[2])
       const day = parseInt(match[3])
       const maya = MayaDate.fromGreg(year, month, day)
-      return meta.$send([
+      return session.$send([
         "Tzolk'in: " + maya.toTzolkin(),
         'Haab: ' + maya.toHaab(),
         'Long Count: ' + maya.toMLC(),

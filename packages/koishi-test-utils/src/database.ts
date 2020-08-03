@@ -1,4 +1,4 @@
-import { App, createUser, createGroup } from 'koishi-core'
+import { App, User, Group } from 'koishi-core'
 import { BASE_SELF_ID } from './app'
 
 export function createArray <T> (length: number, create: (index: number) => T) {
@@ -39,13 +39,13 @@ export function testDatabase (app: App, options: TestDatabaseOptions) {
     test('getUser with authority 0', async () => {
       const id = 2
       const user = await db.getUser(id)
-      expect(user).toMatchObject(createUser(id, 0))
+      expect(user).toMatchObject(User.create(id, 0))
     })
 
     test('getUser with authority 1', async () => {
       const id = 3
       const user = await db.getUser(id, 1)
-      expect(user).toMatchObject(createUser(id, 1))
+      expect(user).toMatchObject(User.create(id, 1))
     })
 
     test('setUser with data', async () => {
@@ -104,7 +104,7 @@ export function testDatabase (app: App, options: TestDatabaseOptions) {
       const id = 123
       const selfId = 456
       const group = await db.getGroup(id, selfId)
-      expect(group).toMatchObject(createGroup(id, selfId))
+      expect(group).toMatchObject(Group.create(id, selfId))
     })
 
     test('getGroup with fields', async () => {

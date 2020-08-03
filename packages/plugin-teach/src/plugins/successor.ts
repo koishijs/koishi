@@ -66,11 +66,11 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/validate', (argv) => {
-    const { options, meta } = argv
+    const { options, session } = argv
 
     if ('setPred' in options) {
       if ('addPred' in options) {
-        return meta.$send('选项 --set-pred, --add-pred 不能同时使用。')
+        return session.$send('选项 --set-pred, --add-pred 不能同时使用。')
       } else {
         argv.predecessors = split(options.setPred)
         argv.predOverwrite = true
@@ -82,7 +82,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
 
     if ('setSucc' in options) {
       if ('addSucc' in options) {
-        return meta.$send('选项 --set-succ, --add-succ 不能同时使用。')
+        return session.$send('选项 --set-succ, --add-succ 不能同时使用。')
       } else {
         argv.successors = split(options.setSucc)
         argv.succOverwrite = true
@@ -147,16 +147,16 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     await Dialogue.update(targets, argv)
   })
 
-  ctx.on('dialogue/after-modify', async ({ options: { createSuccessor }, dialogues, meta }) => {
+  ctx.on('dialogue/after-modify', async ({ options: { createSuccessor }, dialogues, session }) => {
     // 当存在 ># 时自动添加新问答并将当前处理的问答作为其前置
     if (!createSuccessor) return
-    if (!dialogues.length) return meta.$send('没有搜索到任何问答。')
+    if (!dialogues.length) return session.$send('没有搜索到任何问答。')
     const command = ctx.command('teach')
-    const argv = { ...command.parse(createSuccessor), meta, command }
+    const argv = { ...command.parse(createSuccessor), session, command }
     const target = argv.options.setPred = dialogues.map(d => d.id).join(',')
     argv.source = `# ${createSuccessor} < ${target}`
     parseTeachArgs(argv)
-    await command.execute(meta.$argv)
+    await command.execute(session.$argv)
   })
 
   // get predecessors

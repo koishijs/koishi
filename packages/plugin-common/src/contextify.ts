@@ -1,10 +1,10 @@
-import { Context, getTargetId, ContextType, Group, User, Meta } from 'koishi-core'
+import { Context, getTargetId, ContextType, Group, User, Session } from 'koishi-core'
 
 export function apply (ctx: Context) {
   ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3 })
     .alias('ctxf')
     .userFields(['authority'])
-    .before(meta => !meta.$app.database)
+    .before(session => !session.$app.database)
     .option('-u, --user [id]', '使用私聊上下文')
     .option('-d, --discuss [id]', '使用讨论组上下文')
     .option('-g, --group [id]', '使用群聊上下文')
@@ -15,24 +15,24 @@ export function apply (ctx: Context) {
       '群聊的子类型包括 normal（默认），notice，anonymous。',
       '讨论组聊天没有子类型。',
     ].join('\n'))
-    .action(async ({ meta, options }, message) => {
-      if (!message) return meta.$send('请输入要触发的指令。')
+    .action(async ({ session, options }, message) => {
+      if (!message) return session.$send('请输入要触发的指令。')
 
       if (options.member) {
-        if (meta.messageType === 'private') {
-          return meta.$send('无法在私聊上下文使用 --member 选项。')
+        if (session.messageType === 'private') {
+          return session.$send('无法在私聊上下文使用 --member 选项。')
         }
-        options[meta.messageType] = meta.$ctxId
+        options[session.messageType] = session.$ctxId
         options.user = options.member
       }
 
       if (!options.user && !options.group && !options.discuss) {
-        return meta.$send('请提供新的上下文。')
+        return session.$send('请提供新的上下文。')
       }
 
-      const newMeta = new Meta(meta)
-      newMeta.$send = meta.$send.bind(meta)
-      newMeta.$sendQueued = meta.$sendQueued.bind(meta)
+      const newMeta = new Session(session)
+      newMeta.$send = session.$send.bind(session)
+      newMeta.$sendQueued = session.$sendQueued.bind(session)
 
       delete newMeta.groupId
       delete newMeta.discussId
@@ -57,23 +57,23 @@ export function apply (ctx: Context) {
 
       if (options.user) {
         const id = getTargetId(options.user)
-        if (!id) return meta.$send('未指定目标。')
+        if (!id) return session.$send('未指定目标。')
 
         newMeta.userId = id
         newMeta.sender.userId = id
 
         delete newMeta.$user
         const user = await newMeta.observeUser(User.fields)
-        if (meta.$user.authority <= user.authority) {
-          return meta.$send('权限不足。')
+        if (session.$user.authority <= user.authority) {
+          return session.$send('权限不足。')
         }
       }
 
       if (options.group) {
-        const info = await meta.$bot.getGroupMemberInfo(ctxId, newMeta.userId).catch(() => ({}))
+        const info = await session.$bot.getGroupMemberInfo(ctxId, newMeta.userId).catch(() => ({}))
         Object.assign(newMeta.sender, info)
       } else if (options.user) {
-        const info = await meta.$bot.getStrangerInfo(newMeta.userId).catch(() => ({}))
+        const info = await session.$bot.getStrangerInfo(newMeta.userId).catch(() => ({}))
         Object.assign(newMeta.sender, info)
       }
 

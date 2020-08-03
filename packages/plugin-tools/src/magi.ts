@@ -13,8 +13,8 @@ export function apply (ctx: Context) {
     .option('-c, --confidence', '显示数据可信度')
     .alias('搜索')
     .usage('由 https://magi.com 提供支持。')
-    .action(async ({ meta, options }, q) => {
-      if (!q) return meta.$send('请输入要搜索的文本。')
+    .action(async ({ session, options }, q) => {
+      if (!q) return session.$send('请输入要搜索的文本。')
       const { data } = await axios.get('https://magi.com/search', {
         params: { q },
       })
@@ -59,10 +59,10 @@ export function apply (ctx: Context) {
       })
 
       if (!messages.length) {
-        return meta.$send(`没有找到“${q}”相关的结果。`)
+        return session.$send(`没有找到“${q}”相关的结果。`)
       } else {
         for (const message of messages) {
-          await meta.$send(message)
+          await session.$send(message)
         }
       }
     })

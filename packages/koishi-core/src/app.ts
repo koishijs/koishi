@@ -3,7 +3,7 @@ import { Command } from './command'
 import { Context, Middleware, NextFunction } from './context'
 import { Group, User, Database } from './database'
 import { BotOptions, CQServer, ServerTypes } from './server'
-import { Meta } from './meta'
+import { Session } from './session'
 import { simplify, defineProperty } from 'koishi-utils'
 import { types } from 'util'
 import help from './plugins/help'
@@ -23,8 +23,8 @@ export interface AppOptions extends BotOptions {
   retryInterval?: number
   maxListeners?: number
   preferSync?: boolean
-  queueDelay?: number | ((message: string, meta: Meta) => number)
-  defaultAuthority?: number | ((meta: Meta) => number)
+  queueDelay?: number | ((message: string, session: Session) => number)
+  defaultAuthority?: number | ((session: Session) => number)
   quickOperationTimeout?: number
   similarityCoefficient?: number
   userCacheTimeout?: number
@@ -157,15 +157,15 @@ export class App extends Context {
     this.emit('disconnect')
   }
 
-  private async _preprocess (meta: Meta, next: NextFunction) {
+  private async _preprocess (session: Session, next: NextFunction) {
     // strip prefix
     let capture: RegExpMatchArray
     let atMe = false
     let nickname = ''
     let prefix: string = null
-    let message = simplify(meta.message.trim())
+    let message = simplify(session.message.trim())
 
-    if (meta.messageType !== 'private' && (capture = message.match(this._atMeRE))) {
+    if (session.messageType !== 'private' && (capture = message.match(this._atMeRE))) {
       atMe = true
       nickname = capture[0]
       message = message.slice(capture[0].length)
@@ -183,49 +183,49 @@ export class App extends Context {
     }
 
     // store parsed message
-    meta.$parsed = { atMe, nickname, prefix, message }
-    meta.$argv = this.parse(message, meta, next, true)
+    session.$parsed = { atMe, nickname, prefix, message }
+    session.$argv = this.parse(message, session, next, true)
 
     if (this.database) {
-      if (meta.messageType === 'group') {
+      if (session.messageType === 'group') {
         // attach group data
         const groupFields = new Set<Group.Field>(['flag', 'assignee'])
-        this.emit('before-attach-group', meta, groupFields)
-        const group = await meta.observeGroup(groupFields)
+        this.emit('before-attach-group', session, groupFields)
+        const group = await session.observeGroup(groupFields)
 
         // emit attach event
-        if (await this.serialize(meta, 'attach-group', meta)) return
+        if (await this.serialize(session, 'attach-group', session)) return
 
         // ignore some group calls
         if (group.flag & Group.Flag.ignore) return
-        if (group.assignee !== meta.selfId && !atMe) return
+        if (group.assignee !== session.selfId && !atMe) return
       }
 
       // attach user data
       const userFields = new Set<User.Field>(['flag'])
-      this.emit('before-attach-user', meta, userFields)
-      const user = await meta.observeUser(userFields)
+      this.emit('before-attach-user', session, userFields)
+      const user = await session.observeUser(userFields)
 
       // emit attach event
-      if (await this.serialize(meta, 'attach-user', meta)) return
+      if (await this.serialize(session, 'attach-user', session)) return
 
       // ignore some user calls
       if (user.flag & User.Flag.ignore) return
     }
 
-    await this.parallelize(meta, 'attach', meta)
+    await this.parallelize(session, 'attach', session)
 
     // execute command
-    if (!meta.$argv) return next()
-    return meta.$argv.command.execute(meta.$argv)
+    if (!session.$argv) return next()
+    return session.$argv.command.execute(session.$argv)
   }
 
-  private async _applyMiddlewares(meta: Meta) {
+  private async _applyMiddlewares(session: Session) {
     // preparation
     const counter = this._middlewareCounter++
     this._middlewareSet.add(counter)
     const middlewares: Middleware[] = this._hooks[Context.MIDDLEWARE_EVENT as any]
-      .filter(([context]) => context.match(meta))
+      .filter(([context]) => context.match(session))
       .map(([_, middleware]) => middleware)
 
     // execute middlewares
@@ -242,23 +242,23 @@ export class App extends Context {
           throw new Error('isolated next function detected')
         }
         if (fallback) middlewares.push((_, next) => fallback(next))
-        return middlewares[index++]?.(meta, next)
+        return middlewares[index++]?.(session, next)
       } catch (error) {
         if (!types.isNativeError(error)) {
           error = new Error(error as any)
         }
         const index = error.stack.indexOf(lastCall)
-        this.logger('middleware').warn(`${meta.message}\n${error.stack.slice(0, index)}Middleware stack:${stack}`)
+        this.logger('middleware').warn(`${session.message}\n${error.stack.slice(0, index)}Middleware stack:${stack}`)
       }
     }
     await next()
 
     // update middleware set
     this._middlewareSet.delete(counter)
-    this.emit(meta, 'after-middleware', meta)
+    this.emit(session, 'after-middleware', session)
 
     // flush user & group data
-    await meta.$user?._update()
-    await meta.$group?._update()
+    await session.$user?._update()
+    await session.$group?._update()
   }
 }

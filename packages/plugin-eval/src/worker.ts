@@ -1,5 +1,5 @@
 import { InspectOptions, formatWithOptions } from 'util'
-import { Meta, User, getUsage, App } from 'koishi-core'
+import { Session, User, getUsage, App } from 'koishi-core'
 import { parentPort, workerData } from 'worker_threads'
 import { expose, Remote } from './comlink'
 import { VM } from './vm'
@@ -20,7 +20,7 @@ const config: WorkerConfig = {
 
 export default class Global {
   private user: User
-  private meta: Meta
+  private session: Session
   private main: Remote<MainAPI>
 
   constructor () {
@@ -44,7 +44,7 @@ export default class Global {
 }
 
 interface EvalOptions {
-  meta: string
+  session: string
   user: string
   output: boolean
   source: string
@@ -56,10 +56,10 @@ const vm = new VM({ sandbox })
 
 export class WorkerAPI {
   async eval (options: EvalOptions, main: MainAPI) {
-    const { meta, source, user, output } = options
+    const { session, source, user, output } = options
     defineProperty(sandbox, 'main', main)
     vm.setGlobal('user', JSON.parse(user))
-    vm.setGlobal('meta', JSON.parse(meta))
+    vm.setGlobal('session', JSON.parse(session))
     try {
       const result = await vm.run(source, 'stdin')
       if (result !== undefined && output) await sandbox.log(result)

@@ -1,11 +1,11 @@
 import { intersection, difference, noop, Logger, defineProperty } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine, ParsedLine } from './command'
-import { Meta, getSessionId } from './meta'
+import { Session, getSessionId } from './session'
 import { User, Group, Database } from './database'
 import { App } from './app'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
-export type Middleware = (meta: Meta, next: NextFunction) => any
+export type Middleware = (session: Session, next: NextFunction) => any
 export type PluginFunction <T, U = any> = (ctx: T, options: U) => void
 export type PluginObject <T, U = any> = { name?: string, apply: PluginFunction<T, U> }
 export type Plugin <T, U = any> = PluginFunction<T, U> | PluginObject<T, U>
@@ -82,11 +82,11 @@ export class Context {
     return new Context(scope, this.app)
   }
 
-  match (meta: Meta) {
-    if (!meta) return true
-    return matchScope(this.scope.groups, meta.groupId)
-      && matchScope(this.scope.users, meta.userId)
-      && (this.scope.private || meta.messageType !== 'private')
+  match (session: Session) {
+    if (!session) return true
+    return matchScope(this.scope.groups, session.groupId)
+      && matchScope(this.scope.users, session.userId)
+      && (this.scope.private || session.messageType !== 'private')
   }
 
   plugin <T extends PluginFunction<this>> (plugin: T, options?: T extends PluginFunction<this, infer U> ? U : never): this
@@ -107,46 +107,46 @@ export class Context {
   }
 
   async parallelize <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<void>
-  async parallelize <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
+  async parallelize <K extends keyof EventMap> (session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
   async parallelize (...args: any[]) {
     const tasks: Promise<any>[] = []
-    const meta = typeof args[0] === 'object' ? args.shift() : null
+    const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
     this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(meta)) continue
-      tasks.push(callback.apply(meta, args))
+      if (!context.match(session)) continue
+      tasks.push(callback.apply(session, args))
     }
     await Promise.all(tasks)
   }
 
   emit <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): void
-  emit <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): void
+  emit <K extends keyof EventMap> (session: Session, name: K, ...args: Parameters<EventMap[K]>): void
   emit (...args: [any, ...any[]]) {
     this.parallelize(...args)
   }
 
   async serialize <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
-  async serialize <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
+  async serialize <K extends keyof EventMap> (session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
   async serialize (...args: any[]) {
-    const meta = typeof args[0] === 'object' ? args.shift() : null
+    const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
     this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(meta)) continue
+      if (!context.match(session)) continue
       const result = await callback.apply(this, args)
       if (result) return result
     }
   }
 
   bail <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
-  bail <K extends keyof EventMap> (meta: Meta, name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
+  bail <K extends keyof EventMap> (session: Session, name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
   bail (...args: any[]) {
-    const meta = typeof args[0] === 'object' ? args.shift() : null
+    const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
     this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
-      if (!context.match(meta)) continue
+      if (!context.match(session)) continue
       const result = callback.apply(this, args)
       if (result) return result
     }
@@ -218,12 +218,12 @@ export class Context {
     return this.removeListener(Context.MIDDLEWARE_EVENT, middleware)
   }
 
-  onceMiddleware (middleware: Middleware, meta?: Meta) {
-    const identifier = meta ? getSessionId(meta) : undefined
-    const listener: Middleware = async (meta, next) => {
-      if (identifier && getSessionId(meta) !== identifier) return next()
+  onceMiddleware (middleware: Middleware, session?: Session) {
+    const identifier = session ? getSessionId(session) : undefined
+    const listener: Middleware = async (session, next) => {
+      if (identifier && getSessionId(session) !== identifier) return next()
       this.removeMiddleware(listener)
-      return middleware(meta, next)
+      return middleware(session, next)
     }
     return this.prependMiddleware(listener)
   }
@@ -272,41 +272,41 @@ export class Context {
     return parent
   }
 
-  private resolve (argv: ParsedArgv, meta: Meta, next: NextFunction) {
+  private resolve (argv: ParsedArgv, session: Session, next: NextFunction) {
     if (typeof argv.command === 'string') {
       argv.command = this.app._commandMap[argv.command]
     }
-    if (!argv.command?.context.match(meta)) return
-    return { meta, next, ...argv } as ParsedCommandLine
+    if (!argv.command?.context.match(session)) return
+    return { session, next, ...argv } as ParsedCommandLine
   }
 
-  parse (message: string, meta: Meta, next: NextFunction = noop, forced = false): ParsedCommandLine {
+  parse (message: string, session: Session, next: NextFunction = noop, forced = false): ParsedCommandLine {
     if (!message) return
-    const argv = this.bail(meta, 'parse', message, meta, forced)
-    if (argv) return this.resolve(argv, meta, next)
+    const argv = this.bail(session, 'parse', message, session, forced)
+    if (argv) return this.resolve(argv, session, next)
   }
 
   execute (argv: ExecuteArgv): Promise<void>
-  execute (message: string, meta: Meta, next?: NextFunction): Promise<void>
-  async execute (...args: [ExecuteArgv] | [string, Meta, NextFunction?]) {
-    const meta = typeof args[0] === 'string' ? args[1] : args[0].meta
-    if (!('$ctxType' in meta)) this.app.server.parseMeta(meta)
+  execute (message: string, session: Session, next?: NextFunction): Promise<void>
+  async execute (...args: [ExecuteArgv] | [string, Session, NextFunction?]) {
+    const session = typeof args[0] === 'string' ? args[1] : args[0].session
+    if (!('$ctxType' in session)) this.app.server.parseMeta(session)
 
     let argv: ParsedCommandLine, next: NextFunction
     if (typeof args[0] === 'string') {
       next = args[2] || noop
-      argv = this.parse(args[0], meta, next)
+      argv = this.parse(args[0], session, next)
     } else {
       next = args[0].next || noop
-      argv = this.resolve(args[0], meta, next)
+      argv = this.resolve(args[0], session, next)
     }
     if (!argv) return next()
 
     if (this.database) {
-      if (meta.messageType === 'group') {
-        await meta.observeGroup()
+      if (session.messageType === 'group') {
+        await session.observeGroup()
       }
-      await meta.observeUser()
+      await session.observeUser()
     }
 
     return argv.command.execute(argv)
@@ -319,63 +319,63 @@ export class Context {
 
 export interface ParsedArgv extends Partial<ParsedLine> {
   command: string | Command
-  meta?: Meta
+  session?: Session
   next?: NextFunction
 }
 
 export interface ExecuteArgv extends ParsedArgv {
-  meta: Meta
+  session: Session
 }
 
 export interface EventMap {
   [Context.MIDDLEWARE_EVENT]: Middleware
 
   // CQHTTP events
-  'message' (meta: Meta): void
-  'message/normal' (meta: Meta): void
-  'message/notice' (meta: Meta): void
-  'message/anonymous' (meta: Meta): void
-  'message/friend' (meta: Meta): void
-  'message/group' (meta: Meta): void
-  'message/discuss' (meta: Meta): void
-  'message/other' (meta: Meta): void
-  'friend-add' (meta: Meta): void
-  'group-increase' (meta: Meta): void
-  'group-increase/invite' (meta: Meta): void
-  'group-increase/approve' (meta: Meta): void
-  'group-decrease' (meta: Meta): void
-  'group-decrease/leave' (meta: Meta): void
-  'group-decrease/kick' (meta: Meta): void
-  'group-decrease/kick-me' (meta: Meta): void
-  'group-upload' (meta: Meta): void
-  'group-admin' (meta: Meta): void
-  'group-admin/set' (meta: Meta): void
-  'group-admin/unset' (meta: Meta): void
-  'group-ban' (meta: Meta): void
-  'group-ban/ban' (meta: Meta): void
-  'group-ban/lift-ban' (meta: Meta): void
-  'group_recall' (meta: Meta): void
-  'request/friend' (meta: Meta): void
-  'request/group/add' (meta: Meta): void
-  'request/group/invite' (meta: Meta): void
-  'heartbeat' (meta: Meta): void
-  'lifecycle' (meta: Meta): void
-  'lifecycle/enable' (meta: Meta): void
-  'lifecycle/disable' (meta: Meta): void
-  'lifecycle/connect' (meta: Meta): void
+  'message' (session: Session): void
+  'message/normal' (session: Session): void
+  'message/notice' (session: Session): void
+  'message/anonymous' (session: Session): void
+  'message/friend' (session: Session): void
+  'message/group' (session: Session): void
+  'message/discuss' (session: Session): void
+  'message/other' (session: Session): void
+  'friend-add' (session: Session): void
+  'group-increase' (session: Session): void
+  'group-increase/invite' (session: Session): void
+  'group-increase/approve' (session: Session): void
+  'group-decrease' (session: Session): void
+  'group-decrease/leave' (session: Session): void
+  'group-decrease/kick' (session: Session): void
+  'group-decrease/kick-me' (session: Session): void
+  'group-upload' (session: Session): void
+  'group-admin' (session: Session): void
+  'group-admin/set' (session: Session): void
+  'group-admin/unset' (session: Session): void
+  'group-ban' (session: Session): void
+  'group-ban/ban' (session: Session): void
+  'group-ban/lift-ban' (session: Session): void
+  'group_recall' (session: Session): void
+  'request/friend' (session: Session): void
+  'request/group/add' (session: Session): void
+  'request/group/invite' (session: Session): void
+  'heartbeat' (session: Session): void
+  'lifecycle' (session: Session): void
+  'lifecycle/enable' (session: Session): void
+  'lifecycle/disable' (session: Session): void
+  'lifecycle/connect' (session: Session): void
 
   // Koishi events
-  'parse' (message: string, meta: Meta, forced: boolean): undefined | ParsedArgv
-  'before-attach-user' (meta: Meta, fields: Set<User.Field>): void
-  'before-attach-group' (meta: Meta, fields: Set<Group.Field>): void
-  'attach-user' (meta: Meta): void | boolean | Promise<void | boolean>
-  'attach-group' (meta: Meta): void | boolean | Promise<void | boolean>
-  'attach' (meta: Meta): void | Promise<void>
-  'send' (meta: Meta): void | Promise<void>
-  'before-send' (meta: Meta): void | boolean
+  'parse' (message: string, session: Session, forced: boolean): undefined | ParsedArgv
+  'before-attach-user' (session: Session, fields: Set<User.Field>): void
+  'before-attach-group' (session: Session, fields: Set<Group.Field>): void
+  'attach-user' (session: Session): void | boolean | Promise<void | boolean>
+  'attach-group' (session: Session): void | boolean | Promise<void | boolean>
+  'attach' (session: Session): void | Promise<void>
+  'send' (session: Session): void | Promise<void>
+  'before-send' (session: Session): void | boolean
   'before-command' (argv: ParsedCommandLine): void | boolean | Promise<void | boolean>
   'command' (argv: ParsedCommandLine): void | Promise<void>
-  'after-middleware' (meta: Meta): void
+  'after-middleware' (session: Session): void
   'new-command' (cmd: Command): void
   'remove-command' (cmd: Command): void
   'ready' (): void

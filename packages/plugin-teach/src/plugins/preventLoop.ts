@@ -50,7 +50,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/before-send', (state) => {
-    if (state.meta.$_redirected) return
+    if (state.session.$_redirected) return
     state.initiators.unshift(state.userId)
     state.initiators.splice(initiatorCount, Infinity)
     state.loopTimestamp = null

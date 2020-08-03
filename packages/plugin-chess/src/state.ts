@@ -1,5 +1,5 @@
 import { SVG } from 'koishi-plugin-puppeteer'
-import { Meta, App } from 'koishi-core'
+import { Session, App } from 'koishi-core'
 
 const numbers = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
 const alphabet = 'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ'
@@ -163,17 +163,17 @@ export class State {
     return output
   }
 
-  async draw (meta: Meta, message: string = '', x?: number, y?: number) {
+  async draw (session: Session, message: string = '', x?: number, y?: number) {
     if (this.imageMode) {
       const [image] = await Promise.all([
         this.drawImage(x, y),
-        message && meta.$send(message),
+        message && session.$send(message),
       ])
-      await meta.$send(image)
+      await session.$send(image)
     } else {
       if (message) message += '\n'
       message += this.drawText(x, y)
-      await meta.$send(message)
+      await session.$send(message)
     }
   }
 

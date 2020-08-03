@@ -1,4 +1,4 @@
-import { Meta, ContextType, ResponsePayload } from 'koishi-core'
+import { Session as Meta, ContextType, ResponsePayload } from 'koishi-core'
 import { MockedApp } from './app'
 
 export const createMessageMeta = (type: ContextType, message: string, userId: number, ctxId: number) => new Meta({

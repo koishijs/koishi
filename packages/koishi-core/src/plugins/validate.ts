@@ -1,13 +1,13 @@
 import { format } from 'util'
 import { getDateNumber, hyphenate } from 'koishi-utils'
-import { Meta } from '../meta'
+import { Session } from '../session'
 import { User } from '../database'
 import { Command, ParsedCommandLine } from '../command'
 import { App } from '../app'
 
 declare module '../context' {
   interface EventMap {
-    'usage-exhausted' (meta: Meta): void
+    'usage-exhausted' (session: Session): void
   }
 }
 
@@ -15,9 +15,9 @@ export type UserType <T, U extends User.Field = User.Field> = T | ((user: Pick<U
 
 declare module '../command' {
   interface Command <U, G> {
-    _checkers: ((meta: Meta<U, G>) => string | boolean)[]
-    before (checker: (meta: Meta<U, G>) => string | boolean): this
-    getConfig <K extends keyof CommandConfig> (key: K, meta: Meta): Exclude<CommandConfig[K], (user: User) => any>
+    _checkers: ((session: Session<U, G>) => string | boolean)[]
+    before (checker: (session: Session<U, G>) => string | boolean): this
+    getConfig <K extends keyof CommandConfig> (key: K, session: Session): Exclude<CommandConfig[K], (user: User) => any>
   }
 
   interface CommandConfig <U, G> {
@@ -84,9 +84,9 @@ Command.userFields(function* ({ command, options = {} }, fields) {
   }
 })
 
-Command.prototype.getConfig = function (key: string, meta: Meta) {
+Command.prototype.getConfig = function (key: string, session: Session) {
   const value = this.config[key]
-  return typeof value === 'function' ? value(meta.$user) : value
+  return typeof value === 'function' ? value(session.$user) : value
 }
 
 Command.prototype.before = function (this: Command, checker) {
@@ -99,28 +99,28 @@ export default function apply (app: App) {
     cmd._checkers = []
   })
 
-  app.on('before-command', ({ meta, args, options, command }: ParsedCommandLine<ValidationField>) => {
-    async function sendHint (meta: Meta, message: string, ...param: any[]) {
+  app.on('before-command', ({ session, args, options, command }: ParsedCommandLine<ValidationField>) => {
+    async function sendHint (session: Session, message: string, ...param: any[]) {
       if (command.config.showWarning) {
-        await meta.$send(format(message, ...param))
+        await session.$send(format(message, ...param))
         return true
       }
     }
 
     for (const checker of command._checkers) {
-      const result = checker(meta)
-      if (result) return sendHint(meta, result === true ? '' : result)
+      const result = checker(session)
+      if (result) return sendHint(session, result === true ? '' : result)
     }
 
     // check argument count
     if (command.config.checkArgCount) {
       const nextArg = command._arguments[args.length]
       if (nextArg?.required) {
-        return sendHint(meta, messages.INSUFFICIENT_ARGUMENTS)
+        return sendHint(session, messages.INSUFFICIENT_ARGUMENTS)
       }
       const finalArg = command._arguments[command._arguments.length - 1]
       if (args.length > command._arguments.length && !finalArg.noSegment && !finalArg.variadic) {
-        return sendHint(meta, messages.REDUNANT_ARGUMENTS)
+        return sendHint(session, messages.REDUNANT_ARGUMENTS)
       }
     }
 
@@ -128,7 +128,7 @@ export default function apply (app: App) {
     if (command.config.checkUnknown) {
       const unknown = Object.keys(options).map(hyphenate).filter(key => !command['_optionMap'][key])
       if (unknown.length) {
-        return sendHint(meta, messages.UNKNOWN_OPTIONS, unknown.join(', '))
+        return sendHint(session, messages.UNKNOWN_OPTIONS, unknown.join(', '))
       }
     }
 
@@ -138,7 +138,7 @@ export default function apply (app: App) {
         return option.required && !(option.longest in options)
       })
       if (absent) {
-        return sendHint(meta, messages.REQUIRED_OPTIONS, absent.rawName)
+        return sendHint(session, messages.REQUIRED_OPTIONS, absent.rawName)
       }
     }
 
@@ -148,21 +148,21 @@ export default function apply (app: App) {
         ? !option.validate.test(options[option.longest])
         : option.validate(options[option.longest])
       if (result) {
-        return sendHint(meta, messages.INVALID_OPTION, option.rawName, result === true ? messages.CHECK_SYNTAX : result)
+        return sendHint(session, messages.INVALID_OPTION, option.rawName, result === true ? messages.CHECK_SYNTAX : result)
       }
     }
 
-    if (!meta.$user) return
+    if (!session.$user) return
     let isUsage = true
 
     // check authority
-    if (command.config.authority > meta.$user.authority) {
-      return sendHint(meta, messages.LOW_AUTHORITY)
+    if (command.config.authority > session.$user.authority) {
+      return sendHint(session, messages.LOW_AUTHORITY)
     }
     for (const option of command._options) {
       if (option.camels[0] in options) {
-        if (option.authority > meta.$user.authority) {
-          return sendHint(meta, messages.LOW_AUTHORITY)
+        if (option.authority > session.$user.authority) {
+          return sendHint(session, messages.LOW_AUTHORITY)
         }
         if (option.notUsage) isUsage = false
       }
@@ -171,16 +171,16 @@ export default function apply (app: App) {
     // check usage
     if (isUsage) {
       const name = getUsageName(command)
-      const minInterval = command.getConfig('minInterval', meta)
-      const maxUsage = command.getConfig('maxUsage', meta)
+      const minInterval = command.getConfig('minInterval', session)
+      const maxUsage = command.getConfig('maxUsage', session)
 
-      if (maxUsage < Infinity && checkUsage(name, meta.$user, maxUsage)) {
-        app.emit(meta, 'usage-exhausted', meta)
-        return sendHint(meta, messages.USAGE_EXHAUSTED)
+      if (maxUsage < Infinity && checkUsage(name, session.$user, maxUsage)) {
+        app.emit(session, 'usage-exhausted', session)
+        return sendHint(session, messages.USAGE_EXHAUSTED)
       }
 
-      if (minInterval > 0 && checkTimer(name, meta.$user, minInterval)) {
-        return sendHint(meta, messages.TOO_FREQUENT)
+      if (minInterval > 0 && checkTimer(name, session.$user, minInterval)) {
+        return sendHint(session, messages.TOO_FREQUENT)
       }
     }
   })

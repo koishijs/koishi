@@ -56,12 +56,12 @@ export function apply (ctx: Context, config: Options = {}) {
   ctx.command('screenshot <url>', '网页截图', { authority: 2 })
     .alias('shot')
     .option('-f, --full-page', '对整个可滚动区域截图')
-    .action(async ({ meta, options }, url) => {
+    .action(async ({ session, options }, url) => {
       let page: Page
       try {
         page = await ctx.getPage()
       } catch (error) {
-        return meta.$send('无法启动浏览器。')
+        return session.$send('无法启动浏览器。')
       }
 
       try {
@@ -69,7 +69,7 @@ export function apply (ctx: Context, config: Options = {}) {
         logger.debug(`navigated to ${url}`)
       } catch (error) {
         ctx.freePage(page)
-        return meta.$send('无法打开页面。')
+        return session.$send('无法打开页面。')
       }
 
       const data = await page.screenshot({
@@ -77,14 +77,14 @@ export function apply (ctx: Context, config: Options = {}) {
         fullPage: options.fullPage,
       })
       ctx.freePage(page)
-      return meta.$send(`[CQ:image,file=base64://${data}]`)
+      return session.$send(`[CQ:image,file=base64://${data}]`)
     })
 
   ctx.command('latex <code...>', 'LaTeX 渲染', { authority: 2 })
     .option('-s, --scale <scale>', '缩放比例', { default: 2 })
     .usage('渲染器由 https://www.zhihu.com/equation 提供。')
-    .action(async ({ meta, options }, tex) => {
-      if (!tex) return meta.$send('请输入要渲染的 LaTeX 代码。')
+    .action(async ({ session, options }, tex) => {
+      if (!tex) return session.$send('请输入要渲染的 LaTeX 代码。')
       const page = await ctx.getPage()
       const viewport = page.viewport()
       await page.setViewport({
@@ -97,13 +97,13 @@ export function apply (ctx: Context, config: Options = {}) {
       const inner = await svg.evaluate(node => node.innerHTML)
       const text = inner.match(/>([^<]+)<\/text>/)
       if (text) {
-        await meta.$send(text[1])
+        await session.$send(text[1])
       } else {
         const base64 = await page.screenshot({
           encoding: 'base64',
           clip: await svg.boundingBox(),
         })
-        await meta.$send(`[CQ:image,file=base64://${base64}]`)
+        await session.$send(`[CQ:image,file=base64://${base64}]`)
       }
       await page.setViewport(viewport)
       ctx.freePage(page)
