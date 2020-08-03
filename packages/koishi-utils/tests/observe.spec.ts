@@ -23,7 +23,6 @@ describe('Observer API', () => {
   test('observe property', () => {
     const target: Record<string, number> = { a: 1, b: 2 }
     const object = observe(target)
-    expect(target._diff).toBeUndefined()
     expect(object._diff).toMatchObject({})
 
     object.a = 1
