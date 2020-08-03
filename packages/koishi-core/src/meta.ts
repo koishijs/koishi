@@ -258,7 +258,7 @@ export class MessageBuffer {
   private buffer = ''
   private original = false
 
-  public hasSent = false
+  public hasData = false
   public send: Meta['$send']
   public sendQueued: Meta['$sendQueued']
 
@@ -268,8 +268,8 @@ export class MessageBuffer {
 
     meta.$send = async (message: string) => {
       if (!message) return
+      this.hasData = true
       if (this.original) {
-        this.hasSent = true
         return this.send(message)
       }
       this.buffer += message
@@ -277,8 +277,8 @@ export class MessageBuffer {
 
     meta.$sendQueued = async (message, delay) => {
       if (!message) return
+      this.hasData = true
       if (this.original) {
-        this.hasSent = true
         return this.sendQueued(message, delay)
       }
       return this._flush(this.buffer + message, delay)
@@ -286,13 +286,14 @@ export class MessageBuffer {
   }
 
   write (message: string) {
+    if (!message) return
+    this.hasData = true
     this.buffer += message
   }
 
   private async _flush (message: string, delay?: number) {
     this.original = true
     message = message.trim()
-    if (message) this.hasSent = true
     await this.sendQueued(message, delay)
     this.buffer = ''
     this.original = false
@@ -314,7 +315,7 @@ export class MessageBuffer {
   }
 
   async end (message = '') {
-    this.buffer += message
+    this.write(message)
     await this.flush()
     this.original = true
     delete this.meta.$send

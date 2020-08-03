@@ -9,6 +9,7 @@ export type Middleware = (meta: Meta, next: NextFunction) => any
 export type PluginFunction <T, U = any> = (ctx: T, options: U) => void
 export type PluginObject <T, U = any> = { name?: string, apply: PluginFunction<T, U> }
 export type Plugin <T, U = any> = PluginFunction<T, U> | PluginObject<T, U>
+export type Disposable = () => void
 
 interface ScopeSet extends Array<number> {
   positive?: boolean
@@ -35,7 +36,7 @@ function matchScope (base: ScopeSet, id: number) {
 export class Context {
   static readonly MIDDLEWARE_EVENT: unique symbol = Symbol('mid')
 
-  private _disposables: (() => void)[]
+  private _disposables: Disposable[]
 
   constructor (public scope: Scope, public app?: App) {
     defineProperty(this, '_disposables', [])
@@ -166,7 +167,7 @@ export class Context {
   addListener <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
     this.getHooks(name).push([this, listener])
     const dispose = () => this.removeListener(name, listener)
-    this._disposables.push(dispose)
+    this._disposables.push(name === 'dispose' ? listener as Disposable : dispose)
     return dispose
   }
 
@@ -177,7 +178,7 @@ export class Context {
   prependListener <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
     this.getHooks(name).unshift([this, listener])
     const dispose = () => this.removeListener(name, listener)
-    this._disposables.push(dispose)
+    this._disposables.push(name === 'dispose' ? listener as Disposable : dispose)
     return dispose
   }
 
@@ -382,6 +383,7 @@ export interface EventMap {
   'connect' (): void
   'before-disconnect' (): void | Promise<void>
   'disconnect' (): void
+  'dispose' (): void
 }
 
 export type Events = keyof EventMap

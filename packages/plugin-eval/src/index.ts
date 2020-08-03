@@ -64,9 +64,8 @@ export function apply (ctx: Context, config: Config = {}) {
 
         const timer = setTimeout(async () => {
           await worker.terminate()
-          await buffer.end()
-          if (!buffer.hasSent) {
-            await meta.$send('计算超时。')
+          if (!buffer.hasData) {
+            buffer.write('执行超时。')
           }
           resolve()
         }, config.timeout)
@@ -76,18 +75,20 @@ export function apply (ctx: Context, config: Config = {}) {
           output: options.output,
           source: CQCode.unescape(expression),
         }, proxy({
-          send: (message: string) => meta.$send(message),
+          send: (message: string) => (buffer.write(message), buffer.flush()),
           execute: (message: string) => buffer.run(() => meta.$app.execute(message, meta)),
-          execute: (message: string) => meta.$app.execute(message, meta),
-        })).then(async () => {
+        })).catch((error) => {
+          logger.warn(error)
+          if (!buffer.hasData) {
+            buffer.write('执行过程中遇到错误。')
+          }
+        }).then(() => {
           clearTimeout(timer)
-          await buffer.end()
           resolve()
-        }, () => {
-          // TODO catch callback
         })
       }).finally(() => {
         meta._eval = false
+        return buffer.end()
       })
     })
 }
