@@ -1,42 +1,27 @@
 import { Context, Session } from 'koishi-core'
 import { Logger, CQCode, Time } from 'koishi-utils'
 
-function formatMessage (message: string) {
-  const codes = CQCode.parseAll(message)
-  let output = ''
-  for (const code of codes) {
-    if (typeof code === 'string') {
-      output += code
-      continue
-    }
-    switch (code.type) {
-      case 'at': output += `@${code.data.qq}`; break
-      case 'face': output += `[face ${code.data.id}]`; break
-      default: output += `[${code.type}]`
-    }
-  }
-  return output
-}
-
-const groupMap: Record<number, [Promise<string>, number]> = {}
-
 export interface DebugOptions {
   showUserId?: boolean
   showGroupId?: boolean
-  refreshInterval?: number
+  refreshUserName?: number
+  refreshGroupName?: number
 }
 
 export function apply (ctx: Context, config: DebugOptions = {}) {
-  const { refreshInterval = Time.day, showUserId, showGroupId } = config
+  const { refreshUserName = Time.hour, refreshGroupName = Time.hour, showUserId, showGroupId } = config
   const logger = Logger.create('message', true)
   Logger.levels.message = 3
+
+  const groupMap: Record<number, [Promise<string>, number]> = {}
 
   async function getGroupName (session: Session) {
     if (session.messageType === 'private') return '私聊'
     const { groupId: id, $bot } = session
     const timestamp = Date.now()
-    if (!groupMap[id] || timestamp - groupMap[id][1] >= refreshInterval) {
-      groupMap[id] = [$bot.getGroupInfo(id).then(d => d.groupName, () => '' + id), timestamp]
+    if (!groupMap[id] || timestamp - groupMap[id][1] >= refreshGroupName) {
+      const promise = $bot.getGroupInfo(id).then(d => d.groupName, () => '' + id)
+      groupMap[id] = [promise, timestamp]
     }
     let output = await groupMap[id][0]
     if (showGroupId && output !== '' + id) {
@@ -45,10 +30,42 @@ export function apply (ctx: Context, config: DebugOptions = {}) {
     return output
   }
 
+  const userMap: Record<number, [string | Promise<string>, number]> = {}
+
   function getSenderName ({ anonymous, sender, userId }: Session) {
     return anonymous
       ? anonymous.name + (showUserId ? ` (${anonymous.id})` : '')
-      : (sender.card || sender.nickname) + (showUserId ? ` (${userId})` : '')
+      : (userMap[userId] = [sender.nickname, Date.now()])[0]
+      + (showUserId ? ` (${userId})` : '')
+  }
+
+  async function formatMessage (session: Session) {
+    const codes = CQCode.parseAll(session.message)
+    let output = ''
+    for (const code of codes) {
+      if (typeof code === 'string') {
+        output += code
+      } else if (code.type === 'at') {
+        if (code.data.qq === 'all') {
+          output += '@全体成员'
+        } else {
+          const id = +code.data.qq
+          const timestamp = Date.now()
+          if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
+            const promise = session.$bot
+              .getGroupMemberInfo(session.groupId, id)
+              .then(d => d.nickname, () => '' + id)
+            userMap[id] = [promise, timestamp]
+          }
+          output += '@' + await userMap[id][0]
+        }
+      } else if (code.type === 'face') {
+        output += `[face ${code.data.id}]`
+      } else {
+        output += `[${code.type}]`
+      }
+    }
+    return output
   }
 
   ctx.on('connect', () => {
@@ -58,6 +75,7 @@ export function apply (ctx: Context, config: DebugOptions = {}) {
   ctx.on('message', async (session) => {
     const groupName = await getGroupName(session)
     const senderName = getSenderName(session)
-    logger.debug(`[${groupName}] ${senderName}: ${formatMessage(session.message)}`)
+    const message = await formatMessage(session)
+    logger.debug(`[${groupName}] ${senderName}: ${message}`)
   })
 }
