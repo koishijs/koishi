@@ -3,6 +3,11 @@ type CQCodeData = Record<string, string | number | boolean>
 interface CQCode {
   type: string
   data: CQCodeData
+}
+
+interface ParsedCQCode {
+  type: string
+  data: Record<string, string>
   capture?: RegExpMatchArray
 }
 
@@ -40,11 +45,11 @@ namespace CQCode {
 
   const regexp = /\[CQ:(\w+)((,\w+=[^,\]]*)+)\]/
 
-  export function parse (source: string): CQCode {
+  export function parse (source: string): ParsedCQCode {
     const capture = source.match(regexp)
     if (!capture) return null
     const [_, type, attrs] = capture
-    const data: Record<string, string | number> = {}
+    const data: Record<string, string> = {}
     attrs.slice(1).split(/,/g).forEach((str) => {
       const index = str.indexOf('=')
       data[str.slice(0, index)] = unescape(str.slice(index + 1))
@@ -53,8 +58,8 @@ namespace CQCode {
   }
 
   export function parseAll (source: string) {
-    const codes: (CQCode | string)[] = []
-    let result: CQCode
+    const codes: (ParsedCQCode | string)[] = []
+    let result: ParsedCQCode
     while ((result = parse(source))) {
       const { capture } = result
       if (capture.index) {
