@@ -38,11 +38,12 @@ function inferFields (keys: readonly string[]) {
 
 export default class MysqlDatabase {
   public pool: Pool
+  public config: Options
 
   escape = escape
   escapeId = escapeId
 
-  constructor (public app: App, public config: Options) {
+  constructor (public app: App, config: Options) {
     this.config = {
       ...defaultConfig,
       ...config,
