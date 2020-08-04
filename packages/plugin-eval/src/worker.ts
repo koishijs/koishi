@@ -1,11 +1,10 @@
 import { InspectOptions, formatWithOptions } from 'util'
-import { Session, User, getUsage, App } from 'koishi-core'
+import { Session, User } from 'koishi-core'
 import { parentPort, workerData } from 'worker_threads'
 import { expose, Remote } from './comlink'
 import { VM } from './vm'
 import { MainAPI } from '.'
 import { defineProperty } from 'koishi-utils'
-import { getHeapStatistics } from 'v8'
 
 export interface WorkerConfig {
   inspect?: InspectOptions

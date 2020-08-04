@@ -40,21 +40,21 @@ class MayaDate {
     }
 
     let m4 = 0
-    let m4begin = pyear + (pyear > 0 ? 4 - pyear % 4 : -(pyear % 4))
+    let m4begin = pyear - pyear % 4
     let m4end = year - 1 - (year > 0 ? (year - 1) % 4 : 4 + (year - 1) % 4)
     if (m4begin <= m4end) {
       m4 = Math.floor((m4end - m4begin) / 4) + 1
     }
 
     let m100 = 0
-    let m100begin = pyear + (pyear > 0 ? 100 - pyear % 100 : -(pyear % 100))
+    let m100begin = pyear - pyear % 100
     let m100end = year - 1 - (year > 0 ? (year - 1) % 100 : 100 + (year - 1) % 100)
     if (m100begin <= m100end) {
       m100 = Math.floor((m100end - m100begin) / 100) + 1
     }
 
     let m400 = 0
-    let m400begin = pyear + (pyear > 0 ? 400 - pyear % 400 : -(pyear % 400))
+    let m400begin = pyear - pyear % 400
     let m400end = year - 1 - (year > 0 ? (year - 1) % 400 : 400 + (year - 1) % 400)
     if (m400begin <= m400end) {
       m400 = Math.floor((m400end - m400begin) / 400) + 1
@@ -83,9 +83,6 @@ class MayaDate {
       }
     }
 
-    if (isLeap(pyear) && pmonth <= 2 && (month > 2 || year > pyear)) {
-      delta++
-    }
     if (isLeap(year) && month > 2 && pyear < year) {
       delta++
     }
@@ -130,7 +127,6 @@ class MayaDate {
       }
 
       if (days > 0) {
-        let has100 = false
         let nyear = year + (year > 0 ? 100 - year % 100 : -(year % 100))
         if (nyear % 400 === 0) {
           nyear += 100
@@ -143,11 +139,9 @@ class MayaDate {
 
         let last4 = MayaDate.fromGreg(year, month, day)
         if (last4.compare(next100) > 0) {
-          has100 = true
           day++
         }
         if (!has400 && last4.compare(next400) > 0) {
-          has400 = true
           day--
         }
 

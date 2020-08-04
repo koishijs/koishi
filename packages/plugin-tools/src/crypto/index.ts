@@ -37,9 +37,9 @@ export function apply (ctx: Context) {
           const a = parseInt(cap[1])
           const b = parseInt(cap[2])
           cryptos.push(new Affine(a, b))
-        } else if (cap = algorithm.match(/^atbash$/i)) {
+        } else if (algorithm.match(/^atbash$/i)) {
           cryptos.push(new Affine(-1, 0))
-        } else if (cap = algorithm.match(/^rot13$/i)) {
+        } else if (algorithm.match(/^rot13$/i)) {
           cryptos.push(new Affine(1, 13))
         } else if (cap = algorithm.match(/^caesar\(([+-]?\d+)\)/i)) {
           const b = parseInt(cap[1])
