@@ -1,7 +1,7 @@
 import { inspect, InspectOptions, format } from 'util'
+import { formatTimeShort } from './date'
 import { stderr } from 'supports-color'
 import { isatty } from 'tty'
-import ms from 'ms'
 
 const isTTY = isatty(process.stderr['fd'])
 
@@ -113,7 +113,7 @@ export class Logger {
     if (Logger.showDiff || this.showDiff) {
       const now = Date.now()
       if (Logger.lastTime) {
-        args.push(this.color('+' + ms(now - Logger.lastTime)))
+        args.push(this.color('+' + formatTimeShort(now - Logger.lastTime)))
       }
       Logger.lastTime = now
     }

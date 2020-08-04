@@ -29,7 +29,7 @@ export function apply (ctx: Context, options: Options = {}) {
   if (options.admin !== false) ctx.plugin(require('./admin'))
   if (options.contextify !== false) ctx.plugin(require('./contextify'))
   if (options.broadcast !== false) ctx.plugin(require('./broadcast'))
-  if (options.debug !== false) ctx.plugin(require('./debug'), options.debug)
+  if (options.debug) ctx.plugin(require('./debug'), options.debug)
   if (options.exit !== false) ctx.plugin(require('./exit'))
   if (options.info !== false) ctx.plugin(require('./info'))
   if (options.usage !== false) ctx.plugin(require('./usage'))

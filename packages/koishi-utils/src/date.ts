@@ -52,6 +52,20 @@ export function parseDate (date: string) {
   return date ? new Date(date) : new Date()
 }
 
+export function formatTimeShort (ms: number) {
+  const abs = Math.abs(ms)
+  if (abs >= Time.day - Time.hour / 2) {
+    return Math.round(ms / Time.day) + 'd'
+  } else if (abs >= Time.hour - Time.minute / 2) {
+    return Math.round(ms / Time.hour) + 'h'
+  } else if (abs >= Time.minute - Time.second / 2) {
+    return Math.round(ms / Time.minute) + 'm'
+  } else if (abs >= Time.second) {
+    return Math.round(ms / Time.second) + 's'
+  }
+  return ms + 'ms'
+}
+
 export function formatTime (ms: number) {
   let result: string
   if (ms >= Time.day - Time.hour / 2) {

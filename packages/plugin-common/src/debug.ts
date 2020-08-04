@@ -58,6 +58,6 @@ export function apply (ctx: Context, config: DebugOptions = {}) {
   ctx.on('message', async (session) => {
     const groupName = await getGroupName(session)
     const senderName = getSenderName(session)
-    logger.debug('[%s] %s: %s', groupName, senderName, formatMessage(session.message))
+    logger.debug(`[${groupName}] ${senderName}: ${formatMessage(session.message)}`)
   })
 }
