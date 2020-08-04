@@ -16,18 +16,18 @@ export function apply (ctx: Context) {
       '讨论组聊天没有子类型。',
     ].join('\n'))
     .action(async ({ session, options }, message) => {
-      if (!message) return session.$send('请输入要触发的指令。')
+      if (!message) return '请输入要触发的指令。'
 
       if (options.member) {
         if (session.messageType === 'private') {
-          return session.$send('无法在私聊上下文使用 --member 选项。')
+          return '无法在私聊上下文使用 --member 选项。'
         }
         options[session.messageType] = session.$ctxId
         options.user = options.member
       }
 
       if (!options.user && !options.group && !options.discuss) {
-        return session.$send('请提供新的上下文。')
+        return '请提供新的上下文。'
       }
 
       const newMeta = new Session(session)
@@ -57,7 +57,7 @@ export function apply (ctx: Context) {
 
       if (options.user) {
         const id = getTargetId(options.user)
-        if (!id) return session.$send('未指定目标。')
+        if (!id) return '未指定目标。'
 
         newMeta.userId = id
         newMeta.sender.userId = id
@@ -65,7 +65,7 @@ export function apply (ctx: Context) {
         delete newMeta.$user
         const user = await newMeta.observeUser(User.fields)
         if (session.$user.authority <= user.authority) {
-          return session.$send('权限不足。')
+          return '权限不足。'
         }
       }
 

@@ -91,11 +91,11 @@ export function apply (ctx: Context, config: Config = {}) {
     .action(async ({ session, options }, expression) => {
       if (options.restart) {
         await worker.terminate()
-        return session.$send('子线程已重启。')
+        return '子线程已重启。'
       }
 
-      if (!expression) return session.$send('请输入要执行的脚本。')
-      if (session._eval) return session.$send('不能嵌套调用本指令。')
+      if (!expression) return '请输入要执行的脚本。'
+      if (session._eval) return '不能嵌套调用本指令。'
 
       return new Promise((_resolve) => {
         defineProperty(session, '_eval', true)

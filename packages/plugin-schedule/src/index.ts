@@ -62,7 +62,7 @@ export function apply (ctx: Context) {
     .action(async ({ session, options }, ...dateSegments) => {
       if (options.delete) {
         await database.removeSchedule(options.delete)
-        return session.$send(`日程 ${options.delete} 已删除。`)
+        return `日程 ${options.delete} 已删除。`
       }
 
       if (options.list || options.fullList) {
@@ -70,26 +70,26 @@ export function apply (ctx: Context) {
         if (!options.fullList) {
           schedules = schedules.filter(s => getContextId(session) === getContextId(s.session))
         }
-        if (!schedules.length) return session.$send('当前没有等待执行的日程。')
-        return session.$send(schedules.map(({ id, time, interval, command, session }) => {
+        if (!schedules.length) return '当前没有等待执行的日程。'
+        return schedules.map(({ id, time, interval, command, session }) => {
           let output = `${id}. 触发时间：${formatTimeInterval(time, interval)}，指令：${command}`
           if (options.fullList) output += `，上下文：${formatContext(session)}`
           return output
-        }).join('\n'))
+        }).join('\n')
       }
 
-      if (!options.rest) return session.$send('请输入要执行的指令。')
+      if (!options.rest) return '请输入要执行的指令。'
 
       const time = parseDate(dateSegments.join('-'))
       if (Number.isNaN(+time)) {
-        return session.$send('请输入合法的日期。')
+        return '请输入合法的日期。'
       } else if (!options.interval && +time <= Date.now()) {
-        return session.$send('不能指定过去的时间为起始时间。')
+        return '不能指定过去的时间为起始时间。'
       }
 
       const interval = parseTime(options.interval)
       if (!interval && options.interval) {
-        return session.$send('请输入合法的时间间隔。')
+        return '请输入合法的时间间隔。'
       }
 
       const schedule = await database.createSchedule(time, interval, options.rest, session)

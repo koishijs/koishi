@@ -38,14 +38,14 @@ function encode (source: number) {
 export function apply (ctx: Context) {
   ctx.command('tools/bvid <avid|bvid>', 'av/BV 号转换')
     .action(async ({ session }, source) => {
-      if (!source) return session.$send('请输入正确的 av/BV 号。')
+      if (!source) return '请输入正确的 av/BV 号。'
       if (source.startsWith('BV')) {
         const result = decode(source)
-        if (result) return session.$send('av' + result)
+        if (result) return 'av' + result
       } else if (/^av\d+$/.test(source)) {
         const result = encode(+source.slice(2))
-        if (result) return session.$send(result)
+        if (result) return result
       }
-      return session.$send('请输入正确的 av/BV 号。')
+      return '请输入正确的 av/BV 号。'
     })
 }

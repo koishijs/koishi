@@ -13,8 +13,8 @@ export function apply (ctx: Context) {
         if (name.startsWith('$')) continue
         output.push(`${name}：${usage[name] || 0} 次`)
       }
-      if (!output.length) return session.$send('你今日没有调用过消耗次数的指令。')
+      if (!output.length) return '你今日没有调用过消耗次数的指令。'
       output.unshift('你今日各指令的调用次数为：')
-      return session.$send(output.join('\n'))
+      return output.join('\n')
     })
 }

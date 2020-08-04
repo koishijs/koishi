@@ -25,9 +25,9 @@ export function apply (ctx: Context) {
     ].join('\n'))
     .example('crypto vigenere(keyword) "Hello World"  ->  Rijhc Nrbpb')
     .example('crypto vigenere(keyword) -d "Rijhc Nrbpb"  ->  Hello World')
-    .action(({ options, session }, algorithms, text) => {
-      if (!text) return session.$send('请输入文本。')
-      if (!algorithms) return session.$send('请指定算法。')
+    .action(({ options }, algorithms, text) => {
+      if (!text) return '请输入文本。'
+      if (!algorithms) return '请指定算法。'
       text = CQCode.unescape(text)
       algorithms = CQCode.unescape(algorithms)
 
@@ -51,7 +51,7 @@ export function apply (ctx: Context) {
         } else if (cap = algorithm.match(/^four-?square\(([a-z]+), *([a-z]+)\)/i)) {
           cryptos.push(new FourSquare(cap[1], cap[2], options.square))
         } else {
-          return session.$send(`无法识别算法 ${algorithm}，请使用“crypto -h”查看支持的算法列表。`)
+          return `无法识别算法 ${algorithm}，请使用“crypto -h”查看支持的算法列表。`
         }
       }
 
@@ -79,6 +79,6 @@ export function apply (ctx: Context) {
         }
       }
 
-      return session.$send(text, true)
+      return text
     })
 }

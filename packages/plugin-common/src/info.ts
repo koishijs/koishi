@@ -34,9 +34,9 @@ export function apply (ctx: Context) {
       const output = []
       if (options.user) {
         const id = getTargetId(options.user)
-        if (!id) return session.$send('未找到用户。')
+        if (!id) return '未找到用户。'
         user = await ctx.database.getUser(id, -1, Array.from(infoFields))
-        if (!user) return session.$send('未找到用户。')
+        if (!user) return '未找到用户。'
         if (+user.name === id) {
           output.push(`${id} 的权限为 ${user.authority} 级。`)
         } else {
@@ -51,6 +51,6 @@ export function apply (ctx: Context) {
         const result = callback(user)
         if (result) output.push(result)
       }
-      return session.$send(output.join('\n'))
+      return output.join('\n')
     })
 }

@@ -175,7 +175,7 @@ export function apply (ctx: Context, config: StatusOptions) {
         `内存使用率：${(memory.app * 100).toFixed()}% / ${(memory.total * 100).toFixed()}%`,
       )
 
-      return session.$send(output.join('\n'))
+      return output.join('\n')
     })
 
   async function _getStatus (config: StatusOptions, extend: boolean) {

@@ -23,14 +23,14 @@ export function apply (ctx: Context, config: AlphaOptions) {
     .example('alpha int(sinx)')
     .action(async ({ session }, message) => {
       const input = message.slice(message.indexOf('alpha') + 5).trim()
-      if (!input) return session.$send('请输入问题')
+      if (!input) return '请输入问题。'
       try {
         const { data } = await axios.get('http://api.wolframalpha.com/v2/query', {
           params: { input, appid },
         })
         const { queryresult } = xml2js(data, { compact: true }) as any
         if (queryresult._attributes.success !== 'true') {
-          return session.$send('failed')
+          return 'failed'
         }
         const output = [`Question from ${session.sender.card || session.sender.nickname}: ${input}`]
         queryresult.pod.forEach((el) => {
@@ -42,21 +42,21 @@ export function apply (ctx: Context, config: AlphaOptions) {
             output.push(el._attributes.title + ': ' + text)
           }
         })
-        return session.$send(output.join('\n'))
+        return output.join('\n')
       } catch (error) {
         console.log(error.toJSON())
       }
     })
     .subcommand('.short <expression...>', '调用 WolframAlpha 短问答', { maxUsage: 10, usageName: 'alpha' })
     .example('alpha.short How big is the universe?')
-    .action(async ({ session }, message) => {
+    .action(async (_, message) => {
       const input = message.slice(message.indexOf('alpha.short') + 11).trim()
-      if (!input) return session.$send('请输入问题')
+      if (!input) return '请输入问题。'
       try {
         const { data } = await axios.get('http://api.wolframalpha.com/v1/result', {
           params: { input, appid },
         })
-        return session.$send(data)
+        return data
       } catch (error) {
         console.log(error.toJSON())
       }

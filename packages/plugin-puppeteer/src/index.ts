@@ -59,12 +59,12 @@ export function apply (ctx: Context, config: Config = {}) {
   ctx.command('shot <url>', '网页截图', { authority: 2 })
     .option('-f, --full-page', '对整个可滚动区域截图')
     .action(async ({ session, options }, url) => {
-      if (!url) return session.$send('请输入网址。')
+      if (!url) return '请输入网址。'
       const scheme = /^(\w+):\/\//.exec(url)
       if (!scheme) {
         url = 'http://' + url
       } else if (!allowedProtocols.includes(scheme[1])) {
-        return session.$send('请输入正确的网址。')
+        return '请输入正确的网址。'
       }
 
       const page = await ctx.getPage()
@@ -78,7 +78,7 @@ export function apply (ctx: Context, config: Config = {}) {
       } catch (error) {
         ctx.freePage(page)
         logger.debug(error)
-        return session.$send('无法打开页面。')
+        return '无法打开页面。'
       }
 
       return page.screenshot({
@@ -90,7 +90,7 @@ export function apply (ctx: Context, config: Config = {}) {
       }, (error) => {
         ctx.freePage(page)
         logger.debug(error)
-        return session.$send('截图失败')
+        return '截图失败'
       })
     })
 
@@ -98,7 +98,7 @@ export function apply (ctx: Context, config: Config = {}) {
     .option('-s, --scale <scale>', '缩放比例', { default: 2 })
     .usage('渲染器由 https://www.zhihu.com/equation 提供。')
     .action(async ({ session, options }, tex) => {
-      if (!tex) return session.$send('请输入要渲染的 LaTeX 代码。')
+      if (!tex) return '请输入要渲染的 LaTeX 代码。'
       const page = await ctx.getPage()
       const viewport = page.viewport()
       await page.setViewport({

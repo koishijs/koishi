@@ -50,21 +50,21 @@ export function apply (ctx: Context) {
     .option('-m, --mirrativ <id>', '设置 Mirrativ 账号')
     .option('-t, --twitcasting <id>', '设置 TwitCasting 账号', { isString: true })
     .action(async ({ session, options }, ...names) => {
-      if (!names.length) return session.$send('请提供至少一个名字。')
+      if (!names.length) return '请提供至少一个名字。'
 
       const usedNames = await checkNames(names)
-      if (usedNames.length) return session.$send(`名称 ${usedNames.join(', ')} 已被使用。`)
+      if (usedNames.length) return `名称 ${usedNames.join(', ')} 已被使用。`
 
       const { bilibili, twitCasting, mirrativ } = options
-      if (!bilibili && !twitCasting && !mirrativ) return session.$send('请提供至少一种社交账号。')
+      if (!bilibili && !twitCasting && !mirrativ) return '请提供至少一种社交账号。'
       try {
         await ctx.database.createSubscribe({ names, bilibili, twitCasting, mirrativ })
-        return session.$send('账号添加成功。')
+        return '账号添加成功。'
       } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
-          return session.$send('已有此账号。')
+          return '已有此账号。'
         } else {
-          return session.$send('无法账号此账号。')
+          return '无法账号此账号。'
         }
       }
     })
@@ -72,25 +72,25 @@ export function apply (ctx: Context) {
   cmd.subcommand('.search <name>', '查找账号信息')
     .alias('搜索主播')
     .action(async ({ session, options }, name: string) => {
-      if (!name) return session.$send('请输入账号。')
+      if (!name) return '请输入账号。'
       name = String(name)
       const subscribe = await ctx.database.findSubscribe(name, ['names', 'bilibili', 'mirrativ', 'twitCasting'])
-      if (!subscribe) return session.$send('没有找到该账号。')
+      if (!subscribe) return '没有找到该账号。'
       const { names, bilibili, twitCasting } = subscribe
       const output: string[] = [names[0]]
       if (names.length > 1) output[0] += ` (${names.slice(1).join(', ')})`
       if (bilibili) output.push('Bilibili: ' + bilibili)
       if (twitCasting) output.push('TwitCasting: ' + twitCasting)
-      return session.$send(output.join('\n'))
+      return output.join('\n')
     })
 
   cmd.subcommand('.remove <name>', '删除已有的检测账号', { authority: 3 })
     .action(async ({ session }, name) => {
-      if (!name) return session.$send('请输入账号。')
+      if (!name) return '请输入账号。'
       name = String(name)
       const succeed = await ctx.database.removeSubscribe(name)
-      if (succeed) return session.$send(`已成功删除名为“${name}”的账号。`)
-      return session.$send(`未找到名为“${name}”的账号。`)
+      if (succeed) return `已成功删除名为“${name}”的账号。`
+      return `未找到名为“${name}”的账号。`
     })
 
   cmd.subcommand('.update <name>', '修改已有账号信息', { authority: 3 })
@@ -100,14 +100,14 @@ export function apply (ctx: Context) {
     .option('-m, --mirrativ <id>', '设置 Mirrativ 账号', { isString: true })
     .option('-t, --twitcasting <id>', '设置 TwitCasting 账号', { isString: true })
     .action(async ({ session, options }, name: string) => {
-      if (!name) return session.$send('请输入账号。')
+      if (!name) return '请输入账号。'
       name = String(name)
       const data = await ctx.database.findSubscribe(name, ['id', 'names', 'bilibili', 'mirrativ', 'twitCasting'])
-      if (!data) return session.$send('没有找到该账号。')
+      if (!data) return '没有找到该账号。'
 
       const addList = (options.addName || '').split(',')
       const usedNames = await checkNames(addList)
-      if (usedNames.length) return session.$send(`名称 ${usedNames.join(', ')} 已被使用。`)
+      if (usedNames.length) return `名称 ${usedNames.join(', ')} 已被使用。`
       const account = observe(data, diff => ctx.database.setSubscribe(data.id, diff), `subscribe ${data.id}`)
 
       let configUpdated = false
@@ -135,14 +135,14 @@ export function apply (ctx: Context) {
       if (nameUpdated) account.names = Array.from(nameSet)
 
       if (!Object.keys(account._diff).length) {
-        return session.$send('没有信息被修改。')
+        return '没有信息被修改。'
       }
 
       if (configUpdated && account.id in monitors) {
         monitors[account.id].start()
       }
       await account._update()
-      return session.$send('账号修改成功。')
+      return '账号修改成功。'
     })
 
   cmd.subcommand('.check', '查看当前直播状态')
@@ -178,9 +178,9 @@ export function apply (ctx: Context) {
         output.push(message)
       }
       if (output.length === 1) {
-        return session.$send(options.group ? '当前群内没有关注的直播。' : '你没有在群内关注任何主播。')
+        return options.group ? '当前群内没有关注的直播。' : '你没有在群内关注任何主播。'
       }
-      return session.$send(output.join('\n'))
+      return output.join('\n')
     })
 
   cmd.subcommand('.subscribe <name>', '设置关注账号')
@@ -209,16 +209,16 @@ export function apply (ctx: Context) {
         }
         if (count) {
           await session.$group._update()
-          return session.$send(`已成功取消关注 ${count} 个账号。`)
+          return `已成功取消关注 ${count} 个账号。`
         } else {
-          return session.$send('未在本群内关注任何账号。')
+          return '未在本群内关注任何账号。'
         }
       }
 
-      if (!name) return session.$send('请输入账号。')
+      if (!name) return '请输入账号。'
       name = String(name)
       const account = await ctx.database.findSubscribe(name)
-      if (!account) return session.$send('没有找到该账号。')
+      if (!account) return '没有找到该账号。'
       const { id } = account
       if (!subscribe[id]) subscribe[id] = []
       const appellation = options.global ? '本群' : '你'
@@ -226,7 +226,7 @@ export function apply (ctx: Context) {
 
       if (options.delete) {
         if (index < 0) {
-          return session.$send(appellation + '未关注此账号。')
+          return appellation + '未关注此账号。'
         }
         if (subscribe[id].length === 1) {
           delete subscribe[id]
@@ -234,11 +234,11 @@ export function apply (ctx: Context) {
           subscribe[id].splice(index)
         }
         await session.$group._update()
-        return session.$send('已成功取消关注。')
+        return '已成功取消关注。'
       }
 
       if (index >= 0) {
-        return session.$send(appellation + '已关注此账号。')
+        return appellation + '已关注此账号。'
       }
       subscribe[id].push(userId)
       if (!monitors[id]) {
@@ -246,6 +246,6 @@ export function apply (ctx: Context) {
         monitors[id].start()
       }
       await session.$group._update()
-      return session.$send('关注成功！')
+      return '关注成功！'
     })
 }

@@ -10,7 +10,7 @@ export function apply (ctx: Context) {
     .option('-g, --group <id>', '指定信息发送的目标群号', { isString: true, authority: 4 })
     .option('-d, --discuss <id>', '指定信息发送的目标讨论组号', { isString: true, authority: 4 })
     .usage('各 id 之间请使用逗号分隔。')
-    .action(({ options, session }, message) => {
+    .action(async ({ options, session }, message) => {
       // parse channels
       const channels: Record<MetaTypeMap['message'], number[]> = {
         private: options.user ? options.user.split(',') : [],
@@ -34,7 +34,7 @@ export function apply (ctx: Context) {
       }
 
       // send messages
-      return Promise.all([
+      await Promise.all([
         ...channels.private.map(id => session.$bot.sendPrivateMsgAsync(+id, message)),
         ...channels.group.map(id => session.$bot.sendGroupMsgAsync(+id, message)),
         ...channels.discuss.map(id => session.$bot.sendDiscussMsgAsync(+id, message)),

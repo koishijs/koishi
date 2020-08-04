@@ -84,7 +84,7 @@ export default function apply (app: App) {
     .action(async ({ session, options }, name) => {
       if (name) {
         const command = app._commandMap[name] || app._shortcutMap[name]
-        if (!command?.context.match(session)) return session.$send('指令未找到。')
+        if (!command?.context.match(session)) return '指令未找到。'
         return showCommandHelp(command, session, options as HelpConfig)
       } else {
         return showGlobalHelp(app, session, options as HelpConfig)
@@ -137,7 +137,7 @@ function showGlobalHelp (context: Context, session: Session<'authority' | 'timer
   if (context.app.options.globalHelpMessage) {
     output.push(context.app.options.globalHelpMessage)
   }
-  return session.$send(output.join('\n'))
+  return output.join('\n')
 }
 
 function getOptions (command: Command, session: Session<ValidationField>, maxUsage: number, config: HelpConfig) {
@@ -218,5 +218,5 @@ async function showCommandHelp (command: Command, session: Session<ValidationFie
     output.push(...getCommandList('可用的子指令有', command.context, session, command, config))
   }
 
-  return session.$send(output.join('\n'))
+  return output.join('\n')
 }

@@ -29,22 +29,22 @@ export function apply (ctx: Context, options: MusicOptions = {}) {
     .shortcut('来一首', { fuzzy: true, oneArg: true })
     .shortcut('点一首', { fuzzy: true, oneArg: true })
     .shortcut('整一首', { fuzzy: true, oneArg: true })
-    .action(async ({ options, session }, keyword) => {
+    .action(async ({ options }, keyword) => {
       if (!options.platform) options.platform = platform
       const search = platforms[options.platform]
       if (!search) {
-        return session.$send(`目前不支持平台 ${options.platform}。`)
+        return `目前不支持平台 ${options.platform}。`
       }
 
       try {
         const result = await search.call(ctx, keyword)
         if (typeof result === 'object') {
-          return session.$send(CQCode.stringify('music', result))
+          return CQCode.stringify('music', result)
         }
       } catch {}
 
       if (showWarning) {
-        return session.$send('点歌失败，请尝试更换平台。')
+        return '点歌失败，请尝试更换平台。'
       }
     })
 }

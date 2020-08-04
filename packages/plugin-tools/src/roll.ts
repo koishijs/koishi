@@ -13,7 +13,7 @@ export function apply (ctx: Context, options: RollOptions = {}) {
     .shortcut('掷骰', { fuzzy: true })
     .example('roll 2d6+d10')
     .action(async ({ session }, message = '1d6') => {
-      if (!/^((\d*)d)?(\d+)(\+((\d*)d)?(\d+))*$/i.test(message)) return session.$send('表达式语法错误。')
+      if (!/^((\d*)d)?(\d+)(\+((\d*)d)?(\d+))*$/i.test(message)) return '表达式语法错误。'
 
       const expressions = message.split('+')
       let hasMultiple = false
@@ -24,7 +24,7 @@ export function apply (ctx: Context, options: RollOptions = {}) {
         const [_, dice, _times, _max] = /^((\d*)d)?(\d+)$/i.exec(expr)
         const max = +_max
         if (!max || max > maxPoint) {
-          return session.$send(`点数必须在 1 到 ${maxPoint} 之间。`)
+          return `点数必须在 1 到 ${maxPoint} 之间。`
         }
 
         if (!dice) {
@@ -35,7 +35,7 @@ export function apply (ctx: Context, options: RollOptions = {}) {
 
         const times = +(_times || 1)
         if (!times || times > maxTimes) {
-          return session.$send(`次数必须在 1 到 ${maxTimes} 之间。`)
+          return `次数必须在 1 到 ${maxTimes} 之间。`
         }
 
         const values = []
@@ -59,6 +59,6 @@ export function apply (ctx: Context, options: RollOptions = {}) {
       if (hasMultiple || expressions.length > 1) {
         output += '=' + total
       }
-      return session.$send(output)
+      return output
     })
 }

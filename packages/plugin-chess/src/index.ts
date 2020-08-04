@@ -75,15 +75,15 @@ export function apply (ctx: Context) {
     .action(async ({ session, options }, position) => {
       if (!states[session.groupId]) {
         if (position || options.stop || options.repent || options.skip) {
-          return session.$send('没有正在进行的游戏。输入“下棋”开始一轮游戏。')
+          return '没有正在进行的游戏。输入“下棋”开始一轮游戏。'
         }
 
         if (!isInteger(options.size) || options.size < 2 || options.size > 20) {
-          return session.$send('棋盘大小应该为不小于 2，不大于 20 的整数。')
+          return '棋盘大小应该为不小于 2，不大于 20 的整数。'
         }
 
         const rule = rules[options.rule]
-        if (!rule) return session.$send('没有找到对应的规则。')
+        if (!rule) return '没有找到对应的规则。'
 
         const state = new State(ctx.app, options.rule, options.size, rule.placement || 'cross')
         state.p1 = session.userId
@@ -92,7 +92,7 @@ export function apply (ctx: Context) {
 
         if (rule.create) {
           const result = rule.create.call(state)
-          if (result) return session.$send(result)
+          if (result) return result
         }
         state.update = rule.update
         states[session.groupId] = state
@@ -103,7 +103,7 @@ export function apply (ctx: Context) {
       if (options.stop) {
         delete states[session.groupId]
         session.$group.chess = null
-        return session.$send('游戏已停止。')
+        return '游戏已停止。'
       }
 
       const state = states[session.groupId]
@@ -119,20 +119,20 @@ export function apply (ctx: Context) {
       if (options.show) return state.draw(session)
 
       if (state.p2 && state.p1 !== session.userId && state.p2 !== session.userId) {
-        return session.$send('游戏已经开始，无法加入。')
+        return '游戏已经开始，无法加入。'
       }
 
       if (options.skip) {
-        if (state.next !== session.userId) return session.$send('当前不是你的回合。')
+        if (state.next !== session.userId) return '当前不是你的回合。'
         state.next = state.p1 === session.userId ? state.p2 : state.p1
         session.$group.chess = state.serial()
-        return session.$send(`${session.$username} 选择跳过其回合，下一手轮到 [CQ:at,qq=${state.next}]。`)
+        return `${session.$username} 选择跳过其回合，下一手轮到 [CQ:at,qq=${state.next}]。`
       }
 
       if (options.repent) {
-        if (!state.p2) return session.$send('尚未有人行棋。')
+        if (!state.p2) return '尚未有人行棋。'
         const last = state.p1 === state.next ? state.p2 : state.p1
-        if (last !== session.userId) return session.$send('上一手棋不是你所下。')
+        if (last !== session.userId) return '上一手棋不是你所下。'
         state.history.pop()
         state.refresh()
         state.next = last
@@ -140,25 +140,25 @@ export function apply (ctx: Context) {
         return state.draw(session, `${session.$username} 进行了悔棋。`)
       }
 
-      if (!position) return session.$send('请输入坐标。')
+      if (!position) return '请输入坐标。'
 
       if (typeof position !== 'string' || !/^[a-z]\d+$/i.test(position)) {
-        return session.$send('请输入由字母+数字构成的坐标。')
+        return '请输入由字母+数字构成的坐标。'
       }
 
       if (!state.p2) {
-        if (session.userId === state.p1) return session.$send('当前不是你的回合。')
+        if (session.userId === state.p1) return '当前不是你的回合。'
       } else {
-        if (session.userId !== state.next) return session.$send('当前不是你的回合。')
+        if (session.userId !== state.next) return '当前不是你的回合。'
       }
 
       const x = position.charCodeAt(0) % 32 - 1
       const y = parseInt(position.slice(1)) - 1
       if (x >= state.size || y >= state.size || y < 0) {
-        return session.$send('落子超出边界。')
+        return '落子超出边界。'
       }
 
-      if (state.get(x, y)) return session.$send('此处已有落子。')
+      if (state.get(x, y)) return '此处已有落子。'
 
       let message = ''
       if (!state.p2) {
@@ -174,7 +174,7 @@ export function apply (ctx: Context) {
       switch (result) {
         case MoveResult.illegal:
           state.next = session.userId
-          return session.$send('非法落子。')
+          return '非法落子。'
         case MoveResult.skip:
           message += `下一手依然轮到 [CQ:at,qq=${session.userId}]。`
           break

@@ -102,7 +102,7 @@ export interface CommandConfig <U extends User.Field = never, G extends Group.Fi
 
 type ArgvInferred <T> = Iterable<T> | ((argv: ParsedCommandLine, fields: Set<T>) => Iterable<T>)
 export type CommandAction <U extends User.Field = never, G extends Group.Field = never> =
-  (this: Command<U, G>, config: ParsedCommandLine<U, G>, ...args: string[]) => any
+  (this: Command<U, G>, config: ParsedCommandLine<U, G>, ...args: string[]) => void | string | Promise<void | string>
 
 export class Command <U extends User.Field = never, G extends Group.Field = never> {
   config: CommandConfig<U, G>
@@ -534,7 +534,8 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     try {
       if (await this.app.serial(argv.session, 'before-command', argv)) return
       state = 'executing command'
-      await this._action(argv, ...argv.args)
+      const message = await this._action(argv, ...argv.args)
+      if (message) argv.session.$send(message)
       state = 'after command'
       await this.app.serial(argv.session, 'command', argv)
     } catch (error) {

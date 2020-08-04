@@ -14,7 +14,7 @@ function itob (n: number, length: number) {
 export function apply (ctx: Context) {
   ctx.command('tools/mcping <server>', '查看 Minecraft 服务器信息')
     .action(async ({ session }, address) => {
-      if (!address) return session.$send('请输入正确的网址。')
+      if (!address) return '请输入正确的网址。'
       if (!address.match(/^\w+:\/\//)) address = 'http://' + address
 
       let host: string, port: number
@@ -23,7 +23,7 @@ export function apply (ctx: Context) {
         host = url.hostname
         port = Number(url.port) || 25565
       } catch (error) {
-        return session.$send('请输入正确的网址。')
+        return '请输入正确的网址。'
       }
 
       const socket = new Socket()
@@ -62,7 +62,7 @@ export function apply (ctx: Context) {
         if (bytes >= length) {
           try {
             const status = JSON.parse(response)
-            if (!status.version) return session.$send('无法解析服务器信息。')
+            if (!status.version) return '无法解析服务器信息。'
             const output = [
               `版本：${status.version.name}`,
               `人数：${status.players.online} / ${status.players.max}`,

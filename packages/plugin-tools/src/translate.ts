@@ -44,7 +44,7 @@ export function apply (ctx: Context, config: TranslateOptions) {
         params: { q, appKey, salt, from, to, sign },
       })
 
-      if (Number(data.errorCode)) return session.$send(`翻译失败，错误码：${data.errorCode}`)
+      if (Number(data.errorCode)) return `翻译失败，错误码：${data.errorCode}`
 
       const [source, target] = data.l.split('2')
       const output = [
@@ -58,6 +58,6 @@ export function apply (ctx: Context, config: TranslateOptions) {
         }
         output.push(...data.basic.explains)
       }
-      return session.$send(output.join('\n'))
+      return output.join('\n')
     })
 }

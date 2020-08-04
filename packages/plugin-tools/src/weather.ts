@@ -9,17 +9,17 @@ export function apply (ctx: Context) {
   ctx.command('tools/weather <longitude> <latitude>', '查询天气')
     .option('-p, --product <product>', `晴天钟产品选择，可为 ${products.join(', ')}`, { default: 'civil' })
     .action(async ({ session, options }, lon, lat) => {
-      if (!lon || !lat) return session.$send('请输入经纬度')
+      if (!lon || !lat) return '请输入经纬度。'
       const { product } = options
       if (!products.includes(options.product)) {
-        return session.$send(`不支持该产品，产品选择应为 ${products.join(', ')} 之一。`)
+        return `不支持该产品，产品选择应为 ${products.join(', ')} 之一。`
       }
       try {
         const { data } = await axios.get<ArrayBuffer>(`http://www.7timer.info/bin/${product}.php`, {
           params: { lon, lat, lang, unit },
           responseType: 'arraybuffer',
         })
-        return session.$send(`[CQ:image,file=base64://${Buffer.from(data).toString('base64')}]`)
+        return `[CQ:image,file=base64://${Buffer.from(data).toString('base64')}]`
       } catch (error) {
         console.log(error.toJSON())
       }

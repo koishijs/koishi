@@ -14,7 +14,7 @@ export function apply (ctx: Context) {
     .alias('搜索')
     .usage('由 https://magi.com 提供支持。')
     .action(async ({ session, options }, q) => {
-      if (!q) return session.$send('请输入要搜索的文本。')
+      if (!q) return '请输入要搜索的文本。'
       const { data } = await axios.get('https://magi.com/search', {
         params: { q },
       })
@@ -59,7 +59,7 @@ export function apply (ctx: Context) {
       })
 
       if (!messages.length) {
-        return session.$send(`没有找到“${q}”相关的结果。`)
+        return `没有找到“${q}”相关的结果。`
       } else {
         for (const message of messages) {
           await session.$send(message)
