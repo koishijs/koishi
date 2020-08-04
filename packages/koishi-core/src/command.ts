@@ -532,11 +532,11 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     this.context.logger('command').debug(source)
     const lastCall = new Error().stack.split('\n', 4)[3]
     try {
-      if (await this.app.serialize(argv.session, 'before-command', argv)) return
+      if (await this.app.serial(argv.session, 'before-command', argv)) return
       state = 'executing command'
       await this._action(argv, ...argv.args)
       state = 'after command'
-      await this.app.serialize(argv.session, 'command', argv)
+      await this.app.serial(argv.session, 'command', argv)
     } catch (error) {
       if (!state) throw error
       if (!types.isNativeError(error)) {

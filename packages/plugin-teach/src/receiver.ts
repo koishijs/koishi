@@ -140,7 +140,7 @@ export async function triggerDialogue (ctx: Context, session: Session, config: D
     })
   }
 
-  if (await ctx.app.serialize(session, 'dialogue/before-send', state)) return
+  if (await ctx.app.serial(session, 'dialogue/before-send', state)) return
   logger.debug('[send]', session.messageId, '->', dialogue.answer)
 
   // send answers
@@ -169,7 +169,7 @@ export async function triggerDialogue (ctx: Context, session: Session, config: D
     }
   }
   await buffer.end(unescapeAnswer(state.answer))
-  await ctx.app.parallelize(session, 'dialogue/send', state)
+  await ctx.app.parallel(session, 'dialogue/send', state)
 }
 
 export default function (ctx: Context, config: Dialogue.Config) {

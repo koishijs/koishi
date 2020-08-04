@@ -201,7 +201,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
       }
     }
 
-    await argv.ctx.parallelize('dialogue/search', argv, test, successors)
+    await argv.ctx.parallel('dialogue/search', argv, test, successors)
   }
 
   ctx.on('dialogue/detail', async (dialogue, output, argv) => {

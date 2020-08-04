@@ -989,6 +989,8 @@ connect(host.Buffer.prototype['inspect'], function inspect () {
 export const value = Decontextify.value
 export const sandbox = Decontextify.value(GLOBAL)
 
+delete global.console
+
 for (const key of Object.getOwnPropertyNames(global)) {
   Object.defineProperty(GLOBAL, key, { value: global[key] })
 }

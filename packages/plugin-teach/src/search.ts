@@ -89,7 +89,7 @@ export default function apply (ctx: Context) {
         original: prefixed,
       })
       Object.defineProperty(dialogue, '_redirections', { writable: true, value: dialogues })
-      await argv.ctx.parallelize('dialogue/search', argv, test, dialogues)
+      await argv.ctx.parallel('dialogue/search', argv, test, dialogues)
     }
   })
 }
@@ -174,7 +174,7 @@ async function showSearch (argv: Dialogue.Argv) {
   }
 
   if (recursive && !autoMerge) {
-    await argv.ctx.parallelize('dialogue/search', argv, test, dialogues)
+    await argv.ctx.parallel('dialogue/search', argv, test, dialogues)
   }
 
   function sendResult (title: string, output: string[], suffix?: string) {

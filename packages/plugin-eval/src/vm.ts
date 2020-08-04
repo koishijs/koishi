@@ -21,7 +21,7 @@ export class VM extends EventEmitter {
   constructor(options: VMOptions = {}) {
     super()
 
-    const {	sandbox = {}, strings = true, wasm = false } = options
+    const { sandbox = {}, strings = true, wasm = true } = options
     this._context = createContext(undefined, {
       codeGeneration: { strings, wasm },
     })

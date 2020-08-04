@@ -66,14 +66,14 @@ const isObject = (val: unknown): val is object =>
 
 export interface TransferHandler<T, S> {
   canHandle(value: unknown): value is T;
-  serialize(value: T): [S, Transferable[]];
+  serial(value: T): [S, Transferable[]];
   deserialize(value: S): T;
 }
 
 const proxyTransferHandler: TransferHandler<object, MessagePort> = {
   canHandle: (val): val is ProxyMarked =>
     isObject(val) && (val as ProxyMarked)[proxyMarker],
-  serialize(obj) {
+  serial(obj) {
     const { port1, port2 } = new MessageChannel();
     expose(obj, port1);
     return [port2, [port2]];
@@ -99,7 +99,7 @@ type SerializedThrownValue =
 const throwTransferHandler: TransferHandler<ThrownValue, SerializedThrownValue> = {
   canHandle: (value): value is ThrownValue =>
     isObject(value) && throwMarker in value,
-  serialize({ value }) {
+  serial({ value }) {
     let serialized: SerializedThrownValue;
     if (value instanceof Error) {
       serialized = {
@@ -321,7 +321,7 @@ export function proxy<T>(obj: T): T & ProxyMarked {
 function toWireValue(value: any): [WireValue, Transferable[]] {
   for (const [name, handler] of transferHandlers) {
     if (handler.canHandle(value)) {
-      const [serializedValue, transferables] = handler.serialize(value);
+      const [serializedValue, transferables] = handler.serial(value);
       return [
         {
           type: WireValueType.HANDLER,

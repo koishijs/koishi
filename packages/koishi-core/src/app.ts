@@ -31,10 +31,6 @@ export interface AppOptions extends BotOptions {
   groupCacheTimeout?: number
 }
 
-export interface MajorContext extends Context {
-  except (...ids: number[]): Context
-}
-
 function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegex).join('|')})${suffix}`) : /^$/
 }
@@ -142,7 +138,7 @@ export class App extends Context {
 
   async start () {
     this.status = Status.opening
-    await this.parallelize('before-connect')
+    await this.parallel('before-connect')
     this.status = Status.open
     this.logger('app').debug('started')
     this.emit('connect')
@@ -151,7 +147,7 @@ export class App extends Context {
 
   async stop () {
     this.status = Status.closing
-    await this.parallelize('before-disconnect')
+    await this.parallel('before-disconnect')
     this.status = Status.closed
     this.logger('app').debug('stopped')
     this.emit('disconnect')
@@ -194,7 +190,7 @@ export class App extends Context {
         const group = await session.observeGroup(groupFields)
 
         // emit attach event
-        if (await this.serialize(session, 'attach-group', session)) return
+        if (await this.serial(session, 'attach-group', session)) return
 
         // ignore some group calls
         if (group.flag & Group.Flag.ignore) return
@@ -207,13 +203,13 @@ export class App extends Context {
       const user = await session.observeUser(userFields)
 
       // emit attach event
-      if (await this.serialize(session, 'attach-user', session)) return
+      if (await this.serial(session, 'attach-user', session)) return
 
       // ignore some user calls
       if (user.flag & User.Flag.ignore) return
     }
 
-    await this.parallelize(session, 'attach', session)
+    await this.parallel(session, 'attach', session)
 
     // execute command
     if (!session.$argv) return next()

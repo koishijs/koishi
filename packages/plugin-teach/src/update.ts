@@ -68,7 +68,7 @@ export default function apply (ctx: Context) {
 
   ctx.on('dialogue/before-detail', async (argv) => {
     if (argv.options.modify) return
-    await argv.ctx.parallelize('dialogue/search', argv, {}, argv.dialogues)
+    await argv.ctx.parallel('dialogue/search', argv, {}, argv.dialogues)
   })
 
   ctx.on('dialogue/detail-short', ({ _type, _timestamp }, output) => {
@@ -156,7 +156,7 @@ export async function update (argv: Dialogue.Argv) {
 
   const actualIds = argv.dialogues.map(d => d.id)
   argv.unknown = difference(target, actualIds)
-  await ctx.serialize('dialogue/before-detail', argv)
+  await ctx.serial('dialogue/before-detail', argv)
 
   if (!options.modify) {
     if (argv.unknown.length) {
@@ -164,7 +164,7 @@ export async function update (argv: Dialogue.Argv) {
     }
     for (let index = 0; index < dialogues.length; index++) {
       const output = [`编号为 ${dialogues[index].id} 的${review ? '历史版本' : '问答信息'}：`]
-      await ctx.serialize('dialogue/detail', dialogues[index], output, argv)
+      await ctx.serial('dialogue/detail', dialogues[index], output, argv)
       if (index) await sleep(detailInterval)
       await session.$send(output.join('\n'))
     }
@@ -185,17 +185,17 @@ export async function update (argv: Dialogue.Argv) {
       await Dialogue.remove(editable, argv)
       message = `问答 ${editable.join(', ')} 已成功删除。`
     }
-    await ctx.serialize('dialogue/after-modify', argv)
+    await ctx.serial('dialogue/after-modify', argv)
     return sendResult(argv, message)
   }
 
   if (targets.length) {
-    if (await ctx.app.serialize('dialogue/before-modify', argv)) return
+    if (await ctx.app.serial('dialogue/before-modify', argv)) return
     for (const dialogue of targets) {
       ctx.emit('dialogue/modify', argv, dialogue)
     }
     await Dialogue.update(targets, argv)
-    await ctx.serialize('dialogue/after-modify', argv)
+    await ctx.serial('dialogue/after-modify', argv)
   }
 
   return sendResult(argv)
@@ -205,15 +205,15 @@ export async function create (argv: Dialogue.Argv) {
   const { ctx, options } = argv
   options.create = options.modify = true
   const { question, answer } = options
-  if (await ctx.app.serialize('dialogue/before-create', argv)) return
+  if (await ctx.app.serial('dialogue/before-create', argv)) return
 
   argv.unknown = []
   argv.uneditable = []
   argv.updated = []
   argv.skipped = []
   argv.dialogues = await Dialogue.fromTest(ctx, { question, answer, regexp: false })
-  await ctx.serialize('dialogue/before-detail', argv)
-  if (await ctx.app.serialize('dialogue/before-modify', argv)) return
+  await ctx.serial('dialogue/before-detail', argv)
+  if (await ctx.app.serial('dialogue/before-modify', argv)) return
 
   if (argv.dialogues.length) {
     argv.target = argv.dialogues.map(d => d.id)
@@ -222,7 +222,7 @@ export async function create (argv: Dialogue.Argv) {
       ctx.emit('dialogue/modify', argv, dialogue)
     }
     await Dialogue.update(targets, argv)
-    await ctx.serialize('dialogue/after-modify', argv)
+    await ctx.serial('dialogue/after-modify', argv)
     return sendResult(argv)
   }
 
@@ -235,7 +235,7 @@ export async function create (argv: Dialogue.Argv) {
     ctx.emit('dialogue/modify', argv, dialogue)
     argv.dialogues = [await Dialogue.create(dialogue, argv)]
 
-    await ctx.serialize('dialogue/after-modify', argv)
+    await ctx.serial('dialogue/after-modify', argv)
     return sendResult(argv, `问答已添加，编号为 ${argv.dialogues[0].id}。`)
   } catch (err) {
     await argv.session.$send('添加问答时遇到错误。')

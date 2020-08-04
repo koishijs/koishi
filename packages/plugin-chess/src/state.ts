@@ -204,7 +204,7 @@ export class State {
     this.bBoard = board & this.full
   }
 
-  serialize () {
+  serial () {
     const { rule, size, placement, p1, p2, next, history } = this
     return { rule, size, placement, p1, p2, next, history: history.join(',') }
   }

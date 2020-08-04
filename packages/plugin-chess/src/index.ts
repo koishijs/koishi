@@ -125,7 +125,7 @@ export function apply (ctx: Context) {
       if (options.skip) {
         if (state.next !== session.userId) return session.$send('当前不是你的回合。')
         state.next = state.p1 === session.userId ? state.p2 : state.p1
-        session.$group.chess = state.serialize()
+        session.$group.chess = state.serial()
         return session.$send(`${session.$username} 选择跳过其回合，下一手轮到 [CQ:at,qq=${state.next}]。`)
       }
 
@@ -136,7 +136,7 @@ export function apply (ctx: Context) {
         state.history.pop()
         state.refresh()
         state.next = last
-        session.$group.chess = state.serialize()
+        session.$group.chess = state.serial()
         return state.draw(session, `${session.$username} 进行了悔棋。`)
       }
 
@@ -198,7 +198,7 @@ export function apply (ctx: Context) {
           message += `下一手轮到 [CQ:at,qq=${state.next}]。`
       }
 
-      session.$group.chess = state.serialize()
+      session.$group.chess = state.serial()
       return state.draw(session, message, x, y)
     })
 }

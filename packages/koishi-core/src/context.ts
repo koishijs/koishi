@@ -106,9 +106,9 @@ export class Context {
     return this
   }
 
-  async parallelize <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<void>
-  async parallelize <K extends keyof EventMap> (session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
-  async parallelize (...args: any[]) {
+  async parallel <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<void>
+  async parallel <K extends keyof EventMap> (session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
+  async parallel (...args: any[]) {
     const tasks: Promise<any>[] = []
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
@@ -123,12 +123,12 @@ export class Context {
   emit <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): void
   emit <K extends keyof EventMap> (session: Session, name: K, ...args: Parameters<EventMap[K]>): void
   emit (...args: [any, ...any[]]) {
-    this.parallelize(...args)
+    this.parallel(...args)
   }
 
-  async serialize <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
-  async serialize <K extends keyof EventMap> (session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
-  async serialize (...args: any[]) {
+  async serial <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
+  async serial <K extends keyof EventMap> (session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
+  async serial (...args: any[]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
     this.logger('dispatch').debug(name)
