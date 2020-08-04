@@ -96,8 +96,9 @@ export class App extends Context {
     this._prefixRE = createLeadingRE(prefixes)
 
     // bind built-in event listeners
-    this.on('message', this._applyMiddlewares.bind(this))
     this.middleware(this._preprocess.bind(this))
+    this.on('message', this._handleMessage.bind(this))
+    this.on('connect', this._handleConnect.bind(this))
 
     this.on('parse', (message, { $parsed, messageType }, forced) => {
       if (forced && $parsed.prefix === null && !$parsed.nickname && messageType !== 'private') return
@@ -256,5 +257,17 @@ export class App extends Context {
     // flush user & group data
     await session.$user?._update()
     await session.$group?._update()
+  }
+
+  private _handleConnect () {
+    const { type, port } = this.options
+    const logger = this.logger('app')
+    if (port) logger.info('server listening at %c', port)
+  
+    this.bots.forEach(({ server }) => {
+      if (!server) return
+      if (type === 'ws') server = server.replace(/^http/, 'ws')
+      logger.info('connected to %c', server)
+    })
   }
 }

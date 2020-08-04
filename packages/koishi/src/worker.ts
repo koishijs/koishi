@@ -116,22 +116,13 @@ process.on('unhandledRejection', (error) => {
 })
 
 app.start().then(() => {
-  const { type, port } = app.options
-  if (port) logger.info('server listening at %c', port)
-
-  app.bots.forEach((bot) => {
-    const { server } = bot
-    if (!server) return
+  app.bots.forEach(bot => {
+    if (!bot.version) return
     const { coolqEdition, pluginVersion, goCqhttp, runtimeVersion } = bot.version
-    if (type === 'http') {
-      logger.info('connected to %c', server)
-    } else {
-      logger.info('connected to %c', server.replace(/^http/, 'ws'))
-    }
     if (goCqhttp) {
-      logger.info(`Koishi/${version} Go-cqhttp (Go/${runtimeVersion.slice(2)})`)
+      logger.info('%C', `Koishi/${version} Go-CQHTTP (Go/${runtimeVersion.slice(2)})`)
     } else {
-      logger.info(`Koishi/${version} CoolQ/${capitalize(coolqEdition)} cqhttp/${pluginVersion}`)
+      logger.info('%C', `Koishi/${version} CoolQ/${capitalize(coolqEdition)} CQHTTP/${pluginVersion}`)
     }
   })
 

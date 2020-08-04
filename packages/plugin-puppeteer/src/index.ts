@@ -57,6 +57,7 @@ export function apply (ctx: Context, config: Config = {}) {
   })
 
   ctx.command('shot <url>', '网页截图', { authority: 2 })
+    .alias('screenshot')
     .option('-f, --full-page', '对整个可滚动区域截图')
     .action(async ({ session, options }, url) => {
       if (!url) return '请输入网址。'
