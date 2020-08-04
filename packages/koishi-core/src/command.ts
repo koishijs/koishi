@@ -101,7 +101,7 @@ export interface CommandConfig <U extends User.Field = never, G extends Group.Fi
 }
 
 type ArgvInferred <T> = Iterable<T> | ((argv: ParsedCommandLine, fields: Set<T>) => Iterable<T>)
-type CommandAction <U extends User.Field, G extends Group.Field> =
+export type CommandAction <U extends User.Field = never, G extends Group.Field = never> =
   (this: Command<U, G>, config: ParsedCommandLine<U, G>, ...args: string[]) => any
 
 export class Command <U extends User.Field = never, G extends Group.Field = never> {

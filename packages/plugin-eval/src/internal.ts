@@ -128,7 +128,7 @@ Object.defineProperty(GLOBAL, 'VMError', {
  */
 function throwCallerCalleeArgumentsAccess(key) {
   'use strict'
-  throwCallerCalleeArgumentsAccess[key]
+  throwCallerCalleeArgumentsAccess[key] // lgtm[js/useless-expression]
   return new VMError('Unreachable')
 }
 
