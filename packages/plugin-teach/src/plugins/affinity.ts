@@ -36,8 +36,8 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   if (!getAffinity) return
 
   ctx.command('teach')
-    .option('-a, --min-affinity, --match-affinity <aff>', { validate: isShortInteger })
-    .option('-A, --max-affinity, --mismatch-affinity <aff>', { validate: isShortInteger })
+    .option('-a, --min-affinity, --match-affinity <aff>', '最小好感度', { validate: isShortInteger })
+    .option('-A, --max-affinity, --mismatch-affinity <aff>', '最大好感度', { validate: isShortInteger })
 
   ctx.on('dialogue/validate', ({ options }) => {
     if (options.maxAffinity === 0) options.maxAffinity = 32768

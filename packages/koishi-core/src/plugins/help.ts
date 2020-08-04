@@ -24,6 +24,7 @@ declare module '../command' {
   interface CommandConfig {
     /** hide all options by default */
     hideOptions?: boolean
+    hidden?: boolean
   }
 
   interface OptionConfig {
@@ -44,7 +45,7 @@ Command.prototype.example = function (example) {
 
 interface HelpConfig {
   expand: boolean
-  options: boolean
+  showHidden: boolean
 }
 
 export default function apply (app: App) {
@@ -79,7 +80,7 @@ export default function apply (app: App) {
     .groupFields(createCollector('group'))
     .shortcut('帮助', { fuzzy: true })
     .option('-e, --expand', '展开指令列表')
-    .option('-o, --options', '查看全部选项（包括隐藏）')
+    .option('-H, --show-hidden', '查看隐藏的选项和指令')
     .action(async ({ session, options }, name) => {
       if (name) {
         const command = app._commandMap[name] || app._shortcutMap[name]
@@ -98,16 +99,15 @@ function getShortcuts (command: Command, user: Pick<User, 'authority'>) {
   })
 }
 
-function getCommands (context: Context, session: Session<ValidationField>, parent?: Command) {
-  const commands = parent ? parent.children : context.app._commands
-  return commands
-    .filter(cmd => cmd.context.match(session) && cmd.config.authority <= session.$user.authority)
+function getCommandList (prefix: string, context: Context, session: Session<ValidationField>, parent: Command, config: HelpConfig) {
+  let commands = (parent ? parent.children : context.app._commands)
+    .filter((cmd) => {
+      return cmd.context.match(session)
+        && cmd.config.authority <= session.$user.authority
+        && (config.showHidden || !cmd.config.hidden)
+    })
     .sort((a, b) => a.name > b.name ? 1 : -1)
-}
-
-function getCommandList (prefix: string, context: Context, session: Session<ValidationField>, parent: Command, expand: boolean) {
-  let commands = getCommands(context, session, parent)
-  if (!expand) {
+  if (!config.expand) {
     commands = commands.filter(cmd => cmd.parent === parent)
   } else {
     const startPosition = parent ? parent.name.length + 1 : 0
@@ -123,13 +123,13 @@ function getCommandList (prefix: string, context: Context, session: Session<Vali
     return `    ${name} (${config.authority}${children.length ? '*' : ''})  ${config.description}`
   })
   output.unshift(`${prefix}（括号内为对应的最低权限等级${hasSubcommand ? '，标有星号的表示含有子指令' : ''}）：`)
-  if (expand) output.push('注：部分指令组已展开，故不再显示。')
+  if (config.expand) output.push('注：部分指令组已展开，故不再显示。')
   return output
 }
 
 function showGlobalHelp (context: Context, session: Session<'authority' | 'timers' | 'usage'>, config: HelpConfig) {
   const output = [
-    ...getCommandList('当前可用的指令有', context, session, null, config.expand),
+    ...getCommandList('当前可用的指令有', context, session, null, config),
     '群聊普通指令可以通过“@我+指令名”的方式进行触发。',
     '私聊或全局指令则不需要添加上述前缀，直接输入指令名即可触发。',
     '输入“帮助+指令名”查看特定指令的语法和使用示例。',
@@ -141,8 +141,8 @@ function showGlobalHelp (context: Context, session: Session<'authority' | 'timer
 }
 
 function getOptions (command: Command, session: Session<ValidationField>, maxUsage: number, config: HelpConfig) {
-  if (command.config.hideOptions && !config.options) return []
-  const options = config.options
+  if (command.config.hideOptions && !config.showHidden) return []
+  const options = config.showHidden
     ? command._options
     : command._options.filter(option => !option.hidden && option.authority <= session.$user.authority)
   if (!options.length) return []
@@ -165,11 +165,6 @@ function getOptions (command: Command, session: Session<ValidationField>, maxUsa
 
 async function showCommandHelp (command: Command, session: Session<ValidationField>, config: HelpConfig) {
   const output = [command.name + command.declaration, command.config.description]
-  if (config.options) {
-    const output = getOptions(command, session, Infinity, config)
-    if (!output.length) return session.$send('该指令没有可用的选项。')
-    return session.$send(output.join('\n'))
-  }
 
   if (command.context.database) {
     await session.observeUser(['authority', 'timers', 'usage'])
@@ -220,7 +215,7 @@ async function showCommandHelp (command: Command, session: Session<ValidationFie
   }
 
   if (command.children.length) {
-    output.push(...getCommandList('可用的子指令有', command.context, session, command, config.expand))
+    output.push(...getCommandList('可用的子指令有', command.context, session, command, config))
   }
 
   return session.$send(output.join('\n'))
