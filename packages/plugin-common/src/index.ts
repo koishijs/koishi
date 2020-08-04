@@ -1,4 +1,5 @@
 import { Context } from 'koishi-core'
+import { DebugOptions } from './debug'
 import repeater, { RepeaterOptions } from './repeater'
 import handler, { HandlerOptions } from './handler'
 
@@ -15,6 +16,7 @@ export interface Options extends HandlerOptions, RepeaterOptions {
   exit?: false
   info?: false
   usage?: false
+  debug?: DebugOptions
 }
 
 export const name = 'common'
@@ -27,6 +29,7 @@ export function apply (ctx: Context, options: Options = {}) {
   if (options.admin !== false) ctx.plugin(require('./admin'))
   if (options.contextify !== false) ctx.plugin(require('./contextify'))
   if (options.broadcast !== false) ctx.plugin(require('./broadcast'))
+  if (options.debug !== false) ctx.plugin(require('./debug'), options.debug)
   if (options.exit !== false) ctx.plugin(require('./exit'))
   if (options.info !== false) ctx.plugin(require('./info'))
   if (options.usage !== false) ctx.plugin(require('./usage'))

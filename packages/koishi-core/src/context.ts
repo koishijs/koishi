@@ -93,6 +93,7 @@ export class Context {
   plugin <T extends PluginObject<this>> (plugin: T, options?: T extends PluginObject<this, infer U> ? U : never): this
   plugin <T extends Plugin<this>> (plugin: T, options?: T extends Plugin<this, infer U> ? U : never) {
     if (options === false) return
+    if (options === true) options = undefined
     const ctx: this = Object.create(this)
     defineProperty(ctx, '_disposables', [])
     if (typeof plugin === 'function') {

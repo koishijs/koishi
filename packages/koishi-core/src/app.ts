@@ -217,7 +217,7 @@ export class App extends Context {
     return session.$argv.command.execute(session.$argv)
   }
 
-  private async _applyMiddlewares(session: Session) {
+  private async _handleMessage (session: Session) {
     // preparation
     const counter = this._middlewareCounter++
     this._middlewareSet.add(counter)
