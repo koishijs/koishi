@@ -42,7 +42,7 @@
     "koishi-plugin-mysql": "^2.0.0-beta.1",
     "koishi-plugin-schedule": "^2.0.0-beta.3",
     "koishi-plugin-status": "^2.0.0-beta.2",
-    "koishi-plugin-teach": "^1.0.0-beta.2",
+    "koishi-plugin-teach": "^1.0.0-beta.3",
     "koishi-utils": "^2.1.2",
     "prompts": "^2.3.2"
   }

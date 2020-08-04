@@ -51,11 +51,13 @@ export function showSuggestions (options: SuggestOptions): Promise<void> {
     const message = prefix + `你要找的是不是${suggestions.map(name => `“${name}”`).join('或')}？`
     if (suggestions.length > 1) return session.$send(message)
 
-    session.$app.onceMiddleware(async (session, next) => {
-      const message = session.message.trim()
-      if (message && message !== '.' && message !== '。') return next()
+    session.$prompt().then((message) => {
+      if (!message) return
+      message = message.trim()
+      if (message && message !== '.' && message !== '。') return
       return execute(suggestions[0], session, next)
-    }, session)
+    })
+
     return session.$send(message + suffix)
   })
 }

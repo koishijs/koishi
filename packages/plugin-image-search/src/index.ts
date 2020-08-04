@@ -48,11 +48,11 @@ export function apply (ctx: Context, config: Config = {}) {
         await Promise.all(urls.map(url => callback(url, session, config)))
       }
 
-      session.$app.onceMiddleware((session, next) => {
-        const urls = extractImages(session.message)
-        if (!urls.length) return next()
+      session.$prompt().then((message) => {
+        const urls = extractImages(message)
+        if (!urls.length) return
         return Promise.all(urls.map(url => callback(url, session, config)))
-      }, session)
+      })
 
       return session.$send('请发送图片。')
     }

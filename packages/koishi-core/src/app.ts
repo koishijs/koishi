@@ -4,7 +4,7 @@ import { Context, Middleware, NextFunction } from './context'
 import { Group, User, Database } from './database'
 import { BotOptions, CQServer, ServerTypes } from './server'
 import { Session } from './session'
-import { simplify, defineProperty } from 'koishi-utils'
+import { simplify, defineProperty, Time } from 'koishi-utils'
 import { types } from 'util'
 import help from './plugins/help'
 import shortcut from './plugins/shortcut'
@@ -23,6 +23,7 @@ export interface AppOptions extends BotOptions {
   retryInterval?: number
   maxListeners?: number
   preferSync?: boolean
+  promptTimeout?: number
   queueDelay?: number | ((message: string, session: Session) => number)
   defaultAuthority?: number | ((session: Session) => number)
   quickOperationTimeout?: number
@@ -37,10 +38,11 @@ function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
 
 const defaultOptions: AppOptions = {
   maxListeners: 64,
-  retryInterval: 5000,
-  userCacheTimeout: 60000,
-  groupCacheTimeout: 300000,
-  quickOperationTimeout: 500,
+  promptTimeout: Time.minute,
+  retryInterval: 5 * Time.second,
+  userCacheTimeout: Time.minute,
+  groupCacheTimeout: 5 * Time.minute,
+  quickOperationTimeout: 0.1 * Time.second,
 }
 
 export enum Status { closed, opening, open, closing }

@@ -117,7 +117,7 @@ logger.info('hello world!')
 | [koishi-plugin-common](https://github.com/koishijs/koishi/tree/master/packages/plugin-common) | [![npm](https://img.shields.io/npm/v/koishi-plugin-common/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-common) |
 | [koishi-plugin-eval](https://github.com/koishijs/koishi/tree/master/packages/plugin-eval) | [![npm](https://img.shields.io/npm/v/koishi-plugin-eval/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-eval) |
 | [koishi-plugin-github-webhook](https://github.com/koishijs/koishi/tree/master/packages/plugin-github-webhook) | [![npm](https://img.shields.io/npm/v/koishi-plugin-github-webhook/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-github-webhook) |
-| [koishi-plugin-image-search](https://github.com/koishijs/koishi/tree/master/packages/plugin-image-search) | [![npm](https://img.shields.io/npm/v/koishi-plugin-image-search?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-image-search) |
+| [koishi-plugin-image-search](https://github.com/koishijs/koishi/tree/master/packages/plugin-image-search) | [![npm](https://img.shields.io/npm/v/koishi-plugin-image-search/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-image-search) |
 | [koishi-plugin-monitor](https://github.com/koishijs/koishi/tree/master/packages/plugin-monitor) | [![npm](https://img.shields.io/npm/v/koishi-plugin-monitor/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-monitor) |
 | [koishi-plugin-mysql](https://github.com/koishijs/koishi/tree/master/packages/plugin-mysql) | [![npm](https://img.shields.io/npm/v/koishi-plugin-mysql/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-mysql) |
 | [koishi-plugin-puppeteer](https://github.com/koishijs/koishi/tree/master/packages/plugin-puppeteer) | [![npm](https://img.shields.io/npm/v/koishi-plugin-puppeteer/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-puppeteer) |
@@ -125,7 +125,7 @@ logger.info('hello world!')
 | [koishi-plugin-schedule](https://github.com/koishijs/koishi/tree/master/packages/plugin-schedule) | [![npm](https://img.shields.io/npm/v/koishi-plugin-schedule/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-schedule) |
 | [koishi-plugin-status](https://github.com/koishijs/koishi/tree/master/packages/plugin-status) | [![npm](https://img.shields.io/npm/v/koishi-plugin-status/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-status) |
 | [koishi-plugin-teach](https://github.com/koishijs/koishi/tree/master/packages/plugin-teach) | [![npm](https://img.shields.io/npm/v/koishi-plugin-teach/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-teach) |
-| [koishi-plugin-tools](https://github.com/koishijs/koishi/tree/master/packages/plugin-tools) | [![npm](https://img.shields.io/npm/v/koishi-plugin-tools?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-tools) |
+| [koishi-plugin-tools](https://github.com/koishijs/koishi/tree/master/packages/plugin-tools) | [![npm](https://img.shields.io/npm/v/koishi-plugin-tools/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-tools) |
 
 ## 支持项目作者
 

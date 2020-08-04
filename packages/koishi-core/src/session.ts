@@ -2,6 +2,7 @@ import { User, Group } from './database'
 import { ParsedCommandLine, Command } from './command'
 import { isInteger, contain, observe, Observed } from 'koishi-utils'
 import { App } from './app'
+import { Middleware } from './context'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
 export type MessageType = 'private' | 'group' | 'discuss'
@@ -87,6 +88,8 @@ export interface Session {
   interval?: number
 }
 
+type PromptValidator = (message: string) => boolean
+
 export class Session <U extends User.Field = never, G extends Group.Field = never> {
   $user?: User.Observed<U>
   $group?: Group.Observed<G>
@@ -162,6 +165,22 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
         this.$_delay = delay
         hook()
       }, this.$_delay || 0)
+    })
+  }
+
+  $prompt (timeout = this.$app.options.promptTimeout): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const identifier = getSessionId(this)
+      const dispose = this.$app.prependMiddleware(async (session, next) => {
+        if (getSessionId(session) !== identifier) return next()
+        dispose()
+        clearTimeout(timer)
+        resolve(session.message)
+      })
+      const timer = setTimeout(() => {
+        dispose()
+        resolve('')
+      }, timeout)
     })
   }
 

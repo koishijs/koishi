@@ -121,24 +121,27 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
 
     // 修改问答时发现可能想改回答但是改了问题
     if (target && !ignoreHint && question && !answer && maybeAnswer(question, dialogues)) {
-      session.$app.onceMiddleware(async (session, next) => {
-        const message = session.message.trim()
-        if (message && message !== '.' && message !== '。') return next()
+      session.$prompt().then((message) => {
+        if (!message) return
+        message = message.trim()
+        if (message && message !== '.' && message !== '。') return
         options.answer = options.original
         delete options.question
         return update(argv)
-      }, session)
+      })
       await session.$send('推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -i 选项以忽略本提示。')
       return true
     }
 
     // 如果问题疑似正则表达式但原问答不是正则匹配，提示添加 -x 选项
     if (question && !regexp && maybeRegExp(question) && !ignoreHint && (!target || !dialogues.every(d => d.flag & DialogueFlag.regexp))) {
-      session.$app.onceMiddleware(async (session, next) => {
-        const message = session.message.trim()
-        if (message && message !== '.' && message !== '。') return next()
+      session.$prompt().then((message) => {
+        if (!message) return
+        message = message.trim()
+        if (message && message !== '.' && message !== '。') return
         options.regexp = true
-      }, session)
+        return update(argv)
+      })
       await session.$send(`推测你想${target ? '修改' : '添加'}的问题是正则表达式。发送空行或句号以添加 -x 选项，使用 -i 选项以忽略本提示。`)
       return true
     }

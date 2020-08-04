@@ -219,16 +219,6 @@ export class Context {
     return this.removeListener(Context.MIDDLEWARE_EVENT, middleware)
   }
 
-  onceMiddleware (middleware: Middleware, session?: Session) {
-    const identifier = session ? getSessionId(session) : undefined
-    const listener: Middleware = async (session, next) => {
-      if (identifier && getSessionId(session) !== identifier) return next()
-      this.removeMiddleware(listener)
-      return middleware(session, next)
-    }
-    return this.prependMiddleware(listener)
-  }
-
   command (rawName: string, config?: CommandConfig): Command
   command (rawName: string, description: string, config?: CommandConfig): Command
   command (rawName: string, ...args: [CommandConfig?] | [string, CommandConfig?]) {
