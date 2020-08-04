@@ -47,7 +47,7 @@ export function apply (ctx: Context) {
         newMeta.messageType = ctxType = 'group'
         newMeta.subType = options.type || 'normal'
         delete newMeta.$group
-        await newMeta.observeGroup(Group.fields)
+        await newMeta.$observeGroup(Group.fields)
       } else {
         ctxId = newMeta.userId
         ctxType = 'user'
@@ -63,7 +63,7 @@ export function apply (ctx: Context) {
         newMeta.sender.userId = id
 
         delete newMeta.$user
-        const user = await newMeta.observeUser(User.fields)
+        const user = await newMeta.$observeUser(User.fields)
         if (session.$user.authority <= user.authority) {
           return '权限不足。'
         }

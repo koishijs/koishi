@@ -188,7 +188,7 @@ export class App extends Context {
         // attach group data
         const groupFields = new Set<Group.Field>(['flag', 'assignee'])
         this.emit('before-attach-group', session, groupFields)
-        const group = await session.observeGroup(groupFields)
+        const group = await session.$observeGroup(groupFields)
 
         // emit attach event
         if (await this.serial(session, 'attach-group', session)) return
@@ -201,7 +201,7 @@ export class App extends Context {
       // attach user data
       const userFields = new Set<User.Field>(['flag'])
       this.emit('before-attach-user', session, userFields)
-      const user = await session.observeUser(userFields)
+      const user = await session.$observeUser(userFields)
 
       // emit attach event
       if (await this.serial(session, 'attach-user', session)) return

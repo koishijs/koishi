@@ -167,7 +167,7 @@ async function showCommandHelp (command: Command, session: Session<ValidationFie
   const output = [command.name + command.declaration, command.config.description]
 
   if (command.context.database) {
-    await session.observeUser(['authority', 'timers', 'usage'])
+    await session.$observeUser(['authority', 'timers', 'usage'])
   }
 
   const disabled = command._checkers.some(checker => checker(session))

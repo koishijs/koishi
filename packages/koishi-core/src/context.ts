@@ -305,9 +305,9 @@ export class Context {
 
     if (this.database) {
       if (session.messageType === 'group') {
-        await session.observeGroup()
+        await session.$observeGroup()
       }
-      await session.observeUser()
+      await session.$observeUser()
     }
 
     return argv.command.execute(argv)

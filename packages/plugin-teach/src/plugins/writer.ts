@@ -146,7 +146,7 @@ export default function apply (ctx: Context) {
       ctx.app.emit(session, 'dialogue/before-attach-user', state, userFields)
       session.userId = dialogue.writer
       session.$user = null
-      await session.observeUser(userFields)
+      await session.$observeUser(userFields)
     }
   })
 }

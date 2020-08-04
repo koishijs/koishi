@@ -156,7 +156,7 @@ export function apply (ctx: Context) {
         const fields = action.fields ? action.fields.slice() as Group.Field[] : Group.fields
         let group: Group.Observed
         if (options.thisGroup) {
-          group = await session.observeGroup(fields)
+          group = await session.$observeGroup(fields)
         } else if (isInteger(options.group) && options.group > 0) {
           const data = await ctx.database.getGroup(options.group, fields)
           if (!data) return '未找到指定的群。'
@@ -173,14 +173,14 @@ export function apply (ctx: Context) {
           const data = await ctx.database.getUser(qq, -1, fields)
           if (!data) return '未找到指定的用户。'
           if (qq === session.userId) {
-            user = await session.observeUser(fields)
+            user = await session.$observeUser(fields)
           } else if (session.$user.authority <= data.authority) {
             return '权限不足。'
           } else {
             user = observe(data, diff => ctx.database.setUser(qq, diff), `user ${qq}`)
           }
         } else {
-          user = await session.observeUser(fields)
+          user = await session.$observeUser(fields)
         }
         return (action as ActionItem<User>).callback.call(ctx, session, user, ...args)
       }

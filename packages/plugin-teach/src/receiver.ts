@@ -86,7 +86,7 @@ export async function getTotalWeight (ctx: Context, state: SessionState) {
   ctx.app.emit(session, 'dialogue/prepare', state)
   const userFields = new Set<User.Field>(['name'])
   ctx.app.emit(session, 'dialogue/before-attach-user', state, userFields)
-  await session.observeUser(userFields)
+  await session.$observeUser(userFields)
   if (ctx.app.bail(session, 'dialogue/attach-user', state)) return 0
   return dialogues.reduce((prev, curr) => prev + curr._weight, 0)
 }
