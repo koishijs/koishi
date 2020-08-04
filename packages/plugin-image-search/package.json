@@ -43,6 +43,6 @@
   "dependencies": {
     "axios": "^0.19.2",
     "cheerio": "^1.0.0-rc.3",
-    "nhentai-api-js": "^1.1.4"
+    "nhentai-api": "^3.0.2"
   }
 }

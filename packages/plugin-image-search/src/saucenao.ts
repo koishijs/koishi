@@ -1,11 +1,13 @@
+/* lgtm[js/incomplete-url-substring-sanitization] */
+
 import axios from 'axios'
 import nhentai from './nhentai'
 import danbooru from './danbooru'
 import konachan from './konachan'
 import { Session } from 'koishi-core'
-import { noop, Logger } from 'koishi-utils'
+import { Logger } from 'koishi-utils'
 import { getShareText } from './utils'
-import { Options } from '.'
+import { Config } from '.'
 
 export interface SaucenaoIndex {
   status: number
@@ -63,13 +65,13 @@ export interface SaucenaoResponse {
   results: SaucenaoResult[]
 }
 
-const logger = Logger.create('image')
+const logger = Logger.create('search')
 
-export default async function saucenao (sourceUrl: string, session: Session, config: Options, mixedMode = false) {
+export default async function saucenao (sourceUrl: string, session: Session, config: Config, mixedMode = false) {
   let data: SaucenaoResponse
 
   try {
-    const response = await axios.get('http://saucenao.com/search.php', {
+    const response = await axios.get<SaucenaoResponse>('http://saucenao.com/search.php', {
       params: { db: 999, url: sourceUrl, output_type: 2, numres: 3 },
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36',
@@ -97,14 +99,14 @@ export default async function saucenao (sourceUrl: string, session: Session, con
     }
   }
 
-  const { long_remaining } = data.header
+  const { long_remaining, short_remaining } = data.header
   const [{
     header,
     data: { ext_urls, title, member_id, member_name, eng_name, jp_name },
   }] = data.results
 
   let url: string
-  let source: string
+  let source: string | void
   if (ext_urls) {
     url = ext_urls[0]
     for (let i = 1; i < ext_urls.length; i++) {
@@ -114,16 +116,16 @@ export default async function saucenao (sourceUrl: string, session: Session, con
       }
     }
     url = url.replace('http://', 'https://')
-    if (url.indexOf('danbooru') !== -1) {
-      source = await danbooru(url).catch(noop)
-    } else if (url.indexOf('konachan') !== -1) {
-      source = await konachan(url).catch(noop)
+    if (url.includes('danbooru')) {
+      source = await danbooru(url).catch(logger.debug)
+    } else if (url.includes('konachan')) {
+      source = await konachan(url).catch(logger.debug)
     }
   }
 
   const output: string[] = []
 
-  let { thumbnail, similarity } = header
+  const { thumbnail, similarity } = header
   const lowSimilarity = +similarity < (config.lowSimilarity ?? 40)
   const highSimilarity = +similarity > (config.highSimilarity ?? 60)
 
@@ -141,7 +143,6 @@ export default async function saucenao (sourceUrl: string, session: Session, con
       try {
         const book = await nhentai(bookName)
         if (book) {
-          thumbnail = book.thumbnail.s
           url = `https://nhentai.net/g/${book.id}/`
         } else {
           output.push('没有在 nhentai 找到对应的本子_(:3」∠)_')
@@ -171,6 +172,8 @@ export default async function saucenao (sourceUrl: string, session: Session, con
 
   if (long_remaining < 20) {
     output.push(`注意：24h 内搜图次数仅剩 ${long_remaining} 次。`)
+  } else if (short_remaining < 5) {
+    output.push(`注意：30s 内搜图次数仅剩 ${short_remaining}次。`)
   }
 
   await session.$send(output.join('\n'))

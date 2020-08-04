@@ -13,7 +13,7 @@ export interface ShareData {
   title: string
   thumbnail: string
   authorUrl?: string
-  source?: string
+  source?: string | void
 }
 
 export function getShareText ({ url, title, thumbnail, authorUrl, source }: ShareData) {
