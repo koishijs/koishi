@@ -33,19 +33,22 @@ Context.prototype.freePage = function freePage (this: Context, page: Page) {
   this.app._idlePages.push(page)
 }
 
-export interface Options extends LaunchOptions {
-  screenshot?: false
+export interface Config {
+  browser?: LaunchOptions
+  timeout?: number
+  shot?: false
   latex?: false
 }
 
+const allowedProtocols = ['http', 'https']
+
 export const name = 'puppeteer'
 
-export function apply (ctx: Context, config: Options = {}) {
-  const logger = ctx.logger('puppeteer')
+export function apply (ctx: Context, config: Config = {}) {
   defineProperty(ctx.app, '_idlePages', [])
 
   ctx.on('before-connect', async () => {
-    ctx.app.browser = await launch(config)
+    ctx.app.browser = await launch(config.browser)
     logger.info('browser launched')
   })
 
@@ -53,31 +56,42 @@ export function apply (ctx: Context, config: Options = {}) {
     await ctx.app.browser?.close()
   })
 
-  ctx.command('screenshot <url>', '网页截图', { authority: 2 })
-    .alias('shot')
+  ctx.command('shot <url>', '网页截图', { authority: 2 })
     .option('-f, --full-page', '对整个可滚动区域截图')
     .action(async ({ session, options }, url) => {
-      let page: Page
-      try {
-        page = await ctx.getPage()
-      } catch (error) {
-        return session.$send('无法启动浏览器。')
+      if (!url) return session.$send('请输入网址。')
+      const scheme = /^(\w+):\/\//.exec(url)
+      if (!scheme) {
+        url = 'http://' + url
+      } else if (!allowedProtocols.includes(scheme[1])) {
+        return session.$send('请输入正确的网址。')
       }
 
+      const page = await ctx.getPage()
+
       try {
-        await page.goto(url)
-        logger.debug(`navigated to ${url}`)
+        logger.debug(`navigating to ${url}`)
+        await page.goto(url, {
+          waitUntil: 'networkidle0',
+          timeout: config.timeout,
+        })
       } catch (error) {
         ctx.freePage(page)
+        logger.debug(error)
         return session.$send('无法打开页面。')
       }
 
-      const data = await page.screenshot({
+      return page.screenshot({
         encoding: 'base64',
         fullPage: options.fullPage,
+      }).then((data) => {
+        ctx.freePage(page)
+        session.$send(`[CQ:image,file=base64://${data}]`)
+      }, (error) => {
+        ctx.freePage(page)
+        logger.debug(error)
+        return session.$send('截图失败')
       })
-      ctx.freePage(page)
-      return session.$send(`[CQ:image,file=base64://${data}]`)
     })
 
   ctx.command('latex <code...>', 'LaTeX 渲染', { authority: 2 })
