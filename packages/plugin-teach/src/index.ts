@@ -127,7 +127,7 @@ export function apply (ctx: Context, config: Dialogue.Config = {}) {
     return argv
   })
 
-  ctx.command('teach', '添加教学对话', { authority: 2, checkUnknown: true, hideOptions: true })
+  ctx.command('teach [question] [answer]', '添加教学对话', { authority: 2, checkUnknown: true, hideOptions: true })
     .userFields(['authority', 'id'])
     .usage(cheatSheet)
     .action(async ({ options, session, args }) => {

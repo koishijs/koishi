@@ -23,10 +23,6 @@ declare module '../command' {
   interface CommandConfig <U, G> {
     /** disallow unknown options */
     checkUnknown?: boolean
-    /** check required options */
-    checkRequired?: boolean
-    /** check argument count */
-    checkArgCount?: boolean
     /** show command warnings */
     showWarning?: boolean
     /** usage identifier */
@@ -113,15 +109,13 @@ export default function apply (app: App) {
     }
 
     // check argument count
-    if (command.config.checkArgCount) {
-      const nextArg = command._arguments[args.length]
-      if (nextArg?.required) {
-        return sendHint(session, messages.INSUFFICIENT_ARGUMENTS)
-      }
-      const finalArg = command._arguments[command._arguments.length - 1]
-      if (args.length > command._arguments.length && !finalArg.noSegment && !finalArg.variadic) {
-        return sendHint(session, messages.REDUNANT_ARGUMENTS)
-      }
+    const nextArg = command._arguments[args.length]
+    if (nextArg?.required) {
+      return sendHint(session, messages.INSUFFICIENT_ARGUMENTS)
+    }
+    const finalArg = command._arguments[command._arguments.length - 1]
+    if (args.length > command._arguments.length && !finalArg.noSegment && !finalArg.variadic) {
+      return sendHint(session, messages.REDUNANT_ARGUMENTS)
     }
 
     // check unknown options
@@ -129,16 +123,6 @@ export default function apply (app: App) {
       const unknown = Object.keys(options).map(hyphenate).filter(key => !command['_optionMap'][key])
       if (unknown.length) {
         return sendHint(session, messages.UNKNOWN_OPTIONS, unknown.join(', '))
-      }
-    }
-
-    // check required options
-    if (command.config.checkRequired) {
-      const absent = command._options.find((option) => {
-        return option.required && !(option.longest in options)
-      })
-      if (absent) {
-        return sendHint(session, messages.REQUIRED_OPTIONS, absent.rawName)
       }
     }
 
