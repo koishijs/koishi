@@ -1,8 +1,8 @@
 import { User, Group } from './database'
-import { ParsedCommandLine, Command } from './command'
+import { ParsedArgv, ParsedCommandLine, Command } from './command'
 import { isInteger, contain, observe, Observed, noop } from 'koishi-utils'
+import { NextFunction } from './context'
 import { App } from './app'
-import { ParsedArgv, NextFunction } from './context'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
 export type MessageType = 'private' | 'group'
@@ -13,6 +13,7 @@ export interface MetaTypeMap {
   request: 'friend' | 'group'
   // eslint-disable-next-line camelcase
   meta_event: 'lifecycle' | 'heartbeat'
+  send: null
 }
 
 export interface SubTypeMap {
@@ -21,6 +22,7 @@ export interface SubTypeMap {
   request: 'add' | 'invite'
   // eslint-disable-next-line camelcase
   meta_event: 'enable' | 'disable' | 'connect'
+  send: null
 }
 
 export interface ResponsePayload {
@@ -43,15 +45,18 @@ export interface ParsedMessage {
   message?: string
 }
 
-/** CQHTTP Session Information */
-export interface Session {
+/** CQHTTP Meta Information */
+export interface Meta <P extends PostType = PostType> {
+  // type
+  postType?: P
+  messageType?: MetaTypeMap[P & 'message']
+  noticeType?: MetaTypeMap[P & 'notice']
+  requestType?: MetaTypeMap[P & 'request']
+  metaEventType?: MetaTypeMap[P & 'meta_event']
+  sendType?: MetaTypeMap[P & 'send']
+  subType?: SubTypeMap[P]
+
   // basic properties
-  postType?: PostType
-  messageType?: MetaTypeMap['message']
-  noticeType?: MetaTypeMap['notice']
-  requestType?: MetaTypeMap['request']
-  metaEventType?: MetaTypeMap['meta_event']
-  subType?: SubTypeMap[keyof SubTypeMap]
   selfId?: number
   userId?: number
   groupId?: number
@@ -79,6 +84,8 @@ export interface Session {
   status?: StatusInfo
   interval?: number
 }
+
+export interface Session <U, G, P extends PostType = PostType> extends Meta <P> {}
 
 export class Session <U extends User.Field = never, G extends Group.Field = never> {
   $user?: User.Observed<U>
@@ -243,16 +250,30 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
     return this.$user = user
   }
 
+  $resolve (argv: ParsedArgv, next: NextFunction) {
+    if (typeof argv.command === 'string') {
+      argv.command = this.$app._commandMap[argv.command]
+    }
+    if (!argv.command?.context.match(this)) return
+    return { session: this, next, ...argv } as ParsedCommandLine
+  }
+
+  $parse (message: string, next: NextFunction = noop, forced = false): ParsedCommandLine {
+    if (!message) return
+    const argv = this.$app.bail(this, 'parse', message, this, forced)
+    if (argv) return this.$resolve(argv, next)
+  }
+
   $execute (argv: ParsedArgv): Promise<void>
   $execute (message: string, next?: NextFunction): Promise<void>
   async $execute (...args: [ParsedArgv] | [string, NextFunction?]) {
     let argv: ParsedCommandLine, next: NextFunction
     if (typeof args[0] === 'string') {
       next = args[1] || noop
-      argv = this.$app.parse(args[0], this, next)
+      argv = this.$parse(args[0], next)
     } else {
       next = args[0].next || noop
-      argv = this.$app.resolve(args[0], this, next)
+      argv = this.$resolve(args[0], next)
     }
     if (!argv) return next()
 

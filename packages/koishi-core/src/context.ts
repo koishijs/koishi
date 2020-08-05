@@ -1,5 +1,5 @@
-import { intersection, difference, noop, Logger, defineProperty } from 'koishi-utils'
-import { Command, CommandConfig, ParsedCommandLine, ParsedLine } from './command'
+import { intersection, difference, Logger, defineProperty } from 'koishi-utils'
+import { Command, CommandConfig, ParsedCommandLine, ParsedArgv } from './command'
 import { Session } from './session'
 import { User, Group, Database } from './database'
 import { App } from './app'
@@ -263,65 +263,46 @@ export class Context {
     return parent
   }
 
-  resolve (argv: ParsedArgv, session: Session, next: NextFunction) {
-    if (typeof argv.command === 'string') {
-      argv.command = this.app._commandMap[argv.command]
-    }
-    if (!argv.command?.context.match(session)) return
-    return { session, next, ...argv } as ParsedCommandLine
-  }
-
-  parse (message: string, session: Session, next: NextFunction = noop, forced = false): ParsedCommandLine {
-    if (!message) return
-    const argv = this.bail(session, 'parse', message, session, forced)
-    if (argv) return this.resolve(argv, session, next)
-  }
-
   dispose () {
     this._disposables.forEach(dispose => dispose())
   }
-}
-
-export interface ParsedArgv extends Partial<ParsedLine> {
-  command: string | Command
-  next?: NextFunction
 }
 
 export interface EventMap {
   [Context.MIDDLEWARE_EVENT]: Middleware
 
   // CQHTTP events
-  'message' (session: Session): void
-  'message/normal' (session: Session): void
-  'message/notice' (session: Session): void
-  'message/anonymous' (session: Session): void
-  'message/friend' (session: Session): void
-  'message/group' (session: Session): void
-  'message/other' (session: Session): void
-  'friend-add' (session: Session): void
-  'group-increase' (session: Session): void
-  'group-increase/invite' (session: Session): void
-  'group-increase/approve' (session: Session): void
-  'group-decrease' (session: Session): void
-  'group-decrease/leave' (session: Session): void
-  'group-decrease/kick' (session: Session): void
-  'group-decrease/kick-me' (session: Session): void
-  'group-upload' (session: Session): void
-  'group-admin' (session: Session): void
-  'group-admin/set' (session: Session): void
-  'group-admin/unset' (session: Session): void
-  'group-ban' (session: Session): void
-  'group-ban/ban' (session: Session): void
-  'group-ban/lift-ban' (session: Session): void
-  'group_recall' (session: Session): void
-  'request/friend' (session: Session): void
-  'request/group/add' (session: Session): void
-  'request/group/invite' (session: Session): void
-  'heartbeat' (session: Session): void
-  'lifecycle' (session: Session): void
-  'lifecycle/enable' (session: Session): void
-  'lifecycle/disable' (session: Session): void
-  'lifecycle/connect' (session: Session): void
+  'message' (session: Session<never, never, 'message'>): void
+  'message/normal' (session: Session<never, never, 'message'>): void
+  'message/notice' (session: Session<never, never, 'message'>): void
+  'message/anonymous' (session: Session<never, never, 'message'>): void
+  'message/friend' (session: Session<never, never, 'message'>): void
+  'message/group' (session: Session<never, never, 'message'>): void
+  'message/other' (session: Session<never, never, 'message'>): void
+  'friend-add' (session: Session<never, never, 'notice'>): void
+  'group-increase' (session: Session<never, never, 'notice'>): void
+  'group-increase/invite' (session: Session<never, never, 'notice'>): void
+  'group-increase/approve' (session: Session<never, never, 'notice'>): void
+  'group-decrease' (session: Session<never, never, 'notice'>): void
+  'group-decrease/leave' (session: Session<never, never, 'notice'>): void
+  'group-decrease/kick' (session: Session<never, never, 'notice'>): void
+  'group-decrease/kick-me' (session: Session<never, never, 'notice'>): void
+  'group-upload' (session: Session<never, never, 'notice'>): void
+  'group-admin' (session: Session<never, never, 'notice'>): void
+  'group-admin/set' (session: Session<never, never, 'notice'>): void
+  'group-admin/unset' (session: Session<never, never, 'notice'>): void
+  'group-ban' (session: Session<never, never, 'notice'>): void
+  'group-ban/ban' (session: Session<never, never, 'notice'>): void
+  'group-ban/lift-ban' (session: Session<never, never, 'notice'>): void
+  'group_recall' (session: Session<never, never, 'notice'>): void
+  'request/friend' (session: Session<never, never, 'request'>): void
+  'request/group/add' (session: Session<never, never, 'request'>): void
+  'request/group/invite' (session: Session<never, never, 'request'>): void
+  'heartbeat' (session: Session<never, never, 'meta_event'>): void
+  'lifecycle' (session: Session<never, never, 'meta_event'>): void
+  'lifecycle/enable' (session: Session<never, never, 'meta_event'>): void
+  'lifecycle/disable' (session: Session<never, never, 'meta_event'>): void
+  'lifecycle/connect' (session: Session<never, never, 'meta_event'>): void
 
   // Koishi events
   'parse' (message: string, session: Session, forced: boolean): undefined | ParsedArgv

@@ -183,7 +183,7 @@ export class App extends Context {
 
     // store parsed message
     session.$parsed = { atMe, nickname, prefix, message }
-    session.$argv = this.parse(message, session, next, true)
+    session.$argv = session.$parse(message, next, true)
 
     if (this.database) {
       if (session.messageType === 'group') {

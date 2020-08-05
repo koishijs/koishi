@@ -93,6 +93,11 @@ export interface ParsedCommandLine <U extends User.Field = never, G extends Grou
   next?: NextFunction
 }
 
+export interface ParsedArgv extends Partial<ParsedLine> {
+  command: string | Command
+  next?: NextFunction
+}
+
 export interface CommandConfig <U extends User.Field = never, G extends Group.Field = never> {
   /** description */
   description?: string
