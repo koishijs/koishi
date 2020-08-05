@@ -38,7 +38,7 @@ export class MainAPI {
 
   send (message: string) {
     if (MainAPI.config.maxLogs > this.logCount++) {
-      return this.session.$send(message)
+      return this.session.$sendQueued(message)
     }
   }
 

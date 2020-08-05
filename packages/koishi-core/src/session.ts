@@ -94,8 +94,9 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
   $parsed?: ParsedMessage
   $response?: (payload: ResponsePayload) => void
 
-  private $_delay?: number
-  private $_hooks?: (() => void)[] = []
+  private _delay?: number
+  private _queued = Promise.resolve()
+  private _hooks?: (() => void)[] = []
 
   constructor (session: Partial<Session>) {
     Object.assign(this, session)
@@ -139,8 +140,8 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
   }
 
   $cancelQueued (delay = 0) {
-    this.$_hooks.forEach(Reflect.apply)
-    this.$_delay = delay
+    this._hooks.forEach(Reflect.apply)
+    this._delay = delay
   }
 
   async $sendQueued (message: string | void, delay?: number) {
@@ -149,20 +150,20 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
       const { queueDelay = 100 } = this.$app.options
       delay = typeof queueDelay === 'function' ? queueDelay(message, this) : queueDelay
     }
-    return new Promise<void>(async (resolve) => {
+    return this._queued = this._queued.then(() => new Promise<void>((resolve) => {
       const hook = () => {
         resolve()
         clearTimeout(timer)
-        const index = this.$_hooks.indexOf(hook)
-        if (index >= 0) this.$_hooks.splice(index, 1)
+        const index = this._hooks.indexOf(hook)
+        if (index >= 0) this._hooks.splice(index, 1)
       }
-      this.$_hooks.push(hook)
+      this._hooks.push(hook)
       const timer = setTimeout(async () => {
         await this.$send(message)
-        this.$_delay = delay
+        this._delay = delay
         hook()
-      }, this.$_delay || 0)
-    })
+      }, this._delay || 0)
+    }))
   }
 
   /** 在元数据上绑定一个可观测群实例 */
