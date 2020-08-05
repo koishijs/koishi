@@ -273,8 +273,6 @@ export interface CQSender {
   setGroupLeaveAsync (groupId: number, isDismiss?: boolean): Promise<void>
   setGroupSpecialTitle (groupId: number, userId: number, specialTitle?: string, duration?: number): Promise<void>
   setGroupSpecialTitleAsync (groupId: number, userId: number, specialTitle?: string, duration?: number): Promise<void>
-  setDiscussLeave (discussId: number): Promise<void>
-  setDiscussLeaveAsync (discussId: number): Promise<void>
   getLoginInfo (): Promise<AccountInfo>
   getStrangerInfo (userId: number, noCache?: boolean): Promise<StrangerInfo>
   getFriendList (): Promise<FriendInfo[]>
@@ -308,7 +306,6 @@ defineAsync('set_group_anonymous', 'group_id', 'enable')
 defineAsync('set_group_card', 'group_id', 'user_id', 'card')
 defineAsync('set_group_leave', 'group_id', 'is_dismiss')
 defineAsync('set_group_special_title', 'group_id', 'user_id', 'special_title', 'duration')
-defineAsync('set_discuss_leave', 'discuss_id')
 defineSync('get_login_info')
 defineSync('get_stranger_info', 'user_id', 'no_cache')
 defineSync('get_friend_list')

@@ -33,9 +33,7 @@ function inspectSchedule ({ id, session, interval, command, time }: Schedule) {
 }
 
 function formatContext (session: Session) {
-  return session.messageType === 'private' ? `私聊 ${session.userId}`
-    : session.messageType === 'group' ? `群聊 ${session.groupId}`
-    : `讨论组 ${session.discussId}`
+  return session.messageType === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.groupId}`
 }
 
 export const name = 'schedule'

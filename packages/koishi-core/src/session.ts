@@ -60,7 +60,6 @@ export interface Meta <P extends PostType = PostType> {
   selfId?: number
   userId?: number
   groupId?: number
-  discussId?: number
   time?: number
 
   // message event
@@ -406,7 +405,7 @@ export interface StatusInfo {
 /**
  * get context unique id
  * @example
- * getContextId(session) // user123, group456, discuss789
+ * getContextId(session) // user123, group456
  */
 export function getContextId (session: Session) {
   const type = session.messageType === 'private' ? 'user' : session.messageType

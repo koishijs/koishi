@@ -34,7 +34,6 @@ export function apply (ctx: Context) {
       newSession.$sendQueued = session.$sendQueued.bind(session)
 
       delete newSession.groupId
-      delete newSession.discussId
 
       if (options.group) {
         newSession.groupId = +options.group
