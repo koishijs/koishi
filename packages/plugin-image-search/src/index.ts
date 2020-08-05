@@ -48,7 +48,8 @@ export function apply (ctx: Context, config: Config = {}) {
         await Promise.all(urls.map(url => callback(url, session, config)))
       }
 
-      session.$once(({ message }, next) => {
+      const dispose = session.$use(({ message }, next) => {
+        dispose()
         const urls = extractImages(message)
         if (!urls.length) return next()
         return Promise.all(urls.map(url => callback(url, session, config)))

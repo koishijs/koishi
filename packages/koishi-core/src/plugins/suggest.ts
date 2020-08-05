@@ -4,8 +4,9 @@ import leven from 'leven'
 
 declare module '../session' {
   interface Session {
+    $use (middleware: Middleware, timeout?: number): () => void
+    $prompt (timeout?: number): Promise<string>
     $suggest (options: SuggestOptions): void
-    $once (middleware: Middleware, timeout?: number): () => void
   }
 }
 
@@ -23,11 +24,10 @@ export function getSessionId (session: Session) {
   return '' + session.userId + session.groupId
 }
 
-Session.prototype.$once = function $once (this: Session, middleware: Middleware, timeout = this.$app.options.promptTimeout) {
+Session.prototype.$use = function $use (this: Session, middleware: Middleware, timeout = this.$app.options.promptTimeout) {
   const identifier = getSessionId(this)
   const _dispose = this.$app.prependMiddleware(async (session, next) => {
     if (identifier && getSessionId(session) !== identifier) return next()
-    dispose()
     return middleware(session, next)
   })
   const timer = setTimeout(dispose, timeout)
@@ -36,6 +36,22 @@ Session.prototype.$once = function $once (this: Session, middleware: Middleware,
     clearTimeout(timer)
   }
   return dispose
+}
+
+Session.prototype.$prompt = function $prompt (this: Session, timeout = this.$app.options.promptTimeout) {
+  return new Promise((resolve, reject) => {
+    const identifier = getSessionId(this)
+    const dispose = this.$app.prependMiddleware(async (session, next) => {
+      if (identifier && getSessionId(session) !== identifier) return next()
+      clearTimeout(timer)
+      dispose()
+      resolve(session.message)
+    })
+    const timer = setTimeout(() => {
+      dispose()
+      reject(new Error('prompt timeout'))
+    }, timeout)
+  })
 }
 
 Session.prototype.$suggest = function $suggest (this: Session, options: SuggestOptions) {
@@ -56,7 +72,7 @@ Session.prototype.$suggest = function $suggest (this: Session, options: SuggestO
     const message = prefix + `你要找的是不是${suggestions.map(name => `“${name}”`).join('或')}？`
     if (suggestions.length > 1) return this.$send(message)
 
-    this.$once((session, next) => {
+    this.$use((session, next) => {
       const message = session.message.trim()
       if (message && message !== '.' && message !== '。') return next()
       return apply.call(session, suggestions[0], next)

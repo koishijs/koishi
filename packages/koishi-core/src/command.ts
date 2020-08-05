@@ -373,7 +373,8 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
       }
     }
 
-    const [content] = source.split(';', 1)
+    // TODO multiple terminators
+    const [content] = terminator ? source.split(terminator, 1) : [source]
     return {
       content,
       quoted: false,
