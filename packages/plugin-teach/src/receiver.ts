@@ -208,7 +208,7 @@ export default function (ctx: Context, config: Dialogue.Config) {
     for (const data of dialogues) {
       const capture = data.answer.match(/%\{.+?\}/g)
       for (const message of capture || []) {
-        const argv = ctx.parse(message.slice(2, -1), session)
+        const argv = session.$parse(message.slice(2, -1))
         Command.collect(argv, 'user', userFields)
       }
       if (capture || data.answer.includes('%n')) {

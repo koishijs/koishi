@@ -37,7 +37,7 @@
     "pixiv"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.0.0-beta.3",
+    "koishi-core": "^2.0.0-beta.4",
     "koishi-utils": "^2.1.2"
   },
   "dependencies": {
