@@ -48,9 +48,9 @@ export function apply (ctx: Context, config: Config = {}) {
         await Promise.all(urls.map(url => callback(url, session, config)))
       }
 
-      session.$prompt().then((message) => {
+      session.$prompt(({ message }, next) => {
         const urls = extractImages(message)
-        if (!urls.length) return
+        if (!urls.length) return next()
         return Promise.all(urls.map(url => callback(url, session, config)))
       })
 

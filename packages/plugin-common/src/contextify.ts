@@ -30,56 +30,56 @@ export function apply (ctx: Context) {
         return '请提供新的上下文。'
       }
 
-      const newMeta = new Session(session)
-      newMeta.$send = session.$send.bind(session)
-      newMeta.$sendQueued = session.$sendQueued.bind(session)
+      const newSession = new Session(session)
+      newSession.$send = session.$send.bind(session)
+      newSession.$sendQueued = session.$sendQueued.bind(session)
 
-      delete newMeta.groupId
-      delete newMeta.discussId
+      delete newSession.groupId
+      delete newSession.discussId
 
       let ctxType: ContextType, ctxId: number
       if (options.discuss) {
-        newMeta.discussId = ctxId = +options.discuss
-        newMeta.messageType = 'discuss'
-        newMeta.messageType = ctxType = 'discuss'
+        newSession.discussId = ctxId = +options.discuss
+        newSession.messageType = 'discuss'
+        newSession.messageType = ctxType = 'discuss'
       } else if (options.group) {
-        newMeta.groupId = ctxId = +options.group
-        newMeta.messageType = ctxType = 'group'
-        newMeta.subType = options.type || 'normal'
-        delete newMeta.$group
-        await newMeta.$observeGroup(Group.fields)
+        newSession.groupId = ctxId = +options.group
+        newSession.messageType = ctxType = 'group'
+        newSession.subType = options.type || 'normal'
+        delete newSession.$group
+        await newSession.$observeGroup(Group.fields)
       } else {
-        ctxId = newMeta.userId
+        ctxId = newSession.userId
         ctxType = 'user'
-        newMeta.messageType = 'private'
-        newMeta.subType = options.type || 'other'
+        newSession.messageType = 'private'
+        newSession.subType = options.type || 'other'
       }
 
       if (options.user) {
         const id = getTargetId(options.user)
         if (!id) return '未指定目标。'
 
-        newMeta.userId = id
-        newMeta.sender.userId = id
+        newSession.userId = id
+        newSession.sender.userId = id
 
-        delete newMeta.$user
-        const user = await newMeta.$observeUser(User.fields)
+        delete newSession.$user
+        const user = await newSession.$observeUser(User.fields)
         if (session.$user.authority <= user.authority) {
           return '权限不足。'
         }
       }
 
       if (options.group) {
-        const info = await session.$bot.getGroupMemberInfo(ctxId, newMeta.userId).catch(() => ({}))
-        Object.assign(newMeta.sender, info)
+        const info = await session.$bot.getGroupMemberInfo(ctxId, newSession.userId).catch(() => ({}))
+        Object.assign(newSession.sender, info)
       } else if (options.user) {
-        const info = await session.$bot.getStrangerInfo(newMeta.userId).catch(() => ({}))
-        Object.assign(newMeta.sender, info)
+        const info = await session.$bot.getStrangerInfo(newSession.userId).catch(() => ({}))
+        Object.assign(newSession.sender, info)
       }
 
-      newMeta.$ctxId = ctxId
-      newMeta.$ctxType = ctxType
+      newSession.$ctxId = ctxId
+      newSession.$ctxType = ctxType
 
-      return ctx.execute(message, newMeta)
+      return ctx.execute(message, newSession)
     })
 }

@@ -1,6 +1,6 @@
 import { intersection, difference, noop, Logger, defineProperty } from 'koishi-utils'
 import { Command, CommandConfig, ParsedCommandLine, ParsedLine } from './command'
-import { Session, getSessionId } from './session'
+import { Session } from './session'
 import { User, Group, Database } from './database'
 import { App } from './app'
 

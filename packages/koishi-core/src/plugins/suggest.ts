@@ -1,63 +1,96 @@
-import { App } from '../app'
-import { NextFunction } from '../context'
+import { NextFunction, Context, Middleware } from '../context'
 import { Session } from '../session'
 import leven from 'leven'
 
-export default function apply (app: App) {
-  app.middleware((session, next) => {
-    if (session.$argv) return next()
-    const { message, prefix, nickname } = session.$parsed
-    const target = session.$parsed.message.split(/\s/, 1)[0].toLowerCase()
-    if (!target || !(prefix !== null || nickname || session.messageType === 'private')) return next()
-
-    const items = Object.keys(app._commandMap)
-      .filter(name => app._commandMap[name].context.match(session))
-
-    return showSuggestions({
-      target,
-      session,
-      next,
-      items,
-      prefix: '没有此命令。',
-      suffix: '发送空行或句号以调用推测的指令。',
-      coefficient: app.options.similarityCoefficient,
-      async execute (suggestion, session, next) {
-        const newMessage = suggestion + message.slice(target.length)
-        return app.execute(newMessage, session, next)
-      },
-    })
-  })
+declare module '../session' {
+  interface Session {
+    $suggest (options: SuggestOptions): void
+    $prompt (middleware: Middleware, timeout?: number): () => void
+  }
 }
 
 interface SuggestOptions {
   target: string
   items: string[]
-  session: Session
-  next: NextFunction
-  prefix: string
+  next?: NextFunction
+  prefix?: string
   suffix: string
   coefficient?: number
-  execute: (suggestion: string, session: Session, next: NextFunction) => any
+  apply: (suggestion: string, session: Session, next: NextFunction) => any
 }
 
-export function showSuggestions (options: SuggestOptions): Promise<void> {
-  const { target, items, session, next, prefix, suffix, execute, coefficient = 0.4 } = options
-  const suggestions = items.filter((name) => {
-    return name.length > 2 && leven(name, target) <= name.length * coefficient
+/**
+ * get session unique id
+ * @example
+ * getSessionId(session) // 123user123, 123group456, 123discuss789
+ */
+export function getSessionId (session: Session) {
+  return session.$ctxId + session.$ctxType + session.userId
+}
+
+Session.prototype.$prompt = function $prompt (this: Session, middleware: Middleware, timeout = this.$app.options.promptTimeout) {
+  const identifier = getSessionId(this)
+  const _dispose = this.$app.prependMiddleware(async (session, next) => {
+    if (identifier && getSessionId(session) !== identifier) return next()
+    dispose()
+    return middleware(session, next)
   })
-  if (!suggestions.length) return next()
+  const timer = setTimeout(dispose, timeout)
+  function dispose () {
+    _dispose()
+    clearTimeout(timer)
+  }
+  return dispose
+}
+
+Session.prototype.$suggest = function $suggest (this: Session, options: SuggestOptions) {
+  const { target, items, next = callback => callback(), prefix = '', suffix, apply, coefficient = 0.4 } = options
+  let suggestions: string[], minDistance = Infinity
+  for (const name of items) {
+    const distance = leven(name, target)
+    if (name.length <= 2 || distance > name.length * coefficient) continue
+    if (distance === minDistance) {
+      suggestions.push(name)
+    } else if (distance < minDistance) {
+      suggestions = [name]
+    }
+  }
+  if (!suggestions) return next(() => this.$send(prefix))
 
   return next(() => {
     const message = prefix + `你要找的是不是${suggestions.map(name => `“${name}”`).join('或')}？`
-    if (suggestions.length > 1) return session.$send(message)
+    if (suggestions.length > 1) return this.$send(message)
 
-    session.$prompt().then((message) => {
-      if (!message) return
+    this.$prompt(({ message }, next) => {
       message = message.trim()
-      if (message && message !== '.' && message !== '。') return
-      return execute(suggestions[0], session, next)
+      if (message && message !== '.' && message !== '。') return next()
+      return apply(suggestions[0], this, next)
     })
 
-    return session.$send(message + suffix)
+    return this.$send(message + suffix)
+  })
+}
+
+export default function apply (ctx: Context) {
+  ctx.middleware((session, next) => {
+    if (session.$argv) return next()
+    const { message, prefix, nickname } = session.$parsed
+    const target = session.$parsed.message.split(/\s/, 1)[0].toLowerCase()
+    if (!target || !(prefix !== null || nickname || session.messageType === 'private')) return next()
+
+    const items = Object.keys(ctx.app._commandMap)
+      .filter(name => ctx.app._commandMap[name].context.match(session))
+
+    return session.$suggest({
+      target,
+      next,
+      items,
+      suffix: '发送空行或句号以调用推测的指令。',
+      coefficient: ctx.app.options.similarityCoefficient,
+      async apply (suggestion, session, next) {
+        const newMessage = suggestion + message.slice(target.length)
+        return ctx.execute(newMessage, session, next)
+      },
+    })
   })
 }

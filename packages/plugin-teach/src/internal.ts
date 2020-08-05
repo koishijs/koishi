@@ -121,10 +121,9 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
 
     // 修改问答时发现可能想改回答但是改了问题
     if (target && !ignoreHint && question && !answer && maybeAnswer(question, dialogues)) {
-      session.$prompt().then((message) => {
-        if (!message) return
+      session.$prompt(({ message }, next) => {
         message = message.trim()
-        if (message && message !== '.' && message !== '。') return
+        if (message && message !== '.' && message !== '。') return next()
         options.answer = options.original
         delete options.question
         return update(argv)
@@ -135,10 +134,9 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
 
     // 如果问题疑似正则表达式但原问答不是正则匹配，提示添加 -x 选项
     if (question && !regexp && maybeRegExp(question) && !ignoreHint && (!target || !dialogues.every(d => d.flag & DialogueFlag.regexp))) {
-      session.$prompt().then((message) => {
-        if (!message) return
+      session.$prompt(({ message }, next) => {
         message = message.trim()
-        if (message && message !== '.' && message !== '。') return
+        if (message && message !== '.' && message !== '。') return next()
         options.regexp = true
         return update(argv)
       })
