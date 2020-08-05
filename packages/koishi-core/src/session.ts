@@ -5,7 +5,7 @@ import { App } from './app'
 import { ParsedArgv, NextFunction } from './context'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
-export type MessageType = 'private' | 'group' | 'discuss'
+export type MessageType = 'private' | 'group'
 
 export interface MetaTypeMap {
   message: MessageType
@@ -16,20 +16,12 @@ export interface MetaTypeMap {
 }
 
 export interface SubTypeMap {
-  message: 'friend' | 'group' | 'discuss' | 'other' | 'normal' | 'anonymous' | 'notice'
+  message: 'friend' | 'group' | 'other' | 'normal' | 'anonymous' | 'notice'
   notice: 'set' | 'unset' | 'approve' | 'invite' | 'leave' | 'kick' | 'kick_me' | 'ban' | 'lift_ban'
   request: 'add' | 'invite'
   // eslint-disable-next-line camelcase
   meta_event: 'enable' | 'disable' | 'connect'
 }
-
-export enum contextTypes {
-  user = 0,
-  group = 1,
-  discuss = 2,
-}
-
-export type ContextType = keyof typeof contextTypes
 
 export interface ResponsePayload {
   delete?: boolean
@@ -109,14 +101,6 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
     }))
   }
 
-  get $ctxType () {
-    return this.groupId ? 'group' : this.discussId ? 'discuss' : this.userId ? 'user' : null
-  }
-
-  get $ctxId () {
-    return this.groupId || this.discussId || this.userId
-  }
-
   get $bot () {
     return this.$app.bots[this.selfId]
   }
@@ -133,16 +117,18 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
   }
 
   async $send (message: string, autoEscape = false) {
+    let ctxId: number
+    const ctxType = (ctxId = this.groupId) ? 'group' : (ctxId = this.userId) ? 'user' : null
     if (this.$app.options.preferSync) {
-      await this.$bot.sendMsg(this.messageType, this.$ctxId, message, autoEscape)
+      await this.$bot.sendMsg(this.messageType, ctxId, message, autoEscape)
       return
     }
     if (this.$response) {
-      const _meta = this.$bot._createSendMeta(this.messageType, this.$ctxType, this.$ctxId, message)
-      if (this.$app.bail(this, 'before-send', _meta)) return
+      const session = this.$bot.createSession(this.messageType, ctxType, ctxId, message)
+      if (this.$app.bail(this, 'before-send', session)) return
       return this.$response({ reply: message, autoEscape, atSender: false })
     }
-    return this.$bot.sendMsgAsync(this.messageType, this.$ctxId, message, autoEscape)
+    return this.$bot.sendMsgAsync(this.messageType, ctxId, message, autoEscape)
   }
 
   $cancelQueued (delay = 0) {

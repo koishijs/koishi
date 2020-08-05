@@ -19,13 +19,8 @@ interface SuggestOptions {
   apply: (suggestion: string, session: Session, next: NextFunction) => any
 }
 
-/**
- * get session unique id
- * @example
- * getSessionId(session) // 123user123, 123group456, 123discuss789
- */
 export function getSessionId (session: Session) {
-  return session.$ctxId + session.$ctxType + session.userId
+  return '' + session.userId + session.groupId
 }
 
 Session.prototype.$prompt = function $prompt (this: Session, middleware: Middleware, timeout = this.$app.options.promptTimeout) {

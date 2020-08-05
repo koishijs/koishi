@@ -24,7 +24,7 @@ export const name = 'recorder'
 
 export function apply (ctx: Context, options: RecorderOptions = {}) {
   async function handleMessage (session: Session<never, 'assignee'>) {
-    if (session.$ctxType !== 'group' || session.postType === 'message' && session.$group.assignee !== session.selfId) return
+    if (session.subType === 'group' && session.$group.assignee !== session.selfId) return
     if (await ctx.serial('before-record', session)) return
     const output = JSON.stringify(pick(session, ['time', 'userId', 'message'])) + '\n'
     const path = resolve(cwd, options.folder || 'messages', `${session.groupId}.txt`)

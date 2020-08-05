@@ -7,7 +7,7 @@ import {} from 'koa-bodyparser'
 import { Server } from 'http'
 import { createHmac } from 'crypto'
 import { camelCase, snakeCase, paramCase, Logger, defineProperty } from 'koishi-utils'
-import { Session, ContextType } from './session'
+import { Session } from './session'
 import { App } from './app'
 import { CQSender, CQResponse } from './sender'
 

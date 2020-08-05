@@ -24,6 +24,8 @@
   "license": "LGPL-3.0-or-later",
   "devDependencies": {
     "@octokit/rest": "^18.0.3",
+    "@swc-node/jest": "^0.1.13",
+    "@swc-node/register": "^0.1.12",
     "@types/cross-spawn": "^6.0.2",
     "@types/fs-extra": "^9.0.1",
     "@types/jest": "^26.0.8",

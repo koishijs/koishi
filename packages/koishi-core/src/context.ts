@@ -297,7 +297,6 @@ export interface EventMap {
   'message/anonymous' (session: Session): void
   'message/friend' (session: Session): void
   'message/group' (session: Session): void
-  'message/discuss' (session: Session): void
   'message/other' (session: Session): void
   'friend-add' (session: Session): void
   'group-increase' (session: Session): void
