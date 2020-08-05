@@ -16,7 +16,7 @@ function inspectSchedule ({ id, session, interval, command, time }: Schedule) {
     if (date < now) return database.removeSchedule(id)
     return setTimeout(async () => {
       if (!await database.getSchedule(id)) return
-      session.$app.execute(command, session)
+      session.$execute(command)
       database.removeSchedule(id)
     }, date - now)
   }
@@ -26,9 +26,9 @@ function inspectSchedule ({ id, session, interval, command, time }: Schedule) {
     if (!await database.getSchedule(id)) return
     const timer = setInterval(async () => {
       if (!await database.getSchedule(id)) return clearInterval(timer)
-      session.$app.execute(command, session)
+      session.$execute(command)
     }, interval)
-    session.$app.execute(command, session)
+    session.$execute(command)
   }, timeout)
 }
 

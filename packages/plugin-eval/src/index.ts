@@ -45,7 +45,7 @@ export class MainAPI {
   async execute (message: string) {
     const send = this.session.$send
     const sendQueued = this.session.$sendQueued
-    await this.session.$app.execute(message, this.session)
+    await this.session.$execute(message)
     this.session.$sendQueued = sendQueued
     this.session.$send = send
   }

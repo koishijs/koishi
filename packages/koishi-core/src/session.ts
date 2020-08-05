@@ -1,7 +1,8 @@
 import { User, Group } from './database'
 import { ParsedCommandLine, Command } from './command'
-import { isInteger, contain, observe, Observed } from 'koishi-utils'
+import { isInteger, contain, observe, Observed, noop } from 'koishi-utils'
 import { App } from './app'
+import { ParsedArgv, NextFunction } from './context'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
 export type MessageType = 'private' | 'group' | 'discuss'
@@ -248,6 +249,33 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
     const user = userCache[userId] = observe(data, diff => this.$app.database.setUser(userId, diff), `user ${userId}`)
     userCache[userId]._timestamp = timestamp
     return this.$user = user
+  }
+
+  $execute (argv: ParsedArgv): Promise<void>
+  $execute (message: string, next?: NextFunction): Promise<void>
+  async $execute (...args: [ParsedArgv] | [string, NextFunction?]) {
+    // TODO investigate removal
+    if (!('$ctxType' in this)) this.$app.server.parseMeta(this)
+
+    let argv: ParsedCommandLine, next: NextFunction
+    if (typeof args[0] === 'string') {
+      next = args[1] || noop
+      argv = this.$app.parse(args[0], this, next)
+    } else {
+      next = args[0].next || noop
+      argv = this.$app.resolve(args[0], this, next)
+    }
+    if (!argv) return next()
+
+    if (this.$app.database) {
+      if (this.messageType === 'group') {
+        await this.$observeGroup()
+      }
+      await this.$observeUser()
+    }
+
+    argv.session = this
+    return argv.command.execute(argv)
   }
 }
 

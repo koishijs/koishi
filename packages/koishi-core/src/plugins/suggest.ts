@@ -89,7 +89,7 @@ export default function apply (ctx: Context) {
       coefficient: ctx.app.options.similarityCoefficient,
       async apply (suggestion, session, next) {
         const newMessage = suggestion + message.slice(target.length)
-        return ctx.execute(newMessage, session, next)
+        return session.$execute(newMessage, next)
       },
     })
   })

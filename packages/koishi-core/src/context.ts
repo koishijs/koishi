@@ -263,7 +263,7 @@ export class Context {
     return parent
   }
 
-  private resolve (argv: ParsedArgv, session: Session, next: NextFunction) {
+  resolve (argv: ParsedArgv, session: Session, next: NextFunction) {
     if (typeof argv.command === 'string') {
       argv.command = this.app._commandMap[argv.command]
     }
@@ -277,32 +277,6 @@ export class Context {
     if (argv) return this.resolve(argv, session, next)
   }
 
-  execute (argv: ExecuteArgv): Promise<void>
-  execute (message: string, session: Session, next?: NextFunction): Promise<void>
-  async execute (...args: [ExecuteArgv] | [string, Session, NextFunction?]) {
-    const session = typeof args[0] === 'string' ? args[1] : args[0].session
-    if (!('$ctxType' in session)) this.app.server.parseMeta(session)
-
-    let argv: ParsedCommandLine, next: NextFunction
-    if (typeof args[0] === 'string') {
-      next = args[2] || noop
-      argv = this.parse(args[0], session, next)
-    } else {
-      next = args[0].next || noop
-      argv = this.resolve(args[0], session, next)
-    }
-    if (!argv) return next()
-
-    if (this.database) {
-      if (session.messageType === 'group') {
-        await session.$observeGroup()
-      }
-      await session.$observeUser()
-    }
-
-    return argv.command.execute(argv)
-  }
-
   dispose () {
     this._disposables.forEach(dispose => dispose())
   }
@@ -310,12 +284,7 @@ export class Context {
 
 export interface ParsedArgv extends Partial<ParsedLine> {
   command: string | Command
-  session?: Session
   next?: NextFunction
-}
-
-export interface ExecuteArgv extends ParsedArgv {
-  session: Session
 }
 
 export interface EventMap {

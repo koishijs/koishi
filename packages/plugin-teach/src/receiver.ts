@@ -165,7 +165,7 @@ export async function triggerDialogue (ctx: Context, session: Session, config: D
       if (end < 0) end = Infinity
       const command = unescapeAnswer(state.answer.slice(0, end))
       state.answer = state.answer.slice(end + 1)
-      await buffer.run(() => ctx.execute(command, session))
+      await buffer.run(() => session.$execute(command))
     }
   }
   await buffer.end(unescapeAnswer(state.answer))

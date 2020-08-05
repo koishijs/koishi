@@ -80,6 +80,6 @@ export function apply (ctx: Context) {
       newSession.$ctxId = ctxId
       newSession.$ctxType = ctxType
 
-      return ctx.execute(message, newSession)
+      return newSession.$execute(message)
     })
 }
