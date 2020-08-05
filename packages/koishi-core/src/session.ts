@@ -91,8 +91,6 @@ export interface Session {
 export class Session <U extends User.Field = never, G extends Group.Field = never> {
   $user?: User.Observed<U>
   $group?: Group.Observed<G>
-  $ctxId?: number
-  $ctxType?: ContextType
   $app?: App
   $argv?: ParsedCommandLine
   $parsed?: ParsedMessage
@@ -109,6 +107,14 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
     return Object.fromEntries(Object.entries(this).filter(([key]) => {
       return !key.startsWith('_') && !key.startsWith('$')
     }))
+  }
+
+  get $ctxType () {
+    return this.groupId ? 'group' : this.discussId ? 'discuss' : this.userId ? 'user' : null
+  }
+
+  get $ctxId () {
+    return this.groupId || this.discussId || this.userId
   }
 
   get $bot () {
@@ -254,9 +260,6 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
   $execute (argv: ParsedArgv): Promise<void>
   $execute (message: string, next?: NextFunction): Promise<void>
   async $execute (...args: [ParsedArgv] | [string, NextFunction?]) {
-    // TODO investigate removal
-    if (!('$ctxType' in this)) this.$app.server.parseMeta(this)
-
     let argv: ParsedCommandLine, next: NextFunction
     if (typeof args[0] === 'string') {
       next = args[1] || noop

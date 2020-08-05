@@ -58,16 +58,14 @@ export class CQSender {
     await this.get(action + '_async', params)
   }
 
-  _createSendMeta (messageType: MessageType, $ctxType: ContextType, $ctxId: number, message: string) {
+  _createSendMeta (messageType: MessageType, ctxType: ContextType, ctxId: number, message: string) {
     return new Session({
-      $ctxId,
-      $ctxType,
       message,
       messageType,
       postType: 'send',
       $app: this.app,
       selfId: this.bot.selfId,
-      [$ctxType + 'Id']: $ctxId,
+      [ctxType + 'Id']: ctxId,
       time: Math.round(Date.now() / 1000),
     })
   }

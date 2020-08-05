@@ -50,7 +50,7 @@ export abstract class CQServer {
     })
   }
 
-  protected prepareMeta (data: any) {
+  protected prepare (data: any) {
     const meta = camelCase<Session>(data)
     if (!this.bots[meta.selfId]) {
       const bot = this.bots.find(bot => !bot.selfId)
@@ -59,24 +59,11 @@ export abstract class CQServer {
       this.app.prepare()
       this.ready()
     }
+    meta.$app = this.app
     return new Session(meta)
   }
 
-  parseMeta (session: Session) {
-    // prepare prefix
-    let ctxType: ContextType, ctxId: number
-    if (session.groupId) {
-      ctxType = 'group'
-      ctxId = session.groupId
-    } else if (session.discussId) {
-      ctxType = 'discuss'
-      ctxId = session.discussId
-    } else if (session.userId) {
-      ctxType = 'user'
-      ctxId = session.userId
-    }
-
-    // prepare events
+  protected dispatch (session: Session) {
     const events: string[] = []
     if (session.postType === 'message' || session.postType === 'send') {
       events.push(session.postType)
@@ -90,17 +77,6 @@ export abstract class CQServer {
     if (session.subType) {
       events.unshift(events[0] + '/' + session.subType)
     }
-
-    // generate path
-    session.$app = this.app
-    session.$ctxId = ctxId
-    session.$ctxType = ctxType
-
-    return events
-  }
-
-  dispatchMeta (session: Session) {
-    const events = this.parseMeta(session)
     for (const event of events) {
       this.app.emit(session, paramCase<any>(event), session)
     }
@@ -152,7 +128,7 @@ class HttpServer extends CQServer {
       }
 
       logger.debug('receive %o', ctx.request.body)
-      const meta = this.prepareMeta(ctx.request.body)
+      const meta = this.prepare(ctx.request.body)
       if (!meta) return ctx.status = 403
 
       const { quickOperationTimeout } = this.app.options
@@ -178,7 +154,7 @@ class HttpServer extends CQServer {
       }
 
       // dispatch events
-      this.dispatchMeta(meta)
+      this.dispatch(meta)
     })
   }
 
@@ -275,8 +251,8 @@ class WsClient extends CQServer {
           }
 
           if ('post_type' in parsed) {
-            const meta = this.prepareMeta(parsed)
-            if (meta) this.dispatchMeta(meta)
+            const meta = this.prepare(parsed)
+            if (meta) this.dispatch(meta)
           } else if (parsed.echo === -1) {
             bot.version = camelCase(parsed.data)
             bot._get = (action, params) => this.send({ action, params })

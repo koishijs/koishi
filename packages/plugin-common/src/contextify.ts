@@ -1,4 +1,4 @@
-import { Context, getTargetId, ContextType, Group, User, Session } from 'koishi-core'
+import { Context, getTargetId, Group, User, Session } from 'koishi-core'
 
 export function apply (ctx: Context) {
   ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3 })
@@ -37,20 +37,16 @@ export function apply (ctx: Context) {
       delete newSession.groupId
       delete newSession.discussId
 
-      let ctxType: ContextType, ctxId: number
       if (options.discuss) {
-        newSession.discussId = ctxId = +options.discuss
+        newSession.discussId = +options.discuss
         newSession.messageType = 'discuss'
-        newSession.messageType = ctxType = 'discuss'
       } else if (options.group) {
-        newSession.groupId = ctxId = +options.group
-        newSession.messageType = ctxType = 'group'
+        newSession.groupId = +options.group
+        newSession.messageType = 'group'
         newSession.subType = options.type || 'normal'
         delete newSession.$group
         await newSession.$observeGroup(Group.fields)
       } else {
-        ctxId = newSession.userId
-        ctxType = 'user'
         newSession.messageType = 'private'
         newSession.subType = options.type || 'other'
       }
@@ -70,15 +66,12 @@ export function apply (ctx: Context) {
       }
 
       if (options.group) {
-        const info = await session.$bot.getGroupMemberInfo(ctxId, newSession.userId).catch(() => ({}))
+        const info = await session.$bot.getGroupMemberInfo(newSession.groupId, newSession.userId).catch(() => ({}))
         Object.assign(newSession.sender, info)
       } else if (options.user) {
         const info = await session.$bot.getStrangerInfo(newSession.userId).catch(() => ({}))
         Object.assign(newSession.sender, info)
       }
-
-      newSession.$ctxId = ctxId
-      newSession.$ctxType = ctxType
 
       return newSession.$execute(message)
     })
