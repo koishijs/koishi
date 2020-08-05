@@ -2,7 +2,7 @@ import { format } from 'util'
 import { getDateNumber, hyphenate } from 'koishi-utils'
 import { Session } from '../session'
 import { User } from '../database'
-import { Command, ParsedCommandLine } from '../command'
+import { Command, ParsedArgv } from '../command'
 import { App } from '../app'
 
 declare module '../context' {
@@ -95,7 +95,7 @@ export default function apply (app: App) {
     cmd._checkers = []
   })
 
-  app.on('before-command', ({ session, args, options, command }: ParsedCommandLine<ValidationField>) => {
+  app.on('before-command', ({ session, args, options, command }: ParsedArgv<ValidationField>) => {
     async function sendHint (session: Session, message: string, ...param: any[]) {
       if (command.config.showWarning) {
         await session.$send(format(message, ...param))

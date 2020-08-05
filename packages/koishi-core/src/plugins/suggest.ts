@@ -16,7 +16,7 @@ interface SuggestOptions {
   prefix?: string
   suffix: string
   coefficient?: number
-  apply: (suggestion: string, session: Session, next: NextFunction) => any
+  apply: (this: Session, suggestion: string, next: NextFunction) => any
 }
 
 export function getSessionId (session: Session) {
@@ -56,10 +56,10 @@ Session.prototype.$suggest = function $suggest (this: Session, options: SuggestO
     const message = prefix + `你要找的是不是${suggestions.map(name => `“${name}”`).join('或')}？`
     if (suggestions.length > 1) return this.$send(message)
 
-    this.$prompt(({ message }, next) => {
-      message = message.trim()
+    this.$prompt((session, next) => {
+      const message = session.message.trim()
       if (message && message !== '.' && message !== '。') return next()
-      return apply(suggestions[0], this, next)
+      return apply.call(session, suggestions[0], next)
     })
 
     return this.$send(message + suffix)
@@ -82,9 +82,9 @@ export default function apply (ctx: Context) {
       items,
       suffix: '发送空行或句号以调用推测的指令。',
       coefficient: ctx.app.options.similarityCoefficient,
-      async apply (suggestion, session, next) {
+      async apply (suggestion, next) {
         const newMessage = suggestion + message.slice(target.length)
-        return session.$execute(newMessage, next)
+        return this.$execute(newMessage, next)
       },
     })
   })

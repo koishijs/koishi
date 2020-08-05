@@ -1,4 +1,4 @@
-import { Context, ParsedArgv, Session } from 'koishi-core'
+import { Context, ExecuteArgv, Session } from 'koishi-core'
 import { Dialogue, parseTeachArgs } from './database'
 import internal from './internal'
 import receiver from './receiver'
@@ -107,7 +107,7 @@ export function apply (ctx: Context, config: Dialogue.Config = {}) {
     const command = ctx.command('teach')
     const message = source.slice(capture[0].length)
     const { options, args, rest } = command.parse(message)
-    const argv: ParsedArgv = { options, args, command, source, rest }
+    const argv: ExecuteArgv = { options, args, command, source, rest }
 
     if (capture[1] === '#') {
       options.search = true

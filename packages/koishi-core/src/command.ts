@@ -87,13 +87,13 @@ export interface ParsedLine {
   options: Record<string, any>
 }
 
-export interface ParsedCommandLine <U extends User.Field = never, G extends Group.Field = never> extends Partial<ParsedLine> {
+export interface ParsedArgv <U extends User.Field = never, G extends Group.Field = never> extends Partial<ParsedLine> {
   command: Command<U, G>
   session: Session<U, G>
   next?: NextFunction
 }
 
-export interface ParsedArgv extends Partial<ParsedLine> {
+export interface ExecuteArgv extends Partial<ParsedLine> {
   command: string | Command
   next?: NextFunction
 }
@@ -105,9 +105,9 @@ export interface CommandConfig <U extends User.Field = never, G extends Group.Fi
   authority?: number
 }
 
-type ArgvInferred <T> = Iterable<T> | ((argv: ParsedCommandLine, fields: Set<T>) => Iterable<T>)
+type ArgvInferred <T> = Iterable<T> | ((argv: ParsedArgv, fields: Set<T>) => Iterable<T>)
 export type CommandAction <U extends User.Field = never, G extends Group.Field = never> =
-  (this: Command<U, G>, config: ParsedCommandLine<U, G>, ...args: string[]) => void | string | Promise<void | string>
+  (this: Command<U, G>, config: ParsedArgv<U, G>, ...args: string[]) => void | string | Promise<void | string>
 
 export class Command <U extends User.Field = never, G extends Group.Field = never> {
   config: CommandConfig<U, G>
@@ -146,7 +146,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return this
   }
 
-  static collect <T extends TableType> (argv: ParsedCommandLine, key: T, fields = new Set<keyof Tables[T]>()) {
+  static collect <T extends TableType> (argv: ParsedArgv, key: T, fields = new Set<keyof Tables[T]>()) {
     if (!argv) return
     const values: ArgvInferred<keyof Tables[T]>[] = [
       ...this[`_${key}Fields`],
@@ -192,14 +192,14 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
   }
 
   userFields <T extends User.Field = never> (fields: Iterable<T>): Command<U | T, G>
-  userFields <T extends User.Field = never> (fields: (argv: ParsedCommandLine, fields: Set<User.Field>) => Iterable<T>): Command<U | T, G>
+  userFields <T extends User.Field = never> (fields: (argv: ParsedArgv, fields: Set<User.Field>) => Iterable<T>): Command<U | T, G>
   userFields (fields: ArgvInferred<User.Field>) {
     this._userFields.push(fields)
     return this
   }
 
   groupFields <T extends Group.Field = never> (fields: Iterable<T>): Command<U, G | T>
-  groupFields <T extends Group.Field = never> (fields: (argv: ParsedCommandLine, fields: Set<Group.Field>) => Iterable<T>): Command<U, G | T>
+  groupFields <T extends Group.Field = never> (fields: (argv: ParsedArgv, fields: Set<Group.Field>) => Iterable<T>): Command<U, G | T>
   groupFields (fields: ArgvInferred<Group.Field>) {
     this._groupFields.push(fields)
     return this
@@ -495,7 +495,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return { rest, options, args, source }
   }
 
-  stringify (argv: ParsedCommandLine) {
+  stringify (argv: ParsedArgv) {
     let output = this.name
     const optionSet = new Set<string>()
     for (let key in argv.options) {
@@ -519,7 +519,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return output
   }
 
-  async execute (argv: ParsedCommandLine<U, G>) {
+  async execute (argv: ParsedArgv<U, G>) {
     argv.command = this
     if (!argv.options) argv.options = {}
     if (!argv.args) argv.args = []

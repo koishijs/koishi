@@ -1,6 +1,6 @@
 import { getUsage, getUsageName, ValidationField } from './validate'
 import { User, Group, TableType, Tables } from '../database'
-import { Command, ParsedCommandLine } from '../command'
+import { Command, ParsedArgv } from '../command'
 import { Session } from '../session'
 import { App } from '../app'
 import { Context } from '../context'
@@ -65,7 +65,7 @@ export default function apply (app: App) {
   })
 
   function createCollector <T extends TableType> (key: T) {
-    return function* (argv: ParsedCommandLine, fields: Set<keyof Tables[T]>) {
+    return function* (argv: ParsedArgv, fields: Set<keyof Tables[T]>) {
       const { args: [name] } = argv
       const command = app._commandMap[name] || app._shortcutMap[name]
       if (!command) return

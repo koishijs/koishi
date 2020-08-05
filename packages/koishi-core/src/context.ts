@@ -1,5 +1,5 @@
 import { intersection, difference, Logger, defineProperty } from 'koishi-utils'
-import { Command, CommandConfig, ParsedCommandLine, ParsedArgv } from './command'
+import { Command, CommandConfig, ParsedArgv, ExecuteArgv } from './command'
 import { Session } from './session'
 import { User, Group, Database } from './database'
 import { App } from './app'
@@ -305,7 +305,7 @@ export interface EventMap {
   'lifecycle/connect' (session: Session<never, never, 'meta_event'>): void
 
   // Koishi events
-  'parse' (message: string, session: Session, forced: boolean): undefined | ParsedArgv
+  'parse' (message: string, session: Session, forced: boolean): undefined | ExecuteArgv
   'before-attach-user' (session: Session, fields: Set<User.Field>): void
   'before-attach-group' (session: Session, fields: Set<Group.Field>): void
   'attach-user' (session: Session): void | boolean | Promise<void | boolean>
@@ -313,8 +313,8 @@ export interface EventMap {
   'attach' (session: Session): void | Promise<void>
   'send' (session: Session): void | Promise<void>
   'before-send' (session: Session): void | boolean
-  'before-command' (argv: ParsedCommandLine): void | boolean | Promise<void | boolean>
-  'command' (argv: ParsedCommandLine): void | Promise<void>
+  'before-command' (argv: ParsedArgv): void | boolean | Promise<void | boolean>
+  'command' (argv: ParsedArgv): void | Promise<void>
   'after-middleware' (session: Session): void
   'new-command' (cmd: Command): void
   'remove-command' (cmd: Command): void

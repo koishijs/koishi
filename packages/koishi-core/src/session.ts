@@ -1,5 +1,5 @@
 import { User, Group } from './database'
-import { ParsedArgv, ParsedCommandLine, Command } from './command'
+import { ExecuteArgv, ParsedArgv, Command } from './command'
 import { isInteger, contain, observe, Observed, noop } from 'koishi-utils'
 import { NextFunction } from './context'
 import { App } from './app'
@@ -90,7 +90,7 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
   $user?: User.Observed<U>
   $group?: Group.Observed<G>
   $app?: App
-  $argv?: ParsedCommandLine
+  $argv?: ParsedArgv
   $parsed?: ParsedMessage
   $response?: (payload: ResponsePayload) => void
 
@@ -123,6 +123,7 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
   }
 
   async $send (message: string, autoEscape = false) {
+    if (!message) return
     let ctxId: number
     const ctxType = (ctxId = this.groupId) ? 'group' : (ctxId = this.userId) ? 'user' : null
     if (this.$app.options.preferSync) {
@@ -249,24 +250,24 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
     return this.$user = user
   }
 
-  $resolve (argv: ParsedArgv, next: NextFunction) {
+  $resolve (argv: ExecuteArgv, next: NextFunction) {
     if (typeof argv.command === 'string') {
       argv.command = this.$app._commandMap[argv.command]
     }
     if (!argv.command?.context.match(this)) return
-    return { session: this, next, ...argv } as ParsedCommandLine
+    return { session: this, next, ...argv } as ParsedArgv
   }
 
-  $parse (message: string, next: NextFunction = noop, forced = false): ParsedCommandLine {
+  $parse (message: string, next: NextFunction = noop, forced = false): ParsedArgv {
     if (!message) return
     const argv = this.$app.bail(this, 'parse', message, this, forced)
     if (argv) return this.$resolve(argv, next)
   }
 
-  $execute (argv: ParsedArgv): Promise<void>
+  $execute (argv: ExecuteArgv): Promise<void>
   $execute (message: string, next?: NextFunction): Promise<void>
-  async $execute (...args: [ParsedArgv] | [string, NextFunction?]) {
-    let argv: ParsedCommandLine, next: NextFunction
+  async $execute (...args: [ExecuteArgv] | [string, NextFunction?]) {
+    let argv: ParsedArgv, next: NextFunction
     if (typeof args[0] === 'string') {
       next = args[1] || noop
       argv = this.$parse(args[0], next)
