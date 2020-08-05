@@ -63,14 +63,15 @@ export class WorkerAPI {
       const result = await vm.run(source, 'stdin')
       if (result !== undefined && output) await sandbox.log(result)
     } catch (error) {
-      if (error.message === 'Script execution timed out.') {
-        return main.send('执行超时。')
-      } else if (error.name === 'SyntaxError') {
-        const lines = error.stack.split('\n')
-        return main.send(`${lines[4]}\n    at ${lines[0]}:${lines[2].length}`)
-      } else {
-        return main.send(error.stack.replace(/\s*.+Script[\s\S]*/, ''))
+      if (error.name === 'SyntaxError') {
+        const message = 'SyntaxError: ' + error.message
+        const lines: string[] = error.stack.split('\n')
+        const index = lines.indexOf(message) + 1
+        if (lines[index].startsWith('    at new Script')) {
+          return main.send(`${message}\n    at ${lines[0]}:${lines[2].length}`)
+        }
       }
+      return main.send(error.stack.replace(/\s*.+Script[\s\S]*/, ''))
     }
   }
 }

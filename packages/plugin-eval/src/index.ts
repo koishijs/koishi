@@ -81,23 +81,24 @@ export function apply (ctx: Context, config: Config = {}) {
     createWorker()
   })
 
-  ctx.command('eval <expression...>', '执行 JavaScript 脚本', { authority: 2 })
+  ctx.command('eval [expr...]', '执行 JavaScript 脚本', { authority: 2 })
     // TODO can it be on demand?
     .userFields(User.fields)
     .shortcut('>', { oneArg: true, fuzzy: true })
     .shortcut('>>', { oneArg: true, fuzzy: true, options: { output: true } })
     .option('-o, --output', '输出最后的结果')
     .option('-r, --restart', '重启子线程')
-    .action(async ({ session, options }, expression) => {
+    .action(async ({ session, options }, expr) => {
       if (options.restart) {
         await worker.terminate()
         return '子线程已重启。'
       }
 
-      if (!expression) return '请输入要执行的脚本。'
+      if (!expr) return '请输入要执行的脚本。'
       if (session._eval) return '不能嵌套调用本指令。'
 
       return new Promise((_resolve) => {
+        logger.debug(expr)
         defineProperty(session, '_eval', true)
 
         const main = new MainAPI(session)
@@ -124,8 +125,11 @@ export function apply (ctx: Context, config: Config = {}) {
           session: JSON.stringify(session),
           user: JSON.stringify(session.$user),
           output: options.output,
-          source: CQCode.unescape(expression),
-        }, proxy(main)).then(resolve)
+          source: CQCode.unescape(expr),
+        }, proxy(main)).then(resolve, (error) => {
+          logger.warn(error)
+          resolve()
+        })
 
         function resolve () {
           clearTimeout(timer)
