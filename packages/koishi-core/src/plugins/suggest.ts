@@ -5,7 +5,7 @@ import leven from 'leven'
 declare module '../session' {
   interface Session {
     $suggest (options: SuggestOptions): void
-    $prompt (middleware: Middleware, timeout?: number): () => void
+    $once (middleware: Middleware, timeout?: number): () => void
   }
 }
 
@@ -23,7 +23,7 @@ export function getSessionId (session: Session) {
   return '' + session.userId + session.groupId
 }
 
-Session.prototype.$prompt = function $prompt (this: Session, middleware: Middleware, timeout = this.$app.options.promptTimeout) {
+Session.prototype.$once = function $once (this: Session, middleware: Middleware, timeout = this.$app.options.promptTimeout) {
   const identifier = getSessionId(this)
   const _dispose = this.$app.prependMiddleware(async (session, next) => {
     if (identifier && getSessionId(session) !== identifier) return next()
@@ -56,7 +56,7 @@ Session.prototype.$suggest = function $suggest (this: Session, options: SuggestO
     const message = prefix + `你要找的是不是${suggestions.map(name => `“${name}”`).join('或')}？`
     if (suggestions.length > 1) return this.$send(message)
 
-    this.$prompt((session, next) => {
+    this.$once((session, next) => {
       const message = session.message.trim()
       if (message && message !== '.' && message !== '。') return next()
       return apply.call(session, suggestions[0], next)
