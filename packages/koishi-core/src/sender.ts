@@ -36,7 +36,7 @@ export class CQSender {
 
   _get?: (action: string, params: Record<string, any>) => Promise<CQResponse>
 
-  constructor (public app: App, public bot: BotOptions) {
+  constructor (public app: App, bot: BotOptions) {
     Object.assign(this, bot)
   }
 
@@ -48,9 +48,9 @@ export class CQSender {
     if (retcode === 0 && !silent) {
       return camelCase(data)
     } else if (retcode < 0 && !silent) {
-      throw new SenderError(params, action, retcode, this.bot.selfId)
+      throw new SenderError(params, action, retcode, this.selfId)
     } else if (retcode > 1) {
-      throw new SenderError(params, action, retcode, this.bot.selfId)
+      throw new SenderError(params, action, retcode, this.selfId)
     }
   }
 
@@ -64,7 +64,7 @@ export class CQSender {
       messageType,
       postType: 'send',
       $app: this.app,
-      selfId: this.bot.selfId,
+      selfId: this.selfId,
       [ctxType + 'Id']: ctxId,
       time: Math.round(Date.now() / 1000),
     })
