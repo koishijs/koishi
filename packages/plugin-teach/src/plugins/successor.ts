@@ -223,7 +223,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     if ((dialogue.successorTimeout || successorTimeout) !== successorTimeout) {
       output.push(`z=${dialogue.successorTimeout / 1000}`)
     }
-    if (dialogue.predecessors.length) output.push(`存在前置`)
+    if (dialogue.predecessors.length) output.push('存在前置')
     if (dialogue.flag & DialogueFlag.context) {
       output.push('上下文后置')
     }

@@ -149,7 +149,7 @@ export function apply (ctx: Context) {
   cmd.subcommand('.check', '查看当前直播状态')
     .groupFields(['subscribe'])
     .shortcut('查看单推列表')
-    .shortcut('查看直播状态', { options: { group: true }})
+    .shortcut('查看直播状态', { options: { group: true } })
     .option('-g, --group', '查看本群内全部直播')
     .action(async ({ session, options }) => {
       const { subscribe } = session.$group
@@ -167,11 +167,11 @@ export function apply (ctx: Context) {
           continue
         }
         message += '：'
-        if (daemons.bilibili && daemons.bilibili.isLive) {
+        if (daemons.bilibili?.isLive) {
           message += 'Bilibili 正在直播'
-        } else if (daemons.mirrativ && daemons.mirrativ.isLive) {
+        } else if (daemons.mirrativ?.isLive) {
           message += 'Mirrativ 正在直播'
-        } else if (daemons.twitCasting && daemons.twitCasting.isLive) {
+        } else if (daemons.twitCasting?.isLive) {
           message += 'TwitCasting 正在直播'
         } else {
           message += '未开播'

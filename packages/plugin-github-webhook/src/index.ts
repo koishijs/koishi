@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+
 import type { Context } from 'koishi-core'
 import { Webhooks, EventNames } from '@octokit/webhooks'
 import { Options, WebhookEvent } from '@octokit/webhooks/dist-types/types'

@@ -25,7 +25,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
 
   const throttleConfig = !throttle ? []
     : Array.isArray(throttle) ? throttle
-    : [throttle]
+      : [throttle]
   const counters: Record<number, number> = {}
   for (const { interval, responses } of throttleConfig) {
     counters[interval] = responses

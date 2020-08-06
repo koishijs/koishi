@@ -129,6 +129,7 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
   async $send (message: string, autoEscape = false) {
     if (!message) return
     let ctxId: number
+    // eslint-disable-next-line no-cond-assign
     const ctxType = (ctxId = this.groupId) ? 'group' : (ctxId = this.userId) ? 'user' : null
     if (this.$app.options.preferSync) {
       await this.$bot.sendMsg(this.messageType, ctxId, message, autoEscape)

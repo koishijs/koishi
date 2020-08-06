@@ -425,7 +425,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
 
       // parse argv0
       let arg0 = this.parseArg(message, terminator)
-      let arg = arg0.content
+      const arg = arg0.content
       message = arg0.rest
 
       let option = this._optionAliasMap[arg]

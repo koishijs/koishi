@@ -14,6 +14,7 @@ class RegExpError extends Error {
 
 const validator = new RegExpValidator({
   onEscapeCharacterSet (start, end, kind, negate) {
+    // eslint-disable-next-line curly
     if (kind === 'space') throw negate
       ? new RegExpError('四季酱会自动删除问题中的空白字符，你无需使用 \\s。')
       : new RegExpError('四季酱会自动删除问题中的空白字符，请使用 . 代替 \\S。')

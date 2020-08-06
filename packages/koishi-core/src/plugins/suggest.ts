@@ -56,6 +56,7 @@ Session.prototype.$suggest = function $suggest (this: Session, options: SuggestO
       suggestions.push(name)
     } else if (distance < minDistance) {
       suggestions = [name]
+      minDistance = distance
     }
   }
   if (!suggestions) return next(() => this.$send(prefix))

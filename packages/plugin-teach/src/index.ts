@@ -1,3 +1,5 @@
+/* eslint-disable no-irregular-whitespace */
+
 import { Context, ExecuteArgv, Session } from 'koishi-core'
 import { Dialogue, parseTeachArgs } from './database'
 import internal from './internal'

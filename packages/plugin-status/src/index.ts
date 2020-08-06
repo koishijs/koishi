@@ -181,8 +181,8 @@ export function apply (ctx: Context, config: StatusOptions) {
   async function _getStatus (config: StatusOptions, extend: boolean) {
     const [[[{ 'COUNT(*)': userCount }], [{ 'COUNT(*)': groupCount }]], bots] = await Promise.all([
       app.database.query<[{ 'COUNT(*)': number }][]>([
-        `SELECT COUNT(*) FROM \`user\` WHERE CURRENT_TIMESTAMP() - \`lastCall\` < 1000 * 3600 * 24`,
-        `SELECT COUNT(*) FROM \`group\` WHERE \`assignee\``,
+        'SELECT COUNT(*) FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',
+        'SELECT COUNT(*) FROM `group` WHERE `assignee`',
       ].join(';')),
       Promise.all(app.bots.map(async (bot): Promise<BotStatus> => ({
         selfId: bot.selfId,

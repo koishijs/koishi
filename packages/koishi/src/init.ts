@@ -1,9 +1,8 @@
 import { existsSync, writeFileSync, mkdirSync } from 'fs'
-import { yellow } from 'kleur'
+import { yellow, red, green } from 'kleur'
 import { resolve, extname, dirname } from 'path'
 import { AppConfig } from './worker'
 import prompts from 'prompts'
-import kleur from 'kleur'
 import { CAC } from 'cac'
 
 async function createConfig (options) {
@@ -59,8 +58,8 @@ const supportedTypes = ['js', 'ts', 'json'] as const
 type ConfigFileType = typeof supportedTypes[number]
 
 export default function (cli: CAC) {
-  const error = kleur.red('error')
-  const success = kleur.green('success')
+  const error = red('error')
+  const success = green('success')
 
   cli.command('init [file]', 'initialize a koishi configuration file')
     .option('-f, --forced', 'overwrite config file if it exists')

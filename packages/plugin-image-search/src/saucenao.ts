@@ -1,4 +1,5 @@
 /* lgtm[js/incomplete-url-substring-sanitization] */
+/* eslint-disable camelcase */
 
 import axios from 'axios'
 import nhentai from './nhentai'

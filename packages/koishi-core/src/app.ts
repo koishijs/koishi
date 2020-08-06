@@ -253,7 +253,7 @@ export class App extends Context {
     const { type, port } = this.options
     const logger = this.logger('app')
     if (port) logger.info('server listening at %c', port)
-  
+
     this.bots.forEach(({ server }) => {
       if (!server) return
       if (type === 'ws') server = server.replace(/^http/, 'ws')

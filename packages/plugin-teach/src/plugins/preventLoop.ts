@@ -27,8 +27,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
 
   const preventLoopConfig: LoopConfig[] = !preventLoop ? []
     : typeof preventLoop === 'number' ? [{ length: preventLoop, participants: 1 }]
-    : Array.isArray(preventLoop) ? preventLoop
-    : [preventLoop]
+      : Array.isArray(preventLoop) ? preventLoop : [preventLoop]
   const initiatorCount = Math.max(0, ...preventLoopConfig.map(c => c.length))
 
   ctx.on('dialogue/state', (state) => {

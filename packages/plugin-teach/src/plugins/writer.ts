@@ -12,7 +12,7 @@ declare module '../database' {
   interface Dialogue {
     writer: number
   }
-  
+
   namespace Dialogue {
     interface Argv {
       userMap?: Record<number, string>
@@ -107,7 +107,7 @@ export default function apply (ctx: Context) {
       ((flag & DialogueFlag.frozen) && authority < 4) ||
       (writer !== session.$user.id && (
         (target && authority < 3) || (
-          (substitute || (flag & DialogueFlag.substitute)) && 
+          (substitute || (flag & DialogueFlag.substitute)) &&
           (authority <= (authMap[writer] || 2))
         )
       ))

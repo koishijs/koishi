@@ -1,6 +1,8 @@
 // modified from vm2@3.9.2
 // https://github.com/patriksimek/vm2
 
+/* eslint-disable */
+
 import type { Host } from './vm'
 
 declare global {

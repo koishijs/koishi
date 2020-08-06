@@ -40,22 +40,22 @@ class MayaDate {
     }
 
     let m4 = 0
-    let m4begin = pyear - pyear % 4
-    let m4end = year - 1 - (year > 0 ? (year - 1) % 4 : 4 + (year - 1) % 4)
+    const m4begin = pyear - pyear % 4
+    const m4end = year - 1 - (year > 0 ? (year - 1) % 4 : 4 + (year - 1) % 4)
     if (m4begin <= m4end) {
       m4 = Math.floor((m4end - m4begin) / 4) + 1
     }
 
     let m100 = 0
-    let m100begin = pyear - pyear % 100
-    let m100end = year - 1 - (year > 0 ? (year - 1) % 100 : 100 + (year - 1) % 100)
+    const m100begin = pyear - pyear % 100
+    const m100end = year - 1 - (year > 0 ? (year - 1) % 100 : 100 + (year - 1) % 100)
     if (m100begin <= m100end) {
       m100 = Math.floor((m100end - m100begin) / 100) + 1
     }
 
     let m400 = 0
-    let m400begin = pyear - pyear % 400
-    let m400end = year - 1 - (year > 0 ? (year - 1) % 400 : 400 + (year - 1) % 400)
+    const m400begin = pyear - pyear % 400
+    const m400end = year - 1 - (year > 0 ? (year - 1) % 400 : 400 + (year - 1) % 400)
     if (m400begin <= m400end) {
       m400 = Math.floor((m400end - m400begin) / 400) + 1
     }
@@ -71,14 +71,14 @@ class MayaDate {
         delta += dayInMonth[m]
       }
       delta += day
-    } else if (pyear == year) {
+    } else if (pyear === year) {
       for (let m = pmonth + 1; m < month; m++) {
         delta += dayInMonth[m]
       }
       if (pmonth < month) {
         delta += dayInMonth[pmonth] - pday
         delta += day
-      } else if (pmonth == month) {
+      } else if (pmonth === month) {
         delta += day - pday
       }
     }
@@ -92,7 +92,7 @@ class MayaDate {
 
   static fromMaya (mlc: string) {
     let num = 0
-    let periods = mlc.split('.')
+    const periods = mlc.split('.')
     periods.forEach((n, i) => {
       if (i === periods.length - 2) {
         num *= 18
@@ -107,20 +107,20 @@ class MayaDate {
   toGreg () {
     let days = this.stamp
     let year = -3113, month = 8, day = 11
-    
-    let t400num = Math.floor(days / 146097)
+
+    const t400num = Math.floor(days / 146097)
     year += t400num * 400
     days %= 146097
 
     if (days > 0) {
       let has400 = false
-      let next400 = MayaDate.fromGreg(year + (year > 0 ? 400 - year % 400 : -(year % 400)), 2, 29)
+      const next400 = MayaDate.fromGreg(year + (year > 0 ? 400 - year % 400 : -(year % 400)), 2, 29)
 
-      let t100num = Math.floor(days / 36524)
+      const t100num = Math.floor(days / 36524)
       year += t100num * 100
       days %= 36524
 
-      let last100 = MayaDate.fromGreg(year, month, day)
+      const last100 = MayaDate.fromGreg(year, month, day)
       if (last100.compare(next400) > 0) {
         has400 = true
         day--
@@ -131,13 +131,13 @@ class MayaDate {
         if (nyear % 400 === 0) {
           nyear += 100
         }
-        let next100 = MayaDate.fromGreg(nyear, 2, 28)
+        const next100 = MayaDate.fromGreg(nyear, 2, 28)
 
-        let t4num = Math.floor(days / 1461)
+        const t4num = Math.floor(days / 1461)
         year += t4num * 4
         days %= 1461
 
-        let last4 = MayaDate.fromGreg(year, month, day)
+        const last4 = MayaDate.fromGreg(year, month, day)
         if (last4.compare(next100) > 0) {
           day++
         }
@@ -146,7 +146,7 @@ class MayaDate {
         }
 
         while (days > 0) {
-          let nextYearDays = isLeap(year + 1) ? 366 : 365
+          const nextYearDays = isLeap(year + 1) ? 366 : 365
           if (days >= nextYearDays) {
             year++
             days -= nextYearDays
@@ -203,9 +203,9 @@ class MayaDate {
   }
 
   toTzolkin () {
-    let days = this.stamp
-    let daynum = (days + 4) % 13
-    let dayname = dayNames[days % 20]
+    const days = this.stamp
+    const daynum = (days + 4) % 13
+    const dayname = dayNames[days % 20]
     return daynum + ' ' + dayname
   }
 
@@ -230,7 +230,7 @@ class MayaDate {
 export function apply (ctx: Context) {
   ctx.command('tools/maya <YYYY-MM-DD> [BC|AD]', '玛雅日历换算')
     .example('maya 2012-12-21')
-    .action(({ session }, date, hint) => {
+    .action((_, date, hint) => {
       if (!date) return '请输入正确的日期。'
       const match = date.match(/^(\d+)[-\.](\d+)[-\.](\d+)\.?$/)
       if (!match) return '请输入正确的日期。'

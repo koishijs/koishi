@@ -79,6 +79,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   ctx.on('dialogue/before-attach-user', (state, fields) => {
     if (state.dialogue) return
     // 如果所有可能触发的问答都不涉及好感度，则无需获取好感度字段
+    // eslint-disable-next-line no-cond-assign
     if (state.noAffinityTest = state.dialogues.every(d => !d._weight || !d.minAffinity && d.maxAffinity === 32768)) return
     for (const field of affinityFields) {
       fields.add(field)

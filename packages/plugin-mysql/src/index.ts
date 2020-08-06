@@ -70,7 +70,7 @@ export default class MysqlDatabase {
   query = <T extends {}> (source: string, values?: any): Promise<T> => {
     return new Promise((resolve, reject) => {
       const sql = format(source, values)
-      logger.debug(`[sql]`, sql)
+      logger.debug('[sql]', sql)
       this.pool.query(sql, (error, results) => {
         if (error) {
           reject(error)

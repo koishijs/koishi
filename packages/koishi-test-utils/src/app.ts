@@ -4,12 +4,6 @@ import { Session, createMessageMeta } from './session'
 
 export const BASE_SELF_ID = 514
 
-declare module 'koishi-core/dist/server' {
-  interface ServerTypes {
-    mock: typeof MockedAppServer
-  }
-}
-
 class MockedAppServer extends CQServer {
   mock = new MockedServer()
 
@@ -23,6 +17,12 @@ class MockedAppServer extends CQServer {
     this.bots[0]._get = async (action, params) => {
       return this.mock.receive(action.replace(/_async$/, ''), params)
     }
+  }
+}
+
+declare module 'koishi-core/dist/server' {
+  interface ServerTypes {
+    mock: typeof MockedAppServer
   }
 }
 

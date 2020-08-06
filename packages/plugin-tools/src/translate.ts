@@ -1,3 +1,5 @@
+/* eslint-disable quote-props */
+
 import { createHash } from 'crypto'
 import { Context } from 'koishi-core'
 import axios from 'axios'

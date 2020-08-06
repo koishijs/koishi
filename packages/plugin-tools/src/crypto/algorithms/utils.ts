@@ -14,7 +14,7 @@ export function bezout (a: number, b: number) {
   }
 
   let x = 0, y = 1, u = 1, v = 0
-  while (a != 0) {
+  while (a !== 0) {
     const q = Math.floor(b / a)
     const r = b % a
     const m = x - u * q
@@ -76,10 +76,10 @@ export class Square {
     }
 
     source = deleteDuplicate(source)
-    for (let i = 0; i < size; ++ i) {
+    for (let i = 0; i < size; ++i) {
       const row = source.slice(i * size, i * size + size)
       this.data[i] = []
-      for (let j = 0; j < size; ++ j) {
+      for (let j = 0; j < size; ++j) {
         this.data[i][j] = row.charCodeAt(j) - 64
         this.map[row[j]] = [i, j]
         this.map[row[j].toLowerCase()] = [i, j]

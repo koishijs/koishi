@@ -14,7 +14,7 @@ const config: WorkerConfig = {
   inspect: {
     depth: 0,
     ...workerData.inspect,
-  }
+  },
 }
 
 export default class Global {

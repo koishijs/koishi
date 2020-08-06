@@ -22,7 +22,7 @@ export class State {
   readonly area: bigint
   readonly full: bigint
   imageMode = true
-  update: (x: number, y: number, value: 1 | -1) => MoveResult
+  update: (this: State, x: number, y: number, value: 1 | -1) => MoveResult
 
   constructor (public app: App, public readonly rule: string, public readonly size: number, public readonly placement: 'cross' | 'grid') {
     this.area = BigInt(size * size)
@@ -34,6 +34,7 @@ export class State {
   }
 
   set pBoard (value) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     this.next === this.p2 ? this.wBoard = value : this.bBoard = value
   }
 
@@ -42,6 +43,7 @@ export class State {
   }
 
   set nBoard (value) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     this.next === this.p2 ? this.bBoard = value : this.wBoard = value
   }
 
@@ -77,7 +79,7 @@ export class State {
       strokeWidth: 0.08,
       strokeLinecap: 'round',
     })
-  
+
     const textGroup = svg.g({
       fontSize: '0.75',
       fontWeight: 'normal',
@@ -93,10 +95,10 @@ export class State {
       stroke: 'black',
       strokeWidth: 0.08,
     })
-  
+
     const verticalOffset = placement === 'cross' ? 0.3 : 0.8
     const horizontalOffset = placement === 'cross' ? 0 : 0.5
-    for (let index = 2; index < viewSize; ++ index) {
+    for (let index = 2; index < viewSize; ++index) {
       lineGroup.line(index, 2, index, viewSize - 1)
       lineGroup.line(2, index, viewSize - 1, index)
       if (index < size + 2) {
@@ -155,9 +157,9 @@ export class State {
         const value = this.get(i, j)
         output += value === 1 ? x === i && y === j ? '▲' : '●'
           : value === -1 ? x === i && y === j ? '△' : '○'
-          : i === 0 ? j === 0 ? '┌' : j === max ? '┐' : '┬'
-          : i === max ? j === 0 ? '└' : j === max ? '┘' : '┴'
-          : j === 0 ? '├' : j === max ? '┤' : '┼'
+            : i === 0 ? j === 0 ? '┌' : j === max ? '┐' : '┬'
+              : i === max ? j === 0 ? '└' : j === max ? '┘' : '┴'
+                : j === 0 ? '├' : j === max ? '┤' : '┼'
       }
     }
     return output

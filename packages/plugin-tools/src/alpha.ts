@@ -4,8 +4,8 @@ import { xml2js } from 'xml-js'
 import axios from 'axios'
 
 function extractData (subpod: any, inline = false) {
-  const text = subpod.plaintext && subpod.plaintext._text
-  if (text && text.match(/^[a-zA-Z0-9 "',?!;:()-]+$/)) {
+  const text = subpod.plaintext?._text
+  if (text?.match(/^[a-zA-Z0-9 "',?!;:()-]+$/)) {
     return text
   } else if (subpod.img) {
     const { src, height } = subpod.img._attributes

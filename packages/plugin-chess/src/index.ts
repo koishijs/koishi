@@ -55,8 +55,8 @@ export function apply (ctx: Context) {
     .shortcut('五子棋', { options: { size: 15, rule: 'gomoku' }, fuzzy: true })
     .shortcut('奥赛罗', { options: { size: 8, rule: 'othello' }, fuzzy: true })
     .shortcut('黑白棋', { options: { size: 8, rule: 'othello' }, fuzzy: true })
-    .shortcut('停止下棋', { options: { stop: true }})
-    .shortcut('跳过回合', { options: { skip: true }})
+    .shortcut('停止下棋', { options: { stop: true } })
+    .shortcut('跳过回合', { options: { skip: true } })
     .shortcut('使用图片模式', { options: { imageMode: true } })
     .shortcut('使用文本模式', { options: { textMode: true } })
     .option('-i, --image-mode', '使用图片模式')
@@ -70,7 +70,7 @@ export function apply (ctx: Context) {
     .usage([
       '输入“五子棋”“黑白棋”“围棋”开始对应的一局游戏。',
       '再输入“落子 A1”将棋子落于 A1 点上。',
-      '目前默认使用图片模式。文本模式速度更快，但是在部分机型上可能无法正常显示，同时无法适应过大的棋盘。'
+      '目前默认使用图片模式。文本模式速度更快，但是在部分机型上可能无法正常显示，同时无法适应过大的棋盘。',
     ].join('\n'))
     .action(async ({ session, options }, position) => {
       if (!states[session.groupId]) {
@@ -189,7 +189,7 @@ export function apply (ctx: Context) {
           session.$group.chess = null
           break
         case MoveResult.draw:
-          message += `本局游戏平局。`
+          message += '本局游戏平局。'
           delete states[session.groupId]
           session.$group.chess = null
           break

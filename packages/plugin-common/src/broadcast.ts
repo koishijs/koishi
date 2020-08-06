@@ -34,6 +34,7 @@ CQSender.prototype.sendGroupMsgAsync = async function (this: CQSender, group: nu
 Context.prototype.broadcast = async function (this: Context, message, forced) {
   let output = ''
   let capture: RegExpExecArray
+  // eslint-disable-next-line no-cond-assign
   while (capture = imageRE.exec(message)) {
     const [text, _, url] = capture
     output += message.slice(0, capture.index)

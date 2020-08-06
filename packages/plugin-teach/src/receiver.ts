@@ -21,7 +21,7 @@ declare module 'koishi-core/dist/context' {
 
 declare module 'koishi-core/dist/session' {
   interface Session {
-    $_redirected?: number
+    _redirected?: number
   }
 }
 
@@ -145,7 +145,7 @@ export async function triggerDialogue (ctx: Context, session: Session, config: D
 
   // send answers
   const buffer = new MessageBuffer(session)
-  session.$_redirected = (session.$_redirected || 0) + 1
+  session._redirected = (session._redirected || 0) + 1
 
   // parse answer
   let index: number
@@ -219,7 +219,7 @@ export default function (ctx: Context, config: Dialogue.Config) {
 
   ctx.group().command('teach/dialogue <message...>', '触发教学对话')
     .action(async ({ session, next }, message = '') => {
-      if (session.$_redirected > maxRedirections) return next()
+      if (session._redirected > maxRedirections) return next()
       session.message = message
       return triggerDialogue(ctx, session, config, next)
     })

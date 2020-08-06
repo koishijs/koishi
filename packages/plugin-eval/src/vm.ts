@@ -18,7 +18,7 @@ export class VM extends EventEmitter {
   private readonly _context: object
   private readonly _internal: typeof Internal = Object.create(null)
 
-  constructor(options: VMOptions = {}) {
+  constructor (options: VMOptions = {}) {
     super()
 
     const { sandbox = {}, strings = true, wasm = true } = options
@@ -86,7 +86,7 @@ export class VM extends EventEmitter {
 export class VMError extends Error {
   name = 'VMError'
 
-  constructor(message: string) {
+  constructor (message: string) {
     super(message)
     Error.captureStackTrace(this, this.constructor)
   }

@@ -68,12 +68,13 @@ class BrainFuck {
           input = input.slice(1)
           break
 
-        case 91: // '['
+        case 91: { // '['
           const next = this.findMatch(index)
           if (!this.data[this.pointer]) {
             index = next
           }
           break
+        }
 
         case 93: // ']'
           if (this.map[index] === undefined) {

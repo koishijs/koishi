@@ -22,7 +22,7 @@ const defaultConfig: Config = {
   resourceLimits: {
     maxOldGenerationSizeMb: 64,
     maxYoungGenerationSizeMb: 64,
-  }
+  },
 }
 
 const logger = Logger.create('eval')
@@ -102,14 +102,14 @@ export function apply (ctx: Context, config: Config = {}) {
       if (!expr) return '请输入要执行的脚本。'
       if (session._eval) return '不能嵌套调用本指令。'
 
-      return new Promise((_resolve) => {
+      return new Promise((resolve) => {
         logger.debug(expr)
         defineProperty(session, '_eval', true)
 
         const main = new MainAPI(session)
         const timer = setTimeout(async () => {
           await worker.terminate()
-          resolve()
+          _resolve()
           if (!main.logCount) {
             return session.$send('执行超时。')
           }
@@ -121,7 +121,7 @@ export function apply (ctx: Context, config: Config = {}) {
             logger.warn(error)
             message = '执行过程中遇到错误。'
           }
-          resolve()
+          _resolve()
           return session.$send(message)
         }
         worker.on('error', listener)
@@ -131,16 +131,16 @@ export function apply (ctx: Context, config: Config = {}) {
           user: JSON.stringify(session.$user),
           output: options.output,
           source: CQCode.unescape(expr),
-        }, proxy(main)).then(resolve, (error) => {
+        }, proxy(main)).then(_resolve, (error) => {
           logger.warn(error)
-          resolve()
+          _resolve()
         })
 
-        function resolve () {
+        function _resolve () {
           clearTimeout(timer)
           worker.off('error', listener)
           session._eval = false
-          _resolve()
+          resolve()
         }
       })
     })

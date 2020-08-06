@@ -41,8 +41,9 @@ export function parseTime (source: string) {
 }
 
 export function parseDate (date: string) {
-  let parsed: number
-  if (parsed = parseTime(date)) {
+  const parsed = parseTime(date)
+  // eslint-disable-next-line no-cond-assign
+  if (parsed) {
     date = Date.now() + parsed as any
   } else if (/^\d{1,2}(:\d{1,2}){1,2}$/.test(date)) {
     date = `${new Date().toLocaleDateString()}-${date}`

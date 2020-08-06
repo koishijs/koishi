@@ -9,8 +9,3 @@ export * from './plugins/help'
 export * from './plugins/shortcut'
 export * from './plugins/suggest'
 export * from './plugins/validate'
-
-import './plugins/help'
-import './plugins/shortcut'
-import './plugins/suggest'
-import './plugins/validate'

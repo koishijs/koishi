@@ -102,6 +102,7 @@ export default function apply (app: App, config: Dialogue.Config) {
       try {
         let output = ''
         let capture: RegExpExecArray
+        // eslint-disable-next-line no-cond-assign
         while (capture = imageRE.exec(answer)) {
           const [text, file, url] = capture
           output += answer.slice(0, capture.index)

@@ -65,7 +65,7 @@ export namespace Dialogue {
   export interface Config {
     preserveHistory?: number
   }
-  
+
   export interface Argv {
     ctx: Context
     session: Session<'authority' | 'id'>
@@ -74,7 +74,7 @@ export namespace Dialogue {
     target?: number[]
     options: Record<string, any>
     appellative?: boolean
-  
+
     // modify status
     dialogues?: Dialogue[]
     dialogueMap?: Record<number, Dialogue>
@@ -173,11 +173,9 @@ export namespace Dialogue {
 const primitives = ['number', 'string', 'bigint', 'boolean', 'symbol']
 
 function clone <T> (source: T): T {
-  return primitives.includes(typeof source)
-    ? source
-    : Array.isArray(source)
-    ? source.map(clone) as any
-    : Object.fromEntries(Object.entries(source).map(([key, value]) => [key, clone(value)]))
+  return primitives.includes(typeof source) ? source
+    : Array.isArray(source) ? source.map(clone) as any
+      : Object.fromEntries(Object.entries(source).map(([key, value]) => [key, clone(value)]))
 }
 
 export function sendResult (argv: Dialogue.Argv, prefix?: string, suffix?: string) {

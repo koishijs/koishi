@@ -50,7 +50,7 @@ const subscribeKeys = [
 
 extendDatabase('koishi-plugin-mysql', {
   async getSubscribes (ids, keys = subscribeKeys) {
-    if (!ids) return this.query(`SELECT * FROM \`subscribe\``)
+    if (!ids) return this.query('SELECT * FROM `subscribe`')
     if (!ids.length) return []
     return this.query('SELECT ' + this.joinKeys(keys) + ` FROM \`subscribe\` WHERE \`id\` IN (${ids.map(id => `'${id}'`).join(',')})`)
   },
