@@ -296,7 +296,7 @@ class WsClient extends CQServer {
 }
 
 class WsServer extends HttpServer {
-  private _channel = new WsChannel(this)  
+  private _channel = new WsChannel(this)
 
   _listen () {
     const { port, path = '/' } = this.app.options
@@ -342,6 +342,8 @@ class WsServer extends HttpServer {
   }
 }
 
+/* eslint-disable quote-props */
+
 export interface ServerTypes {
   'http': typeof HttpServer
   'ws': typeof WsClient
@@ -352,6 +354,6 @@ export namespace CQServer {
   export const types: ServerTypes = {
     'http': HttpServer,
     'ws': WsClient,
-    'ws-reverse': WsServer
+    'ws-reverse': WsServer,
   }
 }
