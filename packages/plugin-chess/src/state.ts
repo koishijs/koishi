@@ -1,3 +1,5 @@
+/* global BigInt */
+
 import { SVG } from 'koishi-plugin-puppeteer'
 import { Session, App } from 'koishi-core'
 

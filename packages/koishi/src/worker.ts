@@ -73,7 +73,7 @@ function loadEcosystem (name: string) {
     logger.debug('resolving %c', path)
     try {
       const result = require(path)
-      logger.info('apply plugin %c', result && result.name || name)
+      logger.info('apply plugin %c', result.name || name)
       return cacheMap[name] = result
     } catch (error) {
       if (isErrorModule(error)) {

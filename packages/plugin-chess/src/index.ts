@@ -169,7 +169,7 @@ export function apply (ctx: Context) {
       }
 
       const value = session.userId === state.p1 ? -1 : 1
-      const result = state.update.call(state, x, y, value) as MoveResult
+      const result = state.update(x, y, value)
 
       switch (result) {
         case MoveResult.illegal:

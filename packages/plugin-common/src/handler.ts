@@ -51,6 +51,7 @@ export default function apply (ctx: App, options: HandlerOptions = {}) {
 
   const { blackList = [], respondents = [], throttle, welcome = defaultMessage } = options
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   blackList.length && ctx.prependMiddleware((session, next) => {
     for (const word of blackList) {
       if (session.message.includes(word)) return
@@ -58,6 +59,7 @@ export default function apply (ctx: App, options: HandlerOptions = {}) {
     return next()
   })
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   respondents.length && ctx.middleware((session, next) => {
     const message = simplify(session.message)
     for (const { match, reply } of respondents) {

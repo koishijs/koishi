@@ -57,7 +57,7 @@ export default function apply (ctx: Context, options: RepeaterOptions = {}) {
 
     const state = getState(groupId, selfId)
     const check = (handle: RepeatHandler) => {
-      const text = handle && handle(state, message, userId)
+      const text = handle?.(state, message, userId)
       return text && next(() => {
         ctx.emit('repeater', session, state)
         return session.$send(text)

@@ -357,11 +357,11 @@ function fromWireValue (value: WireValue): any {
 function requestResponseMessage (
   ep: Endpoint,
   msg: Message,
-  transfers?: Transferable[]
+  transfers?: Transferable[],
 ): Promise<WireValue> {
   return new Promise((resolve) => {
     const id = generateUUID()
-    ep.on('message', function l(data) {
+    ep.on('message', function l (data) {
       ep.off('message', l as any)
       resolve(data)
     } as any)

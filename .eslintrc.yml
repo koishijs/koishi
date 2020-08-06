@@ -28,10 +28,8 @@ rules:
   # https://github.com/typescript-eslint/typescript-eslint/issues/239
   no-inner-declarations: off
   no-mixed-operators: off
-  # https://github.com/typescript-eslint/typescript-eslint/issues/1220
-  no-unused-expressions: off
   no-unused-vars: off
-  no-useless-escape: warn
+  no-useless-escape: off
   no-redeclare: off
   no-return-assign: off
   no-sequences: off
@@ -43,6 +41,7 @@ rules:
     - warn
     - single
     - avoidEscape: true
+      allowTemplateLiterals: true
   space-before-function-paren: off
   yield-star-spacing:
     - warn

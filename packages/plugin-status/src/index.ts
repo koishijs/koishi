@@ -36,7 +36,7 @@ function memoryRate () {
   }
 }
 
-function getCpuUsage() {
+function getCpuUsage () {
   let totalIdle = 0, totalTick = 0
   const cpuInfo = cpus()
   const usage = process.cpuUsage().user
@@ -60,6 +60,7 @@ function updateCpuUsage () {
   const totalDifference = newUsage.total - usage.total
   appRate = (newUsage.app - usage.app) / totalDifference
   usedRate = (newUsage.used - usage.used) / totalDifference
+  usage = newUsage
 }
 
 export interface Rate {

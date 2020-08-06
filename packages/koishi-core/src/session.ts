@@ -117,6 +117,7 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
 
   get $username (): string {
     const idString = '' + this.userId
+    // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
     return this.$user && this.$user['name'] && idString !== this.$user['name']
       ? this.$user['name']
       : this.anonymous

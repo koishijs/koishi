@@ -3,6 +3,7 @@ import { CQCode, Logger, defineProperty } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { wrap, Remote, proxy } from './comlink'
 import { WorkerAPI, WorkerConfig } from './worker'
+import { resolve } from 'path'
 
 declare module 'koishi-core/dist/session' {
   interface Session {
@@ -64,7 +65,7 @@ export function apply (ctx: Context, config: Config = {}) {
   let worker: Worker
   let remote: Remote<WorkerAPI>
   function createWorker () {
-    worker = new Worker(__dirname + '/worker.js', {
+    worker = new Worker(resolve(__dirname, 'worker.js'), {
       workerData: config,
       resourceLimits,
     })
