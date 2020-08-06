@@ -39,6 +39,6 @@
     "koishi-core": "^2.0.0-beta.4"
   },
   "dependencies": {
-    "@octokit/webhooks": "^7.8.1"
+    "@octokit/webhooks": "^7.9.0"
   }
 }

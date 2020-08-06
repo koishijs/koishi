@@ -144,10 +144,10 @@ export class App extends Context {
     session.message = this.options.processMessage(session.message)
 
     // strip prefix
-    let capture: RegExpMatchArray
+    let capture: RegExpMatchArray, atSelf = false
     const at = `[CQ:at,qq=${session.selfId}]`
     if (session.messageType !== 'private' && session.message.startsWith(at)) {
-      session.$atSelf = session.$appel = true
+      atSelf = session.$appel = true
       session.message = session.message.slice(at.length).trimStart()
       // eslint-disable-next-line no-cond-assign
     } else if (capture = session.message.match(this._nameRE)) {
@@ -174,7 +174,7 @@ export class App extends Context {
 
         // ignore some group calls
         if (group.flag & Group.Flag.ignore) return
-        if (group.assignee !== session.selfId && !session.$atSelf) return
+        if (group.assignee !== session.selfId && !atSelf) return
       }
 
       // attach user data
