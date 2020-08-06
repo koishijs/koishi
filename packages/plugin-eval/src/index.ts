@@ -60,6 +60,7 @@ export function apply (ctx: Context, config: Config = {}) {
     ...config.resourceLimits,
   }
 
+  let restart = true
   let worker: Worker
   let remote: Remote<WorkerAPI>
   function createWorker () {
@@ -73,9 +74,13 @@ export function apply (ctx: Context, config: Config = {}) {
 
     worker.on('exit', (code) => {
       logger.info('exited with code', code)
-      createWorker()
+      if (restart) createWorker()
     })
   }
+
+  process.on('beforeExit', () => {
+    restart = false
+  })
 
   ctx.on('before-connect', () => {
     createWorker()
