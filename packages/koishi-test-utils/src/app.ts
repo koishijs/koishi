@@ -1,4 +1,4 @@
-import { AppOptions, App, CQServer, ContextType, Session as Meta, FileInfo } from 'koishi-core'
+import { AppOptions, App, CQServer, Session as Meta, FileInfo } from 'koishi-core'
 import { MockedServer, RequestParams, RequestData, RequestHandler } from './mocks'
 import { Session, createMessageMeta } from './session'
 
@@ -36,7 +36,7 @@ export class MockedApp extends App {
   }
 
   receive (meta: Partial<Meta>) {
-    this.server.dispatchMeta(new Meta({
+    this.server['dispatch'](new Meta({
       selfId: this.bots[0].selfId,
       ...meta,
     }))
@@ -77,8 +77,7 @@ export class MockedApp extends App {
   receiveMessage (meta: Meta): Promise<void>
   receiveMessage (type: 'user', message: string, userId: number): Promise<void>
   receiveMessage (type: 'group', message: string, userId: number, groupId: number): Promise<void>
-  receiveMessage (type: 'discuss', message: string, userId: number, discussId: number): Promise<void>
-  receiveMessage (type: ContextType | Meta, message?: string, userId?: number, ctxId: number = userId) {
+  receiveMessage (type: 'user' | 'group' | Meta, message?: string, userId?: number, ctxId: number = userId) {
     return new Promise((resolve) => {
       this.once('after-middleware', () => resolve())
       this.receive(typeof type === 'string' ? createMessageMeta(type, message, userId, ctxId) : type)
@@ -113,8 +112,7 @@ export class MockedApp extends App {
 
   createSession (type: 'user', userId: number): Session
   createSession (type: 'group', userId: number, groupId: number): Session
-  createSession (type: 'discuss', userId: number, discussId: number): Session
-  createSession (type: ContextType, userId: number, ctxId: number = userId) {
+  createSession (type: 'user' | 'group', userId: number, ctxId: number = userId) {
     return new Session(this, type, userId, ctxId)
   }
 }
