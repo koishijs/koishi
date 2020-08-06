@@ -159,12 +159,12 @@ class HttpServer extends CQServer {
   private async __listen (bot: CQSender) {
     if (!bot.server) return
     bot._get = async (action, params) => {
-      const headers = {} as any
+      const headers = { 'Content-Type': 'application/json' } as any
       if (bot.token) {
         headers.Authorization = `Token ${bot.token}`
       }
       const uri = new URL(action, bot.server).href
-      const { data } = await axios.get(uri, { params, headers })
+      const { data } = await axios.post(uri, params, { headers })
       return data
     }
     bot.version = await bot.getVersionInfo()
