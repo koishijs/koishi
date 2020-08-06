@@ -160,7 +160,7 @@ export class App extends Context {
     }
 
     // store parsed message
-    session.$argv = session.$parse(session.message, next, true)
+    session.$argv = session.$parse(session.message, next, false)
 
     if (this.database) {
       if (session.messageType === 'group') {
@@ -240,7 +240,7 @@ export class App extends Context {
 
   private _handleParse (message: string, { $prefix, $appel, messageType }: Session, forced: boolean) {
     // group message should have prefix or appel to be interpreted as a command call
-    if (forced && messageType !== 'private' && $prefix === null && !$appel) return
+    if (!forced && messageType !== 'private' && $prefix === null && !$appel) return
     const name = message.split(/\s/, 1)[0]
     const index = name.lastIndexOf('/')
     const command = this.app._commandMap[name.slice(index + 1).toLowerCase()]

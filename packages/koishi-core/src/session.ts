@@ -1,6 +1,6 @@
 import { User, Group } from './database'
 import { ExecuteArgv, ParsedArgv, Command } from './command'
-import { isInteger, contain, observe, Observed, noop } from 'koishi-utils'
+import { isInteger, contain, observe, Observed, noop, Logger } from 'koishi-utils'
 import { NextFunction } from './context'
 import { App } from './app'
 
@@ -83,6 +83,8 @@ export interface Meta <P extends PostType = PostType> {
   status?: StatusInfo
   interval?: number
 }
+
+const logger = Logger.create('session')
 
 export interface Session <U, G, P extends PostType = PostType> extends Meta <P> {}
 
@@ -256,20 +258,25 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
     if (typeof argv.command === 'string') {
       argv.command = this.$app._commandMap[argv.command]
     }
-    if (!argv.command?.context.match(this)) return
+    if (!argv.command) {
+      logger.warn('cannot resolve', argv)
+      return
+    }
+    if (!argv.command.context.match(this)) return
     return { session: this, next, ...argv } as ParsedArgv
   }
 
-  $parse (message: string, next: NextFunction = noop, forced = false): ParsedArgv {
+  $parse (message: string, next: NextFunction = noop, forced = true) {
     if (!message) return
     const argv = this.$app.bail(this, 'parse', message, this, forced)
     if (argv) return this.$resolve(argv, next)
+    if (forced) logger.warn('cannot parse', message)
   }
 
   $execute (argv: ExecuteArgv): Promise<void>
   $execute (message: string, next?: NextFunction): Promise<void>
   async $execute (...args: [ExecuteArgv] | [string, NextFunction?]) {
-    let argv: ParsedArgv, next: NextFunction
+    let argv: void | ParsedArgv, next: NextFunction
     if (typeof args[0] === 'string') {
       next = args[1] || noop
       argv = this.$parse(args[0], next)

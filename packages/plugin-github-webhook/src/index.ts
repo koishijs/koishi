@@ -1,9 +1,9 @@
 import type { Context } from 'koishi-core'
 import { Webhooks, EventNames } from '@octokit/webhooks'
-import { Options } from '@octokit/webhooks/dist-types/types'
+import { Options, WebhookEvent } from '@octokit/webhooks/dist-types/types'
 import { GetWebhookPayloadTypeFromEvent } from '@octokit/webhooks/dist-types/generated/get-webhook-payload-type-from-event'
 
-export interface Config extends Partial<Options> {
+export interface Config extends Options<WebhookEvent> {
   repos?: Record<string, number[]>
 }
 
@@ -17,7 +17,7 @@ export const name = 'github-webhook'
 
 export function apply (ctx: Context, config: Config = {}) {
   config = { ...defaultOptions, ...config }
-  const webhook = new Webhooks(config as any)
+  const webhook = new Webhooks(config)
 
   ctx.app.server.router.post(config.path, (ctx, next) => {
     return webhook.middleware(ctx.req, ctx.res, next)
