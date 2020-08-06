@@ -2,6 +2,7 @@ import { SenderInfo, StatusInfo, Session, AccountInfo, StrangerInfo, MessageType
 import { snakeCase, camelCase, Logger } from 'koishi-utils'
 import { BotOptions } from './server'
 import { App } from './app'
+import WebSocket from 'ws'
 
 const logger = Logger.create('sender')
 
@@ -29,7 +30,9 @@ interface MessageResponse {
   messageId: number
 }
 
-export interface CQSender extends BotOptions {}
+export interface CQSender extends BotOptions {
+  socket?: WebSocket
+}
 
 export class CQSender {
   public version?: VersionInfo

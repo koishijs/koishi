@@ -75,12 +75,11 @@ export class App extends Context {
     defineProperty(this, '_commandMap', {})
 
     if (!options.type) {
-      const { server } = options.bots[0]
+      const { server } = options.bots.find(bot => bot.server)
       if (server) {
         options.type = server.split(':', 1)[0] as any
       } else if (options.port) {
-        // TODO ws reverse support
-        options.type = 'ws-reverse' as any
+        options.type = 'ws-reverse'
       }
     }
 

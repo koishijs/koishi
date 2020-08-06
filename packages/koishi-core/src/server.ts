@@ -24,7 +24,7 @@ export abstract class CQServer {
   public koa?: Koa
   public router?: Router
   public server?: Server
-  public socket?: WebSocket
+  public wsServer?: WebSocket.Server
 
   protected _isListening = false
   protected _isReady = false
@@ -50,7 +50,7 @@ export abstract class CQServer {
     })
   }
 
-  protected prepare (data: any) {
+  prepare (data: any) {
     const meta = camelCase<Session>(data)
     if (!this.bots[meta.selfId]) {
       const bot = this.bots.find(bot => !bot.selfId)
@@ -62,7 +62,7 @@ export abstract class CQServer {
     return new Session(meta)
   }
 
-  protected dispatch (session: Session) {
+  dispatch (session: Session) {
     const events: string[] = []
     if (session.postType === 'message' || session.postType === 'send') {
       events.push(session.postType)
@@ -107,13 +107,33 @@ export abstract class CQServer {
 class HttpServer extends CQServer {
   constructor (app: App) {
     super(app)
+    const { port } = app.options
+    if (!port) throw new Error('missing configuration "port"')
 
-    const { secret, path = '/' } = app.options
     this.koa = new (require('koa'))()
     this.router = new (require('koa-router'))()
     this.koa.use(require('koa-bodyparser')())
     this.koa.use(this.router.routes())
     this.koa.use(this.router.allowedMethods())
+  }
+
+  private async __listen (bot: CQSender) {
+    if (!bot.server) return
+    bot._get = async (action, params) => {
+      const headers = { 'Content-Type': 'application/json' } as any
+      if (bot.token) {
+        headers.Authorization = `Token ${bot.token}`
+      }
+      const uri = new URL(action, bot.server).href
+      const { data } = await axios.post(uri, params, { headers })
+      return data
+    }
+    bot.version = await bot.getVersionInfo()
+    logger.debug('%d got version info', bot.selfId)
+  }
+
+  async _listen () {
+    const { secret, path = '/' } = this.app.options
     this.router.post(path, (ctx) => {
       if (secret) {
         // no signature
@@ -154,66 +174,90 @@ class HttpServer extends CQServer {
       // dispatch events
       this.dispatch(meta)
     })
-  }
 
-  private async __listen (bot: CQSender) {
-    if (!bot.server) return
-    bot._get = async (action, params) => {
-      const headers = { 'Content-Type': 'application/json' } as any
-      if (bot.token) {
-        headers.Authorization = `Token ${bot.token}`
-      }
-      const uri = new URL(action, bot.server).href
-      const { data } = await axios.post(uri, params, { headers })
-      return data
-    }
-    bot.version = await bot.getVersionInfo()
-  }
-
-  async _listen () {
-    logger.debug('http server opening')
     const { port } = this.app.options
-    if (!port) return
+    logger.debug('http server opening at', port)
     this.server = this.koa.listen(port)
     await Promise.all(this.bots.map(bot => this.__listen(bot)))
-    logger.debug('http server listen to', port)
   }
 
   _close () {
+    logger.debug('http server closing')
     this.server.close()
-    logger.debug('http server closed')
   }
 }
 
 let counter = 0
 
-class WsClient extends CQServer {
-  private _retryCount = 0
+class WsChannel {
   private _listeners: Record<number, (response: CQResponse) => void> = {}
 
-  send (data: any): Promise<CQResponse> {
-    data.echo = ++counter
-    return new Promise((resolve, reject) => {
-      this._listeners[counter] = resolve
-      this.socket.send(JSON.stringify(data), (error) => {
-        if (error) reject(error)
-      })
+  constructor (private server: CQServer) {}
+
+  connect = (resolve: () => void, reject: (error: Error) => void, bot: CQSender) => {
+    bot.socket.on('message', (data) => {
+      data = data.toString()
+      let parsed: any
+      try {
+        parsed = JSON.parse(data)
+      } catch (error) {
+        return logger.warn('cannot parse message', data)
+      }
+
+      if ('post_type' in parsed) {
+        logger.debug('receive %o', parsed)
+        const meta = this.server.prepare(parsed)
+        if (meta) this.server.dispatch(meta)
+      } else if (parsed.echo === -1) {
+        logger.debug('%d got version info', bot.selfId)
+        bot.version = camelCase(parsed.data)
+        resolve()
+      } else {
+        this._listeners[parsed.echo]?.(parsed)
+      }
     })
+
+    bot.socket.send(JSON.stringify({
+      action: 'get_version_info',
+      echo: -1,
+    }), (error) => {
+      if (error) reject(error)
+    })
+
+    bot._get = (action, params) => {
+      const data = { action, params, echo: ++counter }
+      data.echo = ++counter
+      return new Promise((resolve, reject) => {
+        this._listeners[counter] = resolve
+        bot.socket.send(JSON.stringify(data), (error) => {
+          if (error) reject(error)
+        })
+      })
+    }
   }
+}
+
+class WsClient extends CQServer {
+  private _retryCount = 0
+  private _channel = new WsChannel(this)
+  private _sockets = new Set<WebSocket>()
 
   private async __listen (bot: CQSender) {
+    const { token, server } = bot
+    if (!server) return
+    const Socket: typeof WebSocket = require('ws')
     const connect = (resolve: () => void, reject: (reason: Error) => void) => {
       logger.debug('websocket client opening')
       const headers: Record<string, string> = {}
-      const { token, server } = bot
-      if (!server) return
       const { retryInterval, retryTimes } = this.app.options
       if (token) headers.Authorization = `Bearer ${token}`
-      this.socket = new (require('ws'))(server, { headers })
+      const socket = new Socket(server, { headers })
+      this._sockets.add(socket)
 
-      this.socket.on('error', error => logger.debug(error))
+      socket.on('error', error => logger.debug(error))
 
-      this.socket.once('close', (code) => {
+      socket.on('close', (code) => {
+        this._sockets.delete(socket)
         if (!this._isListening || code === 1005) return
 
         const message = `failed to connect to ${server}`
@@ -222,44 +266,17 @@ class WsClient extends CQServer {
         }
 
         this._retryCount++
-        logger.debug(`${message}, will retry in ${ms(retryInterval)}...`)
+        logger.warn(`${message}, will retry in ${ms(retryInterval)}...`)
         setTimeout(() => {
           if (this._isListening) connect(resolve, reject)
         }, retryInterval)
       })
 
-      this.socket.once('open', () => {
+      socket.on('open', () => {
         this._retryCount = 0
-
-        this.socket.send(JSON.stringify({
-          action: 'get_version_info',
-          echo: -1,
-        }), (error) => {
-          if (error) reject(error)
-        })
-
-        this.socket.on('message', (data) => {
-          data = data.toString()
-          logger.debug('receive', data)
-          let parsed: any
-          try {
-            parsed = JSON.parse(data)
-          } catch (error) {
-            return reject(new Error(data))
-          }
-
-          if ('post_type' in parsed) {
-            const meta = this.prepare(parsed)
-            if (meta) this.dispatch(meta)
-          } else if (parsed.echo === -1) {
-            bot.version = camelCase(parsed.data)
-            bot._get = (action, params) => this.send({ action, params })
-            logger.debug('connect to ws server:', bot.server)
-            resolve()
-          } else {
-            this._listeners[parsed.echo]?.(parsed)
-          }
-        })
+        logger.debug('connect to ws server:', bot.server)
+        bot.socket = socket
+        this._channel.connect(resolve, reject, bot)
       })
     }
     return new Promise(connect)
@@ -270,20 +287,71 @@ class WsClient extends CQServer {
   }
 
   _close () {
-    this.socket.close()
+    logger.debug('websocket client closing')
+    for (const socket of this._sockets) {
+      socket.close()
+    }
     this._retryCount = 0
-    logger.debug('websocket client closed')
+  }
+}
+
+class WsServer extends HttpServer {
+  private _channel = new WsChannel(this)  
+
+  _listen () {
+    const { port, path = '/' } = this.app.options
+    const ws: typeof WebSocket = require('ws')
+    logger.debug('ws server opening at', port)
+    this.server = this.koa.listen(port)
+    this.wsServer = new ws.Server({
+      path,
+      server: this.server,
+    })
+
+    return new Promise<void>((resolve, reject) => {
+      this.wsServer.on('error', reject)
+      this.wsServer.on('connection', (socket, { headers }) => {
+        logger.debug('connected with', headers)
+        if (headers['x-client-role'] !== 'Universal') {
+          return socket.close(1008, 'invalid x-client-role')
+        }
+        let bot: CQSender
+        const selfId = +headers['x-self-id']
+        if (!selfId || !(bot = this.bots[selfId] || this.bots.find(bot => !bot.selfId))) {
+          return socket.close(1008, 'invalid x-self-id')
+        }
+        if (!bot.selfId) bot.selfId = selfId
+
+        socket.on('close', () => {
+          delete bot.socket
+          delete bot._get
+        })
+
+        bot.socket = socket
+        this._channel.connect(() => {
+          if (this.bots.every(({ version, server }) => version || server === null)) resolve()
+        }, reject, bot)
+      })
+    })
+  }
+
+  _close () {
+    logger.debug('ws server closing')
+    this.wsServer.close()
+    super._close()
   }
 }
 
 export interface ServerTypes {
-  http: typeof HttpServer
-  ws: typeof WsClient
+  'http': typeof HttpServer
+  'ws': typeof WsClient
+  'ws-reverse': typeof WsServer
 }
 
 export namespace CQServer {
   export const types: ServerTypes = {
-    http: HttpServer,
-    ws: WsClient,
+    'http': HttpServer,
+    'ws': WsClient,
+    'ws-reverse': WsServer
   }
 }
