@@ -1,5 +1,6 @@
 // modified from https://github.com/Coxxs/bvid
-import { Context } from 'koishi'
+
+import { Context } from 'koishi-core'
 
 const table = 'fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
 const tr = {}

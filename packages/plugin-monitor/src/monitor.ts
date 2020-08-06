@@ -1,4 +1,5 @@
-import { Group, CQCode, Logger, App } from 'koishi'
+import { Group, App } from 'koishi-core'
+import { CQCode, Logger } from 'koishi-utils'
 import { Subscribe } from './database'
 import bilibili from './bilibili'
 import twitCasting from './twitCasting'
