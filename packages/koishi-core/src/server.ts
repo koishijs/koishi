@@ -56,7 +56,6 @@ export abstract class CQServer {
       const bot = this.bots.find(bot => !bot.selfId)
       if (!bot) return
       bot.selfId = meta.selfId
-      this.app.prepare()
       this.ready()
     }
     meta.$app = this.app
@@ -87,7 +86,6 @@ export abstract class CQServer {
     this._isListening = true
     try {
       await this._listen()
-      this.app.prepare()
     } catch (error) {
       this.close()
       throw error

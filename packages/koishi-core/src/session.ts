@@ -91,7 +91,9 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
   $group?: Group.Observed<G>
   $app?: App
   $argv?: ParsedArgv
-  $parsed?: ParsedMessage
+  $atSelf?: boolean
+  $appel?: boolean
+  $prefix?: string = null
   $response?: (payload: ResponsePayload) => void
 
   private _delay?: number

@@ -4,7 +4,7 @@ import leven from 'leven'
 
 declare module '../session' {
   interface Session {
-    $use (middleware: Middleware, timeout?: number): () => void
+    $use (middleware: Middleware): () => void
     $prompt (timeout?: number): Promise<string>
     $suggest (options: SuggestOptions): void
   }
@@ -24,25 +24,17 @@ export function getSessionId (session: Session) {
   return '' + session.userId + session.groupId
 }
 
-Session.prototype.$use = function $use (this: Session, middleware: Middleware, timeout = this.$app.options.promptTimeout) {
+Session.prototype.$use = function $use (this: Session, middleware: Middleware) {
   const identifier = getSessionId(this)
-  const _dispose = this.$app.prependMiddleware(async (session, next) => {
+  return this.$app.prependMiddleware(async (session, next) => {
     if (identifier && getSessionId(session) !== identifier) return next()
     return middleware(session, next)
   })
-  const timer = setTimeout(dispose, timeout)
-  function dispose () {
-    _dispose()
-    clearTimeout(timer)
-  }
-  return dispose
 }
 
 Session.prototype.$prompt = function $prompt (this: Session, timeout = this.$app.options.promptTimeout) {
   return new Promise((resolve, reject) => {
-    const identifier = getSessionId(this)
-    const dispose = this.$app.prependMiddleware(async (session, next) => {
-      if (identifier && getSessionId(session) !== identifier) return next()
+    const dispose = this.$use((session) => {
       clearTimeout(timer)
       dispose()
       resolve(session.message)
@@ -84,10 +76,10 @@ Session.prototype.$suggest = function $suggest (this: Session, options: SuggestO
 
 export default function apply (ctx: Context) {
   ctx.middleware((session, next) => {
-    if (session.$argv) return next()
-    const { message, prefix, nickname } = session.$parsed
-    const target = session.$parsed.message.split(/\s/, 1)[0].toLowerCase()
-    if (!target || !(prefix !== null || nickname || session.messageType === 'private')) return next()
+    const { $argv, message, $prefix, $appel, messageType } = session
+    if ($argv || messageType !== 'private' && $prefix === null && !$appel) return next()
+    const target = message.split(/\s/, 1)[0].toLowerCase()
+    if (!target) return next()
 
     const items = Object.keys(ctx.app._commandMap)
       .filter(name => ctx.app._commandMap[name].context.match(session))

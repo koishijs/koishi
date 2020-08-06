@@ -24,6 +24,7 @@ export interface AppOptions extends BotOptions {
   maxListeners?: number
   preferSync?: boolean
   promptTimeout?: number
+  processMessage?: (message: string) => string
   queueDelay?: number | ((message: string, session: Session) => number)
   defaultAuthority?: number | ((session: Session) => number)
   quickOperationTimeout?: number
@@ -33,7 +34,7 @@ export interface AppOptions extends BotOptions {
 }
 
 function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
-  return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegex).join('|')})${suffix}`) : /^$/
+  return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegex).join('|')})${suffix}`) : /$^/
 }
 
 const defaultOptions: AppOptions = {
@@ -43,6 +44,7 @@ const defaultOptions: AppOptions = {
   userCacheTimeout: Time.minute,
   groupCacheTimeout: 5 * Time.minute,
   quickOperationTimeout: 0.1 * Time.second,
+  processMessage: (message) => simplify(message.trim()),
 }
 
 export enum Status { closed, opening, open, closing }
@@ -58,7 +60,6 @@ export class App extends Context {
   _commandMap: Record<string, Command> = {}
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
 
-  private _atMeRE: RegExp
   private _nameRE: RegExp
   private _prefixRE: RegExp
   private _middlewareCounter = 0
@@ -101,16 +102,7 @@ export class App extends Context {
     this.middleware(this._preprocess.bind(this))
     this.on('message', this._handleMessage.bind(this))
     this.on('connect', this._handleConnect.bind(this))
-
-    this.on('parse', (message, { $parsed, messageType }, forced) => {
-      if (forced && $parsed.prefix === null && !$parsed.nickname && messageType !== 'private') return
-      const name = message.split(/\s/, 1)[0]
-      const index = name.lastIndexOf('/')
-      const command = this.app._commandMap[name.slice(index + 1).toLowerCase()]
-      if (!command) return
-      const result = command.parse(message.slice(name.length).trimStart())
-      return { command, ...result }
-    })
+    this.on('parse', this._handleParse.bind(this))
 
     this.plugin(validate)
     this.plugin(suggest)
@@ -125,18 +117,10 @@ export class App extends Context {
         if (bot.selfId || !bot._get) return
         const info = await bot.getLoginInfo()
         bot.selfId = info.userId
-        this.prepare()
       }))
     }
     await this._getSelfIdsPromise
     return bots.map(bot => bot.selfId)
-  }
-
-  prepare () {
-    const selfIds = this.server.bots
-      .filter(bot => bot.selfId && bot._get)
-      .map(bot => '' + bot.selfId)
-    this._atMeRE = createLeadingRE(selfIds, '\\[CQ:at,qq=', '\\]\\s*')
   }
 
   async start () {
@@ -157,33 +141,26 @@ export class App extends Context {
   }
 
   private async _preprocess (session: Session, next: NextFunction) {
+    session.message = this.options.processMessage(session.message)
+
     // strip prefix
     let capture: RegExpMatchArray
-    let atMe = false
-    let nickname = ''
-    let prefix: string = null
-    let message = simplify(session.message.trim())
-
-    if (session.messageType !== 'private' && (capture = message.match(this._atMeRE))) {
-      atMe = true
-      nickname = capture[0]
-      message = message.slice(capture[0].length)
-    }
-
-    if ((capture = message.match(this._nameRE))?.[0].length) {
-      nickname = capture[0]
-      message = message.slice(capture[0].length)
-    }
-
-    // eslint-disable-next-line no-cond-assign
-    if (capture = message.match(this._prefixRE)) {
-      prefix = capture[0]
-      message = message.slice(capture[0].length)
+    const at = `[CQ:at,qq=${session.selfId}]`
+    if (session.messageType !== 'private' && session.message.startsWith(at)) {
+      session.$atSelf = session.$appel = true
+      session.message = session.message.slice(at.length).trimStart()
+      // eslint-disable-next-line no-cond-assign
+    } else if (capture = session.message.match(this._nameRE)) {
+      session.$appel = true
+      session.message = session.message.slice(capture[0].length)
+      // eslint-disable-next-line no-cond-assign
+    } else if (capture = session.message.match(this._prefixRE)) {
+      session.$prefix = capture[0]
+      session.message = session.message.slice(capture[0].length)
     }
 
     // store parsed message
-    session.$parsed = { atMe, nickname, prefix, message }
-    session.$argv = session.$parse(message, next, true)
+    session.$argv = session.$parse(session.message, next, true)
 
     if (this.database) {
       if (session.messageType === 'group') {
@@ -197,7 +174,7 @@ export class App extends Context {
 
         // ignore some group calls
         if (group.flag & Group.Flag.ignore) return
-        if (group.assignee !== session.selfId && !atMe) return
+        if (group.assignee !== session.selfId && !session.$atSelf) return
       }
 
       // attach user data
@@ -259,6 +236,17 @@ export class App extends Context {
     // flush user & group data
     await session.$user?._update()
     await session.$group?._update()
+  }
+
+  private _handleParse (message: string, { $prefix, $appel, messageType }: Session, forced: boolean) {
+    // group message should have prefix or appel to be interpreted as a command call
+    if (forced && messageType !== 'private' && $prefix === null && !$appel) return
+    const name = message.split(/\s/, 1)[0]
+    const index = name.lastIndexOf('/')
+    const command = this.app._commandMap[name.slice(index + 1).toLowerCase()]
+    if (!command) return
+    const result = command.parse(message.slice(name.length).trimStart())
+    return { command, ...result }
   }
 
   private _handleConnect () {
