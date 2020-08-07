@@ -18,6 +18,10 @@ const defaultOptions: Config = {
 export const name = 'github-webhook'
 
 export function apply (ctx: Context, config: Config = {}) {
+  if (!ctx.app.server.router) {
+    throw new Error('missing configuration "port"')
+  }
+
   config = { ...defaultOptions, ...config }
   const webhook = new Webhooks(config)
 
@@ -36,7 +40,7 @@ export function apply (ctx: Context, config: Config = {}) {
       const groups = await ctx.database.getAllGroups(['id', 'assignee'])
       for (const { id, assignee } of groups) {
         if (ids.includes(id)) {
-          await ctx.bots[assignee].sendGroupMsgAsync(id, message)
+          await ctx.bots[assignee].sendGroupMsg(id, message)
         }
       }
     })

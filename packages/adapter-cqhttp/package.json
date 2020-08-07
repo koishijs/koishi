@@ -36,19 +36,13 @@
     "koishi-utils": "^2.1.2"
   },
   "devDependencies": {
-    "@types/koa": "^2.11.3",
-    "@types/koa-router": "^7.4.1",
     "@types/ms": "^0.7.31",
     "@types/ws": "^7.2.6",
     "get-port": "^5.1.1",
     "koishi-test-utils": "^4.0.0-beta.2"
   },
   "dependencies": {
-    "@types/koa-bodyparser": "^4.3.0",
     "axios": "^0.19.2",
-    "koa": "^2.13.0",
-    "koa-bodyparser": "^4.3.0",
-    "koa-router": "^9.1.0",
     "ms": "^2.1.2",
     "ws": "^7.3.1"
   }

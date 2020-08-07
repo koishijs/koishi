@@ -1,14 +1,13 @@
 import { Context, App } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
 import {} from 'koishi-plugin-mysql'
+import {} from 'koishi-plugin-cqhttp'
 
 declare module 'koishi-core/dist/server' {
   interface BotOptions {
     label?: string
   }
-}
 
-declare module 'koishi-core/dist/sender' {
   interface Bot {
     counter: number[]
   }

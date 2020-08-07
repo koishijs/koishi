@@ -27,7 +27,7 @@ export default class WsClient extends Server {
 
       socket.on('close', (code) => {
         this._sockets.delete(socket)
-        if (!this._isListening || code === 1005) return
+        if (!this._listening || code === 1005) return
 
         const message = `failed to connect to ${server}`
         if (!retryInterval || this._retryCount >= retryTimes) {
@@ -37,7 +37,7 @@ export default class WsClient extends Server {
         this._retryCount++
         logger.warn(`${message}, will retry in ${ms(retryInterval)}...`)
         setTimeout(() => {
-          if (this._isListening) connect(resolve, reject)
+          if (this._listening) connect(resolve, reject)
         }, retryInterval)
       })
 

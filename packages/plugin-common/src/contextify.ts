@@ -29,7 +29,7 @@ export function apply (ctx: Context) {
         return '请提供新的上下文。'
       }
 
-      const newSession = new Session(session)
+      const newSession = new Session(ctx.app, session)
       newSession.$send = session.$send.bind(session)
       newSession.$sendQueued = session.$sendQueued.bind(session)
 

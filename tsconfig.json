@@ -11,6 +11,7 @@
     { "path": "./packages/koishi-core" },
     { "path": "./packages/koishi-test-utils" },
 
+    { "path": "./packages/plugin-cqhttp" },
     { "path": "./packages/plugin-mysql" },
     { "path": "./packages/plugin-puppeteer" },
 

@@ -1,24 +1,32 @@
-import { Bot } from 'koishi-core'
+import { Bot, App, Server } from 'koishi-core'
 import { Logger } from 'koishi-utils'
-import HttpServer from './http'
-import Channel from './channel'
 import type WebSocket from 'ws'
+import Channel from './channel'
 
 const logger = Logger.create('server')
 
-export default class WsServer extends HttpServer {
+export default class WsServer extends Server {
   public wsServer?: WebSocket.Server
-  private _channel = new Channel(this)
+  private _channel: Channel
 
-  _listen () {
-    const { port, path = '/' } = this.app.options
+  constructor (app: App) {
+    if (!app.options.port) {
+      throw new Error('missing configuration "port"')
+    }
+    super(app)
+    this._channel = new Channel(this)
+    const { path = '/' } = this.app.options
     const ws: typeof WebSocket = require('ws')
-    logger.debug('ws server opening at', port)
-    this.server = this.koa.listen(port)
     this.wsServer = new ws.Server({
       path,
       server: this.server,
     })
+  }
+
+  _listen () {
+    const { port } = this.app.options
+    logger.debug('ws server opening at', port)
+    this.server.listen(port)
 
     return new Promise<void>((resolve, reject) => {
       this.wsServer.on('error', reject)
@@ -50,6 +58,6 @@ export default class WsServer extends HttpServer {
   _close () {
     logger.debug('ws server closing')
     this.wsServer.close()
-    super._close()
+    this.server.close()
   }
 }

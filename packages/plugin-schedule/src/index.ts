@@ -45,8 +45,7 @@ export function apply (ctx: Context) {
     const schedules = await database.getAllSchedules()
     schedules.forEach((schedule) => {
       if (!ctx.bots[schedule.assignee]) return
-      schedule.session = new Session(schedule.session)
-      schedule.session.$app = ctx.app
+      schedule.session = new Session(ctx.app, schedule.session)
       inspectSchedule(schedule)
     })
   })

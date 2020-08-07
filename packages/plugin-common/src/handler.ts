@@ -1,5 +1,6 @@
 import { App, Session } from 'koishi-core'
 import { simplify } from 'koishi-utils'
+import {} from 'koishi-plugin-cqhttp'
 
 export interface Respondent {
   match: string | RegExp
@@ -29,24 +30,24 @@ export interface HandlerOptions {
 
 const defaultMessage: WelcomeMessage = session => `欢迎新大佬 [CQ:at,qq=${session.userId}]！`
 
-async function getHandleResult (handler: RequestHandler, session: Session) {
+async function getHandleResult (handler: RequestHandler, session: Session): Promise<any> {
   return typeof handler === 'function' ? handler(session) : handler
 }
 
 export default function apply (ctx: App, options: HandlerOptions = {}) {
   ctx.on('request/friend', async (session) => {
     const result = await getHandleResult(options.onFriend, session)
-    return result !== undefined && session.$bot.setFriendAddRequest(session.flag, result as any)
+    return result !== undefined && session.$bot.setFriendAddRequest(session.flag, result)
   })
 
   ctx.on('request/group/add', async (session) => {
     const result = await getHandleResult(options.onGroupAdd, session)
-    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subType as any, result as any)
+    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subType, result)
   })
 
   ctx.on('request/group/invite', async (session) => {
     const result = await getHandleResult(options.onGroupInvite, session)
-    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subType as any, result as any)
+    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subType, result)
   })
 
   const { blackList = [], respondents = [], throttle, welcome = defaultMessage } = options

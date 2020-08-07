@@ -71,9 +71,7 @@ declare module 'koishi-core/dist/server' {
     _get?: (action: string, params: Record<string, any>) => Promise<CQResponse>
     get <T = any> (action: string, params?: Record<string, any>, silent?: boolean): Promise<T>
     getAsync (action: string, params?: Record<string, any>): Promise<void>
-    sendGroupMsg (groupId: number, message: string, autoEscape?: boolean): Promise<number>
     sendGroupMsgAsync (groupId: number, message: string, autoEscape?: boolean): Promise<void>
-    sendPrivateMsg (userId: number, message: string, autoEscape?: boolean): Promise<number>
     sendPrivateMsgAsync (userId: number, message: string, autoEscape?: boolean): Promise<void>
     setGroupAnonymousBan (groupId: number, anonymous: object, duration?: number): Promise<void>
     setGroupAnonymousBan (groupId: number, flag: string, duration?: number): Promise<void>
@@ -377,22 +375,3 @@ interface CQNode {
 }
 
 defineAsync('set_group_name', 'group_id', 'name')
-
-// async sendMsg (type: MessageType, ctxId: number, message: string, autoEscape = false) {
-//   if (!message) return
-//   const ctxType = type === 'private' ? 'user' : type
-//   const session = this.createSession(type, ctxType, ctxId, message)
-//   if (this.app.bail(session, 'before-send', session)) return
-//   const { messageId } = await this.get<MessageResponse>('send_msg', { [ctxType + 'Id']: ctxId, message, autoEscape })
-//   session.messageId = messageId
-//   this.app.emit(session, 'send', session)
-//   return messageId
-// }
-
-// async sendMsgAsync (type: MessageType, ctxId: number, message: string, autoEscape = false) {
-//   if (!message) return
-//   const ctxType = type === 'private' ? 'user' : type
-//   const session = this.createSession(type, ctxType, ctxId, message)
-//   if (this.app.bail(session, 'before-send', session)) return
-//   return this.getAsync('send_msg', { [ctxType + 'Id']: ctxId, message, autoEscape })
-// }

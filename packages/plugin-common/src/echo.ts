@@ -33,8 +33,8 @@ export function apply (ctx: Context) {
 
       // send messages
       await Promise.all([
-        ...channels.private.map(id => session.$bot.sendPrivateMsgAsync(+id, message)),
-        ...channels.group.map(id => session.$bot.sendGroupMsgAsync(+id, message)),
+        ...channels.private.map(id => session.$bot.sendPrivateMsg(+id, message)),
+        ...channels.group.map(id => session.$bot.sendGroupMsg(+id, message)),
       ])
     })
 }

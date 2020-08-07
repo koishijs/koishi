@@ -72,6 +72,14 @@ export class App extends Context {
     options = this.options = { ...defaultOptions, ...options }
     if (!options.bots) options.bots = [options]
 
+    const { type } = this.options
+    const server = Server.types[type]
+    if (!server) {
+      const types = Object.keys(Server.types).map(type => `"${type}"`).join(', ')
+      throw new Error(`unsupported server type "${type}", expect ${types}`)
+    }
+    this.server = Reflect.construct(server, [this])
+
     defineProperty(this, '_commandMap', {})
 
     const { nickname, prefix } = this.options
@@ -83,7 +91,6 @@ export class App extends Context {
     // bind built-in event listeners
     this.middleware(this._preprocess.bind(this))
     this.on('message', this._handleMessage.bind(this))
-    this.on('connect', this._handleConnect.bind(this))
     this.on('parse', this._handleParse.bind(this))
 
     this.plugin(validate)
@@ -107,21 +114,11 @@ export class App extends Context {
   }
 
   async start () {
-    this.emit('adapt')
-    const { type } = this.options
-    const server = Server.types[type]
-    if (!server) {
-      const types = Object.keys(Server.types).map(type => `"${type}"`).join(', ')
-      throw new Error(`unsupported server type "${type}", expect ${types}`)
-    }
-    this.server = Reflect.construct(server, [this])
-
     this.status = Status.opening
     await this.parallel('before-connect')
     this.status = Status.open
     this.logger('app').debug('started')
     this.emit('connect')
-    this.server.ready()
   }
 
   async stop () {
@@ -239,17 +236,5 @@ export class App extends Context {
     if (!command) return
     const result = command.parse(message.slice(name.length).trimStart())
     return { command, ...result }
-  }
-
-  private _handleConnect () {
-    const { type, port } = this.options
-    const logger = this.logger('app')
-    if (port) logger.info('server listening at %c', port)
-
-    this.bots.forEach(({ server }) => {
-      if (!server) return
-      if (type === 'ws') server = server.replace(/^http/, 'ws')
-      logger.info('connected to %c', server)
-    })
   }
 }

@@ -1,9 +1,11 @@
 import { camelCase, paramCase } from 'koishi-utils'
-import { Session, MessageType } from './session'
+import { Session, MessageType, Meta } from './session'
 import { App } from './app'
+import * as http from 'http'
+import type Koa from 'koa'
+import type Router from 'koa-router'
 
 export interface BotOptions {
-  token?: string
   server?: string
   selfId?: number
 }
@@ -14,16 +16,17 @@ export abstract class Server {
   static types: ServerTypes = {}
 
   public bots: Bot[]
+  public router?: Router
+  public server?: http.Server
 
-  protected _isListening = false
-  protected _isReady = false
-
+  protected _listening = false
   protected abstract _listen (): Promise<void>
   protected abstract _close (): void
 
   constructor (public app: App) {
     app.on('before-connect', this.listen.bind(this))
     app.on('before-disconnect', this.close.bind(this))
+    app.on('connect', this.success.bind(this))
     const senders = app.options.bots.map(bot => new Bot(app, bot))
     this.bots = new Proxy(senders, {
       get (target, prop) {
@@ -37,18 +40,26 @@ export abstract class Server {
           : false
       },
     })
+    if (app.options.port) this.createServer()
+  }
+
+  createServer () {
+    const koa: Koa = new (require('koa'))()
+    this.router = new (require('koa-router'))()
+    koa.use(require('koa-bodyparser')())
+    koa.use(this.router.routes())
+    koa.use(this.router.allowedMethods())
+    this.server = http.createServer(koa.callback())
   }
 
   prepare (data: any) {
-    const meta = camelCase<Session>(data)
+    const meta = camelCase<Meta>(data)
     if (!this.bots[meta.selfId]) {
       const bot = this.bots.find(bot => !bot.selfId)
       if (!bot) return
       bot.selfId = meta.selfId
-      this.ready()
     }
-    meta.$app = this.app
-    return new Session(meta)
+    return new Session(this.app, meta)
   }
 
   dispatch (session: Session) {
@@ -71,8 +82,8 @@ export abstract class Server {
   }
 
   async listen () {
-    if (this._isListening) return
-    this._isListening = true
+    if (this._listening) return
+    this._listening = true
     try {
       await this._listen()
     } catch (error) {
@@ -81,25 +92,32 @@ export abstract class Server {
     }
   }
 
-  close () {
-    this._isListening = false
-    this._close()
+  success () {
+    const { type, port } = this.app.options
+    const logger = this.app.logger('app')
+    if (port) logger.info('server listening at %c', port)
+
+    this.bots.forEach(({ server }) => {
+      if (!server) return
+      if (type === 'ws') server = server.replace(/^http/, 'ws')
+      logger.info('connected to %c', server)
+    })
   }
 
-  ready () {
-    // @ts-ignore
-    if (this._isReady || !this.bots.every(bot => bot.selfId || !bot._get)) return
-    this._isReady = true
-    this.app.emit('ready')
+  close () {
+    this._listening = false
+    this._close()
   }
 }
 
 export interface VersionInfo {}
 
 export interface Bot extends BotOptions {
+  ready?: boolean
   version?: VersionInfo
   getSelfId (): Promise<number>
-  getVersion (): Promise<VersionInfo>
+  sendGroupMsg (groupId: number, message: string, autoEscape?: boolean): Promise<number>
+  sendPrivateMsg (userId: number, message: string, autoEscape?: boolean): Promise<number>
 }
 
 export class Bot {
@@ -108,7 +126,7 @@ export class Bot {
   }
 
   createSession (messageType: MessageType, ctxType: 'group' | 'user', ctxId: number, message: string) {
-    return new Session({
+    return new Session(this.app, {
       message,
       messageType,
       postType: 'send',

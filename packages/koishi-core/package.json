@@ -35,10 +35,16 @@
     "koishi"
   ],
   "devDependencies": {
+    "@types/koa": "^2.11.3",
+    "@types/koa-router": "^7.4.1",
     "koishi-test-utils": "^4.0.0-beta.2"
   },
   "dependencies": {
+    "@types/koa-bodyparser": "^4.3.0",
     "escape-string-regexp": "^4.0.0",
+    "koa": "^2.13.0",
+    "koa-bodyparser": "^4.3.0",
+    "koa-router": "^9.1.0",
     "koishi-utils": "^2.1.2",
     "leven": "^3.1.0"
   }

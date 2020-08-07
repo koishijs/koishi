@@ -1,34 +1,23 @@
 import { App, Bot, Server } from 'koishi-core'
 import { Logger, defineProperty, snakeCase } from 'koishi-utils'
-import type Koa from 'koa'
-import type Router from 'koa-router'
-import * as http from 'http'
 import {} from 'koa-bodyparser'
 import { createHmac } from 'crypto'
 import axios from 'axios'
 
-declare module 'koishi-core/dist/server' {
-  interface Server {  
-    router?: Router
+declare module 'koishi-core/dist/session' {
+  interface Session {
+    $response?: (payload: ResponsePayload) => void
   }
 }
 
 const logger = Logger.create('server')
 
 export default class HttpServer extends Server {
-  public koa?: Koa
-  public server?: http.Server
-
   constructor (app: App) {
+    if (!app.options.port) {
+      throw new Error('missing configuration "port"')
+    }
     super(app)
-    const { port } = app.options
-    if (!port) throw new Error('missing configuration "port"')
-
-    this.koa = new (require('koa'))()
-    this.router = new (require('koa-router'))()
-    this.koa.use(require('koa-bodyparser')())
-    this.koa.use(this.router.routes())
-    this.koa.use(this.router.allowedMethods())
   }
 
   private async __listen (bot: Bot) {
@@ -42,7 +31,7 @@ export default class HttpServer extends Server {
       const { data } = await axios.post(uri, params, { headers })
       return data
     }
-    bot.version = await bot.getVersion()
+    bot.version = await bot.getVersionInfo()
     logger.debug('%d got version info', bot.selfId)
   }
 
@@ -91,7 +80,7 @@ export default class HttpServer extends Server {
 
     const { port } = this.app.options
     logger.debug('http server opening at', port)
-    this.server = this.koa.listen(port)
+    this.server.listen(port)
     await Promise.all(this.bots.map(bot => this.__listen(bot)))
   }
 

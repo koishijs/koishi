@@ -1,6 +1,6 @@
 import { User, Group } from './database'
 import { ExecuteArgv, ParsedArgv, Command } from './command'
-import { isInteger, contain, observe, Observed, noop, Logger } from 'koishi-utils'
+import { isInteger, contain, observe, Observed, noop, Logger, defineProperty } from 'koishi-utils'
 import { NextFunction } from './context'
 import { App } from './app'
 
@@ -95,13 +95,16 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
   $argv?: ParsedArgv
   $appel?: boolean
   $prefix?: string = null
-  $response?: (payload: ResponsePayload) => void
+
+  // should be adapted by plugins
+  $send: (message: string, autoEscape?: boolean) => Promise<void>
 
   private _delay?: number
   private _queued = Promise.resolve()
   private _hooks?: (() => void)[] = []
 
-  constructor (session: Partial<Session>) {
+  constructor (app: App, session: Partial<Session>) {
+    defineProperty(this, '$app', app)
     Object.assign(this, session)
   }
 
@@ -125,25 +128,6 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
         : this.sender
           ? this.sender.card || this.sender.nickname
           : idString
-  }
-
-  async $send (message: string, autoEscape = false) {
-    if (!message) return
-    let ctxId: number
-    // eslint-disable-next-line no-cond-assign
-    const ctxType = (ctxId = this.groupId) ? 'group' : (ctxId = this.userId) ? 'user' : null
-    if (this.$app.options.preferSync) {
-      // @ts-ignore
-      await this.$bot.sendMsg(this.messageType, ctxId, message, autoEscape)
-      return
-    }
-    if (this.$response) {
-      const session = this.$bot.createSession(this.messageType, ctxType, ctxId, message)
-      if (this.$app.bail(this, 'before-send', session)) return
-      return this.$response({ reply: message, autoEscape, atSender: false })
-    }
-    // @ts-ignore
-    return this.$bot.sendMsgAsync(this.messageType, ctxId, message, autoEscape)
   }
 
   $cancelQueued (delay = 0) {

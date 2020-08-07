@@ -42,6 +42,10 @@ export class Context {
     defineProperty(this, '_disposables', [])
   }
 
+  get router () {
+    return this.app.server.router
+  }
+
   get database (): Database {
     return this.app._database
   }
@@ -318,7 +322,6 @@ export interface EventMap {
   'after-middleware' (session: Session): void
   'new-command' (cmd: Command): void
   'remove-command' (cmd: Command): void
-  'ready' (): void
   'adapt' (): void
   'before-connect' (): void | Promise<void>
   'connect' (): void

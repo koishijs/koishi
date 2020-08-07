@@ -14,20 +14,22 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-declare module 'koishi-core/dist/sender' {
+declare module 'koishi-core/dist/server' {
   interface Bot {
-    sendGroupMsgAsync (groups: number[], message: string, autoEscape?: boolean): Promise<void>
-    sendGroupMsgAsync (groupId: number | number[], message: string, autoEscape?: boolean): Promise<void>
+    sendGroupMsg (groups: number[], message: string, autoEscape?: boolean): Promise<void>
+    sendGroupMsg (groupId: number | number[], message: string, autoEscape?: boolean): Promise<void | number>
   }
 }
 
-const { sendGroupMsgAsync } = Bot.prototype
-Bot.prototype.sendGroupMsgAsync = async function (this: Bot, group: number | number[], message: string, autoEscape = false) {
-  if (typeof group === 'number') return sendGroupMsgAsync.call(this, group, message, autoEscape)
+const { sendGroupMsg } = Bot.prototype
+Bot.prototype.sendGroupMsg = async function (this: Bot, group: number | number[], message: string, autoEscape = false) {
+  if (typeof group === 'number') {
+    return sendGroupMsg.call(this, group, message, autoEscape) as any
+  }
   const { broadcastInterval = 1000 } = this.app.options
   for (let index = 0; index < group.length; index++) {
     if (index && broadcastInterval) await sleep(broadcastInterval)
-    await sendGroupMsgAsync.call(this, group[index], message, autoEscape)
+    await sendGroupMsg.call(this, group[index], message, autoEscape)
   }
 }
 
@@ -56,7 +58,7 @@ Context.prototype.broadcast = async function (this: Context, message, forced) {
   }
 
   await Promise.all(Object.entries(assignMap).map(([id, groups]) => {
-    return this.app.bots[+id].sendGroupMsgAsync(groups, message)
+    return this.app.bots[+id].sendGroupMsg(groups, message)
   }))
 }
 
@@ -69,15 +71,12 @@ export function apply (ctx: Context) {
     .option('-o, --only', '仅向当前 Bot 负责的群进行广播')
     .action(async ({ options, session }, message) => {
       if (!message) return '请输入要发送的文本。'
+      if (!options.only) return ctx.broadcast(message, options.forced)
 
-      if (options.only) {
-        let groups = await ctx.database.getAllGroups(['id', 'flag'], [session.selfId])
-        if (!options.forced) {
-          groups = groups.filter(g => !(g.flag & Group.Flag.noEmit))
-        }
-        return session.$bot.sendGroupMsgAsync(groups.map(g => g.id), message)
+      let groups = await ctx.database.getAllGroups(['id', 'flag'], [session.selfId])
+      if (!options.forced) {
+        groups = groups.filter(g => !(g.flag & Group.Flag.noEmit))
       }
-
-      return ctx.broadcast(message, options.forced)
+      await session.$bot.sendGroupMsg(groups.map(g => g.id), message)
     })
 }
