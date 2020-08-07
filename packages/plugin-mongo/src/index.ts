@@ -1,148 +1,173 @@
-import { MongoClient, Db, Collection } from 'mongodb'
-import { App, UserField, UserData, userFields, createUser, GroupData, groupFields, createGroup, GroupField, Database, extendDatabase, Context } from 'koishi-core'
+import { MongoClient, Db, Collection } from 'mongodb';
+import {
+    App, User, Group, Database, extendDatabase, Context,
+} from 'koishi-core';
 
 declare module 'koishi-core/dist/database' {
-  interface Database extends MongoDatabase { }
+    interface Database extends MongoDatabase { }
 }
 
 export interface Options {
-  username?: string,
-  password?: string,
-  host: string,
-  port: number,
-  name: string,
+    username?: string,
+    password?: string,
+    host?: string,
+    port?: number,
+    name?: string,
+    prefix?: string,
 }
 
-interface Udoc extends UserData {
-  _id: number,
+interface Udoc extends User {
+    _id: number,
 }
-interface Gdoc extends GroupData {
-  _id: number,
+interface Gdoc extends Group {
+    _id: number,
 }
 
 export default class MongoDatabase {
-  public client: MongoClient;
-  public db: Db;
-  user: Collection<Udoc>;
-  group: Collection<Gdoc>;
+    public client: MongoClient;
 
-  constructor (public app: App, public config: Options) {
-    this.config = config
-  }
+    public db: Db;
 
-  async start () {
-    let mongourl = 'mongodb://'
-    if (this.config.username) mongourl += `${this.config.username}:${this.config.password}@`
-    mongourl += `${this.config.host}:${this.config.port}/${this.config.name}`
-    this.client = await MongoClient.connect(mongourl, { useNewUrlParser: true, useUnifiedTopology: true })
-    this.db = this.client.db(this.config.name)
-    this.user = this.db.collection('user')
-    this.group = this.db.collection('group')
-  }
+    user: Collection<Udoc>;
 
-  stop () {
-    return this.client.close()
-  }
+    group: Collection<Gdoc>;
+
+    watcher: any;
+
+    constructor(public app: App, public config: Options) {
+        this.config = config;
+    }
+
+    async start() {
+        let mongourl = 'mongodb://';
+        if (this.config.username) mongourl += `${this.config.username}:${this.config.password}@`;
+        mongourl += `${this.config.host}:${this.config.port}/${this.config.name}`;
+        this.client = await MongoClient.connect(
+            mongourl, { useNewUrlParser: true, useUnifiedTopology: true },
+        );
+        this.db = this.client.db(this.config.name);
+        this.user = this.db.collection(this.config.prefix ? `${this.config.prefix}.user` : 'user');
+        this.group = this.db.collection(this.config.prefix ? `${this.config.prefix}.group` : 'group');
+    }
+
+    stop() {
+        return this.client.close();
+    }
 }
 
 extendDatabase(MongoDatabase, {
-  async getUser (userId, ...args) {
-    const authority = typeof args[0] === 'number' ? args.shift() as number : 0
-    const fields = args[0] ? args[0] as any : userFields
-    if (fields && !fields.length) return {} as any
-    const data = await this.user.findOne({ _id: userId })
-    let fallback: UserData
-    if (authority < 0) return null
-    else if (!data) {
-      fallback = createUser(userId, authority)
-      if (authority) {
-        this.user.updateOne(
-          { _id: userId },
-          {
-            $set: { authority },
-            $setOnInsert: {
-              id: userId,
-              flag: 0,
-              name: '' + userId,
-              usage: {},
-              timers: {},
-            },
-          },
-          { upsert: true },
-        )
-      }
-    }
-    return data || fallback
-  },
+    async getUser(userId, ...args) {
+        const authority = typeof args[0] === 'number' ? args.shift() as number : 0;
+        const fields = args[0] ? args[0] as any : User.fields;
+        if (fields && !fields.length) return {} as any;
+        const data = await this.user.findOne({ _id: userId });
+        let fallback: User;
+        if (authority < 0) return null;
+        if (!data) {
+            fallback = User.create(userId, authority);
+            if (authority) {
+                this.user.updateOne(
+                    { _id: userId },
+                    {
+                        $set: { authority },
+                        $setOnInsert: {
+                            id: userId,
+                            flag: 0,
+                            name: `${userId}`,
+                            usage: {},
+                            timers: {},
+                        },
+                    },
+                    { upsert: true },
+                );
+            }
+        }
+        return data || fallback;
+    },
 
-  async getUsers (...args) {
-    let ids: readonly number[], fields: readonly UserField[]
-    if (args.length > 1) {
-      ids = args[0]
-      fields = args[1]
-    } else if (args.length && typeof args[0][0] !== 'string') {
-      ids = args[0]
-      fields = userFields
-    } else fields = args[0] as any
-    if (ids && !ids.length) return []
-    return this.user.find({ _id: { $in: ids as number[] } }).toArray()
-  },
+    async getUsers(...args) {
+        let ids: readonly number[];
+        let fields: readonly User.Field[];
+        if (args.length > 1) {
+            ids = args[0];
+            fields = args[1];
+        } else if (args.length && typeof args[0][0] !== 'string') {
+            ids = args[0];
+            fields = User.fields;
+        } else fields = args[0] as any;
+        if (ids && !ids.length) return [];
+        return this.user.find({ _id: { $in: ids as number[] } }).map((doc) => {
+            if (doc.timers._date) {
+                doc.timers.$date = doc.timers._date;
+                delete doc.timers._date;
+            }
+            return doc;
+        }).toArray();
+    },
 
-  async setUser (userId, data) {
-    await this.user.updateOne({ _id: userId }, { $set: data }, { upsert: true })
-  },
+    async setUser(userId, data) {
+        const converted = { ...data };
+        if (converted.timers) {
+            if (converted.timers.$date) {
+                converted.timers._date = converted.timers.$date;
+                delete converted.timers.$date;
+            }
+        }
+        await this.user.updateOne({ _id: userId }, { $set: data }, { upsert: true });
+    },
 
-  async getGroup (groupId, ...args) {
-    const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
-    const fields = args[0] as any || groupFields
-    if (fields && !fields.length) return {} as any
-    const data = await this.group.findOne({ _id: groupId })
-    let fallback: GroupData
-    if (!data) {
-      fallback = createGroup(groupId, selfId)
-      if (selfId && groupId) {
-        this.group.updateOne(
-          { _id: groupId },
-          {
-            $set: { assignee: selfId },
-            $setOnInsert: {
-              id: groupId,
-              flag: 0,
-            },
-          },
-          { upsert: true },
-        )
-      }
-    }
-    return data || fallback
-  },
+    async getGroup(groupId, ...args) {
+        const selfId = typeof args[0] === 'number' ? args.shift() as number : 0;
+        const fields = args[0] as any || Group.fields;
+        if (fields && !fields.length) return {} as any;
+        const data = await this.group.findOne({ _id: groupId });
+        let fallback: Group;
+        if (!data) {
+            fallback = Group.create(groupId, selfId);
+            if (selfId && groupId) {
+                this.group.updateOne(
+                    { _id: groupId },
+                    {
+                        $set: { assignee: selfId },
+                        $setOnInsert: {
+                            id: groupId,
+                            flag: 0,
+                        },
+                    },
+                    { upsert: true },
+                );
+            }
+        }
+        return data || fallback;
+    },
 
-  async getAllGroups (...args) {
-    let assignees: readonly number[], fields: readonly GroupField[]
-    if (args.length > 1) {
-      fields = args[0]
-      assignees = args[1]
-    } else if (args.length && typeof args[0][0] === 'number') {
-      fields = groupFields
-      assignees = args[0] as any
-    } else {
-      fields = args[0] || groupFields
-      assignees = await this.app.getSelfIds()
-    }
-    if (!assignees.length) return []
-    return this.group.find({ assignee: { $in: assignees as number[] } }).toArray()
-  },
+    async getAllGroups(...args) {
+        let assignees: readonly number[];
+        let fields: readonly Group.Field[];
+        if (args.length > 1) {
+            fields = args[0];
+            assignees = args[1];
+        } else if (args.length && typeof args[0][0] === 'number') {
+            fields = Group.fields;
+            assignees = args[0] as any;
+        } else {
+            fields = args[0] || Group.fields;
+            assignees = await this.app.getSelfIds();
+        }
+        if (!assignees.length) return [];
+        return this.group.find({ assignee: { $in: assignees as number[] } }).toArray();
+    },
 
-  async setGroup (groupId, data) {
-    await this.group.updateOne({ _id: groupId }, { $set: data })
-  },
-})
+    async setGroup(groupId, data) {
+        await this.group.updateOne({ _id: groupId }, { $set: data });
+    },
+});
 
-export const name = 'mongo'
+export const name = 'mongo';
 
-export function apply (ctx: Context, config: Options = { host: 'localhost', port: 27017, name: 'koishi' }) {
-  const db = new MongoDatabase(ctx.app, config)
-  ctx.database = db as Database
-  ctx.on('before-connect', () => db.start())
-  ctx.on('before-disconnect', () => db.stop())
+export function apply(ctx: Context, config: Options = { host: 'localhost', port: 27017, name: 'koishi' }) {
+    const db = new MongoDatabase(ctx.app, config);
+    ctx.database = db as Database;
+    ctx.on('before-connect', () => db.start());
+    ctx.on('before-disconnect', () => db.stop());
 }
