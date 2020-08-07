@@ -133,6 +133,7 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
     // eslint-disable-next-line no-cond-assign
     const ctxType = (ctxId = this.groupId) ? 'group' : (ctxId = this.userId) ? 'user' : null
     if (this.$app.options.preferSync) {
+      // @ts-ignore
       await this.$bot.sendMsg(this.messageType, ctxId, message, autoEscape)
       return
     }
@@ -141,6 +142,7 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
       if (this.$app.bail(this, 'before-send', session)) return
       return this.$response({ reply: message, autoEscape, atSender: false })
     }
+    // @ts-ignore
     return this.$bot.sendMsgAsync(this.messageType, ctxId, message, autoEscape)
   }
 

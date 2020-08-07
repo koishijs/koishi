@@ -319,6 +319,7 @@ export interface EventMap {
   'new-command' (cmd: Command): void
   'remove-command' (cmd: Command): void
   'ready' (): void
+  'adapt' (): void
   'before-connect' (): void | Promise<void>
   'connect' (): void
   'before-disconnect' (): void | Promise<void>

@@ -2,7 +2,7 @@ import escapeRegex from 'escape-string-regexp'
 import { Command } from './command'
 import { Context, Middleware, NextFunction } from './context'
 import { Group, User, Database } from './database'
-import { BotOptions, CQServer, ServerTypes } from './server'
+import { BotOptions, Server, ServerTypes } from './server'
 import { Session } from './session'
 import { simplify, defineProperty, Time } from 'koishi-utils'
 import { types } from 'util'
@@ -52,7 +52,7 @@ export enum Status { closed, opening, open, closing }
 export class App extends Context {
   app = this
   options: AppOptions
-  server: CQServer
+  server: Server
   status = Status.closed
 
   _database: Database
@@ -74,23 +74,6 @@ export class App extends Context {
 
     defineProperty(this, '_commandMap', {})
 
-    if (!options.type) {
-      const { server } = options.bots.find(bot => bot.server)
-      if (server) {
-        options.type = server.split(':', 1)[0] as any
-      } else if (options.port) {
-        options.type = 'ws-reverse'
-      }
-    }
-
-    const Server = CQServer.types[options.type]
-    if (!Server) {
-      throw new Error(
-        `unsupported server type "${options.type}", expect ` +
-        Object.keys(CQServer.types).map(type => `"${type}"`).join(', '))
-    }
-    this.server = new Server(this)
-
     const { nickname, prefix } = this.options
     const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
     const prefixes = Array.isArray(prefix) ? prefix : [prefix || '']
@@ -110,12 +93,13 @@ export class App extends Context {
   }
 
   async getSelfIds () {
+    // @ts-ignore
     const bots = this.server.bots.filter(bot => bot._get)
     if (!this._getSelfIdsPromise) {
       this._getSelfIdsPromise = Promise.all(bots.map(async (bot) => {
+        // @ts-ignore
         if (bot.selfId || !bot._get) return
-        const info = await bot.getLoginInfo()
-        bot.selfId = info.userId
+        bot.selfId = await bot.getSelfId()
       }))
     }
     await this._getSelfIdsPromise
@@ -123,6 +107,15 @@ export class App extends Context {
   }
 
   async start () {
+    this.emit('adapt')
+    const { type } = this.options
+    const server = Server.types[type]
+    if (!server) {
+      const types = Object.keys(Server.types).map(type => `"${type}"`).join(', ')
+      throw new Error(`unsupported server type "${type}", expect ${types}`)
+    }
+    this.server = Reflect.construct(server, [this])
+
     this.status = Status.opening
     await this.parallel('before-connect')
     this.status = Status.open

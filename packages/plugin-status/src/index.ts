@@ -9,7 +9,7 @@ declare module 'koishi-core/dist/server' {
 }
 
 declare module 'koishi-core/dist/sender' {
-  interface CQSender {
+  interface Bot {
     counter: number[]
   }
 }

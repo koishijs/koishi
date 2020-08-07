@@ -1,4 +1,4 @@
-import { Context, Group, CQSender } from 'koishi-core'
+import { Context, Group, Bot } from 'koishi-core'
 import { sleep } from 'koishi-utils'
 import axios from 'axios'
 
@@ -15,14 +15,14 @@ declare module 'koishi-core/dist/context' {
 }
 
 declare module 'koishi-core/dist/sender' {
-  interface CQSender {
+  interface Bot {
     sendGroupMsgAsync (groups: number[], message: string, autoEscape?: boolean): Promise<void>
     sendGroupMsgAsync (groupId: number | number[], message: string, autoEscape?: boolean): Promise<void>
   }
 }
 
-const { sendGroupMsgAsync } = CQSender.prototype
-CQSender.prototype.sendGroupMsgAsync = async function (this: CQSender, group: number | number[], message: string, autoEscape = false) {
+const { sendGroupMsgAsync } = Bot.prototype
+Bot.prototype.sendGroupMsgAsync = async function (this: Bot, group: number | number[], message: string, autoEscape = false) {
   if (typeof group === 'number') return sendGroupMsgAsync.call(this, group, message, autoEscape)
   const { broadcastInterval = 1000 } = this.app.options
   for (let index = 0; index < group.length; index++) {
