@@ -35,9 +35,15 @@ Context.prototype.freePage = function freePage (this: Context, page: Page) {
 
 export interface Config {
   browser?: LaunchOptions
-  timeout?: number
+  loadTimeout?: number
+  idleTimeout?: number
   shot?: false
   latex?: false
+}
+
+export const defaultConfig: Config = {
+  loadTimeout: 10000,
+  idleTimeout: 30000,
 }
 
 const allowedProtocols = ['http', 'https']
@@ -45,6 +51,7 @@ const allowedProtocols = ['http', 'https']
 export const name = 'puppeteer'
 
 export function apply (ctx: Context, config: Config = {}) {
+  config = { ...defaultConfig, ...config }
   defineProperty(ctx.app, '_idlePages', [])
 
   ctx.on('before-connect', async () => {
@@ -68,13 +75,26 @@ export function apply (ctx: Context, config: Config = {}) {
         return '请输入正确的网址。'
       }
 
+      let loaded = false
       const page = await ctx.getPage()
+      page.on('load', () => loaded = true)
 
       try {
-        logger.debug(`navigating to ${url}`)
-        await page.goto(url, {
-          waitUntil: 'networkidle0',
-          timeout: config.timeout,
+        await new Promise((resolve, reject) => {
+          logger.debug(`navigating to ${url}`)
+          const _resolve = (...args: any[]) => {
+            clearTimeout(timer)
+            resolve()
+          }
+
+          page.goto(url, {
+            waitUntil: 'networkidle0',
+            timeout: config.idleTimeout,
+          }).then(_resolve, () => loaded ? _resolve() : reject())
+
+          const timer = setTimeout(() => {
+            return loaded ? session.$send('正在加载中，请稍等片刻~') : reject()
+          }, config.loadTimeout)
         })
       } catch (error) {
         ctx.freePage(page)
