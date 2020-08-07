@@ -1,7 +1,6 @@
-import { CQResponse } from './api'
+import { CQResponse, toVersion } from './api'
 import { Server, Bot } from 'koishi-core'
 import { Logger, camelCase } from 'koishi-utils'
-import { toVersion } from './api'
 import type WebSocket from 'ws'
 
 declare module 'koishi-core/dist/server' {

@@ -1,5 +1,6 @@
 import { Context, Session } from 'koishi-core'
 import { Logger, CQCode, Time } from 'koishi-utils'
+import {} from 'koishi-adapter-cqhttp'
 
 export interface DebugOptions {
   showUserId?: boolean

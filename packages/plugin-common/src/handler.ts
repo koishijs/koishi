@@ -1,6 +1,6 @@
 import { App, Session } from 'koishi-core'
 import { simplify } from 'koishi-utils'
-import {} from 'koishi-plugin-cqhttp'
+import {} from 'koishi-adapter-cqhttp'
 
 export interface Respondent {
   match: string | RegExp

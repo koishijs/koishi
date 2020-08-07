@@ -1,4 +1,5 @@
 import { Context, getTargetId, Group, User, Session } from 'koishi-core'
+import {} from 'koishi-adapter-cqhttp'
 
 export function apply (ctx: Context) {
   ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3 })
