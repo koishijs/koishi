@@ -5,6 +5,10 @@ import WsClient from './ws'
 import WsServer from './ws-reverse'
 
 export * from './api'
+export * from './channel'
+export * from './http'
+export * from './ws'
+export * from './ws-reverse'
 
 declare module 'koishi-core/dist/server' {
   interface BotOptions {

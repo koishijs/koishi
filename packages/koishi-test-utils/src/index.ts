@@ -7,7 +7,6 @@ export * from './app'
 export * from './database'
 export * from './memory'
 export * from './mocks'
-export * from './server'
 export * from './session'
 
 jest.mock('koishi-utils', () => {

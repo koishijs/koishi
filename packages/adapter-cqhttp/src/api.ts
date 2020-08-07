@@ -258,6 +258,11 @@ Bot.prototype.getStatus = async function getStatus (this: Bot) {
   }
 }
 
+Bot.prototype.getMemberMap = async function (this: Bot, groupId: number) {
+  const list = await this.getGroupMemberList(groupId)
+  return Object.fromEntries(list.map(info => [info.userId, info.card || info.nickname]))
+}
+
 function defineSync (name: string, ...params: string[]) {
   const prop = camelCase(name.replace(/^_/, ''))
   Bot.prototype[prop] = function (this: Bot, ...args: any[]) {

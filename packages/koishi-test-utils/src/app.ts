@@ -1,10 +1,11 @@
-import { AppOptions, App, CQServer, Session as Meta, FileInfo } from 'koishi-core'
+import { AppOptions, App, Server, Session as Meta, FileInfo } from 'koishi-core'
 import { MockedServer, RequestParams, RequestData, RequestHandler } from './mocks'
 import { Session, createMessageMeta } from './session'
+import {} from 'koishi-adapter-cqhttp'
 
 export const BASE_SELF_ID = 514
 
-class MockedAppServer extends CQServer {
+class MockedAppServer extends Server {
   mock = new MockedServer()
 
   constructor (app: App) {
@@ -14,7 +15,7 @@ class MockedAppServer extends CQServer {
   _close () {}
 
   async _listen () {
-    this.bots[0]._get = async (action, params) => {
+    this.bots[0]._request = async (action, params) => {
       return this.mock.receive(action.replace(/_async$/, ''), params)
     }
   }
@@ -26,7 +27,7 @@ declare module 'koishi-core/dist/server' {
   }
 }
 
-CQServer.types.mock = MockedAppServer
+Server.types.mock = MockedAppServer
 
 export class MockedApp extends App {
   server: MockedAppServer
@@ -36,7 +37,7 @@ export class MockedApp extends App {
   }
 
   receive (meta: Partial<Meta>) {
-    this.server['dispatch'](new Meta({
+    this.server['dispatch'](new Meta(this, {
       selfId: this.bots[0].selfId,
       ...meta,
     }))
@@ -80,7 +81,7 @@ export class MockedApp extends App {
   receiveMessage (type: 'user' | 'group' | Meta, message?: string, userId?: number, ctxId: number = userId) {
     return new Promise((resolve) => {
       this.once('after-middleware', () => resolve())
-      this.receive(typeof type === 'string' ? createMessageMeta(type, message, userId, ctxId) : type)
+      this.receive(typeof type === 'string' ? createMessageMeta(this, type, message, userId, ctxId) : type)
     })
   }
 

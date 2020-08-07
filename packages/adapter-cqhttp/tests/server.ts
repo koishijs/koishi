@@ -1,9 +1,8 @@
 import { createHmac } from 'crypto'
 import { EventEmitter } from 'events'
-import { Session as Meta, App, AppOptions, CQServer } from 'koishi-core'
-import { BASE_SELF_ID } from './app'
+import { Session as Meta, App, AppOptions, Server } from 'koishi-core'
+import { BASE_SELF_ID, MockedServer } from 'koishi-test-utils'
 import { snakeCase, randomInt, Logger } from 'koishi-utils'
-import { MockedServer } from './mocks'
 import * as http from 'http'
 import * as ws from 'ws'
 import getPort from 'get-port'
@@ -131,7 +130,7 @@ export class WsServer extends MockedServer {
       socket.send(JSON.stringify(data))
     })
     await Promise.all(this.appList.map(app => new Promise((resolve) => {
-      (app.server as CQServer).socket.once('message', resolve)
+      (app.server as Server).socket.once('message', resolve)
     })))
   }
 

@@ -129,8 +129,8 @@ export class Daemon {
       const output = [`[直播提示] ${this.config.names[0]} 正在 ${this._displayType} 上直播：${url}`]
       // at subscibers
       try {
-        const users = await bot.getGroupMemberList(id)
-        const subscribers = subscribe[this.config.id].filter(id => !id || users.some(user => user.userId === id))
+        const memberMap = await bot.getMemberMap(id)
+        const subscribers = subscribe[this.config.id].filter(id => !id || id in memberMap)
         subscribe[this.config.id] = subscribers
       } catch {}
       const subscribers = subscribe[this.config.id].filter(x => x)
@@ -143,7 +143,7 @@ export class Daemon {
       }
       if (app.bail('monitor/before-send', info, group)) return
       for (const message of messages) {
-        await bot.sendGroupMsgAsync(id, message)
+        await bot.sendGroupMsg(id, message)
       }
     })
   }

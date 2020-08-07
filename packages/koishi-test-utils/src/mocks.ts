@@ -1,5 +1,5 @@
 import { snakeCase } from 'koishi-utils'
-import { CQResponse } from 'koishi-core'
+import { CQResponse } from 'koishi-adapter-cqhttp'
 
 export type RequestParams = Record<string, any>
 export type RequestData = readonly [string, RequestParams]

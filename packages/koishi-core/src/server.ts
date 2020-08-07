@@ -124,13 +124,14 @@ export interface Bot extends BotOptions {
   version?: string
   getSelfId (): Promise<number>
   getStatus (): Promise<BotStatus>
+  getMemberMap (groupId: number): Promise<Record<number, string>>
   sendGroupMsg (groupId: number, message: string, autoEscape?: boolean): Promise<number>
   sendPrivateMsg (userId: number, message: string, autoEscape?: boolean): Promise<number>
 }
 
 export class Bot {
-  constructor (public app: App, bot: BotOptions) {
-    Object.assign(this, bot)
+  constructor (public app: App, options: BotOptions) {
+    Object.assign(this, options)
   }
 
   createSession (messageType: MessageType, ctxType: 'group' | 'user', ctxId: number, message: string) {

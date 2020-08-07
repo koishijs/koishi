@@ -75,11 +75,9 @@ export default function apply (ctx: Context) {
 
     if (!options.modify && hasUnnamed && session.messageType === 'group') {
       try {
-        const members = await session.$bot.getGroupMemberList(session.groupId)
-        for (const { userId, nickname, card } of members) {
-          if (!userMap[userId]) {
-            userMap[userId] = card || nickname
-          }
+        const memberMap = await session.$bot.getMemberMap(session.groupId)
+        for (const userId in memberMap) {
+          userMap[userId] = userMap[userId] || memberMap[userId]
         }
       } catch {}
     }
