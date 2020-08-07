@@ -101,6 +101,10 @@ extendDatabase(MongoDatabase, {
                 doc.timers.$date = doc.timers._date;
                 delete doc.timers._date;
             }
+            if (doc.usage._date) {
+                doc.usage.$date = doc.usage._date;
+                delete doc.usage._date;
+            }
             return doc;
         }).toArray();
     },
@@ -111,6 +115,12 @@ extendDatabase(MongoDatabase, {
             if (converted.timers.$date) {
                 converted.timers._date = converted.timers.$date;
                 delete converted.timers.$date;
+            }
+        }
+        if (converted.usage) {
+            if (converted.usage.$date) {
+                converted.usage._date = converted.usage.$date;
+                delete converted.usage.$date;
             }
         }
         await this.user.updateOne({ _id: userId }, { $set: data }, { upsert: true });
