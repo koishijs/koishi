@@ -6,6 +6,7 @@ import { readFileSync } from 'fs'
 import { Script, createContext } from 'vm'
 import { EventEmitter } from 'events'
 import { INSPECT_MAX_BYTES } from 'buffer'
+import { inspect } from 'util'
 import type * as Internal from './internal'
 
 export interface VMOptions {
@@ -15,8 +16,8 @@ export interface VMOptions {
 }
 
 export class VM extends EventEmitter {
-  private readonly _context: object
-  private readonly _internal: typeof Internal = Object.create(null)
+  readonly _context: object
+  readonly _internal: typeof Internal = Object.create(null)
 
   constructor (options: VMOptions = {}) {
     super()
@@ -117,6 +118,7 @@ export const Host = {
   Set,
   WeakSet,
   Promise,
+  inspectCustom: inspect.custom,
   Symbol,
   INSPECT_MAX_BYTES,
 } as const

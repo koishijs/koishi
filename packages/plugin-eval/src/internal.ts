@@ -4,6 +4,7 @@
 /* eslint-disable */
 
 import type { Host } from './vm'
+import { InspectOptions } from 'util'
 
 declare global {
   const host: typeof Host
@@ -11,19 +12,36 @@ declare global {
 
 const GLOBAL: any = this
 
-interface Local {
+interface Builtin {
+  // built-in classes
   Object: typeof Object
   Array: typeof Array
-  Reflect: typeof Reflect
-}
+  String: typeof String
+  Number: typeof Number
+  Boolean: typeof Boolean
+  Date: typeof Date
+  Error: typeof Error
+  RangeError: typeof RangeError
+  SyntaxError: typeof SyntaxError
+  TypeError: typeof TypeError
+  URIError: typeof URIError
+  EvalError: typeof EvalError
+  ReferenceError: typeof ReferenceError
+  Promise: typeof Promise
+  RegExp: typeof RegExp
+  Map: typeof Map
+  Set: typeof Set
+  WeakMap: typeof WeakMap
+  WeakSet: typeof WeakSet
 
-interface Helper {
-  proxies: WeakMap<object, any>
-  arguments: (args: any[]) => any[]
-  instance: (instance, klass, deepTraps: Trap, flags, toStringTag?) => any
-  function: (fnc, traps?: Trap, deepTraps?: Trap, flags?, mock?) => any
-  object: (object, traps: Trap, deepTraps: Trap, flags?, mock?) => any
-  value: (value, traps?: Trap, deepTraps?: Trap, flags?, mock?) => any
+  // mocked classes
+  Buffer: typeof Buffer
+  VMError: typeof VMError
+
+  // builtin utils
+  Reflect: typeof Reflect
+  Symbol: typeof Symbol
+  inspectCustom: symbol
 }
 
 type Trap = ProxyHandler<any>
@@ -31,23 +49,33 @@ function createObject <T> (...traps: T[]): T {
   return host.Object.assign(host.Object.create(null), ...traps)
 }
 
-const local: Local = host.Object.create(null)
+const local: Builtin = host.Object.create(null)
 local.Object = Object
 local.Array = Array
+local.String = String
+local.Number = Number
+local.Boolean = Boolean
+local.Date = Date
+local.RangeError = RangeError
+local.ReferenceError = ReferenceError
+local.SyntaxError = SyntaxError
+local.TypeError = TypeError
+local.EvalError = EvalError
+local.URIError = URIError
+local.Error = Error
+local.RegExp = RegExp
+local.Map = Map
+local.WeakMap = WeakMap
+local.Set = Set
+local.WeakSet = WeakSet
+local.Promise = Promise
+
+local.Symbol = Symbol
+local.inspectCustom = host.inspectCustom
 local.Reflect = host.Object.create(null)
-local.Reflect.ownKeys = Reflect.ownKeys
-local.Reflect.enumerate = Reflect.enumerate
-local.Reflect.getPrototypeOf = Reflect.getPrototypeOf
-local.Reflect.construct = Reflect.construct
-local.Reflect.apply = Reflect.apply
-local.Reflect.set = Reflect.set
-local.Reflect.deleteProperty = Reflect.deleteProperty
-local.Reflect.has = Reflect.has
-local.Reflect.defineProperty = Reflect.defineProperty
-local.Reflect.setPrototypeOf = Reflect.setPrototypeOf
-local.Reflect.isExtensible = Reflect.isExtensible
-local.Reflect.preventExtensions = Reflect.preventExtensions
-local.Reflect.getOwnPropertyDescriptor = Reflect.getOwnPropertyDescriptor
+for (const key of host.Object.getOwnPropertyNames(Reflect)) {
+  local.Reflect[key] = Reflect[key]
+}
 
 Object.setPrototypeOf(GLOBAL, Object.prototype)
 
@@ -124,6 +152,8 @@ Object.defineProperty(GLOBAL, 'VMError', {
   value: VMError,
 })
 
+local.VMError = VMError
+
 /*
  * This function will throw a TypeError for accessing properties
  * on a strict mode function
@@ -173,8 +203,101 @@ function doPreventExtensions(target, object, doProxy) {
   if (!local.Reflect.preventExtensions(target)) unexpected()
 }
 
-export const Decontextify: Helper = host.Object.create(null)
+type Inspector <T> = (helper: Helper) => (this: T, depth: number, options: InspectOptions) => string
 
+interface Helper {
+  remote: Builtin
+  local: Builtin
+  remoteStore: WeakMap<object, any>
+  localStore: WeakMap<object, any>
+  proxies: WeakMap<object, any>
+  arguments: (args: any[]) => any[]
+  instance <T> (instance: any, klass: new (...args: any[]) => T, deepTraps: Trap, flags, toStringTag?: string, inspectCustom?: Inspector<T>): any
+  function: (fnc, traps?: Trap, deepTraps?: Trap, flags?, mock?) => any
+  object: (object, traps: Trap, deepTraps: Trap, flags?, mock?) => any
+  value: (value, traps?: Trap, deepTraps?: Trap, flags?, mock?) => any
+}
+
+const Helper: Helper = Object.create(null)
+
+Helper.instance = function (this: Helper, instance, klass, deepTraps, flags, toStringTag, inspectCustom) {
+  if (typeof instance === 'function') return this.function(instance)
+  return this.object(instance, createObject({
+    get: (target, key) => {
+      try {
+        if (key === 'vmProxyTarget' && DEBUG) return instance
+        if (key === 'isVMProxy') return true
+        if (key === 'constructor') return klass
+        if (key === '__proto__') return klass.prototype
+      } catch (e) {
+        return null
+      }
+
+      if (key === '__defineGetter__') return this.local.Object.prototype['__defineGetter__']
+      if (key === '__defineSetter__') return this.local.Object.prototype['__defineSetter__']
+      if (key === '__lookupGetter__') return this.local.Object.prototype['__lookupGetter__']
+      if (key === '__lookupSetter__') return this.local.Object.prototype['__lookupSetter__']
+      if (key === this.local.Symbol.toStringTag && toStringTag) return toStringTag
+      if (key === this.local.inspectCustom && inspectCustom) return inspectCustom(this)
+
+      try {
+        return this.value(this.remote.Reflect.get(instance, key), null, deepTraps, flags)
+      } catch (e) {
+        throw this.value(e)
+      }
+    },
+    getPrototypeOf: () => {
+      return klass && klass.prototype
+    },
+  }), deepTraps, flags)
+}
+
+Helper.value = function (this: Helper, value, traps, deepTraps, flags, mock) {
+  try {
+    if (this.remoteStore.has(value)) return this.remoteStore.get(value)
+    if (this.proxies.has(value)) return this.proxies.get(value)
+    if (typeof value === 'function') return this.function(value, traps, deepTraps, flags, mock)
+    if (typeof value === 'object') {
+      if (value === null) return null
+      if (instanceOf(value, this.remote.Number)) return this.instance(value, this.local.Number, deepTraps, flags, 'Number')
+      if (instanceOf(value, this.remote.String)) return this.instance(value, this.local.String, deepTraps, flags, 'String')
+      if (instanceOf(value, this.remote.Boolean)) return this.instance(value, this.local.Boolean, deepTraps, flags, 'Boolean')
+      if (instanceOf(value, this.remote.Date)) return this.instance(value, this.local.Date, deepTraps, flags, 'Date', defaultInspector)
+      if (instanceOf(value, this.remote.RangeError)) return this.instance(value, this.local.RangeError, deepTraps, flags, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.ReferenceError)) return this.instance(value, this.local.ReferenceError, deepTraps, flags, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.SyntaxError)) return this.instance(value, this.local.SyntaxError, deepTraps, flags, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.TypeError)) return this.instance(value, this.local.TypeError, deepTraps, flags, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.VMError)) return this.instance(value, this.local.VMError, deepTraps, flags, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.EvalError)) return this.instance(value, this.local.EvalError, deepTraps, flags, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.URIError)) return this.instance(value, this.local.URIError, deepTraps, flags, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.Error)) return this.instance(value, this.local.Error, deepTraps, flags, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.RegExp)) return this.instance(value, this.local.RegExp, deepTraps, flags, 'RegExp', defaultInspector)
+      if (instanceOf(value, this.remote.Array)) return this.instance(value, this.local.Array, deepTraps, flags, 'Array')
+      if (instanceOf(value, this.remote.Map)) return this.instance(value, this.local.Map, deepTraps, flags, 'Map')
+      if (instanceOf(value, this.remote.WeakMap)) return this.instance(value, this.local.WeakMap, deepTraps, flags, 'WeakMap')
+      if (instanceOf(value, this.remote.Set)) return this.instance(value, this.local.Set, deepTraps, flags, 'Set')
+      if (instanceOf(value, this.remote.WeakSet)) return this.instance(value, this.local.WeakSet, deepTraps, flags, 'WeakSet')
+      if (instanceOf(value, this.remote.Promise)) return this.instance(value, this.local.Promise, deepTraps, flags, 'Promise')
+      // TODO different behavior with vm2, why?
+      if (instanceOf(value, this.remote.Buffer)) return this.instance(value, this.local.Buffer, deepTraps, flags, 'Uint8Array')
+      if (this.remote.Reflect.getPrototypeOf(value) === null) {
+        return this.instance(value, null, deepTraps, flags)
+      } else {
+        return this.object(value, traps, deepTraps, flags, mock)
+      }
+    }
+    return value
+  } catch {
+    return null
+  }
+}
+
+const Decontextify: Helper = host.Object.create(Helper)
+
+Decontextify.local = host
+Decontextify.remote = local
+Decontextify.remoteStore = Contextified
+Decontextify.localStore = Decontextified
 Decontextify.proxies = new host.WeakMap()
 
 Decontextify.arguments = (args) => {
@@ -188,37 +311,6 @@ Decontextify.arguments = (args) => {
     // Never pass the handled expcetion through!
     return new host.Array()
   }
-}
-
-Decontextify.instance = (instance, klass, deepTraps, flags, toStringTag) => {
-  if (typeof instance === 'function') return Decontextify.function(instance)
-  return Decontextify.object(instance, createObject({
-    get (target, key) {
-      try {
-        if (key === 'vmProxyTarget' && DEBUG) return instance
-        if (key === 'isVMProxy') return true
-        if (key === 'constructor') return klass
-        if (key === '__proto__') return klass.prototype
-      } catch (e) {
-        return null
-      }
-  
-      if (key === '__defineGetter__') return host.Object.prototype['__defineGetter__']
-      if (key === '__defineSetter__') return host.Object.prototype['__defineSetter__']
-      if (key === '__lookupGetter__') return host.Object.prototype['__lookupGetter__']
-      if (key === '__lookupSetter__') return host.Object.prototype['__lookupSetter__']
-      if (key === host.Symbol.toStringTag && toStringTag) return toStringTag
-  
-      try {
-        return Decontextify.value(instance[key], null, deepTraps, flags)
-      } catch (e) {
-        throw Decontextify.value(e)
-      }
-    },
-    getPrototypeOf () {
-      return klass && klass.prototype
-    },
-  }), deepTraps, flags)
 }
 
 Decontextify.function = (fnc, traps, deepTraps, flags, mock) => {
@@ -272,196 +364,194 @@ Decontextify.function = (fnc, traps, deepTraps, flags, mock) => {
 }
 
 Decontextify.object = (object, traps, deepTraps, flags, mock) => {
-  const base: Trap = host.Object.create(null)
-
-  base.get = (target, key, receiver) => {
-    try {
-      if (key === 'vmProxyTarget' && DEBUG) return object
-      if (key === 'isVMProxy') return true
-      if (mock && host.Object.prototype.hasOwnProperty.call(mock, key)) return mock[key]
-      if (key === 'constructor') return host.Object
-      if (key === '__proto__') return host.Object.prototype
-    } catch (e) {
-      // Never pass the handled expcetion through! This block can't throw an exception under normal conditions.
-      return null
-    }
-
-    if (key === '__defineGetter__') return host.Object.prototype['__defineGetter__']
-    if (key === '__defineSetter__') return host.Object.prototype['__defineSetter__']
-    if (key === '__lookupGetter__') return host.Object.prototype['__lookupGetter__']
-    if (key === '__lookupSetter__') return host.Object.prototype['__lookupSetter__']
-
-    try {
-      return Decontextify.value(object[key], null, deepTraps, flags)
-    } catch (e) {
-      throw Decontextify.value(e)
-    }
-  }
-  base.set = (target, key, value, receiver) => {
-    value = Contextify.value(value)
-
-    try {
-      return local.Reflect.set(object, key, value)
-    } catch (e) {
-      throw Decontextify.value(e)
-    }
-  }
-  base.getOwnPropertyDescriptor = (target, prop) => {
-    let def
-
-    try {
-      def = host.Object.getOwnPropertyDescriptor(object, prop)
-    } catch (e) {
-      throw Decontextify.value(e)
-    }
-
-    // Following code prevents V8 to throw
-    // TypeError: 'getOwnPropertyDescriptor' on proxy: trap reported non-configurability for property '<prop>'
-    // which is either non-existant or configurable in the proxy target
-
-    let desc
-    if (!def) {
-      return undefined
-    } else if (def.get || def.set) {
-      desc = {
-        __proto__: null,
-        get: Decontextify.value(def.get) || undefined,
-        set: Decontextify.value(def.set) || undefined,
-        enumerable: def.enumerable === true,
-        configurable: def.configurable === true
-      }
-    } else {
-      desc = {
-        __proto__: null,
-        value: Decontextify.value(def.value),
-        writable: def.writable === true,
-        enumerable: def.enumerable === true,
-        configurable: def.configurable === true
-      }
-    }
-    if (!desc.configurable) {
+  const base: Trap = createObject({
+    get: (target, key, receiver) => {
       try {
-        def = host.Object.getOwnPropertyDescriptor(target, prop)
-        if (!def || def.configurable || def.writable !== desc.writable) {
-          local.Reflect.defineProperty(target, prop, desc)
-        }
+        if (key === 'vmProxyTarget' && DEBUG) return object
+        if (key === 'isVMProxy') return true
+        if (mock && host.Object.prototype.hasOwnProperty.call(mock, key)) return mock[key]
+        if (key === 'constructor') return host.Object
+        if (key === '__proto__') return host.Object.prototype
       } catch (e) {
-        // Should not happen.
+        // Never pass the handled expcetion through! This block can't throw an exception under normal conditions.
+        return null
       }
-    }
-    return desc
-  }
-  base.defineProperty = (target, key, descriptor) => {
-    let success = false
-    try {
-      success = local.Reflect.setPrototypeOf(descriptor, null)
-    } catch (e) {
-      // Should not happen
-    }
-    if (!success) return false
-    // There's a chance accessing a property throws an error so we must not access them
-    // in try catch to prevent contextifying local objects.
-
-    const propertyDescriptor: PropertyDescriptor = host.Object.create(null)
-    if (descriptor.get || descriptor.set) {
-      propertyDescriptor.get = Contextify.value(descriptor.get, null, deepTraps, flags) || undefined
-      propertyDescriptor.set = Contextify.value(descriptor.set, null, deepTraps, flags) || undefined
-      propertyDescriptor.enumerable = descriptor.enumerable === true
-      propertyDescriptor.configurable = descriptor.configurable === true
-    } else {
-      propertyDescriptor.value = Contextify.value(descriptor.value, null, deepTraps, flags)
-      propertyDescriptor.writable = descriptor.writable === true
-      propertyDescriptor.enumerable = descriptor.enumerable === true
-      propertyDescriptor.configurable = descriptor.configurable === true
-    }
-
-    try {
-      success = local.Reflect.defineProperty(object, key, propertyDescriptor)
-    } catch (e) {
-      throw Decontextify.value(e)
-    }
-    if (success && !descriptor.configurable) {
+  
+      if (key === '__defineGetter__') return host.Object.prototype['__defineGetter__']
+      if (key === '__defineSetter__') return host.Object.prototype['__defineSetter__']
+      if (key === '__lookupGetter__') return host.Object.prototype['__lookupGetter__']
+      if (key === '__lookupSetter__') return host.Object.prototype['__lookupSetter__']
+  
       try {
-        local.Reflect.defineProperty(target, key, descriptor)
+        return Decontextify.value(object[key], null, deepTraps, flags)
       } catch (e) {
-        // This should not happen.
-        return false
+        throw Decontextify.value(e)
       }
-    }
-    return success
-  }
-  base.deleteProperty = (target, prop) => {
-    try {
-      return Decontextify.value(local.Reflect.deleteProperty(object, prop))
-    } catch (e) {
-      throw Decontextify.value(e)
-    }
-  }
-  base.getPrototypeOf = (target) => {
-    return host.Object.prototype
-  }
-  base.setPrototypeOf = (target) => {
-    throw new host.Error(OPNA)
-  }
-  base.has = (target, key) => {
-    try {
-      return Decontextify.value(local.Reflect.has(object, key))
-    } catch (e) {
-      throw Decontextify.value(e)
-    }
-  }
-  base.isExtensible = target => {
-    let result
-    try {
-      result = local.Reflect.isExtensible(object)
-    } catch (e) {
-      throw Decontextify.value(e)
-    }
-    if (!result) {
+    },
+    set: (target, key, value, receiver) => {
+      value = Contextify.value(value)
+  
       try {
-        if (local.Reflect.isExtensible(target)) {
-          doPreventExtensions(target, object, obj => Contextify.value(obj, null, deepTraps, flags))
+        return local.Reflect.set(object, key, value)
+      } catch (e) {
+        throw Decontextify.value(e)
+      }
+    },
+    getOwnPropertyDescriptor: (target, prop) => {
+      let def
+  
+      try {
+        def = host.Object.getOwnPropertyDescriptor(object, prop)
+      } catch (e) {
+        throw Decontextify.value(e)
+      }
+  
+      // Following code prevents V8 to throw
+      // TypeError: 'getOwnPropertyDescriptor' on proxy: trap reported non-configurability for property '<prop>'
+      // which is either non-existant or configurable in the proxy target
+  
+      let desc
+      if (!def) {
+        return undefined
+      } else if (def.get || def.set) {
+        desc = {
+          __proto__: null,
+          get: Decontextify.value(def.get) || undefined,
+          set: Decontextify.value(def.set) || undefined,
+          enumerable: def.enumerable === true,
+          configurable: def.configurable === true
         }
+      } else {
+        desc = {
+          __proto__: null,
+          value: Decontextify.value(def.value),
+          writable: def.writable === true,
+          enumerable: def.enumerable === true,
+          configurable: def.configurable === true
+        }
+      }
+      if (!desc.configurable) {
+        try {
+          def = host.Object.getOwnPropertyDescriptor(target, prop)
+          if (!def || def.configurable || def.writable !== desc.writable) {
+            local.Reflect.defineProperty(target, prop, desc)
+          }
+        } catch (e) {
+          // Should not happen.
+        }
+      }
+      return desc
+    },
+    defineProperty: (target, key, descriptor) => {
+      let success = false
+      try {
+        success = local.Reflect.setPrototypeOf(descriptor, null)
       } catch (e) {
         // Should not happen
       }
-    }
-    return result
-  }
-  base.ownKeys = target => {
-    try {
-      return Decontextify.value(local.Reflect.ownKeys(object))
-    } catch (e) {
-      throw Decontextify.value(e)
-    }
-  }
-  base.preventExtensions = target => {
-    let success
-    try {
-      success = local.Reflect.preventExtensions(object)
-    } catch (e) {
-      throw Decontextify.value(e)
-    }
-    if (success) {
-      try {
-        if (local.Reflect.isExtensible(target)) {
-          doPreventExtensions(target, object, obj => Contextify.value(obj, null, deepTraps, flags))
-        }
-      } catch (e) {
-        // Should not happen
+      if (!success) return false
+      // There's a chance accessing a property throws an error so we must not access them
+      // in try catch to prevent contextifying local objects.
+  
+      const propertyDescriptor: PropertyDescriptor = host.Object.create(null)
+      if (descriptor.get || descriptor.set) {
+        propertyDescriptor.get = Contextify.value(descriptor.get, null, deepTraps, flags) || undefined
+        propertyDescriptor.set = Contextify.value(descriptor.set, null, deepTraps, flags) || undefined
+        propertyDescriptor.enumerable = descriptor.enumerable === true
+        propertyDescriptor.configurable = descriptor.configurable === true
+      } else {
+        propertyDescriptor.value = Contextify.value(descriptor.value, null, deepTraps, flags)
+        propertyDescriptor.writable = descriptor.writable === true
+        propertyDescriptor.enumerable = descriptor.enumerable === true
+        propertyDescriptor.configurable = descriptor.configurable === true
       }
-    }
-    return success
-  }
-  base.enumerate = target => {
-    try {
-      return Decontextify.value(local.Reflect.enumerate(object))
-    } catch (e) {
-      throw Decontextify.value(e)
-    }
-  }
-
-  host.Object.assign(base, traps, deepTraps)
+  
+      try {
+        success = local.Reflect.defineProperty(object, key, propertyDescriptor)
+      } catch (e) {
+        throw Decontextify.value(e)
+      }
+      if (success && !descriptor.configurable) {
+        try {
+          local.Reflect.defineProperty(target, key, descriptor)
+        } catch (e) {
+          // This should not happen.
+          return false
+        }
+      }
+      return success
+    },
+    deleteProperty: (target, prop) => {
+      try {
+        return Decontextify.value(local.Reflect.deleteProperty(object, prop))
+      } catch (e) {
+        throw Decontextify.value(e)
+      }
+    },
+    getPrototypeOf: (target) => {
+      return host.Object.prototype
+    },
+    setPrototypeOf: (target) => {
+      throw new host.Error(OPNA)
+    },
+    has: (target, key) => {
+      try {
+        return Decontextify.value(local.Reflect.has(object, key))
+      } catch (e) {
+        throw Decontextify.value(e)
+      }
+    },
+    isExtensible: (target) => {
+      let result
+      try {
+        result = local.Reflect.isExtensible(object)
+      } catch (e) {
+        throw Decontextify.value(e)
+      }
+      if (!result) {
+        try {
+          if (local.Reflect.isExtensible(target)) {
+            doPreventExtensions(target, object, obj => Contextify.value(obj, null, deepTraps, flags))
+          }
+        } catch (e) {
+          // Should not happen
+        }
+      }
+      return result
+    },
+    ownKeys: (target) => {
+      try {
+        return Decontextify.value(local.Reflect.ownKeys(object))
+      } catch (e) {
+        throw Decontextify.value(e)
+      }
+    },
+    preventExtensions: (target) => {
+      let success
+      try {
+        success = local.Reflect.preventExtensions(object)
+      } catch (e) {
+        throw Decontextify.value(e)
+      }
+      if (success) {
+        try {
+          if (local.Reflect.isExtensible(target)) {
+            doPreventExtensions(target, object, obj => Contextify.value(obj, null, deepTraps, flags))
+          }
+        } catch (e) {
+          // Should not happen
+        }
+      }
+      return success
+    },
+    enumerate: (target) => {
+      try {
+        return Decontextify.value(local.Reflect.enumerate(object))
+      } catch (e) {
+        throw Decontextify.value(e)
+      }
+    },
+  }, traps, deepTraps)
 
   let shallow
   if (host.Array.isArray(object)) {
@@ -497,61 +587,12 @@ Decontextify.object = (object, traps, deepTraps, flags, mock) => {
   return proxy2
 }
 
-Decontextify.value = (value, traps, deepTraps, flags, mock) => {
-  try {
-    if (Contextified.has(value)) {
-      // Contextified object has returned back from vm
-      return Contextified.get(value)
-    } else if (Decontextify.proxies.has(value)) {
-      // Decontextified proxy already exists, reuse
-      return Decontextify.proxies.get(value)
-    }
+const Contextify: Helper = host.Object.create(Helper)
 
-    switch (typeof value) {
-      case 'object':
-        if (value === null) {
-          return null
-        } else if (instanceOf(value, Number))         { return Decontextify.instance(value, host.Number, deepTraps, flags, 'Number')
-        } else if (instanceOf(value, String))         { return Decontextify.instance(value, host.String, deepTraps, flags, 'String')
-        } else if (instanceOf(value, Boolean))        { return Decontextify.instance(value, host.Boolean, deepTraps, flags, 'Boolean')
-        } else if (instanceOf(value, Date))           { return Decontextify.instance(value, host.Date, deepTraps, flags, 'Date')
-        } else if (instanceOf(value, RangeError))     { return Decontextify.instance(value, host.RangeError, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, ReferenceError)) { return Decontextify.instance(value, host.ReferenceError, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, SyntaxError))    { return Decontextify.instance(value, host.SyntaxError, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, TypeError))      { return Decontextify.instance(value, host.TypeError, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, VMError))        { return Decontextify.instance(value, host.VMError, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, EvalError))      { return Decontextify.instance(value, host.EvalError, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, URIError))       { return Decontextify.instance(value, host.URIError, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, Error))          { return Decontextify.instance(value, host.Error, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, Array))          { return Decontextify.instance(value, host.Array, deepTraps, flags, 'Array')
-        } else if (instanceOf(value, RegExp))         { return Decontextify.instance(value, host.RegExp, deepTraps, flags, 'RegExp')
-        } else if (instanceOf(value, Map))            { return Decontextify.instance(value, host.Map, deepTraps, flags, 'Map')
-        } else if (instanceOf(value, WeakMap))        { return Decontextify.instance(value, host.WeakMap, deepTraps, flags, 'WeakMap')
-        } else if (instanceOf(value, Set))            { return Decontextify.instance(value, host.Set, deepTraps, flags, 'Set')
-        } else if (instanceOf(value, WeakSet))        { return Decontextify.instance(value, host.WeakSet, deepTraps, flags, 'WeakSet')
-        } else if (instanceOf(value, Promise)) { return Decontextify.instance(value, host.Promise, deepTraps, flags, 'Promise')
-        } else if (local.Reflect.getPrototypeOf(value) === null) {
-          return Decontextify.instance(value, null, deepTraps, flags)
-        } else {
-          return Decontextify.object(value, traps, deepTraps, flags, mock)
-        }
-      case 'function':
-        return Decontextify.function(value, traps, deepTraps, flags, mock)
-
-      case 'undefined':
-        return undefined
-
-      default: // string, number, boolean, symbol
-        return value
-    }
-  } catch (ex) {
-    // Never pass the handled expcetion through! This block can't throw an exception under normal conditions.
-    return null
-  }
-}
-
-export const Contextify: Helper = host.Object.create(null)
-
+Contextify.remote = host
+Contextify.local = local
+Contextify.remoteStore = Decontextified
+Contextify.localStore = Contextified
 Contextify.proxies = new host.WeakMap()
 
 Contextify.arguments = args => {
@@ -565,40 +606,6 @@ Contextify.arguments = args => {
     // Never pass the handled expcetion through!
     return new local.Array()
   }
-}
-
-Contextify.instance = (instance, klass, deepTraps, flags, toStringTag) => {
-  if (typeof instance === 'function') return Contextify.function(instance)
-  const base: Trap = host.Object.create(null)
-
-  base.get = (target, key, receiver) => {
-    try {
-      if (key === 'vmProxyTarget' && DEBUG) return instance
-      if (key === 'isVMProxy') return true
-      if (key === 'constructor') return klass
-      if (key === '__proto__') return klass.prototype
-    } catch (e) {
-      // Never pass the handled expcetion through! This block can't throw an exception under normal conditions.
-      return null
-    }
-
-    if (key === '__defineGetter__') return local.Object.prototype['__defineGetter__']
-    if (key === '__defineSetter__') return local.Object.prototype['__defineSetter__']
-    if (key === '__lookupGetter__') return local.Object.prototype['__lookupGetter__']
-    if (key === '__lookupSetter__') return local.Object.prototype['__lookupSetter__']
-    if (key === host.Symbol.toStringTag && toStringTag) return toStringTag
-
-    try {
-      return Contextify.value(host.Reflect.get(instance, key), null, deepTraps, flags)
-    } catch (e) {
-      throw Contextify.value(e)
-    }
-  }
-  base.getPrototypeOf = (target) => {
-    return klass && klass.prototype
-  }
-
-  return Contextify.object(instance, base, deepTraps, flags)
 }
 
 Contextify.function = (fnc, traps, deepTraps, flags, mock) => {
@@ -866,60 +873,6 @@ Contextify.object = (object, traps, deepTraps, flags, mock) => {
   return proxy
 }
 
-Contextify.value = (value, traps, deepTraps, flags, mock) => {
-  try {
-    if (Decontextified.has(value)) {
-      // Decontextified object has returned back to vm
-      return Decontextified.get(value)
-    } else if (Contextify.proxies.has(value)) {
-      // Contextified proxy already exists, reuse
-      return Contextify.proxies.get(value)
-    }
-
-    switch (typeof value) {
-      case 'object':
-        if (value === null) {
-          return null
-        } else if (instanceOf(value, host.Number))         { return Contextify.instance(value, Number, deepTraps, flags, 'Number')
-        } else if (instanceOf(value, host.String))         { return Contextify.instance(value, String, deepTraps, flags, 'String')
-        } else if (instanceOf(value, host.Boolean))        { return Contextify.instance(value, Boolean, deepTraps, flags, 'Boolean')
-        } else if (instanceOf(value, host.Date))           { return Contextify.instance(value, Date, deepTraps, flags, 'Date')
-        } else if (instanceOf(value, host.RangeError))     { return Contextify.instance(value, RangeError, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, host.ReferenceError)) { return Contextify.instance(value, ReferenceError, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, host.SyntaxError))    { return Contextify.instance(value, SyntaxError, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, host.TypeError))      { return Contextify.instance(value, TypeError, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, host.VMError))        { return Contextify.instance(value, VMError, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, host.EvalError))      { return Contextify.instance(value, EvalError, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, host.URIError))       { return Contextify.instance(value, URIError, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, host.Error))          { return Contextify.instance(value, Error, deepTraps, flags, 'Error')
-        } else if (instanceOf(value, host.Array))          { return Contextify.instance(value, Array, deepTraps, flags, 'Array')
-        } else if (instanceOf(value, host.RegExp))         { return Contextify.instance(value, RegExp, deepTraps, flags, 'RegExp')
-        } else if (instanceOf(value, host.Map))            { return Contextify.instance(value, Map, deepTraps, flags, 'Map')
-        } else if (instanceOf(value, host.WeakMap))        { return Contextify.instance(value, WeakMap, deepTraps, flags, 'WeakMap')
-        } else if (instanceOf(value, host.Set))            { return Contextify.instance(value, Set, deepTraps, flags, 'Set')
-        } else if (instanceOf(value, host.WeakSet))        { return Contextify.instance(value, WeakSet, deepTraps, flags, 'WeakSet')
-        } else if (instanceOf(value, host.Promise))        { return Contextify.instance(value, Promise, deepTraps, flags, 'Promise')
-        } else if (instanceOf(value, host.Buffer))         { return Contextify.instance(value, LocalBuffer, deepTraps, flags, 'Uint8Array')
-        } else if (host.Reflect.getPrototypeOf(value) === null) {
-          return Contextify.instance(value, null, deepTraps, flags)
-        } else {
-          return Contextify.object(value, traps, deepTraps, flags, mock)
-        }
-      case 'function':
-        return Contextify.function(value, traps, deepTraps, flags, mock)
-
-      case 'undefined':
-        return undefined
-
-      default: // string, number, boolean, symbol
-        return value
-    }
-  } catch (ex) {
-    // Never pass the handled expcetion through! This block can't throw an exception under normal conditions.
-    return null
-  }
-}
-
 export function setGlobal (name: string, value: any, writable = false) {
   const prop = Contextify.value(name)
   try {
@@ -977,7 +930,7 @@ Object.defineProperty(GLOBAL, 'Buffer', {
   value: readonly(host.Buffer, BufferMock),
 })
 
-const LocalBuffer = GLOBAL['Buffer']
+local.Buffer = GLOBAL['Buffer']
 
 connect(host.Buffer.prototype['inspect'], function inspect () {
   const max = host.INSPECT_MAX_BYTES
@@ -988,7 +941,11 @@ connect(host.Buffer.prototype['inspect'], function inspect () {
   return `<${this.constructor.name} ${str}>`
 })
 
-export const value = Decontextify.value
+const defaultInspector: Inspector<Object> = (helper) => function (depth, options) {
+  return this.toString()
+}
+
+export const value = Decontextify.value.bind(Decontextify)
 export const sandbox = Decontextify.value(GLOBAL)
 
 delete global.console

@@ -18,8 +18,8 @@ const config: WorkerConfig = {
 }
 
 export default class Global {
-  private user: User
-  private session: Session
+  public user: User
+  public session: Session
   private main: Remote<MainAPI>
 
   constructor () {
