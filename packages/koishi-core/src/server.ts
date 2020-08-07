@@ -10,10 +10,8 @@ export interface BotOptions {
   selfId?: number
 }
 
-export interface ServerTypes {}
-
 export abstract class Server {
-  static types: ServerTypes = {}
+  static types: Record<string, new (app: App) => Server> = {}
 
   public bots: Bot[]
   public router?: Router
@@ -93,14 +91,12 @@ export abstract class Server {
   }
 
   success () {
-    const { type, port } = this.app.options
+    const { port } = this.app.options
     const logger = this.app.logger('app')
     if (port) logger.info('server listening at %c', port)
 
     this.bots.forEach(({ server }) => {
-      if (!server) return
-      if (type === 'ws') server = server.replace(/^http/, 'ws')
-      logger.info('connected to %c', server)
+      if (server) logger.info('connected to %c', server)
     })
   }
 
@@ -110,12 +106,24 @@ export abstract class Server {
   }
 }
 
-export interface VersionInfo {}
+export enum BotStatus {
+  /** 正常运行 */
+  GOOD,
+  /** Bot 处于闲置状态 */
+  BOT_IDLE,
+  /** Bot 离线 */
+  BOT_OFFLINE,
+  /** 无法获得状态 */
+  NET_ERROR,
+  /** 服务器状态异常 */
+  SERVER_ERROR,
+}
 
 export interface Bot extends BotOptions {
   ready?: boolean
-  version?: VersionInfo
+  version?: string
   getSelfId (): Promise<number>
+  getStatus (): Promise<BotStatus>
   sendGroupMsg (groupId: number, message: string, autoEscape?: boolean): Promise<number>
   sendPrivateMsg (userId: number, message: string, autoEscape?: boolean): Promise<number>
 }

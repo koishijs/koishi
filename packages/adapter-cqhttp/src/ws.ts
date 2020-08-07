@@ -44,8 +44,7 @@ export default class WsClient extends Server {
       socket.on('open', () => {
         this._retryCount = 0
         logger.debug('connect to ws server:', bot.server)
-        bot.socket = socket
-        this._channel.connect(resolve, reject, bot)
+        this._channel.connect(resolve, reject, bot, socket)
       })
     }
     return new Promise(connect)

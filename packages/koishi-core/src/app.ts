@@ -2,7 +2,7 @@ import escapeRegex from 'escape-string-regexp'
 import { Command } from './command'
 import { Context, Middleware, NextFunction } from './context'
 import { Group, User, Database } from './database'
-import { BotOptions, Server, ServerTypes } from './server'
+import { BotOptions, Server } from './server'
 import { Session } from './session'
 import { simplify, defineProperty, Time } from 'koishi-utils'
 import { types } from 'util'
@@ -15,7 +15,7 @@ export interface AppOptions extends BotOptions {
   port?: number
   secret?: string
   path?: string
-  type?: keyof ServerTypes
+  type?: string
   bots?: BotOptions[]
   prefix?: string | string[]
   nickname?: string | string[]
@@ -37,23 +37,13 @@ function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegex).join('|')})${suffix}`) : /$^/
 }
 
-const defaultOptions: AppOptions = {
-  maxListeners: 64,
-  promptTimeout: Time.minute,
-  retryInterval: 5 * Time.second,
-  userCacheTimeout: Time.minute,
-  groupCacheTimeout: 5 * Time.minute,
-  quickOperationTimeout: 0.1 * Time.second,
-  processMessage: (message) => simplify(message.trim()),
-}
-
-export enum Status { closed, opening, open, closing }
+export enum AppStatus { closed, opening, open, closing }
 
 export class App extends Context {
   app = this
   options: AppOptions
   server: Server
-  status = Status.closed
+  status = AppStatus.closed
 
   _database: Database
   _commands: Command[] = []
@@ -66,17 +56,26 @@ export class App extends Context {
   private _middlewareSet = new Set<number>()
   private _getSelfIdsPromise: Promise<any>
 
+  static defaultOptions: AppOptions = {
+    maxListeners: 64,
+    promptTimeout: Time.minute,
+    retryInterval: 5 * Time.second,
+    userCacheTimeout: Time.minute,
+    groupCacheTimeout: 5 * Time.minute,
+    quickOperationTimeout: 0.1 * Time.second,
+    processMessage: (message) => simplify(message.trim()),
+  }
+
   constructor (options: AppOptions = {}) {
     super({ groups: [], users: [], private: true })
     this.app = this
-    options = this.options = { ...defaultOptions, ...options }
+    options = this.options = { ...App.defaultOptions, ...options }
     if (!options.bots) options.bots = [options]
 
     const { type } = this.options
     const server = Server.types[type]
     if (!server) {
-      const types = Object.keys(Server.types).map(type => `"${type}"`).join(', ')
-      throw new Error(`unsupported server type "${type}", expect ${types}`)
+      throw new Error(`unsupported type "${type}", you should import the adapter yourself`)
     }
     this.server = Reflect.construct(server, [this])
 
@@ -100,12 +99,10 @@ export class App extends Context {
   }
 
   async getSelfIds () {
-    // @ts-ignore
-    const bots = this.server.bots.filter(bot => bot._get)
+    const bots = this.server.bots.filter(bot => bot.ready)
     if (!this._getSelfIdsPromise) {
       this._getSelfIdsPromise = Promise.all(bots.map(async (bot) => {
-        // @ts-ignore
-        if (bot.selfId || !bot._get) return
+        if (bot.selfId || !bot.ready) return
         bot.selfId = await bot.getSelfId()
       }))
     }
@@ -114,17 +111,17 @@ export class App extends Context {
   }
 
   async start () {
-    this.status = Status.opening
+    this.status = AppStatus.opening
     await this.parallel('before-connect')
-    this.status = Status.open
+    this.status = AppStatus.open
     this.logger('app').debug('started')
     this.emit('connect')
   }
 
   async stop () {
-    this.status = Status.closing
+    this.status = AppStatus.closing
     await this.parallel('before-disconnect')
-    this.status = Status.closed
+    this.status = AppStatus.closed
     this.logger('app').debug('stopped')
     this.emit('disconnect')
   }

@@ -42,15 +42,9 @@ export default class WsServer extends Server {
         }
         if (!bot.selfId) bot.selfId = selfId
 
-        socket.on('close', () => {
-          delete bot.socket
-          delete bot._get
-        })
-
-        bot.socket = socket
         this._channel.connect(() => {
           if (this.bots.every(({ version, server }) => version || server === null)) resolve()
-        }, reject, bot)
+        }, reject, bot, socket)
       })
     })
   }

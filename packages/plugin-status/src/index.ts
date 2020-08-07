@@ -1,7 +1,6 @@
 import { Context, App } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
 import {} from 'koishi-plugin-mysql'
-import {} from 'koishi-plugin-cqhttp'
 
 declare module 'koishi-core/dist/server' {
   interface BotOptions {
@@ -19,9 +18,7 @@ declare module 'koishi-core/dist/database' {
   }
 }
 
-export interface StatusOptions {
-  sort?: (a: BotStatus, b: BotStatus) => number
-}
+export interface StatusOptions {}
 
 let usage = getCpuUsage()
 let appRate: number
@@ -93,22 +90,17 @@ export function extendStatus (callback: StatusModifier) {
 
 const startTime = Date.now()
 
-const defaultConfig: StatusOptions = {
-  sort: () => 0,
-}
-
 export enum StatusCode {
   GOOD,
+  IDLE,
   CQ_ERROR,
   NET_ERROR,
-  IDLE,
 }
 
 export const name = 'status'
 
 export function apply (ctx: Context, config: StatusOptions) {
   const app = ctx.app
-  config = { ...defaultConfig, ...config }
 
   app.on('before-command', ({ session }) => {
     session.$user['lastCall'] = new Date()
@@ -158,10 +150,10 @@ export function apply (ctx: Context, config: StatusOptions) {
     .shortcut('你的状况', { prefix: true })
     .shortcut('运行情况', { prefix: true })
     .shortcut('运行状态', { prefix: true })
-    .action(async ({ session }) => {
+    .action(async () => {
       const { bots: apps, cpu, memory, startTime, userCount, groupCount } = await getStatus(config)
 
-      const output = apps.sort(config.sort).map(({ label, selfId, code, rate }) => {
+      const output = apps.map(({ label, selfId, code, rate }) => {
         return `${label || selfId}：${code ? '无法连接' : `工作中（${rate}/min）`}`
       })
 
@@ -187,10 +179,7 @@ export function apply (ctx: Context, config: StatusOptions) {
       Promise.all(app.bots.map(async (bot): Promise<BotStatus> => ({
         selfId: bot.selfId,
         label: bot.label,
-        code: bot._get ? await bot.getStatus().then(
-          ({ good }) => good ? StatusCode.GOOD : StatusCode.CQ_ERROR,
-          () => StatusCode.NET_ERROR,
-        ) : StatusCode.IDLE,
+        code: await bot.getStatus(),
         rate: bot.counter.slice(1).reduce((prev, curr) => prev + curr, 0),
       }))),
     ])

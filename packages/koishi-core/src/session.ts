@@ -38,13 +38,6 @@ export interface ResponsePayload {
   reason?: string
 }
 
-export interface ParsedMessage {
-  atMe?: boolean
-  nickname?: string
-  prefix?: string
-  message?: string
-}
-
 /** CQHTTP Meta Information */
 export interface Meta <P extends PostType = PostType> {
   // type
@@ -96,9 +89,6 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
   $appel?: boolean
   $prefix?: string = null
 
-  // should be adapted by plugins
-  $send: (message: string, autoEscape?: boolean) => Promise<void>
-
   private _delay?: number
   private _queued = Promise.resolve()
   private _hooks?: (() => void)[] = []
@@ -128,6 +118,15 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
         : this.sender
           ? this.sender.card || this.sender.nickname
           : idString
+  }
+
+  async $send (message: string, autoEscape = false) {
+    if (!message) return
+    if (this.groupId) {
+      await this.$bot.sendGroupMsg(this.groupId, message, autoEscape)
+    } else {
+      await this.$bot.sendPrivateMsg(this.userId, message, autoEscape)
+    }
   }
 
   $cancelQueued (delay = 0) {

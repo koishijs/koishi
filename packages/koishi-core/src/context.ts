@@ -322,7 +322,6 @@ export interface EventMap {
   'after-middleware' (session: Session): void
   'new-command' (cmd: Command): void
   'remove-command' (cmd: Command): void
-  'adapt' (): void
   'before-connect' (): void | Promise<void>
   'connect' (): void
   'before-disconnect' (): void | Promise<void>

@@ -1,8 +1,9 @@
 import { App, AppOptions, Context, Plugin } from 'koishi-core'
 import { resolve, dirname } from 'path'
-import { capitalize, Logger } from 'koishi-utils'
+import { Logger } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
+import 'koishi-adapter-cqhttp'
 
 const logger = Logger.create('app')
 const { version } = require('../package')
@@ -118,12 +119,7 @@ process.on('unhandledRejection', (error) => {
 app.start().then(() => {
   app.bots.forEach(bot => {
     if (!bot.version) return
-    const { coolqEdition, pluginVersion, goCqhttp, runtimeVersion } = bot.version
-    if (goCqhttp) {
-      logger.info('%C', `Koishi/${version} Go-CQHTTP (Go/${runtimeVersion.slice(2)})`)
-    } else {
-      logger.info('%C', `Koishi/${version} CoolQ/${capitalize(coolqEdition)} CQHTTP/${pluginVersion}`)
-    }
+    logger.info('%C', `Koishi/${version} ${bot.version}`)
   })
 
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()

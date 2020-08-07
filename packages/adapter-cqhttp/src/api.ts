@@ -1,5 +1,5 @@
-import { camelCase, Logger, snakeCase } from 'koishi-utils'
-import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo } from 'koishi-core'
+import { camelCase, Logger, snakeCase, capitalize } from 'koishi-utils'
+import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatus } from 'koishi-core'
 
 const logger = Logger.create('sender')
 
@@ -66,9 +66,17 @@ export interface RecordInfo {
   file: string
 }
 
+export interface VersionInfo {
+  coolqDirectory: string
+  coolqEdition: 'air' | 'pro'
+  pluginVersion: string
+  pluginBuildNumber: number
+  pluginBuildConfiguration: 'debug' | 'release'
+}
+
 declare module 'koishi-core/dist/server' {
   interface Bot {
-    _get?: (action: string, params: Record<string, any>) => Promise<CQResponse>
+    _request?: (action: string, params: Record<string, any>) => Promise<CQResponse>
     get <T = any> (action: string, params?: Record<string, any>, silent?: boolean): Promise<T>
     getAsync (action: string, params?: Record<string, any>): Promise<void>
     sendGroupMsgAsync (groupId: number, message: string, autoEscape?: boolean): Promise<void>
@@ -119,7 +127,6 @@ declare module 'koishi-core/dist/server' {
     getImage (file: string): Promise<ImageInfo>
     canSendImage (): Promise<boolean>
     canSendRecord (): Promise<boolean>
-    getStatus (): Promise<StatusInfo>
     getVersionInfo (): Promise<VersionInfo>
     setRestartPlugin (delay?: number): Promise<void>
     cleanDataDir (dataDir: DataDirectory): Promise<void>
@@ -138,19 +145,11 @@ declare module 'koishi-core/dist/server' {
     sendGroupForwardMsg (groupId: number, messages: CQNode[]): Promise<void>
     sendGroupForwardMsgAsync (groupId: number, messages: CQNode[]): Promise<void>
   }
-
-  interface VersionInfo {
-    coolqDirectory: string
-    coolqEdition: 'air' | 'pro'
-    pluginVersion: string
-    pluginBuildNumber: number
-    pluginBuildConfiguration: 'debug' | 'release'
-  }
 }
 
 Bot.prototype.get = async function (this: Bot, action, params = {}, silent = false) {
   logger.debug('[request] %s %o', action, params)
-  const response = await this._get(action, snakeCase(params))
+  const response = await this._request(action, snakeCase(params))
   logger.debug('[response] %o', response)
   const { data, retcode } = response
   if (retcode === 0 && !silent) {
@@ -244,6 +243,21 @@ Bot.prototype.setGroupAddRequestAsync = function (this: Bot, flag: string, subTy
   }
 }
 
+Bot.prototype.getSelfId = async function getSelfId (this: Bot) {
+  const { userId } = await this.getLoginInfo()
+  return userId
+}
+
+Bot.prototype.getStatus = async function getStatus (this: Bot) {
+  if (!this.ready) return BotStatus.BOT_IDLE
+  try {
+    const data = await this.get<StatusInfo>('get_status')
+    return data.good ? BotStatus.GOOD : data.online ? BotStatus.SERVER_ERROR : BotStatus.BOT_OFFLINE
+  } catch {
+    return BotStatus.NET_ERROR
+  }
+}
+
 function defineSync (name: string, ...params: string[]) {
   const prop = camelCase(name.replace(/^_/, ''))
   Bot.prototype[prop] = function (this: Bot, ...args: any[]) {
@@ -293,7 +307,6 @@ defineSync('get_record', 'file', 'out_format', 'full_path')
 defineSync('get_image', 'file')
 defineExtract('can_send_image', 'yes')
 defineExtract('can_send_record', 'yes')
-defineSync('get_status')
 defineSync('get_version_info')
 defineSync('set_restart_plugin', 'delay')
 defineAsync('clean_data_dir', 'data_dir')
@@ -375,3 +388,12 @@ interface CQNode {
 }
 
 defineAsync('set_group_name', 'group_id', 'name')
+
+export function toVersion (data: VersionInfo) {
+  const { coolqEdition, pluginVersion, goCqhttp } = data
+  if (goCqhttp) {
+    return `Go-CQHTTP`
+  } else {
+    return `CoolQ/${capitalize(coolqEdition)} CQHTTP/${pluginVersion}`
+  }
+}

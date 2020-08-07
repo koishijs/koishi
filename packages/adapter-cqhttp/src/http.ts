@@ -1,12 +1,13 @@
 import { App, Bot, Server } from 'koishi-core'
 import { Logger, defineProperty, snakeCase } from 'koishi-utils'
+import { toVersion } from './api'
 import {} from 'koa-bodyparser'
 import { createHmac } from 'crypto'
 import axios from 'axios'
 
 declare module 'koishi-core/dist/session' {
   interface Session {
-    $response?: (payload: ResponsePayload) => void
+    _response?: (payload: ResponsePayload) => void
   }
 }
 
@@ -22,7 +23,8 @@ export default class HttpServer extends Server {
 
   private async __listen (bot: Bot) {
     if (!bot.server) return
-    bot._get = async (action, params) => {
+    bot.ready = true
+    bot._request = async (action, params) => {
       const headers = { 'Content-Type': 'application/json' } as any
       if (bot.token) {
         headers.Authorization = `Token ${bot.token}`
@@ -31,7 +33,7 @@ export default class HttpServer extends Server {
       const { data } = await axios.post(uri, params, { headers })
       return data
     }
-    bot.version = await bot.getVersionInfo()
+    bot.version = toVersion(await bot.getVersionInfo())
     logger.debug('%d got version info', bot.selfId)
   }
 
@@ -62,14 +64,14 @@ export default class HttpServer extends Server {
 
         // use defineProperty to avoid meta duplication
         defineProperty(meta, '$response', (data) => {
-          meta.$response = null
+          meta._response = null
           clearTimeout(timer)
           ctx.res.write(JSON.stringify(snakeCase(data)))
           ctx.res.end()
         })
 
         const timer = setTimeout(() => {
-          meta.$response = null
+          meta._response = null
           ctx.res.end()
         }, quickOperationTimeout)
       }
