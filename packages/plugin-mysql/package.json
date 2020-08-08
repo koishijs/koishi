@@ -39,7 +39,7 @@
     "koishi-core": "^2.0.0-beta.6"
   },
   "dependencies": {
-    "koishi-utils": "^2.1.2",
+    "koishi-utils": "^2.1.3",
     "mysql": "^2.18.1"
   }
 }

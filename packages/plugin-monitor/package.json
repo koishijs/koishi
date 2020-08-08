@@ -22,6 +22,6 @@
   "homepage": "https://github.com/koishijs/koishi#readme",
   "peerDependencies": {
     "koishi-core": "^2.0.0-beta.6",
-    "koishi-utils": "^2.1.2"
+    "koishi-utils": "^2.1.3"
   }
 }

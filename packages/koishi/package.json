@@ -47,7 +47,7 @@
     "koishi-plugin-schedule": "^2.0.0-beta.5",
     "koishi-plugin-status": "^2.0.0-beta.4",
     "koishi-plugin-teach": "^1.0.0-beta.6",
-    "koishi-utils": "^2.1.2",
+    "koishi-utils": "^2.1.3",
     "prompts": "^2.3.2"
   }
 }
