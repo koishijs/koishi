@@ -1,7 +1,8 @@
 import { launch, LaunchOptions, Browser, Page } from 'puppeteer-core'
 import { Context } from 'koishi-core'
-import { Logger, defineProperty } from 'koishi-utils'
+import { Logger, defineProperty, noop } from 'koishi-utils'
 import { escape } from 'querystring'
+import { PNG } from 'pngjs'
 export * from './svg'
 
 declare module 'koishi-core/dist/app' {
@@ -37,13 +38,15 @@ export interface Config {
   browser?: LaunchOptions
   loadTimeout?: number
   idleTimeout?: number
+  maxLength?: number
   shot?: false
   latex?: false
 }
 
 export const defaultConfig: Config = {
-  loadTimeout: 10000,
-  idleTimeout: 30000,
+  loadTimeout: 10000, // 10s
+  idleTimeout: 30000, // 30s
+  maxLength: 1000000, // 1MB
 }
 
 const allowedProtocols = ['http', 'https']
@@ -103,15 +106,28 @@ export function apply (ctx: Context, config: Config = {}) {
       }
 
       return page.screenshot({
-        encoding: 'base64',
         fullPage: options.fullPage,
-      }).then((data) => {
+      }).then(async (buffer) => {
         ctx.freePage(page)
-        session.$send(`[CQ:image,file=base64://${data}]`)
+        if (buffer.byteLength > config.maxLength) {
+          await new Promise<PNG>((resolve, reject) => {
+            const png = new PNG()
+            png.parse(buffer, (error, data) => {
+              return error ? reject(error) : resolve(data)
+            })
+          }).then((data) => {
+            const width = data.width
+            const height = data.height * config.maxLength / buffer.byteLength
+            const png = new PNG({ width, height })
+            data.bitblt(png, 0, 0, width, height, 0, 0)
+            buffer = PNG.sync.write(png)
+          }).catch(noop)
+        }
+        return `[CQ:image,file=base64://${buffer.toString('base64')}]`
       }, (error) => {
         ctx.freePage(page)
         logger.debug(error)
-        return '截图失败'
+        return '截图失败。'
       })
     })
 
@@ -134,11 +150,10 @@ export function apply (ctx: Context, config: Config = {}) {
       if (text) {
         await session.$send(text[1])
       } else {
-        const base64 = await page.screenshot({
-          encoding: 'base64',
+        const buffer = await page.screenshot({
           clip: await svg.boundingBox(),
         })
-        await session.$send(`[CQ:image,file=base64://${base64}]`)
+        await session.$send(`[CQ:image,file=base64://${buffer.toString('base64')}]`)
       }
       await page.setViewport(viewport)
       ctx.freePage(page)
