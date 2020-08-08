@@ -51,12 +51,12 @@ interface HelpConfig {
 export default function apply (app: App) {
   app.on('new-command', (cmd) => {
     cmd._examples = []
-    cmd.option('-h, --help', '显示此信息', { hidden: true })
+    cmd.option('help', '-h, --help  显示此信息', { hidden: true })
   })
 
   // show help when use `-h, --help` or when there is no action
   app.before('before-command', async ({ command, session, options }) => {
-    if (command._action && !options.help) return
+    if (command._action && !options['help']) return
     await session.$execute({
       command: 'help',
       args: [command.name],
@@ -78,15 +78,15 @@ export default function apply (app: App) {
     .userFields(createCollector('user'))
     .groupFields(createCollector('group'))
     .shortcut('帮助', { fuzzy: true })
-    .option('-e, --expand', '展开指令列表')
-    .option('-H, --show-hidden', '查看隐藏的选项和指令')
+    .option('expand', '-e, --expand  展开指令列表')
+    .option('showHidden', '-H, --show-hidden  查看隐藏的选项和指令')
     .action(async ({ session, options }, name) => {
       if (name) {
         const command = app._commandMap[name] || app._shortcutMap[name]
         if (!command?.context.match(session)) return '指令未找到。'
-        return showCommandHelp(command, session, options as HelpConfig)
+        return showCommandHelp(command, session, options)
       } else {
-        return showGlobalHelp(app, session, options as HelpConfig)
+        return showGlobalHelp(app, session, options)
       }
     })
 }
@@ -152,7 +152,7 @@ function getOptions (command: Command, session: Session<ValidationField>, maxUsa
 
   options.forEach((option) => {
     const authority = option.authority ? `(${option.authority}) ` : ''
-    let line = `    ${authority}${option.fullName}  ${option.description}`
+    let line = `    ${authority}${option.description}`
     if (option.notUsage && maxUsage !== Infinity) {
       line += '（不计入总次数）'
     }

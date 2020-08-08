@@ -1,6 +1,6 @@
 import { Context, NextFunction } from './context'
 import { User, Group, Tables, TableType } from './database'
-import { noop, camelCase } from 'koishi-utils'
+import { noop, camelCase, paramCase } from 'koishi-utils'
 import { Session } from './session'
 import { inspect, format, types } from 'util'
 import escapeRegex from 'escape-string-regexp'
@@ -13,26 +13,26 @@ export function removeBrackets (source: string) {
 }
 
 function parseBracket (name: string, required: boolean): CommandArgument {
-  let variadic = false, noSegment = false
+  let variadic = false, greedy = false
   if (name.startsWith('...')) {
     name = name.slice(3)
     variadic = true
   } else if (name.endsWith('...')) {
     name = name.slice(0, -3)
-    noSegment = true
+    greedy = true
   }
   return {
     name,
     required,
     variadic,
-    noSegment,
+    greedy,
   }
 }
 
 export interface CommandArgument {
   required: boolean
   variadic: boolean
-  noSegment: boolean
+  greedy: boolean
   name: string
 }
 
@@ -48,27 +48,27 @@ export function parseArguments (source: string) {
   return result
 }
 
-export interface OptionConfig {
-  default?: any
+const supportedType = ['string', 'number', 'boolean'] as const
+
+export type OptionType = typeof supportedType[number]
+
+export interface OptionConfig <T = any> {
+  fallback?: T
   authority?: number
   notUsage?: boolean
-  isString?: boolean
-  noNegated?: boolean
+  type?: OptionType
 }
 
+type StringOptionConfig = OptionConfig & ({ fallback: string } | { type: 'string' })
+type NumberOptionConfig = OptionConfig & ({ fallback: number } | { type: 'number' })
+type BooleanOptionConfig = OptionConfig & ({ fallback: boolean } | { type: 'boolean' })
+
 export interface CommandOption extends OptionConfig {
-  fullName: string
-  rawName: string
-  longest: string
-  shortest: string
-  names: string[]
-  camels: string[]
-  aliases: string[]
-  negated: string[]
-  required: boolean
-  isBoolean: boolean
-  noSegment: boolean
+  name: string
   description: string
+  shortest: string
+  greedy: boolean
+  negated?: string[]
 }
 
 interface ParsedArg {
@@ -80,15 +80,16 @@ interface ParsedArg {
 const quoteStart = `"'“‘`
 const quoteEnd = `"'”’`
 
-export interface ParsedLine {
+export interface ParsedLine <O = {}> {
   source?: string
   rest: string
   args: string[]
-  options: Record<string, any>
+  options: O
+  keyMap?: Record<keyof O, string>
 }
 
-export interface ParsedArgv <U extends User.Field = never, G extends Group.Field = never> extends Partial<ParsedLine> {
-  command: Command<U, G>
+export interface ParsedArgv <U extends User.Field = never, G extends Group.Field = never, O = {}> extends Partial<ParsedLine<O>> {
+  command: Command<U, G, O>
   session: Session<U, G>
   next?: NextFunction
 }
@@ -105,11 +106,15 @@ export interface CommandConfig <U extends User.Field = never, G extends Group.Fi
   authority?: number
 }
 
-type ArgvInferred <T> = Iterable<T> | ((argv: ParsedArgv, fields: Set<T>) => Iterable<T>)
-export type CommandAction <U extends User.Field = never, G extends Group.Field = never> =
-  (this: Command<U, G>, config: ParsedArgv<U, G>, ...args: string[]) => void | string | Promise<void | string>
+type Extend <O extends {}, K extends string, T> = {
+  [P in K | keyof O]: (P extends keyof O ? O[P] : unknown) & (P extends K ? T : unknown)
+}
 
-export class Command <U extends User.Field = never, G extends Group.Field = never> {
+type ArgvInferred <T> = Iterable<T> | ((argv: ParsedArgv, fields: Set<T>) => Iterable<T>)
+export type CommandAction <U extends User.Field = never, G extends Group.Field = never, O = {}> =
+  (this: Command<U, G>, config: ParsedArgv<U, G, O>, ...args: string[]) => void | string | Promise<void | string>
+
+export class Command <U extends User.Field = never, G extends Group.Field = never, O = {}> {
   config: CommandConfig<U, G>
   children: Command[] = []
   parent: Command = null
@@ -118,8 +123,8 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
   _arguments: CommandArgument[]
   _options: CommandOption[] = []
 
-  private _optionMap: Record<string, CommandOption> = {}
-  private _optionAliasMap: Record<string, CommandOption> = {}
+  private _optionNameMap: Record<string, CommandOption> = {}
+  private _optionSymbolMap: Record<string, CommandOption> = {}
   private _userFields: ArgvInferred<User.Field>[] = []
   private _groupFields: ArgvInferred<Group.Field>[] = []
 
@@ -219,74 +224,53 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return this.context.command(rawName, ...args as any)
   }
 
-  /**
-   * Add a option for this command
-   * @param fullName raw option name(s)
-   * @param description option description
-   * @param config option config
-   */
-  option (fullName: string, config?: OptionConfig): this
-  option (fullName: string, description: string, config?: OptionConfig): this
-  option (fullName: string, ...args: [OptionConfig?] | [string, OptionConfig?]) {
-    const description = typeof args[0] === 'string' ? args.shift() as string : undefined
-    const config = args[0] as OptionConfig || {}
-    const negated: string[] = []
-    const camels: string[] = []
-
-    let required = false, isBoolean = false, longest = '', shortest = ''
-    const names: string[] = [], aliases: string[] = []
-    const rawName = removeBrackets(fullName)
-    for (let name of rawName.split(',')) {
-      name = name.trim()
-      if (!shortest || name.length < shortest.length) shortest = name
-      if (name && !name.startsWith('-')) {
-        aliases.push(name)
-        continue
+  private _option (name: string, description: string, config?: OptionConfig) {
+    const desc = removeBrackets(description)
+    let shortest: string = name
+    let names: string[] = []
+    let symbols: string[] = []
+    for (let syntax of desc.split(',')) {
+      syntax = syntax.trimStart().split(' ', 1)[0]
+      // the shortest alias will be used for stringification
+      if (syntax.length < shortest.length) {
+        shortest = syntax
       }
-
-      name = name.replace(/^-{1,2}/, '')
-      let camel: string
-      if (name.startsWith('no-') && !config.noNegated && !this._optionMap[name.slice(3)]) {
-        name = name.slice(3)
-        camel = camelCase(name)
-        negated.push(camel)
+      // non-prefixed aliases will prioritize arguments
+      const name = syntax.replace(/^-+/, '')
+      if (!name || !syntax.startsWith('-')) {
+        symbols.push(syntax)
       } else {
-        camel = camelCase(name)
+        names.push(name)
       }
-      camels.push(camel)
-      if (camel.length > longest.length) longest = camel
-      names.push(name)
     }
 
-    const brackets = fullName.slice(rawName.length)
-    if (brackets.includes('<')) {
-      required = true
-    } else if (!brackets.includes('[')) {
-      isBoolean = true
-    }
-    const noSegment = brackets.includes('...')
-
+    const fullName = paramCase(name)
+    if (!names.includes(fullName)) names.push(fullName)
+    const brackets = description.slice(desc.length)
     const option: CommandOption = {
       ...Command.defaultOptionConfig,
       ...config,
-      fullName,
-      rawName,
-      longest,
-      shortest,
-      names,
-      aliases,
-      camels,
-      negated,
-      required,
-      noSegment,
-      isBoolean,
+      name,
       description,
+      shortest,
+      negated: [],
+      greedy: brackets.includes('...'),
     }
-
+    if (!brackets) option.type = 'boolean'
     this._options.push(option)
-    this._registerOption(option, names, this._optionMap)
-    this._registerOption(option, aliases, this._optionAliasMap)
+    this._registerOption(option, names, this._optionNameMap)
+    this._registerOption(option, symbols, this._optionSymbolMap)
     return this
+  }
+
+  option <K extends string> (name: K, description: string, config: StringOptionConfig): Command<U, G, Extend<O, K, string>>
+  option <K extends string> (name: K, description: string, config: NumberOptionConfig): Command<U, G, Extend<O, K, number>>
+  option <K extends string> (name: K, description: string, config: BooleanOptionConfig): Command<U, G, Extend<O, K, boolean>>
+  option <K extends string> (name: K, description: string, config?: OptionConfig): Command<U, G, Extend<O, K, any>>
+  option <K extends string> (name: K, description: string, config: OptionConfig = {}) {
+    const fallbackType = typeof config.fallback as any
+    const type = config.type || supportedType.includes(fallbackType) && fallbackType
+    return this._option(name, description, { ...config, type }) as any
   }
 
   private _registerOption (option: CommandOption, names: string[], optionMap: Record<string, CommandOption>) {
@@ -298,19 +282,25 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     }
   }
 
-  removeOption (name: string) {
-    name = name.replace(/^-+/, '')
-    const option = this._optionMap[name]
-    if (!option) return false
-    for (const name of option.names) {
-      delete this._optionMap[name]
-    }
-    const index = this._options.indexOf(option)
+  removeOption <K extends string & keyof O> (name: K) {
+    const index = this._options.findIndex(o => o.name === name)
+    if (index < 0) return false
+    const option = this._options[index]
     this._options.splice(index, 1)
+    for (const key in this._optionNameMap) {
+      if (this._optionNameMap[key] === option) {
+        delete this._optionNameMap[key]
+      }
+    }
+    for (const key in this._optionSymbolMap) {
+      if (this._optionSymbolMap[key] === option) {
+        delete this._optionSymbolMap[key]
+      }
+    }
     return true
   }
 
-  action (callback: CommandAction<U, G>) {
+  action (callback: CommandAction<U, G, O>) {
     this._action = callback
     return this
   }
@@ -382,17 +372,18 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     }
   }
 
-  private parseValue (source: string | true, quoted: boolean, config = {} as CommandOption) {
+  private parseValue (source: string | true, quoted: boolean, { type, fallback } = {} as CommandOption) {
     // quoted empty string
     if (source === '' && quoted) return ''
     // no explicit parameter
     if (source === true || source === '') {
-      if (config.default !== undefined) return config.default
-      if (config.isString) return ''
+      if (fallback !== undefined) return fallback
+      if (type === 'string') return ''
       return true
     }
     // default behavior
-    if (config.isString) return source
+    if (type === 'number') return +source
+    if (type === 'string') return source
     const n = +source
     return n * 0 === 0 ? n : source
   }
@@ -404,35 +395,33 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     const options: Record<string, any> = {}
 
     const handleOption = (name: string, knownValue: any, unknownValue: any) => {
-      const config = this._optionMap[name]
+      const config = this._optionNameMap[name]
       if (config) {
-        for (const alias of config.camels) {
-          options[alias] = !config.negated.includes(alias) && knownValue
-        }
+        options[config.name] = !config.negated.includes(name) && knownValue
       } else {
         options[camelCase(name)] = unknownValue
       }
     }
 
     while (message) {
-      // long argument
-      if (message[0] !== '-' && this._arguments[args.length]?.noSegment) {
+      // greedy argument
+      if (message[0] !== '-' && this._arguments[args.length]?.greedy) {
         const arg0 = this.parseRest(message, terminator)
         args.push(arg0.content)
         rest = arg0.rest
         break
       }
 
-      // parse argv0
+      // parse arg0
       let arg0 = this.parseArg(message, terminator)
       const arg = arg0.content
       message = arg0.rest
 
-      let option = this._optionAliasMap[arg]
+      let option: CommandOption
       let names: string | string[]
-      let param: any
-      if (option && !arg0.quoted) {
-        names = [option.names[0]]
+      let param: string
+      if (!arg0.quoted && (option = this._optionSymbolMap[arg])) {
+        names = [option.name]
       } else {
         // normal argument
         if (arg[0] !== '-' || arg0.quoted) {
@@ -446,9 +435,9 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
         for (; i < arg.length; ++i) {
           if (arg.charCodeAt(i) !== 45) break
         }
-        if (arg.slice(i, i + 3) === 'no-' && !this._optionMap[arg.slice(i)]) {
+        if (arg.slice(i, i + 3) === 'no-' && !this._optionNameMap[arg.slice(i)]) {
           name = arg.slice(i + 3)
-          handleOption(name, true, false)
+          handleOption(name, false, false)
           continue
         }
 
@@ -460,69 +449,75 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
         name = arg.slice(i, j)
         names = i > 1 ? [name] : name
         param = arg.slice(++j)
-        option = this._optionMap[names[names.length - 1]]
+        option = this._optionNameMap[names[names.length - 1]]
       }
 
       // get parameter
       let quoted = false
-      if (!param && option && option.noSegment) {
-        arg0 = this.parseRest(arg0.rest, terminator)
-        param = arg0.content
-        rest = arg0.rest
-        message = ''
-      } else if (!param && message.charCodeAt(0) !== 45 && (!option || !option.isBoolean)) {
-        arg0 = this.parseArg(message, terminator)
-        param = arg0.content
-        quoted = arg0.quoted
-        message = arg0.rest
+      if (!param) {
+        const { greedy, type } = option || {}
+        if (greedy) {
+          arg0 = this.parseRest(arg0.rest, terminator)
+          param = arg0.content
+          quoted = arg0.quoted
+          rest = arg0.rest
+          message = ''
+        } else if (type !== 'boolean' && (type || message[0] !== '-')) {
+          arg0 = this.parseArg(message, terminator)
+          param = arg0.content
+          quoted = arg0.quoted
+          message = arg0.rest
+        }
       }
 
       // handle each name
       for (let j = 0; j < names.length; j++) {
         const name = names[j]
-        const config = this._optionMap[name]
+        const config = this._optionNameMap[name]
         const value = this.parseValue(j + 1 < names.length || param, quoted, config)
         handleOption(name, value, value)
       }
     }
 
     // assign default values
-    for (const name in this._optionMap) {
-      if (this._optionMap[name].default !== undefined && !(name in options)) {
-        options[name] = this._optionMap[name].default
+    for (const config of this._options) {
+      if (config.fallback !== undefined && !(config.name in options)) {
+        options[config.name] = config.fallback
       }
     }
 
     return { rest, options, args, source }
   }
 
+  private stringifyArg (value: any) {
+    value = '' + value
+    return value.includes(' ') ? `"${value}"` : value
+  }
+
   stringify (argv: ParsedArgv) {
     let output = this.name
-    const optionSet = new Set<string>()
-    for (let key in argv.options) {
-      if (key === 'rest') {
-        key = '--'
-      } else if (key in this._optionMap) {
-        key = this._optionMap[key].shortest
-      }
-      if (optionSet.has(key)) continue
-      optionSet.add(key)
+    for (const key in argv.options) {
+      const {
+        shortest = key.length > 1 ? `--${key}` : `-${key}`,
+      } = this._optionSymbolMap[key] || this._optionNameMap[key] || {}
       const value = argv.options[key]
       if (value === true) {
-        output += ` ${key}`
+        // TODO negated
+        output += ` ${shortest}`
       } else {
-        output += ` ${key} ${value}`
+        output += ` ${shortest} ${this.stringifyArg(value)}`
       }
     }
     for (const arg of argv.args) {
-      output += arg.includes(' ') ? ` "${arg}"` : ` ${arg}`
+      output += ' ' + this.stringifyArg(arg)
     }
     return output
   }
 
-  async execute (argv: ParsedArgv<U, G>) {
+  async execute (argv: ParsedArgv<U, G, O>) {
     argv.command = this
-    if (!argv.options) argv.options = {}
+    if (!argv.keyMap) argv.keyMap = {} as any
+    if (!argv.options) argv.options = {} as any
     if (!argv.args) argv.args = []
 
     let state = 'before'

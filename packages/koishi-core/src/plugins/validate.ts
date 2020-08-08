@@ -49,7 +49,7 @@ const messages = {
   CHECK_SYNTAX: '请检查指令语法。',
   SHOW_THIS_MESSAGE: '显示本信息',
   USAGE_EXHAUSTED: '调用次数已达上限。',
-}
+} as const
 
 export function getUsageName (command: Command) {
   return command.config.usageName || command.name
@@ -68,7 +68,7 @@ Command.userFields(function* ({ command, options = {} }, fields) {
   let shouldFetchAuthority = !fields.has('authority') && authority > 0
   let shouldFetchUsage = !!(maxUsage || minInterval)
   for (const option of command._options) {
-    if (option.camels[0] in options) {
+    if (option.name in options) {
       if (option.authority > 0) shouldFetchAuthority = true
       if (option.notUsage) shouldFetchUsage = false
     }
@@ -95,7 +95,7 @@ export default function apply (app: App) {
     cmd._checkers = []
   })
 
-  app.on('before-command', ({ session, args, options, command }: ParsedArgv<ValidationField>) => {
+  app.on('before-command', ({ session, args, options, command, keyMap }: ParsedArgv<ValidationField>) => {
     async function sendHint (session: Session, message: string, ...param: any[]) {
       if (command.config.showWarning) {
         await session.$send(format(message, ...param))
@@ -114,7 +114,7 @@ export default function apply (app: App) {
       return sendHint(session, messages.INSUFFICIENT_ARGUMENTS)
     }
     const finalArg = command._arguments[command._arguments.length - 1]
-    if (args.length > command._arguments.length && !finalArg.noSegment && !finalArg.variadic) {
+    if (args.length > command._arguments.length && !finalArg.greedy && !finalArg.variadic) {
       return sendHint(session, messages.REDUNANT_ARGUMENTS)
     }
 
@@ -127,12 +127,12 @@ export default function apply (app: App) {
     }
 
     for (const option of command._options) {
-      if (!option.validate || !(option.longest in options)) continue
+      if (!option.validate || !(option.name in options)) continue
       const result = typeof option.validate !== 'function'
-        ? !option.validate.test(options[option.longest])
-        : option.validate(options[option.longest])
+        ? !option.validate.test(options[option.name])
+        : option.validate(options[option.name])
       if (result) {
-        return sendHint(session, messages.INVALID_OPTION, option.rawName, result === true ? messages.CHECK_SYNTAX : result)
+        return sendHint(session, messages.INVALID_OPTION, keyMap[option.name], result === true ? messages.CHECK_SYNTAX : result)
       }
     }
 
@@ -144,7 +144,7 @@ export default function apply (app: App) {
       return sendHint(session, messages.LOW_AUTHORITY)
     }
     for (const option of command._options) {
-      if (option.camels[0] in options) {
+      if (option.name in options) {
         if (option.authority > session.$user.authority) {
           return sendHint(session, messages.LOW_AUTHORITY)
         }
