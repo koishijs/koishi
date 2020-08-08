@@ -1,8 +1,9 @@
 import { App, AppOptions, Context, Plugin } from 'koishi-core'
 import { resolve, dirname } from 'path'
-import { capitalize, Logger } from 'koishi-utils'
+import { Logger } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
+import 'koishi-adapter-cqhttp'
 
 const logger = Logger.create('app')
 const { version } = require('../package')
@@ -73,7 +74,7 @@ function loadEcosystem (name: string) {
     logger.debug('resolving %c', path)
     try {
       const result = require(path)
-      logger.info('apply plugin %c', result && result.name || name)
+      logger.info('apply plugin %c', result.name || name)
       return cacheMap[name] = result
     } catch (error) {
       if (isErrorModule(error)) {
@@ -106,6 +107,14 @@ if (config.logLevel && !process.env.KOISHI_LOG_LEVEL) {
 
 const app = new App(config)
 
+app.command('exit', '停止机器人运行', { authority: 4 })
+  .option('-r, --restart', '重新启动')
+  .shortcut('关机', { prefix: true })
+  .shortcut('重启', { prefix: true, options: { restart: true } })
+  .action(({ options }) => {
+    process.exit(options.restart ? 514 : 0)
+  })
+
 // TODO: object format
 if (Array.isArray(config.plugins)) {
   loadPlugins(app, config.plugins)
@@ -116,23 +125,9 @@ process.on('unhandledRejection', (error) => {
 })
 
 app.start().then(() => {
-  const { type, port } = app.options
-  if (port) logger.info('server listening at %c', port)
-
-  app.bots.forEach((bot) => {
-    const { server } = bot
-    if (!server) return
-    const { coolqEdition, pluginVersion, goCqhttp, runtimeVersion } = bot.version
-    if (type === 'http') {
-      logger.info('connected to %c', server)
-    } else {
-      logger.info('connected to %c', server.replace(/^http/, 'ws'))
-    }
-    if (goCqhttp) {
-      logger.info(`Koishi/${version} Go-cqhttp (Go/${runtimeVersion.slice(2)})`)
-    } else {
-      logger.info(`Koishi/${version} CoolQ/${capitalize(coolqEdition)} cqhttp/${pluginVersion}`)
-    }
+  app.bots.forEach(bot => {
+    if (!bot.version) return
+    logger.info('%C', `Koishi/${version} ${bot.version}`)
   })
 
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()

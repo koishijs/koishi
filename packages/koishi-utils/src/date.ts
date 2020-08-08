@@ -41,8 +41,9 @@ export function parseTime (source: string) {
 }
 
 export function parseDate (date: string) {
-  let parsed: number
-  if (parsed = parseTime(date)) {
+  const parsed = parseTime(date)
+  // eslint-disable-next-line no-cond-assign
+  if (parsed) {
     date = Date.now() + parsed as any
   } else if (/^\d{1,2}(:\d{1,2}){1,2}$/.test(date)) {
     date = `${new Date().toLocaleDateString()}-${date}`
@@ -50,6 +51,20 @@ export function parseDate (date: string) {
     date = `${new Date().getFullYear()}-${date}`
   }
   return date ? new Date(date) : new Date()
+}
+
+export function formatTimeShort (ms: number) {
+  const abs = Math.abs(ms)
+  if (abs >= Time.day - Time.hour / 2) {
+    return Math.round(ms / Time.day) + 'd'
+  } else if (abs >= Time.hour - Time.minute / 2) {
+    return Math.round(ms / Time.hour) + 'h'
+  } else if (abs >= Time.minute - Time.second / 2) {
+    return Math.round(ms / Time.minute) + 'm'
+  } else if (abs >= Time.second) {
+    return Math.round(ms / Time.second) + 's'
+  }
+  return ms + 'ms'
 }
 
 export function formatTime (ms: number) {

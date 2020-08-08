@@ -13,8 +13,8 @@ function itob (n: number, length: number) {
 
 export function apply (ctx: Context) {
   ctx.command('tools/mcping <server>', '查看 Minecraft 服务器信息')
-    .action(async ({ meta }, address) => {
-      if (!address) return meta.$send('请输入正确的网址。')
+    .action(async ({ session }, address) => {
+      if (!address) return '请输入正确的网址。'
       if (!address.match(/^\w+:\/\//)) address = 'http://' + address
 
       let host: string, port: number
@@ -23,7 +23,7 @@ export function apply (ctx: Context) {
         host = url.hostname
         port = Number(url.port) || 25565
       } catch (error) {
-        return meta.$send('请输入正确的网址。')
+        return '请输入正确的网址。'
       }
 
       const socket = new Socket()
@@ -62,7 +62,7 @@ export function apply (ctx: Context) {
         if (bytes >= length) {
           try {
             const status = JSON.parse(response)
-            if (!status.version) return meta.$send('无法解析服务器信息。')
+            if (!status.version) return '无法解析服务器信息。'
             const output = [
               `版本：${status.version.name}`,
               `人数：${status.players.online} / ${status.players.max}`,
@@ -70,20 +70,20 @@ export function apply (ctx: Context) {
             if (status.description) output.unshift(`简介：${status.description.text}`)
             // data:image/png;base64,
             if (status.favicon) output.unshift(`[CQ:image,file=base64://${status.favicon.slice(22)}]`)
-            meta.$send(output.join('\n'))
+            session.$send(output.join('\n'))
           } catch (error) {
-            meta.$send('无法解析服务器信息。')
+            session.$send('无法解析服务器信息。')
           }
         }
       })
 
       socket.setTimeout(5000, () => {
         socket.end()
-        if (!response) meta.$send('服务器响应超时，请确认输入的地址。')
+        if (!response) session.$send('服务器响应超时，请确认输入的地址。')
       })
       socket.on('error', () => {
         socket.destroy()
-        meta.$send('无法获取服务器信息，请确认输入的地址。')
+        session.$send('无法获取服务器信息，请确认输入的地址。')
       })
     })
 }

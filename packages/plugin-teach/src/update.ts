@@ -27,8 +27,8 @@ export default function apply (ctx: Context) {
   ctx.command('teach')
     .option('-v, --review', '查看最近的修改')
     .option('-V, --revert', '回退最近的修改')
-    .option('-l, --include-last [count]', { isString: true, validate: isIntegerOrInterval })
-    .option('-L, --exclude-last [count]', { isString: true, validate: isIntegerOrInterval })
+    .option('-l, --include-last [count]', '包含最近的修改数量', { isString: true, validate: isIntegerOrInterval })
+    .option('-L, --exclude-last [count]', '排除最近的修改数量', { isString: true, validate: isIntegerOrInterval })
     .option('--target <ids>', '查看或修改已有问题', { isString: true, validate: RE_DIALOGUES })
     .option('-r, --remove', '彻底删除问答')
 
@@ -41,17 +41,17 @@ export default function apply (ctx: Context) {
       return update(argv)
     } catch (err) {
       ctx.logger('teach').warn(err)
-      return argv.meta.$send(`${revert ? '回退' : remove ? '删除' : '修改'}问答时出现问题。`)
+      return argv.session.$send(`${revert ? '回退' : remove ? '删除' : '修改'}问答时出现问题。`)
     }
   })
 
   ctx.before('dialogue/execute', (argv) => {
-    const { options, meta } = argv
+    const { options, session } = argv
     const { includeLast, excludeLast } = options
     if (!options.review && !options.revert) return
     const now = Date.now(), includeTime = parseTime(includeLast), excludeTime = parseTime(excludeLast)
     const dialogues = Object.values(Dialogue.history).filter((dialogue) => {
-      if (dialogue._operator !== meta.userId) return
+      if (dialogue._operator !== session.userId) return
       const offset = now - dialogue._timestamp
       if (includeTime && offset >= includeTime) return
       if (excludeTime && offset < excludeTime) return
@@ -62,13 +62,13 @@ export default function apply (ctx: Context) {
       return true
     })
 
-    if (!dialogues.length) return meta.$send('没有搜索到满足条件的教学操作。')
+    if (!dialogues.length) return session.$send('没有搜索到满足条件的教学操作。')
     return options.review ? review(dialogues, argv) : revert(dialogues, argv)
   })
 
   ctx.on('dialogue/before-detail', async (argv) => {
     if (argv.options.modify) return
-    await argv.ctx.parallelize('dialogue/search', argv, {}, argv.dialogues)
+    await argv.ctx.parallel('dialogue/search', argv, {}, argv.dialogues)
   })
 
   ctx.on('dialogue/detail-short', ({ _type, _timestamp }, output) => {
@@ -113,33 +113,33 @@ function formatTimeShort (ms: number) {
 }
 
 function review (dialogues: Dialogue[], argv: Dialogue.Argv) {
-  const { meta } = argv
+  const { session } = argv
   const output = dialogues.map((d) => {
     const details = getDetails(argv, d)
     const { questionType = '问题', answerType = '回答' } = details
     const { original, answer } = d
     return `${formatDetails(d, details)}${questionType}：${original}，${answerType}：${formatAnswer(answer, argv.config)}`
   })
-  return meta.$send(output.join('\n'))
+  return session.$send(output.join('\n'))
 }
 
 async function revert (dialogues: Dialogue[], argv: Dialogue.Argv) {
   try {
-    return argv.meta.$send(await Dialogue.revert(dialogues, argv))
+    return argv.session.$send(await Dialogue.revert(dialogues, argv))
   } catch (err) {
     argv.ctx.logger('teach').warn(err)
-    return argv.meta.$send('回退问答中出现问题。')
+    return argv.session.$send('回退问答中出现问题。')
   }
 }
 
 export async function update (argv: Dialogue.Argv) {
-  const { ctx, meta, options, target, config } = argv
+  const { ctx, session, options, target, config } = argv
   const { maxShownDialogues = 10, detailInterval = 500 } = config
   const { revert, review, remove, search } = options
 
   options.modify = !review && !search && Object.keys(options).length
   if (!options.modify && !search && target.length > maxShownDialogues) {
-    return meta.$send(`一次最多同时预览 ${maxShownDialogues} 个问答。`)
+    return session.$send(`一次最多同时预览 ${maxShownDialogues} 个问答。`)
   }
 
   argv.uneditable = []
@@ -151,22 +151,22 @@ export async function update (argv: Dialogue.Argv) {
   argv.dialogueMap = Object.fromEntries(dialogues.map(d => [d.id, { ...d }]))
 
   if (search) {
-    return meta.$send(formatQuestionAnswers(argv, dialogues).join('\n'))
+    return session.$send(formatQuestionAnswers(argv, dialogues).join('\n'))
   }
 
   const actualIds = argv.dialogues.map(d => d.id)
   argv.unknown = difference(target, actualIds)
-  await ctx.serialize('dialogue/before-detail', argv)
+  await ctx.serial('dialogue/before-detail', argv)
 
   if (!options.modify) {
     if (argv.unknown.length) {
-      await meta.$send(`${review ? '最近无人修改过' : '没有搜索到'}编号为 ${argv.unknown.join(', ')} 的问答。`)
+      await session.$send(`${review ? '最近无人修改过' : '没有搜索到'}编号为 ${argv.unknown.join(', ')} 的问答。`)
     }
     for (let index = 0; index < dialogues.length; index++) {
       const output = [`编号为 ${dialogues[index].id} 的${review ? '历史版本' : '问答信息'}：`]
-      await ctx.serialize('dialogue/detail', dialogues[index], output, argv)
+      await ctx.serial('dialogue/detail', dialogues[index], output, argv)
       if (index) await sleep(detailInterval)
-      await meta.$send(output.join('\n'))
+      await session.$send(output.join('\n'))
     }
     return
   }
@@ -185,17 +185,17 @@ export async function update (argv: Dialogue.Argv) {
       await Dialogue.remove(editable, argv)
       message = `问答 ${editable.join(', ')} 已成功删除。`
     }
-    await ctx.serialize('dialogue/after-modify', argv)
+    await ctx.serial('dialogue/after-modify', argv)
     return sendResult(argv, message)
   }
 
   if (targets.length) {
-    if (await ctx.app.serialize('dialogue/before-modify', argv)) return
+    if (await ctx.app.serial('dialogue/before-modify', argv)) return
     for (const dialogue of targets) {
       ctx.emit('dialogue/modify', argv, dialogue)
     }
     await Dialogue.update(targets, argv)
-    await ctx.serialize('dialogue/after-modify', argv)
+    await ctx.serial('dialogue/after-modify', argv)
   }
 
   return sendResult(argv)
@@ -205,15 +205,15 @@ export async function create (argv: Dialogue.Argv) {
   const { ctx, options } = argv
   options.create = options.modify = true
   const { question, answer } = options
-  if (await ctx.app.serialize('dialogue/before-create', argv)) return
+  if (await ctx.app.serial('dialogue/before-create', argv)) return
 
   argv.unknown = []
   argv.uneditable = []
   argv.updated = []
   argv.skipped = []
   argv.dialogues = await Dialogue.fromTest(ctx, { question, answer, regexp: false })
-  await ctx.serialize('dialogue/before-detail', argv)
-  if (await ctx.app.serialize('dialogue/before-modify', argv)) return
+  await ctx.serial('dialogue/before-detail', argv)
+  if (await ctx.app.serial('dialogue/before-modify', argv)) return
 
   if (argv.dialogues.length) {
     argv.target = argv.dialogues.map(d => d.id)
@@ -222,23 +222,23 @@ export async function create (argv: Dialogue.Argv) {
       ctx.emit('dialogue/modify', argv, dialogue)
     }
     await Dialogue.update(targets, argv)
-    await ctx.serialize('dialogue/after-modify', argv)
+    await ctx.serial('dialogue/after-modify', argv)
     return sendResult(argv)
   }
 
   const dialogue = { flag: 0 } as Dialogue
   if (ctx.bail('dialogue/permit', argv, dialogue)) {
-    return argv.meta.$send('该问答因权限过低无法添加。')
+    return argv.session.$send('该问答因权限过低无法添加。')
   }
 
   try {
     ctx.emit('dialogue/modify', argv, dialogue)
     argv.dialogues = [await Dialogue.create(dialogue, argv)]
 
-    await ctx.serialize('dialogue/after-modify', argv)
+    await ctx.serial('dialogue/after-modify', argv)
     return sendResult(argv, `问答已添加，编号为 ${argv.dialogues[0].id}。`)
   } catch (err) {
-    await argv.meta.$send('添加问答时遇到错误。')
+    await argv.session.$send('添加问答时遇到错误。')
     throw err
   }
 }

@@ -1,7 +1,8 @@
-import { Meta, ContextType, ResponsePayload } from 'koishi-core'
+import { Session as Meta, ResponsePayload, App } from 'koishi-core'
 import { MockedApp } from './app'
+import {} from 'koishi-adapter-cqhttp'
 
-export const createMessageMeta = (type: ContextType, message: string, userId: number, ctxId: number) => new Meta({
+export const createMessageMeta = (app: App, type: 'user' | 'group', message: string, userId: number, ctxId: number) => new Meta(app, {
   [type + 'Id']: ctxId,
   postType: 'message',
   messageType: type === 'user' ? 'private' : type,
@@ -18,16 +19,16 @@ export const createMessageMeta = (type: ContextType, message: string, userId: nu
 export class Session {
   meta: Meta
 
-  constructor (public app: MockedApp, public type: ContextType, public userId: number, public ctxId: number) {
-    this.meta = createMessageMeta(type, null, userId, ctxId)
+  constructor (public app: MockedApp, public type: 'user' | 'group', public userId: number, public ctxId: number) {
+    this.meta = createMessageMeta(app, type, null, userId, ctxId)
   }
 
   async send (message: string) {
     const replies: string[] = []
-    function $response (data: ResponsePayload) {
+    function _response (data: ResponsePayload) {
       if (data.reply) replies.push(data.reply)
     }
-    await this.app.receiveMessage(new Meta({ ...this.meta, message, $response }))
+    await this.app.receiveMessage(new Meta(this.app, { ...this.meta, message, _response }))
     return replies
   }
 

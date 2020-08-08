@@ -1,9 +1,9 @@
 import { arrayTypes } from 'koishi-plugin-mysql'
-import { extendGroup, extendDatabase } from 'koishi-core'
+import { Group, extendDatabase } from 'koishi-core'
 import { OkPacket } from 'mysql'
 
 declare module 'koishi-core/dist/database' {
-  interface GroupData {
+  interface Group {
     subscribe: Record<number, number[]>
   }
 
@@ -21,7 +21,7 @@ declare module 'koishi-core/dist/database' {
   }
 }
 
-extendGroup(() => ({ subscribe: {} }))
+Group.extend(() => ({ subscribe: {} }))
 
 arrayTypes.push('subscribe.names')
 
@@ -50,7 +50,7 @@ const subscribeKeys = [
 
 extendDatabase('koishi-plugin-mysql', {
   async getSubscribes (ids, keys = subscribeKeys) {
-    if (!ids) return this.query(`SELECT * FROM \`subscribe\``)
+    if (!ids) return this.query('SELECT * FROM `subscribe`')
     if (!ids.length) return []
     return this.query('SELECT ' + this.joinKeys(keys) + ` FROM \`subscribe\` WHERE \`id\` IN (${ids.map(id => `'${id}'`).join(',')})`)
   },

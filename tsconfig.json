@@ -9,6 +9,7 @@
   "references": [
     { "path": "./packages/koishi-utils" },
     { "path": "./packages/koishi-core" },
+    { "path": "./packages/adapter-cqhttp" },
     { "path": "./packages/koishi-test-utils" },
 
     { "path": "./packages/plugin-mysql" },

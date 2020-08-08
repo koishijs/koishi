@@ -1,4 +1,5 @@
-import { Context, randomInt } from 'koishi'
+import { Context } from 'koishi-core'
+import { randomInt } from 'koishi-utils'
 
 export interface RollOptions {
   maxPoint?: number
@@ -12,19 +13,19 @@ export function apply (ctx: Context, options: RollOptions = {}) {
     .userFields(['name', 'timers'])
     .shortcut('掷骰', { fuzzy: true })
     .example('roll 2d6+d10')
-    .action(async ({ meta }, message = '1d6') => {
-      if (!/^((\d*)d)?(\d+)(\+((\d*)d)?(\d+))*$/i.test(message)) return meta.$send('表达式语法错误。')
+    .action(async ({ session }, message = '1d6') => {
+      if (!/^((\d*)d)?(\d+)(\+((\d*)d)?(\d+))*$/i.test(message)) return '表达式语法错误。'
 
       const expressions = message.split('+')
       let hasMultiple = false
-      let output = `${meta.$username} 掷骰：${message.slice(1)}=`
+      let output = `${session.$username} 掷骰：${message.slice(1)}=`
       let total = 0
 
       for (const expr of expressions) {
         const [_, dice, _times, _max] = /^((\d*)d)?(\d+)$/i.exec(expr)
         const max = +_max
         if (!max || max > maxPoint) {
-          return meta.$send(`点数必须在 1 到 ${maxPoint} 之间。`)
+          return `点数必须在 1 到 ${maxPoint} 之间。`
         }
 
         if (!dice) {
@@ -35,7 +36,7 @@ export function apply (ctx: Context, options: RollOptions = {}) {
 
         const times = +(_times || 1)
         if (!times || times > maxTimes) {
-          return meta.$send(`次数必须在 1 到 ${maxTimes} 之间。`)
+          return `次数必须在 1 到 ${maxTimes} 之间。`
         }
 
         const values = []
@@ -59,6 +60,6 @@ export function apply (ctx: Context, options: RollOptions = {}) {
       if (hasMultiple || expressions.length > 1) {
         output += '=' + total
       }
-      return meta.$send(output)
+      return output
     })
 }

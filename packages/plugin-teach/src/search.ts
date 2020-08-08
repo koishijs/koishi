@@ -89,7 +89,7 @@ export default function apply (ctx: Context) {
         original: prefixed,
       })
       Object.defineProperty(dialogue, '_redirections', { writable: true, value: dialogues })
-      await argv.ctx.parallelize('dialogue/search', argv, test, dialogues)
+      await argv.ctx.parallel('dialogue/search', argv, test, dialogues)
     }
   })
 }
@@ -155,7 +155,7 @@ export function formatQuestionAnswers (argv: Dialogue.Argv, dialogues: Dialogue[
 }
 
 async function showSearch (argv: Dialogue.Argv) {
-  const { ctx, meta, options } = argv
+  const { ctx, session, options } = argv
   const { regexp, question, answer, page = 1, original, pipe, recursive, autoMerge } = options
   const { itemsPerPage = 30, mergeThreshold = 5 } = argv.config
 
@@ -164,9 +164,9 @@ async function showSearch (argv: Dialogue.Argv) {
   const dialogues = await Dialogue.fromTest(ctx, test)
 
   if (pipe) {
-    if (!dialogues.length) return meta.$send('没有搜索到任何问答。')
+    if (!dialogues.length) return session.$send('没有搜索到任何问答。')
     const command = ctx.command('teach')
-    const argv = { ...command.parse(pipe), meta, command }
+    const argv = { ...command.parse(pipe), session, command }
     const target = argv.options.target = dialogues.map(d => d.id).join(',')
     argv.source = `#${target} ${pipe}`
     parseTeachArgs(argv)
@@ -174,7 +174,7 @@ async function showSearch (argv: Dialogue.Argv) {
   }
 
   if (recursive && !autoMerge) {
-    await argv.ctx.parallelize('dialogue/search', argv, test, dialogues)
+    await argv.ctx.parallel('dialogue/search', argv, test, dialogues)
   }
 
   function sendResult (title: string, output: string[], suffix?: string) {
@@ -188,31 +188,31 @@ async function showSearch (argv: Dialogue.Argv) {
       if (suffix) output.push(suffix)
       output.push('可以使用 /+页码 以调整输出的条目页数。')
     }
-    return meta.$send(output.join('\n'))
+    return session.$send(output.join('\n'))
   }
 
   if (!question && !answer) {
-    if (!dialogues.length) return meta.$send('没有搜索到任何回答，尝试切换到其他环境。')
+    if (!dialogues.length) return session.$send('没有搜索到任何回答，尝试切换到其他环境。')
     return sendResult('全部问答如下', formatQuestionAnswers(argv, dialogues))
   }
 
   if (!options.regexp) {
     const suffix = options.regexp !== false ? '，请尝试使用正则表达式匹配' : ''
     if (!question) {
-      if (!dialogues.length) return meta.$send(`没有搜索到回答“${answer}”${suffix}。`)
+      if (!dialogues.length) return session.$send(`没有搜索到回答“${answer}”${suffix}。`)
       const output = dialogues.map(d => `${formatPrefix(argv, d)}${d.original}`)
       return sendResult(`回答“${answer}”的问题如下`, output)
     } else if (!answer) {
-      if (!dialogues.length) return meta.$send(`没有搜索到问题“${original}”${suffix}。`)
+      if (!dialogues.length) return session.$send(`没有搜索到问题“${original}”${suffix}。`)
       const output = formatAnswers(argv, dialogues)
-      const state = ctx.getSessionState(meta)
+      const state = ctx.getSessionState(session)
       state.isSearch = true
       state.test = test
       state.dialogues = dialogues
       const total = await getTotalWeight(ctx, state)
       return sendResult(`问题“${original}”的回答如下`, output, dialogues.length > 1 ? `实际触发概率：${+Math.min(total, 1).toFixed(3)}` : '')
     } else {
-      if (!dialogues.length) return meta.$send(`没有搜索到问答“${original}”“${answer}”${suffix}。`)
+      if (!dialogues.length) return session.$send(`没有搜索到问答“${original}”“${answer}”${suffix}。`)
       const output = [dialogues.map(d => d.id).join(', ')]
       return sendResult(`“${original}”“${answer}”匹配的回答如下`, output)
     }
@@ -237,18 +237,18 @@ async function showSearch (argv: Dialogue.Argv) {
   }
 
   if (!question) {
-    if (!dialogues.length) return meta.$send(`没有搜索到含有正则表达式“${answer}”的回答。`)
+    if (!dialogues.length) return session.$send(`没有搜索到含有正则表达式“${answer}”的回答。`)
     return sendResult(`回答正则表达式“${answer}”的搜索结果如下`, output)
   } else if (!answer) {
-    if (!dialogues.length) return meta.$send(`没有搜索到含有正则表达式“${original}”的问题。`)
+    if (!dialogues.length) return session.$send(`没有搜索到含有正则表达式“${original}”的问题。`)
     return sendResult(`问题正则表达式“${original}”的搜索结果如下`, output)
   } else {
-    if (!dialogues.length) return meta.$send(`没有搜索到含有正则表达式“${original}”“${answer}”的问答。`)
+    if (!dialogues.length) return session.$send(`没有搜索到含有正则表达式“${original}”“${answer}”的问答。`)
     return sendResult(`问答正则表达式“${original}”“${answer}”的搜索结果如下`, output)
   }
 }
 
-async function showInfo ({ ctx, meta }: Dialogue.Argv) {
+async function showInfo ({ ctx, session }: Dialogue.Argv) {
   const [[{
     'COUNT(DISTINCT `question`)': questions,
     'COUNT(*)': answers,
@@ -257,7 +257,7 @@ async function showInfo ({ ctx, meta }: Dialogue.Argv) {
     ctx.app.getImageServerStatus(),
   ])
 
-  return meta.$send([
+  return session.$send([
     `共收录了 ${questions} 个问题和 ${answers} 个回答。`,
     `收录图片 ${totalCount} 张，总体积 ${(totalSize / (1 << 20)).toFixed(1)} MB。`,
   ].join('\n'))

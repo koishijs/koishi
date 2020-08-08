@@ -96,12 +96,13 @@ export default function apply (app: App, config: Dialogue.Config) {
   }
 
   if (imageServer && downloadFile) {
-    app.on('dialogue/before-modify', async ({ options, meta }) => {
+    app.on('dialogue/before-modify', async ({ options, session }) => {
       let { answer } = options
       if (!answer) return
       try {
         let output = ''
         let capture: RegExpExecArray
+        // eslint-disable-next-line no-cond-assign
         while (capture = imageRE.exec(answer)) {
           const [text, file, url] = capture
           output += answer.slice(0, capture.index)
@@ -112,7 +113,7 @@ export default function apply (app: App, config: Dialogue.Config) {
         options.answer = output + answer
       } catch (error) {
         logger.warn(error.message)
-        await meta.$send('上传图片时发生错误。')
+        await session.$send('上传图片时发生错误。')
         return true
       }
     })

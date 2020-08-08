@@ -1,9 +1,9 @@
-import { Meta, extendDatabase } from 'koishi-core'
+import { Session, extendDatabase } from 'koishi-core'
 import type MysqlDatabase from 'koishi-plugin-mysql'
 
 declare module 'koishi-core/dist/database' {
   interface Database {
-    createSchedule (time: Date, interval: number, command: string, meta: Meta): Promise<Schedule>
+    createSchedule (time: Date, interval: number, command: string, session: Session): Promise<Schedule>
     removeSchedule (id: number): Promise<any>
     getSchedule (id: number): Promise<Schedule>
     getAllSchedules (assignees?: number[]): Promise<Schedule[]>
@@ -20,12 +20,12 @@ export interface Schedule {
   time: Date
   interval: number
   command: string
-  meta: Meta
+  session: Session
 }
 
 extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
-  createSchedule (time, interval, command, meta) {
-    return this.create('schedule', { time, assignee: meta.selfId, interval, command, meta })
+  createSchedule (time, interval, command, session) {
+    return this.create('schedule', { time, assignee: session.selfId, interval, command, session })
   },
 
   removeSchedule (id) {

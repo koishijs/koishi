@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base",
   "compilerOptions": {
-    "target": "es2020",
+    "target": "esnext",
     "outDir": "dist",
     "rootDir": "src",
   },

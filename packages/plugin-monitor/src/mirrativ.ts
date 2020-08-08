@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+
 import { get, Daemon, LiveInfo } from './monitor'
 
 interface MirrativStatus {

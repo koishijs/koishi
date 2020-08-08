@@ -1,5 +1,6 @@
 // modified from https://github.com/Coxxs/bvid
-import { Context } from 'koishi'
+
+import { Context } from 'koishi-core'
 
 const table = 'fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
 const tr = {}
@@ -37,15 +38,15 @@ function encode (source: number) {
 
 export function apply (ctx: Context) {
   ctx.command('tools/bvid <avid|bvid>', 'av/BV 号转换')
-    .action(async ({ meta }, source) => {
-      if (!source) return meta.$send('请输入正确的 av/BV 号。')
+    .action(async ({ session }, source) => {
+      if (!source) return '请输入正确的 av/BV 号。'
       if (source.startsWith('BV')) {
         const result = decode(source)
-        if (result) return meta.$send('av' + result)
+        if (result) return 'av' + result
       } else if (/^av\d+$/.test(source)) {
         const result = encode(+source.slice(2))
-        if (result) return meta.$send(result)
+        if (result) return result
       }
-      return meta.$send('请输入正确的 av/BV 号。')
+      return '请输入正确的 av/BV 号。'
     })
 }

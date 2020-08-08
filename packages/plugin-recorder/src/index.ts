@@ -1,10 +1,10 @@
 import { WriteStream, createWriteStream, existsSync, mkdirSync } from 'fs'
 import { resolve, dirname } from 'path'
-import { Meta, Context } from 'koishi-core'
+import { Session, Context } from 'koishi-core'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'before-record' (meta: Meta): any
+    'before-record' (session: Session): any
   }
 }
 
@@ -23,11 +23,11 @@ const cwd = process.cwd()
 export const name = 'recorder'
 
 export function apply (ctx: Context, options: RecorderOptions = {}) {
-  async function handleMessage (meta: Meta<never, 'assignee'>) {
-    if (meta.$ctxType !== 'group' || meta.postType === 'message' && meta.$group.assignee !== meta.selfId) return
-    if (await ctx.serialize('before-record', meta)) return
-    const output = JSON.stringify(pick(meta, ['time', 'userId', 'message'])) + '\n'
-    const path = resolve(cwd, options.folder || 'messages', `${meta.groupId}.txt`)
+  async function handleMessage (session: Session<never, 'assignee'>) {
+    if (session.subType === 'group' && session.$group.assignee !== session.selfId) return
+    if (await ctx.serial('before-record', session)) return
+    const output = JSON.stringify(pick(session, ['time', 'userId', 'message'])) + '\n'
+    const path = resolve(cwd, options.folder || 'messages', `${session.groupId}.txt`)
     if (!streams[path]) {
       const folder = dirname(path)
       if (!existsSync(folder)) {
@@ -38,11 +38,11 @@ export function apply (ctx: Context, options: RecorderOptions = {}) {
     streams[path].write(output)
   }
 
-  ctx.on('attach-group', (meta: Meta<never, 'assignee'>) => {
-    handleMessage(meta)
+  ctx.on('attach-group', (session: Session<never, 'assignee'>) => {
+    handleMessage(session)
   })
 
-  ctx.on('before-send', (meta: Meta<never, 'assignee'>) => {
-    handleMessage(meta)
+  ctx.on('before-send', (session: Session<never, 'assignee'>) => {
+    handleMessage(session)
   })
 }

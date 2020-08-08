@@ -25,33 +25,39 @@ export function apply (ctx: Context) {
     ].join('\n'))
     .example('crypto vigenere(keyword) "Hello World"  ->  Rijhc Nrbpb')
     .example('crypto vigenere(keyword) -d "Rijhc Nrbpb"  ->  Hello World')
-    .action(({ options, meta }, algorithms, text) => {
-      if (!text) return meta.$send('请输入文本。')
-      if (!algorithms) return meta.$send('请指定算法。')
+    .action(({ options }, algorithms, text) => {
+      if (!text) return '请输入文本。'
+      if (!algorithms) return '请指定算法。'
       text = CQCode.unescape(text)
       algorithms = CQCode.unescape(algorithms)
 
-      let cap, cryptos = []
+      let cap: RegExpMatchArray
+      const cryptos = []
       for (const algorithm of algorithms.split(/;\s*/g)) {
+        // eslint-disable-next-line no-cond-assign
         if (cap = algorithm.match(/^affine\(([+-]?\d+), *([+-]?\d+)\)$/i)) {
           const a = parseInt(cap[1])
           const b = parseInt(cap[2])
           cryptos.push(new Affine(a, b))
-        } else if (cap = algorithm.match(/^atbash$/i)) {
+        } else if (algorithm.match(/^atbash$/i)) {
           cryptos.push(new Affine(-1, 0))
-        } else if (cap = algorithm.match(/^rot13$/i)) {
+        } else if (algorithm.match(/^rot13$/i)) {
           cryptos.push(new Affine(1, 13))
+          // eslint-disable-next-line no-cond-assign
         } else if (cap = algorithm.match(/^caesar\(([+-]?\d+)\)/i)) {
           const b = parseInt(cap[1])
           cryptos.push(new Affine(1, b))
+          // eslint-disable-next-line no-cond-assign
         } else if (cap = algorithm.match(/^vigenere\(([a-z]+)\)/i)) {
           cryptos.push(new Vigenere(cap[1]))
+          // eslint-disable-next-line no-cond-assign
         } else if (cap = algorithm.match(/^two-?square\(([a-z]+), *([a-z]+)\)/i)) {
           cryptos.push(new TwoSquare(cap[1], cap[2], options.square))
+          // eslint-disable-next-line no-cond-assign
         } else if (cap = algorithm.match(/^four-?square\(([a-z]+), *([a-z]+)\)/i)) {
           cryptos.push(new FourSquare(cap[1], cap[2], options.square))
         } else {
-          return meta.$send(`无法识别算法 ${algorithm}，请使用“crypto -h”查看支持的算法列表。`)
+          return `无法识别算法 ${algorithm}，请使用“crypto -h”查看支持的算法列表。`
         }
       }
 
@@ -79,6 +85,6 @@ export function apply (ctx: Context) {
         }
       }
 
-      return meta.$send(text, true)
+      return text
     })
 }

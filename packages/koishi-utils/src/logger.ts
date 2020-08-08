@@ -1,8 +1,9 @@
 import { inspect, InspectOptions, format } from 'util'
+import { formatTimeShort } from './date'
 import { stderr } from 'supports-color'
 import { isatty } from 'tty'
 
-const isTTY = isatty(process.stderr['fd'])
+const isTTY = isatty(process.stderr.fd)
 
 const colors = stderr.level < 2 ? [6, 2, 3, 4, 5, 1] : [
   20, 21, 26, 27, 32, 33, 38, 39, 40, 41, 42, 43, 44, 45, 56, 57, 62,
@@ -18,22 +19,32 @@ type LogFunction = (format: any, ...param: any[]) => void
 
 export class Logger {
   static baseLevel = 2
+  static showDiff = false
   static levels: Record<string, number> = {}
+  static lastTime = 0
 
   static options: InspectOptions = {
     colors: isTTY,
   }
 
   static formatters: Record<string, (this: Logger, value: any) => string> = {
-    c: Logger.prototype.wrapColor,
+    c: Logger.prototype.color,
+    C: value => Logger.color(15, value, ';1'),
     o: value => inspect(value, Logger.options).replace(/\s*\n\s*/g, ' '),
   }
 
-  static create (name = '') {
-    return instances[name] || new Logger(name)
+  static create (name = '', showDiff = false) {
+    const logger = instances[name] || new Logger(name)
+    if (showDiff !== undefined) logger.showDiff = showDiff
+    return logger
   }
 
-  private colorCode: number
+  static color (code: number, value: any, decoration = '') {
+    if (!Logger.options.colors) return '' + value
+    return `\u001B[3${code < 8 ? code : '8;5;' + code}${decoration}m${value}\u001B[0m`
+  }
+
+  private code: number
   private displayName: string
 
   public success: LogFunction
@@ -42,17 +53,17 @@ export class Logger {
   public warn: LogFunction
   public debug: LogFunction
 
-  private constructor (private name: string) {
+  private constructor (private name: string, private showDiff = false) {
     let hash = 0
     for (let i = 0; i < name.length; i++) {
       hash = ((hash << 3) - hash) + name.charCodeAt(i)
       hash |= 0
     }
-    this.colorCode = colors[Math.abs(hash) % colors.length]
+    this.code = colors[Math.abs(hash) % colors.length]
     instances[this.name] = this
     this.displayName = name
     if (name) this.displayName += ' '
-    if (isTTY) this.displayName = this.wrapColor(this.displayName, ';1')
+    if (isTTY) this.displayName = this.color(this.displayName, ';1')
     this.createMethod('success', '[S] ', 1)
     this.createMethod('error', '[E] ', 1)
     this.createMethod('info', '[I] ', 2)
@@ -60,10 +71,8 @@ export class Logger {
     this.createMethod('debug', '[D] ', 3)
   }
 
-  private wrapColor (value: any, decoration = '') {
-    if (!Logger.options.colors) return '' + value
-    const code = this.colorCode
-    return `\u001B[3${code < 8 ? code : '8;5;' + code}${decoration}m${value}\u001B[0m`
+  private color (value: any, decoration = '') {
+    return Logger.color(this.code, value, decoration)
   }
 
   private createMethod (name: string, prefix: string, minLevel: number) {
@@ -100,6 +109,14 @@ export class Logger {
       }
       return match
     }).split('\n').join('\n    ')
+
+    if (Logger.showDiff || this.showDiff) {
+      const now = Date.now()
+      if (Logger.lastTime) {
+        args.push(this.color('+' + formatTimeShort(now - Logger.lastTime)))
+      }
+      Logger.lastTime = now
+    }
 
     return format(...args)
   }

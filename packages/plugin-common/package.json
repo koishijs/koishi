@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-common",
   "description": "Common plugins for Koishi",
-  "version": "3.0.0-beta.1",
+  "version": "3.0.0-beta.6",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -31,11 +31,11 @@
     "plugin"
   ],
   "devDependencies": {
-    "koishi-test-utils": "^4.0.0-beta.0"
+    "koishi-test-utils": "^4.0.0-beta.3"
   },
   "dependencies": {
     "axios": "^0.19.2",
-    "koishi-core": "^2.0.0-beta.1",
-    "koishi-utils": "^2.1.2"
+    "koishi-core": "^2.0.0-beta.6",
+    "koishi-utils": "^2.1.3"
   }
 }

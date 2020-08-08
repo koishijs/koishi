@@ -6,23 +6,19 @@ declare module 'koishi-core/dist/server' {
   interface BotOptions {
     label?: string
   }
-}
 
-declare module 'koishi-core/dist/sender' {
-  interface CQSender {
+  interface Bot {
     counter: number[]
   }
 }
 
 declare module 'koishi-core/dist/database' {
-  interface UserData {
+  interface User {
     lastCall: Date
   }
 }
 
-export interface StatusOptions {
-  sort?: (a: BotStatus, b: BotStatus) => number
-}
+export interface StatusOptions {}
 
 let usage = getCpuUsage()
 let appRate: number
@@ -36,7 +32,7 @@ function memoryRate () {
   }
 }
 
-function getCpuUsage() {
+function getCpuUsage () {
   let totalIdle = 0, totalTick = 0
   const cpuInfo = cpus()
   const usage = process.cpuUsage().user
@@ -60,6 +56,7 @@ function updateCpuUsage () {
   const totalDifference = newUsage.total - usage.total
   appRate = (newUsage.app - usage.app) / totalDifference
   usedRate = (newUsage.used - usage.used) / totalDifference
+  usage = newUsage
 }
 
 export interface Rate {
@@ -93,29 +90,24 @@ export function extendStatus (callback: StatusModifier) {
 
 const startTime = Date.now()
 
-const defaultConfig: StatusOptions = {
-  sort: () => 0,
-}
-
 export enum StatusCode {
   GOOD,
+  IDLE,
   CQ_ERROR,
   NET_ERROR,
-  IDLE,
 }
 
 export const name = 'status'
 
 export function apply (ctx: Context, config: StatusOptions) {
   const app = ctx.app
-  config = { ...defaultConfig, ...config }
 
-  app.on('before-command', ({ meta }) => {
-    meta.$user['lastCall'] = new Date()
+  app.on('before-command', ({ session }) => {
+    session.$user['lastCall'] = new Date()
   })
 
-  app.on('before-send', (meta) => {
-    const { counter } = app.bots[meta.selfId]
+  app.on('before-send', (session) => {
+    const { counter } = app.bots[session.selfId]
     counter[0] += 1
   })
 
@@ -158,10 +150,10 @@ export function apply (ctx: Context, config: StatusOptions) {
     .shortcut('你的状况', { prefix: true })
     .shortcut('运行情况', { prefix: true })
     .shortcut('运行状态', { prefix: true })
-    .action(async ({ meta }) => {
+    .action(async () => {
       const { bots: apps, cpu, memory, startTime, userCount, groupCount } = await getStatus(config)
 
-      const output = apps.sort(config.sort).map(({ label, selfId, code, rate }) => {
+      const output = apps.map(({ label, selfId, code, rate }) => {
         return `${label || selfId}：${code ? '无法连接' : `工作中（${rate}/min）`}`
       })
 
@@ -175,22 +167,19 @@ export function apply (ctx: Context, config: StatusOptions) {
         `内存使用率：${(memory.app * 100).toFixed()}% / ${(memory.total * 100).toFixed()}%`,
       )
 
-      return meta.$send(output.join('\n'))
+      return output.join('\n')
     })
 
   async function _getStatus (config: StatusOptions, extend: boolean) {
     const [[[{ 'COUNT(*)': userCount }], [{ 'COUNT(*)': groupCount }]], bots] = await Promise.all([
       app.database.query<[{ 'COUNT(*)': number }][]>([
-        `SELECT COUNT(*) FROM \`user\` WHERE CURRENT_TIMESTAMP() - \`lastCall\` < 1000 * 3600 * 24`,
-        `SELECT COUNT(*) FROM \`group\` WHERE \`assignee\``,
+        'SELECT COUNT(*) FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',
+        'SELECT COUNT(*) FROM `group` WHERE `assignee`',
       ].join(';')),
       Promise.all(app.bots.map(async (bot): Promise<BotStatus> => ({
         selfId: bot.selfId,
         label: bot.label,
-        code: bot._get ? await bot.getStatus().then(
-          ({ good }) => good ? StatusCode.GOOD : StatusCode.CQ_ERROR,
-          () => StatusCode.NET_ERROR,
-        ) : StatusCode.IDLE,
+        code: await bot.getStatus(),
         rate: bot.counter.slice(1).reduce((prev, curr) => prev + curr, 0),
       }))),
     ])

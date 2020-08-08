@@ -1,7 +1,12 @@
-import type { Context } from 'koishi-core'
-import { Webhooks } from '@octokit/webhooks'
+/* eslint-disable camelcase */
 
-export interface Config extends Partial<ConstructorParameters<typeof Webhooks>[0]> {
+import type { Context } from 'koishi-core'
+import { Webhooks, EventNames } from '@octokit/webhooks'
+import { Options, WebhookEvent } from '@octokit/webhooks/dist-types/types'
+import { GetWebhookPayloadTypeFromEvent } from '@octokit/webhooks/dist-types/generated/get-webhook-payload-type-from-event'
+import { type } from 'os'
+
+export interface Config extends Options<WebhookEvent> {
   repos?: Record<string, number[]>
 }
 
@@ -11,47 +16,47 @@ const defaultOptions: Config = {
   repos: {},
 }
 
-interface RepositoryPayload {
-  repository: Webhooks.PayloadRepository
-}
-
 export const name = 'github-webhook'
 
 export function apply (ctx: Context, config: Config = {}) {
+  if (!ctx.app.server.router) {
+    throw new Error('missing configuration "port"')
+  }
+
   config = { ...defaultOptions, ...config }
-  const webhook = new Webhooks(config as any)
+  const webhook = new Webhooks(config)
 
   ctx.app.server.router.post(config.path, (ctx, next) => {
     return webhook.middleware(ctx.req, ctx.res, next)
   })
 
-  function wrapHandler <T extends RepositoryPayload> (handler: (event: T) => void | string | Promise<void | string>) {
-    return async (event: Webhooks.WebhookEvent<T>) => {
-      const { repository } = event.payload
+  function registerHandler <T extends EventNames.All> (event: T, handler: (payload: GetWebhookPayloadTypeFromEvent<T>['payload']) => void | string | Promise<void | string>) {
+    webhook.on(event, async (callback) => {
+      const { repository } = callback.payload
       const ids = config.repos[repository.full_name]
       if (!ids) return
 
-      const message = await handler(event.payload)
+      const message = await handler(callback.payload)
       if (!message) return
       const groups = await ctx.database.getAllGroups(['id', 'assignee'])
       for (const { id, assignee } of groups) {
         if (ids.includes(id)) {
-          await ctx.bots[assignee].sendGroupMsgAsync(id, message)
+          await ctx.bots[assignee].sendGroupMsg(id, message)
         }
       }
-    }
+    })
   }
 
-  webhook.on('commit_comment.created', wrapHandler<Webhooks.WebhookPayloadCommitComment>(({ repository, comment }) => {
+  registerHandler('commit_comment.created', ({ repository, comment }) => {
     return [
       `[GitHub] Commit Comment (${repository.full_name})`,
       `User: ${comment.user.login}`,
       `URL: ${comment.html_url}`,
       comment.body.replace(/\n\s*\n/g, '\n'),
     ].join('\n')
-  }))
+  })
 
-  webhook.on('issues.opened', wrapHandler<Webhooks.WebhookPayloadIssues>(({ repository, issue }) => {
+  registerHandler('issues.opened', ({ repository, issue }) => {
     return [
       `[GitHub] Issue Opened (${repository.full_name}#${issue.number})`,
       `Title: ${issue.title}`,
@@ -59,18 +64,18 @@ export function apply (ctx: Context, config: Config = {}) {
       `URL: ${issue.html_url}`,
       issue.body.replace(/\n\s*\n/g, '\n'),
     ].join('\n')
-  }))
+  })
 
-  webhook.on('issue_comment.created', wrapHandler<Webhooks.WebhookPayloadIssueComment>(({ comment, issue, repository }) => {
+  registerHandler('issue_comment.created', ({ comment, issue, repository }) => {
     return [
       `[GitHub] ${issue['pull_request'] ? 'Pull Request' : 'Issue'} Comment (${repository.full_name}#${issue.number})`,
       `User: ${comment.user.login}`,
       `URL: ${comment.html_url}`,
       comment.body.replace(/\n\s*\n/g, '\n'),
     ].join('\n')
-  }))
+  })
 
-  webhook.on('pull_request.opened', wrapHandler<Webhooks.WebhookPayloadPullRequest>(({ repository, pull_request }) => {
+  registerHandler('pull_request.opened', ({ repository, pull_request }) => {
     return [
       `[GitHub] Pull Request Opened (${repository.full_name}#${pull_request.id})`,
       `${pull_request.base.label} <- ${pull_request.head.label}`,
@@ -78,9 +83,9 @@ export function apply (ctx: Context, config: Config = {}) {
       `URL: ${pull_request.html_url}`,
       pull_request.body.replace(/\n\s*\n/g, '\n'),
     ].join('\n')
-  }))
+  })
 
-  webhook.on('pull_request_review.submitted', wrapHandler<Webhooks.WebhookPayloadPullRequestReview>(({ repository, review, pull_request }) => {
+  registerHandler('pull_request_review.submitted', ({ repository, review, pull_request }) => {
     if (!review.body) return
     return [
       `[GitHub] Pull Request Review (${repository.full_name}#${pull_request.id})`,
@@ -89,9 +94,9 @@ export function apply (ctx: Context, config: Config = {}) {
       // @ts-ignore
       review.body.replace(/\n\s*\n/g, '\n'),
     ].join('\n')
-  }))
+  })
 
-  webhook.on('pull_request_review_comment.created', wrapHandler<Webhooks.WebhookPayloadPullRequestReviewComment>(({ repository, comment, pull_request }) => {
+  registerHandler('pull_request_review_comment.created', ({ repository, comment, pull_request }) => {
     return [
       `[GitHub] Pull Request Review Comment (${repository.full_name}#${pull_request.id})`,
       `Path: ${comment.path}`,
@@ -99,9 +104,9 @@ export function apply (ctx: Context, config: Config = {}) {
       `URL: ${comment.html_url}`,
       comment.body.replace(/\n\s*\n/g, '\n'),
     ].join('\n')
-  }))
+  })
 
-  webhook.on('push', wrapHandler<Webhooks.WebhookPayloadPush>(({ compare, pusher, commits, repository, ref, after }) => {
+  registerHandler('push', ({ compare, pusher, commits, repository, ref, after }) => {
     // do not show pull request merge
     if (/^0+$/.test(after)) return
 
@@ -117,5 +122,5 @@ export function apply (ctx: Context, config: Config = {}) {
       `Compare: ${compare}`,
       ...commits.map(c => c.message.replace(/\n\s*\n/g, '\n')),
     ].join('\n')
-  }))
+  })
 }

@@ -14,7 +14,7 @@ export default class Vigenere {
     for (const char of text) {
       const offset = getOffset(char)
       if (offset) {
-        result += String.fromCharCode((char.charCodeAt(0) - offset - 1 + this.codes[++ index % this.codes.length]) % 26 + offset + 1)
+        result += String.fromCharCode((char.charCodeAt(0) - offset - 1 + this.codes[++index % this.codes.length]) % 26 + offset + 1)
       } else {
         result += char
       }
@@ -28,7 +28,7 @@ export default class Vigenere {
     for (const char of text) {
       const offset = getOffset(char)
       if (offset) {
-        result += String.fromCharCode((char.charCodeAt(0) - offset + 25 - this.codes[++ index % this.codes.length]) % 26 + offset + 1)
+        result += String.fromCharCode((char.charCodeAt(0) - offset + 25 - this.codes[++index % this.codes.length]) % 26 + offset + 1)
       } else {
         result += char
       }

@@ -1,3 +1,5 @@
+/* eslint-disable quote-props */
+
 import { createHash } from 'crypto'
 import { Context } from 'koishi-core'
 import axios from 'axios'
@@ -32,7 +34,7 @@ export function apply (ctx: Context, config: TranslateOptions) {
     .option('-f, --from <lang>', '指定源语言，默认为自动匹配', { default: '' })
     .option('-t, --to <lang>', '指定目标语言，默认为中文（zh-CHS）', { default: 'zh-CHS' })
     .usage('支持的语言名包括 zh-CHS, en, ja, ko, fr, es, pt, it, ru, vi, de, ar, id, it。')
-    .action(async ({ meta, options }, text) => {
+    .action(async ({ session, options }, text) => {
       if (!text) return
       const salt = new Date().getTime()
       const q = String(text)
@@ -44,7 +46,7 @@ export function apply (ctx: Context, config: TranslateOptions) {
         params: { q, appKey, salt, from, to, sign },
       })
 
-      if (Number(data.errorCode)) return meta.$send(`翻译失败，错误码：${data.errorCode}`)
+      if (Number(data.errorCode)) return `翻译失败，错误码：${data.errorCode}`
 
       const [source, target] = data.l.split('2')
       const output = [
@@ -58,6 +60,6 @@ export function apply (ctx: Context, config: TranslateOptions) {
         }
         output.push(...data.basic.explains)
       }
-      return meta.$send(output.join('\n'))
+      return output.join('\n')
     })
 }

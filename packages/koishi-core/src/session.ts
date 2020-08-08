@@ -1,10 +1,11 @@
-import { User, Group, UserField, GroupField, createUser, UserData, GroupData } from './database'
-import { ParsedCommandLine, Command } from './command'
-import { isInteger, contain, observe, Observed } from 'koishi-utils'
+import { User, Group } from './database'
+import { ExecuteArgv, ParsedArgv, Command } from './command'
+import { isInteger, contain, observe, Observed, noop, Logger, defineProperty } from 'koishi-utils'
+import { NextFunction } from './context'
 import { App } from './app'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
-export type MessageType = 'private' | 'group' | 'discuss'
+export type MessageType = 'private' | 'group'
 
 export interface MetaTypeMap {
   message: MessageType
@@ -12,23 +13,17 @@ export interface MetaTypeMap {
   request: 'friend' | 'group'
   // eslint-disable-next-line camelcase
   meta_event: 'lifecycle' | 'heartbeat'
+  send: null
 }
 
 export interface SubTypeMap {
-  message: 'friend' | 'group' | 'discuss' | 'other' | 'normal' | 'anonymous' | 'notice'
+  message: 'friend' | 'group' | 'other' | 'normal' | 'anonymous' | 'notice'
   notice: 'set' | 'unset' | 'approve' | 'invite' | 'leave' | 'kick' | 'kick_me' | 'ban' | 'lift_ban'
   request: 'add' | 'invite'
   // eslint-disable-next-line camelcase
   meta_event: 'enable' | 'disable' | 'connect'
+  send: null
 }
-
-export enum contextTypes {
-  user = 0,
-  group = 1,
-  discuss = 2,
-}
-
-export type ContextType = keyof typeof contextTypes
 
 export interface ResponsePayload {
   delete?: boolean
@@ -43,26 +38,21 @@ export interface ResponsePayload {
   reason?: string
 }
 
-export interface ParsedMessage {
-  atMe?: boolean
-  nickname?: string
-  prefix?: string
-  message?: string
-}
-
 /** CQHTTP Meta Information */
-export interface Meta {
+export interface Meta <P extends PostType = PostType> {
+  // type
+  postType?: P
+  messageType?: MetaTypeMap[P & 'message']
+  noticeType?: MetaTypeMap[P & 'notice']
+  requestType?: MetaTypeMap[P & 'request']
+  metaEventType?: MetaTypeMap[P & 'meta_event']
+  sendType?: MetaTypeMap[P & 'send']
+  subType?: SubTypeMap[P]
+
   // basic properties
-  postType?: PostType
-  messageType?: MetaTypeMap['message']
-  noticeType?: MetaTypeMap['notice']
-  requestType?: MetaTypeMap['request']
-  metaEventType?: MetaTypeMap['meta_event']
-  subType?: SubTypeMap[keyof SubTypeMap]
   selfId?: number
   userId?: number
   groupId?: number
-  discussId?: number
   time?: number
 
   // message event
@@ -87,21 +77,25 @@ export interface Meta {
   interval?: number
 }
 
-export class Meta <U extends UserField = never, G extends GroupField = never> {
-  $user?: User<U>
-  $group?: Group<G>
-  $ctxId?: number
-  $ctxType?: ContextType
+const logger = Logger.create('session')
+
+export interface Session <U, G, P extends PostType = PostType> extends Meta <P> {}
+
+export class Session <U extends User.Field = never, G extends Group.Field = never> {
+  $user?: User.Observed<U>
+  $group?: Group.Observed<G>
   $app?: App
-  $argv?: ParsedCommandLine
-  $parsed?: ParsedMessage
-  $response?: (payload: ResponsePayload) => void
+  $argv?: ParsedArgv
+  $appel?: boolean
+  $prefix?: string = null
 
-  private $_delay?: number
-  private $_hooks?: (() => void)[] = []
+  private _delay?: number
+  private _queued = Promise.resolve()
+  private _hooks?: (() => void)[] = []
 
-  constructor (meta: Partial<Meta>) {
-    Object.assign(this, meta)
+  constructor (app: App, session: Partial<Session>) {
+    defineProperty(this, '$app', app)
+    Object.assign(this, session)
   }
 
   toJSON () {
@@ -116,6 +110,7 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
 
   get $username (): string {
     const idString = '' + this.userId
+    // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
     return this.$user && this.$user['name'] && idString !== this.$user['name']
       ? this.$user['name']
       : this.anonymous
@@ -126,21 +121,17 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
   }
 
   async $send (message: string, autoEscape = false) {
-    if (this.$app.options.preferSync) {
-      await this.$bot.sendMsg(this.messageType, this.$ctxId, message, autoEscape)
-      return
+    if (!message) return
+    if (this.groupId) {
+      await this.$bot.sendGroupMsg(this.groupId, message, autoEscape)
+    } else {
+      await this.$bot.sendPrivateMsg(this.userId, message, autoEscape)
     }
-    if (this.$response) {
-      const _meta = this.$bot._createSendMeta(this.messageType, this.$ctxType, this.$ctxId, message)
-      if (this.$app.bail(this, 'before-send', _meta)) return
-      return this.$response({ reply: message, autoEscape, atSender: false })
-    }
-    return this.$bot.sendMsgAsync(this.messageType, this.$ctxId, message, autoEscape)
   }
 
   $cancelQueued (delay = 0) {
-    this.$_hooks.forEach(Reflect.apply)
-    this.$_delay = delay
+    this._hooks.forEach(Reflect.apply)
+    this._delay = delay
   }
 
   async $sendQueued (message: string | void, delay?: number) {
@@ -149,25 +140,25 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
       const { queueDelay = 100 } = this.$app.options
       delay = typeof queueDelay === 'function' ? queueDelay(message, this) : queueDelay
     }
-    return new Promise<void>(async (resolve) => {
+    return this._queued = this._queued.then(() => new Promise<void>((resolve) => {
       const hook = () => {
         resolve()
         clearTimeout(timer)
-        const index = this.$_hooks.indexOf(hook)
-        if (index >= 0) this.$_hooks.splice(index, 1)
+        const index = this._hooks.indexOf(hook)
+        if (index >= 0) this._hooks.splice(index, 1)
       }
-      this.$_hooks.push(hook)
+      this._hooks.push(hook)
       const timer = setTimeout(async () => {
         await this.$send(message)
-        this.$_delay = delay
+        this._delay = delay
         hook()
-      }, this.$_delay || 0)
-    })
+      }, this._delay || 0)
+    }))
   }
 
   /** 在元数据上绑定一个可观测群实例 */
-  async observeGroup <T extends GroupField = never> (fields: Iterable<T> = []): Promise<Group<T | G>> {
-    const fieldSet = new Set<GroupField>(fields)
+  async $observeGroup <T extends Group.Field = never> (fields: Iterable<T> = []): Promise<Group.Observed<T | G>> {
+    const fieldSet = new Set<Group.Field>(fields)
     const { groupId, $argv, $group } = this
     if ($argv) Command.collect($argv, 'group', fieldSet)
 
@@ -203,8 +194,8 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
   }
 
   /** 在元数据上绑定一个可观测用户实例 */
-  async observeUser <T extends UserField = never> (fields: Iterable<T> = []): Promise<User<T | U>> {
-    const fieldSet = new Set<UserField>(fields)
+  async $observeUser <T extends User.Field = never> (fields: Iterable<T> = []): Promise<User.Observed<T | U>> {
+    const fieldSet = new Set<User.Field>(fields)
     const { userId, $argv, $user } = this
     if ($argv) Command.collect($argv, 'user', fieldSet)
 
@@ -228,7 +219,7 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
 
     // 确保匿名消息不会写回数据库
     if (this.anonymous) {
-      const user = observe(createUser(userId, defaultAuthority))
+      const user = observe(User.create(userId, defaultAuthority))
       return this.$user = user
     }
 
@@ -249,24 +240,67 @@ export class Meta <U extends UserField = never, G extends GroupField = never> {
     userCache[userId]._timestamp = timestamp
     return this.$user = user
   }
+
+  $resolve (argv: ExecuteArgv, next: NextFunction) {
+    if (typeof argv.command === 'string') {
+      argv.command = this.$app._commandMap[argv.command]
+    }
+    if (!argv.command) {
+      logger.warn('cannot resolve', argv)
+      return
+    }
+    if (!argv.command.context.match(this)) return
+    return { session: this, next, ...argv } as ParsedArgv
+  }
+
+  $parse (message: string, next: NextFunction = noop, forced = true) {
+    if (!message) return
+    const argv = this.$app.bail(this, 'parse', message, this, forced)
+    if (argv) return this.$resolve(argv, next)
+    if (forced) logger.warn('cannot parse', message)
+  }
+
+  $execute (argv: ExecuteArgv): Promise<void>
+  $execute (message: string, next?: NextFunction): Promise<void>
+  async $execute (...args: [ExecuteArgv] | [string, NextFunction?]) {
+    let argv: void | ParsedArgv, next: NextFunction
+    if (typeof args[0] === 'string') {
+      next = args[1] || noop
+      argv = this.$parse(args[0], next)
+    } else {
+      next = args[0].next || noop
+      argv = this.$resolve(args[0], next)
+    }
+    if (!argv) return next()
+
+    if (this.$app.database) {
+      if (this.messageType === 'group') {
+        await this.$observeGroup()
+      }
+      await this.$observeUser()
+    }
+
+    argv.session = this
+    return argv.command.execute(argv)
+  }
 }
 
-const userCache: Record<number, Observed<Partial<UserData & { _timestamp: number }>>> = {}
-const groupCache: Record<number, Observed<Partial<GroupData & { _timestamp: number }>>> = {}
+const userCache: Record<number, Observed<Partial<User & { _timestamp: number }>>> = {}
+const groupCache: Record<number, Observed<Partial<Group & { _timestamp: number }>>> = {}
 
 export class MessageBuffer {
   private buffer = ''
   private original = false
 
   public hasData = false
-  public send: Meta['$send']
-  public sendQueued: Meta['$sendQueued']
+  public send: Session['$send']
+  public sendQueued: Session['$sendQueued']
 
-  constructor (private meta: Meta) {
-    this.send = meta.$send.bind(meta)
-    this.sendQueued = meta.$sendQueued.bind(meta)
+  constructor (private session: Session) {
+    this.send = session.$send.bind(session)
+    this.sendQueued = session.$sendQueued.bind(session)
 
-    meta.$send = async (message: string) => {
+    session.$send = async (message: string) => {
       if (!message) return
       this.hasData = true
       if (this.original) {
@@ -275,7 +309,7 @@ export class MessageBuffer {
       this.buffer += message
     }
 
-    meta.$sendQueued = async (message, delay) => {
+    session.$sendQueued = async (message, delay) => {
       if (!message) return
       this.hasData = true
       if (this.original) {
@@ -305,11 +339,11 @@ export class MessageBuffer {
 
   async run <T> (callback: () => T | Promise<T>) {
     this.original = false
-    const send = this.meta.$send
-    const sendQueued = this.meta.$sendQueued
+    const send = this.session.$send
+    const sendQueued = this.session.$sendQueued
     const result = await callback()
-    this.meta.$sendQueued = sendQueued
-    this.meta.$send = send
+    this.session.$sendQueued = sendQueued
+    this.session.$send = send
     this.original = true
     return result
   }
@@ -318,8 +352,8 @@ export class MessageBuffer {
     this.write(message)
     await this.flush()
     this.original = true
-    delete this.meta.$send
-    delete this.meta.$sendQueued
+    delete this.session.$send
+    delete this.session.$sendQueued
   }
 }
 
@@ -368,20 +402,11 @@ export interface StatusInfo {
 /**
  * get context unique id
  * @example
- * getContextId(meta) // user123, group456, discuss789
+ * getContextId(session) // user123, group456
  */
-export function getContextId (meta: Meta) {
-  const type = meta.messageType === 'private' ? 'user' : meta.messageType
-  return type + meta[`${type}Id`]
-}
-
-/**
- * get session unique id
- * @example
- * getSessionId(meta) // 123user123, 123group456, 123discuss789
- */
-export function getSessionId (meta: Meta) {
-  return meta.$ctxId + meta.$ctxType + meta.userId
+export function getContextId (session: Session) {
+  const type = session.messageType === 'private' ? 'user' : session.messageType
+  return type + session[`${type}Id`]
 }
 
 export function getTargetId (target: string | number) {

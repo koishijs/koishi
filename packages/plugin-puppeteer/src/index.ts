@@ -1,7 +1,8 @@
 import { launch, LaunchOptions, Browser, Page } from 'puppeteer-core'
 import { Context } from 'koishi-core'
-import { Logger, defineProperty } from 'koishi-utils'
+import { Logger, defineProperty, noop } from 'koishi-utils'
 import { escape } from 'querystring'
+import { PNG } from 'pngjs'
 export * from './svg'
 
 declare module 'koishi-core/dist/app' {
@@ -33,19 +34,31 @@ Context.prototype.freePage = function freePage (this: Context, page: Page) {
   this.app._idlePages.push(page)
 }
 
-export interface Options extends LaunchOptions {
-  screenshot?: false
+export interface Config {
+  browser?: LaunchOptions
+  loadTimeout?: number
+  idleTimeout?: number
+  maxLength?: number
+  shot?: false
   latex?: false
 }
 
+export const defaultConfig: Config = {
+  loadTimeout: 10000, // 10s
+  idleTimeout: 30000, // 30s
+  maxLength: 1000000, // 1MB
+}
+
+const allowedProtocols = ['http', 'https']
+
 export const name = 'puppeteer'
 
-export function apply (ctx: Context, config: Options = {}) {
-  const logger = ctx.logger('puppeteer')
+export function apply (ctx: Context, config: Config = {}) {
+  config = { ...defaultConfig, ...config }
   defineProperty(ctx.app, '_idlePages', [])
 
   ctx.on('before-connect', async () => {
-    ctx.app.browser = await launch(config)
+    ctx.app.browser = await launch(config.browser)
     logger.info('browser launched')
   })
 
@@ -53,38 +66,76 @@ export function apply (ctx: Context, config: Options = {}) {
     await ctx.app.browser?.close()
   })
 
-  ctx.command('screenshot <url>', '网页截图', { authority: 2 })
-    .alias('shot')
+  ctx.command('shot <url>', '网页截图', { authority: 2 })
+    .alias('screenshot')
     .option('-f, --full-page', '对整个可滚动区域截图')
-    .action(async ({ meta, options }, url) => {
-      let page: Page
-      try {
-        page = await ctx.getPage()
-      } catch (error) {
-        return meta.$send('无法启动浏览器。')
+    .action(async ({ session, options }, url) => {
+      if (!url) return '请输入网址。'
+      const scheme = /^(\w+):\/\//.exec(url)
+      if (!scheme) {
+        url = 'http://' + url
+      } else if (!allowedProtocols.includes(scheme[1])) {
+        return '请输入正确的网址。'
       }
 
+      let loaded = false
+      const page = await ctx.getPage()
+      page.on('load', () => loaded = true)
+
       try {
-        await page.goto(url)
-        logger.debug(`navigated to ${url}`)
+        await new Promise((resolve, reject) => {
+          logger.debug(`navigating to ${url}`)
+          const _resolve = (...args: any[]) => {
+            clearTimeout(timer)
+            resolve()
+          }
+
+          page.goto(url, {
+            waitUntil: 'networkidle0',
+            timeout: config.idleTimeout,
+          }).then(_resolve, () => loaded ? _resolve() : reject())
+
+          const timer = setTimeout(() => {
+            return loaded ? session.$send('正在加载中，请稍等片刻~') : reject()
+          }, config.loadTimeout)
+        })
       } catch (error) {
         ctx.freePage(page)
-        return meta.$send('无法打开页面。')
+        logger.debug(error)
+        return '无法打开页面。'
       }
 
-      const data = await page.screenshot({
-        encoding: 'base64',
+      return page.screenshot({
         fullPage: options.fullPage,
+      }).then(async (buffer) => {
+        ctx.freePage(page)
+        if (buffer.byteLength > config.maxLength) {
+          await new Promise<PNG>((resolve, reject) => {
+            const png = new PNG()
+            png.parse(buffer, (error, data) => {
+              return error ? reject(error) : resolve(data)
+            })
+          }).then((data) => {
+            const width = data.width
+            const height = data.height * config.maxLength / buffer.byteLength
+            const png = new PNG({ width, height })
+            data.bitblt(png, 0, 0, width, height, 0, 0)
+            buffer = PNG.sync.write(png)
+          }).catch(noop)
+        }
+        return `[CQ:image,file=base64://${buffer.toString('base64')}]`
+      }, (error) => {
+        ctx.freePage(page)
+        logger.debug(error)
+        return '截图失败。'
       })
-      ctx.freePage(page)
-      return meta.$send(`[CQ:image,file=base64://${data}]`)
     })
 
   ctx.command('latex <code...>', 'LaTeX 渲染', { authority: 2 })
     .option('-s, --scale <scale>', '缩放比例', { default: 2 })
     .usage('渲染器由 https://www.zhihu.com/equation 提供。')
-    .action(async ({ meta, options }, tex) => {
-      if (!tex) return meta.$send('请输入要渲染的 LaTeX 代码。')
+    .action(async ({ session, options }, tex) => {
+      if (!tex) return '请输入要渲染的 LaTeX 代码。'
       const page = await ctx.getPage()
       const viewport = page.viewport()
       await page.setViewport({
@@ -97,13 +148,12 @@ export function apply (ctx: Context, config: Options = {}) {
       const inner = await svg.evaluate(node => node.innerHTML)
       const text = inner.match(/>([^<]+)<\/text>/)
       if (text) {
-        await meta.$send(text[1])
+        await session.$send(text[1])
       } else {
-        const base64 = await page.screenshot({
-          encoding: 'base64',
+        const buffer = await page.screenshot({
           clip: await svg.boundingBox(),
         })
-        await meta.$send(`[CQ:image,file=base64://${base64}]`)
+        await session.$send(`[CQ:image,file=base64://${buffer.toString('base64')}]`)
       }
       await page.setViewport(viewport)
       ctx.freePage(page)

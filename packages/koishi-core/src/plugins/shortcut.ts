@@ -56,16 +56,15 @@ export default function apply (ctx: Context) {
     }
   })
 
-  ctx.on('parse', (message, { $parsed }, forced) => {
-    if (forced && $parsed.prefix) return
-    const nickname = !forced || $parsed.nickname
+  ctx.on('parse', (message, { $prefix, $appel }, forced) => {
+    if (forced || $prefix) return
     for (const shortcut of ctx.app._shortcuts) {
       const { name, fuzzy, command, oneArg, prefix, options, args = [] } = shortcut
-      if (prefix && !nickname) continue
+      if (prefix && !$appel) continue
       if (!fuzzy && message !== name) continue
       if (message.startsWith(name)) {
         const _message = message.slice(name.length)
-        if (fuzzy && !nickname && _message.match(/^\S/)) continue
+        if (fuzzy && !$appel && _message.match(/^\S/)) continue
         const result: ParsedLine = oneArg
           ? { options: {}, args: [_message.trim()], rest: '' }
           : command.parse(_message.trim())

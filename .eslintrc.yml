@@ -16,21 +16,37 @@ rules:
   comma-dangle:
     - warn
     - always-multiline
+  curly: warn
+  dot-notation: off
+  generator-star-spacing:
+    - warn
+    - after
+  import/export: off
   # https://github.com/typescript-eslint/typescript-eslint/issues/618
   no-dupe-class-members: off
+  no-ex-assign: off
   # https://github.com/typescript-eslint/typescript-eslint/issues/239
   no-inner-declarations: off
   no-mixed-operators: off
-  # https://github.com/typescript-eslint/typescript-eslint/issues/1220
-  no-unused-expressions: off
   no-unused-vars: off
+  no-useless-escape: off
+  no-redeclare: off
   no-return-assign: off
   no-sequences: off
   # https://github.com/typescript-eslint/typescript-eslint/issues/1131
   no-useless-constructor: off
   one-var: off
   operator-linebreak: off
+  quotes:
+    - warn
+    - single
+    - avoidEscape: true
+      allowTemplateLiterals: true
   space-before-function-paren: off
+  yield-star-spacing:
+    - warn
+    - after
+  yoda: off
   '@typescript-eslint/no-unused-expressions': warn
   '@typescript-eslint/prefer-nullish-coalescing': warn
   '@typescript-eslint/prefer-optional-chain': warn

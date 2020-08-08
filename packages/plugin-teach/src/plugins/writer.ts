@@ -1,4 +1,4 @@
-import { Context, getTargetId, UserField } from 'koishi-core'
+import { Context, getTargetId, User } from 'koishi-core'
 import { isInteger, deduplicate } from 'koishi-utils'
 import { DialogueFlag, useFlag } from '../database'
 
@@ -12,7 +12,7 @@ declare module '../database' {
   interface Dialogue {
     writer: number
   }
-  
+
   namespace Dialogue {
     interface Argv {
       userMap?: Record<number, string>
@@ -38,13 +38,13 @@ export default function apply (ctx: Context) {
     if (test.writer !== undefined) conditionals.push(`\`writer\` = ${test.writer}`)
   })
 
-  ctx.on('dialogue/validate', ({ options, meta }) => {
+  ctx.on('dialogue/validate', ({ options, session }) => {
     if (options.anonymous) {
       options.writer = 0
     } else if (options.writer) {
       const writer = getTargetId(options.writer)
       if (!isInteger(writer) || writer <= 0) {
-        return meta.$send('参数 -w, --writer 错误，请检查指令语法。')
+        return session.$send('参数 -w, --writer 错误，请检查指令语法。')
       }
       options.writer = writer
     }
@@ -53,7 +53,7 @@ export default function apply (ctx: Context) {
   ctx.on('dialogue/before-detail', async (argv) => {
     argv.userMap = {}
     argv.authMap = {}
-    const { options, userMap, meta, dialogues, authMap } = argv
+    const { options, userMap, session, dialogues, authMap } = argv
     const writers = deduplicate(dialogues.map(d => d.writer).filter(Boolean))
     const fields: ('id' | 'name' | 'authority')[] = ['id', 'authority']
     if (options.writer && !writers.includes(options.writer)) writers.push(options.writer)
@@ -66,20 +66,18 @@ export default function apply (ctx: Context) {
       if (options.modify) continue
       if (user.id !== +user.name) {
         userMap[user.id] = user.name
-      } else if (user.id === meta.userId) {
-        userMap[user.id] = meta.sender.card || meta.sender.nickname
+      } else if (user.id === session.userId) {
+        userMap[user.id] = session.sender.card || session.sender.nickname
       } else {
         hasUnnamed = true
       }
     }
 
-    if (!options.modify && hasUnnamed && meta.messageType === 'group') {
+    if (!options.modify && hasUnnamed && session.messageType === 'group') {
       try {
-        const members = await meta.$bot.getGroupMemberList(meta.groupId)
-        for (const { userId, nickname, card } of members) {
-          if (!userMap[userId]) {
-            userMap[userId] = card || nickname
-          }
+        const memberMap = await session.$bot.getMemberMap(session.groupId)
+        for (const userId in memberMap) {
+          userMap[userId] = userMap[userId] || memberMap[userId]
         }
       } catch {}
     }
@@ -100,14 +98,14 @@ export default function apply (ctx: Context) {
   // 当添加和修改问答时，如果问答本身是代行模式或要将问答设置成代行模式，则需要权限高于问答原作者
   // 当使用 -w 时需要原作者权限高于目标用户
   // 锁定的问答需要 4 级权限才能修改
-  ctx.on('dialogue/permit', ({ meta, target, options, authMap }, { writer, flag }) => {
-    const { substitute, writer: newWriter } = options, { authority } = meta.$user
+  ctx.on('dialogue/permit', ({ session, target, options, authMap }, { writer, flag }) => {
+    const { substitute, writer: newWriter } = options, { authority } = session.$user
     return (
       (newWriter && authority <= authMap[newWriter]) ||
       ((flag & DialogueFlag.frozen) && authority < 4) ||
-      (writer !== meta.$user.id && (
+      (writer !== session.$user.id && (
         (target && authority < 3) || (
-          (substitute || (flag & DialogueFlag.substitute)) && 
+          (substitute || (flag & DialogueFlag.substitute)) &&
           (authority <= (authMap[writer] || 2))
         )
       ))
@@ -123,30 +121,30 @@ export default function apply (ctx: Context) {
     test.writer = options.writer
   })
 
-  ctx.on('dialogue/before-modify', async ({ meta, options, authMap }) => {
+  ctx.on('dialogue/before-modify', async ({ session, options, authMap }) => {
     if (options.writer && !(options.writer in authMap)) {
-      await meta.$send('指定的目标用户不存在。')
+      await session.$send('指定的目标用户不存在。')
       return true
     }
   })
 
-  ctx.on('dialogue/modify', ({ options, target, meta }, data) => {
+  ctx.on('dialogue/modify', ({ options, target, session }, data) => {
     if (options.writer !== undefined) {
       data.writer = options.writer
     } else if (!target) {
-      data.writer = meta.userId
+      data.writer = session.userId
     }
   })
 
   // 触发代行者模式
   ctx.on('dialogue/before-send', async (state) => {
-    const { dialogue, meta } = state
-    if (dialogue.flag & DialogueFlag.substitute && dialogue.writer && meta.userId !== dialogue.writer) {
-      const userFields = new Set<UserField>()
-      ctx.app.emit(meta, 'dialogue/before-attach-user', state, userFields)
-      meta.userId = dialogue.writer
-      meta.$user = null
-      await meta.observeUser(userFields)
+    const { dialogue, session } = state
+    if (dialogue.flag & DialogueFlag.substitute && dialogue.writer && session.userId !== dialogue.writer) {
+      const userFields = new Set<User.Field>()
+      ctx.app.emit(session, 'dialogue/before-attach-user', state, userFields)
+      session.userId = dialogue.writer
+      session.$user = null
+      await session.$observeUser(userFields)
     }
   })
 }

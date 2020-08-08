@@ -1,4 +1,4 @@
-import { Context, Meta, ParsedLine } from 'koishi-core'
+import { Context, Session, ParsedLine } from 'koishi-core'
 import { arrayTypes } from 'koishi-plugin-mysql'
 import { Observed, pick, difference, observe, isInteger, defineProperty, capitalize } from 'koishi-utils'
 
@@ -65,16 +65,16 @@ export namespace Dialogue {
   export interface Config {
     preserveHistory?: number
   }
-  
+
   export interface Argv {
     ctx: Context
-    meta: Meta<'authority' | 'id'>
+    session: Session<'authority' | 'id'>
     args: string[]
     config: Config
     target?: number[]
     options: Record<string, any>
     appellative?: boolean
-  
+
     // modify status
     dialogues?: Dialogue[]
     dialogueMap?: Record<number, Dialogue>
@@ -107,7 +107,7 @@ export namespace Dialogue {
     target[dialogue.id] = dialogue
     const time = Date.now()
     defineProperty(dialogue, '_timestamp', time)
-    defineProperty(dialogue, '_operator', argv.meta.userId)
+    defineProperty(dialogue, '_operator', argv.session.userId)
     defineProperty(dialogue, '_type', type)
     setTimeout(() => {
       if (history[dialogue.id]?._timestamp === time) {
@@ -173,15 +173,13 @@ export namespace Dialogue {
 const primitives = ['number', 'string', 'bigint', 'boolean', 'symbol']
 
 function clone <T> (source: T): T {
-  return primitives.includes(typeof source)
-    ? source
-    : Array.isArray(source)
-    ? source.map(clone) as any
-    : Object.fromEntries(Object.entries(source).map(([key, value]) => [key, clone(value)]))
+  return primitives.includes(typeof source) ? source
+    : Array.isArray(source) ? source.map(clone) as any
+      : Object.fromEntries(Object.entries(source).map(([key, value]) => [key, clone(value)]))
 }
 
 export function sendResult (argv: Dialogue.Argv, prefix?: string, suffix?: string) {
-  const { meta, options, uneditable, unknown, skipped, updated, target } = argv
+  const { session, options, uneditable, unknown, skipped, updated, target } = argv
   const { remove, revert, create } = options
   const output = []
   if (prefix) output.push(prefix)
@@ -198,7 +196,7 @@ export function sendResult (argv: Dialogue.Argv, prefix?: string, suffix?: strin
     output.push(`${revert ? '最近无人修改过' : '没有搜索到'}编号为 ${unknown.join(', ')} 的问答。`)
   }
   if (suffix) output.push(suffix)
-  return meta.$send(output.join('\n'))
+  return session.$send(output.join('\n'))
 }
 
 export function split (source: string) {

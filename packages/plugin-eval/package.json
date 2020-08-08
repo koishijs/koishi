@@ -1,9 +1,12 @@
 {
   "name": "koishi-plugin-eval",
-  "version": "2.0.0-beta.1",
+  "version": "2.0.0-beta.6",
   "description": "Execute JavaScript in Koishi",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
+  "engines": {
+    "node": ">=12.0.0"
+  },
   "files": [
     "dist"
   ],
@@ -11,12 +14,12 @@
   "author": "Shigma <1700011071@pku.edu.cn>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/plugins.git"
+    "url": "git+https://github.com/koishijs/koishi.git"
   },
   "bugs": {
-    "url": "https://github.com/koishijs/plugins/issues"
+    "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://github.com/koishijs/plugins/plugin-eval#readme",
+  "homepage": "https://github.com/koishijs/koishi/plugin-eval#readme",
   "keywords": [
     "bot",
     "qqbot",
@@ -30,7 +33,7 @@
     "code"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.0.0-beta.1",
-    "koishi-utils": "^2.1.2"
+    "koishi-core": "^2.0.0-beta.6",
+    "koishi-utils": "^2.1.3"
   }
 }

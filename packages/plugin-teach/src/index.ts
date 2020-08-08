@@ -1,4 +1,6 @@
-import { Context, ParsedArgv, Meta } from 'koishi-core'
+/* eslint-disable no-irregular-whitespace */
+
+import { Context, ExecuteArgv, Session } from 'koishi-core'
 import { Dialogue, parseTeachArgs } from './database'
 import internal from './internal'
 import receiver from './receiver'
@@ -36,7 +38,7 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-const cheatSheet = ({ $user: { authority } }: Meta<'authority'>) => `\
+const cheatSheet = ({ $user: { authority } }: Session<'authority'>) => `\
 教学系统基本用法：
 　添加问答：# 问题 回答
 　搜索回答：## 问题
@@ -99,15 +101,15 @@ export const name = 'teach'
 const teachRegExp = /^#(#?)((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|#?)(\s+|$)/
 
 export function apply (ctx: Context, config: Dialogue.Config = {}) {
-  ctx.on('parse', (source, meta, forced) => {
-    if (forced && meta.$parsed.prefix) return
+  ctx.on('parse', (source, session, forced) => {
+    if (!forced && session.$prefix) return
     const capture = source.match(teachRegExp)
     if (!capture) return
 
     const command = ctx.command('teach')
     const message = source.slice(capture[0].length)
     const { options, args, rest } = command.parse(message)
-    const argv: ParsedArgv = { options, args, meta, command, source, rest }
+    const argv: ExecuteArgv = { options, args, command, source, rest }
 
     if (capture[1] === '#') {
       options.search = true
@@ -127,11 +129,11 @@ export function apply (ctx: Context, config: Dialogue.Config = {}) {
     return argv
   })
 
-  ctx.command('teach', '添加教学对话', { authority: 2, checkUnknown: true, hideOptions: true })
+  ctx.command('teach [question] [answer]', '添加教学对话', { authority: 2, checkUnknown: true, hideOptions: true })
     .userFields(['authority', 'id'])
     .usage(cheatSheet)
-    .action(async ({ options, meta, args }) => {
-      const argv: Dialogue.Argv = { ctx, meta, args, config, options }
+    .action(async ({ options, session, args }) => {
+      const argv: Dialogue.Argv = { ctx, session, args, config, options }
       return ctx.bail('dialogue/validate', argv)
         || ctx.bail('dialogue/execute', argv)
         || create(argv)

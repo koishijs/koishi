@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-status",
   "description": "Show Status of Koishi",
-  "version": "2.0.0-beta.0",
+  "version": "2.0.0-beta.4",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -15,10 +15,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/plugins.git"
+    "url": "git+https://github.com/koishijs/koishi.git"
   },
   "bugs": {
-    "url": "https://github.com/koishijs/plugins/issues"
+    "url": "https://github.com/koishijs/koishi/issues"
   },
   "homepage": "https://github.com/koishijs/plugins/plugin-status#readme",
   "keywords": [
@@ -33,12 +33,12 @@
   ],
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",
-    "koishi-plugin-mysql": "^2.0.0-beta.0",
-    "koishi-test-utils": "^4.0.0-beta.0"
+    "koishi-plugin-mysql": "^2.0.0-beta.2",
+    "koishi-test-utils": "^4.0.0-beta.3"
   },
   "dependencies": {
     "cross-spawn": "^7.0.3",
-    "koishi-core": "^2.0.0-beta.1",
-    "koishi-utils": "^2.1.2"
+    "koishi-core": "^2.0.0-beta.6",
+    "koishi-utils": "^2.1.3"
   }
 }

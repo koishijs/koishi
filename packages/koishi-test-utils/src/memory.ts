@@ -1,4 +1,4 @@
-import { createUser, createGroup, Tables, TableType, App, extendDatabase } from 'koishi-core'
+import { User, Group, Tables, TableType, App, extendDatabase } from 'koishi-core'
 
 declare module 'koishi-core/dist/database' {
   interface Database extends MemoryDatabase {}
@@ -48,7 +48,7 @@ extendDatabase(MemoryDatabase, {
     const data = this.store.user[userId]
     if (data) return clone(data)
     if (authority < 0) return null
-    const fallback = createUser(userId, authority)
+    const fallback = User.create(userId, authority)
     if (authority) this.store.user[userId] = fallback
     return clone(fallback)
   },
@@ -71,7 +71,7 @@ extendDatabase(MemoryDatabase, {
     selfId = typeof selfId === 'number' ? selfId : 0
     const data = this.store.group[groupId]
     if (data) return clone(data)
-    const fallback = createGroup(groupId, selfId)
+    const fallback = Group.create(groupId, selfId)
     if (selfId) this.store.group[groupId] = fallback
     return clone(fallback)
   },

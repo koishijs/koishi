@@ -1,11 +1,12 @@
-import { Context, userFields, Meta } from 'koishi-core'
+import { Context, User, Session } from 'koishi-core'
 import { CQCode, Logger, defineProperty } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { wrap, Remote, proxy } from './comlink'
 import { WorkerAPI, WorkerConfig } from './worker'
+import { resolve } from 'path'
 
-declare module 'koishi-core/dist/meta' {
-  interface Meta {
+declare module 'koishi-core/dist/session' {
+  interface Session {
     _eval: boolean
   }
 }
@@ -22,7 +23,7 @@ const defaultConfig: Config = {
   resourceLimits: {
     maxOldGenerationSizeMb: 64,
     maxYoungGenerationSizeMb: 64,
-  }
+  },
 }
 
 const logger = Logger.create('eval')
@@ -32,22 +33,22 @@ export class MainAPI {
 
   public logCount = 0
 
-  constructor (private meta: Meta) {
+  constructor (private session: Session) {
 
   }
 
   send (message: string) {
     if (MainAPI.config.maxLogs > this.logCount++) {
-      return this.meta.$send(message)
+      return this.session.$sendQueued(message)
     }
   }
 
   async execute (message: string) {
-    const send = this.meta.$send
-    const sendQueued = this.meta.$sendQueued
-    await this.meta.$app.execute(message, this.meta)
-    this.meta.$sendQueued = sendQueued
-    this.meta.$send = send
+    const send = this.session.$send
+    const sendQueued = this.session.$sendQueued
+    await this.session.$execute(message)
+    this.session.$sendQueued = sendQueued
+    this.session.$send = send
   }
 }
 
@@ -60,10 +61,11 @@ export function apply (ctx: Context, config: Config = {}) {
     ...config.resourceLimits,
   }
 
+  let restart = true
   let worker: Worker
   let remote: Remote<WorkerAPI>
   function createWorker () {
-    worker = new Worker(__dirname + '/worker.js', {
+    worker = new Worker(resolve(__dirname, 'worker.js'), {
       workerData: config,
       resourceLimits,
     })
@@ -73,38 +75,44 @@ export function apply (ctx: Context, config: Config = {}) {
 
     worker.on('exit', (code) => {
       logger.info('exited with code', code)
-      createWorker()
+      if (restart) createWorker()
     })
   }
+
+  process.on('beforeExit', () => {
+    restart = false
+  })
 
   ctx.on('before-connect', () => {
     createWorker()
   })
 
-  ctx.command('eval <expression...>', '执行 JavaScript 脚本', { authority: 2 })
-    .userFields(userFields)
+  ctx.command('eval [expr...]', '执行 JavaScript 脚本', { authority: 2 })
+    // TODO can it be on demand?
+    .userFields(User.fields)
     .shortcut('>', { oneArg: true, fuzzy: true })
     .shortcut('>>', { oneArg: true, fuzzy: true, options: { output: true } })
     .option('-o, --output', '输出最后的结果')
     .option('-r, --restart', '重启子线程')
-    .action(async ({ meta, options }, expression) => {
+    .action(async ({ session, options }, expr) => {
       if (options.restart) {
         await worker.terminate()
-        return meta.$send('子线程已重启。')
+        return '子线程已重启。'
       }
 
-      if (!expression) return meta.$send('请输入要执行的脚本。')
-      if (meta._eval) return meta.$send('不能嵌套调用本指令。')
+      if (!expr) return '请输入要执行的脚本。'
+      if (session._eval) return '不能嵌套调用本指令。'
 
-      return new Promise((_resolve) => {
-        defineProperty(meta, '_eval', true)
+      return new Promise((resolve) => {
+        logger.debug(expr)
+        defineProperty(session, '_eval', true)
 
-        const main = new MainAPI(meta)
+        const main = new MainAPI(session)
         const timer = setTimeout(async () => {
           await worker.terminate()
-          resolve()
+          _resolve()
           if (!main.logCount) {
-            return meta.$send('执行超时。')
+            return session.$send('执行超时。')
           }
         }, config.timeout)
 
@@ -114,23 +122,26 @@ export function apply (ctx: Context, config: Config = {}) {
             logger.warn(error)
             message = '执行过程中遇到错误。'
           }
-          resolve()
-          return meta.$send(message)
+          _resolve()
+          return session.$send(message)
         }
         worker.on('error', listener)
 
         remote.eval({
-          meta: JSON.stringify(meta),
-          user: JSON.stringify(meta.$user),
+          session: JSON.stringify(session),
+          user: JSON.stringify(session.$user),
           output: options.output,
-          source: CQCode.unescape(expression),
-        }, proxy(main)).then(resolve)
+          source: CQCode.unescape(expr),
+        }, proxy(main)).then(_resolve, (error) => {
+          logger.warn(error)
+          _resolve()
+        })
 
-        function resolve () {
+        function _resolve () {
           clearTimeout(timer)
           worker.off('error', listener)
-          meta._eval = false
-          _resolve()
+          session._eval = false
+          resolve()
         }
       })
     })

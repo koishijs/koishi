@@ -1,8 +1,8 @@
-import { Context, Meta } from 'koishi-core'
+import { Context, Session } from 'koishi-core'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'repeater' (meta: Meta, state: RepeatState): void
+    'repeater' (session: Session, state: RepeatState): void
   }
 }
 
@@ -49,18 +49,18 @@ export default function apply (ctx: Context, options: RepeaterOptions = {}) {
     }
   })
 
-  ctx.prependMiddleware((meta, next) => {
-    const { message, groupId, userId, selfId } = meta
+  ctx.prependMiddleware((session, next) => {
+    const { message, groupId, userId, selfId } = session
 
     // never respond to messages from self
     if (ctx.app.bots[userId]) return
 
     const state = getState(groupId, selfId)
     const check = (handle: RepeatHandler) => {
-      const text = handle && handle(state, message, userId)
+      const text = handle?.(state, message, userId)
       return text && next(() => {
-        ctx.emit('repeater', meta, state)
-        return meta.$send(text)
+        ctx.emit('repeater', session, state)
+        return session.$send(text)
       })
     }
 

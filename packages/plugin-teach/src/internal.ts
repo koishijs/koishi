@@ -14,6 +14,7 @@ class RegExpError extends Error {
 
 const validator = new RegExpValidator({
   onEscapeCharacterSet (start, end, kind, negate) {
+    // eslint-disable-next-line curly
     if (kind === 'space') throw negate
       ? new RegExpError('四季酱会自动删除问题中的空白字符，你无需使用 \\s。')
       : new RegExpError('四季酱会自动删除问题中的空白字符，请使用 . 代替 \\S。')
@@ -54,9 +55,9 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     .option('=>, --redirect-dialogue <answer>', '重定向到其他问答')
 
   ctx.before('dialogue/validate', (argv) => {
-    const { options, meta, args } = argv
+    const { options, session, args } = argv
     if (args.length) {
-      return meta.$send('存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
+      return session.$send('存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
     }
 
     if (options.noRegexp) options.regexp = false
@@ -64,7 +65,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     const { answer } = options
     const question = options.question || ''
     if (/\[CQ:(?!face)/.test(question)) {
-      return meta.$send('问题必须是纯文本。')
+      return session.$send('问题必须是纯文本。')
     }
 
     const { unprefixed, prefixed, appellative } = config._stripQuestion(options.question)
@@ -116,30 +117,33 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   }
 
   ctx.on('dialogue/before-modify', async (argv) => {
-    const { options, meta, target, dialogues } = argv
+    const { options, session, target, dialogues } = argv
     const { question, answer, ignoreHint, regexp } = options
 
     // 修改问答时发现可能想改回答但是改了问题
     if (target && !ignoreHint && question && !answer && maybeAnswer(question, dialogues)) {
-      meta.$app.onceMiddleware(async (meta, next) => {
-        const message = meta.message.trim()
+      const dispose = session.$use(({ message }, next) => {
+        dispose()
+        message = message.trim()
         if (message && message !== '.' && message !== '。') return next()
         options.answer = options.original
         delete options.question
         return update(argv)
-      }, meta)
-      await meta.$send('推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -i 选项以忽略本提示。')
+      })
+      await session.$send('推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -i 选项以忽略本提示。')
       return true
     }
 
     // 如果问题疑似正则表达式但原问答不是正则匹配，提示添加 -x 选项
     if (question && !regexp && maybeRegExp(question) && !ignoreHint && (!target || !dialogues.every(d => d.flag & DialogueFlag.regexp))) {
-      meta.$app.onceMiddleware(async (meta, next) => {
-        const message = meta.message.trim()
+      const dispose = session.$use(({ message }, next) => {
+        dispose()
+        message = message.trim()
         if (message && message !== '.' && message !== '。') return next()
         options.regexp = true
-      }, meta)
-      await meta.$send(`推测你想${target ? '修改' : '添加'}的问题是正则表达式。发送空行或句号以添加 -x 选项，使用 -i 选项以忽略本提示。`)
+        return update(argv)
+      })
+      await session.$send(`推测你想${target ? '修改' : '添加'}的问题是正则表达式。发送空行或句号以添加 -x 选项，使用 -i 选项以忽略本提示。`)
       return true
     }
 
@@ -151,24 +155,24 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
       } catch (error) {
         if (!types.isNativeError(error)) {
           logger.warn(question, error)
-          await meta.$send('问题含有错误的或不支持的正则表达式语法。')
+          await session.$send('问题含有错误的或不支持的正则表达式语法。')
         } else if (error.name === 'RegExpError') {
-          await meta.$send(error.message)
+          await session.$send(error.message)
         } else {
           if (!error.message.startsWith('SyntaxError')) {
             logger.warn(question, error.stack)
           }
-          await meta.$send('问题含有错误的或不支持的正则表达式语法。')
+          await session.$send('问题含有错误的或不支持的正则表达式语法。')
         }
         return true
       }
     }
   })
 
-  ctx.on('dialogue/before-create', async ({ options, meta, target }) => {
+  ctx.on('dialogue/before-create', async ({ options, session, target }) => {
     // 添加问答时缺少问题或回答
     if (!target && !(options.question && options.answer)) {
-      await meta.$send('缺少问题或回答，请检查指令语法。')
+      await session.$send('缺少问题或回答，请检查指令语法。')
       return true
     }
   })

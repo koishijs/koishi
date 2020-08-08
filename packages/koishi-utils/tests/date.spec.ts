@@ -16,10 +16,10 @@ describe('Date Manipulations', () => {
 
   test('parse time', () => {
     expect(parseTime('')).toBe(0)
-    expect(parseTime('.5s')).toBe(Time.second / 2)
-    expect(parseTime('.5m')).toBe(Time.minute / 2)
-    expect(parseTime('.5h')).toBe(Time.hour / 2)
-    expect(parseTime('.5d')).toBe(Time.day / 2)
-    expect(parseTime('.5w')).toBe(Time.week / 2)
+    expect(parseTime('0.5s')).toBe(Time.second / 2)
+    expect(parseTime('0.5m')).toBe(Time.minute / 2)
+    expect(parseTime('0.5h')).toBe(Time.hour / 2)
+    expect(parseTime('0.5d')).toBe(Time.day / 2)
+    expect(parseTime('0.5w')).toBe(Time.week / 2)
   })
 })

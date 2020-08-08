@@ -68,12 +68,13 @@ class BrainFuck {
           input = input.slice(1)
           break
 
-        case 91: // '['
+        case 91: { // '['
           const next = this.findMatch(index)
           if (!this.data[this.pointer]) {
             index = next
           }
           break
+        }
 
         case 93: // ']'
           if (this.map[index] === undefined) {
@@ -117,15 +118,15 @@ export function apply (ctx: Context, config: BrainfuckOptions = {}) {
     .alias('bf')
     .option('-i, --input <input>', '设置输入', { isString: true, default: '' })
     .usage('语言介绍：http://www.muppetlabs.com/~breadbox/bf')
-    .action(async ({ meta, options }, source) => {
-      if (!source) return meta.$send('请输入源代码。')
+    .action(async ({ options }, source) => {
+      if (!source) return '请输入源代码。'
       source = CQCode.unescape(source)
       const input = CQCode.unescape(options.input)
       try {
-        return meta.$send(new BrainFuck(source, config).exec(input), true)
+        return new BrainFuck(source, config).exec(input), true
       } catch (error) {
         if (error.name === 'BFError') {
-          return meta.$send(error.message)
+          return error.message
         }
       }
     })

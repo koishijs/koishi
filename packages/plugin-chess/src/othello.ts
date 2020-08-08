@@ -40,8 +40,8 @@ function legal (state: State, x: number, y: number, value: -1 | 1) {
 }
 
 function hasLegalMove (state: State, value: -1 | 1) {
-  for (let i = 0; i < state.size; i ++) {
-    for (let j = 0; j < state.size; j ++) {
+  for (let i = 0; i < state.size; i++) {
+    for (let j = 0; j < state.size; j++) {
       if (!state.get(i, j) && legal(state, i, j, value)) return true
     }
   }
@@ -49,7 +49,7 @@ function hasLegalMove (state: State, value: -1 | 1) {
 
 function total (length: number, board: bigint) {
   let count = 0
-  for (let i = 0n; i < length; i ++) {
+  for (let i = 0n; i < length; i++) {
     count += board & 1n << i ? 1 : 0
   }
   return count
