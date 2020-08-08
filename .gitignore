@@ -1,6 +1,7 @@
 dist
 temp
 
+/addons
 /docs
 /shiki
 /coverage
