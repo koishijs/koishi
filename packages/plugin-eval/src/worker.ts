@@ -7,10 +7,12 @@ import { MainAPI } from '.'
 import { defineProperty } from 'koishi-utils'
 
 export interface WorkerConfig {
+  setupFiles?: string[]
   inspect?: InspectOptions
 }
 
 const config: WorkerConfig = {
+  ...workerData,
   inspect: {
     depth: 0,
     ...workerData.inspect,
@@ -41,6 +43,8 @@ export default class Global {
   //   return getUsage(name, this.main.$user)
   // }
 }
+
+config.setupFiles.forEach(require)
 
 interface EvalOptions {
   session: string

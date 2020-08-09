@@ -1,0 +1,40 @@
+{
+  "name": "koishi-plugin-addon",
+  "version": "1.0.0-beta.0",
+  "description": "Execute JavaScript in Koishi",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "LGPL-3.0-or-later",
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi/plugin-addon#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "addon",
+    "runner",
+    "code"
+  ],
+  "peerDependencies": {
+    "koishi-core": "^2.0.0-beta.7",
+    "koishi-plugin-eval": "^2.0.0-beta.7",
+    "koishi-utils": "^2.1.3"
+  }
+}

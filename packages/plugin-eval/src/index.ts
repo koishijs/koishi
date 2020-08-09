@@ -5,6 +5,12 @@ import { wrap, Remote, proxy } from './comlink'
 import { WorkerAPI, WorkerConfig } from './worker'
 import { resolve } from 'path'
 
+declare module 'koishi-core/dist/app' {
+  interface App {
+    evalConfig: Config
+  }
+}
+
 declare module 'koishi-core/dist/session' {
   interface Session {
     _eval: boolean
@@ -20,6 +26,7 @@ export interface Config extends WorkerConfig {
 const defaultConfig: Config = {
   timeout: 1000,
   maxLogs: 10,
+  setupFiles: [],
   resourceLimits: {
     maxOldGenerationSizeMb: 64,
     maxYoungGenerationSizeMb: 64,
@@ -33,9 +40,7 @@ export class MainAPI {
 
   public logCount = 0
 
-  constructor (private session: Session) {
-
-  }
+  constructor (private session: Session) {}
 
   send (message: string) {
     if (MainAPI.config.maxLogs > this.logCount++) {
@@ -60,6 +65,8 @@ export function apply (ctx: Context, config: Config = {}) {
     ...defaultConfig.resourceLimits,
     ...config.resourceLimits,
   }
+
+  defineProperty(ctx.app, 'evalConfig', config)
 
   let restart = true
   let worker: Worker

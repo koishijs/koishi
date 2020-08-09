@@ -14,11 +14,12 @@
 
     { "path": "./packages/plugin-mysql" },
     { "path": "./packages/plugin-mongo" },
+    { "path": "./packages/plugin-eval" },
     { "path": "./packages/plugin-puppeteer" },
 
+    { "path": "./packages/plugin-addon" },
     { "path": "./packages/plugin-chess" },
     { "path": "./packages/plugin-common" },
-    { "path": "./packages/plugin-eval" },
     { "path": "./packages/plugin-github-webhook" },
     { "path": "./packages/plugin-image-search" },
     { "path": "./packages/plugin-monitor" },
