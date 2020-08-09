@@ -24,12 +24,12 @@ declare module '../database' {
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
-    .option('-f, --frozen', '锁定这个问答', { authority: 4 })
-    .option('-F, --no-frozen', '解锁这个问答', { authority: 4 })
-    .option('-w, --writer <uid>', '添加或设置问题的作者')
-    .option('-W, --anonymous', '添加或设置匿名问题')
-    .option('-s, --substitute', '由教学者完成回答的执行')
-    .option('-S, --no-substitute', '由触发者完成回答的执行')
+    .option('frozen', '-f, --frozen  锁定这个问答', { authority: 4 })
+    .option('frozen', '-F, --no-frozen  解锁这个问答', { authority: 4, value: false })
+    .option('writer', '-w, --writer <uid>  添加或设置问题的作者')
+    .option('writer', '-W, --anonymous  添加或设置匿名问题', { value: 0 })
+    .option('substitute', '-s, --substitute  由教学者完成回答的执行')
+    .option('substitute', '-S, --no-substitute  由触发者完成回答的执行', { value: false })
 
   useFlag(ctx, 'frozen')
   useFlag(ctx, 'substitute')
@@ -39,9 +39,7 @@ export default function apply (ctx: Context) {
   })
 
   ctx.on('dialogue/validate', ({ options, session }) => {
-    if (options.anonymous) {
-      options.writer = 0
-    } else if (options.writer) {
+    if (options.writer) {
       const writer = getTargetId(options.writer)
       if (!isInteger(writer) || writer <= 0) {
         return session.$send('参数 -w, --writer 错误，请检查指令语法。')

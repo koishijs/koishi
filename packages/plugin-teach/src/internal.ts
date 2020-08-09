@@ -47,12 +47,12 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   const logger = Logger.create('teach')
 
   ctx.command('teach')
-    .option('--question <question>', '问题', { isString: true })
-    .option('--answer <answer>', '回答', { isString: true })
-    .option('-i, --ignore-hint', '忽略智能提示')
-    .option('-x, --regexp', '使用正则表达式匹配', { authority: 3 })
-    .option('-X, --no-regexp', '取消使用正则表达式匹配', { authority: 3 })
-    .option('=>, --redirect-dialogue <answer>', '重定向到其他问答')
+    .option('question', '--question <question>  问题', { type: 'string' })
+    .option('answer', '--answer <answer>  回答', { type: 'string' })
+    .option('ignore', '-i, --ignore-hint  忽略智能提示')
+    .option('regexp', '-x, --regexp  使用正则表达式匹配', { authority: 3 })
+    .option('regexp', '-X, --no-regexp  取消使用正则表达式匹配', { authority: 3, value: false })
+    .option('redirect', '=>, --redirect <answer>  重定向到其他问答')
 
   ctx.before('dialogue/validate', (argv) => {
     const { options, session, args } = argv
@@ -194,7 +194,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/validate', ({ options }) => {
-    if (options.redirectDialogue) {
+    if (options.redirect) {
       options.answer = `%{dialogue ${options.answer}}`
     }
   })

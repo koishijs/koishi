@@ -21,8 +21,8 @@ export function isHours (value: string) {
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
-    .option('-t, --start-time, --match-time <time>', '起始时间', { isString: true, validate: isHours })
-    .option('-T, --end-time, --mismatch-time <time>', '结束时间', { isString: true, validate: isHours })
+    .option('startTime', '-t, --start-time <time>  起始时间', { type: 'string', validate: isHours })
+    .option('endTime', '-T, --end-time <time>  结束时间', { type: 'string', validate: isHours })
 
   function parseTime (source: string) {
     const [hours, minutes = '0'] = source.split(':')
@@ -30,8 +30,8 @@ export default function apply (ctx: Context) {
   }
 
   ctx.on('dialogue/before-search', ({ options }, test) => {
-    if (options.matchTime !== undefined) test.matchTime = parseTime(options.matchTime)
-    if (options.mismatchTime !== undefined) test.mismatchTime = parseTime(options.mismatchTime)
+    if (options.startTime !== undefined) test.matchTime = parseTime(options.startTime)
+    if (options.endTime !== undefined) test.mismatchTime = parseTime(options.endTime)
   })
 
   ctx.on('dialogue/receive', (state) => {

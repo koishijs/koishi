@@ -25,12 +25,12 @@ declare module '../database' {
 
 export default function apply (ctx: Context, config: Dialogue.Config) {
   ctx.command('teach')
-    .option('-d, --disable', '在当前环境下禁用问答')
-    .option('-D, --disable-global', '在所有环境下禁用问答', { authority: 3 })
-    .option('-e, --enable', '在当前环境下启用问答')
-    .option('-E, --enable-global', '在所有环境下启用问答', { authority: 3 })
-    .option('-g, --groups <gids>', '设置具体的生效环境', { authority: 3, isString: true, validate: RE_GROUPS })
-    .option('-G, --global', '无视上下文搜索')
+    .option('disable', '-d, --disable  在当前环境下禁用问答')
+    .option('disableGlobal', '-D, --disable-global  在所有环境下禁用问答', { authority: 3 })
+    .option('enable', '-e, --enable  在当前环境下启用问答')
+    .option('enableGlobal', '-E, --enable-global  在所有环境下启用问答', { authority: 3 })
+    .option('groups', '-g, --groups <gids>  设置具体的生效环境', { authority: 3, type: 'string', validate: RE_GROUPS })
+    .option('global', '-G, --global  无视上下文搜索')
 
   ctx.on('dialogue/before-fetch', (test, conditionals) => {
     if (!test.groups || !test.groups.length) return

@@ -25,12 +25,12 @@ declare module './database' {
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
-    .option('-v, --review', '查看最近的修改')
-    .option('-V, --revert', '回退最近的修改')
-    .option('-l, --include-last [count]', '包含最近的修改数量', { isString: true, validate: isIntegerOrInterval })
-    .option('-L, --exclude-last [count]', '排除最近的修改数量', { isString: true, validate: isIntegerOrInterval })
-    .option('--target <ids>', '查看或修改已有问题', { isString: true, validate: RE_DIALOGUES })
-    .option('-r, --remove', '彻底删除问答')
+    .option('review', '-v, --review  查看最近的修改')
+    .option('revert', '-V, --revert  回退最近的修改')
+    .option('includeLast', '-l, --include-last [count]  包含最近的修改数量', { type: 'string', validate: isIntegerOrInterval })
+    .option('excludeLast', '-L, --exclude-last [count]  排除最近的修改数量', { type: 'string', validate: isIntegerOrInterval })
+    .option('target', '--target <ids>  查看或修改已有问题', { type: 'string', validate: RE_DIALOGUES })
+    .option('remove', '-r, --remove  彻底删除问答')
 
   ctx.before('dialogue/execute', (argv) => {
     const { remove, revert, target } = argv.options

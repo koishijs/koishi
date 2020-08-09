@@ -7,11 +7,11 @@ import { CQCode } from 'koishi-utils'
 
 export function apply (ctx: Context) {
   ctx.command('tools/crypto <algorithm> <text>', '加密解密工具')
-    .option('-e, --encrypt', '加密模式（默认）')
-    .option('-d, --decrypt', '解密模式')
-    .option('-c, --case <maintain|upper|lower>', '控制输出字母的大小写，默认为 maintain')
-    .option('-p, --preserve <all|word|alpha|nonspace>', '控制要保留的字符，默认为 all')
-    .option('-s, --square <25q|25ij|36>', '设置方格填充规则，默认为 25ij', { default: '25ij' })
+    .option('encrypt', '-e, --encrypt  加密模式（默认）')
+    .option('decrypt', '-d, --decrypt  解密模式')
+    .option('case', '-c, --case <maintain|upper|lower>  控制输出字母的大小写，默认为 maintain')
+    .option('preserve', '-p, --preserve <all|word|alpha|nonspace>  控制要保留的字符，默认为 all')
+    .option('square', '-s, --square <25q|25ij|36>  设置方格填充规则，默认为 25ij', { fallback: '25ij' })
     .usage([
       '当前支持的算法有：',
       '    affine(a,b)',

@@ -41,14 +41,14 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   const { successorTimeout = 20000 } = config
 
   ctx.command('teach')
-    .option('<, --set-pred <ids>', '设置前置问题', { isString: true, validate: RE_DIALOGUES })
-    .option('<<, --add-pred <ids>', '添加前置问题', { isString: true, validate: RE_DIALOGUES })
-    .option('>, --set-succ <ids>', '设置后继问题', { isString: true, validate: RE_DIALOGUES })
-    .option('>>, --add-succ <ids>', '添加后继问题', { isString: true, validate: RE_DIALOGUES })
-    .option('>#, --create-successor <op...>', '创建并添加后继问答')
-    .option('-z, --successor-timeout [time]', '设置允许触发后继的时间', { validate: isPositiveInteger })
-    .option('-c, --context', '允许后继问答被任何人触发')
-    .option('-C, --no-context', '后继问答只能被同一人触发')
+    .option('setPred', '< <ids>  设置前置问题', { type: 'string', validate: RE_DIALOGUES })
+    .option('addPred', '<< <ids>  添加前置问题', { type: 'string', validate: RE_DIALOGUES })
+    .option('setSucc', '> <ids>  设置后继问题', { type: 'string', validate: RE_DIALOGUES })
+    .option('addSucc', '>> <ids>  添加后继问题', { type: 'string', validate: RE_DIALOGUES })
+    .option('createSuccessor', '># <op...>  创建并添加后继问答')
+    .option('successorTimeout', '-z [time]  设置允许触发后继的时间', { validate: isPositiveInteger })
+    .option('context', '-c  允许后继问答被任何人触发')
+    .option('context', '-C  后继问答只能被同一人触发', { value: false })
 
   useFlag(ctx, 'context')
 
@@ -153,7 +153,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     if (!dialogues.length) return session.$send('没有搜索到任何问答。')
     const command = ctx.command('teach')
     const argv = { ...command.parse(createSuccessor), session, command }
-    const target = argv.options.setPred = dialogues.map(d => d.id).join(',')
+    const target = argv.options['setPred'] = dialogues.map(d => d.id).join(',')
     argv.source = `# ${createSuccessor} < ${target}`
     parseTeachArgs(argv)
     await command.execute(session.$argv)

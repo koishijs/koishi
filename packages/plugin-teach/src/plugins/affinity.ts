@@ -36,16 +36,16 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   if (!getAffinity) return
 
   ctx.command('teach')
-    .option('-a, --min-affinity, --match-affinity <aff>', '最小好感度', { validate: isShortInteger })
-    .option('-A, --max-affinity, --mismatch-affinity <aff>', '最大好感度', { validate: isShortInteger })
+    .option('minAffinity', '-a, --min-affinity <aff>  最小好感度', { validate: isShortInteger })
+    .option('maxAffinity', '-A, --max-affinity <aff>  最大好感度', { validate: isShortInteger })
 
   ctx.on('dialogue/validate', ({ options }) => {
     if (options.maxAffinity === 0) options.maxAffinity = 32768
   })
 
   ctx.on('dialogue/before-search', ({ options }, test) => {
-    if (options.matchAffinity !== undefined) test.matchAffinity = options.matchAffinity
-    if (options.mismatchAffinity !== undefined) test.mismatchAffinity = options.mismatchAffinity
+    if (options.minAffinity !== undefined) test.matchAffinity = options.minAffinity
+    if (options.maxAffinity !== undefined) test.mismatchAffinity = options.maxAffinity
   })
 
   function matchAffinity (affinity: number) {

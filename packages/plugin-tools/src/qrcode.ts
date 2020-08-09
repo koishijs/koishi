@@ -3,11 +3,11 @@ import { toDataURL } from 'qrcode'
 
 export function apply (ctx: Context) {
   ctx.command('tools/qrcode <text...>', '生成二维码')
-    .option('-m, --margin <margin>', '边界尺寸', { default: 4 })
-    .option('-s, --scale <scale>', '比例系数', { default: 4 })
-    .option('-w, --width <width>', '图片大小', { default: undefined })
-    .option('-d, --dark <color>', '暗部颜色')
-    .option('-l, --light <color>', '亮部颜色')
+    .option('margin', '-m, --margin <margin>  边界尺寸', { fallback: 4 })
+    .option('scale', '-s, --scale <scale>  比例系数', { fallback: 4 })
+    .option('width', '-w, --width <width>  图片大小')
+    .option('dark', '-d, --dark <color>  暗部颜色')
+    .option('light', '-l, --light <color>  亮部颜色')
     .action(async ({ options }, text) => {
       if (!text) {
         return '请输入源文本。'

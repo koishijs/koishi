@@ -18,8 +18,8 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   const { appellationTimeout = 20000 } = config
 
   ctx.command('teach')
-    .option('-p, --probability-strict <prob>', '设置问题的触发权重', { validate: isZeroToOne })
-    .option('-P, --probability-appellative <prob>', '设置被称呼时问题的触发权重', { validate: isZeroToOne })
+    .option('probabilityStrict', '-p <prob>  设置问题的触发权重', { validate: isZeroToOne })
+    .option('probabilityAppellative', '-P <prob>  设置被称呼时问题的触发权重', { validate: isZeroToOne })
 
   ctx.before('dialogue/modify', ({ options, target, appellative }, data) => {
     if (!target && appellative) {

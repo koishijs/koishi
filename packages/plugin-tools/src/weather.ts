@@ -7,8 +7,8 @@ const products = ['astro', 'civil', 'civillight', 'meteo', 'two']
 
 export function apply (ctx: Context) {
   ctx.command('tools/weather <longitude> <latitude>', '查询天气')
-    .option('-p, --product <product>', `晴天钟产品选择，可为 ${products.join(', ')}`, { default: 'civil' })
-    .action(async ({ session, options }, lon, lat) => {
+    .option('product', `-p, --product <product>  晴天钟产品选择，可为 ${products.join(  )}`, { fallback: 'civil' })
+    .action(async ({ options }, lon, lat) => {
       if (!lon || !lat) return '请输入经纬度。'
       const { product } = options
       if (!products.includes(options.product)) {

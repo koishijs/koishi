@@ -36,11 +36,11 @@ declare module './database' {
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
-    .option('--search', '搜索已有问答', { notUsage: true })
-    .option('/, --page <page>', '设置搜索结果的页码', { validate: isPositiveInteger })
-    .option('--auto-merge', '自动合并相同的问题和回答')
-    .option('-R, --no-recursive', '禁用递归查询', { default: true })
-    .option('|, --pipe <op...>', '对每个搜索结果执行操作')
+    .option('search', '--search  搜索已有问答', { notUsage: true })
+    .option('page', '/, --page <page>  设置搜索结果的页码', { validate: isPositiveInteger })
+    .option('autoMerge', '--auto-merge  自动合并相同的问题和回答')
+    .option('recursive', '-R, --no-recursive  禁用递归查询', { fallback: true, value: false })
+    .option('pipe', '|, --pipe <op...>  对每个搜索结果执行操作')
 
   ctx.before('dialogue/execute', (argv) => {
     const { search, noArgs } = argv.options
@@ -167,7 +167,7 @@ async function showSearch (argv: Dialogue.Argv) {
     if (!dialogues.length) return session.$send('没有搜索到任何问答。')
     const command = ctx.command('teach')
     const argv = { ...command.parse(pipe), session, command }
-    const target = argv.options.target = dialogues.map(d => d.id).join(',')
+    const target = argv.options['target'] = dialogues.map(d => d.id).join(',')
     argv.source = `#${target} ${pipe}`
     parseTeachArgs(argv)
     return command.execute(argv)

@@ -84,10 +84,19 @@ describe('option', () => {
 
   test('valued options', () => {
     cmd = app.command('cmd2 <foo> [bar...]')
-    cmd.option('alpha', '-A', { value: false })
+    cmd.option('alpha', '-A, --no-alpha', { value: false })
     cmd.option('gamma', '-C', { value: 1 })
-    expect(cmd.parse('-A')).toMatchObject({ options: { alpha: false, gamma: 0 } })
+    expect(cmd.parse('-A')).toMatchObject({ options: { alpha: false } })
+    expect(cmd.parse('-a')).toMatchObject({ options: { alpha: true } })
+    expect(cmd.parse('--alpha')).toMatchObject({ options: { alpha: true } })
+    expect(cmd.parse('--no-alpha')).toMatchObject({ options: { alpha: false } })
     expect(cmd.parse('-C')).toMatchObject({ options: { gamma: 1 } })
+    expect(cmd.parse('')).toEqual({
+      options: { gamma: 0 },
+      args: [],
+      rest: '',
+      source: expect.anything(),
+    })
   })
 })
 
