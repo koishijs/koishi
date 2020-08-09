@@ -222,12 +222,12 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
   }
 
   private _registerOption (name: string, def: string, config?: Partial<CommandOption>) {
-    const param = '--' + paramCase(name)
+    const param = paramCase(name)
     const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
     const desc = def.slice(decl.length)
     let syntax = decl.replace(/(?<=^|\s)(<[^<]+>|\[[^[]+\]).*/, '')
     const bracket = decl.slice(syntax.length)
-    syntax = syntax.trim() || param
+    syntax = syntax.trim() || '--' + param
 
     let names: string[] = []
     let symbols: string[] = []
@@ -242,7 +242,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     }
 
     if (!config.value && !names.includes(param)) {
-      def = syntax + ', ' + param + '  ' + bracket + desc
+      syntax += ', --' + param
     }
 
     let option = this._options[name] || (this._options[name] = {
@@ -250,7 +250,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
       ...config,
       name,
       values: {},
-      description: def,
+      description: syntax + '  ' + bracket + desc,
       greedy: bracket.includes('...'),
     })
 
