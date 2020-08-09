@@ -254,8 +254,8 @@ export function parseTeachArgs ({ args, options }: Partial<ParsedLine>) {
   }
 
   defineProperty(options, 'noArgs', !args.length)
-  options.question = parseArgument()
-  options.answer = options.redirectDialogue || parseArgument()
+  options['question'] = parseArgument()
+  options['answer'] = options['redirect'] || parseArgument()
 }
 
 export function isPositiveInteger (value: any) {

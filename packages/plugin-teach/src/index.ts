@@ -112,17 +112,17 @@ export function apply (ctx: Context, config: Dialogue.Config = {}) {
     const argv: ExecuteArgv = { options, args, command, source, rest }
 
     if (capture[1] === '#') {
-      options.search = true
+      options['search'] = true
       if (capture[2] === '#') {
-        options.autoMerge = true
-        options.x = options.regexp = true
+        options['autoMerge'] = true
+        options['regexp'] = true
       }
     } else if (!capture[2] && !message) {
-      options.help = true
+      options['help'] = true
     }
 
     if (capture[2] && capture[2] !== '#') {
-      options.target = capture[2]
+      options['target'] = capture[2]
     }
 
     parseTeachArgs(argv)

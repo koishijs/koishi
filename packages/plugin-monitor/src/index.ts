@@ -95,11 +95,11 @@ export function apply (ctx: Context) {
     })
 
   cmd.subcommand('.update <name>', '修改已有账号信息', { authority: 3 })
-    .option('addName', '-n, --add-name <name>  添加账号名', { isString: true, default: '' })
-    .option('removeName', '-N, --remove-name <name>  删除账号名', { isString: true, default: '' })
-    .option('bilibili', '-b, --bilibili <id>  设置 Bilibili 账号', { isString: true })
-    .option('mirrativ', '-m, --mirrativ <id>  设置 Mirrativ 账号', { isString: true })
-    .option('twitcasting', '-t, --twitcasting <id>  设置 TwitCasting 账号', { isString: true })
+    .option('addName', '-n, --add-name <name>  添加账号名', { type: 'string', fallback: '' })
+    .option('removeName', '-N, --remove-name <name>  删除账号名', { type: 'string', fallback: '' })
+    .option('bilibili', '-b, --bilibili <id>  设置 Bilibili 账号', { type: 'string' })
+    .option('mirrativ', '-m, --mirrativ <id>  设置 Mirrativ 账号', { type: 'string' })
+    .option('twitcasting', '-t, --twitcasting <id>  设置 TwitCasting 账号', { type: 'string' })
     .action(async ({ session, options }, name: string) => {
       if (!name) return '请输入账号。'
       name = String(name)

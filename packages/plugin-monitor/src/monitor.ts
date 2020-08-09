@@ -2,7 +2,7 @@ import { Group, App } from 'koishi-core'
 import { CQCode, Logger } from 'koishi-utils'
 import { Subscribe } from './database'
 import bilibili from './bilibili'
-import twitCasting from './twitCasting'
+import twitcasting from './twitCasting'
 import mirrativ from './mirrativ'
 import axios from 'axios'
 
@@ -26,7 +26,7 @@ export async function get <T> (url: string) {
   return data
 }
 
-const platforms = { bilibili, twitCasting, mirrativ } as const
+const platforms = { bilibili, twitcasting, mirrativ } as const
 
 type LiveType = keyof typeof platforms
 type StatusKey = 'bilibiliStatus' | 'twitCastingStatus' | 'mirrativStatus'

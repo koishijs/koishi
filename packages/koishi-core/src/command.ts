@@ -197,15 +197,15 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return `Command <${this.name}>`
   }
 
-  userFields <T extends User.Field = never> (fields: Iterable<T>): Command<U | T, G>
-  userFields <T extends User.Field = never> (fields: (argv: ParsedArgv, fields: Set<User.Field>) => Iterable<T>): Command<U | T, G>
+  userFields <T extends User.Field = never> (fields: Iterable<T>): Command<U | T, G, O>
+  userFields <T extends User.Field = never> (fields: (argv: ParsedArgv<never, never, O>, fields: Set<User.Field>) => Iterable<T>): Command<U | T, G, O>
   userFields (fields: ArgvInferred<User.Field>) {
     this._userFields.push(fields)
     return this
   }
 
-  groupFields <T extends Group.Field = never> (fields: Iterable<T>): Command<U, G | T>
-  groupFields <T extends Group.Field = never> (fields: (argv: ParsedArgv, fields: Set<Group.Field>) => Iterable<T>): Command<U, G | T>
+  groupFields <T extends Group.Field = never> (fields: Iterable<T>): Command<U, G | T, O>
+  groupFields <T extends Group.Field = never> (fields: (argv: ParsedArgv<never, never, O>, fields: Set<Group.Field>) => Iterable<T>): Command<U, G | T, O>
   groupFields (fields: ArgvInferred<Group.Field>) {
     this._groupFields.push(fields)
     return this
@@ -231,7 +231,6 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     let symbols: string[] = []
     for (let syntax of desc.split(',')) {
       syntax = syntax.trimStart().split(' ', 1)[0]
-      // non-prefixed aliases will prioritize arguments
       const name = syntax.replace(/^-+/, '')
       if (!name || !syntax.startsWith('-')) {
         symbols.push(syntax)
@@ -259,9 +258,9 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     this._assignOption(option, names, this._optionNameMap)
     this._assignOption(option, symbols, this._optionSymbolMap)
 
-    const fullName = paramCase(name)
-    if (!this._optionNameMap[fullName]) {
-      this._optionNameMap[fullName] = option
+    const param = paramCase(name)
+    if (!this._optionNameMap[param]) {
+      this._optionNameMap[param] = option
     }
 
     return this

@@ -52,10 +52,10 @@ export function apply (ctx: Context) {
           cryptos.push(new Vigenere(cap[1]))
           // eslint-disable-next-line no-cond-assign
         } else if (cap = algorithm.match(/^two-?square\(([a-z]+), *([a-z]+)\)/i)) {
-          cryptos.push(new TwoSquare(cap[1], cap[2], options.square))
+          cryptos.push(new TwoSquare(cap[1], cap[2], options.square as any))
           // eslint-disable-next-line no-cond-assign
         } else if (cap = algorithm.match(/^four-?square\(([a-z]+), *([a-z]+)\)/i)) {
-          cryptos.push(new FourSquare(cap[1], cap[2], options.square))
+          cryptos.push(new FourSquare(cap[1], cap[2], options.square as any))
         } else {
           return `无法识别算法 ${algorithm}，请使用“crypto -h”查看支持的算法列表。`
         }
