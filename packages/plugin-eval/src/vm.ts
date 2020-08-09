@@ -16,14 +16,14 @@ export interface VMOptions {
 }
 
 export class VM extends EventEmitter {
-  readonly _context: object
+  readonly context: object
   readonly _internal: typeof Internal = Object.create(null)
 
   constructor (options: VMOptions = {}) {
     super()
 
     const { sandbox = {}, strings = true, wasm = true } = options
-    this._context = createContext(undefined, {
+    this.context = createContext(undefined, {
       codeGeneration: { strings, wasm },
     })
 
@@ -35,8 +35,8 @@ export class VM extends EventEmitter {
     })
 
     script
-      .runInContext(this._context, { displayErrors: false })
-      .call(this._context, Host, this._internal)
+      .runInContext(this.context, { displayErrors: false })
+      .call(this.context, Host, this._internal)
 
     for (const name in sandbox) {
       if (Object.prototype.hasOwnProperty.call(sandbox, name)) {
@@ -77,7 +77,7 @@ export class VM extends EventEmitter {
     })
 
     try {
-      return this._internal.value(script.runInContext(this._context, { displayErrors: false }))
+      return this._internal.value(script.runInContext(this.context, { displayErrors: false }))
     } catch (e) {
       throw this._internal.value(e)
     }

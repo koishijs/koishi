@@ -3,7 +3,7 @@ import { resolve } from 'path'
 import {} from 'koishi-plugin-eval'
 
 export interface Config {
-  addonRoot: string
+  moduleRoot: string
 }
 
 declare module 'koishi-plugin-eval/dist/worker' {

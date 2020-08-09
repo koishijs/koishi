@@ -16,17 +16,16 @@
  * v4.3.0
  */
 
-import { MessageChannel, MessagePort } from 'worker_threads'
-import { EventEmitter } from 'events'
-export const proxyMarker = Symbol('Comlink.proxy')
-export const createEndpoint = Symbol('Comlink.endpoint')
-export const releaseProxy = Symbol('Comlink.releaseProxy')
-
+import { MessageChannel, MessagePort, Worker } from 'worker_threads'
+const proxyMarker = Symbol('Comlink.proxy')
+const createEndpoint = Symbol('Comlink.endpoint')
+const releaseProxy = Symbol('Comlink.releaseProxy')
 const throwMarker = Symbol('Comlink.thrown')
 
+type Endpoint = MessagePort | Worker
 type Transferable = ArrayBuffer | MessagePort
 
-export interface ProxyMarked {
+interface ProxyMarked {
   [proxyMarker]: true
 }
 
@@ -37,10 +36,10 @@ type RemoteProperty<T> = T extends Function | ProxyMarked ? Remote<T> : Promisif
 type LocalProperty<T> = T extends Function | ProxyMarked ? Local<T> : Unpromisify<T>
 type ProxyOrClone<T> = T extends ProxyMarked ? Remote<T> : T
 type UnproxyOrClone<T> = T extends RemoteObject<ProxyMarked> ? Local<T> : T
-export type RemoteObject<T> = { [P in keyof T]: RemoteProperty<T[P]> }
-export type LocalObject<T> = { [P in keyof T]: LocalProperty<T[P]> }
+type RemoteObject<T> = { [P in keyof T]: RemoteProperty<T[P]> }
+type LocalObject<T> = { [P in keyof T]: LocalProperty<T[P]> }
 
-export interface ProxyMethods {
+interface ProxyMethods {
   [createEndpoint]: () => Promise<MessagePort>
   [releaseProxy]: () => void
 }
@@ -61,16 +60,17 @@ export type Local<T> = Omit<LocalObject<T>, keyof ProxyMethods>
     ? new (...args: { [I in keyof P]: ProxyOrClone<P[I]>}) => MaybePromise<Local<Unpromisify<R>>>
     : unknown)
 
-export const enum MessageType {
+const enum MessageType {
   GET,
   SET,
   APPLY,
   CONSTRUCT,
   ENDPOINT,
   RELEASE,
+  READY,
 }
 
-export const enum WireValueType {
+const enum WireValueType {
   RAW,
   PROXY,
   THROW,
@@ -80,7 +80,7 @@ export const enum WireValueType {
 const isObject = (val: unknown): val is object =>
   (typeof val === 'object' && val !== null) || typeof val === 'function'
 
-export interface TransferHandler<T, S> {
+interface TransferHandler<T, S> {
   canHandle(value: unknown): value is T
   serial(value: T): [S, Transferable[]]
   deserialize(value: S): T
@@ -139,17 +139,14 @@ const throwTransferHandler: TransferHandler<ThrownValue, SerializedThrownValue> 
   },
 }
 
-export const transferHandlers = new Map<string, TransferHandler<unknown, unknown>>([
+const transferHandlers = new Map<string, TransferHandler<unknown, unknown>>([
   ['proxy', proxyTransferHandler],
   ['throw', throwTransferHandler],
 ])
 
 export function expose (obj: any, ep: Endpoint) {
   ep.on('message', function callback (data: Message) {
-    const { id, type, path } = {
-      path: [] as string[],
-      ...(data as Message),
-    }
+    const { id, type, path = [] } = data
     const argumentList = (data.argumentList || []).map(fromWireValue)
     let returnValue
     try {
@@ -250,18 +247,12 @@ function createProxy<T> (
     },
     set (_target, prop, rawValue) {
       throwIfProxyReleased(isProxyReleased)
-      // FIXME: ES6 Proxy Handler `set` methods are supposed to return a
-      // boolean. To show good will, we return true asynchronously ¯\_(ツ)_/¯
       const [value, transferables] = toWireValue(rawValue)
-      return requestResponseMessage(
-        ep,
-        {
-          type: MessageType.SET,
-          path: [...path, prop].map((p) => p.toString()),
-          value,
-        },
-        transferables,
-      ).then(fromWireValue) as any
+      return requestResponseMessage(ep, {
+        type: MessageType.SET,
+        path: [...path, prop].map((p) => p.toString()),
+        value,
+      }, transferables).then(fromWireValue) as any
     },
     apply (_target, _thisArg, rawArgumentList) {
       throwIfProxyReleased(isProxyReleased)
@@ -354,20 +345,10 @@ function fromWireValue (value: WireValue): any {
   }
 }
 
-function requestResponseMessage (
-  ep: Endpoint,
-  msg: Message,
-  transfers?: Transferable[],
-): Promise<WireValue> {
-  return new Promise((resolve) => {
+function requestResponseMessage (ep: Endpoint, msg: Message, transfers?: Transferable[]) {
+  return new Promise<WireValue>((resolve) => {
     const id = generateUUID()
-    ep.on('message', function l (data) {
-      ep.off('message', l as any)
-      resolve(data)
-    } as any)
-    if (ep.start) {
-      ep.start()
-    }
+    ep.once('message', resolve)
     ep.postMessage({ id, ...msg }, transfers)
   })
 }
@@ -379,32 +360,38 @@ function generateUUID (): string {
     .join('-')
 }
 
-export interface Endpoint extends EventEmitter {
-  postMessage(message: any, transfer?: Transferable[]): void
-  start?: () => void
-}
-
-export interface RawWireValue {
+interface RawWireValue {
   id?: string
   type: WireValueType.RAW
   value: {}
 }
 
-export interface HandlerWireValue {
+interface HandlerWireValue {
   id?: string
   type: WireValueType.HANDLER
   name: string
   value: unknown
 }
 
-export type WireValue = RawWireValue | HandlerWireValue
+type WireValue = RawWireValue | HandlerWireValue
 
-export type MessageID = string
-
-export interface Message {
-  id?: MessageID
+interface Message {
+  id?: string
   type: MessageType
   path?: string[]
   value?: WireValue
   argumentList?: WireValue[]
+}
+
+export function ready (ep: Endpoint) {
+  ep.postMessage({ type: MessageType.READY })
+}
+
+export function wait (ep: Endpoint) {
+  return new Promise<void>((resolve, reject) => {
+    ep.on('message', (value) => {
+      if (value.type === MessageType.READY) resolve()
+    })
+    ep.on('close', reject)
+  })
 }

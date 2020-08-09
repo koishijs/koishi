@@ -1,7 +1,7 @@
 import { Context, User, Session } from 'koishi-core'
 import { CQCode, Logger, defineProperty } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
-import { wrap, Remote, proxy } from './comlink'
+import { wrap, Remote, proxy, wait } from './comlink'
 import { WorkerAPI, WorkerConfig } from './worker'
 import { resolve } from 'path'
 
@@ -71,12 +71,13 @@ export function apply (ctx: Context, config: Config = {}) {
   let restart = true
   let worker: Worker
   let remote: Remote<WorkerAPI>
-  function createWorker () {
+  async function createWorker () {
     worker = new Worker(resolve(__dirname, 'worker.js'), {
       workerData: config,
       resourceLimits,
     })
 
+    await wait(worker)
     remote = wrap(worker)
     logger.info('worker started')
 
@@ -91,7 +92,7 @@ export function apply (ctx: Context, config: Config = {}) {
   })
 
   ctx.on('before-connect', () => {
-    createWorker()
+    return createWorker()
   })
 
   ctx.command('eval [expr...]', '执行 JavaScript 脚本', { authority: 2 })

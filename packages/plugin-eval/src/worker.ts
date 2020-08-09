@@ -1,7 +1,7 @@
 import { InspectOptions, formatWithOptions } from 'util'
 import { Session, User } from 'koishi-core'
 import { parentPort, workerData } from 'worker_threads'
-import { expose, Remote } from './comlink'
+import { expose, Remote, ready } from './comlink'
 import { VM } from './vm'
 import { MainAPI } from '.'
 import { defineProperty } from 'koishi-utils'
@@ -11,7 +11,7 @@ export interface WorkerConfig {
   inspect?: InspectOptions
 }
 
-const config: WorkerConfig = {
+export const config: WorkerConfig = {
   ...workerData,
   inspect: {
     depth: 0,
@@ -38,13 +38,7 @@ export default class Global {
   log (format: string, ...param: any[]) {
     return this.main.send(formatWithOptions(config.inspect, format, ...param))
   }
-
-  // usage (name: string) {
-  //   return getUsage(name, this.main.$user)
-  // }
 }
-
-config.setupFiles.forEach(require)
 
 interface EvalOptions {
   session: string
@@ -53,9 +47,20 @@ interface EvalOptions {
   source: string
 }
 
-const sandbox = new Global()
+export const sandbox = new Global()
 
 const vm = new VM({ sandbox })
+
+export const context = vm.context
+
+type Bind <O, K extends keyof O> = O[K] extends (...args: infer R) => infer T ? (this: O, ...args: R) => T : O[K]
+
+export function setGlobal <K extends keyof Global> (key: K, value: Bind<Global, K>, writable = false) {
+  if (typeof value === 'function') {
+    value = value['bind'](sandbox)
+  }
+  vm._internal.setGlobal(key, value, writable)
+}
 
 export class WorkerAPI {
   async eval (options: EvalOptions, main: MainAPI) {
@@ -80,4 +85,11 @@ export class WorkerAPI {
   }
 }
 
-expose(new WorkerAPI(), parentPort)
+Promise
+  .all(config.setupFiles.map(file => require(file).default))
+  .then(() => {
+    ready(parentPort)
+    expose(new WorkerAPI(), parentPort)
+  }, () => {
+    parentPort.close()
+  })
