@@ -47,9 +47,9 @@ export function apply (ctx: Context) {
   const cmd = ctx.command('monitor', '直播监测器')
 
   cmd.subcommand('.create <...names>', '添加新的监测账号', { authority: 3 })
-    .option('bilibili', '-b, --bilibili <id>  设置 Bilibili 账号')
-    .option('mirrativ', '-m, --mirrativ <id>  设置 Mirrativ 账号')
-    .option('twitcasting', '-t, --twitcasting <id>  设置 TwitCasting 账号', { type: 'string' })
+    .option('bilibili', '-b <id>  设置 Bilibili 账号')
+    .option('mirrativ', '-m <id>  设置 Mirrativ 账号')
+    .option('twitcasting', '-t <id>  设置 TwitCasting 账号', { type: 'string' })
     .action(async ({ options }, ...names) => {
       if (!names.length) return '请提供至少一个名字。'
 
@@ -95,11 +95,11 @@ export function apply (ctx: Context) {
     })
 
   cmd.subcommand('.update <name>', '修改已有账号信息', { authority: 3 })
-    .option('addName', '-n, --add-name <name>  添加账号名', { type: 'string', fallback: '' })
-    .option('removeName', '-N, --remove-name <name>  删除账号名', { type: 'string', fallback: '' })
-    .option('bilibili', '-b, --bilibili <id>  设置 Bilibili 账号', { type: 'string' })
-    .option('mirrativ', '-m, --mirrativ <id>  设置 Mirrativ 账号', { type: 'string' })
-    .option('twitcasting', '-t, --twitcasting <id>  设置 TwitCasting 账号', { type: 'string' })
+    .option('addName', '-n <name>  添加账号名', { type: 'string', fallback: '' })
+    .option('removeName', '-N <name>  删除账号名', { type: 'string', fallback: '' })
+    .option('bilibili', '-b <id>  设置 Bilibili 账号', { type: 'string' })
+    .option('mirrativ', '-m <id>  设置 Mirrativ 账号', { type: 'string' })
+    .option('twitcasting', '-t <id>  设置 TwitCasting 账号', { type: 'string' })
     .action(async ({ session, options }, name: string) => {
       if (!name) return '请输入账号。'
       name = String(name)
@@ -150,7 +150,7 @@ export function apply (ctx: Context) {
     .groupFields(['subscribe'])
     .shortcut('查看单推列表')
     .shortcut('查看直播状态', { options: { group: true } })
-    .option('group', '-g, --group  查看本群内全部直播')
+    .option('group', '-g  查看本群内全部直播')
     .action(async ({ session, options }) => {
       const { subscribe } = session.$group
       const output = [options.group ? '当前群内关注的直播状态：' : '当前关注的账号列表：']
@@ -190,9 +190,9 @@ export function apply (ctx: Context) {
     .shortcut('取消单推', { prefix: true, fuzzy: true, options: { delete: true } })
     .shortcut('取消关注', { prefix: true, fuzzy: true, options: { delete: true } })
     .groupFields(['subscribe'])
-    .option('global', '-g, --global  设置本群默认关注', { authority: 2 })
-    .option('delete', '-d, --delete  取消关注账号')
-    .option('deleteAll', '-D, --delete-all  取消全部关注账号')
+    .option('global', '-g  设置本群默认关注', { authority: 2 })
+    .option('delete', '-d  取消关注账号')
+    .option('deleteAll', '-D  取消全部关注账号')
     .action(async ({ session, options }, name: string) => {
       const { subscribe } = session.$group
       const userId = options.global ? 0 : session.userId

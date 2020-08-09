@@ -138,8 +138,8 @@ export function apply (ctx: Context) {
   ctx.command('admin <action> [...args]', '管理用户', { authority: 4 })
     .userFields(['authority'])
     .before(session => !session.$app.database)
-    .option('user', '-u, --user [user]  指定目标用户')
-    .option('group', '-g, --group [group]  指定目标群')
+    .option('user', '-u [user]  指定目标用户')
+    .option('group', '-g [group]  指定目标群')
     .option('thisGroup', '-G, --this-group  指定目标群为本群')
     .action(async ({ session, options }, name, ...args) => {
       const isGroup = 'g' in options || 'G' in options

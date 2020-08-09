@@ -28,7 +28,7 @@ export function apply (ctx: Context) {
     .shortcut('我的信息')
     .userFields(['name'])
     .before(session => !session.$app.database)
-    .option('user', '-u, --user [target]  指定目标', { authority: 3 })
+    .option('user', '-u [target]  指定目标', { authority: 3 })
     .action(async ({ session, options }) => {
       let user: User
       const output = []

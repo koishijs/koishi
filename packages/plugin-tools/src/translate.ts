@@ -31,8 +31,8 @@ export function apply (ctx: Context, config: TranslateOptions) {
 
   ctx.command('tools/translate <text>', '翻译工具')
     .alias('翻译')
-    .option('from', '-f, --from <lang>  指定源语言，默认为自动匹配', { fallback: '' })
-    .option('to', '-t, --to <lang>  指定目标语言，默认为中文（zh-CHS）', { fallback: 'zh-CHS' })
+    .option('from', '-f <lang>  指定源语言，默认为自动匹配', { fallback: '' })
+    .option('to', '-t <lang>  指定目标语言，默认为中文（zh-CHS）', { fallback: 'zh-CHS' })
     .usage('支持的语言名包括 zh-CHS, en, ja, ko, fr, es, pt, it, ru, vi, de, ar, id, it。')
     .action(async ({ session, options }, text) => {
       if (!text) return

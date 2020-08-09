@@ -21,8 +21,8 @@ export function isHours (value: string) {
 
 export default function apply (ctx: Context) {
   ctx.command('teach')
-    .option('startTime', '-t, --start-time <time>  起始时间', { type: 'string', validate: isHours })
-    .option('endTime', '-T, --end-time <time>  结束时间', { type: 'string', validate: isHours })
+    .option('startTime', '-t <time>  起始时间', { type: 'string', validate: isHours })
+    .option('endTime', '-T <time>  结束时间', { type: 'string', validate: isHours })
 
   function parseTime (source: string) {
     const [hours, minutes = '0'] = source.split(':')

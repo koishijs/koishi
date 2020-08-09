@@ -10,7 +10,7 @@ const tagMap = {
 
 export function apply (ctx: Context) {
   ctx.command('tools/magi <text...>', '使用 Magi 搜索')
-    .option('confidence', '-c, --confidence  显示数据可信度')
+    .option('confidence', '-c  显示数据可信度')
     .alias('搜索')
     .usage('由 https://magi.com 提供支持。')
     .action(async ({ session, options }, q) => {

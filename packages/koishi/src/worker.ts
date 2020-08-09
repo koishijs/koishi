@@ -108,7 +108,7 @@ if (config.logLevel && !process.env.KOISHI_LOG_LEVEL) {
 const app = new App(config)
 
 app.command('exit', '停止机器人运行', { authority: 4 })
-  .option('restart', '-r, --restart  重新启动')
+  .option('restart', '-r  重新启动')
   .shortcut('关机', { prefix: true })
   .shortcut('重启', { prefix: true, options: { restart: true } })
   .action(({ options }) => {

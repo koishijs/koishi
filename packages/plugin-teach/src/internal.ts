@@ -47,12 +47,12 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   const logger = Logger.create('teach')
 
   ctx.command('teach')
-    .option('question', '--question <question>  问题', { type: 'string' })
-    .option('answer', '--answer <answer>  回答', { type: 'string' })
-    .option('ignore', '-i, --ignore-hint  忽略智能提示')
-    .option('regexp', '-x, --regexp  使用正则表达式匹配', { authority: 3 })
-    .option('regexp', '-X, --no-regexp  取消使用正则表达式匹配', { authority: 3, value: false })
-    .option('redirect', '=>, --redirect <answer>  重定向到其他问答')
+    .option('question', '<question>  问题', { type: 'string' })
+    .option('answer', '<answer>  回答', { type: 'string' })
+    .option('ignoreHint', '-i  忽略智能提示')
+    .option('regexp', '-x  使用正则表达式匹配', { authority: 3 })
+    .option('regexp', '-X  取消使用正则表达式匹配', { authority: 3, value: false })
+    .option('redirect', '=> <answer>  重定向到其他问答')
 
   ctx.before('dialogue/validate', (argv) => {
     const { options, session, args } = argv

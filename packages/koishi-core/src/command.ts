@@ -10,10 +10,6 @@ const logger = Logger.create('command')
 const ANGLED_BRACKET_REGEXP = /<([^>]+)>/g
 const SQUARE_BRACKET_REGEXP = /\[([^\]]+)\]/g
 
-export function removeBrackets (source: string) {
-  return source.replace(/(<[^<]+>|\[[^[]+\]).*/, '').trim()
-}
-
 function parseBracket (name: string, required: boolean): CommandArgument {
   let variadic = false, greedy = false
   if (name.startsWith('...')) {
@@ -225,40 +221,47 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return this.context.command(rawName, ...args as any)
   }
 
-  private _registerOption (name: string, description: string, config?: Partial<CommandOption>) {
-    const desc = removeBrackets(description)
+  private _registerOption (name: string, def: string, config?: Partial<CommandOption>) {
+    const param = '--' + paramCase(name)
+    const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
+    const desc = def.slice(decl.length)
+    let syntax = decl.replace(/(?<=^|\s)(<[^<]+>|\[[^[]+\]).*/, '')
+    const bracket = decl.slice(syntax.length)
+    syntax = syntax.trim() || param
+
     let names: string[] = []
     let symbols: string[] = []
-    for (let syntax of desc.split(',')) {
-      syntax = syntax.trimStart().split(' ', 1)[0]
-      const name = syntax.replace(/^-+/, '')
-      if (!name || !syntax.startsWith('-')) {
-        symbols.push(syntax)
+    for (let param of syntax.trim().split(',')) {
+      param = param.trimStart()
+      const name = param.replace(/^-+/, '')
+      if (!name || !param.startsWith('-')) {
+        symbols.push(param)
       } else {
         names.push(name)
       }
     }
 
-    const brackets = description.slice(desc.length)
+    if (!config.value && !names.includes(param)) {
+      def = syntax + ', ' + param + '  ' + bracket + desc
+    }
+
     let option = this._options[name] || (this._options[name] = {
       ...Command.defaultOptionConfig,
       ...config,
       name,
-      description,
       values: {},
-      greedy: brackets.includes('...'),
+      description: def,
+      greedy: bracket.includes('...'),
     })
 
     if ('value' in config) {
       names.forEach(name => option.values[name] = config.value)
-    } else if (!brackets) {
+    } else if (!bracket.trim()) {
       option.type = 'boolean'
     }
 
     this._assignOption(option, names, this._optionNameMap)
     this._assignOption(option, symbols, this._optionSymbolMap)
-
-    const param = paramCase(name)
     if (!this._optionNameMap[param]) {
       this._optionNameMap[param] = option
     }

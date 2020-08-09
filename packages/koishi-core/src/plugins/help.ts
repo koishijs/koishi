@@ -51,7 +51,7 @@ interface HelpConfig {
 export default function apply (app: App) {
   app.on('new-command', (cmd) => {
     cmd._examples = []
-    cmd.option('help', '-h, --help  显示此信息', { hidden: true })
+    cmd.option('help', '-h  显示此信息', { hidden: true })
   })
 
   // show help when use `-h, --help` or when there is no action
@@ -78,8 +78,8 @@ export default function apply (app: App) {
     .userFields(createCollector('user'))
     .groupFields(createCollector('group'))
     .shortcut('帮助', { fuzzy: true })
-    .option('expand', '-e, --expand  展开指令列表')
-    .option('showHidden', '-H, --show-hidden  查看隐藏的选项和指令')
+    .option('expand', '-e  展开指令列表')
+    .option('showHidden', '-H  查看隐藏的选项和指令')
     .action(async ({ session, options }, name) => {
       if (name) {
         const command = app._commandMap[name] || app._shortcutMap[name]
