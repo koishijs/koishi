@@ -43,9 +43,9 @@
     "koishi-core": "^2.0.0-beta.7",
     "koishi-adapter-cqhttp": "^1.0.0-beta.0",
     "koishi-plugin-common": "^3.0.0-beta.7",
-    "koishi-plugin-mysql": "^2.0.0-beta.2",
+    "koishi-plugin-mysql": "^2.0.0-beta.3",
     "koishi-plugin-schedule": "^2.0.0-beta.6",
-    "koishi-plugin-status": "^2.0.0-beta.4",
+    "koishi-plugin-status": "^2.0.0-beta.5",
     "koishi-plugin-teach": "^1.0.0-beta.7",
     "koishi-utils": "^2.1.3",
     "prompts": "^2.3.2"

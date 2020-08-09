@@ -120,7 +120,7 @@ export default function apply (app: App) {
 
     // check unknown options
     if (command.config.checkUnknown) {
-      const unknown = Object.keys(options).map(hyphenate).filter(key => !command['_optionMap'][key])
+      const unknown = Object.keys(options).filter(key => !command._options[key])
       if (unknown.length) {
         return sendHint(session, messages.UNKNOWN_OPTIONS, unknown.join(', '))
       }

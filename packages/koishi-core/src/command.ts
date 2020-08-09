@@ -506,7 +506,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     if (!argv.args) argv.args = []
     if (!argv.rest) argv.rest = ''
 
-    let state = 'before'
+    let state = 'before command'
     const { next = noop } = argv
     argv.next = async (fallback) => {
       const oldState = state
@@ -521,10 +521,10 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     const lastCall = new Error().stack.split('\n', 4)[3]
     try {
       if (await this.app.serial(session, 'before-command', argv)) return
-      state = 'executing'
+      state = 'executing command'
       const message = await this._action(argv, ...args)
       if (message) session.$send(message)
-      state = 'after'
+      state = 'after command'
       await this.app.serial(session, 'command', argv)
     } catch (error) {
       if (!state) throw error

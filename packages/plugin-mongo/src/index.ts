@@ -1,58 +1,11 @@
-import { MongoClient, Db, Collection } from 'mongodb'
-import {
-  App, User, Group, Database, extendDatabase, Context,
-} from 'koishi-core'
+import MongoDatabase, { Config } from './database'
+import { User, Group, Database, extendDatabase, Context } from 'koishi-core'
+
+export * from './database'
+export default MongoDatabase
 
 declare module 'koishi-core/dist/database' {
-  interface Database extends MongoDatabase { }
-}
-
-export interface Options {
-  username?: string,
-  password?: string,
-  host?: string,
-  port?: number,
-  name?: string,
-  prefix?: string,
-}
-
-interface Udoc extends User {
-  _id: number,
-}
-interface Gdoc extends Group {
-  _id: number,
-}
-
-export default class MongoDatabase {
-  public client: MongoClient;
-
-  public db: Db;
-
-  user: Collection<Udoc>;
-
-  group: Collection<Gdoc>;
-
-  watcher: any;
-
-  constructor (public app: App, public config: Options) {
-    this.config = config
-  }
-
-  async start () {
-    let mongourl = 'mongodb://'
-    if (this.config.username) mongourl += `${this.config.username}:${this.config.password}@`
-    mongourl += `${this.config.host}:${this.config.port}/${this.config.name}`
-    this.client = await MongoClient.connect(
-      mongourl, { useNewUrlParser: true, useUnifiedTopology: true },
-    )
-    this.db = this.client.db(this.config.name)
-    this.user = this.db.collection(this.config.prefix ? `${this.config.prefix}.user` : 'user')
-    this.group = this.db.collection(this.config.prefix ? `${this.config.prefix}.group` : 'group')
-  }
-
-  stop () {
-    return this.client.close()
-  }
+  interface Database extends MongoDatabase {}
 }
 
 extendDatabase(MongoDatabase, {
@@ -181,7 +134,7 @@ extendDatabase(MongoDatabase, {
 
 export const name = 'mongo'
 
-export function apply (ctx: Context, config: Options = { host: 'localhost', port: 27017, name: 'koishi' }) {
+export function apply (ctx: Context, config: Config = { host: 'localhost', port: 27017, name: 'koishi' }) {
   const db = new MongoDatabase(ctx.app, config)
   ctx.database = db as Database
   ctx.on('before-connect', () => db.start())

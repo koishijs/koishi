@@ -1,5 +1,6 @@
 import { Session, extendDatabase } from 'koishi-core'
-import type MysqlDatabase from 'koishi-plugin-mysql'
+import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
+import MongoDatabase from 'koishi-plugin-mongo/dist/database'
 
 declare module 'koishi-core/dist/database' {
   interface Database {
@@ -44,3 +45,5 @@ extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
     return this.query(queryString)
   },
 })
+
+extendDatabase<MongoDatabase>('koishi-plugin-mongo', {})

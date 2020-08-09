@@ -38,7 +38,7 @@
     "conversation"
   ],
   "devDependencies": {
-    "koishi-plugin-mysql": "^2.0.0-beta.2",
+    "koishi-plugin-mysql": "^2.0.0-beta.3",
     "koishi-test-utils": "^4.0.0-beta.3"
   },
   "dependencies": {

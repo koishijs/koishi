@@ -1,6 +1,8 @@
 import { Context, App } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
-import {} from 'koishi-plugin-mysql'
+import { ActiveData } from './database'
+
+export * from './database'
 
 declare module 'koishi-core/dist/server' {
   interface BotOptions {
@@ -9,12 +11,6 @@ declare module 'koishi-core/dist/server' {
 
   interface Bot {
     counter: number[]
-  }
-}
-
-declare module 'koishi-core/dist/database' {
-  interface User {
-    lastCall: Date
   }
 }
 
@@ -64,10 +60,8 @@ export interface Rate {
   total: number
 }
 
-export interface Status {
+export interface Status extends ActiveData {
   bots: BotStatus[]
-  userCount: number
-  groupCount: number
   memory: Rate
   cpu: Rate
   timestamp: number
@@ -151,7 +145,7 @@ export function apply (ctx: Context, config: StatusOptions) {
     .shortcut('运行情况', { prefix: true })
     .shortcut('运行状态', { prefix: true })
     .action(async () => {
-      const { bots: apps, cpu, memory, startTime, userCount, groupCount } = await getStatus(config)
+      const { bots: apps, cpu, memory, startTime, activeUsers, activeGroups } = await getStatus(config)
 
       const output = apps.map(({ label, selfId, code, rate }) => {
         return `${label || selfId}：${code ? '无法连接' : `工作中（${rate}/min）`}`
@@ -160,8 +154,8 @@ export function apply (ctx: Context, config: StatusOptions) {
       output.push('==========')
 
       output.push(
-        `活跃用户数量：${userCount}`,
-        `活跃群数量：${groupCount}`,
+        `活跃用户数量：${activeUsers}`,
+        `活跃群数量：${activeGroups}`,
         `启动时间：${new Date(startTime).toLocaleString('zh-CN', { hour12: false })}`,
         `CPU 使用率：${(cpu.app * 100).toFixed()}% / ${(cpu.total * 100).toFixed()}%`,
         `内存使用率：${(memory.app * 100).toFixed()}% / ${(memory.total * 100).toFixed()}%`,
@@ -171,11 +165,8 @@ export function apply (ctx: Context, config: StatusOptions) {
     })
 
   async function _getStatus (config: StatusOptions, extend: boolean) {
-    const [[[{ 'COUNT(*)': userCount }], [{ 'COUNT(*)': groupCount }]], bots] = await Promise.all([
-      app.database.query<[{ 'COUNT(*)': number }][]>([
-        'SELECT COUNT(*) FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',
-        'SELECT COUNT(*) FROM `group` WHERE `assignee`',
-      ].join(';')),
+    const [data, bots] = await Promise.all([
+      app.database.getActiveData(),
       Promise.all(app.bots.map(async (bot): Promise<BotStatus> => ({
         selfId: bot.selfId,
         label: bot.label,
@@ -185,7 +176,7 @@ export function apply (ctx: Context, config: StatusOptions) {
     ])
     const memory = memoryRate()
     const cpu = { app: appRate, total: usedRate }
-    const status: Status = { bots, userCount, groupCount, memory, cpu, timestamp, startTime }
+    const status: Status = { ...data, bots, memory, cpu, timestamp, startTime }
     if (extend) {
       await Promise.all(statusModifiers.map(modifier => modifier.call(app, status, config)))
     }
