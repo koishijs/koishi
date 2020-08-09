@@ -142,8 +142,8 @@ function showGlobalHelp (context: Context, session: Session<'authority' | 'timer
 function getOptions (command: Command, session: Session<ValidationField>, maxUsage: number, config: HelpConfig) {
   if (command.config.hideOptions && !config.showHidden) return []
   const options = config.showHidden
-    ? command._options
-    : command._options.filter(option => !option.hidden && option.authority <= session.$user.authority)
+    ? Object.values(command._options)
+    : Object.values(command._options).filter(option => !option.hidden && option.authority <= session.$user.authority)
   if (!options.length) return []
 
   const output = options.some(o => o.authority)

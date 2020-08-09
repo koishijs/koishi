@@ -1,9 +1,11 @@
 import { Context, NextFunction } from './context'
 import { User, Group, Tables, TableType } from './database'
-import { noop, camelCase, paramCase } from 'koishi-utils'
+import { noop, camelCase, paramCase, Logger } from 'koishi-utils'
 import { Session } from './session'
 import { inspect, format, types } from 'util'
 import escapeRegex from 'escape-string-regexp'
+
+const logger = Logger.create('command')
 
 const ANGLED_BRACKET_REGEXP = /<([^>]+)>/g
 const SQUARE_BRACKET_REGEXP = /\[([^\]]+)\]/g
@@ -53,10 +55,10 @@ const supportedType = ['string', 'number', 'boolean'] as const
 export type OptionType = typeof supportedType[number]
 
 export interface OptionConfig <T = any> {
+  value?: T
   fallback?: T
   authority?: number
   notUsage?: boolean
-  type?: OptionType
 }
 
 type StringOptionConfig = OptionConfig & ({ fallback: string } | { type: 'string' })
@@ -66,9 +68,9 @@ type BooleanOptionConfig = OptionConfig & ({ fallback: boolean } | { type: 'bool
 export interface CommandOption extends OptionConfig {
   name: string
   description: string
-  shortest: string
   greedy: boolean
-  negated?: string[]
+  type?: OptionType
+  values?: Record<string, any>
 }
 
 interface ParsedArg {
@@ -85,7 +87,6 @@ export interface ParsedLine <O = {}> {
   rest: string
   args: string[]
   options: O
-  keyMap?: Record<keyof O, string>
 }
 
 export interface ParsedArgv <U extends User.Field = never, G extends Group.Field = never, O = {}> extends Partial<ParsedLine<O>> {
@@ -121,7 +122,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
 
   _aliases: string[] = []
   _arguments: CommandArgument[]
-  _options: CommandOption[] = []
+  _options: Record<string, CommandOption> = {}
 
   private _optionNameMap: Record<string, CommandOption> = {}
   private _optionSymbolMap: Record<string, CommandOption> = {}
@@ -224,17 +225,12 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return this.context.command(rawName, ...args as any)
   }
 
-  private _option (name: string, description: string, config?: OptionConfig) {
+  private _registerOption (name: string, description: string, config?: Partial<CommandOption>) {
     const desc = removeBrackets(description)
-    let shortest: string = name
     let names: string[] = []
     let symbols: string[] = []
     for (let syntax of desc.split(',')) {
       syntax = syntax.trimStart().split(' ', 1)[0]
-      // the shortest alias will be used for stringification
-      if (syntax.length < shortest.length) {
-        shortest = syntax
-      }
       // non-prefixed aliases will prioritize arguments
       const name = syntax.replace(/^-+/, '')
       if (!name || !syntax.startsWith('-')) {
@@ -244,36 +240,34 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
       }
     }
 
-    const fullName = paramCase(name)
-    if (!names.includes(fullName)) names.push(fullName)
     const brackets = description.slice(desc.length)
-    const option: CommandOption = {
+    let option = this._options[name] || (this._options[name] = {
       ...Command.defaultOptionConfig,
       ...config,
       name,
       description,
-      shortest,
-      negated: [],
+      values: {},
       greedy: brackets.includes('...'),
+    })
+
+    if ('value' in config) {
+      names.forEach(name => option.values[name] = config.value)
+    } else if (!brackets) {
+      option.type = 'boolean'
     }
-    if (!brackets) option.type = 'boolean'
-    this._options.push(option)
-    this._registerOption(option, names, this._optionNameMap)
-    this._registerOption(option, symbols, this._optionSymbolMap)
+
+    this._assignOption(option, names, this._optionNameMap)
+    this._assignOption(option, symbols, this._optionSymbolMap)
+
+    const fullName = paramCase(name)
+    if (!this._optionNameMap[fullName]) {
+      this._optionNameMap[fullName] = option
+    }
+
     return this
   }
 
-  option <K extends string> (name: K, description: string, config: StringOptionConfig): Command<U, G, Extend<O, K, string>>
-  option <K extends string> (name: K, description: string, config: NumberOptionConfig): Command<U, G, Extend<O, K, number>>
-  option <K extends string> (name: K, description: string, config: BooleanOptionConfig): Command<U, G, Extend<O, K, boolean>>
-  option <K extends string> (name: K, description: string, config?: OptionConfig): Command<U, G, Extend<O, K, any>>
-  option <K extends string> (name: K, description: string, config: OptionConfig = {}) {
-    const fallbackType = typeof config.fallback as any
-    const type = config.type || supportedType.includes(fallbackType) && fallbackType
-    return this._option(name, description, { ...config, type }) as any
-  }
-
-  private _registerOption (option: CommandOption, names: string[], optionMap: Record<string, CommandOption>) {
+  private _assignOption (option: CommandOption, names: string[], optionMap: Record<string, CommandOption>) {
     for (const name of names) {
       if (name in optionMap) {
         throw new Error(format('duplicate option names: "%s"', name))
@@ -282,11 +276,20 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     }
   }
 
+  option <K extends string> (name: K, description: string, config: StringOptionConfig): Command<U, G, Extend<O, K, string>>
+  option <K extends string> (name: K, description: string, config: NumberOptionConfig): Command<U, G, Extend<O, K, number>>
+  option <K extends string> (name: K, description: string, config: BooleanOptionConfig): Command<U, G, Extend<O, K, boolean>>
+  option <K extends string> (name: K, description: string, config?: OptionConfig): Command<U, G, Extend<O, K, any>>
+  option <K extends string> (name: K, description: string, config: OptionConfig = {}) {
+    const fallbackType = typeof config.fallback as never
+    const type = config['type'] || supportedType.includes(fallbackType) && fallbackType
+    return this._registerOption(name, description, { ...config, type }) as any
+  }
+
   removeOption <K extends string & keyof O> (name: K) {
-    const index = this._options.findIndex(o => o.name === name)
-    if (index < 0) return false
-    const option = this._options[index]
-    this._options.splice(index, 1)
+    if (!this._options[name]) return false
+    const option = this._options[name]
+    delete this._options[name]
     for (const key in this._optionNameMap) {
       if (this._optionNameMap[key] === option) {
         delete this._optionNameMap[key]
@@ -305,19 +308,10 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return this
   }
 
-  /**
-   * some examples:
-   * - `foo bar baz` -> `foo` + `bar baz`
-   * - `"foo bar" baz` -> `foo bar` + `baz`
-   * - `"foo bar "baz` -> `"foo` + `bar "baz`
-   * - `foo" bar" baz` -> `foo"` + `bar" baz`
-   * - `foo;bar baz` -> `foo` + `;bar baz`
-   * - `"foo;bar";baz` -> `foo;bar` + `;baz`
-   */
   private parseArg (source: string, terminator: string): ParsedArg {
-    const quoteIndex = quoteStart.indexOf(source[0])
-    if (quoteIndex >= 0) {
-      const capture = new RegExp(`${quoteEnd[quoteIndex]}(?=[\\s${escapeRegex(terminator)}]|$)`).exec(source.slice(1))
+    const index = quoteStart.indexOf(source[0])
+    if (index >= 0) {
+      const capture = new RegExp(`${quoteEnd[index]}(?=[\\s${terminator}]|$)`).exec(source.slice(1))
       if (capture) {
         return {
           quoted: true,
@@ -327,7 +321,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
       }
     }
 
-    const [content] = source.split(new RegExp(`[\\s${escapeRegex(terminator)}]`), 1)
+    const [content] = source.split(new RegExp(`[\\s${terminator}]`), 1)
     return {
       content,
       quoted: false,
@@ -335,40 +329,26 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     }
   }
 
-  /**
-   * some examples:
-   * - `foo bar baz` -> `foo bar baz` + ` `
-   * - `"foo bar" baz` -> `"foo bar" baz` + ` `
-   * - `"foo bar baz"` -> `foo bar baz` + ` `
-   * - `foo;bar baz` -> `foo` + `bar baz`
-   * - `"foo;bar" baz` -> `"foo` + `bar" baz`
-   * - `"foo;bar";baz` -> `foo;bar` + `baz`
-   */
   private parseRest (source: string, terminator: string): ParsedArg {
-    const quoteIndex = quoteStart.indexOf(source[0])
-    if (quoteIndex >= 0) {
-      const index = terminator && source.slice(1).indexOf(quoteEnd[quoteIndex] + terminator)
-      if (index >= 0) {
+    const index = quoteStart.indexOf(source[0])
+    if (index >= 0) {
+      const capture = terminator
+        ? new RegExp(`${quoteEnd[index]}(?=[${terminator}]|$)`).exec(source.slice(1))
+        : new RegExp(`${quoteEnd[index]}(?=$)`).exec(source.slice(1))
+      if (capture) {
         return {
           quoted: true,
-          content: source.slice(1, index + 1),
-          rest: source.slice(index + 3).trimLeft(),
-        }
-      } else if (source.endsWith(quoteEnd[quoteIndex])) {
-        return {
-          quoted: true,
-          content: source.slice(1, -1),
-          rest: '',
+          content: source.slice(1, 1 + capture.index),
+          rest: source.slice(2 + capture.index).trimLeft(),
         }
       }
     }
 
-    // TODO multiple terminators
-    const [content] = terminator ? source.split(terminator, 1) : [source]
+    const [content] = terminator ? source.split(new RegExp(`[${terminator}]`), 1) : [source]
     return {
       content,
       quoted: false,
-      rest: source.slice(content.length + 1).trimLeft(),
+      rest: source.slice(content.length).trimLeft(),
     }
   }
 
@@ -390,20 +370,26 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
 
   parse (message: string, terminator = ''): ParsedLine {
     let rest = ''
+    terminator = escapeRegex(terminator)
     const source = `${this.name} ${message}`
     const args: string[] = []
     const options: Record<string, any> = {}
 
-    const handleOption = (name: string, knownValue: any, unknownValue: any) => {
+    const handleOption = (name: string, value: any) => {
       const config = this._optionNameMap[name]
       if (config) {
-        options[config.name] = !config.negated.includes(name) && knownValue
+        options[config.name] = name in config.values ? config.values[name] : value
       } else {
-        options[camelCase(name)] = unknownValue
+        options[camelCase(name)] = value
       }
     }
 
     while (message) {
+      if (terminator.includes(message[0])) {
+        rest = message
+        break
+      }
+
       // greedy argument
       if (message[0] !== '-' && this._arguments[args.length]?.greedy) {
         const arg0 = this.parseRest(message, terminator)
@@ -437,7 +423,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
         }
         if (arg.slice(i, i + 3) === 'no-' && !this._optionNameMap[arg.slice(i)]) {
           name = arg.slice(i + 3)
-          handleOption(name, false, false)
+          handleOption(name, false)
           continue
         }
 
@@ -475,14 +461,14 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
         const name = names[j]
         const config = this._optionNameMap[name]
         const value = this.parseValue(j + 1 < names.length || param, quoted, config)
-        handleOption(name, value, value)
+        handleOption(name, value)
       }
     }
 
     // assign default values
-    for (const config of this._options) {
-      if (config.fallback !== undefined && !(config.name in options)) {
-        options[config.name] = config.fallback
+    for (const { name, fallback } of Object.values(this._options)) {
+      if (fallback !== undefined && !(name in options)) {
+        options[name] = fallback
       }
     }
 
@@ -494,21 +480,19 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return value.includes(' ') ? `"${value}"` : value
   }
 
-  stringify (argv: ParsedArgv) {
+  stringify (args: string[], options: any) {
     let output = this.name
-    for (const key in argv.options) {
-      const {
-        shortest = key.length > 1 ? `--${key}` : `-${key}`,
-      } = this._optionSymbolMap[key] || this._optionNameMap[key] || {}
-      const value = argv.options[key]
+    for (const key in options) {
+      const value = options[key]
       if (value === true) {
-        // TODO negated
-        output += ` ${shortest}`
+        output += ` --${key}`
+      } else if (value === false) {
+        output += ` --no-${key}`
       } else {
-        output += ` ${shortest} ${this.stringifyArg(value)}`
+        output += ` --${key} ${this.stringifyArg(value)}`
       }
     }
-    for (const arg of argv.args) {
+    for (const arg of args) {
       output += ' ' + this.stringifyArg(arg)
     }
     return output
@@ -516,9 +500,9 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
 
   async execute (argv: ParsedArgv<U, G, O>) {
     argv.command = this
-    if (!argv.keyMap) argv.keyMap = {} as any
     if (!argv.options) argv.options = {} as any
     if (!argv.args) argv.args = []
+    if (!argv.rest) argv.rest = ''
 
     let state = 'before'
     const { next = noop } = argv
@@ -529,23 +513,24 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
       state = oldState
     }
 
-    const { source = this.stringify(argv) } = argv
-    this.context.logger('command').debug(source)
+    let { args, options, session, source } = argv
+    const getSource = () => source || (source = this.stringify(args, options))
+    if (logger.level >= 3) logger.debug(getSource())
     const lastCall = new Error().stack.split('\n', 4)[3]
     try {
-      if (await this.app.serial(argv.session, 'before-command', argv)) return
+      if (await this.app.serial(session, 'before-command', argv)) return
       state = 'executing'
-      const message = await this._action(argv, ...argv.args)
-      if (message) argv.session.$send(message)
+      const message = await this._action(argv, ...args)
+      if (message) session.$send(message)
       state = 'after'
-      await this.app.serial(argv.session, 'command', argv)
+      await this.app.serial(session, 'command', argv)
     } catch (error) {
       if (!state) throw error
       if (!types.isNativeError(error)) {
         error = new Error(error as any)
       }
       const index = error.stack.indexOf(lastCall)
-      this.context.logger('command').warn(`${state}: ${source}\n${error.stack.slice(0, index - 1)}`)
+      logger.warn(`${state}: ${getSource()}\n${error.stack.slice(0, index - 1)}`)
     }
   }
 

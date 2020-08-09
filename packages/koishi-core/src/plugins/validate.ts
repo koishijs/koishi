@@ -67,10 +67,10 @@ Command.userFields(function* ({ command, options = {} }, fields) {
   const { maxUsage, minInterval, authority } = command.config
   let shouldFetchAuthority = !fields.has('authority') && authority > 0
   let shouldFetchUsage = !!(maxUsage || minInterval)
-  for (const option of command._options) {
-    if (option.name in options) {
-      if (option.authority > 0) shouldFetchAuthority = true
-      if (option.notUsage) shouldFetchUsage = false
+  for (const { name, authority, notUsage } of Object.values(command._options)) {
+    if (name in options) {
+      if (authority > 0) shouldFetchAuthority = true
+      if (notUsage) shouldFetchUsage = false
     }
   }
   if (shouldFetchAuthority) yield 'authority'
@@ -95,7 +95,7 @@ export default function apply (app: App) {
     cmd._checkers = []
   })
 
-  app.on('before-command', ({ session, args, options, command, keyMap }: ParsedArgv<ValidationField>) => {
+  app.on('before-command', ({ session, args, options, command }: ParsedArgv<ValidationField>) => {
     async function sendHint (session: Session, message: string, ...param: any[]) {
       if (command.config.showWarning) {
         await session.$send(format(message, ...param))
@@ -126,13 +126,13 @@ export default function apply (app: App) {
       }
     }
 
-    for (const option of command._options) {
-      if (!option.validate || !(option.name in options)) continue
-      const result = typeof option.validate !== 'function'
-        ? !option.validate.test(options[option.name])
-        : option.validate(options[option.name])
+    for (const { validate, name } of Object.values(command._options)) {
+      if (!validate || !(name in options)) continue
+      const result = typeof validate !== 'function'
+        ? !validate.test(options[name])
+        : validate(options[name])
       if (result) {
-        return sendHint(session, messages.INVALID_OPTION, keyMap[option.name], result === true ? messages.CHECK_SYNTAX : result)
+        return sendHint(session, messages.INVALID_OPTION, name, result === true ? messages.CHECK_SYNTAX : result)
       }
     }
 
@@ -143,7 +143,7 @@ export default function apply (app: App) {
     if (command.config.authority > session.$user.authority) {
       return sendHint(session, messages.LOW_AUTHORITY)
     }
-    for (const option of command._options) {
+    for (const option of Object.values(command._options)) {
       if (option.name in options) {
         if (option.authority > session.$user.authority) {
           return sendHint(session, messages.LOW_AUTHORITY)

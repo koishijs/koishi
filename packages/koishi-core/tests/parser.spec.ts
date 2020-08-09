@@ -81,6 +81,14 @@ describe('option', () => {
     expect(cmd.parse('a -b c')).toMatchObject({ args: ['a'] })
     expect(cmd.parse('a b -c')).toMatchObject({ args: ['a', 'b -c'] })
   })
+
+  test('valued options', () => {
+    cmd = app.command('cmd2 <foo> [bar...]')
+    cmd.option('alpha', '-A', { value: false })
+    cmd.option('gamma', '-C', { value: 1 })
+    expect(cmd.parse('-A')).toMatchObject({ options: { alpha: false, gamma: 0 } })
+    expect(cmd.parse('-C')).toMatchObject({ options: { gamma: 1 } })
+  })
 })
 
 describe('advanced', () => {
@@ -88,6 +96,10 @@ describe('advanced', () => {
     cmd = app.command('cmd3')
     cmd.option('sharp', '# <id>')
     expect(cmd.parse('# 1')).toMatchObject({ args: [], options: { sharp: 1 } })
+  })
+
+  test('duplicate option', () => {
+    expect(() => cmd.option('flat', '#')).toThrowError()
   })
 
   test('remove option', () => {
@@ -102,99 +114,35 @@ describe('advanced', () => {
     expect(cmd.parse('a "b -- c" d')).toMatchObject({ args: ['a', 'b -- c', 'd'], options: {}, rest: '' })
     expect(cmd.parse('a b -- "c d"')).toMatchObject({ args: ['a', 'b'], options: { rest: 'c d' }, rest: '' })
   })
+
+  test('terminator 1', () => {
+    expect(cmd.parse('foo bar baz', ';')).toMatchObject({ args: ['foo', 'bar', 'baz'], rest: '' })
+    expect(cmd.parse('"foo bar" baz', ';')).toMatchObject({ args: ['foo bar', 'baz'], rest: '' })
+    expect(cmd.parse('"foo bar "baz', ';')).toMatchObject({ args: ['"foo', 'bar', '"baz'], rest: '' })
+    expect(cmd.parse('foo" bar" baz', ';')).toMatchObject({ args: ['foo"', 'bar"', 'baz'], rest: '' })
+    expect(cmd.parse('foo;bar baz', ';')).toMatchObject({ args: ['foo'], rest: ';bar baz' })
+    expect(cmd.parse('"foo;bar";baz', ';')).toMatchObject({ args: ['foo;bar'], rest: ';baz' })
+  })
+
+  test('terminator 2', () => {
+    expect(cmd.parse('-- foo bar baz', ';')).toMatchObject({ options: { rest: 'foo bar baz' }, rest: '' })
+    expect(cmd.parse('-- "foo bar" baz', ';')).toMatchObject({ options: { rest: '"foo bar" baz' }, rest: '' })
+    expect(cmd.parse('-- "foo bar baz"', ';')).toMatchObject({ options: { rest: 'foo bar baz' }, rest: '' })
+    expect(cmd.parse('-- foo;bar baz', ';')).toMatchObject({ options: { rest: 'foo' }, rest: ';bar baz' })
+    expect(cmd.parse('-- "foo;bar" baz', ';')).toMatchObject({ options: { rest: '"foo' }, rest: ';bar" baz' })
+    expect(cmd.parse('-- "foo;bar";baz', ';')).toMatchObject({ options: { rest: 'foo;bar' }, rest: ';baz' })
+  })
 })
 
-// describe('arguments', () => {
-//   test('sufficient arguments', () => {
-//     expect(1).toBe(1)
-    // const result = cmd1.parse('foo bar 123')
-    // expect(result.args).toMatchObject(['foo', 'bar', '123'])
-  // })
-
-//   test('insufficient arguments', () => {
-//     const result = cmd1.parse('-a')
-//     expect(result.args).toMatchObject([])
-//   })
-
-//   test('hyphen-prefixed arguments', () => {
-//     const result = cmd1.parse('-a "-a"')
-//     expect(result.args).toMatchObject(['-a'])
-//   })
-
-//   test('skip rest part', () => {
-//     const result = cmd1.parse('foo bar baz -- 123 456')
-//     expect(result.rest).toBe('123 456')
-//     expect(result.args).toMatchObject(['foo', 'bar', 'baz'])
-//   })
-
-//   test('long argument', () => {
-//     const result = cmd2.parse('foo bar baz -- 123 456')
-//     expect(result.rest).toBe('')
-//     expect(result.args).toMatchObject(['foo', 'bar baz -- 123 456'])
-//   })
-// })
-
-// describe('options', () => {
-//   let result: ParsedLine
-
-//   test('duplicate options', () => {
-//     expect(() => app
-//       .command('cmd-duplicate-options')
-//       .option('-a, --alpha')
-//       .option('-a, --aleph')
-//     ).toThrow()
-//   })
-
-//   test('option without parameter', () => {
-//     result = cmd1.parse('--alpha a')
-//     expect(result.args).toMatchObject(['a'])
-//     expect(result.options).toMatchObject({ a: true, alpha: true })
-//   })
-
-//   test('option with parameter', () => {
-//     result = cmd1.parse('--beta 10')
-//     expect(result.options).toMatchObject({ b: 10, beta: 10 })
-//     result = cmd1.parse('--beta=10')
-//     expect(result.options).toMatchObject({ b: 10, beta: 10 })
-//   })
-
-//   test('quoted parameter', () => {
-//     result = cmd1.parse('-c "" -d')
-//     expect(result.options).toMatchObject({ c: '', d: true })
-//   })
-
-//   test('unknown options', () => {
-//     result = cmd1.parse('--unknown-gamma b --unknown-gamma c -de 10')
-//     expect(result.unknown).toMatchObject(['unknown-gamma', 'd', 'e'])
-//     expect(result.options).toMatchObject({ unknownGamma: 'c', d: true, e: 10 })
-//   })
-
-//   test('negated options', () => {
-//     result = cmd2.parse('-C --no-delta -E --no-epsilon')
-//     expect(result.options).toMatchObject({ C: true, gamma: false, D: true, delta: false, E: true, epsilon: false })
-//   })
-
-//   test('option configuration', () => {
-//     result = cmd2.parse('-ba 123')
-//     expect(result.options).toMatchObject({ a: '123', b: 1000 })
-//     result = cmd2.parse('-ad 456')
-//     expect(result.options).toMatchObject({ a: '', b: 1000, d: 456 })
-//   })
-// })
-
-// describe('edge cases', () => {
-//   let cmd3: Command
-
-//   beforeAll(() => {
-//     cmd3 = app
-//       .command('cmd3')
-//       .option('-a, --alpha-beta')
-//       .option('-b, --no-alpha-beta')
-//       .option('-c, --no-gamma', '', { noNegated: true })
-//   })
-
-//   test('no negated options', () => {
-//     const result = cmd3.parse('-abc')
-//     expect(result.options).toMatchObject({ a: true, alphaBeta: true, b: true, noAlphaBeta: true, c: true, noGamma: true })
-//   })
-// })
+describe('stringify', () => {
+  test('basic support', () => {
+    cmd = app.command('cmd4')
+    cmd.option('alpha', '-a <val>')
+    cmd.option('beta', '-b')
+    expect(cmd.stringify(['foo', 'bar'], {})).toBe('cmd4 foo bar')
+    expect(cmd.stringify([], { alpha: 2 })).toBe('cmd4 --alpha 2')
+    expect(cmd.stringify([], { alpha: ' ' })).toBe('cmd4 --alpha " "')
+    expect(cmd.stringify([], { beta: true })).toBe('cmd4 --beta')
+    expect(cmd.stringify([], { beta: false })).toBe('cmd4 --no-beta')
+  })
+})
