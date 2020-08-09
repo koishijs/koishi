@@ -29,14 +29,14 @@ interface SubscribeOptions {
   names?: string[]
   bilibili?: string
   mirrativ?: string
-  twitCasting?: string
+  twitcasting?: string
 }
 
 export interface Subscribe extends SubscribeOptions {
   id: number
   bilibiliStatus: boolean
   mirrativStatus: boolean
-  twitCastingStatus: boolean
+  twitcastingStatus: boolean
 }
 
 export type SubscribeField = keyof Subscribe

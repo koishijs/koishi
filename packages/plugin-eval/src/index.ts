@@ -92,8 +92,8 @@ export function apply (ctx: Context, config: Config = {}) {
     .userFields(User.fields)
     .shortcut('>', { oneArg: true, fuzzy: true })
     .shortcut('>>', { oneArg: true, fuzzy: true, options: { output: true } })
-    .option('-o, --output', '输出最后的结果')
-    .option('-r, --restart', '重启子线程')
+    .option('output', '-o, --output  输出最后的结果')
+    .option('restart', '-r, --restart  重启子线程')
     .action(async ({ session, options }, expr) => {
       if (options.restart) {
         await worker.terminate()

@@ -67,8 +67,8 @@ const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
 export function apply (ctx: Context) {
   ctx.command('broadcast <message...>', '全服广播', { authority: 4 })
     .before(session => !session.$app.database)
-    .option('-f, --forced', '无视 noEmit 标签进行广播')
-    .option('-o, --only', '仅向当前 Bot 负责的群进行广播')
+    .option('forced', '-f, --forced  无视 noEmit 标签进行广播')
+    .option('only', '-o, --only  仅向当前 Bot 负责的群进行广播')
     .action(async ({ options, session }, message) => {
       if (!message) return '请输入要发送的文本。'
       if (!options.only) return ctx.broadcast(message, options.forced)

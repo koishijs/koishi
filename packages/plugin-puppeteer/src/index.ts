@@ -68,7 +68,7 @@ export function apply (ctx: Context, config: Config = {}) {
 
   ctx.command('shot <url>', '网页截图', { authority: 2 })
     .alias('screenshot')
-    .option('-f, --full-page', '对整个可滚动区域截图')
+    .option('fullPage', '-f, --full-page  对整个可滚动区域截图')
     .action(async ({ session, options }, url) => {
       if (!url) return '请输入网址。'
       const scheme = /^(\w+):\/\//.exec(url)
@@ -132,7 +132,7 @@ export function apply (ctx: Context, config: Config = {}) {
     })
 
   ctx.command('latex <code...>', 'LaTeX 渲染', { authority: 2 })
-    .option('-s, --scale <scale>', '缩放比例', { default: 2 })
+    .option('scale', '-s, --scale <scale>  缩放比例', { fallback: 2 })
     .usage('渲染器由 https://www.zhihu.com/equation 提供。')
     .action(async ({ session, options }, tex) => {
       if (!tex) return '请输入要渲染的 LaTeX 代码。'

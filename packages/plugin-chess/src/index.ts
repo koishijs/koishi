@@ -59,14 +59,14 @@ export function apply (ctx: Context) {
     .shortcut('跳过回合', { options: { skip: true } })
     .shortcut('使用图片模式', { options: { imageMode: true } })
     .shortcut('使用文本模式', { options: { textMode: true } })
-    .option('-i, --image-mode', '使用图片模式')
-    .option('-t, --text-mode', '使用文本模式')
-    .option('--rule <rule>', '设置规则，支持的规则有 go, gomoku, othello')
-    .option('--size <size>', '设置大小')
-    .option('--skip', '跳过回合')
-    .option('--repent', '悔棋')
-    .option('-v, --show, --draw, --view', '显示棋盘')
-    .option('-e, --stop, --end', '停止游戏')
+    .option('imageMode', '-i, --image-mode  使用图片模式')
+    .option('textMode', '-t, --text-mode  使用文本模式')
+    .option('rule', '--rule <rule>  设置规则，支持的规则有 go, gomoku, othello')
+    .option('size', '--size <size>  设置大小')
+    .option('skip', '--skip  跳过回合')
+    .option('repent', '--repent  悔棋')
+    .option('show', '-v, --show, --view  显示棋盘')
+    .option('stop', '-e, --stop, --end  停止游戏')
     .usage([
       '输入“五子棋”“黑白棋”“围棋”开始对应的一局游戏。',
       '再输入“落子 A1”将棋子落于 A1 点上。',

@@ -47,19 +47,19 @@ export function apply (ctx: Context) {
   const cmd = ctx.command('monitor', '直播监测器')
 
   cmd.subcommand('.create <...names>', '添加新的监测账号', { authority: 3 })
-    .option('-b, --bilibili <id>', '设置 Bilibili 账号')
-    .option('-m, --mirrativ <id>', '设置 Mirrativ 账号')
-    .option('-t, --twitcasting <id>', '设置 TwitCasting 账号', { isString: true })
-    .action(async ({ session, options }, ...names) => {
+    .option('bilibili', '-b, --bilibili <id>  设置 Bilibili 账号')
+    .option('mirrativ', '-m, --mirrativ <id>  设置 Mirrativ 账号')
+    .option('twitcasting', '-t, --twitcasting <id>  设置 TwitCasting 账号', { type: 'string' })
+    .action(async ({ options }, ...names) => {
       if (!names.length) return '请提供至少一个名字。'
 
       const usedNames = await checkNames(names)
       if (usedNames.length) return `名称 ${usedNames.join(', ')} 已被使用。`
 
-      const { bilibili, twitCasting, mirrativ } = options
-      if (!bilibili && !twitCasting && !mirrativ) return '请提供至少一种社交账号。'
+      const { bilibili, twitcasting, mirrativ } = options
+      if (!bilibili && !twitcasting && !mirrativ) return '请提供至少一种社交账号。'
       try {
-        await ctx.database.createSubscribe({ names, bilibili, twitCasting, mirrativ })
+        await ctx.database.createSubscribe({ names, bilibili, twitcasting, mirrativ })
         return '账号添加成功。'
       } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
@@ -72,21 +72,21 @@ export function apply (ctx: Context) {
 
   cmd.subcommand('.search <name>', '查找账号信息')
     .alias('搜索主播')
-    .action(async ({ session, options }, name: string) => {
+    .action(async (_, name: string) => {
       if (!name) return '请输入账号。'
       name = String(name)
-      const subscribe = await ctx.database.findSubscribe(name, ['names', 'bilibili', 'mirrativ', 'twitCasting'])
+      const subscribe = await ctx.database.findSubscribe(name, ['names', 'bilibili', 'mirrativ', 'twitcasting'])
       if (!subscribe) return '没有找到该账号。'
-      const { names, bilibili, twitCasting } = subscribe
+      const { names, bilibili, twitcasting } = subscribe
       const output: string[] = [names[0]]
       if (names.length > 1) output[0] += ` (${names.slice(1).join(', ')})`
       if (bilibili) output.push('Bilibili: ' + bilibili)
-      if (twitCasting) output.push('TwitCasting: ' + twitCasting)
+      if (twitcasting) output.push('TwitCasting: ' + twitcasting)
       return output.join('\n')
     })
 
   cmd.subcommand('.remove <name>', '删除已有的检测账号', { authority: 3 })
-    .action(async ({ session }, name) => {
+    .action(async (_, name) => {
       if (!name) return '请输入账号。'
       name = String(name)
       const succeed = await ctx.database.removeSubscribe(name)
@@ -95,15 +95,15 @@ export function apply (ctx: Context) {
     })
 
   cmd.subcommand('.update <name>', '修改已有账号信息', { authority: 3 })
-    .option('-n, --add-name <name>', '添加账号名', { isString: true, default: '' })
-    .option('-N, --remove-name <name>', '删除账号名', { isString: true, default: '' })
-    .option('-b, --bilibili <id>', '设置 Bilibili 账号', { isString: true })
-    .option('-m, --mirrativ <id>', '设置 Mirrativ 账号', { isString: true })
-    .option('-t, --twitcasting <id>', '设置 TwitCasting 账号', { isString: true })
+    .option('addName', '-n, --add-name <name>  添加账号名', { isString: true, default: '' })
+    .option('removeName', '-N, --remove-name <name>  删除账号名', { isString: true, default: '' })
+    .option('bilibili', '-b, --bilibili <id>  设置 Bilibili 账号', { isString: true })
+    .option('mirrativ', '-m, --mirrativ <id>  设置 Mirrativ 账号', { isString: true })
+    .option('twitcasting', '-t, --twitcasting <id>  设置 TwitCasting 账号', { isString: true })
     .action(async ({ session, options }, name: string) => {
       if (!name) return '请输入账号。'
       name = String(name)
-      const data = await ctx.database.findSubscribe(name, ['id', 'names', 'bilibili', 'mirrativ', 'twitCasting'])
+      const data = await ctx.database.findSubscribe(name, ['id', 'names', 'bilibili', 'mirrativ', 'twitcasting'])
       if (!data) return '没有找到该账号。'
 
       const addList = (options.addName || '').split(',')
@@ -112,7 +112,7 @@ export function apply (ctx: Context) {
       const account = observe(data, diff => ctx.database.setSubscribe(data.id, diff), `subscribe ${data.id}`)
 
       let configUpdated = false
-      for (const key of ['bilibili', 'mirrativ', 'twitCasting']) {
+      for (const key of ['bilibili', 'mirrativ', 'twitcasting']) {
         const optionKey = key.toLowerCase()
         if (optionKey in options) {
           account[optionKey] = options[optionKey]
@@ -150,7 +150,7 @@ export function apply (ctx: Context) {
     .groupFields(['subscribe'])
     .shortcut('查看单推列表')
     .shortcut('查看直播状态', { options: { group: true } })
-    .option('-g, --group', '查看本群内全部直播')
+    .option('group', '-g, --group  查看本群内全部直播')
     .action(async ({ session, options }) => {
       const { subscribe } = session.$group
       const output = [options.group ? '当前群内关注的直播状态：' : '当前关注的账号列表：']
@@ -171,7 +171,7 @@ export function apply (ctx: Context) {
           message += 'Bilibili 正在直播'
         } else if (daemons.mirrativ?.isLive) {
           message += 'Mirrativ 正在直播'
-        } else if (daemons.twitCasting?.isLive) {
+        } else if (daemons.twitcasting?.isLive) {
           message += 'TwitCasting 正在直播'
         } else {
           message += '未开播'
@@ -190,9 +190,9 @@ export function apply (ctx: Context) {
     .shortcut('取消单推', { prefix: true, fuzzy: true, options: { delete: true } })
     .shortcut('取消关注', { prefix: true, fuzzy: true, options: { delete: true } })
     .groupFields(['subscribe'])
-    .option('-g, --global', '设置本群默认关注', { authority: 2 })
-    .option('-d, --delete', '取消关注账号')
-    .option('-D, --delete-all', '取消全部关注账号')
+    .option('global', '-g, --global  设置本群默认关注', { authority: 2 })
+    .option('delete', '-d, --delete  取消关注账号')
+    .option('deleteAll', '-D, --delete-all  取消全部关注账号')
     .action(async ({ session, options }, name: string) => {
       const { subscribe } = session.$group
       const userId = options.global ? 0 : session.userId

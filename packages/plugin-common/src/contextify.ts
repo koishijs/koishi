@@ -6,10 +6,10 @@ export function apply (ctx: Context) {
     .alias('ctxf')
     .userFields(['authority'])
     .before(session => !session.$app.database)
-    .option('-u, --user [id]', '使用私聊上下文')
-    .option('-g, --group [id]', '使用群聊上下文')
-    .option('-m, --member [id]', '使用当前群/讨论组成员上下文')
-    .option('-t, --type [type]', '确定发送信息的子类型')
+    .option('user', '-u, --user [id]  使用私聊上下文')
+    .option('group', '-g, --group [id]  使用群聊上下文')
+    .option('member', '-m, --member [id]  使用当前群/讨论组成员上下文')
+    .option('type', '-t, --type [type]  确定发送信息的子类型')
     .usage([
       '私聊的子类型包括 other（默认），friend，group。',
       '群聊的子类型包括 normal（默认），notice，anonymous。',

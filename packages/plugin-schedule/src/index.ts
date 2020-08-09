@@ -51,11 +51,11 @@ export function apply (ctx: Context) {
   })
 
   ctx.command('schedule [time]', '设置定时命令', { authority: 3, checkUnknown: true })
-    .option('--, --rest <command...>', '要执行的指令')
-    .option('/, --interval <interval>', '设置触发的间隔秒数', { authority: 4, isString: true })
-    .option('-l, --list', '查看已经设置的日程')
-    .option('-L, --full-list', '查看全部上下文中已经设置的日程', { authority: 4 })
-    .option('-d, --delete <id>', '删除已经设置的日程')
+    .option('rest', '--, --rest <command...>  要执行的指令')
+    .option('interval', '/, --interval <interval>  设置触发的间隔秒数', { authority: 4, type: 'string' })
+    .option('list', '-l, --list  查看已经设置的日程')
+    .option('fullList', '-L, --full-list  查看全部上下文中已经设置的日程', { authority: 4 })
+    .option('delete', '-d, --delete <id>  删除已经设置的日程')
     .action(async ({ session, options }, ...dateSegments) => {
       if (options.delete) {
         await database.removeSchedule(options.delete)

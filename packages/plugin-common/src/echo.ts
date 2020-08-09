@@ -3,15 +3,15 @@ import { CQCode } from 'koishi-utils'
 
 export function apply (ctx: Context) {
   ctx.command('echo <message...>', '向多个上下文发送广播', { authority: 2 })
-    .option('-a, --anonymous', '匿名发送消息', { authority: 3 })
-    .option('-A, --force-anonymous', '匿名发送消息', { authority: 3 })
-    .option('-e, --unescape', '发送非转义的消息', { authority: 3 })
-    .option('-u, --user <id>', '指定信息发送的目标 QQ 号', { isString: true, authority: 4 })
-    .option('-g, --group <id>', '指定信息发送的目标群号', { isString: true, authority: 4 })
+    .option('anonymous', '-a, --anonymous  匿名发送消息', { authority: 3 })
+    .option('forceAnonymous', '-A, --force-anonymous  匿名发送消息', { authority: 3 })
+    .option('unescape', '-e, --unescape  发送非转义的消息', { authority: 3 })
+    .option('user', '-u, --user <id>  指定信息发送的目标 QQ 号', { type: 'string', authority: 4 })
+    .option('group', '-g, --group <id>  指定信息发送的目标群号', { type: 'string', authority: 4 })
     .usage('各 id 之间请使用逗号分隔。')
     .action(async ({ options, session }, message) => {
       // parse channels
-      const channels: Record<MetaTypeMap['message'], number[]> = {
+      const channels: Record<MetaTypeMap['message'], string[]> = {
         private: options.user ? options.user.split(',') : [],
         group: options.group ? options.group.split(',') : [],
       }
