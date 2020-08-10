@@ -5,8 +5,9 @@ import { Session, User } from 'koishi-core'
 import escapeRegExp from 'escape-string-regexp'
 
 Logger.levels = workerData.logLevels
+const logger = Logger.create('eval')
 
-import { expose, Remote, status } from './comlink'
+import { expose, Remote } from './comlink'
 import { VM } from './vm'
 import { MainAPI } from '.'
 
@@ -109,7 +110,6 @@ export class WorkerAPI {
 }
 
 Promise.all(Object.values(config.setupFiles).map(file => require(file).default)).then(() => {
-  status(parentPort)
   expose(new WorkerAPI(), parentPort)
 
   const path = findSourceMap(__filename).payload.sources[0].slice(7, -9)
@@ -119,6 +119,4 @@ Promise.all(Object.values(config.setupFiles).map(file => require(file).default))
     if (sourceMap) path = sourceMap.payload.sources[0].slice(7)
     return pathMapper[name] = new RegExp(`(at | \\()${escapeRegExp(path)}`, 'g')
   })
-}, (err) => {
-  status(parentPort, err instanceof Error ? err : new Error(err))
-})
+}, logger.warn)

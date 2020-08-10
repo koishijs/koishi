@@ -87,6 +87,8 @@ export const Host = {
   WeakSet,
   Promise,
   debug,
+  TextEncoder,
+  TextDecoder,
   inspectCustom: inspect.custom,
   Symbol,
   INSPECT_MAX_BYTES,

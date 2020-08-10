@@ -1,7 +1,7 @@
 import { Context, CommandAction } from 'koishi-core'
 import { resolve } from 'path'
 import {} from 'koishi-plugin-eval'
-import { assertProperty, Logger } from 'koishi-utils'
+import { assertProperty, Logger, noop } from 'koishi-utils'
 import { safeLoad } from 'js-yaml'
 import { readdirSync, promises } from 'fs'
 
@@ -18,6 +18,10 @@ declare module 'koishi-plugin-eval/dist/worker' {
 interface Command {
   name: string
   desc: string
+  options: {
+    name: string
+    desc: string
+  }[]
 }
 
 interface Manifest {
@@ -37,19 +41,20 @@ export function apply (ctx: Context, config: Config) {
   evalConfig.addonNames = readdirSync(root).filter(name => !name.includes('.'))
   evalConfig.addonNames.map(path => loadManifest(path).then(() => {
     logger.debug('load addon manifest %c', path)
-  }, (error) => {
-    logger.warn(`cannot load addon manifest %c\n` + error.stack, path)
-  }))
+  }, noop))
 
   async function loadManifest (path: string) {
     const content = await promises.readFile(resolve(root, path, 'manifest.yml'), 'utf8')
     const { commands = [] } = safeLoad(content) as Manifest
-    commands.forEach(({ name, desc }) => {
-      addons.subcommand(name, desc).action(addonAction)
+    commands.forEach(({ name, desc, options }) => {
+      const cmd = addons.subcommand(name, desc).action(addonAction)
+      options.forEach(({ name, desc }) => {
+        cmd.option(name, desc)
+      })
     })
   }
 
   const addonAction: CommandAction = ({ session, command: { name }, options, rest }, ...args) => {
-    return session.$eval(`require('koishi').executeCommand(${JSON.stringify({ name, args, options, rest })})`)
+    return session.$eval(`require('koishi').executeCommand(${JSON.stringify({ name, args, options, rest })})`, true)
   }
 }

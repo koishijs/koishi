@@ -1,7 +1,7 @@
 import { Context, User, Session } from 'koishi-core'
 import { CQCode, Logger, defineProperty, omit } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
-import { wrap, Remote, proxy, pend } from './comlink'
+import { wrap, Remote, proxy } from './comlink'
 import { WorkerAPI, WorkerConfig, WorkerData } from './worker'
 import { resolve } from 'path'
 
@@ -138,7 +138,6 @@ export function apply (ctx: Context, config: Config = {}) {
       resourceLimits,
     })
 
-    await pend(ctx.app.evalWorker)
     ctx.app.evalRemote = wrap(ctx.app.evalWorker)
     ctx.emit('worker/start')
     logger.info('worker started')

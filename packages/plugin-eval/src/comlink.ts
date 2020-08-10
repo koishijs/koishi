@@ -67,8 +67,6 @@ enum MessageType {
   CONSTRUCT,
   ENDPOINT,
   RELEASE,
-  READY,
-  ERROR,
 }
 
 enum WireValueType {
@@ -382,26 +380,4 @@ interface Message {
   path?: string[]
   value?: WireValue
   argumentList?: WireValue[]
-}
-
-export function status (ep: Endpoint, error?: Error) {
-  if (!error) return ep.postMessage({ type: MessageType.READY })
-  return ep.postMessage({
-    type: MessageType.ERROR,
-    stack: error.stack,
-  })
-}
-
-export function pend (ep: Endpoint) {
-  return new Promise<void>((resolve, reject) => {
-    ep.on('message', function callback (value) {
-      if (value.type === MessageType.READY) {
-        ep.off('message', callback)
-        resolve()
-      } else if (value.type === MessageType.ERROR) {
-        ep.off('message', callback)
-        reject(value.stack)
-      }
-    })
-  })
 }

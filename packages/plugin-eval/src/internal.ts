@@ -39,6 +39,8 @@ interface Builtin {
   // mocked classes
   Buffer: typeof Buffer
   VMError: typeof VMError
+  TextEncoder: typeof TextEncoder
+  TextDecoder: typeof TextDecoder
 
   // builtin utils
   Reflect: typeof Reflect
@@ -353,6 +355,8 @@ Helper.value = function (this: Helper, value, traps, deepTraps, mock) {
       if (instanceOf(value, this.remote.Set)) return this.instance(value, this.local.Set, deepTraps, 'Set')
       if (instanceOf(value, this.remote.WeakSet)) return this.instance(value, this.local.WeakSet, deepTraps, 'WeakSet')
       if (instanceOf(value, this.remote.Promise)) return this.instance(value, this.local.Promise, deepTraps, 'Promise')
+      if (instanceOf(value, this.remote.TextEncoder)) return this.instance(value, this.local.TextEncoder, deepTraps, 'TextEncoder')
+      if (instanceOf(value, this.remote.TextDecoder)) return this.instance(value, this.local.TextDecoder, deepTraps, 'TextDecoder')
       // TODO different behavior with vm2, why?
       if (instanceOf(value, this.remote.Buffer)) return this.instance(value, this.local.Buffer, deepTraps, 'Buffer')
       if (this.remote.Reflect.getPrototypeOf(value) === null) {
@@ -638,20 +642,21 @@ function connect (outer: any, inner: any) {
   Contextified.set(inner, outer)
 }
 
-const BufferMock = createObject({
+function defineGlobal(name: string, mock?: any) {
+  Object.defineProperty(GLOBAL, name, {
+    value: readonly(host[name], mock),
+  })
+  local[name] = GLOBAL[name]
+}
+
+defineGlobal('Buffer', createObject({
   allocUnsafe (size: number) {
     return this.alloc(size)
   },
   allocUnsafeSlow (size: number) {
     return this.alloc(size)
   },
-})
-
-Object.defineProperty(GLOBAL, 'Buffer', {
-  value: readonly(host.Buffer, BufferMock),
-})
-
-local.Buffer = GLOBAL['Buffer']
+}))
 
 connect(host.Buffer.prototype['inspect'], function inspect () {
   const max = host.INSPECT_MAX_BYTES
@@ -661,6 +666,9 @@ connect(host.Buffer.prototype['inspect'], function inspect () {
   if (remaining > 0) str += ` ... ${remaining} more byte${remaining > 1 ? 's' : ''}`
   return `<${this.constructor.name} ${str}>`
 })
+
+defineGlobal('TextEncoder')
+defineGlobal('TextDecoder')
 
 const defaultInspector: Inspector<Object> = (helper, toStringTag) => function (depth, options) {
   return this.toString()
@@ -675,6 +683,8 @@ export const value: <T> (value: T) => T = Decontextify.value.bind(Decontextify)
 export const sandbox = Decontextify.value(GLOBAL)
 
 delete global.console
+
+global['Proxy'][host.inspectCustom] = () => '[Function: Proxy]'
 
 for (const key of Object.getOwnPropertyNames(global)) {
   Object.defineProperty(GLOBAL, key, { value: global[key] })
