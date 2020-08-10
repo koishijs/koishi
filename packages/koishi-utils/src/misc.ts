@@ -7,3 +7,7 @@ export function isInteger (source: any) {
 export async function sleep (ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
+
+export async function assertProperty <T> (config: T, key: keyof T) {
+  if (!(key in config)) throw new Error(`missing configuration "${key}"`)
+}

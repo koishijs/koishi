@@ -14,6 +14,14 @@ export function pick <T, K extends keyof T> (source: T, keys: Iterable<K>) {
   return result
 }
 
+export function omit <T, K extends keyof T> (source: T, keys: Iterable<K>) {
+  const result = { ...source } as Omit<T, K>
+  for (const key of keys) {
+    Reflect.deleteProperty(result, key)
+  }
+  return result
+}
+
 export function defineProperty <T, K extends keyof T> (object: T, key: K, value: T[K]): void
 export function defineProperty <T, K extends keyof any> (object: T, key: K, value: any): void
 export function defineProperty <T, K extends keyof any> (object: T, key: K, value: any) {

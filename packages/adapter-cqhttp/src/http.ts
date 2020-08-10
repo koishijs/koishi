@@ -1,5 +1,5 @@
 import { App, Bot, Server } from 'koishi-core'
-import { Logger, defineProperty, snakeCase } from 'koishi-utils'
+import { Logger, defineProperty, snakeCase, assertProperty } from 'koishi-utils'
 import { toVersion } from './api'
 import {} from 'koa-bodyparser'
 import { createHmac } from 'crypto'
@@ -15,9 +15,7 @@ const logger = Logger.create('server')
 
 export default class HttpServer extends Server {
   constructor (app: App) {
-    if (!app.options.port) {
-      throw new Error('missing configuration "port"')
-    }
+    assertProperty(app.options, 'port')
     super(app)
   }
 

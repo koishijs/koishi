@@ -19,9 +19,7 @@ const defaultOptions: Config = {
 export const name = 'github-webhook'
 
 export function apply (ctx: Context, config: Config = {}) {
-  if (!ctx.app.server.router) {
-    throw new Error('missing configuration "port"')
-  }
+  if (!ctx.router) throw new Error('ctx.router is not defined')
 
   config = { ...defaultOptions, ...config }
   const webhook = new Webhooks(config)

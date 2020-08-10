@@ -1,5 +1,5 @@
 import { Bot, App, Server } from 'koishi-core'
-import { Logger } from 'koishi-utils'
+import { Logger, assertProperty } from 'koishi-utils'
 import type WebSocket from 'ws'
 import Channel from './channel'
 
@@ -10,9 +10,7 @@ export default class WsServer extends Server {
   private _channel: Channel
 
   constructor (app: App) {
-    if (!app.options.port) {
-      throw new Error('missing configuration "port"')
-    }
+    assertProperty(app.options, 'port')
     super(app)
     this._channel = new Channel(this)
     const { path = '/' } = this.app.options

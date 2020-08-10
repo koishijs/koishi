@@ -1,6 +1,7 @@
 /* eslint-disable quote-props */
 
 import { createHash } from 'crypto'
+import { assertProperty } from 'koishi-utils'
 import { Context } from 'koishi-core'
 import axios from 'axios'
 
@@ -26,8 +27,8 @@ export interface TranslateOptions {
 }
 
 export function apply (ctx: Context, config: TranslateOptions) {
+  assertProperty(config, 'youdaoSecret')
   const { youdaoAppKey: appKey, youdaoSecret: secret } = config
-  if (!secret) throw new Error('missing configuration "youdaoSecret"')
 
   ctx.command('tools/translate <text>', '翻译工具')
     .alias('翻译')
