@@ -14,5 +14,5 @@ declare module 'koishi-plugin-eval/dist/worker' {
 export function apply (ctx: Context, config: Config) {
   Object.assign(ctx.app.evalConfig, config)
   assertProperty(ctx.app.evalConfig, 'moduleRoot')
-  ctx.app.evalConfig.setupFiles.push(resolve(__dirname, 'worker'))
+  ctx.app.evalConfig.setupFiles['koishi/addons.ts'] = resolve(__dirname, 'worker.js')
 }

@@ -94,6 +94,8 @@ export class VMError extends Error {
   }
 }
 
+const { debug } = Logger.create('eval')
+
 export const Host = {
   String,
   Number,
@@ -119,7 +121,7 @@ export const Host = {
   Set,
   WeakSet,
   Promise,
-  logger: Logger.create('eval'),
+  debug,
   inspectCustom: inspect.custom,
   Symbol,
   INSPECT_MAX_BYTES,

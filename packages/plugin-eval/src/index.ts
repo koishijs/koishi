@@ -33,7 +33,7 @@ export interface Config extends WorkerConfig {
 const defaultConfig: Config = {
   timeout: 1000,
   maxLogs: 10,
-  setupFiles: [],
+  setupFiles: {},
   resourceLimits: {
     maxOldGenerationSizeMb: 64,
     maxYoungGenerationSizeMb: 64,

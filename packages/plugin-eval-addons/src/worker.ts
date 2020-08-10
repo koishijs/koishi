@@ -49,7 +49,7 @@ async function createModule (path: string) {
     const { outputText } = ts.transpileModule(content, {
       compilerOptions,
     })
-    modules[path] = new SourceTextModule(outputText, { context, identifier: 'addons/' + path })
+    modules[path] = new SourceTextModule(outputText, { context, identifier: path })
   }
   const module = modules[path]
   await module.link(linker)
