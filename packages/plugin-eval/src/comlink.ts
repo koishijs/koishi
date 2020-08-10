@@ -60,7 +60,7 @@ export type Local<T> = Omit<LocalObject<T>, keyof ProxyMethods>
     ? new (...args: { [I in keyof P]: ProxyOrClone<P[I]>}) => MaybePromise<Local<Unpromisify<R>>>
     : unknown)
 
-const enum MessageType {
+enum MessageType {
   GET,
   SET,
   APPLY,
@@ -68,9 +68,10 @@ const enum MessageType {
   ENDPOINT,
   RELEASE,
   READY,
+  ERROR,
 }
 
-const enum WireValueType {
+enum WireValueType {
   RAW,
   PROXY,
   THROW,
@@ -383,15 +384,24 @@ interface Message {
   argumentList?: WireValue[]
 }
 
-export function ready (ep: Endpoint) {
-  ep.postMessage({ type: MessageType.READY })
+export function status (ep: Endpoint, error?: Error) {
+  if (!error) return ep.postMessage({ type: MessageType.READY })
+  return ep.postMessage({
+    type: MessageType.ERROR,
+    stack: error.stack,
+  })
 }
 
-export function wait (ep: Endpoint) {
+export function pend (ep: Endpoint) {
   return new Promise<void>((resolve, reject) => {
-    ep.on('message', (value) => {
-      if (value.type === MessageType.READY) resolve()
+    ep.on('message', function callback (value) {
+      if (value.type === MessageType.READY) {
+        ep.off('message', callback)
+        resolve()
+      } else if (value.type === MessageType.ERROR) {
+        ep.off('message', callback)
+        reject(value.stack)
+      }
     })
-    ep.on('close', reject)
   })
 }

@@ -1,7 +1,7 @@
 import { InspectOptions, formatWithOptions } from 'util'
 import { Session, User } from 'koishi-core'
 import { parentPort, workerData } from 'worker_threads'
-import { expose, Remote, ready } from './comlink'
+import { expose, Remote, status } from './comlink'
 import { VM } from './vm'
 import { MainAPI } from '.'
 import { defineProperty } from 'koishi-utils'
@@ -88,8 +88,8 @@ export class WorkerAPI {
 Promise
   .all(config.setupFiles.map(file => require(file).default))
   .then(() => {
-    ready(parentPort)
+    status(parentPort)
     expose(new WorkerAPI(), parentPort)
-  }, () => {
-    parentPort.close()
+  }, (err) => {
+    status(parentPort, err instanceof Error ? err : new Error(err))
   })
