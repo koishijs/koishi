@@ -4,7 +4,6 @@
 import { resolve } from 'path'
 import { readFileSync } from 'fs'
 import { Script, createContext } from 'vm'
-import { EventEmitter } from 'events'
 import { INSPECT_MAX_BYTES } from 'buffer'
 import { inspect } from 'util'
 import { Logger } from 'koishi-utils'
@@ -16,13 +15,11 @@ export interface VMOptions {
   wasm?: boolean
 }
 
-export class VM extends EventEmitter {
+export class VM {
   readonly context: object
-  readonly _internal: typeof Internal = Object.create(null)
+  readonly internal: typeof Internal = Object.create(null)
 
   constructor (options: VMOptions = {}) {
-    super()
-
     const { sandbox = {}, strings = true, wasm = true } = options
     this.context = createContext(undefined, {
       codeGeneration: { strings, wasm },
@@ -37,38 +34,17 @@ export class VM extends EventEmitter {
 
     script
       .runInContext(this.context, { displayErrors: false })
-      .call(this.context, Host, this._internal)
+      .call(this.context, Host, this.internal)
 
     for (const name in sandbox) {
       if (Object.prototype.hasOwnProperty.call(sandbox, name)) {
-        this._internal.setGlobal(name, sandbox[name])
+        this.internal.setGlobal(name, sandbox[name])
       }
     }
   }
 
   get sandbox () {
-    return this._internal.sandbox
-  }
-
-  setGlobal (name: string, value: any) {
-    this._internal.setGlobal(name, value, true)
-    return this
-  }
-
-  getGlobal (name: string) {
-    return this._internal.getGlobal(name)
-  }
-
-  freeze (value: any, globalName?: string) {
-    this._internal.readonly(value)
-    if (globalName) this._internal.setGlobal(globalName, value)
-    return value
-  }
-
-  protect (value: any, globalName?: string) {
-    this._internal.protect(value)
-    if (globalName) this._internal.setGlobal(globalName, value)
-    return value
+    return this.internal.sandbox
   }
 
   run (code: string, filename = 'vm.js') {
@@ -78,9 +54,9 @@ export class VM extends EventEmitter {
     })
 
     try {
-      return this._internal.value(script.runInContext(this.context, { displayErrors: false }))
+      return this.internal.value(script.runInContext(this.context, { displayErrors: false }))
     } catch (e) {
-      throw this._internal.value(e)
+      throw this.internal.value(e)
     }
   }
 }

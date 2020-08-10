@@ -1,4 +1,4 @@
-import { config, context, setGlobal, sandbox } from 'koishi-plugin-eval/dist/worker'
+import { config, context, setGlobal, sandbox, value } from 'koishi-plugin-eval/dist/worker'
 import { readdirSync, promises, readFileSync } from 'fs'
 import { resolve } from 'path'
 import { Logger } from 'koishi-utils'
@@ -30,7 +30,7 @@ setGlobal('require', function require (name) {
   if (!module) {
     throw new Error(`Cannot find module "${name}"`)
   }
-  return module.namespace
+  return value(module.namespace)
 })
 
 function linker (specifier: string, reference: any) {

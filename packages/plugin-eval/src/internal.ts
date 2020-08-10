@@ -214,11 +214,17 @@ interface Helper {
   remoteStore: WeakMap<object, any>
   localStore: WeakMap<object, any>
   proxies: WeakMap<object, any>
-  arguments: (args: any[]) => any[]
-  instance <T> (instance: any, klass: new (...args: any[]) => T, deepTraps: Trap, flags, toStringTag?: string, inspectCustom?: Inspector<T>): any
-  function: (fnc, traps?: Trap, deepTraps?: Trap, flags?, mock?) => any
-  object: (object, traps: Trap, deepTraps: Trap, flags?, mock?) => any
-  value: (value, traps?: Trap, deepTraps?: Trap, flags?, mock?) => any
+  arguments (args: any[]): any[]
+  function (value: any, traps?: Trap, deepTraps?: Trap, mock?: any): any
+  object (value: any, traps: Trap, deepTraps: Trap, mock?: any): any
+  value (value: any, traps?: Trap, deepTraps?: Trap, mock?: any): any
+  instance <T> (
+    value: any,
+    constructor: new (...args: any[]) => T,
+    deepTraps: Trap,
+    toStringTag?: string,
+    inspectCustom?: Inspector<T>,
+  ): any
 }
 
 const Helper: Helper = Object.create(null)
@@ -238,7 +244,7 @@ Helper.arguments = function (this: Helper, args) {
   }
 }
 
-Helper.instance = function (this: Helper, instance, klass, deepTraps, flags, toStringTag, inspectCustom) {
+Helper.instance = function (this: Helper, instance, klass, deepTraps, toStringTag, inspectCustom) {
   if (typeof instance === 'function') return this.function(instance)
   return this.object(instance, createObject({
     get: (target, key) => {
@@ -259,7 +265,7 @@ Helper.instance = function (this: Helper, instance, klass, deepTraps, flags, toS
       if (key === this.local.inspectCustom && inspectCustom) return inspectCustom(this, toStringTag)
 
       try {
-        return this.value(this.remote.Reflect.get(instance, key), null, deepTraps, flags)
+        return this.value(this.remote.Reflect.get(instance, key), null, deepTraps)
       } catch (e) {
         throw this.value(e)
       }
@@ -267,10 +273,10 @@ Helper.instance = function (this: Helper, instance, klass, deepTraps, flags, toS
     getPrototypeOf: () => {
       return klass && klass.prototype
     },
-  }), deepTraps, flags)
+  }), deepTraps)
 }
 
-Helper.function = function (this: Helper, fnc, traps, deepTraps, flags, mock) {
+Helper.function = function (this: Helper, fnc, traps, deepTraps, mock) {
   const proxy = this.object(fnc, createObject({
     apply: (target, context, args) => {
       context = this.conjugate.value(context)
@@ -284,7 +290,7 @@ Helper.function = function (this: Helper, fnc, traps, deepTraps, flags, mock) {
     construct: (target, args) => {
       args = this.conjugate.arguments(args)
       try {
-        return this.instance(new fnc(...args), proxy, deepTraps, flags)
+        return this.instance(new fnc(...args), proxy, deepTraps)
       } catch (e) {
         throw this.value(e)
       }
@@ -310,7 +316,7 @@ Helper.function = function (this: Helper, fnc, traps, deepTraps, flags, mock) {
       }
 
       try {
-        return this.value(fnc[key], null, deepTraps, flags)
+        return this.value(fnc[key], null, deepTraps)
       } catch (e) {
         throw this.value(e)
       }
@@ -320,38 +326,38 @@ Helper.function = function (this: Helper, fnc, traps, deepTraps, flags, mock) {
   return proxy
 }
 
-Helper.value = function (this: Helper, value, traps, deepTraps, flags, mock) {
+Helper.value = function (this: Helper, value, traps, deepTraps, mock) {
   try {
     if (this.remoteStore.has(value)) return this.remoteStore.get(value)
     if (this.proxies.has(value)) return this.proxies.get(value)
-    if (typeof value === 'function') return this.function(value, traps, deepTraps, flags, mock)
+    if (typeof value === 'function') return this.function(value, traps, deepTraps, mock)
     if (typeof value === 'object') {
       if (value === null) return null
-      if (instanceOf(value, this.remote.Number)) return this.instance(value, this.local.Number, deepTraps, flags, 'Number', primitiveInspector)
-      if (instanceOf(value, this.remote.String)) return this.instance(value, this.local.String, deepTraps, flags, 'String', primitiveInspector)
-      if (instanceOf(value, this.remote.Boolean)) return this.instance(value, this.local.Boolean, deepTraps, flags, 'Boolean', primitiveInspector)
-      if (instanceOf(value, this.remote.Date)) return this.instance(value, this.local.Date, deepTraps, flags, 'Date', defaultInspector)
-      if (instanceOf(value, this.remote.RangeError)) return this.instance(value, this.local.RangeError, deepTraps, flags, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.ReferenceError)) return this.instance(value, this.local.ReferenceError, deepTraps, flags, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.SyntaxError)) return this.instance(value, this.local.SyntaxError, deepTraps, flags, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.TypeError)) return this.instance(value, this.local.TypeError, deepTraps, flags, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.VMError)) return this.instance(value, this.local.VMError, deepTraps, flags, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.EvalError)) return this.instance(value, this.local.EvalError, deepTraps, flags, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.URIError)) return this.instance(value, this.local.URIError, deepTraps, flags, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.Error)) return this.instance(value, this.local.Error, deepTraps, flags, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.RegExp)) return this.instance(value, this.local.RegExp, deepTraps, flags, 'RegExp', defaultInspector)
-      if (instanceOf(value, this.remote.Array)) return this.instance(value, this.local.Array, deepTraps, flags, 'Array')
-      if (instanceOf(value, this.remote.Map)) return this.instance(value, this.local.Map, deepTraps, flags, 'Map')
-      if (instanceOf(value, this.remote.WeakMap)) return this.instance(value, this.local.WeakMap, deepTraps, flags, 'WeakMap')
-      if (instanceOf(value, this.remote.Set)) return this.instance(value, this.local.Set, deepTraps, flags, 'Set')
-      if (instanceOf(value, this.remote.WeakSet)) return this.instance(value, this.local.WeakSet, deepTraps, flags, 'WeakSet')
-      if (instanceOf(value, this.remote.Promise)) return this.instance(value, this.local.Promise, deepTraps, flags, 'Promise')
+      if (instanceOf(value, this.remote.Number)) return this.instance(value, this.local.Number, deepTraps, 'Number', primitiveInspector)
+      if (instanceOf(value, this.remote.String)) return this.instance(value, this.local.String, deepTraps, 'String', primitiveInspector)
+      if (instanceOf(value, this.remote.Boolean)) return this.instance(value, this.local.Boolean, deepTraps, 'Boolean', primitiveInspector)
+      if (instanceOf(value, this.remote.Date)) return this.instance(value, this.local.Date, deepTraps, 'Date', defaultInspector)
+      if (instanceOf(value, this.remote.RangeError)) return this.instance(value, this.local.RangeError, deepTraps, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.ReferenceError)) return this.instance(value, this.local.ReferenceError, deepTraps, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.SyntaxError)) return this.instance(value, this.local.SyntaxError, deepTraps, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.TypeError)) return this.instance(value, this.local.TypeError, deepTraps, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.VMError)) return this.instance(value, this.local.VMError, deepTraps, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.EvalError)) return this.instance(value, this.local.EvalError, deepTraps, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.URIError)) return this.instance(value, this.local.URIError, deepTraps, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.Error)) return this.instance(value, this.local.Error, deepTraps, 'Error', defaultInspector)
+      if (instanceOf(value, this.remote.RegExp)) return this.instance(value, this.local.RegExp, deepTraps, 'RegExp', defaultInspector)
+      if (instanceOf(value, this.remote.Array)) return this.instance(value, this.local.Array, deepTraps, 'Array')
+      if (instanceOf(value, this.remote.Map)) return this.instance(value, this.local.Map, deepTraps, 'Map')
+      if (instanceOf(value, this.remote.WeakMap)) return this.instance(value, this.local.WeakMap, deepTraps, 'WeakMap')
+      if (instanceOf(value, this.remote.Set)) return this.instance(value, this.local.Set, deepTraps, 'Set')
+      if (instanceOf(value, this.remote.WeakSet)) return this.instance(value, this.local.WeakSet, deepTraps, 'WeakSet')
+      if (instanceOf(value, this.remote.Promise)) return this.instance(value, this.local.Promise, deepTraps, 'Promise')
       // TODO different behavior with vm2, why?
-      if (instanceOf(value, this.remote.Buffer)) return this.instance(value, this.local.Buffer, deepTraps, flags, 'Buffer')
+      if (instanceOf(value, this.remote.Buffer)) return this.instance(value, this.local.Buffer, deepTraps, 'Buffer')
       if (this.remote.Reflect.getPrototypeOf(value) === null) {
-        return this.instance(value, null, deepTraps, flags)
+        return this.instance(value, null, deepTraps)
       } else {
-        return this.object(value, traps, deepTraps, flags, mock)
+        return this.object(value, traps, deepTraps, mock)
       }
     }
     return value
@@ -360,7 +366,7 @@ Helper.value = function (this: Helper, value, traps, deepTraps, flags, mock) {
   }
 }
 
-Helper.object = function (this: Helper, object, traps, deepTraps, flags, mock) {
+Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
   const base: Trap = createObject({
     get: (target, key, receiver) => {
       try {
@@ -379,7 +385,7 @@ Helper.object = function (this: Helper, object, traps, deepTraps, flags, mock) {
       if (key === '__lookupSetter__') return this.local.Object.prototype['__lookupSetter__']
 
       try {
-        return this.value(this.remote.Reflect.get(object, key), null, deepTraps, flags)
+        return this.value(this.remote.Reflect.get(object, key), null, deepTraps)
       } catch (e) {
         throw this.value(e)
       }
@@ -387,7 +393,6 @@ Helper.object = function (this: Helper, object, traps, deepTraps, flags, mock) {
     set: (target, key, value, receiver) => {
       if (this === Contextify) {
         if (key === '__proto__') return false
-        if (flags && flags.protected && typeof value === 'function') return false
       }
 
       value = this.conjugate.value(value)
@@ -408,10 +413,10 @@ Helper.object = function (this: Helper, object, traps, deepTraps, flags, mock) {
       if (!def) return undefined
 
       const desc: PropertyDescriptor = createObject(def.get || def.set ? {
-        get: this.value(def.get, null, deepTraps, flags) || undefined,
-        set: this.value(def.set, null, deepTraps, flags) || undefined,
+        get: this.value(def.get, null, deepTraps) || undefined,
+        set: this.value(def.set, null, deepTraps) || undefined,
       } : {
-        value: this.value(def.value, null, deepTraps, flags),
+        value: this.value(def.value, null, deepTraps),
         writable: def.writable === true,
       })
       desc.enumerable = def.enumerable === true
@@ -437,15 +442,12 @@ Helper.object = function (this: Helper, object, traps, deepTraps, flags, mock) {
       const descGet = descriptor.get
       const descSet = descriptor.set
       const descValue = descriptor.value
-      if (this === Contextify && flags && flags.protected) {
-        if (descGet || descSet || typeof descValue === 'function') return false
-      }
   
       const propDesc: PropertyDescriptor = createObject(descGet || descSet ? {
-        get: this.conjugate.value(descGet, null, deepTraps, flags) || undefined,
-        set: this.conjugate.value(descSet, null, deepTraps, flags) || undefined,
+        get: this.conjugate.value(descGet, null, deepTraps) || undefined,
+        set: this.conjugate.value(descSet, null, deepTraps) || undefined,
       } : {
-        value: this.conjugate.value(descValue, null, deepTraps, flags),
+        value: this.conjugate.value(descValue, null, deepTraps),
         writable: descriptor.writable === true,
       })
       propDesc.enumerable = descriptor.enumerable === true
@@ -498,7 +500,7 @@ Helper.object = function (this: Helper, object, traps, deepTraps, flags, mock) {
 
       try {
         if (local.Reflect.isExtensible(target)) {
-          doPreventExtensions(target, object, obj => this.conjugate.value(obj, null, deepTraps, flags))
+          doPreventExtensions(target, object, obj => this.conjugate.value(obj, null, deepTraps))
         }
       } catch (e) {}
     },
@@ -520,7 +522,7 @@ Helper.object = function (this: Helper, object, traps, deepTraps, flags, mock) {
       if (success) {
         try {
           if (local.Reflect.isExtensible(target)) {
-            doPreventExtensions(target, object, obj => this.conjugate.value(obj, null, deepTraps, flags))
+            doPreventExtensions(target, object, obj => this.conjugate.value(obj, null, deepTraps))
           }
         } catch (e) {}
       }
@@ -627,11 +629,7 @@ const FROZEN_TRAPS: Trap = createObject({
 })
 
 export function readonly (value: any, mock?: any) {
-  return Contextify.value(value, null, FROZEN_TRAPS, null, mock)
-}
-
-export function protect (value: any, mock?: any) {
-  return Contextify.value(value, null, null, {protected: true}, mock)
+  return Contextify.value(value, null, FROZEN_TRAPS, mock)
 }
 
 function connect (outer: any, inner: any) {

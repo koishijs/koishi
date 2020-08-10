@@ -38,6 +38,9 @@ export default class Global {
   }
 
   exec (message: string) {
+    if (typeof message !== 'string') {
+      throw new TypeError('The "message" argument must be of type string')
+    }
     return this.main.execute(message)
   }
 
@@ -61,11 +64,15 @@ export const context = vm.context
 
 type Bind <O, K extends keyof O> = O[K] extends (...args: infer R) => infer T ? (this: O, ...args: R) => T : O[K]
 
+export function value <T> (value: T): T {
+  return vm.internal.value(value)
+}
+
 export function setGlobal <K extends keyof Global> (key: K, value: Bind<Global, K>, writable = false) {
   if (typeof value === 'function') {
     value = value['bind'](sandbox)
   }
-  vm._internal.setGlobal(key, value, writable)
+  vm.internal.setGlobal(key, value, writable)
 }
 
 const pathMapper: Record<string, RegExp> = {}
@@ -96,8 +103,8 @@ export class WorkerAPI {
   async eval (options: EvalOptions, main: MainAPI) {
     const { session, source, user, output } = options
     defineProperty(sandbox, 'main', main)
-    vm.setGlobal('user', JSON.parse(user))
-    vm.setGlobal('session', JSON.parse(session))
+    setGlobal('user', JSON.parse(user), true)
+    setGlobal('session', JSON.parse(session), true)
 
     let result: any
     try {
