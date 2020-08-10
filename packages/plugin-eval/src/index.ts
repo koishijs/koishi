@@ -1,5 +1,5 @@
 import { Context, User, Session } from 'koishi-core'
-import { CQCode, Logger, defineProperty } from 'koishi-utils'
+import { CQCode, Logger, defineProperty, omit } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { wrap, Remote, proxy, pend } from './comlink'
 import { WorkerAPI, WorkerConfig } from './worker'
@@ -8,6 +8,13 @@ import { resolve } from 'path'
 declare module 'koishi-core/dist/app' {
   interface App {
     evalConfig: Config
+  }
+}
+
+declare module 'koishi-core/dist/context' {
+  interface EventMap {
+    'worker/start' (): void
+    'worker/exit' (): void
   }
 }
 
@@ -73,15 +80,17 @@ export function apply (ctx: Context, config: Config = {}) {
   let remote: Remote<WorkerAPI>
   async function createWorker () {
     worker = new Worker(resolve(__dirname, 'worker.js'), {
-      workerData: config,
+      workerData: omit(config, ['maxLogs', 'resourceLimits', 'timeout']),
       resourceLimits,
     })
 
     await pend(worker)
     remote = wrap(worker)
+    ctx.emit('worker/start')
     logger.info('worker started')
 
     worker.on('exit', (code) => {
+      ctx.emit('worker/exit')
       logger.info('exited with code', code)
       if (restart) createWorker()
     })
@@ -111,6 +120,7 @@ export function apply (ctx: Context, config: Config = {}) {
       if (!expr) return '请输入要执行的脚本。'
       if (session._eval) return '不能嵌套调用本指令。'
 
+      expr = CQCode.unescape(expr)
       return new Promise((resolve) => {
         logger.debug(expr)
         defineProperty(session, '_eval', true)
@@ -139,7 +149,7 @@ export function apply (ctx: Context, config: Config = {}) {
           session: JSON.stringify(session),
           user: JSON.stringify(session.$user),
           output: options.output,
-          source: CQCode.unescape(expr),
+          source: expr,
         }, proxy(main)).then(_resolve, (error) => {
           logger.warn(error)
           _resolve()

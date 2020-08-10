@@ -1,9 +1,8 @@
 import { config, context, setGlobal, sandbox } from 'koishi-plugin-eval/dist/worker'
-import { readdirSync } from 'fs'
-import { readFile } from 'fs/promises'
+import { readdirSync, promises } from 'fs'
 import { resolve } from 'path'
-import { transpileModule, ScriptTarget, CompilerOptions } from 'typescript'
 import { Logger } from 'koishi-utils'
+import ts from 'typescript'
 
 const logger = Logger.create('addon')
 
@@ -41,16 +40,18 @@ function linker (specifier: string, reference: any) {
   throw new Error(`Unable to resolve dependency "${specifier}"`)
 }
 
-const compilerOptions: CompilerOptions = {
-  target: ScriptTarget.ES2020,
-  noEmit: true,
+let compilerOptions: ts.CompilerOptions
+async function getCompilerOptions () {
+  if (compilerOptions) return compilerOptions
+  const content = await promises.readFile(resolve(root, 'tsconfig.json'), 'utf8')
+  compilerOptions = ts.parseJsonConfigFileContent(content, ts.sys, root).options
 }
 
 async function createModule (path: string) {
   if (!modules[path]) {
-    const content = await readFile(resolve(root, path, 'index.ts'), 'utf8')
-    const { outputText } = transpileModule(content, {
-      compilerOptions,
+    const content = await promises.readFile(resolve(root, path, 'index.ts'), 'utf8')
+    const { outputText } = ts.transpileModule(content, {
+      compilerOptions: await getCompilerOptions(),
     })
     modules[path] = new SourceTextModule(outputText, { context })
   }

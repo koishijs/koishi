@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { observe } from 'koishi-utils'
+import { observe, Logger } from 'koishi-utils'
 import { Monitor, INTERVAL } from './monitor'
 import './database'
 
@@ -7,6 +7,7 @@ export * from './database'
 export * from './monitor'
 
 const monitors: Record<number | string, Monitor> = {}
+const logger = Logger.create('monitor')
 
 export const name = 'monitor'
 
@@ -156,7 +157,7 @@ export function apply (ctx: Context) {
       const output = [options.group ? '当前群内关注的直播状态：' : '当前关注的账号列表：']
       for (const id in subscribe) {
         if (!monitors[id]) {
-          console.error('Account Not Found:', id)
+          logger.warn('Account Not Found:', id)
           continue
         }
         const { config, daemons } = monitors[id]

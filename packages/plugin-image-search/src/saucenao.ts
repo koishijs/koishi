@@ -149,7 +149,7 @@ export default async function saucenao (sourceUrl: string, session: Session, con
           output.push('没有在 nhentai 找到对应的本子_(:3」∠)_')
         }
       } catch (error) {
-        console.log(error)
+        logger.debug(error)
       }
 
       output.push(getShareText({
