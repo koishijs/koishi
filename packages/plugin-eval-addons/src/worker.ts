@@ -1,10 +1,10 @@
 import { config, context, setGlobal, sandbox } from 'koishi-plugin-eval/dist/worker'
-import { readdirSync, promises } from 'fs'
+import { readdirSync, promises, readFileSync } from 'fs'
 import { resolve } from 'path'
 import { Logger } from 'koishi-utils'
 import ts from 'typescript'
 
-const logger = Logger.create('addon')
+const logger = Logger.create('addons')
 
 const { SourceTextModule, SyntheticModule } = require('vm')
 
@@ -28,7 +28,7 @@ paths.push(...Object.keys(modules))
 setGlobal('require', function require (name) {
   const module = modules[name]
   if (!module) {
-    throw new Error(`Cannot find module "${name}".`)
+    throw new Error(`Cannot find module "${name}"`)
   }
   return module.namespace
 })
@@ -40,20 +40,16 @@ function linker (specifier: string, reference: any) {
   throw new Error(`Unable to resolve dependency "${specifier}"`)
 }
 
-let compilerOptions: ts.CompilerOptions
-async function getCompilerOptions () {
-  if (compilerOptions) return compilerOptions
-  const content = await promises.readFile(resolve(root, 'tsconfig.json'), 'utf8')
-  compilerOptions = ts.parseJsonConfigFileContent(content, ts.sys, root).options
-}
+const json = JSON.parse(readFileSync(resolve(root, 'tsconfig.json'), 'utf8'))
+const { options: compilerOptions } = ts.parseJsonConfigFileContent(json, ts.sys, root)
 
 async function createModule (path: string) {
   if (!modules[path]) {
     const content = await promises.readFile(resolve(root, path, 'index.ts'), 'utf8')
     const { outputText } = ts.transpileModule(content, {
-      compilerOptions: await getCompilerOptions(),
+      compilerOptions,
     })
-    modules[path] = new SourceTextModule(outputText, { context })
+    modules[path] = new SourceTextModule(outputText, { context, identifier: 'addons/' + path })
   }
   const module = modules[path]
   await module.link(linker)

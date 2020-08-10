@@ -4,12 +4,14 @@ import { parentPort, workerData } from 'worker_threads'
 import { expose, Remote, status } from './comlink'
 import { VM } from './vm'
 import { MainAPI } from '.'
-import { defineProperty } from 'koishi-utils'
+import { defineProperty, Logger } from 'koishi-utils'
 
 export interface WorkerConfig {
   setupFiles?: string[]
   inspect?: InspectOptions
 }
+
+Logger.levels = workerData.logLevels
 
 export const config: WorkerConfig = {
   ...workerData,

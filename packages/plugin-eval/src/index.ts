@@ -80,7 +80,10 @@ export function apply (ctx: Context, config: Config = {}) {
   let remote: Remote<WorkerAPI>
   async function createWorker () {
     worker = new Worker(resolve(__dirname, 'worker.js'), {
-      workerData: omit(config, ['maxLogs', 'resourceLimits', 'timeout']),
+      workerData: {
+        logLevels: Logger.levels,
+        ...omit(config, ['maxLogs', 'resourceLimits', 'timeout'])
+      },
       resourceLimits,
     })
 

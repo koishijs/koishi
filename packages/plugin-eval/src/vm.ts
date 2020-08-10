@@ -7,6 +7,7 @@ import { Script, createContext } from 'vm'
 import { EventEmitter } from 'events'
 import { INSPECT_MAX_BYTES } from 'buffer'
 import { inspect } from 'util'
+import { Logger } from 'koishi-utils'
 import type * as Internal from './internal'
 
 export interface VMOptions {
@@ -118,6 +119,7 @@ export const Host = {
   Set,
   WeakSet,
   Promise,
+  logger: Logger.create('eval'),
   inspectCustom: inspect.custom,
   Symbol,
   INSPECT_MAX_BYTES,
