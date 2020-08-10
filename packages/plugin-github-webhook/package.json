@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-github-webhook",
   "description": "GitHub webhook plugin for Koishi",
-  "version": "2.0.0-beta.3",
+  "version": "2.0.0-beta.4",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
