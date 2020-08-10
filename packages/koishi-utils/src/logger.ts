@@ -1,9 +1,6 @@
 import { inspect, InspectOptions, format } from 'util'
 import { formatTimeShort } from './date'
 import { stderr } from 'supports-color'
-import { isatty } from 'tty'
-
-const isTTY = isatty(process.stderr['fd'])
 
 const colors = stderr.level < 2 ? [6, 2, 3, 4, 5, 1] : [
   20, 21, 26, 27, 32, 33, 38, 39, 40, 41, 42, 43, 44, 45, 56, 57, 62,
@@ -24,7 +21,7 @@ export class Logger {
   static lastTime = 0
 
   static options: InspectOptions = {
-    colors: isTTY,
+    colors: stderr.hasBasic,
   }
 
   static formatters: Record<string, (this: Logger, value: any) => string> = {
@@ -59,11 +56,9 @@ export class Logger {
       hash = ((hash << 3) - hash) + name.charCodeAt(i)
       hash |= 0
     }
+    instances[name] = this
     this.code = colors[Math.abs(hash) % colors.length]
-    instances[this.name] = this
-    this.displayName = name
-    if (name) this.displayName += ' '
-    if (isTTY) this.displayName = this.color(this.displayName, ';1')
+    this.displayName = name ? this.color(name + ' ', ';1') : ''
     this.createMethod('success', '[S] ', 1)
     this.createMethod('error', '[E] ', 1)
     this.createMethod('info', '[I] ', 2)
