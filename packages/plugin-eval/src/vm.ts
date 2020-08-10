@@ -10,7 +10,6 @@ import { Logger } from 'koishi-utils'
 import type * as Internal from './internal'
 
 export interface VMOptions {
-  sandbox?: any
   strings?: boolean
   wasm?: boolean
 }
@@ -20,7 +19,7 @@ export class VM {
   readonly internal: typeof Internal = Object.create(null)
 
   constructor (options: VMOptions = {}) {
-    const { sandbox = {}, strings = true, wasm = true } = options
+    const { strings = true, wasm = true } = options
     this.context = createContext(undefined, {
       codeGeneration: { strings, wasm },
     })
@@ -35,16 +34,6 @@ export class VM {
     script
       .runInContext(this.context, { displayErrors: false })
       .call(this.context, Host, this.internal)
-
-    for (const name in sandbox) {
-      if (Object.prototype.hasOwnProperty.call(sandbox, name)) {
-        this.internal.setGlobal(name, sandbox[name])
-      }
-    }
-  }
-
-  get sandbox () {
-    return this.internal.sandbox
   }
 
   run (code: string, filename = 'vm.js') {

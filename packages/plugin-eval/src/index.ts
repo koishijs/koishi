@@ -2,12 +2,14 @@ import { Context, User, Session } from 'koishi-core'
 import { CQCode, Logger, defineProperty, omit } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { wrap, Remote, proxy, pend } from './comlink'
-import { WorkerAPI, WorkerConfig } from './worker'
+import { WorkerAPI, WorkerConfig, WorkerData } from './worker'
 import { resolve } from 'path'
 
 declare module 'koishi-core/dist/app' {
   interface App {
-    evalConfig: Config
+    evalConfig: EvalConfig
+    evalWorker: Worker
+    evalRemote: Remote<WorkerAPI>
   }
 }
 
@@ -21,14 +23,19 @@ declare module 'koishi-core/dist/context' {
 declare module 'koishi-core/dist/session' {
   interface Session {
     _eval: boolean
+    $eval (source: string, output?: boolean): Promise<void>
   }
 }
 
-export interface Config extends WorkerConfig {
+interface MainConfig {
   timeout?: number
   maxLogs?: number
   resourceLimits?: ResourceLimits
 }
+
+interface EvalConfig extends MainConfig, WorkerData {}
+
+export interface Config extends MainConfig, WorkerConfig {}
 
 const defaultConfig: Config = {
   timeout: 1000,
@@ -64,7 +71,51 @@ export class MainAPI {
   }
 }
 
-export const name = 'eval'
+Session.prototype.$eval = function $eval (this: Session, source, output) {
+  const { evalRemote, evalWorker, evalConfig } = this.$app
+
+  return new Promise((resolve) => {
+    logger.debug(source)
+    const api = new MainAPI(this)
+    defineProperty(this, '_eval', true)
+
+    const _resolve = () => {
+      clearTimeout(timer)
+      evalWorker.off('error', listener)
+      this._eval = false
+      resolve()
+    }
+
+    const timer = setTimeout(async () => {
+      await evalWorker.terminate()
+      _resolve()
+      if (!api.logCount) {
+        return this.$send('执行超时。')
+      }
+    }, evalConfig.timeout)
+
+    const listener = (error: Error) => {
+      let message = ERROR_CODES[error['code']]
+      if (!message) {
+        logger.warn(error)
+        message = '执行过程中遇到错误。'
+      }
+      _resolve()
+      return this.$send(message)
+    }
+
+    evalWorker.on('error', listener)
+    evalRemote.eval({
+      session: JSON.stringify(this),
+      user: JSON.stringify(this.$user),
+      output,
+      source,
+    }, proxy(api)).then(_resolve, (error) => {
+      logger.warn(error)
+      _resolve()
+    })
+  })
+}
 
 export function apply (ctx: Context, config: Config = {}) {
   MainAPI.config = config = { ...defaultConfig, ...config }
@@ -74,12 +125,12 @@ export function apply (ctx: Context, config: Config = {}) {
   }
 
   defineProperty(ctx.app, 'evalConfig', config)
+  defineProperty(ctx.app, 'evalRemote', null)
+  defineProperty(ctx.app, 'evalWorker', null)
 
   let restart = true
-  let worker: Worker
-  let remote: Remote<WorkerAPI>
   async function createWorker () {
-    worker = new Worker(resolve(__dirname, 'worker.js'), {
+    ctx.app.evalWorker = new Worker(resolve(__dirname, 'worker.js'), {
       workerData: {
         logLevels: Logger.levels,
         ...omit(config, ['maxLogs', 'resourceLimits', 'timeout'])
@@ -87,12 +138,12 @@ export function apply (ctx: Context, config: Config = {}) {
       resourceLimits,
     })
 
-    await pend(worker)
-    remote = wrap(worker)
+    await pend(ctx.app.evalWorker)
+    ctx.app.evalRemote = wrap(ctx.app.evalWorker)
     ctx.emit('worker/start')
     logger.info('worker started')
 
-    worker.on('exit', (code) => {
+    ctx.app.evalWorker.on('exit', (code) => {
       ctx.emit('worker/exit')
       logger.info('exited with code', code)
       if (restart) createWorker()
@@ -116,55 +167,13 @@ export function apply (ctx: Context, config: Config = {}) {
     .option('restart', '-r  重启子线程', { authority: 3 })
     .action(async ({ session, options }, expr) => {
       if (options.restart) {
-        await worker.terminate()
+        await session.$app.evalWorker.terminate()
         return '子线程已重启。'
       }
 
       if (!expr) return '请输入要执行的脚本。'
       if (session._eval) return '不能嵌套调用本指令。'
-
-      expr = CQCode.unescape(expr)
-      return new Promise((resolve) => {
-        logger.debug(expr)
-        defineProperty(session, '_eval', true)
-
-        const main = new MainAPI(session)
-        const timer = setTimeout(async () => {
-          await worker.terminate()
-          _resolve()
-          if (!main.logCount) {
-            return session.$send('执行超时。')
-          }
-        }, config.timeout)
-
-        const listener = (error: Error) => {
-          let message = ERROR_CODES[error['code']]
-          if (!message) {
-            logger.warn(error)
-            message = '执行过程中遇到错误。'
-          }
-          _resolve()
-          return session.$send(message)
-        }
-        worker.on('error', listener)
-
-        remote.eval({
-          session: JSON.stringify(session),
-          user: JSON.stringify(session.$user),
-          output: options.output,
-          source: expr,
-        }, proxy(main)).then(_resolve, (error) => {
-          logger.warn(error)
-          _resolve()
-        })
-
-        function _resolve () {
-          clearTimeout(timer)
-          worker.off('error', listener)
-          session._eval = false
-          resolve()
-        }
-      })
+      return session.$eval(CQCode.unescape(expr), options.output)
     })
 }
 

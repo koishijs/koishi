@@ -4,13 +4,14 @@
 /* eslint-disable */
 
 import type { Host } from './vm'
+import type { Global } from './worker'
 import { InspectOptions } from 'util'
 
 declare global {
   const host: typeof Host
 }
 
-const GLOBAL: any = this
+const GLOBAL: Global = this as any
 
 interface Builtin {
   // built-in classes
@@ -597,7 +598,7 @@ Contextify.proxies = new host.WeakMap()
 Contextify.conjugate = Decontextify
 Decontextify.conjugate = Contextify
 
-export function setGlobal (name: string, value: any, writable = false) {
+export function setGlobal <K extends keyof Global> (name: K, value: Global[K], writable = false) {
   const prop = Contextify.value(name)
   try {
     Object.defineProperty(GLOBAL, prop, {
@@ -670,7 +671,7 @@ const primitiveInspector: Inspector<Object> = (helper, toStringTag) => function 
   return `[${toStringTag}: ${this.toString()}]`
 }
 
-export const value = Decontextify.value.bind(Decontextify)
+export const value: <T> (value: T) => T = Decontextify.value.bind(Decontextify)
 export const sandbox = Decontextify.value(GLOBAL)
 
 delete global.console

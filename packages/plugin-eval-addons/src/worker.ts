@@ -1,37 +1,37 @@
-import { config, context, setGlobal, sandbox, value } from 'koishi-plugin-eval/dist/worker'
-import { readdirSync, promises, readFileSync } from 'fs'
+import { config, context, internal, WorkerAPI } from 'koishi-plugin-eval/dist/worker'
+import { promises, readFileSync } from 'fs'
 import { resolve } from 'path'
 import { Logger } from 'koishi-utils'
+import * as addons from './koishi'
 import ts from 'typescript'
 
-const logger = Logger.create('addons')
+const logger = Logger.create('addon')
 
 const { SourceTextModule, SyntheticModule } = require('vm')
 
 declare module 'koishi-plugin-eval/dist/worker' {
-  export default interface Global {
-    require (name: string): void
+  interface WorkerData {
+    addonNames: string[]
+  }
+
+  interface Require {
+    (name: string): void
+    modules: string[]
+  }
+
+  interface Global {
+    require: Require
   }
 }
 
-const koishi = new SyntheticModule(['command'], function () {
-  this.setExport('command', function command () {
-    sandbox.log('COMMAND CALLED')
-  })
+const koishi = new SyntheticModule(['registerCommand', 'executeCommand'], function () {
+  this.setExport('registerCommand', addons.registerCommand)
+  this.setExport('executeCommand', addons.executeCommand)
 }, { context })
 
 const root = resolve(process.cwd(), config.moduleRoot)
-const paths = readdirSync(root).filter(name => !name.includes('.'))
 const modules: Record<string, any> = { koishi }
-paths.push(...Object.keys(modules))
-
-setGlobal('require', function require (name) {
-  const module = modules[name]
-  if (!module) {
-    throw new Error(`Cannot find module "${name}"`)
-  }
-  return value(module.namespace)
-})
+config.addonNames.unshift(...Object.keys(modules))
 
 function linker (specifier: string, reference: any) {
   if (specifier in modules) {
@@ -56,9 +56,20 @@ async function createModule (path: string) {
   await module.evaluate()
 }
 
-export default Promise.all(paths.map(async (path) => {
-  return createModule(path).catch((error) => {
-    logger.warn(`cannot load addon module %c\n` + error.stack, path)
-    delete modules[path]
-  })
-}))
+export default Promise.all(config.addonNames.map(path => createModule(path).then(() => {
+  logger.debug('load addon module %c', path)
+}, (error) => {
+  logger.warn(`cannot load addon module %c\n` + error.stack, path)
+  delete modules[path]
+}))).then(() => {
+  function require (name: string) {
+    const module = modules[name]
+    if (!module) {
+      throw new Error(`Cannot find module "${name}"`)
+    }
+    return internal.value(module.namespace)
+  }
+
+  require.modules = Object.keys(modules)
+  internal.setGlobal('require', require)
+})

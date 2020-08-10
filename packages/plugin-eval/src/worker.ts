@@ -17,7 +17,9 @@ export interface WorkerConfig {
   inspect?: InspectOptions
 }
 
-export const config: WorkerConfig = {
+export interface WorkerData extends WorkerConfig {}
+
+export const config: WorkerData = {
   ...workerData,
   inspect: {
     depth: 0,
@@ -25,28 +27,11 @@ export const config: WorkerConfig = {
   },
 }
 
-export default class Global {
-  public user: User
-  public session: Session
-  private main: Remote<MainAPI>
-
-  constructor () {
-    for (const key of Object.getOwnPropertyNames(Global.prototype)) {
-      if (key.startsWith('_') || key === 'constructor') continue
-      this[key] = Global.prototype[key].bind(this)
-    }
-  }
-
-  exec (message: string) {
-    if (typeof message !== 'string') {
-      throw new TypeError('The "message" argument must be of type string')
-    }
-    return this.main.execute(message)
-  }
-
-  log (format: string, ...param: any[]) {
-    return this.main.send(formatWithOptions(config.inspect, format, ...param))
-  }
+export interface Global {
+  user: User
+  session: Session
+  exec (message: string): Promise<void>
+  log (format: string, ...param: any[]): Promise<void>
 }
 
 interface EvalOptions {
@@ -56,24 +41,10 @@ interface EvalOptions {
   source: string
 }
 
-export const sandbox = new Global()
-
-const vm = new VM({ sandbox })
-
+const vm = new VM()
 export const context = vm.context
-
-type Bind <O, K extends keyof O> = O[K] extends (...args: infer R) => infer T ? (this: O, ...args: R) => T : O[K]
-
-export function value <T> (value: T): T {
-  return vm.internal.value(value)
-}
-
-export function setGlobal <K extends keyof Global> (key: K, value: Bind<Global, K>, writable = false) {
-  if (typeof value === 'function') {
-    value = value['bind'](sandbox)
-  }
-  vm.internal.setGlobal(key, value, writable)
-}
+export const internal = vm.internal
+export const sandbox = internal.sandbox
 
 const pathMapper: Record<string, RegExp> = {}
 
@@ -81,6 +52,7 @@ function formatError (error: Error) {
   if (!(error instanceof Error)) return `Uncaught: ${error}`
 
   if (error.name === 'SyntaxError') {
+    // syntax error during compilation
     const message = 'SyntaxError: ' + error.message
     const lines = error.stack.split('\n')
     const index = lines.indexOf(message) + 1
@@ -89,7 +61,9 @@ function formatError (error: Error) {
     }
   }
 
-  return error.stack.replace(/\s*.+Script[\s\S]*/, '').split('\n')
+  return error.stack
+    .replace(/\s*.+Script[\s\S]*/, '')
+    .split('\n')
     .map((line) => {
       for (const name in pathMapper) {
         line = line.replace(pathMapper[name], '$1' + name)
@@ -100,11 +74,28 @@ function formatError (error: Error) {
 }
 
 export class WorkerAPI {
+  main: Remote<MainAPI>
+
+  constructor () {
+    const self = this
+
+    internal.setGlobal('exec', function exec (message: string) {
+      if (typeof message !== 'string') {
+        throw new TypeError('The "message" argument must be of type string')
+      }
+      return self.main.execute(message)
+    })
+
+    internal.setGlobal('log', function log (format: string, ...param: any[]) {
+      return self.main.send(formatWithOptions(config.inspect, format, ...param))
+    })
+  }
+
   async eval (options: EvalOptions, main: MainAPI) {
     const { session, source, user, output } = options
-    defineProperty(sandbox, 'main', main)
-    setGlobal('user', JSON.parse(user), true)
-    setGlobal('session', JSON.parse(session), true)
+    defineProperty(this, 'main', main)
+    internal.setGlobal('user', JSON.parse(user), true)
+    internal.setGlobal('session', JSON.parse(session), true)
 
     let result: any
     try {

@@ -27,8 +27,8 @@ export interface TranslateOptions {
 }
 
 export function apply (ctx: Context, config: TranslateOptions) {
-  assertProperty(config, 'youdaoSecret')
-  const { youdaoAppKey: appKey, youdaoSecret: secret } = config
+  const appKey = assertProperty(config, 'youdaoAppKey')
+  const secret = assertProperty(config, 'youdaoSecret')
 
   ctx.command('tools/translate <text>', '翻译工具')
     .alias('翻译')
