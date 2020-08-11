@@ -23,6 +23,8 @@ declare module '../command' {
   interface CommandConfig <U, G> {
     /** disallow unknown options */
     checkUnknown?: boolean
+    /** check argument count */
+    checkArgCount?: boolean
     /** show command warnings */
     showWarning?: boolean
     /** usage identifier */
@@ -109,13 +111,15 @@ export default function apply(app: App) {
     }
 
     // check argument count
-    const nextArg = command._arguments[args.length]
-    if (nextArg?.required) {
-      return sendHint(session, messages.INSUFFICIENT_ARGUMENTS)
-    }
-    const finalArg = command._arguments[command._arguments.length - 1]
-    if (args.length > command._arguments.length && !finalArg.greedy && !finalArg.variadic) {
-      return sendHint(session, messages.REDUNANT_ARGUMENTS)
+    if (command.config.checkArgCount) {
+      const nextArg = command._arguments[args.length]
+      if (nextArg?.required) {
+        return sendHint(session, messages.INSUFFICIENT_ARGUMENTS)
+      }
+      const finalArg = command._arguments[command._arguments.length - 1]
+      if (args.length > command._arguments.length && !finalArg.greedy && !finalArg.variadic) {
+        return sendHint(session, messages.REDUNANT_ARGUMENTS)
+      }
     }
 
     // check unknown options
