@@ -46,4 +46,27 @@ extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
   },
 })
 
-extendDatabase<MongoDatabase>('koishi-plugin-mongo', {})
+extendDatabase<MongoDatabase>('koishi-plugin-mongo', {
+  async createSchedule (time, interval, command, session) {
+    const result = await this.db.collection('schedule').insertOne(
+      { time, assignee: session.selfId, interval, command, session },
+    );
+    return { time, assignee: session.selfId, interval, command, session, id: result.insertedId };
+  },
+
+  removeSchedule (_id) {
+    return this.db.collection('schedule').deleteOne({ _id });
+  },
+
+  async getSchedule (_id) {
+    const res = await this.db.collection('schedule').findOne({ _id });
+    if (res) res.id = res._id;
+    return res;
+  },
+
+  async getAllSchedules (assignees) {
+    const $in = assignees ? assignees : await this.app.getSelfIds();
+    return await this.db.collection('schedule')
+      .find({ assignee: { $in } }).map(doc => ({ ...doc, id: doc._id })).toArray();
+  },
+})

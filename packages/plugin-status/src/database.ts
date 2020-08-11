@@ -42,4 +42,13 @@ extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
   },
 })
 
-extendDatabase<MongoDatabase>('koishi-plugin-mongo', {})
+extendDatabase<MongoDatabase>('koishi-plugin-mongo', {
+  async getActiveData () {
+    const now = new Date()
+    const [activeGroups, activeUsers] = await Promise.all([
+      this.group.find({ assignee: { $ne: null } }).count(),
+      this.user.find({ lastCall: { $gt: now } }).count(),
+    ]);
+    return { activeGroups, activeUsers }
+  }
+})
