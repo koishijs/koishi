@@ -49,29 +49,29 @@ const subscribeKeys = [
 ] as SubscribeField[]
 
 extendDatabase('koishi-plugin-mysql', {
-  async getSubscribes (ids, keys = subscribeKeys) {
+  async getSubscribes(ids, keys = subscribeKeys) {
     if (!ids) return this.query('SELECT * FROM `subscribe`')
     if (!ids.length) return []
     return this.query('SELECT ' + this.joinKeys(keys) + ` FROM \`subscribe\` WHERE \`id\` IN (${ids.map(id => `'${id}'`).join(',')})`)
   },
 
-  async findSubscribe (names: string | string[], keys: SubscribeField[] = subscribeKeys) {
+  async findSubscribe(names: string | string[], keys: SubscribeField[] = subscribeKeys) {
     const isSingle = typeof names === 'string'
     if (isSingle) names = [names as string]
     const data = await this.select('subscribe', keys, (names as string[]).map(name => `FIND_IN_SET(${this.escape(name)}, \`names\`)`).join(' OR '))
     return isSingle ? data[0] : data
   },
 
-  async removeSubscribe (name) {
+  async removeSubscribe(name) {
     const { changedRows } = await this.query<OkPacket>('DELETE FROM `subscribe` WHERE FIND_IN_SET(?, `names`)', [name])
     return !!changedRows
   },
 
-  setSubscribe (id, data) {
+  setSubscribe(id, data) {
     return this.update('subscribe', id, data)
   },
 
-  createSubscribe (options) {
+  createSubscribe(options) {
     return this.create('subscribe', options)
   },
 })

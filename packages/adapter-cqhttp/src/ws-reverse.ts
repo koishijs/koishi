@@ -9,7 +9,7 @@ export default class WsServer extends Server {
   public wsServer?: WebSocket.Server
   private _channel: Channel
 
-  constructor (app: App) {
+  constructor(app: App) {
     assertProperty(app.options, 'port')
     super(app)
     this._channel = new Channel(this)
@@ -21,7 +21,7 @@ export default class WsServer extends Server {
     })
   }
 
-  _listen () {
+  _listen() {
     const { port } = this.app.options
     logger.debug('ws server opening at', port)
     this.server.listen(port)
@@ -47,7 +47,7 @@ export default class WsServer extends Server {
     })
   }
 
-  _close () {
+  _close() {
     logger.debug('ws server closing')
     this.wsServer.close()
     this.server.close()

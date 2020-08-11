@@ -3,12 +3,12 @@ import { isKeyword, getOffset } from './utils'
 export default class Vigenere {
   codes: number[]
 
-  constructor (keyword: string) {
+  constructor(keyword: string) {
     if (!isKeyword(keyword)) throw new Error('Invalid keyword.')
     this.codes = keyword.toLowerCase().split('').map(c => c.charCodeAt(0) - 97)
   }
 
-  encrypt (text: string) {
+  encrypt(text: string) {
     let result = ''
     let index = -1
     for (const char of text) {
@@ -22,7 +22,7 @@ export default class Vigenere {
     return result
   }
 
-  decrypt (text: string) {
+  decrypt(text: string) {
     let result = ''
     let index = -1
     for (const char of text) {

@@ -93,22 +93,22 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
   private _queued = Promise.resolve()
   private _hooks?: (() => void)[] = []
 
-  constructor (app: App, session: Partial<Session>) {
+  constructor(app: App, session: Partial<Session>) {
     defineProperty(this, '$app', app)
     Object.assign(this, session)
   }
 
-  toJSON () {
+  toJSON() {
     return Object.fromEntries(Object.entries(this).filter(([key]) => {
       return !key.startsWith('_') && !key.startsWith('$')
     }))
   }
 
-  get $bot () {
+  get $bot() {
     return this.$app.bots[this.selfId]
   }
 
-  get $username (): string {
+  get $username(): string {
     const idString = '' + this.userId
     // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
     return this.$user && this.$user['name'] && idString !== this.$user['name']
@@ -120,7 +120,7 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
           : idString
   }
 
-  async $send (message: string, autoEscape = false) {
+  async $send(message: string, autoEscape = false) {
     if (!message) return
     if (this.groupId) {
       await this.$bot.sendGroupMsg(this.groupId, message, autoEscape)
@@ -129,12 +129,12 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
     }
   }
 
-  $cancelQueued (delay = 0) {
+  $cancelQueued(delay = 0) {
     this._hooks.forEach(Reflect.apply)
     this._delay = delay
   }
 
-  async $sendQueued (message: string | void, delay?: number) {
+  async $sendQueued(message: string | void, delay?: number) {
     if (!message) return
     if (typeof delay === 'undefined') {
       const { queueDelay = 100 } = this.$app.options
@@ -157,7 +157,7 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
   }
 
   /** 在元数据上绑定一个可观测群实例 */
-  async $observeGroup <T extends Group.Field = never> (fields: Iterable<T> = []): Promise<Group.Observed<T | G>> {
+  async $observeGroup <T extends Group.Field = never>(fields: Iterable<T> = []): Promise<Group.Observed<T | G>> {
     const fieldSet = new Set<Group.Field>(fields)
     const { groupId, $argv, $group } = this
     if ($argv) Command.collect($argv, 'group', fieldSet)
@@ -194,7 +194,7 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
   }
 
   /** 在元数据上绑定一个可观测用户实例 */
-  async $observeUser <T extends User.Field = never> (fields: Iterable<T> = []): Promise<User.Observed<T | U>> {
+  async $observeUser <T extends User.Field = never>(fields: Iterable<T> = []): Promise<User.Observed<T | U>> {
     const fieldSet = new Set<User.Field>(fields)
     const { userId, $argv, $user } = this
     if ($argv) Command.collect($argv, 'user', fieldSet)
@@ -241,7 +241,7 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
     return this.$user = user
   }
 
-  $resolve (argv: ExecuteArgv, next: NextFunction) {
+  $resolve(argv: ExecuteArgv, next: NextFunction) {
     if (typeof argv.command === 'string') {
       argv.command = this.$app._commandMap[argv.command]
     }
@@ -253,16 +253,16 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
     return { session: this, next, ...argv } as ParsedArgv
   }
 
-  $parse (message: string, next: NextFunction = noop, forced = true) {
+  $parse(message: string, next: NextFunction = noop, forced = true) {
     if (!message) return
     const argv = this.$app.bail(this, 'parse', message, this, forced)
     if (argv) return this.$resolve(argv, next)
     if (forced) logger.warn('cannot parse', message)
   }
 
-  $execute (argv: ExecuteArgv): Promise<void>
-  $execute (message: string, next?: NextFunction): Promise<void>
-  async $execute (...args: [ExecuteArgv] | [string, NextFunction?]) {
+  $execute(argv: ExecuteArgv): Promise<void>
+  $execute(message: string, next?: NextFunction): Promise<void>
+  async $execute(...args: [ExecuteArgv] | [string, NextFunction?]) {
     let argv: void | ParsedArgv, next: NextFunction
     if (typeof args[0] === 'string') {
       next = args[1] || noop
@@ -296,7 +296,7 @@ export class MessageBuffer {
   public send: Session['$send']
   public sendQueued: Session['$sendQueued']
 
-  constructor (private session: Session) {
+  constructor(private session: Session) {
     this.send = session.$send.bind(session)
     this.sendQueued = session.$sendQueued.bind(session)
 
@@ -319,13 +319,13 @@ export class MessageBuffer {
     }
   }
 
-  write (message: string) {
+  write(message: string) {
     if (!message) return
     this.hasData = true
     this.buffer += message
   }
 
-  private async _flush (message: string, delay?: number) {
+  private async _flush(message: string, delay?: number) {
     this.original = true
     message = message.trim()
     await this.sendQueued(message, delay)
@@ -333,11 +333,11 @@ export class MessageBuffer {
     this.original = false
   }
 
-  flush () {
+  flush() {
     return this._flush(this.buffer)
   }
 
-  async run <T> (callback: () => T | Promise<T>) {
+  async run <T>(callback: () => T | Promise<T>) {
     this.original = false
     const send = this.session.$send
     const sendQueued = this.session.$sendQueued
@@ -348,7 +348,7 @@ export class MessageBuffer {
     return result
   }
 
-  async end (message = '') {
+  async end(message = '') {
     this.write(message)
     await this.flush()
     this.original = true
@@ -404,12 +404,12 @@ export interface StatusInfo {
  * @example
  * getContextId(session) // user123, group456
  */
-export function getContextId (session: Session) {
+export function getContextId(session: Session) {
   const type = session.messageType === 'private' ? 'user' : session.messageType
   return type + session[`${type}Id`]
 }
 
-export function getTargetId (target: string | number) {
+export function getTargetId(target: string | number) {
   if (typeof target !== 'string' && typeof target !== 'number') return
   let qq = +target
   if (!qq) {

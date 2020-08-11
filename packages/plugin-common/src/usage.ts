@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 
-export function apply (ctx: Context) {
+export function apply(ctx: Context) {
   ctx.command('usage [...commands]', '查看指令的调用次数')
     .userFields(['usage'])
     .before(session => !session.$app.database)

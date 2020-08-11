@@ -30,11 +30,11 @@ export interface HandlerOptions {
 
 const defaultMessage: WelcomeMessage = session => `欢迎新大佬 [CQ:at,qq=${session.userId}]！`
 
-async function getHandleResult (handler: RequestHandler, session: Session): Promise<any> {
+async function getHandleResult(handler: RequestHandler, session: Session): Promise<any> {
   return typeof handler === 'function' ? handler(session) : handler
 }
 
-export default function apply (ctx: App, options: HandlerOptions = {}) {
+export default function apply(ctx: App, options: HandlerOptions = {}) {
   ctx.on('request/friend', async (session) => {
     const result = await getHandleResult(options.onFriend, session)
     return result !== undefined && session.$bot.setFriendAddRequest(session.flag, result)

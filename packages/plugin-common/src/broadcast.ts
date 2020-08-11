@@ -64,7 +64,7 @@ Context.prototype.broadcast = async function (this: Context, message, forced) {
 
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
 
-export function apply (ctx: Context) {
+export function apply(ctx: Context) {
   ctx.command('broadcast <message...>', '全服广播', { authority: 4 })
     .before(session => !session.$app.database)
     .option('forced', '-f  无视 noEmit 标签进行广播')

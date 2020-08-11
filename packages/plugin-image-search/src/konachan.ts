@@ -1,7 +1,7 @@
 import axios from 'axios'
 import Cheerio from 'cheerio'
 
-export default async function konachan (url: string) {
+export default async function konachan(url: string) {
   const { data } = await axios.get(url)
   const $ = Cheerio.load(data)
   let source = null

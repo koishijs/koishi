@@ -34,7 +34,7 @@ declare module './database' {
   }
 }
 
-export default function apply (ctx: Context) {
+export default function apply(ctx: Context) {
   ctx.command('teach')
     .option('search', '搜索已有问答', { notUsage: true })
     .option('page', '/ <page>  设置搜索结果的页码', { validate: isPositiveInteger })
@@ -94,7 +94,7 @@ export default function apply (ctx: Context) {
   })
 }
 
-export function formatAnswer (source: string, { maxAnswerLength = 100 }: Dialogue.Config) {
+export function formatAnswer(source: string, { maxAnswerLength = 100 }: Dialogue.Config) {
   let trimmed = false
   const lines = source.split(/(\r?\n|\$n)/g)
   if (lines.length > 1) {
@@ -116,17 +116,17 @@ export function formatAnswer (source: string, { maxAnswerLength = 100 }: Dialogu
   return source
 }
 
-export function getDetails (argv: Dialogue.Argv, dialogue: Dialogue) {
+export function getDetails(argv: Dialogue.Argv, dialogue: Dialogue) {
   const details: SearchDetails = []
   argv.ctx.emit('dialogue/detail-short', dialogue, details, argv)
   return details
 }
 
-export function formatDetails (dialogue: Dialogue, details: SearchDetails) {
+export function formatDetails(dialogue: Dialogue, details: SearchDetails) {
   return `${dialogue.id}. ${details.length ? `[${details.join(', ')}] ` : ''}`
 }
 
-function formatPrefix (argv: Dialogue.Argv, dialogue: Dialogue, showAnswerType = false) {
+function formatPrefix(argv: Dialogue.Argv, dialogue: Dialogue, showAnswerType = false) {
   const details = getDetails(argv, dialogue)
   let result = formatDetails(dialogue, details)
   if (details.questionType) result += `[${details.questionType}] `
@@ -134,7 +134,7 @@ function formatPrefix (argv: Dialogue.Argv, dialogue: Dialogue, showAnswerType =
   return result
 }
 
-export function formatAnswers (argv: Dialogue.Argv, dialogues: Dialogue[], prefix = '') {
+export function formatAnswers(argv: Dialogue.Argv, dialogues: Dialogue[], prefix = '') {
   return dialogues.map((dialogue) => {
     const { answer } = dialogue
     const output = [`${prefix}${formatPrefix(argv, dialogue, true)}${formatAnswer(answer, argv.config)}`]
@@ -143,7 +143,7 @@ export function formatAnswers (argv: Dialogue.Argv, dialogues: Dialogue[], prefi
   })
 }
 
-export function formatQuestionAnswers (argv: Dialogue.Argv, dialogues: Dialogue[], prefix = '') {
+export function formatQuestionAnswers(argv: Dialogue.Argv, dialogues: Dialogue[], prefix = '') {
   return dialogues.map((dialogue) => {
     const details = getDetails(argv, dialogue)
     const { questionType = '问题', answerType = '回答' } = details
@@ -154,7 +154,7 @@ export function formatQuestionAnswers (argv: Dialogue.Argv, dialogues: Dialogue[
   })
 }
 
-async function showSearch (argv: Dialogue.Argv) {
+async function showSearch(argv: Dialogue.Argv) {
   const { ctx, session, options } = argv
   const { regexp, question, answer, page = 1, original, pipe, recursive, autoMerge } = options
   const { itemsPerPage = 30, mergeThreshold = 5 } = argv.config
@@ -177,7 +177,7 @@ async function showSearch (argv: Dialogue.Argv) {
     await argv.ctx.parallel('dialogue/search', argv, test, dialogues)
   }
 
-  function sendResult (title: string, output: string[], suffix?: string) {
+  function sendResult(title: string, output: string[], suffix?: string) {
     if (output.length <= itemsPerPage) {
       output.unshift(title + '：')
       if (suffix) output.push(suffix)
@@ -248,7 +248,7 @@ async function showSearch (argv: Dialogue.Argv) {
   }
 }
 
-async function showInfo ({ ctx, session }: Dialogue.Argv) {
+async function showInfo({ ctx, session }: Dialogue.Argv) {
   const [[{
     'COUNT(DISTINCT `question`)': questions,
     'COUNT(*)': answers,

@@ -20,7 +20,7 @@ export interface Options extends HandlerOptions, RepeaterOptions {
 
 export const name = 'common'
 
-export function apply (ctx: Context, options: Options = {}) {
+export function apply(ctx: Context, options: Options = {}) {
   ctx.plugin(handler, options)
   ctx.plugin(repeater, options)
 

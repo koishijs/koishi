@@ -26,42 +26,42 @@ export class State {
   imageMode = true
   update: (this: State, x: number, y: number, value: 1 | -1) => MoveResult
 
-  constructor (public app: App, public readonly rule: string, public readonly size: number, public readonly placement: 'cross' | 'grid') {
+  constructor(public app: App, public readonly rule: string, public readonly size: number, public readonly placement: 'cross' | 'grid') {
     this.area = BigInt(size * size)
     this.full = (1n << this.area) - 1n
   }
 
-  get pBoard () {
+  get pBoard() {
     return this.next === this.p2 ? this.wBoard : this.bBoard
   }
 
-  set pBoard (value) {
+  set pBoard(value) {
     // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     this.next === this.p2 ? this.wBoard = value : this.bBoard = value
   }
 
-  get nBoard () {
+  get nBoard() {
     return this.next === this.p2 ? this.bBoard : this.wBoard
   }
 
-  set nBoard (value) {
+  set nBoard(value) {
     // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     this.next === this.p2 ? this.bBoard = value : this.wBoard = value
   }
 
-  get isFull () {
+  get isFull() {
     return !((this.bBoard | this.wBoard) ^ this.full)
   }
 
-  bit (x: number, y: number) {
+  bit(x: number, y: number) {
     return 1n << BigInt(x * this.size + y)
   }
 
-  inRange (x: number, y: number) {
+  inRange(x: number, y: number) {
     return x >= 0 && y >= 0 && x < this.size && y < this.size
   }
 
-  get (x: number, y: number): 0 | 1 | -1 {
+  get(x: number, y: number): 0 | 1 | -1 {
     if (!this.inRange(x, y)) return 0
     const p = 1n << BigInt(x * this.size + y)
     if (p & this.bBoard) return 1
@@ -69,9 +69,9 @@ export class State {
     return 0
   }
 
-  checkUser (userId: number) {}
+  checkUser(userId: number) {}
 
-  drawSvg (x?: number, y?: number) {
+  drawSvg(x?: number, y?: number) {
     const { size, placement } = this
     const viewSize = size + (placement === 'cross' ? 2 : 3)
     const svg = new SVG({ viewSize, size: Math.max(512, viewSize * 32) }).fill('white')
@@ -146,11 +146,11 @@ export class State {
     return svg
   }
 
-  drawImage (x?: number, y?: number) {
+  drawImage(x?: number, y?: number) {
     return this.drawSvg(x, y).render(this.app)
   }
 
-  drawText (x?: number, y?: number) {
+  drawText(x?: number, y?: number) {
     const max = this.size - 1
     let output = '　' + numbers.slice(0, this.size)
     for (let i = 0; i < this.size; i += 1) {
@@ -167,7 +167,7 @@ export class State {
     return output
   }
 
-  async draw (session: Session, message: string = '', x?: number, y?: number) {
+  async draw(session: Session, message: string = '', x?: number, y?: number) {
     if (this.imageMode) {
       const [image] = await Promise.all([
         this.drawImage(x, y),
@@ -181,7 +181,7 @@ export class State {
     }
   }
 
-  set (x: number, y: number, value: 0 | 1 | -1) {
+  set(x: number, y: number, value: 0 | 1 | -1) {
     const chess = this.bit(x, y)
     let board = 0n
     if (value === 1) {
@@ -198,22 +198,22 @@ export class State {
     return board
   }
 
-  save () {
+  save() {
     this.history.push((this.wBoard << this.area) + this.bBoard)
   }
 
-  refresh () {
+  refresh() {
     const board = this.history[this.history.length - 1]
     this.wBoard = board >> this.area
     this.bBoard = board & this.full
   }
 
-  serial () {
+  serial() {
     const { rule, size, placement, p1, p2, next, history } = this
     return { rule, size, placement, p1, p2, next, history: history.join(',') }
   }
 
-  static from (app: App, data: StateData) {
+  static from(app: App, data: StateData) {
     const state = new State(app, data.rule, data.size, data.placement)
     state.p1 = data.p1
     state.p2 = data.p2

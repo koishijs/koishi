@@ -10,7 +10,7 @@ const logger = Logger.create('command')
 const ANGLED_BRACKET_REGEXP = /<([^>]+)>/g
 const SQUARE_BRACKET_REGEXP = /\[([^\]]+)\]/g
 
-function parseBracket (name: string, required: boolean): CommandArgument {
+function parseBracket(name: string, required: boolean): CommandArgument {
   let variadic = false, greedy = false
   if (name.startsWith('...')) {
     name = name.slice(3)
@@ -34,7 +34,7 @@ export interface CommandArgument {
   name: string
 }
 
-export function parseArguments (source: string) {
+export function parseArguments(source: string) {
   let capture: RegExpExecArray
   const result: CommandArgument[] = []
   while ((capture = ANGLED_BRACKET_REGEXP.exec(source))) {
@@ -138,17 +138,17 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
   private static _userFields: ArgvInferred<User.Field>[] = []
   private static _groupFields: ArgvInferred<Group.Field>[] = []
 
-  static userFields (fields: ArgvInferred<User.Field>) {
+  static userFields(fields: ArgvInferred<User.Field>) {
     this._userFields.push(fields)
     return this
   }
 
-  static groupFields (fields: ArgvInferred<Group.Field>) {
+  static groupFields(fields: ArgvInferred<Group.Field>) {
     this._groupFields.push(fields)
     return this
   }
 
-  static collect <T extends TableType> (argv: ParsedArgv, key: T, fields = new Set<keyof Tables[T]>()) {
+  static collect <T extends TableType>(argv: ParsedArgv, key: T, fields = new Set<keyof Tables[T]>()) {
     if (!argv) return
     const values: ArgvInferred<keyof Tables[T]>[] = [
       ...this[`_${key}Fields`],
@@ -165,7 +165,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return fields
   }
 
-  constructor (public name: string, public declaration: string, public context: Context, config: CommandConfig = {}) {
+  constructor(public name: string, public declaration: string, public context: Context, config: CommandConfig = {}) {
     if (!name) throw new Error('expect a command name')
     this._arguments = parseArguments(declaration)
     this.config = { ...Command.defaultConfig, ...config }
@@ -174,11 +174,11 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     context.app.emit('new-command', this)
   }
 
-  get app () {
+  get app() {
     return this.context.app
   }
 
-  private _registerAlias (name: string) {
+  private _registerAlias(name: string) {
     name = name.toLowerCase()
     this._aliases.push(name)
     const previous = this.app._commandMap[name]
@@ -189,39 +189,39 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     }
   }
 
-  [inspect.custom] () {
+  [inspect.custom]() {
     return `Command <${this.name}>`
   }
 
-  userFields <T extends User.Field = never> (fields: Iterable<T>): Command<U | T, G, O>
-  userFields <T extends User.Field = never> (fields: (argv: ParsedArgv<never, never, O>, fields: Set<User.Field>) => Iterable<T>): Command<U | T, G, O>
-  userFields (fields: ArgvInferred<User.Field>) {
+  userFields <T extends User.Field = never>(fields: Iterable<T>): Command<U | T, G, O>
+  userFields <T extends User.Field = never>(fields: (argv: ParsedArgv<never, never, O>, fields: Set<User.Field>) => Iterable<T>): Command<U | T, G, O>
+  userFields(fields: ArgvInferred<User.Field>) {
     this._userFields.push(fields)
     return this
   }
 
-  groupFields <T extends Group.Field = never> (fields: Iterable<T>): Command<U, G | T, O>
-  groupFields <T extends Group.Field = never> (fields: (argv: ParsedArgv<never, never, O>, fields: Set<Group.Field>) => Iterable<T>): Command<U, G | T, O>
-  groupFields (fields: ArgvInferred<Group.Field>) {
+  groupFields <T extends Group.Field = never>(fields: Iterable<T>): Command<U, G | T, O>
+  groupFields <T extends Group.Field = never>(fields: (argv: ParsedArgv<never, never, O>, fields: Set<Group.Field>) => Iterable<T>): Command<U, G | T, O>
+  groupFields(fields: ArgvInferred<Group.Field>) {
     this._groupFields.push(fields)
     return this
   }
 
-  alias (...names: string[]) {
+  alias(...names: string[]) {
     for (const name of names) {
       this._registerAlias(name)
     }
     return this
   }
 
-  subcommand (rawName: string, config?: CommandConfig): Command
-  subcommand (rawName: string, description: string, config?: CommandConfig): Command
-  subcommand (rawName: string, ...args: [CommandConfig?] | [string, CommandConfig?]) {
+  subcommand(rawName: string, config?: CommandConfig): Command
+  subcommand(rawName: string, description: string, config?: CommandConfig): Command
+  subcommand(rawName: string, ...args: [CommandConfig?] | [string, CommandConfig?]) {
     rawName = this.name + (rawName.charCodeAt(0) === 46 ? '' : '/') + rawName
     return this.context.command(rawName, ...args as any)
   }
 
-  private _registerOption (name: string, def: string, config?: Partial<CommandOption>) {
+  private _registerOption(name: string, def: string, config?: Partial<CommandOption>) {
     const param = paramCase(name)
     const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
     const desc = def.slice(decl.length)
@@ -229,8 +229,8 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     const bracket = decl.slice(syntax.length)
     syntax = syntax.trim() || '--' + param
 
-    let names: string[] = []
-    let symbols: string[] = []
+    const names: string[] = []
+    const symbols: string[] = []
     for (let param of syntax.trim().split(',')) {
       param = param.trimStart()
       const name = param.replace(/^-+/, '')
@@ -245,7 +245,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
       syntax += ', --' + param
     }
 
-    let option = this._options[name] || (this._options[name] = {
+    const option = this._options[name] || (this._options[name] = {
       ...Command.defaultOptionConfig,
       ...config,
       name,
@@ -269,7 +269,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return this
   }
 
-  private _assignOption (option: CommandOption, names: string[], optionMap: Record<string, CommandOption>) {
+  private _assignOption(option: CommandOption, names: string[], optionMap: Record<string, CommandOption>) {
     for (const name of names) {
       if (name in optionMap) {
         throw new Error(format('duplicate option names: "%s"', name))
@@ -278,17 +278,17 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     }
   }
 
-  option <K extends string> (name: K, description: string, config: StringOptionConfig): Command<U, G, Extend<O, K, string>>
-  option <K extends string> (name: K, description: string, config: NumberOptionConfig): Command<U, G, Extend<O, K, number>>
-  option <K extends string> (name: K, description: string, config: BooleanOptionConfig): Command<U, G, Extend<O, K, boolean>>
-  option <K extends string> (name: K, description: string, config?: OptionConfig): Command<U, G, Extend<O, K, any>>
-  option <K extends string> (name: K, description: string, config: OptionConfig = {}) {
+  option <K extends string>(name: K, description: string, config: StringOptionConfig): Command<U, G, Extend<O, K, string>>
+  option <K extends string>(name: K, description: string, config: NumberOptionConfig): Command<U, G, Extend<O, K, number>>
+  option <K extends string>(name: K, description: string, config: BooleanOptionConfig): Command<U, G, Extend<O, K, boolean>>
+  option <K extends string>(name: K, description: string, config?: OptionConfig): Command<U, G, Extend<O, K, any>>
+  option <K extends string>(name: K, description: string, config: OptionConfig = {}) {
     const fallbackType = typeof config.fallback as never
     const type = config['type'] || supportedType.includes(fallbackType) && fallbackType
     return this._registerOption(name, description, { ...config, type }) as any
   }
 
-  removeOption <K extends string & keyof O> (name: K) {
+  removeOption <K extends string & keyof O>(name: K) {
     if (!this._options[name]) return false
     const option = this._options[name]
     delete this._options[name]
@@ -305,12 +305,12 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return true
   }
 
-  action (callback: CommandAction<U, G, O>) {
+  action(callback: CommandAction<U, G, O>) {
     this._action = callback
     return this
   }
 
-  private parseArg (source: string, terminator: string): ParsedArg {
+  private parseArg(source: string, terminator: string): ParsedArg {
     const index = quoteStart.indexOf(source[0])
     if (index >= 0) {
       const capture = new RegExp(`${quoteEnd[index]}(?=[\\s${terminator}]|$)`).exec(source.slice(1))
@@ -331,7 +331,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     }
   }
 
-  private parseRest (source: string, terminator: string): ParsedArg {
+  private parseRest(source: string, terminator: string): ParsedArg {
     const index = quoteStart.indexOf(source[0])
     if (index >= 0) {
       const capture = terminator
@@ -354,7 +354,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     }
   }
 
-  private parseValue (source: string | true, quoted: boolean, { type, fallback } = {} as CommandOption) {
+  private parseValue(source: string | true, quoted: boolean, { type, fallback } = {} as CommandOption) {
     // quoted empty string
     if (source === '' && quoted) return ''
     // no explicit parameter
@@ -370,7 +370,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return n * 0 === 0 ? n : source
   }
 
-  parse (message: string, terminator = ''): ParsedLine {
+  parse(message: string, terminator = ''): ParsedLine {
     let rest = ''
     terminator = escapeRegex(terminator)
     const source = `${this.name} ${message}`
@@ -477,12 +477,12 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return { rest, options, args, source }
   }
 
-  private stringifyArg (value: any) {
+  private stringifyArg(value: any) {
     value = '' + value
     return value.includes(' ') ? `"${value}"` : value
   }
 
-  stringify (args: string[], options: any) {
+  stringify(args: string[], options: any) {
     let output = this.name
     for (const key in options) {
       const value = options[key]
@@ -500,7 +500,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return output
   }
 
-  async execute (argv: ParsedArgv<U, G, O>) {
+  async execute(argv: ParsedArgv<U, G, O>) {
     argv.command = this
     if (!argv.options) argv.options = {} as any
     if (!argv.args) argv.args = []
@@ -536,7 +536,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     }
   }
 
-  dispose () {
+  dispose() {
     for (const cmd of this.children) {
       cmd.dispose()
     }

@@ -20,7 +20,7 @@ let usage = getCpuUsage()
 let appRate: number
 let usedRate: number
 
-function memoryRate () {
+function memoryRate() {
   const totalMemory = totalmem()
   return {
     app: process.memoryUsage().rss / totalMemory,
@@ -28,7 +28,7 @@ function memoryRate () {
   }
 }
 
-function getCpuUsage () {
+function getCpuUsage() {
   let totalIdle = 0, totalTick = 0
   const cpuInfo = cpus()
   const usage = process.cpuUsage().user
@@ -47,7 +47,7 @@ function getCpuUsage () {
   }
 }
 
-function updateCpuUsage () {
+function updateCpuUsage() {
   const newUsage = getCpuUsage()
   const totalDifference = newUsage.total - usage.total
   appRate = (newUsage.app - usage.app) / totalDifference
@@ -78,7 +78,7 @@ export interface BotStatus {
 type StatusModifier = (this: App, status: Status, config: StatusOptions) => void | Promise<void>
 const statusModifiers: StatusModifier[] = []
 
-export function extendStatus (callback: StatusModifier) {
+export function extendStatus(callback: StatusModifier) {
   statusModifiers.push(callback)
 }
 
@@ -93,7 +93,7 @@ export enum StatusCode {
 
 export const name = 'status'
 
-export function apply (ctx: Context, config: StatusOptions) {
+export function apply(ctx: Context, config: StatusOptions) {
   const app = ctx.app
 
   app.on('before-command', ({ session }) => {
@@ -164,7 +164,7 @@ export function apply (ctx: Context, config: StatusOptions) {
       return output.join('\n')
     })
 
-  async function _getStatus (config: StatusOptions, extend: boolean) {
+  async function _getStatus(config: StatusOptions, extend: boolean) {
     const [data, bots] = await Promise.all([
       app.database.getActiveData(),
       Promise.all(app.bots.map(async (bot): Promise<BotStatus> => ({
@@ -186,7 +186,7 @@ export function apply (ctx: Context, config: StatusOptions) {
   let cachedStatus: Promise<Status>
   let timestamp: number
 
-  async function getStatus (config: StatusOptions, extend = false): Promise<Status> {
+  async function getStatus(config: StatusOptions, extend = false): Promise<Status> {
     const now = Date.now()
     if (now - timestamp < 60000) return cachedStatus
     timestamp = now

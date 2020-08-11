@@ -6,7 +6,7 @@ export interface RollOptions {
   maxTimes?: number
 }
 
-export function apply (ctx: Context, options: RollOptions = {}) {
+export function apply(ctx: Context, options: RollOptions = {}) {
   const { maxPoint = 1 << 16, maxTimes = 64 } = options
 
   ctx.command('tools/roll [expr]', '掷骰')

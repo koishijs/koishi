@@ -40,7 +40,7 @@ Command.prototype.shortcut = function (this: Command, name, config) {
   return this
 }
 
-export default function apply (ctx: Context) {
+export default function apply(ctx: Context) {
   defineProperty(ctx.app, '_shortcuts', [])
   defineProperty(ctx.app, '_shortcutMap', {})
 

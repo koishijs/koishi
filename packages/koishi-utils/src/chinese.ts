@@ -11,7 +11,7 @@ simplified.split('').forEach((char, index) => {
   tsMap.set(traditional[index], char)
 })
 
-export function traditionalize (source: string) {
+export function traditionalize(source: string) {
   let result = ''
   for (const char of source) {
     result += stMap.get(char) || char
@@ -19,7 +19,7 @@ export function traditionalize (source: string) {
   return result
 }
 
-export function simplify (source: string) {
+export function simplify(source: string) {
   let result = ''
   for (const char of source) {
     result += tsMap.get(char) || char

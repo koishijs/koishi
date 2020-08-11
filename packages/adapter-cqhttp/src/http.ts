@@ -14,12 +14,12 @@ declare module 'koishi-core/dist/session' {
 const logger = Logger.create('server')
 
 export default class HttpServer extends Server {
-  constructor (app: App) {
+  constructor(app: App) {
     assertProperty(app.options, 'port')
     super(app)
   }
 
-  private async __listen (bot: Bot) {
+  private async __listen(bot: Bot) {
     if (!bot.server) return
     bot.ready = true
     bot._request = async (action, params) => {
@@ -35,7 +35,7 @@ export default class HttpServer extends Server {
     logger.debug('%d got version info', bot.selfId)
   }
 
-  async _listen () {
+  async _listen() {
     const { secret, path = '/' } = this.app.options
     this.router.post(path, (ctx) => {
       if (secret) {
@@ -84,7 +84,7 @@ export default class HttpServer extends Server {
     await Promise.all(this.bots.map(bot => this.__listen(bot)))
   }
 
-  _close () {
+  _close() {
     logger.debug('http server closing')
     this.server.close()
   }

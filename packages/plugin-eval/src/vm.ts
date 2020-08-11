@@ -18,7 +18,7 @@ export class VM {
   readonly context: object
   readonly internal: typeof Internal = Object.create(null)
 
-  constructor (options: VMOptions = {}) {
+  constructor(options: VMOptions = {}) {
     const { strings = true, wasm = true } = options
     this.context = createContext(undefined, {
       codeGeneration: { strings, wasm },
@@ -36,7 +36,7 @@ export class VM {
       .call(this.context, Host, this.internal)
   }
 
-  run (code: string, filename = 'vm.js') {
+  run(code: string, filename = 'vm.js') {
     const script = new Script(code, {
       filename,
       displayErrors: false,
@@ -53,7 +53,7 @@ export class VM {
 export class VMError extends Error {
   name = 'VMError'
 
-  constructor (message: string) {
+  constructor(message: string) {
     super(message)
     Error.captureStackTrace(this, this.constructor)
   }

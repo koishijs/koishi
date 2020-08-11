@@ -100,7 +100,7 @@ export const name = 'teach'
 //                      $1  $2
 const teachRegExp = /^#(#?)((\d+(?:\.\.\d+)?(?:,\d+(?:\.\.\d+)?)*)?|#?)(\s+|$)/
 
-export function apply (ctx: Context, config: Dialogue.Config = {}) {
+export function apply(ctx: Context, config: Dialogue.Config = {}) {
   ctx.on('parse', (source, session, forced) => {
     if (!forced && session.$prefix) return
     const capture = source.match(teachRegExp)

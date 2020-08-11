@@ -33,7 +33,7 @@ export * from './state'
 
 export const name = 'chess'
 
-export function apply (ctx: Context) {
+export function apply(ctx: Context) {
   ctx = ctx.group()
 
   ctx.on('connect', async () => {

@@ -84,14 +84,14 @@ export namespace Dialogue {
     uneditable?: number[]
   }
 
-  export async function fromIds <T extends DialogueField> (ids: number[], ctx: Context, fields?: T[]) {
+  export async function fromIds <T extends DialogueField>(ids: number[], ctx: Context, fields?: T[]) {
     if (!ids.length) return []
     const dialogues = await ctx.database.select<Dialogue[]>('dialogue', fields, `\`id\` IN (${ids.join(',')})`)
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
     return dialogues
   }
 
-  export async function fromTest (ctx: Context, test: DialogueTest) {
+  export async function fromTest(ctx: Context, test: DialogueTest) {
     let query = 'SELECT * FROM `dialogue`'
     const conditionals: string[] = []
     ctx.emit('dialogue/before-fetch', test, conditionals)
@@ -102,7 +102,7 @@ export namespace Dialogue {
     return dialogues
   }
 
-  function addHistory (dialogue: Dialogue, type: ModifyType, argv: Dialogue.Argv, revert: boolean, target = history) {
+  function addHistory(dialogue: Dialogue, type: ModifyType, argv: Dialogue.Argv, revert: boolean, target = history) {
     if (revert) return delete target[dialogue.id]
     target[dialogue.id] = dialogue
     const time = Date.now()
@@ -116,13 +116,13 @@ export namespace Dialogue {
     }, argv.config.preserveHistory || 600000)
   }
 
-  export async function create (dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
+  export async function create(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
     dialogue = await argv.ctx.database.create('dialogue', dialogue)
     addHistory(dialogue, '添加', argv, revert)
     return dialogue
   }
 
-  export async function revert (dialogues: Dialogue[], argv: Dialogue.Argv) {
+  export async function revert(dialogues: Dialogue[], argv: Dialogue.Argv) {
     const created = dialogues.filter(d => d._type === '添加')
     const edited = dialogues.filter(d => d._type !== '添加')
     await Dialogue.remove(created.map(d => d.id), argv, true)
@@ -130,7 +130,7 @@ export namespace Dialogue {
     return `问答 ${dialogues.map(d => d.id).sort((a, b) => a - b)} 已回退完成。`
   }
 
-  export async function rewrite (dialogues: Dialogue[], argv: Dialogue.Argv) {
+  export async function rewrite(dialogues: Dialogue[], argv: Dialogue.Argv) {
     if (!dialogues.length) return
     await argv.ctx.database.update('dialogue', dialogues)
     for (const dialogue of dialogues) {
@@ -138,7 +138,7 @@ export namespace Dialogue {
     }
   }
 
-  export async function update (dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
+  export async function update(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
     const data: Partial<Dialogue>[] = []
     const fields = new Set<DialogueField>(['id'])
     for (const { _diff } of dialogues) {
@@ -161,7 +161,7 @@ export namespace Dialogue {
     Object.assign(history, temp)
   }
 
-  export async function remove (ids: number[], argv: Dialogue.Argv, revert = false) {
+  export async function remove(ids: number[], argv: Dialogue.Argv, revert = false) {
     if (!ids.length) return
     await argv.ctx.database.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
     for (const id of ids) {
@@ -172,13 +172,13 @@ export namespace Dialogue {
 
 const primitives = ['number', 'string', 'bigint', 'boolean', 'symbol']
 
-function clone <T> (source: T): T {
+function clone <T>(source: T): T {
   return primitives.includes(typeof source) ? source
     : Array.isArray(source) ? source.map(clone) as any
       : Object.fromEntries(Object.entries(source).map(([key, value]) => [key, clone(value)]))
 }
 
-export function sendResult (argv: Dialogue.Argv, prefix?: string, suffix?: string) {
+export function sendResult(argv: Dialogue.Argv, prefix?: string, suffix?: string) {
   const { session, options, uneditable, unknown, skipped, updated, target } = argv
   const { remove, revert, create } = options
   const output = []
@@ -199,7 +199,7 @@ export function sendResult (argv: Dialogue.Argv, prefix?: string, suffix?: strin
   return session.$send(output.join('\n'))
 }
 
-export function split (source: string) {
+export function split(source: string) {
   if (!source) return []
   return source.split(',').flatMap((value) => {
     if (!value.includes('..')) return +value
@@ -210,11 +210,11 @@ export function split (source: string) {
   })
 }
 
-export function equal (array1: (string | number)[], array2: (string | number)[]) {
+export function equal(array1: (string | number)[], array2: (string | number)[]) {
   return array1.slice().sort().join() === array2.slice().sort().join()
 }
 
-export function prepareTargets (argv: Dialogue.Argv, dialogues = argv.dialogues) {
+export function prepareTargets(argv: Dialogue.Argv, dialogues = argv.dialogues) {
   const targets = dialogues.filter((dialogue) => {
     return !argv.ctx.bail('dialogue/permit', argv, dialogue)
   })
@@ -222,7 +222,7 @@ export function prepareTargets (argv: Dialogue.Argv, dialogues = argv.dialogues)
   return targets.map(data => observe(data, `dialogue ${data.id}`))
 }
 
-export function useFlag (ctx: Context, flag: keyof typeof DialogueFlag) {
+export function useFlag(ctx: Context, flag: keyof typeof DialogueFlag) {
   ctx.on('dialogue/before-fetch', (test, conditionals) => {
     if (test[flag] !== undefined) {
       conditionals.push(`!(\`flag\` & ${DialogueFlag[flag]}) = !${test[flag]}`)
@@ -245,8 +245,8 @@ export function useFlag (ctx: Context, flag: keyof typeof DialogueFlag) {
   })
 }
 
-export function parseTeachArgs ({ args, options }: Partial<ParsedLine>) {
-  function parseArgument () {
+export function parseTeachArgs({ args, options }: Partial<ParsedLine>) {
+  function parseArgument() {
     if (!args.length) return
     const [arg] = args.splice(0, 1)
     if (!arg || arg === '~' || arg === '～') return
@@ -258,11 +258,11 @@ export function parseTeachArgs ({ args, options }: Partial<ParsedLine>) {
   options['answer'] = options['redirect'] || parseArgument()
 }
 
-export function isPositiveInteger (value: any) {
+export function isPositiveInteger(value: any) {
   return isInteger(value) && value > 0 ? '' : '应为正整数。'
 }
 
-export function isZeroToOne (value: number) {
+export function isZeroToOne(value: number) {
   return value < 0 || value > 1 ? '应为不超过 1 的正数。' : ''
 }
 

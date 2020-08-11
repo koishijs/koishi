@@ -20,11 +20,11 @@ interface SuggestOptions {
   apply: (this: Session, suggestion: string, next: NextFunction) => any
 }
 
-export function getSessionId (session: Session) {
+export function getSessionId(session: Session) {
   return '' + session.userId + session.groupId
 }
 
-Session.prototype.$use = function $use (this: Session, middleware: Middleware) {
+Session.prototype.$use = function $use(this: Session, middleware: Middleware) {
   const identifier = getSessionId(this)
   return this.$app.prependMiddleware(async (session, next) => {
     if (identifier && getSessionId(session) !== identifier) return next()
@@ -32,7 +32,7 @@ Session.prototype.$use = function $use (this: Session, middleware: Middleware) {
   })
 }
 
-Session.prototype.$prompt = function $prompt (this: Session, timeout = this.$app.options.promptTimeout) {
+Session.prototype.$prompt = function $prompt(this: Session, timeout = this.$app.options.promptTimeout) {
   return new Promise((resolve, reject) => {
     const dispose = this.$use((session) => {
       clearTimeout(timer)
@@ -46,7 +46,7 @@ Session.prototype.$prompt = function $prompt (this: Session, timeout = this.$app
   })
 }
 
-Session.prototype.$suggest = function $suggest (this: Session, options: SuggestOptions) {
+Session.prototype.$suggest = function $suggest(this: Session, options: SuggestOptions) {
   const { target, items, next = callback => callback(), prefix = '', suffix, apply, coefficient = 0.4 } = options
   let suggestions: string[], minDistance = Infinity
   for (const name of items) {
@@ -75,7 +75,7 @@ Session.prototype.$suggest = function $suggest (this: Session, options: SuggestO
   })
 }
 
-export default function apply (ctx: Context) {
+export default function apply(ctx: Context) {
   ctx.middleware((session, next) => {
     const { $argv, message, $prefix, $appel, messageType } = session
     if ($argv || messageType !== 'private' && $prefix === null && !$appel) return next()
@@ -91,7 +91,7 @@ export default function apply (ctx: Context) {
       items,
       suffix: '发送空行或句号以调用推测的指令。',
       coefficient: ctx.app.options.similarityCoefficient,
-      async apply (suggestion, next) {
+      async apply(suggestion, next) {
         const newMessage = suggestion + message.slice(target.length)
         return this.$execute(newMessage, next)
       },

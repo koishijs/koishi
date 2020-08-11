@@ -16,7 +16,7 @@ let counter = 0
 export default class Channel {
   private _listeners: Record<number, (response: CQResponse) => void> = {}
 
-  constructor (private server: Server) {}
+  constructor(private server: Server) {}
 
   connect = (resolve: () => void, reject: (error: Error) => void, bot: Bot, socket: WebSocket) => {
     bot.ready = true

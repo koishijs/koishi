@@ -1,7 +1,7 @@
 import { MetaTypeMap, Context } from 'koishi-core'
 import { CQCode } from 'koishi-utils'
 
-export function apply (ctx: Context) {
+export function apply(ctx: Context) {
   ctx.command('echo <message...>', '向多个上下文发送广播', { authority: 2 })
     .option('anonymous', '-a  匿名发送消息', { authority: 3 })
     .option('forceAnonymous', '-A  匿名发送消息', { authority: 3 })

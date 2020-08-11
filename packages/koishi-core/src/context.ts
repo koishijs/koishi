@@ -21,14 +21,14 @@ interface Scope {
   private: boolean
 }
 
-function joinScope (base: ScopeSet, ids: number[]) {
+function joinScope(base: ScopeSet, ids: number[]) {
   const result: ScopeSet = !ids.length ? [...base]
     : base.positive ? intersection(ids, base) : difference(ids, base)
   result.positive = !ids.length ? base.positive : true
   return result
 }
 
-function matchScope (base: ScopeSet, id: number) {
+function matchScope(base: ScopeSet, id: number) {
   // @ts-ignore
   return !id || !(base.positive ^ base.includes(id))
 }
@@ -38,47 +38,47 @@ export class Context {
 
   private _disposables: Disposable[]
 
-  constructor (public scope: Scope, public app?: App) {
+  constructor(public scope: Scope, public app?: App) {
     defineProperty(this, '_disposables', [])
   }
 
-  get router () {
+  get router() {
     return this.app.server.router
   }
 
-  get database (): Database {
+  get database(): Database {
     return this.app._database
   }
 
-  set database (database: Database) {
+  set database(database: Database) {
     if (this.app._database && this.app._database !== database) {
       this.logger('app').warn('ctx.database is overwritten.')
     }
     this.app._database = database
   }
 
-  logger (name: string) {
+  logger(name: string) {
     return Logger.create(name)
   }
 
-  get bots () {
+  get bots() {
     return this.app.server.bots
   }
 
-  group (...ids: number[]) {
+  group(...ids: number[]) {
     const scope = { ...this.scope }
     scope.groups = joinScope(scope.groups, ids)
     scope.private = false
     return new Context(scope, this.app)
   }
 
-  user (...ids: number[]) {
+  user(...ids: number[]) {
     const scope = { ...this.scope }
     scope.users = joinScope(scope.users, ids)
     return new Context(scope, this.app)
   }
 
-  private (...ids: number[]) {
+  private(...ids: number[]) {
     const scope = { ...this.scope }
     scope.users = joinScope(scope.users, ids)
     scope.groups.positive = true
@@ -86,16 +86,16 @@ export class Context {
     return new Context(scope, this.app)
   }
 
-  match (session: Session) {
+  match(session: Session) {
     if (!session) return true
     return matchScope(this.scope.groups, session.groupId)
       && matchScope(this.scope.users, session.userId)
       && (this.scope.private || session.messageType !== 'private')
   }
 
-  plugin <T extends PluginFunction<this>> (plugin: T, options?: T extends PluginFunction<this, infer U> ? U : never): this
-  plugin <T extends PluginObject<this>> (plugin: T, options?: T extends PluginObject<this, infer U> ? U : never): this
-  plugin <T extends Plugin<this>> (plugin: T, options?: T extends Plugin<this, infer U> ? U : never) {
+  plugin <T extends PluginFunction<this>>(plugin: T, options?: T extends PluginFunction<this, infer U> ? U : never): this
+  plugin <T extends PluginObject<this>>(plugin: T, options?: T extends PluginObject<this, infer U> ? U : never): this
+  plugin <T extends Plugin<this>>(plugin: T, options?: T extends Plugin<this, infer U> ? U : never) {
     if (options === false) return
     if (options === true) options = undefined
     const ctx: this = Object.create(this)
@@ -111,9 +111,9 @@ export class Context {
     return this
   }
 
-  async parallel <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<void>
-  async parallel <K extends keyof EventMap> (session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
-  async parallel (...args: any[]) {
+  async parallel <K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): Promise<void>
+  async parallel <K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
+  async parallel(...args: any[]) {
     const tasks: Promise<any>[] = []
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
@@ -125,15 +125,15 @@ export class Context {
     await Promise.all(tasks)
   }
 
-  emit <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): void
-  emit <K extends keyof EventMap> (session: Session, name: K, ...args: Parameters<EventMap[K]>): void
-  emit (...args: [any, ...any[]]) {
+  emit <K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): void
+  emit <K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): void
+  emit(...args: [any, ...any[]]) {
     this.parallel(...args)
   }
 
-  async serial <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
-  async serial <K extends keyof EventMap> (session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
-  async serial (...args: any[]) {
+  async serial <K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
+  async serial <K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
+  async serial(...args: any[]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
     this.logger('dispatch').debug(name)
@@ -144,9 +144,9 @@ export class Context {
     }
   }
 
-  bail <K extends keyof EventMap> (name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
-  bail <K extends keyof EventMap> (session: Session, name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
-  bail (...args: any[]) {
+  bail <K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
+  bail <K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
+  bail(...args: any[]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
     this.logger('dispatch').debug(name)
@@ -157,7 +157,7 @@ export class Context {
     }
   }
 
-  private getHooks <K extends keyof EventMap> (name: K) {
+  private getHooks <K extends keyof EventMap>(name: K) {
     const hooks = this.app._hooks[name] || (this.app._hooks[name] = [])
     if (hooks.length >= this.app.options.maxListeners) {
       throw new Error('max listener count (%d) exceeded, which may be caused by a memory leak')
@@ -165,29 +165,29 @@ export class Context {
     return hooks
   }
 
-  on <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
+  on <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
     return this.addListener(name, listener)
   }
 
-  addListener <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
+  addListener <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
     this.getHooks(name).push([this, listener])
     const dispose = () => this.removeListener(name, listener)
     this._disposables.push(name === 'dispose' ? listener as Disposable : dispose)
     return dispose
   }
 
-  before <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
+  before <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
     return this.prependListener(name, listener)
   }
 
-  prependListener <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
+  prependListener <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
     this.getHooks(name).unshift([this, listener])
     const dispose = () => this.removeListener(name, listener)
     this._disposables.push(name === 'dispose' ? listener as Disposable : dispose)
     return dispose
   }
 
-  once <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
+  once <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
     const dispose = this.addListener(name, (...args: any[]) => {
       dispose()
       return listener.apply(this, args)
@@ -195,11 +195,11 @@ export class Context {
     return dispose
   }
 
-  off <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
+  off <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
     return this.removeListener(name, listener)
   }
 
-  removeListener <K extends keyof EventMap> (name: K, listener: EventMap[K]) {
+  removeListener <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
     const index = (this.app._hooks[name] || []).findIndex(([context, callback]) => context === this && callback === listener)
     if (index >= 0) {
       this.app._hooks[name].splice(index, 1)
@@ -207,25 +207,25 @@ export class Context {
     }
   }
 
-  middleware (middleware: Middleware) {
+  middleware(middleware: Middleware) {
     return this.addListener(Context.MIDDLEWARE_EVENT, middleware)
   }
 
-  addMiddleware (middleware: Middleware) {
+  addMiddleware(middleware: Middleware) {
     return this.addListener(Context.MIDDLEWARE_EVENT, middleware)
   }
 
-  prependMiddleware (middleware: Middleware) {
+  prependMiddleware(middleware: Middleware) {
     return this.prependListener(Context.MIDDLEWARE_EVENT, middleware)
   }
 
-  removeMiddleware (middleware: Middleware) {
+  removeMiddleware(middleware: Middleware) {
     return this.removeListener(Context.MIDDLEWARE_EVENT, middleware)
   }
 
-  command (rawName: string, config?: CommandConfig): Command
-  command (rawName: string, description: string, config?: CommandConfig): Command
-  command (rawName: string, ...args: [CommandConfig?] | [string, CommandConfig?]) {
+  command(rawName: string, config?: CommandConfig): Command
+  command(rawName: string, description: string, config?: CommandConfig): Command
+  command(rawName: string, ...args: [CommandConfig?] | [string, CommandConfig?]) {
     const description = typeof args[0] === 'string' ? args.shift() as string : undefined
     const config = args[0] as CommandConfig || {}
     if (description !== undefined) config.description = description
@@ -267,7 +267,7 @@ export class Context {
     return parent
   }
 
-  dispose () {
+  dispose() {
     this._disposables.forEach(dispose => dispose())
   }
 }

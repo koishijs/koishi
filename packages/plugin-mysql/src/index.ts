@@ -10,12 +10,12 @@ declare module 'koishi-core/dist/database' {
 
 export const userGetters: Record<string, () => string> = {}
 
-function inferFields (keys: readonly string[]) {
+function inferFields(keys: readonly string[]) {
   return keys.map(key => key in userGetters ? `${userGetters[key]()} AS ${key}` : key) as User.Field[]
 }
 
 extendDatabase(MysqlDatabase, {
-  async getUser (userId, ...args) {
+  async getUser(userId, ...args) {
     const authority = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] ? inferFields(args[0] as any) : User.fields
     if (fields && !fields.length) return {} as any
@@ -37,7 +37,7 @@ extendDatabase(MysqlDatabase, {
     return data || fallback
   },
 
-  async getUsers (...args) {
+  async getUsers(...args) {
     let ids: readonly number[], fields: readonly User.Field[]
     if (args.length > 1) {
       ids = args[0]
@@ -52,11 +52,11 @@ extendDatabase(MysqlDatabase, {
     return this.select<User[]>('user', fields, ids && `\`id\` IN (${ids.join(', ')})`)
   },
 
-  async setUser (userId, data) {
+  async setUser(userId, data) {
     await this.update('user', userId, data)
   },
 
-  async getGroup (groupId, ...args) {
+  async getGroup(groupId, ...args) {
     const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] as any || Group.fields
     if (fields && !fields.length) return {} as any
@@ -76,7 +76,7 @@ extendDatabase(MysqlDatabase, {
     return data || fallback
   },
 
-  async getAllGroups (...args) {
+  async getAllGroups(...args) {
     let assignees: readonly number[], fields: readonly Group.Field[]
     if (args.length > 1) {
       fields = args[0]
@@ -92,14 +92,14 @@ extendDatabase(MysqlDatabase, {
     return this.select<Group[]>('group', fields, `\`assignee\` IN (${assignees.join(',')})`)
   },
 
-  async setGroup (groupId, data) {
+  async setGroup(groupId, data) {
     await this.update('group', groupId, data)
   },
 })
 
 export const name = 'mysql'
 
-export function apply (ctx: Context, config: Config = {}) {
+export function apply(ctx: Context, config: Config = {}) {
   const db = new MysqlDatabase(ctx.app, config)
   ctx.database = db as Database
   ctx.on('before-connect', () => db.start())

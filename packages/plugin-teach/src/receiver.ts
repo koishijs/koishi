@@ -62,11 +62,11 @@ export interface SessionState {
 
 const states: Record<number, SessionState> = {}
 
-export function escapeAnswer (message: string) {
+export function escapeAnswer(message: string) {
   return message.replace(/%/g, '@@__PLACEHOLDER__@@')
 }
 
-export function unescapeAnswer (message: string) {
+export function unescapeAnswer(message: string) {
   return message.replace(/@@__PLACEHOLDER__@@/g, '%')
 }
 
@@ -81,7 +81,7 @@ Context.prototype.getSessionState = function (session) {
   return state
 }
 
-export async function getTotalWeight (ctx: Context, state: SessionState) {
+export async function getTotalWeight(ctx: Context, state: SessionState) {
   const { session, dialogues } = state
   ctx.app.emit(session, 'dialogue/prepare', state)
   const userFields = new Set<User.Field>(['name'])
@@ -91,7 +91,7 @@ export async function getTotalWeight (ctx: Context, state: SessionState) {
   return dialogues.reduce((prev, curr) => prev + curr._weight, 0)
 }
 
-export async function triggerDialogue (ctx: Context, session: Session, config: Dialogue.Config, next: NextFunction = noop) {
+export async function triggerDialogue(ctx: Context, session: Session, config: Dialogue.Config, next: NextFunction = noop) {
   const state = ctx.getSessionState(session)
   state.next = next
   state.test = {}
@@ -225,7 +225,7 @@ export default function (ctx: Context, config: Dialogue.Config) {
     })
 }
 
-function prepareSource (source: string) {
+function prepareSource(source: string) {
   return CQCode.stringifyAll(CQCode.parseAll(source || '').map((code, index, arr) => {
     if (typeof code !== 'string') return code
     let message = simplify(CQCode.unescape('' + code))

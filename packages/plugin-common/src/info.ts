@@ -10,7 +10,7 @@ interface Info <K extends User.Field = User.Field> {
 const infoFields = new Set<User.Field>(['authority'])
 const infoList: Info[] = []
 
-export function registerUserInfo <K extends User.Field> (callback: UserInfoCallback<K>, fields: Iterable<K> = [], order = 0) {
+export function registerUserInfo <K extends User.Field>(callback: UserInfoCallback<K>, fields: Iterable<K> = [], order = 0) {
   const index = infoList.findIndex(a => a.order > order)
   if (index >= 0) {
     infoList.splice(index, 0, { order, callback })
@@ -22,7 +22,7 @@ export function registerUserInfo <K extends User.Field> (callback: UserInfoCallb
   }
 }
 
-export function apply (ctx: Context) {
+export function apply(ctx: Context) {
   ctx.command('info', '查看用户信息', { authority: 0 })
     .alias('profile')
     .shortcut('我的信息')

@@ -25,7 +25,7 @@ const logger = Logger.create('app')
 interface CQHTTP extends Server {}
 
 class CQHTTP {
-  constructor (app: App) {
+  constructor(app: App) {
     const bot = app.options.bots.find(bot => bot.server)
     if (!bot) {
       logger.info('infer type as %c', 'cqhttp:ws-reverse')
@@ -45,12 +45,13 @@ class CQHTTP {
 Server.types.cqhttp = CQHTTP
 Server.types.undefined = CQHTTP
 
-Session.prototype.$send = async function $send (this: Session, message: string, autoEscape = false) {
+Session.prototype.$send = async function $send(this: Session, message: string, autoEscape = false) {
   if (!message) return
   let ctxId: number
   // eslint-disable-next-line no-cond-assign
   const ctxType = (ctxId = this.groupId) ? 'group' : (ctxId = this.userId) ? 'user' : null
   if (this.$app.options.preferSync) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     ctxType === 'group'
       ? await this.$bot.sendGroupMsg(ctxId, message, autoEscape)
       : await this.$bot.sendPrivateMsg(ctxId, message, autoEscape)

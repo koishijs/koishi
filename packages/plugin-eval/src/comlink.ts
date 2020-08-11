@@ -88,12 +88,12 @@ interface TransferHandler<T, S> {
 const proxyTransferHandler: TransferHandler<object, MessagePort> = {
   canHandle: (val): val is ProxyMarked =>
     isObject(val) && (val as ProxyMarked)[proxyMarker],
-  serial (obj) {
+  serial(obj) {
     const { port1, port2 } = new MessageChannel()
     expose(obj, port1)
     return [port2, [port2]]
   },
-  deserialize (port) {
+  deserialize(port) {
     port.start()
     return wrap(port)
   },
@@ -114,7 +114,7 @@ type SerializedThrownValue =
 const throwTransferHandler: TransferHandler<ThrownValue, SerializedThrownValue> = {
   canHandle: (value): value is ThrownValue =>
     isObject(value) && throwMarker in value,
-  serial ({ value }) {
+  serial({ value }) {
     let serialized: SerializedThrownValue
     if (value instanceof Error) {
       serialized = {
@@ -130,7 +130,7 @@ const throwTransferHandler: TransferHandler<ThrownValue, SerializedThrownValue> 
     }
     return [serialized, []]
   },
-  deserialize (serialized) {
+  deserialize(serialized) {
     if (serialized.isError) {
       throw Object.assign(new Error(serialized.value.message), serialized.value)
     }
@@ -143,8 +143,8 @@ const transferHandlers = new Map<string, TransferHandler<unknown, unknown>>([
   ['throw', throwTransferHandler],
 ])
 
-export function expose (obj: any, ep: Endpoint) {
-  ep.on('message', function callback (data: Message) {
+export function expose(obj: any, ep: Endpoint) {
+  ep.on('message', function callback(data: Message) {
     const { id, type, path = [] } = data
     const argumentList = (data.argumentList || []).map(fromWireValue)
     let returnValue
@@ -194,32 +194,32 @@ export function expose (obj: any, ep: Endpoint) {
   })
 }
 
-function isMessagePort (endpoint: Endpoint): endpoint is MessagePort {
+function isMessagePort(endpoint: Endpoint): endpoint is MessagePort {
   return endpoint.constructor.name === 'MessagePort'
 }
 
-function closeEndPoint (endpoint: Endpoint) {
+function closeEndPoint(endpoint: Endpoint) {
   if (isMessagePort(endpoint)) endpoint.close()
 }
 
-export function wrap <T> (ep: Endpoint, target?: any): Remote<T> {
+export function wrap <T>(ep: Endpoint, target?: any): Remote<T> {
   return createProxy<T>(ep, [], target) as any
 }
 
-function throwIfProxyReleased (isReleased: boolean) {
+function throwIfProxyReleased(isReleased: boolean) {
   if (isReleased) {
     throw new Error('Proxy has been released and is not useable')
   }
 }
 
-function createProxy<T> (
+function createProxy<T>(
   ep: Endpoint,
   path: (string | number | symbol)[] = [],
   target: object = function () {},
 ): Remote<T> {
   let isProxyReleased = false
   const proxy = new Proxy(target, {
-    get (_target, prop) {
+    get(_target, prop) {
       throwIfProxyReleased(isProxyReleased)
       if (prop === releaseProxy) {
         return () => {
@@ -244,7 +244,7 @@ function createProxy<T> (
       }
       return createProxy(ep, [...path, prop])
     },
-    set (_target, prop, rawValue) {
+    set(_target, prop, rawValue) {
       throwIfProxyReleased(isProxyReleased)
       const [value, transferables] = toWireValue(rawValue)
       return requestResponseMessage(ep, {
@@ -253,7 +253,7 @@ function createProxy<T> (
         value,
       }, transferables).then(fromWireValue) as any
     },
-    apply (_target, _thisArg, rawArgumentList) {
+    apply(_target, _thisArg, rawArgumentList) {
       throwIfProxyReleased(isProxyReleased)
       const last = path[path.length - 1]
       if ((last as any) === createEndpoint) {
@@ -276,7 +276,7 @@ function createProxy<T> (
         transferables,
       ).then(fromWireValue)
     },
-    construct (_target, rawArgumentList) {
+    construct(_target, rawArgumentList) {
       throwIfProxyReleased(isProxyReleased)
       const [argumentList, transferables] = processArguments(rawArgumentList)
       return requestResponseMessage(
@@ -293,26 +293,26 @@ function createProxy<T> (
   return proxy as any
 }
 
-function myFlat <T> (arr: (T | T[])[]): T[] {
+function myFlat <T>(arr: (T | T[])[]): T[] {
   return Array.prototype.concat.apply([], arr)
 }
 
-function processArguments (argumentList: any[]): [WireValue[], Transferable[]] {
+function processArguments(argumentList: any[]): [WireValue[], Transferable[]] {
   const processed = argumentList.map(toWireValue)
   return [processed.map((v) => v[0]), myFlat(processed.map((v) => v[1]))]
 }
 
 const transferCache = new WeakMap<any, Transferable[]>()
-export function transfer (obj: any, transfers: Transferable[]) {
+export function transfer(obj: any, transfers: Transferable[]) {
   transferCache.set(obj, transfers)
   return obj
 }
 
-export function proxy <T> (obj: T): T & ProxyMarked {
+export function proxy <T>(obj: T): T & ProxyMarked {
   return Object.assign(obj, { [proxyMarker]: true }) as any
 }
 
-function toWireValue (value: any): [WireValue, Transferable[]] {
+function toWireValue(value: any): [WireValue, Transferable[]] {
   for (const [name, handler] of transferHandlers) {
     if (handler.canHandle(value)) {
       const [serializedValue, transferables] = handler.serial(value)
@@ -335,7 +335,7 @@ function toWireValue (value: any): [WireValue, Transferable[]] {
   ]
 }
 
-function fromWireValue (value: WireValue): any {
+function fromWireValue(value: WireValue): any {
   switch (value.type) {
     case WireValueType.HANDLER:
       return transferHandlers.get(value.name)!.deserialize(value.value)
@@ -344,7 +344,7 @@ function fromWireValue (value: WireValue): any {
   }
 }
 
-function requestResponseMessage (ep: Endpoint, msg: Message, transfers?: Transferable[]) {
+function requestResponseMessage(ep: Endpoint, msg: Message, transfers?: Transferable[]) {
   return new Promise<WireValue>((resolve) => {
     const id = generateUUID()
     ep.once('message', resolve)
@@ -352,7 +352,7 @@ function requestResponseMessage (ep: Endpoint, msg: Message, transfers?: Transfe
   })
 }
 
-function generateUUID (): string {
+function generateUUID(): string {
   return new Array(4)
     .fill(0)
     .map(() => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(16))

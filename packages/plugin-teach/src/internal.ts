@@ -13,7 +13,7 @@ class RegExpError extends Error {
 }
 
 const validator = new RegExpValidator({
-  onEscapeCharacterSet (start, end, kind, negate) {
+  onEscapeCharacterSet(start, end, kind, negate) {
     // eslint-disable-next-line curly
     if (kind === 'space') throw negate
       ? new RegExpError('四季酱会自动删除问题中的空白字符，你无需使用 \\s。')
@@ -26,24 +26,24 @@ const validator = new RegExpValidator({
     }
     throw new RegExpError(`目前不支持在正则表达式中使用 \\${source}，请使用 [${chars}] 代替。`)
   },
-  onQuantifier (start, end, min, max, greedy) {
+  onQuantifier(start, end, min, max, greedy) {
     if (!greedy) throw new RegExpError('目前不支持在正则表达式中使用非贪婪匹配语法。')
   },
-  onWordBoundaryAssertion () {
+  onWordBoundaryAssertion() {
     throw new RegExpError('目前不支持在正则表达式中使用单词边界。')
   },
-  onLookaroundAssertionEnter () {
+  onLookaroundAssertionEnter() {
     throw new RegExpError('目前不支持在正则表达式中使用断言。')
   },
-  onGroupEnter () {
+  onGroupEnter() {
     throw new RegExpError('目前不支持在正则表达式中使用非捕获组。')
   },
-  onCapturingGroupEnter (start, name) {
+  onCapturingGroupEnter(start, name) {
     if (name) throw new RegExpError('目前不支持在正则表达式中使用具名组。')
   },
 })
 
-export default function apply (ctx: Context, config: Dialogue.Config) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
   const logger = Logger.create('teach')
 
   ctx.command('teach')
@@ -104,7 +104,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  function maybeAnswer (question: string, dialogues: Dialogue[]) {
+  function maybeAnswer(question: string, dialogues: Dialogue[]) {
     return dialogues.every(dialogue => {
       const dist = leven(question, dialogue.answer)
       return dist < dialogue.answer.length / 2
@@ -112,7 +112,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     })
   }
 
-  function maybeRegExp (question: string) {
+  function maybeRegExp(question: string) {
     return question.startsWith('^') || question.endsWith('$')
   }
 

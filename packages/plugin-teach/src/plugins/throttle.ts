@@ -20,7 +20,7 @@ declare module '../receiver' {
   }
 }
 
-export default function apply (ctx: Context, config: Dialogue.Config) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
   const { throttle } = config
 
   const throttleConfig = !throttle ? []

@@ -9,14 +9,14 @@ export interface DebugOptions {
   refreshGroupName?: number
 }
 
-export function apply (ctx: Context, config: DebugOptions = {}) {
+export function apply(ctx: Context, config: DebugOptions = {}) {
   const { refreshUserName = Time.hour, refreshGroupName = Time.hour, showUserId, showGroupId } = config
   const logger = Logger.create('message', true)
   Logger.levels.message = 3
 
   const groupMap: Record<number, [Promise<string>, number]> = {}
 
-  async function getGroupName (session: Session) {
+  async function getGroupName(session: Session) {
     if (session.messageType === 'private') return '私聊'
     const { groupId: id, $bot } = session
     const timestamp = Date.now()
@@ -33,14 +33,14 @@ export function apply (ctx: Context, config: DebugOptions = {}) {
 
   const userMap: Record<number, [string | Promise<string>, number]> = {}
 
-  function getSenderName ({ anonymous, sender, userId }: Session) {
+  function getSenderName({ anonymous, sender, userId }: Session) {
     return anonymous
       ? anonymous.name + (showUserId ? ` (${anonymous.id})` : '')
       : (userMap[userId] = [sender.nickname, Date.now()])[0]
       + (showUserId ? ` (${userId})` : '')
   }
 
-  async function formatMessage (session: Session) {
+  async function formatMessage(session: Session) {
     const codes = CQCode.parseAll(session.message)
     let output = ''
     for (const code of codes) {

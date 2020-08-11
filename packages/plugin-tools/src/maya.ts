@@ -6,14 +6,14 @@ const haabMonthNames = ['Pop', "Wo'", 'Sip', "Sotz'", 'Sek', 'Xul', "Yaxk'in", '
 const longCountUnits = ['Kin', 'Uinal', 'Tun', "Ka'tun", "Bak'tun", 'Pictun', 'Kalabtun', "K'inchiltun", 'Alautun']
 const dayNames = ['Ajaw', 'Imix', "Ik'", "Ak'bal", "K'an", 'Chikchan', 'Kimi', "Manik'", 'Lamat', 'Muluk', 'Ok', 'Chuwen', 'Eb', 'Ben', 'Ix', 'Men', "K'ib", 'Kaban', "Etz'nab", 'Kawak']
 
-function isLeap (year: number) {
+function isLeap(year: number) {
   return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
 }
 
 class MayaDate {
-  constructor (public stamp: number) {}
+  constructor(public stamp: number) {}
 
-  compare (date: MayaDate) {
+  compare(date: MayaDate) {
     if (this.stamp > date.stamp) {
       return 1
     } else if (this.stamp < date.stamp) {
@@ -22,11 +22,11 @@ class MayaDate {
     return 0
   }
 
-  getDelta (date: MayaDate) {
+  getDelta(date: MayaDate) {
     return this.stamp - date.stamp
   }
 
-  static fromGreg (year: number, month: number, day: number) {
+  static fromGreg(year: number, month: number, day: number) {
     let delta = 0
 
     const pyear = -3113, pmonth = 8, pday = 11
@@ -90,7 +90,7 @@ class MayaDate {
     return new MayaDate(delta)
   }
 
-  static fromMaya (mlc: string) {
+  static fromMaya(mlc: string) {
     let num = 0
     const periods = mlc.split('.')
     periods.forEach((n, i) => {
@@ -104,7 +104,7 @@ class MayaDate {
     return new MayaDate(num)
   }
 
-  toGreg () {
+  toGreg() {
     let days = this.stamp
     let year = -3113, month = 8, day = 11
 
@@ -182,7 +182,7 @@ class MayaDate {
     return monthNames[month] + ' ' + day + ', ' + (year <= 0 ? Math.abs(year - 1) + 'BC' : year)
   }
 
-  toMLC () {
+  toMLC() {
     let days = this.stamp
     const periods: number[] = []
     periods.push(days % 20)
@@ -202,14 +202,14 @@ class MayaDate {
     return periods.map((value, index) => `${value} ${longCountUnits[index]}`).reverse().join(', ')
   }
 
-  toTzolkin () {
+  toTzolkin() {
     const days = this.stamp
     const daynum = (days + 4) % 13
     const dayname = dayNames[days % 20]
     return daynum + ' ' + dayname
   }
 
-  toHaab () {
+  toHaab() {
     let ht = this.stamp % 365
     let hmonth: number, hday: number
     if (ht < 12) {
@@ -227,7 +227,7 @@ class MayaDate {
   }
 }
 
-export function apply (ctx: Context) {
+export function apply(ctx: Context) {
   ctx.command('tools/maya <YYYY-MM-DD> [BC|AD]', '玛雅日历换算')
     .example('maya 2012-12-21')
     .action((_, date, hint) => {

@@ -23,7 +23,7 @@ declare module '../database' {
   }
 }
 
-export default function apply (ctx: Context, config: Dialogue.Config) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.command('teach')
     .option('disable', '-d  在当前环境下禁用问答')
     .option('disableGlobal', '-D  在所有环境下禁用问答', { authority: 3 })

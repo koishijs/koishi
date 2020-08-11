@@ -10,7 +10,7 @@ export interface Config extends PoolConfig {}
 export const arrayTypes: string[] = []
 
 const defaultConfig: Config = {
-  typeCast (field, next) {
+  typeCast(field, next) {
     const identifier = `${field['packet'].orgTable}.${field.name}`
     if (arrayTypes.includes(identifier)) {
       const source = field.string()
@@ -33,14 +33,14 @@ export default class MysqlDatabase {
   escape = escape
   escapeId = escapeId
 
-  constructor (public app: App, config: Config) {
+  constructor(public app: App, config: Config) {
     this.config = {
       ...defaultConfig,
       ...config,
     }
   }
 
-  async start () {
+  async start() {
     this.pool = createPool(this.config)
   }
 
@@ -76,7 +76,7 @@ export default class MysqlDatabase {
     return this.query<T>(`SELECT ${this.joinKeys(fields)} FROM \`${table}\` _${table} ${conditional ? ' WHERE ' + conditional : ''}`, values)
   }
 
-  async create <K extends TableType> (table: K, data: Partial<Tables[K]>): Promise<Tables[K]> {
+  async create <K extends TableType>(table: K, data: Partial<Tables[K]>): Promise<Tables[K]> {
     const keys = Object.keys(data)
     if (!keys.length) return
     logger.debug(`[create] ${table}: ${data}`)
@@ -87,9 +87,9 @@ export default class MysqlDatabase {
     return { ...data, id: header.insertId } as any
   }
 
-  async update <K extends TableType> (table: K, data: Partial<Tables[K]>[]): Promise<OkPacket>
-  async update <K extends TableType> (table: K, id: number | string, data: Partial<Tables[K]>): Promise<OkPacket>
-  async update <K extends TableType> (table: K, arg1: number | string | Tables[K][], data?: Partial<Tables[K]>) {
+  async update <K extends TableType>(table: K, data: Partial<Tables[K]>[]): Promise<OkPacket>
+  async update <K extends TableType>(table: K, id: number | string, data: Partial<Tables[K]>): Promise<OkPacket>
+  async update <K extends TableType>(table: K, arg1: number | string | Tables[K][], data?: Partial<Tables[K]>) {
     if (typeof arg1 === 'object') {
       if (!arg1.length) return
       const keys = Object.keys(arg1[0])
@@ -111,12 +111,12 @@ export default class MysqlDatabase {
     return header as OkPacket
   }
 
-  async count <K extends TableType> (table: K, conditional?: string) {
+  async count <K extends TableType>(table: K, conditional?: string) {
     const [{ 'COUNT(*)': count }] = await this.query(`SELECT COUNT(*) FROM ?? ${conditional ? 'WHERE ' + conditional : ''}`, [table])
     return count as number
   }
 
-  stop () {
+  stop() {
     this.pool.end()
   }
 }

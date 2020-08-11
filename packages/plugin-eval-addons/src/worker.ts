@@ -33,7 +33,7 @@ const root = resolve(process.cwd(), config.moduleRoot)
 const modules: Record<string, any> = { koishi }
 config.addonNames.unshift(...Object.keys(modules))
 
-function linker (specifier: string, reference: any) {
+function linker(specifier: string, reference: any) {
   if (specifier in modules) {
     return modules[specifier]
   }
@@ -43,7 +43,7 @@ function linker (specifier: string, reference: any) {
 const json = JSON.parse(readFileSync(resolve(root, 'tsconfig.json'), 'utf8'))
 const { options: compilerOptions } = ts.parseJsonConfigFileContent(json, ts.sys, root)
 
-async function createModule (path: string) {
+async function createModule(path: string) {
   if (!modules[path]) {
     const content = await promises.readFile(resolve(root, path, 'index.ts'), 'utf8')
     const { outputText } = ts.transpileModule(content, {
@@ -62,7 +62,7 @@ export default Promise.all(config.addonNames.map(path => createModule(path).then
   logger.warn(`cannot load module %c\n` + error.stack, path)
   delete modules[path]
 }))).then(() => {
-  function require (name: string) {
+  function require(name: string) {
     const module = modules[name]
     if (!module) {
       throw new Error(`Cannot find module "${name}"`)

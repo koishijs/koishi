@@ -33,7 +33,7 @@ export interface AppOptions extends BotOptions {
   groupCacheTimeout?: number
 }
 
-function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
+function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegex).join('|')})${suffix}`) : /$^/
 }
 
@@ -66,7 +66,7 @@ export class App extends Context {
     processMessage: (message) => simplify(message.trim()),
   }
 
-  constructor (options: AppOptions = {}) {
+  constructor(options: AppOptions = {}) {
     super({ groups: [], users: [], private: true })
     this.app = this
     options = this.options = { ...App.defaultOptions, ...options }
@@ -98,7 +98,7 @@ export class App extends Context {
     this.plugin(help)
   }
 
-  async getSelfIds () {
+  async getSelfIds() {
     const bots = this.server.bots.filter(bot => bot.ready)
     if (!this._getSelfIdsPromise) {
       this._getSelfIdsPromise = Promise.all(bots.map(async (bot) => {
@@ -110,7 +110,7 @@ export class App extends Context {
     return bots.map(bot => bot.selfId)
   }
 
-  async start () {
+  async start() {
     this.status = AppStatus.opening
     await this.parallel('before-connect')
     this.status = AppStatus.open
@@ -118,7 +118,7 @@ export class App extends Context {
     this.emit('connect')
   }
 
-  async stop () {
+  async stop() {
     this.status = AppStatus.closing
     await this.parallel('before-disconnect')
     this.status = AppStatus.closed
@@ -126,7 +126,7 @@ export class App extends Context {
     this.emit('disconnect')
   }
 
-  private async _preprocess (session: Session, next: NextFunction) {
+  private async _preprocess(session: Session, next: NextFunction) {
     session.message = this.options.processMessage(session.message)
 
     // strip prefix
@@ -182,7 +182,7 @@ export class App extends Context {
     return session.$argv.command.execute(session.$argv)
   }
 
-  private async _handleMessage (session: Session) {
+  private async _handleMessage(session: Session) {
     // preparation
     const counter = this._middlewareCounter++
     this._middlewareSet.add(counter)
@@ -224,7 +224,7 @@ export class App extends Context {
     await session.$group?._update()
   }
 
-  private _handleParse (message: string, { $prefix, $appel, messageType }: Session, forced: boolean) {
+  private _handleParse(message: string, { $prefix, $appel, messageType }: Session, forced: boolean) {
     // group message should have prefix or appel to be interpreted as a command call
     if (!forced && messageType !== 'private' && $prefix === null && !$appel) return
     const name = message.split(/\s/, 1)[0]

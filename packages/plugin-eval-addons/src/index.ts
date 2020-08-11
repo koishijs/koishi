@@ -29,7 +29,7 @@ interface Manifest {
   commands?: Command[]
 }
 
-export function apply (ctx: Context, config: Config) {
+export function apply(ctx: Context, config: Config) {
   const { evalConfig } = ctx.app
   Object.assign(evalConfig, config)
   const moduleRoot = assertProperty(evalConfig, 'moduleRoot')
@@ -43,7 +43,7 @@ export function apply (ctx: Context, config: Config) {
     logger.debug('load manifest %c', path)
   }, noop))
 
-  async function loadManifest (path: string) {
+  async function loadManifest(path: string) {
     const content = await promises.readFile(resolve(root, path, 'manifest.yml'), 'utf8')
     const { commands = [] } = safeLoad(content) as Manifest
     commands.forEach(({ name, desc, options }) => {

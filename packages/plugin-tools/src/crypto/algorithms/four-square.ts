@@ -6,7 +6,7 @@ export default class FourSquare {
   square3: Square
   square4: Square
 
-  constructor (keyword1: string, keyword2: string, public type: SquareType) {
+  constructor(keyword1: string, keyword2: string, public type: SquareType) {
     if (!isKeyword(keyword1) || !isKeyword(keyword2)) {
       throw new Error('Invalid keyword.')
     }
@@ -16,7 +16,7 @@ export default class FourSquare {
     this.square4 = new Square(type)
   }
 
-  crypt (text: string, s1: Square, s2: Square, s3: Square, s4: Square) {
+  crypt(text: string, s1: Square, s2: Square, s3: Square, s4: Square) {
     if (this.type === '25ij') {
       text = text.replace(/j/ig, 'i')
     } else if (this.type === '25q') {
@@ -50,11 +50,11 @@ export default class FourSquare {
     return result
   }
 
-  encrypt (text: string) {
+  encrypt(text: string) {
     return this.crypt(text, this.square1, this.square2, this.square3, this.square4)
   }
 
-  decrypt (text: string) {
+  decrypt(text: string) {
     return this.crypt(text, this.square2, this.square1, this.square4, this.square3)
   }
 }

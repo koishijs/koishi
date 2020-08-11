@@ -19,20 +19,20 @@ export const createMessageMeta = (app: App, type: 'user' | 'group', message: str
 export class Session {
   meta: Meta
 
-  constructor (public app: MockedApp, public type: 'user' | 'group', public userId: number, public ctxId: number) {
+  constructor(public app: MockedApp, public type: 'user' | 'group', public userId: number, public ctxId: number) {
     this.meta = createMessageMeta(app, type, null, userId, ctxId)
   }
 
-  async send (message: string) {
+  async send(message: string) {
     const replies: string[] = []
-    function _response (data: ResponsePayload) {
+    function _response(data: ResponsePayload) {
       if (data.reply) replies.push(data.reply)
     }
     await this.app.receiveMessage(new Meta(this.app, { ...this.meta, message, _response }))
     return replies
   }
 
-  async shouldHaveReply (message: string, reply?: string) {
+  async shouldHaveReply(message: string, reply?: string) {
     const replies = await this.send(message)
     const lastReply = replies[replies.length - 1]
     if (reply) {
@@ -42,11 +42,11 @@ export class Session {
     }
   }
 
-  shouldHaveNoReply (message: string) {
+  shouldHaveNoReply(message: string) {
     return expect(this.send(message)).resolves.toHaveLength(0)
   }
 
-  shouldMatchSnapshot (message: string) {
+  shouldMatchSnapshot(message: string) {
     return expect(this.send(message)).resolves.toMatchSnapshot(message)
   }
 }

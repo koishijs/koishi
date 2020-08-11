@@ -25,11 +25,11 @@ export default class MongoDatabase {
   group: Collection<Gdoc>
   watcher: any
 
-  constructor (public app: App, public config: Config) {
+  constructor(public app: App, public config: Config) {
     this.config = config
   }
 
-  async start () {
+  async start() {
     let mongourl = 'mongodb://'
     if (this.config.username) mongourl += `${this.config.username}:${this.config.password}@`
     mongourl += `${this.config.host}:${this.config.port}/${this.config.name}`
@@ -41,7 +41,7 @@ export default class MongoDatabase {
     this.group = this.db.collection(this.config.prefix ? `${this.config.prefix}.group` : 'group')
   }
 
-  stop () {
+  stop() {
     return this.client.close()
   }
 }

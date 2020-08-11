@@ -8,7 +8,7 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-function pick <T, K extends keyof T> (source: T, keys: K[]): Pick<T, K> {
+function pick <T, K extends keyof T>(source: T, keys: K[]): Pick<T, K> {
   return keys.reduce((prev, curr) => (prev[curr] = source[curr], prev), {} as Pick<T, K>)
 }
 
@@ -22,8 +22,8 @@ const cwd = process.cwd()
 
 export const name = 'recorder'
 
-export function apply (ctx: Context, options: RecorderOptions = {}) {
-  async function handleMessage (session: Session<never, 'assignee'>) {
+export function apply(ctx: Context, options: RecorderOptions = {}) {
+  async function handleMessage(session: Session<never, 'assignee'>) {
     if (session.subType === 'group' && session.$group.assignee !== session.selfId) return
     if (await ctx.serial('before-record', session)) return
     const output = JSON.stringify(pick(session, ['time', 'userId', 'message'])) + '\n'

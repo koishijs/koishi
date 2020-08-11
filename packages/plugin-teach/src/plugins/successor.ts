@@ -37,7 +37,7 @@ declare module '../database' {
   }
 }
 
-export default function apply (ctx: Context, config: Dialogue.Config) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
   const { successorTimeout = 20000 } = config
 
   ctx.command('teach')
@@ -178,7 +178,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  async function attachSuccessors (argv: Dialogue.Argv, dialogues: Dialogue[], test: DialogueTest = {}) {
+  async function attachSuccessors(argv: Dialogue.Argv, dialogues: Dialogue[], test: DialogueTest = {}) {
     const dMap = argv.dialogueMap
     const predecessors = dialogues.filter((dialogue) => {
       if (dialogue._successors) return

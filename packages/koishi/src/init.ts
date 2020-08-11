@@ -5,7 +5,7 @@ import { AppConfig } from './worker'
 import prompts from 'prompts'
 import { CAC } from 'cac'
 
-async function createConfig (options) {
+async function createConfig(options) {
   let succeed = true
   const data = await prompts([{
     name: 'type',

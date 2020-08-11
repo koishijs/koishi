@@ -27,11 +27,11 @@ declare module '../receiver' {
   }
 }
 
-export function isShortInteger (value: any) {
+export function isShortInteger(value: any) {
   return isInteger(value) && value >= 0 ? '' : '应为正整数。'
 }
 
-export default function apply (ctx: Context, config: Dialogue.Config) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
   const { getAffinity, affinityFields = [] } = config
   if (!getAffinity) return
 
@@ -48,7 +48,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
     if (options.maxAffinity !== undefined) test.mismatchAffinity = options.maxAffinity
   })
 
-  function matchAffinity (affinity: number) {
+  function matchAffinity(affinity: number) {
     return `(\`maxAffinity\` > ${affinity} && \`minAffinity\` <= ${affinity})`
   }
 

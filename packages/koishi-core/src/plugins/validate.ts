@@ -51,7 +51,7 @@ const messages = {
   USAGE_EXHAUSTED: '调用次数已达上限。',
 } as const
 
-export function getUsageName (command: Command) {
+export function getUsageName(command: Command) {
   return command.config.usageName || command.name
 }
 
@@ -90,13 +90,13 @@ Command.prototype.before = function (this: Command, checker) {
   return this
 }
 
-export default function apply (app: App) {
+export default function apply(app: App) {
   app.on('new-command', (cmd) => {
     cmd._checkers = []
   })
 
   app.on('before-command', ({ session, args, options, command }: ParsedArgv<ValidationField>) => {
-    async function sendHint (session: Session, message: string, ...param: any[]) {
+    async function sendHint(session: Session, message: string, ...param: any[]) {
       if (command.config.showWarning) {
         await session.$send(format(message, ...param))
         return true
@@ -170,7 +170,7 @@ export default function apply (app: App) {
   })
 }
 
-export function getUsage (name: string, user: Pick<User, 'usage'>) {
+export function getUsage(name: string, user: Pick<User, 'usage'>) {
   const $date = getDateNumber()
   if (user.usage.$date !== $date) {
     user.usage = { $date }
@@ -178,7 +178,7 @@ export function getUsage (name: string, user: Pick<User, 'usage'>) {
   return user.usage[name] || 0
 }
 
-export function checkUsage (name: string, user: Pick<User, 'usage'>, maxUsage?: number) {
+export function checkUsage(name: string, user: Pick<User, 'usage'>, maxUsage?: number) {
   const count = getUsage(name, user)
   if (count >= maxUsage) return true
   if (maxUsage) {
@@ -188,7 +188,7 @@ export function checkUsage (name: string, user: Pick<User, 'usage'>, maxUsage?: 
 
 const UPDATE_INTERVAL = 86400000
 
-export function checkTimer (name: string, { timers }: Pick<User, 'timers'>, offset?: number) {
+export function checkTimer(name: string, { timers }: Pick<User, 'timers'>, offset?: number) {
   const now = Date.now()
   if (!(now <= timers.$date)) {
     for (const key in timers) {

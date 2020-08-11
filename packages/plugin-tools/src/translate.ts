@@ -26,7 +26,7 @@ export interface TranslateOptions {
   youdaoSecret?: string
 }
 
-export function apply (ctx: Context, config: TranslateOptions) {
+export function apply(ctx: Context, config: TranslateOptions) {
   const appKey = assertProperty(config, 'youdaoAppKey')
   const secret = assertProperty(config, 'youdaoSecret')
 

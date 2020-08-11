@@ -27,7 +27,7 @@ export namespace User {
   type Getter = (id: number, authority: number) => Partial<User>
   const getters: Getter[] = []
 
-  export function extend (getter: Getter) {
+  export function extend(getter: Getter) {
     getters.push(getter)
     fields.push(...Object.keys(getter(0, 0)) as any)
   }
@@ -41,7 +41,7 @@ export namespace User {
     name: '' + id,
   }))
 
-  export function create (id: number, authority: number) {
+  export function create(id: number, authority: number) {
     const result = {} as User
     for (const getter of getters) {
       Object.assign(result, getter(id, authority))
@@ -69,12 +69,12 @@ export namespace Group {
   type Getter = (id: number, authority: number) => Partial<Group>
   const getters: Getter[] = []
 
-  export function extend (getter: Getter) {
+  export function extend(getter: Getter) {
     getters.push(getter)
     fields.push(...Object.keys(getter(0, 0)) as any)
   }
 
-  export function create (id: number, authority: number) {
+  export function create(id: number, authority: number) {
     const result = {} as Group
     for (const getter of getters) {
       Object.assign(result, getter(id, authority))
@@ -107,9 +107,9 @@ type DatabaseExtension <T extends {}> = {
   [K in keyof Database]?: Database[K] extends (...args: infer R) => infer S ? (this: T & Database, ...args: R) => S : never
 }
 
-export function extendDatabase <T extends {}> (module: string, extension: DatabaseExtension<T>): void
-export function extendDatabase <T extends {}> (module: { prototype: T }, extension: DatabaseExtension<T>): void
-export function extendDatabase (module: any, extension: {}) {
+export function extendDatabase <T extends {}>(module: string, extension: DatabaseExtension<T>): void
+export function extendDatabase <T extends {}>(module: { prototype: T }, extension: DatabaseExtension<T>): void
+export function extendDatabase(module: any, extension: {}) {
   try {
     const Database = typeof module === 'string' ? require(module).default : module
     Object.assign(Database.prototype, extension)

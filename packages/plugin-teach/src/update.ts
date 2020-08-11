@@ -23,7 +23,7 @@ declare module './database' {
   }
 }
 
-export default function apply (ctx: Context) {
+export default function apply(ctx: Context) {
   ctx.command('teach')
     .option('review', '-v  查看最近的修改')
     .option('revert', '-V  回退最近的修改')
@@ -90,7 +90,7 @@ export default function apply (ctx: Context) {
   })
 }
 
-function isIntegerOrInterval (value: string) {
+function isIntegerOrInterval(value: string) {
   const n = +value
   return n * 0 === 0 ? !isInteger(n) || n <= 0 : !parseTime(value)
 }
@@ -98,7 +98,7 @@ function isIntegerOrInterval (value: string) {
 const second = 1000
 const minute = second * 60
 
-function formatTimeShort (ms: number) {
+function formatTimeShort(ms: number) {
   let result: string
   if (ms >= minute - second / 2) {
     ms += second / 2
@@ -112,7 +112,7 @@ function formatTimeShort (ms: number) {
   return result
 }
 
-function review (dialogues: Dialogue[], argv: Dialogue.Argv) {
+function review(dialogues: Dialogue[], argv: Dialogue.Argv) {
   const { session } = argv
   const output = dialogues.map((d) => {
     const details = getDetails(argv, d)
@@ -123,7 +123,7 @@ function review (dialogues: Dialogue[], argv: Dialogue.Argv) {
   return session.$send(output.join('\n'))
 }
 
-async function revert (dialogues: Dialogue[], argv: Dialogue.Argv) {
+async function revert(dialogues: Dialogue[], argv: Dialogue.Argv) {
   try {
     return argv.session.$send(await Dialogue.revert(dialogues, argv))
   } catch (err) {
@@ -132,7 +132,7 @@ async function revert (dialogues: Dialogue[], argv: Dialogue.Argv) {
   }
 }
 
-export async function update (argv: Dialogue.Argv) {
+export async function update(argv: Dialogue.Argv) {
   const { ctx, session, options, target, config } = argv
   const { maxShownDialogues = 10, detailInterval = 500 } = config
   const { revert, review, remove, search } = options
@@ -201,7 +201,7 @@ export async function update (argv: Dialogue.Argv) {
   return sendResult(argv)
 }
 
-export async function create (argv: Dialogue.Argv) {
+export async function create(argv: Dialogue.Argv) {
   const { ctx, options } = argv
   options.create = options.modify = true
   const { question, answer } = options

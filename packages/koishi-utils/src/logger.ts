@@ -30,13 +30,13 @@ export class Logger {
     o: value => inspect(value, Logger.options).replace(/\s*\n\s*/g, ' '),
   }
 
-  static create (name = '', showDiff = false) {
+  static create(name = '', showDiff = false) {
     const logger = instances[name] || new Logger(name)
     if (showDiff !== undefined) logger.showDiff = showDiff
     return logger
   }
 
-  static color (code: number, value: any, decoration = '') {
+  static color(code: number, value: any, decoration = '') {
     if (!Logger.options.colors) return '' + value
     return `\u001B[3${code < 8 ? code : '8;5;' + code}${decoration}m${value}\u001B[0m`
   }
@@ -50,7 +50,7 @@ export class Logger {
   public warn: LogFunction
   public debug: LogFunction
 
-  private constructor (private name: string, private showDiff = false) {
+  private constructor(private name: string, private showDiff = false) {
     let hash = 0
     for (let i = 0; i < name.length; i++) {
       hash = ((hash << 3) - hash) + name.charCodeAt(i)
@@ -66,18 +66,18 @@ export class Logger {
     this.createMethod('debug', '[D] ', 3)
   }
 
-  private color (value: any, decoration = '') {
+  private color(value: any, decoration = '') {
     return Logger.color(this.code, value, decoration)
   }
 
-  private createMethod (name: string, prefix: string, minLevel: number) {
+  private createMethod(name: string, prefix: string, minLevel: number) {
     this[name] = (...args: [any, ...any[]]) => {
       if (this.level < minLevel) return
       process.stderr.write(prefix + this.displayName + this.format(...args) + '\n')
     }
   }
 
-  get level () {
+  get level() {
     return Logger.levels[this.name] ?? Logger.baseLevel
   }
 

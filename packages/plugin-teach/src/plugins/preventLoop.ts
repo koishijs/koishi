@@ -22,7 +22,7 @@ declare module '../receiver' {
   }
 }
 
-export default function apply (ctx: Context, config: Dialogue.Config) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
   const { preventLoop } = config
 
   const preventLoopConfig: LoopConfig[] = !preventLoop ? []

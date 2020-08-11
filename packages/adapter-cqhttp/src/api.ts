@@ -4,7 +4,7 @@ import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatus } fro
 const logger = Logger.create('sender')
 
 export class SenderError extends Error {
-  constructor (args: Record<string, any>, url: string, retcode: number, selfId: number) {
+  constructor(args: Record<string, any>, url: string, retcode: number, selfId: number) {
     super(`Error when trying to send to ${url}, args: ${JSON.stringify(args)}, retcode: ${retcode}`)
     Object.defineProperties(this, {
       name: { value: 'SenderError' },
@@ -243,12 +243,12 @@ Bot.prototype.setGroupAddRequestAsync = function (this: Bot, flag: string, subTy
   }
 }
 
-Bot.prototype.getSelfId = async function getSelfId (this: Bot) {
+Bot.prototype.getSelfId = async function getSelfId(this: Bot) {
   const { userId } = await this.getLoginInfo()
   return userId
 }
 
-Bot.prototype.getStatus = async function getStatus (this: Bot) {
+Bot.prototype.getStatus = async function getStatus(this: Bot) {
   if (!this.ready) return BotStatus.BOT_IDLE
   try {
     const data = await this.get<StatusInfo>('get_status')
@@ -263,14 +263,14 @@ Bot.prototype.getMemberMap = async function (this: Bot, groupId: number) {
   return Object.fromEntries(list.map(info => [info.userId, info.card || info.nickname]))
 }
 
-function defineSync (name: string, ...params: string[]) {
+function defineSync(name: string, ...params: string[]) {
   const prop = camelCase(name.replace(/^_/, ''))
   Bot.prototype[prop] = function (this: Bot, ...args: any[]) {
     return this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
   }
 }
 
-function defineAsync (name: string, ...params: string[]) {
+function defineAsync(name: string, ...params: string[]) {
   const prop = camelCase(name.replace(/^_/, ''))
   Bot.prototype[prop] = async function (this: Bot, ...args: any[]) {
     await this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
@@ -280,7 +280,7 @@ function defineAsync (name: string, ...params: string[]) {
   }
 }
 
-function defineExtract (name: string, key: string, ...params: string[]) {
+function defineExtract(name: string, key: string, ...params: string[]) {
   const prop = camelCase(name.replace(/^_/, ''))
   Bot.prototype[prop] = async function (this: Bot, ...args: any[]) {
     const data = await this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
@@ -394,7 +394,7 @@ interface CQNode {
 
 defineAsync('set_group_name', 'group_id', 'name')
 
-export function toVersion (data: VersionInfo) {
+export function toVersion(data: VersionInfo) {
   const { coolqEdition, pluginVersion, goCqhttp } = data
   if (goCqhttp) {
     return `Go-CQHTTP`

@@ -27,7 +27,7 @@ export default async function (url: string, session: Session, config: Config) {
   }
 }
 
-function getDetail (html: string) {
+function getDetail(html: string) {
   const $ = Cheerio.load(html, { decodeEntities: false })
   const $box = $($('.item-box')[1])
   const thumbnail = baseURL + $box.find('.image-box img').attr('src')

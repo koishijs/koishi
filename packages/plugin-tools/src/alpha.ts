@@ -3,7 +3,7 @@ import { CQCode } from 'koishi-utils'
 import { xml2js } from 'xml-js'
 import axios from 'axios'
 
-function extractData (subpod: any, inline = false) {
+function extractData(subpod: any, inline = false) {
   const text = subpod.plaintext?._text
   if (text?.match(/^[a-zA-Z0-9 "',?!;:()-]+$/)) {
     return text
@@ -17,7 +17,7 @@ export interface AlphaOptions {
   wolframAlphaAppId?: string
 }
 
-export function apply (ctx: Context, config: AlphaOptions) {
+export function apply(ctx: Context, config: AlphaOptions) {
   const { wolframAlphaAppId: appid } = config
   ctx.command('tools/alpha <expression...>', '调用 WolframAlpha 查询', { maxUsage: 10 })
     .example('alpha int(sinx)')

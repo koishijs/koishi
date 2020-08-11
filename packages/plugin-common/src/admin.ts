@@ -12,7 +12,7 @@ export interface ActionItem <T extends {}> {
 export class Action <T extends {}> {
   commands: Record<string, ActionItem<T>> = {}
 
-  add <K extends keyof T = never> (name: string, callback: ActionCallback<T, K>, fields?: K[]) {
+  add <K extends keyof T = never>(name: string, callback: ActionCallback<T, K>, fields?: K[]) {
     this.commands[paramCase(name)] = { callback, fields }
   }
 }
@@ -20,7 +20,7 @@ export class Action <T extends {}> {
 export const UserAction = new Action<User>()
 export const GroupAction = new Action<Group>()
 
-function getFlags (data: Record<string, any>): string[] {
+function getFlags(data: Record<string, any>): string[] {
   return Object.values(data).filter(value => typeof value === 'string')
 }
 
@@ -134,7 +134,7 @@ GroupAction.add('setAssignee', async (session, group, _assignee) => {
   return '群信息已修改。'
 }, ['assignee'])
 
-export function apply (ctx: Context) {
+export function apply(ctx: Context) {
   ctx.command('admin <action> [...args]', '管理用户', { authority: 4 })
     .userFields(['authority'])
     .before(session => !session.$app.database)

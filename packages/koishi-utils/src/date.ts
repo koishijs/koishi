@@ -1,10 +1,10 @@
 let timezoneOffset = new Date().getTimezoneOffset()
 
-export function setTimezoneOffset (offset: number) {
+export function setTimezoneOffset(offset: number) {
   timezoneOffset = offset
 }
 
-export function getTimezoneOffset () {
+export function getTimezoneOffset() {
   return timezoneOffset
 }
 
@@ -16,13 +16,13 @@ export namespace Time {
   export const week = day * 7
 }
 
-export function getDateNumber (date: number | Date = new Date(), offset?: number) {
+export function getDateNumber(date: number | Date = new Date(), offset?: number) {
   if (typeof date === 'number') date = new Date(date)
   if (offset === undefined) offset = timezoneOffset
   return Math.floor((date.valueOf() / Time.minute - offset) / 1440)
 }
 
-export function fromDateNumber (value: number, offset?: number) {
+export function fromDateNumber(value: number, offset?: number) {
   const date = new Date(value * Time.day)
   if (offset === undefined) offset = timezoneOffset
   return new Date(+date + offset * Time.minute)
@@ -30,7 +30,7 @@ export function fromDateNumber (value: number, offset?: number) {
 
 const timeRegExp = /^(\d+(?:\.\d+)?w(?:eek(?:s)?)?)?(\d+(?:\.\d+)?d(?:ay(?:s)?)?)?(\d+(?:\.\d+)?h(?:our(?:s)?)?)?(\d+(?:\.\d+)?m(?:in(?:ute)?(?:s)?)?)?(\d+(?:\.\d+)?s(?:ec(?:ond)?(?:s)?)?)?$/
 
-export function parseTime (source: string) {
+export function parseTime(source: string) {
   const capture = timeRegExp.exec(source)
   if (!capture) return 0
   return (parseFloat(capture[1]) * Time.week || 0)
@@ -40,7 +40,7 @@ export function parseTime (source: string) {
     + (parseFloat(capture[5]) * Time.second || 0)
 }
 
-export function parseDate (date: string) {
+export function parseDate(date: string) {
   const parsed = parseTime(date)
   // eslint-disable-next-line no-cond-assign
   if (parsed) {
@@ -53,7 +53,7 @@ export function parseDate (date: string) {
   return date ? new Date(date) : new Date()
 }
 
-export function formatTimeShort (ms: number) {
+export function formatTimeShort(ms: number) {
   const abs = Math.abs(ms)
   if (abs >= Time.day - Time.hour / 2) {
     return Math.round(ms / Time.day) + 'd'
@@ -67,7 +67,7 @@ export function formatTimeShort (ms: number) {
   return ms + 'ms'
 }
 
-export function formatTime (ms: number) {
+export function formatTime(ms: number) {
   let result: string
   if (ms >= Time.day - Time.hour / 2) {
     ms += Time.hour / 2
@@ -95,7 +95,7 @@ export function formatTime (ms: number) {
 
 const dayMap = ['日', '一', '二', '三', '四', '五', '六']
 
-export function formatTimeInterval (time: Date, interval: number) {
+export function formatTimeInterval(time: Date, interval: number) {
   if (!interval) {
     return time.toLocaleString()
   } else if (interval === Time.day) {

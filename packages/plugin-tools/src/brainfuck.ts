@@ -24,12 +24,12 @@ class BrainFuck {
   mask: number
   map: Record<number, number> = {}
 
-  constructor (public source: string, options: BrainfuckOptions = {}) {
+  constructor(public source: string, options: BrainfuckOptions = {}) {
     this.options = { ...defaultOptions, ...options } as any
     this.mask = (1 << this.options.cellSize) - 1
   }
 
-  exec (input = '') {
+  exec(input = '') {
     let output = ''
     let index = 0
     let step = 0
@@ -93,7 +93,7 @@ class BrainFuck {
     return output
   }
 
-  findMatch (index: number) {
+  findMatch(index: number) {
     let next = this.map[index]
     if (next) return next
 
@@ -113,7 +113,7 @@ class BrainFuck {
   }
 }
 
-export function apply (ctx: Context, config: BrainfuckOptions = {}) {
+export function apply(ctx: Context, config: BrainfuckOptions = {}) {
   ctx.command('tools/brainfuck <source>', '运行 brainfuck 代码')
     .alias('bf')
     .option('input', '-i <input>  设置输入', { type: 'string', fallback: '' })

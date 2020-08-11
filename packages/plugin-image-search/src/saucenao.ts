@@ -68,7 +68,7 @@ export interface SaucenaoResponse {
 
 const logger = Logger.create('search')
 
-export default async function saucenao (sourceUrl: string, session: Session, config: Config, mixedMode = false) {
+export default async function saucenao(sourceUrl: string, session: Session, config: Config, mixedMode = false) {
   let data: SaucenaoResponse
 
   try {

@@ -8,7 +8,7 @@ const tagMap = {
   tag: '标签',
 }
 
-export function apply (ctx: Context) {
+export function apply(ctx: Context) {
   ctx.command('tools/magi <text...>', '使用 Magi 搜索')
     .option('confidence', '-c  显示数据可信度')
     .alias('搜索')

@@ -1,6 +1,6 @@
 import { CQCode } from 'koishi-utils'
 
-export function getLink (url: string) {
+export function getLink(url: string) {
   const pidSearch = /pixiv.+illust_id=(\d+)/.exec(url)
   if (pidSearch) return 'https://pixiv.net/i/' + pidSearch[1]
   const uidSearch = /pixiv.+member\.php\?id=(\d+)/.exec(url)
@@ -16,7 +16,7 @@ export interface ShareData {
   source?: string | void
 }
 
-export function getShareText ({ url, title, thumbnail, authorUrl, source }: ShareData) {
+export function getShareText({ url, title, thumbnail, authorUrl, source }: ShareData) {
   const output = [
     title,
     CQCode.stringify('image', { file: thumbnail }),

@@ -11,7 +11,7 @@ export default class WsClient extends Server {
   private _channel = new Channel(this)
   private _sockets = new Set<WebSocket>()
 
-  private async __listen (bot: Bot) {
+  private async __listen(bot: Bot) {
     const { token, server } = bot
     if (!server) return
     const Socket: typeof WebSocket = require('ws')
@@ -50,11 +50,11 @@ export default class WsClient extends Server {
     return new Promise(connect)
   }
 
-  async _listen () {
+  async _listen() {
     await Promise.all(this.bots.map(bot => this.__listen(bot)))
   }
 
-  _close () {
+  _close() {
     logger.debug('websocket client closing')
     for (const socket of this._sockets) {
       socket.close()

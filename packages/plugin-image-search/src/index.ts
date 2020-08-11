@@ -8,7 +8,7 @@ export interface Config {
 }
 
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/g
-function extractImages (message: string) {
+function extractImages(message: string) {
   let search = imageRE.exec(message)
   const result: string[] = []
   while (search) {
@@ -18,13 +18,13 @@ function extractImages (message: string) {
   return result
 }
 
-async function mixedSearch (url: string, session: Session, config: Config) {
+async function mixedSearch(url: string, session: Session, config: Config) {
   return await saucenao(url, session, config, true) && ascii2d(url, session, config)
 }
 
 export const name = 'search'
 
-export function apply (ctx: Context, config: Config = {}) {
+export function apply(ctx: Context, config: Config = {}) {
   const command = ctx.command('search <...images>', '搜图片')
     .alias('搜图')
     .groupFields(['flag'])
@@ -41,7 +41,7 @@ export function apply (ctx: Context, config: Config = {}) {
     .before(session => !!(session.$group.flag & Group.Flag.noImage))
     .action(searchWith(ascii2d))
 
-  function searchWith (callback: (url: string, session: Session<never, never>, config: Config) => Promise<any>): CommandAction {
+  function searchWith(callback: (url: string, session: Session<never, never>, config: Config) => Promise<any>): CommandAction {
     return async ({ session }) => {
       const urls = extractImages(session.message)
       if (urls.length) {

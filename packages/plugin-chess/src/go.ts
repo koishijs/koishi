@@ -2,11 +2,11 @@ import { State, MoveResult } from './state'
 
 const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]] as const
 
-function findEaten (state: State, x: number, y: number) {
+function findEaten(state: State, x: number, y: number) {
   const value = state.get(x, y)
   if (!value) return 0n
   let found = 0n
-  function findLife (x: number, y: number) {
+  function findLife(x: number, y: number) {
     found |= state.bit(x, y)
     const points: [number, number][] = []
     for (const [dx, dy] of directions) {
@@ -25,7 +25,7 @@ function findEaten (state: State, x: number, y: number) {
   return findLife(x, y) ? 0n : found
 }
 
-export function update (this: State, x: number, y: number, value: -1 | 1) {
+export function update(this: State, x: number, y: number, value: -1 | 1) {
   const { bBoard, wBoard } = this
   if (value === 1) {
     this.bBoard |= this.bit(x, y)

@@ -22,7 +22,7 @@ declare module '../database' {
   }
 }
 
-export default function apply (ctx: Context) {
+export default function apply(ctx: Context) {
   ctx.command('teach')
     .option('frozen', '-f  锁定这个问答', { authority: 4 })
     .option('frozen', '-F, --no-frozen  解锁这个问答', { authority: 4, value: false })

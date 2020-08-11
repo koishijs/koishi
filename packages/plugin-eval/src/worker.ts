@@ -4,6 +4,8 @@ import { InspectOptions, formatWithOptions } from 'util'
 import { Session, User } from 'koishi-core'
 import escapeRegExp from 'escape-string-regexp'
 
+/* eslint-ignore import/first */
+
 Logger.levels = workerData.logLevels
 const logger = Logger.create('eval')
 
@@ -49,7 +51,7 @@ export const sandbox = internal.sandbox
 
 const pathMapper: Record<string, RegExp> = {}
 
-function formatError (error: Error) {
+function formatError(error: Error) {
   if (!(error instanceof Error)) return `Uncaught: ${error}`
 
   if (error.name === 'SyntaxError') {
@@ -77,22 +79,22 @@ function formatError (error: Error) {
 export class WorkerAPI {
   main: Remote<MainAPI>
 
-  constructor () {
+  constructor() {
     const self = this
 
-    internal.setGlobal('exec', function exec (message: string) {
+    internal.setGlobal('exec', function exec(message: string) {
       if (typeof message !== 'string') {
         throw new TypeError('The "message" argument must be of type string')
       }
       return self.main.execute(message)
     })
 
-    internal.setGlobal('log', function log (format: string, ...param: any[]) {
+    internal.setGlobal('log', function log(format: string, ...param: any[]) {
       return self.main.send(formatWithOptions(config.inspect, format, ...param))
     })
   }
 
-  async eval (options: EvalOptions, main: MainAPI) {
+  async eval(options: EvalOptions, main: MainAPI) {
     const { session, source, user, output } = options
     defineProperty(this, 'main', main)
     internal.setGlobal('user', JSON.parse(user), true)

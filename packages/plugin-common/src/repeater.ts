@@ -22,12 +22,12 @@ export interface RepeaterOptions {
   onInterruptRepeat?: RepeatHandler
 }
 
-export default function apply (ctx: Context, options: RepeaterOptions = {}) {
+export default function apply(ctx: Context, options: RepeaterOptions = {}) {
   ctx = ctx.group()
 
   const states: Record<number, RepeatState> = {}
 
-  function getState (groupId: number, assignee: number) {
+  function getState(groupId: number, assignee: number) {
     return states[groupId] || (states[groupId] = {
       message: '',
       repeated: false,

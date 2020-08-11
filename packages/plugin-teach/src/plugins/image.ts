@@ -31,7 +31,7 @@ interface ImageServerStatus {
 
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
 
-export default function apply (ctx: Context, config: Dialogue.Config) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
   const logger = ctx.logger('teach')
   const { uploadKey, imagePath, imageServer, uploadPath, uploadServer } = config
 

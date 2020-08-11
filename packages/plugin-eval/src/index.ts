@@ -54,15 +54,15 @@ export class MainAPI {
 
   public logCount = 0
 
-  constructor (private session: Session) {}
+  constructor(private session: Session) {}
 
-  send (message: string) {
+  send(message: string) {
     if (MainAPI.config.maxLogs > this.logCount++) {
       return this.session.$sendQueued(message)
     }
   }
 
-  async execute (message: string) {
+  async execute(message: string) {
     const send = this.session.$send
     const sendQueued = this.session.$sendQueued
     await this.session.$execute(message)
@@ -71,7 +71,7 @@ export class MainAPI {
   }
 }
 
-Session.prototype.$eval = function $eval (this: Session, source, output) {
+Session.prototype.$eval = function $eval(this: Session, source, output) {
   const { evalRemote, evalWorker, evalConfig } = this.$app
 
   return new Promise((resolve) => {
@@ -117,7 +117,7 @@ Session.prototype.$eval = function $eval (this: Session, source, output) {
   })
 }
 
-export function apply (ctx: Context, config: Config = {}) {
+export function apply(ctx: Context, config: Config = {}) {
   MainAPI.config = config = { ...defaultConfig, ...config }
   const resourceLimits = {
     ...defaultConfig.resourceLimits,
@@ -129,11 +129,11 @@ export function apply (ctx: Context, config: Config = {}) {
   defineProperty(ctx.app, 'evalWorker', null)
 
   let restart = true
-  async function createWorker () {
+  async function createWorker() {
     ctx.app.evalWorker = new Worker(resolve(__dirname, 'worker.js'), {
       workerData: {
         logLevels: Logger.levels,
-        ...omit(config, ['maxLogs', 'resourceLimits', 'timeout'])
+        ...omit(config, ['maxLogs', 'resourceLimits', 'timeout']),
       },
       resourceLimits,
     })

@@ -11,7 +11,7 @@ const logger = Logger.create('monitor')
 
 export const name = 'monitor'
 
-export function apply (ctx: Context) {
+export function apply(ctx: Context) {
   ctx = ctx.group()
 
   ctx.on('connect', async () => {
@@ -30,7 +30,7 @@ export function apply (ctx: Context) {
     })
   })
 
-  async function checkNames (names: string[]) {
+  async function checkNames(names: string[]) {
     const accounts = await ctx.database.findSubscribe(names, ['names'])
     if (!accounts.length) return []
     const usedNames: string[] = []

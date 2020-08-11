@@ -1,7 +1,7 @@
 import { App, User, Group } from 'koishi-core'
 import { BASE_SELF_ID } from './app'
 
-export function createArray <T> (length: number, create: (index: number) => T) {
+export function createArray <T>(length: number, create: (index: number) => T) {
   return Array(length).fill(undefined).map((_, index) => create(index))
 }
 
@@ -14,10 +14,10 @@ export interface TestDatabaseOptions {
   afterEachGroup?: TestHook
 }
 
-export function testDatabase (app: App, options: TestDatabaseOptions) {
+export function testDatabase(app: App, options: TestDatabaseOptions) {
   const { database: db } = app
 
-  function registerLifecycle (lifecycle: jest.Lifecycle, hook: TestHook) {
+  function registerLifecycle(lifecycle: jest.Lifecycle, hook: TestHook) {
     if (hook) lifecycle(() => hook(app))
   }
 

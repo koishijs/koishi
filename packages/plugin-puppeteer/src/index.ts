@@ -21,7 +21,7 @@ declare module 'koishi-core/dist/context' {
 
 const logger = Logger.create('puppeteer')
 
-Context.prototype.getPage = async function getPage (this: Context) {
+Context.prototype.getPage = async function getPage(this: Context) {
   if (this.app._idlePages.length) {
     return this.app._idlePages.pop()
   }
@@ -30,7 +30,7 @@ Context.prototype.getPage = async function getPage (this: Context) {
   return this.app.browser.newPage()
 }
 
-Context.prototype.freePage = function freePage (this: Context, page: Page) {
+Context.prototype.freePage = function freePage(this: Context, page: Page) {
   this.app._idlePages.push(page)
 }
 
@@ -53,7 +53,7 @@ const allowedProtocols = ['http', 'https']
 
 export const name = 'puppeteer'
 
-export function apply (ctx: Context, config: Config = {}) {
+export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultConfig, ...config }
   defineProperty(ctx.app, '_idlePages', [])
 
@@ -93,10 +93,14 @@ export function apply (ctx: Context, config: Config = {}) {
           page.goto(url, {
             waitUntil: 'networkidle0',
             timeout: config.idleTimeout,
-          }).then(_resolve, () => loaded ? _resolve() : reject())
+          }).then(_resolve, () => {
+            return loaded ? _resolve() : reject(new Error('navigation timeout'))
+          })
 
           const timer = setTimeout(() => {
-            return loaded ? session.$send('正在加载中，请稍等片刻~') : reject()
+            return loaded
+              ? session.$send('正在加载中，请稍等片刻~')
+              : reject(new Error('navigation timeout'))
           }, config.loadTimeout)
         })
       } catch (error) {

@@ -1,7 +1,7 @@
 import { Context } from 'koishi-core'
 import { Socket } from 'net'
 
-function itob (n: number, length: number) {
+function itob(n: number, length: number) {
   const result = []
   while (n > 0 || result.length < length) {
     const digit = n & 0xff
@@ -11,7 +11,7 @@ function itob (n: number, length: number) {
   return result
 }
 
-export function apply (ctx: Context) {
+export function apply(ctx: Context) {
   ctx.command('tools/mcping <server>', '查看 Minecraft 服务器信息')
     .action(async ({ session }, address) => {
       if (!address) return '请输入正确的网址。'

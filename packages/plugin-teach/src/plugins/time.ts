@@ -12,19 +12,19 @@ declare module '../database' {
   }
 }
 
-export function isHours (value: string) {
+export function isHours(value: string) {
   if (!/^\d+(:\d+)?$/.test(value)) return true
   const [_hours, _minutes = '0'] = value.split(':')
   const hours = +_hours, minutes = +_minutes
   return !(hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60)
 }
 
-export default function apply (ctx: Context) {
+export default function apply(ctx: Context) {
   ctx.command('teach')
     .option('startTime', '-t <time>  起始时间', { type: 'string', validate: isHours })
     .option('endTime', '-T <time>  结束时间', { type: 'string', validate: isHours })
 
-  function parseTime (source: string) {
+  function parseTime(source: string) {
     const [hours, minutes = '0'] = source.split(':')
     return +hours * 60 + +minutes
   }
@@ -39,7 +39,7 @@ export default function apply (ctx: Context) {
     state.test.matchTime = date.getHours() * 60 + date.getMinutes()
   })
 
-  function getProduct (time: number) {
+  function getProduct(time: number) {
     return `(\`startTime\`-${time})*(${time}-\`endTime\`)*(\`endTime\`-\`startTime\`)`
   }
 
@@ -57,7 +57,7 @@ export default function apply (ctx: Context) {
     if (options.endTime !== undefined) data.endTime = parseTime(options.endTime)
   })
 
-  function formatTime (time: number) {
+  function formatTime(time: number) {
     const hours = Math.floor(time / 60)
     const minutes = time - hours * 60
     return `${hours}:${minutes.toString().padStart(2, '0')}`

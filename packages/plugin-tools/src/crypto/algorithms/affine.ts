@@ -3,11 +3,11 @@ import { getOffset, modInverse, modPositive } from './utils'
 export default class Affine {
   private c: number
 
-  constructor (public a: number, public b: number) {
+  constructor(public a: number, public b: number) {
     this.c = modInverse(a, 26)
   }
 
-  encrypt (text: string) {
+  encrypt(text: string) {
     let output = ''
     for (const char of text) {
       const offset = getOffset(char)
@@ -20,7 +20,7 @@ export default class Affine {
     return output
   }
 
-  decrypt (text: string) {
+  decrypt(text: string) {
     let output = ''
     for (const char of text) {
       const offset = getOffset(char)

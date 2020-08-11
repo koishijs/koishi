@@ -48,7 +48,7 @@ interface HelpConfig {
   showHidden: boolean
 }
 
-export default function apply (app: App) {
+export default function apply(app: App) {
   app.on('new-command', (cmd) => {
     cmd._examples = []
     cmd.option('help', '-h  显示此信息', { hidden: true })
@@ -64,7 +64,7 @@ export default function apply (app: App) {
     return true
   })
 
-  function createCollector <T extends TableType> (key: T) {
+  function createCollector <T extends TableType>(key: T) {
     return function* (argv: ParsedArgv, fields: Set<keyof Tables[T]>) {
       const { args: [name] } = argv
       const command = app._commandMap[name] || app._shortcutMap[name]
@@ -91,14 +91,14 @@ export default function apply (app: App) {
     })
 }
 
-function getShortcuts (command: Command, user: Pick<User, 'authority'>) {
+function getShortcuts(command: Command, user: Pick<User, 'authority'>) {
   return Object.keys(command._shortcuts).filter((key) => {
     const shortcut = command._shortcuts[key]
     return !shortcut.hidden && !shortcut.prefix && (!shortcut.authority || !user || shortcut.authority <= user.authority)
   })
 }
 
-function getCommandList (prefix: string, context: Context, session: Session<ValidationField>, parent: Command, config: HelpConfig) {
+function getCommandList(prefix: string, context: Context, session: Session<ValidationField>, parent: Command, config: HelpConfig) {
   let commands = (parent ? parent.children : context.app._commands)
     .filter((cmd) => {
       return cmd.context.match(session)
@@ -126,7 +126,7 @@ function getCommandList (prefix: string, context: Context, session: Session<Vali
   return output
 }
 
-function showGlobalHelp (context: Context, session: Session<'authority' | 'timers' | 'usage'>, config: HelpConfig) {
+function showGlobalHelp(context: Context, session: Session<'authority' | 'timers' | 'usage'>, config: HelpConfig) {
   const output = [
     ...getCommandList('当前可用的指令有', context, session, null, config),
     '群聊普通指令可以通过“@我+指令名”的方式进行触发。',
@@ -139,7 +139,7 @@ function showGlobalHelp (context: Context, session: Session<'authority' | 'timer
   return output.join('\n')
 }
 
-function getOptions (command: Command, session: Session<ValidationField>, maxUsage: number, config: HelpConfig) {
+function getOptions(command: Command, session: Session<ValidationField>, maxUsage: number, config: HelpConfig) {
   if (command.config.hideOptions && !config.showHidden) return []
   const options = config.showHidden
     ? Object.values(command._options)
@@ -162,7 +162,7 @@ function getOptions (command: Command, session: Session<ValidationField>, maxUsa
   return output
 }
 
-async function showCommandHelp (command: Command, session: Session<ValidationField>, config: HelpConfig) {
+async function showCommandHelp(command: Command, session: Session<ValidationField>, config: HelpConfig) {
   const output = [command.name + command.declaration, command.config.description]
 
   if (command.context.database) {

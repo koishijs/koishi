@@ -12,7 +12,7 @@ interface ParsedCQCode {
 }
 
 namespace CQCode {
-  export function escape (source: any, insideCQ = false) {
+  export function escape(source: any, insideCQ = false) {
     const result = String(source)
       .replace(/&/g, '&amp;')
       .replace(/\[/g, '&#91;')
@@ -22,7 +22,7 @@ namespace CQCode {
       : result
   }
 
-  export function unescape (source: string) {
+  export function unescape(source: string) {
     return String(source)
       .replace(/&#91;/g, '[')
       .replace(/&#93;/g, ']')
@@ -30,7 +30,7 @@ namespace CQCode {
       .replace(/&amp;/g, '&')
   }
 
-  export function stringify (type: string, data: CQCodeData = {}) {
+  export function stringify(type: string, data: CQCodeData = {}) {
     if (type === 'text') return '' + data.text
     let output = '[CQ:' + type
     for (const key in data) {
@@ -39,13 +39,13 @@ namespace CQCode {
     return output + ']'
   }
 
-  export function stringifyAll (codes: (string | CQCode)[]) {
+  export function stringifyAll(codes: (string | CQCode)[]) {
     return codes.map(code => typeof code === 'string' ? code : stringify(code.type, code.data)).join('')
   }
 
   const regexp = /\[CQ:(\w+)((,\w+=[^,\]]*)+)\]/
 
-  export function parse (source: string): ParsedCQCode {
+  export function parse(source: string): ParsedCQCode {
     const capture = source.match(regexp)
     if (!capture) return null
     const [_, type, attrs] = capture
@@ -57,7 +57,7 @@ namespace CQCode {
     return { type, data, capture }
   }
 
-  export function parseAll (source: string) {
+  export function parseAll(source: string) {
     const codes: (ParsedCQCode | string)[] = []
     let result: ParsedCQCode
     while ((result = parse(source))) {

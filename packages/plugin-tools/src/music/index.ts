@@ -20,7 +20,7 @@ const defaultOptions: MusicOptions = {
 
 export const name = 'music'
 
-export function apply (ctx: Context, options: MusicOptions = {}) {
+export function apply(ctx: Context, options: MusicOptions = {}) {
   const { showWarning, platform } = { ...defaultOptions, ...options }
 
   ctx.command('tools/music <name...>', '点歌')

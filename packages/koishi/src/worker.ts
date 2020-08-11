@@ -16,7 +16,7 @@ if (process.env.KOISHI_DEBUG) {
   Logger.levels = Object.fromEntries(process.env.KOISHI_DEBUG.split(',').map(name => [name, 3]))
 }
 
-function handleException (error: any) {
+function handleException(error: any) {
   logger.error(error)
   process.exit(1)
 }
@@ -26,11 +26,11 @@ process.on('uncaughtException', handleException)
 const configFile = resolve(process.cwd(), process.env.KOISHI_CONFIG_FILE || 'koishi.config')
 const configDir = dirname(configFile)
 
-function isErrorModule (error: any) {
+function isErrorModule(error: any) {
   return error.code !== 'MODULE_NOT_FOUND' || error.requireStack && error.requireStack[0] !== __filename
 }
 
-function tryCallback <T> (callback: () => T) {
+function tryCallback <T>(callback: () => T) {
   try {
     return callback()
   } catch (error) {
@@ -56,7 +56,7 @@ if (!config) {
 
 const cacheMap: Record<string, any> = {}
 
-function loadEcosystem (name: string) {
+function loadEcosystem(name: string) {
   const cache = cacheMap[name]
   if (cache) return cache
 
@@ -85,7 +85,7 @@ function loadEcosystem (name: string) {
   throw new Error(`cannot resolve plugin ${name}`)
 }
 
-function loadPlugins (ctx: Context, plugins: PluginConfig) {
+function loadPlugins(ctx: Context, plugins: PluginConfig) {
   for (const item of plugins) {
     let plugin: Plugin<Context>, options: any
     if (Array.isArray(item)) {

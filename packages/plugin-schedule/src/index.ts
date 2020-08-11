@@ -6,7 +6,7 @@ export * from './database'
 
 const logger = Logger.create('schedule')
 
-function inspectSchedule ({ id, session, interval, command, time }: Schedule) {
+function inspectSchedule({ id, session, interval, command, time }: Schedule) {
   const now = Date.now()
   const date = time.valueOf()
   const { database } = session.$app
@@ -32,13 +32,13 @@ function inspectSchedule ({ id, session, interval, command, time }: Schedule) {
   }, timeout)
 }
 
-function formatContext (session: Session) {
+function formatContext(session: Session) {
   return session.messageType === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.groupId}`
 }
 
 export const name = 'schedule'
 
-export function apply (ctx: Context) {
+export function apply(ctx: Context) {
   const { database } = ctx
 
   ctx.on('connect', async () => {

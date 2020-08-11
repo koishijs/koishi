@@ -9,7 +9,7 @@ declare module 'koishi-core/dist/database' {
 }
 
 extendDatabase(MongoDatabase, {
-  async getUser (userId, ...args) {
+  async getUser(userId, ...args) {
     const authority = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] ? args[0] as any : User.fields
     if (fields && !fields.length) return {} as any
@@ -38,7 +38,7 @@ extendDatabase(MongoDatabase, {
     return data || fallback
   },
 
-  async getUsers (...args) {
+  async getUsers(...args) {
     let ids: readonly number[]
     let fields: readonly User.Field[]
     if (args.length > 1) {
@@ -64,7 +64,7 @@ extendDatabase(MongoDatabase, {
     }).toArray()
   },
 
-  async setUser (userId, data) {
+  async setUser(userId, data) {
     const converted = { ...data }
     if (converted.timers) {
       if (converted.timers.$date) {
@@ -81,7 +81,7 @@ extendDatabase(MongoDatabase, {
     await this.user.updateOne({ _id: userId }, { $set: data }, { upsert: true })
   },
 
-  async getGroup (groupId, ...args) {
+  async getGroup(groupId, ...args) {
     const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] as any || Group.fields
     if (fields && !fields.length) return {} as any
@@ -108,7 +108,7 @@ extendDatabase(MongoDatabase, {
     return data || fallback
   },
 
-  async getAllGroups (...args) {
+  async getAllGroups(...args) {
     let assignees: number[]
     let fields: readonly Group.Field[]
     if (args.length > 1) {
@@ -127,14 +127,14 @@ extendDatabase(MongoDatabase, {
     return this.group.find({ assignee: { $in: assignees } }).project(f).toArray()
   },
 
-  async setGroup (groupId, data) {
+  async setGroup(groupId, data) {
     await this.group.updateOne({ _id: groupId }, { $set: data })
   },
 })
 
 export const name = 'mongo'
 
-export function apply (ctx: Context, config: Config = { host: 'localhost', port: 27017, name: 'koishi' }) {
+export function apply(ctx: Context, config: Config = { host: 'localhost', port: 27017, name: 'koishi' }) {
   const db = new MongoDatabase(ctx.app, config)
   ctx.database = db as Database
   ctx.on('before-connect', () => db.start())
