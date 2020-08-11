@@ -1,17 +1,16 @@
 // modified from vm2@3.9.2
 // https://github.com/patriksimek/vm2
 
-/* eslint-disable */
+/* global Host */
 
 import type { Host } from './vm'
-import type { Global } from './worker'
 import { InspectOptions } from 'util'
 
 declare global {
   const host: typeof Host
 }
 
-const GLOBAL: Global = this as any
+const GLOBAL = this as any
 
 interface Builtin {
   // built-in classes
@@ -48,7 +47,7 @@ interface Builtin {
 }
 
 type Trap = ProxyHandler<any>
-function createObject <T> (...traps: T[]): T {
+function createObject<T>(...traps: T[]): T {
   return host.Object.assign(host.Object.create(null), ...traps)
 }
 
@@ -109,20 +108,21 @@ function instanceOf(value, construct) {
   }
 }
 
-const SHARED_OBJECT = {__proto__: null}
+const SHARED_OBJECT = { __proto__: null }
 
 function createBaseObject(obj: any) {
   let base: any
   if (typeof obj === 'function') {
     try {
+      // eslint-disable-next-line no-new
       new new host.Proxy(obj, {
         // @ts-ignore
         __proto__: null,
         construct() {
           return this
-        }
+        },
       })()
-      base = function() {}
+      base = function () {}
       base.prototype = null
     } catch (e) {
       base = () => {}
@@ -130,7 +130,7 @@ function createBaseObject(obj: any) {
   } else if (host.Array.isArray(obj)) {
     base = []
   } else {
-    return {__proto__: null}
+    return { __proto__: null }
   }
   if (!local.Reflect.setPrototypeOf(base, null)) {
     // Should not happen
@@ -164,6 +164,7 @@ local.VMError = VMError
  */
 function throwCallerCalleeArgumentsAccess(key) {
   'use strict'
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   throwCallerCalleeArgumentsAccess[key] // lgtm[js/useless-expression]
   return new VMError('Unreachable')
 }
@@ -196,7 +197,7 @@ function doPreventExtensions(target, object, doProxy) {
           configurable: true,
           enumerable: desc.enumerable,
           writable: true,
-          value: null
+          value: null,
         }
       } else {
         desc.value = null
@@ -263,8 +264,8 @@ Helper.instance = function (this: Helper, instance, klass, deepTraps, toStringTa
       if (key === this.local.Symbol.toStringTag && toStringTag) return toStringTag
       if (this === Decontextify && key === host.inspect.custom) {
         return function (depth: number, options: InspectOptions) {
-          depth = Decontextify.value(depth)
-          options = Decontextify.value(options)
+          depth = Contextify.value(depth)
+          options = Contextify.value(options)
           try {
             return host.inspect(instance, options.showHidden, depth, options.colors)
           } catch (e) {
@@ -280,7 +281,7 @@ Helper.instance = function (this: Helper, instance, klass, deepTraps, toStringTa
       }
     },
     getPrototypeOf: () => {
-      return klass && klass.prototype
+      return klass?.prototype
     },
   }), deepTraps)
 }
@@ -299,6 +300,7 @@ Helper.function = function (this: Helper, fnc, traps, deepTraps, mock) {
     construct: (target, args) => {
       args = this.conjugate.arguments(args)
       try {
+        // eslint-disable-next-line new-cap
         return this.instance(new fnc(...args), proxy, deepTraps)
       } catch (e) {
         throw this.value(e)
@@ -311,11 +313,12 @@ Helper.function = function (this: Helper, fnc, traps, deepTraps, mock) {
         if (mock && host.Object.prototype.hasOwnProperty.call(mock, key)) return mock[key]
         if (key === 'constructor') return this.local.Function
         if (key === '__proto__') return this.local.Function.prototype
+        if (key === 'toString' && deepTraps === frozenTraps) return () => `function ${fnc.name}() { [native code] }`
       } catch (e) {
         // Never pass the handled expcetion through! This block can't throw an exception under normal conditions.
         return null
       }
-  
+
       if (key === '__defineGetter__') return this.local.Object.prototype['__defineGetter__']
       if (key === '__defineSetter__') return this.local.Object.prototype['__defineSetter__']
       if (key === '__lookupGetter__') return this.local.Object.prototype['__lookupGetter__']
@@ -449,11 +452,11 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
         success = local.Reflect.setPrototypeOf(descriptor, null)
       } catch (e) {}
       if (!success) return false
-  
+
       const descGet = descriptor.get
       const descSet = descriptor.set
       const descValue = descriptor.value
-  
+
       const propDesc: PropertyDescriptor = createObject(descGet || descSet ? {
         get: this.conjugate.value(descGet, null, deepTraps) || undefined,
         set: this.conjugate.value(descSet, null, deepTraps) || undefined,
@@ -567,7 +570,7 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
     base.ownKeys = target => {
       try {
         const keys = local.Reflect.ownKeys(object)
-        return Decontextify.value(keys.filter(key=>typeof key!=='string' || !key.match(/^\d+$/)))
+        return Decontextify.value(keys.filter(key => typeof key !== 'string' || !key.match(/^\d+$/)))
       } catch (e) {
         throw Decontextify.value(e)
       }
@@ -608,29 +611,7 @@ Contextify.proxies = new host.WeakMap()
 Contextify.conjugate = Decontextify
 Decontextify.conjugate = Contextify
 
-export function setGlobal <K extends keyof Global> (name: K, value: Global[K], writable = false) {
-  const prop = Contextify.value(name)
-  try {
-    Object.defineProperty(GLOBAL, prop, {
-      value: Contextify.value(value),
-      enumerable: true,
-      writable,
-    })
-  } catch (e) {
-    throw Decontextify.value(e)
-  }
-}
-
-export function getGlobal (name: string) {
-  const prop = Contextify.value(name)
-  try {
-    return Decontextify.value(GLOBAL[prop])
-  } catch (e) {
-    throw Decontextify.value(e)
-  }
-}
-
-const FROZEN_TRAPS: Trap = createObject({
+const frozenTraps: Trap = createObject({
   set: () => false,
   setPrototypeOf: () => false,
   defineProperty: () => false,
@@ -639,11 +620,39 @@ const FROZEN_TRAPS: Trap = createObject({
   preventExtensions: () => false,
 })
 
-export function readonly (value: any, mock?: any) {
-  return Contextify.value(value, null, FROZEN_TRAPS, mock)
+function readonly(value: any, mock: any = {}) {
+  for (const key in mock) {
+    const value = mock[key]
+    if (typeof value === 'function') {
+      value.toString = `function ${value.name}() { [native code] }`
+    }
+  }
+  return Contextify.value(value, null, frozenTraps, mock)
 }
 
-function connect (outer: any, inner: any) {
+export function setGlobal(name: string, value: any, writable = false) {
+  const prop = Contextify.value(name)
+  try {
+    Object.defineProperty(GLOBAL, prop, {
+      value: writable ? Contextify.value(value) : readonly(value),
+      enumerable: true,
+      writable,
+    })
+  } catch (e) {
+    throw Decontextify.value(e)
+  }
+}
+
+export function getGlobal(name: string) {
+  const prop = Contextify.value(name)
+  try {
+    return Decontextify.value(GLOBAL[prop])
+  } catch (e) {
+    throw Decontextify.value(e)
+  }
+}
+
+function connect(outer: any, inner: any) {
   Decontextified.set(outer, inner)
   Contextified.set(inner, outer)
 }
@@ -655,16 +664,19 @@ function defineGlobal(name: string, mock?: any) {
   local[name] = GLOBAL[name]
 }
 
+defineGlobal('TextEncoder')
+defineGlobal('TextDecoder')
+
 defineGlobal('Buffer', createObject({
-  allocUnsafe (size: number) {
+  allocUnsafe(size: number) {
     return this.alloc(size)
   },
-  allocUnsafeSlow (size: number) {
+  allocUnsafeSlow(size: number) {
     return this.alloc(size)
   },
 }))
 
-connect(host.Buffer.prototype['inspect'], function inspect () {
+connect(host.Buffer.prototype['inspect'], function inspect() {
   const max = host.INSPECT_MAX_BYTES
   const actualMax = Math.min(max, this.length)
   const remaining = this.length - max
@@ -672,9 +684,6 @@ connect(host.Buffer.prototype['inspect'], function inspect () {
   if (remaining > 0) str += ` ... ${remaining} more byte${remaining > 1 ? 's' : ''}`
   return `<${this.constructor.name} ${str}>`
 })
-
-defineGlobal('TextEncoder')
-defineGlobal('TextDecoder')
 
 export const value: <T> (value: T) => T = Decontextify.value.bind(Decontextify)
 export const sandbox = Decontextify.value(GLOBAL)

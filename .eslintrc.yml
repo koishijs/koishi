@@ -6,6 +6,7 @@ parserOptions:
   project:
     - ./tsconfig.json
     - ./packages/*/tsconfig.json
+    - ./shiki/*/tsconfig.json
 
 extends: standard
 
@@ -30,6 +31,8 @@ rules:
   no-inner-declarations: off
   no-mixed-operators: off
   no-unused-vars: off
+  no-unused-expressions: off
+  no-use-before-define: off
   no-useless-escape: off
   no-redeclare: off
   no-return-assign: off

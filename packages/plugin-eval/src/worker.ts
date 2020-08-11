@@ -4,7 +4,7 @@ import { InspectOptions, formatWithOptions } from 'util'
 import { Session, User } from 'koishi-core'
 import escapeRegExp from 'escape-string-regexp'
 
-/* eslint-ignore import/first */
+/* eslint-disable import/first */
 
 Logger.levels = workerData.logLevels
 const logger = Logger.create('eval')
