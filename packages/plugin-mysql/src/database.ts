@@ -1,5 +1,5 @@
 import { createPool, Pool, PoolConfig, escape, escapeId, format, OkPacket } from 'mysql'
-import { TableType, Tables, App, User } from 'koishi-core'
+import { TableType, Tables, App } from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { types } from 'util'
 

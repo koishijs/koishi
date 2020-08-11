@@ -18,6 +18,7 @@ interface Gdoc extends Group {
 }
 
 export default class MongoDatabase {
+  public config: Config
   public client: MongoClient
   public db: Db
 
@@ -25,7 +26,7 @@ export default class MongoDatabase {
   group: Collection<Gdoc>
   watcher: any
 
-  constructor(public app: App, public config: Config) {
+  constructor(public app: App, config: Config) {
     this.config = config
   }
 

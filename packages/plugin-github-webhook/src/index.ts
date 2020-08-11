@@ -4,7 +4,6 @@ import type { Context } from 'koishi-core'
 import { Webhooks, EventNames } from '@octokit/webhooks'
 import { Options, WebhookEvent } from '@octokit/webhooks/dist-types/types'
 import { GetWebhookPayloadTypeFromEvent } from '@octokit/webhooks/dist-types/generated/get-webhook-payload-type-from-event'
-import { type } from 'os'
 
 export interface Config extends Options<WebhookEvent> {
   repos?: Record<string, number[]>

@@ -1,4 +1,4 @@
-import { config, context, internal, WorkerAPI } from 'koishi-plugin-eval/dist/worker'
+import { config, context, internal } from 'koishi-plugin-eval/dist/worker'
 import { promises, readFileSync } from 'fs'
 import { resolve } from 'path'
 import { Logger } from 'koishi-utils'

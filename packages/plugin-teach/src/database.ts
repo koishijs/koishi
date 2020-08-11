@@ -1,6 +1,6 @@
 import { Context, Session, ParsedLine } from 'koishi-core'
 import { arrayTypes } from 'koishi-plugin-mysql'
-import { Observed, pick, difference, observe, isInteger, defineProperty, capitalize } from 'koishi-utils'
+import { Observed, pick, difference, observe, isInteger, defineProperty } from 'koishi-utils'
 
 arrayTypes.push('dialogue.groups', 'dialogue.predecessors')
 

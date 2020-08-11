@@ -1,5 +1,5 @@
 import { format } from 'util'
-import { getDateNumber, hyphenate } from 'koishi-utils'
+import { getDateNumber } from 'koishi-utils'
 import { Session } from '../session'
 import { User } from '../database'
 import { Command, ParsedArgv } from '../command'
