@@ -78,9 +78,11 @@ export default function apply(ctx: Context) {
     }
     for (const dialogue of dialogues) {
       const { answer } = dialogue
+      // TODO extract dialogue command
       if (!answer.startsWith('%{dialogue ')) continue
       const { prefixed, unprefixed } = argv.config._stripQuestion(answer.slice(11, -1).trimStart())
       if (unprefixed in argv.questionMap) continue
+      // TODO multiple tests in one query
       const dialogues = argv.questionMap[unprefixed] = await Dialogue.fromTest(ctx, {
         ...test,
         regexp: null,
@@ -222,13 +224,13 @@ async function showSearch(argv: Dialogue.Argv) {
   }
 
   if (!question) {
-    if (!dialogues.length) return session.$send(`没有搜索到含有正则表达式“${answer}”的回答。`)
+    if (!dialogues.length) return `没有搜索到含有正则表达式“${answer}”的回答。`
     return sendResult(`回答正则表达式“${answer}”的搜索结果如下`, output)
   } else if (!answer) {
-    if (!dialogues.length) return session.$send(`没有搜索到含有正则表达式“${original}”的问题。`)
+    if (!dialogues.length) return `没有搜索到含有正则表达式“${original}”的问题。`
     return sendResult(`问题正则表达式“${original}”的搜索结果如下`, output)
   } else {
-    if (!dialogues.length) return session.$send(`没有搜索到含有正则表达式“${original}”“${answer}”的问答。`)
+    if (!dialogues.length) return `没有搜索到含有正则表达式“${original}”“${answer}”的问答。`
     return sendResult(`问答正则表达式“${original}”“${answer}”的搜索结果如下`, output)
   }
 

@@ -120,7 +120,7 @@ export class Context {
     this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(session)) continue
-      tasks.push(callback.apply(session, args))
+      tasks.push(callback.apply(this, args))
     }
     await Promise.all(tasks)
   }

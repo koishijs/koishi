@@ -178,32 +178,6 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  async function attachSuccessors(argv: Dialogue.Argv, dialogues: Dialogue[], test: DialogueTest = {}) {
-    const dMap = argv.dialogueMap
-    const predecessors = dialogues.filter((dialogue) => {
-      if (dialogue._successors) return
-      dMap[dialogue.id] = dialogue
-      Object.defineProperty(dialogue, '_successors', { writable: true, value: [] })
-      return true
-    }).map(d => d.id)
-    if (!predecessors.length) return []
-
-    const successors = (await Dialogue.fromTest(ctx, {
-      ...test,
-      question: undefined,
-      answer: undefined,
-      predecessors,
-    })).filter(d => !predecessors.includes(d.id))
-
-    for (const dialogue of successors) {
-      for (const id of dialogue.predecessors) {
-        dMap[id]?._successors.push(dialogue)
-      }
-    }
-
-    await argv.ctx.parallel('dialogue/search', argv, test, successors)
-  }
-
   ctx.on('dialogue/detail', async (dialogue, output, argv) => {
     if (dialogue.flag & DialogueFlag.context) {
       output.push('后继问答可以被上下文内任何人触发')
@@ -230,8 +204,30 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/search', async (argv, test, dialogues) => {
-    if (!argv.dialogueMap) argv.dialogueMap = {}
-    await attachSuccessors(argv, dialogues, test)
+    const dMap = argv.dialogueMap || (argv.dialogueMap = {})
+    const predecessors = dialogues.filter((dialogue) => {
+      if (dialogue._successors) return
+      dMap[dialogue.id] = dialogue
+      Object.defineProperty(dialogue, '_successors', { writable: true, value: [] })
+      return true
+    }).map(d => d.id)
+    if (!predecessors.length) return
+
+    const successors = (await Dialogue.fromTest(ctx, {
+      ...test,
+      question: undefined,
+      answer: undefined,
+      predecessors,
+      // TODO investigate this filter
+    })).filter(d => !Object.keys(dMap).includes('' + d.id))
+
+    for (const dialogue of successors) {
+      for (const id of dialogue.predecessors) {
+        dMap[id]?._successors.push(dialogue)
+      }
+    }
+
+    await argv.ctx.parallel('dialogue/search', argv, test, successors)
   })
 
   ctx.on('dialogue/list', ({ _successors }, output, prefix, argv) => {
