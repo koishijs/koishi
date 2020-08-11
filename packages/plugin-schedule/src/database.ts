@@ -4,10 +4,10 @@ import MongoDatabase from 'koishi-plugin-mongo/dist/database'
 
 declare module 'koishi-core/dist/database' {
   interface Database {
-    createSchedule (time: Date, interval: number, command: string, session: Session): Promise<Schedule>
-    removeSchedule (id: number): Promise<any>
-    getSchedule (id: number): Promise<Schedule>
-    getAllSchedules (assignees?: number[]): Promise<Schedule[]>
+    createSchedule(time: Date, interval: number, command: string, session: Session): Promise<Schedule>
+    removeSchedule(id: number): Promise<any>
+    getSchedule(id: number): Promise<Schedule>
+    getAllSchedules(assignees?: number[]): Promise<Schedule[]>
   }
 
   interface Tables {
@@ -25,20 +25,20 @@ export interface Schedule {
 }
 
 extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
-  createSchedule (time, interval, command, session) {
+  createSchedule(time, interval, command, session) {
     return this.create('schedule', { time, assignee: session.selfId, interval, command, session })
   },
 
-  removeSchedule (id) {
+  removeSchedule(id) {
     return this.query('DELETE FROM `schedule` WHERE `id` = ?', [id])
   },
 
-  async getSchedule (id) {
+  async getSchedule(id) {
     const data = await this.query('SELECT * FROM `schedule` WHERE `id` = ?', [id])
     return data[0]
   },
 
-  async getAllSchedules (assignees) {
+  async getAllSchedules(assignees) {
     let queryString = 'SELECT * FROM `schedule`'
     if (!assignees) assignees = await this.app.getSelfIds()
     queryString += ` WHERE \`assignee\` IN (${assignees.join(',')})`
@@ -46,4 +46,27 @@ extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
   },
 })
 
-extendDatabase<MongoDatabase>('koishi-plugin-mongo', {})
+extendDatabase<MongoDatabase>('koishi-plugin-mongo', {
+  async createSchedule(time, interval, command, session) {
+    const result = await this.db.collection('schedule').insertOne(
+      { time, assignee: session.selfId, interval, command, session },
+    );
+    return { time, assignee: session.selfId, interval, command, session, id: result.insertedId };
+  },
+
+  removeSchedule(_id) {
+    return this.db.collection('schedule').deleteOne({ _id });
+  },
+
+  async getSchedule(id) {
+    const res = await this.db.collection('schedule').findOne({ _id: id });
+    if (res) res.id = res._id;
+    return res;
+  },
+
+  async getAllSchedules(assignees) {
+    const $in = assignees ? assignees : await this.app.getSelfIds();
+    return await this.db.collection('schedule')
+      .find({ assignee: { $in } }).map(doc => ({ ...doc, id: doc._id })).toArray();
+  },
+})
