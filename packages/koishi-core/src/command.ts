@@ -518,7 +518,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     let { args, options, session, source } = argv
     const getSource = () => source || (source = this.stringify(args, options))
     if (logger.level >= 3) logger.debug(getSource())
-    const lastCall = new Error().stack.split('\n', 4)[3]
+    const lastCall = this.app.options.prettyErrors && new Error().stack.split('\n', 4)[3]
     try {
       if (await this.app.serial(session, 'before-command', argv)) return
       state = 'executing command'
@@ -528,11 +528,12 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
       await this.app.serial(session, 'command', argv)
     } catch (error) {
       if (!state) throw error
-      if (!types.isNativeError(error)) {
-        error = new Error(error as any)
+      let { stack } = types.isNativeError(error) ? error : new Error(error as any)
+      if (lastCall) {
+        const index = error.stack.indexOf(lastCall)
+        stack = stack.slice(0, index - 1)
       }
-      const index = error.stack.indexOf(lastCall)
-      logger.warn(`${state}: ${getSource()}\n${error.stack.slice(0, index - 1)}`)
+      logger.warn(`${state}: ${getSource()}\n${stack}`)
     }
   }
 

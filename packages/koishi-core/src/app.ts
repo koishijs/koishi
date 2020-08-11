@@ -23,6 +23,7 @@ export interface AppOptions extends BotOptions {
   retryInterval?: number
   maxListeners?: number
   preferSync?: boolean
+  prettyErrors?: boolean
   promptTimeout?: number
   processMessage?: (message: string) => string
   queueDelay?: number | ((message: string, session: Session) => number)
@@ -58,6 +59,7 @@ export class App extends Context {
 
   static defaultOptions: AppOptions = {
     maxListeners: 64,
+    prettyErrors: true,
     promptTimeout: Time.minute,
     retryInterval: 5 * Time.second,
     userCacheTimeout: Time.minute,
@@ -192,12 +194,15 @@ export class App extends Context {
       .map(([_, middleware]) => middleware)
 
     // execute middlewares
-    let index = 0, stack = ''
+    let index = 0, midStack = '', lastCall = ''
+    const { prettyErrors } = this.options
     const next = async (fallback?: NextFunction) => {
-      const lastCall = new Error().stack.split('\n', 3)[2]
-      if (index) {
-        const capture = lastCall.match(/\((.+)\)/)
-        stack = '\n  - ' + (capture ? capture[1] : lastCall.slice(7)) + stack
+      if (prettyErrors) {
+        lastCall = new Error().stack.split('\n', 3)[2]
+        if (index) {
+          const capture = lastCall.match(/\((.+)\)/)
+          midStack = `\n  - ${capture ? capture[1] : lastCall.slice(7)}${midStack}`
+        }
       }
 
       try {
@@ -207,11 +212,12 @@ export class App extends Context {
         if (fallback) middlewares.push((_, next) => fallback(next))
         return middlewares[index++]?.(session, next)
       } catch (error) {
-        if (!types.isNativeError(error)) {
-          error = new Error(error as any)
+        let { stack } = types.isNativeError(error) ? error : new Error(error as any)
+        if (prettyErrors) {
+          const index = stack.indexOf(lastCall)
+          stack = `${stack.slice(0, index)}Middleware stack:${midStack}`
         }
-        const index = error.stack.indexOf(lastCall)
-        this.logger('middleware').warn(`${session.message}\n${error.stack.slice(0, index)}Middleware stack:${stack}`)
+        this.logger('middleware').warn(`${session.message}\n${stack}`)
       }
     }
     await next()
