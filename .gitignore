@@ -8,6 +8,7 @@ temp
 /plugins
 
 todo.md
+yarn.lock
 node_modules/
 npm-debug.log
 yarn-debug.log
