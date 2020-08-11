@@ -16,7 +16,7 @@
     "docs": "cd docs & yarn dev",
     "jest": "ts-node build/jest",
     "test": "ts-node build/jest koishi-utils --runInBand",
-    "lint": "eslint packages/*/src/**/*.ts --cache",
+    "lint": "eslint packages --ext ts --fix --cache",
     "pub": "ts-node build/publish",
     "pub:plugins": "yarn pub plugins",
     "shiki": "yarn workspace bot-shiki"
