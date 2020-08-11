@@ -241,23 +241,22 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
     return this.$user = user
   }
 
-  $resolve(argv: ExecuteArgv, next: NextFunction) {
+  $resolve(argv: ExecuteArgv): ParsedArgv {
     if (typeof argv.command === 'string') {
       argv.command = this.$app._commandMap[argv.command]
     }
     if (!argv.command) {
-      logger.warn('cannot resolve', argv)
+      logger.warn(new Error(`cannot find command ${argv}`))
       return
     }
     if (!argv.command.context.match(this)) return
-    return { session: this, next, ...argv } as ParsedArgv
+    return { session: this, ...argv } as ParsedArgv
   }
 
-  $parse(message: string, next: NextFunction = noop, forced = true) {
+  $parse(message: string, terminator = '', builtin = false): ParsedArgv {
     if (!message) return
-    const argv = this.$app.bail(this, 'parse', message, this, forced)
-    if (argv) return this.$resolve(argv, next)
-    if (forced) logger.warn('cannot parse', message)
+    const argv = this.$app.bail(this, 'parse', message, this, builtin, terminator)
+    return argv && this.$resolve(argv)
   }
 
   $execute(argv: ExecuteArgv): Promise<void>
@@ -266,10 +265,10 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
     let argv: void | ParsedArgv, next: NextFunction
     if (typeof args[0] === 'string') {
       next = args[1] || noop
-      argv = this.$parse(args[0], next)
+      argv = this.$parse(args[0])
     } else {
       next = args[0].next || noop
-      argv = this.$resolve(args[0], next)
+      argv = this.$resolve(args[0])
     }
     if (!argv) return next()
 
@@ -280,6 +279,7 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
       await this.$observeUser()
     }
 
+    argv.next = next
     argv.session = this
     return argv.command.execute(argv)
   }

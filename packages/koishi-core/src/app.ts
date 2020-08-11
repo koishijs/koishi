@@ -127,26 +127,26 @@ export class App extends Context {
   }
 
   private async _preprocess(session: Session, next: NextFunction) {
-    session.message = this.options.processMessage(session.message)
+    let message = this.options.processMessage(session.message)
 
     // strip prefix
     let capture: RegExpMatchArray, atSelf = false
     const at = `[CQ:at,qq=${session.selfId}]`
-    if (session.messageType !== 'private' && session.message.startsWith(at)) {
+    if (session.messageType !== 'private' && message.startsWith(at)) {
       atSelf = session.$appel = true
-      session.message = session.message.slice(at.length).trimStart()
+      message = message.slice(at.length).trimStart()
       // eslint-disable-next-line no-cond-assign
-    } else if (capture = session.message.match(this._nameRE)) {
+    } else if (capture = message.match(this._nameRE)) {
       session.$appel = true
-      session.message = session.message.slice(capture[0].length)
+      message = message.slice(capture[0].length)
       // eslint-disable-next-line no-cond-assign
-    } else if (capture = session.message.match(this._prefixRE)) {
+    } else if (capture = message.match(this._prefixRE)) {
       session.$prefix = capture[0]
-      session.message = session.message.slice(capture[0].length)
+      message = message.slice(capture[0].length)
     }
 
     // store parsed message
-    session.$argv = session.$parse(session.message, next, false)
+    session.$argv = session.$parse(message, '', true)
 
     if (this.database) {
       if (session.messageType === 'group') {
@@ -179,6 +179,7 @@ export class App extends Context {
 
     // execute command
     if (!session.$argv) return next()
+    session.$argv.next = next
     return session.$argv.command.execute(session.$argv)
   }
 
@@ -224,14 +225,14 @@ export class App extends Context {
     await session.$group?._update()
   }
 
-  private _handleParse(message: string, { $prefix, $appel, messageType }: Session, forced: boolean) {
+  private _handleParse(message: string, { $prefix, $appel, messageType }: Session, builtin: boolean, terminator: string) {
     // group message should have prefix or appel to be interpreted as a command call
-    if (!forced && messageType !== 'private' && $prefix === null && !$appel) return
+    if (builtin && messageType !== 'private' && $prefix === null && !$appel) return
     const name = message.split(/\s/, 1)[0]
     const index = name.lastIndexOf('/')
     const command = this.app._commandMap[name.slice(index + 1).toLowerCase()]
     if (!command) return
-    const result = command.parse(message.slice(name.length).trimStart())
+    const result = command.parse(message.slice(name.length).trimStart(), terminator)
     return { command, ...result }
   }
 }

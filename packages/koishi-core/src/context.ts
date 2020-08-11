@@ -309,7 +309,7 @@ export interface EventMap {
   'lifecycle/connect' (session: Session<never, never, 'meta_event'>): void
 
   // Koishi events
-  'parse' (message: string, session: Session, forced: boolean): undefined | ExecuteArgv
+  'parse' (message: string, session: Session, builtin: boolean, terminator: string): void | ExecuteArgv
   'before-attach-user' (session: Session, fields: Set<User.Field>): void
   'before-attach-group' (session: Session, fields: Set<Group.Field>): void
   'attach-user' (session: Session): void | boolean | Promise<void | boolean>

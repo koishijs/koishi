@@ -230,11 +230,9 @@ export async function triggerDialogue(ctx: Context, session: Session, config: Di
     if (char === 'n') {
       await buffer.flush()
     } else if (char === '{') {
-      let end = state.answer.indexOf('}')
-      if (end < 0) end = Infinity
-      const command = unescapeAnswer(state.answer.slice(0, end))
-      state.answer = state.answer.slice(end + 1)
-      await buffer.run(() => session.$execute(command))
+      const argv = session.$parse(state.answer, '}')
+      state.answer = argv.rest.slice(1)
+      await buffer.run(() => session.$execute(argv))
     }
   }
   await buffer.end(unescapeAnswer(state.answer))
