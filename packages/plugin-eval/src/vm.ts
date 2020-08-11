@@ -89,7 +89,7 @@ export const Host = {
   debug,
   TextEncoder,
   TextDecoder,
-  inspectCustom: inspect.custom,
+  inspect,
   Symbol,
   INSPECT_MAX_BYTES,
 } as const

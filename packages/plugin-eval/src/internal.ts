@@ -45,7 +45,6 @@ interface Builtin {
   // builtin utils
   Reflect: typeof Reflect
   Symbol: typeof Symbol
-  inspectCustom: symbol
 }
 
 type Trap = ProxyHandler<any>
@@ -76,7 +75,6 @@ local.WeakSet = WeakSet
 local.Promise = Promise
 
 local.Symbol = Symbol
-local.inspectCustom = host.inspectCustom
 local.Reflect = host.Object.create(null)
 for (const key of host.Object.getOwnPropertyNames(Reflect)) {
   local.Reflect[key] = Reflect[key]
@@ -90,7 +88,8 @@ Object.defineProperties(GLOBAL, {
   isVM: { value: true },
 })
 
-const DEBUG = false
+const proxyTarget = Symbol('proxy-target')
+
 const OPNA = 'Operation not allowed on contextified object.'
 const captureStackTrace = Error.captureStackTrace
 
@@ -208,8 +207,6 @@ function doPreventExtensions(target, object, doProxy) {
   if (!local.Reflect.preventExtensions(target)) unexpected()
 }
 
-type Inspector <T> = (helper: Helper, toStringTag: string) => (this: T, depth: number, options: InspectOptions) => string
-
 interface Helper {
   conjugate: Helper
   remote: Builtin
@@ -226,7 +223,6 @@ interface Helper {
     constructor: new (...args: any[]) => T,
     deepTraps: Trap,
     toStringTag?: string,
-    inspectCustom?: Inspector<T>,
   ): any
 }
 
@@ -247,12 +243,12 @@ Helper.arguments = function (this: Helper, args) {
   }
 }
 
-Helper.instance = function (this: Helper, instance, klass, deepTraps, toStringTag, inspectCustom) {
+Helper.instance = function (this: Helper, instance, klass, deepTraps, toStringTag) {
   if (typeof instance === 'function') return this.function(instance)
   return this.object(instance, createObject({
     get: (target, key) => {
       try {
-        if (key === 'vmProxyTarget' && DEBUG) return instance
+        if (key === proxyTarget) return instance
         if (key === 'isVMProxy') return true
         if (key === 'constructor') return klass
         if (key === '__proto__') return klass.prototype
@@ -265,7 +261,17 @@ Helper.instance = function (this: Helper, instance, klass, deepTraps, toStringTa
       if (key === '__lookupGetter__') return this.local.Object.prototype['__lookupGetter__']
       if (key === '__lookupSetter__') return this.local.Object.prototype['__lookupSetter__']
       if (key === this.local.Symbol.toStringTag && toStringTag) return toStringTag
-      if (key === this.local.inspectCustom && inspectCustom) return inspectCustom(this, toStringTag)
+      if (this === Decontextify && key === host.inspect.custom) {
+        return function (depth: number, options: InspectOptions) {
+          depth = Decontextify.value(depth)
+          options = Decontextify.value(options)
+          try {
+            return host.inspect(instance, options.showHidden, depth, options.colors)
+          } catch (e) {
+            return Decontextify.value(e)
+          }
+        }
+      }
 
       try {
         return this.value(this.remote.Reflect.get(instance, key), null, deepTraps)
@@ -300,7 +306,7 @@ Helper.function = function (this: Helper, fnc, traps, deepTraps, mock) {
     },
     get: (target, key) => {
       try {
-        if (key === 'vmProxyTarget' && DEBUG) return fnc
+        if (key === proxyTarget) return fnc
         if (key === 'isVMProxy') return true
         if (mock && host.Object.prototype.hasOwnProperty.call(mock, key)) return mock[key]
         if (key === 'constructor') return this.local.Function
@@ -336,19 +342,19 @@ Helper.value = function (this: Helper, value, traps, deepTraps, mock) {
     if (typeof value === 'function') return this.function(value, traps, deepTraps, mock)
     if (typeof value === 'object') {
       if (value === null) return null
-      if (instanceOf(value, this.remote.Number)) return this.instance(value, this.local.Number, deepTraps, 'Number', primitiveInspector)
-      if (instanceOf(value, this.remote.String)) return this.instance(value, this.local.String, deepTraps, 'String', primitiveInspector)
-      if (instanceOf(value, this.remote.Boolean)) return this.instance(value, this.local.Boolean, deepTraps, 'Boolean', primitiveInspector)
-      if (instanceOf(value, this.remote.Date)) return this.instance(value, this.local.Date, deepTraps, 'Date', defaultInspector)
-      if (instanceOf(value, this.remote.RangeError)) return this.instance(value, this.local.RangeError, deepTraps, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.ReferenceError)) return this.instance(value, this.local.ReferenceError, deepTraps, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.SyntaxError)) return this.instance(value, this.local.SyntaxError, deepTraps, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.TypeError)) return this.instance(value, this.local.TypeError, deepTraps, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.VMError)) return this.instance(value, this.local.VMError, deepTraps, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.EvalError)) return this.instance(value, this.local.EvalError, deepTraps, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.URIError)) return this.instance(value, this.local.URIError, deepTraps, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.Error)) return this.instance(value, this.local.Error, deepTraps, 'Error', defaultInspector)
-      if (instanceOf(value, this.remote.RegExp)) return this.instance(value, this.local.RegExp, deepTraps, 'RegExp', defaultInspector)
+      if (instanceOf(value, this.remote.Number)) return this.instance(value, this.local.Number, deepTraps, 'Number')
+      if (instanceOf(value, this.remote.String)) return this.instance(value, this.local.String, deepTraps, 'String')
+      if (instanceOf(value, this.remote.Boolean)) return this.instance(value, this.local.Boolean, deepTraps, 'Boolean')
+      if (instanceOf(value, this.remote.Date)) return this.instance(value, this.local.Date, deepTraps, 'Date')
+      if (instanceOf(value, this.remote.RangeError)) return this.instance(value, this.local.RangeError, deepTraps, 'Error')
+      if (instanceOf(value, this.remote.ReferenceError)) return this.instance(value, this.local.ReferenceError, deepTraps, 'Error')
+      if (instanceOf(value, this.remote.SyntaxError)) return this.instance(value, this.local.SyntaxError, deepTraps, 'Error')
+      if (instanceOf(value, this.remote.TypeError)) return this.instance(value, this.local.TypeError, deepTraps, 'Error')
+      if (instanceOf(value, this.remote.VMError)) return this.instance(value, this.local.VMError, deepTraps, 'Error')
+      if (instanceOf(value, this.remote.EvalError)) return this.instance(value, this.local.EvalError, deepTraps, 'Error')
+      if (instanceOf(value, this.remote.URIError)) return this.instance(value, this.local.URIError, deepTraps, 'Error')
+      if (instanceOf(value, this.remote.Error)) return this.instance(value, this.local.Error, deepTraps, 'Error')
+      if (instanceOf(value, this.remote.RegExp)) return this.instance(value, this.local.RegExp, deepTraps, 'RegExp')
       if (instanceOf(value, this.remote.Array)) return this.instance(value, this.local.Array, deepTraps, 'Array')
       if (instanceOf(value, this.remote.Map)) return this.instance(value, this.local.Map, deepTraps, 'Map')
       if (instanceOf(value, this.remote.WeakMap)) return this.instance(value, this.local.WeakMap, deepTraps, 'WeakMap')
@@ -375,7 +381,7 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
   const base: Trap = createObject({
     get: (target, key, receiver) => {
       try {
-        if (key === 'vmProxyTarget' && DEBUG) return object
+        if (key === proxyTarget) return object
         if (key === 'isVMProxy') return true
         if (mock && host.Object.prototype.hasOwnProperty.call(mock, key)) return mock[key]
         if (key === 'constructor') return this.local.Object
@@ -670,21 +676,12 @@ connect(host.Buffer.prototype['inspect'], function inspect () {
 defineGlobal('TextEncoder')
 defineGlobal('TextDecoder')
 
-const defaultInspector: Inspector<Object> = (helper, toStringTag) => function (depth, options) {
-  return this.toString()
-}
-
-const primitiveInspector: Inspector<Object> = (helper, toStringTag) => function (depth, options) {
-  if (toStringTag === 'String') return `[String: '${this.toString()}']`
-  return `[${toStringTag}: ${this.toString()}]`
-}
-
 export const value: <T> (value: T) => T = Decontextify.value.bind(Decontextify)
 export const sandbox = Decontextify.value(GLOBAL)
 
 delete global.console
 
-global['Proxy'][host.inspectCustom] = () => '[Function: Proxy]'
+global['Proxy'][host.inspect.custom] = () => '[Function: Proxy]'
 
 for (const key of Object.getOwnPropertyNames(global)) {
   Object.defineProperty(GLOBAL, key, { value: global[key] })

@@ -40,7 +40,7 @@ export function apply (ctx: Context, config: Config) {
   const root = resolve(process.cwd(), moduleRoot)
   evalConfig.addonNames = readdirSync(root).filter(name => !name.includes('.'))
   evalConfig.addonNames.map(path => loadManifest(path).then(() => {
-    logger.debug('load addon manifest %c', path)
+    logger.debug('load manifest %c', path)
   }, noop))
 
   async function loadManifest (path: string) {

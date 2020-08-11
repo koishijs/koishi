@@ -57,9 +57,9 @@ async function createModule (path: string) {
 }
 
 export default Promise.all(config.addonNames.map(path => createModule(path).then(() => {
-  logger.debug('load addon module %c', path)
+  logger.debug('load module %c', path)
 }, (error) => {
-  logger.warn(`cannot load addon module %c\n` + error.stack, path)
+  logger.warn(`cannot load module %c\n` + error.stack, path)
   delete modules[path]
 }))).then(() => {
   function require (name: string) {
