@@ -1,4 +1,4 @@
-import { Context, User, Session, NextFunction, Command, MessageBuffer } from 'koishi-core'
+import { Context, User, Session, NextFunction, Command } from 'koishi-core'
 import { CQCode, simplify, noop } from 'koishi-utils'
 import { Dialogue, DialogueTest, DialogueFlag } from './database'
 import escapeRegex from 'escape-string-regexp'
@@ -89,6 +89,75 @@ export async function getTotalWeight(ctx: Context, state: SessionState) {
   await session.$observeUser(userFields)
   if (ctx.app.bail(session, 'dialogue/attach-user', state)) return 0
   return dialogues.reduce((prev, curr) => prev + curr._weight, 0)
+}
+
+export class MessageBuffer {
+  private buffer = ''
+  private original = false
+
+  public hasData = false
+  public send: Session['$send']
+  public sendQueued: Session['$sendQueued']
+
+  constructor(private session: Session) {
+    this.send = session.$send.bind(session)
+    this.sendQueued = session.$sendQueued.bind(session)
+
+    session.$send = async (message: string) => {
+      if (!message) return
+      this.hasData = true
+      if (this.original) {
+        return this.send(message)
+      }
+      this.buffer += message
+    }
+
+    session.$sendQueued = async (message, delay) => {
+      if (!message) return
+      this.hasData = true
+      if (this.original) {
+        return this.sendQueued(message, delay)
+      }
+      return this._flush(this.buffer + message, delay)
+    }
+  }
+
+  write(message: string) {
+    if (!message) return
+    this.hasData = true
+    this.buffer += message
+  }
+
+  private async _flush(message: string, delay?: number) {
+    this.original = true
+    message = message.trim()
+    await this.sendQueued(message, delay)
+    this.buffer = ''
+    this.original = false
+  }
+
+  flush() {
+    return this._flush(this.buffer)
+  }
+
+  async run <T>(callback: () => T | Promise<T>) {
+    this.original = false
+    const send = this.session.$send
+    const sendQueued = this.session.$sendQueued
+    const result = await callback()
+    this.session.$sendQueued = sendQueued
+    this.session.$send = send
+    this.original = true
+    return result
+  }
+
+  async end(message = '') {
+    this.write(message)
+    await this.flush()
+    this.original = true
+    delete this.session.$send
+    delete this.session.$sendQueued
+  }
 }
 
 export async function triggerDialogue(ctx: Context, session: Session, config: Dialogue.Config, next: NextFunction = noop) {
