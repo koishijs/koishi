@@ -1,4 +1,4 @@
-import { App, errors } from 'koishi-core'
+import { App } from 'koishi-core'
 
 let app: App
 
@@ -6,7 +6,7 @@ describe('register commands', () => {
   beforeAll(() => app = new App())
 
   test('constructor checks', () => {
-    expect(() => app.command('')).toThrowError(errors.EXPECT_COMMAND_NAME)
+    expect(() => app.command('')).toThrowError()
   })
 
   test('context.command', () => {
@@ -14,7 +14,8 @@ describe('register commands', () => {
     app.user(10000).command('b')
     app.group(10000).command('c')
 
-    expect(app._commands).toHaveLength(3)
+    // a, b, c, help
+    expect(app._commands).toHaveLength(4)
     expect(app._commandMap.a.context).toBe(app)
     expect(app._commandMap.b.context).toBe(app.user(10000))
     expect(app._commandMap.c.context).toBe(app.group(10000))
@@ -52,7 +53,7 @@ describe('register commands', () => {
     expect(() => {
       app.command('g').alias('y')
       app.command('h').alias('y')
-    }).toThrow(errors.DUPLICATE_COMMAND)
+    }).toThrowError()
 
     expect(() => {
       app.command('i').alias('z')
@@ -62,13 +63,10 @@ describe('register commands', () => {
 
   test('remove options', () => {
     const cmd = app.command('command-with-option').option('-a, --alpha')
-    expect(cmd._optsDef.alpha).toBeTruthy()
+    expect(cmd['_optionMap'].alpha).toBeTruthy()
     expect(cmd.removeOption('a')).toBe(true)
-    expect(cmd._optsDef.alpha).toBeFalsy()
+    expect(cmd['_optionMap'].alpha).toBeFalsy()
     expect(cmd.removeOption('a')).toBe(false)
-
-    expect(app.command('command-with-help')._optsDef.help).toBeTruthy()
-    expect(app.command('command-without-help', { noHelpOption: true })._optsDef.help).toBeFalsy()
   })
 })
 
@@ -121,33 +119,15 @@ describe('register subcommands', () => {
     const d = app.command('d')
 
     // register explicit subcommand
-    expect(() => a.subcommand('a')).toThrow(errors.INVALID_SUBCOMMAND)
+    expect(() => a.subcommand('a')).toThrowError()
     expect(() => a.subcommand('b')).not.toThrow()
-    expect(() => a.subcommand('c')).toThrow(errors.INVALID_SUBCOMMAND)
+    expect(() => a.subcommand('c')).toThrowError()
     expect(() => a.subcommand('d')).not.toThrow()
 
     // register implicit subcommand
     expect(() => app.command('b/c')).not.toThrow()
-    expect(() => app.command('a/c')).toThrow(errors.INVALID_SUBCOMMAND)
-    expect(() => app.command('c/b')).toThrow(errors.INVALID_SUBCOMMAND)
+    expect(() => app.command('a/c')).toThrowError()
+    expect(() => app.command('c/b')).toThrowError()
     expect(() => app.command('a/d')).not.toThrow()
-  })
-
-  test('check context', () => {
-    const a = app.command('a')
-    const b = app.users.command('b')
-    const c = app.user(123).command('c')
-
-    // match command directly
-    expect(() => app.groups.command('a')).not.toThrow()
-    expect(() => app.groups.command('b')).not.toThrow()
-
-    // register explicit subcommand
-    expect(() => b.subcommand('a')).toThrow(errors.INVALID_CONTEXT)
-    expect(() => b.subcommand('c')).not.toThrow()
-
-    // register implicit subcommand
-    expect(() => app.groups.command('b/d')).toThrow(errors.INVALID_CONTEXT)
-    expect(() => app.command('b/d')).not.toThrow()
   })
 })

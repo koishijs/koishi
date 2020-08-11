@@ -1,5 +1,6 @@
-import { App, errors } from 'koishi-core'
+import { App } from 'koishi-core'
 import { noop } from 'koishi-utils'
+import { errors } from '../src/messages'
 
 const app = new App()
 

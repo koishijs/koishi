@@ -1,6 +1,5 @@
-import { onStart, onStop, startAll, stopAll, App, getSelfIds, errors } from 'koishi-core'
+import { App } from 'koishi-core'
 import { HttpServer, createHttpServer } from 'koishi-test-utils'
-import { format } from 'util'
 
 let app1: App, app2: App
 let server: HttpServer
@@ -13,80 +12,20 @@ afterAll(() => server.close())
 
 describe('Server Types', () => {
   test('server', () => {
-    expect(() => new App({ type: 123 as any })).toThrow(errors.UNSUPPORTED_SERVER_TYPE)
-    expect(() => new App({ type: 'foo' as any })).toThrow(errors.UNSUPPORTED_SERVER_TYPE)
-    expect(() => new App({ type: 'http' })).toThrow(format(errors.MISSING_CONFIGURATION, 'port'))
-    expect(() => new App({ type: 'ws' })).toThrow(format(errors.MISSING_CONFIGURATION, 'server'))
-  })
-})
-
-describe('Lifecycle', () => {
-  beforeAll(() => {
-    app1 = new App()
-    app2 = new App()
-  })
-
-  afterAll(() => {
-    app1.destroy()
-    app2.destroy()
-  })
-
-  test('app.version', () => {
-    expect(app1.version).toBeFalsy()
-  })
-
-  test('onStart', async () => {
-    const mock = jest.fn()
-    onStart(mock)
-    await startAll()
-    expect(mock).toBeCalledTimes(1)
-    expect(mock).toBeCalledWith(app1, app2)
-  })
-
-  test('onStop', async () => {
-    const mock = jest.fn()
-    onStop(mock)
-    await stopAll()
-    expect(mock).toBeCalledTimes(1)
+    expect(() => new App()).toThrow()
+    expect(() => new App({ type: 'foo' as any })).toThrow()
+    expect(() => new App({ server: 'http:// '})).not.toThrow()
   })
 })
 
 describe('Startup Checks', () => {
   beforeAll(() => app1 = server.createBoundApp())
   afterEach(() => app1.stop())
-  afterAll(() => app1.destroy())
-
-  test('< 3.0: unsupported cqhttp version', async () => {
-    server.setResponse('get_version_info', { pluginVersion: '2.9' })
-    await expect(app1.start()).rejects.toHaveProperty('message', errors.UNSUPPORTED_CQHTTP_VERSION)
-  })
-
-  test('< 3.4: automatically get selfId', async () => {
-    const app2 = server.createBoundApp({ selfId: undefined })
-    server.setResponse('get_version_info', { pluginVersion: '3.3' })
-    server.setResponse('get_login_info', { userId: 415 })
-    expect(app2.version).toBeFalsy()
-    await expect(app1.start()).resolves.toBeUndefined()
-    expect(app2.version.pluginVersion).toBe('3.3')
-    expect(app2.selfId).toBe(415)
-    app2.destroy()
-    // make coverage happy
-    app2.destroy()
-  })
-
-  test('< 3.4: multiple anonymous bots', async () => {
-    server.setResponse('get_version_info', { pluginVersion: '3.3' })
-    const app2 = server.createBoundApp({ selfId: undefined })
-    const app3 = server.createBoundApp({ selfId: undefined })
-    await expect(app1.start()).rejects.toHaveProperty('message', errors.MULTIPLE_ANONYMOUS_BOTS)
-    app2.destroy()
-    app3.destroy()
-  })
 
   test('= 4.0: get selfIds manually', async () => {
     const readyCallback = jest.fn()
     const app2 = server.createBoundApp({ selfId: undefined })
-    app2.receiver.on('ready', readyCallback)
+    app2.on('ready', readyCallback)
     server.setResponse('get_version_info', { pluginVersion: '4.0' })
     server.setResponse('get_login_info', { userId: 415 })
     await expect(app2.start()).resolves.toBeUndefined()

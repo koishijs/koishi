@@ -1,248 +1,117 @@
-import { Observed } from 'koishi-utils'
+import * as utils from 'koishi-utils'
 
-export interface Usage {
-  last?: number
-  count?: number
+export type TableType = keyof Tables
+
+export interface Tables {
+  user: User
+  group: Group
 }
 
-export enum UserFlag {
-  ignore = 1,
-}
-
-export const userFlags: (keyof typeof UserFlag)[] = ['ignore']
-
-export interface UserData {
+export interface User {
   id: number
   flag: number
   authority: number
-  usage: Record<string, Usage> & { $date?: number }
+  name: string
+  usage: Record<string, number>
+  timers: Record<string, number>
 }
 
-export type User<K extends UserField = UserField> = Observed<Pick<UserData, K | 'id'>>
-export type UserField = keyof UserData
-export const userFields: UserField[] = []
-
-type UserGetter = (id: number, authority: number) => Partial<UserData>
-const userGetters: UserGetter[] = []
-
-export function extendUser (getter: UserGetter) {
-  userGetters.push(getter)
-  userFields.push(...Object.keys(getter(0, 0)) as any)
-}
-
-extendUser((id, authority) => ({
-  id,
-  authority,
-  flag: 0,
-  usage: {},
-}))
-
-export function createUser (id: number, authority: number) {
-  const result = {} as UserData
-  for (const getter of userGetters) {
-    Object.assign(result, getter(id, authority))
+export namespace User {
+  export enum Flag {
+    ignore = 1,
   }
-  return result
+
+  export type Field = keyof User
+  export const fields: Field[] = []
+  export type Observed <K extends Field = Field> = utils.Observed<Pick<User, K>>
+  type Getter = (id: number, authority: number) => Partial<User>
+  const getters: Getter[] = []
+
+  export function extend(getter: Getter) {
+    getters.push(getter)
+    fields.push(...Object.keys(getter(0, 0)) as any)
+  }
+
+  extend((id, authority) => ({
+    id,
+    authority,
+    flag: 0,
+    usage: {},
+    timers: {},
+    name: '' + id,
+  }))
+
+  export function create(id: number, authority: number) {
+    const result = {} as User
+    for (const getter of getters) {
+      Object.assign(result, getter(id, authority))
+    }
+    return result
+  }
 }
 
-export interface GroupData {
+export interface Group {
   id: number
   flag: number
   assignee: number
 }
 
-export enum GroupFlag {
-  noCommand = 1,
-  noResponse = 2,
-  noEmit = 4,
-}
-
-export const groupFlags: (keyof typeof GroupFlag)[] = ['noCommand', 'noResponse', 'noEmit']
-
-export type Group<K extends GroupField = GroupField> = Observed<Pick<GroupData, K | 'id'>>
-export type GroupField = keyof GroupData
-export const groupFields: GroupField[] = []
-
-type GroupGetter = (id: number, assignee: number) => Partial<GroupData>
-const groupGetters: GroupGetter[] = []
-
-export function extendGroup (getter: GroupGetter) {
-  groupGetters.push(getter)
-  groupFields.push(...Object.keys(getter(0, 0)) as any)
-}
-
-extendGroup((id, assignee) => ({
-  id,
-  assignee,
-  flag: assignee ? 0 : 3,
-}))
-
-export function createGroup (id: number, assignee: number) {
-  const result = {} as GroupData
-  for (const getter of groupGetters) {
-    Object.assign(result, getter(id, assignee))
-  }
-  return result
-}
-
-export interface UserMethods {
-  getUser <K extends UserField> (userId: number, fields?: readonly K[]): Promise<Pick<UserData, K | 'id'>>
-  getUser <K extends UserField> (userId: number, defaultAuthority?: number, fields?: readonly K[]): Promise<Pick<UserData, K | 'id'>>
-  getUsers <K extends UserField> (fields?: K[]): Promise<Pick<UserData, K>[]>
-  getUsers <K extends UserField> (ids: readonly number[], fields?: readonly K[]): Promise<Pick<UserData, K>[]>
-  setUser (userId: number, data: Partial<UserData>): Promise<any>
-  observeUser <K extends UserField> (user: number | UserData, fields?: readonly K[]): Promise<User<K>>
-  observeUser <K extends UserField> (user: number | UserData, defaultAuthority?: number, fields?: readonly K[]): Promise<User<K>>
-  getUserCount (): Promise<number>
-}
-
-export interface GroupMethods {
-  getGroup <K extends GroupField> (groupId: number, fields?: readonly K[]): Promise<Pick<GroupData, K | 'id'>>
-  getGroup <K extends GroupField> (groupId: number, selfId?: number, fields?: readonly K[]): Promise<Pick<GroupData, K | 'id'>>
-  getAllGroups <K extends GroupField> (assignees?: readonly number[]): Promise<Pick<GroupData, K>[]>
-  getAllGroups <K extends GroupField> (fields?: readonly K[], assignees?: readonly number[]): Promise<Pick<GroupData, K>[]>
-  setGroup (groupId: number, data: Partial<GroupData>): Promise<any>
-  observeGroup <K extends GroupField> (group: number | GroupData, fields?: readonly K[]): Promise<Group<K>>
-  observeGroup <K extends GroupField> (group: number | GroupData, selfId?: number, fields?: readonly K[]): Promise<Group<K>>
-  getGroupCount (): Promise<number>
-}
-
-export interface TableMethods {
-  user: UserMethods
-  group: GroupMethods
-}
-
-export interface TableData {
-  user: UserData
-  group: GroupData
-}
-
-export type TableType = keyof TableMethods
-type TableMap = Partial<Record<TableType, SubdatabaseType>>
-
-type UnionToIntersection <U> = (U extends any ? (key: U) => void : never) extends (key: infer I) => void ? I : never
-
-export type Database = Subdatabases & UnionToIntersection<TableMethods[TableType]>
-
-export interface DatabaseConfig {
-  $tables?: TableMap
-}
-
-export interface Subdatabases {}
-
-export interface InjectOptions {}
-
-type SubdatabaseType = keyof Subdatabases
-type DatabaseMap = Record<string | number, AbstractDatabase>
-type InjectionMap <S extends SubdatabaseType> = Partial<Record<TableType, DatabaseInjections<S>>>
-
-export type TableConfig <K extends SubdatabaseType> = K extends keyof InjectOptions ? InjectOptions[K] : never
-export type InjectConfig <K extends SubdatabaseType> = Partial<Record<TableType, TableConfig<K>>>
-
-interface Subdatabase <T extends SubdatabaseType = SubdatabaseType, A extends AbstractDatabase = AbstractDatabase> {
-  new (config: DatabaseConfig[T], injectConfig?: InjectConfig<T>): A
-  identify? (config: DatabaseConfig[T]): string | number
-  _methods?: InjectionMap<T>
-  _options?: InjectConfig<T>
-  _managers?: DatabaseManager[]
-}
-
-export interface AbstractDatabase {
-  start? (): void | Promise<void>
-  stop? (): void | Promise<void>
-}
-
-const unknownMethods: { [K in SubdatabaseType]?: DatabaseInjections<K> } = {}
-const unknownOptions: { [K in SubdatabaseType]?: TableConfig<K> } = {}
-const subdatabases: { [K in SubdatabaseType]?: Subdatabase<K> } = {}
-const existingDatabases: { [K in SubdatabaseType]?: DatabaseMap } = {}
-
-export function registerDatabase <K extends SubdatabaseType> (name: K, subdatabase: Subdatabase<K, {}>) {
-  subdatabases[name] = subdatabase as any
-  subdatabase._methods = unknownMethods[name] ?? {}
-  subdatabase._options = unknownOptions[name] ?? {}
-  subdatabase._managers = []
-}
-
-export type DatabaseInjections <K extends SubdatabaseType, T extends TableType = TableType> = {
-  [M in keyof TableMethods[T]]?: TableMethods[T][M] extends (...args: infer P) => infer R
-    ? (this: DatabaseInjections<K, T> & Subdatabases[K], ...args: P) => R
-    : never
-}
-
-export function injectMethods <K extends SubdatabaseType, T extends TableType> (
-  name: K,
-  table: T,
-  methods: DatabaseInjections<K, T>,
-  options?: TableConfig<K>,
-) {
-  const Subdatabase = subdatabases[name] as Subdatabase<K>
-  let methodMap: Partial<Record<TableType, DatabaseInjections<K, T>>>
-  let optionMap: Partial<Record<TableType, TableConfig<K>>>
-
-  // inject before subdatabase was registered
-  if (!Subdatabase) {
-    methodMap = unknownMethods[name] || (unknownMethods[name] = {} as never)
-    optionMap = unknownOptions[name] || (unknownOptions[name] = {} as never)
-  } else {
-    optionMap = Subdatabase._options
-    methodMap = Subdatabase._methods
-    Subdatabase._managers.forEach(manager => manager.injectMethods(name, table, methods))
+export namespace Group {
+  export enum Flag {
+    ignore = 1,
+    noImage = 2,
+    noEmit = 4,
   }
 
-  methodMap[table] = { ...methodMap[table], ...methods }
-  optionMap[table] = { ...optionMap[table] as any, ...options as any }
-}
+  export type Field = keyof Group
+  export const fields: Field[] = []
+  export type Observed <K extends Field = Field> = utils.Observed<Pick<Group, K>>
+  type Getter = (id: number, authority: number) => Partial<Group>
+  const getters: Getter[] = []
 
-class DatabaseManager {
-  public database = {} as Database
-  private explicitTables: TableMap
-  private implicitTables: TableMap = {}
+  export function extend(getter: Getter) {
+    getters.push(getter)
+    fields.push(...Object.keys(getter(0, 0)) as any)
+  }
 
-  constructor (public config: DatabaseConfig) {
-    this.explicitTables = config.$tables || {}
-    for (const table in this.explicitTables) {
-      const name = this.explicitTables[table]
-      if (!config[name]) throw new Error(`database "${name}" not configurated`)
+  export function create(id: number, authority: number) {
+    const result = {} as Group
+    for (const getter of getters) {
+      Object.assign(result, getter(id, authority))
     }
-    for (const type in subdatabases) {
-      this.bindSubdatabase(type as SubdatabaseType, config[type])
-    }
+    return result
   }
 
-  createSubdatabase <S extends SubdatabaseType> (sub: S, config: any) {
-    const Subdatabase: Subdatabase<S> = subdatabases[sub]
-    const identifier = config.identifier ?? (config.identifier = Subdatabase.identify?.(config))
-    const databases: DatabaseMap = existingDatabases[sub] || (existingDatabases[sub] = {} as never)
-    return identifier in databases
-      ? databases[identifier]
-      : databases[identifier] = new Subdatabase({ identifier, ...config }, Subdatabase._options)
-  }
-
-  bindSubdatabase <S extends SubdatabaseType> (type: S, config: any) {
-    if (!config) return
-    const Subdatabase: Subdatabase<S> = subdatabases[type]
-    const subdatabase = this.createSubdatabase(type, config)
-    this.database[type] = subdatabase as never
-    Subdatabase._managers.push(this)
-    for (const table in Subdatabase._methods) {
-      this.injectMethods(type, table as any, Subdatabase._methods[table])
-    }
-  }
-
-  injectMethods <S extends SubdatabaseType, T extends TableType> (sub: S, table: T, methods: any) {
-    const subdatabase = this.database[sub] as AbstractDatabase
-    if (!this.explicitTables[table] && this.implicitTables[table] && this.implicitTables[table] !== sub) {
-      throw new Error(`database "${this.implicitTables[table]}" and "${sub}" conflict on table "${table}"`)
-    } else if (!this.explicitTables[table] || this.explicitTables[table] === sub) {
-      this.implicitTables[table] = sub
-      for (const name in methods) {
-        subdatabase[name] = this.database[name] = methods[name].bind(subdatabase)
-      }
-    }
-  }
+  extend((id, assignee) => ({
+    id,
+    assignee,
+    flag: assignee ? 0 : Flag.ignore | Flag.noEmit,
+  }))
 }
 
-export function createDatabase (config: DatabaseConfig) {
-  return new DatabaseManager(config).database
+export interface Database {
+  getUser <K extends User.Field> (userId: number, fields?: readonly K[]): Promise<Pick<User, K | 'id'>>
+  getUser <K extends User.Field> (userId: number, defaultAuthority?: number, fields?: readonly K[]): Promise<Pick<User, K | 'id'>>
+  getUsers <K extends User.Field> (fields?: readonly K[]): Promise<Pick<User, K>[]>
+  getUsers <K extends User.Field> (ids: readonly number[], fields?: readonly K[]): Promise<Pick<User, K>[]>
+  setUser (userId: number, data: Partial<User>): Promise<any>
+
+  getGroup <K extends Group.Field> (groupId: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id'>>
+  getGroup <K extends Group.Field> (groupId: number, selfId?: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id'>>
+  getAllGroups <K extends Group.Field> (assignees?: readonly number[]): Promise<Pick<Group, K>[]>
+  getAllGroups <K extends Group.Field> (fields?: readonly K[], assignees?: readonly number[]): Promise<Pick<Group, K>[]>
+  setGroup (groupId: number, data: Partial<Group>): Promise<any>
+}
+
+type DatabaseExtension <T extends {}> = {
+  [K in keyof Database]?: Database[K] extends (...args: infer R) => infer S ? (this: T & Database, ...args: R) => S : never
+}
+
+export function extendDatabase <T extends {}>(module: string, extension: DatabaseExtension<T>): void
+export function extendDatabase <T extends {}>(module: { prototype: T }, extension: DatabaseExtension<T>): void
+export function extendDatabase(module: any, extension: {}) {
+  try {
+    const Database = typeof module === 'string' ? require(module).default : module
+    Object.assign(Database.prototype, extension)
+  } catch (error) {}
 }

@@ -1,0 +1,43 @@
+{
+  "name": "koishi-plugin-mongo",
+  "description": "MongoDB support for Koishi",
+  "version": "1.0.0-beta.1",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "author": "undefined <masnn0@outlook.com>",
+  "license": "LGPL-3.0-or-later",
+  "scripts": {
+    "lint": "eslint src --ext .ts --fix",
+    "prepack": "tsc -b"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-mysql#readme",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "database",
+    "mysql"
+  ],
+  "devDependencies": {
+    "@types/mongodb": "^3.5.25"
+  },
+  "peerDependencies": {
+    "koishi-core": "^2.0.0-beta.7"
+  },
+  "dependencies": {
+    "mongodb": "^3.6.0"
+  }
+}

@@ -1,20 +1,6 @@
-import { App, errors } from 'koishi-core'
+import { App, Meta } from 'koishi-core'
 
 const app = new App()
-
-describe('Context API', () => {
-  test('create context', () => {
-    expect(app.createContext('user')).toBe(app.users)
-    expect(app.createContext('group+123,456')).toBe(app.group(123, 456))
-    expect(app.createContext('discuss-123,456')).toBe(app.discusses.except(123, 456))
-    expect(app.createContext('user;group+123')).toBe(app.users.plus(app.group(123)))
-    expect(() => app.createContext('')).toThrowError(errors.INVALID_IDENTIFIER)
-  })
-
-  test('call chaining', () => {
-    expect(app.users.except(123).plus(app.discuss(456)).end()).toBe(app)
-  })
-})
 
 describe('Composition API', () => {
   test('directly generated context', () => {
@@ -74,12 +60,12 @@ describe('Composition API', () => {
 
   test('context.prototype.match', () => {
     const ctx = app.user(123, 456).plus(app.groups.except(123, 456))
-    expect(ctx.match({ $ctxType: 'user', $ctxId: 123 })).toBe(true)
-    expect(ctx.match({ $ctxType: 'user', $ctxId: 789 })).toBe(false)
-    expect(ctx.match({ $ctxType: 'group', $ctxId: 123 })).toBe(false)
-    expect(ctx.match({ $ctxType: 'group', $ctxId: 789 })).toBe(true)
-    expect(ctx.match({ $ctxType: 'discuss', $ctxId: 123 })).toBe(false)
-    expect(ctx.match({ $ctxType: 'discuss', $ctxId: 789 })).toBe(false)
+    expect(ctx.match(new Meta({ $ctxType: 'user', $ctxId: 123 }))).toBe(true)
+    expect(ctx.match(new Meta({ $ctxType: 'user', $ctxId: 789 }))).toBe(false)
+    expect(ctx.match(new Meta({ $ctxType: 'group', $ctxId: 123 }))).toBe(false)
+    expect(ctx.match(new Meta({ $ctxType: 'group', $ctxId: 789 }))).toBe(true)
+    expect(ctx.match(new Meta({ $ctxType: 'discuss', $ctxId: 123 }))).toBe(false)
+    expect(ctx.match(new Meta({ $ctxType: 'discuss', $ctxId: 789 }))).toBe(false)
   })
 
   test('context.prototype.contain', () => {

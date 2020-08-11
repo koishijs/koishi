@@ -1,68 +1,72 @@
-import { Meta, getSelfIds, injectMethods } from 'koishi-core'
-import { noop } from 'koishi-utils'
-import {} from 'koishi-database-mysql'
-import {} from 'koishi-database-level'
-import { Schedule } from '.'
+import { Session, extendDatabase } from 'koishi-core'
+import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
+import MongoDatabase from 'koishi-plugin-mongo/dist/database'
 
 declare module 'koishi-core/dist/database' {
-  interface TableMethods {
-    schedule?: ScheduleMethods
+  interface Database {
+    createSchedule (time: Date, interval: number, command: string, session: Session): Promise<Schedule>
+    removeSchedule (id: number): Promise<any>
+    getSchedule (id: number): Promise<Schedule>
+    getAllSchedules (assignees?: number[]): Promise<Schedule[]>
   }
 
-  interface TableData {
-    schedule?: Schedule
+  interface Tables {
+    schedule: Schedule
   }
 }
 
-interface ScheduleMethods {
-  createSchedule (time: number, assignee: number, interval: number, command: string, meta: Meta<'message'>): Promise<Schedule>
-  removeSchedule (id: number): Promise<any>
-  getSchedule (id: number): Promise<Schedule>
-  getAllSchedules (assignees?: number[]): Promise<Schedule[]>
+export interface Schedule {
+  id: number
+  assignee: number
+  time: Date
+  interval: number
+  command: string
+  session: Session
 }
 
-injectMethods('mysql', 'schedule', {
-  createSchedule (time, assignee, interval, command, meta) {
-    return this.create('schedule', { time, assignee, interval, command, meta })
+extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
+  createSchedule(time, interval, command, session) {
+    return this.create('schedule', { time, assignee: session.selfId, interval, command, session })
   },
 
-  removeSchedule (id) {
+  removeSchedule(id) {
     return this.query('DELETE FROM `schedule` WHERE `id` = ?', [id])
   },
 
-  async getSchedule (id) {
+  async getSchedule(id) {
     const data = await this.query('SELECT * FROM `schedule` WHERE `id` = ?', [id])
     return data[0]
   },
 
-  async getAllSchedules (assignees) {
+  async getAllSchedules(assignees) {
     let queryString = 'SELECT * FROM `schedule`'
-    if (!assignees) assignees = await getSelfIds()
+    if (!assignees) assignees = await this.app.getSelfIds()
     queryString += ` WHERE \`assignee\` IN (${assignees.join(',')})`
     return this.query(queryString)
   },
 })
 
-injectMethods('level', 'schedule', {
-  createSchedule (time, assignee, interval, command, meta) {
-    return this.create('schedule', { time, assignee, interval, command, meta })
+extendDatabase<MongoDatabase>('koishi-plugin-mongo', {
+  async createSchedule(time, interval, command, session) {
+    const result = await this.db.collection('schedule').insertOne(
+      { time, assignee: session.selfId, interval, command, session },
+    )
+    return { time, assignee: session.selfId, interval, command, session, id: result.insertedId }
   },
 
-  removeSchedule (id) {
-    return this.remove('schedule', id)
+  removeSchedule(_id) {
+    return this.db.collection('schedule').deleteOne({ _id })
   },
 
-  getSchedule (id) {
-    return this.tables.schedule.get(id).catch(noop)
+  async getSchedule(_id) {
+    const res = await this.db.collection('schedule').findOne({ _id })
+    if (res) res.id = res._id
+    return res
   },
 
-  async getAllSchedules (assignees) {
-    if (!assignees) assignees = await getSelfIds()
-    return new Promise((resolve) => {
-      const data: Schedule[] = []
-      this.tables.schedule.createValueStream()
-        .on('data', item => assignees.includes(item.assignee) ? data.push(item) : null)
-        .on('end', () => resolve(data))
-    })
+  async getAllSchedules(assignees) {
+    const $in = assignees || await this.app.getSelfIds()
+    return await this.db.collection('schedule')
+      .find({ assignee: { $in } }).map(doc => ({ ...doc, id: doc._id })).toArray()
   },
 })

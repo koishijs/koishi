@@ -15,16 +15,10 @@ describe('CQ Code', () => {
   })
 
   test('stringifyAll', () => {
-    expect(CQCode.stringifyAll([{
-      type: 'text',
-      data: { text: 'foo' },
-    }, {
+    expect(CQCode.stringifyAll(['foo', {
       type: 'bar',
       data: { text: 'bar' },
-    }, {
-      type: 'text',
-      data: { text: 'baz' },
-    }])).toBe('foo[CQ:bar,text=bar]baz')
+    }, 'baz'])).toBe('foo[CQ:bar,text=bar]baz')
   })
 
   test('parse', () => {
@@ -36,19 +30,13 @@ describe('CQ Code', () => {
   })
 
   test('parseAll', () => {
-    expect(CQCode.parseAll('foo[CQ:bar,text=bar]')).toMatchObject([{
-      type: 'text',
-      data: { text: 'foo' },
-    }, {
+    expect(CQCode.parseAll('foo[CQ:bar,text=bar]')).toMatchObject(['foo', {
       type: 'bar',
       data: { text: 'bar' },
     }])
     expect(CQCode.parseAll('[CQ:bar,text=bar]baz')).toMatchObject([{
       type: 'bar',
       data: { text: 'bar' },
-    }, {
-      type: 'text',
-      data: { text: 'baz' },
-    }])
+    }, 'baz'])
   })
 })

@@ -1,0 +1,27 @@
+{
+  "name": "koishi-plugin-monitor",
+  "version": "1.0.0-beta.7",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "LGPL-3.0-or-later",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "lint": "eslint src --ext .ts",
+    "prepack": "tsc -b"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi#readme",
+  "peerDependencies": {
+    "koishi-core": "^2.0.0-beta.7",
+    "koishi-utils": "^2.2.0"
+  }
+}

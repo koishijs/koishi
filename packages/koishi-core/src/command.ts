@@ -1,350 +1,553 @@
 import { Context, NextFunction } from './context'
-import { UserData, UserField, GroupField } from './database'
-import { messages, errors } from './messages'
-import { noop } from 'koishi-utils'
-import { Meta } from './meta'
-import { format } from 'util'
-import { updateUsage } from './utils'
+import { User, Group, Tables, TableType } from './database'
+import { noop, camelCase, paramCase, Logger } from 'koishi-utils'
+import { Session } from './session'
+import { inspect, format, types } from 'util'
+import escapeRegex from 'escape-string-regexp'
 
-import {
-  CommandOption,
-  CommandArgument,
-  OptionConfig,
-  parseArguments,
-  parseOption,
-  parseLine,
-  ParsedLine,
-} from './parser'
+const logger = Logger.create('command')
 
-export interface ParsedCommandLine extends Partial<ParsedLine> {
-  meta: Meta<'message'>
-  command?: Command
+const ANGLED_BRACKET_REGEXP = /<([^>]+)>/g
+const SQUARE_BRACKET_REGEXP = /\[([^\]]+)\]/g
+
+function parseBracket(name: string, required: boolean): CommandArgument {
+  let variadic = false, greedy = false
+  if (name.startsWith('...')) {
+    name = name.slice(3)
+    variadic = true
+  } else if (name.endsWith('...')) {
+    name = name.slice(0, -3)
+    greedy = true
+  }
+  return {
+    name,
+    required,
+    variadic,
+    greedy,
+  }
+}
+
+export interface CommandArgument {
+  required: boolean
+  variadic: boolean
+  greedy: boolean
+  name: string
+}
+
+export function parseArguments(source: string) {
+  let capture: RegExpExecArray
+  const result: CommandArgument[] = []
+  while ((capture = ANGLED_BRACKET_REGEXP.exec(source))) {
+    result.push(parseBracket(capture[1], true))
+  }
+  while ((capture = SQUARE_BRACKET_REGEXP.exec(source))) {
+    result.push(parseBracket(capture[1], false))
+  }
+  return result
+}
+
+const supportedType = ['string', 'number', 'boolean'] as const
+
+export type OptionType = typeof supportedType[number]
+
+export interface OptionConfig <T = any> {
+  value?: T
+  fallback?: T
+  authority?: number
+  notUsage?: boolean
+}
+
+type StringOptionConfig = OptionConfig & ({ fallback: string } | { type: 'string' })
+type NumberOptionConfig = OptionConfig & ({ fallback: number } | { type: 'number' })
+type BooleanOptionConfig = OptionConfig & ({ fallback: boolean } | { type: 'boolean' })
+
+export interface CommandOption extends OptionConfig {
+  name: string
+  description: string
+  greedy: boolean
+  type?: OptionType
+  values?: Record<string, any>
+}
+
+interface ParsedArg {
+  rest: string
+  content: string
+  quoted: boolean
+}
+
+const quoteStart = `"'“‘`
+const quoteEnd = `"'”’`
+
+export interface ParsedLine <O = {}> {
+  source?: string
+  rest: string
+  args: string[]
+  options: O
+}
+
+export interface ParsedArgv <U extends User.Field = never, G extends Group.Field = never, O = {}> extends Partial<ParsedLine<O>> {
+  command: Command<U, G, O>
+  session: Session<U, G>
   next?: NextFunction
 }
 
-export type UserType <T> = T | ((user: UserData) => T)
-export type CommandUsage = string | ((this: Command, meta: Meta) => string | Promise<string>)
+export interface ExecuteArgv extends Partial<ParsedLine> {
+  command: string | Command
+  next?: NextFunction
+}
 
-export interface CommandConfig {
-  /** disallow unknown options */
-  checkUnknown?: boolean
-  /** check required options */
-  checkRequired?: boolean
-  /** check argument count */
-  checkArgCount?: boolean
-  /** usage identifier */
-  usageName?: string
+export interface CommandConfig <U extends User.Field = never, G extends Group.Field = never> {
   /** description */
   description?: string
   /** min authority */
   authority?: number
-  disable?: UserType<boolean>
-  maxUsage?: UserType<number>
-  minInterval?: UserType<number>
-  showWarning?: boolean | number
-  noHelpOption?: boolean
 }
 
-const defaultConfig: CommandConfig = {
-  authority: 1,
-  maxUsage: Infinity,
-  minInterval: 0,
-  showWarning: true,
+type Extend <O extends {}, K extends string, T> = {
+  [P in K | keyof O]: (P extends keyof O ? O[P] : unknown) & (P extends K ? T : unknown)
 }
 
-export interface ShortcutConfig {
-  name?: string
-  command?: Command
-  authority?: number
-  hidden?: boolean
-  prefix?: boolean
-  fuzzy?: boolean
-  args?: string[]
-  oneArg?: boolean
-  options?: Record<string, any>
-}
+type ArgvInferred <T> = Iterable<T> | ((argv: ParsedArgv, fields: Set<T>) => Iterable<T>)
+export type CommandAction <U extends User.Field = never, G extends Group.Field = never, O = {}> =
+  (this: Command<U, G>, config: ParsedArgv<U, G, O>, ...args: string[]) => void | string | Promise<void | string>
 
-export enum CommandHint {
-  USAGE_EXHAUSTED = 1,
-  TOO_FREQUENT = 2,
-  LOW_AUTHORITY = 4,
-  INSUFFICIENT_ARGUMENTS = 8,
-  REDUNANT_ARGUMENTS = 16,
-  UNKNOWN_OPTIONS = 32,
-  REQUIRED_OPTIONS = 64,
-}
-
-export class Command {
-  config: CommandConfig
+export class Command <U extends User.Field = never, G extends Group.Field = never, O = {}> {
+  config: CommandConfig<U, G>
   children: Command[] = []
   parent: Command = null
 
   _aliases: string[] = []
-  _options: CommandOption[] = []
-  _usage?: CommandUsage
-  _examples: string[] = []
-  _shortcuts: Record<string, ShortcutConfig> = {}
-  _userFields = new Set<UserField>()
-  _groupFields = new Set<GroupField>()
-  _argsDef: CommandArgument[]
-  _optsDef: Record<string, CommandOption> = {}
-  _action?: (this: Command, config: ParsedCommandLine, ...args: string[]) => any
+  _arguments: CommandArgument[]
+  _options: Record<string, CommandOption> = {}
 
-  static attachUserFields (userFields: Set<UserField>, { command, options = {} }: ParsedCommandLine) {
-    if (!command) return
-    for (const field of command._userFields) {
-      userFields.add(field)
-    }
+  private _optionNameMap: Record<string, CommandOption> = {}
+  private _optionSymbolMap: Record<string, CommandOption> = {}
+  private _userFields: ArgvInferred<User.Field>[] = []
+  private _groupFields: ArgvInferred<Group.Field>[] = []
 
-    const { maxUsage, minInterval, authority } = command.config
-    let shouldFetchAuthority = !userFields.has('authority') && authority > 0
-    let shouldFetchUsage = !(userFields.has('usage') || !maxUsage && !minInterval)
-    for (const option of command._options) {
-      if (option.camels[0] in options) {
-        if (option.authority > 0) shouldFetchAuthority = true
-        if (option.notUsage) shouldFetchUsage = false
+  _action?: CommandAction<U, G>
+
+  static defaultConfig: CommandConfig = {
+    authority: 1,
+  }
+
+  static defaultOptionConfig: OptionConfig = {
+    authority: 0,
+  }
+
+  private static _userFields: ArgvInferred<User.Field>[] = []
+  private static _groupFields: ArgvInferred<Group.Field>[] = []
+
+  static userFields(fields: ArgvInferred<User.Field>) {
+    this._userFields.push(fields)
+    return this
+  }
+
+  static groupFields(fields: ArgvInferred<Group.Field>) {
+    this._groupFields.push(fields)
+    return this
+  }
+
+  static collect <T extends TableType>(argv: ParsedArgv, key: T, fields = new Set<keyof Tables[T]>()) {
+    if (!argv) return
+    const values: ArgvInferred<keyof Tables[T]>[] = [
+      ...this[`_${key}Fields`],
+      ...argv.command[`_${key}Fields`],
+    ]
+    for (let value of values) {
+      if (typeof value === 'function') {
+        value = value(argv, fields)
+      }
+      for (const field of value) {
+        fields.add(field)
       }
     }
-    if (shouldFetchAuthority) userFields.add('authority')
-    if (shouldFetchUsage) userFields.add('usage')
+    return fields
   }
 
-  static attachGroupFields (groupFields: Set<GroupField>, { command }: ParsedCommandLine) {
-    if (!command) return
-    for (const field of command._groupFields) {
-      groupFields.add(field)
-    }
-  }
-
-  constructor (public name: string, public declaration: string, public context: Context, config: CommandConfig = {}) {
-    if (!name) throw new Error(errors.EXPECT_COMMAND_NAME)
-    this._argsDef = parseArguments(declaration)
-    this.config = { ...defaultConfig, ...config }
+  constructor(public name: string, public declaration: string, public context: Context, config: CommandConfig = {}) {
+    if (!name) throw new Error('expect a command name')
+    this._arguments = parseArguments(declaration)
+    this.config = { ...Command.defaultConfig, ...config }
     this._registerAlias(this.name)
     context.app._commands.push(this)
-    this.option('-h, --help', messages.SHOW_THIS_MESSAGE, { hidden: true })
+    context.app.emit('new-command', this)
   }
 
-  get app () {
+  get app() {
     return this.context.app
   }
 
-  get usageName () {
-    return this.config.usageName || this.name
-  }
-
-  private _registerAlias (name: string) {
+  private _registerAlias(name: string) {
     name = name.toLowerCase()
     this._aliases.push(name)
     const previous = this.app._commandMap[name]
     if (!previous) {
       this.app._commandMap[name] = this
     } else if (previous !== this) {
-      throw new Error(errors.DUPLICATE_COMMAND)
+      throw new Error(format('duplicate command names: "%s"', name))
     }
   }
 
-  userFields (fields: Iterable<UserField>) {
-    for (const field of fields) {
-      this._userFields.add(field)
-    }
+  [inspect.custom]() {
+    return `Command <${this.name}>`
+  }
+
+  userFields <T extends User.Field = never>(fields: Iterable<T>): Command<U | T, G, O>
+  userFields <T extends User.Field = never>(fields: (argv: ParsedArgv<never, never, O>, fields: Set<User.Field>) => Iterable<T>): Command<U | T, G, O>
+  userFields(fields: ArgvInferred<User.Field>) {
+    this._userFields.push(fields)
     return this
   }
 
-  groupFields (fields: Iterable<GroupField>) {
-    for (const field of fields) {
-      this._groupFields.add(field)
-    }
+  groupFields <T extends Group.Field = never>(fields: Iterable<T>): Command<U, G | T, O>
+  groupFields <T extends Group.Field = never>(fields: (argv: ParsedArgv<never, never, O>, fields: Set<Group.Field>) => Iterable<T>): Command<U, G | T, O>
+  groupFields(fields: ArgvInferred<Group.Field>) {
+    this._groupFields.push(fields)
     return this
   }
 
-  alias (...names: string[]) {
+  alias(...names: string[]) {
     for (const name of names) {
       this._registerAlias(name)
     }
     return this
   }
 
-  subcommand (rawName: string, config?: CommandConfig): Command
-  subcommand (rawName: string, description: string, config?: CommandConfig): Command
-  subcommand (rawName: string, ...args: [CommandConfig?] | [string, CommandConfig?]) {
+  subcommand(rawName: string, config?: CommandConfig): Command
+  subcommand(rawName: string, description: string, config?: CommandConfig): Command
+  subcommand(rawName: string, ...args: [CommandConfig?] | [string, CommandConfig?]) {
     rawName = this.name + (rawName.charCodeAt(0) === 46 ? '' : '/') + rawName
     return this.context.command(rawName, ...args as any)
   }
 
-  shortcut (name: string, config: ShortcutConfig = {}) {
-    config = this._shortcuts[name] = {
-      name,
-      command: this,
-      authority: this.config.authority,
-      ...config,
-    }
-    this.app._shortcutMap[name] = this
-    this.app._shortcuts.push(config)
-    return this
-  }
+  private _registerOption(name: string, def: string, config?: Partial<CommandOption>) {
+    const param = paramCase(name)
+    const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
+    const desc = def.slice(decl.length)
+    let syntax = decl.replace(/(?<=^|\s)(<[^<]+>|\[[^[]+\]).*/, '')
+    const bracket = decl.slice(syntax.length)
+    syntax = syntax.trim() || '--' + param
 
-  usage (text: CommandUsage) {
-    this._usage = text
-    return this
-  }
-
-  example (example: string) {
-    this._examples.push(example)
-    return this
-  }
-
-  /**
-   * Add a option for this command
-   * @param rawName raw option name(s)
-   * @param description option description
-   * @param config option config
-   */
-  option (rawName: string, config?: OptionConfig): this
-  option (rawName: string, description: string, config?: OptionConfig): this
-  option (rawName: string, ...args: [OptionConfig?] | [string, OptionConfig?]) {
-    const description = typeof args[0] === 'string' ? args.shift() as string : undefined
-    const config = args[0] as OptionConfig || {}
-    const option = parseOption(rawName, description, config, this._optsDef)
-    this._options.push(option)
-    for (const name of option.names) {
-      if (name in this._optsDef) {
-        throw new Error(errors.DUPLICATE_OPTION)
+    const names: string[] = []
+    const symbols: string[] = []
+    for (let param of syntax.trim().split(',')) {
+      param = param.trimStart()
+      const name = param.replace(/^-+/, '')
+      if (!name || !param.startsWith('-')) {
+        symbols.push(param)
+      } else {
+        names.push(name)
       }
-      this._optsDef[name] = option
     }
+
+    if (!config.value && !names.includes(param)) {
+      syntax += ', --' + param
+    }
+
+    const option = this._options[name] || (this._options[name] = {
+      ...Command.defaultOptionConfig,
+      ...config,
+      name,
+      values: {},
+      description: syntax + '  ' + bracket + desc,
+      greedy: bracket.includes('...'),
+    })
+
+    if ('value' in config) {
+      names.forEach(name => option.values[name] = config.value)
+    } else if (!bracket.trim()) {
+      option.type = 'boolean'
+    }
+
+    this._assignOption(option, names, this._optionNameMap)
+    this._assignOption(option, symbols, this._optionSymbolMap)
+    if (!this._optionNameMap[param]) {
+      this._optionNameMap[param] = option
+    }
+
     return this
   }
 
-  removeOption (name: string) {
-    name = name.replace(/^-+/, '')
-    const option = this._optsDef[name]
-    if (!option) return false
-    for (const name of option.names) {
-      delete this._optsDef[name]
+  private _assignOption(option: CommandOption, names: string[], optionMap: Record<string, CommandOption>) {
+    for (const name of names) {
+      if (name in optionMap) {
+        throw new Error(format('duplicate option names: "%s"', name))
+      }
+      optionMap[name] = option
     }
-    const index = this._options.indexOf(option)
-    this._options.splice(index, 1)
+  }
+
+  option <K extends string>(name: K, description: string, config: StringOptionConfig): Command<U, G, Extend<O, K, string>>
+  option <K extends string>(name: K, description: string, config: NumberOptionConfig): Command<U, G, Extend<O, K, number>>
+  option <K extends string>(name: K, description: string, config: BooleanOptionConfig): Command<U, G, Extend<O, K, boolean>>
+  option <K extends string>(name: K, description: string, config?: OptionConfig): Command<U, G, Extend<O, K, any>>
+  option <K extends string>(name: K, description: string, config: OptionConfig = {}) {
+    const fallbackType = typeof config.fallback as never
+    const type = config['type'] || supportedType.includes(fallbackType) && fallbackType
+    return this._registerOption(name, description, { ...config, type }) as any
+  }
+
+  removeOption <K extends string & keyof O>(name: K) {
+    if (!this._options[name]) return false
+    const option = this._options[name]
+    delete this._options[name]
+    for (const key in this._optionNameMap) {
+      if (this._optionNameMap[key] === option) {
+        delete this._optionNameMap[key]
+      }
+    }
+    for (const key in this._optionSymbolMap) {
+      if (this._optionSymbolMap[key] === option) {
+        delete this._optionSymbolMap[key]
+      }
+    }
     return true
   }
 
-  action (callback: (this: this, options: ParsedCommandLine, ...args: string[]) => any) {
+  action(callback: CommandAction<U, G, O>) {
     this._action = callback
     return this
   }
 
-  getConfig <K extends keyof CommandConfig> (key: K, meta: Meta<'message'>): Exclude<CommandConfig[K], (user: UserData) => any> {
-    const value = this.config[key] as any
-    return typeof value === 'function' ? value(meta.$user) : value
-  }
-
-  parse (source: string) {
-    return parseLine(source, this._argsDef, this._optsDef)
-  }
-
-  async execute (argv: ParsedCommandLine, next: NextFunction = noop) {
-    const options = argv.options || (argv.options = {})
-    const unknown = argv.unknown || (argv.unknown = [])
-    const args = argv.args || (argv.args = [])
-
-    this.app.emitEvent(argv.meta, 'before-command', argv)
-
-    // show help when use `-h, --help` or when there is no action
-    if (!this._action || options.help && !this.config.noHelpOption) {
-      return this.context.runCommand('help', argv.meta, [this.name])
-    }
-
-    // check argument count
-    if (this.config.checkArgCount) {
-      const nextArg = this._argsDef[args.length]
-      if (nextArg?.required) {
-        return this._sendHint(CommandHint.INSUFFICIENT_ARGUMENTS, argv.meta)
-      }
-      const finalArg = this._argsDef[this._argsDef.length - 1]
-      if (args.length > this._argsDef.length && !finalArg.noSegment && !finalArg.variadic) {
-        return this._sendHint(CommandHint.REDUNANT_ARGUMENTS, argv.meta)
-      }
-    }
-
-    // check unknown options
-    if (this.config.checkUnknown && unknown.length) {
-      return this._sendHint(CommandHint.UNKNOWN_OPTIONS, argv.meta, unknown.join(', '))
-    }
-
-    // check required options
-    if (this.config.checkRequired) {
-      const absent = this._options.find((option) => {
-        return option.required && !(option.longest in options)
-      })
-      if (absent) {
-        return this._sendHint(CommandHint.REQUIRED_OPTIONS, argv.meta, absent.rawName)
-      }
-    }
-
-    // check authority and usage
-    const code = this._checkUser(argv.meta, options)
-    if (code) return this._sendHint(code, argv.meta)
-
-    // execute command
-    this.context.logger('koishi:command').debug('execute %s', this.name)
-    this.app.emitEvent(argv.meta, 'command', argv)
-
-    let skipped = false
-    argv.next = (_next) => {
-      skipped = true
-      return next(_next)
-    }
-
-    try {
-      await this._action(argv, ...args)
-      if (!skipped) this.app.emitEvent(argv.meta, 'after-command', argv)
-    } catch (error) {
-      this.app.receiver.emit('error/command', error)
-      this.app.receiver.emit('error', error)
-    }
-  }
-
-  private _sendHint (code: CommandHint, meta: Meta<'message'>, ...param: any[]) {
-    let { showWarning } = this.config
-    if (typeof showWarning === 'boolean') {
-      showWarning = -showWarning
-    }
-    if (showWarning & code) {
-      return meta.$send(format(messages[CommandHint[code]], ...param))
-    }
-  }
-
-  /** check authority and usage */
-  private _checkUser (meta: Meta<'message'>, options: Record<string, any>) {
-    const user = meta.$user
-    if (!user) return
-    let isUsage = true
-
-    // check authority
-    if (this.config.authority > user.authority) {
-      return CommandHint.LOW_AUTHORITY
-    }
-    for (const option of this._options) {
-      if (option.camels[0] in options) {
-        if (option.authority > user.authority) {
-          return CommandHint.LOW_AUTHORITY
+  private parseArg(source: string, terminator: string): ParsedArg {
+    const index = quoteStart.indexOf(source[0])
+    if (index >= 0) {
+      const capture = new RegExp(`${quoteEnd[index]}(?=[\\s${terminator}]|$)`).exec(source.slice(1))
+      if (capture) {
+        return {
+          quoted: true,
+          content: source.slice(1, 1 + capture.index),
+          rest: source.slice(2 + capture.index).trimLeft(),
         }
-        if (option.notUsage) isUsage = false
       }
     }
 
-    // check usage
-    if (isUsage) {
-      const minInterval = this.getConfig('minInterval', meta)
-      const maxUsage = this.getConfig('maxUsage', meta)
-
-      if (maxUsage < Infinity || minInterval > 0) {
-        return updateUsage(this.usageName, user, { maxUsage, minInterval })
-      }
+    const [content] = source.split(new RegExp(`[\\s${terminator}]`), 1)
+    return {
+      content,
+      quoted: false,
+      rest: source.slice(content.length).trimLeft(),
     }
   }
 
-  end () {
-    return this.context
+  private parseRest(source: string, terminator: string): ParsedArg {
+    const index = quoteStart.indexOf(source[0])
+    if (index >= 0) {
+      const capture = terminator
+        ? new RegExp(`${quoteEnd[index]}(?=[${terminator}]|$)`).exec(source.slice(1))
+        : new RegExp(`${quoteEnd[index]}(?=$)`).exec(source.slice(1))
+      if (capture) {
+        return {
+          quoted: true,
+          content: source.slice(1, 1 + capture.index),
+          rest: source.slice(2 + capture.index).trimLeft(),
+        }
+      }
+    }
+
+    const [content] = terminator ? source.split(new RegExp(`[${terminator}]`), 1) : [source]
+    return {
+      content,
+      quoted: false,
+      rest: source.slice(content.length).trimLeft(),
+    }
+  }
+
+  private parseValue(source: string | true, quoted: boolean, { type, fallback } = {} as CommandOption) {
+    // quoted empty string
+    if (source === '' && quoted) return ''
+    // no explicit parameter
+    if (source === true || source === '') {
+      if (fallback !== undefined) return fallback
+      if (type === 'string') return ''
+      return true
+    }
+    // default behavior
+    if (type === 'number') return +source
+    if (type === 'string') return source
+    const n = +source
+    return n * 0 === 0 ? n : source
+  }
+
+  parse(message: string, terminator = ''): ParsedLine {
+    let rest = ''
+    terminator = escapeRegex(terminator)
+    const source = `${this.name} ${message}`
+    const args: string[] = []
+    const options: Record<string, any> = {}
+
+    const handleOption = (name: string, value: any) => {
+      const config = this._optionNameMap[name]
+      if (config) {
+        options[config.name] = name in config.values ? config.values[name] : value
+      } else {
+        options[camelCase(name)] = value
+      }
+    }
+
+    while (message) {
+      if (terminator.includes(message[0])) {
+        rest = message
+        break
+      }
+
+      // greedy argument
+      if (message[0] !== '-' && this._arguments[args.length]?.greedy) {
+        const arg0 = this.parseRest(message, terminator)
+        args.push(arg0.content)
+        rest = arg0.rest
+        break
+      }
+
+      // parse arg0
+      let arg0 = this.parseArg(message, terminator)
+      const arg = arg0.content
+      message = arg0.rest
+
+      let option: CommandOption
+      let names: string | string[]
+      let param: string
+      if (!arg0.quoted && (option = this._optionSymbolMap[arg])) {
+        names = [option.name]
+      } else {
+        // normal argument
+        if (arg[0] !== '-' || arg0.quoted) {
+          args.push(arg)
+          continue
+        }
+
+        // find -
+        let i = 0
+        let name: string
+        for (; i < arg.length; ++i) {
+          if (arg.charCodeAt(i) !== 45) break
+        }
+        if (arg.slice(i, i + 3) === 'no-' && !this._optionNameMap[arg.slice(i)]) {
+          name = arg.slice(i + 3)
+          handleOption(name, false)
+          continue
+        }
+
+        // find =
+        let j = i + 1
+        for (; j < arg.length; j++) {
+          if (arg.charCodeAt(j) === 61) break
+        }
+        name = arg.slice(i, j)
+        names = i > 1 ? [name] : name
+        param = arg.slice(++j)
+        option = this._optionNameMap[names[names.length - 1]]
+      }
+
+      // get parameter
+      let quoted = false
+      if (!param) {
+        const { greedy, type } = option || {}
+        if (greedy) {
+          arg0 = this.parseRest(arg0.rest, terminator)
+          param = arg0.content
+          quoted = arg0.quoted
+          rest = arg0.rest
+          message = ''
+        } else if (type !== 'boolean' && (type || message[0] !== '-')) {
+          arg0 = this.parseArg(message, terminator)
+          param = arg0.content
+          quoted = arg0.quoted
+          message = arg0.rest
+        }
+      }
+
+      // handle each name
+      for (let j = 0; j < names.length; j++) {
+        const name = names[j]
+        const config = this._optionNameMap[name]
+        const value = this.parseValue(j + 1 < names.length || param, quoted, config)
+        handleOption(name, value)
+      }
+    }
+
+    // assign default values
+    for (const { name, fallback } of Object.values(this._options)) {
+      if (fallback !== undefined && !(name in options)) {
+        options[name] = fallback
+      }
+    }
+
+    return { rest, options, args, source }
+  }
+
+  private stringifyArg(value: any) {
+    value = '' + value
+    return value.includes(' ') ? `"${value}"` : value
+  }
+
+  stringify(args: string[], options: any) {
+    let output = this.name
+    for (const key in options) {
+      const value = options[key]
+      if (value === true) {
+        output += ` --${key}`
+      } else if (value === false) {
+        output += ` --no-${key}`
+      } else {
+        output += ` --${key} ${this.stringifyArg(value)}`
+      }
+    }
+    for (const arg of args) {
+      output += ' ' + this.stringifyArg(arg)
+    }
+    return output
+  }
+
+  async execute(argv: ParsedArgv<U, G, O>) {
+    argv.command = this
+    if (!argv.options) argv.options = {} as any
+    if (!argv.args) argv.args = []
+    if (!argv.rest) argv.rest = ''
+
+    let state = 'before command'
+    const { next = noop } = argv
+    argv.next = async (fallback) => {
+      const oldState = state
+      state = ''
+      await next(fallback)
+      state = oldState
+    }
+
+    let { args, options, session, source } = argv
+    const getSource = () => source || (source = this.stringify(args, options))
+    if (logger.level >= 3) logger.debug(getSource())
+    const lastCall = this.app.options.prettyErrors && new Error().stack.split('\n', 4)[3]
+    try {
+      if (await this.app.serial(session, 'before-command', argv)) return
+      state = 'executing command'
+      const message = await this._action(argv, ...args)
+      if (message) session.$send(message)
+      state = 'after command'
+      await this.app.serial(session, 'command', argv)
+    } catch (error) {
+      if (!state) throw error
+      let { stack } = types.isNativeError(error) ? error : new Error(error as any)
+      if (lastCall) {
+        const index = error.stack.indexOf(lastCall)
+        stack = stack.slice(0, index - 1)
+      }
+      logger.warn(`${state}: ${getSource()}\n${stack}`)
+    }
+  }
+
+  dispose() {
+    for (const cmd of this.children) {
+      cmd.dispose()
+    }
+    this.context.emit('remove-command', this)
+    this._aliases.forEach(name => delete this.app._commandMap[name])
+    const index = this.app._commands.indexOf(this)
+    this.app._commands.splice(index, 1)
+    if (this.parent) {
+      const index = this.parent.children.indexOf(this)
+      this.parent.children.splice(index, 1)
+    }
   }
 }

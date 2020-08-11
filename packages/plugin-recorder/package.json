@@ -1,14 +1,18 @@
 {
   "name": "koishi-plugin-recorder",
   "description": "Save Chat Records for Koishi",
-  "version": "1.0.0",
+  "version": "2.0.0-beta.3",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "author": "Shigma <1700011071@pku.edu.cn>",
-  "license": "MIT",
+  "license": "LGPL-3.0-or-later",
   "scripts": {
     "build": "tsc -b",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "prepack": "tsc -b"
   },
   "repository": {
     "type": "git",
@@ -31,10 +35,10 @@
   ],
   "devDependencies": {
     "del": "^5.1.0",
-    "koishi-test-utils": "^3.3.0"
+    "koishi-test-utils": "^4.0.0-beta.3"
   },
   "dependencies": {
-    "koishi-core": "^1.12.0",
-    "koishi-utils": "^1.0.4"
+    "koishi-core": "^2.0.0-beta.7",
+    "koishi-utils": "^2.2.0"
   }
 }

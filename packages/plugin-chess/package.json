@@ -1,0 +1,40 @@
+{
+  "name": "koishi-plugin-chess",
+  "description": "Chess Plugin for Koishi",
+  "version": "2.0.0-beta.4",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "LGPL-3.0-or-later",
+  "scripts": {
+    "lint": "eslint src --ext .ts",
+    "prepack": "tsc -b"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/other/image-search",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "chess",
+    "game"
+  ],
+  "peerDependencies": {
+    "koishi-core": "^2.0.0-beta.7",
+    "koishi-plugin-puppeteer": "^1.0.0-beta.6",
+    "koishi-utils": "^2.2.0"
+  }
+}

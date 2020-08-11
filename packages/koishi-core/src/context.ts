@@ -1,192 +1,231 @@
-import { contain, union, intersection, difference } from 'koishi-utils'
-import { Command, CommandConfig, ParsedCommandLine } from './command'
-import { Meta, contextTypes } from './meta'
-import { EventEmitter } from 'events'
-import { Sender } from './sender'
+import { intersection, difference, Logger, defineProperty } from 'koishi-utils'
+import { Command, CommandConfig, ParsedArgv, ExecuteArgv } from './command'
+import { Session } from './session'
+import { User, Group, Database } from './database'
 import { App } from './app'
-import { Database, UserField, GroupField } from './database'
-import { messages, errors } from './messages'
-import { format } from 'util'
 
-export type NextFunction = (next?: NextFunction) => any
-export type Middleware = (meta: Meta<'message'>, next: NextFunction) => any
+export type NextFunction = (next?: NextFunction) => Promise<void>
+export type Middleware = (session: Session, next: NextFunction) => any
+export type PluginFunction <T, U = any> = (ctx: T, options: U) => void
+export type PluginObject <T, U = any> = { name?: string, apply: PluginFunction<T, U> }
+export type Plugin <T, U = any> = PluginFunction<T, U> | PluginObject<T, U>
+export type Disposable = () => void
 
-type PluginFunction <T extends Context, U = any> = (ctx: T, options: U) => void
-type PluginObject <T extends Context, U = any> = { name?: string, apply: PluginFunction<T, U> }
-export type Plugin <T extends Context = Context, U = any> = PluginFunction<T, U> | PluginObject<T, U>
-
-type Subscope = [number[], number[]]
-export type ContextScope = Subscope[]
-
-export namespace ContextScope {
-  export function stringify (scope: ContextScope) {
-    return scope.map(([include, exclude], index) => {
-      const type = contextTypes[index]
-      const sign = include ? '+' : '-'
-      const idList = include || exclude
-      return `${type}${sign}${idList.join(',')}`
-    }).filter(a => a).join(';')
-  }
-
-  export function parse (identifier: string) {
-    const scope = noopScope.slice()
-    identifier.split(';').forEach((segment) => {
-      const capture = /^(user|group|discuss)(?:([+-])(\d+(?:,\d+)*))?$/.exec(segment)
-      if (!capture) throw new Error(errors.INVALID_IDENTIFIER)
-      const [_, type, sign = '-', list] = capture
-      const idList = list ? list.split(',').map(n => +n) : []
-      scope[contextTypes[type]] = sign === '+' ? [idList, null] : [null, idList]
-    })
-    return scope
-  }
+interface ScopeSet extends Array<number> {
+  positive?: boolean
 }
 
-const noopScope: ContextScope = [[[], null], [[], null], [[], null]]
-const noopIdentifier = ContextScope.stringify(noopScope)
-
-export interface Logger {
-  warn (format: any, ...param: any): void
-  info (format: any, ...param: any): void
-  debug (format: any, ...param: any): void
-  success (format: any, ...param: any): void
-  error (format: any, ...param: any): void
+interface Scope {
+  groups: ScopeSet
+  users: ScopeSet
+  private: boolean
 }
 
-export const logTypes: (keyof Logger)[] = ['warn', 'info', 'debug', 'success', 'error']
+function joinScope(base: ScopeSet, ids: number[]) {
+  const result: ScopeSet = !ids.length ? [...base]
+    : base.positive ? intersection(ids, base) : difference(ids, base)
+  result.positive = !ids.length ? base.positive : true
+  return result
+}
 
-export type LogEvents = 'logger/warn' | 'logger/info' | 'logger/debug' | 'logger/success' | 'logger/error'
+function matchScope(base: ScopeSet, id: number) {
+  // @ts-ignore
+  return !id || !(base.positive ^ base.includes(id))
+}
 
 export class Context {
-  public app: App
-  public sender: Sender
-  public database: Database
-  public logger: (scope?: string) => Logger
-  public receiver: Receiver = new EventEmitter()
+  static readonly MIDDLEWARE_EVENT: unique symbol = Symbol('mid')
 
-  constructor (public readonly identifier: string, private readonly _scope: ContextScope) {
-    this.receiver.on('error', (error) => {
-      this.logger('koishi').warn(error)
-    })
+  private _disposables: Disposable[]
 
-    this.logger = (scope = '') => {
-      const logger = {} as Logger
-      for (const type of logTypes) {
-        logger[type] = (...args) => {
-          this.app.receiver.emit('logger', scope, format(...args), type)
-          this.app.receiver.emit(`logger/${type}` as LogEvents, scope, format(...args))
-        }
-      }
-      return logger
+  constructor(public scope: Scope, public app?: App) {
+    defineProperty(this, '_disposables', [])
+  }
+
+  get router() {
+    return this.app.server.router
+  }
+
+  get database(): Database {
+    return this.app._database
+  }
+
+  set database(database: Database) {
+    if (this.app._database && this.app._database !== database) {
+      this.logger('app').warn('ctx.database is overwritten.')
     }
+    this.app._database = database
   }
 
-  inverse () {
-    return this.app.createContext(this._scope.map(([include, exclude]) => {
-      return include ? [null, include.slice()] : [exclude.slice(), []]
-    }))
+  logger(name: string) {
+    return Logger.create(name)
   }
 
-  plus (ctx: Context) {
-    return this.app.createContext(this._scope.map(([include1, exclude1], index) => {
-      const [include2, exclude2] = ctx._scope[index]
-      return include1
-        ? include2 ? [union(include1, include2), null] : [null, difference(exclude2, include1)]
-        : [null, include2 ? difference(exclude1, include2) : intersection(exclude1, exclude2)]
-    }))
+  get bots() {
+    return this.app.server.bots
   }
 
-  minus (ctx: Context) {
-    return this.app.createContext(this._scope.map(([include1, exclude1], index) => {
-      const [include2, exclude2] = ctx._scope[index]
-      return include1
-        ? [include2 ? difference(include1, include2) : intersection(include1, exclude2), null]
-        : include2 ? [null, union(include2, exclude1)] : [difference(exclude2, exclude1), null]
-    }))
+  group(...ids: number[]) {
+    const scope = { ...this.scope }
+    scope.groups = joinScope(scope.groups, ids)
+    scope.private = false
+    return new Context(scope, this.app)
   }
 
-  intersect (ctx: Context) {
-    return this.app.createContext(this._scope.map(([include1, exclude1], index) => {
-      const [include2, exclude2] = ctx._scope[index]
-      return include1
-        ? [include2 ? intersection(include1, include2) : difference(include1, exclude2), null]
-        : include2 ? [difference(include2, exclude1), null] : [null, union(exclude1, exclude2)]
-    }))
+  user(...ids: number[]) {
+    const scope = { ...this.scope }
+    scope.users = joinScope(scope.users, ids)
+    return new Context(scope, this.app)
   }
 
-  match (meta: Meta) {
-    const [include, exclude] = this._scope[contextTypes[meta.$ctxType]]
-    return include ? include.includes(meta.$ctxId) : !exclude.includes(meta.$ctxId)
+  private(...ids: number[]) {
+    const scope = { ...this.scope }
+    scope.users = joinScope(scope.users, ids)
+    scope.groups.positive = true
+    scope.groups = []
+    return new Context(scope, this.app)
   }
 
-  contain (ctx: Context) {
-    return this._scope.every(([include1, exclude1], index) => {
-      const [include2, exclude2] = ctx._scope[index]
-      return include1
-        ? include2 && contain(include1, include2)
-        : include2 ? !intersection(include2, exclude1).length : contain(exclude2, exclude1)
-    })
+  match(session: Session) {
+    if (!session) return true
+    return matchScope(this.scope.groups, session.groupId)
+      && matchScope(this.scope.users, session.userId)
+      && (this.scope.private || session.messageType !== 'private')
   }
 
-  plugin <T extends PluginFunction<this>> (plugin: T, options?: T extends PluginFunction<this, infer U> ? U : never): this
-  plugin <T extends PluginObject<this>> (plugin: T, options?: T extends PluginObject<this, infer U> ? U : never): this
-  plugin <T extends Plugin<this>> (plugin: T, options?: T extends Plugin<this, infer U> ? U : never) {
+  plugin <T extends PluginFunction<this>>(plugin: T, options?: T extends PluginFunction<this, infer U> ? U : never): this
+  plugin <T extends PluginObject<this>>(plugin: T, options?: T extends PluginObject<this, infer U> ? U : never): this
+  plugin <T extends Plugin<this>>(plugin: T, options?: T extends Plugin<this, infer U> ? U : never) {
     if (options === false) return
-    const ctx = Object.create(this)
+    if (options === true) options = undefined
+    const ctx: this = Object.create(this)
+    defineProperty(ctx, '_disposables', [])
     if (typeof plugin === 'function') {
       (plugin as PluginFunction<this>)(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
       (plugin as PluginObject<this>).apply(ctx, options)
     } else {
-      throw new Error(errors.INVALID_PLUGIN)
+      throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
+    this._disposables.push(() => ctx.dispose())
     return this
   }
 
-  middleware (middleware: Middleware) {
-    const { maxMiddlewares } = this.app.options
-    if (this.app._middlewares.length >= maxMiddlewares) {
-      this.logger('koishi').warn(new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
-    } else {
-      this.app._middlewares.push([this, middleware])
+  async parallel <K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): Promise<void>
+  async parallel <K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
+  async parallel(...args: any[]) {
+    const tasks: Promise<any>[] = []
+    const session = typeof args[0] === 'object' ? args.shift() : null
+    const name = args.shift()
+    this.logger('dispatch').debug(name)
+    for (const [context, callback] of this.app._hooks[name] || []) {
+      if (!context.match(session)) continue
+      tasks.push(callback.apply(this, args))
     }
-    return this
+    await Promise.all(tasks)
   }
 
-  addMiddleware (middleware: Middleware) {
-    return this.middleware(middleware)
+  emit <K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): void
+  emit <K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): void
+  emit(...args: [any, ...any[]]) {
+    this.parallel(...args)
   }
 
-  prependMiddleware (middleware: Middleware) {
-    const { maxMiddlewares } = this.app.options
-    if (this.app._middlewares.length >= maxMiddlewares) {
-      this.logger('koishi').warn(new Error(format(errors.MAX_MIDDLEWARES, maxMiddlewares)))
-    } else {
-      this.app._middlewares.unshift([this, middleware])
+  async serial <K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
+  async serial <K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
+  async serial(...args: any[]) {
+    const session = typeof args[0] === 'object' ? args.shift() : null
+    const name = args.shift()
+    this.logger('dispatch').debug(name)
+    for (const [context, callback] of this.app._hooks[name] || []) {
+      if (!context.match(session)) continue
+      const result = await callback.apply(this, args)
+      if (result) return result
     }
-    return this
   }
 
-  removeMiddleware (middleware: Middleware) {
-    const index = this.app._middlewares.findIndex(([c, m]) => c === this && m === middleware)
+  bail <K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
+  bail <K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
+  bail(...args: any[]) {
+    const session = typeof args[0] === 'object' ? args.shift() : null
+    const name = args.shift()
+    this.logger('dispatch').debug(name)
+    for (const [context, callback] of this.app._hooks[name] || []) {
+      if (!context.match(session)) continue
+      const result = callback.apply(this, args)
+      if (result) return result
+    }
+  }
+
+  private getHooks <K extends keyof EventMap>(name: K) {
+    const hooks = this.app._hooks[name] || (this.app._hooks[name] = [])
+    if (hooks.length >= this.app.options.maxListeners) {
+      throw new Error('max listener count (%d) exceeded, which may be caused by a memory leak')
+    }
+    return hooks
+  }
+
+  on <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
+    return this.addListener(name, listener)
+  }
+
+  addListener <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
+    this.getHooks(name).push([this, listener])
+    const dispose = () => this.removeListener(name, listener)
+    this._disposables.push(name === 'dispose' ? listener as Disposable : dispose)
+    return dispose
+  }
+
+  before <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
+    return this.prependListener(name, listener)
+  }
+
+  prependListener <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
+    this.getHooks(name).unshift([this, listener])
+    const dispose = () => this.removeListener(name, listener)
+    this._disposables.push(name === 'dispose' ? listener as Disposable : dispose)
+    return dispose
+  }
+
+  once <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
+    const dispose = this.addListener(name, (...args: any[]) => {
+      dispose()
+      return listener.apply(this, args)
+    })
+    return dispose
+  }
+
+  off <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
+    return this.removeListener(name, listener)
+  }
+
+  removeListener <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
+    const index = (this.app._hooks[name] || []).findIndex(([context, callback]) => context === this && callback === listener)
     if (index >= 0) {
-      this.app._middlewares.splice(index, 1)
+      this.app._hooks[name].splice(index, 1)
       return true
     }
   }
 
-  onceMiddleware (middleware: Middleware, meta?: Meta) {
-    const identifier = meta ? meta.$ctxId + meta.$ctxType + meta.userId : undefined
-    const listener: Middleware = async (meta, next) => {
-      if (identifier && meta.$ctxId + meta.$ctxType + meta.userId !== identifier) return next()
-      this.removeMiddleware(listener)
-      return middleware(meta, next)
-    }
-    return this.prependMiddleware(listener)
+  middleware(middleware: Middleware) {
+    return this.addListener(Context.MIDDLEWARE_EVENT, middleware)
   }
 
-  command (rawName: string, config?: CommandConfig): Command
-  command (rawName: string, description: string, config?: CommandConfig): Command
-  command (rawName: string, ...args: [CommandConfig?] | [string, CommandConfig?]) {
+  addMiddleware(middleware: Middleware) {
+    return this.addListener(Context.MIDDLEWARE_EVENT, middleware)
+  }
+
+  prependMiddleware(middleware: Middleware) {
+    return this.prependListener(Context.MIDDLEWARE_EVENT, middleware)
+  }
+
+  removeMiddleware(middleware: Middleware) {
+    return this.removeListener(Context.MIDDLEWARE_EVENT, middleware)
+  }
+
+  command(rawName: string, config?: CommandConfig): Command
+  command(rawName: string, description: string, config?: CommandConfig): Command
+  command(rawName: string, ...args: [CommandConfig?] | [string, CommandConfig?]) {
     const description = typeof args[0] === 'string' ? args.shift() as string : undefined
     const config = args[0] as CommandConfig || {}
     if (description !== undefined) config.description = description
@@ -202,26 +241,20 @@ export class Context {
       if (command) {
         if (parent) {
           if (command === parent) {
-            throw new Error(errors.INVALID_SUBCOMMAND)
+            throw new Error('cannot set a command as its own subcommand')
           }
           if (command.parent) {
             if (command.parent !== parent) {
-              throw new Error(errors.INVALID_SUBCOMMAND)
+              throw new Error('already has subcommand')
             }
-          } else if (parent.context.contain(command.context)) {
+          } else {
             command.parent = parent
             parent.children.push(command)
-          } else {
-            throw new Error(errors.INVALID_CONTEXT)
           }
         }
         return parent = command
       }
-      const context = parent ? this.intersect(parent.context) : this
-      if (context.identifier === noopIdentifier) {
-        throw new Error(errors.INVALID_CONTEXT)
-      }
-      command = new Command(name, declaration, context)
+      command = new Command(name, declaration, this)
       if (parent) {
         command.parent = parent
         parent.children.push(command)
@@ -230,104 +263,70 @@ export class Context {
     })
 
     Object.assign(parent.config, config)
-    if (config.noHelpOption) parent.removeOption('help')
+    this._disposables.push(() => parent.dispose())
     return parent
   }
 
-  protected _getCommandByRawName (name: string) {
-    const index = name.lastIndexOf('/')
-    return this.app._commandMap[name.slice(index + 1).toLowerCase()]
-  }
-
-  getCommand (name: string, meta: Meta<'message'>) {
-    const command = this._getCommandByRawName(name)
-    if (command?.context.match(meta) && !command.getConfig('disable', meta)) {
-      return command
-    }
-  }
-
-  runCommand (name: string, meta: Meta<'message'>, args: string[] = [], options: Record<string, any> = {}, rest = '') {
-    const command = this._getCommandByRawName(name)
-    if (!command || !command.context.match(meta) || command.getConfig('disable', meta)) {
-      return meta.$send(messages.COMMAND_NOT_FOUND)
-    }
-    const unknown = Object.keys(options).filter(key => !command._optsDef[key])
-    return command.execute({ meta, command, args, options, rest, unknown })
-  }
-
-  end () {
-    return this.app
+  dispose() {
+    this._disposables.forEach(dispose => dispose())
   }
 }
 
 export interface EventMap {
-  'message' (meta: Meta<'message'>): any
-  'message/normal' (meta: Meta<'message'>): any
-  'message/notice' (meta: Meta<'message'>): any
-  'message/anonymous' (meta: Meta<'message'>): any
-  'message/friend' (meta: Meta<'message'>): any
-  'message/group' (meta: Meta<'message'>): any
-  'message/discuss' (meta: Meta<'message'>): any
-  'message/other' (meta: Meta<'message'>): any
-  'friend-add' (meta: Meta<'notice'>): any
-  'group-increase' (meta: Meta<'notice'>): any
-  'group-increase/invite' (meta: Meta<'notice'>): any
-  'group-increase/approve' (meta: Meta<'notice'>): any
-  'group-decrease' (meta: Meta<'notice'>): any
-  'group-decrease/leave' (meta: Meta<'notice'>): any
-  'group-decrease/kick' (meta: Meta<'notice'>): any
-  'group-decrease/kick-me' (meta: Meta<'notice'>): any
-  'group-upload' (meta: Meta<'notice'>): any
-  'group-admin' (meta: Meta<'notice'>): any
-  'group-admin/set' (meta: Meta<'notice'>): any
-  'group-admin/unset' (meta: Meta<'notice'>): any
-  'group-ban' (meta: Meta<'notice'>): any
-  'group-ban/ban' (meta: Meta<'notice'>): any
-  'group-ban/lift-ban' (meta: Meta<'notice'>): any
-  'request/friend' (meta: Meta<'request'>): any
-  'request/group/add' (meta: Meta<'request'>): any
-  'request/group/invite' (meta: Meta<'request'>): any
-  'heartbeat' (meta: Meta<'meta_event'>): any
-  'lifecycle' (meta: Meta<'meta_event'>): any
-  'lifecycle/enable' (meta: Meta<'meta_event'>): any
-  'lifecycle/disable' (meta: Meta<'meta_event'>): any
-  'lifecycle/connect' (meta: Meta<'meta_event'>): any
-  'before-user' (fields: Set<UserField>, argv: ParsedCommandLine): any
-  'before-group' (fields: Set<GroupField>, argv: ParsedCommandLine): any
-  'attach-user' (meta: Meta<'message'>): any
-  'attach-group' (meta: Meta<'message'>): any
-  'send' (meta: Meta<'send'>): any
-  'before-send' (meta: Meta<'send'>): any
-  'before-command' (argv: ParsedCommandLine): any
-  'command' (argv: ParsedCommandLine): any
-  'after-command' (argv: ParsedCommandLine): any
-  'after-middleware' (meta: Meta<'message'>): any
-  'error' (error: Error): any
-  'error/command' (error: Error): any
-  'error/middleware' (error: Error): any
-  'logger' (scope: string, message: string, type: keyof Logger): any
-  'logger/debug' (scope: string, message: string): any
-  'logger/info' (scope: string, message: string): any
-  'logger/error' (scope: string, message: string): any
-  'logger/warn' (scope: string, message: string): any
-  'logger/success' (scope: string, message: string): any
-  'ready' (): any
-  'before-connect' (): any
-  'connect' (): any
-  'before-disconnect' (): any
-  'disconnect' (): any
+  [Context.MIDDLEWARE_EVENT]: Middleware
 
-  // TODO: deprecated events
-  'attach' (meta: Meta<'message'>): any
+  // CQHTTP events
+  'message' (session: Session<never, never, 'message'>): void
+  'message/normal' (session: Session<never, never, 'message'>): void
+  'message/notice' (session: Session<never, never, 'message'>): void
+  'message/anonymous' (session: Session<never, never, 'message'>): void
+  'message/friend' (session: Session<never, never, 'message'>): void
+  'message/group' (session: Session<never, never, 'message'>): void
+  'message/other' (session: Session<never, never, 'message'>): void
+  'friend-add' (session: Session<never, never, 'notice'>): void
+  'group-increase' (session: Session<never, never, 'notice'>): void
+  'group-increase/invite' (session: Session<never, never, 'notice'>): void
+  'group-increase/approve' (session: Session<never, never, 'notice'>): void
+  'group-decrease' (session: Session<never, never, 'notice'>): void
+  'group-decrease/leave' (session: Session<never, never, 'notice'>): void
+  'group-decrease/kick' (session: Session<never, never, 'notice'>): void
+  'group-decrease/kick-me' (session: Session<never, never, 'notice'>): void
+  'group-upload' (session: Session<never, never, 'notice'>): void
+  'group-admin' (session: Session<never, never, 'notice'>): void
+  'group-admin/set' (session: Session<never, never, 'notice'>): void
+  'group-admin/unset' (session: Session<never, never, 'notice'>): void
+  'group-ban' (session: Session<never, never, 'notice'>): void
+  'group-ban/ban' (session: Session<never, never, 'notice'>): void
+  'group-ban/lift-ban' (session: Session<never, never, 'notice'>): void
+  'group_recall' (session: Session<never, never, 'notice'>): void
+  'request/friend' (session: Session<never, never, 'request'>): void
+  'request/group/add' (session: Session<never, never, 'request'>): void
+  'request/group/invite' (session: Session<never, never, 'request'>): void
+  'heartbeat' (session: Session<never, never, 'meta_event'>): void
+  'lifecycle' (session: Session<never, never, 'meta_event'>): void
+  'lifecycle/enable' (session: Session<never, never, 'meta_event'>): void
+  'lifecycle/disable' (session: Session<never, never, 'meta_event'>): void
+  'lifecycle/connect' (session: Session<never, never, 'meta_event'>): void
+
+  // Koishi events
+  'parse' (message: string, session: Session, builtin: boolean, terminator: string): void | ExecuteArgv
+  'before-attach-user' (session: Session, fields: Set<User.Field>): void
+  'before-attach-group' (session: Session, fields: Set<Group.Field>): void
+  'attach-user' (session: Session): void | boolean | Promise<void | boolean>
+  'attach-group' (session: Session): void | boolean | Promise<void | boolean>
+  'attach' (session: Session): void | Promise<void>
+  'send' (session: Session): void | Promise<void>
+  'before-send' (session: Session): void | boolean
+  'before-command' (argv: ParsedArgv): void | boolean | Promise<void | boolean>
+  'command' (argv: ParsedArgv): void | Promise<void>
+  'after-middleware' (session: Session): void
+  'new-command' (cmd: Command): void
+  'remove-command' (cmd: Command): void
+  'before-connect' (): void | Promise<void>
+  'connect' (): void
+  'before-disconnect' (): void | Promise<void>
+  'disconnect' (): void
+  'dispose' (): void
 }
 
 export type Events = keyof EventMap
-
-export interface Receiver extends EventEmitter {
-  on <K extends Events> (event: K, listener: EventMap[K]): this
-  once <K extends Events> (event: K, listener: EventMap[K]): this
-  off <K extends Events> (event: K, listener: EventMap[K]): this
-  addListener <K extends Events> (event: K, listener: EventMap[K]): this
-  removeListener <K extends Events> (event: K, listener: EventMap[K]): this
-  emit <K extends Events> (event: K, ...args: Parameters<EventMap[K]>): boolean
-}
