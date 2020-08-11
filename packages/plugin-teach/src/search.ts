@@ -49,7 +49,6 @@ export default function apply(ctx: Context) {
 
   ctx.before('dialogue/validate', (argv) => {
     if (!argv.options.search) {
-      delete argv.options.R
       delete argv.options.recursive
     }
   })
@@ -164,7 +163,7 @@ async function showSearch(argv: Dialogue.Argv) {
   const dialogues = await Dialogue.fromTest(ctx, test)
 
   if (pipe) {
-    if (!dialogues.length) return session.$send('没有搜索到任何问答。')
+    if (!dialogues.length) return '没有搜索到任何问答。'
     const command = ctx.command('teach')
     const argv = { ...command.parse(pipe), session, command }
     const target = argv.options['target'] = dialogues.map(d => d.id).join(',')
@@ -177,22 +176,8 @@ async function showSearch(argv: Dialogue.Argv) {
     await argv.ctx.parallel('dialogue/search', argv, test, dialogues)
   }
 
-  function sendResult(title: string, output: string[], suffix?: string) {
-    if (output.length <= itemsPerPage) {
-      output.unshift(title + '：')
-      if (suffix) output.push(suffix)
-    } else {
-      const pageCount = Math.ceil(output.length / itemsPerPage)
-      output = output.slice((page - 1) * itemsPerPage, page * itemsPerPage)
-      output.unshift(title + `（第 ${page}/${pageCount} 页）：`)
-      if (suffix) output.push(suffix)
-      output.push('可以使用 /+页码 以调整输出的条目页数。')
-    }
-    return session.$send(output.join('\n'))
-  }
-
   if (!question && !answer) {
-    if (!dialogues.length) return session.$send('没有搜索到任何回答，尝试切换到其他环境。')
+    if (!dialogues.length) return '没有搜索到任何回答，尝试切换到其他环境。'
     return sendResult('全部问答如下', formatQuestionAnswers(argv, dialogues))
   }
 
@@ -245,6 +230,20 @@ async function showSearch(argv: Dialogue.Argv) {
   } else {
     if (!dialogues.length) return session.$send(`没有搜索到含有正则表达式“${original}”“${answer}”的问答。`)
     return sendResult(`问答正则表达式“${original}”“${answer}”的搜索结果如下`, output)
+  }
+
+  function sendResult(title: string, output: string[], suffix?: string) {
+    if (output.length <= itemsPerPage) {
+      output.unshift(title + '：')
+      if (suffix) output.push(suffix)
+    } else {
+      const pageCount = Math.ceil(output.length / itemsPerPage)
+      output = output.slice((page - 1) * itemsPerPage, page * itemsPerPage)
+      output.unshift(title + `（第 ${page}/${pageCount} 页）：`)
+      if (suffix) output.push(suffix)
+      output.push('可以使用 /+页码 以调整输出的条目页数。')
+    }
+    return output.join('\n')
   }
 }
 

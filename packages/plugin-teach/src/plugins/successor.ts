@@ -66,11 +66,11 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/validate', (argv) => {
-    const { options, session } = argv
+    const { options } = argv
 
     if ('setPred' in options) {
       if ('addPred' in options) {
-        return session.$send('选项 --set-pred, --add-pred 不能同时使用。')
+        return '选项 --set-pred, --add-pred 不能同时使用。'
       } else {
         argv.predecessors = split(options.setPred)
         argv.predOverwrite = true
@@ -82,7 +82,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
     if ('setSucc' in options) {
       if ('addSucc' in options) {
-        return session.$send('选项 --set-succ, --add-succ 不能同时使用。')
+        return '选项 --set-succ, --add-succ 不能同时使用。'
       } else {
         argv.successors = split(options.setSucc)
         argv.succOverwrite = true

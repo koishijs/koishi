@@ -33,8 +33,8 @@ export type Options = Dialogue.Config
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/validate' (argv: Dialogue.Argv): void | Promise<void>
-    'dialogue/execute' (argv: Dialogue.Argv): void | Promise<void>
+    'dialogue/validate' (argv: Dialogue.Argv): void | string
+    'dialogue/execute' (argv: Dialogue.Argv): void | Promise<void | string>
   }
 }
 

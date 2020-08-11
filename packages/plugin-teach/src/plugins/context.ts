@@ -50,13 +50,13 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     const { options, session } = argv
 
     if (options.disable && options.enable) {
-      return session.$send('选项 -d, -e 不能同时使用。')
+      return '选项 -d, -e 不能同时使用。'
     } else if (options.disableGlobal && options.enableGlobal) {
-      return session.$send('选项 -D, -E 不能同时使用。')
+      return '选项 -D, -E 不能同时使用。'
     } else if (options.disableGlobal && options.disable) {
-      return session.$send('选项 -d, -D 不能同时使用。')
+      return '选项 -d, -D 不能同时使用。'
     } else if (options.enable && options.enableGlobal) {
-      return session.$send('选项 -e, -E 不能同时使用。')
+      return '选项 -e, -E 不能同时使用。'
     }
 
     argv.noContextOptions = false
@@ -83,12 +83,12 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
     if ('groups' in options) {
       if (argv.noContextOptions) {
-        return session.$send('参数 -g, --groups 必须与 -d/-D/-e/-E 之一同时使用。')
+        return '参数 -g, --groups 必须与 -d/-D/-e/-E 之一同时使用。'
       } else {
         argv.groups = options.groups ? options.groups.split(',') : []
       }
     } else if (session.messageType !== 'group' && argv.partial) {
-      return session.$send('非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --groups 参数。')
+      return '非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --groups 参数。'
     }
   })
 

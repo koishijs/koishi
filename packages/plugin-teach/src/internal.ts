@@ -55,9 +55,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('redirect', '=> <answer>  重定向到其他问答')
 
   ctx.before('dialogue/validate', (argv) => {
-    const { options, session, args } = argv
+    const { options, args } = argv
     if (args.length) {
-      return session.$send('存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
+      return '存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。'
     }
 
     if (options.noRegexp) options.regexp = false
@@ -65,7 +65,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     const { answer } = options
     const question = options.question || ''
     if (/\[CQ:(?!face)/.test(question)) {
-      return session.$send('问题必须是纯文本。')
+      return '问题必须是纯文本。'
     }
 
     const { unprefixed, prefixed, appellative } = config._stripQuestion(options.question)

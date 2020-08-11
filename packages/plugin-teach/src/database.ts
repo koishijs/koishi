@@ -233,10 +233,6 @@ export function useFlag(ctx: Context, flag: keyof typeof DialogueFlag) {
     test[flag] = options[flag]
   })
 
-  ctx.on('dialogue/validate', ({ options }) => {
-    if (options['no' + capitalize(flag)]) options[flag] = false
-  })
-
   ctx.on('dialogue/modify', ({ options }: Dialogue.Argv, data: Dialogue) => {
     if (options[flag] !== undefined) {
       data.flag &= ~DialogueFlag[flag]

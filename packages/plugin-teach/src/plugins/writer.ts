@@ -38,11 +38,11 @@ export default function apply(ctx: Context) {
     if (test.writer !== undefined) conditionals.push(`\`writer\` = ${test.writer}`)
   })
 
-  ctx.on('dialogue/validate', ({ options, session }) => {
+  ctx.on('dialogue/validate', ({ options }) => {
     if (options.writer) {
       const writer = getTargetId(options.writer)
       if (!isInteger(writer) || writer <= 0) {
-        return session.$send('参数 -w, --writer 错误，请检查指令语法。')
+        return '参数 -w, --writer 错误，请检查指令语法。'
       }
       options.writer = writer
     }
