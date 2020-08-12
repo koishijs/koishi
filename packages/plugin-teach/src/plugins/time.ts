@@ -43,7 +43,7 @@ export default function apply(ctx: Context) {
     return `(\`startTime\`-${time})*(${time}-\`endTime\`)*(\`endTime\`-\`startTime\`)`
   }
 
-  ctx.on('dialogue/before-fetch', (test, conditionals) => {
+  ctx.on('dialogue/mysql', (test, conditionals) => {
     if (test.matchTime !== undefined) {
       conditionals.push(getProduct(test.matchTime) + '>=0')
     }

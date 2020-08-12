@@ -34,7 +34,7 @@ export default function apply(ctx: Context) {
   useFlag(ctx, 'frozen')
   useFlag(ctx, 'substitute')
 
-  ctx.on('dialogue/before-fetch', (test, conditionals) => {
+  ctx.on('dialogue/mysql', (test, conditionals) => {
     if (test.writer !== undefined) conditionals.push(`\`writer\` = ${test.writer}`)
   })
 

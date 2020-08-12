@@ -125,7 +125,7 @@ function review(dialogues: Dialogue[], argv: Dialogue.Argv) {
 
 async function revert(dialogues: Dialogue[], argv: Dialogue.Argv) {
   try {
-    return argv.session.$send(await Dialogue.revert(dialogues, argv))
+    return argv.session.$send(await argv.ctx.database.revertDialogues(dialogues, argv))
   } catch (err) {
     argv.ctx.logger('teach').warn(err)
     return argv.session.$send('回退问答中出现问题。')
@@ -147,7 +147,7 @@ export async function update(argv: Dialogue.Argv) {
   argv.skipped = []
   const dialogues = argv.dialogues = revert || review
     ? Object.values(pick(Dialogue.history, target)).filter(Boolean)
-    : await Dialogue.fromIds(target, argv.ctx)
+    : await ctx.database.getDialoguesById(target)
   argv.dialogueMap = Object.fromEntries(dialogues.map(d => [d.id, { ...d }]))
 
   if (search) {
@@ -174,7 +174,7 @@ export async function update(argv: Dialogue.Argv) {
   const targets = prepareTargets(argv)
 
   if (revert) {
-    const message = targets.length ? await Dialogue.revert(targets, argv) : ''
+    const message = targets.length ? await ctx.database.revertDialogues(targets, argv) : ''
     return sendResult(argv, message)
   }
 
@@ -182,7 +182,7 @@ export async function update(argv: Dialogue.Argv) {
     let message = ''
     if (targets.length) {
       const editable = targets.map(d => d.id)
-      await Dialogue.remove(editable, argv)
+      await ctx.database.removeDialogues(editable, argv)
       message = `问答 ${editable.join(', ')} 已成功删除。`
     }
     await ctx.serial('dialogue/after-modify', argv)
@@ -194,7 +194,7 @@ export async function update(argv: Dialogue.Argv) {
     for (const dialogue of targets) {
       ctx.emit('dialogue/modify', argv, dialogue)
     }
-    await Dialogue.update(targets, argv)
+    await ctx.database.updateDialogues(targets, argv)
     await ctx.serial('dialogue/after-modify', argv)
   }
 
@@ -211,7 +211,7 @@ export async function create(argv: Dialogue.Argv) {
   argv.uneditable = []
   argv.updated = []
   argv.skipped = []
-  argv.dialogues = await Dialogue.fromTest(ctx, { question, answer, regexp: false })
+  argv.dialogues = await ctx.database.getDialoguesByTest({ question, answer, regexp: false })
   await ctx.serial('dialogue/before-detail', argv)
   if (await ctx.app.serial('dialogue/before-modify', argv)) return
 
@@ -221,7 +221,7 @@ export async function create(argv: Dialogue.Argv) {
     for (const dialogue of targets) {
       ctx.emit('dialogue/modify', argv, dialogue)
     }
-    await Dialogue.update(targets, argv)
+    await ctx.database.updateDialogues(targets, argv)
     await ctx.serial('dialogue/after-modify', argv)
     return sendResult(argv)
   }
@@ -233,7 +233,7 @@ export async function create(argv: Dialogue.Argv) {
 
   try {
     ctx.emit('dialogue/modify', argv, dialogue)
-    argv.dialogues = [await Dialogue.create(dialogue, argv)]
+    argv.dialogues = [await ctx.database.createDialogue(dialogue, argv)]
 
     await ctx.serial('dialogue/after-modify', argv)
     return sendResult(argv, `问答已添加，编号为 ${argv.dialogues[0].id}。`)

@@ -52,7 +52,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   useFlag(ctx, 'context')
 
-  ctx.on('dialogue/before-fetch', ({ predecessors, stateful, noRecursive, context }, conditionals) => {
+  ctx.on('dialogue/mysql', ({ predecessors, stateful, noRecursive, context }, conditionals) => {
     if (noRecursive) {
       conditionals.push('!`predecessors`')
     } else if (predecessors !== undefined) {
@@ -121,12 +121,12 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     const { succOverwrite, successors, dialogues } = argv
     if (!successors) return
     const predecessors = dialogues.map(dialogue => '' + dialogue.id)
-    const successorDialogues = await Dialogue.fromIds(successors, argv.ctx)
+    const successorDialogues = await ctx.database.getDialoguesById(successors)
     const newTargets = successorDialogues.map(d => d.id)
     argv.unknown = difference(successors, newTargets)
 
     if (succOverwrite) {
-      for (const dialogue of await Dialogue.fromTest(ctx, { predecessors })) {
+      for (const dialogue of await ctx.database.getDialoguesByTest({ predecessors })) {
         if (!newTargets.includes(dialogue.id)) {
           newTargets.push(dialogue.id)
           successorDialogues.push(dialogue)
@@ -144,7 +144,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       }
     }
 
-    await Dialogue.update(targets, argv)
+    await ctx.database.updateDialogues(targets, argv)
   })
 
   ctx.on('dialogue/after-modify', async ({ options: { createSuccessor }, dialogues, session }) => {
@@ -169,7 +169,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       }
     }
     const dialogueMap: Record<string, Dialogue> = {}
-    for (const dialogue of await Dialogue.fromIds([...predecessors], ctx)) {
+    for (const dialogue of await ctx.database.getDialoguesById([...predecessors])) {
       dialogueMap[dialogue.id] = dialogue
     }
     for (const dialogue of dialogues) {
@@ -213,7 +213,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }).map(d => d.id)
     if (!predecessors.length) return
 
-    const successors = (await Dialogue.fromTest(ctx, {
+    const successors = (await ctx.database.getDialoguesByTest({
       ...test,
       question: undefined,
       answer: undefined,

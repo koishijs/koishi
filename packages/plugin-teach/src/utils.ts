@@ -1,12 +1,11 @@
 import { Context, Session, ParsedLine } from 'koishi-core'
 import { arrayTypes } from 'koishi-plugin-mysql'
-import { Observed, pick, difference, observe, isInteger, defineProperty } from 'koishi-utils'
+import { difference, observe, isInteger, defineProperty } from 'koishi-utils'
 
 arrayTypes.push('dialogue.groups', 'dialogue.predecessors')
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/before-fetch' (test: DialogueTest, conditionals?: string[]): void
     'dialogue/fetch' (dialogue: Dialogue, test: DialogueTest): boolean | void
     'dialogue/permit' (argv: Dialogue.Argv, dialogue: Dialogue): boolean
   }
@@ -18,10 +17,6 @@ declare module 'koishi-core/dist/database' {
   }
 }
 
-type DialogueField = keyof Dialogue
-
-type ModifyType = '添加' | '修改' | '删除'
-
 export interface Dialogue {
   id?: number
   question: string
@@ -30,7 +25,7 @@ export interface Dialogue {
   flag: number
   _weight?: number
   _capture?: RegExpExecArray
-  _type?: ModifyType
+  _type?: Dialogue.ModifyType
   _operator?: number
   _timestamp?: number
   _backup?: Readonly<Dialogue>
@@ -60,6 +55,9 @@ export enum DialogueFlag {
 }
 
 export namespace Dialogue {
+  export type ModifyType = '添加' | '修改' | '删除'
+  export type Field = keyof Dialogue
+
   export const history: Record<number, Dialogue> = []
 
   export interface Config {
@@ -83,96 +81,11 @@ export namespace Dialogue {
     unknown?: number[]
     uneditable?: number[]
   }
-
-  export async function fromIds <T extends DialogueField>(ids: number[], ctx: Context, fields?: T[]) {
-    if (!ids.length) return []
-    const dialogues = await ctx.database.select<Dialogue[]>('dialogue', fields, `\`id\` IN (${ids.join(',')})`)
-    dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
-    return dialogues
-  }
-
-  export async function fromTest(ctx: Context, test: DialogueTest) {
-    let query = 'SELECT * FROM `dialogue`'
-    const conditionals: string[] = []
-    ctx.emit('dialogue/before-fetch', test, conditionals)
-    if (conditionals.length) query += ' WHERE ' + conditionals.join(' && ')
-    const dialogues = (await ctx.database.query<Dialogue[]>(query))
-      .filter((dialogue) => !ctx.bail('dialogue/fetch', dialogue, test))
-    dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
-    return dialogues
-  }
-
-  function addHistory(dialogue: Dialogue, type: ModifyType, argv: Dialogue.Argv, revert: boolean, target = history) {
-    if (revert) return delete target[dialogue.id]
-    target[dialogue.id] = dialogue
-    const time = Date.now()
-    defineProperty(dialogue, '_timestamp', time)
-    defineProperty(dialogue, '_operator', argv.session.userId)
-    defineProperty(dialogue, '_type', type)
-    setTimeout(() => {
-      if (history[dialogue.id]?._timestamp === time) {
-        delete history[dialogue.id]
-      }
-    }, argv.config.preserveHistory || 600000)
-  }
-
-  export async function create(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
-    dialogue = await argv.ctx.database.create('dialogue', dialogue)
-    addHistory(dialogue, '添加', argv, revert)
-    return dialogue
-  }
-
-  export async function revert(dialogues: Dialogue[], argv: Dialogue.Argv) {
-    const created = dialogues.filter(d => d._type === '添加')
-    const edited = dialogues.filter(d => d._type !== '添加')
-    await Dialogue.remove(created.map(d => d.id), argv, true)
-    await Dialogue.rewrite(edited, argv)
-    return `问答 ${dialogues.map(d => d.id).sort((a, b) => a - b)} 已回退完成。`
-  }
-
-  export async function rewrite(dialogues: Dialogue[], argv: Dialogue.Argv) {
-    if (!dialogues.length) return
-    await argv.ctx.database.update('dialogue', dialogues)
-    for (const dialogue of dialogues) {
-      addHistory(dialogue, '修改', argv, true)
-    }
-  }
-
-  export async function update(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
-    const data: Partial<Dialogue>[] = []
-    const fields = new Set<DialogueField>(['id'])
-    for (const { _diff } of dialogues) {
-      for (const key in _diff) {
-        fields.add(key as DialogueField)
-      }
-    }
-    const temp: Record<number, Dialogue> = {}
-    for (const dialogue of dialogues) {
-      if (!Object.keys(dialogue._diff).length) {
-        argv.skipped.push(dialogue.id)
-      } else {
-        dialogue._diff = {}
-        argv.updated.push(dialogue.id)
-        data.push(pick(dialogue, fields))
-        addHistory(dialogue._backup, '修改', argv, false, temp)
-      }
-    }
-    await argv.ctx.database.update('dialogue', data)
-    Object.assign(history, temp)
-  }
-
-  export async function remove(ids: number[], argv: Dialogue.Argv, revert = false) {
-    if (!ids.length) return
-    await argv.ctx.database.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
-    for (const id of ids) {
-      addHistory(argv.dialogueMap[id], '删除', argv, revert)
-    }
-  }
 }
 
 const primitives = ['number', 'string', 'bigint', 'boolean', 'symbol']
 
-function clone <T>(source: T): T {
+export function clone <T>(source: T): T {
   return primitives.includes(typeof source) ? source
     : Array.isArray(source) ? source.map(clone) as any
       : Object.fromEntries(Object.entries(source).map(([key, value]) => [key, clone(value)]))
@@ -223,7 +136,7 @@ export function prepareTargets(argv: Dialogue.Argv, dialogues = argv.dialogues) 
 }
 
 export function useFlag(ctx: Context, flag: keyof typeof DialogueFlag) {
-  ctx.on('dialogue/before-fetch', (test, conditionals) => {
+  ctx.on('dialogue/mysql', (test, conditionals) => {
     if (test[flag] !== undefined) {
       conditionals.push(`!(\`flag\` & ${DialogueFlag[flag]}) = !${test[flag]}`)
     }

@@ -52,7 +52,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     return `(\`maxAffinity\` > ${affinity} && \`minAffinity\` <= ${affinity})`
   }
 
-  ctx.on('dialogue/before-fetch', (test, conditionals) => {
+  ctx.on('dialogue/mysql', (test, conditionals) => {
     if (test.matchAffinity !== undefined) {
       conditionals.push(matchAffinity(test.matchAffinity))
     }

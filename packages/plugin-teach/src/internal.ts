@@ -82,7 +82,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     if (!options.answer) delete options.answer
   })
 
-  ctx.on('dialogue/before-fetch', ({ regexp, answer, question, original }, conditionals) => {
+  ctx.on('dialogue/mysql', ({ regexp, answer, question, original }, conditionals) => {
     if (regexp) {
       if (answer !== undefined) conditionals.push('`answer` REGEXP ' + escape(answer))
       if (question !== undefined) conditionals.push('`question` REGEXP ' + escape(original))

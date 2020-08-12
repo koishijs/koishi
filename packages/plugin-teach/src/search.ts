@@ -83,7 +83,7 @@ export default function apply(ctx: Context) {
       const { prefixed, unprefixed } = argv.config._stripQuestion(answer.slice(11, -1).trimStart())
       if (unprefixed in argv.questionMap) continue
       // TODO multiple tests in one query
-      const dialogues = argv.questionMap[unprefixed] = await Dialogue.fromTest(ctx, {
+      const dialogues = argv.questionMap[unprefixed] = await ctx.database.getDialoguesByTest({
         ...test,
         regexp: null,
         question: unprefixed,
@@ -162,7 +162,7 @@ async function showSearch(argv: Dialogue.Argv) {
 
   const test: DialogueTest = { question, answer, regexp, original: options._original }
   if (ctx.bail('dialogue/before-search', argv, test)) return
-  const dialogues = await Dialogue.fromTest(ctx, test)
+  const dialogues = await ctx.database.getDialoguesByTest(test)
 
   if (pipe) {
     if (!dialogues.length) return '没有搜索到任何问答。'
