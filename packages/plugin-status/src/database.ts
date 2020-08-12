@@ -44,10 +44,10 @@ extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
 
 extendDatabase<MongoDatabase>('koishi-plugin-mongo', {
   async getActiveData() {
-    const now = new Date()
+    const $gt = new Date(new Date().getTime() - 1000 * 3600 * 24)
     const [activeGroups, activeUsers] = await Promise.all([
       this.group.find({ assignee: { $ne: null } }).count(),
-      this.user.find({ lastCall: { $gt: now } }).count(),
+      this.user.find({ lastCall: { $gt } }).count(),
     ])
     return { activeGroups, activeUsers }
   },
