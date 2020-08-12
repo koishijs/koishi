@@ -4,6 +4,7 @@ import { App, User, Group } from 'koishi-core'
 export interface Config {
   username?: string
   password?: string
+  protocol?: string
   host?: string
   port?: number
   name?: string
@@ -31,7 +32,7 @@ export default class MongoDatabase {
   }
 
   async start() {
-    let mongourl = 'mongodb://'
+    let mongourl = `${this.config.protocol}://`
     if (this.config.username) mongourl += `${this.config.username}:${this.config.password}@`
     mongourl += `${this.config.host}:${this.config.port}/${this.config.name}`
     this.client = await MongoClient.connect(
