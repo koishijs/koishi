@@ -107,11 +107,18 @@ type DatabaseExtension <T extends {}> = {
   [K in keyof Database]?: Database[K] extends (...args: infer R) => infer S ? (this: T & Database, ...args: R) => S : never
 }
 
-export function extendDatabase <T extends {}>(module: string, extension: DatabaseExtension<T>): void
-export function extendDatabase <T extends {}>(module: { prototype: T }, extension: DatabaseExtension<T>): void
-export function extendDatabase(module: any, extension: {}) {
+export function extendDatabase <T extends {}>(module: string, extension: DatabaseExtension<T>, onConstruct?: (this: T) => void): void
+export function extendDatabase <T extends {}>(module: { prototype: T }, extension: DatabaseExtension<T>, onConstruct?: (this: T) => void): void
+export function extendDatabase(module: any, extension: {}, onConstruct?: () => void) {
   try {
     const Database = typeof module === 'string' ? require(module).default : module
     Object.assign(Database.prototype, extension)
+    if (onConstruct) {
+      const construct = Database.prototype['construct']
+      Database.prototype['construct'] = function (...args: any[]) {
+        construct.apply(this, args)
+        onConstruct.call(this)
+      }
+    }
   } catch (error) {}
 }

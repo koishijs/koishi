@@ -7,36 +7,31 @@ const logger = Logger.create('mysql')
 
 export interface Config extends PoolConfig {}
 
-export const arrayTypes: string[] = []
-
-const defaultConfig: Config = {
-  typeCast(field, next) {
-    const identifier = `${field['packet'].orgTable}.${field.name}`
-    if (arrayTypes.includes(identifier)) {
-      const source = field.string()
-      return source ? source.split(',') : []
-    }
-    if (field.type === 'JSON') {
-      return JSON.parse(field.string())
-    } else if (field.type === 'BIT') {
-      return Boolean(field.buffer()?.readUInt8(0))
-    } else {
-      return next()
-    }
-  },
-}
-
 export default class MysqlDatabase {
   public pool: Pool
   public config: Config
+  public listFields: string[] = []
 
   escape = escape
   escapeId = escapeId
 
   constructor(public app: App, config: Config) {
     this.config = {
-      ...defaultConfig,
       ...config,
+      typeCast: (field, next) => {
+        const identifier = `${field['packet'].orgTable}.${field.name}`
+        if (this.listFields.includes(identifier)) {
+          const source = field.string()
+          return source ? source.split(',') : []
+        }
+        if (field.type === 'JSON') {
+          return JSON.parse(field.string())
+        } else if (field.type === 'BIT') {
+          return Boolean(field.buffer()?.readUInt8(0))
+        } else {
+          return next()
+        }
+      },
     }
   }
 
@@ -52,7 +47,7 @@ export default class MysqlDatabase {
     return keys.map((key) => {
       if (typeof data[key] !== 'object' || types.isDate(data[key])) return data[key]
       const identifier = `${prefix}.${key}`
-      if (arrayTypes.includes(identifier)) return data[key].join(',')
+      if (this.listFields.includes(identifier)) return data[key].join(',')
       return JSON.stringify(data[key])
     })
   }

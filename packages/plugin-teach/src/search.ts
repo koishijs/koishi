@@ -250,16 +250,16 @@ async function showSearch(argv: Dialogue.Argv) {
 }
 
 async function showInfo({ ctx, session }: Dialogue.Argv) {
-  const [[{
-    'COUNT(DISTINCT `question`)': questions,
-    'COUNT(*)': answers,
-  }], { totalSize, totalCount }] = await Promise.all([
-    ctx.database.query<any>('SELECT COUNT(DISTINCT `question`), COUNT(*) FROM `dialogue`'),
+  const [
+    { questions, dialogues },
+    { totalSize, totalCount },
+  ] = await Promise.all([
+    ctx.database.getDialogueStats(),
     ctx.app.getImageServerStatus(),
   ])
 
   return session.$send([
-    `共收录了 ${questions} 个问题和 ${answers} 个回答。`,
+    `共收录了 ${questions} 个问题和 ${dialogues} 个回答。`,
     `收录图片 ${totalCount} 张，总体积 ${(totalSize / (1 << 20)).toFixed(1)} MB。`,
   ].join('\n'))
 }

@@ -1,8 +1,5 @@
 import { Context, Session, ParsedLine } from 'koishi-core'
-import { arrayTypes } from 'koishi-plugin-mysql'
 import { difference, observe, isInteger, defineProperty } from 'koishi-utils'
-
-arrayTypes.push('dialogue.groups', 'dialogue.predecessors')
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {

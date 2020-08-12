@@ -4,6 +4,11 @@ import { Dialogue, clone, DialogueTest } from './utils'
 import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 import MongoDatabase from 'koishi-plugin-mongo/dist/database'
 
+interface DialogueStats {
+  questions: number
+  dialogues: number
+}
+
 declare module 'koishi-core/dist/database' {
   interface Database {
     dialogueHistory: Record<number, Dialogue>
@@ -15,6 +20,7 @@ declare module 'koishi-core/dist/database' {
     updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv): Promise<void>
     revertDialogues(dialogues: Dialogue[], argv: Dialogue.Argv): Promise<string>
     recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv): Promise<void>
+    getDialogueStats(): Promise<DialogueStats>
   }
 }
 
@@ -38,7 +44,7 @@ function addHistory(dialogue: Dialogue, type: Dialogue.ModifyType, argv: Dialogu
   }, argv.config.preserveHistory || 600000)
 }
 
-extendDatabase(MysqlDatabase, {
+extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
   async getDialoguesById(ids, fields = []) {
     if (!ids.length) return []
     const dialogues = await this.select<Dialogue[]>('dialogue', fields, `\`id\` IN (${ids.join(',')})`)
@@ -97,21 +103,31 @@ extendDatabase(MysqlDatabase, {
   async revertDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {
     const created = dialogues.filter(d => d._type === '添加')
     const edited = dialogues.filter(d => d._type !== '添加')
-    await argv.ctx.database.removeDialogues(created.map(d => d.id), argv, true)
+    await this.removeDialogues(created.map(d => d.id), argv, true)
     await this.recoverDialogues(edited, argv)
     return `问答 ${dialogues.map(d => d.id).sort((a, b) => a - b)} 已回退完成。`
   },
 
   async recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {
     if (!dialogues.length) return
-    await argv.ctx.database.update('dialogue', dialogues)
+    await this.update('dialogue', dialogues)
     for (const dialogue of dialogues) {
       addHistory(dialogue, '修改', argv, true)
     }
   },
+
+  async getDialogueStats() {
+    const [{
+      'COUNT(DISTINCT `question`)': questions,
+      'COUNT(*)': dialogues,
+    }] = await this.query<any>('SELECT COUNT(DISTINCT `question`), COUNT(*) FROM `dialogue`')
+    return { questions, dialogues }
+  },
+}, function () {
+  this.listFields.push('dialogue.groups', 'dialogue.predecessors')
 })
 
-extendDatabase(MongoDatabase, {})
+extendDatabase<MongoDatabase>('koishi-plugin-mongo', {})
 
 export default function apply(ctx: Context) {
   ctx.on('before-connect', () => {

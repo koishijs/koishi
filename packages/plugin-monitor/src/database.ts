@@ -1,4 +1,4 @@
-import { arrayTypes } from 'koishi-plugin-mysql'
+import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 import { Group, extendDatabase } from 'koishi-core'
 import { OkPacket } from 'mysql'
 
@@ -23,8 +23,6 @@ declare module 'koishi-core/dist/database' {
 
 Group.extend(() => ({ subscribe: {} }))
 
-arrayTypes.push('subscribe.names')
-
 interface SubscribeOptions {
   names?: string[]
   bilibili?: string
@@ -48,7 +46,7 @@ const subscribeKeys = [
   'twitCasting', 'twitCastingStatus',
 ] as SubscribeField[]
 
-extendDatabase('koishi-plugin-mysql', {
+extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
   async getSubscribes(ids, keys = subscribeKeys) {
     if (!ids) return this.query('SELECT * FROM `subscribe`')
     if (!ids.length) return []
@@ -74,4 +72,6 @@ extendDatabase('koishi-plugin-mysql', {
   createSubscribe(options) {
     return this.create('subscribe', options)
   },
+}, function () {
+  this.listFields.push('subscribe.names')
 })
