@@ -34,12 +34,12 @@
     "task"
   ],
   "devDependencies": {
-    "koishi-plugin-mongo": "^1.0.0-beta.1",
-    "koishi-plugin-mysql": "^2.0.0-beta.3",
+    "koishi-plugin-mongo": "^1.0.0-beta.2",
+    "koishi-plugin-mysql": "^2.0.0-beta.4",
     "koishi-test-utils": "^4.0.0-beta.3"
   },
   "dependencies": {
-    "koishi-core": "^2.0.0-beta.8",
+    "koishi-core": "^2.0.0-beta.9",
     "koishi-utils": "^2.2.0"
   }
 }

@@ -264,12 +264,10 @@ Helper.instance = function (this: Helper, instance, klass, deepTraps, toStringTa
       if (key === this.local.Symbol.toStringTag && toStringTag) return toStringTag
       if (this === Decontextify && key === host.inspect.custom) {
         return function (depth: number, options: InspectOptions) {
-          depth = Contextify.value(depth)
-          options = Contextify.value(options)
           try {
             return host.inspect(instance, options.showHidden, depth, options.colors)
           } catch (e) {
-            return Decontextify.value(e)
+            return e instanceof host.Error ? e : Decontextify.value(e)
           }
         }
       }
