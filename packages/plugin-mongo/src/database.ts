@@ -32,7 +32,7 @@ export default class MongoDatabase {
   }
 
   async start() {
-    let mongourl = `${this.config.protocol}://`
+    let mongourl = `${this.config.protocol || 'mongodb'}://`
     if (this.config.username) mongourl += `${this.config.username}:${this.config.password}@`
     mongourl += `${this.config.host}:${this.config.port}/${this.config.name}`
     this.client = await MongoClient.connect(
