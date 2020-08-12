@@ -3,7 +3,7 @@ import { randomId } from 'koishi-utils'
 import { createHmac } from 'crypto'
 import { resolve } from 'path'
 import { existsSync, writeFile, readdirSync, stat } from 'fs-extra'
-import { Dialogue } from '../database'
+import { Dialogue } from '../utils'
 import axios from 'axios'
 
 declare module 'koishi-core/dist/app' {
@@ -12,7 +12,7 @@ declare module 'koishi-core/dist/app' {
   }
 }
 
-declare module '../database' {
+declare module '../utils' {
   namespace Dialogue {
     interface Config {
       imagePath?: string

@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { DialogueFlag, Dialogue } from './database'
+import { DialogueFlag, Dialogue } from './utils'
 import { update } from './update'
 import { RegExpValidator } from 'regexpp'
 import { Logger } from 'koishi-utils'

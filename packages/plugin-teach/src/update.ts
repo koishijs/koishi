@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import { difference, deduplicate, sleep, pick, isInteger, parseTime, formatTime } from 'koishi-utils'
-import { Dialogue, DialogueFlag, prepareTargets, sendResult, split, RE_DIALOGUES } from './database'
+import { Dialogue, DialogueFlag, prepareTargets, sendResult, split, RE_DIALOGUES } from './utils'
 import { getDetails, formatDetails, formatAnswer, formatQuestionAnswers } from './search'
 
 declare module 'koishi-core/dist/context' {
@@ -14,7 +14,7 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-declare module './database' {
+declare module './utils' {
   namespace Dialogue {
     interface Config {
       detailInterval?: number

@@ -1,4 +1,4 @@
-import { isPositiveInteger, parseTeachArgs, Dialogue, DialogueTest, DialogueFlag } from './database'
+import { isPositiveInteger, parseTeachArgs, Dialogue, DialogueTest, DialogueFlag } from './utils'
 import { Context } from 'koishi-core'
 import { getTotalWeight } from './receiver'
 
@@ -16,7 +16,7 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-declare module './database' {
+declare module './utils' {
   interface Dialogue {
     _redirections: Dialogue[]
   }

@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference } from 'koishi-utils'
-import { equal, split, prepareTargets, RE_DIALOGUES, parseTeachArgs, isPositiveInteger, Dialogue, DialogueFlag, useFlag } from '../database'
+import { equal, split, prepareTargets, RE_DIALOGUES, parseTeachArgs, isPositiveInteger, Dialogue, DialogueFlag, useFlag } from '../utils'
 import { formatQuestionAnswers } from '../search'
 
 declare module '../receiver' {
@@ -9,7 +9,7 @@ declare module '../receiver' {
   }
 }
 
-declare module '../database' {
+declare module '../utils' {
   interface DialogueTest {
     stateful?: boolean
     context?: boolean

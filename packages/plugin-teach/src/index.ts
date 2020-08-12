@@ -1,7 +1,7 @@
 /* eslint-disable no-irregular-whitespace */
 
 import { Context, ExecuteArgv, Session } from 'koishi-core'
-import { Dialogue, parseTeachArgs } from './database'
+import { Dialogue, parseTeachArgs } from './utils'
 import internal from './internal'
 import receiver from './receiver'
 import search from './search'
@@ -16,7 +16,7 @@ import successor from './plugins/successor'
 import time from './plugins/time'
 import writer from './plugins/writer'
 
-export * from './database'
+export * from './utils'
 export * from './receiver'
 export * from './search'
 export * from './plugins/affinity'

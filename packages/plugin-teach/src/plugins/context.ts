@@ -1,8 +1,8 @@
 import { Context } from 'koishi-core'
 import { union, difference } from 'koishi-utils'
-import { DialogueFlag, Dialogue, equal, RE_GROUPS } from '../database'
+import { DialogueFlag, Dialogue, equal, RE_GROUPS } from '../utils'
 
-declare module '../database' {
+declare module '../utils' {
   interface DialogueTest {
     groups?: string[]
     reversed?: boolean

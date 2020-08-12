@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 
-declare module '../database' {
+declare module '../utils' {
   interface DialogueTest {
     matchTime?: number
     mismatchTime?: number

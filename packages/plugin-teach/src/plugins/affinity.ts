@@ -1,8 +1,8 @@
 import { Context, User } from 'koishi-core'
 import { isInteger } from 'koishi-utils'
-import { Dialogue } from '../database'
+import { Dialogue } from '../utils'
 
-declare module '../database' {
+declare module '../utils' {
   interface DialogueTest {
     matchAffinity?: number
     mismatchAffinity?: number

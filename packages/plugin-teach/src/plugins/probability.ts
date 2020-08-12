@@ -1,7 +1,7 @@
 import { Context } from 'koishi-core'
-import { DialogueFlag, Dialogue, isZeroToOne } from '../database'
+import { DialogueFlag, Dialogue, isZeroToOne } from '../utils'
 
-declare module '../database' {
+declare module '../utils' {
   interface Dialogue {
     probS: number
     probA: number

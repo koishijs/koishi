@@ -1,12 +1,12 @@
 import { Context } from 'koishi-core'
-import { Dialogue } from '../database'
+import { Dialogue } from '../utils'
 
 export interface ThrottleConfig {
   interval: number
   responses: number
 }
 
-declare module '../database' {
+declare module '../utils' {
   namespace Dialogue {
     interface Config {
       throttle?: ThrottleConfig | ThrottleConfig[]

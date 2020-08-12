@@ -1,8 +1,8 @@
 import { Context, getTargetId, User } from 'koishi-core'
 import { isInteger, deduplicate } from 'koishi-utils'
-import { DialogueFlag, useFlag } from '../database'
+import { DialogueFlag, useFlag } from '../utils'
 
-declare module '../database' {
+declare module '../utils' {
   interface DialogueTest {
     writer?: number
     frozen?: boolean

@@ -1,6 +1,6 @@
 import { Context, User, Session, NextFunction, Command } from 'koishi-core'
 import { CQCode, simplify, noop } from 'koishi-utils'
-import { Dialogue, DialogueTest, DialogueFlag } from './database'
+import { Dialogue, DialogueTest, DialogueFlag } from './utils'
 import escapeRegex from 'escape-string-regexp'
 
 declare module 'koishi-core/dist/context' {
@@ -36,7 +36,7 @@ interface Question {
   activated: boolean
 }
 
-declare module './database' {
+declare module './utils' {
   namespace Dialogue {
     interface Config {
       nickname?: string | string[]

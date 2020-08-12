@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { Dialogue } from '../database'
+import { Dialogue } from '../utils'
 
 export interface LoopConfig {
   participants: number
@@ -7,7 +7,7 @@ export interface LoopConfig {
   debounce?: number
 }
 
-declare module '../database' {
+declare module '../utils' {
   namespace Dialogue {
     interface Config {
       preventLoop?: number | LoopConfig | LoopConfig[]
