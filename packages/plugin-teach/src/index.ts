@@ -15,7 +15,9 @@ import probability from './plugins/probability'
 import successor from './plugins/successor'
 import time from './plugins/time'
 import writer from './plugins/writer'
+import database from './database'
 
+export * from './database'
 export * from './utils'
 export * from './receiver'
 export * from './search'
@@ -140,6 +142,7 @@ export function apply(ctx: Context, config: Dialogue.Config = {}) {
     })
 
   // features
+  ctx.plugin(database, config)
   ctx.plugin(receiver, config)
   ctx.plugin(search, config)
   ctx.plugin(update, config)
