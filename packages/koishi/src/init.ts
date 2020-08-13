@@ -12,22 +12,22 @@ async function createConfig(options) {
     type: 'select',
     message: 'Connection Type',
     choices: [
-      { title: 'HTTP', value: 'http' },
-      { title: 'WebSocket', value: 'ws' },
+      { title: 'HTTP', value: 'cqhttp:http' },
+      { title: 'WebSocket', value: 'cqhttp:ws' },
     ],
   }, {
     name: 'port',
-    type: (_, data) => data.type === 'http' ? 'number' : null,
+    type: (_, data) => data.type === 'cqhttp:http' ? 'number' : null,
     message: 'Koishi Port',
     initial: 8080,
   }, {
     name: 'server',
-    type: (_, data) => data.type === 'http' ? 'text' : null,
+    type: (_, data) => data.type === 'cqhttp:http' ? 'text' : null,
     message: 'HTTP Server',
     initial: 'http://localhost:5700',
   }, {
     name: 'server',
-    type: (_, data) => data.type === 'ws' ? 'text' : null,
+    type: (_, data) => data.type === 'cqhttp:ws' ? 'text' : null,
     message: 'WebSocket Server',
     initial: 'ws://localhost:6700',
   }, {
