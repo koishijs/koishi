@@ -53,7 +53,21 @@ export default class MysqlDatabase {
     })
   }
 
-  query = <T extends {}> (source: string, values?: any): Promise<T> => {
+  query<T extends {}>(source: string, values?: any): Promise<T>
+  query<T extends {}>(source: string[], values?: any): Promise<T>
+  async query<T extends {}>(source: string | string[], values?: any): Promise<T> {
+    if (Array.isArray(source)) {
+      if (this.config.multipleStatements) {
+        return this.query(source.join(';'), values)
+      } else {
+        const result: any = []
+        for (const sql of source) {
+          result.push(await this.query(sql, values))
+        }
+        return result
+      }
+    }
+
     return new Promise((resolve, reject) => {
       const sql = format(source, values)
       logger.debug('[sql]', sql)
@@ -67,12 +81,12 @@ export default class MysqlDatabase {
     })
   }
 
-  select = <T extends {}> (table: string, fields: readonly string[], conditional?: string, values: readonly any[] = []) => {
+  select<T extends {}>(table: string, fields: readonly string[], conditional?: string, values: readonly any[] = []) {
     logger.debug(`[select] ${table}: ${fields ? fields.join(', ') : '*'}`)
     return this.query<T>(`SELECT ${this.joinKeys(fields)} FROM \`${table}\` _${table} ${conditional ? ' WHERE ' + conditional : ''}`, values)
   }
 
-  async create <K extends TableType>(table: K, data: Partial<Tables[K]>): Promise<Tables[K]> {
+  async create<K extends TableType>(table: K, data: Partial<Tables[K]>): Promise<Tables[K]> {
     const keys = Object.keys(data)
     if (!keys.length) return
     logger.debug(`[create] ${table}: ${data}`)
@@ -83,9 +97,9 @@ export default class MysqlDatabase {
     return { ...data, id: header.insertId } as any
   }
 
-  async update <K extends TableType>(table: K, data: Partial<Tables[K]>[]): Promise<OkPacket>
-  async update <K extends TableType>(table: K, id: number | string, data: Partial<Tables[K]>): Promise<OkPacket>
-  async update <K extends TableType>(table: K, arg1: number | string | Tables[K][], data?: Partial<Tables[K]>) {
+  async update<K extends TableType>(table: K, data: Partial<Tables[K]>[]): Promise<OkPacket>
+  async update<K extends TableType>(table: K, id: number | string, data: Partial<Tables[K]>): Promise<OkPacket>
+  async update<K extends TableType>(table: K, arg1: number | string | Tables[K][], data?: Partial<Tables[K]>) {
     if (typeof arg1 === 'object') {
       if (!arg1.length) return
       const keys = Object.keys(arg1[0])
@@ -107,7 +121,7 @@ export default class MysqlDatabase {
     return header as OkPacket
   }
 
-  async count <K extends TableType>(table: K, conditional?: string) {
+  async count<K extends TableType>(table: K, conditional?: string) {
     const [{ 'COUNT(*)': count }] = await this.query(`SELECT COUNT(*) FROM ?? ${conditional ? 'WHERE ' + conditional : ''}`, [table])
     return count as number
   }
