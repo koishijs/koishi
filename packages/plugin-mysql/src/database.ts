@@ -7,7 +7,16 @@ const logger = Logger.create('mysql')
 
 export interface Config extends PoolConfig {}
 
+type MysqlColumn = string
+
+type MysqlTableMap = {
+  [T in TableType]?: string[] & {
+    [C in keyof Tables[T]]?: MysqlColumn
+  }
+}
+
 export default class MysqlDatabase {
+  static tables: MysqlTableMap = {}
   static listFields: string[] = []
 
   public pool: Pool
@@ -18,7 +27,8 @@ export default class MysqlDatabase {
 
   constructor(public app: App, config: Config) {
     this.config = {
-      ...config,
+      database: 'koishi',
+      charset: 'utf8mb4_general_ci',
       typeCast: (field, next) => {
         const identifier = `${field['packet'].orgTable}.${field.name}`
         if (MysqlDatabase.listFields.includes(identifier)) {
@@ -33,11 +43,24 @@ export default class MysqlDatabase {
           return next()
         }
       },
+      ...config,
     }
   }
 
   async start() {
     this.pool = createPool(this.config)
+    const tables = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
+    const names = new Set<TableType>(tables.map(data => data.TABLE_NAME))
+    for (const name of Object.keys(MysqlDatabase.tables) as TableType[]) {
+      if (names.has(name)) return
+      const table = MysqlDatabase.tables[name]
+      const cols = Object.keys(table).map((key) => {
+        if (+key * 0 === +key) return table[key]
+        return `\`${key}\` ${table[key]}`
+      })
+      logger.info('auto creating table %c', name)
+      await this.query(`CREATE TABLE ?? (${cols.join(',')}) COLLATE = ?`, [name, this.config.charset])
+    }
   }
 
   joinKeys = (keys: readonly string[]) => {
@@ -72,18 +95,20 @@ export default class MysqlDatabase {
       const sql = format(source, values)
       logger.debug('[sql]', sql)
       this.pool.query(sql, (error, results) => {
-        if (error) {
-          reject(error)
-        } else {
-          resolve(results)
-        }
+        if (!error) return resolve(results)
+        logger.warn(sql)
+        reject(new Error(error.message))
       })
     })
   }
 
-  select<T extends {}>(table: string, fields: readonly string[], conditional?: string, values: readonly any[] = []) {
+  select<T>(table: string, fields: readonly (T extends string ? T : string & keyof T)[], conditional?: string, values: readonly any[] = []) {
     logger.debug(`[select] ${table}: ${fields ? fields.join(', ') : '*'}`)
-    return this.query<T>(`SELECT ${this.joinKeys(fields)} FROM \`${table}\` _${table} ${conditional ? ' WHERE ' + conditional : ''}`, values)
+    const sql = 'SELECT '
+      + this.joinKeys(fields)
+      + (table.includes('.') ? `FROM ${table}` : ' FROM `' + table + `\` _${table}`)
+      + (conditional ? ' WHERE ' + conditional : '')
+    return this.query<T extends string ? Record<T, any>[] : T[]>(sql, values)
   }
 
   async create<K extends TableType>(table: K, data: Partial<Tables[K]>): Promise<Tables[K]> {

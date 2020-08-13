@@ -19,7 +19,7 @@ extendDatabase(MysqlDatabase, {
     const authority = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] ? inferFields(args[0] as any) : User.fields
     if (fields && !fields.length) return {} as any
-    const [data] = await this.select<User[]>('user', fields, '`id` = ?', [userId])
+    const [data] = await this.select<User>('user', fields, '`id` = ?', [userId])
     let fallback: User
     if (data) {
       data.id = userId
@@ -49,7 +49,7 @@ extendDatabase(MysqlDatabase, {
       fields = inferFields(args[0] as any)
     }
     if (ids && !ids.length) return []
-    return this.select<User[]>('user', fields, ids && `\`id\` IN (${ids.join(', ')})`)
+    return this.select<User>('user', fields, ids && `\`id\` IN (${ids.join(', ')})`)
   },
 
   async setUser(userId, data) {
@@ -60,7 +60,7 @@ extendDatabase(MysqlDatabase, {
     const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] as any || Group.fields
     if (fields && !fields.length) return {} as any
-    const [data] = await this.select<Group[]>('group', fields, '`id` = ?', [groupId])
+    const [data] = await this.select<Group>('group', fields, '`id` = ?', [groupId])
     let fallback: Group
     if (!data) {
       fallback = Group.create(groupId, selfId)
@@ -89,12 +89,34 @@ extendDatabase(MysqlDatabase, {
       assignees = await this.app.getSelfIds()
     }
     if (!assignees.length) return []
-    return this.select<Group[]>('group', fields, `\`assignee\` IN (${assignees.join(',')})`)
+    return this.select<Group>('group', fields, `\`assignee\` IN (${assignees.join(',')})`)
   },
 
   async setGroup(groupId, data) {
     await this.update('group', groupId, data)
   },
+})
+
+extendDatabase(MysqlDatabase, (Database) => {
+  Object.assign(Database.tables.user = [
+    'PRIMARY KEY (`id`) USING BTREE',
+    'UNIQUE INDEX `name` (`name`) USING BTREE',
+  ], {
+    id: `BIGINT(20) UNSIGNED NOT NULL COMMENT 'QQ 号'`,
+    name: `VARCHAR(50) NOT NULL COMMENT '昵称' COLLATE 'utf8mb4_general_ci'`,
+    flag: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' COMMENT '状态标签'`,
+    authority: `TINYINT(4) UNSIGNED NOT NULL DEFAULT '0' COMMENT '权限等级'`,
+    usage: `JSON NOT NULL COMMENT ''`,
+    timers: `JSON NOT NULL COMMENT ''`,
+  })
+
+  Object.assign(Database.tables.group = [
+    'PRIMARY KEY (`id`) USING BTREE',
+  ], {
+    id: `BIGINT(20) UNSIGNED NOT NULL COMMENT '群号'`,
+    flag: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' COMMENT '状态标签'`,
+    assignee: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0'`,
+  })
 })
 
 export const name = 'mysql'
