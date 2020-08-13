@@ -8,9 +8,10 @@ const logger = Logger.create('mysql')
 export interface Config extends PoolConfig {}
 
 export default class MysqlDatabase {
+  static listFields: string[] = []
+
   public pool: Pool
   public config: Config
-  public listFields: string[] = []
 
   escape = escape
   escapeId = escapeId
@@ -20,7 +21,7 @@ export default class MysqlDatabase {
       ...config,
       typeCast: (field, next) => {
         const identifier = `${field['packet'].orgTable}.${field.name}`
-        if (this.listFields.includes(identifier)) {
+        if (MysqlDatabase.listFields.includes(identifier)) {
           const source = field.string()
           return source ? source.split(',') : []
         }
@@ -47,7 +48,7 @@ export default class MysqlDatabase {
     return keys.map((key) => {
       if (typeof data[key] !== 'object' || types.isDate(data[key])) return data[key]
       const identifier = `${prefix}.${key}`
-      if (this.listFields.includes(identifier)) return data[key].join(',')
+      if (MysqlDatabase.listFields.includes(identifier)) return data[key].join(',')
       return JSON.stringify(data[key])
     })
   }
