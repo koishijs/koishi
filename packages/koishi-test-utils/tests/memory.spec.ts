@@ -1,6 +1,8 @@
 import { extendDatabase } from 'koishi-core'
 import { MemoryDatabase, testDatabase, memory, MockedApp } from '../src'
-import { expect } from 'chai'
+import { expect, use } from 'chai'
+import shallow from 'chai-shallow-deep-equal'
+use(shallow)
 
 declare module 'koishi-core/dist/database' {
   interface Database {
@@ -40,23 +42,23 @@ const app = testDatabase(new MockedApp().plugin(memory), {
 
 describe('other methods', () => {
   const { database: db } = app
-  beforeAll(() => db.store.foo = [])
+  before(() => db.store.foo = [])
 
-  test('create & remove', async () => {
-    await expect(db.getFooCount()).resolves.toBe(0)
-    await expect(db.createFoo()).resolves.toMatchObject({ id: 1 })
-    await expect(db.getFooCount()).resolves.toBe(1)
-    await expect(db.createFoo()).resolves.toMatchObject({ id: 2 })
-    await expect(db.getFooCount()).resolves.toBe(2)
-    await expect(db.removeFoo(1)).resolves.toBeUndefined()
-    await expect(db.getFooCount()).resolves.toBe(1)
-    await expect(db.createFoo()).resolves.toMatchObject({ id: 1 })
-    await expect(db.getFooCount()).resolves.toBe(2)
-    await expect(db.createFoo({ id: 100 })).resolves.toMatchObject({ id: 100 })
-    await expect(db.getFooCount()).resolves.toBe(3)
-    await expect(db.removeFoo(1)).resolves.toBeUndefined()
-    await expect(db.getFooCount()).resolves.toBe(2)
-    await expect(db.createFoo()).resolves.toMatchObject({ id: 1 })
-    await expect(db.getFooCount()).resolves.toBe(3)
+  it('create & remove', async () => {
+    await expect(db.getFooCount()).eventually.to.equal(0)
+    await expect(db.createFoo()).eventually.to.shallowDeepEqual({ id: 1 })
+    await expect(db.getFooCount()).eventually.to.equal(1)
+    await expect(db.createFoo()).eventually.to.shallowDeepEqual({ id: 2 })
+    await expect(db.getFooCount()).eventually.to.equal(2)
+    await expect(db.removeFoo(1)).eventually.to.shallowDeepEqual()
+    await expect(db.getFooCount()).eventually.to.equal(1)
+    await expect(db.createFoo()).eventually.to.shallowDeepEqual({ id: 1 })
+    await expect(db.getFooCount()).eventually.to.equal(2)
+    await expect(db.createFoo({ id: 100 })).eventually.to.shallowDeepEqual({ id: 100 })
+    await expect(db.getFooCount()).eventually.to.equal(3)
+    await expect(db.removeFoo(1)).eventually.to.shallowDeepEqual()
+    await expect(db.getFooCount()).eventually.to.equal(2)
+    await expect(db.createFoo()).eventually.to.shallowDeepEqual({ id: 1 })
+    await expect(db.getFooCount()).eventually.to.equal(3)
   })
 })

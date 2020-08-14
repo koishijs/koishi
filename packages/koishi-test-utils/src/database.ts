@@ -1,7 +1,9 @@
 import { App, User, Group } from 'koishi-core'
 import { BASE_SELF_ID } from './app'
 import { expect, use } from 'chai'
+import promised from 'chai-as-promised'
 import shallow from 'chai-shallow-deep-equal'
+use(promised)
 use(shallow)
 
 export function createArray <T>(length: number, create: (index: number) => T) {
@@ -31,7 +33,7 @@ export function testDatabase(app: App, options: TestDatabaseOptions) {
     registerLifecycle(beforeEach, options.beforeEachUser)
     registerLifecycle(afterEach, options.afterEachUser)
 
-    test('getUser with authority -1', async function () {
+    it('getUser with authority -1', async function () {
       const id = 1
       const user = await db.getUser(id, -1)
       expect(user).not.ok
@@ -39,19 +41,19 @@ export function testDatabase(app: App, options: TestDatabaseOptions) {
       // expect(count).to.equal(0)
     })
 
-    test('getUser with authority 0', async function () {
+    it('getUser with authority 0', async function () {
       const id = 2
       const user = await db.getUser(id)
       expect(user).to.shallowDeepEqual(User.create(id, 0))
     })
 
-    test('getUser with authority 1', async function () {
+    it('getUser with authority 1', async function () {
       const id = 3
       const user = await db.getUser(id, 1)
       expect(user).to.shallowDeepEqual(User.create(id, 1))
     })
 
-    test('setUser with data', async function () {
+    it('setUser with data', async function () {
       const id = 4, flag = 8
       await db.getUser(id, 1)
       await db.setUser(id, { flag })
@@ -60,34 +62,34 @@ export function testDatabase(app: App, options: TestDatabaseOptions) {
       expect(user.flag).to.equal(flag)
     })
 
-    test('setUser without data', async function () {
+    it('setUser without data', async function () {
       const id = 4
       await db.getUser(id, 1)
-      await expect(db.setUser(id, {})).eventually.not.to.throw()
+      await expect(db.setUser(id, {})).to.be.fulfilled
       const user = await db.getUser(id)
       expect(user.id).to.equal(id)
     })
 
-    test('getUserCount', async function () {
+    it('getUserCount', async function () {
       const length = 100
       await Promise.all(createArray(length, i => db.getUser(i, i % 4)))
     })
 
-    test('getUsers without arguments', async function () {
+    it('getUsers without arguments', async function () {
       const length = 100
       await Promise.all(createArray(length, i => db.getUser(i, i % 4)))
       const users = await db.getUsers()
       expect(users.length).to.equal(length * 3 / 4)
     })
 
-    test('getUsers with fields', async function () {
+    it('getUsers with fields', async function () {
       const length = 100
       await Promise.all(createArray(length, i => db.getUser(i, i % 4)))
       const users = await db.getUsers(['id'])
       expect(users.length).to.equal(length * 3 / 4)
     })
 
-    test('getUsers with ids', async function () {
+    it('getUsers with ids', async function () {
       const length = 50
       await Promise.all(createArray(length, i => db.getUser(i, i % 4)))
       await expect(db.getUsers([0], ['id'])).eventually.to.have.length(0)
@@ -103,21 +105,21 @@ export function testDatabase(app: App, options: TestDatabaseOptions) {
     registerLifecycle(beforeEach, options.beforeEachGroup)
     registerLifecycle(afterEach, options.afterEachGroup)
 
-    test('getGroup with assignee', async function () {
+    it('getGroup with assignee', async function () {
       const id = 123
       const selfId = 456
       const group = await db.getGroup(id, selfId)
       expect(group).to.shallowDeepEqual(Group.create(id, selfId))
     })
 
-    test('getGroup with fields', async function () {
+    it('getGroup with fields', async function () {
       const id = 123
       const group = await db.getGroup(id, ['assignee'])
       expect(group.id).to.equal(id)
       expect(group.assignee).to.equal(0)
     })
 
-    test('setGroup with data', async function () {
+    it('setGroup with data', async function () {
       const id = 123
       const flag = 789
       await db.getGroup(id, 1)
@@ -127,27 +129,27 @@ export function testDatabase(app: App, options: TestDatabaseOptions) {
       expect(group.flag).to.equal(flag)
     })
 
-    test('setGroup without data', async function () {
+    it('setGroup without data', async function () {
       const id = 123
       await db.getGroup(id, 1)
-      await expect(db.setGroup(id, {})).eventually.not.to.throw()
+      await expect(db.setGroup(id, {})).to.be.fulfilled
       const group = await db.getGroup(id)
       expect(group.id).to.equal(id)
     })
 
-    test('getGroupCount', async function () {
+    it('getGroupCount', async function () {
       const length = 200
       await Promise.all(createArray(length, i => db.getGroup(i, i)))
     })
 
-    test('getAllGroups with assignees', async function () {
+    it('getAllGroups with assignees', async function () {
       await Promise.all(createArray(300, i => db.getGroup(i, i % 3)))
       await expect(db.getAllGroups([0])).eventually.to.have.length(0)
       await expect(db.getAllGroups([1])).eventually.to.have.length(100)
       await expect(db.getAllGroups([1, 2])).eventually.to.have.length(200)
     })
 
-    test('getAllGroups with fields', async function () {
+    it('getAllGroups with fields', async function () {
       await Promise.all(createArray(300, i => db.getGroup(i, BASE_SELF_ID + i % 3)))
       await expect(db.getAllGroups(['id'])).eventually.to.have.length(100)
       await expect(db.getAllGroups(['id'], [BASE_SELF_ID + 1])).eventually.to.have.length(100)

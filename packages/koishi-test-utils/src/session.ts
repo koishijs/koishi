@@ -1,6 +1,5 @@
 import { Session as Meta, ResponsePayload, App } from 'koishi-core'
 import { MockedApp } from './app'
-import {} from 'koishi-adapter-cqhttp'
 import { expect } from 'chai'
 
 export const createMessageMeta = (app: App, type: 'user' | 'group', message: string, userId: number, ctxId: number) => new Meta(app, {
@@ -17,7 +16,7 @@ export const createMessageMeta = (app: App, type: 'user' | 'group', message: str
   },
 })
 
-export class Session {
+export class TestSession {
   meta: Meta
 
   constructor(public app: MockedApp, public type: 'user' | 'group', public userId: number, public ctxId: number) {
@@ -26,10 +25,10 @@ export class Session {
 
   async send(message: string) {
     const replies: string[] = []
-    function _response(data: ResponsePayload) {
-      if (data.reply) replies.push(data.reply)
+    async function $send(message: string) {
+      if (message) replies.push(message)
     }
-    await this.app.receiveMessage(new Meta(this.app, { ...this.meta, message, _response }))
+    await this.app.receiveMessage(new Meta(this.app, { ...this.meta, message, $send }))
     return replies
   }
 

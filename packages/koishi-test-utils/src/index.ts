@@ -7,7 +7,6 @@ export { utils, memory }
 export * from './app'
 export * from './database'
 export * from './memory'
-export * from './mocks'
 export * from './session'
 
 mockModule('koishi-utils', () => {

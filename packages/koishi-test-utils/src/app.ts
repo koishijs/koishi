@@ -1,30 +1,31 @@
-import { AppOptions, App, Server, Session as Meta, FileInfo } from 'koishi-core'
-import { MockedServer, RequestParams, RequestData, RequestHandler } from './mocks'
-import { Session, createMessageMeta } from './session'
-import {} from 'koishi-adapter-cqhttp'
+import { AppOptions, App, Server, Session, Bot } from 'koishi-core'
+import { TestSession, createMessageMeta } from './session'
+import { fn, Mock } from 'jest-mock'
 
-export const BASE_SELF_ID = 514
+type MethodsOf<O> = {
+  [P in keyof O]: O[P] extends (...args: any[]) => any ? P : never
+}[keyof O]
 
-class MockedAppServer extends Server {
-  mock = new MockedServer()
-
-  constructor(app: App) {
-    super(app)
-  }
-
-  _close() {}
-
-  async _listen() {
-    this.bots[0]._request = async (action, params) => {
-      return this.mock.receive(action.replace(/_async$/, ''), params)
-    }
+declare module 'koishi-core/dist/server' {
+  interface Bot {
+    mock<T extends MethodsOf<Bot>>(method: T): Bot[T] extends (...args: infer R) => T ? Mock<T, R> : never
   }
 }
 
-declare module 'koishi-core/dist/server' {
-  interface ServerTypes {
-    mock: typeof MockedAppServer
+export const BASE_SELF_ID = 514
+
+Bot.prototype.mock = function (this: Bot, method) {
+  return this[method] = fn<any, any[]>(this[method]) as any
+}
+
+class MockedAppServer extends Server {
+  constructor(app: App) {
+    super(app)
+    this.bots.forEach(bot => bot.ready = true)
   }
+
+  _close() {}
+  async _listen() {}
 }
 
 Server.types.mock = MockedAppServer
@@ -36,85 +37,27 @@ export class MockedApp extends App {
     super({ selfId: BASE_SELF_ID, type: 'mock', ...options })
   }
 
-  receive(meta: Partial<Meta>) {
-    this.server['dispatch'](new Meta(this, {
+  receive(meta: Partial<Session>) {
+    this.server.dispatch(new Session(this, {
       selfId: this.bots[0].selfId,
       ...meta,
     }))
   }
 
-  receiveFriendRequest(userId: number, flag = 'flag') {
-    this.receive({ postType: 'request', requestType: 'friend', userId, flag })
-  }
-
-  receiveGroupRequest(subType: 'add' | 'invite', userId: number, groupId = 10000, flag = 'flag') {
-    this.receive({ postType: 'request', requestType: 'group', subType, userId, groupId, flag })
-  }
-
-  receiveGroupUpload(file: FileInfo, userId: number, groupId = 10000) {
-    this.receive({ postType: 'notice', noticeType: 'group_upload', file, userId, groupId })
-  }
-
-  receiveGroupAdmin(subType: 'set' | 'unset', userId: number, groupId = 10000) {
-    this.receive({ postType: 'notice', noticeType: 'group_admin', subType, userId, groupId })
-  }
-
-  receiveGroupIncrease(subType: 'approve' | 'invite', userId: number, groupId = 10000, operatorId = 1000) {
-    this.receive({ postType: 'notice', noticeType: 'group_increase', subType, userId, groupId, operatorId })
-  }
-
-  receiveGroupDecrease(subType: 'leave' | 'kick' | 'kick_me', userId: number, groupId = 10000, operatorId = 1000) {
-    this.receive({ postType: 'notice', noticeType: 'group_decrease', subType, userId, groupId, operatorId })
-  }
-
-  receiveGroupBan(subType: 'ban' | 'lift_ban', duration: number, userId: number, groupId = 10000, operatorId = 1000) {
-    this.receive({ postType: 'notice', noticeType: 'group_ban', subType, userId, groupId, operatorId, duration })
-  }
-
-  receiveFriendAdd(userId: number) {
-    this.receive({ postType: 'notice', noticeType: 'friend_add', userId })
-  }
-
-  receiveMessage(meta: Meta): Promise<void>
+  receiveMessage(meta: Session): Promise<void>
   receiveMessage(type: 'user', message: string, userId: number): Promise<void>
   receiveMessage(type: 'group', message: string, userId: number, groupId: number): Promise<void>
-  receiveMessage(type: 'user' | 'group' | Meta, message?: string, userId?: number, ctxId: number = userId) {
+  receiveMessage(type: 'user' | 'group' | Session, message?: string, userId?: number, ctxId: number = userId) {
     return new Promise((resolve) => {
       this.once('after-middleware', () => resolve())
       this.receive(typeof type === 'string' ? createMessageMeta(this, type, message, userId, ctxId) : type)
     })
   }
 
-  clearRequests() {
-    this.server.mock.clearRequests()
-  }
-
-  shouldHaveNoRequests() {
-    this.server.mock.shouldHaveNoRequests()
-  }
-
-  shouldHaveLastRequest(action: string, params: RequestParams = {}) {
-    this.server.mock.shouldHaveLastRequest(action, params)
-  }
-
-  shouldHaveLastRequests(requests: RequestData[]) {
-    this.server.mock.shouldHaveLastRequests(requests)
-  }
-
-  shouldMatchSnapshot(name = '') {
-    this.server.mock.shouldMatchSnapshot(name)
-  }
-
-  setResponse(event: string, hanlder: RequestHandler): void
-  setResponse(event: string, data: RequestParams, retcode?: number): void
-  setResponse(event: string, arg1: any, arg2?: any) {
-    this.server.mock.setResponse(event, arg1, arg2)
-  }
-
-  createSession(type: 'user', userId: number): Session
-  createSession(type: 'group', userId: number, groupId: number): Session
+  createSession(type: 'user', userId: number): TestSession
+  createSession(type: 'group', userId: number, groupId: number): TestSession
   createSession(type: 'user' | 'group', userId: number, ctxId: number = userId) {
-    return new Session(this, type, userId, ctxId)
+    return new TestSession(this, type, userId, ctxId)
   }
 }
 
