@@ -40,9 +40,9 @@ interface FooOptions {
 }
 
 class FooDatabase {
-  constructor (public options: FooOptions) {}
+  constructor(public options: FooOptions) {}
 
-  myFunc (value: number) {
+  myFunc(value: number) {
     return this.options.value + value
   }
 }
@@ -50,17 +50,17 @@ class FooDatabase {
 interface BarOptions {}
 
 class BarDatabase {
-  constructor (public options: BarOptions) {}
+  constructor(public options: BarOptions) {}
 }
 
 injectMethods('foo', 'user', {
-  myUserFunc1 () {
+  myUserFunc1() {
     return 'my-foo-user-func'
   },
 })
 
 injectMethods('foo', 'user', {
-  myUserFunc2 () {
+  myUserFunc2() {
     return this.myUserFunc1() + '-' + this.myFunc(1)
   },
 })
@@ -69,13 +69,13 @@ registerDatabase('foo', FooDatabase)
 registerDatabase('bar', BarDatabase)
 
 injectMethods('bar', 'user', {
-  myUserFunc1 () {
+  myUserFunc1() {
     return 'my-bar-user-func'
   },
 })
 
 injectMethods('bar', 'baz', {
-  myBazFunc () {
+  myBazFunc() {
     return 'my-bar-baz-func'
   },
 })

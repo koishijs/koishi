@@ -9,9 +9,16 @@ settings:
     typescript:
       alwaysTryTypes: true
 
-extends: standard
+env:
+  node: true
+  mocha: true
+  es2020: true
+
+extends:
+  - standard
 
 plugins:
+  - mocha
   - '@typescript-eslint'
 
 rules:

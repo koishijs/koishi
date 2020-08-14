@@ -8,7 +8,7 @@ describe('Command Suggestions', () => {
   const app = new MockedApp()
   const session1 = app.createSession('user', 456)
   const session2 = app.createSession('group', 789, 987)
-  
+
   app.command('foo <text>', { checkArgCount: true })
     .action(({ meta }, bar) => {
       return meta.$send('foo' + bar)

@@ -88,7 +88,7 @@ describe('Quick Operations', () => {
     anonymous: {
       flag: 'flag',
       name: 'name',
-    }
+    },
   }
 
   const frientRequestMeta: Meta = {

@@ -4,7 +4,7 @@ import { testGroups } from '../src/utils'
 import 'koishi-database-memory'
 
 injectMethods('memory', 'dialogue', {
-  _testDialogue (test, data) {
+  _testDialogue(test, data) {
     // match question and answer
     if (test.keyword) {
       if (test.question && !data.question.includes(test.question)) return
@@ -26,11 +26,11 @@ injectMethods('memory', 'dialogue', {
     return true
   },
 
-  createDialogue (options) {
+  createDialogue(options) {
     return this.create('dialogue', options)
   },
 
-  async getDialogues (test) {
+  async getDialogues(test) {
     if (Array.isArray(test)) {
       if (!test.length) return []
       return test.map(id => this.store.dialogue[id]).filter(d => d)
@@ -41,15 +41,15 @@ injectMethods('memory', 'dialogue', {
       .filter(data => this._testDialogue(test, data))
   },
 
-  async setDialogue (id, data) {
+  async setDialogue(id, data) {
     return this.update('dialogue', id, data)
   },
 
-  async removeDialogues (ids) {
+  async removeDialogues(ids) {
     return ids.map(id => this.remove('dialogue', id))
   },
 
-  async getDialogueCount (test) {
+  async getDialogueCount(test) {
     const questionSet = new Set<string>()
     let answers = 0
     for (const id in this.store.dialogue) {

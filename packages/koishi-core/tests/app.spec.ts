@@ -14,7 +14,7 @@ describe('Server Types', () => {
   test('server', () => {
     expect(() => new App()).toThrow()
     expect(() => new App({ type: 'foo' as any })).toThrow()
-    expect(() => new App({ server: 'http:// '})).not.toThrow()
+    expect(() => new App({ server: 'http:// ' })).not.toThrow()
   })
 })
 

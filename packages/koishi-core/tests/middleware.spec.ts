@@ -6,11 +6,11 @@ const app = new MockedApp()
 let callSequence: jest.Mock[]
 let middlewares: [Context, Middleware][]
 
-function wrap <T extends (...args: any[]) => any> (callback: T) {
-  const wrapper = jest.fn(((...args: Parameters<T>) => {
+function wrap <T extends (...args: any[]) => any>(callback: T) {
+  const wrapper = jest.fn((...args: Parameters<T>) => {
     callSequence.push(wrapper)
     return callback(...args) as ReturnType<T>
-  }))
+  })
   return wrapper
 }
 

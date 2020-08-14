@@ -37,7 +37,7 @@ test('basic support', async () => {
 
 test('getUserName', async () => {
   app.plugin(info, {
-    getUserName (user, meta) {
+    getUserName(user, meta) {
       if (user.id !== meta.userId) return 'bar'
     },
   })

@@ -19,17 +19,17 @@ interface FooData {
 }
 
 extendDatabase(MemoryDatabase, {
-  async createFoo (data: Partial<FooData> = {}) {
+  async createFoo(data: Partial<FooData> = {}) {
     return await this.create('foo', data) as FooData
   },
 
-  removeFoo (id: number) {
+  removeFoo(id: number) {
     return this.remove('foo', id)
   },
 
-  getFooCount () {
+  getFooCount() {
     return this.count('foo')
-  }
+  },
 })
 
 const app = testDatabase(new MockedApp().plugin(memory), {

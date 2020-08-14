@@ -4,7 +4,7 @@ import { camelCase } from 'koishi-utils'
 
 const app = new MockedApp()
 
-function createMeta <T extends PostType> (postType: T, type: MetaTypeMap[T], subType: SubTypeMap[T], meta: Meta<T> = {}) {
+function createMeta <T extends PostType>(postType: T, type: MetaTypeMap[T], subType: SubTypeMap[T], meta: Meta<T> = {}) {
   if (!meta.selfId) meta.selfId = BASE_SELF_ID
   meta.postType = postType
   meta[camelCase(postType) + 'Type'] = type
@@ -102,7 +102,7 @@ describe('Receiver API', () => {
     expect(app.server.parseMeta(meta)).toMatchObject(['heartbeat'])
     expect(meta.$ctxType).toBeFalsy()
     expect(meta.$ctxId).toBeFalsy()
-    
+
     // make coverage happy
     expect(app.server.dispatchMeta(meta))
   })

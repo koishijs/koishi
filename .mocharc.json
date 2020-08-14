@@ -1,0 +1,6 @@
+  
+{
+  "extension": ["ts"],
+  "spec": "packages/koishi-utils/tests/*.spec.ts",
+  "require": "ts-node/register/transpile-only"
+}
