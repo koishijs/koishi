@@ -102,13 +102,15 @@ export default class MysqlDatabase {
     })
   }
 
-  select<T>(table: string, fields: readonly (T extends string ? T : string & keyof T)[], conditional?: string, values: readonly any[] = []) {
+  select<T extends string>(table: string, fields: readonly (T extends string ? T : string & keyof T)[], conditional?: string, values?: readonly any[]): Promise<Record<T, any>[]>
+  select<T extends {}>(table: string, fields: readonly (T extends string ? T : string & keyof T)[], conditional?: string, values?: readonly any[]): Promise<T[]>
+  select(table: string, fields: string[], conditional?: string, values: readonly any[] = []) {
     logger.debug(`[select] ${table}: ${fields ? fields.join(', ') : '*'}`)
     const sql = 'SELECT '
       + this.joinKeys(fields)
       + (table.includes('.') ? `FROM ${table}` : ' FROM `' + table + `\` _${table}`)
       + (conditional ? ' WHERE ' + conditional : '')
-    return this.query<T extends string ? Record<T, any>[] : T[]>(sql, values)
+    return this.query(sql, values)
   }
 
   async create<K extends TableType>(table: K, data: Partial<Tables[K]>): Promise<Tables[K]> {
