@@ -1,10 +1,12 @@
 import { MockedApp } from '../src'
+import { expect } from 'chai'
+import { fn } from 'jest-mock'
 
 const app = new MockedApp()
 
-beforeAll(() => app.start())
+before(() => app.start())
 
-afterAll(() => app.stop())
+after(() => app.stop())
 
 describe('Sender', () => {
   test('shouldHaveLastRequest', async () => {

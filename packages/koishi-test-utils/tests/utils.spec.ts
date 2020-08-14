@@ -1,5 +1,6 @@
 import { utils } from '../src'
 import * as _utils from 'koishi-utils'
+import { expect } from 'chai'
 
 test('randomPick', () => {
   utils.randomPick.mockIndex(1)

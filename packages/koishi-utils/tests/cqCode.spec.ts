@@ -1,6 +1,7 @@
 import { CQCode } from '../src'
 import { expect, use } from 'chai'
-use(require('chai-shallow-deep-equal'))
+import shallow from 'chai-shallow-deep-equal'
+use(shallow)
 
 describe('CQ Code', () => {
   it('escape', () => {

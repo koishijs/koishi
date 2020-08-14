@@ -1,7 +1,8 @@
 import { observe, noop } from '../src'
 import { expect, use } from 'chai'
 import { fn } from 'jest-mock'
-use(require('chai-shallow-deep-equal'))
+import shallow from 'chai-shallow-deep-equal'
+use(shallow)
 
 describe('Observer API', () => {
   it('type checks', () => {
