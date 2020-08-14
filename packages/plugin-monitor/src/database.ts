@@ -57,7 +57,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
     const isSingle = typeof names === 'string'
     if (isSingle) names = [names as string]
     const data = await this.select('subscribe', keys, (names as string[]).map(name => `FIND_IN_SET(${this.escape(name)}, \`names\`)`).join(' OR '))
-    return isSingle ? data[0] : data
+    return isSingle ? data[0] : data as any
   },
 
   async removeSubscribe(name) {
