@@ -1,6 +1,6 @@
 import { AppOptions, App, Server, Session, Bot } from 'koishi-core'
-import { TestSession, createMessageMeta } from './session'
 import { fn, Mock } from 'jest-mock'
+import { expect } from 'chai'
 
 type MethodsOf<O> = {
   [P in keyof O]: O[P] extends (...args: any[]) => any ? P : never
@@ -58,6 +58,56 @@ export class MockedApp extends App {
   createSession(type: 'group', userId: number, groupId: number): TestSession
   createSession(type: 'user' | 'group', userId: number, ctxId: number = userId) {
     return new TestSession(this, type, userId, ctxId)
+  }
+}
+
+export const createMessageMeta = (app: App, type: 'user' | 'group', message: string, userId: number, ctxId: number) => new Session(app, {
+  [type + 'Id']: ctxId,
+  postType: 'message',
+  messageType: type === 'user' ? 'private' : type,
+  message,
+  userId,
+  sender: {
+    sex: 'unknown',
+    age: 0,
+    userId,
+    nickname: '' + userId,
+  },
+})
+
+export class TestSession {
+  meta: Session
+
+  constructor(public app: MockedApp, public type: 'user' | 'group', public userId: number, public ctxId: number) {
+    this.meta = createMessageMeta(app, type, null, userId, ctxId)
+  }
+
+  async send(message: string) {
+    const replies: string[] = []
+    async function $send(message: string) {
+      if (message) replies.push(message)
+    }
+    await this.app.receiveMessage(new Session(this.app, { ...this.meta, message, $send }))
+    return replies
+  }
+
+  async shouldHaveReply(message: string, reply?: string) {
+    const replies = await this.send(message)
+    const lastReply = replies[replies.length - 1]
+    if (reply) {
+      return expect(lastReply).to.equal(reply)
+    } else {
+      return expect(lastReply).to.be.ok
+    }
+  }
+
+  shouldHaveNoReply(message: string) {
+    return expect(this.send(message)).to.eventually.have.length(0)
+  }
+
+  shouldMatchSnapshot(message: string) {
+    // TODO
+    // return expect(this.send(message)).resolves.toMatchSnapshot(message)
   }
 }
 

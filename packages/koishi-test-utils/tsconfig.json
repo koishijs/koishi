@@ -7,4 +7,7 @@
   "include": [
     "src",
   ],
+  "exclude": [
+    "lib",
+  ],
 }

@@ -11,7 +11,6 @@
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "LGPL-3.0-or-later",
   "scripts": {
-    "jest": "jest tests/.*\\.spec\\.ts",
     "lint": "eslint src --ext .ts",
     "prepack": "tsc -b"
   },

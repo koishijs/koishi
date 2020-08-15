@@ -1,10 +1,7 @@
 import { App, User, Group } from 'koishi-core'
 import { BASE_SELF_ID } from './app'
-import { expect, use } from 'chai'
-import promised from 'chai-as-promised'
-import shallow from 'chai-shallow-deep-equal'
-use(promised)
-use(shallow)
+import { expect } from 'chai'
+import '@shigma/chai-extended'
 
 export function createArray <T>(length: number, create: (index: number) => T) {
   return Array(length).fill(undefined).map((_, index) => create(index))
@@ -36,21 +33,19 @@ export function testDatabase(app: App, options: TestDatabaseOptions) {
     it('getUser with authority -1', async function () {
       const id = 1
       const user = await db.getUser(id, -1)
-      expect(user).not.ok
-      // const count = await db.getUserCount()
-      // expect(count).to.equal(0)
+      expect(user).not.to.be.ok
     })
 
     it('getUser with authority 0', async function () {
       const id = 2
       const user = await db.getUser(id)
-      expect(user).to.shallowDeepEqual(User.create(id, 0))
+      expect(user).to.have.shape(User.create(id, 0))
     })
 
     it('getUser with authority 1', async function () {
       const id = 3
       const user = await db.getUser(id, 1)
-      expect(user).to.shallowDeepEqual(User.create(id, 1))
+      expect(user).to.have.shape(User.create(id, 1))
     })
 
     it('setUser with data', async function () {
@@ -109,7 +104,7 @@ export function testDatabase(app: App, options: TestDatabaseOptions) {
       const id = 123
       const selfId = 456
       const group = await db.getGroup(id, selfId)
-      expect(group).to.shallowDeepEqual(Group.create(id, selfId))
+      expect(group).to.have.shape(Group.create(id, selfId))
     })
 
     it('getGroup with fields', async function () {

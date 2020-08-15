@@ -1,7 +1,6 @@
 import { CQCode } from '../src'
-import { expect, use } from 'chai'
-import shallow from 'chai-shallow-deep-equal'
-use(shallow)
+import { expect } from 'chai'
+import 'koishi-test-utils'
 
 describe('CQ Code', () => {
   it('escape', () => {
@@ -33,11 +32,11 @@ describe('CQ Code', () => {
   })
 
   it('parseAll', () => {
-    expect(CQCode.parseAll('foo[CQ:bar,text=bar]')).to.shallowDeepEqual(['foo', {
+    expect(CQCode.parseAll('foo[CQ:bar,text=bar]')).to.have.shape(['foo', {
       type: 'bar',
       data: { text: 'bar' },
     }])
-    expect(CQCode.parseAll('[CQ:bar,text=bar]baz')).to.shallowDeepEqual([{
+    expect(CQCode.parseAll('[CQ:bar,text=bar]baz')).to.have.shape([{
       type: 'bar',
       data: { text: 'bar' },
     }, 'baz'])

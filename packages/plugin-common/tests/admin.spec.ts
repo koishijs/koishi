@@ -1,22 +1,26 @@
-import { MockedApp } from 'koishi-test-utils'
-import { userFlags, groupFlags, UserFlag, GroupFlag } from 'koishi-core'
-import { admin, registerUserAction, registerGroupAction } from '../src'
-import 'koishi-database-memory'
+import { MockedApp, memory } from 'koishi-test-utils'
+import { User, Group } from 'koishi-core'
+import { expect, use } from 'chai'
+import promised from 'chai-as-promised'
+import * as admin from '../src/admin'
 
-const app = new MockedApp({ database: { memory: {} } })
+use(promised)
+
+const app = new MockedApp()
 const session = app.createSession('group', 123, 321)
 
+app.plugin(memory)
 app.plugin(admin)
-app.command('foo', { maxUsage: 10 }).action(({ meta }) => meta.$send('bar'))
-app.command('bar', { maxUsage: 10 }).action(({ meta }) => meta.$send('foo'))
+app.command('foo', { maxUsage: 10 }).action(({ session }) => session.$send('bar'))
+app.command('bar', { maxUsage: 10 }).action(({ session }) => session.$send('foo'))
 
-beforeAll(async () => {
+before(async () => {
   await app.start()
   await app.database.getUser(123, 4)
   await app.database.getUser(456, 3)
   await app.database.getUser(789, 4)
-  await app.database.getGroup(321, app.selfId)
-  await app.database.getGroup(654, app.selfId)
+  await app.database.getGroup(321, app.bots[0].selfId)
+  await app.database.getGroup(654, app.bots[0].selfId)
 })
 
 describe('basic features', () => {
@@ -45,14 +49,14 @@ describe('user operations', () => {
   })
 
   test('setFlag', async () => {
-    await session.shouldHaveReply('admin -u 456 set-flag', `可用的标记有 ${userFlags.join(', ')}。`)
+    await session.shouldHaveReply('admin -u 456 set-flag', `可用的标记有 ${User.flags.join(', ')}。`)
     await session.shouldHaveReply('admin -u 456 set-flag foo', '未找到标记 foo。')
     await session.shouldHaveReply('admin -u 456 set-flag ignore', '用户信息已修改。')
-    await expect(app.database.getUser(456)).resolves.toHaveProperty('flag', UserFlag.ignore)
+    await expect(app.database.getUser(456)).resolves.toHaveProperty('flag', User.Flag.ignore)
   })
 
   test('unsetFlag', async () => {
-    await session.shouldHaveReply('admin -u 456 unset-flag', `可用的标记有 ${userFlags.join(', ')}。`)
+    await session.shouldHaveReply('admin -u 456 unset-flag', `可用的标记有 ${User.flags.join(', ')}。`)
     await session.shouldHaveReply('admin -u 456 unset-flag foo', '未找到标记 foo。')
     await session.shouldHaveReply('admin -u 456 unset-flag ignore', '用户信息已修改。')
     await expect(app.database.getUser(456)).resolves.toHaveProperty('flag', 0)
@@ -85,28 +89,28 @@ describe('group operations', () => {
   })
 
   test('setFlag', async () => {
-    await session.shouldHaveReply('admin -G set-flag', `可用的标记有 ${groupFlags.join(', ')}。`)
+    await session.shouldHaveReply('admin -G set-flag', `可用的标记有 ${Group.Flag.join(', ')}。`)
     await session.shouldHaveReply('admin -g 654 set-flag foo', '未找到标记 foo。')
-    await session.shouldHaveReply('admin -g 654 set-flag noCommand noEmit', '群信息已修改。')
-    await expect(app.database.getGroup(654)).resolves.toHaveProperty('flag', GroupFlag.noCommand | GroupFlag.noEmit)
+    await session.shouldHaveReply('admin -g 654 set-flag noEmit', '群信息已修改。')
+    await expect(app.database.getGroup(654)).eventually.to.contain({ flag: Group.Flag.noEmit })
   })
 
   test('unsetFlag', async () => {
-    await session.shouldHaveReply('admin -G unset-flag', `可用的标记有 ${groupFlags.join(', ')}。`)
+    await session.shouldHaveReply('admin -G unset-flag', `可用的标记有 ${Group.Flag.join(', ')}。`)
     await session.shouldHaveReply('admin -g 654 unset-flag foo', '未找到标记 foo。')
-    await session.shouldHaveReply('admin -g 654 unset-flag noEmit noResponse', '群信息已修改。')
-    await expect(app.database.getGroup(654)).resolves.toHaveProperty('flag', GroupFlag.noCommand)
+    await session.shouldHaveReply('admin -g 654 unset-flag noEmit ignore', '群信息已修改。')
+    await expect(app.database.getGroup(654)).eventually.to.contain({ flag: 0 })
   })
 })
 
 describe('custom actions', () => {
   test('user action', async () => {
-    registerUserAction('test', meta => meta.$send('foo'))
+    admin.UserAction.add('test', session => session.$send('foo'))
     await session.shouldHaveReply('admin test', 'foo')
   })
 
   test('group action', async () => {
-    registerGroupAction('test', meta => meta.$send('bar'))
+    admin.GroupAction.add('test', session => session.$send('bar'))
     await session.shouldHaveReply('admin -G test', 'bar')
   })
 })

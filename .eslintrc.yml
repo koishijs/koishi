@@ -60,7 +60,6 @@ rules:
     - after
   yoda: off
   '@typescript-eslint/keyword-spacing': error
-  '@typescript-eslint/no-unused-expressions': warn
   '@typescript-eslint/space-before-function-paren':
     - error
     - anonymous: always

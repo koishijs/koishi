@@ -14,8 +14,7 @@
     "dep": "ts-node build/dep",
     "dev": "ts-node build/dev",
     "docs": "cd docs & yarn dev",
-    "jest": "ts-node build/jest",
-    "test": "ts-node build/jest koishi-utils --runInBand",
+    "test": "mocha",
     "lint": "eslint packages/*/src/**/*.ts --fix --cache",
     "pub": "ts-node build/publish",
     "pub:plugins": "yarn pub plugins",
@@ -38,7 +37,6 @@
     "cac": "^6.6.1",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "chai-shallow-deep-equal": "^1.4.6",
     "cross-spawn": "^7.0.3",
     "del": "^5.1.0",
     "eslint": "^7.6.0",
@@ -62,7 +60,6 @@
     "prompts": "^2.3.2",
     "rimraf": "^3.0.2",
     "semver": "^7.3.2",
-    "ts-jest": "^26.1.4",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.7"
   }
