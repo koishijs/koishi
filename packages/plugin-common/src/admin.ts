@@ -1,4 +1,4 @@
-import { isInteger, difference, Observed, paramCase, observe, parseTime } from 'koishi-utils'
+import { isInteger, difference, Observed, paramCase, observe, Time } from 'koishi-utils'
 import { Context, Session, getTargetId, User, Group } from 'koishi-core'
 
 type ActionCallback <T extends {}, K extends keyof T> =
@@ -83,7 +83,7 @@ UserAction.add('clearUsage', async (session, user, ...commands) => {
 
 UserAction.add('setTimer', async (session, user, name, offset) => {
   if (!name || !offset) return '参数不足。'
-  const timestamp = parseTime(offset)
+  const timestamp = Time.parseTime(offset)
   if (!timestamp) return '请输入合法的时间。'
   user.timers[name] = Date.now() + timestamp
   await user._update()

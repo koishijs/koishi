@@ -1,5 +1,5 @@
 import { format } from 'util'
-import { getDateNumber } from 'koishi-utils'
+import { Time } from 'koishi-utils'
 import { Session } from '../session'
 import { User } from '../database'
 import { Command, ParsedArgv } from '../command'
@@ -175,7 +175,7 @@ export default function apply(app: App) {
 }
 
 export function getUsage(name: string, user: Pick<User, 'usage'>) {
-  const $date = getDateNumber()
+  const $date = Time.getDateNumber()
   if (user.usage.$date !== $date) {
     user.usage = { $date }
   }

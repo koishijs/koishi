@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { difference, deduplicate, sleep, pick, isInteger, parseTime, formatTime } from 'koishi-utils'
+import { difference, deduplicate, sleep, pick, isInteger, Time } from 'koishi-utils'
 import { Dialogue, DialogueFlag, prepareTargets, sendResult, split, RE_DIALOGUES } from './utils'
 import { getDetails, formatDetails, formatAnswer, formatQuestionAnswers } from './search'
 
@@ -49,7 +49,7 @@ export default function apply(ctx: Context) {
     const { options, session } = argv
     const { includeLast, excludeLast } = options
     if (!options.review && !options.revert) return
-    const now = Date.now(), includeTime = parseTime(includeLast), excludeTime = parseTime(excludeLast)
+    const now = Date.now(), includeTime = Time.parseTime(includeLast), excludeTime = Time.parseTime(excludeLast)
     const dialogues = Object.values(Dialogue.history).filter((dialogue) => {
       if (dialogue._operator !== session.userId) return
       const offset = now - dialogue._timestamp
@@ -73,7 +73,7 @@ export default function apply(ctx: Context) {
 
   ctx.on('dialogue/detail-short', ({ _type, _timestamp }, output) => {
     if (_type) {
-      output.unshift(`${_type}-${formatTimeShort(Date.now() - _timestamp)}`)
+      output.unshift(`${_type}-${Time.formatTimeShort(Date.now() - _timestamp)}`)
     }
   })
 
@@ -85,32 +85,18 @@ export default function apply(ctx: Context) {
     }
     output.push(`回答：${answer}`)
     if (_type) {
-      output.push(`最后一次${_type}于：${formatTime(Date.now() - _timestamp)}前`)
+      output.push(`最后一次${_type}于：${Time.formatTime(Date.now() - _timestamp)}前`)
     }
   })
 }
 
 function isIntegerOrInterval(value: string) {
   const n = +value
-  return n * 0 === 0 ? !isInteger(n) || n <= 0 : !parseTime(value)
+  return n * 0 === 0 ? !isInteger(n) || n <= 0 : !Time.parseTime(value)
 }
 
 const second = 1000
 const minute = second * 60
-
-function formatTimeShort(ms: number) {
-  let result: string
-  if (ms >= minute - second / 2) {
-    ms += second / 2
-    result = Math.floor(ms / minute) + 'm'
-    if (ms % minute > second) {
-      result += Math.floor(ms % minute / second) + 's'
-    }
-  } else {
-    result = Math.round(ms / second) + 's'
-  }
-  return result
-}
 
 function review(dialogues: Dialogue[], argv: Dialogue.Argv) {
   const { session } = argv
