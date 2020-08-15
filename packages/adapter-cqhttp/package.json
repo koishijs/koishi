@@ -31,14 +31,14 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.0.0-beta.10",
-    "koishi-utils": "^2.2.0"
+    "koishi-core": "^2.0.0-beta.11",
+    "koishi-utils": "^3.0.0"
   },
   "devDependencies": {
     "@types/ms": "^0.7.31",
     "@types/ws": "^7.2.6",
     "get-port": "^5.1.1",
-    "koishi-test-utils": "^4.0.0-beta.3"
+    "koishi-test-utils": "^4.0.0-beta.4"
   },
   "dependencies": {
     "axios": "^0.19.2",
