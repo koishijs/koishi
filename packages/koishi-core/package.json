@@ -43,7 +43,7 @@
     "escape-string-regexp": "^4.0.0",
     "koa": "^2.13.0",
     "koa-bodyparser": "^4.3.0",
-    "koa-router": "^9.1.0",
+    "koa-router": "^9.4.0",
     "koishi-utils": "^2.2.0",
     "leven": "^3.1.0"
   }

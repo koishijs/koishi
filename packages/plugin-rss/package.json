@@ -31,14 +31,15 @@
     "plugin",
     "rss"
   ],
-  "devDependencies": {
+  "peerDependencies": {
     "koishi-core": "^2.0.0-beta.9",
+    "koishi-utils": "^2.2.0"
+  },
+  "devDependencies": {
     "koishi-plugin-mongo": "^1.0.0-beta.2",
     "koishi-test-utils": "^4.0.0-beta.3"
   },
   "dependencies": {
-    "koishi-utils": "^2.2.0",
-    "mongodb": "^3.6.0",
-    "rss-feed-emitter": "^3.2.1"
+    "rss-feed-emitter": "^3.2.2"
   }
 }
