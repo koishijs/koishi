@@ -1,8 +1,7 @@
 import { snakeCase } from 'koishi-utils'
 import { CQResponse } from 'koishi-adapter-cqhttp'
-import { expect, use } from 'chai'
-import shallow from 'chai-shallow-deep-equal'
-use(shallow)
+import { expect } from 'chai'
+import '@shigma/chai-extended'
 
 export type RequestParams = Record<string, any>
 export type RequestData = readonly [string, RequestParams]
@@ -21,7 +20,7 @@ export class MockedServer {
   }
 
   shouldHaveLastRequest(action: string, params: RequestParams = {}) {
-    expect(this.requests[0]).to.shallowDeepEqual([action, snakeCase(params)])
+    expect(this.requests[0]).to.have.shape([action, snakeCase(params)])
     this.clearRequests()
   }
 
@@ -32,7 +31,7 @@ export class MockedServer {
   }
 
   shouldHaveLastRequests(requests: RequestData[]) {
-    expect(this.requests.slice(0, requests.length)).to.shallowDeepEqual(requests.map(snakeCase).reverse())
+    expect(this.requests.slice(0, requests.length)).to.have.shape(requests.map(snakeCase).reverse())
     this.clearRequests()
   }
 
