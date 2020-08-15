@@ -1,6 +1,6 @@
 import { inspect, InspectOptions, format } from 'util'
 import { stderr } from 'supports-color'
-import Time from './date'
+import { Time } from './time'
 
 const colors = stderr.level < 2 ? [6, 2, 3, 4, 5, 1] : [
   20, 21, 26, 27, 32, 33, 38, 39, 40, 41, 42, 43, 44, 45, 56, 57, 62,
