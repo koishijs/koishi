@@ -3,18 +3,18 @@ import { getTargetId, getUsage, updateUsage, createUser } from 'koishi-core'
 
 describe('getTargetId', () => {
   test('with id', () => {
-    expect(getTargetId('12345')).toBe(12345)
+    expect(getTargetId('12345')).to.equal(12345)
   })
 
   test('with at', () => {
-    expect(getTargetId('[CQ:at,qq=12345]')).toBe(12345)
+    expect(getTargetId('[CQ:at,qq=12345]')).to.equal(12345)
   })
 
   test('wrong syntax', () => {
-    expect(getTargetId('')).toBeFalsy()
-    expect(getTargetId(true as any)).toBeFalsy()
-    expect(getTargetId('[CQ:at,qq=]')).toBeFalsy()
-    expect(getTargetId('foo123')).toBeFalsy()
+    expect(getTargetId('')).not.to.be.ok
+    expect(getTargetId(true as any)).not.to.be.ok
+    expect(getTargetId('[CQ:at,qq=]')).not.to.be.ok
+    expect(getTargetId('foo123')).not.to.be.ok
   })
 })
 
@@ -30,21 +30,21 @@ describe('getUsage', () => {
   })
 
   test('update usage', () => {
-    expect(updateUsage('foo', user, { maxUsage: 1, minInterval: 1000 })).toBeFalsy()
+    expect(updateUsage('foo', user, { maxUsage: 1, minInterval: 1000 })).not.to.be.ok
     const usage = getUsage('foo', user)
     expect(usage).toEqual({ count: 1, last: timestamp })
   })
 
   test('too frequent', () => {
     mockedDateNow.mockReturnValue(timestamp - 1000)
-    expect(updateUsage('foo', user)).toBeTruthy()
+    expect(updateUsage('foo', user)).to.be.ok
     const usage = getUsage('foo', user)
     expect(usage).toEqual({ count: 1, last: timestamp })
   })
 
   test('update usage 2', () => {
     mockedDateNow.mockReturnValue(timestamp)
-    expect(updateUsage('foo', user)).toBeFalsy()
+    expect(updateUsage('foo', user)).not.to.be.ok
     const usage = getUsage('foo', user)
     expect(usage).toEqual({ count: 1, last: timestamp })
   })

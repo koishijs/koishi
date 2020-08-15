@@ -93,9 +93,9 @@ export class Context {
       && (this.scope.private || session.messageType !== 'private')
   }
 
-  plugin <T extends PluginFunction<this>>(plugin: T, options?: T extends PluginFunction<this, infer U> ? U : never): this
-  plugin <T extends PluginObject<this>>(plugin: T, options?: T extends PluginObject<this, infer U> ? U : never): this
-  plugin <T extends Plugin<this>>(plugin: T, options?: T extends Plugin<this, infer U> ? U : never) {
+  plugin<T extends PluginFunction<this>>(plugin: T, options?: T extends PluginFunction<this, infer U> ? U : never): this
+  plugin<T extends PluginObject<this>>(plugin: T, options?: T extends PluginObject<this, infer U> ? U : never): this
+  plugin<T extends Plugin<this>>(plugin: T, options?: T extends Plugin<this, infer U> ? U : never) {
     if (options === false) return
     if (options === true) options = undefined
     const ctx: this = Object.create(this)
@@ -160,7 +160,7 @@ export class Context {
   private getHooks <K extends keyof EventMap>(name: K) {
     const hooks = this.app._hooks[name] || (this.app._hooks[name] = [])
     if (hooks.length >= this.app.options.maxListeners) {
-      throw new Error('max listener count (%d) exceeded, which may be caused by a memory leak')
+      this.logger('app').warn('max listener count (%d) exceeded, which may be caused by a memory leak', this.app.options.maxListeners)
     }
     return hooks
   }

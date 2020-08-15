@@ -10,16 +10,16 @@ const session2 = app.createSession('group', 456, 321)
 app.command('foo <text>', { checkArgCount: true })
   .shortcut('bar1', { args: ['bar'] })
   .shortcut('bar4', { oneArg: true, fuzzy: true })
-  .action(({ meta }, bar) => {
-    return meta.$send('foo' + bar)
+  .action(({ session }, bar) => {
+    return session.$send('foo' + bar)
   })
 
 app.command('fooo', { checkUnknown: true, checkRequired: true })
   .shortcut('bar2', { options: { text: 'bar' } })
   .shortcut('bar3', { prefix: true, fuzzy: true })
   .option('-t, --text <bar>')
-  .action(({ meta, options }) => {
-    return meta.$send('fooo' + options.text)
+  .action(({ session, options }) => {
+    return session.$send('fooo' + options.text)
   })
 
 describe('command prefix', () => {
@@ -133,7 +133,7 @@ describe('nickname prefix', () => {
 })
 
 describe('Command Execution', () => {
-  const meta: Meta<'message'> = {
+  const session: Meta<'message'> = {
     userId: 789,
     selfId: app.selfId,
     postType: 'message',
@@ -141,21 +141,21 @@ describe('Command Execution', () => {
   }
 
   // make coverage happy
-  // equal to: app.server.parseMeta(meta)
-  app.executeCommandLine('', meta)
-  const send = meta.$send = jest.fn()
+  // equal to: app.server.parseMeta(session)
+  app.executeCommandLine('', session)
+  const send = session.$send = jest.fn()
 
   beforeEach(() => send.mockClear())
 
   test('app.executeCommandLine (nonexistent)', async () => {
     const next = jest.fn()
-    await app.executeCommandLine('no-such-command', meta, next)
+    await app.executeCommandLine('no-such-command', session, next)
     expect(send).toBeCalledTimes(0)
     expect(next).toBeCalledTimes(1)
   })
 
   test('context.runCommand (nonexistent)', async () => {
-    await app.runCommand('no-such-command', meta)
+    await app.runCommand('no-such-command', session)
     expect(send).toBeCalledWith(messages.COMMAND_NOT_FOUND)
   })
 
@@ -166,7 +166,7 @@ describe('Command Execution', () => {
     const errorCommandCallback = jest.fn()
     app.on('error', errorCallback)
     app.on('error/command', errorCommandCallback)
-    await app.executeCommandLine('error-command', meta)
+    await app.executeCommandLine('error-command', session)
     expect(errorCallback).toBeCalledTimes(1)
     expect(errorCallback).toBeCalledWith(error)
     expect(errorCommandCallback).toBeCalledTimes(1)
@@ -179,28 +179,28 @@ describe('Command Execution', () => {
     const afterCommandCallback = jest.fn()
     app.on('before-command', beforeCommandCallback)
     app.on('after-command', afterCommandCallback)
-    await app.executeCommandLine('skipped-command', meta)
+    await app.executeCommandLine('skipped-command', session)
     expect(beforeCommandCallback).toBeCalledTimes(1)
     expect(afterCommandCallback).toBeCalledTimes(0)
   })
 
   test('insufficient arguments', async () => {
-    await app.runCommand('foo', meta)
+    await app.runCommand('foo', session)
     expect(send).toBeCalledWith(messages.INSUFFICIENT_ARGUMENTS)
   })
 
   test('redundant arguments', async () => {
-    await app.runCommand('foo', meta, ['bar', 'baz'])
+    await app.runCommand('foo', session, ['bar', 'baz'])
     expect(send).toBeCalledWith(messages.REDUNANT_ARGUMENTS)
   })
 
   test('required options', async () => {
-    await app.runCommand('fooo', meta)
+    await app.runCommand('fooo', session)
     expect(send).toBeCalledWith(format(messages.REQUIRED_OPTIONS, '-t, --text <bar>'))
   })
 
   test('unknown options', async () => {
-    await app.runCommand('fooo', meta, [], { text: 'bar', test: 'baz' })
+    await app.runCommand('fooo', session, [], { text: 'bar', test: 'baz' })
     expect(send).toBeCalledWith(format(messages.UNKNOWN_OPTIONS, 'test'))
   })
 })

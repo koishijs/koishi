@@ -37,6 +37,10 @@ export class MockedApp extends App {
     super({ selfId: BASE_SELF_ID, type: 'mock', ...options })
   }
 
+  get selfId() {
+    return this.bots[0].selfId
+  }
+
   receive(meta: Partial<Session>) {
     this.server.dispatch(new Session(this, {
       selfId: this.bots[0].selfId,

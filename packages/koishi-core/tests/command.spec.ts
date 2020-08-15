@@ -1,133 +1,124 @@
-import { App } from 'koishi-core'
+import { App } from 'koishi-test-utils'
+import { expect } from 'chai'
+import '@shigma/chai-extended'
 
 let app: App
 
 describe('register commands', () => {
-  beforeAll(() => app = new App())
+  before(() => app = new App())
 
-  test('constructor checks', () => {
-    expect(() => app.command('')).toThrowError()
+  it('constructor checks', () => {
+    expect(() => app.command('')).to.throw()
   })
 
-  test('context.command', () => {
+  it('context.command', () => {
+    const ctx1 = app.user(10000)
+    const ctx2 = app.group(10000)
     app.command('a')
-    app.user(10000).command('b')
-    app.group(10000).command('c')
+    ctx1.command('b')
+    ctx2.command('c')
 
     // a, b, c, help
-    expect(app._commands).toHaveLength(4)
-    expect(app._commandMap.a.context).toBe(app)
-    expect(app._commandMap.b.context).toBe(app.user(10000))
-    expect(app._commandMap.c.context).toBe(app.group(10000))
+    expect(app._commands).to.have.length(4)
+    expect(app._commandMap.a.context).to.equal(app)
+    expect(app._commandMap.b.context).to.equal(ctx1)
+    expect(app._commandMap.c.context).to.equal(ctx2)
   })
 
-  test('call chaining', () => {
-    const ctx = app.user(123)
-    expect(ctx.command('temp').end()).toBe(ctx)
-  })
-
-  test('modify commands', () => {
+  it('modify commands', () => {
     const d1 = app.command('d', 'foo', { authority: 1 })
-    expect(app._commandMap.d.config.description).toBe('foo')
-    expect(app._commandMap.d.config.authority).toBe(1)
+    expect(app._commandMap.d.config.description).to.equal('foo')
+    expect(app._commandMap.d.config.authority).to.equal(1)
 
     const d2 = app.command('d', { description: 'bar', authority: 2 })
-    expect(app._commandMap.d.config.description).toBe('bar')
-    expect(app._commandMap.d.config.authority).toBe(2)
+    expect(app._commandMap.d.config.description).to.equal('bar')
+    expect(app._commandMap.d.config.authority).to.equal(2)
 
-    expect(d1).toBe(d2)
+    expect(d1).to.equal(d2)
   })
 
-  test('name conflicts', () => {
+  it('name conflicts', () => {
     expect(() => {
       app.command('e')
       app.user(10000).command('e')
-    }).not.toThrow()
+    }).not.to.throw()
 
     expect(() => {
       const x1 = app.command('e').alias('x')
       const x2 = app.user(10000).command('x')
-      expect(x1).toBe(x2)
-    }).not.toThrow()
+      expect(x1).to.equal(x2)
+    }).not.to.throw()
 
     expect(() => {
       app.command('g').alias('y')
       app.command('h').alias('y')
-    }).toThrowError()
+    }).to.throw()
 
     expect(() => {
       app.command('i').alias('z')
       app.command('i').alias('z')
-    }).not.toThrow()
-  })
-
-  test('remove options', () => {
-    const cmd = app.command('command-with-option').option('-a, --alpha')
-    expect(cmd['_optionMap'].alpha).toBeTruthy()
-    expect(cmd.removeOption('a')).toBe(true)
-    expect(cmd['_optionMap'].alpha).toBeFalsy()
-    expect(cmd.removeOption('a')).toBe(false)
+    }).not.to.throw()
   })
 })
 
 describe('register subcommands', () => {
   beforeEach(() => app = new App())
 
-  test('command.subcommand', () => {
+  it('command.subcommand', () => {
     const a = app.command('a')
     const b = a.subcommand('b')
     const c = b.subcommand('.c')
-    expect(a.children).toMatchObject([b])
-    expect(b.name).toBe('b')
-    expect(b.parent).toBe(a)
-    expect(b.children).toMatchObject([c])
-    expect(c.name).toBe('b.c')
-    expect(c.parent).toBe(b)
+    expect(a.children).to.have.shape([b])
+    expect(b.name).to.equal('b')
+    expect(b.parent).to.equal(a)
+    expect(b.children).to.have.shape([c])
+    expect(c.name).to.equal('b.c')
+    expect(c.parent).to.equal(b)
   })
 
-  test('implicit subcommands', () => {
+  it('implicit subcommands', () => {
     const a = app.command('a')
     const d = app.command('a.d')
-    expect(d.name).toBe('a.d')
-    expect(d.parent).toBe(a)
+    expect(d.name).to.equal('a.d')
+    expect(d.parent).to.equal(a)
 
     const b = app.command('b')
     const e = app.command('b/e')
-    expect(e.name).toBe('e')
-    expect(e.parent).toBe(b)
+    expect(e.name).to.equal('e')
+    expect(e.parent).to.equal(b)
 
     const f = a.subcommand('.b/f')
-    expect(f.name).toBe('f')
-    expect(f.parent.name).toBe('a.b')
-    expect(f.parent.parent).toBe(a)
+    expect(f.name).to.equal('f')
+    expect(f.parent.name).to.equal('a.b')
+    expect(f.parent.parent).to.equal(a)
 
     const g = b.subcommand('c.g')
-    expect(g.name).toBe('c.g')
-    expect(g.parent.name).toBe('c')
-    expect(g.parent.parent).toBe(b)
+    expect(g.name).to.equal('c.g')
+    expect(g.parent.name).to.equal('c')
+    expect(g.parent.parent).to.equal(b)
 
     const h = app.command('h')
     b.subcommand('h')
-    expect(h.name).toBe('h')
-    expect(h.parent).toBe(b)
+    expect(h.name).to.equal('h')
+    expect(h.parent).to.equal(b)
   })
 
-  test('check subcommand', () => {
+  it('check subcommand', () => {
     const a = app.command('a')
     const b = a.subcommand('b')
     const c = b.subcommand('c')
     const d = app.command('d')
 
     // register explicit subcommand
-    expect(() => a.subcommand('a')).toThrowError()
-    expect(() => a.subcommand('b')).not.toThrow()
-    expect(() => a.subcommand('c')).toThrowError()
-    expect(() => a.subcommand('d')).not.toThrow()
+    expect(() => a.subcommand('a')).to.throw()
+    expect(() => a.subcommand('b')).not.to.throw()
+    expect(() => a.subcommand('c')).to.throw()
+    expect(() => a.subcommand('d')).not.to.throw()
 
     // register implicit subcommand
-    expect(() => app.command('b/c')).not.toThrow()
-    expect(() => app.command('a/c')).toThrowError()
-    expect(() => app.command('c/b')).toThrowError()
-    expect(() => app.command('a/d')).not.toThrow()
+    expect(() => app.command('b/c')).not.to.throw()
+    expect(() => app.command('a/c')).to.throw()
+    expect(() => app.command('c/b')).to.throw()
+    expect(() => app.command('a/d')).not.to.throw()
   })
 })

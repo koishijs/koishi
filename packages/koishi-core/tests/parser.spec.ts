@@ -9,7 +9,7 @@ const app = new App()
 let cmd: Command
 
 describe('command', () => {
-  test('register', () => {
+  it('register', () => {
     // there is a built-in help command
     expect(app._commands).to.have.length(1)
 
@@ -17,25 +17,25 @@ describe('command', () => {
     expect(app._commands).to.have.length(2)
   })
 
-  test('inspect', () => {
+  it('inspect', () => {
     expect(inspect(cmd)).to.equal('Command <cmd1>')
   })
 
-  test('parse arguments', () => {
+  it('parse arguments', () => {
     expect(cmd.parse('')).to.have.shape({ args: [] })
     expect(cmd.parse('a')).to.have.shape({ args: ['a'] })
     expect(cmd.parse('a b')).to.have.shape({ args: ['a', 'b'] })
     expect(cmd.parse('a b c')).to.have.shape({ args: ['a', 'b', 'c'] })
   })
 
-  test('dispose', () => {
+  it('dispose', () => {
     cmd.dispose()
     expect(app._commands).to.have.length(1)
   })
 })
 
 describe('option', () => {
-  test('register', () => {
+  it('register', () => {
     cmd = app.command('cmd2 <foo> [bar...]')
     cmd.option('alpha', '-a')
     cmd.option('beta', '-b <beta>')
@@ -43,7 +43,7 @@ describe('option', () => {
     cmd.option('delta', '-d <gamma>', { type: 'string' })
   })
 
-  test('option parser', () => {
+  it('option parser', () => {
     expect(cmd.parse('--alpha')).to.have.shape({ options: { alpha: true } })
     expect(cmd.parse('--beta')).to.have.shape({ options: { beta: true } })
     expect(cmd.parse('--no-alpha')).to.have.shape({ options: { alpha: false } })
@@ -54,7 +54,7 @@ describe('option', () => {
     expect(cmd.parse('--beta -1')).to.have.shape({ options: { beta: true } })
   })
 
-  test('typed options', () => {
+  it('typed options', () => {
     expect(cmd.parse('')).to.have.shape({ options: { gamma: 0 } })
     expect(cmd.parse('--gamma')).to.have.shape({ options: { gamma: 0 } })
     expect(cmd.parse('--gamma 1')).to.have.shape({ options: { gamma: 1 } })
@@ -65,7 +65,7 @@ describe('option', () => {
     expect(cmd.parse('--delta -1')).to.have.shape({ options: { delta: '-1' } })
   })
 
-  test('short alias', () => {
+  it('short alias', () => {
     expect(cmd.parse('-ab ""')).to.have.shape({ options: { alpha: true, beta: '' } })
     expect(cmd.parse('-ab=')).to.have.shape({ options: { alpha: true, beta: true } })
     expect(cmd.parse('-ab 1')).to.have.shape({ options: { alpha: true, beta: 1 } })
@@ -74,7 +74,7 @@ describe('option', () => {
     expect(cmd.parse('-ab=-1')).to.have.shape({ options: { alpha: true, beta: -1 } })
   })
 
-  test('greedy arguments', () => {
+  it('greedy arguments', () => {
     expect(cmd.parse('')).to.have.shape({ args: [] })
     expect(cmd.parse('a')).to.have.shape({ args: ['a'] })
     expect(cmd.parse('a b')).to.have.shape({ args: ['a', 'b'] })
@@ -84,7 +84,7 @@ describe('option', () => {
     expect(cmd.parse('a b -c')).to.have.shape({ args: ['a', 'b -c'] })
   })
 
-  test('valued options', () => {
+  it('valued options', () => {
     cmd = app.command('cmd2 <foo> [bar...]')
     cmd.option('alpha', '-A, --no-alpha', { value: false })
     cmd.option('gamma', '-C', { value: 1 })
@@ -98,30 +98,30 @@ describe('option', () => {
 })
 
 describe('advanced', () => {
-  test('symbol alias', () => {
+  it('symbol alias', () => {
     cmd = app.command('cmd3')
     cmd.option('sharp', '# <id>')
     expect(cmd.parse('# 1')).to.have.shape({ args: [], options: { sharp: 1 } })
   })
 
-  test('duplicate option', () => {
+  it('duplicate option', () => {
     expect(() => cmd.option('flat', '#')).to.throw()
   })
 
-  test('remove option', () => {
+  it('remove option', () => {
     expect(cmd.removeOption('sharp' as never)).to.equal(true)
     expect(cmd.parse('# 1')).to.have.shape({ args: ['#', '1'], options: {} })
     expect(cmd.removeOption('sharp' as never)).to.equal(false)
   })
 
-  test('rest option', () => {
+  it('rest option', () => {
     cmd.option('rest', '-- <rest...>')
     expect(cmd.parse('a b -- c d')).to.have.shape({ args: ['a', 'b'], options: { rest: 'c d' }, rest: '' })
     expect(cmd.parse('a "b -- c" d')).to.have.shape({ args: ['a', 'b -- c', 'd'], options: {}, rest: '' })
     expect(cmd.parse('a b -- "c d"')).to.have.shape({ args: ['a', 'b'], options: { rest: 'c d' }, rest: '' })
   })
 
-  test('terminator 1', () => {
+  it('terminator 1', () => {
     expect(cmd.parse('foo bar baz', ';')).to.have.shape({ args: ['foo', 'bar', 'baz'], rest: '' })
     expect(cmd.parse('"foo bar" baz', ';')).to.have.shape({ args: ['foo bar', 'baz'], rest: '' })
     expect(cmd.parse('"foo bar "baz', ';')).to.have.shape({ args: ['"foo', 'bar', '"baz'], rest: '' })
@@ -130,7 +130,7 @@ describe('advanced', () => {
     expect(cmd.parse('"foo;bar";baz', ';')).to.have.shape({ args: ['foo;bar'], rest: ';baz' })
   })
 
-  test('terminator 2', () => {
+  it('terminator 2', () => {
     expect(cmd.parse('-- foo bar baz', ';')).to.have.shape({ options: { rest: 'foo bar baz' }, rest: '' })
     expect(cmd.parse('-- "foo bar" baz', ';')).to.have.shape({ options: { rest: '"foo bar" baz' }, rest: '' })
     expect(cmd.parse('-- "foo bar baz"', ';')).to.have.shape({ options: { rest: 'foo bar baz' }, rest: '' })
@@ -141,7 +141,7 @@ describe('advanced', () => {
 })
 
 describe('stringify', () => {
-  test('basic support', () => {
+  it('basic support', () => {
     cmd = app.command('cmd4')
     cmd.option('alpha', '-a <val>')
     cmd.option('beta', '-b')

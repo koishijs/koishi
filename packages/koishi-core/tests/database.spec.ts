@@ -84,11 +84,11 @@ let app: App
 
 describe('inject methods', () => {
   test('inject methods for unknown database', () => {
-    expect(() => injectMethods('temp' as any, 'user', {})).not.toThrow()
+    expect(() => injectMethods('temp' as any, 'user', {})).not.to.throw()
   })
 
   test('inject methods for unknown table', () => {
-    expect(() => injectMethods('foo', 'temp' as any, {})).not.toThrow()
+    expect(() => injectMethods('foo', 'temp' as any, {})).not.to.throw()
   })
 })
 
@@ -106,9 +106,9 @@ describe('create database', () => {
   })
 
   test('this binding', () => {
-    expect(app.database.foo.myFunc(10)).toBe(11)
-    expect(app.database.myUserFunc1()).toBe('my-foo-user-func')
-    expect(app.database.myUserFunc2()).toBe('my-foo-user-func-2')
+    expect(app.database.foo.myFunc(10)).to.equal(11)
+    expect(app.database.myUserFunc1()).to.equal('my-foo-user-func')
+    expect(app.database.myUserFunc2()).to.equal('my-foo-user-func-2')
   })
 })
 
@@ -120,7 +120,7 @@ describe('multiple databases', () => {
         // make coverage happy
         bar: { identifier: 'id' },
       },
-    })).toThrow()
+    })).to.throw()
   })
 
   test('database not found', () => {
@@ -128,7 +128,7 @@ describe('multiple databases', () => {
       database: {
         $tables: { user: 'baz' as any },
       },
-    })).toThrow()
+    })).to.throw()
   })
 
   test('explicit bound tables', () => {
@@ -138,14 +138,14 @@ describe('multiple databases', () => {
         foo: { value: 1 },
         bar: {},
       },
-    })).not.toThrow()
+    })).not.to.throw()
 
     expect(app.database.foo).toBeInstanceOf(FooDatabase)
     expect(app.database.bar).toBeInstanceOf(BarDatabase)
-    expect(app.database.foo.myFunc(10)).toBe(11)
-    expect(app.database.myUserFunc1()).toBe('my-foo-user-func')
-    expect(app.database.myUserFunc2()).toBe('my-foo-user-func-2')
-    expect(app.database.myBazFunc()).toBe('my-bar-baz-func')
+    expect(app.database.foo.myFunc(10)).to.equal(11)
+    expect(app.database.myUserFunc1()).to.equal('my-foo-user-func')
+    expect(app.database.myUserFunc2()).to.equal('my-foo-user-func-2')
+    expect(app.database.myBazFunc()).to.equal('my-bar-baz-func')
   })
 })
 
@@ -158,7 +158,7 @@ describe('extend fields', () => {
     const extension = { foo: 'foo', bar: [0] }
     extendUser(() => ({ ...extension }))
 
-    expect(createUser(id, authority)).toMatchObject({
+    expect(createUser(id, authority)).to.have.shape({
       ...user,
       ...extension,
     })
@@ -172,7 +172,7 @@ describe('extend fields', () => {
     const extension = { bar: 'bar', foo: [0] }
     extendGroup(() => ({ ...extension }))
 
-    expect(createGroup(id, assignee)).toMatchObject({
+    expect(createGroup(id, assignee)).to.have.shape({
       ...user,
       ...extension,
     })
