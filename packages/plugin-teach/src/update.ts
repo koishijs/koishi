@@ -95,9 +95,6 @@ function isIntegerOrInterval(value: string) {
   return n * 0 === 0 ? !isInteger(n) || n <= 0 : !Time.parseTime(value)
 }
 
-const second = 1000
-const minute = second * 60
-
 function review(dialogues: Dialogue[], argv: Dialogue.Argv) {
   const { session } = argv
   const output = dialogues.map((d) => {
