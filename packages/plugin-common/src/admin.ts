@@ -1,4 +1,4 @@
-import { isInteger, difference, Observed, paramCase, observe, parseTime } from 'koishi-utils'
+import { isInteger, difference, Observed, paramCase, observe, Time } from 'koishi-utils'
 import { Context, Session, getTargetId, User, Group } from 'koishi-core'
 
 type ActionCallback <T extends {}, K extends keyof T> =
@@ -20,7 +20,7 @@ export class Action <T extends {}> {
 export const UserAction = new Action<User>()
 export const GroupAction = new Action<Group>()
 
-function getFlags(data: Record<string, any>): string[] {
+function extractEnumKeys(data: Record<string, any>): string[] {
   return Object.values(data).filter(value => typeof value === 'string')
 }
 
@@ -38,7 +38,7 @@ UserAction.add('setAuth', async (session, user, value) => {
 }, ['authority'])
 
 UserAction.add('setFlag', async (session, user, ...flags) => {
-  const userFlags = getFlags(User.Flag)
+  const userFlags = extractEnumKeys(User.Flag)
   if (!flags.length) return `可用的标记有 ${userFlags.join(', ')}。`
   const notFound = difference(flags, userFlags)
   if (notFound.length) return `未找到标记 ${notFound.join(', ')}。`
@@ -50,7 +50,7 @@ UserAction.add('setFlag', async (session, user, ...flags) => {
 }, ['flag'])
 
 UserAction.add('unsetFlag', async (session, user, ...flags) => {
-  const userFlags = getFlags(User.Flag)
+  const userFlags = extractEnumKeys(User.Flag)
   if (!flags.length) return `可用的标记有 ${userFlags.join(', ')}。`
   const notFound = difference(flags, userFlags)
   if (notFound.length) return `未找到标记 ${notFound.join(', ')}。`
@@ -83,7 +83,7 @@ UserAction.add('clearUsage', async (session, user, ...commands) => {
 
 UserAction.add('setTimer', async (session, user, name, offset) => {
   if (!name || !offset) return '参数不足。'
-  const timestamp = parseTime(offset)
+  const timestamp = Time.parseTime(offset)
   if (!timestamp) return '请输入合法的时间。'
   user.timers[name] = Date.now() + timestamp
   await user._update()
@@ -103,7 +103,7 @@ UserAction.add('clearTimer', async (session, user, ...commands) => {
 }, ['timers'])
 
 GroupAction.add('setFlag', async (session, group, ...flags) => {
-  const groupFlags = getFlags(Group.Flag)
+  const groupFlags = extractEnumKeys(Group.Flag)
   if (!flags.length) return `可用的标记有 ${groupFlags.join(', ')}。`
   const notFound = difference(flags, groupFlags)
   if (notFound.length) return `未找到标记 ${notFound.join(', ')}。`
@@ -115,7 +115,7 @@ GroupAction.add('setFlag', async (session, group, ...flags) => {
 }, ['flag'])
 
 GroupAction.add('unsetFlag', async (session, group, ...flags) => {
-  const groupFlags = getFlags(Group.Flag)
+  const groupFlags = extractEnumKeys(Group.Flag)
   if (!flags.length) return `可用的标记有 ${groupFlags.join(', ')}。`
   const notFound = difference(flags, groupFlags)
   if (notFound.length) return `未找到标记 ${notFound.join(', ')}。`

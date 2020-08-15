@@ -1,9 +1,7 @@
 import { MockedApp } from 'koishi-test-utils'
-import { UserFlag, GroupFlag } from 'koishi-core'
-import { messages } from '../src/messages'
-import 'koishi-database-memory'
+import { User, Group } from 'koishi-core'
 
-const app = new MockedApp({ database: { memory: {} } })
+const app = new MockedApp()
 const session1 = app.createSession('user', 123)
 const session2 = app.createSession('user', 456)
 const session3 = app.createSession('user', 789)
@@ -16,28 +14,28 @@ app.command('cmd1', { authority: 2, maxUsage: 1 })
   .groupFields(['id', 'flag', 'assignee'])
   .option('--bar', '', { authority: 3 })
   .option('--baz', '', { notUsage: true })
-  .action(({ meta }) => meta.$send('cmd1:' + meta.$user.id))
+  .action(({ session }) => session.$send('cmd1:' + session.$user.id))
 
 app.command('cmd2', { minInterval: () => 100 })
   .option('--bar', '', { authority: 3 })
   .option('--baz', '', { notUsage: true })
-  .action(({ meta }) => meta.$send('cmd2:' + meta.$user.id))
+  .action(({ session }) => session.$send('cmd2:' + session.$user.id))
 
-app.middleware((meta) => {
-  if (meta.message === 'mid') return meta.$send('mid')
+app.middleware((session) => {
+  if (session.message === 'mid') return session.$send('mid')
 })
 
-beforeAll(async () => {
+before(async () => {
   await app.start()
   await app.database.getUser(123, 2)
   await app.database.getUser(456, 1)
   await app.database.getUser(789, 1)
-  await app.database.setUser(789, { flag: UserFlag.ignore })
+  await app.database.setUser(789, { flag: User.Flag.ignore })
   await app.database.getGroup(321, app.selfId)
   await app.database.getGroup(654, 999)
 })
 
-afterAll(() => app.stop())
+after(() => app.stop())
 
 describe('middleware validation', () => {
   test('user.flag.ignore', async () => {
@@ -52,19 +50,11 @@ describe('middleware validation', () => {
     await session5.shouldHaveReply(`[CQ:at,qq=${app.selfId}] cmd1 --baz`, 'cmd1:123')
   })
 
-  test('group.flag.noCommand', async () => {
-    await app.database.setGroup(321, { flag: GroupFlag.noCommand })
-    await session4.shouldHaveReply('mid', 'mid')
-    await session4.shouldHaveNoReply('cmd1 --baz')
-    await session4.shouldHaveNoReply(`[CQ:at,qq=${app.selfId}] cmd1 --baz`)
-    await app.database.setGroup(321, { flag: 0 })
-  })
-
-  test('group.flag.noResponse', async () => {
-    await app.database.setGroup(321, { flag: GroupFlag.noResponse })
+  test('group.flag.ignore', async () => {
+    await app.database.setGroup(321, { flag: Group.Flag.ignore })
     await session4.shouldHaveNoReply('mid')
     await session4.shouldHaveNoReply('cmd1 --baz')
-    await session4.shouldHaveReply(`[CQ:at,qq=${app.selfId}] cmd1 --baz`, 'cmd1:123')
+    await session4.shouldHaveReply(`[CQ:at,qq=${app.bots[0].selfId}] cmd1 --baz`, 'cmd1:123')
     await app.database.setGroup(321, { flag: 0 })
   })
 })

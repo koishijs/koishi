@@ -66,11 +66,11 @@ describe('HTTP Server', () => {
     expect(app1MessageCallback).toBeCalledTimes(1)
     expect(app2MessageCallback).toBeCalledTimes(0)
 
-    expect(app2.selfId).toBeFalsy()
+    expect(app2.selfId).not.to.be.ok
     await server.post({ ...shared, selfId: BASE_SELF_ID + 1 })
     expect(app1MessageCallback).toBeCalledTimes(1)
     expect(app2MessageCallback).toBeCalledTimes(1)
-    expect(app2.selfId).toBe(BASE_SELF_ID + 1)
+    expect(app2.selfId).to.equal(BASE_SELF_ID + 1)
     expect(app2ReadyCallback).toBeCalledTimes(1)
   })
 })
@@ -103,33 +103,33 @@ describe('Quick Operations', () => {
 
   test('message event', async () => {
     app1.once('message', meta => meta.$send('foo'))
-    await expect(server.post(messageMeta)).resolves.toMatchObject({ data: { reply: 'foo' } })
+    await expect(server.post(messageMeta)).resolves.to.have.shape({ data: { reply: 'foo' } })
 
     app1.groups.once('message', meta => meta.$ban())
-    await expect(server.post(messageMeta)).resolves.toMatchObject({ data: { ban: true } })
+    await expect(server.post(messageMeta)).resolves.to.have.shape({ data: { ban: true } })
 
     app1.groups.once('message', meta => meta.$delete())
-    await expect(server.post(messageMeta)).resolves.toMatchObject({ data: { delete: true } })
+    await expect(server.post(messageMeta)).resolves.to.have.shape({ data: { delete: true } })
 
     app1.groups.once('message', meta => meta.$kick())
-    await expect(server.post(messageMeta)).resolves.toMatchObject({ data: { kick: true } })
+    await expect(server.post(messageMeta)).resolves.to.have.shape({ data: { kick: true } })
   })
 
   test('request event', async () => {
     app1.once('request/friend', meta => meta.$approve('foo'))
-    await expect(server.post(frientRequestMeta)).resolves.toMatchObject({ data: { approve: true, remark: 'foo' } })
+    await expect(server.post(frientRequestMeta)).resolves.to.have.shape({ data: { approve: true, remark: 'foo' } })
 
     app1.once('request/friend', meta => meta.$reject())
-    await expect(server.post(frientRequestMeta)).resolves.toMatchObject({ data: { approve: false } })
+    await expect(server.post(frientRequestMeta)).resolves.to.have.shape({ data: { approve: false } })
 
     app1.once('request/group/add', meta => meta.$approve())
-    await expect(server.post(groupRequestMeta)).resolves.toMatchObject({ data: { approve: true } })
+    await expect(server.post(groupRequestMeta)).resolves.to.have.shape({ data: { approve: true } })
 
     app1.once('request/group/add', meta => meta.$reject('bar'))
-    await expect(server.post(groupRequestMeta)).resolves.toMatchObject({ data: { approve: false, reason: 'bar' } })
+    await expect(server.post(groupRequestMeta)).resolves.to.have.shape({ data: { approve: false, reason: 'bar' } })
   })
 
   test('operation timeout', async () => {
-    await expect(server.post(frientRequestMeta)).resolves.toMatchObject({ data: {} })
+    await expect(server.post(frientRequestMeta)).resolves.to.have.shape({ data: {} })
   }, 100)
 })

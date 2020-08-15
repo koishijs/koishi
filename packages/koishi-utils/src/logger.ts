@@ -1,6 +1,6 @@
 import { inspect, InspectOptions, format } from 'util'
-import { formatTimeShort } from './date'
 import { stderr } from 'supports-color'
+import { Time } from './time'
 
 const colors = stderr.level < 2 ? [6, 2, 3, 4, 5, 1] : [
   20, 21, 26, 27, 32, 33, 38, 39, 40, 41, 42, 43, 44, 45, 56, 57, 62,
@@ -108,7 +108,7 @@ export class Logger {
     if (Logger.showDiff || this.showDiff) {
       const now = Date.now()
       if (Logger.lastTime) {
-        args.push(this.color('+' + formatTimeShort(now - Logger.lastTime)))
+        args.push(this.color('+' + Time.formatTimeShort(now - Logger.lastTime)))
       }
       Logger.lastTime = now
     }

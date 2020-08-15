@@ -1,5 +1,7 @@
 import { snakeCase } from 'koishi-utils'
 import { CQResponse } from 'koishi-adapter-cqhttp'
+import { expect } from 'chai'
+import '@shigma/chai-extended'
 
 export type RequestParams = Record<string, any>
 export type RequestData = readonly [string, RequestParams]
@@ -14,21 +16,22 @@ export class MockedServer {
   }
 
   shouldHaveNoRequests() {
-    expect(this.requests).toHaveLength(0)
+    expect(this.requests).to.have.length(0)
   }
 
   shouldHaveLastRequest(action: string, params: RequestParams = {}) {
-    expect(this.requests[0]).toMatchObject([action, snakeCase(params)])
+    expect(this.requests[0]).to.have.shape([action, snakeCase(params)])
     this.clearRequests()
   }
 
   shouldMatchSnapshot(name = '') {
-    expect(this.requests[0]).toMatchSnapshot(name)
+    // TODO
+    // expect(this.requests[0]).toMatchSnapshot(name)
     this.clearRequests()
   }
 
   shouldHaveLastRequests(requests: RequestData[]) {
-    expect(this.requests.slice(0, requests.length)).toMatchObject(requests.map(snakeCase).reverse())
+    expect(this.requests.slice(0, requests.length)).to.have.shape(requests.map(snakeCase).reverse())
     this.clearRequests()
   }
 

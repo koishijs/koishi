@@ -7,10 +7,11 @@
     "moduleResolution": "node",
   },
   "references": [
+    { "path": "./packages/chai-extended" },
     { "path": "./packages/koishi-utils" },
     { "path": "./packages/koishi-core" },
-    { "path": "./packages/adapter-cqhttp" },
     { "path": "./packages/koishi-test-utils" },
+    { "path": "./packages/adapter-cqhttp" },
 
     { "path": "./packages/plugin-mysql" },
     { "path": "./packages/plugin-mongo" },

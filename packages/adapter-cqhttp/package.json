@@ -10,7 +10,6 @@
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "LGPL-3.0-or-later",
   "scripts": {
-    "jest": "jest tests/.*\\.spec\\.ts --runInBand",
     "lint": "eslint src --ext .ts",
     "precommit": "yarn lint",
     "prepack": "tsc -b"
