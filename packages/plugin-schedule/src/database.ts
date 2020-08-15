@@ -24,7 +24,7 @@ export interface Schedule {
   session: Session
 }
 
-extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   createSchedule(time, interval, command, session) {
     return this.create('schedule', { time, assignee: session.selfId, interval, command, session })
   },
@@ -46,7 +46,7 @@ extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
   },
 })
 
-extendDatabase<MongoDatabase>('koishi-plugin-mongo', {
+extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
   async createSchedule(time, interval, command, session) {
     const result = await this.db.collection('schedule').insertOne(
       { time, assignee: session.selfId, interval, command, session },

@@ -9,9 +9,16 @@ settings:
     typescript:
       alwaysTryTypes: true
 
-extends: standard
+env:
+  node: true
+  mocha: true
+  es2020: true
+
+extends:
+  - standard
 
 plugins:
+  - mocha
   - '@typescript-eslint'
 
 rules:
@@ -53,7 +60,6 @@ rules:
     - after
   yoda: off
   '@typescript-eslint/keyword-spacing': error
-  '@typescript-eslint/no-unused-expressions': warn
   '@typescript-eslint/space-before-function-paren':
     - error
     - anonymous: always

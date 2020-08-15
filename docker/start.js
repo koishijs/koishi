@@ -3,15 +3,15 @@ const child_process = require('child_process')
 
 const path = process.cwd() + '/koishi.config.js'
 if (!fs.existsSync(path)) {
-  let config = {
+  const config = {
     type: 'http',
     port: 8080,
     server: 'http://localhost:5700',
     plugins: [
       'common',
-      'schedule'
-    ]
-  }  // default config
+      'schedule',
+    ],
+  } // default config
   const envNames = ['PORT', 'TYPE', 'SERVER']
   envNames.map((name) => {
     if (process.env[name]) config[name.toLowerCase()] = process.env[name]

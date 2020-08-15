@@ -46,7 +46,7 @@ const subscribeKeys = [
   'twitCasting', 'twitCastingStatus',
 ] as SubscribeField[]
 
-extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   async getSubscribes(ids, keys = subscribeKeys) {
     if (!ids) return this.query('SELECT * FROM `subscribe`')
     if (!ids.length) return []
@@ -57,7 +57,7 @@ extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
     const isSingle = typeof names === 'string'
     if (isSingle) names = [names as string]
     const data = await this.select('subscribe', keys, (names as string[]).map(name => `FIND_IN_SET(${this.escape(name)}, \`names\`)`).join(' OR '))
-    return isSingle ? data[0] : data
+    return isSingle ? data[0] : data as any
   },
 
   async removeSubscribe(name) {
@@ -72,6 +72,8 @@ extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
   createSubscribe(options) {
     return this.create('subscribe', options)
   },
-}, function () {
-  this.listFields.push('subscribe.names')
+})
+
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields }) => {
+  listFields.push('subscribe.names')
 })

@@ -1,10 +1,9 @@
 import { App } from 'koishi-core'
-import { HttpServer, createHttpServer } from 'koishi-test-utils'
 
 let app1: App, app2: App
 let server: HttpServer
 
-beforeAll(async () => {
+before(async () => {
   server = await createHttpServer()
 })
 
@@ -12,9 +11,9 @@ afterAll(() => server.close())
 
 describe('Server Types', () => {
   test('server', () => {
-    expect(() => new App()).toThrow()
-    expect(() => new App({ type: 'foo' as any })).toThrow()
-    expect(() => new App({ server: 'http:// '})).not.toThrow()
+    expect(() => new App()).to.throw()
+    expect(() => new App({ type: 'foo' as any })).to.throw()
+    expect(() => new App({ server: 'http:// ' })).not.to.throw()
   })
 })
 
@@ -30,9 +29,9 @@ describe('Startup Checks', () => {
     server.setResponse('get_login_info', { userId: 415 })
     await expect(app2.start()).resolves.toBeUndefined()
     expect(readyCallback).toBeCalledTimes(0)
-    await expect(getSelfIds()).resolves.toMatchObject([514, 415])
+    await expect(getSelfIds()).resolves.to.have.shape([514, 415])
     expect(readyCallback).toBeCalledTimes(1)
-    await expect(getSelfIds()).resolves.toMatchObject([514, 415])
+    await expect(getSelfIds()).resolves.to.have.shape([514, 415])
     expect(readyCallback).toBeCalledTimes(1)
     await app2.stop()
     // make coverage happy

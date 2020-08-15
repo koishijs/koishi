@@ -24,7 +24,7 @@ describe('Sender API', () => {
 
   test('get', async () => {
     server.setResponse('bar', bar)
-    await expect(sender.get('bar')).resolves.toMatchObject(bar)
+    await expect(sender.get('bar')).resolves.to.have.shape(bar)
 
     server.setResponse('bar', bar, 102)
     await expect(sender.get('bar')).rejects.toHaveProperty('name', 'SenderError')
@@ -68,11 +68,11 @@ describe('Sender API', () => {
     server.setResponse('send_msg', { messageId })
     await expect(sender.sendMsg('group', 123, '')).resolves.toBeUndefined()
     server.shouldHaveNoRequests()
-    await expect(sender.sendMsg('group', 123, 'foo')).resolves.toBe(messageId)
+    await expect(sender.sendMsg('group', 123, 'foo')).resolves.to.equal(messageId)
     server.shouldHaveLastRequest('send_msg', { groupId: '123', message: 'foo' })
-    await expect(sender.sendMsg('private', 123, 'foo')).resolves.toBe(messageId)
+    await expect(sender.sendMsg('private', 123, 'foo')).resolves.to.equal(messageId)
     server.shouldHaveLastRequest('send_msg', { userId: '123', message: 'foo' })
-    await expect(sender.sendMsg('private', 123, 'foo', true)).resolves.toBe(messageId)
+    await expect(sender.sendMsg('private', 123, 'foo', true)).resolves.to.equal(messageId)
     server.shouldHaveLastRequest('send_msg', { userId: '123', message: 'foo', autoEscape: 'true' })
     await expect(sender.sendMsgAsync('group', 123, '')).resolves.toBeUndefined()
     server.shouldHaveNoRequests()
@@ -91,9 +91,9 @@ describe('Sender API', () => {
     server.setResponse('send_group_msg', { messageId })
     await expect(sender.sendGroupMsg(123, '')).resolves.toBeUndefined()
     server.shouldHaveNoRequests()
-    await expect(sender.sendGroupMsg(123, 'foo')).resolves.toBe(messageId)
+    await expect(sender.sendGroupMsg(123, 'foo')).resolves.to.equal(messageId)
     server.shouldHaveLastRequest('send_group_msg', { groupId: '123', message: 'foo' })
-    await expect(sender.sendGroupMsg(123, 'foo', true)).resolves.toBe(messageId)
+    await expect(sender.sendGroupMsg(123, 'foo', true)).resolves.to.equal(messageId)
     server.shouldHaveLastRequest('send_group_msg', { groupId: '123', message: 'foo', autoEscape: 'true' })
     await expect(sender.sendGroupMsgAsync(123, '')).resolves.toBeUndefined()
     server.shouldHaveNoRequests()
@@ -110,9 +110,9 @@ describe('Sender API', () => {
     server.setResponse('send_discuss_msg', { messageId })
     await expect(sender.sendDiscussMsg(123, '')).resolves.toBeUndefined()
     server.shouldHaveNoRequests()
-    await expect(sender.sendDiscussMsg(123, 'foo')).resolves.toBe(messageId)
+    await expect(sender.sendDiscussMsg(123, 'foo')).resolves.to.equal(messageId)
     server.shouldHaveLastRequest('send_discuss_msg', { discussId: '123', message: 'foo' })
-    await expect(sender.sendDiscussMsg(123, 'foo', true)).resolves.toBe(messageId)
+    await expect(sender.sendDiscussMsg(123, 'foo', true)).resolves.to.equal(messageId)
     server.shouldHaveLastRequest('send_discuss_msg', { discussId: '123', message: 'foo', autoEscape: 'true' })
     await expect(sender.sendDiscussMsgAsync(123, '')).resolves.toBeUndefined()
     server.shouldHaveNoRequests()
@@ -129,9 +129,9 @@ describe('Sender API', () => {
     server.setResponse('send_private_msg', { messageId })
     await expect(sender.sendPrivateMsg(123, '')).resolves.toBeUndefined()
     server.shouldHaveNoRequests()
-    await expect(sender.sendPrivateMsg(123, 'foo')).resolves.toBe(messageId)
+    await expect(sender.sendPrivateMsg(123, 'foo')).resolves.to.equal(messageId)
     server.shouldHaveLastRequest('send_private_msg', { userId: '123', message: 'foo' })
-    await expect(sender.sendPrivateMsg(123, 'foo', true)).resolves.toBe(messageId)
+    await expect(sender.sendPrivateMsg(123, 'foo', true)).resolves.to.equal(messageId)
     server.shouldHaveLastRequest('send_private_msg', { userId: '123', message: 'foo', autoEscape: 'true' })
     await expect(sender.sendPrivateMsgAsync(123, '')).resolves.toBeUndefined()
     server.shouldHaveNoRequests()
@@ -371,13 +371,13 @@ describe('Sender API', () => {
 
   test('getLoginInfo', async () => {
     server.setResponse('get_login_info', userInfo)
-    await expect(sender.getLoginInfo()).resolves.toMatchObject(userInfo)
+    await expect(sender.getLoginInfo()).resolves.to.have.shape(userInfo)
     server.shouldHaveLastRequest('get_login_info', {})
   })
 
   test('getVipInfo', async () => {
     server.setResponse('_get_vip_info', userInfo)
-    await expect(sender.getVipInfo()).resolves.toMatchObject(userInfo)
+    await expect(sender.getVipInfo()).resolves.to.have.shape(userInfo)
     server.shouldHaveLastRequest('_get_vip_info', {})
   })
 
@@ -385,15 +385,15 @@ describe('Sender API', () => {
     await expect(sender.getStrangerInfo(undefined)).rejects.toHaveProperty('message', 'missing argument: userId')
 
     server.setResponse('get_stranger_info', userInfo)
-    await expect(sender.getStrangerInfo(123)).resolves.toMatchObject(userInfo)
+    await expect(sender.getStrangerInfo(123)).resolves.to.have.shape(userInfo)
     server.shouldHaveLastRequest('get_stranger_info', { userId: '123' })
-    await expect(sender.getStrangerInfo(123, true)).resolves.toMatchObject(userInfo)
+    await expect(sender.getStrangerInfo(123, true)).resolves.to.have.shape(userInfo)
     server.shouldHaveLastRequest('get_stranger_info', { userId: '123', noCache: 'true' })
   })
 
   test('getFriendList', async () => {
     server.setResponse('get_friend_list', [userInfo])
-    await expect(sender.getFriendList()).resolves.toMatchObject([userInfo])
+    await expect(sender.getFriendList()).resolves.to.have.shape([userInfo])
     server.shouldHaveLastRequest('get_friend_list', {})
   })
 
@@ -401,18 +401,18 @@ describe('Sender API', () => {
     await expect(sender.getGroupInfo(undefined)).rejects.toHaveProperty('message', 'missing argument: groupId')
 
     server.setResponse('get_group_info', groupInfo)
-    await expect(sender.getGroupInfo(456)).resolves.toMatchObject(groupInfo)
+    await expect(sender.getGroupInfo(456)).resolves.to.have.shape(groupInfo)
     server.shouldHaveLastRequest('get_group_info', { groupId: '456' })
-    await expect(sender.getGroupInfo(456, true)).resolves.toMatchObject(groupInfo)
+    await expect(sender.getGroupInfo(456, true)).resolves.to.have.shape(groupInfo)
     server.shouldHaveLastRequest('get_group_info', { groupId: '456', noCache: 'true' })
 
     // < 4.12.0
     sender.app.version.pluginMajorVersion = 4
     sender.app.version.pluginMinorVersion = 11
     server.setResponse('_get_group_info', groupInfo)
-    await expect(sender.getGroupInfo(456)).resolves.toMatchObject(groupInfo)
+    await expect(sender.getGroupInfo(456)).resolves.to.have.shape(groupInfo)
     server.shouldHaveLastRequest('_get_group_info', { groupId: '456' })
-    await expect(sender.getGroupInfo(456, true)).resolves.toMatchObject(groupInfo)
+    await expect(sender.getGroupInfo(456, true)).resolves.to.have.shape(groupInfo)
     server.shouldHaveLastRequest('_get_group_info', { groupId: '456', noCache: 'true' })
 
     // < 4.0.1
@@ -423,7 +423,7 @@ describe('Sender API', () => {
 
   test('getGroupList', async () => {
     server.setResponse('get_group_list', [groupInfo])
-    await expect(sender.getGroupList()).resolves.toMatchObject([groupInfo])
+    await expect(sender.getGroupList()).resolves.to.have.shape([groupInfo])
     server.shouldHaveLastRequest('get_group_list', {})
   })
 
@@ -432,9 +432,9 @@ describe('Sender API', () => {
     await expect(sender.getGroupMemberInfo(456, undefined)).rejects.toHaveProperty('message', 'missing argument: userId')
 
     server.setResponse('get_group_member_info', userInfo)
-    await expect(sender.getGroupMemberInfo(456, 123)).resolves.toMatchObject(userInfo)
+    await expect(sender.getGroupMemberInfo(456, 123)).resolves.to.have.shape(userInfo)
     server.shouldHaveLastRequest('get_group_member_info', { groupId: '456', userId: '123' })
-    await expect(sender.getGroupMemberInfo(456, 123, true)).resolves.toMatchObject(userInfo)
+    await expect(sender.getGroupMemberInfo(456, 123, true)).resolves.to.have.shape(userInfo)
     server.shouldHaveLastRequest('get_group_member_info', { groupId: '456', userId: '123', noCache: 'true' })
   })
 
@@ -442,7 +442,7 @@ describe('Sender API', () => {
     await expect(sender.getGroupMemberList(undefined)).rejects.toHaveProperty('message', 'missing argument: groupId')
 
     server.setResponse('get_group_member_list', [userInfo])
-    await expect(sender.getGroupMemberList(456)).resolves.toMatchObject([userInfo])
+    await expect(sender.getGroupMemberList(456)).resolves.to.have.shape([userInfo])
     server.shouldHaveLastRequest('get_group_member_list', { groupId: '456' })
   })
 
@@ -450,7 +450,7 @@ describe('Sender API', () => {
     await expect(sender.getGroupNotice(undefined)).rejects.toHaveProperty('message', 'missing argument: groupId')
 
     server.setResponse('_get_group_notice', groupInfo)
-    await expect(sender.getGroupNotice(456)).resolves.toMatchObject(groupInfo)
+    await expect(sender.getGroupNotice(456)).resolves.to.have.shape(groupInfo)
     server.shouldHaveLastRequest('_get_group_notice', { groupId: '456' })
   })
 
@@ -473,22 +473,22 @@ describe('Sender API', () => {
 
   test('getCookies', async () => {
     server.setResponse('get_cookies', { cookies })
-    await expect(sender.getCookies()).resolves.toBe(cookies)
+    await expect(sender.getCookies()).resolves.to.equal(cookies)
     server.shouldHaveLastRequest('get_cookies', {})
-    await expect(sender.getCookies('foo')).resolves.toBe(cookies)
+    await expect(sender.getCookies('foo')).resolves.to.equal(cookies)
     server.shouldHaveLastRequest('get_cookies', { domain: 'foo' })
   })
 
   test('getCsrfToken', async () => {
     server.setResponse('get_csrf_token', { token })
-    await expect(sender.getCsrfToken()).resolves.toBe(token)
+    await expect(sender.getCsrfToken()).resolves.to.equal(token)
     server.shouldHaveLastRequest('get_csrf_token', {})
   })
 
   test('getCredentials', async () => {
     const credentials = { cookies, token }
     server.setResponse('get_credentials', credentials)
-    await expect(sender.getCredentials()).resolves.toMatchObject(credentials)
+    await expect(sender.getCredentials()).resolves.to.have.shape(credentials)
     server.shouldHaveLastRequest('get_credentials', {})
   })
 
@@ -499,9 +499,9 @@ describe('Sender API', () => {
     await expect(sender.getRecord('foo', undefined)).rejects.toHaveProperty('message', 'missing argument: outFormat')
 
     server.setResponse('get_record', { file })
-    await expect(sender.getRecord('foo', 'mp3')).resolves.toBe(file)
+    await expect(sender.getRecord('foo', 'mp3')).resolves.to.equal(file)
     server.shouldHaveLastRequest('get_record', { file: 'foo', outFormat: 'mp3' })
-    await expect(sender.getRecord('foo', 'mp3', true)).resolves.toBe(file)
+    await expect(sender.getRecord('foo', 'mp3', true)).resolves.to.equal(file)
     server.shouldHaveLastRequest('get_record', { file: 'foo', outFormat: 'mp3', fullPath: 'true' })
   })
 
@@ -509,32 +509,32 @@ describe('Sender API', () => {
     await expect(sender.getImage(undefined)).rejects.toHaveProperty('message', 'missing argument: file')
 
     server.setResponse('get_image', { file })
-    await expect(sender.getImage('foo')).resolves.toBe(file)
+    await expect(sender.getImage('foo')).resolves.to.equal(file)
     server.shouldHaveLastRequest('get_image', { file: 'foo' })
   })
 
   test('canSendRecord', async () => {
     server.setResponse('can_send_record', { yes: true })
-    await expect(sender.canSendRecord()).resolves.toBe(true)
+    await expect(sender.canSendRecord()).resolves.to.equal(true)
     server.shouldHaveLastRequest('can_send_record', {})
   })
 
   test('canSendImage', async () => {
     server.setResponse('can_send_image', { yes: true })
-    await expect(sender.canSendImage()).resolves.toBe(true)
+    await expect(sender.canSendImage()).resolves.to.equal(true)
     server.shouldHaveLastRequest('can_send_image', {})
   })
 
   test('getStatus', async () => {
     const status = { good: true }
     server.setResponse('get_status', status)
-    await expect(sender.getStatus()).resolves.toMatchObject(status)
+    await expect(sender.getStatus()).resolves.to.have.shape(status)
     server.shouldHaveLastRequest('get_status', {})
   })
 
   test('getVersionInfo', async () => {
     server.setResponse('get_version_info', { pluginVersion: '4.12.3' })
-    await expect(sender.getVersionInfo()).resolves.toMatchObject({
+    await expect(sender.getVersionInfo()).resolves.to.have.shape({
       pluginVersion: '4.12.3',
       pluginMajorVersion: 4,
       pluginMinorVersion: 12,

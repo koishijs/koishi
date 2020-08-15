@@ -44,10 +44,10 @@ function addHistory(dialogue: Dialogue, type: Dialogue.ModifyType, argv: Dialogu
   }, argv.config.preserveHistory || 600000)
 }
 
-extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   async getDialoguesById(ids, fields = []) {
     if (!ids.length) return []
-    const dialogues = await this.select<Dialogue[]>('dialogue', fields, `\`id\` IN (${ids.join(',')})`)
+    const dialogues = await this.select<Dialogue>('dialogue', fields, `\`id\` IN (${ids.join(',')})`)
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
     return dialogues
   },
@@ -123,11 +123,13 @@ extendDatabase<MysqlDatabase>('koishi-plugin-mysql', {
     }] = await this.query<any>('SELECT COUNT(DISTINCT `question`), COUNT(*) FROM `dialogue`')
     return { questions, dialogues }
   },
-}, function () {
-  this.listFields.push('dialogue.groups', 'dialogue.predecessors')
 })
 
-extendDatabase<MongoDatabase>('koishi-plugin-mongo', {})
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields }) => {
+  listFields.push('dialogue.groups', 'dialogue.predecessors')
+})
+
+extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {})
 
 export default function apply(ctx: Context) {
   ctx.on('before-connect', () => {

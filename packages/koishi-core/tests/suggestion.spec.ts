@@ -8,17 +8,17 @@ describe('Command Suggestions', () => {
   const app = new MockedApp()
   const session1 = app.createSession('user', 456)
   const session2 = app.createSession('group', 789, 987)
-  
+
   app.command('foo <text>', { checkArgCount: true })
-    .action(({ meta }, bar) => {
-      return meta.$send('foo' + bar)
+    .action(({ session }, bar) => {
+      return session.$send('foo' + bar)
     })
 
   app.command('fooo', { checkUnknown: true, checkRequired: true })
     .alias('bool')
     .option('-t, --text <bar>')
-    .action(({ meta, options }) => {
-      return meta.$send('fooo' + options.text)
+    .action(({ session, options }) => {
+      return session.$send('fooo' + options.text)
     })
 
   const expectedSuggestionText = [
@@ -81,20 +81,20 @@ describe('Custom Suggestions with Arguments', () => {
   const app = new MockedApp({ database: { memory: {} } })
   const session = app.createSession('group', 123, 456)
   const command = app.command('echo [message]', { authority: 0 })
-    .action(({ meta }, message) => meta.$send('text:' + message))
+    .action(({ session }, message) => session.$send('text:' + message))
 
-  app.middleware((meta, next) => showSuggestions({
-    target: meta.message,
+  app.middleware((session, next) => showSuggestions({
+    target: session.message,
     items: ['foo', 'bar'],
-    meta,
+    session,
     next,
     prefix: 'prefix',
     suffix: 'suffix',
     command,
-    execute: (message, meta) => command.execute({ args: [message], meta }),
+    execute: (message, session) => command.execute({ args: [message], session }),
   }))
 
-  beforeAll(async () => {
+  before(async () => {
     await app.start()
     await app.database.getGroup(456, 514)
   })
@@ -111,20 +111,20 @@ describe('Custom Suggestions with Options', () => {
   const session = app.createSession('group', 123, 456)
   const command = app.command('echo', { authority: 0 })
     .option('-m, --message <message>')
-    .action(({ meta, options }) => meta.$send('text:' + options.message))
+    .action(({ session, options }) => session.$send('text:' + options.message))
 
-  app.middleware((meta, next) => showSuggestions({
-    target: meta.message,
+  app.middleware((session, next) => showSuggestions({
+    target: session.message,
     items: ['foo', 'bar'],
-    meta,
+    session,
     next,
     prefix: 'prefix',
     suffix: 'suffix',
     command,
-    execute: (message, meta) => command.execute({ options: { message }, meta }),
+    execute: (message, session) => command.execute({ options: { message }, session }),
   }))
 
-  beforeAll(async () => {
+  before(async () => {
     await app.start()
     await app.database.getGroup(456, 514)
   })

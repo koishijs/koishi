@@ -6,28 +6,28 @@ test('basic support', () => {
   const app = new MockedApp()
   app.plugin(common)
 
-  expect(app._commandMap.admin).toBeFalsy()
-  expect(app._commandMap.broadcast).toBeFalsy()
-  expect(app._commandMap.echo).toBeTruthy()
-  expect(app._commandMap.exec).toBeTruthy()
-  expect(app._commandMap.exit).toBeTruthy()
-  expect(app._commandMap.contextify).toBeFalsy()
-  expect(app._commandMap.help).toBeTruthy()
-  expect(app._commandMap.info).toBeFalsy()
+  expect(app._commandMap.admin).not.to.be.ok
+  expect(app._commandMap.broadcast).not.to.be.ok
+  expect(app._commandMap.echo).to.be.ok
+  expect(app._commandMap.exec).to.be.ok
+  expect(app._commandMap.exit).to.be.ok
+  expect(app._commandMap.contextify).not.to.be.ok
+  expect(app._commandMap.help).to.be.ok
+  expect(app._commandMap.info).not.to.be.ok
 })
 
 test('skip database commands', () => {
   const app = new MockedApp({ database: { memory: {} } })
   app.plugin(common)
 
-  expect(app._commandMap.admin).toBeTruthy()
-  expect(app._commandMap.broadcast).toBeTruthy()
-  expect(app._commandMap.echo).toBeTruthy()
-  expect(app._commandMap.exec).toBeTruthy()
-  expect(app._commandMap.exit).toBeTruthy()
-  expect(app._commandMap.contextify).toBeTruthy()
-  expect(app._commandMap.help).toBeTruthy()
-  expect(app._commandMap.info).toBeTruthy()
+  expect(app._commandMap.admin).to.be.ok
+  expect(app._commandMap.broadcast).to.be.ok
+  expect(app._commandMap.echo).to.be.ok
+  expect(app._commandMap.exec).to.be.ok
+  expect(app._commandMap.exit).to.be.ok
+  expect(app._commandMap.contextify).to.be.ok
+  expect(app._commandMap.help).to.be.ok
+  expect(app._commandMap.info).to.be.ok
 })
 
 test('disable commands', () => {
@@ -44,12 +44,12 @@ test('disable commands', () => {
     info: false,
   })
 
-  expect(app._commandMap.admin).toBeFalsy()
-  expect(app._commandMap.broadcast).toBeFalsy()
-  expect(app._commandMap.echo).toBeFalsy()
-  expect(app._commandMap.exec).toBeFalsy()
-  expect(app._commandMap.exit).toBeFalsy()
-  expect(app._commandMap.contextify).toBeFalsy()
-  expect(app._commandMap.help).toBeFalsy()
-  expect(app._commandMap.info).toBeFalsy()
+  expect(app._commandMap.admin).not.to.be.ok
+  expect(app._commandMap.broadcast).not.to.be.ok
+  expect(app._commandMap.echo).not.to.be.ok
+  expect(app._commandMap.exec).not.to.be.ok
+  expect(app._commandMap.exit).not.to.be.ok
+  expect(app._commandMap.contextify).not.to.be.ok
+  expect(app._commandMap.help).not.to.be.ok
+  expect(app._commandMap.info).not.to.be.ok
 })

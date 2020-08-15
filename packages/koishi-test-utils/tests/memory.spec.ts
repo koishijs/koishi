@@ -1,5 +1,6 @@
 import { extendDatabase } from 'koishi-core'
 import { MemoryDatabase, testDatabase, memory, MockedApp } from '../src'
+import { expect } from 'chai'
 
 declare module 'koishi-core/dist/database' {
   interface Database {
@@ -19,17 +20,17 @@ interface FooData {
 }
 
 extendDatabase(MemoryDatabase, {
-  async createFoo (data: Partial<FooData> = {}) {
+  async createFoo(data: Partial<FooData> = {}) {
     return await this.create('foo', data) as FooData
   },
 
-  removeFoo (id: number) {
+  removeFoo(id: number) {
     return this.remove('foo', id)
   },
 
-  getFooCount () {
+  getFooCount() {
     return this.count('foo')
-  }
+  },
 })
 
 const app = testDatabase(new MockedApp().plugin(memory), {
@@ -39,23 +40,23 @@ const app = testDatabase(new MockedApp().plugin(memory), {
 
 describe('other methods', () => {
   const { database: db } = app
-  beforeAll(() => db.store.foo = [])
+  before(() => db.store.foo = [])
 
-  test('create & remove', async () => {
-    await expect(db.getFooCount()).resolves.toBe(0)
-    await expect(db.createFoo()).resolves.toMatchObject({ id: 1 })
-    await expect(db.getFooCount()).resolves.toBe(1)
-    await expect(db.createFoo()).resolves.toMatchObject({ id: 2 })
-    await expect(db.getFooCount()).resolves.toBe(2)
-    await expect(db.removeFoo(1)).resolves.toBeUndefined()
-    await expect(db.getFooCount()).resolves.toBe(1)
-    await expect(db.createFoo()).resolves.toMatchObject({ id: 1 })
-    await expect(db.getFooCount()).resolves.toBe(2)
-    await expect(db.createFoo({ id: 100 })).resolves.toMatchObject({ id: 100 })
-    await expect(db.getFooCount()).resolves.toBe(3)
-    await expect(db.removeFoo(1)).resolves.toBeUndefined()
-    await expect(db.getFooCount()).resolves.toBe(2)
-    await expect(db.createFoo()).resolves.toMatchObject({ id: 1 })
-    await expect(db.getFooCount()).resolves.toBe(3)
+  it('create & remove', async () => {
+    await expect(db.getFooCount()).eventually.to.equal(0)
+    await expect(db.createFoo()).eventually.to.have.shape({ id: 1 })
+    await expect(db.getFooCount()).eventually.to.equal(1)
+    await expect(db.createFoo()).eventually.to.have.shape({ id: 2 })
+    await expect(db.getFooCount()).eventually.to.equal(2)
+    await expect(db.removeFoo(1)).eventually.to.be.undefined
+    await expect(db.getFooCount()).eventually.to.equal(1)
+    await expect(db.createFoo()).eventually.to.have.shape({ id: 1 })
+    await expect(db.getFooCount()).eventually.to.equal(2)
+    await expect(db.createFoo({ id: 100 })).eventually.to.have.shape({ id: 100 })
+    await expect(db.getFooCount()).eventually.to.equal(3)
+    await expect(db.removeFoo(1)).eventually.to.be.undefined
+    await expect(db.getFooCount()).eventually.to.equal(2)
+    await expect(db.createFoo()).eventually.to.have.shape({ id: 1 })
+    await expect(db.getFooCount()).eventually.to.equal(3)
   })
 })

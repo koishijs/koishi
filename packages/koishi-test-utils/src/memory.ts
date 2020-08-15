@@ -15,7 +15,7 @@ export class MemoryDatabase {
 
   constructor(public app: App, public config: MemoryConfig) {}
 
-  private table <K extends TableType>(table: K) {
+  table <K extends TableType>(table: K) {
     return this.store[table] || (this.store[table] = [])
   }
 
@@ -44,22 +44,24 @@ export class MemoryDatabase {
 
 extendDatabase(MemoryDatabase, {
   async getUser(userId: number, authority?: any) {
+    const table = this.table('user')
     authority = typeof authority === 'number' ? authority : 0
-    const data = this.store.user[userId]
+    const data = table[userId]
     if (data) return clone(data)
     if (authority < 0) return null
     const fallback = User.create(userId, authority)
-    if (authority) this.store.user[userId] = fallback
+    if (authority) table[userId] = fallback
     return clone(fallback)
   },
 
   async getUsers(...args: any[][]) {
+    const table = this.table('user')
     if (args.length > 1 || args.length && typeof args[0][0] !== 'string') {
-      return Object.keys(this.store.user)
+      return Object.keys(table)
         .filter(id => args[0].includes(+id))
-        .map(id => clone(this.store.user[id]))
+        .map(id => clone(table[id]))
     } else {
-      return Object.values(this.store.user)
+      return Object.values(table)
     }
   },
 
@@ -68,22 +70,24 @@ extendDatabase(MemoryDatabase, {
   },
 
   async getGroup(groupId: number, selfId: any) {
+    const table = this.table('group')
     selfId = typeof selfId === 'number' ? selfId : 0
-    const data = this.store.group[groupId]
+    const data = table[groupId]
     if (data) return clone(data)
     const fallback = Group.create(groupId, selfId)
-    if (selfId) this.store.group[groupId] = fallback
+    if (selfId) table[groupId] = fallback
     return clone(fallback)
   },
 
   async getAllGroups(...args: any[][]) {
+    const table = this.table('group')
     const assignees = args.length > 1 ? args[1]
       : args.length && typeof args[0][0] === 'number' ? args[0] as never
         : await this.app.getSelfIds()
     if (!assignees.length) return []
-    return Object.keys(this.store.group)
-      .filter(id => assignees.includes(this.store.group[id].assignee))
-      .map(id => clone(this.store.group[id]))
+    return Object.keys(table)
+      .filter(id => assignees.includes(table[id].assignee))
+      .map(id => clone(table[id]))
   },
 
   async setGroup(groupId: number, data: any) {

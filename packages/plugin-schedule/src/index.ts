@@ -1,5 +1,5 @@
 import { Context, Session, getContextId } from 'koishi-core'
-import { parseTime, parseDate, formatTimeInterval, Logger } from 'koishi-utils'
+import { Time, Logger } from 'koishi-utils'
 import { Schedule } from './database'
 
 export * from './database'
@@ -69,7 +69,7 @@ export function apply(ctx: Context) {
         }
         if (!schedules.length) return '当前没有等待执行的日程。'
         return schedules.map(({ id, time, interval, command, session }) => {
-          let output = `${id}. 触发时间：${formatTimeInterval(time, interval)}，指令：${command}`
+          let output = `${id}. 触发时间：${Time.formatTimeInterval(time, interval)}，指令：${command}`
           if (options.fullList) output += `，上下文：${formatContext(session)}`
           return output
         }).join('\n')
@@ -77,14 +77,14 @@ export function apply(ctx: Context) {
 
       if (!options.rest) return '请输入要执行的指令。'
 
-      const time = parseDate(dateSegments.join('-'))
+      const time = Time.parseDate(dateSegments.join('-'))
       if (Number.isNaN(+time)) {
         return '请输入合法的日期。'
       } else if (!options.interval && +time <= Date.now()) {
         return '不能指定过去的时间为起始时间。'
       }
 
-      const interval = parseTime(options.interval)
+      const interval = Time.parseTime(options.interval)
       if (!interval && options.interval) {
         return '请输入合法的时间间隔。'
       }

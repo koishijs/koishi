@@ -40,13 +40,13 @@
   "dependencies": {
     "cac": "^6.6.1",
     "kleur": "^4.0.3",
-    "koishi-core": "^2.0.0-beta.9",
+    "koishi-core": "^2.0.0-beta.10",
     "koishi-adapter-cqhttp": "^1.0.0-beta.1",
     "koishi-plugin-common": "^3.0.0-beta.7",
-    "koishi-plugin-mysql": "^2.0.0-beta.4",
-    "koishi-plugin-schedule": "^2.0.0-beta.7",
-    "koishi-plugin-status": "^2.0.0-beta.7",
-    "koishi-plugin-teach": "^1.0.0-beta.9",
+    "koishi-plugin-mysql": "^2.0.0-beta.5",
+    "koishi-plugin-schedule": "^2.0.0-beta.8",
+    "koishi-plugin-status": "^2.0.0-beta.8",
+    "koishi-plugin-teach": "^1.0.0-beta.10",
     "koishi-utils": "^2.2.0",
     "prompts": "^2.3.2"
   }

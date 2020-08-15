@@ -10,7 +10,7 @@ import axios from 'axios'
 
 export const showTestLog = Logger.create('test').debug
 
-export async function createHttpServer (token?: string) {
+export async function createHttpServer(token?: string) {
   const cqhttpPort = await getPort({ port: randomInt(16384, 49152) })
   const koishiPort = await getPort({ port: randomInt(16384, 49152) })
   return new HttpServer(cqhttpPort, koishiPort, token)
@@ -20,12 +20,12 @@ export class HttpServer extends MockedServer {
   server: http.Server
   appList: App[] = []
 
-  constructor (public cqhttpPort: number, public koishiPort: number, public token?: string) {
+  constructor(public cqhttpPort: number, public koishiPort: number, public token?: string) {
     super()
     this.open()
   }
 
-  open () {
+  open() {
     this.server = http.createServer((req, res) => {
       let body = ''
       req.on('data', chunk => body += chunk)
@@ -57,7 +57,7 @@ export class HttpServer extends MockedServer {
     }).listen(this.cqhttpPort)
   }
 
-  post (meta: Meta, port = this.koishiPort, secret?: string) {
+  post(meta: Meta, port = this.koishiPort, secret?: string) {
     const data = snakeCase(meta)
     const headers: any = {}
     if (secret) {
@@ -67,7 +67,7 @@ export class HttpServer extends MockedServer {
     return axios.post(`http://localhost:${port}`, data, { headers })
   }
 
-  createBoundApp (options: AppOptions = {}) {
+  createBoundApp(options: AppOptions = {}) {
     const app = new App({
       port: this.koishiPort,
       server: `http://localhost:${this.cqhttpPort}`,
@@ -78,13 +78,13 @@ export class HttpServer extends MockedServer {
     return app
   }
 
-  async close () {
+  async close() {
     await Promise.all(this.appList.map(app => app.stop()))
     this.server.close()
   }
 }
 
-export async function createWsServer (token?: string) {
+export async function createWsServer(token?: string) {
   const cqhttpPort = await getPort({ port: randomInt(16384, 49152) })
   return new WsServer(cqhttpPort, token)
 }
@@ -94,12 +94,12 @@ export class WsServer extends MockedServer {
   appList: App[] = []
   emitter = new EventEmitter()
 
-  constructor (public cqhttpPort: number, public token?: string) {
+  constructor(public cqhttpPort: number, public token?: string) {
     super()
     this.open()
   }
 
-  open () {
+  open() {
     this.server = new ws.Server({ port: this.cqhttpPort })
     this.server.on('connection', (socket, req) => {
       if (this.token) {
@@ -118,11 +118,11 @@ export class WsServer extends MockedServer {
     })
   }
 
-  nextTick (): Promise<void> {
+  nextTick(): Promise<void> {
     return new Promise(resolve => this.emitter.on('message', resolve))
   }
 
-  async post (meta: Meta) {
+  async post(meta: Meta) {
     const data = snakeCase(meta)
     showTestLog('websocket post:', data)
     this.server.clients.forEach(socket => {
@@ -134,7 +134,7 @@ export class WsServer extends MockedServer {
     })))
   }
 
-  createBoundApp (options: AppOptions = {}) {
+  createBoundApp(options: AppOptions = {}) {
     const app = new App({
       server: `ws://localhost:${this.cqhttpPort}`,
       selfId: BASE_SELF_ID,
@@ -144,7 +144,7 @@ export class WsServer extends MockedServer {
     return app
   }
 
-  async close () {
+  async close() {
     await Promise.all(this.appList.map(app => app.stop()))
     this.server.close()
   }

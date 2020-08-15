@@ -23,7 +23,7 @@ export namespace User {
 
   export type Field = keyof User
   export const fields: Field[] = []
-  export type Observed <K extends Field = Field> = utils.Observed<Pick<User, K>>
+  export type Observed<K extends Field = Field> = utils.Observed<Pick<User, K>>
   type Getter = (id: number, authority: number) => Partial<User>
   const getters: Getter[] = []
 
@@ -65,7 +65,7 @@ export namespace Group {
 
   export type Field = keyof Group
   export const fields: Field[] = []
-  export type Observed <K extends Field = Field> = utils.Observed<Pick<Group, K>>
+  export type Observed<K extends Field = Field> = utils.Observed<Pick<Group, K>>
   type Getter = (id: number, authority: number) => Partial<Group>
   const getters: Getter[] = []
 
@@ -90,35 +90,33 @@ export namespace Group {
 }
 
 export interface Database {
-  getUser <K extends User.Field> (userId: number, fields?: readonly K[]): Promise<Pick<User, K | 'id'>>
-  getUser <K extends User.Field> (userId: number, defaultAuthority?: number, fields?: readonly K[]): Promise<Pick<User, K | 'id'>>
-  getUsers <K extends User.Field> (fields?: readonly K[]): Promise<Pick<User, K>[]>
-  getUsers <K extends User.Field> (ids: readonly number[], fields?: readonly K[]): Promise<Pick<User, K>[]>
-  setUser (userId: number, data: Partial<User>): Promise<any>
+  getUser<K extends User.Field>(userId: number, fields?: readonly K[]): Promise<Pick<User, K | 'id'>>
+  getUser<K extends User.Field>(userId: number, defaultAuthority?: number, fields?: readonly K[]): Promise<Pick<User, K | 'id'>>
+  getUsers<K extends User.Field>(fields?: readonly K[]): Promise<Pick<User, K>[]>
+  getUsers<K extends User.Field>(ids: readonly number[], fields?: readonly K[]): Promise<Pick<User, K>[]>
+  setUser(userId: number, data: Partial<User>): Promise<any>
 
-  getGroup <K extends Group.Field> (groupId: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id'>>
-  getGroup <K extends Group.Field> (groupId: number, selfId?: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id'>>
-  getAllGroups <K extends Group.Field> (assignees?: readonly number[]): Promise<Pick<Group, K>[]>
-  getAllGroups <K extends Group.Field> (fields?: readonly K[], assignees?: readonly number[]): Promise<Pick<Group, K>[]>
-  setGroup (groupId: number, data: Partial<Group>): Promise<any>
+  getGroup<K extends Group.Field>(groupId: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id'>>
+  getGroup<K extends Group.Field>(groupId: number, selfId?: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id'>>
+  getAllGroups<K extends Group.Field>(assignees?: readonly number[]): Promise<Pick<Group, K>[]>
+  getAllGroups<K extends Group.Field>(fields?: readonly K[], assignees?: readonly number[]): Promise<Pick<Group, K>[]>
+  setGroup(groupId: number, data: Partial<Group>): Promise<any>
 }
 
-type DatabaseExtension <T extends {}> = {
-  [K in keyof Database]?: Database[K] extends (...args: infer R) => infer S ? (this: T & Database, ...args: R) => S : never
+type DatabaseExtensionMethods<I> = {
+  [K in keyof Database]?: Database[K] extends (...args: infer R) => infer S ? (this: I & Database, ...args: R) => S : never
 }
 
-export function extendDatabase <T extends {}>(module: string, extension: DatabaseExtension<T>, onConstruct?: (this: T) => void): void
-export function extendDatabase <T extends {}>(module: { prototype: T }, extension: DatabaseExtension<T>, onConstruct?: (this: T) => void): void
-export function extendDatabase(module: any, extension: {}, onConstruct?: () => void) {
+type DatabaseExtension<T> = ((Database: T) => void)
+  | DatabaseExtensionMethods<T extends new (...args: any[]) => infer I ? I : never>
+
+export function extendDatabase<T extends {}>(module: string | T, extension: DatabaseExtension<T>) {
   try {
     const Database = typeof module === 'string' ? require(module).default : module
-    Object.assign(Database.prototype, extension)
-    if (onConstruct) {
-      const construct = Database.prototype['construct']
-      Database.prototype['construct'] = function (...args: any[]) {
-        construct.apply(this, args)
-        onConstruct.call(this)
-      }
+    if (typeof extension === 'function') {
+      extension(Database)
+    } else {
+      Object.assign(Database.prototype, extension)
     }
   } catch (error) {}
 }
