@@ -14,7 +14,7 @@
     "dep": "ts-node build/dep",
     "dev": "ts-node build/dev",
     "docs": "cd docs & yarn dev",
-    "test": "mocha",
+    "test": "c8 mocha",
     "lint": "eslint packages/*/src/**/*.ts --fix --cache",
     "pub": "ts-node build/publish",
     "pub:plugins": "yarn pub plugins",

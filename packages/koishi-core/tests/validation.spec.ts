@@ -1,6 +1,5 @@
 import { MockedApp } from 'koishi-test-utils'
 import { User, Group } from 'koishi-core'
-import 'koishi-database-memory'
 
 const app = new MockedApp()
 const session1 = app.createSession('user', 123)

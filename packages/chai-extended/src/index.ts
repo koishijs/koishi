@@ -2,8 +2,9 @@ import { use } from 'chai'
 
 use(({ Assertion }) => {
   function sameShape(expect, actual, path) {
+    if (actual === expect || Number.isNaN(expect) && Number.isNaN(actual)) return
+
     if (!expect || ['string', 'number', 'boolean', 'bigint'].includes(typeof expect)) {
-      if (actual === expect) return
       return 'Expected to have null but got "' + actual + '" at path "' + path + '".'
     }
 

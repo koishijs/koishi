@@ -1,7 +1,7 @@
 {
   "name": "@shigma/chai-extended",
   "version": "0.1.4",
-  "main": "index.js",
+  "main": "dist/index.js",
   "typings": "index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",

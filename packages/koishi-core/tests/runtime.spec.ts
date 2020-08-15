@@ -14,7 +14,7 @@ app.command('foo <text>', { checkArgCount: true })
     return session.$send('foo' + bar)
   })
 
-app.command('fooo', { checkUnknown: true, checkRequired: true })
+app.command('fooo', { checkUnknown: true })
   .shortcut('bar2', { options: { text: 'bar' } })
   .shortcut('bar3', { prefix: true, fuzzy: true })
   .option('-t, --text <bar>')
@@ -23,19 +23,17 @@ app.command('fooo', { checkUnknown: true, checkRequired: true })
   })
 
 describe('command prefix', () => {
-  beforeAll(() => {
+  before(() => {
     app.options.similarityCoefficient = 0
   })
 
-  afterAll(() => {
-    app.options.commandPrefix = null
+  after(() => {
+    app.options.prefix = null
     app.options.similarityCoefficient = 0.4
-    app.prepare()
   })
 
   test('no prefix', async () => {
-    app.options.commandPrefix = null
-    app.prepare()
+    app.options.prefix = null
 
     await session1.shouldHaveReply('foo bar', 'foobar')
     await session2.shouldHaveReply('foo bar', 'foobar')
@@ -46,8 +44,7 @@ describe('command prefix', () => {
   })
 
   test('single prefix', async () => {
-    app.options.commandPrefix = '!'
-    app.prepare()
+    app.options.prefix = '!'
 
     await session1.shouldHaveReply('foo bar', 'foobar')
     await session2.shouldHaveNoReply('foo bar')
@@ -58,8 +55,7 @@ describe('command prefix', () => {
   })
 
   test('multiple prefixes', async () => {
-    app.options.commandPrefix = ['!', '.']
-    app.prepare()
+    app.options.prefix = ['!', '.']
 
     await session1.shouldHaveReply('foo bar', 'foobar')
     await session2.shouldHaveNoReply('foo bar')
@@ -70,8 +66,7 @@ describe('command prefix', () => {
   })
 
   test('optional prefix', async () => {
-    app.options.commandPrefix = ['.', '']
-    app.prepare()
+    app.options.prefix = ['.', '']
 
     await session1.shouldHaveReply('foo bar', 'foobar')
     await session2.shouldHaveReply('foo bar', 'foobar')
@@ -83,16 +78,14 @@ describe('command prefix', () => {
 })
 
 describe('nickname prefix', () => {
-  beforeAll(() => {
+  before(() => {
     app.options.similarityCoefficient = 0
-    app.options.commandPrefix = '-'
-    app.prepare()
+    app.options.prefix = '-'
   })
 
-  afterAll(() => {
+  after(() => {
     app.options.similarityCoefficient = 0.4
-    app.options.commandPrefix = null
-    app.prepare()
+    app.options.prefix = null
   })
 
   test('no nickname', async () => {
@@ -105,7 +98,6 @@ describe('nickname prefix', () => {
 
   test('single nickname', async () => {
     app.options.nickname = 'koishi'
-    app.prepare()
 
     await session1.shouldHaveReply('koishi, foo bar', 'foobar')
     await session2.shouldHaveReply('koishi, foo bar', 'foobar')
@@ -119,7 +111,6 @@ describe('nickname prefix', () => {
 
   test('multiple nicknames', async () => {
     app.options.nickname = ['komeiji', 'koishi']
-    app.prepare()
 
     await session1.shouldHaveReply('foo bar', 'foobar')
     await session2.shouldHaveNoReply('foo bar')
@@ -206,14 +197,12 @@ describe('Command Execution', () => {
 })
 
 describe('shortcuts', () => {
-  beforeAll(() => {
-    app.options.commandPrefix = '#'
-    app.prepare()
+  before(() => {
+    app.options.prefix = '#'
   })
 
-  afterAll(() => {
-    app.options.commandPrefix = null
-    app.prepare()
+  after(() => {
+    app.options.prefix = null
   })
 
   test('single shortcut', async () => {
