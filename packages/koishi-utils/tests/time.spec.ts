@@ -17,10 +17,9 @@ describe('Date Manipulations', () => {
 
   it('date number', () => {
     Time.getDateNumber() /* make coverage happy */
-    expect(Time.getDateNumber(new Date(2020, 0))).to.equal(18262)
+    expect(Time.getDateNumber(new Date(Date.UTC(2020, 0)))).to.equal(18262)
     expect(Time.getDateNumber(1577808000000)).to.equal(18262)
-
-    expect(+Time.fromDateNumber(18262)).to.equal(+new Date(2020, 0))
+    expect(+Time.fromDateNumber(18262)).to.equal(+new Date(Date.UTC(2019, 11, 31, 16)))
   })
 
   it('parse time', () => {

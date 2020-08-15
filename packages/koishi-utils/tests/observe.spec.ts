@@ -1,7 +1,17 @@
-import { observe, noop } from '../src'
+import { observe, noop, pick, omit } from '../src'
 import { fn } from 'jest-mock'
 import { expect } from 'chai'
-import 'koishi-test-utils'
+import '@shigma/chai-extended'
+
+describe('object utilities', () => {
+  it('pick', () => {
+    expect(pick({ a: 1, b: [2] }, ['b'])).to.deep.equal({ b: [2] })
+  })
+
+  it('omit', () => {
+    expect(omit({ a: 1, b: [2] }, ['b'])).to.deep.equal({ a: 1 })
+  })
+})
 
 describe('Observer API', () => {
   it('type checks', () => {
@@ -26,7 +36,7 @@ describe('Observer API', () => {
 
   it('observe property', () => {
     const target: Record<string, number> = { a: 1, b: 2 }
-    const object = observe(target)
+    const object = observe(target, 'foo')
     expect(object._diff).to.have.shape({})
 
     object.a = 1
@@ -51,7 +61,7 @@ describe('Observer API', () => {
   })
 
   it('deep observe', () => {
-    const object = observe<any>({ a: { b: 1 }, c: [{ d: 2 }], x: [{ y: 3 }] })
+    const object = observe<any>({ a: { b: 1 }, c: [{ d: 2 }], x: [{ y: 3 }] }, 'foo')
     expect(object._diff).to.have.shape({})
 
     object.a.e = 3
@@ -73,6 +83,14 @@ describe('Observer API', () => {
     delete object.a.b
     expect(object).to.have.shape({ a: { e: 3 }, c: [{ d: 2 }, { f: 4 }], x: [{ y: 4 }, [5]] })
     expect(object._diff).to.have.shape({ a: { e: 3 }, c: [{ d: 2 }, { f: 4 }], x: [{ y: 4 }, [5]] })
+  })
+
+  it('observe date', () => {
+    const object = observe({ foo: new Date() })
+    object.foo.getFullYear()
+    expect(object._diff).to.not.have.property('foo')
+    object.foo.setFullYear(2000)
+    expect(object._diff).to.have.property('foo')
   })
 
   it('flush changes', () => {

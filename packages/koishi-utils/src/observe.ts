@@ -116,7 +116,8 @@ function observeArray <T>(target: T[], label: string, update: () => void) {
 }
 
 function observeDate(target: Date, update: () => void) {
-  for (const method in Date.prototype) {
+  for (const method of Object.getOwnPropertyNames(Date.prototype)) {
+    if (method === 'valueOf') continue
     defineProperty(target, method, function (...args: any[]) {
       const oldValue = target.valueOf()
       const result = Date.prototype[method].apply(this, args)
