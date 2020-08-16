@@ -13,7 +13,7 @@ beforeAll(async () => {
   await app1.database.getUser(123, 4)
   await app1.database.getGroup(321, app1.selfId)
   await app1.database.getGroup(654, app1.selfId)
-  await app1.database.setGroup(654, { flag: GroupFlag.noEmit })
+  await app1.database.setGroup(654, { flag: GroupFlag.silent })
   await app2.database.getGroup(987, app2.selfId)
 })
 

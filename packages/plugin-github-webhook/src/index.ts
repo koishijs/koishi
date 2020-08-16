@@ -38,7 +38,7 @@ export function apply(ctx: Context, config: Config = {}) {
       const groups = await ctx.database.getAllGroups(['id', 'assignee'])
       for (const { id, assignee } of groups) {
         if (ids.includes(id)) {
-          await ctx.bots[assignee].sendGroupMsg(id, message)
+          await ctx.bots[assignee].sendGroupMessage(id, message)
         }
       }
     })

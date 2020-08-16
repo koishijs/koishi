@@ -124,7 +124,7 @@ export class Daemon {
     const groups = await app.database.getAllGroups(['id', 'flag', 'assignee', 'subscribe'])
     groups.forEach(async (group) => {
       const { id, flag, assignee, subscribe } = group
-      if (!subscribe[this.config.id] || flag & Group.Flag.noEmit) return
+      if (!subscribe[this.config.id] || flag & Group.Flag.silent) return
       const bot = app.bots[assignee]
       const output = [`[直播提示] ${this.config.names[0]} 正在 ${this._displayType} 上直播：${url}`]
       // at subscibers
@@ -143,7 +143,7 @@ export class Daemon {
       }
       if (app.bail('monitor/before-send', info, group)) return
       for (const message of messages) {
-        await bot.sendGroupMsg(id, message)
+        await bot.sendGroupMessage(id, message)
       }
     })
   }

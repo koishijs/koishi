@@ -99,6 +99,6 @@ export default function apply(ctx: App, options: HandlerOptions = {}) {
       if (group.assignee !== session.selfId) return
     }
     const output = typeof welcome === 'string' ? welcome : await welcome(session)
-    await session.$bot.sendGroupMsg(session.groupId, output)
+    await session.$bot.sendGroupMessage(session.groupId, output)
   })
 }

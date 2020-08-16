@@ -273,7 +273,7 @@ export class Context {
     const groups = await this.database.getAllGroups(['id', 'assignee', 'flag'])
     const assignMap: Record<number, number[]> = {}
     for (const { id, assignee, flag } of groups) {
-      if (!forced && (flag & Group.Flag.noEmit)) continue
+      if (!forced && (flag & Group.Flag.silent)) continue
       if (assignMap[assignee]) {
         assignMap[assignee].push(id)
       } else {

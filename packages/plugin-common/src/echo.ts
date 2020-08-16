@@ -11,9 +11,9 @@ export function apply(ctx: Context) {
     .usage('各 id 之间请使用逗号分隔。')
     .action(async ({ options, session }, message) => {
       // parse channels
-      const channels: Record<MetaTypeMap['message'], string[]> = {
-        private: options.user ? options.user.split(',') : [],
-        group: options.group ? options.group.split(',') : [],
+      const channels: Record<MetaTypeMap['message'], number[]> = {
+        private: options.user ? options.user.split(',').map(Number) : [],
+        group: options.group ? options.group.split(',').map(Number) : [],
       }
 
       // fallback to current context
@@ -33,8 +33,8 @@ export function apply(ctx: Context) {
 
       // send messages
       await Promise.all([
-        ...channels.private.map(id => session.$bot.sendPrivateMsg(+id, message)),
-        ...channels.group.map(id => session.$bot.sendGroupMsg(+id, message)),
+        session.$bot.sendPrivateMessage(channels.private, message),
+        session.$bot.sendGroupMessage(channels.group, message),
       ])
     })
 }

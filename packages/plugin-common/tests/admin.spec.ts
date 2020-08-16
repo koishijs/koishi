@@ -91,14 +91,14 @@ describe('group operations', () => {
   test('setFlag', async () => {
     await session.shouldHaveReply('admin -G set-flag', `可用的标记有 ${Group.Flag.join(', ')}。`)
     await session.shouldHaveReply('admin -g 654 set-flag foo', '未找到标记 foo。')
-    await session.shouldHaveReply('admin -g 654 set-flag noEmit', '群信息已修改。')
-    await expect(app.database.getGroup(654)).eventually.to.contain({ flag: Group.Flag.noEmit })
+    await session.shouldHaveReply('admin -g 654 set-flag silent', '群信息已修改。')
+    await expect(app.database.getGroup(654)).eventually.to.contain({ flag: Group.Flag.silent })
   })
 
   test('unsetFlag', async () => {
     await session.shouldHaveReply('admin -G unset-flag', `可用的标记有 ${Group.Flag.join(', ')}。`)
     await session.shouldHaveReply('admin -g 654 unset-flag foo', '未找到标记 foo。')
-    await session.shouldHaveReply('admin -g 654 unset-flag noEmit ignore', '群信息已修改。')
+    await session.shouldHaveReply('admin -g 654 unset-flag silent ignore', '群信息已修改。')
     await expect(app.database.getGroup(654)).eventually.to.contain({ flag: 0 })
   })
 })
