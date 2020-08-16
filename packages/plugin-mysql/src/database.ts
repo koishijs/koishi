@@ -91,13 +91,15 @@ export default class MysqlDatabase {
       }
     }
 
+    const error = new Error()
     return new Promise((resolve, reject) => {
       const sql = format(source, values)
       logger.debug('[sql]', sql)
-      this.pool.query(sql, (error, results) => {
-        if (!error) return resolve(results)
+      this.pool.query(sql, (err, results) => {
+        if (!err) return resolve(results)
         logger.warn(sql)
-        reject(new Error(error.message))
+        error.stack = err.message + error.stack.slice(7)
+        reject(error)
       })
     })
   }

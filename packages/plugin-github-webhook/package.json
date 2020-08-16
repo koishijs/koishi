@@ -33,10 +33,10 @@
     "webhook"
   ],
   "devDependencies": {
-    "koishi-test-utils": "^4.0.0-beta.3"
+    "koishi-test-utils": "^4.0.0-beta.4"
   },
   "peerDependencies": {
-    "koishi-core": "^2.0.0-beta.10"
+    "koishi-core": "^2.0.0-beta.11"
   },
   "dependencies": {
     "@octokit/webhooks": "^7.9.3"

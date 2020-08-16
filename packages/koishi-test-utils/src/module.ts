@@ -1,6 +1,6 @@
 import { join, dirname } from 'path'
 
-function getCallsites (): NodeJS.CallSite[] {
+function getCallsites(): NodeJS.CallSite[] {
   const prepareStackTrace = Error.prepareStackTrace
   Error.prepareStackTrace = (_, stack) => stack
   const callsites = new Error().stack.slice(1) as any
@@ -10,7 +10,7 @@ function getCallsites (): NodeJS.CallSite[] {
 
 const currentFile = getCallsites()[0].getFileName()
 
-function getCallerPath () {
+function getCallerPath() {
   for (const callsite of getCallsites()) {
     const file = callsite.getFileName()
     if (file && currentFile !== file) return file

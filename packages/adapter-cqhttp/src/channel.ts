@@ -5,6 +5,7 @@ import type WebSocket from 'ws'
 
 declare module 'koishi-core/dist/server' {
   interface Bot {
+    token?: string
     socket?: WebSocket
   }
 }

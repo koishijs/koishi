@@ -52,8 +52,8 @@ export default class HttpServer extends Server {
       const meta = this.prepare(ctx.request.body)
       if (!meta) return ctx.status = 403
 
-      const { quickOperationTimeout } = this.app.options
-      if (quickOperationTimeout > 0) {
+      const { quickOperation } = this.app.options
+      if (quickOperation > 0) {
         // bypass koa's built-in response handling for quick operations
         ctx.respond = false
         ctx.res.writeHead(200, {
@@ -71,7 +71,7 @@ export default class HttpServer extends Server {
         const timer = setTimeout(() => {
           meta._response = null
           ctx.res.end()
-        }, quickOperationTimeout)
+        }, quickOperation)
       }
 
       // dispatch events

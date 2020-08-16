@@ -58,6 +58,7 @@ export namespace Dialogue {
   export const history: Record<number, Dialogue> = []
 
   export interface Config {
+    prefix?: string
     preserveHistory?: number
   }
 

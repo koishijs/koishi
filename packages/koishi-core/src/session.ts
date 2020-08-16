@@ -1,6 +1,6 @@
 import { User, Group } from './database'
 import { ExecuteArgv, ParsedArgv, Command } from './command'
-import { isInteger, contain, observe, Observed, noop, Logger, defineProperty } from 'koishi-utils'
+import { isInteger, contain, observe, noop, Logger, defineProperty } from 'koishi-utils'
 import { NextFunction } from './context'
 import { App } from './app'
 
@@ -169,27 +169,21 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
       }
       if (fieldSet.size) {
         const data = await this.$app.database.getGroup(groupId, [...fieldSet])
-        groupCache[groupId] = $group._merge(data)
-        groupCache[groupId]._timestamp = Date.now()
+        this.$app._groupCache.set(groupId, $group._merge(data))
       }
       return $group as any
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    const cache = groupCache[groupId]
+    const cache = this.$app._groupCache.get(groupId)
     const fieldArray = [...fieldSet]
-    const timestamp = Date.now()
-    const isActiveCache = cache
-      && contain(Object.keys(cache), fieldArray)
-      && timestamp - cache._timestamp < this.$app.options.groupCacheTimeout
-    if (isActiveCache) {
-      return this.$group = cache as any
-    }
+    const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
+    if (hasActiveCache) return this.$group = cache as any
 
     // 绑定一个新的可观测群实例
     const data = await this.$app.database.getGroup(groupId, fieldArray)
-    const group = groupCache[groupId] = observe(data, diff => this.$app.database.setGroup(groupId, diff), `group ${groupId}`)
-    groupCache[groupId]._timestamp = timestamp
+    const group = observe(data, diff => this.$app.database.setGroup(groupId, diff), `group ${groupId}`)
+    this.$app._groupCache.set(groupId, group)
     return this.$group = group
   }
 
@@ -206,8 +200,7 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
       }
       if (fieldSet.size) {
         const data = await this.$app.database.getUser(userId, [...fieldSet])
-        userCache[userId] = $user._merge(data)
-        userCache[userId]._timestamp = Date.now()
+        this.$app._userCache.set(userId, $user._merge(data))
       }
     }
 
@@ -224,20 +217,15 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    const cache = userCache[userId]
+    const cache = this.$app._userCache.get(userId)
     const fieldArray = [...fieldSet]
-    const timestamp = Date.now()
-    const isActiveCache = cache
-      && contain(Object.keys(cache), fieldArray)
-      && timestamp - cache._timestamp < this.$app.options.userCacheTimeout
-    if (isActiveCache) {
-      return this.$user = cache as any
-    }
+    const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
+    if (hasActiveCache) return this.$user = cache as any
 
     // 绑定一个新的可观测用户实例
     const data = await this.$app.database.getUser(userId, defaultAuthority, fieldArray)
-    const user = userCache[userId] = observe(data, diff => this.$app.database.setUser(userId, diff), `user ${userId}`)
-    userCache[userId]._timestamp = timestamp
+    const user = observe(data, diff => this.$app.database.setUser(userId, diff), `user ${userId}`)
+    this.$app._userCache.set(userId, user)
     return this.$user = user
   }
 
@@ -284,9 +272,6 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
     return argv.command.execute(argv)
   }
 }
-
-const userCache: Record<number, Observed<Partial<User & { _timestamp: number }>>> = {}
-const groupCache: Record<number, Observed<Partial<Group & { _timestamp: number }>>> = {}
 
 export interface AnonymousInfo {
   id?: number

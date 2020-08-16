@@ -4,34 +4,31 @@ import { Context, Middleware, NextFunction } from './context'
 import { Group, User, Database } from './database'
 import { BotOptions, Server } from './server'
 import { Session } from './session'
-import { simplify, defineProperty, Time } from 'koishi-utils'
+import { simplify, defineProperty, Time, Observed } from 'koishi-utils'
 import { types } from 'util'
 import help from './plugins/help'
 import shortcut from './plugins/shortcut'
 import suggest from './plugins/suggest'
 import validate from './plugins/validate'
+import LruCache from 'lru-cache'
 
 export interface AppOptions extends BotOptions {
   port?: number
-  secret?: string
-  path?: string
   type?: string
   bots?: BotOptions[]
   prefix?: string | string[]
   nickname?: string | string[]
-  retryTimes?: number
-  retryInterval?: number
   maxListeners?: number
-  preferSync?: boolean
   prettyErrors?: boolean
   promptTimeout?: number
   processMessage?: (message: string) => string
   queueDelay?: number | ((message: string, session: Session) => number)
   defaultAuthority?: number | ((session: Session) => number)
-  quickOperationTimeout?: number
   similarityCoefficient?: number
-  userCacheTimeout?: number
-  groupCacheTimeout?: number
+  userCacheLength?: number
+  groupCacheLength?: number
+  userCacheAge?: number
+  groupCacheAge?: number
 }
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
@@ -47,9 +44,11 @@ export class App extends Context {
   status = AppStatus.closed
 
   _database: Database
-  _commands: Command[] = []
-  _commandMap: Record<string, Command> = {}
-  _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
+  _commands: Command[]
+  _commandMap: Record<string, Command>
+  _hooks: Record<keyof any, [Context, (...args: any[]) => any][]>
+  _userCache: LruCache<number, Observed<Partial<User>>>
+  _groupCache: LruCache<number, Observed<Partial<Group>>>
 
   private _nameRE: RegExp
   private _prefixRE: RegExp
@@ -57,22 +56,32 @@ export class App extends Context {
   private _middlewareSet = new Set<number>()
   private _getSelfIdsPromise: Promise<any>
 
-  static defaultOptions: AppOptions = {
+  static defaultConfig: AppOptions = {
     maxListeners: 64,
     prettyErrors: true,
+    queueDelay: 0.1 * Time.second,
     promptTimeout: Time.minute,
-    retryInterval: 5 * Time.second,
-    userCacheTimeout: Time.minute,
-    groupCacheTimeout: 5 * Time.minute,
-    quickOperationTimeout: 0.1 * Time.second,
-    processMessage: (message) => simplify(message.trim()),
+    userCacheAge: Time.minute,
+    groupCacheAge: 5 * Time.minute,
+    processMessage: message => simplify(message.trim()),
   }
 
   constructor(options: AppOptions = {}) {
     super({ groups: [], users: [], private: true })
-    this.app = this
-    options = this.options = { ...App.defaultOptions, ...options }
+    options = this.options = { ...App.defaultConfig, ...options }
     if (!options.bots) options.bots = [options]
+
+    defineProperty(this, '_hooks', {})
+    defineProperty(this, '_commands', [])
+    defineProperty(this, '_commandMap', {})
+    defineProperty(this, '_userCache', new LruCache({
+      max: options.userCacheLength,
+      maxAge: options.userCacheAge,
+    }))
+    defineProperty(this, '_groupCache', new LruCache({
+      max: options.groupCacheLength,
+      maxAge: options.groupCacheAge,
+    }))
 
     const { type } = this.options
     const server = Server.types[type]
@@ -80,8 +89,6 @@ export class App extends Context {
       throw new Error(`unsupported type "${type}", you should import the adapter yourself`)
     }
     this.server = Reflect.construct(server, [this])
-
-    defineProperty(this, '_commandMap', {})
 
     const { nickname, prefix } = this.options
     const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []

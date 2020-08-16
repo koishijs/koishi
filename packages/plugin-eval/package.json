@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=14.6.0"
   },
   "files": [
     "dist"
@@ -33,7 +33,10 @@
     "code"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.0.0-beta.10",
-    "koishi-utils": "^2.2.0"
+    "koishi-core": "^2.0.0-beta.11",
+    "koishi-utils": "^3.0.0"
+  },
+  "dependencies": {
+    "escape-string-regexp": "^4.0.0"
   }
 }

@@ -2,6 +2,7 @@
   "name": "koishi-workspace",
   "private": true,
   "workspaces": [
+    "atri",
     "shiki",
     "shiki/core",
     "shiki/cosmos",
@@ -9,15 +10,14 @@
     "packages/*"
   ],
   "scripts": {
+    "atri": "yarn workspace atri",
     "build": "tsc -b",
     "bump": "ts-node build/bump",
     "dep": "ts-node build/dep",
-    "dev": "ts-node build/dev",
     "docs": "cd docs & yarn dev",
     "test": "rimraf coverage & c8 -r text mocha",
     "lint": "eslint packages/*/src/**/*.ts --fix --cache",
     "pub": "ts-node build/publish",
-    "pub:plugins": "yarn pub plugins",
     "shiki": "yarn workspace bot-shiki"
   },
   "version": "1.0.0",
