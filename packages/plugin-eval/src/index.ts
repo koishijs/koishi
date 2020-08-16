@@ -128,7 +128,7 @@ export function apply(ctx: Context, config: Config = {}) {
   defineProperty(ctx.app, 'evalRemote', null)
   defineProperty(ctx.app, 'evalWorker', null)
 
-  let restart = true
+  let restart = false
   async function createWorker() {
     ctx.app.evalWorker = new Worker(resolve(__dirname, 'worker.js'), {
       workerData: {
@@ -142,10 +142,12 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.emit('worker/start')
     logger.info('worker started')
 
-    ctx.app.evalWorker.on('exit', (code) => {
-      ctx.emit('worker/exit')
-      logger.info('exited with code', code)
-      if (restart) createWorker()
+    ctx.app.evalRemote.start().then(() => {
+      ctx.app.evalWorker.on('exit', (code) => {
+        ctx.emit('worker/exit')
+        logger.info('exited with code', code)
+        if (restart) createWorker()
+      })
     })
   }
 

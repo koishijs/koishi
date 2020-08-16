@@ -262,12 +262,16 @@ Helper.instance = function (this: Helper, instance, klass, deepTraps, toStringTa
       if (key === '__lookupGetter__') return this.local.Object.prototype['__lookupGetter__']
       if (key === '__lookupSetter__') return this.local.Object.prototype['__lookupSetter__']
       if (key === this.local.Symbol.toStringTag && toStringTag) return toStringTag
+
       if (this === Decontextify && key === host.inspect.custom) {
-        return function (depth: number, options: InspectOptions) {
+        return (depth: number, options: InspectOptions) => {
           try {
-            return host.inspect(instance, options.showHidden, depth, options.colors)
+            options = host.Object.assign(host.Object.create(null), options)
+            options.customInspect = false
+            return host.inspect(instance, options)
           } catch (e) {
-            return e instanceof host.Error ? e : Decontextify.value(e)
+            if (e instanceof host.Error) throw e
+            throw Decontextify.value(e)
           }
         }
       }

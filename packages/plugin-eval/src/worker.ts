@@ -94,6 +94,8 @@ export class WorkerAPI {
     })
   }
 
+  start() {}
+
   async eval(options: EvalOptions, main: MainAPI) {
     const { session, source, user, output } = options
     defineProperty(this, 'main', main)
@@ -112,8 +114,6 @@ export class WorkerAPI {
 }
 
 Promise.all(Object.values(config.setupFiles).map(file => require(file).default)).then(() => {
-  expose(new WorkerAPI(), parentPort)
-
   const path = findSourceMap(__filename).payload.sources[0].slice(7, -9)
   pathMapper['koishi/'] = new RegExp(`(at | \\()${escapeRegExp(path)}`, 'g')
   Object.entries(config.setupFiles).forEach(([name, path]) => {
@@ -121,4 +121,6 @@ Promise.all(Object.values(config.setupFiles).map(file => require(file).default))
     if (sourceMap) path = sourceMap.payload.sources[0].slice(7)
     return pathMapper[name] = new RegExp(`(at | \\()${escapeRegExp(path)}`, 'g')
   })
-}, logger.warn)
+}, logger.warn).then(() => {
+  expose(new WorkerAPI(), parentPort)
+})
