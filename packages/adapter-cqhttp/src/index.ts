@@ -7,6 +7,7 @@ import WsServer from './ws-reverse'
 declare module 'koishi-core/dist/app' {
   interface AppOptions {
     path?: string
+    secret?: string
     preferSync?: boolean
     quickOperation?: number
   }
