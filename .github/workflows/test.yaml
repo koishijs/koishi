@@ -40,10 +40,10 @@ jobs:
     - name: Unit Test
       run: yarn test
     - name: Report Coverage
-      uses: codecov/codecov-action@v1
+      uses: c8 -r jest mocha
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        file: ./coverage/lcov.info
+        file: ./coverage/coverage-final.json
         name: codecov
     - name: Publish
       run: npx ts-node build/publish
