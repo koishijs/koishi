@@ -45,7 +45,7 @@ function addHistory(dialogue: Dialogue, type: Dialogue.ModifyType, argv: Dialogu
 }
 
 extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
-  async getDialoguesById(ids, fields = []) {
+  async getDialoguesById(ids, fields) {
     if (!ids.length) return []
     const dialogues = await this.select<Dialogue>('dialogue', fields, `\`id\` IN (${ids.join(',')})`)
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
