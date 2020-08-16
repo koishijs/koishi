@@ -120,12 +120,12 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
           : idString
   }
 
-  async $send(message: string, autoEscape = false) {
+  async $send(message: string) {
     if (!message) return
     if (this.groupId) {
-      await this.$bot.sendGroupMsg(this.groupId, message, autoEscape)
+      await this.$bot.sendGroupMessage(this.groupId, message)
     } else {
-      await this.$bot.sendPrivateMsg(this.userId, message, autoEscape)
+      await this.$bot.sendPrivateMessage(this.userId, message)
     }
   }
 

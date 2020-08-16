@@ -267,6 +267,25 @@ export class Context {
     return parent
   }
 
+  async broadcast(message: string, forced?: boolean) {
+    if (!message) return
+
+    const groups = await this.database.getAllGroups(['id', 'assignee', 'flag'])
+    const assignMap: Record<number, number[]> = {}
+    for (const { id, assignee, flag } of groups) {
+      if (!forced && (flag & Group.Flag.noEmit)) continue
+      if (assignMap[assignee]) {
+        assignMap[assignee].push(id)
+      } else {
+        assignMap[assignee] = [id]
+      }
+    }
+
+    await Promise.all(Object.entries(assignMap).map(([id, groups]) => {
+      return this.app.bots[+id].sendGroupMessage(groups, message)
+    }))
+  }
+
   dispose() {
     this._disposables.forEach(dispose => dispose())
   }
