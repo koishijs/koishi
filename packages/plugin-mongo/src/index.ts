@@ -5,7 +5,7 @@ export * from './database'
 export default MongoDatabase
 
 declare module 'koishi-core/dist/database' {
-  interface Database extends MongoDatabase {}
+  interface Database extends MongoDatabase { }
 }
 
 extendDatabase(MongoDatabase, {
@@ -52,11 +52,11 @@ extendDatabase(MongoDatabase, {
     const f = {}
     for (const field of fields) f[field] = 1
     return this.user.find({ _id: { $in: ids as number[] } }).project(f).map((doc) => {
-      if (doc.timers._date) {
+      if (doc.timers?._date) {
         doc.timers.$date = doc.timers._date
         delete doc.timers._date
       }
-      if (doc.usage._date) {
+      if (doc.usage?._date) {
         doc.usage.$date = doc.usage._date
         delete doc.usage._date
       }
@@ -65,20 +65,22 @@ extendDatabase(MongoDatabase, {
   },
 
   async setUser(userId, data) {
-    const converted = { ...data }
-    if (converted.timers) {
-      if (converted.timers.$date) {
-        converted.timers._date = converted.timers.$date
-        delete converted.timers.$date
+    const $set = { ...data }
+    if ($set.timers) {
+      for (const key in $set.timers) {
+        if (key === '$date') $set['timers._date'] = $set.timers.$date
+        else $set[`timers.${key}`] = $set.timers[key]
       }
     }
-    if (converted.usage) {
-      if (converted.usage.$date) {
-        converted.usage._date = converted.usage.$date
-        delete converted.usage.$date
+    if ($set.usage) {
+      for (const key in $set.usage) {
+        if (key === '$date') $set['usage._date'] = $set.usage.$date
+        else $set[`usage.${key}`] = $set.usage[key]
       }
     }
-    await this.user.updateOne({ _id: userId }, { $set: data }, { upsert: true })
+    delete $set.timers
+    delete $set.usage
+    await this.user.updateOne({ _id: userId }, { $set }, { upsert: true })
   },
 
   async getGroup(groupId, ...args) {
@@ -134,7 +136,7 @@ extendDatabase(MongoDatabase, {
 
 export const name = 'mongo'
 
-export function apply(ctx: Context, config: Config = { host: 'localhost', port: 27017, name: 'koishi' }) {
+export function apply(ctx: Context, config: Config = { host: 'localhost', port: 27017, name: 'koishi', protocol: 'mongodb' }) {
   const db = new MongoDatabase(ctx.app, config)
   ctx.database = db as Database
   ctx.on('before-connect', () => db.start())
