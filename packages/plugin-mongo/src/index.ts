@@ -5,7 +5,7 @@ export * from './database'
 export default MongoDatabase
 
 declare module 'koishi-core/dist/database' {
-  interface Database extends MongoDatabase { }
+  interface Database extends MongoDatabase {}
 }
 
 extendDatabase(MongoDatabase, {
@@ -136,8 +136,8 @@ extendDatabase(MongoDatabase, {
 
 export const name = 'mongo'
 
-export function apply(ctx: Context, config: Config = { host: 'localhost', port: 27017, name: 'koishi', protocol: 'mongodb' }) {
-  const db = new MongoDatabase(ctx.app, config)
+export function apply(ctx: Context, config: Config) {
+  const db = new MongoDatabase(ctx.app, { host: 'localhost', port: 27017, name: 'koishi', protocol: 'mongodb', ...config })
   ctx.database = db as Database
   ctx.on('before-connect', () => db.start())
   ctx.on('before-disconnect', () => db.stop())
