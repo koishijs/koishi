@@ -14,21 +14,16 @@ import validate from './plugins/validate'
 export interface AppOptions extends BotOptions {
   port?: number
   secret?: string
-  path?: string
   type?: string
   bots?: BotOptions[]
   prefix?: string | string[]
   nickname?: string | string[]
-  retryTimes?: number
-  retryInterval?: number
   maxListeners?: number
-  preferSync?: boolean
   prettyErrors?: boolean
   promptTimeout?: number
   processMessage?: (message: string) => string
   queueDelay?: number | ((message: string, session: Session) => number)
   defaultAuthority?: number | ((session: Session) => number)
-  quickOperationTimeout?: number
   similarityCoefficient?: number
   userCacheTimeout?: number
   groupCacheTimeout?: number
@@ -57,21 +52,19 @@ export class App extends Context {
   private _middlewareSet = new Set<number>()
   private _getSelfIdsPromise: Promise<any>
 
-  static defaultOptions: AppOptions = {
+  static defaultConfig: AppOptions = {
     maxListeners: 64,
     prettyErrors: true,
     promptTimeout: Time.minute,
-    retryInterval: 5 * Time.second,
     userCacheTimeout: Time.minute,
     groupCacheTimeout: 5 * Time.minute,
-    quickOperationTimeout: 0.1 * Time.second,
-    processMessage: (message) => simplify(message.trim()),
+    processMessage: message => simplify(message.trim()),
   }
 
   constructor(options: AppOptions = {}) {
     super({ groups: [], users: [], private: true })
     this.app = this
-    options = this.options = { ...App.defaultOptions, ...options }
+    options = this.options = { ...App.defaultConfig, ...options }
     if (!options.bots) options.bots = [options]
 
     const { type } = this.options

@@ -1,8 +1,16 @@
 import { Server, Session, App } from 'koishi-core'
-import { Logger } from 'koishi-utils'
+import { Logger, Time } from 'koishi-utils'
 import HttpServer from './http'
 import WsClient from './ws'
 import WsServer from './ws-reverse'
+
+declare module 'koishi-core/dist/app' {
+  interface AppOptions {
+    path?: string
+    preferSync?: boolean
+    quickOperation?: number
+  }
+}
 
 export * from './api'
 export * from './channel'
@@ -10,15 +18,7 @@ export * from './http'
 export * from './ws'
 export * from './ws-reverse'
 
-declare module 'koishi-core/dist/server' {
-  interface BotOptions {
-    token?: string
-  }
-}
-
-Server.types['cqhttp:http'] = HttpServer
-Server.types['cqhttp:ws'] = WsClient
-Server.types['cqhttp:ws-reverse'] = WsServer
+App.defaultConfig.quickOperation = 0.1 * Time.second
 
 const logger = Logger.create('app')
 
@@ -41,7 +41,9 @@ class CQHTTP {
   }
 }
 
-// register default behavior
+Server.types['cqhttp:http'] = HttpServer
+Server.types['cqhttp:ws'] = WsClient
+Server.types['cqhttp:ws-reverse'] = WsServer
 Server.types.cqhttp = CQHTTP
 Server.types.undefined = CQHTTP
 

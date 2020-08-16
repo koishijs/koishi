@@ -1,8 +1,17 @@
-import { Server, Bot } from 'koishi-core'
-import { Logger } from 'koishi-utils'
+import { App, Server, Bot } from 'koishi-core'
+import { Logger, Time } from 'koishi-utils'
 import type WebSocket from 'ws'
 import Channel from './channel'
 import ms from 'ms'
+
+declare module 'koishi-core/dist/app' {
+  interface AppOptions {
+    retryTimes?: number
+    retryInterval?: number
+  }
+}
+
+App.defaultConfig.retryInterval = 5 * Time.second
 
 const logger = Logger.create('server')
 
