@@ -10,6 +10,7 @@
     "packages/*"
   ],
   "scripts": {
+    "atri": "yarn workspace atri",
     "build": "tsc -b",
     "bump": "ts-node build/bump",
     "dep": "ts-node build/dep",
