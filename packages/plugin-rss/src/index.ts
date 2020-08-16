@@ -1,82 +1,76 @@
-import { App, Session } from 'koishi-core'
+import { Context, Group } from 'koishi-core'
+import { Logger, Time } from 'koishi-utils'
 import RssFeedEmitter from 'rss-feed-emitter'
-import { Collection } from 'mongodb'
-import { } from 'koishi-plugin-mongo'
 
-// IsGroup groupId|userId assignee
-type Target = [boolean, number, number];
-
-interface RssSubscription {
-    _id: string,
-    target: Target[],
+declare module 'koishi-core/dist/database' {
+  interface Group {
+    rss?: string[]
+  }
 }
 
-function get(session: Session): Target {
-  return [!!session.groupId, session.groupId || session.userId, session.selfId]
+export interface Config {
+  refresh?: number
 }
 
-export const apply = (app: App) => {
-  app.on('connect', async () => {
+const logger = Logger.create('rss')
+
+export const name = 'rss'
+
+export function apply(ctx: Context, config: Config = {}) {
+  const { refresh = Time.minute } = config
+
+  const feedMap: Record<string, Set<number>> = {}
+
+  ctx.on('connect', async () => {
     const feeder = new RssFeedEmitter({ skipFirstLoad: true })
+
     feeder.on('error', (err: Error) => {
       // TODO remove subscription if returns 404?
-      console.error(err)
+      logger.warn(err)
     })
-    const coll: Collection<RssSubscription> = app.database.db.collection('rss')
 
-    const urls = await coll.find().map((doc) => doc._id).toArray()
-    for (const url of urls) {
-      feeder.add({ url, refresh: 60000 })
+    const groups = await ctx.database.getAllGroups(['id', 'rss'])
+    for (const group of groups) {
+      for (const url of group.rss) {
+        if (url in feedMap) {
+          feedMap[url].add(group.id)
+        } else {
+          feedMap[url] = new Set()
+          feeder.add({ url, refresh })
+        }
+      }
     }
 
     feeder.on('new-item', async (payload) => {
       const source = payload.meta.link.toLowerCase()
+      if (!feedMap[source]) return
       const message = `${payload.meta.title} (${payload.author})\n${payload.title}`
-      const data = await coll.findOne({ _id: source })
-      if (data) {
-        for (const [isGroup, id, selfId] of data.target) {
-          if (isGroup) app.bots[selfId].sendGroupMsg(id, message)
-          else app.bots[selfId].sendPrivateMsg(id, message)
-        }
+      const groups = await ctx.database.getAllGroups(['id', 'assignee', 'flag'])
+      const groupMap = Object.fromEntries(groups.map(g => [g.id, g]))
+      for (const id of feedMap[source]) {
+        if (!groupMap[id].assignee || groupMap[id].flag & Group.Flag.noEmit) continue
+        ctx.bots[groupMap[id].assignee].sendGroupMsg(id, message)
       }
     })
-
-    app.command('rss.subscribe <url>', 'Subscribe a rss url')
-      .action(async ({ session }, url) => {
-        url = url.toLowerCase()
-        const current = await coll.findOne({ _id: url })
-        if (current) {
-          await coll.updateOne(
-            { _id: url },
-            {
-              $addToSet: {
-                target: get(session),
-              },
-            },
-            { upsert: true },
-          )
-          return `Subscribed ${url}`
-        }
-        await coll.insertOne(
-          {
-            _id: url,
-            target: [get(session)],
-          },
-        )
-        feeder.add({ url, refresh: 120000 })
-        return `Subscribed ${url}`
-      })
-
-    app.command('rss.cancel <url>', 'Cancel')
-      .action(async ({ session }, url) => {
-        url = url.toLowerCase()
-        await coll.updateOne(
-          { _id: url },
-          { $pull: { target: get(session) } },
-        )
-        return `Cancelled ${url}`
-      })
   })
 
-  app.command('rss', 'Rss')
+  ctx.group().command('rss <url>', 'Subscribe a rss url')
+    .groupFields(['rss'])
+    .option('remove', '-r, --remove 取消订阅')
+    .action(async ({ session, options }, url) => {
+      url = url.toLowerCase()
+
+      const index = session.$group.rss.indexOf(url)
+      if (!options.remove) {
+        if (index < 0) return '未订阅此链接。'
+        session.$group.rss.splice(index, 1)
+        feedMap[url].delete(session.groupId)
+        return '取消订阅成功！'
+      }
+
+      if (index >= 0) return '已订阅此链接。'
+      session.$group.rss.push(url)
+      feedMap[url].add(session.groupId)
+      return '添加订阅成功！'
+    })
 }
