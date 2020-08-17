@@ -63,7 +63,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const validators: Record<string, Promise<unknown>> = {}
   function validate(url: string) {
     if (validators[url]) return validators[url]
-    const feeder = new RssFeedEmitter()
+    const feeder = new RssFeedEmitter({ userAgent })
     return validators[url] = new Promise((resolve, reject) => {
       // rss-feed-emitter's typings suck
       feeder.add({ url, refresh: Number.MAX_SAFE_INTEGER })
