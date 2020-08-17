@@ -2,9 +2,8 @@ import { Random, isInteger } from '../src'
 import { expect } from 'chai'
 
 describe('Random Manipulations', () => {
-  it('Random.id', () => {
-    expect(Random.id()).to.have.length(8)
-    expect(Random.id(10)).to.have.length(10)
+  it('Random.uuid', () => {
+    expect(Random.uuid()).to.have.length(36)
   })
 
   it('Random.bool', () => {
@@ -42,12 +41,11 @@ describe('Random Manipulations', () => {
     expect(source).to.have.length(10)
   })
 
-  it('Random.splice', () => {
+  it('Random.shuffle', () => {
     const source = new Array(10).fill(undefined).map((_, index) => index)
-    const value = Random.splice(source)
-    expect(value < 10 && value >= 0 && isInteger(value)).to.equal(true)
-    expect(source).to.have.length(9)
-    expect(source.indexOf(value)).to.equal(-1)
+    const result = Random.shuffle(source)
+    expect(result).to.have.length(10)
+    expect(result.reduce((prev, curr) => prev + curr, 0)).to.equal(45)
   })
 
   it('Random.multiPick', () => {

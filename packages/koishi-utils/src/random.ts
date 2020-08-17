@@ -1,3 +1,5 @@
+import { randomFillSync } from 'crypto'
+
 /**
  * random operations
  */
@@ -36,15 +38,15 @@ export class Random {
     return Math.floor(this.real(...args))
   }
 
-  pick <T>(source: readonly T[]) {
+  pick<T>(source: readonly T[]) {
     return source[Math.floor(this.value * source.length)]
   }
 
-  splice <T>(source: T[]) {
+  splice<T>(source: T[]) {
     return source.splice(Math.floor(this.value * source.length), 1)[0]
   }
 
-  weightedPick <T extends string>(weights: Record<T, number>): T {
+  weightedPick<T extends string>(weights: Readonly<Record<T, number>>): T {
     const total = Object.entries(weights).reduce((prev, [_, curr]) => prev + (curr as number), 0)
     const pointer = this.value * total
     let counter = 0
@@ -55,14 +57,21 @@ export class Random {
   }
 }
 
+const hex: string[] = []
+
+for (let i = 0; i < 256; ++i) {
+  hex.push((i + 0x100).toString(16).substr(1))
+}
+
 export namespace Random {
-  const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-  export function id(length = 8) {
-    let output = ''
-    for (let index = length; index > 0; --index) {
-      output += chars[Math.floor(Math.random() * 62)]
-    }
-    return output
+  export function uuid() {
+    const arr = randomFillSync(new Uint8Array(16))
+    arr[6] = arr[6] & 0x0f | 0x40
+    arr[8] = arr[8] & 0x3f | 0x80
+    return hex[arr[0]] + hex[arr[1]] + hex[arr[2]] + hex[arr[3]]
+      + '-' + hex[arr[4]] + hex[arr[5]] + '-' + hex[arr[6]] + hex[arr[7]]
+      + '-' + hex[arr[8]] + hex[arr[9]] + '-' + hex[arr[10]] + hex[arr[11]]
+      + hex[arr[12]] + hex[arr[13]] + hex[arr[14]] + hex[arr[15]]
   }
 
   /**
@@ -89,15 +98,20 @@ export namespace Random {
     return new Random().int(...args)
   }
 
-  export function pick <T>(source: readonly T[]) {
+  export function pick<T>(source: readonly T[]) {
     return new Random().pick(source)
   }
 
-  export function splice <T>(source: T[]) {
-    return new Random().splice(source)
+  export function shuffle<T>(source: readonly T[]) {
+    const clone = source.slice()
+    const result: T[] = []
+    for (let i = source.length; i > 0; --i) {
+      result.push(new Random().splice(clone))
+    }
+    return result
   }
 
-  export function multiPick <T>(source: T[], count: number) {
+  export function multiPick<T>(source: T[], count: number) {
     source = source.slice()
     const result: T[] = []
     const length = Math.min(source.length, count)
@@ -109,7 +123,7 @@ export namespace Random {
     return result
   }
 
-  export function weightedPick <T extends string>(weights: Record<T, number>): T {
+  export function weightedPick<T extends string>(weights: Readonly<Record<T, number>>): T {
     return new Random().weightedPick(weights)
   }
 

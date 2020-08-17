@@ -41,7 +41,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     downloadFile = async (file, url) => {
       const params = { url, file } as any
       if (uploadKey) {
-        params.salt = Random.id()
+        params.salt = Random.uuid()
         params.sign = createHmac('sha1', uploadKey).update(file + params.salt).digest('hex')
       }
       await axios.get(uploadServer, { params })
