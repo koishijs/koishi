@@ -125,6 +125,7 @@ logger.info('hello world!')
 | [koishi-plugin-mysql](./packages/plugin-mysql) | [![npm](https://img.shields.io/npm/v/koishi-plugin-mysql/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-mysql) |
 | [koishi-plugin-puppeteer](./packages/plugin-puppeteer) | [![npm](https://img.shields.io/npm/v/koishi-plugin-puppeteer/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-puppeteer) |
 | [koishi-plugin-recorder](./packages/plugin-recorder) | [![npm](https://img.shields.io/npm/v/koishi-plugin-recorder/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-recorder) |
+| [koishi-plugin-rss](./packages/plugin-rss) | [![npm](https://img.shields.io/npm/v/koishi-plugin-rss/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-rss) |
 | [koishi-plugin-schedule](./packages/plugin-schedule) | [![npm](https://img.shields.io/npm/v/koishi-plugin-schedule/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-schedule) |
 | [koishi-plugin-status](./packages/plugin-status) | [![npm](https://img.shields.io/npm/v/koishi-plugin-status/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-status) |
 | [koishi-plugin-teach](./packages/plugin-teach) | [![npm](https://img.shields.io/npm/v/koishi-plugin-teach/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-teach) |

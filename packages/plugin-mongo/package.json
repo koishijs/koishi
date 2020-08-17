@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-mongo",
   "description": "MongoDB support for Koishi",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -39,7 +39,7 @@
     "@types/mongodb": "^3.5.25"
   },
   "peerDependencies": {
-    "koishi-core": "^2.0.0-beta.11"
+    "koishi-core": "^2.0.0-beta.12"
   },
   "dependencies": {
     "mongodb": "^3.6.0"
