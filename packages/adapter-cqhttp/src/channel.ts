@@ -4,8 +4,12 @@ import { Logger, camelCase } from 'koishi-utils'
 import type WebSocket from 'ws'
 
 declare module 'koishi-core/dist/server' {
-  interface Bot {
+  interface BotOptions {
+    server?: string
     token?: string
+  }
+
+  interface Bot {
     socket?: WebSocket
   }
 }
@@ -37,8 +41,11 @@ export default class Channel {
         const meta = this.server.prepare(parsed)
         if (meta) this.server.dispatch(meta)
       } else if (parsed.echo === -1) {
-        logger.debug('%d got version info', bot.selfId)
         bot.version = toVersion(camelCase(parsed.data))
+        logger.debug('%d got version info', bot.selfId)
+        if (bot.server) {
+          logger.info('connected to %c', bot.server)
+        }
         resolve()
       } else {
         this._listeners[parsed.echo]?.(parsed)

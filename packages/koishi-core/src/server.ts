@@ -6,7 +6,6 @@ import type Koa from 'koa'
 import type Router from 'koa-router'
 
 export interface BotOptions {
-  server?: string
   selfId?: number
 }
 
@@ -24,7 +23,6 @@ export abstract class Server {
   constructor(public app: App) {
     app.on('before-connect', this.listen.bind(this))
     app.on('before-disconnect', this.close.bind(this))
-    app.on('connect', this.success.bind(this))
     const senders = app.options.bots.map(bot => new Bot(app, bot))
     this.bots = new Proxy(senders, {
       get(target, prop) {
@@ -83,21 +81,17 @@ export abstract class Server {
     if (this._listening) return
     this._listening = true
     try {
+      const { port } = this.app.options
+      if (port) {
+        this.server.listen(port)
+        const logger = this.app.logger('server')
+        logger.info('server listening at %c', port)
+      }
       await this._listen()
     } catch (error) {
       this.close()
       throw error
     }
-  }
-
-  success() {
-    const { port } = this.app.options
-    const logger = this.app.logger('app')
-    if (port) logger.info('server listening at %c', port)
-
-    this.bots.forEach(({ server }) => {
-      if (server) logger.info('connected to %c', server)
-    })
   }
 
   close() {

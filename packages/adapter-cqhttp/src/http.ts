@@ -33,6 +33,7 @@ export default class HttpServer extends Server {
     }
     bot.version = toVersion(await bot.getVersionInfo())
     logger.debug('%d got version info', bot.selfId)
+    logger.info('connected to %c', bot.server)
   }
 
   async _listen() {
@@ -61,7 +62,7 @@ export default class HttpServer extends Server {
         })
 
         // use defineProperty to avoid meta duplication
-        defineProperty(meta, '$response', (data) => {
+        defineProperty(meta, '$response', (data: any) => {
           meta._response = null
           clearTimeout(timer)
           ctx.res.write(JSON.stringify(snakeCase(data)))
@@ -78,9 +79,6 @@ export default class HttpServer extends Server {
       this.dispatch(meta)
     })
 
-    const { port } = this.app.options
-    logger.debug('http server opening at', port)
-    this.server.listen(port)
     await Promise.all(this.bots.map(bot => this.__listen(bot)))
   }
 

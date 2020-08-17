@@ -22,10 +22,6 @@ export default class WsServer extends Server {
   }
 
   _listen() {
-    const { port } = this.app.options
-    logger.debug('ws server opening at', port)
-    this.server.listen(port)
-
     return new Promise<void>((resolve, reject) => {
       this.wsServer.on('error', reject)
       this.wsServer.on('connection', (socket, { headers }) => {
