@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { randomId } from 'koishi-utils'
+import { Random } from 'koishi-utils'
 import { createHmac } from 'crypto'
 import { resolve } from 'path'
 import { existsSync, writeFile, readdirSync, stat } from 'fs-extra'
@@ -41,7 +41,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     downloadFile = async (file, url) => {
       const params = { url, file } as any
       if (uploadKey) {
-        params.salt = randomId()
+        params.salt = Random.id()
         params.sign = createHmac('sha1', uploadKey).update(file + params.salt).digest('hex')
       }
       await axios.get(uploadServer, { params })

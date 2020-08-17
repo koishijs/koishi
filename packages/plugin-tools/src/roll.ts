@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { randomInt } from 'koishi-utils'
+import { Random } from 'koishi-utils'
 
 export interface RollOptions {
   maxPoint?: number
@@ -41,7 +41,7 @@ export function apply(ctx: Context, options: RollOptions = {}) {
 
         const values = []
         for (let index = 0; index < times; index += 1) {
-          const value = randomInt(max) + 1
+          const value = Random.int(max) + 1
           values.push(value)
           total += value
         }

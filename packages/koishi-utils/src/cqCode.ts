@@ -1,6 +1,6 @@
 type CQCodeData = Record<string, string | number | boolean>
 
-interface CQCode {
+export interface CQCode {
   type: string
   data: CQCodeData
 }
@@ -11,7 +11,7 @@ interface ParsedCQCode {
   capture?: RegExpMatchArray
 }
 
-namespace CQCode {
+export namespace CQCode {
   export function escape(source: any, insideCQ = false) {
     const result = String(source)
       .replace(/&/g, '&amp;')
@@ -72,5 +72,3 @@ namespace CQCode {
     return codes
   }
 }
-
-export default CQCode

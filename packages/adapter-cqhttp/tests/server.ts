@@ -2,7 +2,7 @@ import { createHmac } from 'crypto'
 import { EventEmitter } from 'events'
 import { Session as Meta, App, AppOptions, Server } from 'koishi-core'
 import { BASE_SELF_ID, MockedServer } from 'koishi-test-utils'
-import { snakeCase, randomInt, Logger } from 'koishi-utils'
+import { snakeCase, Random, Logger } from 'koishi-utils'
 import * as http from 'http'
 import * as ws from 'ws'
 import getPort from 'get-port'
@@ -11,8 +11,8 @@ import axios from 'axios'
 export const showTestLog = Logger.create('test').debug
 
 export async function createHttpServer(token?: string) {
-  const cqhttpPort = await getPort({ port: randomInt(16384, 49152) })
-  const koishiPort = await getPort({ port: randomInt(16384, 49152) })
+  const cqhttpPort = await getPort({ port: Random.int(16384, 49152) })
+  const koishiPort = await getPort({ port: Random.int(16384, 49152) })
   return new HttpServer(cqhttpPort, koishiPort, token)
 }
 
@@ -85,7 +85,7 @@ export class HttpServer extends MockedServer {
 }
 
 export async function createWsServer(token?: string) {
-  const cqhttpPort = await getPort({ port: randomInt(16384, 49152) })
+  const cqhttpPort = await getPort({ port: Random.int(16384, 49152) })
   return new WsServer(cqhttpPort, token)
 }
 

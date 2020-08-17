@@ -1,12 +1,3 @@
-const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-export function randomId(length = 8) {
-  let output = ''
-  for (let index = length; index > 0; --index) {
-    output += chars[Math.floor(Math.random() * 62)]
-  }
-  return output
-}
-
 /**
  * random operations
  */
@@ -64,54 +55,65 @@ export class Random {
   }
 }
 
-/**
- * random real
- * @param start start number
- * @param end end number
- * @returns a random real in the interval [start, end)
- */
-export function randomReal(end: number): number
-export function randomReal(start: number, end: number): number
-export function randomReal(...args: [number, number?]): number {
-  return new Random().real(...args)
-}
-
-/**
- * random integer
- * @param start start number
- * @param end end number
- * @returns a random integer in the interval [start, end)
- */
-export function randomInt(end: number): number
-export function randomInt(start: number, end: number): number
-export function randomInt(...args: [number, number?]): number {
-  return new Random().int(...args)
-}
-
-export function randomPick <T>(source: readonly T[]) {
-  return new Random().pick(source)
-}
-
-export function randomSplice <T>(source: T[]) {
-  return new Random().splice(source)
-}
-
-export function randomMultiPick <T>(source: T[], count: number) {
-  source = source.slice()
-  const result: T[] = []
-  const length = Math.min(source.length, count)
-  for (let i = 0; i < length; i += 1) {
-    const index = Math.floor(Math.random() * source.length)
-    const [item] = source.splice(index, 1)
-    result.push(item)
+export namespace Random {
+  const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  export function id(length = 8) {
+    let output = ''
+    for (let index = length; index > 0; --index) {
+      output += chars[Math.floor(Math.random() * 62)]
+    }
+    return output
   }
-  return result
-}
 
-export function randomWeightedPick <T extends string>(weights: Record<T, number>): T {
-  return new Random().weightedPick(weights)
-}
+  /**
+   * random real
+   * @param start start number
+   * @param end end number
+   * @returns a random real in the interval [start, end)
+   */
+  export function real(end: number): number
+  export function real(start: number, end: number): number
+  export function real(...args: [number, number?]): number {
+    return new Random().real(...args)
+  }
 
-export function randomBool(probability: number) {
-  return new Random().bool(probability)
+  /**
+   * random integer
+   * @param start start number
+   * @param end end number
+   * @returns a random integer in the interval [start, end)
+   */
+  export function int(end: number): number
+  export function int(start: number, end: number): number
+  export function int(...args: [number, number?]): number {
+    return new Random().int(...args)
+  }
+
+  export function pick <T>(source: readonly T[]) {
+    return new Random().pick(source)
+  }
+
+  export function splice <T>(source: T[]) {
+    return new Random().splice(source)
+  }
+
+  export function multiPick <T>(source: T[], count: number) {
+    source = source.slice()
+    const result: T[] = []
+    const length = Math.min(source.length, count)
+    for (let i = 0; i < length; i += 1) {
+      const index = Math.floor(Math.random() * source.length)
+      const [item] = source.splice(index, 1)
+      result.push(item)
+    }
+    return result
+  }
+
+  export function weightedPick <T extends string>(weights: Record<T, number>): T {
+    return new Random().weightedPick(weights)
+  }
+
+  export function bool(probability: number) {
+    return new Random().bool(probability)
+  }
 }
