@@ -60,6 +60,22 @@ export function apply(ctx: Context, config: Config = {}) {
     })
   })
 
+  const validators: Record<string, Promise<unknown>> = {}
+  function validate(url: string) {
+    if (validators[url]) return validators[url]
+    const feeder = new RssFeedEmitter()
+    return validators[url] = new Promise((resolve, reject) => {
+      // rss-feed-emitter's typings suck
+      feeder.add({ url, refresh: Number.MAX_SAFE_INTEGER })
+      feeder.on('new-item', resolve)
+      feeder.on('error', reject)
+      setTimeout(() => reject(new Error('connect timeout')), timeout)
+    }).finally(() => {
+      feeder.destroy()
+      delete validators[url]
+    })
+  }
+
   ctx.group().command('rss <url>', 'Subscribe a rss url')
     .groupFields(['rss', 'id'])
     .option('remove', '-r, --remove 取消订阅')
@@ -75,24 +91,14 @@ export function apply(ctx: Context, config: Config = {}) {
       }
 
       if (index >= 0) return '已订阅此链接。'
-
-      const feeder = new RssFeedEmitter()
-      return new Promise((resolve, reject) => {
-        // rss-feed-emitter's typings suck
-        feeder.add({ url, refresh: Number.MAX_SAFE_INTEGER })
-        feeder.on('new-item', resolve)
-        feeder.on('error', reject)
-        setTimeout(() => reject(new Error('connect timeout')), timeout)
-      }).then(() => {
+      return validate(url).then(() => {
         subscribe(url, $group.id)
-        feeder.destroy()
         if ($group.rss.includes(url)) {
           $group.rss.push(url)
           return '添加订阅成功！'
         }
       }, (error) => {
         logger.warn(error)
-        feeder.destroy()
         return '无法订阅此链接。'
       })
     })
