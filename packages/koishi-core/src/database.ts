@@ -60,7 +60,7 @@ export namespace Group {
   export enum Flag {
     ignore = 1,
     noImage = 2,
-    noEmit = 4,
+    silent = 4,
   }
 
   export type Field = keyof Group
@@ -85,7 +85,7 @@ export namespace Group {
   extend((id, assignee) => ({
     id,
     assignee,
-    flag: assignee ? 0 : Flag.ignore | Flag.noEmit,
+    flag: assignee ? 0 : Flag.ignore | Flag.silent,
   }))
 }
 

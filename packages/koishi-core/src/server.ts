@@ -125,8 +125,8 @@ export interface Bot extends BotOptions {
   getSelfId (): Promise<number>
   getStatus (): Promise<BotStatus>
   getMemberMap (groupId: number): Promise<Record<number, string>>
-  sendGroupMsg (groupId: number, message: string, autoEscape?: boolean): Promise<number>
-  sendPrivateMsg (userId: number, message: string, autoEscape?: boolean): Promise<number>
+  sendGroupMessage (groupId: number | number[], message: string, delay?: number): Promise<void>
+  sendPrivateMessage (userId: number | number[], message: string, delay?: number): Promise<void>
 }
 
 export class Bot {

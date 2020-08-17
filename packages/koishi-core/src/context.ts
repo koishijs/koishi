@@ -267,6 +267,31 @@ export class Context {
     return parent
   }
 
+  async broadcast(message: string, forced?: boolean): Promise<void>
+  async broadcast(groups: number[], message: string, forced?: boolean): Promise<void>
+  async broadcast(...args: [string, boolean?] | [number[], string, boolean?]) {
+    let groups: number[]
+    if (Array.isArray(args[0])) groups = args.shift() as any
+    const [message, forced] = args as [string, boolean]
+    if (!message) return
+
+    const data = await this.database.getAllGroups(['id', 'assignee', 'flag'])
+    const assignMap: Record<number, number[]> = {}
+    for (const { id, assignee, flag } of data) {
+      if (groups && !groups.includes(id)) continue
+      if (!forced && (flag & Group.Flag.silent)) continue
+      if (assignMap[assignee]) {
+        assignMap[assignee].push(id)
+      } else {
+        assignMap[assignee] = [id]
+      }
+    }
+
+    await Promise.all(Object.entries(assignMap).map(([id, groups]) => {
+      return this.app.bots[+id].sendGroupMessage(groups, message)
+    }))
+  }
+
   dispose() {
     this._disposables.forEach(dispose => dispose())
   }

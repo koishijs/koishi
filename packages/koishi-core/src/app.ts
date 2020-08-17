@@ -23,6 +23,7 @@ export interface AppOptions extends BotOptions {
   promptTimeout?: number
   processMessage?: (message: string) => string
   queueDelay?: number | ((message: string, session: Session) => number)
+  broadcastDelay?: number
   defaultAuthority?: number | ((session: Session) => number)
   similarityCoefficient?: number
   userCacheLength?: number
@@ -60,6 +61,7 @@ export class App extends Context {
     maxListeners: 64,
     prettyErrors: true,
     queueDelay: 0.1 * Time.second,
+    broadcastDelay: 0.5 * Time.second,
     promptTimeout: Time.minute,
     userCacheAge: Time.minute,
     groupCacheAge: 5 * Time.minute,

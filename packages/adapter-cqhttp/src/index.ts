@@ -1,8 +1,9 @@
-import { Server, Session, App } from 'koishi-core'
+import { Server, Session, App, Context } from 'koishi-core'
 import { Logger, Time } from 'koishi-utils'
 import HttpServer from './http'
 import WsClient from './ws'
 import WsServer from './ws-reverse'
+import axios from 'axios'
 
 declare module 'koishi-core/dist/app' {
   interface AppOptions {
@@ -47,6 +48,24 @@ Server.types['cqhttp:ws'] = WsClient
 Server.types['cqhttp:ws-reverse'] = WsServer
 Server.types.cqhttp = CQHTTP
 Server.types.undefined = CQHTTP
+
+const { broadcast } = Context.prototype
+const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
+
+Context.prototype.broadcast = async function (this: Context, message, forced) {
+  let output = ''
+  let capture: RegExpExecArray
+  // eslint-disable-next-line no-cond-assign
+  while (capture = imageRE.exec(message)) {
+    const [text, _, url] = capture
+    output += message.slice(0, capture.index)
+    message = message.slice(capture.index + text.length)
+    const { data } = await axios.get<ArrayBuffer>(url, { responseType: 'arraybuffer' })
+    output += `[CQ:image,file=base64://${Buffer.from(data).toString('base64')}]`
+  }
+  message = output + message
+  return broadcast.call(this, message, forced)
+}
 
 Session.prototype.$send = async function $send(this: Session, message: string, autoEscape = false) {
   if (!message) return

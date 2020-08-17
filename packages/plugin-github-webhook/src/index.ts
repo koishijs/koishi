@@ -27,20 +27,14 @@ export function apply(ctx: Context, config: Config = {}) {
     return webhook.middleware(ctx.req, ctx.res, next)
   })
 
-  function registerHandler <T extends EventNames.All>(event: T, handler: (payload: GetWebhookPayloadTypeFromEvent<T>['payload']) => void | string | Promise<void | string>) {
+  function registerHandler <T extends EventNames.All>(event: T, handler: (payload: GetWebhookPayloadTypeFromEvent<T>['payload']) => string | Promise<string>) {
     webhook.on(event, async (callback) => {
       const { repository } = callback.payload
       const ids = config.repos[repository.full_name]
       if (!ids) return
 
       const message = await handler(callback.payload)
-      if (!message) return
-      const groups = await ctx.database.getAllGroups(['id', 'assignee'])
-      for (const { id, assignee } of groups) {
-        if (ids.includes(id)) {
-          await ctx.bots[assignee].sendGroupMsg(id, message)
-        }
-      }
+      await ctx.broadcast(ids, message)
     })
   }
 
