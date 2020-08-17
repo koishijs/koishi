@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "js-yaml": "^3.14.0",
+    "simple-git": "^2.17.0",
     "typescript": "^3.9.7"
   }
 }

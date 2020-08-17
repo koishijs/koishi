@@ -4,11 +4,13 @@ import {} from 'koishi-plugin-eval'
 import { assertProperty, Logger, noop } from 'koishi-utils'
 import { safeLoad } from 'js-yaml'
 import { readdirSync, promises } from 'fs'
+import Git, { CheckRepoActions } from 'simple-git'
 
 const logger = Logger.create('addon')
 
 export interface Config {
-  moduleRoot: string
+  gitRemote?: string
+  moduleRoot?: string
 }
 
 declare module 'koishi-plugin-eval/dist/worker' {
@@ -53,6 +55,21 @@ export function apply(ctx: Context, config: Config) {
       })
     })
   }
+
+  const git = Git(root)
+  ctx.on('before-connect', async () => {
+    const isRepo = await git.checkIsRepo(CheckRepoActions.IS_REPO_ROOT)
+    if (!isRepo) {
+      return logger.warn(`moduleRoot "${moduleRoot}" is not git repository`)
+    }
+
+    addons.subcommand('.update', '更新扩展模块', { authority: 3 })
+      .action(async () => {
+        const { files, summary } = await git.pull(evalConfig.gitRemote)
+        if (!files.length) return '所有模块均已是最新。'
+        return `更新成功！\n${summary.insertions}A ${summary.deletions}D ${summary.changes}M`
+      })
+  })
 
   const addonAction: CommandAction = ({ session, command: { name }, options, rest }, ...args) => {
     return session.$eval(`require('koishi').executeCommand(${JSON.stringify({ name, args, options, rest })})`, true)
