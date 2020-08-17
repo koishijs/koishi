@@ -9,6 +9,7 @@ declare module 'koishi-core/dist/database' {
 }
 
 export interface Config {
+  timeout?: number
   refresh?: number
   userAgent?: string
 }
@@ -18,7 +19,7 @@ const logger = Logger.create('rss')
 export const name = 'rss'
 
 export function apply(ctx: Context, config: Config = {}) {
-  const { refresh = Time.minute, userAgent } = config
+  const { timeout = 10 * Time.second, refresh = Time.minute, userAgent } = config
   const feedMap: Record<string, Set<number>> = {}
   const feeder = new RssFeedEmitter({ skipFirstLoad: true, userAgent })
 
@@ -77,14 +78,18 @@ export function apply(ctx: Context, config: Config = {}) {
 
       const feeder = new RssFeedEmitter()
       return new Promise((resolve, reject) => {
-        feeder.add({ url, refresh })
+        // rss-feed-emitter's typings suck
+        feeder.add({ url, refresh: Number.MAX_SAFE_INTEGER })
         feeder.on('new-item', resolve)
         feeder.on('error', reject)
+        setTimeout(() => reject(new Error('connect timeout')), timeout)
       }).then(() => {
-        $group.rss.push(url)
         subscribe(url, $group.id)
         feeder.destroy()
-        return '添加订阅成功！'
+        if ($group.rss.includes(url)) {
+          $group.rss.push(url)
+          return '添加订阅成功！'
+        }
       }, (error) => {
         logger.warn(error)
         feeder.destroy()
