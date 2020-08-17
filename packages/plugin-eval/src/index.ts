@@ -23,7 +23,7 @@ declare module 'koishi-core/dist/context' {
 declare module 'koishi-core/dist/session' {
   interface Session {
     _eval: boolean
-    $eval (source: string, output?: boolean): Promise<void>
+    $eval(source: string, output?: boolean): Promise<string>
   }
 }
 
@@ -79,19 +79,16 @@ Session.prototype.$eval = function $eval(this: Session, source, output) {
     const api = new MainAPI(this)
     defineProperty(this, '_eval', true)
 
-    const _resolve = () => {
+    const _resolve = (result?: string) => {
       clearTimeout(timer)
       evalWorker.off('error', listener)
       this._eval = false
-      resolve()
+      resolve(result)
     }
 
     const timer = setTimeout(async () => {
       await evalWorker.terminate()
-      _resolve()
-      if (!api.logCount) {
-        return this.$send('执行超时。')
-      }
+      _resolve(!api.logCount && '执行超时。')
     }, evalConfig.timeout)
 
     const listener = (error: Error) => {
@@ -100,8 +97,7 @@ Session.prototype.$eval = function $eval(this: Session, source, output) {
         logger.warn(error)
         message = '执行过程中遇到错误。'
       }
-      _resolve()
-      return this.$send(message)
+      _resolve(message)
     }
 
     evalWorker.on('error', listener)

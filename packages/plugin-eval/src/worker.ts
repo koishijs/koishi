@@ -47,9 +47,13 @@ interface EvalOptions {
 const vm = new VM()
 export const context = vm.context
 export const internal = vm.internal
-export const sandbox = internal.sandbox
+export const sandbox: Global = internal.sandbox
 
 const pathMapper: Record<string, RegExp> = {}
+
+function formatResult(...param: [string, ...any[]]) {
+  return formatWithOptions(config.inspect, ...param)
+}
 
 function formatError(error: Error) {
   if (!(error instanceof Error)) return `Uncaught: ${error}`
@@ -89,8 +93,8 @@ export class WorkerAPI {
       return self.main.execute(message)
     })
 
-    internal.setGlobal('log', function log(format: string, ...param: any[]) {
-      return self.main.send(formatWithOptions(config.inspect, format, ...param))
+    internal.setGlobal('log', function log(...param: [string, ...any[]]) {
+      return self.main.send(formatResult(...param))
     })
   }
 
@@ -106,10 +110,10 @@ export class WorkerAPI {
     try {
       result = await vm.run(source, 'stdin')
     } catch (error) {
-      return main.send(formatError(error))
+      return formatError(error)
     }
 
-    if (result !== undefined && output) await sandbox.log(result)
+    if (result !== undefined && output) return formatResult(result)
   }
 }
 
