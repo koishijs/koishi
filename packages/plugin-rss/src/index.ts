@@ -63,15 +63,17 @@ export function apply(ctx: Context, config: Config = {}) {
   const validators: Record<string, Promise<unknown>> = {}
   function validate(url: string) {
     if (validators[url]) return validators[url]
+    let timer: NodeJS.Timeout
     const feeder = new RssFeedEmitter({ userAgent })
     return validators[url] = new Promise((resolve, reject) => {
       // rss-feed-emitter's typings suck
       feeder.add({ url, refresh: Number.MAX_SAFE_INTEGER })
       feeder.on('new-item', resolve)
       feeder.on('error', reject)
-      setTimeout(() => reject(new Error('connect timeout')), timeout)
+      timer = setTimeout(() => reject(new Error('connect timeout')), timeout)
     }).finally(() => {
       feeder.destroy()
+      clearTimeout(timer)
       delete validators[url]
     })
   }
@@ -93,7 +95,7 @@ export function apply(ctx: Context, config: Config = {}) {
       if (index >= 0) return '已订阅此链接。'
       return validate(url).then(() => {
         subscribe(url, $group.id)
-        if ($group.rss.includes(url)) {
+        if (!$group.rss.includes(url)) {
           $group.rss.push(url)
           return '添加订阅成功！'
         }
