@@ -269,7 +269,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return this
   }
 
-  private _assignOption(option: CommandOption, names: string[], optionMap: Record<string, CommandOption>) {
+  private _assignOption(option: CommandOption, names: readonly string[], optionMap: Record<string, CommandOption>) {
     for (const name of names) {
       if (name in optionMap) {
         throw new Error(format('duplicate option names: "%s"', name))
@@ -482,7 +482,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return value.includes(' ') ? `"${value}"` : value
   }
 
-  stringify(args: string[], options: any) {
+  stringify(args: readonly string[], options: any) {
     let output = this.name
     for (const key in options) {
       const value = options[key]

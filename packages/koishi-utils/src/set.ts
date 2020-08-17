@@ -14,6 +14,6 @@ export function union <T>(array1: readonly T[], array2: readonly T[]) {
   return Array.from(new Set([...array1, ...array2]))
 }
 
-export function deduplicate <T>(array: T[]) {
+export function deduplicate <T>(array: readonly T[]) {
   return [...new Set(array)]
 }

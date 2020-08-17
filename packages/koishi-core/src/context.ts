@@ -268,8 +268,8 @@ export class Context {
   }
 
   async broadcast(message: string, forced?: boolean): Promise<void>
-  async broadcast(groups: number[], message: string, forced?: boolean): Promise<void>
-  async broadcast(...args: [string, boolean?] | [number[], string, boolean?]) {
+  async broadcast(groups: readonly number[], message: string, forced?: boolean): Promise<void>
+  async broadcast(...args: [string, boolean?] | [readonly number[], string, boolean?]) {
     let groups: number[]
     if (Array.isArray(args[0])) groups = args.shift() as any
     const [message, forced] = args as [string, boolean]

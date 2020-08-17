@@ -144,8 +144,8 @@ declare module 'koishi-core/dist/server' {
     setGroupNameAsync (groupId: number, name: string): Promise<void>
     getGroupMsg (messageId: number): Promise<GroupMessage>
     getForwardMsg (messageId: number): Promise<ForwardMessage>
-    sendGroupForwardMsg (groupId: number, messages: CQNode[]): Promise<void>
-    sendGroupForwardMsgAsync (groupId: number, messages: CQNode[]): Promise<void>
+    sendGroupForwardMsg (groupId: number, messages: readonly CQNode[]): Promise<void>
+    sendGroupForwardMsgAsync (groupId: number, messages: readonly CQNode[]): Promise<void>
   }
 }
 
