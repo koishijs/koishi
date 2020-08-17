@@ -29,22 +29,26 @@ export function apply(ctx: Context, config: Config = {}) {
     return webhook.middleware(ctx.req, ctx.res, next)
   })
 
-  function registerHandler<T extends EventNames.All>(event: T, handler: (payload: Payload<T>) => string | Promise<string>) {
+  function registerHandler<T extends EventNames.All>(event: T, handler: (payload: Payload<T>) => string) {
     webhook.on(event, async (callback) => {
       const { repository } = callback.payload
       const ids = config.repos[repository.full_name]
       if (!ids) return
 
-      const message = await handler(callback.payload)
+      const message = handler(callback.payload)
       await ctx.broadcast(ids, message)
     })
+  }
+
+  function formatMarkdown(source: string) {
+    return source.replace(/\n\s*\n/g, '\n')
   }
 
   registerHandler('commit_comment.created', ({ repository, comment }) => {
     return [
       `[GitHub] ${comment.user.login} commented on commit ${repository.full_name}@${comment.commit_id.slice(0, 6)}`,
       `URL: ${comment.html_url}`,
-      comment.body.replace(/\n\s*\n/g, '\n'),
+      formatMarkdown(comment.body),
     ].join('\n')
   })
 
@@ -53,43 +57,43 @@ export function apply(ctx: Context, config: Config = {}) {
       `[GitHub] ${issue.user.login} opened an issue ${repository.full_name}#${issue.number}`,
       `Title: ${issue.title}`,
       `URL: ${issue.html_url}`,
-      issue.body.replace(/\n\s*\n/g, '\n'),
+      formatMarkdown(issue.body),
     ].join('\n')
   })
 
   registerHandler('issue_comment.created', ({ comment, issue, repository }) => {
     const type = issue['pull_request'] ? 'pull request' : 'issue'
     return [
-      `[GitHub] ${comment.user.login} commented on ${type} ${repository.full_name}#${issue.id}`,
+      `[GitHub] ${comment.user.login} commented on ${type} ${repository.full_name}#${issue.number}`,
       `URL: ${comment.html_url}`,
-      comment.body.replace(/\n\s*\n/g, '\n'),
+      formatMarkdown(comment.body),
     ].join('\n')
   })
 
   registerHandler('pull_request.opened', ({ repository, pull_request }) => {
     return [
-      `[GitHub] ${pull_request.user.login} opened a pull request ${repository.full_name}#${pull_request.id} (${pull_request.base.label} <- ${pull_request.head.label})`,
+      `[GitHub] ${pull_request.user.login} opened a pull request ${repository.full_name}#${pull_request.number} (${pull_request.base.label} <- ${pull_request.head.label})`,
       `URL: ${pull_request.html_url}`,
-      pull_request.body.replace(/\n\s*\n/g, '\n'),
+      formatMarkdown(pull_request.body),
     ].join('\n')
   })
 
   registerHandler('pull_request_review.submitted', ({ repository, review, pull_request }) => {
     if (!review.body) return
     return [
-      `[GitHub] ${review.user.login} reviewed pull request ${repository.full_name}#${pull_request.id}`,
+      `[GitHub] ${review.user.login} reviewed pull request ${repository.full_name}#${pull_request.number}`,
       `URL: ${review.html_url}`,
       // @ts-ignore
-      review.body.replace(/\n\s*\n/g, '\n'),
+      formatMarkdown(review.body),
     ].join('\n')
   })
 
   registerHandler('pull_request_review_comment.created', ({ repository, comment, pull_request }) => {
     return [
-      `[GitHub] ${comment.user.login} commented on pull request review ${repository.full_name}#${pull_request.id}`,
+      `[GitHub] ${comment.user.login} commented on pull request review ${repository.full_name}#${pull_request.number}`,
       `Path: ${comment.path}`,
       `URL: ${comment.html_url}`,
-      comment.body.replace(/\n\s*\n/g, '\n'),
+      formatMarkdown(comment.body),
     ].join('\n')
   })
 
@@ -99,13 +103,13 @@ export function apply(ctx: Context, config: Config = {}) {
 
     // use short form for tag releases
     if (ref.startsWith('refs/tags')) {
-      return `[GitHub] ${repository.full_name} published tag ${ref.slice(10)}`
+      return `[GitHub] ${pusher.name} published tag ${repository.full_name}@${ref.slice(10)}`
     }
 
     return [
       `[GitHub] ${pusher.name} pushed to ${repository.full_name} (${ref})`,
       `Compare: ${compare}`,
-      ...commits.map(c => c.message.replace(/\n\s*\n/g, '\n')),
+      ...commits.map(c => formatMarkdown(c.message)),
     ].join('\n')
   })
 }
