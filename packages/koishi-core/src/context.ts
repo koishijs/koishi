@@ -6,9 +6,9 @@ import { App } from './app'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
-export type PluginFunction <T, U = any> = (ctx: T, options: U) => void
-export type PluginObject <T, U = any> = { name?: string, apply: PluginFunction<T, U> }
-export type Plugin <T, U = any> = PluginFunction<T, U> | PluginObject<T, U>
+export type PluginFunction<T, U = any> = (ctx: T, options: U) => void
+export type PluginObject<T, U = any> = { name?: string, apply: PluginFunction<T, U> }
+export type Plugin<T, U = any> = PluginFunction<T, U> | PluginObject<T, U>
 export type Disposable = () => void
 
 interface ScopeSet extends Array<number> {
@@ -111,8 +111,8 @@ export class Context {
     return this
   }
 
-  async parallel <K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): Promise<void>
-  async parallel <K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
+  async parallel<K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): Promise<void>
+  async parallel<K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
   async parallel(...args: any[]) {
     const tasks: Promise<any>[] = []
     const session = typeof args[0] === 'object' ? args.shift() : null
@@ -125,14 +125,14 @@ export class Context {
     await Promise.all(tasks)
   }
 
-  emit <K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): void
-  emit <K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): void
+  emit<K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): void
+  emit<K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): void
   emit(...args: [any, ...any[]]) {
     this.parallel(...args)
   }
 
-  async serial <K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
-  async serial <K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
+  async serial<K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
+  async serial<K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>
   async serial(...args: any[]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
@@ -144,8 +144,8 @@ export class Context {
     }
   }
 
-  bail <K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
-  bail <K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
+  bail<K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
+  bail<K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
   bail(...args: any[]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
@@ -157,7 +157,7 @@ export class Context {
     }
   }
 
-  private getHooks <K extends keyof EventMap>(name: K) {
+  private getHooks<K extends keyof EventMap>(name: K) {
     const hooks = this.app._hooks[name] || (this.app._hooks[name] = [])
     if (hooks.length >= this.app.options.maxListeners) {
       this.logger('app').warn('max listener count (%d) exceeded, which may be caused by a memory leak', this.app.options.maxListeners)
@@ -165,29 +165,29 @@ export class Context {
     return hooks
   }
 
-  on <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
+  on<K extends keyof EventMap>(name: K, listener: EventMap[K]) {
     return this.addListener(name, listener)
   }
 
-  addListener <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
+  addListener<K extends keyof EventMap>(name: K, listener: EventMap[K]) {
     this.getHooks(name).push([this, listener])
     const dispose = () => this.removeListener(name, listener)
     this._disposables.push(name === 'dispose' ? listener as Disposable : dispose)
     return dispose
   }
 
-  before <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
+  before<K extends keyof EventMap>(name: K, listener: EventMap[K]) {
     return this.prependListener(name, listener)
   }
 
-  prependListener <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
+  prependListener<K extends keyof EventMap>(name: K, listener: EventMap[K]) {
     this.getHooks(name).unshift([this, listener])
     const dispose = () => this.removeListener(name, listener)
     this._disposables.push(name === 'dispose' ? listener as Disposable : dispose)
     return dispose
   }
 
-  once <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
+  once<K extends keyof EventMap>(name: K, listener: EventMap[K]) {
     const dispose = this.addListener(name, (...args: any[]) => {
       dispose()
       return listener.apply(this, args)
@@ -195,11 +195,11 @@ export class Context {
     return dispose
   }
 
-  off <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
+  off<K extends keyof EventMap>(name: K, listener: EventMap[K]) {
     return this.removeListener(name, listener)
   }
 
-  removeListener <K extends keyof EventMap>(name: K, listener: EventMap[K]) {
+  removeListener<K extends keyof EventMap>(name: K, listener: EventMap[K]) {
     const index = (this.app._hooks[name] || []).findIndex(([context, callback]) => context === this && callback === listener)
     if (index >= 0) {
       this.app._hooks[name].splice(index, 1)

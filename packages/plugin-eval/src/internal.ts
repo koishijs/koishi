@@ -219,7 +219,7 @@ interface Helper {
   function (value: any, traps?: Trap, deepTraps?: Trap, mock?: any): any
   object (value: any, traps: Trap, deepTraps: Trap, mock?: any): any
   value (value: any, traps?: Trap, deepTraps?: Trap, mock?: any): any
-  instance <T> (
+  instance<T> (
     value: any,
     constructor: new (...args: any[]) => T,
     deepTraps: Trap,
@@ -687,7 +687,7 @@ connect(host.Buffer.prototype['inspect'], function inspect() {
   return `<${this.constructor.name} ${str}>`
 })
 
-export const value: <T> (value: T) => T = Decontextify.value.bind(Decontextify)
+export const value: <T>(value: T) => T = Decontextify.value.bind(Decontextify)
 export const sandbox = Decontextify.value(GLOBAL)
 
 delete global.console

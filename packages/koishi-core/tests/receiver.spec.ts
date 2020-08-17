@@ -4,7 +4,7 @@ import { camelCase } from 'koishi-utils'
 
 const app = new MockedApp()
 
-function createMeta <T extends PostType>(postType: T, type: MetaTypeMap[T], subType: SubTypeMap[T], session: Meta<T> = {}) {
+function createMeta<T extends PostType>(postType: T, type: MetaTypeMap[T], subType: SubTypeMap[T], session: Meta<T> = {}) {
   if (!session.selfId) session.selfId = BASE_SELF_ID
   session.postType = postType
   session[camelCase(postType) + 'Type'] = type

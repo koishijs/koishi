@@ -50,11 +50,9 @@ const supportedType = ['string', 'number', 'boolean'] as const
 
 export type OptionType = typeof supportedType[number]
 
-export interface OptionConfig <T = any> {
+export interface OptionConfig<T = any> {
   value?: T
   fallback?: T
-  authority?: number
-  notUsage?: boolean
 }
 
 type StringOptionConfig = OptionConfig & ({ fallback: string } | { type: 'string' })
@@ -78,14 +76,14 @@ interface ParsedArg {
 const quoteStart = `"'“‘`
 const quoteEnd = `"'”’`
 
-export interface ParsedLine <O = {}> {
+export interface ParsedLine<O = {}> {
   source?: string
   rest: string
   args: string[]
   options: O
 }
 
-export interface ParsedArgv <U extends User.Field = never, G extends Group.Field = never, O = {}> extends Partial<ParsedLine<O>> {
+export interface ParsedArgv<U extends User.Field = never, G extends Group.Field = never, O = {}> extends Partial<ParsedLine<O>> {
   command: Command<U, G, O>
   session: Session<U, G>
   next?: NextFunction
@@ -96,22 +94,20 @@ export interface ExecuteArgv extends Partial<ParsedLine> {
   next?: NextFunction
 }
 
-export interface CommandConfig <U extends User.Field = never, G extends Group.Field = never> {
+export interface CommandConfig<U extends User.Field = never, G extends Group.Field = never> {
   /** description */
   description?: string
-  /** min authority */
-  authority?: number
 }
 
-type Extend <O extends {}, K extends string, T> = {
+type Extend<O extends {}, K extends string, T> = {
   [P in K | keyof O]: (P extends keyof O ? O[P] : unknown) & (P extends K ? T : unknown)
 }
 
-type ArgvInferred <T> = Iterable<T> | ((argv: ParsedArgv, fields: Set<T>) => Iterable<T>)
-export type CommandAction <U extends User.Field = never, G extends Group.Field = never, O = {}> =
+type ArgvInferred<T> = Iterable<T> | ((argv: ParsedArgv, fields: Set<T>) => Iterable<T>)
+export type CommandAction<U extends User.Field = never, G extends Group.Field = never, O = {}> =
   (this: Command<U, G>, config: ParsedArgv<U, G, O>, ...args: string[]) => void | string | Promise<void | string>
 
-export class Command <U extends User.Field = never, G extends Group.Field = never, O = {}> {
+export class Command<U extends User.Field = never, G extends Group.Field = never, O = {}> {
   config: CommandConfig<U, G>
   children: Command[] = []
   parent: Command = null
@@ -127,13 +123,8 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
 
   _action?: CommandAction<U, G>
 
-  static defaultConfig: CommandConfig = {
-    authority: 1,
-  }
-
-  static defaultOptionConfig: OptionConfig = {
-    authority: 0,
-  }
+  static defaultConfig: CommandConfig = {}
+  static defaultOptionConfig: OptionConfig = {}
 
   private static _userFields: ArgvInferred<User.Field>[] = []
   private static _groupFields: ArgvInferred<Group.Field>[] = []
@@ -148,7 +139,7 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return this
   }
 
-  static collect <T extends TableType>(argv: ParsedArgv, key: T, fields = new Set<keyof Tables[T]>()) {
+  static collect<T extends TableType>(argv: ParsedArgv, key: T, fields = new Set<keyof Tables[T]>()) {
     if (!argv) return
     const values: ArgvInferred<keyof Tables[T]>[] = [
       ...this[`_${key}Fields`],
@@ -193,15 +184,15 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     return `Command <${this.name}>`
   }
 
-  userFields <T extends User.Field = never>(fields: Iterable<T>): Command<U | T, G, O>
-  userFields <T extends User.Field = never>(fields: (argv: ParsedArgv<never, never, O>, fields: Set<User.Field>) => Iterable<T>): Command<U | T, G, O>
+  userFields<T extends User.Field = never>(fields: Iterable<T>): Command<U | T, G, O>
+  userFields<T extends User.Field = never>(fields: (argv: ParsedArgv<never, never, O>, fields: Set<User.Field>) => Iterable<T>): Command<U | T, G, O>
   userFields(fields: ArgvInferred<User.Field>) {
     this._userFields.push(fields)
     return this
   }
 
-  groupFields <T extends Group.Field = never>(fields: Iterable<T>): Command<U, G | T, O>
-  groupFields <T extends Group.Field = never>(fields: (argv: ParsedArgv<never, never, O>, fields: Set<Group.Field>) => Iterable<T>): Command<U, G | T, O>
+  groupFields<T extends Group.Field = never>(fields: Iterable<T>): Command<U, G | T, O>
+  groupFields<T extends Group.Field = never>(fields: (argv: ParsedArgv<never, never, O>, fields: Set<Group.Field>) => Iterable<T>): Command<U, G | T, O>
   groupFields(fields: ArgvInferred<Group.Field>) {
     this._groupFields.push(fields)
     return this
@@ -278,17 +269,17 @@ export class Command <U extends User.Field = never, G extends Group.Field = neve
     }
   }
 
-  option <K extends string>(name: K, description: string, config: StringOptionConfig): Command<U, G, Extend<O, K, string>>
-  option <K extends string>(name: K, description: string, config: NumberOptionConfig): Command<U, G, Extend<O, K, number>>
-  option <K extends string>(name: K, description: string, config: BooleanOptionConfig): Command<U, G, Extend<O, K, boolean>>
-  option <K extends string>(name: K, description: string, config?: OptionConfig): Command<U, G, Extend<O, K, any>>
-  option <K extends string>(name: K, description: string, config: OptionConfig = {}) {
+  option<K extends string>(name: K, description: string, config: StringOptionConfig): Command<U, G, Extend<O, K, string>>
+  option<K extends string>(name: K, description: string, config: NumberOptionConfig): Command<U, G, Extend<O, K, number>>
+  option<K extends string>(name: K, description: string, config: BooleanOptionConfig): Command<U, G, Extend<O, K, boolean>>
+  option<K extends string>(name: K, description: string, config?: OptionConfig): Command<U, G, Extend<O, K, any>>
+  option<K extends string>(name: K, description: string, config: OptionConfig = {}) {
     const fallbackType = typeof config.fallback as never
     const type = config['type'] || supportedType.includes(fallbackType) && fallbackType
     return this._registerOption(name, description, { ...config, type }) as any
   }
 
-  removeOption <K extends string & keyof O>(name: K) {
+  removeOption<K extends string & keyof O>(name: K) {
     if (!this._options[name]) return false
     const option = this._options[name]
     delete this._options[name]

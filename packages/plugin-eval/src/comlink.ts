@@ -202,7 +202,7 @@ function closeEndPoint(endpoint: Endpoint) {
   if (isMessagePort(endpoint)) endpoint.close()
 }
 
-export function wrap <T>(ep: Endpoint, target?: any): Remote<T> {
+export function wrap<T>(ep: Endpoint, target?: any): Remote<T> {
   return createProxy<T>(ep, [], target) as any
 }
 
@@ -293,7 +293,7 @@ function createProxy<T>(
   return proxy as any
 }
 
-function myFlat <T>(arr: (T | T[])[]): T[] {
+function myFlat<T>(arr: (T | T[])[]): T[] {
   return Array.prototype.concat.apply([], arr)
 }
 
@@ -308,7 +308,7 @@ export function transfer(obj: any, transfers: Transferable[]) {
   return obj
 }
 
-export function proxy <T>(obj: T): T & ProxyMarked {
+export function proxy<T>(obj: T): T & ProxyMarked {
   return Object.assign(obj, { [proxyMarker]: true }) as any
 }
 

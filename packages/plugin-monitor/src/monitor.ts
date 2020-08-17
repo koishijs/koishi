@@ -21,7 +21,7 @@ const headers = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101 Firefox/60.0',
 }
 
-export async function get <T>(url: string) {
+export async function get<T>(url: string) {
   const { data } = await axios.get<T>(url, { headers })
   return data
 }

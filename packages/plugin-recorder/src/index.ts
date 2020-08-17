@@ -1,15 +1,12 @@
 import { WriteStream, createWriteStream, existsSync, mkdirSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { Session, Context } from 'koishi-core'
+import { pick } from 'koishi-utils'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
     'before-record' (session: Session): any
   }
-}
-
-function pick <T, K extends keyof T>(source: T, keys: K[]): Pick<T, K> {
-  return keys.reduce((prev, curr) => (prev[curr] = source[curr], prev), {} as Pick<T, K>)
 }
 
 const streams: Record<string, WriteStream> = {}

@@ -39,7 +39,7 @@ export interface ResponsePayload {
 }
 
 /** CQHTTP Meta Information */
-export interface Meta <P extends PostType = PostType> {
+export interface Meta<P extends PostType = PostType> {
   // type
   postType?: P
   messageType?: MetaTypeMap[P & 'message']
@@ -79,9 +79,9 @@ export interface Meta <P extends PostType = PostType> {
 
 const logger = Logger.create('session')
 
-export interface Session <U, G, P extends PostType = PostType> extends Meta <P> {}
+export interface Session<U, G, P extends PostType = PostType> extends Meta<P> {}
 
-export class Session <U extends User.Field = never, G extends Group.Field = never> {
+export class Session<U extends User.Field = never, G extends Group.Field = never> {
   $user?: User.Observed<U>
   $group?: Group.Observed<G>
   $app?: App
@@ -157,7 +157,7 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
   }
 
   /** 在元数据上绑定一个可观测群实例 */
-  async $observeGroup <T extends Group.Field = never>(fields: Iterable<T> = []): Promise<Group.Observed<T | G>> {
+  async $observeGroup<T extends Group.Field = never>(fields: Iterable<T> = []): Promise<Group.Observed<T | G>> {
     const fieldSet = new Set<Group.Field>(fields)
     const { groupId, $argv, $group } = this
     if ($argv) Command.collect($argv, 'group', fieldSet)
@@ -188,7 +188,7 @@ export class Session <U extends User.Field = never, G extends Group.Field = neve
   }
 
   /** 在元数据上绑定一个可观测用户实例 */
-  async $observeUser <T extends User.Field = never>(fields: Iterable<T> = []): Promise<User.Observed<T | U>> {
+  async $observeUser<T extends User.Field = never>(fields: Iterable<T> = []): Promise<User.Observed<T | U>> {
     const fieldSet = new Set<User.Field>(fields)
     const { userId, $argv, $user } = this
     if ($argv) Command.collect($argv, 'user', fieldSet)

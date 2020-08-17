@@ -1,8 +1,8 @@
 import { Context, User, getTargetId } from 'koishi-core'
 
-type UserInfoCallback <K extends User.Field = User.Field> = (user: Pick<User, K>) => string
+type UserInfoCallback<K extends User.Field = User.Field> = (user: Pick<User, K>) => string
 
-interface Info <K extends User.Field = User.Field> {
+interface Info<K extends User.Field = User.Field> {
   order: number
   callback: (user: Pick<User, K>) => string
 }
@@ -10,7 +10,7 @@ interface Info <K extends User.Field = User.Field> {
 const infoFields = new Set<User.Field>(['authority'])
 const infoList: Info[] = []
 
-export function registerUserInfo <K extends User.Field>(callback: UserInfoCallback<K>, fields: Iterable<K> = [], order = 0) {
+export function registerUserInfo<K extends User.Field>(callback: UserInfoCallback<K>, fields: Iterable<K> = [], order = 0) {
   const index = infoList.findIndex(a => a.order > order)
   if (index >= 0) {
     infoList.splice(index, 0, { order, callback })

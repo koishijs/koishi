@@ -1,5 +1,5 @@
 function deepen(modifyString: (source: string) => string) {
-  function modifyObject <T>(source: T): T {
+  function modifyObject<T>(source: T): T {
     if (typeof source !== 'object' || !source) return source
     if (Array.isArray(source)) return source.map(modifyObject) as any
     const result = {} as T
@@ -9,7 +9,7 @@ function deepen(modifyString: (source: string) => string) {
     return result
   }
 
-  return function <T> (source: T): T {
+  return function<T> (source: T): T {
     if (typeof source === 'string') {
       return modifyString(source) as any
     } else {

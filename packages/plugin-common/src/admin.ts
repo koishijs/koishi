@@ -1,18 +1,18 @@
 import { isInteger, difference, Observed, paramCase, observe, Time } from 'koishi-utils'
 import { Context, Session, getTargetId, User, Group } from 'koishi-core'
 
-type ActionCallback <T extends {}, K extends keyof T> =
+type ActionCallback<T extends {}, K extends keyof T> =
   (this: Context, session: Session<'authority'>, target: Observed<Pick<T, K>>, ...args: string[]) => Promise<void | string>
 
-export interface ActionItem <T extends {}> {
+export interface ActionItem<T extends {}> {
   callback: ActionCallback<T, keyof T>
   fields: (keyof T)[]
 }
 
-export class Action <T extends {}> {
+export class Action<T extends {}> {
   commands: Record<string, ActionItem<T>> = {}
 
-  add <K extends keyof T = never>(name: string, callback: ActionCallback<T, K>, fields?: K[]) {
+  add<K extends keyof T = never>(name: string, callback: ActionCallback<T, K>, fields?: K[]) {
     this.commands[paramCase(name)] = { callback, fields }
   }
 }

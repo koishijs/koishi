@@ -93,7 +93,7 @@ function getPackage(name: string) {
     || packages[`extensions/plugin-${name}`]
 }
 
-function each <T>(callback: (pkg: Package, name: string) => T) {
+function each<T>(callback: (pkg: Package, name: string) => T) {
   const results: T[] = []
   for (const path in packages) {
     results.push(callback(packages[path], packages[path].name))

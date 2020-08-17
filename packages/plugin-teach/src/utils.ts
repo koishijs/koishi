@@ -83,7 +83,7 @@ export namespace Dialogue {
 
 const primitives = ['number', 'string', 'bigint', 'boolean', 'symbol']
 
-export function clone <T>(source: T): T {
+export function clone<T>(source: T): T {
   return primitives.includes(typeof source) ? source
     : Array.isArray(source) ? source.map(clone) as any
       : Object.fromEntries(Object.entries(source).map(([key, value]) => [key, clone(value)]))

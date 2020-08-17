@@ -30,7 +30,7 @@ function isErrorModule(error: any) {
   return error.code !== 'MODULE_NOT_FOUND' || error.requireStack && error.requireStack[0] !== __filename
 }
 
-function tryCallback <T>(callback: () => T) {
+function tryCallback<T>(callback: () => T) {
   try {
     return callback()
   } catch (error) {

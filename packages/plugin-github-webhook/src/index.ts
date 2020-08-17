@@ -27,7 +27,7 @@ export function apply(ctx: Context, config: Config = {}) {
     return webhook.middleware(ctx.req, ctx.res, next)
   })
 
-  function registerHandler <T extends EventNames.All>(event: T, handler: (payload: GetWebhookPayloadTypeFromEvent<T>['payload']) => string | Promise<string>) {
+  function registerHandler<T extends EventNames.All>(event: T, handler: (payload: GetWebhookPayloadTypeFromEvent<T>['payload']) => string | Promise<string>) {
     webhook.on(event, async (callback) => {
       const { repository } = callback.payload
       const ids = config.repos[repository.full_name]

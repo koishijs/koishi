@@ -5,7 +5,7 @@ import { Session } from '../session'
 import { App } from '../app'
 import { Context } from '../context'
 
-export type CommandUsage <U extends User.Field, G extends Group.Field> = string | ((this: Command<U, G>, session: Session<U, G>) => string | Promise<string>)
+export type CommandUsage<U extends User.Field, G extends Group.Field> = string | ((this: Command<U, G>, session: Session<U, G>) => string | Promise<string>)
 
 declare module '../app' {
   interface AppOptions {
@@ -14,7 +14,7 @@ declare module '../app' {
 }
 
 declare module '../command' {
-  interface Command <U, G> {
+  interface Command<U, G> {
     _usage?: CommandUsage<U, G>
     _examples: string[]
     usage (text: CommandUsage<U, G>): this
@@ -64,7 +64,7 @@ export default function apply(app: App) {
     return true
   })
 
-  function createCollector <T extends TableType>(key: T) {
+  function createCollector<T extends TableType>(key: T) {
     return function* (argv: ParsedArgv, fields: Set<keyof Tables[T]>) {
       const { args: [name] } = argv
       const command = app._commandMap[name] || app._shortcutMap[name]

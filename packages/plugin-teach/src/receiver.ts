@@ -140,7 +140,7 @@ export class MessageBuffer {
     return this._flush(this.buffer)
   }
 
-  async run <T>(callback: () => T | Promise<T>) {
+  async run<T>(callback: () => T | Promise<T>) {
     this.original = false
     const send = this.session.$send
     const sendQueued = this.session.$sendQueued

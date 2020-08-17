@@ -5,22 +5,23 @@ import { User } from '../database'
 import { Command, ParsedArgv } from '../command'
 import { App } from '../app'
 
-declare module '../context' {
-  interface EventMap {
-    'usage-exhausted' (session: Session): void
-  }
-}
-
-export type UserType <T, U extends User.Field = User.Field> = T | ((user: Pick<User, U>) => T)
+export type UserType<T, U extends User.Field = User.Field> = T | ((user: Pick<User, U>) => T)
 
 declare module '../command' {
-  interface Command <U, G> {
+  interface Command<U, G> {
     _checkers: ((session: Session<U, G>) => string | boolean)[]
-    before (checker: (session: Session<U, G>) => string | boolean): this
-    getConfig <K extends keyof CommandConfig> (key: K, session: Session): Exclude<CommandConfig[K], (user: User) => any>
+    before(checker: (session: Session<U, G>) => string | boolean): this
+    getConfig<K extends keyof CommandConfig>(key: K, session: Session): Exclude<CommandConfig[K], (user: User) => any>
   }
 
-  interface CommandConfig <U, G> {
+  interface OptionConfig<T> {
+    authority?: number
+    notUsage?: boolean
+  }
+
+  interface CommandConfig<U, G> {
+    /** min authority */
+    authority?: number
     /** disallow unknown options */
     checkUnknown?: boolean
     /** check argument count */
@@ -60,9 +61,14 @@ export function getUsageName(command: Command) {
 export type ValidationField = 'authority' | 'usage' | 'timers'
 
 Object.assign(Command.defaultConfig, {
+  authority: 1,
   showWarning: true,
   maxUsage: Infinity,
   minInterval: 0,
+})
+
+Object.assign(Command.defaultOptionConfig, {
+  authority: 0,
 })
 
 Command.userFields(function* ({ command, options = {} }, fields) {
@@ -163,7 +169,6 @@ export default function apply(app: App) {
       const maxUsage = command.getConfig('maxUsage', session)
 
       if (maxUsage < Infinity && checkUsage(name, session.$user, maxUsage)) {
-        app.emit(session, 'usage-exhausted', session)
         return sendHint(session, messages.USAGE_EXHAUSTED)
       }
 

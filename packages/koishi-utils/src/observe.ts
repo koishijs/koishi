@@ -6,7 +6,7 @@ const logger = Logger.create('observer')
 const staticTypes = ['number', 'string', 'bigint', 'boolean', 'symbol', 'function']
 const builtinClasses = ['Date', 'RegExp', 'Set', 'Map', 'WeakSet', 'WeakMap', 'Array']
 
-export function pick <T, K extends keyof T>(source: T, keys: Iterable<K>) {
+export function pick<T, K extends keyof T>(source: T, keys: Iterable<K>) {
   const result = {} as Pick<T, K>
   for (const key of keys) {
     result[key] = source[key]
@@ -14,7 +14,7 @@ export function pick <T, K extends keyof T>(source: T, keys: Iterable<K>) {
   return result
 }
 
-export function omit <T, K extends keyof T>(source: T, keys: Iterable<K>) {
+export function omit<T, K extends keyof T>(source: T, keys: Iterable<K>) {
   const result = { ...source } as Omit<T, K>
   for (const key of keys) {
     Reflect.deleteProperty(result, key)
@@ -22,9 +22,9 @@ export function omit <T, K extends keyof T>(source: T, keys: Iterable<K>) {
   return result
 }
 
-export function defineProperty <T, K extends keyof T>(object: T, key: K, value: T[K]): void
-export function defineProperty <T, K extends keyof any>(object: T, key: K, value: any): void
-export function defineProperty <T, K extends keyof any>(object: T, key: K, value: any) {
+export function defineProperty<T, K extends keyof T>(object: T, key: K, value: T[K]): void
+export function defineProperty<T, K extends keyof any>(object: T, key: K, value: any): void
+export function defineProperty<T, K extends keyof any>(object: T, key: K, value: any) {
   Object.defineProperty(object, key, { writable: true, value })
 }
 
@@ -38,7 +38,7 @@ function observeProperty(value: any, proxy: any, key: any, label: string, update
   }
 }
 
-function observeObject <T extends object>(target: T, label: string, update?: () => void): T {
+function observeObject<T extends object>(target: T, label: string, update?: () => void): T {
   if (!target['__proxyGetters__']) {
     Object.defineProperty(target, '__proxyGetters__', { value: {} })
   }
@@ -91,7 +91,7 @@ function observeObject <T extends object>(target: T, label: string, update?: () 
 
 const arrayProxyMethods = ['pop', 'shift', 'splice', 'sort']
 
-function observeArray <T>(target: T[], label: string, update: () => void) {
+function observeArray<T>(target: T[], label: string, update: () => void) {
   const proxy: Record<number, T> = {}
 
   for (const method of arrayProxyMethods) {
@@ -128,17 +128,17 @@ function observeDate(target: Date, update: () => void) {
   return target
 }
 
-export type Observed <T, R = any> = T & {
+export type Observed<T, R = any> = T & {
   _diff: Partial<T>
   _update: () => R
   _merge: (value: Partial<T>) => Observed<T>
 }
 
-type UpdateFunction <T, R> = (diff: Partial<T>) => R
+type UpdateFunction<T, R> = (diff: Partial<T>) => R
 
-export function observe <T extends object>(target: T, label?: string | number): Observed<T, void>
-export function observe <T extends object, R>(target: T, update: UpdateFunction<T, R>, label?: string | number): Observed<T, R>
-export function observe <T extends object, R>(target: T, ...args: [(string | number)?] | [UpdateFunction<T, R>, (string | number)?]) {
+export function observe<T extends object>(target: T, label?: string | number): Observed<T, void>
+export function observe<T extends object, R>(target: T, update: UpdateFunction<T, R>, label?: string | number): Observed<T, R>
+export function observe<T extends object, R>(target: T, ...args: [(string | number)?] | [UpdateFunction<T, R>, (string | number)?]) {
   if (staticTypes.includes(typeof target)) {
     throw new Error(`cannot observe immutable type "${typeof target}"`)
   } else if (!target) {

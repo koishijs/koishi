@@ -76,76 +76,76 @@ export interface VersionInfo {
 
 declare module 'koishi-core/dist/server' {
   interface Bot {
-    _request?: (action: string, params: Record<string, any>) => Promise<CQResponse>
-    get <T = any> (action: string, params?: Record<string, any>, silent?: boolean): Promise<T>
-    getAsync (action: string, params?: Record<string, any>): Promise<void>
-    sendGroupMsg (groupId: number, message: string, autoEscape?: boolean): Promise<number>
-    sendPrivateMsg (userId: number, message: string, autoEscape?: boolean): Promise<number>
-    sendGroupMsgAsync (groupId: number, message: string, autoEscape?: boolean): Promise<void>
-    sendPrivateMsgAsync (userId: number, message: string, autoEscape?: boolean): Promise<void>
-    setGroupAnonymousBan (groupId: number, anonymous: object, duration?: number): Promise<void>
-    setGroupAnonymousBan (groupId: number, flag: string, duration?: number): Promise<void>
-    setGroupAnonymousBanAsync (groupId: number, anonymous: object, duration?: number): Promise<void>
-    setGroupAnonymousBanAsync (groupId: number, flag: string, duration?: number): Promise<void>
-    setFriendAddRequest (flag: string, approve?: boolean): Promise<void>
-    setFriendAddRequest (flag: string, remark?: string): Promise<void>
-    setFriendAddRequestAsync (flag: string, approve?: boolean): Promise<void>
-    setFriendAddRequestAsync (flag: string, remark?: string): Promise<void>
-    setGroupAddRequest (flag: string, subType: 'add' | 'invite', approve?: boolean): Promise<void>
-    setGroupAddRequest (flag: string, subType: 'add' | 'invite', reason?: string): Promise<void>
-    setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', approve?: boolean): Promise<void>
-    setGroupAddRequestAsync (flag: string, subType: 'add' | 'invite', reason?: string): Promise<void>
-    deleteMsg (messageId: number): Promise<void>
-    deleteMsgAsync (messageId: number): Promise<void>
-    sendLike (userId: number, times?: number): Promise<void>
-    sendLikeAsync (userId: number, times?: number): Promise<void>
-    setGroupKick (groupId: number, userId: number, rejectAddRequest?: boolean): Promise<void>
-    setGroupKickAsync (groupId: number, userId: number, rejectAddRequest?: boolean): Promise<void>
-    setGroupBan (groupId: number, userId: number, duration?: number): Promise<void>
-    setGroupBanAsync (groupId: number, userId: number, duration?: number): Promise<void>
-    setGroupWholeBan (groupId: number, enable?: boolean): Promise<void>
-    setGroupWholeBanAsync (groupId: number, enable?: boolean): Promise<void>
-    setGroupAdmin (groupId: number, userId: number, enable?: boolean): Promise<void>
-    setGroupAdminAsync (groupId: number, userId: number, enable?: boolean): Promise<void>
-    setGroupAnonymous (groupId: number, enable?: boolean): Promise<void>
-    setGroupAnonymousAsync (groupId: number, enable?: boolean): Promise<void>
-    setGroupCard (groupId: number, userId: number, card?: string): Promise<void>
-    setGroupCardAsync (groupId: number, userId: number, card?: string): Promise<void>
-    setGroupLeave (groupId: number, isDismiss?: boolean): Promise<void>
-    setGroupLeaveAsync (groupId: number, isDismiss?: boolean): Promise<void>
-    setGroupSpecialTitle (groupId: number, userId: number, specialTitle?: string, duration?: number): Promise<void>
-    setGroupSpecialTitleAsync (groupId: number, userId: number, specialTitle?: string, duration?: number): Promise<void>
-    getLoginInfo (): Promise<AccountInfo>
-    getStrangerInfo (userId: number, noCache?: boolean): Promise<StrangerInfo>
-    getFriendList (): Promise<FriendInfo[]>
-    getGroupList (): Promise<ListedGroupInfo[]>
-    getGroupInfo (groupId: number, noCache?: boolean): Promise<GroupInfo>
-    getGroupMemberInfo (groupId: number, userId: number, noCache?: boolean): Promise<GroupMemberInfo>
-    getGroupMemberList (groupId: number): Promise<GroupMemberInfo[]>
-    getCookies (domain?: string): Promise<string>
-    getCsrfToken (): Promise<number>
-    getCredentials (domain?: string): Promise<Credentials>
-    getRecord (file: string, outFormat: RecordFormat, fullPath?: boolean): Promise<RecordInfo>
-    getImage (file: string): Promise<ImageInfo>
-    canSendImage (): Promise<boolean>
-    canSendRecord (): Promise<boolean>
-    getVersionInfo (): Promise<VersionInfo>
-    setRestartPlugin (delay?: number): Promise<void>
-    cleanDataDir (dataDir: DataDirectory): Promise<void>
-    cleanDataDirAsync (dataDir: DataDirectory): Promise<void>
-    cleanPluginLog (): Promise<void>
-    cleanPluginLogAsync (): Promise<void>
-    getVipInfo (): Promise<VipInfo>
-    getGroupNotice (groupId: number): Promise<GroupNotice[]>
-    sendGroupNotice (groupId: number, title: string, content: string): Promise<void>
-    sendGroupNoticeAsync (groupId: number, title: string, content: string): Promise<void>
-    setRestart (cleanLog?: boolean, cleanCache?: boolean, cleanEvent?: boolean): Promise<void>
-    setGroupName (groupId: number, name: string): Promise<void>
-    setGroupNameAsync (groupId: number, name: string): Promise<void>
-    getGroupMsg (messageId: number): Promise<GroupMessage>
-    getForwardMsg (messageId: number): Promise<ForwardMessage>
-    sendGroupForwardMsg (groupId: number, messages: readonly CQNode[]): Promise<void>
-    sendGroupForwardMsgAsync (groupId: number, messages: readonly CQNode[]): Promise<void>
+    _request?(action: string, params: Record<string, any>): Promise<CQResponse>
+    get<T = any>(action: string, params?: Record<string, any>, silent?: boolean): Promise<T>
+    getAsync(action: string, params?: Record<string, any>): Promise<void>
+    sendGroupMsg(groupId: number, message: string, autoEscape?: boolean): Promise<number>
+    sendPrivateMsg(userId: number, message: string, autoEscape?: boolean): Promise<number>
+    sendGroupMsgAsync(groupId: number, message: string, autoEscape?: boolean): Promise<void>
+    sendPrivateMsgAsync(userId: number, message: string, autoEscape?: boolean): Promise<void>
+    setGroupAnonymousBan(groupId: number, anonymous: object, duration?: number): Promise<void>
+    setGroupAnonymousBan(groupId: number, flag: string, duration?: number): Promise<void>
+    setGroupAnonymousBanAsync(groupId: number, anonymous: object, duration?: number): Promise<void>
+    setGroupAnonymousBanAsync(groupId: number, flag: string, duration?: number): Promise<void>
+    setFriendAddRequest(flag: string, approve?: boolean): Promise<void>
+    setFriendAddRequest(flag: string, remark?: string): Promise<void>
+    setFriendAddRequestAsync(flag: string, approve?: boolean): Promise<void>
+    setFriendAddRequestAsync(flag: string, remark?: string): Promise<void>
+    setGroupAddRequest(flag: string, subType: 'add' | 'invite', approve?: boolean): Promise<void>
+    setGroupAddRequest(flag: string, subType: 'add' | 'invite', reason?: string): Promise<void>
+    setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', approve?: boolean): Promise<void>
+    setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', reason?: string): Promise<void>
+    deleteMsg(messageId: number): Promise<void>
+    deleteMsgAsync(messageId: number): Promise<void>
+    sendLike(userId: number, times?: number): Promise<void>
+    sendLikeAsync(userId: number, times?: number): Promise<void>
+    setGroupKick(groupId: number, userId: number, rejectAddRequest?: boolean): Promise<void>
+    setGroupKickAsync(groupId: number, userId: number, rejectAddRequest?: boolean): Promise<void>
+    setGroupBan(groupId: number, userId: number, duration?: number): Promise<void>
+    setGroupBanAsync(groupId: number, userId: number, duration?: number): Promise<void>
+    setGroupWholeBan(groupId: number, enable?: boolean): Promise<void>
+    setGroupWholeBanAsync(groupId: number, enable?: boolean): Promise<void>
+    setGroupAdmin(groupId: number, userId: number, enable?: boolean): Promise<void>
+    setGroupAdminAsync(groupId: number, userId: number, enable?: boolean): Promise<void>
+    setGroupAnonymous(groupId: number, enable?: boolean): Promise<void>
+    setGroupAnonymousAsync(groupId: number, enable?: boolean): Promise<void>
+    setGroupCard(groupId: number, userId: number, card?: string): Promise<void>
+    setGroupCardAsync(groupId: number, userId: number, card?: string): Promise<void>
+    setGroupLeave(groupId: number, isDismiss?: boolean): Promise<void>
+    setGroupLeaveAsync(groupId: number, isDismiss?: boolean): Promise<void>
+    setGroupSpecialTitle(groupId: number, userId: number, specialTitle?: string, duration?: number): Promise<void>
+    setGroupSpecialTitleAsync(groupId: number, userId: number, specialTitle?: string, duration?: number): Promise<void>
+    getLoginInfo(): Promise<AccountInfo>
+    getStrangerInfo(userId: number, noCache?: boolean): Promise<StrangerInfo>
+    getFriendList(): Promise<FriendInfo[]>
+    getGroupList(): Promise<ListedGroupInfo[]>
+    getGroupInfo(groupId: number, noCache?: boolean): Promise<GroupInfo>
+    getGroupMemberInfo(groupId: number, userId: number, noCache?: boolean): Promise<GroupMemberInfo>
+    getGroupMemberList(groupId: number): Promise<GroupMemberInfo[]>
+    getCookies(domain?: string): Promise<string>
+    getCsrfToken(): Promise<number>
+    getCredentials(domain?: string): Promise<Credentials>
+    getRecord(file: string, outFormat: RecordFormat, fullPath?: boolean): Promise<RecordInfo>
+    getImage(file: string): Promise<ImageInfo>
+    canSendImage(): Promise<boolean>
+    canSendRecord(): Promise<boolean>
+    getVersionInfo(): Promise<VersionInfo>
+    setRestartPlugin(delay?: number): Promise<void>
+    cleanDataDir(dataDir: DataDirectory): Promise<void>
+    cleanDataDirAsync(dataDir: DataDirectory): Promise<void>
+    cleanPluginLog(): Promise<void>
+    cleanPluginLogAsync(): Promise<void>
+    getVipInfo(): Promise<VipInfo>
+    getGroupNotice(groupId: number): Promise<GroupNotice[]>
+    sendGroupNotice(groupId: number, title: string, content: string): Promise<void>
+    sendGroupNoticeAsync(groupId: number, title: string, content: string): Promise<void>
+    setRestart(cleanLog?: boolean, cleanCache?: boolean, cleanEvent?: boolean): Promise<void>
+    setGroupName(groupId: number, name: string): Promise<void>
+    setGroupNameAsync(groupId: number, name: string): Promise<void>
+    getGroupMsg(messageId: number): Promise<GroupMessage>
+    getForwardMsg(messageId: number): Promise<ForwardMessage>
+    sendGroupForwardMsg(groupId: number, messages: readonly CQNode[]): Promise<void>
+    sendGroupForwardMsgAsync(groupId: number, messages: readonly CQNode[]): Promise<void>
   }
 }
 

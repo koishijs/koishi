@@ -13,7 +13,7 @@ export interface ThrottleConfig {
 }
 
 // TODO pending typescript official helper
-type Awaited <T> = T | Promise<T>
+type Awaited<T> = T | Promise<T>
 
 export type RequestHandler = string | boolean | ((session: Session) => Awaited<string | boolean | void>)
 export type WelcomeMessage = string | ((session: Session) => string | Promise<string>)
