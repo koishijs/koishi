@@ -78,7 +78,7 @@ export function apply(ctx: Context, config: Config = {}) {
     })
   }
 
-  ctx.group().command('rss <url>', 'Subscribe a rss url')
+  ctx.group().command('rss <url...>', 'Subscribe a rss url')
     .groupFields(['rss', 'id'])
     .option('remove', '-r, --remove 取消订阅')
     .action(async ({ session: { $group }, options }, url) => {
