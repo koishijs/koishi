@@ -22,7 +22,7 @@ declare module 'koishi-core/dist/context' {
 
 declare module 'koishi-core/dist/session' {
   interface Session {
-    _eval: boolean
+    _duringEval: boolean
     $eval(source: string, silent?: boolean): Promise<string>
   }
 }
@@ -30,6 +30,7 @@ declare module 'koishi-core/dist/session' {
 interface MainConfig {
   timeout?: number
   maxLogs?: number
+  blacklist?: string[]
   resourceLimits?: ResourceLimits
 }
 
@@ -41,6 +42,7 @@ const defaultConfig: Config = {
   timeout: 1000,
   maxLogs: 10,
   setupFiles: {},
+  blacklist: ['eval', 'echo', 'broadcast', 'teach'],
   resourceLimits: {
     maxOldGenerationSizeMb: 64,
     maxYoungGenerationSizeMb: 64,
@@ -77,12 +79,12 @@ Session.prototype.$eval = function $eval(this: Session, source, silent) {
   return new Promise((resolve) => {
     logger.debug(source)
     const api = new MainAPI(this)
-    defineProperty(this, '_eval', true)
+    defineProperty(this, '_duringEval', true)
 
     const _resolve = (result?: string) => {
       clearTimeout(timer)
       evalWorker.off('error', listener)
-      this._eval = false
+      this._duringEval = false
       resolve(result)
     }
 
@@ -115,10 +117,6 @@ Session.prototype.$eval = function $eval(this: Session, source, silent) {
 
 export function apply(ctx: Context, config: Config = {}) {
   MainAPI.config = config = { ...defaultConfig, ...config }
-  const resourceLimits = {
-    ...defaultConfig.resourceLimits,
-    ...config.resourceLimits,
-  }
 
   defineProperty(ctx.app, 'evalConfig', config)
   defineProperty(ctx.app, 'evalRemote', null)
@@ -129,9 +127,12 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.app.evalWorker = new Worker(resolve(__dirname, 'worker.js'), {
       workerData: {
         logLevels: Logger.levels,
-        ...omit(config, ['maxLogs', 'resourceLimits', 'timeout']),
+        ...omit(config, ['maxLogs', 'resourceLimits', 'timeout', 'blacklist']),
       },
-      resourceLimits,
+      resourceLimits: {
+        ...defaultConfig.resourceLimits,
+        ...config.resourceLimits,
+      },
     })
 
     ctx.app.evalRemote = wrap(ctx.app.evalWorker)
@@ -155,8 +156,15 @@ export function apply(ctx: Context, config: Config = {}) {
     return createWorker()
   })
 
+  const blacklist = [...defaultConfig.blacklist, ...config.blacklist]
+  ctx.on('before-command', async ({ command, session }) => {
+    if (blacklist.includes(command.name) && session._duringEval) {
+      await session.$send(`不能在 eval 指令中调用 ${command.name} 指令。`)
+      return true
+    }
+  })
+
   ctx.command('eval [expr...]', '执行 JavaScript 脚本', { authority: 2 })
-    // TODO can it be on demand?
     .userFields(User.fields)
     .shortcut('>', { oneArg: true, fuzzy: true })
     .shortcut('>>', { oneArg: true, fuzzy: true, options: { slient: true } })
@@ -169,7 +177,6 @@ export function apply(ctx: Context, config: Config = {}) {
       }
 
       if (!expr) return '请输入要执行的脚本。'
-      if (session._eval) return '不能嵌套调用本指令。'
       return session.$eval(CQCode.unescape(expr), options.slient)
     })
 }
