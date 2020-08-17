@@ -10,6 +10,7 @@ declare module 'koishi-core/dist/database' {
 
 export interface Config {
   refresh?: number
+  userAgent?: string
 }
 
 const logger = Logger.create('rss')
@@ -17,9 +18,9 @@ const logger = Logger.create('rss')
 export const name = 'rss'
 
 export function apply(ctx: Context, config: Config = {}) {
-  const { refresh = Time.minute } = config
+  const { refresh = Time.minute, userAgent } = config
   const feedMap: Record<string, Set<number>> = {}
-  const feeder = new RssFeedEmitter({ skipFirstLoad: true })
+  const feeder = new RssFeedEmitter({ skipFirstLoad: true, userAgent })
 
   function subscribe(url: string, groupId: number) {
     if (url in feedMap) {
@@ -73,8 +74,21 @@ export function apply(ctx: Context, config: Config = {}) {
       }
 
       if (index >= 0) return '已订阅此链接。'
-      $group.rss.push(url)
-      subscribe(url, $group.id)
-      return '添加订阅成功！'
+
+      const feeder = new RssFeedEmitter()
+      return new Promise((resolve, reject) => {
+        feeder.add({ url, refresh })
+        feeder.on('new-item', resolve)
+        feeder.on('error', reject)
+      }).then(() => {
+        $group.rss.push(url)
+        subscribe(url, $group.id)
+        feeder.destroy()
+        return '添加订阅成功！'
+      }, (error) => {
+        logger.warn(error)
+        feeder.destroy()
+        return '无法订阅此链接。'
+      })
     })
 }
