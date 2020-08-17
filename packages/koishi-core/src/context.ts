@@ -267,12 +267,18 @@ export class Context {
     return parent
   }
 
-  async broadcast(message: string, forced?: boolean) {
+  async broadcast(message: string, forced?: boolean): Promise<void>
+  async broadcast(groups: number[], message: string, forced?: boolean): Promise<void>
+  async broadcast(...args: [string, boolean?] | [number[], string, boolean?]) {
+    let groups: number[]
+    if (Array.isArray(args[0])) groups = args.shift() as any
+    const [message, forced] = args as [string, boolean]
     if (!message) return
 
-    const groups = await this.database.getAllGroups(['id', 'assignee', 'flag'])
+    const data = await this.database.getAllGroups(['id', 'assignee', 'flag'])
     const assignMap: Record<number, number[]> = {}
-    for (const { id, assignee, flag } of groups) {
+    for (const { id, assignee, flag } of data) {
+      if (groups && !groups.includes(id)) continue
       if (!forced && (flag & Group.Flag.silent)) continue
       if (assignMap[assignee]) {
         assignMap[assignee].push(id)
