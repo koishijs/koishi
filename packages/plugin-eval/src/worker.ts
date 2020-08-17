@@ -40,7 +40,7 @@ export interface Global {
 interface EvalOptions {
   session: string
   user: string
-  output: boolean
+  silent: boolean
   source: string
 }
 
@@ -101,7 +101,7 @@ export class WorkerAPI {
   start() {}
 
   async eval(options: EvalOptions, main: MainAPI) {
-    const { session, source, user, output } = options
+    const { session, source, user, silent } = options
     defineProperty(this, 'main', main)
     internal.setGlobal('user', JSON.parse(user), true)
     internal.setGlobal('session', JSON.parse(session), true)
@@ -113,7 +113,8 @@ export class WorkerAPI {
       return formatError(error)
     }
 
-    if (result !== undefined && output) return formatResult(result)
+    if (result === undefined || silent) return
+    return formatResult(result)
   }
 }
 

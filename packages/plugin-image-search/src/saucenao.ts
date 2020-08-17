@@ -1,4 +1,3 @@
-/* lgtm[js/incomplete-url-substring-sanitization] */
 /* eslint-disable camelcase */
 
 import axios from 'axios'
@@ -67,6 +66,8 @@ export interface SaucenaoResponse {
 }
 
 const logger = Logger.create('search')
+const HOST_ANIDB = 'anidb.net'
+const HOST_PIXIV = 'pixiv.net'
 
 export default async function saucenao(sourceUrl: string, session: Session, config: Config, mixedMode = false) {
   let data: SaucenaoResponse
@@ -116,7 +117,6 @@ export default async function saucenao(sourceUrl: string, session: Session, conf
         break
       }
     }
-    url = url.replace('http://', 'https://')
     if (url.includes('danbooru')) {
       source = await danbooru(url).catch(logger.debug)
     } else if (url.includes('konachan')) {
@@ -160,12 +160,12 @@ export default async function saucenao(sourceUrl: string, session: Session, conf
     } else {
       const displayTitle = member_name
         ? `「${title}」/「${member_name}」`
-        : title || (url?.includes('anidb.net') ? 'AniDB' : '搜索结果')
+        : title || (url?.includes(HOST_ANIDB) ? 'AniDB' : '搜索结果')
       output.push(getShareText({
         url,
         thumbnail,
         title: `(${similarity}%) ${displayTitle}`,
-        authorUrl: member_id && url.includes('pixiv.net') && `https://pixiv.net/u/${member_id}`,
+        authorUrl: member_id && url?.includes(HOST_PIXIV) && `https://pixiv.net/u/${member_id}`,
         source,
       }))
     }

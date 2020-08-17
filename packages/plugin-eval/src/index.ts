@@ -23,7 +23,7 @@ declare module 'koishi-core/dist/context' {
 declare module 'koishi-core/dist/session' {
   interface Session {
     _eval: boolean
-    $eval(source: string, output?: boolean): Promise<string>
+    $eval(source: string, silent?: boolean): Promise<string>
   }
 }
 
@@ -71,7 +71,7 @@ export class MainAPI {
   }
 }
 
-Session.prototype.$eval = function $eval(this: Session, source, output) {
+Session.prototype.$eval = function $eval(this: Session, source, silent) {
   const { evalRemote, evalWorker, evalConfig } = this.$app
 
   return new Promise((resolve) => {
@@ -104,7 +104,7 @@ Session.prototype.$eval = function $eval(this: Session, source, output) {
     evalRemote.eval({
       session: JSON.stringify(this),
       user: JSON.stringify(this.$user),
-      output,
+      silent,
       source,
     }, proxy(api)).then(_resolve, (error) => {
       logger.warn(error)
@@ -124,7 +124,7 @@ export function apply(ctx: Context, config: Config = {}) {
   defineProperty(ctx.app, 'evalRemote', null)
   defineProperty(ctx.app, 'evalWorker', null)
 
-  let restart = false
+  let restart = true
   async function createWorker() {
     ctx.app.evalWorker = new Worker(resolve(__dirname, 'worker.js'), {
       workerData: {
@@ -159,8 +159,8 @@ export function apply(ctx: Context, config: Config = {}) {
     // TODO can it be on demand?
     .userFields(User.fields)
     .shortcut('>', { oneArg: true, fuzzy: true })
-    .shortcut('>>', { oneArg: true, fuzzy: true, options: { output: true } })
-    .option('output', '-o  输出最后的结果')
+    .shortcut('>>', { oneArg: true, fuzzy: true, options: { slient: true } })
+    .option('slient', '-s  不输出最后的结果')
     .option('restart', '-r  重启子线程', { authority: 3 })
     .action(async ({ session, options }, expr) => {
       if (options.restart) {
@@ -170,7 +170,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
       if (!expr) return '请输入要执行的脚本。'
       if (session._eval) return '不能嵌套调用本指令。'
-      return session.$eval(CQCode.unescape(expr), options.output)
+      return session.$eval(CQCode.unescape(expr), options.slient)
     })
 }
 

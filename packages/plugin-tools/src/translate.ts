@@ -35,14 +35,14 @@ export function apply(ctx: Context, config: TranslateOptions) {
     .option('from', '-f <lang>  指定源语言，默认为自动匹配', { fallback: '' })
     .option('to', '-t <lang>  指定目标语言，默认为中文（zh-CHS）', { fallback: 'zh-CHS' })
     .usage('支持的语言名包括 zh-CHS, en, ja, ko, fr, es, pt, it, ru, vi, de, ar, id, it。')
-    .action(async ({ session, options }, text) => {
+    .action(async ({ options }, text) => {
       if (!text) return
       const salt = new Date().getTime()
       const q = String(text)
       const qShort = q.length > 20 ? q.slice(0, 10) + q.length + q.slice(-10) : q
       const from = options.from
       const to = options.to
-      const sign = createHash('md5').update(appKey + qShort + salt + secret).digest('hex')
+      const sign = createHash('md5').update(appKey + qShort + salt + secret).digest('hex') // lgtm [js/weak-cryptographic-algorithm]
       const { data } = await axios.get('http://openapi.youdao.com/api', {
         params: { q, appKey, salt, from, to, sign },
       })
