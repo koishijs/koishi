@@ -1,4 +1,4 @@
-import { defineProperty, Logger } from 'koishi-utils'
+import { Logger } from 'koishi-utils'
 import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
 import { Session, User } from 'koishi-core'
@@ -82,34 +82,40 @@ function formatError(error: Error) {
 
 const main = wrap<MainAPI>(parentPort)
 
+function contextFactory(sid: string, user: {}) {
+  return {
+    user,
+    async send(...param: [string, ...any[]]) {
+      return await main.send(sid, formatResult(...param))
+    },
+    async execute(message: string) {
+      if (typeof message !== 'string') {
+        throw new TypeError('The "message" argument must be of type string')
+      }
+      return await main.execute(sid, message)
+    },
+  }
+}
+
 export class WorkerAPI {
   start() {}
 
   async eval(options: EvalOptions) {
-    console.log('worker eval')
     const { sid, source, user, silent } = options
 
-    internal.setGlobal('temp', {
-      user,
-      async send(...param: [string, ...any[]]) {
-        return await main.send(sid, formatResult(...param))
-      },
-      async execute(message: string) {
-        if (typeof message !== 'string') {
-          throw new TypeError('The "message" argument must be of type string')
-        }
-        return await main.execute(sid, message)
-      },
-    }, true)
+    const key = 'koishi-eval-session:' + sid
+    internal.setGlobal(Symbol.for(key), contextFactory(sid, user), false, true)
 
     let result: any
     try {
-      console.log('run')
       result = await vm.run(`{
-        const { send, execute, user } = temp;
-        delete temp;
-        ${source}
-      }`, 'stdin')
+        const { send, execute, user } = global[Symbol.for("${key}")];
+        delete global[Symbol.for("${key}")];
+        \n${source}
+      }`, {
+        filename: 'stdin',
+        lineOffset: -4,
+      })
     } catch (error) {
       return formatError(error)
     }

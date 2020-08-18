@@ -69,7 +69,6 @@ export class MainAPI {
   }
 
   async send(uuid: string, message: string) {
-    console.log('main send')
     const session = this.app._sessions[uuid]
     if (!session) throw new Error('session not found')
     if (!session._logCount) session._logCount = 0

@@ -3,7 +3,7 @@
 
 import { resolve } from 'path'
 import { readFileSync } from 'fs'
-import { Script, createContext } from 'vm'
+import { Script, createContext, ScriptOptions } from 'vm'
 import { INSPECT_MAX_BYTES } from 'buffer'
 import { inspect } from 'util'
 import { Logger } from 'koishi-utils'
@@ -36,11 +36,8 @@ export class VM {
       .call(this.context, Host, this.internal)
   }
 
-  run(code: string, filename = 'vm.js') {
-    const script = new Script(code, {
-      filename,
-      displayErrors: false,
-    })
+  run(code: string, options: ScriptOptions = {}) {
+    const script = new Script(code, options)
 
     try {
       return this.internal.value(script.runInContext(this.context, { displayErrors: false }))

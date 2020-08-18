@@ -632,20 +632,21 @@ function readonly(value: any, mock: any = {}) {
   return Contextify.value(value, null, frozenTraps, mock)
 }
 
-export function setGlobal(name: string, value: any, writable = false) {
+export function setGlobal(name: keyof any, value: any, writable = false, configurable = false) {
   const prop = Contextify.value(name)
   try {
     Object.defineProperty(GLOBAL, prop, {
       value: writable ? Contextify.value(value) : readonly(value),
       enumerable: true,
       writable,
+      configurable,
     })
   } catch (e) {
     throw Decontextify.value(e)
   }
 }
 
-export function getGlobal(name: string) {
+export function getGlobal(name: keyof any) {
   const prop = Contextify.value(name)
   try {
     return Decontextify.value(GLOBAL[prop])
