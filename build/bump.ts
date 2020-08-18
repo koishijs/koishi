@@ -88,9 +88,8 @@ function getPackage(name: string) {
   name = nameMap[name] || name
   return packages[`packages/${name}`]
     || packages[`packages/koishi-${name}`]
-    || packages[`packages/database-${name}`]
+    || packages[`packages/adapter-${name}`]
     || packages[`packages/plugin-${name}`]
-    || packages[`extensions/plugin-${name}`]
 }
 
 function each<T>(callback: (pkg: Package, name: string) => T) {

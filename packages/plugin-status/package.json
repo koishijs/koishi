@@ -33,7 +33,7 @@
   ],
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",
-    "koishi-core": "^2.0.0-beta.12",
+    "koishi-core": "^2.0.0-beta.13",
     "koishi-plugin-mongo": "^1.0.0-beta.3",
     "koishi-plugin-mysql": "^2.0.0-beta.6",
     "koishi-test-utils": "^4.0.0-beta.5"
