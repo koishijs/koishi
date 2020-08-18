@@ -1,4 +1,4 @@
-import { config, context, internal, WorkerAPI } from 'koishi-plugin-eval/dist/worker'
+import { config, context, internal, WorkerAPI, contextFactory } from 'koishi-plugin-eval/dist/worker'
 import { promises, readFileSync } from 'fs'
 import { resolve } from 'path'
 import { Logger } from 'koishi-utils'
@@ -13,17 +13,8 @@ declare module 'koishi-plugin-eval/dist/worker' {
     addonNames: string[]
   }
 
-  interface Require {
-    (name: string): void
-    modules: string[]
-  }
-
-  interface Global {
-    require: Require
-  }
-
   interface WorkerAPI {
-    execAddon(argv: string): string | void | Promise<string | void>
+    addon(sid: string, user: {}, argv: WorkerArgv): string | void | Promise<string | void>
   }
 }
 
@@ -37,11 +28,10 @@ interface WorkerArgv {
 type AddonAction = (argv: WorkerArgv) => string | void | Promise<string | void>
 const commandMap: Record<string, AddonAction> = {}
 
-WorkerAPI.prototype.execAddon = async function (argvString) {
-  const argv: WorkerArgv = JSON.parse(argvString)
+WorkerAPI.prototype.addon = async function (sid, user, argv) {
   const callback = commandMap[argv.name]
   try {
-    return await callback(argv)
+    return await callback({ ...argv, ...contextFactory(sid, user) })
   } catch (error) {
     logger.warn(error)
   }
@@ -82,18 +72,8 @@ async function createModule(path: string) {
 
 export default Promise.all(config.addonNames.map(path => createModule(path).then(() => {
   logger.debug('load module %c', path)
+  internal.setGlobal(path, modules[path].namespace)
 }, (error) => {
   logger.warn(`cannot load module %c\n` + error.stack, path)
   delete modules[path]
-}))).then(() => {
-  function require(name: string) {
-    const module = modules[name]
-    if (!module) {
-      throw new Error(`Cannot find module "${name}"`)
-    }
-    return internal.value(module.namespace)
-  }
-
-  require.modules = Object.keys(modules)
-  internal.setGlobal('require', require)
-})
+})))

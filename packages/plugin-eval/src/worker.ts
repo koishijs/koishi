@@ -1,7 +1,6 @@
 import { Logger } from 'koishi-utils'
 import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
-import { Session, User } from 'koishi-core'
 import escapeRegExp from 'escape-string-regexp'
 
 /* eslint-disable import/first */
@@ -30,13 +29,6 @@ export const config: WorkerData = {
   },
 }
 
-export interface Global {
-  user: User
-  session: Session
-  exec (message: string): Promise<void>
-  log (format: string, ...param: any[]): Promise<void>
-}
-
 interface EvalOptions {
   sid: string
   user: {}
@@ -47,7 +39,7 @@ interface EvalOptions {
 const vm = new VM()
 export const context = vm.context
 export const internal = vm.internal
-export const sandbox: Global = internal.sandbox
+export const sandbox = internal.sandbox
 
 const pathMapper: Record<string, RegExp> = {}
 
@@ -82,13 +74,13 @@ function formatError(error: Error) {
 
 const main = wrap<MainAPI>(parentPort)
 
-function contextFactory(sid: string, user: {}) {
+export function contextFactory(sid: string, user: {}) {
   return {
     user,
     async send(...param: [string, ...any[]]) {
       return await main.send(sid, formatResult(...param))
     },
-    async execute(message: string) {
+    async exec(message: string) {
       if (typeof message !== 'string') {
         throw new TypeError('The "message" argument must be of type string')
       }

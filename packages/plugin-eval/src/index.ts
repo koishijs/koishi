@@ -27,7 +27,6 @@ declare module 'koishi-core/dist/session' {
     $uuid: string
     _isEval: boolean
     _logCount: number
-    $eval(source: string, silent?: boolean): Promise<string>
   }
 }
 
@@ -76,47 +75,6 @@ export class MainAPI {
       return await session.$sendQueued(message)
     }
   }
-}
-
-Session.prototype.$eval = function $eval(this: Session, source, silent) {
-  const { evalRemote, evalWorker, evalConfig } = this.$app
-
-  return new Promise((resolve) => {
-    logger.debug(source)
-    defineProperty(this, '_duringEval', true)
-
-    const _resolve = (result?: string) => {
-      clearTimeout(timer)
-      evalWorker.off('error', listener)
-      this._isEval = false
-      resolve(result)
-    }
-
-    const timer = setTimeout(async () => {
-      await evalWorker.terminate()
-      _resolve(!this._logCount && '执行超时。')
-    }, evalConfig.timeout)
-
-    const listener = (error: Error) => {
-      let message = ERROR_CODES[error['code']]
-      if (!message) {
-        logger.warn(error)
-        message = '执行过程中遇到错误。'
-      }
-      _resolve(message)
-    }
-
-    evalWorker.on('error', listener)
-    evalRemote.eval({
-      sid: this.$uuid,
-      user: this.$user,
-      silent,
-      source,
-    }).then(_resolve, (error) => {
-      logger.warn(error)
-      _resolve()
-    })
-  })
 }
 
 export function apply(ctx: Context, config: Config = {}) {
@@ -199,7 +157,44 @@ export function apply(ctx: Context, config: Config = {}) {
       }
 
       if (!expr) return '请输入要执行的脚本。'
-      return session.$eval(CQCode.unescape(expr), options.slient)
+      expr = CQCode.unescape(expr)
+
+      return new Promise((resolve) => {
+        logger.debug(expr)
+        defineProperty(this, '_duringEval', true)
+
+        const _resolve = (result?: string) => {
+          clearTimeout(timer)
+          app.evalWorker.off('error', listener)
+          this._isEval = false
+          resolve(result)
+        }
+
+        const timer = setTimeout(async () => {
+          await app.evalWorker.terminate()
+          _resolve(!this._logCount && '执行超时。')
+        }, config.timeout)
+
+        const listener = (error: Error) => {
+          let message = ERROR_CODES[error['code']]
+          if (!message) {
+            logger.warn(error)
+            message = '执行过程中遇到错误。'
+          }
+          _resolve(message)
+        }
+
+        app.evalWorker.on('error', listener)
+        app.evalRemote.eval({
+          sid: this.$uuid,
+          user: this.$user,
+          silent: options.slient,
+          source: expr,
+        }).then(_resolve, (error) => {
+          logger.warn(error)
+          _resolve()
+        })
+      })
     })
 }
 
