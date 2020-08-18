@@ -31,6 +31,7 @@ declare module 'koishi-core/dist/session' {
 }
 
 interface MainConfig {
+  prefix?: string
   timeout?: number
   maxLogs?: number
   blacklist?: string[]
@@ -42,6 +43,7 @@ interface EvalConfig extends MainConfig, WorkerData {}
 export interface Config extends MainConfig, WorkerConfig {}
 
 const defaultConfig: Config = {
+  prefix: '>',
   timeout: 1000,
   maxLogs: 10,
   setupFiles: {},
@@ -78,8 +80,7 @@ export class MainAPI {
 }
 
 export function apply(ctx: Context, config: Config = {}) {
-  config = { ...defaultConfig, ...config }
-
+  const { prefix } = config = { ...defaultConfig, ...config }
   const { app } = ctx
   defineProperty(app, '_sessions', {})
   defineProperty(app, 'evalConfig', config)
@@ -140,11 +141,9 @@ export function apply(ctx: Context, config: Config = {}) {
     }
   })
 
-  ctx.command('evaluate [expr...]', '执行 JavaScript 脚本')
+  const evaluate = ctx.command('evaluate [expr...]', '执行 JavaScript 脚本')
     .alias('eval')
     .userFields(User.fields)
-    .shortcut('>', { oneArg: true, fuzzy: true })
-    .shortcut('>>', { oneArg: true, fuzzy: true, options: { slient: true } })
     .option('slient', '-s  不输出最后的结果')
     .option('restart', '-r  重启子线程', { authority: 3 })
     .before((session) => {
@@ -196,6 +195,11 @@ export function apply(ctx: Context, config: Config = {}) {
         })
       })
     })
+
+  if (prefix) {
+    evaluate.shortcut(prefix, { oneArg: true, fuzzy: true })
+    evaluate.shortcut(prefix + prefix, { oneArg: true, fuzzy: true, options: { slient: true } })
+  }
 }
 
 const ERROR_CODES = {
