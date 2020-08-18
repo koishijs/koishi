@@ -72,6 +72,6 @@ export function apply(ctx: Context, config: Config) {
   })
 
   const addonAction: CommandAction = ({ session, command: { name }, options, rest }, ...args) => {
-    return session.$eval(`require('koishi').executeCommand(${JSON.stringify({ name, args, options, rest })})`, true)
+    return session.$app.evalRemote.execAddon(JSON.stringify({ name, args, options, rest }))
   }
 }

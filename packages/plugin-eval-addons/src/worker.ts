@@ -1,8 +1,7 @@
-import { config, context, internal } from 'koishi-plugin-eval/dist/worker'
+import { config, context, internal, WorkerAPI } from 'koishi-plugin-eval/dist/worker'
 import { promises, readFileSync } from 'fs'
 import { resolve } from 'path'
 import { Logger } from 'koishi-utils'
-import * as addons from './koishi'
 import ts from 'typescript'
 
 const logger = Logger.create('addon')
@@ -22,11 +21,36 @@ declare module 'koishi-plugin-eval/dist/worker' {
   interface Global {
     require: Require
   }
+
+  interface WorkerAPI {
+    execAddon(argv: string): string | void | Promise<string | void>
+  }
 }
 
-const koishi = new SyntheticModule(['registerCommand', 'executeCommand'], function () {
-  this.setExport('registerCommand', addons.registerCommand)
-  this.setExport('executeCommand', addons.executeCommand)
+interface WorkerArgv {
+  name: string
+  args: string[]
+  options: Record<string, any>
+  rest: string
+}
+
+type AddonAction = (argv: WorkerArgv) => string | void | Promise<string | void>
+const commandMap: Record<string, AddonAction> = {}
+
+WorkerAPI.prototype.execAddon = async function (argvString) {
+  const argv: WorkerArgv = JSON.parse(argvString)
+  const callback = commandMap[argv.name]
+  try {
+    return await callback(argv)
+  } catch (error) {
+    logger.warn(error)
+  }
+}
+
+const koishi = new SyntheticModule(['registerCommand'], function () {
+  this.setExport('registerCommand', function registerCommand(name: string, callback: AddonAction) {
+    commandMap[name] = callback
+  })
 }, { context })
 
 const root = resolve(process.cwd(), config.moduleRoot)

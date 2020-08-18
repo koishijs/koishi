@@ -59,6 +59,7 @@ rules:
     - warn
     - after
   yoda: off
+  standard/no-callback-literal: off
   '@typescript-eslint/keyword-spacing': error
   '@typescript-eslint/space-before-function-paren':
     - error

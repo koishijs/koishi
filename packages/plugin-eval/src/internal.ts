@@ -626,7 +626,7 @@ function readonly(value: any, mock: any = {}) {
   for (const key in mock) {
     const value = mock[key]
     if (typeof value === 'function') {
-      value.toString = `function ${value.name}() { [native code] }`
+      value.toString = () => `function ${value.name}() { [native code] }`
     }
   }
   return Contextify.value(value, null, frozenTraps, mock)

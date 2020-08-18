@@ -1,13 +1,14 @@
-import { Context, User, Session } from 'koishi-core'
-import { CQCode, Logger, defineProperty, omit } from 'koishi-utils'
+import { App, Context, User, Session } from 'koishi-core'
+import { CQCode, Logger, defineProperty, omit, Random } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
-import { wrap, Remote, proxy } from './comlink'
 import { WorkerAPI, WorkerConfig, WorkerData } from './worker'
+import { wrap, expose, Remote } from './transfer'
 import { resolve } from 'path'
 import {} from 'koishi-plugin-teach'
 
 declare module 'koishi-core/dist/app' {
   interface App {
+    _sessions: Record<string, Session>
     evalConfig: EvalConfig
     evalWorker: Worker
     evalRemote: Remote<WorkerAPI>
@@ -23,7 +24,9 @@ declare module 'koishi-core/dist/context' {
 
 declare module 'koishi-core/dist/session' {
   interface Session {
+    $uuid: string
     _isEval: boolean
+    _logCount: number
     $eval(source: string, silent?: boolean): Promise<string>
   }
 }
@@ -53,24 +56,26 @@ const defaultConfig: Config = {
 const logger = Logger.create('eval')
 
 export class MainAPI {
-  static config: Config
+  constructor(public app: App) {}
 
-  public logCount = 0
-
-  constructor(private session: Session) {}
-
-  send(message: string) {
-    if (MainAPI.config.maxLogs > this.logCount++) {
-      return this.session.$sendQueued(message)
-    }
+  async execute(uuid: string, message: string) {
+    const session = this.app._sessions[uuid]
+    if (!session) throw new Error('session not found')
+    const send = session.$send
+    const sendQueued = session.$sendQueued
+    await session.$execute(message)
+    session.$sendQueued = sendQueued
+    session.$send = send
   }
 
-  async execute(message: string) {
-    const send = this.session.$send
-    const sendQueued = this.session.$sendQueued
-    await this.session.$execute(message)
-    this.session.$sendQueued = sendQueued
-    this.session.$send = send
+  async send(uuid: string, message: string) {
+    console.log('main send')
+    const session = this.app._sessions[uuid]
+    if (!session) throw new Error('session not found')
+    if (!session._logCount) session._logCount = 0
+    if (this.app.evalConfig.maxLogs > session._logCount++) {
+      return await session.$sendQueued(message)
+    }
   }
 }
 
@@ -79,7 +84,6 @@ Session.prototype.$eval = function $eval(this: Session, source, silent) {
 
   return new Promise((resolve) => {
     logger.debug(source)
-    const api = new MainAPI(this)
     defineProperty(this, '_duringEval', true)
 
     const _resolve = (result?: string) => {
@@ -91,7 +95,7 @@ Session.prototype.$eval = function $eval(this: Session, source, silent) {
 
     const timer = setTimeout(async () => {
       await evalWorker.terminate()
-      _resolve(!api.logCount && '执行超时。')
+      _resolve(!this._logCount && '执行超时。')
     }, evalConfig.timeout)
 
     const listener = (error: Error) => {
@@ -105,11 +109,11 @@ Session.prototype.$eval = function $eval(this: Session, source, silent) {
 
     evalWorker.on('error', listener)
     evalRemote.eval({
-      session: JSON.stringify(this),
-      user: JSON.stringify(this.$user),
+      sid: this.$uuid,
+      user: this.$user,
       silent,
       source,
-    }, proxy(api)).then(_resolve, (error) => {
+    }).then(_resolve, (error) => {
       logger.warn(error)
       _resolve()
     })
@@ -117,15 +121,18 @@ Session.prototype.$eval = function $eval(this: Session, source, silent) {
 }
 
 export function apply(ctx: Context, config: Config = {}) {
-  MainAPI.config = config = { ...defaultConfig, ...config }
+  config = { ...defaultConfig, ...config }
 
-  defineProperty(ctx.app, 'evalConfig', config)
-  defineProperty(ctx.app, 'evalRemote', null)
-  defineProperty(ctx.app, 'evalWorker', null)
+  const { app } = ctx
+  defineProperty(app, '_sessions', {})
+  defineProperty(app, 'evalConfig', config)
+  defineProperty(app, 'evalRemote', null)
+  defineProperty(app, 'evalWorker', null)
 
   let restart = true
+  const api = new MainAPI(app)
   async function createWorker() {
-    ctx.app.evalWorker = new Worker(resolve(__dirname, 'worker.js'), {
+    const worker = app.evalWorker = new Worker(resolve(__dirname, 'worker.js'), {
       workerData: {
         logLevels: Logger.levels,
         ...omit(config, ['maxLogs', 'resourceLimits', 'timeout', 'blacklist']),
@@ -136,12 +143,14 @@ export function apply(ctx: Context, config: Config = {}) {
       },
     })
 
-    ctx.app.evalRemote = wrap(ctx.app.evalWorker)
-    ctx.emit('worker/start')
-    logger.info('worker started')
+    expose(worker, api)
 
-    ctx.app.evalRemote.start().then(() => {
-      ctx.app.evalWorker.on('exit', (code) => {
+    app.evalRemote = wrap(worker)
+    app.evalRemote.start().then(() => {
+      app.emit('worker/start')
+      logger.info('worker started')
+
+      worker.on('exit', (code) => {
         ctx.emit('worker/exit')
         logger.info('exited with code', code)
         if (restart) createWorker()
@@ -153,7 +162,16 @@ export function apply(ctx: Context, config: Config = {}) {
     restart = false
   })
 
-  ctx.on('before-connect', () => {
+  app.prependMiddleware((session, next) => {
+    app._sessions[session.$uuid = Random.uuid()] = session
+    return next()
+  })
+
+  app.on('after-middleware', (session) => {
+    delete app._sessions[session.$uuid]
+  })
+
+  app.on('before-connect', () => {
     return createWorker()
   })
 

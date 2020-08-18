@@ -9,7 +9,7 @@ import escapeRegExp from 'escape-string-regexp'
 Logger.levels = workerData.logLevels
 const logger = Logger.create('eval')
 
-import { expose, Remote } from './comlink'
+import { expose, Remote, wrap } from './transfer'
 import { VM } from './vm'
 import { MainAPI } from '.'
 
@@ -38,8 +38,8 @@ export interface Global {
 }
 
 interface EvalOptions {
-  session: string
-  user: string
+  sid: string
+  user: {}
   silent: boolean
   source: string
 }
@@ -80,35 +80,36 @@ function formatError(error: Error) {
     .join('\n')
 }
 
+const main = wrap<MainAPI>(parentPort)
+
 export class WorkerAPI {
-  main: Remote<MainAPI>
-
-  constructor() {
-    const self = this
-
-    internal.setGlobal('exec', function exec(message: string) {
-      if (typeof message !== 'string') {
-        throw new TypeError('The "message" argument must be of type string')
-      }
-      return self.main.execute(message)
-    })
-
-    internal.setGlobal('log', function log(...param: [string, ...any[]]) {
-      return self.main.send(formatResult(...param))
-    })
-  }
-
   start() {}
 
-  async eval(options: EvalOptions, main: MainAPI) {
-    const { session, source, user, silent } = options
-    defineProperty(this, 'main', main)
-    internal.setGlobal('user', JSON.parse(user), true)
-    internal.setGlobal('session', JSON.parse(session), true)
+  async eval(options: EvalOptions) {
+    console.log('worker eval')
+    const { sid, source, user, silent } = options
+
+    internal.setGlobal('temp', {
+      user,
+      async send(...param: [string, ...any[]]) {
+        return await main.send(sid, formatResult(...param))
+      },
+      async execute(message: string) {
+        if (typeof message !== 'string') {
+          throw new TypeError('The "message" argument must be of type string')
+        }
+        return await main.execute(sid, message)
+      },
+    }, true)
 
     let result: any
     try {
-      result = await vm.run(source, 'stdin')
+      console.log('run')
+      result = await vm.run(`{
+        const { send, execute, user } = temp;
+        delete temp;
+        ${source}
+      }`, 'stdin')
     } catch (error) {
       return formatError(error)
     }
@@ -127,5 +128,5 @@ Promise.all(Object.values(config.setupFiles).map(file => require(file).default))
     return pathMapper[name] = new RegExp(`(at | \\()${escapeRegExp(path)}`, 'g')
   })
 }, logger.warn).then(() => {
-  expose(new WorkerAPI(), parentPort)
+  expose(parentPort, new WorkerAPI())
 })
