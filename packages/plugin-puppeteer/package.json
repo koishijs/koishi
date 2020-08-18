@@ -43,6 +43,7 @@
     "koishi-utils": "^3.0.1"
   },
   "dependencies": {
+    "chrome-finder": "^1.0.7",
     "pngjs": "^5.0.0",
     "puppeteer-core": "^5.2.1"
   }

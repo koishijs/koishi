@@ -3,6 +3,7 @@ import { Context } from 'koishi-core'
 import { Logger, defineProperty, noop } from 'koishi-utils'
 import { escape } from 'querystring'
 import { PNG } from 'pngjs'
+import findChrome from 'chrome-finder'
 export * from './svg'
 
 declare module 'koishi-core/dist/app' {
@@ -39,8 +40,6 @@ export interface Config {
   loadTimeout?: number
   idleTimeout?: number
   maxLength?: number
-  shot?: false
-  latex?: false
 }
 
 export const defaultConfig: Config = {
@@ -58,6 +57,11 @@ export function apply(ctx: Context, config: Config = {}) {
   defineProperty(ctx.app, '_idlePages', [])
 
   ctx.on('before-connect', async () => {
+    const { browser = {} } = config
+    if (!browser.executablePath) {
+      logger.info('finding chrome executable path...')
+      browser.executablePath = findChrome()
+    }
     ctx.app.browser = await launch(config.browser)
     logger.info('browser launched')
   })
@@ -135,7 +139,7 @@ export function apply(ctx: Context, config: Config = {}) {
       })
     })
 
-  ctx.command('latex <code...>', 'LaTeX 渲染', { authority: 2 })
+  ctx.command('tex <code...>', 'TeX 渲染', { authority: 2 })
     .option('scale', '-s <scale>  缩放比例', { fallback: 2 })
     .usage('渲染器由 https://www.zhihu.com/equation 提供。')
     .action(async ({ session, options }, tex) => {

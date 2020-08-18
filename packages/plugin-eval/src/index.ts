@@ -45,13 +45,8 @@ export interface Config extends MainConfig, WorkerConfig {}
 const defaultConfig: Config = {
   prefix: '>',
   timeout: 1000,
-  maxLogs: 10,
   setupFiles: {},
   blacklist: ['evaluate', 'echo', 'broadcast', 'teach', 'contextify'],
-  resourceLimits: {
-    maxOldGenerationSizeMb: 64,
-    maxYoungGenerationSizeMb: 64,
-  },
 }
 
 const logger = Logger.create('eval')
@@ -95,10 +90,7 @@ export function apply(ctx: Context, config: Config = {}) {
         logLevels: Logger.levels,
         ...omit(config, ['maxLogs', 'resourceLimits', 'timeout', 'blacklist']),
       },
-      resourceLimits: {
-        ...defaultConfig.resourceLimits,
-        ...config.resourceLimits,
-      },
+      resourceLimits: config.resourceLimits,
     })
 
     expose(worker, api)

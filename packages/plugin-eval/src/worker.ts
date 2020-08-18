@@ -8,7 +8,7 @@ import escapeRegExp from 'escape-string-regexp'
 Logger.levels = workerData.logLevels
 const logger = Logger.create('eval')
 
-import { expose, Remote, wrap } from './transfer'
+import { expose, wrap } from './transfer'
 import { VM } from './vm'
 import { MainAPI } from '.'
 
