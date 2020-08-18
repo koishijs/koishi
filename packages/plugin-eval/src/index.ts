@@ -4,6 +4,7 @@ import { Worker, ResourceLimits } from 'worker_threads'
 import { wrap, Remote, proxy } from './comlink'
 import { WorkerAPI, WorkerConfig, WorkerData } from './worker'
 import { resolve } from 'path'
+import {} from 'koishi-plugin-teach'
 
 declare module 'koishi-core/dist/app' {
   interface App {
@@ -22,7 +23,7 @@ declare module 'koishi-core/dist/context' {
 
 declare module 'koishi-core/dist/session' {
   interface Session {
-    _duringEval: boolean
+    _isEval: boolean
     $eval(source: string, silent?: boolean): Promise<string>
   }
 }
@@ -42,7 +43,7 @@ const defaultConfig: Config = {
   timeout: 1000,
   maxLogs: 10,
   setupFiles: {},
-  blacklist: ['eval', 'echo', 'broadcast', 'teach'],
+  blacklist: ['evaluate', 'echo', 'broadcast', 'teach', 'contextify'],
   resourceLimits: {
     maxOldGenerationSizeMb: 64,
     maxYoungGenerationSizeMb: 64,
@@ -84,7 +85,7 @@ Session.prototype.$eval = function $eval(this: Session, source, silent) {
     const _resolve = (result?: string) => {
       clearTimeout(timer)
       evalWorker.off('error', listener)
-      this._duringEval = false
+      this._isEval = false
       resolve(result)
     }
 
@@ -158,18 +159,22 @@ export function apply(ctx: Context, config: Config = {}) {
 
   const blacklist = [...defaultConfig.blacklist, ...config.blacklist]
   ctx.on('before-command', async ({ command, session }) => {
-    if (blacklist.includes(command.name) && session._duringEval) {
-      await session.$send(`不能在 eval 指令中调用 ${command.name} 指令。`)
+    if (blacklist.includes(command.name) && session._isEval) {
+      await session.$send(`不能在 evaluate 指令中调用 ${command.name} 指令。`)
       return true
     }
   })
 
-  ctx.command('eval [expr...]', '执行 JavaScript 脚本', { authority: 2 })
+  ctx.command('evaluate [expr...]', '执行 JavaScript 脚本')
+    .alias('eval')
     .userFields(User.fields)
     .shortcut('>', { oneArg: true, fuzzy: true })
     .shortcut('>>', { oneArg: true, fuzzy: true, options: { slient: true } })
     .option('slient', '-s  不输出最后的结果')
     .option('restart', '-r  重启子线程', { authority: 3 })
+    .before((session) => {
+      if (!session._redirected && session.$user.authority < 2) return '权限不足。'
+    })
     .action(async ({ session, options }, expr) => {
       if (options.restart) {
         await session.$app.evalWorker.terminate()
