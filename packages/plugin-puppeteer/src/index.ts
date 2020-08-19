@@ -3,7 +3,6 @@ import { Context } from 'koishi-core'
 import { Logger, defineProperty, noop } from 'koishi-utils'
 import { escape } from 'querystring'
 import { PNG } from 'pngjs'
-import findChrome from 'chrome-finder'
 export * from './svg'
 
 declare module 'koishi-core/dist/app' {
@@ -15,8 +14,8 @@ declare module 'koishi-core/dist/app' {
 
 declare module 'koishi-core/dist/context' {
   interface Context {
-    getPage (): Promise<Page>
-    freePage (page: Page): void
+    getPage(): Promise<Page>
+    freePage(page: Page): void
   }
 }
 
@@ -57,13 +56,19 @@ export function apply(ctx: Context, config: Config = {}) {
   defineProperty(ctx.app, '_idlePages', [])
 
   ctx.on('before-connect', async () => {
-    const { browser = {} } = config
-    if (!browser.executablePath) {
-      logger.info('finding chrome executable path...')
-      browser.executablePath = findChrome()
+    try {
+      const { browser = {} } = config
+      if (!browser.executablePath) {
+        const findChrome = require('chrome-finder')
+        logger.info('finding chrome executable path...')
+        browser.executablePath = findChrome()
+      }
+      ctx.app.browser = await launch(browser)
+      logger.info('browser launched')
+    } catch (error) {
+      logger.error(error)
+      ctx.dispose()
     }
-    ctx.app.browser = await launch(config.browser)
-    logger.info('browser launched')
   })
 
   ctx.on('before-disconnect', async () => {

@@ -44,9 +44,14 @@ export function apply(ctx: Context) {
         states[id].update = rules[chess.rule].update
       }
     }
+
+    if (ctx.app.browser) {
+      chess.removeOption('imageMode')
+      chess.removeOption('textMode')
+    }
   })
 
-  ctx.command('chess [position]', '棋类游戏')
+  const chess = ctx.command('chess [position]', '棋类游戏')
     .userFields(['name'])
     .groupFields(['chess'])
     .shortcut('落子', { fuzzy: true })
@@ -57,8 +62,6 @@ export function apply(ctx: Context) {
     .shortcut('黑白棋', { options: { size: 8, rule: 'othello' }, fuzzy: true })
     .shortcut('停止下棋', { options: { stop: true } })
     .shortcut('跳过回合', { options: { skip: true } })
-    .shortcut('使用图片模式', { options: { imageMode: true } })
-    .shortcut('使用文本模式', { options: { textMode: true } })
     .option('imageMode', '-i  使用图片模式')
     .option('textMode', '-t  使用文本模式')
     .option('rule', '<rule>  设置规则，支持的规则有 go, gomoku, othello')
@@ -108,12 +111,14 @@ export function apply(ctx: Context) {
 
       const state = states[session.groupId]
 
-      if (options.textMode) {
-        state.imageMode = false
-        return state.draw(session, '已切换到文本模式。')
-      } else if (options.imageMode) {
-        state.imageMode = true
-        return state.draw(session, '已切换到图片模式。')
+      if (ctx.app.browser) {
+        if (options.textMode) {
+          state.imageMode = false
+          return state.draw(session, '已切换到文本模式。')
+        } else if (options.imageMode) {
+          state.imageMode = true
+          return state.draw(session, '已切换到图片模式。')
+        }
       }
 
       if (options.show) return state.draw(session)

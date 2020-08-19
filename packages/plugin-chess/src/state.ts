@@ -1,6 +1,6 @@
 /* global BigInt */
 
-import { SVG } from 'koishi-plugin-puppeteer'
+import * as puppeteer from 'koishi-plugin-puppeteer'
 import { Session, App } from 'koishi-core'
 
 const numbers = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
@@ -23,12 +23,13 @@ export class State {
   history: bigint[] = []
   readonly area: bigint
   readonly full: bigint
-  imageMode = true
+  imageMode: boolean
   update: (this: State, x: number, y: number, value: 1 | -1) => MoveResult
 
   constructor(public app: App, public readonly rule: string, public readonly size: number, public readonly placement: 'cross' | 'grid') {
     this.area = BigInt(size * size)
     this.full = (1n << this.area) - 1n
+    this.imageMode = !!app.browser
   }
 
   get pBoard() {
@@ -72,6 +73,7 @@ export class State {
   checkUser(userId: number) {}
 
   drawSvg(x?: number, y?: number) {
+    const { SVG } = require('koishi-plugin-puppeteer') as typeof puppeteer
     const { size, placement } = this
     const viewSize = size + (placement === 'cross' ? 2 : 3)
     const svg = new SVG({ viewSize, size: Math.max(512, viewSize * 32) }).fill('white')
