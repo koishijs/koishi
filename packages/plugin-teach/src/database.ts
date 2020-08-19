@@ -30,20 +30,6 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-function addHistory(dialogue: Dialogue, type: Dialogue.ModifyType, argv: Dialogue.Argv, revert: boolean, target = argv.ctx.database.dialogueHistory) {
-  if (revert) return delete target[dialogue.id]
-  target[dialogue.id] = dialogue
-  const time = Date.now()
-  defineProperty(dialogue, '_timestamp', time)
-  defineProperty(dialogue, '_operator', argv.session.userId)
-  defineProperty(dialogue, '_type', type)
-  setTimeout(() => {
-    if (argv.ctx.database.dialogueHistory[dialogue.id]?._timestamp === time) {
-      delete argv.ctx.database.dialogueHistory[dialogue.id]
-    }
-  }, argv.config.preserveHistory || 600000)
-}
-
 extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   async getDialoguesById(ids, fields) {
     if (!ids.length) return []
@@ -65,7 +51,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
 
   async createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
     dialogue = await this.create('dialogue', dialogue)
-    addHistory(dialogue, '添加', argv, revert)
+    Dialogue.addHistory(dialogue, '添加', argv, revert)
     return dialogue
   },
 
@@ -73,7 +59,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
     if (!ids.length) return
     await this.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
     for (const id of ids) {
-      addHistory(argv.dialogueMap[id], '删除', argv, revert)
+      Dialogue.addHistory(argv.dialogueMap[id], '删除', argv, revert)
     }
   },
 
@@ -93,7 +79,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
         dialogue._diff = {}
         argv.updated.push(dialogue.id)
         data.push(pick(dialogue, fields))
-        addHistory(dialogue._backup, '修改', argv, false, temp)
+        Dialogue.addHistory(dialogue._backup, '修改', argv, false, temp)
       }
     }
     await this.update('dialogue', data)
@@ -112,7 +98,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
     if (!dialogues.length) return
     await this.update('dialogue', dialogues)
     for (const dialogue of dialogues) {
-      addHistory(dialogue, '修改', argv, true)
+      Dialogue.addHistory(dialogue, '修改', argv, true)
     }
   },
 

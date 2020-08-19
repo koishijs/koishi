@@ -59,7 +59,21 @@ export namespace Dialogue {
 
   export interface Config {
     prefix?: string
-    preserveHistory?: number
+    historyAge?: number
+  }
+
+  export function addHistory(dialogue: Dialogue, type: Dialogue.ModifyType, argv: Dialogue.Argv, revert: boolean, target = argv.ctx.database.dialogueHistory) {
+    if (revert) return delete target[dialogue.id]
+    target[dialogue.id] = dialogue
+    const time = Date.now()
+    defineProperty(dialogue, '_timestamp', time)
+    defineProperty(dialogue, '_operator', argv.session.userId)
+    defineProperty(dialogue, '_type', type)
+    setTimeout(() => {
+      if (argv.ctx.database.dialogueHistory[dialogue.id]?._timestamp === time) {
+        delete argv.ctx.database.dialogueHistory[dialogue.id]
+      }
+    }, argv.config.historyAge || 600000)
   }
 
   export interface Argv {

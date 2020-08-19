@@ -17,7 +17,7 @@ declare module 'koishi-core/dist/context' {
 declare module './utils' {
   namespace Dialogue {
     interface Config {
-      detailInterval?: number
+      detailDelay?: number
       maxShownDialogues?: number
     }
   }
@@ -117,7 +117,7 @@ async function revert(dialogues: Dialogue[], argv: Dialogue.Argv) {
 
 export async function update(argv: Dialogue.Argv) {
   const { ctx, session, options, target, config } = argv
-  const { maxShownDialogues = 10, detailInterval = 500 } = config
+  const { maxShownDialogues = 10, detailDelay: detailInterval = 500 } = config
   const { revert, review, remove, search } = options
 
   options.modify = !review && !search && Object.keys(options).length

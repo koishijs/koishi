@@ -164,7 +164,6 @@ local.VMError = VMError
  */
 function throwCallerCalleeArgumentsAccess(key) {
   'use strict'
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   throwCallerCalleeArgumentsAccess[key] // lgtm[js/useless-expression]
   return new VMError('Unreachable')
 }

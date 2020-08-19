@@ -37,7 +37,6 @@ export class State {
   }
 
   set pBoard(value) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     this.next === this.p2 ? this.wBoard = value : this.bBoard = value
   }
 
@@ -46,7 +45,6 @@ export class State {
   }
 
   set nBoard(value) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     this.next === this.p2 ? this.bBoard = value : this.wBoard = value
   }
 

@@ -14,7 +14,7 @@ declare module 'koishi-core/dist/server' {
   }
 }
 
-export interface StatusOptions {}
+export interface Config {}
 
 let usage = getCpuUsage()
 let appRate: number
@@ -75,7 +75,7 @@ export interface BotStatus {
   rate?: number
 }
 
-type StatusModifier = (this: App, status: Status, config: StatusOptions) => void | Promise<void>
+type StatusModifier = (this: App, status: Status, config: Config) => void | Promise<void>
 const statusModifiers: StatusModifier[] = []
 
 export function extendStatus(callback: StatusModifier) {
@@ -84,16 +84,9 @@ export function extendStatus(callback: StatusModifier) {
 
 const startTime = Date.now()
 
-export enum StatusCode {
-  GOOD,
-  IDLE,
-  CQ_ERROR,
-  NET_ERROR,
-}
-
 export const name = 'status'
 
-export function apply(ctx: Context, config: StatusOptions) {
+export function apply(ctx: Context, config: Config) {
   const app = ctx.app
 
   app.on('before-command', ({ session }) => {
@@ -164,7 +157,7 @@ export function apply(ctx: Context, config: StatusOptions) {
       return output.join('\n')
     })
 
-  async function _getStatus(config: StatusOptions, extend: boolean) {
+  async function _getStatus(config: Config, extend: boolean) {
     const [data, bots] = await Promise.all([
       app.database.getActiveData(),
       Promise.all(app.bots.map(async (bot): Promise<BotStatus> => ({
@@ -186,7 +179,7 @@ export function apply(ctx: Context, config: StatusOptions) {
   let cachedStatus: Promise<Status>
   let timestamp: number
 
-  async function getStatus(config: StatusOptions, extend = false): Promise<Status> {
+  async function getStatus(config: Config, extend = false): Promise<Status> {
     const now = Date.now()
     if (now - timestamp < 60000) return cachedStatus
     timestamp = now
