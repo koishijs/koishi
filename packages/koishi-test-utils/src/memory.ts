@@ -1,11 +1,8 @@
 import { User, Group, Tables, TableType, App, extendDatabase } from 'koishi-core'
+import { clone } from 'koishi-utils'
 
 declare module 'koishi-core/dist/database' {
   interface Database extends MemoryDatabase {}
-}
-
-function clone <T>(source: T): T {
-  return JSON.parse(JSON.stringify(source))
 }
 
 export interface MemoryConfig {}

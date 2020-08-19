@@ -1,32 +1,10 @@
 import { types } from 'util'
-import { noop } from './misc'
+import { noop, defineProperty } from './misc'
 import { Logger } from './logger'
 
 const logger = Logger.create('observer')
 const staticTypes = ['number', 'string', 'bigint', 'boolean', 'symbol', 'function']
 const builtinClasses = ['Date', 'RegExp', 'Set', 'Map', 'WeakSet', 'WeakMap', 'Array']
-
-export function pick<T, K extends keyof T>(source: T, keys: Iterable<K>) {
-  const result = {} as Pick<T, K>
-  for (const key of keys) {
-    result[key] = source[key]
-  }
-  return result
-}
-
-export function omit<T, K extends keyof T>(source: T, keys: Iterable<K>) {
-  const result = { ...source } as Omit<T, K>
-  for (const key of keys) {
-    Reflect.deleteProperty(result, key)
-  }
-  return result
-}
-
-export function defineProperty<T, K extends keyof T>(object: T, key: K, value: T[K]): void
-export function defineProperty<T, K extends keyof any>(object: T, key: K, value: any): void
-export function defineProperty<T, K extends keyof any>(object: T, key: K, value: any) {
-  Object.defineProperty(object, key, { writable: true, value })
-}
 
 function observeProperty(value: any, proxy: any, key: any, label: string, update: any) {
   if (types.isDate(value)) {

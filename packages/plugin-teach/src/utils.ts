@@ -1,5 +1,5 @@
 import { Context, Session, ParsedLine } from 'koishi-core'
-import { difference, observe, isInteger, defineProperty } from 'koishi-utils'
+import { difference, observe, isInteger, defineProperty, clone } from 'koishi-utils'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -93,14 +93,6 @@ export namespace Dialogue {
     unknown?: number[]
     uneditable?: number[]
   }
-}
-
-const primitives = ['number', 'string', 'bigint', 'boolean', 'symbol']
-
-export function clone<T>(source: T): T {
-  return primitives.includes(typeof source) ? source
-    : Array.isArray(source) ? source.map(clone) as any
-      : Object.fromEntries(Object.entries(source).map(([key, value]) => [key, clone(value)]))
 }
 
 export function sendResult(argv: Dialogue.Argv, prefix?: string, suffix?: string) {
