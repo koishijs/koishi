@@ -69,14 +69,13 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/before-send', ({ test, activated, userId }) => {
-    if (test.activated) {
-      const time = activated[userId] = Date.now()
-      setTimeout(() => {
-        if (activated[userId] === time) {
-          delete activated[userId]
-        }
-      }, appellationTimeout)
-    }
+    if (!test.activated) return
+    const time = activated[userId] = Date.now()
+    ctx.setTimeout(() => {
+      if (activated[userId] === time) {
+        delete activated[userId]
+      }
+    }, appellationTimeout)
   })
 
   ctx.on('dialogue/detail', ({ probS, probA }, output) => {

@@ -44,6 +44,7 @@ export class App extends Context {
   server: Server
   status = AppStatus.closed
 
+  _timers: Set<NodeJS.Timeout>
   _database: Database
   _commands: Command[]
   _commandMap: Record<string, Command>
@@ -73,6 +74,7 @@ export class App extends Context {
     options = this.options = { ...App.defaultConfig, ...options }
     if (!options.bots) options.bots = [options]
 
+    defineProperty(this, '_timers', new Set())
     defineProperty(this, '_hooks', {})
     defineProperty(this, '_commands', [])
     defineProperty(this, '_commandMap', {})
@@ -100,8 +102,9 @@ export class App extends Context {
 
     // bind built-in event listeners
     this.middleware(this._preprocess.bind(this))
-    this.on('message', this._handleMessage.bind(this))
-    this.on('parse', this._handleParse.bind(this))
+    this.on('before-disconnect', this._dispose.bind(this))
+    this.on('message', this._receive.bind(this))
+    this.on('parse', this._parse.bind(this))
 
     this.plugin(validate)
     this.plugin(suggest)
@@ -194,7 +197,7 @@ export class App extends Context {
     return session.$argv.command.execute(session.$argv)
   }
 
-  private async _handleMessage(session: Session) {
+  private async _receive(session: Session) {
     // preparation
     const counter = this._middlewareCounter++
     this._middlewareSet.add(counter)
@@ -240,7 +243,7 @@ export class App extends Context {
     await session.$group?._update()
   }
 
-  private _handleParse(message: string, { $prefix, $appel, messageType }: Session, builtin: boolean, terminator: string) {
+  private _parse(message: string, { $prefix, $appel, messageType }: Session, builtin: boolean, terminator: string) {
     // group message should have prefix or appel to be interpreted as a command call
     if (builtin && messageType !== 'private' && $prefix === null && !$appel) return
     const name = message.split(/\s/, 1)[0]
@@ -249,5 +252,9 @@ export class App extends Context {
     if (!command) return
     const result = command.parse(message.slice(name.length).trimStart(), terminator)
     return { command, ...result }
+  }
+
+  private _dispose() {
+    this._timers.forEach(clearTimeout)
   }
 }

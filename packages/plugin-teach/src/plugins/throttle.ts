@@ -44,7 +44,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.on('dialogue/before-send', ({ counters }) => {
     for (const { interval } of throttleConfig) {
       counters[interval]--
-      setTimeout(() => counters[interval]++, interval)
+      ctx.setTimeout(() => counters[interval]++, interval)
     }
   })
 }

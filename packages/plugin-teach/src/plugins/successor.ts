@@ -270,7 +270,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       delete predMap[id]
     }
     predMap[dialogue.id] = time
-    setTimeout(() => {
+    ctx.setTimeout(() => {
       if (predMap[dialogue.id] === time) {
         delete predMap[dialogue.id]
       }

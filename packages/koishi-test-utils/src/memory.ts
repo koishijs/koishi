@@ -13,7 +13,7 @@ export class MemoryDatabase {
   constructor(public app: App, public config: MemoryConfig) {}
 
   $table<K extends TableType>(table: K): Record<number, Tables[K]> {
-    return this.$store[table] || (this.$store[table] = [])
+    return this.$store[table] || (this.$store[table] = {})
   }
 
   $create<K extends TableType>(table: K, data: Partial<Tables[K]>) {
