@@ -130,8 +130,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         delete options.question
         return update(argv)
       })
-      await session.$send('推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -i 选项以忽略本提示。')
-      return true
+      return '推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -i 选项以忽略本提示。'
     }
 
     // 如果问题疑似正则表达式但原问答不是正则匹配，提示添加 -x 选项
@@ -143,8 +142,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         options.regexp = true
         return update(argv)
       })
-      await session.$send(`推测你想${target ? '修改' : '添加'}的问题是正则表达式。发送空行或句号以添加 -x 选项，使用 -i 选项以忽略本提示。`)
-      return true
+      return `推测你想${target ? '修改' : '添加'}的问题是正则表达式。发送空行或句号以添加 -x 选项，使用 -i 选项以忽略本提示。`
     }
 
     // 检测正则表达式的合法性
@@ -155,16 +153,15 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       } catch (error) {
         if (!types.isNativeError(error)) {
           logger.warn(question, error)
-          await session.$send('问题含有错误的或不支持的正则表达式语法。')
+          return '问题含有错误的或不支持的正则表达式语法。'
         } else if (error.name === 'RegExpError') {
-          await session.$send(error.message)
+          return error.message
         } else {
           if (!error.message.startsWith('SyntaxError')) {
             logger.warn(question, error.stack)
           }
-          await session.$send('问题含有错误的或不支持的正则表达式语法。')
+          return '问题含有错误的或不支持的正则表达式语法。'
         }
-        return true
       }
     }
   })

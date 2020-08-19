@@ -5,7 +5,7 @@ import { getDetails, formatDetails, formatAnswer, formatQuestionAnswers } from '
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/before-modify' (argv: Dialogue.Argv): void | boolean | Promise<void | boolean>
+    'dialogue/before-modify' (argv: Dialogue.Argv): void | string | Promise<void | string>
     'dialogue/modify' (argv: Dialogue.Argv, dialogue: Dialogue): void
     'dialogue/before-create' (argv: Dialogue.Argv): void | boolean | Promise<void | boolean>
     'dialogue/after-modify' (argv: Dialogue.Argv): void | Promise<void>
@@ -173,7 +173,8 @@ export async function update(argv: Dialogue.Argv) {
   }
 
   if (targets.length) {
-    if (await ctx.app.serial('dialogue/before-modify', argv)) return
+    const result = await ctx.app.serial('dialogue/before-modify', argv)
+    if (typeof result === 'string') return result
     for (const dialogue of targets) {
       ctx.emit('dialogue/modify', argv, dialogue)
     }
@@ -196,7 +197,8 @@ export async function create(argv: Dialogue.Argv) {
   argv.skipped = []
   argv.dialogues = await ctx.database.getDialoguesByTest({ question, answer, regexp: false })
   await ctx.serial('dialogue/before-detail', argv)
-  if (await ctx.app.serial('dialogue/before-modify', argv)) return
+  const result = await ctx.app.serial('dialogue/before-modify', argv)
+  if (typeof result === 'string') return result
 
   if (argv.dialogues.length) {
     argv.target = argv.dialogues.map(d => d.id)

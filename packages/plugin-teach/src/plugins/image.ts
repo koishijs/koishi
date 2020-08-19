@@ -96,7 +96,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   }
 
   if (imageServer && downloadFile) {
-    ctx.on('dialogue/before-modify', async ({ options, session }) => {
+    ctx.on('dialogue/before-modify', async ({ options }) => {
       let { answer } = options
       if (!answer) return
       try {
@@ -113,8 +113,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         options.answer = output + answer
       } catch (error) {
         logger.warn(error.message)
-        await session.$send('上传图片时发生错误。')
-        return true
+        return '上传图片时发生错误。'
       }
     })
   }

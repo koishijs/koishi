@@ -119,10 +119,9 @@ export default function apply(ctx: Context) {
     test.writer = options.writer
   })
 
-  ctx.on('dialogue/before-modify', async ({ session, options, authMap }) => {
+  ctx.on('dialogue/before-modify', async ({ options, authMap }) => {
     if (options.writer && !(options.writer in authMap)) {
-      await session.$send('指定的目标用户不存在。')
-      return true
+      return '指定的目标用户不存在。'
     }
   })
 
