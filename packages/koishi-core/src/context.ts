@@ -342,7 +342,7 @@ export interface EventMap {
   'attach' (session: Session): void | Promise<void>
   'send' (session: Session): void | Promise<void>
   'before-send' (session: Session): void | boolean
-  'before-command' (argv: ParsedArgv): void | boolean | Promise<void | boolean>
+  'before-command' (argv: ParsedArgv): void | string | Promise<void | string>
   'command' (argv: ParsedArgv): void | Promise<void>
   'after-middleware' (session: Session): void
   'new-command' (cmd: Command): void

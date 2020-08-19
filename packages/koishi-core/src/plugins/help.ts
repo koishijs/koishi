@@ -61,7 +61,7 @@ export default function apply(app: App) {
       command: 'help',
       args: [command.name],
     })
-    return true
+    return ''
   })
 
   function createCollector<T extends TableType>(key: T) {

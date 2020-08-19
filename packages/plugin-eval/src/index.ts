@@ -128,8 +128,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const blacklist = [...defaultConfig.blacklist, ...config.blacklist]
   ctx.on('before-command', async ({ command, session }) => {
     if (blacklist.includes(command.name) && session._isEval) {
-      await session.$send(`不能在 evaluate 指令中调用 ${command.name} 指令。`)
-      return true
+      return `不能在 evaluate 指令中调用 ${command.name} 指令。`
     }
   })
 

@@ -104,27 +104,24 @@ export default function apply(app: App) {
   })
 
   app.on('before-command', ({ session, args, options, command }: ParsedArgv<ValidationField>) => {
-    async function sendHint(session: Session, message: string, ...param: any[]) {
-      if (command.config.showWarning) {
-        await session.$send(format(message, ...param))
-        return true
-      }
+    async function sendHint(message: string, ...param: any[]) {
+      return command.config.showWarning ? format(message, ...param) : ''
     }
 
     for (const checker of command._checkers) {
       const result = checker(session)
-      if (result) return sendHint(session, result === true ? '' : result)
+      if (result) return sendHint(result === true ? '' : result)
     }
 
     // check argument count
     if (command.config.checkArgCount) {
       const nextArg = command._arguments[args.length]
       if (nextArg?.required) {
-        return sendHint(session, messages.INSUFFICIENT_ARGUMENTS)
+        return sendHint(messages.INSUFFICIENT_ARGUMENTS)
       }
       const finalArg = command._arguments[command._arguments.length - 1]
       if (args.length > command._arguments.length && !finalArg.greedy && !finalArg.variadic) {
-        return sendHint(session, messages.REDUNANT_ARGUMENTS)
+        return sendHint(messages.REDUNANT_ARGUMENTS)
       }
     }
 
@@ -132,7 +129,7 @@ export default function apply(app: App) {
     if (command.config.checkUnknown) {
       const unknown = Object.keys(options).filter(key => !command._options[key])
       if (unknown.length) {
-        return sendHint(session, messages.UNKNOWN_OPTIONS, unknown.join(', '))
+        return sendHint(messages.UNKNOWN_OPTIONS, unknown.join(', '))
       }
     }
 
@@ -142,7 +139,7 @@ export default function apply(app: App) {
         ? !validate.test(options[name])
         : validate(options[name])
       if (result) {
-        return sendHint(session, messages.INVALID_OPTION, name, result === true ? messages.CHECK_SYNTAX : result)
+        return sendHint(messages.INVALID_OPTION, name, result === true ? messages.CHECK_SYNTAX : result)
       }
     }
 
@@ -151,12 +148,12 @@ export default function apply(app: App) {
 
     // check authority
     if (command.config.authority > session.$user.authority) {
-      return sendHint(session, messages.LOW_AUTHORITY)
+      return sendHint(messages.LOW_AUTHORITY)
     }
     for (const option of Object.values(command._options)) {
       if (option.name in options) {
         if (option.authority > session.$user.authority) {
-          return sendHint(session, messages.LOW_AUTHORITY)
+          return sendHint(messages.LOW_AUTHORITY)
         }
         if (option.notUsage) isUsage = false
       }
@@ -169,11 +166,11 @@ export default function apply(app: App) {
       const maxUsage = command.getConfig('maxUsage', session)
 
       if (maxUsage < Infinity && checkUsage(name, session.$user, maxUsage)) {
-        return sendHint(session, messages.USAGE_EXHAUSTED)
+        return sendHint(messages.USAGE_EXHAUSTED)
       }
 
       if (minInterval > 0 && checkTimer(name, session.$user, minInterval)) {
-        return sendHint(session, messages.TOO_FREQUENT)
+        return sendHint(messages.TOO_FREQUENT)
       }
     }
   })

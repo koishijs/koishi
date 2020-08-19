@@ -511,10 +511,11 @@ export class Command<U extends User.Field = never, G extends Group.Field = never
     if (logger.level >= 3) logger.debug(getSource())
     const lastCall = this.app.options.prettyErrors && new Error().stack.split('\n', 4)[3]
     try {
-      if (await this.app.serial(session, 'before-command', argv)) return
+      const result = await this.app.serial(session, 'before-command', argv)
+      if (typeof result === 'string') return session.$send(result)
       state = 'executing command'
       const message = await this._action(argv, ...args)
-      if (message) session.$send(message)
+      if (message) await session.$send(message)
       state = 'after command'
       await this.app.serial(session, 'command', argv)
     } catch (error) {
