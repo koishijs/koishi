@@ -1,4 +1,4 @@
-import { isInteger, difference, Observed, paramCase, observe, Time } from 'koishi-utils'
+import { isInteger, difference, Observed, paramCase, observe, Time, enumKeys } from 'koishi-utils'
 import { Context, Session, getTargetId, User, Group } from 'koishi-core'
 
 type ActionCallback<T extends {}, K extends keyof T> =
@@ -20,10 +20,6 @@ export class Action<T extends {}> {
 export const UserAction = new Action<User>()
 export const GroupAction = new Action<Group>()
 
-function extractEnumKeys(data: Record<string, any>): string[] {
-  return Object.values(data).filter(value => typeof value === 'string')
-}
-
 UserAction.add('setAuth', async (session, user, value) => {
   const authority = Number(value)
   if (!isInteger(authority) || authority < 0) return '参数错误。'
@@ -38,7 +34,7 @@ UserAction.add('setAuth', async (session, user, value) => {
 }, ['authority'])
 
 UserAction.add('setFlag', async (session, user, ...flags) => {
-  const userFlags = extractEnumKeys(User.Flag)
+  const userFlags = enumKeys(User.Flag)
   if (!flags.length) return `可用的标记有 ${userFlags.join(', ')}。`
   const notFound = difference(flags, userFlags)
   if (notFound.length) return `未找到标记 ${notFound.join(', ')}。`
@@ -50,7 +46,7 @@ UserAction.add('setFlag', async (session, user, ...flags) => {
 }, ['flag'])
 
 UserAction.add('unsetFlag', async (session, user, ...flags) => {
-  const userFlags = extractEnumKeys(User.Flag)
+  const userFlags = enumKeys(User.Flag)
   if (!flags.length) return `可用的标记有 ${userFlags.join(', ')}。`
   const notFound = difference(flags, userFlags)
   if (notFound.length) return `未找到标记 ${notFound.join(', ')}。`
@@ -103,7 +99,7 @@ UserAction.add('clearTimer', async (session, user, ...commands) => {
 }, ['timers'])
 
 GroupAction.add('setFlag', async (session, group, ...flags) => {
-  const groupFlags = extractEnumKeys(Group.Flag)
+  const groupFlags = enumKeys(Group.Flag)
   if (!flags.length) return `可用的标记有 ${groupFlags.join(', ')}。`
   const notFound = difference(flags, groupFlags)
   if (notFound.length) return `未找到标记 ${notFound.join(', ')}。`
@@ -115,7 +111,7 @@ GroupAction.add('setFlag', async (session, group, ...flags) => {
 }, ['flag'])
 
 GroupAction.add('unsetFlag', async (session, group, ...flags) => {
-  const groupFlags = extractEnumKeys(Group.Flag)
+  const groupFlags = enumKeys(Group.Flag)
   if (!flags.length) return `可用的标记有 ${groupFlags.join(', ')}。`
   const notFound = difference(flags, groupFlags)
   if (notFound.length) return `未找到标记 ${notFound.join(', ')}。`
@@ -142,7 +138,7 @@ export function apply(ctx: Context) {
     .option('group', '-g [group]  指定目标群')
     .option('thisGroup', '-G, --this-group  指定目标群为本群')
     .action(async ({ session, options }, name, ...args) => {
-      const isGroup = 'g' in options || 'G' in options
+      const isGroup = 'group' in options || 'thisGroup' in options
       if ('user' in options && isGroup) return '不能同时目标为指定用户和群。'
 
       const actionMap = isGroup ? GroupAction.commands : UserAction.commands

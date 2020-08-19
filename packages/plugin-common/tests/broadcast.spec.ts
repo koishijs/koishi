@@ -8,7 +8,7 @@ const app2 = new MockedApp({ database: { memory: {} }, selfId: BASE_SELF_ID + 1 
 
 app1.plugin(broadcast)
 
-beforeAll(async () => {
+before(async () => {
   await startAll()
   await app1.database.getUser(123, 4)
   await app1.database.getGroup(321, app1.selfId)
@@ -17,9 +17,9 @@ beforeAll(async () => {
   await app2.database.getGroup(987, app2.selfId)
 })
 
-afterAll(() => stopAll())
+after(() => stopAll())
 
-utils.sleep.mockResolvedValue()
+utils.sleep.mockResolvedValue(undefined)
 
 beforeEach(() => utils.sleep.mockClear())
 
