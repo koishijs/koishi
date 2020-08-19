@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import { union, difference } from 'koishi-utils'
-import { DialogueFlag, Dialogue, equal, RE_GROUPS } from '../utils'
+import { Dialogue, equal, RE_GROUPS } from '../utils'
 
 declare module '../utils' {
   interface DialogueTest {
@@ -35,15 +35,15 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.on('dialogue/mysql', (test, conditionals) => {
     if (!test.groups || !test.groups.length) return
     conditionals.push(`(
-      !(\`flag\` & ${DialogueFlag.complement}) != ${test.reversed} && ${test.groups.map(id => `FIND_IN_SET(${id}, \`groups\`)`).join(' && ')} ||
-      !(\`flag\` & ${DialogueFlag.complement}) = ${test.reversed} && ${test.groups.map(id => `!FIND_IN_SET(${id}, \`groups\`)`).join(' && ')}
+      !(\`flag\` & ${Dialogue.Flag.complement}) != ${test.reversed} && ${test.groups.map(id => `FIND_IN_SET(${id}, \`groups\`)`).join(' && ')} ||
+      !(\`flag\` & ${Dialogue.Flag.complement}) = ${test.reversed} && ${test.groups.map(id => `!FIND_IN_SET(${id}, \`groups\`)`).join(' && ')}
     )`)
   })
 
   // TODO: ???
   ctx.on('dialogue/fetch', (data, test) => {
     if (!test.groups || test.partial) return
-    return !(data.flag & DialogueFlag.complement) === test.reversed || !equal(test.groups, data.groups)
+    return !(data.flag & Dialogue.Flag.complement) === test.reversed || !equal(test.groups, data.groups)
   })
 
   ctx.on('dialogue/validate', (argv) => {
@@ -96,14 +96,14 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     if (!groups) return
     if (!data.groups) data.groups = []
     if (partial) {
-      const newGroups = !(data.flag & DialogueFlag.complement) === reversed
+      const newGroups = !(data.flag & Dialogue.Flag.complement) === reversed
         ? difference(data.groups, groups)
         : union(data.groups, groups)
       if (!equal(data.groups, newGroups)) {
         data.groups = newGroups.sort()
       }
     } else {
-      data.flag = data.flag & ~DialogueFlag.complement | (+reversed * DialogueFlag.complement)
+      data.flag = data.flag & ~Dialogue.Flag.complement | (+reversed * Dialogue.Flag.complement)
       if (!equal(data.groups, groups)) {
         data.groups = groups.sort()
       }
@@ -118,7 +118,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/detail', ({ groups, flag }, output, { session }) => {
     const thisGroup = session.messageType === 'group' && groups.includes('' + session.groupId)
-    output.push(`生效环境：${flag & DialogueFlag.complement
+    output.push(`生效环境：${flag & Dialogue.Flag.complement
       ? thisGroup
         ? groups.length - 1 ? `除本群等 ${groups.length} 个群外的所有群` : '除本群'
         : groups.length ? `除 ${groups.length} 个群外的所有群` : '全局'
@@ -129,7 +129,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/detail-short', ({ groups, flag }, output, argv) => {
     if (!argv.groups && argv.session.messageType === 'group') {
-      const isReversed = flag & DialogueFlag.complement
+      const isReversed = flag & Dialogue.Flag.complement
       const hasGroup = groups.includes('' + argv.session.groupId)
       output.unshift(!isReversed === hasGroup ? isReversed ? 'E' : 'e' : isReversed ? 'd' : 'D')
     }

@@ -21,26 +21,26 @@ interface FooData {
 
 extendDatabase(MemoryDatabase, {
   async createFoo(data: Partial<FooData> = {}) {
-    return await this.create('foo', data) as FooData
+    return this.$create('foo', data) as FooData
   },
 
-  removeFoo(id: number) {
-    return this.remove('foo', id)
+  async removeFoo(id: number) {
+    return this.$remove('foo', id)
   },
 
-  getFooCount() {
-    return this.count('foo')
+  async getFooCount() {
+    return this.$count('foo')
   },
 })
 
 const app = testDatabase(new MockedApp().plugin(memory), {
-  beforeEachUser: app => app.database.store.user = [],
-  beforeEachGroup: app => app.database.store.group = [],
+  beforeEachUser: app => app.database.$store.user = [],
+  beforeEachGroup: app => app.database.$store.group = [],
 })
 
 describe('other methods', () => {
   const { database: db } = app
-  before(() => db.store.foo = [])
+  before(() => db.$store.foo = [])
 
   it('create & remove', async () => {
     await expect(db.getFooCount()).eventually.to.equal(0)

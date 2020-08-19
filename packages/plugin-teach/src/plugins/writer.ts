@@ -1,6 +1,6 @@
 import { Context, getTargetId, User } from 'koishi-core'
 import { isInteger, deduplicate } from 'koishi-utils'
-import { DialogueFlag, useFlag } from '../utils'
+import { Dialogue, useFlag } from '../utils'
 
 declare module '../utils' {
   interface DialogueTest {
@@ -82,11 +82,11 @@ export default function apply(ctx: Context) {
   })
 
   ctx.on('dialogue/detail', ({ writer, flag }, output, argv) => {
-    if (flag & DialogueFlag.frozen) output.push('此问答已锁定。')
+    if (flag & Dialogue.Flag.frozen) output.push('此问答已锁定。')
     if (writer) {
       const name = argv.userMap[writer]
       output.push(name ? `来源：${name} (${writer})` : `来源：${writer}`)
-      if (flag & DialogueFlag.substitute) {
+      if (flag & Dialogue.Flag.substitute) {
         output.push('回答中的指令由教学者代行。')
       }
     }
@@ -100,10 +100,10 @@ export default function apply(ctx: Context) {
     const { substitute, writer: newWriter } = options, { authority } = session.$user
     return (
       (newWriter && authority <= authMap[newWriter]) ||
-      ((flag & DialogueFlag.frozen) && authority < 4) ||
+      ((flag & Dialogue.Flag.frozen) && authority < 4) ||
       (writer !== session.$user.id && (
         (target && authority < 3) || (
-          (substitute || (flag & DialogueFlag.substitute)) &&
+          (substitute || (flag & Dialogue.Flag.substitute)) &&
           (authority <= (authMap[writer] || 2))
         )
       ))
@@ -111,8 +111,8 @@ export default function apply(ctx: Context) {
   })
 
   ctx.on('dialogue/detail-short', ({ flag }, output) => {
-    if (flag & DialogueFlag.frozen) output.push('锁定')
-    if (flag & DialogueFlag.substitute) output.push('教学者执行')
+    if (flag & Dialogue.Flag.frozen) output.push('锁定')
+    if (flag & Dialogue.Flag.substitute) output.push('教学者执行')
   })
 
   ctx.on('dialogue/before-search', ({ options }, test) => {
@@ -137,7 +137,7 @@ export default function apply(ctx: Context) {
   // 触发代行者模式
   ctx.on('dialogue/before-send', async (state) => {
     const { dialogue, session } = state
-    if (dialogue.flag & DialogueFlag.substitute && dialogue.writer && session.userId !== dialogue.writer) {
+    if (dialogue.flag & Dialogue.Flag.substitute && dialogue.writer && session.userId !== dialogue.writer) {
       const userFields = new Set<User.Field>()
       ctx.app.emit(session, 'dialogue/before-attach-user', state, userFields)
       session.userId = dialogue.writer

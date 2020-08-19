@@ -8,16 +8,16 @@ declare module 'koishi-core/dist/database' {
 export interface MemoryConfig {}
 
 export class MemoryDatabase {
-  store: { [T in TableType]?: Tables[T][] } = {}
+  $store: Record<string, Record<number, any>> = {}
 
   constructor(public app: App, public config: MemoryConfig) {}
 
-  table <K extends TableType>(table: K) {
-    return this.store[table] || (this.store[table] = [])
+  $table<K extends TableType>(table: K): Record<number, Tables[K]> {
+    return this.$store[table] || (this.$store[table] = [])
   }
 
-  async create <K extends TableType>(table: K, data: Partial<Tables[K]>) {
-    const store = this.table(table)
+  $create<K extends TableType>(table: K, data: Partial<Tables[K]>) {
+    const store = this.$table(table)
     if (typeof data.id !== 'number') {
       let index = 1
       while (index in store) index++
@@ -26,22 +26,23 @@ export class MemoryDatabase {
     return store[data.id] = data as Tables[K]
   }
 
-  async remove <K extends TableType>(table: K, id: number) {
-    delete this.table(table)[id]
+  $remove<K extends TableType>(table: K, id: number) {
+    delete this.$table(table)[id]
   }
 
-  async update <K extends TableType>(table: K, id: number, data: Partial<Tables[K]>) {
-    Object.assign(this.table(table)[id], clone(data))
+  $update<K extends TableType>(table: K, id: number, data: Partial<Tables[K]>) {
+    Object.assign(this.$table(table)[id], clone(data))
   }
 
-  async count(table: TableType) {
-    return Object.keys(this.table(table)).length
+  $count<K extends TableType>(table: K, field?: keyof Tables[K]) {
+    if (!field) return Object.keys(this.$table(table)).length
+    return new Set(Object.values(this.$table(table)).map(data => data[field])).size
   }
 }
 
 extendDatabase(MemoryDatabase, {
   async getUser(userId: number, authority?: any) {
-    const table = this.table('user')
+    const table = this.$table('user')
     authority = typeof authority === 'number' ? authority : 0
     const data = table[userId]
     if (data) return clone(data)
@@ -52,7 +53,7 @@ extendDatabase(MemoryDatabase, {
   },
 
   async getUsers(...args: any[][]) {
-    const table = this.table('user')
+    const table = this.$table('user')
     if (args.length > 1 || args.length && typeof args[0][0] !== 'string') {
       return Object.keys(table)
         .filter(id => args[0].includes(+id))
@@ -63,11 +64,11 @@ extendDatabase(MemoryDatabase, {
   },
 
   async setUser(userId: number, data: any) {
-    return this.update('user', userId, data)
+    return this.$update('user', userId, data)
   },
 
   async getGroup(groupId: number, selfId: any) {
-    const table = this.table('group')
+    const table = this.$table('group')
     selfId = typeof selfId === 'number' ? selfId : 0
     const data = table[groupId]
     if (data) return clone(data)
@@ -77,7 +78,7 @@ extendDatabase(MemoryDatabase, {
   },
 
   async getAllGroups(...args: any[][]) {
-    const table = this.table('group')
+    const table = this.$table('group')
     const assignees = args.length > 1 ? args[1]
       : args.length && typeof args[0][0] === 'number' ? args[0] as never
         : await this.app.getSelfIds()
@@ -88,7 +89,7 @@ extendDatabase(MemoryDatabase, {
   },
 
   async setGroup(groupId: number, data: any) {
-    return this.update('group', groupId, data)
+    return this.$update('group', groupId, data)
   },
 })
 

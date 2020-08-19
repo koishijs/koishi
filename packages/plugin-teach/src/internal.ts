@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { DialogueFlag, Dialogue } from './utils'
+import { Dialogue } from './utils'
 import { update } from './update'
 import { RegExpValidator } from 'regexpp'
 import { Logger } from 'koishi-utils'
@@ -95,8 +95,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         conditionals.push('`question` = ' + escape(question))
       } else {
         conditionals.push(`(\
-          !(\`flag\` & ${DialogueFlag.regexp}) && \`question\` = ${escape(question)} ||\
-          \`flag\` & ${DialogueFlag.regexp} && (\
+          !(\`flag\` & ${Dialogue.Flag.regexp}) && \`question\` = ${escape(question)} ||\
+          \`flag\` & ${Dialogue.Flag.regexp} && (\
             ${escape(question)} REGEXP \`question\` || ${escape(original)} REGEXP \`question\`\
           )\
         )`)
@@ -135,7 +135,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
 
     // 如果问题疑似正则表达式但原问答不是正则匹配，提示添加 -x 选项
-    if (question && !regexp && maybeRegExp(question) && !ignoreHint && (!target || !dialogues.every(d => d.flag & DialogueFlag.regexp))) {
+    if (question && !regexp && maybeRegExp(question) && !ignoreHint && (!target || !dialogues.every(d => d.flag & Dialogue.Flag.regexp))) {
       const dispose = session.$use(({ message }, next) => {
         dispose()
         message = message.trim()
@@ -148,7 +148,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
 
     // 检测正则表达式的合法性
-    if (regexp || regexp !== false && question && dialogues.some(d => d.flag & DialogueFlag.regexp)) {
+    if (regexp || regexp !== false && question && dialogues.some(d => d.flag & Dialogue.Flag.regexp)) {
       const questions = question ? [question as string] : dialogues.map(d => d.question)
       try {
         questions.map(q => validator.validatePattern(q))
@@ -183,8 +183,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
 
     if (options.regexp !== undefined) {
-      data.flag &= ~DialogueFlag.regexp
-      data.flag |= +options.regexp * DialogueFlag.regexp
+      data.flag &= ~Dialogue.Flag.regexp
+      data.flag |= +options.regexp * Dialogue.Flag.regexp
     }
 
     if (options.question) {

@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import { difference, deduplicate, sleep, pick, isInteger, Time } from 'koishi-utils'
-import { Dialogue, DialogueFlag, prepareTargets, sendResult, split, RE_DIALOGUES } from './utils'
+import { Dialogue, prepareTargets, sendResult, split, RE_DIALOGUES } from './utils'
 import { getDetails, formatDetails, formatAnswer, formatQuestionAnswers } from './search'
 
 declare module 'koishi-core/dist/context' {
@@ -78,7 +78,7 @@ export default function apply(ctx: Context) {
   })
 
   ctx.on('dialogue/detail', ({ original, answer, flag, _type, _timestamp }, output, argv) => {
-    if (flag & DialogueFlag.regexp) {
+    if (flag & Dialogue.Flag.regexp) {
       output.push(`正则：${original}`)
     } else {
       output.push(`问题：${original}`)

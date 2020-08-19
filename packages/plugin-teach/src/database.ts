@@ -1,6 +1,6 @@
 import { extendDatabase, Context } from 'koishi-core'
-import { defineProperty, Observed, pick } from 'koishi-utils'
-import { Dialogue, clone, DialogueTest } from './utils'
+import { defineProperty, Observed, pick, clone } from 'koishi-utils'
+import { Dialogue, DialogueTest } from './utils'
 import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 import MongoDatabase from 'koishi-plugin-mongo/dist/database'
 

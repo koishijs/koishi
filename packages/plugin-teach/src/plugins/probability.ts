@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { DialogueFlag, Dialogue, isZeroToOne } from '../utils'
+import { Dialogue, isZeroToOne } from '../utils'
 
 declare module '../utils' {
   interface Dialogue {
@@ -40,15 +40,15 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.before('dialogue/prepare', ({ test, userId, dialogues, activated }) => {
-    const hasNormal = dialogues.some(d => !(d.flag & DialogueFlag.regexp))
+    const hasNormal = dialogues.some(d => !(d.flag & Dialogue.Flag.regexp))
     dialogues.forEach((dialogue) => {
-      if (hasNormal && (dialogue.flag & DialogueFlag.regexp)) {
+      if (hasNormal && (dialogue.flag & Dialogue.Flag.regexp)) {
         // 如果存在普通匹配的问答，则所有正则匹配的问答不会触发
         dialogue._weight = 0
       } else if (userId in activated) {
         // 如果已经是激活状态，采用两个概率的最大值
         dialogue._weight = Math.max(dialogue.probS, dialogue.probA)
-      } else if (!test.appellative || !(dialogue.flag & DialogueFlag.regexp)) {
+      } else if (!test.appellative || !(dialogue.flag & Dialogue.Flag.regexp)) {
         // 如果不是正则表达式，或问题不含称呼，则根据是否有称呼决定概率
         dialogue._weight = test.appellative ? dialogue.probA : dialogue.probS
       } else {

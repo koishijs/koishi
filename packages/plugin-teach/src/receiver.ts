@@ -1,6 +1,6 @@
 import { Context, User, Session, NextFunction, Command } from 'koishi-core'
 import { CQCode, simplify, noop } from 'koishi-utils'
-import { Dialogue, DialogueTest, DialogueFlag } from './utils'
+import { Dialogue, DialogueTest } from './utils'
 import escapeRegex from 'escape-string-regexp'
 
 declare module 'koishi-core/dist/context' {
@@ -199,7 +199,7 @@ export async function triggerDialogue(ctx: Context, session: Session, config: Di
     .replace(/%s/g, escapeAnswer(session.$username))
     .replace(/%0/g, escapeAnswer(session.message))
 
-  if (dialogue.flag & DialogueFlag.regexp) {
+  if (dialogue.flag & Dialogue.Flag.regexp) {
     const capture = dialogue._capture || new RegExp(dialogue.question, 'i').exec(state.test.question)
     if (!capture) console.log(dialogue.question, state.test.question)
     capture.map((segment, index) => {

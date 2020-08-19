@@ -1,10 +1,10 @@
 import { Context, Session, ParsedLine } from 'koishi-core'
-import { difference, observe, isInteger, defineProperty, clone } from 'koishi-utils'
+import { difference, observe, isInteger, defineProperty } from 'koishi-utils'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/fetch' (dialogue: Dialogue, test: DialogueTest): boolean | void
-    'dialogue/permit' (argv: Dialogue.Argv, dialogue: Dialogue): boolean
+    'dialogue/fetch'(dialogue: Dialogue, test: DialogueTest): boolean | void
+    'dialogue/permit'(argv: Dialogue.Argv, dialogue: Dialogue): boolean
   }
 }
 
@@ -38,19 +38,6 @@ export interface DialogueTest {
   noRecursive?: boolean
 }
 
-export enum DialogueFlag {
-  /** 冻结：只有 4 级以上权限者可修改 */
-  frozen = 1,
-  /** 正则：使用正则表达式进行匹配 */
-  regexp = 2,
-  /** 上下文：后继问答可以被上下文内任何人触发 */
-  context = 4,
-  /** 代行者：由教学者完成回答的执行 */
-  substitute = 8,
-  /** 补集：上下文匹配时取补集 */
-  complement = 16,
-}
-
 export namespace Dialogue {
   export type ModifyType = '添加' | '修改' | '删除'
   export type Field = keyof Dialogue
@@ -60,6 +47,19 @@ export namespace Dialogue {
   export interface Config {
     prefix?: string
     historyAge?: number
+  }
+
+  export enum Flag {
+    /** 冻结：只有 4 级以上权限者可修改 */
+    frozen = 1,
+    /** 正则：使用正则表达式进行匹配 */
+    regexp = 2,
+    /** 上下文：后继问答可以被上下文内任何人触发 */
+    context = 4,
+    /** 代行者：由教学者完成回答的执行 */
+    substitute = 8,
+    /** 补集：上下文匹配时取补集 */
+    complement = 16,
   }
 
   export function addHistory(dialogue: Dialogue, type: Dialogue.ModifyType, argv: Dialogue.Argv, revert: boolean, target = argv.ctx.database.dialogueHistory) {
@@ -139,10 +139,10 @@ export function prepareTargets(argv: Dialogue.Argv, dialogues = argv.dialogues) 
   return targets.map(data => observe(data, `dialogue ${data.id}`))
 }
 
-export function useFlag(ctx: Context, flag: keyof typeof DialogueFlag) {
+export function useFlag(ctx: Context, flag: keyof typeof Dialogue.Flag) {
   ctx.on('dialogue/mysql', (test, conditionals) => {
     if (test[flag] !== undefined) {
-      conditionals.push(`!(\`flag\` & ${DialogueFlag[flag]}) = !${test[flag]}`)
+      conditionals.push(`!(\`flag\` & ${Dialogue.Flag[flag]}) = !${test[flag]}`)
     }
   })
 
@@ -152,8 +152,8 @@ export function useFlag(ctx: Context, flag: keyof typeof DialogueFlag) {
 
   ctx.on('dialogue/modify', ({ options }: Dialogue.Argv, data: Dialogue) => {
     if (options[flag] !== undefined) {
-      data.flag &= ~DialogueFlag[flag]
-      data.flag |= +options[flag] * DialogueFlag[flag]
+      data.flag &= ~Dialogue.Flag[flag]
+      data.flag |= +options[flag] * Dialogue.Flag[flag]
     }
   })
 }

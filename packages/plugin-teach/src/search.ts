@@ -1,4 +1,4 @@
-import { isPositiveInteger, parseTeachArgs, Dialogue, DialogueTest, DialogueFlag } from './utils'
+import { isPositiveInteger, parseTeachArgs, Dialogue, DialogueTest } from './utils'
 import { Context } from 'koishi-core'
 import { getTotalWeight } from './receiver'
 
@@ -59,7 +59,7 @@ export default function apply(ctx: Context) {
   })
 
   ctx.on('dialogue/detail-short', ({ flag }, output) => {
-    if (flag & DialogueFlag.regexp) {
+    if (flag & Dialogue.Flag.regexp) {
       output.questionType = '正则'
     }
   })

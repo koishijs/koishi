@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference } from 'koishi-utils'
-import { equal, split, prepareTargets, RE_DIALOGUES, parseTeachArgs, isPositiveInteger, Dialogue, DialogueFlag, useFlag } from '../utils'
+import { equal, split, prepareTargets, RE_DIALOGUES, parseTeachArgs, isPositiveInteger, Dialogue, useFlag } from '../utils'
 import { formatQuestionAnswers } from '../search'
 
 declare module '../receiver' {
@@ -179,7 +179,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/detail', async (dialogue, output, argv) => {
-    if (dialogue.flag & DialogueFlag.context) {
+    if (dialogue.flag & Dialogue.Flag.context) {
       output.push('后继问答可以被上下文内任何人触发')
     }
     if ((dialogue.successorTimeout || successorTimeout) !== successorTimeout) {
@@ -198,7 +198,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       output.push(`z=${dialogue.successorTimeout / 1000}`)
     }
     if (dialogue.predecessors.length) output.push('存在前置')
-    if (dialogue.flag & DialogueFlag.context) {
+    if (dialogue.flag & Dialogue.Flag.context) {
       output.push('上下文后置')
     }
   })
@@ -264,7 +264,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/before-send', ({ dialogue, predecessors, userId }) => {
     const time = Date.now()
-    if (dialogue.flag & DialogueFlag.context) userId = 0
+    if (dialogue.flag & Dialogue.Flag.context) userId = 0
     const predMap = predecessors[userId] || (predecessors[userId] = {})
     for (const id of dialogue.predecessors) {
       delete predMap[id]
