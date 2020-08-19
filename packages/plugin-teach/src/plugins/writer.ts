@@ -1,6 +1,6 @@
 import { Context, getTargetId, User } from 'koishi-core'
 import { isInteger, deduplicate } from 'koishi-utils'
-import { Dialogue, useFlag } from '../utils'
+import { Dialogue } from '../utils'
 
 declare module '../utils' {
   interface DialogueTest {
@@ -31,8 +31,8 @@ export default function apply(ctx: Context) {
     .option('substitute', '-s  由教学者完成回答的执行')
     .option('substitute', '-S, --no-substitute  由触发者完成回答的执行', { value: false })
 
-  useFlag(ctx, 'frozen')
-  useFlag(ctx, 'substitute')
+  ctx.emit('dialogue/flag', 'frozen')
+  ctx.emit('dialogue/flag', 'substitute')
 
   ctx.on('dialogue/mysql', (test, conditionals) => {
     if (test.writer !== undefined) conditionals.push(`\`writer\` = ${test.writer}`)

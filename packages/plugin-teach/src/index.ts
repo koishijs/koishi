@@ -6,7 +6,6 @@ import internal from './internal'
 import receiver from './receiver'
 import search from './search'
 import update, { create } from './update'
-import affinity from './plugins/affinity'
 import context from './plugins/context'
 import image from './plugins/image'
 import throttle from './plugins/throttle'
@@ -22,7 +21,7 @@ export * from './database'
 export * from './utils'
 export * from './receiver'
 export * from './search'
-export * from './plugins/affinity'
+export * from './update'
 export * from './plugins/context'
 export * from './plugins/image'
 export * from './plugins/throttle'
@@ -161,7 +160,6 @@ export function apply(ctx: Context, config: Dialogue.Config = {}) {
 
   // options
   ctx.plugin(internal, config)
-  ctx.plugin(affinity, config)
   ctx.plugin(context, config)
   ctx.plugin(image, config)
   ctx.plugin(throttle, config)

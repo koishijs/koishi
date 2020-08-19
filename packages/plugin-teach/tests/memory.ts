@@ -1,5 +1,5 @@
 import { extendDatabase, Context } from 'koishi-core'
-import { defineProperty, Observed, clone } from 'koishi-utils'
+import { defineProperty, Observed, clone, intersection } from 'koishi-utils'
 import { Dialogue, DialogueTest } from '../src'
 import { MemoryDatabase, memory } from 'koishi-test-utils'
 
@@ -88,6 +88,16 @@ extendDatabase(MemoryDatabase, {
 export function apply(ctx: Context) {
   ctx.plugin(memory)
 
+  // flag
+  ctx.on('dialogue/flag', (flag) => {
+    ctx.on('dialogue/memory', (data, test) => {
+      if (test[flag] !== undefined) {
+        return !(data.flag & Dialogue.Flag[flag]) === test[flag]
+      }
+    })
+  })
+
+  // internal
   ctx.on('dialogue/memory', (data, { regexp, answer, question, original }) => {
     if (regexp) {
       if (answer !== undefined && !new RegExp(answer).test(data.answer)) return true
@@ -102,4 +112,38 @@ export function apply(ctx: Context) {
       return !questionRegExp.test(question) && !questionRegExp.test(original)
     }
   })
+
+  // writer
+  ctx.on('dialogue/memory', (data, { writer }) => {
+    if (writer !== undefined && data.writer !== writer) return true
+  })
+
+  // time
+  ctx.on('dialogue/memory', (data, { matchTime, mismatchTime }) => {
+    if (matchTime !== undefined && getProduct(data, matchTime) < 0) return true
+    if (mismatchTime !== undefined && getProduct(data, mismatchTime) >= 0) return true
+  })
+
+  // successor
+  ctx.on('dialogue/memory', (data, { predecessors, stateful, noRecursive }) => {
+    if (noRecursive) return !!data.predecessors.length
+    if (!predecessors) return
+    const hasMatched = !!intersection(data.predecessors, predecessors).length
+    if (stateful) return hasMatched
+    return hasMatched || !data.predecessors.length
+  })
+
+  // context
+  ctx.on('dialogue/memory', (data, test) => {
+    if (!test.groups || !test.groups.length) return
+    if (!(data.flag & Dialogue.Flag.complement) === test.reversed) {
+      return test.groups.some(id => !data.groups.includes(id))
+    } else {
+      return test.groups.some(id => data.groups.includes(id))
+    }
+  })
+}
+
+function getProduct({ startTime, endTime }: Dialogue, time: number) {
+  return (startTime - time) * (time - endTime) * (endTime - startTime)
 }

@@ -5,6 +5,7 @@ declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/fetch'(dialogue: Dialogue, test: DialogueTest): boolean | void
     'dialogue/permit'(argv: Dialogue.Argv, dialogue: Dialogue): boolean
+    'dialogue/flag'(flag: keyof typeof Dialogue.Flag): void
   }
 }
 
@@ -137,25 +138,6 @@ export function prepareTargets(argv: Dialogue.Argv, dialogues = argv.dialogues) 
   })
   argv.uneditable.unshift(...difference(dialogues, targets).map(d => d.id))
   return targets.map(data => observe(data, `dialogue ${data.id}`))
-}
-
-export function useFlag(ctx: Context, flag: keyof typeof Dialogue.Flag) {
-  ctx.on('dialogue/mysql', (test, conditionals) => {
-    if (test[flag] !== undefined) {
-      conditionals.push(`!(\`flag\` & ${Dialogue.Flag[flag]}) = !${test[flag]}`)
-    }
-  })
-
-  ctx.on('dialogue/before-search', ({ options }, test) => {
-    test[flag] = options[flag]
-  })
-
-  ctx.on('dialogue/modify', ({ options }: Dialogue.Argv, data: Dialogue) => {
-    if (options[flag] !== undefined) {
-      data.flag &= ~Dialogue.Flag[flag]
-      data.flag |= +options[flag] * Dialogue.Flag[flag]
-    }
-  })
 }
 
 export function parseTeachArgs({ args, options }: Partial<ParsedLine>) {

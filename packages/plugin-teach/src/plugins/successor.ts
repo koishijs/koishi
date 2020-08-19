@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference } from 'koishi-utils'
-import { equal, split, prepareTargets, RE_DIALOGUES, parseTeachArgs, isPositiveInteger, Dialogue, useFlag } from '../utils'
+import { equal, split, prepareTargets, RE_DIALOGUES, parseTeachArgs, isPositiveInteger, Dialogue } from '../utils'
 import { formatQuestionAnswers } from '../search'
 
 declare module '../receiver' {
@@ -50,9 +50,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('context', '-c  允许后继问答被任何人触发')
     .option('context', '-C  后继问答只能被同一人触发', { value: false })
 
-  useFlag(ctx, 'context')
+  ctx.emit('dialogue/flag', 'context')
 
-  ctx.on('dialogue/mysql', ({ predecessors, stateful, noRecursive, context }, conditionals) => {
+  ctx.on('dialogue/mysql', ({ predecessors, stateful, noRecursive }, conditionals) => {
     if (noRecursive) {
       conditionals.push('!`predecessors`')
     } else if (predecessors !== undefined) {

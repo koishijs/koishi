@@ -204,4 +204,23 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       output.push('重定向到：', ...formatQuestionAnswers(argv, dialogue._redirections))
     }
   })
+
+  ctx.on('dialogue/flag', (flag) => {
+    ctx.on('dialogue/mysql', (test, conditionals) => {
+      if (test[flag] !== undefined) {
+        conditionals.push(`!(\`flag\` & ${Dialogue.Flag[flag]}) = !${test[flag]}`)
+      }
+    })
+
+    ctx.on('dialogue/before-search', ({ options }, test) => {
+      test[flag] = options[flag]
+    })
+
+    ctx.on('dialogue/modify', ({ options }: Dialogue.Argv, data: Dialogue) => {
+      if (options[flag] !== undefined) {
+        data.flag &= ~Dialogue.Flag[flag]
+        data.flag |= +options[flag] * Dialogue.Flag[flag]
+      }
+    })
+  })
 }
