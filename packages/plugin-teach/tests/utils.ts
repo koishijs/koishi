@@ -24,13 +24,13 @@ extendDatabase(MemoryDatabase, {
     const dialogues = Object.values(this.$table('dialogue')).filter((dialogue) => {
       return !this.app.bail('dialogue/memory', dialogue, test)
         && !this.app.bail('dialogue/fetch', dialogue, test)
-    })
+    }).map(clone)
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
     return dialogues
   },
 
   async createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
-    dialogue = this.$create('dialogue', dialogue)
+    dialogue = this.$create('dialogue', { ...Dialogue.create(), ...dialogue })
     Dialogue.addHistory(dialogue, '添加', argv, revert)
     return dialogue
   },
@@ -137,9 +137,9 @@ export function apply(ctx: Context) {
   ctx.on('dialogue/memory', (data, test) => {
     if (!test.groups || !test.groups.length) return
     if (!(data.flag & Dialogue.Flag.complement) === test.reversed) {
-      return test.groups.some(id => !data.groups.includes(id))
-    } else {
       return test.groups.some(id => data.groups.includes(id))
+    } else {
+      return test.groups.some(id => !data.groups.includes(id))
     }
   })
 }

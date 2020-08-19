@@ -77,7 +77,7 @@ export default function apply(ctx: Context) {
     }
   })
 
-  ctx.on('dialogue/detail', ({ original, answer, flag, _type, _timestamp }, output, argv) => {
+  ctx.on('dialogue/detail', ({ original, answer, flag, _type, _timestamp }, output) => {
     if (flag & Dialogue.Flag.regexp) {
       output.push(`正则：${original}`)
     } else {
