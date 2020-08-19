@@ -36,12 +36,12 @@
     "rss"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.0.0-beta.13",
+    "koishi-core": "^2.0.0-beta.14",
     "koishi-utils": "^3.0.1"
   },
   "devDependencies": {
     "koishi-plugin-mongo": "^1.0.0-beta.3",
-    "koishi-test-utils": "^4.0.0-beta.5"
+    "koishi-test-utils": "^4.0.0-beta.6"
   },
   "dependencies": {
     "rss-feed-emitter": "^3.2.2"

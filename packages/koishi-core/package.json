@@ -1,7 +1,7 @@
 {
   "name": "koishi-core",
   "description": "Core features for Koishi",
-  "version": "2.0.0-beta.13",
+  "version": "2.0.0-beta.14",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "engines": {
@@ -36,7 +36,7 @@
   "devDependencies": {
     "@types/koa": "^2.11.3",
     "@types/lru-cache": "^5.1.0",
-    "koishi-test-utils": "^4.0.0-beta.5"
+    "koishi-test-utils": "^4.0.0-beta.6"
   },
   "dependencies": {
     "@types/koa-bodyparser": "^4.3.0",
