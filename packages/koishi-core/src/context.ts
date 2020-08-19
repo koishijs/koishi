@@ -292,24 +292,6 @@ export class Context {
     }))
   }
 
-  setTimeout(callback: (...args: any[]) => void, ms: number, ...args: any[]): NodeJS.Timeout {
-    const timer = setTimeout((...args: any[]) => {
-      this.app._timers.delete(timer)
-      callback(...args)
-    }, ms, args)
-    this.app._timers.add(timer)
-    return timer
-  }
-
-  setInterval(callback: (...args: any[]) => void, ms: number, ...args: any[]): NodeJS.Timeout {
-    const timer = setInterval((...args: any[]) => {
-      this.app._timers.delete(timer)
-      callback(...args)
-    }, ms, args)
-    this.app._timers.add(timer)
-    return timer
-  }
-
   dispose() {
     this._disposables.forEach(dispose => dispose())
   }

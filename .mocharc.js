@@ -1,4 +1,5 @@
 module.exports = {
+  exit: true,
   extension: ['ts'],
   spec: [
     'packages/koishi-core/tests/command.spec.ts',

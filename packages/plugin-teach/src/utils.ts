@@ -95,7 +95,7 @@ export namespace Dialogue {
     defineProperty(dialogue, '_timestamp', time)
     defineProperty(dialogue, '_operator', argv.session.userId)
     defineProperty(dialogue, '_type', type)
-    argv.ctx.setTimeout(() => {
+    setTimeout(() => {
       if (argv.ctx.database.dialogueHistory[dialogue.id]?._timestamp === time) {
         delete argv.ctx.database.dialogueHistory[dialogue.id]
       }
