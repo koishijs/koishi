@@ -136,21 +136,18 @@ function registerPrefix(ctx: Context, prefix: string) {
 }
 
 export function apply(ctx: Context, config: Dialogue.Config = {}) {
-  const teach = ctx.command('teach [question] [answer]', '添加教学对话', { authority: 2, checkUnknown: true })
+  const { prefix = '#' } = config
+  registerPrefix(ctx, prefix)
+
+  ctx.command('teach', '添加教学对话', { authority: 2, checkUnknown: true, hideOptions: true })
     .userFields(['authority', 'id'])
+    .usage(({ $user }) => cheatSheet(prefix, $user.authority))
     .action(async ({ options, session, args }) => {
       const argv: Dialogue.Argv = { ctx, session, args, config, options }
       return ctx.bail('dialogue/validate', argv)
         || ctx.bail('dialogue/execute', argv)
         || create(argv)
     })
-
-  const { prefix = '#' } = config
-  if (prefix) {
-    registerPrefix(ctx, prefix)
-    teach.config.hideOptions = true
-    teach.usage(({ $user }) => cheatSheet(prefix, $user.authority))
-  }
 
   // features
   ctx.plugin(database, config)

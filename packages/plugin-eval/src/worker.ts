@@ -101,7 +101,7 @@ export class WorkerAPI {
     let result: any
     try {
       result = await vm.run(`{
-        const { send, execute, user } = global[Symbol.for("${key}")];
+        const { send, exec, user } = global[Symbol.for("${key}")];
         delete global[Symbol.for("${key}")];
         \n${source}
       }`, {

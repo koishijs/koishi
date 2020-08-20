@@ -122,7 +122,7 @@ export namespace Dialogue {
 }
 
 export function sendResult(argv: Dialogue.Argv, prefix?: string, suffix?: string) {
-  const { session, options, uneditable, unknown, skipped, updated, target } = argv
+  const { session, options, uneditable, unknown, skipped, updated, target, config } = argv
   const { remove, revert, create } = options
   const output = []
   if (prefix) output.push(prefix)
@@ -130,7 +130,7 @@ export function sendResult(argv: Dialogue.Argv, prefix?: string, suffix?: string
     output.push(create ? `修改了已存在的问答，编号为 ${updated.join(', ')}。` : `问答 ${updated.join(', ')} 已成功修改。`)
   }
   if (skipped.length) {
-    output.push(create ? `问答已存在，编号为 ${target.join(', ')}，如要修改请尝试使用 #${skipped.join(',')} 指令。` : `问答 ${skipped.join(', ')} 没有发生改动。`)
+    output.push(create ? `问答已存在，编号为 ${target.join(', ')}，如要修改请尝试使用 ${config.prefix}${skipped.join(',')} 指令。` : `问答 ${skipped.join(', ')} 没有发生改动。`)
   }
   if (uneditable.length) {
     output.push(`问答 ${uneditable.join(', ')} 因权限过低无法${revert ? '回退' : remove ? '删除' : '修改'}。`)

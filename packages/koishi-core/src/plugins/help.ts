@@ -102,7 +102,7 @@ function getCommandList(prefix: string, context: Context, session: Session<Valid
   let commands = (parent ? parent.children : context.app._commands)
     .filter((cmd) => {
       return cmd.context.match(session)
-        && cmd.config.authority <= session.$user.authority
+        && (!session.$user || cmd.config.authority <= session.$user.authority)
         && (config.showHidden || !cmd.config.hidden)
     })
     .sort((a, b) => a.name > b.name ? 1 : -1)
@@ -143,7 +143,7 @@ function getOptions(command: Command, session: Session<ValidationField>, maxUsag
   if (command.config.hideOptions && !config.showHidden) return []
   const options = config.showHidden
     ? Object.values(command._options)
-    : Object.values(command._options).filter(option => !option.hidden && option.authority <= session.$user.authority)
+    : Object.values(command._options).filter(option => !option.hidden && (!session.$user || option.authority <= session.$user.authority))
   if (!options.length) return []
 
   const output = options.some(o => o.authority)
