@@ -1,5 +1,6 @@
-import { Context } from 'koishi-core'
+import { Context, Group, extendDatabase } from 'koishi-core'
 import { Logger, Time } from 'koishi-utils'
+import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 import RssFeedEmitter from 'rss-feed-emitter'
 
 declare module 'koishi-core/dist/database' {
@@ -7,6 +8,14 @@ declare module 'koishi-core/dist/database' {
     rss?: string[]
   }
 }
+
+Group.extend(() => ({
+  rss: [],
+}))
+
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields }) => {
+  listFields.push('group.rss')
+})
 
 export interface Config {
   timeout?: number

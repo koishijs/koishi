@@ -115,8 +115,8 @@ export function apply(ctx: Context, config: Config) {
       })
     }, 1000)
 
-    if (!app.server.router) return
-    app.server.router.get('/status', async (ctx) => {
+    if (!app.router) return
+    app.router.get('/status', async (ctx) => {
       const status = await getStatus(config, true).catch<Status>((error) => {
         app.logger('status').warn(error)
         return null

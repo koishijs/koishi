@@ -28,7 +28,6 @@ export class VM {
     const data = readFileSync(filename, 'utf8')
     const script = new Script(`(function(host, exports) {${data}\n})`, {
       filename,
-      displayErrors: false,
     })
 
     script

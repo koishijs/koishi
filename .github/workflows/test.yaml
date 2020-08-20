@@ -19,7 +19,7 @@ jobs:
     - name: Set up Node
       uses: actions/setup-node@v1
       with:
-        node-version: 12.x
+        node-version: 14.x
     - name: Create .npmrc
       run: 'echo "//registry.npmjs.org/:_authToken=${{secrets.NPM_TOKEN}}" > .npmrc'
     - name: Install
@@ -29,9 +29,9 @@ jobs:
     - name: Lint
       run: yarn lint
     - name: Unit Test
-      run: yarn test
+      run: yarn test:json
     - name: Report Coverage
-      uses: c8 -r jest mocha
+      uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage/coverage-final.json

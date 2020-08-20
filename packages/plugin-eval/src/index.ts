@@ -4,7 +4,6 @@ import { Worker, ResourceLimits } from 'worker_threads'
 import { WorkerAPI, WorkerConfig, WorkerData } from './worker'
 import { wrap, expose, Remote } from './transfer'
 import { resolve } from 'path'
-import {} from 'koishi-plugin-teach'
 
 declare module 'koishi-core/dist/app' {
   interface App {
@@ -46,6 +45,7 @@ const defaultConfig: Config = {
   prefix: '>',
   timeout: 1000,
   setupFiles: {},
+  maxLogs: Infinity,
   blacklist: ['evaluate', 'echo', 'broadcast', 'teach', 'contextify'],
 }
 
@@ -54,9 +54,14 @@ const logger = Logger.create('eval')
 export class MainAPI {
   constructor(public app: App) {}
 
-  async execute(uuid: string, message: string) {
+  private getSession(uuid: string) {
     const session = this.app._sessions[uuid]
-    if (!session) throw new Error('session not found')
+    if (!session) throw new Error(`session ${uuid} not found`)
+    return session
+  }
+
+  async execute(uuid: string, message: string) {
+    const session = this.getSession(uuid)
     const send = session.$send
     const sendQueued = session.$sendQueued
     await session.$execute(message)
@@ -65,8 +70,7 @@ export class MainAPI {
   }
 
   async send(uuid: string, message: string) {
-    const session = this.app._sessions[uuid]
-    if (!session) throw new Error('session not found')
+    const session = this.getSession(uuid)
     if (!session._logCount) session._logCount = 0
     if (this.app.evalConfig.maxLogs > session._logCount++) {
       return await session.$sendQueued(message)
@@ -138,7 +142,7 @@ export function apply(ctx: Context, config: Config = {}) {
     .option('slient', '-s  不输出最后的结果')
     .option('restart', '-r  重启子线程', { authority: 3 })
     .before((session) => {
-      if (!session._redirected && session.$user.authority < 2) return '权限不足。'
+      if (!session['_redirected'] && session.$user?.authority < 2) return '权限不足。'
     })
     .action(async ({ session, options }, expr) => {
       if (options.restart) {
@@ -149,20 +153,20 @@ export function apply(ctx: Context, config: Config = {}) {
       if (!expr) return '请输入要执行的脚本。'
       expr = CQCode.unescape(expr)
 
-      return new Promise((resolve) => {
+      return await new Promise((resolve) => {
         logger.debug(expr)
-        defineProperty(this, '_duringEval', true)
+        defineProperty(session, '_isEval', true)
 
         const _resolve = (result?: string) => {
           clearTimeout(timer)
           app.evalWorker.off('error', listener)
-          this._isEval = false
+          session._isEval = false
           resolve(result)
         }
 
         const timer = setTimeout(async () => {
           await app.evalWorker.terminate()
-          _resolve(!this._logCount && '执行超时。')
+          _resolve(!session._logCount && '执行超时。')
         }, config.timeout)
 
         const listener = (error: Error) => {
@@ -176,8 +180,8 @@ export function apply(ctx: Context, config: Config = {}) {
 
         app.evalWorker.on('error', listener)
         app.evalRemote.eval({
-          sid: this.$uuid,
-          user: this.$user,
+          sid: session.$uuid,
+          user: session.$user,
           silent: options.slient,
           source: expr,
         }).then(_resolve, (error) => {

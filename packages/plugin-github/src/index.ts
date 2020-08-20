@@ -1,19 +1,36 @@
 /* eslint-disable camelcase */
 
-import type { Context } from 'koishi-core'
+import { Context, User } from 'koishi-core'
 import { Webhooks, EventNames } from '@octokit/webhooks'
-import { Options, WebhookEvent } from '@octokit/webhooks/dist-types/types'
 import { GetWebhookPayloadTypeFromEvent } from '@octokit/webhooks/dist-types/generated/get-webhook-payload-type-from-event'
+import axios from 'axios'
 
 type Payload<T extends EventNames.All> = GetWebhookPayloadTypeFromEvent<T, unknown>['payload']
 
-export interface Config extends Options<WebhookEvent> {
+declare module 'koishi-core/dist/database' {
+  interface User {
+    githubToken?: string
+  }
+}
+
+User.extend(() => ({
+  githubToken: '',
+}))
+
+export interface Config {
+  secret?: string
+  webhook?: string
+  authorize?: string
+  clientId?: string
+  clientSecret?: string
+  redirectUri?: string
   repos?: Record<string, number[]>
 }
 
 const defaultOptions: Config = {
   secret: '',
-  path: '/webhook',
+  webhook: '/github/webhook',
+  authorize: '/github/authorize',
   repos: {},
 }
 
@@ -25,8 +42,29 @@ export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultOptions, ...config }
   const webhook = new Webhooks(config)
 
-  ctx.app.server.router.post(config.path, (ctx, next) => {
+  const { router, database } = ctx
+
+  router.post(config.webhook, (ctx, next) => {
     return webhook.middleware(ctx.req, ctx.res, next)
+  })
+
+  router.get(config.authorize, async (ctx) => {
+    const targetId = parseInt(ctx.query.state)
+    if (Number.isNaN(targetId)) throw new Error('Invalid targetId')
+    const { code, state } = ctx.query
+    const { data } = await axios.post('https://github.com/login/oauth/access_token', {
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      redirect_uri: config.redirectUri,
+      code,
+      state,
+    })
+    if (data.access_token) {
+      await database.setUser(targetId, { githubToken: data.access_token })
+      return ctx.status = 200
+    } else {
+      return ctx.status = 500
+    }
   })
 
   function registerHandler<T extends EventNames.All>(event: T, handler: (payload: Payload<T>) => string) {
@@ -107,9 +145,9 @@ export function apply(ctx: Context, config: Config = {}) {
     }
 
     return [
-      `[GitHub] ${pusher.name} pushed to ${repository.full_name} (${ref})`,
+      `[GitHub] ${pusher.name} pushed to ${repository.full_name}:${ref}`,
       `Compare: ${compare}`,
-      ...commits.map(c => formatMarkdown(c.message)),
+      ...commits.map(c => `[${c.id.slice(0, 6)}] ${formatMarkdown(c.message)}`),
     ].join('\n')
   })
 }

@@ -81,23 +81,23 @@ export const createMessageMeta = (app: App, type: 'user' | 'group', message: str
 
 export class TestSession {
   meta: Session
+  replies: string[] = []
 
   constructor(public app: MockedApp, public type: 'user' | 'group', public userId: number, public ctxId: number) {
     this.meta = createMessageMeta(app, type, null, userId, ctxId)
   }
 
   async send(message: string) {
-    const replies: string[] = []
-    async function $send(message: string) {
-      if (message) replies.push(message)
+    const $send = async (message: string) => {
+      if (message) this.replies.push(message)
     }
     await this.app.receiveMessage(new Session(this.app, { ...this.meta, message, $send }))
-    return replies
   }
 
   async shouldHaveReply(message: string, reply?: string) {
-    const replies = await this.send(message)
-    const lastReply = replies[replies.length - 1]
+    await this.send(message)
+    const lastReply = this.replies[this.replies.length - 1]
+    this.replies = []
     if (reply) {
       return expect(lastReply).to.equal(reply)
     } else {
@@ -105,8 +105,9 @@ export class TestSession {
     }
   }
 
-  shouldHaveNoReply(message: string) {
-    return expect(this.send(message)).to.eventually.have.length(0)
+  async shouldHaveNoReply(message: string) {
+    await this.send(message)
+    return expect(this.replies).to.have.length(0)
   }
 
   shouldMatchSnapshot(message: string) {

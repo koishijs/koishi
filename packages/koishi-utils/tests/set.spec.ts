@@ -1,7 +1,7 @@
 import { union, intersection, difference, contain, deduplicate } from '../src'
 import { expect } from 'chai'
 
-describe('set operations', () => {
+describe('Set Manipulations', () => {
   it('union', () => {
     expect(union([1, 2], [3, 4])).to.deep.equal([1, 2, 3, 4])
     expect(union([1, 2], [1, 3])).to.deep.equal([1, 2, 3])
