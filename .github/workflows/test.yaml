@@ -29,7 +29,7 @@ jobs:
     - name: Lint
       run: yarn lint
     - name: Unit Test
-      run: c8 -r json mocha
+      run: yarn c8 -r json mocha
     - name: Report Coverage
       uses: codecov/codecov-action@v1
       with:
