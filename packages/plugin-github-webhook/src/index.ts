@@ -107,9 +107,9 @@ export function apply(ctx: Context, config: Config = {}) {
     }
 
     return [
-      `[GitHub] ${pusher.name} pushed to ${repository.full_name} (${ref})`,
+      `[GitHub] ${pusher.name} pushed to ${repository.full_name}:${ref}`,
       `Compare: ${compare}`,
-      ...commits.map(c => formatMarkdown(c.message)),
+      ...commits.map(c => `[${c.id.slice(0, 6)}] ${formatMarkdown(c.message)}`),
     ].join('\n')
   })
 }
