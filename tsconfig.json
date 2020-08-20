@@ -17,6 +17,7 @@
     { "path": "./packages/plugin-mongo" },
     { "path": "./packages/plugin-eval" },
     { "path": "./packages/plugin-puppeteer" },
+    { "path": "./packages/plugin-teach" },
 
     { "path": "./packages/plugin-chess" },
     { "path": "./packages/plugin-common" },
@@ -28,7 +29,6 @@
     { "path": "./packages/plugin-rss" },
     { "path": "./packages/plugin-schedule" },
     { "path": "./packages/plugin-status" },
-    { "path": "./packages/plugin-teach" },
     { "path": "./packages/plugin-tools" },
 
     { "path": "./packages/koishi" },

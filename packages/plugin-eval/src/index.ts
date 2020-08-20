@@ -4,7 +4,6 @@ import { Worker, ResourceLimits } from 'worker_threads'
 import { WorkerAPI, WorkerConfig, WorkerData } from './worker'
 import { wrap, expose, Remote } from './transfer'
 import { resolve } from 'path'
-import {} from 'koishi-plugin-teach'
 
 declare module 'koishi-core/dist/app' {
   interface App {
@@ -138,7 +137,7 @@ export function apply(ctx: Context, config: Config = {}) {
     .option('slient', '-s  不输出最后的结果')
     .option('restart', '-r  重启子线程', { authority: 3 })
     .before((session) => {
-      if (!session._redirected && session.$user.authority < 2) return '权限不足。'
+      if (!session['_redirected'] && session.$user.authority < 2) return '权限不足。'
     })
     .action(async ({ session, options }, expr) => {
       if (options.restart) {
