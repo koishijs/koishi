@@ -79,7 +79,9 @@ export function apply(ctx: Context, config: Config = {}) {
   }
 
   function formatMarkdown(source: string) {
-    return source.replace(/\n\s*\n/g, '\n')
+    return source
+      .replace(/^```(.*)$/gm, '')
+      .replace(/\n\s*\n/g, '\n')
   }
 
   registerHandler('commit_comment.created', ({ repository, comment }) => {
@@ -93,8 +95,8 @@ export function apply(ctx: Context, config: Config = {}) {
   registerHandler('issues.opened', ({ repository, issue }) => {
     return [
       `[GitHub] ${issue.user.login} opened an issue ${repository.full_name}#${issue.number}`,
-      `Title: ${issue.title}`,
       `URL: ${issue.html_url}`,
+      `Title: ${issue.title}`,
       formatMarkdown(issue.body),
     ].join('\n')
   })
