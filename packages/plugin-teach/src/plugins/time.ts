@@ -52,6 +52,23 @@ export default function apply(ctx: Context) {
     }
   })
 
+  ctx.on('dialogue/mongo', (test, conditionals) => {
+    if (test.matchTime !== undefined) {
+      conditionals.push({
+        startTime: { $gte: test.matchTime },
+        endTime: { $lte: test.matchTime },
+      })
+    }
+    if (test.mismatchTime !== undefined) {
+      conditionals.push({
+        $or: [
+          { startTime: { $gt: test.matchTime } },
+          { endTime: { $lt: test.matchTime } },
+        ],
+      })
+    }
+  })
+
   ctx.on('dialogue/modify', async ({ options }, data) => {
     if (options.startTime !== undefined) data.startTime = parseTime(options.startTime)
     if (options.endTime !== undefined) data.endTime = parseTime(options.endTime)

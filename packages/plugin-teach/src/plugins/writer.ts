@@ -38,6 +38,10 @@ export default function apply(ctx: Context) {
     if (test.writer !== undefined) conditionals.push(`\`writer\` = ${test.writer}`)
   })
 
+  ctx.on('dialogue/mongo', (test, conditionals) => {
+    if (test.writer !== undefined) conditionals.push({ writer: test.writer })
+  })
+
   ctx.on('dialogue/validate', ({ options }) => {
     if (options.writer) {
       const writer = getTargetId(options.writer)
