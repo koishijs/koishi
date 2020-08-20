@@ -29,9 +29,9 @@ jobs:
     - name: Lint
       run: yarn lint
     - name: Unit Test
-      run: yarn test
+      run: c8 -r json mocha
     - name: Report Coverage
-      uses: c8 -r jest mocha
+      uses: codecov/codecov-actions@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage/coverage-final.json
