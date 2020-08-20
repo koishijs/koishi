@@ -22,7 +22,7 @@ after(async () => {
   await app.stop()
 })
 
-describe('teach', () => {
+describe('koishi-plugin-teach', () => {
   it('create', async () => {
     await session.shouldHaveNoReply('foo')
     await session.shouldHaveReply('# foo', '缺少问题或回答，请检查指令语法。')
@@ -44,5 +44,7 @@ describe('teach', () => {
     await session.shouldHaveReply('## baz', '没有搜索到问题“baz”，请尝试使用正则表达式匹配。')
     await session.shouldHaveReply('## ~ baz', '回答“baz”的问题如下：\n1. [P=1] foo')
     await session.shouldHaveReply('## ~ foo', '没有搜索到回答“foo”，请尝试使用正则表达式匹配。')
+    await session.shouldHaveReply('## foo baz', '“foo”“baz”匹配的回答如下：\n1')
+    await session.shouldHaveReply('## foo bar', '没有搜索到问答“foo”“bar”，请尝试使用正则表达式匹配。')
   })
 })

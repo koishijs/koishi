@@ -6,7 +6,7 @@ import '@shigma/chai-extended'
 const timestamp = Date.UTC(2020, 3, 1, 1, 30)
 const date = new Date(timestamp)
 
-describe('Date Manipulations', () => {
+describe('Time Manipulations', () => {
   before(() => set(timestamp))
   after(() => reset())
 

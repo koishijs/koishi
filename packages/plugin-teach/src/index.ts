@@ -135,13 +135,17 @@ function registerPrefix(ctx: Context, prefix: string) {
   })
 }
 
+const defaultConfig: Config = {
+  prefix: '#',
+}
+
 export function apply(ctx: Context, config: Dialogue.Config = {}) {
-  const { prefix = '#' } = config
-  registerPrefix(ctx, prefix)
+  config = { ...defaultConfig, ...config }
+  registerPrefix(ctx, config.prefix)
 
   ctx.command('teach', '添加教学对话', { authority: 2, checkUnknown: true, hideOptions: true })
     .userFields(['authority', 'id'])
-    .usage(({ $user }) => cheatSheet(prefix, $user.authority))
+    .usage(({ $user }) => cheatSheet(config.prefix, $user.authority))
     .action(async ({ options, session, args }) => {
       const argv: Dialogue.Argv = { ctx, session, args, config, options }
       return ctx.bail('dialogue/validate', argv)

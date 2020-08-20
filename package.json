@@ -16,7 +16,7 @@
     "dep": "ts-node build/dep",
     "docs": "cd docs & yarn dev",
     "mocha": "mocha --experimental-vm-modules --enable-source-maps",
-    "test": "rimraf coverage & c8 -r text mocha --experimental-vm-modules --enable-source-maps",
+    "test": "c8 -r text -r json mocha --experimental-vm-modules --enable-source-maps",
     "lint": "eslint packages/*/src/**/*.ts --fix --cache",
     "pub": "ts-node build/publish",
     "shiki": "yarn workspace bot-shiki"
