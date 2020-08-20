@@ -40,6 +40,26 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     )`)
   })
 
+  ctx.on('dialogue/mongo', (test, conditionals) => {
+    if (!test.groups || !test.groups.length) return
+    conditionals.push({
+      $or: [
+        {
+          $not: {
+            flag: { [test.reversed ? '$bitsAllClear' : '$bitsAllSet']: Dialogue.Flag.complement },
+            groups: { $in: test.groups },
+          },
+        },
+        {
+          $not: {
+            flag: { [test.reversed ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag.complement },
+            groups: { $nin: test.groups },
+          },
+        },
+      ],
+    })
+  })
+
   // TODO: ???
   ctx.on('dialogue/fetch', (data, test) => {
     if (!test.groups || test.partial) return

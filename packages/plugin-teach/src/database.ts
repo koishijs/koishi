@@ -3,6 +3,7 @@ import { defineProperty, Observed, pick, clone } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './utils'
 import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 import MongoDatabase from 'koishi-plugin-mongo/dist/database'
+type FilterQuery<T> = import('mongodb').FilterQuery<T>
 
 interface DialogueStats {
   questions: number
@@ -27,7 +28,7 @@ declare module 'koishi-core/dist/database' {
 declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/mysql'(test: DialogueTest, conditionals?: string[]): void
-    'dialogue/mongo'(test: DialogueTest, conditionals?: any[]): void
+    'dialogue/mongo'(test: DialogueTest, conditionals?: FilterQuery<Dialogue>[]): void
   }
 }
 
@@ -130,14 +131,11 @@ extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
   },
 
   async getDialoguesByTest(test: DialogueTest) {
-    const query = { $and: [] }
+    const query: FilterQuery<Dialogue> = { $and: [] }
     this.app.emit('dialogue/mongo', test, query.$and)
     const dialogues = (await this.db.collection('dialogue').find(query).toArray())
       .filter((dialogue) => !this.app.bail('dialogue/fetch', dialogue, test))
-    dialogues.forEach(d => {
-      d._id = d.id
-      defineProperty(d, '_backup', clone(d))
-    })
+    dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
     return dialogues
   },
 

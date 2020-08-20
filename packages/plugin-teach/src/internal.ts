@@ -104,6 +104,35 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
+  ctx.on('dialogue/mongo', ({ regexp, answer, question, original }, conditionals) => {
+    if (regexp) {
+      if (answer !== undefined) conditionals.push({ answer: { $regex: new RegExp(answer) } })
+      if (question !== undefined) conditionals.push({ question: { $regex: original } })
+      return
+    }
+    if (answer !== undefined) conditionals.push({ answer })
+    if (question !== undefined) {
+      if (regexp === false) {
+        conditionals.push({ question })
+      } else {
+        conditionals.push({
+          $or: [
+            { flag: { $bitsAllClear: Dialogue.Flag.regexp }, question },
+            {
+              flag: { $bitsAllSet: Dialogue.Flag.regexp },
+              // ugly, but it works
+              // eslint-disable-next-line no-eval
+              $where: eval(`function () {
+                const regex = new RegExp(this.question)
+                return regex.test("${question.replace(/"/gmi, '\\"')}") || regex.test("${original.replace(/"/gmi, '\\"')}")
+              }`),
+            },
+          ],
+        })
+      }
+    }
+  })
+
   function maybeAnswer(question: string, dialogues: Dialogue[]) {
     return dialogues.every(dialogue => {
       const dist = leven(question, dialogue.answer)
@@ -206,6 +235,14 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     ctx.on('dialogue/mysql', (test, conditionals) => {
       if (test[flag] !== undefined) {
         conditionals.push(`!(\`flag\` & ${Dialogue.Flag[flag]}) = !${test[flag]}`)
+      }
+    })
+
+    ctx.on('dialogue/mongo', (test, conditionals) => {
+      if (test[flag] !== undefined) {
+        conditionals.push({
+          flag: { [test[flag] ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag[flag] },
+        })
       }
     })
 
