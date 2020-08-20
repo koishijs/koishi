@@ -1,6 +1,6 @@
 import { AppOptions, App, Server, Session, Bot } from 'koishi-core'
 import { fn, Mock } from 'jest-mock'
-import { expect } from 'chai'
+import { expect, AssertionError } from 'chai'
 
 type MethodsOf<O> = {
   [P in keyof O]: O[P] extends (...args: any[]) => any ? P : never
@@ -107,7 +107,11 @@ export class TestSession {
 
   async shouldHaveNoReply(message: string) {
     await this.send(message)
-    return expect(this.replies).to.have.length(0)
+    try {
+      return expect(this.replies).to.have.length(0)
+    } catch {
+      throw new AssertionError(`expected "${message}" to have no reply but got "${this.replies}"`)
+    }
   }
 
   shouldMatchSnapshot(message: string) {

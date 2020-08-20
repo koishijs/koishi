@@ -140,7 +140,7 @@ export class Context {
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(session)) continue
       const result = await callback.apply(this, args)
-      if (result) return result
+      if (result !== undefined) return result
     }
   }
 
@@ -153,7 +153,7 @@ export class Context {
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(session)) continue
       const result = callback.apply(this, args)
-      if (result) return result
+      if (result !== undefined) return result
     }
   }
 

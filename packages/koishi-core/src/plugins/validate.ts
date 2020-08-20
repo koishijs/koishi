@@ -46,7 +46,6 @@ const messages = {
   TOO_FREQUENT: '调用过于频繁，请稍后再试。',
   INSUFFICIENT_ARGUMENTS: '缺少参数，请检查指令语法。',
   REDUNANT_ARGUMENTS: '存在多余参数，请检查指令语法。',
-  REQUIRED_OPTIONS: '缺少必需选项 %s，请检查指令语法。',
   INVALID_OPTION: '选项 %s 输入无效，%s',
   UNKNOWN_OPTIONS: '存在未知选项 %s，请检查指令语法。',
   CHECK_SYNTAX: '请检查指令语法。',
@@ -104,7 +103,7 @@ export default function apply(app: App) {
   })
 
   app.on('before-command', ({ session, args, options, command }: ParsedArgv<ValidationField>) => {
-    async function sendHint(message: string, ...param: any[]) {
+    function sendHint(message: string, ...param: any[]) {
       return command.config.showWarning ? format(message, ...param) : ''
     }
 
