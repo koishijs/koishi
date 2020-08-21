@@ -28,6 +28,7 @@ export interface Config {
 }
 
 export const defaultConfig: Config = {
+  browser: {},
   loadTimeout: 10000, // 10s
   idleTimeout: 30000, // 30s
   maxLength: 1000000, // 1MB
@@ -38,17 +39,17 @@ export const name = 'puppeteer'
 
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultConfig, ...config }
+  const { executablePath, defaultViewport } = config.browser
 
   const { app } = ctx
   ctx.on('before-connect', async () => {
     try {
-      const { browser = {} } = config
-      if (!browser.executablePath) {
+      if (!executablePath) {
         const findChrome = require('chrome-finder')
         logger.info('finding chrome executable path...')
-        browser.executablePath = findChrome()
+        config.browser.executablePath = findChrome()
       }
-      defineProperty(app, 'browser', await launch(browser))
+      defineProperty(app, 'browser', await launch(config.browser))
       logger.info('browser launched')
     } catch (error) {
       logger.error(error)
@@ -62,7 +63,8 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.command('shot <url>', '网页截图', { authority: 2 })
     .alias('screenshot')
-    .option('fullPage', '-f  对整个可滚动区域截图')
+    .option('full', '-f  对整个可滚动区域截图')
+    .option('viewport', '-v <viewport>  指定视口', { type: 'string' })
     .action(async ({ session, options }, url) => {
       if (!url) return '请输入网址。'
       const scheme = /^(\w+):\/\//.exec(url)
@@ -80,6 +82,15 @@ export function apply(ctx: Context, config: Config = {}) {
       page.on('load', () => loaded = true)
 
       try {
+        if (options.viewport) {
+          const viewport = options.viewport.split('x')
+          const width = +viewport[0]
+          const height = +viewport[1]
+          if (width !== defaultViewport.width || height !== defaultViewport.height) {
+            await page.setViewport({ width, height })
+          }
+        }
+
         await new Promise((resolve, reject) => {
           logger.debug(`navigating to ${url}`)
           const _resolve = () => {
@@ -107,7 +118,7 @@ export function apply(ctx: Context, config: Config = {}) {
       }
 
       return page.screenshot({
-        fullPage: options.fullPage,
+        fullPage: options.full,
       }).then(async (buffer) => {
         if (buffer.byteLength > config.maxLength) {
           await new Promise<PNG>((resolve, reject) => {
@@ -133,10 +144,9 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.command('tex <code...>', 'TeX 渲染', { authority: 2 })
     .option('scale', '-s <scale>  缩放比例', { fallback: 2 })
     .usage('渲染器由 https://www.zhihu.com/equation 提供。')
-    .action(async ({ session, options }, tex) => {
+    .action(async ({ options }, tex) => {
       if (!tex) return '请输入要渲染的 LaTeX 代码。'
       const page = await app.browser.newPage()
-      const viewport = page.viewport()
       await page.setViewport({
         width: 1920,
         height: 1080,
@@ -147,14 +157,14 @@ export function apply(ctx: Context, config: Config = {}) {
       const inner = await svg.evaluate(node => node.innerHTML)
       const text = inner.match(/>([^<]+)<\/text>/)
       if (text) {
-        await session.$send(text[1])
+        page.close()
+        return text[1]
       } else {
         const buffer = await page.screenshot({
           clip: await svg.boundingBox(),
         })
-        await session.$send(`[CQ:image,file=base64://${buffer.toString('base64')}]`)
+        page.close()
+        return `[CQ:image,file=base64://${buffer.toString('base64')}]`
       }
-      await page.setViewport(viewport)
-      page.close()
     })
 }
