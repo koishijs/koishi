@@ -1,5 +1,6 @@
 import { Context } from 'koishi-core'
 import { union, difference } from 'koishi-utils'
+import { FilterQuery } from 'mongodb'
 import { Dialogue, equal, RE_GROUPS } from '../utils'
 
 declare module '../utils' {
@@ -42,18 +43,26 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/mongo', (test, conditionals) => {
     if (!test.groups || !test.groups.length) return
+    const q1: FilterQuery<Dialogue> = []
+    for (const group of test.groups) {
+      q1.push({ groups: { $eleMatch: { $eq: group } } })
+    }
+    const q2: FilterQuery<Dialogue> = []
+    for (const group of test.groups) {
+      q2.push({ groups: { $not: { $eleMatch: { $eq: group } } } })
+    }
     conditionals.push({
       $or: [
         {
           $not: {
             flag: { [test.reversed ? '$bitsAllClear' : '$bitsAllSet']: Dialogue.Flag.complement },
-            groups: { $in: test.groups },
+            $and: q1,
           },
         },
         {
           $not: {
             flag: { [test.reversed ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag.complement },
-            groups: { $nin: test.groups },
+            $and: q2,
           },
         },
       ],
