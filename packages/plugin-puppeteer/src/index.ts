@@ -1,4 +1,4 @@
-import { launch, LaunchOptions, Browser, Page } from 'puppeteer-core'
+import { launch, LaunchOptions, Browser } from 'puppeteer-core'
 import { Context } from 'koishi-core'
 import { Logger, defineProperty, noop } from 'koishi-utils'
 import { escape } from 'querystring'
@@ -8,35 +8,16 @@ export * from './svg'
 declare module 'koishi-core/dist/app' {
   interface App {
     browser: Browser
-    _idlePages: Page[]
   }
 }
 
 declare module 'koishi-core/dist/context' {
-  interface Context {
-    getPage(): Promise<Page>
-    freePage(page: Page): void
-  }
-
   interface EventMap {
     'puppeteer/validate'(url: string): string
   }
 }
 
 const logger = Logger.create('puppeteer')
-
-Context.prototype.getPage = async function getPage(this: Context) {
-  if (this.app._idlePages.length) {
-    return this.app._idlePages.pop()
-  }
-
-  logger.debug('create new page')
-  return this.app.browser.newPage()
-}
-
-Context.prototype.freePage = function freePage(this: Context, page: Page) {
-  this.app._idlePages.push(page)
-}
 
 export interface Config {
   browser?: LaunchOptions
@@ -57,8 +38,8 @@ export const name = 'puppeteer'
 
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultConfig, ...config }
-  defineProperty(ctx.app, '_idlePages', [])
 
+  const { app } = ctx
   ctx.on('before-connect', async () => {
     try {
       const { browser = {} } = config
@@ -67,7 +48,7 @@ export function apply(ctx: Context, config: Config = {}) {
         logger.info('finding chrome executable path...')
         browser.executablePath = findChrome()
       }
-      ctx.app.browser = await launch(browser)
+      defineProperty(app, 'browser', await launch(browser))
       logger.info('browser launched')
     } catch (error) {
       logger.error(error)
@@ -76,7 +57,7 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   ctx.on('before-disconnect', async () => {
-    await ctx.app.browser?.close()
+    await app.browser?.close()
   })
 
   ctx.command('shot <url>', '网页截图', { authority: 2 })
@@ -95,13 +76,13 @@ export function apply(ctx: Context, config: Config = {}) {
       if (typeof result === 'string') return result
 
       let loaded = false
-      const page = await ctx.getPage()
+      const page = await app.browser.newPage()
       page.on('load', () => loaded = true)
 
       try {
         await new Promise((resolve, reject) => {
           logger.debug(`navigating to ${url}`)
-          const _resolve = (...args: any[]) => {
+          const _resolve = () => {
             clearTimeout(timer)
             resolve()
           }
@@ -120,7 +101,7 @@ export function apply(ctx: Context, config: Config = {}) {
           }, config.loadTimeout)
         })
       } catch (error) {
-        ctx.freePage(page)
+        page.close()
         logger.debug(error)
         return '无法打开页面。'
       }
@@ -128,7 +109,6 @@ export function apply(ctx: Context, config: Config = {}) {
       return page.screenshot({
         fullPage: options.fullPage,
       }).then(async (buffer) => {
-        ctx.freePage(page)
         if (buffer.byteLength > config.maxLength) {
           await new Promise<PNG>((resolve, reject) => {
             const png = new PNG()
@@ -145,10 +125,9 @@ export function apply(ctx: Context, config: Config = {}) {
         }
         return `[CQ:image,file=base64://${buffer.toString('base64')}]`
       }, (error) => {
-        ctx.freePage(page)
         logger.debug(error)
         return '截图失败。'
-      })
+      }).finally(() => page.close())
     })
 
   ctx.command('tex <code...>', 'TeX 渲染', { authority: 2 })
@@ -156,7 +135,7 @@ export function apply(ctx: Context, config: Config = {}) {
     .usage('渲染器由 https://www.zhihu.com/equation 提供。')
     .action(async ({ session, options }, tex) => {
       if (!tex) return '请输入要渲染的 LaTeX 代码。'
-      const page = await ctx.getPage()
+      const page = await app.browser.newPage()
       const viewport = page.viewport()
       await page.setViewport({
         width: 1920,
@@ -176,6 +155,6 @@ export function apply(ctx: Context, config: Config = {}) {
         await session.$send(`[CQ:image,file=base64://${buffer.toString('base64')}]`)
       }
       await page.setViewport(viewport)
-      ctx.freePage(page)
+      page.close()
     })
 }

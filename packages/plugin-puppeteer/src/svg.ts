@@ -131,7 +131,7 @@ export class SVG extends Tag {
   }
 
   async render(ctx: Context) {
-    const page = await ctx.getPage()
+    const page = await ctx.app.browser.newPage()
     await page.setContent(this.outer)
     const base64 = await page.screenshot({
       encoding: 'base64',
@@ -142,7 +142,7 @@ export class SVG extends Tag {
         height: this.height,
       },
     })
-    ctx.freePage(page)
+    page.close()
     return `[CQ:image,file=base64://${base64}]`
   }
 }
