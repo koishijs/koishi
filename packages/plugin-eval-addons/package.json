@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-eval-addons",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.4",
   "description": "Execute JavaScript in Koishi",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",

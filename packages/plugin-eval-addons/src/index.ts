@@ -1,4 +1,4 @@
-import { Context, CommandAction, CommandConfig, OptionConfig } from 'koishi-core'
+import { Context, CommandAction, CommandConfig, OptionConfig, User } from 'koishi-core'
 import { resolve } from 'path'
 import {} from 'koishi-plugin-eval'
 import { assertProperty, Logger, noop } from 'koishi-utils'
@@ -52,7 +52,10 @@ export function apply(ctx: Context, config: Config) {
     const { commands = [] } = safeLoad(content) as Manifest
     commands.forEach((config) => {
       const { name, desc, options } = config
-      const cmd = addon.subcommand(name, desc, config).action(addonAction)
+      const cmd = addon
+        .subcommand(name, desc, config)
+        .userFields(User.fields)
+        .action(addonAction)
       options.forEach((config) => {
         const { name, desc } = config
         cmd.option(name, desc, config)
@@ -63,11 +66,10 @@ export function apply(ctx: Context, config: Config) {
   const git = Git(root)
   ctx.on('before-connect', async () => {
     const isRepo = await git.checkIsRepo(CheckRepoActions.IS_REPO_ROOT)
-    if (!isRepo) {
-      return logger.warn(`moduleRoot "${moduleRoot}" is not git repository`)
-    }
+    if (!isRepo) return logger.warn(`moduleRoot "${moduleRoot}" is not git repository`)
 
-    addon.subcommand('.update', '更新扩展模块', { authority: 3 })
+    addon
+      .subcommand('.update', '更新扩展模块', { authority: 3 })
       .action(async () => {
         const { files, summary } = await git.pull(evalConfig.gitRemote)
         if (!files.length) return '所有模块均已是最新。'
