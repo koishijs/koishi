@@ -38,7 +38,7 @@
     "conversation"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.0.0-rc.0"
+    "koishi-core": "^2.0.0-rc.1"
   },
   "devDependencies": {
     "koishi-plugin-mongo": "^1.0.0-beta.4",
@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "escape-string-regexp": "^4.0.0",
-    "koishi-utils": "^3.0.1",
+    "koishi-utils": "^3.0.2",
     "leven": "^3.1.0",
     "regexpp": "^3.1.0"
   }
