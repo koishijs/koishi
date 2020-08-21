@@ -13,12 +13,12 @@ declare module 'koishi-core/dist/database' {
   }
 
   interface Database {
-    getSubscribes (ids?: number[], keys?: SubscribeField[]): Promise<Subscribe[]>
-    findSubscribe (name: string[], keys?: SubscribeField[]): Promise<Subscribe[]>
-    findSubscribe (name: string, keys?: SubscribeField[]): Promise<Subscribe>
-    setSubscribe (id: number, data: Partial<Subscribe>): Promise<any>
-    createSubscribe (options: SubscribeOptions): Promise<Subscribe>
-    removeSubscribe (name: string): Promise<boolean>
+    getSubscribes(ids?: number[], keys?: SubscribeField[]): Promise<Subscribe[]>
+    findSubscribe(name: string[], keys?: SubscribeField[]): Promise<Subscribe[]>
+    findSubscribe(name: string, keys?: SubscribeField[]): Promise<Subscribe>
+    setSubscribe(id: number, data: Partial<Subscribe>): Promise<any>
+    createSubscribe(options: SubscribeOptions): Promise<Subscribe>
+    removeSubscribe(name: string): Promise<boolean>
   }
 }
 
@@ -107,7 +107,9 @@ extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
   },
 
   async createSubscribe(options) {
-    const _id = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
+    let _id = 1
+    const [latest] = await this.db.collection('subscribe').find().sort('_id', -1).limit(1).toArray()
+    if (latest) _id = latest._id + 1
     const res = await this.db.collection('subscribe').insertOne({ _id, id: _id, ...options })
     return { id: res.insertedId, ...options, bilibiliStatus: false, mirrativStatus: false, twitcastingStatus: false }
   },
