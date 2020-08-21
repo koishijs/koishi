@@ -5,6 +5,7 @@ import { sleep } from 'koishi-utils'
 const app = new App({
   groupCacheAge: Number.EPSILON,
   userCacheAge: Number.EPSILON,
+  similarityCoefficient: 0,
 })
 
 app.plugin(memory)
@@ -42,6 +43,104 @@ before(async () => {
 after(() => app.stop())
 
 describe('Runtime', () => {
+  describe('command prefix', () => {
+    it('single prefix', async () => {
+      app.options.prefix = '!'
+      app.prepare()
+
+      await session1.shouldHaveReply('cmd2', 'cmd2:123')
+      await session4.shouldHaveNoReply('cmd2')
+      await session1.shouldHaveReply('!cmd2', 'cmd2:123')
+      await session4.shouldHaveReply('!cmd2', 'cmd2:123')
+      await session1.shouldHaveNoReply('.cmd2')
+      await session4.shouldHaveNoReply('.cmd2')
+    })
+
+    it('multiple prefixes', async () => {
+      app.options.prefix = ['!', '.']
+      app.prepare()
+
+      await session1.shouldHaveReply('cmd2', 'cmd2:123')
+      await session4.shouldHaveNoReply('cmd2')
+      await session1.shouldHaveReply('!cmd2', 'cmd2:123')
+      await session4.shouldHaveReply('!cmd2', 'cmd2:123')
+      await session1.shouldHaveReply('.cmd2', 'cmd2:123')
+      await session4.shouldHaveReply('.cmd2', 'cmd2:123')
+    })
+
+    it('optional prefix', async () => {
+      app.options.prefix = ['.', '']
+      app.prepare()
+
+      await session1.shouldHaveReply('cmd2', 'cmd2:123')
+      await session4.shouldHaveReply('cmd2', 'cmd2:123')
+      await session1.shouldHaveNoReply('!cmd2')
+      await session4.shouldHaveNoReply('!cmd2')
+      await session1.shouldHaveReply('.cmd2', 'cmd2:123')
+      await session4.shouldHaveReply('.cmd2', 'cmd2:123')
+    })
+
+    it('no prefix', async () => {
+      app.options.prefix = null
+      app.prepare()
+
+      await session1.shouldHaveReply('cmd2', 'cmd2:123')
+      await session4.shouldHaveReply('cmd2', 'cmd2:123')
+      await session1.shouldHaveNoReply('!cmd2')
+      await session4.shouldHaveNoReply('!cmd2')
+      await session1.shouldHaveNoReply('.cmd2')
+      await session4.shouldHaveNoReply('.cmd2')
+    })
+  })
+
+  describe('nickname prefix', () => {
+    before(() => {
+      app.options.prefix = '-'
+      app.prepare()
+    })
+
+    after(() => {
+      app.options.prefix = null
+      app.prepare()
+    })
+
+    it('no nickname', async () => {
+      await session1.shouldHaveReply('cmd2', 'cmd2:123')
+      await session4.shouldHaveNoReply('cmd2')
+      await session1.shouldHaveReply('-cmd2', 'cmd2:123')
+      await session4.shouldHaveReply('-cmd2', 'cmd2:123')
+      await session4.shouldHaveReply(`[CQ:at,qq=${app.selfId}] cmd2`, 'cmd2:123')
+    })
+
+    it('single nickname', async () => {
+      app.options.nickname = 'koishi'
+      app.prepare()
+
+      await session1.shouldHaveReply('koishi, cmd2', 'cmd2:123')
+      await session4.shouldHaveReply('koishi, cmd2', 'cmd2:123')
+      await session1.shouldHaveReply('koishi\n cmd2', 'cmd2:123')
+      await session4.shouldHaveReply('koishi\n cmd2', 'cmd2:123')
+      await session1.shouldHaveReply('@koishi cmd2', 'cmd2:123')
+      await session4.shouldHaveReply('@koishi cmd2', 'cmd2:123')
+      await session1.shouldHaveNoReply('komeiji, cmd2')
+      await session4.shouldHaveNoReply('komeiji, cmd2')
+    })
+
+    it('multiple nicknames', async () => {
+      app.options.nickname = ['komeiji', 'koishi']
+      app.prepare()
+
+      await session1.shouldHaveReply('cmd2', 'cmd2:123')
+      await session4.shouldHaveNoReply('cmd2')
+      await session1.shouldHaveReply('-cmd2', 'cmd2:123')
+      await session4.shouldHaveReply('-cmd2', 'cmd2:123')
+      await session1.shouldHaveReply('koishi, cmd2', 'cmd2:123')
+      await session4.shouldHaveReply('koishi, cmd2', 'cmd2:123')
+      await session1.shouldHaveReply('komeiji cmd2', 'cmd2:123')
+      await session4.shouldHaveReply('komeiji cmd2', 'cmd2:123')
+    })
+  })
+
   describe('middleware validation', () => {
     app.middleware((session) => {
       if (session.message === 'mid') return session.$send('mid')

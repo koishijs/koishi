@@ -92,11 +92,7 @@ export class App extends Context {
     }
     this.server = Reflect.construct(server, [this])
 
-    const { nickname, prefix } = this.options
-    const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
-    const prefixes = Array.isArray(prefix) ? prefix : [prefix || '']
-    this._nameRE = createLeadingRE(nicknames, '@?', '([,，]\\s*|\\s+)')
-    this._prefixRE = createLeadingRE(prefixes)
+    this.prepare()
 
     // bind built-in event listeners
     this.middleware(this._preprocess.bind(this))
@@ -107,6 +103,14 @@ export class App extends Context {
     this.plugin(suggest)
     this.plugin(shortcut)
     this.plugin(help)
+  }
+
+  prepare() {
+    const { nickname, prefix } = this.options
+    const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
+    const prefixes = Array.isArray(prefix) ? prefix : [prefix || '']
+    this._nameRE = createLeadingRE(nicknames, '@?', '([,，]\\s*|\\s+)')
+    this._prefixRE = createLeadingRE(prefixes)
   }
 
   async getSelfIds() {
