@@ -14,11 +14,12 @@ export namespace Message {
 
   // suggest.ts
   export let SUGGESTION = '你要找的是不是%s？'
-  export let SUGGEST_COMMAND_PREFIX = ''
-  export let SUGGEST_COMMAND_SUFFIX = '发送空行或句号以调用推测的指令。'
+  export let COMMAND_SUGGEST_PREFIX = ''
+  export let COMMAND_SUGGEST_SUFFIX = '发送空行或句号以调用推测的指令。'
 
   // help.ts
-  export let COMMAND_NOT_FOUND = '指令未找到。'
+  export let HELP_SUGGEST_PREFIX = '指令未找到。'
+  export let HELP_SUGGEST_SUFFIX = '发送空行或句号以调用推测的指令。'
   export let GLOBAL_HELP_EPILOG = [
     '群聊普通指令可以通过“@我+指令名”的方式进行触发。',
     '私聊或全局指令则不需要添加上述前缀，直接输入指令名即可触发。',

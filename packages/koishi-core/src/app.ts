@@ -64,6 +64,7 @@ export class App extends Context {
     promptTimeout: Time.minute,
     userCacheAge: Time.minute,
     groupCacheAge: 5 * Time.minute,
+    similarityCoefficient: 0.4,
     processMessage: message => simplify(message.trim()),
   }
 
@@ -160,6 +161,7 @@ export class App extends Context {
     }
 
     // store parsed message
+    session.$parsed = message
     session.$argv = session.$parse(message, '', true)
 
     if (this.database) {
