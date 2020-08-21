@@ -1,8 +1,8 @@
 import { Context, NextFunction } from './context'
 import { User, Group, Tables, TableType } from './database'
-import { noop, camelCase, paramCase, Logger } from 'koishi-utils'
+import { noop, camelCase, paramCase, Logger, coerce } from 'koishi-utils'
 import { Session } from './session'
-import { inspect, format, types } from 'util'
+import { inspect, format } from 'util'
 import escapeRegex from 'escape-string-regexp'
 
 const logger = Logger.create('command')
@@ -520,7 +520,7 @@ export class Command<U extends User.Field = never, G extends Group.Field = never
       await this.app.serial(session, 'command', argv)
     } catch (error) {
       if (!state) throw error
-      let { stack } = types.isNativeError(error) ? error : new Error(error as any)
+      let stack = coerce(error)
       if (lastCall) {
         const index = error.stack.indexOf(lastCall)
         stack = stack.slice(0, index - 1)

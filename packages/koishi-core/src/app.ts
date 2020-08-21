@@ -4,8 +4,7 @@ import { Context, Middleware, NextFunction } from './context'
 import { Group, User, Database } from './database'
 import { BotOptions, Server } from './server'
 import { Session } from './session'
-import { simplify, defineProperty, Time, Observed } from 'koishi-utils'
-import { types } from 'util'
+import { simplify, defineProperty, Time, Observed, coerce } from 'koishi-utils'
 import help from './plugins/help'
 import shortcut from './plugins/shortcut'
 import suggest from './plugins/suggest'
@@ -225,7 +224,7 @@ export class App extends Context {
         if (fallback) middlewares.push((_, next) => fallback(next))
         return middlewares[index++]?.(session, next)
       } catch (error) {
-        let { stack } = types.isNativeError(error) ? error : new Error(error as any)
+        let stack = coerce(error)
         if (prettyErrors) {
           const index = stack.indexOf(lastCall)
           stack = `${stack.slice(0, index)}Middleware stack:${midStack}`

@@ -46,3 +46,8 @@ export function assertProperty<O, K extends keyof O>(config: O, key: K) {
   if (!config[key]) throw new Error(`missing configuration "${key}"`)
   return config[key]
 }
+
+export function coerce(val: any) {
+  const { stack } = val instanceof Error ? val : new Error(val as any)
+  return stack
+}
