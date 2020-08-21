@@ -25,19 +25,6 @@ export interface SubTypeMap {
   send: null
 }
 
-export interface ResponsePayload {
-  delete?: boolean
-  ban?: boolean
-  banDuration?: number
-  kick?: boolean
-  reply?: string
-  autoEscape?: boolean
-  atSender?: boolean
-  approve?: boolean
-  remark?: string
-  reason?: string
-}
-
 /** CQHTTP Meta Information */
 export interface Meta<P extends PostType = PostType> {
   // type

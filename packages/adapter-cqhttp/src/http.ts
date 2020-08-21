@@ -5,6 +5,19 @@ import {} from 'koa-bodyparser'
 import { createHmac } from 'crypto'
 import axios from 'axios'
 
+export interface ResponsePayload {
+  delete?: boolean
+  ban?: boolean
+  banDuration?: number
+  kick?: boolean
+  reply?: string
+  autoEscape?: boolean
+  atSender?: boolean
+  approve?: boolean
+  remark?: string
+  reason?: string
+}
+
 declare module 'koishi-core/dist/session' {
   interface Session {
     _response?: (payload: ResponsePayload) => void
