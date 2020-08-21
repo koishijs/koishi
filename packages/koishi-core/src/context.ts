@@ -287,8 +287,9 @@ export class Context {
       }
     }
 
+    const warn = this.logger('bot').warn
     await Promise.all(Object.entries(assignMap).map(([id, groups]) => {
-      return this.app.bots[+id].sendGroupMessage(groups, message)
+      return this.app.bots[+id].sendGroupMessage(groups, message).catch(warn)
     }))
   }
 
