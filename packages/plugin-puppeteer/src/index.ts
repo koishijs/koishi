@@ -17,6 +17,10 @@ declare module 'koishi-core/dist/context' {
     getPage(): Promise<Page>
     freePage(page: Page): void
   }
+
+  interface EventMap {
+    'puppeteer/validate'(url: string): string
+  }
 }
 
 const logger = Logger.create('puppeteer')
@@ -39,15 +43,15 @@ export interface Config {
   loadTimeout?: number
   idleTimeout?: number
   maxLength?: number
+  protocols?: string[]
 }
 
 export const defaultConfig: Config = {
   loadTimeout: 10000, // 10s
   idleTimeout: 30000, // 30s
   maxLength: 1000000, // 1MB
+  protocols: ['http', 'https'],
 }
-
-const allowedProtocols = ['http', 'https']
 
 export const name = 'puppeteer'
 
@@ -83,9 +87,12 @@ export function apply(ctx: Context, config: Config = {}) {
       const scheme = /^(\w+):\/\//.exec(url)
       if (!scheme) {
         url = 'http://' + url
-      } else if (!allowedProtocols.includes(scheme[1])) {
+      } else if (!config.protocols.includes(scheme[1])) {
         return '请输入正确的网址。'
       }
+
+      const result = ctx.bail('puppeteer/validate', url)
+      if (typeof result === 'string') return result
 
       let loaded = false
       const page = await ctx.getPage()
