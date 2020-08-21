@@ -5,17 +5,17 @@ import escapeRegex from 'escape-string-regexp'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/state' (state: SessionState): void
-    'dialogue/receive' (state: SessionState): void | boolean
-    'dialogue/prepare' (state: SessionState): void
-    'dialogue/before-attach-user' (state: SessionState, userFields: Set<User.Field>): void
-    'dialogue/attach-user' (state: SessionState): void | boolean
-    'dialogue/before-send' (state: SessionState): void | boolean | Promise<void | boolean>
-    'dialogue/send' (state: SessionState): void
+    'dialogue/state'(state: SessionState): void
+    'dialogue/receive'(state: SessionState): void | boolean
+    'dialogue/prepare'(state: SessionState): void
+    'dialogue/before-attach-user'(state: SessionState, userFields: Set<User.Field>): void
+    'dialogue/attach-user'(state: SessionState): void | boolean
+    'dialogue/before-send'(state: SessionState): void | boolean | Promise<void | boolean>
+    'dialogue/send'(state: SessionState): void
   }
 
   interface Context {
-    getSessionState (this: Context, session: Session): SessionState
+    getSessionState(this: Context, session: Session): SessionState
   }
 }
 
@@ -42,7 +42,7 @@ declare module './utils' {
       nickname?: string | string[]
       appellationTimeout?: number
       maxRedirections?: number
-      _stripQuestion? (source: string): Question
+      _stripQuestion?(source: string): Question
     }
   }
 }

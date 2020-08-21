@@ -16,7 +16,7 @@ declare module '../utils' {
   namespace Dialogue {
     interface Config {
       affinityFields?: Iterable<User.Field>
-      getAffinity? (user: Partial<User>): number
+      getAffinity?(user: Partial<User>): number
     }
   }
 }

@@ -9,10 +9,10 @@ export interface SearchDetails extends Array<string> {
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/list' (dialogue: Dialogue, output: string[], prefix: string, argv: Dialogue.Argv): void
-    'dialogue/detail-short' (dialogue: Dialogue, output: SearchDetails, argv: Dialogue.Argv): void
-    'dialogue/before-search' (argv: Dialogue.Argv, test: DialogueTest): void | boolean
-    'dialogue/search' (argv: Dialogue.Argv, test: DialogueTest, dialogue: Dialogue[]): Promise<void>
+    'dialogue/list'(dialogue: Dialogue, output: string[], prefix: string, argv: Dialogue.Argv): void
+    'dialogue/detail-short'(dialogue: Dialogue, output: SearchDetails, argv: Dialogue.Argv): void
+    'dialogue/before-search'(argv: Dialogue.Argv, test: DialogueTest): void | boolean
+    'dialogue/search'(argv: Dialogue.Argv, test: DialogueTest, dialogue: Dialogue[]): Promise<void>
   }
 }
 

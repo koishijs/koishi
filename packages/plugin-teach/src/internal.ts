@@ -104,6 +104,10 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
+  function escapeString(str: string) {
+    return str.replace(/\\/gmi, '\\\\').replace(/\n/gmi, '\\n').replace(/"/gmi, '\\"')
+  }
+
   ctx.on('dialogue/mongo', ({ regexp, answer, question, original }, conditionals) => {
     if (regexp) {
       if (answer !== undefined) conditionals.push({ answer: { $regex: new RegExp(answer) } })
@@ -124,7 +128,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
               // eslint-disable-next-line no-eval
               $where: eval(`function () {
                 const regex = new RegExp(this.question)
-                return regex.test("${question.replace(/"/gmi, '\\"')}") || regex.test("${original.replace(/"/gmi, '\\"')}")
+                return regex.test("${escapeString(question)}") || regex.test("${escapeString(original)}")
               }`),
             },
           ],

@@ -5,12 +5,12 @@ import { getDetails, formatDetails, formatAnswer, formatQuestionAnswers } from '
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/before-modify' (argv: Dialogue.Argv): void | string | Promise<void | string>
-    'dialogue/modify' (argv: Dialogue.Argv, dialogue: Dialogue): void
-    'dialogue/before-create' (argv: Dialogue.Argv): void | boolean | Promise<void | boolean>
-    'dialogue/after-modify' (argv: Dialogue.Argv): void | Promise<void>
-    'dialogue/before-detail' (argv: Dialogue.Argv): void | Promise<void>
-    'dialogue/detail' (dialogue: Dialogue, output: string[], argv: Dialogue.Argv): void | Promise<void>
+    'dialogue/before-modify'(argv: Dialogue.Argv): void | string | Promise<void | string>
+    'dialogue/modify'(argv: Dialogue.Argv, dialogue: Dialogue): void
+    'dialogue/before-create'(argv: Dialogue.Argv): void | boolean | Promise<void | boolean>
+    'dialogue/after-modify'(argv: Dialogue.Argv): void | Promise<void>
+    'dialogue/before-detail'(argv: Dialogue.Argv): void | Promise<void>
+    'dialogue/detail'(dialogue: Dialogue, output: string[], argv: Dialogue.Argv): void | Promise<void>
   }
 }
 
