@@ -4,6 +4,7 @@ import { Session } from '../session'
 import { User } from '../database'
 import { Command, ParsedArgv } from '../command'
 import { App } from '../app'
+import { Message } from './message'
 
 export type UserType<T, U extends User.Field = User.Field> = T | ((user: Pick<User, U>) => T)
 
@@ -40,18 +41,6 @@ declare module '../command' {
     validate?: RegExp | ((value: any) => void | string | boolean)
   }
 }
-
-const messages = {
-  LOW_AUTHORITY: '权限不足。',
-  TOO_FREQUENT: '调用过于频繁，请稍后再试。',
-  INSUFFICIENT_ARGUMENTS: '缺少参数，请检查指令语法。',
-  REDUNANT_ARGUMENTS: '存在多余参数，请检查指令语法。',
-  INVALID_OPTION: '选项 %s 输入无效，%s',
-  UNKNOWN_OPTIONS: '存在未知选项 %s，请检查指令语法。',
-  CHECK_SYNTAX: '请检查指令语法。',
-  SHOW_THIS_MESSAGE: '显示本信息',
-  USAGE_EXHAUSTED: '调用次数已达上限。',
-} as const
 
 export function getUsageName(command: Command) {
   return command.config.usageName || command.name
@@ -116,11 +105,11 @@ export default function apply(app: App) {
     if (command.config.checkArgCount) {
       const nextArg = command._arguments[args.length]
       if (nextArg?.required) {
-        return sendHint(messages.INSUFFICIENT_ARGUMENTS)
+        return sendHint(Message.INSUFFICIENT_ARGUMENTS)
       }
       const finalArg = command._arguments[command._arguments.length - 1]
       if (args.length > command._arguments.length && !finalArg.greedy && !finalArg.variadic) {
-        return sendHint(messages.REDUNANT_ARGUMENTS)
+        return sendHint(Message.REDUNANT_ARGUMENTS)
       }
     }
 
@@ -128,7 +117,7 @@ export default function apply(app: App) {
     if (command.config.checkUnknown) {
       const unknown = Object.keys(options).filter(key => !command._options[key])
       if (unknown.length) {
-        return sendHint(messages.UNKNOWN_OPTIONS, unknown.join(', '))
+        return sendHint(Message.UNKNOWN_OPTIONS, unknown.join(', '))
       }
     }
 
@@ -138,7 +127,7 @@ export default function apply(app: App) {
         ? !validate.test(options[name])
         : validate(options[name])
       if (result) {
-        return sendHint(messages.INVALID_OPTION, name, result === true ? messages.CHECK_SYNTAX : result)
+        return sendHint(Message.INVALID_OPTION, name, result === true ? Message.CHECK_SYNTAX : result)
       }
     }
 
@@ -147,12 +136,12 @@ export default function apply(app: App) {
 
     // check authority
     if (command.config.authority > session.$user.authority) {
-      return sendHint(messages.LOW_AUTHORITY)
+      return sendHint(Message.LOW_AUTHORITY)
     }
     for (const option of Object.values(command._options)) {
       if (option.name in options) {
         if (option.authority > session.$user.authority) {
-          return sendHint(messages.LOW_AUTHORITY)
+          return sendHint(Message.LOW_AUTHORITY)
         }
         if (option.notUsage) isUsage = false
       }
@@ -165,11 +154,11 @@ export default function apply(app: App) {
       const maxUsage = command.getConfig('maxUsage', session)
 
       if (maxUsage < Infinity && checkUsage(name, session.$user, maxUsage)) {
-        return sendHint(messages.USAGE_EXHAUSTED)
+        return sendHint(Message.USAGE_EXHAUSTED)
       }
 
       if (minInterval > 0 && checkTimer(name, session.$user, minInterval)) {
-        return sendHint(messages.TOO_FREQUENT)
+        return sendHint(Message.TOO_FREQUENT)
       }
     }
   })

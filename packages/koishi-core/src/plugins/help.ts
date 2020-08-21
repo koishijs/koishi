@@ -4,6 +4,7 @@ import { Command, ParsedArgv } from '../command'
 import { Session } from '../session'
 import { App } from '../app'
 import { Context } from '../context'
+import { Message } from './message'
 
 export type CommandUsage<U extends User.Field, G extends Group.Field> = string | ((this: Command<U, G>, session: Session<U, G>) => string | Promise<string>)
 
@@ -129,9 +130,7 @@ function getCommandList(prefix: string, context: Context, session: Session<Valid
 function showGlobalHelp(context: Context, session: Session<'authority' | 'timers' | 'usage'>, config: HelpConfig) {
   const output = [
     ...getCommandList('当前可用的指令有', context, session, null, config),
-    '群聊普通指令可以通过“@我+指令名”的方式进行触发。',
-    '私聊或全局指令则不需要添加上述前缀，直接输入指令名即可触发。',
-    '输入“帮助+指令名”查看特定指令的语法和使用示例。',
+    Message.HELP_EPILOG,
   ]
   if (context.app.options.globalHelpMessage) {
     output.push(context.app.options.globalHelpMessage)

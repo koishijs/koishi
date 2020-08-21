@@ -1,5 +1,7 @@
 import { NextFunction, Context, Middleware } from '../context'
 import { Session } from '../session'
+import { Message } from './message'
+import { format } from 'util'
 import leven from 'leven'
 
 declare module '../session' {
@@ -62,7 +64,7 @@ Session.prototype.$suggest = function $suggest(this: Session, options: SuggestOp
   if (!suggestions) return next(() => this.$send(prefix))
 
   return next(() => {
-    const message = prefix + `你要找的是不是${suggestions.map(name => `“${name}”`).join('或')}？`
+    const message = prefix + format(Message.SUGGESTION, suggestions.map(name => `“${name}”`).join('或'))
     if (suggestions.length > 1) return this.$send(message)
 
     const dispose = this.$use((session, next) => {
@@ -90,7 +92,8 @@ export default function apply(ctx: Context) {
       target,
       next,
       items,
-      suffix: '发送空行或句号以调用推测的指令。',
+      prefix: Message.SUGGEST_COMMAND_PREFIX,
+      suffix: Message.SUGGEST_COMMAND_SUFFIX,
       coefficient: ctx.app.options.similarityCoefficient,
       async apply(suggestion, next) {
         const newMessage = suggestion + message.slice(target.length)
