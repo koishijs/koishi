@@ -34,7 +34,7 @@
     "koishi"
   ],
   "devDependencies": {
-    "@types/koa": "^2.11.3",
+    "@types/koa": "^2.11.4",
     "@types/lru-cache": "^5.1.0",
     "koishi-test-utils": "^4.0.0-beta.6"
   },

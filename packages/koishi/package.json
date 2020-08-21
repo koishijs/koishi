@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "cac": "^6.6.1",
-    "kleur": "^4.1.0",
+    "kleur": "^4.1.1",
     "koishi-core": "^2.0.0-beta.14",
     "koishi-adapter-cqhttp": "^1.0.0-beta.3",
     "koishi-plugin-common": "^3.0.0-beta.10",
