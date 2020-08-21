@@ -15,6 +15,7 @@ const cqTypes = {
   video: '短视频',
   image: '图片',
   music: '音乐',
+  reply: '回复',
   forward: '合并转发',
   dice: '掷骰子',
   rps: '猜拳',
@@ -59,7 +60,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
     let output = ''
     for (const code of codes) {
       if (typeof code === 'string') {
-        output += code
+        output += CQCode.unescape(code)
       } else if (code.type === 'at') {
         if (code.data.qq === 'all') {
           output += '@全体成员'
