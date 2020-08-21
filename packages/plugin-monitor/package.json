@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-monitor",
-  "version": "1.0.0-beta.10",
+  "version": "1.0.0-beta.11",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -21,7 +21,9 @@
   },
   "homepage": "https://github.com/koishijs/koishi#readme",
   "peerDependencies": {
-    "koishi-core": "^2.0.0-beta.14",
+    "koishi-core": "^2.0.0-rc.0"
+  },
+  "dependencies": {
     "koishi-utils": "^3.0.1"
   }
 }

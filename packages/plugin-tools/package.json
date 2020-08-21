@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-tools",
-  "version": "1.0.0-beta.8",
+  "version": "1.0.0-beta.9",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -20,18 +20,18 @@
     "url": "https://github.com/koishijs/koishi/issues"
   },
   "homepage": "https://github.com/koishijs/koishi#readme",
-  "peerDependencies": {
-    "koishi-core": "^2.0.0-beta.14",
-    "koishi-utils": "^3.0.1"
-  },
-  "dependencies": {
-    "axios": "^0.19.2",
-    "cheerio": "^1.0.0-rc.3",
-    "qrcode": "^1.4.4",
-    "xml-js": "^1.6.11"
-  },
   "devDependencies": {
     "@types/cheerio": "^0.22.21",
     "@types/qrcode": "^1.3.5"
+  },
+  "peerDependencies": {
+    "koishi-core": "^2.0.0-rc.0"
+  },
+  "dependencies": {
+    "axios": "^0.20.0",
+    "cheerio": "^1.0.0-rc.3",
+    "qrcode": "^1.4.4",
+    "xml-js": "^1.6.11",
+    "koishi-utils": "^3.0.1"
   }
 }

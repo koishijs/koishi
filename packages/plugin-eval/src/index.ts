@@ -130,7 +130,7 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   const blacklist = [...defaultConfig.blacklist, ...config.blacklist]
-  ctx.on('before-command', async ({ command, session }) => {
+  ctx.on('before-command', ({ command, session }) => {
     if (blacklist.includes(command.name) && session._isEval) {
       return `不能在 evaluate 指令中调用 ${command.name} 指令。`
     }
