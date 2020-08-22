@@ -90,7 +90,7 @@ export function apply(ctx: Context) {
       }
 
       const schedule = await database.createSchedule(time, interval, options.rest, session)
-      await session.$send(`日程已创建，编号为 ${schedule.id}。`)
-      return inspectSchedule(schedule)
+      inspectSchedule(schedule)
+      return `日程已创建，编号为 ${schedule.id}。`
     })
 }
