@@ -43,28 +43,15 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/mongo', (test, conditionals) => {
     if (!test.groups || !test.groups.length) return
-    const q1: FilterQuery<Dialogue> = []
-    for (const group of test.groups) {
-      q1.push({ groups: { $eleMatch: { $eq: group } } })
-    }
-    const q2: FilterQuery<Dialogue> = []
-    for (const group of test.groups) {
-      q2.push({ groups: { $not: { $eleMatch: { $eq: group } } } })
-    }
+    const $and: FilterQuery<Dialogue>[] = test.groups.map(group => ({ $not: { groups: group } }))
+    $and.push({ flag: { [test.reversed ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag.complement } })
     conditionals.push({
       $or: [
         {
-          $not: {
-            flag: { [test.reversed ? '$bitsAllClear' : '$bitsAllSet']: Dialogue.Flag.complement },
-            $and: q1,
-          },
+          flag: { [test.reversed ? '$bitsAllClear' : '$bitsAllSet']: Dialogue.Flag.complement },
+          groups: { $all: test.groups },
         },
-        {
-          $not: {
-            flag: { [test.reversed ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag.complement },
-            $and: q2,
-          },
-        },
+        { $and },
       ],
     })
   })
