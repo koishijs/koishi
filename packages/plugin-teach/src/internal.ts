@@ -195,11 +195,10 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.on('dialogue/before-create', async ({ options, session, target }) => {
+  ctx.on('dialogue/before-modify', async ({ options, target }) => {
     // 添加问答时缺少问题或回答
-    if (!target && !(options.question && options.answer)) {
-      await session.$send('缺少问题或回答，请检查指令语法。')
-      return true
+    if (options.create && !target && !(options.question && options.answer)) {
+      return '缺少问题或回答，请检查指令语法。'
     }
   })
 
