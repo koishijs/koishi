@@ -88,8 +88,8 @@ export function apply(ctx: Context, config: Config = {}) {
   const interactions: Record<number, Middleware> = {}
 
   ctx.middleware((session, next) => {
-    const middleware = interactions[session.$reply] || ((_, fallback) => next(fallback))
-    return middleware(session, next)
+    const middleware = interactions[session.$reply]
+    return middleware ? middleware(session, next) : next()
   })
 
   function registerHandler<T extends EventNames.All>(event: T, handler: (payload: Payload<T>) => [string, Middleware?]) {

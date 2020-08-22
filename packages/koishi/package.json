@@ -42,7 +42,7 @@
     "kleur": "^4.1.1",
     "koishi-core": "^2.0.0-rc.2",
     "koishi-adapter-cqhttp": "^1.0.0-rc.1",
-    "koishi-plugin-common": "^3.0.0-beta.13",
+    "koishi-plugin-common": "^3.0.0-beta.14",
     "koishi-plugin-mysql": "^2.0.0-beta.8",
     "koishi-plugin-schedule": "^2.0.0-beta.12",
     "koishi-plugin-status": "^2.0.0-beta.12",
