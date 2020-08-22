@@ -1,4 +1,5 @@
 import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
+import MongoDatabase from 'koishi-plugin-mongo/dist/database'
 import { Group, extendDatabase } from 'koishi-core'
 import { OkPacket } from 'mysql'
 
@@ -12,12 +13,12 @@ declare module 'koishi-core/dist/database' {
   }
 
   interface Database {
-    getSubscribes (ids?: number[], keys?: SubscribeField[]): Promise<Subscribe[]>
-    findSubscribe (name: string[], keys?: SubscribeField[]): Promise<Subscribe[]>
-    findSubscribe (name: string, keys?: SubscribeField[]): Promise<Subscribe>
-    setSubscribe (id: number, data: Partial<Subscribe>): Promise<any>
-    createSubscribe (options: SubscribeOptions): Promise<Subscribe>
-    removeSubscribe (name: string): Promise<boolean>
+    getSubscribes(ids?: number[], keys?: SubscribeField[]): Promise<Subscribe[]>
+    findSubscribe(name: string[], keys?: SubscribeField[]): Promise<Subscribe[]>
+    findSubscribe(name: string, keys?: SubscribeField[]): Promise<Subscribe>
+    setSubscribe(id: number, data: Partial<Subscribe>): Promise<any>
+    createSubscribe(options: SubscribeOptions): Promise<Subscribe>
+    removeSubscribe(name: string): Promise<boolean>
   }
 }
 
@@ -76,4 +77,40 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
 
 extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields }) => {
   listFields.push('subscribe.names')
+})
+
+extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
+  async getSubscribes(ids, keys = subscribeKeys) {
+    if (!ids) return this.db.collection('subscribe').find().toArray()
+    if (!ids.length) return []
+    const p = {}
+    for (const key of keys) p[key] = 1
+    return this.db.collection('subscribe').find({ _id: { $in: ids } }).project(p).toArray()
+  },
+
+  async findSubscribe(names: string | string[], keys: SubscribeField[] = subscribeKeys) {
+    const isSingle = typeof names === 'string'
+    if (isSingle) names = [names as string]
+    const p = {}
+    for (const key of keys) p[key] = 1
+    const data = await this.db.collection('subscribe').find({ names: { $elemMatch: { $in: names } } }).project(p).toArray()
+    return isSingle ? data[0] : data as any
+  },
+
+  async removeSubscribe(name) {
+    const result = await this.db.collection('subscribe').deleteMany({ names: { $elemMatch: { $eq: name } } })
+    return !!result.deletedCount
+  },
+
+  setSubscribe(_id, data) {
+    return this.db.collection('subscribe').updateOne({ _id }, { $set: data })
+  },
+
+  async createSubscribe(options) {
+    let _id = 1
+    const [latest] = await this.db.collection('subscribe').find().sort('_id', -1).limit(1).toArray()
+    if (latest) _id = latest._id + 1
+    const res = await this.db.collection('subscribe').insertOne({ _id, id: _id, ...options })
+    return { id: res.insertedId, ...options, bilibiliStatus: false, mirrativStatus: false, twitcastingStatus: false }
+  },
 })

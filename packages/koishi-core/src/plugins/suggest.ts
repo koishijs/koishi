@@ -1,5 +1,8 @@
 import { NextFunction, Context, Middleware } from '../context'
 import { Session } from '../session'
+import { Message } from './message'
+import { getCommands } from './help'
+import { format } from 'util'
 import leven from 'leven'
 
 declare module '../session' {
@@ -47,7 +50,16 @@ Session.prototype.$prompt = function $prompt(this: Session, timeout = this.$app.
 }
 
 Session.prototype.$suggest = function $suggest(this: Session, options: SuggestOptions) {
-  const { target, items, next = callback => callback(), prefix = '', suffix, apply, coefficient = 0.4 } = options
+  const {
+    target,
+    items,
+    prefix = '',
+    suffix,
+    apply,
+    next = callback => callback(),
+    coefficient = this.$app.options.similarityCoefficient,
+  } = options
+
   let suggestions: string[], minDistance = Infinity
   for (const name of items) {
     const distance = leven(name, target)
@@ -62,7 +74,7 @@ Session.prototype.$suggest = function $suggest(this: Session, options: SuggestOp
   if (!suggestions) return next(() => this.$send(prefix))
 
   return next(() => {
-    const message = prefix + `你要找的是不是${suggestions.map(name => `“${name}”`).join('或')}？`
+    const message = prefix + format(Message.SUGGESTION, suggestions.map(name => `“${name}”`).join('或'))
     if (suggestions.length > 1) return this.$send(message)
 
     const dispose = this.$use((session, next) => {
@@ -78,22 +90,20 @@ Session.prototype.$suggest = function $suggest(this: Session, options: SuggestOp
 
 export default function apply(ctx: Context) {
   ctx.middleware((session, next) => {
-    const { $argv, message, $prefix, $appel, messageType } = session
+    const { $argv, $parsed, $prefix, $appel, messageType } = session
     if ($argv || messageType !== 'private' && $prefix === null && !$appel) return next()
-    const target = message.split(/\s/, 1)[0].toLowerCase()
+    const target = $parsed.split(/\s/, 1)[0].toLowerCase()
     if (!target) return next()
 
-    const items = Object.keys(ctx.app._commandMap)
-      .filter(name => ctx.app._commandMap[name].context.match(session))
-
+    const items = getCommands(session as any).flatMap(cmd => cmd._aliases)
     return session.$suggest({
       target,
       next,
       items,
-      suffix: '发送空行或句号以调用推测的指令。',
-      coefficient: ctx.app.options.similarityCoefficient,
+      prefix: Message.COMMAND_SUGGEST_PREFIX,
+      suffix: Message.COMMAND_SUGGEST_SUFFIX,
       async apply(suggestion, next) {
-        const newMessage = suggestion + message.slice(target.length)
+        const newMessage = suggestion + $parsed.slice(target.length)
         return this.$execute(newMessage, next)
       },
     })

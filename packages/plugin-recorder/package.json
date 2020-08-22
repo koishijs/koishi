@@ -34,13 +34,13 @@
     "recorder"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.0.0-rc.0"
+    "koishi-core": "^2.0.0-rc.1"
   },
   "devDependencies": {
     "del": "^5.1.0",
     "koishi-test-utils": "^4.0.0-beta.7"
   },
   "dependencies": {
-    "koishi-utils": "^3.0.1"
+    "koishi-utils": "^3.0.2"
   }
 }

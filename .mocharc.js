@@ -2,7 +2,7 @@ module.exports = {
   exit: true,
   extension: ['ts'],
   spec: [
-    'packages/koishi-core/tests/validation.spec.ts',
+    'packages/koishi-core/tests/runtime.spec.ts',
     'packages/koishi-core/tests/command.spec.ts',
     'packages/koishi-core/tests/middleware.spec.ts',
     'packages/koishi-core/tests/parser.spec.ts',

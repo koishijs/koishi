@@ -28,3 +28,9 @@ export const hyphenate = paramCase
 export function capitalize(source: string) {
   return source.charAt(0).toUpperCase() + source.slice(1)
 }
+
+export function escapeRegExp(source: string) {
+  return source
+    .replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
+    .replace(/-/g, '\\x2d')
+}

@@ -1,17 +1,7 @@
-import { observe, noop, pick, omit } from '../src'
+import { observe, noop } from '../src'
 import { fn } from 'jest-mock'
 import { expect } from 'chai'
 import '@shigma/chai-extended'
-
-describe('object utilities', () => {
-  it('pick', () => {
-    expect(pick({ a: 1, b: [2] }, ['b'])).to.deep.equal({ b: [2] })
-  })
-
-  it('omit', () => {
-    expect(omit({ a: 1, b: [2] }, ['b'])).to.deep.equal({ a: 1 })
-  })
-})
 
 describe('Observer API', () => {
   it('type checks', () => {

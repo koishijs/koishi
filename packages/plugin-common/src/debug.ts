@@ -9,6 +9,21 @@ export interface DebugOptions {
   refreshGroupName?: number
 }
 
+const cqTypes = {
+  face: '表情',
+  record: '语音',
+  video: '短视频',
+  image: '图片',
+  music: '音乐',
+  reply: '回复',
+  forward: '合并转发',
+  dice: '掷骰子',
+  rps: '猜拳',
+  poke: '戳一戳',
+  json: 'JSON',
+  xml: 'XML',
+}
+
 export function apply(ctx: Context, config: DebugOptions = {}) {
   const { refreshUserName = Time.hour, refreshGroupName = Time.hour, showUserId, showGroupId } = config
   const logger = Logger.create('message', true)
@@ -45,7 +60,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
     let output = ''
     for (const code of codes) {
       if (typeof code === 'string') {
-        output += code
+        output += CQCode.unescape(code)
       } else if (code.type === 'at') {
         if (code.data.qq === 'all') {
           output += '@全体成员'
@@ -60,10 +75,12 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
           }
           output += '@' + await userMap[id][0]
         }
-      } else if (code.type === 'face') {
-        output += `[face ${code.data.id}]`
+      } else if (code.type === 'share' || code.type === 'location') {
+        output += `[分享:${code.data.title}]`
+      } else if (code.type === 'contact') {
+        output += `[推荐${code.data.type === 'qq' ? '好友' : '群'}:${code.data.id}]`
       } else {
-        output += `[${code.type}]`
+        output += `[${cqTypes[code.type]}]`
       }
     }
     return output

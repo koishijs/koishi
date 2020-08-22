@@ -1,7 +1,6 @@
-import { Logger } from 'koishi-utils'
+import { Logger, escapeRegExp } from 'koishi-utils'
 import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
-import escapeRegExp from 'escape-string-regexp'
 
 /* eslint-disable import/first */
 

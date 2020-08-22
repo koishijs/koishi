@@ -1,11 +1,9 @@
-import escapeRegex from 'escape-string-regexp'
 import { Command } from './command'
 import { Context, Middleware, NextFunction } from './context'
 import { Group, User, Database } from './database'
 import { BotOptions, Server } from './server'
 import { Session } from './session'
-import { simplify, defineProperty, Time, Observed } from 'koishi-utils'
-import { types } from 'util'
+import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp } from 'koishi-utils'
 import help from './plugins/help'
 import shortcut from './plugins/shortcut'
 import suggest from './plugins/suggest'
@@ -33,7 +31,7 @@ export interface AppOptions extends BotOptions {
 }
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
-  return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegex).join('|')})${suffix}`) : /$^/
+  return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
 }
 
 export enum AppStatus { closed, opening, open, closing }
@@ -65,6 +63,7 @@ export class App extends Context {
     promptTimeout: Time.minute,
     userCacheAge: Time.minute,
     groupCacheAge: 5 * Time.minute,
+    similarityCoefficient: 0.4,
     processMessage: message => simplify(message.trim()),
   }
 
@@ -92,11 +91,7 @@ export class App extends Context {
     }
     this.server = Reflect.construct(server, [this])
 
-    const { nickname, prefix } = this.options
-    const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
-    const prefixes = Array.isArray(prefix) ? prefix : [prefix || '']
-    this._nameRE = createLeadingRE(nicknames, '@?', '([,，]\\s*|\\s+)')
-    this._prefixRE = createLeadingRE(prefixes)
+    this.prepare()
 
     // bind built-in event listeners
     this.middleware(this._preprocess.bind(this))
@@ -107,6 +102,14 @@ export class App extends Context {
     this.plugin(suggest)
     this.plugin(shortcut)
     this.plugin(help)
+  }
+
+  prepare() {
+    const { nickname, prefix } = this.options
+    const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
+    const prefixes = Array.isArray(prefix) ? prefix : [prefix || '']
+    this._nameRE = createLeadingRE(nicknames, '@?', '([,，]\\s*|\\s+)')
+    this._prefixRE = createLeadingRE(prefixes)
   }
 
   async getSelfIds() {
@@ -157,6 +160,7 @@ export class App extends Context {
     }
 
     // store parsed message
+    session.$parsed = message
     session.$argv = session.$parse(message, '', true)
 
     if (this.database) {
@@ -221,7 +225,7 @@ export class App extends Context {
         if (fallback) middlewares.push((_, next) => fallback(next))
         return middlewares[index++]?.(session, next)
       } catch (error) {
-        let { stack } = types.isNativeError(error) ? error : new Error(error as any)
+        let stack = coerce(error)
         if (prettyErrors) {
           const index = stack.indexOf(lastCall)
           stack = `${stack.slice(0, index)}Middleware stack:${midStack}`
@@ -240,10 +244,11 @@ export class App extends Context {
     await session.$group?._update()
   }
 
-  private _parse(message: string, { $prefix, $appel, messageType }: Session, builtin: boolean, terminator: string) {
+  private _parse(message: string, { $prefix, $appel, messageType }: Session, builtin: boolean, terminator = '') {
     // group message should have prefix or appel to be interpreted as a command call
     if (builtin && messageType !== 'private' && $prefix === null && !$appel) return
-    const name = message.split(/\s/, 1)[0]
+    terminator = escapeRegExp(terminator)
+    const name = message.split(new RegExp(`[\\s${terminator}]`), 1)[0]
     const index = name.lastIndexOf('/')
     const command = this.app._commandMap[name.slice(index + 1).toLowerCase()]
     if (!command) return

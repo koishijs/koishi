@@ -25,19 +25,6 @@ export interface SubTypeMap {
   send: null
 }
 
-export interface ResponsePayload {
-  delete?: boolean
-  ban?: boolean
-  banDuration?: number
-  kick?: boolean
-  reply?: string
-  autoEscape?: boolean
-  atSender?: boolean
-  approve?: boolean
-  remark?: string
-  reason?: string
-}
-
 /** CQHTTP Meta Information */
 export interface Meta<P extends PostType = PostType> {
   // type
@@ -88,6 +75,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   $argv?: ParsedArgv
   $appel?: boolean
   $prefix?: string = null
+  $parsed?: string
 
   private _delay?: number
   private _queued = Promise.resolve()
@@ -260,6 +248,9 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     }
     if (!argv) return next()
 
+    argv.next = next
+    argv.session = this
+    this.$argv = argv
     if (this.$app.database) {
       if (this.messageType === 'group') {
         await this.$observeGroup()
@@ -267,8 +258,6 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
       await this.$observeUser()
     }
 
-    argv.next = next
-    argv.session = this
     return argv.command.execute(argv)
   }
 }
