@@ -53,19 +53,18 @@ export default function apply(ctx: Context) {
   })
 
   ctx.on('dialogue/mongo', (test, conditionals) => {
-    if (test.matchTime !== undefined) {
-      conditionals.push({
-        startTime: { $gte: test.matchTime },
-        endTime: { $lte: test.matchTime },
-      })
+    const expr = {
+      $multiply: [
+        { $subtract: ['$endTime', '$startTime'] },
+        { $subtract: ['$startTime', test.matchTime] },
+        { $subtract: [test.matchTime, '$endTime'] },
+      ],
     }
-    if (test.mismatchTime !== undefined) {
-      conditionals.push({
-        $or: [
-          { startTime: { $gt: test.matchTime } },
-          { endTime: { $lt: test.matchTime } },
-        ],
-      })
+    if (test.matchTime !== undefined) {
+      conditionals.push({ $expr: { $gte: [expr, 0] } })
+    }
+    if (test.matchTime !== undefined) {
+      conditionals.push({ $expr: { $lt: [expr, 0] } })
     }
   })
 
