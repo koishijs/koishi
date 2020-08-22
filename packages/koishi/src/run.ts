@@ -26,7 +26,7 @@ process.on('SIGINT', () => {
   }
 })
 
-function createWorker (options: WorkerOptions) {
+function createWorker(options: WorkerOptions) {
   child = fork(resolve(__dirname, 'worker'), [], {
     execArgv: options['--'],
   })

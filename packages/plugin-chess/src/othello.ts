@@ -2,7 +2,7 @@ import { State, MoveResult } from './state'
 
 export const placement = 'grid'
 
-export function create (this: State) {
+export function create(this: State) {
   const { size } = this
   if (size % 2 !== 0 || size === 2) return '棋盘大小应为不小于 4 的 2 的倍数。'
   const mid = size / 2
@@ -23,7 +23,7 @@ const delta = [
   [-1, -1],
 ] as const
 
-function legal (state: State, x: number, y: number, value: -1 | 1) {
+function legal(state: State, x: number, y: number, value: -1 | 1) {
   let diff = 0n
   for (const [dx, dy] of delta) {
     let i = x + dx, j = y + dy
@@ -39,30 +39,30 @@ function legal (state: State, x: number, y: number, value: -1 | 1) {
   return diff
 }
 
-function hasLegalMove (state: State, value: -1 | 1) {
-  for (let i = 0; i < state.size; i ++) {
-    for (let j = 0; j < state.size; j ++) {
+function hasLegalMove(state: State, value: -1 | 1) {
+  for (let i = 0; i < state.size; i++) {
+    for (let j = 0; j < state.size; j++) {
       if (!state.get(i, j) && legal(state, i, j, value)) return true
     }
   }
 }
 
-function total (length: number, board: bigint) {
+function total(length: number, board: bigint) {
   let count = 0
-  for (let i = 0n; i < length; i ++) {
+  for (let i = 0n; i < length; i++) {
     count += board & 1n << i ? 1 : 0
   }
   return count
 }
 
-function check (state: State): MoveResult {
+function check(state: State): MoveResult {
   const length = state.size * state.size
   const bCount = total(length, state.bBoard)
   const wCount = total(length, state.wBoard)
   return Math.sign(bCount - wCount) || MoveResult.draw as any
 }
 
-export function update (this: State, x: number, y: number, value: -1 | 1): MoveResult {
+export function update(this: State, x: number, y: number, value: -1 | 1): MoveResult {
   const diff = legal(this, x, y, value)
   if (!diff) return MoveResult.illegal
   this.wBoard ^= diff

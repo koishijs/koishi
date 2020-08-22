@@ -21,7 +21,7 @@ export interface Options extends AlphaOptions, TranslateOptions {
 
 export const name = 'tools'
 
-export function apply (ctx: Context, config: Options = {}) {
+export function apply(ctx: Context, config: Options = {}) {
   ctx.command('tools', '实用工具')
 
   if (config.wolframAlphaAppId) ctx.plugin(require('./alpha'), config)

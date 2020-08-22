@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+
 import { get, Daemon, LiveInfo } from './monitor'
 
 interface MirrativStatus {
@@ -147,7 +149,7 @@ interface MirrativLiveData {
   orientation_v2: string
 }
 
-export default async function check (daemon: Daemon): Promise<LiveInfo> {
+export default async function check(daemon: Daemon): Promise<LiveInfo> {
   const user = await get<MirrativUserData>(`https://www.mirrativ.com/api/user/profile?user_id=${daemon.id}`)
   if (!user || !user.onlive) return
   const live = await get<MirrativLiveData>(`https://www.mirrativ.com/api/live/live?live_id=${user.onlive.live_id}`)

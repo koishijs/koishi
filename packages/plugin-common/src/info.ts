@@ -1,16 +1,16 @@
-import { Context, UserField, UserData, getTargetId } from 'koishi-core'
+import { Context, User, getTargetId } from 'koishi-core'
 
-type UserInfoCallback <K extends UserField = UserField> = (user: Pick<UserData, K>) => string
+type UserInfoCallback<K extends User.Field = User.Field> = (user: Pick<User, K>) => string
 
-interface Info <K extends UserField = UserField> {
+interface Info<K extends User.Field = User.Field> {
   order: number
-  callback: (user: Pick<UserData, K>) => string
+  callback: (user: Pick<User, K>) => string
 }
 
-const infoFields = new Set<UserField>(['authority'])
+const infoFields = new Set<User.Field>(['authority'])
 const infoList: Info[] = []
 
-export function registerUserInfo <K extends UserField> (callback: UserInfoCallback<K>, fields: Iterable<K> = [], order = 0) {
+export function registerUserInfo<K extends User.Field>(callback: UserInfoCallback<K>, fields: Iterable<K> = [], order = 0) {
   const index = infoList.findIndex(a => a.order > order)
   if (index >= 0) {
     infoList.splice(index, 0, { order, callback })
@@ -22,35 +22,35 @@ export function registerUserInfo <K extends UserField> (callback: UserInfoCallba
   }
 }
 
-export function apply (ctx: Context) {
+export function apply(ctx: Context) {
   ctx.command('info', '查看用户信息', { authority: 0 })
     .alias('profile')
     .shortcut('我的信息')
     .userFields(['name'])
-    .before(meta => !meta.$app.database)
-    .option('-u, --user [target]', '指定目标', { authority: 3 })
-    .action(async ({ meta, options }) => {
-      let user: UserData
+    .before(session => !session.$app.database)
+    .option('user', '-u [target]  指定目标', { authority: 3 })
+    .action(async ({ session, options }) => {
+      let user: User
       const output = []
       if (options.user) {
         const id = getTargetId(options.user)
-        if (!id) return meta.$send('未找到用户。')
+        if (!id) return '未找到用户。'
         user = await ctx.database.getUser(id, -1, Array.from(infoFields))
-        if (!user) return meta.$send('未找到用户。')
+        if (!user) return '未找到用户。'
         if (+user.name === id) {
           output.push(`${id} 的权限为 ${user.authority} 级。`)
         } else {
           output.push(`${user.name} (${id}) 的权限为 ${user.authority} 级。`)
         }
       } else {
-        user = await ctx.database.getUser(meta.userId, Array.from(infoFields))
-        output.push(`${meta.$username}，您的权限为 ${user.authority} 级。`)
+        user = await ctx.database.getUser(session.userId, Array.from(infoFields))
+        output.push(`${session.$username}，您的权限为 ${user.authority} 级。`)
       }
 
       for (const { callback } of infoList) {
         const result = callback(user)
         if (result) output.push(result)
       }
-      return meta.$send(output.join('\n'))
+      return output.join('\n')
     })
 }

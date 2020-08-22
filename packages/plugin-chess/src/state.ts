@@ -1,5 +1,7 @@
-import { SVG } from 'koishi-plugin-puppeteer'
-import { Meta, App } from 'koishi-core'
+/* global BigInt */
+
+import * as puppeteer from 'koishi-plugin-puppeteer'
+import { Session, App } from 'koishi-core'
 
 const numbers = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
 const alphabet = 'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ'
@@ -21,43 +23,44 @@ export class State {
   history: bigint[] = []
   readonly area: bigint
   readonly full: bigint
-  imageMode = true
-  update: (x: number, y: number, value: 1 | -1) => MoveResult
+  imageMode: boolean
+  update: (this: State, x: number, y: number, value: 1 | -1) => MoveResult | string
 
-  constructor (public app: App, public readonly rule: string, public readonly size: number, public readonly placement: 'cross' | 'grid') {
+  constructor(public app: App, public readonly rule: string, public readonly size: number, public readonly placement: 'cross' | 'grid') {
     this.area = BigInt(size * size)
     this.full = (1n << this.area) - 1n
+    this.imageMode = !!app.browser
   }
 
-  get pBoard () {
+  get pBoard() {
     return this.next === this.p2 ? this.wBoard : this.bBoard
   }
 
-  set pBoard (value) {
+  set pBoard(value) {
     this.next === this.p2 ? this.wBoard = value : this.bBoard = value
   }
 
-  get nBoard () {
+  get nBoard() {
     return this.next === this.p2 ? this.bBoard : this.wBoard
   }
 
-  set nBoard (value) {
+  set nBoard(value) {
     this.next === this.p2 ? this.bBoard = value : this.wBoard = value
   }
 
-  get isFull () {
+  get isFull() {
     return !((this.bBoard | this.wBoard) ^ this.full)
   }
 
-  bit (x: number, y: number) {
+  bit(x: number, y: number) {
     return 1n << BigInt(x * this.size + y)
   }
 
-  inRange (x: number, y: number) {
+  inRange(x: number, y: number) {
     return x >= 0 && y >= 0 && x < this.size && y < this.size
   }
 
-  get (x: number, y: number): 0 | 1 | -1 {
+  get(x: number, y: number): 0 | 1 | -1 {
     if (!this.inRange(x, y)) return 0
     const p = 1n << BigInt(x * this.size + y)
     if (p & this.bBoard) return 1
@@ -65,9 +68,10 @@ export class State {
     return 0
   }
 
-  checkUser (userId: number) {}
+  checkUser(userId: number) {}
 
-  drawSvg (x?: number, y?: number) {
+  drawSvg(x?: number, y?: number) {
+    const { SVG } = require('koishi-plugin-puppeteer') as typeof puppeteer
     const { size, placement } = this
     const viewSize = size + (placement === 'cross' ? 2 : 3)
     const svg = new SVG({ viewSize, size: Math.max(512, viewSize * 32) }).fill('white')
@@ -77,7 +81,7 @@ export class State {
       strokeWidth: 0.08,
       strokeLinecap: 'round',
     })
-  
+
     const textGroup = svg.g({
       fontSize: '0.75',
       fontWeight: 'normal',
@@ -93,10 +97,10 @@ export class State {
       stroke: 'black',
       strokeWidth: 0.08,
     })
-  
+
     const verticalOffset = placement === 'cross' ? 0.3 : 0.8
     const horizontalOffset = placement === 'cross' ? 0 : 0.5
-    for (let index = 2; index < viewSize; ++ index) {
+    for (let index = 2; index < viewSize; ++index) {
       lineGroup.line(index, 2, index, viewSize - 1)
       lineGroup.line(2, index, viewSize - 1, index)
       if (index < size + 2) {
@@ -142,11 +146,11 @@ export class State {
     return svg
   }
 
-  drawImage (x?: number, y?: number) {
+  drawImage(x?: number, y?: number) {
     return this.drawSvg(x, y).render(this.app)
   }
 
-  drawText (x?: number, y?: number) {
+  drawText(x?: number, y?: number) {
     const max = this.size - 1
     let output = '　' + numbers.slice(0, this.size)
     for (let i = 0; i < this.size; i += 1) {
@@ -155,29 +159,29 @@ export class State {
         const value = this.get(i, j)
         output += value === 1 ? x === i && y === j ? '▲' : '●'
           : value === -1 ? x === i && y === j ? '△' : '○'
-          : i === 0 ? j === 0 ? '┌' : j === max ? '┐' : '┬'
-          : i === max ? j === 0 ? '└' : j === max ? '┘' : '┴'
-          : j === 0 ? '├' : j === max ? '┤' : '┼'
+            : i === 0 ? j === 0 ? '┌' : j === max ? '┐' : '┬'
+              : i === max ? j === 0 ? '└' : j === max ? '┘' : '┴'
+                : j === 0 ? '├' : j === max ? '┤' : '┼'
       }
     }
     return output
   }
 
-  async draw (meta: Meta, message: string = '', x?: number, y?: number) {
+  async draw(session: Session, message: string = '', x?: number, y?: number) {
     if (this.imageMode) {
       const [image] = await Promise.all([
         this.drawImage(x, y),
-        message && meta.$send(message),
+        message && session.$send(message),
       ])
-      await meta.$send(image)
+      await session.$send(image)
     } else {
       if (message) message += '\n'
       message += this.drawText(x, y)
-      await meta.$send(message)
+      await session.$send(message)
     }
   }
 
-  set (x: number, y: number, value: 0 | 1 | -1) {
+  set(x: number, y: number, value: 0 | 1 | -1) {
     const chess = this.bit(x, y)
     let board = 0n
     if (value === 1) {
@@ -194,22 +198,22 @@ export class State {
     return board
   }
 
-  save () {
+  save() {
     this.history.push((this.wBoard << this.area) + this.bBoard)
   }
 
-  refresh () {
+  refresh() {
     const board = this.history[this.history.length - 1]
     this.wBoard = board >> this.area
     this.bBoard = board & this.full
   }
 
-  serialize () {
+  serial() {
     const { rule, size, placement, p1, p2, next, history } = this
     return { rule, size, placement, p1, p2, next, history: history.join(',') }
   }
 
-  static from (app: App, data: StateData) {
+  static from(app: App, data: StateData) {
     const state = new State(app, data.rule, data.size, data.placement)
     state.p1 = data.p1
     state.p2 = data.p2

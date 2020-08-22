@@ -1,9 +1,9 @@
-import { App } from 'koishi-core'
-import { randomId } from 'koishi-utils'
+import { Context } from 'koishi-core'
+import { Random } from 'koishi-utils'
 import { createHmac } from 'crypto'
 import { resolve } from 'path'
 import { existsSync, writeFile, readdirSync, stat } from 'fs-extra'
-import { Dialogue } from '../database'
+import { Dialogue } from '../utils'
 import axios from 'axios'
 
 declare module 'koishi-core/dist/app' {
@@ -12,7 +12,7 @@ declare module 'koishi-core/dist/app' {
   }
 }
 
-declare module '../database' {
+declare module '../utils' {
   namespace Dialogue {
     interface Config {
       imagePath?: string
@@ -31,8 +31,8 @@ interface ImageServerStatus {
 
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
 
-export default function apply (app: App, config: Dialogue.Config) {
-  const logger = app.logger('teach')
+export default function apply(ctx: Context, config: Dialogue.Config) {
+  const logger = ctx.logger('teach')
   const { uploadKey, imagePath, imageServer, uploadPath, uploadServer } = config
 
   let downloadFile: (file: string, url: string) => Promise<void>
@@ -41,13 +41,13 @@ export default function apply (app: App, config: Dialogue.Config) {
     downloadFile = async (file, url) => {
       const params = { url, file } as any
       if (uploadKey) {
-        params.salt = randomId()
+        params.salt = Random.uuid()
         params.sign = createHmac('sha1', uploadKey).update(file + params.salt).digest('hex')
       }
       await axios.get(uploadServer, { params })
     }
 
-    app.getImageServerStatus = async () => {
+    ctx.app.getImageServerStatus = async () => {
       const { data } = await axios.get(uploadServer)
       return data
     }
@@ -73,13 +73,13 @@ export default function apply (app: App, config: Dialogue.Config) {
       totalSize += size
     }))
 
-    const getStatus = app.getImageServerStatus = async () => {
+    const getStatus = ctx.app.getImageServerStatus = async () => {
       await statPromise
       return { totalCount, totalSize }
     }
 
-    app.on('connect', () => {
-      app.server.router.get(uploadPath, async (ctx) => {
+    ctx.on('connect', () => {
+      ctx.router.get(uploadPath, async (ctx) => {
         const { salt, sign, url, file } = ctx.query
         if (!file) return ctx.body = await getStatus()
 
@@ -96,12 +96,13 @@ export default function apply (app: App, config: Dialogue.Config) {
   }
 
   if (imageServer && downloadFile) {
-    app.on('dialogue/before-modify', async ({ options, meta }) => {
+    ctx.on('dialogue/before-modify', async ({ options }) => {
       let { answer } = options
       if (!answer) return
       try {
         let output = ''
         let capture: RegExpExecArray
+        // eslint-disable-next-line no-cond-assign
         while (capture = imageRE.exec(answer)) {
           const [text, file, url] = capture
           output += answer.slice(0, capture.index)
@@ -112,8 +113,7 @@ export default function apply (app: App, config: Dialogue.Config) {
         options.answer = output + answer
       } catch (error) {
         logger.warn(error.message)
-        await meta.$send('上传图片时发生错误。')
-        return true
+        return '上传图片时发生错误。'
       }
     })
   }

@@ -1,26 +1,21 @@
 import { utils } from '../src'
 import * as _utils from 'koishi-utils'
+import { expect } from 'chai'
 
-test('randomPick', () => {
-  utils.randomPick.mockIndex(1)
-  utils.randomPick.mockIndexOnce(0)
-  const source = ['a', 'b', 'c']
-  expect(_utils.randomPick(source)).toEqual('a')
-  expect(_utils.randomPick(source)).toEqual('b')
-})
+describe('mocked random API', () => {
+  it('randomPick', () => {
+    utils.Random.pick.mockIndex(1)
+    utils.Random.pick.mockIndexOnce(0)
+    const source = ['a', 'b', 'c']
+    expect(_utils.Random.pick(source)).to.equal('a')
+    expect(_utils.Random.pick(source)).to.equal('b')
+  })
 
-test('randomSplice', () => {
-  utils.randomSplice.mockIndex(1)
-  utils.randomSplice.mockIndexOnce(0)
-  const source = ['a', 'b', 'c']
-  expect(_utils.randomSplice(source)).toEqual('a')
-  expect(_utils.randomSplice(source)).toEqual('c')
-})
-
-test('randomMultiPick', () => {
-  utils.randomMultiPick.mockIndices(0)
-  utils.randomMultiPick.mockIndicesOnce(1, 2)
-  const source = ['a', 'b', 'c']
-  expect(_utils.randomMultiPick(source, 2)).toEqual(['b', 'c'])
-  expect(_utils.randomMultiPick(source, 1)).toEqual(['a'])
+  it('randomMultiPick', () => {
+    utils.Random.multiPick.mockIndex(0)
+    utils.Random.multiPick.mockIndexOnce(1, 2)
+    const source = ['a', 'b', 'c']
+    expect(_utils.Random.multiPick(source, 2)).to.deep.equal(['b', 'c'])
+    expect(_utils.Random.multiPick(source, 1)).to.deep.equal(['a'])
+  })
 })

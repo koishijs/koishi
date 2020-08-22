@@ -1,61 +1,111 @@
-import { App } from '../app'
-import { NextFunction } from '../context'
-import { Meta } from '../meta'
+import { NextFunction, Context, Middleware } from '../context'
+import { Session } from '../session'
+import { Message } from './message'
+import { getCommands } from './help'
+import { format } from 'util'
 import leven from 'leven'
 
-export default function apply (app: App) {
-  app.middleware((meta, next) => {
-    if (meta.$argv) return next()
-    const { message, prefix, nickname } = meta.$parsed
-    const target = meta.$parsed.message.split(/\s/, 1)[0].toLowerCase()
-    if (!target || !(prefix !== null || nickname || meta.messageType === 'private')) return next()
-
-    const items = Object.keys(app._commandMap)
-      .filter(name => app._commandMap[name].context.match(meta))
-
-    return showSuggestions({
-      target,
-      meta,
-      next,
-      items,
-      prefix: '没有此命令。',
-      suffix: '发送空行或句号以调用推测的指令。',
-      coefficient: app.options.similarityCoefficient,
-      async execute (suggestion, meta, next) {
-        const newMessage = suggestion + message.slice(target.length)
-        return app.execute(newMessage, meta, next)
-      },
-    })
-  })
+declare module '../session' {
+  interface Session {
+    $use(middleware: Middleware): () => void
+    $prompt(timeout?: number): Promise<string>
+    $suggest(options: SuggestOptions): void
+  }
 }
 
 interface SuggestOptions {
   target: string
   items: string[]
-  meta: Meta
-  next: NextFunction
-  prefix: string
+  next?: NextFunction
+  prefix?: string
   suffix: string
   coefficient?: number
-  execute: (suggestion: string, meta: Meta, next: NextFunction) => any
+  apply: (this: Session, suggestion: string, next: NextFunction) => void
 }
 
-export function showSuggestions (options: SuggestOptions): Promise<void> {
-  const { target, items, meta, next, prefix, suffix, execute, coefficient = 0.4 } = options
-  const suggestions = items.filter((name) => {
-    return name.length > 2 && leven(name, target) <= name.length * coefficient
+export function getSessionId(session: Session) {
+  return '' + session.userId + session.groupId
+}
+
+Session.prototype.$use = function $use(this: Session, middleware: Middleware) {
+  const identifier = getSessionId(this)
+  return this.$app.prependMiddleware(async (session, next) => {
+    if (identifier && getSessionId(session) !== identifier) return next()
+    return middleware(session, next)
   })
-  if (!suggestions.length) return next()
+}
+
+Session.prototype.$prompt = function $prompt(this: Session, timeout = this.$app.options.promptTimeout) {
+  return new Promise((resolve, reject) => {
+    const dispose = this.$use((session) => {
+      clearTimeout(timer)
+      dispose()
+      resolve(session.message)
+    })
+    const timer = setTimeout(() => {
+      dispose()
+      reject(new Error('prompt timeout'))
+    }, timeout)
+  })
+}
+
+Session.prototype.$suggest = function $suggest(this: Session, options: SuggestOptions) {
+  const {
+    target,
+    items,
+    prefix = '',
+    suffix,
+    apply,
+    next = callback => callback(),
+    coefficient = this.$app.options.similarityCoefficient,
+  } = options
+
+  let suggestions: string[], minDistance = Infinity
+  for (const name of items) {
+    const distance = leven(name, target)
+    if (name.length <= 2 || distance > name.length * coefficient) continue
+    if (distance === minDistance) {
+      suggestions.push(name)
+    } else if (distance < minDistance) {
+      suggestions = [name]
+      minDistance = distance
+    }
+  }
+  if (!suggestions) return next(() => this.$send(prefix))
 
   return next(() => {
-    const message = prefix + `你要找的是不是${suggestions.map(name => `“${name}”`).join('或')}？`
-    if (suggestions.length > 1) return meta.$send(message)
+    const message = prefix + format(Message.SUGGESTION, suggestions.map(name => `“${name}”`).join('或'))
+    if (suggestions.length > 1) return this.$send(message)
 
-    meta.$app.onceMiddleware(async (meta, next) => {
-      const message = meta.message.trim()
+    const dispose = this.$use((session, next) => {
+      dispose()
+      const message = session.message.trim()
       if (message && message !== '.' && message !== '。') return next()
-      return execute(suggestions[0], meta, next)
-    }, meta)
-    return meta.$send(message + suffix)
+      return apply.call(session, suggestions[0], next)
+    })
+
+    return this.$send(message + suffix)
+  })
+}
+
+export default function apply(ctx: Context) {
+  ctx.middleware((session, next) => {
+    const { $argv, $parsed, $prefix, $appel, messageType } = session
+    if ($argv || messageType !== 'private' && $prefix === null && !$appel) return next()
+    const target = $parsed.split(/\s/, 1)[0].toLowerCase()
+    if (!target) return next()
+
+    const items = getCommands(session as any).flatMap(cmd => cmd._aliases)
+    return session.$suggest({
+      target,
+      next,
+      items,
+      prefix: Message.COMMAND_SUGGEST_PREFIX,
+      suffix: Message.COMMAND_SUGGEST_SUFFIX,
+      async apply(suggestion, next) {
+        const newMessage = suggestion + $parsed.slice(target.length)
+        return this.$execute(newMessage, next)
+      },
+    })
   })
 }

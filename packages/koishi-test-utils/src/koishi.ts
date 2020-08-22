@@ -1,61 +1,65 @@
 import * as utils from 'koishi-utils'
+import { Mock, fn } from 'jest-mock'
+import { actualModule } from './module'
 
-const _utils = jest.requireActual('koishi-utils') as typeof utils
+type Mocked<O> = { [P in keyof O]: Mocked<O[P]> }
+  & (O extends (...args: infer R) => infer T ? Mock<T, R> : unknown)
 
-type RealRandomPick = typeof utils.randomPick
-interface MockedRandomPick extends RealRandomPick, jest.Mock<any, [readonly any[]]> {
-  mockIndex (index: number): this
-  mockIndexOnce (index: number): this
+const _utils = actualModule('koishi-utils') as typeof utils
+
+interface MockedRandomPick extends Mocked<typeof utils.Random.pick> {
+  mockIndex(index: number): this
+  mockIndexOnce(index: number): this
 }
 
-type RealRandomSplice = typeof utils.randomSplice
-interface MockedRandomSplice extends RealRandomSplice, jest.Mock<any, [any[]]> {
-  mockIndex (index: number): this
-  mockIndexOnce (index: number): this
+interface MockedRandomMultiPick extends Mocked<typeof utils.Random.multiPick> {
+  mockIndex(...indices: number[]): this
+  mockIndexOnce(...indices: number[]): this
 }
 
-type RealRandomMultiPick = typeof utils.randomMultiPick
-interface MockedRandomMultiPick extends RealRandomMultiPick, jest.Mock<any, [readonly any[], number]> {
-  mockIndices (...indices: number[]): this
-  mockIndicesOnce (...indices: number[]): this
+interface MockedRandom extends Mocked<typeof utils.Random> {
+  pick: MockedRandomPick
+  multiPick: MockedRandomMultiPick
 }
 
-export const sleep = jest.fn(_utils.sleep)
-export const getDateNumber = jest.fn(_utils.getDateNumber)
-export const fromDateNumber = jest.fn(_utils.fromDateNumber)
-export const randomBool = jest.fn(_utils.randomBool)
-export const randomId = jest.fn(_utils.randomId)
-export const randomReal = jest.fn(_utils.randomReal)
-export const randomInt = jest.fn(_utils.randomInt)
-export const randomPick: MockedRandomPick = jest.fn(_utils.randomPick) as any
-export const randomSplice: MockedRandomSplice = jest.fn(_utils.randomSplice) as any
-export const randomMultiPick: MockedRandomMultiPick = jest.fn(_utils.randomMultiPick) as any
-export const randomWeightedPick = jest.fn(_utils.randomWeightedPick)
-
-randomPick.mockIndex = (index) => {
-  return randomPick.mockImplementation(source => source[index])
+interface MockedTime extends Mocked<typeof utils.Time> {
+  getDateNumber: Mock<number, [(number | Date)?, number?]>
+  fromDateNumber: Mock<Date, [number, number?]>
 }
 
-randomPick.mockIndexOnce = (index) => {
-  return randomPick.mockImplementationOnce(source => source[index])
+export const Random = {
+  uuid: fn(_utils.Random.uuid),
+  bool: fn(_utils.Random.bool),
+  int: fn(_utils.Random.int),
+  real: fn(_utils.Random.real),
+  pick: fn(_utils.Random.pick),
+  shuffle: fn(_utils.Random.shuffle),
+  multiPick: fn(_utils.Random.multiPick),
+  weightedPick: fn(_utils.Random.weightedPick),
+} as MockedRandom
+
+export const Time = {
+  ..._utils.Time,
+  getDateNumber: fn(_utils.Time.getDateNumber),
+  fromDateNumber: fn(_utils.Time.fromDateNumber),
+} as MockedTime
+
+Random.pick.mockIndex = (index) => {
+  return Random.pick.mockImplementation(source => source[index])
 }
 
-randomSplice.mockIndex = (index) => {
-  return randomSplice.mockImplementation(source => source.splice(index, 1)[0])
+Random.pick.mockIndexOnce = (index) => {
+  return Random.pick.mockImplementationOnce(source => source[index])
 }
 
-randomSplice.mockIndexOnce = (index) => {
-  return randomSplice.mockImplementationOnce(source => source.splice(index, 1)[0])
-}
-
-randomMultiPick.mockIndices = (...indices) => {
-  return randomMultiPick.mockImplementation((source) => {
+Random.multiPick.mockIndex = (...indices) => {
+  return Random.multiPick.mockImplementation((source) => {
     return indices.map(index => source[index])
   })
 }
 
-randomMultiPick.mockIndicesOnce = (...indices) => {
-  return randomMultiPick.mockImplementationOnce((source) => {
+Random.multiPick.mockIndexOnce = (...indices) => {
+  return Random.multiPick.mockImplementationOnce((source) => {
     return indices.map(index => source[index])
   })
 }

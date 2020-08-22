@@ -1,27 +1,26 @@
-import { Context, UserField, Meta, NextFunction, Command, MessageBuffer } from 'koishi-core'
-import { CQCode, simplify, noop } from 'koishi-utils'
-import { Dialogue, DialogueTest, DialogueFlag } from './database'
-import escapeRegex from 'escape-string-regexp'
+import { Context, User, Session, NextFunction, Command } from 'koishi-core'
+import { CQCode, simplify, noop, escapeRegExp } from 'koishi-utils'
+import { Dialogue, DialogueTest } from './utils'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/state' (state: SessionState): void
     'dialogue/receive' (state: SessionState): void | boolean
     'dialogue/prepare' (state: SessionState): void
-    'dialogue/before-attach-user' (state: SessionState, userFields: Set<UserField>): void
+    'dialogue/before-attach-user' (state: SessionState, userFields: Set<User.Field>): void
     'dialogue/attach-user' (state: SessionState): void | boolean
     'dialogue/before-send' (state: SessionState): void | boolean | Promise<void | boolean>
     'dialogue/send' (state: SessionState): void
   }
 
   interface Context {
-    getSessionState (this: Context, meta: Meta): SessionState
+    getSessionState (this: Context, session: Session): SessionState
   }
 }
 
-declare module 'koishi-core/dist/meta' {
-  interface Meta {
-    $_redirected?: number
+declare module 'koishi-core/dist/session' {
+  interface Session {
+    _redirected?: number
   }
 }
 
@@ -36,7 +35,7 @@ interface Question {
   activated: boolean
 }
 
-declare module './database' {
+declare module './utils' {
   namespace Dialogue {
     interface Config {
       nickname?: string | string[]
@@ -47,11 +46,12 @@ declare module './database' {
   }
 }
 
+// TODO change name
 export interface SessionState {
   userId: number
   groupId: number
   answer?: string
-  meta?: Meta<UserField>
+  session?: Session<User.Field>
   test?: DialogueTest
   dialogue?: Dialogue
   dialogues?: Dialogue[]
@@ -61,46 +61,115 @@ export interface SessionState {
 
 const states: Record<number, SessionState> = {}
 
-export function escapeAnswer (message: string) {
+export function escapeAnswer(message: string) {
   return message.replace(/%/g, '@@__PLACEHOLDER__@@')
 }
 
-export function unescapeAnswer (message: string) {
+export function unescapeAnswer(message: string) {
   return message.replace(/@@__PLACEHOLDER__@@/g, '%')
 }
 
-Context.prototype.getSessionState = function (meta) {
-  const { groupId, anonymous, userId } = meta
+Context.prototype.getSessionState = function (session) {
+  const { groupId, anonymous, userId } = session
   if (!states[groupId]) {
     this.emit('dialogue/state', states[groupId] = { groupId } as SessionState)
   }
   const state = Object.create(states[groupId])
-  state.meta = meta
+  state.session = session
   state.userId = anonymous ? -anonymous.id : userId
   return state
 }
 
-export async function getTotalWeight (ctx: Context, state: SessionState) {
-  const { meta, dialogues } = state
-  ctx.app.emit(meta, 'dialogue/prepare', state)
-  const userFields = new Set<UserField>(['name'])
-  ctx.app.emit(meta, 'dialogue/before-attach-user', state, userFields)
-  await meta.observeUser(userFields)
-  if (ctx.app.bail(meta, 'dialogue/attach-user', state)) return 0
+export async function getTotalWeight(ctx: Context, state: SessionState) {
+  const { session, dialogues } = state
+  ctx.app.emit(session, 'dialogue/prepare', state)
+  const userFields = new Set<User.Field>(['name'])
+  ctx.app.emit(session, 'dialogue/before-attach-user', state, userFields)
+  await session.$observeUser(userFields)
+  if (ctx.app.bail(session, 'dialogue/attach-user', state)) return 0
   return dialogues.reduce((prev, curr) => prev + curr._weight, 0)
 }
 
-export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogue.Config, next: NextFunction = noop) {
-  const state = ctx.getSessionState(meta)
+export class MessageBuffer {
+  private buffer = ''
+  private original = false
+
+  public hasData = false
+  public send: Session['$send']
+  public sendQueued: Session['$sendQueued']
+
+  constructor(private session: Session) {
+    this.send = session.$send.bind(session)
+    this.sendQueued = session.$sendQueued.bind(session)
+
+    session.$send = async (message: string) => {
+      if (!message) return
+      this.hasData = true
+      if (this.original) {
+        return this.send(message)
+      }
+      this.buffer += message
+    }
+
+    session.$sendQueued = async (message, delay) => {
+      if (!message) return
+      this.hasData = true
+      if (this.original) {
+        return this.sendQueued(message, delay)
+      }
+      return this._flush(this.buffer + message, delay)
+    }
+  }
+
+  write(message: string) {
+    if (!message) return
+    this.hasData = true
+    this.buffer += message
+  }
+
+  private async _flush(message: string, delay?: number) {
+    this.original = true
+    message = message.trim()
+    await this.sendQueued(message, delay)
+    this.buffer = ''
+    this.original = false
+  }
+
+  flush() {
+    return this._flush(this.buffer)
+  }
+
+  async run<T>(callback: () => T | Promise<T>) {
+    this.original = false
+    const send = this.session.$send
+    const sendQueued = this.session.$sendQueued
+    const result = await callback()
+    this.session.$sendQueued = sendQueued
+    this.session.$send = send
+    this.original = true
+    return result
+  }
+
+  async end(message = '') {
+    this.write(message)
+    await this.flush()
+    this.original = true
+    delete this.session.$send
+    delete this.session.$sendQueued
+  }
+}
+
+export async function triggerDialogue(ctx: Context, session: Session, config: Dialogue.Config, next: NextFunction = noop) {
+  const state = ctx.getSessionState(session)
   state.next = next
   state.test = {}
 
   if (ctx.bail('dialogue/receive', state)) return next()
   const logger = ctx.logger('dialogue')
-  logger.debug('[receive]', meta.messageId, meta.message)
+  logger.debug('[receive]', session.messageId, session.message)
 
   // fetch matched dialogues
-  const dialogues = state.dialogues = await Dialogue.fromTest(ctx, state.test)
+  const dialogues = state.dialogues = await ctx.database.getDialoguesByTest(state.test)
 
   // pick dialogue
   let dialogue: Dialogue
@@ -116,7 +185,7 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
     }
   }
   if (!dialogue) return next()
-  logger.debug('[attach]', meta.messageId)
+  logger.debug('[attach]', session.messageId)
 
   // parse answer
   state.dialogue = dialogue
@@ -124,12 +193,12 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
   state.answer = dialogue.answer
     .replace(/%%/g, '@@__PLACEHOLDER__@@')
     .replace(/%A/g, CQCode.stringify('at', { qq: 'all' }))
-    .replace(/%a/g, CQCode.stringify('at', { qq: meta.userId }))
-    .replace(/%m/g, CQCode.stringify('at', { qq: meta.selfId }))
-    .replace(/%s/g, escapeAnswer(meta.$username))
-    .replace(/%0/g, escapeAnswer(meta.message))
+    .replace(/%a/g, CQCode.stringify('at', { qq: session.userId }))
+    .replace(/%m/g, CQCode.stringify('at', { qq: session.selfId }))
+    .replace(/%s/g, escapeAnswer(session.$username))
+    .replace(/%0/g, escapeAnswer(session.message))
 
-  if (dialogue.flag & DialogueFlag.regexp) {
+  if (dialogue.flag & Dialogue.Flag.regexp) {
     const capture = dialogue._capture || new RegExp(dialogue.question, 'i').exec(state.test.question)
     if (!capture) console.log(dialogue.question, state.test.question)
     capture.map((segment, index) => {
@@ -139,12 +208,12 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
     })
   }
 
-  if (await ctx.app.serialize(meta, 'dialogue/before-send', state)) return
-  logger.debug('[send]', meta.messageId, '->', dialogue.answer)
+  if (await ctx.app.serial(session, 'dialogue/before-send', state)) return
+  logger.debug('[send]', session.messageId, '->', dialogue.answer)
 
   // send answers
-  const buffer = new MessageBuffer(meta)
-  meta.$_redirected = (meta.$_redirected || 0) + 1
+  const buffer = new MessageBuffer(session)
+  session._redirected = (session._redirected || 0) + 1
 
   // parse answer
   let index: number
@@ -160,21 +229,25 @@ export async function triggerDialogue (ctx: Context, meta: Meta, config: Dialogu
     if (char === 'n') {
       await buffer.flush()
     } else if (char === '{') {
-      let end = state.answer.indexOf('}')
-      if (end < 0) end = Infinity
-      const command = unescapeAnswer(state.answer.slice(0, end))
-      state.answer = state.answer.slice(end + 1)
-      await buffer.run(() => ctx.execute(command, meta))
+      const argv = session.$parse(state.answer, '}')
+      if (argv) {
+        state.answer = argv.rest.slice(1)
+        await buffer.run(() => session.$execute(argv))
+      } else {
+        logger.warn('cannot parse:', state.answer)
+        const index = state.answer.indexOf('}')
+        state.answer = state.answer.slice(index + 1)
+      }
     }
   }
   await buffer.end(unescapeAnswer(state.answer))
-  await ctx.app.parallelize(meta, 'dialogue/send', state)
+  await ctx.app.parallel(session, 'dialogue/send', state)
 }
 
 export default function (ctx: Context, config: Dialogue.Config) {
   const { nickname = ctx.app.options.nickname, maxRedirections = 3 } = config
   const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
-  const nicknameRE = new RegExp(`^((${nicknames.map(escapeRegex).join('|')})[,，]?\\s*)+`)
+  const nicknameRE = new RegExp(`^((${nicknames.map(escapeRegExp).join('|')})[,，]?\\s*)+`)
 
   config._stripQuestion = (source) => {
     source = prepareSource(source)
@@ -189,13 +262,13 @@ export default function (ctx: Context, config: Dialogue.Config) {
     }
   }
 
-  ctx.group().middleware(async (meta, next) => {
-    return triggerDialogue(ctx, meta, config, next)
+  ctx.group().middleware(async (session, next) => {
+    return triggerDialogue(ctx, session, config, next)
   })
 
-  ctx.on('dialogue/receive', ({ meta, test }) => {
-    if (meta.message.includes('[CQ:image,')) return true
-    const { unprefixed, prefixed, appellative, activated } = config._stripQuestion(meta.message)
+  ctx.on('dialogue/receive', ({ session, test }) => {
+    if (session.message.includes('[CQ:image,')) return true
+    const { unprefixed, prefixed, appellative, activated } = config._stripQuestion(session.message)
     test.question = unprefixed
     test.original = prefixed
     test.activated = activated
@@ -203,11 +276,11 @@ export default function (ctx: Context, config: Dialogue.Config) {
   })
 
   // 预判要获取的用户字段
-  ctx.on('dialogue/before-attach-user', ({ dialogues, meta }, userFields) => {
+  ctx.on('dialogue/before-attach-user', ({ dialogues, session }, userFields) => {
     for (const data of dialogues) {
       const capture = data.answer.match(/%\{.+?\}/g)
       for (const message of capture || []) {
-        const argv = ctx.parse(message.slice(2, -1), meta)
+        const argv = session.$parse(message.slice(2, -1))
         Command.collect(argv, 'user', userFields)
       }
       if (capture || data.answer.includes('%n')) {
@@ -217,14 +290,14 @@ export default function (ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.group().command('teach/dialogue <message...>', '触发教学对话')
-    .action(async ({ meta, next }, message = '') => {
-      if (meta.$_redirected > maxRedirections) return next()
-      meta.message = message
-      return triggerDialogue(ctx, meta, config, next)
+    .action(async ({ session, next }, message = '') => {
+      if (session._redirected > maxRedirections) return next()
+      session.message = message
+      return triggerDialogue(ctx, session, config, next)
     })
 }
 
-function prepareSource (source: string) {
+function prepareSource(source: string) {
   return CQCode.stringifyAll(CQCode.parseAll(source || '').map((code, index, arr) => {
     if (typeof code !== 'string') return code
     let message = simplify(CQCode.unescape('' + code))

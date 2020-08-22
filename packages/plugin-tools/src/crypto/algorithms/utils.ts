@@ -1,20 +1,20 @@
 import { isInteger } from 'koishi-utils'
 
-export function mod (n: number, m: number) {
+export function mod(n: number, m: number) {
   return n >= 0 ? n % m : n % m + m
 }
 
-export function modPositive (n: number, m: number) {
+export function modPositive(n: number, m: number) {
   return mod(n, m) || m
 }
 
-export function bezout (a: number, b: number) {
+export function bezout(a: number, b: number) {
   if (!isInteger(a) || !isInteger(b)) {
     throw new Error('Expect integer.')
   }
 
   let x = 0, y = 1, u = 1, v = 0
-  while (a != 0) {
+  while (a !== 0) {
     const q = Math.floor(b / a)
     const r = b % a
     const m = x - u * q
@@ -29,21 +29,21 @@ export function bezout (a: number, b: number) {
   return [b, x, y]
 }
 
-export function modInverse (a: number, m: number) {
+export function modInverse(a: number, m: number) {
   const [gcd, x] = bezout(a, m)
   return gcd !== 1 ? null : x % m
 }
 
-export function isKeyword (source: string) {
+export function isKeyword(source: string) {
   return /^[a-zA-Z]+$/.exec(source)
 }
 
-export function getOffset (char: string) {
+export function getOffset(char: string) {
   if ('A' <= char && char <= 'Z') return 64
   if ('a' <= char && char <= 'z') return 96
 }
 
-export function deleteDuplicate (source: string) {
+export function deleteDuplicate(source: string) {
   let result = ''
   for (const char of source) {
     if (!result.includes(char)) result += char
@@ -60,7 +60,7 @@ export class Square {
   data: number[][] = []
   map: Record<string, [number, number]> = {}
 
-  constructor (type: SquareType, keyword = '') {
+  constructor(type: SquareType, keyword = '') {
     let size: number, source = keyword.toUpperCase() + ALPHABET
     if (type === '25ij') {
       size = 5
@@ -76,10 +76,10 @@ export class Square {
     }
 
     source = deleteDuplicate(source)
-    for (let i = 0; i < size; ++ i) {
+    for (let i = 0; i < size; ++i) {
       const row = source.slice(i * size, i * size + size)
       this.data[i] = []
-      for (let j = 0; j < size; ++ j) {
+      for (let j = 0; j < size; ++j) {
         this.data[i][j] = row.charCodeAt(j) - 64
         this.map[row[j]] = [i, j]
         this.map[row[j].toLowerCase()] = [i, j]

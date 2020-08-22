@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-chess",
   "description": "Chess Plugin for Koishi",
-  "version": "2.0.0-beta.0",
+  "version": "2.0.0-beta.7",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -15,10 +15,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/plugin-image-search.git"
+    "url": "git+https://github.com/koishijs/koishi.git"
   },
   "bugs": {
-    "url": "https://github.com/koishijs/plugin-image-search/issues"
+    "url": "https://github.com/koishijs/koishi/issues"
   },
   "homepage": "https://koishi.js.org/plugins/other/image-search",
   "keywords": [
@@ -33,8 +33,10 @@
     "game"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.0.0-beta.0",
-    "koishi-plugin-puppeteer": "^1.0.0-beta.0",
-    "koishi-utils": "^2.1.2"
+    "koishi-core": "^2.0.0-rc.1",
+    "koishi-plugin-puppeteer": "^1.0.0-beta.10"
+  },
+  "dependencies": {
+    "koishi-utils": "^3.0.2"
   }
 }

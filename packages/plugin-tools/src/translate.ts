@@ -1,4 +1,7 @@
+/* eslint-disable quote-props */
+
 import { createHash } from 'crypto'
+import { assertProperty } from 'koishi-utils'
 import { Context } from 'koishi-core'
 import axios from 'axios'
 
@@ -23,28 +26,28 @@ export interface TranslateOptions {
   youdaoSecret?: string
 }
 
-export function apply (ctx: Context, config: TranslateOptions) {
-  const { youdaoAppKey: appKey, youdaoSecret: secret } = config
-  if (!secret) throw new Error('missing configuration "youdaoSecret"')
+export function apply(ctx: Context, config: TranslateOptions) {
+  const appKey = assertProperty(config, 'youdaoAppKey')
+  const secret = assertProperty(config, 'youdaoSecret')
 
   ctx.command('tools/translate <text>', '翻译工具')
     .alias('翻译')
-    .option('-f, --from <lang>', '指定源语言，默认为自动匹配', { default: '' })
-    .option('-t, --to <lang>', '指定目标语言，默认为中文（zh-CHS）', { default: 'zh-CHS' })
+    .option('from', '-f <lang>  指定源语言，默认为自动匹配', { fallback: '' })
+    .option('to', '-t <lang>  指定目标语言，默认为中文（zh-CHS）', { fallback: 'zh-CHS' })
     .usage('支持的语言名包括 zh-CHS, en, ja, ko, fr, es, pt, it, ru, vi, de, ar, id, it。')
-    .action(async ({ meta, options }, text) => {
+    .action(async ({ options }, text) => {
       if (!text) return
       const salt = new Date().getTime()
       const q = String(text)
       const qShort = q.length > 20 ? q.slice(0, 10) + q.length + q.slice(-10) : q
       const from = options.from
       const to = options.to
-      const sign = createHash('md5').update(appKey + qShort + salt + secret).digest('hex')
+      const sign = createHash('md5').update(appKey + qShort + salt + secret).digest('hex') // lgtm [js/weak-cryptographic-algorithm]
       const { data } = await axios.get('http://openapi.youdao.com/api', {
         params: { q, appKey, salt, from, to, sign },
       })
 
-      if (Number(data.errorCode)) return meta.$send(`翻译失败，错误码：${data.errorCode}`)
+      if (Number(data.errorCode)) return `翻译失败，错误码：${data.errorCode}`
 
       const [source, target] = data.l.split('2')
       const output = [
@@ -58,6 +61,6 @@ export function apply (ctx: Context, config: TranslateOptions) {
         }
         output.push(...data.basic.explains)
       }
-      return meta.$send(output.join('\n'))
+      return output.join('\n')
     })
 }

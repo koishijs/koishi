@@ -1,56 +1,56 @@
-import { App } from 'koishi-core'
+import { MockedApp } from 'koishi-test-utils'
 import { noop } from 'koishi-utils'
-import { errors } from '../src/messages'
+import { expect } from 'chai'
+import { fn } from 'jest-mock'
+import '@shigma/chai-extended'
 
-const app = new App()
+const app = new MockedApp()
 
 describe('Plugin API', () => {
-  test('call chaining', () => {
-    expect(app.plugin(noop)).toBe(app)
+  it('call chaining', () => {
+    expect(app.plugin(noop)).to.equal(app)
 
-    const ctx = app.users.except(123).plus(app.group(456))
-    expect(ctx.plugin(noop)).toBe(ctx)
+    const ctx = app.user(123)
+    expect(ctx.plugin(noop)).to.equal(ctx)
   })
 
-  test('apply functional plugin', () => {
-    const callback = jest.fn()
+  it('apply functional plugin', () => {
+    const callback = fn()
     const options = { foo: 'bar' }
     app.plugin(callback, options)
 
-    expect(callback).toBeCalledTimes(1)
-    expect(callback).not.toBeCalledWith(options)
-    expect(callback.mock.calls[0][1]).toMatchObject(options)
+    expect(callback.mock.calls).to.have.length(1)
+    expect(callback.mock.calls[0][1]).to.have.shape(options)
   })
 
-  test('apply object plugin', () => {
-    const callback = jest.fn()
+  it('apply object plugin', () => {
+    const callback = fn()
     const options = { bar: 'foo' }
     const plugin = { apply: callback }
     app.plugin(plugin, options)
 
-    expect(callback).toBeCalledTimes(1)
-    expect(callback).not.toBeCalledWith(options)
-    expect(callback.mock.calls[0][1]).toMatchObject(options)
+    expect(callback.mock.calls).to.have.length(1)
+    expect(callback.mock.calls[0][1]).to.have.shape(options)
   })
 
-  test('apply functional plugin with false', () => {
-    const callback = jest.fn()
+  it('apply functional plugin with false', () => {
+    const callback = fn()
     app.plugin(callback, false)
 
-    expect(callback).toBeCalledTimes(0)
+    expect(callback.mock.calls).to.have.length(0)
   })
 
-  test('apply object plugin with false', () => {
-    const callback = jest.fn()
+  it('apply object plugin with false', () => {
+    const callback = fn()
     const plugin = { apply: callback }
     app.plugin(plugin, false)
 
-    expect(callback).toBeCalledTimes(0)
+    expect(callback.mock.calls).to.have.length(0)
   })
 
-  test('apply invalid plugin', () => {
-    expect(() => app.plugin(undefined)).toThrowError(errors.INVALID_PLUGIN)
-    expect(() => app.plugin({} as any)).toThrowError(errors.INVALID_PLUGIN)
-    expect(() => app.plugin({ apply: {} } as any)).toThrowError(errors.INVALID_PLUGIN)
+  it('apply invalid plugin', () => {
+    expect(() => app.plugin(undefined)).to.throw()
+    expect(() => app.plugin({} as any)).to.throw()
+    expect(() => app.plugin({ apply: {} } as any)).to.throw()
   })
 })

@@ -1,67 +1,66 @@
-import { randomId, randomBool, randomReal, randomInt, randomPick, randomSplice, randomMultiPick, randomWeightedPick, isInteger } from '../src'
+import { Random, isInteger } from '../src'
+import { expect } from 'chai'
 
 describe('Random Manipulations', () => {
-  test('randomId', () => {
-    expect(randomId()).toHaveLength(8)
-    expect(randomId(10)).toHaveLength(10)
+  it('Random.uuid', () => {
+    expect(Random.uuid()).to.have.length(36)
   })
 
-  test('randomBool', () => {
+  it('Random.bool', () => {
     for (let i = 0; i < 10; ++i) {
-      expect(typeof randomBool(0.5)).toBe('boolean')
-      expect(randomBool(0)).toBe(false)
-      expect(randomBool(1)).toBe(true)
+      expect(typeof Random.bool(0.5)).to.equal('boolean')
+      expect(Random.bool(0)).to.equal(false)
+      expect(Random.bool(1)).to.equal(true)
     }
   })
 
-  test('randomReal', () => {
+  it('Random.real', () => {
     let value: number
     for (let i = 0; i < 10; ++i) {
-      value = randomReal(2, 5)
-      expect(value < 5 && value >= 2).toBe(true)
-      value = randomReal(5)
-      expect(value < 5 && value >= 0).toBe(true)
+      value = Random.real(2, 5)
+      expect(value < 5 && value >= 2).to.equal(true)
+      value = Random.real(5)
+      expect(value < 5 && value >= 0).to.equal(true)
     }
   })
 
-  test('randomInt', () => {
+  it('Random.int', () => {
     let value: number
     for (let i = 0; i < 10; ++i) {
-      value = randomInt(2, 5.9)
-      expect(value <= 5 && value >= 2 && isInteger(value)).toBe(true)
-      value = randomInt(5.9)
-      expect(value <= 5 && value >= 0 && isInteger(value)).toBe(true)
+      value = Random.int(2, 5.9)
+      expect(value <= 5 && value >= 2 && isInteger(value)).to.equal(true)
+      value = Random.int(5.9)
+      expect(value <= 5 && value >= 0 && isInteger(value)).to.equal(true)
     }
   })
 
-  test('randomPick', () => {
+  it('Random.pick', () => {
     const source = new Array(10).fill(undefined).map((_, index) => index)
-    const value = randomPick(source)
-    expect(value < 10 && value >= 0 && isInteger(value)).toBe(true)
-    expect(source).toHaveLength(10)
+    const value = Random.pick(source)
+    expect(value < 10 && value >= 0 && isInteger(value)).to.equal(true)
+    expect(source).to.have.length(10)
   })
 
-  test('randomSplice', () => {
+  it('Random.shuffle', () => {
     const source = new Array(10).fill(undefined).map((_, index) => index)
-    const value = randomSplice(source)
-    expect(value < 10 && value >= 0 && isInteger(value)).toBe(true)
-    expect(source).toHaveLength(9)
-    expect(source.indexOf(value)).toBe(-1)
+    const result = Random.shuffle(source)
+    expect(result).to.have.length(10)
+    expect(result.reduce((prev, curr) => prev + curr, 0)).to.equal(45)
   })
 
-  test('randomMultiPick', () => {
+  it('Random.multiPick', () => {
     const source = new Array(10).fill(undefined).map((_, index) => index)
-    const values = randomMultiPick(source, 5)
-    values.forEach(value => expect(value < 10 && value >= 0 && isInteger(value)).toBe(true))
-    expect(values).toHaveLength(5)
-    expect(source).toHaveLength(10)
+    const values = Random.multiPick(source, 5)
+    values.forEach(value => expect(value < 10 && value >= 0 && isInteger(value)).to.equal(true))
+    expect(values).to.have.length(5)
+    expect(source).to.have.length(10)
   })
 
-  test('randomWeightedPick', () => {
+  it('Random.weightedPick', () => {
     const source: Record<string, number> = {}
     for (let index = 0; index < 10; ++index) source[index] = index
-    const value = +randomWeightedPick(source)
-    expect(value < 10 && value >= 0 && isInteger(value)).toBe(true)
-    expect(Object.keys(source)).toHaveLength(10)
+    const value = +Random.weightedPick(source)
+    expect(value < 10 && value >= 0 && isInteger(value)).to.equal(true)
+    expect(Object.keys(source)).to.have.length(10)
   })
 })

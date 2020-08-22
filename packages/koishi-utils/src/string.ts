@@ -1,5 +1,5 @@
-function deepen (modifyString: (source: string) => string) {
-  function modifyObject <T> (source: T): T {
+function deepen(modifyString: (source: string) => string) {
+  function modifyObject<T>(source: T): T {
     if (typeof source !== 'object' || !source) return source
     if (Array.isArray(source)) return source.map(modifyObject) as any
     const result = {} as T
@@ -9,7 +9,7 @@ function deepen (modifyString: (source: string) => string) {
     return result
   }
 
-  return function <T> (source: T): T {
+  return function<T> (source: T): T {
     if (typeof source === 'string') {
       return modifyString(source) as any
     } else {
@@ -25,6 +25,12 @@ export const snakeCase = deepen(source => source.replace(/-/g, '_').replace(/(?<
 export const camelize = camelCase
 export const hyphenate = paramCase
 
-export function capitalize (source: string) {
+export function capitalize(source: string) {
   return source.charAt(0).toUpperCase() + source.slice(1)
+}
+
+export function escapeRegExp(source: string) {
+  return source
+    .replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
+    .replace(/-/g, '\\x2d')
 }

@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-image-search",
   "description": "Image searching plugin for Koishi",
-  "version": "1.3.16",
+  "version": "2.0.0-beta.7",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -15,10 +15,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/plugin-image-search.git"
+    "url": "git+https://github.com/koishijs/koishi.git"
   },
   "bugs": {
-    "url": "https://github.com/koishijs/plugin-image-search/issues"
+    "url": "https://github.com/koishijs/koishi/issues"
   },
   "homepage": "https://koishi.js.org/plugins/other/image-search",
   "keywords": [
@@ -37,12 +37,12 @@
     "pixiv"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.0.0-beta.0",
-    "koishi-utils": "^2.1.2"
+    "koishi-core": "^2.0.0-rc.1"
   },
   "dependencies": {
-    "axios": "^0.19.2",
+    "axios": "^0.20.0",
     "cheerio": "^1.0.0-rc.3",
-    "nhentai-api-js": "^1.1.4"
+    "koishi-utils": "^3.0.2",
+    "nhentai-api": "^3.0.2"
   }
 }

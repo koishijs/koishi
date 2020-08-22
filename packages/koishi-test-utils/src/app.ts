@@ -1,121 +1,122 @@
-import { AppOptions, App, CQServer, ContextType, Meta, FileInfo, BotOptions } from 'koishi-core'
-import { MockedServer, RequestParams, RequestData, RequestHandler } from './mocks'
-import { Session, createMessageMeta } from './session'
+import { AppOptions, App, Server, Session, Bot } from 'koishi-core'
+import { fn, Mock } from 'jest-mock'
+import { expect, AssertionError } from 'chai'
+
+type MethodsOf<O> = {
+  [P in keyof O]: O[P] extends (...args: any[]) => any ? P : never
+}[keyof O]
+
+declare module 'koishi-core/dist/server' {
+  interface Bot {
+    mock<T extends MethodsOf<Bot>>(method: T): Bot[T] extends (...args: infer R) => T ? Mock<T, R> : never
+  }
+}
 
 export const BASE_SELF_ID = 514
 
-declare module 'koishi-core/dist/server' {
-  interface ServerTypes {
-    mock: typeof MockedAppServer
-  }
+Bot.prototype.mock = function (this: Bot, method) {
+  return this[method] = fn<any, any[]>(this[method]) as any
 }
 
-class MockedAppServer extends CQServer {
-  mock = new MockedServer()
-
-  constructor (app: App) {
+class MockedAppServer extends Server {
+  constructor(app: App) {
     super(app)
+    this.bots.forEach(bot => bot.ready = true)
   }
 
-  _close () {}
-
-  async _listen () {
-    this.bots[0]._get = async (action, params) => {
-      return this.mock.receive(action.replace(/_async$/, ''), params)
-    }
-  }
+  _close() {}
+  async _listen() {}
 }
 
-CQServer.types.mock = MockedAppServer
+Server.types.mock = MockedAppServer
 
 export class MockedApp extends App {
   server: MockedAppServer
 
-  constructor (options: AppOptions = {}) {
+  constructor(options: AppOptions = {}) {
     super({ selfId: BASE_SELF_ID, type: 'mock', ...options })
   }
 
-  receive (meta: Partial<Meta>) {
-    this.server.dispatchMeta(new Meta({
+  get selfId() {
+    return this.bots[0].selfId
+  }
+
+  receive(meta: Partial<Session>) {
+    this.server.dispatch(new Session(this, {
       selfId: this.bots[0].selfId,
       ...meta,
     }))
   }
 
-  receiveFriendRequest (userId: number, flag = 'flag') {
-    this.receive({ postType: 'request', requestType: 'friend', userId, flag })
-  }
-
-  receiveGroupRequest (subType: 'add' | 'invite', userId: number, groupId = 10000, flag = 'flag') {
-    this.receive({ postType: 'request', requestType: 'group', subType, userId, groupId, flag })
-  }
-
-  receiveGroupUpload (file: FileInfo, userId: number, groupId = 10000) {
-    this.receive({ postType: 'notice', noticeType: 'group_upload', file, userId, groupId })
-  }
-
-  receiveGroupAdmin (subType: 'set' | 'unset', userId: number, groupId = 10000) {
-    this.receive({ postType: 'notice', noticeType: 'group_admin', subType, userId, groupId })
-  }
-
-  receiveGroupIncrease (subType: 'approve' | 'invite', userId: number, groupId = 10000, operatorId = 1000) {
-    this.receive({ postType: 'notice', noticeType: 'group_increase', subType, userId, groupId, operatorId })
-  }
-
-  receiveGroupDecrease (subType: 'leave' | 'kick' | 'kick_me', userId: number, groupId = 10000, operatorId = 1000) {
-    this.receive({ postType: 'notice', noticeType: 'group_decrease', subType, userId, groupId, operatorId })
-  }
-
-  receiveGroupBan (subType: 'ban' | 'lift_ban', duration: number, userId: number, groupId = 10000, operatorId = 1000) {
-    this.receive({ postType: 'notice', noticeType: 'group_ban', subType, userId, groupId, operatorId, duration })
-  }
-
-  receiveFriendAdd (userId: number) {
-    this.receive({ postType: 'notice', noticeType: 'friend_add', userId })
-  }
-
-  receiveMessage (meta: Meta): Promise<void>
-  receiveMessage (type: 'user', message: string, userId: number): Promise<void>
-  receiveMessage (type: 'group', message: string, userId: number, groupId: number): Promise<void>
-  receiveMessage (type: 'discuss', message: string, userId: number, discussId: number): Promise<void>
-  receiveMessage (type: ContextType | Meta, message?: string, userId?: number, ctxId: number = userId) {
+  receiveMessage(meta: Session): Promise<void>
+  receiveMessage(type: 'user', message: string, userId: number): Promise<void>
+  receiveMessage(type: 'group', message: string, userId: number, groupId: number): Promise<void>
+  receiveMessage(type: 'user' | 'group' | Session, message?: string, userId?: number, ctxId: number = userId) {
     return new Promise((resolve) => {
       this.once('after-middleware', () => resolve())
-      this.receive(typeof type === 'string' ? createMessageMeta(type, message, userId, ctxId) : type)
+      this.receive(typeof type === 'string' ? createMessageMeta(this, type, message, userId, ctxId) : type)
     })
   }
 
-  clearRequests () {
-    this.server.mock.clearRequests()
+  createSession(type: 'user', userId: number): TestSession
+  createSession(type: 'group', userId: number, groupId: number): TestSession
+  createSession(type: 'user' | 'group', userId: number, ctxId: number = userId) {
+    return new TestSession(this, type, userId, ctxId)
+  }
+}
+
+export const createMessageMeta = (app: App, type: 'user' | 'group', message: string, userId: number, ctxId: number) => new Session(app, {
+  [type + 'Id']: ctxId,
+  postType: 'message',
+  messageType: type === 'user' ? 'private' : type,
+  message,
+  userId,
+  sender: {
+    sex: 'unknown',
+    age: 0,
+    userId,
+    nickname: '' + userId,
+  },
+})
+
+export class TestSession {
+  meta: Session
+  replies: string[] = []
+
+  constructor(public app: MockedApp, public type: 'user' | 'group', public userId: number, public ctxId: number) {
+    this.meta = createMessageMeta(app, type, null, userId, ctxId)
   }
 
-  shouldHaveNoRequests () {
-    this.server.mock.shouldHaveNoRequests()
+  async send(message: string) {
+    const $send = async (message: string) => {
+      if (message) this.replies.push(message)
+    }
+    await this.app.receiveMessage(new Session(this.app, { ...this.meta, message, $send }))
   }
 
-  shouldHaveLastRequest (action: string, params: RequestParams = {}) {
-    this.server.mock.shouldHaveLastRequest(action, params)
+  async shouldHaveReply(message: string, reply?: string) {
+    await this.send(message)
+    const lastReply = this.replies[this.replies.length - 1]
+    this.replies = []
+    if (reply) {
+      return expect(lastReply).to.equal(reply)
+    } else {
+      return expect(lastReply).to.be.ok
+    }
   }
 
-  shouldHaveLastRequests (requests: RequestData[]) {
-    this.server.mock.shouldHaveLastRequests(requests)
+  async shouldHaveNoReply(message: string) {
+    await this.send(message)
+    try {
+      return expect(this.replies).to.have.length(0)
+    } catch {
+      throw new AssertionError(`expected "${message}" to have no reply but got "${this.replies}"`)
+    }
   }
 
-  shouldMatchSnapshot (name = '') {
-    this.server.mock.shouldMatchSnapshot(name)
-  }
-
-  setResponse (event: string, hanlder: RequestHandler): void
-  setResponse (event: string, data: RequestParams, retcode?: number): void
-  setResponse (event: string, arg1: any, arg2?: any) {
-    this.server.mock.setResponse(event, arg1, arg2)
-  }
-
-  createSession (type: 'user', userId: number): Session
-  createSession (type: 'group', userId: number, groupId: number): Session
-  createSession (type: 'discuss', userId: number, discussId: number): Session
-  createSession (type: ContextType, userId: number, ctxId: number = userId) {
-    return new Session(this, type, userId, ctxId)
+  shouldMatchSnapshot(message: string) {
+    // TODO
+    // return expect(this.send(message)).resolves.toMatchSnapshot(message)
   }
 }
 

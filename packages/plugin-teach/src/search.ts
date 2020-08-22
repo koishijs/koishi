@@ -1,4 +1,4 @@
-import { isPositiveInteger, parseTeachArgs, Dialogue, DialogueTest, DialogueFlag } from './database'
+import { isPositiveInteger, parseTeachArgs, Dialogue, DialogueTest } from './utils'
 import { Context } from 'koishi-core'
 import { getTotalWeight } from './receiver'
 
@@ -16,7 +16,7 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-declare module './database' {
+declare module './utils' {
   interface Dialogue {
     _redirections: Dialogue[]
   }
@@ -34,13 +34,13 @@ declare module './database' {
   }
 }
 
-export default function apply (ctx: Context) {
+export default function apply(ctx: Context) {
   ctx.command('teach')
-    .option('--search', '搜索已有问答', { notUsage: true })
-    .option('/, --page <page>', '设置搜索结果的页码', { validate: isPositiveInteger })
-    .option('--auto-merge', '自动合并相同的问题和回答')
-    .option('-R, --no-recursive', '禁用递归查询', { default: true })
-    .option('|, --pipe <op...>', '对每个搜索结果执行操作')
+    .option('search', '搜索已有问答', { notUsage: true })
+    .option('page', '/ <page>  设置搜索结果的页码', { validate: isPositiveInteger })
+    .option('autoMerge', '自动合并相同的问题和回答')
+    .option('recursive', '-R  禁用递归查询', { fallback: true, value: false })
+    .option('pipe', '| <op...>  对每个搜索结果执行操作')
 
   ctx.before('dialogue/execute', (argv) => {
     const { search, noArgs } = argv.options
@@ -49,7 +49,6 @@ export default function apply (ctx: Context) {
 
   ctx.before('dialogue/validate', (argv) => {
     if (!argv.options.search) {
-      delete argv.options.R
       delete argv.options.recursive
     }
   })
@@ -60,7 +59,7 @@ export default function apply (ctx: Context) {
   })
 
   ctx.on('dialogue/detail-short', ({ flag }, output) => {
-    if (flag & DialogueFlag.regexp) {
+    if (flag & Dialogue.Flag.regexp) {
       output.questionType = '正则'
     }
   })
@@ -79,22 +78,24 @@ export default function apply (ctx: Context) {
     }
     for (const dialogue of dialogues) {
       const { answer } = dialogue
+      // TODO extract dialogue command
       if (!answer.startsWith('%{dialogue ')) continue
       const { prefixed, unprefixed } = argv.config._stripQuestion(answer.slice(11, -1).trimStart())
       if (unprefixed in argv.questionMap) continue
-      const dialogues = argv.questionMap[unprefixed] = await Dialogue.fromTest(ctx, {
+      // TODO multiple tests in one query
+      const dialogues = argv.questionMap[unprefixed] = await ctx.database.getDialoguesByTest({
         ...test,
         regexp: null,
         question: unprefixed,
         original: prefixed,
       })
       Object.defineProperty(dialogue, '_redirections', { writable: true, value: dialogues })
-      await argv.ctx.parallelize('dialogue/search', argv, test, dialogues)
+      await argv.ctx.parallel('dialogue/search', argv, test, dialogues)
     }
   })
 }
 
-export function formatAnswer (source: string, { maxAnswerLength = 100 }: Dialogue.Config) {
+export function formatAnswer(source: string, { maxAnswerLength = 100 }: Dialogue.Config) {
   let trimmed = false
   const lines = source.split(/(\r?\n|\$n)/g)
   if (lines.length > 1) {
@@ -116,17 +117,17 @@ export function formatAnswer (source: string, { maxAnswerLength = 100 }: Dialogu
   return source
 }
 
-export function getDetails (argv: Dialogue.Argv, dialogue: Dialogue) {
+export function getDetails(argv: Dialogue.Argv, dialogue: Dialogue) {
   const details: SearchDetails = []
   argv.ctx.emit('dialogue/detail-short', dialogue, details, argv)
   return details
 }
 
-export function formatDetails (dialogue: Dialogue, details: SearchDetails) {
+export function formatDetails(dialogue: Dialogue, details: SearchDetails) {
   return `${dialogue.id}. ${details.length ? `[${details.join(', ')}] ` : ''}`
 }
 
-function formatPrefix (argv: Dialogue.Argv, dialogue: Dialogue, showAnswerType = false) {
+function formatPrefix(argv: Dialogue.Argv, dialogue: Dialogue, showAnswerType = false) {
   const details = getDetails(argv, dialogue)
   let result = formatDetails(dialogue, details)
   if (details.questionType) result += `[${details.questionType}] `
@@ -134,7 +135,7 @@ function formatPrefix (argv: Dialogue.Argv, dialogue: Dialogue, showAnswerType =
   return result
 }
 
-export function formatAnswers (argv: Dialogue.Argv, dialogues: Dialogue[], prefix = '') {
+export function formatAnswers(argv: Dialogue.Argv, dialogues: Dialogue[], prefix = '') {
   return dialogues.map((dialogue) => {
     const { answer } = dialogue
     const output = [`${prefix}${formatPrefix(argv, dialogue, true)}${formatAnswer(answer, argv.config)}`]
@@ -143,7 +144,7 @@ export function formatAnswers (argv: Dialogue.Argv, dialogues: Dialogue[], prefi
   })
 }
 
-export function formatQuestionAnswers (argv: Dialogue.Argv, dialogues: Dialogue[], prefix = '') {
+export function formatQuestionAnswers(argv: Dialogue.Argv, dialogues: Dialogue[], prefix = '') {
   return dialogues.map((dialogue) => {
     const details = getDetails(argv, dialogue)
     const { questionType = '问题', answerType = '回答' } = details
@@ -154,65 +155,51 @@ export function formatQuestionAnswers (argv: Dialogue.Argv, dialogues: Dialogue[
   })
 }
 
-async function showSearch (argv: Dialogue.Argv) {
-  const { ctx, meta, options } = argv
+async function showSearch(argv: Dialogue.Argv) {
+  const { ctx, session, options } = argv
   const { regexp, question, answer, page = 1, original, pipe, recursive, autoMerge } = options
   const { itemsPerPage = 30, mergeThreshold = 5 } = argv.config
 
   const test: DialogueTest = { question, answer, regexp, original: options._original }
   if (ctx.bail('dialogue/before-search', argv, test)) return
-  const dialogues = await Dialogue.fromTest(ctx, test)
+  const dialogues = await ctx.database.getDialoguesByTest(test)
 
   if (pipe) {
-    if (!dialogues.length) return meta.$send('没有搜索到任何问答。')
+    if (!dialogues.length) return '没有搜索到任何问答。'
     const command = ctx.command('teach')
-    const argv = { ...command.parse(pipe), meta, command }
-    const target = argv.options.target = dialogues.map(d => d.id).join(',')
+    const argv = { ...command.parse(pipe), session, command }
+    const target = argv.options['target'] = dialogues.map(d => d.id).join(',')
     argv.source = `#${target} ${pipe}`
     parseTeachArgs(argv)
     return command.execute(argv)
   }
 
   if (recursive && !autoMerge) {
-    await argv.ctx.parallelize('dialogue/search', argv, test, dialogues)
-  }
-
-  function sendResult (title: string, output: string[], suffix?: string) {
-    if (output.length <= itemsPerPage) {
-      output.unshift(title + '：')
-      if (suffix) output.push(suffix)
-    } else {
-      const pageCount = Math.ceil(output.length / itemsPerPage)
-      output = output.slice((page - 1) * itemsPerPage, page * itemsPerPage)
-      output.unshift(title + `（第 ${page}/${pageCount} 页）：`)
-      if (suffix) output.push(suffix)
-      output.push('可以使用 /+页码 以调整输出的条目页数。')
-    }
-    return meta.$send(output.join('\n'))
+    await argv.ctx.parallel('dialogue/search', argv, test, dialogues)
   }
 
   if (!question && !answer) {
-    if (!dialogues.length) return meta.$send('没有搜索到任何回答，尝试切换到其他环境。')
+    if (!dialogues.length) return '没有搜索到任何回答，尝试切换到其他环境。'
     return sendResult('全部问答如下', formatQuestionAnswers(argv, dialogues))
   }
 
   if (!options.regexp) {
     const suffix = options.regexp !== false ? '，请尝试使用正则表达式匹配' : ''
     if (!question) {
-      if (!dialogues.length) return meta.$send(`没有搜索到回答“${answer}”${suffix}。`)
+      if (!dialogues.length) return session.$send(`没有搜索到回答“${answer}”${suffix}。`)
       const output = dialogues.map(d => `${formatPrefix(argv, d)}${d.original}`)
       return sendResult(`回答“${answer}”的问题如下`, output)
     } else if (!answer) {
-      if (!dialogues.length) return meta.$send(`没有搜索到问题“${original}”${suffix}。`)
+      if (!dialogues.length) return session.$send(`没有搜索到问题“${original}”${suffix}。`)
       const output = formatAnswers(argv, dialogues)
-      const state = ctx.getSessionState(meta)
+      const state = ctx.getSessionState(session)
       state.isSearch = true
       state.test = test
       state.dialogues = dialogues
       const total = await getTotalWeight(ctx, state)
       return sendResult(`问题“${original}”的回答如下`, output, dialogues.length > 1 ? `实际触发概率：${+Math.min(total, 1).toFixed(3)}` : '')
     } else {
-      if (!dialogues.length) return meta.$send(`没有搜索到问答“${original}”“${answer}”${suffix}。`)
+      if (!dialogues.length) return session.$send(`没有搜索到问答“${original}”“${answer}”${suffix}。`)
       const output = [dialogues.map(d => d.id).join(', ')]
       return sendResult(`“${original}”“${answer}”匹配的回答如下`, output)
     }
@@ -237,28 +224,42 @@ async function showSearch (argv: Dialogue.Argv) {
   }
 
   if (!question) {
-    if (!dialogues.length) return meta.$send(`没有搜索到含有正则表达式“${answer}”的回答。`)
+    if (!dialogues.length) return `没有搜索到含有正则表达式“${answer}”的回答。`
     return sendResult(`回答正则表达式“${answer}”的搜索结果如下`, output)
   } else if (!answer) {
-    if (!dialogues.length) return meta.$send(`没有搜索到含有正则表达式“${original}”的问题。`)
+    if (!dialogues.length) return `没有搜索到含有正则表达式“${original}”的问题。`
     return sendResult(`问题正则表达式“${original}”的搜索结果如下`, output)
   } else {
-    if (!dialogues.length) return meta.$send(`没有搜索到含有正则表达式“${original}”“${answer}”的问答。`)
+    if (!dialogues.length) return `没有搜索到含有正则表达式“${original}”“${answer}”的问答。`
     return sendResult(`问答正则表达式“${original}”“${answer}”的搜索结果如下`, output)
+  }
+
+  function sendResult(title: string, output: string[], suffix?: string) {
+    if (output.length <= itemsPerPage) {
+      output.unshift(title + '：')
+      if (suffix) output.push(suffix)
+    } else {
+      const pageCount = Math.ceil(output.length / itemsPerPage)
+      output = output.slice((page - 1) * itemsPerPage, page * itemsPerPage)
+      output.unshift(title + `（第 ${page}/${pageCount} 页）：`)
+      if (suffix) output.push(suffix)
+      output.push('可以使用 /+页码 以调整输出的条目页数。')
+    }
+    return output.join('\n')
   }
 }
 
-async function showInfo ({ ctx, meta }: Dialogue.Argv) {
-  const [[{
-    'COUNT(DISTINCT `question`)': questions,
-    'COUNT(*)': answers,
-  }], { totalSize, totalCount }] = await Promise.all([
-    ctx.database.query<any>('SELECT COUNT(DISTINCT `question`), COUNT(*) FROM `dialogue`'),
-    ctx.app.getImageServerStatus(),
-  ])
+async function showInfo({ ctx }: Dialogue.Argv) {
+  const tasks: Promise<string>[] = []
+  tasks.push(ctx.database.getDialogueStats().then(({ questions, dialogues }) => {
+    return `共收录了 ${questions} 个问题和 ${dialogues} 个回答。`
+  }))
+  if (ctx.app.getImageServerStatus) {
+    tasks.push(ctx.app.getImageServerStatus().then(({ totalSize, totalCount }) => {
+      return `收录图片 ${totalCount} 张，总体积 ${(totalSize / (1 << 20)).toFixed(1)} MB。`
+    }))
+  }
 
-  return meta.$send([
-    `共收录了 ${questions} 个问题和 ${answers} 个回答。`,
-    `收录图片 ${totalCount} 张，总体积 ${(totalSize / (1 << 20)).toFixed(1)} MB。`,
-  ].join('\n'))
+  const output = await Promise.all(tasks)
+  return output.join('\n')
 }

@@ -6,14 +6,14 @@ const haabMonthNames = ['Pop', "Wo'", 'Sip', "Sotz'", 'Sek', 'Xul', "Yaxk'in", '
 const longCountUnits = ['Kin', 'Uinal', 'Tun', "Ka'tun", "Bak'tun", 'Pictun', 'Kalabtun', "K'inchiltun", 'Alautun']
 const dayNames = ['Ajaw', 'Imix', "Ik'", "Ak'bal", "K'an", 'Chikchan', 'Kimi', "Manik'", 'Lamat', 'Muluk', 'Ok', 'Chuwen', 'Eb', 'Ben', 'Ix', 'Men', "K'ib", 'Kaban', "Etz'nab", 'Kawak']
 
-function isLeap (year: number) {
+function isLeap(year: number) {
   return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
 }
 
 class MayaDate {
-  constructor (public stamp: number) {}
+  constructor(public stamp: number) {}
 
-  compare (date: MayaDate) {
+  compare(date: MayaDate) {
     if (this.stamp > date.stamp) {
       return 1
     } else if (this.stamp < date.stamp) {
@@ -22,11 +22,11 @@ class MayaDate {
     return 0
   }
 
-  getDelta (date: MayaDate) {
+  getDelta(date: MayaDate) {
     return this.stamp - date.stamp
   }
 
-  static fromGreg (year: number, month: number, day: number) {
+  static fromGreg(year: number, month: number, day: number) {
     let delta = 0
 
     const pyear = -3113, pmonth = 8, pday = 11
@@ -40,22 +40,22 @@ class MayaDate {
     }
 
     let m4 = 0
-    let m4begin = pyear + (pyear > 0 ? 4 - pyear % 4 : -(pyear % 4))
-    let m4end = year - 1 - (year > 0 ? (year - 1) % 4 : 4 + (year - 1) % 4)
+    const m4begin = pyear - pyear % 4
+    const m4end = year - 1 - (year > 0 ? (year - 1) % 4 : 4 + (year - 1) % 4)
     if (m4begin <= m4end) {
       m4 = Math.floor((m4end - m4begin) / 4) + 1
     }
 
     let m100 = 0
-    let m100begin = pyear + (pyear > 0 ? 100 - pyear % 100 : -(pyear % 100))
-    let m100end = year - 1 - (year > 0 ? (year - 1) % 100 : 100 + (year - 1) % 100)
+    const m100begin = pyear - pyear % 100
+    const m100end = year - 1 - (year > 0 ? (year - 1) % 100 : 100 + (year - 1) % 100)
     if (m100begin <= m100end) {
       m100 = Math.floor((m100end - m100begin) / 100) + 1
     }
 
     let m400 = 0
-    let m400begin = pyear + (pyear > 0 ? 400 - pyear % 400 : -(pyear % 400))
-    let m400end = year - 1 - (year > 0 ? (year - 1) % 400 : 400 + (year - 1) % 400)
+    const m400begin = pyear - pyear % 400
+    const m400end = year - 1 - (year > 0 ? (year - 1) % 400 : 400 + (year - 1) % 400)
     if (m400begin <= m400end) {
       m400 = Math.floor((m400end - m400begin) / 400) + 1
     }
@@ -71,21 +71,18 @@ class MayaDate {
         delta += dayInMonth[m]
       }
       delta += day
-    } else if (pyear == year) {
+    } else if (pyear === year) {
       for (let m = pmonth + 1; m < month; m++) {
         delta += dayInMonth[m]
       }
       if (pmonth < month) {
         delta += dayInMonth[pmonth] - pday
         delta += day
-      } else if (pmonth == month) {
+      } else if (pmonth === month) {
         delta += day - pday
       }
     }
 
-    if (isLeap(pyear) && pmonth <= 2 && (month > 2 || year > pyear)) {
-      delta++
-    }
     if (isLeap(year) && month > 2 && pyear < year) {
       delta++
     }
@@ -93,9 +90,9 @@ class MayaDate {
     return new MayaDate(delta)
   }
 
-  static fromMaya (mlc: string) {
+  static fromMaya(mlc: string) {
     let num = 0
-    let periods = mlc.split('.')
+    const periods = mlc.split('.')
     periods.forEach((n, i) => {
       if (i === periods.length - 2) {
         num *= 18
@@ -107,52 +104,49 @@ class MayaDate {
     return new MayaDate(num)
   }
 
-  toGreg () {
+  toGreg() {
     let days = this.stamp
     let year = -3113, month = 8, day = 11
-    
-    let t400num = Math.floor(days / 146097)
+
+    const t400num = Math.floor(days / 146097)
     year += t400num * 400
     days %= 146097
 
     if (days > 0) {
       let has400 = false
-      let next400 = MayaDate.fromGreg(year + (year > 0 ? 400 - year % 400 : -(year % 400)), 2, 29)
+      const next400 = MayaDate.fromGreg(year + (year > 0 ? 400 - year % 400 : -(year % 400)), 2, 29)
 
-      let t100num = Math.floor(days / 36524)
+      const t100num = Math.floor(days / 36524)
       year += t100num * 100
       days %= 36524
 
-      let last100 = MayaDate.fromGreg(year, month, day)
+      const last100 = MayaDate.fromGreg(year, month, day)
       if (last100.compare(next400) > 0) {
         has400 = true
         day--
       }
 
       if (days > 0) {
-        let has100 = false
         let nyear = year + (year > 0 ? 100 - year % 100 : -(year % 100))
         if (nyear % 400 === 0) {
           nyear += 100
         }
-        let next100 = MayaDate.fromGreg(nyear, 2, 28)
+        const next100 = MayaDate.fromGreg(nyear, 2, 28)
 
-        let t4num = Math.floor(days / 1461)
+        const t4num = Math.floor(days / 1461)
         year += t4num * 4
         days %= 1461
 
-        let last4 = MayaDate.fromGreg(year, month, day)
+        const last4 = MayaDate.fromGreg(year, month, day)
         if (last4.compare(next100) > 0) {
-          has100 = true
           day++
         }
         if (!has400 && last4.compare(next400) > 0) {
-          has400 = true
           day--
         }
 
         while (days > 0) {
-          let nextYearDays = isLeap(year + 1) ? 366 : 365
+          const nextYearDays = isLeap(year + 1) ? 366 : 365
           if (days >= nextYearDays) {
             year++
             days -= nextYearDays
@@ -188,7 +182,7 @@ class MayaDate {
     return monthNames[month] + ' ' + day + ', ' + (year <= 0 ? Math.abs(year - 1) + 'BC' : year)
   }
 
-  toMLC () {
+  toMLC() {
     let days = this.stamp
     const periods: number[] = []
     periods.push(days % 20)
@@ -208,14 +202,14 @@ class MayaDate {
     return periods.map((value, index) => `${value} ${longCountUnits[index]}`).reverse().join(', ')
   }
 
-  toTzolkin () {
-    let days = this.stamp
-    let daynum = (days + 4) % 13
-    let dayname = dayNames[days % 20]
+  toTzolkin() {
+    const days = this.stamp
+    const daynum = (days + 4) % 13
+    const dayname = dayNames[days % 20]
     return daynum + ' ' + dayname
   }
 
-  toHaab () {
+  toHaab() {
     let ht = this.stamp % 365
     let hmonth: number, hday: number
     if (ht < 12) {
@@ -233,21 +227,21 @@ class MayaDate {
   }
 }
 
-export function apply (ctx: Context) {
+export function apply(ctx: Context) {
   ctx.command('tools/maya <YYYY-MM-DD> [BC|AD]', '玛雅日历换算')
     .example('maya 2012-12-21')
-    .action(({ meta }, date, hint) => {
-      if (!date) return meta.$send('请输入正确的日期。')
+    .action((_, date, hint) => {
+      if (!date) return '请输入正确的日期。'
       const match = date.match(/^(\d+)[-\.](\d+)[-\.](\d+)\.?$/)
-      if (!match) return meta.$send('请输入正确的日期。')
+      if (!match) return '请输入正确的日期。'
       const year = parseInt(match[1]) * (hint === 'BC' ? -1 : 1)
       const month = parseInt(match[2])
       const day = parseInt(match[3])
       const maya = MayaDate.fromGreg(year, month, day)
-      return meta.$send([
+      return [
         "Tzolk'in: " + maya.toTzolkin(),
         'Haab: ' + maya.toHaab(),
         'Long Count: ' + maya.toMLC(),
-      ].join('\n'))
+      ].join('\n')
     })
 }

@@ -1,26 +1,12 @@
 import { types } from 'util'
-import { noop } from './misc'
+import { noop, defineProperty } from './misc'
 import { Logger } from './logger'
 
 const logger = Logger.create('observer')
 const staticTypes = ['number', 'string', 'bigint', 'boolean', 'symbol', 'function']
 const builtinClasses = ['Date', 'RegExp', 'Set', 'Map', 'WeakSet', 'WeakMap', 'Array']
 
-export function pick <T, K extends keyof T> (source: T, keys: Iterable<K>) {
-  const result = {} as Pick<T, K>
-  for (const key of keys) {
-    result[key] = source[key]
-  }
-  return result
-}
-
-export function defineProperty <T, K extends keyof T> (object: T, key: K, value: T[K]): void
-export function defineProperty <T, K extends keyof any> (object: T, key: K, value: any): void
-export function defineProperty <T, K extends keyof any> (object: T, key: K, value: any) {
-  Object.defineProperty(object, key, { writable: true, value })
-}
-
-function observeProperty (value: any, proxy: any, key: any, label: string, update: any) {
+function observeProperty(value: any, proxy: any, key: any, label: string, update: any) {
   if (types.isDate(value)) {
     return proxy[key] = observeDate(value, update)
   } else if (Array.isArray(value)) {
@@ -30,7 +16,7 @@ function observeProperty (value: any, proxy: any, key: any, label: string, updat
   }
 }
 
-function observeObject <T extends object> (target: T, label: string, update?: () => void): T {
+function observeObject<T extends object>(target: T, label: string, update?: () => void): T {
   if (!target['__proxyGetters__']) {
     Object.defineProperty(target, '__proxyGetters__', { value: {} })
   }
@@ -40,7 +26,7 @@ function observeObject <T extends object> (target: T, label: string, update?: ()
   if (!update) defineProperty(target, '_diff', diff)
 
   const proxy = new Proxy(target as Observed<T>, {
-    get (target, key) {
+    get(target, key) {
       if (key in getters) return getters[key]
       const value = target[key]
       if (!value || staticTypes.includes(typeof value) || typeof key === 'string' && key.startsWith('_')) return value
@@ -53,7 +39,7 @@ function observeObject <T extends object> (target: T, label: string, update?: ()
       })
       return observeProperty(value, getters, key, label, _update)
     },
-    set (target, key, value) {
+    set(target, key, value) {
       if (target[key] !== value && (typeof key !== 'string' || !key.startsWith('_'))) {
         if (update) {
           update()
@@ -68,7 +54,7 @@ function observeObject <T extends object> (target: T, label: string, update?: ()
       }
       return Reflect.set(target, key, value)
     },
-    deleteProperty (target, key) {
+    deleteProperty(target, key) {
       if (update) {
         update()
       } else {
@@ -83,7 +69,7 @@ function observeObject <T extends object> (target: T, label: string, update?: ()
 
 const arrayProxyMethods = ['pop', 'shift', 'splice', 'sort']
 
-function observeArray <T> (target: T[], label: string, update: () => void) {
+function observeArray<T>(target: T[], label: string, update: () => void) {
   const proxy: Record<number, T> = {}
 
   for (const method of arrayProxyMethods) {
@@ -94,21 +80,22 @@ function observeArray <T> (target: T[], label: string, update: () => void) {
   }
 
   return new Proxy(target, {
-    get (target, key) {
+    get(target, key) {
       if (key in proxy) return proxy[key]
       const value = target[key]
       if (!value || staticTypes.includes(typeof value) || typeof key === 'symbol' || isNaN(key as any)) return value
       return observeProperty(value, proxy, key, label, update)
     },
-    set (target, key, value) {
+    set(target, key, value) {
       if (typeof key !== 'symbol' && !isNaN(key as any) && target[key] !== value) update()
       return Reflect.set(target, key, value)
     },
   })
 }
 
-function observeDate (target: Date, update: () => void) {
-  for (const method in Date.prototype) {
+function observeDate(target: Date, update: () => void) {
+  for (const method of Object.getOwnPropertyNames(Date.prototype)) {
+    if (method === 'valueOf') continue
     defineProperty(target, method, function (...args: any[]) {
       const oldValue = target.valueOf()
       const result = Date.prototype[method].apply(this, args)
@@ -119,17 +106,17 @@ function observeDate (target: Date, update: () => void) {
   return target
 }
 
-export type Observed <T, R = any> = T & {
+export type Observed<T, R = any> = T & {
   _diff: Partial<T>
   _update: () => R
   _merge: (value: Partial<T>) => Observed<T>
 }
 
-type UpdateFunction <T, R> = (diff: Partial<T>) => R
+type UpdateFunction<T, R> = (diff: Partial<T>) => R
 
-export function observe <T extends object> (target: T, label?: string | number): Observed<T, void>
-export function observe <T extends object, R> (target: T, update: UpdateFunction<T, R>, label?: string | number): Observed<T, R>
-export function observe <T extends object, R> (target: T, ...args: [(string | number)?] | [UpdateFunction<T, R>, (string | number)?]) {
+export function observe<T extends object>(target: T, label?: string | number): Observed<T, void>
+export function observe<T extends object, R>(target: T, update: UpdateFunction<T, R>, label?: string | number): Observed<T, R>
+export function observe<T extends object, R>(target: T, ...args: [(string | number)?] | [UpdateFunction<T, R>, (string | number)?]) {
   if (staticTypes.includes(typeof target)) {
     throw new Error(`cannot observe immutable type "${typeof target}"`)
   } else if (!target) {

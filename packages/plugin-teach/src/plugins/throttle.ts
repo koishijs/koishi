@@ -1,12 +1,12 @@
 import { Context } from 'koishi-core'
-import { Dialogue } from '../database'
+import { Dialogue } from '../utils'
 
 export interface ThrottleConfig {
   interval: number
   responses: number
 }
 
-declare module '../database' {
+declare module '../utils' {
   namespace Dialogue {
     interface Config {
       throttle?: ThrottleConfig | ThrottleConfig[]
@@ -20,12 +20,12 @@ declare module '../receiver' {
   }
 }
 
-export default function apply (ctx: Context, config: Dialogue.Config) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
   const { throttle } = config
 
   const throttleConfig = !throttle ? []
     : Array.isArray(throttle) ? throttle
-    : [throttle]
+      : [throttle]
   const counters: Record<number, number> = {}
   for (const { interval, responses } of throttleConfig) {
     counters[interval] = responses

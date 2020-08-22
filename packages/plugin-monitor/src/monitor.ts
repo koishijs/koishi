@@ -1,13 +1,14 @@
-import { GroupFlag, CQCode, Logger, App, GroupData } from 'koishi'
+import { Group, App } from 'koishi-core'
+import { CQCode, Logger } from 'koishi-utils'
 import { Subscribe } from './database'
 import bilibili from './bilibili'
-import twitCasting from './twitCasting'
+import twitcasting from './twitCasting'
 import mirrativ from './mirrativ'
 import axios from 'axios'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'monitor/before-send' (info: LiveInfo, group: Pick<GroupData, 'id' | 'flag' | 'assignee' | 'subscribe'>): void | boolean
+    'monitor/before-send' (info: LiveInfo, group: Pick<Group, 'id' | 'flag' | 'assignee' | 'subscribe'>): void | boolean
   }
 }
 
@@ -20,12 +21,12 @@ const headers = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101 Firefox/60.0',
 }
 
-export async function get <T> (url: string) {
+export async function get<T>(url: string) {
   const { data } = await axios.get<T>(url, { headers })
   return data
 }
 
-const platforms = { bilibili, twitCasting, mirrativ } as const
+const platforms = { bilibili, twitcasting, mirrativ } as const
 
 type LiveType = keyof typeof platforms
 type StatusKey = 'bilibiliStatus' | 'twitCastingStatus' | 'mirrativStatus'
@@ -34,7 +35,7 @@ export class Monitor {
   public running = false
   public daemons: Partial<Record<LiveType, Daemon>> = {}
 
-  constructor (public config: Subscribe, public app: App) {
+  constructor(public config: Subscribe, public app: App) {
     for (const key in platforms) {
       if (key in config) {
         this.daemons[key] = new Daemon(key as LiveType, config, this)
@@ -42,14 +43,14 @@ export class Monitor {
     }
   }
 
-  start () {
+  start() {
     this.running = true
     for (const type in this.daemons) {
       this.daemons[type].start()
     }
   }
 
-  stop () {
+  stop() {
     this.running = false
     for (const type in this.daemons) {
       this.daemons[type].stop()
@@ -70,17 +71,17 @@ export class Daemon {
   private _statusKey: StatusKey
   private _displayType: string
 
-  constructor (public readonly type: LiveType, public config: Subscribe, public monitor: Monitor) {}
+  constructor(public readonly type: LiveType, public config: Subscribe, public monitor: Monitor) {}
 
-  get id () {
+  get id() {
     return this.config[this.type]
   }
 
-  get isLive () {
+  get isLive() {
     return this._status.some(s => s)
   }
 
-  set isLive (value) {
+  set isLive(value) {
     const [status] = this._status
     this._status.unshift(value)
     this._status = this._status.slice(0, 5)
@@ -89,14 +90,14 @@ export class Daemon {
     }
   }
 
-  public start () {
+  public start() {
     this._statusKey = this.type + 'Status' as any
     this._displayType = this.type[0].toUpperCase() + this.type.slice(1)
     this.isLive = this.config[this._statusKey]
     this.run()
   }
 
-  private async run () {
+  private async run() {
     this.stop()
     this._timer = setTimeout(() => this.run(), INTERVAL)
     let result: LiveInfo
@@ -110,12 +111,12 @@ export class Daemon {
     }
   }
 
-  public stop () {
+  public stop() {
     clearTimeout(this._timer)
     this._timer = null
   }
 
-  protected async send (info: LiveInfo) {
+  protected async send(info: LiveInfo) {
     if (this.isLive) return
     this.isLive = true
     const { url, content, image, title } = info
@@ -123,13 +124,13 @@ export class Daemon {
     const groups = await app.database.getAllGroups(['id', 'flag', 'assignee', 'subscribe'])
     groups.forEach(async (group) => {
       const { id, flag, assignee, subscribe } = group
-      if (!subscribe[this.config.id] || flag & GroupFlag.noEmit) return
+      if (!subscribe[this.config.id] || flag & Group.Flag.silent) return
       const bot = app.bots[assignee]
       const output = [`[直播提示] ${this.config.names[0]} 正在 ${this._displayType} 上直播：${url}`]
       // at subscibers
       try {
-        const users = await bot.getGroupMemberList(id)
-        const subscribers = subscribe[this.config.id].filter(id => !id || users.some(user => user.userId === id))
+        const memberMap = await bot.getMemberMap(id)
+        const subscribers = subscribe[this.config.id].filter(id => !id || id in memberMap)
         subscribe[this.config.id] = subscribers
       } catch {}
       const subscribers = subscribe[this.config.id].filter(x => x)
@@ -142,7 +143,7 @@ export class Daemon {
       }
       if (app.bail('monitor/before-send', info, group)) return
       for (const message of messages) {
-        await bot.sendGroupMsgAsync(id, message)
+        await bot.sendGroupMessage(id, message)
       }
     })
   }

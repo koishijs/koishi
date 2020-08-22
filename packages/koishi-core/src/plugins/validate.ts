@@ -1,30 +1,30 @@
 import { format } from 'util'
-import { getDateNumber, hyphenate } from 'koishi-utils'
-import { Meta } from '../meta'
-import { UserField, UserData } from '../database'
-import { Command, ParsedCommandLine } from '../command'
+import { Time } from 'koishi-utils'
+import { Session } from '../session'
+import { User } from '../database'
+import { Command, ParsedArgv } from '../command'
 import { App } from '../app'
+import { Message } from './message'
 
-declare module '../context' {
-  interface EventMap {
-    'usage-exhausted' (meta: Meta): void
-  }
-}
-
-export type UserType <T, U extends UserField = UserField> = T | ((user: Pick<UserData, U>) => T)
+export type UserType<T, U extends User.Field = User.Field> = T | ((user: Pick<User, U>) => T)
 
 declare module '../command' {
-  interface Command <U, G> {
-    _checkers: ((meta: Meta<U, G>) => string | boolean)[]
-    before (checker: (meta: Meta<U, G>) => string | boolean): this
-    getConfig <K extends keyof CommandConfig> (key: K, meta: Meta): Exclude<CommandConfig[K], (user: UserData) => any>
+  interface Command<U, G> {
+    _checkers: ((session: Session<U, G>) => string | boolean)[]
+    before(checker: (session: Session<U, G>) => string | boolean): this
+    getConfig<K extends keyof CommandConfig>(key: K, session: Session): Exclude<CommandConfig[K], (user: User) => any>
   }
 
-  interface CommandConfig <U, G> {
+  interface OptionConfig<T> {
+    authority?: number
+    notUsage?: boolean
+  }
+
+  interface CommandConfig<U, G> {
+    /** min authority */
+    authority?: number
     /** disallow unknown options */
     checkUnknown?: boolean
-    /** check required options */
-    checkRequired?: boolean
     /** check argument count */
     checkArgCount?: boolean
     /** show command warnings */
@@ -42,39 +42,31 @@ declare module '../command' {
   }
 }
 
-const messages = {
-  LOW_AUTHORITY: '权限不足。',
-  TOO_FREQUENT: '调用过于频繁，请稍后再试。',
-  INSUFFICIENT_ARGUMENTS: '缺少参数，请检查指令语法。',
-  REDUNANT_ARGUMENTS: '存在多余参数，请检查指令语法。',
-  REQUIRED_OPTIONS: '缺少必需选项 %s，请检查指令语法。',
-  INVALID_OPTION: '选项 %s 输入无效，%s',
-  UNKNOWN_OPTIONS: '存在未知选项 %s，请检查指令语法。',
-  CHECK_SYNTAX: '请检查指令语法。',
-  SHOW_THIS_MESSAGE: '显示本信息',
-  USAGE_EXHAUSTED: '调用次数已达上限。',
-}
-
-export function getUsageName (command: Command) {
+export function getUsageName(command: Command) {
   return command.config.usageName || command.name
 }
 
 export type ValidationField = 'authority' | 'usage' | 'timers'
 
 Object.assign(Command.defaultConfig, {
+  authority: 1,
   showWarning: true,
   maxUsage: Infinity,
   minInterval: 0,
+})
+
+Object.assign(Command.defaultOptionConfig, {
+  authority: 0,
 })
 
 Command.userFields(function* ({ command, options = {} }, fields) {
   const { maxUsage, minInterval, authority } = command.config
   let shouldFetchAuthority = !fields.has('authority') && authority > 0
   let shouldFetchUsage = !!(maxUsage || minInterval)
-  for (const option of command._options) {
-    if (option.camels[0] in options) {
-      if (option.authority > 0) shouldFetchAuthority = true
-      if (option.notUsage) shouldFetchUsage = false
+  for (const { name, authority, notUsage } of Object.values(command._options)) {
+    if (name in options) {
+      if (authority > 0) shouldFetchAuthority = true
+      if (notUsage) shouldFetchUsage = false
     }
   }
   if (shouldFetchAuthority) yield 'authority'
@@ -84,9 +76,9 @@ Command.userFields(function* ({ command, options = {} }, fields) {
   }
 })
 
-Command.prototype.getConfig = function (key: string, meta: Meta) {
+Command.prototype.getConfig = function (key: string, session: Session) {
   const value = this.config[key]
-  return typeof value === 'function' ? value(meta.$user) : value
+  return typeof value === 'function' ? value(session.$user) : value
 }
 
 Command.prototype.before = function (this: Command, checker) {
@@ -94,75 +86,62 @@ Command.prototype.before = function (this: Command, checker) {
   return this
 }
 
-export default function apply (app: App) {
+export default function apply(app: App) {
   app.on('new-command', (cmd) => {
     cmd._checkers = []
   })
 
-  app.on('before-command', ({ meta, args, options, command }: ParsedCommandLine<ValidationField>) => {
-    async function sendHint (meta: Meta, message: string, ...param: any[]) {
-      if (command.config.showWarning) {
-        await meta.$send(format(message, ...param))
-        return true
-      }
+  app.on('before-command', ({ session, args, options, command }: ParsedArgv<ValidationField>) => {
+    function sendHint(message: string, ...param: any[]) {
+      return command.config.showWarning ? format(message, ...param) : ''
     }
 
     for (const checker of command._checkers) {
-      const result = checker(meta)
-      if (result) return sendHint(meta, result === true ? '' : result)
+      const result = checker(session)
+      if (result) return sendHint(result === true ? '' : result)
     }
 
     // check argument count
     if (command.config.checkArgCount) {
       const nextArg = command._arguments[args.length]
       if (nextArg?.required) {
-        return sendHint(meta, messages.INSUFFICIENT_ARGUMENTS)
+        return sendHint(Message.INSUFFICIENT_ARGUMENTS)
       }
       const finalArg = command._arguments[command._arguments.length - 1]
-      if (args.length > command._arguments.length && !finalArg.noSegment && !finalArg.variadic) {
-        return sendHint(meta, messages.REDUNANT_ARGUMENTS)
+      if (args.length > command._arguments.length && !finalArg.greedy && !finalArg.variadic) {
+        return sendHint(Message.REDUNANT_ARGUMENTS)
       }
     }
 
     // check unknown options
     if (command.config.checkUnknown) {
-      const unknown = Object.keys(options).map(hyphenate).filter(key => !command['_optionMap'][key])
+      const unknown = Object.keys(options).filter(key => !command._options[key])
       if (unknown.length) {
-        return sendHint(meta, messages.UNKNOWN_OPTIONS, unknown.join(', '))
+        return sendHint(Message.UNKNOWN_OPTIONS, unknown.join(', '))
       }
     }
 
-    // check required options
-    if (command.config.checkRequired) {
-      const absent = command._options.find((option) => {
-        return option.required && !(option.longest in options)
-      })
-      if (absent) {
-        return sendHint(meta, messages.REQUIRED_OPTIONS, absent.rawName)
-      }
-    }
-
-    for (const option of command._options) {
-      if (!option.validate || !(option.longest in options)) continue
-      const result = typeof option.validate !== 'function'
-        ? !option.validate.test(options[option.longest])
-        : option.validate(options[option.longest])
+    for (const { validate, name } of Object.values(command._options)) {
+      if (!validate || !(name in options)) continue
+      const result = typeof validate !== 'function'
+        ? !validate.test(options[name])
+        : validate(options[name])
       if (result) {
-        return sendHint(meta, messages.INVALID_OPTION, option.rawName, result === true ? messages.CHECK_SYNTAX : result)
+        return sendHint(Message.INVALID_OPTION, name, result === true ? Message.CHECK_SYNTAX : result)
       }
     }
 
-    if (!meta.$user) return
+    if (!session.$user) return
     let isUsage = true
 
     // check authority
-    if (command.config.authority > meta.$user.authority) {
-      return sendHint(meta, messages.LOW_AUTHORITY)
+    if (command.config.authority > session.$user.authority) {
+      return sendHint(Message.LOW_AUTHORITY)
     }
-    for (const option of command._options) {
-      if (option.camels[0] in options) {
-        if (option.authority > meta.$user.authority) {
-          return sendHint(meta, messages.LOW_AUTHORITY)
+    for (const option of Object.values(command._options)) {
+      if (option.name in options) {
+        if (option.authority > session.$user.authority) {
+          return sendHint(Message.LOW_AUTHORITY)
         }
         if (option.notUsage) isUsage = false
       }
@@ -171,30 +150,29 @@ export default function apply (app: App) {
     // check usage
     if (isUsage) {
       const name = getUsageName(command)
-      const minInterval = command.getConfig('minInterval', meta)
-      const maxUsage = command.getConfig('maxUsage', meta)
+      const minInterval = command.getConfig('minInterval', session)
+      const maxUsage = command.getConfig('maxUsage', session)
 
-      if (maxUsage < Infinity && checkUsage(name, meta.$user, maxUsage)) {
-        app.emit(meta, 'usage-exhausted', meta)
-        return sendHint(meta, messages.USAGE_EXHAUSTED)
+      if (maxUsage < Infinity && checkUsage(name, session.$user, maxUsage)) {
+        return sendHint(Message.USAGE_EXHAUSTED)
       }
 
-      if (minInterval > 0 && checkTimer(name, meta.$user, minInterval)) {
-        return sendHint(meta, messages.TOO_FREQUENT)
+      if (minInterval > 0 && checkTimer(name, session.$user, minInterval)) {
+        return sendHint(Message.TOO_FREQUENT)
       }
     }
   })
 }
 
-export function getUsage (name: string, user: Pick<UserData, 'usage'>) {
-  const $date = getDateNumber()
+export function getUsage(name: string, user: Pick<User, 'usage'>) {
+  const $date = Time.getDateNumber()
   if (user.usage.$date !== $date) {
     user.usage = { $date }
   }
   return user.usage[name] || 0
 }
 
-export function checkUsage (name: string, user: Pick<UserData, 'usage'>, maxUsage?: number) {
+export function checkUsage(name: string, user: Pick<User, 'usage'>, maxUsage?: number) {
   const count = getUsage(name, user)
   if (count >= maxUsage) return true
   if (maxUsage) {
@@ -204,7 +182,7 @@ export function checkUsage (name: string, user: Pick<UserData, 'usage'>, maxUsag
 
 const UPDATE_INTERVAL = 86400000
 
-export function checkTimer (name: string, { timers }: Pick<UserData, 'timers'>, offset?: number) {
+export function checkTimer(name: string, { timers }: Pick<User, 'timers'>, offset?: number) {
   const now = Date.now()
   if (!(now <= timers.$date)) {
     for (const key in timers) {

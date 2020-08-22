@@ -4,7 +4,7 @@ export default class TwoSquare {
   square1: Square
   square2: Square
 
-  constructor (keyword1: string, keyword2: string, public type: SquareType) {
+  constructor(keyword1: string, keyword2: string, public type: SquareType) {
     if (!isKeyword(keyword1) || !isKeyword(keyword2)) {
       throw new Error('Invalid keyword.')
     }
@@ -12,7 +12,7 @@ export default class TwoSquare {
     this.square2 = new Square(type, keyword2)
   }
 
-  crypt (text: string) {
+  crypt(text: string) {
     if (this.type === '25ij') {
       text = text.replace(/j/ig, 'i')
     } else if (this.type === '25q') {
@@ -46,11 +46,11 @@ export default class TwoSquare {
     return result
   }
 
-  encrypt (text: string) {
+  encrypt(text: string) {
     return this.crypt(text)
   }
 
-  decrypt (text: string) {
+  decrypt(text: string) {
     return this.crypt(text)
   }
 }

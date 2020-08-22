@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+
 import { get, Daemon, LiveInfo } from './monitor'
 
 interface BilibiliData {
@@ -18,7 +20,7 @@ interface BilibiliData {
   }
 }
 
-export default async function check (daemon: Daemon): Promise<LiveInfo> {
+export default async function check(daemon: Daemon): Promise<LiveInfo> {
   const data = await get<BilibiliData>(`https://api.live.bilibili.com/room/v1/Room/getRoomInfoOld?mid=${daemon.id}`)
   if (!data.data || !data.data.liveStatus) return
   const { url, title, cover } = data.data

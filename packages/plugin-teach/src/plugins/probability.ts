@@ -1,7 +1,7 @@
 import { Context } from 'koishi-core'
-import { DialogueFlag, Dialogue, isZeroToOne } from '../database'
+import { Dialogue, isZeroToOne } from '../utils'
 
-declare module '../database' {
+declare module '../utils' {
   interface Dialogue {
     probS: number
     probA: number
@@ -14,12 +14,12 @@ declare module '../receiver' {
   }
 }
 
-export default function apply (ctx: Context, config: Dialogue.Config) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
   const { appellationTimeout = 20000 } = config
 
   ctx.command('teach')
-    .option('-p, --probability-strict <prob>', '设置问题的触发权重', { validate: isZeroToOne })
-    .option('-P, --probability-appellative <prob>', '设置被称呼时问题的触发权重', { validate: isZeroToOne })
+    .option('probabilityStrict', '-p <prob>  设置问题的触发权重', { validate: isZeroToOne })
+    .option('probabilityAppellative', '-P <prob>  设置被称呼时问题的触发权重', { validate: isZeroToOne })
 
   ctx.before('dialogue/modify', ({ options, target, appellative }, data) => {
     if (!target && appellative) {
@@ -40,15 +40,15 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.before('dialogue/prepare', ({ test, userId, dialogues, activated }) => {
-    const hasNormal = dialogues.some(d => !(d.flag & DialogueFlag.regexp))
+    const hasNormal = dialogues.some(d => !(d.flag & Dialogue.Flag.regexp))
     dialogues.forEach((dialogue) => {
-      if (hasNormal && (dialogue.flag & DialogueFlag.regexp)) {
+      if (hasNormal && (dialogue.flag & Dialogue.Flag.regexp)) {
         // 如果存在普通匹配的问答，则所有正则匹配的问答不会触发
         dialogue._weight = 0
       } else if (userId in activated) {
         // 如果已经是激活状态，采用两个概率的最大值
         dialogue._weight = Math.max(dialogue.probS, dialogue.probA)
-      } else if (!test.appellative || !(dialogue.flag & DialogueFlag.regexp)) {
+      } else if (!test.appellative || !(dialogue.flag & Dialogue.Flag.regexp)) {
         // 如果不是正则表达式，或问题不含称呼，则根据是否有称呼决定概率
         dialogue._weight = test.appellative ? dialogue.probA : dialogue.probS
       } else {
@@ -69,14 +69,13 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/before-send', ({ test, activated, userId }) => {
-    if (test.activated) {
-      const time = activated[userId] = Date.now()
-      setTimeout(() => {
-        if (activated[userId] === time) {
-          delete activated[userId]
-        }
-      }, appellationTimeout)
-    }
+    if (!test.activated) return
+    const time = activated[userId] = Date.now()
+    setTimeout(() => {
+      if (activated[userId] === time) {
+        delete activated[userId]
+      }
+    }, appellationTimeout)
   })
 
   ctx.on('dialogue/detail', ({ probS, probA }, output) => {

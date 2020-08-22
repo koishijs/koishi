@@ -1,71 +1,69 @@
-import { MockedApp } from 'koishi-test-utils'
-import { userFlags, groupFlags, UserFlag, GroupFlag } from 'koishi-core'
-import { admin, registerUserAction, registerGroupAction } from '../src'
-import 'koishi-database-memory'
+import { MockedApp, memory } from 'koishi-test-utils'
+import { User, Group } from 'koishi-core'
+import { enumKeys } from 'koishi-utils'
+import { expect } from 'chai'
+import '@shigma/chai-extended'
+import * as admin from '../src/admin'
 
-const app = new MockedApp({ database: { memory: {} } })
+const app = new MockedApp()
 const session = app.createSession('group', 123, 321)
 
+app.plugin(memory)
 app.plugin(admin)
-app.command('foo', { maxUsage: 10 }).action(({ meta }) => meta.$send('bar'))
-app.command('bar', { maxUsage: 10 }).action(({ meta }) => meta.$send('foo'))
+app.command('foo', { maxUsage: 10 }).action(({ session }) => session.$send('bar'))
+app.command('bar', { maxUsage: 10 }).action(({ session }) => session.$send('foo'))
 
-beforeAll(async () => {
+before(async () => {
   await app.start()
   await app.database.getUser(123, 4)
   await app.database.getUser(456, 3)
   await app.database.getUser(789, 4)
-  await app.database.getGroup(321, app.selfId)
-  await app.database.getGroup(654, app.selfId)
+  await app.database.getGroup(321, app.bots[0].selfId)
+  await app.database.getGroup(654, app.bots[0].selfId)
 })
 
 describe('basic features', () => {
-  test('check', async () => {
+  it('check', async () => {
     await session.shouldHaveReply('admin -u 456 -g 321', '不能同时目标为指定用户和群。')
   })
 })
 
 describe('user operations', () => {
-  test('list actions', async () => {
+  it('list actions', async () => {
     await session.shouldMatchSnapshot('admin')
     await session.shouldMatchSnapshot('admin foo')
   })
 
-  test('check target', async () => {
+  it('check target', async () => {
     await session.shouldHaveReply('admin -u bar set-flag', '未指定目标。')
     await session.shouldHaveReply('admin -u 233 set-flag', '未找到指定的用户。')
     await session.shouldHaveReply('admin -u 789 show-usage', '权限不足。')
   })
 
-  test('setAuth', async () => {
+  it('setAuth', async () => {
     await session.shouldHaveReply('admin -u 456 set-auth -1', '参数错误。')
     await session.shouldHaveReply('admin -u 456 set-auth 3', '用户权限未改动。')
     await session.shouldHaveReply('admin -u 456 set-auth 2', '用户权限已修改。')
     await session.shouldHaveReply('admin -u 456 set-auth 4', '权限不足。')
   })
 
-  test('setFlag', async () => {
-    await session.shouldHaveReply('admin -u 456 set-flag', `可用的标记有 ${userFlags.join(', ')}。`)
+  const userFlags = enumKeys(User.Flag).join(', ')
+
+  it('setFlag', async () => {
+    await session.shouldHaveReply('admin -u 456 set-flag', `可用的标记有 ${userFlags}。`)
     await session.shouldHaveReply('admin -u 456 set-flag foo', '未找到标记 foo。')
     await session.shouldHaveReply('admin -u 456 set-flag ignore', '用户信息已修改。')
-    await expect(app.database.getUser(456)).resolves.toHaveProperty('flag', UserFlag.ignore)
+    await expect(app.database.getUser(456)).eventually.to.have.property('flag', User.Flag.ignore)
   })
 
-  test('unsetFlag', async () => {
-    await session.shouldHaveReply('admin -u 456 unset-flag', `可用的标记有 ${userFlags.join(', ')}。`)
+  it('unsetFlag', async () => {
+    await session.shouldHaveReply('admin -u 456 unset-flag', `可用的标记有 ${userFlags}。`)
     await session.shouldHaveReply('admin -u 456 unset-flag foo', '未找到标记 foo。')
     await session.shouldHaveReply('admin -u 456 unset-flag ignore', '用户信息已修改。')
-    await expect(app.database.getUser(456)).resolves.toHaveProperty('flag', 0)
+    await expect(app.database.getUser(456)).eventually.to.have.property('flag', 0)
   })
 
-  test('showUsage', async () => {
-    await session.shouldHaveReply('admin show-usage', '用户今日没有调用过指令。')
-    await session.shouldHaveReply('foo', 'bar')
-    await session.shouldHaveReply('admin show-usage', '用户今日各指令的调用次数为：\nfoo：1 次')
-    await session.shouldHaveReply('admin show-usage foo bar', '用户今日各指令的调用次数为：\nbar：0 次\nfoo：1 次')
-  })
-
-  test('clearUsage', async () => {
+  it('clearUsage', async () => {
     await session.shouldHaveReply('bar', 'foo')
     await session.shouldHaveReply('admin clear-usage foo', '用户信息已修改。')
     await session.shouldHaveReply('admin show-usage', '用户今日各指令的调用次数为：\nbar：1 次')
@@ -75,38 +73,40 @@ describe('user operations', () => {
 })
 
 describe('group operations', () => {
-  test('list actions', async () => {
+  it('list actions', async () => {
     await session.shouldMatchSnapshot('admin -G')
     await session.shouldMatchSnapshot('admin -G foo')
   })
 
-  test('check target', async () => {
+  it('check target', async () => {
     await session.shouldHaveReply('admin -g bar set-flag', '未找到指定的群。')
   })
 
-  test('setFlag', async () => {
-    await session.shouldHaveReply('admin -G set-flag', `可用的标记有 ${groupFlags.join(', ')}。`)
+  const groupFlags = enumKeys(Group.Flag).join(', ')
+
+  it('setFlag', async () => {
+    await session.shouldHaveReply('admin -G set-flag', `可用的标记有 ${groupFlags}。`)
     await session.shouldHaveReply('admin -g 654 set-flag foo', '未找到标记 foo。')
-    await session.shouldHaveReply('admin -g 654 set-flag noCommand noEmit', '群信息已修改。')
-    await expect(app.database.getGroup(654)).resolves.toHaveProperty('flag', GroupFlag.noCommand | GroupFlag.noEmit)
+    await session.shouldHaveReply('admin -g 654 set-flag silent', '群信息已修改。')
+    await expect(app.database.getGroup(654)).eventually.to.have.property('flag', Group.Flag.silent)
   })
 
-  test('unsetFlag', async () => {
-    await session.shouldHaveReply('admin -G unset-flag', `可用的标记有 ${groupFlags.join(', ')}。`)
+  it('unsetFlag', async () => {
+    await session.shouldHaveReply('admin -G unset-flag', `可用的标记有 ${groupFlags}。`)
     await session.shouldHaveReply('admin -g 654 unset-flag foo', '未找到标记 foo。')
-    await session.shouldHaveReply('admin -g 654 unset-flag noEmit noResponse', '群信息已修改。')
-    await expect(app.database.getGroup(654)).resolves.toHaveProperty('flag', GroupFlag.noCommand)
+    await session.shouldHaveReply('admin -g 654 unset-flag silent ignore', '群信息已修改。')
+    await expect(app.database.getGroup(654)).eventually.to.have.property('flag', 0)
   })
 })
 
 describe('custom actions', () => {
-  test('user action', async () => {
-    registerUserAction('test', meta => meta.$send('foo'))
+  it('user action', async () => {
+    admin.UserAction.add('test', session => session.$send('foo'))
     await session.shouldHaveReply('admin test', 'foo')
   })
 
-  test('group action', async () => {
-    registerGroupAction('test', meta => meta.$send('bar'))
+  it('group action', async () => {
+    admin.GroupAction.add('test', session => session.$send('bar'))
     await session.shouldHaveReply('admin -G test', 'bar')
   })
 })

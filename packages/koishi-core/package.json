@@ -1,16 +1,18 @@
 {
   "name": "koishi-core",
   "description": "Core features for Koishi",
-  "version": "2.0.0-beta.0",
+  "version": "2.0.0-rc.1",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
+  "engines": {
+    "node": ">=12.0.0"
+  },
   "files": [
     "dist"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "LGPL-3.0-or-later",
   "scripts": {
-    "jest": "jest tests/.*\\.spec\\.ts --runInBand",
     "lint": "eslint src --ext .ts",
     "precommit": "yarn lint",
     "prepack": "tsc -b"
@@ -32,24 +34,18 @@
     "koishi"
   ],
   "devDependencies": {
-    "@types/koa": "^2.11.3",
-    "@types/koa-router": "^7.4.1",
-    "@types/ms": "^0.7.31",
-    "@types/ws": "^7.2.6",
-    "get-port": "^5.1.1",
-    "koishi-database-memory": "^2.0.0-beta.0",
-    "koishi-test-utils": "^4.0.0-beta.0"
+    "@types/koa": "^2.11.4",
+    "@types/lru-cache": "^5.1.0",
+    "koishi-test-utils": "^4.0.0-beta.7"
   },
   "dependencies": {
     "@types/koa-bodyparser": "^4.3.0",
-    "axios": "^0.19.2",
-    "escape-string-regexp": "^4.0.0",
+    "@types/koa-router": "^7.4.1",
     "koa": "^2.13.0",
     "koa-bodyparser": "^4.3.0",
-    "koa-router": "^9.1.0",
-    "koishi-utils": "^2.1.2",
+    "koa-router": "^9.4.0",
+    "koishi-utils": "^3.0.2",
     "leven": "^3.1.0",
-    "ms": "^2.1.2",
-    "ws": "^7.3.1"
+    "lru-cache": "^6.0.0"
   }
 }

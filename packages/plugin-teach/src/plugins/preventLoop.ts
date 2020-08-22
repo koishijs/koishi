@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { Dialogue } from '../database'
+import { Dialogue } from '../utils'
 
 export interface LoopConfig {
   participants: number
@@ -7,7 +7,7 @@ export interface LoopConfig {
   debounce?: number
 }
 
-declare module '../database' {
+declare module '../utils' {
   namespace Dialogue {
     interface Config {
       preventLoop?: number | LoopConfig | LoopConfig[]
@@ -22,13 +22,12 @@ declare module '../receiver' {
   }
 }
 
-export default function apply (ctx: Context, config: Dialogue.Config) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
   const { preventLoop } = config
 
   const preventLoopConfig: LoopConfig[] = !preventLoop ? []
     : typeof preventLoop === 'number' ? [{ length: preventLoop, participants: 1 }]
-    : Array.isArray(preventLoop) ? preventLoop
-    : [preventLoop]
+      : Array.isArray(preventLoop) ? preventLoop : [preventLoop]
   const initiatorCount = Math.max(0, ...preventLoopConfig.map(c => c.length))
 
   ctx.on('dialogue/state', (state) => {
@@ -50,7 +49,7 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/before-send', (state) => {
-    if (state.meta.$_redirected) return
+    if (state.session._redirected) return
     state.initiators.unshift(state.userId)
     state.initiators.splice(initiatorCount, Infinity)
     state.loopTimestamp = null

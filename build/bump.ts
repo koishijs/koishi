@@ -25,7 +25,7 @@ class Package {
   version: SemVer
   dirty: boolean
 
-  static async from (path: string) {
+  static async from(path: string) {
     try {
       const pkg = packages[path] = new Package(path)
       pkg.metaVersion = pkg.meta.version
@@ -37,13 +37,13 @@ class Package {
     } catch { /* pass */ }
   }
 
-  constructor (public path: string) {
+  constructor(public path: string) {
     this.meta = require(`../${path}/package.json`)
     this.name = this.meta.name
     this.version = new SemVer(this.meta.version)
   }
 
-  bump (flag: BumpType) {
+  bump(flag: BumpType) {
     if (this.meta.private) return
     const newVersion = new SemVer(this.oldVersion)
     if (flag === 'auto') {
@@ -70,7 +70,7 @@ class Package {
     }
   }
 
-  save () {
+  save() {
     return writeJson(resolve(__dirname, `../${this.path}/package.json`), {
       ...this.meta,
       version: this.version.format(),
@@ -84,16 +84,15 @@ const nameMap = {
   test: 'test-utils',
 }
 
-function getPackage (name: string) {
+function getPackage(name: string) {
   name = nameMap[name] || name
   return packages[`packages/${name}`]
     || packages[`packages/koishi-${name}`]
-    || packages[`packages/database-${name}`]
+    || packages[`packages/adapter-${name}`]
     || packages[`packages/plugin-${name}`]
-    || packages[`extensions/plugin-${name}`]
 }
 
-function each <T> (callback: (pkg: Package, name: string) => T) {
+function each<T>(callback: (pkg: Package, name: string) => T) {
   const results: T[] = []
   for (const path in packages) {
     results.push(callback(packages[path], packages[path].name))
@@ -101,15 +100,15 @@ function each <T> (callback: (pkg: Package, name: string) => T) {
   return results
 }
 
-function bumpPkg (source: Package, flag: BumpType, only = false) {
+function bumpPkg(source: Package, flag: BumpType, only = false) {
   const newVersion = source.bump(flag)
   if (!newVersion) return
   const dependents = new Set<Package>()
   each((target) => {
-    const { devDependencies, peerDependencies, dependencies } = target.meta
+    const { devDependencies, peerDependencies, dependencies, optionalDependencies } = target.meta
     const { name } = source
     if (target.name === name) return
-    Object.entries({ devDependencies, peerDependencies, dependencies })
+    Object.entries({ devDependencies, peerDependencies, dependencies, optionalDependencies })
       .filter(([_, dependencies = {}]) => dependencies[name])
       .forEach(([type]) => {
         target.meta[type][name] = '^' + newVersion

@@ -1,315 +1,142 @@
-import ms from 'ms'
-import axios from 'axios'
-import type WebSocket from 'ws'
+import { camelCase, paramCase } from 'koishi-utils'
+import { Session, MessageType, Meta } from './session'
+import { App } from './app'
+import * as http from 'http'
 import type Koa from 'koa'
 import type Router from 'koa-router'
-import {} from 'koa-bodyparser'
-import { Server } from 'http'
-import { createHmac } from 'crypto'
-import { camelCase, snakeCase, paramCase, Logger, defineProperty } from 'koishi-utils'
-import { Meta, ContextType } from './meta'
-import { App } from './app'
-import { CQSender, CQResponse } from './sender'
-
-const logger = Logger.create('server')
 
 export interface BotOptions {
-  token?: string
-  server?: string
   selfId?: number
 }
 
-export abstract class CQServer {
-  public bots: CQSender[]
-  public koa?: Koa
+export abstract class Server {
+  static types: Record<string, new (app: App) => Server> = {}
+
+  public bots: Bot[]
   public router?: Router
-  public server?: Server
-  public socket?: WebSocket
+  public server?: http.Server
 
-  protected _isListening = false
-  protected _isReady = false
+  protected _listening = false
+  protected abstract _listen(): Promise<void>
+  protected abstract _close(): void
 
-  protected abstract _listen (): Promise<void>
-  protected abstract _close (): void
-
-  constructor (public app: App) {
+  constructor(public app: App) {
     app.on('before-connect', this.listen.bind(this))
     app.on('before-disconnect', this.close.bind(this))
-    const senders = app.options.bots.map(bot => new CQSender(app, bot))
+    const senders = app.options.bots.map(bot => new Bot(app, bot))
     this.bots = new Proxy(senders, {
-      get (target, prop) {
+      get(target, prop) {
         return typeof prop === 'symbol' || +prop * 0 !== 0
           ? Reflect.get(target, prop)
           : target[prop] || target.find(bot => bot.selfId === +prop)
       },
-      set (target, prop, value) {
+      set(target, prop, value) {
         return typeof prop === 'symbol' || +prop * 0 !== 0
           ? Reflect.set(target, prop, value)
           : false
       },
     })
+    if (app.options.port) this.createServer()
   }
 
-  protected prepareMeta (data: any) {
+  createServer() {
+    const koa: Koa = new (require('koa'))()
+    this.router = new (require('koa-router'))()
+    koa.use(require('koa-bodyparser')())
+    koa.use(this.router.routes())
+    koa.use(this.router.allowedMethods())
+    this.server = http.createServer(koa.callback())
+  }
+
+  prepare(data: any) {
     const meta = camelCase<Meta>(data)
     if (!this.bots[meta.selfId]) {
       const bot = this.bots.find(bot => !bot.selfId)
       if (!bot) return
       bot.selfId = meta.selfId
-      this.app.prepare()
-      this.ready()
     }
-    return new Meta(meta)
+    return new Session(this.app, meta)
   }
 
-  parseMeta (meta: Meta) {
-    // prepare prefix
-    let ctxType: ContextType, ctxId: number
-    if (meta.groupId) {
-      ctxType = 'group'
-      ctxId = meta.groupId
-    } else if (meta.discussId) {
-      ctxType = 'discuss'
-      ctxId = meta.discussId
-    } else if (meta.userId) {
-      ctxType = 'user'
-      ctxId = meta.userId
-    }
-
-    // prepare events
+  dispatch(session: Session) {
     const events: string[] = []
-    if (meta.postType === 'message' || meta.postType === 'send') {
-      events.push(meta.postType)
-    } else if (meta.postType === 'request') {
-      events.push('request/' + meta.requestType)
-    } else if (meta.postType === 'notice') {
-      events.push(meta.noticeType)
+    if (session.postType === 'message' || session.postType === 'send') {
+      events.push(session.postType)
+    } else if (session.postType === 'request') {
+      events.push('request/' + session.requestType)
+    } else if (session.postType === 'notice') {
+      events.push(session.noticeType)
     } else {
-      events.push(meta.metaEventType)
+      events.push(session.metaEventType)
     }
-    if (meta.subType) {
-      events.unshift(events[0] + '/' + meta.subType)
+    if (session.subType) {
+      events.unshift(events[0] + '/' + session.subType)
     }
-
-    // generate path
-    meta.$app = this.app
-    meta.$ctxId = ctxId
-    meta.$ctxType = ctxType
-
-    return events
-  }
-
-  dispatchMeta (meta: Meta) {
-    const events = this.parseMeta(meta)
     for (const event of events) {
-      this.app.emit(meta, paramCase<any>(event), meta)
+      this.app.emit(session, paramCase<any>(event), session)
     }
   }
 
-  async listen () {
-    if (this._isListening) return
-    this._isListening = true
+  async listen() {
+    if (this._listening) return
+    this._listening = true
     try {
+      const { port } = this.app.options
+      if (port) {
+        this.server.listen(port)
+        const logger = this.app.logger('server')
+        logger.info('server listening at %c', port)
+      }
       await this._listen()
-      this.app.prepare()
     } catch (error) {
       this.close()
       throw error
     }
   }
 
-  close () {
-    this._isListening = false
+  close() {
+    this._listening = false
     this._close()
   }
-
-  ready () {
-    if (this._isReady || !this.bots.every(bot => bot.selfId || !bot._get)) return
-    this._isReady = true
-    this.app.emit('ready')
-  }
 }
 
-class HttpServer extends CQServer {
-  constructor (app: App) {
-    super(app)
+export enum BotStatus {
+  /** 正常运行 */
+  GOOD,
+  /** Bot 处于闲置状态 */
+  BOT_IDLE,
+  /** Bot 离线 */
+  BOT_OFFLINE,
+  /** 无法获得状态 */
+  NET_ERROR,
+  /** 服务器状态异常 */
+  SERVER_ERROR,
+}
 
-    const { secret, path = '/' } = app.options
-    this.koa = new (require('koa'))()
-    this.router = new (require('koa-router'))()
-    this.koa.use(require('koa-bodyparser')())
-    this.koa.use(this.router.routes())
-    this.koa.use(this.router.allowedMethods())
-    this.router.post(path, (ctx) => {
-      if (secret) {
-        // no signature
-        const signature = ctx.headers['x-signature']
-        if (!signature) return ctx.status = 401
+export interface Bot extends BotOptions {
+  ready?: boolean
+  version?: string
+  getSelfId (): Promise<number>
+  getStatus (): Promise<BotStatus>
+  getMemberMap (groupId: number): Promise<Record<number, string>>
+  sendGroupMessage (groupId: number | number[], message: string, delay?: number): Promise<void>
+  sendPrivateMessage (userId: number | number[], message: string, delay?: number): Promise<void>
+}
 
-        // invalid signature
-        const sig = createHmac('sha1', secret).update(ctx.request.rawBody).digest('hex')
-        if (signature !== `sha1=${sig}`) return ctx.status = 403
-      }
+export class Bot {
+  constructor(public app: App, options: BotOptions) {
+    Object.assign(this, options)
+  }
 
-      logger.debug('receive %o', ctx.request.body)
-      const meta = this.prepareMeta(ctx.request.body)
-      if (!meta) return ctx.status = 403
-
-      const { quickOperationTimeout } = this.app.options
-      if (quickOperationTimeout > 0) {
-        // bypass koa's built-in response handling for quick operations
-        ctx.respond = false
-        ctx.res.writeHead(200, {
-          'Content-Type': 'application/json',
-        })
-
-        // use defineProperty to avoid meta duplication
-        defineProperty(meta, '$response', (data) => {
-          meta.$response = null
-          clearTimeout(timer)
-          ctx.res.write(JSON.stringify(snakeCase(data)))
-          ctx.res.end()
-        })
-
-        const timer = setTimeout(() => {
-          meta.$response = null
-          ctx.res.end()
-        }, quickOperationTimeout)
-      }
-
-      // dispatch events
-      this.dispatchMeta(meta)
+  createSession(messageType: MessageType, ctxType: 'group' | 'user', ctxId: number, message: string) {
+    return new Session(this.app, {
+      message,
+      messageType,
+      postType: 'send',
+      $app: this.app,
+      selfId: this.selfId,
+      [ctxType + 'Id']: ctxId,
+      time: Math.round(Date.now() / 1000),
     })
-  }
-
-  private async __listen (bot: CQSender) {
-    if (!bot.server) return
-    bot._get = async (action, params) => {
-      const headers = {} as any
-      if (bot.token) {
-        headers.Authorization = `Token ${bot.token}`
-      }
-      const uri = new URL(action, bot.server).href
-      const { data } = await axios.get(uri, { params, headers })
-      return data
-    }
-    bot.version = await bot.getVersionInfo()
-  }
-
-  async _listen () {
-    logger.debug('http server opening')
-    const { port } = this.app.options
-    if (!port) return
-    this.server = this.koa.listen(port)
-    await Promise.all(this.bots.map(bot => this.__listen(bot)))
-    logger.debug('http server listen to', port)
-  }
-
-  _close () {
-    this.server.close()
-    logger.debug('http server closed')
-  }
-}
-
-let counter = 0
-
-class WsClient extends CQServer {
-  private _retryCount = 0
-  private _listeners: Record<number, (response: CQResponse) => void> = {}
-
-  send (data: any): Promise<CQResponse> {
-    data.echo = ++counter
-    return new Promise((resolve, reject) => {
-      this._listeners[counter] = resolve
-      this.socket.send(JSON.stringify(data), (error) => {
-        if (error) reject(error)
-      })
-    })
-  }
-
-  private async __listen (bot: CQSender) {
-    const connect = (resolve: () => void, reject: (reason: Error) => void) => {
-      logger.debug('websocket client opening')
-      const headers: Record<string, string> = {}
-      const { token, server } = bot
-      if (!server) return
-      const { retryInterval, retryTimes } = this.app.options
-      if (token) headers.Authorization = `Bearer ${token}`
-      this.socket = new (require('ws'))(server, { headers })
-
-      this.socket.on('error', error => logger.debug(error))
-
-      this.socket.once('close', (code) => {
-        if (!this._isListening || code === 1005) return
-
-        const message = `failed to connect to ${server}`
-        if (!retryInterval || this._retryCount >= retryTimes) {
-          return reject(new Error(message))
-        }
-
-        this._retryCount++
-        logger.debug(`${message}, will retry in ${ms(retryInterval)}...`)
-        setTimeout(() => {
-          if (this._isListening) connect(resolve, reject)
-        }, retryInterval)
-      })
-
-      this.socket.once('open', () => {
-        this._retryCount = 0
-
-        this.socket.send(JSON.stringify({
-          action: 'get_version_info',
-          echo: -1,
-        }), (error) => {
-          if (error) reject(error)
-        })
-
-        this.socket.on('message', (data) => {
-          data = data.toString()
-          logger.debug('receive', data)
-          let parsed: any
-          try {
-            parsed = JSON.parse(data)
-          } catch (error) {
-            return reject(new Error(data))
-          }
-
-          if ('post_type' in parsed) {
-            const meta = this.prepareMeta(parsed)
-            if (meta) this.dispatchMeta(meta)
-          } else if (parsed.echo === -1) {
-            bot.version = camelCase(parsed.data)
-            bot._get = (action, params) => this.send({ action, params })
-            logger.debug('connect to ws server:', bot.server)
-            resolve()
-          } else {
-            this._listeners[parsed.echo]?.(parsed)
-          }
-        })
-      })
-    }
-    return new Promise(connect)
-  }
-
-  async _listen () {
-    await Promise.all(this.bots.map(bot => this.__listen(bot)))
-  }
-
-  _close () {
-    this.socket.close()
-    this._retryCount = 0
-    logger.debug('websocket client closed')
-  }
-}
-
-export interface ServerTypes {
-  http: typeof HttpServer
-  ws: typeof WsClient
-}
-
-export namespace CQServer {
-  export const types: ServerTypes = {
-    http: HttpServer,
-    ws: WsClient,
   }
 }

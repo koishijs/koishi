@@ -1,8 +1,9 @@
 import { App, AppOptions, Context, Plugin } from 'koishi-core'
 import { resolve, dirname } from 'path'
-import { capitalize, Logger } from 'koishi-utils'
+import { Logger } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
+import 'koishi-adapter-cqhttp'
 
 const logger = Logger.create('app')
 const { version } = require('../package')
@@ -15,7 +16,7 @@ if (process.env.KOISHI_DEBUG) {
   Logger.levels = Object.fromEntries(process.env.KOISHI_DEBUG.split(',').map(name => [name, 3]))
 }
 
-function handleException (error: any) {
+function handleException(error: any) {
   logger.error(error)
   process.exit(1)
 }
@@ -25,11 +26,11 @@ process.on('uncaughtException', handleException)
 const configFile = resolve(process.cwd(), process.env.KOISHI_CONFIG_FILE || 'koishi.config')
 const configDir = dirname(configFile)
 
-function isErrorModule (error: any) {
+function isErrorModule(error: any) {
   return error.code !== 'MODULE_NOT_FOUND' || error.requireStack && error.requireStack[0] !== __filename
 }
 
-function tryCallback <T> (callback: () => T) {
+function tryCallback<T>(callback: () => T) {
   try {
     return callback()
   } catch (error) {
@@ -55,7 +56,7 @@ if (!config) {
 
 const cacheMap: Record<string, any> = {}
 
-function loadEcosystem (name: string) {
+function loadEcosystem(name: string) {
   const cache = cacheMap[name]
   if (cache) return cache
 
@@ -73,7 +74,7 @@ function loadEcosystem (name: string) {
     logger.debug('resolving %c', path)
     try {
       const result = require(path)
-      logger.info('apply plugin %c', result && result.name || name)
+      logger.info('apply plugin %c', result.name || name)
       return cacheMap[name] = result
     } catch (error) {
       if (isErrorModule(error)) {
@@ -84,7 +85,7 @@ function loadEcosystem (name: string) {
   throw new Error(`cannot resolve plugin ${name}`)
 }
 
-function loadPlugins (ctx: Context, plugins: PluginConfig) {
+function loadPlugins(ctx: Context, plugins: PluginConfig) {
   for (const item of plugins) {
     let plugin: Plugin<Context>, options: any
     if (Array.isArray(item)) {
@@ -106,6 +107,14 @@ if (config.logLevel && !process.env.KOISHI_LOG_LEVEL) {
 
 const app = new App(config)
 
+app.command('exit', '停止机器人运行', { authority: 4 })
+  .option('restart', '-r  重新启动')
+  .shortcut('关机', { prefix: true })
+  .shortcut('重启', { prefix: true, options: { restart: true } })
+  .action(({ options }) => {
+    process.exit(options.restart ? 514 : 0)
+  })
+
 // TODO: object format
 if (Array.isArray(config.plugins)) {
   loadPlugins(app, config.plugins)
@@ -116,23 +125,9 @@ process.on('unhandledRejection', (error) => {
 })
 
 app.start().then(() => {
-  const { type, port } = app.options
-  if (port) logger.info('server listening at %c', port)
-
-  app.bots.forEach((bot) => {
-    const { server } = bot
-    if (!server) return
-    const { coolqEdition, pluginVersion, goCqhttp, runtimeVersion } = bot.version
-    if (type === 'http') {
-      logger.info('connected to %c', server)
-    } else {
-      logger.info('connected to %c', server.replace(/^http/, 'ws'))
-    }
-    if (goCqhttp) {
-      logger.info(`Koishi/${version} Go-cqhttp (Go/${runtimeVersion.slice(2)})`)
-    } else {
-      logger.info(`Koishi/${version} CoolQ/${capitalize(coolqEdition)} cqhttp/${pluginVersion}`)
-    }
+  app.bots.forEach(bot => {
+    if (!bot.version) return
+    logger.info('%C', `Koishi/${version} ${bot.version}`)
   })
 
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()

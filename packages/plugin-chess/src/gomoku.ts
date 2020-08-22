@@ -1,6 +1,6 @@
 import { State, MoveResult } from './state'
 
-export function update (this: State, x: number, y: number, value: -1 | 1): MoveResult {
+export function update(this: State, x: number, y: number, value: -1 | 1): MoveResult {
   const { size } = this
   const board = this.set(x, y, value)
   let vCount = 0, hCount = 0, mCount = 0, pCount = 0

@@ -1,34 +1,26 @@
 import { Context, App } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
-import {} from 'koishi-plugin-mysql'
+import { ActiveData } from './database'
+
+export * from './database'
 
 declare module 'koishi-core/dist/server' {
   interface BotOptions {
     label?: string
   }
-}
 
-declare module 'koishi-core/dist/sender' {
-  interface CQSender {
+  interface Bot {
     counter: number[]
   }
 }
 
-declare module 'koishi-core/dist/database' {
-  interface UserData {
-    lastCall: Date
-  }
-}
-
-export interface StatusOptions {
-  sort?: (a: BotStatus, b: BotStatus) => number
-}
+export interface Config {}
 
 let usage = getCpuUsage()
 let appRate: number
 let usedRate: number
 
-function memoryRate () {
+function memoryRate() {
   const totalMemory = totalmem()
   return {
     app: process.memoryUsage().rss / totalMemory,
@@ -55,11 +47,12 @@ function getCpuUsage() {
   }
 }
 
-function updateCpuUsage () {
+function updateCpuUsage() {
   const newUsage = getCpuUsage()
   const totalDifference = newUsage.total - usage.total
   appRate = (newUsage.app - usage.app) / totalDifference
   usedRate = (newUsage.used - usage.used) / totalDifference
+  usage = newUsage
 }
 
 export interface Rate {
@@ -67,10 +60,8 @@ export interface Rate {
   total: number
 }
 
-export interface Status {
+export interface Status extends ActiveData {
   bots: BotStatus[]
-  userCount: number
-  groupCount: number
   memory: Rate
   cpu: Rate
   timestamp: number
@@ -84,38 +75,26 @@ export interface BotStatus {
   rate?: number
 }
 
-type StatusModifier = (this: App, status: Status, config: StatusOptions) => void | Promise<void>
+type StatusModifier = (this: App, status: Status, config: Config) => void | Promise<void>
 const statusModifiers: StatusModifier[] = []
 
-export function extendStatus (callback: StatusModifier) {
+export function extendStatus(callback: StatusModifier) {
   statusModifiers.push(callback)
 }
 
 const startTime = Date.now()
 
-const defaultConfig: StatusOptions = {
-  sort: () => 0,
-}
-
-export enum StatusCode {
-  GOOD,
-  CQ_ERROR,
-  NET_ERROR,
-  IDLE,
-}
-
 export const name = 'status'
 
-export function apply (ctx: Context, config: StatusOptions) {
+export function apply(ctx: Context, config: Config) {
   const app = ctx.app
-  config = { ...defaultConfig, ...config }
 
-  app.on('before-command', ({ meta }) => {
-    meta.$user['lastCall'] = new Date()
+  app.on('before-command', ({ session }) => {
+    session.$user['lastCall'] = new Date()
   })
 
-  app.on('before-send', (meta) => {
-    const { counter } = app.bots[meta.selfId]
+  app.on('before-send', (session) => {
+    const { counter } = app.bots[session.selfId]
     counter[0] += 1
   })
 
@@ -136,8 +115,8 @@ export function apply (ctx: Context, config: StatusOptions) {
       })
     }, 1000)
 
-    if (!app.server.router) return
-    app.server.router.get('/status', async (ctx) => {
+    if (!app.router) return
+    app.router.get('/status', async (ctx) => {
       const status = await getStatus(config, true).catch<Status>((error) => {
         app.logger('status').warn(error)
         return null
@@ -158,45 +137,39 @@ export function apply (ctx: Context, config: StatusOptions) {
     .shortcut('你的状况', { prefix: true })
     .shortcut('运行情况', { prefix: true })
     .shortcut('运行状态', { prefix: true })
-    .action(async ({ meta }) => {
-      const { bots: apps, cpu, memory, startTime, userCount, groupCount } = await getStatus(config)
+    .action(async () => {
+      const { bots: apps, cpu, memory, startTime, activeUsers, activeGroups } = await getStatus(config)
 
-      const output = apps.sort(config.sort).map(({ label, selfId, code, rate }) => {
+      const output = apps.map(({ label, selfId, code, rate }) => {
         return `${label || selfId}：${code ? '无法连接' : `工作中（${rate}/min）`}`
       })
 
       output.push('==========')
 
       output.push(
-        `活跃用户数量：${userCount}`,
-        `活跃群数量：${groupCount}`,
+        `活跃用户数量：${activeUsers}`,
+        `活跃群数量：${activeGroups}`,
         `启动时间：${new Date(startTime).toLocaleString('zh-CN', { hour12: false })}`,
         `CPU 使用率：${(cpu.app * 100).toFixed()}% / ${(cpu.total * 100).toFixed()}%`,
         `内存使用率：${(memory.app * 100).toFixed()}% / ${(memory.total * 100).toFixed()}%`,
       )
 
-      return meta.$send(output.join('\n'))
+      return output.join('\n')
     })
 
-  async function _getStatus (config: StatusOptions, extend: boolean) {
-    const [[[{ 'COUNT(*)': userCount }], [{ 'COUNT(*)': groupCount }]], bots] = await Promise.all([
-      app.database.query<[{ 'COUNT(*)': number }][]>([
-        `SELECT COUNT(*) FROM \`user\` WHERE CURRENT_TIMESTAMP() - \`lastCall\` < 1000 * 3600 * 24`,
-        `SELECT COUNT(*) FROM \`group\` WHERE \`assignee\``,
-      ].join(';')),
+  async function _getStatus(config: Config, extend: boolean) {
+    const [data, bots] = await Promise.all([
+      app.database.getActiveData(),
       Promise.all(app.bots.map(async (bot): Promise<BotStatus> => ({
         selfId: bot.selfId,
         label: bot.label,
-        code: bot._get ? await bot.getStatus().then(
-          ({ good }) => good ? StatusCode.GOOD : StatusCode.CQ_ERROR,
-          () => StatusCode.NET_ERROR,
-        ) : StatusCode.IDLE,
+        code: await bot.getStatus(),
         rate: bot.counter.slice(1).reduce((prev, curr) => prev + curr, 0),
       }))),
     ])
     const memory = memoryRate()
     const cpu = { app: appRate, total: usedRate }
-    const status: Status = { bots, userCount, groupCount, memory, cpu, timestamp, startTime }
+    const status: Status = { ...data, bots, memory, cpu, timestamp, startTime }
     if (extend) {
       await Promise.all(statusModifiers.map(modifier => modifier.call(app, status, config)))
     }
@@ -206,7 +179,7 @@ export function apply (ctx: Context, config: StatusOptions) {
   let cachedStatus: Promise<Status>
   let timestamp: number
 
-  async function getStatus (config: StatusOptions, extend = false): Promise<Status> {
+  async function getStatus(config: Config, extend = false): Promise<Status> {
     const now = Date.now()
     if (now - timestamp < 60000) return cachedStatus
     timestamp = now

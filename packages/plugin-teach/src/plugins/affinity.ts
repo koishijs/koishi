@@ -1,8 +1,8 @@
-import { Context, UserData, UserField } from 'koishi-core'
+import { Context, User } from 'koishi-core'
 import { isInteger } from 'koishi-utils'
-import { Dialogue } from '../database'
+import { Dialogue } from '../utils'
 
-declare module '../database' {
+declare module '../utils' {
   interface DialogueTest {
     matchAffinity?: number
     mismatchAffinity?: number
@@ -15,8 +15,8 @@ declare module '../database' {
 
   namespace Dialogue {
     interface Config {
-      affinityFields?: Iterable<UserField>
-      getAffinity? (user: Partial<UserData>): number
+      affinityFields?: Iterable<User.Field>
+      getAffinity? (user: Partial<User>): number
     }
   }
 }
@@ -27,32 +27,32 @@ declare module '../receiver' {
   }
 }
 
-export function isShortInteger (value: any) {
+export function isShortInteger(value: any) {
   return isInteger(value) && value >= 0 ? '' : '应为正整数。'
 }
 
-export default function apply (ctx: Context, config: Dialogue.Config) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
   const { getAffinity, affinityFields = [] } = config
   if (!getAffinity) return
 
   ctx.command('teach')
-    .option('-a, --min-affinity, --match-affinity <aff>', { validate: isShortInteger })
-    .option('-A, --max-affinity, --mismatch-affinity <aff>', { validate: isShortInteger })
+    .option('minAffinity', '-a <aff>  最小好感度', { validate: isShortInteger })
+    .option('maxAffinity', '-A <aff>  最大好感度', { validate: isShortInteger })
 
   ctx.on('dialogue/validate', ({ options }) => {
     if (options.maxAffinity === 0) options.maxAffinity = 32768
   })
 
   ctx.on('dialogue/before-search', ({ options }, test) => {
-    if (options.matchAffinity !== undefined) test.matchAffinity = options.matchAffinity
-    if (options.mismatchAffinity !== undefined) test.mismatchAffinity = options.mismatchAffinity
+    if (options.minAffinity !== undefined) test.matchAffinity = options.minAffinity
+    if (options.maxAffinity !== undefined) test.mismatchAffinity = options.maxAffinity
   })
 
-  function matchAffinity (affinity: number) {
+  function matchAffinity(affinity: number) {
     return `(\`maxAffinity\` > ${affinity} && \`minAffinity\` <= ${affinity})`
   }
 
-  ctx.on('dialogue/before-fetch', (test, conditionals) => {
+  ctx.on('dialogue/mysql', (test, conditionals) => {
     if (test.matchAffinity !== undefined) {
       conditionals.push(matchAffinity(test.matchAffinity))
     }
@@ -79,15 +79,16 @@ export default function apply (ctx: Context, config: Dialogue.Config) {
   ctx.on('dialogue/before-attach-user', (state, fields) => {
     if (state.dialogue) return
     // 如果所有可能触发的问答都不涉及好感度，则无需获取好感度字段
+    // eslint-disable-next-line no-cond-assign
     if (state.noAffinityTest = state.dialogues.every(d => !d._weight || !d.minAffinity && d.maxAffinity === 32768)) return
     for (const field of affinityFields) {
       fields.add(field)
     }
   })
 
-  ctx.on('dialogue/attach-user', ({ meta, dialogues, noAffinityTest }) => {
+  ctx.on('dialogue/attach-user', ({ session, dialogues, noAffinityTest }) => {
     if (noAffinityTest) return
-    const affinity = getAffinity(meta.$user)
+    const affinity = getAffinity(session.$user)
     dialogues.forEach((dialogue) => {
       if (dialogue.minAffinity <= affinity && dialogue.maxAffinity > affinity) return
       dialogue._weight = 0

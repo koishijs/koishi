@@ -25,7 +25,7 @@ interface Dependency {
   const workspaces: Record<string, Workspace> = {}
   const dependencies: Record<string, Dependency> = {}
 
-  function loadPackage (path: string) {
+  function loadPackage(path: string) {
     let meta: PackageJson
     try {
       meta = require(`../${path}/package`)
@@ -64,7 +64,7 @@ interface Dependency {
   spinner.succeed()
 
   const bumpMap = new Map<string, boolean>()
-  async function shouldBump (name: string, dep: string, version: string, oldVersion: string) {
+  async function shouldBump(name: string, dep: string, version: string, oldVersion: string) {
     if (!gt(version, oldVersion.replace(/^[~^]/, ''))) return
     const message = `${name} > ${yellow(dep)}: ${cyan(oldVersion)} -> ${green(version)}`
     if (satisfies(version, oldVersion)) return message

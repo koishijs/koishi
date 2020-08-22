@@ -16,7 +16,7 @@ interface TwitCastingData {
   fmp4: TwitCastingLive
 }
 
-export default async function check (daemon: Daemon): Promise<LiveInfo> {
+export default async function check(daemon: Daemon): Promise<LiveInfo> {
   const data = await get<TwitCastingData>(`https://twitcasting.tv/streamserver.php?target=${daemon.id}&mode=client`)
   if (!data || !data.movie || !data.movie.live) return
   return { url: `https://twitcasting.tv/${daemon.id}` }

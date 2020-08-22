@@ -1,34 +1,33 @@
 import { existsSync, writeFileSync, mkdirSync } from 'fs'
-import { yellow } from 'kleur'
+import { yellow, red, green } from 'kleur'
 import { resolve, extname, dirname } from 'path'
 import { AppConfig } from './worker'
 import prompts from 'prompts'
-import kleur from 'kleur'
 import { CAC } from 'cac'
 
-async function createConfig (options) {
+async function createConfig(options) {
   let succeed = true
   const data = await prompts([{
     name: 'type',
     type: 'select',
     message: 'Connection Type',
     choices: [
-      { title: 'HTTP', value: 'http' },
-      { title: 'WebSocket', value: 'ws' },
+      { title: 'HTTP', value: 'cqhttp:http' },
+      { title: 'WebSocket', value: 'cqhttp:ws' },
     ],
   }, {
     name: 'port',
-    type: (_, data) => data.type === 'http' ? 'number' : null,
+    type: (_, data) => data.type === 'cqhttp:http' ? 'number' : null,
     message: 'Koishi Port',
     initial: 8080,
   }, {
     name: 'server',
-    type: (_, data) => data.type === 'http' ? 'text' : null,
+    type: (_, data) => data.type === 'cqhttp:http' ? 'text' : null,
     message: 'HTTP Server',
     initial: 'http://localhost:5700',
   }, {
     name: 'server',
-    type: (_, data) => data.type === 'ws' ? 'text' : null,
+    type: (_, data) => data.type === 'cqhttp:ws' ? 'text' : null,
     message: 'WebSocket Server',
     initial: 'ws://localhost:6700',
   }, {
@@ -59,8 +58,8 @@ const supportedTypes = ['js', 'ts', 'json'] as const
 type ConfigFileType = typeof supportedTypes[number]
 
 export default function (cli: CAC) {
-  const error = kleur.red('error')
-  const success = kleur.green('success')
+  const error = red('error')
+  const success = green('success')
 
   cli.command('init [file]', 'initialize a koishi configuration file')
     .option('-f, --forced', 'overwrite config file if it exists')

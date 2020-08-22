@@ -1,110 +1,156 @@
-import { App, Command, ParsedLine } from 'koishi-core'
-import { errors } from '../src/shared'
+import { Command } from 'koishi-core'
+import { App } from 'koishi-test-utils'
+import { inspect } from 'util'
+import { expect } from 'chai'
+import '@shigma/chai-extended'
 
 const app = new App()
 
-const cmd1 = app
-  .command('cmd1 <foo> [...bar]')
-  .option('-a, --alpha')
-  .option('-b, --beta <beta>')
+let cmd: Command
 
-const cmd2 = app
-  .command('cmd2 [foo] [bar...]')
-  .option('-a [alpha]', '', { isString: true })
-  .option('-b [beta]', '', { default: 1000 })
-  .option('--no-gamma, -C')
-  .option('--no-delta, -D')
+describe('Parser API', () => {
+  describe('basic support', () => {
+    it('register', () => {
+      // there is a built-in help command
+      expect(app._commands).to.have.length(1)
 
-describe('arguments', () => {
-  test('sufficient arguments', () => {
-    const result = cmd1.parse('foo bar 123')
-    expect(result.args).toMatchObject(['foo', 'bar', '123'])
+      cmd = app.command('cmd1 <foo> [...bar]')
+      expect(app._commands).to.have.length(2)
+    })
+
+    it('inspect', () => {
+      expect(inspect(cmd)).to.equal('Command <cmd1>')
+    })
+
+    it('parse arguments', () => {
+      expect(cmd.parse('')).to.have.shape({ args: [] })
+      expect(cmd.parse('a')).to.have.shape({ args: ['a'] })
+      expect(cmd.parse('a b')).to.have.shape({ args: ['a', 'b'] })
+      expect(cmd.parse('a b c')).to.have.shape({ args: ['a', 'b', 'c'] })
+    })
+
+    it('dispose', () => {
+      cmd.dispose()
+      expect(app._commands).to.have.length(1)
+    })
   })
 
-  test('insufficient arguments', () => {
-    const result = cmd1.parse('-a')
-    expect(result.args).toMatchObject([])
+  describe('option', () => {
+    it('register', () => {
+      cmd = app.command('cmd2 <foo> [bar...]')
+      cmd.option('alpha', '-a')
+      cmd.option('beta', '-b <beta>')
+      cmd.option('gamma', '-c <gamma>', { fallback: 0 })
+      cmd.option('delta', '-d <gamma>', { type: 'string' })
+    })
+
+    it('option parser', () => {
+      expect(cmd.parse('--alpha')).to.have.shape({ options: { alpha: true } })
+      expect(cmd.parse('--beta')).to.have.shape({ options: { beta: true } })
+      expect(cmd.parse('--no-alpha')).to.have.shape({ options: { alpha: false } })
+      expect(cmd.parse('--no-beta')).to.have.shape({ options: { beta: false } })
+      expect(cmd.parse('--alpha 1')).to.have.shape({ options: { alpha: true } })
+      expect(cmd.parse('--beta 1')).to.have.shape({ options: { beta: 1 } })
+      expect(cmd.parse('--beta "1"')).to.have.shape({ options: { beta: 1 } })
+      expect(cmd.parse('--beta -1')).to.have.shape({ options: { beta: true } })
+    })
+
+    it('typed options', () => {
+      expect(cmd.parse('')).to.have.shape({ options: { gamma: 0 } })
+      expect(cmd.parse('--gamma')).to.have.shape({ options: { gamma: 0 } })
+      expect(cmd.parse('--gamma 1')).to.have.shape({ options: { gamma: 1 } })
+      expect(cmd.parse('--gamma -1')).to.have.shape({ options: { gamma: -1 } })
+      expect(cmd.parse('--gamma a')).to.have.shape({ options: { gamma: NaN } })
+      expect(cmd.parse('--delta')).to.have.shape({ options: { delta: '' } })
+      expect(cmd.parse('--delta 1')).to.have.shape({ options: { delta: '1' } })
+      expect(cmd.parse('--delta -1')).to.have.shape({ options: { delta: '-1' } })
+    })
+
+    it('short alias', () => {
+      expect(cmd.parse('-ab ""')).to.have.shape({ options: { alpha: true, beta: '' } })
+      expect(cmd.parse('-ab=')).to.have.shape({ options: { alpha: true, beta: true } })
+      expect(cmd.parse('-ab 1')).to.have.shape({ options: { alpha: true, beta: 1 } })
+      expect(cmd.parse('-ab=1')).to.have.shape({ options: { alpha: true, beta: 1 } })
+      expect(cmd.parse('-ab -1')).to.have.shape({ options: { alpha: true, beta: true } })
+      expect(cmd.parse('-ab=-1')).to.have.shape({ options: { alpha: true, beta: -1 } })
+    })
+
+    it('greedy arguments', () => {
+      expect(cmd.parse('')).to.have.shape({ args: [] })
+      expect(cmd.parse('a')).to.have.shape({ args: ['a'] })
+      expect(cmd.parse('a b')).to.have.shape({ args: ['a', 'b'] })
+      expect(cmd.parse('a b c')).to.have.shape({ args: ['a', 'b c'] })
+      expect(cmd.parse('-a b c')).to.have.shape({ args: ['b', 'c'] })
+      expect(cmd.parse('a -b c')).to.have.shape({ args: ['a'] })
+      expect(cmd.parse('a b -c')).to.have.shape({ args: ['a', 'b -c'] })
+    })
+
+    it('valued options', () => {
+      cmd = app.command('cmd2 <foo> [bar...]')
+      cmd.option('alpha', '-A, --no-alpha', { value: false })
+      cmd.option('gamma', '-C', { value: 1 })
+      expect(cmd.parse('-A')).to.have.shape({ options: { alpha: false } })
+      expect(cmd.parse('-a')).to.have.shape({ options: { alpha: true } })
+      expect(cmd.parse('--alpha')).to.have.shape({ options: { alpha: true } })
+      expect(cmd.parse('--no-alpha')).to.have.shape({ options: { alpha: false } })
+      expect(cmd.parse('-C')).to.have.shape({ options: { gamma: 1 } })
+      expect(cmd.parse('')).to.have.shape({ options: { gamma: 0 }, args: [], rest: '' })
+    })
   })
 
-  test('hyphen-prefixed arguments', () => {
-    const result = cmd1.parse('-a "-a"')
-    expect(result.args).toMatchObject(['-a'])
+  describe('advanced', () => {
+    it('symbol alias', () => {
+      cmd = app.command('cmd3')
+      cmd.option('sharp', '# <id>')
+      expect(cmd.parse('# 1')).to.have.shape({ args: [], options: { sharp: 1 } })
+    })
+
+    it('duplicate option', () => {
+      expect(() => cmd.option('flat', '#')).to.throw()
+    })
+
+    it('remove option', () => {
+      expect(cmd.removeOption('sharp' as never)).to.equal(true)
+      expect(cmd.parse('# 1')).to.have.shape({ args: ['#', '1'], options: {} })
+      expect(cmd.removeOption('sharp' as never)).to.equal(false)
+    })
+
+    it('rest option', () => {
+      cmd.option('rest', '-- <rest...>')
+      expect(cmd.parse('a b -- c d')).to.have.shape({ args: ['a', 'b'], options: { rest: 'c d' }, rest: '' })
+      expect(cmd.parse('a "b -- c" d')).to.have.shape({ args: ['a', 'b -- c', 'd'], options: {}, rest: '' })
+      expect(cmd.parse('a b -- "c d"')).to.have.shape({ args: ['a', 'b'], options: { rest: 'c d' }, rest: '' })
+    })
+
+    it('terminator 1', () => {
+      expect(cmd.parse('foo bar baz', ';')).to.have.shape({ args: ['foo', 'bar', 'baz'], rest: '' })
+      expect(cmd.parse('"foo bar" baz', ';')).to.have.shape({ args: ['foo bar', 'baz'], rest: '' })
+      expect(cmd.parse('"foo bar "baz', ';')).to.have.shape({ args: ['"foo', 'bar', '"baz'], rest: '' })
+      expect(cmd.parse('foo" bar" baz', ';')).to.have.shape({ args: ['foo"', 'bar"', 'baz'], rest: '' })
+      expect(cmd.parse('foo;bar baz', ';')).to.have.shape({ args: ['foo'], rest: ';bar baz' })
+      expect(cmd.parse('"foo;bar";baz', ';')).to.have.shape({ args: ['foo;bar'], rest: ';baz' })
+    })
+
+    it('terminator 2', () => {
+      expect(cmd.parse('-- foo bar baz', ';')).to.have.shape({ options: { rest: 'foo bar baz' }, rest: '' })
+      expect(cmd.parse('-- "foo bar" baz', ';')).to.have.shape({ options: { rest: '"foo bar" baz' }, rest: '' })
+      expect(cmd.parse('-- "foo bar baz"', ';')).to.have.shape({ options: { rest: 'foo bar baz' }, rest: '' })
+      expect(cmd.parse('-- foo;bar baz', ';')).to.have.shape({ options: { rest: 'foo' }, rest: ';bar baz' })
+      expect(cmd.parse('-- "foo;bar" baz', ';')).to.have.shape({ options: { rest: '"foo' }, rest: ';bar" baz' })
+      expect(cmd.parse('-- "foo;bar";baz', ';')).to.have.shape({ options: { rest: 'foo;bar' }, rest: ';baz' })
+    })
   })
 
-  test('skip rest part', () => {
-    const result = cmd1.parse('foo bar baz -- 123 456')
-    expect(result.rest).toBe('123 456')
-    expect(result.args).toMatchObject(['foo', 'bar', 'baz'])
-  })
-
-  test('long argument', () => {
-    const result = cmd2.parse('foo bar baz -- 123 456')
-    expect(result.rest).toBe('')
-    expect(result.args).toMatchObject(['foo', 'bar baz -- 123 456'])
-  })
-})
-
-describe('options', () => {
-  let result: ParsedLine
-
-  test('duplicate options', () => {
-    expect(() => app
-      .command('cmd-duplicate-options')
-      .option('-a, --alpha')
-      .option('-a, --aleph')
-    ).toThrow(errors.DUPLICATE_OPTION)
-  })
-
-  test('option without parameter', () => {
-    result = cmd1.parse('--alpha a')
-    expect(result.args).toMatchObject(['a'])
-    expect(result.options).toMatchObject({ a: true, alpha: true })
-  })
-
-  test('option with parameter', () => {
-    result = cmd1.parse('--beta 10')
-    expect(result.options).toMatchObject({ b: 10, beta: 10 })
-    result = cmd1.parse('--beta=10')
-    expect(result.options).toMatchObject({ b: 10, beta: 10 })
-  })
-
-  test('quoted parameter', () => {
-    result = cmd1.parse('-c "" -d')
-    expect(result.options).toMatchObject({ c: '', d: true })
-  })
-
-  test('unknown options', () => {
-    result = cmd1.parse('--unknown-gamma b --unknown-gamma c -de 10')
-    expect(result.unknown).toMatchObject(['unknown-gamma', 'd', 'e'])
-    expect(result.options).toMatchObject({ unknownGamma: 'c', d: true, e: 10 })
-  })
-
-  test('negated options', () => {
-    result = cmd2.parse('-C --no-delta -E --no-epsilon')
-    expect(result.options).toMatchObject({ C: true, gamma: false, D: true, delta: false, E: true, epsilon: false })
-  })
-
-  test('option configuration', () => {
-    result = cmd2.parse('-ba 123')
-    expect(result.options).toMatchObject({ a: '123', b: 1000 })
-    result = cmd2.parse('-ad 456')
-    expect(result.options).toMatchObject({ a: '', b: 1000, d: 456 })
-  })
-})
-
-describe('edge cases', () => {
-  let cmd3: Command
-
-  beforeAll(() => {
-    cmd3 = app
-      .command('cmd3')
-      .option('-a, --alpha-beta')
-      .option('-b, --no-alpha-beta')
-      .option('-c, --no-gamma', '', { noNegated: true })
-  })
-
-  test('no negated options', () => {
-    const result = cmd3.parse('-abc')
-    expect(result.options).toMatchObject({ a: true, alphaBeta: true, b: true, noAlphaBeta: true, c: true, noGamma: true })
+  describe('stringify argv', () => {
+    it('basic support', () => {
+      cmd = app.command('cmd4')
+      cmd.option('alpha', '-a <val>')
+      cmd.option('beta', '-b')
+      expect(cmd.stringify(['foo', 'bar'], {})).to.equal('cmd4 foo bar')
+      expect(cmd.stringify([], { alpha: 2 })).to.equal('cmd4 --alpha 2')
+      expect(cmd.stringify([], { alpha: ' ' })).to.equal('cmd4 --alpha " "')
+      expect(cmd.stringify([], { beta: true })).to.equal('cmd4 --beta')
+      expect(cmd.stringify([], { beta: false })).to.equal('cmd4 --no-beta')
+    })
   })
 })

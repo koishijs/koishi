@@ -4,7 +4,7 @@ interface Attributes {
   [key: string]: string | number | boolean
 }
 
-function hyphenate (source: Attributes) {
+function hyphenate(source: Attributes) {
   const result = {}
   for (const key in source) {
     result[key.replace(/[A-Z]/g, str => '-' + str.toLowerCase())] = source[key]
@@ -12,7 +12,7 @@ function hyphenate (source: Attributes) {
   return result
 }
 
-function escapeHtml (source: string) {
+function escapeHtml(source: string) {
   return source
     .replace(/&/g, '&amp;')
     .replace(/"/g, '&quot;')
@@ -27,16 +27,16 @@ export class Tag {
   private attributes: Attributes = {}
   private innerText: string = ''
 
-  constructor (public tag: string) {}
+  constructor(public tag: string) {}
 
-  child (tag: string) {
+  child(tag: string) {
     const child = new Tag(tag)
     child.parent = this
     this.children.push(child)
     return child
   }
 
-  attr (attributes: Attributes) {
+  attr(attributes: Attributes) {
     this.attributes = {
       ...this.attributes,
       ...attributes,
@@ -44,43 +44,43 @@ export class Tag {
     return this
   }
 
-  data (innerText: string) {
+  data(innerText: string) {
     this.innerText = innerText
     return this
   }
 
-  line (x1: number, y1: number, x2: number, y2: number, attr: Attributes = {}) {
+  line(x1: number, y1: number, x2: number, y2: number, attr: Attributes = {}) {
     this.child('line').attr({ ...hyphenate(attr), x1, y1, x2, y2 })
     return this
   }
 
-  circle (cx: number, cy: number, r: number, attr: Attributes = {}) {
+  circle(cx: number, cy: number, r: number, attr: Attributes = {}) {
     this.child('circle').attr({ ...hyphenate(attr), cx, cy, r })
     return this
   }
 
-  rect (x1: number, y1: number, x2: number, y2: number, attr: Attributes = {}) {
+  rect(x1: number, y1: number, x2: number, y2: number, attr: Attributes = {}) {
     this.child('rect').attr({ ...hyphenate(attr), x: x1, y: y1, width: y2 - y1, height: x2 - x1 })
     return this
   }
 
-  text (text: string, x: number, y: number, attr: Attributes = {}) {
+  text(text: string, x: number, y: number, attr: Attributes = {}) {
     this.child('text').attr({ ...hyphenate(attr), x, y }).data(text)
     return this
   }
 
-  g (attr: Attributes = {}) {
+  g(attr: Attributes = {}) {
     return this.child('g').attr(hyphenate(attr))
   }
 
-  get outer (): string {
+  get outer(): string {
     const attrText = Object.keys(this.attributes)
       .map(key => ` ${key}="${escapeHtml(String(this.attributes[key]))}"`)
       .join('')
     return `<${this.tag}${attrText}>${this.inner}</${this.tag}>`
   }
 
-  get inner (): string {
+  get inner(): string {
     return this.children.length
       ? this.children.map(child => child.outer).join('')
       : this.innerText
@@ -108,7 +108,7 @@ export class SVG extends Tag {
   width: number
   height: number
 
-  constructor (options: SVGOptions = {}) {
+  constructor(options: SVGOptions = {}) {
     super('svg')
     const { size = 200, viewSize = size, width = size, height = size } = options
     this.width = width
@@ -125,13 +125,13 @@ export class SVG extends Tag {
     })
   }
 
-  fill (color: string) {
+  fill(color: string) {
     this.rect(this.view.top, this.view.left, this.view.bottom, this.view.right, { style: `fill: ${color}` })
     return this
   }
 
-  async render (ctx: Context) {
-    const page = await ctx.getPage()
+  async render(ctx: Context) {
+    const page = await ctx.app.browser.newPage()
     await page.setContent(this.outer)
     const base64 = await page.screenshot({
       encoding: 'base64',
@@ -142,7 +142,7 @@ export class SVG extends Tag {
         height: this.height,
       },
     })
-    ctx.freePage(page)
+    page.close()
     return `[CQ:image,file=base64://${base64}]`
   }
 }

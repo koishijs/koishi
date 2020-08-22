@@ -3,82 +3,45 @@
 
 import { resolve } from 'path'
 import { readFileSync } from 'fs'
-import { Script, createContext } from 'vm'
-import { EventEmitter } from 'events'
+import { Script, createContext, ScriptOptions } from 'vm'
 import { INSPECT_MAX_BYTES } from 'buffer'
+import { inspect } from 'util'
+import { Logger } from 'koishi-utils'
 import type * as Internal from './internal'
 
-const filename = resolve(__dirname, 'internal.js')
-const data = readFileSync(filename, 'utf8')
-const contextifyScript = new Script(`(function(host, exports) {${data}\n})`, {
-  filename,
-  displayErrors: false,
-})
-
 export interface VMOptions {
-  sandbox: any
   strings?: boolean
   wasm?: boolean
 }
 
-export class VM extends EventEmitter {
-  private readonly _context: object
-  private readonly _internal: typeof Internal = Object.create(null)
+export class VM {
+  readonly context: object
+  readonly internal: typeof Internal = Object.create(null)
 
-  constructor(options: VMOptions) {
-    super()
-
-    const {	sandbox, strings = true, wasm = false } = options
-    this._context = createContext(undefined, {
+  constructor(options: VMOptions = {}) {
+    const { strings = true, wasm = true } = options
+    this.context = createContext(undefined, {
       codeGeneration: { strings, wasm },
     })
 
-    contextifyScript
-      .runInContext(this._context, { displayErrors: false })
-      .call(this._context, Host, this._internal)
-
-    for (const name in sandbox) {
-      if (Object.prototype.hasOwnProperty.call(sandbox, name)) {
-        this._internal.setGlobal(name, sandbox[name])
-      }
-    }
-  }
-
-  get sandbox () {
-    return this._internal.sandbox
-  }
-
-  setGlobal (name: string, value: any) {
-    this._internal.setGlobal(name, value, true)
-    return this
-  }
-
-  getGlobal (name: string) {
-    return this._internal.getGlobal(name)
-  }
-
-  freeze (value: any, globalName?: string) {
-    this._internal.readonly(value)
-    if (globalName) this._internal.setGlobal(globalName, value)
-    return value
-  }
-
-  protect (value: any, globalName?: string) {
-    this._internal.protect(value)
-    if (globalName) this._internal.setGlobal(globalName, value)
-    return value
-  }
-
-  run (code: string, filename = 'vm.js') {
-    const script = new Script(code, {
+    const filename = resolve(__dirname, 'internal.js')
+    const data = readFileSync(filename, 'utf8')
+    const script = new Script(`(function(host, exports) {${data}\n})`, {
       filename,
-      displayErrors: false,
     })
 
+    script
+      .runInContext(this.context, { displayErrors: false })
+      .call(this.context, Host, this.internal)
+  }
+
+  run(code: string, options: ScriptOptions = {}) {
+    const script = new Script(code, options)
+
     try {
-      return this._internal.value(script.runInContext(this._context, { displayErrors: false }))
+      return this.internal.value(script.runInContext(this.context, { displayErrors: false }))
     } catch (e) {
-      throw this._internal.value(e)
+      throw this.internal.value(e)
     }
   }
 }
@@ -91,6 +54,8 @@ export class VMError extends Error {
     Error.captureStackTrace(this, this.constructor)
   }
 }
+
+const { debug } = Logger.create('eval')
 
 export const Host = {
   String,
@@ -117,6 +82,10 @@ export const Host = {
   Set,
   WeakSet,
   Promise,
+  debug,
+  TextEncoder,
+  TextDecoder,
+  inspect,
   Symbol,
   INSPECT_MAX_BYTES,
 } as const
