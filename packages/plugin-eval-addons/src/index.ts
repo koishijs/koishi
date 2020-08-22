@@ -62,7 +62,8 @@ export function apply(ctx: Context, config: Config) {
   ctx.on('worker/start', async () => {
     const folders = await promises.readdir(root)
     evalConfig.addonNames = folders.filter(name => !name.includes('.'))
-    addon.children.forEach(cmd => cmd.dispose())
+    // cmd.dispose() may affect addon.children, so here we make a slice
+    addon.children.slice().forEach(cmd => cmd.dispose())
   })
 
   ctx.on('worker/ready', (response) => {
