@@ -30,7 +30,7 @@ extendDatabase(MemoryDatabase, {
   },
 
   async createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
-    dialogue = this.$create('dialogue', { ...Dialogue.create(), ...dialogue })
+    dialogue = this.$create('dialogue', dialogue)
     Dialogue.addHistory(dialogue, '添加', argv, revert)
     return dialogue
   },

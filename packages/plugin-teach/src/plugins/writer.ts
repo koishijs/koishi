@@ -129,10 +129,10 @@ export default function apply(ctx: Context) {
     }
   })
 
-  ctx.on('dialogue/modify', ({ options, target, session }, data) => {
+  ctx.on('dialogue/modify', ({ options, session }, data) => {
     if (options.writer !== undefined) {
       data.writer = options.writer
-    } else if (!target) {
+    } else if (options.create) {
       data.writer = session.userId
     }
   })
