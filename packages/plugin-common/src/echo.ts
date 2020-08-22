@@ -1,4 +1,4 @@
-import { MetaTypeMap, Context } from 'koishi-core'
+import { Context } from 'koishi-core'
 import { CQCode } from 'koishi-utils'
 
 export function apply(ctx: Context) {

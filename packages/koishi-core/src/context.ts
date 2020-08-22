@@ -160,7 +160,10 @@ export class Context {
   private getHooks<K extends keyof EventMap>(name: K) {
     const hooks = this.app._hooks[name] || (this.app._hooks[name] = [])
     if (hooks.length >= this.app.options.maxListeners) {
-      this.logger('app').warn('max listener count (%d) exceeded, which may be caused by a memory leak', this.app.options.maxListeners)
+      this.logger('app').warn(
+        'max listener count (%d) for event "%s" exceeded, which may be caused by a memory leak',
+        this.app.options.maxListeners, name,
+      )
     }
     return hooks
   }
