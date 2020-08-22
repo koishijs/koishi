@@ -248,6 +248,9 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     }
     if (!argv) return next()
 
+    argv.next = next
+    argv.session = this
+    this.$argv = argv
     if (this.$app.database) {
       if (this.messageType === 'group') {
         await this.$observeGroup()
@@ -255,8 +258,6 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
       await this.$observeUser()
     }
 
-    argv.next = next
-    argv.session = this
     return argv.command.execute(argv)
   }
 }
