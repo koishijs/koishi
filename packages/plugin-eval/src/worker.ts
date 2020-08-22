@@ -1,6 +1,7 @@
 import { Logger, escapeRegExp } from 'koishi-utils'
 import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
+import { findSourceMap } from 'module'
 
 /* eslint-disable import/first */
 
@@ -10,8 +11,6 @@ const logger = Logger.create('eval')
 import { expose, wrap } from './transfer'
 import { VM } from './vm'
 import { MainAPI } from '.'
-
-const { findSourceMap } = require('module')
 
 export interface WorkerConfig {
   setupFiles?: Record<string, string>
@@ -88,8 +87,14 @@ export function contextFactory(sid: string, user: {}) {
   }
 }
 
+export interface Response {}
+
+export const response: Response = {}
+
 export class WorkerAPI {
-  start() {}
+  start() {
+    return response
+  }
 
   async eval(options: EvalOptions) {
     const { sid, source, user, silent } = options

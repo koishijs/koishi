@@ -1,7 +1,7 @@
 import { App, Context, User, Session } from 'koishi-core'
 import { CQCode, Logger, defineProperty, omit, Random } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
-import { WorkerAPI, WorkerConfig, WorkerData } from './worker'
+import { WorkerAPI, WorkerConfig, WorkerData, Response } from './worker'
 import { wrap, expose, Remote } from './transfer'
 import { resolve } from 'path'
 
@@ -16,7 +16,8 @@ declare module 'koishi-core/dist/app' {
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'worker/start' (): void
+    'worker/start' (): void | Promise<void>
+    'worker/ready' (response: Response): void
     'worker/exit' (): void
   }
 }
@@ -89,6 +90,8 @@ export function apply(ctx: Context, config: Config = {}) {
   let restart = true
   const api = new MainAPI(app)
   async function createWorker() {
+    await app.parallel('worker/start')
+
     const worker = app.evalWorker = new Worker(resolve(__dirname, 'worker.js'), {
       workerData: {
         logLevels: Logger.levels,
@@ -100,8 +103,8 @@ export function apply(ctx: Context, config: Config = {}) {
     expose(worker, api)
 
     app.evalRemote = wrap(worker)
-    app.evalRemote.start().then(() => {
-      app.emit('worker/start')
+    await app.evalRemote.start().then((response) => {
+      app.emit('worker/ready', response)
       logger.info('worker started')
 
       worker.on('exit', (code) => {
