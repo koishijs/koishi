@@ -267,8 +267,8 @@ export class Context {
     return parent
   }
 
-  async broadcast(message: string, forced?: boolean): Promise<void>
-  async broadcast(groups: readonly number[], message: string, forced?: boolean): Promise<void>
+  async broadcast(message: string, forced?: boolean): Promise<number[]>
+  async broadcast(groups: readonly number[], message: string, forced?: boolean): Promise<number[]>
   async broadcast(...args: [string, boolean?] | [readonly number[], string, boolean?]) {
     let groups: number[]
     if (Array.isArray(args[0])) groups = args.shift() as any
@@ -287,10 +287,9 @@ export class Context {
       }
     }
 
-    const warn = this.logger('bot').warn
-    await Promise.all(Object.entries(assignMap).map(([id, groups]) => {
-      return this.app.bots[+id].broadcast(groups, message).catch(warn)
-    }))
+    return (await Promise.all(Object.entries(assignMap).map(async ([id, groups]) => {
+      return await this.app.bots[+id].broadcast(groups, message)
+    }))).flat(1)
   }
 
   dispose() {

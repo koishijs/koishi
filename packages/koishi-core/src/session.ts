@@ -76,6 +76,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   $appel?: boolean
   $prefix?: string = null
   $parsed?: string
+  $reply?: number
 
   private _delay?: number
   private _queued = Promise.resolve()
