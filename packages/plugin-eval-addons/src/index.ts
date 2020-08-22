@@ -49,7 +49,7 @@ export function apply(ctx: Context, config: Config) {
         const { files, summary } = await git.pull(evalConfig.gitRemote)
         if (!files.length) return '所有模块均已是最新。'
         await session.$app.evalWorker.terminate()
-        return `更新成功！(\n${summary.insertions}A ${summary.deletions}D ${summary.changes}M)`
+        return `更新成功！(${summary.insertions}A ${summary.deletions}D ${summary.changes}M)`
       }
       return session.$execute('help addon')
     })
