@@ -245,10 +245,11 @@ export class App extends Context {
     await session.$group?._update()
   }
 
-  private _parse(message: string, { $prefix, $appel, messageType }: Session, builtin: boolean, terminator: string) {
+  private _parse(message: string, { $prefix, $appel, messageType }: Session, builtin: boolean, terminator = '') {
     // group message should have prefix or appel to be interpreted as a command call
     if (builtin && messageType !== 'private' && $prefix === null && !$appel) return
-    const name = message.split(/\s/, 1)[0]
+    terminator = escapeRegex(terminator)
+    const name = message.split(new RegExp(`[\\s${terminator}]`), 1)[0]
     const index = name.lastIndexOf('/')
     const command = this.app._commandMap[name.slice(index + 1).toLowerCase()]
     if (!command) return
