@@ -180,15 +180,13 @@ export function checkUsage(name: string, user: Pick<User, 'usage'>, maxUsage?: n
   }
 }
 
-const UPDATE_INTERVAL = 86400000
-
 export function checkTimer(name: string, { timers }: Pick<User, 'timers'>, offset?: number) {
   const now = Date.now()
   if (!(now <= timers.$date)) {
     for (const key in timers) {
       if (now > timers[key]) delete timers[key]
     }
-    timers.$date = now + UPDATE_INTERVAL
+    timers.$date = now + Time.day
   }
   if (now <= timers[name]) return true
   if (offset !== undefined) {
