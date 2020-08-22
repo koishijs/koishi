@@ -1,4 +1,4 @@
-import { State, MoveResult } from './state'
+import { State } from './state'
 
 const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]] as const
 
@@ -50,13 +50,13 @@ export function update(this: State, x: number, y: number, value: -1 | 1) {
   } else if (findEaten(this, x, y)) {
     this.bBoard = bBoard
     this.wBoard = wBoard
-    return MoveResult.illegal
+    return '不入子'
   }
 
   if (this.history.includes((this.wBoard << this.area) + this.bBoard)) {
     this.bBoard = bBoard
     this.wBoard = wBoard
-    return MoveResult.illegal
+    return '全局同形'
   }
 
   this.save()
