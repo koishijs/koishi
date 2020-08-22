@@ -1,4 +1,4 @@
-import { capitalize, camelCase, paramCase, snakeCase, simplify, traditionalize } from '../src'
+import { capitalize, camelCase, paramCase, snakeCase, simplify, traditionalize, escapeRegExp } from '../src'
 import { expect } from 'chai'
 
 describe('String Manipulations', () => {
@@ -27,5 +27,9 @@ describe('String Manipulations', () => {
   it('snake case', () => {
     expect(snakeCase('aa-aa_aA')).to.equal('aa_aa_a_a')
     expect(snakeCase({ 'a-b': [{ cD: 'e-f' }] })).to.deep.equal({ a_b: [{ c_d: 'e-f' }] })
+  })
+
+  it('escape regexp', () => {
+    expect(escapeRegExp('\\^$*+?.()|{}[]-')).to.equal('\\\\\\^\\$\\*\\+\\?\\.\\(\\)\\|\\{\\}\\[\\]\\x2d')
   })
 })

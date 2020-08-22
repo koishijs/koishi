@@ -1,10 +1,9 @@
-import escapeRegex from 'escape-string-regexp'
 import { Command } from './command'
 import { Context, Middleware, NextFunction } from './context'
 import { Group, User, Database } from './database'
 import { BotOptions, Server } from './server'
 import { Session } from './session'
-import { simplify, defineProperty, Time, Observed, coerce } from 'koishi-utils'
+import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp } from 'koishi-utils'
 import help from './plugins/help'
 import shortcut from './plugins/shortcut'
 import suggest from './plugins/suggest'
@@ -32,7 +31,7 @@ export interface AppOptions extends BotOptions {
 }
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
-  return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegex).join('|')})${suffix}`) : /$^/
+  return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
 }
 
 export enum AppStatus { closed, opening, open, closing }
@@ -248,7 +247,7 @@ export class App extends Context {
   private _parse(message: string, { $prefix, $appel, messageType }: Session, builtin: boolean, terminator = '') {
     // group message should have prefix or appel to be interpreted as a command call
     if (builtin && messageType !== 'private' && $prefix === null && !$appel) return
-    terminator = escapeRegex(terminator)
+    terminator = escapeRegExp(terminator)
     const name = message.split(new RegExp(`[\\s${terminator}]`), 1)[0]
     const index = name.lastIndexOf('/')
     const command = this.app._commandMap[name.slice(index + 1).toLowerCase()]

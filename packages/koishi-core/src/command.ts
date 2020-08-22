@@ -1,9 +1,8 @@
 import { Context, NextFunction } from './context'
 import { User, Group, Tables, TableType } from './database'
-import { noop, camelCase, paramCase, Logger, coerce } from 'koishi-utils'
+import { noop, camelCase, paramCase, Logger, coerce, escapeRegExp } from 'koishi-utils'
 import { Session } from './session'
 import { inspect, format } from 'util'
-import escapeRegex from 'escape-string-regexp'
 
 const logger = Logger.create('command')
 
@@ -363,7 +362,7 @@ export class Command<U extends User.Field = never, G extends Group.Field = never
 
   parse(message: string, terminator = ''): ParsedLine {
     let rest = ''
-    terminator = escapeRegex(terminator)
+    terminator = escapeRegExp(terminator)
     const source = `${this.name} ${message}`
     const args: string[] = []
     const options: Record<string, any> = {}

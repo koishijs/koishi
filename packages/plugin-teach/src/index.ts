@@ -1,6 +1,7 @@
 /* eslint-disable no-irregular-whitespace */
 
 import { Context, ExecuteArgv } from 'koishi-core'
+import { escapeRegExp } from 'koishi-utils'
 import { Dialogue, parseTeachArgs } from './utils'
 import internal from './internal'
 import receiver from './receiver'
@@ -15,7 +16,6 @@ import successor from './plugins/successor'
 import time from './plugins/time'
 import writer from './plugins/writer'
 import database from './database'
-import escapeRegexp from 'escape-string-regexp'
 
 export * from './database'
 export * from './utils'
@@ -102,7 +102,7 @@ export const name = 'teach'
 
 function registerPrefix(ctx: Context, prefix: string) {
   const g = '\\d+(?:\\.\\.\\d+)?'
-  const p = escapeRegexp(prefix)
+  const p = escapeRegExp(prefix)
   const teachRegExp = new RegExp(`^${p}(${p}?)((${g}(?:,${g})*)?|${p}?)(\\s+|$)`)
   //                                   $1     $2
 

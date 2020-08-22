@@ -1,7 +1,6 @@
 import { Context, User, Session, NextFunction, Command } from 'koishi-core'
-import { CQCode, simplify, noop } from 'koishi-utils'
+import { CQCode, simplify, noop, escapeRegExp } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './utils'
-import escapeRegex from 'escape-string-regexp'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -242,7 +241,7 @@ export async function triggerDialogue(ctx: Context, session: Session, config: Di
 export default function (ctx: Context, config: Dialogue.Config) {
   const { nickname = ctx.app.options.nickname, maxRedirections = 3 } = config
   const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
-  const nicknameRE = new RegExp(`^((${nicknames.map(escapeRegex).join('|')})[,，]?\\s*)+`)
+  const nicknameRE = new RegExp(`^((${nicknames.map(escapeRegExp).join('|')})[,，]?\\s*)+`)
 
   config._stripQuestion = (source) => {
     source = prepareSource(source)
