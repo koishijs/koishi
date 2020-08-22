@@ -232,17 +232,15 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/flag', (flag) => {
     ctx.on('dialogue/mysql', (test, conditionals) => {
-      if (test[flag] !== undefined) {
-        conditionals.push(`!(\`flag\` & ${Dialogue.Flag[flag]}) = !${test[flag]}`)
-      }
+      if (test[flag] === undefined) return
+      conditionals.push(`!(\`flag\` & ${Dialogue.Flag[flag]}) = !${test[flag]}`)
     })
 
     ctx.on('dialogue/mongo', (test, conditionals) => {
-      if (test[flag] !== undefined) {
-        conditionals.push({
-          flag: { [test[flag] ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag[flag] },
-        })
-      }
+      if (test[flag] === undefined) return
+      conditionals.push({
+        flag: { [test[flag] ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag[flag] },
+      })
     })
 
     ctx.on('dialogue/before-search', ({ options }, test) => {
