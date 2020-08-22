@@ -230,8 +230,14 @@ export async function triggerDialogue(ctx: Context, session: Session, config: Di
       await buffer.flush()
     } else if (char === '{') {
       const argv = session.$parse(state.answer, '}')
-      state.answer = argv.rest.slice(1)
-      await buffer.run(() => session.$execute(argv))
+      if (argv) {
+        state.answer = argv.rest.slice(1)
+        await buffer.run(() => session.$execute(argv))
+      } else {
+        logger.warn('cannot parse:', state.answer)
+        const index = state.answer.indexOf('}')
+        state.answer = state.answer.slice(index + 1)
+      }
     }
   }
   await buffer.end(unescapeAnswer(state.answer))
