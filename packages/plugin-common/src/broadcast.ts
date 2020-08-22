@@ -13,6 +13,6 @@ export function apply(ctx: Context) {
       if (!options.forced) {
         groups = groups.filter(g => !(g.flag & Group.Flag.silent))
       }
-      await session.$bot.sendGroupMessage(groups.map(g => g.id), message)
+      await session.$bot.broadcast(groups.map(g => g.id), message)
     })
 }

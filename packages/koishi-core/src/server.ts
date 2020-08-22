@@ -1,4 +1,4 @@
-import { camelCase, paramCase } from 'koishi-utils'
+import { camelCase, paramCase, sleep } from 'koishi-utils'
 import { Session, MessageType, Meta } from './session'
 import { App } from './app'
 import * as http from 'http'
@@ -116,11 +116,11 @@ export enum BotStatus {
 export interface Bot extends BotOptions {
   ready?: boolean
   version?: string
-  getSelfId (): Promise<number>
-  getStatus (): Promise<BotStatus>
-  getMemberMap (groupId: number): Promise<Record<number, string>>
-  sendGroupMessage (groupId: number | number[], message: string, delay?: number): Promise<void>
-  sendPrivateMessage (userId: number | number[], message: string, delay?: number): Promise<void>
+  getSelfId(): Promise<number>
+  getStatus(): Promise<BotStatus>
+  getMemberMap(groupId: number): Promise<Record<number, string>>
+  sendGroupMsg(groupId: number, message: string, autoEscape?: boolean): Promise<number>
+  sendPrivateMsg(userId: number, message: string, autoEscape?: boolean): Promise<number>
 }
 
 export class Bot {
@@ -138,5 +138,18 @@ export class Bot {
       [ctxType + 'Id']: ctxId,
       time: Math.round(Date.now() / 1000),
     })
+  }
+
+  async broadcast(groups: number[], message: string, delay = this.app.options.broadcastDelay) {
+    const messageIds: number[] = []
+    for (let index = 0; index < groups.length; index++) {
+      if (index && delay) await sleep(delay)
+      try {
+        messageIds.push(await this.sendGroupMsg(groups[index], message))
+      } catch (error) {
+        this.app.logger('bot').warn(error)
+      }
+    }
+    return messageIds
   }
 }

@@ -143,7 +143,7 @@ export class Daemon {
       }
       if (app.bail('monitor/before-send', info, group)) return
       for (const message of messages) {
-        await bot.sendGroupMessage(id, message)
+        await bot.sendGroupMsg(id, message)
       }
     })
   }
