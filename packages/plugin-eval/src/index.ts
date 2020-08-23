@@ -34,7 +34,7 @@ interface MainConfig {
   prefix?: string
   timeout?: number
   maxLogs?: number
-  blacklist?: string[]
+  prohibitedCommands?: string[]
   resourceLimits?: ResourceLimits
 }
 
@@ -47,7 +47,7 @@ const defaultConfig: Config = {
   timeout: 1000,
   setupFiles: {},
   maxLogs: Infinity,
-  blacklist: ['evaluate', 'echo', 'broadcast', 'teach', 'contextify'],
+  prohibitedCommands: ['evaluate', 'echo', 'broadcast', 'teach', 'contextify'],
 }
 
 const logger = new Logger('eval')
@@ -95,7 +95,7 @@ export function apply(ctx: Context, config: Config = {}) {
     const worker = app.evalWorker = new Worker(resolve(__dirname, 'worker.js'), {
       workerData: {
         logLevels: Logger.levels,
-        ...omit(config, ['maxLogs', 'resourceLimits', 'timeout', 'blacklist']),
+        ...omit(config, ['maxLogs', 'resourceLimits', 'timeout', 'prohibitedCommands']),
       },
       resourceLimits: config.resourceLimits,
     })
@@ -132,9 +132,8 @@ export function apply(ctx: Context, config: Config = {}) {
     return createWorker()
   })
 
-  const blacklist = [...defaultConfig.blacklist, ...config.blacklist]
   ctx.on('before-command', ({ command, session }) => {
-    if (blacklist.includes(command.name) && session._isEval) {
+    if (config.prohibitedCommands.includes(command.name) && session._isEval) {
       return `不能在 evaluate 指令中调用 ${command.name} 指令。`
     }
   })
