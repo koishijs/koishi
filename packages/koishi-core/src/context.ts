@@ -34,7 +34,7 @@ function matchScope(base: ScopeSet, id: number) {
 }
 
 export class Context {
-  static readonly MIDDLEWARE_EVENT: unique symbol = Symbol('mid')
+  static readonly MIDDLEWARE_EVENT = Symbol('mid')
 
   private _disposables: Disposable[]
 
@@ -297,6 +297,7 @@ export class Context {
 
   dispose() {
     this._disposables.forEach(dispose => dispose())
+    this._disposables = []
   }
 }
 

@@ -72,6 +72,60 @@ describe('Context API', () => {
     })
   })
 
+  describe('Composition Runtime', () => {
+    beforeEach(() => {
+      delete app._hooks.attach
+    })
+
+    it('ctx.prototype.parallel', async () => {
+      await app.parallel('attach', null)
+      const callback = fn<void, []>()
+      app.private().on('attach', callback)
+      await app.parallel('attach', null)
+      expect(callback.mock.calls).to.have.length(1)
+      await app.parallel(groupSession, 'attach', null)
+      expect(callback.mock.calls).to.have.length(1)
+      await app.parallel(privateSession, 'attach', null)
+      expect(callback.mock.calls).to.have.length(2)
+    })
+
+    it('ctx.prototype.emit', async () => {
+      app.emit('attach', null)
+      const callback = fn<void, []>()
+      app.private().on('attach', callback)
+      app.emit('attach', null)
+      expect(callback.mock.calls).to.have.length(1)
+      app.emit(groupSession, 'attach', null)
+      expect(callback.mock.calls).to.have.length(1)
+      app.emit(privateSession, 'attach', null)
+      expect(callback.mock.calls).to.have.length(2)
+    })
+
+    it('ctx.prototype.serial', async () => {
+      app.serial('attach', null)
+      const callback = fn<void, []>()
+      app.private().on('attach', callback)
+      app.serial('attach', null)
+      expect(callback.mock.calls).to.have.length(1)
+      app.serial(groupSession, 'attach', null)
+      expect(callback.mock.calls).to.have.length(1)
+      app.serial(privateSession, 'attach', null)
+      expect(callback.mock.calls).to.have.length(2)
+    })
+
+    it('ctx.prototype.bail', async () => {
+      app.bail('attach', null)
+      const callback = fn<void, []>()
+      app.private().on('attach', callback)
+      app.bail('attach', null)
+      expect(callback.mock.calls).to.have.length(1)
+      app.bail(groupSession, 'attach', null)
+      expect(callback.mock.calls).to.have.length(1)
+      app.bail(privateSession, 'attach', null)
+      expect(callback.mock.calls).to.have.length(2)
+    })
+  })
+
   describe('Plugin API', () => {
     it('call chaining', () => {
       expect(app.plugin(noop)).to.equal(app)
