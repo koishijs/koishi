@@ -106,8 +106,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/mongo', ({ regexp, answer, question, original }, conditionals) => {
     if (regexp) {
-      if (answer !== undefined) conditionals.push({ answer: { $regex: new RegExp(answer) } })
-      if (question !== undefined) conditionals.push({ question: { $regex: new RegExp(original) } })
+      if (answer !== undefined) conditionals.push({ answer: { $regex: new RegExp(answer, 'i') } })
+      if (question !== undefined) conditionals.push({ question: { $regex: new RegExp(original, 'i') } })
       return
     }
     if (answer !== undefined) conditionals.push({ answer })
@@ -115,18 +115,18 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       if (regexp === false) {
         conditionals.push({ question })
       } else {
+        const $expr = {
+          body(field: string, question: string, original: string) {
+            const regex = new RegExp(field, 'i')
+            return regex.test(question) || regex.test(original)
+          },
+          args: ['$name', question, original],
+          lang: 'js',
+        }
         conditionals.push({
           $or: [
             { flag: { $bitsAllClear: Dialogue.Flag.regexp }, question },
-            {
-              flag: { $bitsAllSet: Dialogue.Flag.regexp },
-              // ugly, but it works
-              // eslint-disable-next-line no-eval
-              $where: eval(`function () {
-                const regex = new RegExp(this.question)
-                return regex.test(${JSON.stringify(question)}) || regex.test(${JSON.stringify(original)})
-              }`),
-            },
+            { flag: { $bitsAllSet: Dialogue.Flag.regexp }, $expr },
           ],
         })
       }
