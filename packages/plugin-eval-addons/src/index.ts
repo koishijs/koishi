@@ -11,6 +11,7 @@ const logger = new Logger('addon')
 export interface Config {
   gitRemote?: string
   moduleRoot?: string
+  exclude?: RegExp
 }
 
 interface Option extends OptionConfig {
@@ -59,9 +60,12 @@ export function apply(ctx: Context, config: Config) {
     if (!isRepo) throw new Error(`moduleRoot "${moduleRoot}" is not git repository`)
   })
 
+  const { exclude = /^(\..+|node_modules)$/ } = evalConfig
   ctx.on('worker/start', async () => {
-    const folders = await promises.readdir(root)
-    evalConfig.addonNames = folders.filter(name => !name.includes('.'))
+    const dirents = await promises.readdir(root, { withFileTypes: true })
+    evalConfig.addonNames = dirents
+      .filter(dir => dir.isDirectory() && !exclude.test(dir.name))
+      .map(dir => dir.name)
     // cmd.dispose() may affect addon.children, so here we make a slice
     addon.children.slice().forEach(cmd => cmd.dispose())
   })
