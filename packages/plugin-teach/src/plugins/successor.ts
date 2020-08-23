@@ -52,36 +52,6 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.emit('dialogue/flag', 'context')
 
-  ctx.on('dialogue/mysql', ({ predecessors, stateful, noRecursive }, conditionals) => {
-    if (noRecursive) {
-      conditionals.push('!`predecessors`')
-    } else if (predecessors !== undefined) {
-      const segments = predecessors.map(id => `FIND_IN_SET(${id}, \`predecessors\`)`)
-      if (stateful) {
-        conditionals.push(`(${['!`predecessors`', ...segments].join('||')})`)
-      } else if (predecessors.length) {
-        conditionals.push(`(${segments.join('||')})`)
-      }
-    }
-  })
-
-  ctx.on('dialogue/mongo', ({ predecessors, stateful, noRecursive }, conditionals) => {
-    if (noRecursive) {
-      conditionals.push({ predecessors: { $size: 0 } })
-    } else if (predecessors !== undefined) {
-      if (stateful) {
-        conditionals.push({
-          $or: [
-            { predecessors: { $size: 0 } },
-            { predecessors: { $in: predecessors.map(i => i.toString()) } },
-          ],
-        })
-      } else if (predecessors.length) {
-        conditionals.push({ predecessors: { $in: predecessors.map(i => i.toString()) } })
-      }
-    }
-  })
-
   ctx.on('dialogue/validate', (argv) => {
     const { options } = argv
 
@@ -177,7 +147,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   // get predecessors
-  ctx.on('dialogue/before-detail', async ({ options, dialogues, ctx }) => {
+  ctx.on('dialogue/before-detail', async ({ options, dialogues }) => {
     if (options.modify) return
     const predecessors = new Set<number>()
     for (const dialogue of dialogues) {
@@ -244,7 +214,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       }
     }
 
-    await argv.ctx.parallel('dialogue/search', argv, test, successors)
+    await argv.app.parallel('dialogue/search', argv, test, successors)
   })
 
   ctx.on('dialogue/list', ({ _successors }, output, prefix, argv) => {

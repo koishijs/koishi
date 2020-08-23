@@ -7,6 +7,8 @@ import internal from './internal'
 import receiver from './receiver'
 import search from './search'
 import update, { create } from './update'
+import mongo from './database/mongo'
+import mysql from './database/mysql'
 import context from './plugins/context'
 import image from './plugins/image'
 import throttle from './plugins/throttle'
@@ -15,9 +17,7 @@ import probability from './plugins/probability'
 import successor from './plugins/successor'
 import time from './plugins/time'
 import writer from './plugins/writer'
-import database from './database'
 
-export * from './database'
 export * from './utils'
 export * from './receiver'
 export * from './search'
@@ -147,17 +147,18 @@ export function apply(ctx: Context, config: Dialogue.Config = {}) {
     .userFields(['authority', 'id'])
     .usage(({ $user }) => cheatSheet(config.prefix, $user.authority))
     .action(async ({ options, session, args }) => {
-      const argv: Dialogue.Argv = { ctx, session, args, config, options }
+      const argv: Dialogue.Argv = { app: ctx.app, session, args, config, options }
       return ctx.bail('dialogue/validate', argv)
         || ctx.bail('dialogue/execute', argv)
         || create(argv)
     })
 
   // features
-  ctx.plugin(database, config)
   ctx.plugin(receiver, config)
   ctx.plugin(search, config)
   ctx.plugin(update, config)
+  ctx.plugin(mongo, config)
+  ctx.plugin(mysql, config)
 
   // options
   ctx.plugin(internal, config)

@@ -33,29 +33,6 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('groups', '-g <gids>  设置具体的生效环境', { authority: 3, type: 'string', validate: RE_GROUPS })
     .option('global', '-G  无视上下文搜索')
 
-  ctx.on('dialogue/mysql', (test, conditionals) => {
-    if (!test.groups || !test.groups.length) return
-    conditionals.push(`(
-      !(\`flag\` & ${Dialogue.Flag.complement}) != ${test.reversed} && ${test.groups.map(id => `FIND_IN_SET(${id}, \`groups\`)`).join(' && ')} ||
-      !(\`flag\` & ${Dialogue.Flag.complement}) = ${test.reversed} && ${test.groups.map(id => `!FIND_IN_SET(${id}, \`groups\`)`).join(' && ')}
-    )`)
-  })
-
-  ctx.on('dialogue/mongo', (test, conditionals) => {
-    if (!test.groups || !test.groups.length) return
-    const $and: FilterQuery<Dialogue>[] = test.groups.map(group => ({ $not: { groups: group } }))
-    $and.push({ flag: { [test.reversed ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag.complement } })
-    conditionals.push({
-      $or: [
-        {
-          flag: { [test.reversed ? '$bitsAllClear' : '$bitsAllSet']: Dialogue.Flag.complement },
-          groups: { $all: test.groups },
-        },
-        { $and },
-      ],
-    })
-  })
-
   // TODO: ???
   ctx.on('dialogue/fetch', (data, test) => {
     if (!test.groups || test.partial) return

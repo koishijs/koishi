@@ -1,5 +1,11 @@
-import { Context, Session, ParsedLine } from 'koishi-core'
-import { difference, observe, isInteger, defineProperty } from 'koishi-utils'
+import { Session, ParsedLine, App } from 'koishi-core'
+import { difference, observe, isInteger, defineProperty, Observed } from 'koishi-utils'
+
+declare module 'koishi-core/dist/app' {
+  interface App {
+    teachHistory: Record<number, Dialogue>
+  }
+}
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -13,6 +19,22 @@ declare module 'koishi-core/dist/database' {
   interface Tables {
     dialogue: Dialogue
   }
+
+  interface Database {
+    getDialoguesById<T extends Dialogue.Field>(ids: number[], fields?: T[]): Promise<Dialogue[]>
+    getDialoguesByTest(test: DialogueTest): Promise<Dialogue[]>
+    createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert?: boolean): Promise<Dialogue>
+    removeDialogues(ids: number[], argv: Dialogue.Argv, revert?: boolean): Promise<void>
+    updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv): Promise<void>
+    revertDialogues(dialogues: Dialogue[], argv: Dialogue.Argv): Promise<string>
+    recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv): Promise<void>
+    getDialogueStats(): Promise<DialogueStats>
+  }
+}
+
+interface DialogueStats {
+  questions: number
+  dialogues: number
 }
 
 export interface Dialogue {
@@ -63,7 +85,7 @@ export namespace Dialogue {
     complement = 16,
   }
 
-  export function addHistory(dialogue: Dialogue, type: Dialogue.ModifyType, argv: Dialogue.Argv, revert: boolean, target = argv.ctx.database.dialogueHistory) {
+  export function addHistory(dialogue: Dialogue, type: Dialogue.ModifyType, argv: Dialogue.Argv, revert: boolean, target = argv.app.teachHistory) {
     if (revert) return delete target[dialogue.id]
     target[dialogue.id] = dialogue
     const time = Date.now()
@@ -71,14 +93,14 @@ export namespace Dialogue {
     defineProperty(dialogue, '_operator', argv.session.userId)
     defineProperty(dialogue, '_type', type)
     setTimeout(() => {
-      if (argv.ctx.database.dialogueHistory[dialogue.id]?._timestamp === time) {
-        delete argv.ctx.database.dialogueHistory[dialogue.id]
+      if (argv.app.teachHistory[dialogue.id]?._timestamp === time) {
+        delete argv.app.teachHistory[dialogue.id]
       }
     }, argv.config.historyAge ?? 600000)
   }
 
   export interface Argv {
-    ctx: Context
+    app: App
     session: Session<'authority' | 'id'>
     args: string[]
     config: Config
@@ -134,7 +156,7 @@ export function equal(array1: (string | number)[], array2: (string | number)[]) 
 
 export function prepareTargets(argv: Dialogue.Argv, dialogues = argv.dialogues) {
   const targets = dialogues.filter((dialogue) => {
-    return !argv.ctx.bail('dialogue/permit', argv, dialogue)
+    return !argv.app.bail('dialogue/permit', argv, dialogue)
   })
   argv.uneditable.unshift(...difference(dialogues, targets).map(d => d.id))
   return targets.map(data => observe(data, `dialogue ${data.id}`))

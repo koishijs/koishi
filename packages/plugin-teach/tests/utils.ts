@@ -60,7 +60,7 @@ extendDatabase(MemoryDatabase, {
         Dialogue.addHistory(dialogue._backup, '修改', argv, false, temp)
       }
     }
-    Object.assign(this.dialogueHistory, temp)
+    Object.assign(this.app.teachHistory, temp)
   },
 
   async revertDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {

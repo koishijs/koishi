@@ -39,35 +39,6 @@ export default function apply(ctx: Context) {
     state.test.matchTime = date.getHours() * 60 + date.getMinutes()
   })
 
-  function getProduct(time: number) {
-    return `(\`startTime\`-${time})*(${time}-\`endTime\`)*(\`endTime\`-\`startTime\`)`
-  }
-
-  ctx.on('dialogue/mysql', (test, conditionals) => {
-    if (test.matchTime !== undefined) {
-      conditionals.push(getProduct(test.matchTime) + '>=0')
-    }
-    if (test.mismatchTime !== undefined) {
-      conditionals.push(getProduct(test.matchTime) + '<0')
-    }
-  })
-
-  ctx.on('dialogue/mongo', (test, conditionals) => {
-    const expr = {
-      $multiply: [
-        { $subtract: ['$endTime', '$startTime'] },
-        { $subtract: ['$startTime', test.matchTime] },
-        { $subtract: [test.matchTime, '$endTime'] },
-      ],
-    }
-    if (test.matchTime !== undefined) {
-      conditionals.push({ $expr: { $gte: [expr, 0] } })
-    }
-    if (test.matchTime !== undefined) {
-      conditionals.push({ $expr: { $lt: [expr, 0] } })
-    }
-  })
-
   ctx.on('dialogue/modify', async ({ options }, data) => {
     if (options.startTime !== undefined) {
       data.startTime = parseTime(options.startTime)

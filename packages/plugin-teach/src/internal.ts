@@ -2,11 +2,10 @@ import { Context } from 'koishi-core'
 import { Dialogue } from './utils'
 import { update } from './update'
 import { RegExpValidator } from 'regexpp'
-import { Logger } from 'koishi-utils'
+import { defineProperty, Logger } from 'koishi-utils'
+import { formatQuestionAnswers } from './search'
 import { types } from 'util'
 import leven from 'leven'
-import { escape } from 'mysql'
-import { formatQuestionAnswers } from './search'
 
 class RegExpError extends Error {
   name = 'RegExpError'
@@ -16,8 +15,8 @@ const validator = new RegExpValidator({
   onEscapeCharacterSet(start, end, kind, negate) {
     // eslint-disable-next-line curly
     if (kind === 'space') throw negate
-      ? new RegExpError('四季酱会自动删除问题中的空白字符，你无需使用 \\s。')
-      : new RegExpError('四季酱会自动删除问题中的空白字符，请使用 . 代替 \\S。')
+      ? new RegExpError('我会自动删除问题中的空白字符，你无需使用 \\s。')
+      : new RegExpError('我会自动删除问题中的空白字符，请使用 . 代替 \\S。')
     let chars = kind === 'digit' ? '0-9' : '_0-9a-z'
     let source = kind === 'digit' ? 'd' : 'w'
     if (negate) {
@@ -45,6 +44,7 @@ const validator = new RegExpValidator({
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
   const logger = new Logger('teach')
+  defineProperty(ctx.app, 'teachHistory', {})
 
   ctx.command('teach')
     .option('question', '<question>  问题', { type: 'string' })
@@ -80,57 +80,6 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
     options.answer = (String(answer || '')).trim()
     if (!options.answer) delete options.answer
-  })
-
-  ctx.on('dialogue/mysql', ({ regexp, answer, question, original }, conditionals) => {
-    if (regexp) {
-      if (answer !== undefined) conditionals.push('`answer` REGEXP ' + escape(answer))
-      if (question !== undefined) conditionals.push('`question` REGEXP ' + escape(original))
-      return
-    }
-
-    if (answer !== undefined) conditionals.push('`answer` = ' + escape(answer))
-    if (question !== undefined) {
-      if (regexp === false) {
-        conditionals.push('`question` = ' + escape(question))
-      } else {
-        conditionals.push(`(\
-          !(\`flag\` & ${Dialogue.Flag.regexp}) && \`question\` = ${escape(question)} ||\
-          \`flag\` & ${Dialogue.Flag.regexp} && (\
-            ${escape(question)} REGEXP \`question\` || ${escape(original)} REGEXP \`question\`\
-          )\
-        )`)
-      }
-    }
-  })
-
-  ctx.on('dialogue/mongo', ({ regexp, answer, question, original }, conditionals) => {
-    if (regexp) {
-      if (answer !== undefined) conditionals.push({ answer: { $regex: new RegExp(answer, 'i') } })
-      if (question !== undefined) conditionals.push({ question: { $regex: new RegExp(original, 'i') } })
-      return
-    }
-    if (answer !== undefined) conditionals.push({ answer })
-    if (question !== undefined) {
-      if (regexp === false) {
-        conditionals.push({ question })
-      } else {
-        const $expr = {
-          body(field: string, question: string, original: string) {
-            const regex = new RegExp(field, 'i')
-            return regex.test(question) || regex.test(original)
-          },
-          args: ['$name', question, original],
-          lang: 'js',
-        }
-        conditionals.push({
-          $or: [
-            { flag: { $bitsAllClear: Dialogue.Flag.regexp }, question },
-            { flag: { $bitsAllSet: Dialogue.Flag.regexp }, $expr },
-          ],
-        })
-      }
-    }
   })
 
   function maybeAnswer(question: string, dialogues: Dialogue[]) {
@@ -231,18 +180,6 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/flag', (flag) => {
-    ctx.on('dialogue/mysql', (test, conditionals) => {
-      if (test[flag] === undefined) return
-      conditionals.push(`!(\`flag\` & ${Dialogue.Flag[flag]}) = !${test[flag]}`)
-    })
-
-    ctx.on('dialogue/mongo', (test, conditionals) => {
-      if (test[flag] === undefined) return
-      conditionals.push({
-        flag: { [test[flag] ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag[flag] },
-      })
-    })
-
     ctx.on('dialogue/before-search', ({ options }, test) => {
       test[flag] = options[flag]
     })
