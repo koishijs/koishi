@@ -128,7 +128,6 @@ export class Bot {
       message,
       messageType,
       postType: 'send',
-      $app: this.app,
       selfId: this.selfId,
       [ctxType + 'Id']: ctxId,
       time: Math.round(Date.now() / 1000),

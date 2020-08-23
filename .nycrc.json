@@ -1,10 +1,10 @@
 {
   "exclude": [
-    "coverage/**",
-    "packages/*/test{,s}/**",
     "**/*.d.ts",
     "**/*.config.js",
-    "test{,s}/**",
+    "coverage/**",
+    "packages/*/tests/**",
+    "packages/chai-extended/**",
     "packages/plugin-mongo/**",
     "packages/plugin-mysql/**"
   ]

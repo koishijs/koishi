@@ -2,7 +2,7 @@ import { App } from 'koishi-test-utils'
 import { sleep } from 'koishi-utils'
 
 describe('Session API', () => {
-  describe('command suggestions', () => {
+  describe('Command Suggestions', () => {
     const app = new App()
     const session1 = app.createSession('user', 456)
     const session2 = app.createSession('group', 789, 987)
@@ -56,7 +56,7 @@ describe('Session API', () => {
     })
   })
 
-  describe('other session methods', () => {
+  describe('Other Session Methods', () => {
     const app = new App({ prefix: '.' })
     const session = app.createSession('group', 123, 456)
     const items = ['foo', 'bar']

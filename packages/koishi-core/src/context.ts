@@ -276,7 +276,7 @@ export class Context {
     let groups: number[]
     if (Array.isArray(args[0])) groups = args.shift() as any
     const [message, forced] = args as [string, boolean]
-    if (!message) return
+    if (!message) return []
 
     const data = await this.database.getAllGroups(['id', 'assignee', 'flag'])
     const assignMap: Record<number, number[]> = {}
