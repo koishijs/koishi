@@ -68,7 +68,6 @@ describe('Hook API', () => {
 
         ctx.before('dispose', () => app.off('attach', cb1))
         ctx.dispose()
-        expect(cb3.mock.calls).to.have.length(2)
 
         ctx.emit('attach', null)
         expect(cb1.mock.calls).to.have.length(2)

@@ -1,0 +1,11 @@
+{
+  "exclude": [
+    "coverage/**",
+    "packages/*/test{,s}/**",
+    "**/*.d.ts",
+    "**/*.config.js",
+    "test{,s}/**",
+    "packages/plugin-mongo/**",
+    "packages/plugin-mysql/**"
+  ]
+}

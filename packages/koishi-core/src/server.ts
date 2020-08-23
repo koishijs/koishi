@@ -30,11 +30,6 @@ export abstract class Server {
           ? Reflect.get(target, prop)
           : target[prop] || target.find(bot => bot.selfId === +prop)
       },
-      set(target, prop, value) {
-        return typeof prop === 'symbol' || +prop * 0 !== 0
-          ? Reflect.set(target, prop, value)
-          : false
-      },
     })
     if (app.options.port) this.createServer()
   }

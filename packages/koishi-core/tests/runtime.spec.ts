@@ -116,7 +116,7 @@ describe('Runtime', () => {
       await session4.shouldHaveNoReply('cmd2')
       await session1.shouldHaveReply('-cmd2', 'cmd2:123')
       await session4.shouldHaveReply('-cmd2', 'cmd2:123')
-      await session4.shouldHaveReply(`[CQ:at,qq=${app.selfId}] cmd2`, 'cmd2:123')
+      await session4.shouldHaveReply(`[CQ:reply,id=123][CQ:at,qq=${app.selfId}] cmd2`, 'cmd2:123')
     })
 
     it('single nickname', async () => {
