@@ -65,6 +65,23 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
+  ctx.on('dialogue/mongo', ({ predecessors, stateful, noRecursive }, conditionals) => {
+    if (noRecursive) {
+      conditionals.push({ predecessors: { $size: 0 } })
+    } else if (predecessors !== undefined) {
+      if (stateful) {
+        conditionals.push({
+          $or: [
+            { predecessors: { $size: 0 } },
+            { predecessors: { $in: predecessors.map(i => i.toString()) } },
+          ],
+        })
+      } else if (predecessors.length) {
+        conditionals.push({ predecessors: { $in: predecessors.map(i => i.toString()) } })
+      }
+    }
+  })
+
   ctx.on('dialogue/validate', (argv) => {
     const { options } = argv
 

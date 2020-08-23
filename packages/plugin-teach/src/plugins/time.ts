@@ -52,9 +52,34 @@ export default function apply(ctx: Context) {
     }
   })
 
+  ctx.on('dialogue/mongo', (test, conditionals) => {
+    const expr = {
+      $multiply: [
+        { $subtract: ['$endTime', '$startTime'] },
+        { $subtract: ['$startTime', test.matchTime] },
+        { $subtract: [test.matchTime, '$endTime'] },
+      ],
+    }
+    if (test.matchTime !== undefined) {
+      conditionals.push({ $expr: { $gte: [expr, 0] } })
+    }
+    if (test.matchTime !== undefined) {
+      conditionals.push({ $expr: { $lt: [expr, 0] } })
+    }
+  })
+
   ctx.on('dialogue/modify', async ({ options }, data) => {
-    if (options.startTime !== undefined) data.startTime = parseTime(options.startTime)
-    if (options.endTime !== undefined) data.endTime = parseTime(options.endTime)
+    if (options.startTime !== undefined) {
+      data.startTime = parseTime(options.startTime)
+    } else if (options.create) {
+      data.startTime = 0
+    }
+
+    if (options.endTime !== undefined) {
+      data.endTime = parseTime(options.endTime)
+    } else if (options.create) {
+      data.endTime = 0
+    }
   })
 
   function formatTime(time: number) {

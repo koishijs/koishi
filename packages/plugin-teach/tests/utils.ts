@@ -30,7 +30,7 @@ extendDatabase(MemoryDatabase, {
   },
 
   async createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
-    dialogue = this.$create('dialogue', { ...Dialogue.create(), ...dialogue })
+    dialogue = this.$create('dialogue', dialogue)
     Dialogue.addHistory(dialogue, '添加', argv, revert)
     return dialogue
   },
@@ -100,15 +100,15 @@ export function apply(ctx: Context) {
   // internal
   ctx.on('dialogue/memory', (data, { regexp, answer, question, original }) => {
     if (regexp) {
-      if (answer !== undefined && !new RegExp(answer).test(data.answer)) return true
-      if (question !== undefined && !new RegExp(question).test(data.question)) return true
+      if (answer !== undefined && !new RegExp(answer, 'i').test(data.answer)) return true
+      if (question !== undefined && !new RegExp(question, 'i').test(data.question)) return true
       return
     }
 
     if (answer !== undefined && answer !== data.answer) return true
     if (question !== undefined) {
       if (regexp === false || !(data.flag & Dialogue.Flag.regexp)) return question !== data.question
-      const questionRegExp = new RegExp(data.question)
+      const questionRegExp = new RegExp(data.question, 'i')
       return !questionRegExp.test(question) && !questionRegExp.test(original)
     }
   })

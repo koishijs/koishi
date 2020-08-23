@@ -43,31 +43,6 @@ export namespace Dialogue {
   export type ModifyType = '添加' | '修改' | '删除'
   export type Field = keyof Dialogue
 
-  type Getter = () => Partial<Dialogue>
-  const getters: Getter[] = []
-
-  export function extend(getter: Getter) {
-    getters.push(getter)
-  }
-
-  extend(() => ({
-    flag: 0,
-    probA: 0,
-    probS: 1,
-    startTime: 0,
-    endTime: 0,
-    groups: [],
-    predecessors: [],
-  }))
-
-  export function create() {
-    const result = {} as Dialogue
-    for (const getter of getters) {
-      Object.assign(result, getter())
-    }
-    return result
-  }
-
   export const history: Record<number, Dialogue> = []
 
   export interface Config {

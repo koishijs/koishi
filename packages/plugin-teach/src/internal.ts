@@ -104,6 +104,35 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
+  ctx.on('dialogue/mongo', ({ regexp, answer, question, original }, conditionals) => {
+    if (regexp) {
+      if (answer !== undefined) conditionals.push({ answer: { $regex: new RegExp(answer, 'i') } })
+      if (question !== undefined) conditionals.push({ question: { $regex: new RegExp(original, 'i') } })
+      return
+    }
+    if (answer !== undefined) conditionals.push({ answer })
+    if (question !== undefined) {
+      if (regexp === false) {
+        conditionals.push({ question })
+      } else {
+        const $expr = {
+          body(field: string, question: string, original: string) {
+            const regex = new RegExp(field, 'i')
+            return regex.test(question) || regex.test(original)
+          },
+          args: ['$name', question, original],
+          lang: 'js',
+        }
+        conditionals.push({
+          $or: [
+            { flag: { $bitsAllClear: Dialogue.Flag.regexp }, question },
+            { flag: { $bitsAllSet: Dialogue.Flag.regexp }, $expr },
+          ],
+        })
+      }
+    }
+  })
+
   function maybeAnswer(question: string, dialogues: Dialogue[]) {
     return dialogues.every(dialogue => {
       const dist = leven(question, dialogue.answer)
@@ -166,11 +195,10 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.on('dialogue/before-create', async ({ options, session, target }) => {
+  ctx.on('dialogue/before-modify', async ({ options, target }) => {
     // 添加问答时缺少问题或回答
-    if (!target && !(options.question && options.answer)) {
-      await session.$send('缺少问题或回答，请检查指令语法。')
-      return true
+    if (options.create && !target && !(options.question && options.answer)) {
+      return '缺少问题或回答，请检查指令语法。'
     }
   })
 
@@ -204,9 +232,15 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/flag', (flag) => {
     ctx.on('dialogue/mysql', (test, conditionals) => {
-      if (test[flag] !== undefined) {
-        conditionals.push(`!(\`flag\` & ${Dialogue.Flag[flag]}) = !${test[flag]}`)
-      }
+      if (test[flag] === undefined) return
+      conditionals.push(`!(\`flag\` & ${Dialogue.Flag[flag]}) = !${test[flag]}`)
+    })
+
+    ctx.on('dialogue/mongo', (test, conditionals) => {
+      if (test[flag] === undefined) return
+      conditionals.push({
+        flag: { [test[flag] ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag[flag] },
+      })
     })
 
     ctx.on('dialogue/before-search', ({ options }, test) => {
