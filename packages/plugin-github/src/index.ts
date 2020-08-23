@@ -1,11 +1,12 @@
 /* eslint-disable camelcase */
 
 import { Context, Middleware, User } from 'koishi-core'
-import { Time } from 'koishi-utils'
+import { Logger, Time } from 'koishi-utils'
 import { Octokit } from '@octokit/rest'
 import { Webhooks, EventNames, EventPayloads } from '@octokit/webhooks'
 import { GetWebhookPayloadTypeFromEvent } from '@octokit/webhooks/dist-types/generated/get-webhook-payload-type-from-event'
 import { Agent } from 'http'
+import { encode } from 'querystring'
 import axios from 'axios'
 
 type Payload<T extends EventNames.All> = GetWebhookPayloadTypeFromEvent<T, unknown>['payload']
@@ -25,6 +26,14 @@ User.extend(() => ({
   githubToken: '',
 }))
 
+const logger = Logger.create('github')
+
+interface AuthorizeResult {
+  access_token: string
+  token_type: string
+  scope: string
+}
+
 export interface Config {
   agent?: Agent
   secret?: string
@@ -32,7 +41,8 @@ export interface Config {
   authorize?: string
   appId?: string
   appSecret?: string
-  redirectUri?: string
+  redirect?: string
+  promptTimeout?: number
   replyTimeout?: number
   requestTimeout?: number
   repos?: Record<string, number[]>
@@ -70,20 +80,37 @@ export function apply(ctx: Context, config: Config = {}) {
     const targetId = parseInt(ctx.query.state)
     if (Number.isNaN(targetId)) throw new Error('Invalid targetId')
     const { code, state } = ctx.query
-    const { data } = await axios.post('https://github.com/login/oauth/access_token', {
+    const { data } = await axios.post<AuthorizeResult>('https://github.com/login/oauth/access_token', {
       client_id: config.appId,
       client_secret: config.appSecret,
-      redirect_uri: config.redirectUri,
+      redirect_uri: config.redirect,
       code,
       state,
-    }, { httpsAgent: config.agent })
+    }, {
+      httpsAgent: config.agent,
+      headers: { Accept: 'application/json' },
+    })
     if (data.access_token) {
       await database.setUser(targetId, { githubToken: data.access_token })
       return ctx.status = 200
     } else {
+      logger.warn(data)
       return ctx.status = 500
     }
   })
+
+  ctx.command('github <user>', '授权 GitHub 功能')
+    .action(async ({ session }, user) => {
+      if (!user) return '请输入用户名。'
+      const url = 'https://github.com/login/oauth/authorize?' + encode({
+        client_id: config.appId,
+        state: session.userId,
+        redirect_uri: config.redirect,
+        scope: 'admin:repo_hook,repo',
+        login: user,
+      })
+      return '请点击下面的链接继续操作：\n' + url
+    })
 
   const interactions: Record<number, Middleware> = {}
 
@@ -130,36 +157,47 @@ export function apply(ctx: Context, config: Config = {}) {
     ].join('\n')]
   })
 
+  const checkToken: Middleware = async (session, next) => {
+    const user = await session.$observeUser(['githubToken'])
+    if (!user.githubToken) {
+      await session.$send('如果想使用此功能，请对机器人进行授权，输入你的 GitHub 用户名。')
+      const name = await session.$prompt().catch<string>()
+      if (!name) return
+      return session.$execute({ command: 'github', args: [name] })
+    }
+    return next()
+  }
+
   const createIssueComment = (repo: Repository, issue: Issue): Middleware => async (session, next) => {
     const body = session.$parsed
     if (!body) return next()
-    const user = await session.$observeUser(['githubToken'])
-    if (!user.githubToken) return // TODO hint
-    await github.issues.createComment({
-      owner: repo.owner.login,
-      repo: repo.name,
-      issue_number: issue.number,
-      body,
-      headers: {
-        Authorization: `token ${user.githubToken}`,
-      },
+    return checkToken(session, async () => {
+      await github.issues.createComment({
+        owner: repo.owner.login,
+        repo: repo.name,
+        issue_number: issue.number,
+        body,
+        headers: {
+          Authorization: `token ${session.$user['githubToken']}`,
+        },
+      })
     })
   }
 
   const createReviewCommentReply = (repo: Repository, issue: Issue, comment: ReviewComment): Middleware => async (session, next) => {
     const body = session.$parsed
     if (!body) return next()
-    const user = await session.$observeUser(['githubToken'])
-    if (!user.githubToken) return // TODO hint
-    await github.pulls.createReplyForReviewComment({
-      owner: repo.owner.login,
-      repo: repo.name,
-      pull_number: issue.number,
-      comment_id: comment.id,
-      body,
-      headers: {
-        Authorization: `token ${user.githubToken}`,
-      },
+    return checkToken(session, async () => {
+      await github.pulls.createReplyForReviewComment({
+        owner: repo.owner.login,
+        repo: repo.name,
+        pull_number: issue.number,
+        comment_id: comment.id,
+        body,
+        headers: {
+          Authorization: `token ${session.$user['githubToken']}`,
+        },
+      })
     })
   }
 
