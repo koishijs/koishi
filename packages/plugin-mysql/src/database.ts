@@ -3,7 +3,7 @@ import { TableType, Tables, App } from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { types } from 'util'
 
-const logger = Logger.create('mysql')
+const logger = new Logger('mysql')
 
 export interface Config extends PoolConfig {}
 

@@ -6,7 +6,7 @@ import { safeLoad } from 'js-yaml'
 import { promises } from 'fs'
 import Git, { CheckRepoActions } from 'simple-git'
 
-const logger = Logger.create('addon')
+const logger = new Logger('addon')
 
 export interface Config {
   gitRemote?: string

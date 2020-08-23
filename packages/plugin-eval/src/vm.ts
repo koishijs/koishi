@@ -55,7 +55,7 @@ export class VMError extends Error {
   }
 }
 
-const { debug } = Logger.create('eval')
+const { debug } = new Logger('eval')
 
 export const Host = {
   String,

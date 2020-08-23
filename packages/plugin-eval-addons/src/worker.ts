@@ -5,7 +5,7 @@ import { Logger } from 'koishi-utils'
 import { Config } from '.'
 import ts from 'typescript'
 
-const logger = Logger.create('addon')
+const logger = new Logger('addon')
 
 const { SourceTextModule, SyntheticModule } = require('vm')
 

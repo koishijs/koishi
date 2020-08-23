@@ -58,7 +58,7 @@ export class Context {
   }
 
   logger(name: string) {
-    return Logger.create(name)
+    return new Logger(name)
   }
 
   get bots() {

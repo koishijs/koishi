@@ -26,7 +26,7 @@ User.extend(() => ({
   githubToken: '',
 }))
 
-const logger = Logger.create('github')
+const logger = new Logger('github')
 
 interface AuthorizeResult {
   access_token: string

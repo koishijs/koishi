@@ -14,7 +14,7 @@ declare module 'koishi-core/dist/server' {
   }
 }
 
-const logger = Logger.create('server')
+const logger = new Logger('server')
 
 let counter = 0
 

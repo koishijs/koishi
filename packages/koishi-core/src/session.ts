@@ -64,7 +64,7 @@ export interface Meta<P extends PostType = PostType> {
   interval?: number
 }
 
-const logger = Logger.create('session')
+const logger = new Logger('session')
 
 export interface Session<U, G, P extends PostType = PostType> extends Meta<P> {}
 

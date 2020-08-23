@@ -6,7 +6,7 @@ import { findSourceMap } from 'module'
 /* eslint-disable import/first */
 
 Logger.levels = workerData.logLevels
-const logger = Logger.create('eval')
+const logger = new Logger('eval')
 
 import { expose, wrap } from './transfer'
 import { VM } from './vm'

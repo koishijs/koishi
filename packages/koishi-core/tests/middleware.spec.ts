@@ -22,9 +22,9 @@ beforeEach(() => {
 })
 
 Logger.baseLevel = 1
-const appLogger = Logger.create('app')
+const appLogger = new Logger('app')
 const appWarn = appLogger.warn = fn(appLogger.warn)
-const midLogger = Logger.create('middleware')
+const midLogger = new Logger('middleware')
 const midWarn = midLogger.warn = fn(midLogger.warn)
 
 describe('Middleware API', () => {

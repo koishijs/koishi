@@ -1,7 +1,7 @@
 import { camelCase, Logger, snakeCase, capitalize } from 'koishi-utils'
 import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatus } from 'koishi-core'
 
-const logger = Logger.create('bot')
+const logger = new Logger('bot')
 
 export class SenderError extends Error {
   constructor(args: Record<string, any>, url: string, retcode: number, selfId: number) {

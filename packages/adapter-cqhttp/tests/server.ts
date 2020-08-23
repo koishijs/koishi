@@ -8,7 +8,7 @@ import * as ws from 'ws'
 import getPort from 'get-port'
 import axios from 'axios'
 
-export const showTestLog = Logger.create('test').debug
+export const showTestLog = new Logger('test').debug
 
 export async function createHttpServer(token?: string) {
   const cqhttpPort = await getPort({ port: Random.int(16384, 49152) })

@@ -44,7 +44,7 @@ const validator = new RegExpValidator({
 })
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
-  const logger = Logger.create('teach')
+  const logger = new Logger('teach')
 
   ctx.command('teach')
     .option('question', '<question>  问题', { type: 'string' })

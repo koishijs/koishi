@@ -50,7 +50,7 @@ const defaultConfig: Config = {
   blacklist: ['evaluate', 'echo', 'broadcast', 'teach', 'contextify'],
 }
 
-const logger = Logger.create('eval')
+const logger = new Logger('eval')
 
 export class MainAPI {
   constructor(public app: App) {}
