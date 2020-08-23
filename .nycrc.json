@@ -5,6 +5,8 @@
     "coverage/**",
     "packages/*/tests/**",
     "packages/chai-extended/**",
+    "packages/plugin-*/src/database/**",
+    "packages/plugin-*/src/database.ts",
     "packages/plugin-mongo/**",
     "packages/plugin-mysql/**"
   ]

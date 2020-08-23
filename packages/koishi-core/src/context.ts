@@ -1,7 +1,7 @@
 import { intersection, difference, Logger, defineProperty } from 'koishi-utils'
 import { Command, CommandConfig, ParsedArgv, ExecuteArgv } from './command'
 import { Session } from './session'
-import { User, Group, Database } from './database'
+import { User, Group } from './database'
 import { App } from './app'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
@@ -46,13 +46,13 @@ export class Context {
     return this.app.server.router
   }
 
-  get database(): Database {
+  get database() {
     return this.app._database
   }
 
-  set database(database: Database) {
+  set database(database) {
     if (this.app._database && this.app._database !== database) {
-      this.logger('app').warn('ctx.database is overwritten.')
+      this.logger('app').warn('ctx.database is overwritten')
     }
     this.app._database = database
   }

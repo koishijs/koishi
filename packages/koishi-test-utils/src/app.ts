@@ -113,11 +113,6 @@ export class TestSession {
       throw new AssertionError(`expected "${message}" to have no reply but got "${this.replies}"`)
     }
   }
-
-  shouldMatchSnapshot(message: string) {
-    // TODO
-    // return expect(this.send(message)).resolves.toMatchSnapshot(message)
-  }
 }
 
 export { MockedApp as App }

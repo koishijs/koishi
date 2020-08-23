@@ -11,10 +11,7 @@ export interface Config {
   prefix?: string
 }
 
-interface Udoc extends User {
-  _id: number
-}
-interface Gdoc extends Group {
+interface Document {
   _id: number
 }
 
@@ -23,8 +20,8 @@ export default class MongoDatabase {
   public client: MongoClient
   public db: Db
 
-  user: Collection<Udoc>
-  group: Collection<Gdoc>
+  user: Collection<User & Document>
+  group: Collection<Group & Document>
 
   constructor(public app: App, config: Config) {
     this.config = config
