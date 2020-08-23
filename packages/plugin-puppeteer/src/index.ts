@@ -17,7 +17,7 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-const logger = Logger.create('puppeteer')
+const logger = new Logger('puppeteer')
 
 export interface Config {
   browser?: LaunchOptions

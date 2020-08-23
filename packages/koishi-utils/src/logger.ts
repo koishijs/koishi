@@ -30,12 +30,6 @@ export class Logger {
     o: value => inspect(value, Logger.options).replace(/\s*\n\s*/g, ' '),
   }
 
-  static create(name = '', showDiff = false) {
-    const logger = instances[name] || new Logger(name)
-    if (showDiff !== undefined) logger.showDiff = showDiff
-    return logger
-  }
-
   static color(code: number, value: any, decoration = '') {
     if (!Logger.options.colors) return '' + value
     return `\u001B[3${code < 8 ? code : '8;5;' + code}${decoration}m${value}\u001B[0m`
@@ -50,7 +44,8 @@ export class Logger {
   public warn: LogFunction
   public debug: LogFunction
 
-  private constructor(private name: string, private showDiff = false) {
+  constructor(private name: string, private showDiff = false) {
+    if (name in instances) return instances[name]
     let hash = 0
     for (let i = 0; i < name.length; i++) {
       hash = ((hash << 3) - hash) + name.charCodeAt(i)
@@ -82,7 +77,7 @@ export class Logger {
   }
 
   extend = (namespace: string) => {
-    return Logger.create(`${this.name}:${namespace}`)
+    return new Logger(`${this.name}:${namespace}`)
   }
 
   format: (format: any, ...param: any[]) => string = (...args) => {

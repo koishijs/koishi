@@ -3,7 +3,7 @@ import { Logger, assertProperty } from 'koishi-utils'
 import type WebSocket from 'ws'
 import Channel from './channel'
 
-const logger = Logger.create('server')
+const logger = new Logger('server')
 
 export default class WsServer extends Server {
   public wsServer?: WebSocket.Server

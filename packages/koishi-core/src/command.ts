@@ -4,7 +4,7 @@ import { noop, camelCase, paramCase, Logger, coerce, escapeRegExp } from 'koishi
 import { Session } from './session'
 import { inspect, format } from 'util'
 
-const logger = Logger.create('command')
+const logger = new Logger('command')
 
 const ANGLED_BRACKET_REGEXP = /<([^>]+)>/g
 const SQUARE_BRACKET_REGEXP = /\[([^\]]+)\]/g

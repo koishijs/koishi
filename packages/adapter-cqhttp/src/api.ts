@@ -1,7 +1,7 @@
-import { camelCase, Logger, snakeCase, capitalize, sleep } from 'koishi-utils'
+import { camelCase, Logger, snakeCase, capitalize } from 'koishi-utils'
 import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatus } from 'koishi-core'
 
-const logger = Logger.create('sender')
+const logger = new Logger('bot')
 
 export class SenderError extends Error {
   constructor(args: Record<string, any>, url: string, retcode: number, selfId: number) {
@@ -79,8 +79,6 @@ declare module 'koishi-core/dist/server' {
     _request?(action: string, params: Record<string, any>): Promise<CQResponse>
     get<T = any>(action: string, params?: Record<string, any>, silent?: boolean): Promise<T>
     getAsync(action: string, params?: Record<string, any>): Promise<void>
-    sendGroupMsg(groupId: number, message: string, autoEscape?: boolean): Promise<number>
-    sendPrivateMsg(userId: number, message: string, autoEscape?: boolean): Promise<number>
     sendGroupMsgAsync(groupId: number, message: string, autoEscape?: boolean): Promise<void>
     sendPrivateMsgAsync(userId: number, message: string, autoEscape?: boolean): Promise<void>
     setGroupAnonymousBan(groupId: number, anonymous: object, duration?: number): Promise<void>
@@ -184,17 +182,6 @@ Bot.prototype.sendGroupMsgAsync = function (this: Bot, groupId, message, autoEsc
   return this.getAsync('send_group_msg', { groupId, message, autoEscape })
 }
 
-Bot.prototype.sendGroupMessage = async function (this: Bot, group, message, delay = this.app.options.broadcastDelay) {
-  if (typeof group === 'number') {
-    await this.sendGroupMsg(group, message)
-    return
-  }
-  for (let index = 0; index < group.length; index++) {
-    if (index && delay) await sleep(delay)
-    await this.sendGroupMsg(group[index], message)
-  }
-}
-
 Bot.prototype.sendPrivateMsg = async function (this: Bot, userId, message, autoEscape = false) {
   if (!message) return
   const session = this.createSession('private', 'user', userId, message)
@@ -210,17 +197,6 @@ Bot.prototype.sendPrivateMsgAsync = function (this: Bot, userId, message, autoEs
   const session = this.createSession('private', 'user', userId, message)
   if (this.app.bail(session, 'before-send', session)) return
   return this.getAsync('send_private_msg', { userId, message, autoEscape })
-}
-
-Bot.prototype.sendPrivateMessage = async function (this: Bot, user, message, delay = this.app.options.broadcastDelay) {
-  if (typeof user === 'number') {
-    await this.sendPrivateMsg(user, message)
-    return
-  }
-  for (let index = 0; index < user.length; index++) {
-    if (index && delay) await sleep(delay)
-    await this.sendPrivateMsg(user[index], message)
-  }
 }
 
 Bot.prototype.setGroupAnonymousBan = async function (this: Bot, groupId: number, meta: object | string, duration?: number) {

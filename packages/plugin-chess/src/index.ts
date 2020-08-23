@@ -8,7 +8,7 @@ import * as othello from './othello'
 interface Rule {
   placement?: 'grid' | 'cross'
   create?: (this: State) => string | void
-  update?: (this: State, x: number, y: number, value: -1 | 1) => MoveResult
+  update?: (this: State, x: number, y: number, value: -1 | 1) => MoveResult | string
 }
 
 const rules: Record<string, Rule> = {
@@ -198,9 +198,13 @@ export function apply(ctx: Context) {
           delete states[session.groupId]
           session.$group.chess = null
           break
-        default:
+        case undefined:
           state.next = session.userId === state.p1 ? state.p2 : state.p1
           message += `下一手轮到 [CQ:at,qq=${state.next}]。`
+          break
+        default:
+          state.next = session.userId
+          return `非法落子（${result}）。`
       }
 
       session.$group.chess = state.serial()

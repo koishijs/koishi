@@ -22,7 +22,7 @@ export * from './ws-reverse'
 
 App.defaultConfig.quickOperation = 0.1 * Time.second
 
-const logger = Logger.create('server')
+const logger = new Logger('server')
 
 interface CQHTTP extends Server {}
 

@@ -9,7 +9,7 @@ const app = new App()
 let cmd: Command
 
 describe('Parser API', () => {
-  describe('basic support', () => {
+  describe('Basic Support', () => {
     it('register', () => {
       // there is a built-in help command
       expect(app._commands).to.have.length(1)
@@ -35,7 +35,7 @@ describe('Parser API', () => {
     })
   })
 
-  describe('option', () => {
+  describe('Register Options', () => {
     it('register', () => {
       cmd = app.command('cmd2 <foo> [bar...]')
       cmd.option('alpha', '-a')
@@ -98,7 +98,7 @@ describe('Parser API', () => {
     })
   })
 
-  describe('advanced', () => {
+  describe('Advanced Features', () => {
     it('symbol alias', () => {
       cmd = app.command('cmd3')
       cmd.option('sharp', '# <id>')
@@ -141,7 +141,7 @@ describe('Parser API', () => {
     })
   })
 
-  describe('stringify argv', () => {
+  describe('Stringify Argv', () => {
     it('basic support', () => {
       cmd = app.command('cmd4')
       cmd.option('alpha', '-a <val>')

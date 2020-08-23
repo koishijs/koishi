@@ -65,7 +65,7 @@ export interface SaucenaoResponse {
   results: SaucenaoResult[]
 }
 
-const logger = Logger.create('search')
+const logger = new Logger('search')
 const HOST_ANIDB = 'anidb.net'
 const HOST_PIXIV = 'pixiv.net'
 

@@ -34,7 +34,7 @@ function matchScope(base: ScopeSet, id: number) {
 }
 
 export class Context {
-  static readonly MIDDLEWARE_EVENT: unique symbol = Symbol('mid')
+  static readonly MIDDLEWARE_EVENT = Symbol('mid')
 
   private _disposables: Disposable[]
 
@@ -58,7 +58,7 @@ export class Context {
   }
 
   logger(name: string) {
-    return Logger.create(name)
+    return new Logger(name)
   }
 
   get bots() {
@@ -81,8 +81,8 @@ export class Context {
   private(...ids: number[]) {
     const scope = { ...this.scope }
     scope.users = joinScope(scope.users, ids)
-    scope.groups.positive = true
     scope.groups = []
+    scope.groups.positive = true
     return new Context(scope, this.app)
   }
 
@@ -160,7 +160,10 @@ export class Context {
   private getHooks<K extends keyof EventMap>(name: K) {
     const hooks = this.app._hooks[name] || (this.app._hooks[name] = [])
     if (hooks.length >= this.app.options.maxListeners) {
-      this.logger('app').warn('max listener count (%d) exceeded, which may be caused by a memory leak', this.app.options.maxListeners)
+      this.logger('app').warn(
+        'max listener count (%d) for event "%s" exceeded, which may be caused by a memory leak',
+        this.app.options.maxListeners, name,
+      )
     }
     return hooks
   }
@@ -267,13 +270,13 @@ export class Context {
     return parent
   }
 
-  async broadcast(message: string, forced?: boolean): Promise<void>
-  async broadcast(groups: readonly number[], message: string, forced?: boolean): Promise<void>
+  async broadcast(message: string, forced?: boolean): Promise<number[]>
+  async broadcast(groups: readonly number[], message: string, forced?: boolean): Promise<number[]>
   async broadcast(...args: [string, boolean?] | [readonly number[], string, boolean?]) {
     let groups: number[]
     if (Array.isArray(args[0])) groups = args.shift() as any
     const [message, forced] = args as [string, boolean]
-    if (!message) return
+    if (!message) return []
 
     const data = await this.database.getAllGroups(['id', 'assignee', 'flag'])
     const assignMap: Record<number, number[]> = {}
@@ -287,14 +290,14 @@ export class Context {
       }
     }
 
-    const warn = this.logger('bot').warn
-    await Promise.all(Object.entries(assignMap).map(([id, groups]) => {
-      return this.app.bots[+id].sendGroupMessage(groups, message).catch(warn)
-    }))
+    return (await Promise.all(Object.entries(assignMap).map(async ([id, groups]) => {
+      return await this.app.bots[+id].broadcast(groups, message)
+    }))).flat(1)
   }
 
   dispose() {
     this._disposables.forEach(dispose => dispose())
+    this._disposables = []
   }
 }
 

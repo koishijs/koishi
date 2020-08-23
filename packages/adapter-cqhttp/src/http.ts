@@ -24,7 +24,7 @@ declare module 'koishi-core/dist/session' {
   }
 }
 
-const logger = Logger.create('server')
+const logger = new Logger('server')
 
 export default class HttpServer extends Server {
   constructor(app: App) {

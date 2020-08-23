@@ -2,7 +2,7 @@ import { types } from 'util'
 import { noop, defineProperty } from './misc'
 import { Logger } from './logger'
 
-const logger = Logger.create('observer')
+const logger = new Logger('observer')
 const staticTypes = ['number', 'string', 'bigint', 'boolean', 'symbol', 'function']
 const builtinClasses = ['Date', 'RegExp', 'Set', 'Map', 'WeakSet', 'WeakMap', 'Array']
 

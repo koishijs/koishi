@@ -7,12 +7,15 @@ export function apply(ctx: Context) {
     .option('only', '-o  仅向当前 Bot 负责的群进行广播')
     .action(async ({ options, session }, message) => {
       if (!message) return '请输入要发送的文本。'
-      if (!options.only) return ctx.broadcast(message, options.forced)
+      if (!options.only) {
+        await ctx.broadcast(message, options.forced)
+        return
+      }
 
       let groups = await ctx.database.getAllGroups(['id', 'flag'], [session.selfId])
       if (!options.forced) {
         groups = groups.filter(g => !(g.flag & Group.Flag.silent))
       }
-      await session.$bot.sendGroupMessage(groups.map(g => g.id), message)
+      await session.$bot.broadcast(groups.map(g => g.id), message)
     })
 }

@@ -14,7 +14,7 @@ declare module 'koishi-core/dist/context' {
 
 export const INTERVAL = 60000
 
-const logger = Logger.create('monitor')
+const logger = new Logger('monitor')
 
 const headers = {
   'Accept-Language': 'en-US,en;q=0.8',
@@ -143,7 +143,7 @@ export class Daemon {
       }
       if (app.bail('monitor/before-send', info, group)) return
       for (const message of messages) {
-        await bot.sendGroupMessage(id, message)
+        await bot.sendGroupMsg(id, message)
       }
     })
   }

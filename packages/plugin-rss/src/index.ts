@@ -23,7 +23,7 @@ export interface Config {
   userAgent?: string
 }
 
-const logger = Logger.create('rss')
+const logger = new Logger('rss')
 
 export const name = 'rss'
 

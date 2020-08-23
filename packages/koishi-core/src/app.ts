@@ -143,8 +143,14 @@ export class App extends Context {
   private async _preprocess(session: Session, next: NextFunction) {
     let message = this.options.processMessage(session.message)
 
-    // strip prefix
     let capture: RegExpMatchArray, atSelf = false
+    // eslint-disable-next-line no-cond-assign
+    if (capture = message.match(/^\[CQ:reply,id=(\d+)\]/)) {
+      session.$reply = +capture[1]
+      message = message.slice(capture[0].length)
+    }
+
+    // strip prefix
     const at = `[CQ:at,qq=${session.selfId}]`
     if (session.messageType !== 'private' && message.startsWith(at)) {
       atSelf = session.$appel = true

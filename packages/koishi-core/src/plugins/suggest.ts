@@ -95,7 +95,7 @@ export default function apply(ctx: Context) {
     const target = $parsed.split(/\s/, 1)[0].toLowerCase()
     if (!target) return next()
 
-    const items = getCommands(session as any).flatMap(cmd => cmd._aliases)
+    const items = getCommands(session as any, ctx.app._commands).flatMap(cmd => cmd._aliases)
     return session.$suggest({
       target,
       next,

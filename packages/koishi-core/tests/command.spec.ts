@@ -5,7 +5,7 @@ import '@shigma/chai-extended'
 let app: App
 
 describe('Command API', () => {
-  describe('register commands', () => {
+  describe('Register Commands', () => {
     before(() => app = new App())
 
     it('constructor checks', () => {
@@ -62,7 +62,7 @@ describe('Command API', () => {
     })
   })
 
-  describe('register subcommands', () => {
+  describe('Register Subcommands', () => {
     beforeEach(() => app = new App())
 
     it('command.subcommand', () => {

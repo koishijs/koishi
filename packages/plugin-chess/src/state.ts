@@ -24,7 +24,7 @@ export class State {
   readonly area: bigint
   readonly full: bigint
   imageMode: boolean
-  update: (this: State, x: number, y: number, value: 1 | -1) => MoveResult
+  update: (this: State, x: number, y: number, value: 1 | -1) => MoveResult | string
 
   constructor(public app: App, public readonly rule: string, public readonly size: number, public readonly placement: 'cross' | 'grid') {
     this.area = BigInt(size * size)

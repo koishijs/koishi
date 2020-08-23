@@ -5,7 +5,7 @@ import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
 import 'koishi-adapter-cqhttp'
 
-const logger = Logger.create('app')
+const logger = new Logger('app')
 const { version } = require('../package')
 
 if (process.env.KOISHI_LOG_LEVEL) {
