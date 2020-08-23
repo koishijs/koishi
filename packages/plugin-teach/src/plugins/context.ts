@@ -1,6 +1,5 @@
 import { Context } from 'koishi-core'
 import { union, difference } from 'koishi-utils'
-import { FilterQuery } from 'mongodb'
 import { Dialogue, equal, RE_GROUPS } from '../utils'
 
 declare module '../utils' {

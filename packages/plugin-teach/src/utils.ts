@@ -1,5 +1,6 @@
 import { Session, ParsedLine, App } from 'koishi-core'
 import { difference, observe, isInteger, defineProperty, Observed } from 'koishi-utils'
+import { RegExpValidator } from 'regexpp'
 
 declare module 'koishi-core/dist/app' {
   interface App {
@@ -70,6 +71,8 @@ export namespace Dialogue {
   export interface Config {
     prefix?: string
     historyAge?: number
+    validateRegExp?: RegExpValidator.Options
+    prohibitedCommands?: string[]
   }
 
   export enum Flag {

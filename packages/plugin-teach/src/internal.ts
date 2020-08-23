@@ -1,46 +1,40 @@
-import { Context } from 'koishi-core'
+import { Context, Message } from 'koishi-core'
 import { Dialogue } from './utils'
 import { update } from './update'
 import { RegExpValidator } from 'regexpp'
 import { defineProperty, Logger } from 'koishi-utils'
 import { formatQuestionAnswers } from './search'
-import { types } from 'util'
+import { format, types } from 'util'
 import leven from 'leven'
 
-class RegExpError extends Error {
+declare module 'koishi-core/dist/plugins/message' {
+  namespace Message {
+    export namespace Teach {
+      let TooManyArguments: string
+      let MissingQuestionOrAnswer: string
+      let ProhibitedCommand: string
+      let ProhibitedCQCode: string
+      let IllegalRegExp: string
+      let MayModifyAnswer: string
+      let MaybeRegExp: string
+    }
+  }
+}
+
+Message.Teach = {} as any
+Message.Teach.TooManyArguments = '存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。'
+Message.Teach.MissingQuestionOrAnswer = '缺少问题或回答，请检查指令语法。'
+Message.Teach.ProhibitedCommand = '禁止在教学回答中插值调用 %s 指令。'
+Message.Teach.ProhibitedCQCode = '问题必须是纯文本。'
+Message.Teach.IllegalRegExp = '问题含有错误的或不支持的正则表达式语法。'
+Message.Teach.MayModifyAnswer = '推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -i 选项以忽略本提示。'
+Message.Teach.MaybeRegExp = '推测你想%s的问题是正则表达式。发送空行或句号以添加 -x 选项，使用 -i 选项以忽略本提示。'
+
+export class RegExpError extends Error {
   name = 'RegExpError'
 }
 
-const validator = new RegExpValidator({
-  onEscapeCharacterSet(start, end, kind, negate) {
-    // eslint-disable-next-line curly
-    if (kind === 'space') throw negate
-      ? new RegExpError('我会自动删除问题中的空白字符，你无需使用 \\s。')
-      : new RegExpError('我会自动删除问题中的空白字符，请使用 . 代替 \\S。')
-    let chars = kind === 'digit' ? '0-9' : '_0-9a-z'
-    let source = kind === 'digit' ? 'd' : 'w'
-    if (negate) {
-      chars = '^' + chars
-      source = source.toUpperCase()
-    }
-    throw new RegExpError(`目前不支持在正则表达式中使用 \\${source}，请使用 [${chars}] 代替。`)
-  },
-  onQuantifier(start, end, min, max, greedy) {
-    if (!greedy) throw new RegExpError('目前不支持在正则表达式中使用非贪婪匹配语法。')
-  },
-  onWordBoundaryAssertion() {
-    throw new RegExpError('目前不支持在正则表达式中使用单词边界。')
-  },
-  onLookaroundAssertionEnter() {
-    throw new RegExpError('目前不支持在正则表达式中使用断言。')
-  },
-  onGroupEnter() {
-    throw new RegExpError('目前不支持在正则表达式中使用非捕获组。')
-  },
-  onCapturingGroupEnter(start, name) {
-    if (name) throw new RegExpError('目前不支持在正则表达式中使用具名组。')
-  },
-})
+const validator = new RegExpValidator()
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
   const logger = new Logger('teach')
@@ -57,7 +51,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.before('dialogue/validate', (argv) => {
     const { options, args } = argv
     if (args.length) {
-      return '存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。'
+      return Message.Teach.TooManyArguments
     }
 
     if (options.noRegexp) options.regexp = false
@@ -65,7 +59,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     const { answer } = options
     const question = options.question || ''
     if (/\[CQ:(?!face)/.test(question)) {
-      return '问题必须是纯文本。'
+      return Message.Teach.ProhibitedCQCode
     }
 
     const { unprefixed, prefixed, appellative } = config._stripQuestion(options.question)
@@ -108,7 +102,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         delete options.question
         return update(argv)
       })
-      return '推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -i 选项以忽略本提示。'
+      return Message.Teach.MayModifyAnswer
     }
 
     // 如果问题疑似正则表达式但原问答不是正则匹配，提示添加 -x 选项
@@ -120,7 +114,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         options.regexp = true
         return update(argv)
       })
-      return `推测你想${target ? '修改' : '添加'}的问题是正则表达式。发送空行或句号以添加 -x 选项，使用 -i 选项以忽略本提示。`
+      return format(Message.Teach.MaybeRegExp, target ? '修改' : '添加')
     }
 
     // 检测正则表达式的合法性
@@ -131,14 +125,14 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       } catch (error) {
         if (!types.isNativeError(error)) {
           logger.warn(question, error)
-          return '问题含有错误的或不支持的正则表达式语法。'
+          return Message.Teach.IllegalRegExp
         } else if (error.name === 'RegExpError') {
           return error.message
         } else {
           if (!error.message.startsWith('SyntaxError')) {
             logger.warn(question, error.stack)
           }
-          return '问题含有错误的或不支持的正则表达式语法。'
+          return Message.Teach.IllegalRegExp
         }
       }
     }
@@ -147,7 +141,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.on('dialogue/before-modify', async ({ options, target }) => {
     // 添加问答时缺少问题或回答
     if (options.create && !target && !(options.question && options.answer)) {
-      return '缺少问题或回答，请检查指令语法。'
+      return Message.Teach.MissingQuestionOrAnswer
     }
   })
 
@@ -190,5 +184,12 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         data.flag |= +options[flag] * Dialogue.Flag[flag]
       }
     })
+  })
+
+  const { prohibitedCommands = [] } = config
+  ctx.on('before-command', ({ command, session }) => {
+    if (prohibitedCommands.includes(command.name) && session._redirected) {
+      return format(Message.Teach.ProhibitedCommand, command.name)
+    }
   })
 }
