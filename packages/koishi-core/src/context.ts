@@ -81,8 +81,8 @@ export class Context {
   private(...ids: number[]) {
     const scope = { ...this.scope }
     scope.users = joinScope(scope.users, ids)
-    scope.groups.positive = true
     scope.groups = []
+    scope.groups.positive = true
     return new Context(scope, this.app)
   }
 

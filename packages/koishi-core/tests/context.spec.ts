@@ -1,80 +1,124 @@
-import { App, Meta } from 'koishi-core'
+import { App } from 'koishi-test-utils'
+import { Session } from 'koishi-core'
+import { noop } from 'koishi-utils'
+import { expect } from 'chai'
+import { fn } from 'jest-mock'
+import '@shigma/chai-extended'
 
 const app = new App()
+const groupSession = new Session(app, { userId: 123, groupId: 456, messageType: 'group' })
+const privateSession = new Session(app, { userId: 123, messageType: 'private' })
+const metaEventSession = new Session(app, { postType: 'meta_event' })
 
-describe('Composition API', () => {
-  test('directly generated context', () => {
-    expect(app.user(123, 456)).to.equal(app.user(456, 123))
-    expect(app.groups.except(123, 456)).to.equal(app.groups.except(456, 123))
-    expect(app.groups).to.equal(app.groups.except())
-    expect(app.user()).to.equal(app.group())
+describe('Context API', () => {
+  describe('Composition API', () => {
+    it('root context', () => {
+      expect(app.match(groupSession)).to.be.true
+      expect(app.match(privateSession)).to.be.true
+      expect(app.match(metaEventSession)).to.be.true
+    })
 
-    expect(app.discuss(789)).not.to.equal(app.discusses)
-    expect(app.discuss(789)).not.to.equal(app.group(789))
-    expect(app.discuss(789)).not.to.equal(app.discuss(123, 789))
+    it('context.prototype.user', () => {
+      expect(app.user().match(groupSession)).to.be.true
+      expect(app.user().match(privateSession)).to.be.true
+      expect(app.user().match(metaEventSession)).to.be.true
+      expect(app.user(123).match(groupSession)).to.be.true
+      expect(app.user(123).match(privateSession)).to.be.true
+      expect(app.user(456).match(groupSession)).to.be.false
+      expect(app.user(456).match(privateSession)).to.be.false
+      expect(app.user(456).match(metaEventSession)).to.be.true
+    })
+
+    it('context.prototype.private', () => {
+      expect(app.private().match(groupSession)).to.be.false
+      expect(app.private().match(privateSession)).to.be.true
+      expect(app.private().match(metaEventSession)).to.be.true
+      expect(app.private(123).match(groupSession)).to.be.false
+      expect(app.private(123).match(privateSession)).to.be.true
+      expect(app.private(456).match(groupSession)).to.be.false
+      expect(app.private(456).match(privateSession)).to.be.false
+      expect(app.private(123).match(metaEventSession)).to.be.true
+    })
+
+    it('context.prototype.group', () => {
+      expect(app.group().match(groupSession)).to.be.true
+      expect(app.group().match(privateSession)).to.be.false
+      expect(app.group().match(metaEventSession)).to.be.true
+      expect(app.group(123).match(groupSession)).to.be.false
+      expect(app.group(123).match(privateSession)).to.be.false
+      expect(app.group(456).match(groupSession)).to.be.true
+      expect(app.group(456).match(privateSession)).to.be.false
+      expect(app.group(456).match(metaEventSession)).to.be.true
+    })
+
+    it('context chaining', () => {
+      expect(app.group(456).user(123).match(groupSession)).to.be.true
+      expect(app.group(456).user(456).match(groupSession)).to.be.false
+      expect(app.group(123).user(123).match(groupSession)).to.be.false
+      expect(app.group(456).user(123).match(metaEventSession)).to.be.true
+      expect(app.user(123).group(456).match(groupSession)).to.be.true
+      expect(app.user(456).group(456).match(groupSession)).to.be.false
+      expect(app.user(123).group(123).match(groupSession)).to.be.false
+      expect(app.user(123).group(456).match(metaEventSession)).to.be.true
+    })
+
+    it('context intersection', () => {
+      expect(app.group(456, 789).group(123, 456).match(groupSession)).to.be.true
+      expect(app.group(456, 789).group(123, 789).match(groupSession)).to.be.false
+      expect(app.group(123, 789).group(123, 456).match(groupSession)).to.be.false
+      expect(app.user(123, 789).user(123, 456).match(groupSession)).to.be.true
+      expect(app.user(456, 789).user(123, 456).match(groupSession)).to.be.false
+      expect(app.user(123, 789).user(456, 789).match(groupSession)).to.be.false
+    })
   })
 
-  test('context.prototype.plus', () => {
-    expect(app.user(123, 456).plus(app.user(456, 789))).to.equal(app.user(123, 456, 789))
-    expect(app.user(123, 456).plus(app.users.except(456, 789))).to.equal(app.users.except(789))
-    expect(app.users.except(123, 456).plus(app.user(456, 789))).to.equal(app.users.except(123))
-    expect(app.users.except(123, 456).plus(app.users.except(456, 789))).to.equal(app.users.except(456))
+  describe('Plugin API', () => {
+    it('call chaining', () => {
+      expect(app.plugin(noop)).to.equal(app)
 
-    expect(app.user(123).plus(app.group(456))).to.equal(app.group(456).plus(app.user(123)))
-    expect(app.user(123).plus(app.groups.except(123))).to.equal(app.groups.except(123).plus(app.user(123)))
-    expect(app.users.except(123).plus(app.group(456))).to.equal(app.group(456).plus(app.users.except(123)))
-    expect(app.users.except(123).plus(app.groups.except(123))).to.equal(app.groups.except(123).plus(app.users.except(123)))
-  })
+      const ctx = app.user(123)
+      expect(ctx.plugin(noop)).to.equal(ctx)
+    })
 
-  test('context.prototype.minus', () => {
-    expect(app.user(123, 456).minus(app.user(456, 789))).to.equal(app.user(123))
-    expect(app.user(123, 456).minus(app.users.except(456, 789))).to.equal(app.user(456))
-    expect(app.users.except(123, 456).minus(app.user(456, 789))).to.equal(app.users.except(123, 456, 789))
-    expect(app.users.except(123, 456).minus(app.users.except(456, 789))).to.equal(app.user(789))
+    it('apply functional plugin', () => {
+      const callback = fn()
+      const options = { foo: 'bar' }
+      app.plugin(callback, options)
 
-    expect(app.user(123).minus(app.groups)).to.equal(app.user(123))
-    expect(app.users.minus(app.group(456))).to.equal(app.users)
-    expect(app.minus(app.users.except(123))).to.equal(app.groups.plus(app.discusses).plus(app.user(123)))
-    expect(app.minus(app.user(123))).to.equal(app.groups.plus(app.discusses).plus(app.users.except(123)))
-  })
+      expect(callback.mock.calls).to.have.length(1)
+      expect(callback.mock.calls[0][1]).to.have.shape(options)
+    })
 
-  test('context.prototype.intersect', () => {
-    expect(app.user(123, 456).intersect(app.user(456, 789))).to.equal(app.user(456))
-    expect(app.user(123, 456).intersect(app.users.except(456, 789))).to.equal(app.user(123))
-    expect(app.users.except(123, 456).intersect(app.user(456, 789))).to.equal(app.user(789))
-    expect(app.users.except(123, 456).intersect(app.users.except(456, 789))).to.equal(app.users.except(123, 456, 789))
+    it('apply object plugin', () => {
+      const callback = fn()
+      const options = { bar: 'foo' }
+      const plugin = { apply: callback }
+      app.plugin(plugin, options)
 
-    expect(app.user(123).intersect(app.group(456))).to.equal(app.group(456).intersect(app.user(123)))
-    expect(app.user(123).intersect(app.groups.except(123))).to.equal(app.groups.except(123).intersect(app.user(123)))
-    expect(app.users.except(123).intersect(app.group(456))).to.equal(app.group(456).intersect(app.users.except(123)))
-    expect(app.users.except(123).intersect(app.groups.except(123))).to.equal(app.groups.except(123).intersect(app.users.except(123)))
-  })
+      expect(callback.mock.calls).to.have.length(1)
+      expect(callback.mock.calls[0][1]).to.have.shape(options)
+    })
 
-  test('context.prototype.inverse', () => {
-    expect(app.inverse()).to.equal(app.user())
-    expect(app.users.except(123).inverse()).to.equal(app.groups.plus(app.discusses).plus(app.user(123)))
-    expect(app.user(123).inverse()).to.equal(app.groups.plus(app.discusses).plus(app.users.except(123)))
-    expect(app.groups.plus(app.user(123)).inverse()).to.equal(app.discusses.plus(app.users.except(123)))
-    expect(app.discusses.plus(app.users.except(123)).inverse()).to.equal(app.groups.plus(app.user(123)))
-  })
+    it('apply functional plugin with false', () => {
+      const callback = fn()
+      app.plugin(callback, false)
 
-  test('context.prototype.match', () => {
-    const ctx = app.user(123, 456).plus(app.groups.except(123, 456))
-    expect(ctx.match(new Meta({ $ctxType: 'user', $ctxId: 123 }))).to.equal(true)
-    expect(ctx.match(new Meta({ $ctxType: 'user', $ctxId: 789 }))).to.equal(false)
-    expect(ctx.match(new Meta({ $ctxType: 'group', $ctxId: 123 }))).to.equal(false)
-    expect(ctx.match(new Meta({ $ctxType: 'group', $ctxId: 789 }))).to.equal(true)
-    expect(ctx.match(new Meta({ $ctxType: 'discuss', $ctxId: 123 }))).to.equal(false)
-    expect(ctx.match(new Meta({ $ctxType: 'discuss', $ctxId: 789 }))).to.equal(false)
-  })
+      expect(callback.mock.calls).to.have.length(0)
+    })
 
-  test('context.prototype.contain', () => {
-    const ctx = app.user(123, 456).plus(app.groups.except(123, 456))
-    expect(ctx.contain(app.user(123))).to.equal(true)
-    expect(ctx.contain(app.user(123, 789))).to.equal(false)
-    expect(ctx.contain(app.group(123, 789))).to.equal(false)
-    expect(ctx.contain(app.group(789))).to.equal(true)
-    expect(ctx.contain(app.discuss(123))).to.equal(false)
-    expect(ctx.contain(app.discuss(789))).to.equal(false)
+    it('apply object plugin with true', () => {
+      const callback = fn()
+      const plugin = { apply: callback }
+      app.plugin(plugin, true)
+
+      expect(callback.mock.calls).to.have.length(1)
+      expect(callback.mock.calls[0][1]).to.be.undefined
+    })
+
+    it('apply invalid plugin', () => {
+      expect(() => app.plugin(undefined)).to.throw()
+      expect(() => app.plugin({} as any)).to.throw()
+      expect(() => app.plugin({ apply: {} } as any)).to.throw()
+    })
   })
 })
