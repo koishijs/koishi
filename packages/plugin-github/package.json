@@ -1,0 +1,47 @@
+{
+  "name": "koishi-plugin-github",
+  "description": "GitHub webhook plugin for Koishi",
+  "version": "2.0.0-beta.9",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts",
+    "prepack": "tsc -b"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/plugin-github-webhook.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/plugin-github-webhook/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/other/github-webhook",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "github",
+    "webhook"
+  ],
+  "devDependencies": {
+    "koishi-test-utils": "^4.0.0-beta.9"
+  },
+  "peerDependencies": {
+    "koishi-core": "^2.0.0"
+  },
+  "dependencies": {
+    "@octokit/rest": "^18.0.3",
+    "@octokit/webhooks": "^7.11.0",
+    "axios": "^0.20.0",
+    "koishi-utils": "^3.1.0"
+  }
+}

@@ -14,7 +14,7 @@ app.plugin(respondent, [{
   reply: (_, action) => `一直${action}一直爽`,
 }])
 
-test('basic support', async () => {
+it('basic support', async () => {
   await session.shouldHaveReply('挖坑一时爽', '填坑火葬场')
   await session.shouldHaveReply('填坑一时爽', '一直填坑一直爽')
   await session.shouldHaveNoReply('填坑一直爽')

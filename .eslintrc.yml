@@ -2,37 +2,68 @@ root: true
 
 parser: '@typescript-eslint/parser'
 
-parserOptions:
-  project:
-    - ./tsconfig.json
-    - ./packages/*/tsconfig.json
+settings:
+  import/parsers:
+    '@typescript-eslint/parser': ['.ts']
+  import/resolver:
+    typescript:
+      alwaysTryTypes: true
 
-extends: standard
+env:
+  node: true
+  mocha: true
+  es2020: true
+
+extends:
+  - standard
 
 plugins:
+  - mocha
   - '@typescript-eslint'
 
 rules:
   comma-dangle:
     - warn
     - always-multiline
+  curly: warn
+  dot-notation: off
+  generator-star-spacing:
+    - warn
+    - after
+  import/export: off
+  keyword-spacing: off
   # https://github.com/typescript-eslint/typescript-eslint/issues/618
   no-dupe-class-members: off
+  no-ex-assign: off
   # https://github.com/typescript-eslint/typescript-eslint/issues/239
   no-inner-declarations: off
   no-mixed-operators: off
-  # https://github.com/typescript-eslint/typescript-eslint/issues/1220
-  no-unused-expressions: off
   no-unused-vars: off
+  no-unused-expressions: off
+  no-use-before-define: off
+  no-useless-escape: off
+  no-redeclare: off
   no-return-assign: off
   no-sequences: off
   # https://github.com/typescript-eslint/typescript-eslint/issues/1131
   no-useless-constructor: off
   one-var: off
   operator-linebreak: off
+  quotes:
+    - warn
+    - single
+    - avoidEscape: true
+      allowTemplateLiterals: true
   space-before-function-paren: off
-  '@typescript-eslint/no-unused-expressions': warn
-  '@typescript-eslint/prefer-nullish-coalescing': warn
-  '@typescript-eslint/prefer-optional-chain': warn
-  '@typescript-eslint/space-before-function-paren': warn
+  yield-star-spacing:
+    - warn
+    - after
+  yoda: off
+  standard/no-callback-literal: off
+  '@typescript-eslint/keyword-spacing': error
+  '@typescript-eslint/space-before-function-paren':
+    - error
+    - anonymous: always
+      asyncArrow: always
+      named: never
   '@typescript-eslint/type-annotation-spacing': warn

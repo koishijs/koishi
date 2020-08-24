@@ -1,87 +1,96 @@
-import { Context, appMap, Database, CommandConfig, Meta } from 'koishi-core'
-import ms from 'ms'
-import './database'
+import { Context, Session, getContextId } from 'koishi-core'
+import { Time, Logger } from 'koishi-utils'
+import { Schedule } from './database'
 
-export interface Schedule {
-  id: number
-  assignee: number
-  time: number
-  interval: number
-  command: string
-  meta: Meta<'message'>
-}
+export * from './database'
 
-function inspectSchedule ({ id, assignee, meta, interval, command, time }: Schedule) {
-  if (!appMap[assignee]) return
+const logger = new Logger('schedule')
+
+function inspectSchedule({ id, session, interval, command, time }: Schedule) {
   const now = Date.now()
-  const app = appMap[assignee]
+  const date = time.valueOf()
+  const { database } = session.$app
+  logger.debug('inspect', command)
 
   if (!interval) {
-    if (time < now) {
-      return app.database.removeSchedule(id)
-    } else {
-      setTimeout(async () => {
-        if (!await app.database.getSchedule(id)) return
-        app.executeCommandLine(command, meta)
-        app.database.removeSchedule(id)
-      }, time - now)
-    }
-  } else {
-    const timeout = time < now ? interval - (now - time) % interval : time - now
-    setTimeout(async () => {
-      if (!await app.database.getSchedule(id)) return
-      const timer = setInterval(async () => {
-        if (!await app.database.getSchedule(id)) {
-          return clearInterval(timer)
-        }
-        app.executeCommandLine(command, meta)
-      }, interval)
-      app.executeCommandLine(command, meta)
-    }, timeout)
+    if (date < now) return database.removeSchedule(id)
+    return setTimeout(async () => {
+      if (!await database.getSchedule(id)) return
+      session.$execute(command)
+      database.removeSchedule(id)
+    }, date - now)
   }
+
+  const timeout = date < now ? interval - (now - date) % interval : date - now
+  setTimeout(async () => {
+    if (!await database.getSchedule(id)) return
+    const timer = setInterval(async () => {
+      if (!await database.getSchedule(id)) return clearInterval(timer)
+      session.$execute(command)
+    }, interval)
+    session.$execute(command)
+  }, timeout)
 }
 
-const databases = new Set<Database>()
+function formatContext(session: Session) {
+  return session.messageType === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.groupId}`
+}
 
 export const name = 'schedule'
 
-export function apply (ctx: Context, config: CommandConfig = {}) {
-  const { database } = ctx.app
+export function apply(ctx: Context) {
+  const { database } = ctx
 
-  ctx.app.receiver.on('connect', async () => {
-    if (!database || databases.has(database) || !database.getAllSchedules) return
-    databases.add(database)
+  ctx.on('connect', async () => {
     const schedules = await database.getAllSchedules()
-    schedules.forEach(schedule => inspectSchedule(schedule))
+    schedules.forEach((schedule) => {
+      if (!ctx.bots[schedule.assignee]) return
+      schedule.session = new Session(ctx.app, schedule.session)
+      inspectSchedule(schedule)
+    })
   })
 
-  ctx.command('schedule [time] -- <command>', '设置定时命令', { authority: 3, ...config })
-    .option('-i, --interval <interval>', '设置触发的间隔秒数', { default: 0, authority: 4 })
-    .option('-l, --list', '查看已经设置的日程')
-    .option('-d, --delete <id>', '删除已经设置的日程', { notUsage: true })
-    .action(async ({ meta, options, rest }, date) => {
+  ctx.command('schedule [time]', '设置定时命令', { authority: 3, checkUnknown: true })
+    .option('rest', '-- <command...>  要执行的指令')
+    .option('interval', '/ <interval>  设置触发的间隔秒数', { authority: 4, type: 'string' })
+    .option('list', '-l  查看已经设置的日程')
+    .option('fullList', '-L  查看全部上下文中已经设置的日程', { authority: 4 })
+    .option('delete', '-d <id>  删除已经设置的日程')
+    .action(async ({ session, options }, ...dateSegments) => {
       if (options.delete) {
         await database.removeSchedule(options.delete)
-        return meta.$send('日程已删除。')
+        return `日程 ${options.delete} 已删除。`
       }
 
-      if (options.list) {
-        const schedules = await database.getAllSchedules([ctx.app.selfId])
-        if (!schedules.length) return meta.$send('当前没有等待执行的日程。')
-        return meta.$send(schedules.map(({ id, time, interval, command }) => {
-          let output = `${id}. 起始时间：${new Date(time).toLocaleString()}，`
-          if (interval) output += `间隔时间：${ms(interval)}，`
-          return output + `指令：${command}`
-        }).join('\n'))
+      if (options.list || options.fullList) {
+        let schedules = await database.getAllSchedules([session.selfId])
+        if (!options.fullList) {
+          schedules = schedules.filter(s => getContextId(session) === getContextId(s.session))
+        }
+        if (!schedules.length) return '当前没有等待执行的日程。'
+        return schedules.map(({ id, time, interval, command, session }) => {
+          let output = `${id}. 触发时间：${Time.formatTimeInterval(time, interval)}，指令：${command}`
+          if (options.fullList) output += `，上下文：${formatContext(session)}`
+          return output
+        }).join('\n')
       }
 
-      if (/^\d{1,2}(:\d{1,2}){1,2}$/.exec(date)) {
-        date = `${new Date().toLocaleDateString()} ${date}`
+      if (!options.rest) return '请输入要执行的指令。'
+
+      const time = Time.parseDate(dateSegments.join('-'))
+      if (Number.isNaN(+time)) {
+        return '请输入合法的日期。'
+      } else if (!options.interval && +time <= Date.now()) {
+        return '不能指定过去的时间为起始时间。'
       }
-      const time = date ? new Date(date).valueOf() : Date.now()
-      if (Number.isNaN(time)) return meta.$send('请输入合法的日期。')
-      const schedule = await database.createSchedule(time, ctx.app.selfId, options.interval * 1000, rest, meta)
-      await meta.$send(`日程已创建，编号为 ${schedule.id}。`)
-      return inspectSchedule(schedule)
+
+      const interval = Time.parseTime(options.interval)
+      if (!interval && options.interval) {
+        return '请输入合法的时间间隔。'
+      }
+
+      const schedule = await database.createSchedule(time, interval, options.rest, session)
+      inspectSchedule(schedule)
+      return `日程已创建，编号为 ${schedule.id}。`
     })
 }

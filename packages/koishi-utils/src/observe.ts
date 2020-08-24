@@ -1,158 +1,161 @@
-import debug from 'debug'
-import { noop } from './misc'
+import { types } from 'util'
+import { noop, defineProperty } from './misc'
+import { Logger } from './logger'
 
-const showObserverLog = debug('koishi:observer')
+const logger = new Logger('observer')
 const staticTypes = ['number', 'string', 'bigint', 'boolean', 'symbol', 'function']
 const builtinClasses = ['Date', 'RegExp', 'Set', 'Map', 'WeakSet', 'WeakMap', 'Array']
 
-const refs: Record<string | number, any> = {}
+function observeProperty(value: any, proxy: any, key: any, label: string, update: any) {
+  if (types.isDate(value)) {
+    return proxy[key] = observeDate(value, update)
+  } else if (Array.isArray(value)) {
+    return proxy[key] = observeArray(value, label, update)
+  } else {
+    return proxy[key] = observeObject(value, label, update)
+  }
+}
 
-function observeObject <T extends object> (target: T, label: string, update?: () => void): T {
-  Object.defineProperty(target, '__proxyGetters__', { value: {} })
-
-  if (!update) {
-    Object.defineProperty(target, '_diff', {
-      value: {},
-      writable: true,
-    })
+function observeObject<T extends object>(target: T, label: string, update?: () => void): T {
+  if (!target['__proxyGetters__']) {
+    Object.defineProperty(target, '__proxyGetters__', { value: {} })
   }
 
-  return new Proxy(target as Observed<T, any>, {
-    get (target, key) {
-      if (key in target.__proxyGetters__) return target.__proxyGetters__[key]
+  const diff = {}
+  const getters = target['__proxyGetters__']
+  if (!update) defineProperty(target, '_diff', diff)
+
+  const proxy = new Proxy(target as Observed<T>, {
+    get(target, key) {
+      if (key in getters) return getters[key]
       const value = target[key]
       if (!value || staticTypes.includes(typeof value) || typeof key === 'string' && key.startsWith('_')) return value
       const _update = update || (() => {
-        const hasKey = key in target._diff
-        target._diff[key] = target.__proxyGetters__[key]
+        const hasKey = key in diff
+        diff[key] = getters[key]
         if (!hasKey && label) {
-          showObserverLog(`[diff] ${label}: ${String(key)} (deep)`)
+          logger.debug(`[diff] ${label}: ${String(key)} (deep)`)
         }
       })
-      if (Array.isArray(value)) {
-        return target.__proxyGetters__[key] = observeArray(value, label, _update)
-      } else {
-        return target.__proxyGetters__[key] = observeObject(value, label, _update)
-      }
+      return observeProperty(value, getters, key, label, _update)
     },
-    set (target, key, value) {
-      if (target[key] !== value) {
+    set(target, key, value) {
+      if (target[key] !== value && (typeof key !== 'string' || !key.startsWith('_'))) {
         if (update) {
           update()
-        } else if (typeof key !== 'string' || !key.startsWith('_')) {
-          const hasKey = key in target._diff
-          target._diff[key] = value
-          delete target.__proxyGetters__[key]
+        } else {
+          const hasKey = key in diff
+          diff[key] = value
+          delete getters[key]
           if (!hasKey && label) {
-            showObserverLog(`[diff] ${label}: ${String(key)}`)
+            logger.debug(`[diff] ${label}: ${String(key)}`)
           }
         }
       }
       return Reflect.set(target, key, value)
     },
-    deleteProperty (target, key) {
+    deleteProperty(target, key) {
       if (update) {
         update()
       } else {
-        delete target._diff[key]
+        delete diff[key]
       }
       return Reflect.deleteProperty(target, key)
     },
   })
+
+  return proxy
 }
 
-const arrayProxyMethods = ['pop', 'shift', 'splice']
+const arrayProxyMethods = ['pop', 'shift', 'splice', 'sort']
 
-function observeArray <T> (target: T[], label: string, update: () => void) {
+function observeArray<T>(target: T[], label: string, update: () => void) {
   const proxy: Record<number, T> = {}
 
   for (const method of arrayProxyMethods) {
-    Object.defineProperty(target, method, {
-      value (...args: any[]) {
-        update()
-        return Array.prototype[method].apply(this, args)
-      },
+    defineProperty(target, method, function (...args: any[]) {
+      update()
+      return Array.prototype[method].apply(this, args)
     })
   }
 
   return new Proxy(target, {
-    get (target, key) {
+    get(target, key) {
       if (key in proxy) return proxy[key]
       const value = target[key]
       if (!value || staticTypes.includes(typeof value) || typeof key === 'symbol' || isNaN(key as any)) return value
-      if (Array.isArray(value)) {
-        return proxy[key] = observeArray(value, label, update)
-      } else {
-        return proxy[key] = observeObject(value, label, update)
-      }
+      return observeProperty(value, proxy, key, label, update)
     },
-    set (target, key, value) {
+    set(target, key, value) {
       if (typeof key !== 'symbol' && !isNaN(key as any) && target[key] !== value) update()
       return Reflect.set(target, key, value)
     },
   })
 }
 
-export type Observed <T, R = any> = T & {
-  _diff: Partial<T>
-  _update: () => R
-  _merge: (value: Partial<T>) => Observed<T, R>
-  __proxyGetters__: Partial<T>
-  __updateCallback__: UpdateFunction<T, R>
+function observeDate(target: Date, update: () => void) {
+  for (const method of Object.getOwnPropertyNames(Date.prototype)) {
+    if (method === 'valueOf') continue
+    defineProperty(target, method, function (...args: any[]) {
+      const oldValue = target.valueOf()
+      const result = Date.prototype[method].apply(this, args)
+      if (target.valueOf() !== oldValue) update()
+      return result
+    })
+  }
+  return target
 }
 
-type UpdateFunction <T, R> = (diff: Partial<T>) => R
+export type Observed<T, R = any> = T & {
+  _diff: Partial<T>
+  _update: () => R
+  _merge: (value: Partial<T>) => Observed<T>
+}
 
-export function observe <T extends object> (target: T, label?: string | number): Observed<T, void>
-export function observe <T extends object, R> (target: T, update: UpdateFunction<T, R>, label?: string | number): Observed<T, R>
-export function observe <T extends object, R> (target: T, ...args: [(string | number)?] | [UpdateFunction<T, R>, (string | number)?]) {
+type UpdateFunction<T, R> = (diff: Partial<T>) => R
+
+export function observe<T extends object>(target: T, label?: string | number): Observed<T, void>
+export function observe<T extends object, R>(target: T, update: UpdateFunction<T, R>, label?: string | number): Observed<T, R>
+export function observe<T extends object, R>(target: T, ...args: [(string | number)?] | [UpdateFunction<T, R>, (string | number)?]) {
   if (staticTypes.includes(typeof target)) {
-    throw new Error(`cannot observe type "${typeof target}"`)
+    throw new Error(`cannot observe immutable type "${typeof target}"`)
   } else if (!target) {
     throw new Error('cannot observe null or undefined')
-  } else {
-    const type = Object.prototype.toString.call(target).slice(8, -1)
-    if (builtinClasses.includes(type)) {
-      throw new Error(`cannot observe instance of type "${type}"`)
-    }
   }
 
-  let label = '', update: UpdateFunction<T, R>
-  if (typeof args[0] === 'function') update = args.shift() as UpdateFunction<T, R>
+  const type = Object.prototype.toString.call(target).slice(8, -1)
+  if (builtinClasses.includes(type)) {
+    throw new Error(`cannot observe instance of type "${type}"`)
+  }
+
+  let label = '', update: UpdateFunction<T, R> = noop
+  if (typeof args[0] === 'function') update = args.shift() as any
   if (typeof args[0] === 'string') label = args[0]
 
-  if (label && label in refs) {
-    refs[label].__updateCallback__ = update || refs[label].__updateCallback__
-    return refs[label]._merge(target)
-  }
+  const observer = observeObject(target, label, null) as Observed<T>
 
-  Object.defineProperty(target, '__updateCallback__', { value: update || noop, writable: true })
-
-  Object.defineProperty(target, '_update', {
-    value (this: Observed<T, R>) {
-      const diff = this._diff
-      const fields = Object.keys(diff)
-      if (fields.length) {
-        if (label) showObserverLog(`[update] ${label}: ${fields.join(', ')}`)
-        this._diff = {}
-        return this.__updateCallback__(diff)
+  defineProperty(observer, '_update', function (this: Observed<T>) {
+    const diff = { ...this._diff }
+    const fields = Object.keys(diff)
+    if (fields.length) {
+      if (label) logger.debug(`[update] ${label}: ${fields.join(', ')}`)
+      for (const key in this._diff) {
+        delete this._diff[key]
       }
-    },
+      return update(diff)
+    }
   })
 
-  Object.defineProperty(target, '_merge', {
-    value (this: Observed<T, R>, value: Partial<T>) {
-      for (const key in value) {
-        if (!(key in this._diff)) {
-          target[key] = value[key]
-          delete this.__proxyGetters__[key]
-        }
+  defineProperty(observer, '_merge', function (this: Observed<T>, value: Partial<T>) {
+    for (const key in value) {
+      if (key in this._diff) {
+        throw new Error(`unresolved diff key "${key}"`)
       }
-      return this
-    },
+      target[key] = value[key]
+      delete this['__proxyGetters__'][key]
+    }
+    return this
   })
 
-  const observer = observeObject(target, label, null) as Observed<T, R>
-  if (label) refs[label] = observer
   return observer
 }

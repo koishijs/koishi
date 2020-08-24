@@ -1,70 +1,71 @@
-import { isInteger, difference, Observed, paramCase } from 'koishi-utils'
-import {
-  Context, Meta, getTargetId,
-  User, UserData, userFlags, UserFlag, userFields, UserField,
-  Group, GroupData, groupFlags, GroupFlag, groupFields, GroupField,
-} from 'koishi-core'
+import { isInteger, difference, Observed, paramCase, observe, Time, enumKeys } from 'koishi-utils'
+import { Context, Session, getTargetId, User, Group } from 'koishi-core'
 
-type ActionCallback <T extends {}, K extends keyof T> =
-  (this: Context, meta: Meta, target: Observed<Pick<T, K>>, ...args: string[]) => Promise<any>
+type ActionCallback<T extends {}, K extends keyof T> =
+  (this: Context, session: Session<'authority'>, target: Observed<Pick<T, K>>, ...args: string[]) => Promise<void | string>
 
-export interface UserAction {
-  callback: ActionCallback<UserData, UserField>
-  fields: UserField[]
+export interface ActionItem<T extends {}> {
+  callback: ActionCallback<T, keyof T>
+  fields: (keyof T)[]
 }
 
-export interface GroupAction {
-  callback: ActionCallback<GroupData, GroupField>
-  fields: GroupField[]
+export class Action<T extends {}> {
+  commands: Record<string, ActionItem<T>> = {}
+
+  add<K extends keyof T = never>(name: string, callback: ActionCallback<T, K>, fields?: K[]) {
+    this.commands[paramCase(name)] = { callback, fields }
+  }
 }
 
-const userActionMap: Record<string, UserAction> = {}
-const groupActionMap: Record<string, GroupAction> = {}
+export const UserAction = new Action<User>()
+export const GroupAction = new Action<Group>()
 
-export function registerUserAction <K extends UserField> (name: string, callback: ActionCallback<UserData, K>, fields?: K[]) {
-  userActionMap[paramCase(name)] = { callback, fields }
-}
-
-export function registerGroupAction <K extends GroupField> (name: string, callback: ActionCallback<GroupData, K>, fields?: K[]) {
-  groupActionMap[paramCase(name)] = { callback, fields }
-}
-
-registerUserAction('setAuth', async (meta, user, value) => {
+UserAction.add('setAuth', async (session, user, value) => {
   const authority = Number(value)
-  if (!isInteger(authority) || authority < 0) return meta.$send('参数错误。')
-  if (authority >= meta.$user.authority) return meta.$send('权限不足。')
+  if (!isInteger(authority) || authority < 0) return '参数错误。'
+  if (authority >= session.$user.authority) return '权限不足。'
   if (authority === user.authority) {
-    return meta.$send('用户权限未改动。')
+    return '用户权限未改动。'
   } else {
     user.authority = authority
     await user._update()
-    return meta.$send('用户权限已修改。')
+    return '用户权限已修改。'
   }
 }, ['authority'])
 
-registerUserAction('setFlag', async (meta, user, ...flags) => {
-  if (!flags.length) return meta.$send(`可用的标记有 ${userFlags.join(', ')}。`)
+UserAction.add('setFlag', async (session, user, ...flags) => {
+  const userFlags = enumKeys(User.Flag)
+  if (!flags.length) return `可用的标记有 ${userFlags.join(', ')}。`
   const notFound = difference(flags, userFlags)
-  if (notFound.length) return meta.$send(`未找到标记 ${notFound.join(', ')}。`)
+  if (notFound.length) return `未找到标记 ${notFound.join(', ')}。`
   for (const name of flags) {
-    user.flag |= UserFlag[name]
+    user.flag |= User.Flag[name]
   }
   await user._update()
-  return meta.$send('用户信息已修改。')
+  return '用户信息已修改。'
 }, ['flag'])
 
-registerUserAction('unsetFlag', async (meta, user, ...flags) => {
-  if (!flags.length) return meta.$send(`可用的标记有 ${userFlags.join(', ')}。`)
+UserAction.add('unsetFlag', async (session, user, ...flags) => {
+  const userFlags = enumKeys(User.Flag)
+  if (!flags.length) return `可用的标记有 ${userFlags.join(', ')}。`
   const notFound = difference(flags, userFlags)
-  if (notFound.length) return meta.$send(`未找到标记 ${notFound.join(', ')}。`)
+  if (notFound.length) return `未找到标记 ${notFound.join(', ')}。`
   for (const name of flags) {
-    user.flag &= ~UserFlag[name]
+    user.flag &= ~User.Flag[name]
   }
   await user._update()
-  return meta.$send('用户信息已修改。')
+  return '用户信息已修改。'
 }, ['flag'])
 
-registerUserAction('clearUsage', async (meta, user, ...commands) => {
+UserAction.add('setUsage', async (session, user, name, _count) => {
+  const count = +_count
+  if (!isInteger(count) || count < 0) return '参数错误。'
+  user.usage[name] = count
+  await user._update()
+  return '用户信息已修改。'
+}, ['usage'])
+
+UserAction.add('clearUsage', async (session, user, ...commands) => {
   if (commands.length) {
     for (const command of commands) {
       delete user.usage[command]
@@ -73,81 +74,111 @@ registerUserAction('clearUsage', async (meta, user, ...commands) => {
     user.usage = {}
   }
   await user._update()
-  return meta.$send('用户信息已修改。')
+  return '用户信息已修改。'
 }, ['usage'])
 
-registerUserAction('showUsage', async (meta, user, ...commands) => {
-  const { usage } = user
-  if (!commands.length) commands = Object.keys(usage).filter(k => !k.startsWith('$'))
-  if (!commands.length) return meta.$send('用户今日没有调用过指令。')
-  return meta.$send([
-    '用户今日各指令的调用次数为：',
-    ...commands.sort().map(name => `${name}：${usage[name] ? usage[name].count : 0} 次`),
-  ].join('\n'))
-}, ['usage'])
+UserAction.add('setTimer', async (session, user, name, offset) => {
+  if (!name || !offset) return '参数不足。'
+  const timestamp = Time.parseTime(offset)
+  if (!timestamp) return '请输入合法的时间。'
+  user.timers[name] = Date.now() + timestamp
+  await user._update()
+  return '用户信息已修改。'
+}, ['timers'])
 
-registerGroupAction('setFlag', async (meta, group, ...flags) => {
-  if (!flags.length) return meta.$send(`可用的标记有 ${groupFlags.join(', ')}。`)
+UserAction.add('clearTimer', async (session, user, ...commands) => {
+  if (commands.length) {
+    for (const command of commands) {
+      delete user.timers[command]
+    }
+  } else {
+    user.timers = {}
+  }
+  await user._update()
+  return '用户信息已修改。'
+}, ['timers'])
+
+GroupAction.add('setFlag', async (session, group, ...flags) => {
+  const groupFlags = enumKeys(Group.Flag)
+  if (!flags.length) return `可用的标记有 ${groupFlags.join(', ')}。`
   const notFound = difference(flags, groupFlags)
-  if (notFound.length) return meta.$send(`未找到标记 ${notFound.join(', ')}。`)
+  if (notFound.length) return `未找到标记 ${notFound.join(', ')}。`
   for (const name of flags) {
-    group.flag |= GroupFlag[name]
+    group.flag |= Group.Flag[name]
   }
   await group._update()
-  return meta.$send('群信息已修改。')
+  return '群信息已修改。'
 }, ['flag'])
 
-registerGroupAction('unsetFlag', async (meta, group, ...flags) => {
-  if (!flags.length) return meta.$send(`可用的标记有 ${groupFlags.join(', ')}。`)
+GroupAction.add('unsetFlag', async (session, group, ...flags) => {
+  const groupFlags = enumKeys(Group.Flag)
+  if (!flags.length) return `可用的标记有 ${groupFlags.join(', ')}。`
   const notFound = difference(flags, groupFlags)
-  if (notFound.length) return meta.$send(`未找到标记 ${notFound.join(', ')}。`)
+  if (notFound.length) return `未找到标记 ${notFound.join(', ')}。`
   for (const name of flags) {
-    group.flag &= ~GroupFlag[name]
+    group.flag &= ~Group.Flag[name]
   }
   await group._update()
-  return meta.$send('群信息已修改。')
+  return '群信息已修改。'
 }, ['flag'])
 
-export default function apply (ctx: Context) {
+GroupAction.add('setAssignee', async (session, group, _assignee) => {
+  const assignee = _assignee ? +_assignee : session.selfId
+  if (!isInteger(assignee) || assignee < 0) return '参数错误。'
+  group.assignee = assignee
+  await group._update()
+  return '群信息已修改。'
+}, ['assignee'])
+
+export function apply(ctx: Context) {
   ctx.command('admin <action> [...args]', '管理用户', { authority: 4 })
-    .option('-u, --user [user]', '指定目标用户')
-    .option('-g, --group [group]', '指定目标群')
-    .option('-G, --this-group', '指定目标群为本群')
-    .action(async ({ meta, options }, name: string, ...args: string[]) => {
-      const isGroup = 'g' in options || 'G' in options
-      if ('user' in options && isGroup) return meta.$send('不能同时目标为指定用户和群。')
+    .userFields(['authority'])
+    .before(session => !session.$app.database)
+    .option('user', '-u [user]  指定目标用户')
+    .option('group', '-g [group]  指定目标群')
+    .option('thisGroup', '-G, --this-group  指定目标群为本群')
+    .action(async ({ session, options }, name, ...args) => {
+      const isGroup = 'group' in options || 'thisGroup' in options
+      if ('user' in options && isGroup) return '不能同时目标为指定用户和群。'
 
-      const actionMap = isGroup ? groupActionMap : userActionMap
+      const actionMap = isGroup ? GroupAction.commands : UserAction.commands
       const actionList = Object.keys(actionMap).map(paramCase).join(', ')
-      if (!name) return meta.$send(`当前的可用指令有：${actionList}。`)
+      if (!name) return `当前的可用指令有：${actionList}。`
 
       const action = actionMap[paramCase(name)]
-      if (!action) return meta.$send(`指令未找到。当前的可用指令有：${actionList}。`)
+      if (!action) return `指令未找到。当前的可用指令有：${actionList}。`
 
       if (isGroup) {
-        const fields = action.fields ? action.fields.slice() as GroupField[] : groupFields
-        let group: Group
+        const fields = action.fields ? action.fields.slice() as Group.Field[] : Group.fields
+        let group: Group.Observed
         if (options.thisGroup) {
-          group = await ctx.database.observeGroup(meta.$group, fields)
+          group = await session.$observeGroup(fields)
         } else if (isInteger(options.group) && options.group > 0) {
-          group = await ctx.database.observeGroup(options.group, fields)
+          const data = await ctx.database.getGroup(options.group, fields)
+          if (!data) return '未找到指定的群。'
+          group = observe(data, diff => ctx.database.setGroup(options.group, diff), `group ${options.group}`)
         }
-        if (!group) return meta.$send('未找到指定的群。')
-        return action.callback.call(ctx, meta, group, ...args)
+        return (action as ActionItem<Group>).callback.call(ctx, session, group, ...args)
       } else {
-        const fields = action.fields ? action.fields.slice() as UserField[] : userFields
+        const fields = action.fields ? action.fields.slice() as User.Field[] : User.fields
         if (!fields.includes('authority')) fields.push('authority')
-        let user: User
+        let user: User.Observed
         if (options.user) {
           const qq = getTargetId(options.user)
-          if (!qq) return meta.$send('未指定目标。')
-          user = await ctx.database.observeUser(qq, -1, fields)
-          if (!user) return meta.$send('未找到指定的用户。')
-          if (qq !== meta.$user.id && meta.$user.authority <= user.authority) return meta.$send('权限不足。')
+          if (!qq) return '未指定目标。'
+          const data = await ctx.database.getUser(qq, -1, fields)
+          if (!data) return '未找到指定的用户。'
+          if (qq === session.userId) {
+            user = await session.$observeUser(fields)
+          } else if (session.$user.authority <= data.authority) {
+            return '权限不足。'
+          } else {
+            user = observe(data, diff => ctx.database.setUser(qq, diff), `user ${qq}`)
+          }
         } else {
-          user = await ctx.database.observeUser(meta.$user, 0, fields)
+          user = await session.$observeUser(fields)
         }
-        return action.callback.call(ctx, meta, user, ...args)
+        return (action as ActionItem<User>).callback.call(ctx, session, user, ...args)
       }
     })
 }

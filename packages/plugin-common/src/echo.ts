@@ -1,25 +1,16 @@
-import { MetaTypeMap, Context } from 'koishi-core'
+import { Context } from 'koishi-core'
 import { CQCode } from 'koishi-utils'
 
-export default function (ctx: Context) {
-  ctx.command('echo <message...>', '向多个上下文发送广播', { authority: 2 })
-    .option('-a, --anonymous', '匿名发送消息')
-    .option('-A, --force-anonymous', '匿名发送消息')
-    .option('-u, --user <id>', '指定信息发送的目标 QQ 号', { isString: true, authority: 4 })
-    .option('-g, --group <id>', '指定信息发送的目标群号', { isString: true, authority: 4 })
-    .option('-d, --discuss <id>', '指定信息发送的目标讨论组号', { isString: true, authority: 4 })
-    .usage('各 id 之间请使用逗号分隔。')
-    .action(({ options, meta }, message) => {
-      // parse channels
-      const channels: Record<MetaTypeMap['message'], number[]> = {
-        private: options.user ? options.user.split(',') : [],
-        group: options.group ? options.group.split(',') : [],
-        discuss: options.discuss ? options.discuss.split(',') : [],
-      }
+export function apply(ctx: Context) {
+  ctx.command('echo <message...>', '向当前上下文发送消息', { authority: 2 })
+    .option('anonymous', '-a  匿名发送消息', { authority: 3 })
+    .option('forceAnonymous', '-A  匿名发送消息', { authority: 3 })
+    .option('unescape', '-e  发送非转义的消息', { authority: 3 })
+    .action(async ({ options }, message) => {
+      if (!message) return '请输入要发送的文本。'
 
-      // fallback to current context
-      if (!channels.private.length && !channels.group.length && !channels.discuss.length) {
-        channels[meta.messageType].push(meta.messageType === 'private' ? meta.userId : meta[meta.messageType + 'Id'])
+      if (options.unescape) {
+        message = CQCode.unescape(message)
       }
 
       if (options.forceAnonymous) {
@@ -28,11 +19,6 @@ export default function (ctx: Context) {
         message = CQCode.stringify('anonymous', { ignore: true }) + message
       }
 
-      // send messages
-      return Promise.all([
-        ...channels.private.map(id => ctx.sender.sendPrivateMsgAsync(+id, message)),
-        ...channels.group.map(id => ctx.sender.sendGroupMsgAsync(+id, message)),
-        ...channels.discuss.map(id => ctx.sender.sendDiscussMsgAsync(+id, message)),
-      ])
+      return message
     })
 }

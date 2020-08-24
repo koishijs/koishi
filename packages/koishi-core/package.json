@@ -1,16 +1,18 @@
 {
   "name": "koishi-core",
   "description": "Core features for Koishi",
-  "version": "1.12.0",
+  "version": "2.0.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
+  "engines": {
+    "node": ">=12.0.0"
+  },
   "files": [
     "dist"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
   "scripts": {
-    "jest": "jest tests/.*\\.spec\\.ts --runInBand",
     "lint": "eslint src --ext .ts",
     "precommit": "yarn lint",
     "prepack": "tsc -b"
@@ -32,19 +34,18 @@
     "koishi"
   ],
   "devDependencies": {
-    "@types/debug": "^4.1.5",
-    "@types/ws": "^7.2.4",
-    "get-port": "^5.1.1",
-    "koishi-database-memory": "^1.2.0",
-    "koishi-test-utils": "^3.3.0"
+    "@types/koa": "^2.11.4",
+    "@types/lru-cache": "^5.1.0",
+    "koishi-test-utils": "^4.0.0-beta.9"
   },
   "dependencies": {
-    "axios": "^0.19.2",
-    "debug": "^4.1.1",
-    "escape-string-regexp": "^3.0.0",
-    "koishi-utils": "^1.0.4",
+    "@types/koa-bodyparser": "^4.3.0",
+    "@types/koa-router": "^7.4.1",
+    "koa": "^2.13.0",
+    "koa-bodyparser": "^4.3.0",
+    "koa-router": "^9.4.0",
+    "koishi-utils": "^3.1.0",
     "leven": "^3.1.0",
-    "ms": "^2.1.2",
-    "ws": "^7.2.3"
+    "lru-cache": "^6.0.0"
   }
 }

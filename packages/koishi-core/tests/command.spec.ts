@@ -1,153 +1,126 @@
-import { App, errors } from 'koishi-core'
+import { App } from 'koishi-test-utils'
+import { expect } from 'chai'
+import '@shigma/chai-extended'
 
 let app: App
 
-describe('register commands', () => {
-  beforeAll(() => app = new App())
+describe('Command API', () => {
+  describe('Register Commands', () => {
+    before(() => app = new App())
 
-  test('constructor checks', () => {
-    expect(() => app.command('')).toThrowError(errors.EXPECT_COMMAND_NAME)
+    it('constructor checks', () => {
+      expect(() => app.command('')).to.throw()
+    })
+
+    it('context.command', () => {
+      const ctx1 = app.user(10000)
+      const ctx2 = app.group(10000)
+      app.command('a')
+      ctx1.command('b')
+      ctx2.command('c')
+
+      // a, b, c, help
+      expect(app._commands).to.have.length(4)
+      expect(app._commandMap.a.context).to.equal(app)
+      expect(app._commandMap.b.context).to.equal(ctx1)
+      expect(app._commandMap.c.context).to.equal(ctx2)
+    })
+
+    it('modify commands', () => {
+      const d1 = app.command('d', 'foo', { authority: 1 })
+      expect(app._commandMap.d.config.description).to.equal('foo')
+      expect(app._commandMap.d.config.authority).to.equal(1)
+
+      const d2 = app.command('d', { description: 'bar', authority: 2 })
+      expect(app._commandMap.d.config.description).to.equal('bar')
+      expect(app._commandMap.d.config.authority).to.equal(2)
+
+      expect(d1).to.equal(d2)
+    })
+
+    it('name conflicts', () => {
+      expect(() => {
+        app.command('e')
+        app.user(10000).command('e')
+      }).not.to.throw()
+
+      expect(() => {
+        const x1 = app.command('e').alias('x')
+        const x2 = app.user(10000).command('x')
+        expect(x1).to.equal(x2)
+      }).not.to.throw()
+
+      expect(() => {
+        app.command('g').alias('y')
+        app.command('h').alias('y')
+      }).to.throw()
+
+      expect(() => {
+        app.command('i').alias('z')
+        app.command('i').alias('z')
+      }).not.to.throw()
+    })
   })
 
-  test('context.command', () => {
-    app.command('a')
-    app.user(10000).command('b')
-    app.group(10000).command('c')
+  describe('Register Subcommands', () => {
+    beforeEach(() => app = new App())
 
-    expect(app._commands).toHaveLength(3)
-    expect(app._commandMap.a.context).toBe(app)
-    expect(app._commandMap.b.context).toBe(app.user(10000))
-    expect(app._commandMap.c.context).toBe(app.group(10000))
-  })
+    it('command.subcommand', () => {
+      const a = app.command('a')
+      const b = a.subcommand('b')
+      const c = b.subcommand('.c')
+      expect(a.children).to.have.shape([b])
+      expect(b.name).to.equal('b')
+      expect(b.parent).to.equal(a)
+      expect(b.children).to.have.shape([c])
+      expect(c.name).to.equal('b.c')
+      expect(c.parent).to.equal(b)
+    })
 
-  test('call chaining', () => {
-    const ctx = app.user(123)
-    expect(ctx.command('temp').end()).toBe(ctx)
-  })
+    it('implicit subcommands', () => {
+      const a = app.command('a')
+      const d = app.command('a.d')
+      expect(d.name).to.equal('a.d')
+      expect(d.parent).to.equal(a)
 
-  test('modify commands', () => {
-    const d1 = app.command('d', 'foo', { authority: 1 })
-    expect(app._commandMap.d.config.description).toBe('foo')
-    expect(app._commandMap.d.config.authority).toBe(1)
+      const b = app.command('b')
+      const e = app.command('b/e')
+      expect(e.name).to.equal('e')
+      expect(e.parent).to.equal(b)
 
-    const d2 = app.command('d', { description: 'bar', authority: 2 })
-    expect(app._commandMap.d.config.description).toBe('bar')
-    expect(app._commandMap.d.config.authority).toBe(2)
+      const f = a.subcommand('.b/f')
+      expect(f.name).to.equal('f')
+      expect(f.parent.name).to.equal('a.b')
+      expect(f.parent.parent).to.equal(a)
 
-    expect(d1).toBe(d2)
-  })
+      const g = b.subcommand('c.g')
+      expect(g.name).to.equal('c.g')
+      expect(g.parent.name).to.equal('c')
+      expect(g.parent.parent).to.equal(b)
 
-  test('name conflicts', () => {
-    expect(() => {
-      app.command('e')
-      app.user(10000).command('e')
-    }).not.toThrow()
+      const h = app.command('h')
+      b.subcommand('h')
+      expect(h.name).to.equal('h')
+      expect(h.parent).to.equal(b)
+    })
 
-    expect(() => {
-      const x1 = app.command('e').alias('x')
-      const x2 = app.user(10000).command('x')
-      expect(x1).toBe(x2)
-    }).not.toThrow()
+    it('check subcommand', () => {
+      const a = app.command('a')
+      const b = a.subcommand('b')
+      const c = b.subcommand('c')
+      const d = app.command('d')
 
-    expect(() => {
-      app.command('g').alias('y')
-      app.command('h').alias('y')
-    }).toThrow(errors.DUPLICATE_COMMAND)
+      // register explicit subcommand
+      expect(() => a.subcommand('a')).to.throw()
+      expect(() => a.subcommand('b')).not.to.throw()
+      expect(() => a.subcommand('c')).to.throw()
+      expect(() => a.subcommand('d')).not.to.throw()
 
-    expect(() => {
-      app.command('i').alias('z')
-      app.command('i').alias('z')
-    }).not.toThrow()
-  })
-
-  test('remove options', () => {
-    const cmd = app.command('command-with-option').option('-a, --alpha')
-    expect(cmd._optsDef.alpha).toBeTruthy()
-    expect(cmd.removeOption('a')).toBe(true)
-    expect(cmd._optsDef.alpha).toBeFalsy()
-    expect(cmd.removeOption('a')).toBe(false)
-
-    expect(app.command('command-with-help')._optsDef.help).toBeTruthy()
-    expect(app.command('command-without-help', { noHelpOption: true })._optsDef.help).toBeFalsy()
-  })
-})
-
-describe('register subcommands', () => {
-  beforeEach(() => app = new App())
-
-  test('command.subcommand', () => {
-    const a = app.command('a')
-    const b = a.subcommand('b')
-    const c = b.subcommand('.c')
-    expect(a.children).toMatchObject([b])
-    expect(b.name).toBe('b')
-    expect(b.parent).toBe(a)
-    expect(b.children).toMatchObject([c])
-    expect(c.name).toBe('b.c')
-    expect(c.parent).toBe(b)
-  })
-
-  test('implicit subcommands', () => {
-    const a = app.command('a')
-    const d = app.command('a.d')
-    expect(d.name).toBe('a.d')
-    expect(d.parent).toBe(a)
-
-    const b = app.command('b')
-    const e = app.command('b/e')
-    expect(e.name).toBe('e')
-    expect(e.parent).toBe(b)
-
-    const f = a.subcommand('.b/f')
-    expect(f.name).toBe('f')
-    expect(f.parent.name).toBe('a.b')
-    expect(f.parent.parent).toBe(a)
-
-    const g = b.subcommand('c.g')
-    expect(g.name).toBe('c.g')
-    expect(g.parent.name).toBe('c')
-    expect(g.parent.parent).toBe(b)
-
-    const h = app.command('h')
-    b.subcommand('h')
-    expect(h.name).toBe('h')
-    expect(h.parent).toBe(b)
-  })
-
-  test('check subcommand', () => {
-    const a = app.command('a')
-    const b = a.subcommand('b')
-    const c = b.subcommand('c')
-    const d = app.command('d')
-
-    // register explicit subcommand
-    expect(() => a.subcommand('a')).toThrow(errors.INVALID_SUBCOMMAND)
-    expect(() => a.subcommand('b')).not.toThrow()
-    expect(() => a.subcommand('c')).toThrow(errors.INVALID_SUBCOMMAND)
-    expect(() => a.subcommand('d')).not.toThrow()
-
-    // register implicit subcommand
-    expect(() => app.command('b/c')).not.toThrow()
-    expect(() => app.command('a/c')).toThrow(errors.INVALID_SUBCOMMAND)
-    expect(() => app.command('c/b')).toThrow(errors.INVALID_SUBCOMMAND)
-    expect(() => app.command('a/d')).not.toThrow()
-  })
-
-  test('check context', () => {
-    const a = app.command('a')
-    const b = app.users.command('b')
-    const c = app.user(123).command('c')
-
-    // match command directly
-    expect(() => app.groups.command('a')).not.toThrow()
-    expect(() => app.groups.command('b')).not.toThrow()
-
-    // register explicit subcommand
-    expect(() => b.subcommand('a')).toThrow(errors.INVALID_CONTEXT)
-    expect(() => b.subcommand('c')).not.toThrow()
-
-    // register implicit subcommand
-    expect(() => app.groups.command('b/d')).toThrow(errors.INVALID_CONTEXT)
-    expect(() => app.command('b/d')).not.toThrow()
+      // register implicit subcommand
+      expect(() => app.command('b/c')).not.to.throw()
+      expect(() => app.command('a/c')).to.throw()
+      expect(() => app.command('c/b')).to.throw()
+      expect(() => app.command('a/d')).not.to.throw()
+    })
   })
 })

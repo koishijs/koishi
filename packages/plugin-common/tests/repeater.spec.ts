@@ -1,16 +1,12 @@
-import { MockedApp } from 'koishi-test-utils'
-import { repeater } from '../src'
-import 'koishi-database-memory'
+import { App } from 'koishi-test-utils'
+import repeater from '../src/repeater'
 
-test('repeat', async () => {
-  const app = new MockedApp()
+it.only('repeat', async () => {
+  const app = new App()
   const session1 = app.createSession('group', 123, 123)
 
   app.plugin(repeater, {
-    repeat: (repeated, times) => !repeated && times >= 2,
-    interrupt: false,
-    repeatCheck: false,
-    interruptCheck: false,
+    onRepeat: ({ repeated, times }, message) => !repeated && times >= 2 ? message : '',
   })
 
   await session1.shouldHaveNoReply('foo')
@@ -19,8 +15,8 @@ test('repeat', async () => {
   await session1.shouldHaveNoReply('foo')
 })
 
-test('interrupt', async () => {
-  const app = new MockedApp()
+it('interrupt', async () => {
+  const app = new App()
   const session1 = app.createSession('group', 123, 123)
 
   app.plugin(repeater, {
@@ -35,8 +31,8 @@ test('interrupt', async () => {
   await session1.shouldHaveReply('foo', '打断复读！')
 })
 
-test('repeat check', async () => {
-  const app = new MockedApp()
+it('repeat check', async () => {
+  const app = new App()
   const session1 = app.createSession('group', 123, 123)
   const session2 = app.createSession('group', 456, 123)
 
@@ -53,8 +49,8 @@ test('repeat check', async () => {
   await session2.shouldHaveReply('foo', `[CQ:at,qq=${session2.userId}] 在？为什么重复复读？`)
 })
 
-test('interrupt check', async () => {
-  const app = new MockedApp()
+it('interrupt check', async () => {
+  const app = new App()
   const session1 = app.createSession('group', 123, 123)
 
   app.plugin(repeater, {

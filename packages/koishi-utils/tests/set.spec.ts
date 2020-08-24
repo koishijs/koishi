@@ -1,29 +1,34 @@
-import { union, intersection, difference, contain } from '../src'
+import { union, intersection, difference, contain, deduplicate } from '../src'
+import { expect } from 'chai'
 
-describe('set operations', () => {
-  test('union', () => {
-    expect(union([1, 2], [3, 4])).toMatchObject([1, 2, 3, 4])
-    expect(union([1, 2], [1, 3])).toMatchObject([1, 2, 3])
-    expect(union([], [2, 3])).toMatchObject([2, 3])
+describe('Set Manipulations', () => {
+  it('union', () => {
+    expect(union([1, 2], [3, 4])).to.deep.equal([1, 2, 3, 4])
+    expect(union([1, 2], [1, 3])).to.deep.equal([1, 2, 3])
+    expect(union([], [2, 3])).to.deep.equal([2, 3])
   })
 
-  test('intersection', () => {
-    expect(intersection([1, 2], [3, 4])).toMatchObject([])
-    expect(intersection([1, 2], [1, 3])).toMatchObject([1])
-    expect(intersection([1, 2, 3], [2, 3])).toMatchObject([2, 3])
+  it('intersection', () => {
+    expect(intersection([1, 2], [3, 4])).to.deep.equal([])
+    expect(intersection([1, 2], [1, 3])).to.deep.equal([1])
+    expect(intersection([1, 2, 3], [2, 3])).to.deep.equal([2, 3])
   })
 
-  test('difference', () => {
-    expect(difference([1, 2], [3, 4])).toMatchObject([1, 2])
-    expect(difference([1, 2], [1, 3])).toMatchObject([2])
-    expect(difference([2, 3], [])).toMatchObject([2, 3])
-    expect(difference([], [2, 3])).toMatchObject([])
+  it('difference', () => {
+    expect(difference([1, 2], [3, 4])).to.deep.equal([1, 2])
+    expect(difference([1, 2], [1, 3])).to.deep.equal([2])
+    expect(difference([2, 3], [])).to.deep.equal([2, 3])
+    expect(difference([], [2, 3])).to.deep.equal([])
   })
 
-  test('contain', () => {
-    expect(contain([1, 2], [3, 4])).toBe(false)
-    expect(contain([1, 2], [1, 3])).toBe(false)
-    expect(contain([2, 3], [])).toBe(true)
-    expect(contain([], [2, 3])).toBe(false)
+  it('contain', () => {
+    expect(contain([1, 2], [3, 4])).to.equal(false)
+    expect(contain([1, 2], [1, 3])).to.equal(false)
+    expect(contain([2, 3], [])).to.equal(true)
+    expect(contain([], [2, 3])).to.equal(false)
+  })
+
+  it('deduplicate', () => {
+    expect(deduplicate([1, 2, 3, 3])).to.deep.equal([1, 2, 3])
   })
 })

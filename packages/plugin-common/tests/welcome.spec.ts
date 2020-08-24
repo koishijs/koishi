@@ -12,7 +12,7 @@ const shared: Meta = {
   userId: 456,
 }
 
-test('basic support', async () => {
+it('basic support', async () => {
   const app = new MockedApp()
   app.plugin(welcome)
 
@@ -25,7 +25,7 @@ test('basic support', async () => {
   app.shouldHaveNoRequests()
 })
 
-test('check assignee', async () => {
+it('check assignee', async () => {
   const app = new MockedApp({ database: { memory: {} } })
   app.plugin(welcome, 'welcome')
 

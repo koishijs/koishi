@@ -1,11 +1,12 @@
 dist
 temp
 
+/addons
+/atri
 /docs
-/bots
+/shiki
 /coverage
 /plugins
-/tsconfig.extend.json
 
 todo.md
 yarn.lock
@@ -15,6 +16,7 @@ yarn-debug.log
 yarn-error.log
 package-lock.json
 tsconfig.tsbuildinfo
+report.*.json
 
 .eslintcache
 .DS_Store

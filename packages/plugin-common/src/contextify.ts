@@ -1,90 +1,74 @@
-import { Context, getTargetId, ContextType } from 'koishi-core'
+import { Context, getTargetId, Group, User, Session } from 'koishi-core'
+import {} from 'koishi-adapter-cqhttp'
 
-export default function apply (ctx: Context) {
+export function apply(ctx: Context) {
   ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3 })
     .alias('ctxf')
-    .option('-u, --user [id]', '使用私聊上下文')
-    .option('-d, --discuss [id]', '使用讨论组上下文')
-    .option('-g, --group [id]', '使用群聊上下文')
-    .option('-m, --member [id]', '使用当前群/讨论组成员上下文')
-    .option('-t, --type [type]', '确定发送信息的子类型')
+    .userFields(['authority'])
+    .before(session => !session.$app.database)
+    .option('user', '-u [id]  使用私聊上下文')
+    .option('group', '-g [id]  使用群聊上下文')
+    .option('member', '-m [id]  使用当前群/讨论组成员上下文')
+    .option('type', '-t [type]  确定发送信息的子类型')
     .usage([
-      '私聊的子类型包括 other（默认），friend，group，discuss。',
+      '私聊的子类型包括 other（默认），friend，group。',
       '群聊的子类型包括 normal（默认），notice，anonymous。',
       '讨论组聊天没有子类型。',
     ].join('\n'))
-    .action(async ({ meta, options }, message) => {
-      if (!message) return meta.$send('请输入要触发的指令。')
+    .action(async ({ session, options }, message) => {
+      if (!message) return '请输入要触发的指令。'
 
       if (options.member) {
-        if (meta.messageType === 'private') {
-          return meta.$send('无法在私聊上下文使用 --member 选项。')
+        if (session.messageType === 'private') {
+          return '无法在私聊上下文使用 --member 选项。'
         }
-        options[meta.messageType] = meta.$ctxId
+        options.group = session.groupId
         options.user = options.member
       }
 
-      if (!options.user && !options.group && !options.discuss) {
-        return meta.$send('请提供新的上下文。')
+      if (!options.user && !options.group) {
+        return '请提供新的上下文。'
       }
 
-      const newMeta = { ...meta }
-      let user = meta.$user
+      const newSession = new Session(ctx.app, session)
+      newSession.$send = session.$send.bind(session)
+      newSession.$sendQueued = session.$sendQueued.bind(session)
+
+      delete newSession.groupId
+
+      if (options.group) {
+        newSession.groupId = +options.group
+        newSession.messageType = 'group'
+        newSession.subType = options.type || 'normal'
+        delete newSession.$group
+        await newSession.$observeGroup(Group.fields)
+      } else {
+        newSession.messageType = 'private'
+        newSession.subType = options.type || 'other'
+      }
+
       if (options.user) {
         const id = getTargetId(options.user)
-        if (!id) return meta.$send('未指定目标。')
-        user = await ctx.database.observeUser(id)
-        if (meta.$user.authority <= user.authority) {
-          return meta.$send('权限不足。')
+        if (!id) return '未指定目标。'
+
+        newSession.userId = id
+        newSession.sender.userId = id
+
+        delete newSession.$user
+        const user = await newSession.$observeUser(User.fields)
+        if (session.$user.authority <= user.authority) {
+          return '权限不足。'
         }
-
-        newMeta.userId = id
-        newMeta.sender = {
-          sex: 'unknown',
-          nickname: '',
-          userId: id,
-          age: 0,
-        }
-      }
-
-      Object.defineProperty(newMeta, '$app', { value: ctx.app })
-      Object.defineProperty(newMeta, '$user', { value: user, writable: true })
-
-      delete newMeta.groupId
-      delete newMeta.discussId
-
-      let ctxType: ContextType, ctxId: number
-      if (options.discuss) {
-        newMeta.discussId = ctxId = +options.discuss
-        newMeta.messageType = 'discuss'
-        newMeta.messageType = ctxType = 'discuss'
-      } else if (options.group) {
-        newMeta.groupId = ctxId = +options.group
-        newMeta.messageType = ctxType = 'group'
-        newMeta.subType = options.type || 'normal'
-        Object.defineProperty(newMeta, '$group', {
-          value: await ctx.database.observeGroup(ctxId),
-          writable: true,
-        })
-      } else {
-        ctxId = newMeta.userId
-        ctxType = 'user'
-        newMeta.messageType = 'private'
-        newMeta.subType = options.type || 'other'
       }
 
       if (options.group) {
-        const info = await ctx.sender.getGroupMemberInfo(ctxId, newMeta.userId).catch(() => ({}))
-        Object.assign(newMeta.sender, info)
+        const info = await session.$bot.getGroupMemberInfo(newSession.groupId, newSession.userId).catch(() => ({}))
+        Object.assign(newSession.sender, info)
       } else if (options.user) {
-        const info = await ctx.sender.getStrangerInfo(newMeta.userId).catch(() => ({}))
-        Object.assign(newMeta.sender, info)
+        const info = await session.$bot.getStrangerInfo(newSession.userId).catch(() => ({}))
+        Object.assign(newSession.sender, info)
       }
 
-      // generate path
-      Object.defineProperty(newMeta, '$ctxId', { value: ctxId })
-      Object.defineProperty(newMeta, '$ctxType', { value: ctxType })
-
-      return ctx.app.executeCommandLine(message, newMeta)
+      return newSession.$execute(message)
     })
 }

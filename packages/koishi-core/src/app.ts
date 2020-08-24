@@ -1,506 +1,264 @@
-import debug from 'debug'
-import escapeRegex from 'escape-string-regexp'
-import { Sender } from './sender'
-import { Server, createServer, ServerType } from './server'
-import { Command, ShortcutConfig, ParsedCommandLine } from './command'
-import { Context, Middleware, NextFunction, ContextScope, Events, EventMap } from './context'
-import { GroupFlag, UserFlag, UserField, createDatabase, DatabaseConfig, GroupField, createUser } from './database'
-import { showSuggestions } from './utils'
-import { Meta } from './meta'
-import { simplify, noop, observe } from 'koishi-utils'
-import { errors, messages } from './messages'
-import { ParsedLine } from './parser'
+import { Command } from './command'
+import { Context, Middleware, NextFunction } from './context'
+import { Group, User, Database } from './database'
+import { BotOptions, Server } from './server'
+import { Session } from './session'
+import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp } from 'koishi-utils'
+import help from './plugins/help'
+import shortcut from './plugins/shortcut'
+import suggest from './plugins/suggest'
+import validate from './plugins/validate'
+import LruCache from 'lru-cache'
 
-export interface AppOptions {
+export interface AppOptions extends BotOptions {
   port?: number
-  token?: string
-  secret?: string
-  selfId?: number
-  server?: string
-  type?: ServerType
-  database?: DatabaseConfig
+  type?: string
+  bots?: BotOptions[]
+  prefix?: string | string[]
   nickname?: string | string[]
-  retryTimes?: number
-  retryInterval?: number
-  maxMiddlewares?: number
-  commandPrefix?: string | string[]
-  defaultAuthority?: number | ((meta: Meta) => number)
-  quickOperationTimeout?: number
+  maxListeners?: number
+  prettyErrors?: boolean
+  promptTimeout?: number
+  processMessage?: (message: string) => string
+  queueDelay?: number | ((message: string, session: Session) => number)
+  broadcastDelay?: number
+  defaultAuthority?: number | ((session: Session) => number)
   similarityCoefficient?: number
+  userCacheLength?: number
+  groupCacheLength?: number
+  userCacheAge?: number
+  groupCacheAge?: number
 }
 
-const selfIds = new Set<number>()
-export const appMap: Record<number, App> = {}
-export const appList: App[] = []
-
-const onStartHooks = new Set<(...app: App[]) => void>()
-export function onStart (hook: (...app: App[]) => void) {
-  onStartHooks.add(hook)
+function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
+  return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
 }
 
-const onStopHooks = new Set<(...app: App[]) => void>()
-export function onStop (hook: (...app: App[]) => void) {
-  onStopHooks.add(hook)
-}
-
-export async function startAll () {
-  await Promise.all(appList.map(async app => app.start()))
-}
-
-export async function stopAll () {
-  await Promise.all(appList.map(async app => app.stop()))
-}
-
-let getSelfIdsPromise: Promise<any>
-export async function getSelfIds () {
-  if (!getSelfIdsPromise) {
-    getSelfIdsPromise = Promise.all(appList.map(async (app) => {
-      if (app.selfId || !app.options.type) return
-      const info = await app.sender.getLoginInfo()
-      app.prepare(info.userId)
-    }))
-  }
-  await getSelfIdsPromise
-  return Array.from(selfIds)
-}
-
-export interface MajorContext extends Context {
-  except (...ids: number[]): Context
-}
-
-const appScope: ContextScope = [[null, []], [null, []], [null, []]]
-const appIdentifier = ContextScope.stringify(appScope)
-
-const nicknameSuffix = '([,，]\\s*|\\s+)'
-function createLeadingRE (patterns: string[], prefix = '', suffix = '') {
-  return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegex).join('|')})${suffix}`) : /^/
-}
-
-const defaultOptions: AppOptions = {
-  maxMiddlewares: 64,
-  retryInterval: 5000,
-}
-
-export enum Status { closed, opening, open, closing }
+export enum AppStatus { closed, opening, open, closing }
 
 export class App extends Context {
   app = this
   options: AppOptions
   server: Server
-  atMeRE: RegExp
-  prefixRE: RegExp
-  nicknameRE: RegExp
-  status = Status.closed
+  status = AppStatus.closed
 
-  _commands: Command[] = []
-  _commandMap: Record<string, Command> = {}
-  _shortcuts: ShortcutConfig[] = []
-  _shortcutMap: Record<string, Command> = {}
-  _middlewares: [Context, Middleware][] = []
+  _database: Database
+  _commands: Command[]
+  _commandMap: Record<string, Command>
+  _hooks: Record<keyof any, [Context, (...args: any[]) => any][]>
+  _userCache: LruCache<number, Observed<Partial<User>>>
+  _groupCache: LruCache<number, Observed<Partial<Group>>>
 
-  private _users: MajorContext
-  private _groups: MajorContext
-  private _discusses: MajorContext
-  private _isReady = false
+  private _nameRE: RegExp
+  private _prefixRE: RegExp
   private _middlewareCounter = 0
   private _middlewareSet = new Set<number>()
-  private _contexts: Record<string, Context> = { [appIdentifier]: this }
+  private _getSelfIdsPromise: Promise<any>
 
-  constructor (options: AppOptions = {}) {
-    super(appIdentifier, appScope)
+  static defaultConfig: AppOptions = {
+    maxListeners: 64,
+    prettyErrors: true,
+    queueDelay: 0.1 * Time.second,
+    broadcastDelay: 0.5 * Time.second,
+    promptTimeout: Time.minute,
+    userCacheAge: Time.minute,
+    groupCacheAge: 5 * Time.minute,
+    similarityCoefficient: 0.4,
+    processMessage: message => simplify(message.trim()),
+  }
 
-    // resolve options
-    this.options = { ...defaultOptions, ...options }
-    if (options.database && Object.keys(options.database).length) {
-      this.database = createDatabase(options.database)
-    }
-    if (!options.type && typeof options.server === 'string') {
-      this.options.type = this.options.server.split(':', 1)[0] as any
-    }
-    if (this.options.type) {
-      this.server = createServer(this)
-      this.sender = new Sender(this)
-    }
+  constructor(options: AppOptions = {}) {
+    super({ groups: [], users: [], private: true })
+    options = this.options = { ...App.defaultConfig, ...options }
+    if (!options.bots) options.bots = [options]
 
-    // register application
-    appList.push(this)
-    if (this.selfId) this.prepare()
+    defineProperty(this, '_hooks', {})
+    defineProperty(this, '_commands', [])
+    defineProperty(this, '_commandMap', {})
+    defineProperty(this, '_userCache', new LruCache({
+      max: options.userCacheLength,
+      maxAge: options.userCacheAge,
+    }))
+    defineProperty(this, '_groupCache', new LruCache({
+      max: options.groupCacheLength,
+      maxAge: options.groupCacheAge,
+    }))
+
+    const { type } = this.options
+    const server = Server.types[type]
+    if (!server) {
+      throw new Error(`unsupported type "${type}", you should import the adapter yourself`)
+    }
+    this.server = Reflect.construct(server, [this])
+
+    this.prepare()
 
     // bind built-in event listeners
-    this.receiver.on('message', this._applyMiddlewares)
-    this.receiver.on('before-user', Command.attachUserFields)
-    this.receiver.on('before-group', Command.attachGroupFields)
-    this.middleware(this._preprocess)
+    this.middleware(this._preprocess.bind(this))
+    this.on('message', this._receive.bind(this))
+    this.on('parse', this._parse.bind(this))
 
-    // apply default logger
-    this.receiver.on('logger', (scope, message) => debug(scope)(message))
+    this.plugin(validate)
+    this.plugin(suggest)
+    this.plugin(shortcut)
+    this.plugin(help)
   }
 
-  get users () {
-    if (this._users) return this._users
-    const users = this.createContext([[null, []], [[], null], [[], null]]) as MajorContext
-    users.except = (...ids) => this.createContext([[null, ids], [[], null], [[], null]])
-    return this._users = users
-  }
-
-  get groups () {
-    if (this._groups) return this._groups
-    const groups = this.createContext([[[], null], [null, []], [[], null]]) as MajorContext
-    groups.except = (...ids) => this.createContext([[[], null], [null, ids], [[], null]])
-    return this._groups = groups
-  }
-
-  get discusses () {
-    if (this._discusses) return this._discusses
-    const discusses = this.createContext([[[], null], [[], null], [null, []]]) as MajorContext
-    discusses.except = (...ids) => this.createContext([[[], null], [[], null], [null, ids]])
-    return this._discusses = discusses
-  }
-
-  get selfId () {
-    return this.options.selfId
-  }
-
-  get version () {
-    return this.server?.version
-  }
-
-  prepare (selfId?: number) {
-    if (selfId) {
-      this.options.selfId = selfId
-      if (!this._isReady && this.server.isListening) {
-        this.receiver.emit('ready')
-        this._isReady = true
-      }
-    }
-    appMap[this.selfId] = this
-    selfIds.add(this.selfId)
-    if (this.server) {
-      this.server.appMap[this.selfId] = this
-    }
-    const { nickname, commandPrefix } = this.options
+  prepare() {
+    const { nickname, prefix } = this.options
     const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
-    const prefixes = Array.isArray(commandPrefix) ? commandPrefix : [commandPrefix || '']
-    this.atMeRE = new RegExp(`^\\[CQ:at,qq=${this.selfId}\\]${nicknameSuffix}`)
-    this.nicknameRE = createLeadingRE(nicknames, '@?', nicknameSuffix)
-    this.prefixRE = createLeadingRE(prefixes)
+    const prefixes = Array.isArray(prefix) ? prefix : [prefix || '']
+    this._nameRE = createLeadingRE(nicknames, '@?', '([,，]\\s*|\\s+)')
+    this._prefixRE = createLeadingRE(prefixes)
   }
 
-  destroy () {
-    const index = appList.indexOf(this)
-    if (index >= 0) appList.splice(index, 1)
-    delete appMap[this.selfId]
-    selfIds.delete(this.selfId)
-    if (this.server) {
-      const index = this.server.appList.indexOf(this)
-      if (index >= 0) this.server.appList.splice(index, 1)
-      delete this.server.appMap[this.selfId]
+  async getSelfIds() {
+    const bots = this.server.bots.filter(bot => bot.ready)
+    if (!this._getSelfIdsPromise) {
+      this._getSelfIdsPromise = Promise.all(bots.map(async (bot) => {
+        if (bot.selfId || !bot.ready) return
+        bot.selfId = await bot.getSelfId()
+      }))
     }
+    await this._getSelfIdsPromise
+    return bots.map(bot => bot.selfId)
   }
 
-  createContext (scope: string | ContextScope) {
-    if (typeof scope === 'string') scope = ContextScope.parse(scope)
-    scope = scope.map(([include, exclude]) => {
-      return include ? [include.sort(), exclude] : [include, exclude.sort()]
-    })
-    const identifier = ContextScope.stringify(scope)
-    if (!this._contexts[identifier]) {
-      const ctx = this._contexts[identifier] = new Context(identifier, scope)
-      ctx.database = this.database
-      ctx.sender = this.sender
-      ctx.app = this
-    }
-    return this._contexts[identifier]
+  async start() {
+    this.status = AppStatus.opening
+    await this.parallel('before-connect')
+    this.status = AppStatus.open
+    this.logger('app').debug('started')
+    this.emit('connect')
   }
 
-  discuss (...ids: number[]) {
-    return this.createContext([[[], null], [[], null], [ids, null]])
+  async stop() {
+    this.status = AppStatus.closing
+    await this.parallel('before-disconnect')
+    this.status = AppStatus.closed
+    this.logger('app').debug('stopped')
+    this.emit('disconnect')
   }
 
-  group (...ids: number[]) {
-    return this.createContext([[[], null], [ids, null], [[], null]])
-  }
+  private async _preprocess(session: Session, next: NextFunction) {
+    let message = this.options.processMessage(session.message)
 
-  user (...ids: number[]) {
-    return this.createContext([[ids, null], [[], null], [[], null]])
-  }
-
-  async start () {
-    this.status = Status.opening
-    this.receiver.emit('before-connect')
-    const tasks: Promise<any>[] = []
-    if (this.database) {
-      for (const type in this.options.database) {
-        tasks.push(this.database[type]?.start?.())
-      }
-    }
-    if (this.server) {
-      tasks.push(this.server.listen())
-    }
-    await Promise.all(tasks)
-    this.status = Status.open
-    this.logger('koishi:app').debug('started')
-    this.receiver.emit('connect')
-    if (this.selfId && !this._isReady) {
-      this.receiver.emit('ready')
-      this._isReady = true
-    }
-    if (appList.every(app => app.status === Status.open)) {
-      onStartHooks.forEach(hook => hook(...appList))
-    }
-  }
-
-  async stop () {
-    this.status = Status.closing
-    this.receiver.emit('before-disconnect')
-    const tasks: Promise<any>[] = []
-    if (this.database) {
-      for (const type in this.options.database) {
-        tasks.push(this.database[type]?.stop?.())
-      }
-    }
-    await Promise.all(tasks)
-    if (this.server) {
-      this.server.close()
-    }
-    this.status = Status.closed
-    this.logger('koishi:app').debug('stopped')
-    this.receiver.emit('disconnect')
-    if (appList.every(app => app.status === Status.closed)) {
-      onStopHooks.forEach(hook => hook(...appList))
-    }
-  }
-
-  emitEvent <K extends Events> (meta: Meta, event: K, ...payload: Parameters<EventMap[K]>) {
-    if (!meta.$ctxType) {
-      this.logger('koishi:receiver').debug('/', 'emits', event)
-      this.receiver.emit(event, ...payload)
-      return
-    }
-
-    for (const path in this._contexts) {
-      const context = this._contexts[path]
-      if (!context.match(meta)) continue
-      this.logger('koishi:receiver').debug(path, 'emits', event)
-      context.receiver.emit(event, ...payload)
-    }
-  }
-
-  private _preprocess = async (meta: Meta<'message'>, next: NextFunction) => {
-    // strip prefix
-    let capture: RegExpMatchArray
-    let atMe = false
-    let nickname = ''
-    let prefix: string = null
-    let message = simplify(meta.message.trim())
-
-    if (meta.messageType !== 'private' && (capture = message.match(this.atMeRE))) {
-      atMe = true
-      nickname = capture[0]
-      message = message.slice(capture[0].length)
-    }
-
-    if ((capture = message.match(this.nicknameRE))?.[0].length) {
-      nickname = capture[0]
-      message = message.slice(capture[0].length)
-    }
-
+    let capture: RegExpMatchArray, atSelf = false
     // eslint-disable-next-line no-cond-assign
-    if (capture = message.match(this.prefixRE)) {
-      prefix = capture[0]
+    if (capture = message.match(/^\[CQ:reply,id=(\d+)\]/)) {
+      session.$reply = +capture[1]
+      message = message.slice(capture[0].length)
+    }
+
+    // strip prefix
+    const at = `[CQ:at,qq=${session.selfId}]`
+    if (session.messageType !== 'private' && message.startsWith(at)) {
+      atSelf = session.$appel = true
+      message = message.slice(at.length).trimStart()
+      // eslint-disable-next-line no-cond-assign
+    } else if (capture = message.match(this._nameRE)) {
+      session.$appel = true
+      message = message.slice(capture[0].length)
+      // eslint-disable-next-line no-cond-assign
+    } else if (capture = message.match(this._prefixRE)) {
+      session.$prefix = capture[0]
       message = message.slice(capture[0].length)
     }
 
     // store parsed message
-    Object.defineProperty(meta, '$parsed', {
-      writable: true,
-      value: { atMe, nickname, prefix, message },
-    })
+    session.$parsed = message
+    session.$argv = session.$parse(message, '', true)
 
-    // parse as command
-    if (!meta.$argv && (prefix !== null || nickname || meta.messageType === 'private')) {
-      Object.defineProperty(meta, '$argv', {
-        writable: true,
-        value: this.parseCommandLine(message, meta),
-      })
-    }
-
-    // parse as shortcut
-    if (!meta.$argv && !prefix) {
-      for (const shortcut of this._shortcuts) {
-        const { name, fuzzy, command, oneArg, prefix, options, args = [] } = shortcut
-        if (prefix && !nickname) continue
-        if (!fuzzy && message !== name) continue
-        if (message.startsWith(name)) {
-          const _message = message.slice(name.length)
-          if (fuzzy && !nickname && _message.match(/^\S/)) continue
-          const result: ParsedLine = oneArg
-            ? { rest: '', options: {}, unknown: [], args: [_message.trim()] }
-            : command.parse(_message.trim())
-          result.options = { ...options, ...result.options }
-          result.args.unshift(...args)
-          Object.defineProperty(meta, '$argv', {
-            writable: true,
-            value: { meta, command, ...result },
-          })
-          break
-        }
-      }
-    }
-
-    if (!meta.$argv) {
-      Object.defineProperty(meta, '$argv', {
-        writable: true,
-        value: { meta },
-      })
-    }
-
-    const { command } = meta.$argv
     if (this.database) {
-      if (meta.messageType === 'group') {
+      if (session.messageType === 'group') {
         // attach group data
-        const group = await this._attachGroup(meta, ['flag', 'assignee'])
+        const groupFields = new Set<Group.Field>(['flag', 'assignee'])
+        this.emit('before-attach-group', session, groupFields)
+        const group = await session.$observeGroup(groupFields)
 
         // emit attach event
-        this.emitEvent(meta, 'attach-group', meta)
+        if (await this.serial(session, 'attach-group', session)) return
 
         // ignore some group calls
-        const isAssignee = !group.assignee || group.assignee === this.selfId
-        const noCommand = group.flag & GroupFlag.noCommand
-        const noResponse = group.flag & GroupFlag.noResponse || !isAssignee
-        if (noCommand && command) return
-        if (noResponse && !atMe) return
-        const originalNext = next
-        next = (fallback?: NextFunction) => noResponse as never || originalNext(fallback)
+        if (group.flag & Group.Flag.ignore) return
+        if (group.assignee !== session.selfId && !atSelf) return
       }
 
       // attach user data
-      const user = await this._attachUser(meta, ['flag'])
+      const userFields = new Set<User.Field>(['flag'])
+      this.emit('before-attach-user', session, userFields)
+      const user = await session.$observeUser(userFields)
 
       // emit attach event
-      this.emitEvent(meta, 'attach', meta)
-      this.emitEvent(meta, 'attach-user', meta)
+      if (await this.serial(session, 'attach-user', session)) return
 
       // ignore some user calls
-      if (user.flag & UserFlag.ignore) return
+      if (user.flag & User.Flag.ignore) return
     }
+
+    await this.parallel(session, 'attach', session)
 
     // execute command
-    if (command && !command.getConfig('disable', meta)) {
-      return command.execute(meta.$argv, next)
-    }
-
-    // show suggestions
-    const target = message.split(/\s/, 1)[0].toLowerCase()
-    if (!target || !capture || command) return next()
-
-    const executableMap = new Map<Command, boolean>()
-    return showSuggestions({
-      target,
-      meta,
-      next,
-      prefix: messages.COMMAND_SUGGESTION_PREFIX,
-      suffix: messages.COMMAND_SUGGESTION_SUFFIX,
-      items: Object.keys(this._commandMap),
-      coefficient: this.options.similarityCoefficient,
-      command: suggestion => this._commandMap[suggestion],
-      disable: (name) => {
-        const command = this._commandMap[name]
-        let disabled = executableMap.get(command)
-        if (disabled === undefined) {
-          disabled = !!command.getConfig('disable', meta)
-          executableMap.set(command, disabled)
-        }
-        return disabled
-      },
-      execute: async (suggestion, meta, next) => {
-        const newMessage = suggestion + message.slice(target.length)
-        const argv = this.parseCommandLine(newMessage, meta)
-        return argv.command.execute(argv, next)
-      },
-    })
+    if (!session.$argv) return next()
+    session.$argv.next = next
+    return session.$argv.command.execute(session.$argv)
   }
 
-  parseCommandLine (message: string, meta: Meta<'message'>): ParsedCommandLine {
-    const name = message.split(/\s/, 1)[0]
-    const command = this._getCommandByRawName(name)
-    if (command?.context.match(meta)) {
-      const result = command.parse(message.slice(name.length).trimStart())
-      return { meta, command, ...result }
-    }
-  }
-
-  private async _attachGroup (meta: Meta<'message'>, fields: Iterable<GroupField> = []) {
-    const groupFields = new Set<GroupField>(fields)
-    this.emitEvent(meta, 'before-group', groupFields, meta.$argv)
-    const group = await this.database.observeGroup(meta.groupId, Array.from(groupFields))
-    Object.defineProperty(meta, '$group', { value: group, writable: true })
-    return group
-  }
-
-  private async _attachUser (meta: Meta<'message'>, fields: Iterable<UserField> = []) {
-    const userFields = new Set<UserField>(fields)
-    this.emitEvent(meta, 'before-user', userFields, meta.$argv)
-    const defaultAuthority = typeof this.options.defaultAuthority === 'function'
-      ? this.options.defaultAuthority(meta)
-      : this.options.defaultAuthority || 0
-    const user = meta.anonymous
-      ? observe(createUser(meta.userId, defaultAuthority))
-      : await this.database.observeUser(meta.userId, defaultAuthority, Array.from(userFields))
-    Object.defineProperty(meta, '$user', { value: user, writable: true })
-    return user
-  }
-
-  async executeCommandLine (message: string, meta: Meta<'message'>, next: NextFunction = noop) {
-    if (!('$ctxType' in meta)) this.server.parseMeta(meta)
-    const argv = this.parseCommandLine(message, meta)
-    if (!argv) return next()
-    Object.defineProperty(meta, '$argv', {
-      writable: true,
-      value: argv,
-    })
-
-    if (this.database) {
-      if (meta.messageType === 'group') {
-        await this._attachGroup(meta)
-      }
-      await this._attachUser(meta)
-    }
-
-    if (argv.command.getConfig('disable', meta)) return next()
-    return argv.command.execute(argv, next)
-  }
-
-  private _applyMiddlewares = async (meta: Meta<'message'>) => {
+  private async _receive(session: Session) {
     // preparation
     const counter = this._middlewareCounter++
     this._middlewareSet.add(counter)
-    const middlewares: Middleware[] = this._middlewares
-      .filter(([context]) => context.match(meta))
+    const middlewares: Middleware[] = this._hooks[Context.MIDDLEWARE_EVENT as any]
+      .filter(([context]) => context.match(session))
       .map(([_, middleware]) => middleware)
 
     // execute middlewares
-    let index = 0
+    let index = 0, midStack = '', lastCall = ''
+    const { prettyErrors } = this.options
     const next = async (fallback?: NextFunction) => {
-      if (!this._middlewareSet.has(counter)) {
-        return this.logger('koishi').warn(new Error(errors.ISOLATED_NEXT))
+      if (prettyErrors) {
+        lastCall = new Error().stack.split('\n', 3)[2]
+        if (index) {
+          const capture = lastCall.match(/\((.+)\)/)
+          midStack = `\n  - ${capture ? capture[1] : lastCall.slice(7)}${midStack}`
+        }
       }
-      if (fallback) middlewares.push((_, next) => fallback(next))
+
       try {
-        return middlewares[index++]?.(meta, next)
+        if (!this._middlewareSet.has(counter)) {
+          throw new Error('isolated next function detected')
+        }
+        if (fallback) middlewares.push((_, next) => fallback(next))
+        return middlewares[index++]?.(session, next)
       } catch (error) {
-        this.receiver.emit('error/middleware', error)
-        this.receiver.emit('error', error)
+        let stack = coerce(error)
+        if (prettyErrors) {
+          const index = stack.indexOf(lastCall)
+          stack = `${stack.slice(0, index)}Middleware stack:${midStack}`
+        }
+        this.logger('middleware').warn(`${session.message}\n${stack}`)
       }
     }
     await next()
 
     // update middleware set
     this._middlewareSet.delete(counter)
-    this.emitEvent(meta, 'after-middleware', meta)
+    this.emit(session, 'after-middleware', session)
 
     // flush user & group data
-    await meta.$user?._update()
-    await meta.$group?._update()
+    await session.$user?._update()
+    await session.$group?._update()
+  }
+
+  private _parse(message: string, { $prefix, $appel, messageType }: Session, builtin: boolean, terminator = '') {
+    // group message should have prefix or appel to be interpreted as a command call
+    if (builtin && messageType !== 'private' && $prefix === null && !$appel) return
+    terminator = escapeRegExp(terminator)
+    const name = message.split(new RegExp(`[\\s${terminator}]`), 1)[0]
+    const index = name.lastIndexOf('/')
+    const command = this.app._commandMap[name.slice(index + 1).toLowerCase()]
+    if (!command) return
+    const result = command.parse(message.slice(name.length).trimStart(), terminator)
+    return { command, ...result }
   }
 }
