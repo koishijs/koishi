@@ -1,4 +1,4 @@
-import { observe, noop } from '../src'
+import { observe, noop } from 'koishi-utils'
 import { fn } from 'jest-mock'
 import { expect } from 'chai'
 import '@shigma/chai-extended'

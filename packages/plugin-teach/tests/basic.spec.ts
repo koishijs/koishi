@@ -1,5 +1,5 @@
 import { App } from 'koishi-test-utils'
-import * as teach from '../src'
+import * as teach from 'koishi-plugin-teach'
 import * as utils from './utils'
 import { expect } from 'chai'
 
@@ -32,6 +32,11 @@ describe('koishi-plugin-teach', () => {
     await session1.shouldHaveReply('# foo bar', '问答已添加，编号为 1。')
     await session1.shouldHaveReply('# foo bar baz', '存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。')
     await session1.shouldHaveReply('foo', 'bar')
+  })
+
+  it('validate', async () => {
+    await session1.shouldHaveReply('# [CQ:image] bar', '问题必须是纯文本。')
+    await session1.shouldHaveReply('# foo[foo bar -x', '问题含有错误的或不支持的正则表达式语法。')
   })
 
   it('modify', async () => {

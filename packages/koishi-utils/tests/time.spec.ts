@@ -1,4 +1,4 @@
-import { Time } from '../src'
+import { Time } from 'koishi-utils'
 import { expect } from 'chai'
 import { set, reset } from 'mockdate'
 import '@shigma/chai-extended'
