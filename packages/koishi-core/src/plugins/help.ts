@@ -50,7 +50,7 @@ export default function apply(app: App) {
   })
 
   // show help when use `-h, --help` or when there is no action
-  app.before('before-command', async ({ command, session, options }) => {
+  app.prependListener('before-command', async ({ command, session, options }) => {
     if (command._action && !options['help']) return
     await session.$execute({
       command: 'help',

@@ -26,7 +26,7 @@ describe('Hook API', () => {
 
     it('max prepended hooks', () => {
       appWarn.mockClear()
-      createArray(64 + extraCalls, () => app.before('attach', noop))
+      createArray(64 + extraCalls, () => app.prependListener('attach', noop))
       expect(app._hooks.attach.length).to.equal(64 + extraCalls)
       expect(appWarn.mock.calls).to.have.length(extraCalls)
       delete app._hooks.attach
@@ -66,7 +66,7 @@ describe('Hook API', () => {
         expect(cb1.mock.calls).to.have.length(2)
         expect(cb2.mock.calls).to.have.length(1)
 
-        ctx.before('dispose', () => app.off('attach', cb1))
+        ctx.prependListener('dispose', () => app.off('attach', cb1))
         ctx.dispose()
 
         ctx.emit('attach', null)

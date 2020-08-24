@@ -179,10 +179,6 @@ export class Context {
     return dispose
   }
 
-  before<K extends keyof EventMap>(name: K, listener: EventMap[K]) {
-    return this.prependListener(name, listener)
-  }
-
   prependListener<K extends keyof EventMap>(name: K, listener: EventMap[K]) {
     this.getHooks(name).unshift([this, listener])
     const dispose = () => this.removeListener(name, listener)

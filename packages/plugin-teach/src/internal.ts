@@ -48,7 +48,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('regexp', '-X  取消使用正则表达式匹配', { authority: 3, value: false })
     .option('redirect', '=> <answer>  重定向到其他问答')
 
-  ctx.before('dialogue/validate', (argv) => {
+  ctx.on('dialogue/validate', (argv) => {
     const { options, args } = argv
     if (args.length) {
       return Message.Teach.TooManyArguments
@@ -145,7 +145,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.before('dialogue/modify', ({ options }, data) => {
+  ctx.on('dialogue/modify', ({ options }, data) => {
     if (options.answer) {
       data.answer = options.answer
     }

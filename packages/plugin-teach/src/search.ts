@@ -42,12 +42,12 @@ export default function apply(ctx: Context) {
     .option('recursive', '-R  禁用递归查询', { fallback: true, value: false })
     .option('pipe', '| <op...>  对每个搜索结果执行操作')
 
-  ctx.before('dialogue/execute', (argv) => {
+  ctx.on('dialogue/execute', (argv) => {
     const { search, noArgs } = argv.options
     if (search) return noArgs ? showInfo(argv) : showSearch(argv)
   })
 
-  ctx.before('dialogue/validate', (argv) => {
+  ctx.on('dialogue/validate', (argv) => {
     if (!argv.options.search) {
       delete argv.options.recursive
     }
