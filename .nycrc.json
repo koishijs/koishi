@@ -1,5 +1,6 @@
 {
   "exclude": [
+    ".*",
     "**/*.d.ts",
     "**/*.config.js",
     "coverage/**",

@@ -9,6 +9,9 @@
     "index.d.ts",
     "dist"
   ],
+  "scripts": {
+    "prepack": "tsc -b"
+  },
   "peerDependencies": {
     "chai": "^4.2.0"
   },

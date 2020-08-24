@@ -10,6 +10,10 @@
   "files": [
     "dist"
   ],
+  "scripts": {
+    "wrap": "ts-node build/wrap",
+    "prepack": "tsc -b & yarn wrap"
+  },
   "license": "LGPL-3.0-or-later",
   "author": "Shigma <1700011071@pku.edu.cn>",
   "repository": {
