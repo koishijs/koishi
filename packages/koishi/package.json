@@ -43,10 +43,10 @@
     "koishi-core": "^2.0.0",
     "koishi-adapter-cqhttp": "^1.0.0",
     "koishi-plugin-common": "^3.0.0-beta.15",
-    "koishi-plugin-mysql": "^2.0.0-beta.9",
-    "koishi-plugin-schedule": "^2.0.0-beta.13",
+    "koishi-plugin-mysql": "^2.0.0",
+    "koishi-plugin-schedule": "^2.0.0",
     "koishi-plugin-status": "^2.0.0-beta.13",
-    "koishi-plugin-teach": "^1.0.0-beta.16",
+    "koishi-plugin-teach": "^1.0.0",
     "koishi-utils": "^3.1.0",
     "prompts": "^2.3.2"
   }
