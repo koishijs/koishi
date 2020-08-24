@@ -1,5 +1,5 @@
 import { extendDatabase } from 'koishi-core'
-import { MemoryDatabase, testDatabase, memory, MockedApp } from '../src'
+import { MemoryDatabase, testDatabase, memory, MockedApp } from 'koishi-test-utils'
 import { expect } from 'chai'
 
 declare module 'koishi-core/dist/database' {

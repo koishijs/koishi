@@ -1,4 +1,4 @@
-import { capitalize, camelCase, paramCase, snakeCase, simplify, traditionalize, escapeRegExp } from '../src'
+import { capitalize, camelCase, paramCase, snakeCase, simplify, traditionalize, escapeRegExp } from 'koishi-utils'
 import { expect } from 'chai'
 
 describe('String Manipulations', () => {

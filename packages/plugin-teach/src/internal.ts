@@ -54,8 +54,6 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       return Message.Teach.TooManyArguments
     }
 
-    if (options.noRegexp) options.regexp = false
-
     const { answer } = options
     const question = options.question || ''
     if (/\[CQ:(?!face)/.test(question)) {

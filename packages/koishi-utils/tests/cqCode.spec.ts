@@ -1,4 +1,4 @@
-import { CQCode } from '../src'
+import { CQCode } from 'koishi-utils'
 import { expect } from 'chai'
 import 'koishi-test-utils'
 

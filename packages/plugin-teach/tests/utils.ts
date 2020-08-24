@@ -1,6 +1,6 @@
 import { extendDatabase, Context } from 'koishi-core'
 import { defineProperty, Observed, clone, intersection } from 'koishi-utils'
-import { Dialogue, DialogueTest } from '../src'
+import { Dialogue, DialogueTest } from 'koishi-plugin-teach'
 import { MemoryDatabase, memory } from 'koishi-test-utils'
 
 declare module 'koishi-core/dist/context' {
