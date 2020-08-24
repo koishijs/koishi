@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "koishi-plugin-*": ["packages/plugin-*/src"],
+      "koishi-adapter-*": ["packages/adapter-*/src"],
+      "koishi-*": ["packages/koishi-*/src"],
+    },
+  },
+}
