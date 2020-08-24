@@ -43,7 +43,7 @@ function tryCallback<T>(callback: () => T) {
 export type PluginConfig = (string | Plugin<Context> | [string | Plugin<Context>, any?])[]
 
 export interface AppConfig extends AppOptions {
-  plugins?: PluginConfig | Record<string, PluginConfig>
+  plugins?: PluginConfig
   logLevel?: number
   logFilter?: Record<string, number>
 }
@@ -115,7 +115,6 @@ app.command('exit', '停止机器人运行', { authority: 4 })
     process.exit(options.restart ? 514 : 0)
   })
 
-// TODO: object format
 if (Array.isArray(config.plugins)) {
   loadPlugins(app, config.plugins)
 }

@@ -1,7 +1,7 @@
 {
   "name": "koishi",
   "description": "A QQ bot framework based on CQHTTP",
-  "version": "2.0.0-rc.1",
+  "version": "2.0.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "engines": {
@@ -12,7 +12,7 @@
   ],
   "bin": "dist/cli.js",
   "author": "Shigma <1700011071@pku.edu.cn>",
-  "license": "LGPL-3.0-or-later",
+  "license": "MIT",
   "scripts": {
     "lint": "eslint src --ext .ts",
     "prepack": "tsc -b"
@@ -40,14 +40,14 @@
   "dependencies": {
     "cac": "^6.6.1",
     "kleur": "^4.1.1",
-    "koishi-core": "^2.0.0-rc.2",
-    "koishi-adapter-cqhttp": "^1.0.0-rc.1",
-    "koishi-plugin-common": "^3.0.0-beta.14",
-    "koishi-plugin-mysql": "^2.0.0-beta.8",
-    "koishi-plugin-schedule": "^2.0.0-beta.12",
-    "koishi-plugin-status": "^2.0.0-beta.12",
-    "koishi-plugin-teach": "^1.0.0-beta.15",
-    "koishi-utils": "^3.0.3",
+    "koishi-core": "^2.0.0",
+    "koishi-adapter-cqhttp": "^1.0.0",
+    "koishi-plugin-common": "^3.0.0-beta.15",
+    "koishi-plugin-mysql": "^2.0.0-beta.9",
+    "koishi-plugin-schedule": "^2.0.0-beta.13",
+    "koishi-plugin-status": "^2.0.0-beta.13",
+    "koishi-plugin-teach": "^1.0.0-beta.16",
+    "koishi-utils": "^3.1.0",
     "prompts": "^2.3.2"
   }
 }

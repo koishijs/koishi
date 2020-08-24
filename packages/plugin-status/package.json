@@ -1,14 +1,14 @@
 {
   "name": "koishi-plugin-status",
   "description": "Show Status of Koishi",
-  "version": "2.0.0-beta.12",
+  "version": "2.0.0-beta.13",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
-  "license": "LGPL-3.0-or-later",
+  "license": "MIT",
   "scripts": {
     "lint": "eslint src --ext .ts",
     "prepack": "tsc -b"
@@ -32,16 +32,16 @@
     "status"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.0.0-rc.2"
+    "koishi-core": "^2.0.0"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",
     "koishi-plugin-mongo": "^1.0.0-beta.5",
-    "koishi-plugin-mysql": "^2.0.0-beta.8",
-    "koishi-test-utils": "^4.0.0-beta.8"
+    "koishi-plugin-mysql": "^2.0.0-beta.9",
+    "koishi-test-utils": "^4.0.0-beta.9"
   },
   "dependencies": {
     "cross-spawn": "^7.0.3",
-    "koishi-utils": "^3.0.3"
+    "koishi-utils": "^3.1.0"
   }
 }

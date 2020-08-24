@@ -1,7 +1,7 @@
 {
   "name": "koishi-utils",
   "description": "Utilities for Koishi",
-  "version": "3.0.3",
+  "version": "3.1.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -9,7 +9,7 @@
     "chinese.txt"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
-  "license": "LGPL-3.0-or-later",
+  "license": "MIT",
   "scripts": {
     "lint": "eslint src --ext .ts",
     "prepack": "tsc -b"
