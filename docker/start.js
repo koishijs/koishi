@@ -4,12 +4,12 @@ const child_process = require('child_process')
 const path = process.cwd() + '/koishi.config.js'
 if (!fs.existsSync(path)) {
   const config = {
-    type: 'http',
+    type: 'cqhttp:http',
     port: 8080,
     server: 'http://localhost:5700',
     plugins: [
-      'common',
-      'schedule',
+      ['common'],
+      ['schedule'],
     ],
   } // default config
   const envNames = ['PORT', 'TYPE', 'SERVER']
