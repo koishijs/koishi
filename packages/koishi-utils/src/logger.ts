@@ -15,6 +15,12 @@ const instances: Record<string, Logger> = {}
 type LogFunction = (format: any, ...param: any[]) => void
 
 export class Logger {
+  static readonly SUCCESS = 1
+  static readonly ERROR = 1
+  static readonly INFO = 2
+  static readonly WARN = 2
+  static readonly DEBUG = 3
+
   static baseLevel = 2
   static showDiff = false
   static levels: Record<string, number> = {}
@@ -54,11 +60,11 @@ export class Logger {
     instances[name] = this
     this.code = colors[Math.abs(hash) % colors.length]
     this.displayName = name ? this.color(name + ' ', ';1') : ''
-    this.createMethod('success', '[S] ', 1)
-    this.createMethod('error', '[E] ', 1)
-    this.createMethod('info', '[I] ', 2)
-    this.createMethod('warn', '[W] ', 2)
-    this.createMethod('debug', '[D] ', 3)
+    this.createMethod('success', '[S] ', Logger.SUCCESS)
+    this.createMethod('error', '[E] ', Logger.ERROR)
+    this.createMethod('info', '[I] ', Logger.INFO)
+    this.createMethod('warn', '[W] ', Logger.WARN)
+    this.createMethod('debug', '[D] ', Logger.DEBUG)
   }
 
   private color(value: any, decoration = '') {

@@ -6,7 +6,7 @@ import { expect } from 'chai'
 
 const app = new App()
 
-Logger.baseLevel = 1
+Logger.baseLevel = Logger.ERROR
 const appLogger = new Logger('app')
 const appWarn = spyOn(appLogger, 'warn')
 const midLogger = new Logger('middleware')
