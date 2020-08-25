@@ -102,16 +102,18 @@ describe('Plugin Teach', () => {
 
     app.plugin(utils)
 
-    before(async () => {
+    async function start() {
       await app.start()
       await app.database.getUser(u2id, 2)
       await app.database.getUser(u3id, 3)
       await app.database.getUser(u4id, 4)
       await app.database.getGroup(g1id, app.selfId)
       await app.database.getGroup(g2id, app.selfId)
-    })
+    }
 
-    return { app, u2, u3, u4, u2g1, u2g2, u3g1, u3g2, u4g1, u4g2 }
+    before(start)
+
+    return { app, u2, u3, u4, u2g1, u2g2, u3g1, u3g2, u4g1, u4g2, start }
   }
 
   const DETAIL_HEAD = '编号为 1 的问答信息：\n问题：foo\n回答：bar\n'
@@ -237,10 +239,45 @@ describe('Plugin Teach', () => {
       await u3g1.shouldHaveReply('#1 ~ %s:%{test}', '问答 1 已成功修改。')
       await u2g1.shouldHaveReply('foo', 'nick2:200')
       await u3g1.shouldHaveReply('#1 -s', '问答 1 已成功修改。')
-      await u3g1.shouldHaveReply('## foo', SEARCH_HEAD + '1. [代行] %s:%{test}')
       await u3g1.shouldHaveReply('#1 -w [CQ:at,qq=300]', '问答 1 已成功修改。')
       await u3g1.shouldHaveReply('#1', DETAIL_HEAD + '来源：user3 (300)\n回答中的指令由教学者代行。')
+      await u3g1.shouldHaveReply('## foo', SEARCH_HEAD + '1. [代行] %s:%{test}')
       await u2g1.shouldHaveReply('foo', 'nick2:300')
+    })
+  })
+
+  describe('restriction', () => {
+    // make coverage happy
+    new App().plugin(teach, { throttle: [] })
+    new App().plugin(teach, { preventLoop: [] })
+    new App().plugin(teach, { preventLoop: 10 })
+
+    it('throttle', async () => {
+      const { u2g1, u3g1, u4g1, u4g2, start } = createEnvironment({ throttle: { interval: 1000, responses: 2 } })
+
+      await start()
+      await u3g1.shouldHaveReply('# baz bar', '问答已添加，编号为 1。')
+      await u3g1.shouldHaveReply('# foo => baz', '问答已添加，编号为 2。')
+      await u2g1.shouldHaveReply('foo', 'bar')
+      await u3g1.shouldHaveReply('foo', 'bar')
+      await u4g1.shouldHaveNoReply('foo')
+      await u4g2.shouldHaveReply('foo', 'bar')
+    })
+
+    it('preventLoop', async () => {
+      const { u2g1, u3g1, u4g1, start } = createEnvironment({ preventLoop: { length: 5, participants: 2 } })
+
+      await start()
+      await u3g1.shouldHaveReply('# baz bar', '问答已添加，编号为 1。')
+      await u3g1.shouldHaveReply('# foo => baz', '问答已添加，编号为 2。')
+      await u2g1.shouldHaveReply('foo', 'bar')
+      await u2g1.shouldHaveReply('foo', 'bar')
+      await u3g1.shouldHaveReply('foo', 'bar')
+      await u3g1.shouldHaveReply('foo', 'bar')
+      await u2g1.shouldHaveReply('foo', 'bar')
+      await u2g1.shouldHaveNoReply('foo')
+      await u3g1.shouldHaveNoReply('foo')
+      await u4g1.shouldHaveReply('foo', 'bar')
     })
   })
 })

@@ -2,6 +2,12 @@ import { Context, User, Session, NextFunction, Command } from 'koishi-core'
 import { CQCode, simplify, noop, escapeRegExp } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './utils'
 
+declare module 'koishi-core/dist/app' {
+  interface App {
+    _dialogueStates: Record<number, SessionState>
+  }
+}
+
 declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/state'(state: SessionState): void
@@ -59,8 +65,6 @@ export interface SessionState {
   isSearch?: boolean
 }
 
-const states: Record<number, SessionState> = {}
-
 export function escapeAnswer(message: string) {
   return message.replace(/%/g, '@@__PLACEHOLDER__@@')
 }
@@ -70,11 +74,11 @@ export function unescapeAnswer(message: string) {
 }
 
 Context.prototype.getSessionState = function (session) {
-  const { groupId, anonymous, userId } = session
-  if (!states[groupId]) {
-    this.emit('dialogue/state', states[groupId] = { groupId } as SessionState)
+  const { groupId, anonymous, userId, $app } = session
+  if (!$app._dialogueStates[groupId]) {
+    this.emit('dialogue/state', $app._dialogueStates[groupId] = { groupId } as SessionState)
   }
-  const state = Object.create(states[groupId])
+  const state = Object.create($app._dialogueStates[groupId])
   state.session = session
   state.userId = anonymous ? -anonymous.id : userId
   return state
@@ -248,6 +252,8 @@ export default function (ctx: Context, config: Dialogue.Config) {
   const { nickname = ctx.app.options.nickname, maxRedirections = 3 } = config
   const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
   const nicknameRE = new RegExp(`^((${nicknames.map(escapeRegExp).join('|')})[,，]?\\s*)+`)
+
+  ctx.app._dialogueStates = {}
 
   config._stripQuestion = (source) => {
     source = prepareSource(source)
