@@ -66,8 +66,6 @@ export namespace Dialogue {
   export type ModifyType = '添加' | '修改' | '删除'
   export type Field = keyof Dialogue
 
-  export const history: Record<number, Dialogue> = []
-
   export interface Config {
     prefix?: string
     historyAge?: number

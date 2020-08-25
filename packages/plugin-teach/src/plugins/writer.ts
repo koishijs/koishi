@@ -19,10 +19,16 @@ declare module '../utils' {
       /** 用于保存用户权限的键值对，键的范围包括目标问答列表的全体作者以及 -w 参数 */
       authMap?: Record<number, number>
     }
+
+    interface Config {
+      useWriter?: boolean
+    }
   }
 }
 
-export default function apply(ctx: Context) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
+  if (config.useWriter === false) return
+
   ctx.command('teach')
     .option('frozen', '-f  锁定这个问答', { authority: 4 })
     .option('frozen', '-F, --no-frozen  解锁这个问答', { authority: 4, value: false })
@@ -93,11 +99,12 @@ export default function apply(ctx: Context) {
   // 当使用 -w 时需要原作者权限高于目标用户
   // 锁定的问答需要 4 级权限才能修改
   ctx.on('dialogue/permit', ({ session, target, options, authMap }, { writer, flag }) => {
-    const { substitute, writer: newWriter } = options, { authority } = session.$user
+    const { substitute, writer: newWriter } = options
+    const { id, authority } = session.$user
     return (
-      (newWriter && authority <= authMap[newWriter]) ||
+      (newWriter && authority <= authMap[newWriter] && newWriter !== id) ||
       ((flag & Dialogue.Flag.frozen) && authority < 4) ||
-      (writer !== session.$user.id && (
+      (writer !== id && (
         (target && authority < 3) || (
           (substitute || (flag & Dialogue.Flag.substitute)) &&
           (authority <= (authMap[writer] || 2))
@@ -108,7 +115,7 @@ export default function apply(ctx: Context) {
 
   ctx.on('dialogue/detail-short', ({ flag }, output) => {
     if (flag & Dialogue.Flag.frozen) output.push('锁定')
-    if (flag & Dialogue.Flag.substitute) output.push('教学者执行')
+    if (flag & Dialogue.Flag.substitute) output.push('代行')
   })
 
   ctx.on('dialogue/before-search', ({ options }, test) => {
@@ -121,10 +128,10 @@ export default function apply(ctx: Context) {
     }
   })
 
-  ctx.on('dialogue/modify', ({ options, session }, data) => {
+  ctx.on('dialogue/modify', ({ options, session, target }, data) => {
     if (options.writer !== undefined) {
       data.writer = options.writer
-    } else if (options.create) {
+    } else if (!target) {
       data.writer = session.userId
     }
   })

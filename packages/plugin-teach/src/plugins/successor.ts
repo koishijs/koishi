@@ -39,6 +39,7 @@ declare module '../utils' {
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
   const { successorTimeout = 20000 } = config
+  if (!successorTimeout) return
 
   ctx.command('teach')
     .option('setPred', '< <ids>  设置前置问题', { type: 'string', validate: RE_DIALOGUES })

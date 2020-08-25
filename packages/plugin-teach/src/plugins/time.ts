@@ -1,4 +1,5 @@
 import { Context } from 'koishi-core'
+import { Dialogue } from '../utils'
 
 declare module '../utils' {
   interface DialogueTest {
@@ -10,6 +11,12 @@ declare module '../utils' {
     startTime: number
     endTime: number
   }
+
+  namespace Dialogue {
+    interface Config {
+      useTime?: boolean
+    }
+  }
 }
 
 export function isHours(value: string) {
@@ -19,7 +26,9 @@ export function isHours(value: string) {
   return !(hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60)
 }
 
-export default function apply(ctx: Context) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
+  if (config.useTime === false) return
+
   ctx.command('teach')
     .option('startTime', '-t <time>  起始时间', { type: 'string', validate: isHours })
     .option('endTime', '-T <time>  结束时间', { type: 'string', validate: isHours })

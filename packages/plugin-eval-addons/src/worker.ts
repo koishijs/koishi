@@ -1,6 +1,6 @@
 import { config, context, internal, WorkerAPI, contextFactory, response } from 'koishi-plugin-eval/dist/worker'
 import { promises, readFileSync } from 'fs'
-import { resolve } from 'path'
+import { resolve, posix, dirname } from 'path'
 import { Logger } from 'koishi-utils'
 import { Config } from '.'
 import ts from 'typescript'
@@ -44,42 +44,87 @@ WorkerAPI.prototype.addon = async function (sid, user, argv) {
   }
 }
 
-const koishi = new SyntheticModule(['registerCommand'], function () {
+// TODO pending @types/node
+interface Module {
+  status: string
+  identifier: string
+  namespace: any
+  link(linker: (specifier: string, referenceModule: Module) => Promise<Module>): Promise<void>
+  evaluate(): Promise<void>
+}
+
+const builtinIdentifier = 'koishi/addons.ts'
+const builtin = new SyntheticModule(['registerCommand'], function () {
   this.setExport('registerCommand', function registerCommand(name: string, callback: AddonAction) {
     commandMap[name] = callback
   })
-}, { context })
+}, { context, identifier: builtinIdentifier })
 
 const root = resolve(process.cwd(), config.moduleRoot)
-const modules: Record<string, any> = { koishi }
+const modules: Record<string, Module> = { [builtinIdentifier]: builtin }
 config.addonNames.unshift(...Object.keys(modules))
 
-function linker(specifier: string, reference: any) {
-  if (specifier in modules) {
-    return modules[specifier]
+const suffixes = ['', '.ts', '/index.ts']
+const relativeRE = /^\.\.?[\\/]/
+
+function locateModule(specifier: string) {
+  for (const suffix of suffixes) {
+    const target = specifier + suffix
+    if (target in modules) return modules[target]
   }
-  throw new Error(`Unable to resolve dependency "${specifier}"`)
+}
+
+async function linker(specifier: string, { identifier }: Module) {
+  // resolve path based on reference module
+  if (relativeRE.test(specifier)) {
+    specifier = `${dirname(identifier)}/${specifier}`
+  }
+  specifier = posix.normalize(specifier)
+
+  // load from cache
+  const module = locateModule(specifier)
+  if (module) return module
+
+  // create new module
+  const [dir] = specifier.split('/', 1)
+  if (config.addonNames.includes(dir)) {
+    return await createModule(specifier)
+  }
+
+  throw new Error(`Unable to resolve dependency "${specifier}" in "${identifier}"`)
 }
 
 const json = JSON.parse(readFileSync(resolve(root, 'tsconfig.json'), 'utf8'))
 const { options: compilerOptions } = ts.parseJsonConfigFileContent(json, ts.sys, root)
 
-async function createModule(path: string) {
-  if (!modules[path]) {
-    const content = await promises.readFile(resolve(root, path, 'index.ts'), 'utf8')
-    const { outputText } = ts.transpileModule(content, {
-      compilerOptions,
-    })
-    modules[path] = new SourceTextModule(outputText, { context, identifier: path })
+async function loadSource(path: string) {
+  for (const postfix of suffixes) {
+    try {
+      const target = path + postfix
+      return [await promises.readFile(resolve(root, target), 'utf8'), target]
+    } catch {}
   }
-  const module = modules[path]
-  await module.link(linker)
-  await module.evaluate()
+  throw new Error(`cannot load source file "${path}"`)
 }
 
-export default Promise.all(config.addonNames.map(path => createModule(path).then(() => {
-  logger.debug('load module %c', path)
-  internal.setGlobal(path, modules[path].namespace)
+async function createModule(path: string) {
+  let module = locateModule(path)
+  if (!module) {
+    const [source, identifier] = await loadSource(path)
+    const { outputText } = ts.transpileModule(source, {
+      compilerOptions,
+    })
+    module = modules[identifier] = new SourceTextModule(outputText, { context, identifier })
+  }
+
+  logger.debug('creating module %c', module.identifier)
+  await module.link(linker)
+  await module.evaluate()
+  return module
+}
+
+export default Promise.all(config.addonNames.map(path => createModule(path).then((module) => {
+  internal.setGlobal(path, module.namespace)
 }, (error) => {
   logger.warn(`cannot load module %c\n` + error.stack, path)
   delete modules[path]
