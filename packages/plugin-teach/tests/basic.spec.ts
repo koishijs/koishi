@@ -185,9 +185,11 @@ describe('Plugin Teach', () => {
   })
 
   describe('writer', () => {
-    const { app, u2, u3g1, u4g2 } = createEnvironment({ useWriter: true })
+    const { app, u2, u2g1, u3g1, u4g2 } = createEnvironment({ useWriter: true })
 
-    it('teach with writer', async () => {
+    app.command('test').action(({ session }) => '' + session.userId)
+
+    it('create writer', async () => {
       // 当自身未设置 name 时使用 session.sender
       u3g1.meta.sender.nickname = 'nick3'
       await u3g1.shouldHaveReply('# foo bar', '问答已添加，编号为 1。')
@@ -202,6 +204,7 @@ describe('Plugin Teach', () => {
     it('modify writer', async () => {
       await u2.shouldHaveReply('#1 -W', '问答 1 因权限过低无法修改。')
       await u4g2.shouldHaveReply('#1 -w foo', '参数 -w, --writer 错误，请检查指令语法。')
+      await u4g2.shouldHaveReply('#1 -w [CQ:at,qq=500]', '指定的目标用户不存在。')
       await u4g2.shouldHaveReply('#1 -w [CQ:at,qq=200]', '问答 1 已成功修改。')
 
       // 实在找不到名字就只显示 QQ 号
@@ -217,6 +220,27 @@ describe('Plugin Teach', () => {
       await u2.shouldHaveReply('#1 -W', '问答 1 已成功修改。')
       await u2.shouldHaveReply('#1', DETAIL_HEAD.slice(0, -1))
       await u2.shouldHaveReply('#1 -p 0', '问答 1 因权限过低无法修改。')
+    })
+
+    it('frozen', async () => {
+      await u3g1.shouldHaveReply('# foo baz -f', '权限不足。')
+      await u4g2.shouldHaveReply('# foo bar -f', '修改了已存在的问答，编号为 1。')
+      await u3g1.shouldHaveReply('# foo bar -p 0', '问答 1 因权限过低无法修改。')
+      await u3g1.shouldHaveReply('#1', DETAIL_HEAD + '此问答已锁定。')
+      await u3g1.shouldHaveReply('## foo', SEARCH_HEAD + '1. [锁定] bar')
+      await u4g2.shouldHaveReply('#1 -F', '问答 1 已成功修改。')
+    })
+
+    it('substitute', async () => {
+      u2g1.meta.sender.nickname = 'nick2'
+      const DETAIL_HEAD = '编号为 1 的问答信息：\n问题：foo\n回答：%s:%{test}\n'
+      await u3g1.shouldHaveReply('#1 ~ %s:%{test}', '问答 1 已成功修改。')
+      await u2g1.shouldHaveReply('foo', 'nick2:200')
+      await u3g1.shouldHaveReply('#1 -s', '问答 1 已成功修改。')
+      await u3g1.shouldHaveReply('## foo', SEARCH_HEAD + '1. [代行] %s:%{test}')
+      await u3g1.shouldHaveReply('#1 -w [CQ:at,qq=300]', '问答 1 已成功修改。')
+      await u3g1.shouldHaveReply('#1', DETAIL_HEAD + '来源：user3 (300)\n回答中的指令由教学者代行。')
+      await u2g1.shouldHaveReply('foo', 'nick2:300')
     })
   })
 })

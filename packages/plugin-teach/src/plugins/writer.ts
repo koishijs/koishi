@@ -99,11 +99,12 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   // 当使用 -w 时需要原作者权限高于目标用户
   // 锁定的问答需要 4 级权限才能修改
   ctx.on('dialogue/permit', ({ session, target, options, authMap }, { writer, flag }) => {
-    const { substitute, writer: newWriter } = options, { authority } = session.$user
+    const { substitute, writer: newWriter } = options
+    const { id, authority } = session.$user
     return (
-      (newWriter && authority <= authMap[newWriter]) ||
+      (newWriter && authority <= authMap[newWriter] && newWriter !== id) ||
       ((flag & Dialogue.Flag.frozen) && authority < 4) ||
-      (writer !== session.$user.id && (
+      (writer !== id && (
         (target && authority < 3) || (
           (substitute || (flag & Dialogue.Flag.substitute)) &&
           (authority <= (authMap[writer] || 2))
@@ -114,7 +115,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/detail-short', ({ flag }, output) => {
     if (flag & Dialogue.Flag.frozen) output.push('锁定')
-    if (flag & Dialogue.Flag.substitute) output.push('教学者执行')
+    if (flag & Dialogue.Flag.substitute) output.push('代行')
   })
 
   ctx.on('dialogue/before-search', ({ options }, test) => {
