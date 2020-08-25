@@ -21,10 +21,10 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('probabilityStrict', '-p <prob>  设置问题的触发权重', { validate: isZeroToOne })
     .option('probabilityAppellative', '-P <prob>  设置被称呼时问题的触发权重', { validate: isZeroToOne })
 
-  ctx.before('dialogue/modify', ({ options, target, appellative }, data) => {
-    if (!target && appellative) {
-      data.probS = options.probabilityStrict ?? 0
-      data.probA = options.probabilityAppellative ?? 1
+  ctx.on('dialogue/modify', ({ options, appellative }, data) => {
+    if (options.create) {
+      data.probS = options.probabilityStrict ?? 1 - +appellative
+      data.probA = options.probabilityAppellative ?? +appellative
     } else {
       if (options.probabilityStrict !== undefined) {
         data.probS = options.probabilityStrict
@@ -39,7 +39,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     state.activated = {}
   })
 
-  ctx.before('dialogue/prepare', ({ test, userId, dialogues, activated }) => {
+  ctx.on('dialogue/prepare', ({ test, userId, dialogues, activated }) => {
     const hasNormal = dialogues.some(d => !(d.flag & Dialogue.Flag.regexp))
     dialogues.forEach((dialogue) => {
       if (hasNormal && (dialogue.flag & Dialogue.Flag.regexp)) {

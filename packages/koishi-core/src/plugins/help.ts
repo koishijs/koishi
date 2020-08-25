@@ -39,7 +39,6 @@ Command.prototype.example = function (example) {
 }
 
 interface HelpConfig {
-  expand: boolean
   showHidden: boolean
   authority: boolean
 }
@@ -51,7 +50,7 @@ export default function apply(app: App) {
   })
 
   // show help when use `-h, --help` or when there is no action
-  app.before('before-command', async ({ command, session, options }) => {
+  app.prependListener('before-command', async ({ command, session, options }) => {
     if (command._action && !options['help']) return
     await session.$execute({
       command: 'help',
@@ -75,18 +74,18 @@ export default function apply(app: App) {
     .groupFields(createCollector('group'))
     .shortcut('帮助', { fuzzy: true })
     .option('authority', '-a  显示权限设置')
-    .option('expand', '-e  展开指令列表')
     .option('showHidden', '-H  查看隐藏的选项和指令')
     .action(async ({ session, options }, target) => {
       if (!target) {
-        const output = getCommandList('当前可用的指令有', session, null, options)
-        output.push(Message.GLOBAL_HELP_EPILOG)
+        const commands = session.$app._commands.filter(cmd => cmd.parent === null)
+        const output = formatCommands('当前可用的指令有', session, commands, options)
+        if (Message.GLOBAL_HELP_EPILOG) output.push(Message.GLOBAL_HELP_EPILOG)
         return output.join('\n')
       }
 
       const command = app._commandMap[target] || app._shortcutMap[target]
       if (!command?.context.match(session)) {
-        const items = getCommands(session).flatMap(cmd => cmd._aliases)
+        const items = getCommands(session, app._commands).flatMap(cmd => cmd._aliases)
         return session.$suggest({
           target,
           items,
@@ -103,34 +102,18 @@ export default function apply(app: App) {
     })
 }
 
-function getShortcuts(command: Command, user: Pick<User, 'authority'>) {
-  return Object.keys(command._shortcuts).filter((key) => {
-    const shortcut = command._shortcuts[key]
-    return !shortcut.hidden && !shortcut.prefix && (!shortcut.authority || !user || shortcut.authority <= user.authority)
-  })
-}
-
-export function getCommands(session: Session<'authority'>, parent: Command = null, showHidden = false) {
+export function getCommands(session: Session<'authority'>, commands: Command[], showHidden = false) {
   const { authority } = session.$user || {}
-  return (parent ? parent.children : session.$app._commands).filter(cmd => {
+  return commands.filter(cmd => {
     return cmd.context.match(session)
       && (authority === undefined || cmd.config.authority <= authority)
       && (showHidden || !cmd.config.hidden)
   }).sort((a, b) => a.name > b.name ? 1 : -1)
 }
 
-function getCommandList(prefix: string, session: Session<ValidationField>, parent: Command, options: HelpConfig) {
-  let commands = getCommands(session, parent, options.showHidden)
-  if (!options.expand) {
-    commands = commands.filter(cmd => cmd.parent === parent)
-  } else {
-    const startPosition = parent ? parent.name.length + 1 : 0
-    commands = commands.filter(cmd => {
-      return !cmd.name.includes('.', startPosition)
-        && (!cmd.children.length
-          || cmd.children.find(cmd => cmd.name.includes('.', startPosition)))
-    })
-  }
+function formatCommands(prefix: string, session: Session<ValidationField>, source: Command[], options: HelpConfig) {
+  const commands = getCommands(session, source, options.showHidden)
+  if (!commands.length) return []
   let hasSubcommand = false
   const output = commands.map(({ name, config, children }) => {
     let output = '    ' + name
@@ -145,7 +128,6 @@ function getCommandList(prefix: string, session: Session<ValidationField>, paren
   } else {
     output.unshift(`${prefix}：`)
   }
-  if (options.expand) output.push('注：部分指令组已展开，故不再显示。')
   return output
 }
 
@@ -186,11 +168,6 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
     output.push(`别名：${Array.from(command._aliases.slice(1)).join('，')}。`)
   }
 
-  const shortcuts = getShortcuts(command, session.$user)
-  if (shortcuts.length) {
-    output.push(`相关全局指令：${shortcuts.join('，')}。`)
-  }
-
   const maxUsage = command.getConfig('maxUsage', session)
   if (!disabled && session.$user) {
     const name = getUsageName(command)
@@ -223,9 +200,7 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
     output.push('使用示例：', ...command._examples.map(example => '    ' + example))
   }
 
-  if (command.children.length) {
-    output.push(...getCommandList('可用的子指令有', session, command, config))
-  }
+  output.push(...formatCommands('可用的子指令有', session, command.children, config))
 
   return output.join('\n')
 }

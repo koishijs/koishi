@@ -4,7 +4,7 @@ import { Schedule } from './database'
 
 export * from './database'
 
-const logger = Logger.create('schedule')
+const logger = new Logger('schedule')
 
 function inspectSchedule({ id, session, interval, command, time }: Schedule) {
   const now = Date.now()

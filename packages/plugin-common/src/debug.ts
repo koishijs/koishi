@@ -26,7 +26,7 @@ const cqTypes = {
 
 export function apply(ctx: Context, config: DebugOptions = {}) {
   const { refreshUserName = Time.hour, refreshGroupName = Time.hour, showUserId, showGroupId } = config
-  const logger = Logger.create('message', true)
+  const logger = new Logger('message', true)
   Logger.levels.message = 3
 
   const groupMap: Record<number, [Promise<string>, number]> = {}

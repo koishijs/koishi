@@ -107,7 +107,8 @@ type DatabaseExtensionMethods<I> = {
   [K in keyof Database]?: Database[K] extends (...args: infer R) => infer S ? (this: I & Database, ...args: R) => S : never
 }
 
-type DatabaseExtension<T> = ((Database: T) => void)
+type DatabaseExtension<T> =
+  | ((Database: T) => void)
   | DatabaseExtensionMethods<T extends new (...args: any[]) => infer I ? I : never>
 
 export function extendDatabase<T extends {}>(module: string | T, extension: DatabaseExtension<T>) {

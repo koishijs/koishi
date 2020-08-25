@@ -64,7 +64,7 @@ export interface Meta<P extends PostType = PostType> {
   interval?: number
 }
 
-const logger = Logger.create('session')
+const logger = new Logger('session')
 
 export interface Session<U, G, P extends PostType = PostType> extends Meta<P> {}
 
@@ -76,6 +76,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   $appel?: boolean
   $prefix?: string = null
   $parsed?: string
+  $reply?: number
 
   private _delay?: number
   private _queued = Promise.resolve()
@@ -98,7 +99,6 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
 
   get $username(): string {
     const idString = '' + this.userId
-    // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
     return this.$user && this.$user['name'] && idString !== this.$user['name']
       ? this.$user['name']
       : this.anonymous
@@ -111,9 +111,9 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   async $send(message: string) {
     if (!message) return
     if (this.groupId) {
-      await this.$bot.sendGroupMessage(this.groupId, message)
+      await this.$bot.sendGroupMsg(this.groupId, message)
     } else {
-      await this.$bot.sendPrivateMessage(this.userId, message)
+      await this.$bot.sendPrivateMsg(this.userId, message)
     }
   }
 

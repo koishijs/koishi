@@ -92,31 +92,24 @@ export class TestSession {
       if (message) this.replies.push(message)
     }
     await this.app.receiveMessage(new Session(this.app, { ...this.meta, message, $send }))
+    const last = this.replies[this.replies.length - 1]
+    this.replies = []
+    return last
   }
 
-  async shouldHaveReply(message: string, reply?: string) {
-    await this.send(message)
-    const lastReply = this.replies[this.replies.length - 1]
-    this.replies = []
+  shouldHaveReply(message: string, reply?: string) {
+    const assertion = expect(this.send(message)).eventually
     if (reply) {
-      return expect(lastReply).to.equal(reply)
+      return assertion.equal(reply)
     } else {
-      return expect(lastReply).to.be.ok
+      return assertion.ok
     }
   }
 
   async shouldHaveNoReply(message: string) {
-    await this.send(message)
-    try {
-      return expect(this.replies).to.have.length(0)
-    } catch {
+    if (await this.send(message) !== undefined) {
       throw new AssertionError(`expected "${message}" to have no reply but got "${this.replies}"`)
     }
-  }
-
-  shouldMatchSnapshot(message: string) {
-    // TODO
-    // return expect(this.send(message)).resolves.toMatchSnapshot(message)
   }
 }
 

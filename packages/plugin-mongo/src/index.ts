@@ -110,13 +110,13 @@ extendDatabase(MongoDatabase, {
     if ($set.timers) {
       for (const key in $set.timers) {
         if (key === '$date') $set['timers._date'] = $set.timers.$date
-        else $set[`timers.${key.replace(/./gmi, '_')}`] = $set.timers[key]
+        else $set[`timers.${key.replace(/\./gmi, '_')}`] = $set.timers[key]
       }
     }
     if ($set.usage) {
       for (const key in $set.usage) {
         if (key === '$date') $set['usage._date'] = $set.usage.$date
-        else $set[`usage.${key.replace(/./gmi, '_')}`] = $set.usage[key]
+        else $set[`usage.${key.replace(/\./gmi, '_')}`] = $set.usage[key]
       }
     }
     delete $set.timers

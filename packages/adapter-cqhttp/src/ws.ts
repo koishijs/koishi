@@ -13,7 +13,7 @@ declare module 'koishi-core/dist/app' {
 
 App.defaultConfig.retryInterval = 5 * Time.second
 
-const logger = Logger.create('server')
+const logger = new Logger('server')
 
 export default class WsClient extends Server {
   private _retryCount = 0

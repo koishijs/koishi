@@ -2,7 +2,7 @@ import { format } from 'util'
 import { Time } from 'koishi-utils'
 import { Session } from '../session'
 import { User } from '../database'
-import { Command, ParsedArgv } from '../command'
+import { Command, CommandArgument, ParsedArgv } from '../command'
 import { App } from '../app'
 import { Message } from './message'
 
@@ -103,11 +103,11 @@ export default function apply(app: App) {
 
     // check argument count
     if (command.config.checkArgCount) {
-      const nextArg = command._arguments[args.length]
-      if (nextArg?.required) {
+      const nextArg = command._arguments[args.length] || {} as CommandArgument
+      if (nextArg.required) {
         return sendHint(Message.INSUFFICIENT_ARGUMENTS)
       }
-      const finalArg = command._arguments[command._arguments.length - 1]
+      const finalArg = command._arguments[command._arguments.length - 1] || {} as CommandArgument
       if (args.length > command._arguments.length && !finalArg.greedy && !finalArg.variadic) {
         return sendHint(Message.REDUNANT_ARGUMENTS)
       }
@@ -180,15 +180,13 @@ export function checkUsage(name: string, user: Pick<User, 'usage'>, maxUsage?: n
   }
 }
 
-const UPDATE_INTERVAL = 86400000
-
 export function checkTimer(name: string, { timers }: Pick<User, 'timers'>, offset?: number) {
   const now = Date.now()
   if (!(now <= timers.$date)) {
     for (const key in timers) {
       if (now > timers[key]) delete timers[key]
     }
-    timers.$date = now + UPDATE_INTERVAL
+    timers.$date = now + Time.day
   }
   if (now <= timers[name]) return true
   if (offset !== undefined) {

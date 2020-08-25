@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-mongo",
   "description": "MongoDB support for Koishi",
-  "version": "1.0.0-beta.4",
+  "version": "1.0.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -12,7 +12,7 @@
     "Shigma <1700011071@pku.edu.cn>",
     "undefined <masnn0@outlook.com>"
   ],
-  "license": "LGPL-3.0-or-later",
+  "license": "MIT",
   "scripts": {
     "lint": "eslint src --ext .ts --fix",
     "prepack": "tsc -b"
@@ -39,7 +39,7 @@
     "@types/mongodb": "^3.5.26"
   },
   "peerDependencies": {
-    "koishi-core": "^2.0.0-rc.1"
+    "koishi-core": "^2.0.0"
   },
   "dependencies": {
     "mongodb": "^3.6.0"

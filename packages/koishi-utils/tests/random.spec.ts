@@ -1,4 +1,4 @@
-import { Random, isInteger } from '../src'
+import { Random, isInteger } from 'koishi-utils'
 import { expect } from 'chai'
 
 describe('Random Manipulations', () => {

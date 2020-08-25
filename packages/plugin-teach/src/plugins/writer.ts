@@ -34,10 +34,6 @@ export default function apply(ctx: Context) {
   ctx.emit('dialogue/flag', 'frozen')
   ctx.emit('dialogue/flag', 'substitute')
 
-  ctx.on('dialogue/mysql', (test, conditionals) => {
-    if (test.writer !== undefined) conditionals.push(`\`writer\` = ${test.writer}`)
-  })
-
   ctx.on('dialogue/validate', ({ options }) => {
     if (options.writer) {
       const writer = getTargetId(options.writer)
@@ -125,10 +121,10 @@ export default function apply(ctx: Context) {
     }
   })
 
-  ctx.on('dialogue/modify', ({ options, target, session }, data) => {
+  ctx.on('dialogue/modify', ({ options, session }, data) => {
     if (options.writer !== undefined) {
       data.writer = options.writer
-    } else if (!target) {
+    } else if (options.create) {
       data.writer = session.userId
     }
   })

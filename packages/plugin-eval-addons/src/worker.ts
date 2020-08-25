@@ -1,20 +1,27 @@
-import { config, context, internal, WorkerAPI, contextFactory } from 'koishi-plugin-eval/dist/worker'
+import { config, context, internal, WorkerAPI, contextFactory, response } from 'koishi-plugin-eval/dist/worker'
 import { promises, readFileSync } from 'fs'
 import { resolve } from 'path'
 import { Logger } from 'koishi-utils'
+import { Config } from '.'
 import ts from 'typescript'
 
-const logger = Logger.create('addon')
+const logger = new Logger('addon')
 
 const { SourceTextModule, SyntheticModule } = require('vm')
 
 declare module 'koishi-plugin-eval/dist/worker' {
+  interface WorkerConfig extends Config {}
+
   interface WorkerData {
     addonNames: string[]
   }
 
   interface WorkerAPI {
     addon(sid: string, user: {}, argv: WorkerArgv): string | void | Promise<string | void>
+  }
+
+  interface Response {
+    commands: string[]
   }
 }
 
@@ -76,4 +83,6 @@ export default Promise.all(config.addonNames.map(path => createModule(path).then
 }, (error) => {
   logger.warn(`cannot load module %c\n` + error.stack, path)
   delete modules[path]
-})))
+}))).then(() => {
+  response.commands = Object.keys(commandMap)
+})

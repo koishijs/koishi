@@ -1,7 +1,7 @@
 import { App, Context, User, Session } from 'koishi-core'
 import { CQCode, Logger, defineProperty, omit, Random } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
-import { WorkerAPI, WorkerConfig, WorkerData } from './worker'
+import { WorkerAPI, WorkerConfig, WorkerData, Response } from './worker'
 import { wrap, expose, Remote } from './transfer'
 import { resolve } from 'path'
 
@@ -16,7 +16,8 @@ declare module 'koishi-core/dist/app' {
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'worker/start' (): void
+    'worker/start' (): void | Promise<void>
+    'worker/ready' (response: Response): void
     'worker/exit' (): void
   }
 }
@@ -33,7 +34,7 @@ interface MainConfig {
   prefix?: string
   timeout?: number
   maxLogs?: number
-  blacklist?: string[]
+  prohibitedCommands?: string[]
   resourceLimits?: ResourceLimits
 }
 
@@ -46,10 +47,10 @@ const defaultConfig: Config = {
   timeout: 1000,
   setupFiles: {},
   maxLogs: Infinity,
-  blacklist: ['evaluate', 'echo', 'broadcast', 'teach', 'contextify'],
+  prohibitedCommands: ['evaluate', 'echo', 'broadcast', 'teach', 'contextify'],
 }
 
-const logger = Logger.create('eval')
+const logger = new Logger('eval')
 
 export class MainAPI {
   constructor(public app: App) {}
@@ -89,10 +90,12 @@ export function apply(ctx: Context, config: Config = {}) {
   let restart = true
   const api = new MainAPI(app)
   async function createWorker() {
+    await app.parallel('worker/start')
+
     const worker = app.evalWorker = new Worker(resolve(__dirname, 'worker.js'), {
       workerData: {
         logLevels: Logger.levels,
-        ...omit(config, ['maxLogs', 'resourceLimits', 'timeout', 'blacklist']),
+        ...omit(config, ['maxLogs', 'resourceLimits', 'timeout', 'prohibitedCommands']),
       },
       resourceLimits: config.resourceLimits,
     })
@@ -100,8 +103,8 @@ export function apply(ctx: Context, config: Config = {}) {
     expose(worker, api)
 
     app.evalRemote = wrap(worker)
-    app.evalRemote.start().then(() => {
-      app.emit('worker/start')
+    await app.evalRemote.start().then((response) => {
+      app.emit('worker/ready', response)
       logger.info('worker started')
 
       worker.on('exit', (code) => {
@@ -129,9 +132,8 @@ export function apply(ctx: Context, config: Config = {}) {
     return createWorker()
   })
 
-  const blacklist = [...defaultConfig.blacklist, ...config.blacklist]
   ctx.on('before-command', ({ command, session }) => {
-    if (blacklist.includes(command.name) && session._isEval) {
+    if (config.prohibitedCommands.includes(command.name) && session._isEval) {
       return `不能在 evaluate 指令中调用 ${command.name} 指令。`
     }
   })

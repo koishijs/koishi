@@ -7,7 +7,7 @@ import { Script, createContext, ScriptOptions } from 'vm'
 import { INSPECT_MAX_BYTES } from 'buffer'
 import { inspect } from 'util'
 import { Logger } from 'koishi-utils'
-import type * as Internal from './internal'
+import * as Internal from './internal'
 
 export interface VMOptions {
   strings?: boolean
@@ -26,7 +26,7 @@ export class VM {
 
     const filename = resolve(__dirname, 'internal.js')
     const data = readFileSync(filename, 'utf8')
-    const script = new Script(`(function(host, exports) {${data}\n})`, {
+    const script = new Script(data, {
       filename,
     })
 
@@ -55,7 +55,7 @@ export class VMError extends Error {
   }
 }
 
-const { debug } = Logger.create('eval')
+const { debug } = new Logger('eval')
 
 export const Host = {
   String,

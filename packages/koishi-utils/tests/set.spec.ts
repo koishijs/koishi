@@ -1,4 +1,4 @@
-import { union, intersection, difference, contain, deduplicate } from '../src'
+import { union, intersection, difference, contain, deduplicate } from 'koishi-utils'
 import { expect } from 'chai'
 
 describe('Set Manipulations', () => {

@@ -1,4 +1,4 @@
-import { utils } from '../src'
+import { utils } from 'koishi-test-utils'
 import * as _utils from 'koishi-utils'
 import { expect } from 'chai'
 

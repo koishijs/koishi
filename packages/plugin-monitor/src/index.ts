@@ -7,7 +7,7 @@ export * from './database'
 export * from './monitor'
 
 const monitors: Record<number | string, Monitor> = {}
-const logger = Logger.create('monitor')
+const logger = new Logger('monitor')
 
 export const name = 'monitor'
 

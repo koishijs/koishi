@@ -50,7 +50,7 @@ before(async () => {
 after(() => app.stop())
 
 describe('Runtime', () => {
-  describe('command prefix', () => {
+  describe('Command Prefix', () => {
     it('single prefix', async () => {
       app.options.prefix = '!'
       app.prepare()
@@ -100,7 +100,7 @@ describe('Runtime', () => {
     })
   })
 
-  describe('nickname prefix', () => {
+  describe('Nickname Prefix', () => {
     before(() => {
       app.options.prefix = '-'
       app.prepare()
@@ -116,7 +116,7 @@ describe('Runtime', () => {
       await session4.shouldHaveNoReply('cmd2')
       await session1.shouldHaveReply('-cmd2', 'cmd2:123')
       await session4.shouldHaveReply('-cmd2', 'cmd2:123')
-      await session4.shouldHaveReply(`[CQ:at,qq=${app.selfId}] cmd2`, 'cmd2:123')
+      await session4.shouldHaveReply(`[CQ:reply,id=123][CQ:at,qq=${app.selfId}] cmd2`, 'cmd2:123')
     })
 
     it('single nickname', async () => {
@@ -148,7 +148,7 @@ describe('Runtime', () => {
     })
   })
 
-  describe('shortcuts', () => {
+  describe('Shortcuts', () => {
     before(() => {
       app.options.prefix = '#'
       app.prepare()
@@ -183,7 +183,7 @@ describe('Runtime', () => {
     })
   })
 
-  describe('middleware validation', () => {
+  describe('Middleware Validation', () => {
     app.middleware((session) => {
       if (session.message === 'mid') return session.$send('mid')
     })
@@ -210,7 +210,7 @@ describe('Runtime', () => {
     })
   })
 
-  describe('command validation', () => {
+  describe('Command Validation', () => {
     it('check authority', async () => {
       app.command('cmd1', { showWarning: true })
       await session2.shouldHaveReply('cmd1', '权限不足。')

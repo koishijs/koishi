@@ -6,7 +6,7 @@ import { getShareText } from './utils'
 import { Config } from '.'
 
 const baseURL = 'https://ascii2d.net'
-const logger = Logger.create('search')
+const logger = new Logger('search')
 
 export default async function (url: string, session: Session, config: Config) {
   try {

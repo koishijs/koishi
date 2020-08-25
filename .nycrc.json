@@ -1,0 +1,14 @@
+{
+  "exclude": [
+    ".*",
+    "**/*.d.ts",
+    "**/*.config.js",
+    "coverage/**",
+    "packages/*/tests/**",
+    "packages/chai-extended/**",
+    "packages/plugin-*/**/database/**",
+    "packages/plugin-*/**/database.js",
+    "packages/plugin-mongo/**",
+    "packages/plugin-mysql/**"
+  ]
+}

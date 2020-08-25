@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-rss",
   "description": "Subscribe RSS Url for Koishi",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -12,7 +12,7 @@
     "Shigma <1700011071@pku.edu.cn>",
     "undefined <masnn0@outlook.com>"
   ],
-  "license": "LGPL-3.0-or-later",
+  "license": "MIT",
   "scripts": {
     "lint": "eslint src --ext .ts",
     "prepack": "tsc -b"
@@ -36,13 +36,13 @@
     "rss"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.0.0-rc.1"
+    "koishi-core": "^2.0.0"
   },
   "devDependencies": {
-    "koishi-test-utils": "^4.0.0-beta.7"
+    "koishi-test-utils": "^4.0.0-beta.9"
   },
   "dependencies": {
     "rss-feed-emitter": "^3.2.2",
-    "koishi-utils": "^3.0.2"
+    "koishi-utils": "^3.1.0"
   }
 }
