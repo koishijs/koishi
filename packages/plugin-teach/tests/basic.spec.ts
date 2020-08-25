@@ -2,6 +2,7 @@ import { App } from 'koishi-test-utils'
 import * as teach from 'koishi-plugin-teach'
 import * as utils from './utils'
 import { expect } from 'chai'
+import { fn } from 'jest-mock'
 
 describe('Plugin Teach', () => {
   describe('basic support', () => {
@@ -77,10 +78,18 @@ describe('Plugin Teach', () => {
   })
 
   function createEnvironment(config: teach.Config) {
-    const app = new App()
-    const user = app.createSession('user', 123)
-    const group1 = app.createSession('group', 123, 456)
-    const group2 = app.createSession('group', 123, 789)
+    const app = new App({ userCacheAge: Number.EPSILON })
+    const u2id = 200, u3id = 300, u4id = 400
+    const g1id = 100, g2id = 200
+    const u2 = app.createSession('user', u2id)
+    const u3 = app.createSession('user', u3id)
+    const u4 = app.createSession('user', u4id)
+    const u2g1 = app.createSession('group', u2id, g1id)
+    const u2g2 = app.createSession('group', u2id, g2id)
+    const u3g1 = app.createSession('group', u3id, g1id)
+    const u3g2 = app.createSession('group', u3id, g2id)
+    const u4g1 = app.createSession('group', u4id, g1id)
+    const u4g2 = app.createSession('group', u4id, g2id)
 
     app.plugin(teach, {
       historyAge: 0,
@@ -95,80 +104,119 @@ describe('Plugin Teach', () => {
 
     before(async () => {
       await app.start()
-      await app.database.getUser(123, 3)
-      await app.database.getGroup(456, app.selfId)
-      await app.database.getGroup(789, app.selfId)
+      await app.database.getUser(u2id, 2)
+      await app.database.getUser(u3id, 3)
+      await app.database.getUser(u4id, 4)
+      await app.database.getGroup(g1id, app.selfId)
+      await app.database.getGroup(g2id, app.selfId)
     })
 
-    return { app, user, group1, group2 }
+    return { app, u2, u3, u4, u2g1, u2g2, u3g1, u3g2, u4g1, u4g2 }
   }
 
+  const DETAIL_HEAD = '编号为 1 的问答信息：\n问题：foo\n回答：bar\n'
+  const SEARCH_HEAD = '问题“foo”的回答如下：\n'
+
   describe('context', () => {
-    const { user, group1, group2 } = createEnvironment({ useContext: true })
-    const DETAIL_HEAD = '编号为 1 的问答信息：\n问题：foo\n回答：bar\n'
-    const SEARCH_HEAD = '问题“foo”的回答如下：\n'
+    const { u3, u3g1, u3g2 } = createEnvironment({ useContext: true })
 
     it('validate options 1', async () => {
-      await user.shouldHaveReply('# foo bar', '非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --groups 选项。')
-      await user.shouldHaveReply('# foo bar -g 456', '选项 -g, --groups 必须与 -d/-D/-e/-E 之一同时使用。')
-      await user.shouldHaveReply('# foo bar -eg 456', '问答已添加，编号为 1。')
-      await group1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：本群')
-      await group1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [e] bar')
+      await u3.shouldHaveReply('# foo bar', '非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --groups 选项。')
+      await u3.shouldHaveReply('# foo bar -g 100', '选项 -g, --groups 必须与 -d/-D/-e/-E 之一同时使用。')
+      await u3.shouldHaveReply('# foo bar -eg 100', '问答已添加，编号为 1。')
+      await u3g1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：本群')
+      await u3g1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [e] bar')
     })
 
     it('validate options 2', async () => {
-      await group1.shouldHaveReply('#1 -de', '选项 -d, -e 不能同时使用。')
-      await group1.shouldHaveReply('#1 -DE', '选项 -D, -E 不能同时使用。')
-      await group1.shouldHaveReply('#1 -Dd', '选项 -D, -d 不能同时使用。')
-      await group1.shouldHaveReply('#1 -Ee', '选项 -E, -e 不能同时使用。')
+      await u3g1.shouldHaveReply('#1 -de', '选项 -d, -e 不能同时使用。')
+      await u3g1.shouldHaveReply('#1 -DE', '选项 -D, -E 不能同时使用。')
+      await u3g1.shouldHaveReply('#1 -Dd', '选项 -D, -d 不能同时使用。')
+      await u3g1.shouldHaveReply('#1 -Ee', '选项 -E, -e 不能同时使用。')
     })
 
     it('limited group enabled (with current group)', async () => {
-      await group2.shouldHaveReply('# foo bar', '修改了已存在的问答，编号为 1。')
-      await group1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：本群等 2 个群')
-      await group1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [e] bar')
+      await u3g2.shouldHaveReply('# foo bar', '修改了已存在的问答，编号为 1。')
+      await u3g1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：本群等 2 个群')
+      await u3g1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [e] bar')
     })
 
     it('limited group enabled (without current group)', async () => {
-      await group1.shouldHaveReply('#1 -d', '问答 1 已成功修改。')
-      await group1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：1 个群')
-      await group1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [D] bar')
+      await u3g1.shouldHaveReply('#1 -d', '问答 1 已成功修改。')
+      await u3g1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：1 个群')
+      await u3g1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [D] bar')
     })
 
     it('limited group enabled (with no groups)', async () => {
-      await group1.shouldHaveReply('#1 -D', '问答 1 已成功修改。')
-      await group1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：全局禁止')
-      await group1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [D] bar')
+      await u3g1.shouldHaveReply('#1 -D', '问答 1 已成功修改。')
+      await u3g1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：全局禁止')
+      await u3g1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [D] bar')
     })
 
     it('unlimited group enabled (with all groups)', async () => {
-      await group1.shouldHaveReply('#1 -E', '问答 1 已成功修改。')
-      await group1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：全局')
-      await group1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [E] bar')
+      await u3g1.shouldHaveReply('#1 -E', '问答 1 已成功修改。')
+      await u3g1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：全局')
+      await u3g1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [E] bar')
     })
 
     it('unlimited group enabled (with current group)', async () => {
-      await group1.shouldHaveReply('#1 -dg 789', '问答 1 已成功修改。')
-      await group1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：除 1 个群外的所有群')
-      await group1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [E] bar')
+      await u3g1.shouldHaveReply('#1 -dg 200', '问答 1 已成功修改。')
+      await u3g1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：除 1 个群外的所有群')
+      await u3g1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [E] bar')
     })
 
     it('unlimited group enabled (without current group)', async () => {
-      await group1.shouldHaveReply('#1 -d', '问答 1 已成功修改。')
-      await group1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：除本群等 2 个群外的所有群')
-      await group1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [d] bar')
+      await u3g1.shouldHaveReply('#1 -d', '问答 1 已成功修改。')
+      await u3g1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：除本群等 2 个群外的所有群')
+      await u3g1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [d] bar')
     })
 
     it('limited group enabled (with current group only)', async () => {
-      await group1.shouldHaveReply('#1 -De', '问答 1 已成功修改。')
-      await group1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：本群')
-      await group1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [e] bar')
+      await u3g1.shouldHaveReply('#1 -De', '问答 1 已成功修改。')
+      await u3g1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：本群')
+      await u3g1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [e] bar')
     })
 
     it('unlimited group enabled (without current group only)', async () => {
-      await group1.shouldHaveReply('#1 -Ed', '问答 1 已成功修改。')
-      await group1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：除本群')
-      await group1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [d] bar')
+      await u3g1.shouldHaveReply('#1 -Ed', '问答 1 已成功修改。')
+      await u3g1.shouldHaveReply('#1', DETAIL_HEAD + '生效环境：除本群')
+      await u3g1.shouldHaveReply('## foo -G', SEARCH_HEAD + '1. [d] bar')
+    })
+  })
+
+  describe('writer', () => {
+    const { app, u2, u3g1, u4g2 } = createEnvironment({ useWriter: true })
+
+    it('teach with writer', async () => {
+      // 当自身未设置 name 时使用 session.sender
+      u3g1.meta.sender.nickname = 'nick3'
+      await u3g1.shouldHaveReply('# foo bar', '问答已添加，编号为 1。')
+      await u3g1.shouldHaveReply('#1', DETAIL_HEAD + '来源：nick3 (300)')
+
+      // 重复添加问答时不应该覆盖旧的作者
+      await app.database.setUser(300, { name: 'user3' })
+      await u4g2.shouldHaveReply('# foo bar', '问答已存在，编号为 1，如要修改请尝试使用 #1 指令。')
+      await u4g2.shouldHaveReply('#1', DETAIL_HEAD + '来源：user3 (300)')
+    })
+
+    it('modify writer', async () => {
+      await u2.shouldHaveReply('#1 -W', '问答 1 因权限过低无法修改。')
+      await u4g2.shouldHaveReply('#1 -w foo', '参数 -w, --writer 错误，请检查指令语法。')
+      await u4g2.shouldHaveReply('#1 -w [CQ:at,qq=200]', '问答 1 已成功修改。')
+
+      // 实在找不到名字就只显示 QQ 号
+      await u4g2.shouldHaveReply('#1', DETAIL_HEAD + '来源：200')
+      const getMemberMap = app.bots[0].getMemberMap = fn()
+      getMemberMap.mockReturnValue(Promise.resolve({ 200: 'mock2' }))
+      await u4g2.shouldHaveReply('#1', DETAIL_HEAD + '来源：mock2 (200)')
+    })
+
+    it('anonymous', async () => {
+      u2.meta.sender.nickname = 'nick2'
+      await u2.shouldHaveReply('#1', DETAIL_HEAD + '来源：nick2 (200)')
+      await u2.shouldHaveReply('#1 -W', '问答 1 已成功修改。')
+      await u2.shouldHaveReply('#1', DETAIL_HEAD.slice(0, -1))
+      await u2.shouldHaveReply('#1 -p 0', '问答 1 因权限过低无法修改。')
     })
   })
 })

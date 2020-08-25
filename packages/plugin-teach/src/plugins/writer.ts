@@ -127,10 +127,10 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.on('dialogue/modify', ({ options, session }, data) => {
+  ctx.on('dialogue/modify', ({ options, session, target }, data) => {
     if (options.writer !== undefined) {
       data.writer = options.writer
-    } else if (options.create) {
+    } else if (!target) {
       data.writer = session.userId
     }
   })
