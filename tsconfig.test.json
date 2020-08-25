@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "paths": {
       "koishi-plugin-*": ["packages/plugin-*/src"],
       "koishi-adapter-*": ["packages/adapter-*/src"],
