@@ -19,10 +19,16 @@ declare module '../utils' {
       /** 用于保存用户权限的键值对，键的范围包括目标问答列表的全体作者以及 -w 参数 */
       authMap?: Record<number, number>
     }
+
+    interface Config {
+      useWriter?: boolean
+    }
   }
 }
 
-export default function apply(ctx: Context) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
+  if (config.useWriter === false) return
+
   ctx.command('teach')
     .option('frozen', '-f  锁定这个问答', { authority: 4 })
     .option('frozen', '-F, --no-frozen  解锁这个问答', { authority: 4, value: false })
