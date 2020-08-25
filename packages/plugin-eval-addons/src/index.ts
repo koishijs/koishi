@@ -3,7 +3,7 @@ import { resolve } from 'path'
 import {} from 'koishi-plugin-eval'
 import { assertProperty, Logger, noop } from 'koishi-utils'
 import { safeLoad } from 'js-yaml'
-import { promises } from 'fs'
+import { promises as fs } from 'fs'
 import Git, { CheckRepoActions } from 'simple-git'
 
 const logger = new Logger('addon')
@@ -62,21 +62,29 @@ export function apply(ctx: Context, config: Config) {
     if (!isRepo) throw new Error(`moduleRoot "${moduleRoot}" is not git repository`)
   })
 
+  let manifests: Record<string, Promise<Manifest>>
   const { exclude = /^(\..+|node_modules)$/ } = evalConfig
+
   ctx.on('worker/start', async () => {
-    const dirents = await promises.readdir(root, { withFileTypes: true })
-    evalConfig.addonNames = dirents
+    const dirents = await fs.readdir(root, { withFileTypes: true })
+    const paths = evalConfig.addonNames = dirents
       .filter(dir => dir.isDirectory() && !exclude.test(dir.name))
       .map(dir => dir.name)
     // cmd.dispose() may affect addon.children, so here we make a slice
     addon.children.slice().forEach(cmd => cmd.dispose())
+    manifests = Object.fromEntries(paths.map(path => [path, loadManifest(path).catch<null>(noop)]))
   })
+
+  async function loadManifest(path: string) {
+    const content = await fs.readFile(resolve(root, path, 'manifest.yml'), 'utf8')
+    return safeLoad(content) as Manifest
+  }
 
   ctx.on('worker/ready', (response) => {
     evalConfig.addonNames.map(async (path) => {
-      const content = await promises.readFile(resolve(root, path, 'manifest.yml'), 'utf8').catch<string>(noop)
-      if (!content) return
-      const { commands = [] } = safeLoad(content) as Manifest
+      const manifest = await manifests[path]
+      if (!manifest) return
+      const { commands = [] } = manifest
       commands.forEach((config) => {
         const { name: rawName, desc, options = [], userFields = [] } = config
         const [name] = rawName.split(' ', 1)
