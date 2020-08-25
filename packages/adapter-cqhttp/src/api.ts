@@ -360,6 +360,7 @@ export interface ImageInfo {
 }
 
 export interface VersionInfo {
+  version?: string
   goCqhttp?: boolean
   runtimeVersion?: string
   runtimeOs?: string
@@ -395,9 +396,9 @@ interface CQNode {
 defineAsync('set_group_name', 'group_id', 'name')
 
 export function toVersion(data: VersionInfo) {
-  const { coolqEdition, pluginVersion, goCqhttp } = data
+  const { coolqEdition, pluginVersion, goCqhttp, version } = data
   if (goCqhttp) {
-    return `Go-CQHTTP`
+    return `Go-CQHTTP/${version.slice(1)}`
   } else {
     return `CoolQ/${capitalize(coolqEdition)} CQHTTP/${pluginVersion}`
   }
