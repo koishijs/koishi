@@ -8,5 +8,8 @@ module.exports = {
     'packages/plugin-eval/tests/*.spec.ts',
     'packages/plugin-teach/tests/*.spec.ts',
   ],
-  require: 'ts-node/register/transpile-only',
+  require: [
+    'ts-node/register/transpile-only',
+    'tsconfig-paths/register',
+  ],
 }
