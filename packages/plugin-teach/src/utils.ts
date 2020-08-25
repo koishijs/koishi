@@ -70,7 +70,6 @@ export namespace Dialogue {
     prefix?: string
     historyAge?: number
     validateRegExp?: RegExpValidator.Options
-    prohibitedCommands?: string[]
   }
 
   export enum Flag {

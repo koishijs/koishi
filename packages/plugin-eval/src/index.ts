@@ -1,4 +1,4 @@
-import { App, Context, User, Session } from 'koishi-core'
+import { App, Context, Session } from 'koishi-core'
 import { CQCode, Logger, defineProperty, omit, Random } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { WorkerAPI, WorkerConfig, WorkerData, Response } from './worker'
@@ -11,6 +11,12 @@ declare module 'koishi-core/dist/app' {
     evalConfig: EvalConfig
     evalWorker: Worker
     evalRemote: Remote<WorkerAPI>
+  }
+}
+
+declare module 'koishi-core/dist/command' {
+  interface CommandConfig {
+    noEval?: boolean
   }
 }
 
@@ -34,7 +40,6 @@ interface MainConfig {
   prefix?: string
   timeout?: number
   maxLogs?: number
-  prohibitedCommands?: string[]
   resourceLimits?: ResourceLimits
 }
 
@@ -47,7 +52,6 @@ const defaultConfig: Config = {
   timeout: 1000,
   setupFiles: {},
   maxLogs: Infinity,
-  prohibitedCommands: ['evaluate', 'echo', 'broadcast', 'teach', 'contextify'],
 }
 
 const logger = new Logger('eval')
@@ -103,7 +107,7 @@ export function apply(ctx: Context, config: Config = {}) {
       workerData: {
         entry: process.env.KOISHI_WORKER_ENTRY,
         logLevels: Logger.levels,
-        ...omit(config, ['maxLogs', 'resourceLimits', 'timeout', 'prohibitedCommands']),
+        ...omit(config, ['maxLogs', 'resourceLimits', 'timeout']),
       },
       resourceLimits: config.resourceLimits,
     })
@@ -141,12 +145,12 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   ctx.on('before-command', ({ command, session }) => {
-    if (config.prohibitedCommands.includes(command.name) && session._isEval) {
+    if (command.config.noEval && session._isEval) {
       return `不能在 evaluate 指令中调用 ${command.name} 指令。`
     }
   })
 
-  const evaluate = ctx.command('evaluate [expr...]', '执行 JavaScript 脚本')
+  const evaluate = ctx.command('evaluate [expr...]', '执行 JavaScript 脚本', { noEval: true })
     .alias('eval')
     .userFields(['authority'])
     .option('slient', '-s  不输出最后的结果')

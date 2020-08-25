@@ -7,6 +7,12 @@ import { formatQuestionAnswers } from './search'
 import { format } from 'util'
 import leven from 'leven'
 
+declare module 'koishi-core/dist/command' {
+  interface CommandConfig {
+    noInterp?: boolean
+  }
+}
+
 declare module 'koishi-core/dist/plugins/message' {
   namespace Message {
     export namespace Teach {
@@ -169,9 +175,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     })
   })
 
-  const { prohibitedCommands = [] } = config
   ctx.on('before-command', ({ command, session }) => {
-    if (prohibitedCommands.includes(command.name) && session._redirected) {
+    if (command.config.noInterp && session._redirected) {
       return format(Message.Teach.ProhibitedCommand, command.name)
     }
   })
