@@ -148,7 +148,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   const evaluate = ctx.command('evaluate [expr...]', '执行 JavaScript 脚本')
     .alias('eval')
-    .userFields(User.fields)
+    .userFields(['authority'])
     .option('slient', '-s  不输出最后的结果')
     .option('restart', '-r  重启子线程', { authority: 3 })
     .before((session) => {
@@ -191,7 +191,6 @@ export function apply(ctx: Context, config: Config = {}) {
         app.evalWorker.on('error', listener)
         app.evalRemote.eval({
           sid: session.$uuid,
-          user: session.$user,
           silent: options.slient,
           source: expr,
         }).then(_resolve, (error) => {

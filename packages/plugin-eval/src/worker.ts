@@ -29,7 +29,6 @@ export const config: WorkerData = {
 
 interface EvalOptions {
   sid: string
-  user: {}
   silent: boolean
   source: string
 }
@@ -72,9 +71,8 @@ function formatError(error: Error) {
 
 const main = wrap<MainAPI>(parentPort)
 
-export function contextFactory(sid: string, user: {}) {
+export function createContext(sid: string) {
   return {
-    user,
     async send(...param: [string, ...any[]]) {
       return await main.send(sid, formatResult(...param))
     },
@@ -97,10 +95,10 @@ export class WorkerAPI {
   }
 
   async eval(options: EvalOptions) {
-    const { sid, source, user, silent } = options
+    const { sid, source, silent } = options
 
     const key = 'koishi-eval-session:' + sid
-    internal.setGlobal(Symbol.for(key), contextFactory(sid, user), false, true)
+    internal.setGlobal(Symbol.for(key), createContext(sid), false, true)
 
     let result: any
     try {

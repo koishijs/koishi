@@ -1,6 +1,7 @@
-import { config, context, internal, WorkerAPI, contextFactory, response } from 'koishi-plugin-eval/dist/worker'
+import { config, context, internal, WorkerAPI, createContext, response } from 'koishi-plugin-eval/dist/worker'
 import { promises, readFileSync } from 'fs'
 import { resolve, posix, dirname } from 'path'
+import { User } from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { Config } from '.'
 import ts from 'typescript'
@@ -17,7 +18,7 @@ declare module 'koishi-plugin-eval/dist/worker' {
   }
 
   interface WorkerAPI {
-    addon(sid: string, user: {}, argv: WorkerArgv): string | void | Promise<string | void>
+    addon(sid: string, user: Partial<User>, argv: AddonArgv): Promise<string | void>
   }
 
   interface Response {
@@ -25,20 +26,23 @@ declare module 'koishi-plugin-eval/dist/worker' {
   }
 }
 
-interface WorkerArgv {
+interface AddonArgv {
   name: string
   args: string[]
   options: Record<string, any>
-  rest: string
 }
 
-type AddonAction = (argv: WorkerArgv) => string | void | Promise<string | void>
+interface AddonContext extends AddonArgv {
+  user: Partial<User>
+}
+
+type AddonAction = (ctx: AddonContext) => string | void | Promise<string | void>
 const commandMap: Record<string, AddonAction> = {}
 
 WorkerAPI.prototype.addon = async function (sid, user, argv) {
   const callback = commandMap[argv.name]
   try {
-    return await callback({ ...argv, ...contextFactory(sid, user) })
+    return await callback({ user, ...argv, ...createContext(sid) })
   } catch (error) {
     logger.warn(error)
   }

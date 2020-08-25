@@ -1,4 +1,4 @@
-import { Context, CommandAction, CommandConfig, OptionConfig, User } from 'koishi-core'
+import { Context, CommandConfig, OptionConfig, User } from 'koishi-core'
 import { resolve } from 'path'
 import {} from 'koishi-plugin-eval'
 import { assertProperty, Logger, noop } from 'koishi-utils'
@@ -14,24 +14,26 @@ export interface Config {
   exclude?: RegExp
 }
 
-interface Option extends OptionConfig {
+interface OptionManifest extends OptionConfig {
   name: string
   desc: string
 }
 
-interface Command extends CommandConfig {
+type Permission<T> = T[] | {
+  read?: T[]
+  write?: T[]
+}
+
+interface CommandManifest extends CommandConfig {
   name: string
   desc: string
-  options?: Option[]
+  options?: OptionManifest[]
+  userFields?: Permission<User.Field>
 }
 
 interface Manifest {
   version: number
-  commands?: Command[]
-}
-
-const addonAction: CommandAction = ({ session, command: { name }, options, rest }, ...args) => {
-  return session.$app.evalRemote.addon(session.$uuid, session.$user, { name, args, options, rest })
+  commands?: CommandManifest[]
 }
 
 export function apply(ctx: Context, config: Config) {
@@ -76,15 +78,20 @@ export function apply(ctx: Context, config: Config) {
       if (!content) return
       const { commands = [] } = safeLoad(content) as Manifest
       commands.forEach((config) => {
-        const { name: rawName, desc, options = [] } = config
+        const { name: rawName, desc, options = [], userFields = [] } = config
         const [name] = rawName.split(' ', 1)
         if (!response.commands.includes(name)) {
           return logger.warn('unregistered command manifest: %c', name)
         }
+        const { read = [] } = Array.isArray(userFields) ? { read: userFields } : userFields
         const cmd = addon
           .subcommand(rawName, desc, config)
-          .userFields(User.fields)
-          .action(addonAction)
+          .userFields(read)
+          .action(async ({ session, command: { name }, options }, ...args) => {
+            const { $app, $user, $uuid } = session
+            const result = await $app.evalRemote.addon($uuid, $user, { name, args, options })
+            return result
+          })
         options.forEach((config) => {
           const { name, desc } = config
           cmd.option(name, desc, config)
