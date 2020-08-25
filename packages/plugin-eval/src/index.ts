@@ -79,8 +79,9 @@ export class MainAPI {
   }
 }
 
-process.env.WORKER_ENTRY = resolve(__dirname, 'worker.js')
-process.env.WORKER_CODE = `\
+process.env.KOISHI_WORKER_ENTRY = resolve(__dirname, 'worker.js')
+
+process.env.KOISHI_WORKER_LOADER = `\
 const { workerData } = require('worker_threads');
 require(workerData.entry);`
 
@@ -97,10 +98,10 @@ export function apply(ctx: Context, config: Config = {}) {
   async function createWorker() {
     await app.parallel('worker/start')
 
-    const worker = app.evalWorker = new Worker(process.env.WORKER_CODE, {
+    const worker = app.evalWorker = new Worker(process.env.KOISHI_WORKER_LOADER, {
       eval: true,
       workerData: {
-        entry: process.env.WORKER_ENTRY,
+        entry: process.env.KOISHI_WORKER_ENTRY,
         logLevels: Logger.levels,
         ...omit(config, ['maxLogs', 'resourceLimits', 'timeout', 'prohibitedCommands']),
       },
