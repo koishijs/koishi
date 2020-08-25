@@ -43,7 +43,9 @@ describe('koishi-plugin-teach', () => {
     await session1.shouldHaveReply('# foo bar', '问答已存在，编号为 1，如要修改请尝试使用 #1 指令。')
     await session1.shouldHaveReply('# foo bar -P 1', '修改了已存在的问答，编号为 1。')
     await session1.shouldHaveReply('#1 -P 1', '问答 1 没有发生改动。')
-    await session1.shouldHaveReply('#1 ~ baz', '问答 1 已成功修改。')
+    await session1.shouldHaveReply('#1 baz', '推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -i 选项以忽略本提示。')
+    await session1.shouldHaveReply('#1 baz', '推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -i 选项以忽略本提示。')
+    await session1.shouldHaveReply('.', '问答 1 已成功修改。')
     await session1.shouldHaveReply('foo', 'baz')
   })
 

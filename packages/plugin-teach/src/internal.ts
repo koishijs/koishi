@@ -2,9 +2,9 @@ import { Context, Message } from 'koishi-core'
 import { Dialogue } from './utils'
 import { update } from './update'
 import { RegExpValidator } from 'regexpp'
-import { defineProperty, Logger } from 'koishi-utils'
+import { defineProperty } from 'koishi-utils'
 import { formatQuestionAnswers } from './search'
-import { format, types } from 'util'
+import { format } from 'util'
 import leven from 'leven'
 
 declare module 'koishi-core/dist/plugins/message' {
@@ -30,14 +30,7 @@ Message.Teach.IllegalRegExp = '问题含有错误的或不支持的正则表达�
 Message.Teach.MayModifyAnswer = '推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -i 选项以忽略本提示。'
 Message.Teach.MaybeRegExp = '推测你想%s的问题是正则表达式。发送空行或句号以添加 -x 选项，使用 -i 选项以忽略本提示。'
 
-export class RegExpError extends Error {
-  name = 'RegExpError'
-}
-
-const validator = new RegExpValidator()
-
 export default function apply(ctx: Context, config: Dialogue.Config) {
-  const logger = new Logger('teach')
   defineProperty(ctx.app, 'teachHistory', {})
 
   ctx.command('teach')
@@ -86,6 +79,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     return question.startsWith('^') || question.endsWith('$')
   }
 
+  const validator = new RegExpValidator(config.validateRegExp)
+
   ctx.on('dialogue/before-modify', async (argv) => {
     const { options, session, target, dialogues } = argv
     const { question, answer, ignoreHint, regexp } = options
@@ -121,17 +116,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       try {
         questions.map(q => validator.validatePattern(q))
       } catch (error) {
-        if (!types.isNativeError(error)) {
-          logger.warn(question, error)
-          return Message.Teach.IllegalRegExp
-        } else if (error.name === 'RegExpError') {
-          return error.message
-        } else {
-          if (!error.message.startsWith('SyntaxError')) {
-            logger.warn(question, error.stack)
-          }
-          return Message.Teach.IllegalRegExp
-        }
+        return Message.Teach.IllegalRegExp
       }
     }
   })
