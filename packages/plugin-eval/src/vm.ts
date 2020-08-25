@@ -24,7 +24,7 @@ export class VM {
       codeGeneration: { strings, wasm },
     })
 
-    const filename = resolve(__dirname, 'internal.js')
+    const filename = resolve(__dirname, '../dist/internal.js')
     const data = readFileSync(filename, 'utf8')
     const script = new Script(data, {
       filename,

@@ -79,6 +79,11 @@ export class MainAPI {
   }
 }
 
+process.env.WORKER_ENTRY = resolve(__dirname, 'worker.js')
+process.env.WORKER_CODE = `\
+const { workerData } = require('worker_threads');
+require(workerData.entry);`
+
 export function apply(ctx: Context, config: Config = {}) {
   const { prefix } = config = { ...defaultConfig, ...config }
   const { app } = ctx
@@ -92,8 +97,10 @@ export function apply(ctx: Context, config: Config = {}) {
   async function createWorker() {
     await app.parallel('worker/start')
 
-    const worker = app.evalWorker = new Worker(resolve(__dirname, 'worker.js'), {
+    const worker = app.evalWorker = new Worker(process.env.WORKER_CODE, {
+      eval: true,
       workerData: {
+        entry: process.env.WORKER_ENTRY,
         logLevels: Logger.levels,
         ...omit(config, ['maxLogs', 'resourceLimits', 'timeout', 'prohibitedCommands']),
       },

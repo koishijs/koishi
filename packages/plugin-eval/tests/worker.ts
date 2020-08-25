@@ -1,6 +1,6 @@
 /* eslint-disable no-new-wrappers */
 
-const { internal } = require('koishi-plugin-eval/dist/worker')
+import { internal } from 'koishi-plugin-eval/dist/worker'
 
 internal.setGlobal('test', {
   null: null,
