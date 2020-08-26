@@ -4,6 +4,7 @@ services:
   cqhttp:
     image: nanahira/go-cqhttp:latest
     container_name: koishi-go-cqhttp
+    stdin_open: true
     volumes:
       - ./cqhttp:/data
     environment:
