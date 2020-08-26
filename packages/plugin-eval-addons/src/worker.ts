@@ -1,9 +1,10 @@
-import { config, context, internal, WorkerAPI, createContext, response } from 'koishi-plugin-eval/dist/worker'
+import { config, context, internal, WorkerAPI, createContext, response, mapDirectory } from 'koishi-plugin-eval/dist/worker'
 import { promises, readFileSync } from 'fs'
 import { resolve, posix, dirname } from 'path'
 import { User } from 'koishi-core'
-import { Logger } from 'koishi-utils'
+import { Logger, Time, CQCode, Random } from 'koishi-utils'
 import { Config } from '.'
+import json5 from 'json5'
 import ts from 'typescript'
 
 const logger = new Logger('addon')
@@ -57,16 +58,28 @@ interface Module {
   evaluate(): Promise<void>
 }
 
-const builtinIdentifier = 'koishi/addons.ts'
-const builtin = new SyntheticModule(['registerCommand'], function () {
-  this.setExport('registerCommand', function registerCommand(name: string, callback: AddonAction) {
-    commandMap[name] = callback
-  })
-}, { context, identifier: builtinIdentifier })
-
 const root = resolve(process.cwd(), config.moduleRoot)
-const modules: Record<string, Module> = { [builtinIdentifier]: builtin }
-config.addonNames.unshift(...Object.keys(modules))
+const modules: Record<string, Module> = {}
+
+export function createSynthetic(identifier: string, exports: {}) {
+  const module = new SyntheticModule(Object.keys(exports), function () {
+    for (const key in exports) {
+      this.setExport(key, exports[key])
+    }
+  }, { context, identifier })
+  modules[identifier] = module
+  config.addonNames.unshift(identifier)
+}
+
+createSynthetic('koishi/addons.ts', {
+  registerCommand(name: string, callback: AddonAction) {
+    commandMap[name] = callback
+  },
+})
+
+createSynthetic('koishi/utils.ts', {
+  Time, CQCode, Random,
+})
 
 const suffixes = ['', '.ts', '/index.ts']
 const relativeRE = /^\.\.?[\\/]/
@@ -98,7 +111,7 @@ async function linker(specifier: string, { identifier }: Module) {
   throw new Error(`Unable to resolve dependency "${specifier}" in "${identifier}"`)
 }
 
-const json = JSON.parse(readFileSync(resolve(root, 'tsconfig.json'), 'utf8'))
+const json = json5.parse(readFileSync(resolve(root, 'tsconfig.json'), 'utf8'))
 const { options: compilerOptions } = ts.parseJsonConfigFileContent(json, ts.sys, root)
 
 async function loadSource(path: string) {
@@ -124,14 +137,17 @@ async function createModule(path: string) {
   logger.debug('creating module %c', module.identifier)
   await module.link(linker)
   await module.evaluate()
+
+  if (module instanceof SourceTextModule) {
+    internal.setGlobal(path, module.namespace)
+  }
   return module
 }
 
-export default Promise.all(config.addonNames.map(path => createModule(path).then((module) => {
-  internal.setGlobal(path, module.namespace)
-}, (error) => {
+export default Promise.all(config.addonNames.map(path => createModule(path).catch((error) => {
   logger.warn(`cannot load module %c\n` + error.stack, path)
-  delete modules[path]
 }))).then(() => {
   response.commands = Object.keys(commandMap)
+  mapDirectory('koishi/utils/', require.resolve('koishi-utils'))
+  internal.setGlobal('utils', modules['koishi/utils.ts'].namespace)
 })

@@ -2,6 +2,7 @@ import { Logger, escapeRegExp } from 'koishi-utils'
 import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
 import { findSourceMap } from 'module'
+import { dirname, sep } from 'path'
 
 /* eslint-disable import/first */
 
@@ -119,9 +120,13 @@ export class WorkerAPI {
   }
 }
 
+export function mapDirectory(identifier: string, filename: string) {
+  const path = dirname(findSourceMap(filename).payload.sources[0].slice(7)) + sep
+  pathMapper[identifier] = new RegExp(`(at | \\()${escapeRegExp(path)}`, 'g')
+}
+
 Promise.all(Object.values(config.setupFiles).map(file => require(file).default)).then(() => {
-  const path = findSourceMap(__filename).payload.sources[0].slice(7, -9)
-  pathMapper['koishi/'] = new RegExp(`(at | \\()${escapeRegExp(path)}`, 'g')
+  mapDirectory('koishi/', __filename)
   Object.entries(config.setupFiles).forEach(([name, path]) => {
     const sourceMap = findSourceMap(path)
     if (sourceMap) path = sourceMap.payload.sources[0].slice(7)

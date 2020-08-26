@@ -3,6 +3,7 @@
   "private": true,
   "workspaces": [
     "atri",
+    "addons",
     "shiki",
     "shiki/core",
     "shiki/cosmos",
@@ -11,6 +12,7 @@
   ],
   "scripts": {
     "atri": "yarn workspace atri",
+    "addons": "yarn workspace addons",
     "build": "tsc -b && yarn workspace koishi-plugin-eval wrap",
     "build:ci": "tsc -b --listEmittedFiles && yarn workspace koishi-plugin-eval wrap",
     "bump": "ts-node build/bump",
