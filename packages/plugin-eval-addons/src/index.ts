@@ -19,6 +19,17 @@ declare module 'koishi-plugin-eval' {
   interface MainConfig extends AddonConfig {}
 }
 
+const proxyFields: Record<string, FieldTrap<any, any>> = {}
+
+export function defineFieldTrap<T, K extends User.Field = never>(key: string, trap: FieldTrap<T, K>) {
+  proxyFields[key] = trap
+}
+
+export interface FieldTrap<T = any, K extends User.Field = never> {
+  fields: Iterable<K>
+  get(data: Pick<User, K>): T
+}
+
 interface OptionManifest extends OptionConfig {
   name: string
   desc: string
@@ -93,23 +104,36 @@ export function apply(ctx: Context, config: Config) {
       const { commands = [] } = manifest
       commands.forEach((config) => {
         const { name: rawName, desc, options = [], userFields = [] } = config
+        const { read = [] } = Array.isArray(userFields) ? { read: userFields } : userFields
+
         const [name] = rawName.split(' ', 1)
         if (!response.commands.includes(name)) {
           return logger.warn('unregistered command manifest: %c', name)
         }
-        const { read = [] } = Array.isArray(userFields) ? { read: userFields } : userFields
+
         const cmd = addon
           .subcommand(rawName, desc, config)
-          .userFields(read)
-          .action(async ({ session, command: { name }, options }, ...args) => {
+          .action(async ({ session, command, options }, ...args) => {
             const { $app, $user, $uuid } = session
-            const result = await $app.evalRemote.addon($uuid, $user, { name, args, options })
+            const { name } = command
+            const user: Partial<User> = {}
+            for (const key of read) {
+              const trap = proxyFields[key]
+              Reflect.set(user, key, trap ? trap.get($user) : $user[key])
+            }
+            const result = await $app.evalRemote.addon($uuid, user, { name, args, options })
             return result
           })
+
         options.forEach((config) => {
           const { name, desc } = config
           cmd.option(name, desc, config)
         })
+
+        for (const key of read) {
+          const trap = proxyFields[key]
+          cmd.userFields(trap ? trap.fields : [key])
+        }
       })
     })
   })
