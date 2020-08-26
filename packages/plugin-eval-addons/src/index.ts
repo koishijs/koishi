@@ -3,7 +3,7 @@ import { assertProperty, Logger, noop } from 'koishi-utils'
 import { resolve } from 'path'
 import { safeLoad } from 'js-yaml'
 import { promises as fs } from 'fs'
-import {} from 'koishi-plugin-eval'
+import { UserTrap } from 'koishi-plugin-eval'
 import Git, { CheckRepoActions } from 'simple-git'
 
 const logger = new Logger('addon')
@@ -19,25 +19,14 @@ declare module 'koishi-plugin-eval' {
   interface MainConfig extends AddonConfig {}
 }
 
-const proxyFields: Record<string, FieldTrap<any, any>> = {}
-
-export function defineFieldTrap<T, K extends User.Field = never>(key: string, trap: FieldTrap<T, K>) {
-  proxyFields[key] = trap
-}
-
-export interface FieldTrap<T = any, K extends User.Field = never> {
-  fields: Iterable<K>
-  get(data: Pick<User, K>): T
-}
-
 interface OptionManifest extends OptionConfig {
   name: string
   desc: string
 }
 
 type Permission<T> = T[] | {
-  read?: T[]
-  write?: T[]
+  readable?: T[]
+  writable?: T[]
 }
 
 interface CommandManifest extends CommandConfig {
@@ -104,7 +93,7 @@ export function apply(ctx: Context, config: Config) {
       const { commands = [] } = manifest
       commands.forEach((config) => {
         const { name: rawName, desc, options = [], userFields = [] } = config
-        const { read = [] } = Array.isArray(userFields) ? { read: userFields } : userFields
+        const { readable = [] } = Array.isArray(userFields) ? { readable: userFields } : userFields
 
         const [name] = rawName.split(' ', 1)
         if (!response.commands.includes(name)) {
@@ -116,24 +105,16 @@ export function apply(ctx: Context, config: Config) {
           .action(async ({ session, command, options }, ...args) => {
             const { $app, $user, $uuid } = session
             const { name } = command
-            const user: Partial<User> = {}
-            for (const key of read) {
-              const trap = proxyFields[key]
-              Reflect.set(user, key, trap ? trap.get($user) : $user[key])
-            }
-            const result = await $app.evalRemote.addon($uuid, user, { name, args, options })
+            const user = UserTrap.get($user, readable)
+            const result = await $app.evalRemote.callAddon($uuid, user, { name, args, options })
             return result
           })
 
+        UserTrap.prepare(cmd, readable)
         options.forEach((config) => {
           const { name, desc } = config
           cmd.option(name, desc, config)
         })
-
-        for (const key of read) {
-          const trap = proxyFields[key]
-          cmd.userFields(trap ? trap.fields : [key])
-        }
       })
     })
   })

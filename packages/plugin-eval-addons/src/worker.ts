@@ -20,7 +20,7 @@ declare module 'koishi-plugin-eval/dist/worker' {
   }
 
   interface WorkerAPI {
-    addon(sid: string, user: Partial<User>, argv: AddonArgv): Promise<string | void>
+    callAddon(sid: string, user: Partial<User>, argv: AddonArgv): Promise<string | void>
   }
 
   interface Response {
@@ -41,10 +41,10 @@ interface AddonContext extends AddonArgv {
 type AddonAction = (ctx: AddonContext) => string | void | Promise<string | void>
 const commandMap: Record<string, AddonAction> = {}
 
-WorkerAPI.prototype.addon = async function (sid, user, argv) {
+WorkerAPI.prototype.callAddon = async function (sid, user, argv) {
   const callback = commandMap[argv.name]
   try {
-    return await callback({ user, ...argv, ...createContext(sid) })
+    return await callback({ ...argv, ...createContext(sid, user) })
   } catch (error) {
     logger.warn(error)
   }

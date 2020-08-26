@@ -1,9 +1,12 @@
-import { App, Context, Session } from 'koishi-core'
+import { App, Context, Session, User } from 'koishi-core'
 import { CQCode, Logger, defineProperty, Random, pick } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { WorkerAPI, WorkerConfig, WorkerData, Response } from './worker'
 import { wrap, expose, Remote } from './transfer'
 import { resolve } from 'path'
+import { UserTrap } from './trap'
+
+export * from './trap'
 
 declare module 'koishi-core/dist/app' {
   interface App {
@@ -40,6 +43,7 @@ export interface MainConfig {
   prefix?: string
   timeout?: number
   maxLogs?: number
+  userFields?: User.Field[]
   resourceLimits?: ResourceLimits
   dataKeys?: (keyof WorkerData)[]
 }
@@ -53,6 +57,7 @@ const defaultConfig: EvalConfig = {
   timeout: 1000,
   setupFiles: {},
   maxLogs: Infinity,
+  userFields: ['id', 'authority'],
   dataKeys: ['inspect', 'setupFiles'],
 }
 
@@ -152,9 +157,10 @@ export function apply(ctx: Context, config: Config = {}) {
     }
   })
 
-  const evaluate = ctx.command('evaluate [expr...]', '执行 JavaScript 脚本', { noEval: true })
+  const cmd = ctx.command('evaluate [expr...]', '执行 JavaScript 脚本', { noEval: true })
     .alias('eval')
     .userFields(['authority'])
+    .userFields(config.userFields)
     .option('slient', '-s  不输出最后的结果')
     .option('restart', '-r  重启子线程', { authority: 3 })
     .before((session) => {
@@ -197,6 +203,7 @@ export function apply(ctx: Context, config: Config = {}) {
         app.evalWorker.on('error', listener)
         app.evalRemote.eval({
           sid: session.$uuid,
+          user: UserTrap.get(session.$user, config.userFields),
           silent: options.slient,
           source: expr,
         }).then(_resolve, (error) => {
@@ -206,9 +213,11 @@ export function apply(ctx: Context, config: Config = {}) {
       })
     })
 
+  UserTrap.prepare(cmd, config.userFields)
+
   if (prefix) {
-    evaluate.shortcut(prefix, { oneArg: true, fuzzy: true })
-    evaluate.shortcut(prefix + prefix, { oneArg: true, fuzzy: true, options: { slient: true } })
+    cmd.shortcut(prefix, { oneArg: true, fuzzy: true })
+    cmd.shortcut(prefix + prefix, { oneArg: true, fuzzy: true, options: { slient: true } })
   }
 }
 

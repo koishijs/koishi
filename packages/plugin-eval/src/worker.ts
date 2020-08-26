@@ -12,6 +12,7 @@ const logger = new Logger('eval')
 import { expose, wrap } from './transfer'
 import { VM } from './vm'
 import { MainAPI } from '.'
+import { User } from 'koishi-core'
 
 export interface WorkerConfig {
   setupFiles?: Record<string, string>
@@ -30,6 +31,7 @@ export const config: WorkerData = {
 
 interface EvalOptions {
   sid: string
+  user: Partial<User>
   silent: boolean
   source: string
 }
@@ -72,19 +74,18 @@ function formatError(error: Error) {
 
 const main = wrap<MainAPI>(parentPort)
 
-export function createContext(sid: string) {
-  return {
-    async send(...param: [string, ...any[]]) {
-      return await main.send(sid, formatResult(...param))
-    },
-    async exec(message: string) {
-      if (typeof message !== 'string') {
-        throw new TypeError('The "message" argument must be of type string')
-      }
-      return await main.execute(sid, message)
-    },
-  }
-}
+export const createContext = (sid: string, user: Partial<User>) => ({
+  user,
+  async send(...param: [string, ...any[]]) {
+    return await main.send(sid, formatResult(...param))
+  },
+  async exec(message: string) {
+    if (typeof message !== 'string') {
+      throw new TypeError('The "message" argument must be of type string')
+    }
+    return await main.execute(sid, message)
+  },
+})
 
 export interface Response {}
 
@@ -96,10 +97,10 @@ export class WorkerAPI {
   }
 
   async eval(options: EvalOptions) {
-    const { sid, source, silent } = options
+    const { sid, user, source, silent } = options
 
     const key = 'koishi-eval-session:' + sid
-    internal.setGlobal(Symbol.for(key), createContext(sid), false, true)
+    internal.setGlobal(Symbol.for(key), createContext(sid, user), false, true)
 
     let result: any
     try {
