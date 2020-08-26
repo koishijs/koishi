@@ -134,11 +134,12 @@ async function createModule(path: string) {
     module = modules[identifier] = new SourceTextModule(outputText, { context, identifier })
   }
 
-  logger.debug('creating module %c', module.identifier)
+  const type = module instanceof SyntheticModule ? 'synthetic' : 'source text'
+  logger.debug('creating %s module %c', type, module.identifier)
   await module.link(linker)
   await module.evaluate()
 
-  if (module instanceof SourceTextModule) {
+  if (!path.includes('/')) {
     internal.setGlobal(path, module.namespace)
   }
   return module
