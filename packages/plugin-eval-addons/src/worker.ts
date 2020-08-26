@@ -1,4 +1,4 @@
-import { config, context, internal, WorkerAPI, createContext, response, mapDirectory } from 'koishi-plugin-eval/dist/worker'
+import { config, context, internal, WorkerAPI, Context, response, mapDirectory, formatError } from 'koishi-plugin-eval/dist/worker'
 import { promises, readFileSync } from 'fs'
 import { resolve, posix, dirname } from 'path'
 import { User } from 'koishi-core'
@@ -34,9 +34,7 @@ interface AddonArgv {
   options: Record<string, any>
 }
 
-interface AddonContext extends AddonArgv {
-  user: Partial<User>
-}
+interface AddonContext extends AddonArgv, Context {}
 
 type AddonAction = (ctx: AddonContext) => string | void | Promise<string | void>
 const commandMap: Record<string, AddonAction> = {}
@@ -44,9 +42,11 @@ const commandMap: Record<string, AddonAction> = {}
 WorkerAPI.prototype.callAddon = async function (sid, user, argv) {
   const callback = commandMap[argv.name]
   try {
-    return await callback({ ...argv, ...createContext(sid, user) })
+    return await callback({ ...argv, ...Context(sid, user) })
   } catch (error) {
-    logger.warn(error)
+    if (!argv.options.debug) return logger.warn(error)
+    return formatError(error)
+      .replace('WorkerAPI.worker_1.WorkerAPI.callAddon', 'WorkerAPI.callAddon')
   }
 }
 
@@ -64,7 +64,7 @@ export const modules: Record<string, Module> = {}
 export function synthetize(identifier: string, namespace: {}) {
   const module = new SyntheticModule(Object.keys(namespace), function () {
     for (const key in namespace) {
-      this.setExport(key, namespace[key])
+      this.setExport(key, internal.contextify(namespace[key]))
     }
   }, { context, identifier })
   modules[identifier] = module

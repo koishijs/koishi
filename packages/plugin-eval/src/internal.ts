@@ -687,7 +687,8 @@ connect(host.Buffer.prototype['inspect'], function inspect() {
   return `<${this.constructor.name} ${str}>`
 })
 
-export const value: <T>(value: T) => T = Decontextify.value.bind(Decontextify)
+export const contextify: <T>(value: T) => T = Contextify.value.bind(Contextify)
+export const decontextify: <T>(value: T) => T = Decontextify.value.bind(Decontextify)
 export const sandbox = Decontextify.value(GLOBAL)
 
 delete global.console

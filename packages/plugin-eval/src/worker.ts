@@ -47,7 +47,7 @@ function formatResult(...param: [string, ...any[]]) {
   return formatWithOptions(config.inspect, ...param)
 }
 
-function formatError(error: Error) {
+export function formatError(error: Error) {
   if (!(error instanceof Error)) return `Uncaught: ${error}`
 
   if (error.name === 'SyntaxError') {
@@ -61,7 +61,7 @@ function formatError(error: Error) {
   }
 
   return error.stack
-    .replace(/\s*.+Script[\s\S]*/, '')
+    .replace(/\s*.+(Script|MessagePort)[\s\S]*/, '')
     .split('\n')
     .map((line) => {
       for (const name in pathMapper) {
@@ -74,7 +74,13 @@ function formatError(error: Error) {
 
 const main = wrap<MainAPI>(parentPort)
 
-export const createContext = (sid: string, user: Partial<User>) => ({
+export interface Context {
+  user: Partial<User>
+  send(...param: any[]): Promise<void>
+  exec(message: string): Promise<void>
+}
+
+export const Context = (sid: string, user: Partial<User>): Context => ({
   user,
   async send(...param: [string, ...any[]]) {
     return await main.send(sid, formatResult(...param))
@@ -100,7 +106,7 @@ export class WorkerAPI {
     const { sid, user, source, silent } = options
 
     const key = 'koishi-eval-session:' + sid
-    internal.setGlobal(Symbol.for(key), createContext(sid, user), false, true)
+    internal.setGlobal(Symbol.for(key), Context(sid, user), false, true)
 
     let result: any
     try {

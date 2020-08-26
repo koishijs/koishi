@@ -102,6 +102,7 @@ export function apply(ctx: Context, config: Config) {
 
         const cmd = addon
           .subcommand(rawName, desc, config)
+          .option('debug', '启用调试模式', { type: 'boolean' })
           .action(async ({ session, command, options }, ...args) => {
             const { $app, $user, $uuid } = session
             const { name } = command
