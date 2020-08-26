@@ -20,6 +20,7 @@ export namespace UserTrap {
   }
 
   export function get($user: {}, fields: string[]) {
+    if (!$user) return
     const result: Partial<User> = {}
     for (const field of fields) {
       const trap = traps[field]

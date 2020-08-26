@@ -90,11 +90,7 @@ export class MainAPI {
   }
 }
 
-process.env.KOISHI_WORKER_ENTRY = resolve(__dirname, 'worker.js')
-
-process.env.KOISHI_WORKER_LOADER = `\
-const { workerData } = require('worker_threads');
-require(workerData.entry);`
+export const workerScript = `require(${JSON.stringify(resolve(__dirname, 'worker.js'))});`
 
 export function apply(ctx: Context, config: Config = {}) {
   const { prefix } = config = { ...defaultConfig, ...config }
@@ -109,10 +105,9 @@ export function apply(ctx: Context, config: Config = {}) {
   async function createWorker() {
     await app.parallel('worker/start')
 
-    const worker = app.evalWorker = new Worker(process.env.KOISHI_WORKER_LOADER, {
+    const worker = app.evalWorker = new Worker(workerScript, {
       eval: true,
       workerData: {
-        entry: process.env.KOISHI_WORKER_ENTRY,
         logLevels: Logger.levels,
         ...pick(config, config.dataKeys),
       },
@@ -160,7 +155,6 @@ export function apply(ctx: Context, config: Config = {}) {
   const cmd = ctx.command('evaluate [expr...]', '执行 JavaScript 脚本', { noEval: true })
     .alias('eval')
     .userFields(['authority'])
-    .userFields(config.userFields)
     .option('slient', '-s  不输出最后的结果')
     .option('restart', '-r  重启子线程', { authority: 3 })
     .before((session) => {
