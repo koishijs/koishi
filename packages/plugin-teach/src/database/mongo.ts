@@ -29,7 +29,13 @@ extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
     const dialogues = (await this.db.collection('dialogue').find(query).toArray())
       .filter((dialogue) => !this.app.bail('dialogue/fetch', dialogue, test))
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
-    return dialogues
+    return dialogues.filter(value => {
+      if (value.flag & Dialogue.Flag.regexp) {
+        const regex = new RegExp(value.question, 'i')
+        return regex.test(test.question) || regex.test(test.original)
+      }
+      return true
+    })
   },
 
   async createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
@@ -151,12 +157,12 @@ export default function apply(ctx: Context) {
 
   ctx.on('dialogue/mongo', (test, conditionals) => {
     if (!test.groups || !test.groups.length) return
-    const $and: FilterQuery<Dialogue>[] = test.groups.map(group => ({ $not: { groups: group } }))
-    $and.push({ flag: { [test.reversed ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag.complement } })
+    const $and: FilterQuery<Dialogue>[] = test.groups.map((group) => ({ groups: { $ne: group } }))
+    $and.push({ flag: { [test.reversed ? '$bitsAllClear' : '$bitsAllSet']: Dialogue.Flag.complement } })
     conditionals.push({
       $or: [
         {
-          flag: { [test.reversed ? '$bitsAllClear' : '$bitsAllSet']: Dialogue.Flag.complement },
+          flag: { [test.reversed ? '$bitsAllSet' : '$bitsAllClear']: Dialogue.Flag.complement },
           groups: { $all: test.groups },
         },
         { $and },
@@ -192,7 +198,7 @@ export default function apply(ctx: Context) {
     if (test.matchTime !== undefined) {
       conditionals.push({ $expr: { $gte: [expr, 0] } })
     }
-    if (test.matchTime !== undefined) {
+    if (test.mismatchTime !== undefined) {
       conditionals.push({ $expr: { $lt: [expr, 0] } })
     }
   })
