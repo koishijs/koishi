@@ -59,25 +59,25 @@ interface Module {
 }
 
 const root = resolve(process.cwd(), config.moduleRoot)
-const modules: Record<string, Module> = {}
+export const modules: Record<string, Module> = {}
 
-export function createSynthetic(identifier: string, exports: {}) {
-  const module = new SyntheticModule(Object.keys(exports), function () {
-    for (const key in exports) {
-      this.setExport(key, exports[key])
+export function synthetize(identifier: string, namespace: {}) {
+  const module = new SyntheticModule(Object.keys(namespace), function () {
+    for (const key in namespace) {
+      this.setExport(key, namespace[key])
     }
   }, { context, identifier })
   modules[identifier] = module
   config.addonNames.unshift(identifier)
 }
 
-createSynthetic('koishi/addons.ts', {
+synthetize('koishi/addons.ts', {
   registerCommand(name: string, callback: AddonAction) {
     commandMap[name] = callback
   },
 })
 
-createSynthetic('koishi/utils.ts', {
+synthetize('koishi/utils.ts', {
   Time, CQCode, Random,
 })
 
@@ -144,9 +144,15 @@ async function createModule(path: string) {
   return module
 }
 
-export default Promise.all(config.addonNames.map(path => createModule(path).catch((error) => {
-  logger.warn(`cannot load module %c\n` + error.stack, path)
-}))).then(() => {
+export async function evaluate(path: string) {
+  try {
+    await createModule(path)
+  } catch (error) {
+    logger.warn(`cannot load module %c\n` + error.stack, path)
+  }
+}
+
+export default Promise.all(config.addonNames.map(evaluate)).then(() => {
   response.commands = Object.keys(commandMap)
   mapDirectory('koishi/utils/', require.resolve('koishi-utils'))
   internal.setGlobal('utils', modules['koishi/utils.ts'].namespace)
