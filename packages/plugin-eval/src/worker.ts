@@ -121,7 +121,9 @@ export class WorkerAPI {
 }
 
 export function mapDirectory(identifier: string, filename: string) {
-  const path = dirname(findSourceMap(filename).payload.sources[0].slice(7)) + sep
+  const sourceMap = findSourceMap(filename)
+  if (!sourceMap) return logger.warn('cannot find source map for %c', filename)
+  const path = dirname(sourceMap.payload.sources[0].slice(7)) + sep
   pathMapper[identifier] = new RegExp(`(at | \\()${escapeRegExp(path)}`, 'g')
 }
 

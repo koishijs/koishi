@@ -8,6 +8,7 @@
     "shiki/core",
     "shiki/cosmos",
     "shiki/games",
+    "shiki/others",
     "packages/*"
   ],
   "scripts": {
