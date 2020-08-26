@@ -3,7 +3,6 @@ import { promises, readFileSync } from 'fs'
 import { resolve, posix, dirname } from 'path'
 import { User } from 'koishi-core'
 import { Logger, Time, CQCode, Random } from 'koishi-utils'
-import { Config } from '.'
 import json5 from 'json5'
 import ts from 'typescript'
 
@@ -12,7 +11,9 @@ const logger = new Logger('addon')
 const { SourceTextModule, SyntheticModule } = require('vm')
 
 declare module 'koishi-plugin-eval/dist/worker' {
-  interface WorkerConfig extends Config {}
+  interface WorkerConfig {
+    moduleRoot?: string
+  }
 
   interface WorkerData {
     addonNames: string[]
@@ -58,7 +59,6 @@ interface Module {
   evaluate(): Promise<void>
 }
 
-const root = resolve(process.cwd(), config.moduleRoot)
 export const modules: Record<string, Module> = {}
 
 export function synthetize(identifier: string, namespace: {}) {
@@ -111,14 +111,14 @@ async function linker(specifier: string, { identifier }: Module) {
   throw new Error(`Unable to resolve dependency "${specifier}" in "${identifier}"`)
 }
 
-const json = json5.parse(readFileSync(resolve(root, 'tsconfig.json'), 'utf8'))
-const { options: compilerOptions } = ts.parseJsonConfigFileContent(json, ts.sys, root)
+const json = json5.parse(readFileSync(resolve(config.moduleRoot, 'tsconfig.json'), 'utf8'))
+const { options: compilerOptions } = ts.parseJsonConfigFileContent(json, ts.sys, config.moduleRoot)
 
 async function loadSource(path: string) {
   for (const postfix of suffixes) {
     try {
       const target = path + postfix
-      return [await promises.readFile(resolve(root, target), 'utf8'), target]
+      return [await promises.readFile(resolve(config.moduleRoot, target), 'utf8'), target]
     } catch {}
   }
   throw new Error(`cannot load source file "${path}"`)

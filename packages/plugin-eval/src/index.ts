@@ -1,5 +1,5 @@
 import { App, Context, Session } from 'koishi-core'
-import { CQCode, Logger, defineProperty, omit, Random } from 'koishi-utils'
+import { CQCode, Logger, defineProperty, Random, pick } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { WorkerAPI, WorkerConfig, WorkerData, Response } from './worker'
 import { wrap, expose, Remote } from './transfer'
@@ -22,9 +22,9 @@ declare module 'koishi-core/dist/command' {
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'worker/start' (): void | Promise<void>
-    'worker/ready' (response: Response): void
-    'worker/exit' (): void
+    'worker/start'(): void | Promise<void>
+    'worker/ready'(response: Response): void
+    'worker/exit'(): void
   }
 }
 
@@ -36,22 +36,24 @@ declare module 'koishi-core/dist/session' {
   }
 }
 
-interface MainConfig {
+export interface MainConfig {
   prefix?: string
   timeout?: number
   maxLogs?: number
   resourceLimits?: ResourceLimits
+  dataKeys?: (keyof WorkerData)[]
 }
 
-interface EvalConfig extends MainConfig, WorkerData {}
+export interface EvalConfig extends MainConfig, WorkerData {}
 
 export interface Config extends MainConfig, WorkerConfig {}
 
-const defaultConfig: Config = {
+const defaultConfig: EvalConfig = {
   prefix: '>',
   timeout: 1000,
   setupFiles: {},
   maxLogs: Infinity,
+  dataKeys: ['inspect', 'setupFiles'],
 }
 
 const logger = new Logger('eval')
@@ -107,7 +109,7 @@ export function apply(ctx: Context, config: Config = {}) {
       workerData: {
         entry: process.env.KOISHI_WORKER_ENTRY,
         logLevels: Logger.levels,
-        ...omit(config, ['maxLogs', 'resourceLimits', 'timeout']),
+        ...pick(config, config.dataKeys),
       },
       resourceLimits: config.resourceLimits,
     })

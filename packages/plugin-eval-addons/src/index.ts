@@ -1,17 +1,22 @@
 import { Context, CommandConfig, OptionConfig, User } from 'koishi-core'
-import { resolve } from 'path'
-import {} from 'koishi-plugin-eval'
 import { assertProperty, Logger, noop } from 'koishi-utils'
+import { resolve } from 'path'
 import { safeLoad } from 'js-yaml'
 import { promises as fs } from 'fs'
+import {} from 'koishi-plugin-eval'
 import Git, { CheckRepoActions } from 'simple-git'
 
 const logger = new Logger('addon')
 
+type AddonConfig = Config
+
 export interface Config {
   gitRemote?: string
-  moduleRoot?: string
   exclude?: RegExp
+}
+
+declare module 'koishi-plugin-eval' {
+  interface MainConfig extends AddonConfig {}
 }
 
 interface OptionManifest extends OptionConfig {
@@ -39,10 +44,11 @@ interface Manifest {
 export function apply(ctx: Context, config: Config) {
   const { evalConfig } = ctx.app
   Object.assign(evalConfig, config)
-  const moduleRoot = assertProperty(evalConfig, 'moduleRoot')
+  const root = resolve(process.cwd(), assertProperty(evalConfig, 'moduleRoot'))
+  evalConfig.moduleRoot = root
+  evalConfig.dataKeys.push('addonNames', 'moduleRoot')
   evalConfig.setupFiles['koishi/addons.ts'] = resolve(__dirname, 'worker.js')
 
-  const root = resolve(process.cwd(), moduleRoot)
   const git = Git(root)
 
   const addon = ctx.command('addon', '扩展功能')
@@ -59,7 +65,7 @@ export function apply(ctx: Context, config: Config) {
 
   ctx.on('before-connect', async () => {
     const isRepo = await git.checkIsRepo(CheckRepoActions.IS_REPO_ROOT)
-    if (!isRepo) throw new Error(`moduleRoot "${moduleRoot}" is not git repository`)
+    if (!isRepo) throw new Error(`moduleRoot "${root}" is not git repository`)
   })
 
   let manifests: Record<string, Promise<Manifest>>
