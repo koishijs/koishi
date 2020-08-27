@@ -1,6 +1,6 @@
 import { getUsage, getUsageName, ValidationField } from './validate'
 import { User, Group, TableType, Tables } from '../database'
-import { Command, ParsedArgv } from '../command'
+import { Command, FieldCollector, ParsedArgv } from '../command'
 import { Session } from '../session'
 import { App } from '../app'
 import { Message } from './message'
@@ -59,17 +59,15 @@ export default function apply(app: App) {
     return ''
   })
 
-  function createCollector<T extends TableType>(key: T) {
-    return function* (argv: ParsedArgv, fields: Set<keyof Tables[T]>) {
-      const { args: [name] } = argv
-      const command = app._commandMap[name] || app._shortcutMap[name]
-      if (!command) return
-      yield* Command.collect({ ...argv, args: [], options: { help: true } }, key, fields)
-    }
+  const createCollector = <T extends TableType>(key: T): FieldCollector<T> => (argv, fields) => {
+    const { args: [name] } = argv
+    const command = app._commandMap[name] || app._shortcutMap[name]
+    if (!command) return
+    Command.collect({ ...argv, command, args: [], options: { help: true } }, key, fields)
   }
 
   app.command('help [command]', '显示帮助信息', { authority: 0 })
-    .userFields(['authority'])
+    .userFields<ValidationField>(['authority'])
     .userFields(createCollector('user'))
     .groupFields(createCollector('group'))
     .shortcut('帮助', { fuzzy: true })
@@ -98,6 +96,7 @@ export default function apply(app: App) {
           },
         })
       }
+
       return showHelp(command, session, options)
     })
 }

@@ -102,7 +102,10 @@ type Extend<O extends {}, K extends string, T> = {
   [P in K | keyof O]: (P extends keyof O ? O[P] : unknown) & (P extends K ? T : unknown)
 }
 
-type ArgvInferred<T> = Iterable<T> | ((argv: ParsedArgv, fields: Set<T>) => Iterable<T>)
+export type FieldCollector<T extends TableType, K = keyof Tables[T], O extends {} = {}> =
+  | Iterable<K>
+  | ((argv: ParsedArgv<never, never, O>, fields: Set<keyof Tables[T]>) => void)
+
 export type CommandAction<U extends User.Field = never, G extends Group.Field = never, O = {}> =
   (this: Command<U, G>, config: ParsedArgv<U, G, O>, ...args: string[]) => void | string | Promise<void | string>
 
@@ -117,36 +120,37 @@ export class Command<U extends User.Field = never, G extends Group.Field = never
 
   private _optionNameMap: Record<string, CommandOption> = {}
   private _optionSymbolMap: Record<string, CommandOption> = {}
-  private _userFields: ArgvInferred<User.Field>[] = []
-  private _groupFields: ArgvInferred<Group.Field>[] = []
+  private _userFields: FieldCollector<'user'>[] = []
+  private _groupFields: FieldCollector<'group'>[] = []
 
   _action?: CommandAction<U, G>
 
   static defaultConfig: CommandConfig = {}
   static defaultOptionConfig: OptionConfig = {}
 
-  private static _userFields: ArgvInferred<User.Field>[] = []
-  private static _groupFields: ArgvInferred<Group.Field>[] = []
+  private static _userFields: FieldCollector<'user'>[] = []
+  private static _groupFields: FieldCollector<'group'>[] = []
 
-  static userFields(fields: ArgvInferred<User.Field>) {
+  static userFields(fields: FieldCollector<'user'>) {
     this._userFields.push(fields)
     return this
   }
 
-  static groupFields(fields: ArgvInferred<Group.Field>) {
+  static groupFields(fields: FieldCollector<'group'>) {
     this._groupFields.push(fields)
     return this
   }
 
   static collect<T extends TableType>(argv: ParsedArgv, key: T, fields = new Set<keyof Tables[T]>()) {
     if (!argv) return
-    const values: ArgvInferred<keyof Tables[T]>[] = [
+    const values: FieldCollector<T>[] = [
       ...this[`_${key}Fields`],
       ...argv.command[`_${key}Fields`],
     ]
-    for (let value of values) {
+    for (const value of values) {
       if (typeof value === 'function') {
-        value = value(argv, fields)
+        value(argv, fields)
+        continue
       }
       for (const field of value) {
         fields.add(field)
@@ -183,18 +187,14 @@ export class Command<U extends User.Field = never, G extends Group.Field = never
     return `Command <${this.name}>`
   }
 
-  userFields<T extends User.Field = never>(fields: Iterable<T>): Command<U | T, G, O>
-  userFields<T extends User.Field = never>(fields: (argv: ParsedArgv<never, never, O>, fields: Set<User.Field>) => Iterable<T>): Command<U | T, G, O>
-  userFields(fields: ArgvInferred<User.Field>) {
+  userFields<T extends User.Field = never>(fields: FieldCollector<'user', T, O>): Command<U | T, G, O> {
     this._userFields.push(fields)
-    return this
+    return this as any
   }
 
-  groupFields<T extends Group.Field = never>(fields: Iterable<T>): Command<U, G | T, O>
-  groupFields<T extends Group.Field = never>(fields: (argv: ParsedArgv<never, never, O>, fields: Set<Group.Field>) => Iterable<T>): Command<U, G | T, O>
-  groupFields(fields: ArgvInferred<Group.Field>) {
+  groupFields<T extends Group.Field = never>(fields: FieldCollector<'group', T, O>): Command<U, G | T, O> {
     this._groupFields.push(fields)
-    return this
+    return this as any
   }
 
   alias(...names: string[]) {
