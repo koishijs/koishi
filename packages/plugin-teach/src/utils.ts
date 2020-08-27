@@ -10,7 +10,6 @@ declare module 'koishi-core/dist/app' {
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/fetch'(dialogue: Dialogue, test: DialogueTest): boolean | void
     'dialogue/permit'(argv: Dialogue.Argv, dialogue: Dialogue): boolean
     'dialogue/flag'(flag: keyof typeof Dialogue.Flag): void
   }

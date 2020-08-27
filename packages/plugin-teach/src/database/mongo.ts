@@ -1,8 +1,8 @@
 import { Context, extendDatabase } from 'koishi-core'
 import { clone, defineProperty, Observed, pick } from 'koishi-utils'
-import { Dialogue, DialogueTest } from '../utils'
 import { FilterQuery } from 'mongodb'
 import MongoDatabase from 'koishi-plugin-mongo/dist/database'
+import { Dialogue, DialogueTest } from '../utils'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -26,8 +26,7 @@ extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
   async getDialoguesByTest(test: DialogueTest) {
     const query: FilterQuery<Dialogue> = { $and: [] }
     this.app.emit('dialogue/mongo', test, query.$and)
-    const dialogues = (await this.db.collection('dialogue').find(query).toArray())
-      .filter((dialogue) => !this.app.bail('dialogue/fetch', dialogue, test))
+    const dialogues = await this.db.collection('dialogue').find(query).toArray()
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
     return dialogues.filter(value => {
       if (value.flag & Dialogue.Flag.regexp) {
