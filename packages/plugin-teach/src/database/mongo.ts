@@ -2,7 +2,7 @@ import { Context, extendDatabase } from 'koishi-core'
 import { clone, defineProperty, Observed, pick } from 'koishi-utils'
 import { FilterQuery } from 'mongodb'
 import MongoDatabase from 'koishi-plugin-mongo/dist/database'
-import { Dialogue, DialogueTest } from '../utils'
+import { Dialogue, DialogueTest, equal } from '../utils'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -31,7 +31,10 @@ extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
     return dialogues.filter(value => {
       if (value.flag & Dialogue.Flag.regexp) {
         const regex = new RegExp(value.question, 'i')
-        return regex.test(test.question) || regex.test(test.original)
+        if (!(regex.test(test.question) || regex.test(test.original))) return false
+      }
+      if (test.groups && !test.partial) {
+        return !(value.flag & Dialogue.Flag.complement) === test.reversed || !equal(test.groups, value.groups)
       }
       return true
     })
