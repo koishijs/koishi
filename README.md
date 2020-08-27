@@ -15,6 +15,8 @@ Koishi 是一个在 [Node.js](https://nodejs.org/) 环境下运行的机器人�
 
 这个项目的名字和图标来源于东方 Project 中的角色古明地恋 (Komeiji Koishi)。
 
+![demo](./.github/demo.png)
+
 ## 安装
 
 ```sh
