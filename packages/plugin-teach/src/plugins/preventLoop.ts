@@ -35,6 +35,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/receive', (state) => {
+    if (state.session._redirected) return
     const timestamp = Date.now()
     for (const { participants, length, debounce } of preventLoopConfig) {
       if (state.initiators.length < length) break

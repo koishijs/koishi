@@ -1,7 +1,8 @@
-import { Logger, escapeRegExp } from 'koishi-utils'
+import { Logger, escapeRegExp, observe, contain } from 'koishi-utils'
 import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
 import { findSourceMap } from 'module'
+import { dirname, sep } from 'path'
 
 /* eslint-disable import/first */
 
@@ -11,6 +12,7 @@ const logger = new Logger('eval')
 import { expose, wrap } from './transfer'
 import { VM } from './vm'
 import { MainAPI } from '.'
+import { User } from 'koishi-core'
 
 export interface WorkerConfig {
   setupFiles?: Record<string, string>
@@ -29,9 +31,10 @@ export const config: WorkerData = {
 
 interface EvalOptions {
   sid: string
-  user: {}
+  user: Partial<User>
   silent: boolean
   source: string
+  writable: User.Field[]
 }
 
 const vm = new VM()
@@ -45,7 +48,7 @@ function formatResult(...param: [string, ...any[]]) {
   return formatWithOptions(config.inspect, ...param)
 }
 
-function formatError(error: Error) {
+export function formatError(error: Error) {
   if (!(error instanceof Error)) return `Uncaught: ${error}`
 
   if (error.name === 'SyntaxError') {
@@ -59,7 +62,7 @@ function formatError(error: Error) {
   }
 
   return error.stack
-    .replace(/\s*.+Script[\s\S]*/, '')
+    .replace(/\s*.+(Script|MessagePort)[\s\S]*/, '')
     .split('\n')
     .map((line) => {
       for (const name in pathMapper) {
@@ -72,20 +75,32 @@ function formatError(error: Error) {
 
 const main = wrap<MainAPI>(parentPort)
 
-export function contextFactory(sid: string, user: {}) {
-  return {
-    user,
-    async send(...param: [string, ...any[]]) {
-      return await main.send(sid, formatResult(...param))
-    },
-    async exec(message: string) {
-      if (typeof message !== 'string') {
-        throw new TypeError('The "message" argument must be of type string')
-      }
-      return await main.execute(sid, message)
-    },
-  }
+export interface Context {
+  user: User.Observed<any>
+  send(...param: any[]): Promise<void>
+  exec(message: string): Promise<void>
 }
+
+export const Context = (sid: string, user: Partial<User>, writable: User.Field[]): Context => ({
+  user: observe(user, async (diff) => {
+    const diffKeys = Object.keys(diff)
+    if (!contain(writable, diffKeys)) {
+      throw new TypeError(`cannot set user field: ${diffKeys.join(', ')}`)
+    }
+    await main.updateUser(sid, diff)
+  }),
+
+  async send(...param: [string, ...any[]]) {
+    return await main.send(sid, formatResult(...param))
+  },
+
+  async exec(message: string) {
+    if (typeof message !== 'string') {
+      throw new TypeError('The "message" argument must be of type string')
+    }
+    return await main.execute(sid, message)
+  },
+})
 
 export interface Response {}
 
@@ -97,10 +112,11 @@ export class WorkerAPI {
   }
 
   async eval(options: EvalOptions) {
-    const { sid, source, user, silent } = options
+    const { sid, user, source, silent, writable } = options
 
-    const key = 'koishi-eval-session:' + sid
-    internal.setGlobal(Symbol.for(key), contextFactory(sid, user), false, true)
+    const key = 'koishi-eval-context:' + sid
+    const ctx = Context(sid, user, writable)
+    internal.setGlobal(Symbol.for(key), ctx, true)
 
     let result: any
     try {
@@ -112,6 +128,7 @@ export class WorkerAPI {
         filename: 'stdin',
         lineOffset: -4,
       })
+      await ctx.user._update()
     } catch (error) {
       return formatError(error)
     }
@@ -121,9 +138,15 @@ export class WorkerAPI {
   }
 }
 
+export function mapDirectory(identifier: string, filename: string) {
+  const sourceMap = findSourceMap(filename)
+  if (!sourceMap) return logger.warn('cannot find source map for %c', filename)
+  const path = dirname(sourceMap.payload.sources[0].slice(7)) + sep
+  pathMapper[identifier] = new RegExp(`(at | \\()${escapeRegExp(path)}`, 'g')
+}
+
 Promise.all(Object.values(config.setupFiles).map(file => require(file).default)).then(() => {
-  const path = findSourceMap(__filename).payload.sources[0].slice(7, -9)
-  pathMapper['koishi/'] = new RegExp(`(at | \\()${escapeRegExp(path)}`, 'g')
+  mapDirectory('koishi/', __filename)
   Object.entries(config.setupFiles).forEach(([name, path]) => {
     const sourceMap = findSourceMap(path)
     if (sourceMap) path = sourceMap.payload.sources[0].slice(7)

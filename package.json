@@ -3,20 +3,23 @@
   "private": true,
   "workspaces": [
     "atri",
+    "addons",
     "shiki",
     "shiki/core",
     "shiki/cosmos",
     "shiki/games",
+    "shiki/others",
     "packages/*"
   ],
   "scripts": {
     "atri": "yarn workspace atri",
+    "addons": "yarn workspace addons",
     "build": "tsc -b && yarn workspace koishi-plugin-eval wrap",
     "build:ci": "tsc -b --listEmittedFiles && yarn workspace koishi-plugin-eval wrap",
     "bump": "ts-node build/bump",
     "dep": "ts-node build/dep",
     "docs": "cd docs && yarn dev",
-    "test": "mocha --experimental-vm-modules --enable-source-maps",
+    "test": "cross-env TS_NODE_PROJECT=tsconfig.test.json mocha --experimental-vm-modules --enable-source-maps",
     "test:json": "c8 -r json yarn test",
     "test:lcov": "rimraf coverage && c8 -r lcov yarn test",
     "test:text": "c8 -r text yarn test",
@@ -41,6 +44,7 @@
     "cac": "^6.6.1",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
+    "cross-env": "^7.0.2",
     "cross-spawn": "^7.0.3",
     "del": "^5.1.0",
     "eslint": "^7.7.0",
@@ -64,6 +68,7 @@
     "rimraf": "^3.0.2",
     "semver": "^7.3.2",
     "ts-node": "^9.0.0",
+    "tsconfig-paths": "^3.9.0",
     "typescript": "^4.0.2"
   }
 }

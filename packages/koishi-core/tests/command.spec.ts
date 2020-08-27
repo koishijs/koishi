@@ -1,12 +1,11 @@
 import { App } from 'koishi-test-utils'
+import { inspect } from 'util'
 import { expect } from 'chai'
 import '@shigma/chai-extended'
 
-let app: App
-
 describe('Command API', () => {
   describe('Register Commands', () => {
-    before(() => app = new App())
+    const app = new App()
 
     it('constructor checks', () => {
       expect(() => app.command('')).to.throw()
@@ -24,6 +23,10 @@ describe('Command API', () => {
       expect(app._commandMap.a.context).to.equal(app)
       expect(app._commandMap.b.context).to.equal(ctx1)
       expect(app._commandMap.c.context).to.equal(ctx2)
+    })
+
+    it('custom inspect', () => {
+      expect(inspect(app.command('a'))).to.equal('Command <a>')
     })
 
     it('modify commands', () => {
@@ -63,6 +66,7 @@ describe('Command API', () => {
   })
 
   describe('Register Subcommands', () => {
+    let app: App
     beforeEach(() => app = new App())
 
     it('command.subcommand', () => {
@@ -121,6 +125,30 @@ describe('Command API', () => {
       expect(() => app.command('a/c')).to.throw()
       expect(() => app.command('c/b')).to.throw()
       expect(() => app.command('a/d')).not.to.throw()
+    })
+  })
+
+  describe('Dispose Commands', () => {
+    const app = new App()
+    const foo = app.command('foo')
+    const bar = foo.subcommand('bar')
+    const test = bar.subcommand('test')
+    bar.alias('baz').shortcut('1')
+    test.alias('it').shortcut('2')
+
+    it('before dispose', () => {
+      // don't forget help
+      expect(app._commands).to.have.length(4)
+      expect(app._shortcuts).to.have.length(3)
+      expect(foo.children).to.have.length(1)
+    })
+
+    it('after dispose', () => {
+      bar.dispose()
+      // don't forget help
+      expect(app._commands).to.have.length(2)
+      expect(app._shortcuts).to.have.length(1)
+      expect(foo.children).to.have.length(0)
     })
   })
 })
