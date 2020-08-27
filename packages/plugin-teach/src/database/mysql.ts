@@ -99,7 +99,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields }) => 
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
   config.validateRegExp = {
-    onEscapeCharacterSet(start, end, kind, negate) {
+    onEscapeCharacterSet() {
       throw new SyntaxError('unsupported escape character set')
     },
     onQuantifier(start, end, min, max, greedy) {
