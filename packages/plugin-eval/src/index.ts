@@ -1,12 +1,12 @@
-import { App, Context, Session, User } from 'koishi-core'
-import { CQCode, Logger, defineProperty, Random, pick } from 'koishi-utils'
+import { Context, Session, User } from 'koishi-core'
 import { Worker, ResourceLimits } from 'worker_threads'
+import { CQCode, Logger, defineProperty, Random, pick } from 'koishi-utils'
 import { WorkerAPI, WorkerConfig, WorkerData, Response } from './worker'
 import { wrap, expose, Remote } from './transfer'
+import { MainAPI, Access, UserTrap } from './main'
 import { resolve } from 'path'
-import { UserTrap } from './trap'
 
-export * from './trap'
+export * from './main'
 
 declare module 'koishi-core/dist/app' {
   interface App {
@@ -35,7 +35,7 @@ declare module 'koishi-core/dist/session' {
   interface Session {
     $uuid: string
     _isEval: boolean
-    _logCount: number
+    _sendCount: number
   }
 }
 
@@ -43,7 +43,7 @@ export interface MainConfig {
   prefix?: string
   timeout?: number
   maxLogs?: number
-  userFields?: User.Field[]
+  userFields?: Access<User.Field>
   resourceLimits?: ResourceLimits
   dataKeys?: (keyof WorkerData)[]
 }
@@ -62,33 +62,6 @@ const defaultConfig: EvalConfig = {
 }
 
 const logger = new Logger('eval')
-
-export class MainAPI {
-  constructor(public app: App) {}
-
-  private getSession(uuid: string) {
-    const session = this.app._sessions[uuid]
-    if (!session) throw new Error(`session ${uuid} not found`)
-    return session
-  }
-
-  async execute(uuid: string, message: string) {
-    const session = this.getSession(uuid)
-    const send = session.$send
-    const sendQueued = session.$sendQueued
-    await session.$execute(message)
-    session.$sendQueued = sendQueued
-    session.$send = send
-  }
-
-  async send(uuid: string, message: string) {
-    const session = this.getSession(uuid)
-    if (!session._logCount) session._logCount = 0
-    if (this.app.evalConfig.maxLogs > session._logCount++) {
-      return await session.$sendQueued(message)
-    }
-  }
-}
 
 export const workerScript = `require(${JSON.stringify(resolve(__dirname, 'worker.js'))});`
 
@@ -160,54 +133,54 @@ export function apply(ctx: Context, config: Config = {}) {
     .before((session) => {
       if (!session['_redirected'] && session.$user?.authority < 2) return '权限不足。'
     })
-    .action(async ({ session, options }, expr) => {
-      if (options.restart) {
-        await session.$app.evalWorker.terminate()
-        return '子线程已重启。'
+
+  UserTrap.attach(cmd, config.userFields, async ({ session, options, user, writable }, expr) => {
+    if (options.restart) {
+      await session.$app.evalWorker.terminate()
+      return '子线程已重启。'
+    }
+
+    if (!expr) return '请输入要执行的脚本。'
+    expr = CQCode.unescape(expr)
+
+    return await new Promise((resolve) => {
+      logger.debug(expr)
+      defineProperty(session, '_isEval', true)
+
+      const _resolve = (result?: string) => {
+        clearTimeout(timer)
+        app.evalWorker.off('error', listener)
+        session._isEval = false
+        resolve(result)
       }
 
-      if (!expr) return '请输入要执行的脚本。'
-      expr = CQCode.unescape(expr)
+      const timer = setTimeout(async () => {
+        await app.evalWorker.terminate()
+        _resolve(!session._sendCount && '执行超时。')
+      }, config.timeout)
 
-      return await new Promise((resolve) => {
-        logger.debug(expr)
-        defineProperty(session, '_isEval', true)
-
-        const _resolve = (result?: string) => {
-          clearTimeout(timer)
-          app.evalWorker.off('error', listener)
-          session._isEval = false
-          resolve(result)
-        }
-
-        const timer = setTimeout(async () => {
-          await app.evalWorker.terminate()
-          _resolve(!session._logCount && '执行超时。')
-        }, config.timeout)
-
-        const listener = (error: Error) => {
-          let message = ERROR_CODES[error['code']]
-          if (!message) {
-            logger.warn(error)
-            message = '执行过程中遇到错误。'
-          }
-          _resolve(message)
-        }
-
-        app.evalWorker.on('error', listener)
-        app.evalRemote.eval({
-          sid: session.$uuid,
-          user: UserTrap.get(session.$user, config.userFields),
-          silent: options.slient,
-          source: expr,
-        }).then(_resolve, (error) => {
+      const listener = (error: Error) => {
+        let message = ERROR_CODES[error['code']]
+        if (!message) {
           logger.warn(error)
-          _resolve()
-        })
+          message = '执行过程中遇到错误。'
+        }
+        _resolve(message)
+      }
+
+      app.evalWorker.on('error', listener)
+      app.evalRemote.eval({
+        user,
+        writable,
+        sid: session.$uuid,
+        silent: options.slient,
+        source: expr,
+      }).then(_resolve, (error) => {
+        logger.warn(error)
+        _resolve()
       })
     })
-
-  UserTrap.prepare(cmd, config.userFields)
+  })
 
   if (prefix) {
     cmd.shortcut(prefix, { oneArg: true, fuzzy: true })

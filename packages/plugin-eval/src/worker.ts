@@ -1,4 +1,4 @@
-import { Logger, escapeRegExp } from 'koishi-utils'
+import { Logger, escapeRegExp, observe, contain } from 'koishi-utils'
 import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
 import { findSourceMap } from 'module'
@@ -34,6 +34,7 @@ interface EvalOptions {
   user: Partial<User>
   silent: boolean
   source: string
+  writable: User.Field[]
 }
 
 const vm = new VM()
@@ -75,16 +76,24 @@ export function formatError(error: Error) {
 const main = wrap<MainAPI>(parentPort)
 
 export interface Context {
-  user: Partial<User>
+  user: User.Observed<any>
   send(...param: any[]): Promise<void>
   exec(message: string): Promise<void>
 }
 
-export const Context = (sid: string, user: Partial<User>): Context => ({
-  user,
+export const Context = (sid: string, user: Partial<User>, writable: User.Field[]): Context => ({
+  user: observe(user, async (diff) => {
+    const diffKeys = Object.keys(diff)
+    if (!contain(writable, diffKeys)) {
+      throw new TypeError(`cannot set user field: ${diffKeys.join(', ')}`)
+    }
+    await main.updateUser(sid, diff)
+  }),
+
   async send(...param: [string, ...any[]]) {
     return await main.send(sid, formatResult(...param))
   },
+
   async exec(message: string) {
     if (typeof message !== 'string') {
       throw new TypeError('The "message" argument must be of type string')
@@ -103,10 +112,11 @@ export class WorkerAPI {
   }
 
   async eval(options: EvalOptions) {
-    const { sid, user, source, silent } = options
+    const { sid, user, source, silent, writable } = options
 
-    const key = 'koishi-eval-session:' + sid
-    internal.setGlobal(Symbol.for(key), Context(sid, user), false, true)
+    const key = 'koishi-eval-context:' + sid
+    const ctx = Context(sid, user, writable)
+    internal.setGlobal(Symbol.for(key), ctx, true)
 
     let result: any
     try {
@@ -118,6 +128,7 @@ export class WorkerAPI {
         filename: 'stdin',
         lineOffset: -4,
       })
+      await ctx.user._update()
     } catch (error) {
       return formatError(error)
     }

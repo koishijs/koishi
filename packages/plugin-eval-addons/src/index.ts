@@ -93,8 +93,6 @@ export function apply(ctx: Context, config: Config) {
       const { commands = [] } = manifest
       commands.forEach((config) => {
         const { name: rawName, desc, options = [], userFields = [] } = config
-        const { readable = [] } = Array.isArray(userFields) ? { readable: userFields } : userFields
-
         const [name] = rawName.split(' ', 1)
         if (!response.commands.includes(name)) {
           return logger.warn('unregistered command manifest: %c', name)
@@ -102,16 +100,15 @@ export function apply(ctx: Context, config: Config) {
 
         const cmd = addon
           .subcommand(rawName, desc, config)
-          .option('debug', '启用调试模式', { type: 'boolean' })
-          .action(async ({ session, command, options }, ...args) => {
-            const { $app, $user, $uuid } = session
-            const { name } = command
-            const user = UserTrap.get($user, readable)
-            const result = await $app.evalRemote.callAddon($uuid, user, { name, args, options })
-            return result
-          })
+          .option('debug', '启用调试模式', { type: 'boolean', hidden: true })
 
-        UserTrap.prepare(cmd, readable)
+        UserTrap.attach(cmd, userFields, async ({ session, command, options, user, writable }, ...args) => {
+          const { $app, $uuid } = session
+          const { name } = command
+          const result = await $app.evalRemote.callAddon($uuid, user, writable, { name, args, options })
+          return result
+        })
+
         options.forEach((config) => {
           const { name, desc } = config
           cmd.option(name, desc, config)

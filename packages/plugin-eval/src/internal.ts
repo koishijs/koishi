@@ -314,7 +314,7 @@ Helper.function = function (this: Helper, fnc, traps, deepTraps, mock) {
         if (mock && host.Object.prototype.hasOwnProperty.call(mock, key)) return mock[key]
         if (key === 'constructor') return this.local.Function
         if (key === '__proto__') return this.local.Function.prototype
-        if (key === 'toString' && deepTraps === frozenTraps) return () => `function ${fnc.name}() { [native code] }`
+        if (key === 'toString' && this === Contextify) return () => `function ${fnc.name}() { [native code] }`
       } catch (e) {
         // Never pass the handled expcetion through! This block can't throw an exception under normal conditions.
         return null
@@ -622,23 +622,17 @@ const frozenTraps: Trap = createObject({
 })
 
 function readonly(value: any, mock: any = {}) {
-  for (const key in mock) {
-    const value = mock[key]
-    if (typeof value === 'function') {
-      value.toString = () => `function ${value.name}() { [native code] }`
-    }
-  }
   return Contextify.value(value, null, frozenTraps, mock)
 }
 
-export function setGlobal(name: keyof any, value: any, writable = false, configurable = false) {
+export function setGlobal(name: keyof any, value: any, writable = false) {
   const prop = Contextify.value(name)
   try {
     Object.defineProperty(GLOBAL, prop, {
       value: writable ? Contextify.value(value) : readonly(value),
       enumerable: true,
+      configurable: writable,
       writable,
-      configurable,
     })
   } catch (e) {
     throw Decontextify.value(e)
