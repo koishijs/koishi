@@ -60,7 +60,7 @@ const prefixRegExp = new RegExp(`^(${prefixes.join('|')})(?:\\((\\S+)\\))?: (.+)
     auth: GITHUB_TOKEN,
   })
 
-  const { version } = require('../packages/koishi-cli/package') as PackageJson
+  const { version } = require('../packages/koishi/package') as PackageJson
   const tags = spawnSync('git tag -l').split(/\r?\n/)
   if (tags.includes(version)) {
     return console.log(`Tag ${version} already exists.`)
