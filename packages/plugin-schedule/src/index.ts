@@ -77,10 +77,16 @@ export function apply(ctx: Context) {
 
       if (!options.rest) return '请输入要执行的指令。'
 
-      const time = Time.parseDate(dateSegments.join('-'))
-      if (Number.isNaN(+time)) {
-        return '请输入合法的日期。'
-      } else if (!options.interval && +time <= Date.now()) {
+      const dateString = dateSegments.join('-')
+      const time = Time.parseDate(dateString)
+      const timestamp = +time
+      if (Number.isNaN(timestamp) || timestamp > 2147483647000) {
+        if (/^\d+$/.test(dateString)) {
+          return `请输入合法的日期。你要输入的是不是 ${dateString}s？`
+        } else {
+          return '请输入合法的日期。'
+        }
+      } else if (!options.interval && timestamp <= Date.now()) {
         return '不能指定过去的时间为起始时间。'
       }
 

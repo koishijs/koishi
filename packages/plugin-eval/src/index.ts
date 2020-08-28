@@ -2,7 +2,7 @@ import { Context, Session } from 'koishi-core'
 import { CQCode, Logger, defineProperty, Random } from 'koishi-utils'
 import { EvalWorker, UserTrap, EvalConfig, Config } from './main'
 
-export { UserTrap, MainAPI } from './main'
+export { UserTrap, MainAPI, Config, MainConfig } from './main'
 
 declare module 'koishi-core/dist/app' {
   interface App {
