@@ -1,7 +1,6 @@
 import { config, context, internal, WorkerAPI, Context, response, mapDirectory, formatError } from 'koishi-plugin-eval/dist/worker'
 import { promises, readFileSync } from 'fs'
 import { resolve, posix, dirname } from 'path'
-import { User } from 'koishi-core'
 import { Logger, Time, CQCode, Random } from 'koishi-utils'
 import json5 from 'json5'
 import ts from 'typescript'
@@ -20,7 +19,7 @@ declare module 'koishi-plugin-eval/dist/worker' {
   }
 
   interface WorkerAPI {
-    callAddon(sid: string, user: Partial<User>, writable: User.Field[], argv: AddonArgv): Promise<string | void>
+    callAddon(options: ContextOptions, argv: AddonArgv): Promise<string | void>
   }
 
   interface Response {
@@ -39,10 +38,10 @@ interface AddonContext extends AddonArgv, Context {}
 type AddonAction = (ctx: AddonContext) => string | void | Promise<string | void>
 const commandMap: Record<string, AddonAction> = {}
 
-WorkerAPI.prototype.callAddon = async function (sid, user, writable, argv) {
+WorkerAPI.prototype.callAddon = async function (options, argv) {
   const callback = commandMap[argv.name]
   try {
-    const context = { ...argv, ...Context(sid, user, writable) }
+    const context = { ...argv, ...Context(options) }
     const result = await callback(context)
     await context.user._update()
     return result

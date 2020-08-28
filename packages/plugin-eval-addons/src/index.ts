@@ -1,9 +1,9 @@
-import { Context, CommandConfig, OptionConfig, User } from 'koishi-core'
+import { Context, CommandConfig, OptionConfig } from 'koishi-core'
 import { assertProperty, Logger, noop } from 'koishi-utils'
 import { resolve } from 'path'
 import { safeLoad } from 'js-yaml'
 import { promises as fs } from 'fs'
-import { UserTrap } from 'koishi-plugin-eval'
+import { attachTraps, FieldOptions } from 'koishi-plugin-eval'
 import Git, { CheckRepoActions } from 'simple-git'
 
 const logger = new Logger('addon')
@@ -24,16 +24,10 @@ interface OptionManifest extends OptionConfig {
   desc: string
 }
 
-type Permission<T> = T[] | {
-  readable?: T[]
-  writable?: T[]
-}
-
-interface CommandManifest extends CommandConfig {
+interface CommandManifest extends CommandConfig, FieldOptions {
   name: string
   desc: string
   options?: OptionManifest[]
-  userFields?: Permission<User.Field>
 }
 
 interface Manifest {
@@ -92,7 +86,7 @@ export function apply(ctx: Context, config: Config) {
       if (!manifest) return
       const { commands = [] } = manifest
       commands.forEach((config) => {
-        const { name: rawName, desc, options = [], userFields = [] } = config
+        const { name: rawName, desc, options = [] } = config
         const [name] = rawName.split(' ', 1)
         if (!response.commands.includes(name)) {
           return logger.warn('unregistered command manifest: %c', name)
@@ -102,10 +96,9 @@ export function apply(ctx: Context, config: Config) {
           .subcommand(rawName, desc, config)
           .option('debug', '启用调试模式', { type: 'boolean', hidden: true })
 
-        UserTrap.attach(cmd, userFields, async ({ session, command, options, user, writable }, ...args) => {
-          const { $app, $uuid } = session
-          const { name } = command
-          const result = await $app.worker.remote.callAddon($uuid, user, writable, { name, args, options })
+        attachTraps(cmd, config, async ({ session, command, options, ctxOptions }, ...args) => {
+          const { name } = command, { worker } = session.$app
+          const result = await worker.remote.callAddon(ctxOptions, { name, args, options })
           return result
         })
 

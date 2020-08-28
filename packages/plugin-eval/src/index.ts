@@ -1,8 +1,8 @@
 import { Context, Session } from 'koishi-core'
 import { CQCode, Logger, defineProperty, Random } from 'koishi-utils'
-import { EvalWorker, UserTrap, EvalConfig, Config } from './main'
+import { EvalWorker, attachTraps, EvalConfig, Config } from './main'
 
-export { UserTrap, MainAPI, Config, MainConfig } from './main'
+export * from './main'
 
 declare module 'koishi-core/dist/app' {
   interface App {
@@ -30,6 +30,7 @@ const defaultConfig: EvalConfig = {
   timeout: 1000,
   setupFiles: {},
   maxLogs: Infinity,
+  groupFields: ['id'],
   userFields: ['id', 'authority'],
   dataKeys: ['inspect', 'setupFiles'],
 }
@@ -73,7 +74,7 @@ export function apply(ctx: Context, config: Config = {}) {
       if (!session['_redirected'] && session.$user?.authority < 2) return '权限不足。'
     })
 
-  UserTrap.attach(cmd, config.userFields, async ({ session, options, user, writable }, expr) => {
+  attachTraps(cmd, config, async ({ session, options, ctxOptions }, expr) => {
     if (options.restart) {
       await app.worker.restart()
       return '子线程已重启。'
@@ -107,10 +108,7 @@ export function apply(ctx: Context, config: Config = {}) {
         _resolve(message)
       })
 
-      app.worker.remote.eval({
-        user,
-        writable,
-        sid: session.$uuid,
+      app.worker.remote.eval(ctxOptions, {
         silent: options.slient,
         source: expr,
       }).then(_resolve, (error) => {

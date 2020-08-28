@@ -1,9 +1,9 @@
-import { App, Command, CommandAction, ParsedArgv, User } from 'koishi-core'
-import { Logger, pick } from 'koishi-utils'
-import { resolve } from 'path'
-import { WorkerAPI, WorkerConfig, WorkerData, Response } from './worker'
+import { App, Command, CommandAction, Group, ParsedArgv, User } from 'koishi-core'
+import { Logger, Observed, pick } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
+import { WorkerAPI, WorkerConfig, WorkerData, Response, ContextOptions } from './worker'
 import { expose, Remote, wrap } from './transfer'
+import { resolve } from 'path'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -15,11 +15,10 @@ declare module 'koishi-core/dist/context' {
 
 const logger = new Logger('eval')
 
-export interface MainConfig {
+export interface MainConfig extends FieldOptions {
   prefix?: string
   timeout?: number
   maxLogs?: number
-  userFields?: Access<User.Field>
   resourceLimits?: ResourceLimits
   dataKeys?: (keyof WorkerData)[]
 }
@@ -28,60 +27,85 @@ export interface EvalConfig extends MainConfig, WorkerData {}
 
 export interface Config extends MainConfig, WorkerConfig {}
 
-interface TrappedArgv<O> extends ParsedArgv<never, never, O> {
-  user: Partial<User>
-  writable: User.Field[]
-}
-
-type TrappedAction<O> = (argv: TrappedArgv<O>, ...args: string[]) => ReturnType<CommandAction>
-
-export interface UserTrap<T = any, K extends User.Field = never> {
+export interface Trap<O extends {}, T = any, K extends keyof O = never> {
   fields: Iterable<K>
-  get?(data: Pick<User, K>): T
-  set?(data: Pick<User, K>, value: T): void
+  get?(data: Pick<O, K>): T
+  set?(data: Pick<O, K>, value: T): void
 }
 
-export namespace UserTrap {
-  const traps: Record<string, UserTrap<any, any>> = {}
+export class DataTrap<O extends {}> {
+  private traps: Record<string, Trap<O, any, any>> = {}
 
-  export function define<T, K extends User.Field = never>(key: string, trap: UserTrap<T, K>) {
-    traps[key] = trap
+  define<T, K extends keyof O = never>(key: string, trap: Trap<O, T, K>) {
+    this.traps[key] = trap
   }
 
-  export function attach<O>(command: Command<never, never, O>, fields: Access<User.Field>, action: TrappedAction<O>) {
-    const { readable = [], writable = [] } = Array.isArray(fields) ? { readable: fields } : fields
-    for (const field of readable) {
-      const trap = traps[field]
-      command.userFields(trap ? trap.fields : [field])
-      command.action((argv, ...args) => {
-        const user = get(argv.session.$user, readable)
-        return action({ ...argv, user, writable }, ...args)
-      })
+  * fields(fields: (string & keyof O)[] = []) {
+    for (const field of fields) {
+      const trap = this.traps[field]
+      trap ? yield* trap.fields : yield field
     }
   }
 
-  export function get($user: User.Observed<never>, fields: string[]) {
-    if (!$user) return {}
-    const result: Partial<User> = {}
+  get(target: Observed<{}, Promise<void>>, fields: string[]) {
+    if (!target) return {}
+    const result: Partial<O> = {}
     for (const field of fields) {
-      const getter = traps[field]?.get
-      Reflect.set(result, field, getter ? getter($user) : $user[field])
+      const getter = this.traps[field]?.get
+      Reflect.set(result, field, getter ? getter(target) : target[field])
     }
     return result
   }
 
-  export function set($user: User.Observed<never>, data: Partial<User>) {
+  set(target: Observed<{}, Promise<void>>, data: Partial<O>) {
     for (const field in data) {
-      const setter = traps[field]?.set
-      setter ? setter($user, data[field]) : ($user[field] = data[field])
+      const setter = this.traps[field]?.set
+      setter ? setter(target, data[field]) : Reflect.set(target, field, data[field])
     }
-    return $user._update()
+    return target._update()
   }
 }
 
-export type Access<T> = T[] | {
+export const userTrap = new DataTrap<User>()
+export const groupTrap = new DataTrap<Group>()
+
+interface AccessOptions<T> {
   readable?: T[]
   writable?: T[]
+}
+
+export type Access<T> = T[] | AccessOptions<T>
+
+interface TrappedArgv<O> extends ParsedArgv<never, never, O> {
+  ctxOptions?: ContextOptions
+}
+
+type TrappedAction<O> = (argv: TrappedArgv<O>, ...args: string[]) => ReturnType<CommandAction>
+
+function resolveAccess<T>(fields: Access<T>) {
+  return Array.isArray(fields) ? { readable: fields } : fields
+}
+
+export interface FieldOptions {
+  userFields?: Access<User.Field>
+  groupFields?: Access<Group.Field>
+}
+
+export function attachTraps<O>(command: Command<never, never, O>, options: FieldOptions, action: TrappedAction<O>) {
+  const userAccess = resolveAccess(options.userFields)
+  const groupAccess = resolveAccess(options.groupFields)
+  const userWritable = userAccess.writable || []
+  const groupWritable = groupAccess.writable || []
+
+  command.userFields(userTrap.fields(userAccess.readable))
+  command.groupFields(groupTrap.fields(groupAccess.readable))
+  command.action((argv, ...args) => {
+    const { $uuid, $user, $group } = argv.session
+    const user = userTrap.get($user, userAccess.readable)
+    const group = groupTrap.get($group, groupAccess.readable)
+    const ctxOptions = { $uuid, user, group, userWritable, groupWritable }
+    return action({ ...argv, ctxOptions }, ...args)
+  })
 }
 
 export class MainAPI {
@@ -112,7 +136,12 @@ export class MainAPI {
 
   async updateUser(uuid: string, data: Partial<User>) {
     const session = this.getSession(uuid)
-    return UserTrap.set(session.$user, data)
+    return userTrap.set(session.$user, data)
+  }
+
+  async updateGroup(uuid: string, data: Partial<Group>) {
+    const session = this.getSession(uuid)
+    return groupTrap.set(session.$group, data)
   }
 }
 

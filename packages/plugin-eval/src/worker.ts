@@ -1,4 +1,4 @@
-import { Logger, escapeRegExp, observe, contain } from 'koishi-utils'
+import { Logger, escapeRegExp, observe, contain, difference } from 'koishi-utils'
 import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
 import { findSourceMap } from 'module'
@@ -12,7 +12,7 @@ const logger = new Logger('eval')
 import { expose, wrap } from './transfer'
 import { VM } from './vm'
 import { MainAPI } from '.'
-import { User } from 'koishi-core'
+import { Group, User } from 'koishi-core'
 
 export interface WorkerConfig {
   setupFiles?: Record<string, string>
@@ -30,11 +30,8 @@ export const config: WorkerData = {
 }
 
 interface EvalOptions {
-  sid: string
-  user: Partial<User>
   silent: boolean
   source: string
-  writable: User.Field[]
 }
 
 const vm = new VM()
@@ -75,30 +72,47 @@ export function formatError(error: Error) {
 
 const main = wrap<MainAPI>(parentPort)
 
+export interface ContextOptions {
+  $uuid: string
+  user: Partial<User>
+  group: Partial<Group>
+  userWritable: User.Field[]
+  groupWritable: Group.Field[]
+}
+
 export interface Context {
   user: User.Observed<any>
+  group: Group.Observed<any>
   send(...param: any[]): Promise<void>
   exec(message: string): Promise<void>
 }
 
-export const Context = (sid: string, user: Partial<User>, writable: User.Field[]): Context => ({
+export const Context = ({ $uuid, user, userWritable, group, groupWritable }: ContextOptions): Context => ({
   user: observe(user, async (diff) => {
-    const diffKeys = Object.keys(diff)
-    if (!contain(writable, diffKeys)) {
+    const diffKeys = difference(Object.keys(diff), userWritable)
+    if (diffKeys.length) {
       throw new TypeError(`cannot set user field: ${diffKeys.join(', ')}`)
     }
-    await main.updateUser(sid, diff)
+    await main.updateUser($uuid, diff)
+  }),
+
+  group: observe(group, async (diff) => {
+    const diffKeys = difference(Object.keys(diff), groupWritable)
+    if (diffKeys.length) {
+      throw new TypeError(`cannot set group field: ${diffKeys.join(', ')}`)
+    }
+    await main.updateGroup($uuid, diff)
   }),
 
   async send(...param: [string, ...any[]]) {
-    return await main.send(sid, formatResult(...param))
+    return await main.send($uuid, formatResult(...param))
   },
 
   async exec(message: string) {
     if (typeof message !== 'string') {
       throw new TypeError('The "message" argument must be of type string')
     }
-    return await main.execute(sid, message)
+    return await main.execute($uuid, message)
   },
 })
 
@@ -111,11 +125,11 @@ export class WorkerAPI {
     return response
   }
 
-  async eval(options: EvalOptions) {
-    const { sid, user, source, silent, writable } = options
+  async eval(ctxOptions: ContextOptions, evalOptions: EvalOptions) {
+    const { source, silent } = evalOptions
 
-    const key = 'koishi-eval-context:' + sid
-    const ctx = Context(sid, user, writable)
+    const key = 'koishi-eval-context:' + ctxOptions.$uuid
+    const ctx = Context(ctxOptions)
     internal.setGlobal(Symbol.for(key), ctx, true)
 
     let result: any
