@@ -9,8 +9,8 @@ type TrappedAction<O> = (argv: TrappedArgv<O>, ...args: string[]) => ReturnType<
 
 export interface UserTrap<T = any, K extends User.Field = never> {
   fields: Iterable<K>
-  get(data: Pick<User, K>): T
-  set(data: Pick<User, K>, value: T): void
+  get?(data: Pick<User, K>): T
+  set?(data: Pick<User, K>, value: T): void
 }
 
 export namespace UserTrap {
@@ -36,16 +36,16 @@ export namespace UserTrap {
     if (!$user) return {}
     const result: Partial<User> = {}
     for (const field of fields) {
-      const trap = traps[field]
-      Reflect.set(result, field, trap ? trap.get($user) : $user[field])
+      const getter = traps[field]?.get
+      Reflect.set(result, field, getter ? getter($user) : $user[field])
     }
     return result
   }
 
   export function set($user: User.Observed<never>, data: Partial<User>) {
     for (const field in data) {
-      const trap = traps[field]
-      trap ? trap.set($user, data[field]) : $user[field] = data[field]
+      const setter = traps[field]?.set
+      setter ? setter($user, data[field]) : ($user[field] = data[field])
     }
     return $user._update()
   }
