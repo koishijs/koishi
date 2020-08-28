@@ -1,4 +1,32 @@
 import { App, Command, CommandAction, ParsedArgv, User } from 'koishi-core'
+import { Logger, pick } from 'koishi-utils'
+import { resolve } from 'path'
+import { WorkerAPI, WorkerConfig, WorkerData, Response } from './worker'
+import { Worker, ResourceLimits } from 'worker_threads'
+import { expose, Remote, wrap } from './transfer'
+
+declare module 'koishi-core/dist/context' {
+  interface EventMap {
+    'worker/start'(): void | Promise<void>
+    'worker/ready'(response: Response): void
+    'worker/exit'(): void
+  }
+}
+
+const logger = new Logger('eval')
+
+export interface MainConfig {
+  prefix?: string
+  timeout?: number
+  maxLogs?: number
+  userFields?: Access<User.Field>
+  resourceLimits?: ResourceLimits
+  dataKeys?: (keyof WorkerData)[]
+}
+
+export interface EvalConfig extends MainConfig, WorkerData {}
+
+export interface Config extends MainConfig, WorkerConfig {}
 
 interface TrappedArgv<O> extends ParsedArgv<never, never, O> {
   user: Partial<User>
@@ -77,7 +105,7 @@ export class MainAPI {
   async send(uuid: string, message: string) {
     const session = this.getSession(uuid)
     if (!session._sendCount) session._sendCount = 0
-    if (this.app.evalConfig.maxLogs > session._sendCount++) {
+    if (this.app.worker.config.maxLogs > session._sendCount++) {
       return await session.$sendQueued(message)
     }
   }
@@ -87,3 +115,60 @@ export class MainAPI {
     return UserTrap.set(session.$user, data)
   }
 }
+
+export const workerScript = `require(${JSON.stringify(resolve(__dirname, 'worker.js'))});`
+
+export class EvalWorker {
+  static restart = true
+
+  private worker: Worker
+  private promise: Promise<void>
+
+  public local: MainAPI
+  public remote: Remote<WorkerAPI>
+
+  constructor(public app: App, public config: EvalConfig) {
+    this.local = new MainAPI(app)
+  }
+
+  async start() {
+    await this.app.parallel('worker/start')
+
+    this.worker = new Worker(workerScript, {
+      eval: true,
+      workerData: {
+        logLevels: Logger.levels,
+        ...pick(this.config, this.config.dataKeys),
+      },
+      resourceLimits: this.config.resourceLimits,
+    })
+
+    expose(this.worker, this.local)
+    this.remote = wrap(this.worker)
+
+    await this.remote.start().then((response) => {
+      this.app.emit('worker/ready', response)
+      logger.info('worker started')
+
+      this.worker.on('exit', (code) => {
+        this.app.emit('worker/exit')
+        logger.info('exited with code', code)
+        if (EvalWorker.restart) this.promise = this.start()
+      })
+    })
+  }
+
+  async restart() {
+    await this.worker.terminate()
+    await this.promise
+  }
+
+  onError(listener: (error: Error) => void) {
+    this.worker.on('error', listener)
+    return () => this.worker.off('error', listener)
+  }
+}
+
+process.on('beforeExit', () => {
+  EvalWorker.restart = false
+})

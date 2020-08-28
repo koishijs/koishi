@@ -15,7 +15,7 @@ export interface Config {
   exclude?: RegExp
 }
 
-declare module 'koishi-plugin-eval' {
+declare module 'koishi-plugin-eval/dist/main' {
   interface MainConfig extends AddonConfig {}
 }
 
@@ -42,12 +42,12 @@ interface Manifest {
 }
 
 export function apply(ctx: Context, config: Config) {
-  const { evalConfig } = ctx.app
-  Object.assign(evalConfig, config)
-  const root = resolve(process.cwd(), assertProperty(evalConfig, 'moduleRoot'))
-  evalConfig.moduleRoot = root
-  evalConfig.dataKeys.push('addonNames', 'moduleRoot')
-  evalConfig.setupFiles['koishi/addons.ts'] = resolve(__dirname, 'worker.js')
+  const { worker } = ctx.app
+  Object.assign(worker.config, config)
+  const root = resolve(process.cwd(), assertProperty(worker.config, 'moduleRoot'))
+  worker.config.moduleRoot = root
+  worker.config.dataKeys.push('addonNames', 'moduleRoot')
+  worker.config.setupFiles['koishi/addons.ts'] = resolve(__dirname, 'worker.js')
 
   const git = Git(root)
 
@@ -55,9 +55,9 @@ export function apply(ctx: Context, config: Config) {
     .option('update', '-u  更新扩展模块', { authority: 3 })
     .action(async ({ options, session }) => {
       if (options.update) {
-        const { files, summary } = await git.pull(evalConfig.gitRemote)
+        const { files, summary } = await git.pull(worker.config.gitRemote)
         if (!files.length) return '所有模块均已是最新。'
-        await session.$app.evalWorker.terminate()
+        await session.$app.worker.restart()
         return `更新成功！(${summary.insertions}A ${summary.deletions}D ${summary.changes}M)`
       }
       return session.$execute('help addon')
@@ -69,11 +69,11 @@ export function apply(ctx: Context, config: Config) {
   })
 
   let manifests: Record<string, Promise<Manifest>>
-  const { exclude = /^(\..+|node_modules)$/ } = evalConfig
+  const { exclude = /^(\..+|node_modules)$/ } = worker.config
 
   ctx.on('worker/start', async () => {
     const dirents = await fs.readdir(root, { withFileTypes: true })
-    const paths = evalConfig.addonNames = dirents
+    const paths = worker.config.addonNames = dirents
       .filter(dir => dir.isDirectory() && !exclude.test(dir.name))
       .map(dir => dir.name)
     // cmd.dispose() may affect addon.children, so here we make a slice
@@ -87,7 +87,7 @@ export function apply(ctx: Context, config: Config) {
   }
 
   ctx.on('worker/ready', (response) => {
-    evalConfig.addonNames.map(async (path) => {
+    worker.config.addonNames.map(async (path) => {
       const manifest = await manifests[path]
       if (!manifest) return
       const { commands = [] } = manifest
@@ -105,7 +105,7 @@ export function apply(ctx: Context, config: Config) {
         UserTrap.attach(cmd, userFields, async ({ session, command, options, user, writable }, ...args) => {
           const { $app, $uuid } = session
           const { name } = command
-          const result = await $app.evalRemote.callAddon($uuid, user, writable, { name, args, options })
+          const result = await $app.worker.remote.callAddon($uuid, user, writable, { name, args, options })
           return result
         })
 

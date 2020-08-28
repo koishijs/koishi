@@ -1,33 +1,19 @@
-import { Context, Session, User } from 'koishi-core'
-import { Worker, ResourceLimits } from 'worker_threads'
-import { CQCode, Logger, defineProperty, Random, pick } from 'koishi-utils'
-import { WorkerAPI, WorkerConfig, WorkerData, Response } from './worker'
-import { wrap, expose, Remote } from './transfer'
-import { MainAPI, Access, UserTrap } from './main'
-import { resolve } from 'path'
+import { Context, Session } from 'koishi-core'
+import { CQCode, Logger, defineProperty, Random } from 'koishi-utils'
+import { EvalWorker, UserTrap, EvalConfig, Config } from './main'
 
-export * from './main'
+export { UserTrap, MainAPI } from './main'
 
 declare module 'koishi-core/dist/app' {
   interface App {
     _sessions: Record<string, Session>
-    evalConfig: EvalConfig
-    evalWorker: Worker
-    evalRemote: Remote<WorkerAPI>
+    worker: EvalWorker
   }
 }
 
 declare module 'koishi-core/dist/command' {
   interface CommandConfig {
     noEval?: boolean
-  }
-}
-
-declare module 'koishi-core/dist/context' {
-  interface EventMap {
-    'worker/start'(): void | Promise<void>
-    'worker/ready'(response: Response): void
-    'worker/exit'(): void
   }
 }
 
@@ -38,19 +24,6 @@ declare module 'koishi-core/dist/session' {
     _sendCount: number
   }
 }
-
-export interface MainConfig {
-  prefix?: string
-  timeout?: number
-  maxLogs?: number
-  userFields?: Access<User.Field>
-  resourceLimits?: ResourceLimits
-  dataKeys?: (keyof WorkerData)[]
-}
-
-export interface EvalConfig extends MainConfig, WorkerData {}
-
-export interface Config extends MainConfig, WorkerConfig {}
 
 const defaultConfig: EvalConfig = {
   prefix: '>',
@@ -63,48 +36,14 @@ const defaultConfig: EvalConfig = {
 
 const logger = new Logger('eval')
 
-export const workerScript = `require(${JSON.stringify(resolve(__dirname, 'worker.js'))});`
+export const name = 'eval'
 
 export function apply(ctx: Context, config: Config = {}) {
   const { prefix } = config = { ...defaultConfig, ...config }
   const { app } = ctx
+  const worker = new EvalWorker(app, config)
   defineProperty(app, '_sessions', {})
-  defineProperty(app, 'evalConfig', config)
-  defineProperty(app, 'evalRemote', null)
-  defineProperty(app, 'evalWorker', null)
-
-  let restart = true
-  const api = new MainAPI(app)
-  async function createWorker() {
-    await app.parallel('worker/start')
-
-    const worker = app.evalWorker = new Worker(workerScript, {
-      eval: true,
-      workerData: {
-        logLevels: Logger.levels,
-        ...pick(config, config.dataKeys),
-      },
-      resourceLimits: config.resourceLimits,
-    })
-
-    expose(worker, api)
-
-    app.evalRemote = wrap(worker)
-    await app.evalRemote.start().then((response) => {
-      app.emit('worker/ready', response)
-      logger.info('worker started')
-
-      worker.on('exit', (code) => {
-        ctx.emit('worker/exit')
-        logger.info('exited with code', code)
-        if (restart) createWorker()
-      })
-    })
-  }
-
-  process.on('beforeExit', () => {
-    restart = false
-  })
+  defineProperty(app, 'worker', worker)
 
   app.prependMiddleware((session, next) => {
     app._sessions[session.$uuid = Random.uuid()] = session
@@ -116,7 +55,7 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   app.on('before-connect', () => {
-    return createWorker()
+    return worker.start()
   })
 
   ctx.on('before-command', ({ command, session }) => {
@@ -136,7 +75,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   UserTrap.attach(cmd, config.userFields, async ({ session, options, user, writable }, expr) => {
     if (options.restart) {
-      await session.$app.evalWorker.terminate()
+      await app.worker.restart()
       return '子线程已重启。'
     }
 
@@ -149,27 +88,26 @@ export function apply(ctx: Context, config: Config = {}) {
 
       const _resolve = (result?: string) => {
         clearTimeout(timer)
-        app.evalWorker.off('error', listener)
         session._isEval = false
+        dispose()
         resolve(result)
       }
 
       const timer = setTimeout(async () => {
-        await app.evalWorker.terminate()
         _resolve(!session._sendCount && '执行超时。')
+        app.worker.restart()
       }, config.timeout)
 
-      const listener = (error: Error) => {
+      const dispose = app.worker.onError((error: Error) => {
         let message = ERROR_CODES[error['code']]
         if (!message) {
           logger.warn(error)
           message = '执行过程中遇到错误。'
         }
         _resolve(message)
-      }
+      })
 
-      app.evalWorker.on('error', listener)
-      app.evalRemote.eval({
+      app.worker.remote.eval({
         user,
         writable,
         sid: session.$uuid,
