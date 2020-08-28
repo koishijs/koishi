@@ -36,6 +36,6 @@
     "mockdate": "^3.0.2"
   },
   "dependencies": {
-    "supports-color": "^7.1.0"
+    "supports-color": "^7.2.0"
   }
 }
