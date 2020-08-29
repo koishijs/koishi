@@ -3,12 +3,11 @@ import Cheerio from 'cheerio'
 import { Session } from 'koishi-core'
 import { noop, Logger } from 'koishi-utils'
 import { getShareText } from './utils'
-import { Config } from '.'
 
 const baseURL = 'https://ascii2d.net'
 const logger = new Logger('search')
 
-export default async function (url: string, session: Session, config: Config) {
+export default async function (url: string, session: Session) {
   try {
     const tasks: Promise<void>[] = []
     const response = await axios.get(`${baseURL}/search/url/${encodeURIComponent(url)}`)

@@ -48,7 +48,7 @@ export namespace CQCode {
   export function parse(source: string): ParsedCQCode {
     const capture = source.match(regexp)
     if (!capture) return null
-    const [_, type, attrs] = capture
+    const [, type, attrs] = capture
     const data: Record<string, string> = {}
     attrs.slice(1).split(/,/g).forEach((str) => {
       const index = str.indexOf('=')

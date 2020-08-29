@@ -57,7 +57,7 @@ Context.prototype.broadcast = async function (this: Context, message, forced) {
   let capture: RegExpExecArray
   // eslint-disable-next-line no-cond-assign
   while (capture = imageRE.exec(message)) {
-    const [text, _, url] = capture
+    const [text, , url] = capture
     output += message.slice(0, capture.index)
     message = message.slice(capture.index + text.length)
     const { data } = await axios.get<ArrayBuffer>(url, { responseType: 'arraybuffer' })

@@ -5,7 +5,7 @@ import { AppConfig } from './worker'
 import prompts from 'prompts'
 import { CAC } from 'cac'
 
-async function createConfig(options) {
+async function createConfig() {
   let succeed = true
   const data = await prompts([{
     name: 'type',
@@ -82,7 +82,7 @@ export default function (cli: CAC) {
       }
 
       // create configurations
-      const config = await createConfig(options)
+      const config = await createConfig()
       if (!config) {
         console.warn(`${error} initialization was canceled`)
         process.exit(0)

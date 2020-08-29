@@ -210,7 +210,7 @@ export class App extends Context {
     this._middlewareSet.add(counter)
     const middlewares: Middleware[] = this._hooks[Context.MIDDLEWARE_EVENT as any]
       .filter(([context]) => context.match(session))
-      .map(([_, middleware]) => middleware)
+      .map(([, middleware]) => middleware)
 
     // execute middlewares
     let index = 0, midStack = '', lastCall = ''

@@ -19,7 +19,7 @@ function extractImages(message: string) {
 }
 
 async function mixedSearch(url: string, session: Session, config: Config) {
-  return await saucenao(url, session, config, true) && ascii2d(url, session, config)
+  return await saucenao(url, session, config, true) && ascii2d(url, session)
 }
 
 export const name = 'search'
