@@ -26,3 +26,7 @@ export function getShareText({ url, title, thumbnail, authorUrl, source }: Share
   if (source) output.push(`来源：${getLink(source)}`)
   return output.join('\n')
 }
+
+export function checkHost(source: string, name: string) {
+  return source && source.includes(name)
+}
