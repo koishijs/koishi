@@ -68,8 +68,6 @@ export class State {
     return 0
   }
 
-  checkUser(userId: number) {}
-
   drawSvg(x?: number, y?: number) {
     const { SVG } = require('koishi-plugin-puppeteer') as typeof puppeteer
     const { size, placement } = this

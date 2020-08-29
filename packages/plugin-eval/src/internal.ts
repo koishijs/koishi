@@ -383,7 +383,7 @@ Helper.value = function (this: Helper, value, traps, deepTraps, mock) {
 
 Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
   const base: Trap = createObject({
-    get: (target, key, receiver) => {
+    get: (target, key) => {
       try {
         if (key === proxyTarget) return object
         if (key === 'isVMProxy') return true
@@ -405,7 +405,7 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
         throw this.value(e)
       }
     },
-    set: (target, key, value, receiver) => {
+    set: (target, key, value) => {
       if (this === Contextify) {
         if (key === '__proto__') return false
       }
@@ -490,10 +490,10 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
         throw this.value(e)
       }
     },
-    getPrototypeOf: (target) => {
+    getPrototypeOf: () => {
       return this.local.Object.prototype
     },
-    setPrototypeOf: (target) => {
+    setPrototypeOf: () => {
       throw new VMError(OPNA)
     },
     has: (target, key) => {
@@ -519,7 +519,7 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
         }
       } catch (e) {}
     },
-    ownKeys: target => {
+    ownKeys: () => {
       try {
         return this.value(this.remote.Reflect.ownKeys(object))
       } catch (e) {
@@ -543,7 +543,7 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
       }
       return success
     },
-    enumerate: target => {
+    enumerate: () => {
       try {
         return this.value(this.remote.Reflect.enumerate(object))
       } catch (e) {
@@ -568,7 +568,7 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
       // TODO this get will call getOwnPropertyDescriptor of target all the time.
       get: origGet,
     }
-    base.ownKeys = target => {
+    base.ownKeys = () => {
       try {
         const keys = local.Reflect.ownKeys(object)
         return Decontextify.value(keys.filter(key => typeof key !== 'string' || !key.match(/^\d+$/)))

@@ -1,6 +1,6 @@
 import { getUsage, getUsageName, ValidationField } from './validate'
-import { User, Group, TableType, Tables } from '../database'
-import { Command, FieldCollector, ParsedArgv } from '../command'
+import { User, Group, TableType } from '../database'
+import { Command, FieldCollector } from '../command'
 import { Session } from '../session'
 import { App } from '../app'
 import { Message } from './message'

@@ -1,7 +1,6 @@
 import { snakeCase } from 'koishi-utils'
 import { CQResponse } from 'koishi-adapter-cqhttp'
 import { expect } from 'chai'
-import '@shigma/chai-extended'
 
 export type RequestParams = Record<string, any>
 export type RequestData = readonly [string, RequestParams]

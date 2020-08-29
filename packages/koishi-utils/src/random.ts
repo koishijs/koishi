@@ -47,7 +47,7 @@ export class Random {
   }
 
   weightedPick<T extends string>(weights: Readonly<Record<T, number>>): T {
-    const total = Object.entries(weights).reduce((prev, [_, curr]) => prev + (curr as number), 0)
+    const total = Object.entries(weights).reduce((prev, [, curr]) => prev + (curr as number), 0)
     const pointer = this.value * total
     let counter = 0
     for (const key in weights) {

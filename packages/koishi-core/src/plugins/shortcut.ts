@@ -56,8 +56,8 @@ export default function apply(ctx: Context) {
     }
   })
 
-  ctx.on('parse', (message, { $prefix, $appel }, builtin) => {
-    if (!builtin || $prefix) return
+  ctx.on('parse', (message, { $reply, $prefix, $appel }, builtin) => {
+    if (!builtin || $prefix || $reply) return
     for (const shortcut of ctx.app._shortcuts) {
       const { name, fuzzy, command, oneArg, prefix, options, args = [] } = shortcut
       if (prefix && !$appel) continue

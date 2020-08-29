@@ -1,7 +1,9 @@
 import { App } from 'koishi-test-utils'
+import { spyOn } from 'jest-mock'
+import { Logger, noop } from 'koishi-utils'
+import { Session } from 'koishi-core'
 import { inspect } from 'util'
 import { expect } from 'chai'
-import '@shigma/chai-extended'
 
 describe('Command API', () => {
   describe('Register Commands', () => {
@@ -126,29 +128,54 @@ describe('Command API', () => {
       expect(() => app.command('c/b')).to.throw()
       expect(() => app.command('a/d')).not.to.throw()
     })
-  })
 
-  describe('Dispose Commands', () => {
-    const app = new App()
-    const foo = app.command('foo')
-    const bar = foo.subcommand('bar')
-    const test = bar.subcommand('test')
-    bar.alias('baz').shortcut('1')
-    test.alias('it').shortcut('2')
+    it('dispose commands', () => {
+      const app = new App()
+      const foo = app.command('foo')
+      const bar = foo.subcommand('bar')
+      const test = bar.subcommand('test')
+      bar.alias('baz').shortcut('1')
+      test.alias('it').shortcut('2')
 
-    it('before dispose', () => {
       // don't forget help
       expect(app._commands).to.have.length(4)
       expect(app._shortcuts).to.have.length(3)
       expect(foo.children).to.have.length(1)
-    })
-
-    it('after dispose', () => {
       bar.dispose()
-      // don't forget help
       expect(app._commands).to.have.length(2)
       expect(app._shortcuts).to.have.length(1)
       expect(foo.children).to.have.length(0)
+    })
+  })
+
+  describe('Error Handling', () => {
+    const app = new App()
+    const command = app.command('test')
+    const session = new Session(app, {})
+    const cmdWarn = spyOn(new Logger('command'), 'warn')
+    const next = fallback => fallback()
+    const argv = { command, session, next }
+
+    it('throw in action', async () => {
+      command.action(async ({ next }) => {
+        await next(noop)
+        throw new Error('message')
+      })
+
+      await expect(command.execute(argv)).to.be.fulfilled
+      expect(cmdWarn.mock.calls).to.have.length(1)
+      expect(cmdWarn.mock.calls[0][0]).to.match(/^executing command: test\nError: message/)
+    })
+
+    it('throw in next', async () => {
+      command.action(({ next }) => {
+        return next(() => {
+          throw new Error('message')
+        })
+      })
+
+      await expect(command.execute(argv)).to.be.rejectedWith('message')
+      expect(cmdWarn.mock.calls).to.have.length(1)
     })
   })
 })

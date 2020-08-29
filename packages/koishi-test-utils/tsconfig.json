@@ -4,6 +4,9 @@
     "outDir": "dist",
     "rootDir": "src",
   },
+  "references": [
+    { "path": "./chai" },
+  ],
   "include": [
     "src",
   ],

@@ -1,7 +1,6 @@
 import { Time } from 'koishi-utils'
 import { expect } from 'chai'
 import { set, reset } from 'mockdate'
-import '@shigma/chai-extended'
 
 const timestamp = Date.UTC(2020, 3, 1, 1, 30)
 const date = new Date(timestamp)

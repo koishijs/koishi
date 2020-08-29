@@ -37,12 +37,6 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('groups', '-g <gids>  设置具体的生效环境', { authority: 3, type: 'string', validate: RE_GROUPS })
     .option('global', '-G  无视上下文搜索')
 
-  // TODO: ???
-  ctx.on('dialogue/fetch', (data, test) => {
-    if (!test.groups || test.partial) return
-    return !(data.flag & Dialogue.Flag.complement) === test.reversed || !equal(test.groups, data.groups)
-  })
-
   ctx.on('dialogue/validate', (argv) => {
     const { options, session } = argv
 

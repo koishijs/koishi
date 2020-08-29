@@ -210,7 +210,7 @@ export class App extends Context {
     this._middlewareSet.add(counter)
     const middlewares: Middleware[] = this._hooks[Context.MIDDLEWARE_EVENT as any]
       .filter(([context]) => context.match(session))
-      .map(([_, middleware]) => middleware)
+      .map(([, middleware]) => middleware)
 
     // execute middlewares
     let index = 0, midStack = '', lastCall = ''
@@ -250,9 +250,9 @@ export class App extends Context {
     await session.$group?._update()
   }
 
-  private _parse(message: string, { $prefix, $appel, messageType }: Session, builtin: boolean, terminator = '') {
+  private _parse(message: string, { $reply, $prefix, $appel, messageType }: Session, builtin: boolean, terminator = '') {
     // group message should have prefix or appel to be interpreted as a command call
-    if (builtin && messageType !== 'private' && $prefix === null && !$appel) return
+    if (builtin && ($reply || messageType !== 'private' && $prefix === null && !$appel)) return
     terminator = escapeRegExp(terminator)
     const name = message.split(new RegExp(`[\\s${terminator}]`), 1)[0]
     const index = name.lastIndexOf('/')

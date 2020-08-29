@@ -1,9 +1,9 @@
 import { App, User, Group } from 'koishi-core'
 import { BASE_SELF_ID } from './app'
 import { expect } from 'chai'
-import '@shigma/chai-extended'
+import '../chai'
 
-export function createArray <T>(length: number, create: (index: number) => T) {
+export function createArray<T>(length: number, create: (index: number) => T) {
   return Array(length).fill(undefined).map((_, index) => create(index))
 }
 

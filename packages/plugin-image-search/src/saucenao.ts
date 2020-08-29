@@ -6,7 +6,7 @@ import danbooru from './danbooru'
 import konachan from './konachan'
 import { Session } from 'koishi-core'
 import { Logger } from 'koishi-utils'
-import { getShareText } from './utils'
+import { getShareText, checkHost } from './utils'
 import { Config } from '.'
 
 export interface SaucenaoIndex {
@@ -66,8 +66,6 @@ export interface SaucenaoResponse {
 }
 
 const logger = new Logger('search')
-const HOST_ANIDB = 'anidb.net'
-const HOST_PIXIV = 'pixiv.net'
 
 export default async function saucenao(sourceUrl: string, session: Session, config: Config, mixedMode = false) {
   let data: SaucenaoResponse
@@ -112,14 +110,14 @@ export default async function saucenao(sourceUrl: string, session: Session, conf
   if (ext_urls) {
     url = ext_urls[0]
     for (let i = 1; i < ext_urls.length; i++) {
-      if (ext_urls[i].includes('danbooru')) {
+      if (checkHost(ext_urls[i], 'danbooru')) {
         url = ext_urls[i]
         break
       }
     }
-    if (url.includes('danbooru')) {
+    if (checkHost(url, 'danbooru')) {
       source = await danbooru(url).catch(logger.debug)
-    } else if (url.includes('konachan')) {
+    } else if (checkHost(url, 'konachan')) {
       source = await konachan(url).catch(logger.debug)
     }
   }
@@ -160,12 +158,12 @@ export default async function saucenao(sourceUrl: string, session: Session, conf
     } else {
       const displayTitle = member_name
         ? `「${title}」/「${member_name}」`
-        : title || (url?.includes(HOST_ANIDB) ? 'AniDB' : '搜索结果')
+        : title || (checkHost(url, 'anidb.net') ? 'AniDB' : '搜索结果')
       output.push(getShareText({
         url,
         thumbnail,
         title: `(${similarity}%) ${displayTitle}`,
-        authorUrl: member_id && url?.includes(HOST_PIXIV) && `https://pixiv.net/u/${member_id}`,
+        authorUrl: member_id && checkHost(url, 'pixiv.net') && `https://pixiv.net/u/${member_id}`,
         source,
       }))
     }

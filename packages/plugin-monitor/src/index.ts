@@ -101,7 +101,7 @@ export function apply(ctx: Context) {
     .option('bilibili', '-b <id>  设置 Bilibili 账号', { type: 'string' })
     .option('mirrativ', '-m <id>  设置 Mirrativ 账号', { type: 'string' })
     .option('twitcasting', '-t <id>  设置 TwitCasting 账号', { type: 'string' })
-    .action(async ({ session, options }, name: string) => {
+    .action(async ({ options }, name: string) => {
       if (!name) return '请输入账号。'
       name = String(name)
       const data = await ctx.database.findSubscribe(name, ['id', 'names', 'bilibili', 'mirrativ', 'twitcasting'])

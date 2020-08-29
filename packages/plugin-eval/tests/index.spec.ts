@@ -1,18 +1,17 @@
-import { defineProperty } from 'koishi-utils'
 import { App } from 'koishi-test-utils'
 import { inspect } from 'util'
 import { resolve } from 'path'
-import * as _eval from 'koishi-plugin-eval'
+import * as pluginEval from 'koishi-plugin-eval'
 
-defineProperty(_eval, 'workerScript', [
+require('koishi-plugin-eval/src/main').workerScript = [
   'require("ts-node/register/transpile-only");',
   'require("tsconfig-paths/register");',
   `require(${JSON.stringify(resolve(__dirname, '../src/worker.ts'))})`,
-].join('\n'))
+].join('\n')
 
 const app = new App()
 
-app.plugin(_eval, {
+app.plugin(pluginEval, {
   setupFiles: {
     'test-worker': resolve(__dirname, 'worker.ts'),
   },

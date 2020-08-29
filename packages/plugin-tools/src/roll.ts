@@ -22,7 +22,7 @@ export function apply(ctx: Context, options: RollOptions = {}) {
       let total = 0
 
       for (const expr of expressions) {
-        const [_, dice, _times, _max] = /^((\d*)d)?(\d+)$/i.exec(expr)
+        const [, dice, _times, _max] = /^((\d*)d)?(\d+)$/i.exec(expr)
         const max = +_max
         if (!max || max > maxPoint) {
           return `点数必须在 1 到 ${maxPoint} 之间。`
