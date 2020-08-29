@@ -15,7 +15,9 @@ Koishi 是一个在 [Node.js](https://nodejs.org/) 环境下运行的机器人�
 
 这个项目的名字和图标来源于东方 Project 中的角色古明地恋 (Komeiji Koishi)。
 
-![demo](./.github/demo.png)
+<div align="center">
+<img src="./.github/demo.png" alt="demo" width="640">
+</div>
 
 ## 安装
 
@@ -85,7 +87,7 @@ koishi-plugin-common 包含了一些常用功能，它们在你使用 koishi 库
 - 输出聊天记录到控制台
 - 欢迎入群，复读，处理申请，频率限制，自定义回复……
 
-### [koishi-plugin-eval](https://koishi.js.org/plugins/eval.html) [![npm](https://img.shields.io/npm/v/koishi-plugin-eval/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-eval)
+### [koishi-plugin-eval](https://koishi.js.org/plugins/eval.html) [![npm](https://img.shields.io/npm/v/koishi-plugin-eval?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-eval)
 
 koishi-plugin-eval 允许用户直接使用机器人执行脚本。它利用了 Node.js 的 [vm](https://nodejs.org/api/vm.html) 和 [worker_threads](https://nodejs.org/api/worker_threads.html) 模块，在保护执行安全的前提下能够获得较快的响应速度。同时，插件还提供了一些内置的 API 供用户调用，结合教学功能可以在客户端实现复杂的行为。
 
@@ -99,13 +101,17 @@ koishi-plugin-eval-addons 在前一个插件的基础上，允许用户编写自
 
 ### [koishi-plugin-monitor](./packages/plugin-monitor) [![npm](https://img.shields.io/npm/v/koishi-plugin-monitor/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-monitor)
 
-### [koishi-plugin-puppeteer](./packages/plugin-puppeteer) [![npm](https://img.shields.io/npm/v/koishi-plugin-puppeteer?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-puppeteer)
+### [koishi-plugin-puppeteer](https://koishi.js.org/plugins/puppeteer.html) [![npm](https://img.shields.io/npm/v/koishi-plugin-puppeteer?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-puppeteer)
 
-### [koishi-plugin-recorder](./packages/plugin-recorder) [![npm](https://img.shields.io/npm/v/koishi-plugin-recorder/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-recorder)
+koishi-plugin-puppeteer 本身提供了网页截图（shot）指令和 TeX 渲染指令（tex），同时也封装了一系列与网页进行交互的接口。利用这些接口我们可以开发更多以渲染图片为基础的插件，如 koishi-plugin-chess 等。
 
 ### [koishi-plugin-rss](./packages/plugin-rss) [![npm](https://img.shields.io/npm/v/koishi-plugin-rss?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-rss)
 
+koishi-plugin-rss 提供了 [RSS](https://en.wikipedia.org/wiki/RSS) 支持，允许不同的群订阅不同的 RSS 信息源并实时进行通知。
+
 ### [koishi-plugin-schedule](./packages/plugin-schedule) [![npm](https://img.shields.io/npm/v/koishi-plugin-schedule?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-schedule)
+
+koishi-plugin-schedule 允许用户设置定时任务并执行。这些计划任务会被存储在数据库中，即使重启机器人也能继续工作。
 
 ### [koishi-plugin-status](./packages/plugin-status) [![npm](https://img.shields.io/npm/v/koishi-plugin-status/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-status)
 
