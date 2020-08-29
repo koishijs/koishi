@@ -1,7 +1,8 @@
-import { config, context, internal, WorkerAPI, Context, response, mapDirectory, formatError } from 'koishi-plugin-eval/dist/worker'
-import { promises, readFileSync } from 'fs'
+import { remote, config, context, internal, WorkerAPI, Context, response, mapDirectory, formatError } from 'koishi-plugin-eval/dist/worker'
+import { promises as fs, readFileSync } from 'fs'
 import { resolve, posix, dirname } from 'path'
 import { Logger, Time, CQCode, Random } from 'koishi-utils'
+import { serialize, deserialize } from 'v8'
 import json5 from 'json5'
 import ts from 'typescript'
 
@@ -9,10 +10,13 @@ const logger = new Logger('addon')
 
 const { SourceTextModule, SyntheticModule } = require('vm')
 
+export interface AddonWorkerConfig {
+  storageFile?: string
+  moduleRoot?: string
+}
+
 declare module 'koishi-plugin-eval/dist/worker' {
-  interface WorkerConfig {
-    moduleRoot?: string
-  }
+  interface WorkerConfig extends AddonWorkerConfig {}
 
   interface WorkerData {
     addonNames: string[]
@@ -58,6 +62,12 @@ WorkerAPI.prototype.callAddon = async function (this: WorkerAPI, options, argv) 
   }
 }
 
+const sync = WorkerAPI.prototype.sync
+WorkerAPI.prototype.sync = async function (this: WorkerAPI, ctx) {
+  await sync.call(this, ctx)
+  await remote.updateStorage(serialize(storage))
+}
+
 // TODO pending @types/node
 interface Module {
   status: string
@@ -79,11 +89,16 @@ export function synthetize(identifier: string, namespace: {}) {
   config.addonNames.unshift(identifier)
 }
 
-synthetize('koishi/addons.ts', {
-  registerCommand(name: string, callback: AddonAction) {
-    commandMap[name] = callback
-  },
-})
+let storage = {}
+if (config.storageFile) {
+  const storageFile = resolve(process.cwd(), config.storageFile)
+  try {
+    storage = deserialize(readFileSync(storageFile))
+  } catch {}
+  addons.storage = storage
+}
+
+synthetize('koishi/addons.ts', addons)
 
 synthetize('koishi/utils.ts', {
   Time, CQCode, Random,
@@ -126,7 +141,7 @@ async function loadSource(path: string) {
   for (const postfix of suffixes) {
     try {
       const target = path + postfix
-      return [await promises.readFile(resolve(config.moduleRoot, target), 'utf8'), target]
+      return [await fs.readFile(resolve(config.moduleRoot, target), 'utf8'), target]
     } catch {}
   }
   throw new Error(`cannot load source file "${path}"`)
@@ -165,4 +180,7 @@ export default Promise.all(config.addonNames.map(evaluate)).then(() => {
   response.commands = Object.keys(commandMap)
   mapDirectory('koishi/utils/', require.resolve('koishi-utils'))
   internal.setGlobal('utils', modules['koishi/utils.ts'].namespace)
+  if (config.storageFile) {
+    internal.setGlobal('storage', storage, false, false)
+  }
 })

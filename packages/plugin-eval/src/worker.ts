@@ -70,7 +70,7 @@ export function formatError(error: Error) {
     .join('\n')
 }
 
-const main = wrap<MainAPI>(parentPort)
+export const remote = wrap<MainAPI>(parentPort)
 
 export interface ContextOptions {
   $uuid: string
@@ -93,7 +93,7 @@ export const Context = ({ $uuid, user, userWritable, group, groupWritable }: Con
     if (diffKeys.length) {
       throw new TypeError(`cannot set user field: ${diffKeys.join(', ')}`)
     }
-    await main.updateUser($uuid, diff)
+    await remote.updateUser($uuid, diff)
   }),
 
   group: group && observe(group, async (diff) => {
@@ -101,18 +101,18 @@ export const Context = ({ $uuid, user, userWritable, group, groupWritable }: Con
     if (diffKeys.length) {
       throw new TypeError(`cannot set group field: ${diffKeys.join(', ')}`)
     }
-    await main.updateGroup($uuid, diff)
+    await remote.updateGroup($uuid, diff)
   }),
 
   async send(...param: [string, ...any[]]) {
-    return await main.send($uuid, formatResult(...param))
+    return await remote.send($uuid, formatResult(...param))
   },
 
   async exec(message: string) {
     if (typeof message !== 'string') {
       throw new TypeError('The "message" argument must be of type string')
     }
-    return await main.execute($uuid, message)
+    return await remote.execute($uuid, message)
   },
 })
 

@@ -625,11 +625,11 @@ function readonly(value: any, mock: any = {}) {
   return Contextify.value(value, null, frozenTraps, mock)
 }
 
-export function setGlobal(name: keyof any, value: any, writable = false) {
+export function setGlobal(name: keyof any, value: any, writable = false, deep = true) {
   const prop = Contextify.value(name)
   try {
     Object.defineProperty(GLOBAL, prop, {
-      value: writable ? Contextify.value(value) : readonly(value),
+      value: writable || !deep ? Contextify.value(value) : readonly(value),
       enumerable: true,
       configurable: writable,
       writable,

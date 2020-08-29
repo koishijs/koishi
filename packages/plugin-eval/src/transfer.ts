@@ -1,5 +1,6 @@
 import { MessagePort, Worker } from 'worker_threads'
 import { noop, Random } from 'koishi-utils'
+import { serialize, deserialize } from 'v8'
 
 type Endpoint = MessagePort | Worker
 
@@ -14,13 +15,13 @@ interface Message {
 export function request(ep: Endpoint, payload: Partial<Message>) {
   const uuid = Random.uuid()
   return new Promise<Message>((resolve) => {
-    ep.on('message', function listener(data: string) {
-      const message = JSON.parse(data)
+    ep.on('message', function listener(data: Buffer) {
+      const message = deserialize(data)
       if (message.uuid !== uuid) return
       ep.off('message', listener)
       resolve(message)
     })
-    ep.postMessage(JSON.stringify({ uuid, ...payload }))
+    ep.postMessage(serialize({ uuid, ...payload }))
   })
 }
 
@@ -47,10 +48,10 @@ export function wrap<T>(ep: Endpoint) {
 }
 
 export function expose(ep: Endpoint, object: {}) {
-  ep.on('message', async (data: string) => {
-    const { type, key, uuid, args } = JSON.parse(data)
+  ep.on('message', async (data: Buffer) => {
+    const { type, key, uuid, args } = deserialize(data)
     if (type !== 'apply') return
     const value = await object[key](...args)
-    ep.postMessage(JSON.stringify({ uuid, value }))
+    ep.postMessage(serialize({ uuid, value }))
   })
 }

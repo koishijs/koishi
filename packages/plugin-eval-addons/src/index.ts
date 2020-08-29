@@ -3,20 +3,25 @@ import { assertProperty, Logger, noop } from 'koishi-utils'
 import { resolve } from 'path'
 import { safeLoad } from 'js-yaml'
 import { promises as fs } from 'fs'
-import { attachTraps, FieldOptions } from 'koishi-plugin-eval'
+import { attachTraps, FieldOptions, MainAPI } from 'koishi-plugin-eval'
 import Git, { CheckRepoActions } from 'simple-git'
+import { AddonWorkerConfig } from './worker'
 
 const logger = new Logger('addon')
 
-type AddonConfig = Config
-
-export interface Config {
+export interface AddonMainConfig {
   gitRemote?: string
   exclude?: RegExp
 }
 
+export interface Config extends AddonMainConfig, AddonWorkerConfig {}
+
 declare module 'koishi-plugin-eval/dist/main' {
-  interface MainConfig extends AddonConfig {}
+  interface MainConfig extends AddonMainConfig {}
+
+  interface MainAPI {
+    updateStorage(data: Buffer): Promise<void>
+  }
 }
 
 interface OptionManifest extends OptionConfig {
@@ -35,13 +40,22 @@ interface Manifest {
   commands?: CommandManifest[]
 }
 
+MainAPI.prototype.updateStorage = function (this: MainAPI, data) {
+  return fs.writeFile(this.app.worker.config.storageFile, data)
+}
+
+export const name = 'eval-addons'
+
 export function apply(ctx: Context, config: Config) {
   const { worker } = ctx.app
   Object.assign(worker.config, config)
   const root = resolve(process.cwd(), assertProperty(worker.config, 'moduleRoot'))
   worker.config.moduleRoot = root
-  worker.config.dataKeys.push('addonNames', 'moduleRoot')
+  worker.config.dataKeys.push('addonNames', 'moduleRoot', 'storageFile')
   worker.config.setupFiles['koishi/addons.ts'] = resolve(__dirname, 'worker.js')
+  if (worker.config.storageFile) {
+    worker.config.storageFile = resolve(process.cwd(), worker.config.storageFile)
+  }
 
   const git = Git(root)
 
