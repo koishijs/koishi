@@ -1,7 +1,7 @@
 import { observe, noop } from 'koishi-utils'
 import { fn } from 'jest-mock'
 import { expect } from 'chai'
-import 'koishi-test-utils/chai'
+import 'koishi-test-utils'
 
 describe('Observer API', () => {
   it('type checks', () => {
