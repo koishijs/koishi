@@ -83,7 +83,9 @@ interface TrappedArgv<O> extends ParsedArgv<never, never, O> {
 type TrappedAction<O> = (argv: TrappedArgv<O>, ...args: string[]) => ReturnType<CommandAction>
 
 function resolveAccess<T>(fields: Access<T>) {
-  return Array.isArray(fields) ? { readable: fields } : fields
+  return Array.isArray(fields)
+    ? { readable: fields, writable: [] }
+    : { readable: [], writable: [], ...fields }
 }
 
 export interface FieldOptions {
@@ -94,8 +96,8 @@ export interface FieldOptions {
 export function attachTraps<O>(command: Command<never, never, O>, options: FieldOptions, action: TrappedAction<O>) {
   const userAccess = resolveAccess(options.userFields)
   const groupAccess = resolveAccess(options.groupFields)
-  const userWritable = userAccess.writable || []
-  const groupWritable = groupAccess.writable || []
+  const userWritable = userAccess.writable
+  const groupWritable = groupAccess.writable
 
   command.userFields(userTrap.fields(userAccess.readable))
   command.groupFields(groupTrap.fields(groupAccess.readable))

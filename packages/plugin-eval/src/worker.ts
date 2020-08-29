@@ -125,6 +125,11 @@ export class WorkerAPI {
     return response
   }
 
+  async sync(ctx: Context) {
+    await ctx.user?._update()
+    await ctx.group?._update()
+  }
+
   async eval(ctxOptions: ContextOptions, evalOptions: EvalOptions) {
     const { source, silent } = evalOptions
 
@@ -142,8 +147,7 @@ export class WorkerAPI {
         filename: 'stdin',
         lineOffset: -4,
       })
-      await ctx.user?._update()
-      await ctx.group?._update()
+      await this.sync(ctx)
     } catch (error) {
       return formatError(error)
     }

@@ -38,12 +38,18 @@ interface AddonContext extends AddonArgv, Context {}
 type AddonAction = (ctx: AddonContext) => string | void | Promise<string | void>
 const commandMap: Record<string, AddonAction> = {}
 
-WorkerAPI.prototype.callAddon = async function (options, argv) {
+const addons: any = {
+  registerCommand(name: string, callback: AddonAction) {
+    commandMap[name] = callback
+  },
+}
+
+WorkerAPI.prototype.callAddon = async function (this: WorkerAPI, options, argv) {
   const callback = commandMap[argv.name]
   try {
-    const context = { ...argv, ...Context(options) }
-    const result = await callback(context)
-    await context.user._update()
+    const ctx = { ...argv, ...Context(options) }
+    const result = await callback(ctx)
+    await this.sync(ctx)
     return result
   } catch (error) {
     if (!argv.options.debug) return logger.warn(error)
