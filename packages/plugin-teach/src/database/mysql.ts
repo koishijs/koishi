@@ -1,8 +1,7 @@
-import { Context, extendDatabase, Message } from 'koishi-core'
+import { Context, extendDatabase } from 'koishi-core'
 import { clone, defineProperty, Observed, pick } from 'koishi-utils'
-import { Dialogue, DialogueTest } from '../utils'
+import { Dialogue, equal, DialogueTest } from '../utils'
 import { escape } from 'mysql'
-import { format } from 'util'
 import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 
 declare module 'koishi-core/dist/context' {
@@ -24,10 +23,12 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
     const conditionals: string[] = []
     this.app.emit('dialogue/mysql', test, conditionals)
     if (conditionals.length) query += ' WHERE ' + conditionals.join(' && ')
-    const dialogues = (await this.query<Dialogue[]>(query))
-      .filter((dialogue) => !this.app.bail('dialogue/fetch', dialogue, test))
+    const dialogues = await this.query<Dialogue[]>(query)
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
-    return dialogues
+    return dialogues.filter((data) => {
+      if (!test.groups || test.partial) return true
+      return !(data.flag & Dialogue.Flag.complement) === test.reversed || !equal(test.groups, data.groups)
+    })
   },
 
   async createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
@@ -98,7 +99,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields }) => 
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
   config.validateRegExp = {
-    onEscapeCharacterSet(start, end, kind, negate) {
+    onEscapeCharacterSet() {
       throw new SyntaxError('unsupported escape character set')
     },
     onQuantifier(start, end, min, max, greedy) {
