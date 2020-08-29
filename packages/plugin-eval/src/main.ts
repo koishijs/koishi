@@ -48,7 +48,7 @@ export class DataTrap<O extends {}> {
   }
 
   get(target: Observed<{}, Promise<void>>, fields: string[]) {
-    if (!target) return {}
+    if (!target) return
     const result: Partial<O> = {}
     for (const field of fields) {
       const getter = this.traps[field]?.get

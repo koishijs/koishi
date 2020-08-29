@@ -1,4 +1,4 @@
-import { Logger, escapeRegExp, observe, contain, difference } from 'koishi-utils'
+import { Logger, escapeRegExp, observe, difference } from 'koishi-utils'
 import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
 import { findSourceMap } from 'module'
@@ -88,7 +88,7 @@ export interface Context {
 }
 
 export const Context = ({ $uuid, user, userWritable, group, groupWritable }: ContextOptions): Context => ({
-  user: observe(user, async (diff) => {
+  user: user && observe(user, async (diff) => {
     const diffKeys = difference(Object.keys(diff), userWritable)
     if (diffKeys.length) {
       throw new TypeError(`cannot set user field: ${diffKeys.join(', ')}`)
@@ -96,7 +96,7 @@ export const Context = ({ $uuid, user, userWritable, group, groupWritable }: Con
     await main.updateUser($uuid, diff)
   }),
 
-  group: observe(group, async (diff) => {
+  group: group && observe(group, async (diff) => {
     const diffKeys = difference(Object.keys(diff), groupWritable)
     if (diffKeys.length) {
       throw new TypeError(`cannot set group field: ${diffKeys.join(', ')}`)
@@ -142,7 +142,8 @@ export class WorkerAPI {
         filename: 'stdin',
         lineOffset: -4,
       })
-      await ctx.user._update()
+      await ctx.user?._update()
+      await ctx.group?._update()
     } catch (error) {
       return formatError(error)
     }
