@@ -1,4 +1,4 @@
-import { MockedApp, BASE_SELF_ID, utils } from 'koishi-test-utils'
+import { MockedApp, BASE_SELF_ID } from 'koishi-test-utils'
 import { startAll, stopAll, GroupFlag } from 'koishi-core'
 import { broadcast } from '../src'
 import 'koishi-database-memory'

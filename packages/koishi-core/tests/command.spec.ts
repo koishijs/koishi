@@ -4,7 +4,6 @@ import { Logger, noop } from 'koishi-utils'
 import { Session } from 'koishi-core'
 import { inspect } from 'util'
 import { expect } from 'chai'
-import '@shigma/chai-extended'
 
 describe('Command API', () => {
   describe('Register Commands', () => {

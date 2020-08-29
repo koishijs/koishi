@@ -1,15 +1,7 @@
-import * as utils from './koishi'
-import * as memory from './memory'
-import { mockModule, actualModule } from './module'
+import memory from './memory'
 
-export { utils, memory }
+export { memory }
 
 export * from './app'
 export * from './database'
 export * from './memory'
-
-mockModule('koishi-utils', () => {
-  const utils1 = actualModule('koishi-utils')
-  const utils2 = actualModule('./koishi')
-  return { ...utils1, ...utils2 }
-})

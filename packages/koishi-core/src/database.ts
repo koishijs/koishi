@@ -65,7 +65,7 @@ export namespace Group {
 
   export type Field = keyof Group
   export const fields: Field[] = []
-  export type Observed<K extends Field = Field> = utils.Observed<Pick<Group, K>>
+  export type Observed<K extends Field = Field> = utils.Observed<Pick<Group, K>, Promise<void>>
   type Getter = (id: number, authority: number) => Partial<Group>
   const getters: Getter[] = []
 
