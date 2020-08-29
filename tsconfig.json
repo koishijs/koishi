@@ -7,7 +7,6 @@
     "moduleResolution": "node",
   },
   "references": [
-    { "path": "./packages/chai-extended" },
     { "path": "./packages/koishi-utils" },
     { "path": "./packages/koishi-core" },
     { "path": "./packages/koishi-test-utils" },

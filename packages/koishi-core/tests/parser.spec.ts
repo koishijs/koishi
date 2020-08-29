@@ -1,7 +1,6 @@
 import { Command } from 'koishi-core'
 import { App } from 'koishi-test-utils'
 import { expect } from 'chai'
-import '@shigma/chai-extended'
 
 const app = new App()
 

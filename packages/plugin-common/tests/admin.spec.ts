@@ -2,7 +2,6 @@ import { MockedApp, memory } from 'koishi-test-utils'
 import { User, Group } from 'koishi-core'
 import { enumKeys } from 'koishi-utils'
 import { expect } from 'chai'
-import '@shigma/chai-extended'
 import * as admin from '../src/admin'
 
 const app = new MockedApp()
