@@ -4,10 +4,10 @@ import MongoDatabase from 'koishi-plugin-mongo/dist/database'
 
 declare module 'koishi-core/dist/database' {
   interface Database {
-    createSchedule (time: Date, interval: number, command: string, session: Session): Promise<Schedule>
-    removeSchedule (id: number): Promise<any>
-    getSchedule (id: number): Promise<Schedule>
-    getAllSchedules (assignees?: number[]): Promise<Schedule[]>
+    createSchedule(time: Date, interval: number, command: string, session: Session): Promise<Schedule>
+    removeSchedule(id: number): Promise<any>
+    getSchedule(id: number): Promise<Schedule>
+    getAllSchedules(assignees?: number[]): Promise<Schedule[]>
   }
 
   interface Tables {

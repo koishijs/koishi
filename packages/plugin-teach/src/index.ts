@@ -106,14 +106,14 @@ function registerPrefix(ctx: Context, prefix: string) {
   const teachRegExp = new RegExp(`^${p}(${p}?)((${g}(?:,${g})*)?|${p}?)(\\s+|$)`)
   //                                   $1     $2
 
-  ctx.on('parse', (source, session, builtin) => {
-    if (builtin && session.$prefix) return
+  ctx.on('parse', (source, session, builtin, terminator) => {
+    if (builtin && session.$prefix || session.$reply) return
     const capture = source.match(teachRegExp)
     if (!capture) return
 
     const command = ctx.command('teach')
     const message = source.slice(capture[0].length)
-    const { options, args, rest } = command.parse(message)
+    const { options, args, rest } = command.parse(message, terminator)
     const argv: ExecuteArgv = { options, args, command, source, rest }
 
     if (capture[1] === prefix) {

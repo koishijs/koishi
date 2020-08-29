@@ -1,19 +1,17 @@
 import { App } from 'koishi-test-utils'
 import { inspect } from 'util'
 import { resolve } from 'path'
-import * as _eval from 'koishi-plugin-eval'
+import * as pluginEval from 'koishi-plugin-eval'
 
-process.env.KOISHI_WORKER_ENTRY = resolve(__dirname, '../src/worker.ts')
-
-process.env.KOISHI_WORKER_LOADER = [
+require('koishi-plugin-eval/src/main').workerScript = [
   'require("ts-node/register/transpile-only");',
   'require("tsconfig-paths/register");',
-  process.env.KOISHI_WORKER_LOADER,
+  `require(${JSON.stringify(resolve(__dirname, '../src/worker.ts'))})`,
 ].join('\n')
 
 const app = new App()
 
-app.plugin(_eval, {
+app.plugin(pluginEval, {
   setupFiles: {
     'test-worker': resolve(__dirname, 'worker.ts'),
   },

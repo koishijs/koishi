@@ -39,9 +39,9 @@ export class VM {
     const script = new Script(code, options)
 
     try {
-      return this.internal.value(script.runInContext(this.context, { displayErrors: false }))
+      return this.internal.decontextify(script.runInContext(this.context, { displayErrors: false }))
     } catch (e) {
-      throw this.internal.value(e)
+      throw this.internal.decontextify(e)
     }
   }
 }

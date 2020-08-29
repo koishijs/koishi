@@ -1,9 +1,7 @@
-import { config, context, internal, WorkerAPI, createContext, response, mapDirectory } from 'koishi-plugin-eval/dist/worker'
+import { config, context, internal, WorkerAPI, Context, response, mapDirectory, formatError } from 'koishi-plugin-eval/dist/worker'
 import { promises, readFileSync } from 'fs'
 import { resolve, posix, dirname } from 'path'
-import { User } from 'koishi-core'
 import { Logger, Time, CQCode, Random } from 'koishi-utils'
-import { Config } from '.'
 import json5 from 'json5'
 import ts from 'typescript'
 
@@ -12,14 +10,16 @@ const logger = new Logger('addon')
 const { SourceTextModule, SyntheticModule } = require('vm')
 
 declare module 'koishi-plugin-eval/dist/worker' {
-  interface WorkerConfig extends Config {}
+  interface WorkerConfig {
+    moduleRoot?: string
+  }
 
   interface WorkerData {
     addonNames: string[]
   }
 
   interface WorkerAPI {
-    addon(sid: string, user: Partial<User>, argv: AddonArgv): Promise<string | void>
+    callAddon(options: ContextOptions, argv: AddonArgv): Promise<string | void>
   }
 
   interface Response {
@@ -33,19 +33,28 @@ interface AddonArgv {
   options: Record<string, any>
 }
 
-interface AddonContext extends AddonArgv {
-  user: Partial<User>
-}
+interface AddonContext extends AddonArgv, Context {}
 
 type AddonAction = (ctx: AddonContext) => string | void | Promise<string | void>
 const commandMap: Record<string, AddonAction> = {}
 
-WorkerAPI.prototype.addon = async function (sid, user, argv) {
+const addons: any = {
+  registerCommand(name: string, callback: AddonAction) {
+    commandMap[name] = callback
+  },
+}
+
+WorkerAPI.prototype.callAddon = async function (this: WorkerAPI, options, argv) {
   const callback = commandMap[argv.name]
   try {
-    return await callback({ user, ...argv, ...createContext(sid) })
+    const ctx = { ...argv, ...Context(options) }
+    const result = await callback(ctx)
+    await this.sync(ctx)
+    return result
   } catch (error) {
-    logger.warn(error)
+    if (!argv.options.debug) return logger.warn(error)
+    return formatError(error)
+      .replace('WorkerAPI.worker_1.WorkerAPI.callAddon', 'WorkerAPI.callAddon')
   }
 }
 
@@ -58,13 +67,12 @@ interface Module {
   evaluate(): Promise<void>
 }
 
-const root = resolve(process.cwd(), config.moduleRoot)
 export const modules: Record<string, Module> = {}
 
 export function synthetize(identifier: string, namespace: {}) {
   const module = new SyntheticModule(Object.keys(namespace), function () {
     for (const key in namespace) {
-      this.setExport(key, namespace[key])
+      this.setExport(key, internal.contextify(namespace[key]))
     }
   }, { context, identifier })
   modules[identifier] = module
@@ -111,14 +119,14 @@ async function linker(specifier: string, { identifier }: Module) {
   throw new Error(`Unable to resolve dependency "${specifier}" in "${identifier}"`)
 }
 
-const json = json5.parse(readFileSync(resolve(root, 'tsconfig.json'), 'utf8'))
-const { options: compilerOptions } = ts.parseJsonConfigFileContent(json, ts.sys, root)
+const json = json5.parse(readFileSync(resolve(config.moduleRoot, 'tsconfig.json'), 'utf8'))
+const { options: compilerOptions } = ts.parseJsonConfigFileContent(json, ts.sys, config.moduleRoot)
 
 async function loadSource(path: string) {
   for (const postfix of suffixes) {
     try {
       const target = path + postfix
-      return [await promises.readFile(resolve(root, target), 'utf8'), target]
+      return [await promises.readFile(resolve(config.moduleRoot, target), 'utf8'), target]
     } catch {}
   }
   throw new Error(`cannot load source file "${path}"`)
@@ -134,11 +142,12 @@ async function createModule(path: string) {
     module = modules[identifier] = new SourceTextModule(outputText, { context, identifier })
   }
 
-  logger.debug('creating module %c', module.identifier)
+  const type = module instanceof SyntheticModule ? 'synthetic' : 'source text'
+  logger.debug('creating %s module %c', type, module.identifier)
   await module.link(linker)
   await module.evaluate()
 
-  if (module instanceof SourceTextModule) {
+  if (!path.includes('/')) {
     internal.setGlobal(path, module.namespace)
   }
   return module
