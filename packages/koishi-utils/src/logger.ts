@@ -14,6 +14,10 @@ const instances: Record<string, Logger> = {}
 
 type LogFunction = (format: any, ...param: any[]) => void
 
+type LogType = 'success' | 'error' | 'info' | 'warn' | 'debug'
+
+export interface Logger extends Record<LogType, LogFunction> {}
+
 export class Logger {
   static readonly SUCCESS = 1
   static readonly ERROR = 1
@@ -44,12 +48,6 @@ export class Logger {
   private code: number
   private displayName: string
 
-  public success: LogFunction
-  public error: LogFunction
-  public info: LogFunction
-  public warn: LogFunction
-  public debug: LogFunction
-
   constructor(private name: string, private showDiff = false) {
     if (name in instances) return instances[name]
     let hash = 0
@@ -71,7 +69,7 @@ export class Logger {
     return Logger.color(this.code, value, decoration)
   }
 
-  private createMethod(name: string, prefix: string, minLevel: number) {
+  private createMethod(name: LogType, prefix: string, minLevel: number) {
     this[name] = (...args: [any, ...any[]]) => {
       if (this.level < minLevel) return
       process.stderr.write(prefix + this.displayName + this.format(...args) + '\n')
