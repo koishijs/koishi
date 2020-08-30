@@ -1,5 +1,5 @@
 import { config, context, internal, WorkerAPI, Context, response, mapDirectory, formatError } from 'koishi-plugin-eval/dist/worker'
-import { promises, readFileSync } from 'fs'
+import { promises as fs, readFileSync } from 'fs'
 import { resolve, posix, dirname } from 'path'
 import { Logger, Time, CQCode, Random } from 'koishi-utils'
 import json5 from 'json5'
@@ -9,10 +9,12 @@ const logger = new Logger('addon')
 
 const { SourceTextModule, SyntheticModule } = require('vm')
 
+export interface AddonWorkerConfig {
+  moduleRoot?: string
+}
+
 declare module 'koishi-plugin-eval/dist/worker' {
-  interface WorkerConfig {
-    moduleRoot?: string
-  }
+  interface WorkerConfig extends AddonWorkerConfig {}
 
   interface WorkerData {
     addonNames: string[]
@@ -120,7 +122,7 @@ async function loadSource(path: string) {
   for (const postfix of suffixes) {
     try {
       const target = path + postfix
-      return [await promises.readFile(resolve(config.moduleRoot, target), 'utf8'), target]
+      return [await fs.readFile(resolve(config.moduleRoot, target), 'utf8'), target]
     } catch {}
   }
   throw new Error(`cannot load source file "${path}"`)
@@ -142,7 +144,7 @@ async function createModule(path: string) {
   await module.evaluate()
 
   if (!path.includes('/')) {
-    internal.setGlobal(path, module.namespace)
+    internal.setGlobal(path, internal.decontextify(module.namespace))
   }
   return module
 }
@@ -158,5 +160,5 @@ export async function evaluate(path: string) {
 export default Promise.all(config.addonNames.map(evaluate)).then(() => {
   response.commands = Object.keys(commandMap)
   mapDirectory('koishi/utils/', require.resolve('koishi-utils'))
-  internal.setGlobal('utils', modules['koishi/utils.ts'].namespace)
+  internal.setGlobal('utils', internal.decontextify(modules['koishi/utils.ts'].namespace))
 })

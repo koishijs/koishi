@@ -5,18 +5,19 @@ import { safeLoad } from 'js-yaml'
 import { promises as fs } from 'fs'
 import { attachTraps, FieldOptions } from 'koishi-plugin-eval'
 import Git, { CheckRepoActions } from 'simple-git'
+import { AddonWorkerConfig } from './worker'
 
 const logger = new Logger('addon')
 
-type AddonConfig = Config
+export interface Config extends AddonMainConfig, AddonWorkerConfig {}
 
-export interface Config {
+export interface AddonMainConfig {
   gitRemote?: string
   exclude?: RegExp
 }
 
 declare module 'koishi-plugin-eval/dist/main' {
-  interface MainConfig extends AddonConfig {}
+  interface MainConfig extends AddonMainConfig {}
 }
 
 interface OptionManifest extends OptionConfig {
