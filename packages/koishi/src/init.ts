@@ -14,12 +14,18 @@ async function createConfig() {
     choices: [
       { title: 'HTTP', value: 'cqhttp:http' },
       { title: 'WebSocket', value: 'cqhttp:ws' },
+      { title: 'WebSocket Reverse', value: 'cqhttp:ws-reverse' },
     ],
   }, {
     name: 'port',
-    type: (_, data) => data.type === 'cqhttp:http' ? 'number' : null,
+    type: (_, data) => data.type === 'cqhttp:http' || data.type === 'cqhttp:ws-reverse' ? 'number' : null,
     message: 'Koishi Port',
     initial: 8080,
+  }, {
+    name: 'path',
+    type: (_, data) => data.type === 'cqhttp:http' || data.type === 'cqhttp:ws-reverse' ? 'text' : null,
+    message: 'Koishi Path',
+    initial: '/',
   }, {
     name: 'server',
     type: (_, data) => data.type === 'cqhttp:http' ? 'text' : null,
@@ -41,7 +47,7 @@ async function createConfig() {
   }, {
     name: 'token',
     type: 'text',
-    message: 'Token for CoolQ Server',
+    message: 'Token for CQHTTP Server',
   }], {
     onCancel: () => succeed = false,
   })
