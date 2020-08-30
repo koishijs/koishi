@@ -144,7 +144,10 @@ async function createModule(path: string) {
   await module.evaluate()
 
   if (!path.includes('/')) {
-    internal.setGlobal(path, internal.decontextify(module.namespace))
+    const namespace = internal.decontextify(module.namespace)
+    if (Object.keys(namespace).length) {
+      internal.setGlobal(path, namespace)
+    }
   }
   return module
 }
