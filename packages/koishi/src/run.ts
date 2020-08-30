@@ -26,6 +26,13 @@ process.on('SIGINT', () => {
   }
 })
 
+interface Message {
+  type: 'start' | 'exit'
+  payload: any
+}
+
+let payload: any
+
 function createWorker(options: WorkerOptions) {
   child = fork(resolve(__dirname, 'worker'), [], {
     execArgv: options['--'],
@@ -33,9 +40,14 @@ function createWorker(options: WorkerOptions) {
 
   let started = false
 
-  child.on('message', (data) => {
-    if (data === 'start') {
+  child.on('message', (message: Message) => {
+    if (message.type === 'start') {
       started = true
+      if (payload) {
+        child.send({ type: 'send', payload })
+      }
+    } else if (message.type === 'exit') {
+      payload = message.payload
     }
   })
 
