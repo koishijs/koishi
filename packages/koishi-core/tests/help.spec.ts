@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { memory, App } from 'koishi-test-utils'
 import { Time } from 'koishi-utils'
 import { Message } from 'koishi-core'

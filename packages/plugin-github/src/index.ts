@@ -11,7 +11,8 @@ import axios from 'axios'
 
 type Payload<T extends EventNames.All> = GetWebhookPayloadTypeFromEvent<T, unknown>['payload']
 type Repository = EventPayloads.PayloadRepository
-type Issue = EventPayloads.WebhookPayloadIssuesIssue
+type Issue =
+  | EventPayloads.WebhookPayloadIssuesIssue
   | EventPayloads.WebhookPayloadPullRequestPullRequest
   | EventPayloads.WebhookPayloadPullRequestReviewPullRequest
 type ReviewComment = EventPayloads.WebhookPayloadPullRequestReviewCommentComment
