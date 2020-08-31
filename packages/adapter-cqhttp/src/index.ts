@@ -52,7 +52,9 @@ Server.types.undefined = CQHTTP
 const { broadcast } = Context.prototype
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
 
-Context.prototype.broadcast = async function (this: Context, message, forced) {
+Context.prototype.broadcast = async function (this: Context, ...args: any[]) {
+  const index = Array.isArray(args[0]) ? 1 : 0
+  let message = args[index] as string
   let output = ''
   let capture: RegExpExecArray
   // eslint-disable-next-line no-cond-assign
@@ -63,8 +65,8 @@ Context.prototype.broadcast = async function (this: Context, message, forced) {
     const { data } = await axios.get<ArrayBuffer>(url, { responseType: 'arraybuffer' })
     output += `[CQ:image,file=base64://${Buffer.from(data).toString('base64')}]`
   }
-  message = output + message
-  return broadcast.call(this, message, forced)
+  args[index] = output + message
+  return broadcast.apply(this, args)
 }
 
 Session.prototype.$send = async function $send(this: Session, message: string, autoEscape = false) {
