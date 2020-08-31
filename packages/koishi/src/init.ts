@@ -4,8 +4,8 @@ import { resolve, extname, dirname } from 'path'
 import { AppConfig } from './worker'
 import { CAC } from 'cac'
 import prompts, { Choice, PrevCaller, PromptObject } from 'prompts'
-import * as mysql from 'koishi-plugin-mysql'
-import * as mongo from 'koishi-plugin-mongo'
+import * as mysql from 'koishi-plugin-mysql/dist/database'
+import * as mongo from 'koishi-plugin-mongo/dist/database'
 
 function conditional<T extends PromptObject['type']>(type: T, key: string, ...values: string[]): PrevCaller<any> {
   return (prev, data, prompt) => {
