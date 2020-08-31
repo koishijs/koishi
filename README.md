@@ -120,3 +120,9 @@ koishi-plugin-schedule 允许用户设置定时任务并执行。这些计划任
 ### [koishi-plugin-teach](./packages/plugin-teach) [![npm](https://img.shields.io/npm/v/koishi-plugin-teach?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-teach)
 
 ### [koishi-plugin-tools](./packages/plugin-tools) [![npm](https://img.shields.io/npm/v/koishi-plugin-tools?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-tools)
+
+## 协议
+
+[MIT](./LICENSE)
+
+Copyright © 2019-present, Shigma

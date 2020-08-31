@@ -16,11 +16,11 @@
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-eval-addons": {
-    "version": "1.0.0-beta.9",
+    "version": "1.0.0-beta.10",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-github": {
-    "version": "2.0.0-beta.9",
+    "version": "2.0.0-beta.10",
     "description": "GitHub webhook plugin for Koishi"
   },
   "koishi-plugin-image-search": {
@@ -28,7 +28,7 @@
     "description": "Image searching plugin for Koishi"
   },
   "koishi-plugin-mongo": {
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "MongoDB support for Koishi"
   },
   "koishi-plugin-monitor": {
