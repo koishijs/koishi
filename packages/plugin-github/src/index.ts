@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 
 import { Context, Middleware, User } from 'koishi-core'
-import { Logger, Time } from 'koishi-utils'
+import { defineProperty, Logger, Time } from 'koishi-utils'
 import { Octokit } from '@octokit/rest'
 import { Webhooks, EventNames, EventPayloads } from '@octokit/webhooks'
 import { GetWebhookPayloadTypeFromEvent } from '@octokit/webhooks/dist-types/generated/get-webhook-payload-type-from-event'
@@ -15,6 +15,12 @@ type Issue = EventPayloads.WebhookPayloadIssuesIssue
   | EventPayloads.WebhookPayloadPullRequestPullRequest
   | EventPayloads.WebhookPayloadPullRequestReviewPullRequest
 type ReviewComment = EventPayloads.WebhookPayloadPullRequestReviewCommentComment
+
+declare module 'koishi-core/dist/app' {
+  interface App {
+    githubWebhooks?: Webhooks
+  }
+}
 
 declare module 'koishi-core/dist/database' {
   interface User {
@@ -62,7 +68,11 @@ export function apply(ctx: Context, config: Config = {}) {
   if (!ctx.router) throw new Error('ctx.router is not defined')
 
   config = { ...defaultOptions, ...config }
-  const webhook = new Webhooks(config)
+  const webhooks = new Webhooks({
+    ...config,
+    path: config.webhook,
+  })
+  defineProperty(ctx.app, 'githubWebhooks', webhooks)
   const github = new Octokit({
     request: {
       agent: config.agent,
@@ -73,7 +83,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const { router, database } = ctx
 
   router.post(config.webhook, (ctx, next) => {
-    return webhook.middleware(ctx.req, ctx.res, next)
+    return webhooks.middleware(ctx.req, ctx.res, next)
   })
 
   router.get(config.authorize, async (ctx) => {
@@ -120,7 +130,7 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   function registerHandler<T extends EventNames.All>(event: T, handler: (payload: Payload<T>) => [string, Middleware?]) {
-    webhook.on(event, async (callback) => {
+    webhooks.on(event, async (callback) => {
       const { repository } = callback.payload
       const groupIds = config.repos[repository.full_name]
       if (!groupIds) return

@@ -62,7 +62,7 @@ koishi run
 - [Mrs4s/go-cqhttp](https://github.com/Mrs4s/go-cqhttp)
 - [yyuueexxiinngg/cqhttp-mirai](https://github.com/yyuueexxiinngg/cqhttp-mirai)
 
-请注意：尽管 Koishi 使用的协议是 MIT，但上面陈述的三种途径的相关框架都使用了基于 [AGPL 3.0](https://choosealicense.com/licenses/agpl-3.0/) 的协议。因此如果你使用 koishi-adapter-cqhttp 运行你的机器人，你将可能受到 AGPL 3.0 协议的限制，**必须将你的代码开源并保持同协议**。Koishi 及其作者对使用上述框架或违反上述限制所可能造成的法律后果不负任何责任。
+请注意：尽管 Koishi 使用的协议是 [MIT](https://choosealicense.com/licenses/mit/)，但上面陈述的三种途径的相关框架都使用了基于 [AGPL 3.0](https://choosealicense.com/licenses/agpl-3.0/) 的协议。因此如果你使用 koishi-adapter-cqhttp 运行你的机器人，你将可能受到 AGPL 3.0 协议的限制，**必须将你的代码开源并保持同协议**。Koishi 及其作者对使用上述框架或违反上述限制的行为所可能造成的法律后果概不负责。
 
 ## 数据库支持
 
