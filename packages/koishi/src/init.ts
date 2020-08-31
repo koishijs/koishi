@@ -176,7 +176,7 @@ async function createConfig() {
 
 const workingDirectory = process.cwd()
 const supportedTypes = ['js', 'ts', 'json'] as const
-type ConfigFileType = typeof supportedTypes[number]
+type SourceType = typeof supportedTypes[number]
 
 const error = red('error')
 const success = green('success')
@@ -190,7 +190,7 @@ async function updateMeta(config: AppConfig) {
     const fullname = 'koishi-plugin-' + name
     if (!meta.dependencies[fullname]) {
       modified = true
-      meta.dependencies[fullname] = ecosystem[fullname].version
+      meta.dependencies[fullname] = '^' + ecosystem[fullname].version
     }
   }
   if (!modified) return
@@ -198,16 +198,42 @@ async function updateMeta(config: AppConfig) {
   console.log(`${success} package.json was updated`)
 }
 
-async function writeConfig(config: AppConfig, path: string, type: ConfigFileType) {
+type Serializable = string | number | Serializable[] | { [key: string]: Serializable }
+
+function joinLines(lines: string[], type: SourceType, indent: string) {
+  return `\n  ${indent}${lines.join(',\n  ' + indent)}${type === 'json' ? '' : ','}\n${indent}`
+}
+
+function codegen(value: Serializable, type: SourceType, indent = '', path = '/') {
+  if (value === null) return 'null'
+  switch (typeof value) {
+    case 'number': case 'boolean': return '' + value
+    case 'string': return type === 'json' || value.includes("'") && !value.includes('"')
+      ? `"${value.replace(/"/g, '\\"')}"`
+      : `'${value.replace(/'/g, "\\'")}'`
+    case 'undefined': return undefined
+  }
+
+  if (Array.isArray(value)) {
+    return path === '/plugins/0/'
+      ? `[${value.map(value => codegen(value, type, indent, path + '0/')).join(', ')}]`
+      : `[${joinLines(value.map(value => codegen(value, type, '  ' + indent, path + '0/')), type, indent)}]`
+  }
+
+  return `{${joinLines(Object.entries(value).filter(([, value]) => value !== undefined).map(([key, value]) => {
+    const keyString = type === 'json' ? `"${key}"` : key
+    const valueString = codegen(value, type, '  ' + indent, path + key + '/')
+    return keyString + ': ' + valueString
+  }), type, indent)}}`
+}
+
+async function writeConfig(config: any, path: string, type: SourceType) {
   // generate output
-  let output = JSON.stringify(config, null, 2)
-  if (type !== 'json') {
-    output = output.replace(/^(\s+)"([\w$]+)":/mg, '$1$2:')
-    if (type === 'js') {
-      output = 'module.exports = ' + output
-    } else if (type === 'ts') {
-      output = 'export = ' + output
-    }
+  let output = codegen(config, type) + '\n'
+  if (type === 'js') {
+    output = 'module.exports = ' + output
+  } else if (type === 'ts') {
+    output = 'export = ' + output
   }
 
   // write to file
@@ -229,7 +255,7 @@ export default function (cli: CAC) {
       }
 
       // parse extension
-      const extension = extname(path).slice(1) as ConfigFileType
+      const extension = extname(path).slice(1) as SourceType
       if (!extension) {
         console.warn(`${error} configuration file should have an extension, received "${file}"`)
         process.exit(1)
