@@ -232,10 +232,11 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   registerHandler('pull_request.opened', ({ repository, pull_request }) => {
+    const { user, html_url, base, head, body, number } = pull_request
     return [[
-      `[GitHub] ${pull_request.user.login} opened a pull request ${repository.full_name}#${pull_request.number} (${pull_request.base.label} <- ${pull_request.head.label})`,
-      `URL: ${pull_request.html_url}`,
-      formatMarkdown(pull_request.body),
+      `[GitHub] ${user.login} opened a pull request ${repository.full_name}#${number} (${base.label} <- ${head.label})`,
+      `URL: ${html_url}`,
+      formatMarkdown(body),
     ].join('\n'), createIssueComment(repository, pull_request)]
   })
 
@@ -268,7 +269,7 @@ export function apply(ctx: Context, config: Config = {}) {
     }
 
     return [[
-      `[GitHub] ${pusher.name} pushed to ${repository.full_name}:${ref}`,
+      `[GitHub] ${pusher.name} pushed to ${repository.full_name}:${ref.replace(/^refs\/heads\//, '')}`,
       `Compare: ${compare}`,
       ...commits.map(c => `[${c.id.slice(0, 6)}] ${formatMarkdown(c.message)}`),
     ].join('\n')]

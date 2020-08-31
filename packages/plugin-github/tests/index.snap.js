@@ -19,10 +19,15 @@ URL: https://github.com/koishijs/koishi/issues/19
 Title: Wie kann man um das Koishi zu installieren?
 Ich verstecke Englisch und Chinesisch nicht! Gab es Personen, die mir helfen kann?`
 
-module.exports[`pull_request.opened`] = `
+module.exports[`pull_request.opened.1`] = `
 [GitHub] simon300000 opened a pull request koishijs/koishi#20 (koishijs:develop <- koishijs:experimental)
 URL: https://github.com/koishijs/koishi/pull/20
 Das ist wichtig!`
+
+module.exports[`pull_request.opened.2`] = `
+[GitHub] jjyyxx opened a pull request koishijs/koishi#90 (koishijs:mapping <- jjyyxx:mapping)
+URL: https://github.com/koishijs/koishi/pull/90
+According to \`tsconfig-paths\` documentation ...`
 
 module.exports[`pull_request_review.submitted.2`] = `
 [GitHub] Kouchya reviewed pull request koishijs/koishi#20
@@ -36,7 +41,7 @@ URL: https://github.com/koishijs/koishi/pull/20#discussion_r368570320
 Naming is so hard......`
 
 module.exports[`push.commit`] = `
-[GitHub] Shigma pushed to koishijs/koishi:refs/heads/develop
+[GitHub] Shigma pushed to koishijs/koishi:develop
 Compare: https://github.com/koishijs/koishi/compare/976c6e8f09a4...3ae7e7044d06
 [d7ff34] chore: adjust
 [3ae7e7] fix(core): create major context at demand`
