@@ -83,6 +83,8 @@ export function apply(ctx: Context, config: Config = {}) {
   const { router, database } = ctx
 
   router.post(config.webhook, (ctx, next) => {
+    // workaround @octokit/webhooks for koa
+    ctx.req['body'] = ctx.request.body
     return webhooks.middleware(ctx.req, ctx.res, next)
   })
 
