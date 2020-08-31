@@ -4,7 +4,7 @@ URL: https://github.com/koishijs/koishi/commit/bff469eabe14d42683a4f7c3ccb659dae
 This will introduce a failure in test.`
 
 module.exports[`fork`] = `
-[GitHub] jjyyxx forked koishijs/koishi to jjyyxx/koishi`
+[GitHub] jjyyxx forked koishijs/koishi to jjyyxx/koishi (total 12 forks)`
 
 module.exports[`issue_comment.created.1`] = `
 [GitHub] simon300000 commented on issue koishijs/koishi#19
@@ -51,3 +51,6 @@ Compare: https://github.com/koishijs/koishi/compare/976c6e8f09a4...3ae7e7044d06
 
 module.exports[`push.tag`] = `
 [GitHub] Shigma published tag koishijs/koishi@1.5.0`
+
+module.exports[`star.created`] = `
+[GitHub] 275761919 starred koishijs/koishi (total 189 stargazers)`

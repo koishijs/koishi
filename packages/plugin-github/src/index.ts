@@ -169,6 +169,10 @@ export function apply(ctx: Context, config: Config = {}) {
     ].join('\n')]
   })
 
+  registerHandler('fork', ({ repository, sender, forkee }) => {
+    return [`[GitHub] ${sender.login} forked ${repository.full_name} to ${forkee.full_name} (total ${repository.forks_count} forks)`]
+  })
+
   const checkToken: Middleware = async (session, next) => {
     const user = await session.$observeUser(['githubToken'])
     if (!user.githubToken) {
@@ -275,7 +279,7 @@ export function apply(ctx: Context, config: Config = {}) {
     ].join('\n')]
   })
 
-  registerHandler('fork', ({ repository, sender, forkee }) => {
-    return [`[GitHub] ${sender.login} forked ${repository.full_name} to ${forkee.full_name}`]
+  registerHandler('star.created', ({ repository, sender }) => {
+    return [`[GitHub] ${sender.login} starred ${repository.full_name} (total ${repository.stargazers_count} stargazers)`]
   })
 }
