@@ -17,6 +17,7 @@ export type DependencyType = 'dependencies' | 'devDependencies' | 'peerDependenc
 
 export interface PackageJson extends Partial<Record<DependencyType, Record<string, string>>> {
   name?: string
+  description?: string
   private?: boolean
   version?: string
 }
@@ -36,7 +37,7 @@ export function spawnSync(command: string, silent?: boolean) {
 export function spawnAsync(command: string) {
   const args = command.split(/\s+/)
   const child = spawn(args[0], args.slice(1), { stdio: 'inherit' })
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     child.on('close', resolve)
   })
 }
