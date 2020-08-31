@@ -274,4 +274,8 @@ export function apply(ctx: Context, config: Config = {}) {
       ...commits.map(c => `[${c.id.slice(0, 6)}] ${formatMarkdown(c.message)}`),
     ].join('\n')]
   })
+
+  registerHandler('fork', ({ repository, sender, forkee }) => {
+    return [`[GitHub] ${sender.login} forked ${repository.full_name} to ${forkee.full_name}`]
+  })
 }

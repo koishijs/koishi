@@ -3,6 +3,9 @@ module.exports[`commit_comment.created`] = `
 URL: https://github.com/koishijs/koishi/commit/bff469eabe14d42683a4f7c3ccb659daec5e1c00#commitcomment-36878220
 This will introduce a failure in test.`
 
+module.exports[`fork`] = `
+[GitHub] jjyyxx forked koishijs/koishi to jjyyxx/koishi`
+
 module.exports[`issue_comment.created.1`] = `
 [GitHub] simon300000 commented on issue koishijs/koishi#19
 URL: https://github.com/koishijs/koishi/issues/19#issuecomment-576277946
