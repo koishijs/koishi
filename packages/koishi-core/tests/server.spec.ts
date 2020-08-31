@@ -1,7 +1,8 @@
 import { App, BASE_SELF_ID, memory } from 'koishi-test-utils'
-import { App as RealApp, Group, Session } from 'koishi-core'
+import { App as RealApp, extendDatabase, Group, Session } from 'koishi-core'
 import { expect } from 'chai'
 import { fn, spyOn } from 'jest-mock'
+import { Logger } from 'koishi-utils'
 
 describe('Server API', () => {
   describe('Adaptation API', () => {
@@ -94,6 +95,33 @@ describe('Server API', () => {
     it('ctx.broadcast 3', async () => {
       await expect(app.broadcast([123, 456], 'foo', true)).to.eventually.deep.equal([789])
       expect(sendGroupMsg.mock.calls).to.deep.equal([[123, 'foo'], [456, 'foo']])
+    })
+  })
+
+  describe('Database API', () => {
+    const app = new App()
+    const warn = spyOn(new Logger('app'), 'warn')
+
+    it('override database', () => {
+      warn.mockClear()
+      app.database = {} as any
+      expect(warn.mock.calls).to.have.length(0)
+      app.database = {} as any
+      expect(warn.mock.calls).to.have.length(1)
+    })
+
+    it('extend database', () => {
+      const callback = fn()
+      const id = 'this-module-does-not-exist'
+      extendDatabase(id, callback)
+      expect(callback.mock.calls).to.have.length(0)
+      class CustomDatabase {}
+      const module = require.cache[require.resolve('koishi-core/src/database.ts')]
+      const mockedRequire = spyOn(module, 'require')
+      mockedRequire.mockReturnValue({ default: CustomDatabase })
+      extendDatabase(id, callback)
+      expect(callback.mock.calls).to.deep.equal([[CustomDatabase]])
+      mockedRequire.mockRestore()
     })
   })
 })

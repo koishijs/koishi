@@ -1,6 +1,6 @@
 import { App, AppOptions, Context, Plugin } from 'koishi-core'
 import { resolve, dirname } from 'path'
-import { Logger } from 'koishi-utils'
+import { Logger, noop } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
 import 'koishi-adapter-cqhttp'
@@ -105,14 +105,38 @@ if (config.logLevel && !process.env.KOISHI_LOG_LEVEL) {
   Logger.baseLevel = config.logLevel
 }
 
+interface Message {
+  type: 'send'
+  payload: any
+}
+
+process.on('message', (data: Message) => {
+  if (data.type === 'send') {
+    const { groupId, userId, selfId, message } = data.payload
+    const bot = app.bots[selfId]
+    if (groupId) {
+      bot.sendGroupMsg(groupId, message)
+    } else {
+      bot.sendPrivateMsg(userId, message)
+    }
+  }
+})
+
 const app = new App(config)
 
 app.command('exit', '停止机器人运行', { authority: 4 })
   .option('restart', '-r  重新启动')
   .shortcut('关机', { prefix: true })
   .shortcut('重启', { prefix: true, options: { restart: true } })
-  .action(({ options }) => {
-    process.exit(options.restart ? 514 : 0)
+  .action(async ({ options, session }) => {
+    const { groupId, userId, selfId } = session
+    if (!options.restart) {
+      await session.$send('正在关机……').catch(noop)
+      process.exit()
+    }
+    process.send({ type: 'exit', payload: { groupId, userId, selfId, message: '已成功重启。' } })
+    await session.$send(`正在重启……`).catch(noop)
+    process.exit(514)
   })
 
 if (Array.isArray(config.plugins)) {
@@ -131,5 +155,5 @@ app.start().then(() => {
 
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
   logger.success(`bot started successfully in ${time} ms.`)
-  process.send('start')
+  process.send({ type: 'start' })
 }, handleException)

@@ -3,10 +3,10 @@ temp
 
 /addons
 /atri
+/coverage
 /docs
 /shiki
-/coverage
-/plugins
+/test
 
 todo.md
 yarn.lock

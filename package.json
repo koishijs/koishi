@@ -4,6 +4,7 @@
   "workspaces": [
     "atri",
     "addons",
+    "test",
     "shiki",
     "shiki/core",
     "shiki/cosmos",

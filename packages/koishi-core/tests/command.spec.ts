@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { App } from 'koishi-test-utils'
 import { spyOn } from 'jest-mock'
 import { Logger, noop } from 'koishi-utils'

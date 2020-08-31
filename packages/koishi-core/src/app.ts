@@ -46,8 +46,8 @@ export class App extends Context {
   _commands: Command[]
   _commandMap: Record<string, Command>
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]>
-  _userCache: LruCache<number, Observed<Partial<User>>>
-  _groupCache: LruCache<number, Observed<Partial<Group>>>
+  _userCache: LruCache<number, Observed<Partial<User>, Promise<void>>>
+  _groupCache: LruCache<number, Observed<Partial<Group>, Promise<void>>>
 
   private _nameRE: RegExp
   private _prefixRE: RegExp

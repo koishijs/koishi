@@ -109,7 +109,7 @@ function bumpPkg(source: Package, flag: BumpType, only = false) {
     const { name } = source
     if (target.name === name) return
     Object.entries({ devDependencies, peerDependencies, dependencies, optionalDependencies })
-      .filter(([_, dependencies = {}]) => dependencies[name])
+      .filter(([, dependencies = {}]) => dependencies[name])
       .forEach(([type]) => {
         target.meta[type][name] = '^' + newVersion
         target.dirty = true
@@ -150,4 +150,13 @@ const flag = options.major ? 'major' : options.minor ? 'minor' : options.patch ?
     }
     return pkg.save()
   }))
+
+  const ecosystem: Record<string, Pick<PackageJson, 'version' | 'description'>> = {}
+  for (const path in packages) {
+    if (!path.startsWith('packages/') || path.startsWith('packages/koishi')) continue
+    const { name, version, description } = packages[path].meta
+    ecosystem[name] = { version, description }
+  }
+
+  await writeJson(resolve(__dirname, '../packages/koishi/ecosystem.json'), ecosystem, { spaces: 2 })
 })()
