@@ -8,7 +8,8 @@
     "node": ">=12.0.0"
   },
   "files": [
-    "dist"
+    "dist",
+    "ecosystem.json"
   ],
   "bin": "dist/cli.js",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -34,21 +35,14 @@
     "koishi"
   ],
   "devDependencies": {
-    "@types/js-yaml": "^3.12.5",
     "@types/prompts": "^2.0.8"
   },
   "dependencies": {
     "cac": "^6.6.1",
     "kleur": "^4.1.1",
-    "koishi-core": "^2.0.2",
     "koishi-adapter-cqhttp": "^1.0.1",
+    "koishi-core": "^2.0.2",
     "koishi-plugin-common": "^3.0.0-beta.15",
-    "koishi-plugin-mysql": "^2.0.0",
-    "koishi-plugin-mongo": "^1.0.1",
-    "koishi-plugin-schedule": "^2.0.1",
-    "koishi-plugin-status": "^2.0.0-beta.13",
-    "koishi-plugin-teach": "^1.0.2",
-    "koishi-utils": "^3.1.2",
     "prompts": "^2.3.2"
   }
 }

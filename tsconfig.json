@@ -24,7 +24,6 @@
     { "path": "./packages/plugin-github" },
     { "path": "./packages/plugin-image-search" },
     { "path": "./packages/plugin-monitor" },
-    { "path": "./packages/plugin-recorder" },
     { "path": "./packages/plugin-rss" },
     { "path": "./packages/plugin-schedule" },
     { "path": "./packages/plugin-status" },

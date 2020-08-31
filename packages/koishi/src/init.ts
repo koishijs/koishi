@@ -1,11 +1,9 @@
-import { existsSync, writeFileSync, mkdirSync } from 'fs'
+import { promises as fs, existsSync } from 'fs'
 import { yellow, red, green } from 'kleur'
 import { resolve, extname, dirname } from 'path'
 import { AppConfig } from './worker'
-import prompts, { PrevCaller, PromptObject } from 'prompts'
 import { CAC } from 'cac'
-import { AppOptions } from 'koishi-core'
-import { omit } from 'koishi-utils'
+import prompts, { Choice, PrevCaller, PromptObject } from 'prompts'
 import * as mysql from 'koishi-plugin-mysql'
 import * as mongo from 'koishi-plugin-mongo'
 
@@ -16,7 +14,7 @@ function conditional<T extends PromptObject['type']>(type: T, key: string, ...va
   }
 }
 
-const serverQuestions: PromptObject<keyof AppOptions | 'database'>[] = [{
+const serverQuestions: PromptObject<keyof AppConfig | 'database'>[] = [{
   name: 'type',
   type: 'select',
   message: 'Server Type',
@@ -120,6 +118,11 @@ const mongoQuestions: PromptObject<keyof mongo.Config>[] = [{
   initial: 'koishi',
 }]
 
+const dbQuestionMap = {
+  mysql: mysqlQuestions,
+  mongo: mongoQuestions,
+}
+
 async function question<T extends string>(questions: PromptObject<T>[]) {
   let succeed = true
   const data = await prompts(questions, {
@@ -129,31 +132,97 @@ async function question<T extends string>(questions: PromptObject<T>[]) {
   return data
 }
 
+type DependencyType = 'dependencies' | 'devDependencies' | 'peerDependencies' | 'optionalDependencies'
+
+interface Package extends Partial<Record<DependencyType, Record<string, string>>> {
+  version: string
+  description?: string
+}
+
+const ecosystem: Record<string, Package> = require('../ecosystem')
+const builtinPackages = ['koishi-plugin-common']
+
 async function createConfig() {
   const data = await question(serverQuestions)
-  const config = omit(data, ['database']) as AppConfig
-  config.plugins = []
-  console.log(data.database)
-  if (data.database === 'mysql') {
-    config.plugins.push(['mysql', await question(mysqlQuestions)])
-  } else if (data.database === 'mongo') {
-    config.plugins.push(['mongo', await question(mongoQuestions)])
+  const { database } = data
+  const config = { ...data, database: undefined, plugins: [] } as AppConfig
+
+  // database
+  if (database) {
+    config.plugins.push([database, await question(dbQuestionMap[database])])
   }
+
+  // official plugins
+  const choices: Choice[] = Object.entries(ecosystem).map(([title, meta]) => {
+    if (!title.startsWith('koishi-plugin-')) return
+    const value = title.slice(14)
+    if (value in dbQuestionMap) return
+    const { description } = meta
+    const selected = builtinPackages.includes(title)
+    return { title, value, description, selected }
+  }).filter(Boolean)
+
+  const { plugins } = await prompts({
+    type: 'multiselect',
+    name: 'plugins',
+    message: 'Choose Official Plugins',
+    choices,
+  })
+
+  config.plugins.push(...plugins.map(name => [name]))
+
   return config
 }
 
+const workingDirectory = process.cwd()
 const supportedTypes = ['js', 'ts', 'json'] as const
 type ConfigFileType = typeof supportedTypes[number]
 
-export default function (cli: CAC) {
-  const error = red('error')
-  const success = green('success')
+const error = red('error')
+const success = green('success')
 
+async function updateMeta(config: AppConfig) {
+  const path = resolve(workingDirectory, 'package.json')
+  const meta: Package = JSON.parse(await fs.readFile(path, 'utf8'))
+  let modified = false
+  if (!meta.dependencies) meta.dependencies = {}
+  for (const [name] of config.plugins as string[]) {
+    const fullname = 'koishi-plugin-' + name
+    if (!meta.dependencies[fullname]) {
+      modified = true
+      meta.dependencies[fullname] = ecosystem[fullname].version
+    }
+  }
+  if (!modified) return
+  await fs.writeFile(path, JSON.stringify(meta, null, 2))
+  console.log(`${success} package.json was updated`)
+}
+
+async function writeConfig(config: AppConfig, path: string, type: ConfigFileType) {
+  // generate output
+  let output = JSON.stringify(config, null, 2)
+  if (type !== 'json') {
+    output = output.replace(/^(\s+)"([\w$]+)":/mg, '$1$2:')
+    if (type === 'js') {
+      output = 'module.exports = ' + output
+    } else if (type === 'ts') {
+      output = 'export = ' + output
+    }
+  }
+
+  // write to file
+  const folder = dirname(path)
+  await fs.mkdir(folder, { recursive: true })
+  await fs.writeFile(path, output)
+  console.log(`${success} created config file: ${path}`)
+}
+
+export default function (cli: CAC) {
   cli.command('init [file]', 'initialize a koishi configuration file')
     .option('-f, --forced', 'overwrite config file if it exists')
-    .action(async (file, options) => {
+    .action(async (file = 'koishi.config.js', options) => {
       // resolve file path
-      const path = resolve(process.cwd(), String(file || 'koishi.config.js'))
+      const path = resolve(workingDirectory, file)
       if (!options.forced && existsSync(path)) {
         console.warn(`${error} ${options.output} already exists. If you want to overwrite the current file, use ${yellow('koishi init -f')}`)
         process.exit(1)
@@ -176,22 +245,7 @@ export default function (cli: CAC) {
         process.exit(0)
       }
 
-      // generate output
-      let output = JSON.stringify(config, null, 2)
-      if (extension !== 'json') {
-        output = output.replace(/^(\s+)"([\w$]+)":/mg, '$1$2:')
-        if (extension === 'js') {
-          output = 'module.exports = ' + output
-        } else if (extension === 'ts') {
-          output = 'export = ' + output
-        }
-      }
-
-      // write to file
-      const folder = dirname(path)
-      if (!existsSync(folder)) mkdirSync(folder, { recursive: true })
-      writeFileSync(path, output)
-      console.warn(`${success} created config file: ${path}`)
+      await Promise.all([updateMeta(config), writeConfig(config, path, extension)])
       process.exit(0)
     })
 }
