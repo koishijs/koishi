@@ -10,12 +10,14 @@ import axios from 'axios'
 
 interface ReplyPayloads {
   link?: string
-  reply?: string
+  reply?: [url: string, params?: Record<string, any>],
 }
 
 type Payload<T extends EventNames.All> = GetWebhookPayloadTypeFromEvent<T, unknown>['payload']
 type EventHandler<T extends EventNames.All> = (payload: Payload<T>) => [message: string, replies?: ReplyPayloads]
-type ReplyHandlers = Record<string, (payload: any, session: Session, message: string) => Promise<void>>
+type ReplyHandlers = {
+  [K in keyof ReplyPayloads]: (payload: ReplyPayloads[K], session: Session, message: string) => Promise<void>
+}
 
 export default function apply(ctx: Context, config: Config) {
   const webhooks = new Webhooks({
@@ -29,9 +31,10 @@ export default function apply(ctx: Context, config: Config) {
     url: string
     session: Session<'githubToken'>
     message: string
+    params: Record<string, any>
   }
 
-  const request = async ({ session, url, message }: RestOptions) => {
+  const request = async ({ session, url, message, params }: RestOptions) => {
     if (!session.$user.githubToken) {
       await session.$send('如果想使用此功能，请对机器人进行授权，输入你的 GitHub 用户名。')
       const name = await session.$prompt().catch<string>()
@@ -39,7 +42,7 @@ export default function apply(ctx: Context, config: Config) {
       return session.$execute({ command: 'github', args: [name] })
     }
 
-    await axios.post(url, { body: message }, {
+    await axios.post(url, { ...params, body: message }, {
       httpsAgent: config.agent,
       timeout: config.requestTimeout,
       headers: {
@@ -51,7 +54,7 @@ export default function apply(ctx: Context, config: Config) {
 
   const replyHandlers: ReplyHandlers = {
     link: (url, session) => session.$send(url),
-    reply: (url, session, message) => request({ url, session, message }),
+    reply: ([url, params], session, message) => request({ url, session, message, params }),
   }
 
   const interactions: Record<number, ReplyPayloads> = {}
@@ -121,14 +124,16 @@ export default function apply(ctx: Context, config: Config) {
 
   registerHandler('commit_comment.created', ({ repository, comment }) => {
     const { full_name } = repository
-    const { user, html_url, commit_id, body } = comment
+    const { user, html_url, commit_id, body, path, position } = comment
     if (user.type === 'bot') return
     return [[
       `[GitHub] ${user.login} commented on commit ${full_name}@${commit_id.slice(0, 6)}`,
+      `Path: ${path}`,
       formatMarkdown(body),
     ].join('\n'), {
       link: html_url,
-      reply: `https://api.github.com/repos/${full_name}/commits/${commit_id}/comments`,
+      // https://docs.github.com/en/rest/reference/repos#create-a-commit-comment
+      reply: [`https://api.github.com/repos/${full_name}/commits/${commit_id}/comments`, { path, position }],
     }]
   })
 
@@ -146,7 +151,7 @@ export default function apply(ctx: Context, config: Config) {
       `[GitHub] ${user.login} opened an issue ${full_name}#${number}`,
       `Title: ${title}`,
       formatMarkdown(body),
-    ].join('\n'), { link: html_url, reply: comments_url }]
+    ].join('\n'), { link: html_url, reply: [comments_url] }]
   })
 
   registerHandler('issue_comment.created', ({ comment, issue, repository }) => {
@@ -159,7 +164,7 @@ export default function apply(ctx: Context, config: Config) {
     return [[
       `[GitHub] ${user.login} commented on ${type} ${full_name}#${number}`,
       formatMarkdown(body),
-    ].join('\n'), { link: html_url, reply: comments_url }]
+    ].join('\n'), { link: html_url, reply: [comments_url] }]
   })
 
   registerHandler('pull_request.opened', ({ repository, pull_request }) => {
@@ -170,7 +175,7 @@ export default function apply(ctx: Context, config: Config) {
     return [[
       `[GitHub] ${user.login} opened a pull request ${full_name}#${number} (${base.label} <- ${head.label})`,
       formatMarkdown(body),
-    ].join('\n'), { link: html_url, reply: comments_url }]
+    ].join('\n'), { link: html_url, reply: [comments_url] }]
   })
 
   registerHandler('pull_request_review.submitted', ({ repository, review, pull_request }) => {
@@ -183,7 +188,7 @@ export default function apply(ctx: Context, config: Config) {
     return [[
       `[GitHub] ${user.login} reviewed pull request ${full_name}#${number}`,
       formatMarkdown(body),
-    ].join('\n'), { link: html_url, reply: comments_url }]
+    ].join('\n'), { link: html_url, reply: [comments_url] }]
   })
 
   registerHandler('pull_request_review_comment.created', ({ repository, comment, pull_request }) => {
@@ -195,7 +200,7 @@ export default function apply(ctx: Context, config: Config) {
       `[GitHub] ${user.login} commented on pull request review ${full_name}#${number}`,
       `Path: ${path}`,
       formatMarkdown(body),
-    ].join('\n'), { link: html_url, reply: url }]
+    ].join('\n'), { link: html_url, reply: [url] }]
   })
 
   registerHandler('push', ({ compare, pusher, commits, repository, ref, after }) => {

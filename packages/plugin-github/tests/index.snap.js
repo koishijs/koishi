@@ -1,6 +1,7 @@
 // URL: https://github.com/koishijs/koishi/commit/bff469eabe14d42683a4f7c3ccb659daec5e1c00#commitcomment-36878220
 module.exports[`commit_comment.created`] = `
 [GitHub] Shigma commented on commit koishijs/koishi@bff469
+Path: packages/koishi-core/tests/parser.spec.ts
 This will introduce a failure in test.`
 
 module.exports[`fork`] = `
