@@ -41,6 +41,9 @@
     "koishi-core": "^2.1.0"
   },
   "devDependencies": {
+    "@sinonjs/fake-timers": "^6.0.1",
+    "@types/sinonjs__fake-timers": "^6.0.1",
+    "jest-mock": "^26.3.0",
     "koishi-plugin-mongo": "^1.0.2",
     "koishi-plugin-mysql": "^2.0.0",
     "koishi-test-utils": "^4.0.0"

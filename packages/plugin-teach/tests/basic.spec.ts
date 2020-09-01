@@ -1,11 +1,12 @@
 import { App } from 'koishi-test-utils'
+import { Random } from 'koishi-utils'
+import { fn, spyOn } from 'jest-mock'
+import { install, InstalledClock } from '@sinonjs/fake-timers'
 import * as teach from 'koishi-plugin-teach'
 import * as utils from './utils'
-import { expect } from 'chai'
-import { fn } from 'jest-mock'
 
 describe('Plugin Teach', () => {
-  describe('basic support', () => {
+  describe('Basic Support', () => {
     const app = new App({ prefix: '.' })
     const session1 = app.createSession('group', 123, 456)
     const session2 = app.createSession('group', 321, 456)
@@ -78,7 +79,7 @@ describe('Plugin Teach', () => {
   })
 
   function createEnvironment(config: teach.Config) {
-    const app = new App({ userCacheAge: Number.EPSILON })
+    const app = new App({ userCacheAge: Number.EPSILON, nickname: ['koishi', 'satori'] })
     const u2id = 200, u3id = 300, u4id = 400
     const g1id = 100, g2id = 200
     const u2 = app.createSession('user', u2id)
@@ -119,7 +120,54 @@ describe('Plugin Teach', () => {
   const DETAIL_HEAD = '编号为 1 的问答信息：\n问题：foo\n回答：bar\n'
   const SEARCH_HEAD = '问题“foo”的回答如下：\n'
 
-  describe('context', () => {
+  describe('Internal', () => {
+    const { u3g1 } = createEnvironment({})
+
+    let clock: InstalledClock
+    const randomReal = spyOn(Random, 'real')
+
+    before(() => {
+      clock = install({ shouldAdvanceTime: true, advanceTimeDelta: 5 })
+      randomReal.mockReturnValue(1 - Number.EPSILON)
+    })
+
+    after(() => {
+      clock.uninstall()
+      randomReal.mockRestore()
+    })
+
+    it('appellative', async () => {
+      await u3g1.shouldHaveReply('# koishi,foo bar', '问答已添加，编号为 1。')
+      await u3g1.shouldHaveNoReply('foo')
+      await u3g1.shouldHaveReply('koishi, foo', 'bar')
+      await u3g1.shouldHaveReply('satori, foo', 'bar')
+      // TODO support at-trigger
+      // await u3g1.shouldHaveReply(`[CQ:at,qq=${app.selfId}] foo`, 'bar')
+      await u3g1.shouldHaveReply('#1', '编号为 1 的问答信息：\n问题：koishi,foo\n回答：bar\n触发权重：p=0, P=1')
+      await u3g1.shouldHaveReply('## foo', SEARCH_HEAD + '1. [p=0, P=1] bar')
+    })
+
+    it('activated', async () => {
+      await u3g1.shouldHaveReply('# koishi ?', '问答已添加，编号为 2。')
+      await u3g1.shouldHaveReply('koishi', '?')
+      await u3g1.shouldHaveReply('foo', 'bar')
+
+      // due to mocked Random.real
+      await u3g1.shouldHaveReply('# satori ! -p 0.5', '问答已添加，编号为 3。')
+      await u3g1.shouldHaveNoReply('satori')
+    })
+
+    it('regular expression', async () => {
+      clock.runAll()
+      await u3g1.shouldHaveReply('# foo baz -xP 0.5', '问答已添加，编号为 4。')
+      await u3g1.shouldHaveNoReply('foo')
+      await u3g1.shouldHaveReply('koishi, fooo', 'baz')
+      await u3g1.shouldHaveReply('#4 -p 0.5 -P 1', '问答 4 已成功修改。')
+      await u3g1.shouldHaveReply('koishi, fooo', 'baz')
+    })
+  })
+
+  describe('Context', () => {
     const { u3, u3g1, u3g2 } = createEnvironment({ useContext: true })
 
     it('validate options 1', async () => {
@@ -186,7 +234,7 @@ describe('Plugin Teach', () => {
     })
   })
 
-  describe('writer', () => {
+  describe('Writer', () => {
     const { app, u2, u2g1, u3g1, u4g2 } = createEnvironment({ useWriter: true })
 
     app.command('test').action(({ session }) => '' + session.userId)
@@ -246,7 +294,7 @@ describe('Plugin Teach', () => {
     })
   })
 
-  describe('restriction', () => {
+  describe('Restriction', () => {
     // make coverage happy
     new App().plugin(teach, { throttle: [] })
     new App().plugin(teach, { preventLoop: [] })

@@ -23,7 +23,7 @@ before(() => app.start())
 
 after(() => app.stop())
 
-describe('koishi-plugin-eval', () => {
+describe('Plugin Eval', () => {
   it('basic support', async () => {
     await ses.shouldHaveReply('> 1+1', '2')
     await ses.shouldHaveNoReply('>> 1+1')
