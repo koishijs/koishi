@@ -1,5 +1,5 @@
 import { App } from 'koishi-test-utils'
-import { Random } from 'koishi-utils'
+import { Random, Time } from 'koishi-utils'
 import { fn, spyOn } from 'jest-mock'
 import { install, InstalledClock } from '@sinonjs/fake-timers'
 import * as teach from 'koishi-plugin-teach'
@@ -294,7 +294,38 @@ describe('Plugin Teach', () => {
     })
   })
 
-  describe('Restriction', () => {
+  describe('Time', () => {
+    const { u3g1 } = createEnvironment({ useTime: true })
+
+    it('time', async () => {
+      await u3g1.shouldHaveReply('# bar foo -t baz', '选项 startTime 输入无效，请输入正确的时间。')
+      await u3g1.shouldHaveReply('# foo bar -t 8 -T 16', '问答已添加，编号为 1。')
+      await u3g1.shouldHaveReply('#1', DETAIL_HEAD + '触发时段：8:00-16:00')
+      await u3g1.shouldHaveReply('## foo', SEARCH_HEAD + '1. [8:00-16:00] bar')
+      await u3g1.shouldHaveReply('## foo -t 12', SEARCH_HEAD + '1. [8:00-16:00] bar')
+      await u3g1.shouldHaveReply('## foo -T 12', '没有搜索到问题“foo”，请尝试使用正则表达式匹配。')
+    })
+
+    it('receiver', async () => {
+      const clock = install({
+        now: new Date('2020-1-1 12:00'),
+        shouldAdvanceTime: true,
+        advanceTimeDelta: 5,
+      })
+
+      await u3g1.shouldHaveReply('foo', 'bar')
+      clock.tick(8 * Time.hour) // 20:00
+      await u3g1.shouldHaveNoReply('foo')
+      clock.tick(8 * Time.hour) // 4:00
+      await u3g1.shouldHaveNoReply('foo')
+      clock.tick(8 * Time.hour) // 12:00
+      await u3g1.shouldHaveReply('foo', 'bar')
+
+      clock.uninstall()
+    })
+  })
+
+  describe('Rate Limit', () => {
     // make coverage happy
     new App().plugin(teach, { throttle: [] })
     new App().plugin(teach, { preventLoop: [] })

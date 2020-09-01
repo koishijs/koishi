@@ -20,7 +20,7 @@ declare module '../utils' {
 }
 
 export function isHours(value: string) {
-  if (!/^\d+(:\d+)?$/.test(value)) return true
+  if (!/^\d+(:\d+)?$/.test(value)) return '请输入正确的时间。'
   const [_hours, _minutes = '0'] = value.split(':')
   const hours = +_hours, minutes = +_minutes
   return !(hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60)
