@@ -134,8 +134,8 @@ export function apply(ctx: Context, config: Config = {}) {
 
   async function authorize(session: Session, message: string) {
     await session.$send(message)
-    const name = await session.$prompt().catch<string>()
-    if (!name) return
+    const name = await session.$prompt(config.promptTimeout)
+    if (!name) return session.$send('输入超时。')
     return session.$execute({ command: 'github', args: [name] })
   }
 

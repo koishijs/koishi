@@ -36,7 +36,7 @@ Session.prototype.$use = function $use(this: Session, middleware: Middleware) {
 }
 
 Session.prototype.$prompt = function $prompt(this: Session, timeout = this.$app.options.promptTimeout) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const dispose = this.$use((session) => {
       clearTimeout(timer)
       dispose()
@@ -44,7 +44,7 @@ Session.prototype.$prompt = function $prompt(this: Session, timeout = this.$app.
     })
     const timer = setTimeout(() => {
       dispose()
-      reject(new Error('prompt timeout'))
+      resolve('')
     }, timeout)
   })
 }
