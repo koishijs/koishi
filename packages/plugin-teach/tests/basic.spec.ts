@@ -2,8 +2,10 @@ import { App } from 'koishi-test-utils'
 import { Random, Time } from 'koishi-utils'
 import { fn, spyOn } from 'jest-mock'
 import { install, InstalledClock } from '@sinonjs/fake-timers'
+import { expect } from 'chai'
 import * as teach from 'koishi-plugin-teach'
 import * as utils from './utils'
+import axios from 'axios'
 
 describe('Plugin Teach', () => {
   describe('Basic Support', () => {
@@ -322,6 +324,36 @@ describe('Plugin Teach', () => {
       await u3g1.shouldHaveReply('foo', 'bar')
 
       clock.uninstall()
+    })
+  })
+
+  describe('Image (Client)', () => {
+    const axiosGet = spyOn(axios, 'get')
+    const uploadKey = Random.uuid()
+    const imageServer = 'https://127.0.0.1/image'
+    const uploadServer = 'https://127.0.0.1/upload'
+    const { u3g1 } = createEnvironment({ uploadKey, uploadServer, imageServer })
+
+    it('upload succeed', async () => {
+      axiosGet.mockReturnValue(Promise.resolve())
+      await u3g1.shouldHaveReply('# foo [CQ:image,file=baz,url=bar]', '问答已添加，编号为 1。')
+      await u3g1.shouldHaveReply('foo', '[CQ:image,file=https://127.0.0.1/image/baz]')
+      expect(axiosGet.mock.calls).to.have.shape([[uploadServer, {
+        params: { file: 'baz', url: 'bar' },
+      }]])
+    })
+
+    it('upload failed', async () => {
+      axiosGet.mockReturnValue(Promise.reject(new Error('failed')))
+      await u3g1.shouldHaveReply('#1 fooo', '问答 1 已成功修改。')
+      await u3g1.shouldHaveReply('#1 ~ [CQ:image,file=bar,url=baz]', '上传图片时发生错误。')
+    })
+
+    it('get status', async () => {
+      axiosGet.mockReturnValue(Promise.resolve({
+        data: { totalSize: 10000000, totalCount: 10 },
+      }))
+      await u3g1.shouldHaveReply('##', '共收录了 1 个问题和 1 个回答。\n收录图片 10 张，总体积 9.5 MB。')
     })
   })
 
