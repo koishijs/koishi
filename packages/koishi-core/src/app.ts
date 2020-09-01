@@ -145,7 +145,7 @@ export class App extends Context {
 
     let capture: RegExpMatchArray, atSelf = false
     // eslint-disable-next-line no-cond-assign
-    if (capture = message.match(/^\[CQ:reply,id=(\d+)\]/)) {
+    if (capture = message.match(/^\[CQ:reply,id=(-?\d+)\]/)) {
       session.$reply = +capture[1]
       message = message.slice(capture[0].length)
     }
