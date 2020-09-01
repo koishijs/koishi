@@ -6,14 +6,12 @@ import { readdirSync } from 'fs-extra'
 import { resolve } from 'path'
 import * as github from 'koishi-plugin-github'
 
-const secret = Random.uuid()
-
 const app = new App({ port: 10000 })
 
 app.plugin(memory)
 
 app.plugin(github, {
-  secret,
+  secret: Random.uuid(),
   repos: { 'koishijs/koishi': [123] },
 })
 
@@ -47,8 +45,10 @@ function check(file: string) {
 }
 
 describe('koishi-plugin-github', () => {
-  const files = readdirSync(resolve(__dirname, 'fixtures'))
-  files.forEach(file => {
-    check(file.slice(0, -5))
+  describe('Webhook Events', () => {
+    const files = readdirSync(resolve(__dirname, 'fixtures'))
+    files.forEach(file => {
+      check(file.slice(0, -5))
+    })
   })
 })

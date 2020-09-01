@@ -3,7 +3,7 @@
 import { Context, User } from 'koishi-core'
 import { Logger, Time } from 'koishi-utils'
 import { Webhooks } from '@octokit/webhooks'
-import { Agent } from 'http'
+import { Agent } from 'https'
 import { encode } from 'querystring'
 import axios from 'axios'
 import events from './events'
@@ -57,8 +57,6 @@ const defaultOptions: Config = {
 export const name = 'github'
 
 export function apply(ctx: Context, config: Config = {}) {
-  if (!ctx.router) throw new Error('ctx.router is not defined')
-
   config = { ...defaultOptions, ...config }
   ctx.plugin(events, config)
 
