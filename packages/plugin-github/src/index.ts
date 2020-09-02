@@ -45,6 +45,7 @@ export interface Config {
   secret?: string
   webhook?: string
   authorize?: string
+  prefix?: string
   appId?: string
   appSecret?: string
   redirect?: string
@@ -56,6 +57,7 @@ export interface Config {
 
 const defaultOptions: Config = {
   secret: '',
+  prefix: '.',
   webhook: '/github/webhook',
   authorize: '/github/authorize',
   replyTimeout: Time.hour,
@@ -68,19 +70,16 @@ export const name = 'github'
 
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultOptions, ...config }
-
-  const webhooks = new Webhooks({
-    ...config,
-    path: config.webhook,
-  })
-
   const { app, database, router } = ctx
+  const { appId, appSecret, prefix, redirect, webhook: path } = config
+
+  const webhooks = new Webhooks({ ...config, path })
   defineProperty(app, 'githubWebhooks', webhooks)
 
   async function getTokens(params: any) {
     const { data } = await axios.post<OAuth>('https://github.com/login/oauth/access_token', {
-      client_id: config.appId,
-      client_secret: config.appSecret,
+      client_id: appId,
+      client_secret: appSecret,
       ...params,
     }, {
       httpsAgent: config.agent,
@@ -93,7 +92,7 @@ export function apply(ctx: Context, config: Config = {}) {
     const targetId = parseInt(ctx.query.state)
     if (Number.isNaN(targetId)) throw new Error('Invalid targetId')
     const { code, state } = ctx.query
-    const data = await getTokens({ code, state, redirect_uri: config.redirect })
+    const data = await getTokens({ code, state, redirect_uri: redirect })
     await database.setUser(targetId, {
       ghAccessToken: data.access_token,
       ghRefreshToken: data.refresh_token,
@@ -105,9 +104,9 @@ export function apply(ctx: Context, config: Config = {}) {
     .action(async ({ session }, user) => {
       if (!user) return '请输入用户名。'
       const url = 'https://github.com/login/oauth/authorize?' + encode({
-        client_id: config.appId,
+        client_id: appId,
         state: session.userId,
-        redirect_uri: config.redirect,
+        redirect_uri: redirect,
         scope: 'admin:repo_hook,repo',
         login: user,
       })
@@ -187,7 +186,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   const interactions: Record<number, ReplyPayloads> = {}
 
-  router.post(config.webhook, (ctx, next) => {
+  router.post(path, (ctx, next) => {
     // workaround @octokit/webhooks for koa
     ctx.req['body'] = ctx.request.body
     ctx.status = 200
@@ -207,9 +206,9 @@ export function apply(ctx: Context, config: Config = {}) {
     if (!body || !payloads) return next()
 
     let name: string, message: string
-    if (body.startsWith('.')) {
-      name = body.split(' ', 1)[0].slice(1)
-      message = body.slice(2 + name.length).trim()
+    if (body.startsWith(prefix)) {
+      name = body.split(' ', 1)[0].slice(prefix.length)
+      message = body.slice(prefix.length + name.length).trim()
     } else {
       name = reactions.includes(body) ? 'react' : 'reply'
       message = body
