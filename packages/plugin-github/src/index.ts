@@ -2,7 +2,7 @@
 /* eslint-disable quote-props */
 
 import { Context, Session, User } from 'koishi-core'
-import { defineProperty, Logger, Time } from 'koishi-utils'
+import { CQCode, defineProperty, Logger, Time } from 'koishi-utils'
 import { Webhooks } from '@octokit/webhooks'
 import { Agent } from 'https'
 import { encode } from 'querystring'
@@ -171,10 +171,18 @@ export function apply(ctx: Context, config: Config = {}) {
 
   const reactions = ['+1', '-1', 'laugh', 'confused', 'heart', 'hooray', 'rocket', 'eyes']
 
+  function formatReply(source: string) {
+    return CQCode.parseAll(source).map((value) => {
+      if (typeof value === 'string') return value
+      if (value.type === 'image') return `![image](${value.data.url})`
+      return ''
+    }).join('')
+  }
+
   const replyHandlers: ReplyHandlers = {
     link: (url, session) => session.$send(url),
     react: (url, session, content) => request(url, session, { content }, 'application/vnd.github.squirrel-girl-preview'),
-    reply: ([url, params], session, body) => request(url, session, { ...params, body }),
+    reply: ([url, params], session, content) => request(url, session, { ...params, body: formatReply(content) }),
   }
 
   const interactions: Record<number, ReplyPayloads> = {}
