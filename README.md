@@ -62,7 +62,7 @@ koishi run
 - [Mrs4s/go-cqhttp](https://github.com/Mrs4s/go-cqhttp)
 - [yyuueexxiinngg/cqhttp-mirai](https://github.com/yyuueexxiinngg/cqhttp-mirai)
 
-请注意：尽管 Koishi 使用的协议是 [MIT](https://choosealicense.com/licenses/mit/)，但上面陈述的三种途径的相关框架都使用了基于 [AGPL 3.0](https://choosealicense.com/licenses/agpl-3.0/) 的协议。因此如果你使用 koishi-adapter-cqhttp 运行你的机器人，你将可能受到 AGPL 3.0 协议的限制，**必须将你的代码开源并保持同协议**。Koishi 及其作者对使用上述框架或违反上述限制的行为所可能造成的法律后果概不负责。
+请注意：尽管 Koishi 使用的协议是 [MIT](https://choosealicense.com/licenses/mit/) 协议，但上面陈述的三种途径的相关框架都使用了基于 [AGPL 3.0](https://choosealicense.com/licenses/agpl-3.0/) 的协议。因此如果你使用 koishi-adapter-cqhttp 运行你的机器人，你将可能受到 AGPL 3.0 协议的限制，**必须将你的代码开源并保持同协议**。Koishi 及其作者对使用上述框架或违反上述限制的行为所可能造成的一切后果概不负责。
 
 ## 数据库支持
 
@@ -97,7 +97,9 @@ koishi-plugin-eval 允许用户直接使用机器人执行脚本。它利用了 
 
 koishi-plugin-eval-addons 在前一个插件的基础上，允许用户编写自己的模块并永久保存。插件将自动加载特定目录下的文件，并将其作为机器人的内置功能。用户可以利用此功能存储较为复杂的代码，甚至扩展新的指令。同时，如果上述目录是一个 git 目录，该插件也提供了自动更新等机制。
 
-### [koishi-plugin-github](./packages/plugin-github) [![npm](https://img.shields.io/npm/v/koishi-plugin-github/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-github)
+### [koishi-plugin-github](./packages/plugin-github) [![npm](https://img.shields.io/npm/v/koishi-plugin-github?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-github)
+
+koishi-plugin-github 提供了对 GitHub API 和 Webhooks 的全方位集成。它将允许机器人监听并群发目标仓库的更新，同时只需回复机器人的消息就能实现多种在 GitHub 网页中的操作。
 
 ### [koishi-plugin-image-search](./packages/plugin-image-search) [![npm](https://img.shields.io/npm/v/koishi-plugin-image-search?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-image-search)
 
@@ -123,6 +125,12 @@ koishi-plugin-schedule 允许用户设置定时任务并执行。这些计划任
 
 ## 协议
 
-[MIT](./LICENSE)
+[MIT](./LICENSE) 维护良好的开源生态从我做起 (*>ω<)φ
 
 Copyright © 2019-present, Shigma
+
+## 联系
+
+[![QQ群](https://img.shields.io/badge/QQ%E7%BE%A4-963697928-blue.svg?style=flat-square)](https://jq.qq.com/?_wv=1027&k=89G3oKG0)
+
+本群只交流程序开发，不欢迎伸手党，禁止接商单。
