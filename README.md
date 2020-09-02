@@ -133,4 +133,4 @@ Copyright © 2019-present, Shigma
 
 [![QQ群](https://img.shields.io/badge/QQ%E7%BE%A4-963697928-blue.svg?style=flat-square)](https://jq.qq.com/?_wv=1027&k=89G3oKG0)
 
-本群只交流程序开发，不欢迎伸手党，禁止接商单。
+本群只交流程序开发，不欢迎伸手党，禁止谈论商业行为。
