@@ -1,4 +1,4 @@
-import { Context, App } from 'koishi-core'
+import { Context, App, BotStatusCode } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
 import { ActiveData } from './database'
 
@@ -71,7 +71,7 @@ export interface Status extends ActiveData {
 export interface BotStatus {
   label?: string
   selfId: number
-  code: number
+  code: BotStatusCode
   rate?: number
 }
 
@@ -140,9 +140,11 @@ export function apply(ctx: Context, config: Config) {
     .action(async () => {
       const { bots: apps, cpu, memory, startTime, activeUsers, activeGroups } = await getStatus(config)
 
-      const output = apps.map(({ label, selfId, code, rate }) => {
-        return `${label || selfId}：${code ? '无法连接' : `工作中（${rate}/min）`}`
-      })
+      const output = apps
+        .filter(bot => bot.code !== BotStatusCode.BOT_IDLE)
+        .map(({ label, selfId, code, rate }) => {
+          return `${label || selfId}：${code ? '无法连接' : `工作中（${rate}/min）`}`
+        })
 
       output.push('==========')
 
@@ -163,7 +165,7 @@ export function apply(ctx: Context, config: Config) {
       Promise.all(app.bots.map(async (bot): Promise<BotStatus> => ({
         selfId: bot.selfId,
         label: bot.label,
-        code: await bot.getStatus(),
+        code: await bot.getStatusCode(),
         rate: bot.counter.slice(1).reduce((prev, curr) => prev + curr, 0),
       }))),
     ])

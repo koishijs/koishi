@@ -33,6 +33,10 @@ function matchScope(base: ScopeSet, id: number) {
   return !id || !(base.positive ^ base.includes(id))
 }
 
+function isBailed(value: any) {
+  return value !== null && value !== false && value !== undefined
+}
+
 export class Context {
   static readonly MIDDLEWARE_EVENT = Symbol('mid')
 
@@ -140,7 +144,7 @@ export class Context {
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(session)) continue
       const result = await callback.apply(this, args)
-      if (result !== undefined) return result
+      if (isBailed(result)) return result
     }
   }
 
@@ -153,7 +157,7 @@ export class Context {
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(session)) continue
       const result = callback.apply(this, args)
-      if (result !== undefined) return result
+      if (isBailed(result)) return result
     }
   }
 

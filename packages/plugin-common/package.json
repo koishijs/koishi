@@ -31,7 +31,7 @@
     "plugin"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.1.0"
+    "koishi-core": "^2.1.1"
   },
   "devDependencies": {
     "koishi-test-utils": "^4.0.0"

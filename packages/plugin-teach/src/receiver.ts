@@ -1,5 +1,5 @@
 import { Context, User, Session, NextFunction, Command } from 'koishi-core'
-import { CQCode, simplify, noop, escapeRegExp } from 'koishi-utils'
+import { CQCode, simplify, noop, escapeRegExp, Random } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './utils'
 
 declare module 'koishi-core/dist/app' {
@@ -179,7 +179,7 @@ export async function triggerDialogue(ctx: Context, session: Session, config: Di
   let dialogue: Dialogue
   const total = await getTotalWeight(ctx, state)
   if (!total) return next()
-  const target = Math.random() * Math.max(1, total)
+  const target = Random.real(Math.max(1, total))
   let pointer = 0
   for (const _dialogue of dialogues) {
     pointer += _dialogue._weight

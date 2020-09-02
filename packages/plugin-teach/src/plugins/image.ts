@@ -2,7 +2,7 @@ import { Context } from 'koishi-core'
 import { Random } from 'koishi-utils'
 import { createHmac } from 'crypto'
 import { resolve } from 'path'
-import { existsSync, writeFile, readdirSync, stat } from 'fs-extra'
+import { promises as fs, existsSync, readdirSync } from 'fs'
 import { Dialogue } from '../utils'
 import axios from 'axios'
 
@@ -62,14 +62,14 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       const path = resolve(imagePath, file)
       if (!existsSync(path)) {
         const { data } = await axios.get<ArrayBuffer>(url, { responseType: 'arraybuffer' })
-        await writeFile(path, data)
+        await fs.writeFile(path, Buffer.from(data))
         totalCount += 1
         totalSize += data.byteLength
       }
     }
 
     const statPromise = Promise.all(fileList.map(async (file) => {
-      const { size } = await stat(resolve(imagePath, file))
+      const { size } = await fs.stat(resolve(imagePath, file))
       totalSize += size
     }))
 
@@ -78,20 +78,18 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       return { totalCount, totalSize }
     }
 
-    ctx.on('connect', () => {
-      ctx.router.get(uploadPath, async (ctx) => {
-        const { salt, sign, url, file } = ctx.query
-        if (!file) return ctx.body = await getStatus()
+    ctx.router.get(uploadPath, async (ctx) => {
+      const { salt, sign, url, file } = ctx.query
+      if (!file) return ctx.body = await getStatus()
 
-        if (uploadKey) {
-          if (!salt || !sign) return ctx.status = 400
-          const hash = createHmac('sha1', uploadKey).update(file + salt).digest('hex')
-          if (hash !== sign) return ctx.status = 403
-        }
+      if (uploadKey) {
+        if (!salt || !sign) return ctx.status = 400
+        const hash = createHmac('sha1', uploadKey).update(file + salt).digest('hex')
+        if (hash !== sign) return ctx.status = 403
+      }
 
-        await downloadFile(file, url)
-        return ctx.status = 200
-      })
+      await downloadFile(file, url)
+      return ctx.status = 200
     })
   }
 

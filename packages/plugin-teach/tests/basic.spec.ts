@@ -1,11 +1,14 @@
 import { App } from 'koishi-test-utils'
+import { Random, Time } from 'koishi-utils'
+import { fn, spyOn } from 'jest-mock'
+import { install, InstalledClock } from '@sinonjs/fake-timers'
+import { expect } from 'chai'
 import * as teach from 'koishi-plugin-teach'
 import * as utils from './utils'
-import { expect } from 'chai'
-import { fn } from 'jest-mock'
+import axios from 'axios'
 
 describe('Plugin Teach', () => {
-  describe('basic support', () => {
+  describe('Basic Support', () => {
     const app = new App({ prefix: '.' })
     const session1 = app.createSession('group', 123, 456)
     const session2 = app.createSession('group', 321, 456)
@@ -78,7 +81,7 @@ describe('Plugin Teach', () => {
   })
 
   function createEnvironment(config: teach.Config) {
-    const app = new App({ userCacheAge: Number.EPSILON })
+    const app = new App({ userCacheAge: Number.EPSILON, nickname: ['koishi', 'satori'] })
     const u2id = 200, u3id = 300, u4id = 400
     const g1id = 100, g2id = 200
     const u2 = app.createSession('user', u2id)
@@ -119,7 +122,54 @@ describe('Plugin Teach', () => {
   const DETAIL_HEAD = '编号为 1 的问答信息：\n问题：foo\n回答：bar\n'
   const SEARCH_HEAD = '问题“foo”的回答如下：\n'
 
-  describe('context', () => {
+  describe('Internal', () => {
+    const { u3g1 } = createEnvironment({})
+
+    let clock: InstalledClock
+    const randomReal = spyOn(Random, 'real')
+
+    before(() => {
+      clock = install({ shouldAdvanceTime: true, advanceTimeDelta: 5 })
+      randomReal.mockReturnValue(1 - Number.EPSILON)
+    })
+
+    after(() => {
+      clock.uninstall()
+      randomReal.mockRestore()
+    })
+
+    it('appellative', async () => {
+      await u3g1.shouldHaveReply('# koishi,foo bar', '问答已添加，编号为 1。')
+      await u3g1.shouldHaveNoReply('foo')
+      await u3g1.shouldHaveReply('koishi, foo', 'bar')
+      await u3g1.shouldHaveReply('satori, foo', 'bar')
+      // TODO support at-trigger
+      // await u3g1.shouldHaveReply(`[CQ:at,qq=${app.selfId}] foo`, 'bar')
+      await u3g1.shouldHaveReply('#1', '编号为 1 的问答信息：\n问题：koishi,foo\n回答：bar\n触发权重：p=0, P=1')
+      await u3g1.shouldHaveReply('## foo', SEARCH_HEAD + '1. [p=0, P=1] bar')
+    })
+
+    it('activated', async () => {
+      await u3g1.shouldHaveReply('# koishi ?', '问答已添加，编号为 2。')
+      await u3g1.shouldHaveReply('koishi', '?')
+      await u3g1.shouldHaveReply('foo', 'bar')
+
+      // due to mocked Random.real
+      await u3g1.shouldHaveReply('# satori ! -p 0.5', '问答已添加，编号为 3。')
+      await u3g1.shouldHaveNoReply('satori')
+    })
+
+    it('regular expression', async () => {
+      clock.runAll()
+      await u3g1.shouldHaveReply('# foo baz -xP 0.5', '问答已添加，编号为 4。')
+      await u3g1.shouldHaveNoReply('foo')
+      await u3g1.shouldHaveReply('koishi, fooo', 'baz')
+      await u3g1.shouldHaveReply('#4 -p 0.5 -P 1', '问答 4 已成功修改。')
+      await u3g1.shouldHaveReply('koishi, fooo', 'baz')
+    })
+  })
+
+  describe('Context', () => {
     const { u3, u3g1, u3g2 } = createEnvironment({ useContext: true })
 
     it('validate options 1', async () => {
@@ -186,7 +236,7 @@ describe('Plugin Teach', () => {
     })
   })
 
-  describe('writer', () => {
+  describe('Writer', () => {
     const { app, u2, u2g1, u3g1, u4g2 } = createEnvironment({ useWriter: true })
 
     app.command('test').action(({ session }) => '' + session.userId)
@@ -246,7 +296,68 @@ describe('Plugin Teach', () => {
     })
   })
 
-  describe('restriction', () => {
+  describe('Time', () => {
+    const { u3g1 } = createEnvironment({ useTime: true })
+
+    it('time', async () => {
+      await u3g1.shouldHaveReply('# bar foo -t baz', '选项 startTime 输入无效，请输入正确的时间。')
+      await u3g1.shouldHaveReply('# foo bar -t 8 -T 16', '问答已添加，编号为 1。')
+      await u3g1.shouldHaveReply('#1', DETAIL_HEAD + '触发时段：8:00-16:00')
+      await u3g1.shouldHaveReply('## foo', SEARCH_HEAD + '1. [8:00-16:00] bar')
+      await u3g1.shouldHaveReply('## foo -t 12', SEARCH_HEAD + '1. [8:00-16:00] bar')
+      await u3g1.shouldHaveReply('## foo -T 12', '没有搜索到问题“foo”，请尝试使用正则表达式匹配。')
+    })
+
+    it('receiver', async () => {
+      const clock = install({
+        now: new Date('2020-1-1 12:00'),
+        shouldAdvanceTime: true,
+        advanceTimeDelta: 5,
+      })
+
+      await u3g1.shouldHaveReply('foo', 'bar')
+      clock.tick(8 * Time.hour) // 20:00
+      await u3g1.shouldHaveNoReply('foo')
+      clock.tick(8 * Time.hour) // 4:00
+      await u3g1.shouldHaveNoReply('foo')
+      clock.tick(8 * Time.hour) // 12:00
+      await u3g1.shouldHaveReply('foo', 'bar')
+
+      clock.uninstall()
+    })
+  })
+
+  describe('Image (Client)', () => {
+    const axiosGet = spyOn(axios, 'get')
+    const uploadKey = Random.uuid()
+    const imageServer = 'https://127.0.0.1/image'
+    const uploadServer = 'https://127.0.0.1/upload'
+    const { u3g1 } = createEnvironment({ uploadKey, uploadServer, imageServer })
+
+    it('upload succeed', async () => {
+      axiosGet.mockReturnValue(Promise.resolve())
+      await u3g1.shouldHaveReply('# foo [CQ:image,file=baz,url=bar]', '问答已添加，编号为 1。')
+      await u3g1.shouldHaveReply('foo', '[CQ:image,file=https://127.0.0.1/image/baz]')
+      expect(axiosGet.mock.calls).to.have.shape([[uploadServer, {
+        params: { file: 'baz', url: 'bar' },
+      }]])
+    })
+
+    it('upload failed', async () => {
+      axiosGet.mockReturnValue(Promise.reject(new Error('failed')))
+      await u3g1.shouldHaveReply('#1 fooo', '问答 1 已成功修改。')
+      await u3g1.shouldHaveReply('#1 ~ [CQ:image,file=bar,url=baz]', '上传图片时发生错误。')
+    })
+
+    it('get status', async () => {
+      axiosGet.mockReturnValue(Promise.resolve({
+        data: { totalSize: 10000000, totalCount: 10 },
+      }))
+      await u3g1.shouldHaveReply('##', '共收录了 1 个问题和 1 个回答。\n收录图片 10 张，总体积 9.5 MB。')
+    })
+  })
+
+  describe('Rate Limit', () => {
     // make coverage happy
     new App().plugin(teach, { throttle: [] })
     new App().plugin(teach, { preventLoop: [] })

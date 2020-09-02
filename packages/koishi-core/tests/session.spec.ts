@@ -90,19 +90,19 @@ describe('Session API', () => {
     app.middleware(async (session, next) => {
       if (session.message !== 'prompt') return next()
       await session.$send('prompt text')
-      session.$prompt().then(
-        message => session.$send('received ' + message),
-        () => session.$send('received nothing'),
-      )
+      ;(async () => {
+        const message = await session.$prompt() || 'nothing'
+        await session.$send('received ' + message)
+      })()
     })
 
-    it('session.$prompt (resolved)', async () => {
+    it('session.$prompt 1', async () => {
       await session.shouldHaveReply('prompt', 'prompt text')
       await session.shouldHaveReply('foo', 'received foo')
       await session.shouldHaveNoReply('foo')
     })
 
-    it('session.$prompt (rejected)', async () => {
+    it('session.$prompt 2', async () => {
       app.options.promptTimeout = 0
       await session.shouldHaveReply('prompt', 'prompt text')
       await sleep(0)

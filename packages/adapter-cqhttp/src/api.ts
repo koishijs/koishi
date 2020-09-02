@@ -1,5 +1,5 @@
 import { camelCase, Logger, snakeCase, capitalize } from 'koishi-utils'
-import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatus } from 'koishi-core'
+import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatusCode } from 'koishi-core'
 
 const logger = new Logger('bot')
 
@@ -248,13 +248,13 @@ Bot.prototype.getSelfId = async function getSelfId(this: Bot) {
   return userId
 }
 
-Bot.prototype.getStatus = async function getStatus(this: Bot) {
-  if (!this.ready) return BotStatus.BOT_IDLE
+Bot.prototype.getStatusCode = async function getStatusCode(this: Bot) {
+  if (!this.ready) return BotStatusCode.BOT_IDLE
   try {
     const data = await this.get<StatusInfo>('get_status')
-    return data.good ? BotStatus.GOOD : data.online ? BotStatus.SERVER_ERROR : BotStatus.BOT_OFFLINE
+    return data.good ? BotStatusCode.GOOD : data.online ? BotStatusCode.SERVER_ERROR : BotStatusCode.BOT_OFFLINE
   } catch {
-    return BotStatus.NET_ERROR
+    return BotStatusCode.NET_ERROR
   }
 }
 

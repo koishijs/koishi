@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-teach",
   "description": "Teach plugin for Koishi",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "engines": {
@@ -38,7 +38,7 @@
     "conversation"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.1.0"
+    "koishi-core": "^2.1.1"
   },
   "devDependencies": {
     "koishi-plugin-mongo": "^1.0.2",
@@ -46,6 +46,7 @@
     "koishi-test-utils": "^4.0.0"
   },
   "dependencies": {
+    "axios": "^0.20.0",
     "koishi-utils": "^3.1.3",
     "leven": "^3.1.0",
     "regexpp": "^3.1.0"
