@@ -36,13 +36,6 @@ export interface OAuth {
   scope: string
 }
 
-interface RequestOptions {
-  url: string
-  session: Session<'ghAccessToken' | 'ghRefreshToken'>
-  message: string
-  params: Record<string, any>
-}
-
 type ReplyHandlers = {
   [K in keyof ReplyPayloads]: (payload: ReplyPayloads[K], session: Session, message: string) => Promise<void>
 }
@@ -121,13 +114,16 @@ export function apply(ctx: Context, config: Config = {}) {
       return '请点击下面的链接继续操作：\n' + url
     })
 
-  async function plainRequest({ session, url, message, params }: RequestOptions) {
-    await axios.post(url, { ...params, body: message }, {
+  type ReplySession = Session<'ghAccessToken' | 'ghRefreshToken'>
+
+  async function plainRequest(url: string, session: ReplySession, params: any, accept: string) {
+    logger.debug('POST', url, params)
+    await axios.post(url, params, {
       httpsAgent: config.agent,
       timeout: config.requestTimeout,
       headers: {
-        'Accept': 'application/vnd.github.v3+json',
-        'Authorization': `token ${session.$user.ghAccessToken}`,
+        accept,
+        authorization: `token ${session.$user.ghAccessToken}`,
       },
     })
   }
@@ -139,14 +135,13 @@ export function apply(ctx: Context, config: Config = {}) {
     return session.$execute({ command: 'github', args: [name] })
   }
 
-  async function request(options: RequestOptions) {
-    const { session } = options
+  async function request(url: string, session: ReplySession, params: any, accept = 'application/vnd.github.v3+json') {
     if (!session.$user.ghAccessToken) {
       return authorize(session, '如果想使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
     }
 
     try {
-      return await plainRequest(options)
+      return await plainRequest(url, session, params, accept)
     } catch (error) {
       const { response } = error as AxiosError
       if (response?.status !== 401) {
@@ -167,16 +162,19 @@ export function apply(ctx: Context, config: Config = {}) {
     }
 
     try {
-      await plainRequest(options)
+      await plainRequest(url, session, params, accept)
     } catch (error) {
       logger.warn(error)
       return session.$send('发送失败。')
     }
   }
 
+  const reactions = ['+1', '-1', 'laugh', 'confused', 'heart', 'hooray', 'rocket', 'eyes']
+
   const replyHandlers: ReplyHandlers = {
     link: (url, session) => session.$send(url),
-    reply: ([url, params], session, message) => request({ url, session, message, params }),
+    react: (url, session, content) => request(url, session, { content }, 'application/vnd.github.squirrel-girl-preview'),
+    reply: ([url, params], session, body) => request(url, session, { ...params, body }),
   }
 
   const interactions: Record<number, ReplyPayloads> = {}
@@ -205,8 +203,7 @@ export function apply(ctx: Context, config: Config = {}) {
       name = body.split(' ', 1)[0].slice(1)
       message = body.slice(2 + name.length).trim()
     } else {
-      // fallback to reply
-      name = 'reply'
+      name = reactions.includes(body) ? 'react' : 'reply'
       message = body
     }
 
