@@ -103,12 +103,15 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
   })
 
   on('pull_request.opened', ({ repository, pull_request }) => {
-    const { full_name } = repository
+    const { full_name, owner } = repository
     const { user, html_url, issue_url, comments_url, base, head, body, number } = pull_request
     if (user.type === 'bot') return
 
+    const prefix = new RegExp(`^${owner.login}:`)
+    const baseLabel = base.label.replace(prefix, '')
+    const headLabel = head.label.replace(prefix, '')
     return [[
-      `[GitHub] ${user.login} opened a pull request ${full_name}#${number} (${base.label} <- ${head.label})`,
+      `[GitHub] ${user.login} opened a pull request ${full_name}#${number} (${baseLabel} <- ${headLabel})`,
       formatMarkdown(body),
     ].join('\n'), {
       link: html_url,

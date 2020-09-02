@@ -25,12 +25,12 @@ Ich verstecke Englisch und Chinesisch nicht! Gab es Personen, die mir helfen kan
 
 // URL: https://github.com/koishijs/koishi/pull/20
 module.exports[`pull_request.opened.1`] = `
-[GitHub] simon300000 opened a pull request koishijs/koishi#20 (koishijs:develop <- koishijs:experimental)
+[GitHub] simon300000 opened a pull request koishijs/koishi#20 (develop <- experimental)
 Das ist wichtig!`
 
 // URL: https://github.com/koishijs/koishi/pull/90
 module.exports[`pull_request.opened.2`] = `
-[GitHub] jjyyxx opened a pull request koishijs/koishi#90 (koishijs:mapping <- jjyyxx:mapping)
+[GitHub] jjyyxx opened a pull request koishijs/koishi#90 (mapping <- jjyyxx:mapping)
 According to \`tsconfig-paths\` documentation ...`
 
 // URL: https://github.com/koishijs/koishi/pull/20#pullrequestreview-345349537
