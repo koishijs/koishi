@@ -1,22 +1,7 @@
-import { AppOptions, App, Server, Session, Bot } from 'koishi-core'
-import { fn, Mock } from 'jest-mock'
+import { AppOptions, App, Server, Session } from 'koishi-core'
 import { expect, AssertionError } from 'chai'
 
-type MethodsOf<O> = {
-  [P in keyof O]: O[P] extends (...args: any[]) => any ? P : never
-}[keyof O]
-
-declare module 'koishi-core/dist/server' {
-  interface Bot {
-    mock<T extends MethodsOf<Bot>>(method: T): Bot[T] extends (...args: infer R) => T ? Mock<T, R> : never
-  }
-}
-
 export const BASE_SELF_ID = 514
-
-Bot.prototype.mock = function (this: Bot, method) {
-  return this[method] = fn<any, any[]>(this[method]) as any
-}
 
 class MockedAppServer extends Server {
   constructor(app: App) {
@@ -25,6 +10,7 @@ class MockedAppServer extends Server {
   }
 
   _close() {}
+
   async _listen() {}
 }
 
