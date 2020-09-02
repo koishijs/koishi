@@ -95,7 +95,7 @@ export abstract class Server {
   }
 }
 
-export enum BotStatus {
+export enum BotStatusCode {
   /** 正常运行 */
   GOOD,
   /** Bot 处于闲置状态 */
@@ -112,7 +112,7 @@ export interface Bot extends BotOptions {
   ready?: boolean
   version?: string
   getSelfId(): Promise<number>
-  getStatus(): Promise<BotStatus>
+  getStatusCode(): Promise<BotStatusCode>
   getMemberMap(groupId: number): Promise<Record<number, string>>
   sendGroupMsg(groupId: number, message: string, autoEscape?: boolean): Promise<number>
   sendPrivateMsg(userId: number, message: string, autoEscape?: boolean): Promise<number>
