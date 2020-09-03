@@ -1,5 +1,4 @@
 import { App } from 'koishi-test-utils'
-import { inspect } from 'util'
 import { resolve } from 'path'
 import * as pluginEval from 'koishi-plugin-eval'
 
@@ -52,55 +51,6 @@ describe('Plugin Eval', () => {
     await ses.shouldHaveNoReply('> global.setInterval')
     await ses.shouldHaveReply('> exec', '[AsyncFunction: exec]')
     await ses.shouldHaveReply('> exec.toString()', 'function exec() { [native code] }')
-    await ses.shouldHaveReply('> Buffer.alloc', '[Function: alloc]')
-    await ses.shouldHaveReply('> Buffer.alloc.toString()', 'function alloc() { [native code] }')
-  })
-
-  it('contextify', async () => {
-    await ses.shouldHaveReply('> test.null === null', 'true')
-    await ses.shouldHaveReply('> test.undefined === undefined', 'true')
-    await ses.shouldHaveReply('> test.string.constructor === String', 'true')
-    await ses.shouldHaveReply('> test.number.constructor === Number', 'true')
-    await ses.shouldHaveReply('> test.boolean.constructor === Boolean', 'true')
-    await ses.shouldHaveReply('> test.stringO instanceof String', 'true')
-    await ses.shouldHaveReply('> test.numberO instanceof Number', 'true')
-    await ses.shouldHaveReply('> test.booleanO instanceof Boolean', 'true')
-    await ses.shouldHaveReply('> test.date instanceof Date', 'true')
-    await ses.shouldHaveReply('> test.regexp instanceof RegExp', 'true')
-    await ses.shouldHaveReply('> test.buffer instanceof Buffer', 'true')
-    await ses.shouldHaveReply('> test.error instanceof Error', 'true')
-    await ses.shouldHaveReply('> test.rangeError instanceof RangeError', 'true')
-    await ses.shouldHaveReply('> test.syntaxError instanceof SyntaxError', 'true')
-    await ses.shouldHaveReply('> test.referenceError instanceof ReferenceError', 'true')
-    await ses.shouldHaveReply('> test.typeError instanceof TypeError', 'true')
-    await ses.shouldHaveReply('> test.evalError instanceof EvalError', 'true')
-    await ses.shouldHaveReply('> test.uriError instanceof URIError', 'true')
-  })
-
-  it('function', async () => {
-    await ses.shouldHaveReply('> test.function instanceof Function', 'true')
-    await ses.shouldHaveReply('> test.function() instanceof Function', 'true')
-    await ses.shouldHaveReply('> test.function()() instanceof Object', 'true')
-  })
-
-  it('symbol', async () => {
-    await ses.shouldHaveReply('> Symbol.for("test") === test.symbol2', 'true')
-    await ses.shouldHaveReply('> test.symbol1.constructor.constructor === Function', 'true')
-    await ses.shouldHaveReply('> test.symbol2.constructor.constructor === Function', 'true')
-    await ses.shouldHaveReply('> test.symbol3.constructor.constructor === Function', 'true')
-    await ses.shouldHaveReply('> Symbol("test").constructor.constructor === Function', 'true')
-    await ses.shouldHaveReply('> Symbol("foobar").constructor.constructor === Function', 'true')
-    await ses.shouldHaveReply('> Symbol.keyFor(test.symbol2)', 'test')
-  })
-
-  it('host inspect', async () => {
-    await ses.shouldHaveReply('> [1, 2]', inspect([1, 2]))
-    await ses.shouldHaveReply('> new Set([1, 2])', inspect(new Set([1, 2])))
-    await ses.shouldHaveReply('> new Map([[1, 2]])', inspect(new Map([[1, 2]])))
-    await ses.shouldHaveReply('> new WeakSet([[1]])', inspect(new WeakSet([[1]])))
-    await ses.shouldHaveReply('> new WeakMap([[[1], 2]])', inspect(new WeakMap([[[1], 2]])))
-    await ses.shouldHaveReply('> new RegExp()', inspect(new RegExp(undefined)))
-    await ses.shouldHaveReply('> Proxy', inspect(Proxy))
   })
 
   it('attack 1', async () => {
@@ -114,38 +64,5 @@ describe('Plugin Eval', () => {
       const ForeignFunction = global.constructor.constructor;
       const process1 = ForeignFunction("return process")();
     `).which.matches(/^ReferenceError: process is not defined/)
-  })
-
-  it('deprecated api attack', async () => {
-    await ses.shouldHaveReply(`> Buffer.prototype.__defineGetter__ === {}.__defineGetter__`, 'true')
-    await ses.shouldHaveReply(`> Buffer.prototype.__defineSetter__ === {}.__defineSetter__`, 'true')
-    await ses.shouldHaveReply(`> Buffer.prototype.__lookupGetter__ === {}.__lookupGetter__`, 'true')
-    await ses.shouldHaveReply(`> Buffer.prototype.__lookupSetter__ === {}.__lookupSetter__`, 'true')
-
-    await ses
-      .shouldHaveReply(`> Buffer.prototype.__defineGetter__("toString", () => {})`)
-      .which.matches(/'defineProperty' on proxy: trap returned falsish for property 'toString'/)
-
-    await ses.shouldHaveReply(`>
-      global.__defineGetter__("foo", () => 123);
-      global.foo;
-    `, '123')
-
-    await ses.shouldHaveReply(`> Buffer.from.__lookupGetter__("__proto__") === Object.prototype.__lookupGetter__.call(Buffer.from, "__proto__")`, 'true')
-  })
-
-  it('buffer operations', async () => {
-    await ses.shouldHaveReply(`>
-      Buffer.allocUnsafe(100).constructor.constructor === Function &&
-      Buffer.allocUnsafeSlow(100).constructor.constructor === Function;
-    `, 'true')
-
-    await ses.shouldHaveReply(`>
-      Buffer.allocUnsafe(100).toString('hex') +
-      Buffer.allocUnsafeSlow(100).toString('hex');
-    `, '00'.repeat(200))
-
-    await ses.shouldHaveReply('> test.buffer.inspect()', `<Buffer ${'01 '.repeat(50)}... 950 more bytes>`)
-    await ses.shouldHaveReply('> Buffer.from(Array(51).fill(1)).inspect()', `<Buffer ${'01 '.repeat(50)}... 1 more byte>`)
   })
 })

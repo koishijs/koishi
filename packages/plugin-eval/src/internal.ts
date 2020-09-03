@@ -87,8 +87,6 @@ Object.defineProperties(GLOBAL, {
   isVM: { value: true },
 })
 
-const proxyTarget = Symbol('proxy-target')
-
 const OPNA = 'Operation not allowed on contextified object.'
 const captureStackTrace = Error.captureStackTrace
 
@@ -248,8 +246,6 @@ Helper.instance = function (this: Helper, instance, klass, deepTraps, toStringTa
   return this.object(instance, createObject({
     get: (target, key) => {
       try {
-        if (key === proxyTarget) return instance
-        if (key === 'isVMProxy') return true
         if (key === 'constructor') return klass
         if (key === '__proto__') return klass.prototype
       } catch (e) {
@@ -309,8 +305,6 @@ Helper.function = function (this: Helper, fnc, traps, deepTraps, mock) {
     },
     get: (target, key) => {
       try {
-        if (key === proxyTarget) return fnc
-        if (key === 'isVMProxy') return true
         if (mock && host.Object.prototype.hasOwnProperty.call(mock, key)) return mock[key]
         if (key === 'constructor') return this.local.Function
         if (key === '__proto__') return this.local.Function.prototype
@@ -385,8 +379,6 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
   const base: Trap = createObject({
     get: (target, key) => {
       try {
-        if (key === proxyTarget) return object
-        if (key === 'isVMProxy') return true
         if (mock && host.Object.prototype.hasOwnProperty.call(mock, key)) return mock[key]
         if (key === 'constructor') return this.local.Object
         if (key === '__proto__') return this.local.Object.prototype
