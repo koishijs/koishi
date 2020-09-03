@@ -34,16 +34,6 @@ export class MockedApp extends App {
     }))
   }
 
-  receiveMessage(meta: Session): Promise<void>
-  receiveMessage(type: 'user', message: string, userId: number): Promise<void>
-  receiveMessage(type: 'group', message: string, userId: number, groupId: number): Promise<void>
-  receiveMessage(type: 'user' | 'group' | Session, message?: string, userId?: number, ctxId: number = userId) {
-    return new Promise((resolve) => {
-      this.once('after-middleware', () => resolve())
-      this.receive(typeof type === 'string' ? createMessageMeta(this, type, message, userId, ctxId) : type)
-    })
-  }
-
   createSession(type: 'user', userId: number): TestSession
   createSession(type: 'group', userId: number, groupId: number): TestSession
   createSession(type: 'user' | 'group', userId: number, ctxId: number = userId) {
@@ -77,14 +67,17 @@ export class TestSession {
     const $send = async (message: string) => {
       if (message) this.replies.push(message)
     }
-    await this.app.receiveMessage(new Session(this.app, { ...this.meta, message, $send }))
-    const last = this.replies[this.replies.length - 1]
-    this.replies = []
-    return last
+    return new Promise<string[]>((resolve) => {
+      this.app.once('after-middleware', () => {
+        resolve(this.replies)
+        this.replies = []
+      })
+      this.app.receive({ ...this.meta, message, $send })
+    })
   }
 
   shouldHaveReply(message: string, reply?: string) {
-    const assertion = expect(this.send(message)).eventually
+    const assertion = expect(this.send(message).then(replies => replies[replies.length - 1])).eventually
     if (reply) {
       return assertion.equal(reply)
     } else {
@@ -93,8 +86,9 @@ export class TestSession {
   }
 
   async shouldHaveNoReply(message: string) {
-    if (await this.send(message) !== undefined) {
-      throw new AssertionError(`expected "${message}" to have no reply but got "${this.replies}"`)
+    const replies = await this.send(message)
+    if (replies.length) {
+      throw new AssertionError(`expected "${message}" to have no reply but got "${this.replies[0]}"`)
     }
   }
 }
