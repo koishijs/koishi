@@ -99,8 +99,19 @@ export async function prepare() {
   await Promise.all(config.addonNames.map(evaluate))
   saveCache().catch(logger.warn)
   for (const key in synthetics) {
-    internal.setGlobal(key, internal.decontextify(synthetics[key].namespace))
+    exposeGlobal(key, synthetics[key].namespace)
   }
+}
+
+const MockModule = class Module {}
+
+function exposeGlobal(name: string, namespace: {}) {
+  const outer = new MockModule()
+  for (const key in namespace) {
+    outer[key] = internal.decontextify(namespace[key])
+  }
+  internal.connect(outer, namespace)
+  internal.setGlobal(name, outer)
 }
 
 async function saveCache() {
@@ -145,11 +156,8 @@ async function createModule(path: string) {
   await module.link(linker)
   await module.evaluate()
 
-  if (!path.includes('/')) {
-    const namespace = internal.decontextify(module.namespace)
-    if (Object.keys(namespace).length) {
-      internal.setGlobal(path, namespace)
-    }
+  if (!path.includes('/') && Object.keys(module.namespace).length) {
+    exposeGlobal(path, module.namespace)
   }
   return module
 }

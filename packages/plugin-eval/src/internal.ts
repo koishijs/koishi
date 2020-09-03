@@ -637,7 +637,7 @@ export function getGlobal(name: keyof any) {
   }
 }
 
-function connect(outer: any, inner: any) {
+export function connect(outer: any, inner: any) {
   Decontextified.set(outer, inner)
   Contextified.set(inner, outer)
 }
