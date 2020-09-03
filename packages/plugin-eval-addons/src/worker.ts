@@ -1,6 +1,8 @@
-import { config, internal, WorkerAPI, Context, response, mapDirectory, formatError } from 'koishi-plugin-eval/dist/worker'
+import { WorkerAPI, Context, response, mapDirectory, formatError } from 'koishi-plugin-eval/dist/worker'
 import { Logger, Time, CQCode, Random } from 'koishi-utils'
-import { prologue, epilogue, evaluate, modules, synthetize } from './loader'
+import { prepare, synthetize } from './loader'
+
+export * from './loader'
 
 const logger = new Logger('addon')
 
@@ -58,12 +60,9 @@ synthetize('koishi/addons.ts', {
 
 synthetize('koishi/utils.ts', {
   Time, CQCode, Random,
-})
+}, 'utils')
 
-export default prologue().then(async () => {
-  await Promise.all(config.addonNames.map(evaluate))
-  epilogue()
+export default prepare().then(() => {
   response.commands = Object.keys(commandMap)
   mapDirectory('koishi/utils/', require.resolve('koishi-utils'))
-  internal.setGlobal('utils', internal.decontextify(modules['koishi/utils.ts'].namespace))
 })

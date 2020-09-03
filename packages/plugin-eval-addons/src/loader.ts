@@ -21,8 +21,9 @@ interface Module {
 }
 
 export const modules: Record<string, Module> = {}
+export const synthetics: Record<string, Module> = {}
 
-export function synthetize(identifier: string, namespace: {}) {
+export function synthetize(identifier: string, namespace: {}, name?: string) {
   const module = new SyntheticModule(Object.keys(namespace), function () {
     for (const key in namespace) {
       this.setExport(key, internal.contextify(namespace[key]))
@@ -30,6 +31,7 @@ export function synthetize(identifier: string, namespace: {}) {
   }, { context, identifier })
   modules[identifier] = module
   config.addonNames.unshift(identifier)
+  if (name) synthetics[name] = module
 }
 
 const suffixes = ['', '.ts', '/index.ts']
@@ -79,7 +81,7 @@ const cachedFiles: Record<string, FileCache> = {}
 const tsconfigPath = resolve(config.moduleRoot, 'tsconfig.json')
 const cachePath = resolve(config.moduleRoot, config.cacheFile || '.koishi/cache')
 
-export async function prologue() {
+export async function prepare() {
   await Promise.all([
     fs.readFile(tsconfigPath, 'utf8').then((tsconfig) => {
       Object.assign(compilerOptions, json5.parse(tsconfig))
@@ -94,9 +96,14 @@ export async function prologue() {
       }
     }, noop),
   ])
+  await Promise.all(config.addonNames.map(evaluate))
+  saveCache().catch(logger.warn)
+  for (const key in synthetics) {
+    internal.setGlobal(key, internal.decontextify(synthetics[key].namespace))
+  }
 }
 
-export async function epilogue() {
+async function saveCache() {
   await fs.mkdir(dirname(cachePath), { recursive: true })
   await fs.writeFile(cachePath, serialize({ version: CACHE_VERSION, files }))
 }
