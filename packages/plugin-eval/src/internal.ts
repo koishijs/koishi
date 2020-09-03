@@ -370,9 +370,7 @@ Helper.value = function (this: Helper, value, traps, deepTraps, mock) {
       }
     }
     return value
-  } catch {
-    return null
-  }
+  } catch {}
 }
 
 Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
@@ -416,12 +414,11 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
       } catch (e) {
         throw this.value(e)
       }
-      // why?
-      if (!def) return undefined
+      if (!def) return
 
       const desc: PropertyDescriptor = createObject(def.get || def.set ? {
-        get: this.value(def.get, null, deepTraps) || undefined,
-        set: this.value(def.set, null, deepTraps) || undefined,
+        get: this.value(def.get, null, deepTraps),
+        set: this.value(def.set, null, deepTraps),
       } : {
         value: this.value(def.value, null, deepTraps),
         writable: def.writable === true,
@@ -451,8 +448,8 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
       const descValue = descriptor.value
 
       const propDesc: PropertyDescriptor = createObject(descGet || descSet ? {
-        get: this.conjugate.value(descGet, null, deepTraps) || undefined,
-        set: this.conjugate.value(descSet, null, deepTraps) || undefined,
+        get: this.conjugate.value(descGet, null, deepTraps),
+        set: this.conjugate.value(descSet, null, deepTraps),
       } : {
         value: this.conjugate.value(descValue, null, deepTraps),
         writable: descriptor.writable === true,

@@ -1,11 +1,9 @@
-import { expect } from 'chai'
-/* eslint-disable no-eval */
-/* eslint-disable no-void */
-/* eslint-env mocha */
 /* eslint-disable no-new-wrappers, max-len */
 
+import 'koishi-test-utils'
 import { VM } from 'koishi-plugin-eval/src/vm'
 import { inspect } from 'util'
+import { expect } from 'chai'
 
 describe('Eval Sandbox (Frozen)', () => {
   const vm = new VM()
@@ -140,8 +138,13 @@ describe('Eval Sandbox (Frozen)', () => {
 describe('Eval Sandbox (Normal)', () => {
   const vm = new VM()
 
+  let baz = 3
+
   vm.internal.setGlobal('test1', {
     foo: 1,
+    bar: 2,
+    get baz() { return baz },
+    set baz(val) { baz = val },
   }, true)
 
   function throwError(): any {
@@ -158,9 +161,16 @@ describe('Eval Sandbox (Normal)', () => {
 
   vm.internal.setGlobal('test2', new Proxy({
     foo: 1,
+    bar: 2,
+    get baz() { return baz },
+    set baz(val) { baz = val },
   }, {
     deleteProperty: throwError,
     setPrototypeOf: throwError,
+    defineProperty: throwError,
+    getOwnPropertyDescriptor: throwError,
+    isExtensible: throwError,
+    preventExtensions: throwError,
   }), true)
 
   it('delete property', () => {
@@ -177,5 +187,30 @@ describe('Eval Sandbox (Normal)', () => {
     expect(vm.run('Object.getPrototypeOf(test1) === Object.prototype')).to.be.true
     expect(() => vm.run('Object.setPrototypeOf(test2, null)')).to.throw('not allowed')
     expect(vm.run('Object.getPrototypeOf(test2) === Object.prototype')).to.be.true
+  })
+
+  it('get property descriptor', () => {
+    expect(vm.run('Object.getOwnPropertyDescriptor(test1, "bar")')).to.have.shape({ value: 2, writable: true })
+    expect(vm.run('Object.getOwnPropertyDescriptor(test1, "baz")')).to.not.have.property('value')
+    expect(vm.run('Object.getOwnPropertyDescriptor(test1, "baz")')).to.have.property('get')
+    expect(catchError(() => vm.run('Object.getOwnPropertyDescriptor(test2, "bar")')) instanceof Error).to.be.true
+    expect(catchError(() => vm.run('Object.getOwnPropertyDescriptor(test2, "baz")')) instanceof Error).to.be.true
+  })
+
+  it('define property', () => {
+    expect(vm.run('Object.defineProperty(test1, "bar", { value: -2 }); test1.bar')).to.equal(-2)
+    expect(vm.run('Object.defineProperty(test1, "baz", { value: -3 }); test1.baz')).to.equal(-3)
+    expect(catchError(() => vm.run('Object.defineProperty(test2, "bar", { value: 2 })')) instanceof Error).to.be.true
+    expect(catchError(() => vm.run('Object.defineProperty(test2, "baz", { value: 3 })')) instanceof Error).to.be.true
+  })
+
+  it('isExtensible', () => {
+    expect(vm.run('Object.isExtensible(test1)')).to.be.true
+    expect(catchError(() => vm.run('Object.isExtensible(test2)')) instanceof Error).to.be.true
+  })
+
+  it('preventExtensions', () => {
+    expect(vm.run('Object.preventExtensions(test1)')).to.be.ok
+    expect(catchError(() => vm.run('Object.preventExtensions(test2)')) instanceof Error).to.be.true
   })
 })
