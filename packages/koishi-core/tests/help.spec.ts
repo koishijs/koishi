@@ -3,7 +3,7 @@
 import { memory, App } from 'koishi-test-utils'
 import { Time } from 'koishi-utils'
 import { Message } from 'koishi-core'
-import { spyOn } from 'jest-mock'
+import { install } from '@sinonjs/fake-timers'
 
 Message.GLOBAL_HELP_EPILOG = 'EPILOG'
 
@@ -53,8 +53,7 @@ describe('Help Command', () => {
     app.command('foo8', 'DESCRIPTION', { minInterval: 3 * Time.minute })
     app.command('foo9', 'DESCRIPTION', { minInterval: 3 * Time.minute })
 
-    const spy = spyOn(Date, 'now')
-    spy.mockReturnValue(now)
+    const clock = install({ now })
 
     await session.shouldHaveReply('help foo1', 'foo1\nDESCRIPTION\n别名：foo。')
     await session.shouldHaveReply('help foo2', 'foo2\nDESCRIPTION\n最低权限：2 级。')
@@ -66,7 +65,7 @@ describe('Help Command', () => {
     await session.shouldHaveReply('help foo8', 'foo8\nDESCRIPTION\n距离下次调用还需：60/180 秒。')
     await session.shouldHaveReply('help foo9', 'foo9\nDESCRIPTION\n距离下次调用还需：0/180 秒。')
 
-    spy.mockRestore()
+    clock.uninstall()
   })
 
   it('command options', async () => {

@@ -1,13 +1,15 @@
 import { Time } from 'koishi-utils'
 import { expect } from 'chai'
-import { set, reset } from 'mockdate'
-
-const timestamp = Date.UTC(2020, 3, 1, 1, 30)
-const date = new Date(timestamp)
+import { install, InstalledClock } from '@sinonjs/fake-timers'
 
 describe('Time Manipulations', () => {
-  before(() => set(timestamp))
-  after(() => reset())
+  let clock: InstalledClock
+
+  const now = Date.UTC(2020, 3, 1, 1, 30)
+  const date = new Date(now)
+
+  before(() => clock = install({ now, shouldAdvanceTime: true }))
+  after(() => clock.uninstall())
 
   it('timezone offset', () => {
     Time.setTimezoneOffset(-480)
@@ -31,10 +33,10 @@ describe('Time Manipulations', () => {
   })
 
   it('parse date', () => {
-    expect(+Time.parseDate('')).to.equal(timestamp)
-    expect(+Time.parseDate('1min')).to.equal(timestamp + Time.minute)
-    expect(+Time.parseDate('2:30')).to.approximately(timestamp, Time.day)
-    expect(+Time.parseDate('5-1-1:30')).to.approximately(timestamp + 30 * Time.day, Time.day)
+    expect(+Time.parseDate('')).to.equal(now)
+    expect(+Time.parseDate('1min')).to.equal(now + Time.minute)
+    expect(+Time.parseDate('2:30')).to.approximately(now, Time.day)
+    expect(+Time.parseDate('5-1-1:30')).to.approximately(now + 30 * Time.day, Time.day)
   })
 
   it('format time short', () => {
