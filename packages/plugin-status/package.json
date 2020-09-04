@@ -32,13 +32,13 @@
     "status"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.1.1"
+    "koishi-core": "^2.2.0"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",
     "koishi-plugin-mongo": "^1.0.2",
     "koishi-plugin-mysql": "^2.0.0",
-    "koishi-test-utils": "^4.0.0"
+    "koishi-test-utils": "^5.0.0"
   },
   "dependencies": {
     "cross-spawn": "^7.0.3",

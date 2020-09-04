@@ -12,15 +12,15 @@
     "description": "Common plugins for Koishi"
   },
   "koishi-plugin-eval": {
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-eval-addons": {
-    "version": "1.0.0-beta.10",
+    "version": "1.0.0-beta.11",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-github": {
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "GitHub webhook plugin for Koishi"
   },
   "koishi-plugin-image-search": {
