@@ -17,20 +17,30 @@ module.exports[`issue_comment.created.2`] = `
 [GitHub] Kouchya commented on pull request koishijs/koishi#20
 C'est important!`
 
+module.exports['issues.closed'] = `
+[GitHub] simon300000 closed issue koishijs/koishi#19
+Wie kann man um das Koishi zu installieren?`
+
 // URL: https://github.com/koishijs/koishi/issues/19
 module.exports[`issues.opened`] = `
 [GitHub] simon300000 opened an issue koishijs/koishi#19
 Title: Wie kann man um das Koishi zu installieren?
 Ich verstecke Englisch und Chinesisch nicht! Gab es Personen, die mir helfen kann?`
 
+module.exports['pull_request.closed'] = `
+[GitHub] Shigma closed pull request koishijs/koishi#97
+Storage API, fix #96`
+
 // URL: https://github.com/koishijs/koishi/pull/20
 module.exports[`pull_request.opened.1`] = `
 [GitHub] simon300000 opened a pull request koishijs/koishi#20 (develop <- experimental)
+Title: test: add experimental shouldMatchSnapshot
 Das ist wichtig!`
 
 // URL: https://github.com/koishijs/koishi/pull/90
 module.exports[`pull_request.opened.2`] = `
 [GitHub] jjyyxx opened a pull request koishijs/koishi#90 (mapping <- jjyyxx:mapping)
+Title: test: fix path mapping
 According to \`tsconfig-paths\` documentation ...`
 
 // URL: https://github.com/koishijs/koishi/pull/20#pullrequestreview-345349537
