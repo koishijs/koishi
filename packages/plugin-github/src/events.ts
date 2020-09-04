@@ -3,6 +3,92 @@
 import { EventNames } from '@octokit/webhooks'
 import { GetWebhookPayloadTypeFromEvent } from '@octokit/webhooks/dist-types/generated/get-webhook-payload-type-from-event'
 
+export interface EventConfig {
+  commitComment?: boolean
+  fork?: boolean
+  issueComment?: boolean | {
+    created?: boolean
+    deleted?: boolean
+    edited?: boolean
+  }
+  issues?: boolean | {
+    assigned?: boolean
+    closed?: boolean
+    deleted?: boolean
+    demilestoned?: boolean
+    edited?: boolean
+    labeled?: boolean
+    locked?: boolean
+    milestoned?: boolean
+    opened?: boolean
+    pinned?: boolean
+    reopened?: boolean
+    transferred?: boolean
+    unassigned?: boolean
+    unlabeled?: boolean
+    unlocked?: boolean
+    unpinned?: boolean
+  }
+  pullRequest?: boolean | {
+    assigned?: boolean
+    closed?: boolean
+    edited?: boolean
+    labeled?: boolean
+    locked?: boolean
+    merged?: boolean
+    opened?: boolean
+    readyForReview?: boolean
+    reopened?: boolean
+    reviewRequestRemoved?: boolean
+    reviewRequested?: boolean
+    synchronize?: boolean
+    unassigned?: boolean
+    unlabeled?: boolean
+    unlocked?: boolean
+  }
+  pullRequestReview?: boolean | {
+    dismissed?: boolean
+    edited?: boolean
+    submitted?: boolean
+  }
+  pullRequestReviewComment?: boolean | {
+    created?: boolean
+    deleted?: boolean
+    edited?: boolean
+  }
+  push?: boolean
+  star?: boolean | {
+    created?: boolean
+    deleted?: boolean
+  }
+}
+
+export const defaultEvents: EventConfig = {
+  commitComment: true,
+  fork: true,
+  issueComment: {
+    created: true,
+  },
+  issues: {
+    closed: true,
+    opened: true,
+  },
+  pullRequest: {
+    closed: true,
+    opened: true,
+  },
+  pullRequestReview: {
+    submitted: true,
+  },
+  pullRequestReviewComment: {
+    created: true,
+  },
+  push: true,
+  star: {
+    created: true,
+  },
+}
+
 export interface ReplyPayloads {
   link?: string
   react?: string

@@ -2,12 +2,12 @@
 /* eslint-disable quote-props */
 
 import { Context, Session, User } from 'koishi-core'
-import { CQCode, defineProperty, Logger, Time } from 'koishi-utils'
+import { camelize, CQCode, defineProperty, Logger, Time } from 'koishi-utils'
 import { Webhooks } from '@octokit/webhooks'
 import { Agent } from 'https'
 import { encode } from 'querystring'
 import axios, { AxiosError } from 'axios'
-import { addListeners, ReplyPayloads } from './events'
+import { addListeners, defaultEvents, EventConfig, ReplyPayloads } from './events'
 
 declare module 'koishi-core/dist/app' {
   interface App {
@@ -53,6 +53,7 @@ export interface Config {
   replyTimeout?: number
   requestTimeout?: number
   repos?: Record<string, number[]>
+  events?: EventConfig
 }
 
 const defaultOptions: Config = {
@@ -62,6 +63,7 @@ const defaultOptions: Config = {
   authorize: '/github/authorize',
   replyTimeout: Time.hour,
   repos: {},
+  events: {},
 }
 
 const logger = new Logger('github')
@@ -220,18 +222,34 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   addListeners((event, handler) => {
+    const base = camelize(event.split('.', 1)[0]) as keyof EventConfig
     webhooks.on(event, async (callback) => {
       const { repository } = callback.payload
+
+      // step 1: filter repository
       const groupIds = config.repos[repository.full_name]
       if (!groupIds) return
 
+      // step 2: filter event
+      const baseConfig = config.events[base] || {}
+      if (baseConfig === false) return
+      const action = camelize(callback.payload.action)
+      if (action && baseConfig !== true) {
+        const actionConfig = baseConfig[action]
+        if (actionConfig === false) return
+        if (actionConfig !== true && defaultEvents[base] !== true && !(defaultEvents[base] || {})[action]) return
+      }
+
+      // step 3: handle event
       const result = handler(callback.payload)
       if (!result) return
 
+      // step 4: broadcast message
       const [message, replies] = result
       const messageIds = await ctx.broadcast(groupIds, message)
       if (!replies) return
 
+      // step 5: save message ids for interactions
       for (const id of messageIds) {
         interactions[id] = replies
       }
