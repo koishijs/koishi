@@ -1,6 +1,6 @@
 import { camelCase, paramCase, sleep } from 'koishi-utils'
 import { Session, MessageType, Meta } from './session'
-import { App } from './app'
+import { App, AppStatus } from './app'
 import * as http from 'http'
 import type Koa from 'koa'
 import type Router from 'koa-router'
@@ -44,6 +44,7 @@ export abstract class Server {
   }
 
   prepare(data: any) {
+    if (this.app.status !== AppStatus.open) return
     const meta = camelCase<Meta>(data)
     if (!this.bots[meta.selfId]) {
       const bot = this.bots.find(bot => !bot.selfId)
