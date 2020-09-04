@@ -4,7 +4,9 @@ import { EventNames } from '@octokit/webhooks'
 import { GetWebhookPayloadTypeFromEvent } from '@octokit/webhooks/dist-types/generated/get-webhook-payload-type-from-event'
 
 export interface EventConfig {
-  commitComment?: boolean
+  commitComment?: boolean | {
+    created?: boolean
+  }
   fork?: boolean
   issueComment?: boolean | {
     created?: boolean
@@ -64,7 +66,9 @@ export interface EventConfig {
 }
 
 export const defaultEvents: EventConfig = {
-  commitComment: true,
+  commitComment: {
+    created: true,
+  },
   fork: true,
   issueComment: {
     created: true,
@@ -105,18 +109,32 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
       .replace(/\n\s*\n/g, '\n')
   }
 
-  on('commit_comment.created', ({ repository, comment }) => {
-    const { full_name } = repository
-    const { user, url, html_url, commit_id, body, path, position } = comment
-    if (user.type === 'bot') return
+  type CommentEvent = 'commit_comment' | 'issue_comment' | 'pull_request_review_comment'
+  type CommandHandler<E extends CommentEvent> = (payload: Payload<E>) => [target: string, replies: ReplyPayloads]
 
-    return [[
-      `[GitHub] ${user.login} commented on commit ${full_name}@${commit_id.slice(0, 6)}`,
-      `Path: ${path}`,
-      formatMarkdown(body),
-    ].join('\n'), {
-      link: html_url,
-      react: url + `/reactions`,
+  function onComment<E extends CommentEvent>(event: E, handler: CommandHandler<E>) {
+    on(event as CommentEvent, (payload) => {
+      const { user, body, html_url, url } = payload.comment
+      if (user.type === 'bot') return
+
+      const [target, replies] = handler(payload)
+      if (payload.action === 'deleted') {
+        return [`[GitHub] ${user.login} deleted a comment on ${target}`]
+      }
+
+      const operation = payload.action === 'created' ? 'commented' : 'edited a comment'
+      return [`[GitHub] ${user.login} ${operation} on ${target}\n${formatMarkdown(body)}`, {
+        link: html_url,
+        react: url + `/reactions`,
+        ...replies,
+      }]
+    })
+  }
+
+  onComment('commit_comment', ({ repository, comment }) => {
+    const { full_name } = repository
+    const { commit_id, path, position } = comment
+    return [`commit ${full_name}@${commit_id.slice(0, 6)}\nPath: ${path}`, {
       // https://docs.github.com/en/rest/reference/repos#create-a-commit-comment
       reply: [`https://api.github.com/repos/${full_name}/commits/${commit_id}/comments`, { path, position }],
     }]
@@ -127,19 +145,11 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
     return [`[GitHub] ${sender.login} forked ${full_name} to ${forkee.full_name} (total ${forks_count} forks)`]
   })
 
-  on('issue_comment.created', ({ comment, issue, repository }) => {
+  onComment('issue_comment', ({ issue, repository }) => {
     const { full_name } = repository
     const { number, comments_url } = issue
-    const { user, url, html_url, body } = comment
-    if (user.type === 'bot') return
-
     const type = issue['pull_request'] ? 'pull request' : 'issue'
-    return [[
-      `[GitHub] ${user.login} commented on ${type} ${full_name}#${number}`,
-      formatMarkdown(body),
-    ].join('\n'), {
-      link: html_url,
-      react: url + `/reactions`,
+    return [`${type} ${full_name}#${number}`, {
       reply: [comments_url],
     }]
   })
@@ -172,18 +182,11 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
     }]
   })
 
-  on('pull_request_review_comment.created', ({ repository, comment, pull_request }) => {
+  onComment('pull_request_review_comment', ({ repository, comment, pull_request }) => {
     const { full_name } = repository
     const { number } = pull_request
-    const { user, path, body, html_url, url } = comment
-    if (user.type === 'bot') return
-    return [[
-      `[GitHub] ${user.login} commented on pull request review ${full_name}#${number}`,
-      `Path: ${path}`,
-      formatMarkdown(body),
-    ].join('\n'), {
-      link: html_url,
-      react: url + `/reactions`,
+    const { path, url } = comment
+    return [`pull request review ${full_name}#${number}\nPath: ${path}`, {
       reply: [url],
     }]
   })

@@ -237,7 +237,7 @@ export function apply(ctx: Context, config: Config = {}) {
       if (action && baseConfig !== true) {
         const actionConfig = baseConfig[action]
         if (actionConfig === false) return
-        if (actionConfig !== true && defaultEvents[base] !== true && !(defaultEvents[base] || {})[action]) return
+        if (actionConfig !== true && !(defaultEvents[base] || {})[action]) return
       }
 
       // step 3: handle event

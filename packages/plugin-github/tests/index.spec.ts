@@ -45,7 +45,7 @@ function check(file: string) {
   })
 }
 
-describe('koishi-plugin-github', () => {
+describe('GitHub Plugin', () => {
   describe('Webhook Events', () => {
     const files = readdirSync(resolve(__dirname, 'fixtures'))
     files.forEach(file => {
