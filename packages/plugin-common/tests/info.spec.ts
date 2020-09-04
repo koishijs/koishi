@@ -1,16 +1,15 @@
-import { MockedApp, TestSession, memory } from 'koishi-test-utils'
+import { App, TestSession } from 'koishi-test-utils'
 import * as info from '../src/info'
 
 // make coverage happy
 info.registerUserInfo(() => '')
 info.registerUserInfo(() => 'foo', ['flag'], -1)
 
-let app: MockedApp, session: TestSession
+let app: App, session: TestSession
 
 describe('info', () => {
   beforeEach(async () => {
-    app = new MockedApp()
-    app.plugin(memory)
+    app = new App({ mockDatabase: true })
     session = app.session(123)
     await app.start()
     await app.database.getUser(123, 3)

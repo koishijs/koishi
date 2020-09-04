@@ -8,8 +8,13 @@ describe('Time Manipulations', () => {
   const now = Date.UTC(2020, 3, 1, 1, 30)
   const date = new Date(now)
 
-  before(() => clock = install({ now, shouldAdvanceTime: true }))
-  after(() => clock.uninstall())
+  before(() => {
+    clock = install({ now })
+  })
+
+  after(() => {
+    clock.uninstall()
+  })
 
   it('timezone offset', () => {
     Time.setTimezoneOffset(-480)

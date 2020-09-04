@@ -1,4 +1,4 @@
-import { App, BASE_SELF_ID, memory } from 'koishi-test-utils'
+import { App, BASE_SELF_ID } from 'koishi-test-utils'
 import { Random } from 'koishi-utils'
 import { fn, spyOn } from 'jest-mock'
 import { expect } from 'chai'
@@ -6,9 +6,10 @@ import { readdirSync } from 'fs-extra'
 import { resolve } from 'path'
 import * as github from 'koishi-plugin-github'
 
-const app = new App({ port: 10000 })
-
-app.plugin(memory)
+const app = new App({
+  port: 10000,
+  mockDatabase: true,
+})
 
 app.plugin(github, {
   secret: Random.uuid(),

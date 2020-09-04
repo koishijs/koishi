@@ -1,14 +1,14 @@
-import { App, memory } from 'koishi-test-utils'
+import { App } from 'koishi-test-utils'
 import { User, Group, Command } from 'koishi-core'
 import { sleep } from 'koishi-utils'
+import { install } from '@sinonjs/fake-timers'
 
 const app = new App({
+  mockDatabase: true,
   groupCacheAge: Number.EPSILON,
   userCacheAge: Number.EPSILON,
   similarityCoefficient: 0,
 })
-
-app.plugin(memory)
 
 // make coverage happy
 Command.groupFields([])
@@ -232,6 +232,7 @@ describe('Runtime', () => {
     })
 
     it('check frequency', async () => {
+      const clock = install()
       cmd2.config.minInterval = () => 1000
       cmd2.config.showWarning = true
       await session2.shouldReply('cmd2', 'cmd2:456')
@@ -241,6 +242,7 @@ describe('Runtime', () => {
       cmd2.config.showWarning = false
       await session2.shouldNotReply('cmd2')
       delete cmd2.config.minInterval
+      clock.uninstall()
     })
 
     it('check arg count', async () => {

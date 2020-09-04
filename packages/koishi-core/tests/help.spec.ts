@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { memory, App } from 'koishi-test-utils'
+import { App } from 'koishi-test-utils'
 import { Time } from 'koishi-utils'
 import { Message } from 'koishi-core'
 import { install } from '@sinonjs/fake-timers'
 
 Message.GLOBAL_HELP_EPILOG = 'EPILOG'
 
-const app = new App().plugin(memory)
+const app = new App({ mockDatabase: true })
 const session = app.session(123)
 const now = Date.now()
 

@@ -1,4 +1,4 @@
-import { App, BASE_SELF_ID, memory } from 'koishi-test-utils'
+import { App, BASE_SELF_ID } from 'koishi-test-utils'
 import { App as RealApp, extendDatabase, Group, Session } from 'koishi-core'
 import { expect } from 'chai'
 import { fn, spyOn } from 'jest-mock'
@@ -48,8 +48,6 @@ describe('Server API', () => {
     it('server.prepare', async () => {
       const app = new App()
       delete app.bots[0].selfId
-      expect(app.server.prepare({ selfId: BASE_SELF_ID + 1 })).to.be.undefined
-      await app.start()
       expect(app.server.prepare({ selfId: BASE_SELF_ID + 1 })).to.be.ok
       expect(app.bots[0].selfId).to.equal(BASE_SELF_ID + 1)
       expect(app.server.prepare({ selfId: BASE_SELF_ID })).to.be.undefined
@@ -57,9 +55,12 @@ describe('Server API', () => {
   })
 
   describe('Sender API', () => {
-    const app = new App({ broadcastDelay: Number.EPSILON }).plugin(memory)
-    const bot = app.bots[0]
+    const app = new App({
+      mockDatabase: true,
+      broadcastDelay: Number.EPSILON,
+    })
 
+    const bot = app.bots[0]
     const sendGroupMsg = bot.sendGroupMsg = fn(async (id) => {
       if (id === 456) return 789
       throw new Error('bar')

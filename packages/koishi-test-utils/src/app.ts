@@ -1,5 +1,6 @@
-import { AppOptions, App, Server, Session } from 'koishi-core'
+import { AppOptions, App, Server, Session, AppStatus } from 'koishi-core'
 import { assert } from 'chai'
+import * as memory from './memory'
 
 export const BASE_SELF_ID = 514
 
@@ -16,11 +17,18 @@ class MockedAppServer extends Server {
 
 Server.types.mock = MockedAppServer
 
+interface MockedAppOptions extends AppOptions {
+  mockStart?: boolean
+  mockDatabase?: boolean
+}
+
 export class MockedApp extends App {
   public server: MockedAppServer
 
-  constructor(options: AppOptions = {}) {
+  constructor(options: MockedAppOptions = {}) {
     super({ selfId: BASE_SELF_ID, type: 'mock', ...options })
+    if (options.mockStart !== false) this.status = AppStatus.open
+    if (options.mockDatabase) this.plugin(memory)
   }
 
   get selfId() {

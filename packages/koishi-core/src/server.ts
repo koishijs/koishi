@@ -44,7 +44,6 @@ export abstract class Server {
   }
 
   prepare(data: any) {
-    if (this.app.status !== AppStatus.open) return
     const meta = camelCase<Meta>(data)
     if (!this.bots[meta.selfId]) {
       const bot = this.bots.find(bot => !bot.selfId)
@@ -55,6 +54,7 @@ export abstract class Server {
   }
 
   dispatch(session: Session) {
+    if (this.app.status !== AppStatus.open) return
     const events: string[] = []
     if (session.postType === 'message' || session.postType === 'send') {
       events.push(session.postType)

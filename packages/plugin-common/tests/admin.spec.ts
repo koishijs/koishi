@@ -1,13 +1,12 @@
-import { MockedApp, memory } from 'koishi-test-utils'
+import { App } from 'koishi-test-utils'
 import { User, Group } from 'koishi-core'
 import { enumKeys } from 'koishi-utils'
 import { expect } from 'chai'
 import * as admin from '../src/admin'
 
-const app = new MockedApp()
+const app = new App({ mockDatabase: true })
 const session = app.session(123, 321)
 
-app.plugin(memory)
 app.plugin(admin)
 app.command('foo', { maxUsage: 10 }).action(({ session }) => session.$send('bar'))
 app.command('bar', { maxUsage: 10 }).action(({ session }) => session.$send('foo'))
