@@ -3,8 +3,8 @@ import { contextify } from '../src'
 import 'koishi-database-memory'
 
 const app = new MockedApp({ database: { memory: {} } })
-const session1 = app.createSession('user', 123)
-const session2 = app.createSession('group', 123, 654)
+const session1 = app.session(123)
+const session2 = app.session(123, 654)
 
 app.plugin(contextify)
 app.command('show-context')
@@ -21,22 +21,22 @@ beforeAll(async () => {
 })
 
 test('check input', async () => {
-  await session1.shouldHaveReply('ctxf -u 456', '请输入要触发的指令。')
-  await session2.shouldHaveReply('ctxf -m foo show-context', '未指定目标。')
-  await session1.shouldHaveReply('ctxf show-context', '请提供新的上下文。')
-  await session1.shouldHaveReply('ctxf -u 789 show-context', '权限不足。')
-  await session1.shouldHaveReply('ctxf -m 456 show-context', '无法在私聊上下文使用 --member 选项。')
+  await session1.shouldReply('ctxf -u 456', '请输入要触发的指令。')
+  await session2.shouldReply('ctxf -m foo show-context', '未指定目标。')
+  await session1.shouldReply('ctxf show-context', '请提供新的上下文。')
+  await session1.shouldReply('ctxf -u 789 show-context', '权限不足。')
+  await session1.shouldReply('ctxf -m 456 show-context', '无法在私聊上下文使用 --member 选项。')
 })
 
 test('user context', async () => {
-  await session1.shouldHaveReply('ctxf -u 456 show-context', '456,user,456,456,undefined')
-  await session1.shouldHaveReply('ctxf -g 654 show-context', '123,group,654,123,654')
-  await session1.shouldHaveReply('ctxf -d 654 show-context', '123,discuss,654,123,undefined')
-  await session1.shouldHaveReply('ctxf -u 456 -g 654 show-context', '456,group,654,456,654')
-  await session1.shouldHaveReply('ctxf -u 456 -d 654 show-context', '456,discuss,654,456,undefined')
+  await session1.shouldReply('ctxf -u 456 show-context', '456,user,456,456,undefined')
+  await session1.shouldReply('ctxf -g 654 show-context', '123,group,654,123,654')
+  await session1.shouldReply('ctxf -d 654 show-context', '123,discuss,654,123,undefined')
+  await session1.shouldReply('ctxf -u 456 -g 654 show-context', '456,group,654,456,654')
+  await session1.shouldReply('ctxf -u 456 -d 654 show-context', '456,discuss,654,456,undefined')
 })
 
 test('group context', async () => {
-  await session2.shouldHaveReply('ctxf -u 456 show-context', '456,user,456,456,undefined')
-  await session2.shouldHaveReply('ctxf -m 456 show-context', '456,group,654,456,654')
+  await session2.shouldReply('ctxf -u 456 show-context', '456,user,456,456,undefined')
+  await session2.shouldReply('ctxf -m 456 show-context', '456,group,654,456,654')
 })

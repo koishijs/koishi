@@ -44,6 +44,7 @@ export class App extends Context {
 
   _database: Database
   _commands: Command[]
+  _sessions: Record<string, Session> = {}
   _commandMap: Record<string, Command>
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]>
   _userCache: LruCache<number, Observed<Partial<User>, Promise<void>>>
@@ -51,8 +52,6 @@ export class App extends Context {
 
   private _nameRE: RegExp
   private _prefixRE: RegExp
-  private _middlewareCounter = 0
-  private _middlewareSet = new Set<number>()
   private _getSelfIdsPromise: Promise<any>
 
   static defaultConfig: AppOptions = {
@@ -206,8 +205,7 @@ export class App extends Context {
 
   private async _receive(session: Session) {
     // preparation
-    const counter = this._middlewareCounter++
-    this._middlewareSet.add(counter)
+    this._sessions[session.$uuid] = session
     const middlewares: Middleware[] = this._hooks[Context.MIDDLEWARE_EVENT as any]
       .filter(([context]) => context.match(session))
       .map(([, middleware]) => middleware)
@@ -225,7 +223,7 @@ export class App extends Context {
       }
 
       try {
-        if (!this._middlewareSet.has(counter)) {
+        if (!this._sessions[session.$uuid]) {
           throw new Error('isolated next function detected')
         }
         if (fallback) middlewares.push((_, next) => fallback(next))
@@ -241,9 +239,9 @@ export class App extends Context {
     }
     await next()
 
-    // update middleware set
-    this._middlewareSet.delete(counter)
-    this.emit(session, 'after-middleware', session)
+    // update session map
+    delete this._sessions[session.$uuid]
+    this.emit(session, 'middleware', session)
 
     // flush user & group data
     await session.$user?._update()

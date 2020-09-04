@@ -36,10 +36,10 @@
     "rss"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.1.1"
+    "koishi-core": "^2.2.0"
   },
   "devDependencies": {
-    "koishi-test-utils": "^4.0.0"
+    "koishi-test-utils": "^5.0.0"
   },
   "dependencies": {
     "rss-feed-emitter": "^3.2.2",

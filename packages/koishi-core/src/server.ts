@@ -1,6 +1,6 @@
 import { camelCase, paramCase, sleep } from 'koishi-utils'
 import { Session, MessageType, Meta } from './session'
-import { App } from './app'
+import { App, AppStatus } from './app'
 import * as http from 'http'
 import type Koa from 'koa'
 import type Router from 'koa-router'
@@ -54,6 +54,7 @@ export abstract class Server {
   }
 
   dispatch(session: Session) {
+    if (this.app.status !== AppStatus.open) return
     const events: string[] = []
     if (session.postType === 'message' || session.postType === 'send') {
       events.push(session.postType)

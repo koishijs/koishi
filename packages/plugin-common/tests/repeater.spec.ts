@@ -3,21 +3,21 @@ import repeater from '../src/repeater'
 
 it.only('repeat', async () => {
   const app = new App()
-  const session1 = app.createSession('group', 123, 123)
+  const session1 = app.session(123, 123)
 
   app.plugin(repeater, {
     onRepeat: ({ repeated, times }, message) => !repeated && times >= 2 ? message : '',
   })
 
-  await session1.shouldHaveNoReply('foo')
-  await session1.shouldHaveReply('foo', 'foo')
-  await session1.shouldHaveNoReply('foo')
-  await session1.shouldHaveNoReply('foo')
+  await session1.shouldNotReply('foo')
+  await session1.shouldReply('foo', 'foo')
+  await session1.shouldNotReply('foo')
+  await session1.shouldNotReply('foo')
 })
 
 it('interrupt', async () => {
   const app = new App()
-  const session1 = app.createSession('group', 123, 123)
+  const session1 = app.session(123, 123)
 
   app.plugin(repeater, {
     repeat: (_, times) => times >= 2,
@@ -26,15 +26,15 @@ it('interrupt', async () => {
     interruptCheck: false,
   })
 
-  await session1.shouldHaveNoReply('foo')
-  await session1.shouldHaveReply('foo', 'foo')
-  await session1.shouldHaveReply('foo', '打断复读！')
+  await session1.shouldNotReply('foo')
+  await session1.shouldReply('foo', 'foo')
+  await session1.shouldReply('foo', '打断复读！')
 })
 
 it('repeat check', async () => {
   const app = new App()
-  const session1 = app.createSession('group', 123, 123)
-  const session2 = app.createSession('group', 456, 123)
+  const session1 = app.session(123, 123)
+  const session2 = app.session(456, 123)
 
   app.plugin(repeater, {
     repeat: (_, times) => times >= 2,
@@ -43,15 +43,15 @@ it('repeat check', async () => {
     interruptCheck: false,
   })
 
-  await session1.shouldHaveNoReply('foo')
-  await session1.shouldHaveReply('foo', 'foo')
-  await session2.shouldHaveReply('foo', 'foo')
-  await session2.shouldHaveReply('foo', `[CQ:at,qq=${session2.userId}] 在？为什么重复复读？`)
+  await session1.shouldNotReply('foo')
+  await session1.shouldReply('foo', 'foo')
+  await session2.shouldReply('foo', 'foo')
+  await session2.shouldReply('foo', `[CQ:at,qq=${session2.userId}] 在？为什么重复复读？`)
 })
 
 it('interrupt check', async () => {
   const app = new App()
-  const session1 = app.createSession('group', 123, 123)
+  const session1 = app.session(123, 123)
 
   app.plugin(repeater, {
     repeat: (_, times) => times >= 2,
@@ -60,8 +60,8 @@ it('interrupt check', async () => {
     interruptCheck: (_, times) => times >= 2,
   })
 
-  await session1.shouldHaveNoReply('foo')
-  await session1.shouldHaveNoReply('bar')
-  await session1.shouldHaveReply('bar', 'bar')
-  await session1.shouldHaveReply('foo', `[CQ:at,qq=${session1.userId}] 在？为什么打断复读？`)
+  await session1.shouldNotReply('foo')
+  await session1.shouldNotReply('bar')
+  await session1.shouldReply('bar', 'bar')
+  await session1.shouldReply('foo', `[CQ:at,qq=${session1.userId}] 在？为什么打断复读？`)
 })

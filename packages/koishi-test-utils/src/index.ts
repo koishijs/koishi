@@ -1,7 +1,6 @@
-import memory from './memory'
+import { MemoryDatabase } from './memory'
 
-export { memory }
+export default MemoryDatabase
 
 export * from './app'
 export * from './database'
-export * from './memory'

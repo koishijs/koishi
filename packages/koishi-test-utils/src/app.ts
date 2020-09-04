@@ -1,5 +1,6 @@
-import { AppOptions, App, Server, Session } from 'koishi-core'
-import { expect, AssertionError } from 'chai'
+import { AppOptions, App, Server, Session, AppStatus } from 'koishi-core'
+import { assert } from 'chai'
+import * as memory from './memory'
 
 export const BASE_SELF_ID = 514
 
@@ -16,11 +17,18 @@ class MockedAppServer extends Server {
 
 Server.types.mock = MockedAppServer
 
-export class MockedApp extends App {
-  server: MockedAppServer
+interface MockedAppOptions extends AppOptions {
+  mockStart?: boolean
+  mockDatabase?: boolean
+}
 
-  constructor(options: AppOptions = {}) {
+export class MockedApp extends App {
+  public server: MockedAppServer
+
+  constructor(options: MockedAppOptions = {}) {
     super({ selfId: BASE_SELF_ID, type: 'mock', ...options })
+    if (options.mockStart !== false) this.status = AppStatus.open
+    if (options.mockDatabase) this.plugin(memory)
   }
 
   get selfId() {
@@ -28,74 +36,87 @@ export class MockedApp extends App {
   }
 
   receive(meta: Partial<Session>) {
-    this.server.dispatch(new Session(this, {
-      selfId: this.bots[0].selfId,
+    const session = new Session(this, {
+      selfId: this.selfId,
       ...meta,
-    }))
-  }
-
-  receiveMessage(meta: Session): Promise<void>
-  receiveMessage(type: 'user', message: string, userId: number): Promise<void>
-  receiveMessage(type: 'group', message: string, userId: number, groupId: number): Promise<void>
-  receiveMessage(type: 'user' | 'group' | Session, message?: string, userId?: number, ctxId: number = userId) {
-    return new Promise((resolve) => {
-      this.once('after-middleware', () => resolve())
-      this.receive(typeof type === 'string' ? createMessageMeta(this, type, message, userId, ctxId) : type)
     })
+    this.server.dispatch(session)
+    return session.$uuid
   }
 
-  createSession(type: 'user', userId: number): TestSession
-  createSession(type: 'group', userId: number, groupId: number): TestSession
-  createSession(type: 'user' | 'group', userId: number, ctxId: number = userId) {
-    return new TestSession(this, type, userId, ctxId)
+  session(userId: number, groupId?: number) {
+    return new TestSession(this, userId, groupId)
   }
 }
 
-export const createMessageMeta = (app: App, type: 'user' | 'group', message: string, userId: number, ctxId: number) => new Session(app, {
-  [type + 'Id']: ctxId,
-  postType: 'message',
-  messageType: type === 'user' ? 'private' : type,
-  message,
-  userId,
-  sender: {
-    sex: 'unknown',
-    age: 0,
-    userId,
-    nickname: '' + userId,
-  },
-})
-
 export class TestSession {
-  meta: Session
-  replies: string[] = []
+  public meta: Partial<Session>
 
-  constructor(public app: MockedApp, public type: 'user' | 'group', public userId: number, public ctxId: number) {
-    this.meta = createMessageMeta(app, type, null, userId, ctxId)
-  }
+  private replies: string[] = []
 
-  async send(message: string) {
-    const $send = async (message: string) => {
-      if (message) this.replies.push(message)
+  constructor(public app: MockedApp, public userId: number, public groupId?: number) {
+    this.meta = {
+      postType: 'message',
+      userId,
+      sender: {
+        sex: 'unknown',
+        age: 0,
+        userId,
+        nickname: '' + userId,
+      },
     }
-    await this.app.receiveMessage(new Session(this.app, { ...this.meta, message, $send }))
-    const last = this.replies[this.replies.length - 1]
-    this.replies = []
-    return last
-  }
 
-  shouldHaveReply(message: string, reply?: string) {
-    const assertion = expect(this.send(message)).eventually
-    if (reply) {
-      return assertion.equal(reply)
+    if (groupId) {
+      this.meta.groupId = groupId
+      this.meta.messageType = 'group'
     } else {
-      return assertion.ok
+      this.meta.messageType = 'private'
     }
   }
 
-  async shouldHaveNoReply(message: string) {
-    if (await this.send(message) !== undefined) {
-      throw new AssertionError(`expected "${message}" to have no reply but got "${this.replies}"`)
+  async receive(message: string, count?: number) {
+    return new Promise<string[]>((resolve) => {
+      let resolved = false
+      const _resolve = () => {
+        if (resolved) return
+        resolved = true
+        dispose()
+        resolve(this.replies)
+        this.replies = []
+      }
+      const $send = async (message: string) => {
+        if (!message) return
+        const length = this.replies.push(message)
+        if (length >= count) _resolve()
+      }
+      const dispose = this.app.on('middleware', (session) => {
+        if (session.$uuid === uuid) _resolve()
+      })
+      const uuid = this.app.receive({ ...this.meta, $send, message })
+    })
+  }
+
+  async shouldReply(message: string, reply?: string | RegExp | (string | RegExp)[]) {
+    if (!reply) {
+      const result = await this.receive(message)
+      return assert.ok(result.length, `expected "${message}" to be replied but not received nothing`)
     }
+
+    if (!Array.isArray(reply)) reply = [reply]
+    const result = await this.receive(message, reply.length)
+    for (const index in reply) {
+      const expected = reply[index]
+      if (typeof expected === 'string') {
+        assert.strictEqual(result[index], expected)
+      } else {
+        assert.match(result[index], expected)
+      }
+    }
+  }
+
+  async shouldNotReply(message: string) {
+    const result = await this.receive(message)
+    assert.ok(!result.length, `expected "${message}" to have no reply but received "${result[0]}"`)
   }
 }
 

@@ -1,6 +1,6 @@
 import { User, Group } from './database'
 import { ExecuteArgv, ParsedArgv, Command } from './command'
-import { isInteger, contain, observe, noop, Logger, defineProperty } from 'koishi-utils'
+import { isInteger, contain, observe, noop, Logger, defineProperty, Random } from 'koishi-utils'
 import { NextFunction } from './context'
 import { App } from './app'
 
@@ -66,17 +66,18 @@ export interface Meta<P extends PostType = PostType> {
 
 const logger = new Logger('session')
 
-export interface Session<U, G, P extends PostType = PostType> extends Meta<P> {}
+export interface Session<U, G, O, P extends PostType = PostType> extends Meta<P> {}
 
-export class Session<U extends User.Field = never, G extends Group.Field = never> {
+export class Session<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}> {
   $user?: User.Observed<U>
   $group?: Group.Observed<G>
   $app?: App
-  $argv?: ParsedArgv
+  $argv?: ParsedArgv<U, G, O>
   $appel?: boolean
   $prefix?: string = null
   $parsed?: string
   $reply?: number
+  $uuid = Random.uuid()
 
   private _delay?: number
   private _queued = Promise.resolve()
@@ -238,7 +239,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   $execute(argv: ExecuteArgv): Promise<void>
   $execute(message: string, next?: NextFunction): Promise<void>
   async $execute(...args: [ExecuteArgv] | [string, NextFunction?]) {
-    let argv: void | ParsedArgv, next: NextFunction
+    let argv: any, next: NextFunction
     if (typeof args[0] === 'string') {
       next = args[1] || noop
       argv = this.$parse(args[0])

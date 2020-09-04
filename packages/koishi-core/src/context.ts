@@ -1,6 +1,6 @@
 import { intersection, difference, Logger, defineProperty } from 'koishi-utils'
 import { Command, CommandConfig, ParsedArgv, ExecuteArgv } from './command'
-import { Session } from './session'
+import { PostType, Session } from './session'
 import { User, Group } from './database'
 import { App } from './app'
 
@@ -301,41 +301,43 @@ export class Context {
   }
 }
 
+export type RawSession<P extends PostType = PostType> = Session<never, never, never, P>
+
 export interface EventMap {
   [Context.MIDDLEWARE_EVENT]: Middleware
 
   // CQHTTP events
-  'message' (session: Session<never, never, 'message'>): void
-  'message/normal' (session: Session<never, never, 'message'>): void
-  'message/notice' (session: Session<never, never, 'message'>): void
-  'message/anonymous' (session: Session<never, never, 'message'>): void
-  'message/friend' (session: Session<never, never, 'message'>): void
-  'message/group' (session: Session<never, never, 'message'>): void
-  'message/other' (session: Session<never, never, 'message'>): void
-  'friend-add' (session: Session<never, never, 'notice'>): void
-  'group-increase' (session: Session<never, never, 'notice'>): void
-  'group-increase/invite' (session: Session<never, never, 'notice'>): void
-  'group-increase/approve' (session: Session<never, never, 'notice'>): void
-  'group-decrease' (session: Session<never, never, 'notice'>): void
-  'group-decrease/leave' (session: Session<never, never, 'notice'>): void
-  'group-decrease/kick' (session: Session<never, never, 'notice'>): void
-  'group-decrease/kick-me' (session: Session<never, never, 'notice'>): void
-  'group-upload' (session: Session<never, never, 'notice'>): void
-  'group-admin' (session: Session<never, never, 'notice'>): void
-  'group-admin/set' (session: Session<never, never, 'notice'>): void
-  'group-admin/unset' (session: Session<never, never, 'notice'>): void
-  'group-ban' (session: Session<never, never, 'notice'>): void
-  'group-ban/ban' (session: Session<never, never, 'notice'>): void
-  'group-ban/lift-ban' (session: Session<never, never, 'notice'>): void
-  'group_recall' (session: Session<never, never, 'notice'>): void
-  'request/friend' (session: Session<never, never, 'request'>): void
-  'request/group/add' (session: Session<never, never, 'request'>): void
-  'request/group/invite' (session: Session<never, never, 'request'>): void
-  'heartbeat' (session: Session<never, never, 'meta_event'>): void
-  'lifecycle' (session: Session<never, never, 'meta_event'>): void
-  'lifecycle/enable' (session: Session<never, never, 'meta_event'>): void
-  'lifecycle/disable' (session: Session<never, never, 'meta_event'>): void
-  'lifecycle/connect' (session: Session<never, never, 'meta_event'>): void
+  'message' (session: RawSession<'message'>): void
+  'message/normal' (session: RawSession<'message'>): void
+  'message/notice' (session: RawSession<'message'>): void
+  'message/anonymous' (session: RawSession<'message'>): void
+  'message/friend' (session: RawSession<'message'>): void
+  'message/group' (session: RawSession<'message'>): void
+  'message/other' (session: RawSession<'message'>): void
+  'friend-add' (session: RawSession<'notice'>): void
+  'group-increase' (session: RawSession<'notice'>): void
+  'group-increase/invite' (session: RawSession<'notice'>): void
+  'group-increase/approve' (session: RawSession<'notice'>): void
+  'group-decrease' (session: RawSession<'notice'>): void
+  'group-decrease/leave' (session: RawSession<'notice'>): void
+  'group-decrease/kick' (session: RawSession<'notice'>): void
+  'group-decrease/kick-me' (session: RawSession<'notice'>): void
+  'group-upload' (session: RawSession<'notice'>): void
+  'group-admin' (session: RawSession<'notice'>): void
+  'group-admin/set' (session: RawSession<'notice'>): void
+  'group-admin/unset' (session: RawSession<'notice'>): void
+  'group-ban' (session: RawSession<'notice'>): void
+  'group-ban/ban' (session: RawSession<'notice'>): void
+  'group-ban/lift-ban' (session: RawSession<'notice'>): void
+  'group_recall' (session: RawSession<'notice'>): void
+  'request/friend' (session: RawSession<'request'>): void
+  'request/group/add' (session: RawSession<'request'>): void
+  'request/group/invite' (session: RawSession<'request'>): void
+  'heartbeat' (session: RawSession<'meta_event'>): void
+  'lifecycle' (session: RawSession<'meta_event'>): void
+  'lifecycle/enable' (session: RawSession<'meta_event'>): void
+  'lifecycle/disable' (session: RawSession<'meta_event'>): void
+  'lifecycle/connect' (session: RawSession<'meta_event'>): void
 
   // Koishi events
   'parse' (message: string, session: Session, builtin: boolean, terminator: string): void | ExecuteArgv
@@ -348,7 +350,7 @@ export interface EventMap {
   'before-send' (session: Session): void | boolean
   'before-command' (argv: ParsedArgv): void | string | Promise<void | string>
   'command' (argv: ParsedArgv): void | Promise<void>
-  'after-middleware' (session: Session): void
+  'middleware' (session: Session): void
   'new-command' (cmd: Command): void
   'remove-command' (cmd: Command): void
   'before-connect' (): void | Promise<void>

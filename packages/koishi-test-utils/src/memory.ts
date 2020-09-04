@@ -93,6 +93,6 @@ extendDatabase(MemoryDatabase, {
   },
 })
 
-export default function apply(app: App, config: MemoryConfig = {}) {
+export function apply(app: App, config: MemoryConfig = {}) {
   app.database = new MemoryDatabase(app, config) as any
 }

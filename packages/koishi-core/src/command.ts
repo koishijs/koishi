@@ -75,16 +75,16 @@ interface ParsedArg {
 const quoteStart = `"'“‘`
 const quoteEnd = `"'”’`
 
-export interface ParsedLine<O = {}> {
+export interface ParsedLine<O extends {} = {}> {
   source?: string
   rest: string
   args: string[]
   options: O
 }
 
-export interface ParsedArgv<U extends User.Field = never, G extends Group.Field = never, O = {}> extends Partial<ParsedLine<O>> {
+export interface ParsedArgv<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}> extends Partial<ParsedLine<O>> {
   command: Command<U, G, O>
-  session: Session<U, G>
+  session: Session<U, G, O>
   next?: NextFunction
 }
 
@@ -99,17 +99,17 @@ export interface CommandConfig<U extends User.Field = never, G extends Group.Fie
 }
 
 type Extend<O extends {}, K extends string, T> = {
-  [P in K | keyof O]: (P extends keyof O ? O[P] : unknown) & (P extends K ? T : unknown)
+  [P in K | keyof O]?: (P extends keyof O ? O[P] : unknown) & (P extends K ? T : unknown)
 }
 
 export type FieldCollector<T extends TableType, K = keyof Tables[T], O extends {} = {}> =
   | Iterable<K>
   | ((argv: ParsedArgv<never, never, O>, fields: Set<keyof Tables[T]>) => void)
 
-export type CommandAction<U extends User.Field = never, G extends Group.Field = never, O = {}> =
-  (this: Command<U, G>, config: ParsedArgv<U, G, O>, ...args: string[]) => void | string | Promise<void | string>
+export type CommandAction<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}> =
+  (this: Command<U, G, O>, argv: ParsedArgv<U, G, O>, ...args: string[]) => void | string | Promise<void | string>
 
-export class Command<U extends User.Field = never, G extends Group.Field = never, O = {}> {
+export class Command<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}> {
   config: CommandConfig<U, G>
   children: Command[] = []
   parent: Command = null
@@ -123,7 +123,7 @@ export class Command<U extends User.Field = never, G extends Group.Field = never
   private _userFields: FieldCollector<'user'>[] = []
   private _groupFields: FieldCollector<'group'>[] = []
 
-  _action?: CommandAction<U, G>
+  _action?: CommandAction<U, G, O>
 
   static defaultConfig: CommandConfig = {}
   static defaultOptionConfig: OptionConfig = {}

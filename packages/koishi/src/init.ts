@@ -209,8 +209,8 @@ function codegen(value: Serializable, type: SourceType, indent = '', path = '/')
   switch (typeof value) {
     case 'number': case 'boolean': return '' + value
     case 'string': return type === 'json' || value.includes("'") && !value.includes('"')
-      ? `"${value.replace(/"/g, '\\"')}"`
-      : `'${value.replace(/'/g, "\\'")}'`
+      ? `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+      : `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
     case 'undefined': return undefined
   }
 

@@ -23,6 +23,7 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
     const { full_name } = repository
     const { user, url, html_url, commit_id, body, path, position } = comment
     if (user.type === 'bot') return
+
     return [[
       `[GitHub] ${user.login} commented on commit ${full_name}@${commit_id.slice(0, 6)}`,
       `Path: ${path}`,
@@ -73,6 +74,18 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
     }]
   })
 
+  on('issues.closed', ({ repository, issue }) => {
+    const { full_name } = repository
+    const { user, url, html_url, comments_url, title, number } = issue
+    if (user.type === 'bot') return
+
+    return [`[GitHub] ${user.login} closed issue ${full_name}#${number}\n${title}`, {
+      link: html_url,
+      react: url + `/reactions`,
+      reply: [comments_url],
+    }]
+  })
+
   on('pull_request_review_comment.created', ({ repository, comment, pull_request }) => {
     const { full_name } = repository
     const { number } = pull_request
@@ -102,9 +115,21 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
     ].join('\n'), { link: html_url, reply: [comments_url] }]
   })
 
+  on('pull_request.closed', ({ repository, pull_request }) => {
+    const { full_name } = repository
+    const { user, html_url, issue_url, comments_url, title, number } = pull_request
+    if (user.type === 'bot') return
+
+    return [`[GitHub] ${user.login} closed pull request ${full_name}#${number}\n${title}`, {
+      link: html_url,
+      react: issue_url + '/reactions',
+      reply: [comments_url],
+    }]
+  })
+
   on('pull_request.opened', ({ repository, pull_request }) => {
     const { full_name, owner } = repository
-    const { user, html_url, issue_url, comments_url, base, head, body, number } = pull_request
+    const { user, html_url, issue_url, comments_url, title, base, head, body, number } = pull_request
     if (user.type === 'bot') return
 
     const prefix = new RegExp(`^${owner.login}:`)
@@ -112,6 +137,7 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
     const headLabel = head.label.replace(prefix, '')
     return [[
       `[GitHub] ${user.login} opened a pull request ${full_name}#${number} (${baseLabel} <- ${headLabel})`,
+      `Title: ${title}`,
       formatMarkdown(body),
     ].join('\n'), {
       link: html_url,

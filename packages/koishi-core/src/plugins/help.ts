@@ -39,8 +39,8 @@ Command.prototype.example = function (example) {
 }
 
 interface HelpConfig {
-  showHidden: boolean
-  authority: boolean
+  showHidden?: boolean
+  authority?: boolean
 }
 
 export default function apply(app: App) {
