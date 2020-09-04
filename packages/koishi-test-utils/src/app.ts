@@ -81,7 +81,7 @@ export class TestSession {
         const length = this.replies.push(message)
         if (length >= count) _resolve()
       }
-      const dispose = this.app.on('after-middleware', (session) => {
+      const dispose = this.app.on('middleware', (session) => {
         if (session.$uuid === uuid) _resolve()
       })
       const uuid = this.app.receive({ ...this.meta, $send, message })

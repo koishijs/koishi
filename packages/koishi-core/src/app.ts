@@ -241,7 +241,7 @@ export class App extends Context {
 
     // update session map
     delete this._sessions[session.$uuid]
-    this.emit(session, 'after-middleware', session)
+    this.emit(session, 'middleware', session)
 
     // flush user & group data
     await session.$user?._update()
