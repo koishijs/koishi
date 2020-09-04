@@ -9,9 +9,9 @@ import { Message } from './message'
 export type UserType<T, U extends User.Field = User.Field> = T | ((user: Pick<User, U>) => T)
 
 declare module '../command' {
-  interface Command<U, G> {
-    _checkers: ((session: Session<U, G>) => string | boolean)[]
-    before(checker: (session: Session<U, G>) => string | boolean): this
+  interface Command<U, G, O> {
+    _checkers: ((session: ArgvSession<U, G, O>) => string | boolean)[]
+    before(checker: (session: ArgvSession<U, G, O>) => string | boolean): this
     getConfig<K extends keyof CommandConfig>(key: K, session: Session): Exclude<CommandConfig[K], (user: User) => any>
   }
 

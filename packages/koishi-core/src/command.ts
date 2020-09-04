@@ -84,13 +84,17 @@ export interface ParsedLine<O = {}> {
 
 export interface ParsedArgv<U extends User.Field = never, G extends Group.Field = never, O = {}> extends Partial<ParsedLine<O>> {
   command: Command<U, G, O>
-  session: Session<U, G>
+  session: ArgvSession<U, G, O>
   next?: NextFunction
 }
 
 export interface ExecuteArgv extends Partial<ParsedLine> {
   command: string | Command
   next?: NextFunction
+}
+
+export interface ArgvSession<U extends User.Field, G extends Group.Field, O extends {}> extends Session<U, G> {
+  $argv?: ParsedArgv<U, G, O>
 }
 
 export interface CommandConfig<U extends User.Field = never, G extends Group.Field = never> {
@@ -107,7 +111,7 @@ export type FieldCollector<T extends TableType, K = keyof Tables[T], O extends {
   | ((argv: ParsedArgv<never, never, O>, fields: Set<keyof Tables[T]>) => void)
 
 export type CommandAction<U extends User.Field = never, G extends Group.Field = never, O = {}> =
-  (this: Command<U, G>, config: ParsedArgv<U, G, O>, ...args: string[]) => void | string | Promise<void | string>
+  (this: Command<U, G, O>, argv: ParsedArgv<U, G, O>, ...args: string[]) => void | string | Promise<void | string>
 
 export class Command<U extends User.Field = never, G extends Group.Field = never, O = {}> {
   config: CommandConfig<U, G>
