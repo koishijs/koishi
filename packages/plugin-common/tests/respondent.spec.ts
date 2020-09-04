@@ -2,7 +2,7 @@ import { MockedApp } from 'koishi-test-utils'
 import { respondent } from '../src'
 
 const app = new MockedApp()
-const session = app.createSession('user', 123)
+const session = app.session(123)
 
 // make coverage happy
 app.plugin(respondent)
@@ -15,7 +15,7 @@ app.plugin(respondent, [{
 }])
 
 it('basic support', async () => {
-  await session.shouldHaveReply('挖坑一时爽', '填坑火葬场')
-  await session.shouldHaveReply('填坑一时爽', '一直填坑一直爽')
-  await session.shouldHaveNoReply('填坑一直爽')
+  await session.shouldReply('挖坑一时爽', '填坑火葬场')
+  await session.shouldReply('填坑一时爽', '一直填坑一直爽')
+  await session.shouldNotReply('填坑一直爽')
 })
