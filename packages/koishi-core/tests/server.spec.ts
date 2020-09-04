@@ -48,6 +48,8 @@ describe('Server API', () => {
     it('server.prepare', async () => {
       const app = new App()
       delete app.bots[0].selfId
+      expect(app.server.prepare({ selfId: BASE_SELF_ID + 1 })).to.be.undefined
+      await app.start()
       expect(app.server.prepare({ selfId: BASE_SELF_ID + 1 })).to.be.ok
       expect(app.bots[0].selfId).to.equal(BASE_SELF_ID + 1)
       expect(app.server.prepare({ selfId: BASE_SELF_ID })).to.be.undefined
