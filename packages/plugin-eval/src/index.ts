@@ -1,12 +1,11 @@
-import { Context, Session } from 'koishi-core'
-import { CQCode, Logger, defineProperty, Random } from 'koishi-utils'
+import { Context } from 'koishi-core'
+import { CQCode, Logger, defineProperty } from 'koishi-utils'
 import { EvalWorker, attachTraps, EvalConfig, Config } from './main'
 
 export * from './main'
 
 declare module 'koishi-core/dist/app' {
   interface App {
-    _sessions: Record<string, Session>
     worker: EvalWorker
   }
 }
@@ -19,7 +18,6 @@ declare module 'koishi-core/dist/command' {
 
 declare module 'koishi-core/dist/session' {
   interface Session {
-    $uuid: string
     _isEval: boolean
     _sendCount: number
   }
@@ -43,17 +41,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const { prefix } = config = { ...defaultConfig, ...config }
   const { app } = ctx
   const worker = new EvalWorker(app, config)
-  defineProperty(app, '_sessions', {})
   defineProperty(app, 'worker', worker)
-
-  app.prependMiddleware((session, next) => {
-    app._sessions[session.$uuid = Random.uuid()] = session
-    return next()
-  })
-
-  app.on('after-middleware', (session) => {
-    delete app._sessions[session.$uuid]
-  })
 
   app.on('before-connect', () => {
     return worker.start()

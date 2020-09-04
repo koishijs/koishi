@@ -1,6 +1,6 @@
 import { User, Group } from './database'
 import { ExecuteArgv, ParsedArgv, Command } from './command'
-import { isInteger, contain, observe, noop, Logger, defineProperty } from 'koishi-utils'
+import { isInteger, contain, observe, noop, Logger, defineProperty, Random } from 'koishi-utils'
 import { NextFunction } from './context'
 import { App } from './app'
 
@@ -77,6 +77,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   $prefix?: string = null
   $parsed?: string
   $reply?: number
+  $uuid = Random.uuid()
 
   private _delay?: number
   private _queued = Promise.resolve()
