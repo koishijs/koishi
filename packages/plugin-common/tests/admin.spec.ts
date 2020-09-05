@@ -26,7 +26,7 @@ before(async () => {
   await app.database.getGroup(654, app.selfId)
 })
 
-describe('Admin Command', () => {
+describe('Admin Commands', () => {
   it('user.auth', async () => {
     await session.shouldReply('user.auth -u nan', '请指定正确的目标。')
     await session.shouldReply('user.auth -u 321', '未找到指定的用户。')

@@ -2,13 +2,13 @@ import { Context } from 'koishi-core'
 import { DebugOptions } from './debug'
 import repeater, { RepeaterOptions } from './repeater'
 import handler, { HandlerOptions } from './handler'
+import sender, { SenderConfig } from './sender'
 
 export * from './admin'
-export * from './broadcast'
 export * from './info'
 export * from './repeater'
 
-export interface Options extends HandlerOptions, RepeaterOptions {
+export interface Config extends HandlerOptions, RepeaterOptions, SenderConfig {
   admin?: false
   broadcast?: false
   contextify?: false
@@ -20,15 +20,14 @@ export interface Options extends HandlerOptions, RepeaterOptions {
 
 export const name = 'common'
 
-export function apply(ctx: Context, options: Options = {}) {
-  ctx.plugin(handler, options)
-  ctx.plugin(repeater, options)
+export function apply(ctx: Context, config: Config = {}) {
+  ctx.plugin(handler, config)
+  ctx.plugin(repeater, config)
+  ctx.plugin(sender, config)
 
-  if (options.echo !== false) ctx.plugin(require('./echo'))
-  if (options.admin !== false) ctx.plugin(require('./admin'))
-  if (options.contextify !== false) ctx.plugin(require('./contextify'))
-  if (options.broadcast !== false) ctx.plugin(require('./broadcast'))
-  if (options.debug) ctx.plugin(require('./debug'), options.debug)
-  if (options.info !== false) ctx.plugin(require('./info'))
-  if (options.usage !== false) ctx.plugin(require('./usage'))
+  if (config.admin !== false) ctx.plugin(require('./admin'))
+  if (config.contextify !== false) ctx.plugin(require('./contextify'))
+  if (config.debug) ctx.plugin(require('./debug'), config.debug)
+  if (config.info !== false) ctx.plugin(require('./info'))
+  if (config.usage !== false) ctx.plugin(require('./usage'))
 }
