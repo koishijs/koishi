@@ -14,7 +14,6 @@ export interface Config extends HandlerOptions, RepeaterOptions, SenderConfig {
   contextify?: false
   echo?: false
   info?: false
-  usage?: false
   debug?: DebugOptions
 }
 
@@ -29,5 +28,4 @@ export function apply(ctx: Context, config: Config = {}) {
   if (config.contextify !== false) ctx.plugin(require('./contextify'))
   if (config.debug) ctx.plugin(require('./debug'), config.debug)
   if (config.info !== false) ctx.plugin(require('./info'))
-  if (config.usage !== false) ctx.plugin(require('./usage'))
 }
