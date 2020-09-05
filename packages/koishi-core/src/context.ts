@@ -203,7 +203,8 @@ export class Context {
   }
 
   removeListener<K extends keyof EventMap>(name: K, listener: EventMap[K]) {
-    const index = (this.app._hooks[name] || []).findIndex(([context, callback]) => context === this && callback === listener)
+    const index = (this.app._hooks[name] || [])
+      .findIndex(([context, callback]) => context === this && callback === listener)
     if (index >= 0) {
       this.app._hooks[name].splice(index, 1)
       return true

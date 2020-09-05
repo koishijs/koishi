@@ -1,6 +1,7 @@
 /* eslint-disable camelcase */
 
 import { EventNames } from '@octokit/webhooks'
+// eslint-disable-next-line max-len
 import { GetWebhookPayloadTypeFromEvent } from '@octokit/webhooks/dist-types/generated/get-webhook-payload-type-from-event'
 
 export interface EventConfig {

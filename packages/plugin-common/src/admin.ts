@@ -68,7 +68,7 @@ Command.prototype.adminUser = function (this: Command<never, never, { user?: str
       target = await session.$observeUser(fields)
     }
     const result = await callback({ ...argv, target }, ...args)
-    if (result) return result
+    if (typeof result === 'string') return result
     if (!Object.keys(target._diff).length) return '用户数据未改动。'
     await target._update()
     return '用户数据已修改。'
@@ -98,7 +98,7 @@ Command.prototype.adminGruop = function (this: Command<never, never, { group?: s
       return '当前不在群上下文中，请使用 -g 参数指定目标群。'
     }
     const result = await callback({ ...argv, target }, ...args)
-    if (result) return result
+    if (typeof result === 'string') return result
     if (!Object.keys(target._diff).length) return '群数据未改动。'
     await target._update()
     return '群数据已修改。'
@@ -121,15 +121,15 @@ export function apply(ctx: Context) {
 
   ctx.command('user.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
     .userFields(['flag'])
-    .option('set', '-s 添加标记', { authority: 4 })
-    .option('unset', '-S 删除标记', { authority: 4 })
+    .option('set', '-s  添加标记', { authority: 4 })
+    .option('unset', '-S  删除标记', { authority: 4 })
     .adminUser(flagAction)
 
   ctx.command('usage [key]', '调用次数信息')
     .alias('usages')
     .userFields(['usage'])
-    .option('set', '-s 设置调用次数', { authority: 4 })
-    .option('clear', '-c 清空调用次数', { authority: 4 })
+    .option('set', '-s  设置调用次数', { authority: 4 })
+    .option('clear', '-c  清空调用次数', { authority: 4 })
     .adminUser(({ target, options }, name, value) => {
       if (options.clear) {
         name ? delete target.usage[name] : target.usage = {}
@@ -158,8 +158,8 @@ export function apply(ctx: Context) {
   ctx.command('timer [key]', '定时器信息')
     .alias('timers')
     .userFields(['timers'])
-    .option('set', '-s 设置定时器', { authority: 4 })
-    .option('clear', '-c 清空定时器', { authority: 4 })
+    .option('set', '-s  设置定时器', { authority: 4 })
+    .option('clear', '-c  清空定时器', { authority: 4 })
     .adminUser(({ target, options }, name, value) => {
       if (options.clear) {
         name ? delete target.timers[name] : target.timers = {}
@@ -200,7 +200,7 @@ export function apply(ctx: Context) {
 
   ctx.command('group.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
     .groupFields(['flag'])
-    .option('set', '-s 添加标记', { authority: 4 })
-    .option('unset', '-S 删除标记', { authority: 4 })
+    .option('set', '-s  添加标记', { authority: 4 })
+    .option('unset', '-S  删除标记', { authority: 4 })
     .adminGruop(flagAction)
 }

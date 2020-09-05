@@ -81,18 +81,14 @@ declare module 'koishi-core/dist/server' {
     getAsync(action: string, params?: Record<string, any>): Promise<void>
     sendGroupMsgAsync(groupId: number, message: string, autoEscape?: boolean): Promise<void>
     sendPrivateMsgAsync(userId: number, message: string, autoEscape?: boolean): Promise<void>
-    setGroupAnonymousBan(groupId: number, anonymous: object, duration?: number): Promise<void>
-    setGroupAnonymousBan(groupId: number, flag: string, duration?: number): Promise<void>
-    setGroupAnonymousBanAsync(groupId: number, anonymous: object, duration?: number): Promise<void>
-    setGroupAnonymousBanAsync(groupId: number, flag: string, duration?: number): Promise<void>
+    setGroupAnonymousBan(groupId: number, anonymous: string | object, duration?: number): Promise<void>
+    setGroupAnonymousBanAsync(groupId: number, anonymous: string | object, duration?: number): Promise<void>
     setFriendAddRequest(flag: string, approve?: boolean): Promise<void>
     setFriendAddRequest(flag: string, remark?: string): Promise<void>
     setFriendAddRequestAsync(flag: string, approve?: boolean): Promise<void>
     setFriendAddRequestAsync(flag: string, remark?: string): Promise<void>
-    setGroupAddRequest(flag: string, subType: 'add' | 'invite', approve?: boolean): Promise<void>
-    setGroupAddRequest(flag: string, subType: 'add' | 'invite', reason?: string): Promise<void>
-    setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', approve?: boolean): Promise<void>
-    setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', reason?: string): Promise<void>
+    setGroupAddRequest(flag: string, subType: 'add' | 'invite', approve?: string | boolean): Promise<void>
+    setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', approve?: string | boolean): Promise<void>
     deleteMsg(messageId: number): Promise<void>
     deleteMsgAsync(messageId: number): Promise<void>
     sendLike(userId: number, times?: number): Promise<void>
@@ -199,13 +195,13 @@ Bot.prototype.sendPrivateMsgAsync = function (this: Bot, userId, message, autoEs
   return this.getAsync('send_private_msg', { userId, message, autoEscape })
 }
 
-Bot.prototype.setGroupAnonymousBan = async function (this: Bot, groupId: number, meta: object | string, duration?: number) {
+Bot.prototype.setGroupAnonymousBan = async function (this: Bot, groupId, meta, duration) {
   const args = { groupId, duration } as any
   args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
   await this.get('set_group_anonymous_ban', args)
 }
 
-Bot.prototype.setGroupAnonymousBanAsync = function (this: Bot, groupId: number, meta: object | string, duration?: number) {
+Bot.prototype.setGroupAnonymousBanAsync = function (this: Bot, groupId, meta, duration) {
   const args = { groupId, duration } as any
   args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
   return this.getAsync('set_group_anonymous_ban', args)
@@ -227,7 +223,7 @@ Bot.prototype.setFriendAddRequestAsync = function (this: Bot, flag: string, info
   }
 }
 
-Bot.prototype.setGroupAddRequest = async function (this: Bot, flag: string, subType: 'add' | 'invite', info: string | boolean = true) {
+Bot.prototype.setGroupAddRequest = async function (this: Bot, flag, subType, info = true) {
   if (typeof info === 'string') {
     await this.get('set_group_add_request', { flag, subType, approve: false, reason: info })
   } else {
@@ -235,7 +231,7 @@ Bot.prototype.setGroupAddRequest = async function (this: Bot, flag: string, subT
   }
 }
 
-Bot.prototype.setGroupAddRequestAsync = function (this: Bot, flag: string, subType: 'add' | 'invite', info: string | boolean = true) {
+Bot.prototype.setGroupAddRequestAsync = function (this: Bot, flag, subType, info = true) {
   if (typeof info === 'string') {
     return this.getAsync('set_group_add_request', { flag, subType, approve: false, reason: info })
   } else {

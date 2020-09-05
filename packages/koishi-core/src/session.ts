@@ -6,13 +6,18 @@ import { App } from './app'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
 export type MessageType = 'private' | 'group'
+export type NoticeType =
+  | 'group_upload' | 'group_admin' | 'group_increase' | 'group_decrease'
+  | 'group_ban' | 'friend_add' | 'group_recall'
+export type RequestType = 'friend' | 'group'
+export type MetaEventType = 'lifecycle' | 'heartbeat'
 
 export interface MetaTypeMap {
   message: MessageType
-  notice: 'group_upload' | 'group_admin' | 'group_increase' | 'group_decrease' | 'group_ban' | 'friend_add' | 'group_recall'
-  request: 'friend' | 'group'
+  notice: NoticeType
+  request: RequestType
   // eslint-disable-next-line camelcase
-  meta_event: 'lifecycle' | 'heartbeat'
+  meta_event: MetaEventType
   send: null
 }
 

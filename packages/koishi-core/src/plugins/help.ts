@@ -134,7 +134,8 @@ function getOptions(command: Command, session: Session<ValidationField>, maxUsag
   if (command.config.hideOptions && !config.showHidden) return []
   const options = config.showHidden
     ? Object.values(command._options)
-    : Object.values(command._options).filter(option => !option.hidden && (!session.$user || option.authority <= session.$user.authority))
+    : Object.values(command._options)
+      .filter(option => !option.hidden && (!session.$user || option.authority <= session.$user.authority))
   if (!options.length) return []
 
   const output = config.authority && options.some(o => o.authority)
