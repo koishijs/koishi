@@ -1,14 +1,14 @@
-import { MockedApp } from 'koishi-test-utils'
+import { App } from 'koishi-test-utils'
 import { sleep } from 'koishi-utils'
-import { requestHandler } from '../src'
+import handler from '../src/handler'
 import 'koishi-database-memory'
 
-let app: MockedApp
+let app: App
 
 describe('type: undefined', () => {
-  beforeAll(async () => {
-    app = new MockedApp()
-    app.plugin(requestHandler)
+  before(async () => {
+    app = new App()
+    app.plugin(handler)
     await app.start()
   })
 
@@ -32,9 +32,9 @@ describe('type: undefined', () => {
 })
 
 describe('type: string', () => {
-  beforeAll(async () => {
-    app = new MockedApp()
-    app.plugin(requestHandler, {
+  before(async () => {
+    app = new App()
+    app.plugin(handler, {
       handleFriend: 'foo',
       handleGroupAdd: 'bar',
       handleGroupInvite: 'baz',
@@ -62,9 +62,9 @@ describe('type: string', () => {
 })
 
 describe('type: boolean', () => {
-  beforeAll(async () => {
-    app = new MockedApp()
-    app.plugin(requestHandler, {
+  before(async () => {
+    app = new App()
+    app.plugin(handler, {
       handleFriend: false,
       handleGroupAdd: false,
       handleGroupInvite: false,
@@ -92,9 +92,9 @@ describe('type: boolean', () => {
 })
 
 describe('type: function', () => {
-  beforeAll(async () => {
-    app = new MockedApp()
-    app.plugin(requestHandler, {
+  before(async () => {
+    app = new App()
+    app.plugin(handler, {
       handleFriend: () => true,
       handleGroupAdd: () => true,
       handleGroupInvite: () => true,

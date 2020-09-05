@@ -48,10 +48,16 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
 
 extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
   async createSchedule(time, interval, command, session) {
-    const result = await this.db.collection('schedule').insertOne(
-      { time, assignee: session.selfId, interval, command, session },
-    )
-    return { time, assignee: session.selfId, interval, command, session, id: result.insertedId }
+    let _id = 1
+    const [latest] = await this.db.collection('schedule').find().sort('_id', -1).limit(1).toArray()
+    if (latest) _id = latest._id + 1
+    const data = { time, interval, command, assignee: session.selfId }
+    const result = await this.db.collection('schedule').insertOne({
+      _id,
+      ...data,
+      session: JSON.stringify(session),
+    })
+    return { ...data, session, id: result.insertedId }
   },
 
   removeSchedule(_id) {
@@ -60,13 +66,18 @@ extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
 
   async getSchedule(_id) {
     const res = await this.db.collection('schedule').findOne({ _id })
-    if (res) res.id = res._id
+    if (res) {
+      res.id = res._id
+      res.session = JSON.parse(res.session)
+    }
     return res
   },
 
   async getAllSchedules(assignees) {
     const $in = assignees || await this.app.getSelfIds()
     return await this.db.collection('schedule')
-      .find({ assignee: { $in } }).map(doc => ({ ...doc, id: doc._id })).toArray()
+      .find({ assignee: { $in } })
+      .map(doc => ({ ...doc, id: doc._id, session: JSON.parse(doc.session) }))
+      .toArray()
   },
 })
