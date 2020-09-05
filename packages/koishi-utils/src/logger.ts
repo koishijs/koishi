@@ -80,8 +80,8 @@ export class Logger {
     return Logger.levels[this.name] ?? Logger.baseLevel
   }
 
-  extend = (namespace: string) => {
-    return new Logger(`${this.name}:${namespace}`)
+  extend = (namespace: string, showDiff = this.showDiff) => {
+    return new Logger(`${this.name}:${namespace}`, showDiff)
   }
 
   format: (format: any, ...param: any[]) => string = (...args) => {
@@ -93,7 +93,7 @@ export class Logger {
 
     let index = 0
     args[0] = (args[0] as string).replace(/%([a-zA-Z%])/g, (match, format) => {
-      if (match === '%%') return match
+      if (match === '%%') return '%'
       index += 1
       const formatter = Logger.formatters[format]
       if (typeof formatter === 'function') {
