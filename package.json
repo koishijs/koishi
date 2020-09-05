@@ -22,7 +22,7 @@
     "docs": "cd docs && yarn dev",
     "test": "cross-env TS_NODE_PROJECT=tsconfig.test.json mocha --experimental-vm-modules --enable-source-maps",
     "test:json": "c8 -r json yarn test",
-    "test:lcov": "rimraf coverage && c8 -r lcov yarn test",
+    "test:html": "rimraf coverage && c8 -r html yarn test",
     "test:text": "c8 -r text yarn test",
     "lint": "eslint packages/*/src/**/*.ts --fix --cache",
     "pub": "ts-node build/publish",
