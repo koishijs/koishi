@@ -45,7 +45,7 @@ function flagAction({ target, options }: FlagArgv, ...flags: string[]) {
 Command.prototype.adminUser = function (this: Command<never, never, { user?: string }>, callback) {
   const command = this
     .userFields(['authority'])
-    .option('user', '-u [user]  指定目标用户', { authority: 4 })
+    .option('user', '-u [user]  指定目标用户', { authority: 3 })
 
   command._action = async (argv) => {
     const { options, session, args } = argv
@@ -80,7 +80,7 @@ Command.prototype.adminUser = function (this: Command<never, never, { user?: str
 Command.prototype.adminGruop = function (this: Command<never, never, { group?: string }>, callback) {
   const command = this
     .userFields(['authority'])
-    .option('group', '-g [group]  指定目标群', { authority: 4 })
+    .option('group', '-g [group]  指定目标群', { authority: 3 })
 
   command._action = async (argv) => {
     const { options, session, args } = argv
@@ -92,8 +92,10 @@ Command.prototype.adminGruop = function (this: Command<never, never, { group?: s
       const data = await database.getGroup(options.group, -1, [...fields])
       if (!data) return '未找到指定的群。'
       target = observe(data, diff => database.setGroup(options.group, diff), `group ${options.group}`)
-    } else {
+    } else if (session.messageType === 'group') {
       target = await session.$observeGroup(fields)
+    } else {
+      return '当前不在群上下文中，请使用 -g 参数指定目标群。'
     }
     const result = await callback({ ...argv, target }, ...args)
     if (result) return result
@@ -123,7 +125,8 @@ export function apply(ctx: Context) {
     .option('unset', '-S 删除标记', { authority: 4 })
     .adminUser(flagAction)
 
-  ctx.command('user.usage [key]', '调用次数信息')
+  ctx.command('usage [key]', '调用次数信息')
+    .alias('usages')
     .userFields(['usage'])
     .option('set', '-s 设置调用次数', { authority: 4 })
     .option('clear', '-c 清空调用次数', { authority: 4 })
@@ -152,7 +155,8 @@ export function apply(ctx: Context) {
       return output.join('\n')
     })
 
-  ctx.command('user.timer [key]', '定时器信息', { authority: 3 })
+  ctx.command('timer [key]', '定时器信息')
+    .alias('timers')
     .userFields(['timers'])
     .option('set', '-s 设置定时器', { authority: 4 })
     .option('clear', '-c 清空定时器', { authority: 4 })
