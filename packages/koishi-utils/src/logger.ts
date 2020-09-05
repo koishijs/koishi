@@ -48,7 +48,9 @@ export class Logger {
   private code: number
   private displayName: string
 
-  constructor(private name: string, private showDiff = false) {
+  public stream: NodeJS.WritableStream = process.stderr
+
+  constructor(public name: string, private showDiff = false) {
     if (name in instances) return instances[name]
     let hash = 0
     for (let i = 0; i < name.length; i++) {
@@ -72,7 +74,7 @@ export class Logger {
   private createMethod(name: LogType, prefix: string, minLevel: number) {
     this[name] = (...args: [any, ...any[]]) => {
       if (this.level < minLevel) return
-      process.stderr.write(prefix + this.displayName + this.format(...args) + '\n')
+      this.stream.write(prefix + this.displayName + this.format(...args) + '\n')
     }
   }
 
