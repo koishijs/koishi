@@ -34,7 +34,7 @@ rules:
   keyword-spacing: off
   max-len:
     - warn
-    - 120
+    - 160
   # https://github.com/typescript-eslint/typescript-eslint/issues/618
   no-dupe-class-members: off
   no-ex-assign: off
