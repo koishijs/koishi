@@ -13,22 +13,30 @@ declare module 'koishi-core/dist/command' {
 }
 
 interface FlagOptions {
+  list?: boolean
   set?: boolean
   unset?: boolean
 }
+
+type FlagMap = Record<string, number> & Record<number, string>
 
 interface FlagArgv extends ParsedArgv<never, never, FlagOptions> {
   target: User.Observed<'flag'> | Group.Observed<'flag'>
 }
 
-function flagAction({ target, options }: FlagArgv, ...flags: string[]) {
+function flagAction(map: any, { target, options }: FlagArgv, ...flags: string[]): string
+function flagAction(map: FlagMap, { target, options }: FlagArgv, ...flags: string[]) {
   if (options.set || options.unset) {
-    const notFound = difference(flags, enumKeys(User.Flag))
+    const notFound = difference(flags, enumKeys(map))
     if (notFound.length) return `未找到标记 ${notFound.join(', ')}。`
     for (const name of flags) {
-      options.set ? target.flag |= User.Flag[name] : target.flag &= ~User.Flag[name]
+      options.set ? target.flag |= map[name] : target.flag &= ~map[name]
     }
     return
+  }
+
+  if (options.list) {
+    return `全部标记为：${enumKeys(map).join(', ')}。`
   }
 
   let flag = target.flag
@@ -36,7 +44,7 @@ function flagAction({ target, options }: FlagArgv, ...flags: string[]) {
   while (flag) {
     const value = 2 ** Math.floor(Math.log2(flag))
     flag -= value
-    keys.unshift(User.Flag[value])
+    keys.unshift(map[value])
   }
   if (!keys.length) return '未设置任何标记。'
   return `当前的标记为：${keys.join(', ')}。`
@@ -67,9 +75,10 @@ Command.prototype.adminUser = function (this: Command<never, never, { user?: str
     } else {
       target = await session.$observeUser(fields)
     }
+    const diffKeys = Object.keys(target._diff)
     const result = await callback({ ...argv, target }, ...args)
     if (typeof result === 'string') return result
-    if (!Object.keys(target._diff).length) return '用户数据未改动。'
+    if (!difference(Object.keys(target._diff), diffKeys).length) return '用户数据未改动。'
     await target._update()
     return '用户数据已修改。'
   }
@@ -121,9 +130,10 @@ export function apply(ctx: Context) {
 
   ctx.command('user.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
     .userFields(['flag'])
+    .option('list', '-l  标记列表')
     .option('set', '-s  添加标记', { authority: 4 })
     .option('unset', '-S  删除标记', { authority: 4 })
-    .adminUser(flagAction)
+    .adminUser(flagAction.bind(null, User.Flag))
 
   ctx.command('usage [key]', '调用次数信息')
     .alias('usages')
@@ -200,7 +210,8 @@ export function apply(ctx: Context) {
 
   ctx.command('group.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
     .groupFields(['flag'])
+    .option('list', '-l  标记列表')
     .option('set', '-s  添加标记', { authority: 4 })
     .option('unset', '-S  删除标记', { authority: 4 })
-    .adminGruop(flagAction)
+    .adminGruop(flagAction.bind(null, Group.Flag))
 }

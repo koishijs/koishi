@@ -38,6 +38,7 @@ describe('Admin Commands', () => {
 
   it('user.flag', async () => {
     await session.shouldReply('user.flag -u 123', '未设置任何标记。')
+    await session.shouldReply('user.flag -l', '全部标记为：ignore, test。')
     await session.shouldReply('user.flag -s foo', '未找到标记 foo。')
     await session.shouldReply('user.flag -s test', '用户数据已修改。')
     await session.shouldReply('user.flag', '当前的标记为：test。')

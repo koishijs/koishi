@@ -7,6 +7,8 @@ import { encode } from 'querystring'
 import { addListeners, defaultEvents, EventConfig, ReplyPayloads } from './events'
 import { Config, GitHub } from './server'
 
+export * from './server'
+
 declare module 'koishi-core/dist/app' {
   interface App {
     github?: GitHub
