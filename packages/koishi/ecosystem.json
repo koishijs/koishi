@@ -1,6 +1,6 @@
 {
   "koishi-adapter-cqhttp": {
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-plugin-chess": {
@@ -8,7 +8,7 @@
     "description": "Chess Plugin for Koishi"
   },
   "koishi-plugin-common": {
-    "version": "3.0.0-beta.15",
+    "version": "3.0.0-beta.16",
     "description": "Common plugins for Koishi"
   },
   "koishi-plugin-eval": {
@@ -20,7 +20,7 @@
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-github": {
-    "version": "2.0.1",
+    "version": "2.0.2",
     "description": "GitHub webhook plugin for Koishi"
   },
   "koishi-plugin-image-search": {
@@ -28,7 +28,7 @@
     "description": "Image searching plugin for Koishi"
   },
   "koishi-plugin-mongo": {
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "MongoDB support for Koishi"
   },
   "koishi-plugin-monitor": {
@@ -47,7 +47,7 @@
     "description": "Subscribe RSS Url for Koishi"
   },
   "koishi-plugin-schedule": {
-    "version": "2.0.1",
+    "version": "2.0.2",
     "description": "Schedule plugin for Koishi"
   },
   "koishi-plugin-status": {

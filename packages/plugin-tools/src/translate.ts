@@ -26,6 +26,10 @@ export interface TranslateOptions {
   youdaoSecret?: string
 }
 
+function encrypt(source: string) {
+  return createHash('md5').update(source).digest('hex') // lgtm [js/weak-cryptographic-algorithm]
+}
+
 export function apply(ctx: Context, config: TranslateOptions) {
   const appKey = assertProperty(config, 'youdaoAppKey')
   const secret = assertProperty(config, 'youdaoSecret')
@@ -42,7 +46,7 @@ export function apply(ctx: Context, config: TranslateOptions) {
       const qShort = q.length > 20 ? q.slice(0, 10) + q.length + q.slice(-10) : q
       const from = options.from
       const to = options.to
-      const sign = createHash('md5').update(appKey + qShort + salt + secret).digest('hex') // lgtm [js/weak-cryptographic-algorithm]
+      const sign = encrypt(appKey + qShort + salt + secret)
       const { data } = await axios.get('http://openapi.youdao.com/api', {
         params: { q, appKey, salt, from, to, sign },
       })

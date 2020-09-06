@@ -102,7 +102,6 @@ function instanceOf(value, construct) {
   } catch (ex) {
     // Never pass the handled exception through!
     throw new VMError('Unable to perform instanceOf check.')
-    // This exception actually never get to the user. It only instructs the caller to return null because we wasn't able to perform instanceOf check.
   }
 }
 

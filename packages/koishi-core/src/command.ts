@@ -82,7 +82,8 @@ export interface ParsedLine<O extends {} = {}> {
   options: O
 }
 
-export interface ParsedArgv<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}> extends Partial<ParsedLine<O>> {
+export interface ParsedArgv<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}>
+extends Partial<ParsedLine<O>> {
   command: Command<U, G, O>
   session: Session<U, G, O>
   next?: NextFunction
@@ -268,14 +269,14 @@ export class Command<U extends User.Field = never, G extends Group.Field = never
     }
   }
 
-  option<K extends string>(name: K, description: string, config: StringOptionConfig): Command<U, G, Extend<O, K, string>>
-  option<K extends string>(name: K, description: string, config: NumberOptionConfig): Command<U, G, Extend<O, K, number>>
-  option<K extends string>(name: K, description: string, config: BooleanOptionConfig): Command<U, G, Extend<O, K, boolean>>
-  option<K extends string>(name: K, description: string, config?: OptionConfig): Command<U, G, Extend<O, K, any>>
-  option<K extends string>(name: K, description: string, config: OptionConfig = {}) {
+  option<K extends string>(name: K, desc: string, config: StringOptionConfig): Command<U, G, Extend<O, K, string>>
+  option<K extends string>(name: K, desc: string, config: NumberOptionConfig): Command<U, G, Extend<O, K, number>>
+  option<K extends string>(name: K, desc: string, config: BooleanOptionConfig): Command<U, G, Extend<O, K, boolean>>
+  option<K extends string>(name: K, desc: string, config?: OptionConfig): Command<U, G, Extend<O, K, any>>
+  option<K extends string>(name: K, desc: string, config: OptionConfig = {}) {
     const fallbackType = typeof config.fallback as never
     const type = config['type'] || supportedType.includes(fallbackType) && fallbackType
-    return this._registerOption(name, description, { ...config, type }) as any
+    return this._registerOption(name, desc, { ...config, type }) as any
   }
 
   removeOption<K extends string & keyof O>(name: K) {

@@ -35,7 +35,7 @@ function check(file: string) {
     sendGroupMsg.mockClear()
     const payload = require(`./fixtures/${file}`)
     const [name] = file.split('.', 1)
-    await app.githubWebhooks.receive({ id: Random.uuid(), name, payload })
+    await app.github.receive({ id: Random.uuid(), name, payload })
     if (snapshot[file]) {
       expect(sendGroupMsg.mock.calls).to.have.length(1)
       expect(sendGroupMsg.mock.calls[0][1]).to.equal(snapshot[file].trim())
@@ -45,7 +45,7 @@ function check(file: string) {
   })
 }
 
-describe('koishi-plugin-github', () => {
+describe('GitHub Plugin', () => {
   describe('Webhook Events', () => {
     const files = readdirSync(resolve(__dirname, 'fixtures'))
     files.forEach(file => {

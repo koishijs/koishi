@@ -1,7 +1,6 @@
 import { App } from 'koishi-test-utils'
 import { User, Group } from 'koishi-core'
-import { enumKeys } from 'koishi-utils'
-import { expect } from 'chai'
+import { install } from '@sinonjs/fake-timers'
 import * as admin from '../src/admin'
 
 const app = new App({ mockDatabase: true })
@@ -9,102 +8,88 @@ const session = app.session(123, 321)
 
 app.plugin(admin)
 app.command('foo', { maxUsage: 10 }).action(({ session }) => session.$send('bar'))
-app.command('bar', { maxUsage: 10 }).action(({ session }) => session.$send('foo'))
+app.command('bar', { minInterval: 1000 }).action(({ session }) => session.$send('foo'))
+
+;((flags: Record<keyof typeof User.Flag, number>) => {
+  flags[flags[1 << 4] = 'test'] = 1 << 4
+})(User.Flag)
+
+;((flags: Record<keyof typeof Group.Flag, number>) => {
+  flags[flags[1 << 4] = 'test'] = 1 << 4
+})(Group.Flag)
 
 before(async () => {
-  await app.start()
   await app.database.getUser(123, 4)
   await app.database.getUser(456, 3)
   await app.database.getUser(789, 4)
-  await app.database.getGroup(321, app.bots[0].selfId)
-  await app.database.getGroup(654, app.bots[0].selfId)
+  await app.database.getGroup(321, app.selfId)
+  await app.database.getGroup(654, app.selfId)
 })
 
-describe('basic features', () => {
-  it('check', async () => {
-    await session.shouldReply('admin -u 456 -g 321', '不能同时目标为指定用户和群。')
-  })
-})
-
-describe('user operations', () => {
-  it('list actions', async () => {
-    await session.shouldMatchSnapshot('admin')
-    await session.shouldMatchSnapshot('admin foo')
+describe('Admin Commands', () => {
+  it('user.auth', async () => {
+    await session.shouldReply('user.auth -u nan', '请指定正确的目标。')
+    await session.shouldReply('user.auth -u 321', '未找到指定的用户。')
+    await session.shouldReply('user.auth -u 789', '权限不足。')
+    await session.shouldReply('user.auth -u 456 -1', '参数错误。')
+    await session.shouldReply('user.auth -u 456 3', '用户数据未改动。')
+    await session.shouldReply('user.auth -u 456 4', '权限不足。')
   })
 
-  it('check target', async () => {
-    await session.shouldReply('admin -u bar set-flag', '未指定目标。')
-    await session.shouldReply('admin -u 233 set-flag', '未找到指定的用户。')
-    await session.shouldReply('admin -u 789 show-usage', '权限不足。')
+  it('user.flag', async () => {
+    await session.shouldReply('user.flag -u 123', '未设置任何标记。')
+    await session.shouldReply('user.flag -l', '全部标记为：ignore, test。')
+    await session.shouldReply('user.flag -s foo', '未找到标记 foo。')
+    await session.shouldReply('user.flag -s test', '用户数据已修改。')
+    await session.shouldReply('user.flag', '当前的标记为：test。')
+    await session.shouldReply('user.flag -S ignore', '用户数据未改动。')
+    await session.shouldReply('user.flag', '当前的标记为：test。')
   })
 
-  it('setAuth', async () => {
-    await session.shouldReply('admin -u 456 set-auth -1', '参数错误。')
-    await session.shouldReply('admin -u 456 set-auth 3', '用户权限未改动。')
-    await session.shouldReply('admin -u 456 set-auth 2', '用户权限已修改。')
-    await session.shouldReply('admin -u 456 set-auth 4', '权限不足。')
+  it('usage', async () => {
+    await session.shouldReply('usage', '今日没有调用过消耗次数的功能。')
+    await session.shouldReply('foo', 'bar')
+    await session.shouldReply('usage', '今日各功能的调用次数为：\nfoo：1')
+    await session.shouldReply('usage -c foo', '用户数据已修改。')
+    await session.shouldReply('usage', '今日没有调用过消耗次数的功能。')
+    await session.shouldReply('usage -s bar', '参数不足。')
+    await session.shouldReply('usage -s bar nan', '参数错误。')
+    await session.shouldReply('usage -s bar 2', '用户数据已修改。')
+    await session.shouldReply('usage bar', '今日 bar 功能的调用次数为：2')
+    await session.shouldReply('usage baz', '今日 baz 功能的调用次数为：0')
+    await session.shouldReply('usage -c', '用户数据已修改。')
   })
 
-  const userFlags = enumKeys(User.Flag).join(', ')
-
-  it('setFlag', async () => {
-    await session.shouldReply('admin -u 456 set-flag', `可用的标记有 ${userFlags}。`)
-    await session.shouldReply('admin -u 456 set-flag foo', '未找到标记 foo。')
-    await session.shouldReply('admin -u 456 set-flag ignore', '用户信息已修改。')
-    await expect(app.database.getUser(456)).eventually.to.have.property('flag', User.Flag.ignore)
-  })
-
-  it('unsetFlag', async () => {
-    await session.shouldReply('admin -u 456 unset-flag', `可用的标记有 ${userFlags}。`)
-    await session.shouldReply('admin -u 456 unset-flag foo', '未找到标记 foo。')
-    await session.shouldReply('admin -u 456 unset-flag ignore', '用户信息已修改。')
-    await expect(app.database.getUser(456)).eventually.to.have.property('flag', 0)
-  })
-
-  it('clearUsage', async () => {
+  it('timer', async () => {
+    const clock = install({ now: Date.now() })
+    await session.shouldReply('timer', '当前没有生效的定时器。')
     await session.shouldReply('bar', 'foo')
-    await session.shouldReply('admin clear-usage foo', '用户信息已修改。')
-    await session.shouldReply('admin show-usage', '用户今日各指令的调用次数为：\nbar：1 次')
-    await session.shouldReply('admin clear-usage', '用户信息已修改。')
-    await session.shouldReply('admin show-usage', '用户今日没有调用过指令。')
-  })
-})
-
-describe('group operations', () => {
-  it('list actions', async () => {
-    await session.shouldMatchSnapshot('admin -G')
-    await session.shouldMatchSnapshot('admin -G foo')
-  })
-
-  it('check target', async () => {
-    await session.shouldReply('admin -g bar set-flag', '未找到指定的群。')
+    await session.shouldReply('timer', '各定时器的生效时间为：\nbar：剩余 1 秒')
+    await session.shouldReply('timer -c bar', '用户数据已修改。')
+    await session.shouldReply('timer', '当前没有生效的定时器。')
+    await session.shouldReply('timer -s foo', '参数不足。')
+    await session.shouldReply('timer -s foo nan', '请输入合法的时间。')
+    await session.shouldReply('timer -s foo 2min', '用户数据已修改。')
+    await session.shouldReply('timer foo', '定时器 foo 的生效时间为：剩余 2 分钟')
+    await session.shouldReply('timer fox', '定时器 fox 当前并未生效。')
+    await session.shouldReply('timer -c', '用户数据已修改。')
+    clock.uninstall()
   })
 
-  const groupFlags = enumKeys(Group.Flag).join(', ')
-
-  it('setFlag', async () => {
-    await session.shouldReply('admin -G set-flag', `可用的标记有 ${groupFlags}。`)
-    await session.shouldReply('admin -g 654 set-flag foo', '未找到标记 foo。')
-    await session.shouldReply('admin -g 654 set-flag silent', '群信息已修改。')
-    await expect(app.database.getGroup(654)).eventually.to.have.property('flag', Group.Flag.silent)
+  it('group.assignee', async () => {
+    await app.session(123).shouldReply('group.assign', '当前不在群上下文中，请使用 -g 参数指定目标群。')
+    await session.shouldReply('group.assign -g nan', '请指定正确的目标。')
+    await session.shouldReply('group.assign -g 123', '未找到指定的群。')
+    await session.shouldReply('group.assign -g 321', '群数据未改动。')
+    await session.shouldReply('group.assign -g 321 nan', '参数错误。')
   })
 
-  it('unsetFlag', async () => {
-    await session.shouldReply('admin -G unset-flag', `可用的标记有 ${groupFlags}。`)
-    await session.shouldReply('admin -g 654 unset-flag foo', '未找到标记 foo。')
-    await session.shouldReply('admin -g 654 unset-flag silent ignore', '群信息已修改。')
-    await expect(app.database.getGroup(654)).eventually.to.have.property('flag', 0)
-  })
-})
-
-describe('custom actions', () => {
-  it('user action', async () => {
-    admin.UserAction.add('test', session => session.$send('foo'))
-    await session.shouldReply('admin test', 'foo')
-  })
-
-  it('group action', async () => {
-    admin.GroupAction.add('test', session => session.$send('bar'))
-    await session.shouldReply('admin -G test', 'bar')
+  it('group.flag', async () => {
+    await session.shouldReply('group.flag', '未设置任何标记。')
+    await session.shouldReply('group.flag -s foo', '未找到标记 foo。')
+    await session.shouldReply('group.flag -s test', '群数据已修改。')
+    await session.shouldReply('group.flag', '当前的标记为：test。')
+    await session.shouldReply('group.flag -S ignore', '群数据未改动。')
+    await session.shouldReply('group.flag', '当前的标记为：test。')
   })
 })

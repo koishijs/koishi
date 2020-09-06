@@ -6,18 +6,23 @@ export * from './database'
 
 const logger = new Logger('schedule')
 
-function inspectSchedule({ id, session, interval, command, time }: Schedule) {
+function prepareSchedule({ id, session, interval, command, time }: Schedule) {
   const now = Date.now()
   const date = time.valueOf()
   const { database } = session.$app
-  logger.debug('inspect', command)
+  logger.debug('prepare %d: %c at %s', id, command, time)
+
+  function executeSchedule() {
+    logger.debug('execute %d: %c', id, command)
+    return session.$execute(command)
+  }
 
   if (!interval) {
     if (date < now) return database.removeSchedule(id)
     return setTimeout(async () => {
       if (!await database.getSchedule(id)) return
-      session.$execute(command)
-      database.removeSchedule(id)
+      await database.removeSchedule(id)
+      await executeSchedule()
     }, date - now)
   }
 
@@ -26,9 +31,9 @@ function inspectSchedule({ id, session, interval, command, time }: Schedule) {
     if (!await database.getSchedule(id)) return
     const timer = setInterval(async () => {
       if (!await database.getSchedule(id)) return clearInterval(timer)
-      session.$execute(command)
+      await executeSchedule()
     }, interval)
-    session.$execute(command)
+    await executeSchedule()
   }, timeout)
 }
 
@@ -46,7 +51,7 @@ export function apply(ctx: Context) {
     schedules.forEach((schedule) => {
       if (!ctx.bots[schedule.assignee]) return
       schedule.session = new Session(ctx.app, schedule.session)
-      inspectSchedule(schedule)
+      prepareSchedule(schedule)
     })
   })
 
@@ -96,7 +101,7 @@ export function apply(ctx: Context) {
       }
 
       const schedule = await database.createSchedule(time, interval, options.rest, session)
-      inspectSchedule(schedule)
+      prepareSchedule(schedule)
       return `日程已创建，编号为 ${schedule.id}。`
     })
 }

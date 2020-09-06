@@ -248,8 +248,9 @@ export class App extends Context {
     await session.$group?._update()
   }
 
-  private _parse(message: string, { $reply, $prefix, $appel, messageType }: Session, builtin: boolean, terminator = '') {
+  private _parse(message: string, session: Session, builtin: boolean, terminator = '') {
     // group message should have prefix or appel to be interpreted as a command call
+    const { $reply, $prefix, $appel, messageType } = session
     if (builtin && ($reply || messageType !== 'private' && $prefix === null && !$appel)) return
     terminator = escapeRegExp(terminator)
     const name = message.split(new RegExp(`[\\s${terminator}]`), 1)[0]

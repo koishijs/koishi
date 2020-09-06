@@ -72,6 +72,7 @@ extendDatabase(MemoryDatabase, {
     selfId = typeof selfId === 'number' ? selfId : 0
     const data = table[groupId]
     if (data) return clone(data)
+    if (selfId < 0) return null
     const fallback = Group.create(groupId, selfId)
     if (selfId) table[groupId] = fallback
     return clone(fallback)

@@ -104,8 +104,7 @@ export default class MysqlDatabase {
     })
   }
 
-  select<T extends string>(table: string, fields: readonly (T extends string ? T : string & keyof T)[], conditional?: string, values?: readonly any[]): Promise<Record<T, any>[]>
-  select<T extends {}>(table: string, fields: readonly (T extends string ? T : string & keyof T)[], conditional?: string, values?: readonly any[]): Promise<T[]>
+  select<T extends {}>(table: string, fields: readonly (string & keyof T)[], conditional?: string, values?: readonly any[]): Promise<T[]>
   select(table: string, fields: string[], conditional?: string, values: readonly any[] = []) {
     logger.debug(`[select] ${table}: ${fields ? fields.join(', ') : '*'}`)
     const sql = 'SELECT '
