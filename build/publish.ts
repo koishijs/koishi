@@ -1,6 +1,7 @@
 import { PackageJson, getWorkspaces, spawnAsync, spawnSync } from './utils'
 import { gt, prerelease } from 'semver'
 import { Octokit } from '@octokit/rest'
+import { draft } from './release'
 import latest from 'latest-version'
 import ora from 'ora'
 
@@ -10,15 +11,6 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
   console.log('publish skipped.')
   process.exit(0)
 }
-
-const headerMap = {
-  feat: 'Features',
-  fix: 'Bug Fixes',
-  dep: 'Dependencies',
-}
-
-const prefixes = Object.keys(headerMap)
-const prefixRegExp = new RegExp(`^(${prefixes.join('|')})(?:\\((\\S+)\\))?: (.+)$`)
 
 ;(async () => {
   let folders = await getWorkspaces()
@@ -66,24 +58,7 @@ const prefixRegExp = new RegExp(`^(${prefixes.join('|')})(?:\\((\\S+)\\))?: (.+)
     return console.log(`Tag ${version} already exists.`)
   }
 
-  const updates = {}
-  const lastTag = tags[tags.length - 1]
-  const commits = spawnSync(`git log ${lastTag}..HEAD --format=%H%s`).split(/\r?\n/).reverse()
-  for (const commit of commits) {
-    const hash = commit.slice(0, 40)
-    const details = prefixRegExp.exec(commit.slice(40))
-    if (!details) continue
-    let message = details[3]
-    if (details[2]) message = `**${details[2]}:** ${message}`
-    if (!updates[details[1]]) updates[details[1]] = ''
-    updates[details[1]] += `- ${message} (${hash})\n`
-  }
-
-  let body = ''
-  for (const type in headerMap) {
-    if (!updates[type]) continue
-    body += `## ${headerMap[type]}\n\n${updates[type]}\n`
-  }
+  const body = draft(tags[tags.length - 1])
 
   console.log(`Start to release a new version with tag ${version} ...`)
   await github.repos.createRelease({

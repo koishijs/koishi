@@ -20,6 +20,7 @@
     "bump": "ts-node build/bump",
     "dep": "ts-node build/dep",
     "docs": "cd docs && yarn dev",
+    "draft": "ts-node build/release",
     "test": "cross-env TS_NODE_PROJECT=tsconfig.test.json mocha --experimental-vm-modules --enable-source-maps",
     "test:json": "c8 -r json yarn test",
     "test:html": "rimraf coverage && c8 -r html yarn test",

@@ -38,16 +38,16 @@
     "conversation"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.2.0"
+    "koishi-core": "^2.2.1"
   },
   "devDependencies": {
-    "koishi-plugin-mongo": "^1.0.2",
+    "koishi-plugin-mongo": "^1.0.3",
     "koishi-plugin-mysql": "^2.0.0",
     "koishi-test-utils": "^5.0.0"
   },
   "dependencies": {
     "axios": "^0.20.0",
-    "koishi-utils": "^3.1.3",
+    "koishi-utils": "^3.1.4",
     "leven": "^3.1.0",
     "regexpp": "^3.1.0"
   }
