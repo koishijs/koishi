@@ -165,7 +165,7 @@ Bot.prototype.sendGroupMsg = async function (this: Bot, groupId, message, autoEs
   if (!message) return
   const session = this.createSession('group', 'group', groupId, message)
   if (this.app.bail(session, 'before-send', session)) return
-  const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message, autoEscape })
+  const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message: session.message, autoEscape })
   session.messageId = messageId
   this.app.emit(session, 'send', session)
   return messageId
@@ -175,14 +175,14 @@ Bot.prototype.sendGroupMsgAsync = function (this: Bot, groupId, message, autoEsc
   if (!message) return
   const session = this.createSession('group', 'group', groupId, message)
   if (this.app.bail(session, 'before-send', session)) return
-  return this.getAsync('send_group_msg', { groupId, message, autoEscape })
+  return this.getAsync('send_group_msg', { groupId, message: session.message, autoEscape })
 }
 
 Bot.prototype.sendPrivateMsg = async function (this: Bot, userId, message, autoEscape = false) {
   if (!message) return
   const session = this.createSession('private', 'user', userId, message)
   if (this.app.bail(session, 'before-send', session)) return
-  const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message, autoEscape })
+  const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message: session.message, autoEscape })
   session.messageId = messageId
   this.app.emit(session, 'send', session)
   return messageId
@@ -192,7 +192,7 @@ Bot.prototype.sendPrivateMsgAsync = function (this: Bot, userId, message, autoEs
   if (!message) return
   const session = this.createSession('private', 'user', userId, message)
   if (this.app.bail(session, 'before-send', session)) return
-  return this.getAsync('send_private_msg', { userId, message, autoEscape })
+  return this.getAsync('send_private_msg', { userId, message: session.message, autoEscape })
 }
 
 Bot.prototype.setGroupAnonymousBan = async function (this: Bot, groupId, meta, duration) {
