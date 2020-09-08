@@ -3,7 +3,7 @@ import { Session } from '../session'
 import { Message } from './message'
 import { getCommands } from './help'
 import { format } from 'util'
-import leven from 'leven'
+import { distance } from 'fastest-levenshtein'
 
 declare module '../session' {
   interface Session {
@@ -62,13 +62,13 @@ Session.prototype.$suggest = function $suggest(this: Session, options: SuggestOp
 
   let suggestions: string[], minDistance = Infinity
   for (const name of items) {
-    const distance = leven(name, target)
-    if (name.length <= 2 || distance > name.length * coefficient) continue
-    if (distance === minDistance) {
+    const dist = distance(name, target)
+    if (name.length <= 2 || dist > name.length * coefficient) continue
+    if (dist === minDistance) {
       suggestions.push(name)
-    } else if (distance < minDistance) {
+    } else if (dist < minDistance) {
       suggestions = [name]
-      minDistance = distance
+      minDistance = dist
     }
   }
   if (!suggestions) return next(() => this.$send(prefix))

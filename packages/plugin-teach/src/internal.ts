@@ -5,7 +5,7 @@ import { RegExpValidator } from 'regexpp'
 import { defineProperty } from 'koishi-utils'
 import { formatQuestionAnswers } from './search'
 import { format } from 'util'
-import leven from 'leven'
+import { distance } from 'fastest-levenshtein'
 
 declare module 'koishi-core/dist/command' {
   interface CommandConfig {
@@ -75,9 +75,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   function maybeAnswer(question: string, dialogues: Dialogue[]) {
     return dialogues.every(dialogue => {
-      const dist = leven(question, dialogue.answer)
+      const dist = distance(question, dialogue.answer)
       return dist < dialogue.answer.length / 2
-        && dist < leven(question, dialogue.question)
+        && dist < distance(question, dialogue.question)
     })
   }
 
