@@ -82,7 +82,7 @@ export class GitHub extends Webhooks {
 
   async request(url: string, session: ReplySession, params: any, accept = 'application/vnd.github.v3+json') {
     if (!session.$user.ghAccessToken) {
-      return this.authorize(session, '如果想使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
+      return this.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
     }
 
     try {

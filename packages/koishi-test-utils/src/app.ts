@@ -27,7 +27,10 @@ class MockedServer extends Server {
   }
 
   post(path: string, body: any, headers?: Record<string, any>) {
-    return this.receive('POST', path, headers, JSON.stringify(body))
+    return this.receive('POST', path, {
+      ...headers,
+      'content-type': 'application/json',
+    }, JSON.stringify(body))
   }
 
   receive(method: string, path: string, headers: Record<string, any>, content: string) {
@@ -36,7 +39,6 @@ class MockedServer extends Server {
     req.url = path
     req.method = method
     Object.assign(req.headers, headers)
-    req.headers['content-type'] = 'application/json'
     req.headers['content-length'] = '' + content.length
     return new Promise<MockedResponse>((resolve) => {
       const res = new http.ServerResponse(req)
@@ -133,7 +135,7 @@ export class TestSession {
         if (length >= count) _resolve()
       }
       const dispose = this.app.on('middleware', (session) => {
-        if (session.$uuid === uuid) _resolve()
+        if (session.$uuid === uuid) process.nextTick(_resolve)
       })
       const uuid = this.app.receive({ ...this.meta, $send, message })
     })
