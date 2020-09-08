@@ -34,21 +34,6 @@ before(async () => {
 
 const snapshot = require('./index.snap')
 
-function check(file: string) {
-  it(file, async () => {
-    sendGroupMsg.mockClear()
-    const payload = require(`./fixtures/${file}`)
-    const [name] = file.split('.', 1)
-    await app.github.receive({ id: Random.uuid(), name, payload })
-    if (snapshot[file]) {
-      expect(sendGroupMsg.mock.calls).to.have.length(1)
-      expect(sendGroupMsg.mock.calls[0][1]).to.equal(snapshot[file].trim())
-    } else {
-      expect(sendGroupMsg.mock.calls).to.have.length(0)
-    }
-  })
-}
-
 describe('GitHub Plugin', () => {
   it('authorize server', async () => {
     const ghAccessToken = Random.uuid()
@@ -67,15 +52,52 @@ describe('GitHub Plugin', () => {
     })
   })
 
+  it('webhook server', async () => {
+    await expect(app.server.post('/github/webhook', {})).to.eventually.have.property('code', 400)
+  })
+
   it('github command', async () => {
     await session.shouldReply('github', '请输入用户名。')
     await session.shouldReply('github satori', /^请点击下面的链接继续操作：/)
   })
 
+  let counter = 10000
+  const idMap: Record<string, number> = {}
+
   describe('Webhook Events', () => {
     const files = readdirSync(resolve(__dirname, 'fixtures'))
-    files.forEach(file => {
-      check(file.slice(0, -5))
+    files.forEach((file) => {
+      const title = file.slice(0, -5)
+      it(title, async () => {
+        sendGroupMsg.mockClear()
+        sendGroupMsg.mockImplementation(() => {
+          return Promise.resolve(idMap[title] = ++counter)
+        })
+
+        const payload = require(`./fixtures/${title}`)
+        const [name] = title.split('.', 1)
+        await app.github.receive({ id: Random.uuid(), name, payload })
+        if (snapshot[title]) {
+          expect(sendGroupMsg.mock.calls).to.have.length(1)
+          expect(sendGroupMsg.mock.calls[0][1]).to.equal(snapshot[title].trim())
+        } else {
+          expect(sendGroupMsg.mock.calls).to.have.length(0)
+        }
+      })
+    })
+  })
+
+  describe('Quick Interactions', () => {
+    it('no operation', async () => {
+      await session.shouldNotReply(`[CQ:reply,id=${idMap['issue_comment.created.1']}]`)
+      await session.shouldNotReply(`[CQ:reply,id=${idMap['issue_comment.created.1']}] .noop`)
+    })
+
+    it('link', async () => {
+      await session.shouldReply(
+        `[CQ:reply,id=${idMap['issue_comment.created.1']}] .link`,
+        'https://github.com/koishijs/koishi/issues/19#issuecomment-576277946',
+      )
     })
   })
 })
