@@ -4,6 +4,7 @@ import { fn, spyOn } from 'jest-mock'
 import { expect } from 'chai'
 import { readdirSync } from 'fs-extra'
 import { resolve } from 'path'
+import nock from 'nock'
 import * as github from 'koishi-plugin-github'
 
 const app = new App({
@@ -16,6 +17,8 @@ app.plugin(github, {
   repos: { 'koishijs/koishi': [123] },
 })
 
+const session = app.session(123)
+
 // override listen
 const listen = spyOn(app.server, 'listen')
 listen.mockReturnValue(Promise.resolve())
@@ -25,6 +28,7 @@ const sendGroupMsg = app.bots[0].sendGroupMsg = fn()
 
 before(async () => {
   await app.start()
+  await app.database.getUser(123, 3)
   await app.database.getGroup(123, BASE_SELF_ID)
 })
 
@@ -46,6 +50,28 @@ function check(file: string) {
 }
 
 describe('GitHub Plugin', () => {
+  it('authorize server', async () => {
+    const ghAccessToken = Random.uuid()
+    const ghRefreshToken = Random.uuid()
+    const interceptor = nock('https://github.com').post('/login/oauth/access_token')
+    interceptor.reply(200, {
+      access_token: ghAccessToken,
+      refresh_token: ghRefreshToken,
+    })
+
+    await expect(app.server.get('/github/authorize')).to.eventually.have.property('code', 400)
+    await expect(app.server.get('/github/authorize?state=123')).to.eventually.have.property('code', 200)
+    await expect(app.database.getUser(123)).to.eventually.have.shape({
+      ghAccessToken,
+      ghRefreshToken,
+    })
+  })
+
+  it('github command', async () => {
+    await session.shouldReply('github', '请输入用户名。')
+    await session.shouldReply('github satori', /^请点击下面的链接继续操作：/)
+  })
+
   describe('Webhook Events', () => {
     const files = readdirSync(resolve(__dirname, 'fixtures'))
     files.forEach(file => {

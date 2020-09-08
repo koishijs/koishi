@@ -41,7 +41,10 @@ export function apply(ctx: Context, config: Config = {}) {
 
   router.get(config.authorize, async (ctx) => {
     const targetId = parseInt(ctx.query.state)
-    if (Number.isNaN(targetId)) throw new Error('Invalid targetId')
+    if (Number.isNaN(targetId)) {
+      ctx.body = 'Invalid targetId'
+      return ctx.status = 400
+    }
     const { code, state } = ctx.query
     const data = await github.getTokens({ code, state, redirect_uri: redirect })
     await database.setUser(targetId, {
