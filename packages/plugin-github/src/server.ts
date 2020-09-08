@@ -102,7 +102,7 @@ export class GitHub extends Webhooks {
       })
       session.$user.ghAccessToken = data.access_token
       session.$user.ghRefreshToken = data.refresh_token
-    } catch (error) {
+    } catch {
       return this.authorize(session, '令牌已失效，需要重新授权。输入你的 GitHub 用户名。')
     }
 

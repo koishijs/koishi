@@ -1,4 +1,5 @@
 import { App, BASE_SELF_ID } from 'koishi-test-utils'
+import { install, InstalledClock } from '@sinonjs/fake-timers'
 import { Random } from 'koishi-utils'
 import { fn, Mock, spyOn } from 'jest-mock'
 import { expect } from 'chai'
@@ -36,31 +37,47 @@ before(async () => {
 
 const snapshot = require('./index.snap')
 
+const apiScope = nock('https://api.github.com')
+const tokenInterceptor = nock('https://github.com').post('/login/oauth/access_token')
+
+const ghAccessToken = Random.uuid()
+const ghRefreshToken = Random.uuid()
+const payload = {
+  access_token: ghAccessToken,
+  refresh_token: ghRefreshToken,
+}
+
 describe('GitHub Plugin', () => {
-  it('authorize server', async () => {
-    const ghAccessToken = Random.uuid()
-    const ghRefreshToken = Random.uuid()
-    const interceptor = nock('https://github.com').post('/login/oauth/access_token')
-    interceptor.reply(200, {
-      access_token: ghAccessToken,
-      refresh_token: ghRefreshToken,
-    })
+  let clock: InstalledClock
 
-    await expect(app.server.get('/github/authorize')).to.eventually.have.property('code', 400)
-    await expect(app.server.get('/github/authorize?state=123')).to.eventually.have.property('code', 200)
-    await expect(app.database.getUser(123)).to.eventually.have.shape({
-      ghAccessToken,
-      ghRefreshToken,
-    })
+  before(() => {
+    clock = install()
   })
 
-  it('webhook server', async () => {
-    await expect(app.server.post('/github/webhook', {})).to.eventually.have.property('code', 400)
+  after(() => {
+    clock.runAll()
+    clock.uninstall()
   })
 
-  it('github command', async () => {
-    await session1.shouldReply('github', '请输入用户名。')
-    await session1.shouldReply('github satori', /^请点击下面的链接继续操作：/)
+  describe('Basic Support', () => {
+    it('authorize server', async () => {
+      tokenInterceptor.reply(200, payload)
+      await expect(app.server.get('/github/authorize')).to.eventually.have.property('code', 400)
+      await expect(app.server.get('/github/authorize?state=123')).to.eventually.have.property('code', 200)
+      await expect(app.database.getUser(123)).to.eventually.have.shape({
+        ghAccessToken,
+        ghRefreshToken,
+      })
+    })
+
+    it('webhook server', async () => {
+      await expect(app.server.post('/github/webhook', {})).to.eventually.have.property('code', 400)
+    })
+
+    it('github command', async () => {
+      await session1.shouldReply('github', '请输入用户名。')
+      await session1.shouldReply('github satori', /^请点击下面的链接继续操作：/)
+    })
   })
 
   let counter = 10000
@@ -105,26 +122,22 @@ describe('GitHub Plugin', () => {
     type MockedReplyCallback = (err: NodeJS.ErrnoException, result: nock.ReplyFnResult) => void
     type MockedReply = Mock<void, [uri: string, body: nock.Body, callback: MockedReplyCallback]>
 
-    const api = nock('https://api.github.com')
     const mockResponse = (uri: string, payload: nock.ReplyFnResult) => {
       const mock: MockedReply = fn((uri, body, callback) => callback(null, payload))
-      api.post(uri).reply(mock)
+      apiScope.post(uri).reply(mock)
       return mock
     }
 
-    const createReaction = mockResponse('/repos/koishijs/koishi/issues/comments/576277946/reactions', [200])
-    const createComment = mockResponse('/repos/koishijs/koishi/issues/19/comments', [200])
-
     it('react', async () => {
+      const reaction = mockResponse('/repos/koishijs/koishi/issues/comments/576277946/reactions', [200])
       await session1.shouldNotReply(`[CQ:reply,id=${idMap['issue_comment.created.1']}] laugh`)
-      expect(createReaction.mock.calls).to.have.length(1)
-      expect(createComment.mock.calls).to.have.length(0)
+      expect(reaction.mock.calls).to.have.length(1)
     })
 
     it('reply', async () => {
+      const comment = mockResponse('/repos/koishijs/koishi/issues/19/comments', [200])
       await session1.shouldNotReply(`[CQ:reply,id=${idMap['issue_comment.created.1']}] test`)
-      expect(createReaction.mock.calls).to.have.length(1)
-      expect(createComment.mock.calls).to.have.length(1)
+      expect(comment.mock.calls).to.have.length(1)
     })
 
     it('token not found', async () => {
@@ -133,6 +146,31 @@ describe('GitHub Plugin', () => {
         '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。',
       )
       await session2.shouldReply('satori', /^请点击下面的链接继续操作：/)
+    })
+
+    it('request error', async () => {
+      apiScope.post('/repos/koishijs/koishi/issues/19/comments').replyWithError('foo')
+      await session1.shouldReply(`[CQ:reply,id=${idMap['issue_comment.created.1']}] test`, '发送失败。')
+    })
+
+    it('refresh token', async () => {
+      const unauthorized = mockResponse('/repos/koishijs/koishi/issues/19/comments', [401])
+      tokenInterceptor.reply(401)
+      await session1.shouldReply(
+        `[CQ:reply,id=${idMap['issue_comment.created.1']}] test`,
+        '令牌已失效，需要重新授权。输入你的 GitHub 用户名。',
+      )
+      expect(unauthorized.mock.calls).to.have.length(1)
+      await session1.shouldReply('', '输入超时。')
+    })
+
+    it('reauthorize', async () => {
+      const unauthorized = mockResponse('/repos/koishijs/koishi/issues/19/comments', [401])
+      tokenInterceptor.reply(200, payload)
+      const notFound = mockResponse('/repos/koishijs/koishi/issues/19/comments', [404])
+      await session1.shouldReply(`[CQ:reply,id=${idMap['issue_comment.created.1']}] test`, '发送失败。')
+      expect(unauthorized.mock.calls).to.have.length(1)
+      expect(notFound.mock.calls).to.have.length(1)
     })
   })
 })
