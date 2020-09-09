@@ -1,5 +1,6 @@
 import { Context, App, BotStatusCode } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
+import { Time } from 'koishi-utils'
 import { ActiveData } from './database'
 
 export * from './database'
@@ -14,7 +15,9 @@ declare module 'koishi-core/dist/server' {
   }
 }
 
-export interface Config {}
+export interface Config {
+  refresh?: number
+}
 
 let usage = getCpuUsage()
 let appRate: number
@@ -75,11 +78,11 @@ export interface BotStatus {
   rate?: number
 }
 
-type StatusModifier = (this: App, status: Status, config: Config) => void | Promise<void>
-const statusModifiers: StatusModifier[] = []
+type StatusCallback = (this: App, status: Status, config: Config) => void | Promise<void>
+const callbacks: [callback: StatusCallback, local: boolean][] = []
 
-export function extendStatus(callback: StatusModifier) {
-  statusModifiers.push(callback)
+export function extendStatus(callback: StatusCallback, local = false) {
+  callbacks.push([callback, local])
 }
 
 const startTime = Date.now()
@@ -88,6 +91,7 @@ export const name = 'status'
 
 export function apply(ctx: Context, config: Config) {
   const app = ctx.app
+  const { refresh = Time.minute } = config
 
   app.on('before-command', ({ session }) => {
     session.$user['lastCall'] = new Date()
@@ -117,7 +121,7 @@ export function apply(ctx: Context, config: Config) {
 
     if (!app.router) return
     app.router.get('/status', async (ctx) => {
-      const status = await getStatus(config, true).catch<Status>((error) => {
+      const status = await getStatus(true).catch<Status>((error) => {
         app.logger('status').warn(error)
         return null
       })
@@ -138,9 +142,10 @@ export function apply(ctx: Context, config: Config) {
     .shortcut('运行情况', { prefix: true })
     .shortcut('运行状态', { prefix: true })
     .action(async () => {
-      const { bots: apps, cpu, memory, startTime, activeUsers, activeGroups } = await getStatus(config)
+      const status = await getStatus()
+      const { bots, cpu, memory, startTime, activeUsers, activeGroups } = status
 
-      const output = apps
+      const output = bots
         .filter(bot => bot.code !== BotStatusCode.BOT_IDLE)
         .map(({ label, selfId, code, rate }) => {
           return `${label || selfId}：${code ? '无法连接' : `工作中（${rate}/min）`}`
@@ -159,7 +164,7 @@ export function apply(ctx: Context, config: Config) {
       return output.join('\n')
     })
 
-  async function _getStatus(config: Config, extend: boolean) {
+  async function _getStatus(extend: boolean) {
     const [data, bots] = await Promise.all([
       app.database.getActiveData(),
       Promise.all(app.bots.map(async (bot): Promise<BotStatus> => ({
@@ -172,19 +177,19 @@ export function apply(ctx: Context, config: Config) {
     const memory = memoryRate()
     const cpu = { app: appRate, total: usedRate }
     const status: Status = { ...data, bots, memory, cpu, timestamp, startTime }
-    if (extend) {
-      await Promise.all(statusModifiers.map(modifier => modifier.call(app, status, config)))
-    }
+    await Promise.all(callbacks.map(([callback, local]) => {
+      if (local || extend) return callback.call(app, status, config)
+    }))
     return status
   }
 
   let cachedStatus: Promise<Status>
   let timestamp: number
 
-  async function getStatus(config: Config, extend = false): Promise<Status> {
+  async function getStatus(extend = false): Promise<Status> {
     const now = Date.now()
-    if (now - timestamp < 60000) return cachedStatus
+    if (now - timestamp < refresh) return cachedStatus
     timestamp = now
-    return cachedStatus = _getStatus(config, extend)
+    return cachedStatus = _getStatus(extend)
   }
 }
