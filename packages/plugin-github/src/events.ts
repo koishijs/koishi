@@ -115,7 +115,7 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
   function onComment<E extends CommentEvent>(event: E, handler: CommandHandler<E>) {
     on(event as CommentEvent, (payload) => {
       const { user, body, html_url, url } = payload.comment
-      if (user.type === 'bot') return
+      if (user.type === 'Bot') return
 
       const [target, replies] = handler(payload)
       if (payload.action === 'deleted') {
@@ -157,7 +157,7 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
   on('issues.opened', ({ repository, issue }) => {
     const { full_name } = repository
     const { user, url, html_url, comments_url, title, body, number } = issue
-    if (user.type === 'bot') return
+    if (user.type === 'Bot') return
 
     return [[
       `[GitHub] ${user.login} opened an issue ${full_name}#${number}`,
@@ -173,7 +173,7 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
   on('issues.closed', ({ repository, issue }) => {
     const { full_name } = repository
     const { user, url, html_url, comments_url, title, number } = issue
-    if (user.type === 'bot') return
+    if (user.type === 'Bot') return
 
     return [`[GitHub] ${user.login} closed issue ${full_name}#${number}\n${title}`, {
       link: html_url,
@@ -196,7 +196,7 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
     const { full_name } = repository
     const { number, comments_url } = pull_request
     const { user, html_url, body } = review
-    if (user.type === 'bot') return
+    if (user.type === 'Bot') return
 
     return [[
       `[GitHub] ${user.login} reviewed pull request ${full_name}#${number}`,
@@ -207,7 +207,7 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
   on('pull_request.closed', ({ repository, pull_request }) => {
     const { full_name } = repository
     const { user, html_url, issue_url, comments_url, title, number } = pull_request
-    if (user.type === 'bot') return
+    if (user.type === 'Bot') return
 
     return [`[GitHub] ${user.login} closed pull request ${full_name}#${number}\n${title}`, {
       link: html_url,
@@ -219,7 +219,7 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
   on('pull_request.opened', ({ repository, pull_request }) => {
     const { full_name, owner } = repository
     const { user, html_url, issue_url, comments_url, title, base, head, body, number } = pull_request
-    if (user.type === 'bot') return
+    if (user.type === 'Bot') return
 
     const prefix = new RegExp(`^${owner.login}:`)
     const baseLabel = base.label.replace(prefix, '')

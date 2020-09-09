@@ -55,12 +55,12 @@ Path: packages/test-utils/src/mocks.ts
 Naming is so hard......`
 
 // URL: https://github.com/koishijs/koishi/compare/976c6e8f09a4...3ae7e7044d06
-module.exports[`push.commit`] = `
+module.exports[`push.1`] = `
 [GitHub] Shigma pushed to koishijs/koishi:develop
 [d7ff34] chore: adjust
 [3ae7e7] fix(core): create major context at demand`
 
-module.exports[`push.tag`] = `
+module.exports[`push.3`] = `
 [GitHub] Shigma published tag koishijs/koishi@1.5.0`
 
 module.exports[`star.created`] = `
