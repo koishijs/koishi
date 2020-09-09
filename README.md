@@ -49,6 +49,7 @@ koishi run
 | 项目地址 | <span align="center">简介</span> |
 |:-:|:-:|
 | [masnn/qqbot](https://github.com/masnn/qqbot) | 没想好（ |
+| [ArilyChan/qq-bot](https://github.com/ArilyChan/qq-bot) | 小阿日 |
 
 欢迎[向上表中添加](https://github.com/koishijs/koishi/edit/master/README.md)自己的机器人。
 
