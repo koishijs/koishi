@@ -204,12 +204,12 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
     ].join('\n'), { link: html_url, reply: [comments_url] }]
   })
 
-  on('pull_request.closed', ({ repository, pull_request }) => {
+  on('pull_request.closed', ({ repository, pull_request, sender }) => {
     const { full_name } = repository
-    const { user, html_url, issue_url, comments_url, title, number } = pull_request
-    if (user.type === 'Bot') return
+    const { html_url, issue_url, comments_url, title, number, merged } = pull_request
 
-    return [`[GitHub] ${user.login} closed pull request ${full_name}#${number}\n${title}`, {
+    const type = merged ? 'merged' : 'closed'
+    return [`[GitHub] ${sender.login} ${type} pull request ${full_name}#${number}\n${title}`, {
       link: html_url,
       react: issue_url + '/reactions',
       reply: [comments_url],

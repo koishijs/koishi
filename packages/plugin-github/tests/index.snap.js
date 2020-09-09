@@ -27,9 +27,13 @@ module.exports[`issues.opened`] = `
 Title: Wie kann man um das Koishi zu installieren?
 Ich verstecke Englisch und Chinesisch nicht! Gab es Personen, die mir helfen kann?`
 
-module.exports['pull_request.closed'] = `
+module.exports['pull_request.closed.1'] = `
 [GitHub] Shigma closed pull request koishijs/koishi#97
 Storage API, fix #96`
+
+module.exports['pull_request.closed.2'] = `
+[GitHub] Shigma merged pull request koishijs/koishi#101
+来壮大列表了（不是`
 
 // URL: https://github.com/koishijs/koishi/pull/20
 module.exports[`pull_request.opened.1`] = `
