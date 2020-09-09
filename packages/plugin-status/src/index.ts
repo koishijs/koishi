@@ -5,6 +5,12 @@ import { ActiveData } from './database'
 
 export * from './database'
 
+declare module 'koishi-core/dist/context' {
+  interface EventMap {
+    'status'(status: Status, output: string[]): void
+  }
+}
+
 declare module 'koishi-core/dist/server' {
   interface BotOptions {
     label?: string
@@ -161,6 +167,7 @@ export function apply(ctx: Context, config: Config) {
         `内存使用率：${(memory.app * 100).toFixed()}% / ${(memory.total * 100).toFixed()}%`,
       )
 
+      ctx.emit('status', status, output)
       return output.join('\n')
     })
 
