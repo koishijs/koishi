@@ -27,9 +27,13 @@ module.exports[`issues.opened`] = `
 Title: Wie kann man um das Koishi zu installieren?
 Ich verstecke Englisch und Chinesisch nicht! Gab es Personen, die mir helfen kann?`
 
-module.exports['pull_request.closed'] = `
+module.exports['pull_request.closed.1'] = `
 [GitHub] Shigma closed pull request koishijs/koishi#97
 Storage API, fix #96`
+
+module.exports['pull_request.closed.2'] = `
+[GitHub] Shigma merged pull request koishijs/koishi#101
+来壮大列表了（不是`
 
 // URL: https://github.com/koishijs/koishi/pull/20
 module.exports[`pull_request.opened.1`] = `
@@ -55,12 +59,12 @@ Path: packages/test-utils/src/mocks.ts
 Naming is so hard......`
 
 // URL: https://github.com/koishijs/koishi/compare/976c6e8f09a4...3ae7e7044d06
-module.exports[`push.commit`] = `
+module.exports[`push.1`] = `
 [GitHub] Shigma pushed to koishijs/koishi:develop
 [d7ff34] chore: adjust
 [3ae7e7] fix(core): create major context at demand`
 
-module.exports[`push.tag`] = `
+module.exports[`push.3`] = `
 [GitHub] Shigma published tag koishijs/koishi@1.5.0`
 
 module.exports[`star.created`] = `

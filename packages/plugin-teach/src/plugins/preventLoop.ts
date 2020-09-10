@@ -1,4 +1,5 @@
 import { Context } from 'koishi-core'
+import { makeArray } from 'koishi-utils'
 import { Dialogue } from '../utils'
 
 export interface LoopConfig {
@@ -27,7 +28,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   const preventLoopConfig: LoopConfig[] = !preventLoop ? []
     : typeof preventLoop === 'number' ? [{ length: preventLoop, participants: 1 }]
-      : Array.isArray(preventLoop) ? preventLoop : [preventLoop]
+      : makeArray(preventLoop)
   const initiatorCount = Math.max(0, ...preventLoopConfig.map(c => c.length))
 
   ctx.on('dialogue/state', (state) => {

@@ -37,12 +37,12 @@
     "code"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.2.1"
+    "koishi-core": "^2.2.2"
   },
   "devDependencies": {
-    "koishi-test-utils": "^5.0.0"
+    "koishi-test-utils": "^5.0.1"
   },
   "dependencies": {
-    "koishi-utils": "^3.1.4"
+    "koishi-utils": "^3.1.5"
   }
 }

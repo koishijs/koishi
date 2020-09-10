@@ -1,10 +1,18 @@
 import { AppOptions, App, Server, Session, AppStatus } from 'koishi-core'
 import { assert } from 'chai'
+import { Socket } from 'net'
+import * as http from 'http'
 import * as memory from './memory'
 
 export const BASE_SELF_ID = 514
 
-class MockedAppServer extends Server {
+interface MockedResponse {
+  code: number
+  body: string
+  headers: Record<string, any>
+}
+
+class MockedServer extends Server {
   constructor(app: App) {
     super(app)
     this.bots.forEach(bot => bot.ready = true)
@@ -13,9 +21,46 @@ class MockedAppServer extends Server {
   _close() {}
 
   async _listen() {}
+
+  get(path: string, headers?: Record<string, any>) {
+    return this.receive('GET', path, headers, '')
+  }
+
+  post(path: string, body: any, headers?: Record<string, any>) {
+    return this.receive('POST', path, {
+      ...headers,
+      'content-type': 'application/json',
+    }, JSON.stringify(body))
+  }
+
+  receive(method: string, path: string, headers: Record<string, any>, content: string) {
+    const socket = new Socket()
+    const req = new http.IncomingMessage(socket)
+    req.url = path
+    req.method = method
+    Object.assign(req.headers, headers)
+    req.headers['content-length'] = '' + content.length
+    return new Promise<MockedResponse>((resolve) => {
+      const res = new http.ServerResponse(req)
+      let body = ''
+      res.write = (chunk: any) => {
+        body += chunk
+        return true
+      }
+      res.end = (chunk: any) => {
+        res.write(chunk)
+        const code = res.statusCode
+        const headers = res.getHeaders()
+        resolve({ code, body, headers })
+      }
+      this.server.emit('request', req, res)
+      req.emit('data', content)
+      req.emit('end')
+    })
+  }
 }
 
-Server.types.mock = MockedAppServer
+Server.types.mock = MockedServer
 
 interface MockedAppOptions extends AppOptions {
   mockStart?: boolean
@@ -23,7 +68,7 @@ interface MockedAppOptions extends AppOptions {
 }
 
 export class MockedApp extends App {
-  public server: MockedAppServer
+  public server: MockedServer
 
   constructor(options: MockedAppOptions = {}) {
     super({ selfId: BASE_SELF_ID, type: 'mock', ...options })
@@ -90,7 +135,7 @@ export class TestSession {
         if (length >= count) _resolve()
       }
       const dispose = this.app.on('middleware', (session) => {
-        if (session.$uuid === uuid) _resolve()
+        if (session.$uuid === uuid) process.nextTick(_resolve)
       })
       const uuid = this.app.receive({ ...this.meta, $send, message })
     })

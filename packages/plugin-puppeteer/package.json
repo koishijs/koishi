@@ -36,15 +36,15 @@
   "devDependencies": {
     "@types/pngjs": "^3.4.2",
     "@types/puppeteer-core": "^2.0.0",
-    "koishi-test-utils": "^5.0.0"
+    "koishi-test-utils": "^5.0.1"
   },
   "peerDependencies": {
-    "koishi-core": "^2.2.1"
+    "koishi-core": "^2.2.2"
   },
   "dependencies": {
     "chrome-finder": "^1.0.7",
     "pngjs": "^5.0.0",
     "puppeteer-core": "^5.2.1",
-    "koishi-utils": "^3.1.4"
+    "koishi-utils": "^3.1.5"
   }
 }

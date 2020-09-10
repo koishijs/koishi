@@ -1,12 +1,12 @@
 import { App } from 'koishi-test-utils'
 import { User, Group } from 'koishi-core'
 import { install } from '@sinonjs/fake-timers'
-import * as admin from '../src/admin'
+import * as common from 'koishi-plugin-common'
 
 const app = new App({ mockDatabase: true })
 const session = app.session(123, 321)
 
-app.plugin(admin)
+app.plugin(common)
 app.command('foo', { maxUsage: 10 }).action(({ session }) => session.$send('bar'))
 app.command('bar', { minInterval: 1000 }).action(({ session }) => session.$send('foo'))
 
