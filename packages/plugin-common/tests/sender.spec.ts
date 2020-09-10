@@ -1,15 +1,15 @@
 import { App } from 'koishi-test-utils'
 import { fn } from 'jest-mock'
 import { expect } from 'chai'
-import sender from '../src/sender'
 import { StrangerInfo } from 'koishi-core'
 import { GroupMemberInfo } from 'koishi-adapter-cqhttp'
+import * as common from 'koishi-plugin-common'
 
 const app = new App({ mockDatabase: true })
 const session1 = app.session(123)
 const session2 = app.session(123, 456)
 
-app.plugin(sender)
+app.plugin(common)
 
 app.command('show-context')
   .userFields(['id'])

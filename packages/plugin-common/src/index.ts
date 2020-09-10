@@ -9,10 +9,6 @@ export * from './info'
 export * from './repeater'
 
 export interface Config extends HandlerOptions, RepeaterOptions {
-  admin?: false
-  broadcast?: false
-  echo?: false
-  info?: false
   debug?: DebugOptions
 }
 
@@ -23,7 +19,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(repeater, config)
   ctx.plugin(sender, config)
 
-  if (config.admin !== false) ctx.plugin(require('./admin'))
+  ctx.plugin(require('./admin'))
   if (config.debug) ctx.plugin(require('./debug'), config.debug)
-  if (config.info !== false) ctx.plugin(require('./info'))
+  ctx.plugin(require('./info'))
 }

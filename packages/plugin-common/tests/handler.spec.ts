@@ -1,122 +1,141 @@
+import { expect } from 'chai'
+import { fn } from 'jest-mock'
+import { Meta } from 'koishi-core'
 import { App } from 'koishi-test-utils'
 import { sleep } from 'koishi-utils'
-import handler from '../src/handler'
-import 'koishi-database-memory'
+import * as common from 'koishi-plugin-common'
 
-let app: App
+const app = new App({ mockDatabase: true })
+const options: common.Config = {}
 
-describe('type: undefined', () => {
-  before(async () => {
-    app = new App()
-    app.plugin(handler)
-    await app.start()
-  })
+app.plugin(common, options)
 
-  test('friend add', async () => {
-    app.receiveFriendRequest(321)
-    await sleep(0)
-    app.shouldHaveNoRequests()
-  })
-
-  test('group add', async () => {
-    app.receiveGroupRequest('add', 321)
-    await sleep(0)
-    app.shouldHaveNoRequests()
-  })
-
-  test('group invite', async () => {
-    app.receiveGroupRequest('invite', 321)
-    await sleep(0)
-    app.shouldHaveNoRequests()
-  })
+before(async () => {
+  await app.database.getGroup(123, app.selfId)
 })
 
-describe('type: string', () => {
-  before(async () => {
-    app = new App()
-    app.plugin(handler, {
-      handleFriend: 'foo',
-      handleGroupAdd: 'bar',
-      handleGroupInvite: 'baz',
-    })
-    await app.start()
-  })
+const receive = (meta: Meta) => {
+  app.receive(meta)
+  return sleep(0)
+}
 
-  test('friend add', async () => {
-    app.receiveFriendRequest(321)
-    await sleep(0)
-    app.shouldHaveLastRequest('set_friend_add_request', { approve: true, remark: 'foo' })
-  })
-
-  test('group add', async () => {
-    app.receiveGroupRequest('add', 321)
-    await sleep(0)
-    app.shouldHaveLastRequest('set_group_add_request', { approve: false, reason: 'bar' })
-  })
-
-  test('group invite', async () => {
-    app.receiveGroupRequest('invite', 321)
-    await sleep(0)
-    app.shouldHaveLastRequest('set_group_add_request', { approve: false, reason: 'baz' })
-  })
+const receiveFriendRequest = (userId: number) => receive({
+  postType: 'request',
+  requestType: 'friend',
+  flag: 'flag',
+  userId,
 })
 
-describe('type: boolean', () => {
-  before(async () => {
-    app = new App()
-    app.plugin(handler, {
-      handleFriend: false,
-      handleGroupAdd: false,
-      handleGroupInvite: false,
-    })
-    await app.start()
-  })
-
-  test('friend add', async () => {
-    app.receiveFriendRequest(321)
-    await sleep(0)
-    app.shouldHaveLastRequest('set_friend_add_request', { approve: false })
-  })
-
-  test('group add', async () => {
-    app.receiveGroupRequest('add', 321)
-    await sleep(0)
-    app.shouldHaveLastRequest('set_group_add_request', { approve: false })
-  })
-
-  test('group invite', async () => {
-    app.receiveGroupRequest('invite', 321)
-    await sleep(0)
-    app.shouldHaveLastRequest('set_group_add_request', { approve: false })
-  })
+const receiveGroupRequest = (subType: 'add' | 'invite', userId: number) => receive({
+  postType: 'request',
+  requestType: 'group',
+  groupId: 10000,
+  flag: 'flag',
+  subType,
+  userId,
 })
 
-describe('type: function', () => {
-  before(async () => {
-    app = new App()
-    app.plugin(handler, {
-      handleFriend: () => true,
-      handleGroupAdd: () => true,
-      handleGroupInvite: () => true,
-    })
-    await app.start()
+const receiveGroupIncrease = (groupId: number, userId: number) => receive({
+  postType: 'notice',
+  noticeType: 'group_increase',
+  subType: 'invite',
+  userId,
+  groupId,
+})
+
+const setFriendAddRequest = app.bots[0].setFriendAddRequest = fn(async () => {})
+const setGroupAddRequest = app.bots[0].setGroupAddRequest = fn(async () => {})
+const sendGroupMsg = app.bots[0].sendGroupMsg = fn(async () => 0)
+
+describe('Common Handlers', () => {
+  it('request handler: undefined', async () => {
+    setFriendAddRequest.mockClear()
+    await receiveFriendRequest(321)
+    expect(setFriendAddRequest.mock.calls).to.have.length(0)
+
+    setGroupAddRequest.mockClear()
+    await receiveGroupRequest('add', 321)
+    expect(setGroupAddRequest.mock.calls).to.have.length(0)
+
+    setGroupAddRequest.mockClear()
+    await receiveGroupRequest('invite', 321)
+    expect(setGroupAddRequest.mock.calls).to.have.length(0)
   })
 
-  test('friend add', async () => {
-    app.receiveFriendRequest(321)
-    await sleep(0)
-    app.shouldHaveLastRequest('set_friend_add_request', { approve: true })
+  it('request handler: string', async () => {
+    options.onFriend = 'foo'
+    options.onGroupAdd = 'bar'
+    options.onGroupInvite = 'baz'
+
+    setFriendAddRequest.mockClear()
+    await receiveFriendRequest(321)
+    expect(setFriendAddRequest.mock.calls).to.have.length(1)
+    expect(setFriendAddRequest.mock.calls).to.have.shape([['flag', 'foo']])
+
+    setGroupAddRequest.mockClear()
+    await receiveGroupRequest('add', 321)
+    expect(setGroupAddRequest.mock.calls).to.have.length(1)
+    expect(setGroupAddRequest.mock.calls).to.have.shape([['flag', 'add', 'bar']])
+
+    setGroupAddRequest.mockClear()
+    await receiveGroupRequest('invite', 321)
+    expect(setGroupAddRequest.mock.calls).to.have.length(1)
+    expect(setGroupAddRequest.mock.calls).to.have.shape([['flag', 'invite', 'baz']])
   })
 
-  test('group add', async () => {
-    app.receiveGroupRequest('add', 321)
-    await sleep(0)
-    app.shouldHaveLastRequest('set_group_add_request', { approve: true })
+  it('request handler: boolean', async () => {
+    options.onFriend = false
+    options.onGroupAdd = false
+    options.onGroupInvite = false
+
+    setFriendAddRequest.mockClear()
+    await receiveFriendRequest(321)
+    expect(setFriendAddRequest.mock.calls).to.have.length(1)
+    expect(setFriendAddRequest.mock.calls).to.have.shape([['flag', false]])
+
+    setGroupAddRequest.mockClear()
+    await receiveGroupRequest('add', 321)
+    expect(setGroupAddRequest.mock.calls).to.have.length(1)
+    expect(setGroupAddRequest.mock.calls).to.have.shape([['flag', 'add', false]])
+
+    setGroupAddRequest.mockClear()
+    await receiveGroupRequest('invite', 321)
+    expect(setGroupAddRequest.mock.calls).to.have.length(1)
+    expect(setGroupAddRequest.mock.calls).to.have.shape([['flag', 'invite', false]])
   })
 
-  test('group invite', async () => {
-    app.receiveGroupRequest('invite', 321)
-    await sleep(0)
-    app.shouldHaveLastRequest('set_group_add_request', { approve: true })
+  it('request handler: function', async () => {
+    options.onFriend = () => true
+    options.onGroupAdd = () => true
+    options.onGroupInvite = () => true
+
+    setFriendAddRequest.mockClear()
+    await receiveFriendRequest(321)
+    expect(setFriendAddRequest.mock.calls).to.have.length(1)
+    expect(setFriendAddRequest.mock.calls).to.have.shape([['flag', true]])
+
+    setGroupAddRequest.mockClear()
+    await receiveGroupRequest('add', 321)
+    expect(setGroupAddRequest.mock.calls).to.have.length(1)
+    expect(setGroupAddRequest.mock.calls).to.have.shape([['flag', 'add', true]])
+
+    setGroupAddRequest.mockClear()
+    await receiveGroupRequest('invite', 321)
+    expect(setGroupAddRequest.mock.calls).to.have.length(1)
+    expect(setGroupAddRequest.mock.calls).to.have.shape([['flag', 'invite', true]])
+  })
+
+  it('welcome', async () => {
+    sendGroupMsg.mockClear()
+    await receiveGroupIncrease(321, 456)
+    expect(sendGroupMsg.mock.calls).to.have.length(0)
+
+    sendGroupMsg.mockClear()
+    await receiveGroupIncrease(123, app.selfId)
+    expect(sendGroupMsg.mock.calls).to.have.length(0)
+
+    sendGroupMsg.mockClear()
+    await receiveGroupIncrease(123, 456)
+    expect(sendGroupMsg.mock.calls).to.have.length(1)
   })
 })
