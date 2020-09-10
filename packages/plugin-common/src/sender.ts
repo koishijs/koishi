@@ -1,7 +1,11 @@
 import { Context, getTargetId, Group, Session, User } from 'koishi-core'
 import { CQCode } from 'koishi-utils'
 
-export default function apply(ctx: Context) {
+export interface SenderConfig {
+  operator?: number
+}
+
+export default function apply(ctx: Context, config: SenderConfig = {}) {
   ctx.command('broadcast <message...>', '全服广播', { authority: 4 })
     .before(session => !session.$app.database)
     .option('forced', '-f  无视 silent 标签进行广播')
@@ -39,6 +43,27 @@ export default function apply(ctx: Context) {
 
       return message
     })
+
+  const interactions: Record<number, number> = {}
+
+  config.operator && ctx.command('feedback', '发送反馈信息给作者')
+    .userFields(['name', 'id'])
+    .action(async ({ session }, text) => {
+      if (!text) return '请输入要发送的文本。'
+      const { $username: name, userId } = session
+      const nickname = name === '' + userId ? userId : `${name} (${userId})`
+      const message = `收到来自 ${nickname} 的反馈信息：\n${text}`
+      const id = await session.$bot.sendPrivateMsg(config.operator, message)
+      interactions[id] = userId
+      return '反馈信息发送成功！'
+    })
+
+  ctx.middleware((session, next) => {
+    const { $reply, $parsed } = session
+    const userId = interactions[$reply]
+    if (!$parsed || !userId) return next()
+    return session.$bot.sendPrivateMsg(userId, $parsed)
+  })
 
   ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3 })
     .alias('ctxf')

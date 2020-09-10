@@ -9,7 +9,9 @@ const app = new App({ mockDatabase: true })
 const session1 = app.session(123)
 const session2 = app.session(123, 456)
 
-app.plugin(common)
+app.plugin(common, {
+  operator: 999,
+})
 
 app.command('show-context')
   .userFields(['id'])
@@ -44,6 +46,22 @@ describe('Sender Commands', () => {
     expect(sendGroupMsg.mock.calls).to.have.length(2)
     await session1.shouldNotReply('broadcast -of foo')
     expect(sendGroupMsg.mock.calls).to.have.length(3)
+  })
+
+  it('feedback', async () => {
+    const sendPrivateMsg = app.bots[0].sendPrivateMsg = fn(async () => 1000)
+    await session1.shouldReply('feedback', '请输入要发送的文本。')
+    expect(sendPrivateMsg.mock.calls).to.have.length(0)
+    await session1.shouldReply('feedback foo', '反馈信息发送成功！')
+    expect(sendPrivateMsg.mock.calls).to.have.length(1)
+    expect(sendPrivateMsg.mock.calls).to.have.shape([[999, '收到来自 123 的反馈信息：\nfoo']])
+
+    sendPrivateMsg.mockClear()
+    await session1.shouldNotReply('bar')
+    expect(sendPrivateMsg.mock.calls).to.have.length(0)
+    await session1.shouldNotReply('[CQ:reply,id=1000] bar')
+    expect(sendPrivateMsg.mock.calls).to.have.length(1)
+    expect(sendPrivateMsg.mock.calls).to.have.shape([[123, 'bar']])
   })
 
   describe('Contextify', () => {
