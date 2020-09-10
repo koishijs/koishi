@@ -97,6 +97,11 @@ export interface ReplyPayloads {
   link?: string
   react?: string
   reply?: [url: string, params?: Record<string, any>]
+  shot?: {
+    url: string
+    selector: string
+    padding?: number[]
+  }
 }
 
 type Payload<T extends EventNames.All> = GetWebhookPayloadTypeFromEvent<T, unknown>['payload']
@@ -109,10 +114,14 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
       .replace(/\n\s*\n/g, '\n')
   }
 
-  type CommentEvent = 'commit_comment' | 'issue_comment' | 'pull_request_review_comment'
-  type CommandHandler<E extends CommentEvent> = (payload: Payload<E>) => [target: string, replies: ReplyPayloads]
+  interface CommantReplyPayloads extends ReplyPayloads {
+    padding?: number[]
+  }
 
-  function onComment<E extends CommentEvent>(event: E, handler: CommandHandler<E>) {
+  type CommentEvent = 'commit_comment' | 'issue_comment' | 'pull_request_review_comment'
+  type CommantHandler<E extends CommentEvent> = (payload: Payload<E>) => [target: string, replies: CommantReplyPayloads]
+
+  function onComment<E extends CommentEvent>(event: E, handler: CommantHandler<E>) {
     on(event as CommentEvent, (payload) => {
       const { user, body, html_url, url } = payload.comment
       if (user.type === 'Bot') return
@@ -122,10 +131,16 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
         return [`[GitHub] ${user.login} deleted a comment on ${target}`]
       }
 
+      const index = html_url.indexOf('#')
       const operation = payload.action === 'created' ? 'commented' : 'edited a comment'
       return [`[GitHub] ${user.login} ${operation} on ${target}\n${formatMarkdown(body)}`, {
         link: html_url,
         react: url + `/reactions`,
+        shot: {
+          url: html_url.slice(0, index),
+          selector: html_url.slice(index),
+          padding: replies.padding,
+        },
         ...replies,
       }]
     })
@@ -151,6 +166,7 @@ export function addListeners(on: <T extends EventNames.All>(event: T, handler: E
     const type = issue['pull_request'] ? 'pull request' : 'issue'
     return [`${type} ${full_name}#${number}`, {
       reply: [comments_url],
+      padding: [16, 16, 16, 88],
     }]
   })
 

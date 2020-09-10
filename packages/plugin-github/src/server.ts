@@ -42,6 +42,13 @@ export interface OAuth {
   scope: string
 }
 
+interface PostOptions {
+  url: string
+  session: ReplySession
+  body: any
+  headers?: Record<string, any>
+}
+
 type ReplySession = Session<'ghAccessToken' | 'ghRefreshToken'>
 
 const logger = new Logger('github')
@@ -62,13 +69,15 @@ export class GitHub extends Webhooks {
     return data
   }
 
-  async _request(url: string, session: ReplySession, params: any, accept: string) {
-    logger.debug('POST', url, params)
-    await axios.post(url, params, {
+  async _request(options: PostOptions) {
+    const { url, session, body, headers } = options
+    logger.debug('POST', url, body)
+    await axios.post(url, body, {
       timeout: this.config.requestTimeout,
       headers: {
-        accept,
+        accept: 'application/vnd.github.v3+json',
         authorization: `token ${session.$user.ghAccessToken}`,
+        ...headers,
       },
     })
   }
@@ -80,13 +89,14 @@ export class GitHub extends Webhooks {
     return session.$execute({ command: 'github', args: [name] })
   }
 
-  async request(url: string, session: ReplySession, params: any, accept = 'application/vnd.github.v3+json') {
+  async post(options: PostOptions) {
+    const { session } = options
     if (!session.$user.ghAccessToken) {
       return this.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
     }
 
     try {
-      return await this._request(url, session, params, accept)
+      return await this._request(options)
     } catch (error) {
       const { response } = error as AxiosError
       if (response?.status !== 401) {
@@ -107,7 +117,7 @@ export class GitHub extends Webhooks {
     }
 
     try {
-      await this._request(url, session, params, accept)
+      await this._request(options)
     } catch (error) {
       logger.warn(error)
       return session.$send('发送失败。')

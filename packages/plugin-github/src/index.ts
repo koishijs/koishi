@@ -2,10 +2,11 @@
 /* eslint-disable quote-props */
 
 import { Context, Session } from 'koishi-core'
-import { camelize, CQCode, defineProperty, Time } from 'koishi-utils'
+import { camelize, CQCode, defineProperty, Logger, Time } from 'koishi-utils'
 import { encode } from 'querystring'
-import { addListeners, defaultEvents, EventConfig, ReplyPayloads } from './events'
+import { addListeners, defaultEvents, ReplyPayloads } from './events'
 import { Config, GitHub } from './server'
+import {} from 'koishi-plugin-puppeteer'
 
 export * from './server'
 
@@ -79,8 +80,38 @@ export function apply(ctx: Context, config: Config = {}) {
 
   const replyHandlers: ReplyHandlers = {
     link: (url, session) => session.$send(url),
-    react: (url, session, content) => github.request(url, session, { content }, 'application/vnd.github.squirrel-girl-preview'),
-    reply: ([url, params], session, content) => github.request(url, session, { ...params, body: formatReply(content) }),
+    react: (url, session, content) => github.post({
+      url,
+      session,
+      body: { content },
+      headers: { accept: 'application/vnd.github.squirrel-girl-preview' },
+    }),
+    reply: ([url, params], session, content) => github.post({
+      url,
+      session,
+      body: { ...params, body: formatReply(content) },
+    }),
+    async shot({ url, selector, padding = [] }, session) {
+      const page = await app.browser.newPage()
+      let buffer: Buffer
+      try {
+        await page.goto(url)
+        const el = await page.$(selector)
+        const clip = await el.boundingBox()
+        const [top = 0, right = 0, bottom = 0, left = 0] = padding
+        clip.x -= left
+        clip.y -= top
+        clip.width += left + right
+        clip.height += top + bottom
+        buffer = await page.screenshot({ clip })
+      } catch (error) {
+        new Logger('puppeteer').warn(error)
+        return session.$send('截图失败。')
+      } finally {
+        await page.close()
+      }
+      return session.$send(`[CQ:image,file=base64://${buffer.toString('base64')}]`)
+    },
   }
 
   const interactions: Record<number, ReplyPayloads> = {}
@@ -119,7 +150,7 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   addListeners((event, handler) => {
-    const base = camelize(event.split('.', 1)[0]) as keyof EventConfig
+    const base = camelize(event.split('.', 1)[0])
     github.on(event, async (callback) => {
       const { repository } = callback.payload
 
