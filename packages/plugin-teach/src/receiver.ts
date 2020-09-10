@@ -1,5 +1,5 @@
 import { Context, User, Session, NextFunction, Command } from 'koishi-core'
-import { CQCode, simplify, noop, escapeRegExp, Random } from 'koishi-utils'
+import { CQCode, simplify, noop, escapeRegExp, Random, makeArray } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './utils'
 
 declare module 'koishi-core/dist/app' {
@@ -250,8 +250,8 @@ export async function triggerDialogue(ctx: Context, session: Session, config: Di
 
 export default function (ctx: Context, config: Dialogue.Config) {
   const { nickname = ctx.app.options.nickname, maxRedirections = 3 } = config
-  const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
-  const nicknameRE = new RegExp(`^((${nicknames.map(escapeRegExp).join('|')})[,，]?\\s*)+`)
+  const nicknames = makeArray(nickname).map(escapeRegExp)
+  const nicknameRE = new RegExp(`^((${nicknames.join('|')})[,，]?\\s*)+`)
 
   ctx.app._dialogueStates = {}
 

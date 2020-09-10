@@ -3,7 +3,7 @@ import { Context, Middleware, NextFunction } from './context'
 import { Group, User, Database } from './database'
 import { BotOptions, Server } from './server'
 import { Session } from './session'
-import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp } from 'koishi-utils'
+import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray } from 'koishi-utils'
 import help from './plugins/help'
 import shortcut from './plugins/shortcut'
 import suggest from './plugins/suggest'
@@ -105,7 +105,7 @@ export class App extends Context {
 
   prepare() {
     const { nickname, prefix } = this.options
-    const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
+    const nicknames = makeArray(nickname)
     const prefixes = Array.isArray(prefix) ? prefix : [prefix || '']
     this._nameRE = createLeadingRE(nicknames, '@?', '([,，]\\s*|\\s+)')
     this._prefixRE = createLeadingRE(prefixes)

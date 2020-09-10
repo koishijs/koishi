@@ -51,3 +51,9 @@ export function coerce(val: any) {
   const { stack } = val instanceof Error ? val : new Error(val as any)
   return stack
 }
+
+export function makeArray<T>(source: T | T[]) {
+  return Array.isArray(source) ? source
+    : source === null || source === undefined ? []
+      : [source]
+}
