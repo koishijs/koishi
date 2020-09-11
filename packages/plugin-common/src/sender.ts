@@ -46,7 +46,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
 
   const interactions: Record<number, number> = {}
 
-  config.operator && ctx.command('feedback', '发送反馈信息给作者')
+  config.operator && ctx.command('feedback <message...>', '发送反馈信息给作者')
     .userFields(['name', 'id'])
     .action(async ({ session }, text) => {
       if (!text) return '请输入要发送的文本。'
