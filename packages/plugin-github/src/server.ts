@@ -22,7 +22,8 @@ export interface Config {
   secret?: string
   webhook?: string
   authorize?: string
-  prefix?: string
+  replyPrefix?: string
+  messagePrefix?: string
   appId?: string
   appSecret?: string
   redirect?: string
@@ -86,7 +87,7 @@ export class GitHub extends Webhooks {
     await session.$send(message)
     const name = await session.$prompt(this.config.promptTimeout)
     if (!name) return session.$send('输入超时。')
-    return session.$execute({ command: 'github', args: [name] })
+    return session.$execute({ command: 'github.authorize', args: [name] })
   }
 
   async post(options: PostOptions) {
