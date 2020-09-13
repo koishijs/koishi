@@ -74,6 +74,27 @@ export interface VersionInfo {
   pluginBuildConfiguration: 'debug' | 'release'
 }
 
+export type HonorType = 'talkative' | 'performer' | 'legend' | 'strong_newbie' | 'emotion'
+
+export interface TalkativeMemberInfo extends AccountInfo {
+  avatar: string
+  dayCount: number
+}
+
+export interface HonoredMemberInfo {
+  avatar: string
+  description: string
+}
+
+export interface HonorInfo {
+  currentTalkative: TalkativeMemberInfo
+  talkativeList: HonoredMemberInfo[]
+  performerList: HonoredMemberInfo[]
+  legendList: HonoredMemberInfo[]
+  strongNewbieList: HonoredMemberInfo[]
+  emotionList: HonoredMemberInfo[]
+}
+
 declare module 'koishi-core/dist/server' {
   interface Bot {
     _request?(action: string, params: Record<string, any>): Promise<CQResponse>
@@ -116,6 +137,7 @@ declare module 'koishi-core/dist/server' {
     getGroupInfo(groupId: number, noCache?: boolean): Promise<GroupInfo>
     getGroupMemberInfo(groupId: number, userId: number, noCache?: boolean): Promise<GroupMemberInfo>
     getGroupMemberList(groupId: number): Promise<GroupMemberInfo[]>
+    getGroupHonorInfo(groupId: number, type: HonorType): Promise<HonorInfo>
     getCookies(domain?: string): Promise<string>
     getCsrfToken(): Promise<number>
     getCredentials(domain?: string): Promise<Credentials>
@@ -301,6 +323,7 @@ defineSync('get_group_list')
 defineSync('get_group_info', 'group_id', 'no_cache')
 defineSync('get_group_member_info', 'group_id', 'user_id', 'no_cache')
 defineSync('get_group_member_list', 'group_id')
+defineSync('get_group_honor_info', 'group_id', 'type')
 defineExtract('get_cookies', 'cookies', 'domain')
 defineExtract('get_csrf_token', 'token')
 defineSync('get_credentials', 'domain')
