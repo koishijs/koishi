@@ -39,7 +39,7 @@
     "@types/mongodb": "^3.5.27"
   },
   "peerDependencies": {
-    "koishi-core": "^2.2.2"
+    "koishi-core": "^2.3.0"
   },
   "dependencies": {
     "mongodb": "^3.6.1"

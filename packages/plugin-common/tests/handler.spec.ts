@@ -3,14 +3,27 @@ import { fn } from 'jest-mock'
 import { Meta } from 'koishi-core'
 import { App } from 'koishi-test-utils'
 import { sleep } from 'koishi-utils'
+import {} from 'koishi-adapter-cqhttp'
 import * as common from 'koishi-plugin-common'
 
 const app = new App({ mockDatabase: true })
-const options: common.Config = {}
+
+const options: common.Config = {
+  respondents: [{
+    match: '挖坑一时爽',
+    reply: '填坑火葬场',
+  }, {
+    match: /^(.+)一时爽$/,
+    reply: (_, action) => `一直${action}一直爽`,
+  }],
+}
+
+const session = app.session(123)
 
 app.plugin(common, options)
 
 before(async () => {
+  await app.database.getUser(123, 3)
   await app.database.getGroup(123, app.selfId)
 })
 
@@ -123,6 +136,12 @@ describe('Common Handlers', () => {
     await receiveGroupRequest('invite', 321)
     expect(setGroupAddRequest.mock.calls).to.have.length(1)
     expect(setGroupAddRequest.mock.calls).to.have.shape([['flag', 'invite', true]])
+  })
+
+  it('respondent', async () => {
+    await session.shouldReply('挖坑一时爽', '填坑火葬场')
+    await session.shouldReply('填坑一时爽', '一直填坑一直爽')
+    await session.shouldNotReply('填坑一直爽')
   })
 
   it('welcome', async () => {

@@ -74,13 +74,17 @@ describe('GitHub Plugin', () => {
       await expect(app.server.post('/github/webhook', {})).to.eventually.have.property('code', 400)
     })
 
-    it('github command', async () => {
-      await session1.shouldReply('github', '请输入用户名。')
-      await session1.shouldReply('github satori', /^请点击下面的链接继续操作：/)
+    it('github.authorize', async () => {
+      await session1.shouldReply('github.authorize', '请输入用户名。')
+      await session1.shouldReply('github.authorize satori', /^请点击下面的链接继续操作：/)
+    })
+
+    it('github.recent', async () => {
+      await session1.shouldReply('github.recent', '最近没有 GitHub 通知。')
     })
   })
 
-  let counter = 10000
+  let counter = 0x100000
   const idMap: Record<string, number> = {}
 
   describe('Webhook Events', () => {
@@ -171,6 +175,10 @@ describe('GitHub Plugin', () => {
       await session1.shouldReply(`[CQ:reply,id=${idMap['issue_comment.created.1']}] test`, '发送失败。')
       expect(unauthorized.mock.calls).to.have.length(1)
       expect(notFound.mock.calls).to.have.length(1)
+    })
+
+    it('github.recent', async () => {
+      await session1.shouldReply('github.recent', /^100001\./)
     })
   })
 })

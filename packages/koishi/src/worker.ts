@@ -3,7 +3,6 @@ import { resolve, dirname } from 'path'
 import { Logger, noop } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
-import 'koishi-adapter-cqhttp'
 
 const logger = new Logger('app')
 const { version } = require('../package')
@@ -56,11 +55,11 @@ if (!config) {
 
 const cacheMap: Record<string, any> = {}
 
-function loadEcosystem(name: string) {
+function loadEcosystem(type: string, name: string) {
   const cache = cacheMap[name]
   if (cache) return cache
 
-  const prefix = 'koishi-plugin-'
+  const prefix = `koishi-${type}-`
   const modules: string[] = []
   if (name.startsWith('.')) {
     modules.push(resolve(configDir, name))
@@ -74,7 +73,7 @@ function loadEcosystem(name: string) {
     logger.debug('resolving %c', path)
     try {
       const result = require(path)
-      logger.info('apply plugin %c', result.name || name)
+      logger.info('apply %s %c', type, result.name || name)
       return cacheMap[name] = result
     } catch (error) {
       if (isErrorModule(error)) {
@@ -82,22 +81,7 @@ function loadEcosystem(name: string) {
       }
     }
   }
-  throw new Error(`cannot resolve plugin ${name}`)
-}
-
-function loadPlugins(ctx: Context, plugins: PluginConfig) {
-  for (const item of plugins) {
-    let plugin: Plugin<Context>, options: any
-    if (Array.isArray(item)) {
-      plugin = typeof item[0] === 'string' ? loadEcosystem(item[0]) : item[0]
-      options = item[1]
-    } else if (typeof item === 'string') {
-      plugin = loadEcosystem(item)
-    } else {
-      plugin = item
-    }
-    ctx.plugin(plugin, options)
-  }
+  throw new Error(`cannot resolve ${type} ${name}`)
 }
 
 Object.assign(Logger.levels, config.logFilter)
@@ -139,8 +123,26 @@ app.command('exit', '停止机器人运行', { authority: 4 })
     process.exit(514)
   })
 
+// load adapter
+try {
+  const [name] = config.type.split('.', 1)
+  loadEcosystem('adapter', name)
+} catch {}
+
+// load plugins
 if (Array.isArray(config.plugins)) {
-  loadPlugins(app, config.plugins)
+  for (const item of config.plugins) {
+    let plugin: Plugin<Context>, options: any
+    if (Array.isArray(item)) {
+      plugin = typeof item[0] === 'string' ? loadEcosystem('plugin', item[0]) : item[0]
+      options = item[1]
+    } else if (typeof item === 'string') {
+      plugin = loadEcosystem('plugin', item)
+    } else {
+      plugin = item
+    }
+    app.plugin(plugin, options)
+  }
 }
 
 process.on('unhandledRejection', (error) => {

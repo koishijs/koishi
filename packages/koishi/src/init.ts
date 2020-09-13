@@ -3,6 +3,8 @@ import { yellow, red, green } from 'kleur'
 import { resolve, extname, dirname } from 'path'
 import { AppConfig } from './worker'
 import { CAC } from 'cac'
+import {} from 'koishi-adapter-cqhttp'
+import {} from 'koishi-adapter-tomon'
 import prompts, { Choice, PrevCaller, PromptObject } from 'prompts'
 import * as mysql from 'koishi-plugin-mysql/dist/database'
 import * as mongo from 'koishi-plugin-mongo/dist/database'
@@ -14,21 +16,24 @@ function conditional<T extends PromptObject['type']>(type: T, key: string, ...va
   }
 }
 
-const serverQuestions: PromptObject<keyof AppConfig | 'database'>[] = [{
+const serverQuestions: PromptObject<keyof AppConfig>[] = [{
   name: 'type',
   type: 'select',
   message: 'Server Type',
   choices: [
-    { title: 'HTTP', value: 'cqhttp:http' },
-    { title: 'WebSocket', value: 'cqhttp:ws' },
-    { title: 'WebSocket Reverse', value: 'cqhttp:ws-reverse' },
+    { title: 'QQ (OneBot, HTTP)', value: 'cqhttp:http' },
+    { title: 'QQ (OneBot, WebSocket)', value: 'cqhttp:ws' },
+    { title: 'QQ (OneBot, WebSocket Reverse)', value: 'cqhttp:ws-reverse' },
+    { title: 'Tomon', value: 'tomon' },
   ],
 }, {
   name: 'port',
-  type: conditional('number', 'type', 'cqhttp:http', 'cqhttp:ws-reverse'),
+  type: 'number',
   message: 'Koishi Port',
   initial: 8080,
-}, {
+}]
+
+const cqhttpQuestions: PromptObject<keyof AppConfig>[] = [{
   name: 'path',
   type: conditional('text', 'type', 'cqhttp:http', 'cqhttp:ws-reverse'),
   message: 'Koishi Path',
@@ -55,7 +60,22 @@ const serverQuestions: PromptObject<keyof AppConfig | 'database'>[] = [{
   name: 'token',
   type: 'text',
   message: 'Token for CQHTTP Server',
-}, {
+}]
+
+const tomonQuestions: PromptObject<keyof AppConfig>[] = [{
+  name: 'token',
+  type: 'text',
+  message: 'Token for Tomon',
+}]
+
+const adapterMap = {
+  'cqhttp:http': cqhttpQuestions,
+  'cqhttp:ws': cqhttpQuestions,
+  'cqhttp:ws-reverse': cqhttpQuestions,
+  tomon: tomonQuestions,
+}
+
+const databaseQuestions: PromptObject<'database'>[] = [{
   name: 'database',
   type: 'select',
   message: 'Database Type',
@@ -118,7 +138,7 @@ const mongoQuestions: PromptObject<keyof mongo.Config>[] = [{
   initial: 'koishi',
 }]
 
-const dbQuestionMap = {
+const databaseMap = {
   mysql: mysqlQuestions,
   mongo: mongoQuestions,
 }
@@ -143,20 +163,21 @@ const ecosystem: Record<string, Package> = require('../ecosystem')
 const builtinPackages = ['koishi-plugin-common']
 
 async function createConfig() {
-  const data = await question(serverQuestions)
-  const { database } = data
-  const config = { ...data, database: undefined, plugins: [] } as AppConfig
+  const config: AppConfig = { plugins: [] }
+  Object.assign(config, await question(serverQuestions))
+  Object.assign(config, await question(adapterMap[config.type]))
 
   // database
+  const { database } = await question(databaseQuestions)
   if (database) {
-    config.plugins.push([database, await question(dbQuestionMap[database])])
+    config.plugins.push([database, await question(databaseMap[database])])
   }
 
   // official plugins
   const choices: Choice[] = Object.entries(ecosystem).map(([title, meta]) => {
     if (!title.startsWith('koishi-plugin-')) return
     const value = title.slice(14)
-    if (value in dbQuestionMap) return
+    if (value in databaseMap) return
     const { description } = meta
     const selected = builtinPackages.includes(title)
     return { title, value, description, selected }
@@ -195,7 +216,7 @@ async function updateMeta(config: AppConfig) {
   }
   if (!modified) return
   await fs.writeFile(path, JSON.stringify(meta, null, 2))
-  console.log(`${success} package.json was updated`)
+  console.log(`${success} package.json was updated, type "npm install" to install new dependencies`)
 }
 
 type Serializable = string | number | Serializable[] | { [key: string]: Serializable }

@@ -4,7 +4,7 @@
 import { Context, Session } from 'koishi-core'
 import { camelize, CQCode, defineProperty, Logger, Time } from 'koishi-utils'
 import { encode } from 'querystring'
-import { addListeners, defaultEvents, ReplyPayloads } from './events'
+import { addListeners, defaultEvents, EventData } from './events'
 import { Config, GitHub } from './server'
 import {} from 'koishi-plugin-puppeteer'
 
@@ -17,12 +17,13 @@ declare module 'koishi-core/dist/app' {
 }
 
 type ReplyHandlers = {
-  [K in keyof ReplyPayloads]: (payload: ReplyPayloads[K], session: Session, message: string) => Promise<void>
+  [K in keyof EventData]: (payload: EventData[K], session: Session, message: string) => Promise<void>
 }
 
 const defaultOptions: Config = {
   secret: '',
-  prefix: '.',
+  replyPrefix: '.',
+  messagePrefix: '[GitHub] ',
   webhook: '/github/webhook',
   authorize: '/github/authorize',
   replyTimeout: Time.hour,
@@ -35,7 +36,7 @@ export const name = 'github'
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultOptions, ...config }
   const { app, database, router } = ctx
-  const { appId, prefix, redirect, webhook } = config
+  const { appId, replyPrefix, redirect, webhook } = config
 
   const github = new GitHub(config)
   defineProperty(app, 'github', github)
@@ -55,7 +56,9 @@ export function apply(ctx: Context, config: Config = {}) {
     return ctx.status = 200
   })
 
-  ctx.command('github <user>', '授权 GitHub 功能')
+  ctx.command('github', 'GitHub 相关功能')
+
+  ctx.command('github.authorize <user>', 'GitHub 授权')
     .action(async ({ session }, user) => {
       if (!user) return '请输入用户名。'
       const url = 'https://github.com/login/oauth/authorize?' + encode({
@@ -66,6 +69,16 @@ export function apply(ctx: Context, config: Config = {}) {
         login: user,
       })
       return '请点击下面的链接继续操作：\n' + url
+    })
+
+  ctx.command('github.recent', '查看最近的通知')
+    .action(async () => {
+      const output = Object.entries(history).slice(0, 10).map(([messageId, payload]) => {
+        const [brief] = payload.message.split('\n', 1)
+        return `${messageId}. ${brief}`
+      })
+      if (!output.length) return '最近没有 GitHub 通知。'
+      return output.join('\n')
     })
 
   const reactions = ['+1', '-1', 'laugh', 'confused', 'heart', 'hooray', 'rocket', 'eyes']
@@ -114,7 +127,7 @@ export function apply(ctx: Context, config: Config = {}) {
     },
   }
 
-  const interactions: Record<number, ReplyPayloads> = {}
+  const history: Record<string, EventData> = {}
 
   router.post(webhook, (ctx, next) => {
     // workaround @octokit/webhooks for koa
@@ -124,7 +137,7 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   ctx.on('before-attach-user', (session, fields) => {
-    if (interactions[session.$reply]) {
+    if (history[int32ToHex6(session.$reply)]) {
       fields.add('ghAccessToken')
       fields.add('ghRefreshToken')
     }
@@ -132,13 +145,13 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.middleware((session, next) => {
     const body = session.$parsed
-    const payloads = interactions[session.$reply]
+    const payloads = history[int32ToHex6(session.$reply)]
     if (!body || !payloads) return next()
 
     let name: string, message: string
-    if (body.startsWith(prefix)) {
-      name = body.split(' ', 1)[0].slice(prefix.length)
-      message = body.slice(prefix.length + name.length).trim()
+    if (body.startsWith(replyPrefix)) {
+      name = body.split(' ', 1)[0].slice(replyPrefix.length)
+      message = body.slice(replyPrefix.length + name.length).trim()
     } else {
       name = reactions.includes(body) ? 'react' : 'reply'
       message = body
@@ -173,19 +186,24 @@ export function apply(ctx: Context, config: Config = {}) {
       if (!result) return
 
       // step 4: broadcast message
-      const [message, replies] = result
-      const messageIds = await ctx.broadcast(groupIds, message)
-      if (!replies) return
+      const messageIds = await ctx.broadcast(groupIds, config.messagePrefix + result.message)
+      const hexIds = messageIds.map(int32ToHex6)
 
       // step 5: save message ids for interactions
-      for (const id of messageIds) {
-        interactions[id] = replies
+      for (const id of hexIds) {
+        history[id] = result
       }
+
       setTimeout(() => {
-        for (const id of messageIds) {
-          delete interactions[id]
+        for (const id of hexIds) {
+          delete history[id]
         }
       }, config.replyTimeout)
     })
   })
+}
+
+function int32ToHex6(source: number) {
+  if (source < 0) source -= 1 << 31
+  return source.toString(16).padStart(8, '0').slice(2)
 }

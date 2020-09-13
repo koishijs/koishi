@@ -1,7 +1,7 @@
 {
-  "name": "koishi-plugin-schedule",
-  "description": "Schedule plugin for Koishi",
-  "version": "2.0.2",
+  "name": "koishi-adapter-tomon",
+  "description": "Tomon adapter for Koishi",
+  "version": "0.1.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -10,8 +10,8 @@
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
   "scripts": {
-    "build": "tsc -b",
     "lint": "eslint src --ext .ts",
+    "precommit": "yarn lint",
     "prepack": "tsc -b"
   },
   "repository": {
@@ -21,27 +21,21 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://github.com/koishijs/koishi/packages/plugin-schedule#readme",
+  "homepage": "https://github.com/koishijs/koishi/tree/master/packages/koishi-core#readme",
   "keywords": [
     "bot",
-    "qqbot",
-    "cqhttp",
-    "coolq",
+    "tomon",
     "chatbot",
-    "koishi",
-    "plugin",
-    "schedule",
-    "task"
+    "koishi"
   ],
-  "devDependencies": {
-    "koishi-plugin-mongo": "^1.0.3",
-    "koishi-plugin-mysql": "^2.0.0",
-    "koishi-test-utils": "^5.0.1"
-  },
   "peerDependencies": {
     "koishi-core": "^2.3.0"
   },
+  "devDependencies": {
+    "koishi-test-utils": "^5.0.1"
+  },
   "dependencies": {
-    "koishi-utils": "^3.1.5"
+    "koishi-utils": "^3.1.5",
+    "tomon-sdk": "^0.2.0"
   }
 }
