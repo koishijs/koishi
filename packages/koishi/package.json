@@ -40,7 +40,6 @@
   "dependencies": {
     "cac": "^6.6.1",
     "kleur": "^4.1.1",
-    "koishi-adapter-cqhttp": "^1.0.4",
     "koishi-core": "^2.3.0",
     "koishi-plugin-common": "^3.0.1",
     "prompts": "^2.3.2"
