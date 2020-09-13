@@ -195,7 +195,7 @@ async function updateMeta(config: AppConfig) {
   }
   if (!modified) return
   await fs.writeFile(path, JSON.stringify(meta, null, 2))
-  console.log(`${success} package.json was updated`)
+  console.log(`${success} package.json was updated, type "npm install" to install new dependencies`)
 }
 
 type Serializable = string | number | Serializable[] | { [key: string]: Serializable }
