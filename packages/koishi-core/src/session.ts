@@ -85,11 +85,13 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   $uuid = Random.uuid()
 
   private _delay?: number
-  private _queued = Promise.resolve()
-  private _hooks?: (() => void)[] = []
+  private _queued: Promise<void>
+  private _hooks: (() => void)[]
 
   constructor(app: App, session: Partial<Session>) {
     defineProperty(this, '$app', app)
+    defineProperty(this, '_queued', Promise.resolve())
+    defineProperty(this, '_hooks', [])
     Object.assign(this, session)
   }
 
