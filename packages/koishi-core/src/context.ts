@@ -308,57 +308,59 @@ export interface EventMap {
   [Context.MIDDLEWARE_EVENT]: Middleware
 
   // CQHTTP events
-  'message' (session: RawSession<'message'>): void
-  'message/normal' (session: RawSession<'message'>): void
-  'message/notice' (session: RawSession<'message'>): void
-  'message/anonymous' (session: RawSession<'message'>): void
-  'message/friend' (session: RawSession<'message'>): void
-  'message/group' (session: RawSession<'message'>): void
-  'message/other' (session: RawSession<'message'>): void
-  'friend-add' (session: RawSession<'notice'>): void
-  'group-increase' (session: RawSession<'notice'>): void
-  'group-increase/invite' (session: RawSession<'notice'>): void
-  'group-increase/approve' (session: RawSession<'notice'>): void
-  'group-decrease' (session: RawSession<'notice'>): void
-  'group-decrease/leave' (session: RawSession<'notice'>): void
-  'group-decrease/kick' (session: RawSession<'notice'>): void
-  'group-decrease/kick-me' (session: RawSession<'notice'>): void
-  'group-upload' (session: RawSession<'notice'>): void
-  'group-admin' (session: RawSession<'notice'>): void
-  'group-admin/set' (session: RawSession<'notice'>): void
-  'group-admin/unset' (session: RawSession<'notice'>): void
-  'group-ban' (session: RawSession<'notice'>): void
-  'group-ban/ban' (session: RawSession<'notice'>): void
-  'group-ban/lift-ban' (session: RawSession<'notice'>): void
-  'group_recall' (session: RawSession<'notice'>): void
-  'request/friend' (session: RawSession<'request'>): void
-  'request/group/add' (session: RawSession<'request'>): void
-  'request/group/invite' (session: RawSession<'request'>): void
-  'heartbeat' (session: RawSession<'meta_event'>): void
-  'lifecycle' (session: RawSession<'meta_event'>): void
-  'lifecycle/enable' (session: RawSession<'meta_event'>): void
-  'lifecycle/disable' (session: RawSession<'meta_event'>): void
-  'lifecycle/connect' (session: RawSession<'meta_event'>): void
+  'message'(session: RawSession<'message'>): void
+  'message/normal'(session: RawSession<'message'>): void
+  'message/notice'(session: RawSession<'message'>): void
+  'message/anonymous'(session: RawSession<'message'>): void
+  'message/friend'(session: RawSession<'message'>): void
+  'message/group'(session: RawSession<'message'>): void
+  'message/other'(session: RawSession<'message'>): void
+  'friend-add'(session: RawSession<'notice'>): void
+  'group-increase'(session: RawSession<'notice'>): void
+  'group-increase/invite'(session: RawSession<'notice'>): void
+  'group-increase/approve'(session: RawSession<'notice'>): void
+  'group-decrease'(session: RawSession<'notice'>): void
+  'group-decrease/leave'(session: RawSession<'notice'>): void
+  'group-decrease/kick'(session: RawSession<'notice'>): void
+  'group-decrease/kick-me'(session: RawSession<'notice'>): void
+  'group-upload'(session: RawSession<'notice'>): void
+  'group-admin'(session: RawSession<'notice'>): void
+  'group-admin/set'(session: RawSession<'notice'>): void
+  'group-admin/unset'(session: RawSession<'notice'>): void
+  'group-ban'(session: RawSession<'notice'>): void
+  'group-ban/ban'(session: RawSession<'notice'>): void
+  'group-ban/lift-ban'(session: RawSession<'notice'>): void
+  'group_recall'(session: RawSession<'notice'>): void
+  'friend_recall'(session: RawSession<'notice'>): void
+  'notify'(session: RawSession<'notice'>): void
+  'request/friend'(session: RawSession<'request'>): void
+  'request/group/add'(session: RawSession<'request'>): void
+  'request/group/invite'(session: RawSession<'request'>): void
+  'heartbeat'(session: RawSession<'meta_event'>): void
+  'lifecycle'(session: RawSession<'meta_event'>): void
+  'lifecycle/enable'(session: RawSession<'meta_event'>): void
+  'lifecycle/disable'(session: RawSession<'meta_event'>): void
+  'lifecycle/connect'(session: RawSession<'meta_event'>): void
 
   // Koishi events
-  'parse' (message: string, session: Session, builtin: boolean, terminator: string): void | ExecuteArgv
-  'before-attach-user' (session: Session, fields: Set<User.Field>): void
-  'before-attach-group' (session: Session, fields: Set<Group.Field>): void
-  'attach-user' (session: Session): void | boolean | Promise<void | boolean>
-  'attach-group' (session: Session): void | boolean | Promise<void | boolean>
-  'attach' (session: Session): void | Promise<void>
-  'send' (session: Session): void | Promise<void>
-  'before-send' (session: Session): void | boolean
-  'before-command' (argv: ParsedArgv): void | string | Promise<void | string>
-  'command' (argv: ParsedArgv): void | Promise<void>
-  'middleware' (session: Session): void
-  'new-command' (cmd: Command): void
-  'remove-command' (cmd: Command): void
-  'before-connect' (): void | Promise<void>
-  'connect' (): void
-  'before-disconnect' (): void | Promise<void>
-  'disconnect' (): void
-  'dispose' (): void
+  'parse'(message: string, session: Session, builtin: boolean, terminator: string): void | ExecuteArgv
+  'before-attach-user'(session: Session, fields: Set<User.Field>): void
+  'before-attach-group'(session: Session, fields: Set<Group.Field>): void
+  'attach-user'(session: Session): void | boolean | Promise<void | boolean>
+  'attach-group'(session: Session): void | boolean | Promise<void | boolean>
+  'attach'(session: Session): void | Promise<void>
+  'send'(session: Session): void | Promise<void>
+  'before-send'(session: Session): void | boolean
+  'before-command'(argv: ParsedArgv): void | string | Promise<void | string>
+  'command'(argv: ParsedArgv): void | Promise<void>
+  'middleware'(session: Session): void
+  'new-command'(cmd: Command): void
+  'remove-command'(cmd: Command): void
+  'before-connect'(): void | Promise<void>
+  'connect'(): void
+  'before-disconnect'(): void | Promise<void>
+  'disconnect'(): void
+  'dispose'(): void
 }
 
 export type Events = keyof EventMap

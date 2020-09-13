@@ -8,7 +8,7 @@ export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
 export type MessageType = 'private' | 'group'
 export type NoticeType =
   | 'group_upload' | 'group_admin' | 'group_increase' | 'group_decrease'
-  | 'group_ban' | 'friend_add' | 'group_recall'
+  | 'group_ban' | 'friend_add' | 'group_recall' | 'friend_recall' | 'notify'
 export type RequestType = 'friend' | 'group'
 export type MetaEventType = 'lifecycle' | 'heartbeat'
 
@@ -23,7 +23,9 @@ export interface MetaTypeMap {
 
 export interface SubTypeMap {
   message: 'friend' | 'group' | 'other' | 'normal' | 'anonymous' | 'notice'
-  notice: 'set' | 'unset' | 'approve' | 'invite' | 'leave' | 'kick' | 'kick_me' | 'ban' | 'lift_ban'
+  notice:
+    | 'set' | 'unset' | 'approve' | 'invite' | 'leave' | 'kick' | 'kick_me'
+    | 'ban' | 'lift_ban' | 'poke' | 'lucky_king' | 'honor'
   request: 'add' | 'invite'
   // eslint-disable-next-line camelcase
   meta_event: 'enable' | 'disable' | 'connect'
@@ -57,8 +59,10 @@ export interface Meta<P extends PostType = PostType> {
 
   // notice event
   operatorId?: number
+  targetId?: number
   duration?: number
   file?: FileInfo
+  honorType?: 'talkative' | 'performer' | 'emotion'
 
   // request event
   comment?: string
