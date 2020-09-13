@@ -52,7 +52,6 @@ declare module './utils' {
   }
 }
 
-// TODO change name
 export interface SessionState {
   userId: number
   groupId: number
@@ -163,7 +162,7 @@ export class MessageBuffer {
   }
 }
 
-export async function triggerDialogue(ctx: Context, session: Session, config: Dialogue.Config, next: NextFunction = noop) {
+export async function triggerDialogue(ctx: Context, session: Session, next: NextFunction = noop) {
   const state = ctx.getSessionState(session)
   state.next = next
   state.test = {}
@@ -269,7 +268,11 @@ export default function (ctx: Context, config: Dialogue.Config) {
   }
 
   ctx.group().middleware(async (session, next) => {
-    return triggerDialogue(ctx, session, config, next)
+    return session.$execute({
+      command: 'dialogue',
+      args: [session.message],
+      next,
+    })
   })
 
   ctx.on('dialogue/receive', ({ session, test }) => {
@@ -295,11 +298,11 @@ export default function (ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.group().command('teach/dialogue <message...>', '触发教学对话')
+  ctx.group().command('dialogue <message...>', '触发教学对话')
     .action(async ({ session, next }, message = '') => {
       if (session._redirected > maxRedirections) return next()
       session.message = message
-      return triggerDialogue(ctx, session, config, next)
+      return triggerDialogue(ctx, session, next)
     })
 }
 
