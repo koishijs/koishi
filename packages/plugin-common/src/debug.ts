@@ -1,4 +1,4 @@
-import { Context, Session } from 'koishi-core'
+import { Context, RawSession, Session } from 'koishi-core'
 import { Logger, CQCode, Time } from 'koishi-utils'
 import {} from 'koishi-adapter-cqhttp'
 
@@ -7,6 +7,8 @@ export interface DebugOptions {
   showGroupId?: boolean
   refreshUserName?: number
   refreshGroupName?: number
+  includeUsers?: number[]
+  includeGroups?: number[]
 }
 
 const cqTypes = {
@@ -25,7 +27,15 @@ const cqTypes = {
 }
 
 export function apply(ctx: Context, config: DebugOptions = {}) {
-  const { refreshUserName = Time.hour, refreshGroupName = Time.hour, showUserId, showGroupId } = config
+  const {
+    refreshUserName = Time.hour,
+    refreshGroupName = Time.hour,
+    includeUsers = [],
+    includeGroups = [],
+    showUserId,
+    showGroupId,
+  } = config
+
   const logger = new Logger('message', true)
   Logger.levels.message = 3
 
@@ -90,10 +100,18 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
     Logger.lastTime = Date.now()
   })
 
-  ctx.on('message', async (session) => {
+  async function onMessage(session: RawSession<'message'>) {
     const groupName = await getGroupName(session)
     const senderName = getSenderName(session)
     const message = await formatMessage(session)
     logger.debug(`[${groupName}] ${senderName}: ${message}`)
-  })
+  }
+
+  if (includeUsers) {
+    ctx.private(...includeUsers).on('message', onMessage)
+  }
+
+  if (includeGroups) {
+    ctx.group(...includeGroups).on('message', onMessage)
+  }
 }

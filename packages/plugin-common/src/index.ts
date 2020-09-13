@@ -20,6 +20,9 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(sender, config)
 
   ctx.plugin(require('./admin'))
-  ctx.plugin(require('./debug'), config.debug)
   ctx.plugin(require('./info'))
+
+  if (config.debug) {
+    ctx.plugin(require('./debug'), config.debug)
+  }
 }
