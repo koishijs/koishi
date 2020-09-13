@@ -32,7 +32,7 @@
     "status"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.2.2"
+    "koishi-core": "^2.3.0"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",

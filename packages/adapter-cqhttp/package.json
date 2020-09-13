@@ -1,7 +1,7 @@
 {
   "name": "koishi-adapter-cqhttp",
   "description": "CQHTTP adapter for Koishi",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -31,7 +31,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.2.2"
+    "koishi-core": "^2.3.0"
   },
   "devDependencies": {
     "@types/ms": "^0.7.31",

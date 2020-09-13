@@ -39,7 +39,7 @@
     "koishi-test-utils": "^5.0.1"
   },
   "peerDependencies": {
-    "koishi-core": "^2.2.2"
+    "koishi-core": "^2.3.0"
   },
   "dependencies": {
     "chrome-finder": "^1.0.7",
