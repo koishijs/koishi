@@ -55,7 +55,7 @@ export default class MysqlDatabase {
       if (names.has(name)) return
       const table = MysqlDatabase.tables[name]
       const cols = Object.keys(table).map((key) => {
-        if (+key * 0 === +key) return table[key]
+        if (+key * 0 === 0) return table[key]
         return `\`${key}\` ${table[key]}`
       })
       logger.info('auto creating table %c', name)
