@@ -21,6 +21,7 @@
 
     { "path": "./packages/plugin-chess" },
     { "path": "./packages/plugin-common" },
+    { "path": "./packages/plugin-dice" },
     { "path": "./packages/plugin-eval-addons" },
     { "path": "./packages/plugin-github" },
     { "path": "./packages/plugin-image-search" },
