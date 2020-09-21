@@ -10,7 +10,6 @@ declare module 'koishi-core/dist/app' {
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'dialogue/fetch'(dialogue: Dialogue, test: DialogueTest): boolean | void
     'dialogue/permit'(argv: Dialogue.Argv, dialogue: Dialogue): boolean
     'dialogue/flag'(flag: keyof typeof Dialogue.Flag): void
   }
@@ -66,13 +65,10 @@ export namespace Dialogue {
   export type ModifyType = '添加' | '修改' | '删除'
   export type Field = keyof Dialogue
 
-  export const history: Record<number, Dialogue> = []
-
   export interface Config {
     prefix?: string
     historyAge?: number
     validateRegExp?: RegExpValidator.Options
-    prohibitedCommands?: string[]
   }
 
   export enum Flag {

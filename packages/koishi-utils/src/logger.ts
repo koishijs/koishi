@@ -14,7 +14,17 @@ const instances: Record<string, Logger> = {}
 
 type LogFunction = (format: any, ...param: any[]) => void
 
+type LogType = 'success' | 'error' | 'info' | 'warn' | 'debug'
+
+export interface Logger extends Record<LogType, LogFunction> {}
+
 export class Logger {
+  static readonly SUCCESS = 1
+  static readonly ERROR = 1
+  static readonly INFO = 2
+  static readonly WARN = 2
+  static readonly DEBUG = 3
+
   static baseLevel = 2
   static showDiff = false
   static levels: Record<string, number> = {}
@@ -38,13 +48,9 @@ export class Logger {
   private code: number
   private displayName: string
 
-  public success: LogFunction
-  public error: LogFunction
-  public info: LogFunction
-  public warn: LogFunction
-  public debug: LogFunction
+  public stream: NodeJS.WritableStream = process.stderr
 
-  constructor(private name: string, private showDiff = false) {
+  constructor(public name: string, private showDiff = false) {
     if (name in instances) return instances[name]
     let hash = 0
     for (let i = 0; i < name.length; i++) {
@@ -54,21 +60,21 @@ export class Logger {
     instances[name] = this
     this.code = colors[Math.abs(hash) % colors.length]
     this.displayName = name ? this.color(name + ' ', ';1') : ''
-    this.createMethod('success', '[S] ', 1)
-    this.createMethod('error', '[E] ', 1)
-    this.createMethod('info', '[I] ', 2)
-    this.createMethod('warn', '[W] ', 2)
-    this.createMethod('debug', '[D] ', 3)
+    this.createMethod('success', '[S] ', Logger.SUCCESS)
+    this.createMethod('error', '[E] ', Logger.ERROR)
+    this.createMethod('info', '[I] ', Logger.INFO)
+    this.createMethod('warn', '[W] ', Logger.WARN)
+    this.createMethod('debug', '[D] ', Logger.DEBUG)
   }
 
   private color(value: any, decoration = '') {
     return Logger.color(this.code, value, decoration)
   }
 
-  private createMethod(name: string, prefix: string, minLevel: number) {
+  private createMethod(name: LogType, prefix: string, minLevel: number) {
     this[name] = (...args: [any, ...any[]]) => {
       if (this.level < minLevel) return
-      process.stderr.write(prefix + this.displayName + this.format(...args) + '\n')
+      this.stream.write(prefix + this.displayName + this.format(...args) + '\n')
     }
   }
 
@@ -76,8 +82,8 @@ export class Logger {
     return Logger.levels[this.name] ?? Logger.baseLevel
   }
 
-  extend = (namespace: string) => {
-    return new Logger(`${this.name}:${namespace}`)
+  extend = (namespace: string, showDiff = this.showDiff) => {
+    return new Logger(`${this.name}:${namespace}`, showDiff)
   }
 
   format: (format: any, ...param: any[]) => string = (...args) => {
@@ -89,7 +95,7 @@ export class Logger {
 
     let index = 0
     args[0] = (args[0] as string).replace(/%([a-zA-Z%])/g, (match, format) => {
-      if (match === '%%') return match
+      if (match === '%%') return '%'
       index += 1
       const formatter = Logger.formatters[format]
       if (typeof formatter === 'function') {

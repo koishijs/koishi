@@ -1,5 +1,5 @@
 import { extendDatabase } from 'koishi-core'
-import { MemoryDatabase, testDatabase, memory, MockedApp } from 'koishi-test-utils'
+import MemoryDatabase, { testDatabase, App } from 'koishi-test-utils'
 import { expect } from 'chai'
 
 declare module 'koishi-core/dist/database' {
@@ -19,7 +19,7 @@ interface FooData {
   bar: string
 }
 
-extendDatabase(MemoryDatabase, {
+extendDatabase<typeof MemoryDatabase>('koishi-test-utils', {
   async createFoo(data: Partial<FooData> = {}) {
     return this.$create('foo', data) as FooData
   },
@@ -33,7 +33,7 @@ extendDatabase(MemoryDatabase, {
   },
 })
 
-const app = testDatabase(new MockedApp().plugin(memory), {
+const app = testDatabase(new App({ mockDatabase: true }), {
   beforeEachUser: app => app.database.$store.user = [],
   beforeEachGroup: app => app.database.$store.group = [],
 })

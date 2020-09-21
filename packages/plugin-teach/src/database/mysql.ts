@@ -1,9 +1,7 @@
-import { Context, extendDatabase, Message } from 'koishi-core'
+import { Context, extendDatabase } from 'koishi-core'
 import { clone, defineProperty, Observed, pick } from 'koishi-utils'
-import { Dialogue, DialogueTest } from '../utils'
+import { Dialogue, equal, DialogueTest } from '../utils'
 import { escape } from 'mysql'
-import { RegExpError } from '../internal'
-import { format } from 'util'
 import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 
 declare module 'koishi-core/dist/context' {
@@ -11,30 +9,6 @@ declare module 'koishi-core/dist/context' {
     'dialogue/mysql'(test: DialogueTest, conditionals?: string[]): void
   }
 }
-
-declare module 'koishi-core/dist/plugins/message' {
-  namespace Message {
-    export namespace Teach {
-      let WhitespaceCharset: string
-      let NonspaceCharset: string
-      let UnsupportedCharset: string
-      let UnsupportedWordBoundary: string
-      let UnsupportedNongreedy: string
-      let UnsupportedLookaround: string
-      let UnsupportedNoncapturing: string
-      let UnsupportedNamedGroup: string
-    }
-  }
-}
-
-Message.Teach.WhitespaceCharset = '问题中的空白字符会被自动删除，你无需使用 \\s。'
-Message.Teach.NonspaceCharset = '问题中的空白字符会被自动删除，请使用 . 代替 \\S。'
-Message.Teach.UnsupportedCharset = '目前不支持在正则表达式中使用 \\%s，请使用 [%s] 代替。'
-Message.Teach.UnsupportedWordBoundary = '目前不支持在正则表达式中使用单词边界。'
-Message.Teach.UnsupportedNongreedy = '目前不支持在正则表达式中使用非捕获组。'
-Message.Teach.UnsupportedLookaround = '目前不支持在正则表达式中使用断言。'
-Message.Teach.UnsupportedNoncapturing = '目前不支持在正则表达式中使用非捕获组。'
-Message.Teach.UnsupportedNamedGroup = '目前不支持在正则表达式中使用具名组。'
 
 extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   async getDialoguesById(ids, fields) {
@@ -49,10 +23,12 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
     const conditionals: string[] = []
     this.app.emit('dialogue/mysql', test, conditionals)
     if (conditionals.length) query += ' WHERE ' + conditionals.join(' && ')
-    const dialogues = (await this.query<Dialogue[]>(query))
-      .filter((dialogue) => !this.app.bail('dialogue/fetch', dialogue, test))
+    const dialogues = await this.query<Dialogue[]>(query)
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
-    return dialogues
+    return dialogues.filter((data) => {
+      if (!test.groups || test.partial) return true
+      return !(data.flag & Dialogue.Flag.complement) === test.reversed || !equal(test.groups, data.groups)
+    })
   },
 
   async createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
@@ -123,33 +99,23 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields }) => 
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
   config.validateRegExp = {
-    onEscapeCharacterSet(start, end, kind, negate) {
-      // eslint-disable-next-line curly
-      if (kind === 'space') throw negate
-        ? new RegExpError(Message.Teach.WhitespaceCharset)
-        : new RegExpError(Message.Teach.NonspaceCharset)
-      let chars = kind === 'digit' ? '0-9' : '_0-9a-z'
-      let source = kind === 'digit' ? 'd' : 'w'
-      if (negate) {
-        chars = '^' + chars
-        source = source.toUpperCase()
-      }
-      throw new RegExpError(format(Message.Teach.UnsupportedCharset, source, chars))
+    onEscapeCharacterSet() {
+      throw new SyntaxError('unsupported escape character set')
     },
     onQuantifier(start, end, min, max, greedy) {
-      if (!greedy) throw new RegExpError(Message.Teach.UnsupportedNongreedy)
+      if (!greedy) throw new SyntaxError('unsupported non-greedy quantifier')
     },
     onWordBoundaryAssertion() {
-      throw new RegExpError(Message.Teach.UnsupportedWordBoundary)
+      throw new SyntaxError('unsupported word boundary assertion')
     },
     onLookaroundAssertionEnter() {
-      throw new RegExpError(Message.Teach.UnsupportedLookaround)
+      throw new SyntaxError('unsupported lookaround assertion')
     },
     onGroupEnter() {
-      throw new RegExpError(Message.Teach.UnsupportedNoncapturing)
+      throw new SyntaxError('unsupported non-capturing group')
     },
     onCapturingGroupEnter(start, name) {
-      if (name) throw new RegExpError(Message.Teach.UnsupportedNamedGroup)
+      if (name) throw new SyntaxError('unsupported named capturing group')
     },
   }
 

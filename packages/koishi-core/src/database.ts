@@ -23,7 +23,7 @@ export namespace User {
 
   export type Field = keyof User
   export const fields: Field[] = []
-  export type Observed<K extends Field = Field> = utils.Observed<Pick<User, K>>
+  export type Observed<K extends Field = Field> = utils.Observed<Pick<User, K>, Promise<void>>
   type Getter = (id: number, authority: number) => Partial<User>
   const getters: Getter[] = []
 
@@ -65,7 +65,7 @@ export namespace Group {
 
   export type Field = keyof Group
   export const fields: Field[] = []
-  export type Observed<K extends Field = Field> = utils.Observed<Pick<Group, K>>
+  export type Observed<K extends Field = Field> = utils.Observed<Pick<Group, K>, Promise<void>>
   type Getter = (id: number, authority: number) => Partial<Group>
   const getters: Getter[] = []
 
@@ -94,13 +94,13 @@ export interface Database {
   getUser<K extends User.Field>(userId: number, defaultAuthority?: number, fields?: readonly K[]): Promise<Pick<User, K | 'id'>>
   getUsers<K extends User.Field>(fields?: readonly K[]): Promise<Pick<User, K>[]>
   getUsers<K extends User.Field>(ids: readonly number[], fields?: readonly K[]): Promise<Pick<User, K>[]>
-  setUser(userId: number, data: Partial<User>): Promise<any>
+  setUser(userId: number, data: Partial<User>): Promise<void>
 
   getGroup<K extends Group.Field>(groupId: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id'>>
   getGroup<K extends Group.Field>(groupId: number, selfId?: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id'>>
   getAllGroups<K extends Group.Field>(assignees?: readonly number[]): Promise<Pick<Group, K>[]>
   getAllGroups<K extends Group.Field>(fields?: readonly K[], assignees?: readonly number[]): Promise<Pick<Group, K>[]>
-  setGroup(groupId: number, data: Partial<Group>): Promise<any>
+  setGroup(groupId: number, data: Partial<Group>): Promise<void>
 }
 
 type DatabaseExtensionMethods<I> = {

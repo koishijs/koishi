@@ -1,23 +1,25 @@
-import { config, context, internal, WorkerAPI, contextFactory, response } from 'koishi-plugin-eval/dist/worker'
-import { promises, readFileSync } from 'fs'
-import { resolve } from 'path'
-import { Logger } from 'koishi-utils'
-import { Config } from '.'
-import ts from 'typescript'
+import { WorkerAPI, Context, response, mapDirectory, formatError } from 'koishi-plugin-eval/dist/worker'
+import { Logger, Time, CQCode, Random } from 'koishi-utils'
+import { prepare, synthetize } from './loader'
+
+export * from './loader'
 
 const logger = new Logger('addon')
 
-const { SourceTextModule, SyntheticModule } = require('vm')
+export interface AddonWorkerConfig {
+  moduleRoot?: string
+  cacheFile?: string
+}
 
 declare module 'koishi-plugin-eval/dist/worker' {
-  interface WorkerConfig extends Config {}
+  interface WorkerConfig extends AddonWorkerConfig {}
 
   interface WorkerData {
     addonNames: string[]
   }
 
   interface WorkerAPI {
-    addon(sid: string, user: {}, argv: WorkerArgv): string | void | Promise<string | void>
+    callAddon(options: ContextOptions, argv: AddonArgv): Promise<string | void>
   }
 
   interface Response {
@@ -25,64 +27,42 @@ declare module 'koishi-plugin-eval/dist/worker' {
   }
 }
 
-interface WorkerArgv {
+interface AddonArgv {
   name: string
   args: string[]
   options: Record<string, any>
-  rest: string
 }
 
-type AddonAction = (argv: WorkerArgv) => string | void | Promise<string | void>
+interface AddonContext extends AddonArgv, Context {}
+
+type AddonAction = (ctx: AddonContext) => string | void | Promise<string | void>
 const commandMap: Record<string, AddonAction> = {}
 
-WorkerAPI.prototype.addon = async function (sid, user, argv) {
+WorkerAPI.prototype.callAddon = async function (this: WorkerAPI, options, argv) {
   const callback = commandMap[argv.name]
   try {
-    return await callback({ ...argv, ...contextFactory(sid, user) })
+    const ctx = { ...argv, ...Context(options) }
+    const result = await callback(ctx)
+    await this.sync(ctx)
+    return result
   } catch (error) {
-    logger.warn(error)
+    if (!argv.options.debug) return logger.warn(error)
+    return formatError(error)
+      .replace('WorkerAPI.worker_1.WorkerAPI.callAddon', 'WorkerAPI.callAddon')
   }
 }
 
-const koishi = new SyntheticModule(['registerCommand'], function () {
-  this.setExport('registerCommand', function registerCommand(name: string, callback: AddonAction) {
+synthetize('koishi/addons.ts', {
+  registerCommand(name: string, callback: AddonAction) {
     commandMap[name] = callback
-  })
-}, { context })
+  },
+})
 
-const root = resolve(process.cwd(), config.moduleRoot)
-const modules: Record<string, any> = { koishi }
-config.addonNames.unshift(...Object.keys(modules))
+synthetize('koishi/utils.ts', {
+  Time, CQCode, Random,
+}, 'utils')
 
-function linker(specifier: string, reference: any) {
-  if (specifier in modules) {
-    return modules[specifier]
-  }
-  throw new Error(`Unable to resolve dependency "${specifier}"`)
-}
-
-const json = JSON.parse(readFileSync(resolve(root, 'tsconfig.json'), 'utf8'))
-const { options: compilerOptions } = ts.parseJsonConfigFileContent(json, ts.sys, root)
-
-async function createModule(path: string) {
-  if (!modules[path]) {
-    const content = await promises.readFile(resolve(root, path, 'index.ts'), 'utf8')
-    const { outputText } = ts.transpileModule(content, {
-      compilerOptions,
-    })
-    modules[path] = new SourceTextModule(outputText, { context, identifier: path })
-  }
-  const module = modules[path]
-  await module.link(linker)
-  await module.evaluate()
-}
-
-export default Promise.all(config.addonNames.map(path => createModule(path).then(() => {
-  logger.debug('load module %c', path)
-  internal.setGlobal(path, modules[path].namespace)
-}, (error) => {
-  logger.warn(`cannot load module %c\n` + error.stack, path)
-  delete modules[path]
-}))).then(() => {
+export default prepare().then(() => {
   response.commands = Object.keys(commandMap)
+  mapDirectory('koishi/utils/', require.resolve('koishi-utils'))
 })

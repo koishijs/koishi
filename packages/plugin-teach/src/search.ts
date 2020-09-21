@@ -256,7 +256,7 @@ async function showInfo({ app }: Dialogue.Argv) {
   }))
   if (app.getImageServerStatus) {
     tasks.push(app.getImageServerStatus().then(({ totalSize, totalCount }) => {
-      return `收录图片 ${totalCount} 张，总体积 ${(totalSize / (1 << 20)).toFixed(1)} MB。`
+      return `收录图片 ${totalCount} 张，总体积 ${+(totalSize / (1 << 20)).toFixed(1)} MB。`
     }))
   }
 

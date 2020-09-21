@@ -1,5 +1,5 @@
 import { camelCase, Logger, snakeCase, capitalize } from 'koishi-utils'
-import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatus } from 'koishi-core'
+import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatusCode } from 'koishi-core'
 
 const logger = new Logger('bot')
 
@@ -74,6 +74,27 @@ export interface VersionInfo {
   pluginBuildConfiguration: 'debug' | 'release'
 }
 
+export type HonorType = 'talkative' | 'performer' | 'legend' | 'strong_newbie' | 'emotion'
+
+export interface TalkativeMemberInfo extends AccountInfo {
+  avatar: string
+  dayCount: number
+}
+
+export interface HonoredMemberInfo {
+  avatar: string
+  description: string
+}
+
+export interface HonorInfo {
+  currentTalkative: TalkativeMemberInfo
+  talkativeList: HonoredMemberInfo[]
+  performerList: HonoredMemberInfo[]
+  legendList: HonoredMemberInfo[]
+  strongNewbieList: HonoredMemberInfo[]
+  emotionList: HonoredMemberInfo[]
+}
+
 declare module 'koishi-core/dist/server' {
   interface Bot {
     _request?(action: string, params: Record<string, any>): Promise<CQResponse>
@@ -81,18 +102,14 @@ declare module 'koishi-core/dist/server' {
     getAsync(action: string, params?: Record<string, any>): Promise<void>
     sendGroupMsgAsync(groupId: number, message: string, autoEscape?: boolean): Promise<void>
     sendPrivateMsgAsync(userId: number, message: string, autoEscape?: boolean): Promise<void>
-    setGroupAnonymousBan(groupId: number, anonymous: object, duration?: number): Promise<void>
-    setGroupAnonymousBan(groupId: number, flag: string, duration?: number): Promise<void>
-    setGroupAnonymousBanAsync(groupId: number, anonymous: object, duration?: number): Promise<void>
-    setGroupAnonymousBanAsync(groupId: number, flag: string, duration?: number): Promise<void>
+    setGroupAnonymousBan(groupId: number, anonymous: string | object, duration?: number): Promise<void>
+    setGroupAnonymousBanAsync(groupId: number, anonymous: string | object, duration?: number): Promise<void>
     setFriendAddRequest(flag: string, approve?: boolean): Promise<void>
     setFriendAddRequest(flag: string, remark?: string): Promise<void>
     setFriendAddRequestAsync(flag: string, approve?: boolean): Promise<void>
     setFriendAddRequestAsync(flag: string, remark?: string): Promise<void>
-    setGroupAddRequest(flag: string, subType: 'add' | 'invite', approve?: boolean): Promise<void>
-    setGroupAddRequest(flag: string, subType: 'add' | 'invite', reason?: string): Promise<void>
-    setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', approve?: boolean): Promise<void>
-    setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', reason?: string): Promise<void>
+    setGroupAddRequest(flag: string, subType: 'add' | 'invite', approve?: string | boolean): Promise<void>
+    setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', approve?: string | boolean): Promise<void>
     deleteMsg(messageId: number): Promise<void>
     deleteMsgAsync(messageId: number): Promise<void>
     sendLike(userId: number, times?: number): Promise<void>
@@ -120,6 +137,7 @@ declare module 'koishi-core/dist/server' {
     getGroupInfo(groupId: number, noCache?: boolean): Promise<GroupInfo>
     getGroupMemberInfo(groupId: number, userId: number, noCache?: boolean): Promise<GroupMemberInfo>
     getGroupMemberList(groupId: number): Promise<GroupMemberInfo[]>
+    getGroupHonorInfo(groupId: number, type: HonorType): Promise<HonorInfo>
     getCookies(domain?: string): Promise<string>
     getCsrfToken(): Promise<number>
     getCredentials(domain?: string): Promise<Credentials>
@@ -169,7 +187,7 @@ Bot.prototype.sendGroupMsg = async function (this: Bot, groupId, message, autoEs
   if (!message) return
   const session = this.createSession('group', 'group', groupId, message)
   if (this.app.bail(session, 'before-send', session)) return
-  const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message, autoEscape })
+  const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message: session.message, autoEscape })
   session.messageId = messageId
   this.app.emit(session, 'send', session)
   return messageId
@@ -179,14 +197,14 @@ Bot.prototype.sendGroupMsgAsync = function (this: Bot, groupId, message, autoEsc
   if (!message) return
   const session = this.createSession('group', 'group', groupId, message)
   if (this.app.bail(session, 'before-send', session)) return
-  return this.getAsync('send_group_msg', { groupId, message, autoEscape })
+  return this.getAsync('send_group_msg', { groupId, message: session.message, autoEscape })
 }
 
 Bot.prototype.sendPrivateMsg = async function (this: Bot, userId, message, autoEscape = false) {
   if (!message) return
   const session = this.createSession('private', 'user', userId, message)
   if (this.app.bail(session, 'before-send', session)) return
-  const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message, autoEscape })
+  const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message: session.message, autoEscape })
   session.messageId = messageId
   this.app.emit(session, 'send', session)
   return messageId
@@ -196,16 +214,16 @@ Bot.prototype.sendPrivateMsgAsync = function (this: Bot, userId, message, autoEs
   if (!message) return
   const session = this.createSession('private', 'user', userId, message)
   if (this.app.bail(session, 'before-send', session)) return
-  return this.getAsync('send_private_msg', { userId, message, autoEscape })
+  return this.getAsync('send_private_msg', { userId, message: session.message, autoEscape })
 }
 
-Bot.prototype.setGroupAnonymousBan = async function (this: Bot, groupId: number, meta: object | string, duration?: number) {
+Bot.prototype.setGroupAnonymousBan = async function (this: Bot, groupId, meta, duration) {
   const args = { groupId, duration } as any
   args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
   await this.get('set_group_anonymous_ban', args)
 }
 
-Bot.prototype.setGroupAnonymousBanAsync = function (this: Bot, groupId: number, meta: object | string, duration?: number) {
+Bot.prototype.setGroupAnonymousBanAsync = function (this: Bot, groupId, meta, duration) {
   const args = { groupId, duration } as any
   args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
   return this.getAsync('set_group_anonymous_ban', args)
@@ -227,7 +245,7 @@ Bot.prototype.setFriendAddRequestAsync = function (this: Bot, flag: string, info
   }
 }
 
-Bot.prototype.setGroupAddRequest = async function (this: Bot, flag: string, subType: 'add' | 'invite', info: string | boolean = true) {
+Bot.prototype.setGroupAddRequest = async function (this: Bot, flag, subType, info = true) {
   if (typeof info === 'string') {
     await this.get('set_group_add_request', { flag, subType, approve: false, reason: info })
   } else {
@@ -235,7 +253,7 @@ Bot.prototype.setGroupAddRequest = async function (this: Bot, flag: string, subT
   }
 }
 
-Bot.prototype.setGroupAddRequestAsync = function (this: Bot, flag: string, subType: 'add' | 'invite', info: string | boolean = true) {
+Bot.prototype.setGroupAddRequestAsync = function (this: Bot, flag, subType, info = true) {
   if (typeof info === 'string') {
     return this.getAsync('set_group_add_request', { flag, subType, approve: false, reason: info })
   } else {
@@ -248,13 +266,13 @@ Bot.prototype.getSelfId = async function getSelfId(this: Bot) {
   return userId
 }
 
-Bot.prototype.getStatus = async function getStatus(this: Bot) {
-  if (!this.ready) return BotStatus.BOT_IDLE
+Bot.prototype.getStatusCode = async function getStatusCode(this: Bot) {
+  if (!this.ready) return BotStatusCode.BOT_IDLE
   try {
     const data = await this.get<StatusInfo>('get_status')
-    return data.good ? BotStatus.GOOD : data.online ? BotStatus.SERVER_ERROR : BotStatus.BOT_OFFLINE
+    return data.good ? BotStatusCode.GOOD : data.online ? BotStatusCode.SERVER_ERROR : BotStatusCode.BOT_OFFLINE
   } catch {
-    return BotStatus.NET_ERROR
+    return BotStatusCode.NET_ERROR
   }
 }
 
@@ -305,6 +323,7 @@ defineSync('get_group_list')
 defineSync('get_group_info', 'group_id', 'no_cache')
 defineSync('get_group_member_info', 'group_id', 'user_id', 'no_cache')
 defineSync('get_group_member_list', 'group_id')
+defineSync('get_group_honor_info', 'group_id', 'type')
 defineExtract('get_cookies', 'cookies', 'domain')
 defineExtract('get_csrf_token', 'token')
 defineSync('get_credentials', 'domain')
@@ -360,6 +379,7 @@ export interface ImageInfo {
 }
 
 export interface VersionInfo {
+  version?: string
   goCqhttp?: boolean
   runtimeVersion?: string
   runtimeOs?: string
@@ -395,9 +415,9 @@ interface CQNode {
 defineAsync('set_group_name', 'group_id', 'name')
 
 export function toVersion(data: VersionInfo) {
-  const { coolqEdition, pluginVersion, goCqhttp } = data
+  const { coolqEdition, pluginVersion, goCqhttp, version } = data
   if (goCqhttp) {
-    return `Go-CQHTTP`
+    return `Go-CQHTTP/${version.slice(1)}`
   } else {
     return `CoolQ/${capitalize(coolqEdition)} CQHTTP/${pluginVersion}`
   }

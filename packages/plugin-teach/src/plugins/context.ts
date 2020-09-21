@@ -18,12 +18,17 @@ declare module '../utils' {
       groups?: string[]
       partial?: boolean
       reversed?: boolean
-      noContextOptions?: boolean
+    }
+
+    interface Config {
+      useContext?: boolean
     }
   }
 }
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
+  if (config.useContext === false) return
+
   ctx.command('teach')
     .option('disable', '-d  在当前环境下禁用问答')
     .option('disableGlobal', '-D  在所有环境下禁用问答', { authority: 3 })
@@ -31,12 +36,6 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('enableGlobal', '-E  在所有环境下启用问答', { authority: 3 })
     .option('groups', '-g <gids>  设置具体的生效环境', { authority: 3, type: 'string', validate: RE_GROUPS })
     .option('global', '-G  无视上下文搜索')
-
-  // TODO: ???
-  ctx.on('dialogue/fetch', (data, test) => {
-    if (!test.groups || test.partial) return
-    return !(data.flag & Dialogue.Flag.complement) === test.reversed || !equal(test.groups, data.groups)
-  })
 
   ctx.on('dialogue/validate', (argv) => {
     const { options, session } = argv
@@ -46,12 +45,12 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     } else if (options.disableGlobal && options.enableGlobal) {
       return '选项 -D, -E 不能同时使用。'
     } else if (options.disableGlobal && options.disable) {
-      return '选项 -d, -D 不能同时使用。'
+      return '选项 -D, -d 不能同时使用。'
     } else if (options.enable && options.enableGlobal) {
-      return '选项 -e, -E 不能同时使用。'
+      return '选项 -E, -e 不能同时使用。'
     }
 
-    argv.noContextOptions = false
+    let noContextOptions = false
     if (options.disable) {
       argv.reversed = true
       argv.partial = !options.enableGlobal
@@ -65,7 +64,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       argv.partial = false
       argv.groups = []
     } else {
-      argv.noContextOptions = !options.enable
+      noContextOptions = !options.enable
       if (options.target ? options.enable : !options.global) {
         argv.reversed = false
         argv.partial = true
@@ -74,13 +73,13 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
 
     if ('groups' in options) {
-      if (argv.noContextOptions) {
-        return '参数 -g, --groups 必须与 -d/-D/-e/-E 之一同时使用。'
+      if (noContextOptions) {
+        return '选项 -g, --groups 必须与 -d/-D/-e/-E 之一同时使用。'
       } else {
         argv.groups = options.groups ? options.groups.split(',') : []
       }
     } else if (session.messageType !== 'group' && argv.partial) {
-      return '非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --groups 参数。'
+      return '非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --groups 选项。'
     }
   })
 

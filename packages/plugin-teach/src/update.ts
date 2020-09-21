@@ -49,7 +49,7 @@ export default function apply(ctx: Context) {
     const { includeLast, excludeLast } = options
     if (!options.review && !options.revert) return
     const now = Date.now(), includeTime = Time.parseTime(includeLast), excludeTime = Time.parseTime(excludeLast)
-    const dialogues = Object.values(Dialogue.history).filter((dialogue) => {
+    const dialogues = Object.values(argv.app.teachHistory).filter((dialogue) => {
       if (dialogue._operator !== session.userId) return
       const offset = now - dialogue._timestamp
       if (includeTime && offset >= includeTime) return
@@ -128,7 +128,7 @@ export async function update(argv: Dialogue.Argv) {
   argv.updated = []
   argv.skipped = []
   const dialogues = argv.dialogues = revert || review
-    ? Object.values(pick(Dialogue.history, target)).filter(Boolean)
+    ? Object.values(pick(argv.app.teachHistory, target)).filter(Boolean)
     : await app.database.getDialoguesById(target)
   argv.dialogueMap = Object.fromEntries(dialogues.map(d => [d.id, { ...d }]))
 

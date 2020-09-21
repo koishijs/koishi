@@ -2,9 +2,23 @@ import { Context } from 'koishi-core'
 
 const dayInMonth = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const haabMonthNames = ['Pop', "Wo'", 'Sip', "Sotz'", 'Sek', 'Xul', "Yaxk'in", 'Mol', "Ch'en", 'Yax', "Sak'", 'Keh', 'Mak', "K'ank'in", 'Muwan', 'Pax', "K'ayab", "Kumk'u", 'Wayeb']
-const longCountUnits = ['Kin', 'Uinal', 'Tun', "Ka'tun", "Bak'tun", 'Pictun', 'Kalabtun', "K'inchiltun", 'Alautun']
-const dayNames = ['Ajaw', 'Imix', "Ik'", "Ak'bal", "K'an", 'Chikchan', 'Kimi', "Manik'", 'Lamat', 'Muluk', 'Ok', 'Chuwen', 'Eb', 'Ben', 'Ix', 'Men', "K'ib", 'Kaban', "Etz'nab", 'Kawak']
+
+const haabMonthNames = [
+  'Pop', "Wo'", 'Sip', "Sotz'", 'Sek', 'Xul', "Yaxk'in",
+  'Mol', "Ch'en", 'Yax', "Sak'", 'Keh', 'Mak',
+  "K'ank'in", 'Muwan', 'Pax', "K'ayab", "Kumk'u", 'Wayeb',
+]
+
+const longCountUnits = [
+  'Kin', 'Uinal', 'Tun', "Ka'tun", "Bak'tun",
+  'Pictun', 'Kalabtun', "K'inchiltun", 'Alautun',
+]
+
+const dayNames = [
+  'Ajaw', 'Imix', "Ik'", "Ak'bal", "K'an", 'Chikchan',
+  'Kimi', "Manik'", 'Lamat', 'Muluk', 'Ok', 'Chuwen', 'Eb',
+  'Ben', 'Ix', 'Men', "K'ib", 'Kaban', "Etz'nab", 'Kawak',
+]
 
 function isLeap(year: number) {
   return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)

@@ -32,6 +32,9 @@ rules:
     - after
   import/export: off
   keyword-spacing: off
+  max-len:
+    - warn
+    - 160
   # https://github.com/typescript-eslint/typescript-eslint/issues/618
   no-dupe-class-members: off
   no-ex-assign: off
@@ -61,6 +64,7 @@ rules:
   yoda: off
   standard/no-callback-literal: off
   '@typescript-eslint/keyword-spacing': error
+  '@typescript-eslint/no-unused-vars': warn
   '@typescript-eslint/space-before-function-paren':
     - error
     - anonymous: always

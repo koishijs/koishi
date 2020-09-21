@@ -43,10 +43,13 @@ export function apply(ctx: Context) {
             case 'description':
             case 'tag':
             case 'synonym':
-              message += `\n${tagMap[scope]}: ` + articles.map(a => a.object + (options.confidence ? ` (${a.confidence})` : '')).join(', ')
+              message += `\n${tagMap[scope]}: `
+                + articles.map(a => a.object + (options.confidence ? ` (${a.confidence})` : '')).join(', ')
               break
             case 'mixed':
-              message += '\n' + articles.map(a => (title.includes(a.subject) ? a.object : a.subject) + (options.confidence ? ` (${a.confidence})` : '')).join(', ')
+              message += '\n'
+                + articles.map(a => (title.includes(a.subject) ? a.object : a.subject)
+                + (options.confidence ? ` (${a.confidence})` : '')).join(', ')
               break
             case 'property':
               for (const { object, confidence, predicate } of articles) {

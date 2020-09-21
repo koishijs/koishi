@@ -7,11 +7,11 @@
     "moduleResolution": "node",
   },
   "references": [
-    { "path": "./packages/chai-extended" },
     { "path": "./packages/koishi-utils" },
     { "path": "./packages/koishi-core" },
     { "path": "./packages/koishi-test-utils" },
     { "path": "./packages/adapter-cqhttp" },
+    { "path": "./packages/adapter-tomon" },
 
     { "path": "./packages/plugin-mysql" },
     { "path": "./packages/plugin-mongo" },
@@ -25,7 +25,6 @@
     { "path": "./packages/plugin-github" },
     { "path": "./packages/plugin-image-search" },
     { "path": "./packages/plugin-monitor" },
-    { "path": "./packages/plugin-recorder" },
     { "path": "./packages/plugin-rss" },
     { "path": "./packages/plugin-schedule" },
     { "path": "./packages/plugin-status" },

@@ -3,7 +3,7 @@ import { Session } from '../session'
 import { Message } from './message'
 import { getCommands } from './help'
 import { format } from 'util'
-import leven from 'leven'
+import { distance } from 'fastest-levenshtein'
 
 declare module '../session' {
   interface Session {
@@ -36,7 +36,7 @@ Session.prototype.$use = function $use(this: Session, middleware: Middleware) {
 }
 
 Session.prototype.$prompt = function $prompt(this: Session, timeout = this.$app.options.promptTimeout) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const dispose = this.$use((session) => {
       clearTimeout(timer)
       dispose()
@@ -44,7 +44,7 @@ Session.prototype.$prompt = function $prompt(this: Session, timeout = this.$app.
     })
     const timer = setTimeout(() => {
       dispose()
-      reject(new Error('prompt timeout'))
+      resolve('')
     }, timeout)
   })
 }
@@ -62,13 +62,13 @@ Session.prototype.$suggest = function $suggest(this: Session, options: SuggestOp
 
   let suggestions: string[], minDistance = Infinity
   for (const name of items) {
-    const distance = leven(name, target)
-    if (name.length <= 2 || distance > name.length * coefficient) continue
-    if (distance === minDistance) {
+    const dist = distance(name, target)
+    if (name.length <= 2 || dist > name.length * coefficient) continue
+    if (dist === minDistance) {
       suggestions.push(name)
-    } else if (distance < minDistance) {
+    } else if (dist < minDistance) {
       suggestions = [name]
-      minDistance = distance
+      minDistance = dist
     }
   }
   if (!suggestions) return next(() => this.$send(prefix))
@@ -90,8 +90,8 @@ Session.prototype.$suggest = function $suggest(this: Session, options: SuggestOp
 
 export default function apply(ctx: Context) {
   ctx.middleware((session, next) => {
-    const { $argv, $parsed, $prefix, $appel, messageType } = session
-    if ($argv || messageType !== 'private' && $prefix === null && !$appel) return next()
+    const { $argv, $reply, $parsed, $prefix, $appel, messageType } = session
+    if ($argv || $reply || messageType !== 'private' && $prefix === null && !$appel) return next()
     const target = $parsed.split(/\s/, 1)[0].toLowerCase()
     if (!target) return next()
 

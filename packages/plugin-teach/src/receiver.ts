@@ -1,6 +1,12 @@
 import { Context, User, Session, NextFunction, Command } from 'koishi-core'
-import { CQCode, simplify, noop, escapeRegExp } from 'koishi-utils'
+import { CQCode, simplify, noop, escapeRegExp, Random, makeArray } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './utils'
+
+declare module 'koishi-core/dist/app' {
+  interface App {
+    _dialogueStates: Record<number, SessionState>
+  }
+}
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -46,7 +52,6 @@ declare module './utils' {
   }
 }
 
-// TODO change name
 export interface SessionState {
   userId: number
   groupId: number
@@ -59,8 +64,6 @@ export interface SessionState {
   isSearch?: boolean
 }
 
-const states: Record<number, SessionState> = {}
-
 export function escapeAnswer(message: string) {
   return message.replace(/%/g, '@@__PLACEHOLDER__@@')
 }
@@ -70,11 +73,11 @@ export function unescapeAnswer(message: string) {
 }
 
 Context.prototype.getSessionState = function (session) {
-  const { groupId, anonymous, userId } = session
-  if (!states[groupId]) {
-    this.emit('dialogue/state', states[groupId] = { groupId } as SessionState)
+  const { groupId, anonymous, userId, $app } = session
+  if (!$app._dialogueStates[groupId]) {
+    this.emit('dialogue/state', $app._dialogueStates[groupId] = { groupId } as SessionState)
   }
-  const state = Object.create(states[groupId])
+  const state = Object.create($app._dialogueStates[groupId])
   state.session = session
   state.userId = anonymous ? -anonymous.id : userId
   return state
@@ -159,7 +162,7 @@ export class MessageBuffer {
   }
 }
 
-export async function triggerDialogue(ctx: Context, session: Session, config: Dialogue.Config, next: NextFunction = noop) {
+export async function triggerDialogue(ctx: Context, session: Session, next: NextFunction = noop) {
   const state = ctx.getSessionState(session)
   state.next = next
   state.test = {}
@@ -175,7 +178,7 @@ export async function triggerDialogue(ctx: Context, session: Session, config: Di
   let dialogue: Dialogue
   const total = await getTotalWeight(ctx, state)
   if (!total) return next()
-  const target = Math.random() * Math.max(1, total)
+  const target = Random.real(Math.max(1, total))
   let pointer = 0
   for (const _dialogue of dialogues) {
     pointer += _dialogue._weight
@@ -246,8 +249,10 @@ export async function triggerDialogue(ctx: Context, session: Session, config: Di
 
 export default function (ctx: Context, config: Dialogue.Config) {
   const { nickname = ctx.app.options.nickname, maxRedirections = 3 } = config
-  const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
-  const nicknameRE = new RegExp(`^((${nicknames.map(escapeRegExp).join('|')})[,，]?\\s*)+`)
+  const nicknames = makeArray(nickname).map(escapeRegExp)
+  const nicknameRE = new RegExp(`^((${nicknames.join('|')})[,，]?\\s*)+`)
+
+  ctx.app._dialogueStates = {}
 
   config._stripQuestion = (source) => {
     source = prepareSource(source)
@@ -263,7 +268,11 @@ export default function (ctx: Context, config: Dialogue.Config) {
   }
 
   ctx.group().middleware(async (session, next) => {
-    return triggerDialogue(ctx, session, config, next)
+    return session.$execute({
+      command: 'dialogue',
+      args: [session.message],
+      next,
+    })
   })
 
   ctx.on('dialogue/receive', ({ session, test }) => {
@@ -289,11 +298,11 @@ export default function (ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.group().command('teach/dialogue <message...>', '触发教学对话')
+  ctx.group().command('dialogue <message...>', '触发教学对话')
     .action(async ({ session, next }, message = '') => {
       if (session._redirected > maxRedirections) return next()
       session.message = message
-      return triggerDialogue(ctx, session, config, next)
+      return triggerDialogue(ctx, session, next)
     })
 }
 

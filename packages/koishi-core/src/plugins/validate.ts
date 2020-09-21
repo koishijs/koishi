@@ -9,9 +9,9 @@ import { Message } from './message'
 export type UserType<T, U extends User.Field = User.Field> = T | ((user: Pick<User, U>) => T)
 
 declare module '../command' {
-  interface Command<U, G> {
-    _checkers: ((session: Session<U, G>) => string | boolean)[]
-    before(checker: (session: Session<U, G>) => string | boolean): this
+  interface Command<U, G, O> {
+    _checkers: ((session: Session<U, G, O>) => string | boolean)[]
+    before(checker: (session: Session<U, G, O>) => string | boolean): this
     getConfig<K extends keyof CommandConfig>(key: K, session: Session): Exclude<CommandConfig[K], (user: User) => any>
   }
 
@@ -59,7 +59,7 @@ Object.assign(Command.defaultOptionConfig, {
   authority: 0,
 })
 
-Command.userFields(function* ({ command, options = {} }, fields) {
+Command.userFields(({ command, options = {} }, fields) => {
   const { maxUsage, minInterval, authority } = command.config
   let shouldFetchAuthority = !fields.has('authority') && authority > 0
   let shouldFetchUsage = !!(maxUsage || minInterval)
@@ -69,10 +69,10 @@ Command.userFields(function* ({ command, options = {} }, fields) {
       if (notUsage) shouldFetchUsage = false
     }
   }
-  if (shouldFetchAuthority) yield 'authority'
+  if (shouldFetchAuthority) fields.add('authority')
   if (shouldFetchUsage) {
-    if (maxUsage) yield 'usage'
-    if (minInterval) yield 'timers'
+    if (maxUsage) fields.add('usage')
+    if (minInterval) fields.add('timers')
   }
 })
 

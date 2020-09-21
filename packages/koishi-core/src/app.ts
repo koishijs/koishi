@@ -3,7 +3,7 @@ import { Context, Middleware, NextFunction } from './context'
 import { Group, User, Database } from './database'
 import { BotOptions, Server } from './server'
 import { Session } from './session'
-import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp } from 'koishi-utils'
+import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray } from 'koishi-utils'
 import help from './plugins/help'
 import shortcut from './plugins/shortcut'
 import suggest from './plugins/suggest'
@@ -44,15 +44,14 @@ export class App extends Context {
 
   _database: Database
   _commands: Command[]
+  _sessions: Record<string, Session> = {}
   _commandMap: Record<string, Command>
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]>
-  _userCache: LruCache<number, Observed<Partial<User>>>
-  _groupCache: LruCache<number, Observed<Partial<Group>>>
+  _userCache: LruCache<number, Observed<Partial<User>, Promise<void>>>
+  _groupCache: LruCache<number, Observed<Partial<Group>, Promise<void>>>
 
   private _nameRE: RegExp
   private _prefixRE: RegExp
-  private _middlewareCounter = 0
-  private _middlewareSet = new Set<number>()
   private _getSelfIdsPromise: Promise<any>
 
   static defaultConfig: AppOptions = {
@@ -106,7 +105,7 @@ export class App extends Context {
 
   prepare() {
     const { nickname, prefix } = this.options
-    const nicknames = Array.isArray(nickname) ? nickname : nickname ? [nickname] : []
+    const nicknames = makeArray(nickname)
     const prefixes = Array.isArray(prefix) ? prefix : [prefix || '']
     this._nameRE = createLeadingRE(nicknames, '@?', '([,，]\\s*|\\s+)')
     this._prefixRE = createLeadingRE(prefixes)
@@ -145,7 +144,7 @@ export class App extends Context {
 
     let capture: RegExpMatchArray, atSelf = false
     // eslint-disable-next-line no-cond-assign
-    if (capture = message.match(/^\[CQ:reply,id=(\d+)\]/)) {
+    if (capture = message.match(/^\[CQ:reply,id=(-?\d+)\]\s*/)) {
       session.$reply = +capture[1]
       message = message.slice(capture[0].length)
     }
@@ -206,11 +205,10 @@ export class App extends Context {
 
   private async _receive(session: Session) {
     // preparation
-    const counter = this._middlewareCounter++
-    this._middlewareSet.add(counter)
+    this._sessions[session.$uuid] = session
     const middlewares: Middleware[] = this._hooks[Context.MIDDLEWARE_EVENT as any]
       .filter(([context]) => context.match(session))
-      .map(([_, middleware]) => middleware)
+      .map(([, middleware]) => middleware)
 
     // execute middlewares
     let index = 0, midStack = '', lastCall = ''
@@ -225,7 +223,7 @@ export class App extends Context {
       }
 
       try {
-        if (!this._middlewareSet.has(counter)) {
+        if (!this._sessions[session.$uuid]) {
           throw new Error('isolated next function detected')
         }
         if (fallback) middlewares.push((_, next) => fallback(next))
@@ -241,18 +239,19 @@ export class App extends Context {
     }
     await next()
 
-    // update middleware set
-    this._middlewareSet.delete(counter)
-    this.emit(session, 'after-middleware', session)
+    // update session map
+    delete this._sessions[session.$uuid]
+    this.emit(session, 'middleware', session)
 
     // flush user & group data
     await session.$user?._update()
     await session.$group?._update()
   }
 
-  private _parse(message: string, { $prefix, $appel, messageType }: Session, builtin: boolean, terminator = '') {
+  private _parse(message: string, session: Session, builtin: boolean, terminator = '') {
     // group message should have prefix or appel to be interpreted as a command call
-    if (builtin && messageType !== 'private' && $prefix === null && !$appel) return
+    const { $reply, $prefix, $appel, messageType } = session
+    if (builtin && ($reply || messageType !== 'private' && $prefix === null && !$appel)) return
     terminator = escapeRegExp(terminator)
     const name = message.split(new RegExp(`[\\s${terminator}]`), 1)[0]
     const index = name.lastIndexOf('/')

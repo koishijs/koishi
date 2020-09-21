@@ -104,8 +104,7 @@ export default class MysqlDatabase {
     })
   }
 
-  select<T extends string>(table: string, fields: readonly (T extends string ? T : string & keyof T)[], conditional?: string, values?: readonly any[]): Promise<Record<T, any>[]>
-  select<T extends {}>(table: string, fields: readonly (T extends string ? T : string & keyof T)[], conditional?: string, values?: readonly any[]): Promise<T[]>
+  select<T extends {}>(table: string, fields: readonly (string & keyof T)[], conditional?: string, values?: readonly any[]): Promise<T[]>
   select(table: string, fields: string[], conditional?: string, values: readonly any[] = []) {
     logger.debug(`[select] ${table}: ${fields ? fields.join(', ') : '*'}`)
     const sql = 'SELECT '
@@ -120,7 +119,7 @@ export default class MysqlDatabase {
     if (!keys.length) return
     logger.debug(`[create] ${table}: ${data}`)
     const header = await this.query<OkPacket>(
-      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(_ => '?').join(', ')})`,
+      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
       [table, ...this.formatValues(table, data, keys)],
     )
     return { ...data, id: header.insertId } as any
@@ -132,9 +131,9 @@ export default class MysqlDatabase {
     if (typeof arg1 === 'object') {
       if (!arg1.length) return
       const keys = Object.keys(arg1[0])
-      const placeholder = `(${keys.map(_ => '?').join(', ')})`
+      const placeholder = `(${keys.map(() => '?').join(', ')})`
       const header = await this.query(
-        `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES ${arg1.map(_ => placeholder).join(', ')}
+        `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES ${arg1.map(() => placeholder).join(', ')}
         ON DUPLICATE KEY UPDATE ${keys.filter(key => key !== 'id').map(key => `\`${key}\` = VALUES(\`${key}\`)`).join(', ')}`,
         [table, ...[].concat(...arg1.map(data => this.formatValues(table, data, keys)))],
       )

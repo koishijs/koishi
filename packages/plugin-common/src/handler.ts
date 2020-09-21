@@ -1,5 +1,5 @@
 import { App, Session } from 'koishi-core'
-import { simplify } from 'koishi-utils'
+import { simplify, makeArray } from 'koishi-utils'
 import {} from 'koishi-adapter-cqhttp'
 
 export interface Respondent {
@@ -22,7 +22,6 @@ export interface HandlerOptions {
   onFriend?: RequestHandler
   onGroupAdd?: RequestHandler
   onGroupInvite?: RequestHandler
-  blackList?: string[]
   respondents?: Respondent[]
   throttle?: ThrottleConfig | ThrottleConfig[]
   welcome?: WelcomeMessage
@@ -50,14 +49,7 @@ export default function apply(ctx: App, options: HandlerOptions = {}) {
     return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subType, result)
   })
 
-  const { blackList = [], respondents = [], throttle, welcome = defaultMessage } = options
-
-  blackList.length && ctx.prependMiddleware((session, next) => {
-    for (const word of blackList) {
-      if (session.message.includes(word)) return
-    }
-    return next()
-  })
+  const { respondents = [], welcome = defaultMessage } = options
 
   respondents.length && ctx.middleware((session, next) => {
     const message = simplify(session.message)
@@ -68,7 +60,7 @@ export default function apply(ctx: App, options: HandlerOptions = {}) {
     return next()
   })
 
-  const throttleConfig = !throttle ? [] : Array.isArray(throttle) ? throttle : [throttle]
+  const throttleConfig = makeArray(options.throttle)
   if (throttleConfig.length) {
     const counters: Record<number, number> = {}
     for (const { interval, messages } of throttleConfig) {

@@ -134,7 +134,7 @@ export function observe<T extends object, R>(target: T, ...args: [(string | numb
 
   const observer = observeObject(target, label, null) as Observed<T>
 
-  defineProperty(observer, '_update', function (this: Observed<T>) {
+  defineProperty(observer, '_update', function _update(this: Observed<T>) {
     const diff = { ...this._diff }
     const fields = Object.keys(diff)
     if (fields.length) {
@@ -146,7 +146,7 @@ export function observe<T extends object, R>(target: T, ...args: [(string | numb
     }
   })
 
-  defineProperty(observer, '_merge', function (this: Observed<T>, value: Partial<T>) {
+  defineProperty(observer, '_merge', function _merge(this: Observed<T>, value: Partial<T>) {
     for (const key in value) {
       if (key in this._diff) {
         throw new Error(`unresolved diff key "${key}"`)

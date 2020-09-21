@@ -6,7 +6,7 @@ import { expect } from 'chai'
 
 const app = new App()
 
-Logger.baseLevel = 1
+Logger.baseLevel = Logger.ERROR
 const appLogger = new Logger('app')
 const appWarn = spyOn(appLogger, 'warn')
 const midLogger = new Logger('middleware')
@@ -97,7 +97,7 @@ describe('Hook API', () => {
       const mid2 = wrap<Middleware>((_, next) => next())
       app.addMiddleware(mid1)
       app.addMiddleware(mid2)
-      await app.receiveMessage('user', 'foo', 123)
+      await app.session(123).receive('foo')
       expect(callSequence).to.deep.equal([mid1, mid2])
     })
 
@@ -107,7 +107,7 @@ describe('Hook API', () => {
       app.addMiddleware(mid1)
       app.addMiddleware(mid2)
       expect(callSequence).to.deep.equal([])
-      await app.receiveMessage('user', 'foo', 123)
+      await app.session(123).receive('foo')
       expect(callSequence).to.deep.equal([mid1])
     })
 
@@ -118,7 +118,7 @@ describe('Hook API', () => {
       app.addMiddleware(mid1)
       app.prependMiddleware(mid2)
       app.prependMiddleware(mid3)
-      await app.receiveMessage('user', 'foo', 123)
+      await app.session(123).receive('foo')
       expect(callSequence).to.deep.equal([mid3, mid2, mid1])
     })
 
@@ -130,7 +130,7 @@ describe('Hook API', () => {
       const mid5 = wrap<NextFunction>((next) => next())
       app.addMiddleware(mid1)
       app.addMiddleware(mid2)
-      await app.receiveMessage('user', 'foo', 123)
+      await app.session(123).receive('foo')
       expect(callSequence).to.deep.equal([mid1, mid2, mid3, mid4, mid5])
     })
 
@@ -138,7 +138,7 @@ describe('Hook API', () => {
       midWarn.mockClear()
       const errorMessage = 'error message'
       app.addMiddleware(() => { throw new Error(errorMessage) })
-      await app.receiveMessage('user', 'foo', 123)
+      await app.session(123).receive('foo')
       expect(midWarn.mock.calls).to.have.length(1)
     })
 
@@ -146,7 +146,7 @@ describe('Hook API', () => {
       midWarn.mockClear()
       app.addMiddleware((_, next) => (next(), undefined))
       app.addMiddleware((_, next) => sleep(0).then(() => next()))
-      await app.receiveMessage('user', 'foo', 123)
+      await app.session(123).receive('foo')
       await sleep(0)
       expect(midWarn.mock.calls).to.have.length(1)
     })

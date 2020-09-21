@@ -3,7 +3,6 @@ import { Session } from 'koishi-core'
 import { noop } from 'koishi-utils'
 import { expect } from 'chai'
 import { fn } from 'jest-mock'
-import '@shigma/chai-extended'
 
 const app = new App()
 const groupSession = new Session(app, { userId: 123, groupId: 456, messageType: 'group' })

@@ -1,7 +1,8 @@
-import { Logger, escapeRegExp } from 'koishi-utils'
+import { Logger, escapeRegExp, observe, difference } from 'koishi-utils'
 import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
 import { findSourceMap } from 'module'
+import { dirname, sep } from 'path'
 
 /* eslint-disable import/first */
 
@@ -11,6 +12,7 @@ const logger = new Logger('eval')
 import { expose, wrap } from './transfer'
 import { VM } from './vm'
 import { MainAPI } from '.'
+import { Group, User } from 'koishi-core'
 
 export interface WorkerConfig {
   setupFiles?: Record<string, string>
@@ -28,8 +30,6 @@ export const config: WorkerData = {
 }
 
 interface EvalOptions {
-  sid: string
-  user: {}
   silent: boolean
   source: string
 }
@@ -45,7 +45,7 @@ function formatResult(...param: [string, ...any[]]) {
   return formatWithOptions(config.inspect, ...param)
 }
 
-function formatError(error: Error) {
+export function formatError(error: Error) {
   if (!(error instanceof Error)) return `Uncaught: ${error}`
 
   if (error.name === 'SyntaxError') {
@@ -59,7 +59,7 @@ function formatError(error: Error) {
   }
 
   return error.stack
-    .replace(/\s*.+Script[\s\S]*/, '')
+    .replace(/\s*.+(Script|MessagePort)[\s\S]*/, '')
     .split('\n')
     .map((line) => {
       for (const name in pathMapper) {
@@ -72,20 +72,49 @@ function formatError(error: Error) {
 
 const main = wrap<MainAPI>(parentPort)
 
-export function contextFactory(sid: string, user: {}) {
-  return {
-    user,
-    async send(...param: [string, ...any[]]) {
-      return await main.send(sid, formatResult(...param))
-    },
-    async exec(message: string) {
-      if (typeof message !== 'string') {
-        throw new TypeError('The "message" argument must be of type string')
-      }
-      return await main.execute(sid, message)
-    },
-  }
+export interface ContextOptions {
+  $uuid: string
+  user: Partial<User>
+  group: Partial<Group>
+  userWritable: User.Field[]
+  groupWritable: Group.Field[]
 }
+
+export interface Context {
+  user: User.Observed<any>
+  group: Group.Observed<any>
+  send(...param: any[]): Promise<void>
+  exec(message: string): Promise<void>
+}
+
+export const Context = ({ $uuid, user, userWritable, group, groupWritable }: ContextOptions): Context => ({
+  user: user && observe(user, async (diff) => {
+    const diffKeys = difference(Object.keys(diff), userWritable)
+    if (diffKeys.length) {
+      throw new TypeError(`cannot set user field: ${diffKeys.join(', ')}`)
+    }
+    await main.updateUser($uuid, diff)
+  }),
+
+  group: group && observe(group, async (diff) => {
+    const diffKeys = difference(Object.keys(diff), groupWritable)
+    if (diffKeys.length) {
+      throw new TypeError(`cannot set group field: ${diffKeys.join(', ')}`)
+    }
+    await main.updateGroup($uuid, diff)
+  }),
+
+  async send(...param: [string, ...any[]]) {
+    return await main.send($uuid, formatResult(...param))
+  },
+
+  async exec(message: string) {
+    if (typeof message !== 'string') {
+      throw new TypeError('The "message" argument must be of type string')
+    }
+    return await main.execute($uuid, message)
+  },
+})
 
 export interface Response {}
 
@@ -96,11 +125,17 @@ export class WorkerAPI {
     return response
   }
 
-  async eval(options: EvalOptions) {
-    const { sid, source, user, silent } = options
+  async sync(ctx: Context) {
+    await ctx.user?._update()
+    await ctx.group?._update()
+  }
 
-    const key = 'koishi-eval-session:' + sid
-    internal.setGlobal(Symbol.for(key), contextFactory(sid, user), false, true)
+  async eval(ctxOptions: ContextOptions, evalOptions: EvalOptions) {
+    const { source, silent } = evalOptions
+
+    const key = 'koishi-eval-context:' + ctxOptions.$uuid
+    const ctx = Context(ctxOptions)
+    internal.setGlobal(Symbol.for(key), ctx, true)
 
     let result: any
     try {
@@ -112,6 +147,7 @@ export class WorkerAPI {
         filename: 'stdin',
         lineOffset: -4,
       })
+      await this.sync(ctx)
     } catch (error) {
       return formatError(error)
     }
@@ -121,9 +157,15 @@ export class WorkerAPI {
   }
 }
 
+export function mapDirectory(identifier: string, filename: string) {
+  const sourceMap = findSourceMap(filename)
+  if (!sourceMap) return logger.warn('cannot find source map for %c', filename)
+  const path = dirname(sourceMap.payload.sources[0].slice(7)) + sep
+  pathMapper[identifier] = new RegExp(`(at | \\()${escapeRegExp(path)}`, 'g')
+}
+
 Promise.all(Object.values(config.setupFiles).map(file => require(file).default)).then(() => {
-  const path = findSourceMap(__filename).payload.sources[0].slice(7, -9)
-  pathMapper['koishi/'] = new RegExp(`(at | \\()${escapeRegExp(path)}`, 'g')
+  mapDirectory('koishi/', __filename)
   Object.entries(config.setupFiles).forEach(([name, path]) => {
     const sourceMap = findSourceMap(path)
     if (sourceMap) path = sourceMap.payload.sources[0].slice(7)

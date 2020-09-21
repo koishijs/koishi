@@ -1,24 +1,31 @@
 import { User, Group } from './database'
 import { ExecuteArgv, ParsedArgv, Command } from './command'
-import { isInteger, contain, observe, noop, Logger, defineProperty } from 'koishi-utils'
+import { isInteger, contain, observe, noop, Logger, defineProperty, Random } from 'koishi-utils'
 import { NextFunction } from './context'
 import { App } from './app'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
 export type MessageType = 'private' | 'group'
+export type NoticeType =
+  | 'group_upload' | 'group_admin' | 'group_increase' | 'group_decrease'
+  | 'group_ban' | 'friend_add' | 'group_recall' | 'friend_recall' | 'notify'
+export type RequestType = 'friend' | 'group'
+export type MetaEventType = 'lifecycle' | 'heartbeat'
 
 export interface MetaTypeMap {
   message: MessageType
-  notice: 'group_upload' | 'group_admin' | 'group_increase' | 'group_decrease' | 'group_ban' | 'friend_add' | 'group_recall'
-  request: 'friend' | 'group'
+  notice: NoticeType
+  request: RequestType
   // eslint-disable-next-line camelcase
-  meta_event: 'lifecycle' | 'heartbeat'
+  meta_event: MetaEventType
   send: null
 }
 
 export interface SubTypeMap {
   message: 'friend' | 'group' | 'other' | 'normal' | 'anonymous' | 'notice'
-  notice: 'set' | 'unset' | 'approve' | 'invite' | 'leave' | 'kick' | 'kick_me' | 'ban' | 'lift_ban'
+  notice:
+    | 'set' | 'unset' | 'approve' | 'invite' | 'leave' | 'kick' | 'kick_me'
+    | 'ban' | 'lift_ban' | 'poke' | 'lucky_king' | 'honor'
   request: 'add' | 'invite'
   // eslint-disable-next-line camelcase
   meta_event: 'enable' | 'disable' | 'connect'
@@ -52,8 +59,10 @@ export interface Meta<P extends PostType = PostType> {
 
   // notice event
   operatorId?: number
+  targetId?: number
   duration?: number
   file?: FileInfo
+  honorType?: 'talkative' | 'performer' | 'emotion'
 
   // request event
   comment?: string
@@ -66,24 +75,27 @@ export interface Meta<P extends PostType = PostType> {
 
 const logger = new Logger('session')
 
-export interface Session<U, G, P extends PostType = PostType> extends Meta<P> {}
+export interface Session<U, G, O, P extends PostType = PostType> extends Meta<P> {}
 
-export class Session<U extends User.Field = never, G extends Group.Field = never> {
+export class Session<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}> {
   $user?: User.Observed<U>
   $group?: Group.Observed<G>
   $app?: App
-  $argv?: ParsedArgv
+  $argv?: ParsedArgv<U, G, O>
   $appel?: boolean
   $prefix?: string = null
   $parsed?: string
   $reply?: number
+  $uuid = Random.uuid()
 
   private _delay?: number
-  private _queued = Promise.resolve()
-  private _hooks?: (() => void)[] = []
+  private _queued: Promise<void>
+  private _hooks: (() => void)[]
 
   constructor(app: App, session: Partial<Session>) {
     defineProperty(this, '$app', app)
+    defineProperty(this, '_queued', Promise.resolve())
+    defineProperty(this, '_hooks', [])
     Object.assign(this, session)
   }
 
@@ -200,7 +212,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
 
     // 确保匿名消息不会写回数据库
     if (this.anonymous) {
-      const user = observe(User.create(userId, defaultAuthority))
+      const user = observe(User.create(userId, defaultAuthority), () => Promise.resolve())
       return this.$user = user
     }
 
@@ -238,7 +250,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   $execute(argv: ExecuteArgv): Promise<void>
   $execute(message: string, next?: NextFunction): Promise<void>
   async $execute(...args: [ExecuteArgv] | [string, NextFunction?]) {
-    let argv: void | ParsedArgv, next: NextFunction
+    let argv: any, next: NextFunction
     if (typeof args[0] === 'string') {
       next = args[1] || noop
       argv = this.$parse(args[0])

@@ -32,7 +32,7 @@ export function apply(ctx: Context, config: AlphaOptions) {
         if (queryresult._attributes.success !== 'true') {
           return 'failed'
         }
-        const output = [`Question from ${session.sender.card || session.sender.nickname}: ${input}`]
+        const output = [`Question from ${session.$username}: ${input}`]
         queryresult.pod.forEach((el) => {
           if (Array.isArray(el.subpod)) {
             output.push(el._attributes.title + ': ', ...el.subpod.map(extractData).filter(t => t))

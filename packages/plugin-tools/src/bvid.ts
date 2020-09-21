@@ -38,7 +38,7 @@ function encode(source: number) {
 
 export function apply(ctx: Context) {
   ctx.command('tools/bvid <avid|bvid>', 'av/BV 号转换')
-    .action(async ({ session }, source) => {
+    .action(async (_, source) => {
       if (!source) return '请输入正确的 av/BV 号。'
       if (source.startsWith('BV')) {
         const result = decode(source)

@@ -1,264 +1,209 @@
 /* eslint-disable camelcase */
+/* eslint-disable quote-props */
 
-import { Context, Middleware, User } from 'koishi-core'
-import { Logger, Time } from 'koishi-utils'
-import { Octokit } from '@octokit/rest'
-import { Webhooks, EventNames, EventPayloads } from '@octokit/webhooks'
-import { GetWebhookPayloadTypeFromEvent } from '@octokit/webhooks/dist-types/generated/get-webhook-payload-type-from-event'
-import { Agent } from 'http'
+import { Context, Session } from 'koishi-core'
+import { camelize, CQCode, defineProperty, Logger, Time } from 'koishi-utils'
 import { encode } from 'querystring'
-import axios from 'axios'
+import { addListeners, defaultEvents, EventData } from './events'
+import { Config, GitHub } from './server'
+import {} from 'koishi-plugin-puppeteer'
 
-type Payload<T extends EventNames.All> = GetWebhookPayloadTypeFromEvent<T, unknown>['payload']
-type Repository = EventPayloads.PayloadRepository
-type Issue = EventPayloads.WebhookPayloadIssuesIssue
-  | EventPayloads.WebhookPayloadPullRequestPullRequest
-  | EventPayloads.WebhookPayloadPullRequestReviewPullRequest
-type ReviewComment = EventPayloads.WebhookPayloadPullRequestReviewCommentComment
+export * from './server'
 
-declare module 'koishi-core/dist/database' {
-  interface User {
-    githubToken?: string
+declare module 'koishi-core/dist/app' {
+  interface App {
+    github?: GitHub
   }
 }
 
-User.extend(() => ({
-  githubToken: '',
-}))
-
-const logger = new Logger('github')
-
-interface AuthorizeResult {
-  access_token: string
-  token_type: string
-  scope: string
-}
-
-export interface Config {
-  agent?: Agent
-  secret?: string
-  webhook?: string
-  authorize?: string
-  appId?: string
-  appSecret?: string
-  redirect?: string
-  promptTimeout?: number
-  replyTimeout?: number
-  requestTimeout?: number
-  repos?: Record<string, number[]>
+type ReplyHandlers = {
+  [K in keyof EventData]: (payload: EventData[K], session: Session, message: string) => Promise<void>
 }
 
 const defaultOptions: Config = {
   secret: '',
+  replyPrefix: '.',
+  messagePrefix: '[GitHub] ',
   webhook: '/github/webhook',
   authorize: '/github/authorize',
   replyTimeout: Time.hour,
   repos: {},
+  events: {},
 }
 
-export const name = 'github-webhook'
+export const name = 'github'
 
 export function apply(ctx: Context, config: Config = {}) {
-  if (!ctx.router) throw new Error('ctx.router is not defined')
-
   config = { ...defaultOptions, ...config }
-  const webhook = new Webhooks(config)
-  const github = new Octokit({
-    request: {
-      agent: config.agent,
-      timeout: config.requestTimeout,
-    },
-  })
+  const { app, database, router } = ctx
+  const { appId, replyPrefix, redirect, webhook } = config
 
-  const { router, database } = ctx
-
-  router.post(config.webhook, (ctx, next) => {
-    return webhook.middleware(ctx.req, ctx.res, next)
-  })
+  const github = new GitHub(config)
+  defineProperty(app, 'github', github)
 
   router.get(config.authorize, async (ctx) => {
     const targetId = parseInt(ctx.query.state)
-    if (Number.isNaN(targetId)) throw new Error('Invalid targetId')
-    const { code, state } = ctx.query
-    const { data } = await axios.post<AuthorizeResult>('https://github.com/login/oauth/access_token', {
-      client_id: config.appId,
-      client_secret: config.appSecret,
-      redirect_uri: config.redirect,
-      code,
-      state,
-    }, {
-      httpsAgent: config.agent,
-      headers: { Accept: 'application/json' },
-    })
-    if (data.access_token) {
-      await database.setUser(targetId, { githubToken: data.access_token })
-      return ctx.status = 200
-    } else {
-      logger.warn(data)
-      return ctx.status = 500
+    if (Number.isNaN(targetId)) {
+      ctx.body = 'Invalid targetId'
+      return ctx.status = 400
     }
+    const { code, state } = ctx.query
+    const data = await github.getTokens({ code, state, redirect_uri: redirect })
+    await database.setUser(targetId, {
+      ghAccessToken: data.access_token,
+      ghRefreshToken: data.refresh_token,
+    })
+    return ctx.status = 200
   })
 
-  ctx.command('github <user>', '授权 GitHub 功能')
+  ctx.command('github', 'GitHub 相关功能')
+
+  ctx.command('github.authorize <user>', 'GitHub 授权')
     .action(async ({ session }, user) => {
       if (!user) return '请输入用户名。'
       const url = 'https://github.com/login/oauth/authorize?' + encode({
-        client_id: config.appId,
+        client_id: appId,
         state: session.userId,
-        redirect_uri: config.redirect,
+        redirect_uri: redirect,
         scope: 'admin:repo_hook,repo',
         login: user,
       })
       return '请点击下面的链接继续操作：\n' + url
     })
 
-  const interactions: Record<number, Middleware> = {}
+  ctx.command('github.recent', '查看最近的通知')
+    .action(async () => {
+      const output = Object.entries(history).slice(0, 10).map(([messageId, payload]) => {
+        const [brief] = payload.message.split('\n', 1)
+        return `${messageId}. ${brief}`
+      })
+      if (!output.length) return '最近没有 GitHub 通知。'
+      return output.join('\n')
+    })
 
-  ctx.middleware((session, next) => {
-    const middleware = interactions[session.$reply]
-    return middleware ? middleware(session, next) : next()
+  const reactions = ['+1', '-1', 'laugh', 'confused', 'heart', 'hooray', 'rocket', 'eyes']
+
+  function formatReply(source: string) {
+    return CQCode.parseAll(source).map((value) => {
+      if (typeof value === 'string') return value
+      if (value.type === 'image') return `![image](${value.data.url})`
+      return ''
+    }).join('')
+  }
+
+  const replyHandlers: ReplyHandlers = {
+    link: (url, session) => session.$send(url),
+    react: (url, session, content) => github.post({
+      url,
+      session,
+      body: { content },
+      headers: { accept: 'application/vnd.github.squirrel-girl-preview' },
+    }),
+    reply: ([url, params], session, content) => github.post({
+      url,
+      session,
+      body: { ...params, body: formatReply(content) },
+    }),
+    async shot({ url, selector, padding = [] }, session) {
+      const page = await app.browser.newPage()
+      let buffer: Buffer
+      try {
+        await page.goto(url)
+        const el = await page.$(selector)
+        const clip = await el.boundingBox()
+        const [top = 0, right = 0, bottom = 0, left = 0] = padding
+        clip.x -= left
+        clip.y -= top
+        clip.width += left + right
+        clip.height += top + bottom
+        buffer = await page.screenshot({ clip })
+      } catch (error) {
+        new Logger('puppeteer').warn(error)
+        return session.$send('截图失败。')
+      } finally {
+        await page.close()
+      }
+      return session.$send(`[CQ:image,file=base64://${buffer.toString('base64')}]`)
+    },
+  }
+
+  const history: Record<string, EventData> = {}
+
+  router.post(webhook, (ctx, next) => {
+    // workaround @octokit/webhooks for koa
+    ctx.req['body'] = ctx.request.body
+    ctx.status = 200
+    return github.middleware(ctx.req, ctx.res, next)
   })
 
-  function registerHandler<T extends EventNames.All>(event: T, handler: (payload: Payload<T>) => [string, Middleware?]) {
-    webhook.on(event, async (callback) => {
+  ctx.on('before-attach-user', (session, fields) => {
+    if (history[int32ToHex6(session.$reply)]) {
+      fields.add('ghAccessToken')
+      fields.add('ghRefreshToken')
+    }
+  })
+
+  ctx.middleware((session, next) => {
+    const body = session.$parsed
+    const payloads = history[int32ToHex6(session.$reply)]
+    if (!body || !payloads) return next()
+
+    let name: string, message: string
+    if (body.startsWith(replyPrefix)) {
+      name = body.split(' ', 1)[0].slice(replyPrefix.length)
+      message = body.slice(replyPrefix.length + name.length).trim()
+    } else {
+      name = reactions.includes(body) ? 'react' : 'reply'
+      message = body
+    }
+
+    const payload = payloads[name]
+    if (!payload) return next()
+    return replyHandlers[name](payload, session, message)
+  })
+
+  addListeners((event, handler) => {
+    const base = camelize(event.split('.', 1)[0])
+    github.on(event, async (callback) => {
       const { repository } = callback.payload
+
+      // step 1: filter repository
       const groupIds = config.repos[repository.full_name]
       if (!groupIds) return
 
+      // step 2: filter event
+      const baseConfig = config.events[base] || {}
+      if (baseConfig === false) return
+      const action = camelize(callback.payload.action)
+      if (action && baseConfig !== true) {
+        const actionConfig = baseConfig[action]
+        if (actionConfig === false) return
+        if (actionConfig !== true && !(defaultEvents[base] || {})[action]) return
+      }
+
+      // step 3: handle event
       const result = handler(callback.payload)
       if (!result) return
 
-      const [message, middleware] = result
-      const messageIds = await ctx.broadcast(groupIds, message)
-      if (!middleware) return
+      // step 4: broadcast message
+      const messageIds = await ctx.broadcast(groupIds, config.messagePrefix + result.message)
+      const hexIds = messageIds.map(int32ToHex6)
 
-      for (const id of messageIds) {
-        interactions[id] = middleware
+      // step 5: save message ids for interactions
+      for (const id of hexIds) {
+        history[id] = result
       }
+
       setTimeout(() => {
-        for (const id of messageIds) {
-          delete interactions[id]
+        for (const id of hexIds) {
+          delete history[id]
         }
       }, config.replyTimeout)
     })
-  }
-
-  function formatMarkdown(source: string) {
-    return source
-      .replace(/^```(.*)$/gm, '')
-      .replace(/\n\s*\n/g, '\n')
-  }
-
-  registerHandler('commit_comment.created', ({ repository, comment }) => {
-    return [[
-      `[GitHub] ${comment.user.login} commented on commit ${repository.full_name}@${comment.commit_id.slice(0, 6)}`,
-      `URL: ${comment.html_url}`,
-      formatMarkdown(comment.body),
-    ].join('\n')]
   })
+}
 
-  const checkToken: Middleware = async (session, next) => {
-    const user = await session.$observeUser(['githubToken'])
-    if (!user.githubToken) {
-      await session.$send('如果想使用此功能，请对机器人进行授权，输入你的 GitHub 用户名。')
-      const name = await session.$prompt().catch<string>()
-      if (!name) return
-      return session.$execute({ command: 'github', args: [name] })
-    }
-    return next()
-  }
-
-  const createIssueComment = (repo: Repository, issue: Issue): Middleware => async (session, next) => {
-    const body = session.$parsed
-    if (!body) return next()
-    return checkToken(session, async () => {
-      await github.issues.createComment({
-        owner: repo.owner.login,
-        repo: repo.name,
-        issue_number: issue.number,
-        body,
-        headers: {
-          Authorization: `token ${session.$user['githubToken']}`,
-        },
-      })
-    })
-  }
-
-  const createReviewCommentReply = (repo: Repository, issue: Issue, comment: ReviewComment): Middleware => async (session, next) => {
-    const body = session.$parsed
-    if (!body) return next()
-    return checkToken(session, async () => {
-      await github.pulls.createReplyForReviewComment({
-        owner: repo.owner.login,
-        repo: repo.name,
-        pull_number: issue.number,
-        comment_id: comment.id,
-        body,
-        headers: {
-          Authorization: `token ${session.$user['githubToken']}`,
-        },
-      })
-    })
-  }
-
-  registerHandler('issues.opened', ({ repository, issue }) => {
-    return [[
-      `[GitHub] ${issue.user.login} opened an issue ${repository.full_name}#${issue.number}`,
-      `URL: ${issue.html_url}`,
-      `Title: ${issue.title}`,
-      formatMarkdown(issue.body),
-    ].join('\n'), createIssueComment(repository, issue)]
-  })
-
-  registerHandler('issue_comment.created', ({ comment, issue, repository }) => {
-    const type = issue['pull_request'] ? 'pull request' : 'issue'
-    return [[
-      `[GitHub] ${comment.user.login} commented on ${type} ${repository.full_name}#${issue.number}`,
-      `URL: ${comment.html_url}`,
-      formatMarkdown(comment.body),
-    ].join('\n'), createIssueComment(repository, issue)]
-  })
-
-  registerHandler('pull_request.opened', ({ repository, pull_request }) => {
-    return [[
-      `[GitHub] ${pull_request.user.login} opened a pull request ${repository.full_name}#${pull_request.number} (${pull_request.base.label} <- ${pull_request.head.label})`,
-      `URL: ${pull_request.html_url}`,
-      formatMarkdown(pull_request.body),
-    ].join('\n'), createIssueComment(repository, pull_request)]
-  })
-
-  registerHandler('pull_request_review.submitted', ({ repository, review, pull_request }) => {
-    if (!review.body) return
-    return [[
-      `[GitHub] ${review.user.login} reviewed pull request ${repository.full_name}#${pull_request.number}`,
-      `URL: ${review.html_url}`,
-      // @ts-ignore
-      formatMarkdown(review.body),
-    ].join('\n'), createIssueComment(repository, pull_request)]
-  })
-
-  registerHandler('pull_request_review_comment.created', ({ repository, comment, pull_request }) => {
-    return [[
-      `[GitHub] ${comment.user.login} commented on pull request review ${repository.full_name}#${pull_request.number}`,
-      `Path: ${comment.path}`,
-      `URL: ${comment.html_url}`,
-      formatMarkdown(comment.body),
-    ].join('\n'), createReviewCommentReply(repository, pull_request, comment)]
-  })
-
-  registerHandler('push', ({ compare, pusher, commits, repository, ref, after }) => {
-    // do not show pull request merge
-    if (/^0+$/.test(after)) return
-
-    // use short form for tag releases
-    if (ref.startsWith('refs/tags')) {
-      return [`[GitHub] ${pusher.name} published tag ${repository.full_name}@${ref.slice(10)}`]
-    }
-
-    return [[
-      `[GitHub] ${pusher.name} pushed to ${repository.full_name}:${ref}`,
-      `Compare: ${compare}`,
-      ...commits.map(c => `[${c.id.slice(0, 6)}] ${formatMarkdown(c.message)}`),
-    ].join('\n')]
-  })
+function int32ToHex6(source: number) {
+  if (source < 0) source -= 1 << 31
+  return source.toString(16).padStart(8, '0').slice(2)
 }

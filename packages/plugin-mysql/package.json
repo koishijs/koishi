@@ -36,10 +36,10 @@
     "@types/mysql": "^2.15.15"
   },
   "peerDependencies": {
-    "koishi-core": "^2.0.0"
+    "koishi-core": "^2.3.0"
   },
   "dependencies": {
-    "koishi-utils": "^3.1.0",
+    "koishi-utils": "^3.1.5",
     "mysql": "^2.18.1"
   }
 }

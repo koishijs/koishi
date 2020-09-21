@@ -147,7 +147,8 @@ export function apply(ctx: Context) {
 
       if (!position) return '请输入坐标。'
 
-      if (typeof position !== 'string' || !/^[a-z]\d+$/i.test(position)) {
+      let isLetterFirst = false
+      if (typeof position !== 'string' || !(isLetterFirst = /^[a-z]\d+$/i.test(position)) && !/^\d+[a-z]$/i.test(position)) {
         return '请输入由字母+数字构成的坐标。'
       }
 
@@ -157,8 +158,14 @@ export function apply(ctx: Context) {
         if (session.userId !== state.next) return '当前不是你的回合。'
       }
 
-      const x = position.charCodeAt(0) % 32 - 1
-      const y = parseInt(position.slice(1)) - 1
+      const [x, y] = isLetterFirst ? [
+        position.charCodeAt(0) % 32 - 1,
+        parseInt(position.slice(1)) - 1,
+      ] : [
+        parseInt(position.slice(0, -1)) - 1,
+        position.slice(-1).charCodeAt(0) % 32 - 1,
+      ]
+
       if (x >= state.size || y >= state.size || y < 0) {
         return '落子超出边界。'
       }

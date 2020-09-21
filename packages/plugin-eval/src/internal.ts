@@ -87,8 +87,6 @@ Object.defineProperties(GLOBAL, {
   isVM: { value: true },
 })
 
-const proxyTarget = Symbol('proxy-target')
-
 const OPNA = 'Operation not allowed on contextified object.'
 const captureStackTrace = Error.captureStackTrace
 
@@ -104,7 +102,6 @@ function instanceOf(value, construct) {
   } catch (ex) {
     // Never pass the handled exception through!
     throw new VMError('Unable to perform instanceOf check.')
-    // This exception actually never get to the user. It only instructs the caller to return null because we wasn't able to perform instanceOf check.
   }
 }
 
@@ -248,8 +245,6 @@ Helper.instance = function (this: Helper, instance, klass, deepTraps, toStringTa
   return this.object(instance, createObject({
     get: (target, key) => {
       try {
-        if (key === proxyTarget) return instance
-        if (key === 'isVMProxy') return true
         if (key === 'constructor') return klass
         if (key === '__proto__') return klass.prototype
       } catch (e) {
@@ -309,12 +304,10 @@ Helper.function = function (this: Helper, fnc, traps, deepTraps, mock) {
     },
     get: (target, key) => {
       try {
-        if (key === proxyTarget) return fnc
-        if (key === 'isVMProxy') return true
         if (mock && host.Object.prototype.hasOwnProperty.call(mock, key)) return mock[key]
         if (key === 'constructor') return this.local.Function
         if (key === '__proto__') return this.local.Function.prototype
-        if (key === 'toString' && deepTraps === frozenTraps) return () => `function ${fnc.name}() { [native code] }`
+        if (key === 'toString' && this === Contextify) return () => `function ${fnc.name}() { [native code] }`
       } catch (e) {
         // Never pass the handled expcetion through! This block can't throw an exception under normal conditions.
         return null
@@ -376,17 +369,13 @@ Helper.value = function (this: Helper, value, traps, deepTraps, mock) {
       }
     }
     return value
-  } catch {
-    return null
-  }
+  } catch {}
 }
 
 Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
   const base: Trap = createObject({
-    get: (target, key, receiver) => {
+    get: (target, key) => {
       try {
-        if (key === proxyTarget) return object
-        if (key === 'isVMProxy') return true
         if (mock && host.Object.prototype.hasOwnProperty.call(mock, key)) return mock[key]
         if (key === 'constructor') return this.local.Object
         if (key === '__proto__') return this.local.Object.prototype
@@ -405,7 +394,7 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
         throw this.value(e)
       }
     },
-    set: (target, key, value, receiver) => {
+    set: (target, key, value) => {
       if (this === Contextify) {
         if (key === '__proto__') return false
       }
@@ -424,12 +413,11 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
       } catch (e) {
         throw this.value(e)
       }
-      // why?
-      if (!def) return undefined
+      if (!def) return
 
       const desc: PropertyDescriptor = createObject(def.get || def.set ? {
-        get: this.value(def.get, null, deepTraps) || undefined,
-        set: this.value(def.set, null, deepTraps) || undefined,
+        get: this.value(def.get, null, deepTraps),
+        set: this.value(def.set, null, deepTraps),
       } : {
         value: this.value(def.value, null, deepTraps),
         writable: def.writable === true,
@@ -459,8 +447,8 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
       const descValue = descriptor.value
 
       const propDesc: PropertyDescriptor = createObject(descGet || descSet ? {
-        get: this.conjugate.value(descGet, null, deepTraps) || undefined,
-        set: this.conjugate.value(descSet, null, deepTraps) || undefined,
+        get: this.conjugate.value(descGet, null, deepTraps),
+        set: this.conjugate.value(descSet, null, deepTraps),
       } : {
         value: this.conjugate.value(descValue, null, deepTraps),
         writable: descriptor.writable === true,
@@ -490,10 +478,10 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
         throw this.value(e)
       }
     },
-    getPrototypeOf: (target) => {
+    getPrototypeOf: () => {
       return this.local.Object.prototype
     },
-    setPrototypeOf: (target) => {
+    setPrototypeOf: () => {
       throw new VMError(OPNA)
     },
     has: (target, key) => {
@@ -519,7 +507,7 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
         }
       } catch (e) {}
     },
-    ownKeys: target => {
+    ownKeys: () => {
       try {
         return this.value(this.remote.Reflect.ownKeys(object))
       } catch (e) {
@@ -543,7 +531,7 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
       }
       return success
     },
-    enumerate: target => {
+    enumerate: () => {
       try {
         return this.value(this.remote.Reflect.enumerate(object))
       } catch (e) {
@@ -568,7 +556,7 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
       // TODO this get will call getOwnPropertyDescriptor of target all the time.
       get: origGet,
     }
-    base.ownKeys = target => {
+    base.ownKeys = () => {
       try {
         const keys = local.Reflect.ownKeys(object)
         return Decontextify.value(keys.filter(key => typeof key !== 'string' || !key.match(/^\d+$/)))
@@ -622,23 +610,17 @@ const frozenTraps: Trap = createObject({
 })
 
 function readonly(value: any, mock: any = {}) {
-  for (const key in mock) {
-    const value = mock[key]
-    if (typeof value === 'function') {
-      value.toString = () => `function ${value.name}() { [native code] }`
-    }
-  }
   return Contextify.value(value, null, frozenTraps, mock)
 }
 
-export function setGlobal(name: keyof any, value: any, writable = false, configurable = false) {
+export function setGlobal(name: keyof any, value: any, writable = false) {
   const prop = Contextify.value(name)
   try {
     Object.defineProperty(GLOBAL, prop, {
       value: writable ? Contextify.value(value) : readonly(value),
       enumerable: true,
+      configurable: writable,
       writable,
-      configurable,
     })
   } catch (e) {
     throw Decontextify.value(e)
@@ -654,7 +636,7 @@ export function getGlobal(name: keyof any) {
   }
 }
 
-function connect(outer: any, inner: any) {
+export function connect(outer: any, inner: any) {
   Decontextified.set(outer, inner)
   Contextified.set(inner, outer)
 }
@@ -687,7 +669,8 @@ connect(host.Buffer.prototype['inspect'], function inspect() {
   return `<${this.constructor.name} ${str}>`
 })
 
-export const value: <T>(value: T) => T = Decontextify.value.bind(Decontextify)
+export const contextify: <T>(value: T) => T = Contextify.value.bind(Contextify)
+export const decontextify: <T>(value: T) => T = Decontextify.value.bind(Decontextify)
 export const sandbox = Decontextify.value(GLOBAL)
 
 delete global.console

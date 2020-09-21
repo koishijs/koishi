@@ -52,19 +52,21 @@ Server.types.undefined = CQHTTP
 const { broadcast } = Context.prototype
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
 
-Context.prototype.broadcast = async function (this: Context, message, forced) {
+Context.prototype.broadcast = async function (this: Context, ...args: any[]) {
+  const index = Array.isArray(args[0]) ? 1 : 0
+  let message = args[index] as string
   let output = ''
   let capture: RegExpExecArray
   // eslint-disable-next-line no-cond-assign
   while (capture = imageRE.exec(message)) {
-    const [text, _, url] = capture
+    const [text, , url] = capture
     output += message.slice(0, capture.index)
     message = message.slice(capture.index + text.length)
     const { data } = await axios.get<ArrayBuffer>(url, { responseType: 'arraybuffer' })
     output += `[CQ:image,file=base64://${Buffer.from(data).toString('base64')}]`
   }
-  message = output + message
-  return broadcast.call(this, message, forced)
+  args[index] = output + message
+  return broadcast.apply(this, args)
 }
 
 Session.prototype.$send = async function $send(this: Session, message: string, autoEscape = false) {
@@ -81,7 +83,7 @@ Session.prototype.$send = async function $send(this: Session, message: string, a
   if (this._response) {
     const session = this.$bot.createSession(this.messageType, ctxType, ctxId, message)
     if (this.$app.bail(this, 'before-send', session)) return
-    return this._response({ reply: message, autoEscape, atSender: false })
+    return this._response({ reply: session.message, autoEscape, atSender: false })
   }
   return ctxType === 'group'
     ? this.$bot.sendGroupMsgAsync(ctxId, message, autoEscape)

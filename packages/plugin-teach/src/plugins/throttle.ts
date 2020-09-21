@@ -1,4 +1,5 @@
 import { Context } from 'koishi-core'
+import { makeArray } from 'koishi-utils'
 import { Dialogue } from '../utils'
 
 export interface ThrottleConfig {
@@ -21,11 +22,7 @@ declare module '../receiver' {
 }
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
-  const { throttle } = config
-
-  const throttleConfig = !throttle ? []
-    : Array.isArray(throttle) ? throttle
-      : [throttle]
+  const throttleConfig = makeArray(config.throttle)
   const counters: Record<number, number> = {}
   for (const { interval, responses } of throttleConfig) {
     counters[interval] = responses
@@ -35,13 +32,15 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     state.counters = { ...counters }
   })
 
-  ctx.on('dialogue/receive', ({ counters }) => {
+  ctx.on('dialogue/receive', ({ counters, session }) => {
+    if (session._redirected) return
     for (const interval in counters) {
       if (counters[interval] <= 0) return true
     }
   })
 
-  ctx.on('dialogue/before-send', ({ counters }) => {
+  ctx.on('dialogue/before-send', ({ counters, session }) => {
+    if (session._redirected) return
     for (const { interval } of throttleConfig) {
       counters[interval]--
       setTimeout(() => counters[interval]++, interval)

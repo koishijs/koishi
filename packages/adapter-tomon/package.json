@@ -1,0 +1,41 @@
+{
+  "name": "koishi-adapter-tomon",
+  "description": "Tomon adapter for Koishi",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts",
+    "precommit": "yarn lint",
+    "prepack": "tsc -b"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi/tree/master/packages/koishi-core#readme",
+  "keywords": [
+    "bot",
+    "tomon",
+    "chatbot",
+    "koishi"
+  ],
+  "peerDependencies": {
+    "koishi-core": "^2.3.0"
+  },
+  "devDependencies": {
+    "koishi-test-utils": "^5.0.1"
+  },
+  "dependencies": {
+    "koishi-utils": "^3.1.5",
+    "tomon-sdk": "^0.2.0"
+  }
+}
