@@ -171,8 +171,8 @@ export default async function saucenao(sourceUrl: string, session: Session, conf
 
   if (long_remaining < 20) {
     output.push(`注意：24h 内搜图次数仅剩 ${long_remaining} 次。`)
-  } else if (short_remaining < 5) {
-    output.push(`注意：30s 内搜图次数仅剩 ${short_remaining}次。`)
+  } else if (short_remaining < 3) {
+    output.push(`注意：30s 内搜图次数仅剩 ${short_remaining} 次。`)
   }
 
   await session.$send(output.join('\n'))

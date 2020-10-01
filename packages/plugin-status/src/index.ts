@@ -95,7 +95,7 @@ const startTime = Date.now()
 
 export const name = 'status'
 
-export function apply(ctx: Context, config: Config) {
+export function apply(ctx: Context, config: Config = {}) {
   const app = ctx.app
   const { refresh = Time.minute } = config
 

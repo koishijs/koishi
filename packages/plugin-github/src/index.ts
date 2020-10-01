@@ -137,6 +137,7 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   ctx.on('before-attach-user', (session, fields) => {
+    if (!session.$reply) return
     if (history[int32ToHex6(session.$reply)]) {
       fields.add('ghAccessToken')
       fields.add('ghRefreshToken')
@@ -144,6 +145,7 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   ctx.middleware((session, next) => {
+    if (!session.$reply) return next()
     const body = session.$parsed
     const payloads = history[int32ToHex6(session.$reply)]
     if (!body || !payloads) return next()
