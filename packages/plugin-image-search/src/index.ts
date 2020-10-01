@@ -1,4 +1,5 @@
 import { Context, Session, Group, CommandAction } from 'koishi-core'
+import { noop } from 'koishi-utils'
 import ascii2d from './ascii2d'
 import saucenao from './saucenao'
 
@@ -45,7 +46,8 @@ export function apply(ctx: Context, config: Config = {}) {
     return async ({ session }) => {
       const urls = extractImages(session.message)
       if (urls.length) {
-        await Promise.all(urls.map(url => callback(url, session, config)))
+        await Promise.all(urls.map(url => callback(url, session, config).catch(noop)))
+        return
       }
 
       const dispose = session.$use(({ message }, next) => {
