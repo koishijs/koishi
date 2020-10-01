@@ -1,5 +1,4 @@
-import { Context, Session, Group, CommandAction } from 'koishi-core'
-import { noop } from 'koishi-utils'
+import { Context, Session, Group, CommandAction, getContextId } from 'koishi-core'
 import ascii2d from './ascii2d'
 import saucenao from './saucenao'
 
@@ -30,34 +29,52 @@ export function apply(ctx: Context, config: Config = {}) {
     .alias('搜图')
     .groupFields(['flag'])
     .before(session => !!(session.$group.flag & Group.Flag.noImage))
-    .action(searchWith(mixedSearch))
+    .action(search(mixedSearch))
 
   command.subcommand('saucenao <...images>', '使用 saucenao 搜图')
     .groupFields(['flag'])
     .before(session => !!(session.$group.flag & Group.Flag.noImage))
-    .action(searchWith(saucenao))
+    .action(search(saucenao))
 
   command.subcommand('ascii2d <...images>', '使用 ascii2d 搜图')
     .groupFields(['flag'])
     .before(session => !!(session.$group.flag & Group.Flag.noImage))
-    .action(searchWith(ascii2d))
+    .action(search(ascii2d))
 
-  function searchWith(callback: (url: string, session: Session<never, never>, config: Config) => Promise<any>): CommandAction {
+  const pending = new Set<string>()
+
+  type SearchCallback = (url: string, session: Session, config: Config) => Promise<any>
+
+  async function searchUrls(session: Session, urls: string[], callback: SearchCallback) {
+    const id = getContextId(session)
+    pending.add(id)
+    let hasSuccess = false, hasFailure = false
+    await Promise.all(urls.map((url) => {
+      return callback(url, session, config).then(() => hasSuccess = true, () => hasFailure = true)
+    }))
+    pending.delete(id)
+    if (!hasFailure) return
+    return session.$send(hasSuccess ? '其他图片搜索失败。' : '搜索失败。')
+  }
+
+  function search(callback: SearchCallback): CommandAction {
     return async ({ session }) => {
+      const id = getContextId(session)
+      if (pending.has(id)) return '存在正在进行的查询，请稍后再试。'
+
       const urls = extractImages(session.message)
       if (urls.length) {
-        await Promise.all(urls.map(url => callback(url, session, config).catch(noop)))
-        return
+        return searchUrls(session, urls, callback)
       }
 
       const dispose = session.$use(({ message }, next) => {
         dispose()
         const urls = extractImages(message)
         if (!urls.length) return next()
-        return Promise.all(urls.map(url => callback(url, session, config)))
+        return searchUrls(session, urls, callback)
       })
 
-      return session.$send('请发送图片。')
+      return '请发送图片。'
     }
   }
 }
