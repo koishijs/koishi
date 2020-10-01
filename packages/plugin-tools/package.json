@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/koishijs/koishi#readme",
   "devDependencies": {
-    "@types/cheerio": "^0.22.21",
+    "@types/cheerio": "^0.22.22",
     "@types/qrcode": "^1.3.5"
   },
   "peerDependencies": {

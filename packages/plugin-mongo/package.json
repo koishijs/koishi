@@ -42,6 +42,6 @@
     "koishi-core": "^2.3.0"
   },
   "dependencies": {
-    "mongodb": "^3.6.1"
+    "mongodb": "^3.6.2"
   }
 }
