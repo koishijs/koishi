@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-github",
   "description": "GitHub webhook plugin for Koishi",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -33,11 +33,11 @@
     "webhook"
   ],
   "devDependencies": {
-    "koishi-test-utils": "^5.0.1"
+    "koishi-test-utils": "^5.0.2"
   },
   "peerDependencies": {
-    "koishi-core": "^2.3.0",
-    "koishi-plugin-puppeteer": "^1.0.0",
+    "koishi-core": "^2.3.1",
+    "koishi-plugin-puppeteer": "^1.0.1",
     "koishi-utils": "^3.1.5"
   },
   "dependencies": {

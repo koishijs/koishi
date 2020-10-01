@@ -1,68 +1,72 @@
 {
   "koishi-adapter-cqhttp": {
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-adapter-tomon": {
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Tomon adapter for Koishi"
   },
   "koishi-plugin-chess": {
-    "version": "2.0.0-beta.10",
+    "version": "2.0.0-beta.11",
     "description": "Chess Plugin for Koishi"
   },
   "koishi-plugin-common": {
-    "version": "3.0.1",
+    "version": "3.0.2",
     "description": "Common plugins for Koishi"
   },
+  "koishi-plugin-dice": {
+    "version": "0.1.1",
+    "description": "COC / DND Tools for Koishi"
+  },
   "koishi-plugin-eval": {
-    "version": "2.0.1",
+    "version": "2.0.2",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-eval-addons": {
-    "version": "1.0.0-beta.11",
+    "version": "1.0.0-beta.12",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-github": {
-    "version": "2.1.0",
+    "version": "2.1.1",
     "description": "GitHub webhook plugin for Koishi"
   },
   "koishi-plugin-image-search": {
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "Image searching plugin for Koishi"
   },
   "koishi-plugin-mongo": {
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "MongoDB support for Koishi"
   },
   "koishi-plugin-monitor": {
-    "version": "1.0.0-beta.14"
+    "version": "1.0.0-beta.15"
   },
   "koishi-plugin-mysql": {
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "MySQL support for Koishi"
   },
   "koishi-plugin-puppeteer": {
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Take Screenshots in Koishi"
   },
   "koishi-plugin-rss": {
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Subscribe RSS Url for Koishi"
   },
   "koishi-plugin-schedule": {
-    "version": "2.0.2",
+    "version": "2.0.3",
     "description": "Schedule plugin for Koishi"
   },
   "koishi-plugin-status": {
-    "version": "2.0.0-beta.15",
+    "version": "2.0.0-beta.16",
     "description": "Show Status of Koishi"
   },
   "koishi-plugin-teach": {
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "Teach plugin for Koishi"
   },
   "koishi-plugin-tools": {
-    "version": "1.0.1"
+    "version": "1.0.2"
   }
 }
