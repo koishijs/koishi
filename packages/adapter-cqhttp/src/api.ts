@@ -158,6 +158,8 @@ declare module 'koishi-core/dist/server' {
     setRestart(cleanLog?: boolean, cleanCache?: boolean, cleanEvent?: boolean): Promise<void>
     setGroupName(groupId: number, name: string): Promise<void>
     setGroupNameAsync(groupId: number, name: string): Promise<void>
+    setGroupPortrait(groupId: number, file: string, cache?: boolean): Promise<void>
+    setGroupPortraitAsync(groupId: number, file: string, cache?: boolean): Promise<void>
     getGroupMsg(messageId: number): Promise<GroupMessage>
     getForwardMsg(messageId: number): Promise<ForwardMessage>
     sendGroupForwardMsg(groupId: number, messages: readonly CQNode[]): Promise<void>
@@ -412,7 +414,8 @@ interface CQNode {
   }
 }
 
-defineAsync('set_group_name', 'group_id', 'name')
+defineAsync('set_group_name', 'group_id', 'group_name')
+defineAsync('set_group_portrait', 'group_id', 'file', 'cache')
 
 export function toVersion(data: VersionInfo) {
   const { coolqEdition, pluginVersion, goCqhttp, version } = data
