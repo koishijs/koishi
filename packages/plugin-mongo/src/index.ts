@@ -16,7 +16,7 @@ extendDatabase(MongoDatabase, {
     const data = (await this.user.findOne({ _id: userId })) || {}
     if (authority < 0) return null
     const fallback = User.create(userId, authority)
-    if (authority && [undefined, null].includes(data.authority)) await this.user.updateOne({ _id: userId }, { $set: { authority }, { upsert: true })
+    if (authority && [undefined, null].includes(data.authority)) await this.user.updateOne({ _id: userId }, { $set: { authority } }, { upsert: true })
     if (data.timers) {
       if (data.timers._date) {
         data.timers.$date = data.timers._date
