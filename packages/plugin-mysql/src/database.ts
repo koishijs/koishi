@@ -50,7 +50,7 @@ export default class MysqlDatabase {
   async start() {
     this.pool = createPool(this.config)
     const tables = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
-    const names = new Set<TableType>(tables.map(data => data.TABLE_NAME))
+    const names = new Set(tables.map(data => data.TABLE_NAME))
     for (const name of Object.keys(MysqlDatabase.tables) as TableType[]) {
       if (names.has(name)) return
       const table = MysqlDatabase.tables[name]

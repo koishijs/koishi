@@ -24,6 +24,19 @@ export interface Schedule {
   session: Session
 }
 
+extendDatabase(MysqlDatabase, (Database) => {
+  Object.assign(Database.tables.schedule = [
+    'PRIMARY KEY (`id`) USING BTREE',
+  ], {
+    id: `INT(10) UNSIGNED NOT NULL AUTO_INCREMENT`,
+    assignee: `BIGINT(20) NOT NULL DEFAULT '0'`,
+    time: `TIMESTAMP NULL DEFAULT NULL`,
+    interval: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0'`,
+    command: `MEDIUMTEXT NOT NULL COLLATE 'utf8mb4_general_ci'`,
+    session: `JSON NOT NULL`,
+  })
+})
+
 extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   createSchedule(time, interval, command, session) {
     return this.create('schedule', { time, assignee: session.selfId, interval, command, session })
