@@ -18,22 +18,7 @@ extendDatabase(MongoDatabase, {
     if (authority < 0) return null
     if (!data) {
       fallback = User.create(userId, authority)
-      if (authority) {
-        this.user.updateOne(
-          { _id: userId },
-          {
-            $set: { authority },
-            $setOnInsert: {
-              id: userId,
-              flag: 0,
-              name: `${userId}`,
-              usage: {},
-              timers: {},
-            },
-          },
-          { upsert: true },
-        )
-      }
+      if (authority) this.user.insertOne({ _id: userId, ...fallback })
     } else {
       if (data.timers) {
         if (data.timers._date) {
@@ -136,19 +121,7 @@ extendDatabase(MongoDatabase, {
     let fallback: Group
     if (!data) {
       fallback = Group.create(groupId, selfId)
-      if (selfId && groupId) {
-        this.group.updateOne(
-          { _id: groupId },
-          {
-            $set: { assignee: selfId },
-            $setOnInsert: {
-              id: groupId,
-              flag: 0,
-            },
-          },
-          { upsert: true },
-        )
-      }
+      if (selfId && groupId) this.group.insertOne({ _id: groupId, ...fallback })
     }
     return data || fallback
   },
