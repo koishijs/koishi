@@ -13,10 +13,10 @@ extendDatabase(MongoDatabase, {
     const authority = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] ? args[0] as any : User.fields
     if (fields && !fields.length) return {} as any
-    const data = await this.user.findOne({ _id: userId })
+    const data = (await this.user.findOne({ _id: userId })) || {}
     if (authority < 0) return null
     const fallback = User.create(userId, authority)
-    if (authority && data.authority !== authority) await this.user.updateOne({ _id: userId }, { $set: { authority }, { upsert: true })
+    if (authority && [undefined, null].includes(data.authority)) await this.user.updateOne({ _id: userId }, { $set: { authority }, { upsert: true })
     if (data.timers) {
       if (data.timers._date) {
         data.timers.$date = data.timers._date
