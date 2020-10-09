@@ -14,38 +14,34 @@ extendDatabase(MongoDatabase, {
     const fields = args[0] ? args[0] as any : User.fields
     if (fields && !fields.length) return {} as any
     const data = await this.user.findOne({ _id: userId })
-    let fallback: User
     if (authority < 0) return null
-    if (!data) {
-      fallback = User.create(userId, authority)
-      if (authority) this.user.insertOne({ _id: userId, ...fallback })
-    } else {
-      if (data.timers) {
-        if (data.timers._date) {
-          data.timers.$date = data.timers._date
-          delete data.timers._date
-        }
-        for (const key in data.timers) {
-          if (key.includes('_')) {
-            data.timers[key.replace(/_/gmi, '.')] = data.timers[key]
-            delete data.timers[key]
-          }
-        }
+    const fallback = User.create(userId, authority)
+    if (authority && data.authority !== authority) await this.user.updateOne({ _id: userId }, { $set: { authority }, { upsert: true })
+    if (data.timers) {
+      if (data.timers._date) {
+        data.timers.$date = data.timers._date
+        delete data.timers._date
       }
-      if (data.usage) {
-        if (data.usage._date) {
-          data.usage.$date = data.usage._date
-          delete data.usage._date
-        }
-        for (const key in data.usage) {
-          if (key.includes('_')) {
-            data.usage[key.replace(/_/gmi, '.')] = data.usage[key]
-            delete data.usage[key]
-          }
+      for (const key in data.timers) {
+        if (key.includes('_')) {
+          data.timers[key.replace(/_/gmi, '.')] = data.timers[key]
+          delete data.timers[key]
         }
       }
     }
-    return data || fallback
+    if (data.usage) {
+      if (data.usage._date) {
+        data.usage.$date = data.usage._date
+        delete data.usage._date
+      }
+      for (const key in data.usage) {
+        if (key.includes('_')) {
+          data.usage[key.replace(/_/gmi, '.')] = data.usage[key]
+          delete data.usage[key]
+        }
+      }
+    }
+    return { ...fallback, ...data }
   },
 
   async getUsers(...args) {
@@ -118,12 +114,11 @@ extendDatabase(MongoDatabase, {
     const f = {}
     for (const field of fields) f[field] = 1
     const [data] = await this.group.find({ _id: groupId }).project(f).toArray()
-    let fallback: Group
+    const fallback = Group.create(groupId, selfId)
     if (!data) {
-      fallback = Group.create(groupId, selfId)
-      if (selfId && groupId) this.group.insertOne({ _id: groupId, ...fallback })
+      if (selfId && groupId) this.group.insertOne({ _id: groupId, selfId, groupId })
     }
-    return data || fallback
+    return { ...fallback, ...data }
   },
 
   async getAllGroups(...args) {
