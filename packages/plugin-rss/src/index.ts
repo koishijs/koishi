@@ -94,7 +94,7 @@ export function apply(ctx: Context, config: Config = {}) {
       url = url.toLowerCase()
 
       const index = $group.rss.indexOf(url)
-      if (!options.remove) {
+      if (options.remove) {
         if (index < 0) return '未订阅此链接。'
         $group.rss.splice(index, 1)
         unsubscribe(url, $group.id)
