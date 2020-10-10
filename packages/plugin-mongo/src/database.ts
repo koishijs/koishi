@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection } from 'mongodb'
-import { App, User, Group, TableType } from 'koishi-core'
+import { App, Group, TableType } from 'koishi-core'
 
 export interface Config {
   username?: string
