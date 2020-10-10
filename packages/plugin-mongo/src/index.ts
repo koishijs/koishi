@@ -13,7 +13,7 @@ extendDatabase(MongoDatabase, {
     const authority = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] ? args[0] as any : User.fields
     if (fields && !fields.length) return {} as any
-    const data = (await this.user.findOne({ _id: userId })) || {}
+    const data: Partial<User> = (await this.user.findOne({ _id: userId })) || {}
     if (authority < 0) return null
     const fallback = User.create(userId, authority)
     if (authority && [undefined, null].includes(data.authority)) await this.user.updateOne({ _id: userId }, { $set: { authority } }, { upsert: true })
@@ -115,9 +115,7 @@ extendDatabase(MongoDatabase, {
     for (const field of fields) f[field] = 1
     const [data] = await this.group.find({ _id: groupId }).project(f).toArray()
     const fallback = Group.create(groupId, selfId)
-    if (!data) {
-      if (selfId && groupId) this.group.insertOne({ _id: groupId, selfId, groupId })
-    }
+    if (!data && selfId && groupId) this.group.insertOne({ _id: groupId, selfId, groupId })
     return { ...fallback, ...data }
   },
 
