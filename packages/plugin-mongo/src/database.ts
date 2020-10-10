@@ -11,17 +11,13 @@ export interface Config {
   prefix?: string
 }
 
-interface Document {
-  _id: number
-}
-
 export default class MongoDatabase {
   public config: Config
   public client: MongoClient
   public db: Db
 
-  user: Collection<User & Document>
-  group: Collection<Group & Document>
+  user: Collection<any>
+  group: Collection<any>
 
   constructor(public app: App, config: Config) {
     this.config = config
