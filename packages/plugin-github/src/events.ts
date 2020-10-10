@@ -1,7 +1,8 @@
 /* eslint-disable camelcase */
 
-import { EventNames } from '@octokit/webhooks'
-import { GetWebhookPayloadTypeFromEvent } from '@octokit/webhooks/dist-types/generated/get-webhook-payload-type-from-event'
+import { EventTypesPayload } from '@octokit/webhooks/dist-types/generated/get-webhook-payload-type-from-event'
+
+type WebhookEvent = Exclude<keyof EventTypesPayload, 'error'>
 
 export interface EventConfig {
   commitComment?: boolean | {
@@ -105,10 +106,10 @@ export interface EventData {
   }
 }
 
-type Payload<T extends EventNames.All> = GetWebhookPayloadTypeFromEvent<T, unknown>['payload']
-type EventHandler<T extends EventNames.All> = (payload: Payload<T>) => EventData
+type Payload<T extends WebhookEvent> = EventTypesPayload[T]['payload']
+type EventHandler<T extends WebhookEvent> = (payload: Payload<T>) => EventData
 
-export function addListeners(on: <T extends EventNames.All>(event: T, handler: EventHandler<T>) => void) {
+export function addListeners(on: <T extends WebhookEvent>(event: T, handler: EventHandler<T>) => void) {
   function formatMarkdown(source: string) {
     return source
       .replace(/^```(.*)$/gm, '')
