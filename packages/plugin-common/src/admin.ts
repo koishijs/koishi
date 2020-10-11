@@ -203,7 +203,7 @@ export function apply(ctx: Context) {
   ctx.command('group.assign [bot]', '受理者账号', { authority: 4 })
     .groupFields(['assignee'])
     .adminGruop(({ session, target }, value) => {
-      const assignee = value ? +value : session.selfId
+      const assignee = value ? getTargetId(value) : session.selfId
       if (!isInteger(assignee) || assignee < 0) return '参数错误。'
       target.assignee = assignee
     })
