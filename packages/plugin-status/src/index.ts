@@ -7,7 +7,7 @@ export * from './database'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'status'(status: Status, output: string[]): void
+    'status'(status: Status, output: string[]): void | Promise<void>
   }
 }
 
@@ -23,11 +23,19 @@ declare module 'koishi-core/dist/server' {
 
 export interface Config {
   refresh?: number
+  template?: string[]
 }
 
 let usage = getCpuUsage()
 let appRate: number
 let usedRate: number
+const defaultTemplate = [
+  '活跃用户数量：%activeUsers',
+  '活跃群数量：%activeGroups',
+  '启动时间：%startTime',
+  'CPU 使用率：%processCpuUsage% / %totalCpuUsage%',
+  '内存使用率：%processMemUsage% / %totalMemUsage%',
+]
 
 function memoryRate() {
   const totalMemory = totalmem()
@@ -97,7 +105,7 @@ export const name = 'status'
 
 export function apply(ctx: Context, config: Config = {}) {
   const app = ctx.app
-  const { refresh = Time.minute } = config
+  const { refresh = Time.minute, template = defaultTemplate } = config
 
   app.on('before-command', ({ session }) => {
     session.$user['lastCall'] = new Date()
@@ -158,17 +166,17 @@ export function apply(ctx: Context, config: Config = {}) {
         })
 
       output.push('==========')
+      output.push(...template)
 
-      output.push(
-        `活跃用户数量：${activeUsers}`,
-        `活跃群数量：${activeGroups}`,
-        `启动时间：${new Date(startTime).toLocaleString('zh-CN', { hour12: false })}`,
-        `CPU 使用率：${(cpu.app * 100).toFixed()}% / ${(cpu.total * 100).toFixed()}%`,
-        `内存使用率：${(memory.app * 100).toFixed()}% / ${(memory.total * 100).toFixed()}%`,
-      )
-
-      ctx.emit('status', status, output)
+      await ctx.serial('status', status, output)
       return output.join('\n')
+        .replace(/%activeUsers/g, activeUsers)
+        .replace(/%activeGroups/g, activeGroups)
+        .replace(/%startTime/g, new Date(startTime).toLocaleString('zh-CN', { hour12: false }))
+        .replace(/%processCpuUsage/g, (cpu.app * 100).toFixed())
+        .replace(/%totalCpuUsage/g, (cpu.total * 100).toFixed())
+        .replace(/%processMemUsage/g, (memory.app * 100).toFixed())
+        .replace(/%totalMemUsage/g, (memory.total * 100).toFixed())
     })
 
   async function _getStatus(extend: boolean) {
