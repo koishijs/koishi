@@ -307,7 +307,7 @@ export default function (ctx: Context, config: Dialogue.Config) {
 }
 
 function prepareSource(source: string) {
-  return CQCode.stringifyAll(CQCode.parseAll(source || '').map((code, index, arr) => {
+  return CQCode.stringifyAll(CQCode.parseAll(source).map((code, index, arr) => {
     if (typeof code !== 'string') return code
     let message = simplify(CQCode.unescape('' + code))
       .toLowerCase()

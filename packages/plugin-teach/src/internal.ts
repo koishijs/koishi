@@ -59,11 +59,13 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       return Message.Teach.ProhibitedCQCode
     }
 
-    const { unprefixed, prefixed, appellative } = config._stripQuestion(options.question)
+    const { unprefixed, prefixed, appellative } = options.regexp
+      ? { unprefixed: question, prefixed: question, appellative: false }
+      : config._stripQuestion(question)
     argv.appellative = appellative
     Object.defineProperty(options, '_original', { value: prefixed })
     if (unprefixed) {
-      options.original = options.question
+      options.original = question
       options.question = unprefixed
     } else {
       delete options.question
