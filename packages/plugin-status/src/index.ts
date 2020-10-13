@@ -5,12 +5,6 @@ import { ActiveData } from './database'
 
 export * from './database'
 
-declare module 'koishi-core/dist/context' {
-  interface EventMap {
-    'status'(status: Status, output: string[]): void
-  }
-}
-
 declare module 'koishi-core/dist/server' {
   interface BotOptions {
     label?: string
@@ -23,6 +17,7 @@ declare module 'koishi-core/dist/server' {
 
 export interface Config {
   refresh?: number
+  output?: (status: Status) => string
 }
 
 let usage = getCpuUsage()
@@ -93,11 +88,34 @@ export function extendStatus(callback: StatusCallback, local = false) {
 
 const startTime = Date.now()
 
+const defaultConfig: Config = {
+  refresh: Time.minute,
+  output({ bots, cpu, memory, startTime, activeUsers, activeGroups }) {
+    const output = bots
+      .filter(bot => bot.code !== BotStatusCode.BOT_IDLE)
+      .map(({ label, selfId, code, rate }) => {
+        return `${label || selfId}：${code ? '无法连接' : `工作中（${rate}/min）`}`
+      })
+
+    output.push('==========')
+
+    output.push(
+      `活跃用户数量：${activeUsers}`,
+      `活跃群数量：${activeGroups}`,
+      `启动时间：${new Date(startTime).toLocaleString('zh-CN', { hour12: false })}`,
+      `CPU 使用率：${(cpu.app * 100).toFixed()}% / ${(cpu.total * 100).toFixed()}%`,
+      `内存使用率：${(memory.app * 100).toFixed()}% / ${(memory.total * 100).toFixed()}%`,
+    )
+
+    return output.join('\n')
+  },
+}
+
 export const name = 'status'
 
 export function apply(ctx: Context, config: Config = {}) {
   const app = ctx.app
-  const { refresh = Time.minute } = config
+  const { refresh, output } = { ...defaultConfig, ...config }
 
   app.on('before-command', ({ session }) => {
     session.$user['lastCall'] = new Date()
@@ -148,27 +166,7 @@ export function apply(ctx: Context, config: Config = {}) {
     .shortcut('运行情况', { prefix: true })
     .shortcut('运行状态', { prefix: true })
     .action(async () => {
-      const status = await getStatus()
-      const { bots, cpu, memory, startTime, activeUsers, activeGroups } = status
-
-      const output = bots
-        .filter(bot => bot.code !== BotStatusCode.BOT_IDLE)
-        .map(({ label, selfId, code, rate }) => {
-          return `${label || selfId}：${code ? '无法连接' : `工作中（${rate}/min）`}`
-        })
-
-      output.push('==========')
-
-      output.push(
-        `活跃用户数量：${activeUsers}`,
-        `活跃群数量：${activeGroups}`,
-        `启动时间：${new Date(startTime).toLocaleString('zh-CN', { hour12: false })}`,
-        `CPU 使用率：${(cpu.app * 100).toFixed()}% / ${(cpu.total * 100).toFixed()}%`,
-        `内存使用率：${(memory.app * 100).toFixed()}% / ${(memory.total * 100).toFixed()}%`,
-      )
-
-      ctx.emit('status', status, output)
-      return output.join('\n')
+      return output(await getStatus())
     })
 
   async function _getStatus(extend: boolean) {
