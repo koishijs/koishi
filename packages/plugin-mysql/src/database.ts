@@ -22,8 +22,8 @@ export default class MysqlDatabase {
   public pool: Pool
   public config: Config
 
-  escape = escape
-  escapeId = escapeId
+  escape: typeof escape
+  escapeId: typeof escapeId
 
   constructor(public app: App, config: Config) {
     this.config = {
@@ -158,3 +158,6 @@ export default class MysqlDatabase {
     this.pool.end()
   }
 }
+
+MysqlDatabase.prototype.escape = escape
+MysqlDatabase.prototype.escapeId = escapeId

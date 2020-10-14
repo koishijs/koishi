@@ -1,8 +1,7 @@
 import { Context, extendDatabase } from 'koishi-core'
 import { clone, defineProperty, Observed, pick } from 'koishi-utils'
 import { Dialogue, equal, DialogueTest } from '../utils'
-import { escape } from 'mysql'
-import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
+import type MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -127,6 +126,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/mysql', ({ regexp, answer, question, original }, conditionals) => {
+    const { escape } = require('koishi-plugin-mysql/dist/database').default.prototype as MysqlDatabase
+
     if (regexp) {
       if (answer !== undefined) conditionals.push('`answer` REGEXP ' + escape(answer))
       if (question !== undefined) conditionals.push('`question` REGEXP ' + escape(original))
