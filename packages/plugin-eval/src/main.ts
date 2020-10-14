@@ -17,6 +17,7 @@ const logger = new Logger('eval')
 
 export interface MainConfig extends FieldOptions {
   prefix?: string
+  authority?: number
   timeout?: number
   maxLogs?: number
   resourceLimits?: ResourceLimits
