@@ -17,7 +17,7 @@ declare module 'koishi-core/dist/server' {
 
 export interface Config {
   refresh?: number
-  output?: (status: Status) => string
+  template?: string
 }
 
 let usage = getCpuUsage()
@@ -90,32 +90,33 @@ const startTime = Date.now()
 
 const defaultConfig: Config = {
   refresh: Time.minute,
-  output({ bots, cpu, memory, startTime, activeUsers, activeGroups }) {
-    const output = bots
-      .filter(bot => bot.code !== BotStatusCode.BOT_IDLE)
-      .map(({ label, selfId, code, rate }) => {
-        return `${label || selfId}：${code ? '无法连接' : `工作中（${rate}/min）`}`
-      })
+  template: `{{bots
+    .filter(bot => bot.code !== BotStatusCode.BOT_IDLE)
+    .map(({ label, selfId, code, rate }) => \`\${label || selfId}：\${code ? '无法连接' : \`工作中（\${rate}/min）\`}\`)}}
+==========
+活跃用户数量：{{activeUsers}}
+活跃群数量：{{activeGroups}}
+启动时间：{{new Date(startTime).toLocaleString('zh-CN', { hour12: false })}}
+CPU 使用率：{{(cpu.app * 100).toFixed()}}% / {{(cpu.total * 100).toFixed()}}%
+内存使用率：{{(memory.app * 100).toFixed()}}% / {{(memory.total * 100).toFixed()}}%`
+}
 
-    output.push('==========')
-
-    output.push(
-      `活跃用户数量：${activeUsers}`,
-      `活跃群数量：${activeGroups}`,
-      `启动时间：${new Date(startTime).toLocaleString('zh-CN', { hour12: false })}`,
-      `CPU 使用率：${(cpu.app * 100).toFixed()}% / ${(cpu.total * 100).toFixed()}%`,
-      `内存使用率：${(memory.app * 100).toFixed()}% / ${(memory.total * 100).toFixed()}%`,
-    )
-
-    return output.join('\n')
-  },
+const RE = /\{\{[\s\S]+?\}\}/g;
+const format = function (template: string, args: any) {
+  // @ts-ignore
+  with (args) {
+    return template.replace(RE, (sub: string) => {
+      const expr = sub.substring(2, sub.length - 2);
+      return eval(expr);
+    })
+  }
 }
 
 export const name = 'status'
 
 export function apply(ctx: Context, config: Config = {}) {
   const app = ctx.app
-  const { refresh, output } = { ...defaultConfig, ...config }
+  const { refresh, template } = { ...defaultConfig, ...config }
 
   app.on('before-command', ({ session }) => {
     session.$user['lastCall'] = new Date()
@@ -166,7 +167,7 @@ export function apply(ctx: Context, config: Config = {}) {
     .shortcut('运行情况', { prefix: true })
     .shortcut('运行状态', { prefix: true })
     .action(async () => {
-      return output(await getStatus())
+      return format(template, await getStatus())
     })
 
   async function _getStatus(extend: boolean) {
