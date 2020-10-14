@@ -333,6 +333,9 @@ export interface EventMap {
   'group_recall'(session: RawSession<'notice'>): void
   'friend_recall'(session: RawSession<'notice'>): void
   'notify'(session: RawSession<'notice'>): void
+  'notify/poke'(session: RawSession<'notice'>): void
+  'notify/lucky_king'(session: RawSession<'notice'>): void
+  'notify/honor'(session: RawSession<'notice'>): void
   'request/friend'(session: RawSession<'request'>): void
   'request/group/add'(session: RawSession<'request'>): void
   'request/group/invite'(session: RawSession<'request'>): void
