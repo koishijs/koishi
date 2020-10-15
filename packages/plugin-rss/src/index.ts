@@ -39,6 +39,7 @@ export function apply(ctx: Context, config: Config = {}) {
     } else {
       feedMap[url] = new Set()
       feeder.add({ url, refresh })
+      logger.debug('subscribe', url)
     }
   }
 
@@ -47,6 +48,7 @@ export function apply(ctx: Context, config: Config = {}) {
     if (!feedMap[url].size) {
       delete feedMap[url]
       feeder.remove(url)
+      logger.debug('unsubscribe', url)
     }
   }
 
@@ -63,6 +65,7 @@ export function apply(ctx: Context, config: Config = {}) {
     }
 
     feeder.on('new-item', async (payload) => {
+      logger.debug('receive', payload)
       const source = payload.meta.link.toLowerCase()
       if (!feedMap[source]) return
       const message = `${payload.meta.title} (${payload.author})\n${payload.title}`
