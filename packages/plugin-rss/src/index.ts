@@ -37,7 +37,7 @@ export function apply(ctx: Context, config: Config = {}) {
     if (url in feedMap) {
       feedMap[url].add(groupId)
     } else {
-      feedMap[url] = new Set()
+      feedMap[url] = new Set([groupId])
       feeder.add({ url, refresh })
       logger.debug('subscribe', url)
     }
@@ -65,7 +65,7 @@ export function apply(ctx: Context, config: Config = {}) {
     }
 
     feeder.on('new-item', async (payload) => {
-      logger.debug('receive', payload)
+      logger.debug('receive', payload.title)
       const source = payload.meta.link.toLowerCase()
       if (!feedMap[source]) return
       const message = `${payload.meta.title} (${payload.author})\n${payload.title}`
