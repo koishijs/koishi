@@ -25,6 +25,7 @@ declare module 'koishi-core/dist/session' {
 
 const defaultConfig: EvalConfig = {
   prefix: '>',
+  authority: 2,
   timeout: 1000,
   setupFiles: {},
   maxLogs: Infinity,
@@ -38,7 +39,7 @@ const logger = new Logger('eval')
 export const name = 'eval'
 
 export function apply(ctx: Context, config: Config = {}) {
-  const { prefix } = config = { ...defaultConfig, ...config }
+  const { prefix, authority } = config = { ...defaultConfig, ...config }
   const { app } = ctx
   const worker = new EvalWorker(app, config)
   defineProperty(app, 'worker', worker)
@@ -59,7 +60,7 @@ export function apply(ctx: Context, config: Config = {}) {
     .option('slient', '-s  不输出最后的结果')
     .option('restart', '-r  重启子线程', { authority: 3 })
     .before((session) => {
-      if (!session['_redirected'] && session.$user?.authority < 2) return '权限不足。'
+      if (!session['_redirected'] && session.$user?.authority < authority) return '权限不足。'
     })
 
   attachTraps(cmd, config, async ({ session, options, ctxOptions }, expr) => {

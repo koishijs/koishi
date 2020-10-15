@@ -268,11 +268,20 @@ export default function (ctx: Context, config: Dialogue.Config) {
   }
 
   ctx.group().middleware(async (session, next) => {
-    return session.$execute({
-      command: 'dialogue',
-      args: [session.message],
-      next,
-    })
+    return triggerDialogue(ctx, session, next)
+  })
+
+  ctx.on('notify/poke', (session) => {
+    if (session.targetId !== session.selfId) return
+    session.message = 'hook:poke'
+    triggerDialogue(ctx, session)
+  })
+
+  ctx.on('notify/honor', async (session) => {
+    const { assignee } = await session.$observeGroup(['assignee'])
+    if (assignee !== session.selfId) return
+    session.message = 'hook:' + session.honorType
+    triggerDialogue(ctx, session)
   })
 
   ctx.on('dialogue/receive', ({ session, test }) => {
@@ -307,7 +316,7 @@ export default function (ctx: Context, config: Dialogue.Config) {
 }
 
 function prepareSource(source: string) {
-  return CQCode.stringifyAll(CQCode.parseAll(source || '').map((code, index, arr) => {
+  return CQCode.stringifyAll(CQCode.parseAll(source).map((code, index, arr) => {
     if (typeof code !== 'string') return code
     let message = simplify(CQCode.unescape('' + code))
       .toLowerCase()

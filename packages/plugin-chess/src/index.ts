@@ -1,9 +1,14 @@
-import { Context, Group } from 'koishi-core'
+import { Context, extendDatabase, Group } from 'koishi-core'
 import { isInteger } from 'koishi-utils'
 import { State, MoveResult, StateData } from './state'
+import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 import * as go from './go'
 import * as gomoku from './gomoku'
 import * as othello from './othello'
+
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables }) => {
+  tables.group.chess = `JSON NULL DEFAULT NULL`
+})
 
 interface Rule {
   placement?: 'grid' | 'cross'

@@ -1,4 +1,4 @@
-import { Context, Group, extendDatabase } from 'koishi-core'
+import { Context, Group, Session, extendDatabase } from 'koishi-core'
 import { Logger, Time } from 'koishi-utils'
 import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 import RssFeedEmitter from 'rss-feed-emitter'
@@ -13,8 +13,9 @@ Group.extend(() => ({
   rss: [],
 }))
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields }) => {
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields, tables }) => {
   listFields.push('group.rss')
+  tables.group.rss = `TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`
 })
 
 export interface Config {
@@ -36,8 +37,9 @@ export function apply(ctx: Context, config: Config = {}) {
     if (url in feedMap) {
       feedMap[url].add(groupId)
     } else {
-      feedMap[url] = new Set()
+      feedMap[url] = new Set([groupId])
       feeder.add({ url, refresh })
+      logger.debug('subscribe', url)
     }
   }
 
@@ -46,6 +48,7 @@ export function apply(ctx: Context, config: Config = {}) {
     if (!feedMap[url].size) {
       delete feedMap[url]
       feeder.remove(url)
+      logger.debug('unsubscribe', url)
     }
   }
 
@@ -62,6 +65,7 @@ export function apply(ctx: Context, config: Config = {}) {
     }
 
     feeder.on('new-item', async (payload) => {
+      logger.debug('receive', payload.title)
       const source = payload.meta.link.toLowerCase()
       if (!feedMap[source]) return
       const message = `${payload.meta.title} (${payload.author})\n${payload.title}`
@@ -70,13 +74,17 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   const validators: Record<string, Promise<unknown>> = {}
-  function validate(url: string) {
-    if (validators[url]) return validators[url]
+  async function validate(url: string, session: Session) {
+    if (validators[url]) {
+      await session.$send('正在尝试连接……')
+      return validators[url]
+    }
+
     let timer: NodeJS.Timeout
     const feeder = new RssFeedEmitter({ userAgent })
     return validators[url] = new Promise((resolve, reject) => {
       // rss-feed-emitter's typings suck
-      feeder.add({ url, refresh: Number.MAX_SAFE_INTEGER })
+      feeder.add({ url, refresh: 1 << 30 })
       feeder.on('new-item', resolve)
       feeder.on('error', reject)
       timer = setTimeout(() => reject(new Error('connect timeout')), timeout)
@@ -87,14 +95,15 @@ export function apply(ctx: Context, config: Config = {}) {
     })
   }
 
-  ctx.group().command('rss <url...>', 'Subscribe a rss url')
+  ctx.group().command('rss <url...>', '订阅 RSS 链接')
     .groupFields(['rss', 'id'])
     .option('remove', '-r, --remove 取消订阅')
-    .action(async ({ session: { $group }, options }, url) => {
+    .action(async ({ session, options }, url) => {
       url = url.toLowerCase()
-
+      const { $group } = session
       const index = $group.rss.indexOf(url)
-      if (!options.remove) {
+
+      if (options.remove) {
         if (index < 0) return '未订阅此链接。'
         $group.rss.splice(index, 1)
         unsubscribe(url, $group.id)
@@ -102,7 +111,7 @@ export function apply(ctx: Context, config: Config = {}) {
       }
 
       if (index >= 0) return '已订阅此链接。'
-      return validate(url).then(() => {
+      return validate(url, session).then(() => {
         subscribe(url, $group.id)
         if (!$group.rss.includes(url)) {
           $group.rss.push(url)

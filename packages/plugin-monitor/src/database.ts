@@ -75,8 +75,9 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   },
 })
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields }) => {
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields, tables }) => {
   listFields.push('subscribe.names')
+  tables.group.subscribe = `JSON NULL DEFAULT NULL`
 })
 
 extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {

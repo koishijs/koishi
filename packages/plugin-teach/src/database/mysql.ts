@@ -1,8 +1,7 @@
 import { Context, extendDatabase } from 'koishi-core'
 import { clone, defineProperty, Observed, pick } from 'koishi-utils'
 import { Dialogue, equal, DialogueTest } from '../utils'
-import { escape } from 'mysql'
-import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
+import type MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -93,8 +92,26 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   },
 })
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields }) => {
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields, tables }) => {
   listFields.push('dialogue.groups', 'dialogue.predecessors')
+
+  Object.assign(tables.dialogue = [
+    'PRIMARY KEY (`id`) USING BTREE',
+  ], {
+    id: `INT(11) UNSIGNED NOT NULL AUTO_INCREMENT`,
+    flag: `INT(10) UNSIGNED NOT NULL DEFAULT '0'`,
+    probS: `DECIMAL(4,3) UNSIGNED NOT NULL DEFAULT '1.000'`,
+    probA: `DECIMAL(4,3) UNSIGNED NOT NULL DEFAULT '0.000'`,
+    startTime: `INT(10) NOT NULL DEFAULT '0'`,
+    endTime: `INT(10) NOT NULL DEFAULT '0'`,
+    groups: `TINYTEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
+    original: `TINYTEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
+    question: `TINYTEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
+    answer: `TEXT(65535) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
+    predecessors: `TINYTEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
+    successorTimeout: `INT(10) UNSIGNED NOT NULL DEFAULT '0'`,
+    writer: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0'`,
+  })
 })
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
@@ -127,6 +144,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/mysql', ({ regexp, answer, question, original }, conditionals) => {
+    const { escape } = require('koishi-plugin-mysql/dist/database').default.prototype as MysqlDatabase
+
     if (regexp) {
       if (answer !== undefined) conditionals.push('`answer` REGEXP ' + escape(answer))
       if (question !== undefined) conditionals.push('`question` REGEXP ' + escape(original))
