@@ -24,7 +24,7 @@ export interface Schedule {
   session: Session
 }
 
-extendDatabase(MysqlDatabase, (Database) => {
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', (Database) => {
   Object.assign(Database.tables.schedule = [
     'PRIMARY KEY (`id`) USING BTREE',
   ], {
