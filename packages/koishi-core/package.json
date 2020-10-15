@@ -1,7 +1,7 @@
 {
   "name": "koishi-core",
   "description": "Core features for Koishi",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "engines": {
