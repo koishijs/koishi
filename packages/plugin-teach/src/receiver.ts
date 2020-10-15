@@ -272,11 +272,14 @@ export default function (ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('notify/poke', (session) => {
+    if (session.targetId !== session.selfId) return
     session.message = 'hook:poke'
     triggerDialogue(ctx, session)
   })
 
-  ctx.on('notify/honor', (session) => {
+  ctx.on('notify/honor', async (session) => {
+    const { assignee } = await session.$observeGroup(['assignee'])
+    if (assignee !== session.selfId) return
     session.message = 'hook:' + session.honorType
     triggerDialogue(ctx, session)
   })
