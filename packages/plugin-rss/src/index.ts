@@ -77,7 +77,7 @@ export function apply(ctx: Context, config: Config = {}) {
     const feeder = new RssFeedEmitter({ userAgent })
     return validators[url] = new Promise((resolve, reject) => {
       // rss-feed-emitter's typings suck
-      feeder.add({ url, refresh: Number.MAX_SAFE_INTEGER })
+      feeder.add({ url, refresh: 1 << 30 })
       feeder.on('new-item', resolve)
       feeder.on('error', reject)
       timer = setTimeout(() => reject(new Error('connect timeout')), timeout)
