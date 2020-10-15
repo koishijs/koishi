@@ -268,11 +268,17 @@ export default function (ctx: Context, config: Dialogue.Config) {
   }
 
   ctx.group().middleware(async (session, next) => {
-    return session.$execute({
-      command: 'dialogue',
-      args: [session.message],
-      next,
-    })
+    return triggerDialogue(ctx, session, next)
+  })
+
+  ctx.on('notify/poke', (session) => {
+    session.message = 'hook:poke'
+    triggerDialogue(ctx, session)
+  })
+
+  ctx.on('notify/honor', (session) => {
+    session.message = 'hook:' + session.honorType
+    triggerDialogue(ctx, session)
   })
 
   ctx.on('dialogue/receive', ({ session, test }) => {
