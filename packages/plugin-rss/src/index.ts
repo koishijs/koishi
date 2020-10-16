@@ -66,7 +66,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
     feeder.on('new-item', async (payload) => {
       logger.debug('receive', payload.title)
-      const source = payload.meta.link.toLowerCase()
+      const source = payload.meta.link
       if (!feedMap[source]) return
       const message = `${payload.meta.title} (${payload.author})\n${payload.title}`
       await ctx.broadcast([...feedMap[source]], message)
@@ -106,7 +106,6 @@ export function apply(ctx: Context, config: Config = {}) {
         return rss.join('\n')
       }
 
-      url = url.toLowerCase()
       const index = rss.indexOf(url)
 
       if (options.remove) {
