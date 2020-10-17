@@ -65,8 +65,18 @@ export namespace Dialogue {
   export type ModifyType = '添加' | '修改' | '删除'
   export type Field = keyof Dialogue
 
+  export interface AuthorityConfig {
+    base?: number
+    admin?: number
+    context?: number
+    frozen?: number
+    regExp?: number
+    writer?: number
+  }
+
   export interface Config {
     prefix?: string
+    authority?: AuthorityConfig
     historyAge?: number
     validateRegExp?: RegExpValidator.Options
   }
