@@ -68,10 +68,10 @@ export namespace Dialogue {
   export interface AuthorityConfig {
     base?: number
     admin?: number
-    anonymous?: number
     context?: number
     frozen?: number
     regExp?: number
+    writer?: number
   }
 
   export interface Config {

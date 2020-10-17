@@ -54,29 +54,27 @@ const cheatSheet = (p: string, authority: number, config: Config) => `\
 　管道语法：　　　|
 　结果页码：　　　/ page
 　禁用递归查询：　-R${authority >= config.authority.regExp ? `
-　正则+合并结果：${p}${p}${p}` : ''}
+　正则+合并结果：${p}${p}${p}` : ''}${config.useContext ? `
 上下文选项：
 　允许本群：　　　-e
-　禁止本群：　　　-d${authority >= config.authority.context ? `
+　禁止本群：　　　-d` : ''}${config.useContext && authority >= config.authority.context ? `
 　全局允许：　　　-E
 　全局禁止：　　　-D
 　设置群号：　　　-g id
 　无视上下文搜索：-G` : ''}
-问答选项：${authority >= config.authority.frozen ? `
+问答选项：${config.useWriter && authority >= config.authority.frozen ? `
 　锁定问答：　　　-f/-F
-　教学者代行：　　-s/-S` : ''}
-　设置问题作者：　-w uid${authority >= config.authority.anonymous ? `
+　教学者代行：　　-s/-S` : ''}${config.useWriter && authority >= config.authority.writer ? `
+　设置问题作者：　-w uid
 　设置为匿名：　　-W` : ''}
 　忽略智能提示：　-i
 　重定向：　　　　=>
 匹配规则：${authority >= config.authority.regExp ? `
 　正则表达式：　　-x/-X` : ''}
 　严格匹配权重：　-p prob
-　称呼匹配权重：　-P prob
-　设置最小好感度：-a aff
-　设置最大好感度：-A aff
+　称呼匹配权重：　-P prob${config.useTime ? `
 　设置起始时间：　-t time
-　设置结束时间：　-T time
+　设置结束时间：　-T time` : ''}${config.successorTimeout ? `
 前置与后继：
 　设置前置问题：　< id
 　添加前置问题：　<< id
@@ -84,7 +82,7 @@ const cheatSheet = (p: string, authority: number, config: Config) => `\
 　添加后继问题：　>> id
 　上下文触发后继：-c/-C
 　前置生效时间：　-z secs
-　创建新问答并作为后继：>#
+　创建新问答并作为后继：>#` : ''}
 回退功能：
 　查看近期改动：　-v
 　回退近期改动：　-V
@@ -140,10 +138,10 @@ const defaultConfig: Config = {
   authority: {
     base: 2,
     admin: 3,
-    anonymous: 2,
     context: 3,
     frozen: 4,
     regExp: 3,
+    writer: 2,
   },
 }
 
