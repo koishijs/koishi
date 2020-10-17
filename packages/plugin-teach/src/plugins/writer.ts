@@ -33,7 +33,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('frozen', '-f  锁定这个问答', { authority: config.lockAuthority })
     .option('frozen', '-F, --no-frozen  解锁这个问答', { authority: config.lockAuthority, value: false })
     .option('writer', '-w <uid>  添加或设置问题的作者')
-    .option('writer', '-W, --anonymous  添加或设置匿名问题', { value: 0 })
+    .option('writer', '-W, --anonymous  添加或设置匿名问题', { authority: config.setAnonymousAuthority, value: 0 })
     .option('substitute', '-s  由教学者完成回答的执行')
     .option('substitute', '-S, --no-substitute  由触发者完成回答的执行', { value: false })
 
@@ -79,7 +79,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         for (const userId in memberMap) {
           userMap[userId] = userMap[userId] || memberMap[userId]
         }
-      } catch {}
+      } catch { }
     }
   })
 
@@ -103,9 +103,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     const { id, authority } = session.$user
     return (
       (newWriter && authority <= authMap[newWriter] && newWriter !== id) ||
-      ((flag & Dialogue.Flag.frozen) && authority < config.unlockAnyAuthority) ||
+      ((flag & Dialogue.Flag.frozen) && authority < config.lockAuthority) ||
       (writer !== id && (
-        (target && authority < config.lockAuthority) || (
+        (target && authority < config.editAnyAuthority) || (
           (substitute || (flag & Dialogue.Flag.substitute)) &&
           (authority <= (authMap[writer] || 2))
         )

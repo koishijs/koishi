@@ -65,8 +65,8 @@ const cheatSheet = (p: string, authority: number, config: Config) => `\
 问答选项：${authority >= config.lockAuthority ? `
 　锁定问答：　　　-f/-F
 　教学者代行：　　-s/-S` : ''}
-　设置问题作者：　-w uid
-　设置为匿名：　　-W
+　设置问题作者：　-w uid${authority >= config.setAnonymousAuthority ? `
+　设置为匿名：　　-W`: ''}
 　忽略智能提示：　-i
 　重定向：　　　　=>
 匹配规则：${authority >= config.regExpAuthority ? `
@@ -138,10 +138,11 @@ function registerPrefix(ctx: Context, prefix: string) {
 const defaultConfig: Config = {
   prefix: '#',
   baseAuthority: 2,
-  lockAuthority: 3,
-  unlockAnyAuthority: 4,
+  lockAuthority: 4,
   regExpAuthority: 3,
-  switchContextAuthority: 3
+  switchContextAuthority: 3,
+  setAnonymousAuthority: 2,
+  editAnyAuthority: 3,
 }
 
 export function apply(ctx: Context, config: Dialogue.Config = {}) {

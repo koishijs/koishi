@@ -71,7 +71,8 @@ export namespace Dialogue {
     regExpAuthority?: number
     switchContextAuthority?: number
     lockAuthority?: number
-    unlockAnyAuthority?: number
+    editAnyAuthority?: number
+    setAnonymousAuthority?: number
     historyAge?: number
     validateRegExp?: RegExpValidator.Options
   }
