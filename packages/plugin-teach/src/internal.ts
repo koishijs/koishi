@@ -43,8 +43,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('question', '<question>  问题', { type: 'string' })
     .option('answer', '<answer>  回答', { type: 'string' })
     .option('ignoreHint', '-i  忽略智能提示')
-    .option('regexp', '-x  使用正则表达式匹配', { authority: config.regExpAuthority })
-    .option('regexp', '-X  取消使用正则表达式匹配', { authority: config.regExpAuthority, value: false })
+    .option('regexp', '-x  使用正则表达式匹配', { authority: config.authority.regExp })
+    .option('regexp', '-X  取消使用正则表达式匹配', { authority: config.authority.regExp, value: false })
     .option('redirect', '=> <answer>  重定向到其他问答')
 
   ctx.on('dialogue/validate', (argv) => {
