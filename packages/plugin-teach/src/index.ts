@@ -40,7 +40,7 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-const cheatSheet = (p: string, authority: number) => `\
+const cheatSheet = (p: string, authority: number, config: Config) => `\
 教学系统基本用法：
 　添加问答：${p} 问题 回答
 　搜索回答：${p}${p} 问题
@@ -53,23 +53,23 @@ const cheatSheet = (p: string, authority: number) => `\
 搜索选项：
 　管道语法：　　　|
 　结果页码：　　　/ page
-　禁用递归查询：　-R${authority >= 3 ? `
+　禁用递归查询：　-R${authority >= config.regExpAuthority ? `
 　正则+合并结果：${p}${p}${p}` : ''}
 上下文选项：
 　允许本群：　　　-e
-　禁止本群：　　　-d${authority >= 3 ? `
+　禁止本群：　　　-d${authority >= config.switchContextAuthority ? `
 　全局允许：　　　-E
 　全局禁止：　　　-D
 　设置群号：　　　-g id
 　无视上下文搜索：-G` : ''}
-问答选项：${authority >= 3 ? `
+问答选项：${authority >= config.lockAuthority ? `
 　锁定问答：　　　-f/-F
 　教学者代行：　　-s/-S` : ''}
 　设置问题作者：　-w uid
 　设置为匿名：　　-W
 　忽略智能提示：　-i
 　重定向：　　　　=>
-匹配规则：${authority >= 3 ? `
+匹配规则：${authority >= config.regExpAuthority ? `
 　正则表达式：　　-x/-X` : ''}
 　严格匹配权重：　-p prob
 　称呼匹配权重：　-P prob
@@ -137,15 +137,20 @@ function registerPrefix(ctx: Context, prefix: string) {
 
 const defaultConfig: Config = {
   prefix: '#',
+  baseAuthority: 2,
+  lockAuthority: 3,
+  unlockAnyAuthority: 4,
+  regExpAuthority: 3,
+  switchContextAuthority: 3
 }
 
 export function apply(ctx: Context, config: Dialogue.Config = {}) {
   config = { ...defaultConfig, ...config }
   registerPrefix(ctx, config.prefix)
 
-  ctx.command('teach', '添加教学对话', { authority: 2, checkUnknown: true, hideOptions: true })
+  ctx.command('teach', '添加教学对话', { authority: config.baseAuthority, checkUnknown: true, hideOptions: true })
     .userFields(['authority', 'id'])
-    .usage(({ $user }) => cheatSheet(config.prefix, $user.authority))
+    .usage(({ $user }) => cheatSheet(config.prefix, $user.authority, config))
     .action(async ({ options, session, args }) => {
       const argv: Dialogue.Argv = { app: ctx.app, session, args, config, options }
       return ctx.bail('dialogue/validate', argv)

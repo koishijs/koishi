@@ -67,6 +67,11 @@ export namespace Dialogue {
 
   export interface Config {
     prefix?: string
+    baseAuthority?: number
+    regExpAuthority?: number
+    switchContextAuthority?: number
+    lockAuthority?: number
+    unlockAnyAuthority?: number
     historyAge?: number
     validateRegExp?: RegExpValidator.Options
   }
