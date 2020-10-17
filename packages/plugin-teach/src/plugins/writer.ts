@@ -28,12 +28,13 @@ declare module '../utils' {
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
   if (config.useWriter === false) return
+  const { authority } = config
 
   ctx.command('teach')
-    .option('frozen', '-f  锁定这个问答', { authority: config.authority.lock })
-    .option('frozen', '-F, --no-frozen  解锁这个问答', { authority: config.authority.lock, value: false })
+    .option('frozen', '-f  锁定这个问答', { authority: authority.frozen })
+    .option('frozen', '-F, --no-frozen  解锁这个问答', { authority: authority.frozen, value: false })
     .option('writer', '-w <uid>  添加或设置问题的作者')
-    .option('writer', '-W, --anonymous  添加或设置匿名问题', { authority: config.authority.setAnonymous, value: 0 })
+    .option('writer', '-W, --anonymous  添加或设置匿名问题', { authority: authority.anonymous, value: 0 })
     .option('substitute', '-s  由教学者完成回答的执行')
     .option('substitute', '-S, --no-substitute  由触发者完成回答的执行', { value: false })
 
@@ -94,20 +95,20 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  // 当修改问答时，如果问答的作者不是本人，需要 3 级权限
+  // 当修改问答时，如果问答的作者不是本人，需要 admin 级权限
   // 当添加和修改问答时，如果问答本身是代行模式或要将问答设置成代行模式，则需要权限高于问答原作者
   // 当使用 -w 时需要原作者权限高于目标用户
-  // 锁定的问答需要 4 级权限才能修改
+  // 锁定的问答需要 frozen 级权限才能修改
   ctx.on('dialogue/permit', ({ session, target, options, authMap }, { writer, flag }) => {
     const { substitute, writer: newWriter } = options
     const { id, authority } = session.$user
     return (
       (newWriter && authority <= authMap[newWriter] && newWriter !== id) ||
-      ((flag & Dialogue.Flag.frozen) && authority < config.authority.lock) ||
+      ((flag & Dialogue.Flag.frozen) && authority < config.authority.frozen) ||
       (writer !== id && (
-        (target && authority < config.authority.editAny) || (
+        (target && authority < config.authority.admin) || (
           (substitute || (flag & Dialogue.Flag.substitute)) &&
-          (authority <= (authMap[writer] || 2))
+          (authority <= (authMap[writer] || config.authority.base))
         )
       ))
     )

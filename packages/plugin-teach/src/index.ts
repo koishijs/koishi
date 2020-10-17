@@ -57,16 +57,16 @@ const cheatSheet = (p: string, authority: number, config: Config) => `\
 　正则+合并结果：${p}${p}${p}` : ''}
 上下文选项：
 　允许本群：　　　-e
-　禁止本群：　　　-d${authority >= config.authority.switchContext ? `
+　禁止本群：　　　-d${authority >= config.authority.context ? `
 　全局允许：　　　-E
 　全局禁止：　　　-D
 　设置群号：　　　-g id
 　无视上下文搜索：-G` : ''}
-问答选项：${authority >= config.authority.lock ? `
+问答选项：${authority >= config.authority.frozen ? `
 　锁定问答：　　　-f/-F
 　教学者代行：　　-s/-S` : ''}
-　设置问题作者：　-w uid${authority >= config.authority.setAnonymous ? `
-　设置为匿名：　　-W`: ''}
+　设置问题作者：　-w uid${authority >= config.authority.anonymous ? `
+　设置为匿名：　　-W` : ''}
 　忽略智能提示：　-i
 　重定向：　　　　=>
 匹配规则：${authority >= config.authority.regExp ? `
@@ -139,16 +139,24 @@ const defaultConfig: Config = {
   prefix: '#',
   authority: {
     base: 2,
-    setAnonymous: 2,
+    admin: 3,
+    anonymous: 2,
+    context: 3,
+    frozen: 4,
     regExp: 3,
-    switchContext: 3,
-    editAny: 3,
-    lock: 4,
-  }
+  },
 }
 
-export function apply(ctx: Context, config: Dialogue.Config = {}) {
-  config = { ...defaultConfig, ...config, authority: { ...defaultConfig.authority, ...config.authority } }
+export function apply(ctx: Context, config: Config = {}) {
+  config = {
+    ...defaultConfig,
+    ...config,
+    authority: {
+      ...defaultConfig.authority,
+      ...config.authority,
+    },
+  }
+
   registerPrefix(ctx, config.prefix)
 
   ctx.command('teach', '添加教学对话', { authority: config.authority.base, checkUnknown: true, hideOptions: true })
