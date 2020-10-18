@@ -91,7 +91,7 @@ Session.prototype.$suggest = function $suggest(this: Session, options: SuggestOp
 export default function apply(ctx: Context) {
   ctx.middleware((session, next) => {
     const { $argv, $reply, $parsed, $prefix, $appel, messageType } = session
-    if ($argv || $reply || messageType !== 'private' && $prefix === null && !$appel) return next()
+    if ($argv || messageType !== 'private' && $prefix === null && !$appel) return next()
     const target = $parsed.split(/\s/, 1)[0].toLowerCase()
     if (!target) return next()
 
@@ -103,7 +103,7 @@ export default function apply(ctx: Context) {
       prefix: Message.COMMAND_SUGGEST_PREFIX,
       suffix: Message.COMMAND_SUGGEST_SUFFIX,
       async apply(suggestion, next) {
-        const newMessage = suggestion + $parsed.slice(target.length)
+        const newMessage = suggestion + $parsed.slice(target.length) + ($reply ? ' ' + $reply.message : '')
         return this.$execute(newMessage, next)
       },
     })

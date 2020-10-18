@@ -255,13 +255,14 @@ export class App extends Context {
   private _parse(message: string, session: Session, builtin: boolean, terminator = '') {
     // group message should have prefix or appel to be interpreted as a command call
     const { $reply, $prefix, $appel, messageType } = session
-    if (builtin && ($reply || messageType !== 'private' && $prefix === null && !$appel)) return
+    if (builtin && messageType !== 'private' && $prefix === null && !$appel) return
     terminator = escapeRegExp(terminator)
     const name = message.split(new RegExp(`[\\s${terminator}]`), 1)[0]
     const index = name.lastIndexOf('/')
     const command = this.app._commandMap[name.slice(index + 1).toLowerCase()]
     if (!command) return
-    const result = command.parse(message.slice(name.length).trimStart(), terminator)
+    message = message.slice(name.length).trim() + ($reply ? ' ' + $reply.message : '')
+    const result = command.parse(message, terminator)
     return { command, ...result }
   }
 }
