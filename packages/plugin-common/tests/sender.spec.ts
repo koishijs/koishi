@@ -59,7 +59,7 @@ describe('Sender Commands', () => {
     sendPrivateMsg.mockClear()
     await session1.shouldNotReply('bar')
     expect(sendPrivateMsg.mock.calls).to.have.length(0)
-    await session1.shouldNotReply('[CQ:reply,id=1000] bar')
+    await session1.shouldNotReply(`[CQ:reply,id=1000] [CQ:at,qq=${app.selfId}] bar`)
     expect(sendPrivateMsg.mock.calls).to.have.length(1)
     expect(sendPrivateMsg.mock.calls).to.have.shape([[123, 'bar']])
   })
