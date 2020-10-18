@@ -1,9 +1,9 @@
+import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop } from 'koishi-utils'
 import { Command } from './command'
 import { Context, Middleware, NextFunction } from './context'
 import { Group, User, Database } from './database'
 import { BotOptions, Server } from './server'
 import { Session } from './session'
-import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray } from 'koishi-utils'
 import help from './plugins/help'
 import shortcut from './plugins/shortcut'
 import suggest from './plugins/suggest'
@@ -145,8 +145,12 @@ export class App extends Context {
     let capture: RegExpMatchArray, atSelf = false
     // eslint-disable-next-line no-cond-assign
     if (capture = message.match(/^\[CQ:reply,id=(-?\d+)\]\s*/)) {
-      session.$reply = +capture[1]
+      session.$reply = await session.$bot.getMsg(+capture[1]).catch(noop)
       message = message.slice(capture[0].length)
+      if (session.$reply) {
+        const prefix = `[CQ:at,qq=${session.$reply.sender.userId}]`
+        message = message.slice(prefix.length).trimStart()
+      }
     }
 
     // strip prefix
