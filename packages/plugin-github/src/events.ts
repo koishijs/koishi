@@ -16,6 +16,8 @@ interface CommentEventConfig {
 
 export interface EventConfig {
   commitComment?: boolean | CommentEventConfig
+  create?: boolean
+  delete?: boolean
   fork?: boolean
   issueComment?: boolean | CommentEventConfig
   issues?: boolean | {
@@ -70,7 +72,6 @@ export const defaultEvents: EventConfig = {
   commitComment: {
     created: true,
   },
-  fork: true,
   issueComment: {
     created: true,
   },
@@ -88,7 +89,6 @@ export const defaultEvents: EventConfig = {
   pullRequestReviewComment: {
     created: true,
   },
-  push: true,
   star: {
     created: true,
   },
@@ -157,6 +157,19 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
       reply: [`https://api.github.com/repos/${full_name}/commits/${commit_id}/comments`, { path, position }],
     }]
   })
+
+  function onReference<T extends 'create' | 'delete'>(event: T) {
+    on(event, ({ repository, ref, ref_type, sender }) => {
+      const ref_name = `${repository.full_name}${ref_type === 'tag' ? '@' : ':'}${ref}`
+      return {
+        message: `${sender.login} ${event}d ${ref_type} ${ref_name}`,
+      }
+    })
+  }
+
+  onReference('create')
+
+  onReference('delete')
 
   on('fork', ({ repository, sender, forkee }) => {
     const { full_name, forks_count } = repository
@@ -268,18 +281,11 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     }
   })
 
-  on('push', ({ compare, pusher, commits, repository, ref, after }) => {
+  on('push', ({ compare, pusher, commits, repository, ref, before, after }) => {
     const { full_name } = repository
 
-    // do not show pull request merge
-    if (/^0+$/.test(after)) return
-
-    // use short form for tag releases
-    if (ref.startsWith('refs/tags')) {
-      return {
-        message: `${pusher.name} published tag ${full_name}@${ref.slice(10)}`,
-      }
-    }
+    // do not show branch create / delete
+    if (/^0+$/.test(before) || /^0+$/.test(after)) return
 
     return {
       message: [

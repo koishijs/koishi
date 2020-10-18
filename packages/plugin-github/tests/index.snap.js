@@ -4,6 +4,18 @@ module.exports[`commit_comment.created`] = `
 Path: packages/koishi-core/tests/parser.spec.ts
 This will introduce a failure in test.`
 
+module.exports[`create.1`] = `
+[GitHub] Shigma created branch koishijs/koishi:reply-api`
+
+module.exports[`create.2`] = `
+[GitHub] Shigma created tag koishijs/koishi@2.3.2`
+
+module.exports[`delete.1`] = `
+[GitHub] Shigma deleted branch koishijs/koishi:reply-api`
+
+module.exports[`delete.2`] = `
+[GitHub] Shigma deleted tag koishijs/koishi@0.1`
+
 module.exports[`fork`] = `
 [GitHub] jjyyxx forked koishijs/koishi to jjyyxx/koishi (total 12 forks)`
 
@@ -63,9 +75,6 @@ module.exports[`push.1`] = `
 [GitHub] Shigma pushed to koishijs/koishi:develop
 [d7ff34] chore: adjust
 [3ae7e7] fix(core): create major context at demand`
-
-module.exports[`push.3`] = `
-[GitHub] Shigma published tag koishijs/koishi@1.5.0`
 
 module.exports[`star.created`] = `
 [GitHub] 275761919 starred koishijs/koishi (total 189 stargazers)`

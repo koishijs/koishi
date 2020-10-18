@@ -166,17 +166,15 @@ export function apply(ctx: Context, config: Config = {}) {
 
   addListeners((event, handler) => {
     const base = camelize(event.split('.', 1)[0])
-    github.on(event, async (callback) => {
-      const { repository } = callback.payload
-
+    github.on(event, async ({ payload }) => {
       // step 1: filter repository
-      const groupIds = config.repos[repository.full_name]
+      const groupIds = config.repos[payload.repository.full_name]
       if (!groupIds) return
 
       // step 2: filter event
       const baseConfig = config.events[base] || {}
       if (baseConfig === false) return
-      const action = camelize(callback.payload.action)
+      const action = camelize(payload.action)
       if (action && baseConfig !== true) {
         const actionConfig = baseConfig[action]
         if (actionConfig === false) return
@@ -184,7 +182,7 @@ export function apply(ctx: Context, config: Config = {}) {
       }
 
       // step 3: handle event
-      const result = handler(callback.payload)
+      const result = handler(payload)
       if (!result) return
 
       // step 4: broadcast message
