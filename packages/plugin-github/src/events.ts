@@ -4,16 +4,20 @@ import { EventTypesPayload } from '@octokit/webhooks/dist-types/generated/get-we
 
 type WebhookEvent = Exclude<keyof EventTypesPayload, 'error'>
 
+type SubEvent<T extends WebhookEvent> = {
+  [K in WebhookEvent]: K extends '*' ? never : EventTypesPayload[K] extends EventTypesPayload[T] ? K : never
+}[WebhookEvent]
+
+interface CommentEventConfig {
+  created?: boolean
+  deleted?: boolean
+  edited?: boolean
+}
+
 export interface EventConfig {
-  commitComment?: boolean | {
-    created?: boolean
-  }
+  commitComment?: boolean | CommentEventConfig
   fork?: boolean
-  issueComment?: boolean | {
-    created?: boolean
-    deleted?: boolean
-    edited?: boolean
-  }
+  issueComment?: boolean | CommentEventConfig
   issues?: boolean | {
     assigned?: boolean
     closed?: boolean
@@ -54,11 +58,7 @@ export interface EventConfig {
     edited?: boolean
     submitted?: boolean
   }
-  pullRequestReviewComment?: boolean | {
-    created?: boolean
-    deleted?: boolean
-    edited?: boolean
-  }
+  pullRequestReviewComment?: boolean | CommentEventConfig
   push?: boolean
   star?: boolean | {
     created?: boolean
@@ -116,14 +116,14 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
       .replace(/\n\s*\n/g, '\n')
   }
 
-  interface CommentReplyPayloads extends EventData {
+  interface CommentEventData extends EventData {
     padding?: number[]
   }
 
   type CommentEvent = 'commit_comment' | 'issue_comment' | 'pull_request_review_comment'
-  type CommantHandler<E extends CommentEvent> = (payload: Payload<E>) => [target: string, replies: CommentReplyPayloads]
+  type CommentHandler<E extends CommentEvent> = (payload: Payload<E>) => [target: string, replies: CommentEventData]
 
-  function onComment<E extends CommentEvent>(event: E, handler: CommantHandler<E>) {
+  function onComment<E extends CommentEvent>(event: E, handler: CommentHandler<E>) {
     on(event as CommentEvent, (payload) => {
       const { user, body, html_url, url } = payload.comment
       if (user.type === 'Bot') return
@@ -175,34 +175,38 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     }]
   })
 
-  on('issues.opened', ({ repository, issue }) => {
-    const { full_name } = repository
-    const { user, url, html_url, comments_url, title, body, number } = issue
-    if (user.type === 'Bot') return
+  type IssueHandler = (payload: EventTypesPayload['issues']['payload']) => [message: string, replies?: EventData]
 
-    return {
-      message: [
-        `${user.login} opened an issue ${full_name}#${number}`,
-        `Title: ${title}`,
-        formatMarkdown(body),
-      ].join('\n'),
-      link: html_url,
-      react: url + `/reactions`,
-      reply: [comments_url],
-    }
+  function onIssue(event: SubEvent<'issues'>, handler: IssueHandler) {
+    on(event, (payload) => {
+      const { user, url, html_url, comments_url } = payload.issue
+      if (user.type === 'Bot') return
+
+      const [message, replies] = handler(payload)
+      return {
+        message,
+        link: html_url,
+        react: url + `/reactions`,
+        reply: [comments_url],
+        ...replies,
+      }
+    })
+  }
+
+  onIssue('issues.opened', ({ repository, issue }) => {
+    const { full_name } = repository
+    const { user, title, body, number } = issue
+    return [[
+      `${user.login} opened an issue ${full_name}#${number}`,
+      `Title: ${title}`,
+      formatMarkdown(body),
+    ].join('\n')]
   })
 
-  on('issues.closed', ({ repository, issue }) => {
+  onIssue('issues.closed', ({ repository, issue }) => {
     const { full_name } = repository
-    const { user, url, html_url, comments_url, title, number } = issue
-    if (user.type === 'Bot') return
-
-    return {
-      message: `${user.login} closed issue ${full_name}#${number}\n${title}`,
-      link: html_url,
-      react: url + `/reactions`,
-      reply: [comments_url],
-    }
+    const { user, title, number } = issue
+    return [`${user.login} closed issue ${full_name}#${number}\n${title}`]
   })
 
   onComment('pull_request_review_comment', ({ repository, comment, pull_request }) => {
@@ -254,7 +258,7 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     const headLabel = head.label.replace(prefix, '')
     return {
       message: [
-        `${user.login} opened a pull request ${full_name}#${number} (${baseLabel} <- ${headLabel})`,
+        `${user.login} opened a pull request ${full_name}#${number} (${baseLabel} ← ${headLabel})`,
         `Title: ${title}`,
         formatMarkdown(body),
       ].join('\n'),

@@ -37,13 +37,13 @@ module.exports['pull_request.closed.2'] = `
 
 // URL: https://github.com/koishijs/koishi/pull/20
 module.exports[`pull_request.opened.1`] = `
-[GitHub] simon300000 opened a pull request koishijs/koishi#20 (develop <- experimental)
+[GitHub] simon300000 opened a pull request koishijs/koishi#20 (develop ← experimental)
 Title: test: add experimental shouldMatchSnapshot
 Das ist wichtig!`
 
 // URL: https://github.com/koishijs/koishi/pull/90
 module.exports[`pull_request.opened.2`] = `
-[GitHub] jjyyxx opened a pull request koishijs/koishi#90 (mapping <- jjyyxx:mapping)
+[GitHub] jjyyxx opened a pull request koishijs/koishi#90 (mapping ← jjyyxx:mapping)
 Title: test: fix path mapping
 According to \`tsconfig-paths\` documentation ...`
 
