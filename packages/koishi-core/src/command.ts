@@ -400,7 +400,7 @@ export class Command<U extends User.Field = never, G extends Group.Field = never
       let names: string | string[]
       let param: string
       if (!arg0.quoted && (option = this._optionSymbolMap[arg])) {
-        names = [option.name]
+        names = [paramCase(option.name)]
       } else {
         // normal argument
         if (arg[0] !== '-' || arg0.quoted) {
