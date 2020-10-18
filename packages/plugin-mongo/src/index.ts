@@ -115,7 +115,7 @@ extendDatabase(MongoDatabase, {
     for (const field of fields) f[field] = 1
     const [data] = await this.group.find({ _id: groupId }).project(f).toArray()
     const fallback = Group.create(groupId, selfId)
-    if (!data && selfId && groupId) this.group.insertOne({ _id: groupId, selfId, groupId })
+    if (!data?.assignee && selfId && groupId) this.group.insertOne({ _id: groupId, assignee: selfId, groupId })
     return { ...fallback, ...data }
   },
 
