@@ -11,7 +11,7 @@ declare module 'koishi-core/dist/context' {
 }
 
 extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
-  async getDialoguesById(ids, fields) {
+  async getDialoguesById(ids, fields = []) {
     if (!ids.length) return []
     const p = {}
     for (const field of fields) p[field] = 1
