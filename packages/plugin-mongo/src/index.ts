@@ -116,7 +116,7 @@ extendDatabase(MongoDatabase, {
     const [data] = await this.group.find({ _id: groupId }).project(f).toArray()
     const fallback = Group.create(groupId, selfId)
     if (!data?.assignee && selfId && groupId) {
-        await this.group.updateOne({ _id: groupId }, { $set: { assignee: selfId, flag: 0 } }), { upsert: true })
+        await this.group.updateOne({ _id: groupId }, { $set: { assignee: selfId, flag: 0 } }, { upsert: true })
     }
     return { ...fallback, ...data }
   },
