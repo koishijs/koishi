@@ -1,5 +1,5 @@
 import { camelCase, paramCase, sleep } from 'koishi-utils'
-import { Session, MessageType, Meta } from './session'
+import { Session, MessageType, Meta, MessageInfo } from './session'
 import { App, AppStatus } from './app'
 import * as http from 'http'
 import type Koa from 'koa'
@@ -112,6 +112,7 @@ export enum BotStatusCode {
 export interface Bot extends BotOptions {
   ready?: boolean
   version?: string
+  getMsg(messageId: number): Promise<MessageInfo>
   getSelfId(): Promise<number>
   getStatusCode(): Promise<BotStatusCode>
   getMemberMap(groupId: number): Promise<Record<number, string>>
