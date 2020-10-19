@@ -10,6 +10,7 @@
     "shiki/cosmos",
     "shiki/games",
     "shiki/others",
+    "utsuho",
     "packages/*"
   ],
   "scripts": {
@@ -27,7 +28,8 @@
     "test:text": "c8 -r text yarn test",
     "lint": "eslint packages/*/src/**/*.ts --fix --cache",
     "pub": "ts-node build/publish",
-    "shiki": "yarn workspace bot-shiki"
+    "shiki": "yarn workspace bot-shiki",
+    "utsuho": "yarn workspace bot-utsuho"
   },
   "version": "1.0.0",
   "license": "MIT",
