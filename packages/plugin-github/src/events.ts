@@ -206,20 +206,20 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     })
   }
 
-  onIssue('issues.opened', ({ repository, issue }) => {
+  onIssue('issues.opened', ({ repository, issue, sender }) => {
     const { full_name } = repository
-    const { user, title, body, number } = issue
+    const { title, body, number } = issue
     return [[
-      `${user.login} opened an issue ${full_name}#${number}`,
+      `${sender.login} opened an issue ${full_name}#${number}`,
       `Title: ${title}`,
       formatMarkdown(body),
     ].join('\n')]
   })
 
-  onIssue('issues.closed', ({ repository, issue }) => {
+  onIssue('issues.closed', ({ repository, issue, sender }) => {
     const { full_name } = repository
-    const { user, title, number } = issue
-    return [`${user.login} closed issue ${full_name}#${number}\n${title}`]
+    const { title, number } = issue
+    return [`${sender.login} closed issue ${full_name}#${number}\n${title}`]
   })
 
   onComment('pull_request_review_comment', ({ repository, comment, pull_request }) => {
@@ -261,17 +261,17 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     }
   })
 
-  on('pull_request.opened', ({ repository, pull_request }) => {
+  on('pull_request.opened', ({ repository, pull_request, sender }) => {
     const { full_name, owner } = repository
-    const { user, html_url, issue_url, comments_url, title, base, head, body, number } = pull_request
-    if (user.type === 'Bot') return
+    const { html_url, issue_url, comments_url, title, base, head, body, number } = pull_request
+    if (sender.type === 'Bot') return
 
     const prefix = new RegExp(`^${owner.login}:`)
     const baseLabel = base.label.replace(prefix, '')
     const headLabel = head.label.replace(prefix, '')
     return {
       message: [
-        `${user.login} opened a pull request ${full_name}#${number} (${baseLabel} ← ${headLabel})`,
+        `${sender.login} opened a pull request ${full_name}#${number} (${baseLabel} ← ${headLabel})`,
         `Title: ${title}`,
         formatMarkdown(body),
       ].join('\n'),
