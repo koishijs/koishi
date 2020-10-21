@@ -30,9 +30,7 @@ export default class MongoDatabase {
   }
 
   async start() {
-    let mongourl
-    if (this.config.uri) mongourl = this.config.uri
-    else mongourl = this.connectionStringFromConfig()
+    const mongourl = this.config.uri || this.connectionStringFromConfig()
     this.client = await MongoClient.connect(
       mongourl, { useNewUrlParser: true, useUnifiedTopology: true },
     )
