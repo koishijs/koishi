@@ -14,7 +14,8 @@ export interface Config {
   connectionOptions?: {
     [key: string]: string | number | [string | number]
   }
-  uri?: string // connection string (will overwrite all configs except 'name' and 'prefix')
+  /** connection string (will overwrite all configs except 'name' and 'prefix') */
+  uri?: string
 }
 
 export default class MongoDatabase {
