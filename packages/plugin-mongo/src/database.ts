@@ -11,7 +11,7 @@ export interface Config {
   name?: string // database name
   prefix?: string
   authDatabase?: string // default auth database
-  connectionOption?: {
+  connectionOptions?: {
     [key: string]: string | number | [string | number]
   }
   uri?: string // connection string (will overwrite all configs except 'name' and 'prefix')
@@ -54,9 +54,9 @@ export default class MongoDatabase {
     let mongourl = `${this.config.protocol}://`
     if (this.config.username) mongourl += `${this.config.username}${this.config.password ? `:${this.config.password}` : ''}@`
     mongourl += `${this.config.host}${this.config.port ? `:${this.config.port}` : ''}/${this.config.authDatabase ? this.config.authDatabase : this.config.name}`
-    if (this.config.connectionOption) {
+    if (this.config.connectionOptions) {
       // https://nodejs.org/api/url.html#url_new_urlsearchparams_obj this should be find but I got an complaint from TS
-      const params = new URLSearchParams(this.config.connectionOption)
+      const params = new URLSearchParams(this.config.connectionOptions)
       params.sort()
       mongourl += `?${params}`
     }
