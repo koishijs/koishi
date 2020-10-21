@@ -1,5 +1,6 @@
 import { MongoClient, Db, Collection } from 'mongodb'
 import { App, TableType } from 'koishi-core'
+import { URLSearchParams } from 'url'
 
 export interface Config {
   username?: string
@@ -7,8 +8,13 @@ export interface Config {
   protocol?: string
   host?: string
   port?: number
-  name?: string
+  name?: string // database name
   prefix?: string
+  authDatabase?: string // default auth database
+  connectionOption?: {
+    [key: string]: string | number | [string | number]
+  }
+  uri?: string // connection string (will overwrite all configs except 'name' and 'prefix')
 }
 
 export default class MongoDatabase {
@@ -24,9 +30,9 @@ export default class MongoDatabase {
   }
 
   async start() {
-    let mongourl = `${this.config.protocol}://`
-    if (this.config.username) mongourl += `${this.config.username}:${this.config.password}@`
-    mongourl += `${this.config.host}:${this.config.port}/${this.config.name}`
+    let mongourl
+    if (this.config.uri) mongourl = this.config.uri
+    else mongourl = this.connectionStringFromConfig()
     this.client = await MongoClient.connect(
       mongourl, { useNewUrlParser: true, useUnifiedTopology: true },
     )
@@ -42,5 +48,18 @@ export default class MongoDatabase {
 
   stop() {
     return this.client.close()
+  }
+
+  connectionStringFromConfig() {
+    let mongourl = `${this.config.protocol}://`
+    if (this.config.username) mongourl += `${this.config.username}${this.config.password ? `:${this.config.password}` : ''}@`
+    mongourl += `${this.config.host}${this.config.port ? `:${this.config.port}` : ''}/${this.config.authDatabase ? this.config.authDatabase : this.config.name}`
+    if (this.config.connectionOption) {
+      // https://nodejs.org/api/url.html#url_new_urlsearchparams_obj this should be find but I got an complaint from TS
+      const params = new URLSearchParams(this.config.connectionOption)
+      params.sort()
+      mongourl += `?${params}`
+    }
+    return mongourl
   }
 }
