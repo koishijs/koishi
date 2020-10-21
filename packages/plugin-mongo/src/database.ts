@@ -1,6 +1,6 @@
+import { URLSearchParams } from 'url'
 import { MongoClient, Db, Collection } from 'mongodb'
 import { App, TableType } from 'koishi-core'
-import { URLSearchParams } from 'url'
 
 export interface Config {
   username?: string
