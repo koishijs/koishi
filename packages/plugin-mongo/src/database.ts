@@ -11,7 +11,7 @@ export interface Config {
   name?: string // database name
   prefix?: string
   authDatabase?: string // default auth database
-  connectionOptions?: URLSearchParams | string | object | Iterable<[string, string]> | Array<[string, string]>
+  connectionOptions?: URLSearchParams | string | { [key: string]: string | (string)[] } | Iterable<[string, string]> | Array<[string, string]>
   /** connection string (will overwrite all configs except 'name' and 'prefix') */
   uri?: string
 }
