@@ -12,7 +12,7 @@ export interface Config {
   prefix?: string
   authDatabase?: string // default auth database
   connectionOptions?: {
-    [key: string]: string | number | [string | number]
+    [key: string]: string | number | (string | number)[]
   }
   /** connection string (will overwrite all configs except 'name' and 'prefix') */
   uri?: string
