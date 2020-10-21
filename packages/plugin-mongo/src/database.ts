@@ -11,7 +11,7 @@ export interface Config {
   name?: string // database name
   prefix?: string
   authDatabase?: string // default auth database
-  connectionOptions?: string | { [key: string]: string | number | (string | number)[] } | [string, string][]
+  connectionOptions?: string | { [key: string]: string | number | boolean | (string | number)[] } | [string, string][]
   /** connection string (will overwrite all configs except 'name' and 'prefix') */
   uri?: string
 }
