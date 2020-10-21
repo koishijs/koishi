@@ -56,7 +56,6 @@ export default class MongoDatabase {
     if (this.config.connectionOptions) {
       // https://nodejs.org/api/url.html#url_new_urlsearchparams_obj this should be find but I got an complaint from TS
       const params = new URLSearchParams(this.config.connectionOptions)
-      params.sort()
       mongourl += `?${params}`
     }
     return mongourl
