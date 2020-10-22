@@ -113,6 +113,7 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
   function formatMarkdown(source: string) {
     return source
       .replace(/^```(.*)$/gm, '')
+      .replace(/^<!--(.*)-->$/gm, '')
       .replace(/\n\s*\n/g, '\n')
   }
 
