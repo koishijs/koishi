@@ -24,7 +24,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://github.com/koishijs/koishi/tree/master/packages/database-mysql#readme",
+  "homepage": "https://github.com/koishijs/koishi/tree/master/packages/plugin-mongo#readme",
   "keywords": [
     "bot",
     "qqbot",

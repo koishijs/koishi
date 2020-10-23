@@ -1,4 +1,4 @@
-import { AppOptions, App, Server, Session, AppStatus } from 'koishi-core'
+import { AppOptions, App, Server, Session, AppStatus, Bot, SenderInfo } from 'koishi-core'
 import { assert } from 'chai'
 import { Socket } from 'net'
 import * as http from 'http'
@@ -10,6 +10,17 @@ interface MockedResponse {
   code: number
   body: string
   headers: Record<string, any>
+}
+
+Bot.prototype.getMsg = async function (this: Bot, messageId: number) {
+  return {
+    messageId,
+    message: '',
+    time: 0,
+    realId: 0,
+    messageType: null,
+    sender: { userId: this.selfId } as SenderInfo,
+  }
 }
 
 class MockedServer extends Server {

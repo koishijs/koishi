@@ -54,7 +54,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.on('connect', async () => {
     feeder.on('error', (err: Error) => {
-      logger.warn(err.message)
+      logger.debug(err.message)
     })
 
     const groups = await ctx.database.getAllGroups(['id', 'rss'])
@@ -123,7 +123,7 @@ export function apply(ctx: Context, config: Config = {}) {
           return '添加订阅成功！'
         }
       }, (error) => {
-        logger.warn(error)
+        logger.debug(error)
         return '无法订阅此链接。'
       })
     })

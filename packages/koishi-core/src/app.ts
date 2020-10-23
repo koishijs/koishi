@@ -1,9 +1,9 @@
+import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop } from 'koishi-utils'
 import { Command } from './command'
 import { Context, Middleware, NextFunction } from './context'
 import { Group, User, Database } from './database'
 import { BotOptions, Server } from './server'
 import { Session } from './session'
-import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray } from 'koishi-utils'
 import help from './plugins/help'
 import shortcut from './plugins/shortcut'
 import suggest from './plugins/suggest'
@@ -145,8 +145,12 @@ export class App extends Context {
     let capture: RegExpMatchArray, atSelf = false
     // eslint-disable-next-line no-cond-assign
     if (capture = message.match(/^\[CQ:reply,id=(-?\d+)\]\s*/)) {
-      session.$reply = +capture[1]
+      session.$reply = await session.$bot.getMsg(+capture[1]).catch(noop)
       message = message.slice(capture[0].length)
+      if (session.$reply) {
+        const prefix = `[CQ:at,qq=${session.$reply.sender.userId}]`
+        message = message.slice(prefix.length).trimStart()
+      }
     }
 
     // strip prefix
@@ -251,13 +255,14 @@ export class App extends Context {
   private _parse(message: string, session: Session, builtin: boolean, terminator = '') {
     // group message should have prefix or appel to be interpreted as a command call
     const { $reply, $prefix, $appel, messageType } = session
-    if (builtin && ($reply || messageType !== 'private' && $prefix === null && !$appel)) return
+    if (builtin && messageType !== 'private' && $prefix === null && !$appel) return
     terminator = escapeRegExp(terminator)
     const name = message.split(new RegExp(`[\\s${terminator}]`), 1)[0]
     const index = name.lastIndexOf('/')
     const command = this.app._commandMap[name.slice(index + 1).toLowerCase()]
     if (!command) return
-    const result = command.parse(message.slice(name.length).trimStart(), terminator)
+    message = message.slice(name.length).trim() + ($reply ? ' ' + $reply.message : '')
+    const result = command.parse(message, terminator)
     return { command, ...result }
   }
 }

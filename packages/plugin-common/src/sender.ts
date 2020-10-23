@@ -60,8 +60,9 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
 
   ctx.middleware((session, next) => {
     const { $reply, $parsed } = session
-    const userId = interactions[$reply]
-    if (!$parsed || !userId) return next()
+    if (!$parsed || !$reply) return next()
+    const userId = interactions[$reply.messageId]
+    if (!userId) return next()
     return session.$bot.sendPrivateMsg(userId, $parsed)
   })
 

@@ -85,7 +85,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   $appel?: boolean
   $prefix?: string = null
   $parsed?: string
-  $reply?: number
+  $reply?: MessageInfo
   $uuid = Random.uuid()
 
   private _delay?: number
@@ -314,6 +314,15 @@ export interface StatusInfo {
   appGood: boolean
   online: boolean
   good: boolean
+}
+
+export interface MessageInfo {
+  time: number
+  messageType: MessageType
+  messageId: number
+  realId: number
+  sender: SenderInfo
+  message: string
 }
 
 /**
