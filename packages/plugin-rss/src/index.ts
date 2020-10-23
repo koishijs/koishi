@@ -54,7 +54,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.on('connect', async () => {
     feeder.on('error', (err: Error) => {
-      logger.warn(err)
+      logger.debug(err.message)
     })
 
     const groups = await ctx.database.getAllGroups(['id', 'rss'])
@@ -66,7 +66,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
     feeder.on('new-item', async (payload) => {
       logger.debug('receive', payload.title)
-      const source = payload.meta.link.toLowerCase()
+      const source = payload.meta.link
       if (!feedMap[source]) return
       const message = `${payload.meta.title} (${payload.author})\n${payload.title}`
       await ctx.broadcast([...feedMap[source]], message)
@@ -97,28 +97,33 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.group().command('rss <url...>', '订阅 RSS 链接')
     .groupFields(['rss', 'id'])
-    .option('remove', '-r, --remove 取消订阅')
+    .option('list', '-l 查看订阅列表')
+    .option('remove', '-r 取消订阅')
     .action(async ({ session, options }, url) => {
-      url = url.toLowerCase()
-      const { $group } = session
-      const index = $group.rss.indexOf(url)
+      const { rss, id } = session.$group
+      if (options.list) {
+        if (!rss.length) return '未订阅任何链接。'
+        return rss.join('\n')
+      }
+
+      const index = rss.indexOf(url)
 
       if (options.remove) {
         if (index < 0) return '未订阅此链接。'
-        $group.rss.splice(index, 1)
-        unsubscribe(url, $group.id)
+        rss.splice(index, 1)
+        unsubscribe(url, id)
         return '取消订阅成功！'
       }
 
       if (index >= 0) return '已订阅此链接。'
       return validate(url, session).then(() => {
-        subscribe(url, $group.id)
-        if (!$group.rss.includes(url)) {
-          $group.rss.push(url)
+        subscribe(url, id)
+        if (!rss.includes(url)) {
+          rss.push(url)
           return '添加订阅成功！'
         }
       }, (error) => {
-        logger.warn(error)
+        logger.debug(error)
         return '无法订阅此链接。'
       })
     })

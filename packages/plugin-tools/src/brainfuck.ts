@@ -123,7 +123,7 @@ export function apply(ctx: Context, config: BrainfuckOptions = {}) {
       source = CQCode.unescape(source)
       const input = CQCode.unescape(options.input)
       try {
-        return new BrainFuck(source, config).exec(input), true
+        return CQCode.escape(new BrainFuck(source, config).exec(input))
       } catch (error) {
         if (error.name === 'BFError') {
           return error.message

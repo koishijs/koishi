@@ -13,9 +13,9 @@ declare module 'koishi-core/dist/context' {
 extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
   async getDialoguesById(ids, fields) {
     if (!ids.length) return []
-    const p = {}
-    for (const field of fields) p[field] = 1
-    const dialogues = await this.db.collection('dialogue').find({ _id: { $in: ids } }).project(p).toArray()
+    let cursor = this.db.collection('dialogue').find({ _id: { $in: ids } })
+    if (fields) cursor = cursor.project(Object.fromEntries(fields.map(k => [k, 1])))
+    const dialogues = await cursor.toArray()
     dialogues.forEach(d => {
       d._id = d.id
       defineProperty(d, '_backup', clone(d))

@@ -4,16 +4,22 @@ import { EventTypesPayload } from '@octokit/webhooks/dist-types/generated/get-we
 
 type WebhookEvent = Exclude<keyof EventTypesPayload, 'error'>
 
+type SubEvent<T extends WebhookEvent> = {
+  [K in WebhookEvent]: K extends '*' ? never : EventTypesPayload[K] extends EventTypesPayload[T] ? K : never
+}[WebhookEvent]
+
+interface CommentEventConfig {
+  created?: boolean
+  deleted?: boolean
+  edited?: boolean
+}
+
 export interface EventConfig {
-  commitComment?: boolean | {
-    created?: boolean
-  }
+  commitComment?: boolean | CommentEventConfig
+  create?: boolean
+  delete?: boolean
   fork?: boolean
-  issueComment?: boolean | {
-    created?: boolean
-    deleted?: boolean
-    edited?: boolean
-  }
+  issueComment?: boolean | CommentEventConfig
   issues?: boolean | {
     assigned?: boolean
     closed?: boolean
@@ -54,11 +60,7 @@ export interface EventConfig {
     edited?: boolean
     submitted?: boolean
   }
-  pullRequestReviewComment?: boolean | {
-    created?: boolean
-    deleted?: boolean
-    edited?: boolean
-  }
+  pullRequestReviewComment?: boolean | CommentEventConfig
   push?: boolean
   star?: boolean | {
     created?: boolean
@@ -70,7 +72,6 @@ export const defaultEvents: EventConfig = {
   commitComment: {
     created: true,
   },
-  fork: true,
   issueComment: {
     created: true,
   },
@@ -88,7 +89,6 @@ export const defaultEvents: EventConfig = {
   pullRequestReviewComment: {
     created: true,
   },
-  push: true,
   star: {
     created: true,
   },
@@ -113,17 +113,18 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
   function formatMarkdown(source: string) {
     return source
       .replace(/^```(.*)$/gm, '')
+      .replace(/^<!--(.*)-->$/gm, '')
       .replace(/\n\s*\n/g, '\n')
   }
 
-  interface CommentReplyPayloads extends EventData {
+  interface CommentEventData extends EventData {
     padding?: number[]
   }
 
   type CommentEvent = 'commit_comment' | 'issue_comment' | 'pull_request_review_comment'
-  type CommantHandler<E extends CommentEvent> = (payload: Payload<E>) => [target: string, replies: CommentReplyPayloads]
+  type CommentHandler<E extends CommentEvent> = (payload: Payload<E>) => [target: string, replies: CommentEventData]
 
-  function onComment<E extends CommentEvent>(event: E, handler: CommantHandler<E>) {
+  function onComment<E extends CommentEvent>(event: E, handler: CommentHandler<E>) {
     on(event as CommentEvent, (payload) => {
       const { user, body, html_url, url } = payload.comment
       if (user.type === 'Bot') return
@@ -158,6 +159,19 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     }]
   })
 
+  function onReference<T extends 'create' | 'delete'>(event: T) {
+    on(event, ({ repository, ref, ref_type, sender }) => {
+      const ref_name = `${repository.full_name}${ref_type === 'tag' ? '@' : ':'}${ref}`
+      return {
+        message: `${sender.login} ${event}d ${ref_type} ${ref_name}`,
+      }
+    })
+  }
+
+  onReference('create')
+
+  onReference('delete')
+
   on('fork', ({ repository, sender, forkee }) => {
     const { full_name, forks_count } = repository
     return {
@@ -175,34 +189,38 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     }]
   })
 
-  on('issues.opened', ({ repository, issue }) => {
-    const { full_name } = repository
-    const { user, url, html_url, comments_url, title, body, number } = issue
-    if (user.type === 'Bot') return
+  type IssueHandler = (payload: EventTypesPayload['issues']['payload']) => [message: string, replies?: EventData]
 
-    return {
-      message: [
-        `${user.login} opened an issue ${full_name}#${number}`,
-        `Title: ${title}`,
-        formatMarkdown(body),
-      ].join('\n'),
-      link: html_url,
-      react: url + `/reactions`,
-      reply: [comments_url],
-    }
+  function onIssue(event: SubEvent<'issues'>, handler: IssueHandler) {
+    on(event, (payload) => {
+      const { user, url, html_url, comments_url } = payload.issue
+      if (user.type === 'Bot') return
+
+      const [message, replies] = handler(payload)
+      return {
+        message,
+        link: html_url,
+        react: url + `/reactions`,
+        reply: [comments_url],
+        ...replies,
+      }
+    })
+  }
+
+  onIssue('issues.opened', ({ repository, issue, sender }) => {
+    const { full_name } = repository
+    const { title, body, number } = issue
+    return [[
+      `${sender.login} opened an issue ${full_name}#${number}`,
+      `Title: ${title}`,
+      formatMarkdown(body),
+    ].join('\n')]
   })
 
-  on('issues.closed', ({ repository, issue }) => {
+  onIssue('issues.closed', ({ repository, issue, sender }) => {
     const { full_name } = repository
-    const { user, url, html_url, comments_url, title, number } = issue
-    if (user.type === 'Bot') return
-
-    return {
-      message: `${user.login} closed issue ${full_name}#${number}\n${title}`,
-      link: html_url,
-      react: url + `/reactions`,
-      reply: [comments_url],
-    }
+    const { title, number } = issue
+    return [`${sender.login} closed issue ${full_name}#${number}\n${title}`]
   })
 
   onComment('pull_request_review_comment', ({ repository, comment, pull_request }) => {
@@ -244,17 +262,17 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     }
   })
 
-  on('pull_request.opened', ({ repository, pull_request }) => {
+  on('pull_request.opened', ({ repository, pull_request, sender }) => {
     const { full_name, owner } = repository
-    const { user, html_url, issue_url, comments_url, title, base, head, body, number } = pull_request
-    if (user.type === 'Bot') return
+    const { html_url, issue_url, comments_url, title, base, head, body, number } = pull_request
+    if (sender.type === 'Bot') return
 
     const prefix = new RegExp(`^${owner.login}:`)
     const baseLabel = base.label.replace(prefix, '')
     const headLabel = head.label.replace(prefix, '')
     return {
       message: [
-        `${user.login} opened a pull request ${full_name}#${number} (${baseLabel} <- ${headLabel})`,
+        `${sender.login} opened a pull request ${full_name}#${number} (${baseLabel} ← ${headLabel})`,
         `Title: ${title}`,
         formatMarkdown(body),
       ].join('\n'),
@@ -264,18 +282,11 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     }
   })
 
-  on('push', ({ compare, pusher, commits, repository, ref, after }) => {
+  on('push', ({ compare, pusher, commits, repository, ref, before, after }) => {
     const { full_name } = repository
 
-    // do not show pull request merge
-    if (/^0+$/.test(after)) return
-
-    // use short form for tag releases
-    if (ref.startsWith('refs/tags')) {
-      return {
-        message: `${pusher.name} published tag ${full_name}@${ref.slice(10)}`,
-      }
-    }
+    // do not show branch create / delete
+    if (/^0+$/.test(before) || /^0+$/.test(after)) return
 
     return {
       message: [

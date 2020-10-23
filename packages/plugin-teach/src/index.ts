@@ -40,7 +40,7 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-const cheatSheet = (p: string, authority: number) => `\
+const cheatSheet = (p: string, authority: number, config: Config) => `\
 教学系统基本用法：
 　添加问答：${p} 问题 回答
 　搜索回答：${p}${p} 问题
@@ -53,30 +53,28 @@ const cheatSheet = (p: string, authority: number) => `\
 搜索选项：
 　管道语法：　　　|
 　结果页码：　　　/ page
-　禁用递归查询：　-R${authority >= 3 ? `
-　正则+合并结果：${p}${p}${p}` : ''}
+　禁用递归查询：　-R${authority >= config.authority.regExp ? `
+　正则+合并结果：${p}${p}${p}` : ''}${config.useContext ? `
 上下文选项：
 　允许本群：　　　-e
-　禁止本群：　　　-d${authority >= 3 ? `
+　禁止本群：　　　-d` : ''}${config.useContext && authority >= config.authority.context ? `
 　全局允许：　　　-E
 　全局禁止：　　　-D
 　设置群号：　　　-g id
 　无视上下文搜索：-G` : ''}
-问答选项：${authority >= 3 ? `
+问答选项：${config.useWriter && authority >= config.authority.frozen ? `
 　锁定问答：　　　-f/-F
-　教学者代行：　　-s/-S` : ''}
+　教学者代行：　　-s/-S` : ''}${config.useWriter && authority >= config.authority.writer ? `
 　设置问题作者：　-w uid
-　设置为匿名：　　-W
+　设置为匿名：　　-W` : ''}
 　忽略智能提示：　-i
 　重定向：　　　　=>
-匹配规则：${authority >= 3 ? `
+匹配规则：${authority >= config.authority.regExp ? `
 　正则表达式：　　-x/-X` : ''}
 　严格匹配权重：　-p prob
-　称呼匹配权重：　-P prob
-　设置最小好感度：-a aff
-　设置最大好感度：-A aff
+　称呼匹配权重：　-P prob${config.useTime ? `
 　设置起始时间：　-t time
-　设置结束时间：　-T time
+　设置结束时间：　-T time` : ''}
 前置与后继：
 　设置前置问题：　< id
 　添加前置问题：　<< id
@@ -137,15 +135,31 @@ function registerPrefix(ctx: Context, prefix: string) {
 
 const defaultConfig: Config = {
   prefix: '#',
+  authority: {
+    base: 2,
+    admin: 3,
+    context: 3,
+    frozen: 4,
+    regExp: 3,
+    writer: 2,
+  },
 }
 
-export function apply(ctx: Context, config: Dialogue.Config = {}) {
-  config = { ...defaultConfig, ...config }
+export function apply(ctx: Context, config: Config = {}) {
+  config = {
+    ...defaultConfig,
+    ...config,
+    authority: {
+      ...defaultConfig.authority,
+      ...config.authority,
+    },
+  }
+
   registerPrefix(ctx, config.prefix)
 
-  ctx.command('teach', '添加教学对话', { authority: 2, checkUnknown: true, hideOptions: true })
+  ctx.command('teach', '添加教学对话', { authority: config.authority.base, checkUnknown: true, hideOptions: true })
     .userFields(['authority', 'id'])
-    .usage(({ $user }) => cheatSheet(config.prefix, $user.authority))
+    .usage(({ $user }) => cheatSheet(config.prefix, $user.authority, config))
     .action(async ({ options, session, args }) => {
       const argv: Dialogue.Argv = { app: ctx.app, session, args, config, options }
       return ctx.bail('dialogue/validate', argv)
