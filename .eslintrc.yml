@@ -35,6 +35,7 @@ rules:
   max-len:
     - warn
     - 160
+  multiline-ternary: off
   # https://github.com/typescript-eslint/typescript-eslint/issues/618
   no-dupe-class-members: off
   no-ex-assign: off
