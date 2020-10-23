@@ -1,5 +1,6 @@
 import { MongoClient, Db, Collection } from 'mongodb'
 import { App, TableType } from 'koishi-core'
+import { URLSearchParams } from 'url'
 
 export interface Config {
   username?: string
@@ -7,8 +8,14 @@ export interface Config {
   protocol?: string
   host?: string
   port?: number
+  /** database name */
   name?: string
   prefix?: string
+  /** default auth database */
+  authDatabase?: string
+  connectOptions?: ConstructorParameters<typeof URLSearchParams>[0]
+  /** connection string (will overwrite all configs except 'name' and 'prefix') */
+  uri?: string
 }
 
 export default class MongoDatabase {
@@ -24,9 +31,7 @@ export default class MongoDatabase {
   }
 
   async start() {
-    let mongourl = `${this.config.protocol}://`
-    if (this.config.username) mongourl += `${this.config.username}:${this.config.password}@`
-    mongourl += `${this.config.host}:${this.config.port}/${this.config.name}`
+    const mongourl = this.config.uri || this.connectionStringFromConfig()
     this.client = await MongoClient.connect(
       mongourl, { useNewUrlParser: true, useUnifiedTopology: true },
     )
@@ -42,5 +47,17 @@ export default class MongoDatabase {
 
   stop() {
     return this.client.close()
+  }
+
+  connectionStringFromConfig() {
+    const { authDatabase, connectOptions, host, name, password, port, protocol, username } = this.config
+    let mongourl = `${protocol}://`
+    if (username) mongourl += `${username}${password ? `:${password}` : ''}@`
+    mongourl += `${host}${port ? `:${port}` : ''}/${authDatabase || name}`
+    if (connectOptions) {
+      const params = new URLSearchParams(connectOptions)
+      mongourl += `?${params}`
+    }
+    return mongourl
   }
 }
