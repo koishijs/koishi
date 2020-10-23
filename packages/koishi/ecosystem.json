@@ -24,11 +24,11 @@
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-eval-addons": {
-    "version": "1.0.0-beta.12",
+    "version": "1.0.0-beta.13",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-github": {
-    "version": "2.1.2",
+    "version": "2.2.0",
     "description": "GitHub webhook plugin for Koishi"
   },
   "koishi-plugin-image-search": {
@@ -36,7 +36,7 @@
     "description": "Image searching plugin for Koishi"
   },
   "koishi-plugin-mongo": {
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "MongoDB support for Koishi"
   },
   "koishi-plugin-monitor": {
@@ -51,7 +51,7 @@
     "description": "Take Screenshots in Koishi"
   },
   "koishi-plugin-rss": {
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "Subscribe RSS Url for Koishi"
   },
   "koishi-plugin-schedule": {
@@ -63,10 +63,10 @@
     "description": "Show Status of Koishi"
   },
   "koishi-plugin-teach": {
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "Teach plugin for Koishi"
   },
   "koishi-plugin-tools": {
-    "version": "1.0.2"
+    "version": "1.0.3"
   }
 }
