@@ -1,6 +1,6 @@
-import { URLSearchParams } from 'url'
 import { MongoClient, Db, Collection } from 'mongodb'
 import { App, TableType } from 'koishi-core'
+import { URLSearchParams } from 'url'
 
 export interface Config {
   username?: string
@@ -8,10 +8,12 @@ export interface Config {
   protocol?: string
   host?: string
   port?: number
-  name?: string // database name
+  /** database name */
+  name?: string
   prefix?: string
-  authDatabase?: string // default auth database
-  connectionOptions?: URLSearchParams | string | NodeJS.Dict<string | ReadonlyArray<string>> | Iterable<[string, string]> | ReadonlyArray<[string, string]>
+  /** default auth database */
+  authDatabase?: string
+  connectOptions?: ConstructorParameters<typeof URLSearchParams>[0]
   /** connection string (will overwrite all configs except 'name' and 'prefix') */
   uri?: string
 }
@@ -48,12 +50,12 @@ export default class MongoDatabase {
   }
 
   connectionStringFromConfig() {
-    let mongourl = `${this.config.protocol}://`
-    if (this.config.username) mongourl += `${this.config.username}${this.config.password ? `:${this.config.password}` : ''}@`
-    mongourl += `${this.config.host}${this.config.port ? `:${this.config.port}` : ''}/${this.config.authDatabase || this.config.name}`
-    if (this.config.connectionOptions) {
-      // https://nodejs.org/api/url.html#url_new_urlsearchparams_obj this should be find but I got an complaint from TS
-      const params = new URLSearchParams(this.config.connectionOptions)
+    const { authDatabase, connectOptions, host, name, password, port, protocol, username } = this.config
+    let mongourl = `${protocol}://`
+    if (username) mongourl += `${username}${password ? `:${password}` : ''}@`
+    mongourl += `${host}${port ? `:${port}` : ''}/${authDatabase || name}`
+    if (connectOptions) {
+      const params = new URLSearchParams(connectOptions)
       mongourl += `?${params}`
     }
     return mongourl
