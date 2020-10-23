@@ -30,7 +30,7 @@ module.exports[`issue_comment.created.2`] = `
 C'est important!`
 
 module.exports['issues.closed'] = `
-[GitHub] simon300000 closed issue koishijs/koishi#19
+[GitHub] Shigma closed issue koishijs/koishi#19
 Wie kann man um das Koishi zu installieren?`
 
 // URL: https://github.com/koishijs/koishi/issues/19
