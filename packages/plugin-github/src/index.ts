@@ -22,7 +22,6 @@ type ReplyHandlers = {
 
 const defaultOptions: Config = {
   secret: '',
-  replyPrefix: '.',
   messagePrefix: '[GitHub] ',
   webhook: '/github/webhook',
   authorize: '/github/authorize',
@@ -36,7 +35,7 @@ export const name = 'github'
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultOptions, ...config }
   const { app, database, router } = ctx
-  const { appId, replyPrefix, redirect, webhook } = config
+  const { appId, redirect, webhook } = config
 
   const github = new GitHub(config)
   defineProperty(app, 'github', github)
@@ -151,9 +150,9 @@ export function apply(ctx: Context, config: Config = {}) {
     if (!body || !payloads) return next()
 
     let name: string, message: string
-    if (body.startsWith(replyPrefix)) {
-      name = body.split(' ', 1)[0].slice(replyPrefix.length)
-      message = body.slice(replyPrefix.length + name.length).trim()
+    if (session.$prefix !== null) {
+      name = body.split(' ', 1)[0]
+      message = body.slice(name.length).trim()
     } else {
       name = reactions.includes(body) ? 'react' : 'reply'
       message = body

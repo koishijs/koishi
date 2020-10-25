@@ -22,7 +22,6 @@ export interface Config {
   secret?: string
   webhook?: string
   authorize?: string
-  replyPrefix?: string
   messagePrefix?: string
   appId?: string
   appSecret?: string

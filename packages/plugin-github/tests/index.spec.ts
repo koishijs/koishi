@@ -10,6 +10,7 @@ import * as github from 'koishi-plugin-github'
 
 const app = new App({
   port: 10000,
+  prefix: '.',
   mockDatabase: true,
 })
 
