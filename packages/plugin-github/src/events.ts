@@ -242,6 +242,8 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
       close: [issue_url],
       link: [html_url],
       merge: [url + '/merge'],
+      rebase: [url + '/merge'],
+      squash: [url + '/merge'],
       react: [issue_url + `/reactions`],
       reply: [comments_url],
       ...replies,

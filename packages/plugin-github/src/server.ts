@@ -175,7 +175,7 @@ export class ReplyHandler {
     })
   }
 
-  merge(url: string) {
+  merge(url: string, method?: 'merge' | 'squash' | 'rebase') {
     const [title] = this.content.split('\n', 1)
     const message = this.content.slice(title.length)
     return this.github.request({
@@ -183,10 +183,19 @@ export class ReplyHandler {
       method: 'PUT',
       session: this.session,
       body: {
+        merge_method: method,
         commit_title: title.trim(),
         commit_message: message.trim(),
       },
     })
+  }
+
+  rebase(url: string) {
+    return this.merge(url, 'rebase')
+  }
+
+  squash(url: string) {
+    return this.merge(url, 'squash')
   }
 
   async close(url: string) {
