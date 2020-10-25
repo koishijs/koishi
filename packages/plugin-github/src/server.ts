@@ -70,9 +70,8 @@ export class GitHub extends Webhooks {
     return data
   }
 
-  private async _request(options: RequestOptions) {
-    const { url, session, body, headers } = options
-    logger.debug(options.method, url, body)
+  private async _request(url: string, method: Method, session: ReplySession, body: any, headers?: Record<string, any>) {
+    logger.debug(method, url, body)
     await axios.post(url, body, {
       timeout: this.config.requestTimeout,
       headers: {
@@ -90,14 +89,13 @@ export class GitHub extends Webhooks {
     return session.$execute({ command: 'github.authorize', args: [name] })
   }
 
-  async request(options: RequestOptions) {
-    const { session } = options
+  async request(url: string, method: Method, session: ReplySession, body: any, headers?: Record<string, any>) {
     if (!session.$user.ghAccessToken) {
       return this.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
     }
 
     try {
-      return await this._request(options)
+      return await this._request(url, method, session, body, headers)
     } catch (error) {
       const { response } = error as AxiosError
       if (response?.status !== 401) {
@@ -118,7 +116,7 @@ export class GitHub extends Webhooks {
     }
 
     try {
-      await this._request(options)
+      await this._request(url, method, session, body, headers)
     } catch (error) {
       logger.warn(error)
       return session.$send('发送失败。')
@@ -148,45 +146,33 @@ export class ReplyHandler {
   }
 
   react(url: string) {
-    return this.github.request({
-      url,
-      method: 'POST',
-      session: this.session,
-      body: { content: this.content },
-      headers: { accept: 'application/vnd.github.squirrel-girl-preview' },
+    return this.github.request(url, 'POST', this.session, {
+      content: this.content,
+    }, {
+      accept: 'application/vnd.github.squirrel-girl-preview',
     })
   }
 
   reply(url: string, params?: Record<string, any>) {
-    return this.github.request({
-      url,
-      method: 'POST',
-      session: this.session,
-      body: { ...params, body: formatReply(this.content) },
+    return this.github.request(url, 'POST', this.session, {
+      body: formatReply(this.content),
+      ...params,
     })
   }
 
   base(url: string) {
-    return this.github.request({
-      url,
-      method: 'PATCH',
-      session: this.session,
-      body: { base: this.content },
+    return this.github.request(url, 'PATCH', this.session, {
+      base: this.content,
     })
   }
 
   merge(url: string, method?: 'merge' | 'squash' | 'rebase') {
     const [title] = this.content.split('\n', 1)
     const message = this.content.slice(title.length)
-    return this.github.request({
-      url,
-      method: 'PUT',
-      session: this.session,
-      body: {
-        merge_method: method,
-        commit_title: title.trim(),
-        commit_message: message.trim(),
-      },
+    return this.github.request(url, 'PUT', this.session, {
+      merge_method: method,
+      commit_title: title.trim(),
+      commit_message: message.trim(),
     })
   }
 
@@ -198,13 +184,10 @@ export class ReplyHandler {
     return this.merge(url, 'squash')
   }
 
-  async close(url: string) {
-    if (this.content) await this.reply(url)
-    await this.github.request({
-      url,
-      method: 'PATCH',
-      session: this.session,
-      body: { state: 'closed' },
+  async close(url: string, commentUrl: string) {
+    if (this.content) await this.reply(commentUrl)
+    await this.github.request(url, 'PATCH', this.session, {
+      state: 'closed',
     })
   }
 

@@ -183,7 +183,7 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
 
     const [message, replies] = handler(payload)
     return [message, {
-      close: [url],
+      close: [url, comments_url],
       link: [html_url],
       react: [url + `/reactions`],
       reply: [comments_url],
@@ -239,7 +239,7 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     const [message, replies] = handler(payload)
     return [message, {
       base: [url],
-      close: [issue_url],
+      close: [issue_url, comments_url],
       link: [html_url],
       merge: [url + '/merge'],
       rebase: [url + '/merge'],
