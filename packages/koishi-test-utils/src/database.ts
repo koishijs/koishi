@@ -26,7 +26,7 @@ export function testDatabase(app: App, options: TestDatabaseOptions) {
   before(function () { return app.start() })
   after(function () { return app.stop() })
 
-  describe('user operations', function () {
+  describe('User Operations', function () {
     registerLifecycle(beforeEach, options.beforeEachUser)
     registerLifecycle(afterEach, options.afterEachUser)
 
@@ -96,7 +96,7 @@ export function testDatabase(app: App, options: TestDatabaseOptions) {
     })
   })
 
-  describe('group operations', function () {
+  describe('Group Operations', function () {
     registerLifecycle(beforeEach, options.beforeEachGroup)
     registerLifecycle(afterEach, options.afterEachGroup)
 
