@@ -105,14 +105,12 @@ function formatMarkdown(source: string) {
     .replace(/\n\s*\n/g, '\n')
 }
 
-type FactoryCallback<E extends WebhookEvent, P = {}> = (event: E, payload: Payload<E>, handler: EventHandler<E, P>) => EventData<P>
-
-type EventFactory<T extends WebhookEvent, P = {}> = <E extends T>(event: E, handler?: EventHandler<E, P>) => void
+type FactoryCreator = <T extends WebhookEvent, P = {}>
+  (callback: (event: T, payload: Payload<T>, handler: EventHandler<T, P>) => EventData<P>)
+    => <E extends T>(event: E, handler?: EventHandler<E, P>) => void
 
 export function addListeners(on: <T extends WebhookEvent>(event: T, handler: EventHandler<T>) => void) {
-  function createFactory<T extends WebhookEvent, P = {}>(callback: FactoryCallback<T, P>): EventFactory<T, P> {
-    return (event, handler) => on(event, payload => callback(event, payload, handler))
-  }
+  const createFactory: FactoryCreator = callback => (event, handler) => on(event, payload => callback(event, payload, handler))
 
   type CommentEvent = 'commit_comment' | 'issue_comment' | 'pull_request_review_comment'
 
@@ -235,13 +233,15 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
   })
 
   const onPullRequest = createFactory<SubEvent<'pull_request'>>((event, payload, handler) => {
-    const { user, html_url, issue_url, comments_url } = payload.pull_request
+    const { user, url, html_url, issue_url, comments_url } = payload.pull_request
     if (user.type === 'Bot') return
 
     const [message, replies] = handler(payload)
     return [message, {
+      base: [url],
       close: [issue_url],
       link: [html_url],
+      merge: [url + '/merge'],
       react: [issue_url + `/reactions`],
       reply: [comments_url],
       ...replies,

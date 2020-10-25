@@ -166,6 +166,29 @@ export class ReplyHandler {
     })
   }
 
+  base(url: string) {
+    return this.github.request({
+      url,
+      method: 'PATCH',
+      session: this.session,
+      body: { base: this.content },
+    })
+  }
+
+  merge(url: string) {
+    const [title] = this.content.split('\n', 1)
+    const message = this.content.slice(title.length)
+    return this.github.request({
+      url,
+      method: 'PUT',
+      session: this.session,
+      body: {
+        commit_title: title.trim(),
+        commit_message: message.trim(),
+      },
+    })
+  }
+
   async close(url: string) {
     if (this.content) await this.reply(url)
     await this.github.request({
