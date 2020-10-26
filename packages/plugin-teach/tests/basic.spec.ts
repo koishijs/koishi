@@ -7,7 +7,7 @@ import * as teach from 'koishi-plugin-teach'
 import * as utils from './utils'
 import axios from 'axios'
 
-describe('Plugin Teach', () => {
+describe('Teach Plugin', () => {
   describe('Basic Support', () => {
     const app = new App({ prefix: '.' })
     const session1 = app.session(123, 456)
