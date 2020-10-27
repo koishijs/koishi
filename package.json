@@ -16,6 +16,7 @@
   "scripts": {
     "atri": "yarn workspace atri",
     "addons": "yarn workspace addons",
+    "cli": "yarn workspace test koishi",
     "build": "tsc -b && yarn workspace koishi-plugin-eval wrap",
     "build:ci": "tsc -b --listEmittedFiles && yarn workspace koishi-plugin-eval wrap",
     "bump": "ts-node build/bump",
