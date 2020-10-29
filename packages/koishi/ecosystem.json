@@ -1,6 +1,6 @@
 {
   "koishi-adapter-cqhttp": {
-    "version": "1.0.6",
+    "version": "1.0.7",
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-adapter-tomon": {
