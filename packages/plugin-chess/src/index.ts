@@ -167,8 +167,8 @@ export function apply(ctx: Context) {
         position.charCodeAt(0) % 32 - 1,
         parseInt(position.slice(1)) - 1,
       ] : [
-        parseInt(position.slice(0, -1)) - 1,
         position.slice(-1).charCodeAt(0) % 32 - 1,
+        parseInt(position.slice(0, -1)) - 1,
       ]
 
       if (x >= state.size || y >= state.size || y < 0) {
