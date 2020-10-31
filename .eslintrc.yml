@@ -22,6 +22,7 @@ plugins:
   - '@typescript-eslint'
 
 rules:
+  array-callback-return: off
   comma-dangle:
     - warn
     - always-multiline
@@ -30,27 +31,18 @@ rules:
   generator-star-spacing:
     - warn
     - after
-  import/export: off
-  keyword-spacing: off
   max-len:
     - warn
     - 160
   multiline-ternary: off
-  # https://github.com/typescript-eslint/typescript-eslint/issues/618
-  no-dupe-class-members: off
   no-ex-assign: off
-  # https://github.com/typescript-eslint/typescript-eslint/issues/239
-  no-inner-declarations: off
   no-mixed-operators: off
-  no-unused-vars: off
   no-unused-expressions: off
   no-use-before-define: off
   no-useless-escape: off
   no-redeclare: off
   no-return-assign: off
   no-sequences: off
-  # https://github.com/typescript-eslint/typescript-eslint/issues/1131
-  no-useless-constructor: off
   one-var: off
   operator-linebreak: off
   quotes:
@@ -58,17 +50,39 @@ rules:
     - single
     - avoidEscape: true
       allowTemplateLiterals: true
-  space-before-function-paren: off
   yield-star-spacing:
     - warn
     - after
   yoda: off
-  standard/no-callback-literal: off
+
+  # node
+  node/no-callback-literal: off
+
+  # typescript
+  import/export: off
+
+  default-param-last: off
+  '@typescript-eslint/default-param-last': error
+
+  keyword-spacing: off
   '@typescript-eslint/keyword-spacing': error
+
+  no-unused-vars: off
   '@typescript-eslint/no-unused-vars': warn
+
+  no-dupe-class-members: off
+  '@typescript-eslint/no-dupe-class-members': error
+
+  # https://github.com/typescript-eslint/typescript-eslint/issues/239
+  no-inner-declarations: off
+
+  no-useless-constructor: off
+  '@typescript-eslint/no-useless-constructor': warn
+
+  space-before-function-paren: off
   '@typescript-eslint/space-before-function-paren':
     - error
     - anonymous: always
       asyncArrow: always
       named: never
-  '@typescript-eslint/type-annotation-spacing': warn
+  '@typescript-eslint/type-annotation-spacing': error

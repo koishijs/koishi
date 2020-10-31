@@ -274,7 +274,7 @@ async function writeConfig(config: any, path: string, type: SourceType) {
 export default function (cli: CAC) {
   cli.command('init [file]', 'initialize a koishi configuration file')
     .option('-f, --forced', 'overwrite config file if it exists')
-    .action(async (file = 'koishi.config.js', options) => {
+    .action(async (file = 'koishi.config.js', options?) => {
       // resolve file path
       const path = resolve(workingDirectory, file)
       if (!options.forced && existsSync(path)) {
