@@ -85,7 +85,7 @@ export namespace Group {
   extend((id, assignee) => ({
     id,
     assignee,
-    flag: assignee ? 0 : Flag.ignore | Flag.silent,
+    flag: 0,
   }))
 }
 
