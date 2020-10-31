@@ -39,12 +39,12 @@
     "koishi-test-utils": "^5.0.2"
   },
   "peerDependencies": {
-    "koishi-core": "^2.4.0",
+    "koishi-core": "^2.4.1",
     "koishi-utils": "^3.1.5"
   },
   "dependencies": {
     "chrome-finder": "^1.0.7",
-    "pngjs": "^5.0.0",
-    "puppeteer-core": "^5.3.1"
+    "pngjs": "^6.0.0",
+    "puppeteer-core": "^5.4.1"
   }
 }
