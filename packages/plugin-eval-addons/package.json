@@ -36,7 +36,7 @@
     "code"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.4.0",
+    "koishi-core": "^2.4.1",
     "koishi-plugin-eval": "^2.0.3",
     "koishi-utils": "^3.1.5"
   },
@@ -44,7 +44,7 @@
     "js-yaml": "^3.14.0",
     "json5": "^2.1.3",
     "simple-git": "^2.21.0",
-    "typescript": "^4.0.3"
+    "typescript": "^4.0.5"
   },
   "devDependencies": {
     "@types/js-yaml": "^3.12.5",

@@ -1,11 +1,11 @@
 /* eslint-disable camelcase */
 /* eslint-disable quote-props */
 
-import { Context, Session } from 'koishi-core'
-import { camelize, CQCode, defineProperty, Logger, Time } from 'koishi-utils'
+import { Context } from 'koishi-core'
+import { camelize, defineProperty, Time } from 'koishi-utils'
 import { encode } from 'querystring'
-import { addListeners, defaultEvents, EventData } from './events'
-import { Config, GitHub } from './server'
+import { addListeners, defaultEvents } from './events'
+import { Config, GitHub, ReplyHandler, EventData } from './server'
 import {} from 'koishi-plugin-puppeteer'
 
 export * from './server'
@@ -16,13 +16,8 @@ declare module 'koishi-core/dist/app' {
   }
 }
 
-type ReplyHandlers = {
-  [K in keyof EventData]: (payload: EventData[K], session: Session, message: string) => Promise<void>
-}
-
 const defaultOptions: Config = {
   secret: '',
-  replyPrefix: '.',
   messagePrefix: '[GitHub] ',
   webhook: '/github/webhook',
   authorize: '/github/authorize',
@@ -36,7 +31,7 @@ export const name = 'github'
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultOptions, ...config }
   const { app, database, router } = ctx
-  const { appId, replyPrefix, redirect, webhook } = config
+  const { appId, redirect, webhook } = config
 
   const github = new GitHub(config)
   defineProperty(app, 'github', github)
@@ -73,8 +68,8 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.command('github.recent', '查看最近的通知')
     .action(async () => {
-      const output = Object.entries(history).slice(0, 10).map(([messageId, payload]) => {
-        const [brief] = payload.message.split('\n', 1)
+      const output = Object.entries(history).slice(0, 10).map(([messageId, [message]]) => {
+        const [brief] = message.split('\n', 1)
         return `${messageId}. ${brief}`
       })
       if (!output.length) return '最近没有 GitHub 通知。'
@@ -82,50 +77,6 @@ export function apply(ctx: Context, config: Config = {}) {
     })
 
   const reactions = ['+1', '-1', 'laugh', 'confused', 'heart', 'hooray', 'rocket', 'eyes']
-
-  function formatReply(source: string) {
-    return CQCode.parseAll(source).map((value) => {
-      if (typeof value === 'string') return value
-      if (value.type === 'image') return `![image](${value.data.url})`
-      return ''
-    }).join('')
-  }
-
-  const replyHandlers: ReplyHandlers = {
-    link: (url, session) => session.$send(url),
-    react: (url, session, content) => github.post({
-      url,
-      session,
-      body: { content },
-      headers: { accept: 'application/vnd.github.squirrel-girl-preview' },
-    }),
-    reply: ([url, params], session, content) => github.post({
-      url,
-      session,
-      body: { ...params, body: formatReply(content) },
-    }),
-    async shot({ url, selector, padding = [] }, session) {
-      const page = await app.browser.newPage()
-      let buffer: Buffer
-      try {
-        await page.goto(url)
-        const el = await page.$(selector)
-        const clip = await el.boundingBox()
-        const [top = 0, right = 0, bottom = 0, left = 0] = padding
-        clip.x -= left
-        clip.y -= top
-        clip.width += left + right
-        clip.height += top + bottom
-        buffer = await page.screenshot({ clip })
-      } catch (error) {
-        new Logger('puppeteer').warn(error)
-        return session.$send('截图失败。')
-      } finally {
-        await page.close()
-      }
-      return session.$send(`[CQ:image,file=base64://${buffer.toString('base64')}]`)
-    },
-  }
 
   const history: Record<string, EventData> = {}
 
@@ -146,22 +97,23 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.middleware((session, next) => {
     if (!session.$reply) return next()
-    const body = session.$parsed
+    const body = session.$parsed.trim()
     const payloads = history[int32ToHex6(session.$reply.messageId)]
     if (!body || !payloads) return next()
 
     let name: string, message: string
-    if (body.startsWith(replyPrefix)) {
-      name = body.split(' ', 1)[0].slice(replyPrefix.length)
-      message = body.slice(replyPrefix.length + name.length).trim()
+    if (session.$prefix !== null) {
+      name = body.split(' ', 1)[0]
+      message = body.slice(name.length).trim()
     } else {
       name = reactions.includes(body) ? 'react' : 'reply'
       message = body
     }
 
-    const payload = payloads[name]
+    const payload = payloads[1][name]
     if (!payload) return next()
-    return replyHandlers[name](payload, session, message)
+    const handler = new ReplyHandler(github, session, message)
+    return handler[name](...payload)
   })
 
   addListeners((event, handler) => {
@@ -186,7 +138,7 @@ export function apply(ctx: Context, config: Config = {}) {
       if (!result) return
 
       // step 4: broadcast message
-      const messageIds = await ctx.broadcast(groupIds, config.messagePrefix + result.message)
+      const messageIds = await ctx.broadcast(groupIds, config.messagePrefix + result[0])
       const hexIds = messageIds.map(int32ToHex6)
 
       // step 5: save message ids for interactions

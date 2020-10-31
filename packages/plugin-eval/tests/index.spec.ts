@@ -22,7 +22,7 @@ before(() => app.start())
 
 after(() => app.stop())
 
-describe('Plugin Eval', () => {
+describe('Eval Plugin', () => {
   it('basic support', async () => {
     await ses.shouldReply('> 1+1', '2')
     await ses.shouldNotReply('>> 1+1')

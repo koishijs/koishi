@@ -30,7 +30,7 @@ function encode(source: number) {
   }
   source = (source ^ xor) + add
   const result = r.slice()
-  for (var i = 0; i < 6; i++) {
+  for (let i = 0; i < 6; i++) {
     result[s[i]] = table[Math.floor(source / 58 ** i) % 58]
   }
   return result.join('')

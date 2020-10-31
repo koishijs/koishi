@@ -215,7 +215,7 @@ async function updateMeta(config: AppConfig) {
     }
   }
 
-  const [name] = config.type.split('.', 1)
+  const [name] = config.type.split(':', 1)
   checkDependency('koishi-adapter-' + name)
   for (const [name] of config.plugins as string[]) {
     checkDependency('koishi-plugin-' + name)
@@ -274,11 +274,11 @@ async function writeConfig(config: any, path: string, type: SourceType) {
 export default function (cli: CAC) {
   cli.command('init [file]', 'initialize a koishi configuration file')
     .option('-f, --forced', 'overwrite config file if it exists')
-    .action(async (file = 'koishi.config.js', options) => {
+    .action(async (file = 'koishi.config.js', options?) => {
       // resolve file path
       const path = resolve(workingDirectory, file)
       if (!options.forced && existsSync(path)) {
-        console.warn(`${error} ${options.output} already exists. If you want to overwrite the current file, use ${yellow('koishi init -f')}`)
+        console.warn(`${error} configuration file already exists. If you want to overwrite the current file, use ${yellow('koishi init -f')}`)
         process.exit(1)
       }
 

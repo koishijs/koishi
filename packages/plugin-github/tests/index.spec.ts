@@ -10,6 +10,7 @@ import * as github from 'koishi-plugin-github'
 
 const app = new App({
   port: 10000,
+  prefix: '.',
   mockDatabase: true,
 })
 
@@ -142,6 +143,38 @@ describe('GitHub Plugin', () => {
       const comment = mockResponse('/repos/koishijs/koishi/issues/19/comments', [200])
       await session1.shouldNotReply(`[CQ:reply,id=${idMap['issue_comment.created.1']}] [CQ:at,qq=${BASE_SELF_ID}] test`)
       expect(comment.mock.calls).to.have.length(1)
+    })
+
+    it('close', async () => {
+      const api1 = mockResponse('/repos/koishijs/koishi/issues/20', [200])
+      const api2 = mockResponse('/repos/koishijs/koishi/issues/20/comments', [200])
+      await session1.shouldNotReply(`[CQ:reply,id=${idMap['pull_request.opened.1']}] [CQ:at,qq=${BASE_SELF_ID}] .close foo`)
+      expect(api1.mock.calls).to.have.length(1)
+      expect(api2.mock.calls).to.have.length(1)
+    })
+
+    it('base', async () => {
+      const api = mockResponse('/repos/koishijs/koishi/pulls/20', [200])
+      await session1.shouldNotReply(`[CQ:reply,id=${idMap['pull_request.opened.1']}] [CQ:at,qq=${BASE_SELF_ID}] .base foo`)
+      expect(api.mock.calls).to.have.length(1)
+    })
+
+    it('merge', async () => {
+      const api = mockResponse('/repos/koishijs/koishi/pulls/20/merge', [200])
+      await session1.shouldNotReply(`[CQ:reply,id=${idMap['pull_request.opened.1']}] [CQ:at,qq=${BASE_SELF_ID}] .merge`)
+      expect(api.mock.calls).to.have.length(1)
+    })
+
+    it('rebase', async () => {
+      const api = mockResponse('/repos/koishijs/koishi/pulls/20/merge', [200])
+      await session1.shouldNotReply(`[CQ:reply,id=${idMap['pull_request.opened.1']}] [CQ:at,qq=${BASE_SELF_ID}] .rebase`)
+      expect(api.mock.calls).to.have.length(1)
+    })
+
+    it('squash', async () => {
+      const api = mockResponse('/repos/koishijs/koishi/pulls/20/merge', [200])
+      await session1.shouldNotReply(`[CQ:reply,id=${idMap['pull_request.opened.1']}] [CQ:at,qq=${BASE_SELF_ID}] .squash`)
+      expect(api.mock.calls).to.have.length(1)
     })
 
     it('token not found', async () => {

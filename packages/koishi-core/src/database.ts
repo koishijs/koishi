@@ -66,7 +66,7 @@ export namespace Group {
   export type Field = keyof Group
   export const fields: Field[] = []
   export type Observed<K extends Field = Field> = utils.Observed<Pick<Group, K>, Promise<void>>
-  type Getter = (id: number, authority: number) => Partial<Group>
+  type Getter = (id: number, assignee: number) => Partial<Group>
   const getters: Getter[] = []
 
   export function extend(getter: Getter) {
@@ -74,10 +74,10 @@ export namespace Group {
     fields.push(...Object.keys(getter(0, 0)) as any)
   }
 
-  export function create(id: number, authority: number) {
+  export function create(id: number, assignee: number) {
     const result = {} as Group
     for (const getter of getters) {
-      Object.assign(result, getter(id, authority))
+      Object.assign(result, getter(id, assignee))
     }
     return result
   }
@@ -85,7 +85,7 @@ export namespace Group {
   extend((id, assignee) => ({
     id,
     assignee,
-    flag: assignee ? 0 : Flag.ignore | Flag.silent,
+    flag: 0,
   }))
 }
 
