@@ -1,6 +1,6 @@
 import { Context, Message } from 'koishi-core'
 import { Dialogue } from './utils'
-import { update } from './update'
+import { create, update } from './update'
 import { RegExpValidator } from 'regexpp'
 import { defineProperty } from 'koishi-utils'
 import { formatQuestionAnswers } from './search'
@@ -93,6 +93,10 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     const { options, session, target, dialogues } = argv
     const { question, answer, ignoreHint, regexp } = options
 
+    function applySuggestion(argv: Dialogue.Argv) {
+      return argv.target ? update(argv) : create(argv)
+    }
+
     // 修改问答时发现可能想改回答但是改了问题
     if (target && !ignoreHint && question && !answer && maybeAnswer(question, dialogues)) {
       const dispose = session.$use(({ message }, next) => {
@@ -101,7 +105,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         if (message && message !== '.' && message !== '。') return next()
         options.answer = options.original
         delete options.question
-        return update(argv)
+        return applySuggestion(argv)
       })
       return Message.Teach.MayModifyAnswer
     }
@@ -113,7 +117,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         message = message.trim()
         if (message && message !== '.' && message !== '。') return next()
         options.regexp = true
-        return update(argv)
+        return applySuggestion(argv)
       })
       return format(Message.Teach.MaybeRegExp, target ? '修改' : '添加')
     }
