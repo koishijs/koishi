@@ -157,11 +157,7 @@ export function apply(ctx: Context) {
         return '请输入由字母+数字构成的坐标。'
       }
 
-      if (!state.p2) {
-        if (session.userId === state.p1) return '当前不是你的回合。'
-      } else {
-        if (session.userId !== state.next) return '当前不是你的回合。'
-      }
+      if (state.p2 && session.userId !== state.next) return '当前不是你的回合。'
 
       const [x, y] = isLetterFirst ? [
         position.charCodeAt(0) % 32 - 1,
@@ -178,14 +174,14 @@ export function apply(ctx: Context) {
       if (state.get(x, y)) return '此处已有落子。'
 
       let message = ''
-      if (!state.p2) {
+      if (!state.p2 && session.userId !== state.p1) {
         state.p2 = session.userId
         message = `${session.$username} 加入了游戏并落子于 ${position.toUpperCase()}，`
       } else {
         message = `${session.$username} 落子于 ${position.toUpperCase()}，`
       }
 
-      const value = session.userId === state.p1 ? -1 : 1
+      const value = state.history.length % 2 ? -1 : 1
       const result = state.update(x, y, value)
 
       switch (result) {
