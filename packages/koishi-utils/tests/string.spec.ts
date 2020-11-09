@@ -1,4 +1,4 @@
-import { capitalize, camelCase, paramCase, snakeCase, simplify, traditionalize, escapeRegExp } from 'koishi-utils'
+import { capitalize, camelCase, paramCase, snakeCase, simplify, traditionalize, interpolate, escapeRegExp } from 'koishi-utils'
 import { expect } from 'chai'
 
 describe('String Manipulations', () => {
@@ -27,6 +27,10 @@ describe('String Manipulations', () => {
   it('snake case', () => {
     expect(snakeCase('aa-aa_aA')).to.equal('aa_aa_a_a')
     expect(snakeCase({ 'a-b': [{ cD: 'e-f' }] })).to.deep.equal({ a_b: [{ c_d: 'e-f' }] })
+  })
+
+  it('interpolate', () => {
+    expect(interpolate('foo{{ bar }}foo', { bar: 'baz' })).to.equal('foobazfoo')
   })
 
   it('escape regexp', () => {
