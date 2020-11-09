@@ -98,8 +98,8 @@ export default class MysqlDatabase {
       this.pool.query(sql, (err, results) => {
         if (!err) return resolve(results)
         logger.warn(sql)
-        error.stack = err.message + error.stack.slice(7)
-        reject(error)
+        err.stack = err.message + error.stack.slice(7)
+        reject(err)
       })
     })
   }
