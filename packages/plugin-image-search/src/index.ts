@@ -1,4 +1,4 @@
-import { Context, Session, Group, CommandAction, getContextId } from 'koishi-core'
+import { Context, Session, CommandAction, getContextId } from 'koishi-core'
 import ascii2d from './ascii2d'
 import saucenao from './saucenao'
 
@@ -27,18 +27,12 @@ export const name = 'search'
 export function apply(ctx: Context, config: Config = {}) {
   const command = ctx.command('search <...images>', '搜图片')
     .alias('搜图')
-    .groupFields(['flag'])
-    .before(session => !!(session.$group.flag & Group.Flag.noImage))
     .action(search(mixedSearch))
 
   command.subcommand('saucenao <...images>', '使用 saucenao 搜图')
-    .groupFields(['flag'])
-    .before(session => !!(session.$group.flag & Group.Flag.noImage))
     .action(search(saucenao))
 
   command.subcommand('ascii2d <...images>', '使用 ascii2d 搜图')
-    .groupFields(['flag'])
-    .before(session => !!(session.$group.flag & Group.Flag.noImage))
     .action(search(ascii2d))
 
   const pending = new Set<string>()
