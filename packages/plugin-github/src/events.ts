@@ -39,6 +39,13 @@ export interface EventConfig {
     unlocked?: boolean
     unpinned?: boolean
   }
+  milestone?: boolean | {
+    closed?: boolean
+    created?: boolean
+    deleted?: boolean
+    edited?: boolean
+    opened?: boolean
+  }
   pullRequest?: boolean | {
     assigned?: boolean
     closed?: boolean
@@ -79,6 +86,9 @@ export const defaultEvents: EventConfig = {
   issues: {
     closed: true,
     opened: true,
+  },
+  milestone: {
+    created: true,
   },
   pullRequest: {
     closed: true,
@@ -214,6 +224,12 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     return [`pull request review ${full_name}#${number}\nPath: ${path}`, {
       reply: [url],
     }]
+  })
+
+  on('milestone.created', ({ repository, milestone, sender }) => {
+    const { full_name } = repository
+    const { title, description } = milestone
+    return [`${sender.login} created milestone ${title} for ${full_name}\n${description}`]
   })
 
   on('pull_request_review.submitted', ({ repository, review, pull_request }) => {
