@@ -267,6 +267,12 @@ export default function (ctx: Context, config: Dialogue.Config) {
     }
   }
 
+  ctx.prependListener('parse', (message, session) => {
+    if (session.$appel) return
+    const { activated } = ctx.getSessionState(session)
+    if (activated[session.userId]) session.$appel = true
+  })
+
   ctx.group().middleware(async (session, next) => {
     return triggerDialogue(ctx, session, next)
   })
