@@ -4,7 +4,8 @@ import registerInitCommand from './init'
 import registerRunCommand from './run'
 import CAC from 'cac'
 
-const { version } = require('../package')
+const _require = module.require
+const { version } = _require('../package')
 const cli = CAC('koishi').help().version(version)
 
 registerInitCommand(cli)

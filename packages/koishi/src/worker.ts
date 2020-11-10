@@ -5,8 +5,8 @@ import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
 
 const logger = new Logger('app')
-const metaPath = '../package'
-const { version } = require(metaPath)
+const _require = module.require
+const { version } = _require('../package')
 
 export { version }
 
