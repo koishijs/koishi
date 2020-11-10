@@ -1,2 +1,5 @@
 atri
 dist
+
+/build/*.js
+/packages/*/*.js

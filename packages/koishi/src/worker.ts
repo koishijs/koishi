@@ -5,7 +5,10 @@ import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
 
 const logger = new Logger('app')
-const { version } = require('../package')
+const metaPath = '../package'
+const { version } = require(metaPath)
+
+export { version }
 
 if (process.env.KOISHI_LOG_LEVEL) {
   Logger.baseLevel = +process.env.KOISHI_LOG_LEVEL

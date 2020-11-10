@@ -144,7 +144,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/mysql', ({ regexp, answer, question, original }, conditionals) => {
-    const { escape } = require('koishi-plugin-mysql/dist/database').default.prototype as MysqlDatabase
+    const { escape } = require('koishi-plugin-mysql').default.prototype as MysqlDatabase
 
     if (regexp) {
       if (answer !== undefined) conditionals.push('`answer` REGEXP ' + escape(answer))
