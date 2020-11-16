@@ -3,6 +3,8 @@ import { readdir } from 'fs/promises'
 import { resolve } from 'path'
 import { cyan, yellow, red } from 'kleur'
 import { PackageJson } from './utils'
+import { rollup } from 'rollup'
+import dts from 'rollup-plugin-dts'
 
 const ignored = [
   'This call to "require" will not be bundled because the argument is not a string literal',
@@ -24,6 +26,20 @@ const displayWarning = display(yellow('warning:'))
   const root = resolve(__dirname, '../packages')
   const workspaces = await readdir(root)
 
+  const roll = await rollup({
+    input: Object.fromEntries(workspaces.map(name => [name, `${root}/${name}/dist/index.d.ts`] as const)),
+    plugins: [dts({
+      respectExternal: false,
+      compilerOptions: {
+        composite: false,
+        incremental: false,
+      },
+    })],
+  })
+
+  process.exit()
+
+  // eslint-disable-next-line no-unreachable
   return Promise.all(workspaces.map((name) => {
     const base = `${root}/${name}`
     const meta: PackageJson = require(base + `/package.json`)

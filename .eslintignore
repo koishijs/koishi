@@ -3,3 +3,4 @@ dist
 
 /build/*.js
 /packages/*/*.js
+/packages/*/*.d.ts
