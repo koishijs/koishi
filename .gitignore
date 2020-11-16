@@ -1,6 +1,9 @@
 dist
 temp
 
+/packages/*/*.js
+/packages/*/*.d.ts
+
 /addons
 /atri
 /coverage

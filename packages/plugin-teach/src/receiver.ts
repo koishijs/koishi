@@ -247,7 +247,7 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
   await ctx.app.parallel(session, 'dialogue/send', state)
 }
 
-export default function (ctx: Context, config: Dialogue.Config) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
   const { nickname = ctx.app.options.nickname, maxRedirections = 3 } = config
   const nicknames = makeArray(nickname).map(escapeRegExp)
   const nicknameRE = new RegExp(`^((${nicknames.join('|')})[,，]?\\s*)+`)
