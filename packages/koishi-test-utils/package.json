@@ -9,6 +9,7 @@
   },
   "files": [
     "dist",
+    "chai/dist",
     "chai/index.d.ts",
     "chai/package.json"
   ],

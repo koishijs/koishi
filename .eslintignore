@@ -1,2 +1,5 @@
 atri
 dist
+
+/packages/*/*.js
+/packages/*/*.d.ts
