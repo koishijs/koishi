@@ -45,6 +45,6 @@
   "dependencies": {
     "chrome-finder": "^1.0.7",
     "pngjs": "^6.0.0",
-    "puppeteer-core": "^5.4.1"
+    "puppeteer-core": "^5.5.0"
   }
 }
