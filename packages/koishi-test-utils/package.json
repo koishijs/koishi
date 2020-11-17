@@ -1,7 +1,7 @@
 {
   "name": "koishi-test-utils",
   "description": "Test utilities for Koishi",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "engines": {
@@ -9,6 +9,7 @@
   },
   "files": [
     "dist",
+    "chai/dist",
     "chai/index.d.ts",
     "chai/package.json"
   ],
@@ -40,7 +41,7 @@
   "dependencies": {
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "koishi-core": "^2.4.1",
+    "koishi-core": "^2.4.2",
     "koishi-utils": "^3.1.5"
   },
   "devDependencies": {

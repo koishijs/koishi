@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-export default async function (keyword: string) {
+export default async function search(keyword: string) {
   const { data } = await axios.get('http://music.163.com/api/cloudsearch/pc', {
     params: { s: keyword, type: 1, offset: 0, limit: 5 },
   })

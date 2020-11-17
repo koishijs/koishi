@@ -29,6 +29,15 @@ export function capitalize(source: string) {
   return source.charAt(0).toUpperCase() + source.slice(1)
 }
 
+// eslint-disable-next-line no-new-func
+export const interpolate = new Function('template', 'context', `
+with (context) {
+  return template.replace(/\\{\\{[\\s\\S]+?\\}\\}/g, (sub) => {
+    const expr = sub.substring(2, sub.length - 2)
+    return eval(expr)
+  })
+}`)
+
 export function escapeRegExp(source: string) {
   return source
     .replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')

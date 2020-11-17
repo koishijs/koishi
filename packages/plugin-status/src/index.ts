@@ -1,6 +1,6 @@
 import { Context, App, BotStatusCode } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
-import { Time } from 'koishi-utils'
+import { interpolate, Time } from 'koishi-utils'
 import { ActiveData } from './database'
 
 export * from './database'
@@ -17,7 +17,8 @@ declare module 'koishi-core/dist/server' {
 
 export interface Config {
   refresh?: number
-  output?: (status: Status) => string
+  format?: string
+  formatBot?: string
 }
 
 let usage = getCpuUsage()
@@ -90,32 +91,24 @@ const startTime = Date.now()
 
 const defaultConfig: Config = {
   refresh: Time.minute,
-  output({ bots, cpu, memory, startTime, activeUsers, activeGroups }) {
-    const output = bots
-      .filter(bot => bot.code !== BotStatusCode.BOT_IDLE)
-      .map(({ label, selfId, code, rate }) => {
-        return `${label || selfId}：${code ? '无法连接' : `工作中（${rate}/min）`}`
-      })
-
-    output.push('==========')
-
-    output.push(
-      `活跃用户数量：${activeUsers}`,
-      `活跃群数量：${activeGroups}`,
-      `启动时间：${new Date(startTime).toLocaleString('zh-CN', { hour12: false })}`,
-      `CPU 使用率：${(cpu.app * 100).toFixed()}% / ${(cpu.total * 100).toFixed()}%`,
-      `内存使用率：${(memory.app * 100).toFixed()}% / ${(memory.total * 100).toFixed()}%`,
-    )
-
-    return output.join('\n')
-  },
+  // eslint-disable-next-line no-template-curly-in-string
+  formatBot: '{{ label || selfId }}：{{ code ? `无法连接` : `工作中（${rate}/min）` }}',
+  format: [
+    '{{ bots }}',
+    '==========',
+    '活跃用户数量：{{ activeUsers }}',
+    '活跃群数量：{{ activeGroups }}',
+    '启动时间：{{ new Date(startTime).toLocaleString("zh-CN", { hour12: false }) }}',
+    'CPU 使用率：{{ (cpu.app * 100).toFixed() }}% / {{ (cpu.total * 100).toFixed() }}%',
+    '内存使用率：{{ (memory.app * 100).toFixed() }}% / {{ (memory.total * 100).toFixed() }}%',
+  ].join('\n'),
 }
 
 export const name = 'status'
 
 export function apply(ctx: Context, config: Config = {}) {
   const app = ctx.app
-  const { refresh, output } = { ...defaultConfig, ...config }
+  const { refresh, formatBot, format } = { ...defaultConfig, ...config }
 
   app.on('before-command', ({ session }) => {
     session.$user['lastCall'] = new Date()
@@ -166,7 +159,11 @@ export function apply(ctx: Context, config: Config = {}) {
     .shortcut('运行情况', { prefix: true })
     .shortcut('运行状态', { prefix: true })
     .action(async () => {
-      return output(await getStatus())
+      const status = await getStatus()
+      status.bots.toString = () => {
+        return status.bots.map(bot => interpolate(formatBot, bot)).join('\n')
+      }
+      return interpolate(format, status)
     })
 
   async function _getStatus(extend: boolean) {

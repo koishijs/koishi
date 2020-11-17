@@ -49,17 +49,30 @@ export default class MysqlDatabase {
 
   async start() {
     this.pool = createPool(this.config)
-    const tables = await this.select('information_schema.tables', ['TABLE_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
-    const names = new Set(tables.map(data => data.TABLE_NAME))
-    for (const name of Object.keys(MysqlDatabase.tables) as TableType[]) {
-      if (names.has(name)) return
+    const data = await this.select('information_schema.columns', ['TABLE_NAME', 'COLUMN_NAME'], 'TABLE_SCHEMA = ?', [this.config.database])
+    const tables: Record<string, string[]> = {}
+    for (const { TABLE_NAME, COLUMN_NAME } of data) {
+      if (!tables[TABLE_NAME]) tables[TABLE_NAME] = []
+      tables[TABLE_NAME].push(COLUMN_NAME)
+    }
+
+    for (const name in MysqlDatabase.tables) {
       const table = MysqlDatabase.tables[name]
-      const cols = Object.keys(table).map((key) => {
-        if (+key * 0 === 0) return table[key]
-        return `\`${key}\` ${table[key]}`
-      })
-      logger.info('auto creating table %c', name)
-      await this.query(`CREATE TABLE ?? (${cols.join(',')}) COLLATE = ?`, [name, this.config.charset])
+      if (!tables[name]) {
+        const cols = Object.keys(table).map((key) => {
+          if (+key * 0 === 0) return table[key]
+          return `\`${key}\` ${table[key]}`
+        })
+        logger.info('auto creating table %c', name)
+        await this.query(`CREATE TABLE ?? (${cols.join(',')}) COLLATE = ?`, [name, this.config.charset])
+      } else {
+        const cols = Object.keys(table)
+          .filter(key => +key * 0 !== 0 && !tables[name].includes(key))
+          .map(key => `ADD \`${key}\` ${table[key]}`)
+        if (!cols.length) continue
+        logger.info('auto updating table %c', name)
+        await this.query(`ALTER TABLE ?? ${cols.join(',')}`, [name])
+      }
     }
   }
 
@@ -98,8 +111,8 @@ export default class MysqlDatabase {
       this.pool.query(sql, (err, results) => {
         if (!err) return resolve(results)
         logger.warn(sql)
-        error.stack = err.message + error.stack.slice(7)
-        reject(error)
+        err.stack = err.message + error.stack.slice(7)
+        reject(err)
       })
     })
   }

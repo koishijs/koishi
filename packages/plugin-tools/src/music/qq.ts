@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-export default async function (keyword: string) {
+export default async function search(keyword: string) {
   const { data } = await axios.get('https://c.y.qq.com/soso/fcgi-bin/client_search_cp', {
     params: { p: 1, n: 5, w: keyword, format: 'json' },
   })

@@ -33,7 +33,7 @@
   ],
   "devDependencies": {
     "@types/supports-color": "^7.2.0",
-    "koishi-test-utils": "^5.0.2"
+    "koishi-test-utils": "^5.0.3"
   },
   "dependencies": {
     "supports-color": "^7.2.0"

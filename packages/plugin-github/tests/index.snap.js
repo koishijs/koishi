@@ -39,6 +39,10 @@ module.exports[`issues.opened`] = `
 Title: Wie kann man um das Koishi zu installieren?
 Ich verstecke Englisch und Chinesisch nicht! Gab es Personen, die mir helfen kann?`
 
+module.exports['milestone.created'] = `
+[GitHub] Shigma created milestone 3.0 for koishijs/koishi
+koishi v3`
+
 module.exports['pull_request.closed.1'] = `
 [GitHub] Shigma closed pull request koishijs/koishi#97
 Storage API, fix #96`

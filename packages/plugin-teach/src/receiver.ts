@@ -232,12 +232,13 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
     if (char === 'n') {
       await buffer.flush()
     } else if (char === '{') {
-      const argv = session.$parse(state.answer, '}')
+      const message = unescapeAnswer(state.answer)
+      const argv = session.$parse(message, '}')
       if (argv) {
         state.answer = argv.rest.slice(1)
         await buffer.run(() => session.$execute(argv))
       } else {
-        logger.warn('cannot parse:', state.answer)
+        logger.warn('cannot parse:', message)
         const index = state.answer.indexOf('}')
         state.answer = state.answer.slice(index + 1)
       }
@@ -247,7 +248,7 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
   await ctx.app.parallel(session, 'dialogue/send', state)
 }
 
-export default function (ctx: Context, config: Dialogue.Config) {
+export default function apply(ctx: Context, config: Dialogue.Config) {
   const { nickname = ctx.app.options.nickname, maxRedirections = 3 } = config
   const nicknames = makeArray(nickname).map(escapeRegExp)
   const nicknameRE = new RegExp(`^((${nicknames.join('|')})[,，]?\\s*)+`)
@@ -266,6 +267,12 @@ export default function (ctx: Context, config: Dialogue.Config) {
       activated: !source && source !== original,
     }
   }
+
+  ctx.prependListener('parse', (message, session) => {
+    if (session.$appel) return
+    const { activated } = ctx.getSessionState(session)
+    if (activated[session.userId]) session.$appel = true
+  })
 
   ctx.group().middleware(async (session, next) => {
     return triggerDialogue(ctx, session, next)
