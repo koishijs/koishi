@@ -1,10 +1,8 @@
-import { build, BuildFailure, Message } from 'esbuild'
+import { build, BuildFailure, BuildOptions, Message } from 'esbuild'
 import { readdir } from 'fs/promises'
 import { resolve } from 'path'
 import { cyan, yellow, red } from 'kleur'
 import { PackageJson } from './utils'
-import { rollup } from 'rollup'
-import dts from 'rollup-plugin-dts'
 
 const ignored = [
   'This call to "require" will not be bundled because the argument is not a string literal',
@@ -23,24 +21,11 @@ const displayError = display(red('error:'))
 const displayWarning = display(yellow('warning:'))
 
 ;(async () => {
+  let code = 0
   const root = resolve(__dirname, '../packages')
   const workspaces = await readdir(root)
 
-  const roll = await rollup({
-    input: Object.fromEntries(workspaces.map(name => [name, `${root}/${name}/dist/index.d.ts`] as const)),
-    plugins: [dts({
-      respectExternal: false,
-      compilerOptions: {
-        composite: false,
-        incremental: false,
-      },
-    })],
-  })
-
-  process.exit()
-
-  // eslint-disable-next-line no-unreachable
-  return Promise.all(workspaces.map((name) => {
+  await Promise.all(workspaces.flatMap<BuildOptions>((name) => {
     const base = `${root}/${name}`
     const meta: PackageJson = require(base + `/package.json`)
     const entryPoints = [base + '/src/index.ts']
@@ -48,6 +33,7 @@ const displayWarning = display(yellow('warning:'))
       ...meta.dependencies,
       ...meta.peerDependencies,
     })
+
     if (name === 'koishi') {
       entryPoints.push(base + '/src/cli.ts')
       entryPoints.push(base + '/src/worker.ts')
@@ -58,20 +44,42 @@ const displayWarning = display(yellow('warning:'))
       entryPoints.push(base + '/src/worker.ts')
     }
 
-    return build({
+    const options: BuildOptions = {
       external,
       entryPoints,
       bundle: true,
       platform: 'node',
       target: 'node12.19',
       charset: 'utf8',
-      outdir: `${root}/${name}`,
+      outdir: `${root}/${name}/dist`,
       logLevel: 'silent',
-    }).then(({ warnings }) => {
+      sourcemap: true,
+    }
+
+    if (name !== 'plugin-eval') return options
+    return [{
+      ...options,
+      plugins: [{
+        name: 'shared library',
+        setup(build) {
+          build.onResolve({ filter: /^\.\/transfer$/ }, () => ({ external: true }))
+        },
+      }],
+    }, {
+      ...options,
+      entryPoints: [base + '/src/internal.ts'],
+      banner: '(function(host, exports) {',
+      footer: '})',
+    }]
+  }).map((options) => {
+    return build(options).then(({ warnings }) => {
       warnings.forEach(displayWarning)
     }, ({ warnings, errors }: BuildFailure) => {
       errors.forEach(displayError)
       warnings.forEach(displayWarning)
+      if (errors.length) code = 1
     })
   }))
+
+  process.exit(code)
 })()

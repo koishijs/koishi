@@ -11,8 +11,7 @@
     "dist"
   ],
   "scripts": {
-    "wrap": "ts-node build/wrap",
-    "prepack": "tsc -b && yarn wrap"
+    "prepack": "tsc -b"
   },
   "license": "MIT",
   "author": "Shigma <1700011071@pku.edu.cn>",

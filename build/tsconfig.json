@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es2019",
+    "target": "esnext",
     "module": "commonjs",
-    "declaration": true,
-    "emitDeclarationOnly": true,
+    "noEmit": true,
     "composite": true,
     "incremental": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
     "strictBindCallApply": true,
   },
+  "include": ["."],
 }
