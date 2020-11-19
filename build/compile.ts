@@ -39,7 +39,7 @@ const displayWarning = display(yellow('warning:'))
       entryPoints.push(base + '/src/worker.ts')
     } else if (name === 'plugin-eval') {
       entryPoints.push(base + '/src/worker.ts')
-      entryPoints.push(base + '/src/internal.ts')
+      entryPoints.push(base + '/src/transfer.ts')
     } else if (name === 'plugin-eval-addons') {
       entryPoints.push(base + '/src/worker.ts')
     }
@@ -68,7 +68,7 @@ const displayWarning = display(yellow('warning:'))
     }, {
       ...options,
       entryPoints: [base + '/src/internal.ts'],
-      banner: '(function(host, exports) {',
+      banner: '(function (host, exports, GLOBAL) {',
       footer: '})',
     }]
   }).map((options) => {

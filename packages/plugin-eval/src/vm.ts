@@ -30,9 +30,7 @@ export class VM {
       filename,
     })
 
-    script
-      .runInContext(this.context, { displayErrors: false })
-      .call(this.context, Host, this.internal)
+    script.runInContext(this.context, { displayErrors: false })(Host, this.internal, this.context)
   }
 
   run(code: string, options: ScriptOptions = {}) {

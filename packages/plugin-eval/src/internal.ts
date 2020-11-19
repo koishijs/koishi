@@ -10,7 +10,7 @@ declare global {
   const host: typeof Host
 }
 
-const GLOBAL = this as any
+declare const GLOBAL: any
 
 interface Builtin {
   // built-in classes
