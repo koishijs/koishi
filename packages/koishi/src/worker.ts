@@ -109,6 +109,12 @@ process.on('message', (data: Message) => {
   }
 })
 
+// load adapter
+try {
+  const [name] = config.type.split('.', 1)
+  loadEcosystem('adapter', name)
+} catch {}
+
 const app = new App(config)
 
 app.command('exit', '停止机器人运行', { authority: 4 })
@@ -125,12 +131,6 @@ app.command('exit', '停止机器人运行', { authority: 4 })
     await session.$send(`正在重启……`).catch(noop)
     process.exit(514)
   })
-
-// load adapter
-try {
-  const [name] = config.type.split('.', 1)
-  loadEcosystem('adapter', name)
-} catch {}
 
 // load plugins
 if (Array.isArray(config.plugins)) {

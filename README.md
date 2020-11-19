@@ -46,12 +46,15 @@ koishi run
 
 ## 应用案例
 
+| 插件名 | <span align="center">功能描述</span> |
+|:-:|:-:|
+| [blame](https://github.com/ArilyChan/koishi-plugin-blame) | 拦截崩溃错误，推送到私信或群 |
+
 | 项目地址 | <span align="center">简介</span> |
 |:-:|:-:|
-| [masnn/qqbot](https://github.com/masnn/qqbot) | 没想好（ |
 | [ArilyChan/qq-bot](https://github.com/ArilyChan/qq-bot) | 小阿日 |
 
-欢迎[向上表中添加](https://github.com/koishijs/koishi/edit/master/README.md)自己的机器人。
+欢迎[向上表中添加](https://github.com/koishijs/koishi/edit/master/README.md)自己的插件或机器人。
 
 ## 平台支持
 

@@ -232,12 +232,13 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
     if (char === 'n') {
       await buffer.flush()
     } else if (char === '{') {
-      const argv = session.$parse(state.answer, '}')
+      const message = unescapeAnswer(state.answer)
+      const argv = session.$parse(message, '}')
       if (argv) {
         state.answer = argv.rest.slice(1)
         await buffer.run(() => session.$execute(argv))
       } else {
-        logger.warn('cannot parse:', state.answer)
+        logger.warn('cannot parse:', message)
         const index = state.answer.indexOf('}')
         state.answer = state.answer.slice(index + 1)
       }
