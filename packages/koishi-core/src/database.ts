@@ -7,8 +7,8 @@ export interface Tables {
   group: Group
 }
 
-export interface User {
-  id: number
+export interface User extends Record<Platform, number> {
+  _id: number
   flag: number
   authority: number
   name: string
@@ -38,7 +38,6 @@ export namespace User {
     flag: 0,
     usage: {},
     timers: {},
-    name: '' + id,
   }))
 
   export function create(id: number, authority: number) {
@@ -50,8 +49,11 @@ export namespace User {
   }
 }
 
+export enum Platform {}
+
 export interface Group {
   id: number
+  type: Platform
   flag: number
   assignee: number
 }
@@ -59,7 +61,6 @@ export interface Group {
 export namespace Group {
   export enum Flag {
     ignore = 1,
-    noImage = 2,
     silent = 4,
   }
 
@@ -90,17 +91,17 @@ export namespace Group {
 }
 
 export interface Database {
-  getUser<K extends User.Field>(userId: number, fields?: readonly K[]): Promise<Pick<User, K | 'id'>>
-  getUser<K extends User.Field>(userId: number, defaultAuthority?: number, fields?: readonly K[]): Promise<Pick<User, K | 'id'>>
-  getUsers<K extends User.Field>(fields?: readonly K[]): Promise<Pick<User, K>[]>
-  getUsers<K extends User.Field>(ids: readonly number[], fields?: readonly K[]): Promise<Pick<User, K>[]>
-  setUser(userId: number, data: Partial<User>): Promise<void>
+  getUser<K extends User.Field>(type: Platform, id: number, fields?: readonly K[]): Promise<Pick<User, K | '_id'>>
+  getUser<K extends User.Field>(type: Platform, id: number, defaultAuthority?: number, fields?: readonly K[]): Promise<Pick<User, K | '_id'>>
+  getUsers<K extends User.Field>(type: Platform, fields?: readonly K[]): Promise<Pick<User, K>[]>
+  getUsers<K extends User.Field>(type: Platform, ids: readonly number[], fields?: readonly K[]): Promise<Pick<User, K>[]>
+  setUser(type: Platform, id: number, data: Partial<User>): Promise<void>
 
-  getGroup<K extends Group.Field>(groupId: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id'>>
-  getGroup<K extends Group.Field>(groupId: number, selfId?: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id'>>
+  getGroup<K extends Group.Field>(type: Platform, id: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id' | 'type'>>
+  getGroup<K extends Group.Field>(type: Platform, id: number, selfId?: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id' | 'type'>>
   getAllGroups<K extends Group.Field>(assignees?: readonly number[]): Promise<Pick<Group, K>[]>
   getAllGroups<K extends Group.Field>(fields?: readonly K[], assignees?: readonly number[]): Promise<Pick<Group, K>[]>
-  setGroup(groupId: number, data: Partial<Group>): Promise<void>
+  setGroup(type: Platform, id: number, data: Partial<Group>): Promise<void>
 }
 
 type DatabaseExtensionMethods<I> = {

@@ -1,4 +1,4 @@
-import { User, Group } from './database'
+import { User, Group, Platform } from './database'
 import { ExecuteArgv, ParsedArgv, Command } from './command'
 import { isInteger, contain, observe, noop, Logger, defineProperty, Random } from 'koishi-utils'
 import { NextFunction } from './context'
@@ -87,6 +87,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   $parsed?: string
   $reply?: MessageInfo
   $uuid = Random.uuid()
+  $type?: Platform
 
   private _delay?: number
   private _queued: Promise<void>
@@ -168,7 +169,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
         fieldSet.delete(key as any)
       }
       if (fieldSet.size) {
-        const data = await this.$app.database.getGroup(groupId, [...fieldSet])
+        const data = await this.$app.database.getGroup(this.$type, groupId, [...fieldSet])
         this.$app._groupCache.set(groupId, $group._merge(data))
       }
       return $group as any
@@ -181,8 +182,8 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     if (hasActiveCache) return this.$group = cache as any
 
     // 绑定一个新的可观测群实例
-    const data = await this.$app.database.getGroup(groupId, fieldArray)
-    const group = observe(data, diff => this.$app.database.setGroup(groupId, diff), `group ${groupId}`)
+    const data = await this.$app.database.getGroup(this.$type, groupId, fieldArray)
+    const group = observe(data, diff => this.$app.database.setGroup(this.$type, groupId, diff), `group ${groupId}`)
     this.$app._groupCache.set(groupId, group)
     return this.$group = group
   }
@@ -199,8 +200,8 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
         fieldSet.delete(key as any)
       }
       if (fieldSet.size) {
-        const data = await this.$app.database.getUser(userId, [...fieldSet])
-        this.$app._userCache.set(userId, $user._merge(data))
+        const data = await this.$app.database.getUser(this.$type, userId, [...fieldSet])
+        this.$app._userCache.set(userId, $user._merge(data) as any)
       }
     }
 
@@ -223,8 +224,8 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     if (hasActiveCache) return this.$user = cache as any
 
     // 绑定一个新的可观测用户实例
-    const data = await this.$app.database.getUser(userId, defaultAuthority, fieldArray)
-    const user = observe(data, diff => this.$app.database.setUser(userId, diff), `user ${userId}`)
+    const data = await this.$app.database.getUser(this.$type, userId, defaultAuthority, fieldArray)
+    const user = observe(data, diff => this.$app.database.setUser(this.$type, userId, diff), `user ${userId}`)
     this.$app._userCache.set(userId, user)
     return this.$user = user
   }
