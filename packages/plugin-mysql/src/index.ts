@@ -15,18 +15,18 @@ function inferFields(keys: readonly string[]) {
 }
 
 extendDatabase(MysqlDatabase, {
-  async getUser(userId, ...args) {
+  async getUser(type, userId, ...args) {
     const authority = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] ? inferFields(args[0] as any) : User.fields
     if (fields && !fields.length) return {} as any
-    const [data] = await this.select<User>('user', fields, '`id` = ?', [userId])
+    const [data] = await this.select<User>('user', fields, '?? = ?', [type, userId])
     let fallback: User
     if (data) {
-      data.id = userId
+      data._id = userId
     } else if (authority < 0) {
       return null
     } else {
-      fallback = User.create(userId, authority)
+      fallback = User.create(type, userId, authority)
       if (authority) {
         await this.query(
           'INSERT INTO `user` (' + this.joinKeys(User.fields) + ') VALUES (' + User.fields.map(() => '?').join(', ') + ')',
@@ -37,7 +37,7 @@ extendDatabase(MysqlDatabase, {
     return data || fallback
   },
 
-  async getUsers(...args) {
+  async getUsers(type, ...args) {
     let ids: readonly number[], fields: readonly User.Field[]
     if (args.length > 1) {
       ids = args[0]
@@ -49,21 +49,22 @@ extendDatabase(MysqlDatabase, {
       fields = inferFields(args[0] as any)
     }
     if (ids && !ids.length) return []
-    return this.select<User>('user', fields, ids && `\`id\` IN (${ids.join(', ')})`)
+    return this.select<User>('user', fields, ids && `?? IN (${ids.join(', ')})`, [type])
   },
 
-  async setUser(userId, data) {
+  async setUser(type, userId, data) {
+    // FIXME:
     await this.update('user', userId, data)
   },
 
-  async getGroup(groupId, ...args) {
+  async getGroup(type, groupId, ...args) {
     const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
     const fields = args[0] as any || Group.fields
     if (fields && !fields.length) return {} as any
-    const [data] = await this.select<Group>('group', fields, '`id` = ?', [groupId])
+    const [data] = await this.select<Group>('group', fields, '`type` = ? && `id` = ?', [type, groupId])
     let fallback: Group
     if (!data) {
-      fallback = Group.create(groupId, selfId)
+      fallback = Group.create(type, groupId, selfId)
       if (selfId && groupId) {
         await this.query(
           'INSERT INTO `group` (' + this.joinKeys(Group.fields) + ') VALUES (' + Group.fields.map(() => '?').join(', ') + ')',
@@ -92,7 +93,8 @@ extendDatabase(MysqlDatabase, {
     return this.select<Group>('group', fields, `\`assignee\` IN (${assignees.join(',')})`)
   },
 
-  async setGroup(groupId, data) {
+  async setGroup(type, groupId, data) {
+    // FIXME:
     await this.update('group', groupId, data)
   },
 })
@@ -103,7 +105,7 @@ extendDatabase(MysqlDatabase, (Database) => {
     'UNIQUE INDEX `name` (`name`) USING BTREE',
   ], {
     id: `BIGINT(20) UNSIGNED NOT NULL COMMENT 'QQ 号'`,
-    name: `VARCHAR(50) NOT NULL COMMENT '昵称' COLLATE 'utf8mb4_general_ci'`,
+    name: `VARCHAR(50) NULL DEFAULT NULL COMMENT '昵称' COLLATE 'utf8mb4_general_ci'`,
     flag: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' COMMENT '状态标签'`,
     authority: `TINYINT(4) UNSIGNED NOT NULL DEFAULT '0' COMMENT '权限等级'`,
     usage: `JSON NOT NULL COMMENT ''`,

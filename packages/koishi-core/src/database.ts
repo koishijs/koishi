@@ -24,12 +24,12 @@ export namespace User {
   export type Field = keyof User
   export const fields: Field[] = []
   export type Observed<K extends Field = Field> = utils.Observed<Pick<User, K>, Promise<void>>
-  type Getter = (id: number, authority: number) => Partial<User>
+  type Getter = (type: Platform, id: number, authority: number) => Partial<User>
   const getters: Getter[] = []
 
   export function extend(getter: Getter) {
     getters.push(getter)
-    fields.push(...Object.keys(getter(0, 0)) as any)
+    fields.push(...Object.keys(getter(null as never, 0, 0)) as any)
   }
 
   extend((id, authority) => ({
@@ -40,16 +40,18 @@ export namespace User {
     timers: {},
   }))
 
-  export function create(id: number, authority: number) {
+  export function create(type: Platform, id: number, authority: number) {
     const result = {} as User
     for (const getter of getters) {
-      Object.assign(result, getter(id, authority))
+      Object.assign(result, getter(type, id, authority))
     }
     return result
   }
 }
 
-export enum Platform {}
+export interface Platforms {}
+
+export type Platform = keyof Platforms
 
 export interface Group {
   id: number
@@ -67,18 +69,18 @@ export namespace Group {
   export type Field = keyof Group
   export const fields: Field[] = []
   export type Observed<K extends Field = Field> = utils.Observed<Pick<Group, K>, Promise<void>>
-  type Getter = (id: number, assignee: number) => Partial<Group>
+  type Getter = (type: Platform, id: number, assignee: number) => Partial<Group>
   const getters: Getter[] = []
 
   export function extend(getter: Getter) {
     getters.push(getter)
-    fields.push(...Object.keys(getter(0, 0)) as any)
+    fields.push(...Object.keys(getter(null as never, 0, 0)) as any)
   }
 
-  export function create(id: number, assignee: number) {
+  export function create(type: Platform, id: number, assignee: number) {
     const result = {} as Group
     for (const getter of getters) {
-      Object.assign(result, getter(id, assignee))
+      Object.assign(result, getter(type, id, assignee))
     }
     return result
   }

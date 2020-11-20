@@ -213,7 +213,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
 
     // 确保匿名消息不会写回数据库
     if (this.anonymous) {
-      const user = observe(User.create(userId, defaultAuthority), () => Promise.resolve())
+      const user = observe(User.create(this.$type, userId, defaultAuthority), () => Promise.resolve())
       return this.$user = user
     }
 
