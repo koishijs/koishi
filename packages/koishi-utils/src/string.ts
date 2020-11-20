@@ -1,12 +1,12 @@
 function deepen(modifyString: (source: string) => string) {
-  function modifyObject<T>(source: T): T {
+  function modifyObject<T extends unknown>(source: T): T {
     if (typeof source !== 'object' || !source) return source
     if (Array.isArray(source)) return source.map(modifyObject) as any
-    const result = {} as T
+    const result = {} as any
     for (const key in source) {
       result[modifyString(key)] = modifyObject(source[key])
     }
-    return result
+    return result as T
   }
 
   return function<T> (source: T): T {
