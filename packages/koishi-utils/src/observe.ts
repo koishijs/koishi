@@ -109,7 +109,7 @@ function observeDate(target: Date, update: () => void) {
 export type Observed<T, R = any> = T & {
   _diff: Partial<T>
   _update: () => R
-  _merge: (value: Partial<T>) => Observed<T>
+  _merge: (value: Partial<T>) => Observed<T, R>
 }
 
 type UpdateFunction<T, R> = (diff: Partial<T>) => R
