@@ -70,7 +70,7 @@ export class DataTrap<O extends {}> {
 export const userTrap = new DataTrap<User>()
 export const groupTrap = new DataTrap<Group>()
 
-interface AccessOptions<T> {
+export interface AccessOptions<T> {
   readable?: T[]
   writable?: T[]
 }
@@ -83,7 +83,7 @@ interface TrappedArgv<O> extends ParsedArgv<never, never, O> {
 
 type TrappedAction<O> = (argv: TrappedArgv<O>, ...args: string[]) => ReturnType<CommandAction>
 
-function resolveAccess<T>(fields: Access<T>): AccessOptions<T> {
+export function resolveAccess<T>(fields: Access<T>): AccessOptions<T> {
   return Array.isArray(fields)
     ? { readable: fields, writable: [] }
     : { readable: [], writable: [], ...fields }
@@ -94,9 +94,12 @@ export interface FieldOptions {
   groupFields?: Access<Group.Field>
 }
 
-export function attachTraps<O>(command: Command<never, never, O>, options: FieldOptions, action: TrappedAction<O>) {
-  const userAccess = resolveAccess(options.userFields)
-  const groupAccess = resolveAccess(options.groupFields)
+export function attachTraps<O>(
+  command: Command<never, never, O>,
+  userAccess: AccessOptions<User.Field>,
+  groupAccess: AccessOptions<Group.Field>,
+  action: TrappedAction<O>,
+) {
   const userWritable = userAccess.writable
   const groupWritable = groupAccess.writable
 

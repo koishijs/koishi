@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import { CQCode, Logger, defineProperty } from 'koishi-utils'
-import { EvalWorker, attachTraps, EvalConfig, Config } from './main'
+import { EvalWorker, attachTraps, EvalConfig, Config, resolveAccess } from './main'
 
 export * from './main'
 
@@ -54,6 +54,9 @@ export function apply(ctx: Context, config: Config = {}) {
     }
   })
 
+  const userAccess = resolveAccess(config.userFields)
+  const groupAccess = resolveAccess(config.groupFields)
+
   const cmd = ctx.command('evaluate [expr...]', '执行 JavaScript 脚本', { noEval: true })
     .alias('eval')
     .userFields(['authority'])
@@ -63,7 +66,7 @@ export function apply(ctx: Context, config: Config = {}) {
       if (!session['_redirected'] && session.$user?.authority < authority) return '权限不足。'
     })
 
-  attachTraps(cmd, config, async ({ session, options, ctxOptions }, expr) => {
+  attachTraps(cmd, userAccess, groupAccess, async ({ session, options, ctxOptions }, expr) => {
     if (options.restart) {
       await app.worker.restart()
       return '子线程已重启。'
