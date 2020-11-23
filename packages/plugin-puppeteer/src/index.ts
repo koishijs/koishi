@@ -91,7 +91,7 @@ export function apply(ctx: Context, config: Config = {}) {
           }
         }
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
           logger.debug(`navigating to ${url}`)
           const _resolve = () => {
             clearTimeout(timer)

@@ -84,7 +84,7 @@ MySQL 5.7 支持。
 
 ## 官方插件
 
-### [koishi-plugin-chess](./packages/plugin-chess) [![npm](https://img.shields.io/npm/v/koishi-plugin-chess/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-chess)
+### [koishi-plugin-chess](./packages/plugin-chess) [![npm](https://img.shields.io/npm/v/koishi-plugin-chess?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-chess)
 
 ### [koishi-plugin-common](./packages/plugin-common) [![npm](https://img.shields.io/npm/v/koishi-plugin-common?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-common)
 
@@ -101,7 +101,7 @@ koishi-plugin-common 包含了一些常用功能，它们在你使用 koishi 库
 
 koishi-plugin-eval 允许用户直接使用机器人执行脚本。它利用了 Node.js 的 [vm](https://nodejs.org/api/vm.html) 和 [worker_threads](https://nodejs.org/api/worker_threads.html) 模块，在保护执行安全的前提下能够获得较快的响应速度。同时，插件还提供了一些内置的 API 供用户调用，结合教学功能可以在客户端实现复杂的行为。
 
-### [koishi-plugin-eval-addons](https://koishi.js.org/plugins/eval.html) [![npm](https://img.shields.io/npm/v/koishi-plugin-eval-addons/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-eval-addons)
+### [koishi-plugin-eval-addons](https://koishi.js.org/plugins/eval.html) [![npm](https://img.shields.io/npm/v/koishi-plugin-eval-addons?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-eval-addons)
 
 koishi-plugin-eval-addons 在前一个插件的基础上，允许用户编写自己的模块并永久保存。插件将自动加载特定目录下的文件，并将其作为机器人的内置功能。用户可以利用此功能存储较为复杂的代码，甚至扩展新的指令。同时，如果上述目录是一个 git 目录，该插件也提供了自动更新等机制。
 
@@ -111,7 +111,7 @@ koishi-plugin-github 提供了对 GitHub API 和 Webhooks 的全方位集成。�
 
 ### [koishi-plugin-image-search](./packages/plugin-image-search) [![npm](https://img.shields.io/npm/v/koishi-plugin-image-search?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-image-search)
 
-### [koishi-plugin-monitor](./packages/plugin-monitor) [![npm](https://img.shields.io/npm/v/koishi-plugin-monitor/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-monitor)
+### [koishi-plugin-monitor](./packages/plugin-monitor) [![npm](https://img.shields.io/npm/v/koishi-plugin-monitor?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-monitor)
 
 ### [koishi-plugin-puppeteer](https://koishi.js.org/plugins/puppeteer.html) [![npm](https://img.shields.io/npm/v/koishi-plugin-puppeteer?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-puppeteer)
 
@@ -125,7 +125,7 @@ koishi-plugin-rss 提供了 [RSS](https://en.wikipedia.org/wiki/RSS) 支持，�
 
 koishi-plugin-schedule 允许用户设置定时任务并执行。这些计划任务会被存储在数据库中，即使重启机器人也能继续工作。
 
-### [koishi-plugin-status](./packages/plugin-status) [![npm](https://img.shields.io/npm/v/koishi-plugin-status/next?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-status)
+### [koishi-plugin-status](./packages/plugin-status) [![npm](https://img.shields.io/npm/v/koishi-plugin-status?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-status)
 
 ### [koishi-plugin-teach](./packages/plugin-teach) [![npm](https://img.shields.io/npm/v/koishi-plugin-teach?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-teach)
 

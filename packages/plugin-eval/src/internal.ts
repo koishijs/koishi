@@ -531,8 +531,10 @@ Helper.object = function (this: Helper, object, traps, deepTraps, mock) {
       }
       return success
     },
+    // @ts-ignore
     enumerate: () => {
       try {
+        // @ts-ignore
         return this.value(this.remote.Reflect.enumerate(object))
       } catch (e) {
         throw this.value(e)

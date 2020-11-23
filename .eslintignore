@@ -1,3 +1,5 @@
 atri
 dist
 build/*.js
+
+/build/*.js
