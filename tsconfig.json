@@ -14,9 +14,10 @@
     { "path": "./packages/koishi-test-utils" },
     { "path": "./packages/adapter-cqhttp" },
     { "path": "./packages/adapter-tomon" },
+    { "path": "./packages/koishi" },
 
     { "path": "./packages/plugin-mysql" },
-    { "path": "./packages/plugin-mongo" },
+    // { "path": "./packages/plugin-mongo" },
     { "path": "./packages/plugin-eval" },
     { "path": "./packages/plugin-puppeteer" },
     { "path": "./packages/plugin-teach" },
@@ -32,8 +33,6 @@
     { "path": "./packages/plugin-schedule" },
     { "path": "./packages/plugin-status" },
     { "path": "./packages/plugin-tools" },
-
-    { "path": "./packages/koishi" },
   ],
   "files": [],
 }
