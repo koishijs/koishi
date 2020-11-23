@@ -16,14 +16,14 @@ export class MemoryDatabase {
     return this.$store[table] || (this.$store[table] = {})
   }
 
-  $create<K extends TableType>(table: K, data: Partial<Tables[K]>) {
+  $create<K extends TableType>(table: K, data: Partial<Tables[K]>, key = 'id') {
     const store = this.$table(table)
-    if (typeof data.id !== 'number') {
+    if (typeof data[key] !== 'number') {
       let index = 1
       while (index in store) index++
-      data.id = index
+      data[key] = index
     }
-    return store[data.id] = data as Tables[K]
+    return store[data[key]] = data as Tables[K]
   }
 
   $remove<K extends TableType>(table: K, id: number) {
@@ -41,18 +41,18 @@ export class MemoryDatabase {
 }
 
 extendDatabase(MemoryDatabase, {
-  async getUser(userId: number, authority?: any) {
+  async getUser(type, userId: number, authority?: any) {
     const table = this.$table('user')
     authority = typeof authority === 'number' ? authority : 0
     const data = table[userId]
     if (data) return clone(data)
     if (authority < 0) return null
-    const fallback = User.create(userId, authority)
+    const fallback = User.create(type, userId, authority)
     if (authority) table[userId] = fallback
     return clone(fallback)
   },
 
-  async getUsers(...args: any[][]) {
+  async getUsers(type, ...args: any[][]) {
     const table = this.$table('user')
     if (args.length > 1 || args.length && typeof args[0][0] !== 'string') {
       return Object.keys(table)
@@ -63,17 +63,17 @@ extendDatabase(MemoryDatabase, {
     }
   },
 
-  async setUser(userId: number, data: any) {
+  async setUser(type, userId: number, data: any) {
     return this.$update('user', userId, data)
   },
 
-  async getGroup(groupId: number, selfId: any) {
+  async getGroup(type, groupId: number, selfId: any) {
     const table = this.$table('group')
     selfId = typeof selfId === 'number' ? selfId : 0
     const data = table[groupId]
     if (data) return clone(data)
     if (selfId < 0) return null
-    const fallback = Group.create(groupId, selfId)
+    const fallback = Group.create(type, groupId, selfId)
     if (selfId) table[groupId] = fallback
     return clone(fallback)
   },
@@ -89,7 +89,7 @@ extendDatabase(MemoryDatabase, {
       .map(id => clone(table[id]))
   },
 
-  async setGroup(groupId: number, data: any) {
+  async setGroup(type, groupId: number, data: any) {
     return this.$update('group', groupId, data)
   },
 })
