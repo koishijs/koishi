@@ -23,7 +23,7 @@ export default class Channel {
 
   constructor(private server: Server) {}
 
-  connect = (resolve: () => void, reject: (error: Error) => void, bot: Bot, socket: WebSocket) => {
+  connect = (resolve: (value: void) => void, reject: (error: Error) => void, bot: Bot, socket: WebSocket) => {
     bot.ready = true
     bot.socket = socket
 
