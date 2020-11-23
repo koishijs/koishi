@@ -157,6 +157,14 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     }))
   }
 
+  async $getGroup<K extends Group.Field = never>(id: number = this.groupId, fields: readonly K[] = [], assignee?: number) {
+    const group = await this.$app.database.getGroup(this.$type, id, fields)
+    if (group) return group
+    const fallback = Group.create(this.$type, id, assignee)
+    await this.$app.database.setGroup(this.$type, id, fallback)
+    return fallback
+  }
+
   /** 在元数据上绑定一个可观测群实例 */
   async $observeGroup<T extends Group.Field = never>(fields: Iterable<T> = []): Promise<Group.Observed<T | G>> {
     const fieldSet = new Set<Group.Field>(fields)
@@ -169,7 +177,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
         fieldSet.delete(key as any)
       }
       if (fieldSet.size) {
-        const data = await this.$app.database.getGroup(this.$type, groupId, [...fieldSet])
+        const data = await this.$getGroup(groupId, [...fieldSet])
         this.$app._groupCache.set(groupId, $group._merge(data))
       }
       return $group as any
@@ -182,10 +190,18 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     if (hasActiveCache) return this.$group = cache as any
 
     // 绑定一个新的可观测群实例
-    const data = await this.$app.database.getGroup(this.$type, groupId, fieldArray)
+    const data = await this.$getGroup(groupId, fieldArray)
     const group = observe(data, diff => this.$app.database.setGroup(this.$type, groupId, diff), `group ${groupId}`)
     this.$app._groupCache.set(groupId, group)
     return this.$group = group
+  }
+
+  async $getUser<K extends User.Field = never>(id: number = this.userId, fields: readonly K[] = [], authority?: number) {
+    const user = await this.$app.database.getUser(this.$type, id, fields)
+    if (user) return user
+    const fallback = User.create(this.$type, id, authority)
+    await this.$app.database.setUser(this.$type, id, fallback)
+    return fallback
   }
 
   /** 在元数据上绑定一个可观测用户实例 */
@@ -200,7 +216,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
         fieldSet.delete(key as any)
       }
       if (fieldSet.size) {
-        const data = await this.$app.database.getUser(this.$type, userId, [...fieldSet])
+        const data = await this.$getUser(userId, [...fieldSet])
         this.$app._userCache.set(userId, $user._merge(data) as any)
       }
     }
@@ -224,7 +240,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     if (hasActiveCache) return this.$user = cache as any
 
     // 绑定一个新的可观测用户实例
-    const data = await this.$app.database.getUser(this.$type, userId, defaultAuthority, fieldArray)
+    const data = await this.$getUser(userId, fieldArray, defaultAuthority)
     const user = observe(data, diff => this.$app.database.setUser(this.$type, userId, diff), `user ${userId}`)
     this.$app._userCache.set(userId, user)
     return this.$user = user

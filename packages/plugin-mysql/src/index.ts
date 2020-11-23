@@ -15,26 +15,11 @@ function inferFields(keys: readonly string[]) {
 }
 
 extendDatabase(MysqlDatabase, {
-  async getUser(type, userId, ...args) {
-    const authority = typeof args[0] === 'number' ? args.shift() as number : 0
-    const fields = args[0] ? inferFields(args[0] as any) : User.fields
+  async getUser(type, userId, fields) {
+    fields = fields ? inferFields(fields) : User.fields
     if (fields && !fields.length) return {} as any
     const [data] = await this.select<User>('user', fields, '?? = ?', [type, userId])
-    let fallback: User
-    if (data) {
-      data._id = userId
-    } else if (authority < 0) {
-      return null
-    } else {
-      fallback = User.create(type, userId, authority)
-      if (authority) {
-        await this.query(
-          'INSERT INTO `user` (' + this.joinKeys(User.fields) + ') VALUES (' + User.fields.map(() => '?').join(', ') + ')',
-          this.formatValues('user', fallback, User.fields),
-        )
-      }
-    }
-    return data || fallback
+    return data && { ...data, _id: userId }
   },
 
   async getUsers(type, ...args) {
@@ -57,24 +42,10 @@ extendDatabase(MysqlDatabase, {
     await this.update('user', userId, data)
   },
 
-  async getGroup(type, groupId, ...args) {
-    const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
-    const fields = args[0] as any || Group.fields
+  async getGroup(type, id, fields) {
     if (fields && !fields.length) return {} as any
-    const [data] = await this.select<Group>('group', fields, '`type` = ? && `id` = ?', [type, groupId])
-    let fallback: Group
-    if (!data) {
-      fallback = Group.create(type, groupId, selfId)
-      if (selfId && groupId) {
-        await this.query(
-          'INSERT INTO `group` (' + this.joinKeys(Group.fields) + ') VALUES (' + Group.fields.map(() => '?').join(', ') + ')',
-          this.formatValues('group', fallback, Group.fields),
-        )
-      }
-    } else {
-      data.id = groupId
-    }
-    return data || fallback
+    const [data] = await this.select<Group>('group', fields, '`type` = ? && `id` = ?', [type, id])
+    return data && { ...data, id, type }
   },
 
   async getAllGroups(...args) {

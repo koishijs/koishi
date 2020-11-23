@@ -94,14 +94,10 @@ export namespace Group {
 
 export interface Database {
   getUser<K extends User.Field>(type: Platform, id: number, fields?: readonly K[]): Promise<Pick<User, K | '_id'>>
-  getUser<K extends User.Field>(type: Platform, id: number, defaultAuthority?: number, fields?: readonly K[]): Promise<Pick<User, K | '_id'>>
-  getUsers<K extends User.Field>(type: Platform, fields?: readonly K[]): Promise<Pick<User, K>[]>
-  getUsers<K extends User.Field>(type: Platform, ids: readonly number[], fields?: readonly K[]): Promise<Pick<User, K>[]>
+  getUsers<K extends User.Field>(type: Platform, ids?: readonly number[], fields?: readonly K[]): Promise<Pick<User, K>[]>
   setUser(type: Platform, id: number, data: Partial<User>): Promise<void>
 
   getGroup<K extends Group.Field>(type: Platform, id: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id' | 'type'>>
-  getGroup<K extends Group.Field>(type: Platform, id: number, selfId?: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id' | 'type'>>
-  getAllGroups<K extends Group.Field>(assignees?: readonly number[]): Promise<Pick<Group, K>[]>
   getAllGroups<K extends Group.Field>(fields?: readonly K[], assignees?: readonly number[]): Promise<Pick<Group, K>[]>
   setGroup(type: Platform, id: number, data: Partial<Group>): Promise<void>
 }

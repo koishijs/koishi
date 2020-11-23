@@ -41,15 +41,10 @@ export class MemoryDatabase {
 }
 
 extendDatabase(MemoryDatabase, {
-  async getUser(type, userId: number, authority?: any) {
+  async getUser(type, userId: number) {
     const table = this.$table('user')
-    authority = typeof authority === 'number' ? authority : 0
     const data = table[userId]
     if (data) return clone(data)
-    if (authority < 0) return null
-    const fallback = User.create(type, userId, authority)
-    if (authority) table[userId] = fallback
-    return clone(fallback)
   },
 
   async getUsers(type, ...args: any[][]) {
@@ -67,15 +62,10 @@ extendDatabase(MemoryDatabase, {
     return this.$update('user', userId, data)
   },
 
-  async getGroup(type, groupId: number, selfId: any) {
+  async getGroup(type, groupId: number) {
     const table = this.$table('group')
-    selfId = typeof selfId === 'number' ? selfId : 0
     const data = table[groupId]
     if (data) return clone(data)
-    if (selfId < 0) return null
-    const fallback = Group.create(type, groupId, selfId)
-    if (selfId) table[groupId] = fallback
-    return clone(fallback)
   },
 
   async getAllGroups(...args: any[][]) {

@@ -85,7 +85,7 @@ export default function apply(ctx: App, options: HandlerOptions = {}) {
   ctx.on('group-increase', async (session) => {
     if (ctx.bots[session.userId]) return
     if (ctx.database) {
-      const group = await ctx.database.getGroup(session.groupId, 0, ['assignee'])
+      const group = await ctx.database.getGroup(session.$type, session.groupId, ['assignee'])
       if (group.assignee !== session.selfId) return
     }
     const output = typeof welcome === 'string' ? welcome : await welcome(session)
