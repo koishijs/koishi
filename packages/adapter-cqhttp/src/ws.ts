@@ -1,5 +1,6 @@
-import { App, Server, Bot } from 'koishi-core'
+import { App, Server } from 'koishi-core'
 import { Logger, Time } from 'koishi-utils'
+import { CQBot } from './api'
 import type WebSocket from 'ws'
 import Channel from './channel'
 import ms from 'ms'
@@ -15,12 +16,16 @@ App.defaultConfig.retryInterval = 5 * Time.second
 
 const logger = new Logger('server')
 
-export default class WsClient extends Server {
+export default class WsClient extends Server<CQBot> {
   private _retryCount = 0
   private _channel = new Channel(this)
   private _sockets = new Set<WebSocket>()
 
-  private async __listen(bot: Bot) {
+  constructor(app: App) {
+    super(app, CQBot)
+  }
+
+  private async __listen(bot: CQBot) {
     const { token, server } = bot
     if (!server) return
     const Socket: typeof WebSocket = require('ws')

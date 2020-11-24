@@ -102,11 +102,11 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Type, tables }) =
     probA: `DECIMAL(4,3) UNSIGNED NOT NULL DEFAULT '0.000'`,
     startTime: `INT(10) NOT NULL DEFAULT '0'`,
     endTime: `INT(10) NOT NULL DEFAULT '0'`,
-    groups: new Type.List(`TINYTEXT`),
+    groups: new DataType.Array(`TINYTEXT`),
     original: `TINYTEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
     question: `TINYTEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
     answer: `TEXT(65535) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
-    predecessors: new Type.List(`TINYTEXT`),
+    predecessors: new DataType.Array(`TINYTEXT`),
     successorTimeout: `INT(10) UNSIGNED NOT NULL DEFAULT '0'`,
     writer: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0'`,
   })

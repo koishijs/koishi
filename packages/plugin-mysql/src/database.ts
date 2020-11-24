@@ -13,47 +13,7 @@ const logger = new Logger('mysql')
 
 export interface Config extends PoolConfig {}
 
-type MysqlTableMap = Record<string, Record<string, string | DataType>>
-
-type FieldInfo = Parameters<Exclude<TypeCast, boolean>>[0]
-
-export interface DataType<T = any> {
-  definition: string
-  toString(value: T): string
-  valueOf(source: FieldInfo): T
-}
-
-export namespace DataType {
-  export class List implements DataType<string[]> {
-    constructor(public definition = 'TEXT') {}
-
-    toString(value: string[]) {
-      return value.join(',')
-    }
-
-    valueOf(field: FieldInfo) {
-      const source = field.string()
-      return source ? source.split(',') : []
-    }
-  }
-
-  export class Json implements DataType {
-    constructor(public definition = 'JSON') {}
-
-    toString(value: any) {
-      return JSON.stringify(value)
-    }
-
-    valueOf(field: FieldInfo) {
-      return JSON.parse(field.string())
-    }
-  }
-}
-
-export default class MysqlDatabase {
-  static tables: MysqlTableMap = {}
-  static Type = DataType
-
+class MysqlDatabase {
   public pool: Pool
   public config: Config
 
@@ -206,3 +166,46 @@ export default class MysqlDatabase {
 
 MysqlDatabase.prototype.escape = escape
 MysqlDatabase.prototype.escapeId = escapeId
+
+namespace MysqlDatabase {
+  type Tables = Record<string, Record<string, string | DataType>>
+
+  export const tables: Tables = {}
+
+  type FieldInfo = Parameters<Exclude<TypeCast, boolean>>[0]
+
+  export interface DataType<T = any> {
+    definition: string
+    toString(value: T): string
+    valueOf(source: FieldInfo): T
+  }
+
+  export namespace DataType {
+    export class Array implements DataType<string[]> {
+      constructor(public definition = 'TEXT') {}
+
+      toString(value: string[]) {
+        return value.join(',')
+      }
+
+      valueOf(field: FieldInfo) {
+        const source = field.string()
+        return source ? source.split(',') : []
+      }
+    }
+
+    export class Json implements DataType {
+      constructor(public definition = 'JSON') {}
+
+      toString(value: any) {
+        return JSON.stringify(value)
+      }
+
+      valueOf(field: FieldInfo) {
+        return JSON.parse(field.string())
+      }
+    }
+  }
+}
+
+export default MysqlDatabase

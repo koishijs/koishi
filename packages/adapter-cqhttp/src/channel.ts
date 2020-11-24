@@ -1,5 +1,5 @@
-import { CQResponse, toVersion } from './api'
-import { Server, Bot } from 'koishi-core'
+import { CQBot, CQResponse, toVersion } from './api'
+import { Server } from 'koishi-core'
 import { Logger, camelCase } from 'koishi-utils'
 import type WebSocket from 'ws'
 
@@ -7,10 +7,6 @@ declare module 'koishi-core/dist/server' {
   interface BotOptions {
     server?: string
     token?: string
-  }
-
-  interface Bot {
-    socket?: WebSocket
   }
 }
 
@@ -23,7 +19,7 @@ export default class Channel {
 
   constructor(private server: Server) {}
 
-  connect = (resolve: (value: void) => void, reject: (error: Error) => void, bot: Bot, socket: WebSocket) => {
+  connect = (resolve: (value: void) => void, reject: (error: Error) => void, bot: CQBot, socket: WebSocket) => {
     bot.ready = true
     bot.socket = socket
 

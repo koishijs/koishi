@@ -76,10 +76,10 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
 })
 
 extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables, Type }) => {
-  tables.group.subscribe = new Type.Json()
+  tables.group.subscribe = new DataType.Json()
   tables.subscribe = Object.assign<any, any>([], {
     id: '`id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT',
-    names: new Type.List(),
+    names: new DataType.Array(),
   })
 })
 

@@ -33,7 +33,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Type, tables }) =
     time: `TIMESTAMP NULL DEFAULT NULL`,
     interval: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0'`,
     command: `MEDIUMTEXT NOT NULL COLLATE 'utf8mb4_general_ci'`,
-    session: new Type.Json(),
+    session: new DataType.Json(),
   })
 })
 

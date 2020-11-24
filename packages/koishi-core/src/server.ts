@@ -9,10 +9,12 @@ export interface BotOptions {
   selfId?: number
 }
 
-export abstract class Server {
+type BotStatic<T extends Bot = Bot> = new (app: App, options: BotOptions) => T
+
+export abstract class Server<T extends Bot = Bot> {
   static types: Record<string, new (app: App) => Server> = {}
 
-  public bots: Bot[]
+  public bots: T[]
   public router?: Router
   public server?: http.Server
 
@@ -20,11 +22,11 @@ export abstract class Server {
   protected abstract _listen(): Promise<void>
   protected abstract _close(): void
 
-  constructor(public app: App) {
+  constructor(public app: App, BotStatic: BotStatic<T>) {
     app.on('before-connect', this.listen.bind(this))
     app.on('before-disconnect', this.close.bind(this))
-    const senders = app.options.bots.map(bot => new Bot(app, bot))
-    this.bots = new Proxy(senders, {
+    const bots = app.options.bots.map(bot => new BotStatic(app, bot))
+    this.bots = new Proxy(bots, {
       get(target, prop) {
         return typeof prop === 'symbol' || +prop * 0 !== 0
           ? Reflect.get(target, prop)

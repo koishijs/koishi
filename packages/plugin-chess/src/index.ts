@@ -7,7 +7,7 @@ import * as gomoku from './gomoku'
 import * as othello from './othello'
 
 extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables, Type }) => {
-  tables.group.chess = new Type.Json()
+  tables.group.chess = new DataType.Json()
 })
 
 interface Rule {

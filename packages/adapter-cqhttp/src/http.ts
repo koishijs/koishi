@@ -1,6 +1,6 @@
-import { App, Bot, Server } from 'koishi-core'
+import { App, Server } from 'koishi-core'
 import { Logger, defineProperty, snakeCase, assertProperty } from 'koishi-utils'
-import { toVersion } from './api'
+import { CQBot, toVersion } from './api'
 import {} from 'koa-bodyparser'
 import { createHmac } from 'crypto'
 import axios from 'axios'
@@ -26,13 +26,13 @@ declare module 'koishi-core/dist/session' {
 
 const logger = new Logger('server')
 
-export default class HttpServer extends Server {
+export default class HttpServer extends Server<CQBot> {
   constructor(app: App) {
     assertProperty(app.options, 'port')
-    super(app)
+    super(app, CQBot)
   }
 
-  private async __listen(bot: Bot) {
+  private async __listen(bot: CQBot) {
     if (!bot.server) return
     bot.ready = true
     bot._request = async (action, params) => {
@@ -50,7 +50,8 @@ export default class HttpServer extends Server {
   }
 
   async _listen() {
-    const { secret, path = '/' } = this.app.options
+    const { cqhttp = {} } = this.app.options
+    const { secret, path = '/' } = cqhttp
     this.router.post(path, (ctx) => {
       if (secret) {
         // no signature
@@ -66,7 +67,7 @@ export default class HttpServer extends Server {
       const meta = this.prepare(ctx.request.body)
       if (!meta) return ctx.status = 403
 
-      const { quickOperation } = this.app.options
+      const { quickOperation } = cqhttp
       if (quickOperation > 0) {
         // bypass koa's built-in response handling for quick operations
         ctx.respond = false

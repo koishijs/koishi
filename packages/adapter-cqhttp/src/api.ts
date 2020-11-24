@@ -1,5 +1,6 @@
 import { camelCase, Logger, snakeCase, capitalize } from 'koishi-utils'
 import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatusCode } from 'koishi-core'
+import type WebSocket from 'ws'
 
 const logger = new Logger('bot')
 
@@ -95,214 +96,215 @@ export interface HonorInfo {
   emotionList: HonoredMemberInfo[]
 }
 
-declare module 'koishi-core/dist/server' {
-  interface Bot {
-    _request?(action: string, params: Record<string, any>): Promise<CQResponse>
-    get<T = any>(action: string, params?: Record<string, any>, silent?: boolean): Promise<T>
-    getAsync(action: string, params?: Record<string, any>): Promise<void>
-    sendGroupMsgAsync(groupId: number, message: string, autoEscape?: boolean): Promise<void>
-    sendPrivateMsgAsync(userId: number, message: string, autoEscape?: boolean): Promise<void>
-    setGroupAnonymousBan(groupId: number, anonymous: string | object, duration?: number): Promise<void>
-    setGroupAnonymousBanAsync(groupId: number, anonymous: string | object, duration?: number): Promise<void>
-    setFriendAddRequest(flag: string, approve?: boolean): Promise<void>
-    setFriendAddRequest(flag: string, remark?: string): Promise<void>
-    setFriendAddRequestAsync(flag: string, approve?: boolean): Promise<void>
-    setFriendAddRequestAsync(flag: string, remark?: string): Promise<void>
-    setGroupAddRequest(flag: string, subType: 'add' | 'invite', approve?: string | boolean): Promise<void>
-    setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', approve?: string | boolean): Promise<void>
-    deleteMsg(messageId: number): Promise<void>
-    deleteMsgAsync(messageId: number): Promise<void>
-    sendLike(userId: number, times?: number): Promise<void>
-    sendLikeAsync(userId: number, times?: number): Promise<void>
-    setGroupKick(groupId: number, userId: number, rejectAddRequest?: boolean): Promise<void>
-    setGroupKickAsync(groupId: number, userId: number, rejectAddRequest?: boolean): Promise<void>
-    setGroupBan(groupId: number, userId: number, duration?: number): Promise<void>
-    setGroupBanAsync(groupId: number, userId: number, duration?: number): Promise<void>
-    setGroupWholeBan(groupId: number, enable?: boolean): Promise<void>
-    setGroupWholeBanAsync(groupId: number, enable?: boolean): Promise<void>
-    setGroupAdmin(groupId: number, userId: number, enable?: boolean): Promise<void>
-    setGroupAdminAsync(groupId: number, userId: number, enable?: boolean): Promise<void>
-    setGroupAnonymous(groupId: number, enable?: boolean): Promise<void>
-    setGroupAnonymousAsync(groupId: number, enable?: boolean): Promise<void>
-    setGroupCard(groupId: number, userId: number, card?: string): Promise<void>
-    setGroupCardAsync(groupId: number, userId: number, card?: string): Promise<void>
-    setGroupLeave(groupId: number, isDismiss?: boolean): Promise<void>
-    setGroupLeaveAsync(groupId: number, isDismiss?: boolean): Promise<void>
-    setGroupSpecialTitle(groupId: number, userId: number, specialTitle?: string, duration?: number): Promise<void>
-    setGroupSpecialTitleAsync(groupId: number, userId: number, specialTitle?: string, duration?: number): Promise<void>
-    getLoginInfo(): Promise<AccountInfo>
-    getStrangerInfo(userId: number, noCache?: boolean): Promise<StrangerInfo>
-    getFriendList(): Promise<FriendInfo[]>
-    getGroupList(): Promise<ListedGroupInfo[]>
-    getGroupInfo(groupId: number, noCache?: boolean): Promise<GroupInfo>
-    getGroupMemberInfo(groupId: number, userId: number, noCache?: boolean): Promise<GroupMemberInfo>
-    getGroupMemberList(groupId: number): Promise<GroupMemberInfo[]>
-    getGroupHonorInfo(groupId: number, type: HonorType): Promise<HonorInfo>
-    getCookies(domain?: string): Promise<string>
-    getCsrfToken(): Promise<number>
-    getCredentials(domain?: string): Promise<Credentials>
-    getRecord(file: string, outFormat: RecordFormat, fullPath?: boolean): Promise<RecordInfo>
-    getImage(file: string): Promise<ImageInfo>
-    canSendImage(): Promise<boolean>
-    canSendRecord(): Promise<boolean>
-    getVersionInfo(): Promise<VersionInfo>
-    setRestartPlugin(delay?: number): Promise<void>
-    cleanDataDir(dataDir: DataDirectory): Promise<void>
-    cleanDataDirAsync(dataDir: DataDirectory): Promise<void>
-    cleanPluginLog(): Promise<void>
-    cleanPluginLogAsync(): Promise<void>
-    getVipInfo(): Promise<VipInfo>
-    getGroupNotice(groupId: number): Promise<GroupNotice[]>
-    sendGroupNotice(groupId: number, title: string, content: string): Promise<void>
-    sendGroupNoticeAsync(groupId: number, title: string, content: string): Promise<void>
-    setRestart(cleanLog?: boolean, cleanCache?: boolean, cleanEvent?: boolean): Promise<void>
-    setGroupName(groupId: number, name: string): Promise<void>
-    setGroupNameAsync(groupId: number, name: string): Promise<void>
-    setGroupPortrait(groupId: number, file: string, cache?: boolean): Promise<void>
-    setGroupPortraitAsync(groupId: number, file: string, cache?: boolean): Promise<void>
-    getGroupMsg(messageId: number): Promise<GroupMessage>
-    getForwardMsg(messageId: number): Promise<ForwardMessage>
-    sendGroupForwardMsg(groupId: number, messages: readonly CQNode[]): Promise<void>
-    sendGroupForwardMsgAsync(groupId: number, messages: readonly CQNode[]): Promise<void>
+export interface CQBot {
+  socket?: WebSocket
+  _request?(action: string, params: Record<string, any>): Promise<CQResponse>
+  get<T = any>(action: string, params?: Record<string, any>, silent?: boolean): Promise<T>
+  getAsync(action: string, params?: Record<string, any>): Promise<void>
+  sendGroupMsgAsync(groupId: number, message: string, autoEscape?: boolean): Promise<void>
+  sendPrivateMsgAsync(userId: number, message: string, autoEscape?: boolean): Promise<void>
+  setGroupAnonymousBan(groupId: number, anonymous: string | object, duration?: number): Promise<void>
+  setGroupAnonymousBanAsync(groupId: number, anonymous: string | object, duration?: number): Promise<void>
+  setFriendAddRequest(flag: string, approve?: boolean): Promise<void>
+  setFriendAddRequest(flag: string, remark?: string): Promise<void>
+  setFriendAddRequestAsync(flag: string, approve?: boolean): Promise<void>
+  setFriendAddRequestAsync(flag: string, remark?: string): Promise<void>
+  setGroupAddRequest(flag: string, subType: 'add' | 'invite', approve?: string | boolean): Promise<void>
+  setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', approve?: string | boolean): Promise<void>
+  deleteMsg(messageId: number): Promise<void>
+  deleteMsgAsync(messageId: number): Promise<void>
+  sendLike(userId: number, times?: number): Promise<void>
+  sendLikeAsync(userId: number, times?: number): Promise<void>
+  setGroupKick(groupId: number, userId: number, rejectAddRequest?: boolean): Promise<void>
+  setGroupKickAsync(groupId: number, userId: number, rejectAddRequest?: boolean): Promise<void>
+  setGroupBan(groupId: number, userId: number, duration?: number): Promise<void>
+  setGroupBanAsync(groupId: number, userId: number, duration?: number): Promise<void>
+  setGroupWholeBan(groupId: number, enable?: boolean): Promise<void>
+  setGroupWholeBanAsync(groupId: number, enable?: boolean): Promise<void>
+  setGroupAdmin(groupId: number, userId: number, enable?: boolean): Promise<void>
+  setGroupAdminAsync(groupId: number, userId: number, enable?: boolean): Promise<void>
+  setGroupAnonymous(groupId: number, enable?: boolean): Promise<void>
+  setGroupAnonymousAsync(groupId: number, enable?: boolean): Promise<void>
+  setGroupCard(groupId: number, userId: number, card?: string): Promise<void>
+  setGroupCardAsync(groupId: number, userId: number, card?: string): Promise<void>
+  setGroupLeave(groupId: number, isDismiss?: boolean): Promise<void>
+  setGroupLeaveAsync(groupId: number, isDismiss?: boolean): Promise<void>
+  setGroupSpecialTitle(groupId: number, userId: number, specialTitle?: string, duration?: number): Promise<void>
+  setGroupSpecialTitleAsync(groupId: number, userId: number, specialTitle?: string, duration?: number): Promise<void>
+  getLoginInfo(): Promise<AccountInfo>
+  getStrangerInfo(userId: number, noCache?: boolean): Promise<StrangerInfo>
+  getFriendList(): Promise<FriendInfo[]>
+  getGroupList(): Promise<ListedGroupInfo[]>
+  getGroupInfo(groupId: number, noCache?: boolean): Promise<GroupInfo>
+  getGroupMemberInfo(groupId: number, userId: number, noCache?: boolean): Promise<GroupMemberInfo>
+  getGroupMemberList(groupId: number): Promise<GroupMemberInfo[]>
+  getGroupHonorInfo(groupId: number, type: HonorType): Promise<HonorInfo>
+  getCookies(domain?: string): Promise<string>
+  getCsrfToken(): Promise<number>
+  getCredentials(domain?: string): Promise<Credentials>
+  getRecord(file: string, outFormat: RecordFormat, fullPath?: boolean): Promise<RecordInfo>
+  getImage(file: string): Promise<ImageInfo>
+  canSendImage(): Promise<boolean>
+  canSendRecord(): Promise<boolean>
+  getVersionInfo(): Promise<VersionInfo>
+  setRestartPlugin(delay?: number): Promise<void>
+  cleanDataDir(dataDir: DataDirectory): Promise<void>
+  cleanDataDirAsync(dataDir: DataDirectory): Promise<void>
+  cleanPluginLog(): Promise<void>
+  cleanPluginLogAsync(): Promise<void>
+  getVipInfo(): Promise<VipInfo>
+  getGroupNotice(groupId: number): Promise<GroupNotice[]>
+  sendGroupNotice(groupId: number, title: string, content: string): Promise<void>
+  sendGroupNoticeAsync(groupId: number, title: string, content: string): Promise<void>
+  setRestart(cleanLog?: boolean, cleanCache?: boolean, cleanEvent?: boolean): Promise<void>
+  setGroupName(groupId: number, name: string): Promise<void>
+  setGroupNameAsync(groupId: number, name: string): Promise<void>
+  setGroupPortrait(groupId: number, file: string, cache?: boolean): Promise<void>
+  setGroupPortraitAsync(groupId: number, file: string, cache?: boolean): Promise<void>
+  getGroupMsg(messageId: number): Promise<GroupMessage>
+  getForwardMsg(messageId: number): Promise<ForwardMessage>
+  sendGroupForwardMsg(groupId: number, messages: readonly CQNode[]): Promise<void>
+  sendGroupForwardMsgAsync(groupId: number, messages: readonly CQNode[]): Promise<void>
+}
+
+export class CQBot extends Bot {
+  async get(action, params = {}, silent = false) {
+    logger.debug('[request] %s %o', action, params)
+    const response = await this._request(action, snakeCase(params))
+    logger.debug('[response] %o', response)
+    const { data, retcode } = response
+    if (retcode === 0 && !silent) {
+      return camelCase(data)
+    } else if (retcode < 0 && !silent) {
+      throw new SenderError(params, action, retcode, this.selfId)
+    } else if (retcode > 1) {
+      throw new SenderError(params, action, retcode, this.selfId)
+    }
   }
-}
 
-Bot.prototype.get = async function (this: Bot, action, params = {}, silent = false) {
-  logger.debug('[request] %s %o', action, params)
-  const response = await this._request(action, snakeCase(params))
-  logger.debug('[response] %o', response)
-  const { data, retcode } = response
-  if (retcode === 0 && !silent) {
-    return camelCase(data)
-  } else if (retcode < 0 && !silent) {
-    throw new SenderError(params, action, retcode, this.selfId)
-  } else if (retcode > 1) {
-    throw new SenderError(params, action, retcode, this.selfId)
+  async getAsync(action, params = {}) {
+    await this.get(action + '_async', params)
   }
-}
 
-Bot.prototype.getAsync = async function (this: Bot, action, params = {}) {
-  await this.get(action + '_async', params)
-}
-
-Bot.prototype.sendGroupMsg = async function (this: Bot, groupId, message, autoEscape = false) {
-  if (!message) return
-  const session = this.createSession('group', 'group', groupId, message)
-  if (this.app.bail(session, 'before-send', session)) return
-  const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message: session.message, autoEscape })
-  session.messageId = messageId
-  this.app.emit(session, 'send', session)
-  return messageId
-}
-
-Bot.prototype.sendGroupMsgAsync = function (this: Bot, groupId, message, autoEscape = false) {
-  if (!message) return
-  const session = this.createSession('group', 'group', groupId, message)
-  if (this.app.bail(session, 'before-send', session)) return
-  return this.getAsync('send_group_msg', { groupId, message: session.message, autoEscape })
-}
-
-Bot.prototype.sendPrivateMsg = async function (this: Bot, userId, message, autoEscape = false) {
-  if (!message) return
-  const session = this.createSession('private', 'user', userId, message)
-  if (this.app.bail(session, 'before-send', session)) return
-  const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message: session.message, autoEscape })
-  session.messageId = messageId
-  this.app.emit(session, 'send', session)
-  return messageId
-}
-
-Bot.prototype.sendPrivateMsgAsync = function (this: Bot, userId, message, autoEscape = false) {
-  if (!message) return
-  const session = this.createSession('private', 'user', userId, message)
-  if (this.app.bail(session, 'before-send', session)) return
-  return this.getAsync('send_private_msg', { userId, message: session.message, autoEscape })
-}
-
-Bot.prototype.setGroupAnonymousBan = async function (this: Bot, groupId, meta, duration) {
-  const args = { groupId, duration } as any
-  args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
-  await this.get('set_group_anonymous_ban', args)
-}
-
-Bot.prototype.setGroupAnonymousBanAsync = function (this: Bot, groupId, meta, duration) {
-  const args = { groupId, duration } as any
-  args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
-  return this.getAsync('set_group_anonymous_ban', args)
-}
-
-Bot.prototype.setFriendAddRequest = async function (this: Bot, flag: string, info: string | boolean = true) {
-  if (typeof info === 'string') {
-    await this.get('set_friend_add_request', { flag, approve: true, remark: info })
-  } else {
-    await this.get('set_friend_add_request', { flag, approve: info })
+  async sendGroupMsg(groupId, message, autoEscape = false) {
+    if (!message) return
+    const session = this.createSession('group', 'group', groupId, message)
+    if (this.app.bail(session, 'before-send', session)) return
+    const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message: session.message, autoEscape })
+    session.messageId = messageId
+    this.app.emit(session, 'send', session)
+    return messageId
   }
-}
 
-Bot.prototype.setFriendAddRequestAsync = function (this: Bot, flag: string, info: string | boolean = true) {
-  if (typeof info === 'string') {
-    return this.getAsync('set_friend_add_request', { flag, approve: true, remark: info })
-  } else {
-    return this.getAsync('set_friend_add_request', { flag, approve: info })
+  sendGroupMsgAsync(groupId, message, autoEscape = false) {
+    if (!message) return
+    const session = this.createSession('group', 'group', groupId, message)
+    if (this.app.bail(session, 'before-send', session)) return
+    return this.getAsync('send_group_msg', { groupId, message: session.message, autoEscape })
   }
-}
 
-Bot.prototype.setGroupAddRequest = async function (this: Bot, flag, subType, info = true) {
-  if (typeof info === 'string') {
-    await this.get('set_group_add_request', { flag, subType, approve: false, reason: info })
-  } else {
-    await this.get('set_group_add_request', { flag, subType, approve: info })
+  async sendPrivateMsg(userId, message, autoEscape = false) {
+    if (!message) return
+    const session = this.createSession('private', 'user', userId, message)
+    if (this.app.bail(session, 'before-send', session)) return
+    const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message: session.message, autoEscape })
+    session.messageId = messageId
+    this.app.emit(session, 'send', session)
+    return messageId
   }
-}
 
-Bot.prototype.setGroupAddRequestAsync = function (this: Bot, flag, subType, info = true) {
-  if (typeof info === 'string') {
-    return this.getAsync('set_group_add_request', { flag, subType, approve: false, reason: info })
-  } else {
-    return this.getAsync('set_group_add_request', { flag, subType, approve: info })
+  sendPrivateMsgAsync(userId, message, autoEscape = false) {
+    if (!message) return
+    const session = this.createSession('private', 'user', userId, message)
+    if (this.app.bail(session, 'before-send', session)) return
+    return this.getAsync('send_private_msg', { userId, message: session.message, autoEscape })
   }
-}
 
-Bot.prototype.getSelfId = async function getSelfId(this: Bot) {
-  const { userId } = await this.getLoginInfo()
-  return userId
-}
-
-Bot.prototype.getStatusCode = async function getStatusCode(this: Bot) {
-  if (!this.ready) return BotStatusCode.BOT_IDLE
-  try {
-    const data = await this.get<StatusInfo>('get_status')
-    return data.good ? BotStatusCode.GOOD : data.online ? BotStatusCode.SERVER_ERROR : BotStatusCode.BOT_OFFLINE
-  } catch {
-    return BotStatusCode.NET_ERROR
+  async setGroupAnonymousBan(groupId, meta, duration) {
+    const args = { groupId, duration } as any
+    args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
+    await this.get('set_group_anonymous_ban', args)
   }
-}
 
-Bot.prototype.getMemberMap = async function (this: Bot, groupId: number) {
-  const list = await this.getGroupMemberList(groupId)
-  return Object.fromEntries(list.map(info => [info.userId, info.card || info.nickname]))
+  setGroupAnonymousBanAsync(groupId, meta, duration) {
+    const args = { groupId, duration } as any
+    args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
+    return this.getAsync('set_group_anonymous_ban', args)
+  }
+
+  async setFriendAddRequest(flag: string, info: string | boolean = true) {
+    if (typeof info === 'string') {
+      await this.get('set_friend_add_request', { flag, approve: true, remark: info })
+    } else {
+      await this.get('set_friend_add_request', { flag, approve: info })
+    }
+  }
+
+  setFriendAddRequestAsync(flag: string, info: string | boolean = true) {
+    if (typeof info === 'string') {
+      return this.getAsync('set_friend_add_request', { flag, approve: true, remark: info })
+    } else {
+      return this.getAsync('set_friend_add_request', { flag, approve: info })
+    }
+  }
+
+  async setGroupAddRequest(flag, subType, info = true) {
+    if (typeof info === 'string') {
+      await this.get('set_group_add_request', { flag, subType, approve: false, reason: info })
+    } else {
+      await this.get('set_group_add_request', { flag, subType, approve: info })
+    }
+  }
+
+  setGroupAddRequestAsync(flag, subType, info = true) {
+    if (typeof info === 'string') {
+      return this.getAsync('set_group_add_request', { flag, subType, approve: false, reason: info })
+    } else {
+      return this.getAsync('set_group_add_request', { flag, subType, approve: info })
+    }
+  }
+
+  async getSelfIdgetSelfId() {
+    const { userId } = await this.getLoginInfo()
+    return userId
+  }
+
+  async getStatusCodegetStatusCode() {
+    if (!this.ready) return BotStatusCode.BOT_IDLE
+    try {
+      const data = await this.get<StatusInfo>('get_status')
+      return data.good ? BotStatusCode.GOOD : data.online ? BotStatusCode.SERVER_ERROR : BotStatusCode.BOT_OFFLINE
+    } catch {
+      return BotStatusCode.NET_ERROR
+    }
+  }
+
+  async getMemberMap(groupId: number) {
+    const list = await this.getGroupMemberList(groupId)
+    return Object.fromEntries(list.map(info => [info.userId, info.card || info.nickname]))
+  }
 }
 
 function defineSync(name: string, ...params: string[]) {
   const prop = camelCase(name.replace(/^_/, ''))
-  Bot.prototype[prop] = function (this: Bot, ...args: any[]) {
+  CQBot.prototype[prop] = function (this: CQBot, ...args: any[]) {
     return this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
   }
 }
 
 function defineAsync(name: string, ...params: string[]) {
   const prop = camelCase(name.replace(/^_/, ''))
-  Bot.prototype[prop] = async function (this: Bot, ...args: any[]) {
+  CQBot.prototype[prop] = async function (this: CQBot, ...args: any[]) {
     await this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
   }
-  Bot.prototype[prop + 'Async'] = async function (this: Bot, ...args: any[]) {
+  CQBot.prototype[prop + 'Async'] = async function (this: CQBot, ...args: any[]) {
     await this.getAsync(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
   }
 }
 
 function defineExtract(name: string, key: string, ...params: string[]) {
   const prop = camelCase(name.replace(/^_/, ''))
-  Bot.prototype[prop] = async function (this: Bot, ...args: any[]) {
+  CQBot.prototype[prop] = async function (this: CQBot, ...args: any[]) {
     const data = await this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
     return data[key]
   }

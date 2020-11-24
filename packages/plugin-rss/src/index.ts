@@ -14,7 +14,7 @@ Group.extend(() => ({
 }))
 
 extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Type, tables }) => {
-  tables.group.rss = new Type.List()
+  tables.group.rss = new DataType.Array()
 })
 
 export interface Config {

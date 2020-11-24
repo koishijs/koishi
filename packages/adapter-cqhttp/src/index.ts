@@ -5,12 +5,16 @@ import WsClient from './ws'
 import WsServer from './ws-reverse'
 import axios from 'axios'
 
+interface CqhttpOptions {
+  path?: string
+  secret?: string
+  preferSync?: boolean
+  quickOperation?: number
+}
+
 declare module 'koishi-core/dist/app' {
   interface AppOptions {
-    path?: string
-    secret?: string
-    preferSync?: boolean
-    quickOperation?: number
+    cqhttp?: CqhttpOptions
   }
 }
 
@@ -20,7 +24,9 @@ export * from './http'
 export * from './ws'
 export * from './ws-reverse'
 
-App.defaultConfig.quickOperation = 0.1 * Time.second
+App.defaultConfig.cqhttp = {
+  quickOperation: 0.1 * Time.second,
+}
 
 const logger = new Logger('server')
 
@@ -74,7 +80,7 @@ Session.prototype.$send = async function $send(this: Session, message: string, a
   let ctxId: number
   // eslint-disable-next-line no-cond-assign
   const ctxType = (ctxId = this.groupId) ? 'group' : (ctxId = this.userId) ? 'user' : null
-  if (this.$app.options.preferSync) {
+  if (this.$app.options.cqhttp?.preferSync) {
     ctxType === 'group'
       ? await this.$bot.sendGroupMsg(ctxId, message, autoEscape)
       : await this.$bot.sendPrivateMsg(ctxId, message, autoEscape)
@@ -86,6 +92,8 @@ Session.prototype.$send = async function $send(this: Session, message: string, a
     return this._response({ reply: session.message, autoEscape, atSender: false })
   }
   return ctxType === 'group'
+    // @ts-ignore FIXME
     ? this.$bot.sendGroupMsgAsync(ctxId, message, autoEscape)
+    // @ts-ignore FIXME
     : this.$bot.sendPrivateMsgAsync(ctxId, message, autoEscape)
 }
