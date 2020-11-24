@@ -1,4 +1,4 @@
-import { CQBot, CQResponse, toVersion } from './api'
+import { CQBot, CQResponse, toVersion } from './bot'
 import { Server } from 'koishi-core'
 import { Logger, camelCase } from 'koishi-utils'
 import type WebSocket from 'ws'
@@ -14,7 +14,7 @@ const logger = new Logger('server')
 
 let counter = 0
 
-export default class Channel {
+export default class SocketChannel {
   private _listeners: Record<number, (response: CQResponse) => void> = {}
 
   constructor(private server: Server) {}
@@ -35,7 +35,10 @@ export default class Channel {
       if ('post_type' in parsed) {
         logger.debug('receive %o', parsed)
         const meta = this.server.prepare(parsed)
-        if (meta) this.server.dispatch(meta)
+        if (meta) {
+          meta.kind = 'qq'
+          this.server.dispatch(meta)
+        }
       } else if (parsed.echo === -1) {
         bot.version = toVersion(camelCase(parsed.data))
         logger.debug('%d got version info', bot.selfId)

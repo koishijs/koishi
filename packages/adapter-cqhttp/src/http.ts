@@ -1,7 +1,6 @@
 import { App, Server } from 'koishi-core'
 import { Logger, defineProperty, snakeCase, assertProperty } from 'koishi-utils'
-import { CQBot, toVersion } from './api'
-import {} from 'koa-bodyparser'
+import { CQBot, toVersion } from './bot'
 import { createHmac } from 'crypto'
 import axios from 'axios'
 
@@ -66,6 +65,7 @@ export default class HttpServer extends Server<CQBot> {
       logger.debug('receive %o', ctx.request.body)
       const meta = this.prepare(ctx.request.body)
       if (!meta) return ctx.status = 403
+      meta.kind = 'qq'
 
       const { quickOperation } = cqhttp
       if (quickOperation > 0) {

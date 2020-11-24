@@ -1,4 +1,4 @@
-import { User, Group, Platform } from './database'
+import { User, Group, PlatformKind } from './database'
 import { ExecuteArgv, ParsedArgv, Command } from './command'
 import { isInteger, contain, observe, noop, Logger, defineProperty, Random } from 'koishi-utils'
 import { NextFunction } from './context'
@@ -34,6 +34,8 @@ export interface SubTypeMap {
 
 /** CQHTTP Meta Information */
 export interface Meta<P extends PostType = PostType> {
+  kind?: PlatformKind
+
   // type
   postType?: P
   messageType?: MetaTypeMap[P & 'message']
@@ -87,7 +89,6 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   $parsed?: string
   $reply?: MessageInfo
   $uuid = Random.uuid()
-  $type?: Platform
 
   private _delay?: number
   private _queued: Promise<void>
@@ -158,10 +159,10 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   }
 
   async $getGroup<K extends Group.Field = never>(id: number = this.groupId, fields: readonly K[] = [], assignee?: number) {
-    const group = await this.$app.database.getGroup(this.$type, id, fields)
+    const group = await this.$app.database.getGroup(this.kind, id, fields)
     if (group) return group
-    const fallback = Group.create(this.$type, id, assignee)
-    await this.$app.database.setGroup(this.$type, id, fallback)
+    const fallback = Group.create(this.kind, id, assignee)
+    await this.$app.database.setGroup(this.kind, id, fallback)
     return fallback
   }
 
@@ -191,16 +192,16 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
 
     // 绑定一个新的可观测群实例
     const data = await this.$getGroup(groupId, fieldArray)
-    const group = observe(data, diff => this.$app.database.setGroup(this.$type, groupId, diff), `group ${groupId}`)
+    const group = observe(data, diff => this.$app.database.setGroup(this.kind, groupId, diff), `group ${groupId}`)
     this.$app._groupCache.set(groupId, group)
     return this.$group = group
   }
 
   async $getUser<K extends User.Field = never>(id: number = this.userId, fields: readonly K[] = [], authority?: number) {
-    const user = await this.$app.database.getUser(this.$type, id, fields)
+    const user = await this.$app.database.getUser(this.kind, id, fields)
     if (user) return user
-    const fallback = User.create(this.$type, id, authority)
-    await this.$app.database.setUser(this.$type, id, fallback)
+    const fallback = User.create(this.kind, id, authority)
+    await this.$app.database.setUser(this.kind, id, fallback)
     return fallback
   }
 
@@ -229,7 +230,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
 
     // 确保匿名消息不会写回数据库
     if (this.anonymous) {
-      const user = observe(User.create(this.$type, userId, defaultAuthority), () => Promise.resolve())
+      const user = observe(User.create(this.kind, userId, defaultAuthority), () => Promise.resolve())
       return this.$user = user
     }
 
@@ -241,7 +242,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
 
     // 绑定一个新的可观测用户实例
     const data = await this.$getUser(userId, fieldArray, defaultAuthority)
-    const user = observe(data, diff => this.$app.database.setUser(this.$type, userId, diff), `user ${userId}`)
+    const user = observe(data, diff => this.$app.database.setUser(this.kind, userId, diff), `user ${userId}`)
     this.$app._userCache.set(userId, user)
     return this.$user = user
   }

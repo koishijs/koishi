@@ -1,6 +1,6 @@
 import { App, Server } from 'koishi-core'
 import { Logger, Time } from 'koishi-utils'
-import { CQBot } from './api'
+import { CQBot } from './bot'
 import type WebSocket from 'ws'
 import Channel from './channel'
 import ms from 'ms'

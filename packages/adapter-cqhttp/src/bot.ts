@@ -2,6 +2,12 @@ import { camelCase, Logger, snakeCase, capitalize } from 'koishi-utils'
 import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatusCode } from 'koishi-core'
 import type WebSocket from 'ws'
 
+declare module 'koishi-core/dist/database' {
+  interface Platforms {
+    qq: string
+  }
+}
+
 const logger = new Logger('bot')
 
 export class SenderError extends Error {
@@ -99,12 +105,6 @@ export interface HonorInfo {
 export interface CQBot {
   socket?: WebSocket
   _request?(action: string, params: Record<string, any>): Promise<CQResponse>
-  get<T = any>(action: string, params?: Record<string, any>, silent?: boolean): Promise<T>
-  getAsync(action: string, params?: Record<string, any>): Promise<void>
-  sendGroupMsgAsync(groupId: number, message: string, autoEscape?: boolean): Promise<void>
-  sendPrivateMsgAsync(userId: number, message: string, autoEscape?: boolean): Promise<void>
-  setGroupAnonymousBan(groupId: number, anonymous: string | object, duration?: number): Promise<void>
-  setGroupAnonymousBanAsync(groupId: number, anonymous: string | object, duration?: number): Promise<void>
   setFriendAddRequest(flag: string, approve?: boolean): Promise<void>
   setFriendAddRequest(flag: string, remark?: string): Promise<void>
   setFriendAddRequestAsync(flag: string, approve?: boolean): Promise<void>
@@ -168,7 +168,7 @@ export interface CQBot {
 }
 
 export class CQBot extends Bot {
-  async get(action, params = {}, silent = false) {
+  async get<T = any>(action: string, params = {}, silent = false): Promise<T> {
     logger.debug('[request] %s %o', action, params)
     const response = await this._request(action, snakeCase(params))
     logger.debug('[response] %o', response)
@@ -182,7 +182,7 @@ export class CQBot extends Bot {
     }
   }
 
-  async getAsync(action, params = {}) {
+  async getAsync(action: string, params = {}) {
     await this.get(action + '_async', params)
   }
 
