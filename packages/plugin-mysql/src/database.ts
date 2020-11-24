@@ -1,23 +1,58 @@
-import { createPool, Pool, PoolConfig, escape, escapeId, format, OkPacket } from 'mysql'
+import { createPool, Pool, PoolConfig, escape, escapeId, format, OkPacket, TypeCast } from 'mysql'
 import { TableType, Tables, App } from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { types } from 'util'
+
+declare module 'mysql' {
+  interface UntypedFieldInfo {
+    packet: UntypedFieldInfo
+  }
+}
 
 const logger = new Logger('mysql')
 
 export interface Config extends PoolConfig {}
 
-type MysqlColumn = string
+type MysqlTableMap = Record<string, Record<string, string | DataType>>
 
-type MysqlTableMap = {
-  [T in TableType]?: string[] & {
-    [C in keyof Tables[T]]?: MysqlColumn
+type FieldInfo = Parameters<Exclude<TypeCast, boolean>>[0]
+
+export interface DataType<T = any> {
+  definition: string
+  toString(value: T): string
+  valueOf(source: FieldInfo): T
+}
+
+export namespace DataType {
+  export class List implements DataType<string[]> {
+    constructor(public definition = 'TEXT') {}
+
+    toString(value: string[]) {
+      return value.join(',')
+    }
+
+    valueOf(field: FieldInfo) {
+      const source = field.string()
+      return source ? source.split(',') : []
+    }
+  }
+
+  export class Json implements DataType {
+    constructor(public definition = 'JSON') {}
+
+    toString(value: any) {
+      return JSON.stringify(value)
+    }
+
+    valueOf(field: FieldInfo) {
+      return JSON.parse(field.string())
+    }
   }
 }
 
 export default class MysqlDatabase {
   static tables: MysqlTableMap = {}
-  static listFields: string[] = []
+  static Type = DataType
 
   public pool: Pool
   public config: Config
@@ -30,14 +65,11 @@ export default class MysqlDatabase {
       database: 'koishi',
       charset: 'utf8mb4_general_ci',
       typeCast: (field, next) => {
-        const identifier = `${field['packet'].orgTable}.${field.name}`
-        if (MysqlDatabase.listFields.includes(identifier)) {
-          const source = field.string()
-          return source ? source.split(',') : []
+        const type = MysqlDatabase.tables[field.packet.orgTable]?.[field.packet.orgName]
+        if (typeof type === 'object') {
+          return type.valueOf(field)
         }
-        if (field.type === 'JSON') {
-          return JSON.parse(field.string())
-        } else if (field.type === 'BIT') {
+        if (field.type === 'BIT') {
           return Boolean(field.buffer()?.readUInt8(0))
         } else {
           return next()
@@ -80,11 +112,11 @@ export default class MysqlDatabase {
     return keys ? keys.map(key => key.includes('`') ? key : `\`${key}\``).join(',') : '*'
   }
 
-  formatValues = (prefix: string, data: object, keys: readonly string[]) => {
+  formatValues = (table: string, data: object, keys: readonly string[]) => {
     return keys.map((key) => {
       if (typeof data[key] !== 'object' || types.isDate(data[key])) return data[key]
-      const identifier = `${prefix}.${key}`
-      if (MysqlDatabase.listFields.includes(identifier)) return data[key].join(',')
+      const type = MysqlDatabase.tables[table]?.[key]
+      if (typeof type !== 'string') return type.toString(data[key])
       return JSON.stringify(data[key])
     })
   }

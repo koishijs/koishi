@@ -2,7 +2,6 @@ import { build, BuildFailure, BuildOptions, Message } from 'esbuild'
 import { readdir } from 'fs/promises'
 import { resolve } from 'path'
 import { cyan, yellow, red } from 'kleur'
-import { PackageJson } from './utils'
 
 const ignored = [
   'This call to "require" will not be bundled because the argument is not a string literal',
@@ -27,12 +26,7 @@ const displayWarning = display(yellow('warning:'))
 
   await Promise.all(workspaces.flatMap<BuildOptions>((name) => {
     const base = `${root}/${name}`
-    const meta: PackageJson = require(base + `/package.json`)
     const entryPoints = [base + '/src/index.ts']
-    const external = Object.keys({
-      ...meta.dependencies,
-      ...meta.peerDependencies,
-    })
 
     if (name === 'koishi') {
       entryPoints.push(base + '/src/cli.ts')
@@ -44,8 +38,8 @@ const displayWarning = display(yellow('warning:'))
       entryPoints.push(base + '/src/worker.ts')
     }
 
+    let filter = /^[/\w-]+$/
     const options: BuildOptions = {
-      external,
       entryPoints,
       bundle: true,
       platform: 'node',
@@ -54,18 +48,17 @@ const displayWarning = display(yellow('warning:'))
       outdir: `${root}/${name}/dist`,
       logLevel: 'silent',
       sourcemap: true,
+      plugins: [{
+        name: 'external library',
+        setup(build) {
+          build.onResolve({ filter }, () => ({ external: true }))
+        },
+      }],
     }
 
     if (name !== 'plugin-eval') return options
-    return [{
-      ...options,
-      plugins: [{
-        name: 'shared library',
-        setup(build) {
-          build.onResolve({ filter: /^\.\/transfer$/ }, () => ({ external: true }))
-        },
-      }],
-    }, {
+    filter = /^([/\w-]+|\.\/transfer)$/
+    return [options, {
       ...options,
       entryPoints: [base + '/src/internal.ts'],
       banner: '(function (host, exports, GLOBAL) {',

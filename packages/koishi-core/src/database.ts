@@ -111,12 +111,14 @@ type DatabaseExtension<T> =
   | DatabaseExtensionMethods<T extends new (...args: any[]) => infer I ? I : never>
 
 export function extendDatabase<T extends {}>(module: string | T, extension: DatabaseExtension<T>) {
+  let Database: any
   try {
-    const Database = typeof module === 'string' ? require(module).default : module
-    if (typeof extension === 'function') {
-      extension(Database)
-    } else {
-      Object.assign(Database.prototype, extension)
-    }
+    Database = typeof module === 'string' ? require(module).default : module
   } catch (error) {}
+
+  if (typeof extension === 'function') {
+    extension(Database)
+  } else {
+    Object.assign(Database.prototype, extension)
+  }
 }

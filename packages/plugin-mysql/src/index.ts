@@ -1,4 +1,4 @@
-import MysqlDatabase, { Config } from './database'
+import MysqlDatabase, { Config, DataType } from './database'
 import { User, Group, Database, extendDatabase, Context } from 'koishi-core'
 
 export * from './database'
@@ -71,7 +71,7 @@ extendDatabase(MysqlDatabase, {
 })
 
 extendDatabase(MysqlDatabase, (Database) => {
-  Object.assign(Database.tables.user = [
+  Database.tables.user = Object.assign<any, any>([
     'PRIMARY KEY (`id`) USING BTREE',
     'UNIQUE INDEX `name` (`name`) USING BTREE',
   ], {
@@ -79,11 +79,11 @@ extendDatabase(MysqlDatabase, (Database) => {
     name: `VARCHAR(50) NULL DEFAULT NULL COMMENT '昵称' COLLATE 'utf8mb4_general_ci'`,
     flag: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' COMMENT '状态标签'`,
     authority: `TINYINT(4) UNSIGNED NOT NULL DEFAULT '0' COMMENT '权限等级'`,
-    usage: `JSON NOT NULL COMMENT ''`,
-    timers: `JSON NOT NULL COMMENT ''`,
+    usage: new DataType.Json(),
+    timers: new DataType.Json(),
   })
 
-  Object.assign(Database.tables.group = [
+  Database.tables.group = Object.assign<any, any>([
     'PRIMARY KEY (`id`) USING BTREE',
   ], {
     id: `BIGINT(20) UNSIGNED NOT NULL COMMENT '群号'`,

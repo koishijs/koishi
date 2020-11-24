@@ -13,9 +13,8 @@ Group.extend(() => ({
   rss: [],
 }))
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields, tables }) => {
-  listFields.push('group.rss')
-  tables.group.rss = `TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Type, tables }) => {
+  tables.group.rss = new Type.List()
 })
 
 export interface Config {
