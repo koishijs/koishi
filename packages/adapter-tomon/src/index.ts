@@ -11,12 +11,6 @@ declare module 'koishi-core/dist/server' {
   }
 }
 
-declare module 'koishi-core/dist/session' {
-  interface Session {
-    channelId?: string
-  }
-}
-
 Server.types.tomon = class TomonServer extends Server<TomonBot> {
   constructor(app: App) {
     super(app, TomonBot)
@@ -28,6 +22,7 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
     bot.ready = true
     const selfId = bot.selfId = tomon.discriminator
     this.app.bots[selfId] = bot
+
     tomon.on('MESSAGE_CREATE', async ({ d }) => {
       const userId = d.author.discriminator
       if (userId === selfId) return
@@ -36,12 +31,13 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
         selfId,
         userId,
         kind: 'tomon',
-        message: d.content,
+        message: d.content || '', // TODO 处理表情包和图片
         postType: 'message',
         messageType: d['guild_id'] ? 'group' : 'private',
         groupId: d['guild_id'],
       }))
     })
+
     return new Promise<void>((resolve) => {
       tomon.on('NETWORK_CONNECTED', resolve)
     })

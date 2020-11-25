@@ -13,7 +13,7 @@ interface RepeatState {
   users: Record<number, number>
 }
 
-type RepeatHandler = (state: RepeatState, message: string, userId: number) => void | string
+type RepeatHandler = (state: RepeatState, message: string, userId: string) => void | string
 
 export interface RepeaterOptions {
   onRepeat?: RepeatHandler
@@ -23,9 +23,9 @@ export interface RepeaterOptions {
 export default function apply(ctx: Context, options: RepeaterOptions = {}) {
   ctx = ctx.group()
 
-  const states: Record<number, RepeatState> = {}
+  const states: Record<string, RepeatState> = {}
 
-  function getState(groupId: number) {
+  function getState(groupId: string) {
     return states[groupId] || (states[groupId] = {
       message: '',
       repeated: false,
@@ -50,7 +50,7 @@ export default function apply(ctx: Context, options: RepeaterOptions = {}) {
     const { message, groupId, userId } = session
 
     // never respond to messages from self
-    if (ctx.bots[userId]) return
+    if (ctx.app.bots[userId]) return
 
     const state = getState(groupId)
     const check = (handle: RepeatHandler) => {

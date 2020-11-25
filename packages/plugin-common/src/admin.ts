@@ -63,14 +63,14 @@ Command.prototype.adminUser = function (this: Command<never, never, { user?: str
       const qq = getTargetId(options.user)
       if (!qq) return '请指定正确的目标。'
       const { database } = session.$app
-      const data = await database.getUser(session.$type, qq, [...fields])
+      const data = await database.getUser(session.kind, '' + qq, [...fields])
       if (!data) return '未找到指定的用户。'
-      if (qq === session.userId) {
+      if ('' + qq === session.userId) {
         target = await session.$observeUser(fields)
       } else if (session.$user.authority <= data.authority) {
         return '权限不足。'
       } else {
-        target = observe(data, diff => database.setUser(session.$type, qq, diff), `user ${qq}`)
+        target = observe(data, diff => database.setUser(session.kind, '' + qq, diff), `user ${qq}`)
       }
     } else {
       target = await session.$observeUser(fields)
@@ -100,7 +100,7 @@ Command.prototype.adminGruop = function (this: Command<never, never, { group?: s
       if (!isInteger(options.group) || options.group <= 0) return '请指定正确的目标。'
       const data = await session.$getGroup(options.group, [...fields])
       if (!data) return '未找到指定的群。'
-      target = observe(data, diff => database.setGroup(session.$type, options.group, diff), `group ${options.group}`)
+      target = observe(data, diff => database.setGroup(session.kind, options.group, diff), `group ${options.group}`)
     } else if (session.messageType === 'group') {
       target = await session.$observeGroup(fields)
     } else {
@@ -203,8 +203,8 @@ export function apply(ctx: Context) {
   ctx.command('group.assign [bot]', '受理者账号', { authority: 4 })
     .groupFields(['assignee'])
     .adminGruop(({ session, target }, value) => {
-      const assignee = value ? getTargetId(value) : session.selfId
-      if (!isInteger(assignee) || assignee < 0) return '参数错误。'
+      const assignee = value ? '' + getTargetId(value) : session.selfId
+      if (!assignee) return '参数错误。'
       target.assignee = assignee
     })
 

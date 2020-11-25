@@ -1,4 +1,4 @@
-import { User, Group, PlatformKind } from './database'
+import { User, Group, Platforms, PlatformKind } from './database'
 import { ExecuteArgv, ParsedArgv, Command } from './command'
 import { isInteger, contain, observe, noop, Logger, defineProperty, Random } from 'koishi-utils'
 import { NextFunction } from './context'
@@ -80,9 +80,9 @@ export interface Meta<P extends PostType = PostType> {
 
 const logger = new Logger('session')
 
-export interface Session<U, G, O, P extends PostType = PostType> extends Meta<P> {}
+export interface Session<U, G, O, K, P extends PostType = PostType> extends Meta<P> {}
 
-export class Session<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}> {
+export class Session<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}, K extends PlatformKind = PlatformKind> {
   $user?: User.Observed<U>
   $group?: Group.Observed<G>
   $app?: App
@@ -111,7 +111,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   }
 
   get $bot() {
-    return this.$app.bots[this.selfId]
+    return this.$app.bots[this.selfId] as PlatformKind extends K ? Bot : Platforms[K]
   }
 
   get $username(): string {
@@ -346,12 +346,11 @@ export interface StatusInfo {
 }
 
 export interface MessageInfo {
-  time: number
   messageType: MessageType
   messageId: number
-  realId: number
+  content: string
+  timestamp: number
   sender: SenderInfo
-  message: string
 }
 
 /**

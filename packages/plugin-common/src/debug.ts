@@ -7,8 +7,8 @@ export interface DebugOptions {
   showGroupId?: boolean
   refreshUserName?: number
   refreshGroupName?: number
-  includeUsers?: number[]
-  includeGroups?: number[]
+  includeUsers?: string[]
+  includeGroups?: string[]
 }
 
 const cqTypes = {

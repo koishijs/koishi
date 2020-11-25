@@ -171,7 +171,7 @@ export class App extends Context {
     let capture: RegExpMatchArray, atSelf = false
     // eslint-disable-next-line no-cond-assign
     if (capture = message.match(/^\[CQ:reply,id=(-?\d+)\]\s*/)) {
-      session.$reply = await session.$bot.getMsg(capture[1]).catch(noop)
+      session.$reply = await session.$bot.getMessage(session.channelId, capture[1]).catch(noop)
       message = message.slice(capture[0].length)
       if (session.$reply) {
         const prefix = `[CQ:at,qq=${session.$reply.sender.userId}]`
@@ -287,7 +287,7 @@ export class App extends Context {
     const index = name.lastIndexOf('/')
     const command = this.app._commandMap[name.slice(index + 1).toLowerCase()]
     if (!command) return
-    message = message.slice(name.length).trim() + ($reply ? ' ' + $reply.message : '')
+    message = message.slice(name.length).trim() + ($reply ? ' ' + $reply.content : '')
     const result = command.parse(message, terminator)
     return { command, ...result }
   }

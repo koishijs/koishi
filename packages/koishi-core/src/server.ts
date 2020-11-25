@@ -63,11 +63,12 @@ export interface Bot extends BotOptions {
   [Bot.$send](session: Session, message: string): Promise<void>
   ready?: boolean
   version?: string
-  getMsg(messageId: string): Promise<MessageInfo>
   getSelfId(): Promise<string>
   getStatusCode(): Promise<BotStatusCode>
   getMemberMap(groupId: string): Promise<Record<string, string>>
   sendMessage(channelId: string, message: string): Promise<string>
+  getMessage(channelId: string, messageId: string): Promise<MessageInfo>
+  deleteMessage(channelId: string, messageId: string): Promise<void>
 }
 
 export class Bot {

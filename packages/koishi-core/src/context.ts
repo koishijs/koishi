@@ -1,7 +1,7 @@
 import { intersection, difference, Logger, defineProperty } from 'koishi-utils'
 import { Command, CommandConfig, ParsedArgv, ExecuteArgv } from './command'
 import { PostType, Session } from './session'
-import { User, Group } from './database'
+import { User, Group, PlatformKind } from './database'
 import { App } from './app'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
@@ -294,7 +294,7 @@ export class Context {
   }
 }
 
-export type RawSession<P extends PostType = PostType> = Session<never, never, never, P>
+export type RawSession<P extends PostType = PostType> = Session<never, never, never, PlatformKind, P>
 
 export interface EventMap {
   [Context.MIDDLEWARE_EVENT]: Middleware

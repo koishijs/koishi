@@ -1,10 +1,10 @@
 import { camelCase, Logger, snakeCase, capitalize } from 'koishi-utils'
-import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatusCode, Session } from 'koishi-core'
+import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatusCode, Session, MessageInfo } from 'koishi-core'
 import type WebSocket from 'ws'
 
 declare module 'koishi-core/dist/database' {
   interface Platforms {
-    qq: string
+    qq: CQBot
   }
 }
 
@@ -21,6 +21,16 @@ export class SenderError extends Error {
       url: { value: url },
     })
   }
+}
+
+export interface CQOriginalMessageInfo extends MessageInfo {
+  time: number
+  realId: number
+  message: string
+}
+
+export interface CQMessageInfo extends MessageInfo {
+  realId: number
 }
 
 export interface CQResponse {
@@ -125,6 +135,7 @@ export interface CQBot {
   setGroupLeaveAsync(groupId: string, isDismiss?: boolean): Promise<void>
   setGroupSpecialTitle(groupId: string, userId: string, specialTitle?: string, duration?: number): Promise<void>
   setGroupSpecialTitleAsync(groupId: string, userId: string, specialTitle?: string, duration?: number): Promise<void>
+  getMsg(messageId: string): Promise<CQOriginalMessageInfo>
   getLoginInfo(): Promise<AccountInfo>
   getStrangerInfo(userId: string, noCache?: boolean): Promise<StrangerInfo>
   getFriendList(): Promise<FriendInfo[]>
@@ -188,6 +199,15 @@ export class CQBot extends Bot {
     return ctxType === 'group'
       ? this.sendGroupMsg(ctxId, message)
       : this.sendPrivateMsg(ctxId, message)
+  }
+
+  async getMessage(channelId: string, messageId: string) {
+    const data = await this.getMsg(messageId)
+    data.timestamp = data.time
+    data.content = data.message
+    delete data.time
+    delete data.message
+    return data as CQMessageInfo
   }
 
   async get<T = any>(action: string, params = {}, silent = false): Promise<T> {

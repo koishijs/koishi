@@ -2,7 +2,7 @@ import { Context, getTargetId, Group, Session, User } from 'koishi-core'
 import { CQCode } from 'koishi-utils'
 
 export interface SenderConfig {
-  operator?: number
+  operator?: string
 }
 
 export default function apply(ctx: Context, config: SenderConfig = {}) {
@@ -44,7 +44,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       return message
     })
 
-  const interactions: Record<number, number> = {}
+  const interactions: Record<number, string> = {}
 
   config.operator && ctx.command('feedback <message...>', '发送反馈信息给作者')
     .userFields(['name', 'id'])
@@ -105,7 +105,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
         newSession.subType = options.type || 'other'
         delete newSession.$group
       } else if (options.group !== session.groupId) {
-        newSession.groupId = +options.group
+        newSession.groupId = options.group
         newSession.messageType = 'group'
         newSession.subType = options.type || 'normal'
         delete newSession.$group
@@ -113,7 +113,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       }
 
       if (options.user) {
-        const id = getTargetId(options.user)
+        const id = '' + getTargetId(options.user)
         if (!id) return '未指定目标。'
 
         newSession.userId = id
