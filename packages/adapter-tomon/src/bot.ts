@@ -1,4 +1,4 @@
-import { Bot, Session } from 'koishi-core'
+import { Bot } from 'koishi-core'
 import Tomon from 'tomon-sdk'
 
 declare module 'koishi-core/dist/database' {
@@ -10,13 +10,7 @@ declare module 'koishi-core/dist/database' {
 export class TomonBot extends Bot {
   tomon?: Tomon
 
-  async [Bot.$send](session: Session, message: string) {
-    if (!message) return
-    await this.send(session.channelId, message)
-  }
-
-  async send(channelId: string, content: string) {
-    if (!content) return
+  async sendMessage(channelId: string, content: string) {
     return this.tomon.api.route(`/channels/${channelId}/messages`).post({ data: { content } })
   }
 }

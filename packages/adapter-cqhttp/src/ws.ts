@@ -2,7 +2,7 @@ import { App, Server, AppStatus } from 'koishi-core'
 import { Logger, Time } from 'koishi-utils'
 import { CQBot } from './bot'
 import type WebSocket from 'ws'
-import Channel from './channel'
+import Socket from './socket'
 import ms from 'ms'
 
 declare module 'koishi-core/dist/app' {
@@ -18,7 +18,7 @@ const logger = new Logger('server')
 
 export default class WsClient extends Server<CQBot> {
   private _retryCount = 0
-  private _channel = new Channel(this)
+  private _channel = new Socket(this)
   private _sockets = new Set<WebSocket>()
 
   constructor(app: App) {

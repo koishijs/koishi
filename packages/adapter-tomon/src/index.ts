@@ -26,10 +26,10 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
     const tomon = bot.tomon = new Tomon()
     await tomon.start(bot.token)
     bot.ready = true
-    const selfId = bot.selfId = +tomon.discriminator
+    const selfId = bot.selfId = tomon.discriminator
     this.app.bots[selfId] = bot
     tomon.on('MESSAGE_CREATE', async ({ d }) => {
-      const userId = +d.author.discriminator
+      const userId = d.author.discriminator
       if (userId === selfId) return
       this.dispatch(new Session(this.app, {
         ...camelize(d),
@@ -41,6 +41,9 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
         messageType: d['guild_id'] ? 'group' : 'private',
         groupId: d['guild_id'],
       }))
+    })
+    return new Promise<void>((resolve) => {
+      tomon.on('NETWORK_CONNECTED', resolve)
     })
   }
 

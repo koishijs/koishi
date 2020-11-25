@@ -1,6 +1,7 @@
-import { App, Server, Session } from 'koishi-core'
-import { Logger, defineProperty, snakeCase, assertProperty, camelCase } from 'koishi-utils'
+import { App, Server } from 'koishi-core'
+import { Logger, defineProperty, snakeCase, assertProperty } from 'koishi-utils'
 import { CQBot, toVersion } from './bot'
+import { createSession } from './socket'
 import { createHmac } from 'crypto'
 import axios from 'axios'
 
@@ -63,8 +64,7 @@ export default class HttpServer extends Server<CQBot> {
       }
 
       logger.debug('receive %o', ctx.request.body)
-      const meta = new Session(this.app, camelCase(ctx.request.body))
-      meta.kind = 'qq'
+      const session = createSession(this, ctx.request.body)
 
       const { quickOperation } = cqhttp
       if (quickOperation > 0) {
@@ -75,21 +75,21 @@ export default class HttpServer extends Server<CQBot> {
         })
 
         // use defineProperty to avoid meta duplication
-        defineProperty(meta, '$response', (data: any) => {
-          meta._response = null
+        defineProperty(session, '$response', (data: any) => {
+          session._response = null
           clearTimeout(timer)
           ctx.res.write(JSON.stringify(snakeCase(data)))
           ctx.res.end()
         })
 
         const timer = setTimeout(() => {
-          meta._response = null
+          session._response = null
           ctx.res.end()
         }, quickOperation)
       }
 
       // dispatch events
-      this.dispatch(meta)
+      this.dispatch(session)
     })
 
     await Promise.all(this.bots.map(bot => this._listen(bot)))

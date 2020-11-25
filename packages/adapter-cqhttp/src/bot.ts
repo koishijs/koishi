@@ -11,7 +11,7 @@ declare module 'koishi-core/dist/database' {
 const logger = new Logger('bot')
 
 export class SenderError extends Error {
-  constructor(args: Record<string, any>, url: string, retcode: number, selfId: number) {
+  constructor(args: Record<string, any>, url: string, retcode: number, selfId: string) {
     super(`Error when trying to send to ${url}, args: ${JSON.stringify(args)}, retcode: ${retcode}`)
     Object.defineProperties(this, {
       name: { value: 'SenderError' },
@@ -31,7 +31,7 @@ export interface CQResponse {
 }
 
 interface MessageResponse {
-  messageId: number
+  messageId: string
 }
 
 export type RecordFormat = 'mp3' | 'amr' | 'wma' | 'm4a' | 'spx' | 'ogg' | 'wav' | 'flac'
@@ -105,40 +105,34 @@ export interface HonorInfo {
 export interface CQBot {
   socket?: WebSocket
   _request?(action: string, params: Record<string, any>): Promise<CQResponse>
-  setFriendAddRequest(flag: string, approve?: boolean): Promise<void>
-  setFriendAddRequest(flag: string, remark?: string): Promise<void>
-  setFriendAddRequestAsync(flag: string, approve?: boolean): Promise<void>
-  setFriendAddRequestAsync(flag: string, remark?: string): Promise<void>
-  setGroupAddRequest(flag: string, subType: 'add' | 'invite', approve?: string | boolean): Promise<void>
-  setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', approve?: string | boolean): Promise<void>
-  deleteMsg(messageId: number): Promise<void>
-  deleteMsgAsync(messageId: number): Promise<void>
-  sendLike(userId: number, times?: number): Promise<void>
-  sendLikeAsync(userId: number, times?: number): Promise<void>
-  setGroupKick(groupId: number, userId: number, rejectAddRequest?: boolean): Promise<void>
-  setGroupKickAsync(groupId: number, userId: number, rejectAddRequest?: boolean): Promise<void>
-  setGroupBan(groupId: number, userId: number, duration?: number): Promise<void>
-  setGroupBanAsync(groupId: number, userId: number, duration?: number): Promise<void>
-  setGroupWholeBan(groupId: number, enable?: boolean): Promise<void>
-  setGroupWholeBanAsync(groupId: number, enable?: boolean): Promise<void>
-  setGroupAdmin(groupId: number, userId: number, enable?: boolean): Promise<void>
-  setGroupAdminAsync(groupId: number, userId: number, enable?: boolean): Promise<void>
-  setGroupAnonymous(groupId: number, enable?: boolean): Promise<void>
-  setGroupAnonymousAsync(groupId: number, enable?: boolean): Promise<void>
-  setGroupCard(groupId: number, userId: number, card?: string): Promise<void>
-  setGroupCardAsync(groupId: number, userId: number, card?: string): Promise<void>
-  setGroupLeave(groupId: number, isDismiss?: boolean): Promise<void>
-  setGroupLeaveAsync(groupId: number, isDismiss?: boolean): Promise<void>
-  setGroupSpecialTitle(groupId: number, userId: number, specialTitle?: string, duration?: number): Promise<void>
-  setGroupSpecialTitleAsync(groupId: number, userId: number, specialTitle?: string, duration?: number): Promise<void>
+  deleteMsg(messageId: string): Promise<void>
+  deleteMsgAsync(messageId: string): Promise<void>
+  sendLike(userId: string, times?: number): Promise<void>
+  sendLikeAsync(userId: string, times?: number): Promise<void>
+  setGroupKick(groupId: string, userId: string, rejectAddRequest?: boolean): Promise<void>
+  setGroupKickAsync(groupId: string, userId: string, rejectAddRequest?: boolean): Promise<void>
+  setGroupBan(groupId: string, userId: string, duration?: number): Promise<void>
+  setGroupBanAsync(groupId: string, userId: string, duration?: number): Promise<void>
+  setGroupWholeBan(groupId: string, enable?: boolean): Promise<void>
+  setGroupWholeBanAsync(groupId: string, enable?: boolean): Promise<void>
+  setGroupAdmin(groupId: string, userId: string, enable?: boolean): Promise<void>
+  setGroupAdminAsync(groupId: string, userId: string, enable?: boolean): Promise<void>
+  setGroupAnonymous(groupId: string, enable?: boolean): Promise<void>
+  setGroupAnonymousAsync(groupId: string, enable?: boolean): Promise<void>
+  setGroupCard(groupId: string, userId: string, card?: string): Promise<void>
+  setGroupCardAsync(groupId: string, userId: string, card?: string): Promise<void>
+  setGroupLeave(groupId: string, isDismiss?: boolean): Promise<void>
+  setGroupLeaveAsync(groupId: string, isDismiss?: boolean): Promise<void>
+  setGroupSpecialTitle(groupId: string, userId: string, specialTitle?: string, duration?: number): Promise<void>
+  setGroupSpecialTitleAsync(groupId: string, userId: string, specialTitle?: string, duration?: number): Promise<void>
   getLoginInfo(): Promise<AccountInfo>
-  getStrangerInfo(userId: number, noCache?: boolean): Promise<StrangerInfo>
+  getStrangerInfo(userId: string, noCache?: boolean): Promise<StrangerInfo>
   getFriendList(): Promise<FriendInfo[]>
   getGroupList(): Promise<ListedGroupInfo[]>
-  getGroupInfo(groupId: number, noCache?: boolean): Promise<GroupInfo>
-  getGroupMemberInfo(groupId: number, userId: number, noCache?: boolean): Promise<GroupMemberInfo>
-  getGroupMemberList(groupId: number): Promise<GroupMemberInfo[]>
-  getGroupHonorInfo(groupId: number, type: HonorType): Promise<HonorInfo>
+  getGroupInfo(groupId: string, noCache?: boolean): Promise<GroupInfo>
+  getGroupMemberInfo(groupId: string, userId: string, noCache?: boolean): Promise<GroupMemberInfo>
+  getGroupMemberList(groupId: string): Promise<GroupMemberInfo[]>
+  getGroupHonorInfo(groupId: string, type: HonorType): Promise<HonorInfo>
   getCookies(domain?: string): Promise<string>
   getCsrfToken(): Promise<number>
   getCredentials(domain?: string): Promise<Credentials>
@@ -153,40 +147,47 @@ export interface CQBot {
   cleanPluginLog(): Promise<void>
   cleanPluginLogAsync(): Promise<void>
   getVipInfo(): Promise<VipInfo>
-  getGroupNotice(groupId: number): Promise<GroupNotice[]>
-  sendGroupNotice(groupId: number, title: string, content: string): Promise<void>
-  sendGroupNoticeAsync(groupId: number, title: string, content: string): Promise<void>
+  getGroupNotice(groupId: string): Promise<GroupNotice[]>
+  sendGroupNotice(groupId: string, title: string, content: string): Promise<void>
+  sendGroupNoticeAsync(groupId: string, title: string, content: string): Promise<void>
   setRestart(cleanLog?: boolean, cleanCache?: boolean, cleanEvent?: boolean): Promise<void>
-  setGroupName(groupId: number, name: string): Promise<void>
-  setGroupNameAsync(groupId: number, name: string): Promise<void>
-  setGroupPortrait(groupId: number, file: string, cache?: boolean): Promise<void>
-  setGroupPortraitAsync(groupId: number, file: string, cache?: boolean): Promise<void>
-  getGroupMsg(messageId: number): Promise<GroupMessage>
-  getForwardMsg(messageId: number): Promise<ForwardMessage>
-  sendGroupForwardMsg(groupId: number, messages: readonly CQNode[]): Promise<void>
-  sendGroupForwardMsgAsync(groupId: number, messages: readonly CQNode[]): Promise<void>
+  setGroupName(groupId: string, name: string): Promise<void>
+  setGroupNameAsync(groupId: string, name: string): Promise<void>
+  setGroupPortrait(groupId: string, file: string, cache?: boolean): Promise<void>
+  setGroupPortraitAsync(groupId: string, file: string, cache?: boolean): Promise<void>
+  getGroupMsg(messageId: string): Promise<GroupMessage>
+  getForwardMsg(messageId: string): Promise<ForwardMessage>
+  sendGroupForwardMsg(groupId: string, messages: readonly CQNode[]): Promise<void>
+  sendGroupForwardMsgAsync(groupId: string, messages: readonly CQNode[]): Promise<void>
 }
 
 export class CQBot extends Bot {
   async [Bot.$send](meta: Session, message: string, autoEscape = false) {
     if (!message) return
-    let ctxId: number
-    // eslint-disable-next-line no-cond-assign
-    const ctxType = (ctxId = meta.groupId) ? 'group' : (ctxId = meta.userId) ? 'user' : null
     if (this.app.options.cqhttp?.preferSync) {
-      ctxType === 'group'
-        ? await this.sendGroupMsg(ctxId, message, autoEscape)
-        : await this.sendPrivateMsg(ctxId, message, autoEscape)
+      await this.sendMessage(meta.channelId, message)
       return
     }
+
+    let ctxId: string
+    // eslint-disable-next-line no-cond-assign
+    const ctxType = (ctxId = meta.groupId) ? 'group' : (ctxId = meta.userId) ? 'user' : null
     if (meta._response) {
       const session = this.createSession(meta.messageType, ctxType, ctxId, message)
       if (this.app.bail(session, 'before-send', session)) return
       return session._response({ reply: session.message, autoEscape, atSender: false })
     }
+
     return ctxType === 'group'
       ? this.sendGroupMsgAsync(ctxId, message, autoEscape)
       : this.sendPrivateMsgAsync(ctxId, message, autoEscape)
+  }
+
+  sendMessage(channelId: string, message: string) {
+    const [ctxType, ctxId] = channelId.split(':')
+    return ctxType === 'group'
+      ? this.sendGroupMsg(ctxId, message)
+      : this.sendPrivateMsg(ctxId, message)
   }
 
   async get<T = any>(action: string, params = {}, silent = false): Promise<T> {
@@ -207,7 +208,7 @@ export class CQBot extends Bot {
     await this.get(action + '_async', params)
   }
 
-  async sendGroupMsg(groupId, message, autoEscape = false) {
+  async sendGroupMsg(groupId: string, message: string, autoEscape = false) {
     if (!message) return
     const session = this.createSession('group', 'group', groupId, message)
     if (this.app.bail(session, 'before-send', session)) return
@@ -217,14 +218,14 @@ export class CQBot extends Bot {
     return messageId
   }
 
-  sendGroupMsgAsync(groupId, message, autoEscape = false) {
+  sendGroupMsgAsync(groupId: string, message: string, autoEscape = false) {
     if (!message) return
     const session = this.createSession('group', 'group', groupId, message)
     if (this.app.bail(session, 'before-send', session)) return
     return this.getAsync('send_group_msg', { groupId, message: session.message, autoEscape })
   }
 
-  async sendPrivateMsg(userId, message, autoEscape = false) {
+  async sendPrivateMsg(userId: string, message: string, autoEscape = false) {
     if (!message) return
     const session = this.createSession('private', 'user', userId, message)
     if (this.app.bail(session, 'before-send', session)) return
@@ -234,25 +235,27 @@ export class CQBot extends Bot {
     return messageId
   }
 
-  sendPrivateMsgAsync(userId, message, autoEscape = false) {
+  sendPrivateMsgAsync(userId: string, message: string, autoEscape = false) {
     if (!message) return
     const session = this.createSession('private', 'user', userId, message)
     if (this.app.bail(session, 'before-send', session)) return
     return this.getAsync('send_private_msg', { userId, message: session.message, autoEscape })
   }
 
-  async setGroupAnonymousBan(groupId, meta, duration) {
+  async setGroupAnonymousBan(groupId: string, meta: string | object, duration?: number) {
     const args = { groupId, duration } as any
     args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
     await this.get('set_group_anonymous_ban', args)
   }
 
-  setGroupAnonymousBanAsync(groupId, meta, duration) {
+  setGroupAnonymousBanAsync(groupId: string, meta: string | object, duration?: number) {
     const args = { groupId, duration } as any
     args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
     return this.getAsync('set_group_anonymous_ban', args)
   }
 
+  setFriendAddRequest(flag: string, approve?: boolean): Promise<void>
+  setFriendAddRequest(flag: string, remark?: string): Promise<void>
   async setFriendAddRequest(flag: string, info: string | boolean = true) {
     if (typeof info === 'string') {
       await this.get('set_friend_add_request', { flag, approve: true, remark: info })
@@ -261,6 +264,8 @@ export class CQBot extends Bot {
     }
   }
 
+  setFriendAddRequestAsync(flag: string, approve?: boolean): Promise<void>
+  setFriendAddRequestAsync(flag: string, remark?: string): Promise<void>
   setFriendAddRequestAsync(flag: string, info: string | boolean = true) {
     if (typeof info === 'string') {
       return this.getAsync('set_friend_add_request', { flag, approve: true, remark: info })
@@ -269,7 +274,7 @@ export class CQBot extends Bot {
     }
   }
 
-  async setGroupAddRequest(flag, subType, info = true) {
+  async setGroupAddRequest(flag: string, subType: 'add' | 'invite', info?: string | boolean) {
     if (typeof info === 'string') {
       await this.get('set_group_add_request', { flag, subType, approve: false, reason: info })
     } else {
@@ -277,7 +282,7 @@ export class CQBot extends Bot {
     }
   }
 
-  setGroupAddRequestAsync(flag, subType, info = true) {
+  setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', info?: string | boolean) {
     if (typeof info === 'string') {
       return this.getAsync('set_group_add_request', { flag, subType, approve: false, reason: info })
     } else {
@@ -285,12 +290,12 @@ export class CQBot extends Bot {
     }
   }
 
-  async getSelfIdgetSelfId() {
+  async getSelfId() {
     const { userId } = await this.getLoginInfo()
     return userId
   }
 
-  async getStatusCodegetStatusCode() {
+  async getStatusCode() {
     if (!this.ready) return BotStatusCode.BOT_IDLE
     try {
       const data = await this.get<StatusInfo>('get_status')
@@ -300,7 +305,7 @@ export class CQBot extends Bot {
     }
   }
 
-  async getMemberMap(groupId: number) {
+  async getMemberMap(groupId: string) {
     const list = await this.getGroupMemberList(groupId)
     return Object.fromEntries(list.map(info => [info.userId, info.card || info.nickname]))
   }

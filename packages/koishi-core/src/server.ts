@@ -4,7 +4,7 @@ import { App, AppStatus } from './app'
 
 export interface BotOptions {
   type?: string
-  selfId?: number
+  selfId?: string
 }
 
 type BotStatic<T extends Bot = Bot> = new (app: App, options: BotOptions) => T
@@ -12,7 +12,6 @@ type BotStatic<T extends Bot = Bot> = new (app: App, options: BotOptions) => T
 export abstract class Server<T extends Bot = Bot> {
   static types: Record<string, new (app: App) => Server> = {}
 
-  public id: string
   public bots: T[] = []
 
   abstract listen(): Promise<void>
@@ -64,12 +63,11 @@ export interface Bot extends BotOptions {
   [Bot.$send](session: Session, message: string): Promise<void>
   ready?: boolean
   version?: string
-  getMsg(messageId: number): Promise<MessageInfo>
-  getSelfId(): Promise<number>
+  getMsg(messageId: string): Promise<MessageInfo>
+  getSelfId(): Promise<string>
   getStatusCode(): Promise<BotStatusCode>
-  getMemberMap(groupId: number): Promise<Record<number, string>>
-  sendGroupMsg(groupId: number, message: string, autoEscape?: boolean): Promise<number>
-  sendPrivateMsg(userId: number, message: string, autoEscape?: boolean): Promise<number>
+  getMemberMap(groupId: string): Promise<Record<string, string>>
+  sendMessage(channelId: string, message: string): Promise<string>
 }
 
 export class Bot {
@@ -79,7 +77,7 @@ export class Bot {
     Object.assign(this, options)
   }
 
-  createSession(messageType: MessageType, ctxType: 'group' | 'user', ctxId: number, message: string) {
+  createSession(messageType: MessageType, ctxType: 'group' | 'user', ctxId: string, message: string) {
     return new Session(this.app, {
       message,
       messageType,
@@ -90,12 +88,12 @@ export class Bot {
     })
   }
 
-  async broadcast(groups: number[], message: string, delay = this.app.options.broadcastDelay) {
-    const messageIds: number[] = []
-    for (let index = 0; index < groups.length; index++) {
+  async broadcast(channels: string[], message: string, delay = this.app.options.broadcastDelay) {
+    const messageIds: string[] = []
+    for (let index = 0; index < channels.length; index++) {
       if (index && delay) await sleep(delay)
       try {
-        messageIds.push(await this.sendGroupMsg(groups[index], message))
+        messageIds.push(await this.sendMessage(channels[index], message))
       } catch (error) {
         this.app.logger('bot').warn(error)
       }

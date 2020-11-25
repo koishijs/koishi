@@ -19,7 +19,7 @@ declare module 'koishi-core/dist/app' {
 }
 
 export * from './bot'
-export * from './channel'
+export * from './socket'
 export * from './http'
 export * from './ws'
 export * from './ws-reverse'

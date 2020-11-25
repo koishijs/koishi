@@ -52,8 +52,8 @@ export class App extends Context {
   _sessions: Record<string, Session> = {}
   _commandMap: Record<string, Command>
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]>
-  _userCache: LruCache<number, Observed<Partial<User>, Promise<void>>>
-  _groupCache: LruCache<number, Observed<Partial<Group>, Promise<void>>>
+  _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
+  _groupCache: LruCache<string, Observed<Partial<Group>, Promise<void>>>
 
   private _nameRE: RegExp
   private _prefixRE: RegExp
@@ -78,10 +78,7 @@ export class App extends Context {
     defineProperty(this, '_hooks', {})
     defineProperty(this, '_commands', [])
     defineProperty(this, '_commandMap', {})
-    defineProperty(this, '_userCache', new LruCache({
-      max: options.userCacheLength,
-      maxAge: options.userCacheAge,
-    }))
+    defineProperty(this, '_userCache', {})
     defineProperty(this, '_groupCache', new LruCache({
       max: options.groupCacheLength,
       maxAge: options.groupCacheAge,
@@ -174,7 +171,7 @@ export class App extends Context {
     let capture: RegExpMatchArray, atSelf = false
     // eslint-disable-next-line no-cond-assign
     if (capture = message.match(/^\[CQ:reply,id=(-?\d+)\]\s*/)) {
-      session.$reply = await session.$bot.getMsg(+capture[1]).catch(noop)
+      session.$reply = await session.$bot.getMsg(capture[1]).catch(noop)
       message = message.slice(capture[0].length)
       if (session.$reply) {
         const prefix = `[CQ:at,qq=${session.$reply.sender.userId}]`

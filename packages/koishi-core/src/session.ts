@@ -4,6 +4,7 @@ import { isInteger, contain, observe, noop, Logger, defineProperty, Random } fro
 import { NextFunction } from './context'
 import { App } from './app'
 import { Bot } from './server'
+import LruCache from 'lru-cache'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
 export type MessageType = 'private' | 'group'
@@ -47,13 +48,14 @@ export interface Meta<P extends PostType = PostType> {
   subType?: SubTypeMap[P]
 
   // basic properties
-  selfId?: number
-  userId?: number
-  groupId?: number
+  channelId?: string
+  selfId?: string
+  userId?: string
+  groupId?: string
   time?: number
 
   // message event
-  messageId?: number
+  messageId?: string
   message?: string
   rawMessage?: string
   font?: number
@@ -123,8 +125,12 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
           : idString
   }
 
-  $send(message: string) {
-    return this.$bot[Bot.$send](this, message)
+  async $send(message: string) {
+    if (this.$bot[Bot.$send]) {
+      return this.$bot[Bot.$send](this, message)
+    }
+    if (!message) return
+    await this.$bot.sendMessage(this.channelId, message)
   }
 
   $cancelQueued(delay = 0) {
@@ -154,7 +160,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     }))
   }
 
-  async $getGroup<K extends Group.Field = never>(id: number = this.groupId, fields: readonly K[] = [], assignee?: number) {
+  async $getGroup<K extends Group.Field = never>(id: string = this.groupId, fields: readonly K[] = [], assignee?: string) {
     const group = await this.$app.database.getGroup(this.kind, id, fields)
     if (group) return group
     const fallback = Group.create(this.kind, id, assignee)
@@ -165,8 +171,9 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   /** 在元数据上绑定一个可观测群实例 */
   async $observeGroup<T extends Group.Field = never>(fields: Iterable<T> = []): Promise<Group.Observed<T | G>> {
     const fieldSet = new Set<Group.Field>(fields)
-    const { groupId, $argv, $group } = this
+    const { kind, groupId, $argv, $group } = this
     if ($argv) Command.collect($argv, 'group', fieldSet)
+    const identifier = `${kind}:${groupId}`
 
     // 对于已经绑定可观测群的，判断字段是否需要自动补充
     if ($group) {
@@ -175,25 +182,25 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
       }
       if (fieldSet.size) {
         const data = await this.$getGroup(groupId, [...fieldSet])
-        this.$app._groupCache.set(groupId, $group._merge(data))
+        this.$app._groupCache.set(identifier, $group._merge(data))
       }
       return $group as any
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    const cache = this.$app._groupCache.get(groupId)
+    const cache = this.$app._groupCache.get(identifier)
     const fieldArray = [...fieldSet]
     const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
     if (hasActiveCache) return this.$group = cache as any
 
     // 绑定一个新的可观测群实例
     const data = await this.$getGroup(groupId, fieldArray)
-    const group = observe(data, diff => this.$app.database.setGroup(this.kind, groupId, diff), `group ${groupId}`)
-    this.$app._groupCache.set(groupId, group)
+    const group = observe(data, diff => this.$app.database.setGroup(kind, groupId, diff), `group ${groupId}`)
+    this.$app._groupCache.set(identifier, group)
     return this.$group = group
   }
 
-  async $getUser<K extends User.Field = never>(id: number = this.userId, fields: readonly K[] = [], authority?: number) {
+  async $getUser<K extends User.Field = never>(id: string = this.userId, fields: readonly K[] = [], authority?: number) {
     const user = await this.$app.database.getUser(this.kind, id, fields)
     if (user) return user
     const fallback = User.create(this.kind, id, authority)
@@ -207,6 +214,14 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     const { userId, $argv, $user } = this
     if ($argv) Command.collect($argv, 'user', fieldSet)
 
+    let userCache = this.$app._userCache[this.kind]
+    if (!userCache) {
+      userCache = this.$app._userCache[this.kind] = new LruCache({
+        max: this.$app.options.userCacheLength,
+        maxAge: this.$app.options.userCacheAge,
+      })
+    }
+
     // 对于已经绑定可观测用户的，判断字段是否需要自动补充
     if ($user && !this.anonymous) {
       for (const key in $user) {
@@ -214,7 +229,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
       }
       if (fieldSet.size) {
         const data = await this.$getUser(userId, [...fieldSet])
-        this.$app._userCache.set(userId, $user._merge(data) as any)
+        userCache.set(userId, $user._merge(data) as any)
       }
     }
 
@@ -231,7 +246,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    const cache = this.$app._userCache.get(userId)
+    const cache = userCache.get(userId)
     const fieldArray = [...fieldSet]
     const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
     if (hasActiveCache) return this.$user = cache as any
@@ -239,7 +254,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     // 绑定一个新的可观测用户实例
     const data = await this.$getUser(userId, fieldArray, defaultAuthority)
     const user = observe(data, diff => this.$app.database.setUser(this.kind, userId, diff), `user ${userId}`)
-    this.$app._userCache.set(userId, user)
+    userCache.set(userId, user)
     return this.$user = user
   }
 
@@ -302,7 +317,7 @@ export interface FileInfo {
 }
 
 export interface AccountInfo {
-  userId: number
+  userId: string
   nickname: string
 }
 

@@ -11,7 +11,7 @@ export type PluginObject<T, U = any> = { name?: string, apply: PluginFunction<T,
 export type Plugin<T, U = any> = PluginFunction<T, U> | PluginObject<T, U>
 export type Disposable = () => void
 
-interface ScopeSet extends Array<number> {
+interface ScopeSet extends Array<string> {
   positive?: boolean
 }
 
@@ -21,14 +21,14 @@ interface Scope {
   private: boolean
 }
 
-function joinScope(base: ScopeSet, ids: number[]) {
+function joinScope(base: ScopeSet, ids: readonly string[]) {
   const result: ScopeSet = !ids.length ? [...base]
     : base.positive ? intersection(ids, base) : difference(ids, base)
   result.positive = !ids.length ? base.positive : true
   return result
 }
 
-function matchScope(base: ScopeSet, id: number) {
+function matchScope(base: ScopeSet, id: string) {
   // @ts-ignore
   return !id || !(base.positive ^ base.includes(id))
 }
@@ -61,20 +61,20 @@ export class Context {
     return new Logger(name)
   }
 
-  group(...ids: number[]) {
+  group(...ids: string[]) {
     const scope = { ...this.scope }
     scope.groups = joinScope(scope.groups, ids)
     scope.private = false
     return new Context(scope, this.app)
   }
 
-  user(...ids: number[]) {
+  user(...ids: string[]) {
     const scope = { ...this.scope }
     scope.users = joinScope(scope.users, ids)
     return new Context(scope, this.app)
   }
 
-  private(...ids: number[]) {
+  private(...ids: string[]) {
     const scope = { ...this.scope }
     scope.users = joinScope(scope.users, ids)
     scope.groups = []
@@ -263,16 +263,16 @@ export class Context {
     return parent
   }
 
-  async broadcast(message: string, forced?: boolean): Promise<number[]>
-  async broadcast(groups: readonly number[], message: string, forced?: boolean): Promise<number[]>
-  async broadcast(...args: [string, boolean?] | [readonly number[], string, boolean?]) {
-    let groups: number[]
+  async broadcast(message: string, forced?: boolean): Promise<string[]>
+  async broadcast(groups: readonly string[], message: string, forced?: boolean): Promise<string[]>
+  async broadcast(...args: [string, boolean?] | [readonly string[], string, boolean?]) {
+    let groups: string[]
     if (Array.isArray(args[0])) groups = args.shift() as any
     const [message, forced] = args as [string, boolean]
     if (!message) return []
 
     const data = await this.database.getAllGroups(['id', 'assignee', 'flag'])
-    const assignMap: Record<number, number[]> = {}
+    const assignMap: Record<string, string[]> = {}
     for (const { id, assignee, flag } of data) {
       if (groups && !groups.includes(id)) continue
       if (!forced && (flag & Group.Flag.silent)) continue

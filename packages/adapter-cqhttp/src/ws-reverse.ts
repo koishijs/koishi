@@ -2,18 +2,18 @@ import { App, Server } from 'koishi-core'
 import { Logger, assertProperty } from 'koishi-utils'
 import { CQBot } from './bot'
 import type WebSocket from 'ws'
-import Channel from './channel'
+import Socket from './socket'
 
 const logger = new Logger('server')
 
 export default class WsServer extends Server<CQBot> {
   public wsServer?: WebSocket.Server
-  private _channel: Channel
+  private _channel: Socket
 
   constructor(app: App) {
     assertProperty(app.options, 'port')
     super(app, CQBot)
-    this._channel = new Channel(this)
+    this._channel = new Socket(this)
     const { cqhttp = {} } = this.app.options
     const { path = '/' } = cqhttp
     const ws: typeof WebSocket = require('ws')
@@ -32,7 +32,7 @@ export default class WsServer extends Server<CQBot> {
           return socket.close(1008, 'invalid x-client-role')
         }
         let bot: CQBot
-        const selfId = +headers['x-self-id']
+        const selfId = headers['x-self-id'].toString()
         if (!selfId || !(bot = this.bots[selfId] || this.bots.find(bot => !bot.selfId))) {
           return socket.close(1008, 'invalid x-self-id')
         }

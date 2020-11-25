@@ -12,9 +12,20 @@ declare module 'koishi-core/dist/server' {
 
 const logger = new Logger('server')
 
+export function createSession(server: Server, data: any) {
+  const session = new Session(server.app, camelCase(data))
+  session.kind = 'qq'
+  if (session.postType === 'message') {
+    session.channelId = session.messageType === 'group'
+      ? `group:${session.groupId}`
+      : `private:${session.userId}`
+  }
+  return session
+}
+
 let counter = 0
 
-export default class SocketChannel {
+export default class Socket {
   private _listeners: Record<number, (response: CQResponse) => void> = {}
 
   constructor(private server: Server) {}
@@ -34,9 +45,8 @@ export default class SocketChannel {
 
       if ('post_type' in parsed) {
         logger.debug('receive %o', parsed)
-        const meta = new Session(this.server.app, camelCase(parsed))
-        meta.kind = 'qq'
-        this.server.dispatch(meta)
+        const session = createSession(this.server, parsed)
+        this.server.dispatch(session)
       } else if (parsed.echo === -1) {
         bot.version = toVersion(camelCase(parsed.data))
         logger.debug('%d got version info', bot.selfId)
