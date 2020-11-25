@@ -1,5 +1,5 @@
 import { camelCase, Logger, snakeCase, capitalize } from 'koishi-utils'
-import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatusCode } from 'koishi-core'
+import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatusCode, Session } from 'koishi-core'
 import type WebSocket from 'ws'
 
 declare module 'koishi-core/dist/database' {
@@ -168,6 +168,27 @@ export interface CQBot {
 }
 
 export class CQBot extends Bot {
+  async [Bot.$send](meta: Session, message: string, autoEscape = false) {
+    if (!message) return
+    let ctxId: number
+    // eslint-disable-next-line no-cond-assign
+    const ctxType = (ctxId = meta.groupId) ? 'group' : (ctxId = meta.userId) ? 'user' : null
+    if (this.app.options.cqhttp?.preferSync) {
+      ctxType === 'group'
+        ? await this.sendGroupMsg(ctxId, message, autoEscape)
+        : await this.sendPrivateMsg(ctxId, message, autoEscape)
+      return
+    }
+    if (meta._response) {
+      const session = this.createSession(meta.messageType, ctxType, ctxId, message)
+      if (this.app.bail(session, 'before-send', session)) return
+      return session._response({ reply: session.message, autoEscape, atSender: false })
+    }
+    return ctxType === 'group'
+      ? this.sendGroupMsgAsync(ctxId, message, autoEscape)
+      : this.sendPrivateMsgAsync(ctxId, message, autoEscape)
+  }
+
   async get<T = any>(action: string, params = {}, silent = false): Promise<T> {
     logger.debug('[request] %s %o', action, params)
     const response = await this._request(action, snakeCase(params))

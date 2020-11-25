@@ -1,5 +1,5 @@
-import { App, Server } from 'koishi-core'
-import { Logger, defineProperty, snakeCase, assertProperty } from 'koishi-utils'
+import { App, Server, Session } from 'koishi-core'
+import { Logger, defineProperty, snakeCase, assertProperty, camelCase } from 'koishi-utils'
 import { CQBot, toVersion } from './bot'
 import { createHmac } from 'crypto'
 import axios from 'axios'
@@ -31,7 +31,7 @@ export default class HttpServer extends Server<CQBot> {
     super(app, CQBot)
   }
 
-  private async __listen(bot: CQBot) {
+  private async _listen(bot: CQBot) {
     if (!bot.server) return
     bot.ready = true
     bot._request = async (action, params) => {
@@ -48,10 +48,10 @@ export default class HttpServer extends Server<CQBot> {
     logger.info('connected to %c', bot.server)
   }
 
-  async _listen() {
+  async listen() {
     const { cqhttp = {} } = this.app.options
     const { secret, path = '/' } = cqhttp
-    this.router.post(path, (ctx) => {
+    this.app.router.post(path, (ctx) => {
       if (secret) {
         // no signature
         const signature = ctx.headers['x-signature']
@@ -63,8 +63,7 @@ export default class HttpServer extends Server<CQBot> {
       }
 
       logger.debug('receive %o', ctx.request.body)
-      const meta = this.prepare(ctx.request.body)
-      if (!meta) return ctx.status = 403
+      const meta = new Session(this.app, camelCase(ctx.request.body))
       meta.kind = 'qq'
 
       const { quickOperation } = cqhttp
@@ -93,11 +92,10 @@ export default class HttpServer extends Server<CQBot> {
       this.dispatch(meta)
     })
 
-    await Promise.all(this.bots.map(bot => this.__listen(bot)))
+    await Promise.all(this.bots.map(bot => this._listen(bot)))
   }
 
-  _close() {
+  close() {
     logger.debug('http server closing')
-    this.server.close()
   }
 }

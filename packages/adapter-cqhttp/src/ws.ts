@@ -1,4 +1,4 @@
-import { App, Server } from 'koishi-core'
+import { App, Server, AppStatus } from 'koishi-core'
 import { Logger, Time } from 'koishi-utils'
 import { CQBot } from './bot'
 import type WebSocket from 'ws'
@@ -25,7 +25,7 @@ export default class WsClient extends Server<CQBot> {
     super(app, CQBot)
   }
 
-  private async __listen(bot: CQBot) {
+  private async _listen(bot: CQBot) {
     const { token, server } = bot
     if (!server) return
     const Socket: typeof WebSocket = require('ws')
@@ -41,7 +41,7 @@ export default class WsClient extends Server<CQBot> {
 
       socket.on('close', (code) => {
         this._sockets.delete(socket)
-        if (!this._listening || code === 1005) return
+        if (this.app.status !== AppStatus.open || code === 1005) return
 
         const message = `failed to connect to ${server}`
         if (!retryInterval || this._retryCount >= retryTimes) {
@@ -51,7 +51,7 @@ export default class WsClient extends Server<CQBot> {
         this._retryCount++
         logger.warn(`${message}, will retry in ${ms(retryInterval)}...`)
         setTimeout(() => {
-          if (this._listening) connect(resolve, reject)
+          if (this.app.status === AppStatus.open) connect(resolve, reject)
         }, retryInterval)
       })
 
@@ -64,11 +64,11 @@ export default class WsClient extends Server<CQBot> {
     return new Promise(connect)
   }
 
-  async _listen() {
-    await Promise.all(this.bots.map(bot => this.__listen(bot)))
+  async listen() {
+    await Promise.all(this.bots.map(bot => this._listen(bot)))
   }
 
-  _close() {
+  close() {
     logger.debug('websocket client closing')
     for (const socket of this._sockets) {
       socket.close()

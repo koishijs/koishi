@@ -19,11 +19,11 @@ export default class WsServer extends Server<CQBot> {
     const ws: typeof WebSocket = require('ws')
     this.wsServer = new ws.Server({
       path,
-      server: this.server,
+      server: this.app._httpServer,
     })
   }
 
-  _listen() {
+  listen() {
     return new Promise<void>((resolve, reject) => {
       this.wsServer.on('error', reject)
       this.wsServer.on('connection', (socket, { headers }) => {
@@ -45,9 +45,8 @@ export default class WsServer extends Server<CQBot> {
     })
   }
 
-  _close() {
+  close() {
     logger.debug('ws server closing')
     this.wsServer.close()
-    this.server.close()
   }
 }

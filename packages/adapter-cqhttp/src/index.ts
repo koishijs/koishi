@@ -1,4 +1,4 @@
-import { Server, Session, App, Context } from 'koishi-core'
+import { Server, App, Context } from 'koishi-core'
 import { Logger, Time } from 'koishi-utils'
 import HttpServer from './http'
 import WsClient from './ws'
@@ -73,27 +73,4 @@ Context.prototype.broadcast = async function (this: Context, ...args: any[]) {
   }
   args[index] = output + message
   return broadcast.apply(this, args)
-}
-
-Session.prototype.$send = async function $send(this: Session, message: string, autoEscape = false) {
-  if (!message) return
-  let ctxId: number
-  // eslint-disable-next-line no-cond-assign
-  const ctxType = (ctxId = this.groupId) ? 'group' : (ctxId = this.userId) ? 'user' : null
-  if (this.$app.options.cqhttp?.preferSync) {
-    ctxType === 'group'
-      ? await this.$bot.sendGroupMsg(ctxId, message, autoEscape)
-      : await this.$bot.sendPrivateMsg(ctxId, message, autoEscape)
-    return
-  }
-  if (this._response) {
-    const session = this.$bot.createSession(this.messageType, ctxType, ctxId, message)
-    if (this.$app.bail(this, 'before-send', session)) return
-    return this._response({ reply: session.message, autoEscape, atSender: false })
-  }
-  return ctxType === 'group'
-    // @ts-ignore FIXME
-    ? this.$bot.sendGroupMsgAsync(ctxId, message, autoEscape)
-    // @ts-ignore FIXME
-    : this.$bot.sendPrivateMsgAsync(ctxId, message, autoEscape)
 }

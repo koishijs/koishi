@@ -3,6 +3,7 @@ import { ExecuteArgv, ParsedArgv, Command } from './command'
 import { isInteger, contain, observe, noop, Logger, defineProperty, Random } from 'koishi-utils'
 import { NextFunction } from './context'
 import { App } from './app'
+import { Bot } from './server'
 
 export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
 export type MessageType = 'private' | 'group'
@@ -122,13 +123,8 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
           : idString
   }
 
-  async $send(message: string) {
-    if (!message) return
-    if (this.groupId) {
-      await this.$bot.sendGroupMsg(this.groupId, message)
-    } else {
-      await this.$bot.sendPrivateMsg(this.userId, message)
-    }
+  $send(message: string) {
+    return this.$bot[Bot.$send](this, message)
   }
 
   $cancelQueued(delay = 0) {

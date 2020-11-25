@@ -2,17 +2,19 @@ import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArr
 import { Command } from './command'
 import { Context, Middleware, NextFunction } from './context'
 import { Group, User, Database } from './database'
-import { BotOptions, Server } from './server'
+import { BotOptions, Server, Bot } from './server'
 import { Session } from './session'
 import help from './plugins/help'
 import shortcut from './plugins/shortcut'
 import suggest from './plugins/suggest'
 import validate from './plugins/validate'
 import LruCache from 'lru-cache'
+import * as http from 'http'
+import type Koa from 'koa'
+import type Router from 'koa-router'
 
 export interface AppOptions extends BotOptions {
   port?: number
-  type?: string
   bots?: BotOptions[]
   prefix?: string | string[]
   nickname?: string | string[]
@@ -39,9 +41,12 @@ export enum AppStatus { closed, opening, open, closing }
 export class App extends Context {
   app = this
   options: AppOptions
-  server: Server
+  bots: Record<string, Bot> = {}
+  servers: Record<string, Server> = {}
   status = AppStatus.closed
+  router?: Router
 
+  _httpServer?: http.Server
   _database: Database
   _commands: Command[]
   _sessions: Record<string, Session> = {}
@@ -52,7 +57,6 @@ export class App extends Context {
 
   private _nameRE: RegExp
   private _prefixRE: RegExp
-  private _getSelfIdsPromise: Promise<any>
 
   static defaultConfig: AppOptions = {
     maxListeners: 64,
@@ -83,12 +87,18 @@ export class App extends Context {
       maxAge: options.groupCacheAge,
     }))
 
-    const { type } = this.options
-    const server = Server.types[type]
-    if (!server) {
-      throw new Error(`unsupported type "${type}", you should import the adapter yourself`)
+    if (options.port) this.createServer()
+    for (const bot of options.bots) {
+      let server = this.servers[bot.type]
+      if (!server) {
+        const constructor = Server.types[bot.type]
+        if (!constructor) {
+          throw new Error(`unsupported type "${bot.type}", you should import the adapter yourself`)
+        }
+        server = this.servers[bot.type] = Reflect.construct(constructor, [this])
+      }
+      server.create(bot)
     }
-    this.server = Reflect.construct(server, [this])
 
     this.prepare()
 
@@ -96,11 +106,22 @@ export class App extends Context {
     this.middleware(this._preprocess.bind(this))
     this.on('message', this._receive.bind(this))
     this.on('parse', this._parse.bind(this))
+    this.on('before-connect', this._listen.bind(this))
+    this.on('before-disconnect', this._close.bind(this))
 
     this.plugin(validate)
     this.plugin(suggest)
     this.plugin(shortcut)
     this.plugin(help)
+  }
+
+  createServer() {
+    const koa: Koa = new (require('koa'))()
+    this.router = new (require('koa-router'))()
+    koa.use(require('koa-bodyparser')())
+    koa.use(this.router.routes())
+    koa.use(this.router.allowedMethods())
+    this._httpServer = http.createServer(koa.callback())
   }
 
   prepare() {
@@ -111,18 +132,6 @@ export class App extends Context {
     this._prefixRE = createLeadingRE(prefixes)
   }
 
-  async getSelfIds() {
-    const bots = this.server.bots.filter(bot => bot.ready)
-    if (!this._getSelfIdsPromise) {
-      this._getSelfIdsPromise = Promise.all(bots.map(async (bot) => {
-        if (bot.selfId || !bot.ready) return
-        bot.selfId = await bot.getSelfId()
-      }))
-    }
-    await this._getSelfIdsPromise
-    return bots.map(bot => bot.selfId)
-  }
-
   async start() {
     this.status = AppStatus.opening
     await this.parallel('before-connect')
@@ -131,12 +140,32 @@ export class App extends Context {
     this.emit('connect')
   }
 
+  private async _listen() {
+    try {
+      const { port } = this.app.options
+      if (port) {
+        this._httpServer.listen(port)
+        this.logger('server').info('server listening at %c', port)
+      }
+      await Promise.all(Object.values(this.servers).map(server => server.listen()))
+    } catch (error) {
+      this._close()
+      throw error
+    }
+  }
+
   async stop() {
     this.status = AppStatus.closing
     await this.parallel('before-disconnect')
     this.status = AppStatus.closed
     this.logger('app').debug('stopped')
     this.emit('disconnect')
+  }
+
+  private _close() {
+    Object.values(this.servers).forEach(server => server.close())
+    this.logger('server').debug('http server closing')
+    this._httpServer.close()
   }
 
   private async _preprocess(session: Session, next: NextFunction) {

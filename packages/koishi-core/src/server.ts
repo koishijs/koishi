@@ -1,11 +1,9 @@
-import { camelCase, paramCase, sleep } from 'koishi-utils'
-import { Session, MessageType, Meta, MessageInfo } from './session'
+import { paramCase, sleep } from 'koishi-utils'
+import { Session, MessageType, MessageInfo } from './session'
 import { App, AppStatus } from './app'
-import * as http from 'http'
-import type Koa from 'koa'
-import type Router from 'koa-router'
 
 export interface BotOptions {
+  type?: string
   selfId?: number
 }
 
@@ -14,45 +12,18 @@ type BotStatic<T extends Bot = Bot> = new (app: App, options: BotOptions) => T
 export abstract class Server<T extends Bot = Bot> {
   static types: Record<string, new (app: App) => Server> = {}
 
-  public bots: T[]
-  public router?: Router
-  public server?: http.Server
+  public id: string
+  public bots: T[] = []
 
-  protected _listening = false
-  protected abstract _listen(): Promise<void>
-  protected abstract _close(): void
+  abstract listen(): Promise<void>
+  abstract close(): void
 
-  constructor(public app: App, BotStatic: BotStatic<T>) {
-    app.on('before-connect', this.listen.bind(this))
-    app.on('before-disconnect', this.close.bind(this))
-    const bots = app.options.bots.map(bot => new BotStatic(app, bot))
-    this.bots = new Proxy(bots, {
-      get(target, prop) {
-        return typeof prop === 'symbol' || +prop * 0 !== 0
-          ? Reflect.get(target, prop)
-          : target[prop] || target.find(bot => bot.selfId === +prop)
-      },
-    })
-    if (app.options.port) this.createServer()
-  }
+  constructor(public app: App, private BotStatic: BotStatic<T>) {}
 
-  createServer() {
-    const koa: Koa = new (require('koa'))()
-    this.router = new (require('koa-router'))()
-    koa.use(require('koa-bodyparser')())
-    koa.use(this.router.routes())
-    koa.use(this.router.allowedMethods())
-    this.server = http.createServer(koa.callback())
-  }
-
-  prepare(data: any) {
-    const meta = camelCase<Meta>(data)
-    if (!this.bots[meta.selfId]) {
-      const bot = this.bots.find(bot => !bot.selfId)
-      if (!bot) return
-      bot.selfId = meta.selfId
-    }
-    return new Session(this.app, meta)
+  create(options: BotOptions) {
+    const bot = new this.BotStatic(this.app, options)
+    this.bots.push(bot)
+    this.app.bots[bot.selfId] = bot
   }
 
   dispatch(session: Session) {
@@ -74,28 +45,6 @@ export abstract class Server<T extends Bot = Bot> {
       this.app.emit(session, paramCase<any>(event), session)
     }
   }
-
-  async listen() {
-    if (this._listening) return
-    this._listening = true
-    try {
-      const { port } = this.app.options
-      if (port) {
-        this.server.listen(port)
-        const logger = this.app.logger('server')
-        logger.info('server listening at %c', port)
-      }
-      await this._listen()
-    } catch (error) {
-      this.close()
-      throw error
-    }
-  }
-
-  close() {
-    this._listening = false
-    this._close()
-  }
 }
 
 export enum BotStatusCode {
@@ -112,6 +61,7 @@ export enum BotStatusCode {
 }
 
 export interface Bot extends BotOptions {
+  [Bot.$send](session: Session, message: string): Promise<void>
   ready?: boolean
   version?: string
   getMsg(messageId: number): Promise<MessageInfo>
@@ -123,6 +73,8 @@ export interface Bot extends BotOptions {
 }
 
 export class Bot {
+  static readonly $send = Symbol.for('koishi.send')
+
   constructor(public app: App, options: BotOptions) {
     Object.assign(this, options)
   }

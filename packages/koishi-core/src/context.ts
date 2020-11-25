@@ -46,10 +46,6 @@ export class Context {
     defineProperty(this, '_disposables', [])
   }
 
-  get router() {
-    return this.app.server.router
-  }
-
   get database() {
     return this.app._database
   }
@@ -63,10 +59,6 @@ export class Context {
 
   logger(name: string) {
     return new Logger(name)
-  }
-
-  get bots() {
-    return this.app.server.bots
   }
 
   group(...ids: number[]) {

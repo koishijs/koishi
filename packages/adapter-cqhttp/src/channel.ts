@@ -1,5 +1,5 @@
 import { CQBot, CQResponse, toVersion } from './bot'
-import { Server } from 'koishi-core'
+import { Server, Session } from 'koishi-core'
 import { Logger, camelCase } from 'koishi-utils'
 import type WebSocket from 'ws'
 
@@ -34,11 +34,9 @@ export default class SocketChannel {
 
       if ('post_type' in parsed) {
         logger.debug('receive %o', parsed)
-        const meta = this.server.prepare(parsed)
-        if (meta) {
-          meta.kind = 'qq'
-          this.server.dispatch(meta)
-        }
+        const meta = new Session(this.server.app, camelCase(parsed))
+        meta.kind = 'qq'
+        this.server.dispatch(meta)
       } else if (parsed.echo === -1) {
         bot.version = toVersion(camelCase(parsed.data))
         logger.debug('%d got version info', bot.selfId)
