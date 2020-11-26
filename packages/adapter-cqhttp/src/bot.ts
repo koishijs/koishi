@@ -1,5 +1,5 @@
-import { camelCase, Logger, snakeCase, capitalize } from 'koishi-utils'
-import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatusCode, Session, MessageInfo } from 'koishi-core'
+import { camelCase, Logger, snakeCase, capitalize, renameProperty } from 'koishi-utils'
+import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatusCode, Session, MessageInfo, EventTypeMap } from 'koishi-core'
 import type WebSocket from 'ws'
 
 declare module 'koishi-core/dist/database' {
@@ -27,6 +27,8 @@ export interface CQOriginalMessageInfo extends MessageInfo {
   time: number
   realId: number
   message: string
+  messageId: number
+  messageType: EventTypeMap['message']
 }
 
 export interface CQMessageInfo extends MessageInfo {
@@ -185,7 +187,7 @@ export class CQBot extends Bot {
     // eslint-disable-next-line no-cond-assign
     const ctxType = (ctxId = meta.groupId) ? 'group' : (ctxId = meta.userId) ? 'user' : null
     if (meta._response) {
-      const session = this.createSession(meta.messageType, ctxType, ctxId, message)
+      const session = this.createSession(meta.subType as any, ctxType, ctxId, message)
       if (this.app.bail(session, 'before-send', session)) return
       return session._response({ reply: session.message, autoEscape, atSender: false })
     }
@@ -204,10 +206,10 @@ export class CQBot extends Bot {
 
   async getMessage(channelId: string, messageId: string) {
     const data = await this.getMsg(messageId)
-    data.timestamp = data.time
-    data.content = data.message
-    delete data.time
-    delete data.message
+    renameProperty(data, 'timestamp', 'time')
+    renameProperty(data, 'content', 'message')
+    renameProperty(data, 'id', 'messageId')
+    renameProperty(data, 'type', 'messageType')
     return data as CQMessageInfo
   }
 

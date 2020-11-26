@@ -181,7 +181,7 @@ export class App extends Context {
 
     // strip prefix
     const at = `[CQ:at,qq=${session.selfId}]`
-    if (session.messageType !== 'private' && message.startsWith(at)) {
+    if (session.subType !== 'private' && message.startsWith(at)) {
       atSelf = session.$appel = true
       message = message.slice(at.length).trimStart()
       // eslint-disable-next-line no-cond-assign
@@ -199,7 +199,7 @@ export class App extends Context {
     session.$argv = session.$parse(message, '', true)
 
     if (this.database) {
-      if (session.messageType === 'group') {
+      if (session.subType === 'group') {
         // attach group data
         const groupFields = new Set<Group.Field>(['flag', 'assignee'])
         this.emit('before-attach-group', session, groupFields)
@@ -280,8 +280,8 @@ export class App extends Context {
 
   private _parse(message: string, session: Session, builtin: boolean, terminator = '') {
     // group message should have prefix or appel to be interpreted as a command call
-    const { $reply, $prefix, $appel, messageType } = session
-    if (builtin && messageType !== 'private' && $prefix === null && !$appel) return
+    const { $reply, $prefix, $appel, subType } = session
+    if (builtin && subType !== 'private' && $prefix === null && !$appel) return
     terminator = escapeRegExp(terminator)
     const name = message.split(new RegExp(`[\\s${terminator}]`), 1)[0]
     const index = name.lastIndexOf('/')

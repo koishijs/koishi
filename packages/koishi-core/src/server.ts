@@ -1,5 +1,5 @@
 import { paramCase, sleep } from 'koishi-utils'
-import { Session, MessageType, MessageInfo } from './session'
+import { Session, MessageInfo, EventTypeMap } from './session'
 import { App, AppStatus } from './app'
 
 export interface BotOptions {
@@ -28,15 +28,7 @@ export abstract class Server<T extends Bot = Bot> {
   dispatch(session: Session) {
     if (this.app.status !== AppStatus.open) return
     const events: string[] = []
-    if (session.postType === 'message' || session.postType === 'send') {
-      events.push(session.postType)
-    } else if (session.postType === 'request') {
-      events.push('request/' + session.requestType)
-    } else if (session.postType === 'notice') {
-      events.push(session.noticeType)
-    } else {
-      events.push(session.metaEventType)
-    }
+    events.push(session.eventType)
     if (session.subType) {
       events.unshift(events[0] + '/' + session.subType)
     }
@@ -78,11 +70,11 @@ export class Bot {
     Object.assign(this, options)
   }
 
-  createSession(messageType: MessageType, ctxType: 'group' | 'user', ctxId: string, message: string) {
+  createSession(subType: EventTypeMap['message'], ctxType: 'group' | 'user', ctxId: string, message: string) {
     return new Session(this.app, {
       message,
-      messageType,
-      postType: 'send',
+      subType,
+      eventType: 'send',
       selfId: this.selfId,
       [ctxType + 'Id']: ctxId,
       time: Math.round(Date.now() / 1000),

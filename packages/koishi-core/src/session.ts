@@ -6,46 +6,31 @@ import { App } from './app'
 import { Bot } from './server'
 import LruCache from 'lru-cache'
 
-export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
+export type EventType = keyof EventTypeMap
+
 export type MessageType = 'private' | 'group'
-export type NoticeType =
-  | 'group_upload' | 'group_admin' | 'group_increase' | 'group_decrease'
-  | 'group_ban' | 'friend_add' | 'group_recall' | 'friend_recall' | 'notify'
-export type RequestType = 'friend' | 'group'
-export type MetaEventType = 'lifecycle' | 'heartbeat'
 
-export interface MetaTypeMap {
-  message: MessageType
-  notice: NoticeType
-  request: RequestType
-  // eslint-disable-next-line camelcase
-  meta_event: MetaEventType
-  send: null
-}
-
-export interface SubTypeMap {
-  message: 'friend' | 'group' | 'other' | 'normal' | 'anonymous' | 'notice'
-  notice:
-    | 'set' | 'unset' | 'approve' | 'invite' | 'leave' | 'kick' | 'kick_me'
-    | 'ban' | 'lift_ban' | 'poke' | 'lucky_king' | 'honor'
-  request: 'add' | 'invite'
-  // eslint-disable-next-line camelcase
-  meta_event: 'enable' | 'disable' | 'connect'
-  send: null
+export interface EventTypeMap {
+  'message': MessageType
+  'message-edited': MessageType
+  'message-deleted': MessageType
+  'group-added': null
+  'group-deleted': null
+  // notice:
+  //   | 'set' | 'unset' | 'approve' | 'invite' | 'leave' | 'kick' | 'kick_me'
+  //   | 'ban' | 'lift_ban' | 'poke' | 'lucky_king' | 'honor'
+  // request: 'add' | 'invite'
+  'lifecycle': 'heartbeat' | 'enable' | 'disable' | 'connect'
+  'send': MessageType
 }
 
 /** CQHTTP Meta Information */
-export interface Meta<P extends PostType = PostType> {
+export interface Meta<E extends EventType = EventType> {
   kind?: PlatformKind
 
   // type
-  postType?: P
-  messageType?: MetaTypeMap[P & 'message']
-  noticeType?: MetaTypeMap[P & 'notice']
-  requestType?: MetaTypeMap[P & 'request']
-  metaEventType?: MetaTypeMap[P & 'meta_event']
-  sendType?: MetaTypeMap[P & 'send']
-  subType?: SubTypeMap[P]
+  eventType?: E
+  subType?: EventTypeMap[E]
 
   // basic properties
   channelId?: string
@@ -80,7 +65,7 @@ export interface Meta<P extends PostType = PostType> {
 
 const logger = new Logger('session')
 
-export interface Session<U, G, O, K, P extends PostType = PostType> extends Meta<P> {}
+export interface Session<U, G, O, K, E extends EventType = EventType> extends Meta<E> {}
 
 export class Session<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}, K extends PlatformKind = PlatformKind> {
   $user?: User.Observed<U>
@@ -293,7 +278,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     argv.session = this
     this.$argv = argv
     if (this.$app.database) {
-      if (this.messageType === 'group') {
+      if (this.subType === 'group') {
         await this.$observeGroup()
       }
       await this.$observeUser()
@@ -346,21 +331,11 @@ export interface StatusInfo {
 }
 
 export interface MessageInfo {
-  messageType: MessageType
-  messageId: number
+  id: string
+  type: EventTypeMap['message']
   content: string
   timestamp: number
   sender: SenderInfo
-}
-
-/**
- * get context unique id
- * @example
- * getContextId(session) // user123, group456
- */
-export function getContextId(session: Session) {
-  const type = session.messageType === 'private' ? 'user' : session.messageType
-  return type + session[`${type}Id`]
 }
 
 export function getTargetId(target: string | number) {

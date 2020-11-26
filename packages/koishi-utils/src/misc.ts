@@ -57,3 +57,8 @@ export function makeArray<T>(source: T | T[]) {
     : source === null || source === undefined ? []
       : [source]
 }
+
+export function renameProperty<O extends object, K extends keyof O, T extends string>(config: O, key: K, oldKey: T) {
+  config[key] = Reflect.get(config, oldKey)
+  Reflect.deleteProperty(config, oldKey)
+}

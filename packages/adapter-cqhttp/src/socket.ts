@@ -1,6 +1,6 @@
 import { CQBot, CQResponse, toVersion } from './bot'
 import { Server, Session } from 'koishi-core'
-import { Logger, camelCase } from 'koishi-utils'
+import { Logger, camelCase, renameProperty } from 'koishi-utils'
 import type WebSocket from 'ws'
 
 declare module 'koishi-core/dist/server' {
@@ -13,13 +13,32 @@ declare module 'koishi-core/dist/server' {
 const logger = new Logger('server')
 
 export function createSession(server: Server, data: any) {
+  renameProperty(data, 'event_type', 'post_type')
   const session = new Session(server.app, camelCase(data))
   session.kind = 'qq'
-  if (session.postType === 'message') {
-    session.channelId = session.messageType === 'group'
+  if (session.eventType === 'message') {
+    renameProperty(session, 'subType', 'messageType')
+    // renameProperty(session, 'content', 'message')
+    session.channelId = session.subType === 'group'
       ? `group:${session.groupId}`
       : `private:${session.userId}`
+  } else if (data.event_type === 'meta_event') {
+    delete session['metaEventType']
+    session.eventType = 'lifecycle'
+    if (data.meta_event_type === 'heartbeat') {
+      session.subType = 'heartbeat'
+    }
+  } else if (data.event_type === 'notice') {
+    delete session['noticeType']
+    if (data.notice_type === 'group_recall') {
+      session.eventType = 'message-deleted'
+      session.subType = 'group'
+    } else if (data.notice_type === 'friend_recall') {
+      session.eventType = 'message-deleted'
+      session.subType = 'private'
+    }
   }
+  delete session['postType']
   return session
 }
 

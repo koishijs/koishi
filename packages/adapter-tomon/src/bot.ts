@@ -1,6 +1,5 @@
 import { Bot, MessageInfo } from 'koishi-core'
 import { camelize } from 'koishi-utils'
-import { Author } from 'tomon-sdk/lib/types'
 import Route from './network/route'
 import WebSocket from 'ws'
 
@@ -10,11 +9,77 @@ declare module 'koishi-core/dist/database' {
   }
 }
 
+export interface Author {
+  id: string;
+  username: string;
+  discriminator: string;
+  avatar: string;
+  name: string;
+  avatarUrl: string;
+  type: number;
+}
+
+export interface User {
+  id: string;
+  username: string;
+  discriminator: string;
+  avatar: string;
+  name: string;
+  avatarUrl: string;
+  createdAt: Date;
+  updatedAt: Date;
+  type: number;
+}
+
+export interface Member {
+  user: User;
+  guildId: string;
+  nick: string;
+  joinedAt: string;
+  mute: boolean;
+  deaf: boolean;
+  roles: string[];
+}
+
+export interface Guild {
+  id: string;
+  name: string;
+  icon: string;
+  iconUrl: string;
+  background: string;
+  backgroundUrl: string;
+  backgroundProps: string;
+  description: string;
+  ownerId: string;
+  joinedAt: string;
+  position: number;
+  defaultMessageNotifications: number;
+  systemChannelFlags: number;
+  systemChannelId: string;
+  banned: boolean;
+  updatedAt: string;
+}
+
+export interface Channel {
+  id: string;
+  type: number;
+  name: string;
+  guildId: string;
+  position: number;
+  permissionOverwrites: any[];
+  parentId: string;
+  topic: string;
+  lastMessageId: string;
+  lastPinTimestamp: string;
+  defaultMessageNotifications: number;
+}
+
 export interface TomonMessageInfo extends MessageInfo {
   id: string
   channelId: string
+  guildId: string
   author: Author
-  type: number
+  member?: Member
   nonce: string
   attachments: string[]
   reactions: string[]
@@ -26,7 +91,7 @@ export interface TomonMessageInfo extends MessageInfo {
 
 function adaptMessage(data: TomonMessageInfo) {
   data = camelize(data)
-  data.timestamp = +data.timestamp // TODO: check
+  data.timestamp = +new Date(data.timestamp)
   return data
 }
 

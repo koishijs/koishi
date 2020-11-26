@@ -1,6 +1,6 @@
 import SocketSession from './network/session'
-import { App, Server, Session } from 'koishi-core'
-import { TomonBot } from './bot'
+import { App, EventType, Server, Session } from 'koishi-core'
+import { TomonBot, TomonMessageInfo } from './bot'
 import { camelize, paramCase } from 'koishi-utils'
 
 export * from './bot'
@@ -31,31 +31,36 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
     this.app.bots[selfId] = bot
 
     // part 2: connect to server
-    const socket = new SocketSession()
     return new Promise<void>((resolve) => {
-      socket.open()
+      const socket = new SocketSession()
       socket.token = bot.token
+      socket.open()
 
       socket._emitter.once('READY', () => {
-        console.log(`🤖️ Bot ${bot.name}(${bot.username}#${bot.discriminator}) is ready to work!`)
+        console.log(`Bot ${bot.name}(${bot.username}#${bot.discriminator}) is ready to work!`)
+        resolve()
       })
 
-      socket._emitter.on('MESSAGE_CREATE', async ({ d }) => {
-        const userId = d.author.discriminator
+      function dispatchMessage(data: TomonMessageInfo, eventType: EventType) {
+        data = camelize(data)
+        const userId = data.author.discriminator
+        console.log(userId, selfId)
         if (userId === selfId) return
         this.dispatch(new Session(this.app, {
-          ...camelize(d),
+          ...data,
           selfId,
           userId,
+          eventType,
           kind: 'tomon',
-          message: d.content || '', // TODO 处理表情包和图片
-          postType: 'message',
-          messageType: d['guild_id'] ? 'group' : 'private',
-          groupId: d['guild_id'],
+          message: data.content || '', // TODO 处理表情包和图片
+          groupId: data['guildId'],
+          subType: data['guildId'] ? 'group' : 'private',
         }))
-      })
+      }
 
-      socket._emitter.on('NETWORK_CONNECTED', resolve)
+      socket._emitter.on('MESSAGE_CREATE', async ({ d }) => dispatchMessage(d, 'message'))
+      socket._emitter.on('MESSAGE_UPDATE', async ({ d }) => dispatchMessage(d, 'message-edited'))
+      socket._emitter.on('MESSAGE_DELETE', async ({ d }) => dispatchMessage(d, 'message-deleted'))
     })
   }
 

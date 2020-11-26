@@ -1,6 +1,6 @@
 import { intersection, difference, Logger, defineProperty } from 'koishi-utils'
 import { Command, CommandConfig, ParsedArgv, ExecuteArgv } from './command'
-import { PostType, Session } from './session'
+import { EventType, Session } from './session'
 import { User, Group, PlatformKind } from './database'
 import { App } from './app'
 
@@ -86,7 +86,7 @@ export class Context {
     if (!session) return true
     return matchScope(this.scope.groups, session.groupId)
       && matchScope(this.scope.users, session.userId)
-      && (this.scope.private || session.messageType !== 'private')
+      && (this.scope.private || session.subType !== 'private')
   }
 
   plugin<T extends PluginFunction<this>>(plugin: T, options?: T extends PluginFunction<this, infer U> ? U : never): this
@@ -294,48 +294,57 @@ export class Context {
   }
 }
 
-export type RawSession<P extends PostType = PostType> = Session<never, never, never, PlatformKind, P>
+export type RawSession<E extends EventType = EventType> = Session<never, never, never, PlatformKind, E>
 
 export interface EventMap {
   [Context.MIDDLEWARE_EVENT]: Middleware
 
-  // CQHTTP events
+  // message
   'message'(session: RawSession<'message'>): void
-  'message/normal'(session: RawSession<'message'>): void
-  'message/notice'(session: RawSession<'message'>): void
-  'message/anonymous'(session: RawSession<'message'>): void
   'message/friend'(session: RawSession<'message'>): void
   'message/group'(session: RawSession<'message'>): void
-  'message/other'(session: RawSession<'message'>): void
-  'friend-add'(session: RawSession<'notice'>): void
-  'group-increase'(session: RawSession<'notice'>): void
-  'group-increase/invite'(session: RawSession<'notice'>): void
-  'group-increase/approve'(session: RawSession<'notice'>): void
-  'group-decrease'(session: RawSession<'notice'>): void
-  'group-decrease/leave'(session: RawSession<'notice'>): void
-  'group-decrease/kick'(session: RawSession<'notice'>): void
-  'group-decrease/kick-me'(session: RawSession<'notice'>): void
-  'group-upload'(session: RawSession<'notice'>): void
-  'group-admin'(session: RawSession<'notice'>): void
-  'group-admin/set'(session: RawSession<'notice'>): void
-  'group-admin/unset'(session: RawSession<'notice'>): void
-  'group-ban'(session: RawSession<'notice'>): void
-  'group-ban/ban'(session: RawSession<'notice'>): void
-  'group-ban/lift-ban'(session: RawSession<'notice'>): void
-  'group_recall'(session: RawSession<'notice'>): void
-  'friend_recall'(session: RawSession<'notice'>): void
-  'notify'(session: RawSession<'notice'>): void
-  'notify/poke'(session: RawSession<'notice'>): void
-  'notify/lucky_king'(session: RawSession<'notice'>): void
-  'notify/honor'(session: RawSession<'notice'>): void
-  'request/friend'(session: RawSession<'request'>): void
-  'request/group/add'(session: RawSession<'request'>): void
-  'request/group/invite'(session: RawSession<'request'>): void
-  'heartbeat'(session: RawSession<'meta_event'>): void
-  'lifecycle'(session: RawSession<'meta_event'>): void
-  'lifecycle/enable'(session: RawSession<'meta_event'>): void
-  'lifecycle/disable'(session: RawSession<'meta_event'>): void
-  'lifecycle/connect'(session: RawSession<'meta_event'>): void
+  'message-edited'(session: RawSession<'message'>): void
+  'message-edited/friend'(session: RawSession<'message'>): void
+  'message-edited/group'(session: RawSession<'message'>): void
+  'message-deleted'(session: RawSession<'message'>): void
+  'message-deleted/friend'(session: RawSession<'message'>): void
+  'message-deleted/group'(session: RawSession<'message'>): void
+
+  // friend
+  'friend-added'(session: Session): void
+  'friend-deleted'(session: Session): void
+
+  'group'(session: Session): void
+  'group-added'(session: Session): void
+  'group-deleted'(session: Session): void
+
+  'group-member'(session: Session): void
+  'group-member-added'(session: Session): void
+  'group-member-deleted'(session: Session): void
+
+  // notice
+  'group-upload'(session: Session): void
+  'group-admin'(session: Session): void
+  'group-admin/set'(session: Session): void
+  'group-admin/unset'(session: Session): void
+  'group-ban'(session: Session): void
+  'group-ban/ban'(session: Session): void
+  'group-ban/lift-ban'(session: Session): void
+  'notify'(session: Session): void
+  'notify/poke'(session: Session): void
+  'notify/lucky_king'(session: Session): void
+  'notify/honor'(session: Session): void
+
+  // request
+  'request/friend'(session: Session): void
+  'request/group/add'(session: Session): void
+  'request/group/invite'(session: Session): void
+
+  // lifecycle
+  'lifecycle/enable'(session: RawSession<'lifecycle'>): void
+  'lifecycle/disable'(session: RawSession<'lifecycle'>): void
+  'lifecycle/connect'(session: RawSession<'lifecycle'>): void
+  'lifecycle/heartbeat'(session: RawSession<'lifecycle'>): void
 
   // Koishi events
   'parse'(message: string, session: Session, builtin: boolean, terminator: string): void | ExecuteArgv
