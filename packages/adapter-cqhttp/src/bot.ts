@@ -113,7 +113,6 @@ export interface HonorInfo {
 }
 
 export interface CQBot {
-  socket?: WebSocket
   _request?(action: string, params: Record<string, any>): Promise<CQResponse>
   deleteMsg(messageId: string): Promise<void>
   deleteMsgAsync(messageId: string): Promise<void>
@@ -173,6 +172,8 @@ export interface CQBot {
 }
 
 export class CQBot extends Bot {
+  socket?: WebSocket
+
   async [Bot.$send](meta: Session, message: string, autoEscape = false) {
     if (!message) return
     if (this.app.options.cqhttp?.preferSync) {

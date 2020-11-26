@@ -17,7 +17,6 @@ App.defaultConfig.retryInterval = 5 * Time.second
 const logger = new Logger('server')
 
 export default class WsClient extends Server<CQBot> {
-  private _retryCount = 0
   private _channel = new Socket(this)
   private _sockets = new Set<WebSocket>()
 
@@ -28,6 +27,7 @@ export default class WsClient extends Server<CQBot> {
   private async _listen(bot: CQBot) {
     const { token, server } = bot
     if (!server) return
+    let _retryCount = 0
     const Socket: typeof WebSocket = require('ws')
     const connect = (resolve: (value: void) => void, reject: (reason: Error) => void) => {
       logger.debug('websocket client opening')
@@ -44,11 +44,11 @@ export default class WsClient extends Server<CQBot> {
         if (this.app.status !== AppStatus.open || code === 1005) return
 
         const message = `failed to connect to ${server}`
-        if (!retryInterval || this._retryCount >= retryTimes) {
+        if (!retryInterval || _retryCount >= retryTimes) {
           return reject(new Error(message))
         }
 
-        this._retryCount++
+        _retryCount++
         logger.warn(`${message}, will retry in ${ms(retryInterval)}...`)
         setTimeout(() => {
           if (this.app.status === AppStatus.open) connect(resolve, reject)
@@ -56,7 +56,7 @@ export default class WsClient extends Server<CQBot> {
       })
 
       socket.on('open', () => {
-        this._retryCount = 0
+        _retryCount = 0
         logger.debug('connect to ws server:', bot.server)
         this._channel.connect(resolve, reject, bot, socket)
       })
@@ -73,6 +73,5 @@ export default class WsClient extends Server<CQBot> {
     for (const socket of this._sockets) {
       socket.close()
     }
-    this._retryCount = 0
   }
 }
