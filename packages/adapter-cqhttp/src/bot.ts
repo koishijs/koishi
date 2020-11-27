@@ -1,5 +1,5 @@
 import { camelCase, Logger, snakeCase, capitalize, renameProperty } from 'koishi-utils'
-import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatusCode, Session, MessageInfo, EventTypeMap } from 'koishi-core'
+import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatusCode, Session, MessageInfo, GroupInfo, GroupMemberInfo } from 'koishi-core'
 import type WebSocket from 'ws'
 
 declare module 'koishi-core/dist/database' {
@@ -23,16 +23,23 @@ export class SenderError extends Error {
   }
 }
 
-export interface CQOriginalMessageInfo extends MessageInfo {
-  time: number
-  realId: number
-  message: string
-  messageId: number
-  messageType: EventTypeMap['message']
-}
-
 export interface CQMessageInfo extends MessageInfo {
   realId: number
+}
+
+export interface CQGroupInfo extends GroupInfo {
+  memberCount: number
+  maxMemberCount: number
+}
+
+// FIXME
+export interface CQGroupMemberInfo extends GroupMemberInfo, SenderInfo {
+  cardChangeable: boolean
+  groupId: number
+  joinTime: number
+  lastSentTime: number
+  titleExpireTime: number
+  unfriendly: boolean
 }
 
 export interface CQResponse {
@@ -51,25 +58,6 @@ export type DataDirectory = 'image' | 'record' | 'show' | 'bface'
 
 export interface FriendInfo extends AccountInfo {
   remark: string
-}
-
-export interface ListedGroupInfo {
-  groupId: number
-  groupName: string
-}
-
-export interface GroupInfo extends ListedGroupInfo {
-  memberCount: number
-  maxMemberCount: number
-}
-
-export interface GroupMemberInfo extends SenderInfo {
-  cardChangeable: boolean
-  groupId: number
-  joinTime: number
-  lastSentTime: number
-  titleExpireTime: number
-  unfriendly: boolean
 }
 
 export interface Credentials {
@@ -116,8 +104,6 @@ export interface HonorInfo {
 
 export interface CQBot {
   _request?(action: string, params: Record<string, any>): Promise<CQResponse>
-  deleteMsg(messageId: string): Promise<void>
-  deleteMsgAsync(messageId: string): Promise<void>
   sendLike(userId: string, times?: number): Promise<void>
   sendLikeAsync(userId: string, times?: number): Promise<void>
   setGroupKick(groupId: string, userId: string, rejectAddRequest?: boolean): Promise<void>
@@ -136,14 +122,9 @@ export interface CQBot {
   setGroupLeaveAsync(groupId: string, isDismiss?: boolean): Promise<void>
   setGroupSpecialTitle(groupId: string, userId: string, specialTitle?: string, duration?: number): Promise<void>
   setGroupSpecialTitleAsync(groupId: string, userId: string, specialTitle?: string, duration?: number): Promise<void>
-  getMsg(messageId: string): Promise<CQOriginalMessageInfo>
   getLoginInfo(): Promise<AccountInfo>
   getStrangerInfo(userId: string, noCache?: boolean): Promise<StrangerInfo>
   getFriendList(): Promise<FriendInfo[]>
-  getGroupList(): Promise<ListedGroupInfo[]>
-  getGroupInfo(groupId: string, noCache?: boolean): Promise<GroupInfo>
-  getGroupMemberInfo(groupId: string, userId: string, noCache?: boolean): Promise<GroupMemberInfo>
-  getGroupMemberList(groupId: string): Promise<GroupMemberInfo[]>
   getGroupHonorInfo(groupId: string, type: HonorType): Promise<HonorInfo>
   getCookies(domain?: string): Promise<string>
   getCsrfToken(): Promise<number>
@@ -205,12 +186,48 @@ export class CQBot extends Bot {
   }
 
   async getMessage(channelId: string, messageId: string) {
-    const data = await this.getMsg(messageId)
+    const data = await this.get<CQMessageInfo>('get_msg', { messageId })
     renameProperty(data, 'timestamp', 'time')
     renameProperty(data, 'content', 'message')
     renameProperty(data, 'id', 'messageId')
     renameProperty(data, 'type', 'messageType')
-    return data as CQMessageInfo
+    return data
+  }
+
+  async deleteMessage(channelId: string, messageId: string) {
+    await this.get('delete_msg', { messageId })
+  }
+
+  static adaptGroup(data: CQGroupInfo) {
+    renameProperty(data, 'id', 'groupId')
+    renameProperty(data, 'name', 'groupName')
+  }
+
+  async getGroup(groupId: string, noCache?: boolean): Promise<CQGroupInfo> {
+    const data = await this.get('get_group_info', { groupId, noCache })
+    CQBot.adaptGroup(data)
+    return data
+  }
+
+  async getGroupList(): Promise<CQGroupInfo[]> {
+    const data = await this.get('get_group_list')
+    data.forEach(CQBot.adaptGroup)
+    return data
+  }
+
+  static adaptGroupMember(data: CQGroupMemberInfo) {
+  }
+
+  async getGroupMember(groupId: string, userId: string, noCache?: boolean): Promise<GroupMemberInfo> {
+    const data = await this.get('get_group_member_info', { groupId, userId, noCache })
+    CQBot.adaptGroupMember(data)
+    return data
+  }
+
+  async getGroupMemberList(groupId: string): Promise<GroupMemberInfo[]> {
+    const data = await this.get('get_group_member_list', { groupId })
+    data.forEach(CQBot.adaptGroupMember)
+    return data
   }
 
   async get<T = any>(action: string, params = {}, silent = false): Promise<T> {
@@ -327,11 +344,6 @@ export class CQBot extends Bot {
       return BotStatusCode.NET_ERROR
     }
   }
-
-  async getMemberMap(groupId: string) {
-    const list = await this.getGroupMemberList(groupId)
-    return Object.fromEntries(list.map(info => [info.userId, info.card || info.nickname]))
-  }
 }
 
 function defineSync(name: string, ...params: string[]) {
@@ -359,7 +371,6 @@ function defineExtract(name: string, key: string, ...params: string[]) {
   }
 }
 
-defineAsync('delete_msg', 'message_id')
 defineAsync('send_like', 'user_id', 'times')
 defineAsync('set_group_kick', 'group_id', 'user_id', 'reject_add_request')
 defineAsync('set_group_ban', 'group_id', 'user_id', 'duration')
@@ -369,7 +380,6 @@ defineAsync('set_group_anonymous', 'group_id', 'enable')
 defineAsync('set_group_card', 'group_id', 'user_id', 'card')
 defineAsync('set_group_leave', 'group_id', 'is_dismiss')
 defineAsync('set_group_special_title', 'group_id', 'user_id', 'special_title', 'duration')
-defineSync('get_msg', 'message_id')
 defineSync('get_login_info')
 defineSync('get_stranger_info', 'user_id', 'no_cache')
 defineSync('get_friend_list')

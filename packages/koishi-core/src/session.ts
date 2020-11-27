@@ -338,6 +338,21 @@ export interface MessageInfo {
   sender: SenderInfo
 }
 
+export interface GroupInfo {
+  id: string
+  name: string
+}
+
+export interface UserInfo {
+  id: string
+  username: string
+}
+
+export interface GroupMemberInfo extends UserInfo {
+  nickname: string
+  roles: string[]
+}
+
 export function getTargetId(target: string | number) {
   if (typeof target !== 'string' && typeof target !== 'number') return
   let qq = +target

@@ -1,5 +1,5 @@
 import { paramCase, sleep } from 'koishi-utils'
-import { Session, MessageInfo, EventTypeMap } from './session'
+import { Session, MessageInfo, EventTypeMap, GroupInfo, GroupMemberInfo } from './session'
 import { App, AppStatus } from './app'
 
 export interface BotOptions {
@@ -57,10 +57,19 @@ export interface Bot extends BotOptions {
   version?: string
   getSelfId(): Promise<string>
   getStatusCode(): Promise<BotStatusCode>
-  getMemberMap(groupId: string): Promise<Record<string, string>>
+
+  // message
   sendMessage(channelId: string, message: string): Promise<string>
   getMessage(channelId: string, messageId: string): Promise<MessageInfo>
   deleteMessage(channelId: string, messageId: string): Promise<void>
+
+  // group
+  getGroup(groupId: string): Promise<GroupInfo>
+  getGroupList(): Promise<GroupInfo[]>
+
+  // group member
+  getGroupMember(groupId: string, userId: string): Promise<GroupMemberInfo>
+  getGroupMemberList(groupId: string): Promise<GroupMemberInfo[]>
 }
 
 export class Bot {
@@ -79,6 +88,11 @@ export class Bot {
       [ctxType + 'Id']: ctxId,
       time: Math.round(Date.now() / 1000),
     })
+  }
+
+  async getGroupMemberMap(groupId: string) {
+    const list = await this.getGroupMemberList(groupId)
+    return Object.fromEntries(list.map(info => [info.id, info.nickname || info.username]))
   }
 
   async broadcast(channels: string[], message: string, delay = this.app.options.broadcastDelay) {

@@ -1,7 +1,7 @@
 import SocketSession from './network/session'
 import { App, EventType, Server, Session } from 'koishi-core'
 import { TomonBot, TomonMessageInfo } from './bot'
-import { camelize, paramCase } from 'koishi-utils'
+import { camelize } from 'koishi-utils'
 
 export * from './bot'
 
@@ -21,10 +21,10 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
   async _listen(bot: TomonBot) {
     // part 1: authorization
     const { token, fullName, password } = bot
-    const info = camelize(await bot.route('/auth/login').post({
-      data: paramCase({ token, fullName, password }),
+    const info = await bot.request('POST', '/auth/login', {
+      data: { token, fullName, password },
       auth: false,
-    }))
+    })
     Object.assign(bot, info)
     bot.ready = true
     const selfId = bot.selfId = bot.discriminator
@@ -42,7 +42,7 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
       })
 
       function dispatchMessage(data: TomonMessageInfo, eventType: EventType) {
-        data = camelize(data)
+        TomonBot.adaptMessage(data = camelize(data))
         const userId = data.author.discriminator
         console.log(userId, selfId)
         if (userId === selfId) return

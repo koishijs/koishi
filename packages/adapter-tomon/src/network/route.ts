@@ -1,10 +1,10 @@
-import axios, { AxiosRequestConfig } from 'axios'
+import axios, { Method, AxiosRequestConfig } from 'axios'
+import { camelize, paramCase } from 'koishi-utils'
 import FormData from 'form-data'
 import fs from 'fs'
 import ospath from 'path'
 import urljoin from 'url-join'
 
-type RequestMethod = 'get' | 'post' | 'put' | 'delete' | 'patch'
 const DEFAULT_TIMEOUT = 30000
 
 export interface RequestOptions {
@@ -52,7 +52,7 @@ export default class Route {
     return this.token ? `Bearer ${this.token}` : undefined
   }
 
-  async request(method: RequestMethod, options?: RequestOptions): Promise<any> {
+  async request(method: Method, options?: RequestOptions): Promise<any> {
     const url = this.url(options)
     let headers: { [key: string]: any } = {}
     if (options?.headers) {
@@ -79,7 +79,7 @@ export default class Route {
         ...body.getHeaders(),
       }
     } else if (options?.data) {
-      body = JSON.stringify(options.data)
+      body = JSON.stringify(paramCase(options.data))
       headers['Content-Type'] = 'application/json'
     }
     const response = await axios({
@@ -90,26 +90,6 @@ export default class Route {
       data: body,
       timeout: options?.timeout || DEFAULT_TIMEOUT,
     })
-    return response.data
-  }
-
-  async get(options?: RequestOptions): Promise<any> {
-    return this.request('get', options)
-  }
-
-  async post(options?: RequestOptions): Promise<any> {
-    return this.request('post', options)
-  }
-
-  async patch(options?: RequestOptions): Promise<any> {
-    return this.request('patch', options)
-  }
-
-  async put(options?: RequestOptions): Promise<any> {
-    return this.request('put', options)
-  }
-
-  async delete(options?: RequestOptions): Promise<any> {
-    return this.request('delete', options)
+    return camelize(response.data)
   }
 }

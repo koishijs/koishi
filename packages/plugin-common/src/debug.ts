@@ -42,11 +42,11 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   const groupMap: Record<number, [Promise<string>, number]> = {}
 
   async function getGroupName(session: Session) {
-    if (session.messageType === 'private') return '私聊'
+    if (session.subType === 'private') return '私聊'
     const { groupId: id, $bot } = session
     const timestamp = Date.now()
     if (!groupMap[id] || timestamp - groupMap[id][1] >= refreshGroupName) {
-      const promise = $bot.getGroupInfo(id).then(d => d.groupName, () => '' + id)
+      const promise = $bot.getGroup(id).then(d => d.name, () => '' + id)
       groupMap[id] = [promise, timestamp]
     }
     let output = await groupMap[id][0]
@@ -56,7 +56,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
     return output
   }
 
-  const userMap: Record<number, [string | Promise<string>, number]> = {}
+  const userMap: Record<string, [string | Promise<string>, number]> = {}
 
   function getSenderName({ anonymous, sender, userId }: Session) {
     return anonymous
@@ -75,12 +75,12 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
         if (code.data.qq === 'all') {
           output += '@全体成员'
         } else {
-          const id = +code.data.qq
+          const id = code.data.qq
           const timestamp = Date.now()
           if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
             const promise = session.$bot
-              .getGroupMemberInfo(session.groupId, id)
-              .then(d => d.nickname, () => '' + id)
+              .getGroupMember(session.groupId, id)
+              .then(d => d.nickname, () => id)
             userMap[id] = [promise, timestamp]
           }
           output += '@' + await userMap[id][0]

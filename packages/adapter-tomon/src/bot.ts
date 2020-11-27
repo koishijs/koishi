@@ -1,7 +1,8 @@
-import { Bot, MessageInfo } from 'koishi-core'
-import { camelize } from 'koishi-utils'
-import Route from './network/route'
+import { Bot, MessageInfo, GroupInfo, UserInfo, GroupMemberInfo } from 'koishi-core'
+import { Method } from 'axios'
+import Route, { RequestOptions } from './network/route'
 import WebSocket from 'ws'
+import { renameProperty } from 'koishi-utils'
 
 declare module 'koishi-core/dist/database' {
   interface Platforms {
@@ -15,49 +16,7 @@ export interface Author {
   discriminator: string;
   avatar: string;
   name: string;
-  avatarUrl: string;
   type: number;
-}
-
-export interface User {
-  id: string;
-  username: string;
-  discriminator: string;
-  avatar: string;
-  name: string;
-  avatarUrl: string;
-  createdAt: Date;
-  updatedAt: Date;
-  type: number;
-}
-
-export interface Member {
-  user: User;
-  guildId: string;
-  nick: string;
-  joinedAt: string;
-  mute: boolean;
-  deaf: boolean;
-  roles: string[];
-}
-
-export interface Guild {
-  id: string;
-  name: string;
-  icon: string;
-  iconUrl: string;
-  background: string;
-  backgroundUrl: string;
-  backgroundProps: string;
-  description: string;
-  ownerId: string;
-  joinedAt: string;
-  position: number;
-  defaultMessageNotifications: number;
-  systemChannelFlags: number;
-  systemChannelId: string;
-  banned: boolean;
-  updatedAt: string;
 }
 
 export interface Channel {
@@ -79,7 +38,7 @@ export interface TomonMessageInfo extends MessageInfo {
   channelId: string
   guildId: string
   author: Author
-  member?: Member
+  member?: TomonGroupMemberInfo
   nonce: string
   attachments: string[]
   reactions: string[]
@@ -89,10 +48,35 @@ export interface TomonMessageInfo extends MessageInfo {
   editedTimestamp: number
 }
 
-function adaptMessage(data: TomonMessageInfo) {
-  data = camelize(data)
-  data.timestamp = +new Date(data.timestamp)
-  return data
+export interface TomonGroupInfo extends GroupInfo {
+  description: string
+  icon: string
+  iconUrl: string
+  background: string
+  backgroundUrl: string
+  backgroundProps: string
+  ownerId: string
+  joinedAt: number
+  position: number
+  defaultMessageNotifications: number
+  systemChannelFlags: number
+  systemChannelId: string
+  banned: boolean
+  updatedAt: number
+}
+
+export interface TomonUserInfo extends UserInfo {
+  discriminator: string
+  avatar: string
+  name: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface TomonGroupMemberInfo extends TomonUserInfo, GroupMemberInfo {
+  joinedAt: number
+  mute: boolean
+  deaf: boolean
 }
 
 export class TomonBot extends Bot {
@@ -104,7 +88,6 @@ export class TomonBot extends Bot {
   avatarUrl: string
   createdAt: string
   updatedAt: string
-  // type: number
   email: string
   emailVerified: boolean
   phone: string
@@ -112,29 +95,75 @@ export class TomonBot extends Bot {
   banned: boolean
   socket: WebSocket
 
-  route(path: string): Route {
-    return new Route(path, 'https://beta.tomon.co/api/v1', this.token)
+  static adaptMessage(data: TomonMessageInfo) {
+    data.timestamp = +new Date(data.timestamp)
+    if (data.member) TomonBot.adaptGroupMember(data.member)
+  }
+
+  static adaptGroup(data: TomonGroupInfo) {
+    data.updatedAt = +new Date(data.updatedAt)
+  }
+
+  static adaptUser(data: TomonUserInfo) {
+    data.createdAt = +new Date(data.createdAt)
+    data.updatedAt = +new Date(data.updatedAt)
+  }
+
+  static adaptGroupMember(data: TomonGroupMemberInfo) {
+    TomonBot.adaptUser(data)
+    renameProperty(data, 'nickname', 'nick')
+    data.joinedAt = +new Date(data.joinedAt)
+  }
+
+  request<T = any>(method: Method, path: string, options?: RequestOptions): Promise<T> {
+    return new Route(path, 'https://beta.tomon.co/api/v1', this.token).request(method, options)
   }
 
   async sendMessage(channelId: string, content: string) {
-    return this.route(`/channels/${channelId}/messages`).post({ data: { content } })
+    return this.request('POST', `/channels/${channelId}/messages`, { data: { content } })
   }
 
   async getMessage(channelId: string, messageId: string) {
-    const data = await this.route(`/channels/${channelId}/messages/${messageId}`).get()
-    return adaptMessage(data)
+    const data = await this.request('GET', `/channels/${channelId}/messages/${messageId}`)
+    TomonBot.adaptMessage(data)
+    return data
   }
 
   async editMessage(channelId: string, messageId: string, content: string) {
-    await this.route(`/channels/${channelId}/messages/${messageId}`).patch({ data: { content } })
+    await this.request('PATCH', `/channels/${channelId}/messages/${messageId}`, { data: { content } })
   }
 
   async deleteMessage(channelId: string, messageId: string) {
-    await this.route(`/channels/${channelId}/messages/${messageId}`).delete()
+    await this.request('DELETE', `/channels/${channelId}/messages/${messageId}`)
   }
 
-  async getMessages(channelId: string, limit?: number) {
-    const data: any[] = await this.route(`/channels/${channelId}/messages`).get({ data: { channel_id: channelId, limit } })
-    return data.map(adaptMessage)
+  async getMessageList(channelId: string, limit?: number): Promise<TomonMessageInfo[]> {
+    const data = await this.request('GET', `/channels/${channelId}/messages`, { data: { channelId, limit } })
+    data.forEach(TomonBot.adaptMessage)
+    return data
+  }
+
+  async getGroup(groupId: string): Promise<TomonGroupInfo> {
+    const data = await this.request('GET', `/guilds/${groupId}`)
+    TomonBot.adaptGroup(data)
+    return data
+  }
+
+  async getGroupList(): Promise<TomonGroupInfo[]> {
+    const data = await this.request('GET', '/users/@me/guilds')
+    data.forEach(TomonBot.adaptGroup)
+    return data
+  }
+
+  async getGroupMember(groupId: string, userId: string): Promise<TomonGroupMemberInfo> {
+    const data = await this.request('GET', `/guilds/${groupId}/members/${userId}`)
+    TomonBot.adaptGroupMember(data)
+    return data
+  }
+
+  async getGroupMemberList(groupId: string): Promise<TomonGroupMemberInfo[]> {
+    const data = await this.request('GET', `/guilds/${groupId}/members`)
+    data.forEach(TomonBot.adaptGroupMember)
+    return data
   }
 }
