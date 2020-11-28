@@ -149,7 +149,9 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     const group = await this.$app.database.getGroup(this.kind, id, fields)
     if (group) return group
     const fallback = Group.create(this.kind, id, assignee)
-    await this.$app.database.setGroup(this.kind, id, fallback)
+    if (assignee) {
+      await this.$app.database.setGroup(this.kind, id, fallback)
+    }
     return fallback
   }
 
@@ -189,7 +191,9 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     const user = await this.$app.database.getUser(this.kind, id, fields)
     if (user) return user
     const fallback = User.create(this.kind, id, authority)
-    await this.$app.database.setUser(this.kind, id, fallback)
+    if (authority) {
+      await this.$app.database.setUser(this.kind, id, fallback)
+    }
     return fallback
   }
 

@@ -1,5 +1,5 @@
-import { isInteger, difference, observe, Time, enumKeys } from 'koishi-utils'
-import { Context, getTargetId, User, Group, Command, ParsedArgv } from 'koishi-core'
+import { isInteger, difference, observe, Time, enumKeys, Random } from 'koishi-utils'
+import { Context, getTargetId, User, Group, Command, ParsedArgv, PlatformKind } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Group.Field, O extends {}, T>
   = (argv: ParsedArgv<U | 'authority', G, O> & { target: T }, ...args: string[])
@@ -119,6 +119,34 @@ Command.prototype.adminGruop = function (this: Command<never, never, { group?: s
 export function apply(ctx: Context) {
   ctx.command('user', '用户管理', { authority: 3 })
   ctx.command('group', '群管理', { authority: 3 })
+
+  const tokens: Record<string, [kind: PlatformKind, id: string]> = {}
+
+  ctx.private().command('user.bind', '绑定到账号', { authority: 0 })
+    .action(({ session }) => {
+      const token = Random.uuid()
+      const data = tokens[token] = [session.kind, session.userId]
+      setTimeout(() => {
+        if (tokens[token] === data) delete tokens[token]
+      }, 5 * Time.minute)
+      return [
+        '请在 5 分钟内使用你的账号在已绑定的平台内向四季酱私聊发送以下文本：',
+        token,
+        '注意：每个账号只能绑定到每个平台一次，此操作将会抹去你当前平台上的数据，请谨慎操作！',
+      ].join('\n')
+    })
+
+  ctx.prependMiddleware(async (session, next) => {
+    if (session.subType !== 'private') return next()
+    const data = tokens[session.message]
+    if (!data) return next()
+    const user = await session.$observeUser(['authority', data[0]])
+    if (!user.authority) return next()
+    if (user[data[0]]) return session.$send('账号绑定失败：你已经绑定过该平台。')
+    user[data[0]] = data[1]
+    await user._update()
+    return session.$send('账号绑定成功！')
+  })
 
   ctx.command('user.auth <value>', '权限信息', { authority: 4 })
     .adminUser(({ session, target }, value) => {

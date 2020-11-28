@@ -15,7 +15,7 @@ const logger = new Logger('server')
 export function createSession(server: Server, data: any) {
   renameProperty(data, 'event_type', 'post_type')
   const session = new Session(server.app, camelCase(data))
-  session.kind = 'qq'
+  session.kind = 'cqhttp'
   session.selfId = '' + session.selfId
   if (session.userId) session.userId = '' + session.userId
   if (session.groupId) session.groupId = '' + session.groupId
@@ -54,7 +54,6 @@ export default class Socket {
 
   connect = (resolve: (value: void) => void, reject: (error: Error) => void, bot: CQBot, socket: WebSocket) => {
     bot.ready = true
-    bot.socket = socket
 
     socket.on('message', (data) => {
       data = data.toString()
@@ -83,7 +82,6 @@ export default class Socket {
 
     socket.on('close', () => {
       delete bot._request
-      delete bot.socket
       bot.ready = false
     })
 

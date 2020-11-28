@@ -1,5 +1,6 @@
 import MysqlDatabase, { Config } from './database'
 import { User, Group, Database, extendDatabase, Context } from 'koishi-core'
+import { difference } from 'koishi-utils'
 
 export * from './database'
 export default MysqlDatabase
@@ -23,7 +24,7 @@ extendDatabase(MysqlDatabase, {
   },
 
   async getUsers(type, ...args) {
-    let ids: readonly number[], fields: readonly User.Field[]
+    let ids: readonly string[], fields: readonly User.Field[]
     if (args.length > 1) {
       ids = args[0]
       fields = inferFields(args[1])
@@ -37,9 +38,23 @@ extendDatabase(MysqlDatabase, {
     return this.select<User>('user', fields, ids && `?? IN (${ids.join(', ')})`, [type])
   },
 
-  async setUser(type, userId, data) {
-    // FIXME:
-    await this.update('user', userId, data)
+  async setUser(type, id, data) {
+    if (data === null) {
+      await this.query(`DELETE FROM ?? WHERE ?? = ?`, ['user', type, id])
+      return
+    }
+
+    data[type as any] = id
+    const keys = Object.keys(data)
+    const assignments = difference(keys, [type]).map((key) => {
+      key = this.escapeId(key)
+      return `${key} = VALUES(${key})`
+    })
+    await this.query(
+      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
+      ON DUPLICATE KEY UPDATE ${assignments.join(', ')}`,
+      ['user', ...this.formatValues('user', data, keys)],
+    )
   },
 
   async getGroup(type, id, fields) {
@@ -49,7 +64,7 @@ extendDatabase(MysqlDatabase, {
   },
 
   async getAllGroups(...args) {
-    let assignees: readonly number[], fields: readonly Group.Field[]
+    let assignees: readonly string[], fields: readonly Group.Field[]
     if (args.length > 1) {
       fields = args[0]
       assignees = args[1]

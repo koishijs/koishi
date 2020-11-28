@@ -1,10 +1,9 @@
 import { camelCase, Logger, snakeCase, capitalize, renameProperty } from 'koishi-utils'
 import { Bot, AccountInfo, StatusInfo, StrangerInfo, BotStatusCode, Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo } from 'koishi-core'
-import type WebSocket from 'ws'
 
 declare module 'koishi-core/dist/database' {
   interface Platforms {
-    qq: CQBot
+    cqhttp: CQBot
   }
 }
 
@@ -159,8 +158,6 @@ export interface CQBot {
 }
 
 export class CQBot extends Bot {
-  socket?: WebSocket
-
   async [Bot.$send](meta: Session, message: string, autoEscape = false) {
     if (!message) return
     if (this.app.options.cqhttp?.preferSync) {
