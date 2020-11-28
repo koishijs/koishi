@@ -23,7 +23,7 @@ export function registerUserInfo<K extends User.Field>(callback: UserInfoCallbac
 }
 
 export function apply(ctx: Context) {
-  ctx.command('info', '查看用户信息', { authority: 0 })
+  ctx.command('common/info', '查看用户信息', { authority: 0 })
     .alias('profile')
     .shortcut('我的信息')
     .userFields(['name'])

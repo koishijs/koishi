@@ -40,7 +40,7 @@ Session.prototype.$prompt = function $prompt(this: Session, timeout = this.$app.
     const dispose = this.$use((session) => {
       clearTimeout(timer)
       dispose()
-      resolve(session.message)
+      resolve(session.content)
     })
     const timer = setTimeout(() => {
       dispose()
@@ -79,7 +79,7 @@ Session.prototype.$suggest = function $suggest(this: Session, options: SuggestOp
 
     const dispose = this.$use((session, next) => {
       dispose()
-      const message = session.message.trim()
+      const message = session.content.trim()
       if (message && message !== '.' && message !== '。') return next()
       return apply.call(session, suggestions[0], next)
     })

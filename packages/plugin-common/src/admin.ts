@@ -117,8 +117,8 @@ Command.prototype.adminGruop = function (this: Command<never, never, { group?: s
 }
 
 export function apply(ctx: Context) {
-  ctx.command('user', '用户管理', { authority: 3 })
-  ctx.command('group', '群管理', { authority: 3 })
+  ctx.command('common/user', '用户管理', { authority: 3 })
+  ctx.command('common/group', '群管理', { authority: 3 })
 
   const tokens: Record<string, [kind: PlatformKind, id: string]> = {}
 
@@ -138,7 +138,7 @@ export function apply(ctx: Context) {
 
   ctx.prependMiddleware(async (session, next) => {
     if (session.subType !== 'private') return next()
-    const data = tokens[session.message]
+    const data = tokens[session.content]
     if (!data) return next()
     const user = await session.$observeUser(['authority', data[0]])
     if (!user.authority) return next()

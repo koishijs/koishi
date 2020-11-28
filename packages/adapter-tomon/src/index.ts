@@ -27,7 +27,7 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
     })
     Object.assign(bot, info)
     bot.ready = true
-    const selfId = bot.selfId = bot.discriminator
+    const selfId = bot.selfId = bot.id
     this.app.bots[selfId] = bot
 
     // part 2: connect to server
@@ -43,15 +43,16 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
 
       const dispatchMessage = (data: TomonMessageInfo, eventType: EventType) => {
         TomonBot.adaptMessage(data = camelize(data))
-        const userId = data.author.discriminator
+        const userId = data.author.id
         if (userId === selfId) return
+        // TODO: 处理图片和表情
+        if (!data.content) data.content = ''
         this.dispatch(new Session(this.app, {
           ...data,
           selfId,
           userId,
           eventType,
           kind: 'tomon',
-          message: data.content || '', // TODO 处理表情包和图片
           groupId: data['guildId'],
           subType: data['guildId'] ? 'group' : 'private',
         }))

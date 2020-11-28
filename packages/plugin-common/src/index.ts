@@ -15,6 +15,8 @@ export interface Config extends HandlerOptions, RepeaterOptions, SenderConfig {
 export const name = 'common'
 
 export function apply(ctx: Context, config: Config = {}) {
+  ctx.command('common', '基础功能')
+
   ctx.plugin(handler, config)
   ctx.plugin(repeater, config)
   ctx.plugin(sender, config)

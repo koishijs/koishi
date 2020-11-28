@@ -41,15 +41,15 @@ export interface Meta<E extends EventType = EventType> {
 
   // message event
   messageId?: string
-  message?: string
+  content?: string
   rawMessage?: string
   font?: number
   sender?: SenderInfo
   anonymous?: AnonymousInfo
 
   // notice event
-  operatorId?: number
-  targetId?: number
+  operatorId?: string
+  targetId?: string
   duration?: number
   file?: FileInfo
   honorType?: 'talkative' | 'performer' | 'emotion'

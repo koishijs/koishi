@@ -55,7 +55,7 @@ export default function apply(ctx: App, options: HandlerOptions = {}) {
   const { respondents = [], welcome = defaultMessage } = options
 
   respondents.length && ctx.middleware((session, next) => {
-    const message = simplify(session.message)
+    const message = simplify(session.content)
     for (const { match, reply } of respondents) {
       const capture = typeof match === 'string' ? message === match && [message] : message.match(match)
       if (capture) return session.$send(typeof reply === 'string' ? reply : reply(...capture))

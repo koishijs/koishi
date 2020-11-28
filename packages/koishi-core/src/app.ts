@@ -166,7 +166,7 @@ export class App extends Context {
   }
 
   private async _preprocess(session: Session, next: NextFunction) {
-    let message = this.options.processMessage(session.message)
+    let message = this.options.processMessage(session.content)
 
     let capture: RegExpMatchArray, atSelf = false
     // eslint-disable-next-line no-cond-assign
@@ -264,7 +264,7 @@ export class App extends Context {
           const index = stack.indexOf(lastCall)
           stack = `${stack.slice(0, index)}Middleware stack:${midStack}`
         }
-        this.logger('middleware').warn(`${session.message}\n${stack}`)
+        this.logger('middleware').warn(`${session.content}\n${stack}`)
       }
     }
     await next()

@@ -83,9 +83,9 @@ export class Bot {
     Object.assign(this, options)
   }
 
-  createSession(subType: EventTypeMap['message'], ctxType: 'group' | 'user', ctxId: string, message: string) {
+  createSession(subType: EventTypeMap['message'], ctxType: 'group' | 'user', ctxId: string, content: string) {
     return new Session(this.app, {
-      message,
+      content,
       subType,
       eventType: 'send',
       selfId: this.selfId,
