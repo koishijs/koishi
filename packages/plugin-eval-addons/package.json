@@ -38,7 +38,7 @@
   "peerDependencies": {
     "koishi-core": "^2.4.2",
     "koishi-plugin-eval": "^2.0.3",
-    "koishi-utils": "^3.1.5"
+    "koishi-utils": "^3.2.0"
   },
   "dependencies": {
     "js-yaml": "^3.14.0",

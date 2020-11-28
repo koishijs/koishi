@@ -38,7 +38,7 @@
   "peerDependencies": {
     "koishi-core": "^2.4.2",
     "koishi-plugin-puppeteer": "^1.0.1",
-    "koishi-utils": "^3.1.5"
+    "koishi-utils": "^3.2.0"
   },
   "dependencies": {
     "@octokit/webhooks": "^7.15.1",

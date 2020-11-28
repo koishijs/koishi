@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-mysql",
   "description": "MySQL support for Koishi",
-  "version": "2.1.0",
+  "version": "3.0.0-alpha.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -10,8 +10,7 @@
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
   "scripts": {
-    "lint": "eslint src --ext .ts",
-    "prepack": "tsc -b"
+    "lint": "eslint src --ext .ts"
   },
   "repository": {
     "type": "git",
@@ -37,7 +36,7 @@
   },
   "peerDependencies": {
     "koishi-core": "^2.4.2",
-    "koishi-utils": "^3.1.5"
+    "koishi-utils": "^3.2.0"
   },
   "dependencies": {
     "mysql": "^2.18.1"

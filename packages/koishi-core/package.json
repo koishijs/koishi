@@ -14,8 +14,7 @@
   "license": "MIT",
   "scripts": {
     "lint": "eslint src --ext .ts",
-    "precommit": "yarn lint",
-    "prepack": "tsc -b"
+    "precommit": "yarn lint"
   },
   "repository": {
     "type": "git",

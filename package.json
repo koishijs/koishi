@@ -33,6 +33,7 @@
     "lint": "eslint packages/*/src/**/*.ts --fix --cache",
     "pub": "ts-node build/publish",
     "shiki": "yarn workspace bot-shiki",
+    "v3": "yarn compile && yarn workspace bot-shiki node .",
     "utsuho": "yarn workspace bot-utsuho"
   },
   "version": "1.0.0",

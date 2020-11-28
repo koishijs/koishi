@@ -1,7 +1,7 @@
 {
   "name": "koishi-adapter-tomon",
   "description": "Tomon adapter for Koishi",
-  "version": "0.1.1",
+  "version": "1.0.0-alpha.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -11,8 +11,7 @@
   "license": "MIT",
   "scripts": {
     "lint": "eslint src --ext .ts",
-    "precommit": "yarn lint",
-    "prepack": "tsc -b"
+    "precommit": "yarn lint"
   },
   "repository": {
     "type": "git",
@@ -37,7 +36,7 @@
   "dependencies": {
     "@types/pako": "^1.0.1",
     "axios": "^0.21.0",
-    "koishi-utils": "^3.1.5",
+    "koishi-utils": "^3.2.0",
     "pako": "^1.0.11"
   }
 }
