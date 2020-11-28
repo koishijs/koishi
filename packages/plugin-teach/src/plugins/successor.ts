@@ -5,7 +5,7 @@ import { formatQuestionAnswers } from '../search'
 
 declare module '../receiver' {
   interface SessionState {
-    predecessors: Record<number, Record<number, number>>
+    predecessors?: Record<number, Record<number, number>>
   }
 }
 
@@ -252,7 +252,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/before-send', ({ dialogue, predecessors, userId }) => {
     const time = Date.now()
-    if (dialogue.flag & Dialogue.Flag.context) userId = 0
+    if (dialogue.flag & Dialogue.Flag.context) userId = ''
     const predMap = predecessors[userId] || (predecessors[userId] = {})
     for (const id of dialogue.predecessors) {
       delete predMap[id]

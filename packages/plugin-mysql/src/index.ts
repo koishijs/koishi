@@ -16,31 +16,31 @@ function inferFields(keys: readonly string[]) {
 }
 
 extendDatabase(MysqlDatabase, {
-  async getUser(type, userId, fields) {
-    fields = fields ? inferFields(fields) : User.fields
-    if (fields && !fields.length) return {} as any
-    const [data] = await this.select<User>('user', fields, '?? = ?', [type, userId])
-    return data && { ...data, _id: userId }
-  },
-
-  async getUsers(type, ...args) {
-    let ids: readonly string[], fields: readonly User.Field[]
-    if (args.length > 1) {
-      ids = args[0]
-      fields = inferFields(args[1])
-    } else if (args.length && typeof args[0][0] !== 'string') {
-      ids = args[0]
-      fields = User.fields
-    } else {
-      fields = inferFields(args[0] as any)
+  async getUser(...args) {
+    if (typeof args[0] === 'number') {
+      const [id, fields] = args as [number, readonly User.Field[]]
+      const [data] = await this.select<User>('user', fields, '`id` = ?', [id])
+      return data && { ...data, id }
+    } else if (Array.isArray(args[0])) {
+      const [ids, fields] = args as [number[], User.Field[]]
+      const list = ids.map(id => this.escape(id)).join(',')
+      return this.select<User>('user', fields, `\`id\` IN (${list})`)
     }
-    if (ids && !ids.length) return []
-    return this.select<User>('user', fields, ids && `?? IN (${ids.join(', ')})`, [type])
+
+    const [type, id, _fields] = args as [string, string | string[], readonly User.Field[]]
+    const fields = _fields ? inferFields(_fields) : User.fields
+    if (fields && !fields.length) return { [type]: id } as any
+    if (Array.isArray(id)) {
+      const list = id.map(id => this.escape(id)).join(',')
+      return this.select<User>('user', fields, `?? IN (${list})`, [type])
+    }
+    const [data] = await this.select<User>('user', fields, '?? = ?', [type, id])
+    return data && { ...data, [type]: id }
   },
 
   async setUser(type, id, data) {
     if (data === null) {
-      await this.query(`DELETE FROM ?? WHERE ?? = ?`, ['user', type, id])
+      await this.query('DELETE FROM `user` WHERE ?? = ?', [type, id])
       return
     }
 
@@ -58,30 +58,43 @@ extendDatabase(MysqlDatabase, {
   },
 
   async getGroup(type, id, fields) {
-    if (fields && !fields.length) return {} as any
+    if (fields && !fields.length) return { id, type } as any
+    if (Array.isArray(id)) {
+      const placeholders = id.map(() => '?').join(',')
+      return this.select<Group>('group', fields, '`type` = ? && `id` IN (' + placeholders + ')', [type, ...id])
+    }
     const [data] = await this.select<Group>('group', fields, '`type` = ? && `id` = ?', [type, id])
     return data && { ...data, id, type }
   },
 
-  async getAllGroups(...args) {
-    let assignees: readonly string[], fields: readonly Group.Field[]
-    if (args.length > 1) {
-      fields = args[0]
-      assignees = args[1]
-    } else if (args.length && typeof args[0][0] === 'number') {
-      fields = Group.fields
-      assignees = args[0] as any
+  async getGroupList(fields, type, assignees) {
+    const idMap: [type: string, ids: readonly string[]][] = []
+    if (assignees) {
+      idMap.push([type, assignees])
+    } else if (type) {
+      idMap.push([type, this.app.servers[type].bots.map(bot => bot.selfId)])
     } else {
-      fields = args[0] || Group.fields
-      assignees = await this.app.getSelfIds()
+      for (const type in this.app.servers) {
+        idMap.push([type, this.app.servers[type].bots.map(bot => bot.selfId)])
+      }
     }
-    if (!assignees.length) return []
-    return this.select<Group>('group', fields, `\`assignee\` IN (${assignees.join(',')})`)
+    return this.select<Group>('group', fields, idMap.map(([type, ids]) => {
+      return `\`type\` = ${this.escape(type)} AND \`assignee\` IN (${ids.map(id => this.escape(id)).join(',')})`
+    }).join(' OR '))
   },
 
-  async setGroup(type, groupId, data) {
-    // FIXME:
-    await this.update('group', groupId, data)
+  async setGroup(type, id, data) {
+    if (data === null) {
+      await this.query('DELETE FROM `group` WHERE `type` = ? && `id` = ?', [type, id])
+      return
+    }
+
+    const keys = Object.keys(data)
+    if (!keys.length) return
+    await this.query(
+      'UPDATE `group` SET ' + keys.map(key => `\`${key}\` = ?`).join(', ') + ' WHERE `type` = ? && `id` = ?',
+      [...this.formatValues('group', data, keys), type, id],
+    )
   },
 })
 

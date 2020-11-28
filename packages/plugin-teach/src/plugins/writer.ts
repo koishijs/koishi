@@ -56,10 +56,10 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     argv.authMap = {}
     const { options, userMap, session, dialogues, authMap } = argv
     const writers = deduplicate(dialogues.map(d => d.writer).filter(Boolean))
-    const fields: ('id' | 'name' | 'authority')[] = ['id', 'authority']
+    const fields: User.Field[] = ['id', 'authority', session.kind]
     if (options.writer && !writers.includes(options.writer)) writers.push(options.writer)
     if (!options.modify) fields.push('name')
-    const users = await ctx.database.getUsers(writers, fields)
+    const users = await ctx.database.getUser(writers, fields)
 
     let hasUnnamed = false
     for (const user of users) {
@@ -67,16 +67,16 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       if (options.modify) continue
       if (user.id !== +user.name) {
         userMap[user.id] = user.name
-      } else if (user.id === session.userId) {
+      } else if (user[session.kind] === session.userId) {
         userMap[user.id] = session.sender.card || session.sender.nickname
       } else {
         hasUnnamed = true
       }
     }
 
-    if (!options.modify && hasUnnamed && session.messageType === 'group') {
+    if (!options.modify && hasUnnamed && session.subType === 'group') {
       try {
-        const memberMap = await session.$bot.getMemberMap(session.groupId)
+        const memberMap = await session.$bot.getGroupMemberMap(session.groupId)
         for (const userId in memberMap) {
           userMap[userId] = userMap[userId] || memberMap[userId]
         }
@@ -131,18 +131,20 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/modify', ({ options, session, target }, data) => {
     if (options.writer !== undefined) {
+      // FIXME
       data.writer = options.writer
     } else if (!target) {
-      data.writer = session.userId
+      data.writer = session.$user.id
     }
   })
 
   // 触发代行者模式
   ctx.on('dialogue/before-send', async (state) => {
     const { dialogue, session } = state
-    if (dialogue.flag & Dialogue.Flag.substitute && dialogue.writer && session.userId !== dialogue.writer) {
+    if (dialogue.flag & Dialogue.Flag.substitute && dialogue.writer && session.$user.id !== dialogue.writer) {
       const userFields = new Set<User.Field>()
       ctx.app.emit(session, 'dialogue/before-attach-user', state, userFields)
+      // FIXME
       session.userId = dialogue.writer
       session.$user = null
       await session.$observeUser(userFields)

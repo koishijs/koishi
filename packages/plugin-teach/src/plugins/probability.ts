@@ -10,7 +10,7 @@ declare module '../utils' {
 
 declare module '../receiver' {
   interface SessionState {
-    activated: Record<number, number>
+    activated?: Record<number, number>
   }
 }
 

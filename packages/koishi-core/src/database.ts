@@ -93,12 +93,16 @@ export namespace Group {
 }
 
 export interface Database {
-  getUser<K extends User.Field>(type: PlatformKind, id: string, fields?: readonly K[]): Promise<Pick<User, K>>
-  getUsers<K extends User.Field>(type: PlatformKind, ids?: readonly string[], fields?: readonly K[]): Promise<Pick<User, K>[]>
+  getUser<K extends User.Field>(uid: number, fields?: readonly K[]): Promise<Pick<User, K | 'id'>>
+  getUser<K extends User.Field>(uids: number[], fields?: readonly K[]): Promise<Pick<User, K | 'id'>[]>
+  getUser<K extends User.Field, T extends PlatformKind>(type: T, id: string, fields?: readonly K[]): Promise<Pick<User, K | T>>
+  getUser<K extends User.Field, T extends PlatformKind>(type: T, ids: string[], fields?: readonly K[]): Promise<Pick<User, K | T>[]>
+  getUser(...args: [...([number | number[]] | [PlatformKind, string | string[]]), readonly User.Field[]]): Promise<any>
   setUser(type: PlatformKind, id: string, data: Partial<User>): Promise<void>
 
   getGroup<K extends Group.Field>(type: PlatformKind, id: string, fields?: readonly K[]): Promise<Pick<Group, K | 'id' | 'type'>>
-  getAllGroups<K extends Group.Field>(fields?: readonly K[], assignees?: readonly string[]): Promise<Pick<Group, K>[]>
+  getGroup<K extends Group.Field>(type: PlatformKind, ids: string[], fields?: readonly K[]): Promise<Pick<Group, K | 'id' | 'type'>[]>
+  getGroupList<K extends Group.Field>(fields?: readonly K[], type?: PlatformKind, assignees?: readonly string[]): Promise<Pick<Group, K>[]>
   setGroup(type: PlatformKind, id: string, data: Partial<Group>): Promise<void>
 }
 

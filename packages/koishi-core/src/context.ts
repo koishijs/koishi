@@ -271,7 +271,7 @@ export class Context {
     const [message, forced] = args as [string, boolean]
     if (!message) return []
 
-    const data = await this.database.getAllGroups(['id', 'type', 'assignee', 'flag'])
+    const data = await this.database.getGroupList(['id', 'type', 'assignee', 'flag'])
     const assignMap: Record<string, string[]> = {}
     for (const { id, assignee, flag } of data) {
       if (groups && !groups.includes(id)) continue

@@ -19,6 +19,8 @@ export function createSession(server: Server, data: any) {
   session.selfId = '' + session.selfId
   if (session.userId) session.userId = '' + session.userId
   if (session.groupId) session.groupId = '' + session.groupId
+  if (session.targetId) session.targetId = '' + session.targetId
+  if (session.operatorId) session.groupId = '' + session.operatorId
   if (session.eventType === 'message') {
     renameProperty(session, 'subType', 'messageType')
     // renameProperty(session, 'content', 'message')

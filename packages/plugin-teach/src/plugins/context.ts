@@ -79,7 +79,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       } else {
         argv.groups = options.groups ? options.groups.split(',') : []
       }
-    } else if (session.messageType !== 'group' && argv.partial) {
+    } else if (session.subType !== 'group' && argv.partial) {
       return '非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --groups 选项。'
     }
   })
@@ -109,7 +109,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/detail', ({ groups, flag }, output, { session }) => {
-    const thisGroup = session.messageType === 'group' && groups.includes('' + session.groupId)
+    const thisGroup = session.subType === 'group' && groups.includes('' + session.groupId)
     output.push(`生效环境：${flag & Dialogue.Flag.complement
       ? thisGroup
         ? groups.length - 1 ? `除本群等 ${groups.length} 个群外的所有群` : '除本群'
@@ -120,7 +120,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/detail-short', ({ groups, flag }, output, argv) => {
-    if (!argv.groups && argv.session.messageType === 'group') {
+    if (!argv.groups && argv.session.subType === 'group') {
       const isReversed = flag & Dialogue.Flag.complement
       const hasGroup = groups.includes('' + argv.session.groupId)
       output.unshift(!isReversed === hasGroup ? isReversed ? 'E' : 'e' : isReversed ? 'd' : 'D')

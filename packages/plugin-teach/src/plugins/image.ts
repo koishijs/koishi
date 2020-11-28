@@ -78,7 +78,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       return { totalCount, totalSize }
     }
 
-    ctx.router.get(uploadPath, async (ctx) => {
+    ctx.app.router.get(uploadPath, async (ctx) => {
       const { salt, sign, url, file } = ctx.query
       if (!file) return ctx.body = await getStatus()
 

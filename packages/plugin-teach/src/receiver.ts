@@ -53,8 +53,8 @@ declare module './utils' {
 }
 
 export interface SessionState {
-  userId: number
-  groupId: number
+  userId?: string
+  groupId?: string
   answer?: string
   session?: Session<User.Field>
   test?: DialogueTest

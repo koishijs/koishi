@@ -17,7 +17,7 @@ declare module '../utils' {
 
 declare module '../receiver' {
   interface SessionState {
-    counters: Record<number, number>
+    counters?: Record<number, number>
   }
 }
 

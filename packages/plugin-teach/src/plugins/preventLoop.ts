@@ -18,8 +18,8 @@ declare module '../utils' {
 
 declare module '../receiver' {
   interface SessionState {
-    initiators: number[]
-    loopTimestamp: number
+    initiators?: string[]
+    loopTimestamp?: number
   }
 }
 

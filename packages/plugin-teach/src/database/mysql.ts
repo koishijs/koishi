@@ -92,7 +92,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   },
 })
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Type, tables }) => {
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ DataType, tables }) => {
   tables.dialogue = Object.assign<any, any>([
     'PRIMARY KEY (`id`) USING BTREE',
   ], {

@@ -46,7 +46,7 @@ export interface Dialogue {
   _weight?: number
   _capture?: RegExpExecArray
   _type?: Dialogue.ModifyType
-  _operator?: number
+  _operator?: string
   _timestamp?: number
   _backup?: Readonly<Dialogue>
 }
