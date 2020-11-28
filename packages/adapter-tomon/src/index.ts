@@ -41,10 +41,9 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
         resolve()
       })
 
-      function dispatchMessage(data: TomonMessageInfo, eventType: EventType) {
+      const dispatchMessage = (data: TomonMessageInfo, eventType: EventType) => {
         TomonBot.adaptMessage(data = camelize(data))
         const userId = data.author.discriminator
-        console.log(userId, selfId)
         if (userId === selfId) return
         this.dispatch(new Session(this.app, {
           ...data,

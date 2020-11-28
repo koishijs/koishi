@@ -2,7 +2,6 @@ import { Bot, MessageInfo, GroupInfo, UserInfo, GroupMemberInfo } from 'koishi-c
 import { Method } from 'axios'
 import Route, { RequestOptions } from './network/route'
 import WebSocket from 'ws'
-import { renameProperty } from 'koishi-utils'
 
 declare module 'koishi-core/dist/database' {
   interface Platforms {
@@ -111,7 +110,6 @@ export class TomonBot extends Bot {
 
   static adaptGroupMember(data: TomonGroupMemberInfo) {
     TomonBot.adaptUser(data)
-    renameProperty(data, 'nickname', 'nick')
     data.joinedAt = +new Date(data.joinedAt)
   }
 
@@ -121,6 +119,11 @@ export class TomonBot extends Bot {
 
   async sendMessage(channelId: string, content: string) {
     return this.request('POST', `/channels/${channelId}/messages`, { data: { content } })
+  }
+
+  async sendPrivateMessage(userId: string, content: string) {
+    const channel = await this.request<Channel>('POST', '/users/@me/channels', { data: { recipients: [userId] } })
+    return this.sendMessage(channel.id, content)
   }
 
   async getMessage(channelId: string, messageId: string) {
@@ -165,5 +168,9 @@ export class TomonBot extends Bot {
     const data = await this.request('GET', `/guilds/${groupId}/members`)
     data.forEach(TomonBot.adaptGroupMember)
     return data
+  }
+
+  getUser() {
+    return Promise.reject(new Error('not implemented'))
   }
 }

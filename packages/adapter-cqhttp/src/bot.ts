@@ -1,5 +1,5 @@
 import { camelCase, Logger, snakeCase, capitalize, renameProperty } from 'koishi-utils'
-import { Bot, AccountInfo, SenderInfo, StatusInfo, StrangerInfo, BotStatusCode, Session, MessageInfo, GroupInfo, GroupMemberInfo } from 'koishi-core'
+import { Bot, AccountInfo, StatusInfo, StrangerInfo, BotStatusCode, Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo } from 'koishi-core'
 import type WebSocket from 'ws'
 
 declare module 'koishi-core/dist/database' {
@@ -32,8 +32,12 @@ export interface CQGroupInfo extends GroupInfo {
   maxMemberCount: number
 }
 
-// FIXME
-export interface CQGroupMemberInfo extends GroupMemberInfo, SenderInfo {
+export interface CQUserInfo extends UserInfo {
+  sex?: 'male' | 'female' | 'unknown'
+  age?: number
+}
+
+export interface CQGroupMemberInfo extends GroupMemberInfo, CQUserInfo {
   cardChangeable: boolean
   groupId: number
   joinTime: number
@@ -174,15 +178,33 @@ export class CQBot extends Bot {
     }
 
     return ctxType === 'group'
-      ? this.sendGroupMsgAsync(ctxId, message, autoEscape)
-      : this.sendPrivateMsgAsync(ctxId, message, autoEscape)
+      ? this.sendGroupMessageAsync(ctxId, message, autoEscape)
+      : this.sendPrivateMessageAsync(ctxId, message, autoEscape)
+  }
+
+  async get<T = any>(action: string, params = {}, silent = false): Promise<T> {
+    logger.debug('[request] %s %o', action, params)
+    const response = await this._request(action, snakeCase(params))
+    logger.debug('[response] %o', response)
+    const { data, retcode } = response
+    if (retcode === 0 && !silent) {
+      return camelCase(data)
+    } else if (retcode < 0 && !silent) {
+      throw new SenderError(params, action, retcode, this.selfId)
+    } else if (retcode > 1) {
+      throw new SenderError(params, action, retcode, this.selfId)
+    }
+  }
+
+  async getAsync(action: string, params = {}) {
+    await this.get(action + '_async', params)
   }
 
   sendMessage(channelId: string, message: string) {
     const [ctxType, ctxId] = channelId.split(':')
     return ctxType === 'group'
-      ? this.sendGroupMsg(ctxId, message)
-      : this.sendPrivateMsg(ctxId, message)
+      ? this.sendGroupMessage(ctxId, message)
+      : this.sendPrivateMessage(ctxId, message)
   }
 
   async getMessage(channelId: string, messageId: string) {
@@ -215,7 +237,20 @@ export class CQBot extends Bot {
     return data
   }
 
+  static adaptUser(data: CQUserInfo) {
+    renameProperty(data, 'id', 'userId')
+    renameProperty(data, 'name', 'username')
+  }
+
   static adaptGroupMember(data: CQGroupMemberInfo) {
+    CQBot.adaptUser(data)
+    renameProperty(data, 'nick', 'card')
+  }
+
+  async getUser(userId: string, noCache?: boolean): Promise<CQUserInfo> {
+    const data = await this.get('get_strange_info', { userId, noCache })
+    CQBot.adaptUser(data)
+    return data
   }
 
   async getGroupMember(groupId: string, userId: string, noCache?: boolean): Promise<GroupMemberInfo> {
@@ -230,25 +265,7 @@ export class CQBot extends Bot {
     return data
   }
 
-  async get<T = any>(action: string, params = {}, silent = false): Promise<T> {
-    logger.debug('[request] %s %o', action, params)
-    const response = await this._request(action, snakeCase(params))
-    logger.debug('[response] %o', response)
-    const { data, retcode } = response
-    if (retcode === 0 && !silent) {
-      return camelCase(data)
-    } else if (retcode < 0 && !silent) {
-      throw new SenderError(params, action, retcode, this.selfId)
-    } else if (retcode > 1) {
-      throw new SenderError(params, action, retcode, this.selfId)
-    }
-  }
-
-  async getAsync(action: string, params = {}) {
-    await this.get(action + '_async', params)
-  }
-
-  async sendGroupMsg(groupId: string, message: string, autoEscape = false) {
+  async sendGroupMessage(groupId: string, message: string, autoEscape = false) {
     if (!message) return
     const session = this.createSession('group', 'group', groupId, message)
     if (this.app.bail(session, 'before-send', session)) return
@@ -258,14 +275,14 @@ export class CQBot extends Bot {
     return messageId
   }
 
-  sendGroupMsgAsync(groupId: string, message: string, autoEscape = false) {
+  sendGroupMessageAsync(groupId: string, message: string, autoEscape = false) {
     if (!message) return
     const session = this.createSession('group', 'group', groupId, message)
     if (this.app.bail(session, 'before-send', session)) return
     return this.getAsync('send_group_msg', { groupId, message: session.message, autoEscape })
   }
 
-  async sendPrivateMsg(userId: string, message: string, autoEscape = false) {
+  async sendPrivateMessage(userId: string, message: string, autoEscape = false) {
     if (!message) return
     const session = this.createSession('private', 'user', userId, message)
     if (this.app.bail(session, 'before-send', session)) return
@@ -275,7 +292,7 @@ export class CQBot extends Bot {
     return messageId
   }
 
-  sendPrivateMsgAsync(userId: string, message: string, autoEscape = false) {
+  sendPrivateMessageAsync(userId: string, message: string, autoEscape = false) {
     if (!message) return
     const session = this.createSession('private', 'user', userId, message)
     if (this.app.bail(session, 'before-send', session)) return
@@ -381,7 +398,6 @@ defineAsync('set_group_card', 'group_id', 'user_id', 'card')
 defineAsync('set_group_leave', 'group_id', 'is_dismiss')
 defineAsync('set_group_special_title', 'group_id', 'user_id', 'special_title', 'duration')
 defineSync('get_login_info')
-defineSync('get_stranger_info', 'user_id', 'no_cache')
 defineSync('get_friend_list')
 defineSync('get_group_list')
 defineSync('get_group_info', 'group_id', 'no_cache')

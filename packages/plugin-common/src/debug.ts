@@ -80,7 +80,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
           if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
             const promise = session.$bot
               .getGroupMember(session.groupId, id)
-              .then(d => d.nickname, () => id)
+              .then(d => d.nick, () => id)
             userMap[id] = [promise, timestamp]
           }
           output += '@' + await userMap[id][0]

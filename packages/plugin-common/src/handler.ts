@@ -29,24 +29,27 @@ export interface HandlerOptions {
 
 const defaultMessage: WelcomeMessage = session => `欢迎新大佬 [CQ:at,qq=${session.userId}]！`
 
-async function getHandleResult(handler: RequestHandler, session: Session): Promise<any> {
+type CQSession = Session<never, never, {}, 'qq'>
+
+async function getHandleResult(handler: RequestHandler, session: CQSession): Promise<any> {
   return typeof handler === 'function' ? handler(session) : handler
 }
 
 export default function apply(ctx: App, options: HandlerOptions = {}) {
-  ctx.on('request/friend', async (session) => {
+  ctx.on('request/friend', async (session: CQSession) => {
     const result = await getHandleResult(options.onFriend, session)
     return result !== undefined && session.$bot.setFriendAddRequest(session.flag, result)
   })
 
-  ctx.on('request/group/add', async (session) => {
+  // FIXME: subtype
+  ctx.on('request/group/add', async (session: CQSession) => {
     const result = await getHandleResult(options.onGroupAdd, session)
-    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subType, result)
+    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subType as any, result)
   })
 
-  ctx.on('request/group/invite', async (session) => {
+  ctx.on('request/group/invite', async (session: CQSession) => {
     const result = await getHandleResult(options.onGroupInvite, session)
-    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subType, result)
+    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subType as any, result)
   })
 
   const { respondents = [], welcome = defaultMessage } = options
@@ -82,13 +85,13 @@ export default function apply(ctx: App, options: HandlerOptions = {}) {
     })
   }
 
-  ctx.on('group-increase', async (session) => {
+  ctx.on('group-member-added', async (session) => {
     if (ctx.bots[session.userId]) return
     if (ctx.database) {
       const group = await ctx.database.getGroup(session.kind, session.groupId, ['assignee'])
       if (group.assignee !== session.selfId) return
     }
     const output = typeof welcome === 'string' ? welcome : await welcome(session)
-    await session.$bot.sendGroupMsg(session.groupId, output)
+    await session.$bot.sendMessage(session.channelId, output)
   })
 }

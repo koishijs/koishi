@@ -101,7 +101,7 @@ Command.prototype.adminGruop = function (this: Command<never, never, { group?: s
       const data = await session.$getGroup(options.group, [...fields])
       if (!data) return '未找到指定的群。'
       target = observe(data, diff => database.setGroup(session.kind, options.group, diff), `group ${options.group}`)
-    } else if (session.messageType === 'group') {
+    } else if (session.subType === 'group') {
       target = await session.$observeGroup(fields)
     } else {
       return '当前不在群上下文中，请使用 -g 参数指定目标群。'

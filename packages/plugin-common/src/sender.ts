@@ -53,7 +53,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       const { $username: name, userId } = session
       const nickname = name === '' + userId ? userId : `${name} (${userId})`
       const message = `收到来自 ${nickname} 的反馈信息：\n${text}`
-      const id = await session.$bot.sendPrivateMsg(config.operator, message)
+      const id = await session.$bot.sendPrivateMessage(config.operator, message)
       interactions[id] = userId
       return '反馈信息发送成功！'
     })
@@ -61,9 +61,9 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
   ctx.middleware((session, next) => {
     const { $reply, $parsed } = session
     if (!$parsed || !$reply) return next()
-    const userId = interactions[$reply.messageId]
+    const userId = interactions[$reply.id]
     if (!userId) return next()
-    return session.$bot.sendPrivateMsg(userId, $parsed)
+    return session.$bot.sendPrivateMessage(userId, $parsed)
   })
 
   ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3 })
@@ -83,7 +83,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       if (!message) return '请输入要触发的指令。'
 
       if (options.member) {
-        if (session.messageType === 'private') {
+        if (session.subType === 'private') {
           return '无法在私聊上下文使用 --member 选项。'
         }
         options.group = session.groupId
@@ -101,13 +101,11 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       delete newSession.groupId
 
       if (!options.group) {
-        newSession.messageType = 'private'
-        newSession.subType = options.type || 'other'
+        newSession.subType = 'private'
         delete newSession.$group
       } else if (options.group !== session.groupId) {
         newSession.groupId = options.group
-        newSession.messageType = 'group'
-        newSession.subType = options.type || 'normal'
+        newSession.subType = 'group'
         delete newSession.$group
         await newSession.$observeGroup(Group.fields)
       }
@@ -127,10 +125,10 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       }
 
       if (options.group) {
-        const info = await session.$bot.getGroupMemberInfo(newSession.groupId, newSession.userId).catch(() => ({}))
+        const info = await session.$bot.getGroupMember(newSession.groupId, newSession.userId).catch(() => ({}))
         Object.assign(newSession.sender, info)
       } else if (options.user) {
-        const info = await session.$bot.getStrangerInfo(newSession.userId).catch(() => ({}))
+        const info = await session.$bot.getUser(newSession.userId).catch(() => ({}))
         Object.assign(newSession.sender, info)
       }
 

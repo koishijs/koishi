@@ -67,7 +67,7 @@ const logger = new Logger('session')
 
 export interface Session<U, G, O, K, E extends EventType = EventType> extends Meta<E> {}
 
-export class Session<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}, K extends PlatformKind = PlatformKind> {
+export class Session<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}, K extends PlatformKind = never> {
   $user?: User.Observed<U>
   $group?: Group.Observed<G>
   $app?: App
@@ -96,7 +96,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   }
 
   get $bot() {
-    return this.$app.bots[this.selfId] as PlatformKind extends K ? Bot : Platforms[K]
+    return this.$app.bots[this.selfId] as [K] extends [never] ? Bot : Platforms[K]
   }
 
   get $username(): string {
@@ -185,7 +185,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     return this.$group = group
   }
 
-  async $getUser<K extends User.Field = never>(id: string = this.userId, fields: readonly K[] = [], authority?: number) {
+  async $getUser<K extends User.Field = never>(id: string = this.userId, fields: readonly K[] = [], authority = 0) {
     const user = await this.$app.database.getUser(this.kind, id, fields)
     if (user) return user
     const fallback = User.create(this.kind, id, authority)
@@ -345,11 +345,11 @@ export interface GroupInfo {
 
 export interface UserInfo {
   id: string
-  username: string
+  name: string
 }
 
 export interface GroupMemberInfo extends UserInfo {
-  nickname: string
+  nick: string
   roles: string[]
 }
 
