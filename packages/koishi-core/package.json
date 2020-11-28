@@ -1,7 +1,7 @@
 {
   "name": "koishi-core",
   "description": "Core features for Koishi",
-  "version": "2.4.2",
+  "version": "3.0.0-alpha.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "engines": {
@@ -45,7 +45,7 @@
     "koa": "^2.13.0",
     "koa-bodyparser": "^4.3.0",
     "koa-router": "^10.0.0",
-    "koishi-utils": "^3.1.5",
+    "koishi-utils": "^3.2.0",
     "lru-cache": "^6.0.0"
   }
 }
