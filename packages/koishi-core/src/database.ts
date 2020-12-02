@@ -7,7 +7,7 @@ export interface Tables {
   group: Group
 }
 
-export interface User extends Record<PlatformKind, string> {
+export interface User extends Record<PlatformType, string> {
   id: number
   flag: number
   authority: number
@@ -24,7 +24,7 @@ export namespace User {
   export type Field = keyof User
   export const fields: Field[] = []
   export type Observed<K extends Field = Field> = utils.Observed<Pick<User, K>, Promise<void>>
-  type Getter = (type: PlatformKind, id: string, authority: number) => Partial<User>
+  type Getter = (type: PlatformType, id: string, authority: number) => Partial<User>
   const getters: Getter[] = []
 
   export function extend(getter: Getter) {
@@ -40,7 +40,7 @@ export namespace User {
     timers: {},
   }))
 
-  export function create(type: PlatformKind, id: string, authority: number) {
+  export function create(type: PlatformType, id: string, authority: number) {
     const result = {} as User
     for (const getter of getters) {
       Object.assign(result, getter(type, id, authority))
@@ -51,11 +51,11 @@ export namespace User {
 
 export interface Platforms {}
 
-export type PlatformKind = keyof Platforms
+export type PlatformType = keyof Platforms
 
 export interface Group {
   id: string
-  type: PlatformKind
+  type: PlatformType
   flag: number
   assignee: string
 }
@@ -69,15 +69,15 @@ export namespace Group {
   export type Field = keyof Group
   export const fields: Field[] = []
   export type Observed<K extends Field = Field> = utils.Observed<Pick<Group, K>, Promise<void>>
-  type Getter = (type: PlatformKind, id: string, assignee: string) => Partial<Group>
+  type Getter = (type: PlatformType, id: string, assignee: string) => Partial<Group>
   const getters: Getter[] = []
 
   export function extend(getter: Getter) {
     getters.push(getter)
-    fields.push(...Object.keys(getter(null as never, '0', '0')) as any)
+    fields.push(...Object.keys(getter(null as never, '', '')) as any)
   }
 
-  export function create(type: PlatformKind, id: string, assignee: string) {
+  export function create(type: PlatformType, id: string, assignee: string) {
     const result = {} as Group
     for (const getter of getters) {
       Object.assign(result, getter(type, id, assignee))
@@ -85,25 +85,21 @@ export namespace Group {
     return result
   }
 
-  extend((id, assignee) => ({
-    id,
-    assignee,
-    flag: 0,
-  }))
+  extend((type, id, assignee) => ({ type, id, assignee, flag: 0 }))
 }
 
 export interface Database {
   getUser<K extends User.Field>(uid: number, fields?: readonly K[]): Promise<Pick<User, K | 'id'>>
   getUser<K extends User.Field>(uids: number[], fields?: readonly K[]): Promise<Pick<User, K | 'id'>[]>
-  getUser<K extends User.Field, T extends PlatformKind>(type: T, id: string, fields?: readonly K[]): Promise<Pick<User, K | T>>
-  getUser<K extends User.Field, T extends PlatformKind>(type: T, ids: string[], fields?: readonly K[]): Promise<Pick<User, K | T>[]>
-  getUser(...args: [...([number | number[]] | [PlatformKind, string | string[]]), readonly User.Field[]]): Promise<any>
-  setUser(type: PlatformKind, id: string, data: Partial<User>): Promise<void>
+  getUser<K extends User.Field, T extends PlatformType>(type: T, id: string, fields?: readonly K[]): Promise<Pick<User, K | T>>
+  getUser<K extends User.Field, T extends PlatformType>(type: T, ids: string[], fields?: readonly K[]): Promise<Pick<User, K | T>[]>
+  getUser(...args: [...([number | number[]] | [PlatformType, string | string[]]), readonly User.Field[]]): Promise<any>
+  setUser(type: PlatformType, id: string, data: Partial<User>): Promise<void>
 
-  getGroup<K extends Group.Field>(type: PlatformKind, id: string, fields?: readonly K[]): Promise<Pick<Group, K | 'id' | 'type'>>
-  getGroup<K extends Group.Field>(type: PlatformKind, ids: string[], fields?: readonly K[]): Promise<Pick<Group, K | 'id' | 'type'>[]>
-  getGroupList<K extends Group.Field>(fields?: readonly K[], type?: PlatformKind, assignees?: readonly string[]): Promise<Pick<Group, K>[]>
-  setGroup(type: PlatformKind, id: string, data: Partial<Group>): Promise<void>
+  getGroup<K extends Group.Field>(type: PlatformType, id: string, fields?: readonly K[]): Promise<Pick<Group, K | 'id' | 'type'>>
+  getGroup<K extends Group.Field>(type: PlatformType, ids: string[], fields?: readonly K[]): Promise<Pick<Group, K | 'id' | 'type'>[]>
+  getGroupList<K extends Group.Field>(fields?: readonly K[], type?: PlatformType, assignees?: readonly string[]): Promise<Pick<Group, K>[]>
+  setGroup(type: PlatformType, id: string, data: Partial<Group>): Promise<void>
 }
 
 type DatabaseExtensionMethods<I> = {

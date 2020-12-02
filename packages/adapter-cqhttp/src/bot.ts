@@ -158,10 +158,10 @@ export interface CQBot {
 }
 
 export class CQBot extends Bot {
-  async [Bot.$send](meta: Session, message: string, autoEscape = false) {
-    if (!message) return
+  async [Bot.$send](meta: Session, content: string, autoEscape = false) {
+    if (!content) return
     if (this.app.options.cqhttp?.preferSync) {
-      await this.sendMessage(meta.channelId, message)
+      await this.sendMessage(meta.channelId, content)
       return
     }
 
@@ -169,14 +169,14 @@ export class CQBot extends Bot {
     // eslint-disable-next-line no-cond-assign
     const ctxType = (ctxId = meta.groupId) ? 'group' : (ctxId = meta.userId) ? 'user' : null
     if (meta._response) {
-      const session = this.createSession(meta.subType as any, ctxType, ctxId, message)
+      const session = this.createSession(meta.subType as any, ctxType, ctxId, content)
       if (this.app.bail(session, 'before-send', session)) return
-      return session._response({ reply: session.message, autoEscape, atSender: false })
+      return session._response({ reply: session.content, autoEscape, atSender: false })
     }
 
     return ctxType === 'group'
-      ? this.sendGroupMessageAsync(ctxId, message, autoEscape)
-      : this.sendPrivateMessageAsync(ctxId, message, autoEscape)
+      ? this.sendGroupMessageAsync(ctxId, content, autoEscape)
+      : this.sendPrivateMessageAsync(ctxId, content, autoEscape)
   }
 
   async get<T = any>(action: string, params = {}, silent = false): Promise<T> {
@@ -262,38 +262,38 @@ export class CQBot extends Bot {
     return data
   }
 
-  async sendGroupMessage(groupId: string, message: string, autoEscape = false) {
-    if (!message) return
-    const session = this.createSession('group', 'group', groupId, message)
+  async sendGroupMessage(groupId: string, content: string, autoEscape = false) {
+    if (!content) return
+    const session = this.createSession('group', 'group', groupId, content)
     if (this.app.bail(session, 'before-send', session)) return
-    const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message: session.message, autoEscape })
+    const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message: session.content, autoEscape })
     session.messageId = messageId
     this.app.emit(session, 'send', session)
     return messageId
   }
 
-  sendGroupMessageAsync(groupId: string, message: string, autoEscape = false) {
-    if (!message) return
-    const session = this.createSession('group', 'group', groupId, message)
+  sendGroupMessageAsync(groupId: string, content: string, autoEscape = false) {
+    if (!content) return
+    const session = this.createSession('group', 'group', groupId, content)
     if (this.app.bail(session, 'before-send', session)) return
-    return this.getAsync('send_group_msg', { groupId, message: session.message, autoEscape })
+    return this.getAsync('send_group_msg', { groupId, message: session.content, autoEscape })
   }
 
-  async sendPrivateMessage(userId: string, message: string, autoEscape = false) {
-    if (!message) return
-    const session = this.createSession('private', 'user', userId, message)
+  async sendPrivateMessage(userId: string, content: string, autoEscape = false) {
+    if (!content) return
+    const session = this.createSession('private', 'user', userId, content)
     if (this.app.bail(session, 'before-send', session)) return
-    const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message: session.message, autoEscape })
+    const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message: session.content, autoEscape })
     session.messageId = messageId
     this.app.emit(session, 'send', session)
     return messageId
   }
 
-  sendPrivateMessageAsync(userId: string, message: string, autoEscape = false) {
-    if (!message) return
-    const session = this.createSession('private', 'user', userId, message)
+  sendPrivateMessageAsync(userId: string, content: string, autoEscape = false) {
+    if (!content) return
+    const session = this.createSession('private', 'user', userId, content)
     if (this.app.bail(session, 'before-send', session)) return
-    return this.getAsync('send_private_msg', { userId, message: session.message, autoEscape })
+    return this.getAsync('send_private_msg', { userId, message: session.content, autoEscape })
   }
 
   async setGroupAnonymousBan(groupId: string, meta: string | object, duration?: number) {

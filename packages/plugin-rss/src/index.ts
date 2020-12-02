@@ -13,7 +13,7 @@ Group.extend(() => ({
   rss: [],
 }))
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Type, tables }) => {
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ DataType, tables }) => {
   tables.group.rss = new DataType.Array()
 })
 

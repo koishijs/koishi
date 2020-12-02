@@ -2,7 +2,7 @@ import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArr
 import { Command } from './command'
 import { Context, Middleware, NextFunction } from './context'
 import { Group, User, Database } from './database'
-import { BotOptions, Server, Bot } from './server'
+import { BotOptions, Server } from './server'
 import { Session } from './session'
 import help from './plugins/help'
 import shortcut from './plugins/shortcut'
@@ -41,7 +41,6 @@ export enum AppStatus { closed, opening, open, closing }
 export class App extends Context {
   app = this
   options: AppOptions
-  bots: Record<string, Bot> = {}
   servers: Record<string, Server> = {}
   status = AppStatus.closed
   router?: Router

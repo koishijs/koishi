@@ -1,7 +1,7 @@
 import { intersection, difference, Logger, defineProperty } from 'koishi-utils'
 import { Command, CommandConfig, ParsedArgv, ExecuteArgv } from './command'
 import { EventType, Session } from './session'
-import { User, Group, PlatformKind } from './database'
+import { User, Group, PlatformType } from './database'
 import { App } from './app'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
@@ -264,27 +264,34 @@ export class Context {
   }
 
   async broadcast(message: string, forced?: boolean): Promise<string[]>
-  async broadcast(groups: readonly string[], message: string, forced?: boolean): Promise<string[]>
-  async broadcast(...args: [string, boolean?] | [readonly string[], string, boolean?]) {
+  async broadcast(type: PlatformType, groups: readonly string[], message: string, forced?: boolean): Promise<string[]>
+  async broadcast(...args: [string, boolean?] | [PlatformType, readonly string[], string, boolean?]) {
+    let platform: PlatformType
     let groups: string[]
-    if (Array.isArray(args[0])) groups = args.shift() as any
+    if (Array.isArray(args[1])) {
+      platform = args.shift() as never
+      groups = args.shift() as never
+    }
     const [message, forced] = args as [string, boolean]
     if (!message) return []
 
-    const data = await this.database.getGroupList(['id', 'type', 'assignee', 'flag'])
-    const assignMap: Record<string, string[]> = {}
-    for (const { id, assignee, flag } of data) {
-      if (groups && !groups.includes(id)) continue
+    const data = await this.database.getGroupList(['id', 'type', 'assignee', 'flag'], platform)
+    const assignMap: Record<string, Record<string, string[]>> = {}
+    for (const { id, type, assignee, flag } of data) {
+      if (platform && !groups.includes(id)) continue
       if (!forced && (flag & Group.Flag.silent)) continue
-      if (assignMap[assignee]) {
-        assignMap[assignee].push(id)
+      const map = assignMap[type] ||= {}
+      if (map[assignee]) {
+        map[assignee].push(id)
       } else {
-        assignMap[assignee] = [id]
+        map[assignee] = [id]
       }
     }
 
-    return (await Promise.all(Object.entries(assignMap).map(async ([id, groups]) => {
-      return await this.app.bots[+id].broadcast(groups, message)
+    return (await Promise.all(Object.entries(assignMap).flatMap(([type, map]) => {
+      return this.app.servers[type].bots.map((bot) => {
+        return bot.broadcast(map[bot.selfId] || [], message)
+      })
     }))).flat(1)
   }
 
@@ -294,7 +301,7 @@ export class Context {
   }
 }
 
-export type RawSession<E extends EventType = EventType> = Session<never, never, never, PlatformKind, E>
+export type RawSession<E extends EventType = EventType> = Session<never, never, never, PlatformType, E>
 
 export interface EventMap {
   [Context.MIDDLEWARE_EVENT]: Middleware
@@ -303,9 +310,9 @@ export interface EventMap {
   'message'(session: RawSession<'message'>): void
   'message/friend'(session: RawSession<'message'>): void
   'message/group'(session: RawSession<'message'>): void
-  'message-edited'(session: RawSession<'message'>): void
-  'message-edited/friend'(session: RawSession<'message'>): void
-  'message-edited/group'(session: RawSession<'message'>): void
+  'message-updated'(session: RawSession<'message'>): void
+  'message-updated/friend'(session: RawSession<'message'>): void
+  'message-updated/group'(session: RawSession<'message'>): void
   'message-deleted'(session: RawSession<'message'>): void
   'message-deleted/friend'(session: RawSession<'message'>): void
   'message-deleted/group'(session: RawSession<'message'>): void

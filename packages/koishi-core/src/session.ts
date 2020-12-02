@@ -1,4 +1,4 @@
-import { User, Group, Platforms, PlatformKind } from './database'
+import { User, Group, Platforms, PlatformType } from './database'
 import { ExecuteArgv, ParsedArgv, Command } from './command'
 import { isInteger, contain, observe, noop, Logger, defineProperty, Random } from 'koishi-utils'
 import { NextFunction } from './context'
@@ -12,7 +12,7 @@ export type MessageType = 'private' | 'group'
 
 export interface EventTypeMap {
   'message': MessageType
-  'message-edited': MessageType
+  'message-updated': MessageType
   'message-deleted': MessageType
   'group-added': null
   'group-deleted': null
@@ -26,7 +26,7 @@ export interface EventTypeMap {
 
 /** CQHTTP Meta Information */
 export interface Meta<E extends EventType = EventType> {
-  kind?: PlatformKind
+  kind?: PlatformType
 
   // type
   eventType?: E
@@ -67,7 +67,7 @@ const logger = new Logger('session')
 
 export interface Session<U, G, O, K, E extends EventType = EventType> extends Meta<E> {}
 
-export class Session<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}, K extends PlatformKind = never> {
+export class Session<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}, K extends PlatformType = never> {
   $user?: User.Observed<U>
   $group?: Group.Observed<G>
   $app?: App
@@ -95,19 +95,18 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     }))
   }
 
-  get $bot() {
-    return this.$app.bots[this.selfId] as [K] extends [never] ? Bot : Platforms[K]
+  get $bot(): [K] extends [never] ? Bot : Platforms[K] {
+    return this.$app.servers[this.kind].bots.find(bot => bot.selfId = this.selfId) as any
   }
 
   get $username(): string {
-    const idString = '' + this.userId
-    return this.$user && this.$user['name'] && idString !== this.$user['name']
+    return this.$user && this.$user['name']
       ? this.$user['name']
       : this.anonymous
         ? this.anonymous.name
         : this.sender
           ? this.sender.card || this.sender.nickname
-          : idString
+          : '' + this.userId
   }
 
   async $send(message: string) {

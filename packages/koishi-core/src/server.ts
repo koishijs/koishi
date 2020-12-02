@@ -22,7 +22,6 @@ export abstract class Server<T extends Bot = Bot> {
   create(options: BotOptions) {
     const bot = new this.BotStatic(this.app, options)
     this.bots.push(bot)
-    this.app.bots[bot.selfId] = bot
   }
 
   dispatch(session: Session) {

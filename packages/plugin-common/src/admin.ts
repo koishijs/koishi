@@ -1,5 +1,5 @@
 import { isInteger, difference, observe, Time, enumKeys, Random } from 'koishi-utils'
-import { Context, getTargetId, User, Group, Command, ParsedArgv, PlatformKind } from 'koishi-core'
+import { Context, getTargetId, User, Group, Command, ParsedArgv, PlatformType } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Group.Field, O extends {}, T>
   = (argv: ParsedArgv<U | 'authority', G, O> & { target: T }, ...args: string[])
@@ -120,7 +120,7 @@ export function apply(ctx: Context) {
   ctx.command('common/user', '用户管理', { authority: 3 })
   ctx.command('common/group', '群管理', { authority: 3 })
 
-  const tokens: Record<string, [kind: PlatformKind, id: string]> = {}
+  const tokens: Record<string, [kind: PlatformType, id: string]> = {}
 
   ctx.private().command('user.bind', '绑定到账号', { authority: 0 })
     .action(({ session }) => {
