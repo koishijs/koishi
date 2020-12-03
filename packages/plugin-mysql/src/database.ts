@@ -168,7 +168,9 @@ MysqlDatabase.prototype.escape = escape
 MysqlDatabase.prototype.escapeId = escapeId
 
 namespace MysqlDatabase {
-  type Tables = Record<string, Record<string, string | DataType>>
+  type Tables = {
+    [T in TableType]?: Record<string, string | DataType>
+  }
 
   export const tables: Tables = {}
 

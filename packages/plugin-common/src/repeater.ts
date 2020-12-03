@@ -25,8 +25,8 @@ export default function apply(ctx: Context, options: RepeaterOptions = {}) {
 
   const states: Record<string, RepeatState> = {}
 
-  function getState(groupId: string) {
-    return states[groupId] || (states[groupId] = {
+  function getState(id: string) {
+    return states[id] || (states[id] = {
       content: '',
       repeated: false,
       times: 0,
@@ -34,8 +34,8 @@ export default function apply(ctx: Context, options: RepeaterOptions = {}) {
     })
   }
 
-  ctx.on('before-send', ({ groupId, content }) => {
-    const state = getState(groupId)
+  ctx.on('before-send', ({ kind, channelId, content }) => {
+    const state = getState(`${kind}:${channelId}`)
     state.repeated = true
     if (state.content === content) {
       state.times += 1
@@ -47,12 +47,12 @@ export default function apply(ctx: Context, options: RepeaterOptions = {}) {
   })
 
   ctx.middleware((session, next) => {
-    const { content, groupId, userId } = session
+    const { content, kind, channelId, userId } = session
 
     // never respond to messages from self
-    if (ctx.app.bots[userId]) return
+    if (ctx.app.servers[kind].bots[userId]) return
 
-    const state = getState(groupId)
+    const state = getState(`${kind}:${channelId}`)
     const check = (handle: RepeatHandler) => {
       const text = handle?.(state, content, userId)
       return text && next(() => {

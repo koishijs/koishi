@@ -1,11 +1,11 @@
 import { getUsage, getUsageName, ValidationField } from './validate'
-import { User, Group, TableType } from '../database'
+import { User, Channel, TableType } from '../database'
 import { Command, FieldCollector } from '../command'
 import { Session } from '../session'
 import { App } from '../app'
 import { Message } from './message'
 
-export type CommandUsage<U extends User.Field, G extends Group.Field> = string
+export type CommandUsage<U extends User.Field, G extends Channel.Field> = string
   | ((this: Command<U, G>, session: Session<U, G>) => string | Promise<string>)
 
 declare module '../command' {
@@ -69,7 +69,7 @@ export default function apply(app: App) {
   app.command('help [command]', '显示帮助信息', { authority: 0 })
     .userFields<ValidationField>(['authority'])
     .userFields(createCollector('user'))
-    .groupFields(createCollector('group'))
+    .channelFields(createCollector('channel'))
     .shortcut('帮助', { fuzzy: true })
     .option('authority', '-a  显示权限设置')
     .option('showHidden', '-H  查看隐藏的选项和指令')

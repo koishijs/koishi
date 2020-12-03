@@ -128,7 +128,7 @@ export default class WS {
     }
   }
 
-  _onOpen(event: WebSocket.OpenEvent) {
+  _onOpen() {
     this._retryCount = 0
     this._reconnecting = false
     this._stopReconnect()

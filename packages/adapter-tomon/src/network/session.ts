@@ -45,7 +45,7 @@ export default class Session {
     }
     this._ws.onClose = (event) => {
       console.log('🔴 [ws] close', `code ${event.code}`)
-      this.handleClose(event.code, event.reason)
+      this.handleClose()
     }
     this._ws.onMessage = (event) => {
       this.handleMessage(event)
@@ -92,7 +92,7 @@ export default class Session {
    * handle close
    * @param {event} event
    */
-  private handleClose(code: number, reason: string) {
+  private handleClose() {
     this.stopHeartbeat()
     this._sessionId = undefined
     this._connected = false

@@ -86,9 +86,9 @@ export default function apply(ctx: App, options: HandlerOptions = {}) {
   }
 
   ctx.on('group-member-added', async (session) => {
-    if (ctx.bots[session.userId]) return
+    if (ctx.app.servers[session.kind].bots[session.userId]) return
     if (ctx.database) {
-      const group = await ctx.database.getGroup(session.kind, session.groupId, ['assignee'])
+      const group = await ctx.database.getChannel(session.kind, session.groupId, ['assignee'])
       if (group.assignee !== session.selfId) return
     }
     const output = typeof welcome === 'string' ? welcome : await welcome(session)

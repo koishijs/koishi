@@ -1,4 +1,4 @@
-import { User, Group, Platforms, PlatformType } from './database'
+import { User, Channel, Platforms, PlatformType } from './database'
 import { ExecuteArgv, ParsedArgv, Command } from './command'
 import { isInteger, contain, observe, noop, Logger, defineProperty, Random } from 'koishi-utils'
 import { NextFunction } from './context'
@@ -67,9 +67,9 @@ const logger = new Logger('session')
 
 export interface Session<U, G, O, K, E extends EventType = EventType> extends Meta<E> {}
 
-export class Session<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}, K extends PlatformType = never> {
+export class Session<U extends User.Field = never, G extends Channel.Field = never, O extends {} = {}, K extends PlatformType = never> {
   $user?: User.Observed<U>
-  $group?: Group.Observed<G>
+  $channel?: Channel.Observed<G>
   $app?: App
   $argv?: ParsedArgv<U, G, O>
   $appel?: boolean
@@ -96,7 +96,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
   }
 
   get $bot(): [K] extends [never] ? Bot : Platforms[K] {
-    return this.$app.servers[this.kind].bots.find(bot => bot.selfId = this.selfId) as any
+    return this.$app.servers[this.kind].bots[this.selfId] as any
   }
 
   get $username(): string {
@@ -144,22 +144,22 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     }))
   }
 
-  async $getGroup<K extends Group.Field = never>(id: string = this.groupId, fields: readonly K[] = [], assignee?: string) {
-    const group = await this.$app.database.getGroup(this.kind, id, fields)
+  async $getGroup<K extends Channel.Field = never>(id: string = this.groupId, fields: readonly K[] = [], assignee?: string) {
+    const group = await this.$app.database.getChannel(this.kind, id, fields)
     if (group) return group
-    const fallback = Group.create(this.kind, id, assignee)
+    const fallback = Channel.create(this.kind, id, assignee)
     if (assignee) {
-      await this.$app.database.setGroup(this.kind, id, fallback)
+      await this.$app.database.setChannel(this.kind, id, fallback)
     }
     return fallback
   }
 
   /** 在元数据上绑定一个可观测群实例 */
-  async $observeGroup<T extends Group.Field = never>(fields: Iterable<T> = []): Promise<Group.Observed<T | G>> {
-    const fieldSet = new Set<Group.Field>(fields)
-    const { kind, groupId, $argv, $group } = this
-    if ($argv) Command.collect($argv, 'group', fieldSet)
-    const identifier = `${kind}:${groupId}`
+  async $observeGroup<T extends Channel.Field = never>(fields: Iterable<T> = []): Promise<Channel.Observed<T | G>> {
+    const fieldSet = new Set<Channel.Field>(fields)
+    const { kind, channelId, $argv, $channel: $group } = this
+    if ($argv) Command.collect($argv, 'channel', fieldSet)
+    const identifier = `${kind}:${channelId}`
 
     // 对于已经绑定可观测群的，判断字段是否需要自动补充
     if ($group) {
@@ -167,7 +167,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
         fieldSet.delete(key as any)
       }
       if (fieldSet.size) {
-        const data = await this.$getGroup(groupId, [...fieldSet])
+        const data = await this.$getGroup(channelId, [...fieldSet])
         this.$app._groupCache.set(identifier, $group._merge(data))
       }
       return $group as any
@@ -177,13 +177,13 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     const cache = this.$app._groupCache.get(identifier)
     const fieldArray = [...fieldSet]
     const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
-    if (hasActiveCache) return this.$group = cache as any
+    if (hasActiveCache) return this.$channel = cache as any
 
     // 绑定一个新的可观测群实例
-    const data = await this.$getGroup(groupId, fieldArray)
-    const group = observe(data, diff => this.$app.database.setGroup(kind, groupId, diff), `group ${groupId}`)
+    const data = await this.$getGroup(channelId, fieldArray)
+    const group = observe(data, diff => this.$app.database.setChannel(kind, channelId, diff), `group ${channelId}`)
     this.$app._groupCache.set(identifier, group)
-    return this.$group = group
+    return this.$channel = group
   }
 
   async $getUser<K extends User.Field = never>(id: string = this.userId, fields: readonly K[] = [], authority = 0) {

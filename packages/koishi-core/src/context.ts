@@ -1,7 +1,7 @@
 import { intersection, difference, Logger, defineProperty } from 'koishi-utils'
 import { Command, CommandConfig, ParsedArgv, ExecuteArgv } from './command'
 import { EventType, Session } from './session'
-import { User, Group, PlatformType } from './database'
+import { User, Channel, PlatformType } from './database'
 import { App } from './app'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
@@ -275,12 +275,12 @@ export class Context {
     const [message, forced] = args as [string, boolean]
     if (!message) return []
 
-    const data = await this.database.getGroupList(['id', 'assignee', 'flag'], platform)
+    const data = await this.database.getChannelList(['id', 'assignee', 'flag'], platform)
     const assignMap: Record<string, Record<string, string[]>> = {}
     for (const { id, assignee, flag } of data) {
       const [type, pid] = id.split(':', 2)
       if (platform && !groups.includes(pid)) continue
-      if (!forced && (flag & Group.Flag.silent)) continue
+      if (!forced && (flag & Channel.Flag.silent)) continue
       const map = assignMap[type] ||= {}
       if (map[assignee]) {
         map[assignee].push(pid)
@@ -357,7 +357,7 @@ export interface EventMap {
   // Koishi events
   'parse'(message: string, session: Session, builtin: boolean, terminator: string): void | ExecuteArgv
   'before-attach-user'(session: Session, fields: Set<User.Field>): void
-  'before-attach-group'(session: Session, fields: Set<Group.Field>): void
+  'before-attach-group'(session: Session, fields: Set<Channel.Field>): void
   'attach-user'(session: Session): void | boolean | Promise<void | boolean>
   'attach-group'(session: Session): void | boolean | Promise<void | boolean>
   'attach'(session: Session): void | Promise<void>

@@ -4,7 +4,7 @@ export type TableType = keyof Tables
 
 export interface Tables {
   user: User
-  group: Group
+  channel: Channel
 }
 
 export interface User extends Record<PlatformType, string> {
@@ -53,22 +53,22 @@ export interface Platforms {}
 
 export type PlatformType = keyof Platforms
 
-export interface Group {
+export interface Channel {
   id: string
   flag: number
   assignee: string
 }
 
-export namespace Group {
+export namespace Channel {
   export enum Flag {
     ignore = 1,
     silent = 4,
   }
 
-  export type Field = keyof Group
+  export type Field = keyof Channel
   export const fields: Field[] = []
-  export type Observed<K extends Field = Field> = utils.Observed<Pick<Group, K>, Promise<void>>
-  type Getter = (type: PlatformType, id: string, assignee: string) => Partial<Group>
+  export type Observed<K extends Field = Field> = utils.Observed<Pick<Channel, K>, Promise<void>>
+  type Getter = (type: PlatformType, id: string, assignee: string) => Partial<Channel>
   const getters: Getter[] = []
 
   export function extend(getter: Getter) {
@@ -77,7 +77,7 @@ export namespace Group {
   }
 
   export function create(type: PlatformType, id: string, assignee: string) {
-    const result = {} as Group
+    const result = {} as Channel
     for (const getter of getters) {
       Object.assign(result, getter(type, id, assignee))
     }
@@ -95,10 +95,10 @@ export interface Database {
   getUser(...args: [...([number | number[]] | [PlatformType, string | string[]]), readonly User.Field[]]): Promise<any>
   setUser(type: PlatformType, id: string, data: Partial<User>): Promise<void>
 
-  getGroup<K extends Group.Field>(type: PlatformType, pid: string, fields?: readonly K[]): Promise<Pick<Group, K | 'id'>>
-  getGroup<K extends Group.Field>(type: PlatformType, pids: string[], fields?: readonly K[]): Promise<Pick<Group, K | 'id'>[]>
-  getGroupList<K extends Group.Field>(fields?: readonly K[], type?: PlatformType, assignees?: readonly string[]): Promise<Pick<Group, K>[]>
-  setGroup(type: PlatformType, pid: string, data: Partial<Group>): Promise<void>
+  getChannel<K extends Channel.Field>(type: PlatformType, id: string, fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>>
+  getChannel<K extends Channel.Field>(type: PlatformType, ids: string[], fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>[]>
+  getChannelList<K extends Channel.Field>(fields?: readonly K[], type?: PlatformType, assignees?: readonly string[]): Promise<Pick<Channel, K>[]>
+  setChannel(type: PlatformType, id: string, data: Partial<Channel>): Promise<void>
 }
 
 type DatabaseExtensionMethods<I> = {

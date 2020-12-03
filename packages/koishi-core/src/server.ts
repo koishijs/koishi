@@ -12,7 +12,15 @@ type BotStatic<T extends Bot = Bot> = new (app: App, options: BotOptions) => T
 export abstract class Server<T extends Bot = Bot> {
   static types: Record<string, new (app: App) => Server> = {}
 
-  public bots: T[] = []
+  protected _bots: T[] = []
+
+  public bots = new Proxy(this._bots, {
+    get(target, prop) {
+      return typeof prop === 'symbol'
+        ? target[prop]
+        : target[prop] || target.find(bot => bot.selfId === prop)
+    },
+  })
 
   abstract listen(): Promise<void>
   abstract close(): void
@@ -21,7 +29,7 @@ export abstract class Server<T extends Bot = Bot> {
 
   create(options: BotOptions) {
     const bot = new this.BotStatic(this.app, options)
-    this.bots.push(bot)
+    this._bots.push(bot)
   }
 
   dispatch(session: Session) {

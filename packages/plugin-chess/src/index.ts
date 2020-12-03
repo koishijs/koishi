@@ -1,4 +1,4 @@
-import { Context, extendDatabase, Group } from 'koishi-core'
+import { Channel, Context, extendDatabase } from 'koishi-core'
 import { isInteger } from 'koishi-utils'
 import { State, MoveResult, StateData } from './state'
 import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
@@ -6,7 +6,7 @@ import * as go from './go'
 import * as gomoku from './gomoku'
 import * as othello from './othello'
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables, Type }) => {
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables, DataType }) => {
   tables.group.chess = new DataType.Json()
 })
 
@@ -23,16 +23,16 @@ const rules: Record<string, Rule> = {
 }
 
 declare module 'koishi-core/dist/database' {
-  interface Group {
+  interface Channel {
     chess: StateData
   }
 }
 
-Group.extend(() => ({
+Channel.extend(() => ({
   chess: null,
 }))
 
-const states: Record<number, State> = {}
+const states: Record<string, State> = {}
 
 export * from './state'
 
@@ -42,7 +42,7 @@ export function apply(ctx: Context) {
   ctx = ctx.group()
 
   ctx.on('connect', async () => {
-    const groups = await ctx.database.getAllGroups(['id', 'chess'])
+    const groups = await ctx.database.getChannelList(['id', 'chess'])
     for (const { id, chess } of groups) {
       if (chess) {
         states[id] = State.from(ctx.app, chess)
@@ -58,7 +58,7 @@ export function apply(ctx: Context) {
 
   const chess = ctx.command('chess [position]', '棋类游戏')
     .userFields(['name'])
-    .groupFields(['chess'])
+    .channelFields(['chess'])
     .shortcut('落子', { fuzzy: true })
     .shortcut('悔棋', { options: { repent: true } })
     .shortcut('围棋', { options: { size: 19, rule: 'go' }, fuzzy: true })
@@ -81,7 +81,8 @@ export function apply(ctx: Context) {
       '目前默认使用图片模式。文本模式速度更快，但是在部分机型上可能无法正常显示，同时无法适应过大的棋盘。',
     ].join('\n'))
     .action(async ({ session, options }, position) => {
-      if (!states[session.groupId]) {
+      const gid = `${session.kind}:${session.channelId}`
+      if (!states[gid]) {
         if (position || options.stop || options.repent || options.skip) {
           return '没有正在进行的游戏。输入“下棋”开始一轮游戏。'
         }
@@ -103,18 +104,18 @@ export function apply(ctx: Context) {
           if (result) return result
         }
         state.update = rule.update
-        states[session.groupId] = state
+        states[gid] = state
 
         return state.draw(session, `${session.$username} 发起了游戏！`)
       }
 
       if (options.stop) {
-        delete states[session.groupId]
-        session.$group.chess = null
+        delete states[gid]
+        session.$channel.chess = null
         return '游戏已停止。'
       }
 
-      const state = states[session.groupId]
+      const state = states[gid]
 
       if (ctx.app.browser) {
         if (options.textMode) {
@@ -135,7 +136,7 @@ export function apply(ctx: Context) {
       if (options.skip) {
         if (state.next !== session.userId) return '当前不是你的回合。'
         state.next = state.p1 === session.userId ? state.p2 : state.p1
-        session.$group.chess = state.serial()
+        session.$channel.chess = state.serial()
         return `${session.$username} 选择跳过其回合，下一手轮到 [CQ:at,qq=${state.next}]。`
       }
 
@@ -146,7 +147,7 @@ export function apply(ctx: Context) {
         state.history.pop()
         state.refresh()
         state.next = last
-        session.$group.chess = state.serial()
+        session.$channel.chess = state.serial()
         return state.draw(session, `${session.$username} 进行了悔棋。`)
       }
 
@@ -193,18 +194,18 @@ export function apply(ctx: Context) {
           break
         case MoveResult.p1Win:
           message += `恭喜 [CQ:at,qq=${state.p1}] 获胜！`
-          delete states[session.groupId]
-          session.$group.chess = null
+          delete states[gid]
+          session.$channel.chess = null
           break
         case MoveResult.p2Win:
           message += `恭喜 [CQ:at,qq=${state.p2}] 获胜！`
-          delete states[session.groupId]
-          session.$group.chess = null
+          delete states[gid]
+          session.$channel.chess = null
           break
         case MoveResult.draw:
           message += '本局游戏平局。'
-          delete states[session.groupId]
-          session.$group.chess = null
+          delete states[gid]
+          session.$channel.chess = null
           break
         case undefined:
           state.next = session.userId === state.p1 ? state.p2 : state.p1
@@ -215,7 +216,7 @@ export function apply(ctx: Context) {
           return `非法落子（${result}）。`
       }
 
-      session.$group.chess = state.serial()
+      session.$channel.chess = state.serial()
       return state.draw(session, message, x, y)
     })
 }

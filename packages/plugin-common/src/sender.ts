@@ -1,4 +1,4 @@
-import { Context, getTargetId, Group, Session, User } from 'koishi-core'
+import { Context, getTargetId, Channel, Session, User } from 'koishi-core'
 import { CQCode } from 'koishi-utils'
 
 export interface SenderConfig {
@@ -17,9 +17,9 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
         return
       }
 
-      let groups = await ctx.database.getGroupList(['id', 'flag'], session.kind, [session.selfId])
+      let groups = await ctx.database.getChannelList(['id', 'flag'], session.kind, [session.selfId])
       if (!options.forced) {
-        groups = groups.filter(g => !(g.flag & Group.Flag.silent))
+        groups = groups.filter(g => !(g.flag & Channel.Flag.silent))
       }
       await session.$bot.broadcast(groups.map(g => g.id), message)
     })
@@ -103,12 +103,12 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
 
       if (!options.group) {
         newSession.subType = 'private'
-        delete newSession.$group
+        delete newSession.$channel
       } else if (options.group !== session.groupId) {
         newSession.groupId = options.group
         newSession.subType = 'group'
-        delete newSession.$group
-        await newSession.$observeGroup(Group.fields)
+        delete newSession.$channel
+        await newSession.$observeGroup(Channel.fields)
       }
 
       if (options.user) {

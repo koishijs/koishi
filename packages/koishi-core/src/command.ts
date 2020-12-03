@@ -1,5 +1,5 @@
 import { Context, NextFunction } from './context'
-import { User, Group, Tables, TableType } from './database'
+import { User, Channel, Tables, TableType } from './database'
 import { noop, camelCase, paramCase, Logger, coerce, escapeRegExp } from 'koishi-utils'
 import { Session } from './session'
 import { inspect, format } from 'util'
@@ -82,7 +82,7 @@ export interface ParsedLine<O extends {} = {}> {
   options: O
 }
 
-export interface ParsedArgv<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}>
+export interface ParsedArgv<U extends User.Field = never, G extends Channel.Field = never, O extends {} = {}>
 extends Partial<ParsedLine<O>> {
   command: Command<U, G, O>
   session: Session<U, G, O>
@@ -94,7 +94,7 @@ export interface ExecuteArgv extends Partial<ParsedLine> {
   next?: NextFunction
 }
 
-export interface CommandConfig<U extends User.Field = never, G extends Group.Field = never> {
+export interface CommandConfig<U extends User.Field = never, G extends Channel.Field = never> {
   /** description */
   description?: string
 }
@@ -107,10 +107,10 @@ export type FieldCollector<T extends TableType, K = keyof Tables[T], O extends {
   | Iterable<K>
   | ((argv: ParsedArgv<never, never, O>, fields: Set<keyof Tables[T]>) => void)
 
-export type CommandAction<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}> =
+export type CommandAction<U extends User.Field = never, G extends Channel.Field = never, O extends {} = {}> =
   (this: Command<U, G, O>, argv: ParsedArgv<U, G, O>, ...args: string[]) => void | string | Promise<void | string>
 
-export class Command<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}> {
+export class Command<U extends User.Field = never, G extends Channel.Field = never, O extends {} = {}> {
   config: CommandConfig<U, G>
   children: Command[] = []
   parent: Command = null
@@ -122,7 +122,7 @@ export class Command<U extends User.Field = never, G extends Group.Field = never
   private _optionNameMap: Record<string, CommandOption> = {}
   private _optionSymbolMap: Record<string, CommandOption> = {}
   private _userFields: FieldCollector<'user'>[] = []
-  private _groupFields: FieldCollector<'group'>[] = []
+  private _channelFields: FieldCollector<'channel'>[] = []
 
   _action?: CommandAction<U, G, O>
 
@@ -130,15 +130,15 @@ export class Command<U extends User.Field = never, G extends Group.Field = never
   static defaultOptionConfig: OptionConfig = {}
 
   private static _userFields: FieldCollector<'user'>[] = []
-  private static _groupFields: FieldCollector<'group'>[] = []
+  private static _channelFields: FieldCollector<'channel'>[] = []
 
   static userFields(fields: FieldCollector<'user'>) {
     this._userFields.push(fields)
     return this
   }
 
-  static groupFields(fields: FieldCollector<'group'>) {
-    this._groupFields.push(fields)
+  static channelFields(fields: FieldCollector<'channel'>) {
+    this._channelFields.push(fields)
     return this
   }
 
@@ -193,8 +193,8 @@ export class Command<U extends User.Field = never, G extends Group.Field = never
     return this as any
   }
 
-  groupFields<T extends Group.Field = never>(fields: FieldCollector<'group', T, O>): Command<U, G | T, O> {
-    this._groupFields.push(fields)
+  channelFields<T extends Channel.Field = never>(fields: FieldCollector<'channel', T, O>): Command<U, G | T, O> {
+    this._channelFields.push(fields)
     return this as any
   }
 

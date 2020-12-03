@@ -1,5 +1,5 @@
 import MysqlDatabase, { Config } from './database'
-import { User, Group, Database, extendDatabase, Context } from 'koishi-core'
+import { User, Channel, Database, extendDatabase, Context } from 'koishi-core'
 import { difference } from 'koishi-utils'
 
 export * from './database'
@@ -57,22 +57,22 @@ extendDatabase(MysqlDatabase, {
     )
   },
 
-  async getGroup(type, pid, fields) {
+  async getChannel(type, pid, fields) {
     if (Array.isArray(pid)) {
       if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` } as any))
       const placeholders = pid.map(() => '?').join(',')
-      return this.select<Group>('group', fields, '`id` IN (' + placeholders + ')', pid.map(id => `${type}:${id}`))
+      return this.select<Channel>('channel', fields, '`id` IN (' + placeholders + ')', pid.map(id => `${type}:${id}`))
     }
     if (fields && !fields.length) return { id: `${type}:${pid}` } as any
-    const [data] = await this.select<Group>('group', fields, '`id` = ?', [`${type}:${pid}`])
+    const [data] = await this.select<Channel>('channel', fields, '`id` = ?', [`${type}:${pid}`])
     return data && { ...data, id: `${type}:${pid}` }
   },
 
-  async getGroupList(fields, type, assignees) {
+  async getChannelList(fields, type, assignees) {
     const idMap: (readonly [type: string, ids: readonly string[]])[] = assignees ? [[type, assignees]]
       : type ? [[type, this.app.servers[type].bots.map(bot => bot.selfId)]]
         : Object.entries(this.app.servers).map(([type, { bots }]) => [type, bots.map(bot => bot.selfId)])
-    return this.select<Group>('group', fields, idMap.map(([type, ids]) => {
+    return this.select<Channel>('channel', fields, idMap.map(([type, ids]) => {
       return [
         `LEFT(\`type\`, ${type.length}) = ${this.escape(type)}`,
         `\`assignee\` IN (${ids.map(id => this.escape(id)).join(',')})`,
@@ -80,9 +80,9 @@ extendDatabase(MysqlDatabase, {
     }).join(' OR '))
   },
 
-  async setGroup(type, pid, data) {
+  async setChannel(type, pid, data) {
     if (data === null) {
-      await this.query('DELETE FROM `group` WHERE `id` = ?', [`${type}:${pid}`])
+      await this.query('DELETE FROM `channel` WHERE `id` = ?', [`${type}:${pid}`])
       return
     }
 
@@ -96,7 +96,7 @@ extendDatabase(MysqlDatabase, {
     await this.query(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
       ON DUPLICATE KEY UPDATE ${assignments.join(', ')}`,
-      ['group', ...this.formatValues('group', data, keys)],
+      ['channel', ...this.formatValues('channel', data, keys)],
     )
   },
 })
@@ -114,7 +114,7 @@ extendDatabase(MysqlDatabase, ({ tables, DataType }) => {
     timers: new DataType.Json(),
   })
 
-  tables.group = Object.assign<any, any>([
+  tables.channel = Object.assign<any, any>([
     'PRIMARY KEY (`id`) USING BTREE',
   ], {
     id: `BIGINT(20) UNSIGNED NOT NULL COMMENT '群号'`,

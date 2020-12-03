@@ -1,7 +1,7 @@
 import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop } from 'koishi-utils'
 import { Command } from './command'
 import { Context, Middleware, NextFunction } from './context'
-import { Group, User, Database } from './database'
+import { Channel, User, Database } from './database'
 import { BotOptions, Server } from './server'
 import { Session } from './session'
 import help from './plugins/help'
@@ -52,7 +52,7 @@ export class App extends Context {
   _commandMap: Record<string, Command>
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]>
   _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
-  _groupCache: LruCache<string, Observed<Partial<Group>, Promise<void>>>
+  _groupCache: LruCache<string, Observed<Partial<Channel>, Promise<void>>>
 
   private _nameRE: RegExp
   private _prefixRE: RegExp
@@ -200,7 +200,7 @@ export class App extends Context {
     if (this.database) {
       if (session.subType === 'group') {
         // attach group data
-        const groupFields = new Set<Group.Field>(['flag', 'assignee'])
+        const groupFields = new Set<Channel.Field>(['flag', 'assignee'])
         this.emit('before-attach-group', session, groupFields)
         const group = await session.$observeGroup(groupFields)
 
@@ -208,7 +208,7 @@ export class App extends Context {
         if (await this.serial(session, 'attach-group', session)) return
 
         // ignore some group calls
-        if (group.flag & Group.Flag.ignore) return
+        if (group.flag & Channel.Flag.ignore) return
         if (group.assignee !== session.selfId && !atSelf) return
       }
 
@@ -274,7 +274,7 @@ export class App extends Context {
 
     // flush user & group data
     await session.$user?._update()
-    await session.$group?._update()
+    await session.$channel?._update()
   }
 
   private _parse(message: string, session: Session, builtin: boolean, terminator = '') {

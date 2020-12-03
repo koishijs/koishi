@@ -1,14 +1,14 @@
 import { isInteger, difference, observe, Time, enumKeys, Random } from 'koishi-utils'
-import { Context, getTargetId, User, Group, Command, ParsedArgv, PlatformType } from 'koishi-core'
+import { Context, getTargetId, User, Channel, Command, ParsedArgv, PlatformType } from 'koishi-core'
 
-type AdminAction<U extends User.Field, G extends Group.Field, O extends {}, T>
+type AdminAction<U extends User.Field, G extends Channel.Field, O extends {}, T>
   = (argv: ParsedArgv<U | 'authority', G, O> & { target: T }, ...args: string[])
     => void | string | Promise<void | string>
 
 declare module 'koishi-core/dist/command' {
   interface Command<U, G, O> {
     adminUser(callback: AdminAction<U, G, O, User.Observed<U | 'authority'>>): this
-    adminGruop(callback: AdminAction<U, G, O, Group.Observed<G>>): this
+    adminChannel(callback: AdminAction<U, G, O, Channel.Observed<G>>): this
   }
 }
 
@@ -21,7 +21,7 @@ interface FlagOptions {
 type FlagMap = Record<string, number> & Record<number, string>
 
 interface FlagArgv extends ParsedArgv<never, never, FlagOptions> {
-  target: User.Observed<'flag'> | Group.Observed<'flag'>
+  target: User.Observed<'flag'> | Channel.Observed<'flag'>
 }
 
 function flagAction(map: any, { target, options }: FlagArgv, ...flags: string[]): string
@@ -58,7 +58,7 @@ Command.prototype.adminUser = function (this: Command<never, never, { user?: str
   command._action = async (argv) => {
     const { options, session, args } = argv
     const fields = Command.collect(argv, 'user')
-    let target: User.Observed
+    let target: User.Observed<never>
     if (options.user) {
       const qq = getTargetId(options.user)
       if (!qq) return '请指定正确的目标。'
@@ -86,21 +86,21 @@ Command.prototype.adminUser = function (this: Command<never, never, { user?: str
   return command
 }
 
-Command.prototype.adminGruop = function (this: Command<never, never, { group?: string }>, callback) {
+Command.prototype.adminChannel = function (this: Command<never, never, { group?: string }>, callback) {
   const command = this
     .userFields(['authority'])
     .option('group', '-g [group]  指定目标群', { authority: 3 })
 
   command._action = async (argv) => {
     const { options, session, args } = argv
-    const fields = Command.collect(argv, 'group')
-    let target: Group.Observed
+    const fields = Command.collect(argv, 'channel')
+    let target: Channel.Observed
     if (options.group) {
       const { database } = session.$app
       if (!isInteger(options.group) || options.group <= 0) return '请指定正确的目标。'
       const data = await session.$getGroup(options.group, [...fields])
       if (!data) return '未找到指定的群。'
-      target = observe(data, diff => database.setGroup(session.kind, options.group, diff), `group ${options.group}`)
+      target = observe(data, diff => database.setChannel(session.kind, options.group, diff), `group ${options.group}`)
     } else if (session.subType === 'group') {
       target = await session.$observeGroup(fields)
     } else {
@@ -229,17 +229,17 @@ export function apply(ctx: Context) {
     })
 
   ctx.command('group.assign [bot]', '受理者账号', { authority: 4 })
-    .groupFields(['assignee'])
-    .adminGruop(({ session, target }, value) => {
+    .channelFields(['assignee'])
+    .adminChannel(({ session, target }, value) => {
       const assignee = value ? '' + getTargetId(value) : session.selfId
       if (!assignee) return '参数错误。'
       target.assignee = assignee
     })
 
   ctx.command('group.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
-    .groupFields(['flag'])
+    .channelFields(['flag'])
     .option('list', '-l  标记列表')
     .option('set', '-s  添加标记', { authority: 4 })
     .option('unset', '-S  删除标记', { authority: 4 })
-    .adminGruop(flagAction.bind(null, Group.Flag))
+    .adminChannel(flagAction.bind(null, Channel.Flag))
 }

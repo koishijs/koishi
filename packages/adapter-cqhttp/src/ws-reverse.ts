@@ -33,7 +33,7 @@ export default class WsServer extends Server<CQBot> {
         }
         let bot: CQBot
         const selfId = headers['x-self-id'].toString()
-        if (!selfId || !(bot = this.bots[selfId] || this.bots.find(bot => !bot.selfId))) {
+        if (!(bot = this.bots[selfId])) {
           return socket.close(1008, 'invalid x-self-id')
         }
         if (!bot.selfId) bot.selfId = selfId
