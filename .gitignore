@@ -1,8 +1,7 @@
 dist
 temp
 
-/packages/*/*.js
-/packages/*/*.d.ts
+/build/*.js
 
 /addons
 /atri

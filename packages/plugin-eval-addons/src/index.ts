@@ -1,9 +1,9 @@
 import { Context, CommandConfig, OptionConfig } from 'koishi-core'
-import { assertProperty, Logger, noop } from 'koishi-utils'
+import { assertProperty, Logger, noop, union } from 'koishi-utils'
 import { resolve } from 'path'
 import { safeLoad } from 'js-yaml'
 import { promises as fs } from 'fs'
-import { attachTraps, FieldOptions } from 'koishi-plugin-eval'
+import { Access, AccessOptions, attachTraps, FieldOptions, resolveAccess } from 'koishi-plugin-eval'
 import Git, { CheckRepoActions } from 'simple-git'
 import { AddonWorkerConfig } from './worker'
 
@@ -65,6 +65,14 @@ export function apply(ctx: Context, config: Config) {
 
   let manifests: Record<string, Promise<Manifest>>
   const { exclude = /^(\..+|node_modules)$/ } = worker.config
+  const userBaseAccess = resolveAccess(worker.config.userFields)
+  const groupBaseAccess = resolveAccess(worker.config.groupFields)
+
+  function mergeAccess<T>(baseAccess: AccessOptions<T>, fields: Access<T>): AccessOptions<T> {
+    const { readable: r1, writable: w1 } = baseAccess
+    const { readable: r2, writable: w2 } = resolveAccess(fields)
+    return { readable: union(r1, r2), writable: union(w1, w2) }
+  }
 
   ctx.on('worker/start', async () => {
     const dirents = await fs.readdir(root, { withFileTypes: true })
@@ -93,11 +101,14 @@ export function apply(ctx: Context, config: Config) {
           return logger.warn('unregistered command manifest: %c', name)
         }
 
+        const userAccess = mergeAccess(userBaseAccess, config.userFields)
+        const groupAccess = mergeAccess(groupBaseAccess, config.groupFields)
+
         const cmd = addon
           .subcommand(rawName, desc, config)
           .option('debug', '启用调试模式', { type: 'boolean', hidden: true })
 
-        attachTraps(cmd, config, async ({ session, command, options, ctxOptions }, ...args) => {
+        attachTraps(cmd, userAccess, groupAccess, async ({ session, command, options, ctxOptions }, ...args) => {
           const { name } = command, { worker } = session.$app
           const result = await worker.remote.callAddon(ctxOptions, { name, args, options })
           return result

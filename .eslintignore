@@ -1,5 +1,4 @@
 atri
 dist
 
-/packages/*/*.js
-/packages/*/*.d.ts
+/build/*.js

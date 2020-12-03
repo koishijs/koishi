@@ -12,7 +12,7 @@ services:
       HTTP_POST: http://koishi:8080
 
   mysql:
-    image: mysql:5.7
+    image: mariadb:10
     container_name: koishi-mysql
     volumes:
       - ./mysql:/var/lib/mysql

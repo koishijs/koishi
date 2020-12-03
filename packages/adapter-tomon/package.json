@@ -35,7 +35,7 @@
     "koishi-test-utils": "^5.0.3"
   },
   "dependencies": {
-    "koishi-utils": "^3.1.5",
+    "koishi-utils": "^3.2.1",
     "tomon-sdk": "^0.2.0"
   }
 }

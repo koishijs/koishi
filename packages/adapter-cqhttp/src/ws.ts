@@ -24,7 +24,7 @@ export default class WsClient extends Server {
     const { token, server } = bot
     if (!server) return
     const Socket: typeof WebSocket = require('ws')
-    const connect = (resolve: () => void, reject: (reason: Error) => void) => {
+    const connect = (resolve: (value: void) => void, reject: (reason: Error) => void) => {
       logger.debug('websocket client opening')
       const headers: Record<string, string> = {}
       const { retryInterval, retryTimes } = this.app.options
