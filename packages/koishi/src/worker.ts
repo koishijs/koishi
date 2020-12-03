@@ -108,7 +108,7 @@ process.on('message', (data: Message) => {
 
 // load adapter
 try {
-  const [name] = config.type.split('.', 1)
+  const [name] = config.type.split(':', 1)
   loadEcosystem('adapter', name)
 } catch {}
 
