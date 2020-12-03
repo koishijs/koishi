@@ -28,7 +28,6 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
     Object.assign(bot, info)
     bot.ready = true
     const selfId = bot.selfId = bot.id
-    this.app.bots[selfId] = bot
 
     // part 2: connect to server
     return new Promise<void>((resolve) => {

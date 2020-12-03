@@ -275,16 +275,17 @@ export class Context {
     const [message, forced] = args as [string, boolean]
     if (!message) return []
 
-    const data = await this.database.getGroupList(['id', 'type', 'assignee', 'flag'], platform)
+    const data = await this.database.getGroupList(['id', 'assignee', 'flag'], platform)
     const assignMap: Record<string, Record<string, string[]>> = {}
-    for (const { id, type, assignee, flag } of data) {
-      if (platform && !groups.includes(id)) continue
+    for (const { id, assignee, flag } of data) {
+      const [type, pid] = id.split(':', 2)
+      if (platform && !groups.includes(pid)) continue
       if (!forced && (flag & Group.Flag.silent)) continue
       const map = assignMap[type] ||= {}
       if (map[assignee]) {
-        map[assignee].push(id)
+        map[assignee].push(pid)
       } else {
-        map[assignee] = [id]
+        map[assignee] = [pid]
       }
     }
 

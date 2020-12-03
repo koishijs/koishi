@@ -57,43 +57,46 @@ extendDatabase(MysqlDatabase, {
     )
   },
 
-  async getGroup(type, id, fields) {
-    if (fields && !fields.length) return { id, type } as any
-    if (Array.isArray(id)) {
-      const placeholders = id.map(() => '?').join(',')
-      return this.select<Group>('group', fields, '`type` = ? && `id` IN (' + placeholders + ')', [type, ...id])
+  async getGroup(type, pid, fields) {
+    if (Array.isArray(pid)) {
+      if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` } as any))
+      const placeholders = pid.map(() => '?').join(',')
+      return this.select<Group>('group', fields, '`id` IN (' + placeholders + ')', pid.map(id => `${type}:${id}`))
     }
-    const [data] = await this.select<Group>('group', fields, '`type` = ? && `id` = ?', [type, id])
-    return data && { ...data, id, type }
+    if (fields && !fields.length) return { id: `${type}:${pid}` } as any
+    const [data] = await this.select<Group>('group', fields, '`id` = ?', [`${type}:${pid}`])
+    return data && { ...data, id: `${type}:${pid}` }
   },
 
   async getGroupList(fields, type, assignees) {
-    const idMap: [type: string, ids: readonly string[]][] = []
-    if (assignees) {
-      idMap.push([type, assignees])
-    } else if (type) {
-      idMap.push([type, this.app.servers[type].bots.map(bot => bot.selfId)])
-    } else {
-      for (const type in this.app.servers) {
-        idMap.push([type, this.app.servers[type].bots.map(bot => bot.selfId)])
-      }
-    }
+    const idMap: (readonly [type: string, ids: readonly string[]])[] = assignees ? [[type, assignees]]
+      : type ? [[type, this.app.servers[type].bots.map(bot => bot.selfId)]]
+        : Object.entries(this.app.servers).map(([type, { bots }]) => [type, bots.map(bot => bot.selfId)])
     return this.select<Group>('group', fields, idMap.map(([type, ids]) => {
-      return `\`type\` = ${this.escape(type)} AND \`assignee\` IN (${ids.map(id => this.escape(id)).join(',')})`
+      return [
+        `LEFT(\`type\`, ${type.length}) = ${this.escape(type)}`,
+        `\`assignee\` IN (${ids.map(id => this.escape(id)).join(',')})`,
+      ].join(' AND ')
     }).join(' OR '))
   },
 
-  async setGroup(type, id, data) {
+  async setGroup(type, pid, data) {
     if (data === null) {
-      await this.query('DELETE FROM `group` WHERE `type` = ? && `id` = ?', [type, id])
+      await this.query('DELETE FROM `group` WHERE `id` = ?', [`${type}:${pid}`])
       return
     }
 
+    data.id = `${type}:${pid}`
     const keys = Object.keys(data)
     if (!keys.length) return
+    const assignments = difference(keys, ['id']).map((key) => {
+      key = this.escapeId(key)
+      return `${key} = VALUES(${key})`
+    })
     await this.query(
-      'UPDATE `group` SET ' + keys.map(key => `\`${key}\` = ?`).join(', ') + ' WHERE `type` = ? && `id` = ?',
-      [...this.formatValues('group', data, keys), type, id],
+      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
+      ON DUPLICATE KEY UPDATE ${assignments.join(', ')}`,
+      ['group', ...this.formatValues('group', data, keys)],
     )
   },
 })

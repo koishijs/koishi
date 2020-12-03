@@ -55,7 +55,6 @@ export type PlatformType = keyof Platforms
 
 export interface Group {
   id: string
-  type: PlatformType
   flag: number
   assignee: string
 }
@@ -85,7 +84,7 @@ export namespace Group {
     return result
   }
 
-  extend((type, id, assignee) => ({ type, id, assignee, flag: 0 }))
+  extend((type, id, assignee) => ({ id: `${type}:${id}`, assignee, flag: 0 }))
 }
 
 export interface Database {
@@ -96,10 +95,10 @@ export interface Database {
   getUser(...args: [...([number | number[]] | [PlatformType, string | string[]]), readonly User.Field[]]): Promise<any>
   setUser(type: PlatformType, id: string, data: Partial<User>): Promise<void>
 
-  getGroup<K extends Group.Field>(type: PlatformType, id: string, fields?: readonly K[]): Promise<Pick<Group, K | 'id' | 'type'>>
-  getGroup<K extends Group.Field>(type: PlatformType, ids: string[], fields?: readonly K[]): Promise<Pick<Group, K | 'id' | 'type'>[]>
+  getGroup<K extends Group.Field>(type: PlatformType, pid: string, fields?: readonly K[]): Promise<Pick<Group, K | 'id'>>
+  getGroup<K extends Group.Field>(type: PlatformType, pids: string[], fields?: readonly K[]): Promise<Pick<Group, K | 'id'>[]>
   getGroupList<K extends Group.Field>(fields?: readonly K[], type?: PlatformType, assignees?: readonly string[]): Promise<Pick<Group, K>[]>
-  setGroup(type: PlatformType, id: string, data: Partial<Group>): Promise<void>
+  setGroup(type: PlatformType, pid: string, data: Partial<Group>): Promise<void>
 }
 
 type DatabaseExtensionMethods<I> = {
