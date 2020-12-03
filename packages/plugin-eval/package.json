@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-eval",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Execute JavaScript in Koishi",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -38,7 +38,7 @@
   ],
   "peerDependencies": {
     "koishi-core": "^2.4.2",
-    "koishi-utils": "^3.1.5"
+    "koishi-utils": "^3.2.1"
   },
   "devDependencies": {
     "koishi-test-utils": "^5.0.3"

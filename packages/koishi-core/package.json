@@ -45,7 +45,7 @@
     "koa": "^2.13.0",
     "koa-bodyparser": "^4.3.0",
     "koa-router": "^10.0.0",
-    "koishi-utils": "^3.1.5",
+    "koishi-utils": "^3.2.1",
     "lru-cache": "^6.0.0"
   }
 }
