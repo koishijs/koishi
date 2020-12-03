@@ -36,7 +36,7 @@
   },
   "peerDependencies": {
     "koishi-core": "^2.4.2",
-    "koishi-utils": "^3.2.0"
+    "koishi-utils": "^3.2.1"
   },
   "dependencies": {
     "mysql": "^2.18.1"

@@ -38,7 +38,7 @@
   ],
   "peerDependencies": {
     "koishi-core": "^2.4.2",
-    "koishi-utils": "^3.2.0"
+    "koishi-utils": "^3.2.1"
   },
   "dependencies": {
     "axios": "^0.21.0",

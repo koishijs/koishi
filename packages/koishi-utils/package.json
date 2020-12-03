@@ -1,7 +1,7 @@
 {
   "name": "koishi-utils",
   "description": "Utilities for Koishi",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [

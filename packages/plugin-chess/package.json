@@ -34,7 +34,7 @@
   ],
   "peerDependencies": {
     "koishi-core": "^2.4.2",
-    "koishi-plugin-puppeteer": "^1.0.1",
-    "koishi-utils": "^3.2.0"
+    "koishi-plugin-puppeteer": "^1.0.2",
+    "koishi-utils": "^3.2.1"
   }
 }

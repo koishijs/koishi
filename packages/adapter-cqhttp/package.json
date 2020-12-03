@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "axios": "^0.21.0",
-    "koishi-utils": "^3.2.0",
+    "koishi-utils": "^3.2.1",
     "ms": "^2.1.2",
     "ws": "^7.4.0"
   }

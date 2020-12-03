@@ -31,12 +31,12 @@
     "koishi-core": "^2.4.2"
   },
   "devDependencies": {
+    "@types/pako": "^1.0.1",
     "koishi-test-utils": "^5.0.3"
   },
   "dependencies": {
-    "@types/pako": "^1.0.1",
     "axios": "^0.21.0",
-    "koishi-utils": "^3.2.0",
+    "koishi-utils": "^3.2.1",
     "pako": "^1.0.11"
   }
 }
