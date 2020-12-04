@@ -21,7 +21,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       if (!options.forced) {
         groups = groups.filter(g => !(g.flag & Channel.Flag.silent))
       }
-      await session.$bot.broadcast(groups.map(g => g.id), message)
+      await session.$bot.broadcast(groups.map(g => g.id.slice(session.kind.length + 1)), message)
     })
 
   ctx.command('common/echo <message...>', '向当前上下文发送消息', { authority: 2 })
@@ -108,7 +108,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
         newSession.groupId = options.group
         newSession.subType = 'group'
         delete newSession.$channel
-        await newSession.$observeGroup(Channel.fields)
+        await newSession.$observeChannel(Channel.fields)
       }
 
       if (options.user) {

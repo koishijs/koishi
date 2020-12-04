@@ -29,7 +29,7 @@ export interface Config {
   promptTimeout?: number
   replyTimeout?: number
   requestTimeout?: number
-  repos?: Record<string, number[]>
+  repos?: Record<string, string[]>
   events?: EventConfig
 }
 

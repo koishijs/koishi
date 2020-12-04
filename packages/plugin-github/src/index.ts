@@ -30,13 +30,13 @@ export const name = 'github'
 
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultOptions, ...config }
-  const { app, database, router } = ctx
+  const { app, database } = ctx
   const { appId, redirect, webhook } = config
 
   const github = new GitHub(config)
   defineProperty(app, 'github', github)
 
-  router.get(config.authorize, async (ctx) => {
+  app.router.get(config.authorize, async (ctx) => {
     const targetId = parseInt(ctx.query.state)
     if (Number.isNaN(targetId)) {
       ctx.body = 'Invalid targetId'
@@ -80,7 +80,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   const history: Record<string, EventData> = {}
 
-  router.post(webhook, (ctx, next) => {
+  app.router.post(webhook, (ctx, next) => {
     // workaround @octokit/webhooks for koa
     ctx.req['body'] = ctx.request.body
     ctx.status = 200
@@ -89,7 +89,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.on('before-attach-user', (session, fields) => {
     if (!session.$reply) return
-    if (history[int32ToHex6(session.$reply.messageId)]) {
+    if (history[int32ToHex6(session.$reply.id)]) {
       fields.add('ghAccessToken')
       fields.add('ghRefreshToken')
     }
@@ -98,7 +98,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.middleware((session, next) => {
     if (!session.$reply) return next()
     const body = session.$parsed.trim()
-    const payloads = history[int32ToHex6(session.$reply.messageId)]
+    const payloads = history[int32ToHex6(session.$reply.id)]
     if (!body || !payloads) return next()
 
     let name: string, message: string

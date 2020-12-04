@@ -38,13 +38,16 @@ extendDatabase(MysqlDatabase, {
     return data && { ...data, [type]: id }
   },
 
-  async setUser(type, id, data) {
+  async setUser(...args) {
+    let type = 'id'
+    if (args.length > 2) type = args.shift()
+    const [id, data] = args
     if (data === null) {
       await this.query('DELETE FROM `user` WHERE ?? = ?', [type, id])
       return
     }
 
-    data[type as any] = id
+    data[type] = id
     const keys = Object.keys(data)
     const assignments = difference(keys, [type]).map((key) => {
       key = this.escapeId(key)
@@ -69,12 +72,12 @@ extendDatabase(MysqlDatabase, {
   },
 
   async getChannelList(fields, type, assignees) {
-    const idMap: (readonly [type: string, ids: readonly string[]])[] = assignees ? [[type, assignees]]
+    const idMap: (readonly [string, readonly string[]])[] = assignees ? [[type, assignees]]
       : type ? [[type, this.app.servers[type].bots.map(bot => bot.selfId)]]
         : Object.entries(this.app.servers).map(([type, { bots }]) => [type, bots.map(bot => bot.selfId)])
     return this.select<Channel>('channel', fields, idMap.map(([type, ids]) => {
       return [
-        `LEFT(\`type\`, ${type.length}) = ${this.escape(type)}`,
+        `LEFT(\`id\`, ${type.length}) = ${this.escape(type)}`,
         `\`assignee\` IN (${ids.map(id => this.escape(id)).join(',')})`,
       ].join(' AND ')
     }).join(' OR '))

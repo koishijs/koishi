@@ -1,4 +1,4 @@
-import { App, Command, CommandAction, Group, ParsedArgv, User } from 'koishi-core'
+import { App, Command, CommandAction, Channel, ParsedArgv, User } from 'koishi-core'
 import { Logger, Observed, pick } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { WorkerAPI, WorkerConfig, WorkerData, Response, ContextOptions } from './worker'
@@ -68,7 +68,7 @@ export class DataTrap<O extends {}> {
 }
 
 export const userTrap = new DataTrap<User>()
-export const groupTrap = new DataTrap<Group>()
+export const channelTrap = new DataTrap<Channel>()
 
 export interface AccessOptions<T> {
   readable?: T[]
@@ -91,25 +91,25 @@ export function resolveAccess<T>(fields: Access<T>): AccessOptions<T> {
 
 export interface FieldOptions {
   userFields?: Access<User.Field>
-  groupFields?: Access<Group.Field>
+  channelFields?: Access<Channel.Field>
 }
 
 export function attachTraps<O>(
   command: Command<never, never, O>,
   userAccess: AccessOptions<User.Field>,
-  groupAccess: AccessOptions<Group.Field>,
+  channelAccess: AccessOptions<Channel.Field>,
   action: TrappedAction<O>,
 ) {
   const userWritable = userAccess.writable
-  const groupWritable = groupAccess.writable
+  const channelWritable = channelAccess.writable
 
   command.userFields([...userTrap.fields(userAccess.readable)])
-  command.groupFields([...groupTrap.fields(groupAccess.readable)])
+  command.channelFields([...channelTrap.fields(channelAccess.readable)])
   command.action((argv, ...args) => {
-    const { $uuid, $user, $group } = argv.session
+    const { $uuid, $user, $channel } = argv.session
     const user = userTrap.get($user, userAccess.readable)
-    const group = groupTrap.get($group, groupAccess.readable)
-    const ctxOptions = { $uuid, user, group, userWritable, groupWritable }
+    const channel = channelTrap.get($channel, channelAccess.readable)
+    const ctxOptions = { $uuid, user, channel, userWritable, channelWritable }
     return action({ ...argv, ctxOptions }, ...args)
   })
 }
@@ -145,9 +145,9 @@ export class MainAPI {
     return userTrap.set(session.$user, data)
   }
 
-  async updateGroup(uuid: string, data: Partial<Group>) {
+  async updateGroup(uuid: string, data: Partial<Channel>) {
     const session = this.getSession(uuid)
-    return groupTrap.set(session.$group, data)
+    return channelTrap.set(session.$channel, data)
   }
 }
 

@@ -264,28 +264,25 @@ export class Context {
   }
 
   async broadcast(message: string, forced?: boolean): Promise<string[]>
-  async broadcast(type: PlatformType, groups: readonly string[], message: string, forced?: boolean): Promise<string[]>
-  async broadcast(...args: [string, boolean?] | [PlatformType, readonly string[], string, boolean?]) {
-    let platform: PlatformType
+  async broadcast(groups: readonly string[], message: string, forced?: boolean): Promise<string[]>
+  async broadcast(...args: [string, boolean?] | [readonly string[], string, boolean?]) {
     let groups: string[]
-    if (Array.isArray(args[1])) {
-      platform = args.shift() as never
-      groups = args.shift() as never
-    }
+    if (Array.isArray(args[0])) groups = args.shift() as any
     const [message, forced] = args as [string, boolean]
     if (!message) return []
 
-    const data = await this.database.getChannelList(['id', 'assignee', 'flag'], platform)
+    const data = await this.database.getChannelList(['id', 'assignee', 'flag'])
     const assignMap: Record<string, Record<string, string[]>> = {}
     for (const { id, assignee, flag } of data) {
-      const [type, pid] = id.split(':', 2)
-      if (platform && !groups.includes(pid)) continue
+      if (groups && !groups.includes(id)) continue
       if (!forced && (flag & Channel.Flag.silent)) continue
+      const [type] = id.split(':')
+      const cid = id.slice(type.length + 1)
       const map = assignMap[type] ||= {}
       if (map[assignee]) {
-        map[assignee].push(pid)
+        map[assignee].push(cid)
       } else {
-        map[assignee] = [pid]
+        map[assignee] = [cid]
       }
     }
 

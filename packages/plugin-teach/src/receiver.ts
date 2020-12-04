@@ -169,7 +169,7 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
 
   if (ctx.bail('dialogue/receive', state)) return next()
   const logger = ctx.logger('dialogue')
-  logger.debug('[receive]', session.messageId, session.message)
+  logger.debug('[receive]', session.messageId, session.content)
 
   // fetch matched dialogues
   const dialogues = state.dialogues = await ctx.database.getDialoguesByTest(state.test)
@@ -199,7 +199,7 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
     .replace(/%a/g, CQCode.stringify('at', { qq: session.userId }))
     .replace(/%m/g, CQCode.stringify('at', { qq: session.selfId }))
     .replace(/%s/g, escapeAnswer(session.$username))
-    .replace(/%0/g, escapeAnswer(session.message))
+    .replace(/%0/g, escapeAnswer(session.content))
 
   if (dialogue.flag & Dialogue.Flag.regexp) {
     const capture = dialogue._capture || new RegExp(dialogue.question, 'i').exec(state.test.question)
@@ -280,20 +280,20 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('notify/poke', (session) => {
     if (session.targetId !== session.selfId) return
-    session.message = 'hook:poke'
+    session.content = 'hook:poke'
     triggerDialogue(ctx, session)
   })
 
   ctx.on('notify/honor', async (session) => {
     const { assignee } = await session.$observeGroup(['assignee'])
     if (assignee !== session.selfId) return
-    session.message = 'hook:' + session.honorType
+    session.content = 'hook:' + session.honorType
     triggerDialogue(ctx, session)
   })
 
   ctx.on('dialogue/receive', ({ session, test }) => {
-    if (session.message.includes('[CQ:image,')) return true
-    const { unprefixed, prefixed, appellative, activated } = config._stripQuestion(session.message)
+    if (session.content.includes('[CQ:image,')) return true
+    const { unprefixed, prefixed, appellative, activated } = config._stripQuestion(session.content)
     test.question = unprefixed
     test.original = prefixed
     test.activated = activated
@@ -317,7 +317,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.group().command('dialogue <message...>', '触发教学对话')
     .action(async ({ session, next }, message = '') => {
       if (session._redirected > maxRedirections) return next()
-      session.message = message
+      session.content = message
       return triggerDialogue(ctx, session, next)
     })
 }

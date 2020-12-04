@@ -34,6 +34,7 @@ export interface Meta<E extends EventType = EventType> {
 
   // basic properties
   channelId?: string
+  ancestors?: string[]
   selfId?: string
   userId?: string
   groupId?: string
@@ -109,6 +110,14 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
           : '' + this.userId
   }
 
+  get uid() {
+    return `${this.kind}:${this.userId}`
+  }
+
+  get cid() {
+    return `${this.kind}:${this.channelId}`
+  }
+
   async $send(message: string) {
     if (this.$bot[Bot.$send]) {
       return this.$bot[Bot.$send](this, message)
@@ -144,7 +153,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     }))
   }
 
-  async $getGroup<K extends Channel.Field = never>(id: string = this.groupId, fields: readonly K[] = [], assignee?: string) {
+  async $getChannel<K extends Channel.Field = never>(id: string = this.groupId, fields: readonly K[] = [], assignee?: string) {
     const group = await this.$app.database.getChannel(this.kind, id, fields)
     if (group) return group
     const fallback = Channel.create(this.kind, id, assignee)
@@ -154,35 +163,34 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return fallback
   }
 
-  /** 在元数据上绑定一个可观测群实例 */
-  async $observeGroup<T extends Channel.Field = never>(fields: Iterable<T> = []): Promise<Channel.Observed<T | G>> {
+  /** 在元数据上绑定一个可观测频道实例 */
+  async $observeChannel<T extends Channel.Field = never>(fields: Iterable<T> = []): Promise<Channel.Observed<T | G>> {
     const fieldSet = new Set<Channel.Field>(fields)
     const { kind, channelId, $argv, $channel: $group } = this
     if ($argv) Command.collect($argv, 'channel', fieldSet)
-    const identifier = `${kind}:${channelId}`
 
-    // 对于已经绑定可观测群的，判断字段是否需要自动补充
+    // 对于已经绑定可观测频道的，判断字段是否需要自动补充
     if ($group) {
       for (const key in $group) {
         fieldSet.delete(key as any)
       }
       if (fieldSet.size) {
-        const data = await this.$getGroup(channelId, [...fieldSet])
-        this.$app._groupCache.set(identifier, $group._merge(data))
+        const data = await this.$getChannel(channelId, [...fieldSet])
+        this.$app._groupCache.set(this.cid, $group._merge(data))
       }
       return $group as any
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    const cache = this.$app._groupCache.get(identifier)
+    const cache = this.$app._groupCache.get(this.cid)
     const fieldArray = [...fieldSet]
     const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
     if (hasActiveCache) return this.$channel = cache as any
 
-    // 绑定一个新的可观测群实例
-    const data = await this.$getGroup(channelId, fieldArray)
+    // 绑定一个新的可观测频道实例
+    const data = await this.$getChannel(channelId, fieldArray)
     const group = observe(data, diff => this.$app.database.setChannel(kind, channelId, diff), `group ${channelId}`)
-    this.$app._groupCache.set(identifier, group)
+    this.$app._groupCache.set(this.cid, group)
     return this.$channel = group
   }
 
@@ -282,7 +290,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     this.$argv = argv
     if (this.$app.database) {
       if (this.subType === 'group') {
-        await this.$observeGroup()
+        await this.$observeChannel()
       }
       await this.$observeUser()
     }

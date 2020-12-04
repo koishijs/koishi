@@ -1,4 +1,4 @@
-import { Context, Session, getContextId } from 'koishi-core'
+import { Context, Session } from 'koishi-core'
 import { Time, Logger } from 'koishi-utils'
 import { Schedule } from './database'
 
@@ -38,7 +38,7 @@ function prepareSchedule({ id, session, interval, command, time }: Schedule) {
 }
 
 function formatContext(session: Session) {
-  return session.messageType === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.groupId}`
+  return session.subType === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.groupId}`
 }
 
 export const name = 'schedule'
@@ -70,7 +70,7 @@ export function apply(ctx: Context) {
       if (options.list || options.fullList) {
         let schedules = await database.getAllSchedules([session.selfId])
         if (!options.fullList) {
-          schedules = schedules.filter(s => getContextId(session) === getContextId(s.session))
+          schedules = schedules.filter(s => session.channelId === s.session.channelId)
         }
         if (!schedules.length) return '当前没有等待执行的日程。'
         return schedules.map(({ id, time, interval, command, session }) => {

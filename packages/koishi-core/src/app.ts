@@ -202,7 +202,7 @@ export class App extends Context {
         // attach group data
         const groupFields = new Set<Channel.Field>(['flag', 'assignee'])
         this.emit('before-attach-group', session, groupFields)
-        const group = await session.$observeGroup(groupFields)
+        const group = await session.$observeChannel(groupFields)
 
         // emit attach event
         if (await this.serial(session, 'attach-group', session)) return

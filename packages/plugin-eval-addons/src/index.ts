@@ -66,7 +66,7 @@ export function apply(ctx: Context, config: Config) {
   let manifests: Record<string, Promise<Manifest>>
   const { exclude = /^(\..+|node_modules)$/ } = worker.config
   const userBaseAccess = resolveAccess(worker.config.userFields)
-  const groupBaseAccess = resolveAccess(worker.config.groupFields)
+  const channelBaseAccess = resolveAccess(worker.config.channelFields)
 
   function mergeAccess<T>(baseAccess: AccessOptions<T>, fields: Access<T>): AccessOptions<T> {
     const { readable: r1, writable: w1 } = baseAccess
@@ -102,13 +102,13 @@ export function apply(ctx: Context, config: Config) {
         }
 
         const userAccess = mergeAccess(userBaseAccess, config.userFields)
-        const groupAccess = mergeAccess(groupBaseAccess, config.groupFields)
+        const channelAccess = mergeAccess(channelBaseAccess, config.channelFields)
 
         const cmd = addon
           .subcommand(rawName, desc, config)
           .option('debug', '启用调试模式', { type: 'boolean', hidden: true })
 
-        attachTraps(cmd, userAccess, groupAccess, async ({ session, command, options, ctxOptions }, ...args) => {
+        attachTraps(cmd, userAccess, channelAccess, async ({ session, command, options, ctxOptions }, ...args) => {
           const { name } = command, { worker } = session.$app
           const result = await worker.remote.callAddon(ctxOptions, { name, args, options })
           return result

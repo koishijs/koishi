@@ -29,7 +29,7 @@ const defaultConfig: EvalConfig = {
   timeout: 1000,
   setupFiles: {},
   maxLogs: Infinity,
-  groupFields: ['id'],
+  channelFields: ['id'],
   userFields: ['id', 'authority'],
   dataKeys: ['inspect', 'setupFiles'],
 }
@@ -55,7 +55,7 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   const userAccess = resolveAccess(config.userFields)
-  const groupAccess = resolveAccess(config.groupFields)
+  const groupAccess = resolveAccess(config.channelFields)
 
   const cmd = ctx.command('evaluate [expr...]', '执行 JavaScript 脚本', { noEval: true })
     .alias('eval')

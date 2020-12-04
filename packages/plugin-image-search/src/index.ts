@@ -1,4 +1,4 @@
-import { Context, Session, CommandAction, getContextId } from 'koishi-core'
+import { Context, Session, CommandAction } from 'koishi-core'
 import ascii2d from './ascii2d'
 import saucenao from './saucenao'
 
@@ -40,7 +40,7 @@ export function apply(ctx: Context, config: Config = {}) {
   type SearchCallback = (url: string, session: Session, config: Config) => Promise<any>
 
   async function searchUrls(session: Session, urls: string[], callback: SearchCallback) {
-    const id = getContextId(session)
+    const id = session.channelId
     pending.add(id)
     let hasSuccess = false, hasFailure = false
     await Promise.all(urls.map((url) => {
@@ -53,17 +53,17 @@ export function apply(ctx: Context, config: Config = {}) {
 
   function search(callback: SearchCallback): CommandAction {
     return async ({ session }) => {
-      const id = getContextId(session)
+      const id = session.channelId
       if (pending.has(id)) return '存在正在进行的查询，请稍后再试。'
 
-      const urls = extractImages(session.message)
+      const urls = extractImages(session.content)
       if (urls.length) {
         return searchUrls(session, urls, callback)
       }
 
-      const dispose = session.$use(({ message }, next) => {
+      const dispose = session.$use(({ content }, next) => {
         dispose()
-        const urls = extractImages(message)
+        const urls = extractImages(content)
         if (!urls.length) return next()
         return searchUrls(session, urls, callback)
       })

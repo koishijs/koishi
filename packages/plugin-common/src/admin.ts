@@ -98,11 +98,11 @@ Command.prototype.adminChannel = function (this: Command<never, never, { group?:
     if (options.group) {
       const { database } = session.$app
       if (!isInteger(options.group) || options.group <= 0) return '请指定正确的目标。'
-      const data = await session.$getGroup(options.group, [...fields])
+      const data = await session.$getChannel(options.group, [...fields])
       if (!data) return '未找到指定的群。'
       target = observe(data, diff => database.setChannel(session.kind, options.group, diff), `group ${options.group}`)
     } else if (session.subType === 'group') {
-      target = await session.$observeGroup(fields)
+      target = await session.$observeChannel(fields)
     } else {
       return '当前不在群上下文中，请使用 -g 参数指定目标群。'
     }
@@ -163,7 +163,7 @@ export function apply(ctx: Context) {
     .option('unset', '-S  删除标记', { authority: 4 })
     .adminUser(flagAction.bind(null, User.Flag))
 
-  ctx.command('usage [key]', '调用次数信息')
+  ctx.command('user.usage [key]', '调用次数信息')
     .alias('usages')
     .userFields(['usage'])
     .option('set', '-s  设置调用次数', { authority: 4 })
@@ -193,7 +193,7 @@ export function apply(ctx: Context) {
       return output.join('\n')
     })
 
-  ctx.command('timer [key]', '定时器信息')
+  ctx.command('user.timer [key]', '定时器信息')
     .alias('timers')
     .userFields(['timers'])
     .option('set', '-s  设置定时器', { authority: 4 })

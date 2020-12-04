@@ -12,7 +12,7 @@ const logger = new Logger('eval')
 import { expose, wrap } from './transfer'
 import { VM } from './vm'
 import { MainAPI } from '.'
-import { Group, User } from 'koishi-core'
+import { Channel, User } from 'koishi-core'
 
 export interface WorkerConfig {
   setupFiles?: Record<string, string>
@@ -75,19 +75,19 @@ const main = wrap<MainAPI>(parentPort)
 export interface ContextOptions {
   $uuid: string
   user: Partial<User>
-  group: Partial<Group>
+  channel: Partial<Channel>
   userWritable: User.Field[]
-  groupWritable: Group.Field[]
+  channelWritable: Channel.Field[]
 }
 
 export interface Context {
   user: User.Observed<any>
-  group: Group.Observed<any>
+  channel: Channel.Observed<any>
   send(...param: any[]): Promise<void>
   exec(message: string): Promise<void>
 }
 
-export const Context = ({ $uuid, user, userWritable, group, groupWritable }: ContextOptions): Context => ({
+export const Context = ({ $uuid, user, userWritable, channel, channelWritable }: ContextOptions): Context => ({
   user: user && observe(user, async (diff) => {
     const diffKeys = difference(Object.keys(diff), userWritable)
     if (diffKeys.length) {
@@ -96,8 +96,8 @@ export const Context = ({ $uuid, user, userWritable, group, groupWritable }: Con
     await main.updateUser($uuid, diff)
   }),
 
-  group: group && observe(group, async (diff) => {
-    const diffKeys = difference(Object.keys(diff), groupWritable)
+  channel: channel && observe(channel, async (diff) => {
+    const diffKeys = difference(Object.keys(diff), channelWritable)
     if (diffKeys.length) {
       throw new TypeError(`cannot set group field: ${diffKeys.join(', ')}`)
     }
@@ -127,7 +127,7 @@ export class WorkerAPI {
 
   async sync(ctx: Context) {
     await ctx.user?._update()
-    await ctx.group?._update()
+    await ctx.channel?._update()
   }
 
   async eval(ctxOptions: ContextOptions, evalOptions: EvalOptions) {
