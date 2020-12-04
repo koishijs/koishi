@@ -10,7 +10,7 @@ declare module '../utils' {
   }
 
   interface Dialogue {
-    writer: number
+    writer: string
   }
 
   namespace Dialogue {
@@ -59,7 +59,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     const fields: User.Field[] = ['id', 'authority', session.kind]
     if (options.writer && !writers.includes(options.writer)) writers.push(options.writer)
     if (!options.modify) fields.push('name')
-    const users = await ctx.database.getUser(writers, fields)
+    const users = await ctx.database.getUser('id', writers, fields)
 
     let hasUnnamed = false
     for (const user of users) {

@@ -16,18 +16,7 @@ function inferFields(keys: readonly string[]) {
 }
 
 extendDatabase(MysqlDatabase, {
-  async getUser(...args) {
-    if (typeof args[0] === 'number') {
-      const [id, fields] = args as [number, readonly User.Field[]]
-      const [data] = await this.select<User>('user', fields, '`id` = ?', [id])
-      return data && { ...data, id }
-    } else if (Array.isArray(args[0])) {
-      const [ids, fields] = args as [number[], User.Field[]]
-      const list = ids.map(id => this.escape(id)).join(',')
-      return this.select<User>('user', fields, `\`id\` IN (${list})`)
-    }
-
-    const [type, id, _fields] = args as [string, string | string[], readonly User.Field[]]
+  async getUser(type, id, _fields) {
     const fields = _fields ? inferFields(_fields) : User.fields
     if (fields && !fields.length) return { [type]: id } as any
     if (Array.isArray(id)) {
@@ -38,16 +27,13 @@ extendDatabase(MysqlDatabase, {
     return data && { ...data, [type]: id }
   },
 
-  async setUser(...args) {
-    let type = 'id'
-    if (args.length > 2) type = args.shift()
-    const [id, data] = args
+  async setUser(type, id, data) {
     if (data === null) {
       await this.query('DELETE FROM `user` WHERE ?? = ?', [type, id])
       return
     }
 
-    data[type] = id
+    data[type as any] = id
     const keys = Object.keys(data)
     const assignments = difference(keys, [type]).map((key) => {
       key = this.escapeId(key)
