@@ -1,5 +1,5 @@
 import { isInteger, difference, observe, Time, enumKeys, Random } from 'koishi-utils'
-import { Context, getTargetId, User, Channel, Command, ParsedArgv, PlatformType } from 'koishi-core'
+import { Context, getTargetId, User, Channel, Command, ParsedArgv, PlatformType, Session } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, O extends {}, T>
   = (argv: ParsedArgv<U | 'authority', G, O> & { target: T }, ...args: string[])
@@ -116,9 +116,42 @@ Command.prototype.adminChannel = function (this: Command<never, never, { group?:
   return command
 }
 
-export function apply(ctx: Context) {
+export interface AdminConfig {
+  checkName?: (name: string, session: Session) => string
+}
+
+export function apply(ctx: Context, options: AdminConfig = {}) {
   ctx.command('common/user', '用户管理', { authority: 3 })
   ctx.command('common/group', '群管理', { authority: 3 })
+
+  ctx.command('common/callme <name...>', '修改自己的称呼')
+    .userFields(['id', 'name'])
+    .shortcut('叫我', { prefix: true, fuzzy: true, oneArg: true })
+    .action(async ({ session }, name) => {
+      if (!name) {
+        return `好的，${session.$username}，请多指教！`
+      } else if (name === session.$user.name) {
+        return '称呼未发生变化。'
+      } else if (/^\s+$/.test(name)) {
+        return '称呼不能为空。'
+      }
+
+      const result = options.checkName(name, session)
+      if (result) return result
+
+      try {
+        session.$user.name = name
+        await session.$user._update()
+        return `好的，${session.$username}，请多指教！`
+      } catch (error) {
+        if (error[Symbol.for('koishi.error-type')] === 'duplicate-entry') {
+          return '禁止与其他用户重名。'
+        } else {
+          ctx.logger('common').warn(error)
+          return '修改称呼失败。'
+        }
+      }
+    })
 
   const tokens: Record<string, [kind: PlatformType, id: string]> = {}
 

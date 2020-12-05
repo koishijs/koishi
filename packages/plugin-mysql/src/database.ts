@@ -104,6 +104,9 @@ class MysqlDatabase {
         if (!err) return resolve(results)
         logger.warn(sql)
         err.stack = err.message + error.stack.slice(7)
+        if (err.code === 'ER_DUP_ENTRY') {
+          err[Symbol.for('koishi.error-type')] = 'duplicate-entry'
+        }
         reject(err)
       })
     })
