@@ -1,8 +1,10 @@
 import { intersection, difference, Logger, defineProperty } from 'koishi-utils'
 import { Command, CommandConfig, ParsedArgv, ExecuteArgv } from './command'
 import { EventType, Session } from './session'
-import { User, Channel, PlatformType } from './database'
+import { User, Channel, PlatformType, Database } from './database'
+import { Server } from './server'
 import { App } from './app'
+import type Router from 'koa-router'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
@@ -40,10 +42,23 @@ function isBailed(value: any) {
 export class Context {
   static readonly MIDDLEWARE_EVENT = Symbol('mid')
 
+  protected _router: Router
+  protected _database: Database
+  protected _servers: Record<string, Server>
+  protected _sessions: Record<string, Session>
+
   private _disposables: Disposable[]
 
   constructor(public scope: Scope, public app?: App) {
     defineProperty(this, '_disposables', [])
+  }
+
+  get router() {
+    return this.app._router
+  }
+
+  get servers() {
+    return this.app._servers
   }
 
   get database() {
@@ -287,7 +302,7 @@ export class Context {
     }
 
     return (await Promise.all(Object.entries(assignMap).flatMap(([type, map]) => {
-      return this.app.servers[type].bots.map((bot) => {
+      return this.servers[type].bots.map((bot) => {
         return bot.broadcast(map[bot.selfId] || [], message)
       })
     }))).flat(1)
