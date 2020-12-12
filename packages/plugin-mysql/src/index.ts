@@ -27,7 +27,7 @@ extendDatabase(MysqlDatabase, {
     return data && { ...data, [type]: id }
   },
 
-  async setUser(type, id, data) {
+  async setUser(type, id, data, autoCreate) {
     if (data === null) {
       await this.query('DELETE FROM `user` WHERE ?? = ?', [type, id])
       return
@@ -40,7 +40,7 @@ extendDatabase(MysqlDatabase, {
       return `${key} = VALUES(${key})`
     }).join(', ')
 
-    if (type === 'id' || type === 'name') {
+    if (!autoCreate) {
       await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['user', type, id])
     } else {
       await this.query(
