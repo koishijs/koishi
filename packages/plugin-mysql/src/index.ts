@@ -27,7 +27,7 @@ extendDatabase(MysqlDatabase, {
     return data && { ...data, [type]: id }
   },
 
-  async setUser(type, id, data) {
+  async setUser(type, id, data, autoCreate) {
     if (data === null) {
       await this.query('DELETE FROM `user` WHERE ?? = ?', [type, id])
       return
@@ -38,12 +38,17 @@ extendDatabase(MysqlDatabase, {
     const assignments = difference(keys, [type]).map((key) => {
       key = this.escapeId(key)
       return `${key} = VALUES(${key})`
-    })
-    await this.query(
-      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
-      ON DUPLICATE KEY UPDATE ${assignments.join(', ')}`,
-      ['user', ...this.formatValues('user', data, keys)],
-    )
+    }).join(', ')
+
+    if (!autoCreate) {
+      await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['user', type, id])
+    } else {
+      await this.query(
+        `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
+        ON DUPLICATE KEY UPDATE ${assignments}`,
+        ['user', ...this.formatValues('user', data, keys)],
+      )
+    }
   },
 
   async getChannel(type, pid, fields) {

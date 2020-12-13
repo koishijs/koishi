@@ -66,8 +66,8 @@ export interface Bot extends BotOptions {
   getStatusCode(): Promise<BotStatusCode>
 
   // message
-  sendMessage(channelId: string, message: string): Promise<string>
-  sendPrivateMessage(userId: string, message: string): Promise<string>
+  sendMessage(channelId: string, content: string): Promise<string>
+  sendPrivateMessage(userId: string, content: string): Promise<string>
   getMessage(channelId: string, messageId: string): Promise<MessageInfo>
   deleteMessage(channelId: string, messageId: string): Promise<void>
 

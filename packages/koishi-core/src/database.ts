@@ -91,8 +91,8 @@ export interface Database {
   getUser<K extends User.Field, T extends User.Field>(type: T, id: User[T], fields?: readonly K[]): Promise<Pick<User, K | T>>
   getUser<K extends User.Field, T extends User.Field>(type: T, ids: User[T][], fields?: readonly K[]): Promise<Pick<User, K | T>[]>
   getUser(type: string, ids: string | string[], fields?: readonly string[]): Promise<any>
-  setUser<T extends User.Field>(type: T, id: User[T], data: Partial<User>): Promise<void>
-  setUser(type: PlatformType, id: string, data: Partial<User>): Promise<void>
+  setUser<T extends User.Field>(type: T, id: User[T], data: Partial<User>, autoCreate?: boolean): Promise<void>
+  setUser(type: PlatformType, id: string, data: Partial<User>, autoCreate?: boolean): Promise<void>
 
   getChannel<K extends Channel.Field>(type: PlatformType, id: string, fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>>
   getChannel<K extends Channel.Field>(type: PlatformType, ids: string[], fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>[]>

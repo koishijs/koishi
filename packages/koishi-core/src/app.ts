@@ -1,8 +1,8 @@
 import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop } from 'koishi-utils'
-import { Command } from './command'
 import { Context, Middleware, NextFunction } from './context'
-import { Channel, User, Database } from './database'
 import { BotOptions, Server } from './server'
+import { Channel, User } from './database'
+import { Command } from './command'
 import { Session } from './session'
 import help from './plugins/help'
 import shortcut from './plugins/shortcut'
@@ -11,7 +11,6 @@ import validate from './plugins/validate'
 import LruCache from 'lru-cache'
 import * as http from 'http'
 import type Koa from 'koa'
-import type Router from 'koa-router'
 
 export interface AppOptions extends BotOptions {
   port?: number
@@ -39,16 +38,11 @@ function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
 export enum AppStatus { closed, opening, open, closing }
 
 export class App extends Context {
-  app = this
-  options: AppOptions
-  servers: Record<string, Server> = {}
-  status = AppStatus.closed
-  router?: Router
+  public app = this
+  public options: AppOptions
+  public status = AppStatus.closed
 
-  _httpServer?: http.Server
-  _database: Database
   _commands: Command[]
-  _sessions: Record<string, Session> = {}
   _commandMap: Record<string, Command>
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]>
   _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
@@ -56,6 +50,7 @@ export class App extends Context {
 
   private _nameRE: RegExp
   private _prefixRE: RegExp
+  private _httpServer?: http.Server
 
   static defaultConfig: AppOptions = {
     maxListeners: 64,
@@ -77,6 +72,8 @@ export class App extends Context {
     defineProperty(this, '_hooks', {})
     defineProperty(this, '_commands', [])
     defineProperty(this, '_commandMap', {})
+    defineProperty(this, '_sessions', {})
+    defineProperty(this, '_servers', {})
     defineProperty(this, '_userCache', {})
     defineProperty(this, '_groupCache', new LruCache({
       max: options.groupCacheLength,
@@ -113,10 +110,10 @@ export class App extends Context {
 
   createServer() {
     const koa: Koa = new (require('koa'))()
-    this.router = new (require('koa-router'))()
+    defineProperty(this, '_router', new (require('koa-router'))())
     koa.use(require('koa-bodyparser')())
-    koa.use(this.router.routes())
-    koa.use(this.router.allowedMethods())
+    koa.use(this._router.routes())
+    koa.use(this._router.allowedMethods())
     this._httpServer = http.createServer(koa.callback())
   }
 
