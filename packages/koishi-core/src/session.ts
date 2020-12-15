@@ -342,7 +342,7 @@ export interface StatusInfo {
 }
 
 export interface MessageInfo {
-  id: string
+  messageId: string
   type: EventTypeMap['message']
   content: string
   timestamp: number

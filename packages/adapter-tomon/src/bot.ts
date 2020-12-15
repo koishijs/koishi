@@ -10,26 +10,26 @@ declare module 'koishi-core/dist/database' {
 }
 
 export interface Author {
-  id: string;
-  username: string;
-  discriminator: string;
-  avatar: string;
-  name: string;
-  type: number;
+  id: string
+  username: string
+  discriminator: string
+  avatar: string
+  name: string
+  type: number
 }
 
 export interface Channel {
-  id: string;
-  type: number;
-  name: string;
-  guildId: string;
-  position: number;
-  permissionOverwrites: any[];
-  parentId: string;
-  topic: string;
-  lastMessageId: string;
-  lastPinTimestamp: string;
-  defaultMessageNotifications: number;
+  id: string
+  type: number
+  name: string
+  guildId: string
+  position: number
+  permissionOverwrites: any[]
+  parentId: string
+  topic: string
+  lastMessageId: string
+  lastPinTimestamp: string
+  defaultMessageNotifications: number
 }
 
 export interface TomonMessageInfo extends MessageInfo {
@@ -94,22 +94,22 @@ export class TomonBot extends Bot {
   banned: boolean
   socket: WebSocket
 
-  static adaptMessage(data: TomonMessageInfo) {
+  static toMessage(data: TomonMessageInfo) {
     data.timestamp = +new Date(data.timestamp)
-    if (data.member) TomonBot.adaptGroupMember(data.member)
+    if (data.member) TomonBot.toGroupMember(data.member)
   }
 
-  static adaptGroup(data: TomonGroupInfo) {
+  static toGroup(data: TomonGroupInfo) {
     data.updatedAt = +new Date(data.updatedAt)
   }
 
-  static adaptUser(data: TomonUserInfo) {
+  static toUser(data: TomonUserInfo) {
     data.createdAt = +new Date(data.createdAt)
     data.updatedAt = +new Date(data.updatedAt)
   }
 
-  static adaptGroupMember(data: TomonGroupMemberInfo) {
-    TomonBot.adaptUser(data)
+  static toGroupMember(data: TomonGroupMemberInfo) {
+    TomonBot.toUser(data)
     data.joinedAt = +new Date(data.joinedAt)
   }
 
@@ -128,7 +128,7 @@ export class TomonBot extends Bot {
 
   async getMessage(channelId: string, messageId: string) {
     const data = await this.request('GET', `/channels/${channelId}/messages/${messageId}`)
-    TomonBot.adaptMessage(data)
+    TomonBot.toMessage(data)
     return data
   }
 
@@ -142,31 +142,31 @@ export class TomonBot extends Bot {
 
   async getMessageList(channelId: string, limit?: number): Promise<TomonMessageInfo[]> {
     const data = await this.request('GET', `/channels/${channelId}/messages`, { data: { channelId, limit } })
-    data.forEach(TomonBot.adaptMessage)
+    data.forEach(TomonBot.toMessage)
     return data
   }
 
   async getGroup(groupId: string): Promise<TomonGroupInfo> {
     const data = await this.request('GET', `/guilds/${groupId}`)
-    TomonBot.adaptGroup(data)
+    TomonBot.toGroup(data)
     return data
   }
 
   async getGroupList(): Promise<TomonGroupInfo[]> {
     const data = await this.request('GET', '/users/@me/guilds')
-    data.forEach(TomonBot.adaptGroup)
+    data.forEach(TomonBot.toGroup)
     return data
   }
 
   async getGroupMember(groupId: string, userId: string): Promise<TomonGroupMemberInfo> {
     const data = await this.request('GET', `/guilds/${groupId}/members/${userId}`)
-    TomonBot.adaptGroupMember(data)
+    TomonBot.toGroupMember(data)
     return data
   }
 
   async getGroupMemberList(groupId: string): Promise<TomonGroupMemberInfo[]> {
     const data = await this.request('GET', `/guilds/${groupId}/members`)
-    data.forEach(TomonBot.adaptGroupMember)
+    data.forEach(TomonBot.toGroupMember)
     return data
   }
 

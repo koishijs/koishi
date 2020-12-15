@@ -1,9 +1,8 @@
 import axios, { Method, AxiosRequestConfig } from 'axios'
-import { camelize, paramCase } from 'koishi-utils'
+import { camelize, snakeCase } from 'koishi-utils'
 import FormData from 'form-data'
 import fs from 'fs'
 import ospath from 'path'
-import urljoin from 'url-join'
 
 const DEFAULT_TIMEOUT = 30000
 
@@ -45,7 +44,7 @@ export default class Route {
 
   url(options?: RequestOptions): string {
     const query = this.queryString(options)
-    return `${urljoin(this.api, this.path)}${query ? `?${query}` : ''}`
+    return `${this.api}${this.path}${query ? `?${query}` : ''}`
   }
 
   get auth(): string | undefined {
@@ -79,7 +78,7 @@ export default class Route {
         ...body.getHeaders(),
       }
     } else if (options?.data) {
-      body = JSON.stringify(paramCase(options.data))
+      body = JSON.stringify(snakeCase(options.data))
       headers['Content-Type'] = 'application/json'
     }
     const response = await axios({

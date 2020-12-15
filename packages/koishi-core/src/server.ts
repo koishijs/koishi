@@ -1,4 +1,4 @@
-import { paramCase, sleep } from 'koishi-utils'
+import { defineProperty, paramCase, sleep } from 'koishi-utils'
 import { Session, MessageInfo, EventTypeMap, GroupInfo, GroupMemberInfo, UserInfo } from './session'
 import { App, AppStatus } from './app'
 
@@ -12,20 +12,22 @@ type BotStatic<T extends Bot = Bot> = new (app: App, options: BotOptions) => T
 export abstract class Server<T extends Bot = Bot> {
   static types: Record<string, new (app: App) => Server> = {}
 
-  protected _bots: T[] = []
-
-  public bots = new Proxy(this._bots, {
-    get(target, prop) {
-      return typeof prop === 'symbol'
-        ? target[prop]
-        : target[prop] || target.find(bot => bot.selfId === prop)
-    },
-  })
+  protected _bots: T[]
+  public bots: T[]
 
   abstract listen(): Promise<void>
   abstract close(): void
 
-  constructor(public app: App, private BotStatic: BotStatic<T>) {}
+  constructor(public app: App, private BotStatic: BotStatic<T>) {
+    defineProperty(this, '_bots', [])
+    this.bots = new Proxy(this._bots, {
+      get(target, prop) {
+        return typeof prop === 'symbol'
+          ? target[prop]
+          : target[prop] || target.find(bot => bot.selfId === prop)
+      },
+    })
+  }
 
   create(options: BotOptions) {
     const bot = new this.BotStatic(this.app, options)
