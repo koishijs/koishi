@@ -36,7 +36,7 @@
     "koishi-test-utils": "^5.0.3"
   },
   "peerDependencies": {
-    "koishi-core": "^2.4.2",
+    "koishi-core": "^3.0.0-alpha.0",
     "koishi-plugin-puppeteer": "^1.0.2",
     "koishi-utils": "^3.2.1"
   },

@@ -13,7 +13,7 @@ export abstract class Server<T extends Bot = Bot> {
   static types: Record<string, new (app: App) => Server> = {}
 
   protected _bots: T[]
-  public bots: T[]
+  public bots: T[] & Record<string, T>
 
   abstract listen(): Promise<void>
   abstract close(): void
@@ -26,7 +26,7 @@ export abstract class Server<T extends Bot = Bot> {
           ? target[prop]
           : target[prop] || target.find(bot => bot.selfId === prop)
       },
-    })
+    }) as any
   }
 
   create(options: BotOptions) {
