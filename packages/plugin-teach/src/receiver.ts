@@ -285,7 +285,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('notify/honor', async (session) => {
-    const { assignee } = await session.$observeGroup(['assignee'])
+    const { assignee } = await session.$observeChannel(['assignee'])
     if (assignee !== session.selfId) return
     session.content = 'hook:' + session.honorType
     triggerDialogue(ctx, session)

@@ -15,7 +15,7 @@ export function apply(ctx: Context) {
   ctx = ctx.group()
 
   ctx.on('connect', async () => {
-    const groups = await ctx.database.getAllGroups(['subscribe'])
+    const groups = await ctx.database.getChannelList(['subscribe'])
     const idSet = new Set<number>()
     for (const { subscribe } of groups) {
       for (const uid in subscribe) {
@@ -148,12 +148,12 @@ export function apply(ctx: Context) {
     })
 
   cmd.subcommand('.check', '查看当前直播状态')
-    .groupFields(['subscribe'])
+    .channelFields(['subscribe'])
     .shortcut('查看单推列表')
     .shortcut('查看直播状态', { options: { group: true } })
     .option('group', '-g  查看本群内全部直播')
     .action(async ({ session, options }) => {
-      const { subscribe } = session.$group
+      const { subscribe } = session.$channel
       const output = [options.group ? '当前群内关注的直播状态：' : '当前关注的账号列表：']
       for (const id in subscribe) {
         if (!monitors[id]) {
@@ -190,13 +190,14 @@ export function apply(ctx: Context) {
     .shortcut('关注', { prefix: true, fuzzy: true })
     .shortcut('取消单推', { prefix: true, fuzzy: true, options: { delete: true } })
     .shortcut('取消关注', { prefix: true, fuzzy: true, options: { delete: true } })
-    .groupFields(['subscribe'])
+    .channelFields(['subscribe'])
     .option('global', '-g  设置本群默认关注', { authority: 2 })
     .option('delete', '-d  取消关注账号')
     .option('deleteAll', '-D  取消全部关注账号')
     .action(async ({ session, options }, name: string) => {
-      const { subscribe } = session.$group
-      const userId = options.global ? 0 : session.userId
+      const { subscribe } = session.$channel
+      // FIXME 0
+      const userId = options.global ? '0' : session.userId
       if (options.deleteAll) {
         let count = 0
         for (const id in subscribe) {
@@ -210,7 +211,7 @@ export function apply(ctx: Context) {
           }
         }
         if (count) {
-          await session.$group._update()
+          await session.$channel._update()
           return `已成功取消关注 ${count} 个账号。`
         } else {
           return '未在本群内关注任何账号。'
@@ -235,7 +236,7 @@ export function apply(ctx: Context) {
         } else {
           subscribe[id].splice(index)
         }
-        await session.$group._update()
+        await session.$channel._update()
         return '已成功取消关注。'
       }
 
@@ -247,7 +248,7 @@ export function apply(ctx: Context) {
         monitors[id] = new Monitor(account, ctx.app)
         monitors[id].start()
       }
-      await session.$group._update()
+      await session.$channel._update()
       return '关注成功！'
     })
 }

@@ -1,11 +1,11 @@
 import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 import MongoDatabase from 'koishi-plugin-mongo/dist/database'
-import { Group, extendDatabase } from 'koishi-core'
+import { Channel, extendDatabase } from 'koishi-core'
 import { OkPacket } from 'mysql'
 
 declare module 'koishi-core/dist/database' {
-  interface Group {
-    subscribe: Record<number, number[]>
+  interface Channel {
+    subscribe: Record<number, string[]>
   }
 
   interface Tables {
@@ -22,7 +22,7 @@ declare module 'koishi-core/dist/database' {
   }
 }
 
-Group.extend(() => ({ subscribe: {} }))
+Channel.extend(() => ({ subscribe: {} }))
 
 interface SubscribeOptions {
   names?: string[]
@@ -75,8 +75,8 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   },
 })
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables, Type }) => {
-  tables.group.subscribe = new DataType.Json()
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables, DataType }) => {
+  tables.channel.subscribe = new DataType.Json()
   tables.subscribe = Object.assign<any, any>([], {
     id: '`id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT',
     names: new DataType.Array(),

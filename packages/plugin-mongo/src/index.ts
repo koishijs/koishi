@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Database, extendDatabase, Context } from 'koishi-core'
+import { User, Database, extendDatabase, Context, Channel } from 'koishi-core'
 
 export * from './database'
 export default MongoDatabase
@@ -80,7 +80,7 @@ extendDatabase(MongoDatabase, {
     else await this.user.updateOne({ [type]: id }, { $set: escapeKey(data) }, { upsert: true })
   },
 
-  async getChannel(type, pid, fields) {
+  async getChannel(type, pid, fields = Channel.fields) {
     if (Array.isArray(pid)) {
       if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` } as any))
       const channels = await this.channel.find({ _id: { $in: pid.map(id => `${type}:${id}`) } }).project(projection(fields)).toArray()
@@ -91,7 +91,7 @@ extendDatabase(MongoDatabase, {
     return data && { ...data, id: `${type}:${pid}` }
   },
 
-  async getChannelList(fields, type, assignees) {
+  async getChannelList(fields = Channel.fields, type?, assignees?) {
     const idMap: (readonly [string, readonly string[]])[] = assignees ? [[type, assignees]]
       : type ? [[type, this.app.servers[type].bots.map(bot => bot.selfId)]]
         : Object.entries(this.app.servers).map(([type, { bots }]) => [type, bots.map(bot => bot.selfId)])

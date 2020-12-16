@@ -41,7 +41,7 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
       })
 
       const dispatchMessage = (data: TomonMessageInfo, eventType: EventType) => {
-        TomonBot.adaptMessage(data = camelize(data))
+        TomonBot.toMessage(data = camelize(data))
         const userId = data.author.id
         if (userId === selfId) return
         // TODO: 处理图片和表情
@@ -52,7 +52,7 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
           userId,
           eventType,
           kind: 'tomon',
-          groupId: data['guildId'],
+          channelId: data['guildId'],
           subType: data['guildId'] ? 'group' : 'private',
         }))
       }

@@ -33,7 +33,7 @@ const serverQuestions: PromptObject<keyof AppConfig>[] = [{
   initial: 8080,
 }]
 
-const cqhttpQuestions: PromptObject<keyof AppConfig>[] = [{
+const cqhttpQuestions: PromptObject[] = [{
   name: 'path',
   type: conditional('text', 'type', 'cqhttp:http', 'cqhttp:ws-reverse'),
   message: 'Koishi Path',
@@ -62,7 +62,7 @@ const cqhttpQuestions: PromptObject<keyof AppConfig>[] = [{
   message: 'Token for CQHTTP Server',
 }]
 
-const tomonQuestions: PromptObject<keyof AppConfig>[] = [{
+const tomonQuestions: PromptObject[] = [{
   name: 'token',
   type: 'text',
   message: 'Token for Tomon',

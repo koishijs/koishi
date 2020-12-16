@@ -1,4 +1,4 @@
-import { Group, App } from 'koishi-core'
+import { Channel, App } from 'koishi-core'
 import { CQCode, Logger } from 'koishi-utils'
 import { Subscribe } from './database'
 import bilibili from './bilibili'
@@ -8,7 +8,7 @@ import axios from 'axios'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'monitor/before-send' (info: LiveInfo, group: Pick<Group, 'id' | 'flag' | 'assignee' | 'subscribe'>): void | boolean
+    'monitor/before-send'(info: LiveInfo, group: Pick<Channel, 'id' | 'flag' | 'assignee' | 'subscribe'>): void | boolean
   }
 }
 
@@ -121,15 +121,17 @@ export class Daemon {
     this.isLive = true
     const { url, content, image, title } = info
     const app = this.monitor.app
-    const groups = await app.database.getAllGroups(['id', 'flag', 'assignee', 'subscribe'])
-    groups.forEach(async (group) => {
+    const channels = await app.database.getChannelList(['id', 'flag', 'assignee', 'subscribe'])
+    channels.forEach(async (group) => {
       const { id, flag, assignee, subscribe } = group
-      if (!subscribe[this.config.id] || flag & Group.Flag.silent) return
-      const bot = app.bots[assignee]
+      const [type, channelId] = id.split(':')
+      if (!subscribe[this.config.id] || flag & Channel.Flag.silent) return
+      const bot = app.servers[type].bots[assignee]
       const output = [`[直播提示] ${this.config.names[0]} 正在 ${this._displayType} 上直播：${url}`]
       // at subscibers
       try {
-        const memberMap = await bot.getMemberMap(id)
+        // @ts-ignore // FIXME
+        const memberMap = await bot.getMemberMap(channelId)
         const subscribers = subscribe[this.config.id].filter(id => !id || id in memberMap)
         subscribe[this.config.id] = subscribers
       } catch {}
@@ -143,7 +145,7 @@ export class Daemon {
       }
       if (app.bail('monitor/before-send', info, group)) return
       for (const message of messages) {
-        await bot.sendGroupMsg(id, message)
+        await bot.sendMessage(channelId, message)
       }
     })
   }

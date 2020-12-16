@@ -208,7 +208,6 @@ export class CQBot extends Bot {
     const data = await this.get<CQMessageInfo>('get_msg', { messageId })
     renameProperty(data, 'timestamp', 'time')
     renameProperty(data, 'content', 'message')
-    renameProperty(data, 'id', 'messageId')
     renameProperty(data, 'type', 'messageType')
     return data
   }

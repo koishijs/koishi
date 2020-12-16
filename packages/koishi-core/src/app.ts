@@ -47,10 +47,10 @@ export class App extends Context {
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]>
   _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
   _groupCache: LruCache<string, Observed<Partial<Channel>, Promise<void>>>
+  _httpServer?: http.Server
 
   private _nameRE: RegExp
   private _prefixRE: RegExp
-  private _httpServer?: http.Server
 
   static defaultConfig: AppOptions = {
     maxListeners: 64,
@@ -114,7 +114,7 @@ export class App extends Context {
     koa.use(require('koa-bodyparser')())
     koa.use(this._router.routes())
     koa.use(this._router.allowedMethods())
-    this._httpServer = http.createServer(koa.callback())
+    defineProperty(this, '_httpServer', http.createServer(koa.callback()))
   }
 
   prepare() {
