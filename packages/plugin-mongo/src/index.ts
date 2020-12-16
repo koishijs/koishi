@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Group, Database, extendDatabase, Context } from 'koishi-core'
+import { User, Channel, Database, extendDatabase, Context } from 'koishi-core'
 
 export * from './database'
 export default MongoDatabase
@@ -91,12 +91,12 @@ extendDatabase(MongoDatabase, {
 
   async getGroup(groupId, ...args) {
     const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
-    const fields = args[0] as any || Group.fields
+    const fields = args[0] as any || Channel.fields
     if (fields && !fields.length) return {} as any
     const f = {}
     for (const field of fields) f[field] = 1
     const [data] = await this.group.find({ _id: groupId }).project(f).toArray()
-    const fallback = Group.create(groupId, selfId)
+    const fallback = Channel.create(groupId, selfId)
     if (!data?.assignee && selfId && groupId) {
       await this.group.updateOne({ _id: groupId }, { $set: { assignee: selfId, flag: 0 } }, { upsert: true })
     }
@@ -105,21 +105,21 @@ extendDatabase(MongoDatabase, {
 
   async getAllGroups(...args) {
     let assignees: number[]
-    let fields: readonly Group.Field[]
+    let fields: readonly Channel.Field[]
     if (args.length > 1) {
       fields = args[0]
       assignees = args[1] as number[]
     } else if (args.length && typeof args[0][0] === 'number') {
-      fields = Group.fields
+      fields = Channel.fields
       assignees = args[0] as any
     } else {
-      fields = args[0] || Group.fields
+      fields = args[0] || Channel.fields
       assignees = await this.app.getSelfIds()
     }
     if (!assignees.length) return []
     const f = {}
     for (const field of fields) f[field] = 1
-    const fallback = Group.create(0, 0)
+    const fallback = Channel.create(0, 0)
     const results = await this.group.find({ assignee: { $in: assignees } }).project(f).toArray()
     return results.map(result => ({
       ...fallback, ...result, id: result._id,

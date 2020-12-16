@@ -3,6 +3,10 @@
     "version": "1.0.8",
     "description": "CQHTTP adapter for Koishi"
   },
+  "koishi-adapter-kaiheila": {
+    "version": "1.0.0-alpha.0",
+    "description": "Tomon adapter for Koishi"
+  },
   "koishi-adapter-tomon": {
     "version": "0.1.1",
     "description": "Tomon adapter for Koishi"

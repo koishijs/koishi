@@ -1,7 +1,7 @@
 /* eslint-disable quote-props */
 
 import { App, Bot, MessageInfo, Session } from 'koishi-core'
-import { camelize, paramCase, renameProperty, snakeCase } from 'koishi-utils'
+import { camelize, renameProperty, snakeCase } from 'koishi-utils'
 import axios, { Method } from 'axios'
 
 export interface KaiheilaMessageInfo extends MessageInfo {
