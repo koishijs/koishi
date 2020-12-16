@@ -35,14 +35,18 @@ extendDatabase(MysqlDatabase, {
 
     data[type as any] = id
     const keys = Object.keys(data)
-    const assignments = difference(keys, [type]).map((key) => {
-      key = this.escapeId(key)
-      return `${key} = VALUES(${key})`
-    }).join(', ')
 
     if (!autoCreate) {
+      const assignments = difference(keys, [type]).map((key) => {
+        key = this.escapeId(key)
+        return `${key} = ${this.escape(data[key])}`
+      }).join(', ')
       await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['user', type, id])
     } else {
+      const assignments = difference(keys, [type]).map((key) => {
+        key = this.escapeId(key)
+        return `${key} = VALUES(${key})`
+      }).join(', ')
       await this.query(
         `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
         ON DUPLICATE KEY UPDATE ${assignments}`,

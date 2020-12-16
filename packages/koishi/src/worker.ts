@@ -1,4 +1,4 @@
-import { App, AppOptions, Context, Plugin } from 'koishi-core'
+import { App, AppOptions, BotOptions, Context, Plugin } from 'koishi-core'
 import { resolve, dirname } from 'path'
 import { Logger, noop } from 'koishi-utils'
 import { performance } from 'perf_hooks'
@@ -99,21 +99,23 @@ interface Message {
 
 process.on('message', (data: Message) => {
   if (data.type === 'send') {
-    const { groupId, userId, selfId, message } = data.payload
-    const bot = app.bots[selfId]
-    if (groupId) {
-      bot.sendGroupMsg(groupId, message)
-    } else {
-      bot.sendPrivateMsg(userId, message)
-    }
+    const { channelId, kind, selfId, message } = data.payload
+    const bot = app.servers[kind].bots[selfId]
+    bot.sendMessage(channelId, message)
   }
 })
 
-// load adapter
-try {
-  const [name] = config.type.split(':', 1)
+function loadAdapter(bot: BotOptions) {
+  const [name] = bot.type.split(':', 1)
   loadEcosystem('adapter', name)
-} catch {}
+}
+
+// load adapter
+if (config.type) {
+  loadAdapter(config)
+} else {
+  config.bots.forEach(loadAdapter)
+}
 
 const app = new App(config)
 
@@ -122,12 +124,12 @@ app.command('exit', '停止机器人运行', { authority: 4 })
   .shortcut('关机', { prefix: true })
   .shortcut('重启', { prefix: true, options: { restart: true } })
   .action(async ({ options, session }) => {
-    const { groupId, userId, selfId } = session
+    const { channelId, kind, selfId } = session
     if (!options.restart) {
       await session.$send('正在关机……').catch(noop)
       process.exit()
     }
-    process.send({ type: 'exit', payload: { groupId, userId, selfId, message: '已成功重启。' } })
+    process.send({ type: 'exit', payload: { channelId, kind, selfId, message: '已成功重启。' } })
     await session.$send(`正在重启……`).catch(noop)
     process.exit(514)
   })

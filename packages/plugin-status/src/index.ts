@@ -1,4 +1,4 @@
-import { Context, App, BotStatusCode } from 'koishi-core'
+import { Context, App, BotStatusCode, PlatformType } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
 import { interpolate, Time } from 'koishi-utils'
 import { ActiveData } from './database'
@@ -75,7 +75,7 @@ export interface Status extends ActiveData {
 
 export interface BotStatus {
   label?: string
-  selfId: number
+  selfId: string
   code: BotStatusCode
   rate?: number
 }
@@ -115,14 +115,12 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   app.on('before-send', (session) => {
-    const { counter } = app.bots[session.selfId]
+    const { counter } = app.servers[session.kind].bots[session.selfId]
     counter[0] += 1
   })
 
   let timer: NodeJS.Timeout
   app.on('connect', async () => {
-    await app.getSelfIds()
-
     app.bots.forEach((bot) => {
       bot.label = bot.label || '' + bot.selfId
       bot.counter = new Array(61).fill(0)
@@ -138,7 +136,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
     if (!app.router) return
     app.router.get('/status', async (ctx) => {
-      const status = await getStatus(true).catch<Status>((error) => {
+      const status = await getStatus().catch<Status>((error) => {
         app.logger('status').warn(error)
         return null
       })
@@ -158,18 +156,19 @@ export function apply(ctx: Context, config: Config = {}) {
     .shortcut('你的状况', { prefix: true })
     .shortcut('运行情况', { prefix: true })
     .shortcut('运行状态', { prefix: true })
-    .action(async () => {
-      const status = await getStatus()
+    .action(async ({ session }) => {
+      const status = await getStatus(session.kind)
       status.bots.toString = () => {
         return status.bots.map(bot => interpolate(formatBot, bot)).join('\n')
       }
       return interpolate(format, status)
     })
 
-  async function _getStatus(extend: boolean) {
+  async function _getStatus(kind?: PlatformType) {
+    const botList = kind ? app.servers[kind].bots : app.bots
     const [data, bots] = await Promise.all([
       app.database.getActiveData(),
-      Promise.all(app.bots.map(async (bot): Promise<BotStatus> => ({
+      Promise.all(botList.map(async (bot): Promise<BotStatus> => ({
         selfId: bot.selfId,
         label: bot.label,
         code: await bot.getStatusCode(),
@@ -180,7 +179,7 @@ export function apply(ctx: Context, config: Config = {}) {
     const cpu = { app: appRate, total: usedRate }
     const status: Status = { ...data, bots, memory, cpu, timestamp, startTime }
     await Promise.all(callbacks.map(([callback, local]) => {
-      if (local || extend) return callback.call(app, status, config)
+      if (local || !kind) return callback.call(app, status, config)
     }))
     return status
   }
@@ -188,10 +187,10 @@ export function apply(ctx: Context, config: Config = {}) {
   let cachedStatus: Promise<Status>
   let timestamp: number
 
-  async function getStatus(extend = false): Promise<Status> {
+  async function getStatus(kind?: PlatformType): Promise<Status> {
     const now = Date.now()
     if (now - timestamp < refresh) return cachedStatus
     timestamp = now
-    return cachedStatus = _getStatus(extend)
+    return cachedStatus = _getStatus(kind)
   }
 }

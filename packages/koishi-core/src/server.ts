@@ -32,6 +32,7 @@ export abstract class Server<T extends Bot = Bot> {
   create(options: BotOptions) {
     const bot = new this.BotStatic(this.app, options)
     this._bots.push(bot)
+    this.app.bots.push(bot)
   }
 
   dispatch(session: Session) {

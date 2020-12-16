@@ -1,5 +1,5 @@
 import { Server, App, Context } from 'koishi-core'
-import { Logger, Time } from 'koishi-utils'
+import { Time } from 'koishi-utils'
 import HttpServer from './http'
 import WsClient from './ws'
 import WsServer from './ws-reverse'
@@ -28,32 +28,9 @@ App.defaultConfig.cqhttp = {
   quickOperation: 0.1 * Time.second,
 }
 
-const logger = new Logger('server')
-
-interface CQHTTP extends Server {}
-
-class CQHTTP {
-  constructor(app: App) {
-    const bot = app.options.bots.find(bot => bot.server)
-    if (!bot) {
-      logger.info('infer type as %c', 'cqhttp:ws-reverse')
-      return new WsServer(app)
-    }
-    if (bot.server.startsWith('ws')) {
-      logger.info('infer type as %c', 'cqhttp:ws')
-      return new WsClient(app)
-    } else {
-      logger.info('infer type as %c', 'cqhttp:http')
-      return new HttpServer(app)
-    }
-  }
-}
-
 Server.types['cqhttp:http'] = HttpServer
 Server.types['cqhttp:ws'] = WsClient
 Server.types['cqhttp:ws-reverse'] = WsServer
-Server.types.cqhttp = CQHTTP
-Server.types.undefined = CQHTTP
 
 const { broadcast } = Context.prototype
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/

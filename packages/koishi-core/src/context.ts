@@ -256,7 +256,7 @@ export class Context {
           }
           if (command.parent) {
             if (command.parent !== parent) {
-              throw new Error('already has subcommand')
+              throw new Error(`cannot create subcommand ${rawName}, ${command.parent.name}/${command.name} already exists`)
             }
           } else {
             command.parent = parent
