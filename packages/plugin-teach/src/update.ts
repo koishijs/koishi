@@ -44,7 +44,7 @@ export default function apply(ctx: Context) {
     }
   })
 
-  ctx.on('dialogue/execute', (argv) => {
+  ctx.prependListener('dialogue/execute', (argv) => {
     const { options, session } = argv
     const { includeLast, excludeLast } = options
     if (!options.review && !options.revert) return
@@ -84,7 +84,7 @@ export default function apply(ctx: Context) {
     }
     output.push(`回答：${answer}`)
     if (_type) {
-      output.push(`最后一次${_type}于：${Time.formatTime(Date.now() - _timestamp)}前`)
+      output.push(`${_type}于：${Time.formatTime(Date.now() - _timestamp)}前`)
     }
   })
 }
@@ -102,6 +102,7 @@ function review(dialogues: Dialogue[], argv: Dialogue.Argv) {
     const { original, answer } = d
     return `${formatDetails(d, details)}${questionType}：${original}，${answerType}：${formatAnswer(answer, argv.config)}`
   })
+  output.unshift('近期执行的教学操作有：')
   return session.$send(output.join('\n'))
 }
 
