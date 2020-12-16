@@ -55,11 +55,11 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     if (options.disable) {
       argv.reversed = true
       argv.partial = !options.enableGlobal
-      argv.groups = ['' + session.groupId]
+      argv.groups = [session.cid]
     } else if (options.disableGlobal) {
       argv.reversed = !!options.groups
       argv.partial = false
-      argv.groups = options.enable ? ['' + session.groupId] : []
+      argv.groups = options.enable ? [session.cid] : []
     } else if (options.enableGlobal) {
       argv.reversed = !options.groups
       argv.partial = false
@@ -69,7 +69,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       if (options.target ? options.enable : !options.global) {
         argv.reversed = false
         argv.partial = true
-        argv.groups = ['' + session.groupId]
+        argv.groups = [session.cid]
       }
     }
 
@@ -109,7 +109,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/detail', ({ groups, flag }, output, { session }) => {
-    const thisGroup = session.subType === 'group' && groups.includes('' + session.groupId)
+    const thisGroup = session.subType === 'group' && groups.includes(session.cid)
     output.push(`生效环境：${flag & Dialogue.Flag.complement
       ? thisGroup
         ? groups.length - 1 ? `除本群等 ${groups.length} 个群外的所有群` : '除本群'
@@ -122,7 +122,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.on('dialogue/detail-short', ({ groups, flag }, output, argv) => {
     if (!argv.groups && argv.session.subType === 'group') {
       const isReversed = flag & Dialogue.Flag.complement
-      const hasGroup = groups.includes('' + argv.session.groupId)
+      const hasGroup = groups.includes(argv.session.cid)
       output.unshift(!isReversed === hasGroup ? isReversed ? 'E' : 'e' : isReversed ? 'd' : 'D')
     }
   })
@@ -130,6 +130,6 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.on('dialogue/receive', ({ session, test }) => {
     test.partial = true
     test.reversed = false
-    test.groups = ['' + session.groupId]
+    test.groups = [session.cid]
   })
 }

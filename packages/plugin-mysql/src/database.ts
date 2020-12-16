@@ -1,4 +1,4 @@
-import { createPool, Pool, PoolConfig, escape, escapeId, format, OkPacket, TypeCast } from 'mysql'
+import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, OkPacket, TypeCast } from 'mysql'
 import { TableType, Tables, App } from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { types } from 'util'
@@ -18,7 +18,7 @@ class MysqlDatabase {
   public config: Config
 
   escape: typeof escape
-  escapeId: typeof escapeId
+  escapeId: (value: string) => string
 
   constructor(public app: App, config: Config) {
     this.config = {
@@ -169,6 +169,11 @@ class MysqlDatabase {
 
 MysqlDatabase.prototype.escape = escape
 MysqlDatabase.prototype.escapeId = escapeId
+
+export function escape(value: any, table?: TableType, field?: string) {
+  const type = MysqlDatabase.tables[table]?.[field]
+  return mysqlEscape(typeof type === 'object' ? type.toString(value) : value)
+}
 
 namespace MysqlDatabase {
   type Tables = {

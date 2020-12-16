@@ -10,7 +10,7 @@ declare module '../utils' {
   }
 
   interface Dialogue {
-    writer: string
+    writer: number
   }
 
   namespace Dialogue {
@@ -141,13 +141,16 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   // 触发代行者模式
   ctx.on('dialogue/before-send', async (state) => {
     const { dialogue, session } = state
+    const { kind } = session
     if (dialogue.flag & Dialogue.Flag.substitute && dialogue.writer && session.$user.id !== dialogue.writer) {
-      const userFields = new Set<User.Field>()
+      const userFields = new Set<User.Field>([session.kind])
       ctx.app.emit(session, 'dialogue/before-attach-user', state, userFields)
-      // FIXME
-      session.userId = dialogue.writer
+      session.kind = 'id' as never
+      session.userId = '' + dialogue.writer
       session.$user = null
       await session.$observeUser(userFields)
+      session.kind = kind
+      session.userId = session.$user[kind]
     }
   })
 }

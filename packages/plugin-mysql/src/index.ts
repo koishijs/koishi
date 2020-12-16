@@ -20,6 +20,7 @@ extendDatabase(MysqlDatabase, {
     const fields = _fields ? inferFields(_fields) : User.fields
     if (fields && !fields.length) return { [type]: id } as any
     if (Array.isArray(id)) {
+      if (!id.length) return []
       const list = id.map(id => this.escape(id)).join(',')
       return this.select<User>('user', fields, `?? IN (${list})`, [type])
     }
@@ -38,8 +39,7 @@ extendDatabase(MysqlDatabase, {
 
     if (!autoCreate) {
       const assignments = difference(keys, [type]).map((key) => {
-        key = this.escapeId(key)
-        return `${key} = ${this.escape(data[key])}`
+        return `${this.escapeId(key)} = ${this.escape(data[key], 'user', key)}`
       }).join(', ')
       await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['user', type, id])
     } else {
