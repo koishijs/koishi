@@ -39,6 +39,8 @@ function isBailed(value: any) {
   return value !== null && value !== false && value !== undefined
 }
 
+type RestParameters<T extends (...args: any) => any> = T extends (arg: any, ...args: infer P) => any ? P : never
+
 export class Context {
   static readonly MIDDLEWARE_EVENT = Symbol('mid')
 
@@ -140,6 +142,20 @@ export class Context {
   emit<K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): void
   emit(...args: [any, ...any[]]) {
     this.parallel(...args)
+  }
+
+  chain<K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
+  chain<K extends keyof EventMap>(session: Session, name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
+  chain(...args: [any, ...any[]]) {
+    const session = typeof args[0] === 'object' ? args.shift() : null
+    const name = args.shift()
+    this.logger('dispatch').debug(name)
+    for (const [context, callback] of this.app._hooks[name] || []) {
+      if (!context.match(session)) continue
+      const result = callback.apply(this, args)
+      args[0] = result
+    }
+    return args
   }
 
   async serial<K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>

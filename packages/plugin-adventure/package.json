@@ -1,0 +1,44 @@
+{
+  "name": "koishi-plugin-adventure",
+  "version": "0.1.0",
+  "description": "COC / DND Tools for Koishi",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "engines": {
+    "node": ">=14.6.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "wrap": "ts-node build/wrap",
+    "prepack": "tsc -b && yarn wrap"
+  },
+  "license": "MIT",
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/adventure.html",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "adventure"
+  ],
+  "peerDependencies": {
+    "koishi-core": "^3.0.0-alpha.0",
+    "koishi-utils": "^3.2.1"
+  },
+  "devDependencies": {
+    "koishi-test-utils": "^5.0.3"
+  }
+}
