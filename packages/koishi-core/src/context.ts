@@ -155,7 +155,7 @@ export class Context {
       const result = callback.apply(this, args)
       args[0] = result
     }
-    return args
+    return args[0]
   }
 
   async serial<K extends keyof EventMap>(name: K, ...args: Parameters<EventMap[K]>): Promise<ReturnType<EventMap[K]>>

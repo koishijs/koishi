@@ -17,8 +17,20 @@ class MysqlDatabase {
   public pool: Pool
   public config: Config
 
-  escape: typeof escape
   escapeId: (value: string) => string
+
+  escape(value: any, table?: TableType, field?: string) {
+    const type = MysqlDatabase.tables[table]?.[field]
+    return mysqlEscape(typeof type === 'object' ? type.toString(value) : value)
+  }
+
+  inferFields<T extends TableType>(table: T, keys: readonly string[]) {
+    const types = MysqlDatabase.tables[table] || {}
+    return keys.map((key) => {
+      const type = types[key]
+      return typeof type === 'function' ? `${type()} AS ${key}` : key
+    }) as (keyof Tables[T])[]
+  }
 
   constructor(public app: App, config: Config) {
     this.config = {
@@ -51,7 +63,9 @@ class MysqlDatabase {
     for (const name in MysqlDatabase.tables) {
       const table = MysqlDatabase.tables[name]
       if (!tables[name]) {
-        const cols = Object.keys(table).map((key) => {
+        const cols = Object.keys(table).filter((key) => {
+          return typeof table[key] !== 'function'
+        }).map((key) => {
           if (+key * 0 === 0) return table[key]
           return `\`${key}\` ${table[key]}`
         })
@@ -59,7 +73,7 @@ class MysqlDatabase {
         await this.query(`CREATE TABLE ?? (${cols.join(',')}) COLLATE = ?`, [name, this.config.charset])
       } else {
         const cols = Object.keys(table)
-          .filter(key => +key * 0 !== 0 && !tables[name].includes(key))
+          .filter(key => +key * 0 !== 0 && typeof table[key] !== 'function' && !tables[name].includes(key))
           .map(key => `ADD \`${key}\` ${table[key]}`)
         if (!cols.length) continue
         logger.info('auto updating table %c', name)
@@ -167,20 +181,16 @@ class MysqlDatabase {
   }
 }
 
-MysqlDatabase.prototype.escape = escape
 MysqlDatabase.prototype.escapeId = escapeId
 
-export function escape(value: any, table?: TableType, field?: string) {
-  const type = MysqlDatabase.tables[table]?.[field]
-  return mysqlEscape(typeof type === 'object' ? type.toString(value) : value)
-}
-
 namespace MysqlDatabase {
-  type Tables = {
-    [T in TableType]?: Record<string, string | DataType>
+  type Declarations = {
+    [T in TableType]?: {
+      [K in keyof Tables[T]]: string | (() => string) | DataType<Tables[T][K]>
+    }
   }
 
-  export const tables: Tables = {}
+  export const tables: Declarations = {}
 
   type FieldInfo = Parameters<Exclude<TypeCast, boolean>>[0]
 

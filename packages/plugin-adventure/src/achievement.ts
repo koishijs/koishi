@@ -1,8 +1,7 @@
 import { User, Context, Session } from 'koishi-core'
 import { difference, defineProperty } from 'koishi-utils'
 import { registerUserInfo } from 'koishi-plugin-common'
-import { userGetters } from 'koishi-plugin-mysql'
-import { getUserName } from './utils'
+import { achvH, achvS, getUserName } from './utils'
 import Affinity from './affinity'
 import Rank from './rank'
 
@@ -107,16 +106,13 @@ let theoretical = 0, achvSCount = 0, achvHCount = 0
 const achvList: Achievement[] & Record<string, Achievement> = [] as any
 const achvFields = new Set<User.Field>(['achievement', 'name', 'flag'])
 
-userGetters.achvS = () => 'list_length(`achievement`)'
-userGetters.achvH = () => '(LENGTH(`achievement`) - LENGTH(REPLACE(`achievement`, "-ex" ,""))) / 3'
-
 registerUserInfo(({ achvS, achvH, achvRank }) => {
   return `成就已获得：${achvS}+${achvH}/${achvSCount}+${achvHCount}${achvRank ? ` (#${achvRank})` : ''}`
 }, ['achvS', `achvH`, 'achvRank'], 100)
 
-Rank.value('achievementSuperficial', ['表成就'], userGetters.achvS(), { format: ' 个' })
-Rank.value('achievementHidden', ['里成就'], userGetters.achvH(), { format: ' 个' })
-Rank.value('achievement', ['成就'], `${userGetters.achvS()} + ${userGetters.achvH()}`, {
+Rank.value('achievementSuperficial', ['表成就'], achvS, { format: ' 个' })
+Rank.value('achievementHidden', ['里成就'], achvH, { format: ' 个' })
+Rank.value('achievement', ['成就'], `${achvS} + ${achvH}`, {
   key: 'achvRank',
   fields: ['achvS', 'achvH'],
   order: '`achvS` DESC',

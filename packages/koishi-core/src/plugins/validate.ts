@@ -10,8 +10,8 @@ export type UserType<T, U extends User.Field = User.Field> = T | ((user: Pick<Us
 
 declare module '../command' {
   interface Command<U, G, O> {
-    _checkers: ((session: Session<U, G, O>) => string | boolean)[]
-    before(checker: (session: Session<U, G, O>) => string | boolean): this
+    _checkers: ((session: Session<U, G, O>) => void | string | boolean | Promise<void | string | boolean>)[]
+    before(checker: (session: Session<U, G, O>) => void | string | boolean | Promise<void | string | boolean>): this
     getConfig<K extends keyof CommandConfig>(key: K, session: Session): Exclude<CommandConfig[K], (user: User) => any>
   }
 
@@ -91,13 +91,13 @@ export default function apply(app: App) {
     cmd._checkers = []
   })
 
-  app.on('before-command', ({ session, args, options, command }: ParsedArgv<ValidationField>) => {
+  app.on('before-command', async ({ session, args, options, command }: ParsedArgv<ValidationField>) => {
     function sendHint(message: string, ...param: any[]) {
       return command.config.showWarning ? format(message, ...param) : ''
     }
 
     for (const checker of command._checkers) {
-      const result = checker(session)
+      const result = await checker(session)
       if (result) return sendHint(result === true ? '' : result)
     }
 

@@ -9,15 +9,9 @@ declare module 'koishi-core/dist/database' {
   interface Database extends MysqlDatabase {}
 }
 
-export const userGetters: Record<string, () => string> = {}
-
-function inferFields(keys: readonly string[]) {
-  return keys.map(key => key in userGetters ? `${userGetters[key]()} AS ${key}` : key) as User.Field[]
-}
-
 extendDatabase(MysqlDatabase, {
   async getUser(type, id, _fields) {
-    const fields = _fields ? inferFields(_fields) : User.fields
+    const fields = _fields ? this.inferFields('user', _fields) : User.fields
     if (fields && !fields.length) return { [type]: id } as any
     if (Array.isArray(id)) {
       if (!id.length) return []

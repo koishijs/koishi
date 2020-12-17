@@ -15,7 +15,6 @@ interface AffinityItem<T extends User.Field = never> {
 }
 
 const affinityList: AffinityItem[] = []
-export const affinityFields = new Set<keyof User>(['name', 'titles', 'affinity'])
 
 type HintCallback<T extends User.Field = User.Field> = (user: Pick<User, T>, now: Date) => Iterable<string>
 const hintList: HintCallback[] = []
@@ -40,19 +39,13 @@ export function getAffinityItems(user: Partial<User>, date = Time.getDateNumber(
   ]
 }
 
-Rank.add('affinity', {
-  names: ['好感度', '好感'],
-  fields: affinityFields,
-  value: Affinity.get,
-  order: '`affinity` DESC',
-  limit: 100,
-})
-
 namespace Affinity {
+  export const fields = new Set<keyof User>(['name', 'titles', 'affinity'])
+
   export function add<T extends User.Field = never>(
     order: number,
     callback: AffinityCallback<T>,
-    fields: Iterable<T>,
+    _fields: Iterable<T>,
     theoretical: TheoreticalAffinityCallback = () => [],
   ) {
     const index = affinityList.findIndex(a => a.order < order)
@@ -61,8 +54,8 @@ namespace Affinity {
     } else {
       affinityList.push({ order, callback, theoretical })
     }
-    for (const field of fields || []) {
-      affinityFields.add(field)
+    for (const field of _fields || []) {
+      fields.add(field)
     }
   }
 
@@ -84,13 +77,13 @@ namespace Affinity {
 
   export function apply(ctx: Context) {
     ctx.on('before-connect', () => {
-      registerUserInfo(user => `好感度：${Affinity.get(user)}`, affinityFields, 20)
+      registerUserInfo(user => `好感度：${Affinity.get(user)}`, fields, 20)
     })
 
     ctx.command('adventure/affinity', '查看四季酱的好感度', { maxUsage: 20 })
       .alias('aff')
       .userFields(['timers'])
-      .userFields(affinityFields)
+      .userFields(fields)
       .userFields(hintFields)
       .option('theoretical', '-t  查看好感度理论值')
       .alias('好感度')
@@ -159,5 +152,13 @@ namespace Affinity {
       })
   }
 }
+
+Rank.add('affinity', {
+  names: ['好感度', '好感'],
+  fields: Affinity.fields,
+  value: Affinity.get,
+  order: '`affinity` DESC',
+  limit: 100,
+})
 
 export default Affinity

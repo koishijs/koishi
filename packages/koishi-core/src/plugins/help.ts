@@ -84,7 +84,7 @@ export default function apply(app: App) {
       const command = app._commandMap[target] || app._shortcutMap[target]
       if (!command?.context.match(session)) {
         const items = getCommands(session, app._commands).flatMap(cmd => cmd._aliases)
-        return session.$suggest({
+        session.$suggest({
           target,
           items,
           prefix: Message.HELP_SUGGEST_PREFIX,
@@ -95,6 +95,7 @@ export default function apply(app: App) {
             return session.$send(output)
           },
         })
+        return
       }
 
       return showHelp(command, session, options)

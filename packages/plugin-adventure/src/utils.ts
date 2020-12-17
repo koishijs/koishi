@@ -16,9 +16,9 @@ declare module 'koishi-core/dist/database' {
     affinity: number
     titles: Affinity[]
     achievement: string[]
-    readonly achvRank: number
-    readonly achvS: number
-    readonly achvH: number
+    achvRank: number
+    achvS: number
+    achvH: number
   }
 
   namespace User {
@@ -44,7 +44,12 @@ User.extend(() => ({
   money: 0,
 }))
 
+export const achvS = 'list_length(`achievement`)'
+export const achvH = '(LENGTH(`achievement`) - LENGTH(REPLACE(`achievement`, "-ex" ,""))) / 3'
+
 extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ DataType, tables }) => {
   tables.user.titles = new DataType.Json()
   tables.user.achievement = new DataType.Array()
+  tables.user.achvS = () => achvS
+  tables.user.achvH = () => achvH
 })

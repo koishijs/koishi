@@ -269,15 +269,23 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     }
   }
 
-  option<K extends string>(name: K, desc: string, config: StringOptionConfig): Command<U, G, Extend<O, K, string>>
-  option<K extends string>(name: K, desc: string, config: NumberOptionConfig): Command<U, G, Extend<O, K, number>>
-  option<K extends string>(name: K, desc: string, config: BooleanOptionConfig): Command<U, G, Extend<O, K, boolean>>
-  option<K extends string>(name: K, desc: string, config?: OptionConfig): Command<U, G, Extend<O, K, any>>
-  option<K extends string>(name: K, desc: string, config: OptionConfig = {}) {
+  /* eslint-disable max-len */
+  option<K extends string>(name: K, desc: string, config: StringOptionConfig, action?: CommandAction<U, G, Extend<O, K, string>>): Command<U, G, Extend<O, K, string>>
+  option<K extends string>(name: K, desc: string, config: NumberOptionConfig, action?: CommandAction<U, G, Extend<O, K, number>>): Command<U, G, Extend<O, K, number>>
+  option<K extends string>(name: K, desc: string, config: BooleanOptionConfig, action?: CommandAction<U, G, Extend<O, K, boolean>>): Command<U, G, Extend<O, K, boolean>>
+  option<K extends string>(name: K, desc: string, config?: OptionConfig, action?: CommandAction<U, G, Extend<O, K, any>>): Command<U, G, Extend<O, K, any>>
+  option<K extends string>(name: K, desc: string, config: OptionConfig = {}, action?: CommandAction<U, G, Extend<O, K, any>>) {
     const fallbackType = typeof config.fallback as never
     const type = config['type'] || supportedType.includes(fallbackType) && fallbackType
+    if (action) {
+      this.before(async (session) => {
+        const { options, args } = session.$argv
+        if (options[name as any]) return action.call(this as any, session.$argv, ...args)
+      })
+    }
     return this._registerOption(name, desc, { ...config, type }) as any
   }
+  /* eslint-enable max-len */
 
   removeOption<K extends string & keyof O>(name: K) {
     if (!this._options[name]) return false
