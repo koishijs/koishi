@@ -198,7 +198,6 @@ namespace Achievement {
     })
 
     ctx.command('adventure/achievement [name]', '查看成就信息', { maxUsage: 20 })
-      .userFields(['timers'])
       .userFields(achvFields)
       .alias('成就', 'achv')
       .shortcut('查看成就')

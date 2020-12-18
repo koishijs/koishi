@@ -82,7 +82,6 @@ namespace Affinity {
 
     ctx.command('adventure/affinity', '查看四季酱的好感度', { maxUsage: 20 })
       .alias('aff')
-      .userFields(['timers'])
       .userFields(fields)
       .userFields(hintFields)
       .option('theoretical', '-t  查看好感度理论值')
