@@ -1,7 +1,7 @@
 import { User, Context, Session } from 'koishi-core'
 import { difference, defineProperty } from 'koishi-utils'
 import { registerUserInfo } from 'koishi-plugin-common'
-import { achvH, achvS, getUserName } from './utils'
+import { achvH, achvS } from './utils'
 import Affinity from './affinity'
 import Rank from './rank'
 
@@ -142,7 +142,7 @@ function getAchievementBonus(user: Pick<User, 'achievement'>) {
   }, 0)
 }
 
-function showAchvs(ctx: Context, target: User.Observed, options: Record<string, any>) {
+function showAchvs(session: Session, target: User.Observed, options: Record<string, any>) {
   const { achievement } = target
   const { forced, achieved, unachieved, full, hidden: showHidden } = options
   const output = achvList.map(({ id, name, nameEx, hidden, progress = () => 0, affinity, descEx, count, countEx }) => {
@@ -170,7 +170,7 @@ function showAchvs(ctx: Context, target: User.Observed, options: Record<string, 
     output.unshift(`成就总数：${achvList.length}，理论好感度：${theoretical}`)
   } else {
     const bonus = getAchievementBonus(target)
-    output.unshift(`${getUserName(ctx, target)}，您已获得成就：${achievement.length}/${achvList.length}，奖励好感度：${bonus}`)
+    output.unshift(`${session.$username}，您已获得成就：${achievement.length}/${achvList.length}，奖励好感度：${bonus}`)
   }
 
   output.push('要查看特定成就的取得条件，请输入“四季酱，成就 成就名”。')
@@ -239,7 +239,7 @@ namespace Achievement {
         }
 
         const [key] = names
-        if (!key) return showAchvs(ctx, target, options)
+        if (!key) return showAchvs(session, target, options)
 
         const { achievement } = target
         const { forced } = options

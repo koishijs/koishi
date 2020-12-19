@@ -29,6 +29,7 @@ require.extensions['.ts'] = (module, filename) => {
     sourcemap: true,
     format: 'cjs',
     loader: 'ts',
+    charset: 'utf8',
   })
   maps[filename] = map
   warnings.forEach(({ location, text }) => {

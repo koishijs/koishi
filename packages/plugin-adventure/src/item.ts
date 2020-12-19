@@ -56,20 +56,23 @@ namespace Item {
   data.EX = []
   data.SP = []
 
-  export const probabilities: Record<Rarity, number> = {
-    N: 500,
-    R: 300,
-    SR: 150,
-    SSR: 49,
-    EX: 1,
-    SP: 0,
-  }
-
   export function load(item: Item) {
     if (!item.maxCount) item.maxCount = 10
     data[item.rarity].push(item)
     data[item.name] = item
     data.push(item)
+  }
+
+  export function condition(name: string, condition: Condition) {
+    data[name].condition = condition
+  }
+
+  export function onGain(name: string, event: Event) {
+    data[name].onGain = event
+  }
+
+  export function onLose(name: string, event: Event<'usage'>) {
+    data[name].onLose = event
   }
 
   export interface Config {

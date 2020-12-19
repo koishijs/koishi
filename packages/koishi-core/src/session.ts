@@ -101,13 +101,14 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   get $username(): string {
-    return this.$user && this.$user['name']
+    const defaultName = this.$user && this.$user['name']
       ? this.$user['name']
       : this.anonymous
         ? this.anonymous.name
         : this.sender
           ? this.sender.card || this.sender.nickname
           : '' + this.userId
+    return this.$app.chain('appellation', defaultName, this)
   }
 
   get uid() {

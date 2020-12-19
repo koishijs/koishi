@@ -10,7 +10,7 @@ const logger = new Logger('cosmos').extend('event')
 type Event<T extends User.Field = Adventurer.Field> = (session: Session<T>) => string | void
 
 namespace Event {
-  export type Visible<T extends User.Field = User.Field> = (session: Session<T>) => string
+  export type Visible<T extends User.Field = Adventurer.Field> = (session: Session<T>) => string
 
   const leaderReward = [300, 200, 100]
   const leaderName = ['首杀', '第二杀', '第三杀']
@@ -183,7 +183,7 @@ namespace Event {
 
     const output: string[] = []
     for (let i = 0; i < _count; i += 1) {
-      const rarity = Luck.use(session.$user).weightedPick(Item.probabilities)
+      const rarity = Luck.use(session.$user).weightedPick(Luck.probabilities)
       const index = Math.floor(Math.random() * data[rarity].length)
       const [item] = data[rarity].splice(index, 1)
       session._item = item
@@ -203,7 +203,7 @@ namespace Event {
     const lostList: string[] = []
     let length = 0
 
-    const probabilities = { ...Item.probabilities }
+    const probabilities = { ...Luck.probabilities }
     const data = {} as Record<Item.Rarity, string[]>
     for (const rarity of rarities.reverse()) {
       data[rarity] = Item.data[rarity]

@@ -9,7 +9,7 @@ import Item from './item'
 declare module 'koishi-core/dist/context' {
   interface EventMap {
     'adventure/use'(userId: number, progress: string): void
-    'adventure/text'(text: string, user: User.Observed<Adventurer.Field>): string
+    'adventure/text'(text: string, user: Session<Adventurer.Field>): string
     'adventure/achieve'(user: User.Observed<Adventurer.Field>, hints: string[]): void
   }
 }
@@ -27,7 +27,7 @@ declare module 'koishi-core/dist/session' {
   }
 }
 
-interface Phase {
+export interface Phase {
   title?: string
   texts?: string[]
   items?: Record<string, ReadonlyUser.Infer<string>>
@@ -38,7 +38,7 @@ interface Phase {
   epilog?: Event[]
 }
 
-namespace Phase {
+export namespace Phase {
   const logger = new Logger('adventure')
 
   export interface Config {
@@ -75,7 +75,7 @@ namespace Phase {
 
   export function sendEscaped(session: Session<Adventurer.Field>, message: string | void, ms?: number) {
     if (!message) return
-    message = session.$app.chain('adventure/text', message, session.$user)
+    message = session.$app.chain('adventure/text', message, session)
     return session.$sendQueued(message, ms)
   }
 

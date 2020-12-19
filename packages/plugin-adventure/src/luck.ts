@@ -8,6 +8,9 @@ namespace Luck {
   export const MAX_LUCKY = 50
   export const DEFAULT_BASE = 0.98
 
+  export const fields = ['timers', 'lucky'] as const
+  export type Field = typeof fields[number]
+
   export function restrict(lucky: number) {
     return Math.min(Math.max(lucky, -MAX_LUCKY), MAX_LUCKY)
   }
@@ -16,7 +19,7 @@ namespace Luck {
     return checkTimer('$reverseLucky', user) ? -1 : 1
   }
 
-  function getResult(user: Pick<ReadonlyUser, 'timers' | 'lucky'>) {
+  export function get(user: Pick<ReadonlyUser, Field>) {
     return restrict(
       (coefficient(user) * user.lucky) +
       (checkTimer('$mellow', user) ? 10 : 0) +
@@ -24,12 +27,21 @@ namespace Luck {
     )
   }
 
-  export function use(user: Pick<ReadonlyUser, 'timers' | 'lucky'>, base = DEFAULT_BASE) {
-    return new Random(1 / (1 + (1 / Math.random() - 1) * base ** getResult(user)))
+  export function use(user: Pick<ReadonlyUser, Field>, base = DEFAULT_BASE) {
+    return new Random(1 / (1 + (1 / Math.random() - 1) * base ** get(user)))
+  }
+
+  export const probabilities: Record<Item.Rarity, number> = {
+    N: 500,
+    R: 300,
+    SR: 150,
+    SSR: 49,
+    EX: 1,
+    SP: 0,
   }
 
   export const allowanceProbabilities = {
-    ...Item.probabilities,
+    ...probabilities,
     N: 0,
     R: 0,
   }
@@ -76,7 +88,7 @@ namespace Luck {
         if (options.tenTimes) {
           const output = [`恭喜 ${session.$username} 获得了：`]
           for (let index = 10; index > 0; index--) {
-            const prize = Item.pick(Item.data[Random.weightedPick(Item.probabilities)], $user)
+            const prize = Item.pick(Item.data[Random.weightedPick(probabilities)], $user)
             output.push(`${prize.name}（${prize.rarity}）`)
           }
           return output.join('\n')
@@ -93,8 +105,8 @@ namespace Luck {
         const output: string[] = []
         function getPrize(output: string[]) {
           times -= 1
-          const probabilities = $user.noSR >= 9 ? allowanceProbabilities : Item.probabilities
-          const rarity = Luck.use($user).weightedPick(probabilities)
+          const weights = $user.noSR >= 9 ? allowanceProbabilities : probabilities
+          const rarity = Luck.use($user).weightedPick(weights)
           if (rarity === 'R' || rarity === 'N') {
             $user.noSR += 1
           } else {

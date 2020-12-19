@@ -383,6 +383,7 @@ export interface EventMap {
   'lifecycle/heartbeat'(session: RawSession<'lifecycle'>): void
 
   // Koishi events
+  'appellation'(name: string, session: Session): string
   'parse'(message: string, session: Session, builtin: boolean, terminator: string): void | ExecuteArgv
   'before-attach-user'(session: Session, fields: Set<User.Field>): void
   'before-attach-group'(session: Session, fields: Set<Channel.Field>): void

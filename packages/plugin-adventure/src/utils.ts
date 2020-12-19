@@ -1,4 +1,4 @@
-import { User, extendDatabase, Context, Session, NextFunction, Command, checkTimer } from 'koishi-core'
+import { User, extendDatabase, Session, NextFunction, Command, checkTimer } from 'koishi-core'
 import MysqlDatabase from 'koishi-plugin-mysql'
 import Affinity from './affinity'
 import Item from './item'
@@ -15,7 +15,6 @@ Command.prototype.checkTimer = function (this: Command, name) {
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'appellation'(name: string, user: Pick<User, 'id' | 'name' | 'timers'>): string
     'rank'(name: string): [string, string]
   }
 }
@@ -25,7 +24,6 @@ declare module 'koishi-core/dist/database' {
     noSR: number
     affinity: number
     titles: Affinity[]
-    achievement: string[]
     achvRank: number
     achvS: number
     achvH: number
@@ -36,10 +34,6 @@ declare module 'koishi-core/dist/database' {
       noLeading = 1 << 6
     }
   }
-}
-
-export function getUserName(ctx: Context, user: Pick<User, 'id' | 'name' | 'timers'>) {
-  return ctx.chain('appellation', user.name || '' + user.id, user)
 }
 
 ((flags: Record<keyof typeof User.Flag, number>) => {
@@ -110,6 +104,7 @@ export interface Adventurer extends Shopper {
   usage: Record<string, number>
   avatarAchv: number
   drunkAchv: number
+  achievement: string[]
 }
 
 export namespace Adventurer {
@@ -120,7 +115,7 @@ export namespace Adventurer {
   export const fields: Field[] = [
     'id', 'money', 'warehouse', 'wealth', 'timers', 'gains',
     'flag', 'lucky', 'taste', 'recent', 'progress', 'phases',
-    'endings', 'usage', 'avatarAchv', 'drunkAchv', 'name',
+    'endings', 'usage', 'avatarAchv', 'drunkAchv', 'name', 'achievement',
   ]
 }
 
