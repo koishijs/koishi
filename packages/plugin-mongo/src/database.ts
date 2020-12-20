@@ -24,7 +24,7 @@ export default class MongoDatabase {
   public db: Db
 
   user: Collection<any>
-  group: Collection<any>
+  channel: Collection<any>
 
   constructor(public app: App, config: Config) {
     this.config = config
@@ -42,7 +42,8 @@ export default class MongoDatabase {
       })(this.db.collection.bind(this.db), this.config.prefix)
     }
     this.user = this.db.collection('user')
-    this.group = this.db.collection('group')
+    this.channel = this.db.collection('channel')
+    await this.channel.createIndex({ type: 1, pid: 1 }, { unique: true })
   }
 
   stop() {
