@@ -3,7 +3,7 @@ import { Bot, AccountInfo, StatusInfo, StrangerInfo, BotStatusCode, Session, Mes
 
 declare module 'koishi-core/dist/database' {
   interface Platforms {
-    cqhttp: CQBot
+    onebot: CQBot
   }
 }
 
@@ -160,7 +160,7 @@ export interface CQBot {
 export class CQBot extends Bot {
   async [Bot.$send](meta: Session, content: string, autoEscape = false) {
     if (!content) return
-    if (this.app.options.cqhttp?.preferSync) {
+    if (this.app.options.onebot?.preferSync) {
       await this.sendMessage(meta.channelId, content)
       return
     }

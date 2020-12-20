@@ -5,7 +5,7 @@ import WsClient from './ws'
 import WsServer from './ws-reverse'
 import axios from 'axios'
 
-interface CqhttpOptions {
+interface OneBotOptions {
   path?: string
   secret?: string
   preferSync?: boolean
@@ -14,7 +14,7 @@ interface CqhttpOptions {
 
 declare module 'koishi-core/dist/app' {
   interface AppOptions {
-    cqhttp?: CqhttpOptions
+    onebot?: OneBotOptions
   }
 }
 
@@ -24,13 +24,13 @@ export * from './http'
 export * from './ws'
 export * from './ws-reverse'
 
-App.defaultConfig.cqhttp = {
+App.defaultConfig.onebot = {
   quickOperation: 0.1 * Time.second,
 }
 
-Server.types['cqhttp:http'] = HttpServer
-Server.types['cqhttp:ws'] = WsClient
-Server.types['cqhttp:ws-reverse'] = WsServer
+Server.types['onebot:http'] = HttpServer
+Server.types['onebot:ws'] = WsClient
+Server.types['onebot:ws-reverse'] = WsServer
 
 const { broadcast } = Context.prototype
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/

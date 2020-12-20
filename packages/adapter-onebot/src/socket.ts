@@ -15,7 +15,7 @@ const logger = new Logger('server')
 export function createSession(server: Server, data: any) {
   renameProperty(data, 'event_type', 'post_type')
   const session = new Session(server.app, camelCase(data))
-  session.kind = 'cqhttp'
+  session.kind = 'onebot'
   session.selfId = '' + session.selfId
   if (session.userId) session.userId = '' + session.userId
   if (session.groupId) session.groupId = '' + session.groupId

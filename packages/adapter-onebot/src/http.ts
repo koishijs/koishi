@@ -50,8 +50,8 @@ export default class HttpServer extends Server<CQBot> {
   }
 
   async listen() {
-    const { cqhttp = {} } = this.app.options
-    const { secret, path = '/' } = cqhttp
+    const { onebot = {} } = this.app.options
+    const { secret, path = '/' } = onebot
     this.app.router.post(path, (ctx) => {
       if (secret) {
         // no signature
@@ -66,7 +66,7 @@ export default class HttpServer extends Server<CQBot> {
       logger.debug('receive %o', ctx.request.body)
       const session = createSession(this, ctx.request.body)
 
-      const { quickOperation } = cqhttp
+      const { quickOperation } = onebot
       if (quickOperation > 0) {
         // bypass koa's built-in response handling for quick operations
         ctx.respond = false

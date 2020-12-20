@@ -3,7 +3,7 @@ import { yellow, red, green } from 'kleur'
 import { resolve, extname, dirname } from 'path'
 import { AppConfig } from './worker'
 import { CAC } from 'cac'
-import {} from 'koishi-adapter-cqhttp'
+import {} from 'koishi-adapter-onebot'
 import {} from 'koishi-adapter-tomon'
 import prompts, { Choice, PrevCaller, PromptObject } from 'prompts'
 import * as mysql from 'koishi-plugin-mysql/dist/database'
@@ -21,9 +21,9 @@ const serverQuestions: PromptObject<keyof AppConfig>[] = [{
   type: 'select',
   message: 'Server Type',
   choices: [
-    { title: 'QQ (OneBot, HTTP)', value: 'cqhttp:http' },
-    { title: 'QQ (OneBot, WebSocket)', value: 'cqhttp:ws' },
-    { title: 'QQ (OneBot, WebSocket Reverse)', value: 'cqhttp:ws-reverse' },
+    { title: 'QQ (OneBot, HTTP)', value: 'onebot:http' },
+    { title: 'QQ (OneBot, WebSocket)', value: 'onebot:ws' },
+    { title: 'QQ (OneBot, WebSocket Reverse)', value: 'onebot:ws-reverse' },
     { title: 'Tomon', value: 'tomon' },
   ],
 }, {
@@ -35,17 +35,17 @@ const serverQuestions: PromptObject<keyof AppConfig>[] = [{
 
 const cqhttpQuestions: PromptObject[] = [{
   name: 'path',
-  type: conditional('text', 'type', 'cqhttp:http', 'cqhttp:ws-reverse'),
+  type: conditional('text', 'type', 'onebot:http', 'onebot:ws-reverse'),
   message: 'Koishi Path',
   initial: '/',
 }, {
   name: 'server',
-  type: conditional('text', 'type', 'cqhttp:http'),
+  type: conditional('text', 'type', 'onebot:http'),
   message: 'HTTP Server',
   initial: 'http://localhost:5700',
 }, {
   name: 'server',
-  type: conditional('text', 'type', 'cqhttp:ws'),
+  type: conditional('text', 'type', 'onebot:ws'),
   message: 'WebSocket Server',
   initial: 'ws://localhost:6700',
 }, {
@@ -69,9 +69,9 @@ const tomonQuestions: PromptObject[] = [{
 }]
 
 const adapterMap = {
-  'cqhttp:http': cqhttpQuestions,
-  'cqhttp:ws': cqhttpQuestions,
-  'cqhttp:ws-reverse': cqhttpQuestions,
+  'onebot:http': cqhttpQuestions,
+  'onebot:ws': cqhttpQuestions,
+  'onebot:ws-reverse': cqhttpQuestions,
   tomon: tomonQuestions,
 }
 

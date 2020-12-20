@@ -1,6 +1,6 @@
 import { Context, RawSession, Session } from 'koishi-core'
 import { Logger, CQCode, Time } from 'koishi-utils'
-import {} from 'koishi-adapter-cqhttp'
+import {} from 'koishi-adapter-onebot'
 
 export interface DebugOptions {
   showUserId?: boolean

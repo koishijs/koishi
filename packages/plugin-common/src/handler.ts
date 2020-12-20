@@ -1,6 +1,6 @@
 import { App, Session } from 'koishi-core'
 import { simplify, makeArray } from 'koishi-utils'
-import {} from 'koishi-adapter-cqhttp'
+import {} from 'koishi-adapter-onebot'
 
 export interface Respondent {
   match: string | RegExp
@@ -29,7 +29,7 @@ export interface HandlerOptions {
 
 const defaultMessage: WelcomeMessage = session => `欢迎新大佬 [CQ:at,qq=${session.userId}]！`
 
-type CQSession = Session<never, never, {}, 'cqhttp'>
+type CQSession = Session<never, never, {}, 'onebot'>
 
 async function getHandleResult(handler: RequestHandler, session: CQSession): Promise<any> {
   return typeof handler === 'function' ? handler(session) : handler

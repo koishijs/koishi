@@ -1,5 +1,5 @@
 {
-  "name": "koishi-adapter-cqhttp",
+  "name": "koishi-adapter-onebot",
   "description": "CQHTTP adapter for Koishi",
   "version": "3.0.0-alpha.1",
   "main": "dist/index.js",
@@ -26,6 +26,7 @@
     "bot",
     "qqbot",
     "cqhttp",
+    "onebot",
     "coolq",
     "chatbot",
     "koishi"

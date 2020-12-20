@@ -14,8 +14,8 @@ export default class WsServer extends Server<CQBot> {
     assertProperty(app.options, 'port')
     super(app, CQBot)
     this._channel = new Socket(this)
-    const { cqhttp = {} } = this.app.options
-    const { path = '/' } = cqhttp
+    const { onebot = {} } = this.app.options
+    const { path = '/' } = onebot
     const ws: typeof WebSocket = require('ws')
     this.wsServer = new ws.Server({
       path,
