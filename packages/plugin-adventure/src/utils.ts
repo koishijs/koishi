@@ -1,6 +1,5 @@
 import { User, extendDatabase, Session, NextFunction, Command, checkTimer } from 'koishi-core'
 import MysqlDatabase from 'koishi-plugin-mysql'
-import Affinity from './affinity'
 import Item from './item'
 
 declare module 'koishi-core/dist/command' {
@@ -23,7 +22,6 @@ declare module 'koishi-core/dist/database' {
   interface User extends Adventurer {
     noSR: number
     affinity: number
-    titles: Affinity[]
     achvRank: number
     achvS: number
     achvH: number
@@ -42,7 +40,6 @@ declare module 'koishi-core/dist/database' {
 
 User.extend(() => ({
   noSR: 5,
-  titles: [],
   achievement: [],
   affinity: 0,
   wealth: 100,
@@ -63,7 +60,6 @@ export const achvS = 'list_length(`achievement`)'
 export const achvH = '(LENGTH(`achievement`) - LENGTH(REPLACE(`achievement`, "-ex" ,""))) / 3'
 
 extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ DataType, tables }) => {
-  tables.user.titles = new DataType.Json()
   tables.user.gains = new DataType.Json()
   tables.user.endings = new DataType.Json()
   tables.user.warehouse = new DataType.Json()

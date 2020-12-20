@@ -1,51 +1,30 @@
 import { User, Context } from 'koishi-core'
-import { Time, Random, isInteger } from 'koishi-utils'
+import { Time, Random } from 'koishi-utils'
 import { registerUserInfo } from 'koishi-plugin-common'
-import { extendStatus } from 'koishi-plugin-status'
 import Rank from './rank'
 
-type Affinity = [] | [number, string]
-type AffinityCallback<T extends User.Field = never> = (user: Pick<User, T>, date: number) => void | Affinity
-type TheoreticalAffinityCallback = () => Affinity
+type AffinityResult = [] | [number, string]
+type AffinityCallback<T extends User.Field = never> = (user: Pick<User, T>, date: number) => void | AffinityResult
+type TheoreticalAffinityCallback = () => AffinityResult
+type HintCallback<T extends User.Field = User.Field> = (user: Pick<User, T>, now: Date) => Iterable<string>
 
-interface AffinityItem<T extends User.Field = never> {
+export interface Affinity<T extends User.Field = never> {
   order: number
   callback: AffinityCallback<T>
   theoretical: TheoreticalAffinityCallback
 }
 
-const affinityList: AffinityItem[] = []
-
-type HintCallback<T extends User.Field = User.Field> = (user: Pick<User, T>, now: Date) => Iterable<string>
+const affinityList: Affinity[] = []
 const hintList: HintCallback[] = []
-export const hintFields = new Set<keyof User>()
 
-declare module 'koishi-plugin-status' {
-  interface Status {
-    theoreticalAffinity: number
-  }
-}
-
-extendStatus((status) => {
-  status.theoreticalAffinity = affinityList
-    .map(a => a.theoretical())
-    .reduce((prev, [curr = 0]) => prev + curr, 0)
-})
-
-export function getAffinityItems(user: Partial<User>, date = Time.getDateNumber()) {
-  return [
-    ...user.titles,
-    ...affinityList.map(a => a.callback(user, date) || [] as Affinity),
-  ]
-}
-
-namespace Affinity {
-  export const fields = new Set<keyof User>(['name', 'titles', 'affinity'])
+export namespace Affinity {
+  export const fields = new Set<User.Field>(['name', 'affinity'])
+  export const hintFields = new Set<User.Field>()
 
   export function add<T extends User.Field = never>(
     order: number,
     callback: AffinityCallback<T>,
-    _fields: Iterable<T>,
+    fields: Iterable<T>,
     theoretical: TheoreticalAffinityCallback = () => [],
   ) {
     const index = affinityList.findIndex(a => a.order < order)
@@ -54,8 +33,8 @@ namespace Affinity {
     } else {
       affinityList.push({ order, callback, theoretical })
     }
-    for (const field of _fields || []) {
-      fields.add(field)
+    for (const field of fields || []) {
+      Affinity.fields.add(field)
     }
   }
 
@@ -64,6 +43,10 @@ namespace Affinity {
     for (const field of fields) {
       hintFields.add(field)
     }
+  }
+
+  function getAffinityItems(user: Partial<User>, date = Time.getDateNumber()) {
+    return affinityList.map(a => a.callback(user, date) || [] as AffinityResult)
   }
 
   export function get(user: Partial<User>) {
@@ -132,22 +115,6 @@ namespace Affinity {
         }
 
         return output.join('\n')
-      })
-
-    ctx.command('user.title [name] [affinity]', '称号信息', { authority: 4 })
-      .userFields(['titles'])
-      .option('remove', '-r 删除称号')
-      .adminUser(({ target, options }, name, value) => {
-        if (options.remove) {
-          const index = target.titles.findIndex(([, title]) => name === title)
-          if (index < 0) return '未找到对应的特殊称号。'
-          target.titles.splice(index, 1)
-          return
-        }
-
-        const affinity = +value
-        if (!isInteger(affinity) || !name) return '参数错误。'
-        target.titles.push([affinity, name])
       })
   }
 }

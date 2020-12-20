@@ -39,7 +39,7 @@ export function apply(ctx: Context, config?: Config) {
   ctx.plugin(Achievement)
   ctx.plugin(Affinity)
   ctx.plugin(Buff)
-  ctx.plugin(Item, config)
+  ctx.plugin(Item)
   ctx.plugin(Luck)
   ctx.plugin(Phase)
   ctx.plugin(Rank)

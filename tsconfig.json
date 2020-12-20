@@ -12,7 +12,7 @@
     { "path": "./packages/koishi-utils" },
     { "path": "./packages/koishi-core" },
     { "path": "./packages/koishi-test-utils" },
-    { "path": "./packages/adapter-cqhttp" },
+    { "path": "./packages/adapter-onebot" },
     { "path": "./packages/adapter-tomon" },
     { "path": "./packages/adapter-kaiheila" },
 

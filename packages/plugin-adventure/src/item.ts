@@ -159,7 +159,7 @@ namespace Item {
     }
   }
 
-  export function apply(ctx: Context, config: Config) {
+  export function apply(ctx: Context) {
     ctx.on('parse', (message, { $reply, $prefix, $appel, subType }, builtin) => {
       if (!builtin || $reply || $prefix || (!$appel && subType === 'group') || !Item.data[message]) return
       return { command: 'show', args: [message], options: { pass: true } }
@@ -227,11 +227,11 @@ namespace Item {
         }
         if (item.rarity !== 'SP' && item.lottery !== 0) source.push('抽奖')
         if ('fishing' in item) source.push('钓鱼')
-        const value = config.createSeller(session.$user)(name)
+        const value = ctx.app.adventure.createSeller(session.$user)(name)
         if (value) {
           output.push(`售出价格：${value}￥`)
         }
-        const bid = config.createBuyer(session.$user)(name)
+        const bid = ctx.app.adventure.createBuyer(session.$user)(name)
         if (bid) {
           source.push('商店')
           output.push(`购入价格：${bid}￥`)
@@ -256,7 +256,7 @@ namespace Item {
         if (message) return message
         if (session.$user.progress) return '检测到你有未完成的剧情，请尝试输入“继续当前剧情”。'
 
-        const toBid = config.createBuyer(session.$user)
+        const toBid = ctx.app.adventure.createBuyer(session.$user)
         if (!args.length) {
           const output = Item.data
             .map(i => ({ ...i, bid: toBid(i.name) }))
@@ -323,7 +323,7 @@ namespace Item {
         if (message) return message
         if (session.$user.progress) return '检测到你有未完成的剧情，请尝试输入“继续当前剧情”。'
 
-        const toValue = config.createSeller(session.$user)
+        const toValue = ctx.app.adventure.createSeller(session.$user)
         if (!args.length) {
           const output = Item.data
             .filter(p => p.value && session.$user.warehouse[p.name])
