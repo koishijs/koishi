@@ -34,7 +34,7 @@ export function apply(ctx: Context, config?: Config) {
     ...config,
   }
 
-  ctx.command('adventure', '冒险系统')
+  ctx.command('adventure', '冒险系统').alias('adv')
 
   ctx.plugin(Achievement)
   ctx.plugin(Affinity)
@@ -92,11 +92,11 @@ export function apply(ctx: Context, config?: Config) {
       target.money = money
     })
 
-  ctx.command('user.lucky <value>', '设置幸运值', { authority: 4 })
-    .userFields(['lucky'])
+  ctx.command('user.luck <value>', '设置幸运值', { authority: 4 })
+    .userFields(['luck'])
     .adminUser(({ target }, value) => {
-      const lucky = +value
-      if (!isInteger(lucky) || lucky < -Luck.MAX_LUCKY || lucky > Luck.MAX_LUCKY) return '参数错误。'
-      target.lucky = lucky
+      const luck = +value
+      if (!isInteger(luck) || luck < -Luck.MAX_LUCKY || luck > Luck.MAX_LUCKY) return '参数错误。'
+      target.luck = luck
     })
 }

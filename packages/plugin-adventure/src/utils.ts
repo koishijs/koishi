@@ -49,7 +49,7 @@ User.extend(() => ({
   money: 100,
   gains: {},
   warehouse: {},
-  lucky: 0,
+  luck: 0,
   taste: 0,
   recent: [],
   progress: '',
@@ -95,7 +95,7 @@ export namespace Shopper {
 export interface Adventurer extends Shopper {
   name: string
   flag: number
-  lucky: number
+  luck: number
   taste: number
   recent: string[]
   progress: string
@@ -114,7 +114,7 @@ export namespace Adventurer {
 
   export const fields: Field[] = [
     'id', 'money', 'warehouse', 'wealth', 'timers', 'gains',
-    'flag', 'lucky', 'taste', 'recent', 'progress', 'phases',
+    'flag', 'luck', 'taste', 'recent', 'progress', 'phases',
     'endings', 'usage', 'avatarAchv', 'drunkAchv', 'name', 'achievement',
   ]
 }

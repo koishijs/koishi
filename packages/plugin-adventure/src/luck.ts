@@ -8,11 +8,11 @@ namespace Luck {
   export const MAX_LUCKY = 50
   export const DEFAULT_BASE = 0.98
 
-  export const fields = ['timers', 'lucky'] as const
+  export const fields = ['timers', 'luck'] as const
   export type Field = typeof fields[number]
 
-  export function restrict(lucky: number) {
-    return Math.min(Math.max(lucky, -MAX_LUCKY), MAX_LUCKY)
+  export function restrict(luck: number) {
+    return Math.min(Math.max(luck, -MAX_LUCKY), MAX_LUCKY)
   }
 
   export function coefficient(user: Pick<ReadonlyUser, 'timers'>) {
@@ -21,7 +21,7 @@ namespace Luck {
 
   export function get(user: Pick<ReadonlyUser, Field>) {
     return restrict(
-      (coefficient(user) * user.lucky) +
+      (coefficient(user) * user.luck) +
       (checkTimer('$mellow', user) ? 10 : 0) +
       (checkTimer('$luckyBonus', user) ? 5 : 0),
     )
@@ -139,7 +139,7 @@ namespace Luck {
         const result = Item.checkOverflow(session, gainList)
         if (result) output.push(result)
         $user.usage.lottery = maxUsage - times
-        session.$app.emit('adventure/achieve', $user, output)
+        session.$app.emit('adventure/achieve', session, output)
         await $user._update()
 
         if (!times) output.push('您本日的抽奖次数已用完，请明天再试吧~')

@@ -303,7 +303,7 @@ namespace Item {
         if (!entries.length) return '没有购买任何物品。'
 
         const hints = [Event.buy(buyMap)(session)]
-        session.$app.emit('adventure/achieve', user as any, hints)
+        session.$app.emit('adventure/achieve', session as any, hints)
 
         await user._update()
         await session.$send(hints.join('\n'))
@@ -386,7 +386,7 @@ namespace Item {
         }
 
         const hints = [Event.sell(sellMap)(session)]
-        session.$app.emit('adventure/achieve', user as any, hints)
+        session.$app.emit('adventure/achieve', session as any, hints)
         await user._update()
         await session.$send(hints.join('\n'))
       })

@@ -110,18 +110,18 @@ namespace Event {
     $user.flag &= ~flag
   }
 
-  export const updateLucky = (offset: number, reason: string): Event => ({ $user }) => {
-    $user.lucky = Luck.restrict($user.lucky + offset * Luck.coefficient($user))
+  export const updateLuck = (offset: number, reason: string): Event => ({ $user }) => {
+    $user.luck = Luck.restrict($user.luck + offset * Luck.coefficient($user))
     return reason
   }
 
-  export const decreaseLucky = (delta: number, reason: string, preventMessage: string): Event => (session) => {
+  export const decreaseLuck = (delta: number, reason: string, preventMessage: string): Event => (session) => {
     if (session.$user.warehouse['疵痕之护符']) {
       session.$user.warehouse['疵痕之护符'] -= 1
       session.$user.avatarAchv += 1
       return preventMessage
     } else {
-      return updateLucky(-delta, reason)(session)
+      return updateLuck(-delta, reason)(session)
     }
   }
 
