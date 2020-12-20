@@ -47,7 +47,7 @@ export class App extends Context {
   public app = this
   public options: AppOptions
   public status = AppStatus.closed
-  public bots: Bot[] = []
+  public bots: Bot[] & Record<string, Bot> = [] as any
 
   _commands: Command[]
   _commandMap: Record<string, Command>

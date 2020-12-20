@@ -119,6 +119,10 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return `${this.kind}:${this.channelId}`
   }
 
+  get sid() {
+    return `${this.kind}:${this.selfId}`
+  }
+
   async $send(message: string) {
     if (this.$bot[Bot.$send]) {
       return this.$bot[Bot.$send](this, message)

@@ -33,6 +33,7 @@ export abstract class Server<T extends Bot = Bot> {
     const bot = new this.BotStatic(this.app, options)
     this._bots.push(bot)
     this.app.bots.push(bot)
+    this.app.bots[bot.sid] = bot
   }
 
   dispatch(session: Session) {
@@ -89,8 +90,11 @@ export interface Bot extends BotOptions {
 export class Bot {
   static readonly $send = Symbol.for('koishi.send')
 
+  readonly sid: string
+
   constructor(public app: App, options: BotOptions) {
     Object.assign(this, options)
+    this.sid = `${this.type}:${this.selfId}`
   }
 
   createSession(subType: EventTypeMap['message'], ctxType: 'group' | 'user', ctxId: string, content: string) {

@@ -1,7 +1,6 @@
 import { App, Server } from 'koishi-core'
-import { Logger, defineProperty, assertProperty, camelize, renameProperty } from 'koishi-utils'
+import { Logger, assertProperty, camelize } from 'koishi-utils'
 import { createSession, KaiheilaBot } from './bot'
-import { createHmac } from 'crypto'
 
 interface KaiheilaOptions {
   path?: string

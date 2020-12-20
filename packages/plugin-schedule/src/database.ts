@@ -7,7 +7,7 @@ declare module 'koishi-core/dist/database' {
     createSchedule(time: Date, interval: number, command: string, session: Session): Promise<Schedule>
     removeSchedule(id: number): Promise<any>
     getSchedule(id: number): Promise<Schedule>
-    getAllSchedules(assignees?: number[]): Promise<Schedule[]>
+    getAllSchedules(assignee?: string): Promise<Schedule[]>
   }
 
   interface Tables {
@@ -17,7 +17,7 @@ declare module 'koishi-core/dist/database' {
 
 export interface Schedule {
   id: number
-  assignee: number
+  assignee: string
   time: Date
   interval: number
   command: string
@@ -39,7 +39,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ DataType, tables 
 
 extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   createSchedule(time, interval, command, session) {
-    return this.create('schedule', { time, assignee: session.selfId, interval, command, session })
+    return this.create('schedule', { time, assignee: session.sid, interval, command, session })
   },
 
   removeSchedule(id) {
@@ -51,11 +51,11 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
     return data[0]
   },
 
-  async getAllSchedules(assignees) {
-    let queryString = 'SELECT * FROM `schedule`'
-    if (!assignees) assignees = await this.app.getSelfIds()
-    queryString += ` WHERE \`assignee\` IN (${assignees.join(',')})`
-    return this.query(queryString)
+  async getAllSchedules(assignee) {
+    const assignees = assignee
+      ? [this.escape(assignee)]
+      : this.app.bots.map(bot => this.escape(bot.sid))
+    return this.query(`SELECT * FROM \`schedule\` WHERE \`assignee\` IN (${assignees.join(',')})`)
   },
 })
 

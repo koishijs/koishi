@@ -49,8 +49,9 @@ export function apply(ctx: Context) {
   ctx.on('connect', async () => {
     const schedules = await database.getAllSchedules()
     schedules.forEach((schedule) => {
-      if (!ctx.bots[schedule.assignee]) return
-      schedule.session = new Session(ctx.app, schedule.session)
+      const { session, assignee } = schedule
+      if (!ctx.app.bots[assignee]) return
+      schedule.session = new Session(ctx.app, session)
       prepareSchedule(schedule)
     })
   })
@@ -59,7 +60,7 @@ export function apply(ctx: Context) {
     .option('rest', '-- <command...>  要执行的指令')
     .option('interval', '/ <interval>  设置触发的间隔秒数', { authority: 4, type: 'string' })
     .option('list', '-l  查看已经设置的日程')
-    .option('fullList', '-L  查看全部上下文中已经设置的日程', { authority: 4 })
+    .option('full', '-f  查找全部上下文', { authority: 4 })
     .option('delete', '-d <id>  删除已经设置的日程')
     .action(async ({ session, options }, ...dateSegments) => {
       if (options.delete) {
@@ -67,15 +68,15 @@ export function apply(ctx: Context) {
         return `日程 ${options.delete} 已删除。`
       }
 
-      if (options.list || options.fullList) {
-        let schedules = await database.getAllSchedules([session.selfId])
-        if (!options.fullList) {
+      if (options.list) {
+        let schedules = await database.getAllSchedules(session.sid)
+        if (!options.full) {
           schedules = schedules.filter(s => session.channelId === s.session.channelId)
         }
         if (!schedules.length) return '当前没有等待执行的日程。'
         return schedules.map(({ id, time, interval, command, session }) => {
           let output = `${id}. 触发时间：${Time.formatTimeInterval(time, interval)}，指令：${command}`
-          if (options.fullList) output += `，上下文：${formatContext(session)}`
+          if (options.full) output += `，上下文：${formatContext(session)}`
           return output
         }).join('\n')
       }

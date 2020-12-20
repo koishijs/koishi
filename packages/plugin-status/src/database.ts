@@ -36,7 +36,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   async getActiveData() {
     const [[{ 'COUNT(*)': activeUsers }], [{ 'COUNT(*)': activeGroups }]] = await this.query<[{ 'COUNT(*)': number }][]>([
       'SELECT COUNT(*) FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',
-      'SELECT COUNT(*) FROM `group` WHERE `assignee`',
+      'SELECT COUNT(*) FROM `channel` WHERE `assignee`',
     ])
     return { activeGroups, activeUsers }
   },
@@ -46,7 +46,7 @@ extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
   async getActiveData() {
     const $gt = new Date(new Date().getTime() - 1000 * 3600 * 24)
     const [activeGroups, activeUsers] = await Promise.all([
-      this.group.find({ assignee: { $ne: null } }).count(),
+      this.channel.find({ assignee: { $ne: null } }).count(),
       this.user.find({ lastCall: { $gt } }).count(),
     ])
     return { activeGroups, activeUsers }
