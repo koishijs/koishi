@@ -4,9 +4,10 @@ import MongoDatabase from 'koishi-plugin-mongo/dist/database'
 
 declare module 'koishi-core/dist/database' {
   interface Database {
-    createSchedule(time: Date, interval: number, command: string, session: Session): Promise<Schedule>
+    createSchedule(time: Date, interval: number, command: string, session: Session, ensure?: boolean): Promise<Schedule>
     removeSchedule(id: number): Promise<any>
     getSchedule(id: number): Promise<Schedule>
+    updateSchedule(id: number, data: Partial<Schedule>): Promise<void>
     getAllSchedules(assignee?: string): Promise<Schedule[]>
   }
 
@@ -19,6 +20,7 @@ export interface Schedule {
   id: number
   assignee: string
   time: Date
+  lastCall: Date
   interval: number
   command: string
   session: Session
@@ -31,6 +33,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ DataType, tables 
     id: `INT(10) UNSIGNED NOT NULL AUTO_INCREMENT`,
     assignee: `BIGINT(20) NOT NULL DEFAULT '0'`,
     time: `TIMESTAMP NULL DEFAULT NULL`,
+    lastCall: `TIMESTAMP NULL DEFAULT NULL`,
     interval: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0'`,
     command: `MEDIUMTEXT NOT NULL COLLATE 'utf8mb4_general_ci'`,
     session: new DataType.Json(),
@@ -38,8 +41,10 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ DataType, tables 
 })
 
 extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
-  createSchedule(time, interval, command, session) {
-    return this.create('schedule', { time, assignee: session.sid, interval, command, session })
+  createSchedule(time, interval, command, session, ensure) {
+    const data: Partial<Schedule> = { time, assignee: session.sid, interval, command, session }
+    if (ensure) data.lastCall = new Date()
+    return this.create('schedule', data)
   },
 
   removeSchedule(id) {
@@ -49,6 +54,10 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   async getSchedule(id) {
     const data = await this.query('SELECT * FROM `schedule` WHERE `id` = ?', [id])
     return data[0]
+  },
+
+  async updateSchedule(id, data) {
+    await this.update('schedule', id, data)
   },
 
   async getAllSchedules(assignee) {

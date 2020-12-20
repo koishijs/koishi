@@ -6,34 +6,47 @@ export * from './database'
 
 const logger = new Logger('schedule')
 
-function prepareSchedule({ id, session, interval, command, time }: Schedule) {
+async function prepareSchedule({ id, session, interval, command, time, lastCall }: Schedule) {
   const now = Date.now()
   const date = time.valueOf()
   const { database } = session.$app
-  logger.debug('prepare %d: %c at %s', id, command, time)
 
-  function executeSchedule() {
+  async function executeSchedule() {
     logger.debug('execute %d: %c', id, command)
-    return session.$execute(command)
+    await session.$execute(command)
+    if (!lastCall || !interval) return
+    lastCall = new Date()
+    await database.updateSchedule(id, { lastCall })
   }
 
   if (!interval) {
-    if (date < now) return database.removeSchedule(id)
+    if (date < now) {
+      database.removeSchedule(id)
+      if (lastCall) executeSchedule()
+      return
+    }
+
+    logger.debug('prepare %d: %c at %s', id, command, time)
     return setTimeout(async () => {
       if (!await database.getSchedule(id)) return
-      await database.removeSchedule(id)
-      await executeSchedule()
+      database.removeSchedule(id)
+      executeSchedule()
     }, date - now)
   }
 
+  logger.debug('prepare %d: %c from %s every %s', id, command, time, Time.formatTimeShort(interval))
   const timeout = date < now ? interval - (now - date) % interval : date - now
+  if (lastCall && timeout + now - interval > +lastCall) {
+    executeSchedule()
+  }
+
   setTimeout(async () => {
     if (!await database.getSchedule(id)) return
     const timer = setInterval(async () => {
       if (!await database.getSchedule(id)) return clearInterval(timer)
-      await executeSchedule()
+      executeSchedule()
     }, interval)
-    await executeSchedule()
+    executeSchedule()
   }, timeout)
 }
 
@@ -41,10 +54,15 @@ function formatContext(session: Session) {
   return session.subType === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.groupId}`
 }
 
+export interface Config {
+  minInterval?: number
+}
+
 export const name = 'schedule'
 
-export function apply(ctx: Context) {
+export function apply(ctx: Context, config: Config = {}) {
   const { database } = ctx
+  const { minInterval = Time.minute } = config
 
   ctx.on('connect', async () => {
     const schedules = await database.getAllSchedules()
@@ -60,6 +78,7 @@ export function apply(ctx: Context) {
     .option('rest', '-- <command...>  要执行的指令')
     .option('interval', '/ <interval>  设置触发的间隔秒数', { authority: 4, type: 'string' })
     .option('list', '-l  查看已经设置的日程')
+    .option('ensure', '-e  错过时间也确保执行')
     .option('full', '-f  查找全部上下文', { authority: 4 })
     .option('delete', '-d <id>  删除已经设置的日程')
     .action(async ({ session, options }, ...dateSegments) => {
@@ -92,16 +111,22 @@ export function apply(ctx: Context) {
         } else {
           return '请输入合法的日期。'
         }
-      } else if (!options.interval && timestamp <= Date.now()) {
-        return '不能指定过去的时间为起始时间。'
+      } else if (!options.interval) {
+        if (!dateString) {
+          return '请输入执行时间。'
+        } else if (timestamp <= Date.now()) {
+          return '不能指定过去的时间为执行时间。'
+        }
       }
 
       const interval = Time.parseTime(options.interval)
       if (!interval && options.interval) {
         return '请输入合法的时间间隔。'
+      } else if (interval && interval < minInterval) {
+        return '时间间隔过短。'
       }
 
-      const schedule = await database.createSchedule(time, interval, options.rest, session)
+      const schedule = await database.createSchedule(time, interval, options.rest, session, options.ensure)
       prepareSchedule(schedule)
       return `日程已创建，编号为 ${schedule.id}。`
     })
