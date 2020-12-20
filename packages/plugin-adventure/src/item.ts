@@ -382,7 +382,7 @@ namespace Item {
           const _meta = session as Session<Adventurer.Field>
           _meta.$user['_skip'] = session._skipAll
           await Phase.setProgress(_meta.$user, progress)
-          return Phase.start(_meta, config as any)
+          return Phase.start(_meta)
         }
 
         const hints = [Event.sell(sellMap)(session)]

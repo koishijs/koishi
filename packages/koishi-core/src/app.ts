@@ -12,6 +12,13 @@ import LruCache from 'lru-cache'
 import * as http from 'http'
 import type Koa from 'koa'
 
+export interface DelayOptions {
+  character?: number
+  message?: number
+  cancel?: number
+  broadcast?: number
+}
+
 export interface AppOptions extends BotOptions {
   port?: number
   bots?: BotOptions[]
@@ -21,8 +28,7 @@ export interface AppOptions extends BotOptions {
   prettyErrors?: boolean
   promptTimeout?: number
   processMessage?: (message: string) => string
-  queueDelay?: number | ((message: string, session: Session) => number)
-  broadcastDelay?: number
+  delay?: DelayOptions
   defaultAuthority?: number | ((session: Session) => number)
   similarityCoefficient?: number
   userCacheLength?: number
@@ -56,19 +62,30 @@ export class App extends Context {
   static defaultConfig: AppOptions = {
     maxListeners: 64,
     prettyErrors: true,
-    queueDelay: 0.1 * Time.second,
-    broadcastDelay: 0.5 * Time.second,
     promptTimeout: Time.minute,
     userCacheAge: Time.minute,
     groupCacheAge: 5 * Time.minute,
     similarityCoefficient: 0.4,
     processMessage: message => simplify(message.trim()),
+    delay: {
+      character: 0,
+      cancel: 0,
+      message: 0.1 * Time.second,
+      broadcast: 0.5 * Time.second,
+    },
   }
 
   constructor(options: AppOptions = {}) {
     super({ groups: [], users: [], private: true })
-    options = this.options = { ...App.defaultConfig, ...options }
     if (!options.bots) options.bots = [options]
+    options = this.options = {
+      ...App.defaultConfig,
+      ...options,
+      delay: {
+        ...App.defaultConfig.delay,
+        ...options.delay,
+      },
+    }
 
     defineProperty(this, '_hooks', {})
     defineProperty(this, '_commands', [])

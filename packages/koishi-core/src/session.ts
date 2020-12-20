@@ -127,16 +127,16 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     await this.$bot.sendMessage(this.channelId, message)
   }
 
-  $cancelQueued(delay = 0) {
+  $cancelQueued(delay = this.$app.options.delay.cancel) {
     this._hooks.forEach(Reflect.apply)
     this._delay = delay
   }
 
-  async $sendQueued(message: string | void, delay?: number) {
-    if (!message) return
+  async $sendQueued(content: string | void, delay?: number) {
+    if (!content) return
     if (typeof delay === 'undefined') {
-      const { queueDelay = 100 } = this.$app.options
-      delay = typeof queueDelay === 'function' ? queueDelay(message, this) : queueDelay
+      const { message, character } = this.$app.options.delay
+      delay = Math.max(message, character * content.length)
     }
     return this._queued = this._queued.then(() => new Promise<void>((resolve) => {
       const hook = () => {
@@ -147,7 +147,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       }
       this._hooks.push(hook)
       const timer = setTimeout(async () => {
-        await this.$send(message)
+        await this.$send(content)
         this._delay = delay
         hook()
       }, this._delay || 0)

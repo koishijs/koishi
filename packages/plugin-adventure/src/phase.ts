@@ -41,12 +41,6 @@ export interface Phase {
 export namespace Phase {
   const logger = new Logger('adventure')
 
-  export interface Config {
-    charDelay?: number
-    textDelay?: number
-    minDelay?: number
-  }
-
   export const mainPhase: Phase = { items: {} }
   export const phaseMap: Record<string, Adventurer.Infer<Phase>> = { '': mainPhase }
   export const salePlots: Record<string, ReadonlyUser.Infer<string, Shopper.Field>> = {}
@@ -135,7 +129,7 @@ export namespace Phase {
     return phase || (user.progress = '', null)
   }
 
-  export type Action = (session: Session<Adventurer.Field>, config: Config) => Promise<string | void>
+  export type Action = (session: Session<Adventurer.Field>) => Promise<string | void>
 
   const HOOK_PENDING_USE = 4182
   const HOOK_PENDING_CHOOSE = 4185
@@ -289,7 +283,7 @@ export namespace Phase {
     session._canSkip = false
   }
 
-  export const plot: Action = async (session, config) => {
+  export const plot: Action = async (session) => {
     const { $app, $user } = session
 
     // resolve phase
@@ -320,7 +314,7 @@ export namespace Phase {
       || choices && choose(choices, options)
       || items && useItem(items)
       || (async () => next as string)
-    const progress = await action(session, config)
+    const progress = await action(session)
     Phase.activeUsers.delete($user.id)
 
     // save user data
@@ -330,16 +324,16 @@ export namespace Phase {
     }
 
     // handle next phase
-    if (progress) return plot(session, config)
+    if (progress) return plot(session)
     logger.debug('%s phase finish', session.userId)
   }
 
-  export function start(session: Session<Adventurer.Field>, options: Config) {
+  export function start(session: Session<Adventurer.Field>) {
     metaMap[session.userId] = session
     if (session.subType === 'group') {
       groupStates[session.groupId] = session.userId
     }
-    return plot(session, options).catch((error) => {
+    return plot(session).catch((error) => {
       new Logger('cosmos').warn(error)
     }).then(() => {
       delete metaMap[session.userId]
@@ -363,7 +357,7 @@ export namespace Phase {
     return { ids, notFound }
   }
 
-  export function apply(ctx: Context, config: Config) {
+  export function apply(ctx: Context) {
     ctx.command('adventure/ending [story]', '查看结局达成情况', { maxUsage: 20 })
       .userFields(['id', 'endings', 'name', 'timers'])
       .alias('endings', 'ed')
@@ -451,7 +445,7 @@ export namespace Phase {
         const message = Phase.checkStates(session)
         if (message) return message
 
-        return Phase.start(session, config)
+        return Phase.start(session)
       })
 
     ctx.command('adventure/skip [-- command...]', '跳过剧情')
@@ -471,7 +465,7 @@ export namespace Phase {
         if (session._skipAll) return
         if (!(session = Phase.metaMap[session.userId])) return
         if (session._skipCurrent || !session._canSkip) return
-        session.$cancelQueued(config.textDelay)
+        session.$cancelQueued()
         session._skipCurrent = true
       })
 
@@ -523,7 +517,7 @@ export namespace Phase {
 
           $user['_skip'] = session._skipAll
           await Phase.setProgress($user, progress)
-          return Phase.start(session, config)
+          return Phase.start(session)
         } else {
           if (!item || session._skipAll) return
           const next = !Phase.metaMap[session.userId] && getValue(Phase.mainPhase.items[item], $user)

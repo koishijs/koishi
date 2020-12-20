@@ -109,7 +109,7 @@ export class Bot {
     return Object.fromEntries(list.map(info => [info.id, info.nick || info.name]))
   }
 
-  async broadcast(channels: string[], message: string, delay = this.app.options.broadcastDelay) {
+  async broadcast(channels: string[], message: string, delay = this.app.options.delay.broadcast) {
     const messageIds: string[] = []
     for (let index = 0; index < channels.length; index++) {
       if (index && delay) await sleep(delay)

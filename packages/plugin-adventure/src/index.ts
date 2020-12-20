@@ -19,7 +19,7 @@ declare module 'koishi-core/dist/app' {
   }
 }
 
-export interface Config extends Item.Config, Phase.Config {}
+export interface Config extends Item.Config {}
 
 const defaultConfig: Config = {
   createBuyer: () => name => Item.data[name].bid,
@@ -39,7 +39,7 @@ export function apply(ctx: Context, config?: Config) {
   ctx.plugin(Achievement)
   ctx.plugin(Affinity)
   ctx.plugin(Buff)
-  ctx.plugin(Item)
+  ctx.plugin(Item, config)
   ctx.plugin(Luck)
   ctx.plugin(Phase)
   ctx.plugin(Rank)
