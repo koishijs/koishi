@@ -36,6 +36,8 @@
   ],
   "peerDependencies": {
     "koishi-core": "^3.0.0-alpha.0",
+    "koishi-plugin-common": "^4.0.0-alpha.0",
+    "koishi-plugin-teach": "^2.0.0-alpha.0",
     "koishi-utils": "^3.2.1"
   },
   "devDependencies": {

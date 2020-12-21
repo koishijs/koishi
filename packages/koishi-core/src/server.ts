@@ -1,4 +1,4 @@
-import { defineProperty, paramCase, sleep } from 'koishi-utils'
+import { CQCode, defineProperty, paramCase, sleep } from 'koishi-utils'
 import { Session, MessageInfo, EventTypeMap, GroupInfo, GroupMemberInfo, UserInfo } from './session'
 import { App, AppStatus } from './app'
 
@@ -64,6 +64,7 @@ export enum BotStatusCode {
 
 export interface Bot extends BotOptions {
   [Bot.$send](session: Session, message: string): Promise<void>
+
   ready?: boolean
   version?: string
   getSelfId(): Promise<string>
@@ -89,6 +90,18 @@ export interface Bot extends BotOptions {
 
 export class Bot {
   static readonly $send = Symbol.for('koishi.send')
+
+  parseUser(source: string) {
+    if (/^\d+$/.test(source)) return source
+    const code = CQCode.parse(source)
+    if (code && code.type === 'at') {
+      return code.data.qq
+    }
+  }
+
+  parseChannel(source: string) {
+    if (/^\d+$/.test(source)) return source
+  }
 
   readonly sid: string
 

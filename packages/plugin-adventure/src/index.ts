@@ -7,9 +7,10 @@ import Event from './event'
 import Item from './item'
 import Luck from './luck'
 import Phase from './phase'
+import Profile from './profile'
 import Rank from './rank'
 
-export { Achievement, Affinity, Buff, Event, Item, Luck, Phase, Rank }
+export { Achievement, Affinity, Buff, Event, Item, Luck, Phase, Profile, Rank }
 
 export * from './utils'
 
@@ -42,6 +43,7 @@ export function apply(ctx: Context, config?: Config) {
   ctx.plugin(Item)
   ctx.plugin(Luck)
   ctx.plugin(Phase)
+  ctx.plugin(Profile)
   ctx.plugin(Rank)
 
   ctx.command('user.add-item', '添加物品', { authority: 4 })

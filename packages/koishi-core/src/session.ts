@@ -1,6 +1,6 @@
 import { User, Channel, Platforms, PlatformType } from './database'
 import { ExecuteArgv, ParsedArgv, Command } from './command'
-import { isInteger, contain, observe, noop, Logger, defineProperty, Random } from 'koishi-utils'
+import { contain, observe, noop, Logger, defineProperty, Random } from 'koishi-utils'
 import { NextFunction } from './context'
 import { App } from './app'
 import { Bot } from './server'
@@ -367,15 +367,4 @@ export interface UserInfo {
 export interface GroupMemberInfo extends UserInfo {
   nick: string
   roles: string[]
-}
-
-export function getTargetId(target: string | number) {
-  if (typeof target !== 'string' && typeof target !== 'number') return
-  let qq = +target
-  if (!qq) {
-    const capture = /\[CQ:at,qq=(\d+)\]/.exec(target as any)
-    if (capture) qq = +capture[1]
-  }
-  if (!isInteger(qq)) return
-  return qq
 }

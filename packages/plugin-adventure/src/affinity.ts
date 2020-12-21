@@ -1,6 +1,6 @@
 import { User, Context } from 'koishi-core'
 import { Time, Random } from 'koishi-utils'
-import { registerUserInfo } from 'koishi-plugin-common'
+import Profile from './profile'
 import Rank from './rank'
 
 type AffinityResult = [] | [number, string]
@@ -60,7 +60,7 @@ export namespace Affinity {
 
   export function apply(ctx: Context) {
     ctx.on('before-connect', () => {
-      registerUserInfo(user => `好感度：${Affinity.get(user)}`, fields, 20)
+      Profile.add(user => `好感度：${Affinity.get(user)}`, fields, 20)
     })
 
     ctx.command('adventure/affinity', '查看四季酱的好感度', { maxUsage: 20 })

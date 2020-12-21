@@ -1,8 +1,8 @@
 import { User, Context, Session } from 'koishi-core'
 import { difference, defineProperty } from 'koishi-utils'
-import { registerUserInfo } from 'koishi-plugin-common'
 import { achvH, achvS } from './utils'
 import Affinity from './affinity'
+import Profile from './profile'
 import Rank from './rank'
 
 export type AchvField = 'achievement' | 'name' | 'flag' | 'wealth' | 'money'
@@ -106,7 +106,7 @@ let theoretical = 0, achvSCount = 0, achvHCount = 0
 const achvList: Achievement[] & Record<string, Achievement> = [] as any
 const achvFields = new Set<User.Field>(['achievement', 'name', 'flag'])
 
-registerUserInfo(({ achvS, achvH, achvRank }) => {
+Profile.add(({ achvS, achvH, achvRank }) => {
   return `成就已获得：${achvS}+${achvH}/${achvSCount}+${achvHCount}${achvRank ? ` (#${achvRank})` : ''}`
 }, ['achvS', `achvH`, 'achvRank'], 100)
 

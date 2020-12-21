@@ -158,8 +158,13 @@ export interface CQBot {
 }
 
 export class CQBot extends Bot {
+  handleContent(content: string) {
+    return content.replace(/\[CQ:at,type=all\]/g, '[CQ:at,qq=all]')
+  }
+
   async [Bot.$send](meta: Session, content: string, autoEscape = false) {
     if (!content) return
+    content = this.handleContent(content)
     if (this.app.options.onebot?.preferSync) {
       await this.sendMessage(meta.channelId, content)
       return
@@ -197,11 +202,12 @@ export class CQBot extends Bot {
     await this.get(action + '_async', params)
   }
 
-  sendMessage(channelId: string, message: string) {
+  sendMessage(channelId: string, content: string) {
     const [ctxType, ctxId] = channelId.split(':')
+    content = this.handleContent(content)
     return ctxType === 'group'
-      ? this.sendGroupMessage(ctxId, message)
-      : this.sendPrivateMessage(ctxId, message)
+      ? this.sendGroupMessage(ctxId, content)
+      : this.sendPrivateMessage(ctxId, content)
   }
 
   async getMessage(channelId: string, messageId: string) {

@@ -6,7 +6,6 @@ import sender, { SenderConfig } from './sender'
 import { AdminConfig } from './admin'
 
 export * from './admin'
-export * from './info'
 export * from './repeater'
 
 export interface Config extends AdminConfig, HandlerOptions, RepeaterOptions, SenderConfig {
@@ -23,7 +22,6 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(sender, config)
 
   ctx.plugin(require('./admin'))
-  ctx.plugin(require('./info'))
 
   if (config.debug) {
     ctx.plugin(require('./debug'), config.debug)

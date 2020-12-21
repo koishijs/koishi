@@ -1,5 +1,5 @@
-import { Context, getTargetId, User } from 'koishi-core'
-import { isInteger, deduplicate } from 'koishi-utils'
+import { Context, User } from 'koishi-core'
+import { deduplicate } from 'koishi-utils'
 import { Dialogue } from '../utils'
 
 declare module '../utils' {
@@ -41,12 +41,10 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.emit('dialogue/flag', 'frozen')
   ctx.emit('dialogue/flag', 'substitute')
 
-  ctx.on('dialogue/validate', ({ options }) => {
+  ctx.on('dialogue/validate', ({ options, session }) => {
     if (options.writer) {
-      const writer = getTargetId(options.writer)
-      if (!isInteger(writer) || writer <= 0) {
-        return '参数 -w, --writer 错误，请检查指令语法。'
-      }
+      const writer = session.$bot.parseUser(options.writer)
+      if (!writer) return '参数 -w, --writer 错误，请检查指令语法。'
       options.writer = writer
     }
   })

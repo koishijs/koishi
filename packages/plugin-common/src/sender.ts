@@ -1,4 +1,4 @@
-import { Context, getTargetId, Channel, Session, User } from 'koishi-core'
+import { Context, Channel, Session, User } from 'koishi-core'
 import { CQCode } from 'koishi-utils'
 
 export interface SenderConfig {
@@ -112,7 +112,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       }
 
       if (options.user) {
-        const id = '' + getTargetId(options.user)
+        const id = session.$bot.parseUser(options.user)
         if (!id) return '未指定目标。'
 
         newSession.userId = id
