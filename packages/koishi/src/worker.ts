@@ -131,7 +131,7 @@ app.command('exit', '停止机器人运行', { authority: 4 })
     }
     process.send({ type: 'exit', payload: { channelId, kind, selfId, message: '已成功重启。' } })
     await session.$send(`正在重启……`).catch(noop)
-    process.exit(514)
+    process.exit(114)
   })
 
 // load plugins

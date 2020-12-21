@@ -13,7 +13,7 @@ interface WorkerOptions {
 
 const codes = [
   134, // heap out of memory
-  514, // preserved for koishi
+  114, // preserved for koishi
 ]
 
 let child: ChildProcess
