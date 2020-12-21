@@ -64,6 +64,7 @@ namespace Luck {
     ctx.command('adventure/lottery', '喜闻乐见的抽卡游戏')
       .userFields(['noSR'])
       .checkTimer('$system')
+      .checkTimer('$lottery')
       .userFields(Adventurer.fields)
       .userFields(Affinity.fields)
       .option('quick', '-q  一次性抽完次数')
@@ -74,7 +75,6 @@ namespace Luck {
       .shortcut('一键抽卡', { options: { quick: true, simple: true } })
       .shortcut('十连抽卡', { options: { tenTimes: true } })
       .usage(showLotteryUsage)
-      .before(session => checkTimer('$lottery', session.$user))
       .action(async ({ session, options }) => {
         const { $user } = session
         if (Phase.metaMap[session.userId]) return '当前处于剧情模式中，无法抽卡。'

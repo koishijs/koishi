@@ -83,6 +83,11 @@ namespace Event {
       $user.taste = 0
     }
 
+    // 如果是新状态则清除调用提示
+    if (!checkTimer(name, $user)) {
+      delete $user.usage[name + 'Hint']
+    }
+
     // 生死流转仅对显式状态生效
     const scale = reason && checkTimer('$dirt', $user) ? 1800000 : 3600000
     checkTimer(name, $user, getValue(hours, $user) * scale)

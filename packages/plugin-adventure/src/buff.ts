@@ -1,6 +1,25 @@
-import { Context } from 'koishi-core'
+import { Context, Command, checkTimer, checkUsage } from 'koishi-core'
 import { Time } from 'koishi-utils'
 import { Adventurer } from './utils'
+
+declare module 'koishi-core/dist/command' {
+  interface Command<U, G, O> {
+    checkTimer(name: string): Command<U | 'timers', G, O>
+  }
+}
+
+Command.prototype.checkTimer = function (this: Command, name) {
+  return this.userFields(['timers', 'usage']).before((session) => {
+    const user = session.$user
+    const blocked = checkTimer(name, user)
+    const buff = Buff.timers[name]
+    if (blocked && buff && !checkUsage(name + 'Hint', user, 1)) {
+      const rest = user.timers[name] - Date.now()
+      session.$send(`您当前处于「${buff}」状态，无法调用本功能，剩余 ${Time.formatTime(rest)}。`)
+    }
+    return blocked
+  })
+}
 
 namespace Buff {
   type Callback<K extends Adventurer.Field = never> = (user: Pick<Adventurer, K>) => void | string

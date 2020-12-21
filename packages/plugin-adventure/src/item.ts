@@ -167,8 +167,7 @@ namespace Item {
 
     ctx.command('adventure/item [item]', '查看图鉴和物品', { maxUsage: 100 })
       .alias('show')
-      .checkTimer('$system')
-      .userFields(['id', 'warehouse', 'achievement', 'name', 'gains', 'authority'])
+      .userFields(['id', 'warehouse', 'achievement', 'name', 'gains', 'authority', 'timers'])
       .shortcut('查看图鉴')
       .shortcut('我的图鉴')
       .shortcut('查看背包')

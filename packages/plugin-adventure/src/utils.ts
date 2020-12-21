@@ -1,16 +1,6 @@
-import { User, extendDatabase, Session, NextFunction, Command, checkTimer } from 'koishi-core'
+import { User, extendDatabase, Session, NextFunction } from 'koishi-core'
 import MysqlDatabase from 'koishi-plugin-mysql'
 import Item from './item'
-
-declare module 'koishi-core/dist/command' {
-  interface Command<U, G, O> {
-    checkTimer(name: string): Command<U | 'timers', G, O>
-  }
-}
-
-Command.prototype.checkTimer = function (this: Command, name) {
-  return this.userFields(['timers']).before(({ $user }) => checkTimer(name, $user))
-}
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
