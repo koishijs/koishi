@@ -1,6 +1,6 @@
 import { User, Context, Session } from 'koishi-core'
 import { difference, defineProperty } from 'koishi-utils'
-import { achvH, achvS } from './utils'
+import { achvH, achvS, showMap } from './utils'
 import Affinity from './affinity'
 import Profile from './profile'
 import Rank from './rank'
@@ -9,10 +9,10 @@ export type AchvField = 'achievement' | 'name' | 'flag' | 'wealth' | 'money'
 
 declare module 'koishi-core/dist/session' {
   interface Session<U> {
-    achieve: U extends AchvField ? {
+    achieve: {
       (id: string, achieve?: boolean, achieveEx?: boolean): string
       (id: string, hints: string[], achieve?: boolean, achieveEx?: boolean): string
-    } : never
+    }
   }
 }
 
@@ -28,7 +28,7 @@ Session.prototype.achieve = function (this: Session<AchvField>, id: string, ...a
   if (!achieveEx) {
     if (index >= 0) return
     $user.achievement.push(id)
-    const { count, name } = achvList[id]
+    const { count, name } = Achievement.data[id]
     if (!($user.flag & User.Flag.noLeading)) {
       const reward = leaderReward[count]
       if (reward) {
@@ -36,7 +36,7 @@ Session.prototype.achieve = function (this: Session<AchvField>, id: string, ...a
         $user.money += reward
         $user.wealth += reward
       }
-      achvList[id].count += 1
+      Achievement.data[id].count += 1
     }
     const hint = `恭喜 ${$user.name} 获得了成就「${name}」！`
     return hints.push(hint), hint
@@ -51,7 +51,7 @@ Session.prototype.achieve = function (this: Session<AchvField>, id: string, ...a
   } else {
     $user.achievement.push(id + '-ex')
   }
-  const { countEx, nameEx } = achvList[id]
+  const { countEx, nameEx } = Achievement.data[id]
   if (!($user.flag & User.Flag.noLeading)) {
     const reward = leaderReward[countEx]
     if (reward) {
@@ -59,30 +59,11 @@ Session.prototype.achieve = function (this: Session<AchvField>, id: string, ...a
       $user.money += reward
       $user.wealth += reward
     }
-    achvList[id].countEx += 1
-    if (index < 0) achvList[id].count += 1
+    Achievement.data[id].countEx += 1
+    if (index < 0) Achievement.data[id].count += 1
   }
   const hint = `恭喜 ${$user.name} 获得了成就「${nameEx}」！`
   return hints.push(hint), hint
-}
-
-function findAchievements(names: string[]) {
-  const notFound: string[] = [], ids: string[] = []
-  for (const name of names) {
-    if (achvList[name]) {
-      ids.push(achvList[name].id)
-    } else if (/^.+·里$/.test(name)) {
-      const omoteName = name.slice(0, -2)
-      if (achvList[omoteName]) {
-        ids.push(achvList[omoteName].id + '-ex')
-      } else {
-        notFound.push(name)
-      }
-    } else {
-      notFound.push(name)
-    }
-  }
-  return { ids, notFound }
 }
 
 const leaderReward = [1000, 500, 200]
@@ -103,8 +84,6 @@ interface Achievement<T extends User.Field = User.Field> {
 }
 
 let theoretical = 0, achvSCount = 0, achvHCount = 0
-const achvList: Achievement[] & Record<string, Achievement> = [] as any
-const achvFields = new Set<User.Field>(['achievement', 'name', 'flag'])
 
 Profile.add(({ achvS, achvH, achvRank }) => {
   return `成就已获得：${achvS}+${achvH}/${achvSCount}+${achvHCount}${achvRank ? ` (#${achvRank})` : ''}`
@@ -120,7 +99,7 @@ Rank.value('achievement', ['成就'], `${achvS} + ${achvH}`, {
 })
 
 Affinity.add(1000, (user) => {
-  const value = getAchievementBonus(user)
+  const value = Achievement.affinity(user)
   const label = value < 50 ? '初入幻想'
     : value < 100 ? '幻想居民'
       : value < 150 ? '见习自机'
@@ -135,70 +114,88 @@ Affinity.hint(function* (user) {
   }
 }, ['achievement'])
 
-function getAchievementBonus(user: Pick<User, 'achievement'>) {
-  return achvList.reduce((prev, { id, affinity }) => {
-    return prev += user.achievement.includes(id) ? affinity
-      : user.achievement.includes(id + '-ex') ? affinity * 2 : 0
-  }, 0)
-}
+namespace Achievement {
+  export const data: Achievement[] & Record<string, Achievement> = [] as any
+  export const fields = new Set<User.Field>(['achievement', 'name', 'flag'])
 
-function showAchvs(session: Session, target: User.Observed, options: Record<string, any>) {
-  const { achievement } = target
-  const { forced, achieved, unachieved, full, hidden: showHidden } = options
-  const output = achvList.map(({ id, name, nameEx, hidden, progress = () => 0, affinity, descEx, count, countEx }) => {
-    const hasNormal = achievement.includes(id)
-    const hasEx = achievement.includes(id + '-ex')
-    const hasNot = !hasNormal && !hasEx
-    const isHidden = hasNot && (typeof hidden === 'function' ? hidden(target) : hidden)
-    if (!full && !forced) {
-      if (achieved && hasNot) return
-      if (unachieved && !hasNot) return
-      if (showHidden && !isHidden) return
-      if (!showHidden && isHidden) return
+  function findAchievements(names: string[]) {
+    const notFound: string[] = [], ids: string[] = []
+    for (const name of names) {
+      if (data[name]) {
+        ids.push(data[name].id)
+      } else if (/^.+·里$/.test(name)) {
+        const omoteName = name.slice(0, -2)
+        if (data[omoteName]) {
+          ids.push(data[omoteName].id + '-ex')
+        } else {
+          notFound.push(name)
+        }
+      } else {
+        notFound.push(name)
+      }
     }
-    if (forced) {
-      let message = `${name}（${count}）`
-      if (descEx) message += `=> ${nameEx}（${countEx}）`
-      return message
-    }
-    if (hasEx) return `${name} => ${nameEx}（已获得 +${affinity * 2}）`
-    if (hasNormal) return `${name}（已获得 +${affinity}${descEx ? '?' : ''}）`
-    return `${isHidden ? '？？？？' : name}（${(progress(target) * 100).toFixed()}%）`
-  }).filter(Boolean)
-
-  if (forced) {
-    output.unshift(`成就总数：${achvList.length}，理论好感度：${theoretical}`)
-  } else {
-    const bonus = getAchievementBonus(target)
-    output.unshift(`${session.$username}，您已获得成就：${achievement.length}/${achvList.length}，奖励好感度：${bonus}`)
+    return { ids, notFound }
   }
 
-  output.push('要查看特定成就的取得条件，请输入“四季酱，成就 成就名”。')
-  return output.join('\n')
-}
+  export function affinity(user: Pick<User, 'achievement'>) {
+    return data.reduce((prev, { id, affinity }) => {
+      return prev += user.achievement.includes(id) ? affinity
+        : user.achievement.includes(id + '-ex') ? affinity * 2 : 0
+    }, 0)
+  }
 
-namespace Achievement {
+  function showAchvs(session: Session, target: User.Observed, options: Record<string, any>) {
+    const { achievement } = target
+    const { forced, achieved, unachieved, full, hidden: showHidden } = options
+    const output = data.map(({ id, name, nameEx, hidden, progress = () => 0, affinity, descEx, count, countEx }) => {
+      const hasNormal = achievement.includes(id)
+      const hasEx = achievement.includes(id + '-ex')
+      const hasNot = !hasNormal && !hasEx
+      const isHidden = hasNot && (typeof hidden === 'function' ? hidden(target) : hidden)
+      if (!full && !forced) {
+        if (achieved && hasNot) return
+        if (unachieved && !hasNot) return
+        if (showHidden && !isHidden) return
+        if (!showHidden && isHidden) return
+      }
+      if (forced) {
+        let message = `${name}（${count}）`
+        if (descEx) message += `=> ${nameEx}（${countEx}）`
+        return message
+      }
+      if (hasEx) return `${name} => ${nameEx}（已获得 +${affinity * 2}）`
+      if (hasNormal) return `${name}（已获得 +${affinity}${descEx ? '?' : ''}）`
+      return `${isHidden ? '？？？？' : name}（${(progress(target) * 100).toFixed()}%）`
+    }).filter(Boolean)
+
+    if (forced) {
+      output.unshift(`成就总数：${data.length}，理论好感度：${theoretical}`)
+    } else {
+      const bonus = affinity(target)
+      output.unshift(`${session.$username}，您已获得成就：${achievement.length}/${data.length}，奖励好感度：${bonus}`)
+    }
+
+    output.push('要查看特定成就的取得条件，请输入“四季酱，成就 成就名”。')
+    return output.join('\n')
+  }
+
   export function add<T extends User.Field = never>(achv: Achievement<T>, fields: Iterable<T> = []) {
-    achvList.push(achv)
-    defineProperty(achvList, achv.id, achv)
-    defineProperty(achvList, achv.name, achv)
-    defineProperty(achvList, achv.nameEx = achv.nameEx || achv.name + '·里', achv)
+    data.push(achv)
+    showMap[achv.name] = ['command', 'achv']
+    defineProperty(data, achv.id, achv)
+    defineProperty(data, achv.name, achv)
+    defineProperty(data, achv.nameEx = achv.nameEx || achv.name + '·里', achv)
     achvSCount += 1
     achvHCount += (achv.descEx ? 1 : 0)
     theoretical += achv.affinity * (achv.descEx ? 2 : 1)
     for (const field of fields) {
-      achvFields.add(field)
+      Achievement.fields.add(field)
     }
   }
 
   export function apply(ctx: Context) {
-    ctx.on('parse', (message, { $reply, $prefix, $appel, subType }, builtin) => {
-      if (!builtin || $reply || $prefix || (!$appel && subType === 'group') || !achvList[message]) return
-      return { command: 'achv', args: [message], options: { pass: true } }
-    })
-
-    ctx.command('adventure/achievement [name]', '查看成就信息', { maxUsage: 20 })
-      .userFields(achvFields)
+    ctx.command('adventure/achievement [name]', '查看成就信息', { maxUsage: 100, usageName: 'show' })
+      .userFields(fields)
       .alias('成就', 'achv')
       .shortcut('查看成就')
       .shortcut('我的成就')
@@ -209,7 +206,7 @@ namespace Achievement {
       .option('hidden', '-H  显示隐藏成就')
       .option('set', '-s  添加成就', { authority: 4 })
       .option('unset', '-S  删除成就', { authority: 4 })
-      .adminUser(({ session, target, options, next }, ...names) => {
+      .adminUser(async ({ session, target, options, next }, ...names) => {
         if (options.set || options.unset) {
           const { ids, notFound } = findAchievements(names)
           if (notFound.length) {
@@ -243,7 +240,7 @@ namespace Achievement {
 
         const { achievement } = target
         const { forced } = options
-        const achv = achvList[key]
+        const achv = data[key]
         if (!achv) return `没有找到成就「${key}」。`
 
         const { id, name, nameEx, progress = () => 0, affinity, desc, hidden, descHidden, descEx } = achv
@@ -255,7 +252,6 @@ namespace Achievement {
         const isHidden = hasNot && (typeof hidden === 'function' ? hidden(target) : hidden)
         if (isHidden && !forced) {
           if (!options['pass']) return `没有找到成就「${key}」。`
-          session.$user.usage.achievement -= 1
           return next().then(() => '')
         }
 
@@ -275,19 +271,19 @@ namespace Achievement {
       })
 
     ctx.on('connect', async () => {
-      if (!achvList.length) return
+      if (!data.length) return
       let sql = 'SELECT'
-      for (const achv of achvList) {
+      for (const achv of data) {
         sql += ` find_achv('${achv.id}') AS '${achv.id}',`
         if (achv.descEx) sql += ` find_achv('${achv.id}-ex') AS '${achv.id}-ex',`
       }
-      const [data] = await ctx.database.query<[Record<string, number>]>(sql.slice(0, -1))
-      for (const key in data) {
+      const [result] = await ctx.database.query<[Record<string, number>]>(sql.slice(0, -1))
+      for (const key in result) {
         if (key.endsWith('-ex')) {
-          const achv = achvList[key.slice(0, -3)]
-          achv.count += (achv.countEx = data[key])
+          const achv = data[key.slice(0, -3)]
+          achv.count += (achv.countEx = result[key])
         } else {
-          achvList[key].count = data[key]
+          data[key].count = result[key]
         }
       }
     })

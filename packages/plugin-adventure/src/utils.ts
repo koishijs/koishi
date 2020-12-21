@@ -1,6 +1,5 @@
-import { User, extendDatabase, Session, NextFunction } from 'koishi-core'
+import { User, extendDatabase } from 'koishi-core'
 import MysqlDatabase from 'koishi-plugin-mysql'
-import Item from './item'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -110,21 +109,9 @@ export type ReadonlyUser = DeepReadonly<Adventurer>
 export namespace ReadonlyUser {
   export type Infer<U, T extends Adventurer.Field = Adventurer.Field> = InferFrom<U, [Pick<ReadonlyUser, T>]>
 }
+
 export function getValue<U, T extends Adventurer.Field = Adventurer.Field>(source: ReadonlyUser.Infer<U, T>, user: Pick<ReadonlyUser, T>): U {
   return typeof source === 'function' ? (source as any)(user) : source
 }
 
-export function showItemSuggestions(command: string, session: Session, args: string[], index: number, next: NextFunction) {
-  args = args.slice()
-  return session.$suggest({
-    next,
-    target: args[index],
-    items: Item.data.map(item => item.name),
-    prefix: `没有物品“${args[index]}”。`,
-    suffix: '发送空行或句号以使用推测的物品。',
-    async apply(suggestion, next) {
-      args.splice(index, 1, suggestion)
-      return session.$execute({ command, args, next })
-    },
-  })
-}
+export const showMap: Record<string, ['command' | 'message', string]> = {}

@@ -1,6 +1,6 @@
 import { Context, User, Session, checkTimer, Command } from 'koishi-core'
 import { capitalize, Logger, Random } from 'koishi-utils'
-import { ReadonlyUser, getValue, Adventurer, Shopper, showItemSuggestions } from './utils'
+import { ReadonlyUser, getValue, Adventurer, Shopper, showMap } from './utils'
 import Event from './event'
 import {} from 'koishi-plugin-common'
 import {} from 'koishi-plugin-teach'
@@ -104,10 +104,12 @@ export namespace Phase {
 
   export function ending(prefix: string, map: Record<string, string>, bad: Pick<string, 'includes'> = '') {
     storyMap[prefix] = Object.values(map)
+    showMap[prefix] = ['command', 'ending']
     for (const id in map) {
       const name = `${prefix}-${id}`
       endingMap[name] = map[id]
       endingCount[name] = 0
+      showMap[map[id]] = ['command', 'ending']
       reversedEndingMap[map[id]] = name
       if (bad.includes(id)) {
         badEndings.add(name)
@@ -126,7 +128,7 @@ export namespace Phase {
   }
 
   export function getPhase(user: Adventurer) {
-    const phase = getValue(Phase.phaseMap[user.progress], user)
+    const phase = getValue(phaseMap[user.progress], user)
     return phase || (user.progress = '', null)
   }
 
@@ -310,13 +312,13 @@ export namespace Phase {
     await sendEscaped(session, hints.join('\n'))
 
     // resolve next phase
-    Phase.activeUsers.add($user.id)
+    activeUsers.add($user.id)
     const action = typeof next === 'function' && next
       || choices && choose(choices, options)
       || items && useItem(items)
       || (async () => next as string)
     const progress = await action(session)
-    Phase.activeUsers.delete($user.id)
+    activeUsers.delete($user.id)
 
     // save user data
     await setProgress($user, progress)
@@ -347,10 +349,10 @@ export namespace Phase {
   function findEndings(names: string[]) {
     const notFound: string[] = [], ids: string[] = []
     for (const name of names) {
-      if (Phase.endingMap[name]) {
+      if (endingMap[name]) {
         ids.push(name)
-      } else if (Phase.reversedEndingMap[name]) {
-        ids.push(Phase.reversedEndingMap[name])
+      } else if (reversedEndingMap[name]) {
+        ids.push(reversedEndingMap[name])
       } else {
         notFound.push(name)
       }
@@ -359,14 +361,14 @@ export namespace Phase {
   }
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/ending [story]', '查看结局达成情况', { maxUsage: 20 })
+    ctx.command('adventure/ending [story]', '查看结局达成情况', { maxUsage: 100, usageName: 'show' })
       .userFields(['id', 'endings', 'name', 'timers'])
       .alias('endings', 'ed')
       .shortcut('我的结局')
       .shortcut('查看结局')
       .option('add', '-a 添加结局', { authority: 4 })
       .option('remove', '-d 删除结局', { authority: 4 })
-      .adminUser(async ({ session, options, target }, ...names) => {
+      .adminUser(async ({ session, options, target, next }, ...names) => {
         if (options.add || options.remove) {
           if (!names.length) return '请输入要删除的结局名。'
           const { notFound, ids } = findEndings(names)
@@ -380,51 +382,62 @@ export namespace Phase {
         }
 
         const { endings } = session.$user
-        const storyMap: Record<string, string[]> = {}
+        const stories: Record<string, string[]> = {}
         for (const ending in endings) {
           const [prefix] = ending.split('-', 1)
-          if (!storyMap[prefix]) storyMap[prefix] = []
-          storyMap[prefix].push(Phase.endingMap[ending])
+          if (!stories[prefix]) stories[prefix] = []
+          stories[prefix].push(endingMap[ending])
         }
 
         if (names.length) {
-          const story = names[0].toLowerCase()
-          if (!storyMap[story]) return `你尚未解锁 ${story} 剧情线。`
-          const output = storyMap[story].map((name) => {
-            const id = Phase.reversedEndingMap[name]
-            return `${id}. ${name}×${endings[id]}${Phase.badEndings.has(id) ? `（BE）` : ''}`
+          const name = names[0].toLowerCase()
+          const id = reversedEndingMap[name]
+          if (id) {
+            const [prefix] = id.split('-', 1)
+            return [
+              `结局「${name}」${badEndings.has(id) ? `（BE）` : ''}`,
+              `来自 ${prefix} 剧情线`,
+              `你已达成 ${endings[id]} 次`,
+            ].join('\n')
+          }
+
+          const story = stories[name]
+          if (!story) return options['pass'] ? next().then(() => '') : `你尚未解锁剧情「${name}」。`
+          const output = story.map((name) => {
+            const id = reversedEndingMap[name]
+            return `${id}. ${name}×${endings[id]}${badEndings.has(id) ? `（BE）` : ''}`
           }).sort()
-          output.unshift(`${session.$username}，你已达成 ${story} 剧情线的 ${storyMap[story].length}/${Phase.storyMap[story].length} 个结局：`)
+          output.unshift(`${session.$username}，你已达成 ${name} 剧情线的 ${story.length}/${storyMap[name].length} 个结局：`)
           return output.join('\n')
         }
 
-        const output = Object.keys(storyMap).sort().map((key) => {
-          const { length } = storyMap[key]
-          let output = `${capitalize(key)} (${length}/${Phase.storyMap[key].length})`
-          if (length) output += '：' + storyMap[key].join('，')
+        const output = Object.keys(stories).sort().map((key) => {
+          const { length } = stories[key]
+          let output = `${capitalize(key)} (${length}/${storyMap[key].length})`
+          if (length) output += '：' + stories[key].join('，')
           return output
         })
-        const totalCount = Object.keys(Phase.endingMap).length
-        const totalBadCount = Phase.badEndings.size
+        const totalCount = Object.keys(endingMap).length
+        const totalBadCount = badEndings.size
         const userCount = Object.keys(endings).length
-        const userBadCount = Phase.getBadEndingCount(session.$user)
+        const userBadCount = getBadEndingCount(session.$user)
         output.unshift(`${session.$username}，你已达成 ${userCount}/${totalCount} 个结局（BE: ${userBadCount}/${totalBadCount}）。`)
         return output.join('\n')
       })
 
     ctx.on('rank', (name) => {
-      return Phase.reversedEndingMap[name] && ['rank.ending', name]
+      return reversedEndingMap[name] && ['rank.ending', name]
     })
 
     ctx.rankCommand('rank.ending [name]', '显示结局达成次数排行')
       .action(async ({ session, options }, name) => {
         if (!name) return '请输入结局名。'
-        if (!Phase.endingMap[name]) {
-          name = Phase.reversedEndingMap[name]
+        if (!endingMap[name]) {
+          name = reversedEndingMap[name]
           if (!name) return '请输入正确的结局名。'
         }
         return Rank.show({
-          names: [Phase.endingMap[name]],
+          names: [endingMap[name]],
           value: `\`endings\`->'$."${name}"'`,
           format: ' 次',
         }, session, options)
@@ -443,10 +456,10 @@ export namespace Phase {
         // assert user progress
         if (!session.$user.progress) return
 
-        const message = Phase.checkStates(session)
+        const message = checkStates(session)
         if (message) return message
 
-        return Phase.start(session)
+        return start(session)
       })
 
     ctx.command('adventure/skip [-- command...]', '跳过剧情')
@@ -464,7 +477,7 @@ export namespace Phase {
           return
         }
         if (session._skipAll) return
-        if (!(session = Phase.metaMap[session.userId])) return
+        if (!(session = metaMap[session.userId])) return
         if (session._skipCurrent || !session._canSkip) return
         session.$cancelQueued()
         session._skipCurrent = true
@@ -479,13 +492,14 @@ export namespace Phase {
       .shortcut('不使用任何物品', { options: { nothing: true } })
       .option('nothing', '-n  不使用任何物品，直接进入下一剧情')
       .before(session => checkTimer('$use', session.$user))
-      .action(async ({ options, session, next }, item) => {
+      .action(async (argv, item) => {
+        const { options, session } = argv
         const { $user } = session
-        const message = Phase.checkStates(session, true)
+        const message = checkStates(session, true)
         if (message) return message
 
         if (!item && !options.nothing) return '请输入物品名。'
-        if (item && !Item.data[item]) return showItemSuggestions('use', session, [item], 0, next)
+        if (item && !Item.data[item]) return Item.suggest(argv)
 
         const possess = Item.data.map(i => i.name).filter(name => $user.warehouse[name])
         if (checkTimer('$control', $user) && Random.bool(0.25) && possess.includes(item)) {
@@ -495,7 +509,7 @@ export namespace Phase {
           return output
         }
 
-        const phase = Phase.getPhase($user)
+        const phase = getPhase($user)
         if (!phase) return
 
         const { items: itemMap = {}, itemsWhenDreamy = [] } = phase
@@ -512,16 +526,16 @@ export namespace Phase {
         const progress = getValue(itemMap[item], $user)
         if (progress) {
           logger.debug('%s use %c', session.$user.id, item)
-          if (Phase.activeUsers.has(session.$user.id)) {
+          if (activeUsers.has(session.$user.id)) {
             return ctx.parallel('adventure/use', session.$user.id, progress)
           }
 
           $user['_skip'] = session._skipAll
-          await Phase.setProgress($user, progress)
-          return Phase.start(session)
+          await setProgress($user, progress)
+          return start(session)
         } else {
           if (!item || session._skipAll) return
-          const next = !Phase.metaMap[session.userId] && getValue(Phase.mainPhase.items[item], $user)
+          const next = !metaMap[session.userId] && getValue(mainPhase.items[item], $user)
           if (next) {
             return `物品“${item}”当前不可用，请尝试输入“继续当前剧情”。`
           } else {
@@ -532,12 +546,12 @@ export namespace Phase {
 
     ctx.on('connect', async () => {
       let sql = 'SELECT'
-      for (const id in Phase.endingCount) {
+      for (const id in endingCount) {
         sql += ` find_ending('${id}') AS '${id}',`
       }
       const [data] = await ctx.database.query<[Record<string, number>]>(sql.slice(0, -1))
       for (const key in data) {
-        Phase.endingCount[key] = data[key]
+        endingCount[key] = data[key]
       }
     })
   }

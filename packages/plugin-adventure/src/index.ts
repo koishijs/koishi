@@ -1,5 +1,6 @@
-import { Context } from 'koishi-core'
+import { Command, Context, NextFunction } from 'koishi-core'
 import { isInteger } from 'koishi-utils'
+import { showMap } from './utils'
 import Achievement from './achievement'
 import Affinity from './affinity'
 import Buff from './buff'
@@ -45,6 +46,35 @@ export function apply(ctx: Context, config?: Config) {
   ctx.plugin(Phase)
   ctx.plugin(Profile)
   ctx.plugin(Rank)
+
+  ctx.command('adventure/show [name]', '查看图鉴', { maxUsage: 100 })
+    .shortcut('查看', { fuzzy: true })
+    .userFields(['usage'])
+    .userFields((argv, fields) => {
+      Command.collect({ ...argv, command: ctx.command('item') }, 'user', fields)
+      Command.collect({ ...argv, command: ctx.command('achv') }, 'user', fields)
+      Command.collect({ ...argv, command: ctx.command('ed') }, 'user', fields)
+    })
+    .action((argv, ...names) => {
+      const { session, next: _next } = argv
+      const target = names.join(' ')
+      session.content = `show:${target}`
+      const next: NextFunction = (next = _next => _next()) => {
+        session.$user.usage.show -= 1
+        return _next(() => next(() => session.$send(`未找到图鉴「${target}」。`)))
+      }
+      if (target in showMap) {
+        const [type, content] = showMap[target]
+        if (type === 'message') return content
+        return ctx.command(content).execute({
+          session,
+          args: [target],
+          options: { pass: true },
+          next,
+        })
+      }
+      return next()
+    })
 
   ctx.command('user.add-item', '添加物品', { authority: 4 })
     .userFields(['warehouse'])

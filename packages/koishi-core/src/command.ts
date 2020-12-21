@@ -82,9 +82,8 @@ export interface ParsedLine<O extends {} = {}> {
   options: O
 }
 
-export interface ParsedArgv<U extends User.Field = never, G extends Channel.Field = never, O extends {} = {}>
-extends Partial<ParsedLine<O>> {
-  command: Command<U, G, O>
+export interface ParsedArgv<U extends User.Field = never, G extends Channel.Field = never, O extends {} = {}> extends Partial<ParsedLine<O>> {
+  command?: Command<U, G, O>
   session: Session<U, G, O>
   next?: NextFunction
 }

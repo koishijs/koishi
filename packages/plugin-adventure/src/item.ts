@@ -1,28 +1,8 @@
 import { Context, isInteger, checkTimer, ParsedArgv, Session, Random, User } from 'koishi'
-import { getValue, Shopper, Adventurer, ReadonlyUser, showItemSuggestions } from './utils'
+import { getValue, Shopper, Adventurer, ReadonlyUser, showMap } from './utils'
 import Event from './event'
 import Phase from './phase'
 import Rank from './rank'
-
-async function generateItemMap({ args, session, next, command }: ParsedArgv) {
-  const itemMap: Record<string, number> = {}
-  for (let i = 0; i < args.length; i++) {
-    const name = args[i]
-    if (!Item.data[name]) {
-      return showItemSuggestions(command.name, session, args, i, next)
-    }
-    const nextArg = args[++i]
-    if (nextArg === '*') {
-      itemMap[name] = Infinity
-    } else if (nextArg === '?') {
-      itemMap[name] = itemMap[name] ?? -Infinity
-    } else {
-      const count = +args[i] * 0 === 0 ? +args[i] : (--i, 1)
-      itemMap[name] = (itemMap[name] === -Infinity ? 0 : itemMap[name] || 0) + count
-    }
-  }
-  return itemMap
-}
 
 type Condition = (user: ReadonlyUser, isLast: boolean) => boolean
 
@@ -61,6 +41,7 @@ namespace Item {
     data[item.rarity].push(item)
     data[item.name] = item
     data.push(item)
+    showMap[item.name] = ['command', 'item']
   }
 
   export function condition(name: string, condition: Condition) {
@@ -159,17 +140,48 @@ namespace Item {
     }
   }
 
-  export function apply(ctx: Context) {
-    ctx.on('parse', (message, { $reply, $prefix, $appel, subType }, builtin) => {
-      if (!builtin || $reply || $prefix || (!$appel && subType === 'group') || !Item.data[message]) return
-      return { command: 'show', args: [message], options: { pass: true } }
-    })
+  async function toItemMap(argv: ParsedArgv) {
+    const { args } = argv
+    const itemMap: Record<string, number> = {}
+    for (let i = 0; i < args.length; i++) {
+      const name = args[i]
+      if (!data[name]) {
+        return suggest(argv, i)
+      }
+      const nextArg = args[++i]
+      if (nextArg === '*') {
+        itemMap[name] = Infinity
+      } else if (nextArg === '?') {
+        itemMap[name] = itemMap[name] ?? -Infinity
+      } else {
+        const count = +args[i] * 0 === 0 ? +args[i] : (--i, 1)
+        itemMap[name] = (itemMap[name] === -Infinity ? 0 : itemMap[name] || 0) + count
+      }
+    }
+    return itemMap
+  }
 
-    ctx.command('adventure/item [item]', '查看图鉴和物品', { maxUsage: 100 })
-      .alias('show')
+  export function suggest({ session, args, next, command }: ParsedArgv, index = 0) {
+    args = args.slice()
+    if (args.length === 1) {
+      session.content = `${command.name}:${args[0]}`
+    }
+    return session.$suggest({
+      next,
+      target: args[index],
+      items: Item.data.map(item => item.name),
+      prefix: `没有物品“${args[index]}”。`,
+      suffix: '发送空行或句号以使用推测的物品。',
+      async apply(suggestion, next) {
+        args.splice(index, 1, suggestion)
+        return session.$execute({ command, args, next })
+      },
+    })
+  }
+
+  export function apply(ctx: Context) {
+    ctx.command('adventure/item [item]', '查看物品', { maxUsage: 100, usageName: 'show' })
       .userFields(['id', 'warehouse', 'achievement', 'name', 'gains', 'authority', 'timers'])
-      .shortcut('查看图鉴')
-      .shortcut('我的图鉴')
       .shortcut('查看背包')
       .shortcut('我的背包')
       .shortcut('查看物品')
@@ -179,9 +191,9 @@ namespace Item {
       .shortcut('查看道具')
       .shortcut('我的道具')
       .shortcut('物品', { fuzzy: true })
-      .shortcut('查看', { fuzzy: true })
       .option('format', '/ <format> 以特定的格式输出', { type: 'string', hidden: true })
-      .action(async ({ session, next, options }, name: string) => {
+      .action(async (argv, name) => {
+        const { session, next, options } = argv
         const { warehouse, gains } = session.$user
 
         if (!name) {
@@ -203,8 +215,8 @@ namespace Item {
         }
 
         const item = Item.data[name]
-        if (!item) return showItemSuggestions('show', session, [name], 0, next)
-        if (Item.data[name] && !(name in warehouse)) return options['pass'] ? next() : '未获得过此物品。'
+        if (!item) return suggest(argv)
+        if (!(name in warehouse)) return options['pass'] ? next() : '未获得过此物品。'
 
         if (session._redirected && options.format && Item.data[name]) {
           return options.format
@@ -266,7 +278,7 @@ namespace Item {
           return output.join('\n')
         }
 
-        const buyMap = await generateItemMap(argv)
+        const buyMap = await toItemMap(argv)
         if (!buyMap) return
 
         let moneyLost = 0
@@ -332,7 +344,7 @@ namespace Item {
           return output.join('\n')
         }
 
-        const sellMap = await generateItemMap(argv)
+        const sellMap = await toItemMap(argv)
         if (!sellMap) return
 
         const user = session.$user
@@ -400,9 +412,10 @@ namespace Item {
     })
 
     ctx.rankCommand('rank.item [name]', '显示物品持有数量排行')
-      .action(async ({ session, options, next }, name) => {
+      .action(async (argv, name) => {
+        const { session, options } = argv
         if (!name) return '请输入物品名。'
-        if (!Item.data[name]) return showItemSuggestions('rank.item', session, [name], 0, next)
+        if (!Item.data[name]) return suggest(argv)
         return Rank.show({
           names: ['持有' + name],
           value: `\`warehouse\`->'$."${name}"'`,
@@ -411,9 +424,10 @@ namespace Item {
       })
 
     ctx.rankCommand('rank.gain [name]', '显示物品累计获得数量排行')
-      .action(async ({ session, options, next }, name) => {
+      .action(async (argv, name) => {
+        const { session, options } = argv
         if (!name) return '请输入物品名。'
-        if (!Item.data[name]) return showItemSuggestions('rank.gain', session, [name], 0, next)
+        if (!Item.data[name]) return suggest(argv)
         return Rank.show({
           names: ['累计获得' + name],
           value: `\`gains\`->'$."${name}"'`,
