@@ -71,11 +71,17 @@ namespace Event {
   }
 
   export const updateTimer = (name: string, hours: Adventurer.Infer<number>, reason = ''): Event => ({ $user }) => {
-    // 替身地藏自动抵消无法交互和无法使用物品的效果
-    if ((name === '$system' || name === '$use') && $user.warehouse['替身地藏']) {
+    // 替身地藏自动抵消无法交互的效果
+    if (name === '$system' && $user.warehouse['替身地藏']) {
       $user.warehouse['替身地藏'] -= 1
       $user.avatarAchv += 1
       return `${reason}\n$s 扔出替身地藏躲过了一劫。\n$s 失去了替身地藏（SP）！`
+    }
+
+    // 疗伤加护自动抵消无法使用物品的效果
+    if (name === '$use' && checkTimer('$healing', $user)) {
+      delete $user.timers['$healing']
+      return `${reason}\n河童的秘药瞬间治愈了 %s 手上的伤！`
     }
 
     // 当死亡时将酒品归零

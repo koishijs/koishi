@@ -45,6 +45,7 @@ namespace Buff {
   }
 
   export const timers = {
+    $healing: '愈疗加护',
     $majesty: '威严满满',
     $drunk: '醉迷恍惚',
     $dream: '化蝶迷梦',
@@ -102,7 +103,7 @@ namespace Buff {
   }, ['flag'])
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/buff', '查看当前状态', { maxUsage: 20 })
+    ctx.command('adventure/buff', '查看当前状态', { maxUsage: 100, usageName: 'show' })
       .userFields(['name'])
       .userFields(fields)
       .shortcut('我的状态')

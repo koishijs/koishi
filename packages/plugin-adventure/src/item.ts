@@ -109,8 +109,8 @@ namespace Item {
     return Item.data[name].rarity
   }
 
-  export function format(names: string[]): void
-  export function format(map: Record<string, number>, list?: string[]): void
+  export function format(names: string[]): string
+  export function format(map: Record<string, number>, list?: string[]): string
   export function format(...args: [string[]] | [Record<string, number>, string[]?]) {
     if (Array.isArray(args[0])) {
       return args[0]

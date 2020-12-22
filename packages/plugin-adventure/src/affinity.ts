@@ -63,7 +63,7 @@ export namespace Affinity {
       Profile.add(user => `好感度：${Affinity.get(user)}`, fields, 20)
     })
 
-    ctx.command('adventure/affinity', '查看四季酱的好感度', { maxUsage: 20 })
+    ctx.command('adventure/affinity', '查看好感度', { maxUsage: 100, usageName: 'show' })
       .alias('aff')
       .userFields(fields)
       .userFields(hintFields)

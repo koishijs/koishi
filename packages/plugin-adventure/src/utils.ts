@@ -18,13 +18,13 @@ declare module 'koishi-core/dist/database' {
 
   namespace User {
     enum Flag {
-      noLeading = 1 << 6
+      noLeading = 1 << 3
     }
   }
 }
 
 ((flags: Record<keyof typeof User.Flag, number>) => {
-  flags[flags[1 << 6] = 'noLeading'] = 1 << 6
+  flags[flags[1 << 3] = 'noLeading'] = 1 << 3
 })(User.Flag)
 
 User.extend(() => ({

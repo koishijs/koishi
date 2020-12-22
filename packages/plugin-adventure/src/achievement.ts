@@ -1,7 +1,6 @@
 import { User, Context, Session } from 'koishi-core'
 import { difference, defineProperty } from 'koishi-utils'
 import { achvH, achvS, showMap } from './utils'
-import Affinity from './affinity'
 import Profile from './profile'
 import Rank from './rank'
 
@@ -83,7 +82,7 @@ interface Achievement<T extends User.Field = User.Field> {
   hidden?: true | ((user: Pick<User, T>) => boolean)
 }
 
-let theoretical = 0, achvSCount = 0, achvHCount = 0
+let achvSCount = 0, achvHCount = 0
 
 Profile.add(({ achvS, achvH, achvRank }) => {
   return `成就已获得：${achvS}+${achvH}/${achvSCount}+${achvHCount}${achvRank ? ` (#${achvRank})` : ''}`
@@ -98,23 +97,8 @@ Rank.value('achievement', ['成就'], `${achvS} + ${achvH}`, {
   format: user => `${user._value} (${user.achvS}+${user.achvH}) 个`,
 })
 
-Affinity.add(1000, (user) => {
-  const value = Achievement.affinity(user)
-  const label = value < 50 ? '初入幻想'
-    : value < 100 ? '幻想居民'
-      : value < 150 ? '见习自机'
-        : value < 200 ? '异变黑幕'
-          : '幻想传说'
-  return [value, label]
-}, ['achievement'], () => [theoretical, '幻想传说'])
-
-Affinity.hint(function* (user) {
-  if (!user.achievement.length) {
-    yield '成就是好感度的基础，试试去完成几个成就再来吧~'
-  }
-}, ['achievement'])
-
 namespace Achievement {
+  export let theoretical = 0
   export const data: Achievement[] & Record<string, Achievement> = [] as any
   export const fields = new Set<User.Field>(['achievement', 'name', 'flag'])
 
@@ -194,7 +178,7 @@ namespace Achievement {
   }
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/achievement [name]', '查看成就信息', { maxUsage: 100, usageName: 'show' })
+    ctx.command('adventure/achievement [name]', '成就信息', { maxUsage: 100, usageName: 'show' })
       .userFields(fields)
       .alias('成就', 'achv')
       .shortcut('查看成就')

@@ -361,7 +361,7 @@ export namespace Phase {
   }
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/ending [story]', '查看结局达成情况', { maxUsage: 100, usageName: 'show' })
+    ctx.command('adventure/ending [story]', '查看结局', { maxUsage: 100, usageName: 'show' })
       .userFields(['id', 'endings', 'name', 'timers'])
       .alias('endings', 'ed')
       .shortcut('我的结局')

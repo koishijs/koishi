@@ -60,12 +60,12 @@ export function apply(ctx: Context, config?: Config) {
       const target = names.join(' ')
       session.content = `show:${target}`
       const next: NextFunction = (next = _next => _next()) => {
-        session.$user.usage.show -= 1
         return _next(() => next(() => session.$send(`未找到图鉴「${target}」。`)))
       }
       if (target in showMap) {
         const [type, content] = showMap[target]
         if (type === 'message') return content
+        session.$user.usage.show -= 1
         return ctx.command(content).execute({
           session,
           args: [target],
