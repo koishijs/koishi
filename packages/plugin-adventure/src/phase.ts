@@ -1,5 +1,5 @@
 import { Context, User, Session, checkTimer, Command } from 'koishi-core'
-import { capitalize, Logger, Random } from 'koishi-utils'
+import { Logger, Random } from 'koishi-utils'
 import { ReadonlyUser, getValue, Adventurer, Shopper, showMap } from './utils'
 import Event from './event'
 import {} from 'koishi-plugin-common'
@@ -29,7 +29,6 @@ declare module 'koishi-core/dist/session' {
 }
 
 export interface Phase {
-  title?: string
   texts?: string[]
   items?: Record<string, ReadonlyUser.Infer<string>>
   choices?: Phase.Choice[]
@@ -99,17 +98,23 @@ export namespace Phase {
   export const endingMap: Record<string, string> = {}
   export const endingCount: Record<string, number> = {}
   export const reversedEndingMap: Record<string, string> = {}
-  export const storyMap: Record<string, string[]> = {}
+  /** 键：prefix，值：[剧情线名，结局数] */
+  export const lines: Record<string, [string, number]> = {}
   export const badEndings = new Set<string>()
 
-  export function ending(prefix: string, map: Record<string, string>, bad: Pick<string, 'includes'> = '') {
-    storyMap[prefix] = Object.values(map)
-    showMap[prefix] = ['command', 'ending']
+  export function ending(prefix: string, name: string, map: Record<string, string>, bad: Pick<string, 'includes'> = '') {
+    if (prefix in lines) {
+      lines[prefix][1] += Object.keys(map).length
+    } else {
+      lines[prefix] = [name, Object.keys(map).length]
+      showMap[prefix] = 'ending'
+    }
+
     for (const id in map) {
       const name = `${prefix}-${id}`
       endingMap[name] = map[id]
       endingCount[name] = 0
-      showMap[map[id]] = ['command', 'ending']
+      showMap[map[id]] = 'ending'
       reversedEndingMap[map[id]] = name
       if (bad.includes(id)) {
         badEndings.add(name)
@@ -382,11 +387,11 @@ export namespace Phase {
         }
 
         const { endings } = session.$user
-        const stories: Record<string, string[]> = {}
+        const storyMap: Record<string, string[]> = {}
         for (const ending in endings) {
           const [prefix] = ending.split('-', 1)
-          if (!stories[prefix]) stories[prefix] = []
-          stories[prefix].push(endingMap[ending])
+          if (!storyMap[prefix]) storyMap[prefix] = []
+          storyMap[prefix].push(endingMap[ending])
         }
 
         if (names.length) {
@@ -396,25 +401,26 @@ export namespace Phase {
             const [prefix] = id.split('-', 1)
             return [
               `结局「${name}」${badEndings.has(id) ? `（BE）` : ''}`,
-              `来自 ${prefix} 剧情线`,
-              `你已达成 ${endings[id]} 次`,
+              `来源：${lines[prefix][0]}剧情线`,
+              `你已达成：${endings[id] || 0} 次`,
             ].join('\n')
           }
 
-          const story = stories[name]
-          if (!story) return options['pass'] ? next().then(() => '') : `你尚未解锁剧情「${name}」。`
-          const output = story.map((name) => {
+          const titles = storyMap[name]
+          if (!titles) return options['pass'] ? next().then(() => '') : `你尚未解锁剧情「${name}」。`
+          const output = titles.map((name) => {
             const id = reversedEndingMap[name]
             return `${id}. ${name}×${endings[id]}${badEndings.has(id) ? `（BE）` : ''}`
           }).sort()
-          output.unshift(`${session.$username}，你已达成 ${name} 剧情线的 ${story.length}/${storyMap[name].length} 个结局：`)
+          const [title, count] = lines[name]
+          output.unshift(`${session.$username}，你已达成${title}剧情线的 ${titles.length}/${count} 个结局：`)
           return output.join('\n')
         }
 
-        const output = Object.keys(stories).sort().map((key) => {
-          const { length } = stories[key]
-          let output = `${capitalize(key)} (${length}/${storyMap[key].length})`
-          if (length) output += '：' + stories[key].join('，')
+        const output = Object.keys(storyMap).sort().map((key) => {
+          const { length } = storyMap[key]
+          let output = `${key} (${length}/${lines[key][1]})`
+          if (length) output += '：' + storyMap[key].join('，')
           return output
         })
         const totalCount = Object.keys(endingMap).length

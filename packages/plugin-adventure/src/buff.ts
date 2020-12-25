@@ -1,6 +1,6 @@
 import { Context, Command, checkTimer, checkUsage } from 'koishi-core'
 import { Time } from 'koishi-utils'
-import { Adventurer } from './utils'
+import { Adventurer, showMap } from './utils'
 
 declare module 'koishi-core/dist/command' {
   interface Command<U, G, O> {
@@ -44,26 +44,30 @@ namespace Buff {
     }
   }
 
-  export const timers = {
-    $healing: '愈疗加护',
-    $majesty: '威严满满',
-    $drunk: '醉迷恍惚',
-    $dream: '化蝶迷梦',
-    $bargain: '福神恩泽',
-    $mellow: '至醇佳酿',
-    $masu: '神魂涤荡',
-    $dirt: '生死流转',
-    $reverseLucky: '幸运反转',
-    $control: '精神失控',
-    $lottery: '无法抽卡',
-    $system: '无法交互',
-    $game: '无法进行游戏',
-    $use: '无法使用物品',
-    $shop: '无法使用商店',
-    $affinityBonus: '好感度提升',
-    $luckyBonus: '幸运值提升',
-    $priceBouns: '物品售价提升',
+  export const timers: Record<string, [string, string]> = {}
+  export function timer(key: string, name: string, desc: string) {
+    timers[key] = [name, desc]
+    showMap[name] = 'buff'
   }
+
+  timer('$healing', '愈疗加护', '一段时间内免疫状态「无法使用物品」。')
+  timer('$majesty', '威严满满', '获得物品「满盛着威严的盒子」后获得。')
+  timer('$drunk', '醉迷恍惚', '一段时间内进行剧情选择时改为随机选择。')
+  timer('$dream', '化蝶迷梦', '使用物品「蝴蝶梦丸」后获得。')
+  timer('$bargain', '福神恩泽', '一段时间内购买的物品花费减少 40%。')
+  timer('$mellow', '至醇佳酿', '一段时间内幸运值提高 10 点。')
+  timer('$masu', '神魂涤荡', '使用物品「百药枡」后获得。')
+  timer('$dirt', '生死流转', '一段时间内新获得的状态持续时间减半。')
+  timer('$reverseLucky', '幸运反转', '一段时间内幸运值变为原本值的相反数。')
+  timer('$control', '精神失控', '一段时间内使用和出售物品时，有 25% 概率改为丢弃。')
+  timer('$lottery', '无法抽卡', '一段时间内无法调用抽卡功能。')
+  timer('$system', '无法交互', '一段时间内无法调用具有交互功能的指令。')
+  timer('$game', '无法进行游戏', '一段时间内无法调用游戏功能。')
+  timer('$use', '无法使用物品', '一段时间内无法调用使用物品指令。')
+  timer('$shop', '无法使用商店', '一段时间内无法调用商店交互指令。')
+  timer('$affinityBonus', '好感度提升', '一段时间内好感度提高 20 点。')
+  timer('$luckyBonus', '幸运值提升', '一段时间内幸运值提高 5 点。')
+  timer('$priceBouns', '物品售价提升', '一段时间内出售物品获利提高 50%。')
 
   export function clearTimers(user: Adventurer) {
     const count = countTimers(user)
@@ -84,7 +88,7 @@ namespace Buff {
     for (const name in timers) {
       const due = user.timers[name]
       if (now < due) {
-        output.push(`${timers[name]}：剩余 ${Time.formatTime(due - now)}`)
+        output.push(`${timers[name][0]}：剩余 ${Time.formatTime(due - now)}`)
       }
     }
     return output.join('\n')
@@ -103,25 +107,28 @@ namespace Buff {
   }, ['flag'])
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/buff', '查看当前状态', { maxUsage: 100, usageName: 'show' })
+    ctx.command('adventure/buff [name]', '查看当前状态', { maxUsage: 100, usageName: 'show' })
       .userFields(['name'])
       .userFields(fields)
       .shortcut('我的状态')
       .shortcut('查看状态')
-      .action(async ({ session }) => {
-        const output: string[] = []
+      .action(async ({ session }, name) => {
+        if (name) {
+          const entry = Object.entries(timers).find(([, value]) => name === value[0])
+          if (!entry) return `未找到状态「${name}」。`
+          const output = [`状态「${name}」`, entry[1][1]]
+          const now = Date.now(), due = session.$user.timers[entry[0]]
+          if (now < due) output.push(`剩余时间：${Time.formatTime(due - now)}。`)
+          return output.join('\n')
+        }
 
+        const output = [session.$username]
         for (const { callback } of buffList) {
           const result = callback(session.$user)
           if (result) output.push(result)
         }
 
-        if (output.length) {
-          output.unshift(`${session.$username}，你当前的可见状态列表为：`)
-        } else {
-          output.unshift(`${session.$username}，你当前没有可见状态。`)
-        }
-
+        output[0] += output.length > 1 ? '，你当前的可见状态列表为：' : '，你当前没有可见状态。'
         return output.join('\n')
       })
   }

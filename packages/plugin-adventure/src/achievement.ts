@@ -165,7 +165,7 @@ namespace Achievement {
 
   export function add<T extends User.Field = never>(achv: Achievement<T>, fields: Iterable<T> = []) {
     data.push(achv)
-    showMap[achv.name] = ['command', 'achv']
+    showMap[achv.name] = 'achv'
     defineProperty(data, achv.id, achv)
     defineProperty(data, achv.name, achv)
     defineProperty(data, achv.nameEx = achv.nameEx || achv.name + '·里', achv)

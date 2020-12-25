@@ -51,7 +51,7 @@ namespace Event {
 
   export const buy = (itemMap: Readonly<Record<string, number>>): Visible<Shopper.Field> => ({ $user, $app }) => {
     let moneyLost = 0
-    const toBid = $app.adventure.createSeller($user)
+    const toBid = $app.adventure.createBuyer($user)
     for (const name in itemMap) {
       const count = itemMap[name]
       const bid = toBid(name)
@@ -80,8 +80,7 @@ namespace Event {
 
     // 疗伤加护自动抵消无法使用物品的效果
     if (name === '$use' && checkTimer('$healing', $user)) {
-      delete $user.timers['$healing']
-      return `${reason}\n河童的秘药瞬间治愈了 %s 手上的伤！`
+      return `${reason}\n河童的秘药瞬间治愈了 $s 手上的伤！`
     }
 
     // 当死亡时将酒品归零
@@ -242,6 +241,7 @@ namespace Event {
   export const loseRecent = (count: Adventurer.Infer<number>): Event => (session) => {
     const _count = getValue(count, session.$user)
     const recent = session.$user.recent.slice(0, _count)
+    if (!recent.length) return
     const output = [`$s 失去了最后获得的 ${recent.length} 件物品：${Item.format(recent)}！`]
     for (const name of recent) {
       const result = Item.lose(session, name)

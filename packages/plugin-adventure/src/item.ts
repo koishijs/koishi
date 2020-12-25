@@ -41,7 +41,7 @@ namespace Item {
     data[item.rarity].push(item)
     data[item.name] = item
     data.push(item)
-    showMap[item.name] = ['command', 'item']
+    showMap[item.name] = 'item'
   }
 
   export function condition(name: string, condition: Condition) {
@@ -293,7 +293,7 @@ namespace Item {
               delete buyMap[name]
               continue
             } else {
-              buyMap[name] = maxCount - user.warehouse[name]
+              buyMap[name] = maxCount - (user.warehouse[name] || 0)
             }
           } else if (count === -Infinity) {
             if (user.warehouse[name]) {

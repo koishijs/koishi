@@ -114,4 +114,4 @@ export function getValue<U, T extends Adventurer.Field = Adventurer.Field>(sourc
   return typeof source === 'function' ? (source as any)(user) : source
 }
 
-export const showMap: Record<string, ['command' | 'message', string]> = {}
+export const showMap: Record<string, string | (() => string)> = {}

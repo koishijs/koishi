@@ -90,7 +90,7 @@ class MysqlDatabase {
     return keys.map((key) => {
       if (typeof data[key] !== 'object' || types.isDate(data[key])) return data[key]
       const type = MysqlDatabase.tables[table]?.[key]
-      if (typeof type !== 'string') return type.toString(data[key])
+      if (type && typeof type !== 'string') return type.toString(data[key])
       return JSON.stringify(data[key])
     })
   }

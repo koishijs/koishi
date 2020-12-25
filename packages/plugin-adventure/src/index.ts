@@ -63,10 +63,10 @@ export function apply(ctx: Context, config?: Config) {
         return _next(() => next(() => session.$send(`未找到图鉴「${target}」。`)))
       }
       if (target in showMap) {
-        const [type, content] = showMap[target]
-        if (type === 'message') return content
+        const value = showMap[target]
+        if (typeof value === 'function') return value()
         session.$user.usage.show -= 1
-        return ctx.command(content).execute({
+        return ctx.command(value).execute({
           session,
           args: [target],
           options: { pass: true },
