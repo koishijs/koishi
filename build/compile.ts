@@ -9,7 +9,7 @@ const ignored = [
 
 function display(prefix: string) {
   return ({ location, text }: Message) => {
-    if (ignored.includes(text)) return
+    if (ignored.some(message => text.includes(message))) return
     if (!location) return console.log(prefix, text)
     const { file, line, column } = location
     console.log(cyan(`${file}:${line}:${column}:`), prefix, text)
@@ -22,9 +22,14 @@ const displayWarning = display(yellow('warning:'))
 ;(async () => {
   let code = 0
   const root = resolve(__dirname, '../packages')
-  const workspaces = await readdir(root)
+  const workspaces = [
+    'koishi-test-utils/chai',
+    ...await readdir(root),
+  ]
 
   await Promise.all(workspaces.flatMap<BuildOptions>((name) => {
+    if (name.startsWith('.')) return []
+
     const base = `${root}/${name}`
     const entryPoints = [base + '/src/index.ts']
 

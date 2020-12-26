@@ -1,5 +1,6 @@
 import { getValue, Shopper, Adventurer } from './utils'
-import { User, checkTimer, Logger, Session } from 'koishi'
+import { User, checkTimer, Session } from 'koishi-core'
+import { Logger } from 'koishi-utils'
 import Buff from './buff'
 import Item from './item'
 import Luck from './luck'

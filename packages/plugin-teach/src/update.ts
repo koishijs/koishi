@@ -117,7 +117,7 @@ async function revert(dialogues: Dialogue[], argv: Dialogue.Argv) {
 
 export async function update(argv: Dialogue.Argv) {
   const { app, session, options, target, config } = argv
-  const { maxShownDialogues = 10, detailDelay: detailInterval = 500 } = config
+  const { maxShownDialogues = 10, detailDelay = 500 } = config
   const { revert, review, remove, search } = options
 
   options.modify = !review && !search && Object.keys(options).length
@@ -148,7 +148,7 @@ export async function update(argv: Dialogue.Argv) {
     for (let index = 0; index < dialogues.length; index++) {
       const output = [`编号为 ${dialogues[index].id} 的${review ? '历史版本' : '问答信息'}：`]
       await app.serial('dialogue/detail', dialogues[index], output, argv)
-      if (index) await sleep(detailInterval)
+      if (index) await sleep(detailDelay)
       await session.$send(output.join('\n'))
     }
     return
@@ -201,7 +201,18 @@ export async function create(argv: Dialogue.Argv) {
 
   if (argv.dialogues.length) {
     argv.target = argv.dialogues.map(d => d.id)
+    argv.dialogueMap = Object.fromEntries(argv.dialogues.map(d => [d.id, d]))
     const targets = prepareTargets(argv)
+    if (options.remove) {
+      let message = ''
+      if (targets.length) {
+        const editable = targets.map(d => d.id)
+        await app.database.removeDialogues(editable, argv)
+        message = `问答 ${editable.join(', ')} 已成功删除。`
+      }
+      await app.serial('dialogue/after-modify', argv)
+      return sendResult(argv, message)
+    }
     for (const dialogue of targets) {
       app.emit('dialogue/modify', argv, dialogue)
     }

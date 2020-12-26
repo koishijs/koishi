@@ -89,7 +89,7 @@ export interface ParsedArgv<U extends User.Field = never, G extends Channel.Fiel
 }
 
 export interface ExecuteArgv extends Partial<ParsedLine> {
-  command: string | Command
+  command?: string | Command
   next?: NextFunction
 }
 
