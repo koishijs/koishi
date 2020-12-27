@@ -5,6 +5,7 @@ import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
 import { Session, User } from 'koishi-core'
 import { CQCode, Logger } from 'koishi-utils'
+import {} from 'koishi-plugin-puppeteer'
 
 declare module 'koishi-core/dist/database' {
   interface User {

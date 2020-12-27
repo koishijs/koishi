@@ -6,7 +6,6 @@ import { camelize, defineProperty, Time } from 'koishi-utils'
 import { encode } from 'querystring'
 import { addListeners, defaultEvents } from './events'
 import { Config, GitHub, ReplyHandler, EventData } from './server'
-import {} from 'koishi-plugin-puppeteer'
 
 export * from './server'
 
@@ -89,7 +88,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.on('before-attach-user', (session, fields) => {
     if (!session.$reply) return
-    if (history[int32ToHex6(session.$reply.id)]) {
+    if (history[session.$reply.messageId.slice(0, 6)]) {
       fields.add('ghAccessToken')
       fields.add('ghRefreshToken')
     }
@@ -98,7 +97,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.middleware((session, next) => {
     if (!session.$reply) return next()
     const body = session.$parsed.trim()
-    const payloads = history[int32ToHex6(session.$reply.id)]
+    const payloads = history[session.$reply.messageId.slice(0, 6)]
     if (!body || !payloads) return next()
 
     let name: string, message: string
@@ -139,7 +138,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
       // step 4: broadcast message
       const messageIds = await ctx.broadcast(groupIds, config.messagePrefix + result[0])
-      const hexIds = messageIds.map(int32ToHex6)
+      const hexIds = messageIds.map(id => id.slice(0, 6))
 
       // step 5: save message ids for interactions
       for (const id of hexIds) {
@@ -153,9 +152,4 @@ export function apply(ctx: Context, config: Config = {}) {
       }, config.replyTimeout)
     })
   })
-}
-
-function int32ToHex6(source: number) {
-  if (source < 0) source -= 1 << 31
-  return source.toString(16).padStart(8, '0').slice(2)
 }

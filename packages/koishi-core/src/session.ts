@@ -77,7 +77,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   $prefix?: string = null
   $parsed?: string
   $reply?: MessageInfo
-  $uuid = Random.uuid()
+  $uuid?: string
 
   private _delay?: number
   private _queued: Promise<void>
@@ -85,6 +85,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
   constructor(app: App, session: Partial<Session>) {
     defineProperty(this, '$app', app)
+    defineProperty(this, '$uuid', Random.uuid())
     defineProperty(this, '_queued', Promise.resolve())
     defineProperty(this, '_hooks', [])
     Object.assign(this, session)

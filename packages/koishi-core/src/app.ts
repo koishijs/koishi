@@ -55,6 +55,7 @@ export class App extends Context {
   _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
   _groupCache: LruCache<string, Observed<Partial<Channel>, Promise<void>>>
   _httpServer?: http.Server
+  _sessions: Record<string, Session>
 
   private _nameRE: RegExp
   private _prefixRE: RegExp

@@ -10,6 +10,7 @@ export interface KaiheilaMessageInfo extends MessageInfo {
 
 export class KaiheilaBot extends Bot {
   static toMessage(data: KaiheilaMessageInfo) {
+    delete data['channelType']
     renameProperty(data, 'timestamp', 'msgTimestamp')
     renameProperty(data, 'messageId', 'msgId')
     data.content = data.content

@@ -46,8 +46,7 @@ export function apply(ctx: Context, config: Config = {}) {
     try {
       if (!executablePath) {
         const findChrome = require('chrome-finder')
-        logger.info('finding chrome executable path...')
-        config.browser.executablePath = findChrome()
+        logger.info('chrome executable found at %c', config.browser.executablePath = findChrome())
       }
       defineProperty(app, 'browser', await launch(config.browser))
       logger.info('browser launched')
