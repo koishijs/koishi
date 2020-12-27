@@ -149,13 +149,13 @@ namespace Rank {
       const capture = /^(全服|本群)?(.+)(全服|本群)?排[名行]榜?$/.exec(message)
       if (!capture) return
       const global = capture[1] === '全服' || capture[3] === '全服'
-      const result = ctx.bail(session, 'rank', capture[2])
+      const result = ctx.bail(session, 'adventure/rank', capture[2])
       if (!result) return
       const [command, arg0] = result
       return { command, args: [arg0], options: { global, length: global ? 20 : 10 } }
     })
 
-    ctx.on('rank', (name) => {
+    ctx.on('adventure/rank', (name) => {
       return rankMap[name] && ['rank', rankMap[name]]
     })
   }

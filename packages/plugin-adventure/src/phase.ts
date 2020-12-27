@@ -7,14 +7,6 @@ import {} from 'koishi-plugin-teach'
 import Rank from './rank'
 import Item from './item'
 
-declare module 'koishi-core/dist/context' {
-  interface EventMap {
-    'adventure/use'(userId: number, progress: string): void
-    'adventure/text'(text: string, user: Session<Adventurer.Field>): string
-    'adventure/achieve'(user: Session<Adventurer.Field>, hints: string[]): void
-  }
-}
-
 declare module 'koishi-core/dist/session' {
   interface Session<U> {
     /** skip current phase */
@@ -431,7 +423,7 @@ export namespace Phase {
         return output.join('\n')
       })
 
-    ctx.on('rank', (name) => {
+    ctx.on('adventure/rank', (name) => {
       return reversedEndingMap[name] && ['rank.ending', name]
     })
 

@@ -403,7 +403,7 @@ namespace Item {
         await session.$send(hints.join('\n'))
       })
 
-    ctx.on('rank', (name) => {
+    ctx.on('adventure/rank', (name) => {
       let isGain = false
       if (name.startsWith('累计')) {
         name = name.slice(2)

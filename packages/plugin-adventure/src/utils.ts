@@ -1,9 +1,12 @@
-import { User, extendDatabase } from 'koishi-core'
+import { User, extendDatabase, Session } from 'koishi-core'
 import MysqlDatabase from 'koishi-plugin-mysql'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'rank'(name: string): [string, string]
+    'adventure/achieve'(user: Session<Adventurer.Field>, hints: string[]): void
+    'adventure/rank'(name: string): [string, string]
+    'adventure/text'(text: string, user: Session<Adventurer.Field>): string
+    'adventure/use'(userId: number, progress: string): void
   }
 }
 
@@ -12,8 +15,7 @@ declare module 'koishi-core/dist/database' {
     noSR: number
     affinity: number
     achvRank: number
-    achvS: number
-    achvH: number
+    achvCount: number
   }
 
   namespace User {
@@ -45,9 +47,6 @@ User.extend(() => ({
   drunkAchv: 0,
 }))
 
-export const achvS = 'list_length(`achievement`)'
-export const achvH = '(LENGTH(`achievement`) - LENGTH(REPLACE(`achievement`, "-ex" ,""))) / 3'
-
 extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ DataType, tables }) => {
   tables.user.gains = new DataType.Json()
   tables.user.endings = new DataType.Json()
@@ -55,8 +54,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ DataType, tables 
   tables.user.achievement = new DataType.Array()
   tables.user.recent = new DataType.Array()
   tables.user.phases = new DataType.Array()
-  tables.user.achvS = () => achvS
-  tables.user.achvH = () => achvH
+  tables.user.achvCount = () => 'list_length(`achievement`)'
 })
 
 type InferFrom<T, R extends any[]> = T extends (...args: any[]) => any ? never : T | ((...args: R) => T)
