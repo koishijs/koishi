@@ -1,4 +1,4 @@
-import { User, extendDatabase, Session } from 'koishi-core'
+import { User, extendDatabase, Session, Context, Command } from 'koishi-core'
 import MysqlDatabase from 'koishi-plugin-mysql'
 
 declare module 'koishi-core/dist/context' {
@@ -114,4 +114,51 @@ export function getValue<U, T extends Adventurer.Field = Adventurer.Field>(sourc
   return typeof source === 'function' ? (source as any)(user) : source
 }
 
-export const showMap: Record<string, string | (() => string)> = {}
+export namespace Show {
+  const data: Record<string, ShowRedirect | ShowCallback> = {}
+
+  type ShowRedirect = ['redirect', string, ((user: Partial<User>, name: string) => boolean)?]
+  type ShowCallback = ['callback', User.Field[], (user: Partial<User>, name: string) => string | undefined]
+
+  export function redirect(name: string, command: string, callback?: ShowRedirect[2]) {
+    data[name] = ['redirect', command, callback]
+  }
+
+  export function define<K extends User.Field = never>(name: string, callback: ShowCallback[2], fields: K[] = []) {
+    data[name] = ['callback', fields, callback]
+  }
+
+  export function apply(ctx: Context) {
+    ctx.command('adventure/show [name]', '查看图鉴', { maxUsage: 100 })
+      .shortcut('查看', { fuzzy: true })
+      .userFields(['usage'])
+      .userFields((argv, fields) => {
+        const target = argv.args.join('')
+        argv.session.content = `show:${target}`
+        const item = data[target]
+        if (!item) return
+        if (item[0] === 'redirect') {
+          const command = argv.command = ctx.command(item[1])
+          Object.assign(argv, command.parse(argv.source.slice(5)))
+          Command.collect(argv, 'user', fields)
+        } else if (item[0] === 'callback') {
+          for (const field of item[1]) {
+            fields.add(field)
+          }
+        }
+      })
+      .action(({ session, args, next }) => {
+        const target = session.content.slice(5)
+        const item = data[target]
+        if (!item) return next(() => session.$send(`未解锁图鉴「${target}」。`))
+        if (item[0] === 'redirect') {
+          const result = item[2]?.(session.$user, target)
+          if (result) return next(() => session.$send(`未解锁图鉴「${target}」。`))
+          return ctx.command(item[1]).execute({ session, args, options: { pass: true }, next })
+        } else if (item[0] === 'callback') {
+          const result = item[2]?.(session.$user, target)
+          return result || next(() => session.$send(`未解锁图鉴「${target}」。`))
+        }
+      })
+  }
+}

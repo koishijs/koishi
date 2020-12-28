@@ -1,6 +1,6 @@
 import { User, Context, Session } from 'koishi-core'
 import { difference, defineProperty, union, makeArray } from 'koishi-utils'
-import { showMap } from './utils'
+import { Show } from './utils'
 import Profile from './profile'
 import Rank from './rank'
 
@@ -16,7 +16,7 @@ const leaderReward = [1000, 500, 200]
 const leaderName = ['首杀', '第二杀', '第三杀']
 const levelName = 'ⅠⅡⅢⅣⅤ'
 
-interface Achievement<T extends User.Field = User.Field> {
+interface Achievement<T extends User.Field = never> {
   id: string
   category: string
   name: string | string[]
@@ -26,6 +26,7 @@ interface Achievement<T extends User.Field = User.Field> {
   count?: number
   progress?: (user: Pick<User, T>) => number
   hidden?: true | ((user: Pick<User, T>) => boolean)
+  parent?: Achievement
 }
 
 interface Category {
@@ -35,8 +36,10 @@ interface Category {
 
 namespace Achievement {
   export let theoretical = 0
+  const catMap: Record<string, Category> = {}
+  const achvMap: Record<string, Achievement> = {}
+  const categories: Category[] & Record<string, Category> = [] as any
   const data: Achievement[] & Record<string, Achievement> = [] as any
-  const categories: Record<string, Category> & Category[] = [] as any
   const fields = new Set<User.Field>(['achievement', 'name', 'flag'])
 
   Session.prototype.achieve = function (this: Session<AchvField>, id, hints, achieve = true) {
@@ -87,8 +90,8 @@ namespace Achievement {
   function findAchievements(names: string[]) {
     const notFound: string[] = [], ids: string[] = []
     for (const name of names) {
-      if (data[name]) {
-        ids.push(data[name].id)
+      if (achvMap[name]) {
+        ids.push(achvMap[name].id)
       } else {
         notFound.push(name)
       }
@@ -100,6 +103,10 @@ namespace Achievement {
     if (typeof desc === 'string') return +user.achievement.includes(id)
     const item = user.achievement.find(item => item.startsWith(id))
     return item ? +item.slice(id.length + 1) : 0
+  }
+
+  function getHidden(user: Pick<User, 'achievement'>, { hidden }: Achievement) {
+    return typeof hidden === 'function' ? hidden(user) : hidden
   }
 
   export function affinity(user: Pick<User, 'achievement'>, achvs: Achievement[] = data) {
@@ -121,26 +128,35 @@ namespace Achievement {
       : achv.desc.map((_, i) => data[`${achv.id}-${i + 1}`] as Standalone)
   }
 
+  function checkHidden(user: Pick<User, 'achievement'>, name: string) {
+    const achv = achvMap[name]
+    return !getLevel(user, achv) && getHidden(user, achv)
+  }
+
   export function add<T extends User.Field = never>(achv: Achievement<T>, userFields: Iterable<T> = []) {
     data.push(achv)
-    if (typeof achv.name === 'string') {
-      showMap[achv.name as string] = 'achv'
-      defineProperty(data, achv.name, achv)
-    }
     defineProperty(data, achv.id, achv)
+    if (typeof achv.name === 'string') {
+      Show.redirect(achv.name, 'achv', checkHidden)
+      achvMap[achv.name] = achv
+    }
     if (typeof achv.desc === 'string') {
       theoretical += achv.affinity
     } else {
       achv.desc.forEach((desc, index) => {
         theoretical += achv.affinity
         const subAchv: Achievement.Standalone = Object.create(achv)
+        subAchv.count = 0
         subAchv.desc = desc
-        defineProperty(data, subAchv.id = `${achv.id}-${index + 1}`, subAchv)
+        subAchv.parent = achv
+        subAchv.id = `${achv.id}-${index + 1}`
+        defineProperty(data, subAchv.id, subAchv)
         if (typeof achv.name === 'string') {
-          subAchv.name = `${achv.name}${levelName[index]}`
+          subAchv.name = `${achv.name} ${levelName[index]}`
         } else {
-          showMap[subAchv.name = achv.name[index]] = 'achv'
-          defineProperty(data, subAchv.name, achv)
+          subAchv.name = achv.name[index]
+          Show.redirect(subAchv.name, 'achv', checkHidden)
+          achvMap[subAchv.name] = achv
         }
       })
     }
@@ -150,11 +166,13 @@ namespace Achievement {
     getCategory(achv.category).data.push(achv)
   }
 
-  export function category(id: string, name: string) {
+  export function category(id: string, ...names: string[]) {
     const category = getCategory(id)
-    category.name = name
-    showMap[name] = 'achv'
-    defineProperty(categories, name, category)
+    category.name = names[0]
+    for (const name of names) {
+      Show.redirect(name, 'achv')
+      catMap[name] = category
+    }
   }
 
   interface Options {
@@ -171,26 +189,31 @@ namespace Achievement {
       return `${name} (${count}/${data.length})`
     })
 
-    output.unshift(`，您已获得成就：${total}/${data.length}，奖励好感度：${affinity(target)}`)
+    output.unshift(`${target.name}，您已获得 ${total}/${data.length} 个成就，奖励好感度：${affinity(target)}`)
     output.push('要查看特定的成就或分类，请输入“四季酱，成就 成就名/分类名”。')
     return output.join('\n')
   }
 
-  function showCategoryForced(data: Achievement[]) {
+  function showCategoryForced({ name, data }: Category) {
     let theoretical = 0
     const output = data.map((achv) => {
       const children = getChildren(achv)
       theoretical += children.length * achv.affinity
       return typeof achv.name === 'string'
-        ? `${achv.name}（${children.map(achv => `#${achv.count}`).join(' => ')}）`
-        : children.map(({ name, count }) => `${name}（#${count}）`).join(' => ')
+        ? `${achv.name} (${children.map(achv => `#${achv.count}`).join(' => ')})`
+        : children.map(({ name, count }) => `${name} (#${count})`).join(' => ')
     })
-    output.unshift(`成就总数：${data.length}，理论好感度：${theoretical}`)
+    output.unshift(`「${name}」\n成就总数：${data.length}，理论好感度：${theoretical}`)
     output.push('要查看特定成就的取得条件，请输入“四季酱，成就 成就名”。')
     return output.join('\n')
   }
 
-  function showCategory(target: User.Observed, data: Achievement[], options: Options) {
+  function getProgress(target: User.Observed, achv: Achievement) {
+    const { progress = () => 0 } = achv
+    return `（${(progress(target) * 100).toFixed()}%）`
+  }
+
+  function showCategory(target: User.Observed, { name, data }: Category, options: Options) {
     const { achieved, unachieved } = options
     let count = 0
     const output = data.map((achv) => {
@@ -198,16 +221,21 @@ namespace Achievement {
       if (level) count++
       if (achieved && !unachieved && !level) return
       if (!achieved && unachieved && level) return
-      if (level) return `${getChildren(achv)[level - 1].name}（已获得 +${level * achv.affinity}）`
+      if (level) {
+        const name = typeof achv.name !== 'string'
+          ? getChildren(achv)[level - 1].name
+          : achv.name
+        return `${name}（已获得 +${level * achv.affinity}）`
+      }
 
-      const { name, hidden, progress = () => 0 } = achv
+      const { name, hidden } = achv
       const isHidden = !level && (typeof hidden === 'function' ? hidden(target) : hidden)
       if (!achieved && !unachieved && isHidden) return
-      return `${isHidden ? '？？？？' : name}（${(progress(target) * 100).toFixed()}%）`
+      return `${isHidden ? '？？？？' : makeArray(name)[level && level - 1]}${getProgress(target, achv)}`
     }).filter(Boolean)
 
     const bonus = affinity(target, data)
-    output.unshift(`，您已获得成就：${count}/${data.length}，奖励好感度：${bonus}`)
+    output.unshift(`「${name}」\n${target.name}，您已达成 ${count}/${data.length} 个成就，奖励好感度：${bonus}`)
     output.push('要查看特定成就的取得条件，请输入“四季酱，成就 成就名”。')
     return output.join('\n')
   }
@@ -215,11 +243,13 @@ namespace Achievement {
   export function apply(ctx: Context) {
     ctx.command('adventure/achievement [name]', '成就信息', { maxUsage: 100, usageName: 'show' })
       .userFields(fields)
-      .alias('成就', 'achv')
+      .alias('achv')
       .shortcut('查看成就')
       .shortcut('我的成就')
+      .shortcut('成就', { fuzzy: true })
       .option('achieved', '-a  显示已获得的成就')
       .option('unachieved', '-A  显示未获得的成就')
+      .option('full', '-f  显示全部成就')
       .option('forced', '-F  强制查看', { authority: 4, hidden: true })
       .option('set', '-s  添加成就', { authority: 4 })
       .option('unset', '-S  删除成就', { authority: 4 })
@@ -238,51 +268,46 @@ namespace Achievement {
         }
 
         const [key] = names
-        if (!key) return session.$username + showCategories(target)
+        if (!key) return showCategories(target)
 
-        if (key in categories) {
+        if (key in catMap) {
+          if (options.full) options.achieved = options.unachieved = true
           return options.forced
-            ? showCategoryForced(categories[key].data)
-            : session.$username + showCategory(target, categories[key].data, options)
+            ? showCategoryForced(catMap[key])
+            : showCategory(target, catMap[key], options)
         }
 
         const { forced } = options
-        const achv = data[key]
+        const achv = achvMap[key]
         if (!achv) return next().then(() => `没有找到成就「${key}」。`)
 
-        const { name, progress = () => 0, affinity, desc, hidden, descHidden } = achv
+        const { name, affinity, desc, hidden, descHidden } = achv
         const currentLevel = getLevel(target, achv)
-        const targetLevel = makeArray(name).indexOf(key) + 1
-        const isHidden = currentLevel
-          ? currentLevel < targetLevel
-          : typeof hidden === 'function' ? hidden(target) : hidden
+        const isHidden = !currentLevel && (typeof hidden === 'function' ? hidden(target) : hidden)
         if (isHidden && !forced) {
           if (!options['pass']) return `没有找到成就「${key}」。`
           return next().then(() => '')
         }
 
         // 多级成就，每级名称不同
-        const displayLevel = forced ? Infinity : currentLevel || 1
         if (typeof name !== 'string') {
-          const status = forced ? ''
-            : currentLevel
-              ? `（已获得 +${affinity}）`
-              : `（${(progress(target) * 100).toFixed()}%）`
-          return name.slice(0, displayLevel).map((name, index) => {
+          return name.map((name, index) => {
+            const status = forced ? ''
+              : currentLevel > index ? `（已获得 +${affinity}）`
+                : index ? '（未获得）' : getProgress(target, achv)
             return `成就「${name}」${status}\n${desc[index]}`
           }).join('\n')
         }
 
         // 使用唯一的成就名
-        const output = makeArray(desc).slice(0, displayLevel).map((desc, index) => {
+        const output = makeArray(desc).map((levelDesc, index) => {
           return (typeof desc === 'string' ? '' : levelName[index] + ' ')
-            + (!forced && !currentLevel && descHidden ? descHidden : desc)
+            + (!forced && !currentLevel && descHidden ? descHidden : levelDesc)
+            + (currentLevel > index ? `（+${affinity}）` : '')
         })
         output.unshift(`成就「${name}」`)
         if (!forced) {
-          output[0] += currentLevel
-            ? `（已获得 +${currentLevel * affinity}）`
-            : `（${(progress(target) * 100).toFixed()}%）`
+          output[0] += currentLevel ? `（已获得）` : getProgress(target, achv)
         }
         return output.join('\n')
       })
@@ -297,7 +322,16 @@ namespace Achievement {
       }
       const [result] = await ctx.database.query<[Record<string, number>]>(sql.slice(0, -1))
       for (const key in result) {
-        data[key].count = result[key]
+        const achv = data[key]
+        if (!achv.parent) {
+          achv.count = result[key]
+        } else {
+          const { id } = achv.parent
+          const level = +key.slice(id.length + 1)
+          for (let i = level; i > 0; --i) {
+            data[`${id}-${i}`].count += result[key]
+          }
+        }
       }
     })
   }

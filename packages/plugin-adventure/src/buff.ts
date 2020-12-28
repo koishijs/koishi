@@ -1,6 +1,6 @@
 import { Context, Command, checkTimer, checkUsage } from 'koishi-core'
 import { Time } from 'koishi-utils'
-import { Adventurer, showMap } from './utils'
+import { Adventurer, Show } from './utils'
 
 declare module 'koishi-core/dist/command' {
   interface Command<U, G, O> {
@@ -15,7 +15,7 @@ Command.prototype.checkTimer = function (this: Command, name) {
     const buff = Buff.timers[name]
     if (blocked && buff && !checkUsage(name + 'Hint', user, 1)) {
       const rest = user.timers[name] - Date.now()
-      session.$send(`您当前处于「${buff}」状态，无法调用本功能，剩余 ${Time.formatTime(rest)}。`)
+      session.$send(`您当前处于「${buff[0]}」状态，无法调用本功能，剩余 ${Time.formatTime(rest)}。`)
     }
     return blocked
   })
@@ -47,27 +47,20 @@ namespace Buff {
   export const timers: Record<string, [string, string]> = {}
   export function timer(key: string, name: string, desc: string) {
     timers[key] = [name, desc]
-    showMap[name] = 'buff'
+    Show.redirect(name, 'buff')
   }
 
   timer('$healing', '愈疗加护', '一段时间内免疫状态「无法使用物品」。')
-  timer('$majesty', '威严满满', '获得物品「满盛着威严的盒子」后获得。')
   timer('$drunk', '醉迷恍惚', '一段时间内进行剧情选择时改为随机选择。')
-  timer('$dream', '化蝶迷梦', '使用物品「蝴蝶梦丸」后获得。')
-  timer('$bargain', '福神恩泽', '一段时间内购买的物品花费减少 40%。')
   timer('$mellow', '至醇佳酿', '一段时间内幸运值提高 10 点。')
-  timer('$masu', '神魂涤荡', '使用物品「百药枡」后获得。')
   timer('$dirt', '生死流转', '一段时间内新获得的状态持续时间减半。')
   timer('$reverseLucky', '幸运反转', '一段时间内幸运值变为原本值的相反数。')
-  timer('$control', '精神失控', '一段时间内使用和出售物品时，有 25% 概率改为丢弃。')
   timer('$lottery', '无法抽卡', '一段时间内无法调用抽卡功能。')
   timer('$system', '无法交互', '一段时间内无法调用具有交互功能的指令。')
   timer('$game', '无法进行游戏', '一段时间内无法调用游戏功能。')
   timer('$use', '无法使用物品', '一段时间内无法调用使用物品指令。')
   timer('$shop', '无法使用商店', '一段时间内无法调用商店交互指令。')
-  timer('$affinityBonus', '好感度提升', '一段时间内好感度提高 20 点。')
   timer('$luckyBonus', '幸运值提升', '一段时间内幸运值提高 5 点。')
-  timer('$priceBouns', '物品售价提升', '一段时间内出售物品获利提高 50%。')
 
   export function clearTimers(user: Adventurer) {
     const count = countTimers(user)

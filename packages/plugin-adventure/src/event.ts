@@ -170,11 +170,15 @@ namespace Event {
         if (!session._skipAll) output += '\n' + Item.data[name].description
         if (result) output += '\n' + result
       } else {
-        const { warehouse } = session.$user
+        const { warehouse, gains } = session.$user
         const _count = getValue(arg, session.$user)
-        const isOld = name in warehouse
-        if (!isOld) warehouse[name] = 0
+        const isOld = name in gains
+        if (!isOld) {
+          warehouse[name] = 0
+          gains[name] = 0
+        }
         warehouse[name] += _count
+        gains[name] += _count
         output = `$s ${isOld ? '' : '首次'}获得了${name}×${_count}！`
         if (!session._skipAll) output += '\n' + Item.data[name].description
       }

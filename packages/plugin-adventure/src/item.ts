@@ -1,10 +1,11 @@
 import { Context, checkTimer, ParsedArgv, Session, User } from 'koishi-core'
 import { isInteger, Random } from 'koishi-utils'
-import { getValue, Shopper, Adventurer, ReadonlyUser, showMap } from './utils'
+import { getValue, Shopper, Adventurer, ReadonlyUser, Show } from './utils'
 import Event from './event'
 import Phase from './phase'
 import Rank from './rank'
 
+type Note = (user: Pick<ReadonlyUser, 'flag' | 'warehouse'>) => string
 type Condition = (user: ReadonlyUser, isLast: boolean) => boolean
 
 interface Item {
@@ -19,6 +20,7 @@ interface Item {
   lottery?: number
   fishing?: number
   plot?: boolean
+  note?: Note
   condition?: Condition
 }
 
@@ -37,12 +39,20 @@ namespace Item {
   data.EX = []
   data.SP = []
 
+  function checkHidden(user: Pick<User, 'gains'>, target: string) {
+    return !(target in user.gains)
+  }
+
   export function load(item: Item) {
     if (!item.maxCount) item.maxCount = 10
     data[item.rarity].push(item)
     data[item.name] = item
     data.push(item)
-    showMap[item.name] = 'item'
+    Show.redirect(item.name, 'item', checkHidden)
+  }
+
+  export function note(name: string, note: Note) {
+    data[name].note = note
   }
 
   export function condition(name: string, condition: Condition) {
@@ -182,7 +192,7 @@ namespace Item {
 
   export function apply(ctx: Context) {
     ctx.command('adventure/item [item]', '查看物品', { maxUsage: 100, usageName: 'show' })
-      .userFields(['id', 'warehouse', 'achievement', 'name', 'gains', 'authority', 'timers'])
+      .userFields(['id', 'warehouse', 'achievement', 'name', 'gains', 'authority', 'timers', 'flag'])
       .shortcut('查看背包')
       .shortcut('我的背包')
       .shortcut('查看物品')
@@ -250,6 +260,8 @@ namespace Item {
         }
         if (item.plot || !source.length) source.push('剧情')
         output.push(`获取来源：${source.join(' / ')}`)
+        const result = item.note?.(session.$user)
+        if (result) output.push(result)
         output.push(item.description)
         return output.join('\n')
       })
@@ -411,7 +423,7 @@ namespace Item {
         if (!Item.data[name]) return suggest(argv)
         return Rank.show({
           names: ['持有' + name],
-          value: `\`warehouse\`->'$."${name}"'`,
+          value: `json_extract(\`warehouse\`, '$."${name}"')`,
           format: ' 件',
         }, session, options)
       })
@@ -423,7 +435,7 @@ namespace Item {
         if (!Item.data[name]) return suggest(argv)
         return Rank.show({
           names: ['累计获得' + name],
-          value: `\`gains\`->'$."${name}"'`,
+          value: `json_extract(\`gains\`, '$."${name}"')`,
           format: ' 件',
         }, session, options)
       })

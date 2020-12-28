@@ -1,6 +1,6 @@
 import { Context, User, Session, checkTimer, Command } from 'koishi-core'
 import { Logger, Random } from 'koishi-utils'
-import { ReadonlyUser, getValue, Adventurer, Shopper, showMap } from './utils'
+import { ReadonlyUser, getValue, Adventurer, Shopper, Show } from './utils'
 import Event from './event'
 import {} from 'koishi-plugin-common'
 import {} from 'koishi-plugin-teach'
@@ -94,19 +94,27 @@ export namespace Phase {
   export const lines: Record<string, [string, number]> = {}
   export const badEndings = new Set<string>()
 
+  function checkLine(user: Pick<User, 'endings'>, target: string) {
+    return !Object.keys(user.endings).some(name => name.startsWith(target))
+  }
+
+  function checkEnding(user: Pick<User, 'endings'>, target: string) {
+    return !(target in user.endings)
+  }
+
   export function ending(prefix: string, name: string, map: Record<string, string>, bad: Pick<string, 'includes'> = '') {
     if (prefix in lines) {
       lines[prefix][1] += Object.keys(map).length
     } else {
       lines[prefix] = [name, Object.keys(map).length]
-      showMap[prefix] = 'ending'
+      Show.redirect(name, 'ending', checkLine)
     }
 
     for (const id in map) {
       const name = `${prefix}-${id}`
       endingMap[name] = map[id]
       endingCount[name] = 0
-      showMap[map[id]] = 'ending'
+      Show.redirect(map[id], 'ending', checkEnding)
       reversedEndingMap[map[id]] = name
       if (bad.includes(id)) {
         badEndings.add(name)
@@ -436,7 +444,7 @@ export namespace Phase {
         }
         return Rank.show({
           names: [endingMap[name]],
-          value: `\`endings\`->'$."${name}"'`,
+          value: `json_extract(\`endings\`, '$."${name}"')`,
           format: ' 次',
         }, session, options)
       })

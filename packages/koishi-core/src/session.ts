@@ -349,6 +349,7 @@ export interface StatusInfo {
 
 export interface MessageInfo {
   messageId: string
+  channelId: string
   type: EventTypeMap['message']
   content: string
   timestamp: number

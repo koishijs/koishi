@@ -10,7 +10,7 @@ export interface KaiheilaMessageInfo extends MessageInfo {
 
 export class KaiheilaBot extends Bot {
   static toMessage(data: KaiheilaMessageInfo) {
-    delete data['channelType']
+    renameProperty(data, 'channelId', 'targetId')
     renameProperty(data, 'timestamp', 'msgTimestamp')
     renameProperty(data, 'messageId', 'msgId')
     data.content = data.content
@@ -19,6 +19,8 @@ export class KaiheilaBot extends Bot {
       .replace(/@在线成员/, () => `[CQ:at,type=here]`)
       .replace(/@role:(\d+);/, (_, $1) => `[CQ:at,role=${$1}]`)
       .replace(/#channel:(\d+);/, (_, $1) => `[CQ:sharp,id=${$1}]`)
+    delete data['channelType']
+    delete data['verifyToken']
   }
 
   parseChannel(source: string) {

@@ -124,8 +124,7 @@ Server.types.kaiheila = class HttpServer extends Server<KaiheilaBot> {
         userId: data.d.authorId,
         eventType: 'message',
         kind: 'kaiheila',
-        channelId: data.d.targetId,
-        subType: data.d.targetId ? 'group' : 'private',
+        subType: meta.channelId ? 'group' : 'private',
       })
 
       // dispatch events
