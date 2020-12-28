@@ -117,13 +117,13 @@ export class Bot {
       eventType: 'send',
       selfId: this.selfId,
       [ctxType + 'Id']: ctxId,
-      time: Math.round(Date.now() / 1000),
+      timestamp: Math.round(Date.now() / 1000),
     })
   }
 
   async getGroupMemberMap(groupId: string) {
     const list = await this.getGroupMemberList(groupId)
-    return Object.fromEntries(list.map(info => [info.id, info.nick || info.name]))
+    return Object.fromEntries(list.map(info => [info.userId, info.nick || info.name]))
   }
 
   async broadcast(channels: string[], message: string, delay = this.app.options.delay.broadcast) {

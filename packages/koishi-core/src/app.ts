@@ -189,7 +189,7 @@ export class App extends Context {
       session.$reply = await session.$bot.getMessage(session.channelId, capture[1]).catch(noop)
       message = message.slice(capture[0].length)
       if (session.$reply) {
-        const prefix = `[CQ:at,qq=${session.$reply.sender.userId}]`
+        const prefix = `[CQ:at,qq=${session.$reply.author.userId}]`
         message = message.slice(prefix.length).trimStart()
       }
     }

@@ -66,7 +66,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       if (user.id !== +user.name) {
         userMap[user.id] = user.name
       } else if (user[session.kind] === session.userId) {
-        userMap[user.id] = session.sender.card || session.sender.nickname
+        userMap[user.id] = session.author.nick || session.author.name
       } else {
         hasUnnamed = true
       }

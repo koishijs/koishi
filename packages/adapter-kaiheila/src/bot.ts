@@ -1,26 +1,53 @@
 /* eslint-disable quote-props */
 
-import { App, Bot, BotStatusCode, MessageInfo, Session } from 'koishi-core'
-import { camelize, CQCode, renameProperty, snakeCase } from 'koishi-utils'
+import { App, AuthorInfo, Bot, BotStatusCode, MessageInfo, Session } from 'koishi-core'
+import { camelize, CQCode, pick, renameProperty, snakeCase } from 'koishi-utils'
 import axios, { Method } from 'axios'
 
-export interface KaiheilaMessageInfo extends MessageInfo {
+export interface KaiheilaAuthorInfo extends AuthorInfo {
+  avatar?: string
+  descriminator?: string
+}
 
+export interface KaiheilaMessageInfo extends MessageInfo {
+  channelName?: string
+  mention?: string[]
+  mentionRoles?: string[]
+  mentionAll?: boolean
+  mentionHere?: boolean
+  author?: KaiheilaAuthorInfo
 }
 
 export class KaiheilaBot extends Bot {
-  static toMessage(data: KaiheilaMessageInfo) {
+  static toMessage(data: KaiheilaMessageInfo & Record<string, any>) {
     renameProperty(data, 'channelId', 'targetId')
     renameProperty(data, 'timestamp', 'msgTimestamp')
     renameProperty(data, 'messageId', 'msgId')
+    renameProperty(data, 'userId', 'authorId')
+    const { author, channelName, guildId } = data.extra
+    data.channelName = channelName
+    data.groupId = guildId
+    data.author = {
+      userId: data.userId,
+      descriminator: author.identifyNum,
+      avatar: author.avatar,
+      name: author.username,
+      nick: author.nickname,
+      roles: author.roles,
+    }
+    data.messageType = data['channelType'] === 'GROUP' ? 'group' : 'private'
     data.content = data.content
       .replace(/@(.+?)#(\d+)/, (_, $1, $2) => `[CQ:at,qq=${$2}]`)
       .replace(/@全体成员/, () => `[CQ:at,type=all]`)
       .replace(/@在线成员/, () => `[CQ:at,type=here]`)
       .replace(/@role:(\d+);/, (_, $1) => `[CQ:at,role=${$1}]`)
       .replace(/#channel:(\d+);/, (_, $1) => `[CQ:sharp,id=${$1}]`)
-    delete data['channelType']
-    delete data['verifyToken']
+    Object.assign(data, pick(data.extra, ['mention', 'mentionRoles', 'memtionAll', 'mentionHere']))
+    delete data.channelType
+    delete data.verifyToken
+    delete data.nonce
+    delete data.type
+    delete data.extra
   }
 
   parseChannel(source: string) {

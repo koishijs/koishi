@@ -25,27 +25,21 @@ export interface EventTypeMap {
 }
 
 /** CQHTTP Meta Information */
-export interface Meta<E extends EventType = EventType> {
-  kind?: PlatformType
-
-  // type
+export interface Meta<E extends EventType = EventType> extends MessageInfo {
   eventType?: E
-  subType?: EventTypeMap[E]
-
-  // basic properties
-  channelId?: string
-  ancestors?: string[]
+  kind?: PlatformType
   selfId?: string
-  userId?: string
-  groupId?: string
-  time?: number
+
+  // TODO
+  subType?: EventTypeMap[E]
+  ancestors?: string[]
 
   // message event
   messageId?: string
   content?: string
   rawMessage?: string
   font?: number
-  sender?: SenderInfo
+  author?: AuthorInfo
   anonymous?: AnonymousInfo
 
   // notice event
@@ -106,8 +100,8 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       ? this.$user['name']
       : this.anonymous
         ? this.anonymous.name
-        : this.sender
-          ? this.sender.card || this.sender.nickname
+        : this.author
+          ? this.author.nick || this.author.name
           : '' + this.userId
     return this.$app.chain('appellation', defaultName, this)
   }
@@ -159,7 +153,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     }))
   }
 
-  async $getChannel<K extends Channel.Field = never>(id: string = this.groupId, fields: readonly K[] = [], assignee?: string) {
+  async $getChannel<K extends Channel.Field = never>(id: string = this.channelId, fields: readonly K[] = [], assignee?: string) {
     const group = await this.$app.database.getChannel(this.kind, id, fields)
     if (group) return group
     const fallback = Channel.create(this.kind, id, assignee)
@@ -330,14 +324,6 @@ export interface StrangerInfo extends AccountInfo {
 
 export type GroupRole = 'owner' | 'admin' | 'member'
 
-export interface SenderInfo extends StrangerInfo {
-  area?: string
-  card?: string
-  level?: string
-  role?: GroupRole
-  title?: string
-}
-
 export interface StatusInfo {
   appInitialized: boolean
   appEnabled: boolean
@@ -348,21 +334,23 @@ export interface StatusInfo {
 }
 
 export interface MessageInfo {
-  messageId: string
-  channelId: string
-  type: EventTypeMap['message']
-  content: string
-  timestamp: number
-  sender: SenderInfo
+  messageId?: string
+  channelId?: string
+  groupId?: string
+  userId?: string
+  messageType?: EventTypeMap['message']
+  content?: string
+  timestamp?: number
+  author?: AuthorInfo
 }
 
 export interface GroupInfo {
-  id: string
+  groupId: string
   name: string
 }
 
 export interface UserInfo {
-  id: string
+  userId: string
   name: string
 }
 
@@ -370,3 +358,5 @@ export interface GroupMemberInfo extends UserInfo {
   nick: string
   roles: string[]
 }
+
+export interface AuthorInfo extends GroupMemberInfo {}

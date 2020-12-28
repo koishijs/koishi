@@ -24,7 +24,7 @@ interface SuggestOptions {
 }
 
 export function getSessionId(session: Session) {
-  return '' + session.userId + session.groupId
+  return '' + session.userId + session.channelId
 }
 
 Session.prototype.$use = function $use(this: Session, middleware: Middleware) {

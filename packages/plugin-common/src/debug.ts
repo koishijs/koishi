@@ -58,10 +58,10 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
 
   const userMap: Record<string, [string | Promise<string>, number]> = {}
 
-  function getSenderName({ anonymous, sender, userId }: Session) {
+  function getSenderName({ anonymous, author, userId }: Session) {
     return anonymous
       ? anonymous.name + (showUserId ? ` (${anonymous.id})` : '')
-      : (userMap[userId] = [sender.nickname, Date.now()])[0]
+      : (userMap[userId] = [author.nick, Date.now()])[0]
       + (showUserId ? ` (${userId})` : '')
   }
 

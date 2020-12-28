@@ -116,7 +116,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
         if (!id) return '未指定目标。'
 
         newSession.userId = id
-        newSession.sender.userId = id
+        newSession.author.userId = id
 
         delete newSession.$user
         const user = await newSession.$observeUser(User.fields)
@@ -127,10 +127,10 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
 
       if (options.group) {
         const info = await session.$bot.getGroupMember(newSession.groupId, newSession.userId).catch(() => ({}))
-        Object.assign(newSession.sender, info)
+        Object.assign(newSession.author, info)
       } else if (options.user) {
         const info = await session.$bot.getUser(newSession.userId).catch(() => ({}))
-        Object.assign(newSession.sender, info)
+        Object.assign(newSession.author, info)
       }
 
       return newSession.$execute(message)

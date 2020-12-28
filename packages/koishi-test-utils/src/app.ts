@@ -100,8 +100,8 @@ export class MockedApp extends App {
     return session.$uuid
   }
 
-  session(userId: number, groupId?: number) {
-    return new TestSession(this, userId, groupId)
+  session(userId: number, channelId?: number) {
+    return new TestSession(this, userId, channelId)
   }
 }
 
@@ -110,7 +110,7 @@ export class TestSession {
 
   private replies: string[] = []
 
-  constructor(public app: MockedApp, public userId: number, public groupId?: number) {
+  constructor(public app: MockedApp, public userId: number, public channelId?: number) {
     this.meta = {
       postType: 'message',
       userId,
@@ -122,8 +122,8 @@ export class TestSession {
       },
     }
 
-    if (groupId) {
-      this.meta.groupId = groupId
+    if (channelId) {
+      this.meta.channelId = channelId
       this.meta.messageType = 'group'
     } else {
       this.meta.messageType = 'private'
