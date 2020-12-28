@@ -177,8 +177,10 @@ namespace Achievement {
   }
 
   function showCategoryForced(data: Achievement[]) {
+    let theoretical = 0
     const output = data.map((achv) => {
       const children = getChildren(achv)
+      theoretical += children.length * achv.affinity
       return typeof achv.name === 'string'
         ? `${achv.name}（${children.map(achv => `#${achv.count}`).join(' => ')}）`
         : children.map(({ name, count }) => `${name}（#${count}）`).join(' => ')
@@ -204,7 +206,7 @@ namespace Achievement {
       return `${isHidden ? '？？？？' : name}（${(progress(target) * 100).toFixed()}%）`
     }).filter(Boolean)
 
-    const bonus = affinity(target)
+    const bonus = affinity(target, data)
     output.unshift(`，您已获得成就：${count}/${data.length}，奖励好感度：${bonus}`)
     output.push('要查看特定成就的取得条件，请输入“四季酱，成就 成就名”。')
     return output.join('\n')
@@ -251,27 +253,30 @@ namespace Achievement {
         const { name, progress = () => 0, affinity, desc, hidden, descHidden } = achv
         const currentLevel = getLevel(target, achv)
         const targetLevel = makeArray(name).indexOf(key) + 1
-        const isHidden = currentLevel < targetLevel
-          || !currentLevel && (typeof hidden === 'function' ? hidden(target) : hidden)
+        const isHidden = currentLevel
+          ? currentLevel < targetLevel
+          : typeof hidden === 'function' ? hidden(target) : hidden
         if (isHidden && !forced) {
           if (!options['pass']) return `没有找到成就「${key}」。`
           return next().then(() => '')
         }
 
         // 多级成就，每级名称不同
+        const displayLevel = forced ? Infinity : currentLevel || 1
         if (typeof name !== 'string') {
           const status = forced ? ''
             : currentLevel
               ? `（已获得 +${affinity}）`
               : `（${(progress(target) * 100).toFixed()}%）`
-          return name.slice(0, forced ? Infinity : currentLevel || 1).map((name, index) => {
+          return name.slice(0, displayLevel).map((name, index) => {
             return `成就「${name}」${status}\n${desc[index]}`
           }).join('\n')
         }
 
         // 使用唯一的成就名
-        const output = makeArray(desc).slice(0, forced ? Infinity : currentLevel || 1).map((desc, index) => {
-          return `${levelName[index]} ${!forced && !currentLevel && descHidden ? descHidden : desc}`
+        const output = makeArray(desc).slice(0, displayLevel).map((desc, index) => {
+          return (typeof desc === 'string' ? '' : levelName[index] + ' ')
+            + (!forced && !currentLevel && descHidden ? descHidden : desc)
         })
         output.unshift(`成就「${name}」`)
         if (!forced) {

@@ -315,7 +315,7 @@ namespace Item {
         if (!entries.length) return '没有购买任何物品。'
 
         const hints = [Event.buy(buyMap)(session)]
-        session.$app.emit('adventure/achieve', session as any, hints)
+        session.$app.emit('adventure/check', session as any, hints)
 
         await user._update()
         await session.$send(hints.join('\n'))
@@ -374,31 +374,23 @@ namespace Item {
         const entries = Object.entries(sellMap)
         if (!entries.length) return '没有出售任何物品。'
 
-        if (checkTimer('$control', user) && Random.bool(0.25)) {
-          let output = `${session.$username} 神志不清，手一滑丢弃了将要出售的${format(Object.keys(sellMap))}！`
-          for (const name in sellMap) {
-            const result = Item.lose(session, name, sellMap[name])
-            if (result) output += '\n' + result
-          }
-          return output
-        }
+        const result = ctx.bail('adventure/sell', sellMap, session)
+        if (result) return result
 
-        let progress: string
         if (!user.progress && entries.length === 1 && entries[0][1] === 1 && entries[0][0] in Phase.salePlots) {
           const saleAction = Phase.salePlots[entries[0][0]]
           await session.$observeUser(Adventurer.fields)
-          progress = getValue<string, Shopper.Field>(saleAction, user)
-        }
-
-        if (progress) {
-          const _meta = session as Session<Adventurer.Field>
-          _meta.$user['_skip'] = session._skipAll
-          await Phase.setProgress(_meta.$user, progress)
-          return Phase.start(_meta)
+          const progress = getValue<string, Shopper.Field>(saleAction, user)
+          if (progress) {
+            const _meta = session as Session<Adventurer.Field>
+            _meta.$user['_skip'] = session._skipAll
+            await Phase.setProgress(_meta.$user, progress)
+            return Phase.start(_meta)
+          }
         }
 
         const hints = [Event.sell(sellMap)(session)]
-        session.$app.emit('adventure/achieve', session as any, hints)
+        session.$app.emit('adventure/check', session as any, hints)
         await user._update()
         await session.$send(hints.join('\n'))
       })

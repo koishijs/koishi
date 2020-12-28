@@ -3,10 +3,12 @@ import MysqlDatabase from 'koishi-plugin-mysql'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
-    'adventure/achieve'(user: Session<Adventurer.Field>, hints: string[]): void
+    'adventure/check'(session: Session<Adventurer.Field>, hints: string[]): void
     'adventure/rank'(name: string): [string, string]
-    'adventure/text'(text: string, user: Session<Adventurer.Field>): string
+    'adventure/text'(text: string, session: Session<Adventurer.Field>): string
     'adventure/use'(userId: number, progress: string): void
+    'adventure/sell'(itemMap: Record<string, number>, session: Session<Shopper.Field>): string | undefined
+    'adventure/lose'(itemMap: Record<string, number>, session: Session<Shopper.Field>, hints: string[]): void
   }
 }
 
@@ -66,6 +68,7 @@ export interface Shopper {
   id: number
   money: number
   wealth: number
+  usage: Record<string, number>
   timers: Record<string, number>
   gains: Record<string, number>
   warehouse: Record<string, number>
@@ -84,7 +87,6 @@ export interface Adventurer extends Shopper {
   progress: string
   phases: string[]
   endings: Record<string, number>
-  usage: Record<string, number>
   avatarAchv: number
   drunkAchv: number
   achievement: string[]

@@ -175,7 +175,7 @@ export namespace Phase {
       logger.debug('%s choose drunk %c', session.userId, String.fromCharCode(65 + index))
       $user.drunkAchv += 1
       const hints = [`$s 醉迷恍惚，随手选择了 ${String.fromCharCode(65 + index)}。`]
-      $app.emit('adventure/achieve', session, hints)
+      $app.emit('adventure/check', session, hints)
       await sendEscaped(session, hints.join('\n'))
       return applyChoice(choices[index])
     }
@@ -237,7 +237,7 @@ export namespace Phase {
       logger.debug('%s use drunk %c', session.userId, name)
       $user.drunkAchv += 1
       const hints = [name ? `$s 醉迷恍惚，随手使用了${name}。` : `$s 醉迷恍惚，没有使用任何物品！`]
-      $app.emit('adventure/achieve', session, hints)
+      $app.emit('adventure/check', session, hints)
       await sendEscaped(session, hints.join('\n'))
       return nextMap[name]
     }
@@ -305,7 +305,7 @@ export namespace Phase {
       }
     }
 
-    $app.emit('adventure/achieve', session, hints)
+    $app.emit('adventure/check', session, hints)
     await sendEscaped(session, hints.join('\n'))
 
     // resolve next phase

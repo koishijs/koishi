@@ -158,24 +158,52 @@ namespace Event {
     return output.join('\n')
   }
 
-  export const gainSingle = (name: string, message: string): Event.Visible => (session) => {
-    session._item = name
-    let result = Item.gain(session, name)
-    let output = message.replace('$i', session._item)
-    if (!session._skipAll) output += '\n' + Item.data[name].description
-    if (result) output += '\n' + result
-    result = Item.checkOverflow(session, [name])
-    if (result) output += '\n' + result
-    return output
+  export function gainSingle(name: string, reason: string): Event.Visible
+  export function gainSingle(name: string, count: Adventurer.Infer<number>): Event.Visible
+  export function gainSingle(name: string, arg: string | Adventurer.Infer<number>): Visible {
+    return (session) => {
+      let output: string
+      if (typeof arg === 'string') {
+        session._item = name
+        const result = Item.gain(session, name)
+        output = arg.replace('$i', session._item)
+        if (!session._skipAll) output += '\n' + Item.data[name].description
+        if (result) output += '\n' + result
+      } else {
+        const { warehouse } = session.$user
+        const _count = getValue(arg, session.$user)
+        const isOld = name in warehouse
+        if (!isOld) warehouse[name] = 0
+        warehouse[name] += _count
+        output = `$s ${isOld ? '' : '首次'}获得了${name}×${_count}！`
+        if (!session._skipAll) output += '\n' + Item.data[name].description
+      }
+      const result = Item.checkOverflow(session, [name])
+      if (result) output += '\n' + result
+      return output
+    }
   }
 
-  export const lose = (...names: string[]): Event => (session) => {
-    const output = [`$s 失去了${Item.format(names)}！`]
-    for (const name of names) {
-      const result = Item.lose(session, name)
-      if (result) output.push(result)
+  export function lose(...names: string[]): Visible<Shopper.Field>
+  export function lose(itemMap: Record<string, number>, reason?: string): Visible<Shopper.Field>
+  export function lose(...args: string[] | [Record<string, number>, string?]): Visible {
+    let itemMap: Record<string, number>, reason = '$s 失去了$i！'
+    if (typeof args[0] === 'object') {
+      itemMap = args[0]
+      reason = (args[1] || reason).replace('$i', () => Item.format(itemMap))
+    } else {
+      itemMap = Object.fromEntries((args as string[]).map(arg => [arg, 1]))
+      reason = reason.replace('$i', Item.format(args as string[]))
     }
-    return output.join('\n')
+    return (session) => {
+      const output = [reason]
+      for (const name in itemMap) {
+        const result = Item.lose(session, name)
+        if (result) output.push(result)
+      }
+      session.$app.emit('adventure/lose', itemMap, session, output)
+      return output.join('\n')
+    }
   }
 
   const rarities = ['N', 'R', 'SR', 'SSR', 'EX'] as Item.Rarity[]

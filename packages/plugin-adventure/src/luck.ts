@@ -140,7 +140,7 @@ namespace Luck {
         const result = Item.checkOverflow(session, gainList)
         if (result) output.push(result)
         $user.usage.lottery = maxUsage - times
-        session.$app.emit('adventure/achieve', session, output)
+        session.$app.emit('adventure/check', session, output)
         await $user._update()
 
         if (!times) output.push('您本日的抽奖次数已用完，请明天再试吧~')
