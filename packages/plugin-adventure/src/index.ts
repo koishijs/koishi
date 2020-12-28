@@ -1,4 +1,4 @@
-import { Context } from 'koishi-core'
+import { Context, User } from 'koishi-core'
 import { isInteger } from 'koishi-utils'
 import { Show } from './utils'
 import Achievement from './achievement'
@@ -27,6 +27,8 @@ const defaultConfig: Config = {
   createBuyer: () => name => Item.data[name].bid,
   createSeller: () => name => Item.data[name].value,
 }
+
+const leadingOrder = ['首杀', '第二杀', '第三杀', '第四杀', '第五杀']
 
 export const name = 'adventure'
 
@@ -103,4 +105,29 @@ export function apply(ctx: Context, config?: Config) {
       if (!isInteger(luck) || luck < -Luck.MAX_LUCKY || luck > Luck.MAX_LUCKY) return '参数错误。'
       target.luck = luck
     })
+
+  const achvReward = [1000, 500, 200]
+  ctx.on('adventure/achieve', ({ $app, $user, $username }, achv) => {
+    if ($user.flag & User.Flag.noLeading) return
+    const { count, name } = achv
+    const reward = achvReward[count]
+    if (reward) {
+      $app.broadcast(`恭喜 ${$username} 获得了成就「${name}」的全服${leadingOrder[count]}，将获得 ${reward}￥ 的奖励！`).catch()
+      $user.money += reward
+      $user.wealth += reward
+    }
+    achv.count += 1
+  })
+
+  const endingReward = [300, 200, 100]
+  ctx.on('adventure/ending', ({ $app, $user, $username }, id) => {
+    if ($user.flag & User.Flag.noLeading) return
+    const count = Phase.endingCount[id], reward = endingReward[count]
+    if (reward) {
+      $app.broadcast(`恭喜 ${$username} 达成了结局「${Phase.endingMap[id]}」的全服${leadingOrder[count]}，将获得 ${reward}￥ 的奖励！`).catch()
+      $user.money += reward
+      $user.wealth += reward
+    }
+    Phase.endingCount[id] += 1
+  })
 }

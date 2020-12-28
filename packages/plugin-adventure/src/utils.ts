@@ -1,5 +1,6 @@
 import { User, extendDatabase, Session, Context, Command } from 'koishi-core'
 import MysqlDatabase from 'koishi-plugin-mysql'
+import Achievement from './achievement'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -9,6 +10,8 @@ declare module 'koishi-core/dist/context' {
     'adventure/use'(userId: number, progress: string): void
     'adventure/sell'(itemMap: Record<string, number>, session: Session<Shopper.Field>): string | undefined
     'adventure/lose'(itemMap: Record<string, number>, session: Session<Shopper.Field>, hints: string[]): void
+    'adventure/ending'(session: Session<Adventurer.Field>, id: string, hints: string[]): void
+    'adventure/achieve'(session: Session<Achievement.Field>, achv: Achievement, hints: string[]): void
   }
 }
 

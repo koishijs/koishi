@@ -13,26 +13,17 @@ type Event<T extends User.Field = Adventurer.Field> = (session: Session<T>) => s
 namespace Event {
   export type Visible<T extends User.Field = Adventurer.Field> = (session: Session<T>) => string
 
-  const leaderReward = [300, 200, 100]
-  const leaderName = ['首杀', '第二杀', '第三杀']
-
-  export const ending = (name: string): Visible => ({ $app, $user, $username }) => {
-    const hasEnding = $user.endings[name]
+  export const ending = (id: string): Visible => (session) => {
+    const { $app, $user } = session
+    const hasEnding = $user.endings[id]
     if (!hasEnding) {
-      $user.endings[name] = 1
+      $user.endings[id] = 1
     } else {
-      $user.endings[name] += 1
+      $user.endings[id] += 1
     }
-    if (!($user.flag & User.Flag.noLeading)) {
-      const count = Phase.endingCount[name], reward = leaderReward[count]
-      if (reward) {
-        $app.broadcast(`恭喜 ${$username} 达成了结局「${Phase.endingMap[name]}」的全服${leaderName[count]}，将获得 ${reward}￥ 的奖励！`).catch()
-        $user.money += reward
-        $user.wealth += reward
-      }
-      Phase.endingCount[name] += 1
-    }
-    return `$s ${hasEnding ? '' : '首次'}达成了结局「${Phase.endingMap[name]}」！`
+    const output = [`$s ${hasEnding ? '' : '首次'}达成了结局「${Phase.endingMap[id]}」！`]
+    $app.emit('adventure/ending', session, id, output)
+    return output.join('\n')
   }
 
   export const sell = (itemMap: Readonly<Record<string, number>>): Visible<Shopper.Field> => ({ $user, $app }) => {

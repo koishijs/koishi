@@ -4,16 +4,12 @@ import { Show } from './utils'
 import Profile from './profile'
 import Rank from './rank'
 
-export type AchvField = 'achievement' | 'name' | 'flag' | 'wealth' | 'money'
-
 declare module 'koishi-core/dist/session' {
   interface Session<U> {
     achieve(id: string, hints: string[], achieve?: boolean | boolean[]): string
   }
 }
 
-const leaderReward = [1000, 500, 200]
-const leaderName = ['首杀', '第二杀', '第三杀']
 const levelName = 'ⅠⅡⅢⅣⅤ'
 
 interface Achievement<T extends User.Field = never> {
@@ -42,7 +38,9 @@ namespace Achievement {
   const data: Achievement[] & Record<string, Achievement> = [] as any
   const fields = new Set<User.Field>(['achievement', 'name', 'flag'])
 
-  Session.prototype.achieve = function (this: Session<AchvField>, id, hints, achieve = true) {
+  export type Field = 'achievement' | 'name' | 'flag' | 'wealth' | 'money'
+
+  Session.prototype.achieve = function (this: Session<Field>, id, hints, achieve = true) {
     const { $user, $app } = this
     if (!achieve || $user.achievement.includes(id)) return
     const achv = data[id]
@@ -61,19 +59,9 @@ namespace Achievement {
       }
     }
 
-    const { count, name } = data[id]
-    if (!($user.flag & User.Flag.noLeading)) {
-      const reward = leaderReward[count]
-      if (reward) {
-        $app.broadcast(`恭喜 ${$user.name} 获得了成就「${name}」的全服${leaderName[count]}，将获得 ${reward}￥ 的奖励！`).catch()
-        $user.money += reward
-        $user.wealth += reward
-      }
-      data[id].count += 1
-    }
-    const hint = `恭喜 ${$user.name} 获得了成就「${name}」！`
-    hints.push(hint)
-    return hint
+    hints.push(`恭喜 ${$user.name} 获得了成就「${data[id].name}」！`)
+    $app.emit('adventure/achieve', this, data[id], hints)
+    return hints.join('\n')
   }
 
   Profile.add(({ achvCount, achvRank }) => {
@@ -253,7 +241,7 @@ namespace Achievement {
       .option('forced', '-F  强制查看', { authority: 4, hidden: true })
       .option('set', '-s  添加成就', { authority: 4 })
       .option('unset', '-S  删除成就', { authority: 4 })
-      .adminUser(async ({ session, target, options, next }, ...names) => {
+      .adminUser(async ({ target, options, next }, ...names) => {
         if (options.set || options.unset) {
           const { ids, notFound } = findAchievements(names)
           if (notFound.length) {
