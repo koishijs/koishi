@@ -25,7 +25,7 @@ export interface EventTypeMap {
 }
 
 /** CQHTTP Meta Information */
-export interface Meta<E extends EventType = EventType> extends MessageInfo {
+export interface Meta<E extends EventType = EventType> extends MessageBase {
   eventType?: E
   kind?: PlatformType
   selfId?: string
@@ -68,7 +68,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   $app?: App
   $argv?: ParsedArgv<U, G, O>
   $appel?: boolean
-  $prefix?: string = null
+  $prefix?: string
   $parsed?: string
   $reply?: MessageInfo
   $uuid?: string
@@ -80,6 +80,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   constructor(app: App, session: Partial<Session>) {
     defineProperty(this, '$app', app)
     defineProperty(this, '$uuid', Random.uuid())
+    defineProperty(this, '$prefix', null)
     defineProperty(this, '_queued', Promise.resolve())
     defineProperty(this, '_hooks', [])
     Object.assign(this, session)
@@ -333,15 +334,18 @@ export interface StatusInfo {
   good: boolean
 }
 
-export interface MessageInfo {
+export interface MessageBase {
   messageId?: string
   channelId?: string
   groupId?: string
   userId?: string
-  messageType?: EventTypeMap['message']
   content?: string
   timestamp?: number
   author?: AuthorInfo
+}
+
+export interface MessageInfo extends MessageBase {
+  subType?: EventTypeMap['message']
 }
 
 export interface GroupInfo {

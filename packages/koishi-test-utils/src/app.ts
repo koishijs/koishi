@@ -18,7 +18,7 @@ Bot.prototype.getMsg = async function (this: Bot, messageId: number) {
     message: '',
     time: 0,
     realId: 0,
-    messageType: null,
+    subType: null,
     sender: { userId: this.selfId } as SenderInfo,
   }
 }
@@ -110,7 +110,7 @@ export class TestSession {
 
   private replies: string[] = []
 
-  constructor(public app: MockedApp, public userId: number, public channelId?: number) {
+  constructor(public app: MockedApp, public userId: number, public channelId?: string) {
     this.meta = {
       postType: 'message',
       userId,
@@ -124,9 +124,9 @@ export class TestSession {
 
     if (channelId) {
       this.meta.channelId = channelId
-      this.meta.messageType = 'group'
+      this.meta.subType = 'group'
     } else {
-      this.meta.messageType = 'private'
+      this.meta.subType = 'private'
     }
   }
 

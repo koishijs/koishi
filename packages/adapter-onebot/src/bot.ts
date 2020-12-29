@@ -1,5 +1,5 @@
 import { camelCase, Logger, snakeCase, capitalize, renameProperty } from 'koishi-utils'
-import { Bot, AccountInfo, StatusInfo, StrangerInfo, BotStatusCode, Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo } from 'koishi-core'
+import { Bot, AccountInfo, StatusInfo, StrangerInfo, BotStatusCode, Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo, AuthorInfo } from 'koishi-core'
 
 declare module 'koishi-core/dist/database' {
   interface Platforms {
@@ -43,6 +43,12 @@ export interface CQGroupMemberInfo extends GroupMemberInfo, CQUserInfo {
   lastSentTime: number
   titleExpireTime: number
   unfriendly: boolean
+}
+
+export interface CQAuthorInfo extends AuthorInfo, CQUserInfo {
+  area?: string
+  level?: string
+  title?: string
 }
 
 export interface CQResponse {
@@ -212,9 +218,7 @@ export class CQBot extends Bot {
 
   async getMessage(channelId: string, messageId: string) {
     const data = await this.get<CQMessageInfo>('get_msg', { messageId })
-    renameProperty(data, 'timestamp', 'time')
-    renameProperty(data, 'content', 'message')
-    renameProperty(data, 'type', 'messageType')
+    CQBot.adaptMessage(data)
     return data
   }
 
@@ -223,7 +227,6 @@ export class CQBot extends Bot {
   }
 
   static adaptGroup(data: CQGroupInfo) {
-    renameProperty(data, 'id', 'groupId')
     renameProperty(data, 'name', 'groupName')
   }
 
@@ -239,14 +242,24 @@ export class CQBot extends Bot {
     return data
   }
 
-  static adaptUser(data: CQUserInfo) {
-    renameProperty(data, 'id', 'userId')
+  static adaptUser(data: UserInfo) {
     renameProperty(data, 'name', 'username')
   }
 
-  static adaptGroupMember(data: CQGroupMemberInfo) {
+  static adaptGroupMember(data: GroupMemberInfo) {
     CQBot.adaptUser(data)
     renameProperty(data, 'nick', 'card')
+  }
+
+  static adaptAuthor(data: AuthorInfo) {
+    CQBot.adaptGroupMember(data)
+  }
+
+  static adaptMessage(data: MessageInfo) {
+    renameProperty(data, 'timestamp', 'time')
+    renameProperty(data, 'content', 'message')
+    renameProperty(data, 'author', 'sender')
+    CQBot.adaptAuthor(data.author)
   }
 
   async getUser(userId: string, noCache?: boolean): Promise<CQUserInfo> {

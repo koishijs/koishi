@@ -121,10 +121,8 @@ Server.types.kaiheila = class HttpServer extends Server<KaiheilaBot> {
       const session = createSession(this.app, {
         ...data.d,
         selfId: bot.selfId,
-        userId: data.d.authorId,
         eventType: 'message',
         kind: 'kaiheila',
-        subType: meta.channelId ? 'group' : 'private',
       })
 
       // dispatch events

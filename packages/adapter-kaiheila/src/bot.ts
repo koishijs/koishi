@@ -35,7 +35,7 @@ export class KaiheilaBot extends Bot {
       nick: author.nickname,
       roles: author.roles,
     }
-    data.messageType = data['channelType'] === 'GROUP' ? 'group' : 'private'
+    data.subType = data['channelType'] === 'GROUP' ? 'group' : 'private'
     data.content = data.content
       .replace(/@(.+?)#(\d+)/, (_, $1, $2) => `[CQ:at,qq=${$2}]`)
       .replace(/@全体成员/, () => `[CQ:at,type=all]`)
