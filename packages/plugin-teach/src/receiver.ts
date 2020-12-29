@@ -1,4 +1,4 @@
-import { Context, User, Session, NextFunction, Command } from 'koishi-core'
+import { Context, User, Session, NextFunction, Command, Channel } from 'koishi-core'
 import { CQCode, simplify, noop, escapeRegExp, Random, makeArray } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './utils'
 
@@ -86,7 +86,7 @@ Context.prototype.getSessionState = function (session) {
 export async function getTotalWeight(ctx: Context, state: SessionState) {
   const { session, dialogues } = state
   ctx.app.emit(session, 'dialogue/prepare', state)
-  const userFields = new Set<User.Field>(['name'])
+  const userFields = new Set<User.Field>(['name', 'flag'])
   ctx.app.emit(session, 'dialogue/before-attach-user', state, userFields)
   await session.$observeUser(userFields)
   if (ctx.app.bail(session, 'dialogue/attach-user', state)) return 0
@@ -278,17 +278,24 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     return triggerDialogue(ctx, session, next)
   })
 
-  ctx.on('notify/poke', (session) => {
+  ctx.on('notify/poke', async (session) => {
     if (session.targetId !== session.selfId) return
+    const { flag } = await session.$observeChannel(['flag'])
+    if (flag & Channel.Flag.ignore) return
     session.content = 'hook:poke'
     triggerDialogue(ctx, session)
   })
 
   ctx.on('notify/honor', async (session) => {
-    const { assignee } = await session.$observeChannel(['assignee'])
+    const { flag, assignee } = await session.$observeChannel(['flag', 'assignee'])
     if (assignee !== session.selfId) return
+    if (flag & Channel.Flag.ignore) return
     session.content = 'hook:' + session.honorType
     triggerDialogue(ctx, session)
+  })
+
+  ctx.on('dialogue/attach-user', ({ session }) => {
+    if (session.$user.flag & User.Flag.ignore) return true
   })
 
   ctx.on('dialogue/receive', ({ session, test }) => {
