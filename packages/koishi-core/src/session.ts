@@ -1,6 +1,7 @@
-import { User, Channel, Platforms, PlatformType } from './database'
-import { ExecuteArgv, ParsedArgv, Command } from './command'
-import { contain, observe, noop, Logger, defineProperty, Random } from 'koishi-utils'
+import { User, Channel, Platforms, PlatformType, TableType, Tables } from './database'
+import { Command } from './command'
+import { contain, observe, Logger, defineProperty, Random } from 'koishi-utils'
+import { collectFields, Argv } from './parser'
 import { NextFunction } from './context'
 import { App } from './app'
 import { Bot } from './server'
@@ -66,7 +67,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   $user?: User.Observed<U>
   $channel?: Channel.Observed<G>
   $app?: App
-  $argv?: ParsedArgv<U, G, O>
+  $argv?: Argv<U, G, O>
   $appel?: boolean
   $prefix?: string
   $parsed?: string
@@ -167,19 +168,18 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   /** 在元数据上绑定一个可观测频道实例 */
   async $observeChannel<T extends Channel.Field = never>(fields: Iterable<T> = []): Promise<Channel.Observed<T | G>> {
     const fieldSet = new Set<Channel.Field>(fields)
-    const { kind, channelId, $argv, $channel: $group } = this
-    if ($argv) Command.collect($argv, 'channel', fieldSet)
+    const { kind, channelId, $channel } = this
 
     // 对于已经绑定可观测频道的，判断字段是否需要自动补充
-    if ($group) {
-      for (const key in $group) {
+    if ($channel) {
+      for (const key in $channel) {
         fieldSet.delete(key as any)
       }
       if (fieldSet.size) {
         const data = await this.$getChannel(channelId, [...fieldSet])
-        this.$app._groupCache.set(this.cid, $group._merge(data))
+        this.$app._groupCache.set(this.cid, $channel._merge(data))
       }
-      return $group as any
+      return $channel as any
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
@@ -208,8 +208,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   /** 在元数据上绑定一个可观测用户实例 */
   async $observeUser<T extends User.Field = never>(fields: Iterable<T> = []): Promise<User.Observed<T | U>> {
     const fieldSet = new Set<User.Field>(fields)
-    const { userId, $argv, $user } = this
-    if ($argv) Command.collect($argv, 'user', fieldSet)
+    const { userId, $user } = this
 
     let userCache = this.$app._userCache[this.kind]
     if (!userCache) {
@@ -255,48 +254,65 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return this.$user = user
   }
 
-  $resolve(argv: ExecuteArgv): ParsedArgv {
-    if (typeof argv.command === 'string') {
-      argv.command = this.$app._commandMap[argv.command]
+  resolve(argv: Argv) {
+    const name = this.$app.bail('parse', argv, this)
+    const command = argv.command = this.$app._commandMap[name]
+    if (command && argv.tokens.every(token => !token.inters.length)) {
+      Argv.assign(argv, command.parse(argv))
     }
-    if (!argv.command) {
-      logger.warn(new Error(`cannot find command ${argv}`))
-      return
-    }
-    if (!argv.command.context.match(this)) return
-    return { session: this, ...argv } as ParsedArgv
+    return command
   }
 
-  $parse(message: string, terminator = '', builtin = false): ParsedArgv {
-    if (!message) return
-    const argv = this.$app.bail(this, 'parse', message, this, builtin, terminator)
-    return argv && this.$resolve(argv)
+  collect<T extends TableType>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()) {
+    collectFields(argv, Command[`_${key}Fields`], fields)
+    const collect = (argv: Argv) => {
+      if (argv.tokens) {
+        for (const { inters } of argv.tokens) {
+          inters.forEach(collect)
+        }
+        if (!argv.command && !this.resolve(argv)) return
+      }
+      collectFields(argv, argv.command[`_${key}Fields`], fields)
+    }
+    collect(argv)
+    return fields
   }
 
-  $execute(argv: ExecuteArgv): Promise<void>
-  $execute(message: string, next?: NextFunction): Promise<void>
-  async $execute(...args: [ExecuteArgv] | [string, NextFunction?]) {
-    let argv: any, next: NextFunction
-    if (typeof args[0] === 'string') {
-      next = args[1] || noop
-      argv = this.$parse(args[0])
+  async execute(content: string, next?: NextFunction): Promise<string>
+  async execute(argv: Argv, next?: NextFunction): Promise<string>
+  async execute(argv: string | Argv, next?: NextFunction): Promise<string> {
+    if (typeof argv === 'string') argv = Argv.from(argv)
+
+    if (argv.tokens) {
+      for (const arg of argv.tokens) {
+        const { inters } = arg
+        const output: string[] = []
+        for (let i = 0; i < inters.length; ++i) {
+          output.push(await this.execute(inters[i]))
+        }
+        for (let i = inters.length - 1; i >= 0; --i) {
+          const { pos } = inters[i]
+          arg.content = arg.content.slice(0, pos) + output[i] + arg.content.slice(pos)
+        }
+        arg.inters = []
+      }
+      if (!(argv.command = this.resolve(argv))) return ''
     } else {
-      next = args[0].next || noop
-      argv = this.$resolve(args[0])
+      argv.command ||= this.$app._commandMap[argv.name]
+      if (!argv.command) {
+        logger.warn(new Error(`cannot find command ${argv.name}`))
+        return ''
+      }
     }
-    if (!argv) return next()
 
-    argv.next = next
-    argv.session = this
-    this.$argv = argv
     if (this.$app.database) {
       if (this.subType === 'group') {
-        await this.$observeChannel()
+        await this.$observeChannel(this.collect('channel', argv))
       }
-      await this.$observeUser()
+      await this.$observeUser(this.collect('user', argv))
     }
 
-    return argv.command.execute(argv)
+    return argv.command.execute(argv, next)
   }
 }
 

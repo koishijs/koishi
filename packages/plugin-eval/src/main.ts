@@ -1,4 +1,4 @@
-import { App, Command, CommandAction, Channel, ParsedArgv, User } from 'koishi-core'
+import { App, Command, CommandAction, Channel, Argv, User } from 'koishi-core'
 import { Logger, Observed, pick } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { WorkerAPI, WorkerConfig, WorkerData, Response, ContextOptions } from './worker'
@@ -77,7 +77,7 @@ export interface AccessOptions<T> {
 
 export type Access<T> = T[] | AccessOptions<T>
 
-interface TrappedArgv<O> extends ParsedArgv<never, never, O> {
+interface TrappedArgv<O> extends Argv<never, never, O> {
   ctxOptions?: ContextOptions
 }
 
@@ -127,7 +127,7 @@ export class MainAPI {
     const session = this.getSession(uuid)
     const send = session.$send
     const sendQueued = session.$sendQueued
-    await session.$execute(message)
+    await session.execute(message)
     session.$sendQueued = sendQueued
     session.$send = send
   }

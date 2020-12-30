@@ -144,15 +144,15 @@ namespace Rank {
         return Rank.show(rank, session, options)
       })
 
-    ctx.on('parse', (message, session, builtin) => {
-      if (!builtin || session.$reply || session.$prefix) return
+    ctx.on('tokenize', (message, session) => {
+      if (session.$reply || session.$prefix) return
       const capture = /^(全服|本群)?(.+)(全服|本群)?排[名行]榜?$/.exec(message)
       if (!capture) return
       const global = capture[1] === '全服' || capture[3] === '全服'
       const result = ctx.bail(session, 'adventure/rank', capture[2])
       if (!result) return
-      const [command, arg0] = result
-      return { command, args: [arg0], options: { global, length: global ? 20 : 10 } }
+      const [name, arg0] = result
+      return { name, args: [arg0], options: { global, length: global ? 20 : 10 } }
     })
 
     ctx.on('adventure/rank', (name) => {

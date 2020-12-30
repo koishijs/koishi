@@ -1,7 +1,8 @@
 import { intersection, difference, Logger, defineProperty } from 'koishi-utils'
-import { Command, CommandConfig, ParsedArgv, ExecuteArgv } from './command'
+import { Command, CommandConfig } from './command'
 import { EventType, Session } from './session'
 import { User, Channel, PlatformType, Database } from './database'
+import { Argv } from './parser'
 import { Server } from './server'
 import { App } from './app'
 import type Router from 'koa-router'
@@ -383,16 +384,15 @@ export interface EventMap {
 
   // Koishi events
   'appellation'(name: string, session: Session): string
-  'parse'(message: string, session: Session, builtin: boolean, terminator: string): void | ExecuteArgv
+  'tokenize'(content: string, session: Session): Argv
+  'parse'(argv: Argv, session: Session): string
   'before-attach-user'(session: Session, fields: Set<User.Field>): void
   'before-attach-group'(session: Session, fields: Set<Channel.Field>): void
   'attach-user'(session: Session): void | boolean | Promise<void | boolean>
   'attach-group'(session: Session): void | boolean | Promise<void | boolean>
-  'attach'(session: Session): void | Promise<void>
   'send'(session: Session): void | Promise<void>
   'before-send'(session: Session): void | boolean
-  'before-command'(argv: ParsedArgv): void | string | Promise<void | string>
-  'command'(argv: ParsedArgv): void | Promise<void>
+  'before-command'(argv: Argv): void | string | Promise<void | string>
   'middleware'(session: Session): void
   'new-command'(cmd: Command): void
   'remove-command'(cmd: Command): void

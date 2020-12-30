@@ -1,4 +1,4 @@
-import { Context, checkTimer, ParsedArgv, Session, User } from 'koishi-core'
+import { Context, checkTimer, Argv, Session, User } from 'koishi-core'
 import { isInteger, Random } from 'koishi-utils'
 import { getValue, Shopper, Adventurer, ReadonlyUser, Show } from './utils'
 import Event from './event'
@@ -151,7 +151,7 @@ namespace Item {
     }
   }
 
-  async function toItemMap(argv: ParsedArgv) {
+  async function toItemMap(argv: Argv) {
     const { args } = argv
     const itemMap: Record<string, number> = {}
     for (let i = 0; i < args.length; i++) {
@@ -172,7 +172,7 @@ namespace Item {
     return itemMap
   }
 
-  export function suggest({ session, args, next, command }: ParsedArgv, index = 0) {
+  export function suggest({ session, args, next, command }: Argv, index = 0) {
     args = args.slice()
     if (args.length === 1) {
       session.content = `${command.name}:${args[0]}`
@@ -185,7 +185,7 @@ namespace Item {
       suffix: '发送空行或句号以使用推测的物品。',
       async apply(suggestion, next) {
         args.splice(index, 1, suggestion)
-        return session.$execute({ command, args, next })
+        return session.execute({ command, args, next })
       },
     })
   }

@@ -1,9 +1,10 @@
 import { getUsage, getUsageName, ValidationField } from './validate'
 import { User, Channel, TableType } from '../database'
-import { Command, FieldCollector } from '../command'
+import { Command } from '../command'
 import { Session } from '../session'
 import { App } from '../app'
 import { Message } from './message'
+import { FieldCollector } from '../parser'
 
 export type CommandUsage<U extends User.Field, G extends Channel.Field> = string
   | ((this: Command<U, G>, session: Session<U, G>) => string | Promise<string>)
@@ -52,18 +53,18 @@ export default function apply(app: App) {
   // show help when use `-h, --help` or when there is no action
   app.prependListener('before-command', async ({ command, session, options }) => {
     if (command._action && !options['help']) return
-    await session.$execute({
-      command: 'help',
+    await session.execute({
+      name: 'help',
       args: [command.name],
     })
     return ''
   })
 
   const createCollector = <T extends TableType>(key: T): FieldCollector<T> => (argv, fields) => {
-    const { args: [name] } = argv
+    const { args: [name], session } = argv
     const command = app._commandMap[name] || app._shortcutMap[name]
     if (!command) return
-    Command.collect({ ...argv, command, args: [], options: { help: true } }, key, fields)
+    session.collect(key, { ...argv, name: command.name, args: [], options: { help: true } }, fields)
   }
 
   app.command('help [command]', '显示帮助信息', { authority: 0 })

@@ -133,6 +133,6 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
         Object.assign(newSession.author, info)
       }
 
-      return newSession.$execute(message)
+      return newSession.execute(message)
     })
 }

@@ -1,4 +1,4 @@
-import { Context, User, Session, checkTimer, Command } from 'koishi-core'
+import { Context, User, Session, checkTimer } from 'koishi-core'
 import { Logger, Random } from 'koishi-utils'
 import { ReadonlyUser, getValue, Adventurer, Shopper, Show } from './utils'
 import Event from './event'
@@ -336,19 +336,20 @@ export namespace Phase {
     logger.debug('%s phase finish', session.userId)
   }
 
-  export function start(session: Session<Adventurer.Field>) {
+  export async function start(session: Session<Adventurer.Field>) {
     metaMap[session.userId] = session
     if (session.subType === 'group') {
       groupStates[session.groupId] = session.userId
     }
-    return plot(session).catch((error) => {
+    try {
+      await plot(session)
+    } catch (error) {
       new Logger('cosmos').warn(error)
-    }).then(() => {
-      delete metaMap[session.userId]
-      if (session.subType === 'group') {
-        delete groupStates[session.groupId]
-      }
-    })
+    }
+    delete metaMap[session.userId]
+    if (session.subType === 'group') {
+      delete groupStates[session.groupId]
+    }
   }
 
   function findEndings(names: string[]) {
@@ -471,14 +472,13 @@ export namespace Phase {
     ctx.command('adventure/skip [-- command...]', '跳过剧情')
       .shortcut('跳过剧情')
       .shortcut('跳过当前剧情')
-      .option('rest', '-- <command...>  要执行的指令', { type: 'string' })
       .userFields(['phases', 'progress'])
-      .userFields(({ options, session }, fields) => Command.collect(session.$parse(options.rest), 'user', fields))
+      .optionRest()
       .usage('这个指令用于跳过剧情的主体部分，并不会略去结算文字。当进入下一段剧情时需要再次跳过。未读过的剧情无法跳过。')
       .action(async ({ session, next, options }) => {
         if (options.rest) {
           session._skipAll = true
-          await session.$execute(options.rest, next)
+          await session.execute(options.rest, next)
           session._skipAll = false
           return
         }

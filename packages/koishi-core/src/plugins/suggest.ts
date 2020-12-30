@@ -104,7 +104,7 @@ export default function apply(ctx: Context) {
       suffix: Message.COMMAND_SUGGEST_SUFFIX,
       async apply(suggestion, next) {
         const newMessage = suggestion + $parsed.slice(target.length) + ($reply ? ' ' + $reply.content : '')
-        return this.$execute(newMessage, next)
+        return this.execute(newMessage, next)
       },
     })
   })

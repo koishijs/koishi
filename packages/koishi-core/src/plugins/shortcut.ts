@@ -1,6 +1,7 @@
 import { Context } from '../context'
-import { Command, ParsedLine } from '../command'
+import { Command } from '../command'
 import { defineProperty } from 'koishi-utils'
+import { Argv } from '../parser'
 
 declare module '../app' {
   interface App {
@@ -56,21 +57,20 @@ export default function apply(ctx: Context) {
     }
   })
 
-  ctx.on('parse', (message, { $reply, $prefix, $appel }, builtin) => {
-    if (!builtin || $prefix || $reply) return
+  ctx.on('tokenize', (content, { $reply, $prefix, $appel }) => {
+    if ($prefix || $reply) return
     for (const shortcut of ctx.app._shortcuts) {
-      const { name, fuzzy, command, oneArg, prefix, options, args = [] } = shortcut
+      const { name, fuzzy, command, oneArg, prefix } = shortcut
       if (prefix && !$appel) continue
-      if (!fuzzy && message !== name) continue
-      if (message.startsWith(name)) {
-        const _message = message.slice(name.length)
-        if (fuzzy && !$appel && _message.match(/^\S/)) continue
-        const result: ParsedLine = oneArg
-          ? { options: {}, args: [_message.trim()], rest: '' }
-          : command.parse(_message.trim())
-        result.options = { ...options, ...result.options }
-        result.args.unshift(...args)
-        return { command, ...result }
+      if (!fuzzy && content !== name) continue
+      if (content.startsWith(name)) {
+        const message = content.slice(name.length)
+        if (fuzzy && !$appel && message.match(/^\S/)) continue
+        const argv: Argv = oneArg
+          ? { options: {}, args: [message.trim()] }
+          : command.parse(Argv.from(message.trim()))
+        Argv.assign(argv, shortcut)
+        return { command, ...argv }
       }
     }
   })

@@ -2,9 +2,10 @@ import { format } from 'util'
 import { Time } from 'koishi-utils'
 import { Session } from '../session'
 import { User } from '../database'
-import { Command, CommandArgument, ParsedArgv } from '../command'
+import { Command } from '../command'
 import { App } from '../app'
 import { Message } from './message'
+import { Argv, CommandArgument } from '../parser'
 
 export type UserType<T, U extends User.Field = User.Field> = T | ((user: Pick<User, U>) => T)
 
@@ -59,14 +60,17 @@ Object.assign(Command.defaultOptionConfig, {
   authority: 0,
 })
 
-Command.userFields(({ command, options = {} }, fields) => {
+Command.userFields(({ tokens, command, options = {} }, fields) => {
+  if (!command) return
   const { maxUsage, minInterval, authority } = command.config
-  let shouldFetchAuthority = !fields.has('authority') && authority > 0
+  let shouldFetchAuthority = authority > 0
   let shouldFetchUsage = !!(maxUsage || minInterval)
   for (const { name, authority, notUsage } of Object.values(command._options)) {
     if (name in options) {
       if (authority > 0) shouldFetchAuthority = true
       if (notUsage) shouldFetchUsage = false
+    } else if (tokens) {
+      if (authority > 0) shouldFetchAuthority = true
     }
   }
   if (shouldFetchAuthority) fields.add('authority')
@@ -91,7 +95,7 @@ export default function apply(app: App) {
     cmd._checkers = []
   })
 
-  app.on('before-command', async ({ session, args, options, command }: ParsedArgv<ValidationField>) => {
+  app.on('before-command', async ({ session, args, options, command }: Argv<ValidationField>) => {
     function sendHint(message: string, ...param: any[]) {
       return command.config.showWarning ? format(message, ...param) : ''
     }

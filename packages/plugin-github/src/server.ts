@@ -87,7 +87,7 @@ export class GitHub extends Webhooks {
     await session.$send(message)
     const name = await session.$prompt(this.config.promptTimeout)
     if (!name) return session.$send('输入超时。')
-    return session.$execute({ command: 'github.authorize', args: [name] })
+    return session.execute({ name: 'github.authorize', args: [name] })
   }
 
   async request(url: string, method: Method, session: ReplySession, body: any, headers?: Record<string, any>) {

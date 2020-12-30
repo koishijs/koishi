@@ -13,7 +13,7 @@ async function prepareSchedule({ id, session, interval, command, time, lastCall 
 
   async function executeSchedule() {
     logger.debug('execute %d: %c', id, command)
-    await session.$execute(command)
+    await session.execute(command)
     if (!lastCall || !interval) return
     lastCall = new Date()
     await database.updateSchedule(id, { lastCall })

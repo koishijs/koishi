@@ -1,5 +1,6 @@
 import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop } from 'koishi-utils'
 import { Context, Middleware, NextFunction } from './context'
+import { Argv } from './parser'
 import { Bot, BotOptions, Server } from './server'
 import { Channel, User } from './database'
 import { Command } from './command'
@@ -117,9 +118,23 @@ export class App extends Context {
     // bind built-in event listeners
     this.middleware(this._preprocess.bind(this))
     this.on('message', this._receive.bind(this))
-    this.on('parse', this._parse.bind(this))
     this.on('before-connect', this._listen.bind(this))
     this.on('before-disconnect', this._close.bind(this))
+
+    // group message should have prefix or appel to be interpreted as a command call
+    this.on('parse', (argv: Argv, session: Session) => {
+      const { $prefix, $appel, subType } = session
+      if (argv.root && subType !== 'private' && $prefix === null && !$appel) return
+      return argv.tokens[0]?.content
+    })
+
+    this.on('before-attach-user', (session, fields) => {
+      session.collect('user', session.$argv, fields)
+    })
+
+    this.on('before-attach-group', (session, fields) => {
+      session.collect('channel', session.$argv, fields)
+    })
 
     this.plugin(validate)
     this.plugin(suggest)
@@ -211,7 +226,11 @@ export class App extends Context {
 
     // store parsed message
     session.$parsed = message
-    session.$argv = session.$parse(message, '', true)
+    session.$argv = this.bail('tokenize', message, session) || Argv.from(message, ';')
+    if (session.$argv) {
+      session.$argv.root = true
+      session.$argv.session = session
+    }
 
     if (this.database) {
       if (session.subType === 'group') {
@@ -240,12 +259,10 @@ export class App extends Context {
       if (user.flag & User.Flag.ignore) return
     }
 
-    await this.parallel(session, 'attach', session)
-
     // execute command
     if (!session.$argv) return next()
-    session.$argv.next = next
-    return session.$argv.command.execute(session.$argv)
+    const result = await session.execute(session.$argv, next)
+    if (result) await session.$send(result)
   }
 
   private async _receive(session: Session) {
@@ -291,19 +308,5 @@ export class App extends Context {
     // flush user & group data
     await session.$user?._update()
     await session.$channel?._update()
-  }
-
-  private _parse(message: string, session: Session, builtin: boolean, terminator = '') {
-    // group message should have prefix or appel to be interpreted as a command call
-    const { $reply, $prefix, $appel, subType } = session
-    if (builtin && subType !== 'private' && $prefix === null && !$appel) return
-    terminator = escapeRegExp(terminator)
-    const name = message.split(new RegExp(`[\\s${terminator}]`), 1)[0]
-    const index = name.lastIndexOf('/')
-    const command = this.app._commandMap[name.slice(index + 1).toLowerCase()]
-    if (!command) return
-    message = message.slice(name.length).trim() + ($reply ? ' ' + $reply.content : '')
-    const result = command.parse(message, terminator)
-    return { command, ...result }
   }
 }

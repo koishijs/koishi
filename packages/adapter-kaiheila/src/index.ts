@@ -126,7 +126,6 @@ Server.types.kaiheila = class HttpServer extends Server<KaiheilaBot> {
       })
 
       // dispatch events
-      console.log(session)
       this.dispatch(session)
     })
 

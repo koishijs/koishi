@@ -1,6 +1,30 @@
-import { User, extendDatabase, Session, Context, Command } from 'koishi-core'
+import { User, extendDatabase, Session, Context, Command, Argv, TableType, FieldCollector } from 'koishi-core'
 import MysqlDatabase from 'koishi-plugin-mysql'
 import Achievement from './achievement'
+
+declare module 'koishi-core/dist/command' {
+  interface Command<U, G, O> {
+    optionRest(): Command<U, G, Extend<O, 'rest', string>>
+  }
+}
+
+function createCollector<T extends TableType>(key: T): FieldCollector<T, never, { rest: string }> {
+  return ({ tokens, session, options }, fields) => {
+    if (tokens) {
+      const index = tokens.findIndex(token => !token.quoted && token.content === '--')
+      session.collect(key, { tokens: tokens.slice(index).slice(1) }, fields)
+    } else {
+      session.collect(key, Argv.from(options.rest), fields)
+    }
+  }
+}
+
+Command.prototype.optionRest = function (this: Command) {
+  return this
+    .option('rest', '-- [command...]  要执行的指令', { type: 'string' })
+    .userFields(createCollector('user'))
+    .channelFields(createCollector('channel'))
+}
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -142,8 +166,8 @@ export namespace Show {
         if (!item) return
         if (item[0] === 'redirect') {
           const command = argv.command = ctx.command(item[1])
-          Object.assign(argv, command.parse(argv.source.slice(5)))
-          Command.collect(argv, 'user', fields)
+          Object.assign(argv, command.parse(Argv.from(argv.source.slice(5))))
+          argv.session.collect('user', argv, fields)
         } else if (item[0] === 'callback') {
           for (const field of item[1]) {
             fields.add(field)

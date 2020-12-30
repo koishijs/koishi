@@ -1,8 +1,8 @@
 import { isInteger, difference, observe, Time, enumKeys, Random } from 'koishi-utils'
-import { Context, User, Channel, Command, ParsedArgv, PlatformType, Session } from 'koishi-core'
+import { Context, User, Channel, Command, Argv, PlatformType, Session } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, O extends {}, T>
-  = (argv: ParsedArgv<U | 'authority', G, O> & { target: T }, ...args: string[])
+  = (argv: Argv<U | 'authority', G, O> & { target: T }, ...args: string[])
     => void | string | Promise<void | string>
 
 declare module 'koishi-core/dist/command' {
@@ -20,7 +20,7 @@ interface FlagOptions {
 
 type FlagMap = Record<string, number> & Record<number, string>
 
-interface FlagArgv extends ParsedArgv<never, never, FlagOptions> {
+interface FlagArgv extends Argv<never, never, FlagOptions> {
   target: User.Observed<'flag'> | Channel.Observed<'flag'>
 }
 
@@ -57,7 +57,7 @@ Command.prototype.adminUser = function (this: Command, callback) {
 
   command._action = async (argv) => {
     const { options, session, args } = argv
-    const fields = Command.collect(argv, 'user')
+    const fields = session.collect('user', argv)
     let target: User.Observed<never>
     if (options.target) {
       const id = session.$bot.parseUser(options.target)
@@ -93,7 +93,7 @@ Command.prototype.adminChannel = function (this: Command, callback) {
 
   command._action = async (argv) => {
     const { options, session, args } = argv
-    const fields = Command.collect(argv, 'channel')
+    const fields = session.collect('channel', argv)
     let target: Channel.Observed
     if (options.target) {
       const id = session.$bot.parseChannel(options.target)
