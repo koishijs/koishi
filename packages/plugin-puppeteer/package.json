@@ -35,11 +35,11 @@
   ],
   "devDependencies": {
     "@types/pngjs": "^3.4.2",
-    "@types/puppeteer-core": "^2.0.0",
+    "@types/puppeteer-core": "^5.4.0",
     "koishi-test-utils": "^5.0.3"
   },
   "peerDependencies": {
-    "koishi-core": "^2.4.2",
+    "koishi-core": "^2.5.0",
     "koishi-utils": "^3.2.1"
   },
   "dependencies": {

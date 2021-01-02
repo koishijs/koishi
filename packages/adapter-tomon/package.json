@@ -29,13 +29,13 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.4.2"
+    "koishi-core": "^2.5.0"
   },
   "devDependencies": {
     "koishi-test-utils": "^5.0.3"
   },
   "dependencies": {
     "koishi-utils": "^3.2.1",
-    "tomon-sdk": "^0.2.0"
+    "tomon-sdk": "^0.2.2"
   }
 }
