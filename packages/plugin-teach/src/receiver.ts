@@ -1,4 +1,4 @@
-import { Context, User, Session, NextFunction, Command, Channel } from 'koishi-core'
+import { Context, User, Session, NextFunction, Channel, Argv } from 'koishi-core'
 import { CQCode, simplify, noop, escapeRegExp, Random, makeArray } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './utils'
 
@@ -65,11 +65,11 @@ export interface SessionState {
 }
 
 export function escapeAnswer(message: string) {
-  return message.replace(/%/g, '@@__PLACEHOLDER__@@')
+  return message.replace(/\$/g, '@@__PLACEHOLDER__@@')
 }
 
 export function unescapeAnswer(message: string) {
-  return message.replace(/@@__PLACEHOLDER__@@/g, '%')
+  return message.replace(/@@__PLACEHOLDER__@@/g, '$')
 }
 
 Context.prototype.getSessionState = function (session) {
@@ -142,15 +142,15 @@ export class MessageBuffer {
     return this._flush(this.buffer)
   }
 
-  async run<T>(callback: () => T | Promise<T>) {
+  async run(callback: () => Promise<string>) {
     this.original = false
     const send = this.session.$send
     const sendQueued = this.session.$sendQueued
     const result = await callback()
+    if (result) await send(result)
     this.session.$sendQueued = sendQueued
     this.session.$send = send
     this.original = true
-    return result
   }
 
   async end(message = '') {
@@ -194,19 +194,19 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
   state.dialogue = dialogue
   state.dialogues = [dialogue]
   state.answer = dialogue.answer
-    .replace(/%%/g, '@@__PLACEHOLDER__@@')
-    .replace(/%A/g, CQCode.stringify('at', { qq: 'all' }))
-    .replace(/%a/g, CQCode.stringify('at', { qq: session.userId }))
-    .replace(/%m/g, CQCode.stringify('at', { qq: session.selfId }))
-    .replace(/%s/g, escapeAnswer(session.$username))
-    .replace(/%0/g, escapeAnswer(session.content))
+    .replace(/\$\$/g, '@@__PLACEHOLDER__@@')
+    .replace(/\$A/g, CQCode.stringify('at', { qq: 'all' }))
+    .replace(/\$a/g, CQCode.stringify('at', { qq: session.userId }))
+    .replace(/\$m/g, CQCode.stringify('at', { qq: session.selfId }))
+    .replace(/\$s/g, escapeAnswer(session.$username))
+    .replace(/\$0/g, escapeAnswer(session.content))
 
   if (dialogue.flag & Dialogue.Flag.regexp) {
     const capture = dialogue._capture || new RegExp(dialogue.question, 'i').exec(state.test.question)
     if (!capture) console.log(dialogue.question, state.test.question)
     capture.map((segment, index) => {
       if (index && index <= 9) {
-        state.answer = state.answer.replace(new RegExp(`%${index}`, 'g'), escapeAnswer(segment || ''))
+        state.answer = state.answer.replace(new RegExp(`\\$${index}`, 'g'), escapeAnswer(segment || ''))
       }
     })
   }
@@ -220,9 +220,9 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
 
   // parse answer
   let index: number
-  while ((index = state.answer.indexOf('%')) >= 0) {
+  while ((index = state.answer.indexOf('$')) >= 0) {
     const char = state.answer[index + 1]
-    if (!'n{'.includes(char)) {
+    if (!'n('.includes(char)) {
       buffer.write(unescapeAnswer(state.answer.slice(0, index + 2)))
       state.answer = state.answer.slice(index + 2)
       continue
@@ -231,17 +231,11 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
     state.answer = state.answer.slice(index + 2)
     if (char === 'n') {
       await buffer.flush()
-    } else if (char === '{') {
+    } else if (char === '(') {
       const message = unescapeAnswer(state.answer)
-      const argv = session.$parse(message, '}')
-      if (argv) {
-        state.answer = argv.rest.slice(1)
-        await buffer.run(() => session.$execute(argv))
-      } else {
-        logger.warn('cannot parse:', message)
-        const index = state.answer.indexOf('}')
-        state.answer = state.answer.slice(index + 1)
-      }
+      const argv = Argv.from(message, ')')
+      state.answer = argv.rest
+      await buffer.run(() => session.execute(argv))
     }
   }
   await buffer.end(unescapeAnswer(state.answer))
@@ -268,7 +262,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   }
 
-  ctx.prependListener('parse', (message, session) => {
+  ctx.on('message', (session) => {
     if (session.$appel) return
     const { activated } = ctx.getSessionState(session)
     if (activated[session.userId]) session.$appel = true
@@ -307,16 +301,14 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     test.appellative = appellative
   })
 
+  const tokenizer = new Argv.Tokenizer('', { '$(': ')', '${': '}' })
+
   // 预判要获取的用户字段
   ctx.on('dialogue/before-attach-user', ({ dialogues, session }, userFields) => {
     for (const data of dialogues) {
-      const capture = data.answer.match(/%\{.+?\}/g)
-      for (const message of capture || []) {
-        const argv = session.$parse(message.slice(2, -1))
-        Command.collect(argv, 'user', userFields)
-      }
-      if (capture || data.answer.includes('%n')) {
-        userFields.add('timers')
+      const { inters } = tokenizer.parseToken(data.answer)
+      for (const argv of inters) {
+        session.collect('user', argv, userFields)
       }
     }
   })

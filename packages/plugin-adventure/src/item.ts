@@ -416,7 +416,8 @@ namespace Item {
       return Item.data[name] && [isGain ? 'rank.gain' : 'rank.item', name]
     })
 
-    ctx.rankCommand('rank.item [name]', '显示物品持有数量排行')
+    ctx.command('rank.item [name]', '显示物品持有数量排行')
+      .useRank()
       .action(async (argv, name) => {
         const { session, options } = argv
         if (!name) return '请输入物品名。'
@@ -428,7 +429,8 @@ namespace Item {
         }, session, options)
       })
 
-    ctx.rankCommand('rank.gain [name]', '显示物品累计获得数量排行')
+    ctx.command('rank.gain [name]', '显示物品累计获得数量排行')
+      .useRank()
       .action(async (argv, name) => {
         const { session, options } = argv
         if (!name) return '请输入物品名。'

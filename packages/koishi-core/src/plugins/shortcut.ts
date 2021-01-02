@@ -60,7 +60,7 @@ export default function apply(ctx: Context) {
   ctx.on('tokenize', (content, { $reply, $prefix, $appel }) => {
     if ($prefix || $reply) return
     for (const shortcut of ctx.app._shortcuts) {
-      const { name, fuzzy, command, oneArg, prefix } = shortcut
+      const { name, fuzzy, command, oneArg, prefix, options, args = [] } = shortcut
       if (prefix && !$appel) continue
       if (!fuzzy && content !== name) continue
       if (content.startsWith(name)) {
@@ -69,8 +69,10 @@ export default function apply(ctx: Context) {
         const argv: Argv = oneArg
           ? { options: {}, args: [message.trim()] }
           : command.parse(Argv.from(message.trim()))
-        Argv.assign(argv, shortcut)
-        return { command, ...argv }
+        argv.command = command
+        argv.options = { ...options, ...argv.options }
+        argv.args = [...args, ...argv.args]
+        return argv
       }
     }
   })

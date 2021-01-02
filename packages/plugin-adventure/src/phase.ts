@@ -436,7 +436,8 @@ export namespace Phase {
       return reversedEndingMap[name] && ['rank.ending', name]
     })
 
-    ctx.rankCommand('rank.ending [name]', '显示结局达成次数排行')
+    ctx.command('rank.ending [name]', '显示结局达成次数排行')
+      .useRank()
       .action(async ({ session, options }, name) => {
         if (!name) return '请输入结局名。'
         if (!endingMap[name]) {
@@ -473,7 +474,7 @@ export namespace Phase {
       .shortcut('跳过剧情')
       .shortcut('跳过当前剧情')
       .userFields(['phases', 'progress'])
-      .optionRest()
+      .useRest()
       .usage('这个指令用于跳过剧情的主体部分，并不会略去结算文字。当进入下一段剧情时需要再次跳过。未读过的剧情无法跳过。')
       .action(async ({ session, next, options }) => {
         if (options.rest) {

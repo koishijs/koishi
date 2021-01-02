@@ -12,49 +12,13 @@ export interface Token {
   inters: Argv[]
 }
 
-export namespace Token {
-  const leftQuotes = `"'“‘`
-  const rightQuotes = `"'”’`
-
-  export function from(source: string, terminator: string): Token {
-    const index = leftQuotes.indexOf(source[0])
-    const quote = rightQuotes[index]
-    let resource = `[\\s${escapeRegExp(terminator)}]|$`, content = ''
-    if (quote) {
-      source = source.slice(1)
-      resource += `|${quote}(?=${resource})`
-    }
-    const regExp = new RegExp(resource + '|\\$\\(')
-    const inters: Argv[] = []
-    while (true) {
-      const capture = regExp.exec(source)
-      content += source.slice(0, capture.index)
-      if (capture[0] === '$(') {
-        const { rest, tokens } = Argv.from(source.slice(capture.index + 2).trimStart(), ')')
-        source = rest
-        inters.push({ tokens, pos: content.length })
-      } else {
-        const quoted = capture[0] === quote
-        const rest = terminator.includes(capture[0])
-          ? source.slice(capture.index).trimStart()
-          : source.slice(capture.index + 1).trimStart()
-        if (!quoted && quote) {
-          content = leftQuotes[index] + content
-          inters.forEach(inter => inter.pos += 1)
-        }
-        return { quoted, terminator: capture[0], content, inters, rest }
-      }
-    }
-  }
-}
-
 export interface ParsedArgv<O = {}> {
   args?: string[]
   options?: O
+  source?: string
 }
 
 export interface Argv<U extends User.Field = never, G extends Channel.Field = never, O = {}> extends ParsedArgv<O> {
-  source?: string
   session?: Session<U, G, O>
   command?: Command<U, G, O>
   rest?: string
@@ -65,28 +29,84 @@ export interface Argv<U extends User.Field = never, G extends Channel.Field = ne
   next?: NextFunction
 }
 
+const leftQuotes = `"'“‘`
+const rightQuotes = `"'”’`
+
 export namespace Argv {
-  export function from(source: string, terminator = ''): Argv {
-    const tokens: Token[] = []
-    let rest = source
-    // eslint-disable-next-line no-unmodified-loop-condition
-    while (rest && !(terminator && rest.startsWith(terminator))) {
-      const token = Token.from(rest, terminator)
-      tokens.push(token)
-      rest = token.rest
-      delete token.rest
+  export class Tokenizer {
+    private sepRE: RegExp
+
+    constructor(public sep = '\\s', public brac: Record<string, string> = { '$(': ')' }) {
+      this.sepRE = sep && new RegExp(`^${sep}+$`)
     }
-    if (rest.startsWith(terminator)) rest = rest.slice(1)
-    return { tokens, rest, source: source.slice(0, -rest.length) }
+
+    parseToken(source: string, terminator = ''): Token {
+      const index = leftQuotes.indexOf(source[0])
+      const quote = rightQuotes[index]
+      let resource = `${this.sep}+|[${escapeRegExp(terminator)}]${this.sep}*|$`, content = ''
+      if (quote) {
+        source = source.slice(1)
+        resource += `|${quote}(?=${resource})`
+      }
+      resource += `|${Object.keys(this.brac).map(escapeRegExp).join('|')}`
+      const regExp = new RegExp(resource)
+      const inters: Argv[] = []
+      while (true) {
+        const capture = regExp.exec(source)
+        content += source.slice(0, capture.index)
+        if (capture[0] in this.brac) {
+          source = source.slice(capture.index + capture[0].length).trimStart()
+          const { rest, tokens } = this.parse(source, this.brac[capture[0]])
+          source = rest
+          inters.push({ tokens, pos: content.length })
+        } else {
+          const quoted = capture[0] === quote
+          const rest = source.slice(capture.index + +quoted).trimStart()
+          if (!quoted && quote) {
+            content = leftQuotes[index] + content
+            inters.forEach(inter => inter.pos += 1)
+          }
+          return { quoted, terminator: capture[0], content, inters, rest }
+        }
+      }
+    }
+
+    parse(source: string, terminator = ''): Argv {
+      const tokens: Token[] = []
+      let rest = source
+      // eslint-disable-next-line no-unmodified-loop-condition
+      while (rest && !(terminator && rest.startsWith(terminator))) {
+        const token = this.parseToken(rest, terminator)
+        tokens.push(token)
+        rest = token.rest
+        delete token.rest
+      }
+      if (rest.startsWith(terminator)) rest = rest.slice(1)
+      return { tokens, rest, source: source.slice(0, -rest.length) }
+    }
+
+    stringify(argv: Argv) {
+      return argv.tokens.map((token) => {
+        return this.sepRE.test(token.terminator)
+          ? token.content + token.terminator
+          : token.content
+      }).join('')
+    }
   }
 
-  export function assign(argv1: ParsedArgv, argv2: ParsedArgv) {
-    argv1.args = [...argv1.args || [], ...argv2.args || []]
-    argv1.options = { ...argv1.options, ...argv2.options }
+  const defaultTokenizer = new Tokenizer()
+
+  export function from(source: string, terminator = '') {
+    return defaultTokenizer.parse(source, terminator)
   }
 
   export function stringify(argv: Argv) {
-    return argv.tokens.map(token => token.content).join(' ')
+    return defaultTokenizer.stringify(argv)
+  }
+
+  export function assign(argv1: ParsedArgv, argv2: ParsedArgv) {
+    argv1.args = [...argv1.args || [], ...argv2.args]
+    argv1.options = { ...argv1.options, ...argv2.options }
   }
 }
 

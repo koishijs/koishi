@@ -1,6 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 
-import { Context, ExecuteArgv } from 'koishi-core'
+import { Context } from 'koishi-core'
 import { escapeRegExp } from 'koishi-utils'
 import { Dialogue, parseTeachArgs } from './utils'
 import internal from './internal'
@@ -88,48 +88,53 @@ const cheatSheet = (p: string, authority: number, config: Config) => `\
 　回退近期改动：　-V
 　设置查看区间：　-l/-L
 特殊语法：
-　%%：一个普通的 % 字符
-　%0：收到的原文本
-　%n：分条发送
-　%a：@说话人
-　%m：@四季酱
-　%s：说话人的名字
-　%{}: 指令插值`
+　$$：一个普通的 $ 字符
+　$0：收到的原文本
+　$n：分条发送
+　$a：@说话人
+　$m：@四季酱
+　$s：说话人的名字
+　\${}: 指令插值`
 
 export const name = 'teach'
 
 function registerPrefix(ctx: Context, prefix: string) {
   const g = '\\d+(?:\\.\\.\\d+)?'
   const p = escapeRegExp(prefix)
-  const teachRegExp = new RegExp(`^${p}(${p}?)((${g}(?:,${g})*)?|${p}?)(\\s+|$)`)
+  const teachRegExp = new RegExp(`^${p}(${p}?)((${g}(?:,${g})*)?|${p}?)$`)
   //                                   $1     $2
 
-  ctx.on('parse', (source, session, builtin, terminator) => {
-    if (builtin && session.$prefix || session.$reply) return
-    const capture = source.match(teachRegExp)
+  ctx.on('parse', (argv, session) => {
+    if (argv.root && session.$prefix || session.$reply) return
+    const capture = teachRegExp.exec(argv.tokens[0]?.content)
     if (!capture) return
 
-    const command = ctx.command('teach')
-    const message = source.slice(capture[0].length)
-    const { options, args, rest } = command.parse(message, terminator)
-    const argv: ExecuteArgv = { options, args, command, source, rest }
-
-    if (capture[1] === prefix) {
-      options['search'] = true
-      if (capture[2] === prefix) {
-        options['autoMerge'] = true
-        options['regexp'] = true
+    argv.tokens.shift()
+    const { length } = argv.tokens
+    for (const arg of argv.tokens) {
+      while (arg.inters.length) {
+        const { pos, source } = arg.inters.pop()
+        arg.content = `${arg.content.slice(0, pos)}$(${source})${arg.content.slice(pos)}`
       }
-    } else if (!capture[2] && !message) {
-      options['help'] = true
+    }
+
+    argv.source = session.$parsed
+    argv.options = {}
+    if (capture[1] === prefix) {
+      argv.options['search'] = true
+      if (capture[2] === prefix) {
+        argv.options['autoMerge'] = true
+        argv.options['regexp'] = true
+      }
+    } else if (!capture[2] && !length) {
+      argv.options['help'] = true
     }
 
     if (capture[2] && capture[2] !== prefix) {
-      options['target'] = capture[2]
+      argv.options['target'] = capture[2]
     }
 
-    parseTeachArgs(argv)
-    return argv
+    return 'teach'
   })
 }
 
@@ -160,11 +165,13 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.command('teach', '添加教学对话', { authority: config.authority.base, checkUnknown: true, hideOptions: true })
     .userFields(['authority', 'id'])
     .usage(({ $user }) => cheatSheet(config.prefix, $user.authority, config))
-    .action(async ({ options, session, args }) => {
-      const argv: Dialogue.Argv = { app: ctx.app, session, args, config, options }
-      return ctx.bail('dialogue/validate', argv)
-        || ctx.bail('dialogue/execute', argv)
-        || create(argv)
+    .action(async (argv) => {
+      parseTeachArgs(argv)
+      const { options, session, args } = argv
+      const argd: Dialogue.Argv = { app: ctx.app, session, args, config, options }
+      return ctx.bail('dialogue/validate', argd)
+        || ctx.bail('dialogue/execute', argd)
+        || create(argd)
     })
 
   // features

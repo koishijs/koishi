@@ -125,7 +125,12 @@ export class App extends Context {
     this.on('parse', (argv: Argv, session: Session) => {
       const { $prefix, $appel, subType } = session
       if (argv.root && subType !== 'private' && $prefix === null && !$appel) return
-      return argv.tokens[0]?.content
+      const name = argv.tokens[0]?.content
+      if (name in this._commandMap) {
+        argv.tokens.shift()
+        argv.source = session.$parsed
+        return name
+      }
     })
 
     this.on('before-attach-user', (session, fields) => {
@@ -226,11 +231,9 @@ export class App extends Context {
 
     // store parsed message
     session.$parsed = message
-    session.$argv = this.bail('tokenize', message, session) || Argv.from(message, ';')
-    if (session.$argv) {
-      session.$argv.root = true
-      session.$argv.session = session
-    }
+    session.$argv = this.bail('tokenize', message, session) || Argv.from(message)
+    session.$argv.root = true
+    session.$argv.session = session
 
     if (this.database) {
       if (session.subType === 'group') {
@@ -260,7 +263,7 @@ export class App extends Context {
     }
 
     // execute command
-    if (!session.$argv) return next()
+    if (!session.$argv.command) return next()
     const result = await session.execute(session.$argv, next)
     if (result) await session.$send(result)
   }

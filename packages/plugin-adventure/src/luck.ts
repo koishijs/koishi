@@ -144,7 +144,7 @@ namespace Luck {
         await $user._update()
 
         if (!times) output.push('您本日的抽奖次数已用完，请明天再试吧~')
-        await session.$send(output.join('\n').replace(/\$s/g, session.$username))
+        return output.join('\n').replace(/\$s/g, session.$username)
       })
   }
 }

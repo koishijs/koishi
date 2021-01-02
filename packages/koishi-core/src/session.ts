@@ -133,7 +133,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     this._delay = delay
   }
 
-  async $sendQueued(content: string | void, delay?: number) {
+  async $sendQueued(content: string, delay?: number) {
     if (!content) return
     if (typeof delay === 'undefined') {
       const { message, character } = this.$app.options.delay
@@ -258,7 +258,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     const name = this.$app.bail('parse', argv, this)
     const command = argv.command = this.$app._commandMap[name]
     if (command && argv.tokens.every(token => !token.inters.length)) {
-      Argv.assign(argv, command.parse(argv))
+      const { options, args } = command.parse(argv)
+      argv.options = { ...argv.options, ...options }
+      argv.args = [...argv.args || [], ...args]
     }
     return command
   }
@@ -283,6 +285,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   async execute(argv: string | Argv, next?: NextFunction): Promise<string> {
     if (typeof argv === 'string') argv = Argv.from(argv)
 
+    argv.session = this
     if (argv.tokens) {
       for (const arg of argv.tokens) {
         const { inters } = arg
@@ -296,7 +299,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         }
         arg.inters = []
       }
-      if (!(argv.command = this.resolve(argv))) return ''
+      if (!argv.command && !this.resolve(argv)) return ''
     } else {
       argv.command ||= this.$app._commandMap[argv.name]
       if (!argv.command) {

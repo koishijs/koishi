@@ -1,4 +1,4 @@
-import { User, Context, Session, Command, GroupMemberInfo } from 'koishi-core'
+import { User, Context, Session, GroupMemberInfo } from 'koishi-core'
 import { paramCase, camelCase, isInteger } from 'koishi-utils'
 import MysqlDatabase from 'koishi-plugin-mysql'
 
@@ -124,7 +124,8 @@ namespace Rank {
   }
 
   export function apply(ctx: Context) {
-    ctx.rankCommand('adventure/rank [type]', '显示排行')
+    ctx.command('adventure/rank [type]', '显示排行')
+      .useRank()
       .action(async ({ session, options }, type) => {
         if (!type) {
           const output = Object.keys(ranks).sort().map((key) => {
@@ -159,19 +160,6 @@ namespace Rank {
       return rankMap[name] && ['rank', rankMap[name]]
     })
   }
-}
-
-declare module 'koishi-core/dist/context' {
-  interface Context {
-    rankCommand(rawName: string, description: string): Command
-  }
-}
-
-Context.prototype.rankCommand = function (this: Context, rawName: string, description: string) {
-  return this.command(rawName, description, { usageName: 'rank', maxUsage: 20 })
-    .option('global', '-g  使用全服数据')
-    .option('length', '-l <index>  排名长度，默认为 10', { fallback: 10 })
-    .option('threshold', '-t <value>  数据阈值')
 }
 
 export default Rank

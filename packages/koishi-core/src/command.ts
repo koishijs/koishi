@@ -1,5 +1,5 @@
 import { noop, camelCase, paramCase, Logger, coerce } from 'koishi-utils'
-import { FieldCollector, Argv, CommandArgument, parseArguments } from './parser'
+import { FieldCollector, Argv, CommandArgument, parseArguments, ParsedArgv } from './parser'
 import { Context, NextFunction } from './context'
 import { User, Channel } from './database'
 import { inspect, format } from 'util'
@@ -236,7 +236,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return n * 0 === 0 ? n : source
   }
 
-  parse(argv: Argv): Argv {
+  parse(argv: Argv): ParsedArgv {
     const args: string[] = []
     const options: Record<string, any> = {}
     const source = this.name + ' ' + Argv.stringify(argv)
@@ -251,7 +251,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     }
 
     while (argv.tokens.length) {
-      const token = argv.tokens.shift()
+      const token = argv.tokens[0]
       let { content, quoted } = token
 
       // greedy argument
@@ -261,6 +261,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       }
 
       // parse token
+      argv.tokens.shift()
       let option: CommandOption
       let names: string | string[]
       let param: string
@@ -329,7 +330,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     }
 
     delete argv.tokens
-    return Object.assign(argv, { options, args, source })
+    return { options, args, source }
   }
 
   private stringifyArg(value: any) {

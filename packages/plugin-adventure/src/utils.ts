@@ -4,7 +4,8 @@ import Achievement from './achievement'
 
 declare module 'koishi-core/dist/command' {
   interface Command<U, G, O> {
-    optionRest(): Command<U, G, Extend<O, 'rest', string>>
+    useRest(): Command<U, G, Extend<O, 'rest', string>>
+    useRank(): Command<U, G, O>
   }
 }
 
@@ -14,16 +15,25 @@ function createCollector<T extends TableType>(key: T): FieldCollector<T, never, 
       const index = tokens.findIndex(token => !token.quoted && token.content === '--')
       session.collect(key, { tokens: tokens.slice(index).slice(1) }, fields)
     } else {
-      session.collect(key, Argv.from(options.rest), fields)
+      session.collect(key, Argv.from(options.rest || ''), fields)
     }
   }
 }
 
-Command.prototype.optionRest = function (this: Command) {
+Command.prototype.useRest = function (this: Command) {
   return this
     .option('rest', '-- [command...]  要执行的指令', { type: 'string' })
     .userFields(createCollector('user'))
     .channelFields(createCollector('channel'))
+}
+
+Command.prototype.useRank = function (this: Command) {
+  this.config.usageName = 'rank'
+  this.config.maxUsage = 20
+  return this
+    .option('global', '-g  使用全服数据')
+    .option('length', '-l <index>  排名长度，默认为 10', { fallback: 10 })
+    .option('threshold', '-t <value>  数据阈值')
 }
 
 declare module 'koishi-core/dist/context' {

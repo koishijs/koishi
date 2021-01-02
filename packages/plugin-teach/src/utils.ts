@@ -1,4 +1,4 @@
-import { Session, ParsedLine, App } from 'koishi-core'
+import { Session, Argv, App } from 'koishi-core'
 import { difference, observe, isInteger, defineProperty, Observed } from 'koishi-utils'
 import { RegExpValidator } from 'regexpp'
 
@@ -171,7 +171,7 @@ export function prepareTargets(argv: Dialogue.Argv, dialogues = argv.dialogues) 
   return targets.map(data => observe(data, `dialogue ${data.id}`))
 }
 
-export function parseTeachArgs({ args, options }: Partial<ParsedLine>) {
+export function parseTeachArgs({ args, options }: Partial<Argv>) {
   function parseArgument() {
     if (!args.length) return
     const [arg] = args.splice(0, 1)
