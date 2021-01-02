@@ -39,7 +39,7 @@
     "koishi-test-utils": "^5.0.3"
   },
   "peerDependencies": {
-    "koishi-core": "^2.4.2",
+    "koishi-core": "^2.5.0",
     "koishi-utils": "^3.2.1"
   },
   "dependencies": {
