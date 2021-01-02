@@ -286,13 +286,21 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     triggerDialogue(ctx, session)
   })
 
-  ctx.on('notify/honor', async (session) => {
+  async function triggerNotice(name: string, session: Session) {
     const { flag, assignee } = await session.$observeGroup(['flag', 'assignee'])
     if (assignee !== session.selfId) return
     if (flag & Group.Flag.ignore) return
-    session.message = 'hook:' + session.honorType
+    session.message = 'hook:' + name + (session.userId === session.selfId ? ':self' : ':others')
     triggerDialogue(ctx, session)
+  }
+
+  ctx.on('notify/honor', async (session) => {
+    await triggerNotice(session.honorType, session)
   })
+
+  ctx.on('group-increase', triggerNotice.bind(null, 'join'))
+
+  ctx.on('group-decrease', triggerNotice.bind(null, 'leave'))
 
   ctx.on('dialogue/attach-user', ({ session }) => {
     if (session.$user.flag & User.Flag.ignore) return true
