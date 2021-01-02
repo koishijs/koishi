@@ -41,10 +41,10 @@
     "koishi-utils": "^3.2.1"
   },
   "dependencies": {
-    "js-yaml": "^3.14.0",
+    "js-yaml": "^3.14.1",
     "json5": "^2.1.3",
-    "simple-git": "^2.23.0",
-    "typescript": "^4.1.2"
+    "simple-git": "^2.31.0",
+    "typescript": "^4.1.3"
   },
   "devDependencies": {
     "@types/js-yaml": "^3.12.5",

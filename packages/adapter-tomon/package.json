@@ -36,6 +36,6 @@
   },
   "dependencies": {
     "koishi-utils": "^3.2.1",
-    "tomon-sdk": "^0.2.0"
+    "tomon-sdk": "^0.2.2"
   }
 }

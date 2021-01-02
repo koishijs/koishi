@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/koishijs/koishi#readme",
   "devDependencies": {
-    "@types/cheerio": "^0.22.22",
+    "@types/cheerio": "^0.22.23",
     "@types/qrcode": "^1.3.5"
   },
   "peerDependencies": {
@@ -29,8 +29,8 @@
     "koishi-utils": "^3.2.1"
   },
   "dependencies": {
-    "axios": "^0.21.0",
-    "cheerio": "^1.0.0-rc.3",
+    "axios": "^0.21.1",
+    "cheerio": "^1.0.0-rc.5",
     "qrcode": "^1.4.4",
     "xml-js": "^1.6.11"
   }
