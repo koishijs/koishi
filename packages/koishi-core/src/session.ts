@@ -254,17 +254,6 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return this.$user = user
   }
 
-  resolve(argv: Argv) {
-    const name = this.$app.bail('parse', argv, this)
-    const command = argv.command = this.$app._commandMap[name]
-    if (command && argv.tokens.every(token => !token.inters.length)) {
-      const { options, args } = command.parse(argv)
-      argv.options = { ...argv.options, ...options }
-      argv.args = [...argv.args || [], ...args]
-    }
-    return command
-  }
-
   collect<T extends TableType>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()) {
     collectFields(argv, Command[`_${key}Fields`], fields)
     const collect = (argv: Argv) => {
@@ -272,7 +261,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         for (const { inters } of argv.tokens) {
           inters.forEach(collect)
         }
-        if (!argv.command && !this.resolve(argv)) return
+        if (!this.resolve(argv)) return
       }
       collectFields(argv, argv.command[`_${key}Fields`], fields)
     }
@@ -280,9 +269,22 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return fields
   }
 
-  async execute(content: string, next?: NextFunction): Promise<string>
-  async execute(argv: Argv, next?: NextFunction): Promise<string>
-  async execute(argv: string | Argv, next?: NextFunction): Promise<string> {
+  resolve(argv: Argv) {
+    if (!argv.command) {
+      const name = this.$app.bail('parse', argv, this)
+      if (!(argv.command = this.$app._commandMap[name])) return
+    }
+    if (argv.tokens.every(token => !token.inters.length)) {
+      const { options, args } = argv.command.parse(argv)
+      argv.options = { ...argv.options, ...options }
+      argv.args = [...argv.args || [], ...args]
+    }
+    return argv.command
+  }
+
+  async execute(content: string, next?: NextFunction, silent?: boolean): Promise<string>
+  async execute(argv: Argv, next?: NextFunction, silent?: boolean): Promise<string>
+  async execute(argv: string | Argv, next?: NextFunction, silent?: boolean): Promise<string> {
     if (typeof argv === 'string') argv = Argv.from(argv)
 
     argv.session = this
@@ -299,7 +301,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         }
         arg.inters = []
       }
-      if (!argv.command && !this.resolve(argv)) return ''
+      if (!this.resolve(argv)) return ''
     } else {
       argv.command ||= this.$app._commandMap[argv.name]
       if (!argv.command) {
@@ -315,7 +317,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       await this.$observeUser(this.collect('user', argv))
     }
 
-    return argv.command.execute(argv, next)
+    const result = await argv.command.execute(argv, next)
+    if (!argv.parent && !silent) await this.$send(result)
+    return result
   }
 }
 

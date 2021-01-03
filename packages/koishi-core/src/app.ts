@@ -121,14 +121,13 @@ export class App extends Context {
     this.on('before-connect', this._listen.bind(this))
     this.on('before-disconnect', this._close.bind(this))
 
-    // group message should have prefix or appel to be interpreted as a command call
     this.on('parse', (argv: Argv, session: Session) => {
       const { $prefix, $appel, subType } = session
+      // group message should have prefix or appel to be interpreted as a command call
       if (argv.root && subType !== 'private' && $prefix === null && !$appel) return
       const name = argv.tokens[0]?.content
       if (name in this._commandMap) {
         argv.tokens.shift()
-        argv.source = session.$parsed
         return name
       }
     })
@@ -264,8 +263,7 @@ export class App extends Context {
 
     // execute command
     if (!session.$argv.command) return next()
-    const result = await session.execute(session.$argv, next)
-    if (result) await session.$send(result)
+    return session.execute(session.$argv, next)
   }
 
   private async _receive(session: Session) {

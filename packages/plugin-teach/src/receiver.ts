@@ -146,8 +146,7 @@ export class MessageBuffer {
     this.original = false
     const send = this.session.$send
     const sendQueued = this.session.$sendQueued
-    const result = await callback()
-    if (result) await send(result)
+    await callback()
     this.session.$sendQueued = sendQueued
     this.session.$send = send
     this.original = true

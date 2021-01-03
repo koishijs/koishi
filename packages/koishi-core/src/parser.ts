@@ -5,7 +5,7 @@ import { Channel, Tables, TableType, User } from './database'
 import { Session } from './session'
 
 export interface Token {
-  rest?: string
+  rest: string
   content: string
   quoted: boolean
   terminator: string
@@ -19,11 +19,13 @@ export interface ParsedArgv<O = {}> {
 }
 
 export interface Argv<U extends User.Field = never, G extends Channel.Field = never, O = {}> extends ParsedArgv<O> {
+  initiator?: string
   session?: Session<U, G, O>
   command?: Command<U, G, O>
   rest?: string
   pos?: number
   root?: boolean
+  parent?: Token
   tokens?: Token[]
   name?: string
   next?: NextFunction
@@ -41,48 +43,64 @@ export namespace Argv {
     }
 
     parseToken(source: string, terminator = ''): Token {
+      const parent = { inters: [] } as Token
       const index = leftQuotes.indexOf(source[0])
       const quote = rightQuotes[index]
-      let resource = `${this.sep}+|[${escapeRegExp(terminator)}]${this.sep}*|$`, content = ''
+      let content = ''
+      let resource = this.sep
+        ? `${this.sep}+|[${escapeRegExp(terminator)}]${this.sep}*|$`
+        : `[${escapeRegExp(terminator)}]|$`
       if (quote) {
         source = source.slice(1)
         resource += `|${quote}(?=${resource})`
       }
       resource += `|${Object.keys(this.brac).map(escapeRegExp).join('|')}`
       const regExp = new RegExp(resource)
-      const inters: Argv[] = []
       while (true) {
         const capture = regExp.exec(source)
         content += source.slice(0, capture.index)
         if (capture[0] in this.brac) {
           source = source.slice(capture.index + capture[0].length).trimStart()
-          const { rest, tokens } = this.parse(source, this.brac[capture[0]])
-          source = rest
-          inters.push({ tokens, pos: content.length })
+          const argv = this.parse(source, this.brac[capture[0]])
+          source = argv.rest
+          parent.inters.push({ ...argv, pos: content.length, initiator: capture[0], parent })
         } else {
           const quoted = capture[0] === quote
           const rest = source.slice(capture.index + +quoted).trimStart()
           if (!quoted && quote) {
             content = leftQuotes[index] + content
-            inters.forEach(inter => inter.pos += 1)
+            parent.inters.forEach(inter => inter.pos += 1)
           }
-          return { quoted, terminator: capture[0], content, inters, rest }
+          if (quote === "'") {
+            for (let i = parent.inters.length - 1; i >= 0; --i) {
+              const { pos, source, initiator } = parent.inters[i]
+              content = content.slice(0, pos) + initiator + source + this.brac[initiator] + content.slice(pos)
+            }
+            parent.inters = []
+          }
+          parent.rest = rest
+          parent.quoted = quoted
+          parent.content = content
+          parent.terminator = capture[0]
+          return parent
         }
       }
     }
 
     parse(source: string, terminator = ''): Argv {
       const tokens: Token[] = []
-      let rest = source
+      let rest = source, term = ''
       // eslint-disable-next-line no-unmodified-loop-condition
       while (rest && !(terminator && rest.startsWith(terminator))) {
         const token = this.parseToken(rest, terminator)
         tokens.push(token)
         rest = token.rest
+        term = token.terminator
         delete token.rest
       }
       if (rest.startsWith(terminator)) rest = rest.slice(1)
-      return { tokens, rest, source: source.slice(0, -rest.length) }
+      source = source.slice(0, -(rest + term).length)
+      return { tokens, rest, source }
     }
 
     stringify(argv: Argv) {
