@@ -1,7 +1,7 @@
 import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop } from 'koishi-utils'
 import { Context, Middleware, NextFunction } from './context'
 import { Argv } from './parser'
-import { Bot, BotOptions, Server } from './server'
+import { BotOptions, Server, createBots } from './server'
 import { Channel, User } from './database'
 import { Command } from './command'
 import { Session } from './session'
@@ -48,7 +48,7 @@ export class App extends Context {
   public app = this
   public options: AppOptions
   public status = AppStatus.closed
-  public bots: Bot[] & Record<string, Bot> = [] as any
+  public bots = createBots('sid')
 
   _commands: Command[]
   _commandMap: Record<string, Command>

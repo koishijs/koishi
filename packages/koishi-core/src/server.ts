@@ -1,4 +1,4 @@
-import { CQCode, defineProperty, paramCase, sleep } from 'koishi-utils'
+import { CQCode, paramCase, sleep } from 'koishi-utils'
 import { Session, MessageInfo, EventTypeMap, GroupInfo, GroupMemberInfo, UserInfo } from './session'
 import { App, AppStatus } from './app'
 
@@ -7,33 +7,33 @@ export interface BotOptions {
   selfId?: string
 }
 
+export function createBots<T extends Bot>(key: 'selfId' | 'sid') {
+  const bots = [] as Array<T> & Record<string, T>
+  return new Proxy(bots, {
+    get(target, prop) {
+      return typeof prop === 'symbol'
+        ? Reflect.get(target, prop)
+        : target[prop] || target.find(bot => bot[key] === prop)
+    },
+  })
+}
+
 type BotStatic<T extends Bot = Bot> = new (app: App, options: BotOptions) => T
 
 export abstract class Server<T extends Bot = Bot> {
   static types: Record<string, new (app: App) => Server> = {}
 
-  protected _bots: T[]
-  public bots: T[] & Record<string, T>
+  public bots = createBots<T>('selfId')
 
   abstract listen(): Promise<void>
   abstract close(): void
 
-  constructor(public app: App, private BotStatic: BotStatic<T>) {
-    defineProperty(this, '_bots', [])
-    this.bots = new Proxy(this._bots, {
-      get(target, prop) {
-        return typeof prop === 'symbol'
-          ? target[prop]
-          : target[prop] || target.find(bot => bot.selfId === prop)
-      },
-    }) as any
-  }
+  constructor(public app: App, private BotStatic: BotStatic<T>) {}
 
   create(options: BotOptions) {
     const bot = new this.BotStatic(this.app, options)
-    this._bots.push(bot)
+    this.bots.push(bot)
     this.app.bots.push(bot)
-    this.app.bots[bot.sid] = bot
   }
 
   dispatch(session: Session) {

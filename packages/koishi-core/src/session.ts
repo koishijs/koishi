@@ -282,9 +282,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return argv.command
   }
 
-  async execute(content: string, next?: NextFunction, silent?: boolean): Promise<string>
-  async execute(argv: Argv, next?: NextFunction, silent?: boolean): Promise<string>
-  async execute(argv: string | Argv, next?: NextFunction, silent?: boolean): Promise<string> {
+  async execute(content: string, next?: NextFunction): Promise<string>
+  async execute(argv: Argv, next?: NextFunction): Promise<string>
+  async execute(argv: string | Argv, next?: NextFunction): Promise<string> {
     if (typeof argv === 'string') argv = Argv.from(argv)
 
     argv.session = this
@@ -318,7 +318,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     }
 
     const result = await argv.command.execute(argv, next)
-    if (!argv.parent && !silent) await this.$send(result)
+    if (!argv.parent) await this.$send(result)
     return result
   }
 }
