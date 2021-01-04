@@ -101,15 +101,23 @@ export namespace Time {
 
   const dayMap = ['日', '一', '二', '三', '四', '五', '六']
 
+  function toDoubleDigit(source: number) {
+    return source.toString().padStart(2, '0')
+  }
+
+  function toHourMinute(time: Date) {
+    return `${toDoubleDigit(time.getHours())}:${toDoubleDigit(time.getMilliseconds())}`
+  }
+
   export function formatTimeInterval(time: Date, interval?: number) {
     if (!interval) {
       return time.toLocaleString()
     } else if (interval === day) {
-      return `每天 ${time.toLocaleTimeString()}`
+      return `每天 ${toHourMinute(time)}`
     } else if (interval === week) {
-      return `每周${dayMap[time.getDay()]} ${time.toLocaleTimeString()}`
+      return `每周${dayMap[time.getDay()]} ${toHourMinute(time)}`
     } else {
-      return `${time.toLocaleString()} 起每隔 ${formatTime(interval)}`
+      return `${time.toLocaleString('zh-CN', { hour12: false })} 起每隔 ${formatTime(interval)}`
     }
   }
 }

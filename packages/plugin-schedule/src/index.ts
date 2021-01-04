@@ -94,7 +94,7 @@ export function apply(ctx: Context, config: Config = {}) {
         }
         if (!schedules.length) return '当前没有等待执行的日程。'
         return schedules.map(({ id, time, interval, command, session }) => {
-          let output = `${id}. 触发时间：${Time.formatTimeInterval(time, interval)}，指令：${command}`
+          let output = `${id}. ${Time.formatTimeInterval(time, interval)}：${command}`
           if (options.full) output += `，上下文：${formatContext(session)}`
           return output
         }).join('\n')
