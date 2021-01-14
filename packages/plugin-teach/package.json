@@ -47,7 +47,7 @@
     "koishi-test-utils": "^5.0.3"
   },
   "dependencies": {
-    "axios": "^0.21.0",
+    "axios": "^0.21.1",
     "fastest-levenshtein": "^1.0.12",
     "regexpp": "^3.1.0"
   }

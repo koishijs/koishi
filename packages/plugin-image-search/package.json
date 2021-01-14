@@ -41,8 +41,8 @@
     "koishi-utils": "^3.2.1"
   },
   "dependencies": {
-    "axios": "^0.21.0",
-    "cheerio": "^1.0.0-rc.3",
+    "axios": "^0.21.1",
+    "cheerio": "^1.0.0-rc.5",
     "nhentai-api": "^3.0.2"
   }
 }

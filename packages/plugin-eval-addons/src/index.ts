@@ -1,7 +1,7 @@
 import { Context, CommandConfig, OptionConfig } from 'koishi-core'
 import { assertProperty, Logger, noop, union } from 'koishi-utils'
 import { resolve } from 'path'
-import { safeLoad } from 'js-yaml'
+import { load } from 'js-yaml'
 import { promises as fs } from 'fs'
 import { Access, AccessOptions, attachTraps, FieldOptions, resolveAccess } from 'koishi-plugin-eval'
 import Git, { CheckRepoActions } from 'simple-git'
@@ -86,7 +86,7 @@ export function apply(ctx: Context, config: Config) {
 
   async function loadManifest(path: string) {
     const content = await fs.readFile(resolve(root, path, 'manifest.yml'), 'utf8')
-    return safeLoad(content) as Manifest
+    return load(content) as Manifest
   }
 
   ctx.on('worker/ready', (response) => {
