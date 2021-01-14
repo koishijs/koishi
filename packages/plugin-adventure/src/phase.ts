@@ -1,5 +1,5 @@
 import { Context, User, Session, checkTimer } from 'koishi-core'
-import { Logger, Random } from 'koishi-utils'
+import { Logger, Random, interpolate, noop } from 'koishi-utils'
 import { ReadonlyUser, getValue, Adventurer, Shopper, Show } from './utils'
 import Event from './event'
 import {} from 'koishi-plugin-common'
@@ -20,14 +20,15 @@ declare module 'koishi-core/dist/session' {
   }
 }
 
-export interface Phase {
+export interface Phase<S = {}> {
+  prepare?: () => S
   texts?: string[]
   items?: Record<string, ReadonlyUser.Infer<string>>
   choices?: Phase.Choice[]
   options?: Phase.ChooseOptions
-  next?: string | Phase.Action
+  next?: string | Phase.Action<S>
   itemsWhenDreamy?: string[]
-  epilog?: Event[]
+  events?: Event[]
 }
 
 export namespace Phase {
@@ -137,7 +138,7 @@ export namespace Phase {
     return phase || (user.progress = '', null)
   }
 
-  export type Action = (session: Session<Adventurer.Field>) => Promise<string | void>
+  export type Action<S = {}> = (session: Session<Adventurer.Field>, state?: S) => Promise<string | void>
 
   const HOOK_PENDING_USE = 4182
   const HOOK_PENDING_CHOOSE = 4185
@@ -280,31 +281,21 @@ export namespace Phase {
   }
 
   /** display phase texts */
-  export async function print(texts: string[], canSkip: boolean, session: Session<Adventurer.Field>) {
+  export async function print(session: Session<Adventurer.Field>, texts: string[], canSkip = true, state = {}) {
     session._canSkip = canSkip
     if (!session._skipAll || !session._canSkip) {
       for (const text of texts || []) {
         if (session._skipCurrent) break
-        await sendEscaped(session, text)
+        await sendEscaped(session, interpolate(text, state))
       }
     }
     session._canSkip = false
   }
 
-  export const plot: Action = async (session) => {
-    const { $app, $user } = session
-
-    // resolve phase
-    const phase = getPhase($user)
-    if (!phase) return logger.warn('phase not found %c', $user.progress)
-
-    logger.debug('%s phase %c', session.userId, $user.progress)
-    const { texts, epilog, items, choices, next, options } = phase
-    await print(texts, $user.phases.includes($user.progress), session)
-
-    // handle epilog
+  /** handle events */
+  async function epilog(session: Session<Adventurer.Field>, events: Event[] = []) {
     const hints: string[] = []
-    for (const event of epilog || []) {
+    for (const event of events || []) {
       const result = event(session)
       if (!session._skipAll) {
         await sendEscaped(session, result)
@@ -313,8 +304,23 @@ export namespace Phase {
       }
     }
 
-    $app.emit('adventure/check', session, hints)
+    session.$app.emit('adventure/check', session, hints)
     await sendEscaped(session, hints.join('\n'))
+  }
+
+  export const plot: Action = async (session) => {
+    const { $user } = session
+
+    // resolve phase
+    const phase = getPhase($user)
+    if (!phase) return logger.warn('phase not found %c', $user.progress)
+
+    logger.debug('%s phase %c', session.userId, $user.progress)
+    const { items, choices, next, options, prepare = noop } = phase
+
+    const state = prepare()
+    await print(session, phase.texts, $user.phases.includes($user.progress), state)
+    await epilog(session, phase.events)
 
     // resolve next phase
     activeUsers.add($user.id)
@@ -322,7 +328,7 @@ export namespace Phase {
       || choices && choose(choices, options)
       || items && useItem(items)
       || (async () => next as string)
-    const progress = await action(session)
+    const progress = await action(session, state)
     activeUsers.delete($user.id)
 
     // save user data
@@ -509,12 +515,8 @@ export namespace Phase {
         if (item && !Item.data[item]) return Item.suggest(argv)
 
         const possess = Item.data.map(i => i.name).filter(name => $user.warehouse[name])
-        if (checkTimer('$control', $user) && Random.bool(0.25) && possess.includes(item)) {
-          let output = `${session.$username} 神志不清，手一滑丢弃了将要使用的${item}！`
-          const result = Item.lose(session, item)
-          if (result) output += '\n' + result
-          return output
-        }
+        const result = ctx.bail('adventure/before-use', item, session)
+        if (result) return result
 
         const phase = getPhase($user)
         if (!phase) return

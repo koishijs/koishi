@@ -196,7 +196,7 @@ export class App extends Context {
   private _close() {
     Object.values(this.servers).forEach(server => server.close())
     this.logger('server').debug('http server closing')
-    this._httpServer.close()
+    this._httpServer?.close()
   }
 
   private async _preprocess(session: Session, next: NextFunction) {

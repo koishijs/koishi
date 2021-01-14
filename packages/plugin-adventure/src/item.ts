@@ -28,9 +28,9 @@ namespace Item {
   export enum rarities { N, R, SR, SSR, EX, SP }
   export type Rarity = keyof typeof rarities
 
-  type Items = Record<string, Item> & Item[] & Record<Rarity, Item[]>
+  type Data = Record<string, Item> & Item[] & Record<Rarity, Item[]>
 
-  export const data: Items = [] as any
+  export const data: Data = [] as any
 
   data.N = []
   data.R = []
@@ -120,16 +120,16 @@ namespace Item {
     return Item.data[name].rarity
   }
 
-  export function format(names: string[]): string
-  export function format(map: Record<string, number>, list?: string[]): string
-  export function format(...args: [string[]] | [Record<string, number>, string[]?]) {
-    if (Array.isArray(args[0])) {
-      return args[0]
+  export type Pack = string[] | Record<string, number>
+
+  export function format(items: Pack, list?: string[]): string {
+    if (Array.isArray(items)) {
+      return items
         .sort((a, b) => Item.rarities[getRarityIndex(a)] - Item.rarities[getRarityIndex(b)])
         .map(i => `${i}（${getRarityIndex(i)}）`)
         .join('，')
     } else {
-      return (args[1] || Object.keys(args[0])).map(name => `${name}×${args[0][name]}`).join('，')
+      return (list || Object.keys(items)).map(name => `${name}×${items[name]}`).join('，')
     }
   }
 
@@ -333,7 +333,7 @@ namespace Item {
         await session.$send(hints.join('\n'))
       })
 
-    ctx.command('adventure/sell [item] [count]', '售出物品', { maxUsage: 100 })
+    ctx.command('adventure/before-sell [item] [count]', '售出物品', { maxUsage: 100 })
       .checkTimer('$system')
       .checkTimer('$shop')
       .userFields(['id', 'authority', 'warehouse', 'money', 'wealth', 'achievement', 'timers', 'progress', 'name', 'usage', 'gains'])
@@ -386,7 +386,7 @@ namespace Item {
         const entries = Object.entries(sellMap)
         if (!entries.length) return '没有出售任何物品。'
 
-        const result = ctx.bail('adventure/sell', sellMap, session)
+        const result = ctx.bail('adventure/before-sell', sellMap, session)
         if (result) return result
 
         if (!user.progress && entries.length === 1 && entries[0][1] === 1 && entries[0][0] in Phase.salePlots) {

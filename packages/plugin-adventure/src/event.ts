@@ -179,17 +179,11 @@ namespace Event {
     }
   }
 
-  export function lose(...names: string[]): Visible<Shopper.Field>
-  export function lose(itemMap: Record<string, number>, reason?: string): Visible<Shopper.Field>
-  export function lose(...args: string[] | [Record<string, number>, string?]): Visible {
-    let itemMap: Record<string, number>, reason = '$s 失去了$i！'
-    if (typeof args[0] === 'object') {
-      itemMap = args[0]
-      reason = (args[1] || reason).replace('$i', () => Item.format(itemMap))
-    } else {
-      itemMap = Object.fromEntries((args as string[]).map(arg => [arg, 1]))
-      reason = reason.replace('$i', Item.format(args as string[]))
-    }
+  export function lose(items: Item.Pack, reason = '$s 失去了$i！'): Visible<Shopper.Field> {
+    reason = reason.replace('$i', () => Item.format(items))
+    const itemMap = Array.isArray(items)
+      ? Object.fromEntries(items.map(arg => [arg, 1]))
+      : items
     return (session) => {
       const output = [reason]
       for (const name in itemMap) {

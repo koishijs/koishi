@@ -42,7 +42,7 @@ function tryCallback<T>(callback: () => T) {
   }
 }
 
-export type PluginConfig = (string | Plugin<Context> | [string | Plugin<Context>, any?])[]
+export type PluginConfig = Record<string, any> | (string | [string, any?])[]
 
 export interface AppConfig extends AppOptions {
   plugins?: PluginConfig
@@ -135,19 +135,18 @@ app.command('exit', '停止机器人运行', { authority: 4 })
   })
 
 // load plugins
-if (Array.isArray(config.plugins)) {
-  for (const item of config.plugins) {
-    let plugin: Plugin<Context>, options: any
-    if (Array.isArray(item)) {
-      plugin = typeof item[0] === 'string' ? loadEcosystem('plugin', item[0]) : item[0]
-      options = item[1]
-    } else if (typeof item === 'string') {
-      plugin = loadEcosystem('plugin', item)
-    } else {
-      plugin = item
-    }
-    app.plugin(plugin, options)
+const pluginEntries = Array.isArray(config.plugins)
+  ? config.plugins
+  : Object.entries(config.plugins || {})
+for (const item of pluginEntries) {
+  let plugin: Plugin<Context>, options: any
+  if (Array.isArray(item)) {
+    plugin = typeof item[0] === 'string' ? loadEcosystem('plugin', item[0]) : item[0]
+    options = item[1]
+  } else {
+    plugin = loadEcosystem('plugin', item)
   }
+  app.plugin(plugin, options)
 }
 
 process.on('unhandledRejection', (error) => {

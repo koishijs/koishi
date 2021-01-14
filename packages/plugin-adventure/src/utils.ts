@@ -42,7 +42,8 @@ declare module 'koishi-core/dist/context' {
     'adventure/rank'(name: string): [string, string]
     'adventure/text'(text: string, session: Session<Adventurer.Field>): string
     'adventure/use'(userId: number, progress: string): void
-    'adventure/sell'(itemMap: Record<string, number>, session: Session<Shopper.Field>): string | undefined
+    'adventure/before-sell'(itemMap: Record<string, number>, session: Session<Shopper.Field>): string | undefined
+    'adventure/before-use'(item: string, session: Session<Adventurer.Field>): string | undefined
     'adventure/lose'(itemMap: Record<string, number>, session: Session<Shopper.Field>, hints: string[]): void
     'adventure/ending'(session: Session<Adventurer.Field>, id: string, hints: string[]): void
     'adventure/achieve'(session: Session<Achievement.Field>, achv: Achievement, hints: string[]): void

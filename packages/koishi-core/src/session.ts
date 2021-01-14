@@ -257,6 +257,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   collect<T extends TableType>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()) {
     collectFields(argv, Command[`_${key}Fields`], fields)
     const collect = (argv: Argv) => {
+      argv.session = this
       if (argv.tokens) {
         for (const { inters } of argv.tokens) {
           inters.forEach(collect)
