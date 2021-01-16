@@ -161,6 +161,12 @@ export class MessageBuffer {
   }
 }
 
+const tokenizer = new Argv.Tokenizer()
+
+tokenizer.interpolate('$n', '', (rest) => {
+  return { rest, tokens: [], source: '' }
+})
+
 export async function triggerDialogue(ctx: Context, session: Session, next: NextFunction = noop) {
   const state = ctx.getSessionState(session)
   state.next = next
@@ -219,26 +225,19 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
 
   // parse answer
   let index: number
-  while ((index = state.answer.indexOf('$')) >= 0) {
-    const char = state.answer[index + 1]
-    if (!'n('.includes(char)) {
-      buffer.write(unescapeAnswer(state.answer.slice(0, index + 2)))
-      state.answer = state.answer.slice(index + 2)
-      continue
-    }
-    buffer.write(unescapeAnswer(state.answer.slice(0, index)))
-    state.answer = state.answer.slice(index + 2)
-    if (char === 'n') {
+  const { content, inters } = tokenizer.parseToken(unescapeAnswer(state.answer))
+  while (inters.length) {
+    const argv = inters.shift()
+    buffer.write(content.slice(index, argv.pos))
+    if (argv.initiator === '$n') {
       await buffer.flush()
-    } else if (char === '(') {
-      // FIXME 这里可能有个 bug
-      const message = unescapeAnswer(state.answer)
-      const argv = Argv.parse(message, ')')
-      state.answer = argv.rest
+    } else {
+      delete argv.parent
       await buffer.run(() => session.execute(argv))
     }
+    index = argv.pos
   }
-  await buffer.end(unescapeAnswer(state.answer))
+  await buffer.end(content.slice(index))
   await ctx.app.parallel(session, 'dialogue/send', state)
 }
 
@@ -308,8 +307,6 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     test.activated = activated
     test.appellative = appellative
   })
-
-  const tokenizer = new Argv.Tokenizer('')
 
   // 预判要获取的用户字段
   ctx.on('dialogue/before-attach-user', ({ dialogues, session }, userFields) => {

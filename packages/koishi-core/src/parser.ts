@@ -40,42 +40,44 @@ export namespace Argv {
     parse?(source: string): Argv
   }
 
-  export const bracs: Record<string, Interpolation> = {}
+  const bracs: Record<string, Interpolation> = {}
 
-  export function interpolate(initiator: string, terminator: string, brac: Interpolation = {}) {
-    brac.terminator = terminator
-    bracs[initiator] = brac
+  export function interpolate(initiator: string, terminator: string, parse?: (source: string) => Argv) {
+    bracs[initiator] = { terminator, parse }
   }
 
   interpolate('$(', ')')
 
   export class Tokenizer {
     private sepRE: RegExp
+    private bracs: Record<string, Interpolation>
 
     constructor(public sep = '\\s') {
-      this.sepRE = sep && new RegExp(`^${sep}+$`)
+      this.sepRE = new RegExp(`^${sep}+$`)
+      this.bracs = { ...bracs }
     }
 
-    parseToken(source: string, terminator = ''): Token {
+    interpolate(initiator: string, terminator: string, parse?: (source: string) => Argv) {
+      this.bracs[initiator] = { terminator, parse }
+    }
+
+    parseToken(source: string, stopReg = '$'): Token {
       const parent = { inters: [] } as Token
       const index = leftQuotes.indexOf(source[0])
       const quote = rightQuotes[index]
       let content = ''
-      let resource = this.sep
-        ? `${this.sep}+|[${escapeRegExp(terminator)}]${this.sep}*|$`
-        : `[${escapeRegExp(terminator)}]|$`
       if (quote) {
         source = source.slice(1)
-        resource += `|${quote}(?=${resource})`
+        stopReg += `|${quote}(?=${stopReg})`
       }
-      resource += `|${Object.keys(bracs).map(escapeRegExp).join('|')}`
-      const regExp = new RegExp(resource)
+      stopReg += `|${Object.keys(this.bracs).map(escapeRegExp).join('|')}`
+      const regExp = new RegExp(stopReg)
       while (true) {
         const capture = regExp.exec(source)
         content += source.slice(0, capture.index)
-        if (capture[0] in bracs) {
+        if (capture[0] in this.bracs) {
           source = source.slice(capture.index + capture[0].length).trimStart()
-          const { parse, terminator } = bracs[capture[0]]
+          const { parse, terminator } = this.bracs[capture[0]]
           const argv = parse?.(source) || this.parse(source, terminator)
           source = argv.rest
           parent.inters.push({ ...argv, pos: content.length, initiator: capture[0], parent })
@@ -99,9 +101,10 @@ export namespace Argv {
     parse(source: string, terminator = ''): Argv {
       const tokens: Token[] = []
       let rest = source, term = ''
+      const stopReg = `${this.sep}+|[${escapeRegExp(terminator)}]${this.sep}*|$`
       // eslint-disable-next-line no-unmodified-loop-condition
       while (rest && !(terminator && rest.startsWith(terminator))) {
-        const token = this.parseToken(rest, terminator)
+        const token = this.parseToken(rest, stopReg)
         tokens.push(token)
         rest = token.rest
         term = token.terminator

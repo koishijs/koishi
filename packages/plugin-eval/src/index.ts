@@ -124,24 +124,22 @@ export function apply(ctx: Context, config: Config = {}) {
     command.shortcut(prefix + prefix, { oneArg: true, fuzzy: true, options: { slient: true } })
   }
 
-  Argv.interpolate('${', '}', {
-    parse(source) {
-      try {
-        Reflect.construct(Script, [source])
-      } catch (e) {
-        if (!(e instanceof Error)) throw e
-        if (e.message === "Unexpected token '}'") {
-          const eLines = e.stack.split('\n')
-          const sLines = source.split('\n')
-          const cap = /\d+$/.exec(eLines[0])
-          const row = +cap[0] - 1
-          const expr = sLines.slice(0, row) + sLines[row].slice(0, eLines[2].length - 1)
-          const rest = sLines[row].slice(eLines[2].length) + sLines.slice(row + 1)
-          return { source, command, args: [expr], rest }
-        }
+  Argv.interpolate('${', '}', (source) => {
+    try {
+      Reflect.construct(Script, [source])
+    } catch (e) {
+      if (!(e instanceof Error)) throw e
+      if (e.message === "Unexpected token '}'") {
+        const eLines = e.stack.split('\n')
+        const sLines = source.split('\n')
+        const cap = /\d+$/.exec(eLines[0])
+        const row = +cap[0] - 1
+        const rest = sLines[row].slice(eLines[2].length) + sLines.slice(row + 1)
+        source = sLines.slice(0, row) + sLines[row].slice(0, eLines[2].length - 1)
+        return { source, command, args: [source], rest }
       }
-      return { source, rest: source, tokens: [] }
-    },
+    }
+    return { source, rest: source, tokens: [] }
   })
 }
 
