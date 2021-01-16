@@ -1,5 +1,6 @@
 import { Context } from 'koishi-core'
 import { CQCode, Logger, defineProperty } from 'koishi-utils'
+import { Script } from 'vm'
 import { EvalWorker, attachTraps, EvalConfig, Config, resolveAccess } from './main'
 
 export * from './main'
@@ -74,6 +75,14 @@ export function apply(ctx: Context, config: Config = {}) {
 
     if (!expr) return '请输入要执行的脚本。'
     expr = CQCode.unescape(expr)
+
+    try {
+      Reflect.construct(Script, [expr, { filename: 'stdin' }])
+    } catch (e) {
+      if (!(e instanceof SyntaxError)) throw e
+      const lines = e.stack.split('\n', 5)
+      return `${lines[4]}\n    at ${lines[0]}:${lines[2].length}`
+    }
 
     return await new Promise((resolve) => {
       logger.debug(expr)
