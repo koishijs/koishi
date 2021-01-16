@@ -15,7 +15,7 @@ function createCollector<T extends TableType>(key: T): FieldCollector<T, never, 
       const index = tokens.findIndex(token => !token.quoted && token.content === '--')
       session.collect(key, { tokens: tokens.slice(index).slice(1) }, fields)
     } else {
-      session.collect(key, Argv.from(options.rest || ''), fields)
+      session.collect(key, Argv.parse(options.rest || ''), fields)
     }
   }
 }
@@ -177,7 +177,7 @@ export namespace Show {
         if (!item) return
         if (item[0] === 'redirect') {
           const command = argv.command = ctx.command(item[1])
-          Object.assign(argv, command.parse(Argv.from(argv.source.slice(5))))
+          Object.assign(argv, command.parse(Argv.parse(argv.source.slice(5))))
           argv.session.collect('user', argv, fields)
         } else if (item[0] === 'callback') {
           for (const field of item[1]) {

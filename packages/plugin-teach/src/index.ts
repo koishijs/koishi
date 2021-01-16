@@ -1,6 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 
-import { Context } from 'koishi-core'
+import { Argv, Context } from 'koishi-core'
 import { escapeRegExp } from 'koishi-utils'
 import { Dialogue, parseTeachArgs } from './utils'
 import internal from './internal'
@@ -110,16 +110,10 @@ function registerPrefix(ctx: Context, prefix: string) {
     if (!capture) return
 
     argv.tokens.shift()
-    const { length } = argv.tokens
-    for (const arg of argv.tokens) {
-      while (arg.inters.length) {
-        const { pos, source } = arg.inters.pop()
-        arg.content = `${arg.content.slice(0, pos)}$(${source})${arg.content.slice(pos)}`
-      }
-    }
-
+    argv.tokens.forEach(Argv.revert)
     argv.source = session.$parsed
     argv.options = {}
+    const { length } = argv.tokens
     if (capture[1] === prefix) {
       argv.options['search'] = true
       if (capture[2] === prefix) {

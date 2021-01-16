@@ -35,10 +35,24 @@ const leftQuotes = `"'“‘`
 const rightQuotes = `"'”’`
 
 export namespace Argv {
+  export interface Interpolation {
+    terminator?: string
+    parse?(source: string): Argv
+  }
+
+  export const bracs: Record<string, Interpolation> = {}
+
+  export function interpolate(initiator: string, terminator: string, brac: Interpolation = {}) {
+    brac.terminator = terminator
+    bracs[initiator] = brac
+  }
+
+  interpolate('$(', ')')
+
   export class Tokenizer {
     private sepRE: RegExp
 
-    constructor(public sep = '\\s', public brac: Record<string, string> = { '$(': ')' }) {
+    constructor(public sep = '\\s') {
       this.sepRE = sep && new RegExp(`^${sep}+$`)
     }
 
@@ -54,14 +68,15 @@ export namespace Argv {
         source = source.slice(1)
         resource += `|${quote}(?=${resource})`
       }
-      resource += `|${Object.keys(this.brac).map(escapeRegExp).join('|')}`
+      resource += `|${Object.keys(bracs).map(escapeRegExp).join('|')}`
       const regExp = new RegExp(resource)
       while (true) {
         const capture = regExp.exec(source)
         content += source.slice(0, capture.index)
-        if (capture[0] in this.brac) {
+        if (capture[0] in bracs) {
           source = source.slice(capture.index + capture[0].length).trimStart()
-          const argv = this.parse(source, this.brac[capture[0]])
+          const { parse, terminator } = bracs[capture[0]]
+          const argv = parse?.(source) || this.parse(source, terminator)
           source = argv.rest
           parent.inters.push({ ...argv, pos: content.length, initiator: capture[0], parent })
         } else {
@@ -71,17 +86,11 @@ export namespace Argv {
             content = leftQuotes[index] + content
             parent.inters.forEach(inter => inter.pos += 1)
           }
-          if (quote === "'") {
-            for (let i = parent.inters.length - 1; i >= 0; --i) {
-              const { pos, source, initiator } = parent.inters[i]
-              content = content.slice(0, pos) + initiator + source + this.brac[initiator] + content.slice(pos)
-            }
-            parent.inters = []
-          }
           parent.rest = rest
           parent.quoted = quoted
           parent.content = content
           parent.terminator = capture[0]
+          if (quote === "'") Argv.revert(parent)
           return parent
         }
       }
@@ -114,12 +123,21 @@ export namespace Argv {
 
   const defaultTokenizer = new Tokenizer()
 
-  export function from(source: string, terminator = '') {
+  export function parse(source: string, terminator = '') {
     return defaultTokenizer.parse(source, terminator)
   }
 
   export function stringify(argv: Argv) {
     return defaultTokenizer.stringify(argv)
+  }
+
+  export function revert(token: Token) {
+    while (token.inters.length) {
+      const { pos, source, initiator } = token.inters.pop()
+      token.content = token.content.slice(0, pos)
+        + initiator + source + bracs[initiator].terminator
+        + token.content.slice(pos)
+    }
   }
 
   export function assign(argv1: ParsedArgv, argv2: ParsedArgv) {

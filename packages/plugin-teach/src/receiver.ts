@@ -142,7 +142,7 @@ export class MessageBuffer {
     return this._flush(this.buffer)
   }
 
-  async run(callback: () => Promise<string>) {
+  async run(callback: () => Promise<any>) {
     this.original = false
     const send = this.session.$send
     const sendQueued = this.session.$sendQueued
@@ -231,8 +231,9 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
     if (char === 'n') {
       await buffer.flush()
     } else if (char === '(') {
+      // FIXME 这里可能有个 bug
       const message = unescapeAnswer(state.answer)
-      const argv = Argv.from(message, ')')
+      const argv = Argv.parse(message, ')')
       state.answer = argv.rest
       await buffer.run(() => session.execute(argv))
     }
@@ -308,7 +309,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     test.appellative = appellative
   })
 
-  const tokenizer = new Argv.Tokenizer('', { '$(': ')', '${': '}' })
+  const tokenizer = new Argv.Tokenizer('')
 
   // 预判要获取的用户字段
   ctx.on('dialogue/before-attach-user', ({ dialogues, session }, userFields) => {

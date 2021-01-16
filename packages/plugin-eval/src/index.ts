@@ -1,4 +1,4 @@
-import { Context } from 'koishi-core'
+import { Context, Argv } from 'koishi-core'
 import { CQCode, Logger, defineProperty } from 'koishi-utils'
 import { Script } from 'vm'
 import { EvalWorker, attachTraps, EvalConfig, Config, resolveAccess } from './main'
@@ -58,7 +58,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const userAccess = resolveAccess(config.userFields)
   const groupAccess = resolveAccess(config.channelFields)
 
-  const cmd = ctx.command('evaluate [expr...]', '执行 JavaScript 脚本', { noEval: true })
+  const command = ctx.command('evaluate [expr...]', '执行 JavaScript 脚本', { noEval: true })
     .alias('eval')
     .userFields(['authority'])
     .option('slient', '-s  不输出最后的结果')
@@ -67,7 +67,7 @@ export function apply(ctx: Context, config: Config = {}) {
       if (!session['_redirected'] && session.$user?.authority < authority) return '权限不足。'
     })
 
-  attachTraps(cmd, userAccess, groupAccess, async ({ session, options, ctxOptions }, expr) => {
+  attachTraps(command, userAccess, groupAccess, async ({ session, options, ctxOptions }, expr) => {
     if (options.restart) {
       await app.worker.restart()
       return '子线程已重启。'
@@ -120,9 +120,29 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   if (prefix) {
-    cmd.shortcut(prefix, { oneArg: true, fuzzy: true })
-    cmd.shortcut(prefix + prefix, { oneArg: true, fuzzy: true, options: { slient: true } })
+    command.shortcut(prefix, { oneArg: true, fuzzy: true })
+    command.shortcut(prefix + prefix, { oneArg: true, fuzzy: true, options: { slient: true } })
   }
+
+  Argv.interpolate('${', '}', {
+    parse(source) {
+      try {
+        Reflect.construct(Script, [source])
+      } catch (e) {
+        if (!(e instanceof Error)) throw e
+        if (e.message === "Unexpected token '}'") {
+          const eLines = e.stack.split('\n')
+          const sLines = source.split('\n')
+          const cap = /\d+$/.exec(eLines[0])
+          const row = +cap[0] - 1
+          const expr = sLines.slice(0, row) + sLines[row].slice(0, eLines[2].length - 1)
+          const rest = sLines[row].slice(eLines[2].length) + sLines.slice(row + 1)
+          return { source, command, args: [expr], rest }
+        }
+      }
+      return { source, rest: source, tokens: [] }
+    },
+  })
 }
 
 const ERROR_CODES = {

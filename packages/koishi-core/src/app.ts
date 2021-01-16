@@ -230,7 +230,7 @@ export class App extends Context {
 
     // store parsed message
     session.$parsed = message
-    session.$argv = this.bail('tokenize', message, session) || Argv.from(message)
+    session.$argv = this.bail('tokenize', message, session) || Argv.parse(message)
     session.$argv.root = true
     session.$argv.session = session
 

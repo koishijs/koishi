@@ -68,7 +68,7 @@ export default function apply(ctx: Context) {
         if (fuzzy && !$appel && message.match(/^\S/)) continue
         const argv: Argv = oneArg
           ? { options: {}, args: [message.trim()] }
-          : command.parse(Argv.from(message.trim()))
+          : command.parse(Argv.parse(message.trim()))
         argv.command = command
         argv.options = { ...options, ...argv.options }
         argv.args = [...args, ...argv.args]

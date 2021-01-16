@@ -286,7 +286,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   async execute(content: string, next?: NextFunction): Promise<string>
   async execute(argv: Argv, next?: NextFunction): Promise<string>
   async execute(argv: string | Argv, next?: NextFunction): Promise<string> {
-    if (typeof argv === 'string') argv = Argv.from(argv)
+    if (typeof argv === 'string') argv = Argv.parse(argv)
 
     argv.session = this
     if (argv.tokens) {
