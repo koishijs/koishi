@@ -1,3 +1,5 @@
+/* eslint-disable quote-props */
+
 import { promises as fs, existsSync } from 'fs'
 import { yellow, red, green } from 'kleur'
 import { resolve, extname, dirname } from 'path'
@@ -5,16 +7,9 @@ import { AppConfig } from './worker'
 import { CAC } from 'cac'
 import {} from 'koishi-adapter-onebot'
 import {} from 'koishi-adapter-tomon'
-import prompts, { Choice, PrevCaller, PromptObject } from 'prompts'
+import prompts, { Choice, PromptObject } from 'prompts'
 import * as mysql from 'koishi-plugin-mysql/dist/database'
 import * as mongo from 'koishi-plugin-mongo/dist/database'
-
-function conditional<T extends PromptObject['type']>(type: T, key: string, ...values: string[]): PrevCaller<any> {
-  return (prev, data, prompt) => {
-    if (!values.includes(data[key])) return null
-    return typeof type === 'function' ? (type as PrevCaller<any>)(prev, data, prompt) : type
-  }
-}
 
 const serverQuestions: PromptObject<keyof AppConfig>[] = [{
   name: 'type',
@@ -33,19 +28,19 @@ const serverQuestions: PromptObject<keyof AppConfig>[] = [{
   initial: 8080,
 }]
 
-const cqhttpQuestions: PromptObject[] = [{
+const onebotQuestions: PromptObject[] = [{
   name: 'path',
-  type: conditional('text', 'type', 'onebot:http', 'onebot:ws-reverse'),
+  type: () => ['onebot:http', 'onebot:ws-reverse'].includes(config.type) ? 'text' : null,
   message: 'Koishi Path',
   initial: '/',
 }, {
   name: 'server',
-  type: conditional('text', 'type', 'onebot:http'),
+  type: () => ['onebot:http'].includes(config.type) ? 'text' : null,
   message: 'HTTP Server',
   initial: 'http://localhost:5700',
 }, {
   name: 'server',
-  type: conditional('text', 'type', 'onebot:ws'),
+  type: () => ['onebot:ws'].includes(config.type) ? 'text' : null,
   message: 'WebSocket Server',
   initial: 'ws://localhost:6700',
 }, {
@@ -69,10 +64,10 @@ const tomonQuestions: PromptObject[] = [{
 }]
 
 const adapterMap = {
-  'onebot:http': cqhttpQuestions,
-  'onebot:ws': cqhttpQuestions,
-  'onebot:ws-reverse': cqhttpQuestions,
-  tomon: tomonQuestions,
+  'onebot:http': onebotQuestions,
+  'onebot:ws': onebotQuestions,
+  'onebot:ws-reverse': onebotQuestions,
+  'tomon': tomonQuestions,
 }
 
 const databaseQuestions: PromptObject<'database'>[] = [{
@@ -162,8 +157,9 @@ interface Package extends Partial<Record<DependencyType, Record<string, string>>
 const ecosystem: Record<string, Package> = require('../ecosystem')
 const builtinPackages = ['koishi-plugin-common']
 
+const config: AppConfig = { plugins: [] }
+
 async function createConfig() {
-  const config: AppConfig = { plugins: [] }
   Object.assign(config, await question(serverQuestions))
   Object.assign(config, await question(adapterMap[config.type]))
 
@@ -191,8 +187,6 @@ async function createConfig() {
   })
 
   config.plugins.push(...plugins.map(name => [name]))
-
-  return config
 }
 
 const workingDirectory = process.cwd()
@@ -293,8 +287,9 @@ export default function (cli: CAC) {
       }
 
       // create configurations
-      const config = await createConfig().catch(() => {})
-      if (!config) {
+      try {
+        await createConfig()
+      } catch {
         console.warn(`${error} initialization was canceled`)
         process.exit(0)
       }

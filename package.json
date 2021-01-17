@@ -6,17 +6,13 @@
     "addons",
     "test",
     "shiki",
-    "shiki/core",
-    "shiki/cosmos",
-    "shiki/games",
-    "shiki/others",
     "utsuho",
     "packages/*"
   ],
   "scripts": {
     "atri": "yarn workspace atri",
     "addons": "yarn workspace addons",
-    "cli": "yarn workspace test koishi",
+    "cli": "yarn workspace test node -r ../build/register ../packages/koishi/src/cli",
     "build": "yarn compile && tsc -b",
     "build:ci": "yarn build --listEmittedFiles",
     "build:register": "esbuild build/register.ts --outdir=build --format=cjs",

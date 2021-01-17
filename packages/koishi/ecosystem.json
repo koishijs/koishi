@@ -1,5 +1,5 @@
 {
-  "koishi-adapter-cqhttp": {
+  "koishi-adapter-onebot": {
     "version": "1.0.8",
     "description": "CQHTTP adapter for Koishi"
   },
