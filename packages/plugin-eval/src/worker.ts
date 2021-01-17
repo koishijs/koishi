@@ -48,16 +48,6 @@ function formatResult(...param: [string, ...any[]]) {
 export function formatError(error: Error) {
   if (!(error instanceof Error)) return `Uncaught: ${error}`
 
-  if (error.name === 'SyntaxError') {
-    // syntax error during compilation
-    const message = 'SyntaxError: ' + error.message
-    const lines = error.stack.split('\n')
-    const index = lines.indexOf(message) + 1
-    if (lines[index].startsWith('    at new Script')) {
-      return `${message}\n    at ${lines[0]}:${lines[2].length}`
-    }
-  }
-
   return error.stack
     .replace(/\s*.+(Script|MessagePort)[\s\S]*/, '')
     .split('\n')
@@ -139,13 +129,11 @@ export class WorkerAPI {
 
     let result: any
     try {
-      result = await vm.run(`{
-        const { send, exec, user, group } = global[Symbol.for("${key}")];
-        delete global[Symbol.for("${key}")];
-        \n${source}
+      result = await vm.run(`with (global[Symbol.for("${key}")]) {
+        delete global[Symbol.for("${key}")];\n${source}
       }`, {
         filename: 'stdin',
-        lineOffset: -4,
+        lineOffset: -2,
       })
       await this.sync(ctx)
     } catch (error) {
