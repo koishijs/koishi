@@ -1,6 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 
-import { Argv, Context } from 'koishi-core'
+import { Argv, Context, Session } from 'koishi-core'
 import { escapeRegExp } from 'koishi-utils'
 import { Dialogue, parseTeachArgs } from './utils'
 import internal from './internal'
@@ -40,7 +40,10 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-const cheatSheet = (p: string, authority: number, config: Config) => `\
+const cheatSheet = (session: Session<'authority'>, config: Config) => {
+  const { authority } = session.$user
+  const { authority: a, prefix: p } = config
+  return `\
 教学系统基本用法：
 　添加问答：${p} 问题 回答
 　搜索回答：${p}${p} 问题
@@ -53,23 +56,23 @@ const cheatSheet = (p: string, authority: number, config: Config) => `\
 搜索选项：
 　管道语法：　　　|
 　结果页码：　　　/ page
-　禁用递归查询：　-R${authority >= config.authority.regExp ? `
+　禁用递归查询：　-R${authority >= a.regExp ? `
 　正则+合并结果：${p}${p}${p}` : ''}${config.useContext ? `
 上下文选项：
 　允许本群：　　　-e
-　禁止本群：　　　-d` : ''}${config.useContext && authority >= config.authority.context ? `
+　禁止本群：　　　-d` : ''}${config.useContext && authority >= a.context ? `
 　全局允许：　　　-E
 　全局禁止：　　　-D
 　设置群号：　　　-g id
 　无视上下文搜索：-G` : ''}
-问答选项：${config.useWriter && authority >= config.authority.frozen ? `
+问答选项：${config.useWriter && authority >= a.frozen ? `
 　锁定问答：　　　-f/-F
-　教学者代行：　　-s/-S` : ''}${config.useWriter && authority >= config.authority.writer ? `
+　教学者代行：　　-s/-S` : ''}${config.useWriter && authority >= a.writer ? `
 　设置问题作者：　-w uid
 　设置为匿名：　　-W` : ''}
 　忽略智能提示：　-i
 　重定向：　　　　=>
-匹配规则：${authority >= config.authority.regExp ? `
+匹配规则：${authority >= a.regExp ? `
 　正则表达式：　　-x/-X` : ''}
 　严格匹配权重：　-p prob
 　称呼匹配权重：　-P prob${config.useTime ? `
@@ -92,9 +95,11 @@ const cheatSheet = (p: string, authority: number, config: Config) => `\
 　$0：收到的原文本
 　$n：分条发送
 　$a：@说话人
-　$m：@四季酱
+　$m：@${session.$app.options.nickname[0]}
 　$s：说话人的名字
-　\${}: 指令插值`
+　\$()：指令插值
+　\${}：表达式插值`
+}
 
 export const name = 'teach'
 
@@ -158,7 +163,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.command('teach', '添加教学对话', { authority: config.authority.base, checkUnknown: true, hideOptions: true })
     .userFields(['authority', 'id'])
-    .usage(({ $user }) => cheatSheet(config.prefix, $user.authority, config))
+    .usage(session => cheatSheet(session, config))
     .action(async (argv) => {
       parseTeachArgs(argv)
       const { options, session, args } = argv

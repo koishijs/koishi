@@ -157,10 +157,10 @@ export class App extends Context {
 
   prepare() {
     const { nickname, prefix } = this.options
-    const nicknames = makeArray(nickname)
-    const prefixes = Array.isArray(prefix) ? prefix : [prefix || '']
-    this._nameRE = createLeadingRE(nicknames, '@?', '([,，]\\s*|\\s+)')
-    this._prefixRE = createLeadingRE(prefixes)
+    this.options.nickname = makeArray(nickname)
+    this.options.prefix = Array.isArray(prefix) ? prefix : [prefix || '']
+    this._nameRE = createLeadingRE(this.options.nickname, '@?', '([,，]\\s*|\\s+)')
+    this._prefixRE = createLeadingRE(this.options.prefix)
   }
 
   async start() {
