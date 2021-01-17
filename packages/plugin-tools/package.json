@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-tools",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -24,7 +24,7 @@
     "@types/qrcode": "^1.3.5"
   },
   "peerDependencies": {
-    "koishi-core": "^2.5.0",
+    "koishi-core": "^2.5.1",
     "koishi-utils": "^3.2.1"
   },
   "dependencies": {

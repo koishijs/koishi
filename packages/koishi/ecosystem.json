@@ -20,11 +20,11 @@
     "description": "COC / DND Tools for Koishi"
   },
   "koishi-plugin-eval": {
-    "version": "2.0.4",
+    "version": "2.0.5",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-eval-addons": {
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-github": {
@@ -63,10 +63,10 @@
     "description": "Show Status of Koishi"
   },
   "koishi-plugin-teach": {
-    "version": "1.3.0",
+    "version": "1.3.1",
     "description": "Teach plugin for Koishi"
   },
   "koishi-plugin-tools": {
-    "version": "1.0.3"
+    "version": "1.0.4"
   }
 }
