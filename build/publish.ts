@@ -47,11 +47,6 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
     }
   }
 
-  if (!GITHUB_TOKEN) return
-  const github = new Octokit({
-    auth: GITHUB_TOKEN,
-  })
-
   const { version } = require('../packages/koishi/package') as PackageJson
   const tags = spawnSync('git tag -l').split(/\r?\n/)
   if (tags.includes(version)) {
@@ -59,6 +54,12 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
   }
 
   const body = draft(tags[tags.length - 1])
+  console.log(body)
+
+  if (!GITHUB_TOKEN) return
+  const github = new Octokit({
+    auth: GITHUB_TOKEN,
+  })
 
   console.log(`Start to release a new version with tag ${version} ...`)
   await github.repos.createRelease({

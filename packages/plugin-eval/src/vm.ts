@@ -26,9 +26,7 @@ export class VM {
 
     const filename = resolve(__dirname, '../dist/internal.js')
     const data = readFileSync(filename, 'utf8')
-    const script = new Script(data, {
-      filename,
-    })
+    const script = new Script(data, { filename })
 
     script
       .runInContext(this.context, { displayErrors: false })
