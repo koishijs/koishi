@@ -1,4 +1,5 @@
 import { Context } from 'koishi-core'
+import { Element } from 'domhandler'
 import { load } from 'cheerio'
 import axios from 'axios'
 
@@ -17,12 +18,15 @@ export function apply(ctx: Context) {
       if (!q) return '请输入要搜索的文本。'
       const { data } = await axios.get('https://magi.com/search', {
         params: { q },
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36',
+        },
       })
       const $ = load(data)
       const messages = []
 
       $('main .card[data-type="fact"]').each((_, el) => {
-        const header = el.firstChild.nextSibling
+        const header = el.firstChild.nextSibling as Element
         const title = $('h2', header).text()
         const category = $('span', header).text()
         let message = `${title} [${category}]`
