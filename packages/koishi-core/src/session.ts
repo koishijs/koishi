@@ -1,7 +1,7 @@
 import { User, Channel, Platforms, PlatformType, TableType, Tables } from './database'
 import { Command } from './command'
 import { contain, observe, Logger, defineProperty, Random } from 'koishi-utils'
-import { collectFields, Argv } from './parser'
+import { Argv } from './parser'
 import { NextFunction } from './context'
 import { App } from './app'
 import { Bot } from './server'
@@ -322,6 +322,23 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (!argv.parent) await this.$send(result)
     return result
   }
+}
+
+export type FieldCollector<T extends TableType, K = keyof Tables[T], O = {}> =
+  | Iterable<K>
+  | ((argv: Argv<never, never, O>, fields: Set<keyof Tables[T]>) => void)
+
+function collectFields<T extends TableType>(argv: Argv, collectors: FieldCollector<T>[], fields: Set<keyof Tables[T]>) {
+  for (const collector of collectors) {
+    if (typeof collector === 'function') {
+      collector(argv, fields)
+      continue
+    }
+    for (const field of collector) {
+      fields.add(field)
+    }
+  }
+  return fields
 }
 
 export interface AnonymousInfo {

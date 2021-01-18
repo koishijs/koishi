@@ -13,7 +13,7 @@ declare module '../app' {
 declare module '../command' {
   interface Command {
     _shortcuts: Record<string, ShortcutConfig>
-    shortcut (name: string, config?: ShortcutConfig): this
+    shortcut(name: string, config?: ShortcutConfig): this
   }
 }
 

@@ -202,6 +202,8 @@ namespace Item {
       .shortcut('查看道具')
       .shortcut('我的道具')
       .shortcut('物品', { fuzzy: true })
+      .option('current', '-v 当前持有数量')
+      .option('total', '-V 累计持有数量')
       .option('format', '/ <format> 以特定的格式输出', { type: 'string', hidden: true })
       .action(async (argv, name) => {
         const { session, next, options } = argv
@@ -228,6 +230,9 @@ namespace Item {
         const item = Item.data[name]
         if (!item) return suggest(argv)
         if (!(name in warehouse)) return options['pass'] ? next() : '未获得过此物品。'
+
+        if (options.current) return '' + warehouse[name]
+        if (options.total) return '' + gains[name]
 
         if (session._redirected && options.format && Item.data[name]) {
           return options.format

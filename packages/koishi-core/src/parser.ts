@@ -1,7 +1,7 @@
 import { escapeRegExp } from 'koishi-utils'
 import { Command } from './command'
 import { NextFunction } from './context'
-import { Channel, Tables, TableType, User } from './database'
+import { Channel, User } from './database'
 import { Session } from './session'
 
 export interface Token {
@@ -12,13 +12,10 @@ export interface Token {
   inters: Argv[]
 }
 
-export interface ParsedArgv<O = {}> {
+export interface Argv<U extends User.Field = never, G extends Channel.Field = never, O = {}> {
   args?: string[]
   options?: O
   source?: string
-}
-
-export interface Argv<U extends User.Field = never, G extends Channel.Field = never, O = {}> extends ParsedArgv<O> {
   initiator?: string
   session?: Session<U, G, O>
   command?: Command<U, G, O>
@@ -142,65 +139,94 @@ export namespace Argv {
         + token.content.slice(pos)
     }
   }
-
-  export function assign(argv1: ParsedArgv, argv2: ParsedArgv) {
-    argv1.args = [...argv1.args || [], ...argv2.args]
-    argv1.options = { ...argv1.options, ...argv2.options }
-  }
 }
 
-export type FieldCollector<T extends TableType, K = keyof Tables[T], O = {}> =
-  | Iterable<K>
-  | ((argv: Argv<never, never, O>, fields: Set<keyof Tables[T]>) => void)
+export interface Domain {
+  type?: string
+  fallback?: any
+}
 
-export function collectFields<T extends TableType>(argv: Argv, collectors: FieldCollector<T>[], fields: Set<keyof Tables[T]>) {
-  for (const collector of collectors) {
-    if (typeof collector === 'function') {
-      collector(argv, fields)
-      continue
+export namespace Domain {
+  export type Callback<T = any> = (source: string) => T
+
+  const builtin: Record<string, Callback> = {}
+
+  export function create(name: string, callback: Callback) {
+    builtin[name] = callback
+  }
+
+  create('string', source => source)
+  create('number', source => +source)
+
+  export function parseValue(source: string, quoted: boolean, { type, fallback }: Domain = {}) {
+    // no explicit parameter & has fallback
+    const implicit = source === '' && !quoted
+    if (implicit && fallback !== undefined) return fallback
+
+    // apply domain callback
+    if (type in builtin) return builtin[type](source)
+
+    // default behavior
+    if (implicit) return true
+    const n = +source
+    return n * 0 === 0 ? n : source
+  }
+
+  export interface ArgumentDecl extends Domain {
+    required: boolean
+    variadic: boolean
+    greedy: boolean
+    name: string
+  }
+
+  function parseBracket(name: string, required: boolean): ArgumentDecl {
+    let variadic = false, greedy = false
+    if (name.startsWith('...')) {
+      name = name.slice(3)
+      variadic = true
+    } else if (name.endsWith('...')) {
+      name = name.slice(0, -3)
+      greedy = true
     }
-    for (const field of collector) {
-      fields.add(field)
+    return {
+      name,
+      required,
+      variadic,
+      greedy,
     }
   }
-  return fields
-}
 
-function parseBracket(name: string, required: boolean): CommandArgument {
-  let variadic = false, greedy = false
-  if (name.startsWith('...')) {
-    name = name.slice(3)
-    variadic = true
-  } else if (name.endsWith('...')) {
-    name = name.slice(0, -3)
-    greedy = true
-  }
-  return {
-    name,
-    required,
-    variadic,
-    greedy,
-  }
-}
+  const ANGLED_BRACKET_REGEXP = /<([^>]+)>/g
+  const SQUARE_BRACKET_REGEXP = /\[([^\]]+)\]/g
 
-export interface CommandArgument {
-  required: boolean
-  variadic: boolean
-  greedy: boolean
-  name: string
-}
-
-const ANGLED_BRACKET_REGEXP = /<([^>]+)>/g
-const SQUARE_BRACKET_REGEXP = /\[([^\]]+)\]/g
-
-export function parseArguments(source: string) {
-  let capture: RegExpExecArray
-  const result: CommandArgument[] = []
-  while ((capture = ANGLED_BRACKET_REGEXP.exec(source))) {
-    result.push(parseBracket(capture[1], true))
+  export function parseArgDecl(source: string) {
+    let capture: RegExpExecArray
+    const result: ArgumentDecl[] = []
+    while ((capture = ANGLED_BRACKET_REGEXP.exec(source))) {
+      result.push(parseBracket(capture[1], true))
+    }
+    while ((capture = SQUARE_BRACKET_REGEXP.exec(source))) {
+      result.push(parseBracket(capture[1], false))
+    }
+    return result
   }
-  while ((capture = SQUARE_BRACKET_REGEXP.exec(source))) {
-    result.push(parseBracket(capture[1], false))
+
+  export interface OptionConfig<T = any> {
+    value?: T
+    fallback?: T
+    /** hide the option by default */
+    hidden?: boolean
+    authority?: number
+    notUsage?: boolean
+    validate?: RegExp | ((value: any) => void | string | boolean)
   }
-  return result
+
+  export interface OptionDecl extends Domain, OptionConfig {
+    name: string
+    description: string
+    greedy: boolean
+    values?: Record<string, any>
+  }
+
+  export function parseOptionDecl() {}
 }

@@ -5,7 +5,7 @@ import { User } from '../database'
 import { Command } from '../command'
 import { App } from '../app'
 import { Message } from './message'
-import { Argv, CommandArgument } from '../parser'
+import { Argv, Domain } from '../parser'
 
 export type UserType<T, U extends User.Field = User.Field> = T | ((user: Pick<User, U>) => T)
 
@@ -14,11 +14,6 @@ declare module '../command' {
     _checkers: ((session: Session<U, G, O>) => void | string | boolean | Promise<void | string | boolean>)[]
     before(checker: (session: Session<U, G, O>) => void | string | boolean | Promise<void | string | boolean>): this
     getConfig<K extends keyof CommandConfig>(key: K, session: Session): Exclude<CommandConfig[K], (user: User) => any>
-  }
-
-  interface OptionConfig<T> {
-    authority?: number
-    notUsage?: boolean
   }
 
   interface CommandConfig<U, G> {
@@ -36,10 +31,6 @@ declare module '../command' {
     maxUsage?: UserType<number>
     /** min interval */
     minInterval?: UserType<number>
-  }
-
-  interface OptionConfig {
-    validate?: RegExp | ((value: any) => void | string | boolean)
   }
 }
 
@@ -107,11 +98,11 @@ export default function apply(app: App) {
 
     // check argument count
     if (command.config.checkArgCount) {
-      const nextArg = command._arguments[args.length] || {} as CommandArgument
+      const nextArg = command._arguments[args.length] || {} as Domain.ArgumentDecl
       if (nextArg.required) {
         return sendHint(Message.INSUFFICIENT_ARGUMENTS)
       }
-      const finalArg = command._arguments[command._arguments.length - 1] || {} as CommandArgument
+      const finalArg = command._arguments[command._arguments.length - 1] || {} as Domain.ArgumentDecl
       if (args.length > command._arguments.length && !finalArg.greedy && !finalArg.variadic) {
         return sendHint(Message.REDUNANT_ARGUMENTS)
       }

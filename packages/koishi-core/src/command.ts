@@ -1,31 +1,17 @@
 import { noop, camelCase, paramCase, Logger, coerce } from 'koishi-utils'
-import { FieldCollector, Argv, CommandArgument, parseArguments, ParsedArgv } from './parser'
+import { Argv, Domain } from './parser'
 import { Context, NextFunction } from './context'
 import { User, Channel } from './database'
+import { FieldCollector } from './session'
 import { inspect, format } from 'util'
 
 const logger = new Logger('command')
 
 const supportedType = ['string', 'number', 'boolean'] as const
 
-export type OptionType = typeof supportedType[number]
-
-export interface OptionConfig<T = any> {
-  value?: T
-  fallback?: T
-}
-
-type StringOptionConfig = OptionConfig & ({ fallback: string } | { type: 'string' })
-type NumberOptionConfig = OptionConfig & ({ fallback: number } | { type: 'number' })
-type BooleanOptionConfig = OptionConfig & ({ fallback: boolean } | { type: 'boolean' })
-
-export interface CommandOption extends OptionConfig {
-  name: string
-  description: string
-  greedy: boolean
-  type?: OptionType
-  values?: Record<string, any>
-}
+type StringOptionConfig = Domain.OptionConfig & ({ fallback: string } | { type: 'string' })
+type NumberOptionConfig = Domain.OptionConfig & ({ fallback: number } | { type: 'number' })
+type BooleanOptionConfig = Domain.OptionConfig & ({ fallback: boolean } | { type: 'boolean' })
 
 export interface CommandConfig<U extends User.Field = never, G extends Channel.Field = never> {
   /** description */
@@ -45,18 +31,18 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   parent: Command = null
 
   _aliases: string[] = []
-  _arguments: CommandArgument[]
-  _options: Record<string, CommandOption> = {}
+  _arguments: Domain.ArgumentDecl[]
+  _options: Record<string, Domain.OptionDecl> = {}
 
-  private _optionNameMap: Record<string, CommandOption> = {}
-  private _optionSymbolMap: Record<string, CommandOption> = {}
+  private _optionNameMap: Record<string, Domain.OptionDecl> = {}
+  private _optionSymbolMap: Record<string, Domain.OptionDecl> = {}
   private _userFields: FieldCollector<'user'>[] = []
   private _channelFields: FieldCollector<'channel'>[] = []
 
   _action?: CommandAction<U, G, O>
 
   static defaultConfig: CommandConfig = {}
-  static defaultOptionConfig: OptionConfig = {}
+  static defaultOptionConfig: Domain.OptionConfig = {}
 
   private static _userFields: FieldCollector<'user'>[] = []
   private static _channelFields: FieldCollector<'channel'>[] = []
@@ -73,7 +59,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   constructor(public name: string, public declaration: string, public context: Context, config: CommandConfig = {}) {
     if (!name) throw new Error('expect a command name')
-    this._arguments = parseArguments(declaration)
+    this._arguments = Domain.parseArgDecl(declaration)
     this.config = { ...Command.defaultConfig, ...config }
     this._registerAlias(this.name)
     context.app._commands.push(this)
@@ -123,7 +109,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this.context.command(rawName, ...args as any)
   }
 
-  private _registerOption(name: string, def: string, config?: Partial<CommandOption>) {
+  private _registerOption(name: string, def: string, config?: Partial<Domain.OptionDecl>) {
     const param = paramCase(name)
     const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
     const desc = def.slice(decl.length)
@@ -171,7 +157,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  private _assignOption(option: CommandOption, names: readonly string[], optionMap: Record<string, CommandOption>) {
+  private _assignOption(option: Domain.OptionDecl, names: readonly string[], optionMap: Record<string, Domain.OptionDecl>) {
     for (const name of names) {
       if (name in optionMap) {
         throw new Error(format('duplicate option names: "%s"', name))
@@ -184,8 +170,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   option<K extends string>(name: K, desc: string, config: StringOptionConfig, action?: CommandAction<U, G, Extend<O, K, string>>): Command<U, G, Extend<O, K, string>>
   option<K extends string>(name: K, desc: string, config: NumberOptionConfig, action?: CommandAction<U, G, Extend<O, K, number>>): Command<U, G, Extend<O, K, number>>
   option<K extends string>(name: K, desc: string, config: BooleanOptionConfig, action?: CommandAction<U, G, Extend<O, K, boolean>>): Command<U, G, Extend<O, K, boolean>>
-  option<K extends string>(name: K, desc: string, config?: OptionConfig, action?: CommandAction<U, G, Extend<O, K, any>>): Command<U, G, Extend<O, K, any>>
-  option<K extends string>(name: K, desc: string, config: OptionConfig = {}, action?: CommandAction<U, G, Extend<O, K, any>>) {
+  option<K extends string>(name: K, desc: string, config?: Domain.OptionConfig, action?: CommandAction<U, G, Extend<O, K, any>>): Command<U, G, Extend<O, K, any>>
+  option<K extends string>(name: K, desc: string, config: Domain.OptionConfig = {}, action?: CommandAction<U, G, Extend<O, K, any>>) {
     const fallbackType = typeof config.fallback as never
     const type = config['type'] || supportedType.includes(fallbackType) && fallbackType
     if (action) {
@@ -220,23 +206,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  private parseValue(source: string | true, quoted: boolean, { type, fallback } = {} as CommandOption) {
-    // quoted empty string
-    if (source === '' && quoted) return ''
-    // no explicit parameter
-    if (source === true || source === '') {
-      if (fallback !== undefined) return fallback
-      if (type === 'string') return ''
-      return true
-    }
-    // default behavior
-    if (type === 'number') return +source
-    if (type === 'string') return source
-    const n = +source
-    return n * 0 === 0 ? n : source
-  }
-
-  parse(argv: Argv): ParsedArgv {
+  parse(argv: Argv): Argv {
     const args: string[] = []
     const options: Record<string, any> = {}
     const source = this.name + ' ' + Argv.stringify(argv)
@@ -262,7 +232,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
       // parse token
       argv.tokens.shift()
-      let option: CommandOption
+      let option: Domain.OptionDecl
       let names: string | string[]
       let param: string
       // symbolic option
@@ -317,7 +287,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       for (let j = 0; j < names.length; j++) {
         const name = names[j]
         const config = this._optionNameMap[name]
-        const value = this.parseValue(j + 1 < names.length || param, quoted, config)
+        const value = Domain.parseValue(j + 1 < names.length ? '' : param, quoted, config)
         handleOption(name, value)
       }
     }

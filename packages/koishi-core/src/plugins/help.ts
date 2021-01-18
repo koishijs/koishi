@@ -1,10 +1,9 @@
 import { getUsage, getUsageName, ValidationField } from './validate'
 import { User, Channel, TableType } from '../database'
 import { Command } from '../command'
-import { Session } from '../session'
+import { Session, FieldCollector } from '../session'
 import { App } from '../app'
 import { Message } from './message'
-import { FieldCollector } from '../parser'
 
 export type CommandUsage<U extends User.Field, G extends Channel.Field> = string
   | ((this: Command<U, G>, session: Session<U, G>) => string | Promise<string>)
@@ -20,11 +19,6 @@ declare module '../command' {
   interface CommandConfig {
     /** hide all options by default */
     hideOptions?: boolean
-    hidden?: boolean
-  }
-
-  interface OptionConfig {
-    /** hide the option by default */
     hidden?: boolean
   }
 }
