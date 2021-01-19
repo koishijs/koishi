@@ -184,12 +184,16 @@ export function parseTeachArgs({ args, options }: Partial<Argv>) {
   options['answer'] = options['redirect'] || parseArgument()
 }
 
-export function isPositiveInteger(value: any) {
-  return isInteger(value) && value > 0 ? '' : '应为正整数。'
+export function isPositiveInteger(source: string) {
+  const n = +source
+  if (isInteger(n) && n > 0) return n
+  throw new Error('应为正整数。')
 }
 
-export function isZeroToOne(value: number) {
-  return value < 0 || value > 1 ? '应为不超过 1 的正数。' : ''
+export function isZeroToOne(source: string) {
+  const n = +source
+  if (n >= 0 && n <= 1) return n
+  throw new Error('应为不超过 1 的正数。')
 }
 
 export const RE_GROUPS = /^\d+(,\d+)*$/

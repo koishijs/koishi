@@ -9,6 +9,10 @@ const logger = new Logger('command')
 
 export type UserType<T, U extends User.Field = User.Field> = T | ((user: Pick<User, U>) => T)
 
+export type Extend<O extends {}, K extends string, T> = {
+  [P in K | keyof O]?: (P extends keyof O ? O[P] : unknown) & (P extends K ? T : unknown)
+}
+
 export namespace Command {
   export interface Config {
     /** description */
@@ -165,11 +169,11 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   // eslint-disable-next-line max-len
-  option<K extends string, D extends string>(
+  option<K extends string, D extends string, T extends Domain.Type>(
     name: K, desc: D,
-    config: Domain.OptionConfig = {},
-    action?: Command.Action<U, G, A, O & { [P in K]: Domain.OptionType<D> }>,
-  ): Command<U, G, A, O & { [P in K]: Domain.OptionType<D> }> {
+    config: Domain.OptionConfig<T> = {},
+    action?: Command.Action<U, G, A, Extend<O, K, Domain.OptionType<D, T>>>,
+  ): Command<U, G, A, Extend<O, K, Domain.OptionType<D, T>>> {
     if (action) {
       this.before(async (session) => {
         const { options, args } = session.$argv

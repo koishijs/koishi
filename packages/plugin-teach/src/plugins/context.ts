@@ -35,7 +35,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('disableGlobal', '-D  在所有环境下禁用问答', { authority })
     .option('enable', '-e  在当前环境下启用问答')
     .option('enableGlobal', '-E  在所有环境下启用问答', { authority })
-    .option('groups', '-g <gids:string>  设置具体的生效环境', { authority, validate: RE_GROUPS })
+    .option('groups', '-g <gids:string>  设置具体的生效环境', { authority, type: RE_GROUPS })
     .option('global', '-G  无视上下文搜索')
 
   ctx.on('dialogue/validate', (argv) => {

@@ -25,7 +25,7 @@ export default function apply(app: App) {
     const { args: [name], session } = argv
     const command = app._commandMap[name] || app._shortcutMap[name]
     if (!command) return
-    session.collect(key, { ...argv, name: command.name, args: [], options: { help: true } }, fields)
+    session.collect(key, { ...argv, command, args: [], options: { help: true } }, fields)
   }
 
   app.command('help [command]', '显示帮助信息', { authority: 0 })

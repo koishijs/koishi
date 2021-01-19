@@ -33,10 +33,12 @@ Command.userFields(({ tokens, command, options = {} }, fields) => {
 })
 
 export default function apply(app: App) {
-  app.on('before-command', async ({ session, args, options, command }: Argv<ValidationField>) => {
+  app.on('before-command', async ({ error, session, args, options, command }: Argv<ValidationField>) => {
     function sendHint(message: string, ...param: any[]) {
       return command.config.showWarning ? format(message, ...param) : ''
     }
+
+    if (error) return error
 
     for (const checker of command._checkers) {
       const result = await checker(session)
@@ -60,16 +62,6 @@ export default function apply(app: App) {
       const unknown = Object.keys(options).filter(key => !command._options[key])
       if (unknown.length) {
         return sendHint(Message.UNKNOWN_OPTIONS, unknown.join(', '))
-      }
-    }
-
-    for (const { validate, name } of Object.values(command._options)) {
-      if (!validate || !(name in options)) continue
-      const result = typeof validate !== 'function'
-        ? !validate.test(options[name])
-        : validate(options[name])
-      if (result) {
-        return sendHint(Message.INVALID_OPTION, name, result === true ? Message.CHECK_SYNTAX : result)
       }
     }
 

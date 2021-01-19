@@ -20,18 +20,19 @@ declare module '../utils' {
 }
 
 export function isHours(value: string) {
-  if (!/^\d+(:\d+)?$/.test(value)) return '请输入正确的时间。'
+  if (!/^\d+(:\d+)?$/.test(value)) throw new Error('请输入正确的时间。')
   const [_hours, _minutes = '0'] = value.split(':')
   const hours = +_hours, minutes = +_minutes
-  return !(hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60)
+  if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) return value
+  throw new Error('请输入正确的时间。')
 }
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
   if (config.useTime === false) return
 
   ctx.command('teach')
-    .option('startTime', '-t <time:string>  起始时间', { validate: isHours })
-    .option('endTime', '-T <time:string>  结束时间', { validate: isHours })
+    .option('startTime', '-t <time>  起始时间', { type: isHours })
+    .option('endTime', '-T <time>  结束时间', { type: isHours })
 
   function parseTime(source: string) {
     const [hours, minutes = '0'] = source.split(':')

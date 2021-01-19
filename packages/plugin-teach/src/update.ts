@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
-import { difference, deduplicate, sleep, pick, isInteger, Time } from 'koishi-utils'
-import { Dialogue, prepareTargets, sendResult, split, RE_DIALOGUES } from './utils'
+import { difference, deduplicate, sleep, pick, Time } from 'koishi-utils'
+import { Dialogue, prepareTargets, sendResult, split, RE_DIALOGUES, isPositiveInteger } from './utils'
 import { getDetails, formatDetails, formatAnswer, formatQuestionAnswers } from './search'
 
 declare module 'koishi-core/dist/context' {
@@ -26,9 +26,9 @@ export default function apply(ctx: Context) {
   ctx.command('teach')
     .option('review', '-v  查看最近的修改')
     .option('revert', '-V  回退最近的修改')
-    .option('includeLast', '-l [count:string]  包含最近的修改数量', { validate: isIntegerOrInterval })
-    .option('excludeLast', '-L [count:string]  排除最近的修改数量', { validate: isIntegerOrInterval })
-    .option('target', '<ids:string>  查看或修改已有问题', { validate: RE_DIALOGUES })
+    .option('includeLast', '-l [count]  包含最近的修改数量', { type: isIntegerOrInterval })
+    .option('excludeLast', '-L [count]  排除最近的修改数量', { type: isIntegerOrInterval })
+    .option('target', '<ids>  查看或修改已有问题', { type: RE_DIALOGUES })
     .option('remove', '-r  彻底删除问答')
 
   ctx.on('dialogue/execute', (argv) => {
@@ -89,9 +89,15 @@ export default function apply(ctx: Context) {
   })
 }
 
-function isIntegerOrInterval(value: string) {
-  const n = +value
-  return n * 0 === 0 ? !isInteger(n) || n <= 0 : !Time.parseTime(value)
+function isIntegerOrInterval(source: string) {
+  const n = +source
+  if (n * 0 === 0) {
+    isPositiveInteger(source)
+    return source
+  } else {
+    if (Time.parseTime(source)) return source
+    throw new Error()
+  }
 }
 
 function review(dialogues: Dialogue[], argv: Dialogue.Argv) {

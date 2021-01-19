@@ -37,7 +37,7 @@ declare module './utils' {
 export default function apply(ctx: Context) {
   ctx.command('teach')
     .option('search', '搜索已有问答', { notUsage: true })
-    .option('page', '/ <page>  设置搜索结果的页码', { validate: isPositiveInteger })
+    .option('page', '/ <page>  设置搜索结果的页码', { type: isPositiveInteger })
     .option('autoMerge', '自动合并相同的问题和回答')
     .option('recursive', '-R  禁用递归查询', { fallback: true, value: false })
     .option('pipe', '| <op:text>  对每个搜索结果执行操作')

@@ -3,6 +3,7 @@ import { format } from 'util'
 import { Command } from './command'
 import { NextFunction } from './context'
 import { Channel, User } from './database'
+import { Message } from './plugins/message'
 import { Session } from './session'
 
 export interface Token {
@@ -16,6 +17,7 @@ export interface Token {
 export interface Argv<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O = {}> {
   args?: A
   options?: O
+  error?: string
   source?: string
   initiator?: string
   session?: Session<U, G>
@@ -142,19 +144,19 @@ export namespace Argv {
   }
 }
 
+// builtin domains
 export interface Domain {
   string: string
   number: number
   boolean: boolean
   user: string
-  /** @builtin greedy argument */
   text: string
 }
 
 export namespace Domain {
-  export type Type = keyof Domain
+  type Builtin = keyof Domain
 
-  type GetDomain<T extends string, F> = T extends Type ? Domain[T] : F
+  type GetDomain<T extends string, F> = T extends Builtin ? Domain[T] : F
 
   type GetParamDomain<S extends string, X extends string, F>
     = S extends `${any}${X}${infer T}` ? GetDomain<T, F> : F
@@ -170,7 +172,13 @@ export namespace Domain {
 
   export type ArgumentType<S extends string> = [...Extract<Replace<S, '>', ']'>, ':', ']', string>, ...string[]]
 
-  export type OptionType<S extends string> = ExtractFirst<Replace<S, '>', ']'>, ':', ']', any>
+  export type OptionType<S extends string, T extends Type>
+    = T extends Builtin ? Domain[T]
+    : T extends RegExp ? string
+    : T extends (source: string) => infer R ? R
+    : ExtractFirst<Replace<S, '>', ']'>, ':', ']', any>
+
+  export type Type = Builtin | RegExp | Transform<any>
 
   export interface Declaration {
     name?: string
@@ -182,6 +190,17 @@ export namespace Domain {
 
   export type Transform<T> = (source: string) => T
 
+  function resolveType(type: Declaration['type']) {
+    if (typeof type === 'function') return type
+    if (type instanceof RegExp) {
+      return (source: string) => {
+        if (type.test(source)) return source
+        throw new Error()
+      }
+    }
+    return builtin[type]
+  }
+
   const builtin: Record<string, Transform<any>> = {}
 
   export function create<K extends keyof Domain>(name: K, callback: Transform<Domain[K]>) {
@@ -190,6 +209,7 @@ export namespace Domain {
 
   create('string', source => source)
   create('number', source => +source)
+  create('text', source => source)
   create('user', (source) => {
     const cap = /\[CQ:at,qq=(\d+)\]/.exec(source)
     if (cap) return cap[1]
@@ -197,27 +217,13 @@ export namespace Domain {
     return source
   })
 
-  export function parseValue(source: string, quoted: boolean, { type, fallback }: Declaration = {}) {
-    // no explicit parameter & has fallback
-    const implicit = source === '' && !quoted
-    if (implicit && fallback !== undefined) return fallback
-
-    // apply domain callback
-    if (type in builtin) return builtin[type](source)
-
-    // default behavior
-    if (implicit) return true
-    const n = +source
-    return n * 0 === 0 ? n : source
-  }
-
   const BRACKET_REGEXP = /<[^>]+>|\[[^\]]+\]/g
 
   interface DeclarationList extends Array<Declaration> {
     stripped: string
   }
 
-  export function parseDeclaration(source: string) {
+  function parseDecl(source: string) {
     let cap: RegExpExecArray
     const result = [] as DeclarationList
     // eslint-disable-next-line no-cond-assign
@@ -229,7 +235,7 @@ export namespace Domain {
         variadic = true
       }
       const [name, rawType] = rawName.split(':')
-      const type = rawType ? rawType.trim() as Type : null
+      const type = rawType ? rawType.trim() as Builtin : null
       result.push({
         name,
         variadic,
@@ -241,13 +247,14 @@ export namespace Domain {
     return result
   }
 
-  export interface OptionConfig {
+  export interface OptionConfig<T extends Type = Type> {
     value?: any
+    fallback?: any
+    type?: T
     /** hide the option by default */
     hidden?: boolean
     authority?: number
     notUsage?: boolean
-    validate?: RegExp | ((value: any) => void | string | boolean)
   }
 
   export interface OptionDeclaration extends Declaration, OptionConfig {
@@ -268,7 +275,7 @@ export namespace Domain {
 
     constructor(public name: string, declaration: string) {
       if (!name) throw new Error('expect a command name')
-      this.declaration = (this._arguments = parseDeclaration(declaration)).stripped
+      this.declaration = (this._arguments = parseDecl(declaration)).stripped
     }
 
     _createOption(name: string, def: string, config?: OptionConfig) {
@@ -295,11 +302,11 @@ export namespace Domain {
         syntax += ', --' + param
       }
 
-      const declList = parseDeclaration(bracket)
+      const declList = parseDecl(bracket)
       const option = this._options[name] ||= {
         ...Command.defaultOptionConfig,
-        ...config,
         ...declList[0],
+        ...config,
         name,
         values: {},
         description: syntax + '  ' + declList.stripped + desc,
@@ -349,6 +356,29 @@ export namespace Domain {
       const options: Record<string, any> = {}
       const source = this.name + ' ' + Argv.stringify(argv)
 
+      let error: string
+      function parseValue(source: string, quoted: boolean, hint: string, { name, type, fallback }: Declaration = {}) {
+        // no explicit parameter & has fallback
+        const implicit = source === '' && !quoted
+        if (implicit && fallback !== undefined) return fallback
+
+        // apply domain callback
+        const transform = resolveType(type)
+        if (transform) {
+          try {
+            return transform(source)
+          } catch (e) {
+            error = format(hint, name, e['message'] || Message.CHECK_SYNTAX)
+            return
+          }
+        }
+
+        // default behavior
+        if (implicit) return true
+        const n = +source
+        return n * 0 === 0 ? n : source
+      }
+
       const handleOption = (name: string, value: any) => {
         const config = this._namedOptions[name]
         if (config) {
@@ -358,12 +388,13 @@ export namespace Domain {
         }
       }
 
-      while (argv.tokens.length) {
+      while (!error && argv.tokens.length) {
         const token = argv.tokens[0]
         let { content, quoted } = token
 
         // greedy argument
-        if (content[0] !== '-' && this._arguments[args.length]?.type === 'text') {
+        const argDecl = this._arguments[args.length]
+        if (content[0] !== '-' && argDecl?.type === 'text') {
           args.push(Argv.stringify(argv))
           break
         }
@@ -379,7 +410,7 @@ export namespace Domain {
         } else {
           // normal argument
           if (content[0] !== '-' || quoted) {
-            args.push(content)
+            args.push(parseValue(content, quoted, Message.INVALID_ARGUMENT, argDecl))
             continue
           }
 
@@ -424,9 +455,9 @@ export namespace Domain {
         // handle each name
         for (let j = 0; j < names.length; j++) {
           const name = names[j]
-          const config = this._namedOptions[name]
-          const value = parseValue(j + 1 < names.length ? '' : param, quoted, config)
-          handleOption(name, value)
+          const optDecl = this._namedOptions[name]
+          handleOption(name, parseValue(j + 1 < names.length ? '' : param, quoted, Message.INVALID_OPTION, optDecl))
+          if (error) break
         }
       }
 
@@ -438,7 +469,7 @@ export namespace Domain {
       }
 
       delete argv.tokens
-      return { options, args, source }
+      return { options, args, source, error }
     }
 
     private stringifyArg(value: any) {
