@@ -94,7 +94,7 @@ export function apply(ctx: Context, config: Config = {}) {
     })
   }
 
-  ctx.group().command('rss <url...>', '订阅 RSS 链接')
+  ctx.group().command('rss <url:text>', '订阅 RSS 链接')
     .channelFields(['rss', 'id'])
     .option('list', '-l 查看订阅列表')
     .option('remove', '-r 取消订阅')

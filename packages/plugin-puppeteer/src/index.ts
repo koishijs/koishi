@@ -140,7 +140,7 @@ export function apply(ctx: Context, config: Config = {}) {
       }).finally(() => page.close())
     })
 
-  ctx.command('tex <code...>', 'TeX 渲染', { authority: 2 })
+  ctx.command('tex <code:text>', 'TeX 渲染', { authority: 2 })
     .option('scale', '-s <scale>  缩放比例', { fallback: 2 })
     .usage('渲染器由 https://www.zhihu.com/equation 提供。')
     .action(async ({ options }, tex) => {

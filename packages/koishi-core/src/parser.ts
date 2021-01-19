@@ -147,7 +147,7 @@ export interface Domain {
   number: number
   boolean: boolean
   user: string
-  /** greedy */
+  /** @builtin greedy argument */
   text: string
 }
 
@@ -172,7 +172,7 @@ export namespace Domain {
 
   export type OptionType<S extends string> = ExtractFirst<Replace<S, '>', ']'>, ':', ']', any>
 
-  export interface ArgumentDecl {
+  export interface Declaration {
     name?: string
     type?: Type
     fallback?: any
@@ -197,7 +197,7 @@ export namespace Domain {
     return source
   })
 
-  export function parseValue(source: string, quoted: boolean, { type, fallback }: ArgumentDecl = {}) {
+  export function parseValue(source: string, quoted: boolean, { type, fallback }: Declaration = {}) {
     // no explicit parameter & has fallback
     const implicit = source === '' && !quoted
     if (implicit && fallback !== undefined) return fallback
@@ -213,9 +213,13 @@ export namespace Domain {
 
   const BRACKET_REGEXP = /<[^>]+>|\[[^\]]+\]/g
 
-  export function parseDecl(source: string) {
+  interface DeclarationList extends Array<Declaration> {
+    stripped: string
+  }
+
+  export function parseDeclaration(source: string) {
     let cap: RegExpExecArray
-    const result: ArgumentDecl[] = []
+    const result = [] as DeclarationList
     // eslint-disable-next-line no-cond-assign
     while (cap = BRACKET_REGEXP.exec(source)) {
       let rawName = cap[0].slice(1, -1)
@@ -233,12 +237,12 @@ export namespace Domain {
         required: cap[0][0] === '<',
       })
     }
+    result.stripped = source.replace(/:[\w-]+[>\]]/g, str => str.slice(-1))
     return result
   }
 
-  export interface OptionConfig<T = any> {
-    value?: T
-    fallback?: T
+  export interface OptionConfig {
+    value?: any
     /** hide the option by default */
     hidden?: boolean
     authority?: number
@@ -246,25 +250,28 @@ export namespace Domain {
     validate?: RegExp | ((value: any) => void | string | boolean)
   }
 
-  export interface OptionDecl extends ArgumentDecl, OptionConfig {
-    name: string
-    description: string
+  export interface OptionDeclaration extends Declaration, OptionConfig {
+    description?: string
     values?: Record<string, any>
   }
 
+  type OptionDeclarationMap = Record<string, OptionDeclaration>
+
   export class CommandBase {
-    _arguments: Domain.ArgumentDecl[]
-    _options: Record<string, Domain.OptionDecl> = {}
+    public declaration: string
 
-    private _optionNameMap: Record<string, Domain.OptionDecl> = {}
-    private _optionSymbolMap: Record<string, Domain.OptionDecl> = {}
+    public _arguments: Declaration[]
+    public _options: OptionDeclarationMap = {}
 
-    constructor(public name: string, public declaration: string) {
+    private _namedOptions: OptionDeclarationMap = {}
+    private _symbolicOptions: OptionDeclarationMap = {}
+
+    constructor(public name: string, declaration: string) {
       if (!name) throw new Error('expect a command name')
-      this._arguments = Domain.parseDecl(declaration)
+      this.declaration = (this._arguments = parseDeclaration(declaration)).stripped
     }
 
-    _registerOption(name: string, def: string, config?: Partial<Domain.OptionDecl>) {
+    _createOption(name: string, def: string, config?: OptionConfig) {
       const param = paramCase(name)
       const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
       const desc = def.slice(decl.length)
@@ -288,13 +295,14 @@ export namespace Domain {
         syntax += ', --' + param
       }
 
+      const declList = parseDeclaration(bracket)
       const option = this._options[name] ||= {
         ...Command.defaultOptionConfig,
         ...config,
-        ...parseDecl(bracket),
+        ...declList[0],
         name,
         values: {},
-        description: syntax + '  ' + bracket + desc,
+        description: syntax + '  ' + declList.stripped + desc,
       }
 
       if ('value' in config) {
@@ -303,16 +311,14 @@ export namespace Domain {
         option.type = 'boolean'
       }
 
-      this._assignOption(option, names, this._optionNameMap)
-      this._assignOption(option, symbols, this._optionSymbolMap)
-      if (!this._optionNameMap[param]) {
-        this._optionNameMap[param] = option
+      this._assignOption(option, names, this._namedOptions)
+      this._assignOption(option, symbols, this._symbolicOptions)
+      if (!this._namedOptions[param]) {
+        this._namedOptions[param] = option
       }
-
-      return this
     }
 
-    private _assignOption(option: Domain.OptionDecl, names: readonly string[], optionMap: Record<string, Domain.OptionDecl>) {
+    private _assignOption(option: OptionDeclaration, names: readonly string[], optionMap: OptionDeclarationMap) {
       for (const name of names) {
         if (name in optionMap) {
           throw new Error(format('duplicate option names: "%s"', name))
@@ -325,14 +331,14 @@ export namespace Domain {
       if (!this._options[name]) return false
       const option = this._options[name]
       delete this._options[name]
-      for (const key in this._optionNameMap) {
-        if (this._optionNameMap[key] === option) {
-          delete this._optionNameMap[key]
+      for (const key in this._namedOptions) {
+        if (this._namedOptions[key] === option) {
+          delete this._namedOptions[key]
         }
       }
-      for (const key in this._optionSymbolMap) {
-        if (this._optionSymbolMap[key] === option) {
-          delete this._optionSymbolMap[key]
+      for (const key in this._symbolicOptions) {
+        if (this._symbolicOptions[key] === option) {
+          delete this._symbolicOptions[key]
         }
       }
       return true
@@ -344,7 +350,7 @@ export namespace Domain {
       const source = this.name + ' ' + Argv.stringify(argv)
 
       const handleOption = (name: string, value: any) => {
-        const config = this._optionNameMap[name]
+        const config = this._namedOptions[name]
         if (config) {
           options[config.name] = name in config.values ? config.values[name] : value
         } else {
@@ -364,11 +370,11 @@ export namespace Domain {
 
         // parse token
         argv.tokens.shift()
-        let option: Domain.OptionDecl
+        let option: OptionDeclaration
         let names: string | string[]
         let param: string
         // symbolic option
-        if (!quoted && (option = this._optionSymbolMap[content])) {
+        if (!quoted && (option = this._symbolicOptions[content])) {
           names = [paramCase(option.name)]
         } else {
           // normal argument
@@ -383,7 +389,7 @@ export namespace Domain {
           for (; i < content.length; ++i) {
             if (content.charCodeAt(i) !== 45) break
           }
-          if (content.slice(i, i + 3) === 'no-' && !this._optionNameMap[content.slice(i)]) {
+          if (content.slice(i, i + 3) === 'no-' && !this._namedOptions[content.slice(i)]) {
             name = content.slice(i + 3)
             handleOption(name, false)
             continue
@@ -397,7 +403,7 @@ export namespace Domain {
           name = content.slice(i, j)
           names = i > 1 ? [name] : name
           param = content.slice(++j)
-          option = this._optionNameMap[names[names.length - 1]]
+          option = this._namedOptions[names[names.length - 1]]
         }
 
         // get parameter from next token
@@ -418,8 +424,8 @@ export namespace Domain {
         // handle each name
         for (let j = 0; j < names.length; j++) {
           const name = names[j]
-          const config = this._optionNameMap[name]
-          const value = Domain.parseValue(j + 1 < names.length ? '' : param, quoted, config)
+          const config = this._namedOptions[name]
+          const value = parseValue(j + 1 < names.length ? '' : param, quoted, config)
           handleOption(name, value)
         }
       }

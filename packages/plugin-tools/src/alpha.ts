@@ -19,7 +19,7 @@ export interface AlphaOptions {
 
 export function apply(ctx: Context, config: AlphaOptions) {
   const { wolframAlphaAppId: appid } = config
-  ctx.command('tools/alpha <expression...>', '调用 WolframAlpha 查询', { maxUsage: 10 })
+  ctx.command('tools/alpha <expression:text>', '调用 WolframAlpha 查询', { maxUsage: 10 })
     .example('alpha int(sinx)')
     .action(async ({ session }, message) => {
       const input = message.slice(message.indexOf('alpha') + 5).trim()
@@ -47,7 +47,7 @@ export function apply(ctx: Context, config: AlphaOptions) {
         console.log(error.toJSON())
       }
     })
-    .subcommand('.short <expression...>', '调用 WolframAlpha 短问答', { maxUsage: 10, usageName: 'alpha' })
+    .subcommand('.short <expression:text>', '调用 WolframAlpha 短问答', { maxUsage: 10, usageName: 'alpha' })
     .example('alpha.short How big is the universe?')
     .action(async (_, message) => {
       const input = message.slice(message.indexOf('alpha.short') + 11).trim()

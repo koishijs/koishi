@@ -67,8 +67,16 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   _action?: Command.Action<U, G, A, O>
   _checkers: ((session: Session<U, G>) => void | string | boolean | Promise<void | string | boolean>)[] = []
 
-  static defaultConfig: Command.Config = {}
-  static defaultOptionConfig: Domain.OptionConfig = {}
+  static defaultConfig: Command.Config = {
+    authority: 1,
+    showWarning: true,
+    maxUsage: Infinity,
+    minInterval: 0,
+  }
+
+  static defaultOptionConfig: Domain.OptionConfig = {
+    authority: 0,
+  }
 
   private static _userFields: FieldCollector<'user'>[] = []
   private static _channelFields: FieldCollector<'channel'>[] = []
@@ -164,13 +172,12 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   ): Command<U, G, A, O & { [P in K]: Domain.OptionType<D> }> {
     if (action) {
       this.before(async (session) => {
-        const { options, args, command } = session.$argv
-        if (name in options && command === this) {
-          return action.call(this as any, session.$argv, ...args)
-        }
+        const { options, args } = session.$argv
+        if (name in options) return action.call(this as any, session.$argv, ...args)
       })
     }
-    return this._registerOption(name, desc, config) as any
+    this._createOption(name, desc, config)
+    return this as any
   }
 
   before(checker: (session: Session<U, G>) => void | string | boolean | Promise<void | string | boolean>) {
@@ -236,38 +243,5 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       const index = this.parent.children.indexOf(this)
       this.parent.children.splice(index, 1)
     }
-  }
-
-  static apply(ctx: Context) {
-    // show help when use `-h, --help` or when there is no action
-    ctx.prependListener('before-command', async ({ command, session, options }) => {
-      if (command._action && !options['help']) return
-      await session.execute({
-        name: 'help',
-        args: [command.name],
-      })
-      return ''
-    })
-
-    // shortcut
-    ctx.on('tokenize', (content, { $reply, $prefix, $appel }) => {
-      if ($prefix || $reply) return
-      for (const shortcut of ctx.app._shortcuts) {
-        const { name, fuzzy, command, oneArg, prefix, options, args = [] } = shortcut
-        if (prefix && !$appel) continue
-        if (!fuzzy && content !== name) continue
-        if (content.startsWith(name)) {
-          const message = content.slice(name.length)
-          if (fuzzy && !$appel && message.match(/^\S/)) continue
-          const argv: Argv = oneArg
-            ? { options: {}, args: [message.trim()] }
-            : command.parse(Argv.parse(message.trim()))
-          argv.command = command
-          argv.options = { ...options, ...argv.options }
-          argv.args = [...args, ...argv.args]
-          return argv
-        }
-      }
-    })
   }
 }

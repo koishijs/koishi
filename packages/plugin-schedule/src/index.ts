@@ -75,8 +75,8 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   ctx.command('schedule [time]', '设置定时命令', { authority: 3, checkUnknown: true })
-    .option('rest', '-- <command...>  要执行的指令')
-    .option('interval', '/ <interval>  设置触发的间隔秒数', { authority: 4, type: 'string' })
+    .option('rest', '-- <command:text>  要执行的指令')
+    .option('interval', '/ <interval:string>  设置触发的间隔秒数', { authority: 4 })
     .option('list', '-l  查看已经设置的日程')
     .option('ensure', '-e  错过时间也确保执行')
     .option('full', '-f  查找全部上下文', { authority: 4 })

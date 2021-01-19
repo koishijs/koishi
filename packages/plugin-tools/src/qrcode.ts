@@ -2,7 +2,7 @@ import { Context } from 'koishi-core'
 import { toDataURL } from 'qrcode'
 
 export function apply(ctx: Context) {
-  ctx.command('tools/qrcode <text...>', '生成二维码')
+  ctx.command('tools/qrcode <text:text>', '生成二维码')
     .option('margin', '-m <margin>  边界尺寸', { fallback: 4 })
     .option('scale', '-s <scale>  比例系数', { fallback: 4 })
     .option('width', '-w <width>  图片大小')

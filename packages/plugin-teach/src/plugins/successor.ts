@@ -46,7 +46,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('addPred', '<< <ids:string>  添加前置问题', { validate: RE_DIALOGUES })
     .option('setSucc', '> <ids:string>  设置后继问题', { validate: RE_DIALOGUES })
     .option('addSucc', '>> <ids:string>  添加后继问题', { validate: RE_DIALOGUES })
-    .option('createSuccessor', '># <op...>  创建并添加后继问答')
+    .option('createSuccessor', '># <op:text>  创建并添加后继问答')
     .option('successorTimeout', '-z [time]  设置允许触发后继的时间', { validate: isPositiveInteger })
     .option('context', '-c  允许后继问答被任何人触发')
     .option('context', '-C  后继问答只能被同一人触发', { value: false })

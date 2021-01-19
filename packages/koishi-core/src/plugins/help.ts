@@ -11,6 +11,16 @@ interface HelpConfig {
 }
 
 export default function apply(app: App) {
+  // show help when use `-h, --help` or when there is no action
+  app.prependListener('before-command', async ({ command, session, options }) => {
+    if (command._action && !options['help']) return
+    await session.execute({
+      name: 'help',
+      args: [command.name],
+    })
+    return ''
+  })
+
   const createCollector = <T extends TableType>(key: T): FieldCollector<T> => (argv, fields) => {
     const { args: [name], session } = argv
     const command = app._commandMap[name] || app._shortcutMap[name]

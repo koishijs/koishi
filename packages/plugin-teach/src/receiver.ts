@@ -318,7 +318,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.group().command('dialogue <message...>', '触发教学对话')
+  ctx.group().command('dialogue <message:text>', '触发教学对话')
     .action(async ({ session, next }, message = '') => {
       if (session._redirected > maxRedirections) return next()
       session.content = message

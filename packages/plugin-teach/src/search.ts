@@ -40,7 +40,7 @@ export default function apply(ctx: Context) {
     .option('page', '/ <page>  设置搜索结果的页码', { validate: isPositiveInteger })
     .option('autoMerge', '自动合并相同的问题和回答')
     .option('recursive', '-R  禁用递归查询', { fallback: true, value: false })
-    .option('pipe', '| <op...>  对每个搜索结果执行操作')
+    .option('pipe', '| <op:text>  对每个搜索结果执行操作')
 
   ctx.on('dialogue/execute', (argv) => {
     const { search, noArgs } = argv.options

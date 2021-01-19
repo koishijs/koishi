@@ -124,6 +124,27 @@ export class App extends Context {
     this.on('before-connect', this._listen.bind(this))
     this.on('before-disconnect', this._close.bind(this))
 
+    // shortcut
+    this.on('tokenize', (content, { $reply, $prefix, $appel }) => {
+      if ($prefix || $reply) return
+      for (const shortcut of this._shortcuts) {
+        const { name, fuzzy, command, oneArg, prefix, options, args = [] } = shortcut
+        if (prefix && !$appel) continue
+        if (!fuzzy && content !== name) continue
+        if (content.startsWith(name)) {
+          const message = content.slice(name.length)
+          if (fuzzy && !$appel && message.match(/^\S/)) continue
+          const argv: Argv = oneArg
+            ? { options: {}, args: [message.trim()] }
+            : command.parse(Argv.parse(message.trim()))
+          argv.command = command
+          argv.options = { ...options, ...argv.options }
+          argv.args = [...args, ...argv.args]
+          return argv
+        }
+      }
+    })
+
     this.on('parse', (argv: Argv, session: Session) => {
       const { $prefix, $appel, subType } = session
       // group message should have prefix or appel to be interpreted as a command call
@@ -146,7 +167,6 @@ export class App extends Context {
     this.plugin(validate)
     this.plugin(suggest)
     this.plugin(help)
-    this.plugin(Command.apply)
   }
 
   createServer() {

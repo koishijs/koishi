@@ -23,7 +23,7 @@ export const name = 'music'
 export function apply(ctx: Context, options: MusicOptions = {}) {
   const { showWarning, platform } = { ...defaultOptions, ...options }
 
-  ctx.command('tools/music <name...>', '点歌')
+  ctx.command('tools/music <name:text>', '点歌')
     .option('platform', `-p <platform>  点歌平台，目前支持 qq, netease，默认为 ${platform}`)
     .alias('点歌')
     .shortcut('来一首', { fuzzy: true, oneArg: true })

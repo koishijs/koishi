@@ -4,24 +4,13 @@ import { User } from '../database'
 import { Command } from '../command'
 import { App } from '../app'
 import { Message } from './message'
-import { Argv, Domain } from '../parser'
+import { Argv } from '../parser'
 
 export function getUsageName(command: Command) {
   return command.config.usageName || command.name
 }
 
 export type ValidationField = 'authority' | 'usage' | 'timers'
-
-Object.assign(Command.defaultConfig, {
-  authority: 1,
-  showWarning: true,
-  maxUsage: Infinity,
-  minInterval: 0,
-})
-
-Object.assign(Command.defaultOptionConfig, {
-  authority: 0,
-})
 
 Command.userFields(({ tokens, command, options = {} }, fields) => {
   if (!command) return
@@ -56,11 +45,11 @@ export default function apply(app: App) {
 
     // check argument count
     if (command.config.checkArgCount) {
-      const nextArg = command._arguments[args.length] || {} as Domain.ArgumentDecl
+      const nextArg = command._arguments[args.length] || {}
       if (nextArg.required) {
         return sendHint(Message.INSUFFICIENT_ARGUMENTS)
       }
-      const finalArg = command._arguments[command._arguments.length - 1] || {} as Domain.ArgumentDecl
+      const finalArg = command._arguments[command._arguments.length - 1] || {}
       if (args.length > command._arguments.length && finalArg.type !== 'text' && !finalArg.variadic) {
         return sendHint(Message.REDUNANT_ARGUMENTS)
       }

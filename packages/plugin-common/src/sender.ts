@@ -6,7 +6,7 @@ export interface SenderConfig {
 }
 
 export default function apply(ctx: Context, config: SenderConfig = {}) {
-  ctx.command('common/broadcast <message...>', '全服广播', { authority: 4 })
+  ctx.command('common/broadcast <message:text>', '全服广播', { authority: 4 })
     .before(session => !session.$app.database)
     .option('forced', '-f  无视 silent 标签进行广播')
     .option('only', '-o  仅向当前 Bot 负责的群进行广播')
@@ -24,7 +24,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       await session.$bot.broadcast(groups.map(g => g.id.slice(session.kind.length + 1)), message)
     })
 
-  ctx.command('common/echo <message...>', '向当前上下文发送消息', { authority: 2 })
+  ctx.command('common/echo <message:text>', '向当前上下文发送消息', { authority: 2 })
     .option('anonymous', '-a  匿名发送消息', { authority: 3 })
     .option('forceAnonymous', '-A  匿名发送消息', { authority: 3 })
     .option('unescape', '-e  发送非转义的消息', { authority: 3 })
@@ -47,7 +47,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
   const interactions: Record<number, string> = {}
 
   // FIXME operator
-  config.operator && ctx.command('common/feedback <message...>', '发送反馈信息给作者')
+  config.operator && ctx.command('common/feedback <message:text>', '发送反馈信息给作者')
     .userFields(['name', 'id'])
     .action(async ({ session }, text) => {
       if (!text) return '请输入要发送的文本。'
@@ -67,7 +67,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
     return session.$bot.sendPrivateMessage(userId, $parsed)
   })
 
-  ctx.command('common/contextify <message...>', '在特定上下文中触发指令', { authority: 3 })
+  ctx.command('common/contextify <message:text>', '在特定上下文中触发指令', { authority: 3 })
     .alias('ctxf')
     .userFields(['authority'])
     .before(session => !session.$app.database)
