@@ -1,38 +1,10 @@
 import { format } from 'util'
 import { Time } from 'koishi-utils'
-import { Session } from '../session'
 import { User } from '../database'
 import { Command } from '../command'
 import { App } from '../app'
 import { Message } from './message'
 import { Argv, Domain } from '../parser'
-
-export type UserType<T, U extends User.Field = User.Field> = T | ((user: Pick<User, U>) => T)
-
-declare module '../command' {
-  interface Command<U, G, O> {
-    _checkers: ((session: Session<U, G, O>) => void | string | boolean | Promise<void | string | boolean>)[]
-    before(checker: (session: Session<U, G, O>) => void | string | boolean | Promise<void | string | boolean>): this
-    getConfig<K extends keyof CommandConfig>(key: K, session: Session): Exclude<CommandConfig[K], (user: User) => any>
-  }
-
-  interface CommandConfig<U, G> {
-    /** min authority */
-    authority?: number
-    /** disallow unknown options */
-    checkUnknown?: boolean
-    /** check argument count */
-    checkArgCount?: boolean
-    /** show command warnings */
-    showWarning?: boolean
-    /** usage identifier */
-    usageName?: string
-    /** max usage per day */
-    maxUsage?: UserType<number>
-    /** min interval */
-    minInterval?: UserType<number>
-  }
-}
 
 export function getUsageName(command: Command) {
   return command.config.usageName || command.name
@@ -71,21 +43,7 @@ Command.userFields(({ tokens, command, options = {} }, fields) => {
   }
 })
 
-Command.prototype.getConfig = function (key: string, session: Session) {
-  const value = this.config[key]
-  return typeof value === 'function' ? value(session.$user) : value
-}
-
-Command.prototype.before = function (this: Command, checker) {
-  this._checkers.push(checker)
-  return this
-}
-
 export default function apply(app: App) {
-  app.on('new-command', (cmd) => {
-    cmd._checkers = []
-  })
-
   app.on('before-command', async ({ session, args, options, command }: Argv<ValidationField>) => {
     function sendHint(message: string, ...param: any[]) {
       return command.config.showWarning ? format(message, ...param) : ''
@@ -103,7 +61,7 @@ export default function apply(app: App) {
         return sendHint(Message.INSUFFICIENT_ARGUMENTS)
       }
       const finalArg = command._arguments[command._arguments.length - 1] || {} as Domain.ArgumentDecl
-      if (args.length > command._arguments.length && !finalArg.greedy && !finalArg.variadic) {
+      if (args.length > command._arguments.length && finalArg.type !== 'text' && !finalArg.variadic) {
         return sendHint(Message.REDUNANT_ARGUMENTS)
       }
     }

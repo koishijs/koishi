@@ -42,10 +42,10 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   if (!successorTimeout) return
 
   ctx.command('teach')
-    .option('setPred', '< <ids>  设置前置问题', { type: 'string', validate: RE_DIALOGUES })
-    .option('addPred', '<< <ids>  添加前置问题', { type: 'string', validate: RE_DIALOGUES })
-    .option('setSucc', '> <ids>  设置后继问题', { type: 'string', validate: RE_DIALOGUES })
-    .option('addSucc', '>> <ids>  添加后继问题', { type: 'string', validate: RE_DIALOGUES })
+    .option('setPred', '< <ids:string>  设置前置问题', { validate: RE_DIALOGUES })
+    .option('addPred', '<< <ids:string>  添加前置问题', { validate: RE_DIALOGUES })
+    .option('setSucc', '> <ids:string>  设置后继问题', { validate: RE_DIALOGUES })
+    .option('addSucc', '>> <ids:string>  添加后继问题', { validate: RE_DIALOGUES })
     .option('createSuccessor', '># <op...>  创建并添加后继问答')
     .option('successorTimeout', '-z [time]  设置允许触发后继的时间', { validate: isPositiveInteger })
     .option('context', '-c  允许后继问答被任何人触发')

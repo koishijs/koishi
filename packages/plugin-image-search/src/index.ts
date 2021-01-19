@@ -1,4 +1,4 @@
-import { Context, Session, CommandAction } from 'koishi-core'
+import { Context, Session, Command } from 'koishi-core'
 import ascii2d from './ascii2d'
 import saucenao from './saucenao'
 
@@ -51,7 +51,7 @@ export function apply(ctx: Context, config: Config = {}) {
     return session.$send(hasSuccess ? '其他图片搜索失败。' : '搜索失败。')
   }
 
-  function search(callback: SearchCallback): CommandAction {
+  function search(callback: SearchCallback): Command.Action {
     return async ({ session }) => {
       const id = session.channelId
       if (pending.has(id)) return '存在正在进行的查询，请稍后再试。'

@@ -1,8 +1,8 @@
 import { intersection, difference, Logger, defineProperty } from 'koishi-utils'
-import { Command, CommandConfig } from './command'
+import { Command } from './command'
 import { EventType, Session } from './session'
 import { User, Channel, PlatformType, Database } from './database'
-import { Argv } from './parser'
+import { Argv, Domain } from './parser'
 import { Server } from './server'
 import { App } from './app'
 import type Router from 'koa-router'
@@ -250,11 +250,11 @@ export class Context {
     return this.removeListener(Context.MIDDLEWARE_EVENT, middleware)
   }
 
-  command(rawName: string, config?: CommandConfig): Command
-  command(rawName: string, description: string, config?: CommandConfig): Command
-  command(rawName: string, ...args: [CommandConfig?] | [string, CommandConfig?]) {
+  command<D extends string>(rawName: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
+  command<D extends string>(rawName: D, description: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
+  command(rawName: string, ...args: [Command.Config?] | [string, Command.Config?]) {
     const description = typeof args[0] === 'string' ? args.shift() as string : undefined
-    const config = args[0] as CommandConfig || {}
+    const config = args[0] as Command.Config || {}
     if (description !== undefined) config.description = description
     const [path] = rawName.split(' ', 1)
     const declaration = rawName.slice(path.length)
@@ -330,7 +330,7 @@ export class Context {
   }
 }
 
-export type RawSession<E extends EventType = EventType> = Session<never, never, never, PlatformType, E>
+export type RawSession<E extends EventType = EventType> = Session<never, never, PlatformType, E>
 
 export interface EventMap {
   [Context.MIDDLEWARE_EVENT]: Middleware
@@ -394,8 +394,6 @@ export interface EventMap {
   'before-send'(session: Session): void | boolean
   'before-command'(argv: Argv): void | string | Promise<void | string>
   'middleware'(session: Session): void
-  'new-command'(cmd: Command): void
-  'remove-command'(cmd: Command): void
   'before-connect'(): void | Promise<void>
   'connect'(): void
   'before-disconnect'(): void | Promise<void>

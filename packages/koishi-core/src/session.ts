@@ -61,13 +61,13 @@ export interface Meta<E extends EventType = EventType> extends MessageBase {
 
 const logger = new Logger('session')
 
-export interface Session<U, G, O, K, E extends EventType = EventType> extends Meta<E> {}
+export interface Session<U, G, K, E extends EventType = EventType> extends Meta<E> {}
 
-export class Session<U extends User.Field = never, G extends Channel.Field = never, O extends {} = {}, K extends PlatformType = never> {
+export class Session<U extends User.Field = never, G extends Channel.Field = never, K extends PlatformType = never> {
   $user?: User.Observed<U>
   $channel?: Channel.Observed<G>
   $app?: App
-  $argv?: Argv<U, G, O>
+  $argv?: Argv<U, G>
   $appel?: boolean
   $prefix?: string
   $parsed?: string
@@ -324,9 +324,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 }
 
-export type FieldCollector<T extends TableType, K = keyof Tables[T], O = {}> =
+export type FieldCollector<T extends TableType, K = keyof Tables[T], A extends any[] = any[], O = {}> =
   | Iterable<K>
-  | ((argv: Argv<never, never, O>, fields: Set<keyof Tables[T]>) => void)
+  | ((argv: Argv<never, never, A, O>, fields: Set<keyof Tables[T]>) => void)
 
 function collectFields<T extends TableType>(argv: Argv, collectors: FieldCollector<T>[], fields: Set<keyof Tables[T]>) {
   for (const collector of collectors) {

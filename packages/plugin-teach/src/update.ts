@@ -26,9 +26,9 @@ export default function apply(ctx: Context) {
   ctx.command('teach')
     .option('review', '-v  查看最近的修改')
     .option('revert', '-V  回退最近的修改')
-    .option('includeLast', '-l [count]  包含最近的修改数量', { type: 'string', validate: isIntegerOrInterval })
-    .option('excludeLast', '-L [count]  排除最近的修改数量', { type: 'string', validate: isIntegerOrInterval })
-    .option('target', '<ids>  查看或修改已有问题', { type: 'string', validate: RE_DIALOGUES })
+    .option('includeLast', '-l [count:string]  包含最近的修改数量', { validate: isIntegerOrInterval })
+    .option('excludeLast', '-L [count:string]  排除最近的修改数量', { validate: isIntegerOrInterval })
+    .option('target', '<ids:string>  查看或修改已有问题', { validate: RE_DIALOGUES })
     .option('remove', '-r  彻底删除问答')
 
   ctx.on('dialogue/execute', (argv) => {

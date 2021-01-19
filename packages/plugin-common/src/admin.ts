@@ -1,14 +1,14 @@
 import { isInteger, difference, observe, Time, enumKeys, Random } from 'koishi-utils'
 import { Context, User, Channel, Command, Argv, PlatformType, Session } from 'koishi-core'
 
-type AdminAction<U extends User.Field, G extends Channel.Field, O extends {}, T>
-  = (argv: Argv<U | 'authority', G, O> & { target: T }, ...args: string[])
+type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
+  = (argv: Argv<U | 'authority', G, A, O> & { target: T }, ...args: A)
     => void | string | Promise<void | string>
 
 declare module 'koishi-core/dist/command' {
-  interface Command<U, G, O> {
-    adminUser(callback: AdminAction<U, G, O, User.Observed<U | 'authority'>>): this
-    adminChannel(callback: AdminAction<U, G, O, Channel.Observed<G>>): this
+  interface Command<U, G, A, O> {
+    adminUser(callback: AdminAction<U, G, A, O, User.Observed<U | 'authority'>>): this
+    adminChannel(callback: AdminAction<U, G, A, O, Channel.Observed<G>>): this
   }
 }
 
@@ -20,7 +20,7 @@ interface FlagOptions {
 
 type FlagMap = Record<string, number> & Record<number, string>
 
-interface FlagArgv extends Argv<never, never, FlagOptions> {
+interface FlagArgv extends Argv<never, never, string[], FlagOptions> {
   target: User.Observed<'flag'> | Channel.Observed<'flag'>
 }
 
@@ -53,7 +53,7 @@ function flagAction(map: FlagMap, { target, options }: FlagArgv, ...flags: strin
 Command.prototype.adminUser = function (this: Command, callback) {
   const command = this
     .userFields(['authority'])
-    .option('target', '-t [user]  指定目标用户', { authority: 3, type: 'string' })
+    .option('target', '-t [user]  指定目标用户', { authority: 3 })
 
   command._action = async (argv) => {
     const { options, session, args } = argv
@@ -89,7 +89,7 @@ Command.prototype.adminUser = function (this: Command, callback) {
 Command.prototype.adminChannel = function (this: Command, callback) {
   const command = this
     .userFields(['authority'])
-    .option('target', '-t [channel]  指定目标频道', { authority: 3, type: 'string' })
+    .option('target', '-t [channel]  指定目标频道', { authority: 3 })
 
   command._action = async (argv) => {
     const { options, session, args } = argv
@@ -125,7 +125,7 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
   ctx.command('common/user', '用户管理', { authority: 3 })
   ctx.command('common/channel', '频道管理', { authority: 3 })
 
-  ctx.command('common/callme <name...>', '修改自己的称呼')
+  ctx.command('common/callme <name:text>', '修改自己的称呼')
     .userFields(['id', 'name'])
     .shortcut('叫我', { prefix: true, fuzzy: true, oneArg: true })
     .action(async ({ session }, name) => {

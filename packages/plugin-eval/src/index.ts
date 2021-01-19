@@ -12,8 +12,10 @@ declare module 'koishi-core/dist/app' {
 }
 
 declare module 'koishi-core/dist/command' {
-  interface CommandConfig {
-    noEval?: boolean
+  namespace Command {
+    interface Config {
+      noEval?: boolean
+    }
   }
 }
 

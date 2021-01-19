@@ -30,8 +30,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   if (config.useTime === false) return
 
   ctx.command('teach')
-    .option('startTime', '-t <time>  起始时间', { type: 'string', validate: isHours })
-    .option('endTime', '-T <time>  结束时间', { type: 'string', validate: isHours })
+    .option('startTime', '-t <time:string>  起始时间', { validate: isHours })
+    .option('endTime', '-T <time:string>  结束时间', { validate: isHours })
 
   function parseTime(source: string) {
     const [hours, minutes = '0'] = source.split(':')

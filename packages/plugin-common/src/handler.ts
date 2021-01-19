@@ -29,7 +29,7 @@ export interface HandlerOptions {
 
 const defaultMessage: WelcomeMessage = session => `欢迎新大佬 [CQ:at,qq=${session.userId}]！`
 
-type CQSession = Session<never, never, {}, 'onebot'>
+type CQSession = Session<never, never, 'onebot'>
 
 async function getHandleResult(handler: RequestHandler, session: CQSession): Promise<any> {
   return typeof handler === 'function' ? handler(session) : handler

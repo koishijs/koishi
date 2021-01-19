@@ -6,7 +6,6 @@ import { Channel, User } from './database'
 import { Command } from './command'
 import { Session } from './session'
 import help from './plugins/help'
-import shortcut from './plugins/shortcut'
 import suggest from './plugins/suggest'
 import validate from './plugins/validate'
 import LruCache from 'lru-cache'
@@ -52,6 +51,8 @@ export class App extends Context {
 
   _commands: Command[]
   _commandMap: Record<string, Command>
+  _shortcuts: Command.Shortcut[]
+  _shortcutMap: Record<string, Command>
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]>
   _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
   _groupCache: LruCache<string, Observed<Partial<Channel>, Promise<void>>>
@@ -92,6 +93,8 @@ export class App extends Context {
     defineProperty(this, '_hooks', {})
     defineProperty(this, '_commands', [])
     defineProperty(this, '_commandMap', {})
+    defineProperty(this, '_shortcuts', [])
+    defineProperty(this, '_shortcutMap', {})
     defineProperty(this, '_sessions', {})
     defineProperty(this, '_servers', {})
     defineProperty(this, '_userCache', {})
@@ -142,8 +145,8 @@ export class App extends Context {
 
     this.plugin(validate)
     this.plugin(suggest)
-    this.plugin(shortcut)
     this.plugin(help)
+    this.plugin(Command.apply)
   }
 
   createServer() {

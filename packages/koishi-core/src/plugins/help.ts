@@ -1,37 +1,9 @@
 import { getUsage, getUsageName, ValidationField } from './validate'
-import { User, Channel, TableType } from '../database'
+import { TableType } from '../database'
 import { Command } from '../command'
 import { Session, FieldCollector } from '../session'
 import { App } from '../app'
 import { Message } from './message'
-
-export type CommandUsage<U extends User.Field, G extends Channel.Field> = string
-  | ((this: Command<U, G>, session: Session<U, G>) => string | Promise<string>)
-
-declare module '../command' {
-  interface Command<U, G> {
-    _usage?: CommandUsage<U, G>
-    _examples: string[]
-    usage (text: CommandUsage<U, G>): this
-    example (example: string): this
-  }
-
-  interface CommandConfig {
-    /** hide all options by default */
-    hideOptions?: boolean
-    hidden?: boolean
-  }
-}
-
-Command.prototype.usage = function (text) {
-  this._usage = text
-  return this
-}
-
-Command.prototype.example = function (example) {
-  this._examples.push(example)
-  return this
-}
 
 interface HelpConfig {
   showHidden?: boolean
@@ -39,21 +11,6 @@ interface HelpConfig {
 }
 
 export default function apply(app: App) {
-  app.on('new-command', (cmd) => {
-    cmd._examples = []
-    cmd.option('help', '-h  显示此信息', { hidden: true })
-  })
-
-  // show help when use `-h, --help` or when there is no action
-  app.prependListener('before-command', async ({ command, session, options }) => {
-    if (command._action && !options['help']) return
-    await session.execute({
-      name: 'help',
-      args: [command.name],
-    })
-    return ''
-  })
-
   const createCollector = <T extends TableType>(key: T): FieldCollector<T> => (argv, fields) => {
     const { args: [name], session } = argv
     const command = app._commandMap[name] || app._shortcutMap[name]

@@ -1,4 +1,4 @@
-import { Context, CommandConfig, OptionConfig } from 'koishi-core'
+import { Context, Domain, Command } from 'koishi-core'
 import { assertProperty, Logger, noop, union } from 'koishi-utils'
 import { resolve } from 'path'
 import { load } from 'js-yaml'
@@ -20,12 +20,12 @@ declare module 'koishi-plugin-eval/dist/main' {
   interface MainConfig extends AddonMainConfig {}
 }
 
-interface OptionManifest extends OptionConfig {
+interface OptionManifest extends Domain.OptionConfig {
   name: string
   desc: string
 }
 
-interface CommandManifest extends CommandConfig, FieldOptions {
+interface CommandManifest extends Command.Config, FieldOptions {
   name: string
   desc: string
   options?: OptionManifest[]
@@ -106,7 +106,7 @@ export function apply(ctx: Context, config: Config) {
 
         const cmd = addon
           .subcommand(rawName, desc, config)
-          .option('debug', '启用调试模式', { type: 'boolean', hidden: true })
+          .option('debug', '启用调试模式', { hidden: true })
 
         attachTraps(cmd, userAccess, channelAccess, async ({ session, command, options, ctxOptions }, ...args) => {
           const { name } = command, { worker } = session.$app

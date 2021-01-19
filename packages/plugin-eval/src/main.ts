@@ -1,4 +1,4 @@
-import { App, Command, CommandAction, Channel, Argv, User } from 'koishi-core'
+import { App, Command, Channel, Argv, User } from 'koishi-core'
 import { Logger, Observed, pick } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { WorkerAPI, WorkerConfig, WorkerData, Response, ContextOptions } from './worker'
@@ -77,11 +77,11 @@ export interface AccessOptions<T> {
 
 export type Access<T> = T[] | AccessOptions<T>
 
-interface TrappedArgv<O> extends Argv<never, never, O> {
+interface TrappedArgv<A extends any[], O> extends Argv<never, never, A, O> {
   ctxOptions?: ContextOptions
 }
 
-type TrappedAction<O> = (argv: TrappedArgv<O>, ...args: string[]) => ReturnType<CommandAction>
+type TrappedAction<A extends any[], O> = (argv: TrappedArgv<A, O>, ...args: A) => ReturnType<Command.Action>
 
 export function resolveAccess<T>(fields: Access<T>): AccessOptions<T> {
   return Array.isArray(fields)
@@ -94,11 +94,11 @@ export interface FieldOptions {
   channelFields?: Access<Channel.Field>
 }
 
-export function attachTraps<O>(
-  command: Command<never, never, O>,
+export function attachTraps<A extends any[], O>(
+  command: Command<never, never, A, O>,
   userAccess: AccessOptions<User.Field>,
   channelAccess: AccessOptions<Channel.Field>,
-  action: TrappedAction<O>,
+  action: TrappedAction<A, O>,
 ) {
   const userWritable = userAccess.writable
   const channelWritable = channelAccess.writable

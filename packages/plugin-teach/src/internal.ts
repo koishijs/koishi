@@ -8,8 +8,10 @@ import { format } from 'util'
 import { distance } from 'fastest-levenshtein'
 
 declare module 'koishi-core/dist/command' {
-  interface CommandConfig {
-    noInterp?: boolean
+  namespace Command {
+    interface Config {
+      noInterp?: boolean
+    }
   }
 }
 
@@ -40,8 +42,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   defineProperty(ctx.app, 'teachHistory', {})
 
   ctx.command('teach')
-    .option('question', '<question>  问题', { type: 'string' })
-    .option('answer', '<answer>  回答', { type: 'string' })
+    .option('question', '<question:string>  问题')
+    .option('answer', '<answer:string>  回答')
     .option('ignoreHint', '-i  忽略智能提示')
     .option('regexp', '-x  使用正则表达式匹配', { authority: config.authority.regExp })
     .option('regexp', '-X  取消使用正则表达式匹配', { authority: config.authority.regExp, value: false })

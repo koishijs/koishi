@@ -3,13 +3,13 @@ import MysqlDatabase from 'koishi-plugin-mysql'
 import Achievement from './achievement'
 
 declare module 'koishi-core/dist/command' {
-  interface Command<U, G, O> {
-    useRest(): Command<U, G, Extend<O, 'rest', string>>
-    useRank(): Command<U, G, O>
+  interface Command<U, G, A, O> {
+    useRest(): Command<U, G, A, O & { rest: string }>
+    useRank(): Command<U, G, A, O>
   }
 }
 
-function createCollector<T extends TableType>(key: T): FieldCollector<T, never, { rest: string }> {
+function createCollector<T extends TableType>(key: T): FieldCollector<T, never, any[], { rest: string }> {
   return ({ tokens, session, options }, fields) => {
     if (tokens) {
       const index = tokens.findIndex(token => !token.quoted && token.content === '--')
@@ -22,7 +22,7 @@ function createCollector<T extends TableType>(key: T): FieldCollector<T, never, 
 
 Command.prototype.useRest = function (this: Command) {
   return this
-    .option('rest', '-- [command...]  要执行的指令', { type: 'string' })
+    .option('rest', '-- [command:text]  要执行的指令')
     .userFields(createCollector('user'))
     .channelFields(createCollector('channel'))
 }
@@ -176,7 +176,8 @@ export namespace Show {
         const item = data[target]
         if (!item) return
         if (item[0] === 'redirect') {
-          const command = argv.command = ctx.command(item[1])
+          const command = ctx.command(item[1])
+          argv.command = command as any
           Object.assign(argv, command.parse(Argv.parse(argv.source.slice(5))))
           argv.session.collect('user', argv, fields)
         } else if (item[0] === 'callback') {

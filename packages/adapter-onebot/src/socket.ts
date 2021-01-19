@@ -22,7 +22,7 @@ export function createSession(server: Server, data: any) {
   if (session.targetId) session.targetId = '' + session.targetId
   if (session.operatorId) session.groupId = '' + session.operatorId
   if (session.eventType === 'message') {
-    CQBot.adaptMessage(session)
+    CQBot.adaptMessage(session as any)
     session.channelId = session.subType === 'group'
       ? `group:${session.groupId}`
       : `private:${session.userId}`

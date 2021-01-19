@@ -3,8 +3,8 @@ import { Time } from 'koishi-utils'
 import { Adventurer, Show } from './utils'
 
 declare module 'koishi-core/dist/command' {
-  interface Command<U, G, O> {
-    checkTimer(name: string): Command<U | 'timers', G, O>
+  interface Command<U, G, A, O> {
+    checkTimer(name: string): Command<U | 'timers', G, A, O>
   }
 }
 
