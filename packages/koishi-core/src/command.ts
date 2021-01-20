@@ -168,7 +168,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  // eslint-disable-next-line max-len
   option<K extends string, D extends string, T extends Domain.Type>(
     name: K, desc: D,
     config: Domain.OptionConfig<T> = {},

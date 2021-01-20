@@ -106,7 +106,7 @@ export namespace Time {
   }
 
   function toHourMinute(time: Date) {
-    return `${toDoubleDigit(time.getHours())}:${toDoubleDigit(time.getMilliseconds())}`
+    return `${toDoubleDigit(time.getHours())}:${toDoubleDigit(time.getMinutes())}`
   }
 
   export function formatTimeInterval(time: Date, interval?: number) {

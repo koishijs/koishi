@@ -4,8 +4,8 @@ import { sleep } from 'koishi-utils'
 describe('Session API', () => {
   describe('Command Suggestions', () => {
     const app = new App()
-    const session1 = app.session(456)
-    const session2 = app.session(789, 987)
+    const session1 = app.session('456')
+    const session2 = app.session('789', '987')
 
     app.command('foo <text>', { checkArgCount: true })
       .action((_, bar) => 'foo' + bar)
@@ -58,7 +58,7 @@ describe('Session API', () => {
 
   describe('Other Session Methods', () => {
     const app = new App({ prefix: '.' })
-    const session = app.session(123, 456)
+    const session = app.session('123', '456')
     const items = ['foo', 'bar']
     const command = app.command('find [item]').action(({ session }, item) => {
       if (items.includes(item)) return 'found:' + item
@@ -88,7 +88,7 @@ describe('Session API', () => {
     })
 
     app.middleware(async (session, next) => {
-      if (session.message !== 'prompt') return next()
+      if (session.content !== 'prompt') return next()
       await session.$send('prompt text')
       ;(async () => {
         const message = await session.$prompt() || 'nothing'

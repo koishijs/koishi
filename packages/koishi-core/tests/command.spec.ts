@@ -16,8 +16,8 @@ describe('Command API', () => {
     })
 
     it('context.command', () => {
-      const ctx1 = app.user(10000)
-      const ctx2 = app.group(10000)
+      const ctx1 = app.user('10000')
+      const ctx2 = app.group('10000')
       app.command('a')
       ctx1.command('b')
       ctx2.command('c')
@@ -48,12 +48,12 @@ describe('Command API', () => {
     it('name conflicts', () => {
       expect(() => {
         app.command('e')
-        app.user(10000).command('e')
+        app.user('10000').command('e')
       }).not.to.throw()
 
       expect(() => {
         const x1 = app.command('e').alias('x')
-        const x2 = app.user(10000).command('x')
+        const x2 = app.user('10000').command('x')
         expect(x1).to.equal(x2)
       }).not.to.throw()
 

@@ -504,6 +504,7 @@ export namespace Phase {
       .shortcut('不使用物品', { options: { nothing: true } })
       .shortcut('不使用任何物品', { options: { nothing: true } })
       .option('nothing', '-n  不使用任何物品，直接进入下一剧情')
+      // FIXME
       .before(session => checkTimer('$use', session.$user))
       .action(async (argv, item) => {
         const { options, session } = argv

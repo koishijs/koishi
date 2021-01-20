@@ -5,9 +5,9 @@ import { expect } from 'chai'
 import { fn } from 'jest-mock'
 
 const app = new App()
-const groupSession = new Session(app, { userId: 123, groupId: 456, messageType: 'group' })
-const privateSession = new Session(app, { userId: 123, messageType: 'private' })
-const metaEventSession = new Session(app, { postType: 'meta_event' })
+const groupSession = new Session(app, { userId: ''123'', groupId: ''456'', subType: 'group' })
+const privateSession = new Session(app, { userId: ''123'', subType: 'private' })
+const metaEventSession = new Session(app, { eventType: 'lifecycle' })
 
 describe('Context API', () => {
   describe('Composition API', () => {
@@ -21,53 +21,53 @@ describe('Context API', () => {
       expect(app.user().match(groupSession)).to.be.true
       expect(app.user().match(privateSession)).to.be.true
       expect(app.user().match(metaEventSession)).to.be.true
-      expect(app.user(123).match(groupSession)).to.be.true
-      expect(app.user(123).match(privateSession)).to.be.true
-      expect(app.user(456).match(groupSession)).to.be.false
-      expect(app.user(456).match(privateSession)).to.be.false
-      expect(app.user(456).match(metaEventSession)).to.be.true
+      expect(app.user('123').match(groupSession)).to.be.true
+      expect(app.user('123').match(privateSession)).to.be.true
+      expect(app.user('456').match(groupSession)).to.be.false
+      expect(app.user('456').match(privateSession)).to.be.false
+      expect(app.user('456').match(metaEventSession)).to.be.true
     })
 
     it('context.prototype.private', () => {
       expect(app.private().match(groupSession)).to.be.false
       expect(app.private().match(privateSession)).to.be.true
       expect(app.private().match(metaEventSession)).to.be.true
-      expect(app.private(123).match(groupSession)).to.be.false
-      expect(app.private(123).match(privateSession)).to.be.true
-      expect(app.private(456).match(groupSession)).to.be.false
-      expect(app.private(456).match(privateSession)).to.be.false
-      expect(app.private(123).match(metaEventSession)).to.be.true
+      expect(app.private('123').match(groupSession)).to.be.false
+      expect(app.private('123').match(privateSession)).to.be.true
+      expect(app.private('456').match(groupSession)).to.be.false
+      expect(app.private('456').match(privateSession)).to.be.false
+      expect(app.private('123').match(metaEventSession)).to.be.true
     })
 
     it('context.prototype.group', () => {
       expect(app.group().match(groupSession)).to.be.true
       expect(app.group().match(privateSession)).to.be.false
       expect(app.group().match(metaEventSession)).to.be.true
-      expect(app.group(123).match(groupSession)).to.be.false
-      expect(app.group(123).match(privateSession)).to.be.false
-      expect(app.group(456).match(groupSession)).to.be.true
-      expect(app.group(456).match(privateSession)).to.be.false
-      expect(app.group(456).match(metaEventSession)).to.be.true
+      expect(app.group('123').match(groupSession)).to.be.false
+      expect(app.group('123').match(privateSession)).to.be.false
+      expect(app.group('456').match(groupSession)).to.be.true
+      expect(app.group('456').match(privateSession)).to.be.false
+      expect(app.group('456').match(metaEventSession)).to.be.true
     })
 
     it('context chaining', () => {
-      expect(app.group(456).user(123).match(groupSession)).to.be.true
-      expect(app.group(456).user(456).match(groupSession)).to.be.false
-      expect(app.group(123).user(123).match(groupSession)).to.be.false
-      expect(app.group(456).user(123).match(metaEventSession)).to.be.true
-      expect(app.user(123).group(456).match(groupSession)).to.be.true
-      expect(app.user(456).group(456).match(groupSession)).to.be.false
-      expect(app.user(123).group(123).match(groupSession)).to.be.false
-      expect(app.user(123).group(456).match(metaEventSession)).to.be.true
+      expect(app.group('456').user('123').match(groupSession)).to.be.true
+      expect(app.group('456').user('456').match(groupSession)).to.be.false
+      expect(app.group('123').user('123').match(groupSession)).to.be.false
+      expect(app.group('456').user('123').match(metaEventSession)).to.be.true
+      expect(app.user('123').group('456').match(groupSession)).to.be.true
+      expect(app.user('456').group('456').match(groupSession)).to.be.false
+      expect(app.user('123').group('123').match(groupSession)).to.be.false
+      expect(app.user('123').group('456').match(metaEventSession)).to.be.true
     })
 
     it('context intersection', () => {
-      expect(app.group(456, 789).group(123, 456).match(groupSession)).to.be.true
-      expect(app.group(456, 789).group(123, 789).match(groupSession)).to.be.false
-      expect(app.group(123, 789).group(123, 456).match(groupSession)).to.be.false
-      expect(app.user(123, 789).user(123, 456).match(groupSession)).to.be.true
-      expect(app.user(456, 789).user(123, 456).match(groupSession)).to.be.false
-      expect(app.user(123, 789).user(456, 789).match(groupSession)).to.be.false
+      expect(app.group('456', '789').group('123', '456').match(groupSession)).to.be.true
+      expect(app.group('456', '789').group('123', '789').match(groupSession)).to.be.false
+      expect(app.group('123', '789').group('123', '456').match(groupSession)).to.be.false
+      expect(app.user('123', '789').user('123', '456').match(groupSession)).to.be.true
+      expect(app.user('456', '789').user('123', '456').match(groupSession)).to.be.false
+      expect(app.user('123', '789').user('456', '789').match(groupSession)).to.be.false
     })
   })
 
@@ -129,7 +129,7 @@ describe('Context API', () => {
     it('call chaining', () => {
       expect(app.plugin(noop)).to.equal(app)
 
-      const ctx = app.user(123)
+      const ctx = app.user('123')
       expect(ctx.plugin(noop)).to.equal(ctx)
     })
 

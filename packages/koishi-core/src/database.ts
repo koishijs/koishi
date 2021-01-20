@@ -87,15 +87,18 @@ export namespace Channel {
   extend((type, id, assignee) => ({ id: `${type}:${id}`, assignee, flag: 0 }))
 }
 
+type MaybeArray<T> = T | readonly T[]
+
 export interface Database {
   getUser<K extends User.Field, T extends User.Field>(type: T, id: User[T], fields?: readonly K[]): Promise<Pick<User, K | T>>
-  getUser<K extends User.Field, T extends User.Field>(type: T, ids: User[T][], fields?: readonly K[]): Promise<Pick<User, K | T>[]>
-  getUser(type: string, ids: string | string[], fields?: readonly string[]): Promise<any>
+  getUser<K extends User.Field, T extends User.Field>(type: T, ids: readonly User[T][], fields?: readonly K[]): Promise<Pick<User, K | T>[]>
+  getUser<K extends User.Field>(type: string, id: MaybeArray<string>, fields?: readonly K[]): Promise<any>
   setUser<T extends User.Field>(type: T, id: User[T], data: Partial<User>, autoCreate?: boolean): Promise<void>
   setUser(type: PlatformType, id: string, data: Partial<User>, autoCreate?: boolean): Promise<void>
 
   getChannel<K extends Channel.Field>(type: PlatformType, id: string, fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>>
-  getChannel<K extends Channel.Field>(type: PlatformType, ids: string[], fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>[]>
+  getChannel<K extends Channel.Field>(type: PlatformType, ids: readonly string[], fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>[]>
+  getChannel<K extends Channel.Field>(type: PlatformType, id: MaybeArray<string>, fields?: readonly K[]): Promise<any>
   getChannelList<K extends Channel.Field>(fields?: readonly K[], type?: PlatformType, assignees?: readonly string[]): Promise<Pick<Channel, K>[]>
   setChannel(type: PlatformType, id: string, data: Partial<Channel>): Promise<void>
 }

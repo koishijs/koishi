@@ -278,7 +278,6 @@ namespace Item {
       .shortcut('购入', { fuzzy: true })
       .shortcut('购买', { fuzzy: true })
       .shortcut('买入', { fuzzy: true })
-      .before(session => checkTimer('$shop', session.$user))
       .action(async (argv, ...args) => {
         const { session } = argv
         const message = Phase.checkStates(session)

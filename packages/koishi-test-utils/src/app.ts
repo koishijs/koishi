@@ -1,10 +1,10 @@
-import { AppOptions, App, Server, Session, AppStatus, Bot, SenderInfo } from 'koishi-core'
+import { AppOptions, App, Server, Session, AppStatus, Bot, AuthorInfo } from 'koishi-core'
 import { assert } from 'chai'
 import { Socket } from 'net'
 import * as http from 'http'
 import * as memory from './memory'
 
-export const BASE_SELF_ID = 514
+export const BASE_SELF_ID = '514'
 
 interface MockedResponse {
   code: number
@@ -12,26 +12,29 @@ interface MockedResponse {
   headers: Record<string, any>
 }
 
-Bot.prototype.getMsg = async function (this: Bot, messageId: number) {
-  return {
-    messageId,
-    message: '',
-    time: 0,
-    realId: 0,
-    subType: null,
-    sender: { userId: this.selfId } as SenderInfo,
+class MockedBot extends Bot {
+  async getMessage(messageId: string) {
+    return {
+      messageId,
+      message: '',
+      time: 0,
+      realId: 0,
+      subType: null,
+      messageType: null,
+      author: { userId: this.selfId } as AuthorInfo,
+    }
   }
 }
 
 class MockedServer extends Server {
   constructor(app: App) {
-    super(app)
+    super(app, MockedBot)
     this.bots.forEach(bot => bot.ready = true)
   }
 
-  _close() {}
+  close() {}
 
-  async _listen() {}
+  async listen() {}
 
   get(path: string, headers?: Record<string, any>) {
     return this.receive('GET', path, headers, '')
@@ -64,7 +67,7 @@ class MockedServer extends Server {
         const headers = res.getHeaders()
         resolve({ code, body, headers })
       }
-      this.server.emit('request', req, res)
+      this.app._httpServer.emit('request', req, res)
       req.emit('data', content)
       req.emit('end')
     })
@@ -83,6 +86,7 @@ export class MockedApp extends App {
 
   constructor(options: MockedAppOptions = {}) {
     super({ selfId: BASE_SELF_ID, type: 'mock', ...options })
+
     if (options.mockStart !== false) this.status = AppStatus.open
     if (options.mockDatabase) this.plugin(memory)
   }
@@ -100,7 +104,7 @@ export class MockedApp extends App {
     return session.$uuid
   }
 
-  session(userId: number, channelId?: number) {
+  session(userId: string, channelId?: string) {
     return new TestSession(this, userId, channelId)
   }
 }
@@ -110,15 +114,13 @@ export class TestSession {
 
   private replies: string[] = []
 
-  constructor(public app: MockedApp, public userId: number, public channelId?: string) {
+  constructor(public app: MockedApp, public userId: string, public channelId?: string) {
     this.meta = {
-      postType: 'message',
+      eventType: 'message',
       userId,
-      sender: {
-        sex: 'unknown',
-        age: 0,
+      author: {
         userId,
-        nickname: '' + userId,
+        name: '' + userId,
       },
     }
 
@@ -130,7 +132,7 @@ export class TestSession {
     }
   }
 
-  async receive(message: string, count?: number) {
+  async receive(content: string, count?: number) {
     return new Promise<string[]>((resolve) => {
       let resolved = false
       const _resolve = () => {
@@ -148,7 +150,7 @@ export class TestSession {
       const dispose = this.app.on('middleware', (session) => {
         if (session.$uuid === uuid) process.nextTick(_resolve)
       })
-      const uuid = this.app.receive({ ...this.meta, $send, message })
+      const uuid = this.app.receive({ ...this.meta, $send, content })
     })
   }
 

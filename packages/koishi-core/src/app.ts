@@ -5,12 +5,12 @@ import { BotOptions, Server, createBots } from './server'
 import { Channel, User } from './database'
 import { Command } from './command'
 import { Session } from './session'
-import help from './plugins/help'
-import suggest from './plugins/suggest'
+import help, { getCommands } from './plugins/help'
 import validate from './plugins/validate'
 import LruCache from 'lru-cache'
 import * as http from 'http'
 import type Koa from 'koa'
+import { Message } from './plugins/message'
 
 export interface DelayOptions {
   character?: number
@@ -165,8 +165,28 @@ export class App extends Context {
     })
 
     this.plugin(validate)
-    this.plugin(suggest)
     this.plugin(help)
+
+    // suggest
+    this.middleware((session, next) => {
+      const { $argv, $reply, $parsed, $prefix, $appel, subType } = session
+      if ($argv || subType !== 'private' && $prefix === null && !$appel) return next()
+      const target = $parsed.split(/\s/, 1)[0].toLowerCase()
+      if (!target) return next()
+
+      const items = getCommands(session as any, this._commands).flatMap(cmd => cmd._aliases)
+      return session.$suggest({
+        target,
+        next,
+        items,
+        prefix: Message.COMMAND_SUGGEST_PREFIX,
+        suffix: Message.COMMAND_SUGGEST_SUFFIX,
+        async apply(suggestion, next) {
+          const newMessage = suggestion + $parsed.slice(target.length) + ($reply ? ' ' + $reply.content : '')
+          return this.execute(newMessage, next)
+        },
+      })
+    })
   }
 
   createServer() {

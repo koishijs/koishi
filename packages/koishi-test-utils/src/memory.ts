@@ -1,4 +1,4 @@
-import { User, Group, Tables, TableType, App, extendDatabase } from 'koishi-core'
+import { Tables, TableType, App, extendDatabase } from 'koishi-core'
 import { clone } from 'koishi-utils'
 
 declare module 'koishi-core/dist/database' {
@@ -8,79 +8,85 @@ declare module 'koishi-core/dist/database' {
 export interface MemoryConfig {}
 
 export class MemoryDatabase {
-  $store: Record<string, Record<number, any>> = {}
+  $store: { [K in TableType]?: Tables[K][] } = {
+    user: [],
+    channel: [],
+  }
 
   constructor(public app: App, public config: MemoryConfig) {}
 
-  $table<K extends TableType>(table: K): Record<number, Tables[K]> {
-    return this.$store[table] || (this.$store[table] = {})
+  $table<K extends TableType>(table: K): Tables[K][] {
+    return this.$store[table] as any
   }
 
-  $create<K extends TableType>(table: K, data: Partial<Tables[K]>, key = 'id') {
-    const store = this.$table(table)
-    if (typeof data[key] !== 'number') {
-      let index = 1
-      while (index in store) index++
-      data[key] = index
-    }
-    return store[data[key]] = data as Tables[K]
-  }
-
-  $remove<K extends TableType>(table: K, id: number) {
-    delete this.$table(table)[id]
-  }
-
-  $update<K extends TableType>(table: K, id: number, data: Partial<Tables[K]>) {
-    Object.assign(this.$table(table)[id], clone(data))
-  }
-
-  $count<K extends TableType>(table: K, field?: keyof Tables[K]) {
-    if (!field) return Object.keys(this.$table(table)).length
-    return new Set(Object.values(this.$table(table)).map(data => data[field])).size
+  $select<T extends TableType, K extends keyof Tables[T]>(table: T, key: K, values: readonly Tables[T][K][]) {
+    return this.$table(table).filter(row => values.includes(row[key])).map(clone)
   }
 }
 
 extendDatabase(MemoryDatabase, {
-  async getUser(type, userId: number) {
-    const table = this.$table('user')
-    const data = table[userId]
-    if (data) return clone(data)
-  },
-
-  async getUsers(type, ...args: any[][]) {
-    const table = this.$table('user')
-    if (args.length > 1 || args.length && typeof args[0][0] !== 'string') {
-      return Object.keys(table)
-        .filter(id => args[0].includes(+id))
-        .map(id => clone(table[id]))
+  async getUser(type, id) {
+    if (Array.isArray(id)) {
+      return this.$select('user', type as any, id)
     } else {
-      return Object.values(table)
+      return this.$select('user', type as any, [id])[0]
     }
   },
 
-  async setUser(type, userId: number, data: any) {
-    return this.$update('user', userId, data)
+  async setUser(type, id, data, autoCreate) {
+    const table = this.$table('user')
+    const index = table.findIndex(row => row[type] === id)
+    if (index < 0) {
+      if (autoCreate && data) {
+        const max = Math.max(...table.map(row => row.id))
+        table.push({
+          id: max + 1,
+          ...clone(data),
+        } as any)
+      }
+      return
+    }
+
+    if (!data) {
+      table.splice(index, 1)
+      return
+    }
+
+    Object.assign(table[index], clone(data))
   },
 
-  async getGroup(type, groupId: number) {
-    const table = this.$table('group')
-    const data = table[groupId]
-    if (data) return clone(data)
+  async getChannel(type, id) {
+    if (Array.isArray(id)) {
+      return this.$select('channel', 'id', id.map(id => `${type}:${id}`))
+    } else {
+      return this.$select('channel', 'id', [`${type}:${id}`])[0]
+    }
   },
 
-  async getAllGroups(...args: any[][]) {
-    const table = this.$table('group')
-    const assignees = args.length > 1 ? args[1]
-      : args.length && typeof args[0][0] === 'number' ? args[0] as never
-        : await this.app.getSelfIds()
-    if (!assignees.length) return []
-    return Object.keys(table)
-      .filter(id => assignees.includes(table[id].assignee))
-      .map(id => clone(table[id]))
+  async getChannelList(fields, type, assignees) {
+    const assigneeMap: Record<string, readonly string[]> = Object.fromEntries(assignees ? [[type, assignees]]
+      : type ? [[type, this.app.servers[type].bots.map(bot => bot.selfId)]]
+        : Object.entries(this.app.servers).map(([type, { bots }]) => [type, bots.map(bot => bot.selfId)]))
+    return this.$table('channel').filter((row) => {
+      const [type] = row.id.split(':')
+      return assigneeMap[type]?.includes(row.assignee)
+    })
   },
 
-  async setGroup(type, groupId: number, data: any) {
-    return this.$update('group', groupId, data)
+  async setChannel(type, id, data) {
+    const table = this.$table('channel')
+    const index = table.findIndex(row => row.id === `${type}:${id}`)
+    if (index < 0) {
+      if (data) table.push(clone(data) as any)
+      return
+    }
+
+    if (!data) {
+      table.splice(index, 1)
+      return
+    }
+
+    Object.assign(table[index], clone(data))
   },
 })
 

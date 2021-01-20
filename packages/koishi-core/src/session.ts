@@ -2,10 +2,13 @@ import { User, Channel, Platforms, PlatformType, TableType, Tables } from './dat
 import { Command } from './command'
 import { contain, observe, Logger, defineProperty, Random } from 'koishi-utils'
 import { Argv } from './parser'
-import { NextFunction } from './context'
+import { Middleware, NextFunction } from './context'
 import { App } from './app'
 import { Bot } from './server'
 import LruCache from 'lru-cache'
+import { format } from 'util'
+import { Message } from './plugins/message'
+import { distance } from 'fastest-levenshtein'
 
 export type EventType = keyof EventTypeMap
 
@@ -323,6 +326,81 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (!argv.parent) await this.$send(result)
     return result
   }
+
+  $use(middleware: Middleware) {
+    const identifier = getSessionId(this)
+    return this.$app.prependMiddleware(async (session, next) => {
+      if (identifier && getSessionId(session) !== identifier) return next()
+      return middleware(session, next)
+    })
+  }
+
+  $prompt(timeout = this.$app.options.promptTimeout) {
+    return new Promise((resolve) => {
+      const dispose = this.$use((session) => {
+        clearTimeout(timer)
+        dispose()
+        resolve(session.content)
+      })
+      const timer = setTimeout(() => {
+        dispose()
+        resolve('')
+      }, timeout)
+    })
+  }
+
+  $suggest(options: SuggestOptions) {
+    const {
+      target,
+      items,
+      prefix = '',
+      suffix,
+      apply,
+      next = callback => callback(),
+      coefficient = this.$app.options.similarityCoefficient,
+    } = options
+
+    let suggestions: string[], minDistance = Infinity
+    for (const name of items) {
+      const dist = distance(name, target)
+      if (name.length <= 2 || dist > name.length * coefficient) continue
+      if (dist === minDistance) {
+        suggestions.push(name)
+      } else if (dist < minDistance) {
+        suggestions = [name]
+        minDistance = dist
+      }
+    }
+    if (!suggestions) return next(() => this.$send(prefix))
+
+    return next(() => {
+      const message = prefix + format(Message.SUGGESTION, suggestions.map(name => `“${name}”`).join('或'))
+      if (suggestions.length > 1) return this.$send(message)
+
+      const dispose = this.$use((session, next) => {
+        dispose()
+        const message = session.content.trim()
+        if (message && message !== '.' && message !== '。') return next()
+        return apply.call(session, suggestions[0], next)
+      })
+
+      return this.$send(message + suffix)
+    })
+  }
+}
+
+export interface SuggestOptions {
+  target: string
+  items: string[]
+  next?: NextFunction
+  prefix?: string
+  suffix: string
+  coefficient?: number
+  apply: (this: Session, suggestion: string, next: NextFunction) => void
+}
+
+export function getSessionId(session: Session) {
+  return '' + session.userId + session.channelId
 }
 
 export type FieldCollector<T extends TableType, K = keyof Tables[T], A extends any[] = any[], O = {}> =
@@ -401,8 +479,8 @@ export interface UserInfo {
 }
 
 export interface GroupMemberInfo extends UserInfo {
-  nick: string
-  roles: string[]
+  nick?: string
+  roles?: string[]
 }
 
 export interface AuthorInfo extends GroupMemberInfo {}

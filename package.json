@@ -4,7 +4,6 @@
   "workspaces": [
     "atri",
     "addons",
-    "test",
     "shiki",
     "utsuho",
     "packages/*"
@@ -12,11 +11,11 @@
   "scripts": {
     "atri": "yarn workspace atri",
     "addons": "yarn workspace addons",
-    "cli": "yarn workspace test node -r ../build/register ../packages/koishi/src/cli",
+    "cli": "cd test & node -r ../build/register ../packages/koishi/src/cli",
     "build": "yarn compile && tsc -b",
     "build:ci": "yarn build --listEmittedFiles",
-    "build:register": "esbuild build/register.ts --outdir=build --format=cjs",
-    "bump": "ts-node build/bump",
+    "build:reg": "esbuild build/register.ts --outdir=build --format=cjs",
+    "bump": "node -r ./build/register build/bump",
     "compile": "node -r ./build/register build/compile",
     "dep": "ts-node build/dep",
     "docs": "cd docs && yarn dev",
@@ -26,6 +25,7 @@
     "test:html": "rimraf coverage && c8 -r html yarn test",
     "test:text": "c8 -r text yarn test",
     "lint": "eslint packages/*/src/**/*.ts --fix --cache",
+    "ts-node": "node -r ./build/register",
     "pub": "ts-node build/publish",
     "shiki": "yarn workspace bot-shiki",
     "utsuho": "yarn workspace bot-utsuho"

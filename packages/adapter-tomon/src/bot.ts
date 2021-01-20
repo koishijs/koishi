@@ -1,4 +1,4 @@
-import { Bot, MessageInfo, GroupInfo, UserInfo, GroupMemberInfo } from 'koishi-core'
+import { Bot, MessageInfo, GroupInfo, UserInfo, GroupMemberInfo, AuthorInfo } from 'koishi-core'
 import { Method } from 'axios'
 import Route, { RequestOptions } from './network/route'
 import WebSocket from 'ws'
@@ -9,7 +9,7 @@ declare module 'koishi-core/dist/database' {
   }
 }
 
-export interface Author {
+export interface TomonAuthor extends AuthorInfo {
   id: string
   username: string
   discriminator: string
@@ -36,7 +36,7 @@ export interface TomonMessageInfo extends MessageInfo {
   id: string
   channelId: string
   guildId: string
-  author: Author
+  author: TomonAuthor
   member?: TomonGroupMemberInfo
   nonce: string
   attachments: string[]
