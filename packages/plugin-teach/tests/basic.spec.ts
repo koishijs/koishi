@@ -9,9 +9,9 @@ import axios from 'axios'
 
 describe('Teach Plugin', () => {
   describe('Basic Support', () => {
-    const app = new App({ prefix: '.' })
-    const session1 = app.session(123, 456)
-    const session2 = app.session(321, 456)
+    const app = new App({ prefix: '.', mockDatabase: true })
+    const session1 = app.session('123', '456')
+    const session2 = app.session('321', '456')
 
     app.plugin(teach, {
       historyAge: 0,
@@ -22,9 +22,9 @@ describe('Teach Plugin', () => {
 
     before(async () => {
       await app.start()
-      await app.database.getUser(123, 3)
-      await app.database.getUser(321, 2)
-      await app.database.getGroup(456, app.selfId)
+      await app.database.setUser('mock', '123', { authority: 3 })
+      await app.database.setUser('mock', '321', { authority: 2 })
+      await app.database.setChannel('mock', '456', { assignee: app.selfId })
     })
 
     it('create', async () => {
@@ -81,9 +81,9 @@ describe('Teach Plugin', () => {
   })
 
   function createEnvironment(config: teach.Config) {
-    const app = new App({ userCacheAge: Number.EPSILON, nickname: ['koishi', 'satori'] })
-    const u2id = 200, u3id = 300, u4id = 400
-    const g1id = 100, g2id = 200
+    const app = new App({ userCacheAge: Number.EPSILON, nickname: ['koishi', 'satori'], mockDatabase: true })
+    const u2id = '200', u3id = '300', u4id = '400'
+    const g1id = '100', g2id = '200'
     const u2 = app.session(u2id)
     const u3 = app.session(u3id)
     const u4 = app.session(u4id)
@@ -107,11 +107,11 @@ describe('Teach Plugin', () => {
 
     async function start() {
       await app.start()
-      await app.database.getUser(u2id, 2)
-      await app.database.getUser(u3id, 3)
-      await app.database.getUser(u4id, 4)
-      await app.database.getGroup(g1id, app.selfId)
-      await app.database.getGroup(g2id, app.selfId)
+      await app.database.setUser('mock', u2id, { authority: 2 })
+      await app.database.setUser('mock', u3id, { authority: 3 })
+      await app.database.setUser('mock', u4id, { authority: 4 })
+      await app.database.setChannel('mock', g1id, { assignee: app.selfId })
+      await app.database.setChannel('mock', g2id, { assignee: app.selfId })
     }
 
     before(start)
@@ -243,12 +243,12 @@ describe('Teach Plugin', () => {
 
     it('create writer', async () => {
       // 当自身未设置 name 时使用 session.sender
-      u3g1.meta.sender.nickname = 'nick3'
+      u3g1.meta.author.name = 'nick3'
       await u3g1.shouldReply('# foo bar', '问答已添加，编号为 1。')
       await u3g1.shouldReply('#1', DETAIL_HEAD + '来源：nick3 (300)')
 
       // 重复添加问答时不应该覆盖旧的作者
-      await app.database.setUser(300, { name: 'user3' })
+      await app.database.setUser('mock', '300', { name: 'user3' })
       await u4g2.shouldReply('# foo bar', '问答已存在，编号为 1，如要修改请尝试使用 #1 指令。')
       await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：user3 (300)')
     })
@@ -261,13 +261,13 @@ describe('Teach Plugin', () => {
 
       // 实在找不到名字就只显示 QQ 号
       await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：200')
-      const getMemberMap = app.bots[0].getMemberMap = fn()
-      getMemberMap.mockReturnValue(Promise.resolve({ 200: 'mock2' }))
+      const getGroupMemberMap = app.bots[0].getGroupMemberMap = fn()
+      getGroupMemberMap.mockReturnValue(Promise.resolve({ 200: 'mock2' }))
       await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：mock2 (200)')
     })
 
     it('anonymous', async () => {
-      u2.meta.sender.nickname = 'nick2'
+      u2.meta.author.name = 'nick2'
       await u2.shouldReply('#1', DETAIL_HEAD + '来源：nick2 (200)')
       await u2.shouldReply('#1 -W', '问答 1 已成功修改。')
       await u2.shouldReply('#1', DETAIL_HEAD.slice(0, -1))
@@ -284,7 +284,7 @@ describe('Teach Plugin', () => {
     })
 
     it('substitute', async () => {
-      u2g1.meta.sender.nickname = 'nick2'
+      u2g1.meta.author.name = 'nick2'
       const DETAIL_HEAD = '编号为 1 的问答信息：\n问题：foo\n回答：%s:%{test}\n'
       await u3g1.shouldReply('#1 ~ %s:%{test}', '问答 1 已成功修改。')
       await u2g1.shouldReply('foo', 'nick2:200')

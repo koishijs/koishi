@@ -340,7 +340,7 @@ export class App extends Context {
           const index = stack.indexOf(lastCall)
           stack = `${stack.slice(0, index)}Middleware stack:${midStack}`
         }
-        this.logger('middleware').warn(`${session.content}\n${stack}`)
+        this.logger('session').warn(`${session.content}\n${stack}`)
       }
     }
     await next()

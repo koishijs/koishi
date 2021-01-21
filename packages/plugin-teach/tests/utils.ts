@@ -1,7 +1,7 @@
 import { extendDatabase, Context } from 'koishi-core'
 import { defineProperty, Observed, clone, intersection } from 'koishi-utils'
 import { Dialogue, DialogueTest, equal } from 'koishi-plugin-teach'
-import * as memory from 'koishi-test-utils/dist/memory'
+import MemoryDatabase from 'koishi-test-utils'
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
@@ -9,7 +9,7 @@ declare module 'koishi-core/dist/context' {
   }
 }
 
-extendDatabase(memory.MemoryDatabase, {
+extendDatabase(MemoryDatabase, {
   async getDialoguesById(ids) {
     if (!ids.length) return []
     const table = this.$table('dialogue')
@@ -88,8 +88,6 @@ extendDatabase(memory.MemoryDatabase, {
 })
 
 export function apply(ctx: Context) {
-  ctx.plugin(memory)
-
   // flag
   ctx.on('dialogue/flag', (flag) => {
     ctx.on('dialogue/memory', (data, test) => {
