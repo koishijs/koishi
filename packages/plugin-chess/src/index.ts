@@ -42,8 +42,9 @@ export function apply(ctx: Context) {
   ctx = ctx.group()
 
   ctx.on('connect', async () => {
-    const groups = await ctx.database.getChannelList(['id', 'chess'])
-    for (const { id, chess } of groups) {
+    if (!ctx.database) return
+    const channels = await ctx.database.getChannelList(['id', 'chess'])
+    for (const { id, chess } of channels) {
       if (chess) {
         states[id] = State.from(ctx.app, chess)
         states[id].update = rules[chess.rule].update
@@ -67,6 +68,7 @@ export function apply(ctx: Context) {
     .shortcut('黑白棋', { options: { size: 8, rule: 'othello' }, fuzzy: true })
     .shortcut('停止下棋', { options: { stop: true } })
     .shortcut('跳过回合', { options: { skip: true } })
+    .shortcut('查看棋盘', { options: { show: true } })
     .option('imageMode', '-i  使用图片模式')
     .option('textMode', '-t  使用文本模式')
     .option('rule', '<rule>  设置规则，支持的规则有 go, gomoku, othello')
@@ -81,7 +83,7 @@ export function apply(ctx: Context) {
       '目前默认使用图片模式。文本模式速度更快，但是在部分机型上可能无法正常显示，同时无法适应过大的棋盘。',
     ].join('\n'))
     .action(async ({ session, options }, position) => {
-      const { cid, userId, $channel } = session
+      const { cid, userId, $channel = { chess: null } } = session
 
       if (!states[cid]) {
         if (position || options.stop || options.repent || options.skip) {
