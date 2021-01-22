@@ -16,8 +16,8 @@ declare module 'koishi-core/dist/context' {
 declare module './utils' {
   namespace Dialogue {
     interface Config {
-      detailDelay?: number
-      maxShownDialogues?: number
+      previewDelay?: number
+      maxPreviews?: number
     }
   }
 }
@@ -123,12 +123,12 @@ async function revert(dialogues: Dialogue[], argv: Dialogue.Argv) {
 
 export async function update(argv: Dialogue.Argv) {
   const { app, session, options, target, config } = argv
-  const { maxShownDialogues = 10, detailDelay = 500 } = config
+  const { maxPreviews = 10, previewDelay = 500 } = config
   const { revert, review, remove, search } = options
 
   options.modify = !review && !search && Object.keys(options).length
-  if (!options.modify && !search && target.length > maxShownDialogues) {
-    return session.$send(`一次最多同时预览 ${maxShownDialogues} 个问答。`)
+  if (!options.modify && !search && target.length > maxPreviews) {
+    return session.$send(`一次最多同时预览 ${maxPreviews} 个问答。`)
   }
 
   argv.uneditable = []
@@ -154,7 +154,7 @@ export async function update(argv: Dialogue.Argv) {
     for (let index = 0; index < dialogues.length; index++) {
       const output = [`编号为 ${dialogues[index].id} 的${review ? '历史版本' : '问答信息'}：`]
       await app.serial('dialogue/detail', dialogues[index], output, argv)
-      if (index) await sleep(detailDelay)
+      if (index) await sleep(previewDelay)
       await session.$send(output.join('\n'))
     }
     return

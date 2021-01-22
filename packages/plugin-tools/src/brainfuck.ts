@@ -114,9 +114,9 @@ class BrainFuck {
 }
 
 export function apply(ctx: Context, config: BrainfuckOptions = {}) {
-  ctx.command('tools/brainfuck <source>', '运行 brainfuck 代码')
+  ctx.command('tools/brainfuck <code>', '运行 brainfuck 代码')
     .alias('bf')
-    .option('input', '-i <input>  设置输入', { type: 'string', fallback: '' })
+    .option('input', '-- <input:text>  设置输入', { fallback: '' })
     .usage('语言介绍：http://www.muppetlabs.com/~breadbox/bf')
     .action(async ({ options }, source) => {
       if (!source) return '请输入源代码。'

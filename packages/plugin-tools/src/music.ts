@@ -1,16 +1,40 @@
 import { Context } from 'koishi-core'
 import { CQCode } from 'koishi-utils'
-import netease from './netease'
-import qq from './qq'
+import axios from 'axios'
 
-const platforms = {
-  netease,
-  qq,
+type Platform = 'netease' | 'qq'
+
+interface Result {
+  type: string
+  id: string
+}
+
+const platforms: Record<Platform, (keyword: string) => Promise<Result>> = {
+  async netease(keyword: string) {
+    const { data } = await axios.get('http://music.163.com/api/cloudsearch/pc', {
+      params: { s: keyword, type: 1, offset: 0, limit: 5 },
+    })
+    if (data.code !== 200) return
+    return {
+      type: '163',
+      id: data.result.songs[0].id,
+    }
+  },
+  async qq(keyword: string) {
+    const { data } = await axios.get('https://c.y.qq.com/soso/fcgi-bin/client_search_cp', {
+      params: { p: 1, n: 5, w: keyword, format: 'json' },
+    })
+    if (data.code) return
+    return {
+      type: 'qq',
+      id: data.data.song.list[0].songid,
+    }
+  },
 }
 
 export interface MusicOptions {
   showWarning?: boolean
-  platform?: keyof typeof platforms
+  platform?: Platform
 }
 
 const defaultOptions: MusicOptions = {

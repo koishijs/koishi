@@ -16,6 +16,7 @@ declare module 'koishi-core/dist/server' {
 }
 
 export interface Config {
+  path?: string
   refresh?: number
   format?: string
   formatBot?: string
@@ -83,13 +84,14 @@ export interface BotStatus {
 type StatusCallback = (this: App, status: Status, config: Config) => void | Promise<void>
 const callbacks: [callback: StatusCallback, local: boolean][] = []
 
-export function extendStatus(callback: StatusCallback, local = false) {
+export function extend(callback: StatusCallback, local = false) {
   callbacks.push([callback, local])
 }
 
 const startTime = Date.now()
 
 const defaultConfig: Config = {
+  path: '/status',
   refresh: Time.minute,
   // eslint-disable-next-line no-template-curly-in-string
   formatBot: '{{ label || selfId }}：{{ code ? `无法连接` : `工作中（${rate}/min）` }}',

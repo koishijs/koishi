@@ -12,7 +12,7 @@ function itob(n: number, length: number) {
 }
 
 export function apply(ctx: Context) {
-  ctx.command('tools/mcping <server>', '查看 Minecraft 服务器信息')
+  ctx.command('tools/mcping <url>', '查看 Minecraft 服务器信息')
     .action(async ({ session }, address) => {
       if (!address) return '请输入正确的网址。'
       if (!address.match(/^\w+:\/\//)) address = 'http://' + address

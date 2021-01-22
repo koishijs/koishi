@@ -1,4 +1,4 @@
-import { Context } from 'koishi-core'
+import { Context, Session } from 'koishi-core'
 import { CQCode } from 'koishi-utils'
 import { xml2js } from 'xml-js'
 import axios from 'axios'
@@ -17,46 +17,44 @@ export interface AlphaOptions {
   wolframAlphaAppId?: string
 }
 
+async function showFull(session: Session, input: string, appid: string) {
+  const { data } = await axios.get('http://api.wolframalpha.com/v2/query', {
+    params: { input, appid },
+  })
+  const { queryresult } = xml2js(data, { compact: true }) as any
+  if (queryresult._attributes.success !== 'true') {
+    return 'failed'
+  }
+  const output = [`Question from ${session.$username}: ${input}`]
+  queryresult.pod.forEach((el) => {
+    if (Array.isArray(el.subpod)) {
+      output.push(el._attributes.title + ': ', ...el.subpod.map(extractData).filter(t => t))
+    } else {
+      const text = extractData(el.subpod, true)
+      if (!text) return
+      output.push(el._attributes.title + ': ' + text)
+    }
+  })
+  return output.join('\n')
+}
+
+async function showShort(session: Session, input: string, appid: string) {
+  const { data } = await axios.get('http://api.wolframalpha.com/v1/result', {
+    params: { input, appid },
+  })
+  return data as string
+}
+
 export function apply(ctx: Context, config: AlphaOptions) {
   const { wolframAlphaAppId: appid } = config
-  ctx.command('tools/alpha <expression:text>', '调用 WolframAlpha 查询', { maxUsage: 10 })
-    .example('alpha int(sinx)')
-    .action(async ({ session }, message) => {
-      const input = message.slice(message.indexOf('alpha') + 5).trim()
+  ctx.command('tools/alpha <expr:text>', '调用 WolframAlpha 查询', { maxUsage: 10 })
+    .option('full', '-f 显示完整内容')
+    .example('alpha How big is the universe?')
+    .example('alpha -f int(sinx)')
+    .action(async ({ session, options }, input) => {
       if (!input) return '请输入问题。'
       try {
-        const { data } = await axios.get('http://api.wolframalpha.com/v2/query', {
-          params: { input, appid },
-        })
-        const { queryresult } = xml2js(data, { compact: true }) as any
-        if (queryresult._attributes.success !== 'true') {
-          return 'failed'
-        }
-        const output = [`Question from ${session.$username}: ${input}`]
-        queryresult.pod.forEach((el) => {
-          if (Array.isArray(el.subpod)) {
-            output.push(el._attributes.title + ': ', ...el.subpod.map(extractData).filter(t => t))
-          } else {
-            const text = extractData(el.subpod, true)
-            if (!text) return
-            output.push(el._attributes.title + ': ' + text)
-          }
-        })
-        return output.join('\n')
-      } catch (error) {
-        console.log(error.toJSON())
-      }
-    })
-    .subcommand('.short <expression:text>', '调用 WolframAlpha 短问答', { maxUsage: 10, usageName: 'alpha' })
-    .example('alpha.short How big is the universe?')
-    .action(async (_, message) => {
-      const input = message.slice(message.indexOf('alpha.short') + 11).trim()
-      if (!input) return '请输入问题。'
-      try {
-        const { data } = await axios.get('http://api.wolframalpha.com/v1/result', {
-          params: { input, appid },
-        })
-        return data
+        return (options.full ? showFull : showShort)(session, input, appid)
       } catch (error) {
         console.log(error.toJSON())
       }

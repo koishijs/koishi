@@ -22,13 +22,25 @@ const displayWarning = display(yellow('warning:'))
 ;(async () => {
   let code = 0
   const root = resolve(__dirname, '../packages')
-  const workspaces = [
-    'koishi-test-utils/chai',
-    ...await readdir(root),
-  ]
+  const chai = 'koishi-test-utils/chai'
+  const workspaces = [chai, ...await readdir(root)]
+  const tasks: Record<string, Promise<void>> = {}
 
-  await Promise.all(workspaces.flatMap<BuildOptions>((name) => {
-    if (name.startsWith('.')) return []
+  function bundle(options: BuildOptions) {
+    for (const path of options.entryPoints) {
+      console.log('building:', path)
+    }
+    return build(options).then(({ warnings }) => {
+      warnings.forEach(displayWarning)
+    }, ({ warnings, errors }: BuildFailure) => {
+      errors.forEach(displayError)
+      warnings.forEach(displayWarning)
+      if (errors.length) code = 1
+    })
+  }
+
+  await Promise.all(workspaces.map(async (name) => {
+    if (name.startsWith('.')) return
 
     const base = `${root}/${name}`
     const entryPoints = [base + '/src/index.ts']
@@ -41,6 +53,8 @@ const displayWarning = display(yellow('warning:'))
       entryPoints.push(base + '/src/transfer.ts')
     } else if (name === 'plugin-eval-addons') {
       entryPoints.push(base + '/src/worker.ts')
+    } else if (name === 'koishi-test-utils') {
+      await tasks[chai]
     }
 
     let filter = /^[/\w-]+$/
@@ -61,22 +75,17 @@ const displayWarning = display(yellow('warning:'))
       }],
     }
 
-    if (name !== 'plugin-eval') return options
+    if (name !== 'plugin-eval') {
+      return tasks[name] = bundle(options)
+    }
+
     filter = /^([/\w-]+|\.\/transfer)$/
-    return [options, {
+    tasks[name] = Promise.all([options, {
       ...options,
       entryPoints: [base + '/src/internal.ts'],
       banner: '(function (host, exports, GLOBAL) {',
       footer: '})',
-    }]
-  }).map((options) => {
-    return build(options).then(({ warnings }) => {
-      warnings.forEach(displayWarning)
-    }, ({ warnings, errors }: BuildFailure) => {
-      errors.forEach(displayError)
-      warnings.forEach(displayWarning)
-      if (errors.length) code = 1
-    })
+    }]).then(() => {})
   }))
 
   process.exit(code)
