@@ -1,6 +1,7 @@
 import { User, Context, Session } from 'koishi-core'
 import { difference, defineProperty, union, makeArray } from 'koishi-utils'
 import { Show } from './utils'
+import {} from 'koishi-plugin-common'
 import Profile from './profile'
 import Rank from './rank'
 

@@ -1,11 +1,12 @@
-import { Context, User, Session, checkTimer } from 'koishi-core'
-import { Logger, Random, interpolate, noop } from 'koishi-utils'
+import { Context, User, Session, checkTimer, checkUsage } from 'koishi-core'
+import { Logger, Random, interpolate, noop, Time } from 'koishi-utils'
 import { ReadonlyUser, getValue, Adventurer, Shopper, Show } from './utils'
 import Event from './event'
 import {} from 'koishi-plugin-common'
 import {} from 'koishi-plugin-teach'
 import Rank from './rank'
 import Item from './item'
+import Buff from './buff'
 
 declare module 'koishi-core/dist/session' {
   interface Session<U> {
@@ -504,8 +505,17 @@ export namespace Phase {
       .shortcut('不使用物品', { options: { nothing: true } })
       .shortcut('不使用任何物品', { options: { nothing: true } })
       .option('nothing', '-n  不使用任何物品，直接进入下一剧情')
-      // FIXME
-      .before(session => checkTimer('$use', session.$user))
+      .action(({ session, options }) => {
+        if (options.nothing) return
+        const user = session.$user
+        if (!checkTimer('$use', user)) return
+        const buff = Buff.timers['$use']
+        if (!checkUsage('$useHint', user, 1)) {
+          const rest = user.timers['$use'] - Date.now()
+          session.$send(`您当前处于「${buff[0]}」状态，无法调用本功能，剩余 ${Time.formatTime(rest)}。`)
+        }
+        return ''
+      })
       .action(async (argv, item) => {
         const { options, session } = argv
         const { $user } = session

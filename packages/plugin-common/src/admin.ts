@@ -55,7 +55,7 @@ Command.prototype.adminUser = function (this: Command, callback) {
     .userFields(['authority'])
     .option('target', '-t [user]  指定目标用户', { authority: 3 })
 
-  command._action = async (argv) => {
+  command._actions.unshift(async (argv) => {
     const { options, session, args } = argv
     const fields = session.collect('user', argv)
     let target: User.Observed<never>
@@ -81,7 +81,7 @@ Command.prototype.adminUser = function (this: Command, callback) {
     if (!difference(Object.keys(target._diff), diffKeys).length) return '用户数据未改动。'
     await target._update()
     return '用户数据已修改。'
-  }
+  })
 
   return command
 }
@@ -91,8 +91,8 @@ Command.prototype.adminChannel = function (this: Command, callback) {
     .userFields(['authority'])
     .option('target', '-t [channel]  指定目标频道', { authority: 3 })
 
-  command._action = async (argv) => {
-    const { options, session, args } = argv
+  command._actions.unshift(async (argv, ...args) => {
+    const { options, session } = argv
     const fields = session.collect('channel', argv)
     let target: Channel.Observed
     if (options.target) {
@@ -112,7 +112,7 @@ Command.prototype.adminChannel = function (this: Command, callback) {
     if (!Object.keys(target._diff).length) return '频道数据未改动。'
     await target._update()
     return '频道数据已修改。'
-  }
+  })
 
   return command
 }

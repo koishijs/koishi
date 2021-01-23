@@ -6,8 +6,7 @@ export interface SenderConfig {
 }
 
 export default function apply(ctx: Context, config: SenderConfig = {}) {
-  ctx.command('common/broadcast <message:text>', '全服广播', { authority: 4 })
-    .before(session => !session.$app.database)
+  ctx.database && ctx.command('common/broadcast <message:text>', '全服广播', { authority: 4 })
     .option('forced', '-f  无视 silent 标签进行广播')
     .option('only', '-o  仅向当前 Bot 负责的群进行广播')
     .action(async ({ options, session }, message) => {
@@ -67,10 +66,9 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
     return session.$bot.sendPrivateMessage(userId, $parsed)
   })
 
-  ctx.command('common/contextify <message:text>', '在特定上下文中触发指令', { authority: 3 })
+  ctx.database && ctx.command('common/contextify <message:text>', '在特定上下文中触发指令', { authority: 3 })
     .alias('ctxf')
     .userFields(['authority'])
-    .before(session => !session.$app.database)
     .option('user', '-u [id]  使用私聊上下文')
     .option('group', '-g [id]  使用群聊上下文')
     .option('member', '-m [id]  使用当前群/讨论组成员上下文')

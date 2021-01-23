@@ -19,25 +19,26 @@ function display(prefix: string) {
 const displayError = display(red('error:'))
 const displayWarning = display(yellow('warning:'))
 
+let code = 0
+
+function bundle(options: BuildOptions) {
+  for (const path of options.entryPoints) {
+    console.log('building:', path)
+  }
+  return build(options).then(({ warnings }) => {
+    warnings.forEach(displayWarning)
+  }, ({ warnings, errors }: BuildFailure) => {
+    errors.forEach(displayError)
+    warnings.forEach(displayWarning)
+    if (errors.length) code = 1
+  })
+}
+
 ;(async () => {
-  let code = 0
   const root = resolve(__dirname, '../packages')
   const chai = 'koishi-test-utils/chai'
   const workspaces = [chai, ...await readdir(root)]
   const tasks: Record<string, Promise<void>> = {}
-
-  function bundle(options: BuildOptions) {
-    for (const path of options.entryPoints) {
-      console.log('building:', path)
-    }
-    return build(options).then(({ warnings }) => {
-      warnings.forEach(displayWarning)
-    }, ({ warnings, errors }: BuildFailure) => {
-      errors.forEach(displayError)
-      warnings.forEach(displayWarning)
-      if (errors.length) code = 1
-    })
-  }
 
   await Promise.all(workspaces.map(async (name) => {
     if (name.startsWith('.')) return

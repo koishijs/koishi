@@ -41,8 +41,7 @@ export default function apply(app: App) {
     if (error) return error
 
     for (const checker of command._checkers) {
-      const result = await checker(session)
-      if (result) return sendHint(result === true ? '' : result)
+      if (checker(session)) return ''
     }
 
     // check argument count

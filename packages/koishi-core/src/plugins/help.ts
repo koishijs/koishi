@@ -13,7 +13,7 @@ interface HelpConfig {
 export default function apply(app: App) {
   // show help when use `-h, --help` or when there is no action
   app.prependListener('before-command', async ({ command, session, options }) => {
-    if (command._action && !options['help']) return
+    if (!command._actions.length && !options['help']) return
     await session.execute({
       name: 'help',
       args: [command.name],
@@ -124,6 +124,7 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
     await session.$observeUser(['authority', 'timers', 'usage'])
   }
 
+  // FIXME: 其他形式
   const disabled = command._checkers.some(checker => checker(session))
   if (disabled) output[1] += '（指令已禁用）'
 

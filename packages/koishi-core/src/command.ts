@@ -19,6 +19,7 @@ export namespace Command {
     description?: string
     /** hide all options by default */
     hideOptions?: boolean
+    /** hide command */
     hidden?: boolean
     /** min authority */
     authority?: number
@@ -51,6 +52,8 @@ export namespace Command {
   export type Action<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}>
     = (this: Command<U, G, A, O>, argv: Argv<U, G, A, O>, ...args: A) => void | string | Promise<void | string>
 
+  export type Checker<U extends User.Field = never, G extends Channel.Field = never> = (session: Session<U, G>) => boolean
+
   export type Usage<U extends User.Field, G extends Channel.Field>
     = string | ((this: Command<U, G>, session: Session<U, G>) => string | Promise<string>)
 }
@@ -68,8 +71,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   private _userFields: FieldCollector<'user'>[] = []
   private _channelFields: FieldCollector<'channel'>[] = []
 
-  _action?: Command.Action<U, G, A, O>
-  _checkers: ((session: Session<U, G>) => void | string | boolean | Promise<void | string | boolean>)[] = []
+  _actions: Command.Action<U, G, A, O>[] = []
+  _checkers: Command.Checker<U, G>[] = []
 
   static defaultConfig: Command.Config = {
     authority: 1,
@@ -174,16 +177,15 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     action?: Command.Action<U, G, A, Extend<O, K, Domain.OptionType<D, T>>>,
   ): Command<U, G, A, Extend<O, K, Domain.OptionType<D, T>>> {
     if (action) {
-      this.before(async (session) => {
-        const { options, args } = session.$argv
-        if (name in options) return action.call(this as any, session.$argv, ...args)
+      this._actions.unshift((argv, ...args) => {
+        if (name in argv.options) return action.call(this as any, argv, ...args)
       })
     }
     this._createOption(name, desc, config)
     return this as any
   }
 
-  before(checker: (session: Session<U, G>) => void | string | boolean | Promise<void | string | boolean>) {
+  check(checker: Command.Checker<U, G>) {
     this._checkers.push(checker)
     return this
   }
@@ -193,8 +195,12 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return typeof value === 'function' ? value(session.$user) : value
   }
 
-  action(callback: Command.Action<U, G, A, O>) {
-    this._action = callback
+  action(callback: Command.Action<U, G, A, O>, prepend = false): Command<U, G, A, O> {
+    if (prepend) {
+      this._actions.unshift(callback)
+    } else {
+      this._actions.push(callback)
+    }
     return this
   }
 
@@ -218,7 +224,11 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     try {
       const result = await this.app.serial(session, 'before-command', argv)
       if (typeof result === 'string') return result
-      return await this._action(argv, ...args) || ''
+      for (const action of this._actions) {
+        const result = await action.call(this, argv, ...args)
+        if (typeof result === 'string') return result
+      }
+      return ''
     } catch (error) {
       if (!state) throw error
       let stack = coerce(error)
