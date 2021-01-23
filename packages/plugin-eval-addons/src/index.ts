@@ -58,7 +58,7 @@ export function apply(ctx: Context, config: Config) {
       return session.execute('help addon')
     })
 
-  ctx.on('before-connect', async () => {
+  ctx.before('connect', async () => {
     const isRepo = await git.checkIsRepo(CheckRepoActions.IS_REPO_ROOT)
     if (!isRepo) throw new Error(`moduleRoot "${root}" is not git repository`)
   })

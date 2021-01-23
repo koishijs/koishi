@@ -110,6 +110,6 @@ export const name = 'mongo'
 export function apply(ctx: Context, config: Config) {
   const db = new MongoDatabase(ctx.app, { host: 'localhost', port: 27017, name: 'koishi', protocol: 'mongodb', ...config })
   ctx.database = db as Database
-  ctx.on('before-connect', () => db.start())
-  ctx.on('before-disconnect', () => db.stop())
+  ctx.before('connect', () => db.start())
+  ctx.before('disconnect', () => db.stop())
 }

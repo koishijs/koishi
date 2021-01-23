@@ -183,7 +183,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     })
   })
 
-  ctx.on('before-command', ({ command, session }) => {
+  ctx.before('command', ({ command, session }) => {
     if (command.config.noInterp && session._redirected) {
       return format(Message.Teach.ProhibitedCommand, command.name)
     }

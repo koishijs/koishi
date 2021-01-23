@@ -59,7 +59,7 @@ export namespace Affinity {
   }
 
   export function apply(ctx: Context) {
-    ctx.on('before-connect', () => {
+    ctx.before('connect', () => {
       Profile.add(user => `好感度：${Affinity.get(user)}`, fields, 20)
     })
 

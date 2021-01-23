@@ -70,7 +70,7 @@ export default function apply(ctx: App, options: HandlerOptions = {}) {
       counters[interval] = messages
     }
 
-    ctx.on('before-send', () => {
+    ctx.before('send', () => {
       for (const { interval } of throttleConfig) {
         counters[interval]--
         setTimeout(() => counters[interval]++, interval)

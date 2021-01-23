@@ -112,11 +112,11 @@ export function apply(ctx: Context, config: Config = {}) {
   const app = ctx.app
   const { refresh, formatBot, format } = { ...defaultConfig, ...config }
 
-  app.on('before-command', ({ session }) => {
+  app.before('command', ({ session }) => {
     session.$user['lastCall'] = new Date()
   })
 
-  app.on('before-send', (session) => {
+  app.before('send', (session) => {
     const { counter } = app.servers[session.kind].bots[session.selfId]
     counter[0] += 1
   })
@@ -149,7 +149,7 @@ export function apply(ctx: Context, config: Config = {}) {
     })
   })
 
-  app.on('before-disconnect', () => {
+  app.before('disconnect', () => {
     clearInterval(timer)
   })
 

@@ -120,6 +120,6 @@ export const name = 'mysql'
 export function apply(ctx: Context, config: Config = {}) {
   const db = new MysqlDatabase(ctx.app, config)
   ctx.database = db as Database
-  ctx.on('before-connect', () => db.start())
-  ctx.on('before-disconnect', () => db.stop())
+  ctx.before('connect', () => db.start())
+  ctx.before('disconnect', () => db.stop())
 }

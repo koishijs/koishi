@@ -16,6 +16,7 @@
     { "path": "./packages/adapter-tomon" },
     { "path": "./packages/adapter-kaiheila" },
 
+    { "path": "./packages/plugin-common" },
     { "path": "./packages/plugin-mysql" },
     { "path": "./packages/plugin-mongo" },
     { "path": "./packages/plugin-eval" },
@@ -25,7 +26,6 @@
 
     { "path": "./packages/plugin-adventure" },
     { "path": "./packages/plugin-chess" },
-    { "path": "./packages/plugin-common" },
     { "path": "./packages/plugin-dice" },
     { "path": "./packages/plugin-eval-addons" },
     { "path": "./packages/plugin-github" },

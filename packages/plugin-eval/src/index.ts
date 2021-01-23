@@ -47,11 +47,11 @@ export function apply(ctx: Context, config: Config = {}) {
   const worker = new EvalWorker(app, config)
   defineProperty(app, 'worker', worker)
 
-  app.on('before-connect', () => {
+  app.before('connect', () => {
     return worker.start()
   })
 
-  ctx.on('before-command', ({ command, session }) => {
+  ctx.before('command', ({ command, session }) => {
     if (command.config.noEval && session._isEval) {
       return `不能在 evaluate 指令中调用 ${command.name} 指令。`
     }

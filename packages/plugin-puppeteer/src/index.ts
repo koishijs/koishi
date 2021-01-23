@@ -42,7 +42,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const { executablePath, defaultViewport } = config.browser
 
   const { app } = ctx
-  ctx.on('before-connect', async () => {
+  ctx.before('connect', async () => {
     try {
       if (!executablePath) {
         const findChrome = require('chrome-finder')
@@ -56,7 +56,7 @@ export function apply(ctx: Context, config: Config = {}) {
     }
   })
 
-  ctx.on('before-disconnect', async () => {
+  ctx.before('disconnect', async () => {
     await app.browser?.close()
   })
 

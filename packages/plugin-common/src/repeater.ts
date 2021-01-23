@@ -34,7 +34,7 @@ export default function apply(ctx: Context, options: RepeaterOptions = {}) {
     })
   }
 
-  ctx.on('before-send', ({ cid, content }) => {
+  ctx.before('send', ({ cid, content }) => {
     const state = getState(cid)
     state.repeated = true
     if (state.content === content) {

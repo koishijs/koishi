@@ -121,8 +121,8 @@ export class App extends Context {
     // bind built-in event listeners
     this.middleware(this._preprocess.bind(this))
     this.on('message', this._receive.bind(this))
-    this.on('before-connect', this._listen.bind(this))
-    this.on('before-disconnect', this._close.bind(this))
+    this.before('connect', this._listen.bind(this))
+    this.before('disconnect', this._close.bind(this))
 
     // shortcut
     this.on('tokenize', (content, { $reply, $prefix, $appel }) => {
@@ -156,11 +156,11 @@ export class App extends Context {
       }
     })
 
-    this.on('before-attach-user', (session, fields) => {
+    this.before('attach-user', (session, fields) => {
       session.collect('user', session.$argv, fields)
     })
 
-    this.on('before-attach-group', (session, fields) => {
+    this.before('attach-group', (session, fields) => {
       session.collect('channel', session.$argv, fields)
     })
 

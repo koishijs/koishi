@@ -33,7 +33,7 @@ Command.userFields(({ tokens, command, options = {} }, fields) => {
 })
 
 export default function apply(app: App) {
-  app.on('before-command', async ({ error, session, args, options, command }: Argv<ValidationField>) => {
+  app.before('command', async ({ error, session, args, options, command }: Argv<ValidationField>) => {
     function sendHint(message: string, ...param: any[]) {
       return command.config.showWarning ? format(message, ...param) : ''
     }

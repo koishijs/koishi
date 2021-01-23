@@ -86,7 +86,7 @@ export function apply(ctx: Context, config: Config = {}) {
     return github.middleware(ctx.req, ctx.res, next)
   })
 
-  ctx.on('before-attach-user', (session, fields) => {
+  ctx.before('attach-user', (session, fields) => {
     if (!session.$reply) return
     if (history[session.$reply.messageId.slice(0, 6)]) {
       fields.add('ghAccessToken')
