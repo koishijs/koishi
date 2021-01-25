@@ -196,5 +196,4 @@ export function isZeroToOne(source: string) {
   throw new Error('应为不超过 1 的正数。')
 }
 
-export const RE_GROUPS = /^\d+(,\d+)*$/
 export const RE_DIALOGUES = /^\d+(\.\.\d+)?(,\d+(\.\.\d+)?)*$/

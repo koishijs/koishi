@@ -160,7 +160,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('dialogue/validate', ({ options }) => {
     if (options.redirect) {
-      options.answer = `%{dialogue ${options.answer}}`
+      options.answer = `$(dialogue ${options.answer})`
     }
   })
 

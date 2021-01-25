@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import { union, difference } from 'koishi-utils'
-import { Dialogue, equal, RE_GROUPS } from '../utils'
+import { Dialogue, equal } from '../utils'
 
 declare module '../utils' {
   interface DialogueTest {
@@ -25,6 +25,8 @@ declare module '../utils' {
     }
   }
 }
+
+export const RE_GROUPS = /^\d+(,\d+)*$/
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
   if (config.useContext === false) return
@@ -77,7 +79,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       if (noContextOptions) {
         return '选项 -g, --groups 必须与 -d/-D/-e/-E 之一同时使用。'
       } else {
-        argv.groups = options.groups ? options.groups.split(',') : []
+        argv.groups = options.groups ? options.groups.split(',').map(id => `${session.kind}:${id}`) : []
       }
     } else if (session.subType !== 'group' && argv.partial) {
       return '非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --groups 选项。'

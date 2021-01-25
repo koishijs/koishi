@@ -22,8 +22,8 @@ describe('Teach Plugin', () => {
 
     before(async () => {
       await app.start()
-      await app.database.setUser('mock', '123', { authority: 3 })
-      await app.database.setUser('mock', '321', { authority: 2 })
+      await app.database.setUser('mock', '123', { authority: 3 }, true)
+      await app.database.setUser('mock', '321', { authority: 2 }, true)
       await app.database.setChannel('mock', '456', { assignee: app.selfId })
     })
 
@@ -107,9 +107,9 @@ describe('Teach Plugin', () => {
 
     async function start() {
       await app.start()
-      await app.database.setUser('mock', u2id, { authority: 2 })
-      await app.database.setUser('mock', u3id, { authority: 3 })
-      await app.database.setUser('mock', u4id, { authority: 4 })
+      await app.database.setUser('mock', u2id, { authority: 2 }, true)
+      await app.database.setUser('mock', u3id, { authority: 3 }, true)
+      await app.database.setUser('mock', u4id, { authority: 4 }, true)
       await app.database.setChannel('mock', g1id, { assignee: app.selfId })
       await app.database.setChannel('mock', g2id, { assignee: app.selfId })
     }
@@ -248,7 +248,7 @@ describe('Teach Plugin', () => {
       await u3g1.shouldReply('#1', DETAIL_HEAD + '来源：nick3 (300)')
 
       // 重复添加问答时不应该覆盖旧的作者
-      await app.database.setUser('mock', '300', { name: 'user3' })
+      await app.database.setUser('mock', '300', { name: 'user3' }, true)
       await u4g2.shouldReply('# foo bar', '问答已存在，编号为 1，如要修改请尝试使用 #1 指令。')
       await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：user3 (300)')
     })
@@ -364,7 +364,9 @@ describe('Teach Plugin', () => {
     new App().plugin(teach, { preventLoop: 10 })
 
     it('throttle', async () => {
-      const { u2g1, u3g1, u4g1, u4g2, start } = createEnvironment({ throttle: { interval: 1000, responses: 2 } })
+      const { u2g1, u3g1, u4g1, u4g2, start } = createEnvironment({
+        throttle: { interval: 1000, responses: 2 },
+      })
 
       await start()
       await u3g1.shouldReply('# baz bar', '问答已添加，编号为 1。')
@@ -376,7 +378,9 @@ describe('Teach Plugin', () => {
     })
 
     it('preventLoop', async () => {
-      const { u2g1, u3g1, u4g1, start } = createEnvironment({ preventLoop: { length: 5, participants: 2 } })
+      const { u2g1, u3g1, u4g1, start } = createEnvironment({
+        preventLoop: { length: 5, participants: 2 },
+      })
 
       await start()
       await u3g1.shouldReply('# baz bar', '问答已添加，编号为 1。')

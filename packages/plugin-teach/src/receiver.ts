@@ -54,7 +54,7 @@ declare module './utils' {
 
 export interface SessionState {
   userId?: string
-  groupId?: string
+  channelId?: string
   answer?: string
   session?: Session<User.Field>
   test?: DialogueTest
@@ -73,11 +73,11 @@ export function unescapeAnswer(message: string) {
 }
 
 Context.prototype.getSessionState = function (session) {
-  const { groupId, anonymous, userId, $app } = session
-  if (!$app._dialogueStates[groupId]) {
-    this.emit('dialogue/state', $app._dialogueStates[groupId] = { groupId } as SessionState)
+  const { channelId, anonymous, userId, $app } = session
+  if (!$app._dialogueStates[channelId]) {
+    this.emit('dialogue/state', $app._dialogueStates[channelId] = { channelId } as SessionState)
   }
-  const state = Object.create($app._dialogueStates[groupId])
+  const state = Object.create($app._dialogueStates[channelId])
   state.session = session
   state.userId = anonymous ? -anonymous.id : userId
   return state

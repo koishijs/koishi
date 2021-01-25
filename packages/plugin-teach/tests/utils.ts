@@ -13,15 +13,13 @@ extendDatabase(MemoryDatabase, {
   async getDialoguesById(ids) {
     if (!ids.length) return []
     const table = this.$table('dialogue')
-    const dialogues = Object.keys(table)
-      .filter(id => ids.includes(+id))
-      .map(id => clone(table[id]))
+    const dialogues = table.filter(row => ids.includes(row.id)).map(clone)
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
     return dialogues
   },
 
   async getDialoguesByTest(test: DialogueTest) {
-    const dialogues = Object.values(this.$table('dialogue')).filter((dialogue) => {
+    const dialogues = this.$table('dialogue').filter((dialogue) => {
       return !this.app.bail('dialogue/memory', dialogue, test)
     }).map(clone)
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
@@ -32,7 +30,7 @@ extendDatabase(MemoryDatabase, {
   },
 
   async createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
-    dialogue = this.$create('dialogue', dialogue)
+    this.$create('dialogue', dialogue)
     Dialogue.addHistory(dialogue, '添加', argv, revert)
     return dialogue
   },
@@ -88,8 +86,10 @@ extendDatabase(MemoryDatabase, {
 })
 
 export function apply(ctx: Context) {
+  ctx.database.$store.dialogue = []
+
   // flag
-  ctx.on('dialogue/flag', (flag) => {
+  ctx.on('dialogue/flag', (flag: string) => {
     ctx.on('dialogue/memory', (data, test) => {
       if (test[flag] !== undefined) {
         return !(data.flag & Dialogue.Flag[flag]) === test[flag]
