@@ -59,5 +59,5 @@ export function testDatabase(app: App) {
     await expect(db.getChannel('mock', ['A'])).eventually.to.deep.equal([])
   })
 
-  return app
+  return db
 }

@@ -30,6 +30,7 @@ require.extensions['.ts'] = (module, filename) => {
     format: 'cjs',
     loader: 'ts',
     charset: 'utf8',
+    target: 'es2020',
   })
   maps[filename] = map
   warnings.forEach(({ location, text }) => {

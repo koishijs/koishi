@@ -278,7 +278,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       const name = this.$app.bail('parse', argv, this)
       if (!(argv.command = this.$app._commandMap[name])) return
     }
-    if (argv.tokens.every(token => !token.inters.length)) {
+    if (argv.tokens?.every(token => !token.inters.length)) {
       const { options, args, error } = argv.command.parse(argv)
       argv.options = { ...argv.options, ...options }
       argv.args = [...argv.args || [], ...args]

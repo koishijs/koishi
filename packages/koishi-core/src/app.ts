@@ -156,11 +156,11 @@ export class App extends Context {
       }
     })
 
-    this.before('attach-user', (session, fields) => {
+    this.on('before-attach-user', (session, fields) => {
       session.collect('user', session.$argv, fields)
     })
 
-    this.before('attach-group', (session, fields) => {
+    this.on('before-attach-group', (session, fields) => {
       session.collect('channel', session.$argv, fields)
     })
 
@@ -305,7 +305,7 @@ export class App extends Context {
     }
 
     // execute command
-    if (!session.$argv.command) return next()
+    if (!session.resolve(session.$argv)) return next()
     return session.execute(session.$argv, next)
   }
 

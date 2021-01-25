@@ -1,4 +1,4 @@
-import { Tables, TableType, App, extendDatabase } from 'koishi-core'
+import { Tables, TableType, App, extendDatabase, User, Channel } from 'koishi-core'
 import { clone } from 'koishi-utils'
 
 declare module 'koishi-core/dist/database' {
@@ -22,6 +22,29 @@ export class MemoryDatabase {
   $select<T extends TableType, K extends keyof Tables[T]>(table: T, key: K, values: readonly Tables[T][K][]) {
     return this.$table(table).filter(row => values.includes(row[key])).map(clone)
   }
+
+  $create<K extends TableType>(table: K, data: Tables[K]) {
+    const store = this.$table(table)
+    const max = store.length ? Math.max(...store.map(row => row.id as number)) : 0
+    data.id = max + 1
+    store.push(data)
+    return data
+  }
+
+  $remove<K extends TableType>(table: K, id: number) {
+    const store = this.$table(table)
+    const index = store.findIndex(row => row.id === id)
+    if (index >= 0) store.splice(index, 1)
+  }
+
+  $update<K extends TableType>(table: K, id: number, data: Partial<Tables[K]>) {
+    const row = this.$table(table).find(row => row.id === id)
+    Object.assign(row, clone(data))
+  }
+
+  $count<K extends TableType>(table: K, field: keyof Tables[K] = 'id') {
+    return new Set(this.$table(table).map(data => data[field])).size
+  }
 }
 
 extendDatabase(MemoryDatabase, {
@@ -38,11 +61,10 @@ extendDatabase(MemoryDatabase, {
     const index = table.findIndex(row => row[type] === id)
     if (index < 0) {
       if (autoCreate && data) {
-        const max = Math.max(...table.map(row => row.id))
-        table.push({
-          id: max + 1,
+        this.$create('user', {
+          ...User.create(type, id, 0),
           ...clone(data),
-        } as any)
+        })
       }
       return
     }
@@ -77,7 +99,12 @@ extendDatabase(MemoryDatabase, {
     const table = this.$table('channel')
     const index = table.findIndex(row => row.id === `${type}:${id}`)
     if (index < 0) {
-      if (data) table.push(clone(data) as any)
+      if (data) {
+        table.push({
+          ...Channel.create(type, id, ''),
+          ...clone(data),
+        })
+      }
       return
     }
 

@@ -82,8 +82,6 @@ interface MockedAppOptions extends AppOptions {
 }
 
 export class MockedApp extends App {
-  public server: MockedServer
-
   constructor(options: MockedAppOptions = {}) {
     super({ selfId: BASE_SELF_ID, type: 'mock', ...options })
 
@@ -100,7 +98,7 @@ export class MockedApp extends App {
       selfId: this.selfId,
       ...meta,
     })
-    this.server.dispatch(session)
+    this.servers.mock.dispatch(session)
     return session.$uuid
   }
 
@@ -116,6 +114,7 @@ export class TestSession {
 
   constructor(public app: MockedApp, public userId: string, public channelId?: string) {
     this.meta = {
+      kind: 'mock',
       eventType: 'message',
       userId,
       author: {
@@ -128,6 +127,7 @@ export class TestSession {
       this.meta.channelId = channelId
       this.meta.subType = 'group'
     } else {
+      this.meta.channelId = 'private:' + userId
       this.meta.subType = 'private'
     }
   }
@@ -142,9 +142,9 @@ export class TestSession {
         resolve(this.replies)
         this.replies = []
       }
-      const $send = async (message: string) => {
-        if (!message) return
-        const length = this.replies.push(message)
+      const $send = async (content: string) => {
+        if (!content) return
+        const length = this.replies.push(content)
         if (length >= count) _resolve()
       }
       const dispose = this.app.on('middleware', (session) => {
@@ -154,7 +154,7 @@ export class TestSession {
     })
   }
 
-  async shouldReply(message: string, reply?: string | RegExp | (string | RegExp)[]) {
+  async shouldReply(message: string, reply?: string | RegExp | readonly (string | RegExp)[]) {
     if (!reply) {
       const result = await this.receive(message)
       return assert.ok(result.length, `expected "${message}" to be replied but not received nothing`)
