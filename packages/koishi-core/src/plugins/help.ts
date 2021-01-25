@@ -21,9 +21,17 @@ export default function apply(app: App) {
     return ''
   })
 
+  function findCommand(target: string) {
+    if (target in app._commandMap) return app._commandMap[target]
+    const shortcut = app._shortcuts.find(({ name }) => {
+      return typeof name === 'string' ? name === target : name.test(target)
+    })
+    if (shortcut) return shortcut.command
+  }
+
   const createCollector = <T extends TableType>(key: T): FieldCollector<T> => (argv, fields) => {
-    const { args: [name], session } = argv
-    const command = app._commandMap[name] || app._shortcutMap[name]
+    const { args: [target], session } = argv
+    const command = findCommand(target)
     if (!command) return
     session.collect(key, { ...argv, command, args: [], options: { help: true } }, fields)
   }
@@ -43,7 +51,7 @@ export default function apply(app: App) {
         return output.join('\n')
       }
 
-      const command = app._commandMap[target] || app._shortcutMap[target]
+      const command = findCommand(target)
       if (!command?.context.match(session)) {
         const items = getCommands(session, app._commands).flatMap(cmd => cmd._aliases)
         session.$suggest({

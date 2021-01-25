@@ -52,7 +52,6 @@ export class App extends Context {
   _commands: Command[]
   _commandMap: Record<string, Command>
   _shortcuts: Command.Shortcut[]
-  _shortcutMap: Record<string, Command>
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]>
   _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
   _groupCache: LruCache<string, Observed<Partial<Channel>, Promise<void>>>
@@ -120,30 +119,10 @@ export class App extends Context {
 
     // bind built-in event listeners
     this.middleware(this._preprocess.bind(this))
-    this.on('message', this._receive.bind(this))
+    this.on('message', this._onMessage.bind(this))
+    this.on('tokenize', this._onShortcut.bind(this))
     this.before('connect', this._listen.bind(this))
     this.before('disconnect', this._close.bind(this))
-
-    // shortcut
-    this.on('tokenize', (content, { $reply, $prefix, $appel }) => {
-      if ($prefix || $reply) return
-      for (const shortcut of this._shortcuts) {
-        const { name, fuzzy, command, oneArg, prefix, options, args = [] } = shortcut
-        if (prefix && !$appel) continue
-        if (!fuzzy && content !== name) continue
-        if (content.startsWith(name)) {
-          const message = content.slice(name.length)
-          if (fuzzy && !$appel && message.match(/^\S/)) continue
-          const argv: Argv = oneArg
-            ? { options: {}, args: [message.trim()] }
-            : command.parse(Argv.parse(message.trim()))
-          argv.command = command
-          argv.options = { ...options, ...argv.options }
-          argv.args = [...args, ...argv.args]
-          return argv
-        }
-      }
-    })
 
     this.on('parse', (argv: Argv, session: Session) => {
       const { $prefix, $appel, subType } = session
@@ -309,7 +288,7 @@ export class App extends Context {
     return session.execute(session.$argv, next)
   }
 
-  private async _receive(session: Session) {
+  private async _onMessage(session: Session) {
     // preparation
     this._sessions[session.$uuid] = session
     const middlewares: Middleware[] = this._hooks[Context.MIDDLEWARE_EVENT as any]
@@ -352,5 +331,42 @@ export class App extends Context {
     // flush user & group data
     await session.$user?._update()
     await session.$channel?._update()
+  }
+
+  private _onShortcut(content: string, { $prefix, $reply, $appel }: Session) {
+    if ($prefix || $reply) return
+    for (const shortcut of this._shortcuts) {
+      const { name, fuzzy, command, oneArg, prefix, options = {}, args = [] } = shortcut
+      if (prefix && !$appel) continue
+      if (typeof name === 'string') {
+        if (!fuzzy && content !== name || !content.startsWith(name)) continue
+        const message = content.slice(name.length)
+        if (fuzzy && !$appel && message.match(/^\S/)) continue
+        const argv: Argv = oneArg
+          ? { options: {}, args: [message.trim()] }
+          : command.parse(Argv.parse(message.trim()))
+        argv.command = command
+        argv.options = { ...options, ...argv.options }
+        argv.args = [...args, ...argv.args]
+        return argv
+      } else {
+        const capture = name.exec(content)
+        if (!capture) continue
+        function escape(source: any) {
+          if (typeof source !== 'string') return source
+          source = source.replace(/\$\$/g, '@@__PLACEHOLDER__@@')
+          capture.map((segment, index) => {
+            if (!index || index > 9) return
+            source = source.replace(new RegExp(`\\$${index}`, 'g'), (segment || '').replace(/\$/g, '@@__PLACEHOLDER__@@'))
+          })
+          return source.replace(/@@__PLACEHOLDER__@@/g, '$')
+        }
+        return {
+          command,
+          args: args.map(escape),
+          options: Object.fromEntries(Object.entries(options).map(([k, v]) => [k, escape(v)])),
+        }
+      }
+    }
   }
 }

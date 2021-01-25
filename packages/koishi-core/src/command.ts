@@ -38,7 +38,7 @@ export namespace Command {
   }
 
   export interface Shortcut {
-    name?: string
+    name?: string | RegExp
     command?: Command
     authority?: number
     hidden?: boolean
@@ -64,9 +64,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   parent: Command = null
 
   _aliases: string[] = []
-  _shortcuts: Record<string, Command.Shortcut> = {}
-  _usage?: Command.Usage<U, G>
   _examples: string[] = []
+  _usage?: Command.Usage<U, G>
 
   private _userFields: FieldCollector<'user'>[] = []
   private _channelFields: FieldCollector<'channel'>[] = []
@@ -142,14 +141,10 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  shortcut(name: string, config?: Command.Shortcut) {
-    config = this._shortcuts[name] = {
-      name,
-      command: this,
-      authority: this.config.authority,
-      ...config,
-    }
-    this.app._shortcutMap[name] = this
+  shortcut(name: string | RegExp, config: Command.Shortcut = {}) {
+    config.name = name
+    config.command = this
+    config.authority ||= this.config.authority
     this.app._shortcuts.push(config)
     return this
   }
@@ -244,11 +239,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     for (const cmd of this.children) {
       cmd.dispose()
     }
-    for (const name in this._shortcuts) {
-      delete this.app._shortcutMap[name]
-      const index = this.app._shortcuts.indexOf(this._shortcuts[name])
-      this.app._shortcuts.splice(index, 1)
-    }
+    this.app._shortcuts = this.app._shortcuts.filter(s => s.command !== this)
     this._aliases.forEach(name => delete this.app._commandMap[name])
     const index = this.app._commands.indexOf(this)
     this.app._commands.splice(index, 1)

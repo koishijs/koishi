@@ -23,7 +23,7 @@ let code = 0
 
 function bundle(options: BuildOptions) {
   for (const path of options.entryPoints) {
-    console.log('building:', path)
+    if (process.env.CI) console.log('entry:', path)
   }
   return build(options).then(({ warnings }) => {
     warnings.forEach(displayWarning)
@@ -86,7 +86,7 @@ function bundle(options: BuildOptions) {
       entryPoints: [base + '/src/internal.ts'],
       banner: '(function (host, exports, GLOBAL) {',
       footer: '})',
-    }]).then(() => {})
+    }].map(bundle)).then(() => {})
   }))
 
   process.exit(code)

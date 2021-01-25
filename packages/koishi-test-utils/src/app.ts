@@ -154,7 +154,7 @@ export class TestSession {
     })
   }
 
-  async shouldReply(message: string, reply?: string | RegExp | readonly (string | RegExp)[]) {
+  async shouldReply(message: string, reply?: string | RegExp | (string | RegExp)[]) {
     if (!reply) {
       const result = await this.receive(message)
       return assert.ok(result.length, `expected "${message}" to be replied but not received nothing`)
