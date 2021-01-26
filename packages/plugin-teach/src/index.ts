@@ -2,7 +2,7 @@
 
 import { Argv, Context, Session } from 'koishi-core'
 import { escapeRegExp } from 'koishi-utils'
-import { Dialogue, parseTeachArgs } from './utils'
+import { Dialogue } from './utils'
 import internal from './internal'
 import receiver from './receiver'
 import search from './search'
@@ -68,7 +68,7 @@ const cheatSheet = (session: Session<'authority'>, config: Config) => {
 　教学者代行：　　-s/-S` : ''}${config.useWriter && authority >= a.writer ? `
 　设置问题作者：　-w uid
 　设置为匿名：　　-W` : ''}
-　忽略智能提示：　-i
+　忽略智能提示：　-I
 　重定向：　　　　=>
 匹配规则：${authority >= a.regExp ? `
 　正则表达式：　　-x/-X` : ''}
@@ -123,6 +123,9 @@ function registerPrefix(ctx: Context, prefix: string) {
         argv.options['autoMerge'] = true
         argv.options['regexp'] = true
       }
+      if (!argv.tokens.length) {
+        argv.options['info'] = true
+      }
     } else if (!capture[2] && !length) {
       argv.options['help'] = true
     }
@@ -163,7 +166,6 @@ export function apply(ctx: Context, config: Config = {}) {
     .userFields(['authority', 'id'])
     .usage(session => cheatSheet(session, config))
     .action(async (argv) => {
-      parseTeachArgs(argv)
       const { options, session, args } = argv
       const argd: Dialogue.Argv = { app: ctx.app, session, args, config, options }
       return ctx.bail('dialogue/validate', argd)

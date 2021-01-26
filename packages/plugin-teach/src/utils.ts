@@ -66,11 +66,17 @@ export namespace Dialogue {
   export type Field = keyof Dialogue
 
   export interface AuthorityConfig {
+    /** 可访问教学系统，默认值为 2 */
     base?: number
+    /** 可修改非自己创建的问答，默认值为 3 */
     admin?: number
+    /** 可修改上下文设置，默认值为 3 */
     context?: number
+    /** 可修改锁定的问答，默认值为 4 */
     frozen?: number
+    /** 可使用正则表达式，默认值为 3 */
     regExp?: number
+    /** 可设置作者或匿名，默认值为 2 */
     writer?: number
   }
 
@@ -115,7 +121,6 @@ export namespace Dialogue {
     config: Config
     target?: number[]
     options: Record<string, any>
-    appellative?: boolean
 
     // modify status
     dialogues?: Dialogue[]
@@ -169,19 +174,6 @@ export function prepareTargets(argv: Dialogue.Argv, dialogues = argv.dialogues) 
   })
   argv.uneditable.unshift(...difference(dialogues, targets).map(d => d.id))
   return targets.map(data => observe(data, `dialogue ${data.id}`))
-}
-
-export function parseTeachArgs({ args, options }: Partial<Argv>) {
-  function parseArgument() {
-    if (!args.length) return
-    const [arg] = args.splice(0, 1)
-    if (!arg || arg === '~' || arg === '～') return
-    return arg
-  }
-
-  defineProperty(options, 'noArgs', !args.length)
-  options['question'] = parseArgument()
-  options['answer'] = options['redirect'] || parseArgument()
 }
 
 export function isPositiveInteger(source: string) {

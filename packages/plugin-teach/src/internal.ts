@@ -35,47 +35,42 @@ Message.Teach.MissingQuestionOrAnswer = '缺少问题或回答，请检查指令
 Message.Teach.ProhibitedCommand = '禁止在教学回答中插值调用 %s 指令。'
 Message.Teach.ProhibitedCQCode = '问题必须是纯文本。'
 Message.Teach.IllegalRegExp = '问题含有错误的或不支持的正则表达式语法。'
-Message.Teach.MayModifyAnswer = '推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -i 选项以忽略本提示。'
-Message.Teach.MaybeRegExp = '推测你想%s的问题是正则表达式。发送空行或句号以添加 -x 选项，使用 -i 选项以忽略本提示。'
+Message.Teach.MayModifyAnswer = '推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -I 选项以忽略本提示。'
+Message.Teach.MaybeRegExp = '推测你想%s的问题是正则表达式。发送空行或句号以添加 -x 选项，使用 -I 选项以忽略本提示。'
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
   defineProperty(ctx.app, 'teachHistory', {})
 
   ctx.command('teach')
-    .option('question', '<question:string>  问题')
-    .option('answer', '<answer:string>  回答')
-    .option('ignoreHint', '-i  忽略智能提示')
+    .option('ignoreHint', '-I  忽略智能提示')
     .option('regexp', '-x  使用正则表达式匹配', { authority: config.authority.regExp })
-    .option('regexp', '-X  取消使用正则表达式匹配', { authority: config.authority.regExp, value: false })
-    .option('redirect', '=> <answer>  重定向到其他问答')
+    .option('regexp', '-X  取消使用正则表达式匹配', { value: false })
+    .option('redirect', '=> <answer:string>  重定向到其他问答')
+    .action(({ options, args }) => {
+      function parseArgument() {
+        if (!args.length) return ''
+        const [arg] = args.splice(0, 1)
+        if (!arg || arg === '~' || arg === '～') return ''
+        return arg.trim()
+      }
 
-  ctx.on('dialogue/validate', (argv) => {
-    const { options, args } = argv
-    if (args.length) {
-      return Message.Teach.TooManyArguments
-    }
-
-    const { answer } = options
-    const question = options.question || ''
-    if (/\[CQ:(?!face)/.test(question)) {
-      return Message.Teach.ProhibitedCQCode
-    }
-
-    const { unprefixed, prefixed, appellative } = options.regexp
-      ? { unprefixed: question, prefixed: question, appellative: false }
-      : config._stripQuestion(question)
-    argv.appellative = appellative
-    Object.defineProperty(options, '_original', { value: prefixed })
-    if (unprefixed) {
-      options.original = question
-      options.question = unprefixed
-    } else {
-      delete options.question
-    }
-
-    options.answer = (String(answer || '')).trim()
-    if (!options.answer) delete options.answer
-  })
+      const question = parseArgument()
+      const answer = options.redirect ? `$(dialogue ${options.redirect})` : parseArgument()
+      if (args.length) {
+        return Message.Teach.TooManyArguments
+      } else if (/\[CQ:(?!face)/.test(question)) {
+        return Message.Teach.ProhibitedCQCode
+      }
+      const { unprefixed, prefixed, appellative } = options.regexp
+        ? { unprefixed: question, prefixed: question, appellative: false }
+        : config._stripQuestion(question)
+      defineProperty(options, 'appellative', appellative)
+      defineProperty(options, '_original', prefixed)
+      defineProperty(options, 'original', question)
+      args[0] = unprefixed
+      args[1] = answer
+      if (!args[0] && !args[1]) args.splice(0, Infinity)
+    }, true)
 
   function maybeAnswer(question: string, dialogues: Dialogue[]) {
     return dialogues.every(dialogue => {
@@ -92,8 +87,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   const validator = new RegExpValidator(config.validateRegExp)
 
   ctx.on('dialogue/before-modify', async (argv) => {
-    const { options, session, target, dialogues } = argv
-    const { question, answer, ignoreHint, regexp } = options
+    const { options, session, target, dialogues, args } = argv
+    const { ignoreHint, regexp } = options
+    const [question, answer] = args
 
     function applySuggestion(argv: Dialogue.Argv) {
       return argv.target ? update(argv) : create(argv)
@@ -105,8 +101,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         dispose()
         content = content.trim()
         if (content && content !== '.' && content !== '。') return next()
-        options.answer = options.original
-        delete options.question
+        args[1] = options.original
+        args[0] = ''
         return applySuggestion(argv)
       })
       return Message.Teach.MayModifyAnswer
@@ -135,16 +131,16 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.on('dialogue/before-modify', async ({ options, target }) => {
+  ctx.on('dialogue/before-modify', async ({ options, target, args }) => {
     // 添加问答时缺少问题或回答
-    if (options.create && !target && !(options.question && options.answer)) {
+    if (options.create && !target && !(args[0] && args[1])) {
       return Message.Teach.MissingQuestionOrAnswer
     }
   })
 
-  ctx.on('dialogue/modify', ({ options }, data) => {
-    if (options.answer) {
-      data.answer = options.answer
+  ctx.on('dialogue/modify', ({ options, args }, data) => {
+    if (args[1]) {
+      data.answer = args[1]
     }
 
     if (options.regexp !== undefined) {
@@ -152,15 +148,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       data.flag |= +options.regexp * Dialogue.Flag.regexp
     }
 
-    if (options.question) {
-      data.question = options.question
+    if (args[0]) {
+      data.question = args[0]
       data.original = options.original
-    }
-  })
-
-  ctx.on('dialogue/validate', ({ options }) => {
-    if (options.redirect) {
-      options.answer = `$(dialogue ${options.answer})`
     }
   })
 

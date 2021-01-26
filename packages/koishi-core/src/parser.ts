@@ -172,11 +172,10 @@ export namespace Domain {
   export type ArgumentType<S extends string> = [...Extract<Replace<S, '>', ']'>, ':', ']', string>, ...string[]]
 
   export type OptionType<S extends string, T extends Type>
-    = Type extends T ? ExtractFirst<Replace<S, '>', ']'>, ':', ']', any>
-    : T extends Builtin ? Domain[T]
+    = T extends Builtin ? Domain[T]
     : T extends RegExp ? string
     : T extends (source: string) => infer R ? R
-    : never
+    : ExtractFirst<Replace<S, '>', ']'>, ':', ']', any>
 
   export type Type = Builtin | RegExp | Transform<any>
 

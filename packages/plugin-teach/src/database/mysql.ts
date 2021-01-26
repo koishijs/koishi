@@ -145,13 +145,13 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     const { escape } = require('koishi-plugin-mysql').default.prototype as MysqlDatabase
 
     if (regexp) {
-      if (answer !== undefined) conditionals.push('`answer` REGEXP ' + escape(answer))
-      if (question !== undefined) conditionals.push('`question` REGEXP ' + escape(original))
+      if (answer) conditionals.push('`answer` REGEXP ' + escape(answer))
+      if (question) conditionals.push('`question` REGEXP ' + escape(original))
       return
     }
 
-    if (answer !== undefined) conditionals.push('`answer` = ' + escape(answer))
-    if (question !== undefined) {
+    if (answer) conditionals.push('`answer` = ' + escape(answer))
+    if (question) {
       if (regexp === false) {
         conditionals.push('`question` = ' + escape(question))
       } else {

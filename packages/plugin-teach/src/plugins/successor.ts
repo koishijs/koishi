@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference } from 'koishi-utils'
-import { equal, split, prepareTargets, RE_DIALOGUES, parseTeachArgs, isPositiveInteger, Dialogue } from '../utils'
+import { equal, split, prepareTargets, RE_DIALOGUES, isPositiveInteger, Dialogue } from '../utils'
 import { formatQuestionAnswers } from '../search'
 
 declare module '../receiver' {
@@ -143,7 +143,6 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     const argv = { ...command.parse(createSuccessor), session, command }
     const target = argv.options['setPred'] = dialogues.map(d => d.id).join(',')
     argv.source = `# ${createSuccessor} < ${target}`
-    parseTeachArgs(argv)
     await command.execute(session.$argv)
   })
 

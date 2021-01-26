@@ -4,11 +4,11 @@ import { createHmac } from 'crypto'
 import { resolve } from 'path'
 import { promises as fs, existsSync, readdirSync } from 'fs'
 import { Dialogue } from '../utils'
-import axios from 'axios'
+import axios, { AxiosRequestConfig } from 'axios'
 
 declare module 'koishi-core/dist/app' {
   interface App {
-    getImageServerStatus (): Promise<ImageServerStatus>
+    getImageServerStatus(): Promise<ImageServerStatus>
   }
 }
 
@@ -20,6 +20,7 @@ declare module '../utils' {
       uploadKey?: string
       uploadPath?: string
       uploadServer?: string
+      requestConfig?: AxiosRequestConfig
     }
   }
 }
@@ -33,7 +34,7 @@ const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
   const logger = ctx.logger('teach')
-  const { uploadKey, imagePath, imageServer, uploadPath, uploadServer } = config
+  const { uploadKey, imagePath, imageServer, uploadPath, uploadServer, requestConfig } = config
 
   let downloadFile: (file: string, url: string) => Promise<void>
 
@@ -44,11 +45,11 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         params.salt = Random.uuid()
         params.sign = createHmac('sha1', uploadKey).update(file + params.salt).digest('hex')
       }
-      await axios.get(uploadServer, { params })
+      await axios.get(uploadServer, { params, ...requestConfig })
     }
 
     ctx.app.getImageServerStatus = async () => {
-      const { data } = await axios.get(uploadServer)
+      const { data } = await axios.get(uploadServer, requestConfig)
       return data
     }
   }
@@ -61,7 +62,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     downloadFile = async (file, url) => {
       const path = resolve(imagePath, file)
       if (!existsSync(path)) {
-        const { data } = await axios.get<ArrayBuffer>(url, { responseType: 'arraybuffer' })
+        const { data } = await axios.get<ArrayBuffer>(url, { responseType: 'arraybuffer', ...requestConfig })
         await fs.writeFile(path, Buffer.from(data))
         totalCount += 1
         totalSize += data.byteLength
@@ -94,8 +95,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   }
 
   if (imageServer && downloadFile) {
-    ctx.on('dialogue/before-modify', async ({ options }) => {
-      let { answer } = options
+    ctx.on('dialogue/before-modify', async ({ args }) => {
+      let answer = args[1]
       if (!answer) return
       try {
         let output = ''
@@ -108,7 +109,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
           await downloadFile(file, url)
           output += `[CQ:image,file=${imageServer}/${file}]`
         }
-        options.answer = output + answer
+        args[1] = output + answer
       } catch (error) {
         logger.warn(error.message)
         return '上传图片时发生错误。'

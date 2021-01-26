@@ -1,4 +1,4 @@
-import { isPositiveInteger, parseTeachArgs, Dialogue, DialogueTest } from './utils'
+import { isPositiveInteger, Dialogue, DialogueTest } from './utils'
 import { Context } from 'koishi-core'
 import { getTotalWeight } from './receiver'
 
@@ -43,8 +43,9 @@ export default function apply(ctx: Context) {
     .option('pipe', '| <op:text>  对每个搜索结果执行操作')
 
   ctx.on('dialogue/execute', (argv) => {
-    const { search, noArgs } = argv.options
-    if (search) return noArgs ? showInfo(argv) : showSearch(argv)
+    const { search, info } = argv.options
+    if (info) return showInfo(argv)
+    if (search) return showSearch(argv)
   })
 
   ctx.on('dialogue/list', ({ _redirections }, output, prefix, argv) => {
@@ -62,8 +63,8 @@ export default function apply(ctx: Context) {
     test.noRecursive = options.recursive === false
   })
 
-  ctx.on('dialogue/before-search', (argv, test) => {
-    test.appellative = argv.appellative
+  ctx.on('dialogue/before-search', ({ options }, test) => {
+    test.appellative = options.appellative
   })
 
   ctx.on('dialogue/search', async (argv, test, dialogues) => {
@@ -150,8 +151,8 @@ export function formatQuestionAnswers(argv: Dialogue.Argv, dialogues: Dialogue[]
 }
 
 async function showSearch(argv: Dialogue.Argv) {
-  const { app, session, options } = argv
-  const { regexp, question, answer, page = 1, original, pipe, recursive, autoMerge } = options
+  const { app, session, options, args: [question, answer] } = argv
+  const { regexp, page = 1, original, pipe, recursive, autoMerge } = options
   const { itemsPerPage = 30, mergeThreshold = 5 } = argv.config
 
   const test: DialogueTest = { question, answer, regexp, original: options._original }
@@ -164,7 +165,6 @@ async function showSearch(argv: Dialogue.Argv) {
     const argv = { ...command.parse(pipe), session, command }
     const target = argv.options['target'] = dialogues.map(d => d.id).join(',')
     argv.source = `#${target} ${pipe}`
-    parseTeachArgs(argv)
     return command.execute(argv)
   }
 
@@ -251,9 +251,12 @@ async function showInfo({ app }: Dialogue.Argv) {
   if (app.getImageServerStatus) {
     tasks.push(app.getImageServerStatus().then(({ totalSize, totalCount }) => {
       return `收录图片 ${totalCount} 张，总体积 ${+(totalSize / (1 << 20)).toFixed(1)} MB。`
+    }, (err) => {
+      app.logger('dialogue').warn(err)
+      return ''
     }))
   }
 
   const output = await Promise.all(tasks)
-  return output.join('\n')
+  return output.filter(x => x).join('\n')
 }

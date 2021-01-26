@@ -122,11 +122,11 @@ async function revert(dialogues: Dialogue[], argv: Dialogue.Argv) {
 }
 
 export async function update(argv: Dialogue.Argv) {
-  const { app, session, options, target, config } = argv
+  const { app, session, options, target, config, args } = argv
   const { maxPreviews = 10, previewDelay = 500 } = config
   const { revert, review, remove, search } = options
 
-  options.modify = !review && !search && Object.keys(options).length
+  options.modify = !review && !search && (Object.keys(options).length || args.length)
   if (!options.modify && !search && target.length > maxPreviews) {
     return session.$send(`一次最多同时预览 ${maxPreviews} 个问答。`)
   }
@@ -192,9 +192,8 @@ export async function update(argv: Dialogue.Argv) {
 }
 
 export async function create(argv: Dialogue.Argv) {
-  const { app, options } = argv
+  const { app, options, args: [question, answer] } = argv
   options.create = options.modify = true
-  const { question, answer } = options
 
   argv.unknown = []
   argv.uneditable = []

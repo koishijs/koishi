@@ -130,12 +130,12 @@ export default function apply(ctx: Context) {
 
   ctx.on('dialogue/mongo', ({ regexp, answer, question, original }, conditionals) => {
     if (regexp) {
-      if (answer !== undefined) conditionals.push({ answer: { $regex: new RegExp(answer, 'i') } })
-      if (question !== undefined) conditionals.push({ question: { $regex: new RegExp(original, 'i') } })
+      if (answer) conditionals.push({ answer: { $regex: new RegExp(answer, 'i') } })
+      if (question) conditionals.push({ question: { $regex: new RegExp(original, 'i') } })
       return
     }
-    if (answer !== undefined) conditionals.push({ answer })
-    if (question !== undefined) {
+    if (answer) conditionals.push({ answer })
+    if (question) {
       if (regexp === false) {
         conditionals.push({ question })
       } else {
