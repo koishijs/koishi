@@ -100,13 +100,13 @@ export function apply(ctx: Context) {
   // internal
   ctx.on('dialogue/memory', (data, { regexp, answer, question, original }) => {
     if (regexp) {
-      if (answer !== undefined && !new RegExp(answer, 'i').test(data.answer)) return true
-      if (question !== undefined && !new RegExp(question, 'i').test(data.question)) return true
+      if (answer && !new RegExp(answer, 'i').test(data.answer)) return true
+      if (question && !new RegExp(question, 'i').test(data.question)) return true
       return
     }
 
-    if (answer !== undefined && answer !== data.answer) return true
-    if (question !== undefined) {
+    if (answer && answer !== data.answer) return true
+    if (question) {
       if (regexp === false || !(data.flag & Dialogue.Flag.regexp)) return question !== data.question
       const questionRegExp = new RegExp(data.question, 'i')
       return !questionRegExp.test(question) && !questionRegExp.test(original)

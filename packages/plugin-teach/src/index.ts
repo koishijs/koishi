@@ -118,13 +118,13 @@ function registerPrefix(ctx: Context, prefix: string) {
     argv.options = {}
     const { length } = argv.tokens
     if (capture[1] === prefix) {
+      if (!argv.tokens.length) {
+        return 'teach.status'
+      }
       argv.options['search'] = true
       if (capture[2] === prefix) {
         argv.options['autoMerge'] = true
         argv.options['regexp'] = true
-      }
-      if (!argv.tokens.length) {
-        argv.options['info'] = true
       }
     } else if (!capture[2] && !length) {
       argv.options['help'] = true

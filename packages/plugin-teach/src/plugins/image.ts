@@ -6,12 +6,6 @@ import { promises as fs, existsSync, readdirSync } from 'fs'
 import { Dialogue } from '../utils'
 import axios, { AxiosRequestConfig } from 'axios'
 
-declare module 'koishi-core/dist/app' {
-  interface App {
-    getImageServerStatus(): Promise<ImageServerStatus>
-  }
-}
-
 declare module '../utils' {
   namespace Dialogue {
     interface Config {
@@ -37,6 +31,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   const { uploadKey, imagePath, imageServer, uploadPath, uploadServer, requestConfig } = config
 
   let downloadFile: (file: string, url: string) => Promise<void>
+  let getStatus: () => Promise<ImageServerStatus>
 
   if (uploadServer) {
     downloadFile = async (file, url) => {
@@ -48,7 +43,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       await axios.get(uploadServer, { params, ...requestConfig })
     }
 
-    ctx.app.getImageServerStatus = async () => {
+    getStatus = async () => {
       const { data } = await axios.get(uploadServer, requestConfig)
       return data
     }
@@ -74,7 +69,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       totalSize += size
     }))
 
-    const getStatus = ctx.app.getImageServerStatus = async () => {
+    getStatus = async () => {
       await statPromise
       return { totalCount, totalSize }
     }
@@ -113,6 +108,17 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       } catch (error) {
         logger.warn(error.message)
         return '上传图片时发生错误。'
+      }
+    })
+  }
+
+  if (getStatus) {
+    ctx.on('dialogue/status', async () => {
+      try {
+        const { totalSize, totalCount } = await getStatus()
+        return `收录图片 ${totalCount} 张，总体积 ${+(totalSize / (1 << 20)).toFixed(1)} MB。`
+      } catch (err) {
+        ctx.logger('dialogue').warn(err)
       }
     })
   }

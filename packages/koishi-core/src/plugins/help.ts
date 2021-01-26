@@ -132,16 +132,12 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
     await session.$observeUser(['authority', 'timers', 'usage'])
   }
 
-  // FIXME: 其他形式
-  const disabled = command._checkers.some(checker => checker(session))
-  if (disabled) output[1] += '（指令已禁用）'
-
   if (command._aliases.length > 1) {
     output.push(`别名：${Array.from(command._aliases.slice(1)).join('，')}。`)
   }
 
   const maxUsage = command.getConfig('maxUsage', session)
-  if (!disabled && session.$user) {
+  if (session.$user) {
     const name = getUsageName(command)
     const minInterval = command.getConfig('minInterval', session)
     const count = getUsage(name, session.$user)

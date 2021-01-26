@@ -9,6 +9,7 @@ export interface SearchDetails extends Array<string> {
 
 declare module 'koishi-core/dist/context' {
   interface EventMap {
+    'dialogue/status'(): Promise<string>
     'dialogue/list'(dialogue: Dialogue, output: string[], prefix: string, argv: Dialogue.Argv): void
     'dialogue/detail-short'(dialogue: Dialogue, output: SearchDetails, argv: Dialogue.Argv): void
     'dialogue/before-search'(argv: Dialogue.Argv, test: DialogueTest): void | boolean
@@ -35,6 +36,16 @@ declare module './utils' {
 }
 
 export default function apply(ctx: Context) {
+  ctx.command('teach.status').action(async () => {
+    const output = await ctx.parallel('dialogue/status')
+    return output.filter(x => x).join('\n')
+  })
+
+  ctx.on('dialogue/status', async () => {
+    const { questions, dialogues } = await ctx.database.getDialogueStats()
+    return `共收录了 ${questions} 个问题和 ${dialogues} 个回答。`
+  })
+
   ctx.command('teach')
     .option('search', '搜索已有问答', { notUsage: true })
     .option('page', '/ <page>  设置搜索结果的页码', { type: isPositiveInteger })
@@ -43,8 +54,7 @@ export default function apply(ctx: Context) {
     .option('pipe', '| <op:text>  对每个搜索结果执行操作')
 
   ctx.on('dialogue/execute', (argv) => {
-    const { search, info } = argv.options
-    if (info) return showInfo(argv)
+    const { search } = argv.options
     if (search) return showSearch(argv)
   })
 
@@ -241,22 +251,4 @@ async function showSearch(argv: Dialogue.Argv) {
     }
     return output.join('\n')
   }
-}
-
-async function showInfo({ app }: Dialogue.Argv) {
-  const tasks: Promise<string>[] = []
-  tasks.push(app.database.getDialogueStats().then(({ questions, dialogues }) => {
-    return `共收录了 ${questions} 个问题和 ${dialogues} 个回答。`
-  }))
-  if (app.getImageServerStatus) {
-    tasks.push(app.getImageServerStatus().then(({ totalSize, totalCount }) => {
-      return `收录图片 ${totalCount} 张，总体积 ${+(totalSize / (1 << 20)).toFixed(1)} MB。`
-    }, (err) => {
-      app.logger('dialogue').warn(err)
-      return ''
-    }))
-  }
-
-  const output = await Promise.all(tasks)
-  return output.filter(x => x).join('\n')
 }

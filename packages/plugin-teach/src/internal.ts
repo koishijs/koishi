@@ -46,7 +46,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('regexp', '-x  使用正则表达式匹配', { authority: config.authority.regExp })
     .option('regexp', '-X  取消使用正则表达式匹配', { value: false })
     .option('redirect', '=> <answer:string>  重定向到其他问答')
-    .action(({ options, args }) => {
+    .check(({ options, args }) => {
       function parseArgument() {
         if (!args.length) return ''
         const [arg] = args.splice(0, 1)
@@ -70,7 +70,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       args[0] = unprefixed
       args[1] = answer
       if (!args[0] && !args[1]) args.splice(0, Infinity)
-    }, true)
+    })
 
   function maybeAnswer(question: string, dialogues: Dialogue[]) {
     return dialogues.every(dialogue => {

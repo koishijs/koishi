@@ -51,7 +51,8 @@ export namespace Command {
   export type Action<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}>
     = (this: Command<U, G, A, O>, argv: Argv<U, G, A, O>, ...args: A) => void | string | Promise<void | string>
 
-  export type Checker<U extends User.Field = never, G extends Channel.Field = never> = (session: Session<U, G>) => boolean
+  export type Checker<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}>
+    = (this: Command<U, G, A, O>, argv: Argv<U, G, A, O>, ...args: A) => void | string
 
   export type Usage<U extends User.Field, G extends Channel.Field>
     = string | ((this: Command<U, G>, session: Session<U, G>) => string | Promise<string>)
@@ -70,7 +71,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   private _channelFields: FieldCollector<'channel'>[] = []
 
   _actions: Command.Action<U, G, A, O>[] = []
-  _checkers: Command.Checker<U, G>[] = []
+  _checkers: Command.Checker<U, G, A, O>[] = []
 
   static defaultConfig: Command.Config = {
     authority: 1,
@@ -179,7 +180,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this as any
   }
 
-  check(checker: Command.Checker<U, G>) {
+  check(checker: Command.Checker<U, G, A, O>) {
     this._checkers.push(checker)
     return this
   }

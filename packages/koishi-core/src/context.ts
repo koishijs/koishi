@@ -13,6 +13,7 @@ export type PluginFunction<T, U = any> = (ctx: T, options: U) => void
 export type PluginObject<T, U = any> = { name?: string, apply: PluginFunction<T, U> }
 export type Plugin<T, U = any> = PluginFunction<T, U> | PluginObject<T, U>
 export type Promisify<T> = T extends Promise<any> ? T : Promise<T>
+export type Depromisify<T> = T extends Promise<infer U> ? U : T
 export type Disposable = () => void
 
 interface ScopeSet extends Array<string> {
@@ -123,8 +124,8 @@ export class Context {
     return this
   }
 
-  async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<void>
-  async parallel<K extends EventName>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<void>
+  async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<Depromisify<ReturnType<EventMap[K]>>[]>
+  async parallel<K extends EventName>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<Depromisify<ReturnType<EventMap[K]>>[]>
   async parallel(...args: any[]) {
     const tasks: Promise<any>[] = []
     const session = typeof args[0] === 'object' ? args.shift() : null
@@ -134,7 +135,7 @@ export class Context {
       if (!context.match(session)) continue
       tasks.push(callback.apply(this, args))
     }
-    await Promise.all(tasks)
+    return Promise.all(tasks)
   }
 
   emit<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): void
