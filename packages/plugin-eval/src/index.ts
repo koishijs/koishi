@@ -122,8 +122,8 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   if (prefix) {
-    command.shortcut(prefix, { oneArg: true, fuzzy: true })
-    command.shortcut(prefix + prefix, { oneArg: true, fuzzy: true, options: { slient: true } })
+    command.shortcut(prefix, { greedy: true, fuzzy: true })
+    command.shortcut(prefix + prefix, { greedy: true, fuzzy: true, options: { slient: true } })
   }
 
   Argv.interpolate('${', '}', (source) => {

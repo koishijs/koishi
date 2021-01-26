@@ -149,7 +149,6 @@ export interface Domain {
   string: string
   number: number
   boolean: boolean
-  user: string
   text: string
 }
 
@@ -210,12 +209,6 @@ export namespace Domain {
   create('string', source => source)
   create('number', source => +source)
   create('text', source => source)
-  create('user', (source) => {
-    const cap = /\[CQ:at,qq=(\d+)\]/.exec(source)
-    if (cap) return cap[1]
-    // TODO by nickname
-    return source
-  })
 
   const BRACKET_REGEXP = /<[^>]+>|\[[^\]]+\]/g
 
@@ -445,7 +438,7 @@ export namespace Domain {
             param = Argv.stringify(argv)
             quoted = true
             argv.tokens = []
-          } else if (type !== 'boolean' && (type || argv.tokens[0]?.content !== '-')) {
+          } else if (type !== 'boolean' && argv.tokens.length && (type || argv.tokens[0]?.content !== '-')) {
             const token = argv.tokens.shift()
             param = token.content
             quoted = token.quoted

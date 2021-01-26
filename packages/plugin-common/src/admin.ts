@@ -127,7 +127,7 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
 
   ctx.command('common/callme <name:text>', '修改自己的称呼')
     .userFields(['id', 'name'])
-    .shortcut('叫我', { prefix: true, fuzzy: true, oneArg: true })
+    .shortcut('叫我', { prefix: true, fuzzy: true, greedy: true })
     .action(async ({ session }, name) => {
       if (!name) {
         return `好的，${session.$username}，请多指教！`

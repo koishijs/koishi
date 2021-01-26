@@ -50,9 +50,9 @@ export function apply(ctx: Context, options: MusicOptions = {}) {
   ctx.command('tools/music <name:text>', '点歌')
     .option('platform', `-p <platform>  点歌平台，目前支持 qq, netease，默认为 ${platform}`)
     .alias('点歌')
-    .shortcut('来一首', { fuzzy: true, oneArg: true })
-    .shortcut('点一首', { fuzzy: true, oneArg: true })
-    .shortcut('整一首', { fuzzy: true, oneArg: true })
+    .shortcut('来一首', { fuzzy: true, greedy: true })
+    .shortcut('点一首', { fuzzy: true, greedy: true })
+    .shortcut('整一首', { fuzzy: true, greedy: true })
     .action(async ({ options }, keyword) => {
       if (!options.platform) options.platform = platform
       const search = platforms[options.platform]

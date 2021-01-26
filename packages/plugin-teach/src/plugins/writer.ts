@@ -6,7 +6,6 @@ declare module '../utils' {
   interface DialogueTest {
     writer?: number
     frozen?: boolean
-    substitute?: boolean
   }
 
   interface Dialogue {
@@ -33,21 +32,10 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.command('teach')
     .option('frozen', '-f  锁定这个问答', { authority: authority.frozen })
     .option('frozen', '-F, --no-frozen  解锁这个问答', { authority: authority.frozen, value: false })
-    .option('writer', '-w <uid>  添加或设置问题的作者')
-    .option('writer', '-W, --anonymous  添加或设置匿名问题', { authority: authority.writer, value: 0 })
-    .option('substitute', '-s  由教学者完成回答的执行')
-    .option('substitute', '-S, --no-substitute  由触发者完成回答的执行', { value: false })
+    .option('writer', '-w <uid:string>  添加或设置问题的作者')
+    .option('writer', '-W, --anonymous  添加或设置匿名问题', { authority: authority.writer, value: '' })
 
   ctx.emit('dialogue/flag', 'frozen')
-  ctx.emit('dialogue/flag', 'substitute')
-
-  ctx.on('dialogue/validate', ({ options, session }) => {
-    if (options.writer) {
-      const writer = session.$bot.parseUser(options.writer)
-      if (!writer) return '参数 -w, --writer 错误，请检查指令语法。'
-      options.writer = writer
-    }
-  })
 
   ctx.on('dialogue/before-detail', async (argv) => {
     argv.userMap = {}
@@ -63,7 +51,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     for (const user of users) {
       authMap[user.id] = user.authority
       if (options.modify) continue
-      if (user.id !== +user.name) {
+      if (user.name) {
         userMap[user.id] = user.name
       } else if (user[session.kind] === session.userId) {
         userMap[user.id] = session.author.nick || session.author.name
@@ -86,10 +74,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     if (flag & Dialogue.Flag.frozen) output.push('此问答已锁定。')
     if (writer) {
       const name = argv.userMap[writer]
-      output.push(name ? `来源：${name} (${writer})` : `来源：${writer}`)
-      if (flag & Dialogue.Flag.substitute) {
-        output.push('回答中的指令由教学者代行。')
-      }
+      output.push(name ? `来源：${name}` : `来源：${writer}`)
     }
   })
 
@@ -98,23 +83,17 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   // 当使用 -w 时需要原作者权限高于目标用户
   // 锁定的问答需要 frozen 级权限才能修改
   ctx.on('dialogue/permit', ({ session, target, options, authMap }, { writer, flag }) => {
-    const { substitute, writer: newWriter } = options
+    const { writer: newWriter } = options
     const { id, authority } = session.$user
     return (
       (newWriter && authority <= authMap[newWriter] && newWriter !== id) ||
       ((flag & Dialogue.Flag.frozen) && authority < config.authority.frozen) ||
-      (writer !== id && (
-        (target && authority < config.authority.admin) || (
-          (substitute || (flag & Dialogue.Flag.substitute)) &&
-          (authority <= (authMap[writer] || config.authority.base))
-        )
-      ))
+      (writer !== id && target && authority < config.authority.admin)
     )
   })
 
   ctx.on('dialogue/detail-short', ({ flag }, output) => {
     if (flag & Dialogue.Flag.frozen) output.push('锁定')
-    if (flag & Dialogue.Flag.substitute) output.push('代行')
   })
 
   ctx.on('dialogue/before-search', ({ options }, test) => {
@@ -133,22 +112,6 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       data.writer = options.writer
     } else if (!target) {
       data.writer = session.$user.id
-    }
-  })
-
-  // 触发代行者模式
-  ctx.on('dialogue/before-send', async (state) => {
-    const { dialogue, session } = state
-    const { kind } = session
-    if (dialogue.flag & Dialogue.Flag.substitute && dialogue.writer && session.$user.id !== dialogue.writer) {
-      const userFields = new Set<User.Field>([session.kind])
-      ctx.app.emit(session, 'dialogue/before-attach-user', state, userFields)
-      session.kind = 'id' as never
-      session.userId = '' + dialogue.writer
-      session.$user = null
-      await session.$observeUser(userFields)
-      session.kind = kind
-      session.userId = session.$user[kind]
     }
   })
 }

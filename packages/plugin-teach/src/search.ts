@@ -39,18 +39,12 @@ export default function apply(ctx: Context) {
     .option('search', '搜索已有问答', { notUsage: true })
     .option('page', '/ <page>  设置搜索结果的页码', { type: isPositiveInteger })
     .option('autoMerge', '自动合并相同的问题和回答')
-    .option('recursive', '-R  禁用递归查询', { fallback: true, value: false })
+    .option('recursive', '-R  禁用递归查询', { value: false })
     .option('pipe', '| <op:text>  对每个搜索结果执行操作')
 
   ctx.on('dialogue/execute', (argv) => {
     const { search, noArgs } = argv.options
     if (search) return noArgs ? showInfo(argv) : showSearch(argv)
-  })
-
-  ctx.on('dialogue/validate', (argv) => {
-    if (!argv.options.search) {
-      delete argv.options.recursive
-    }
   })
 
   ctx.on('dialogue/list', ({ _redirections }, output, prefix, argv) => {
@@ -65,7 +59,7 @@ export default function apply(ctx: Context) {
   })
 
   ctx.on('dialogue/before-search', ({ options }, test) => {
-    test.noRecursive = !options.recursive
+    test.noRecursive = options.recursive === false
   })
 
   ctx.on('dialogue/before-search', (argv, test) => {
@@ -174,7 +168,7 @@ async function showSearch(argv: Dialogue.Argv) {
     return command.execute(argv)
   }
 
-  if (recursive && !autoMerge) {
+  if (recursive !== false && !autoMerge) {
     await argv.app.parallel('dialogue/search', argv, test, dialogues)
   }
 
