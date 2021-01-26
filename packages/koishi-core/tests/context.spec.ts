@@ -5,8 +5,8 @@ import { expect } from 'chai'
 import { fn } from 'jest-mock'
 
 const app = new App()
-const groupSession = new Session(app, { userId: ''123'', groupId: ''456'', subType: 'group' })
-const privateSession = new Session(app, { userId: ''123'', subType: 'private' })
+const groupSession = new Session(app, { userId: '123', groupId: '456', subType: 'group' })
+const privateSession = new Session(app, { userId: '123', subType: 'private' })
 const metaEventSession = new Session(app, { eventType: 'lifecycle' })
 
 describe('Context API', () => {
@@ -73,54 +73,54 @@ describe('Context API', () => {
 
   describe('Composition Runtime', () => {
     beforeEach(() => {
-      delete app._hooks.attach
+      delete app._hooks.command
     })
 
     it('ctx.prototype.parallel', async () => {
-      await app.parallel('attach', null)
+      await app.parallel('command', null)
       const callback = fn<void, []>()
-      app.private().on('attach', callback)
-      await app.parallel('attach', null)
+      app.private().on('command', callback)
+      await app.parallel('command', null)
       expect(callback.mock.calls).to.have.length(1)
-      await app.parallel(groupSession, 'attach', null)
+      await app.parallel(groupSession, 'command', null)
       expect(callback.mock.calls).to.have.length(1)
-      await app.parallel(privateSession, 'attach', null)
+      await app.parallel(privateSession, 'command', null)
       expect(callback.mock.calls).to.have.length(2)
     })
 
     it('ctx.prototype.emit', async () => {
-      app.emit('attach', null)
+      app.emit('command', null)
       const callback = fn<void, []>()
-      app.private().on('attach', callback)
-      app.emit('attach', null)
+      app.private().on('command', callback)
+      app.emit('command', null)
       expect(callback.mock.calls).to.have.length(1)
-      app.emit(groupSession, 'attach', null)
+      app.emit(groupSession, 'command', null)
       expect(callback.mock.calls).to.have.length(1)
-      app.emit(privateSession, 'attach', null)
+      app.emit(privateSession, 'command', null)
       expect(callback.mock.calls).to.have.length(2)
     })
 
     it('ctx.prototype.serial', async () => {
-      app.serial('attach', null)
+      app.serial('command', null)
       const callback = fn<void, []>()
-      app.private().on('attach', callback)
-      app.serial('attach', null)
+      app.private().on('command', callback)
+      app.serial('command', null)
       expect(callback.mock.calls).to.have.length(1)
-      app.serial(groupSession, 'attach', null)
+      app.serial(groupSession, 'command', null)
       expect(callback.mock.calls).to.have.length(1)
-      app.serial(privateSession, 'attach', null)
+      app.serial(privateSession, 'command', null)
       expect(callback.mock.calls).to.have.length(2)
     })
 
     it('ctx.prototype.bail', async () => {
-      app.bail('attach', null)
+      app.bail('command', null)
       const callback = fn<void, []>()
-      app.private().on('attach', callback)
-      app.bail('attach', null)
+      app.private().on('command', callback)
+      app.bail('command', null)
       expect(callback.mock.calls).to.have.length(1)
-      app.bail(groupSession, 'attach', null)
+      app.bail(groupSession, 'command', null)
       expect(callback.mock.calls).to.have.length(1)
-      app.bail(privateSession, 'attach', null)
+      app.bail(privateSession, 'command', null)
       expect(callback.mock.calls).to.have.length(2)
     })
   })

@@ -336,13 +336,13 @@ export class App extends Context {
   private _onShortcut(content: string, { $prefix, $reply, $appel }: Session) {
     if ($prefix || $reply) return
     for (const shortcut of this._shortcuts) {
-      const { name, fuzzy, command, oneArg, prefix, options = {}, args = [] } = shortcut
+      const { name, fuzzy, command, greedy, prefix, options = {}, args = [] } = shortcut
       if (prefix && !$appel) continue
       if (typeof name === 'string') {
         if (!fuzzy && content !== name || !content.startsWith(name)) continue
         const message = content.slice(name.length)
         if (fuzzy && !$appel && message.match(/^\S/)) continue
-        const argv: Argv = oneArg
+        const argv: Argv = greedy
           ? { options: {}, args: [message.trim()] }
           : command.parse(Argv.parse(message.trim()))
         argv.command = command

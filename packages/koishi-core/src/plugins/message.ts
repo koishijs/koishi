@@ -9,7 +9,7 @@ export namespace Message {
   export let INVALID_OPTION = '选项 %s 输入无效，%s'
   export let INVALID_ARGUMENT = '参数 %s 输入无效，%s'
   export let UNKNOWN_OPTIONS = '存在未知选项 %s，请检查指令语法。'
-  export let CHECK_SYNTAX = '请检查指令语法。'
+  export let CHECK_SYNTAX = '请检查语法。'
   export let SHOW_THIS_MESSAGE = '显示本信息'
   export let USAGE_EXHAUSTED = '调用次数已达上限。'
 

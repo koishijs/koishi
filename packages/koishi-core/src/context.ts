@@ -395,9 +395,10 @@ export interface EventMap {
   'before-attach-group'(session: Session, fields: Set<Channel.Field>): void
   'attach-user'(session: Session): void | boolean | Promise<void | boolean>
   'attach-group'(session: Session): void | boolean | Promise<void | boolean>
-  'send'(session: Session): void | Promise<void>
   'before-send'(session: Session): void | boolean
+  'send'(session: Session): void | Promise<void>
   'before-command'(argv: Argv): void | string | Promise<void | string>
+  'command'(argv: Argv): void | Promise<void>
   'middleware'(session: Session): void
   'before-connect'(): void | Promise<void>
   'connect'(): void

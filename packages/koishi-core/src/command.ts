@@ -41,11 +41,10 @@ export namespace Command {
     name?: string | RegExp
     command?: Command
     authority?: number
-    hidden?: boolean
     prefix?: boolean
     fuzzy?: boolean
     args?: string[]
-    oneArg?: boolean
+    greedy?: boolean
     options?: Record<string, any>
   }
 
@@ -223,6 +222,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
         const result = await action.call(this, argv, ...args)
         if (typeof result === 'string') return result
       }
+      await this.app.parallel(session, 'command', argv)
       return ''
     } catch (error) {
       if (!state) throw error
