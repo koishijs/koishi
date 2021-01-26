@@ -2,7 +2,7 @@ import { App } from 'koishi-test-utils'
 import { fn } from 'jest-mock'
 import { expect } from 'chai'
 import { StrangerInfo } from 'koishi-core'
-import { GroupMemberInfo } from 'koishi-adapter-cqhttp'
+import { GroupMemberInfo } from 'koishi-adapter-onebot'
 import * as common from 'koishi-plugin-common'
 
 const app = new App({ mockDatabase: true })
@@ -15,7 +15,7 @@ app.plugin(common, {
 
 app.command('show-context')
   .userFields(['id'])
-  .groupFields(['id'])
+  .channelFields(['id'])
   .action(({ session }) => {
     return `${session.userId},${session.$user?.id},${session.$group?.id}`
   })
@@ -24,7 +24,7 @@ before(async () => {
   await app.database.getUser(123, 4)
   await app.database.getUser(456, 3)
   await app.database.getUser(789, 5)
-  await app.database.getGroup(456, app.selfId)
+  await app.database.getChannel(456, app.selfId)
 })
 
 describe('Sender Commands', () => {

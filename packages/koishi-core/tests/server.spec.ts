@@ -67,10 +67,10 @@ describe('Server API', () => {
     })
 
     before(async () => {
-      await app.database.getGroup(123, BASE_SELF_ID)
-      await app.database.getGroup(456, BASE_SELF_ID)
-      await app.database.getGroup(789, BASE_SELF_ID)
-      await app.database.setGroup(456, { flag: Group.Flag.silent })
+      await app.database.getChannel(123, BASE_SELF_ID)
+      await app.database.getChannel(456, BASE_SELF_ID)
+      await app.database.getChannel(789, BASE_SELF_ID)
+      await app.database.setChannel(456, { flag: Group.Flag.silent })
     })
 
     beforeEach(async () => {

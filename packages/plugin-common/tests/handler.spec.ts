@@ -24,7 +24,7 @@ app.plugin(common, options)
 
 before(async () => {
   await app.database.getUser(123, 3)
-  await app.database.getGroup(123, app.selfId)
+  await app.database.getChannel(123, app.selfId)
 })
 
 const receive = (meta: Meta) => {

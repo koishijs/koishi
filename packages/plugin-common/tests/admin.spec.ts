@@ -22,8 +22,8 @@ before(async () => {
   await app.database.getUser(123, 4)
   await app.database.getUser(456, 3)
   await app.database.getUser(789, 4)
-  await app.database.getGroup(321, app.selfId)
-  await app.database.getGroup(654, app.selfId)
+  await app.database.getChannel(321, app.selfId)
+  await app.database.getChannel(654, app.selfId)
 })
 
 describe('Admin Commands', () => {

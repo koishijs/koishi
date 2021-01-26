@@ -33,7 +33,7 @@ before(async () => {
   await app.start()
   await app.database.getUser(123, 3)
   await app.database.getUser(456, 3)
-  await app.database.getGroup(123, BASE_SELF_ID)
+  await app.database.getChannel(123, BASE_SELF_ID)
 })
 
 const snapshot = require('./index.snap')

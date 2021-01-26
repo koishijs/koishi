@@ -1,5 +1,5 @@
 import { App } from 'koishi-test-utils'
-import { User, Group, Command } from 'koishi-core'
+import { User, Channel, Command } from 'koishi-core'
 import { sleep } from 'koishi-utils'
 import { install } from '@sinonjs/fake-timers'
 
@@ -11,7 +11,7 @@ const app = new App({
 })
 
 // make coverage happy
-Command.groupFields([])
+Command.channelFields([])
 
 const session1 = app.session(123)
 const session2 = app.session(456)
@@ -20,7 +20,7 @@ const session4 = app.session(123, 321)
 const session5 = app.session(123, 654)
 
 const cmd1 = app.command('cmd1 <arg1>', { authority: 2 })
-  .groupFields(['id'])
+  .channelFields(['id'])
   .shortcut('foo1', { args: ['bar'] })
   .shortcut('foo4', { oneArg: true, fuzzy: true })
   .option('--bar', '', { authority: 3 })
@@ -43,8 +43,8 @@ before(async () => {
   // make coverage happy (checkTimer)
   await app.database.setUser(456, { timers: { foo: 0 } })
   await app.database.setUser(789, { flag: User.Flag.ignore })
-  await app.database.getGroup(321, app.selfId)
-  await app.database.getGroup(654, 999)
+  await app.database.getChannel(321, app.selfId)
+  await app.database.getChannel(654, 999)
 })
 
 after(() => app.stop())
@@ -201,12 +201,12 @@ describe('Runtime', () => {
     })
 
     it('group.flag.ignore', async () => {
-      await app.database.setGroup(321, { flag: Group.Flag.ignore })
+      await app.database.setChannel(321, { flag: Channel.Flag.ignore })
       await sleep(0)
       await session4.shouldNotReply('mid')
       await session4.shouldNotReply('cmd1 --baz')
       await session4.shouldNotReply(`[CQ:at,qq=${app.selfId}] cmd1 --baz`)
-      await app.database.setGroup(321, { flag: 0 })
+      await app.database.setChannel(321, { flag: 0 })
     })
   })
 
