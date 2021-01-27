@@ -163,7 +163,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (group) return group
     const fallback = Channel.create(this.kind, id, assignee)
     if (assignee) {
-      await this.$app.database.setChannel(this.kind, id, fallback)
+      await this.$app.database.setChannel(this.kind, id, fallback, true)
     }
     return fallback
   }

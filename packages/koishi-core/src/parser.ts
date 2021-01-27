@@ -210,8 +210,8 @@ export namespace Domain {
   create('string', source => source)
   create('number', source => +source)
   create('text', source => source)
-  create('user', source => {
-    if (/^\d*$/.test(source)) return source
+  create('user', (source) => {
+    if (source.startsWith('@')) return source.slice(1)
     const code = CQCode.parse(source)
     if (code && code.type === 'at') return code.data.qq
     throw new Error()
@@ -379,15 +379,6 @@ export namespace Domain {
         return n * 0 === 0 ? n : source
       }
 
-      const handleOption = (name: string, value: any) => {
-        const config = this._namedOptions[name]
-        if (config) {
-          options[config.name] = name in config.values ? config.values[name] : value
-        } else {
-          options[camelCase(name)] = value
-        }
-      }
-
       while (!error && argv.tokens.length) {
         const token = argv.tokens[0]
         let { content, quoted } = token
@@ -422,7 +413,7 @@ export namespace Domain {
           }
           if (content.slice(i, i + 3) === 'no-' && !this._namedOptions[content.slice(i)]) {
             name = content.slice(i + 3)
-            handleOption(name, false)
+            options[camelCase(name)] = false
             continue
           }
 
@@ -456,7 +447,13 @@ export namespace Domain {
         for (let j = 0; j < names.length; j++) {
           const name = names[j]
           const optDecl = this._namedOptions[name]
-          handleOption(name, parseValue(j + 1 < names.length ? '' : param, quoted, Message.INVALID_OPTION, optDecl))
+          const key = optDecl ? optDecl.name : camelCase(name)
+          if (optDecl && name in optDecl.values) {
+            options[key] = optDecl.values[name]
+          } else {
+            const source = j + 1 < names.length ? '' : param
+            options[key] = parseValue(source, quoted, Message.INVALID_OPTION, optDecl)
+          }
           if (error) break
         }
       }

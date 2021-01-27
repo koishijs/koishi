@@ -2,7 +2,10 @@ import { Tables, TableType, App, extendDatabase, User, Channel } from 'koishi-co
 import { clone } from 'koishi-utils'
 
 declare module 'koishi-core/dist/database' {
-  interface Database extends MemoryDatabase {}
+  interface Database extends MemoryDatabase {
+    initUser(id: string, authority?: number): Promise<void>
+    initChannel(id: string, assignee?: string): Promise<void>
+  }
 }
 
 export interface MemoryConfig {}
@@ -77,6 +80,10 @@ extendDatabase(MemoryDatabase, {
     Object.assign(table[index], clone(data))
   },
 
+  initUser(id, authority = 1) {
+    return this.setUser('mock', id, { authority }, true)
+  },
+
   async getChannel(type, id) {
     if (Array.isArray(id)) {
       return this.$select('channel', 'id', id.map(id => `${type}:${id}`))
@@ -95,11 +102,11 @@ extendDatabase(MemoryDatabase, {
     })
   },
 
-  async setChannel(type, id, data) {
+  async setChannel(type, id, data, autoCreate) {
     const table = this.$table('channel')
     const index = table.findIndex(row => row.id === `${type}:${id}`)
     if (index < 0) {
-      if (data) {
+      if (autoCreate && data) {
         table.push({
           ...Channel.create(type, id, ''),
           ...clone(data),
@@ -114,6 +121,10 @@ extendDatabase(MemoryDatabase, {
     }
 
     Object.assign(table[index], clone(data))
+  },
+
+  initChannel(id, assignee = this.app.bots[0].selfId) {
+    return this.setChannel('mock', id, { assignee }, true)
   },
 })
 

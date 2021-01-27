@@ -1,10 +1,10 @@
 import { App } from 'koishi-test-utils'
-import { User, Group } from 'koishi-core'
+import { User, Channel } from 'koishi-core'
 import { install } from '@sinonjs/fake-timers'
 import * as common from 'koishi-plugin-common'
 
 const app = new App({ mockDatabase: true })
-const session = app.session(123, 321)
+const session = app.session('123', '321')
 
 app.plugin(common)
 app.command('foo', { maxUsage: 10 }).action(({ session }) => session.$send('bar'))
@@ -14,9 +14,9 @@ app.command('bar', { minInterval: 1000 }).action(({ session }) => session.$send(
   flags[flags[1 << 4] = 'test'] = 1 << 4
 })(User.Flag)
 
-;((flags: Record<keyof typeof Group.Flag, number>) => {
+;((flags: Record<keyof typeof Channel.Flag, number>) => {
   flags[flags[1 << 4] = 'test'] = 1 << 4
-})(Group.Flag)
+})(Channel.Flag)
 
 before(async () => {
   await app.database.getUser(123, 4)
@@ -77,7 +77,7 @@ describe('Admin Commands', () => {
   })
 
   it('group.assignee', async () => {
-    await app.session(123).shouldReply('group.assign', '当前不在群上下文中，请使用 -g 参数指定目标群。')
+    await app.session('123').shouldReply('group.assign', '当前不在群上下文中，请使用 -g 参数指定目标群。')
     await session.shouldReply('group.assign -g nan', '请指定正确的目标。')
     await session.shouldReply('group.assign -g 123', '未找到指定的群。')
     await session.shouldReply('group.assign -g 321', '群数据未改动。')

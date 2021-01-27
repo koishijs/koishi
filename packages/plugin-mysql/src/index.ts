@@ -72,7 +72,7 @@ extendDatabase(MysqlDatabase, {
     }).join(' OR '))
   },
 
-  async setChannel(type, pid, data) {
+  async setChannel(type, pid, data, autoCreate) {
     if (data === null) {
       await this.query('DELETE FROM `channel` WHERE `id` = ?', [`${type}:${pid}`])
       return
@@ -81,15 +81,23 @@ extendDatabase(MysqlDatabase, {
     data.id = `${type}:${pid}`
     const keys = Object.keys(data)
     if (!keys.length) return
-    const assignments = difference(keys, ['id']).map((key) => {
-      key = this.escapeId(key)
-      return `${key} = VALUES(${key})`
-    })
-    await this.query(
-      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
-      ON DUPLICATE KEY UPDATE ${assignments.join(', ')}`,
-      ['channel', ...this.formatValues('channel', data, keys)],
-    )
+
+    if (autoCreate) {
+      const assignments = difference(keys, ['id']).map((key) => {
+        key = this.escapeId(key)
+        return `${key} = VALUES(${key})`
+      })
+      await this.query(
+        `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
+        ON DUPLICATE KEY UPDATE ${assignments.join(', ')}`,
+        ['channel', ...this.formatValues('channel', data, keys)],
+      )
+    } else {
+      const assignments = difference(keys, ['id']).map((key) => {
+        return `${this.escapeId(key)} = ${this.escape(data[key], 'channel', key)}`
+      }).join(', ')
+      await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['channel', 'id', data.id])
+    }
   },
 })
 

@@ -100,7 +100,7 @@ export interface Database {
   getChannel<K extends Channel.Field>(type: PlatformType, ids: readonly string[], fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>[]>
   getChannel<K extends Channel.Field>(type: PlatformType, id: MaybeArray<string>, fields?: readonly K[]): Promise<any>
   getChannelList<K extends Channel.Field>(fields?: readonly K[], type?: PlatformType, assignees?: readonly string[]): Promise<Pick<Channel, K>[]>
-  setChannel(type: PlatformType, id: string, data: Partial<Channel>): Promise<void>
+  setChannel(type: PlatformType, id: string, data: Partial<Channel>, autoCreate?: boolean): Promise<void>
 }
 
 type DatabaseExtensionMethods<I> = {

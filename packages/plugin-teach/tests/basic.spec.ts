@@ -22,9 +22,9 @@ describe('Teach Plugin', () => {
 
     before(async () => {
       await app.start()
-      await app.database.setUser('mock', '123', { authority: 3 }, true)
-      await app.database.setUser('mock', '321', { authority: 2 }, true)
-      await app.database.setChannel('mock', '456', { assignee: app.selfId })
+      await app.database.initUser('123', 3)
+      await app.database.initUser('321', 2)
+      await app.database.initChannel('456')
     })
 
     it('create', async () => {
@@ -107,11 +107,11 @@ describe('Teach Plugin', () => {
 
     async function start() {
       await app.start()
-      await app.database.setUser('mock', u2id, { authority: 2 }, true)
-      await app.database.setUser('mock', u3id, { authority: 3 }, true)
-      await app.database.setUser('mock', u4id, { authority: 4 }, true)
-      await app.database.setChannel('mock', g1id, { assignee: app.selfId })
-      await app.database.setChannel('mock', g2id, { assignee: app.selfId })
+      await app.database.initUser(u2id, 2)
+      await app.database.initUser(u3id, 3)
+      await app.database.initUser(u4id, 4)
+      await app.database.initChannel(g1id)
+      await app.database.initChannel(g2id)
     }
 
     before(start)
@@ -248,7 +248,7 @@ describe('Teach Plugin', () => {
       await u3g1.shouldReply('#1', DETAIL_HEAD + '来源：nick3 (300)')
 
       // 重复添加问答时不应该覆盖旧的作者
-      await app.database.setUser('mock', '300', { name: 'user3' }, true)
+      await app.database.setUser('mock', '300', { name: 'user3' })
       await u4g2.shouldReply('# foo bar', '问答已存在，编号为 1，如要修改请尝试使用 #1 指令。')
       await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：user3 (300)')
     })
