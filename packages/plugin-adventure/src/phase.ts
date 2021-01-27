@@ -547,7 +547,8 @@ export namespace Phase {
         if (progress) {
           logger.debug('%s use %c', session.$user.id, item)
           if (activeUsers.has(session.$user.id)) {
-            return ctx.parallel('adventure/use', session.$user.id, progress)
+            await ctx.parallel('adventure/use', session.$user.id, progress)
+            return
           }
 
           $user['_skip'] = session._skipAll

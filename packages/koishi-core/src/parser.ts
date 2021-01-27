@@ -1,4 +1,4 @@
-import { camelCase, escapeRegExp, paramCase } from 'koishi-utils'
+import { camelCase, CQCode, escapeRegExp, paramCase } from 'koishi-utils'
 import { format } from 'util'
 import { Command } from './command'
 import { NextFunction } from './context'
@@ -150,6 +150,7 @@ export interface Domain {
   number: number
   boolean: boolean
   text: string
+  user: string
 }
 
 export namespace Domain {
@@ -209,6 +210,12 @@ export namespace Domain {
   create('string', source => source)
   create('number', source => +source)
   create('text', source => source)
+  create('user', source => {
+    if (/^\d*$/.test(source)) return source
+    const code = CQCode.parse(source)
+    if (code && code.type === 'at') return code.data.qq
+    throw new Error()
+  })
 
   const BRACKET_REGEXP = /<[^>]+>|\[[^\]]+\]/g
 

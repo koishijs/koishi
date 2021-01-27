@@ -245,30 +245,31 @@ describe('Teach Plugin', () => {
       // 当自身未设置 name 时使用 session.sender
       u3g1.meta.author.name = 'nick3'
       await u3g1.shouldReply('# foo bar', '问答已添加，编号为 1。')
-      await u3g1.shouldReply('#1', DETAIL_HEAD + '来源：nick3')
+      await u3g1.shouldReply('#1', DETAIL_HEAD + '来源：nick3 (300)')
 
       // 重复添加问答时不应该覆盖旧的作者
       await app.database.setUser('mock', '300', { name: 'user3' }, true)
       await u4g2.shouldReply('# foo bar', '问答已存在，编号为 1，如要修改请尝试使用 #1 指令。')
-      await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：user3')
+      await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：user3 (300)')
     })
 
     it('modify writer', async () => {
       await u2.shouldReply('#1 -W', '问答 1 因权限过低无法修改。')
-      await u4g2.shouldReply('#1 -w foo', '参数 -w, --writer 错误，请检查指令语法。')
+      await u4g2.shouldReply('#1 -w foo', '选项 writer 输入无效，请检查语法。')
       await u4g2.shouldReply('#1 -w [CQ:at,qq=500]', '指定的目标用户不存在。')
       await u4g2.shouldReply('#1 -w [CQ:at,qq=200]', '问答 1 已成功修改。')
 
-      // 实在找不到名字就只显示 QQ 号
-      await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：200')
+      // 实在找不到名字就只显示未知用户
+      await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：未知用户')
       const getGroupMemberMap = app.bots[0].getGroupMemberMap = fn()
       getGroupMemberMap.mockReturnValue(Promise.resolve({ 200: 'mock2' }))
       await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：mock2')
+      getGroupMemberMap.mockRestore()
     })
 
     it('anonymous', async () => {
       u2.meta.author.name = 'nick2'
-      await u2.shouldReply('#1', DETAIL_HEAD + '来源：nick2')
+      await u2.shouldReply('#1', DETAIL_HEAD + '来源：nick2 (200)')
       await u2.shouldReply('#1 -W', '问答 1 已成功修改。')
       await u2.shouldReply('#1', DETAIL_HEAD.slice(0, -1))
       await u2.shouldReply('#1 -p 0', '问答 1 因权限过低无法修改。')
@@ -278,7 +279,7 @@ describe('Teach Plugin', () => {
       await u3g1.shouldReply('# foo baz -f', '权限不足。')
       await u4g2.shouldReply('# foo bar -f', '修改了已存在的问答，编号为 1。')
       await u3g1.shouldReply('# foo bar -p 0', '问答 1 因权限过低无法修改。')
-      await u3g1.shouldReply('#1', DETAIL_HEAD + '此问答已锁定。\n来源：user3')
+      await u3g1.shouldReply('#1', DETAIL_HEAD + '此问答已锁定。')
       await u3g1.shouldReply('## foo', SEARCH_HEAD + '1. [锁定] bar')
       await u4g2.shouldReply('#1 -F', '问答 1 已成功修改。')
     })

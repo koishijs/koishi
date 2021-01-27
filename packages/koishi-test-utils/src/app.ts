@@ -124,6 +124,7 @@ export class TestSession {
     }
 
     if (channelId) {
+      this.meta.groupId = channelId
       this.meta.channelId = channelId
       this.meta.subType = 'group'
     } else {
