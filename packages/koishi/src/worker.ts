@@ -126,11 +126,11 @@ app.command('exit', '停止机器人运行', { authority: 4 })
   .action(async ({ options, session }) => {
     const { channelId, kind, selfId } = session
     if (!options.restart) {
-      await session.$send('正在关机……').catch(noop)
+      await session.send('正在关机……').catch(noop)
       process.exit()
     }
     process.send({ type: 'exit', payload: { channelId, kind, selfId, message: '已成功重启。' } })
-    await session.$send(`正在重启……`).catch(noop)
+    await session.send(`正在重启……`).catch(noop)
     process.exit(114)
   })
 

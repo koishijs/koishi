@@ -94,8 +94,8 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       }
 
       const newSession = new Session(ctx.app, session)
-      newSession.$send = session.$send.bind(session)
-      newSession.$sendQueued = session.$sendQueued.bind(session)
+      newSession.send = session.send.bind(session)
+      newSession.sendQueued = session.sendQueued.bind(session)
 
       delete newSession.groupId
 
@@ -106,7 +106,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
         newSession.groupId = options.group
         newSession.subType = 'group'
         delete newSession.$channel
-        await newSession.$observeChannel(Channel.fields)
+        await newSession.observeChannel(Channel.fields)
       }
 
       if (options.user) {
@@ -117,7 +117,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
         newSession.author.userId = id
 
         delete newSession.$user
-        const user = await newSession.$observeUser(User.fields)
+        const user = await newSession.observeUser(User.fields)
         if (session.$user.authority <= user.authority) {
           return '权限不足。'
         }

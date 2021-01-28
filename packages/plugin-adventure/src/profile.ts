@@ -29,7 +29,7 @@ namespace Profile {
       .shortcut('我的信息')
       .userFields(['name', 'timers'])
       .action(async ({ session }) => {
-        const user = await session.$observeUser(fields)
+        const user = await session.observeUser(fields)
         const output = [`${session.$username}，您的权限为 ${user.authority} 级。`]
         for (const { callback } of data) {
           const result = callback(user)

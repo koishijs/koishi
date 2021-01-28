@@ -11,18 +11,18 @@ export default async function (url: string, session: Session) {
   try {
     const tasks: Promise<void>[] = []
     const response = await axios.get(`${baseURL}/search/url/${encodeURIComponent(url)}`)
-    tasks.push(session.$send('ascii2d 色合检索\n' + getDetail(response.data)).catch(noop))
+    tasks.push(session.send('ascii2d 色合检索\n' + getDetail(response.data)).catch(noop))
     try {
       const bovwURL = response.request.res.responseUrl.replace('/color/', '/bovw/')
       const bovwHTML = await axios.get(bovwURL).then(r => r.data)
-      tasks.push(session.$send('ascii2d 特征检索\n' + getDetail(bovwHTML)).catch(noop))
+      tasks.push(session.send('ascii2d 特征检索\n' + getDetail(bovwHTML)).catch(noop))
     } catch (err) {
       logger.warn(`[error] ascii2d bovw ${err}`)
     }
     await Promise.all(tasks)
   } catch (err) {
     logger.warn(`[error] ascii2d color ${err}`)
-    return session.$send('访问失败。')
+    return session.send('访问失败。')
   }
 }
 

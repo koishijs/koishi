@@ -154,7 +154,7 @@ export class App extends Context {
       if (!target) return next()
 
       const items = getCommands(session as any, this._commands).flatMap(cmd => cmd._aliases)
-      return session.$suggest({
+      return session.suggest({
         target,
         next,
         items,
@@ -261,7 +261,7 @@ export class App extends Context {
         // attach group data
         const channelFields = new Set<Channel.Field>(['flag', 'assignee'])
         this.emit('before-attach-channel', session, channelFields)
-        const group = await session.$observeChannel(channelFields)
+        const group = await session.observeChannel(channelFields)
 
         // emit attach event
         if (await this.serial(session, 'attach-channel', session)) return
@@ -274,7 +274,7 @@ export class App extends Context {
       // attach user data
       const userFields = new Set<User.Field>(['flag'])
       this.emit('before-attach-user', session, userFields)
-      const user = await session.$observeUser(userFields)
+      const user = await session.observeUser(userFields)
 
       // emit attach event
       if (await this.serial(session, 'attach-user', session)) return
@@ -312,7 +312,7 @@ export class App extends Context {
           throw new Error('isolated next function detected')
         }
         if (fallback) middlewares.push((_, next) => fallback(next))
-        return middlewares[index++]?.(session, next)
+        return await middlewares[index++]?.(session, next)
       } catch (error) {
         let stack = coerce(error)
         if (prettyErrors) {

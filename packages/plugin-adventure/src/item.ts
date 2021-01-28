@@ -177,7 +177,7 @@ namespace Item {
     if (args.length === 1) {
       session.content = `${command.name}:${args[0]}`
     }
-    return session.$suggest({
+    return session.suggest({
       next,
       target: args[index],
       items: Item.data.map(item => item.name),
@@ -327,7 +327,7 @@ namespace Item {
         session.$app.emit('adventure/check', session as any, hints)
 
         await user._update()
-        await session.$send(hints.join('\n'))
+        await session.send(hints.join('\n'))
       })
 
     ctx.command('adventure/before-sell [item] [count]', '售出物品', { maxUsage: 100 })
@@ -388,7 +388,7 @@ namespace Item {
 
         if (!user.progress && entries.length === 1 && entries[0][1] === 1 && entries[0][0] in Phase.salePlots) {
           const saleAction = Phase.salePlots[entries[0][0]]
-          await session.$observeUser(Adventurer.fields)
+          await session.observeUser(Adventurer.fields)
           const progress = getValue<string, Shopper.Field>(saleAction, user)
           if (progress) {
             const _meta = session as Session<Adventurer.Field>
@@ -401,7 +401,7 @@ namespace Item {
         const hints = [Event.sell(sellMap)(session)]
         session.$app.emit('adventure/check', session as any, hints)
         await user._update()
-        await session.$send(hints.join('\n'))
+        await session.send(hints.join('\n'))
       })
 
     ctx.on('adventure/rank', (name) => {

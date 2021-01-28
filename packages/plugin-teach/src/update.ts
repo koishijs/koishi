@@ -40,7 +40,7 @@ export default function apply(ctx: Context) {
       return update(argv)
     } catch (err) {
       ctx.logger('teach').warn(err)
-      return argv.session.$send(`${revert ? '回退' : remove ? '删除' : '修改'}问答时出现问题。`)
+      return argv.session.send(`${revert ? '回退' : remove ? '删除' : '修改'}问答时出现问题。`)
     }
   })
 
@@ -61,7 +61,7 @@ export default function apply(ctx: Context) {
       return true
     })
 
-    if (!dialogues.length) return session.$send('没有搜索到满足条件的教学操作。')
+    if (!dialogues.length) return session.send('没有搜索到满足条件的教学操作。')
     return options.review ? review(dialogues, argv) : revert(dialogues, argv)
   })
 
@@ -109,15 +109,15 @@ function review(dialogues: Dialogue[], argv: Dialogue.Argv) {
     return `${formatDetails(d, details)}${questionType}：${original}，${answerType}：${formatAnswer(answer, argv.config)}`
   })
   output.unshift('近期执行的教学操作有：')
-  return session.$send(output.join('\n'))
+  return session.send(output.join('\n'))
 }
 
 async function revert(dialogues: Dialogue[], argv: Dialogue.Argv) {
   try {
-    return argv.session.$send(await argv.app.database.revertDialogues(dialogues, argv))
+    return argv.session.send(await argv.app.database.revertDialogues(dialogues, argv))
   } catch (err) {
     argv.app.logger('teach').warn(err)
-    return argv.session.$send('回退问答中出现问题。')
+    return argv.session.send('回退问答中出现问题。')
   }
 }
 
@@ -128,7 +128,7 @@ export async function update(argv: Dialogue.Argv) {
 
   options.modify = !review && !search && (Object.keys(options).length || args.length)
   if (!options.modify && !search && target.length > maxPreviews) {
-    return session.$send(`一次最多同时预览 ${maxPreviews} 个问答。`)
+    return session.send(`一次最多同时预览 ${maxPreviews} 个问答。`)
   }
 
   argv.uneditable = []
@@ -140,7 +140,7 @@ export async function update(argv: Dialogue.Argv) {
   argv.dialogueMap = Object.fromEntries(dialogues.map(d => [d.id, { ...d }]))
 
   if (search) {
-    return session.$send(formatQuestionAnswers(argv, dialogues).join('\n'))
+    return session.send(formatQuestionAnswers(argv, dialogues).join('\n'))
   }
 
   const actualIds = argv.dialogues.map(d => d.id)
@@ -149,13 +149,13 @@ export async function update(argv: Dialogue.Argv) {
 
   if (!options.modify) {
     if (argv.unknown.length) {
-      await session.$send(`${review ? '最近无人修改过' : '没有搜索到'}编号为 ${argv.unknown.join(', ')} 的问答。`)
+      await session.send(`${review ? '最近无人修改过' : '没有搜索到'}编号为 ${argv.unknown.join(', ')} 的问答。`)
     }
     for (let index = 0; index < dialogues.length; index++) {
       const output = [`编号为 ${dialogues[index].id} 的${review ? '历史版本' : '问答信息'}：`]
       await app.serial('dialogue/detail', dialogues[index], output, argv)
       if (index) await sleep(previewDelay)
-      await session.$send(output.join('\n'))
+      await session.send(output.join('\n'))
     }
     return
   }
@@ -228,7 +228,7 @@ export async function create(argv: Dialogue.Argv) {
 
   const dialogue = { flag: 0 } as Dialogue
   if (app.bail('dialogue/permit', argv, dialogue)) {
-    return argv.session.$send('该问答因权限过低无法添加。')
+    return argv.session.send('该问答因权限过低无法添加。')
   }
 
   try {
@@ -238,7 +238,7 @@ export async function create(argv: Dialogue.Argv) {
     await app.serial('dialogue/after-modify', argv)
     return sendResult(argv, `问答已添加，编号为 ${argv.dialogues[0].id}。`)
   } catch (err) {
-    await argv.session.$send('添加问答时遇到错误。')
+    await argv.session.send('添加问答时遇到错误。')
     throw err
   }
 }

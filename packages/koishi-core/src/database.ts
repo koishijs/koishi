@@ -24,26 +24,25 @@ export namespace User {
   export type Field = keyof User
   export const fields: Field[] = []
   export type Observed<K extends Field = Field> = utils.Observed<Pick<User, K>, Promise<void>>
-  type Getter = (type: PlatformType, id: string, authority: number) => Partial<User>
+  type Getter = (type: PlatformType, id: string) => Partial<User>
   const getters: Getter[] = []
 
   export function extend(getter: Getter) {
     getters.push(getter)
-    fields.push(...Object.keys(getter(null as never, '0', 0)) as any)
+    fields.push(...Object.keys(getter(null as never, '0')) as any)
   }
 
-  extend((type, id, authority) => ({
-    [type]: id,
-    authority,
+  extend(() => ({
+    authority: 0,
     flag: 0,
     usage: {},
     timers: {},
   }))
 
-  export function create(type: PlatformType, id: string, authority: number) {
-    const result = {} as User
+  export function create(type: PlatformType, id: string) {
+    const result = { [type]: id } as User
     for (const getter of getters) {
-      Object.assign(result, getter(type, id, authority))
+      Object.assign(result, getter(type, id))
     }
     return result
   }
@@ -68,39 +67,43 @@ export namespace Channel {
   export type Field = keyof Channel
   export const fields: Field[] = []
   export type Observed<K extends Field = Field> = utils.Observed<Pick<Channel, K>, Promise<void>>
-  type Getter = (type: PlatformType, id: string, assignee: string) => Partial<Channel>
+  type Getter = (type: PlatformType, id: string) => Partial<Channel>
   const getters: Getter[] = []
 
   export function extend(getter: Getter) {
     getters.push(getter)
-    fields.push(...Object.keys(getter(null as never, '', '')) as any)
+    fields.push(...Object.keys(getter(null as never, '')) as any)
   }
 
-  export function create(type: PlatformType, id: string, assignee: string) {
+  export function create(type: PlatformType, id: string) {
     const result = {} as Channel
     for (const getter of getters) {
-      Object.assign(result, getter(type, id, assignee))
+      Object.assign(result, getter(type, id))
     }
     return result
   }
 
-  extend((type, id, assignee) => ({ id: `${type}:${id}`, assignee, flag: 0 }))
+  extend((type, id) => ({ id: `${type}:${id}`, flag: 0 }))
 }
 
 type MaybeArray<T> = T | readonly T[]
+type At<O, T extends keyof O, F> = [T] extends [never] ? F : O[T]
 
 export interface Database {
   getUser<K extends User.Field, T extends User.Field>(type: T, id: User[T], fields?: readonly K[]): Promise<Pick<User, K | T>>
   getUser<K extends User.Field, T extends User.Field>(type: T, ids: readonly User[T][], fields?: readonly K[]): Promise<Pick<User, K | T>[]>
   getUser<K extends User.Field>(type: string, id: MaybeArray<string>, fields?: readonly K[]): Promise<any>
-  setUser<T extends User.Field>(type: T, id: User[T], data: Partial<User>, autoCreate?: boolean): Promise<void>
-  setUser(type: PlatformType, id: string, data: Partial<User>, autoCreate?: boolean): Promise<void>
+  setUser<T extends User.Field>(type: T, id: At<User, T, string>, data: Partial<User>): Promise<void>
+  createUser<T extends User.Field>(type: T, id: At<User, T, string>, data: Partial<User>): Promise<void>
+  removeUser<T extends User.Field>(type: T, id: At<User, T, string>): Promise<void>
 
   getChannel<K extends Channel.Field>(type: PlatformType, id: string, fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>>
   getChannel<K extends Channel.Field>(type: PlatformType, ids: readonly string[], fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>[]>
   getChannel<K extends Channel.Field>(type: PlatformType, id: MaybeArray<string>, fields?: readonly K[]): Promise<any>
   getChannelList<K extends Channel.Field>(fields?: readonly K[], type?: PlatformType, assignees?: readonly string[]): Promise<Pick<Channel, K>[]>
-  setChannel(type: PlatformType, id: string, data: Partial<Channel>, autoCreate?: boolean): Promise<void>
+  setChannel(type: PlatformType, id: string, data: Partial<Channel>): Promise<void>
+  createChannel(type: PlatformType, id: string, data: Partial<Channel>): Promise<void>
+  removeChannel(type: PlatformType, id: string): Promise<void>
 }
 
 type DatabaseExtensionMethods<I> = {

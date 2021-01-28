@@ -168,7 +168,7 @@ export class CQBot extends Bot {
     return content.replace(/\[CQ:at,type=all\]/g, '[CQ:at,qq=all]')
   }
 
-  async [Bot.$send](meta: Session, content: string, autoEscape = false) {
+  async [Bot.send](meta: Session, content: string, autoEscape = false) {
     if (!content) return
     content = this.handleContent(content)
     if (this.app.options.onebot?.preferSync) {

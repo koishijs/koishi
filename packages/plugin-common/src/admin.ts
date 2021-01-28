@@ -66,14 +66,14 @@ Command.prototype.adminUser = function (this: Command, callback) {
       const data = await database.getUser(session.kind, '' + id, [...fields])
       if (!data) return '未找到指定的用户。'
       if (id === session.userId) {
-        target = await session.$observeUser(fields)
+        target = await session.observeUser(fields)
       } else if (session.$user.authority <= data.authority) {
         return '权限不足。'
       } else {
         target = observe(data, diff => database.setUser(session.kind, '' + id, diff), `user ${id}`)
       }
     } else {
-      target = await session.$observeUser(fields)
+      target = await session.observeUser(fields)
     }
     const diffKeys = Object.keys(target._diff)
     const result = await callback({ ...argv, target }, ...args)
@@ -99,11 +99,11 @@ Command.prototype.adminChannel = function (this: Command, callback) {
       const id = session.$bot.parseChannel(options.target)
       if (!id) return '请指定正确的目标。'
       const { database } = session.$app
-      const data = await session.$getChannel(id, [...fields])
+      const data = await session.getChannel(id, [...fields])
       if (!data) return '未找到指定的频道。'
       target = observe(data, diff => database.setChannel(session.kind, id, diff), `channel ${id}`)
     } else if (session.subType === 'group') {
-      target = await session.$observeChannel(fields)
+      target = await session.observeChannel(fields)
     } else {
       return '当前不在群组上下文中，请使用 -t 参数指定目标频道。'
     }
@@ -174,12 +174,12 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
     if (session.subType !== 'private') return next()
     const data = tokens[session.content]
     if (!data) return next()
-    const user = await session.$observeUser(['authority', data[0]])
+    const user = await session.observeUser(['authority', data[0]])
     if (!user.authority) return next()
-    if (user[data[0]]) return session.$send('账号绑定失败：你已经绑定过该平台。')
+    if (user[data[0]]) return session.send('账号绑定失败：你已经绑定过该平台。')
     user[data[0]] = data[1]
     await user._update()
-    return session.$send('账号绑定成功！')
+    return session.send('账号绑定成功！')
   })
 
   ctx.command('user.auth <value>', '权限信息', { authority: 4 })

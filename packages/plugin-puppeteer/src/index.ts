@@ -106,7 +106,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
           const timer = setTimeout(() => {
             return loaded
-              ? session.$send('正在加载中，请稍等片刻~')
+              ? session.send('正在加载中，请稍等片刻~')
               : reject(new Error('navigation timeout'))
           }, config.loadTimeout)
         })

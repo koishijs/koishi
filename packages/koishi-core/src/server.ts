@@ -63,7 +63,7 @@ export enum BotStatusCode {
 }
 
 export interface Bot extends BotOptions {
-  [Bot.$send](session: Session, message: string): Promise<void>
+  [Bot.send](session: Session, message: string): Promise<void>
 
   ready?: boolean
   version?: string
@@ -89,7 +89,7 @@ export interface Bot extends BotOptions {
 }
 
 export class Bot {
-  static readonly $send = Symbol.for('koishi.send')
+  static readonly send = Symbol.for('koishi.send')
 
   parseUser(source: string) {
     if (/^\d+$/.test(source)) return source

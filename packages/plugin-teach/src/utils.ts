@@ -150,7 +150,7 @@ export function sendResult(argv: Dialogue.Argv, prefix?: string, suffix?: string
     output.push(`${revert ? '最近无人修改过' : '没有搜索到'}编号为 ${unknown.join(', ')} 的问答。`)
   }
   if (suffix) output.push(suffix)
-  return session.$send(output.join('\n'))
+  return session.send(output.join('\n'))
 }
 
 export function split(source: string) {

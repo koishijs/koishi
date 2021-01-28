@@ -143,7 +143,7 @@ export class TestSession {
         resolve(this.replies)
         this.replies = []
       }
-      const $send = async (content: string) => {
+      const send = async (content: string) => {
         if (!content) return
         const length = this.replies.push(content)
         if (length >= count) _resolve()
@@ -151,7 +151,7 @@ export class TestSession {
       const dispose = this.app.on('middleware', (session) => {
         if (session.$uuid === uuid) process.nextTick(_resolve)
       })
-      const uuid = this.app.receive({ ...this.meta, $send, content })
+      const uuid = this.app.receive({ ...this.meta, send, content })
     })
   }
 

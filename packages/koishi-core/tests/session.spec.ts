@@ -62,7 +62,7 @@ describe('Session API', () => {
     const items = ['foo', 'bar']
     const command = app.command('find [item]').action(({ session }, item) => {
       if (items.includes(item)) return 'found:' + item
-      return session.$suggest({
+      return session.suggest({
         target: item,
         items: ['foo', 'bar', 'baz'],
         prefix: 'PREFIX',
@@ -89,20 +89,20 @@ describe('Session API', () => {
 
     app.middleware(async (session, next) => {
       if (session.content !== 'prompt') return next()
-      await session.$send('prompt text')
+      await session.send('prompt text')
       ;(async () => {
-        const message = await session.$prompt() || 'nothing'
-        await session.$send('received ' + message)
+        const message = await session.prompt() || 'nothing'
+        await session.send('received ' + message)
       })()
     })
 
-    it('session.$prompt 1', async () => {
+    it('session.prompt 1', async () => {
       await session.shouldReply('prompt', 'prompt text')
       await session.shouldReply('foo', 'received foo')
       await session.shouldNotReply('foo')
     })
 
-    it('session.$prompt 2', async () => {
+    it('session.prompt 2', async () => {
       app.options.promptTimeout = 0
       await session.shouldReply('prompt', 'prompt text')
       await sleep(0)

@@ -25,7 +25,7 @@ const cmd1 = app.command('cmd1 <arg1>', { authority: 2 })
   .shortcut('foo4', { oneArg: true, fuzzy: true })
   .option('--bar', '', { authority: 3 })
   .option('--baz', '', { notUsage: true })
-  .action(({ session }, arg) => session.$send('cmd1:' + arg))
+  .action(({ session }, arg) => session.send('cmd1:' + arg))
 
 const cmd2 = app.command('cmd2')
   .userFields(['id'])
@@ -33,7 +33,7 @@ const cmd2 = app.command('cmd2')
   .shortcut('foo3', { prefix: true, fuzzy: true })
   .option('--bar', '', { authority: 3 })
   .option('--baz', '', { notUsage: true })
-  .action(({ session }) => session.$send('cmd2:' + session.$user.id))
+  .action(({ session }) => session.send('cmd2:' + session.$user.id))
 
 before(async () => {
   await app.start()
@@ -185,7 +185,7 @@ describe('Runtime', () => {
 
   describe('Middleware Validation', () => {
     app.middleware((session) => {
-      if (session.message === 'mid') return session.$send('mid')
+      if (session.message === 'mid') return session.send('mid')
     })
 
     it('user.flag.ignore', async () => {

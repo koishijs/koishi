@@ -169,13 +169,13 @@ export class State {
     if (this.imageMode) {
       const [image] = await Promise.all([
         this.drawImage(x, y),
-        message && session.$send(message),
+        message && session.send(message),
       ])
-      await session.$send(image)
+      await session.send(image)
     } else {
       if (message) message += '\n'
       message += this.drawText(x, y)
-      await session.$send(message)
+      await session.send(message)
     }
   }
 

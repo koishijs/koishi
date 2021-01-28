@@ -58,7 +58,7 @@ export default function apply(ctx: App, options: HandlerOptions = {}) {
     const message = simplify(session.content)
     for (const { match, reply } of respondents) {
       const capture = typeof match === 'string' ? message === match && [message] : message.match(match)
-      if (capture) return session.$send(typeof reply === 'string' ? reply : reply(...capture))
+      if (capture) return session.send(typeof reply === 'string' ? reply : reply(...capture))
     }
     return next()
   })

@@ -7,8 +7,8 @@ const app = new App({ mockDatabase: true })
 const session = app.session('123', '321')
 
 app.plugin(common)
-app.command('foo', { maxUsage: 10 }).action(({ session }) => session.$send('bar'))
-app.command('bar', { minInterval: 1000 }).action(({ session }) => session.$send('foo'))
+app.command('foo', { maxUsage: 10 }).action(({ session }) => session.send('bar'))
+app.command('bar', { minInterval: 1000 }).action(({ session }) => session.send('foo'))
 
 ;((flags: Record<keyof typeof User.Flag, number>) => {
   flags[flags[1 << 4] = 'test'] = 1 << 4

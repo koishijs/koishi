@@ -64,7 +64,7 @@ export namespace Phase {
   export function sendEscaped(session: Session<Adventurer.Field>, message: string | void, ms?: number) {
     if (!message) return
     message = session.$app.chain('adventure/text', message, session)
-    return session.$sendQueued(message, ms)
+    return session.sendQueued(message, ms)
   }
 
   export function use(name: string, next: string, phase: Adventurer.Infer<Phase>): void
@@ -207,7 +207,7 @@ export namespace Phase {
         _resolve(progress)
       })
 
-      const disposeMiddleware = session.$use((session, next) => {
+      const disposeMiddleware = session.middleware((session, next) => {
         const message = session.content.trim().toUpperCase()
         if (message.length !== 1) return next()
         logger.debug('%s choose %c', session.userId, message)
@@ -493,7 +493,7 @@ export namespace Phase {
         if (session._skipAll) return
         if (!(session = metaMap[session.userId])) return
         if (session._skipCurrent || !session._canSkip) return
-        session.$cancelQueued()
+        session.cancelQueued()
         session._skipCurrent = true
       })
 
@@ -512,7 +512,7 @@ export namespace Phase {
         const buff = Buff.timers['$use']
         if (!checkUsage('$useHint', user, 1)) {
           const rest = user.timers['$use'] - Date.now()
-          session.$send(`您当前处于「${buff[0]}」状态，无法调用本功能，剩余 ${Time.formatTime(rest)}。`)
+          session.send(`您当前处于「${buff[0]}」状态，无法调用本功能，剩余 ${Time.formatTime(rest)}。`)
         }
         return ''
       })

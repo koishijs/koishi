@@ -138,7 +138,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.on('dialogue/after-modify', async ({ options: { createSuccessor }, dialogues, session }) => {
     // 当存在 ># 时自动添加新问答并将当前处理的问答作为其前置
     if (!createSuccessor) return
-    if (!dialogues.length) return session.$send('没有搜索到任何问答。')
+    if (!dialogues.length) return session.send('没有搜索到任何问答。')
     const command = ctx.command('teach')
     const argv = { ...command.parse(createSuccessor), session, command }
     const target = argv.options['setPred'] = dialogues.map(d => d.id).join(',')

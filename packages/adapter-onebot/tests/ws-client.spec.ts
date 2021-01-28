@@ -108,7 +108,7 @@ describe('Quick Operations', () => {
 
   test('message event', async () => {
     mock.mockClear()
-    app1.once('message', meta => meta.$send('foo'))
+    app1.once('message', meta => meta.send('foo'))
     await server.post(messageMeta)
     await server.nextTick()
     server.shouldHaveLastRequest('send_group_msg_async', { groupId: 20000, message: 'foo' })

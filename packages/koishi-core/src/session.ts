@@ -123,20 +123,20 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return `${this.kind}:${this.selfId}`
   }
 
-  async $send(message: string) {
-    if (this.$bot[Bot.$send]) {
-      return this.$bot[Bot.$send](this, message)
+  async send(message: string) {
+    if (this.$bot[Bot.send]) {
+      return this.$bot[Bot.send](this, message)
     }
     if (!message) return
     await this.$bot.sendMessage(this.channelId, message)
   }
 
-  $cancelQueued(delay = this.$app.options.delay.cancel) {
+  cancelQueued(delay = this.$app.options.delay.cancel) {
     this._hooks.forEach(Reflect.apply)
     this._delay = delay
   }
 
-  async $sendQueued(content: string, delay?: number) {
+  async sendQueued(content: string, delay?: number) {
     if (!content) return
     if (typeof delay === 'undefined') {
       const { message, character } = this.$app.options.delay
@@ -151,25 +151,26 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       }
       this._hooks.push(hook)
       const timer = setTimeout(async () => {
-        await this.$send(content)
+        await this.send(content)
         this._delay = delay
         hook()
       }, this._delay || 0)
     }))
   }
 
-  async $getChannel<K extends Channel.Field = never>(id: string = this.channelId, fields: readonly K[] = [], assignee?: string) {
+  async getChannel<K extends Channel.Field = never>(id: string = this.channelId, fields: readonly K[] = [], assignee = '') {
     const group = await this.$app.database.getChannel(this.kind, id, fields)
     if (group) return group
-    const fallback = Channel.create(this.kind, id, assignee)
+    const fallback = Channel.create(this.kind, id)
+    fallback.assignee = assignee
     if (assignee) {
-      await this.$app.database.setChannel(this.kind, id, fallback, true)
+      await this.$app.database.createChannel(this.kind, id, fallback)
     }
     return fallback
   }
 
-  /** 在元数据上绑定一个可观测频道实例 */
-  async $observeChannel<T extends Channel.Field = never>(fields: Iterable<T> = []): Promise<Channel.Observed<T | G>> {
+  /** 在当前会话上绑定一个可观测频道实例 */
+  async observeChannel<T extends Channel.Field = never>(fields: Iterable<T> = []): Promise<Channel.Observed<T | G>> {
     const fieldSet = new Set<Channel.Field>(fields)
     const { kind, channelId, $channel } = this
 
@@ -179,7 +180,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         fieldSet.delete(key as any)
       }
       if (fieldSet.size) {
-        const data = await this.$getChannel(channelId, [...fieldSet])
+        const data = await this.getChannel(channelId, [...fieldSet])
         this.$app._groupCache.set(this.cid, $channel._merge(data))
       }
       return $channel as any
@@ -192,24 +193,25 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (hasActiveCache) return this.$channel = cache as any
 
     // 绑定一个新的可观测频道实例
-    const data = await this.$getChannel(channelId, fieldArray)
+    const data = await this.getChannel(channelId, fieldArray)
     const group = observe(data, diff => this.$app.database.setChannel(kind, channelId, diff), `group ${channelId}`)
     this.$app._groupCache.set(this.cid, group)
     return this.$channel = group
   }
 
-  async $getUser<K extends User.Field = never>(id: string = this.userId, fields: readonly K[] = [], authority = 0) {
+  async getUser<K extends User.Field = never>(id: string = this.userId, fields: readonly K[] = [], authority = 0) {
     const user = await this.$app.database.getUser(this.kind, id, fields)
     if (user) return user
-    const fallback = User.create(this.kind, id, authority)
+    const fallback = User.create(this.kind, id)
+    fallback.authority = authority
     if (authority) {
-      await this.$app.database.setUser(this.kind, id, fallback, true)
+      await this.$app.database.createUser(this.kind, id, fallback)
     }
     return fallback
   }
 
-  /** 在元数据上绑定一个可观测用户实例 */
-  async $observeUser<T extends User.Field = never>(fields: Iterable<T> = []): Promise<User.Observed<T | U>> {
+  /** 在当前会话上绑定一个可观测用户实例 */
+  async observeUser<T extends User.Field = never>(fields: Iterable<T> = []): Promise<User.Observed<T | U>> {
     const fieldSet = new Set<User.Field>(fields)
     const { userId, $user } = this
 
@@ -227,7 +229,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         fieldSet.delete(key as any)
       }
       if (fieldSet.size) {
-        const data = await this.$getUser(userId, [...fieldSet])
+        const data = await this.getUser(userId, [...fieldSet])
         userCache.set(userId, $user._merge(data) as any)
       }
     }
@@ -240,7 +242,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     // 确保匿名消息不会写回数据库
     if (this.anonymous) {
-      const user = observe(User.create(this.kind, userId, defaultAuthority), () => Promise.resolve())
+      const fallback = User.create(this.kind, userId)
+      fallback.authority = defaultAuthority
+      const user = observe(fallback, () => Promise.resolve())
       return this.$user = user
     }
 
@@ -251,7 +255,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (hasActiveCache) return this.$user = cache as any
 
     // 绑定一个新的可观测用户实例
-    const data = await this.$getUser(userId, fieldArray, defaultAuthority)
+    const data = await this.getUser(userId, fieldArray, defaultAuthority)
     const user = observe(data, diff => this.$app.database.setUser(this.kind, userId, diff), `user ${userId}`)
     userCache.set(userId, user)
     return this.$user = user
@@ -265,8 +269,8 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         for (const { inters } of argv.tokens) {
           inters.forEach(collect)
         }
-        if (!this.resolve(argv)) return
       }
+      if (!this.resolve(argv)) return
       collectFields(argv, argv.command[`_${key}Fields`], fields)
     }
     collect(argv)
@@ -275,7 +279,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
   resolve(argv: Argv) {
     if (!argv.command) {
-      const name = this.$app.bail('parse', argv, this)
+      const { name = this.$app.bail('parse', argv, this) } = argv
       if (!(argv.command = this.$app._commandMap[name])) return
     }
     if (argv.tokens?.every(token => !token.inters.length)) {
@@ -317,17 +321,17 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     if (this.$app.database) {
       if (this.subType === 'group') {
-        await this.$observeChannel(this.collect('channel', argv))
+        await this.observeChannel(this.collect('channel', argv))
       }
-      await this.$observeUser(this.collect('user', argv))
+      await this.observeUser(this.collect('user', argv))
     }
 
     const result = await argv.command.execute(argv, next)
-    if (!argv.parent) await this.$send(result)
+    if (!argv.parent) await this.send(result)
     return result
   }
 
-  $use(middleware: Middleware) {
+  middleware(middleware: Middleware) {
     const identifier = getSessionId(this)
     return this.$app.prependMiddleware(async (session, next) => {
       if (identifier && getSessionId(session) !== identifier) return next()
@@ -335,9 +339,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     })
   }
 
-  $prompt(timeout = this.$app.options.promptTimeout) {
+  prompt(timeout = this.$app.options.promptTimeout) {
     return new Promise((resolve) => {
-      const dispose = this.$use((session) => {
+      const dispose = this.middleware((session) => {
         clearTimeout(timer)
         dispose()
         resolve(session.content)
@@ -349,7 +353,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     })
   }
 
-  $suggest(options: SuggestOptions) {
+  suggest(options: SuggestOptions) {
     const {
       target,
       items,
@@ -371,20 +375,20 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         minDistance = dist
       }
     }
-    if (!suggestions) return next(() => this.$send(prefix))
+    if (!suggestions) return next(() => this.send(prefix))
 
     return next(() => {
       const message = prefix + format(Message.SUGGESTION, suggestions.map(name => `“${name}”`).join('或'))
-      if (suggestions.length > 1) return this.$send(message)
+      if (suggestions.length > 1) return this.send(message)
 
-      const dispose = this.$use((session, next) => {
+      const dispose = this.middleware((session, next) => {
         dispose()
         const message = session.content.trim()
         if (message && message !== '.' && message !== '。') return next()
         return apply.call(session, suggestions[0], next)
       })
 
-      return this.$send(message + suffix)
+      return this.send(message + suffix)
     })
   }
 }

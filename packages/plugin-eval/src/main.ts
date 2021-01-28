@@ -125,18 +125,18 @@ export class MainAPI {
 
   async execute(uuid: string, message: string) {
     const session = this.getSession(uuid)
-    const send = session.$send
-    const sendQueued = session.$sendQueued
+    const send = session.send
+    const sendQueued = session.sendQueued
     await session.execute(message)
-    session.$sendQueued = sendQueued
-    session.$send = send
+    session.sendQueued = sendQueued
+    session.send = send
   }
 
   async send(uuid: string, message: string) {
     const session = this.getSession(uuid)
     if (!session._sendCount) session._sendCount = 0
     if (this.app.worker.config.maxLogs > session._sendCount++) {
-      return await session.$sendQueued(message)
+      return await session.sendQueued(message)
     }
   }
 

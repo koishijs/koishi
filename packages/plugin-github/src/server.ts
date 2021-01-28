@@ -84,9 +84,9 @@ export class GitHub extends Webhooks {
   }
 
   async authorize(session: Session, message: string) {
-    await session.$send(message)
-    const name = await session.$prompt(this.config.promptTimeout)
-    if (!name) return session.$send('输入超时。')
+    await session.send(message)
+    const name = await session.prompt(this.config.promptTimeout)
+    if (!name) return session.send('输入超时。')
     return session.execute({ name: 'github.authorize', args: [name] })
   }
 
@@ -101,7 +101,7 @@ export class GitHub extends Webhooks {
       const { response } = error as AxiosError
       if (response?.status !== 401) {
         logger.warn(error)
-        return session.$send('发送失败。')
+        return session.send('发送失败。')
       }
     }
 
@@ -120,7 +120,7 @@ export class GitHub extends Webhooks {
       await this._request(url, method, session, body, headers)
     } catch (error) {
       logger.warn(error)
-      return session.$send('发送失败。')
+      return session.send('发送失败。')
     }
   }
 }
@@ -143,7 +143,7 @@ export class ReplyHandler {
   constructor(public github: GitHub, public session: Session, public content?: string) {}
 
   link(url: string) {
-    return this.session.$send(url)
+    return this.session.send(url)
   }
 
   react(url: string) {
@@ -207,10 +207,10 @@ export class ReplyHandler {
       buffer = await page.screenshot({ clip })
     } catch (error) {
       new Logger('puppeteer').warn(error)
-      return this.session.$send('截图失败。')
+      return this.session.send('截图失败。')
     } finally {
       await page.close()
     }
-    return this.session.$send(`[CQ:image,file=base64://${buffer.toString('base64')}]`)
+    return this.session.send(`[CQ:image,file=base64://${buffer.toString('base64')}]`)
   }
 }

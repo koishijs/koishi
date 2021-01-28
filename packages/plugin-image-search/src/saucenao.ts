@@ -81,21 +81,21 @@ export default async function saucenao(sourceUrl: string, session: Session, conf
   } catch (err) {
     if (!('response' in err)) {
       logger.warn(`[error] saucenao: ${err}`)
-      return session.$send('访问失败。')
+      return session.send('访问失败。')
     } else if (err.response.status === 429) {
-      return session.$send('搜索次数已达单位时间上限，请稍候再试。')
+      return session.send('搜索次数已达单位时间上限，请稍候再试。')
     } else {
       logger.warn(`[error] saucenao: ${err.response.data}`)
-      return session.$send('由于未知原因搜索失败。')
+      return session.send('由于未知原因搜索失败。')
     }
   }
 
   if (!data.results?.length) {
     if (data.header.message) {
-      return session.$send(data.header.message)
+      return session.send(data.header.message)
     } else {
       logger.warn(`[error] saucenao: ${data}`)
-      return session.$send('由于未知原因搜索失败。')
+      return session.send('由于未知原因搜索失败。')
     }
   }
 
@@ -175,6 +175,6 @@ export default async function saucenao(sourceUrl: string, session: Session, conf
     output.push(`注意：30s 内搜图次数仅剩 ${short_remaining} 次。`)
   }
 
-  await session.$send(output.join('\n'))
+  await session.send(output.join('\n'))
   return !highSimilarity && mixedMode
 }

@@ -75,7 +75,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const validators: Record<string, Promise<unknown>> = {}
   async function validate(url: string, session: Session) {
     if (validators[url]) {
-      await session.$send('正在尝试连接……')
+      await session.send('正在尝试连接……')
       return validators[url]
     }
 

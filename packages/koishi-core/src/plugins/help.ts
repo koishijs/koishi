@@ -54,15 +54,15 @@ export default function apply(app: App) {
       const command = findCommand(target)
       if (!command?.context.match(session)) {
         const items = getCommands(session, app._commands).flatMap(cmd => cmd._aliases)
-        session.$suggest({
+        session.suggest({
           target,
           items,
           prefix: Message.HELP_SUGGEST_PREFIX,
           suffix: Message.HELP_SUGGEST_SUFFIX,
           async apply(suggestion) {
-            await this.$observeUser(['authority', 'usage', 'timers'])
+            await this.observeUser(['authority', 'usage', 'timers'])
             const output = await showHelp(app._commandMap[suggestion], this as any, options)
-            return session.$send(output)
+            return session.send(output)
           },
         })
         return
@@ -129,7 +129,7 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
   const output = [command.name + command.declaration, command.config.description]
 
   if (command.context.database) {
-    await session.$observeUser(['authority', 'timers', 'usage'])
+    await session.observeUser(['authority', 'timers', 'usage'])
   }
 
   if (command._aliases.length > 1) {

@@ -59,29 +59,31 @@ extendDatabase(MemoryDatabase, {
     }
   },
 
-  async setUser(type, id, data, autoCreate) {
+  async setUser(type, id, data) {
     const table = this.$table('user')
     const index = table.findIndex(row => row[type] === id)
-    if (index < 0) {
-      if (autoCreate && data) {
-        this.$create('user', {
-          ...User.create(type, id, 0),
-          ...clone(data),
-        })
-      }
-      return
-    }
-
-    if (!data) {
-      table.splice(index, 1)
-      return
-    }
-
+    if (index < 0) return
     Object.assign(table[index], clone(data))
   },
 
+  async removeUser(type, id) {
+    const table = this.$table('user')
+    const index = table.findIndex(row => row[type] === id)
+    if (index >= 0) table.splice(index, 1)
+  },
+
+  async createUser(type, id, data) {
+    const table = this.$table('user')
+    const index = table.findIndex(row => row[type] === id)
+    if (index >= 0) return
+    this.$create('user', {
+      ...User.create(type as any, id as any),
+      ...clone(data),
+    })
+  },
+
   initUser(id, authority = 1) {
-    return this.setUser('mock', id, { authority }, true)
+    return this.createUser('mock', id, { authority })
   },
 
   async getChannel(type, id) {
@@ -102,29 +104,31 @@ extendDatabase(MemoryDatabase, {
     })
   },
 
-  async setChannel(type, id, data, autoCreate) {
+  async setChannel(type, id, data) {
     const table = this.$table('channel')
     const index = table.findIndex(row => row.id === `${type}:${id}`)
-    if (index < 0) {
-      if (autoCreate && data) {
-        table.push({
-          ...Channel.create(type, id, ''),
-          ...clone(data),
-        })
-      }
-      return
-    }
-
-    if (!data) {
-      table.splice(index, 1)
-      return
-    }
-
+    if (index < 0) return
     Object.assign(table[index], clone(data))
   },
 
+  async removeChannel(type, id) {
+    const table = this.$table('channel')
+    const index = table.findIndex(row => row.id === `${type}:${id}`)
+    if (index >= 0) table.splice(index, 1)
+  },
+
+  async createChannel(type, id, data) {
+    const table = this.$table('channel')
+    const index = table.findIndex(row => row.id === `${type}:${id}`)
+    if (index >= 0) return
+    table.push({
+      ...Channel.create(type, id),
+      ...clone(data),
+    })
+  },
+
   initChannel(id, assignee = this.app.bots[0].selfId) {
-    return this.setChannel('mock', id, { assignee }, true)
+    return this.createChannel('mock', id, { assignee })
   },
 })
 

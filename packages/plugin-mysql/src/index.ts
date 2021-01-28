@@ -22,31 +22,31 @@ extendDatabase(MysqlDatabase, {
     return data && { ...data, [type]: id }
   },
 
-  async setUser(type, id, data, autoCreate) {
-    if (data === null) {
-      await this.query('DELETE FROM `user` WHERE ?? = ?', [type, id])
-      return
-    }
+  async removeUser(type, id) {
+    await this.query('DELETE FROM `user` WHERE ?? = ?', [type, id])
+  },
 
+  async createUser(type, id, data) {
     data[type as any] = id
     const keys = Object.keys(data)
+    const assignments = difference(keys, [type]).map((key) => {
+      key = this.escapeId(key)
+      return `${key} = VALUES(${key})`
+    }).join(', ')
+    await this.query(
+      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
+      ON DUPLICATE KEY UPDATE ${assignments}`,
+      ['user', ...this.formatValues('user', data, keys)],
+    )
+  },
 
-    if (!autoCreate) {
-      const assignments = difference(keys, [type]).map((key) => {
-        return `${this.escapeId(key)} = ${this.escape(data[key], 'user', key)}`
-      }).join(', ')
-      await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['user', type, id])
-    } else {
-      const assignments = difference(keys, [type]).map((key) => {
-        key = this.escapeId(key)
-        return `${key} = VALUES(${key})`
-      }).join(', ')
-      await this.query(
-        `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
-        ON DUPLICATE KEY UPDATE ${assignments}`,
-        ['user', ...this.formatValues('user', data, keys)],
-      )
-    }
+  async setUser(type, id, data) {
+    data[type as any] = id
+    const keys = Object.keys(data)
+    const assignments = difference(keys, [type]).map((key) => {
+      return `${this.escapeId(key)} = ${this.escape(data[key], 'user', key)}`
+    }).join(', ')
+    await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['user', type, id])
   },
 
   async getChannel(type, pid, fields) {
@@ -72,32 +72,33 @@ extendDatabase(MysqlDatabase, {
     }).join(' OR '))
   },
 
-  async setChannel(type, pid, data, autoCreate) {
-    if (data === null) {
-      await this.query('DELETE FROM `channel` WHERE `id` = ?', [`${type}:${pid}`])
-      return
-    }
+  async removeChannel(type, pid) {
+    await this.query('DELETE FROM `channel` WHERE `id` = ?', [`${type}:${pid}`])
+  },
 
+  async createChannel(type, pid, data) {
     data.id = `${type}:${pid}`
     const keys = Object.keys(data)
     if (!keys.length) return
+    const assignments = difference(keys, ['id']).map((key) => {
+      key = this.escapeId(key)
+      return `${key} = VALUES(${key})`
+    })
+    await this.query(
+      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
+      ON DUPLICATE KEY UPDATE ${assignments.join(', ')}`,
+      ['channel', ...this.formatValues('channel', data, keys)],
+    )
+  },
 
-    if (autoCreate) {
-      const assignments = difference(keys, ['id']).map((key) => {
-        key = this.escapeId(key)
-        return `${key} = VALUES(${key})`
-      })
-      await this.query(
-        `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
-        ON DUPLICATE KEY UPDATE ${assignments.join(', ')}`,
-        ['channel', ...this.formatValues('channel', data, keys)],
-      )
-    } else {
-      const assignments = difference(keys, ['id']).map((key) => {
-        return `${this.escapeId(key)} = ${this.escape(data[key], 'channel', key)}`
-      }).join(', ')
-      await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['channel', 'id', data.id])
-    }
+  async setChannel(type, pid, data) {
+    data.id = `${type}:${pid}`
+    const keys = Object.keys(data)
+    if (!keys.length) return
+    const assignments = difference(keys, ['id']).map((key) => {
+      return `${this.escapeId(key)} = ${this.escape(data[key], 'channel', key)}`
+    }).join(', ')
+    await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['channel', 'id', data.id])
   },
 })
 

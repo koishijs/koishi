@@ -57,7 +57,7 @@ export default function apply(ctx: Context, options: RepeaterOptions = {}) {
       const text = handle?.(state, content, userId)
       return text && next(() => {
         ctx.emit('repeater', session, state)
-        return session.$send(text)
+        return session.send(text)
       })
     }
 

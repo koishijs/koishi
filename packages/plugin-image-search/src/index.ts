@@ -48,7 +48,7 @@ export function apply(ctx: Context, config: Config = {}) {
     }))
     pending.delete(id)
     if (!hasFailure) return
-    return session.$send(hasSuccess ? '其他图片搜索失败。' : '搜索失败。')
+    return session.send(hasSuccess ? '其他图片搜索失败。' : '搜索失败。')
   }
 
   function search(callback: SearchCallback): Command.Action {
@@ -61,7 +61,7 @@ export function apply(ctx: Context, config: Config = {}) {
         return searchUrls(session, urls, callback)
       }
 
-      const dispose = session.$use(({ content }, next) => {
+      const dispose = session.middleware(({ content }, next) => {
         dispose()
         const urls = extractImages(content)
         if (!urls.length) return next()

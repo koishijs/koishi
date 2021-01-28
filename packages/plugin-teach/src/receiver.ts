@@ -88,7 +88,7 @@ export async function getTotalWeight(ctx: Context, state: SessionState) {
   ctx.app.emit(session, 'dialogue/prepare', state)
   const userFields = new Set<User.Field>(['name', 'flag'])
   ctx.app.emit(session, 'dialogue/before-attach-user', state, userFields)
-  await session.$observeUser(userFields)
+  await session.observeUser(userFields)
   if (ctx.app.bail(session, 'dialogue/attach-user', state)) return 0
   return dialogues.reduce((prev, curr) => prev + curr._weight, 0)
 }
@@ -98,14 +98,14 @@ export class MessageBuffer {
   private original = false
 
   public hasData = false
-  public send: Session['$send']
-  public sendQueued: Session['$sendQueued']
+  public send: Session['send']
+  public sendQueued: Session['sendQueued']
 
   constructor(private session: Session) {
-    this.send = session.$send.bind(session)
-    this.sendQueued = session.$sendQueued.bind(session)
+    this.send = session.send.bind(session)
+    this.sendQueued = session.sendQueued.bind(session)
 
-    session.$send = async (message: string) => {
+    session.send = async (message: string) => {
       if (!message) return
       this.hasData = true
       if (this.original) {
@@ -114,7 +114,7 @@ export class MessageBuffer {
       this.buffer += message
     }
 
-    session.$sendQueued = async (message, delay) => {
+    session.sendQueued = async (message, delay) => {
       if (!message) return
       this.hasData = true
       if (this.original) {
@@ -144,11 +144,11 @@ export class MessageBuffer {
 
   async run(callback: () => Promise<any>) {
     this.original = false
-    const send = this.session.$send
-    const sendQueued = this.session.$sendQueued
+    const send = this.session.send
+    const sendQueued = this.session.sendQueued
     await callback()
-    this.session.$sendQueued = sendQueued
-    this.session.$send = send
+    this.session.sendQueued = sendQueued
+    this.session.send = send
     this.original = true
   }
 
@@ -156,8 +156,8 @@ export class MessageBuffer {
     this.write(message)
     await this.flush()
     this.original = true
-    delete this.session.$send
-    delete this.session.$sendQueued
+    delete this.session.send
+    delete this.session.sendQueued
   }
 }
 
@@ -273,14 +273,14 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.on('notify/poke', async (session) => {
     if (session.targetId !== session.selfId) return
-    const { flag } = await session.$observeChannel(['flag'])
+    const { flag } = await session.observeChannel(['flag'])
     if (flag & Channel.Flag.ignore) return
     session.content = 'hook:poke'
     triggerDialogue(ctx, session)
   })
 
   async function triggerNotice(name: string, session: Session) {
-    const { flag, assignee } = await session.$observeChannel(['flag', 'assignee'])
+    const { flag, assignee } = await session.observeChannel(['flag', 'assignee'])
     if (assignee !== session.selfId) return
     if (flag & Channel.Flag.ignore) return
     session.content = 'hook:' + name + (session.userId === session.selfId ? ':self' : ':others')

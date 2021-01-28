@@ -69,7 +69,7 @@ export function apply(ctx: Context) {
         return `没有找到“${q}”相关的结果。`
       } else {
         for (const message of messages) {
-          await session.$send(message)
+          await session.send(message)
         }
       }
     })

@@ -13,7 +13,7 @@ export function apply(ctx: Context) {
       const { data } = await axios.get(`${BASE_URL}/search?fmt=json&q=${sequence}&start=${options.start}`)
       for (const result of data.results) {
         if (result.name.startsWith('Duplicate')) continue
-        session.$send([
+        session.send([
           `${BASE_URL}/A${String(result.number).padStart(6, '0')}`,
           `${result.name}${result.id ? ` (${result.id})` : ''}`,
           result.data,

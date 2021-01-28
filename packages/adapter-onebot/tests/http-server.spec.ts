@@ -102,7 +102,7 @@ describe('Quick Operations', () => {
   }
 
   test('message event', async () => {
-    app1.once('message', meta => meta.$send('foo'))
+    app1.once('message', meta => meta.send('foo'))
     await expect(server.post(messageMeta)).resolves.to.have.shape({ data: { reply: 'foo' } })
 
     app1.groups.once('message', meta => meta.$ban())

@@ -19,7 +19,7 @@ export function testDatabase(app: App) {
   after(() => app.stop())
 
   it('user operations', async () => {
-    await db.setUser('mock', 'A', User.create('mock', 'A', 1))
+    await db.setUser('mock', 'A', User.create('mock', 'A'))
     await expect(db.getUser('mock', 'A')).eventually.not.to.be.ok
 
     await db.initUser('A', 1)
@@ -33,15 +33,15 @@ export function testDatabase(app: App) {
       authority: 2,
     })
 
-    await db.setUser('mock', 'A', null)
+    await db.removeUser('mock', 'A')
     await expect(db.getUser('mock', ['A'])).eventually.to.deep.equal([])
   })
 
   it('channel operations', async () => {
-    await db.setChannel('mock', 'A', Channel.create('mock', 'A', '123'))
+    await db.setChannel('mock', 'A', Channel.create('mock', 'A'))
     await expect(db.getChannel('mock', 'A')).eventually.not.to.be.ok
 
-    await db.setChannel('mock', 'A', Channel.create('mock', 'A', '123'), true)
+    await db.initChannel('A', '123')
     await expect(db.getChannel('mock', 'A')).eventually.to.have.shape({
       id: 'mock:A',
       assignee: '123',
@@ -58,7 +58,7 @@ export function testDatabase(app: App) {
     await expect(db.getChannelList(null, 'mock')).eventually.to.have.length(2)
     await expect(db.getChannelList(null, 'mock', ['321'])).eventually.to.have.length(1)
 
-    await db.setChannel('mock', 'A', null)
+    await db.removeChannel('mock', 'A')
     await expect(db.getChannel('mock', ['A'])).eventually.to.deep.equal([])
   })
 
