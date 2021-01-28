@@ -101,7 +101,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.on('dialogue/before-search', ({ options }, test) => {
+  ctx.before('dialogue/search', ({ options }, test) => {
     test.partial = options.partial
     test.reversed = options.reversed
     test.groups = options.groups

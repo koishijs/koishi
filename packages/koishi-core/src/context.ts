@@ -393,9 +393,9 @@ export interface EventMap {
   'tokenize'(content: string, session: Session): Argv
   'parse'(argv: Argv, session: Session): string
   'before-attach-user'(session: Session, fields: Set<User.Field>): void
-  'before-attach-group'(session: Session, fields: Set<Channel.Field>): void
+  'before-attach-channel'(session: Session, fields: Set<Channel.Field>): void
   'attach-user'(session: Session): void | boolean | Promise<void | boolean>
-  'attach-group'(session: Session): void | boolean | Promise<void | boolean>
+  'attach-channel'(session: Session): void | boolean | Promise<void | boolean>
   'before-send'(session: Session): void | boolean
   'send'(session: Session): void | Promise<void>
   'before-command'(argv: Argv): void | string | Promise<void | string>

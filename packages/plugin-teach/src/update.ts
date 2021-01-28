@@ -65,7 +65,7 @@ export default function apply(ctx: Context) {
     return options.review ? review(dialogues, argv) : revert(dialogues, argv)
   })
 
-  ctx.on('dialogue/before-detail', async (argv) => {
+  ctx.before('dialogue/detail', async (argv) => {
     if (argv.options.modify) return
     await argv.app.parallel('dialogue/search', argv, {}, argv.dialogues)
   })

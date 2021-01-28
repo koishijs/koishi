@@ -38,7 +38,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.emit('dialogue/flag', 'frozen')
 
-  ctx.on('dialogue/before-detail', async (argv) => {
+  ctx.before('dialogue/detail', async (argv) => {
     argv.nameMap = {}
     argv.authMap = {}
     const { options, nameMap, session, dialogues, authMap } = argv
@@ -108,11 +108,11 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     if (flag & Dialogue.Flag.frozen) output.push('锁定')
   })
 
-  ctx.on('dialogue/before-search', ({ writer }, test) => {
+  ctx.before('dialogue/search', ({ writer }, test) => {
     test.writer = writer
   })
 
-  ctx.on('dialogue/before-modify', async ({ writer, options }) => {
+  ctx.before('dialogue/modify', async ({ writer, options }) => {
     if (options.writer && typeof writer === 'undefined') return '指定的目标用户不存在。'
   })
 

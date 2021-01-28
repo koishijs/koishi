@@ -90,7 +90,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   }
 
   if (imageServer && downloadFile) {
-    ctx.on('dialogue/before-modify', async ({ args }) => {
+    ctx.before('dialogue/modify', async ({ args }) => {
       let answer = args[1]
       if (!answer) return
       try {

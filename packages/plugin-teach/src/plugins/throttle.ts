@@ -48,7 +48,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.on('dialogue/before-send', ({ counters, session }) => {
+  ctx.before('dialogue/send', ({ counters, session }) => {
     if (session._redirected) return
     for (const { interval } of throttleConfig) {
       counters[interval]--
@@ -82,7 +82,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.on('dialogue/before-send', (state) => {
+  ctx.before('dialogue/send', (state) => {
     if (state.session._redirected) return
     state.initiators.unshift(state.userId)
     state.initiators.splice(initiatorCount, Infinity)

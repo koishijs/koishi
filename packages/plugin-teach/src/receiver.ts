@@ -309,7 +309,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   // 预判要获取的用户字段
-  ctx.on('dialogue/before-attach-user', ({ dialogues, session }, userFields) => {
+  ctx.before('dialogue/attach-user', ({ dialogues, session }, userFields) => {
     for (const data of dialogues) {
       const { inters } = tokenizer.parseToken(data.answer)
       for (const argv of inters) {

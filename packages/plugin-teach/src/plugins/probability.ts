@@ -68,7 +68,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     })
   })
 
-  ctx.on('dialogue/before-send', ({ test, activated, userId }) => {
+  ctx.before('dialogue/send', ({ test, activated, userId }) => {
     if (!test.activated) return
     const time = activated[userId] = Date.now()
     setTimeout(() => {

@@ -86,7 +86,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   const validator = new RegExpValidator(config.validateRegExp)
 
-  ctx.on('dialogue/before-modify', async (argv) => {
+  ctx.before('dialogue/modify', async (argv) => {
     const { options, session, target, dialogues, args } = argv
     const { ignoreHint, regexp } = options
     const [question, answer] = args
@@ -131,7 +131,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.on('dialogue/before-modify', async ({ options, target, args }) => {
+  ctx.before('dialogue/modify', async ({ options, target, args }) => {
     // 添加问答时缺少问题或回答
     if (options.create && !target && !(args[0] && args[1])) {
       return Message.Teach.MissingQuestionOrAnswer
@@ -161,7 +161,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/flag', (flag) => {
-    ctx.on('dialogue/before-search', ({ options }, test) => {
+    ctx.before('dialogue/search', ({ options }, test) => {
       test[flag] = options[flag]
     })
 

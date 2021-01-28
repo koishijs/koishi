@@ -139,7 +139,7 @@ export class App extends Context {
       session.collect('user', session.$argv, fields)
     })
 
-    this.on('before-attach-group', (session, fields) => {
+    this.on('before-attach-channel', (session, fields) => {
       session.collect('channel', session.$argv, fields)
     })
 
@@ -260,11 +260,11 @@ export class App extends Context {
       if (session.subType === 'group') {
         // attach group data
         const channelFields = new Set<Channel.Field>(['flag', 'assignee'])
-        this.emit('before-attach-group', session, channelFields)
+        this.emit('before-attach-channel', session, channelFields)
         const group = await session.$observeChannel(channelFields)
 
         // emit attach event
-        if (await this.serial(session, 'attach-group', session)) return
+        if (await this.serial(session, 'attach-channel', session)) return
 
         // ignore some group calls
         if (group.flag & Channel.Flag.ignore) return

@@ -69,11 +69,11 @@ export default function apply(ctx: Context) {
     }
   })
 
-  ctx.on('dialogue/before-search', ({ options }, test) => {
+  ctx.before('dialogue/search', ({ options }, test) => {
     test.noRecursive = options.recursive === false
   })
 
-  ctx.on('dialogue/before-search', ({ options }, test) => {
+  ctx.before('dialogue/search', ({ options }, test) => {
     test.appellative = options.appellative
   })
 

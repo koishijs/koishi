@@ -147,7 +147,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   // get predecessors
-  ctx.on('dialogue/before-detail', async ({ options, dialogues }) => {
+  ctx.before('dialogue/detail', async ({ options, dialogues }) => {
     if (options.modify) return
     const predecessors = new Set<number>()
     for (const dialogue of dialogues) {
@@ -249,7 +249,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.on('dialogue/before-send', ({ dialogue, predecessors, userId }) => {
+  ctx.before('dialogue/send', ({ dialogue, predecessors, userId }) => {
     const time = Date.now()
     if (dialogue.flag & Dialogue.Flag.context) userId = ''
     const predMap = predecessors[userId] || (predecessors[userId] = {})
