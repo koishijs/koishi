@@ -158,7 +158,11 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     }))
   }
 
-  async getChannel<K extends Channel.Field = never>(id: string = this.channelId, fields: readonly K[] = [], assignee = '') {
+  private _getValue<T >(source: T | ((session: Session) => T)): T {
+    return typeof source === 'function' ? Reflect.apply(source, null, [this]) : source
+  }
+
+  async getChannel<K extends Channel.Field = never>(id: string = this.channelId, assignee = '', fields: readonly K[] = []) {
     const group = await this.$app.database.getChannel(this.kind, id, fields)
     if (group) return group
     const fallback = Channel.create(this.kind, id)
@@ -180,7 +184,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         fieldSet.delete(key as any)
       }
       if (fieldSet.size) {
-        const data = await this.getChannel(channelId, [...fieldSet])
+        const data = await this.getChannel(channelId, '', [...fieldSet])
         this.$app._groupCache.set(this.cid, $channel._merge(data))
       }
       return $channel as any
@@ -193,13 +197,14 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (hasActiveCache) return this.$channel = cache as any
 
     // 绑定一个新的可观测频道实例
-    const data = await this.getChannel(channelId, fieldArray)
+    const assignee = this._getValue(this.$app.options.autoAssign) ? this.selfId : ''
+    const data = await this.getChannel(channelId, assignee, fieldArray)
     const group = observe(data, diff => this.$app.database.setChannel(kind, channelId, diff), `group ${channelId}`)
     this.$app._groupCache.set(this.cid, group)
     return this.$channel = group
   }
 
-  async getUser<K extends User.Field = never>(id: string = this.userId, fields: readonly K[] = [], authority = 0) {
+  async getUser<K extends User.Field = never>(id: string = this.userId, authority = 0, fields: readonly K[] = []) {
     const user = await this.$app.database.getUser(this.kind, id, fields)
     if (user) return user
     const fallback = User.create(this.kind, id)
@@ -229,21 +234,17 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
         fieldSet.delete(key as any)
       }
       if (fieldSet.size) {
-        const data = await this.getUser(userId, [...fieldSet])
+        const data = await this.getUser(userId, 0, [...fieldSet])
         userCache.set(userId, $user._merge(data) as any)
       }
     }
 
     if ($user) return $user as any
 
-    const defaultAuthority = typeof this.$app.options.defaultAuthority === 'function'
-      ? this.$app.options.defaultAuthority(this)
-      : this.$app.options.defaultAuthority || 0
-
     // 确保匿名消息不会写回数据库
     if (this.anonymous) {
       const fallback = User.create(this.kind, userId)
-      fallback.authority = defaultAuthority
+      fallback.authority = this._getValue(this.$app.options.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
       return this.$user = user
     }
@@ -255,7 +256,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     if (hasActiveCache) return this.$user = cache as any
 
     // 绑定一个新的可观测用户实例
-    const data = await this.getUser(userId, fieldArray, defaultAuthority)
+    const data = await this.getUser(userId, this._getValue(this.$app.options.autoAuthorize), fieldArray)
     const user = observe(data, diff => this.$app.database.setUser(this.kind, userId, diff), `user ${userId}`)
     userCache.set(userId, user)
     return this.$user = user

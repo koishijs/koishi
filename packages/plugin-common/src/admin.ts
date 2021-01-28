@@ -99,7 +99,7 @@ Command.prototype.adminChannel = function (this: Command, callback) {
       const id = session.$bot.parseChannel(options.target)
       if (!id) return '请指定正确的目标。'
       const { database } = session.$app
-      const data = await session.getChannel(id, [...fields])
+      const data = await session.getChannel(id, '', [...fields])
       if (!data) return '未找到指定的频道。'
       target = observe(data, diff => database.setChannel(session.kind, id, diff), `channel ${id}`)
     } else if (session.subType === 'group') {

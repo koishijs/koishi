@@ -29,7 +29,8 @@ export interface AppOptions extends BotOptions {
   promptTimeout?: number
   processMessage?: (message: string) => string
   delay?: DelayOptions
-  defaultAuthority?: number | ((session: Session) => number)
+  autoAssign?: boolean | ((session: Session) => boolean)
+  autoAuthorize?: number | ((session: Session) => number)
   similarityCoefficient?: number
   userCacheLength?: number
   groupCacheLength?: number
@@ -67,6 +68,8 @@ export class App extends Context {
     promptTimeout: Time.minute,
     userCacheAge: Time.minute,
     groupCacheAge: 5 * Time.minute,
+    autoAssign: false,
+    autoAuthorize: 0,
     similarityCoefficient: 0.4,
     processMessage: message => simplify(message.trim()),
     delay: {
