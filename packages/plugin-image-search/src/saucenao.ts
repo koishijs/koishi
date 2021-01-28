@@ -163,7 +163,7 @@ export default async function saucenao(sourceUrl: string, session: Session, conf
         url,
         thumbnail,
         title: `(${similarity}%) ${displayTitle}`,
-        authorUrl: member_id && checkHost(url, 'pixiv.net') && `https://pixiv.net/u/${member_id}`,
+        authorUrl: member_id && checkHost(url, 'pixiv.net') && `https://www.pixiv.net/u/${member_id}`,
         source,
       }))
     }
