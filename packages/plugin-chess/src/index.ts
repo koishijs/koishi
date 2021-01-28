@@ -42,6 +42,7 @@ export function apply(ctx: Context) {
   ctx = ctx.group()
 
   ctx.on('connect', async () => {
+    if (!ctx.database) return
     const groups = await ctx.database.getAllGroups(['id', 'chess'])
     for (const { id, chess } of groups) {
       if (chess) {
@@ -67,6 +68,7 @@ export function apply(ctx: Context) {
     .shortcut('黑白棋', { options: { size: 8, rule: 'othello' }, fuzzy: true })
     .shortcut('停止下棋', { options: { stop: true } })
     .shortcut('跳过回合', { options: { skip: true } })
+    .shortcut('查看棋盘', { options: { show: true } })
     .option('imageMode', '-i  使用图片模式')
     .option('textMode', '-t  使用文本模式')
     .option('rule', '<rule>  设置规则，支持的规则有 go, gomoku, othello')
@@ -81,6 +83,7 @@ export function apply(ctx: Context) {
       '目前默认使用图片模式。文本模式速度更快，但是在部分机型上可能无法正常显示，同时无法适应过大的棋盘。',
     ].join('\n'))
     .action(async ({ session, options }, position) => {
+      const { $group = { chess: null } } = session
       if (!states[session.groupId]) {
         if (position || options.stop || options.repent || options.skip) {
           return '没有正在进行的游戏。输入“下棋”开始一轮游戏。'
@@ -110,7 +113,7 @@ export function apply(ctx: Context) {
 
       if (options.stop) {
         delete states[session.groupId]
-        session.$group.chess = null
+        $group.chess = null
         return '游戏已停止。'
       }
 
@@ -135,7 +138,7 @@ export function apply(ctx: Context) {
       if (options.skip) {
         if (state.next !== session.userId) return '当前不是你的回合。'
         state.next = state.p1 === session.userId ? state.p2 : state.p1
-        session.$group.chess = state.serial()
+        $group.chess = state.serial()
         return `${session.$username} 选择跳过其回合，下一手轮到 [CQ:at,qq=${state.next}]。`
       }
 
@@ -146,7 +149,7 @@ export function apply(ctx: Context) {
         state.history.pop()
         state.refresh()
         state.next = last
-        session.$group.chess = state.serial()
+        $group.chess = state.serial()
         return state.draw(session, `${session.$username} 进行了悔棋。`)
       }
 
@@ -194,17 +197,17 @@ export function apply(ctx: Context) {
         case MoveResult.p1Win:
           message += `恭喜 [CQ:at,qq=${state.p1}] 获胜！`
           delete states[session.groupId]
-          session.$group.chess = null
+          $group.chess = null
           break
         case MoveResult.p2Win:
           message += `恭喜 [CQ:at,qq=${state.p2}] 获胜！`
           delete states[session.groupId]
-          session.$group.chess = null
+          $group.chess = null
           break
         case MoveResult.draw:
           message += '本局游戏平局。'
           delete states[session.groupId]
-          session.$group.chess = null
+          $group.chess = null
           break
         case undefined:
           state.next = session.userId === state.p1 ? state.p2 : state.p1
@@ -215,7 +218,7 @@ export function apply(ctx: Context) {
           return `非法落子（${result}）。`
       }
 
-      session.$group.chess = state.serial()
+      $group.chess = state.serial()
       return state.draw(session, message, x, y)
     })
 }
