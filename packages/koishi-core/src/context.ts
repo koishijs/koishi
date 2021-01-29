@@ -256,7 +256,8 @@ export class Context {
     return this.removeListener(Context.MIDDLEWARE_EVENT, middleware)
   }
 
-  command<D extends string>(def: D, config: Command.Config = {}) {
+  command<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
+  command(def: string, config?: Command.Config) {
     const [path] = def.split(' ', 1)
     const decl = def.slice(path.length)
     const segments = path.toLowerCase().split(/(?=[\\./])/)
@@ -292,7 +293,7 @@ export class Context {
 
     Object.assign(parent.config, config)
     this._disposables.push(() => parent.dispose())
-    return parent as Command<never, never, Domain.ArgumentType<D>>
+    return parent
   }
 
   async broadcast(message: string, forced?: boolean): Promise<string[]>

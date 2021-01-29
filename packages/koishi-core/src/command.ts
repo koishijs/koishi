@@ -144,9 +144,10 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  subcommand<D extends string>(def: D, config?: Command.Config) {
-    def = this.name + (def.charCodeAt(0) === 46 ? '' : '/') + def as D
-    return this.context.command(def, config)
+  subcommand<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
+  subcommand(def: string, ...args: any[]) {
+    def = this.name + (def.charCodeAt(0) === 46 ? '' : '/') + def
+    return this.context.command(def, ...args)
   }
 
   usage(text: Command.Usage<U, G>) {
