@@ -126,7 +126,9 @@ function getOptions(command: Command, session: Session<ValidationField>, maxUsag
 }
 
 async function showHelp(command: Command, session: Session<ValidationField>, config: HelpConfig) {
-  const output = [command.declaration, command.description]
+  const output = [command.declaration]
+
+  if (command.description) output.push(command.description)
 
   if (command.context.database) {
     await session.observeUser(['authority', 'timers', 'usage'])

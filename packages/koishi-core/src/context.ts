@@ -16,6 +16,8 @@ export type Promisify<T> = T extends Promise<any> ? T : Promise<T>
 export type Depromisify<T> = T extends Promise<infer U> ? U : T
 export type Disposable = () => void
 
+type PluginConfig<T extends Plugin> = T extends PluginFunction<infer U> ? U : T extends PluginObject<infer U> ? U : never
+
 interface ScopeSet extends Array<string> {
   positive?: boolean
 }
@@ -106,7 +108,7 @@ export class Context {
       && (this.scope.private || session.subType !== 'private')
   }
 
-  plugin<T extends Plugin>(plugin: T, options?: T extends Plugin<infer U> ? U : never) {
+  plugin<T extends Plugin>(plugin: T, options?: PluginConfig<T>) {
     if (options === false) return
     if (options === true) options = undefined
     const ctx: this = Object.create(this)

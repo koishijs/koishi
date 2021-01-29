@@ -277,7 +277,7 @@ export namespace Domain {
     constructor(public name: string, def: string) {
       if (!name) throw new Error('expect a command name')
       const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
-      this.description = def.slice(decl.length)
+      this.description = def.slice(decl.length).trim()
       this.declaration = name + (this._arguments = parseDecl(decl)).stripped
     }
 
