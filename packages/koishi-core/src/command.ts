@@ -15,8 +15,6 @@ export type Extend<O extends {}, K extends string, T> = {
 
 export namespace Command {
   export interface Config {
-    /** description */
-    description?: string
     /** hide all options by default */
     hideOptions?: boolean
     /** hide command */
@@ -146,11 +144,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  subcommand(rawName: string, config?: Command.Config): Command
-  subcommand(rawName: string, description: string, config?: Command.Config): Command
-  subcommand(rawName: string, ...args: [Command.Config?] | [string, Command.Config?]) {
-    rawName = this.name + (rawName.charCodeAt(0) === 46 ? '' : '/') + rawName
-    return this.context.command(rawName, ...args as any)
+  subcommand<D extends string>(def: D, config?: Command.Config) {
+    def = this.name + (def.charCodeAt(0) === 46 ? '' : '/') + def as D
+    return this.context.command(def, config)
   }
 
   usage(text: Command.Usage<U, G>) {
