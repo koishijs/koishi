@@ -9,9 +9,9 @@ import type Router from 'koa-router'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
-export type PluginFunction<T, U = any> = (ctx: T, options: U) => void
-export type PluginObject<T, U = any> = { name?: string, apply: PluginFunction<T, U> }
-export type Plugin<T, U = any> = PluginFunction<T, U> | PluginObject<T, U>
+export type PluginFunction<T = any> = (ctx: Context, options: T) => void
+export type PluginObject<T = any> = { name?: string, apply: PluginFunction<T> }
+export type Plugin<T = any> = PluginFunction<T> | PluginObject<T>
 export type Promisify<T> = T extends Promise<any> ? T : Promise<T>
 export type Depromisify<T> = T extends Promise<infer U> ? U : T
 export type Disposable = () => void
@@ -106,9 +106,7 @@ export class Context {
       && (this.scope.private || session.subType !== 'private')
   }
 
-  plugin<T extends PluginFunction<this>>(plugin: T, options?: T extends PluginFunction<this, infer U> ? U : never): this
-  plugin<T extends PluginObject<this>>(plugin: T, options?: T extends PluginObject<this, infer U> ? U : never): this
-  plugin<T extends Plugin<this>>(plugin: T, options?: T extends Plugin<this, infer U> ? U : never) {
+  plugin<T extends Plugin>(plugin: T, options?: T extends Plugin<infer U> ? U : never) {
     if (options === false) return
     if (options === true) options = undefined
     const ctx: this = Object.create(this)
