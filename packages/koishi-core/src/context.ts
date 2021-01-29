@@ -6,10 +6,12 @@ import { App } from './app'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
-export type PluginFunction<T, U = any> = (ctx: T, options: U) => void
-export type PluginObject<T, U = any> = { name?: string, apply: PluginFunction<T, U> }
-export type Plugin<T, U = any> = PluginFunction<T, U> | PluginObject<T, U>
+export type PluginFunction<T = any> = (ctx: Context, options: T) => void
+export type PluginObject<T = any> = { name?: string, apply: PluginFunction<T> }
+export type Plugin<T = any> = PluginFunction<T> | PluginObject<T>
 export type Disposable = () => void
+
+type PluginConfig<T extends Plugin> = T extends PluginFunction<infer U> ? U : T extends PluginObject<infer U> ? U : never
 
 interface ScopeSet extends Array<number> {
   positive?: boolean
@@ -97,9 +99,7 @@ export class Context {
       && (this.scope.private || session.messageType !== 'private')
   }
 
-  plugin<T extends PluginFunction<this>>(plugin: T, options?: T extends PluginFunction<this, infer U> ? U : never): this
-  plugin<T extends PluginObject<this>>(plugin: T, options?: T extends PluginObject<this, infer U> ? U : never): this
-  plugin<T extends Plugin<this>>(plugin: T, options?: T extends Plugin<this, infer U> ? U : never) {
+  plugin<T extends Plugin>(plugin: T, options?: PluginConfig<T>) {
     if (options === false) return
     if (options === true) options = undefined
     const ctx: this = Object.create(this)
