@@ -35,11 +35,11 @@ describe('Command API', () => {
 
     it('modify commands', () => {
       const d1 = app.command('d', 'foo', { authority: 1 })
-      expect(app._commandMap.d.config.description).to.equal('foo')
+      expect(app._commandMap.d.description).to.equal('foo')
       expect(app._commandMap.d.config.authority).to.equal(1)
 
-      const d2 = app.command('d', { description: 'bar', authority: 2 })
-      expect(app._commandMap.d.config.description).to.equal('bar')
+      const d2 = app.command('d', 'bar', { authority: 2 })
+      expect(app._commandMap.d.description).to.equal('bar')
       expect(app._commandMap.d.config.authority).to.equal(2)
 
       expect(d1).to.equal(d2)

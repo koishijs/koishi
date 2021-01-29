@@ -3,7 +3,7 @@ import { fn } from 'jest-mock'
 import { Meta } from 'koishi-core'
 import { App } from 'koishi-test-utils'
 import { sleep } from 'koishi-utils'
-import {} from 'koishi-adapter-cqhttp'
+import {} from 'koishi-adapter-onebot'
 import * as common from 'koishi-plugin-common'
 
 const app = new App({ mockDatabase: true })
@@ -18,13 +18,13 @@ const options: common.Config = {
   }],
 }
 
-const session = app.session(123)
+const session = app.session('123')
 
 app.plugin(common, options)
 
 before(async () => {
-  await app.database.getUser(123, 3)
-  await app.database.getChannel(123, app.selfId)
+  await app.database.initUser('123', 3)
+  await app.database.initChannel('123')
 })
 
 const receive = (meta: Meta) => {

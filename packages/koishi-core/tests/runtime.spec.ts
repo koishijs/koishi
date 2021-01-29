@@ -13,16 +13,16 @@ const app = new App({
 // make coverage happy
 Command.channelFields([])
 
-const session1 = app.session(123)
-const session2 = app.session(456)
-const session3 = app.session(789)
-const session4 = app.session(123, 321)
-const session5 = app.session(123, 654)
+const session1 = app.session('123')
+const session2 = app.session('456')
+const session3 = app.session('789')
+const session4 = app.session('123', '321')
+const session5 = app.session('123', '654')
 
 const cmd1 = app.command('cmd1 <arg1>', { authority: 2 })
   .channelFields(['id'])
   .shortcut('foo1', { args: ['bar'] })
-  .shortcut('foo4', { oneArg: true, fuzzy: true })
+  .shortcut('foo4', { greedy: true, fuzzy: true })
   .option('--bar', '', { authority: 3 })
   .option('--baz', '', { notUsage: true })
   .action(({ session }, arg) => session.send('cmd1:' + arg))
@@ -37,14 +37,14 @@ const cmd2 = app.command('cmd2')
 
 before(async () => {
   await app.start()
-  await app.database.getUser(123, 2)
-  await app.database.getUser(456, 1)
-  await app.database.getUser(789, 1)
+  await app.database.initUser('123', 2)
+  await app.database.initUser('456', 1)
+  await app.database.initUser('789', 1)
   // make coverage happy (checkTimer)
-  await app.database.setUser(456, { timers: { foo: 0 } })
-  await app.database.setUser(789, { flag: User.Flag.ignore })
-  await app.database.getChannel(321, app.selfId)
-  await app.database.getChannel(654, 999)
+  await app.database.setUser('mock', '456', { timers: { foo: 0 } })
+  await app.database.setUser('mock', '789', { flag: User.Flag.ignore })
+  await app.database.initChannel('321')
+  await app.database.initChannel('654', '999')
 })
 
 after(() => app.stop())
@@ -185,7 +185,7 @@ describe('Runtime', () => {
 
   describe('Middleware Validation', () => {
     app.middleware((session) => {
-      if (session.message === 'mid') return session.send('mid')
+      if (session.content === 'mid') return session.send('mid')
     })
 
     it('user.flag.ignore', async () => {
@@ -201,12 +201,12 @@ describe('Runtime', () => {
     })
 
     it('group.flag.ignore', async () => {
-      await app.database.setChannel(321, { flag: Channel.Flag.ignore })
+      await app.database.setChannel('mock', '321', { flag: Channel.Flag.ignore })
       await sleep(0)
       await session4.shouldNotReply('mid')
       await session4.shouldNotReply('cmd1 --baz')
       await session4.shouldNotReply(`[CQ:at,qq=${app.selfId}] cmd1 --baz`)
-      await app.database.setChannel(321, { flag: 0 })
+      await app.database.setChannel('mock', '321', { flag: 0 })
     })
   })
 

@@ -8,12 +8,12 @@ import { install } from '@sinonjs/fake-timers'
 Message.GLOBAL_HELP_EPILOG = 'EPILOG'
 
 const app = new App({ mockDatabase: true })
-const session = app.session(123)
+const session = app.session('123')
 const now = Date.now()
 
 before(async () => {
-  await app.database.getUser(123, 2)
-  await app.database.setUser(123, {
+  await app.database.initUser('123', 2)
+  await app.database.setUser('mock', '123', {
     usage: { foo7: 1, $date: Time.getDateNumber() },
     timers: { foo8: now + Time.minute, $date: now + Time.day },
   })
@@ -45,7 +45,7 @@ describe('Help Command', () => {
   it('command attributes', async () => {
     app.command('foo1', 'DESCRIPTION').alias('foo')
     app.command('foo2', 'DESCRIPTION', { authority: 2 })
-    app.command('foo3', 'DESCRIPTION').before(() => true)
+    app.command('foo3', 'DESCRIPTION').check(() => '')
     app.command('foo4', 'DESCRIPTION').usage('USAGE TEXT')
     app.command('foo5', 'DESCRIPTION').usage(({ userId }) => '' + userId)
     app.command('foo6', 'DESCRIPTION').example('EXAMPLE TEXT')
@@ -136,7 +136,7 @@ describe('Help Command', () => {
     Message.GLOBAL_HELP_EPILOG = ''
 
     const app = new App()
-    const session = app.session(123)
+    const session = app.session('123')
     await session.shouldReply('help', '当前可用的指令有：\n    help  显示帮助信息')
   })
 })

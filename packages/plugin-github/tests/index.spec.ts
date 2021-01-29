@@ -16,24 +16,24 @@ const app = new App({
 
 app.plugin(github, {
   secret: Random.uuid(),
-  repos: { 'koishijs/koishi': [123] },
+  repos: { 'koishijs/koishi': ['123'] },
 })
 
-const session1 = app.session(123)
-const session2 = app.session(456)
+const session1 = app.session('123')
+const session2 = app.session('456')
 
 // override listen
 const listen = spyOn(app.server, 'listen')
 listen.mockReturnValue(Promise.resolve())
 
-// spy on sendGroupMsg
-const sendGroupMsg = app.bots[0].sendGroupMsg = fn()
+// spy on sendMessage
+const sendMessage = app.bots[0].sendMessage = fn()
 
 before(async () => {
   await app.start()
-  await app.database.getUser(123, 3)
-  await app.database.getUser(456, 3)
-  await app.database.getChannel(123, BASE_SELF_ID)
+  await app.database.initUser('123', 3)
+  await app.database.initUser('456', 3)
+  await app.database.initChannel('123')
 })
 
 const snapshot = require('./index.snap')
@@ -65,7 +65,7 @@ describe('GitHub Plugin', () => {
       tokenInterceptor.reply(200, payload)
       await expect(app.server.get('/github/authorize')).to.eventually.have.property('code', 400)
       await expect(app.server.get('/github/authorize?state=123')).to.eventually.have.property('code', 200)
-      await expect(app.database.getUser(123)).to.eventually.have.shape({
+      await expect(app.database.getUser('mock', '123')).to.eventually.have.shape({
         ghAccessToken,
         ghRefreshToken,
       })
@@ -86,26 +86,26 @@ describe('GitHub Plugin', () => {
   })
 
   let counter = 0x100000
-  const idMap: Record<string, number> = {}
+  const idMap: Record<string, string> = {}
 
   describe('Webhook Events', () => {
     const files = readdirSync(resolve(__dirname, 'fixtures'))
     files.forEach((file) => {
       const title = file.slice(0, -5)
       it(title, async () => {
-        sendGroupMsg.mockClear()
-        sendGroupMsg.mockImplementation(() => {
-          return Promise.resolve(idMap[title] = ++counter)
+        sendMessage.mockClear()
+        sendMessage.mockImplementation(() => {
+          return Promise.resolve(idMap[title] = ++counter + '')
         })
 
         const payload = require(`./fixtures/${title}`)
         const [name] = title.split('.', 1)
         await app.github.receive({ id: Random.uuid(), name, payload })
         if (snapshot[title]) {
-          expect(sendGroupMsg.mock.calls).to.have.length(1)
-          expect(sendGroupMsg.mock.calls[0][1]).to.equal(snapshot[title].trim())
+          expect(sendMessage.mock.calls).to.have.length(1)
+          expect(sendMessage.mock.calls[0][1]).to.equal(snapshot[title].trim())
         } else {
-          expect(sendGroupMsg.mock.calls).to.have.length(0)
+          expect(sendMessage.mock.calls).to.have.length(0)
         }
       })
     })

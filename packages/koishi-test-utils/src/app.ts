@@ -82,8 +82,12 @@ interface MockedAppOptions extends AppOptions {
 }
 
 export class MockedApp extends App {
+  public server: MockedServer
+
   constructor(options: MockedAppOptions = {}) {
     super({ selfId: BASE_SELF_ID, type: 'mock', ...options })
+
+    this.server = this.servers.mock as any
 
     if (options.mockStart !== false) this.status = AppStatus.open
     if (options.mockDatabase) this.plugin(memory)

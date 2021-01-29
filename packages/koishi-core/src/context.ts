@@ -255,7 +255,10 @@ export class Context {
   }
 
   command<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
-  command(def: string, config?: Command.Config) {
+  command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
+  command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {
+    if (typeof args[0] === 'string') def += ' ' + args.shift()
+    const config = args[0] as Command.Config
     const [path] = def.split(' ', 1)
     const decl = def.slice(path.length)
     const segments = path.toLowerCase().split(/(?=[\\./])/)

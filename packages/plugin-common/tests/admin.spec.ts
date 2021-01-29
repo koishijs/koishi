@@ -19,11 +19,11 @@ app.command('bar', { minInterval: 1000 }).action(({ session }) => session.send('
 })(Channel.Flag)
 
 before(async () => {
-  await app.database.getUser(123, 4)
-  await app.database.getUser(456, 3)
-  await app.database.getUser(789, 4)
-  await app.database.getChannel(321, app.selfId)
-  await app.database.getChannel(654, app.selfId)
+  await app.database.initUser('123', 4)
+  await app.database.initUser('456', 3)
+  await app.database.initUser('789', 4)
+  await app.database.initChannel('321')
+  await app.database.initChannel('654')
 })
 
 describe('Admin Commands', () => {

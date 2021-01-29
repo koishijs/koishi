@@ -16,7 +16,7 @@ app.plugin(pluginEval, {
   },
 })
 
-const ses = app.session(123)
+const ses = app.session('123')
 
 before(() => app.start())
 

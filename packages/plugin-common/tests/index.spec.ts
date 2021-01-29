@@ -1,8 +1,9 @@
 import { MockedApp } from 'koishi-test-utils'
 import * as common from '../src'
 import 'koishi-database-memory'
+import { expect } from 'chai'
 
-test('basic support', () => {
+it('basic support', () => {
   const app = new MockedApp()
   app.plugin(common)
 
@@ -16,7 +17,7 @@ test('basic support', () => {
   expect(app._commandMap.info).not.to.be.ok
 })
 
-test('skip database commands', () => {
+it('skip database commands', () => {
   const app = new MockedApp({ database: { memory: {} } })
   app.plugin(common)
 
