@@ -146,8 +146,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  subcommand(rawName: string, config?: Command.Config): Command
-  subcommand(rawName: string, description: string, config?: Command.Config): Command
+  subcommand<D extends string>(rawName: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
+  subcommand<D extends string>(rawName: D, description: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
   subcommand(rawName: string, ...args: [Command.Config?] | [string, Command.Config?]) {
     rawName = this.name + (rawName.charCodeAt(0) === 46 ? '' : '/') + rawName
     return this.context.command(rawName, ...args as any)
