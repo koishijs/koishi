@@ -36,8 +36,8 @@ export default function apply(app: App) {
     session.collect(key, { ...argv, command, args: [], options: { help: true } }, fields)
   }
 
-  app.command('help [command]', '显示帮助信息', { authority: 0 })
-    .userFields<ValidationField>(['authority'])
+  app.command('help [command]  显示帮助信息', { authority: 0 })
+    .userFields(['authority'])
     .userFields(createCollector('user'))
     .channelFields(createCollector('channel'))
     .shortcut('帮助', { fuzzy: true })
@@ -85,12 +85,12 @@ function formatCommands(prefix: string, session: Session<ValidationField>, sourc
   const commands = getCommands(session, source, options.showHidden)
   if (!commands.length) return []
   let hasSubcommand = false
-  const output = commands.map(({ name, config, children }) => {
+  const output = commands.map(({ name, config, children, description }) => {
     let output = '    ' + name
     if (options.authority) {
       output += ` (${config.authority}${children.length ? (hasSubcommand = true, '*') : ''})`
     }
-    output += '  ' + config.description
+    output += '  ' + description
     return output
   })
   if (options.authority) {
@@ -126,7 +126,7 @@ function getOptions(command: Command, session: Session<ValidationField>, maxUsag
 }
 
 async function showHelp(command: Command, session: Session<ValidationField>, config: HelpConfig) {
-  const output = [command.name + command.declaration, command.config.description]
+  const output = [command.declaration, command.description]
 
   if (command.context.database) {
     await session.observeUser(['authority', 'timers', 'usage'])
