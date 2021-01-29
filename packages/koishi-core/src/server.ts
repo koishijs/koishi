@@ -126,12 +126,12 @@ export class Bot {
     return Object.fromEntries(list.map(info => [info.userId, info.nick || info.name]))
   }
 
-  async broadcast(channels: string[], message: string, delay = this.app.options.delay.broadcast) {
+  async broadcast(channels: string[], content: string, delay = this.app.options.delay.broadcast) {
     const messageIds: string[] = []
     for (let index = 0; index < channels.length; index++) {
       if (index && delay) await sleep(delay)
       try {
-        messageIds.push(await this.sendMessage(channels[index], message))
+        messageIds.push(await this.sendMessage(channels[index], content))
       } catch (error) {
         this.app.logger('bot').warn(error)
       }

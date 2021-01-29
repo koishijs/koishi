@@ -240,16 +240,12 @@ export class Context {
     }
   }
 
-  middleware(middleware: Middleware) {
-    return this.addListener(Context.MIDDLEWARE_EVENT, middleware)
-  }
-
-  addMiddleware(middleware: Middleware) {
-    return this.addListener(Context.MIDDLEWARE_EVENT, middleware)
-  }
-
-  prependMiddleware(middleware: Middleware) {
-    return this.prependListener(Context.MIDDLEWARE_EVENT, middleware)
+  middleware(middleware: Middleware, prepend = false) {
+    if (prepend) {
+      return this.prependListener(Context.MIDDLEWARE_EVENT, middleware)
+    } else {
+      return this.addListener(Context.MIDDLEWARE_EVENT, middleware)
+    }
   }
 
   removeMiddleware(middleware: Middleware) {
@@ -299,18 +295,18 @@ export class Context {
     return parent
   }
 
-  async broadcast(message: string, forced?: boolean): Promise<string[]>
-  async broadcast(groups: readonly string[], message: string, forced?: boolean): Promise<string[]>
+  async broadcast(content: string, forced?: boolean): Promise<string[]>
+  async broadcast(channels: readonly string[], content: string, forced?: boolean): Promise<string[]>
   async broadcast(...args: [string, boolean?] | [readonly string[], string, boolean?]) {
-    let groups: string[]
-    if (Array.isArray(args[0])) groups = args.shift() as any
-    const [message, forced] = args as [string, boolean]
-    if (!message) return []
+    let channels: string[]
+    if (Array.isArray(args[0])) channels = args.shift() as any
+    const [content, forced] = args as [string, boolean]
+    if (!content) return []
 
     const data = await this.database.getChannelList(['id', 'assignee', 'flag'])
     const assignMap: Record<string, Record<string, string[]>> = {}
     for (const { id, assignee, flag } of data) {
-      if (groups && !groups.includes(id)) continue
+      if (channels && !channels.includes(id)) continue
       if (!forced && (flag & Channel.Flag.silent)) continue
       const [type] = id.split(':')
       const cid = id.slice(type.length + 1)
@@ -324,7 +320,7 @@ export class Context {
 
     return (await Promise.all(Object.entries(assignMap).flatMap(([type, map]) => {
       return this.servers[type].bots.map((bot) => {
-        return bot.broadcast(map[bot.selfId] || [], message)
+        return bot.broadcast(map[bot.selfId] || [], content)
       })
     }))).flat(1)
   }

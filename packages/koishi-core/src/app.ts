@@ -17,6 +17,7 @@ export interface DelayOptions {
   message?: number
   cancel?: number
   broadcast?: number
+  prompt?: number
 }
 
 export interface AppOptions extends BotOptions {
@@ -26,7 +27,6 @@ export interface AppOptions extends BotOptions {
   nickname?: string | string[]
   maxListeners?: number
   prettyErrors?: boolean
-  promptTimeout?: number
   processMessage?: (message: string) => string
   delay?: DelayOptions
   autoAssign?: boolean | ((session: Session) => boolean)
@@ -65,7 +65,6 @@ export class App extends Context {
   static defaultConfig: AppOptions = {
     maxListeners: 64,
     prettyErrors: true,
-    promptTimeout: Time.minute,
     userCacheAge: Time.minute,
     groupCacheAge: 5 * Time.minute,
     autoAssign: false,
@@ -77,6 +76,7 @@ export class App extends Context {
       cancel: 0,
       message: 0.1 * Time.second,
       broadcast: 0.5 * Time.second,
+      prompt: Time.minute,
     },
   }
 

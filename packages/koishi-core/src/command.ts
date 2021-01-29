@@ -175,8 +175,12 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this as any
   }
 
-  check(checker: Command.Action<U, G, A, O>) {
-    this._checkers.push(checker)
+  check(callback: Command.Action<U, G, A, O>, prepend = false) {
+    if (prepend) {
+      this._checkers.unshift(callback)
+    } else {
+      this._checkers.push(callback)
+    }
     return this
   }
 
@@ -185,11 +189,11 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return typeof value === 'function' ? value(session.$user) : value
   }
 
-  action(callback: Command.Action<U, G, A, O>, prepend = false): Command<U, G, A, O> {
-    if (prepend) {
-      this._actions.unshift(callback)
-    } else {
+  action(callback: Command.Action<U, G, A, O>, append = false) {
+    if (append) {
       this._actions.push(callback)
+    } else {
+      this._actions.unshift(callback)
     }
     return this
   }

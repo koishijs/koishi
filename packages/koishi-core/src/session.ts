@@ -334,13 +334,13 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
   middleware(middleware: Middleware) {
     const identifier = getSessionId(this)
-    return this.$app.prependMiddleware(async (session, next) => {
+    return this.$app.middleware(async (session, next) => {
       if (identifier && getSessionId(session) !== identifier) return next()
       return middleware(session, next)
-    })
+    }, true)
   }
 
-  prompt(timeout = this.$app.options.promptTimeout) {
+  prompt(timeout = this.$app.options.delay.prompt) {
     return new Promise((resolve) => {
       const dispose = this.middleware((session) => {
         clearTimeout(timer)
