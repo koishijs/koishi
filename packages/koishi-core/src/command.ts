@@ -126,7 +126,7 @@ export class Command<U extends User.Field = never, G extends Group.Field = never
 
   _action?: CommandAction<U, G, O>
 
-  static defaultConfig: CommandConfig = {}
+  static defaultConfig: CommandConfig = { description: '' }
   static defaultOptionConfig: OptionConfig = {}
 
   private static _userFields: FieldCollector<'user'>[] = []
