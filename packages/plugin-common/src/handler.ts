@@ -77,12 +77,12 @@ export default function apply(ctx: App, options: HandlerOptions = {}) {
       }
     })
 
-    ctx.prependMiddleware((session, next) => {
+    ctx.middleware((session, next) => {
       for (const interval in counters) {
         if (counters[interval] <= 0) return
       }
       return next()
-    })
+    }, true)
   }
 
   ctx.on('group-member-added', async (session) => {

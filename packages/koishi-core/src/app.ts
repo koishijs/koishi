@@ -81,7 +81,7 @@ export class App extends Context {
   }
 
   constructor(options: AppOptions = {}) {
-    super({ groups: [], users: [], private: true })
+    super(() => true)
     if (!options.bots) options.bots = [options]
     options = this.options = {
       ...App.defaultConfig,

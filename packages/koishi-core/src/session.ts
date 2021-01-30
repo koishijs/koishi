@@ -111,6 +111,10 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     return this.$app.chain('appellation', defaultName, this)
   }
 
+  get database() {
+    return this.$app.database
+  }
+
   get uid() {
     return `${this.kind}:${this.userId}`
   }
@@ -163,12 +167,12 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   async getChannel<K extends Channel.Field = never>(id: string = this.channelId, assignee = '', fields: readonly K[] = []) {
-    const group = await this.$app.database.getChannel(this.kind, id, fields)
+    const group = await this.database.getChannel(this.kind, id, fields)
     if (group) return group
     const fallback = Channel.create(this.kind, id)
     fallback.assignee = assignee
     if (assignee) {
-      await this.$app.database.createChannel(this.kind, id, fallback)
+      await this.database.createChannel(this.kind, id, fallback)
     }
     return fallback
   }
@@ -199,18 +203,18 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     // 绑定一个新的可观测频道实例
     const assignee = this._getValue(this.$app.options.autoAssign) ? this.selfId : ''
     const data = await this.getChannel(channelId, assignee, fieldArray)
-    const group = observe(data, diff => this.$app.database.setChannel(kind, channelId, diff), `group ${channelId}`)
+    const group = observe(data, diff => this.database.setChannel(kind, channelId, diff), `group ${channelId}`)
     this.$app._groupCache.set(this.cid, group)
     return this.$channel = group
   }
 
   async getUser<K extends User.Field = never>(id: string = this.userId, authority = 0, fields: readonly K[] = []) {
-    const user = await this.$app.database.getUser(this.kind, id, fields)
+    const user = await this.database.getUser(this.kind, id, fields)
     if (user) return user
     const fallback = User.create(this.kind, id)
     fallback.authority = authority
     if (authority) {
-      await this.$app.database.createUser(this.kind, id, fallback)
+      await this.database.createUser(this.kind, id, fallback)
     }
     return fallback
   }
@@ -257,7 +261,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     // 绑定一个新的可观测用户实例
     const data = await this.getUser(userId, this._getValue(this.$app.options.autoAuthorize), fieldArray)
-    const user = observe(data, diff => this.$app.database.setUser(this.kind, userId, diff), `user ${userId}`)
+    const user = observe(data, diff => this.database.setUser(this.kind, userId, diff), `user ${userId}`)
     userCache.set(userId, user)
     return this.$user = user
   }
@@ -320,7 +324,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
       }
     }
 
-    if (this.$app.database) {
+    if (this.database) {
       if (this.subType === 'group') {
         await this.observeChannel(this.collect('channel', argv))
       }

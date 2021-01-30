@@ -245,6 +245,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   const { nickname = ctx.app.options.nickname, maxRedirections = 3 } = config
   const nicknames = makeArray(nickname).map(escapeRegExp)
   const nicknameRE = new RegExp(`^((${nicknames.join('|')})[,，]?\\s*)+`)
+  const ctx2 = ctx.select('groupId')
 
   ctx.app._dialogueStates = {}
 
@@ -267,7 +268,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     if (activated[session.userId]) session.$appel = true
   })
 
-  ctx.group().middleware(async (session, next) => {
+  ctx2.middleware(async (session, next) => {
     return triggerDialogue(ctx, session, next)
   })
 
@@ -318,7 +319,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.group().command('dialogue <message:text>', '触发教学对话')
+  ctx2.command('dialogue <message:text>', '触发教学对话')
     .action(async ({ session, next }, message = '') => {
       if (session._redirected > maxRedirections) return next()
       session.content = message

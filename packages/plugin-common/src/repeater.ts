@@ -21,7 +21,7 @@ export interface RepeaterOptions {
 }
 
 export default function apply(ctx: Context, options: RepeaterOptions = {}) {
-  ctx = ctx.group()
+  ctx = ctx.select('groupId')
 
   const states: Record<string, RepeatState> = {}
 

@@ -18,56 +18,56 @@ describe('Context API', () => {
     })
 
     it('context.prototype.user', () => {
-      expect(app.user().match(groupSession)).to.be.true
-      expect(app.user().match(privateSession)).to.be.true
-      expect(app.user().match(metaEventSession)).to.be.true
-      expect(app.user('123').match(groupSession)).to.be.true
-      expect(app.user('123').match(privateSession)).to.be.true
-      expect(app.user('456').match(groupSession)).to.be.false
-      expect(app.user('456').match(privateSession)).to.be.false
-      expect(app.user('456').match(metaEventSession)).to.be.true
+      expect(app.select('userId').match(groupSession)).to.be.true
+      expect(app.select('userId').match(privateSession)).to.be.true
+      expect(app.select('userId').match(metaEventSession)).to.be.true
+      expect(app.select('userId', '123').match(groupSession)).to.be.true
+      expect(app.select('userId', '123').match(privateSession)).to.be.true
+      expect(app.select('userId', '456').match(groupSession)).to.be.false
+      expect(app.select('userId', '456').match(privateSession)).to.be.false
+      expect(app.select('userId', '456').match(metaEventSession)).to.be.true
     })
 
     it('context.prototype.private', () => {
-      expect(app.private().match(groupSession)).to.be.false
-      expect(app.private().match(privateSession)).to.be.true
-      expect(app.private().match(metaEventSession)).to.be.true
-      expect(app.private('123').match(groupSession)).to.be.false
-      expect(app.private('123').match(privateSession)).to.be.true
-      expect(app.private('456').match(groupSession)).to.be.false
-      expect(app.private('456').match(privateSession)).to.be.false
-      expect(app.private('123').match(metaEventSession)).to.be.true
+      expect(app.unselect('groupId').match(groupSession)).to.be.false
+      expect(app.unselect('groupId').match(privateSession)).to.be.true
+      expect(app.unselect('groupId').match(metaEventSession)).to.be.true
+      expect(app.unselect('groupId').select('userId', '123').match(groupSession)).to.be.false
+      expect(app.unselect('groupId').select('userId', '123').match(privateSession)).to.be.true
+      expect(app.unselect('groupId').select('userId', '456').match(groupSession)).to.be.false
+      expect(app.unselect('groupId').select('userId', '456').match(privateSession)).to.be.false
+      expect(app.unselect('groupId').select('userId', '123').match(metaEventSession)).to.be.true
     })
 
     it('context.prototype.group', () => {
-      expect(app.group().match(groupSession)).to.be.true
-      expect(app.group().match(privateSession)).to.be.false
-      expect(app.group().match(metaEventSession)).to.be.true
-      expect(app.group('123').match(groupSession)).to.be.false
-      expect(app.group('123').match(privateSession)).to.be.false
-      expect(app.group('456').match(groupSession)).to.be.true
-      expect(app.group('456').match(privateSession)).to.be.false
-      expect(app.group('456').match(metaEventSession)).to.be.true
+      expect(app.select('groupId').match(groupSession)).to.be.true
+      expect(app.select('groupId').match(privateSession)).to.be.false
+      expect(app.select('groupId').match(metaEventSession)).to.be.true
+      expect(app.select('groupId', '123').match(groupSession)).to.be.false
+      expect(app.select('groupId', '123').match(privateSession)).to.be.false
+      expect(app.select('groupId', '456').match(groupSession)).to.be.true
+      expect(app.select('groupId', '456').match(privateSession)).to.be.false
+      expect(app.select('groupId', '456').match(metaEventSession)).to.be.true
     })
 
     it('context chaining', () => {
-      expect(app.group('456').user('123').match(groupSession)).to.be.true
-      expect(app.group('456').user('456').match(groupSession)).to.be.false
-      expect(app.group('123').user('123').match(groupSession)).to.be.false
-      expect(app.group('456').user('123').match(metaEventSession)).to.be.true
-      expect(app.user('123').group('456').match(groupSession)).to.be.true
-      expect(app.user('456').group('456').match(groupSession)).to.be.false
-      expect(app.user('123').group('123').match(groupSession)).to.be.false
-      expect(app.user('123').group('456').match(metaEventSession)).to.be.true
+      expect(app.select('groupId', '456').select('userId', '123').match(groupSession)).to.be.true
+      expect(app.select('groupId', '456').select('userId', '456').match(groupSession)).to.be.false
+      expect(app.select('groupId', '123').select('userId', '123').match(groupSession)).to.be.false
+      expect(app.select('groupId', '456').select('userId', '123').match(metaEventSession)).to.be.true
+      expect(app.select('userId', '123').select('groupId', '456').match(groupSession)).to.be.true
+      expect(app.select('userId', '456').select('groupId', '456').match(groupSession)).to.be.false
+      expect(app.select('userId', '123').select('groupId', '123').match(groupSession)).to.be.false
+      expect(app.select('userId', '123').select('groupId', '456').match(metaEventSession)).to.be.true
     })
 
     it('context intersection', () => {
-      expect(app.group('456', '789').group('123', '456').match(groupSession)).to.be.true
-      expect(app.group('456', '789').group('123', '789').match(groupSession)).to.be.false
-      expect(app.group('123', '789').group('123', '456').match(groupSession)).to.be.false
-      expect(app.user('123', '789').user('123', '456').match(groupSession)).to.be.true
-      expect(app.user('456', '789').user('123', '456').match(groupSession)).to.be.false
-      expect(app.user('123', '789').user('456', '789').match(groupSession)).to.be.false
+      expect(app.select('groupId', '456', '789').select('groupId', '123', '456').match(groupSession)).to.be.true
+      expect(app.select('groupId', '456', '789').select('groupId', '123', '789').match(groupSession)).to.be.false
+      expect(app.select('groupId', '123', '789').select('groupId', '123', '456').match(groupSession)).to.be.false
+      expect(app.select('userId', '123', '789').select('userId', '123', '456').match(groupSession)).to.be.true
+      expect(app.select('userId', '456', '789').select('userId', '123', '456').match(groupSession)).to.be.false
+      expect(app.select('userId', '123', '789').select('userId', '456', '789').match(groupSession)).to.be.false
     })
   })
 
@@ -79,7 +79,7 @@ describe('Context API', () => {
     it('ctx.prototype.parallel', async () => {
       await app.parallel('command', null)
       const callback = fn<void, []>()
-      app.private().on('command', callback)
+      app.unselect('groupId').on('command', callback)
       await app.parallel('command', null)
       expect(callback.mock.calls).to.have.length(1)
       await app.parallel(groupSession, 'command', null)
@@ -91,7 +91,7 @@ describe('Context API', () => {
     it('ctx.prototype.emit', async () => {
       app.emit('command', null)
       const callback = fn<void, []>()
-      app.private().on('command', callback)
+      app.unselect('groupId').on('command', callback)
       app.emit('command', null)
       expect(callback.mock.calls).to.have.length(1)
       app.emit(groupSession, 'command', null)
@@ -103,7 +103,7 @@ describe('Context API', () => {
     it('ctx.prototype.serial', async () => {
       app.serial('command', null)
       const callback = fn<void, []>()
-      app.private().on('command', callback)
+      app.unselect('groupId').on('command', callback)
       app.serial('command', null)
       expect(callback.mock.calls).to.have.length(1)
       app.serial(groupSession, 'command', null)
@@ -115,7 +115,7 @@ describe('Context API', () => {
     it('ctx.prototype.bail', async () => {
       app.bail('command', null)
       const callback = fn<void, []>()
-      app.private().on('command', callback)
+      app.unselect('groupId').on('command', callback)
       app.bail('command', null)
       expect(callback.mock.calls).to.have.length(1)
       app.bail(groupSession, 'command', null)
@@ -129,7 +129,7 @@ describe('Context API', () => {
     it('call chaining', () => {
       expect(app.plugin(noop)).to.equal(app)
 
-      const ctx = app.user('123')
+      const ctx = app.select('userId', '123')
       expect(ctx.plugin(noop)).to.equal(ctx)
     })
 

@@ -156,7 +156,7 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
 
   const tokens: Record<string, [kind: PlatformType, id: string]> = {}
 
-  ctx.private().command('user.bind', '绑定到账号', { authority: 0 })
+  ctx.unselect('groupId').command('user.bind', '绑定到账号', { authority: 0 })
     .action(({ session }) => {
       const token = Random.uuid()
       const data = tokens[token] = [session.kind, session.userId]
@@ -170,7 +170,7 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
       ].join('\n')
     })
 
-  ctx.prependMiddleware(async (session, next) => {
+  ctx.middleware(async (session, next) => {
     if (session.subType !== 'private') return next()
     const data = tokens[session.content]
     if (!data) return next()
@@ -180,7 +180,7 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
     user[data[0]] = data[1]
     await user._update()
     return session.send('账号绑定成功！')
-  })
+  }, true)
 
   ctx.command('user.auth <value>', '权限信息', { authority: 4 })
     .adminUser(({ session, target }, value) => {

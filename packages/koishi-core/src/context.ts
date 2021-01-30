@@ -1,4 +1,4 @@
-import { intersection, difference, Logger, defineProperty } from 'koishi-utils'
+import { Logger, defineProperty } from 'koishi-utils'
 import { Command } from './command'
 import { EventType, Session } from './session'
 import { User, Channel, PlatformType, Database } from './database'
@@ -18,31 +18,11 @@ export type Disposable = () => void
 
 type PluginConfig<T extends Plugin> = T extends PluginFunction<infer U> ? U : T extends PluginObject<infer U> ? U : never
 
-interface ScopeSet extends Array<string> {
-  positive?: boolean
-}
-
-interface Scope {
-  groups: ScopeSet
-  users: ScopeSet
-  private: boolean
-}
-
-function joinScope(base: ScopeSet, ids: readonly string[]) {
-  const result: ScopeSet = !ids.length ? [...base]
-    : base.positive ? intersection(ids, base) : difference(ids, base)
-  result.positive = !ids.length ? base.positive : true
-  return result
-}
-
-function matchScope(base: ScopeSet, id: string) {
-  // @ts-ignore
-  return !id || !(base.positive ^ base.includes(id))
-}
-
 function isBailed(value: any) {
   return value !== null && value !== false && value !== undefined
 }
+
+type Filter = (session: Session) => boolean
 
 export class Context {
   static readonly MIDDLEWARE_EVENT = Symbol('mid')
@@ -53,7 +33,7 @@ export class Context {
 
   private _disposables: Disposable[]
 
-  constructor(public scope: Scope, public app?: App) {
+  constructor(public filter: Filter, public app?: App) {
     defineProperty(this, '_disposables', [])
   }
 
@@ -80,32 +60,30 @@ export class Context {
     return new Logger(name)
   }
 
-  group(...ids: string[]) {
-    const scope = { ...this.scope }
-    scope.groups = joinScope(scope.groups, ids)
-    scope.private = false
-    return new Context(scope, this.app)
+  select<K extends keyof Session>(key: K, ...values: Session[K][]) {
+    return this.intersect((session) => {
+      return values.length ? values.includes(session[key]) : !!session[key]
+    })
   }
 
-  user(...ids: string[]) {
-    const scope = { ...this.scope }
-    scope.users = joinScope(scope.users, ids)
-    return new Context(scope, this.app)
+  unselect<K extends keyof Session>(key: K, ...values: Session[K][]) {
+    return this.intersect((session) => {
+      return values.length ? !values.includes(session[key]) : !session[key]
+    })
   }
 
-  private(...ids: string[]) {
-    const scope = { ...this.scope }
-    scope.users = joinScope(scope.users, ids)
-    scope.groups = []
-    scope.groups.positive = true
-    return new Context(scope, this.app)
+  union(arg: Filter | Context) {
+    const filter = typeof arg === 'function' ? arg : arg.filter
+    return new Context(s => this.filter(s) || filter(s), this.app)
   }
 
-  match(session: Session) {
-    if (!session) return true
-    return matchScope(this.scope.groups, session.groupId)
-      && matchScope(this.scope.users, session.userId)
-      && (this.scope.private || session.subType !== 'private')
+  intersect(arg: Filter | Context) {
+    const filter = typeof arg === 'function' ? arg : arg.filter
+    return new Context(s => this.filter(s) && filter(s), this.app)
+  }
+
+  match(session?: Session) {
+    return !session || this.filter(session)
   }
 
   plugin<T extends Plugin>(plugin: T, options?: PluginConfig<T>) {

@@ -6,22 +6,7 @@ export interface SenderConfig {
 }
 
 export default function apply(ctx: Context, config: SenderConfig = {}) {
-  ctx.database && ctx.command('common/broadcast <message:text>', '全服广播', { authority: 4 })
-    .option('forced', '-f  无视 silent 标签进行广播')
-    .option('only', '-o  仅向当前 Bot 负责的群进行广播')
-    .action(async ({ options, session }, message) => {
-      if (!message) return '请输入要发送的文本。'
-      if (!options.only) {
-        await ctx.broadcast(message, options.forced)
-        return
-      }
-
-      let groups = await ctx.database.getChannelList(['id', 'flag'], session.kind, [session.selfId])
-      if (!options.forced) {
-        groups = groups.filter(g => !(g.flag & Channel.Flag.silent))
-      }
-      await session.$bot.broadcast(groups.map(g => g.id.slice(session.kind.length + 1)), message)
-    })
+  const dbctx = ctx.select('database')
 
   ctx.command('common/echo <message:text>', '向当前上下文发送消息', { authority: 2 })
     .option('anonymous', '-a  匿名发送消息', { authority: 3 })
@@ -66,7 +51,24 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
     return session.$bot.sendPrivateMessage(userId, $parsed)
   })
 
-  ctx.database && ctx.command('common/contextify <message:text>', '在特定上下文中触发指令', { authority: 3 })
+  dbctx.command('common/broadcast <message:text>', '全服广播', { authority: 4 })
+    .option('forced', '-f  无视 silent 标签进行广播')
+    .option('only', '-o  仅向当前 Bot 负责的群进行广播')
+    .action(async ({ options, session }, message) => {
+      if (!message) return '请输入要发送的文本。'
+      if (!options.only) {
+        await ctx.broadcast(message, options.forced)
+        return
+      }
+
+      let groups = await ctx.database.getChannelList(['id', 'flag'], session.kind, [session.selfId])
+      if (!options.forced) {
+        groups = groups.filter(g => !(g.flag & Channel.Flag.silent))
+      }
+      await session.$bot.broadcast(groups.map(g => g.id.slice(session.kind.length + 1)), message)
+    })
+
+  dbctx.command('common/contextify <message:text>', '在特定上下文中触发指令', { authority: 3 })
     .alias('ctxf')
     .userFields(['authority'])
     .option('user', '-u [id]  使用私聊上下文')
