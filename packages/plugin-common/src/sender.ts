@@ -61,11 +61,11 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
         return
       }
 
-      let groups = await ctx.database.getChannelList(['id', 'flag'], session.kind, [session.selfId])
+      let groups = await ctx.database.getChannelList(['id', 'flag'], session.platform, [session.selfId])
       if (!options.forced) {
         groups = groups.filter(g => !(g.flag & Channel.Flag.silent))
       }
-      await session.$bot.broadcast(groups.map(g => g.id.slice(session.kind.length + 1)), message)
+      await session.$bot.broadcast(groups.map(g => g.id.slice(session.platform.length + 1)), message)
     })
 
   dbctx.command('common/contextify <message:text>', '在特定上下文中触发指令', { authority: 3 })

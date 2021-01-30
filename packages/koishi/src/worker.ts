@@ -106,8 +106,8 @@ interface Message {
 
 process.on('message', (data: Message) => {
   if (data.type === 'send') {
-    const { channelId, kind, selfId, message } = data.payload
-    const bot = app.servers[kind].bots[selfId]
+    const { channelId, sid, message } = data.payload
+    const bot = app.bots[sid]
     bot.sendMessage(channelId, message)
   }
 })
@@ -131,12 +131,12 @@ app.command('exit', '停止机器人运行', { authority: 4 })
   .shortcut('关机', { prefix: true })
   .shortcut('重启', { prefix: true, options: { restart: true } })
   .action(async ({ options, session }) => {
-    const { channelId, kind, selfId } = session
+    const { channelId, sid } = session
     if (!options.restart) {
       await session.send('正在关机……').catch(noop)
       process.exit()
     }
-    process.send({ type: 'exit', payload: { channelId, kind, selfId, message: '已成功重启。' } })
+    process.send({ type: 'exit', payload: { channelId, sid, message: '已成功重启。' } })
     await session.send(`正在重启……`).catch(noop)
     process.exit(114)
   })

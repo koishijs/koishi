@@ -62,7 +62,7 @@ extendDatabase(MysqlDatabase, {
 
   async getChannelList(fields, type, assignees) {
     const idMap: (readonly [string, readonly string[]])[] = assignees ? [[type, assignees]]
-      : type ? [[type, this.app.servers[type].bots.map(bot => bot.selfId)]]
+      : type ? [[type, this.app.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)]]
         : Object.entries(this.app.servers).map(([type, { bots }]) => [type, bots.map(bot => bot.selfId)])
     return this.select<Channel>('channel', fields, idMap.map(([type, ids]) => {
       return [

@@ -47,10 +47,10 @@ export default function apply(ctx: Context, options: RepeaterOptions = {}) {
   })
 
   ctx.middleware((session, next) => {
-    const { content, kind, userId } = session
+    const { content, uid, userId } = session
 
     // never respond to messages from self
-    if (ctx.servers[kind].bots[userId]) return
+    if (ctx.app.bots[uid]) return
 
     const state = getState(session.cid)
     const check = (handle: RepeatHandler) => {

@@ -43,11 +43,11 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     argv.authMap = {}
     const { options, nameMap, session, dialogues, authMap } = argv
     const writers = deduplicate(dialogues.map(d => d.writer).filter(Boolean))
-    const fields: User.Field[] = ['id', 'authority', session.kind]
+    const fields: User.Field[] = ['id', 'authority', session.platform]
     if (options.writer === '0') {
       argv.writer = 0
     } else if (options.writer && !writers.includes(options.writer)) {
-      const user = await ctx.database.getUser(session.kind, options.writer as string, fields)
+      const user = await ctx.database.getUser(session.platform, options.writer as string, fields)
       if (user) {
         writers.push(user.id)
         argv.writer = user.id
@@ -61,7 +61,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     for (const user of users) {
       authMap[user.id] = user.authority
       if (options.modify) continue
-      const userId = user[session.kind]
+      const userId = user[session.platform]
       if (user.name) {
         nameMap[user.id] = `${user.name} (${userId})`
       } else if (userId === session.userId) {

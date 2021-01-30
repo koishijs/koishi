@@ -51,7 +51,7 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
           selfId,
           userId,
           eventType,
-          kind: 'tomon',
+          platform: 'tomon',
           channelId: data['guildId'],
           subType: data['guildId'] ? 'group' : 'private',
           author: data.author,

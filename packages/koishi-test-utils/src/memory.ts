@@ -96,7 +96,7 @@ extendDatabase(MemoryDatabase, {
 
   async getChannelList(fields, type, assignees) {
     const assigneeMap: Record<string, readonly string[]> = Object.fromEntries(assignees ? [[type, assignees]]
-      : type ? [[type, this.app.servers[type].bots.map(bot => bot.selfId)]]
+      : type ? [[type, this.app.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)]]
         : Object.entries(this.app.servers).map(([type, { bots }]) => [type, bots.map(bot => bot.selfId)]))
     return this.$table('channel').filter((row) => {
       const [type] = row.id.split(':')

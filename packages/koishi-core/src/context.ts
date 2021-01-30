@@ -297,7 +297,8 @@ export class Context {
     }
 
     return (await Promise.all(Object.entries(assignMap).flatMap(([type, map]) => {
-      return this.servers[type].bots.map((bot) => {
+      return this.app.bots.map((bot) => {
+        if (bot.platform !== type) return Promise.resolve([])
         return bot.broadcast(map[bot.selfId] || [], content)
       })
     }))).flat(1)

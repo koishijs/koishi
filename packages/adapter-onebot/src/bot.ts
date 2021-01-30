@@ -209,11 +209,10 @@ export class CQBot extends Bot {
   }
 
   sendMessage(channelId: string, content: string) {
-    const [ctxType, ctxId] = channelId.split(':')
     content = this.handleContent(content)
-    return ctxType === 'group'
-      ? this.sendGroupMessage(ctxId, content)
-      : this.sendPrivateMessage(ctxId, content)
+    return channelId.startsWith('private:')
+      ? this.sendPrivateMessage(channelId.slice(8), content)
+      : this.sendGroupMessage(channelId, content)
   }
 
   async getMessage(channelId: string, messageId: string) {

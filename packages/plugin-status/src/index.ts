@@ -117,8 +117,7 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   app.before('send', (session) => {
-    const { counter } = app.servers[session.kind].bots[session.selfId]
-    counter[0] += 1
+    session.$bot.counter[0] += 1
   })
 
   let timer: NodeJS.Timeout
@@ -159,15 +158,15 @@ export function apply(ctx: Context, config: Config = {}) {
     .shortcut('运行情况', { prefix: true })
     .shortcut('运行状态', { prefix: true })
     .action(async ({ session }) => {
-      const status = await getStatus(session.kind)
+      const status = await getStatus(session.platform)
       status.bots.toString = () => {
         return status.bots.map(bot => interpolate(formatBot, bot)).join('\n')
       }
       return interpolate(format, status)
     })
 
-  async function _getStatus(kind?: PlatformType) {
-    const botList = kind ? app.servers[kind].bots : app.bots
+  async function _getStatus(platform?: PlatformType) {
+    const botList = platform ? app.bots.filter(bot => bot.platform === platform) : app.bots
     const [data, bots] = await Promise.all([
       app.database.getActiveData(),
       Promise.all(botList.map(async (bot): Promise<BotStatus> => ({
@@ -181,7 +180,7 @@ export function apply(ctx: Context, config: Config = {}) {
     const cpu = { app: appRate, total: usedRate }
     const status: Status = { ...data, bots, memory, cpu, timestamp, startTime }
     await Promise.all(callbacks.map(([callback, local]) => {
-      if (local || !kind) return callback.call(app, status, config)
+      if (local || !platform) return callback.call(app, status, config)
     }))
     return status
   }
@@ -189,10 +188,10 @@ export function apply(ctx: Context, config: Config = {}) {
   let cachedStatus: Promise<Status>
   let timestamp: number
 
-  async function getStatus(kind?: PlatformType): Promise<Status> {
+  async function getStatus(platform?: PlatformType): Promise<Status> {
     const now = Date.now()
     if (now - timestamp < refresh) return cachedStatus
     timestamp = now
-    return cachedStatus = _getStatus(kind)
+    return cachedStatus = _getStatus(platform)
   }
 }

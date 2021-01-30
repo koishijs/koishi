@@ -31,7 +31,7 @@ export interface EventTypeMap {
 /** CQHTTP Meta Information */
 export interface Meta<E extends EventType = EventType> extends MessageBase {
   eventType?: E
-  kind?: PlatformType
+  platform?: PlatformType
   selfId?: string
 
   // TODO
@@ -97,7 +97,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   get $bot(): [K] extends [never] ? Bot : Platforms[K] {
-    return this.$app.servers[this.kind].bots[this.selfId] as any
+    return this.$app.bots[this.sid] as any
   }
 
   get $username(): string {
@@ -116,15 +116,15 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   get uid() {
-    return `${this.kind}:${this.userId}`
+    return `${this.platform}:${this.userId}`
   }
 
   get cid() {
-    return `${this.kind}:${this.channelId}`
+    return `${this.platform}:${this.channelId}`
   }
 
   get sid() {
-    return `${this.kind}:${this.selfId}`
+    return `${this.platform}:${this.selfId}`
   }
 
   async send(message: string) {
@@ -167,12 +167,12 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   async getChannel<K extends Channel.Field = never>(id: string = this.channelId, assignee = '', fields: readonly K[] = []) {
-    const group = await this.database.getChannel(this.kind, id, fields)
+    const group = await this.database.getChannel(this.platform, id, fields)
     if (group) return group
-    const fallback = Channel.create(this.kind, id)
+    const fallback = Channel.create(this.platform, id)
     fallback.assignee = assignee
     if (assignee) {
-      await this.database.createChannel(this.kind, id, fallback)
+      await this.database.createChannel(this.platform, id, fallback)
     }
     return fallback
   }
@@ -180,7 +180,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
   /** 在当前会话上绑定一个可观测频道实例 */
   async observeChannel<T extends Channel.Field = never>(fields: Iterable<T> = []): Promise<Channel.Observed<T | G>> {
     const fieldSet = new Set<Channel.Field>(fields)
-    const { kind, channelId, $channel } = this
+    const { platform, channelId, $channel } = this
 
     // 对于已经绑定可观测频道的，判断字段是否需要自动补充
     if ($channel) {
@@ -203,18 +203,18 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     // 绑定一个新的可观测频道实例
     const assignee = this._getValue(this.$app.options.autoAssign) ? this.selfId : ''
     const data = await this.getChannel(channelId, assignee, fieldArray)
-    const group = observe(data, diff => this.database.setChannel(kind, channelId, diff), `group ${channelId}`)
+    const group = observe(data, diff => this.database.setChannel(platform, channelId, diff), `group ${channelId}`)
     this.$app._groupCache.set(this.cid, group)
     return this.$channel = group
   }
 
   async getUser<K extends User.Field = never>(id: string = this.userId, authority = 0, fields: readonly K[] = []) {
-    const user = await this.database.getUser(this.kind, id, fields)
+    const user = await this.database.getUser(this.platform, id, fields)
     if (user) return user
-    const fallback = User.create(this.kind, id)
+    const fallback = User.create(this.platform, id)
     fallback.authority = authority
     if (authority) {
-      await this.database.createUser(this.kind, id, fallback)
+      await this.database.createUser(this.platform, id, fallback)
     }
     return fallback
   }
@@ -224,9 +224,9 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     const fieldSet = new Set<User.Field>(fields)
     const { userId, $user } = this
 
-    let userCache = this.$app._userCache[this.kind]
+    let userCache = this.$app._userCache[this.platform]
     if (!userCache) {
-      userCache = this.$app._userCache[this.kind] = new LruCache({
+      userCache = this.$app._userCache[this.platform] = new LruCache({
         max: this.$app.options.userCacheLength,
         maxAge: this.$app.options.userCacheAge,
       })
@@ -247,7 +247,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     // 确保匿名消息不会写回数据库
     if (this.anonymous) {
-      const fallback = User.create(this.kind, userId)
+      const fallback = User.create(this.platform, userId)
       fallback.authority = this._getValue(this.$app.options.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
       return this.$user = user
@@ -261,7 +261,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     // 绑定一个新的可观测用户实例
     const data = await this.getUser(userId, this._getValue(this.$app.options.autoAuthorize), fieldArray)
-    const user = observe(data, diff => this.database.setUser(this.kind, userId, diff), `user ${userId}`)
+    const user = observe(data, diff => this.database.setUser(this.platform, userId, diff), `user ${userId}`)
     userCache.set(userId, user)
     return this.$user = user
   }

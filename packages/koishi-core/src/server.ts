@@ -1,6 +1,7 @@
 import { CQCode, paramCase, sleep } from 'koishi-utils'
 import { Session, MessageInfo, EventTypeMap, GroupInfo, GroupMemberInfo, UserInfo } from './session'
 import { App, AppStatus } from './app'
+import { PlatformType } from './database'
 
 export interface BotOptions {
   type?: string
@@ -67,6 +68,7 @@ export interface Bot extends BotOptions {
 
   ready?: boolean
   version?: string
+  platform?: PlatformType
   getSelfId(): Promise<string>
   getStatusCode(): Promise<BotStatusCode>
 
@@ -103,11 +105,13 @@ export class Bot {
     if (/^\d+$/.test(source)) return source
   }
 
-  readonly sid: string
-
   constructor(public app: App, options: BotOptions) {
     Object.assign(this, options)
-    this.sid = `${this.type}:${this.selfId}`
+    this.platform = this.type.split(':', 1)[0] as never
+  }
+
+  get sid() {
+    return `${this.platform}:${this.selfId}`
   }
 
   createSession(subType: EventTypeMap['message'], ctxType: 'group' | 'user', ctxId: string, content: string) {
@@ -115,6 +119,7 @@ export class Bot {
       content,
       subType,
       eventType: 'send',
+      platform: this.platform,
       selfId: this.selfId,
       [ctxType + 'Id']: ctxId,
       timestamp: Math.round(Date.now() / 1000),

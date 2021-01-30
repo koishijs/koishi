@@ -14,18 +14,17 @@ const logger = new Logger('server')
 
 export function createSession(server: Server, data: any) {
   renameProperty(data, 'event_type', 'post_type')
+  renameProperty(data, 'sub_type', 'message_type')
   const session = new Session(server.app, camelCase(data))
-  session.kind = 'onebot'
+  session.platform = 'onebot'
   session.selfId = '' + session.selfId
   if (session.userId) session.userId = '' + session.userId
   if (session.groupId) session.groupId = '' + session.groupId
   if (session.targetId) session.targetId = '' + session.targetId
-  if (session.operatorId) session.groupId = '' + session.operatorId
+  if (session.operatorId) session.operatorId = '' + session.operatorId
   if (session.eventType === 'message') {
     CQBot.adaptMessage(session as any)
-    session.channelId = session.subType === 'group'
-      ? `group:${session.groupId}`
-      : `private:${session.userId}`
+    session.channelId = session.subType === 'group' ? session.groupId : `private:${session.userId}`
   } else if (data.event_type === 'meta_event') {
     delete session['metaEventType']
     session.eventType = 'lifecycle'

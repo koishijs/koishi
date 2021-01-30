@@ -118,7 +118,7 @@ export class TestSession {
 
   constructor(public app: MockedApp, public userId: string, public channelId?: string) {
     this.meta = {
-      kind: 'mock',
+      platform: 'mock',
       eventType: 'message',
       userId,
       author: {

@@ -122,7 +122,7 @@ Server.types.kaiheila = class HttpServer extends Server<KaiheilaBot> {
         ...data.d,
         selfId: bot.selfId,
         eventType: 'message',
-        kind: 'kaiheila',
+        platform: 'kaiheila',
       })
 
       // dispatch events
