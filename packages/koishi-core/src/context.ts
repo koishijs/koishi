@@ -1,7 +1,7 @@
 import { Logger, defineProperty } from 'koishi-utils'
 import { Command } from './command'
-import { EventType, Session } from './session'
-import { User, Channel, PlatformType, Database } from './database'
+import { Session, SessionType } from './session'
+import { User, Channel, Database } from './database'
 import { Argv, Domain } from './parser'
 import { Server } from './server'
 import { App } from './app'
@@ -25,7 +25,7 @@ function isBailed(value: any) {
 type Filter = (session: Session) => boolean
 
 export class Context {
-  static readonly MIDDLEWARE_EVENT = Symbol('mid')
+  static readonly middleware = Symbol('mid')
 
   protected _router: Router
   protected _database: Database
@@ -220,14 +220,14 @@ export class Context {
 
   middleware(middleware: Middleware, prepend = false) {
     if (prepend) {
-      return this.prependListener(Context.MIDDLEWARE_EVENT, middleware)
+      return this.prependListener(Context.middleware, middleware)
     } else {
-      return this.addListener(Context.MIDDLEWARE_EVENT, middleware)
+      return this.addListener(Context.middleware, middleware)
     }
   }
 
   removeMiddleware(middleware: Middleware) {
-    return this.removeListener(Context.MIDDLEWARE_EVENT, middleware)
+    return this.removeListener(Context.middleware, middleware)
   }
 
   command<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
@@ -310,57 +310,19 @@ export class Context {
   }
 }
 
-export type RawSession<E extends EventType = EventType> = Session<never, never, PlatformType, E>
+type FlattenEvents<T> = {
+  [K in keyof T & string]: K | `${K}/${FlattenEvents<T[K]>}`
+}[keyof T & string]
 
-export interface EventMap {
-  [Context.MIDDLEWARE_EVENT]: Middleware
+type SessionEventMap = Record<FlattenEvents<SessionType>, (session: Session) => void>
 
-  // message
-  'message'(session: RawSession<'message'>): void
-  'message/friend'(session: RawSession<'message'>): void
-  'message/group'(session: RawSession<'message'>): void
-  'message-updated'(session: RawSession<'message'>): void
-  'message-updated/friend'(session: RawSession<'message'>): void
-  'message-updated/group'(session: RawSession<'message'>): void
-  'message-deleted'(session: RawSession<'message'>): void
-  'message-deleted/friend'(session: RawSession<'message'>): void
-  'message-deleted/group'(session: RawSession<'message'>): void
+type EventName = keyof EventMap
+type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
+type BeforeEventName = OmitSubstring<EventName & string, 'before-'>
+type BeforeEventMap = { [E in EventName & string as OmitSubstring<E, 'before-'>]: EventMap[E] }
 
-  // friend
-  'friend-added'(session: Session): void
-  'friend-deleted'(session: Session): void
-
-  'group'(session: Session): void
-  'group-added'(session: Session): void
-  'group-deleted'(session: Session): void
-
-  'group-member'(session: Session): void
-  'group-member-added'(session: Session): void
-  'group-member-deleted'(session: Session): void
-
-  // notice
-  'group-upload'(session: Session): void
-  'group-admin'(session: Session): void
-  'group-admin/set'(session: Session): void
-  'group-admin/unset'(session: Session): void
-  'group-ban'(session: Session): void
-  'group-ban/ban'(session: Session): void
-  'group-ban/lift-ban'(session: Session): void
-  'notify'(session: Session): void
-  'notify/poke'(session: Session): void
-  'notify/lucky_king'(session: Session): void
-  'notify/honor'(session: Session): void
-
-  // request
-  'request/friend'(session: Session): void
-  'request/group/add'(session: Session): void
-  'request/group/invite'(session: Session): void
-
-  // lifecycle
-  'lifecycle/enable'(session: RawSession<'lifecycle'>): void
-  'lifecycle/disable'(session: RawSession<'lifecycle'>): void
-  'lifecycle/connect'(session: RawSession<'lifecycle'>): void
-  'lifecycle/heartbeat'(session: RawSession<'lifecycle'>): void
+export interface EventMap extends SessionEventMap {
+  [Context.middleware]: Middleware
 
   // Koishi events
   'appellation'(name: string, session: Session): string
@@ -371,7 +333,6 @@ export interface EventMap {
   'attach-user'(session: Session): void | boolean | Promise<void | boolean>
   'attach-channel'(session: Session): void | boolean | Promise<void | boolean>
   'before-send'(session: Session): void | boolean
-  'send'(session: Session): void | Promise<void>
   'before-command'(argv: Argv): void | string | Promise<void | string>
   'command'(argv: Argv): void | Promise<void>
   'middleware'(session: Session): void
@@ -381,11 +342,3 @@ export interface EventMap {
   'disconnect'(): void
   'dispose'(): void
 }
-
-type EventName = keyof EventMap
-
-type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
-
-type BeforeEventName = OmitSubstring<EventName & string, 'before-'>
-
-type BeforeEventMap = { [E in EventName & string as OmitSubstring<E, 'before-'>]: EventMap[E] }

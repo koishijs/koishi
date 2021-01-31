@@ -75,7 +75,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         } else {
           defineProperty(options, 'groups', options.groups ? options.groups.split(',').map(id => `${session.platform}:${id}`) : [])
         }
-      } else if (session.subType !== 'group' && options['partial']) {
+      } else if (session.subtype !== 'group' && options['partial']) {
         return '非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --groups 选项。'
       } else {
         defineProperty(options, 'groups', groups)
@@ -108,7 +108,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/detail', ({ groups, flag }, output, { session }) => {
-    const thisGroup = session.subType === 'group' && groups.includes(session.cid)
+    const thisGroup = session.subtype === 'group' && groups.includes(session.cid)
     output.push(`生效环境：${flag & Dialogue.Flag.complement
       ? thisGroup
         ? groups.length - 1 ? `除本群等 ${groups.length} 个群外的所有群` : '除本群'
@@ -119,7 +119,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/detail-short', ({ groups, flag }, output, { session, options }) => {
-    if (!options.groups && session.subType === 'group') {
+    if (!options.groups && session.subtype === 'group') {
       const isReversed = flag & Dialogue.Flag.complement
       const hasGroup = groups.includes(session.cid)
       output.unshift(!isReversed === hasGroup ? isReversed ? 'E' : 'e' : isReversed ? 'd' : 'D')

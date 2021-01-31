@@ -102,7 +102,7 @@ Command.prototype.adminChannel = function (this: Command, callback) {
       const data = await session.getChannel(id, '', [...fields])
       if (!data) return '未找到指定的频道。'
       target = observe(data, diff => database.setChannel(session.platform, id, diff), `channel ${id}`)
-    } else if (session.subType === 'group') {
+    } else if (session.subtype === 'group') {
       target = await session.observeChannel(fields)
     } else {
       return '当前不在群组上下文中，请使用 -t 参数指定目标频道。'
@@ -171,7 +171,7 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
     })
 
   ctx.middleware(async (session, next) => {
-    if (session.subType !== 'private') return next()
+    if (session.subtype !== 'private') return next()
     const data = tokens[session.content]
     if (!data) return next()
     const user = await session.observeUser(['authority', data[0]])

@@ -5,9 +5,9 @@ import { expect } from 'chai'
 import { fn } from 'jest-mock'
 
 const app = new App()
-const groupSession = new Session(app, { userId: '123', groupId: '456', subType: 'group' })
-const privateSession = new Session(app, { userId: '123', subType: 'private' })
-const metaEventSession = new Session(app, { eventType: 'lifecycle' })
+const groupSession = new Session(app, { userId: '123', groupId: '456', subtype: 'group' })
+const privateSession = new Session(app, { userId: '123', subtype: 'private' })
+const metaEventSession = new Session(app, { type: 'lifecycle' })
 
 describe('Context API', () => {
   describe('Composition API', () => {

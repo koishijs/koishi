@@ -39,19 +39,19 @@ const receiveFriendRequest = (userId: number) => receive({
   userId,
 })
 
-const receiveGroupRequest = (subType: 'add' | 'invite', userId: number) => receive({
+const receiveGroupRequest = (subtype: 'add' | 'invite', userId: number) => receive({
   postType: 'request',
   requestType: 'group',
   groupId: 10000,
   flag: 'flag',
-  subType,
+  subtype,
   userId,
 })
 
 const receiveGroupIncrease = (groupId: number, userId: number) => receive({
   postType: 'notice',
   noticeType: 'group_increase',
-  subType: 'invite',
+  subtype: 'invite',
   userId,
   groupId,
 })

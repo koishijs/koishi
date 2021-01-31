@@ -1,6 +1,6 @@
 import { CQBot, CQResponse, toVersion } from './bot'
 import { Server, Session } from 'koishi-core'
-import { Logger, camelCase, renameProperty } from 'koishi-utils'
+import { Logger, camelCase, renameProperty, paramCase } from 'koishi-utils'
 import type WebSocket from 'ws'
 
 declare module 'koishi-core/dist/server' {
@@ -13,35 +13,60 @@ declare module 'koishi-core/dist/server' {
 const logger = new Logger('server')
 
 export function createSession(server: Server, data: any) {
-  renameProperty(data, 'event_type', 'post_type')
-  renameProperty(data, 'sub_type', 'message_type')
   const session = new Session(server.app, camelCase(data))
+  renameProperty(session, 'type', 'postType')
+  renameProperty(session, 'subtype', 'subType')
   session.platform = 'onebot'
   session.selfId = '' + session.selfId
   if (session.userId) session.userId = '' + session.userId
   if (session.groupId) session.groupId = '' + session.groupId
   if (session.targetId) session.targetId = '' + session.targetId
   if (session.operatorId) session.operatorId = '' + session.operatorId
-  if (session.eventType === 'message') {
+
+  if (session.type === 'message') {
     CQBot.adaptMessage(session as any)
-    session.channelId = session.subType === 'group' ? session.groupId : `private:${session.userId}`
-  } else if (data.event_type === 'meta_event') {
+    renameProperty(session, 'subtype', 'messageType')
+    session.channelId = session.subtype === 'group' ? session.groupId : `private:${session.userId}`
+  } else if (data.post_type === 'meta_event') {
     delete session['metaEventType']
-    session.eventType = 'lifecycle'
+    session.type = 'lifecycle'
     if (data.meta_event_type === 'heartbeat') {
-      session.subType = 'heartbeat'
+      session.subtype = 'heartbeat'
     }
-  } else if (data.event_type === 'notice') {
+  } else if (data.post_type === 'request') {
+    delete session['requestType']
+    if (data.request_type === 'friend') {
+      session.type = 'friend-request'
+    } else if (data.sub_type === 'add') {
+      session.type = 'group-member-request'
+    } else {
+      session.type = 'group-request'
+    }
+  } else if (data.post_type === 'notice') {
     delete session['noticeType']
-    if (data.notice_type === 'group_recall') {
-      session.eventType = 'message-deleted'
-      session.subType = 'group'
-    } else if (data.notice_type === 'friend_recall') {
-      session.eventType = 'message-deleted'
-      session.subType = 'private'
+    switch (data.notice_type) {
+      case 'group_recall': session.type = 'message-deleted'; session.subtype = 'group'; break
+      case 'friend_recall': session.type = 'message-deleted'; session.subtype = 'private'; break
+      case 'friend_add': session.type = 'friend-added'; break
+      case 'group_upload': session.type = 'group-file-added'; break
+      case 'group_admin': session.type = 'group-member'; session.subtype = 'role'; break
+      case 'group_ban': session.type = 'group-member'; session.subtype = 'ban'; break
+      case 'group_decrease':
+        session.type = session.userId === session.selfId ? 'group-deleted' : 'group-member-deleted'
+        session.subtype = session.userId === session.operatorId ? 'leave' : 'kick'
+        break
+      case 'group_increase':
+        session.type = session.userId === session.selfId ? 'group-added' : 'group-member-added'
+        session.subtype = session.userId === session.operatorId ? 'leave' : 'kick'
+        break
+      case 'notify':
+        session.type = 'notice'
+        session.subtype = paramCase(data.sub_type)
+        session.subsubtype = paramCase(data.honor_type)
+        break
     }
   }
-  delete session['postType']
+
   return session
 }
 

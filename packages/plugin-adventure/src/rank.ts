@@ -42,11 +42,11 @@ namespace Rank {
   }
 
   export async function show<T extends User.Field>(rank: Rank<T>, session: Session, options: any) {
-    if (rank.groupOnly && (session.subType !== 'group' || options.global)) {
+    if (rank.groupOnly && (session.subtype !== 'group' || options.global)) {
       return '此排行只针对群。'
     }
 
-    if (session.subType !== 'group' && !options.global) {
+    if (session.subtype !== 'group' && !options.global) {
       return '非群聊只能获取全服排行。'
     }
 
@@ -132,7 +132,7 @@ namespace Rank {
             return `${paramCase(key)}: ${ranks[key].names[0]}`
           })
           output.unshift('排行项目有：')
-          if (session.subType !== 'group') {
+          if (session.subtype !== 'group') {
             output.push('使用“rank achv -g”或“全服成就排行”以查看全服排行。')
           } else {
             output.push('使用“rank achv”或“成就排行”以查看特定排行，使用“rank achv -g”或“全服成就排行”以查看全服排行。')

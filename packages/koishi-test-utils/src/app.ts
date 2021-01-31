@@ -19,7 +19,7 @@ class MockedBot extends Bot {
       message: '',
       time: 0,
       realId: 0,
-      subType: null,
+      subtype: null,
       messageType: null,
       author: { userId: this.selfId } as AuthorInfo,
     }
@@ -119,7 +119,7 @@ export class TestSession {
   constructor(public app: MockedApp, public userId: string, public channelId?: string) {
     this.meta = {
       platform: 'mock',
-      eventType: 'message',
+      type: 'message',
       userId,
       author: {
         userId,
@@ -130,10 +130,10 @@ export class TestSession {
     if (channelId) {
       this.meta.groupId = channelId
       this.meta.channelId = channelId
-      this.meta.subType = 'group'
+      this.meta.subtype = 'group'
     } else {
       this.meta.channelId = 'private:' + userId
-      this.meta.subType = 'private'
+      this.meta.subtype = 'private'
     }
   }
 

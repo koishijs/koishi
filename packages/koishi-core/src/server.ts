@@ -1,5 +1,5 @@
 import { CQCode, paramCase, sleep } from 'koishi-utils'
-import { Session, MessageInfo, EventTypeMap, GroupInfo, GroupMemberInfo, UserInfo } from './session'
+import { Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo, MessageSubtype } from './session'
 import { App, AppStatus } from './app'
 import { PlatformType } from './database'
 
@@ -40,9 +40,9 @@ export abstract class Server<T extends Bot = Bot> {
   dispatch(session: Session) {
     if (this.app.status !== AppStatus.open) return
     const events: string[] = []
-    events.push(session.eventType)
-    if (session.subType) {
-      events.unshift(events[0] + '/' + session.subType)
+    events.push(session.type)
+    if (session.subtype) {
+      events.unshift(events[0] + '/' + session.subtype)
     }
     for (const event of events) {
       this.app.emit(session, paramCase<any>(event), session)
@@ -114,11 +114,11 @@ export class Bot {
     return `${this.platform}:${this.selfId}`
   }
 
-  createSession(subType: EventTypeMap['message'], ctxType: 'group' | 'user', ctxId: string, content: string) {
+  createSession(subtype: MessageSubtype, ctxType: 'group' | 'user', ctxId: string, content: string) {
     return new Session(this.app, {
       content,
-      subType,
-      eventType: 'send',
+      subtype,
+      type: 'send',
       platform: this.platform,
       selfId: this.selfId,
       [ctxType + 'Id']: ctxId,

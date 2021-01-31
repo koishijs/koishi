@@ -84,7 +84,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       if (!message) return '请输入要触发的指令。'
 
       if (options.member) {
-        if (session.subType === 'private') {
+        if (session.subtype === 'private') {
           return '无法在私聊上下文使用 --member 选项。'
         }
         options.group = session.groupId
@@ -102,11 +102,11 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       delete newSession.groupId
 
       if (!options.group) {
-        newSession.subType = 'private'
+        newSession.subtype = 'private'
         delete newSession.$channel
       } else if (options.group !== session.groupId) {
         newSession.groupId = options.group
-        newSession.subType = 'group'
+        newSession.subtype = 'group'
         delete newSession.$channel
         await newSession.observeChannel(Channel.fields)
       }

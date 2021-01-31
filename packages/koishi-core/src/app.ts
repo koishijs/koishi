@@ -128,9 +128,9 @@ export class App extends Context {
     this.before('disconnect', this._close.bind(this))
 
     this.on('parse', (argv: Argv, session: Session) => {
-      const { $prefix, $appel, subType } = session
+      const { $prefix, $appel, subtype } = session
       // group message should have prefix or appel to be interpreted as a command call
-      if (argv.root && subType !== 'private' && $prefix === null && !$appel) return
+      if (argv.root && subtype !== 'private' && $prefix === null && !$appel) return
       const name = argv.tokens[0]?.content
       if (name in this._commandMap) {
         argv.tokens.shift()
@@ -151,8 +151,8 @@ export class App extends Context {
 
     // suggest
     this.middleware((session, next) => {
-      const { $argv, $reply, $parsed, $prefix, $appel, subType } = session
-      if ($argv || subType !== 'private' && $prefix === null && !$appel) return next()
+      const { $argv, $reply, $parsed, $prefix, $appel, subtype } = session
+      if ($argv || subtype !== 'private' && $prefix === null && !$appel) return next()
       const target = $parsed.split(/\s/, 1)[0].toLowerCase()
       if (!target) return next()
 
@@ -240,7 +240,7 @@ export class App extends Context {
 
     // strip prefix
     const at = `[CQ:at,qq=${session.selfId}]`
-    if (session.subType !== 'private' && message.startsWith(at)) {
+    if (session.subtype !== 'private' && message.startsWith(at)) {
       atSelf = session.$appel = true
       message = message.slice(at.length).trimStart()
       // eslint-disable-next-line no-cond-assign
@@ -260,7 +260,7 @@ export class App extends Context {
     session.$argv.session = session
 
     if (this.database) {
-      if (session.subType === 'group') {
+      if (session.subtype === 'group') {
         // attach group data
         const channelFields = new Set<Channel.Field>(['flag', 'assignee'])
         this.emit('before-attach-channel', session, channelFields)
@@ -294,7 +294,7 @@ export class App extends Context {
   private async _onMessage(session: Session) {
     // preparation
     this._sessions[session.$uuid] = session
-    const middlewares: Middleware[] = this._hooks[Context.MIDDLEWARE_EVENT as any]
+    const middlewares: Middleware[] = this._hooks[Context.middleware as any]
       .filter(([context]) => context.match(session))
       .map(([, middleware]) => middleware)
 
@@ -320,6 +320,7 @@ export class App extends Context {
         let stack = coerce(error)
         if (prettyErrors) {
           const index = stack.indexOf(lastCall)
+          console.log(lastCall)
           stack = `${stack.slice(0, index)}Middleware stack:${midStack}`
         }
         this.logger('session').warn(`${session.content}\n${stack}`)

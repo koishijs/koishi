@@ -50,7 +50,7 @@ export namespace Phase {
   export function checkStates(session: Session<'id'>, active = false) {
     // check group state
     const groupState = groupStates[session.groupId]
-    if (session.subType === 'group' && groupState && groupState !== session.userId) {
+    if (session.subtype === 'group' && groupState && groupState !== session.userId) {
       return '同一个群内只能同时进行一处剧情，请尝试私聊或稍后重试。'
     }
 
@@ -345,7 +345,7 @@ export namespace Phase {
 
   export async function start(session: Session<Adventurer.Field>) {
     metaMap[session.userId] = session
-    if (session.subType === 'group') {
+    if (session.subtype === 'group') {
       groupStates[session.groupId] = session.userId
     }
     try {
@@ -354,7 +354,7 @@ export namespace Phase {
       new Logger('cosmos').warn(error)
     }
     delete metaMap[session.userId]
-    if (session.subType === 'group') {
+    if (session.subtype === 'group') {
       delete groupStates[session.groupId]
     }
   }

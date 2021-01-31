@@ -36,20 +36,20 @@ async function getHandleResult(handler: RequestHandler, session: CQSession): Pro
 }
 
 export default function apply(ctx: App, options: HandlerOptions = {}) {
-  ctx.on('request/friend', async (session: CQSession) => {
+  ctx.on('friend-request', async (session: CQSession) => {
     const result = await getHandleResult(options.onFriend, session)
     return result !== undefined && session.$bot.setFriendAddRequest(session.flag, result)
   })
 
   // FIXME: subtype
-  ctx.on('request/group/add', async (session: CQSession) => {
+  ctx.on('group-member-request', async (session: CQSession) => {
     const result = await getHandleResult(options.onGroupAdd, session)
-    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subType as any, result)
+    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subtype as any, result)
   })
 
-  ctx.on('request/group/invite', async (session: CQSession) => {
+  ctx.on('group-request', async (session: CQSession) => {
     const result = await getHandleResult(options.onGroupInvite, session)
-    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subType as any, result)
+    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subtype as any, result)
   })
 
   const { respondents = [], welcome = defaultMessage } = options

@@ -10,32 +10,59 @@ import { format } from 'util'
 import { Message } from './plugins/message'
 import { distance } from 'fastest-levenshtein'
 
-export type EventType = keyof EventTypeMap
+type UnionToIntersection<U> = (U extends any ? (key: U) => void : never) extends (key: infer I) => void ? I : never
+type Flatten<T> = UnionToIntersection<T[keyof T]>
 
-export type MessageType = 'private' | 'group'
+type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
+type Actions = 'added' | 'deleted' | 'updated'
 
-export interface EventTypeMap {
-  'message': MessageType
-  'message-updated': MessageType
-  'message-deleted': MessageType
-  'group-added': null
-  'group-deleted': null
-  // notice:
-  //   | 'set' | 'unset' | 'approve' | 'invite' | 'leave' | 'kick' | 'kick_me'
-  //   | 'ban' | 'lift_ban' | 'poke' | 'lucky_king' | 'honor'
-  // request: 'add' | 'invite'
-  'lifecycle': 'heartbeat' | 'enable' | 'disable' | 'connect'
-  'send': MessageType
+type MessageActions = 'message' | 'message-deleted' | 'message-updated' | 'send'
+
+export interface SessionType extends Record<`${Genres}-${Actions}`, {}>, Record<MessageActions, MessageType> {
+  'friend-request': {}
+  'group-request': {}
+  'group-member-request': {}
+  'group-added': GroupMemberAddedType
+  'group-member-added': GroupMemberAddedType
+  'group-deleted': GroupMemberDeletedType
+  'group-member-deleted': GroupMemberDeletedType
+  'group-member': {
+    'role': {}
+    'ban': {}
+  }
+  'notice': {
+    'poke': {}
+    'lucky-king': {}
+    'honor': {
+      'talkative': {}
+      'performer': {}
+      'emotion': {}
+    }
+  }
 }
 
-/** CQHTTP Meta Information */
-export interface Meta<E extends EventType = EventType> extends MessageBase {
-  eventType?: E
+interface GroupMemberAddedType {
+  'approve': {}
+  'invite': {}
+}
+
+interface GroupMemberDeletedType {
+  'leave': {}
+  'kick': {}
+}
+
+interface MessageType {
+  'private': {}
+  'group': {}
+}
+
+export interface Meta extends MessageBase {
+  type?: keyof SessionType
+  subtype?: keyof Flatten<SessionType>
+  subsubtype?: keyof Flatten<Flatten<SessionType>>
+
   platform?: PlatformType
   selfId?: string
-
-  // TODO
-  subType?: EventTypeMap[E]
   ancestors?: string[]
 
   // message event
@@ -51,7 +78,6 @@ export interface Meta<E extends EventType = EventType> extends MessageBase {
   targetId?: string
   duration?: number
   file?: FileInfo
-  honorType?: 'talkative' | 'performer' | 'emotion'
 
   // request event
   comment?: string
@@ -64,7 +90,7 @@ export interface Meta<E extends EventType = EventType> extends MessageBase {
 
 const logger = new Logger('session')
 
-export interface Session<U, G, K, E extends EventType = EventType> extends Meta<E> {}
+export interface Session<U, G, K> extends Meta {}
 
 export class Session<U extends User.Field = never, G extends Channel.Field = never, K extends PlatformType = never> {
   $user?: User.Observed<U>
@@ -325,7 +351,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     }
 
     if (this.database) {
-      if (this.subType === 'group') {
+      if (this.subtype === 'group') {
         await this.observeChannel(this.collect('channel', argv))
       }
       await this.observeUser(this.collect('user', argv))
@@ -473,8 +499,10 @@ export interface MessageBase {
   author?: AuthorInfo
 }
 
+export type MessageSubtype = keyof MessageType
+
 export interface MessageInfo extends MessageBase {
-  subType?: EventTypeMap['message']
+  subtype?: MessageSubtype
 }
 
 export interface GroupInfo {

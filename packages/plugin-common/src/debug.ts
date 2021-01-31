@@ -1,4 +1,4 @@
-import { Context, RawSession, Session } from 'koishi-core'
+import { Context, Session } from 'koishi-core'
 import { Logger, CQCode, Time } from 'koishi-utils'
 import {} from 'koishi-adapter-onebot'
 
@@ -42,7 +42,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   const groupMap: Record<number, [Promise<string>, number]> = {}
 
   async function getGroupName(session: Session) {
-    if (session.subType === 'private') return '私聊'
+    if (session.subtype === 'private') return '私聊'
     const { groupId: id, $bot } = session
     const timestamp = Date.now()
     if (!groupMap[id] || timestamp - groupMap[id][1] >= refreshGroupName) {
@@ -100,7 +100,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
     Logger.lastTime = Date.now()
   })
 
-  async function onMessage(session: RawSession<'message'>) {
+  async function onMessage(session: Session) {
     const groupName = await getGroupName(session)
     const senderName = getSenderName(session)
     const message = await formatMessage(session)

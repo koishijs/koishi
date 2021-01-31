@@ -180,7 +180,7 @@ export class CQBot extends Bot {
     // eslint-disable-next-line no-cond-assign
     const ctxType = (ctxId = meta.groupId) ? 'group' : (ctxId = meta.userId) ? 'user' : null
     if (meta._response) {
-      const session = this.createSession(meta.subType as any, ctxType, ctxId, content)
+      const session = this.createSession(meta.subtype as any, ctxType, ctxId, content)
       if (this.app.bail(session, 'before-send', session)) return
       return session._response({ reply: session.content, autoEscape, atSender: false })
     }
@@ -345,19 +345,19 @@ export class CQBot extends Bot {
     }
   }
 
-  async setGroupAddRequest(flag: string, subType: 'add' | 'invite', info?: string | boolean) {
+  async setGroupAddRequest(flag: string, subtype: 'add' | 'invite', info?: string | boolean) {
     if (typeof info === 'string') {
-      await this.get('set_group_add_request', { flag, subType, approve: false, reason: info })
+      await this.get('set_group_add_request', { flag, subtype, approve: false, reason: info })
     } else {
-      await this.get('set_group_add_request', { flag, subType, approve: info })
+      await this.get('set_group_add_request', { flag, subtype, approve: info })
     }
   }
 
-  setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', info?: string | boolean) {
+  setGroupAddRequestAsync(flag: string, subtype: 'add' | 'invite', info?: string | boolean) {
     if (typeof info === 'string') {
-      return this.getAsync('set_group_add_request', { flag, subType, approve: false, reason: info })
+      return this.getAsync('set_group_add_request', { flag, subtype, approve: false, reason: info })
     } else {
-      return this.getAsync('set_group_add_request', { flag, subType, approve: info })
+      return this.getAsync('set_group_add_request', { flag, subtype, approve: info })
     }
   }
 

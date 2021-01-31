@@ -51,7 +51,7 @@ async function prepareSchedule({ id, session, interval, command, time, lastCall 
 }
 
 function formatContext(session: Session) {
-  return session.subType === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.groupId}`
+  return session.subtype === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.groupId}`
 }
 
 export interface Config {

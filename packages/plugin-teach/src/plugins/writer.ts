@@ -72,7 +72,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       }
     }
 
-    if (!options.modify && hasUnnamed && session.subType === 'group') {
+    if (!options.modify && hasUnnamed && session.subtype === 'group') {
       try {
         const memberMap = await session.$bot.getGroupMemberMap(session.groupId)
         for (const userId in memberMap) {

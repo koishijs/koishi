@@ -272,7 +272,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     return triggerDialogue(ctx, session, next)
   })
 
-  ctx.on('notify/poke', async (session) => {
+  ctx.on('notice/poke', async (session) => {
     if (session.targetId !== session.selfId) return
     const { flag } = await session.observeChannel(['flag'])
     if (flag & Channel.Flag.ignore) return
@@ -288,8 +288,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     triggerDialogue(ctx, session)
   }
 
-  ctx.on('notify/honor', async (session) => {
-    await triggerNotice(session.honorType, session)
+  ctx.on('notice/honor', async (session) => {
+    await triggerNotice(session.subsubtype, session)
   })
 
   ctx.on('group-member-added', triggerNotice.bind(null, 'join'))

@@ -1,5 +1,5 @@
 import SocketSession from './network/session'
-import { App, EventType, Server, Session } from 'koishi-core'
+import { App, SessionType, Server, Session } from 'koishi-core'
 import { TomonBot, TomonMessageInfo } from './bot'
 import { camelize } from 'koishi-utils'
 
@@ -40,7 +40,7 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
         resolve()
       })
 
-      const dispatchMessage = (data: TomonMessageInfo, eventType: EventType) => {
+      const dispatchMessage = (data: TomonMessageInfo, type: keyof SessionType) => {
         TomonBot.toMessage(data = camelize(data))
         const userId = data.author.id
         if (userId === selfId) return
@@ -50,10 +50,10 @@ Server.types.tomon = class TomonServer extends Server<TomonBot> {
           ...data,
           selfId,
           userId,
-          eventType,
+          type,
           platform: 'tomon',
           channelId: data['guildId'],
-          subType: data['guildId'] ? 'group' : 'private',
+          subtype: data['guildId'] ? 'group' : 'private',
           author: data.author,
         }))
       }

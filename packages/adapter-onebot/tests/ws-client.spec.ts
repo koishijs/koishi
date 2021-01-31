@@ -44,7 +44,7 @@ describe('WebSocket Server', () => {
     postType: 'message',
     userId: 10000,
     messageType: 'private',
-    subType: 'friend',
+    subtype: 'friend',
     message: 'Hello',
   }
 
@@ -78,7 +78,7 @@ describe('Quick Operations', () => {
     userId: 10000,
     groupId: 20000,
     messageType: 'group',
-    subType: 'normal',
+    subtype: 'normal',
     message: 'Hello',
     messageId: 99999,
   }
@@ -101,7 +101,7 @@ describe('Quick Operations', () => {
   const groupRequestMeta: Meta = {
     ...frientRequestMeta,
     requestType: 'group',
-    subType: 'add',
+    subtype: 'add',
     groupId: 40000,
     flag: 'bar',
   }
