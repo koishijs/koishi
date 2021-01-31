@@ -320,8 +320,8 @@ export class App extends Context {
         let stack = coerce(error)
         if (prettyErrors) {
           const index = stack.indexOf(lastCall)
-          console.log(lastCall)
-          stack = `${stack.slice(0, index)}Middleware stack:${midStack}`
+          if (index >= 0) stack = stack.slice(0, index)
+          stack += `Middleware stack:${midStack}`
         }
         this.logger('session').warn(`${session.content}\n${stack}`)
       }

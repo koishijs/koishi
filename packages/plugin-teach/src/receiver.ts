@@ -307,6 +307,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     test.original = prefixed
     test.activated = activated
     test.appellative = appellative
+    if (!test.question) return true
   })
 
   // 预判要获取的用户字段
