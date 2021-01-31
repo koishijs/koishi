@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-status",
   "description": "Show Status of Koishi",
-  "version": "3.0.0-alpha.0",
+  "version": "3.0.0-beta.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -32,12 +32,12 @@
     "status"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.0.0-alpha.0",
+    "koishi-core": "^3.0.0-beta.0",
     "koishi-utils": "^3.2.1"
   },
   "devDependencies": {
-    "koishi-plugin-mongo": "^2.0.0-alpha.0",
-    "koishi-plugin-mysql": "^3.0.0-alpha.0",
+    "koishi-plugin-mongo": "^2.0.0-beta.0",
+    "koishi-plugin-mysql": "^3.0.0-beta.0",
     "koishi-test-utils": "^5.0.3"
   }
 }

@@ -4,18 +4,21 @@ import { SemVer, gt, prerelease } from 'semver'
 import { cyan, green } from 'kleur'
 import { PackageJson, getWorkspaces } from './utils'
 import latest from 'latest-version'
-import CAC from 'cac'
+import cac from 'cac'
 import ora from 'ora'
 
-const { args, options } = CAC()
+const { args, options } = cac()
   .option('-1, --major', '')
   .option('-2, --minor', '')
   .option('-3, --patch', '')
-  .option('-o, --only', '')
+  .option('-v, --version <ver>', '')
+  .option('-l, --local', '')
+  .option('-r, --recursive', '')
   .help()
   .parse()
 
-type BumpType = 'major' | 'minor' | 'patch' | 'auto'
+const bumpTypes = ['major', 'minor', 'patch', 'version'] as const
+type BumpType = typeof bumpTypes[number]
 
 class Package {
   name: string
@@ -30,7 +33,7 @@ class Package {
       const pkg = packages[path] = new Package(path)
       pkg.metaVersion = pkg.meta.version
       pkg.oldVersion = pkg.meta.version
-      if (pkg.meta.private) return
+      if (pkg.meta.private || options.local) return
       pkg.oldVersion = prerelease(pkg.meta.version)
         ? await latest(pkg.name, { version: 'next' }).catch(() => latest(pkg.name))
         : await latest(pkg.name)
@@ -45,28 +48,30 @@ class Package {
 
   bump(flag: BumpType) {
     if (this.meta.private) return
-    const newVersion = new SemVer(this.oldVersion)
-    if (flag === 'auto') {
-      if (newVersion.prerelease.length) {
-        const prerelease = newVersion.prerelease.slice() as [string, number]
+    let ver = new SemVer(this.oldVersion)
+    if (!flag) {
+      if (ver.prerelease.length) {
+        const prerelease = ver.prerelease.slice() as [string, number]
         prerelease[1] += 1
-        newVersion.prerelease = prerelease
+        ver.prerelease = prerelease
       } else {
-        newVersion.patch += 1
+        ver.patch += 1
       }
+    } else if (flag === 'version') {
+      ver = new SemVer(options.version)
     } else {
-      if (newVersion.prerelease.length) {
-        newVersion.prerelease = []
+      if (ver.prerelease.length) {
+        ver.prerelease = []
       } else {
-        newVersion[flag] += 1
-        if (flag !== 'patch') newVersion.patch = 0
-        if (flag === 'major') newVersion.minor = 0
+        ver[flag] += 1
+        if (flag !== 'patch') ver.patch = 0
+        if (flag === 'major') ver.minor = 0
       }
     }
-    if (gt(newVersion.format(), this.version.format())) {
+    if (gt(ver.format(), this.version.format())) {
       this.dirty = true
-      this.version = newVersion
-      return this.meta.version = newVersion.format()
+      this.version = ver
+      return this.meta.version = ver.format()
     }
   }
 
@@ -80,12 +85,7 @@ class Package {
 
 const packages: Record<string, Package> = {}
 
-const nameMap = {
-  test: 'test-utils',
-}
-
 function getPackage(name: string) {
-  name = nameMap[name] || name
   return packages[`packages/${name}`]
     || packages[`packages/koishi-${name}`]
     || packages[`packages/adapter-${name}`]
@@ -100,7 +100,7 @@ function each<T>(callback: (pkg: Package, name: string) => T) {
   return results
 }
 
-function bumpPkg(source: Package, flag: BumpType, only = false) {
+function bump(source: Package, flag: BumpType, recursive = false) {
   const newVersion = source.bump(flag)
   if (!newVersion) return
   const dependents = new Set<Package>()
@@ -118,11 +118,15 @@ function bumpPkg(source: Package, flag: BumpType, only = false) {
         }
       })
   })
-  if (only) return
-  dependents.forEach(dep => bumpPkg(dep, flag))
+  if (!recursive) return
+  dependents.forEach(dep => bump(dep, flag))
 }
 
-const flag = options.major ? 'major' : options.minor ? 'minor' : options.patch ? 'patch' : 'auto'
+const flag = (() => {
+  for (const type of bumpTypes) {
+    if (type in options) return type
+  }
+})()
 
 ;(async () => {
   const folders = await getWorkspaces()
@@ -138,7 +142,7 @@ const flag = options.major ? 'major' : options.minor ? 'minor' : options.patch ?
   args.forEach((name) => {
     const pkg = getPackage(name)
     if (!pkg) throw new Error(`${name} not found`)
-    bumpPkg(pkg, flag, options.only)
+    bump(pkg, flag, options.recursive)
   })
 
   await Promise.all(each((pkg) => {
