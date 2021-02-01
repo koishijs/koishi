@@ -4,11 +4,9 @@ import { Logger, noop } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
 
-const logger = new Logger('app')
-const _require = module.require
-const { version } = _require('../package.json')
+declare const KOISHI_VERSION: string
 
-export { version }
+const logger = new Logger('app')
 
 if (process.env.KOISHI_LOG_LEVEL) {
   Logger.baseLevel = +process.env.KOISHI_LOG_LEVEL
@@ -163,7 +161,7 @@ process.on('unhandledRejection', (error) => {
 app.start().then(() => {
   app.bots.forEach(bot => {
     if (!bot.version) return
-    logger.info('%C', `Koishi/${version} ${bot.version}`)
+    logger.info('%C', `Koishi/${KOISHI_VERSION} ${bot.version}`)
   })
 
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()

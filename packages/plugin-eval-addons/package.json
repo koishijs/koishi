@@ -10,9 +10,6 @@
   "files": [
     "dist"
   ],
-  "scripts": {
-    "prepack": "tsc -b"
-  },
   "license": "MIT",
   "author": "Shigma <1700011071@pku.edu.cn>",
   "repository": {

@@ -34,6 +34,9 @@ function bundle(options: BuildOptions) {
   })
 }
 
+const { version } = require('../packages/koishi/package.json')
+const KOISHI_VERSION = JSON.stringify(version)
+
 ;(async () => {
   const root = resolve(__dirname, '../packages')
   const chai = 'koishi-test-utils/chai'
@@ -68,6 +71,9 @@ function bundle(options: BuildOptions) {
       outdir: `${root}/${name}/dist`,
       logLevel: 'silent',
       sourcemap: true,
+      define: {
+        KOISHI_VERSION,
+      },
       plugins: [{
         name: 'external library',
         setup(build) {

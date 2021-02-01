@@ -13,10 +13,6 @@
     "undefined <masnn0@outlook.com>"
   ],
   "license": "MIT",
-  "scripts": {
-    "lint": "eslint src --ext .ts --fix",
-    "prepack": "tsc -b"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/koishijs/koishi.git"

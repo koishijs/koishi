@@ -9,10 +9,6 @@
   "files": [
     "dist"
   ],
-  "scripts": {
-    "lint": "eslint src --ext .ts",
-    "prepack": "tsc -b"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/koishijs/koishi.git"

@@ -9,10 +9,6 @@
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
-  "scripts": {
-    "lint": "eslint src --ext .ts",
-    "prepack": "tsc -b"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/koishijs/koishi.git"
