@@ -10,9 +10,6 @@ import { format } from 'util'
 import { Message } from './plugins/message'
 import { distance } from 'fastest-levenshtein'
 
-type UnionToIntersection<U> = (U extends any ? (key: U) => void : never) extends (key: infer I) => void ? I : never
-type Flatten<T> = UnionToIntersection<T[keyof T]>
-
 type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
 type Actions = 'added' | 'deleted' | 'updated'
 
@@ -56,12 +53,33 @@ interface MessageType {
   'group': {}
 }
 
-export interface Meta extends MessageBase {
-  type?: keyof SessionType
-  subtype?: keyof Flatten<SessionType>
-  subsubtype?: keyof Flatten<Flatten<SessionType>>
+const logger = new Logger('session')
 
-  platform?: PlatformType
+type UnionToIntersection<U> = (U extends any ? (key: U) => void : never) extends (key: infer I) => void ? I : never
+type Flatten<T, K extends keyof T = keyof T> = UnionToIntersection<T[K]>
+type InnerKeys<T, K extends keyof T = keyof T> = keyof Flatten<T> & keyof Flatten<T, K>
+
+export interface Session<U, G, K, X, Y> extends MessageBase {}
+
+export namespace Session {
+  type TypeX<X> = Extract<keyof SessionType, X>
+  type TypeY<X, Y> = Extract<InnerKeys<SessionType, TypeX<X>>, Y>
+
+  export type Payload<X, Y = any> = Session<never, never, never, TypeX<X>, TypeY<X, Y>>
+}
+
+export class Session<
+  U extends User.Field = never,
+  G extends Channel.Field = never,
+  K extends PlatformType = never,
+  X extends keyof SessionType = keyof SessionType,
+  Y extends InnerKeys<SessionType, X> = InnerKeys<SessionType, X>,
+> {
+  type?: X
+  subtype?: Y
+  subsubtype?: InnerKeys<UnionToIntersection<SessionType[X]>, Y>
+  platform?: K
+
   selfId?: string
   ancestors?: string[]
 
@@ -86,13 +104,7 @@ export interface Meta extends MessageBase {
   // metaEvent event
   status?: StatusInfo
   interval?: number
-}
 
-const logger = new Logger('session')
-
-export interface Session<U, G, K> extends Meta {}
-
-export class Session<U extends User.Field = never, G extends Channel.Field = never, K extends PlatformType = never> {
   $user?: User.Observed<U>
   $channel?: Channel.Observed<G>
   $app?: App
@@ -240,7 +252,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
     const fallback = User.create(this.platform, id)
     fallback.authority = authority
     if (authority) {
-      await this.database.createUser(this.platform, id, fallback)
+      await this.database.createUser(this.platform, id as any, fallback)
     }
     return fallback
   }
@@ -287,7 +299,7 @@ export class Session<U extends User.Field = never, G extends Channel.Field = nev
 
     // 绑定一个新的可观测用户实例
     const data = await this.getUser(userId, this._getValue(this.$app.options.autoAuthorize), fieldArray)
-    const user = observe(data, diff => this.database.setUser(this.platform, userId, diff), `user ${userId}`)
+    const user = observe(data, diff => this.database.setUser(this.platform, userId as any, diff), `user ${userId}`)
     userCache.set(userId, user)
     return this.$user = user
   }

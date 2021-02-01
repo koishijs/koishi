@@ -32,7 +32,8 @@ const defaultMessage: WelcomeMessage = session => `欢迎新大佬 [CQ:at,qq=${s
 type CQSession = Session<never, never, 'onebot'>
 
 async function getHandleResult(handler: RequestHandler, session: CQSession): Promise<any> {
-  return typeof handler === 'function' ? handler(session) : handler
+  // FIXME
+  return typeof handler === 'function' ? handler(session as any) : handler
 }
 
 export default function apply(ctx: App, options: HandlerOptions = {}) {

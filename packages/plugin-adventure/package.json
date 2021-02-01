@@ -10,10 +10,6 @@
   "files": [
     "dist"
   ],
-  "scripts": {
-    "wrap": "ts-node build/wrap",
-    "prepack": "tsc -b && yarn wrap"
-  },
   "license": "MIT",
   "author": "Shigma <1700011071@pku.edu.cn>",
   "repository": {

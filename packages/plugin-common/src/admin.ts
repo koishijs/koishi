@@ -63,14 +63,14 @@ Command.prototype.adminUser = function (this: Command, callback) {
       const id = session.$bot.parseUser(options.target)
       if (!id) return '请指定正确的目标。'
       const { database } = session.$app
-      const data = await database.getUser(session.platform, '' + id, [...fields])
+      const data = await database.getUser(session.platform, id, [...fields])
       if (!data) return '未找到指定的用户。'
       if (id === session.userId) {
         target = await session.observeUser(fields)
       } else if (session.$user.authority <= data.authority) {
         return '权限不足。'
       } else {
-        target = observe(data, diff => database.setUser(session.platform, '' + id, diff), `user ${id}`)
+        target = observe(data, diff => database.setUser(session.platform, id, diff), `user ${id}`)
       }
     } else {
       target = await session.observeUser(fields)

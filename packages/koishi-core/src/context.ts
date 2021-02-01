@@ -314,7 +314,13 @@ type FlattenEvents<T> = {
   [K in keyof T & string]: K | `${K}/${FlattenEvents<T[K]>}`
 }[keyof T & string]
 
-type SessionEventMap = Record<FlattenEvents<SessionType>, (session: Session) => void>
+type SessionEventMap = {
+  [K in FlattenEvents<SessionType>]: K extends `${infer X}/${infer R}`
+    ? R extends `${infer Y}/${any}`
+      ? (session: Session.Payload<X, Y>) => void
+      : (session: Session.Payload<X, R>) => void
+    : (session: Session.Payload<K>) => void
+}
 
 type EventName = keyof EventMap
 type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never

@@ -108,6 +108,7 @@ export function getUsage(name: string, user: Pick<User, 'usage'>) {
 }
 
 export function checkUsage(name: string, user: Pick<User, 'usage'>, maxUsage?: number) {
+  if (!user.usage) return
   const count = getUsage(name, user)
   if (count >= maxUsage) return true
   if (maxUsage) {
