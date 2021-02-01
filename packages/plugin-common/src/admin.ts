@@ -129,11 +129,16 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
     .userFields(['id', 'name'])
     .shortcut('叫我', { prefix: true, fuzzy: true, greedy: true })
     .action(async ({ session }, name) => {
+      const { $user } = session
       if (!name) {
-        return `好的，${session.$username}，请多指教！`
-      } else if (name === session.$user.name) {
+        if ($user.name) {
+          return `好的呢，${session.$username}！`
+        } else {
+          return '你还没有给自己起一个称呼呢~'
+        }
+      } else if (name === $user.name) {
         return '称呼未发生变化。'
-      } else if (/^\s+$/.test(name)) {
+      } else if (!(name = name.trim())) {
         return '称呼不能为空。'
       } else if (name.includes('[CQ:')) {
         return '称呼中禁止包含纯文本以外的内容。'
@@ -143,8 +148,8 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
       if (result) return result
 
       try {
-        session.$user.name = name
-        await session.$user._update()
+        $user.name = name
+        await $user._update()
         return `好的，${session.$username}，请多指教！`
       } catch (error) {
         if (error[Symbol.for('koishi.error-type')] === 'duplicate-entry') {

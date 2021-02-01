@@ -244,7 +244,7 @@ export class CQBot extends Bot {
   }
 
   static adaptUser(data: UserInfo) {
-    renameProperty(data, 'name', 'username')
+    renameProperty(data, 'name', 'nickname')
   }
 
   static adaptGroupMember(data: GroupMemberInfo) {
