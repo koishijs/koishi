@@ -3,5 +3,5 @@ export * from 'koishi-utils'
 export type { AppConfig, PluginConfig } from './worker'
 
 const _require = module.require
-const { version } = _require('../package')
+const { version } = _require('../package.json')
 export { version }

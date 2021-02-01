@@ -5,7 +5,7 @@ import spawn from 'cross-spawn'
 export const cwd = resolve(__dirname, '..')
 
 export function getWorkspaces() {
-  return globby(require('../package').workspaces, {
+  return globby(require('../package.json').workspaces, {
     cwd,
     deep: 0,
     onlyDirectories: true,

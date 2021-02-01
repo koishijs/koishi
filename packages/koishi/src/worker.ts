@@ -6,7 +6,7 @@ import { yellow } from 'kleur'
 
 const logger = new Logger('app')
 const _require = module.require
-const { version } = _require('../package')
+const { version } = _require('../package.json')
 
 export { version }
 
