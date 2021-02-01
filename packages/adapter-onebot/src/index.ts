@@ -19,12 +19,14 @@ declare module 'koishi-core/dist/app' {
 }
 
 declare module 'koishi-core/dist/session' {
-  interface SessionType {
-    'lifecycle': {
-      'enable': {}
-      'disable': {}
-      'connect': {}
-      'heartbeat': {}
+  namespace Session {
+    interface Events {
+      'lifecycle': {
+        'enable': {}
+        'disable': {}
+        'connect': {}
+        'heartbeat': {}
+      }
     }
   }
 }

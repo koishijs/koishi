@@ -16,7 +16,7 @@ App.defaultConfig.retryInterval = 5 * Time.second
 
 const logger = new Logger('server')
 
-export default class WsClient extends Server<CQBot> {
+export default class WsClient extends Server<'onebot'> {
   private _channel = new Socket(this)
   private _sockets = new Set<WebSocket>()
 

@@ -1,7 +1,6 @@
 import { CQCode, paramCase, sleep } from 'koishi-utils'
-import { Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo, MessageSubtype } from './session'
+import { Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo } from './session'
 import { App, AppStatus } from './app'
-import { PlatformType } from './database'
 
 export interface BotOptions {
   type?: string
@@ -19,12 +18,15 @@ export function createBots<T extends Bot>(key: 'selfId' | 'sid') {
   })
 }
 
-type BotStatic<T extends Bot = Bot> = new (app: App, options: BotOptions) => T
+export type At<O, T extends keyof O, F> = [T] extends [never] ? F : O[T]
 
-export abstract class Server<T extends Bot = Bot> {
+type BotInstance<T extends Platform> = At<Bot.Platforms, T, Bot>
+type BotStatic<T extends Platform> = new (app: App, options: BotOptions) => BotInstance<T>
+
+export abstract class Server<T extends Platform = Platform> {
   static types: Record<string, new (app: App) => Server> = {}
 
-  public bots = createBots<T>('selfId')
+  public bots = createBots<BotInstance<T>>('selfId')
 
   abstract listen(): Promise<void>
   abstract close(): void
@@ -63,12 +65,18 @@ export enum BotStatusCode {
   SERVER_ERROR,
 }
 
-export interface Bot extends BotOptions {
+export namespace Bot {
+  export interface Platforms {}
+}
+
+export type Platform = keyof Bot.Platforms
+
+export interface Bot<P = Platform> extends BotOptions {
   [Bot.send](session: Session, message: string): Promise<void>
 
   ready?: boolean
   version?: string
-  platform?: PlatformType
+  platform?: P
   getSelfId(): Promise<string>
   getStatusCode(): Promise<BotStatusCode>
 
@@ -90,7 +98,7 @@ export interface Bot extends BotOptions {
   getGroupMemberList(groupId: string): Promise<GroupMemberInfo[]>
 }
 
-export class Bot {
+export class Bot<P extends Platform> {
   static readonly send = Symbol.for('koishi.send')
 
   parseUser(source: string) {
@@ -114,8 +122,8 @@ export class Bot {
     return `${this.platform}:${this.selfId}`
   }
 
-  createSession(subtype: MessageSubtype, ctxType: 'group' | 'user', ctxId: string, content: string) {
-    return new Session(this.app, {
+  createSession<T extends keyof Session.Events['send']>(subtype: T, ctxType: 'group' | 'user', ctxId: string, content: string) {
+    return new Session<never, never, P, 'send', T>(this.app, {
       content,
       subtype,
       type: 'send',

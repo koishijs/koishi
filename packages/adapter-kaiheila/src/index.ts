@@ -92,7 +92,7 @@ interface Payload {
 
 const logger = new Logger('server')
 
-Server.types.kaiheila = class HttpServer extends Server<KaiheilaBot> {
+Server.types.kaiheila = class HttpServer extends Server<'kaiheila'> {
   constructor(app: App) {
     assertProperty(app.options, 'port')
     super(app, KaiheilaBot)

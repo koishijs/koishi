@@ -1,5 +1,5 @@
 import { isInteger, difference, observe, Time, enumKeys, Random } from 'koishi-utils'
-import { Context, User, Channel, Command, Argv, PlatformType, Session } from 'koishi-core'
+import { Context, User, Channel, Command, Argv, Platform, Session } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
   = (argv: Argv<U | 'authority', G, A, O> & { target: T }, ...args: A)
@@ -135,9 +135,11 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
         return '称呼未发生变化。'
       } else if (/^\s+$/.test(name)) {
         return '称呼不能为空。'
+      } else if (name.includes('[CQ:')) {
+        return '称呼中禁止包含纯文本以外的内容。'
       }
 
-      const result = options.checkName(name, session)
+      const result = options.checkName?.(name, session)
       if (result) return result
 
       try {
@@ -154,7 +156,7 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
       }
     })
 
-  const tokens: Record<string, [platform: PlatformType, id: string]> = {}
+  const tokens: Record<string, [platform: Platform, id: string]> = {}
 
   ctx.unselect('groupId').command('user.bind', '绑定到账号', { authority: 0 })
     .action(({ session }) => {
@@ -177,7 +179,7 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
     const user = await session.observeUser(['authority', data[0]])
     if (!user.authority) return next()
     if (user[data[0]]) return session.send('账号绑定失败：你已经绑定过该平台。')
-    user[data[0]] = data[1]
+    user[data[0] as any] = data[1]
     await user._update()
     return session.send('账号绑定成功！')
   }, true)

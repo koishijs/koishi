@@ -3,9 +3,11 @@ import { Method } from 'axios'
 import Route, { RequestOptions } from './network/route'
 import WebSocket from 'ws'
 
-declare module 'koishi-core/dist/database' {
-  interface Platforms {
-    tomon: TomonBot
+declare module 'koishi-core/dist/server' {
+  namespace Bot {
+    interface Platforms {
+      tomon: TomonBot
+    }
   }
 }
 

@@ -6,7 +6,7 @@ import Socket from './socket'
 
 const logger = new Logger('server')
 
-export default class WsServer extends Server<CQBot> {
+export default class WsServer extends Server<'onebot'> {
   public wsServer?: WebSocket.Server
   private _channel: Socket
 

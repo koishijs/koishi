@@ -1,4 +1,4 @@
-import { Context, App, BotStatusCode, PlatformType } from 'koishi-core'
+import { Context, App, BotStatusCode, Platform } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
 import { interpolate, Time } from 'koishi-utils'
 import { ActiveData } from './database'
@@ -165,7 +165,7 @@ export function apply(ctx: Context, config: Config = {}) {
       return interpolate(format, status)
     })
 
-  async function _getStatus(platform?: PlatformType) {
+  async function _getStatus(platform?: Platform) {
     const botList = platform ? app.bots.filter(bot => bot.platform === platform) : app.bots
     const [data, bots] = await Promise.all([
       app.database.getActiveData(),
@@ -188,7 +188,7 @@ export function apply(ctx: Context, config: Config = {}) {
   let cachedStatus: Promise<Status>
   let timestamp: number
 
-  async function getStatus(platform?: PlatformType): Promise<Status> {
+  async function getStatus(platform?: Platform): Promise<Status> {
     const now = Date.now()
     if (now - timestamp < refresh) return cachedStatus
     timestamp = now

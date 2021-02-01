@@ -26,7 +26,7 @@ declare module 'koishi-core/dist/session' {
 
 const logger = new Logger('server')
 
-export default class HttpServer extends Server<CQBot> {
+export default class HttpServer extends Server<'onebot'> {
   constructor(app: App) {
     assertProperty(app.options, 'port')
     super(app, CQBot)

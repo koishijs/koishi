@@ -21,7 +21,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(repeater, config)
   ctx.plugin(sender, config)
 
-  ctx.plugin(require('./admin'))
+  ctx.plugin(require('./admin'), config)
 
   if (config.debug) {
     ctx.plugin(require('./debug'), config.debug)

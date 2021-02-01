@@ -4,6 +4,14 @@ import { App, AuthorInfo, Bot, BotStatusCode, MessageInfo, Session } from 'koish
 import { camelize, CQCode, pick, renameProperty, snakeCase } from 'koishi-utils'
 import axios, { Method } from 'axios'
 
+declare module 'koishi-core/dist/server' {
+  namespace Bot {
+    interface Platforms {
+      kaiheila: KaiheilaBot
+    }
+  }
+}
+
 export interface KaiheilaAuthorInfo extends AuthorInfo {
   avatar?: string
   descriminator?: string

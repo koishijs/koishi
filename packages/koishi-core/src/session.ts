@@ -1,57 +1,14 @@
-import { User, Channel, Platforms, PlatformType, TableType, Tables } from './database'
+import { User, Channel, TableType, Tables } from './database'
 import { Command } from './command'
 import { contain, observe, Logger, defineProperty, Random } from 'koishi-utils'
 import { Argv } from './parser'
 import { Middleware, NextFunction } from './context'
 import { App } from './app'
-import { Bot } from './server'
+import { Bot, Platform } from './server'
 import LruCache from 'lru-cache'
 import { format } from 'util'
 import { Message } from './plugins/message'
 import { distance } from 'fastest-levenshtein'
-
-type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
-type Actions = 'added' | 'deleted' | 'updated'
-
-type MessageActions = 'message' | 'message-deleted' | 'message-updated' | 'send'
-
-export interface SessionType extends Record<`${Genres}-${Actions}`, {}>, Record<MessageActions, MessageType> {
-  'friend-request': {}
-  'group-request': {}
-  'group-member-request': {}
-  'group-added': GroupMemberAddedType
-  'group-member-added': GroupMemberAddedType
-  'group-deleted': GroupMemberDeletedType
-  'group-member-deleted': GroupMemberDeletedType
-  'group-member': {
-    'role': {}
-    'ban': {}
-  }
-  'notice': {
-    'poke': {}
-    'lucky-king': {}
-    'honor': {
-      'talkative': {}
-      'performer': {}
-      'emotion': {}
-    }
-  }
-}
-
-interface GroupMemberAddedType {
-  'approve': {}
-  'invite': {}
-}
-
-interface GroupMemberDeletedType {
-  'leave': {}
-  'kick': {}
-}
-
-interface MessageType {
-  'private': {}
-  'group': {}
-}
 
 const logger = new Logger('session')
 
@@ -62,22 +19,65 @@ type InnerKeys<T, K extends keyof T = keyof T> = keyof Flatten<T> & keyof Flatte
 export interface Session<U, G, K, X, Y> extends MessageBase {}
 
 export namespace Session {
-  type TypeX<X> = Extract<keyof SessionType, X>
-  type TypeY<X, Y> = Extract<InnerKeys<SessionType, TypeX<X>>, Y>
+  type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
+  type Actions = 'added' | 'deleted' | 'updated'
 
-  export type Payload<X, Y = any> = Session<never, never, never, TypeX<X>, TypeY<X, Y>>
+  type MessageActions = 'message' | 'message-deleted' | 'message-updated' | 'send'
+
+  export interface Events extends Record<`${Genres}-${Actions}`, {}>, Record<MessageActions, MessageType> {
+    'friend-request': {}
+    'group-request': {}
+    'group-member-request': {}
+    'group-added': GroupMemberAddedType
+    'group-member-added': GroupMemberAddedType
+    'group-deleted': GroupMemberDeletedType
+    'group-member-deleted': GroupMemberDeletedType
+    'group-member': {
+      'role': {}
+      'ban': {}
+    }
+    'notice': {
+      'poke': {}
+      'lucky-king': {}
+      'honor': {
+        'talkative': {}
+        'performer': {}
+        'emotion': {}
+      }
+    }
+  }
+
+  interface GroupMemberAddedType {
+    'approve': {}
+    'invite': {}
+  }
+
+  interface GroupMemberDeletedType {
+    'leave': {}
+    'kick': {}
+  }
+
+  interface MessageType {
+    'private': {}
+    'group': {}
+  }
+
+  type ParamX<X> = Extract<keyof Events, X>
+  type ParamY<X, Y> = Extract<InnerKeys<Events, ParamX<X>>, Y>
+
+  export type Payload<X, Y = any> = Session<never, never, Platform, ParamX<X>, ParamY<X, Y>>
 }
 
 export class Session<
   U extends User.Field = never,
   G extends Channel.Field = never,
-  K extends PlatformType = never,
-  X extends keyof SessionType = keyof SessionType,
-  Y extends InnerKeys<SessionType, X> = InnerKeys<SessionType, X>,
+  K extends Platform = Platform,
+  X extends keyof Session.Events = keyof Session.Events,
+  Y extends InnerKeys<Session.Events, X> = InnerKeys<Session.Events, X>,
 > {
   type?: X
   subtype?: Y
-  subsubtype?: InnerKeys<UnionToIntersection<SessionType[X]>, Y>
+  subsubtype?: InnerKeys<UnionToIntersection<Session.Events[X]>, Y>
   platform?: K
 
   selfId?: string
@@ -134,7 +134,7 @@ export class Session<
     }))
   }
 
-  get $bot(): [K] extends [never] ? Bot : Platforms[K] {
+  get $bot(): [K] extends [never] ? Bot : Bot.Platforms[K] {
     return this.$app.bots[this.sid] as any
   }
 
@@ -511,10 +511,8 @@ export interface MessageBase {
   author?: AuthorInfo
 }
 
-export type MessageSubtype = keyof MessageType
-
 export interface MessageInfo extends MessageBase {
-  subtype?: MessageSubtype
+  subtype?: keyof Session.Events['message']
 }
 
 export interface GroupInfo {

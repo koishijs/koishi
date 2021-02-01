@@ -1,6 +1,6 @@
 import { Logger, defineProperty } from 'koishi-utils'
 import { Command } from './command'
-import { Session, SessionType } from './session'
+import { Session } from './session'
 import { User, Channel, Database } from './database'
 import { Argv, Domain } from './parser'
 import { Server } from './server'
@@ -315,7 +315,7 @@ type FlattenEvents<T> = {
 }[keyof T & string]
 
 type SessionEventMap = {
-  [K in FlattenEvents<SessionType>]: K extends `${infer X}/${infer R}`
+  [K in FlattenEvents<Session.Events>]: K extends `${infer X}/${infer R}`
     ? R extends `${infer Y}/${any}`
       ? (session: Session.Payload<X, Y>) => void
       : (session: Session.Payload<X, R>) => void

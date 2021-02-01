@@ -161,7 +161,7 @@ process.on('unhandledRejection', (error) => {
 app.start().then(() => {
   app.bots.forEach(bot => {
     if (!bot.version) return
-    logger.info('%C', `Koishi/${KOISHI_VERSION} ${bot.version}`)
+    logger.info('%C', `koishi/${KOISHI_VERSION} ${bot.version}`)
   })
 
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()

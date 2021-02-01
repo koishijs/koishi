@@ -223,7 +223,7 @@ export namespace Domain {
     stripped: string
   }
 
-  function parseDecl(source: string) {
+  function parseDecl(source: string, fallback?: Builtin) {
     let cap: RegExpExecArray
     const result = [] as DeclarationList
     // eslint-disable-next-line no-cond-assign
@@ -235,7 +235,7 @@ export namespace Domain {
         variadic = true
       }
       const [name, rawType] = rawName.split(':')
-      const type = rawType ? rawType.trim() as Builtin : null
+      const type = rawType ? rawType.trim() as Builtin : fallback
       result.push({
         name,
         variadic,
@@ -278,7 +278,7 @@ export namespace Domain {
       if (!name) throw new Error('expect a command name')
       const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
       this.description = def.slice(decl.length).trim()
-      this.declaration = name + (this._arguments = parseDecl(decl)).stripped
+      this.declaration = name + (this._arguments = parseDecl(decl, 'string')).stripped
     }
 
     _createOption(name: string, def: string, config?: OptionConfig) {

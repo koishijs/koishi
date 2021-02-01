@@ -16,7 +16,6 @@ export interface ThrottleConfig {
 type Awaited<T> = T | Promise<T>
 
 export type RequestHandler = string | boolean | ((session: Session) => Awaited<string | boolean | void>)
-export type WelcomeMessage = string | ((session: Session) => string | Promise<string>)
 
 export interface HandlerOptions {
   onFriend?: RequestHandler
@@ -24,10 +23,7 @@ export interface HandlerOptions {
   onGroupInvite?: RequestHandler
   respondents?: Respondent[]
   throttle?: ThrottleConfig | ThrottleConfig[]
-  welcome?: WelcomeMessage
 }
-
-const defaultMessage: WelcomeMessage = session => `欢迎新大佬 [CQ:at,qq=${session.userId}]！`
 
 type CQSession = Session<never, never, 'onebot'>
 
@@ -53,7 +49,7 @@ export default function apply(ctx: App, options: HandlerOptions = {}) {
     return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subtype as any, result)
   })
 
-  const { respondents = [], welcome = defaultMessage } = options
+  const { respondents = [] } = options
 
   respondents.length && ctx.middleware((session, next) => {
     const message = simplify(session.content)
@@ -85,14 +81,4 @@ export default function apply(ctx: App, options: HandlerOptions = {}) {
       return next()
     }, true)
   }
-
-  ctx.on('group-member-added', async (session) => {
-    if (ctx.app.bots[session.uid]) return
-    if (ctx.database) {
-      const group = await ctx.database.getChannel(session.platform, session.groupId, ['assignee'])
-      if (group.assignee !== session.selfId) return
-    }
-    const output = typeof welcome === 'string' ? welcome : await welcome(session)
-    await session.$bot.sendMessage(session.channelId, output)
-  })
 }
