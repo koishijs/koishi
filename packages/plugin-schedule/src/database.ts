@@ -69,17 +69,18 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
 })
 
 extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
-  async createSchedule(time, interval, command, session) {
+  async createSchedule(time, interval, command, session, ensure) {
     let _id = 1
     const [latest] = await this.db.collection('schedule').find().sort('_id', -1).limit(1).toArray()
     if (latest) _id = latest._id + 1
-    const data = { time, interval, command, assignee: session.selfId }
+    const data: Partial<Schedule> = { time, assignee: session.sid, interval, command }
+    if (ensure) data.lastCall = new Date()
     const result = await this.db.collection('schedule').insertOne({
       _id,
       ...data,
       session: JSON.stringify(session),
     })
-    return { ...data, session, id: result.insertedId }
+    return { ...data, session, id: result.insertedId } as Schedule
   },
 
   removeSchedule(_id) {
@@ -95,8 +96,10 @@ extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
     return res
   },
 
-  async getAllSchedules(assignees) {
-    const $in = assignees || await this.app.getSelfIds()
+  async getAllSchedules(assignee) {
+    const $in = assignee
+      ? [assignee]
+      : this.app.bots.map(bot => bot.sid)
     return await this.db.collection('schedule')
       .find({ assignee: { $in } })
       .map(doc => ({ ...doc, id: doc._id, session: JSON.parse(doc.session) }))
