@@ -4,7 +4,7 @@
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-onebot": {
-    "version": "3.0.0-beta.1",
+    "version": "3.0.0-beta.2",
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-adapter-tomon": {
@@ -20,7 +20,7 @@
     "description": "Chess Plugin for Koishi"
   },
   "koishi-plugin-common": {
-    "version": "4.0.0-beta.2",
+    "version": "4.0.0-beta.3",
     "description": "Common plugins for Koishi"
   },
   "koishi-plugin-dice": {
