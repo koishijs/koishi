@@ -1,14 +1,14 @@
 {
   "koishi-adapter-kaiheila": {
-    "version": "1.0.0-beta.0",
+    "version": "1.0.0-beta.1",
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-onebot": {
-    "version": "3.0.0-beta.0",
+    "version": "3.0.0-beta.1",
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-adapter-tomon": {
-    "version": "1.0.0-beta.0",
+    "version": "1.0.0-beta.1",
     "description": "Tomon adapter for Koishi"
   },
   "koishi-plugin-adventure": {
@@ -20,7 +20,7 @@
     "description": "Chess Plugin for Koishi"
   },
   "koishi-plugin-common": {
-    "version": "4.0.0-beta.1",
+    "version": "4.0.0-beta.2",
     "description": "Common plugins for Koishi"
   },
   "koishi-plugin-dice": {
@@ -67,7 +67,7 @@
     "description": "Schedule plugin for Koishi"
   },
   "koishi-plugin-status": {
-    "version": "3.0.0-beta.0",
+    "version": "3.0.0-beta.1",
     "description": "Show Status of Koishi"
   },
   "koishi-plugin-teach": {

@@ -33,7 +33,7 @@
     "code"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.0.0-beta.1",
+    "koishi-core": "^3.0.0-beta.2",
     "koishi-utils": "^3.2.2"
   },
   "devDependencies": {

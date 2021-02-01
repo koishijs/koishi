@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-status",
   "description": "Show Status of Koishi",
-  "version": "3.0.0-beta.0",
+  "version": "3.0.0-beta.1",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -28,7 +28,7 @@
     "status"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.0.0-beta.1",
+    "koishi-core": "^3.0.0-beta.2",
     "koishi-utils": "^3.2.2"
   },
   "devDependencies": {
