@@ -225,6 +225,7 @@ async function updateMeta(config: AppConfig) {
 type Serializable = string | number | Serializable[] | { [key: string]: Serializable }
 
 function joinLines(lines: string[], type: SourceType, indent: string) {
+  if (!lines.length) return ''
   return `\n  ${indent}${lines.join(',\n  ' + indent)}${type === 'json' ? '' : ','}\n${indent}`
 }
 
