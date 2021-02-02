@@ -29,7 +29,7 @@
     "game"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.0.0-beta.3",
+    "koishi-core": "^3.0.0-beta.4",
     "koishi-plugin-puppeteer": "^2.0.0-beta.0",
     "koishi-utils": "^3.2.2"
   }
