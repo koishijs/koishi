@@ -5,14 +5,15 @@
     "atri",
     "addons",
     "shiki",
+    "test",
     "utsuho",
     "packages/*"
   ],
   "scripts": {
     "atri": "yarn workspace atri",
     "addons": "yarn workspace addons",
-    "cli": "cd test & node -r ../build/register ../packages/koishi/src/cli",
-    "build": "yarn compile && tsc -b",
+    "cli": "yarn workspace test koishi",
+    "build": "yarn compile & tsc -b",
     "build:ci": "yarn build:reg && yarn build --listEmittedFiles",
     "build:reg": "esbuild build/register.ts --outdir=build --format=cjs",
     "bump": "node -r ./build/register build/bump",

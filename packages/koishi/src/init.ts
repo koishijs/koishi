@@ -157,7 +157,7 @@ interface Package extends Partial<Record<DependencyType, Record<string, string>>
 const ecosystem: Record<string, Package> = require('../ecosystem')
 const builtinPackages = ['koishi-plugin-common']
 
-const config: AppConfig = { plugins: [] }
+const config: AppConfig = { plugins: {} }
 
 async function createConfig() {
   Object.assign(config, await question(serverQuestions))
@@ -166,7 +166,7 @@ async function createConfig() {
   // database
   const { database } = await question(databaseQuestions)
   if (database) {
-    config.plugins.push([database, await question(databaseMap[database])])
+    config.plugins[database] = await question(databaseMap[database])
   }
 
   // official plugins
@@ -186,7 +186,9 @@ async function createConfig() {
     choices,
   })
 
-  config.plugins.push(...plugins.map(name => [name]))
+  for (const name of plugins) {
+    config.plugins[name] = {}
+  }
 }
 
 const workingDirectory = process.cwd()
@@ -211,7 +213,7 @@ async function updateMeta(config: AppConfig) {
 
   const [name] = config.type.split(':', 1)
   checkDependency('koishi-adapter-' + name)
-  for (const [name] of config.plugins as string[]) {
+  for (const name of Object.keys(config.plugins)) {
     checkDependency('koishi-plugin-' + name)
   }
 
@@ -226,7 +228,7 @@ function joinLines(lines: string[], type: SourceType, indent: string) {
   return `\n  ${indent}${lines.join(',\n  ' + indent)}${type === 'json' ? '' : ','}\n${indent}`
 }
 
-function codegen(value: Serializable, type: SourceType, indent = '', path = '/') {
+function codegen(value: Serializable, type: SourceType, indent = '') {
   if (value === null) return 'null'
   switch (typeof value) {
     case 'number': case 'boolean': return '' + value
@@ -237,14 +239,12 @@ function codegen(value: Serializable, type: SourceType, indent = '', path = '/')
   }
 
   if (Array.isArray(value)) {
-    return path === '/plugins/0/'
-      ? `[${value.map(value => codegen(value, type, indent, path + '0/')).join(', ')}]`
-      : `[${joinLines(value.map(value => codegen(value, type, '  ' + indent, path + '0/')), type, indent)}]`
+    return `[${joinLines(value.map(value => codegen(value, type, '  ' + indent)), type, indent)}]`
   }
 
   return `{${joinLines(Object.entries(value).filter(([, value]) => value !== undefined).map(([key, value]) => {
     const keyString = type === 'json' ? `"${key}"` : key
-    const valueString = codegen(value, type, '  ' + indent, path + key + '/')
+    const valueString = codegen(value, type, '  ' + indent)
     return keyString + ': ' + valueString
   }), type, indent)}}`
 }

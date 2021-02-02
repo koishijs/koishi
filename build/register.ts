@@ -19,6 +19,9 @@ install({
   },
 })
 
+const { version } = require('../packages/koishi-core/package.json')
+const KOISHI_VERSION = JSON.stringify(version)
+
 const prefix = '\u001B[35mwarning:\u001B[0m'
 
 // eslint-disable-next-line node/no-deprecated-api
@@ -31,6 +34,9 @@ require.extensions['.ts'] = (module, filename) => {
     loader: 'ts',
     charset: 'utf8',
     target: 'es2020',
+    define: {
+      KOISHI_VERSION,
+    },
   })
   maps[filename] = map
   warnings.forEach(({ location, text }) => {
