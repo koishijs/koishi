@@ -44,7 +44,7 @@ export default function apply(ctx: Context) {
     }
   })
 
-  ctx.prependListener('dialogue/execute', (argv) => {
+  ctx.on('dialogue/execute', (argv) => {
     const { options, session } = argv
     const { includeLast, excludeLast } = options
     if (!options.review && !options.revert) return
@@ -63,7 +63,7 @@ export default function apply(ctx: Context) {
 
     if (!dialogues.length) return session.send('没有搜索到满足条件的教学操作。')
     return options.review ? review(dialogues, argv) : revert(dialogues, argv)
-  })
+  }, true)
 
   ctx.before('dialogue/detail', async (argv) => {
     if (argv.options.modify) return

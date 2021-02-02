@@ -124,7 +124,6 @@ export class Context {
     const tasks: Promise<any>[] = []
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(session)) continue
       tasks.push(callback.apply(session, args))
@@ -143,7 +142,6 @@ export class Context {
   async waterfall(...args: [any, ...any[]]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(session)) continue
       const result = await callback.apply(session, args)
@@ -157,7 +155,6 @@ export class Context {
   chain(...args: [any, ...any[]]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(session)) continue
       const result = callback.apply(session, args)
@@ -171,7 +168,6 @@ export class Context {
   async serial(...args: any[]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(session)) continue
       const result = await callback.apply(session, args)
@@ -184,7 +180,6 @@ export class Context {
   bail(...args: any[]) {
     const session = typeof args[0] === 'object' ? args.shift() : null
     const name = args.shift()
-    this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(session)) continue
       const result = callback.apply(session, args)
@@ -203,31 +198,28 @@ export class Context {
     return hooks
   }
 
-  on<K extends EventName>(name: K, listener: Bind<EventMap[K], Session>) {
-    this.getHooks(name).push([this, listener])
+  on<K extends EventName>(name: K, listener: Bind<EventMap[K], Session>, prepend = false) {
+    if (prepend) {
+      this.getHooks(name).unshift([this, listener])
+    } else {
+      this.getHooks(name).push([this, listener])
+    }
     const dispose = () => this.off(name, listener)
     this._disposables.push(name === 'dispose' ? listener as Disposable : dispose)
     return dispose
   }
 
-  before<K extends BeforeEventName>(name: K, listener: Bind<BeforeEventMap[K], Session>) {
+  before<K extends BeforeEventName>(name: K, listener: Bind<BeforeEventMap[K], Session>, append = false) {
     const seg = name.split('/')
     seg[seg.length - 1] = 'before-' + seg[seg.length - 1]
-    return this.prependListener(seg.join('/') as EventName, listener)
+    return this.on(seg.join('/') as EventName, listener, !append)
   }
 
-  prependListener<K extends EventName>(name: K, listener: Bind<EventMap[K], Session>) {
-    this.getHooks(name).unshift([this, listener])
-    const dispose = () => this.off(name, listener)
-    this._disposables.push(name === 'dispose' ? listener as Disposable : dispose)
-    return dispose
-  }
-
-  once<K extends EventName>(name: K, listener: Bind<EventMap[K], Session>) {
+  once<K extends EventName>(name: K, listener: Bind<EventMap[K], Session>, prepend = false) {
     const dispose = this.on(name, function (...args: any[]) {
       dispose()
       return listener.apply(this, args)
-    } as any)
+    } as any, prepend)
     return dispose
   }
 
@@ -241,11 +233,7 @@ export class Context {
   }
 
   middleware(middleware: Middleware, prepend = false) {
-    if (prepend) {
-      return this.prependListener(Context.middleware, middleware)
-    } else {
-      return this.on(Context.middleware, middleware)
-    }
+    return this.on(Context.middleware, middleware, prepend)
   }
 
   command<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>

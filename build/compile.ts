@@ -34,7 +34,7 @@ function bundle(options: BuildOptions) {
   })
 }
 
-const { version } = require('../packages/koishi/package.json')
+const { version } = require('../packages/koishi-core/package.json')
 const KOISHI_VERSION = JSON.stringify(version)
 
 ;(async () => {

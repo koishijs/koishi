@@ -11,10 +11,10 @@ const prefixRegExp = new RegExp(`^(${prefixes.join('|')})(?:\\((\\S+)\\))?: (.+)
 
 export function draft(base: string) {
   const updates = {}
-  const commits = spawnSync(`git log ${base}..HEAD --format=%H%s`).split(/\r?\n/).reverse()
+  const commits = spawnSync(`git log ${base}..HEAD --format="%H %s"`).split(/\r?\n/).reverse()
   for (const commit of commits) {
     const hash = commit.slice(0, 40)
-    const details = prefixRegExp.exec(commit.slice(40))
+    const details = prefixRegExp.exec(commit.slice(41))
     if (!details) continue
     let message = details[3]
     if (details[2]) message = `**${details[2]}:** ${message}`

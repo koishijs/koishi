@@ -12,14 +12,14 @@ interface HelpConfig {
 
 export default function apply(app: App) {
   // show help when use `-h, --help` or when there is no action
-  app.prependListener('before-command', async ({ command, session, options }) => {
+  app.on('before-command', async ({ command, session, options }) => {
     if (command._actions.length && !options['help']) return
     await session.execute({
       name: 'help',
       args: [command.name],
     })
     return ''
-  })
+  }, true)
 
   function findCommand(target: string) {
     if (target in app._commandMap) return app._commandMap[target]

@@ -49,7 +49,7 @@ export namespace Command {
   export type Action<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}>
     = (this: Command<U, G, A, O>, argv: Argv<U, G, A, O>, ...args: A) => void | string | Promise<void | string>
 
-  export type Usage<U extends User.Field, G extends Channel.Field>
+  export type Usage<U extends User.Field = never, G extends Channel.Field = never>
     = string | ((this: Command<U, G>, session: Session<U, G>) => string | Promise<string>)
 }
 
@@ -60,7 +60,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   _aliases: string[] = []
   _examples: string[] = []
-  _usage?: Command.Usage<U, G>
+  _usage?: Command.Usage
 
   private _userFields: FieldCollector<'user'>[] = []
   private _channelFields: FieldCollector<'channel'>[] = []

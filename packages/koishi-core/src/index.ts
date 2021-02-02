@@ -9,3 +9,6 @@ export * from './server'
 export * from './plugins/help'
 export * from './plugins/message'
 export * from './plugins/validate'
+
+declare const KOISHI_VERSION: string
+export const version = KOISHI_VERSION

@@ -16,7 +16,7 @@ type UnionToIntersection<U> = (U extends any ? (key: U) => void : never) extends
 type Flatten<T, K extends keyof T = keyof T> = UnionToIntersection<T[K]>
 type InnerKeys<T, K extends keyof T = keyof T> = keyof Flatten<T> & keyof Flatten<T, K>
 
-export interface Session<U, G, K, X, Y> extends MessageBase {}
+export interface Session<U, G, P, X, Y> extends MessageBase {}
 
 export namespace Session {
   type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
@@ -71,14 +71,14 @@ export namespace Session {
 export class Session<
   U extends User.Field = never,
   G extends Channel.Field = never,
-  K extends Platform = Platform,
+  P extends Platform = Platform,
   X extends keyof Session.Events = keyof Session.Events,
   Y extends InnerKeys<Session.Events, X> = InnerKeys<Session.Events, X>,
 > {
   type?: X
   subtype?: Y
   subsubtype?: InnerKeys<UnionToIntersection<Session.Events[X]>, Y>
-  platform?: K
+  platform?: P
 
   selfId?: string
   ancestors?: string[]
@@ -134,7 +134,7 @@ export class Session<
     }))
   }
 
-  get $bot(): [K] extends [never] ? Bot : Bot.Platforms[K] {
+  get $bot(): [P] extends [never] ? Bot : Bot.Platforms[P] {
     return this.$app.bots[this.sid] as any
   }
 
