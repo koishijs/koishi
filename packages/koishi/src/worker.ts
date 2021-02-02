@@ -61,14 +61,21 @@ function loadEcosystem(type: string, name: string) {
 
   const prefix = `koishi-${type}-`
   const modules: string[] = []
-  if (name.startsWith('.')) {
+  if ('./'.includes(name[0])) {
+    // absolute or relative path
     modules.push(resolve(configDir, name))
-  } else if (!name.includes(prefix)) {
+  } else if (name.includes(prefix)) {
+    // full package path
+    modules.push(name)
+  } else if (name[0] === '@') {
+    // scope package path
     const index = name.lastIndexOf('/')
     modules.push(name.slice(0, index + 1) + prefix + name.slice(index + 1), name)
   } else {
-    modules.push(name)
+    // normal package path
+    modules.push(prefix + name, name)
   }
+
   for (const path of modules) {
     logger.debug('resolving %c', path)
     try {
