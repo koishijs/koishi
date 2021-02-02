@@ -3,10 +3,9 @@
 import { promises as fs, existsSync } from 'fs'
 import { yellow, red, green } from 'kleur'
 import { resolve, extname, dirname } from 'path'
+import { spawn, StdioOptions } from 'child_process'
 import { AppConfig } from './worker'
 import { CAC } from 'cac'
-import {} from 'koishi-adapter-onebot'
-import {} from 'koishi-adapter-tomon'
 import prompts, { Choice, PromptObject } from 'prompts'
 import * as mysql from 'koishi-plugin-mysql/dist/database'
 import * as mongo from 'koishi-plugin-mongo/dist/database'
@@ -154,9 +153,10 @@ interface Package extends Partial<Record<DependencyType, Record<string, string>>
   description?: string
 }
 
+const cwd = process.cwd()
+const metaPath = resolve(cwd, 'package.json')
 const ecosystem: Record<string, Package> = require('../ecosystem')
 const builtinPackages = ['koishi-plugin-common']
-
 const config: AppConfig = { plugins: {} }
 
 async function createConfig() {
@@ -191,36 +191,11 @@ async function createConfig() {
   }
 }
 
-const workingDirectory = process.cwd()
-const supportedTypes = ['js', 'ts', 'json'] as const
-type SourceType = typeof supportedTypes[number]
+const sourceTypes = ['js', 'ts', 'json'] as const
+type SourceType = typeof sourceTypes[number]
 
 const error = red('error')
 const success = green('success')
-
-async function updateMeta(config: AppConfig) {
-  const path = resolve(workingDirectory, 'package.json')
-  const meta: Package = JSON.parse(await fs.readFile(path, 'utf8'))
-  let modified = false
-  if (!meta.dependencies) meta.dependencies = {}
-
-  function checkDependency(name: string) {
-    if (!meta.dependencies[name]) {
-      modified = true
-      meta.dependencies[name] = '^' + ecosystem[name].version
-    }
-  }
-
-  const [name] = config.type.split(':', 1)
-  checkDependency('koishi-adapter-' + name)
-  for (const name of Object.keys(config.plugins)) {
-    checkDependency('koishi-plugin-' + name)
-  }
-
-  if (!modified) return
-  await fs.writeFile(path, JSON.stringify(meta, null, 2))
-  console.log(`${success} package.json was updated, type "npm install" to install new dependencies`)
-}
 
 type Serializable = string | number | Serializable[] | { [key: string]: Serializable }
 
@@ -266,12 +241,80 @@ async function writeConfig(config: any, path: string, type: SourceType) {
   console.log(`${success} created config file: ${path}`)
 }
 
+async function loadMeta() {
+  return JSON.parse(await fs.readFile(metaPath, 'utf8')) as Package
+}
+
+function execute(bin: string, args: string[] = [], stdio: StdioOptions = 'inherit') {
+  const child = spawn(bin, args, { stdio })
+  return new Promise<number>((resolve) => {
+    child.on('close', resolve)
+  })
+}
+
+type Manager = 'yarn' | 'npm'
+
+async function getManager(): Promise<Manager> {
+  if (existsSync(resolve(cwd, 'yarn.lock'))) return 'yarn'
+  if (existsSync(resolve(cwd, 'package-lock.json'))) return 'npm'
+  if (!await execute('yarn', ['--version'], 'ignore')) return 'yarn'
+  return 'npm'
+}
+
+// async jobs ahead of time
+const _meta = loadMeta()
+const _kind = getManager()
+
+const installArgs: Record<Manager, string[]> = {
+  yarn: [],
+  npm: ['install', '--loglevel', 'error'],
+}
+
+async function updateMeta() {
+  const meta = await _meta
+  const kind = await _kind
+
+  let modified = false
+  if (!meta.dependencies) meta.dependencies = {}
+
+  function ensureDependency(name: string) {
+    if (meta.dependencies[name]) return
+    modified = true
+    meta.dependencies[name] = '^' + ecosystem[name].version
+  }
+
+  const [name] = config.type.split(':', 1)
+  ensureDependency('koishi-adapter-' + name)
+  for (const name of Object.keys(config.plugins)) {
+    ensureDependency('koishi-plugin-' + name)
+  }
+
+  if (!modified) return
+  await fs.writeFile(metaPath, JSON.stringify(meta, null, 2))
+  console.log(`${success} package.json was updated`)
+
+  const { confirm } = await question([{
+    name: 'confirm',
+    type: 'confirm',
+    initial: true,
+    message: 'package.json was updated. install new dependencies now?',
+  }]).catch(() => ({ confirm: false }))
+
+  const args = installArgs[kind]
+  if (!confirm) {
+    console.log(`${success} you can type "${[kind, ...args].join(' ')}" to install new dependencies`)
+    return
+  }
+
+  process.exit(await execute(kind, args))
+}
+
 export default function (cli: CAC) {
   cli.command('init [file]', 'initialize a koishi configuration file')
     .option('-f, --forced', 'overwrite config file if it exists')
     .action(async (file = 'koishi.config.js', options?) => {
       // resolve file path
-      const path = resolve(workingDirectory, file)
+      const path = resolve(cwd, file)
       if (!options.forced && existsSync(path)) {
         console.warn(`${error} configuration file already exists. If you want to overwrite the current file, use ${yellow('koishi init -f')}`)
         process.exit(1)
@@ -282,20 +325,18 @@ export default function (cli: CAC) {
       if (!extension) {
         console.warn(`${error} configuration file should have an extension, received "${file}"`)
         process.exit(1)
-      } else if (!supportedTypes.includes(extension)) {
+      } else if (!sourceTypes.includes(extension)) {
         console.warn(`${error} configuration file type "${extension}" is currently not supported`)
         process.exit(1)
       }
 
       // create configurations
-      try {
-        await createConfig()
-      } catch {
+      await createConfig().catch(() => {
         console.warn(`${error} initialization was canceled`)
         process.exit(0)
-      }
+      })
 
-      await Promise.all([updateMeta(config), writeConfig(config, path, extension)])
-      process.exit(0)
+      await writeConfig(config, path, extension)
+      await updateMeta()
     })
 }

@@ -2,15 +2,17 @@
   "name": "koishi",
   "description": "A QQ bot framework based on CQHTTP",
   "version": "3.0.0-beta.4",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "index.js",
+  "typings": "index.d.ts",
   "engines": {
     "node": ">=12.0.0"
   },
   "files": [
-    "dist"
+    "dist",
+    "index.d.ts",
+    "index.js"
   ],
-  "bin": "dist/cli.js",
+  "bin": "dist/index.js",
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
   "repository": {

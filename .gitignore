@@ -13,8 +13,6 @@ temp
 /utsuho
 
 /build/*.js
-/packages/*/*.js
-/packages/*/*.d.ts
 
 todo.md
 yarn.lock

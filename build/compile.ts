@@ -50,7 +50,6 @@ const KOISHI_VERSION = JSON.stringify(version)
     const entryPoints = [base + '/src/index.ts']
 
     if (name === 'koishi') {
-      entryPoints.push(base + '/src/cli.ts')
       entryPoints.push(base + '/src/worker.ts')
     } else if (name === 'plugin-eval') {
       entryPoints.push(base + '/src/worker.ts')
