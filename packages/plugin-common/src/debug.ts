@@ -108,10 +108,10 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   }
 
   if (includeUsers) {
-    ctx.unselect('groupId').select('userId', ...includeUsers).on('message', onMessage)
+    ctx.group.except().user(...includeUsers).on('message', onMessage)
   }
 
   if (includeGroups) {
-    ctx.select('groupId', ...includeGroups).on('message', onMessage)
+    ctx.group(...includeGroups).on('message', onMessage)
   }
 }

@@ -12,7 +12,7 @@ const logger = new Logger('monitor')
 export const name = 'monitor'
 
 export function apply(ctx: Context) {
-  ctx = ctx.select('groupId')
+  ctx = ctx.group()
 
   ctx.on('connect', async () => {
     const groups = await ctx.database.getChannelList(['subscribe'])

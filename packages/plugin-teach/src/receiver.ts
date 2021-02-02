@@ -245,7 +245,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   const { nickname = ctx.app.options.nickname, maxRedirections = 3 } = config
   const nicknames = makeArray(nickname).map(escapeRegExp)
   const nicknameRE = new RegExp(`^((${nicknames.join('|')})[,，]?\\s*)+`)
-  const ctx2 = ctx.select('groupId')
+  const ctx2 = ctx.group()
 
   ctx.app._dialogueStates = {}
 

@@ -39,7 +39,7 @@ export * from './state'
 export const name = 'chess'
 
 export function apply(ctx: Context) {
-  ctx = ctx.select('groupId')
+  ctx = ctx.group()
 
   ctx.on('connect', async () => {
     if (!ctx.database) return

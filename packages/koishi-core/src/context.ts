@@ -12,9 +12,10 @@ export type Middleware = (session: Session, next: NextFunction) => any
 export type PluginFunction<T = any> = (ctx: Context, options: T) => void
 export type PluginObject<T = any> = { name?: string, apply: PluginFunction<T> }
 export type Plugin<T = any> = PluginFunction<T> | PluginObject<T>
-export type Promisify<T> = T extends Promise<any> ? T : Promise<T>
-export type Depromisify<T> = T extends Promise<infer U> ? U : T
+export type Promisify<T> = T extends Promise<unknown> ? T : Promise<T>
+export type Await<T> = T extends Promise<infer U> ? U : T
 export type Disposable = () => void
+export type Bind<F, T> = F extends (...args: infer P) => infer R ? (this: T, ...args: P) => R : never
 
 type PluginConfig<T extends Plugin> = T extends PluginFunction<infer U> ? U : T extends PluginObject<infer U> ? U : never
 
@@ -23,6 +24,11 @@ function isBailed(value: any) {
 }
 
 type Filter = (session: Session) => boolean
+type PartialSeletor<T> = (...values: T[]) => Context
+
+interface Selector<T> extends PartialSeletor<T> {
+  except?: PartialSeletor<T>
+}
 
 export class Context {
   static readonly middleware = Symbol('mid')
@@ -33,8 +39,18 @@ export class Context {
 
   private _disposables: Disposable[]
 
+  public user = this.createSelector('userId')
+  public group = this.createSelector('groupId')
+  public platform = this.createSelector('platform')
+
   constructor(public filter: Filter, public app?: App) {
     defineProperty(this, '_disposables', [])
+  }
+
+  private createSelector<K extends keyof Session>(key: K) {
+    const selector: Selector<Session[K]> = (...args) => this.select(key, ...args)
+    selector.except = (...args) => this.unselect(key, ...args)
+    return selector
   }
 
   get router() {
@@ -102,8 +118,8 @@ export class Context {
     return this
   }
 
-  async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<Depromisify<ReturnType<EventMap[K]>>[]>
-  async parallel<K extends EventName>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<Depromisify<ReturnType<EventMap[K]>>[]>
+  async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<Await<ReturnType<EventMap[K]>>[]>
+  async parallel<K extends EventName>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promise<Await<ReturnType<EventMap[K]>>[]>
   async parallel(...args: any[]) {
     const tasks: Promise<any>[] = []
     const session = typeof args[0] === 'object' ? args.shift() : null
@@ -111,7 +127,7 @@ export class Context {
     this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(session)) continue
-      tasks.push(callback.apply(this, args))
+      tasks.push(callback.apply(session, args))
     }
     return Promise.all(tasks)
   }
@@ -122,6 +138,20 @@ export class Context {
     this.parallel(...args)
   }
 
+  waterfall<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promisify<ReturnType<EventMap[K]>>
+  waterfall<K extends EventName>(session: Session, name: K, ...args: Parameters<EventMap[K]>): Promisify<ReturnType<EventMap[K]>>
+  async waterfall(...args: [any, ...any[]]) {
+    const session = typeof args[0] === 'object' ? args.shift() : null
+    const name = args.shift()
+    this.logger('dispatch').debug(name)
+    for (const [context, callback] of this.app._hooks[name] || []) {
+      if (!context.match(session)) continue
+      const result = await callback.apply(session, args)
+      args[0] = result
+    }
+    return args[0]
+  }
+
   chain<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
   chain<K extends EventName>(session: Session, name: K, ...args: Parameters<EventMap[K]>): ReturnType<EventMap[K]>
   chain(...args: [any, ...any[]]) {
@@ -130,7 +160,7 @@ export class Context {
     this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(session)) continue
-      const result = callback.apply(this, args)
+      const result = callback.apply(session, args)
       args[0] = result
     }
     return args[0]
@@ -144,7 +174,7 @@ export class Context {
     this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(session)) continue
-      const result = await callback.apply(this, args)
+      const result = await callback.apply(session, args)
       if (isBailed(result)) return result
     }
   }
@@ -157,7 +187,7 @@ export class Context {
     this.logger('dispatch').debug(name)
     for (const [context, callback] of this.app._hooks[name] || []) {
       if (!context.match(session)) continue
-      const result = callback.apply(this, args)
+      const result = callback.apply(session, args)
       if (isBailed(result)) return result
     }
   }
@@ -173,43 +203,35 @@ export class Context {
     return hooks
   }
 
-  on<K extends EventName>(name: K, listener: EventMap[K]) {
-    return this.addListener(name, listener)
-  }
-
-  addListener<K extends EventName>(name: K, listener: EventMap[K]) {
+  on<K extends EventName>(name: K, listener: Bind<EventMap[K], Session>) {
     this.getHooks(name).push([this, listener])
-    const dispose = () => this.removeListener(name, listener)
+    const dispose = () => this.off(name, listener)
     this._disposables.push(name === 'dispose' ? listener as Disposable : dispose)
     return dispose
   }
 
-  before<K extends BeforeEventName>(name: K, listener: BeforeEventMap[K]) {
+  before<K extends BeforeEventName>(name: K, listener: Bind<BeforeEventMap[K], Session>) {
     const seg = name.split('/')
     seg[seg.length - 1] = 'before-' + seg[seg.length - 1]
     return this.prependListener(seg.join('/') as EventName, listener)
   }
 
-  prependListener<K extends EventName>(name: K, listener: EventMap[K]) {
+  prependListener<K extends EventName>(name: K, listener: Bind<EventMap[K], Session>) {
     this.getHooks(name).unshift([this, listener])
-    const dispose = () => this.removeListener(name, listener)
+    const dispose = () => this.off(name, listener)
     this._disposables.push(name === 'dispose' ? listener as Disposable : dispose)
     return dispose
   }
 
-  once<K extends EventName>(name: K, listener: EventMap[K]) {
-    const dispose = this.addListener(name, (...args: any[]) => {
+  once<K extends EventName>(name: K, listener: Bind<EventMap[K], Session>) {
+    const dispose = this.on(name, function (...args: any[]) {
       dispose()
       return listener.apply(this, args)
-    })
+    } as any)
     return dispose
   }
 
-  off<K extends EventName>(name: K, listener: EventMap[K]) {
-    return this.removeListener(name, listener)
-  }
-
-  removeListener<K extends EventName>(name: K, listener: EventMap[K]) {
+  off<K extends EventName>(name: K, listener: Bind<EventMap[K], Session>) {
     const index = (this.app._hooks[name] || [])
       .findIndex(([context, callback]) => context === this && callback === listener)
     if (index >= 0) {
@@ -222,12 +244,8 @@ export class Context {
     if (prepend) {
       return this.prependListener(Context.middleware, middleware)
     } else {
-      return this.addListener(Context.middleware, middleware)
+      return this.on(Context.middleware, middleware)
     }
-  }
-
-  removeMiddleware(middleware: Middleware) {
-    return this.removeListener(Context.middleware, middleware)
   }
 
   command<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
