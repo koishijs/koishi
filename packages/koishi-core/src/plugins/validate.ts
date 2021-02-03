@@ -1,10 +1,9 @@
-import { format } from 'util'
 import { Time } from 'koishi-utils'
 import { User } from '../database'
 import { Command } from '../command'
 import { App } from '../app'
-import { Message } from './message'
 import { Argv } from '../parser'
+import { Template } from '../template'
 
 export function getUsageName(command: Command) {
   return command.config.usageName || command.name
@@ -36,25 +35,25 @@ export default function apply(app: App) {
   app.before('command', async (argv: Argv<ValidationField>) => {
     const { error, session, args, options, command } = argv
     function sendHint(message: string, ...param: any[]) {
-      return command.config.showWarning ? format(message, ...param) : ''
+      return command.config.showWarning ? Template(message, param) : ''
     }
 
-    if (error) return sendHint(error)
+    if (error) return error
 
     for (const validator of command._checkers) {
       const result = validator.call(command, argv, ...argv.args)
-      if (typeof result === 'string') return sendHint(result)
+      if (typeof result === 'string') return result
     }
 
     // check argument count
     if (command.config.checkArgCount) {
       const nextArg = command._arguments[args.length] || {}
       if (nextArg.required) {
-        return sendHint(Message.INSUFFICIENT_ARGUMENTS)
+        return sendHint('internal.insufficient-arguments')
       }
       const finalArg = command._arguments[command._arguments.length - 1] || {}
       if (args.length > command._arguments.length && finalArg.type !== 'text' && !finalArg.variadic) {
-        return sendHint(Message.REDUNANT_ARGUMENTS)
+        return sendHint('internal.redunant-arguments')
       }
     }
 
@@ -62,7 +61,7 @@ export default function apply(app: App) {
     if (command.config.checkUnknown) {
       const unknown = Object.keys(options).filter(key => !command._options[key])
       if (unknown.length) {
-        return sendHint(Message.UNKNOWN_OPTIONS, unknown.join(', '))
+        return sendHint('internal.unknown-option', unknown.join(', '))
       }
     }
 
@@ -71,12 +70,12 @@ export default function apply(app: App) {
 
     // check authority
     if (command.config.authority > session.$user.authority) {
-      return sendHint(Message.LOW_AUTHORITY)
+      return sendHint('internal.low-authority')
     }
     for (const option of Object.values(command._options)) {
       if (option.name in options) {
         if (option.authority > session.$user.authority) {
-          return sendHint(Message.LOW_AUTHORITY)
+          return sendHint('internal.low-authority')
         }
         if (option.notUsage) isUsage = false
       }
@@ -89,11 +88,11 @@ export default function apply(app: App) {
       const maxUsage = command.getConfig('maxUsage', session)
 
       if (maxUsage < Infinity && checkUsage(name, session.$user, maxUsage)) {
-        return sendHint(Message.USAGE_EXHAUSTED)
+        return sendHint('internal.usage-exhausted')
       }
 
       if (minInterval > 0 && checkTimer(name, session.$user, minInterval)) {
-        return sendHint(Message.TOO_FREQUENT)
+        return sendHint('internal.too-frequent')
       }
     }
   })

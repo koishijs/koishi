@@ -1,3 +1,5 @@
+import LruCache from 'lru-cache'
+import { distance } from 'fastest-levenshtein'
 import { User, Channel, TableType, Tables } from './database'
 import { Command } from './command'
 import { contain, observe, Logger, defineProperty, Random } from 'koishi-utils'
@@ -5,10 +7,7 @@ import { Argv } from './parser'
 import { Middleware, NextFunction } from './context'
 import { App } from './app'
 import { Bot, Platform } from './server'
-import LruCache from 'lru-cache'
-import { format } from 'util'
-import { Message } from './plugins/message'
-import { distance } from 'fastest-levenshtein'
+import { Template } from './template'
 
 const logger = new Logger('session')
 
@@ -421,7 +420,7 @@ export class Session<
     if (!suggestions) return next(() => this.send(prefix))
 
     return next(() => {
-      const message = prefix + format(Message.SUGGESTION, suggestions.map(name => `“${name}”`).join('或'))
+      const message = prefix + Template('internal.suggestion', suggestions.map(Template.quote).join(Template.get('basic.or')))
       if (suggestions.length > 1) return this.send(message)
 
       const dispose = this.middleware((session, next) => {

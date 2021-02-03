@@ -5,12 +5,12 @@ import { BotOptions, Server, createBots } from './server'
 import { Channel, User } from './database'
 import { Command } from './command'
 import { Session } from './session'
+import { Template } from './template'
 import help, { getCommands } from './plugins/help'
 import validate from './plugins/validate'
 import LruCache from 'lru-cache'
 import * as http from 'http'
 import type Koa from 'koa'
-import { Message } from './plugins/message'
 
 export interface DelayOptions {
   character?: number
@@ -161,8 +161,8 @@ export class App extends Context {
         target,
         next,
         items,
-        prefix: Message.COMMAND_SUGGEST_PREFIX,
-        suffix: Message.COMMAND_SUGGEST_SUFFIX,
+        prefix: Template('internal.command-suggestion-prefix'),
+        suffix: Template('internal.command-suggestion-suffix'),
         async apply(suggestion, next) {
           const newMessage = suggestion + $parsed.slice(target.length) + ($reply ? ' ' + $reply.content : '')
           return this.execute(newMessage, next)

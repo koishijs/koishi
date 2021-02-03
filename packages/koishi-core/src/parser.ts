@@ -3,7 +3,7 @@ import { format } from 'util'
 import { Command } from './command'
 import { NextFunction } from './context'
 import { Channel, User } from './database'
-import { Message } from './plugins/message'
+import { Template } from './template'
 import { Session } from './session'
 
 export interface Token {
@@ -360,7 +360,7 @@ export namespace Domain {
       const source = this.name + ' ' + Argv.stringify(argv)
 
       let error: string
-      function parseValue(source: string, quoted: boolean, hint: string, { name, type, fallback }: Declaration = {}) {
+      function parseValue(source: string, quoted: boolean, kind: string, { name, type, fallback }: Declaration = {}) {
         // no explicit parameter & has fallback
         const implicit = source === '' && !quoted
         if (implicit && fallback !== undefined) return fallback
@@ -370,8 +370,9 @@ export namespace Domain {
         if (transform) {
           try {
             return transform(source)
-          } catch (e) {
-            error = format(hint, name, e['message'] || Message.CHECK_SYNTAX)
+          } catch (err) {
+            const message = err['message'] || Template('internal.check-syntax')
+            error = Template(`internal.invalid-${kind}`, name, message)
             return
           }
         }
@@ -404,7 +405,7 @@ export namespace Domain {
         } else {
           // normal argument
           if (content[0] !== '-' || quoted) {
-            args.push(parseValue(content, quoted, Message.INVALID_ARGUMENT, argDecl))
+            args.push(parseValue(content, quoted, 'argument', argDecl))
             continue
           }
 
@@ -455,7 +456,7 @@ export namespace Domain {
             options[key] = optDecl.values[name]
           } else {
             const source = j + 1 < names.length ? '' : param
-            options[key] = parseValue(source, quoted, Message.INVALID_OPTION, optDecl)
+            options[key] = parseValue(source, quoted, 'option', optDecl)
           }
           if (error) break
         }

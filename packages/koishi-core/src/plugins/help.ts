@@ -3,7 +3,7 @@ import { TableType } from '../database'
 import { Command } from '../command'
 import { Session, FieldCollector } from '../session'
 import { App } from '../app'
-import { Message } from './message'
+import { Template } from '../template'
 
 interface HelpConfig {
   showHidden?: boolean
@@ -46,8 +46,9 @@ export default function apply(app: App) {
     .action(async ({ session, options }, target) => {
       if (!target) {
         const commands = session.$app._commands.filter(cmd => cmd.parent === null)
-        const output = formatCommands('当前可用的指令有', session, commands, options)
-        if (Message.GLOBAL_HELP_EPILOG) output.push(Message.GLOBAL_HELP_EPILOG)
+        const output = formatCommands('internal.global-help-prolog', session, commands, options)
+        const epilog = Template('internal.global-help-epilog')
+        if (epilog) output.push(epilog)
         return output.join('\n')
       }
 
@@ -57,8 +58,8 @@ export default function apply(app: App) {
         session.suggest({
           target,
           items,
-          prefix: Message.HELP_SUGGEST_PREFIX,
-          suffix: Message.HELP_SUGGEST_SUFFIX,
+          prefix: Template('internal.help-suggestion-prefix'),
+          suffix: Template('internal.help-suggestion-suffix'),
           async apply(suggestion) {
             await this.observeUser(['authority', 'usage', 'timers'])
             const output = await showHelp(app._commandMap[suggestion], this as any, options)
@@ -81,7 +82,7 @@ export function getCommands(session: Session<'authority'>, commands: Command[], 
   }).sort((a, b) => a.name > b.name ? 1 : -1)
 }
 
-function formatCommands(prefix: string, session: Session<ValidationField>, source: Command[], options: HelpConfig) {
+function formatCommands(path: string, session: Session<ValidationField>, source: Command[], options: HelpConfig) {
   const commands = getCommands(session, source, options.showHidden)
   if (!commands.length) return []
   let hasSubcommand = false
@@ -93,11 +94,10 @@ function formatCommands(prefix: string, session: Session<ValidationField>, sourc
     output += '  ' + description
     return output
   })
-  if (options.authority) {
-    output.unshift(`${prefix}（括号内为对应的最低权限等级${hasSubcommand ? '，标有星号的表示含有子指令' : ''}）：`)
-  } else {
-    output.unshift(`${prefix}：`)
-  }
+  const hints: string[] = []
+  if (options.authority) hints.push(Template('internal.hint-authority'))
+  if (hasSubcommand) hints.push(Template('internal.hint-subcommand'))
+  output.unshift(Template(path, [Template.brace(hints)]))
   return output
 }
 
@@ -110,14 +110,14 @@ function getOptions(command: Command, session: Session<ValidationField>, maxUsag
   if (!options.length) return []
 
   const output = config.authority && options.some(o => o.authority)
-    ? ['可用的选项有（括号内为额外要求的权限等级）：']
-    : ['可用的选项有：']
+    ? [Template('internal.available-options-with-authority')]
+    : [Template('internal.available-options')]
 
   options.forEach((option) => {
     const authority = option.authority && config.authority ? `(${option.authority}) ` : ''
     let line = `    ${authority}${option.description}`
     if (option.notUsage && maxUsage !== Infinity) {
-      line += '（不计入总次数）'
+      line += Template('internal.option-not-usage')
     }
     output.push(line)
   })
@@ -135,7 +135,7 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
   }
 
   if (command._aliases.length > 1) {
-    output.push(`别名：${Array.from(command._aliases.slice(1)).join('，')}。`)
+    output.push(Template('internal.command-aliases', Array.from(command._aliases.slice(1)).join('，')))
   }
 
   const maxUsage = command.getConfig('maxUsage', session)
@@ -145,17 +145,17 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
     const count = getUsage(name, session.$user)
 
     if (maxUsage < Infinity) {
-      output.push(`已调用次数：${Math.min(count, maxUsage)}/${maxUsage}。`)
+      output.push(Template('internal.command-max-usage', Math.min(count, maxUsage), maxUsage))
     }
 
     const due = session.$user.timers[name]
     if (minInterval > 0) {
       const nextUsage = due ? (Math.max(0, due - Date.now()) / 1000).toFixed() : 0
-      output.push(`距离下次调用还需：${nextUsage}/${minInterval / 1000} 秒。`)
+      output.push(Template('internal.command-min-interval', nextUsage, minInterval / 1000))
     }
 
     if (command.config.authority > 1) {
-      output.push(`最低权限：${command.config.authority} 级。`)
+      output.push(Template('internal.command-authority', command.config.authority))
     }
   }
 
@@ -167,10 +167,10 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
   output.push(...getOptions(command, session, maxUsage, config))
 
   if (command._examples.length) {
-    output.push('使用示例：', ...command._examples.map(example => '    ' + example))
+    output.push(Template('internal.command-examples'), ...command._examples.map(example => '    ' + example))
   }
 
-  output.push(...formatCommands('可用的子指令有', session, command.children, config))
+  output.push(...formatCommands('internal.subcommand-prolog', session, command.children, config))
 
   return output.join('\n')
 }
