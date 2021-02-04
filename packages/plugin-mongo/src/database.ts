@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection } from 'mongodb'
-import { App, TableType } from 'koishi-core'
+import { App, Channel, Tables, TableType, User } from 'koishi-core'
 import { URLSearchParams } from 'url'
 
 export interface Config {
@@ -19,15 +19,14 @@ export interface Config {
 }
 
 export default class MongoDatabase {
-  public config: Config
   public client: MongoClient
   public db: Db
 
-  user: Collection<any>
-  channel: Collection<any>
+  user: Collection<User>
+  channel: Collection<Channel>
 
-  constructor(public app: App, config: Config) {
-    this.config = config
+  constructor(public app: App, public config: Config) {
+    this.start()
   }
 
   async start() {
@@ -44,6 +43,10 @@ export default class MongoDatabase {
     this.user = this.db.collection('user')
     this.channel = this.db.collection('channel')
     await this.channel.createIndex({ type: 1, pid: 1 }, { unique: true })
+  }
+
+  collection<T extends TableType>(name: T): Collection<Tables[T]> {
+    return this.db.collection(name)
   }
 
   stop() {
