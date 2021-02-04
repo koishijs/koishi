@@ -3,7 +3,7 @@ import { TableType } from '../database'
 import { Command } from '../command'
 import { Session, FieldCollector } from '../session'
 import { App } from '../app'
-import { Template } from '../template'
+import { template } from 'koishi-utils'
 
 interface HelpConfig {
   showHidden?: boolean
@@ -47,7 +47,7 @@ export default function apply(app: App) {
       if (!target) {
         const commands = session.$app._commands.filter(cmd => cmd.parent === null)
         const output = formatCommands('internal.global-help-prolog', session, commands, options)
-        const epilog = Template('internal.global-help-epilog')
+        const epilog = template('internal.global-help-epilog')
         if (epilog) output.push(epilog)
         return output.join('\n')
       }
@@ -58,8 +58,8 @@ export default function apply(app: App) {
         session.suggest({
           target,
           items,
-          prefix: Template('internal.help-suggestion-prefix'),
-          suffix: Template('internal.help-suggestion-suffix'),
+          prefix: template('internal.help-suggestion-prefix'),
+          suffix: template('internal.help-suggestion-suffix'),
           async apply(suggestion) {
             await this.observeUser(['authority', 'usage', 'timers'])
             const output = await showHelp(app._commandMap[suggestion], this as any, options)
@@ -95,9 +95,9 @@ function formatCommands(path: string, session: Session<ValidationField>, source:
     return output
   })
   const hints: string[] = []
-  if (options.authority) hints.push(Template('internal.hint-authority'))
-  if (hasSubcommand) hints.push(Template('internal.hint-subcommand'))
-  output.unshift(Template(path, [Template.brace(hints)]))
+  if (options.authority) hints.push(template('internal.hint-authority'))
+  if (hasSubcommand) hints.push(template('internal.hint-subcommand'))
+  output.unshift(template(path, [template.brace(hints)]))
   return output
 }
 
@@ -110,14 +110,14 @@ function getOptions(command: Command, session: Session<ValidationField>, maxUsag
   if (!options.length) return []
 
   const output = config.authority && options.some(o => o.authority)
-    ? [Template('internal.available-options-with-authority')]
-    : [Template('internal.available-options')]
+    ? [template('internal.available-options-with-authority')]
+    : [template('internal.available-options')]
 
   options.forEach((option) => {
     const authority = option.authority && config.authority ? `(${option.authority}) ` : ''
     let line = `    ${authority}${option.description}`
     if (option.notUsage && maxUsage !== Infinity) {
-      line += Template('internal.option-not-usage')
+      line += template('internal.option-not-usage')
     }
     output.push(line)
   })
@@ -135,7 +135,7 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
   }
 
   if (command._aliases.length > 1) {
-    output.push(Template('internal.command-aliases', Array.from(command._aliases.slice(1)).join('，')))
+    output.push(template('internal.command-aliases', Array.from(command._aliases.slice(1)).join('，')))
   }
 
   const maxUsage = command.getConfig('maxUsage', session)
@@ -145,17 +145,17 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
     const count = getUsage(name, session.$user)
 
     if (maxUsage < Infinity) {
-      output.push(Template('internal.command-max-usage', Math.min(count, maxUsage), maxUsage))
+      output.push(template('internal.command-max-usage', Math.min(count, maxUsage), maxUsage))
     }
 
     const due = session.$user.timers[name]
     if (minInterval > 0) {
       const nextUsage = due ? (Math.max(0, due - Date.now()) / 1000).toFixed() : 0
-      output.push(Template('internal.command-min-interval', nextUsage, minInterval / 1000))
+      output.push(template('internal.command-min-interval', nextUsage, minInterval / 1000))
     }
 
     if (command.config.authority > 1) {
-      output.push(Template('internal.command-authority', command.config.authority))
+      output.push(template('internal.command-authority', command.config.authority))
     }
   }
 
@@ -167,10 +167,46 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
   output.push(...getOptions(command, session, maxUsage, config))
 
   if (command._examples.length) {
-    output.push(Template('internal.command-examples'), ...command._examples.map(example => '    ' + example))
+    output.push(template('internal.command-examples'), ...command._examples.map(example => '    ' + example))
   }
 
   output.push(...formatCommands('internal.subcommand-prolog', session, command.children, config))
 
   return output.join('\n')
 }
+
+/* eslint-disable quote-props */
+template.set('internal', {
+  // command
+  'low-authority': '权限不足。',
+  'usage-exhausted': '调用次数已达上限。',
+  'too-frequent': '调用过于频繁，请稍后再试。',
+  'insufficient-arguments': '缺少参数，请检查指令语法。',
+  'redunant-arguments': '存在多余参数，请检查指令语法。',
+  'invalid-argument': '参数 {0} 输入无效，{1}',
+  'unknown-option': '存在未知选项 %s，请检查指令语法。',
+  'invalid-option': '选项 {0} 输入无效，{1}',
+  'check-syntax': '请检查语法。',
+
+  // suggest
+  'suggestion': '你要找的是不是{0}？',
+  'command-suggestion-prefix': '',
+  'command-suggestion-suffix': '发送空行或句号以使用推测的指令。',
+
+  // help
+  'help-suggestion-prefix': '指令未找到。',
+  'help-suggestion-suffix': '发送空行或句号以使用推测的指令。',
+  'subcommand-prolog': '可用的子指令有{0}：',
+  'global-help-prolog': '当前可用的指令有{0}：',
+  'global-help-epilog': '输入“帮助+指令名”查看特定指令的语法和使用示例。',
+  'available-options': '可用的选项有：',
+  'available-options-with-authority': '可用的选项有（括号内为额外要求的权限等级）：',
+  'option-not-usage': '（不计入总次数）',
+  'hint-authority': '括号内为对应的最低权限等级',
+  'hint-subcommand': '标有星号的表示含有子指令',
+  'command-aliases': '别名：{0}。',
+  'command-examples': '使用示例：',
+  'command-authority': '最低权限：{0} 级。',
+  'command-max-usage': '已调用次数：{0}/{1}。',
+  'command-min-interval': '距离下次调用还需：{0}/{1} 秒。',
+})

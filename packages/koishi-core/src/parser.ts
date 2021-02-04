@@ -1,9 +1,8 @@
-import { camelCase, CQCode, escapeRegExp, paramCase } from 'koishi-utils'
+import { camelCase, CQCode, escapeRegExp, paramCase, template } from 'koishi-utils'
 import { format } from 'util'
 import { Command } from './command'
 import { NextFunction } from './context'
 import { Channel, User } from './database'
-import { Template } from './template'
 import { Session } from './session'
 
 export interface Token {
@@ -371,8 +370,8 @@ export namespace Domain {
           try {
             return transform(source)
           } catch (err) {
-            const message = err['message'] || Template('internal.check-syntax')
-            error = Template(`internal.invalid-${kind}`, name, message)
+            const message = err['message'] || template('internal.check-syntax')
+            error = template(`internal.invalid-${kind}`, name, message)
             return
           }
         }

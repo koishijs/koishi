@@ -80,7 +80,13 @@ extendDatabase(MongoDatabase, {
   },
 
   async setUser(type, id, data) {
-    await this.user.updateOne({ [type]: id }, { $set: escapeKey(data) }, { upsert: true })
+    const [udoc] = await this.user.find({}).sort('_id', -1).limit(1).toArray()
+    const uid = udoc ? udoc.id + 1 : 1
+    await this.user.updateOne(
+      { [type]: id },
+      { $set: escapeKey(data), $setOnInsert: { _id: uid, id: uid } },
+      { upsert: true },
+    )
   },
 
   async createUser(type, id, data) {

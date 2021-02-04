@@ -6,7 +6,6 @@ export * from './database'
 export * from './parser'
 export * from './session'
 export * from './server'
-export * from './template'
 export * from './plugins/help'
 export * from './plugins/validate'
 
