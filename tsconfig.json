@@ -15,6 +15,7 @@
     { "path": "./packages/adapter-onebot" },
     { "path": "./packages/adapter-tomon" },
     { "path": "./packages/adapter-kaiheila" },
+    { "path": "./packages/adapter-telegram" },
 
     { "path": "./packages/plugin-common" },
     { "path": "./packages/plugin-mysql" },
