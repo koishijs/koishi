@@ -1,11 +1,10 @@
-import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop } from 'koishi-utils'
+import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop, template } from 'koishi-utils'
 import { Context, Middleware, NextFunction } from './context'
 import { Argv } from './parser'
 import { BotOptions, Server, createBots } from './server'
 import { Channel, User } from './database'
 import { Command } from './command'
 import { Session } from './session'
-import { Template } from './template'
 import help, { getCommands } from './plugins/help'
 import validate from './plugins/validate'
 import LruCache from 'lru-cache'
@@ -161,8 +160,8 @@ export class App extends Context {
         target,
         next,
         items,
-        prefix: Template('internal.command-suggestion-prefix'),
-        suffix: Template('internal.command-suggestion-suffix'),
+        prefix: template('internal.command-suggestion-prefix'),
+        suffix: template('internal.command-suggestion-suffix'),
         async apply(suggestion, next) {
           const newMessage = suggestion + $parsed.slice(target.length) + ($reply ? ' ' + $reply.content : '')
           return this.execute(newMessage, next)

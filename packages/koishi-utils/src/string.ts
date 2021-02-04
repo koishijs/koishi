@@ -43,3 +43,66 @@ export function escapeRegExp(source: string) {
     .replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
     .replace(/-/g, '\\x2d')
 }
+
+export function template(path: string, ...params: any[]) {
+  return template.format(template.get(path), ...params)
+}
+
+export namespace template {
+  export type Node = string | Store
+
+  export interface Store {
+    [K: string]: Node
+  }
+
+  const store: Store = {}
+
+  export function set(path: string, value: Node) {
+    const seg = path.split('.')
+    let node: Node = store
+    while (seg.length > 1) {
+      node = node[seg.shift()] ||= {}
+    }
+    node[seg[0]] = value
+  }
+
+  export function get(path: string) {
+    const seg = path.split('.')
+    let node: Node = store
+    do {
+      node = node[seg.shift()]
+    } while (seg.length && node)
+    return typeof node === 'string' ? node : path
+  }
+
+  export function format(source: string, ...params: any[]) {
+    let result = ''
+    let cap: RegExpExecArray
+    // eslint-disable-next-line no-cond-assign
+    while (cap = /\{([\w-]+)\}/.exec(source)) {
+      result += source.slice(0, cap.index) + (cap[1] in params ? params[cap[1]] : '')
+      source = source.slice(cap.index + cap[0].length)
+    }
+    return result + source
+  }
+
+  export function quote(content: any) {
+    return get('basic.left-quote') + content + get('basic.right-quote')
+  }
+
+  export function brace(items: any[]) {
+    if (!items.length) return ''
+    return get('basic.left-brace') + items.join(get('basic.comma')) + get('basic.right-brace')
+  }
+}
+
+/* eslint-disable quote-props */
+template.set('basic', {
+  'left-brace': '（',
+  'right-brace': '）',
+  'left-quote': '“',
+  'right-quote': '”',
+  'comma': '，',
+  'and': '和',
+  'or': '或',
+})

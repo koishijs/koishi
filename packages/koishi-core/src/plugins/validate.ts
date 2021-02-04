@@ -1,9 +1,8 @@
-import { Time } from 'koishi-utils'
+import { Time, template } from 'koishi-utils'
 import { User } from '../database'
 import { Command } from '../command'
 import { App } from '../app'
 import { Argv } from '../parser'
-import { Template } from '../template'
 
 export function getUsageName(command: Command) {
   return command.config.usageName || command.name
@@ -35,7 +34,7 @@ export default function apply(app: App) {
   app.before('command', async (argv: Argv<ValidationField>) => {
     const { error, session, args, options, command } = argv
     function sendHint(message: string, ...param: any[]) {
-      return command.config.showWarning ? Template(message, param) : ''
+      return command.config.showWarning ? template(message, param) : ''
     }
 
     if (error) return error

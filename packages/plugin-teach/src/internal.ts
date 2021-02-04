@@ -1,8 +1,7 @@
-import { Context, Template } from 'koishi-core'
+import { Context, template, defineProperty } from 'koishi-core'
 import { Dialogue } from './utils'
 import { create, update } from './update'
 import { RegExpValidator } from 'regexpp'
-import { defineProperty } from 'koishi-utils'
 import { formatQuestionAnswers } from './search'
 import { distance } from 'fastest-levenshtein'
 
@@ -14,7 +13,7 @@ declare module 'koishi-core/dist/command' {
   }
 }
 
-Template.set('teach', {
+template.set('teach', {
   'too-many-arguments': '存在多余的参数，请检查指令语法或将含有空格或换行的问答置于一对引号内。',
   'missing-question-or-answer': '缺少问题或回答，请检查指令语法。',
   'prohibited-command': '禁止在教学回答中插值调用 {0} 指令。',
@@ -43,9 +42,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       const question = parseArgument()
       const answer = options.redirect ? `$(dialogue ${options.redirect})` : parseArgument()
       if (args.length) {
-        return Template('teach.too-many-arguments')
+        return template('teach.too-many-arguments')
       } else if (/\[CQ:(?!face)/.test(question)) {
-        return Template('teach.prohibited-cq-code')
+        return template('teach.prohibited-cq-code')
       }
       const { unprefixed, prefixed, appellative } = options.regexp
         ? { unprefixed: question, prefixed: question, appellative: false }
@@ -91,7 +90,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         args[0] = ''
         return applySuggestion(argv)
       })
-      return Template('teach.probably-modify-answer')
+      return template('teach.probably-modify-answer')
     }
 
     // 如果问题疑似正则表达式但原问答不是正则匹配，提示添加 -x 选项
@@ -103,7 +102,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         options.regexp = true
         return applySuggestion(argv)
       })
-      return Template('teach.probably-regexp', target ? '修改' : '添加')
+      return template('teach.probably-regexp', target ? '修改' : '添加')
     }
 
     // 检测正则表达式的合法性
@@ -112,7 +111,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       try {
         questions.map(q => validator.validatePattern(q))
       } catch (error) {
-        return Template('teach.illegal-regexp')
+        return template('teach.illegal-regexp')
       }
     }
   })
@@ -120,7 +119,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.before('dialogue/modify', async ({ options, target, args }) => {
     // 添加问答时缺少问题或回答
     if (options.create && !target && !(args[0] && args[1])) {
-      return Template('teach.missing-question-or-answer')
+      return template('teach.missing-question-or-answer')
     }
   })
 
@@ -161,7 +160,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
   ctx.before('command', ({ command, session }) => {
     if (command.config.noInterp && session._redirected) {
-      return Template('teach.prohibited-command', command.name)
+      return template('teach.prohibited-command', command.name)
     }
   })
 }
