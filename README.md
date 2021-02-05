@@ -49,6 +49,7 @@ koishi run
 | 插件名 | <span align="center">功能描述</span> |
 |:-:|:-:|
 | [blame](https://github.com/ArilyChan/koishi-plugin-blame) | 拦截崩溃错误，推送到私信或群 |
+| [gosen-choyen](https://github.com/idlist/koishi-plugin-gosen-choyen) | 生成并发送“我想要五千兆元！”风格的图片 |
 
 | 项目地址 | <span align="center">简介</span> |
 |:-:|:-:|
