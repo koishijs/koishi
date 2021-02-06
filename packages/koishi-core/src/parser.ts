@@ -222,7 +222,7 @@ export namespace Domain {
     stripped: string
   }
 
-  function parseDecl(source: string, fallback?: Builtin) {
+  function parseDecl(source: string) {
     let cap: RegExpExecArray
     const result = [] as DeclarationList
     // eslint-disable-next-line no-cond-assign
@@ -234,7 +234,7 @@ export namespace Domain {
         variadic = true
       }
       const [name, rawType] = rawName.split(':')
-      const type = rawType ? rawType.trim() as Builtin : fallback
+      const type = rawType ? rawType.trim() as Builtin : undefined
       result.push({
         name,
         variadic,
@@ -270,6 +270,7 @@ export namespace Domain {
     public _arguments: Declaration[]
     public _options: OptionDeclarationMap = {}
 
+    private _error: string
     private _namedOptions: OptionDeclarationMap = {}
     private _symbolicOptions: OptionDeclarationMap = {}
 
@@ -277,7 +278,7 @@ export namespace Domain {
       if (!name) throw new Error('expect a command name')
       const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
       this.description = def.slice(decl.length).trim()
-      this.declaration = name + (this._arguments = parseDecl(decl, 'string')).stripped
+      this.declaration = name + (this._arguments = parseDecl(decl)).stripped
     }
 
     _createOption(name: string, def: string, config?: OptionConfig) {
@@ -353,36 +354,36 @@ export namespace Domain {
       return true
     }
 
+    private _parseValue(source: string, quoted: boolean, kind: string, { name, type, fallback }: Declaration = {}) {
+      // no explicit parameter & has fallback
+      const implicit = source === '' && !quoted
+      if (implicit && fallback !== undefined) return fallback
+
+      // apply domain callback
+      const transform = resolveType(type)
+      if (transform) {
+        try {
+          return transform(source)
+        } catch (err) {
+          const message = err['message'] || template('internal.check-syntax')
+          this._error = template(`internal.invalid-${kind}`, name, message)
+          return
+        }
+      }
+
+      // default behavior
+      if (implicit) return true
+      const n = +source
+      return n * 0 === 0 ? n : source
+    }
+
     parse(argv: Argv): Argv {
       const args: string[] = []
       const options: Record<string, any> = {}
       const source = this.name + ' ' + Argv.stringify(argv)
+      this._error = ''
 
-      let error: string
-      function parseValue(source: string, quoted: boolean, kind: string, { name, type, fallback }: Declaration = {}) {
-        // no explicit parameter & has fallback
-        const implicit = source === '' && !quoted
-        if (implicit && fallback !== undefined) return fallback
-
-        // apply domain callback
-        const transform = resolveType(type)
-        if (transform) {
-          try {
-            return transform(source)
-          } catch (err) {
-            const message = err['message'] || template('internal.check-syntax')
-            error = template(`internal.invalid-${kind}`, name, message)
-            return
-          }
-        }
-
-        // default behavior
-        if (implicit) return true
-        const n = +source
-        return n * 0 === 0 ? n : source
-      }
-
-      while (!error && argv.tokens.length) {
+      while (!this._error && argv.tokens.length) {
         const token = argv.tokens[0]
         let { content, quoted } = token
 
@@ -404,7 +405,7 @@ export namespace Domain {
         } else {
           // normal argument
           if (content[0] !== '-' || quoted) {
-            args.push(parseValue(content, quoted, 'argument', argDecl))
+            args.push(this._parseValue(content, quoted, 'argument', argDecl || { type: 'string' }))
             continue
           }
 
@@ -455,9 +456,9 @@ export namespace Domain {
             options[key] = optDecl.values[name]
           } else {
             const source = j + 1 < names.length ? '' : param
-            options[key] = parseValue(source, quoted, 'option', optDecl)
+            options[key] = this._parseValue(source, quoted, 'option', optDecl)
           }
-          if (error) break
+          if (this._error) break
         }
       }
 
@@ -469,7 +470,7 @@ export namespace Domain {
       }
 
       delete argv.tokens
-      return { options, args, source, error }
+      return { options, args, source, error: this._error }
     }
 
     private stringifyArg(value: any) {
