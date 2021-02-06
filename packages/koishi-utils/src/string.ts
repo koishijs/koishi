@@ -96,6 +96,8 @@ export namespace template {
   }
 }
 
+export { template as t }
+
 /* eslint-disable quote-props */
 template.set('basic', {
   'left-brace': '（',

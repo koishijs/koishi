@@ -26,10 +26,10 @@ export namespace Session {
     'friend-request': {}
     'group-request': {}
     'group-member-request': {}
-    'group-added': GroupMemberAddedType
-    'group-member-added': GroupMemberAddedType
-    'group-deleted': GroupMemberDeletedType
-    'group-member-deleted': GroupMemberDeletedType
+    'group-added': GroupMemberChangeType
+    'group-member-added': GroupMemberChangeType
+    'group-deleted': GroupMemberChangeType
+    'group-member-deleted': GroupMemberChangeType
     'group-member': {
       'role': {}
       'ban': {}
@@ -45,14 +45,9 @@ export namespace Session {
     }
   }
 
-  interface GroupMemberAddedType {
-    'approve': {}
-    'invite': {}
-  }
-
-  interface GroupMemberDeletedType {
-    'leave': {}
-    'kick': {}
+  interface GroupMemberChangeType {
+    'active': {}
+    'passive': {}
   }
 
   interface MessageType {

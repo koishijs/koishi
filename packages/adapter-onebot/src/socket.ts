@@ -53,11 +53,11 @@ export function createSession(server: Server, data: any) {
       case 'group_ban': session.type = 'group-member'; session.subtype = 'ban'; break
       case 'group_decrease':
         session.type = session.userId === session.selfId ? 'group-deleted' : 'group-member-deleted'
-        session.subtype = session.userId === session.operatorId ? 'leave' : 'kick'
+        session.subtype = session.userId === session.operatorId ? 'active' : 'passive'
         break
       case 'group_increase':
         session.type = session.userId === session.selfId ? 'group-added' : 'group-member-added'
-        session.subtype = session.userId === session.operatorId ? 'leave' : 'kick'
+        session.subtype = session.userId === session.operatorId ? 'active' : 'passive'
         break
       case 'notify':
         session.type = 'notice'
