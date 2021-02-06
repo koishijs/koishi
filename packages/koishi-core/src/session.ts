@@ -137,7 +137,7 @@ export class Session<
       : this.anonymous
         ? this.anonymous.name
         : this.author
-          ? this.author.nick || this.author.name
+          ? this.author.nickname || this.author.username
           : '' + this.userId
     return this.$app.chain('appellation', defaultName, this)
   }
@@ -515,11 +515,11 @@ export interface GroupInfo {
 
 export interface UserInfo {
   userId: string
-  name: string
+  username: string
 }
 
 export interface GroupMemberInfo extends UserInfo {
-  nick?: string
+  nickname?: string
   roles?: string[]
 }
 

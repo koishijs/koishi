@@ -2,9 +2,11 @@ import { App, User, Channel } from 'koishi-core'
 import { expect } from 'chai'
 import '../chai'
 
-declare module 'koishi-core/dist/database' {
-  interface Platforms {
-    mock: string
+declare module 'koishi-core/dist/server' {
+  namespace Bot {
+    interface Platforms {
+      mock: string
+    }
   }
 }
 

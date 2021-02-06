@@ -39,8 +39,8 @@ export class KaiheilaBot extends Bot {
       userId: data.userId,
       descriminator: author.identifyNum,
       avatar: author.avatar,
-      name: author.username,
-      nick: author.nickname,
+      username: author.username,
+      nickname: author.nickname,
       roles: author.roles,
     }
     data.subtype = data['channelType'] === 'GROUP' ? 'group' : 'private'

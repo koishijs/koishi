@@ -242,8 +242,8 @@ describe('Teach Plugin', () => {
     app.command('test').action(({ session }) => '' + session.userId)
 
     it('create writer', async () => {
-      // 当自身未设置 name 时使用 session.sender
-      u3g1.meta.author.name = 'nick3'
+      // 当自身未设置 username 时使用 session.sender
+      u3g1.meta.author.username = 'nick3'
       await u3g1.shouldReply('# foo bar', '问答已添加，编号为 1。')
       await u3g1.shouldReply('#1', DETAIL_HEAD + '来源：nick3 (300)')
 
@@ -268,7 +268,7 @@ describe('Teach Plugin', () => {
     })
 
     it('anonymous', async () => {
-      u2.meta.author.name = 'nick2'
+      u2.meta.author.username = 'nick2'
       await u2.shouldReply('#1', DETAIL_HEAD + '来源：nick2 (200)')
       await u2.shouldReply('#1 -W', '问答 1 已成功修改。')
       await u2.shouldReply('#1', DETAIL_HEAD.slice(0, -1))
