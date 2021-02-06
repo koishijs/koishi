@@ -26,10 +26,10 @@ export namespace Session {
     'friend-request': {}
     'group-request': {}
     'group-member-request': {}
-    'group-added': GroupMemberAddedType
-    'group-member-added': GroupMemberAddedType
-    'group-deleted': GroupMemberDeletedType
-    'group-member-deleted': GroupMemberDeletedType
+    'group-added': GroupMemberChangeType
+    'group-member-added': GroupMemberChangeType
+    'group-deleted': GroupMemberChangeType
+    'group-member-deleted': GroupMemberChangeType
     'group-member': {
       'role': {}
       'ban': {}
@@ -45,14 +45,9 @@ export namespace Session {
     }
   }
 
-  interface GroupMemberAddedType {
-    'approve': {}
-    'invite': {}
-  }
-
-  interface GroupMemberDeletedType {
-    'leave': {}
-    'kick': {}
+  interface GroupMemberChangeType {
+    'active': {}
+    'passive': {}
   }
 
   interface MessageType {
@@ -142,7 +137,7 @@ export class Session<
       : this.anonymous
         ? this.anonymous.name
         : this.author
-          ? this.author.nick || this.author.name
+          ? this.author.nickname || this.author.username
           : '' + this.userId
     return this.$app.chain('appellation', defaultName, this)
   }
@@ -520,11 +515,11 @@ export interface GroupInfo {
 
 export interface UserInfo {
   userId: string
-  name: string
+  username: string
 }
 
 export interface GroupMemberInfo extends UserInfo {
-  nick?: string
+  nickname?: string
   roles?: string[]
 }
 

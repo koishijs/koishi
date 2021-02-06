@@ -32,16 +32,9 @@ Command.userFields(({ tokens, command, options = {} }, fields) => {
 
 export default function apply(app: App) {
   app.before('command', async (argv: Argv<ValidationField>) => {
-    const { error, session, args, options, command } = argv
+    const { session, args, options, command } = argv
     function sendHint(message: string, ...param: any[]) {
       return command.config.showWarning ? template(message, param) : ''
-    }
-
-    if (error) return error
-
-    for (const validator of command._checkers) {
-      const result = validator.call(command, argv, ...argv.args)
-      if (typeof result === 'string') return result
     }
 
     // check argument count

@@ -12,7 +12,7 @@ interface MockedResponse {
   headers: Record<string, any>
 }
 
-class MockedBot extends Bot {
+class MockedBot extends Bot<'mock'> {
   async getMessage(messageId: string) {
     return {
       messageId,
@@ -123,7 +123,7 @@ export class TestSession {
       userId,
       author: {
         userId,
-        name: '' + userId,
+        username: '' + userId,
       },
     }
 

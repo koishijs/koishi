@@ -136,7 +136,7 @@ export class Bot<P extends Platform> {
 
   async getGroupMemberMap(groupId: string) {
     const list = await this.getGroupMemberList(groupId)
-    return Object.fromEntries(list.map(info => [info.userId, info.nick || info.name]))
+    return Object.fromEntries(list.map(info => [info.userId, info.nickname || info.username]))
   }
 
   async broadcast(channels: string[], content: string, delay = this.app.options.delay.broadcast) {

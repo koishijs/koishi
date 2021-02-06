@@ -61,7 +61,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   function getSenderName({ anonymous, author, userId }: Session) {
     return anonymous
       ? anonymous.name + (showUserId ? ` (${anonymous.id})` : '')
-      : (userMap[userId] = [author.nick, Date.now()])[0]
+      : (userMap[userId] = [author.nickname, Date.now()])[0]
       + (showUserId ? ` (${userId})` : '')
   }
 
@@ -80,7 +80,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
           if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
             const promise = session.$bot
               .getGroupMember(session.groupId, id)
-              .then(d => d.nick, () => id)
+              .then(d => d.nickname, () => id)
             userMap[id] = [promise, timestamp]
           }
           output += '@' + await userMap[id][0]
