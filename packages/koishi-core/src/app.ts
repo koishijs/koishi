@@ -112,9 +112,11 @@ export class App extends Context {
       if (!server) {
         const constructor = Server.types[bot.type]
         if (!constructor) {
-          throw new Error(`unsupported type "${bot.type}", you should import the adapter yourself`)
+          const platform = bot.type.split(':', 1)[0]
+          throw new Error(`unsupported platform "${platform}", you should import the adapter yourself`)
         }
-        server = this.servers[bot.type] = Reflect.construct(constructor, [this])
+        server = new constructor(this, bot)
+        this.servers[bot.type] = server
       }
       server.create(bot)
     }

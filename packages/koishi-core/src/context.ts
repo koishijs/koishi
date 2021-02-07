@@ -35,7 +35,7 @@ export class Context {
 
   protected _router: Router
   protected _database: Database
-  protected _servers: Record<string, Server>
+  protected _servers: Server.Instances
 
   private _disposables: Disposable[]
 

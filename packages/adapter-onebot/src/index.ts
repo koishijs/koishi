@@ -44,6 +44,11 @@ App.defaultConfig.onebot = {
 Server.types['onebot:http'] = HttpServer
 Server.types['onebot:ws'] = WsClient
 Server.types['onebot:ws-reverse'] = WsServer
+Server.types['onebot'] = Server.redirect((bot) => {
+  return !bot.server ? 'onebot:ws-reverse'
+    : bot.server.startsWith('ws') ? 'onebot:ws'
+      : 'onebot:http'
+})
 
 const { broadcast } = Context.prototype
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/

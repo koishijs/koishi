@@ -1,4 +1,4 @@
-import { CQCode, paramCase, sleep } from 'koishi-utils'
+import { CQCode, Logger, paramCase, sleep } from 'koishi-utils'
 import { Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo } from './session'
 import { App, AppStatus } from './app'
 
@@ -22,10 +22,12 @@ export type At<O, T extends keyof O, F> = [T] extends [never] ? F : O[T]
 
 type BotInstance<T extends Platform> = At<Bot.Platforms, T, Bot>
 type BotStatic<T extends Platform> = new (app: App, options: BotOptions) => BotInstance<T>
+type ServerStatic<T extends Platform = Platform> = new (app: App, bot: BotOptions) => Server<T>
 
 export abstract class Server<T extends Platform = Platform> {
-  static types: Record<string, new (app: App) => Server> = {}
+  static types: Record<string, ServerStatic> = {}
 
+  public type: string
   public bots = createBots<BotInstance<T>>('selfId')
 
   abstract listen(): Promise<void>
@@ -49,6 +51,22 @@ export abstract class Server<T extends Platform = Platform> {
     for (const event of events) {
       this.app.emit(session, paramCase<any>(event), session)
     }
+  }
+}
+
+export namespace Server {
+  export type Instances = {
+    [K in string]: K extends `${infer T}:${any}` ? Server<T & Platform> : Server<K & Platform>
+  }
+
+  export function redirect(callback: (bot: BotOptions) => string) {
+    return class {
+      constructor(app: App, bot: BotOptions) {
+        const type = bot.type = callback(bot)
+        new Logger('server').info('infer type as %c', type)
+        return app.servers[type] || new Server.types[type](app, bot)
+      }
+    } as ServerStatic
   }
 }
 
