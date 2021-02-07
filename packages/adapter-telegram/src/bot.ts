@@ -1,5 +1,5 @@
 import { camelCase, Logger, snakeCase, renameProperty, CQCode } from 'koishi-utils'
-import { Bot, AccountInfo, StrangerInfo, BotStatusCode, Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo, AuthorInfo, User } from 'koishi-core'
+import { Bot, AccountInfo, StrangerInfo, BotStatusCode, Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo } from 'koishi-core'
 import Telegram from './interface'
 
 declare module 'koishi-core/dist/server' {
@@ -143,7 +143,7 @@ export class TelegramBot extends Bot {
 
   static adaptUser(data: Telegram.User & UserInfo): UserInfo {
     data.userId = data.id.toString()
-    data.name = data.username || (data.first_name + (data.last_name || ''))
+    data.username = data.username || (data.first_name + (data.last_name || ''))
     return data
   }
 

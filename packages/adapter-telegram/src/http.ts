@@ -89,8 +89,8 @@ export default class HttpServer extends Server<'telegram'> {
           : body.groupId
         body.author = {
           userId: message.from.id.toString(),
-          nick: message.from.username,
-          name: message.from.username,
+          nickname: message.from.username,
+          username: message.from.username,
         }
       }
       logger.debug('receive %o', body)
