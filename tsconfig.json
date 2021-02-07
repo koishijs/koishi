@@ -23,7 +23,6 @@
     { "path": "./packages/plugin-eval" },
     { "path": "./packages/plugin-puppeteer" },
     { "path": "./packages/plugin-teach" },
-    { "path": "./packages/koishi" },
 
     { "path": "./packages/plugin-adventure" },
     { "path": "./packages/plugin-chess" },

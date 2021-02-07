@@ -1,10 +1,9 @@
-import { App, AppOptions, BotOptions, Context, Plugin } from 'koishi-core'
+import { App, BotOptions, Context, Plugin, version } from 'koishi-core'
 import { resolve, dirname } from 'path'
 import { Logger, noop } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
-
-declare const KOISHI_VERSION: string
+import { AppConfig } from '..'
 
 const logger = new Logger('app')
 
@@ -38,14 +37,6 @@ function tryCallback<T>(callback: () => T) {
       throw error
     }
   }
-}
-
-export type PluginConfig = Record<string, any> | (string | [string, any?])[]
-
-export interface AppConfig extends AppOptions {
-  plugins?: PluginConfig
-  logLevel?: number
-  logFilter?: Record<string, number>
 }
 
 const config: AppConfig = tryCallback(() => require(configFile))
@@ -161,7 +152,7 @@ process.on('unhandledRejection', (error) => {
 app.start().then(() => {
   app.bots.forEach(bot => {
     if (!bot.version) return
-    logger.info('%C', `koishi/${KOISHI_VERSION} ${bot.version}`)
+    logger.info('%C', `koishi/${version} ${bot.version}`)
   })
 
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
