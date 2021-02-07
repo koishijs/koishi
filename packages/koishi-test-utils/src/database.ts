@@ -2,14 +2,6 @@ import { App, User, Channel } from 'koishi-core'
 import { expect } from 'chai'
 import '../chai'
 
-declare module 'koishi-core/dist/server' {
-  namespace Bot {
-    interface Platforms {
-      mock: string
-    }
-  }
-}
-
 export function createArray<T>(length: number, create: (index: number) => T) {
   return Array(length).fill(undefined).map((_, index) => create(index))
 }

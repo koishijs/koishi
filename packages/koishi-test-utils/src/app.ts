@@ -12,6 +12,14 @@ interface MockedResponse {
   headers: Record<string, any>
 }
 
+declare module 'koishi-core/dist/server' {
+  namespace Bot {
+    interface Platforms {
+      mock: MockedBot
+    }
+  }
+}
+
 class MockedBot extends Bot<'mock'> {
   async getMessage(messageId: string) {
     return {
