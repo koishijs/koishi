@@ -24,6 +24,12 @@ type BotInstance<T extends Platform> = At<Bot.Platforms, T, Bot>
 type BotStatic<T extends Platform> = new (app: App, options: BotOptions) => BotInstance<T>
 type ServerStatic<T extends Platform = Platform> = new (app: App, bot: BotOptions) => Server<T>
 
+export namespace Server {
+  export type Instances = {
+    [K in string]: K extends `${infer T}:${any}` ? Server<T & Platform> : Server<K & Platform>
+  }
+}
+
 export abstract class Server<T extends Platform = Platform> {
   static types: Record<string, ServerStatic> = {}
 
@@ -47,19 +53,17 @@ export abstract class Server<T extends Platform = Platform> {
     events.push(session.type)
     if (session.subtype) {
       events.unshift(events[0] + '/' + session.subtype)
+      if (session.subsubtype) {
+        events.unshift(events[0] + '/' + session.subsubtype)
+      }
     }
     for (const event of events) {
       this.app.emit(session, paramCase<any>(event), session)
     }
   }
-}
 
-export namespace Server {
-  export type Instances = {
-    [K in string]: K extends `${infer T}:${any}` ? Server<T & Platform> : Server<K & Platform>
-  }
-
-  export function redirect(callback: (bot: BotOptions) => string) {
+  static redirect(target: string | ((bot: BotOptions) => string)) {
+    const callback = typeof target === 'string' ? () => target : target
     return class {
       constructor(app: App, bot: BotOptions) {
         const type = bot.type = callback(bot)

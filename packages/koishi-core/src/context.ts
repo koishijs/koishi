@@ -53,6 +53,10 @@ export class Context {
     return selector
   }
 
+  private() {
+    return this.unselect('groupId')
+  }
+
   get router() {
     return this.app._router
   }

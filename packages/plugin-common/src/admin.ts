@@ -161,9 +161,10 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
       }
     })
 
+  const ctx2 = ctx.private()
   const tokens: Record<string, [platform: Platform, id: string]> = {}
 
-  ctx.unselect('groupId').command('user.bind', '绑定到账号', { authority: 0 })
+  ctx2.command('user/bind', '绑定到账号', { authority: 0 })
     .action(({ session }) => {
       const token = Random.uuid()
       const data = tokens[token] = [session.platform, session.userId]
@@ -177,8 +178,7 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
       ].join('\n')
     })
 
-  ctx.middleware(async (session, next) => {
-    if (session.subtype !== 'private') return next()
+  ctx2.middleware(async (session, next) => {
     const data = tokens[session.content]
     if (!data) return next()
     const user = await session.observeUser(['authority', data[0]])

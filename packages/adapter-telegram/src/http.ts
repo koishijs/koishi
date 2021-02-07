@@ -73,7 +73,6 @@ export default class HttpServer extends Server<'telegram'> {
         const message = payload.message
         body.messageId = message.message_id.toString()
         body.type = 'message'
-        body.subtype = message.chat.type === 'private' ? 'private' : 'group'
         body.timestamp = message.date
         // TODO convert video message
         let msg = message.text || ''
@@ -94,10 +93,13 @@ export default class HttpServer extends Server<'telegram'> {
         }
         body.content = body.rawMessage = msg
         body.userId = message.from.id.toString()
-        body.groupId = message.chat.id.toString()
-        body.channelId = body.subtype === 'private'
-          ? 'private:' + body.userId
-          : body.groupId
+        if (message.chat.type === 'private') {
+          body.subtype = 'private'
+          body.channelId = 'private:' + body.userId
+        } else {
+          body.subtype = 'group'
+          body.channelId = body.groupId = message.chat.id.toString()
+        }
         body.author = {
           userId: message.from.id.toString(),
           nickname: message.from.username,
