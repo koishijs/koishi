@@ -60,8 +60,13 @@ class MysqlDatabase {
       tables[TABLE_NAME].push(COLUMN_NAME)
     }
 
+    const platforms = new Set<string>(this.app.bots.map(bot => bot.platform))
     for (const name in MysqlDatabase.tables) {
-      const table = MysqlDatabase.tables[name]
+      const table = Object.create(MysqlDatabase.tables[name])
+      // create platform rows
+      if (name === 'user') {
+        platforms.forEach(name => table[name] = 'varchar(50)')
+      }
       if (!tables[name]) {
         const cols = Object.keys(table).filter((key) => {
           return typeof table[key] !== 'function'
