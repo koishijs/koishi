@@ -1,32 +1,23 @@
 import { Server, Context } from 'koishi-core'
 import HttpServer from './http'
-import axios from 'axios'
+import axios, { AxiosRequestConfig } from 'axios'
 
 interface TelegramOptions {
-  url?: string
+  endpoint?: string
+  path?: string
   selfUrl?: string
-  preferSync?: boolean
+  axiosConfig?: AxiosRequestConfig
 }
+
 declare module 'koishi-core/dist/server' {
   interface BotOptions {
     token?: string
   }
 }
+
 declare module 'koishi-core/dist/app' {
   interface AppOptions {
     telegram?: TelegramOptions
-  }
-}
-declare module 'koishi-core/dist/session' {
-  namespace Session {
-    interface Events {
-      'lifecycle': {
-        'enable': {}
-        'disable': {}
-        'connect': {}
-        'heartbeat': {}
-      }
-    }
   }
 }
 

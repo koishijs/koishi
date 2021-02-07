@@ -1,5 +1,5 @@
-import { camelCase, Logger, snakeCase, renameProperty, CQCode } from 'koishi-utils'
-import { Bot, AccountInfo, StrangerInfo, BotStatusCode, Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo } from 'koishi-core'
+import { camelCase, Logger, snakeCase, renameProperty, CQCode, assertProperty } from 'koishi-utils'
+import { Bot, AccountInfo, StrangerInfo, BotStatusCode, Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo, App, BotOptions } from 'koishi-core'
 import Telegram from './interface'
 
 declare module 'koishi-core/dist/server' {
@@ -85,6 +85,18 @@ export interface TelegramBot {
 }
 
 export class TelegramBot extends Bot {
+  constructor(app: App, options: BotOptions) {
+    assertProperty(options, 'token')
+    if (!options.selfId) {
+      if (options.token.includes(':')) {
+        options.selfId = options.token.split(':')[0]
+      } else {
+        assertProperty(options, 'selfId')
+      }
+    }
+    super(app, options)
+  }
+
   async [Bot.send](meta: Session, content: string) {
     if (!content) return
     return meta.channelId.startsWith('private:')
@@ -93,9 +105,9 @@ export class TelegramBot extends Bot {
   }
 
   async get<T = any>(action: string, params = {}, silent = false): Promise<T> {
-    logger.info('[request] %s %o', action, params)
+    logger.debug('[request] %s %o', action, params)
     const response = await this._request(action, snakeCase(params))
-    logger.info('[response] %o', response)
+    logger.debug('[response] %o', response)
     const { ok, result } = response
     if (ok && !silent) return camelCase(result)
     throw new SenderError(params, action, -1, this.selfId)

@@ -1,8 +1,8 @@
 import { App, Server, Session } from 'koishi-core'
-import { Logger } from 'koishi-utils'
-import axios from 'axios'
+import { assertProperty, Logger } from 'koishi-utils'
 import { TelegramBot } from './bot'
 import Telegram from './interface'
+import axios from 'axios'
 
 export interface ResponsePayload {
   delete?: boolean
@@ -28,35 +28,46 @@ const logger = new Logger('server')
 export default class HttpServer extends Server<'telegram'> {
   constructor(app: App) {
     super(app, TelegramBot)
+    const config = this.app.options.telegram ||= {}
+    assertProperty(config, 'selfUrl')
+    config.path ||= '/'
+    config.endpoint ||= 'https://api.telegram.org/'
   }
 
   private async _listen(bot: TelegramBot) {
     bot.ready = true
-    const { telegram = {} } = this.app.options
-    const { url = 'https://api.telegram.org/', selfUrl } = telegram
+    const { endpoint, selfUrl, path, axiosConfig } = this.app.options.telegram
     bot._request = async (action, params) => {
       const headers = { 'Contsent-Type': 'application/json' } as any
-      const { data } = await axios.post(url + 'bot' + bot.token + '/' + action, params, { headers })
+      const { data } = await axios.post(`${endpoint}bot${bot.token}/${action}`, params, {
+        ...this.app.options.axiosConfig,
+        ...axiosConfig,
+        headers,
+      })
       return data
     }
     const { userId, username } = await bot.getLoginInfo()
     await bot.get('setWebhook', {
-      url: selfUrl + 'webhook/telegram/' + userId + '/' + username + '/' + bot.token,
+      url: selfUrl + path + userId,
       drop_pending_updates: true,
     })
+    bot.username = username
     bot.version = 'Telegram'
-    logger.debug('%d got version info', bot.selfId)
-    logger.info('connected to %c', 'telegram:' + bot.selfId)
+    logger.debug('%d got version debug', bot.selfId)
+    logger.debug('connected to %c', 'telegram:' + bot.selfId)
   }
 
   async listen() {
-    const { telegram = {} } = this.app.options
-    const { url = 'https://api.telegram.org/' } = telegram
-    this.app.router.post('/webhook/telegram/:selfId/:selfName/:token', async (ctx) => {
-      ctx.body = '1'
-      logger.info('receive %s', JSON.stringify(ctx.request.body))
+    const { endpoint, path } = this.app.options.telegram
+    this.app.router.post(path + ':token', async (ctx) => {
+      logger.debug('receive %s', JSON.stringify(ctx.request.body))
       const payload = ctx.request.body as Telegram.Update
-      const { token, selfId, selfName } = ctx.params
+      const { token } = ctx.params
+      const [selfId] = token.split(':')
+      const bot = this.bots[selfId]
+      if (!bot?.token === token) return ctx.status = 403
+
+      ctx.body = 'OK'
       const body: Partial<Session> = { selfId, platform: 'telegram' }
       if (payload.message) {
         const message = payload.message
@@ -69,13 +80,13 @@ export default class HttpServer extends Server<'telegram'> {
         msg += message.caption || ''
         if (message.photo) {
           const fid = message.photo[0].file_id
-          const { data } = await axios.get(url + 'bot' + token + `/getFile?file_id=${fid}`)
-          msg += ` [CQ:image,file=${fid},url=${url}file/bot${token}/${data.result.file_path}]`
+          const { data } = await axios.get(endpoint + 'bot' + token + `/getFile?file_id=${fid}`)
+          msg += ` [CQ:image,file=${fid},url=${endpoint}file/bot${token}/${data.result.file_path}]`
         }
         for (const entity of message.entities || []) {
           if (entity.type === 'mention') {
             const name = msg.substr(entity.offset, entity.length)
-            if (name === '@' + selfName) msg = msg.replace(name, `[CQ:at,qq=${selfId}]`)
+            if (name === '@' + bot.username) msg = msg.replace(name, `[CQ:at,qq=${selfId}]`)
             // TODO handle @others
           } else if (entity.type === 'text_mention') {
             msg = msg.replace(msg.substr(entity.offset, entity.length), `[CQ:at,qq=${entity.user.id}]`)

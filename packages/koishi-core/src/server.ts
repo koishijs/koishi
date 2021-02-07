@@ -76,6 +76,7 @@ export interface Bot<P = Platform> extends BotOptions {
 
   ready?: boolean
   version?: string
+  username?: string
   platform?: P
   getSelfId(): Promise<string>
   getStatusCode(): Promise<BotStatusCode>

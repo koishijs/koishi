@@ -8,6 +8,7 @@ import { Session } from './session'
 import help, { getCommands } from './plugins/help'
 import validate from './plugins/validate'
 import LruCache from 'lru-cache'
+import { AxiosRequestConfig } from 'axios'
 import * as http from 'http'
 import type Koa from 'koa'
 
@@ -35,6 +36,7 @@ export interface AppOptions extends BotOptions {
   groupCacheLength?: number
   userCacheAge?: number
   groupCacheAge?: number
+  axiosConfig?: AxiosRequestConfig
 }
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
