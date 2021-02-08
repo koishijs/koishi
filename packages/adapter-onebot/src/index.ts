@@ -10,6 +10,8 @@ interface OneBotOptions {
   secret?: string
   preferSync?: boolean
   quickOperation?: number
+  retryTimes?: number
+  retryInterval?: number
 }
 
 declare module 'koishi-core/dist/app' {
@@ -39,6 +41,8 @@ export * from './ws-reverse'
 
 App.defaultConfig.onebot = {
   quickOperation: 0.1 * Time.second,
+  retryInterval: 5 * Time.second,
+  retryTimes: 4,
 }
 
 Server.types['onebot:http'] = HttpServer

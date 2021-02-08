@@ -20,6 +20,16 @@ export function clone<T extends unknown>(source: T): T {
       : Object.fromEntries(Object.entries(source).map(([key, value]) => [key, clone(value)]))
 }
 
+export function merge<T extends object>(head: T, base: T): T {
+  Object.entries(base).forEach(([key, value]) => {
+    if (typeof head[key] === 'undefined') return head[key] = base[key]
+    if (typeof value === 'object' && typeof head[key] === 'object') {
+      head[key] = merge(head[key], value)
+    }
+  })
+  return head
+}
+
 export function pick<T, K extends keyof T>(source: T, keys: Iterable<K>) {
   const result = {} as Pick<T, K>
   for (const key of keys) {

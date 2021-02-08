@@ -1,4 +1,4 @@
-import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop, template } from 'koishi-utils'
+import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop, template, merge } from 'koishi-utils'
 import { Context, Middleware, NextFunction } from './context'
 import { Argv } from './parser'
 import { BotOptions, Server, createBots } from './server'
@@ -84,14 +84,7 @@ export class App extends Context {
   constructor(options: AppOptions = {}) {
     super(() => true)
     if (!options.bots) options.bots = [options]
-    options = this.options = {
-      ...App.defaultConfig,
-      ...options,
-      delay: {
-        ...App.defaultConfig.delay,
-        ...options.delay,
-      },
-    }
+    this.options = merge(options, App.defaultConfig)
 
     defineProperty(this, '_hooks', {})
     defineProperty(this, '_commands', [])

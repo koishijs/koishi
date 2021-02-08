@@ -1,18 +1,9 @@
 import { App, Server, AppStatus } from 'koishi-core'
-import { Logger, Time } from 'koishi-utils'
+import { Logger } from 'koishi-utils'
 import { CQBot } from './bot'
 import type WebSocket from 'ws'
 import Socket from './socket'
 import ms from 'ms'
-
-declare module 'koishi-core/dist/app' {
-  interface AppOptions {
-    retryTimes?: number
-    retryInterval?: number
-  }
-}
-
-App.defaultConfig.retryInterval = 5 * Time.second
 
 const logger = new Logger('server')
 
@@ -32,7 +23,7 @@ export default class WsClient extends Server<'onebot'> {
     const connect = (resolve: (value: void) => void, reject: (reason: Error) => void) => {
       logger.debug('websocket client opening')
       const headers: Record<string, string> = {}
-      const { retryInterval, retryTimes } = this.app.options
+      const { retryInterval, retryTimes } = this.app.options.onebot
       if (token) headers.Authorization = `Bearer ${token}`
       const socket = new Socket(server, { headers })
       this._sockets.add(socket)

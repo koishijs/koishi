@@ -193,7 +193,7 @@ export class Session<
     }))
   }
 
-  private _getValue<T >(source: T | ((session: Session) => T)): T {
+  private _getValue<T>(source: T | ((session: Session) => T)): T {
     return typeof source === 'function' ? Reflect.apply(source, null, [this]) : source
   }
 
@@ -516,10 +516,10 @@ export interface GroupInfo {
 export interface UserInfo {
   userId: string
   username: string
+  nickname?: string
 }
 
 export interface GroupMemberInfo extends UserInfo {
-  nickname?: string
   roles?: string[]
 }
 
