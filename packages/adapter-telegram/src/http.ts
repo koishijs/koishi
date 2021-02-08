@@ -1,27 +1,8 @@
 import { App, Server, Session } from 'koishi-core'
-import { assertProperty, Logger } from 'koishi-utils'
+import { assertProperty, camelCase, Logger } from 'koishi-utils'
 import { TelegramBot } from './bot'
 import Telegram from './interface'
 import axios from 'axios'
-
-export interface ResponsePayload {
-  delete?: boolean
-  ban?: boolean
-  banDuration?: number
-  kick?: boolean
-  reply?: string
-  autoEscape?: boolean
-  atSender?: boolean
-  approve?: boolean
-  remark?: string
-  reason?: string
-}
-
-declare module 'koishi-core/dist/session' {
-  interface Session {
-    _response?: (payload: ResponsePayload) => void
-  }
-}
 
 const logger = new Logger('server')
 
@@ -61,7 +42,7 @@ export default class HttpServer extends Server<'telegram'> {
     const { endpoint, path } = this.app.options.telegram
     this.app.router.post(path + ':token', async (ctx) => {
       logger.debug('receive %s', JSON.stringify(ctx.request.body))
-      const payload = ctx.request.body as Telegram.Update
+      const payload = camelCase<Telegram.Update>(ctx.request.body)
       const { token } = ctx.params
       const [selfId] = token.split(':')
       const bot = this.bots[selfId]
@@ -71,14 +52,14 @@ export default class HttpServer extends Server<'telegram'> {
       const body: Partial<Session> = { selfId, platform: 'telegram' }
       if (payload.message) {
         const message = payload.message
-        body.messageId = message.message_id.toString()
+        body.messageId = message.messageId.toString()
         body.type = 'message'
         body.timestamp = message.date
         // TODO convert video message
         let msg = message.text || ''
         msg += message.caption || ''
         if (message.photo) {
-          const fid = message.photo[0].file_id
+          const fid = message.photo[0].fileId
           const { data } = await axios.get(endpoint + 'bot' + token + `/getFile?file_id=${fid}`)
           msg += ` [CQ:image,file=${fid},url=${endpoint}file/bot${token}/${data.result.file_path}]`
         }
@@ -91,22 +72,18 @@ export default class HttpServer extends Server<'telegram'> {
             msg = msg.replace(msg.substr(entity.offset, entity.length), `[CQ:at,qq=${entity.user.id}]`)
           }
         }
-        body.content = body.rawMessage = msg
+        body.content = msg
         body.userId = message.from.id.toString()
+        body.channelId = message.chat.id.toString()
+        body.author = TelegramBot.adaptUser(message.from)
         if (message.chat.type === 'private') {
           body.subtype = 'private'
-          body.channelId = 'private:' + body.userId
         } else {
           body.subtype = 'group'
-          body.channelId = body.groupId = message.chat.id.toString()
-        }
-        body.author = {
-          userId: message.from.id.toString(),
-          nickname: message.from.username,
-          username: message.from.username,
+          body.groupId = body.channelId
         }
       }
-      logger.debug('receive %o', body)
+      logger.info('receive %o', body)
       const session = new Session(this.app, body)
       this.dispatch(session)
     })

@@ -1,5 +1,5 @@
 import { camelCase, Logger, snakeCase, renameProperty, CQCode, assertProperty } from 'koishi-utils'
-import { Bot, AccountInfo, StrangerInfo, BotStatusCode, Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo, App, BotOptions } from 'koishi-core'
+import { Bot, BotStatusCode, Session, GroupInfo, GroupMemberInfo, UserInfo, App, BotOptions } from 'koishi-core'
 import Telegram from './interface'
 
 declare module 'koishi-core/dist/server' {
@@ -24,67 +24,26 @@ export class SenderError extends Error {
     })
   }
 }
-export interface CQMessageInfo extends MessageInfo {
-  realId: number
-}
-export interface CQGroupInfo extends GroupInfo {
-  memberCount: number
-  maxMemberCount: number
-}
-export interface CQUserInfo extends UserInfo {
-  sex?: 'male' | 'female' | 'unknown'
-  age?: number
-}
-export interface CQGroupMemberInfo extends GroupMemberInfo, CQUserInfo {
-  cardChangeable: boolean
-  groupId: number
-  joinTime: number
-  lastSentTime: number
-  titleExpireTime: number
-  unfriendly: boolean
-}
+
 export interface TelegramResponse {
   ok: boolean
   result: any
 }
-interface MessageResponse {
-  messageId: string
-}
-export type RecordFormat = 'mp3' | 'amr' | 'wma' | 'm4a' | 'spx' | 'ogg' | 'wav' | 'flac'
-export type DataDirectory = 'image' | 'record' | 'show' | 'bface'
-export interface FriendInfo extends AccountInfo {
-  remark: string
-}
-export interface ImageInfo {
-  file: string
-}
-export interface RecordInfo {
-  file: string
-}
 
 export interface TelegramBot {
   _request?(action: string, params: Record<string, any>): Promise<TelegramResponse>
-  setGroupKick(groupId: string, userId: string, rejectAddRequest?: boolean): Promise<void>
-  setGroupKickAsync(groupId: string, userId: string, rejectAddRequest?: boolean): Promise<void>
-  setGroupBan(groupId: string, userId: string, duration?: number): Promise<void>
-  setGroupBanAsync(groupId: string, userId: string, duration?: number): Promise<void>
-  setGroupLeave(groupId: string, isDismiss?: boolean): Promise<void>
-  setGroupLeaveAsync(groupId: string, isDismiss?: boolean): Promise<void>
-  getLoginInfo(): Promise<AccountInfo>
-  getStrangerInfo(userId: string, noCache?: boolean): Promise<StrangerInfo>
-  getFriendList(): Promise<FriendInfo[]>
-  getRecord(file: string, outFormat: RecordFormat, fullPath?: boolean): Promise<RecordInfo>
-  getImage(file: string): Promise<ImageInfo>
-  canSendImage(): Promise<boolean>
-  canSendRecord(): Promise<boolean>
-  setGroupName(groupId: string, name: string): Promise<void>
-  setGroupNameAsync(groupId: string, name: string): Promise<void>
-  setGroupPortrait(groupId: string, file: string, cache?: boolean): Promise<void>
-  setGroupPortraitAsync(groupId: string, file: string, cache?: boolean): Promise<void>
-  getGroupMsg(messageId: string): Promise<GroupMessage>
 }
 
 export class TelegramBot extends Bot {
+  static adaptUser(data: Partial<Telegram.User & UserInfo>) {
+    data.userId = data.id.toString()
+    data.nickname = data.firstName + (data.lastName || '')
+    delete data.id
+    delete data.firstName
+    delete data.lastName
+    return data as UserInfo
+  }
+
   constructor(app: App, options: BotOptions) {
     assertProperty(options, 'token')
     if (!options.selfId) {
@@ -97,11 +56,9 @@ export class TelegramBot extends Bot {
     super(app, options)
   }
 
-  async [Bot.send](meta: Session, content: string) {
+  async [Bot.send](session: Session, content: string) {
     if (!content) return
-    return meta.channelId.startsWith('private:')
-      ? this.sendPrivateMessage(meta.channelId.slice(8), content) as any
-      : this.sendGroupMessage(meta.channelId, content) as any
+    await this.sendMessage(session.channelId, content)
   }
 
   async get<T = any>(action: string, params = {}, silent = false): Promise<T> {
@@ -113,28 +70,46 @@ export class TelegramBot extends Bot {
     throw new SenderError(params, action, -1, this.selfId)
   }
 
-  async _sendMsg(chatId: string, message: string) {
-    if (!message) return
-    return await this.get<MessageResponse>('sendMessage', { chatId, text: message })
+  private async _sendMessage(chatId: string, content: string) {
+    const chain = CQCode.parseAll(content)
+    const payload = { chatId, caption: '', photo: '' }
+    let result: Telegram.Message
+    for (const node of chain) {
+      if (typeof node === 'string') {
+        payload.caption += node
+      } else if (node.type === 'image') {
+        if (payload.photo) {
+          result = await this.get('sendPhoto', payload)
+          payload.caption = ''
+          payload.photo = ''
+        }
+        payload.photo = node.data.url
+      }
+    }
+    if (payload.photo) {
+      result = await this.get('sendPhoto', payload)
+      payload.caption = ''
+      payload.photo = ''
+    } else if (payload.caption) {
+      result = await this.get('sendMessage', { chatId, text: payload.caption })
+    }
+    return '' + result.messageId
   }
 
-  async _sendPhoto(chatId: string, caption: string, photo: string) {
-    if (!photo) return
-    return await this.get<MessageResponse>('sendPhoto', { chatId, caption, photo })
-  };
-
-  sendMessage(channelId: string, content: string) {
-    return channelId.startsWith('private:')
-      ? this.sendPrivateMessage(channelId.slice(8), content)
-      : this.sendGroupMessage(channelId, content)
+  async sendMessage(chatId: string, content: string) {
+    if (!content) return
+    const session = this.createSession('group', 'group', chatId, content)
+    if (this.app.bail(session, 'before-send', session)) return
+    session.messageId = await this._sendMessage(chatId, session.content)
+    this.app.emit(session, 'send', session)
+    return session.messageId
   }
 
   async getMessage() {
     return null
   }
 
-  async deleteMessage(channelId: string, messageId: string) {
-    const chatId = channelId.startsWith('private:') ? channelId.split(':')[1] : channelId
+  async deleteMessage(chatId: string, messageId: string) {
     await this.get('deleteMessage', { chatId, messageId })
   }
 
@@ -149,16 +124,6 @@ export class TelegramBot extends Bot {
     return TelegramBot.adaptGroup(data)
   }
 
-  async getGroupList(): Promise<CQGroupInfo[]> {
-    return []
-  }
-
-  static adaptUser(data: Telegram.User & UserInfo): UserInfo {
-    data.userId = data.id.toString()
-    data.username = data.username || (data.first_name + (data.last_name || ''))
-    return data
-  }
-
   async getGroupMember(chatId: string, userId: string): Promise<GroupMemberInfo> {
     if (Number.isNaN(+userId)) return null
     const data = await this.get('getChatMember', { chatId, userId })
@@ -170,66 +135,13 @@ export class TelegramBot extends Bot {
     return data.map(TelegramBot.adaptUser)
   }
 
-  async sendMsg(chatId: string, message: string) {
-    const chain = CQCode.parseAll(message)
-    const payload = { chatId, message: '', image: '' }
-    let result
-    for (const node of chain) {
-      if (typeof node === 'string') {
-        payload.message += node
-      } else if (node.type === 'image') {
-        if (payload.image) {
-          result = await this._sendPhoto(chatId, payload.message, payload.image)
-          payload.message = ''
-          payload.image = ''
-        }
-        payload.image = node.data.url
-      }
-    }
-    if (payload.image) {
-      result = await this._sendPhoto(chatId, payload.message, payload.image)
-      payload.message = ''
-      payload.image = ''
-    } else if (payload.message) {
-      result = await this._sendMsg(chatId, payload.message)
-    }
-    return result.messageId
-  }
-
-  async sendPrivateMessage(userId: string, message: string) {
-    if (!message) return
-    const session = this.createSession('private', 'user', userId, message)
-    if (this.app.bail(session, 'before-send', session)) return
-    session.messageId = await this.sendMsg(userId, session.content)
-    this.app.emit(session, 'send', session)
-    return session.messageId
-  }
-
-  async sendGroupMessage(chatId: string, message: string) {
-    if (!message) return
-    const session = this.createSession('group', 'group', chatId, message)
-    if (this.app.bail(session, 'before-send', session)) return
-    session.messageId = await this.sendMsg(chatId, session.content)
-    this.app.emit(session, 'send', session)
-    return session.messageId
-  }
-
   setGroupLeave(chatId: string) {
-    return this.get('leave_chat', { chatId })
-  };
+    return this.get('leaveChat', { chatId })
+  }
 
   async getLoginInfo() {
-    let data: any = await this.get('getMe')
-    console.log(data)
-    data = TelegramBot.adaptUser(data)
-    console.log(data)
-    data.nickname = data.name
-    return data
-  }
-
-  async getSelfId() {
-    const { userId } = await this.getLoginInfo()
-    return userId
+    const data = await this.get<Telegram.User>('getMe')
+    return TelegramBot.adaptUser(data)
   }
 
   async getStatusCode() {
@@ -247,13 +159,6 @@ function defineSync(name: string, ...params: string[]) {
   const prop = camelCase(name.replace(/^_/, ''))
   TelegramBot.prototype[prop] = function (this: TelegramBot, ...args: any[]) {
     return this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
-  }
-}
-
-function defineRenameSync(name: string, send: string, ...params: string[]) {
-  const prop = camelCase(name.replace(/^_/, ''))
-  TelegramBot.prototype[prop] = function (this: TelegramBot, ...args: any[]) {
-    return this.get(send, Object.fromEntries(params.map((name, index) => [name, args[index]])))
   }
 }
 
@@ -296,19 +201,3 @@ defineSync('get_image', 'file')
 defineExtract('can_send_image', 'yes')
 defineExtract('can_send_record', 'yes')
 defineSync('get_version_info')
-
-// go-cqhttp extension
-
-export interface ImageInfo {
-  size?: number
-  filename?: string
-  url?: string
-}
-
-export interface GroupMessage {
-  messageId: number
-  realId: number
-  sender: AccountInfo
-  time: number
-  content: string
-}

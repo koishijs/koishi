@@ -363,11 +363,6 @@ export class CQBot extends Bot {
     }
   }
 
-  async getSelfId() {
-    const { userId } = await this.getLoginInfo()
-    return userId
-  }
-
   async getStatusCode() {
     if (!this.ready) return BotStatusCode.BOT_IDLE
     try {
