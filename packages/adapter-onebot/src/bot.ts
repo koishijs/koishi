@@ -509,8 +509,8 @@ defineAsync('set_group_portrait', 'group_id', 'file', 'cache')
 export function toVersion(data: VersionInfo) {
   const { coolqEdition, pluginVersion, goCqhttp, version } = data
   if (goCqhttp) {
-    return `Go-CQHTTP/${version.slice(1)}`
+    return `go-cqhttp/${version.slice(1)}`
   } else {
-    return `CoolQ/${capitalize(coolqEdition)} CQHTTP/${pluginVersion}`
+    return `coolq/${capitalize(coolqEdition)} cqhttp/${pluginVersion}`
   }
 }

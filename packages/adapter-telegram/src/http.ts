@@ -33,7 +33,7 @@ export default class HttpServer extends Server<'telegram'> {
       drop_pending_updates: true,
     })
     bot.username = username
-    bot.version = 'Telegram'
+    bot.version = 'telegram'
     logger.debug('%d got version debug', bot.selfId)
     logger.debug('connected to %c', 'telegram:' + bot.selfId)
   }

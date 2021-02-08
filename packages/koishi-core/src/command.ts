@@ -161,18 +161,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  option<K extends string, D extends string, T extends Domain.Type>(
-    name: K, desc: D,
-    config: Domain.OptionConfig<T> = {},
-    action?: Command.Action<U, G, A, Extend<O, K, Domain.OptionType<D, T>>>,
-  ): Command<U, G, A, Extend<O, K, Domain.OptionType<D, T>>> {
-    if (action) {
-      this._actions.unshift((argv, ...args) => {
-        if (name in argv.options) return action.call(this as any, argv, ...args)
-      })
-    }
+  option<K extends string, D extends string, T extends Domain.Type>(name: K, desc: D, config: Domain.OptionConfig<T> = {}) {
     this._createOption(name, desc, config)
-    return this as any
+    return this as Command<U, G, A, Extend<O, K, Domain.OptionType<D, T>>>
   }
 
   check(callback: Command.Action<U, G, A, O>, prepend = false) {
