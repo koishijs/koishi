@@ -53,8 +53,8 @@ export class Context {
     return selector
   }
 
-  private() {
-    return this.unselect('groupId')
+  get private() {
+    return this.unselect('groupId').user
   }
 
   get router() {

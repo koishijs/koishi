@@ -1,7 +1,7 @@
 /* eslint-disable quote-props */
 
 import { promises as fs, existsSync } from 'fs'
-import { yellow, red, green } from 'kleur'
+import { yellow, red, green, magenta } from 'kleur'
 import { resolve, extname, dirname } from 'path'
 import { spawn, StdioOptions } from 'child_process'
 import { AppConfig } from '..'
@@ -15,10 +15,11 @@ const serverQuestions: PromptObject<keyof AppConfig>[] = [{
   type: 'select',
   message: 'Server Type',
   choices: [
-    { title: 'QQ (OneBot, HTTP)', value: 'onebot:http' },
-    { title: 'QQ (OneBot, WebSocket)', value: 'onebot:ws' },
-    { title: 'QQ (OneBot, WebSocket Reverse)', value: 'onebot:ws-reverse' },
-    { title: 'Tomon', value: 'tomon' },
+    { title: 'OneBot - HTTP', value: 'onebot:http' },
+    { title: 'OneBot - WebSocket', value: 'onebot:ws' },
+    { title: 'OneBot - WebSocket Reverse', value: 'onebot:ws-reverse' },
+    // { title: 'Tomon', value: 'tomon' },
+    { title: 'Telegram - HTTP', value: 'telegram' },
   ],
 }, {
   name: 'port',
@@ -62,11 +63,26 @@ const tomonQuestions: PromptObject[] = [{
   message: 'Token for Tomon',
 }]
 
+const telegramQuestions: PromptObject[] = [{
+  name: 'token',
+  type: 'text',
+  message: 'Token for Telegram',
+}, {
+  name: 'selfUrl',
+  type: 'text',
+  message: 'Your Public URL',
+}, {
+  name: 'path',
+  type: 'text',
+  message: 'Telegram Path',
+}]
+
 const adapterMap = {
   'onebot:http': onebotQuestions,
   'onebot:ws': onebotQuestions,
   'onebot:ws-reverse': onebotQuestions,
   'tomon': tomonQuestions,
+  'telegram': telegramQuestions,
 }
 
 const databaseQuestions: PromptObject<'database'>[] = [{
@@ -196,6 +212,7 @@ type SourceType = typeof sourceTypes[number]
 
 const error = red('error')
 const success = green('success')
+const info = magenta('info')
 
 type Serializable = string | number | Serializable[] | { [key: string]: Serializable }
 
@@ -302,7 +319,7 @@ async function updateMeta() {
 
   const args = installArgs[kind]
   if (!confirm) {
-    console.log(`${success} you can type "${[kind, ...args].join(' ')}" to install new dependencies`)
+    console.log(`${info} type "${[kind, ...args].join(' ')}" to install new dependencies before using koishi`)
     return
   }
 
