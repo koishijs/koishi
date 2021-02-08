@@ -189,12 +189,14 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
     return session.send('账号绑定成功！')
   }, true)
 
-  ctx.command('user.auth <value>', '权限信息', { authority: 4 })
-    .adminUser(({ session, target }, value) => {
+  ctx.command('user/authorize <value>', '权限信息', { authority: 4 })
+    .alias('auth')
+    .adminUser(async ({ session, target }, value) => {
       const authority = Number(value)
       if (!isInteger(authority) || authority < 0) return '参数错误。'
       if (authority >= session.$user.authority) return '权限不足。'
-      target.authority = authority
+      await ctx.database.createUser(session.platform, session.userId, { authority })
+      target._merge({ authority })
     })
 
   ctx.command('user.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
@@ -267,13 +269,13 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
       return output.join('\n')
     })
 
-  ctx.group().command('channel/assign [bot]', '受理者账号', { authority: 4 })
+  ctx.command('channel/assign [bot]', '受理者账号', { authority: 4 })
     .channelFields(['assignee'])
     .adminChannel(async ({ session, target }, value) => {
       const assignee = value ? session.$bot.parseUser(value) : session.selfId
       if (!assignee) return '参数错误。'
-      target.assignee = assignee
       await ctx.database.createChannel(session.platform, session.channelId, { assignee })
+      target._merge({ assignee })
     })
 
   ctx.command('channel.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
