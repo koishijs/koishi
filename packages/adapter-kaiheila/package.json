@@ -1,7 +1,7 @@
 {
   "name": "koishi-adapter-kaiheila",
   "description": "Kaiheila adapter for Koishi",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -24,13 +24,13 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.0.0-beta.5"
+    "koishi-core": "^3.0.0-beta.6"
   },
   "devDependencies": {
-    "koishi-test-utils": "^5.0.3"
+    "koishi-test-utils": "^5.0.4"
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "koishi-utils": "^3.2.2"
+    "koishi-utils": "^3.2.3"
   }
 }

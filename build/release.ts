@@ -11,7 +11,7 @@ const prefixRegExp = new RegExp(`^(${prefixes.join('|')})(?:\\((\\S+)\\))?: (.+)
 
 export function draft(base: string) {
   const updates = {}
-  const commits = spawnSync(`git log ${base}..HEAD --format="%H %s"`).split(/\r?\n/).reverse()
+  const commits = spawnSync(['git', 'log', `${base}..HEAD`, '--format=%H %s']).split(/\r?\n/).reverse()
   for (const commit of commits) {
     const hash = commit.slice(0, 40)
     const details = prefixRegExp.exec(commit.slice(41))
@@ -31,6 +31,6 @@ export function draft(base: string) {
 }
 
 if (require.main === module) {
-  const tags = spawnSync('git tag -l').split(/\r?\n/)
+  const tags = spawnSync(['git', 'tag', '-l']).split(/\r?\n/)
   console.log(draft(tags[tags.length - 1]))
 }

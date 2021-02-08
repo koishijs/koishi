@@ -29,12 +29,12 @@
     "webhook"
   ],
   "devDependencies": {
-    "koishi-test-utils": "^5.0.3"
+    "koishi-test-utils": "^5.0.4"
   },
   "peerDependencies": {
-    "koishi-core": "^3.0.0-beta.5",
+    "koishi-core": "^3.0.0-beta.6",
     "koishi-plugin-puppeteer": "^2.0.0-beta.0",
-    "koishi-utils": "^3.2.2"
+    "koishi-utils": "^3.2.3"
   },
   "dependencies": {
     "@octokit/webhooks": "^7.21.0",

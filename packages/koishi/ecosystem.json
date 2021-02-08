@@ -1,11 +1,15 @@
 {
   "koishi-adapter-kaiheila": {
-    "version": "1.0.0-beta.1",
+    "version": "1.0.0-beta.2",
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-onebot": {
-    "version": "3.0.0-beta.2",
+    "version": "3.0.0-beta.3",
     "description": "CQHTTP adapter for Koishi"
+  },
+  "koishi-adapter-telegram": {
+    "version": "1.0.0-beta.0",
+    "description": "Telegram adapter for Koishi"
   },
   "koishi-adapter-tomon": {
     "version": "1.0.0-beta.1",
@@ -20,7 +24,7 @@
     "description": "Chess Plugin for Koishi"
   },
   "koishi-plugin-common": {
-    "version": "4.0.0-beta.4",
+    "version": "4.0.0-beta.5",
     "description": "Common plugins for Koishi"
   },
   "koishi-plugin-dice": {
@@ -44,14 +48,14 @@
     "description": "Image searching plugin for Koishi"
   },
   "koishi-plugin-mongo": {
-    "version": "2.0.0-beta.0",
+    "version": "2.0.0-beta.1",
     "description": "MongoDB support for Koishi"
   },
   "koishi-plugin-monitor": {
     "version": "1.0.0-beta.17"
   },
   "koishi-plugin-mysql": {
-    "version": "3.0.0-beta.0",
+    "version": "3.0.0-beta.1",
     "description": "MySQL support for Koishi"
   },
   "koishi-plugin-puppeteer": {
@@ -71,7 +75,7 @@
     "description": "Show Status of Koishi"
   },
   "koishi-plugin-teach": {
-    "version": "2.0.0-beta.1",
+    "version": "2.0.0-beta.2",
     "description": "Teach plugin for Koishi"
   },
   "koishi-plugin-tools": {

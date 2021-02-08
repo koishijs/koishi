@@ -1,13 +1,17 @@
 {
   "name": "koishi-adapter-telegram",
   "description": "Telegram adapter for Koishi",
-  "version": "3.0.0-beta.0",
+  "version": "1.0.0-beta.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "author": "undefined <i@undefined.moe>",
+  "maintainers": [
+    "Shigma <1700011071@pku.edu.cn>",
+    "undefined <i@undefined.moe>"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -24,18 +28,13 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.0.0-beta.4"
+    "koishi-core": "^3.0.0-beta.6"
   },
   "devDependencies": {
-    "@types/ms": "^0.7.31",
-    "@types/ws": "^7.4.0",
-    "get-port": "^5.1.1",
-    "koishi-test-utils": "^5.0.3"
+    "koishi-test-utils": "^5.0.4"
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "koishi-utils": "^3.2.2",
-    "ms": "^2.1.3",
-    "ws": "^7.4.2"
+    "koishi-utils": "^3.2.3"
   }
 }

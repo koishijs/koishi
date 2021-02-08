@@ -31,12 +31,12 @@
     "adventure"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.0.0-beta.5",
-    "koishi-plugin-common": "^4.0.0-beta.4",
-    "koishi-plugin-teach": "^2.0.0-beta.1",
-    "koishi-utils": "^3.2.2"
+    "koishi-core": "^3.0.0-beta.6",
+    "koishi-plugin-common": "^4.0.0-beta.5",
+    "koishi-plugin-teach": "^2.0.0-beta.2",
+    "koishi-utils": "^3.2.3"
   },
   "devDependencies": {
-    "koishi-test-utils": "^5.0.3"
+    "koishi-test-utils": "^5.0.4"
   }
 }

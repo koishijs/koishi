@@ -48,7 +48,7 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
   }
 
   const { version } = require('../packages/koishi-core/package') as PackageJson
-  const tags = spawnSync('git tag -l').split(/\r?\n/)
+  const tags = spawnSync(['git', 'tag', '-l']).split(/\r?\n/)
   if (tags.includes(version)) {
     return console.log(`Tag ${version} already exists.`)
   }

@@ -22,9 +22,8 @@ export interface PackageJson extends Partial<Record<DependencyType, Record<strin
   version?: string
 }
 
-export function spawnSync(command: string, silent?: boolean) {
-  if (!silent) console.log(`$ ${command}`)
-  const args = command.split(/\s+/)
+export function spawnSync(args: string[], silent?: boolean) {
+  if (!silent) console.log(`$ ${args.join(' ')}`)
   const result = spawn.sync(args[0], [...args.slice(1), '--color'], { cwd, encoding: 'utf8' })
   if (result.status) {
     throw new Error(result.stderr)

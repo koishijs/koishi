@@ -24,15 +24,15 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.0.0-beta.5"
+    "koishi-core": "^3.0.0-beta.6"
   },
   "devDependencies": {
     "@types/pako": "^1.0.1",
-    "koishi-test-utils": "^5.0.3"
+    "koishi-test-utils": "^5.0.4"
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "koishi-utils": "^3.2.2",
+    "koishi-utils": "^3.2.3",
     "pako": "^2.0.3"
   }
 }
