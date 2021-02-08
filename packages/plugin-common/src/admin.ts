@@ -267,12 +267,13 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
       return output.join('\n')
     })
 
-  ctx.command('channel.assign [bot]', '受理者账号', { authority: 4 })
+  ctx.group().command('channel/assign [bot]', '受理者账号', { authority: 4 })
     .channelFields(['assignee'])
-    .adminChannel(({ session, target }, value) => {
+    .adminChannel(async ({ session, target }, value) => {
       const assignee = value ? session.$bot.parseUser(value) : session.selfId
       if (!assignee) return '参数错误。'
       target.assignee = assignee
+      await ctx.database.createChannel(session.platform, session.channelId, { assignee })
     })
 
   ctx.command('channel.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })

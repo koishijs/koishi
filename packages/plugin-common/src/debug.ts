@@ -108,7 +108,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   }
 
   if (includeUsers) {
-    ctx.private().user(...includeUsers).on('message', onMessage)
+    ctx.private(...includeUsers).on('message', onMessage)
   }
 
   if (includeGroups) {
