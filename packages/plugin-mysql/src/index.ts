@@ -28,15 +28,17 @@ extendDatabase(MysqlDatabase, {
 
   async createUser(type, id, data) {
     data[type as any] = id
-    const keys = Object.keys(data)
-    const assignments = difference(keys, [type]).map((key) => {
+    const newKeys = Object.keys(data)
+    const assignments = difference(newKeys, [type]).map((key) => {
       key = this.escapeId(key)
       return `${key} = VALUES(${key})`
     }).join(', ')
+    const user = Object.assign(User.create(type, id), data)
+    const keys = Object.keys(user)
     await this.query(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
       ON DUPLICATE KEY UPDATE ${assignments}`,
-      ['user', ...this.formatValues('user', data, keys)],
+      ['user', ...this.formatValues('user', data, newKeys)],
     )
   },
 
@@ -78,16 +80,18 @@ extendDatabase(MysqlDatabase, {
 
   async createChannel(type, pid, data) {
     data.id = `${type}:${pid}`
-    const keys = Object.keys(data)
-    if (!keys.length) return
-    const assignments = difference(keys, ['id']).map((key) => {
+    const newKeys = Object.keys(data)
+    if (!newKeys.length) return
+    const assignments = difference(newKeys, ['id']).map((key) => {
       key = this.escapeId(key)
       return `${key} = VALUES(${key})`
     })
+    const channel = Object.assign(Channel.create(type, pid), data)
+    const keys = Object.keys(channel)
     await this.query(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
       ON DUPLICATE KEY UPDATE ${assignments.join(', ')}`,
-      ['channel', ...this.formatValues('channel', data, keys)],
+      ['channel', ...this.formatValues('channel', data, newKeys)],
     )
   },
 

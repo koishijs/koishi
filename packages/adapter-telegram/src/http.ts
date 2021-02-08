@@ -83,7 +83,7 @@ export default class HttpServer extends Server<'telegram'> {
           body.groupId = body.channelId
         }
       }
-      logger.info('receive %o', body)
+      logger.debug('receive %o', body)
       const session = new Session(this.app, body)
       this.dispatch(session)
     })

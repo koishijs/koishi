@@ -105,6 +105,10 @@ export class TelegramBot extends Bot {
     return session.messageId
   }
 
+  async sendPrivateMessage(userId: string, content: string) {
+    return this.sendMessage(userId, content)
+  }
+
   async getMessage() {
     return null
   }
@@ -122,6 +126,10 @@ export class TelegramBot extends Bot {
   async getGroup(chatId: string): Promise<GroupInfo> {
     const data = await this.get('getChat', { chatId })
     return TelegramBot.adaptGroup(data)
+  }
+
+  async getGroupList() {
+    return []
   }
 
   async getGroupMember(chatId: string, userId: string): Promise<GroupMemberInfo> {
@@ -152,7 +160,7 @@ export class TelegramBot extends Bot {
     } catch {
       return BotStatusCode.NET_ERROR
     }
-  };
+  }
 }
 
 function defineSync(name: string, ...params: string[]) {
