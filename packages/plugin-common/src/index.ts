@@ -3,12 +3,11 @@ import { DebugOptions } from './debug'
 import repeater, { RepeaterOptions } from './repeater'
 import handler, { HandlerOptions } from './handler'
 import sender, { SenderConfig } from './sender'
-import { AdminConfig } from './admin'
 
 export * from './admin'
 export * from './repeater'
 
-export interface Config extends AdminConfig, HandlerOptions, RepeaterOptions, SenderConfig {
+export interface Config extends HandlerOptions, RepeaterOptions, SenderConfig {
   debug?: DebugOptions
 }
 

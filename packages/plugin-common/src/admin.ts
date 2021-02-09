@@ -1,4 +1,4 @@
-import { isInteger, difference, observe, Time, enumKeys, Random } from 'koishi-utils'
+import { isInteger, difference, observe, Time, enumKeys, Random, template } from 'koishi-utils'
 import { Context, User, Channel, Command, Argv, Platform, Session } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
@@ -11,6 +11,51 @@ declare module 'koishi-core/dist/command' {
     adminChannel(callback: AdminAction<U, G, A, O, Channel.Observed<G>>): this
   }
 }
+
+declare module 'koishi-core/dist/context' {
+  interface EventMap {
+    'common/callme'(name: string, session: Session): string | void
+  }
+}
+
+/* eslint-disable quote-props */
+template.set('admin', {
+  // flag
+  'unknown-flag': '未找到标记 {0}。',
+  'all-flags': '全部标记为：{0}。',
+  'no-flags': '未设置任何标记。',
+  'current-flags': '当前的标记为：{0}。',
+
+  // admin helper
+  'user-not-found': '未找到指定的用户。',
+  'user-unchanged': '用户数据未改动。',
+  'user-updated': '用户数据已修改。',
+  'channel-not-found': '未找到指定的频道。',
+  'channel-unchanged': '频道数据未改动。',
+  'channel-updated': '频道数据已修改。',
+  'not-in-group': '当前不在群组上下文中，请使用 -t 参数指定目标频道。',
+})
+
+template.set('callme', {
+  'current': '好的呢，{0}！',
+  'unnamed': '你还没有给自己起一个称呼呢~',
+  'unchanged': '称呼未发生变化。',
+  'empty': '称呼不能为空。',
+  'invalid': '称呼中禁止包含纯文本以外的内容。',
+  'duplicate': '禁止与其他用户重名。',
+  'updated': '好的，{0}，请多指教！',
+  'failed': '修改称呼失败。',
+})
+
+template.set('bind', {
+  'generated': [
+    '请在 5 分钟内使用你的账号在已绑定的平台内向四季酱私聊发送以下文本：',
+    '{0}',
+    '注意：每个账号只能绑定到每个平台一次，此操作将会抹去你当前平台上的数据，请谨慎操作！',
+  ].join('\n'),
+  'failed': '账号绑定失败：你已经绑定过该平台。',
+  'success': '账号绑定成功！',
+})
 
 interface FlagOptions {
   list?: boolean
@@ -28,7 +73,7 @@ function flagAction(map: any, { target, options }: FlagArgv, ...flags: string[])
 function flagAction(map: FlagMap, { target, options }: FlagArgv, ...flags: string[]) {
   if (options.set || options.unset) {
     const notFound = difference(flags, enumKeys(map))
-    if (notFound.length) return `未找到标记 ${notFound.join(', ')}。`
+    if (notFound.length) return template('admin.unknown-flag', notFound.join(', '))
     for (const name of flags) {
       options.set ? target.flag |= map[name] : target.flag &= ~map[name]
     }
@@ -36,7 +81,7 @@ function flagAction(map: FlagMap, { target, options }: FlagArgv, ...flags: strin
   }
 
   if (options.list) {
-    return `全部标记为：${enumKeys(map).join(', ')}。`
+    return template('admin.all-flags', enumKeys(map).join(', '))
   }
 
   let flag = target.flag
@@ -46,8 +91,8 @@ function flagAction(map: FlagMap, { target, options }: FlagArgv, ...flags: strin
     flag -= value
     keys.unshift(map[value])
   }
-  if (!keys.length) return '未设置任何标记。'
-  return `当前的标记为：${keys.join(', ')}。`
+  if (!keys.length) return template('admin.no-flags')
+  return template('admin.current-flags', keys.join(', '))
 }
 
 Command.prototype.adminUser = function (this: Command, callback) {
@@ -64,11 +109,11 @@ Command.prototype.adminUser = function (this: Command, callback) {
       if (!id) return '请指定正确的目标。'
       const { database } = session.$app
       const data = await database.getUser(session.platform, id, [...fields])
-      if (!data) return '未找到指定的用户。'
+      if (!data) return template('admin.user-not-found')
       if (id === session.userId) {
         target = await session.observeUser(fields)
       } else if (session.$user.authority <= data.authority) {
-        return '权限不足。'
+        return template('internal.low-authority')
       } else {
         target = observe(data, diff => database.setUser(session.platform, id, diff), `user ${id}`)
       }
@@ -78,9 +123,9 @@ Command.prototype.adminUser = function (this: Command, callback) {
     const diffKeys = Object.keys(target._diff)
     const result = await callback({ ...argv, target }, ...args)
     if (typeof result === 'string') return result
-    if (!difference(Object.keys(target._diff), diffKeys).length) return '用户数据未改动。'
+    if (!difference(Object.keys(target._diff), diffKeys).length) return template('admin.user-unchanged')
     await target._update()
-    return '用户数据已修改。'
+    return template('admin.user-updated')
   })
 
   return command
@@ -100,63 +145,59 @@ Command.prototype.adminChannel = function (this: Command, callback) {
       if (!id) return '请指定正确的目标。'
       const { database } = session.$app
       const data = await session.getChannel(id, '', [...fields])
-      if (!data) return '未找到指定的频道。'
+      if (!data) return template('admin.channel-not-found')
       target = observe(data, diff => database.setChannel(session.platform, id, diff), `channel ${id}`)
     } else if (session.subtype === 'group') {
       target = await session.observeChannel(fields)
     } else {
-      return '当前不在群组上下文中，请使用 -t 参数指定目标频道。'
+      return template('admin.not-in-group')
     }
     const result = await callback({ ...argv, target }, ...args)
     if (typeof result === 'string') return result
-    if (!Object.keys(target._diff).length) return '频道数据未改动。'
+    if (!Object.keys(target._diff).length) return template('admin.channel-unchanged')
     await target._update()
-    return '频道数据已修改。'
+    return template('admin.channel-updated')
   })
 
   return command
 }
 
-export interface AdminConfig {
-  checkName?: (name: string, session: Session) => string
-}
-
-export function apply(ctx: Context, options: AdminConfig = {}) {
+export function apply(ctx: Context) {
   ctx.command('common/user', '用户管理', { authority: 3 })
   ctx.command('common/channel', '频道管理', { authority: 3 })
 
-  ctx.command('common/callme <name:text>', '修改自己的称呼')
+  ctx.command('common/callme [name:text]', '修改自己的称呼')
     .userFields(['id', 'name'])
     .shortcut('叫我', { prefix: true, fuzzy: true, greedy: true })
     .action(async ({ session }, name) => {
       const { $user } = session
       if (!name) {
         if ($user.name) {
-          return `好的呢，${session.$username}！`
+          return template('callme.current', session.$username)
         } else {
-          return '你还没有给自己起一个称呼呢~'
+          return template('callme.unnamed')
         }
       } else if (name === $user.name) {
-        return '称呼未发生变化。'
+        return template('callme.unchanged')
       } else if (!(name = name.trim())) {
-        return '称呼不能为空。'
+        return template('callme.empty')
       } else if (name.includes('[CQ:')) {
-        return '称呼中禁止包含纯文本以外的内容。'
+        return template('callme.invalid')
       }
 
-      const result = options.checkName?.(name, session)
+      const result = ctx.bail('common/callme', name, session)
       if (result) return result
 
       try {
         $user.name = name
         await $user._update()
-        return `好的，${session.$username}，请多指教！`
+        return template('callme.updated', session.$username)
       } catch (error) {
         if (error[Symbol.for('koishi.error-type')] === 'duplicate-entry') {
-          return '禁止与其他用户重名。'
+          return template('callme.duplicate')
         } else {
           ctx.logger('common').warn(error)
-          return '修改称呼失败。'
+          return template('callme.failed')
         }
       }
     })
@@ -171,11 +212,7 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
       setTimeout(() => {
         if (tokens[token] === data) delete tokens[token]
       }, 5 * Time.minute)
-      return [
-        '请在 5 分钟内使用你的账号在已绑定的平台内向四季酱私聊发送以下文本：',
-        token,
-        '注意：每个账号只能绑定到每个平台一次，此操作将会抹去你当前平台上的数据，请谨慎操作！',
-      ].join('\n')
+      return template('bind.generated', token)
     })
 
   ctx2.middleware(async (session, next) => {
@@ -183,10 +220,10 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
     if (!data) return next()
     const user = await session.observeUser(['authority', data[0]])
     if (!user.authority) return next()
-    if (user[data[0]]) return session.send('账号绑定失败：你已经绑定过该平台。')
+    if (user[data[0]]) return session.send(template('bind.failed'))
     user[data[0] as any] = data[1]
     await user._update()
-    return session.send('账号绑定成功！')
+    return session.send(template('bind.success'))
   }, true)
 
   ctx.command('user/authorize <value>', '权限信息', { authority: 4 })
@@ -194,7 +231,7 @@ export function apply(ctx: Context, options: AdminConfig = {}) {
     .adminUser(async ({ session, target }, value) => {
       const authority = Number(value)
       if (!isInteger(authority) || authority < 0) return '参数错误。'
-      if (authority >= session.$user.authority) return '权限不足。'
+      if (authority >= session.$user.authority) return template('internal.low-authority')
       await ctx.database.createUser(session.platform, session.userId, { authority })
       target._merge({ authority })
     })
