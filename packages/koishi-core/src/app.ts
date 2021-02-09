@@ -23,6 +23,7 @@ export interface AppOptions extends BotOptions {
   queueDelay?: number | ((message: string, session: Session) => number)
   broadcastDelay?: number
   defaultAuthority?: number | ((session: Session) => number)
+  autoAssign?: boolean | ((session: Session) => boolean)
   similarityCoefficient?: number
   userCacheLength?: number
   groupCacheLength?: number
@@ -63,6 +64,8 @@ export class App extends Context {
     userCacheAge: Time.minute,
     groupCacheAge: 5 * Time.minute,
     similarityCoefficient: 0.4,
+    defaultAuthority: 0,
+    autoAssign: false,
     processMessage: message => simplify(message.trim()),
   }
 

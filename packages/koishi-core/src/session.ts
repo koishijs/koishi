@@ -180,8 +180,12 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
     if (hasActiveCache) return this.$group = cache as any
 
+    const autoAssign = typeof this.$app.options.autoAssign === 'function'
+      ? this.$app.options.autoAssign(this)
+      : this.$app.options.autoAssign
+
     // 绑定一个新的可观测群实例
-    const data = await this.$app.database.getGroup(groupId, fieldArray)
+    const data = await this.$app.database.getGroup(groupId, autoAssign ? this.selfId : 0, fieldArray)
     const group = observe(data, diff => this.$app.database.setGroup(groupId, diff), `group ${groupId}`)
     this.$app._groupCache.set(groupId, group)
     return this.$group = group
@@ -208,7 +212,7 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
 
     const defaultAuthority = typeof this.$app.options.defaultAuthority === 'function'
       ? this.$app.options.defaultAuthority(this)
-      : this.$app.options.defaultAuthority || 0
+      : this.$app.options.defaultAuthority
 
     // 确保匿名消息不会写回数据库
     if (this.anonymous) {
