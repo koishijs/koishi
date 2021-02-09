@@ -1,10 +1,14 @@
 import { Context, Session, CommandAction, getContextId } from 'koishi-core'
+import { assertProperty } from 'koishi-utils'
+import { AxiosRequestConfig } from 'axios'
 import ascii2d from './ascii2d'
 import saucenao from './saucenao'
 
 export interface Config {
   lowSimilarity?: number
   highSimilarity?: number
+  saucenaoApiKey?: string[]
+  axiosConfig?: AxiosRequestConfig
 }
 
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/g
@@ -25,6 +29,8 @@ async function mixedSearch(url: string, session: Session, config: Config) {
 export const name = 'search'
 
 export function apply(ctx: Context, config: Config = {}) {
+  assertProperty(config, 'saucenaoApiKey')
+
   const command = ctx.command('search <...images>', '搜图片')
     .alias('搜图')
     .action(search(mixedSearch))
