@@ -44,8 +44,13 @@ export function escapeRegExp(source: string) {
     .replace(/-/g, '\\x2d')
 }
 
-export function template(path: string, ...params: any[]) {
-  return template.format(template.get(path), ...params)
+export function template(path: string | string[], ...params: any[]) {
+  if (!Array.isArray(path)) path = [path]
+  for (const item of path) {
+    const source = template.get(item)
+    if (source) return template.format(source, ...params)
+  }
+  return path[0]
 }
 
 export namespace template {
@@ -72,7 +77,7 @@ export namespace template {
     do {
       node = node[seg.shift()]
     } while (seg.length && node)
-    return typeof node === 'string' ? node : path
+    if (typeof node === 'string') return node
   }
 
   export function format(source: string, ...params: any[]) {
