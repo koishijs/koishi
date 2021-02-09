@@ -8,7 +8,7 @@
     "description": "Tomon adapter for Koishi"
   },
   "koishi-plugin-chess": {
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "Chess Plugin for Koishi"
   },
   "koishi-plugin-common": {
@@ -32,7 +32,7 @@
     "description": "GitHub webhook plugin for Koishi"
   },
   "koishi-plugin-image-search": {
-    "version": "2.0.3",
+    "version": "2.1.0",
     "description": "Image searching plugin for Koishi"
   },
   "koishi-plugin-mongo": {

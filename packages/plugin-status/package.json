@@ -32,7 +32,7 @@
     "status"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.5.1",
+    "koishi-core": "^2.5.2",
     "koishi-utils": "^3.2.1"
   },
   "devDependencies": {

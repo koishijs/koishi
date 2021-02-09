@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-image-search",
   "description": "Image searching plugin for Koishi",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -37,7 +37,7 @@
     "pixiv"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.5.1",
+    "koishi-core": "^2.5.2",
     "koishi-utils": "^3.2.1"
   },
   "dependencies": {
