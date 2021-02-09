@@ -4,6 +4,7 @@ import { App, AppStatus } from './app'
 
 export interface BotOptions {
   type?: string
+  token?: string
   selfId?: string
 }
 

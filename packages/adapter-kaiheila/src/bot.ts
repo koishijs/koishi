@@ -27,6 +27,8 @@ export interface KaiheilaMessageInfo extends MessageInfo {
 }
 
 export class KaiheilaBot extends Bot {
+  version = 'kaiheila'
+
   static toMessage(data: KaiheilaMessageInfo & Record<string, any>) {
     renameProperty(data, 'channelId', 'targetId')
     renameProperty(data, 'timestamp', 'msgTimestamp')

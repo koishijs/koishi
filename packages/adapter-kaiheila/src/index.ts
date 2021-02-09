@@ -15,7 +15,6 @@ declare module 'koishi-core/dist/app' {
 declare module 'koishi-core/dist/server' {
   interface BotOptions {
     verifyToken?: string
-    token?: string
   }
 }
 
@@ -106,12 +105,13 @@ Server.types.kaiheila = class HttpServer extends Server<'kaiheila'> {
     const { kaiheila = {} } = this.app.options
     const { path = '/' } = kaiheila
     this.app.router.post(path, (ctx) => {
-      logger.debug('receive %o', ctx.request.body)
+      logger.info('receive %o', ctx.request.body)
       const data = camelize<Payload>(ctx.request.body)
 
       const { challenge } = data.d
       ctx.body = { challenge }
       ctx.status = 200
+      if (data.d.type === 255) return
 
       const bot = this.bots.find(bot => bot.verifyToken === data.d.verifyToken)
       if (!bot) return

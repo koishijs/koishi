@@ -54,6 +54,7 @@ export class TelegramBot extends Bot {
       }
     }
     super(app, options)
+    this.version = 'telegram'
   }
 
   async [Bot.send](session: Session, content: string) {

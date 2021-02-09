@@ -1,4 +1,4 @@
-import { noop, Logger, coerce } from 'koishi-utils'
+import { noop, Logger, coerce, merge } from 'koishi-utils'
 import { Argv, Domain } from './parser'
 import { Context, NextFunction } from './context'
 import { User, Channel } from './database'
@@ -94,7 +94,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   constructor(name: string, declaration: string, public context: Context, config: Command.Config = {}) {
     super(name, declaration)
-    this.config = { ...Command.defaultConfig, ...config }
+    this.config = merge(config, Command.defaultConfig)
     this._registerAlias(this.name)
     context.app._commands.push(this)
     this.option('help', '-h  显示此信息', { hidden: true })
