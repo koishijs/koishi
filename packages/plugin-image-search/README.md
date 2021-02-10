@@ -36,16 +36,16 @@ export interface SaucenaoConfig extends CommandConfig {
   lowSimilarity?: number
   /** 相似度较高的认定标准（百分比），默认值为 60 */
   highSimilarity?: number
-}
-
-export interface ImageSearchConfig {
-  /** 基本配置参数，将用于所有搜图相关指令 */
-  baseConfig?: CommandConfig
-  /** image-search 指令的额外配置 */
-  mixedConfig?: CommandConfig
-  /** saucenao 指令的额外配置 */
-  saucenaoConfig?: SaucenaoConfig
-  /** ascii2d 指令的额外配置 */
-  ascii2dConfig?: CommandConfig
+  /** SauceNAO 的 APIKey。
+    * SauceNAO 的 APIKey 可以通过注册 SauceNAO 账户的方式获取。
+    * SauceNAO 账户可以在以下网址注册：
+    * https://saucenao.com/user.php
+    * 注册后即可在 API 页中获取到 APIKey。
+    * saucenaoApiKey 需要以数组的方式填入单个或多个 APIKey，
+    * 如果填入多个 APIKey，则可以实现负载均衡
+    */
+  saucenaoApiKey?: string[]
+  /** Axios 在请求时使用的配置 */
+  axiosConfig?: AxiosRequestConfig
 }
 ```
