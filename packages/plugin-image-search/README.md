@@ -48,15 +48,4 @@ export interface SaucenaoConfig extends CommandConfig {
   /** Axios 在请求时使用的配置 */
   axiosConfig?: AxiosRequestConfig
 }
-
-export interface ImageSearchConfig {
-  /** 基本配置参数，将用于所有搜图相关指令 */
-  baseConfig?: CommandConfig
-  /** image-search 指令的额外配置 */
-  mixedConfig?: CommandConfig
-  /** saucenao 指令的额外配置 */
-  saucenaoConfig?: SaucenaoConfig
-  /** ascii2d 指令的额外配置 */
-  ascii2dConfig?: CommandConfig
-}
 ```
