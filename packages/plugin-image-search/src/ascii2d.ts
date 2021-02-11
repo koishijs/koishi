@@ -34,7 +34,7 @@ function getDetail(html: string) {
   const $title = $($link[0])
   const $author = $($link[1])
   return getShareText({
-    url: $title.attr('href'),
+    imageUrl: $title.attr('href'),
     title: $author
       ? `「${$title.html()}」/「${$author.html()}」`
       : $title.html(),

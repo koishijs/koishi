@@ -1,134 +1,156 @@
 /* eslint-disable camelcase */
 
-import axios from 'axios'
+import axios, { AxiosRequestConfig } from 'axios'
 import nhentai from './nhentai'
 import danbooru from './danbooru'
 import konachan from './konachan'
 import { Session } from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { getShareText, checkHost } from './utils'
-import { Config } from '.'
 
-// https://saucenao.com/user.php?page=search-api
-namespace Saucenao {
-  export namespace Response {
-    export interface Index {
-      status: number
-      id: number
-      parent_id: number
-      results: number
-    }
-
-    export interface Header {
-      user_id: number
-      account_type: number
-      short_limit: string
-      long_limit: string
-      long_remaining: number
-      short_remaining: number
-      status: number
-      message?: string
-      index?: Record<number, Index>
-      search_depth?: string
-      minimum_similarity?: number
-      query_image_display?: string
-      query_image?: string
-      results_requested?: number
-      results_returned?: number
-    }
-  }
-
-  export namespace Result {
-    export interface Header {
-      dupes: number
-      similarity: string
-      thumbnail: string
-      index_id: number
-      index_name: string
-    }
-
-    export interface Data {
-      ext_urls?: string[]
-      source: string
-      creator: string
-      material?: string
-      characters?: string
-      title?: string
-      gelbooru_id?: number
-      member_name?: string
-      member_id?: number
-      eng_name?: string
-      jp_name?: string
-      author_name?: string
-      author_url?: string
-      da_id?: string
-      pixiv_id?: string
-    }
-  }
-
-  export interface Result {
-    header: Result.Header
-    data?: Result.Data
-  }
-
-  export interface Response {
-    header: Response.Header
-    results: Result[]
-  }
-
-  export namespace Request {
-    export enum Type { html, xml, json }
-    export enum Dedupe { none, consolidate, all }
-  }
-
-  export interface Request {
-    output_type: Request.Type
-    api_key: string
-    test_mode?: number
-    dbmask?: number
-    dbmaski?: number
-    db?: number
-    numres: number
-    dedupe?: Request.Dedupe
-    url: string
+declare module 'koishi-core/dist/context' {
+  interface EventMap {
+    'saucenao/get-key'(): string
+    'saucenao/drop-key'(key: string): string | void
   }
 }
 
 const logger = new Logger('search')
-let index = 0
 
-export default async function saucenao(sourceUrl: string, session: Session, config: Config, mixedMode = false) {
-  let data: Saucenao.Response
+// https://saucenao.com/user.php?page=search-api
+namespace Response {
+  export interface Index {
+    status: number
+    id: number
+    parent_id: number
+    results: number
+  }
 
-  try {
-    const params: Saucenao.Request = {
-      db: 999,
-      numres: 3,
-      url: sourceUrl,
-      output_type: Saucenao.Request.Type.json,
-      api_key: config.saucenaoApiKey[index],
+  export interface Header {
+    user_id: number
+    account_type: number
+    short_limit: string
+    long_limit: string
+    long_remaining: number
+    short_remaining: number
+    status: number
+    message?: string
+    index?: Record<number, Index>
+    search_depth?: string
+    minimum_similarity?: number
+    query_image_display?: string
+    query_image?: string
+    results_requested?: number
+    results_returned?: number
+  }
+}
+
+namespace Result {
+  export interface Header {
+    dupes: number
+    similarity: string
+    thumbnail: string
+    index_id: number
+    index_name: string
+  }
+
+  export interface Data {
+    ext_urls?: string[]
+    source: string
+    creator: string
+    material?: string
+    characters?: string
+    title?: string
+    gelbooru_id?: number
+    member_name?: string
+    member_id?: number
+    eng_name?: string
+    jp_name?: string
+    author_name?: string
+    author_url?: string
+    da_id?: string
+    pixiv_id?: string
+  }
+}
+
+interface Result {
+  header: Result.Header
+  data?: Result.Data
+}
+
+interface Response {
+  header: Response.Header
+  results: Result[]
+}
+
+namespace Params {
+  export enum Type { html, xml, json }
+  export enum Dedupe { none, consolidate, all }
+}
+
+interface Params {
+  output_type: Params.Type
+  api_key: string
+  test_mode?: number
+  dbmask?: number
+  dbmaski?: number
+  db?: number
+  numres: number
+  dedupe?: Params.Dedupe
+  url: string
+}
+
+namespace saucenao {
+  export interface Config {
+    maxTrials?: number
+    lowSimilarity?: number
+    highSimilarity?: number
+    axiosConfig?: AxiosRequestConfig
+  }
+}
+
+async function search(url: string, session: Session, config: saucenao.Config, mixed?: boolean) {
+  const { $app } = session
+  const keys = new Set<string>()
+  for (let i = 0; i < config.maxTrials || 3; ++i) {
+    const api_key = $app.bail('saucenao/get-key')
+    if (!api_key || keys.has(api_key)) {
+      if (!mixed) return session.send('当前没有可用的 API 令牌，请联系机器人作者。')
+      return
     }
-    index = (index + 1) % config.saucenaoApiKey.length
-    const response = await axios.get<Saucenao.Response>('http://saucenao.com/search.php', {
-      ...session.$app.options.axiosConfig,
-      ...config.axiosConfig,
-      params,
-    })
-    data = response.data
-  } catch (err) {
-    if (!('response' in err)) {
-      logger.warn(`[error] saucenao:`, err)
-      return session.send('无法连接服务器。')
-    } else if (err.response.status === 403) {
-      logger.warn(`[error] saucenao:`, err.response.data)
-      return session.send('令牌失效导致访问失败，请联系机器人作者。')
-    } else if (err.response.status === 429) {
-      return session.send('搜索次数已达单位时间上限，请稍候再试。')
-    } else {
-      logger.warn(`[error] saucenao:`, err.response.data)
-      return session.send('由于未知原因搜索失败。')
+    keys.add(api_key)
+    try {
+      const response = await axios.get<Response>('https://saucenao.com/search.php', {
+        ...$app.options.axiosConfig,
+        ...config.axiosConfig,
+        params: {
+          db: 999,
+          numres: 3,
+          api_key,
+          url,
+          output_type: Params.Type.json,
+        } as Params,
+      })
+      return response.data
+    } catch (err) {
+      if (!('response' in err)) {
+        logger.warn(`[error] saucenao:`, err)
+        return session.send('无法连接服务器。')
+      } else if (err.response.status === 403) {
+        const result = $app.bail('saucenao/drop-key', api_key)
+        if (result) return session.send(result)
+      } else if (err.response.status !== 429) {
+        logger.warn(`[error] saucenao:`, err.response.data)
+        return session.send('由于未知原因搜索失败。')
+      }
     }
   }
+  return session.send('搜索次数已达单位时间上限，请稍候再试。')
+}
+
+async function saucenao(url: string, session: Session, config: saucenao.Config, mixed?: boolean): Promise<boolean | void> {
+  const data = await search(url, session, config, mixed)
+  if (!data) return
 
   if (!data.results) {
     logger.warn(`[error] saucenao:`, data.header)
@@ -138,31 +160,10 @@ export default async function saucenao(sourceUrl: string, session: Session, conf
   if (!data.results.length) return session.send('没有找到搜索结果。')
 
   const { long_remaining, short_remaining } = data.header
-  const [{
-    header,
-    data: { ext_urls, title, member_id, member_name, eng_name, jp_name },
-  }] = data.results
-
-  let url: string
-  let source: string | void
-  if (ext_urls) {
-    url = ext_urls[0]
-    for (let i = 1; i < ext_urls.length; i++) {
-      if (checkHost(ext_urls[i], 'danbooru')) {
-        url = ext_urls[i]
-        break
-      }
-    }
-    if (checkHost(url, 'danbooru')) {
-      source = await danbooru(url).catch(logger.debug)
-    } else if (checkHost(url, 'konachan')) {
-      source = await konachan(url).catch(logger.debug)
-    }
-  }
 
   const output: string[] = []
 
-  const { thumbnail, similarity } = header
+  const { similarity } = data.results[0].header
   const lowSimilarity = +similarity < (config.lowSimilarity ?? 40)
   const highSimilarity = +similarity > (config.highSimilarity ?? 60)
 
@@ -170,42 +171,10 @@ export default async function saucenao(sourceUrl: string, session: Session, conf
     output.push(`相似度 (${similarity}%) 过低，这很可能不是你要找的图。`)
   } else if (!highSimilarity) {
     output.push(`相似度 (${similarity}%) 较低，这可能不是你要找的图。`)
-    if (mixedMode) output[0] += '将自动使用 ascii2d 继续进行搜索。'
+    if (mixed) output[0] += '将自动使用 ascii2d 继续进行搜索。'
   }
 
-  if (!lowSimilarity || !mixedMode) {
-    if (jp_name || eng_name) {
-      const bookName = (jp_name || eng_name).replace('(English)', '')
-
-      try {
-        const book = await nhentai(bookName)
-        if (book) {
-          url = `https://nhentai.net/g/${book.id}/`
-        } else {
-          output.push('没有在 nhentai 找到对应的本子_(:3」∠)_')
-        }
-      } catch (error) {
-        logger.debug(error)
-      }
-
-      output.push(getShareText({
-        url,
-        thumbnail,
-        title: `(${similarity}%) ${bookName}`,
-      }))
-    } else {
-      const displayTitle = member_name
-        ? `「${title}」/「${member_name}」`
-        : title || (checkHost(url, 'anidb.net') ? 'AniDB' : '搜索结果')
-      output.push(getShareText({
-        url,
-        thumbnail,
-        title: `(${similarity}%) ${displayTitle}`,
-        authorUrl: member_id && checkHost(url, 'pixiv.net') && `https://www.pixiv.net/u/${member_id}`,
-        source,
-      }))
-    }
-  }
+  if (!lowSimilarity || !mixed) await handleResult(data.results[0], output)
 
   if (long_remaining < 20) {
     output.push(`注意：24h 内搜图次数仅剩 ${long_remaining} 次。`)
@@ -214,5 +183,62 @@ export default async function saucenao(sourceUrl: string, session: Session, conf
   }
 
   await session.send(output.join('\n'))
-  return !highSimilarity && mixedMode
+  return !highSimilarity && mixed
 }
+
+async function handleResult(result: Result, output: string[]) {
+  const { header, data } = result
+  const { thumbnail, similarity } = header
+  const { ext_urls, title, member_id, member_name, eng_name, jp_name } = data
+
+  let imageUrl: string
+  let source: string | void
+  if (ext_urls) {
+    imageUrl = ext_urls[0]
+    for (let i = 1; i < ext_urls.length; i++) {
+      if (checkHost(ext_urls[i], 'danbooru')) {
+        imageUrl = ext_urls[i]
+        break
+      }
+    }
+    if (checkHost(imageUrl, 'danbooru')) {
+      source = await danbooru(imageUrl).catch(logger.debug)
+    } else if (checkHost(imageUrl, 'konachan')) {
+      source = await konachan(imageUrl).catch(logger.debug)
+    }
+  }
+
+  if (jp_name || eng_name) {
+    const bookName = (jp_name || eng_name).replace('(English)', '')
+
+    try {
+      const book = await nhentai(bookName)
+      if (book) {
+        imageUrl = `https://nhentai.net/g/${book.id}/`
+      } else {
+        output.push('没有在 nhentai 找到对应的本子_(:3」∠)_')
+      }
+    } catch (error) {
+      logger.debug(error)
+    }
+
+    output.push(getShareText({
+      imageUrl,
+      thumbnail,
+      title: `(${similarity}%) ${bookName}`,
+    }))
+  } else {
+    const displayTitle = member_name
+      ? `「${title}」/「${member_name}」`
+      : title || (checkHost(imageUrl, 'anidb.net') ? 'AniDB' : '搜索结果')
+    output.push(getShareText({
+      imageUrl,
+      thumbnail,
+      title: `(${similarity}%) ${displayTitle}`,
+      authorUrl: member_id && checkHost(imageUrl, 'pixiv.net') && `https://www.pixiv.net/u/${member_id}`,
+      source,
+    }))
+  }
+}
+
+export default saucenao

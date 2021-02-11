@@ -9,19 +9,19 @@ export function getLink(url: string) {
 }
 
 export interface ShareData {
-  url: string
+  imageUrl: string
   title: string
   thumbnail: string
   authorUrl?: string
   source?: string | void
 }
 
-export function getShareText({ url, title, thumbnail, authorUrl, source }: ShareData) {
+export function getShareText({ imageUrl, title, thumbnail, authorUrl, source }: ShareData) {
   const output = [
     title,
     CQCode.stringify('image', { file: thumbnail }),
   ]
-  if (url) output.push(`链接：${getLink(url)}`)
+  if (imageUrl) output.push(`链接：${getLink(imageUrl)}`)
   if (authorUrl) output.push(`作者：${getLink(authorUrl)}`)
   if (source) output.push(`来源：${getLink(source)}`)
   return output.join('\n')

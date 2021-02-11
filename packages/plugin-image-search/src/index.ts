@@ -1,13 +1,9 @@
-import { Context, Session, Command, assertProperty } from 'koishi-core'
-import { AxiosRequestConfig } from 'axios'
+import { Context, Session, Command, makeArray } from 'koishi-core'
 import ascii2d from './ascii2d'
 import saucenao from './saucenao'
 
-export interface Config {
-  lowSimilarity?: number
-  highSimilarity?: number
-  saucenaoApiKey?: string[]
-  axiosConfig?: AxiosRequestConfig
+export interface Config extends saucenao.Config {
+  saucenaoApiKey?: string | string[]
 }
 
 const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/g
@@ -28,7 +24,24 @@ async function mixedSearch(url: string, session: Session, config: Config) {
 export const name = 'search'
 
 export function apply(ctx: Context, config: Config = {}) {
-  assertProperty(config, 'saucenaoApiKey')
+  let index = 0
+  const keys = makeArray(config.saucenaoApiKey)
+
+  ctx.on('saucenao/get-key', () => {
+    const result = keys[index]
+    index = (index + 1) % keys.length
+    return result
+  })
+
+  ctx.on('saucenao/drop-key', (key) => {
+    if (keys.indexOf(key) < 0) return
+    if (index === 0) {
+      keys.pop()
+    } else {
+      keys.splice(--index, 1)
+    }
+    return '令牌失效导致访问失败，请联系机器人作者。'
+  })
 
   ctx.command('search [image]', '搜图片')
     .alias('搜图')
@@ -40,7 +53,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   const pending = new Set<string>()
 
-  type SearchCallback = (url: string, session: Session, config: Config) => Promise<any>
+  type SearchCallback = (url: string, session: Session, config: Config) => Promise<boolean | void>
 
   async function searchUrls(session: Session, urls: string[], callback: SearchCallback) {
     const id = session.channelId
