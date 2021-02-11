@@ -1,8 +1,9 @@
+import { URL } from 'url'
+import axios from 'axios'
 import { App, Server, Session } from 'koishi-core'
 import { assertProperty, camelCase, Logger } from 'koishi-utils'
 import { TelegramBot } from './bot'
 import Telegram from './interface'
-import axios from 'axios'
 
 const logger = new Logger('server')
 
@@ -11,7 +12,7 @@ export default class HttpServer extends Server<'telegram'> {
     super(app, TelegramBot)
     const config = this.app.options.telegram ||= {}
     assertProperty(config, 'selfUrl')
-    config.path ||= '/'
+    config.path ||= '/telegram'
     config.endpoint ||= 'https://api.telegram.org/'
   }
 
@@ -27,9 +28,12 @@ export default class HttpServer extends Server<'telegram'> {
       })
       return data
     }
-    const { userId, username } = await bot.getLoginInfo()
+    const { username } = await bot.getLoginInfo()
+    const url = new URL(selfUrl)
+    if (path) url.pathname = path
+    url.search = '?token=' + bot.token
     await bot.get('setWebhook', {
-      url: selfUrl + path + userId,
+      url: url.toString(),
       drop_pending_updates: true,
     })
     bot.username = username
@@ -39,10 +43,10 @@ export default class HttpServer extends Server<'telegram'> {
 
   async listen() {
     const { endpoint, path } = this.app.options.telegram
-    this.app.router.post(path + ':token', async (ctx) => {
+    this.app.router.post(path, async (ctx) => {
       logger.debug('receive %s', JSON.stringify(ctx.request.body))
       const payload = camelCase<Telegram.Update>(ctx.request.body)
-      const { token } = ctx.params
+      const { token } = ctx.request.query
       const [selfId] = token.split(':')
       const bot = this.bots[selfId]
       if (!bot?.token === token) return ctx.status = 403
