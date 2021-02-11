@@ -1,4 +1,3 @@
-import { URL } from 'url'
 import axios from 'axios'
 import { App, Server, Session } from 'koishi-core'
 import { assertProperty, camelCase, Logger } from 'koishi-utils'
@@ -7,13 +6,17 @@ import Telegram from './interface'
 
 const logger = new Logger('server')
 
+function trimSlash(source: string) {
+  return source.replace(/\/$/, '')
+}
+
 export default class HttpServer extends Server<'telegram'> {
   constructor(app: App) {
     super(app, TelegramBot)
     const config = this.app.options.telegram ||= {}
-    assertProperty(config, 'selfUrl')
     config.path ||= '/telegram'
-    config.endpoint ||= 'https://api.telegram.org/'
+    config.endpoint = trimSlash(config.endpoint || 'https://api.telegram.org')
+    config.selfUrl = trimSlash(assertProperty(config, 'selfUrl'))
   }
 
   private async _listen(bot: TelegramBot) {
@@ -21,7 +24,7 @@ export default class HttpServer extends Server<'telegram'> {
     const { endpoint, selfUrl, path, axiosConfig } = this.app.options.telegram
     bot._request = async (action, params) => {
       const headers = { 'Contsent-Type': 'application/json' } as any
-      const { data } = await axios.post(`${endpoint}bot${bot.token}/${action}`, params, {
+      const { data } = await axios.post(`${endpoint}/bot${bot.token}/${action}`, params, {
         ...this.app.options.axiosConfig,
         ...axiosConfig,
         headers,
@@ -29,11 +32,8 @@ export default class HttpServer extends Server<'telegram'> {
       return data
     }
     const { username } = await bot.getLoginInfo()
-    const url = new URL(selfUrl)
-    if (path) url.pathname = path
-    url.search = '?token=' + bot.token
     await bot.get('setWebhook', {
-      url: url.toString(),
+      url: selfUrl + path + '?token=' + bot.token,
       drop_pending_updates: true,
     })
     bot.username = username
@@ -63,8 +63,8 @@ export default class HttpServer extends Server<'telegram'> {
         msg += message.caption || ''
         if (message.photo) {
           const fid = message.photo[0].fileId
-          const { data } = await axios.get(endpoint + 'bot' + token + `/getFile?file_id=${fid}`)
-          msg += ` [CQ:image,file=${fid},url=${endpoint}file/bot${token}/${data.result.file_path}]`
+          const { data } = await axios.get(endpoint + '/bot' + token + `/getFile?file_id=${fid}`)
+          msg += ` [CQ:image,file=${fid},url=${endpoint}/file/bot${token}/${data.result.file_path}]`
         }
         for (const entity of message.entities || []) {
           if (entity.type === 'mention') {
