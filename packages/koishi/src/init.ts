@@ -4,13 +4,11 @@ import { promises as fs, existsSync } from 'fs'
 import { yellow, red, green, magenta } from 'kleur'
 import { resolve, extname, dirname } from 'path'
 import { spawn, StdioOptions } from 'child_process'
-import { AppConfig } from '..'
+import { AppConfig, BotOptions } from '..'
 import { CAC } from 'cac'
 import prompts, { Choice, PromptObject } from 'prompts'
-import * as mysql from 'koishi-plugin-mysql/dist/database'
-import * as mongo from 'koishi-plugin-mongo/dist/database'
 
-const serverQuestions: PromptObject<keyof AppConfig>[] = [{
+const serverQuestions: PromptObject[] = [{
   name: 'type',
   type: 'select',
   message: 'Server Type',
@@ -23,65 +21,64 @@ const serverQuestions: PromptObject<keyof AppConfig>[] = [{
   ],
 }, {
   name: 'port',
-  type: 'number',
+  type: () => !config.bots.length ? 'number' : null,
   message: 'Koishi Port',
   initial: 8080,
 }]
 
-const onebotQuestions: PromptObject[] = [{
-  name: 'path',
-  type: () => config.type !== 'onebot:ws' ? 'text' : null,
-  message: 'Koishi Path',
-}, {
-  name: '@server',
-  type: () => config.type === 'onebot:http' ? 'text' : null,
-  message: 'HTTP Server',
-  initial: 'http://localhost:5700',
-}, {
-  name: '@server',
-  type: () => config.type === 'onebot:ws' ? 'text' : null,
-  message: 'WebSocket Server',
-  initial: 'ws://localhost:6700',
-}, {
-  name: '@selfId',
-  type: 'number',
-  message: 'Your Bot\'s QQ Number',
-}, {
-  name: 'secret',
-  type: 'text',
-  message: 'Secret for Koishi Server',
-}, {
-  name: '@token',
-  type: 'text',
-  message: 'Token for CQHTTP Server',
-}]
+type PromptDict = Record<string, PromptObject[]>
 
-const tomonQuestions: PromptObject[] = [{
-  name: '@token',
-  type: 'text',
-  message: 'Token for Tomon',
-}]
+const botMap: PromptDict = {
+  'onebot': [{
+    name: 'server',
+    type: () => config.type === 'onebot:http' ? 'text' : null,
+    message: 'HTTP Server',
+    initial: 'http://localhost:5700',
+  }, {
+    name: 'server',
+    type: () => config.type === 'onebot:ws' ? 'text' : null,
+    message: 'WebSocket Server',
+    initial: 'ws://localhost:6700',
+  }, {
+    name: 'selfId',
+    type: 'number',
+    message: 'Your Bot\'s QQ Number',
+  }, {
+    name: 'token',
+    type: 'text',
+    message: 'Token for CQHTTP Server',
+  }],
+  'tomon': [{
+    name: 'token',
+    type: 'text',
+    message: 'Token for Tomon',
+  }],
+  'telegram': [{
+    name: 'token',
+    type: 'text',
+    message: 'Token for Telegram',
+  }],
+}
 
-const telegramQuestions: PromptObject[] = [{
-  name: '@token',
-  type: 'text',
-  message: 'Token for Telegram',
-}, {
-  name: '@selfUrl',
-  type: 'text',
-  message: 'Your Public URL',
-}, {
-  name: 'path',
-  type: 'text',
-  message: 'Telegram Path',
-}]
-
-const adapterMap = {
-  'onebot:http': onebotQuestions,
-  'onebot:ws': onebotQuestions,
-  'onebot:ws-reverse': onebotQuestions,
-  'tomon': tomonQuestions,
-  'telegram': telegramQuestions,
+const adapterMap: PromptDict = {
+  'onebot': [{
+    name: 'path',
+    type: () => !config['onebot'] && config.type !== 'onebot:ws' ? 'text' : null,
+    message: 'Koishi Path',
+  }, {
+    name: 'secret',
+    type: () => !config['onebot'] ? 'text' : null,
+    message: 'Secret for Koishi Server',
+  }],
+  'telegram': [{
+    name: 'selfUrl',
+    type: 'text',
+    message: 'Your Public URL',
+  }, {
+    name: 'path',
+    type: () => !config['telegram'] ? 'text' : null,
+    message: 'Telegram Path',
+  }],
 }
 
 const databaseQuestions: PromptObject<'database'>[] = [{
@@ -95,61 +92,57 @@ const databaseQuestions: PromptObject<'database'>[] = [{
   ],
 }]
 
-const mysqlQuestions: PromptObject<keyof mysql.Config>[] = [{
-  name: 'host',
-  type: 'text',
-  message: 'MySQL / Host',
-  initial: '127.0.0.1',
-}, {
-  name: 'port',
-  type: 'number',
-  message: 'MySQL / Port',
-  initial: '3306',
-}, {
-  name: 'user',
-  type: 'text',
-  message: 'MySQL / Username',
-  initial: 'root',
-}, {
-  name: 'password',
-  type: 'text',
-  message: 'MySQL / Password',
-}, {
-  name: 'database',
-  type: 'text',
-  message: 'MySQL / Database',
-  initial: 'koishi',
-}]
-
-const mongoQuestions: PromptObject<keyof mongo.Config>[] = [{
-  name: 'host',
-  type: 'text',
-  message: 'MongoDB / Host',
-  initial: '127.0.0.1',
-}, {
-  name: 'port',
-  type: 'number',
-  message: 'MongoDB / Port',
-  initial: '27017',
-}, {
-  name: 'username',
-  type: 'text',
-  message: 'MongoDB / Username',
-  initial: 'root',
-}, {
-  name: 'password',
-  type: 'text',
-  message: 'MongoDB / Password',
-}, {
-  name: 'name',
-  type: 'text',
-  message: 'MongoDB / Database',
-  initial: 'koishi',
-}]
-
-const databaseMap = {
-  mysql: mysqlQuestions,
-  mongo: mongoQuestions,
+const databaseMap: PromptDict = {
+  mysql: [{
+    name: 'host',
+    type: 'text',
+    message: 'MySQL / Host',
+    initial: '127.0.0.1',
+  }, {
+    name: 'port',
+    type: 'number',
+    message: 'MySQL / Port',
+    initial: '3306',
+  }, {
+    name: 'user',
+    type: 'text',
+    message: 'MySQL / Username',
+    initial: 'root',
+  }, {
+    name: 'password',
+    type: 'text',
+    message: 'MySQL / Password',
+  }, {
+    name: 'database',
+    type: 'text',
+    message: 'MySQL / Database',
+    initial: 'koishi',
+  }],
+  mongo: [{
+    name: 'host',
+    type: 'text',
+    message: 'MongoDB / Host',
+    initial: '127.0.0.1',
+  }, {
+    name: 'port',
+    type: 'number',
+    message: 'MongoDB / Port',
+    initial: '27017',
+  }, {
+    name: 'username',
+    type: 'text',
+    message: 'MongoDB / Username',
+    initial: 'root',
+  }, {
+    name: 'password',
+    type: 'text',
+    message: 'MongoDB / Password',
+  }, {
+    name: 'name',
+    type: 'text',
+    message: 'MongoDB / Database',
+    initial: 'koishi',
+  }],
 }
 
 async function question<T extends string>(questions: PromptObject<T>[]) {
@@ -159,6 +152,16 @@ async function question<T extends string>(questions: PromptObject<T>[]) {
   })
   if (!succeed) throw new Error('interrupted')
   return data
+}
+
+async function confirm(message: string, initial: boolean) {
+  const { confirmed } = await question([{
+    name: 'confirmed',
+    type: 'confirm',
+    initial,
+    message,
+  }])
+  return confirmed as boolean
 }
 
 type DependencyType = 'dependencies' | 'devDependencies' | 'peerDependencies' | 'optionalDependencies'
@@ -172,19 +175,20 @@ const cwd = process.cwd()
 const metaPath = resolve(cwd, 'package.json')
 const ecosystem: Record<string, Package> = require('../ecosystem')
 const builtinPackages = ['koishi-plugin-common']
-const config: AppConfig = {}
+const config: AppConfig = { bots: [] }
 
 async function createConfig() {
-  Object.assign(config, await question(serverQuestions))
-  const data = await question(adapterMap[config.type])
-  const [platform] = config.type.split(':', 1)
-  for (const key in data) {
-    if (key.startsWith('@')) {
-      config[key.slice(1)] = data[key]
-    } else {
-      (config[platform] ||= {})[key] = data[key]
+  let bot: BotOptions
+  do {
+    Object.assign(config, await question(serverQuestions))
+    const [platform] = config.type.split(':', 1)
+    config.bots.push(bot = { type: config.type })
+    Object.assign(bot, await question(botMap[platform]))
+    if (adapterMap[platform]) {
+      config[platform] = await question(adapterMap[platform])
     }
-  }
+  } while (await confirm('configurate another bot?', false))
+  delete config.type
 
   // database
   config.plugins = {}
@@ -241,7 +245,8 @@ function codegen(value: Serializable, type: SourceType, indent = '') {
   }
 
   if (Array.isArray(value)) {
-    return `[${joinLines(value.map(value => codegen(value, type, '  ' + indent)), type, indent)}]`
+    return `[${value.map(value => codegen(value, type, indent)).join(', ')}]`
+    // return `[${joinLines(value.map(value => codegen(value, type, '  ' + indent)), type, indent)}]`
   }
 
   return `{${joinLines(Object.entries(value).filter(([, value]) => value !== undefined).map(([key, value]) => {
@@ -309,8 +314,11 @@ async function updateMeta() {
     meta.dependencies[name] = '^' + ecosystem[name].version
   }
 
-  const [name] = config.type.split(':', 1)
-  ensureDependency('koishi-adapter-' + name)
+  for (const bot of config.bots) {
+    const [name] = bot.type.split(':', 1)
+    ensureDependency('koishi-adapter-' + name)
+  }
+
   for (const name of Object.keys(config.plugins)) {
     ensureDependency('koishi-plugin-' + name)
   }
@@ -319,15 +327,8 @@ async function updateMeta() {
   await fs.writeFile(metaPath, JSON.stringify(meta, null, 2))
   console.log(`${success} package.json was updated`)
 
-  const { confirm } = await question([{
-    name: 'confirm',
-    type: 'confirm',
-    initial: true,
-    message: 'package.json was updated. install new dependencies now?',
-  }]).catch(() => ({ confirm: false }))
-
   const args = installArgs[kind]
-  if (!confirm) {
+  if (!await confirm('package.json was updated. install new dependencies now?', true).catch(() => false)) {
     console.log(`${info} type "${[kind, ...args].join(' ')}" to install new dependencies before using koishi`)
     return
   }
