@@ -29,8 +29,7 @@
     "puppeteer"
   ],
   "devDependencies": {
-    "@types/pngjs": "^3.4.2",
-    "@types/puppeteer-core": "^5.4.0",
+    "@types/pngjs": "^6.0.0",
     "koishi-test-utils": "^5.0.4"
   },
   "peerDependencies": {
@@ -40,6 +39,6 @@
   "dependencies": {
     "chrome-finder": "^1.0.7",
     "pngjs": "^6.0.0",
-    "puppeteer-core": "^5.5.0"
+    "puppeteer-core": "^7.1.0"
   }
 }

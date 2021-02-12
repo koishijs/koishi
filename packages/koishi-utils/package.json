@@ -32,6 +32,6 @@
     "koishi-test-utils": "^5.0.4"
   },
   "dependencies": {
-    "supports-color": "^8.1.0"
+    "supports-color": "^8.1.1"
   }
 }

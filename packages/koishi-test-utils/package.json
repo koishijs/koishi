@@ -35,13 +35,13 @@
     "utilities"
   ],
   "dependencies": {
-    "chai": "^4.2.0",
+    "chai": "^4.3.0",
     "chai-as-promised": "^7.1.1",
     "koishi-core": "^3.0.0-beta.6",
     "koishi-utils": "^3.2.3"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.14",
+    "@types/chai": "^4.2.15",
     "@types/chai-as-promised": "^7.1.3"
   }
 }
