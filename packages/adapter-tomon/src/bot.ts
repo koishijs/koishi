@@ -80,7 +80,7 @@ export interface TomonGroupMemberInfo extends TomonUserInfo, GroupMemberInfo {
   deaf: boolean
 }
 
-export class TomonBot extends Bot {
+export class TomonBot extends Bot<'tomon'> {
   id: string
   username: string
   discriminator: string

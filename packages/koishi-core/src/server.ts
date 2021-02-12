@@ -107,7 +107,7 @@ export interface Bot<P = Platform> extends BotOptions {
   sendMessage(channelId: string, content: string): Promise<string>
   sendPrivateMessage(userId: string, content: string): Promise<string>
   getMessage(channelId: string, messageId: string): Promise<MessageInfo>
-  editMessage(channelId: string, messageId: string): Promise<void>
+  editMessage(channelId: string, messageId: string, content: string): Promise<void>
   deleteMessage(channelId: string, messageId: string): Promise<void>
 
   // user
