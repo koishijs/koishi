@@ -51,7 +51,7 @@ export default class HttpServer extends Server<'onebot'> {
 
   async listen() {
     const { onebot = {} } = this.app.options
-    const { secret, path = '/' } = onebot
+    const { secret, path = '' } = onebot
     this.app.router.post(path, (ctx) => {
       if (secret) {
         // no signature

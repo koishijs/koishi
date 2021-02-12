@@ -103,7 +103,7 @@ Server.types.kaiheila = class HttpServer extends Server<'kaiheila'> {
 
   async listen() {
     const { kaiheila = {} } = this.app.options
-    const { path = '/' } = kaiheila
+    const { path = '' } = kaiheila
     this.app.router.post(path, (ctx) => {
       logger.info('receive %o', ctx.request.body)
       const data = camelize<Payload>(ctx.request.body)

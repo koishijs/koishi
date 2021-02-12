@@ -30,21 +30,20 @@ const serverQuestions: PromptObject<keyof AppConfig>[] = [{
 
 const onebotQuestions: PromptObject[] = [{
   name: 'path',
-  type: () => ['onebot:http', 'onebot:ws-reverse'].includes(config.type) ? 'text' : null,
+  type: () => config.type !== 'onebot:ws' ? 'text' : null,
   message: 'Koishi Path',
-  initial: '/',
 }, {
-  name: 'server',
-  type: () => ['onebot:http'].includes(config.type) ? 'text' : null,
+  name: '@server',
+  type: () => config.type === 'onebot:http' ? 'text' : null,
   message: 'HTTP Server',
   initial: 'http://localhost:5700',
 }, {
-  name: 'server',
-  type: () => ['onebot:ws'].includes(config.type) ? 'text' : null,
+  name: '@server',
+  type: () => config.type === 'onebot:ws' ? 'text' : null,
   message: 'WebSocket Server',
   initial: 'ws://localhost:6700',
 }, {
-  name: 'selfId',
+  name: '@selfId',
   type: 'number',
   message: 'Your Bot\'s QQ Number',
 }, {
@@ -52,23 +51,23 @@ const onebotQuestions: PromptObject[] = [{
   type: 'text',
   message: 'Secret for Koishi Server',
 }, {
-  name: 'token',
+  name: '@token',
   type: 'text',
   message: 'Token for CQHTTP Server',
 }]
 
 const tomonQuestions: PromptObject[] = [{
-  name: 'token',
+  name: '@token',
   type: 'text',
   message: 'Token for Tomon',
 }]
 
 const telegramQuestions: PromptObject[] = [{
-  name: 'token',
+  name: '@token',
   type: 'text',
   message: 'Token for Telegram',
 }, {
-  name: 'selfUrl',
+  name: '@selfUrl',
   type: 'text',
   message: 'Your Public URL',
 }, {
@@ -173,13 +172,22 @@ const cwd = process.cwd()
 const metaPath = resolve(cwd, 'package.json')
 const ecosystem: Record<string, Package> = require('../ecosystem')
 const builtinPackages = ['koishi-plugin-common']
-const config: AppConfig = { plugins: {} }
+const config: AppConfig = {}
 
 async function createConfig() {
   Object.assign(config, await question(serverQuestions))
-  Object.assign(config, await question(adapterMap[config.type]))
+  const data = await question(adapterMap[config.type])
+  const [platform] = config.type.split(':', 1)
+  for (const key in data) {
+    if (key.startsWith('@')) {
+      config[key.slice(1)] = data[key]
+    } else {
+      (config[platform] ||= {})[key] = data[key]
+    }
+  }
 
   // database
+  config.plugins = {}
   const { database } = await question(databaseQuestions)
   if (database) {
     config.plugins[database] = await question(databaseMap[database])
@@ -223,6 +231,7 @@ function joinLines(lines: string[], type: SourceType, indent: string) {
 
 function codegen(value: Serializable, type: SourceType, indent = '') {
   if (value === null) return 'null'
+
   switch (typeof value) {
     case 'number': case 'boolean': return '' + value
     case 'string': return type === 'json' || value.includes("'") && !value.includes('"')
