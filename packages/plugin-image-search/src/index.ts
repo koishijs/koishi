@@ -44,7 +44,7 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   ctx.command('search [image]', '搜图片')
-    .alias('搜图')
+    .shortcut('搜图', { fuzzy: true })
     .action(search(mixedSearch))
     .subcommand('saucenao [image]', '使用 saucenao 搜图')
     .action(search(saucenao))

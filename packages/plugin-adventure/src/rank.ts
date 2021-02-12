@@ -103,7 +103,7 @@ namespace Rank {
       data = users.map((user) => {
         if (user.name !== String(user.id)) return { ...user, name: user.name }
         const member = members.find(m => m.userId === user[session.platform])
-        return { ...user, name: member.nick || member.name }
+        return { ...user, name: member.nickname || member.username }
       })
     }
 
@@ -145,7 +145,7 @@ namespace Rank {
         return Rank.show(rank, session, options)
       })
 
-    ctx.on('tokenize', (message, session) => {
+    ctx.on('before-parse', (message, session) => {
       if (session.$reply || session.$prefix) return
       const capture = /^(全服|本群)?(.+)(全服|本群)?排[名行]榜?$/.exec(message)
       if (!capture) return

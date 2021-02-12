@@ -6,7 +6,7 @@ import { Channel, User } from './database'
 import { Session } from './session'
 
 export interface Token {
-  rest: string
+  rest?: string
   content: string
   quoted: boolean
   terminator: string

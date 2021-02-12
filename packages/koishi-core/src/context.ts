@@ -15,7 +15,6 @@ export type Plugin<T = any> = PluginFunction<T> | PluginObject<T>
 export type Promisify<T> = T extends Promise<unknown> ? T : Promise<T>
 export type Await<T> = T extends Promise<infer U> ? U : T
 export type Disposable = () => void
-export type Bind<F, T> = F extends (...args: infer P) => infer R ? (this: T, ...args: P) => R : never
 
 type PluginConfig<T extends Plugin> = T extends PluginFunction<infer U> ? U : T extends PluginObject<infer U> ? U : never
 
@@ -202,7 +201,7 @@ export class Context {
     return hooks
   }
 
-  on<K extends EventName>(name: K, listener: Bind<EventMap[K], Session>, prepend = false) {
+  on<K extends EventName>(name: K, listener: EventMap[K], prepend = false) {
     if (prepend) {
       this.getHooks(name).unshift([this, listener])
     } else {
@@ -213,13 +212,13 @@ export class Context {
     return dispose
   }
 
-  before<K extends BeforeEventName>(name: K, listener: Bind<BeforeEventMap[K], Session>, append = false) {
+  before<K extends BeforeEventName>(name: K, listener: BeforeEventMap[K], append = false) {
     const seg = name.split('/')
     seg[seg.length - 1] = 'before-' + seg[seg.length - 1]
     return this.on(seg.join('/') as EventName, listener, !append)
   }
 
-  once<K extends EventName>(name: K, listener: Bind<EventMap[K], Session>, prepend = false) {
+  once<K extends EventName>(name: K, listener: EventMap[K], prepend = false) {
     const dispose = this.on(name, function (...args: any[]) {
       dispose()
       return listener.apply(this, args)
@@ -227,7 +226,7 @@ export class Context {
     return dispose
   }
 
-  off<K extends EventName>(name: K, listener: Bind<EventMap[K], Session>) {
+  off<K extends EventName>(name: K, listener: EventMap[K]) {
     const index = (this.app._hooks[name] || [])
       .findIndex(([context, callback]) => context === this && callback === listener)
     if (index >= 0) {
@@ -342,7 +341,7 @@ export interface EventMap extends SessionEventMap {
 
   // Koishi events
   'appellation'(name: string, session: Session): string
-  'tokenize'(content: string, session: Session): Argv
+  'before-parse'(content: string, session: Session): Argv
   'parse'(argv: Argv, session: Session): string
   'before-attach-user'(session: Session, fields: Set<User.Field>): void
   'before-attach-channel'(session: Session, fields: Set<Channel.Field>): void

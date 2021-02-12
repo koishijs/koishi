@@ -117,9 +117,11 @@ export class App extends Context {
     this.prepare()
 
     // bind built-in event listeners
-    this.middleware(this._preprocess.bind(this))
-    this.on('message', this._onMessage.bind(this))
-    this.on('tokenize', this._onShortcut.bind(this))
+    this.middleware(this._process.bind(this))
+    this.middleware(this._suggest.bind(this))
+    this.on('message', this._handleMessage.bind(this))
+    this.before('parse', this._handleArgv.bind(this))
+    this.before('parse', this._handleShortcut.bind(this))
     this.before('connect', this._listen.bind(this))
     this.before('disconnect', this._close.bind(this))
 
@@ -144,27 +146,6 @@ export class App extends Context {
 
     this.plugin(validate)
     this.plugin(help)
-
-    // suggest
-    this.middleware((session, next) => {
-      const { $argv, $reply, $parsed, $prefix, $appel, subtype } = session
-      if ($argv || subtype !== 'private' && $prefix === null && !$appel) return next()
-      const target = $parsed.split(/\s/, 1)[0].toLowerCase()
-      if (!target) return next()
-
-      const items = getCommands(session as any, this._commands).flatMap(cmd => cmd._aliases)
-      return session.suggest({
-        target,
-        next,
-        items,
-        prefix: template('internal.command-suggestion-prefix'),
-        suffix: template('internal.command-suggestion-suffix'),
-        async apply(suggestion, next) {
-          const newMessage = suggestion + $parsed.slice(target.length) + ($reply ? ' ' + $reply.content : '')
-          return this.execute(newMessage, next)
-        },
-      })
-    })
   }
 
   createServer() {
@@ -220,18 +201,14 @@ export class App extends Context {
     this._httpServer?.close()
   }
 
-  private async _preprocess(session: Session, next: NextFunction) {
+  private async _process(session: Session, next: NextFunction) {
     let message = this.options.processMessage(session.content)
 
     let capture: RegExpMatchArray, atSelf = false
     // eslint-disable-next-line no-cond-assign
     if (capture = message.match(/^\[CQ:reply,id=(-?\d+)\]\s*/)) {
-      session.$reply = await session.$bot.getMessage(session.channelId, capture[1]).catch(noop)
       message = message.slice(capture[0].length)
-      if (session.$reply) {
-        const prefix = `[CQ:at,qq=${session.$reply.author.userId}]`
-        message = message.slice(prefix.length).trimStart()
-      }
+      session.$reply = await session.$bot.getMessage(session.channelId, capture[1]).catch(noop)
     }
 
     // strip prefix
@@ -251,7 +228,7 @@ export class App extends Context {
 
     // store parsed message
     session.$parsed = message
-    session.$argv = this.bail('tokenize', message, session) || Argv.parse(message)
+    session.$argv = this.bail('before-parse', message, session) || Argv.parse(message)
     session.$argv.root = true
     session.$argv.session = session
 
@@ -287,7 +264,27 @@ export class App extends Context {
     return session.execute(session.$argv, next)
   }
 
-  private async _onMessage(session: Session) {
+  private _suggest(session: Session, next: NextFunction) {
+    const { $argv, $reply, $parsed, $prefix, $appel, subtype } = session
+    if ($argv || subtype !== 'private' && $prefix === null && !$appel) return next()
+    const target = $parsed.split(/\s/, 1)[0].toLowerCase()
+    if (!target) return next()
+
+    const items = getCommands(session as any, this._commands).flatMap(cmd => cmd._aliases)
+    return session.suggest({
+      target,
+      next,
+      items,
+      prefix: template('internal.command-suggestion-prefix'),
+      suffix: template('internal.command-suggestion-suffix'),
+      async apply(suggestion, next) {
+        const newMessage = suggestion + $parsed.slice(target.length) + ($reply ? ' ' + $reply.content : '')
+        return this.execute(newMessage, next)
+      },
+    })
+  }
+
+  private async _handleMessage(session: Session) {
     // preparation
     this._sessions[session.$uuid] = session
     const middlewares: Middleware[] = this._hooks[Context.middleware as any]
@@ -333,7 +330,20 @@ export class App extends Context {
     await session.$channel?._update()
   }
 
-  private _onShortcut(content: string, { $prefix, $reply, $appel }: Session) {
+  private _handleArgv(content: string, session: Session) {
+    const argv = Argv.parse(content)
+    if (session.$reply) {
+      argv.tokens.push({
+        content: session.$reply.content,
+        quoted: true,
+        inters: [],
+        terminator: '',
+      })
+    }
+    return argv
+  }
+
+  private _handleShortcut(content: string, { $prefix, $reply, $appel }: Session) {
     if ($prefix || $reply) return
     for (const shortcut of this._shortcuts) {
       const { name, fuzzy, command, greedy, prefix, options = {}, args = [] } = shortcut
