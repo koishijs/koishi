@@ -48,9 +48,8 @@ export function testDatabase(app: App) {
 
     await db.initChannel('B')
     await db.initChannel('C')
-    await expect(db.getChannelList(null)).eventually.to.have.length(2)
-    await expect(db.getChannelList(null, 'mock')).eventually.to.have.length(2)
-    await expect(db.getChannelList(null, 'mock', ['321'])).eventually.to.have.length(1)
+    await expect(db.getAssignedChannels(null)).eventually.to.have.length(2)
+    await expect(db.getAssignedChannels(null, { mock: ['321'] })).eventually.to.have.length(1)
 
     await db.removeChannel('mock', 'A')
     await expect(db.getChannel('mock', ['A'])).eventually.to.deep.equal([])

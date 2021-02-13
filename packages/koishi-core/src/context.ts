@@ -3,7 +3,7 @@ import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Database } from './database'
 import { Argv, Domain } from './parser'
-import { Server } from './server'
+import { Platform, Server } from './server'
 import { App } from './app'
 import type Router from 'koa-router'
 
@@ -282,6 +282,18 @@ export class Context {
     return parent
   }
 
+  getSelfIds(type?: Platform, assignees?: readonly string[]): Record<string, readonly string[]> {
+    if (type) {
+      assignees ||= this.app.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)
+      return { [type]: assignees }
+    }
+    const platforms: Record<string, string[]> = {}
+    for (const bot of this.app.bots) {
+      (platforms[bot.platform] ||= []).push(bot.selfId)
+    }
+    return platforms
+  }
+
   async broadcast(content: string, forced?: boolean): Promise<string[]>
   async broadcast(channels: readonly string[], content: string, forced?: boolean): Promise<string[]>
   async broadcast(...args: [string, boolean?] | [readonly string[], string, boolean?]) {
@@ -290,7 +302,7 @@ export class Context {
     const [content, forced] = args as [string, boolean]
     if (!content) return []
 
-    const data = await this.database.getChannelList(['id', 'assignee', 'flag'])
+    const data = await this.database.getAssignedChannels(['id', 'assignee', 'flag'])
     const assignMap: Record<string, Record<string, string[]>> = {}
     for (const { id, assignee, flag } of data) {
       if (channels && !channels.includes(id)) continue

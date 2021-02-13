@@ -61,7 +61,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
         return
       }
 
-      let groups = await ctx.database.getChannelList(['id', 'flag'], session.platform, [session.selfId])
+      let groups = await ctx.database.getAssignedChannels(['id', 'flag'], { [session.platform]: [session.selfId] })
       if (!options.forced) {
         groups = groups.filter(g => !(g.flag & Channel.Flag.silent))
       }

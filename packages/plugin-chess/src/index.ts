@@ -43,7 +43,7 @@ export function apply(ctx: Context) {
 
   ctx.on('connect', async () => {
     if (!ctx.database) return
-    const channels = await ctx.database.getChannelList(['id', 'chess'])
+    const channels = await ctx.database.getAssignedChannels(['id', 'chess'])
     for (const { id, chess } of channels) {
       if (chess) {
         states[id] = State.from(ctx.app, chess)

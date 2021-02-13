@@ -109,12 +109,9 @@ extendDatabase(MongoDatabase, {
     return data && { ...data, id: `${type}:${pid}` }
   },
 
-  async getChannelList(fields = Channel.fields, type?, assignees?) {
-    const idMap: (readonly [string, readonly string[]])[] = assignees ? [[type, assignees]]
-      : type ? [[type, this.app.bots.filter(bot => bot.platform === type).map(bot => bot.selfId)]]
-        : Object.entries(this.app.servers).map(([type, { bots }]) => [type, bots.map(bot => bot.selfId)])
+  async getAssignedChannels(fields, assignMap = this.app.getSelfIds()) {
     const channels = await this.channel.find({
-      $or: idMap.map<any>(([type, ids]) => ({ type, assignee: { $in: ids } })),
+      $or: Object.entries(assignMap).map<any>(([type, ids]) => ({ type, assignee: { $in: ids } })),
     }).project(projection(fields)).toArray()
     return channels.map(channel => ({ ...channel, id: `${channel.type}:${channel.pid}` }))
   },

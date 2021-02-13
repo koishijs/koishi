@@ -15,7 +15,7 @@ export function apply(ctx: Context) {
   ctx = ctx.group()
 
   ctx.on('connect', async () => {
-    const groups = await ctx.database.getChannelList(['subscribe'])
+    const groups = await ctx.database.getAssignedChannels(['subscribe'])
     const idSet = new Set<number>()
     for (const { subscribe } of groups) {
       for (const uid in subscribe) {

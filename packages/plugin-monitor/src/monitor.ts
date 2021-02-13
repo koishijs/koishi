@@ -121,7 +121,7 @@ export class Daemon {
     this.isLive = true
     const { url, content, image, title } = info
     const app = this.monitor.app
-    const channels = await app.database.getChannelList(['id', 'flag', 'assignee', 'subscribe'])
+    const channels = await app.database.getAssignedChannels(['id', 'flag', 'assignee', 'subscribe'])
     channels.forEach(async (group) => {
       const { id, flag, assignee, subscribe } = group
       const [type, channelId] = id.split(':')

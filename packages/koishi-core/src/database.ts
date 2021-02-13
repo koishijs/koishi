@@ -96,7 +96,7 @@ export interface Database {
   getChannel<K extends Channel.Field>(type: Platform, id: string, fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>>
   getChannel<K extends Channel.Field>(type: Platform, ids: readonly string[], fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>[]>
   getChannel<K extends Channel.Field>(type: Platform, id: MaybeArray<string>, fields?: readonly K[]): Promise<any>
-  getChannelList<K extends Channel.Field>(fields?: readonly K[], type?: Platform, assignees?: readonly string[]): Promise<Pick<Channel, K>[]>
+  getAssignedChannels<K extends Channel.Field>(fields?: readonly K[], assignMap?: Record<string, readonly string[]>): Promise<Pick<Channel, K>[]>
   setChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
   createChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
   removeChannel(type: Platform, id: string): Promise<void>
