@@ -1,7 +1,7 @@
 import { config, context, internal } from 'koishi-plugin-eval/dist/worker'
 import { resolve, posix, dirname } from 'path'
 import { promises as fs } from 'fs'
-import { deserialize, serialize } from 'v8'
+import { deserialize, serialize, cachedDataVersionTag } from 'v8'
 import { Logger, noop } from 'koishi-utils'
 import json5 from 'json5'
 import ts from 'typescript'
@@ -75,7 +75,8 @@ interface FileCache {
   cachedData: Buffer
 }
 
-const CACHE_VERSION = 1
+const CACHE_TAG = 1
+const V8_TAG = cachedDataVersionTag()
 const files: Record<string, FileCache> = {}
 const cachedFiles: Record<string, FileCache> = {}
 const tsconfigPath = resolve(config.moduleRoot, 'tsconfig.json')
@@ -91,7 +92,7 @@ export async function prepare() {
     }),
     fs.readFile(cachePath).then((source) => {
       const data = deserialize(source)
-      if (data.version === CACHE_VERSION) {
+      if (data.tag === CACHE_TAG && data.v8tag === V8_TAG) {
         Object.assign(cachedFiles, data.files)
       }
     }, noop),
@@ -116,7 +117,7 @@ function exposeGlobal(name: string, namespace: {}) {
 
 async function saveCache() {
   await fs.mkdir(dirname(cachePath), { recursive: true })
-  await fs.writeFile(cachePath, serialize({ version: CACHE_VERSION, files }))
+  await fs.writeFile(cachePath, serialize({ tag: CACHE_TAG, v8tag: V8_TAG, files }))
 }
 
 async function loadSource(path: string): Promise<[source: string, identifier: string]> {
