@@ -11,6 +11,7 @@ const { args, options } = cac()
   .option('-1, --major', '')
   .option('-2, --minor', '')
   .option('-3, --patch', '')
+  .option('-a, --all', '')
   .option('-v, --version <ver>', '')
   .option('-l, --local', '')
   .option('-r, --recursive', '')
@@ -128,6 +129,11 @@ const flag = (() => {
   }
 })()
 
+if (!args.length && !options.all) {
+  console.log('no package specified')
+  process.exit()
+}
+
 ;(async () => {
   const folders = await getWorkspaces()
   const spinner = ora()
@@ -139,11 +145,15 @@ const flag = (() => {
   }))
   spinner.succeed()
 
-  args.forEach((name) => {
-    const pkg = getPackage(name)
-    if (!pkg) throw new Error(`${name} not found`)
-    bump(pkg, flag, options.recursive)
-  })
+  if (options.all) {
+    bump(getPackage('utils'), flag, true)
+  } else {
+    args.forEach((name) => {
+      const pkg = getPackage(name)
+      if (!pkg) throw new Error(`${name} not found`)
+      bump(pkg, flag, options.recursive)
+    })
+  }
 
   await Promise.all(each((pkg) => {
     if (!pkg.dirty) return
