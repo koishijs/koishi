@@ -1,7 +1,7 @@
 /* eslint-disable no-irregular-whitespace */
 
 import { Argv, Context, Session } from 'koishi-core'
-import { escapeRegExp } from 'koishi-utils'
+import { escapeRegExp, merge } from 'koishi-utils'
 import { Dialogue } from './utils'
 import internal from './internal'
 import receiver from './receiver'
@@ -138,27 +138,18 @@ function registerPrefix(ctx: Context, prefix: string) {
   })
 }
 
-const defaultConfig: Config = {
-  prefix: '#',
-  authority: {
-    base: 2,
-    admin: 3,
-    context: 3,
-    frozen: 4,
-    regExp: 3,
-    writer: 2,
-  },
-}
-
 export function apply(ctx: Context, config: Config = {}) {
-  config = {
-    ...defaultConfig,
-    ...config,
+  config = merge(config, {
+    prefix: '#',
     authority: {
-      ...defaultConfig.authority,
-      ...config.authority,
+      base: 2,
+      admin: 3,
+      context: 3,
+      frozen: 4,
+      regExp: 3,
+      writer: 2,
     },
-  }
+  })
 
   registerPrefix(ctx, config.prefix)
 

@@ -33,7 +33,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const { app, database } = ctx
   const { appId, redirect, webhook } = config
 
-  const github = new GitHub(config)
+  const github = new GitHub(app, config)
   defineProperty(app, 'github', github)
 
   app.router.get(config.authorize, async (ctx) => {

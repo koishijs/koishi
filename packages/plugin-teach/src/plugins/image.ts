@@ -14,7 +14,7 @@ declare module '../utils' {
       uploadKey?: string
       uploadPath?: string
       uploadServer?: string
-      requestConfig?: AxiosRequestConfig
+      axiosConfig?: AxiosRequestConfig
     }
   }
 }
@@ -28,7 +28,8 @@ const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
   const logger = ctx.logger('teach')
-  const { uploadKey, imagePath, imageServer, uploadPath, uploadServer, requestConfig } = config
+  const { uploadKey, imagePath, imageServer, uploadPath, uploadServer } = config
+  const axiosConfig = { ...ctx.app.options.axiosConfig, ...config.axiosConfig }
 
   let downloadFile: (file: string, url: string) => Promise<void>
   let getStatus: () => Promise<ImageServerStatus>
@@ -40,11 +41,11 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         params.salt = Random.uuid()
         params.sign = createHmac('sha1', uploadKey).update(file + params.salt).digest('hex')
       }
-      await axios.get(uploadServer, { params, ...requestConfig })
+      await axios.get(uploadServer, { params, ...axiosConfig })
     }
 
     getStatus = async () => {
-      const { data } = await axios.get(uploadServer, requestConfig)
+      const { data } = await axios.get(uploadServer, axiosConfig)
       return data
     }
   }
@@ -57,7 +58,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     downloadFile = async (file, url) => {
       const path = resolve(imagePath, file)
       if (!existsSync(path)) {
-        const { data } = await axios.get<ArrayBuffer>(url, { responseType: 'arraybuffer', ...requestConfig })
+        const { data } = await axios.get<ArrayBuffer>(url, { responseType: 'arraybuffer', ...axiosConfig })
         await fs.writeFile(path, Buffer.from(data))
         totalCount += 1
         totalSize += data.byteLength

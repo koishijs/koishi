@@ -2,7 +2,7 @@
 
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
-import { Session, User } from 'koishi-core'
+import { App, Session, User } from 'koishi-core'
 import { CQCode, Logger } from 'koishi-utils'
 import {} from 'koishi-plugin-puppeteer'
 
@@ -47,7 +47,7 @@ type ReplySession = Session<'ghAccessToken' | 'ghRefreshToken'>
 const logger = new Logger('github')
 
 export class GitHub {
-  constructor(public config: Config) {}
+  constructor(public app: App, public config: Config) {}
 
   async getTokens(params: any) {
     const { data } = await axios.post<OAuth>('https://github.com/login/oauth/access_token', {
@@ -55,6 +55,7 @@ export class GitHub {
       client_secret: this.config.appSecret,
       ...params,
     }, {
+      ...this.app.options.axiosConfig,
       headers: { Accept: 'application/json' },
     })
     return data
@@ -63,6 +64,7 @@ export class GitHub {
   private async _request(url: string, method: Method, session: ReplySession, body: any, headers?: Record<string, any>) {
     logger.debug(method, url, body)
     await axios.post(url, body, {
+      ...this.app.options.axiosConfig,
       timeout: this.config.requestTimeout,
       headers: {
         accept: 'application/vnd.github.v3+json',
