@@ -327,9 +327,9 @@ export class Session<
     return argv.command
   }
 
-  async execute(content: string, next?: NextFunction): Promise<string>
-  async execute(argv: Argv, next?: NextFunction): Promise<string>
-  async execute(argv: string | Argv, next?: NextFunction): Promise<string> {
+  async execute(content: string, next?: true | NextFunction): Promise<string>
+  async execute(argv: Argv, next?: true | NextFunction): Promise<string>
+  async execute(argv: string | Argv, next?: true | NextFunction): Promise<string> {
     if (typeof argv === 'string') argv = Argv.parse(argv)
 
     argv.session = this
@@ -362,8 +362,13 @@ export class Session<
       await this.observeUser(this.collect('user', argv))
     }
 
+    if (next === true) {
+      argv.inline = true
+      next = async () => {}
+    }
+
     const result = await argv.command.execute(argv, next)
-    if (!argv.parent) await this.send(result)
+    if (!argv.inline) await this.send(result)
     return result
   }
 

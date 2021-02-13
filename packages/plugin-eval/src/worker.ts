@@ -74,7 +74,7 @@ export interface Context {
   user: User.Observed<any>
   channel: Channel.Observed<any>
   send(...param: any[]): Promise<void>
-  exec(message: string): Promise<void>
+  exec(message: string): Promise<string>
 }
 
 export const Context = ({ $uuid, user, userWritable, channel, channelWritable }: ContextOptions): Context => ({

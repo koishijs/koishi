@@ -127,9 +127,10 @@ export class MainAPI {
     const session = this.getSession(uuid)
     const send = session.send
     const sendQueued = session.sendQueued
-    await session.execute(message)
+    const result = await session.execute(message, true)
     session.sendQueued = sendQueued
     session.send = send
+    return result
   }
 
   async send(uuid: string, message: string) {
