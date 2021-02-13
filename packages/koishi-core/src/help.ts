@@ -1,8 +1,8 @@
-import { getUsage, getUsageName, ValidationField } from './validate'
-import { TableType } from '../database'
-import { Command } from '../command'
-import { Session, FieldCollector } from '../session'
-import { App } from '../app'
+import { getUsage, getUsageName, ValidationField } from './plugins/validate'
+import { TableType } from './database'
+import { Command } from './command'
+import { Session, FieldCollector } from './session'
+import { App } from './app'
 import { template } from 'koishi-utils'
 
 interface HelpConfig {
@@ -184,7 +184,7 @@ template.set('internal', {
   'insufficient-arguments': '缺少参数，请检查指令语法。',
   'redunant-arguments': '存在多余参数，请检查指令语法。',
   'invalid-argument': '参数 {0} 输入无效，{1}',
-  'unknown-option': '存在未知选项 %s，请检查指令语法。',
+  'unknown-option': '存在未知选项 {0}，请检查指令语法。',
   'invalid-option': '选项 {0} 输入无效，{1}',
   'check-syntax': '请检查语法。',
 
