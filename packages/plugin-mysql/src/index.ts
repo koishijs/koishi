@@ -38,7 +38,7 @@ extendDatabase(MysqlDatabase, {
     await this.query(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
       ON DUPLICATE KEY UPDATE ${assignments}`,
-      ['user', ...this.formatValues('user', data, newKeys)],
+      ['user', ...this.formatValues('user', user, keys)],
     )
   },
 
@@ -85,10 +85,11 @@ extendDatabase(MysqlDatabase, {
     })
     const channel = Object.assign(Channel.create(type, pid), data)
     const keys = Object.keys(channel)
+    console.log(assignments)
     await this.query(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
       ON DUPLICATE KEY UPDATE ${assignments.join(', ')}`,
-      ['channel', ...this.formatValues('channel', data, newKeys)],
+      ['channel', ...this.formatValues('channel', channel, keys)],
     )
   },
 

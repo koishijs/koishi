@@ -232,8 +232,9 @@ export function apply(ctx: Context) {
       const authority = Number(value)
       if (!isInteger(authority) || authority < 0) return '参数错误。'
       if (authority >= session.$user.authority) return template('internal.low-authority')
-      await ctx.database.createUser(session.platform, session.userId, { authority })
+      await ctx.database.createUser(session.platform, target[session.platform], { authority })
       target._merge({ authority })
+      return template('admin.user-updated')
     })
 
   ctx.command('user.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
@@ -313,6 +314,7 @@ export function apply(ctx: Context) {
       if (!assignee) return '参数错误。'
       await ctx.database.createChannel(session.platform, session.channelId, { assignee })
       target._merge({ assignee })
+      return template('admin.channel-updated')
     })
 
   ctx.command('channel.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
