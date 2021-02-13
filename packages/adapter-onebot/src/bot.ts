@@ -260,6 +260,7 @@ export class CQBot extends Bot {
     renameProperty(data, 'timestamp', 'time')
     renameProperty(data, 'content', 'message')
     renameProperty(data, 'author', 'sender')
+    data.messageId = '' + data.messageId
     CQBot.adaptAuthor(data.author)
   }
 
