@@ -1,3 +1,4 @@
+import { createReadStream } from 'fs'
 import { camelCase, Logger, snakeCase, renameProperty, CQCode, assertProperty } from 'koishi-utils'
 import { Bot, BotStatusCode, Session, GroupInfo, GroupMemberInfo, UserInfo, App, BotOptions } from 'koishi-core'
 import Telegram from './interface'
@@ -31,7 +32,18 @@ export interface TelegramResponse {
 }
 
 export interface TelegramBot {
-  _request?(action: string, params: Record<string, any>): Promise<TelegramResponse>
+  _request?(action: string, params: Record<string, any>, field?: string, content?: Buffer, filename?: string): Promise<TelegramResponse>
+}
+
+function maybeFile(payload: Record<string, any>, field: string) {
+  if (!payload[field]) return [payload]
+  let content
+  const [schema, data] = payload[field].split('://')
+  if (['base64', 'file'].includes(schema)) {
+    content = (schema === 'base64' ? Buffer.from(data, 'base64') : createReadStream(data))
+    delete payload[field]
+  }
+  return [payload, field, content]
 }
 
 export class TelegramBot extends Bot {
@@ -62,16 +74,17 @@ export class TelegramBot extends Bot {
     await this.sendMessage(session.channelId, content)
   }
 
-  async get<T = any>(action: string, params = {}, silent = false): Promise<T> {
+  async get<T = any>(action: string, params = {}, field = '', content: Buffer = null): Promise<T> {
     logger.debug('[request] %s %o', action, params)
-    const response = await this._request(action, snakeCase(params))
+    const response = await this._request(action, snakeCase(params), field, content)
     logger.debug('[response] %o', response)
     const { ok, result } = response
-    if (ok && !silent) return camelCase(result)
+    if (ok) return camelCase(result)
     throw new SenderError(params, action, -1, this.selfId)
   }
 
   private async _sendMessage(chatId: string, content: string) {
+    console.log(chatId, content)
     const chain = CQCode.parseAll(content)
     const payload = { chatId, caption: '', photo: '' }
     let result: Telegram.Message
@@ -80,21 +93,21 @@ export class TelegramBot extends Bot {
         payload.caption += node
       } else if (node.type === 'image') {
         if (payload.photo) {
-          result = await this.get('sendPhoto', payload)
+          result = await this.get('sendPhoto', ...maybeFile(payload, 'photo'))
           payload.caption = ''
           payload.photo = ''
         }
-        payload.photo = node.data.url
+        payload.photo = node.data.url || node.data.file
       }
     }
     if (payload.photo) {
-      result = await this.get('sendPhoto', payload)
+      result = await this.get('sendPhoto', ...maybeFile(payload, 'photo'))
       payload.caption = ''
       payload.photo = ''
     } else if (payload.caption) {
       result = await this.get('sendMessage', { chatId, text: payload.caption })
     }
-    return '' + result.messageId
+    return result ? ('' + result.messageId) : null
   }
 
   async sendMessage(chatId: string, content: string) {

@@ -1,4 +1,5 @@
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
+import FormData from 'form-data'
 import { App, Server, Session } from 'koishi-core'
 import { assertProperty, camelCase, Logger } from 'koishi-utils'
 import { TelegramBot } from './bot'
@@ -22,12 +23,20 @@ export default class HttpServer extends Server<'telegram'> {
   private async _listen(bot: TelegramBot) {
     bot.ready = true
     const { endpoint, selfUrl, path, axiosConfig } = this.app.options.telegram
-    bot._request = async (action, params) => {
-      const headers = { 'Contsent-Type': 'application/json' } as any
-      const { data } = await axios.post(`${endpoint}/bot${bot.token}/${action}`, params, {
+    bot._request = async (action, params, field, content, filename = 'file') => {
+      const payload = new FormData()
+      for (const key in params) {
+        payload.append(key, params[key].toString())
+      }
+      if (field) payload.append(field, content, filename)
+      const data = await axios.post(`${endpoint}/bot${bot.token}/${action}`, payload, {
         ...this.app.options.axiosConfig,
         ...axiosConfig,
-        headers,
+        headers: payload.getHeaders(),
+      }).then(res => {
+        return res.data
+      }).catch((e: AxiosError) => {
+        return e.response.data
       })
       return data
     }
@@ -46,10 +55,10 @@ export default class HttpServer extends Server<'telegram'> {
     this.app.router.post(path, async (ctx) => {
       logger.debug('receive %s', JSON.stringify(ctx.request.body))
       const payload = camelCase<Telegram.Update>(ctx.request.body)
-      const { token } = ctx.request.query
+      const token = ctx.request.query.token as string
       const [selfId] = token.split(':')
       const bot = this.bots[selfId]
-      if (!bot?.token === token) return ctx.status = 403
+      if (!(bot?.token === token)) return ctx.status = 403
 
       ctx.body = 'OK'
       const body: Partial<Session> = { selfId, platform: 'telegram' }
