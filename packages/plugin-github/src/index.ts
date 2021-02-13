@@ -1,10 +1,11 @@
 /* eslint-disable camelcase */
 /* eslint-disable quote-props */
 
+import { createHmac } from 'crypto'
 import { Context } from 'koishi-core'
 import { camelize, defineProperty, Time } from 'koishi-utils'
 import { encode } from 'querystring'
-import { addListeners, defaultEvents } from './events'
+import { CommonPayload, addListeners, defaultEvents } from './events'
 import { Config, GitHub, ReplyHandler, EventData } from './server'
 
 export * from './server'
@@ -79,11 +80,20 @@ export function apply(ctx: Context, config: Config = {}) {
 
   const history: Record<string, EventData> = {}
 
-  app.router.post(webhook, (ctx, next) => {
-    // workaround @octokit/webhooks for koa
-    ctx.req['body'] = ctx.request.body
+  app.router.post(webhook, (ctx) => {
+    const event = ctx.headers['x-github-event']
+    const signature = ctx.headers['x-hub-signature-256']
+    const id = ctx.headers['x-github-delivery']
+    app.logger('github').debug('received %s (%s)', event, id)
+    if (signature !== `sha256=${createHmac('sha256', github.config.secret).update(ctx.request.rawBody).digest('hex')}`) {
+      return ctx.status = 403
+    }
     ctx.status = 200
-    return github.middleware(ctx.req, ctx.res, next)
+    const payload = JSON.parse(ctx.request.body.payload)
+    if (payload.action) {
+      app.emit(`github/${event}/${payload.action}` as any, payload)
+    }
+    app.emit(`github/${event}` as any, payload)
   })
 
   ctx.before('attach-user', (session, fields) => {
@@ -116,8 +126,8 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   addListeners((event, handler) => {
-    const base = camelize(event.split('.', 1)[0])
-    github.on(event, async ({ payload }) => {
+    const base = camelize(event.split('/', 1)[0])
+    app.on(`github/${event}` as any, async (payload: CommonPayload) => {
       // step 1: filter repository
       const groupIds = config.repos[payload.repository.full_name]
       if (!groupIds) return
@@ -133,10 +143,11 @@ export function apply(ctx: Context, config: Config = {}) {
       }
 
       // step 3: handle event
-      const result = handler(payload)
+      const result = handler(payload as any)
       if (!result) return
 
       // step 4: broadcast message
+      app.logger('github').debug('broadcast', result[0])
       const messageIds = await ctx.broadcast(groupIds, config.messagePrefix + result[0])
       const hexIds = messageIds.map(id => id.slice(0, 6))
 

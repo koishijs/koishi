@@ -1,6 +1,5 @@
 /* eslint-disable camelcase */
 
-import { Webhooks } from '@octokit/webhooks'
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
 import { Session, User } from 'koishi-core'
@@ -43,22 +42,12 @@ export interface OAuth {
   scope: string
 }
 
-interface RequestOptions {
-  url: string
-  method: Method
-  session: ReplySession
-  body: any
-  headers?: Record<string, any>
-}
-
 type ReplySession = Session<'ghAccessToken' | 'ghRefreshToken'>
 
 const logger = new Logger('github')
 
-export class GitHub extends Webhooks {
-  constructor(public config: Config) {
-    super({ ...config, path: config.webhook })
-  }
+export class GitHub {
+  constructor(public config: Config) {}
 
   async getTokens(params: any) {
     const { data } = await axios.post<OAuth>('https://github.com/login/oauth/access_token', {

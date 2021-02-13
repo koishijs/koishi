@@ -286,9 +286,9 @@ export class CQBot extends Bot {
     const session = this.createSession('group', 'group', groupId, content)
     if (this.app.bail(session, 'before-send', session)) return
     const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message: session.content, autoEscape })
-    session.messageId = messageId
+    session.messageId = '' + messageId
     this.app.emit(session, 'send', session)
-    return messageId
+    return '' + messageId
   }
 
   sendGroupMessageAsync(groupId: string, content: string, autoEscape = false) {
@@ -303,9 +303,9 @@ export class CQBot extends Bot {
     const session = this.createSession('private', 'user', userId, content)
     if (this.app.bail(session, 'before-send', session)) return
     const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message: session.content, autoEscape })
-    session.messageId = messageId
+    session.messageId = '' + messageId
     this.app.emit(session, 'send', session)
-    return messageId
+    return '' + messageId
   }
 
   sendPrivateMessageAsync(userId: string, content: string, autoEscape = false) {
