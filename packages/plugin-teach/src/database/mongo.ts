@@ -1,7 +1,7 @@
 import { Context, extendDatabase } from 'koishi-core'
 import { clone, defineProperty, Observed, pick } from 'koishi-utils'
-import { FilterQuery } from 'mongodb'
-import MongoDatabase from 'koishi-plugin-mongo/dist/database'
+import type { FilterQuery } from 'mongodb'
+import type MongoDatabase from 'koishi-plugin-mongo/dist/database'
 import { Dialogue, DialogueTest, equal } from '../utils'
 
 declare module 'koishi-core/dist/context' {

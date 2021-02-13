@@ -45,12 +45,12 @@ export namespace Session {
     }
   }
 
-  interface GroupMemberChangeType {
+  export interface GroupMemberChangeType {
     'active': {}
     'passive': {}
   }
 
-  interface MessageType {
+  export interface MessageType {
     'private': {}
     'group': {}
   }

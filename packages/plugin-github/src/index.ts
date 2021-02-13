@@ -84,14 +84,15 @@ export function apply(ctx: Context, config: Config = {}) {
     const event = ctx.headers['x-github-event']
     const signature = ctx.headers['x-hub-signature-256']
     const id = ctx.headers['x-github-delivery']
-    app.logger('github').debug('received %s (%s)', event, id)
+    const payload = JSON.parse(ctx.request.body.payload)
+    const fullEvent = payload.action ? `${event}/${payload.action}` : event
+    app.logger('github').debug('received %s (%s)', fullEvent, id)
     if (signature !== `sha256=${createHmac('sha256', github.config.secret).update(ctx.request.rawBody).digest('hex')}`) {
       return ctx.status = 403
     }
     ctx.status = 200
-    const payload = JSON.parse(ctx.request.body.payload)
     if (payload.action) {
-      app.emit(`github/${event}/${payload.action}` as any, payload)
+      app.emit(`github/${fullEvent}` as any, payload)
     }
     app.emit(`github/${event}` as any, payload)
   })
@@ -147,7 +148,7 @@ export function apply(ctx: Context, config: Config = {}) {
       if (!result) return
 
       // step 4: broadcast message
-      app.logger('github').debug('broadcast', result[0])
+      app.logger('github').debug('broadcast', result[0].split('\n', 1)[0])
       const messageIds = await ctx.broadcast(groupIds, config.messagePrefix + result[0])
       const hexIds = messageIds.map(id => id.slice(0, 6))
 

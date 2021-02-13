@@ -1,4 +1,4 @@
-import { launch, Browser } from 'puppeteer-core'
+import puppeteer from 'puppeteer-core'
 import { Context } from 'koishi-core'
 import { Logger, defineProperty, noop } from 'koishi-utils'
 import { escape } from 'querystring'
@@ -19,7 +19,7 @@ declare module 'puppeteer-core/lib/types' {
 
 declare module 'koishi-core/dist/app' {
   interface App {
-    browser: Browser
+    browser: puppeteer.Browser
   }
 }
 
@@ -32,7 +32,7 @@ declare module 'koishi-core/dist/context' {
 const logger = new Logger('puppeteer')
 
 export interface Config {
-  browser?: Parameters<typeof launch>[0]
+  browser?: Parameters<typeof puppeteer.launch>[0]
   loadTimeout?: number
   idleTimeout?: number
   maxLength?: number
@@ -60,7 +60,7 @@ export function apply(ctx: Context, config: Config = {}) {
         const findChrome = require('chrome-finder')
         logger.info('chrome executable found at %c', config.browser.executablePath = findChrome())
       }
-      defineProperty(app, 'browser', await launch(config.browser))
+      defineProperty(app, 'browser', await puppeteer.launch(config.browser))
       logger.info('browser launched')
     } catch (error) {
       logger.error(error)

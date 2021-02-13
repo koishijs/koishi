@@ -37,7 +37,7 @@
     "koishi-utils": "^3.2.3"
   },
   "dependencies": {
-    "@octokit/webhooks": "^8.0.3",
+    "@octokit/webhooks-definitions": "^3.60.0",
     "axios": "^0.21.1"
   }
 }
