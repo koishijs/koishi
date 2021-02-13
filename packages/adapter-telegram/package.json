@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
+    "form-data": "^3.0.0",
     "koishi-utils": "^3.2.3"
   }
 }
