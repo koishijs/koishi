@@ -1,9 +1,21 @@
-import { launch, LaunchOptions, Browser } from 'puppeteer-core'
+import { launch, Browser } from 'puppeteer-core'
 import { Context } from 'koishi-core'
 import { Logger, defineProperty, noop } from 'koishi-utils'
 import { escape } from 'querystring'
 import { PNG } from 'pngjs'
 export * from './svg'
+
+// workaround puppeteer typings downgrade
+declare module 'puppeteer-core/lib/types' {
+  interface Base64ScreenshotOptions extends ScreenshotOptions {
+    encoding: 'base64'
+  }
+
+  interface Page {
+    screenshot(options?: Base64ScreenshotOptions): Promise<string>;
+    screenshot(options?: ScreenshotOptions): Promise<Buffer>;
+  }
+}
 
 declare module 'koishi-core/dist/app' {
   interface App {
@@ -20,7 +32,7 @@ declare module 'koishi-core/dist/context' {
 const logger = new Logger('puppeteer')
 
 export interface Config {
-  browser?: LaunchOptions
+  browser?: Parameters<typeof launch>[0]
   loadTimeout?: number
   idleTimeout?: number
   maxLength?: number
