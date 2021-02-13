@@ -48,11 +48,9 @@ export namespace Argv {
   interpolate('$(', ')')
 
   export class Tokenizer {
-    private sepRE: RegExp
     private bracs: Record<string, Interpolation>
 
-    constructor(public sep = '\\s') {
-      this.sepRE = new RegExp(`^${sep}+$`)
+    constructor() {
       this.bracs = Object.create(bracs)
     }
 
@@ -67,7 +65,7 @@ export namespace Argv {
       let content = ''
       if (quote) {
         source = source.slice(1)
-        stopReg += `|${quote}(?=${stopReg})`
+        stopReg = `${quote}(?=${stopReg})|$`
       }
       stopReg += `|${Object.keys({ ...this.bracs, ...bracs }).map(escapeRegExp).join('|')}`
       const regExp = new RegExp(stopReg)
@@ -100,7 +98,7 @@ export namespace Argv {
     parse(source: string, terminator = ''): Argv {
       const tokens: Token[] = []
       let rest = source, term = ''
-      const stopReg = `${this.sep}+|[${escapeRegExp(terminator)}]${this.sep}*|$`
+      const stopReg = `\\s+|[${escapeRegExp(terminator)}]\\s*|$`
       // eslint-disable-next-line no-unmodified-loop-condition
       while (rest && !(terminator && rest.startsWith(terminator))) {
         const token = this.parseToken(rest, stopReg)
@@ -116,7 +114,7 @@ export namespace Argv {
 
     stringify(argv: Argv) {
       return argv.tokens.map((token) => {
-        return this.sepRE.test(token.terminator)
+        return /^\s+$/.test(token.terminator)
           ? token.content + token.terminator
           : token.content
       }).join('')
