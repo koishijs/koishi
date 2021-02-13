@@ -53,7 +53,7 @@ export namespace Argv {
 
     constructor(public sep = '\\s') {
       this.sepRE = new RegExp(`^${sep}+$`)
-      this.bracs = { ...bracs }
+      this.bracs = Object.create(bracs)
     }
 
     interpolate(initiator: string, terminator: string, parse?: (source: string) => Argv) {
@@ -69,7 +69,7 @@ export namespace Argv {
         source = source.slice(1)
         stopReg += `|${quote}(?=${stopReg})`
       }
-      stopReg += `|${Object.keys(this.bracs).map(escapeRegExp).join('|')}`
+      stopReg += `|${Object.keys({ ...this.bracs, ...bracs }).map(escapeRegExp).join('|')}`
       const regExp = new RegExp(stopReg)
       while (true) {
         const capture = regExp.exec(source)
