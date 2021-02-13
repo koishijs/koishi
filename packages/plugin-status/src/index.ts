@@ -77,15 +77,16 @@ export interface Status extends ActiveData {
 export interface BotStatus {
   label?: string
   selfId: string
+  platform: Platform
   code: BotStatusCode
   rate?: number
 }
 
 type StatusCallback = (this: App, status: Status, config: Config) => void | Promise<void>
-const callbacks: [callback: StatusCallback, local: boolean][] = []
+const callbacks: StatusCallback[] = []
 
-export function extend(callback: StatusCallback, local = false) {
-  callbacks.push([callback, local])
+export function extend(callback: StatusCallback) {
+  callbacks.push(callback)
 }
 
 const startTime = Date.now()
@@ -157,19 +158,28 @@ export function apply(ctx: Context, config: Config = {}) {
     .shortcut('你的状况', { prefix: true })
     .shortcut('运行情况', { prefix: true })
     .shortcut('运行状态', { prefix: true })
-    .action(async ({ session }) => {
-      const status = await getStatus(session.platform)
+    .option('all', '-a  查看全部平台')
+    .action(async ({ session, options }) => {
+      const status = { ...await getStatus() }
+      if (!options.all) {
+        status.bots = status.bots.filter(bot => bot.platform === session.platform)
+      }
       status.bots.toString = () => {
-        return status.bots.map(bot => interpolate(formatBot, bot)).join('\n')
+        return status.bots.map(bot => {
+          let output = interpolate(formatBot, bot)
+          if (options.all) output = `[${bot.platform}] ` + output
+          return output
+        }).join('\n')
       }
       return interpolate(format, status)
     })
 
-  async function _getStatus(platform?: Platform) {
-    const botList = platform ? app.bots.filter(bot => bot.platform === platform) : app.bots
+  async function _getStatus() {
+    const botList = app.bots
     const [data, bots] = await Promise.all([
       app.database.getActiveData(),
       Promise.all(botList.map(async (bot): Promise<BotStatus> => ({
+        platform: bot.platform,
         selfId: bot.selfId,
         label: bot.label,
         code: await bot.getStatusCode(),
@@ -179,19 +189,17 @@ export function apply(ctx: Context, config: Config = {}) {
     const memory = memoryRate()
     const cpu = { app: appRate, total: usedRate }
     const status: Status = { ...data, bots, memory, cpu, timestamp, startTime }
-    await Promise.all(callbacks.map(([callback, local]) => {
-      if (local || !platform) return callback.call(app, status, config)
-    }))
+    await Promise.all(callbacks.map(callback => callback.call(app, status, config)))
     return status
   }
 
   let cachedStatus: Promise<Status>
   let timestamp: number
 
-  async function getStatus(platform?: Platform): Promise<Status> {
+  async function getStatus(): Promise<Status> {
     const now = Date.now()
     if (now - timestamp < refresh) return cachedStatus
     timestamp = now
-    return cachedStatus = _getStatus(platform)
+    return cachedStatus = _getStatus()
   }
 }
