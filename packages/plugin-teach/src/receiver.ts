@@ -146,8 +146,8 @@ export class MessageBuffer {
     this.original = false
     const send = this.session.send
     const sendQueued = this.session.sendQueued
-    const output = await this.session.execute(argv)
-    await this.session.send(output)
+    argv.inline = false
+    await this.session.execute(argv)
     this.session.sendQueued = sendQueued
     this.session.send = send
     this.original = true
@@ -233,7 +233,6 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
     if (argv.initiator === '$n') {
       await buffer.flush()
     } else {
-      delete argv.parent
       await buffer.execute(argv)
     }
     index = argv.pos
