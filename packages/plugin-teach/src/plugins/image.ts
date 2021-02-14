@@ -78,6 +78,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     ctx.app.router.get(uploadPath, async (ctx) => {
       const { salt, sign, url, file } = ctx.query
       if (!file) return ctx.body = await getStatus()
+      if (Array.isArray(file) || Array.isArray(url)) {
+        return ctx.status = 400
+      }
 
       if (uploadKey) {
         if (!salt || !sign) return ctx.status = 400
