@@ -44,12 +44,30 @@ export function createSession(server: Server, data: any) {
   } else if (data.post_type === 'notice') {
     delete session['noticeType']
     switch (data.notice_type) {
-      case 'group_recall': session.type = 'message-deleted'; session.subtype = 'group'; break
-      case 'friend_recall': session.type = 'message-deleted'; session.subtype = 'private'; break
-      case 'friend_add': session.type = 'friend-added'; break
-      case 'group_upload': session.type = 'group-file-added'; break
-      case 'group_admin': session.type = 'group-member'; session.subtype = 'role'; break
-      case 'group_ban': session.type = 'group-member'; session.subtype = 'ban'; break
+      case 'group_recall':
+        session.type = 'message-deleted'
+        session.subtype = 'group'
+        session.channelId = session.groupId
+        break
+      case 'friend_recall':
+        session.type = 'message-deleted'
+        session.subtype = 'private'
+        session.channelId = `private:${session.userId}`
+        break
+      case 'friend_add':
+        session.type = 'friend-added'
+        break
+      case 'group_upload':
+        session.type = 'group-file-added'
+        break
+      case 'group_admin':
+        session.type = 'group-member'
+        session.subtype = 'role'
+        break
+      case 'group_ban':
+        session.type = 'group-member'
+        session.subtype = 'ban'
+        break
       case 'group_decrease':
         session.type = session.userId === session.selfId ? 'group-deleted' : 'group-member-deleted'
         session.subtype = session.userId === session.operatorId ? 'active' : 'passive'
@@ -60,6 +78,7 @@ export function createSession(server: Server, data: any) {
         break
       case 'notify':
         session.type = 'notice'
+        session.channelId = session.groupId
         session.subtype = paramCase(data.sub_type)
         session.subsubtype = paramCase(data.honor_type)
         break
