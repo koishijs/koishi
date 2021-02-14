@@ -37,7 +37,7 @@ export function apply(ctx: Context, config: Config = {}) {
   defineProperty(app, 'github', github)
 
   app.router.get(config.authorize, async (ctx) => {
-    const targetId = parseInt(ctx.query.state)
+    const targetId = parseInt('' + ctx.query.state)
     if (Number.isNaN(targetId)) {
       ctx.body = 'Invalid targetId'
       return ctx.status = 400
