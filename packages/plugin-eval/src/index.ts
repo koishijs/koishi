@@ -127,18 +127,19 @@ export function apply(ctx: Context, config: Config = {}) {
   }
 
   Argv.interpolate('${', '}', (source) => {
+    const expr = CQCode.unescape(source)
     try {
-      Reflect.construct(Script, [source])
+      Reflect.construct(Script, [expr])
     } catch (e) {
       if (!(e instanceof Error)) throw e
       if (e.message === "Unexpected token '}'") {
         const eLines = e.stack.split('\n')
-        const sLines = source.split('\n')
+        const sLines = expr.split('\n')
         const cap = /\d+$/.exec(eLines[0])
         const row = +cap[0] - 1
         const rest = sLines[row].slice(eLines[2].length) + sLines.slice(row + 1)
         source = sLines.slice(0, row) + sLines[row].slice(0, eLines[2].length - 1)
-        return { source, command, args: [source], rest }
+        return { source, command, args: [source], rest: CQCode.escape(rest) }
       }
     }
     return { source, rest: source, tokens: [] }
