@@ -88,7 +88,7 @@ type MaybeArray<T> = T | readonly T[]
 export interface Database {
   getUser<K extends User.Field, T extends User.Field>(type: T, id: User[T], fields?: readonly K[]): Promise<Pick<User, K | T>>
   getUser<K extends User.Field, T extends User.Field>(type: T, ids: readonly User[T][], fields?: readonly K[]): Promise<Pick<User, K | T>[]>
-  getUser<K extends User.Field>(type: string, id: MaybeArray<string>, fields?: readonly K[]): Promise<any>
+  getUser<K extends User.Field>(type: Platform, id: MaybeArray<string>, fields?: readonly K[]): Promise<any>
   setUser<T extends User.Field>(type: T, id: At<User, T, string>, data: Partial<User>): Promise<void>
   createUser(type: Platform, id: string, data: Partial<User>): Promise<void>
   removeUser<T extends User.Field>(type: T, id: At<User, T, string>): Promise<void>

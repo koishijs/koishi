@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Database, extendDatabase, Context, Channel } from 'koishi-core'
+import { User, Database, extendDatabase, Context, Channel, Platform } from 'koishi-core'
 
 export * from './database'
 export default MongoDatabase
@@ -7,7 +7,7 @@ export default MongoDatabase
 declare module 'koishi-core/dist/database' {
   interface Database extends MongoDatabase { }
   interface Channel {
-    type: string,
+    type: Platform,
     pid: string,
   }
 }
@@ -73,10 +73,13 @@ extendDatabase(MongoDatabase, {
     if (fields && !fields.length) return { [type]: id } as any
     if (Array.isArray(id)) {
       const users = await this.user.find({ [type]: { $in: id } }).project(projection(fields)).toArray()
-      return users.map(unescapeKey)
+      return users.map(data => (data && {
+        ...User.create(type, data[type]), ...unescapeKey(data),
+      }))
     }
     const [data] = await this.user.find({ [type]: id }).project(projection(fields)).toArray()
-    return data && { ...unescapeKey(data), [type]: id }
+    const udoc = User.create(type, id as string)
+    return data && { ...udoc, ...unescapeKey(data), [type]: id }
   },
 
   async setUser(type, id, data) {
@@ -102,18 +105,18 @@ extendDatabase(MongoDatabase, {
       if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` } as any))
       const channels = await this.channel.find({ _id: { $in: pid.map(id => `${type}:${id}`) } })
         .project(projection(fields)).toArray()
-      return channels.map(channel => ({ ...channel, id: `${type}:${channel.pid}` }))
+      return channels.map(channel => ({ ...Channel.create(type, channel.pid), ...channel, id: `${type}:${channel.pid}` }))
     }
     if (fields && !fields.length) return { id: `${type}:${pid}` } as any
     const [data] = await this.channel.find({ type, pid: pid as string }).project(projection(fields)).toArray()
-    return data && { ...data, id: `${type}:${pid}` }
+    return data && { ...Channel.create(type, pid as string), ...data, id: `${type}:${pid}` }
   },
 
   async getAssignedChannels(fields, assignMap = this.app.getSelfIds()) {
     const channels = await this.channel.find({
       $or: Object.entries(assignMap).map<any>(([type, ids]) => ({ type, assignee: { $in: ids } })),
     }).project(projection(fields)).toArray()
-    return channels.map(channel => ({ ...channel, id: `${channel.type}:${channel.pid}` }))
+    return channels.map(channel => ({ ...Channel.create(channel.type, channel.pid), ...channel, id: `${channel.type}:${channel.pid}` }))
   },
 
   async removeChannel(type, pid) {
