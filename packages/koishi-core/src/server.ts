@@ -50,8 +50,7 @@ export abstract class Server<T extends Platform = Platform> {
 
   dispatch(session: Session) {
     if (this.app.status !== AppStatus.open) return
-    const events: string[] = []
-    events.push(session.type)
+    const events: string[] = [session.type]
     if (session.subtype) {
       events.unshift(events[0] + '/' + session.subtype)
       if (session.subsubtype) {

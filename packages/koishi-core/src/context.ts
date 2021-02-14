@@ -3,7 +3,7 @@ import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Database } from './database'
 import { Argv, Domain } from './parser'
-import { Platform, Server } from './server'
+import { Platform, Server, Bot } from './server'
 import { App } from './app'
 import type Router from 'koa-router'
 
@@ -32,6 +32,7 @@ interface Selector<T> extends PartialSeletor<T> {
 export class Context {
   static readonly middleware = Symbol('mid')
 
+  protected _bots: Bot[] & Record<string, Bot>
   protected _router: Router
   protected _database: Database
   protected _servers: Server.Instances
@@ -62,6 +63,10 @@ export class Context {
 
   get servers() {
     return this.app._servers
+  }
+
+  get bots() {
+    return this.app._bots
   }
 
   get database() {
