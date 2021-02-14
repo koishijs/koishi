@@ -240,7 +240,7 @@ export class Session<
   }
 
   async getUser<K extends User.Field = never>(id: string = this.userId, authority = 0, fields: readonly K[] = []) {
-    const user = await this.database.getUser(this.platform, id, fields)
+    const user = await this.database.getUser(this.platform, id as any, fields)
     if (user) return user
     const fallback = User.create(this.platform, id)
     fallback.authority = authority

@@ -68,23 +68,25 @@ function unescapeKey<T extends Partial<User>>(data: T) {
 }
 
 extendDatabase(MongoDatabase, {
-  async getUser(type, id, _fields) {
+  async getUser(_type, id, _fields) {
     const fields = _fields || User.fields
-    if (fields && !fields.length) return { [type]: id } as any
+    if (fields && !fields.length) return { [_type]: id } as any
+    const type = _type === 'id' ? '_id' : _type
     if (Array.isArray(id)) {
       const users = await this.user.find({ [type]: { $in: id } }).project(projection(fields)).toArray()
       return users.map(data => (data && {
-        ...User.create(type, data[type]), ...unescapeKey(data),
+        ...User.create(type as Platform, data[type]), ...unescapeKey(data),
       }))
     }
     const [data] = await this.user.find({ [type]: id }).project(projection(fields)).toArray()
-    const udoc = User.create(type, id as string)
+    const udoc = User.create(_type as Platform, id as number & string)
     return data && { ...udoc, ...unescapeKey(data), [type]: id }
   },
 
-  async setUser(type, id, data) {
+  async setUser(_type, id, data) {
     const [udoc] = await this.user.find({}).sort('_id', -1).limit(1).toArray()
     const uid = udoc ? udoc.id + 1 : 1
+    const type = _type === 'id' ? '_id' : _type
     await this.user.updateOne(
       { [type]: id },
       { $set: escapeKey(data), $setOnInsert: { _id: uid, id: uid } },

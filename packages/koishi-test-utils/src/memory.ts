@@ -53,7 +53,7 @@ export class MemoryDatabase {
 extendDatabase(MemoryDatabase, {
   async getUser(type, id) {
     if (Array.isArray(id)) {
-      return this.$select('user', type as any, id)
+      return this.$select('user', type as any, id) as any
     } else {
       return this.$select('user', type as any, [id])[0]
     }
@@ -77,7 +77,7 @@ extendDatabase(MemoryDatabase, {
     const index = table.findIndex(row => row[type] === id)
     if (index >= 0) return
     this.$create('user', {
-      ...User.create(type as any, id as any),
+      ...User.create(type, id),
       ...clone(data),
     })
   },

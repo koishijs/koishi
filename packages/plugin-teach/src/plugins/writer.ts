@@ -47,7 +47,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     if (options.writer === '0') {
       argv.writer = 0
     } else if (options.writer && !writers.includes(options.writer)) {
-      const user = await ctx.database.getUser(session.platform, options.writer as string, fields)
+      const user = await ctx.database.getUser(session.platform, options.writer, fields) as any
       if (user) {
         writers.push(user.id)
         argv.writer = user.id

@@ -1,5 +1,5 @@
 import * as utils from 'koishi-utils'
-import { Platform, At } from './server'
+import { Platform } from './server'
 
 export type TableType = keyof Tables
 
@@ -24,8 +24,10 @@ export namespace User {
 
   export type Field = keyof User
   export const fields: Field[] = []
+  export type Indexable = Platform | 'name' | 'id'
+  export type IndexType<T extends Indexable> = T extends Platform ? string : User[T];
   export type Observed<K extends Field = Field> = utils.Observed<Pick<User, K>, Promise<void>>
-  type Getter = (type: Platform, id: string) => Partial<User>
+  type Getter = <T extends Indexable>(type: T, id: IndexType<T> | string) => Partial<User>
   const getters: Getter[] = []
 
   export function extend(getter: Getter) {
@@ -40,12 +42,12 @@ export namespace User {
     timers: {},
   }))
 
-  export function create(type: Platform, id: string) {
-    const result = { [type]: id } as User
+  export function create<T extends Indexable>(type: T, id: IndexType<T> | string) {
+    const result = { [type]: id } as Partial<User>
     for (const getter of getters) {
       Object.assign(result, getter(type, id))
     }
-    return result
+    return result as User
   }
 }
 
@@ -86,12 +88,11 @@ export namespace Channel {
 type MaybeArray<T> = T | readonly T[]
 
 export interface Database {
-  getUser<K extends User.Field, T extends User.Field>(type: T, id: User[T], fields?: readonly K[]): Promise<Pick<User, K | T>>
-  getUser<K extends User.Field, T extends User.Field>(type: T, ids: readonly User[T][], fields?: readonly K[]): Promise<Pick<User, K | T>[]>
-  getUser<K extends User.Field>(type: Platform, id: MaybeArray<string>, fields?: readonly K[]): Promise<any>
-  setUser<T extends User.Field>(type: T, id: At<User, T, string>, data: Partial<User>): Promise<void>
-  createUser(type: Platform, id: string, data: Partial<User>): Promise<void>
-  removeUser<T extends User.Field>(type: T, id: At<User, T, string>): Promise<void>
+  getUser<K extends User.Field, T extends User.Indexable>(type: T, id: User.IndexType<T>, fields?: readonly K[]): Promise<Pick<User, K | T>>
+  getUser<K extends User.Field, T extends User.Indexable>(type: T, ids: readonly User.IndexType<T>[], fields?: readonly K[]): Promise<Pick<User, K | T>[]>
+  setUser<T extends User.Indexable>(type: T, id: User.IndexType<T>, data: Partial<User>): Promise<void>
+  createUser<T extends User.Indexable>(type: T, id: User.IndexType<T>, data: Partial<User>): Promise<void>
+  removeUser<T extends User.Indexable>(type: T, id: User.IndexType<T>): Promise<void>
 
   getChannel<K extends Channel.Field>(type: Platform, id: string, fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>>
   getChannel<K extends Channel.Field>(type: Platform, ids: readonly string[], fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>[]>
