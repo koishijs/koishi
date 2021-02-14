@@ -142,11 +142,12 @@ export class MessageBuffer {
     return this._flush(this.buffer)
   }
 
-  async run(callback: () => Promise<any>) {
+  async execute(argv: Argv) {
     this.original = false
     const send = this.session.send
     const sendQueued = this.session.sendQueued
-    await callback()
+    const output = await this.session.execute(argv)
+    await this.session.send(output)
     this.session.sendQueued = sendQueued
     this.session.send = send
     this.original = true
@@ -233,7 +234,7 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
       await buffer.flush()
     } else {
       delete argv.parent
-      await buffer.run(() => session.execute(argv))
+      await buffer.execute(argv)
     }
     index = argv.pos
   }
