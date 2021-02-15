@@ -1,4 +1,4 @@
-import { App, Server, AppStatus } from 'koishi-core'
+import { App, Server } from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { CQBot } from './bot'
 import type WebSocket from 'ws'
@@ -32,7 +32,7 @@ export default class WsClient extends Server<'onebot'> {
 
       socket.on('close', (code) => {
         this._sockets.delete(socket)
-        if (this.app.status !== AppStatus.open || code === 1005) return
+        if (this.app.status !== App.Status.open || code === 1005) return
 
         const message = `failed to connect to ${server}`
         if (!retryInterval || _retryCount >= retryTimes) {
@@ -42,7 +42,7 @@ export default class WsClient extends Server<'onebot'> {
         _retryCount++
         logger.warn(`${message}, will retry in ${ms(retryInterval)}...`)
         setTimeout(() => {
-          if (this.app.status === AppStatus.open) connect(resolve, reject)
+          if (this.app.status === App.Status.open) connect(resolve, reject)
         }, retryInterval)
       })
 

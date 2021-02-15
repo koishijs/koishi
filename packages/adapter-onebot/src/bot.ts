@@ -1,5 +1,5 @@
 import { camelCase, Logger, snakeCase, capitalize, renameProperty } from 'koishi-utils'
-import { Bot, AccountInfo, StatusInfo, StrangerInfo, BotStatusCode, Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo, AuthorInfo } from 'koishi-core'
+import { Bot, AccountInfo, StatusInfo, StrangerInfo, Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo, AuthorInfo } from 'koishi-core'
 
 declare module 'koishi-core/dist/server' {
   namespace Bot {
@@ -365,12 +365,12 @@ export class CQBot extends Bot {
   }
 
   async getStatusCode() {
-    if (!this.ready) return BotStatusCode.BOT_IDLE
+    if (!this.ready) return Bot.Status.BOT_IDLE
     try {
       const data = await this.get<StatusInfo>('get_status')
-      return data.good ? BotStatusCode.GOOD : data.online ? BotStatusCode.SERVER_ERROR : BotStatusCode.BOT_OFFLINE
+      return data.good ? Bot.Status.GOOD : data.online ? Bot.Status.SERVER_ERROR : Bot.Status.BOT_OFFLINE
     } catch {
-      return BotStatusCode.NET_ERROR
+      return Bot.Status.NET_ERROR
     }
   }
 }

@@ -1,6 +1,6 @@
 import { CQCode, Logger, paramCase, sleep } from 'koishi-utils'
 import { Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo } from './session'
-import { App, AppStatus } from './app'
+import { App } from './app'
 
 export interface BotOptions {
   type?: string
@@ -49,7 +49,7 @@ export abstract class Server<T extends Platform = Platform> {
   }
 
   dispatch(session: Session) {
-    if (this.app.status !== AppStatus.open) return
+    if (this.app.status !== App.Status.open) return
     const events: string[] = [session.type]
     if (session.subtype) {
       events.unshift(events[0] + '/' + session.subtype)
@@ -74,25 +74,6 @@ export abstract class Server<T extends Platform = Platform> {
   }
 }
 
-export enum BotStatusCode {
-  /** 正常运行 */
-  GOOD,
-  /** Bot 处于闲置状态 */
-  BOT_IDLE,
-  /** Bot 离线 */
-  BOT_OFFLINE,
-  /** 无法获得状态 */
-  NET_ERROR,
-  /** 服务器状态异常 */
-  SERVER_ERROR,
-}
-
-export namespace Bot {
-  export interface Platforms {}
-}
-
-export type Platform = keyof Bot.Platforms
-
 export interface Bot<P = Platform> extends BotOptions {
   [Bot.send](session: Session, message: string): Promise<void>
 
@@ -100,7 +81,7 @@ export interface Bot<P = Platform> extends BotOptions {
   version?: string
   username?: string
   platform?: P
-  getStatusCode(): Promise<BotStatusCode>
+  getStatusCode(): Promise<Bot.Status>
 
   // message
   sendMessage(channelId: string, content: string): Promise<string>
@@ -175,3 +156,22 @@ export class Bot<P extends Platform> {
     return messageIds
   }
 }
+
+export namespace Bot {
+  export interface Platforms {}
+
+  export enum Status {
+    /** 正常运行 */
+    GOOD,
+    /** Bot 处于闲置状态 */
+    BOT_IDLE,
+    /** Bot 离线 */
+    BOT_OFFLINE,
+    /** 无法获得状态 */
+    NET_ERROR,
+    /** 服务器状态异常 */
+    SERVER_ERROR,
+  }
+}
+
+export type Platform = keyof Bot.Platforms

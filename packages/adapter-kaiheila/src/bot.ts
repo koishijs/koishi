@@ -1,6 +1,6 @@
 /* eslint-disable quote-props */
 
-import { App, AuthorInfo, Bot, BotStatusCode, MessageInfo, Session } from 'koishi-core'
+import { App, AuthorInfo, Bot, MessageInfo, Session } from 'koishi-core'
 import { camelize, CQCode, pick, renameProperty, snakeCase } from 'koishi-utils'
 import axios, { Method } from 'axios'
 
@@ -103,8 +103,8 @@ export class KaiheilaBot extends Bot {
   }
 
   async getStatusCode() {
-    if (!this.ready) return BotStatusCode.BOT_IDLE
-    return BotStatusCode.GOOD
+    if (!this.ready) return Bot.Status.BOT_IDLE
+    return Bot.Status.GOOD
   }
 }
 

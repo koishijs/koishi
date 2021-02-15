@@ -1,4 +1,4 @@
-import { Context, App, BotStatusCode, Platform } from 'koishi-core'
+import { Context, App, Bot, Platform } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
 import { interpolate, Time } from 'koishi-utils'
 import { ActiveData } from './database'
@@ -78,7 +78,7 @@ export interface BotStatus {
   label?: string
   selfId: string
   platform: Platform
-  code: BotStatusCode
+  code: Bot.Status
   rate?: number
 }
 

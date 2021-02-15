@@ -1,6 +1,6 @@
 import { createReadStream } from 'fs'
 import { camelCase, Logger, snakeCase, renameProperty, CQCode, assertProperty } from 'koishi-utils'
-import { Bot, BotStatusCode, Session, GroupInfo, GroupMemberInfo, UserInfo, App, BotOptions } from 'koishi-core'
+import { Bot, Session, GroupInfo, GroupMemberInfo, UserInfo, App, BotOptions } from 'koishi-core'
 import Telegram from './interface'
 
 declare module 'koishi-core/dist/server' {
@@ -167,12 +167,12 @@ export class TelegramBot extends Bot {
   }
 
   async getStatusCode() {
-    if (!this.ready) return BotStatusCode.BOT_IDLE
+    if (!this.ready) return Bot.Status.BOT_IDLE
     try {
       await this.get('getMe')
-      return BotStatusCode.GOOD
+      return Bot.Status.GOOD
     } catch {
-      return BotStatusCode.NET_ERROR
+      return Bot.Status.NET_ERROR
     }
   }
 }

@@ -1,4 +1,4 @@
-import { AppOptions, App, Server, Session, AppStatus, Bot, AuthorInfo } from 'koishi-core'
+import { AppOptions, App, Server, Session, Bot, AuthorInfo } from 'koishi-core'
 import { assert } from 'chai'
 import { Socket } from 'net'
 import * as http from 'http'
@@ -97,7 +97,7 @@ export class MockedApp extends App {
 
     this.server = this.servers.mock as any
 
-    if (options.mockStart !== false) this.status = AppStatus.open
+    if (options.mockStart !== false) this.status = App.Status.open
     if (options.mockDatabase) this.plugin(memory)
   }
 

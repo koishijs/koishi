@@ -43,12 +43,10 @@ function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
 }
 
-export enum AppStatus { closed, opening, open, closing }
-
 export class App extends Context {
   public app = this
   public options: AppOptions
-  public status = AppStatus.closed
+  public status = App.Status.closed
 
   _bots = createBots('sid')
   _commands: Command[]
@@ -166,9 +164,9 @@ export class App extends Context {
   }
 
   async start() {
-    this.status = AppStatus.opening
+    this.status = App.Status.opening
     await this.parallel('before-connect')
-    this.status = AppStatus.open
+    this.status = App.Status.open
     this.logger('app').debug('started')
     this.emit('connect')
   }
@@ -188,9 +186,9 @@ export class App extends Context {
   }
 
   async stop() {
-    this.status = AppStatus.closing
+    this.status = App.Status.closing
     await this.parallel('before-disconnect')
-    this.status = AppStatus.closed
+    this.status = App.Status.closed
     this.logger('app').debug('stopped')
     this.emit('disconnect')
   }
@@ -379,4 +377,8 @@ export class App extends Context {
       }
     }
   }
+}
+
+export namespace App {
+  export enum Status { closed, opening, open, closing }
 }
