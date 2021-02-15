@@ -84,7 +84,7 @@ export namespace Server {
   export abstract class WsClient<P extends Platform = Platform> extends Server<P> {
     private _sockets = new Set<WebSocket>()
 
-    abstract create(bot: Bot<P>): WebSocket | Promise<WebSocket>
+    abstract createSocket(bot: Bot<P>): WebSocket | Promise<WebSocket>
     abstract connect(bot: Bot<P>, socket: WebSocket): Promise<void>
 
     constructor(app: App, Bot: BotStatic<P>, public options: WsClientOptions) {
@@ -97,16 +97,16 @@ export namespace Server {
 
       const connect = async (resolve: (value: void) => void, reject: (reason: Error) => void) => {
         logger.debug('websocket client opening')
-        const socket = await this.create(bot)
+        const socket = await this.createSocket(bot)
         this._sockets.add(socket)
 
         socket.on('error', error => logger.debug(error))
 
-        socket.on('close', (code) => {
+        socket.on('close', (code, reason) => {
           this._sockets.delete(socket)
           if (this.app.status !== App.Status.open || code === 1005) return
 
-          const message = `failed to connect to ${socket.url}`
+          const message = reason || `failed to connect to ${socket.url}`
           if (!retryInterval || _retryCount >= retryTimes) {
             return reject(new Error(message))
           }

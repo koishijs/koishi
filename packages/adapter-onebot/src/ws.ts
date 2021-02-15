@@ -10,7 +10,7 @@ export default class WsClient extends Server.WsClient<'onebot'> {
     super(app, CQBot, app.options.onebot)
   }
 
-  create(bot: CQBot) {
+  createSocket(bot: CQBot) {
     const headers: Record<string, string> = {}
     if (bot.token) headers.Authorization = `Bearer ${bot.token}`
     return new WebSocket(bot.server, { headers })

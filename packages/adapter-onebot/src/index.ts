@@ -19,19 +19,6 @@ declare module 'koishi-core/dist/app' {
   }
 }
 
-declare module 'koishi-core/dist/session' {
-  namespace Session {
-    interface Events {
-      'lifecycle': {
-        'enable': {}
-        'disable': {}
-        'connect': {}
-        'heartbeat': {}
-      }
-    }
-  }
-}
-
 export * from './bot'
 export * from './socket'
 export * from './http'

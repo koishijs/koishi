@@ -67,7 +67,7 @@ export default class HttpServer extends Server<'onebot'> {
       const session = createSession(this, ctx.request.body)
 
       const { quickOperation } = onebot
-      if (quickOperation > 0) {
+      if (session && quickOperation > 0) {
         // bypass koa's built-in response handling for quick operations
         ctx.respond = false
         ctx.res.writeHead(200, {
@@ -89,7 +89,7 @@ export default class HttpServer extends Server<'onebot'> {
       }
 
       // dispatch events
-      this.dispatch(session)
+      if (session) this.dispatch(session)
     })
 
     await Promise.all(this.bots.map(bot => this._listen(bot)))

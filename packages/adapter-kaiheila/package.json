@@ -27,10 +27,12 @@
     "koishi-core": "^3.0.0-beta.7"
   },
   "devDependencies": {
+    "@types/ws": "^7.4.0",
     "koishi-test-utils": "^6.0.0-beta.0"
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "koishi-utils": "^3.2.4"
+    "koishi-utils": "^3.2.4",
+    "ws": "^7.4.3"
   }
 }

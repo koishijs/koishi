@@ -500,6 +500,7 @@ export interface StatusInfo {
 }
 
 export interface MessageBase {
+  channelName?: string
   messageId?: string
   channelId?: string
   groupId?: string
@@ -522,6 +523,7 @@ export interface UserInfo {
   userId: string
   username: string
   nickname?: string
+  avatar?: string
 }
 
 export interface GroupMemberInfo extends UserInfo {

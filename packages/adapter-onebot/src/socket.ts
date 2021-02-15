@@ -26,12 +26,6 @@ export function createSession(server: Server, data: any) {
     CQBot.adaptMessage(session as any)
     renameProperty(session, 'subtype', 'messageType')
     session.channelId = session.subtype === 'group' ? session.groupId : `private:${session.userId}`
-  } else if (data.post_type === 'meta_event') {
-    delete session['metaEventType']
-    session.type = 'lifecycle'
-    if (data.meta_event_type === 'heartbeat') {
-      session.subtype = 'heartbeat'
-    }
   } else if (data.post_type === 'request') {
     delete session['requestType']
     if (data.request_type === 'friend') {
@@ -83,7 +77,7 @@ export function createSession(server: Server, data: any) {
         session.subsubtype = paramCase(data.honor_type)
         break
     }
-  }
+  } else return
 
   return session
 }
@@ -111,7 +105,7 @@ export default class Socket {
         if ('post_type' in parsed) {
           logger.debug('receive %o', parsed)
           const session = createSession(this.server, parsed)
-          this.server.dispatch(session)
+          if (session) this.server.dispatch(session)
         } else if (parsed.echo === -1) {
           bot.version = toVersion(camelCase(parsed.data))
           logger.debug('%d got version info', bot.selfId)
