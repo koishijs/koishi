@@ -119,8 +119,9 @@ export default class Socket {
             logger.info('connected to %c', bot.server)
           }
           resolve()
-        } else {
-          this._listeners[parsed.echo]?.(parsed)
+        } else if (parsed.echo in this._listeners) {
+          this._listeners[parsed.echo](parsed)
+          delete this._listeners[parsed.echo]
         }
       })
 
@@ -141,6 +142,10 @@ export default class Socket {
         data.echo = ++counter
         return new Promise((resolve, reject) => {
           this._listeners[counter] = resolve
+          setTimeout(() => {
+            delete this._listeners[counter]
+            reject(new Error('response timeout'))
+          }, bot.app.options.onebot.responseTimeout)
           socket.send(JSON.stringify(data), (error) => {
             if (error) reject(error)
           })

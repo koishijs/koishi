@@ -10,6 +10,7 @@ interface OneBotOptions extends Server.WsClientOptions {
   secret?: string
   preferSync?: boolean
   quickOperation?: number
+  responseTimeout?: number
 }
 
 declare module 'koishi-core/dist/app' {
@@ -38,6 +39,7 @@ export * from './ws'
 export * from './ws-reverse'
 
 App.defaultConfig.onebot = {
+  responseTimeout: Time.second,
   quickOperation: 0.1 * Time.second,
   retryInterval: 5 * Time.second,
   retryTimes: 4,

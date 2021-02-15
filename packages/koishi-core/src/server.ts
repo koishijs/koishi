@@ -84,7 +84,7 @@ export namespace Server {
   export abstract class WsClient<P extends Platform = Platform> extends Server<P> {
     private _sockets = new Set<WebSocket>()
 
-    abstract create(bot: Bot<P>): WebSocket
+    abstract create(bot: Bot<P>): WebSocket | Promise<WebSocket>
     abstract connect(bot: Bot<P>, socket: WebSocket): Promise<void>
 
     constructor(app: App, Bot: BotStatic<P>, public options: WsClientOptions) {
@@ -95,9 +95,9 @@ export namespace Server {
       let _retryCount = 0
       const { retryTimes, retryInterval } = this.options
 
-      const connect = (resolve: (value: void) => void, reject: (reason: Error) => void) => {
+      const connect = async (resolve: (value: void) => void, reject: (reason: Error) => void) => {
         logger.debug('websocket client opening')
-        const socket = this.create(bot)
+        const socket = await this.create(bot)
         this._sockets.add(socket)
 
         socket.on('error', error => logger.debug(error))
