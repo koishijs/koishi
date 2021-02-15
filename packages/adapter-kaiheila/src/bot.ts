@@ -91,28 +91,54 @@ export class KaiheilaBot extends Bot {
     return camelize<T>(response.data)
   }
 
+  private processGuildMessage(content: string) {
+    return CQCode.parseAll(content).reduce<string>((prev, code) => {
+      if (typeof code === 'string') return prev + code
+      const { type, data } = code
+      if (type === 'at') {
+        if (data.qq) return prev + `@user#${data.qq}`
+        if (data.type === 'all') return prev + '@全体成员'
+        if (data.type === 'here') return prev + '@在线成员'
+        if (data.role) return prev + `@role:${data.role};`
+      } else if (type === 'sharp') {
+        return prev + `#channel:${data.id};`
+      }
+      return prev
+    }, '')
+  }
+
   async sendMessage(channelId: string, content: string) {
-    let key = 'channelId', path = '/channel/message'
+    let key = 'channelId', path = '/message/create'
     if (channelId.length > 30) {
       key = 'chatCode'
       path = '/user-chat/create-msg'
     } else {
-      content = CQCode.parseAll(content).reduce<string>((prev, code) => {
-        if (typeof code === 'string') return prev + code
-        const { type, data } = code
-        if (type === 'at') {
-          if (data.qq) return prev + `@user#${data.qq}`
-          if (data.type === 'all') return prev + '@全体成员'
-          if (data.type === 'here') return prev + '@在线成员'
-          if (data.role) return prev + `@role:${data.role};`
-        } else if (type === 'sharp') {
-          return prev + `#channel:${data.id};`
-        }
-        return prev
-      }, '')
+      content = this.processGuildMessage(content)
     }
     const message = await this.request('POST', path, { [key]: channelId, content })
     return message.msgId
+  }
+
+  async sendPrivateMessage(targetId: string, content: string) {
+    const { code } = await this.request('POST', '/user-chat/create', { targetId })
+    return this.sendMessage(code, content)
+  }
+
+  async deleteMessage(channelId: string, msgId: string) {
+    if (channelId.length > 30) {
+      await this.request('POST', '/user-chat/delete-msg', { msgId })
+    } else {
+      await this.request('POST', '/message/delete', { msgId })
+    }
+  }
+
+  async editMessage(channelId: string, msgId: string, content: string) {
+    if (channelId.length > 30) {
+      await this.request('POST', '/user-chat/update-msg', { msgId, content })
+    } else {
+      content = this.processGuildMessage(content)
+      await this.request('POST', '/message/update', { msgId, content })
+    }
   }
 
   async getStatusCode() {
