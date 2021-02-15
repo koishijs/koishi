@@ -40,6 +40,7 @@ export class Context {
   private _disposables: Disposable[]
 
   public user = this.createSelector('userId')
+  public self = this.createSelector('selfId')
   public group = this.createSelector('groupId')
   public platform = this.createSelector('platform')
 
