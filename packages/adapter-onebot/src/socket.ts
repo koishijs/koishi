@@ -95,55 +95,57 @@ export default class Socket {
 
   constructor(private server: Server) {}
 
-  connect = (resolve: (value: void) => void, reject: (error: Error) => void, bot: CQBot, socket: WebSocket) => {
-    bot.ready = true
+  connect(bot: CQBot, socket: WebSocket) {
+    return new Promise<void>((resolve, reject) => {
+      bot.ready = true
 
-    socket.on('message', (data) => {
-      data = data.toString()
-      let parsed: any
-      try {
-        parsed = JSON.parse(data)
-      } catch (error) {
-        return logger.warn('cannot parse message', data)
-      }
-
-      if ('post_type' in parsed) {
-        logger.debug('receive %o', parsed)
-        const session = createSession(this.server, parsed)
-        this.server.dispatch(session)
-      } else if (parsed.echo === -1) {
-        bot.version = toVersion(camelCase(parsed.data))
-        logger.debug('%d got version info', bot.selfId)
-        if (bot.server) {
-          logger.info('connected to %c', bot.server)
+      socket.on('message', (data) => {
+        data = data.toString()
+        let parsed: any
+        try {
+          parsed = JSON.parse(data)
+        } catch (error) {
+          return logger.warn('cannot parse message', data)
         }
-        resolve()
-      } else {
-        this._listeners[parsed.echo]?.(parsed)
+
+        if ('post_type' in parsed) {
+          logger.debug('receive %o', parsed)
+          const session = createSession(this.server, parsed)
+          this.server.dispatch(session)
+        } else if (parsed.echo === -1) {
+          bot.version = toVersion(camelCase(parsed.data))
+          logger.debug('%d got version info', bot.selfId)
+          if (bot.server) {
+            logger.info('connected to %c', bot.server)
+          }
+          resolve()
+        } else {
+          this._listeners[parsed.echo]?.(parsed)
+        }
+      })
+
+      socket.on('close', () => {
+        delete bot._request
+        bot.ready = false
+      })
+
+      socket.send(JSON.stringify({
+        action: 'get_version_info',
+        echo: -1,
+      }), (error) => {
+        if (error) reject(error)
+      })
+
+      bot._request = (action, params) => {
+        const data = { action, params, echo: ++counter }
+        data.echo = ++counter
+        return new Promise((resolve, reject) => {
+          this._listeners[counter] = resolve
+          socket.send(JSON.stringify(data), (error) => {
+            if (error) reject(error)
+          })
+        })
       }
     })
-
-    socket.on('close', () => {
-      delete bot._request
-      bot.ready = false
-    })
-
-    socket.send(JSON.stringify({
-      action: 'get_version_info',
-      echo: -1,
-    }), (error) => {
-      if (error) reject(error)
-    })
-
-    bot._request = (action, params) => {
-      const data = { action, params, echo: ++counter }
-      data.echo = ++counter
-      return new Promise((resolve, reject) => {
-        this._listeners[counter] = resolve
-        socket.send(JSON.stringify(data), (error) => {
-          if (error) reject(error)
-        })
-      })
-    }
   }
 }

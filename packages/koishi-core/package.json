@@ -31,12 +31,13 @@
   "devDependencies": {
     "@types/koa": "^2.11.8",
     "@types/lru-cache": "^5.1.0",
+    "@types/ws": "^7.4.0",
+    "axios": "^0.21.1",
     "koishi-test-utils": "^6.0.0-beta.0"
   },
   "dependencies": {
     "@types/koa-bodyparser": "^4.3.0",
     "@types/koa-router": "^7.4.1",
-    "axios": "^0.21.1",
     "fastest-levenshtein": "^1.0.12",
     "koa": "^2.13.1",
     "koa-bodyparser": "^4.3.0",

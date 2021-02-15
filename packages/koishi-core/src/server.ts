@@ -1,6 +1,7 @@
-import { CQCode, Logger, paramCase, sleep } from 'koishi-utils'
+import { CQCode, Logger, paramCase, sleep, Time } from 'koishi-utils'
 import { Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo } from './session'
 import { App } from './app'
+import type WebSocket from 'ws'
 
 export interface BotOptions {
   type?: string
@@ -25,25 +26,17 @@ type BotInstance<T extends Platform> = At<Bot.Platforms, T, Bot>
 type BotStatic<T extends Platform> = new (app: App, options: BotOptions) => BotInstance<T>
 type ServerStatic<T extends Platform = Platform> = new (app: App, bot: BotOptions) => Server<T>
 
-export namespace Server {
-  export type Instances = {
-    [K in string]: K extends `${infer T}:${any}` ? Server<T & Platform> : Server<K & Platform>
-  }
-}
-
-export abstract class Server<T extends Platform = Platform> {
-  static types: Record<string, ServerStatic> = {}
-
+export abstract class Server<P extends Platform = Platform> {
   public type: string
-  public bots = createBots<BotInstance<T>>('selfId')
+  public bots = createBots<BotInstance<P>>('selfId')
 
   abstract listen(): Promise<void>
   abstract close(): void
 
-  constructor(public app: App, private BotStatic: BotStatic<T>) {}
+  constructor(public app: App, private Bot: BotStatic<P>) {}
 
   create(options: BotOptions) {
-    const bot = new this.BotStatic(this.app, options)
+    const bot = new this.Bot(this.app, options)
     this.bots.push(bot)
     this.app.bots.push(bot)
   }
@@ -61,8 +54,18 @@ export abstract class Server<T extends Platform = Platform> {
       this.app.emit(session, paramCase<any>(event), session)
     }
   }
+}
 
-  static redirect(target: string | ((bot: BotOptions) => string)) {
+const logger = new Logger('server')
+
+export namespace Server {
+  export type Instances = {
+    [K in string]: K extends `${infer T}:${any}` ? Server<T & Platform> : Server<K & Platform>
+  }
+
+  export const types: Record<string, ServerStatic> = {}
+
+  export function redirect(target: string | ((bot: BotOptions) => string)) {
     const callback = typeof target === 'string' ? () => target : target
     return class {
       constructor(app: App, bot: BotOptions) {
@@ -71,6 +74,70 @@ export abstract class Server<T extends Platform = Platform> {
         return app.servers[type] || new Server.types[type](app, bot)
       }
     } as ServerStatic
+  }
+
+  export interface WsClientOptions {
+    retryTimes?: number
+    retryInterval?: number
+  }
+
+  export abstract class WsClient<P extends Platform = Platform> extends Server<P> {
+    private _sockets = new Set<WebSocket>()
+
+    abstract create(bot: Bot<P>): WebSocket
+    abstract connect(bot: Bot<P>, socket: WebSocket): Promise<void>
+
+    constructor(app: App, Bot: BotStatic<P>, public options: WsClientOptions) {
+      super(app, Bot)
+    }
+
+    private async _listen(bot: Bot<P>) {
+      let _retryCount = 0
+      const { retryTimes, retryInterval } = this.options
+
+      const connect = (resolve: (value: void) => void, reject: (reason: Error) => void) => {
+        logger.debug('websocket client opening')
+        const socket = this.create(bot)
+        this._sockets.add(socket)
+
+        socket.on('error', error => logger.debug(error))
+
+        socket.on('close', (code) => {
+          this._sockets.delete(socket)
+          if (this.app.status !== App.Status.open || code === 1005) return
+
+          const message = `failed to connect to ${socket.url}`
+          if (!retryInterval || _retryCount >= retryTimes) {
+            return reject(new Error(message))
+          }
+
+          _retryCount++
+          logger.warn(`${message}, will retry in ${Time.formatTimeShort(retryInterval)}...`)
+          setTimeout(() => {
+            if (this.app.status === App.Status.open) connect(resolve, reject)
+          }, retryInterval)
+        })
+
+        socket.on('open', () => {
+          _retryCount = 0
+          logger.debug('connect to ws server:', socket.url)
+          this.connect(bot, socket).then(resolve, reject)
+        })
+      }
+
+      return new Promise(connect)
+    }
+
+    async listen() {
+      await Promise.all(this.bots.map(bot => this._listen(bot)))
+    }
+
+    close() {
+      logger.debug('websocket client closing')
+      for (const socket of this._sockets) {
+        socket.close()
+      }
+    }
   }
 }
 

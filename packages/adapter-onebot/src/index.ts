@@ -5,13 +5,11 @@ import WsClient from './ws'
 import WsServer from './ws-reverse'
 import axios from 'axios'
 
-interface OneBotOptions {
+interface OneBotOptions extends Server.WsClientOptions {
   path?: string
   secret?: string
   preferSync?: boolean
   quickOperation?: number
-  retryTimes?: number
-  retryInterval?: number
 }
 
 declare module 'koishi-core/dist/app' {

@@ -38,9 +38,9 @@ export default class WsServer extends Server<'onebot'> {
         }
         if (!bot.selfId) bot.selfId = selfId
 
-        this._channel.connect(() => {
+        this._channel.connect(bot, socket).then(() => {
           if (this.bots.every(({ version, server }) => version || server === null)) resolve()
-        }, reject, bot, socket)
+        }, reject)
       })
     })
   }
