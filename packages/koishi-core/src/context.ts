@@ -3,7 +3,7 @@ import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Database } from './database'
 import { Argv, Domain } from './parser'
-import { Platform, Server, Bot } from './server'
+import { Platform, Bot } from './adapter'
 import { App } from './app'
 import type Router from 'koa-router'
 
@@ -35,7 +35,6 @@ export class Context {
   protected _bots: Bot[] & Record<string, Bot>
   protected _router: Router
   protected _database: Database
-  protected _servers: Server.Instances
 
   private _disposables: Disposable[]
 
@@ -60,10 +59,6 @@ export class Context {
 
   get router() {
     return this.app._router
-  }
-
-  get servers() {
-    return this.app._servers
   }
 
   get bots() {

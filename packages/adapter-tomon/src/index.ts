@@ -1,11 +1,11 @@
 import SocketSession from './network/session'
-import { App, Server, Session } from 'koishi-core'
+import { App, Adapter, Session } from 'koishi-core'
 import { TomonBot, TomonMessageInfo } from './bot'
 import { camelize } from 'koishi-utils'
 
 export * from './bot'
 
-declare module 'koishi-core/dist/server' {
+declare module 'koishi-core/dist/adapter' {
   interface BotOptions {
     token?: string
     fullName?: string
@@ -13,7 +13,7 @@ declare module 'koishi-core/dist/server' {
   }
 }
 
-Server.types.tomon = class TomonServer extends Server<'tomon'> {
+Adapter.types.tomon = class TomonServer extends Adapter<'tomon'> {
   constructor(app: App) {
     super(app, TomonBot)
   }

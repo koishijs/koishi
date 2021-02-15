@@ -1,4 +1,4 @@
-import { App, Server } from 'koishi-core'
+import { App, Adapter } from 'koishi-core'
 import { Logger, defineProperty, snakeCase, assertProperty } from 'koishi-utils'
 import { CQBot, toVersion } from './bot'
 import { createSession } from './socket'
@@ -26,7 +26,7 @@ declare module 'koishi-core/dist/session' {
 
 const logger = new Logger('server')
 
-export default class HttpServer extends Server<'onebot'> {
+export default class HttpServer extends Adapter<'onebot'> {
   constructor(app: App) {
     assertProperty(app.options, 'port')
     super(app, CQBot)

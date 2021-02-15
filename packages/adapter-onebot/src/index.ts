@@ -1,11 +1,11 @@
-import { Server, App, Context } from 'koishi-core'
+import { Adapter, App, Context } from 'koishi-core'
 import { Time } from 'koishi-utils'
 import HttpServer from './http'
 import WsClient from './ws'
 import WsServer from './ws-reverse'
 import axios from 'axios'
 
-interface OneBotOptions extends Server.WsClientOptions {
+interface OneBotOptions extends Adapter.WsClientOptions {
   path?: string
   secret?: string
   preferSync?: boolean
@@ -32,10 +32,10 @@ App.defaultConfig.onebot = {
   retryTimes: 4,
 }
 
-Server.types['onebot:http'] = HttpServer
-Server.types['onebot:ws'] = WsClient
-Server.types['onebot:ws-reverse'] = WsServer
-Server.types['onebot'] = Server.redirect((bot) => {
+Adapter.types['onebot:http'] = HttpServer
+Adapter.types['onebot:ws'] = WsClient
+Adapter.types['onebot:ws-reverse'] = WsServer
+Adapter.types['onebot'] = Adapter.redirect((bot) => {
   return !bot.server ? 'onebot:ws-reverse'
     : bot.server.startsWith('ws') ? 'onebot:ws'
       : 'onebot:http'

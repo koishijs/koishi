@@ -11,7 +11,7 @@ import prompts, { Choice, PromptObject } from 'prompts'
 const serverQuestions: PromptObject[] = [{
   name: 'type',
   type: 'select',
-  message: 'Server Type',
+  message: 'Adapter Type',
   choices: [
     { title: 'OneBot - HTTP', value: 'onebot:http' },
     { title: 'OneBot - WebSocket', value: 'onebot:ws' },

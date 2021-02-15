@@ -1,9 +1,9 @@
 import { CQBot, CQResponse, toVersion } from './bot'
-import { Server, Session } from 'koishi-core'
+import { Adapter, Session } from 'koishi-core'
 import { Logger, camelCase, renameProperty, paramCase } from 'koishi-utils'
 import type WebSocket from 'ws'
 
-declare module 'koishi-core/dist/server' {
+declare module 'koishi-core/dist/adapter' {
   interface BotOptions {
     server?: string
   }
@@ -11,7 +11,7 @@ declare module 'koishi-core/dist/server' {
 
 const logger = new Logger('server')
 
-export function createSession(server: Server, data: any) {
+export function createSession(server: Adapter, data: any) {
   const session = new Session(server.app, camelCase(data))
   renameProperty(session, 'type', 'postType')
   renameProperty(session, 'subtype', 'subType')
@@ -87,7 +87,7 @@ let counter = 0
 export default class Socket {
   private _listeners: Record<number, (response: CQResponse) => void> = {}
 
-  constructor(private server: Server) {}
+  constructor(private server: Adapter) {}
 
   connect(bot: CQBot, socket: WebSocket) {
     return new Promise<void>((resolve, reject) => {

@@ -5,7 +5,7 @@ import { camelCase, camelize, CQCode, pick, renameProperty, snakeCase } from 'ko
 import axios, { Method } from 'axios'
 import * as Kaiheila from './types'
 
-declare module 'koishi-core/dist/server' {
+declare module 'koishi-core/dist/adapter' {
   namespace Bot {
     interface Platforms {
       kaiheila: KaiheilaBot

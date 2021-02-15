@@ -1,4 +1,4 @@
-import { Server } from 'koishi-core'
+import { Adapter } from 'koishi-core'
 import HttpServer from './http'
 import { AxiosRequestConfig } from 'axios'
 
@@ -9,7 +9,7 @@ interface TelegramOptions {
   axiosConfig?: AxiosRequestConfig
 }
 
-declare module 'koishi-core/dist/server' {
+declare module 'koishi-core/dist/adapter' {
   interface BotOptions {
     token?: string
   }
@@ -24,4 +24,4 @@ declare module 'koishi-core/dist/app' {
 export * from './bot'
 export * from './http'
 
-Server.types.telegram = HttpServer
+Adapter.types.telegram = HttpServer

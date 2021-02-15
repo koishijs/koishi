@@ -24,9 +24,9 @@ export type At<O, T extends keyof O, F> = [T] extends [never] ? F : O[T]
 
 type BotInstance<T extends Platform> = At<Bot.Platforms, T, Bot>
 type BotStatic<T extends Platform> = new (app: App, options: BotOptions) => BotInstance<T>
-type ServerStatic<T extends Platform = Platform> = new (app: App, bot: BotOptions) => Server<T>
+type AdapterStatic<T extends Platform = Platform> = new (app: App, bot: BotOptions) => Adapter<T>
 
-export abstract class Server<P extends Platform = Platform> {
+export abstract class Adapter<P extends Platform = Platform> {
   public type: string
   public bots = createBots<BotInstance<P>>('selfId')
 
@@ -58,12 +58,12 @@ export abstract class Server<P extends Platform = Platform> {
 
 const logger = new Logger('server')
 
-export namespace Server {
+export namespace Adapter {
   export type Instances = {
-    [K in string]: K extends `${infer T}:${any}` ? Server<T & Platform> : Server<K & Platform>
+    [K in string]: K extends `${infer T}:${any}` ? Adapter<T & Platform> : Adapter<K & Platform>
   }
 
-  export const types: Record<string, ServerStatic> = {}
+  export const types: Record<string, AdapterStatic> = {}
 
   export function redirect(target: string | ((bot: BotOptions) => string)) {
     const callback = typeof target === 'string' ? () => target : target
@@ -71,9 +71,9 @@ export namespace Server {
       constructor(app: App, bot: BotOptions) {
         const type = bot.type = callback(bot)
         new Logger('server').info('infer type as %c', type)
-        return app.servers[type] || new Server.types[type](app, bot)
+        return app.adapters[type] || new Adapter.types[type](app, bot)
       }
-    } as ServerStatic
+    } as AdapterStatic
   }
 
   export interface WsClientOptions {
@@ -81,7 +81,7 @@ export namespace Server {
     retryInterval?: number
   }
 
-  export abstract class WsClient<P extends Platform = Platform> extends Server<P> {
+  export abstract class WsClient<P extends Platform = Platform> extends Adapter<P> {
     private _sockets = new Set<WebSocket>()
 
     abstract createSocket(bot: Bot<P>): WebSocket | Promise<WebSocket>

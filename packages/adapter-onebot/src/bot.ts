@@ -1,7 +1,7 @@
 import { camelCase, Logger, snakeCase, capitalize, renameProperty } from 'koishi-utils'
 import { Bot, AccountInfo, StatusInfo, StrangerInfo, Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo, AuthorInfo } from 'koishi-core'
 
-declare module 'koishi-core/dist/server' {
+declare module 'koishi-core/dist/adapter' {
   namespace Bot {
     interface Platforms {
       onebot: CQBot

@@ -6,7 +6,7 @@ import { contain, observe, Logger, defineProperty, Random, template } from 'kois
 import { Argv } from './parser'
 import { Middleware, NextFunction } from './context'
 import { App } from './app'
-import { Bot, Platform } from './server'
+import { Bot, Platform } from './adapter'
 
 const logger = new Logger('session')
 

@@ -1,7 +1,7 @@
 import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop, template, merge } from 'koishi-utils'
 import { Context, Middleware, NextFunction } from './context'
 import { Argv } from './parser'
-import { BotOptions, Server, createBots } from './server'
+import { BotOptions, Adapter, createBots } from './adapter'
 import { Channel, User } from './database'
 import { Command } from './command'
 import { Session } from './session'
@@ -47,6 +47,7 @@ export class App extends Context {
   public app = this
   public options: AppOptions
   public status = App.Status.closed
+  public adapters: Adapter.Instances = {}
 
   _bots = createBots('sid')
   _commands: Command[]
@@ -90,7 +91,6 @@ export class App extends Context {
     defineProperty(this, '_shortcuts', [])
     defineProperty(this, '_shortcutMap', {})
     defineProperty(this, '_sessions', {})
-    defineProperty(this, '_servers', {})
     defineProperty(this, '_userCache', {})
     defineProperty(this, '_groupCache', new LruCache({
       max: options.groupCacheLength,
@@ -99,17 +99,17 @@ export class App extends Context {
 
     if (options.port) this.createServer()
     for (const bot of options.bots) {
-      let server = this.servers[bot.type]
-      if (!server) {
-        const constructor = Server.types[bot.type]
+      let adapter = this.adapters[bot.type]
+      if (!adapter) {
+        const constructor = Adapter.types[bot.type]
         if (!constructor) {
           const platform = bot.type.split(':', 1)[0]
           throw new Error(`unsupported platform "${platform}", you should import the adapter yourself`)
         }
-        server = new constructor(this, bot)
-        this.servers[bot.type] = server
+        adapter = new constructor(this, bot)
+        this.adapters[bot.type] = adapter
       }
-      server.create(bot)
+      adapter.create(bot)
     }
 
     this.prepare()
@@ -178,7 +178,7 @@ export class App extends Context {
         this._httpServer.listen(port)
         this.logger('server').info('server listening at %c', port)
       }
-      await Promise.all(Object.values(this.servers).map(server => server.listen()))
+      await Promise.all(Object.values(this.adapters).map(server => server.listen()))
     } catch (error) {
       this._close()
       throw error
@@ -194,7 +194,7 @@ export class App extends Context {
   }
 
   private _close() {
-    Object.values(this.servers).forEach(server => server.close())
+    Object.values(this.adapters).forEach(server => server.close())
     this.logger('server').debug('http server closing')
     this._httpServer?.close()
   }

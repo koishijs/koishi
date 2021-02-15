@@ -1,9 +1,9 @@
-import { App, Server } from 'koishi-core'
+import { App, Adapter } from 'koishi-core'
 import { CQBot } from './bot'
 import WebSocket from 'ws'
 import Socket from './socket'
 
-export default class WsClient extends Server.WsClient<'onebot'> {
+export default class WsClient extends Adapter.WsClient<'onebot'> {
   private _channel = new Socket(this)
 
   constructor(app: App) {

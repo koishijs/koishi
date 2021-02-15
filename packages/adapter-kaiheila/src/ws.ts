@@ -1,4 +1,4 @@
-import { App, Server, Logger, Time } from 'koishi-core'
+import { App, Adapter, Logger, Time } from 'koishi-core'
 import { createSession, KaiheilaBot } from './bot'
 import { Payload, Signal } from './types'
 import WebSocket from 'ws'
@@ -7,7 +7,7 @@ const logger = new Logger('kaiheila')
 
 const heartbeatIntervals = [6, 2, 4]
 
-export default class WsClient extends Server.WsClient<'kaiheila'> {
+export default class WsClient extends Adapter.WsClient<'kaiheila'> {
   constructor(app: App) {
     super(app, KaiheilaBot, app.options.kaiheila)
   }

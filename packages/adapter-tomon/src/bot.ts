@@ -3,7 +3,7 @@ import { Method } from 'axios'
 import Route, { RequestOptions } from './network/route'
 import WebSocket from 'ws'
 
-declare module 'koishi-core/dist/server' {
+declare module 'koishi-core/dist/adapter' {
   namespace Bot {
     interface Platforms {
       tomon: TomonBot
@@ -68,7 +68,7 @@ export interface TomonGroupInfo extends GroupInfo {
 
 export interface TomonUserInfo extends UserInfo {
   discriminator: string
-  avatar: string
+  avatar?: string
   name: string
   createdAt: number
   updatedAt: number

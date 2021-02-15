@@ -1,5 +1,5 @@
 import * as utils from 'koishi-utils'
-import { Platform } from './server'
+import { Platform } from './adapter'
 
 export type TableType = keyof Tables
 

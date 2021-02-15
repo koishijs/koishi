@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios'
 import FormData from 'form-data'
-import { App, Server, Session } from 'koishi-core'
+import { App, Adapter, Session } from 'koishi-core'
 import { assertProperty, camelCase, Logger } from 'koishi-utils'
 import { TelegramBot } from './bot'
 import Telegram from './interface'
@@ -11,7 +11,7 @@ function trimSlash(source: string) {
   return source.replace(/\/$/, '')
 }
 
-export default class HttpServer extends Server<'telegram'> {
+export default class HttpServer extends Adapter<'telegram'> {
   constructor(app: App) {
     super(app, TelegramBot)
     const config = this.app.options.telegram ||= {}

@@ -1,4 +1,4 @@
-import { AppOptions, App, Server, Session, Bot, AuthorInfo } from 'koishi-core'
+import { AppOptions, App, Adapter, Session, Bot, AuthorInfo } from 'koishi-core'
 import { assert } from 'chai'
 import { Socket } from 'net'
 import * as http from 'http'
@@ -12,7 +12,7 @@ interface MockedResponse {
   headers: Record<string, any>
 }
 
-declare module 'koishi-core/dist/server' {
+declare module 'koishi-core/dist/adapter' {
   namespace Bot {
     interface Platforms {
       mock: MockedBot
@@ -34,7 +34,7 @@ class MockedBot extends Bot<'mock'> {
   }
 }
 
-class MockedServer extends Server {
+class MockedServer extends Adapter {
   constructor(app: App) {
     super(app, MockedBot)
     this.bots.forEach(bot => bot.ready = true)
@@ -82,7 +82,7 @@ class MockedServer extends Server {
   }
 }
 
-Server.types.mock = MockedServer
+Adapter.types.mock = MockedServer
 
 interface MockedAppOptions extends AppOptions {
   mockStart?: boolean
@@ -95,7 +95,7 @@ export class MockedApp extends App {
   constructor(options: MockedAppOptions = {}) {
     super({ selfId: BASE_SELF_ID, type: 'mock', ...options })
 
-    this.server = this.servers.mock as any
+    this.server = this.adapters.mock as any
 
     if (options.mockStart !== false) this.status = App.Status.open
     if (options.mockDatabase) this.plugin(memory)
@@ -110,7 +110,7 @@ export class MockedApp extends App {
       selfId: this.selfId,
       ...meta,
     })
-    this.servers.mock.dispatch(session)
+    this.adapters.mock.dispatch(session)
     return session.$uuid
   }
 

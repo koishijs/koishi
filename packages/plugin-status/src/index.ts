@@ -5,7 +5,7 @@ import { ActiveData } from './database'
 
 export * from './database'
 
-declare module 'koishi-core/dist/server' {
+declare module 'koishi-core/dist/adapter' {
   interface BotOptions {
     label?: string
   }

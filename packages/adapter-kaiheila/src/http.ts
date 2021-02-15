@@ -1,4 +1,4 @@
-import { App, Server } from 'koishi-core'
+import { App, Adapter } from 'koishi-core'
 import { Logger, assertProperty } from 'koishi-utils'
 import { createSession, KaiheilaBot } from './bot'
 
@@ -8,7 +8,7 @@ function trimSlash(source: string) {
   return source.replace(/\/$/, '')
 }
 
-export default class HttpServer extends Server<'kaiheila'> {
+export default class HttpServer extends Adapter<'kaiheila'> {
   constructor(app: App) {
     assertProperty(app.options, 'port')
     super(app, KaiheilaBot)
