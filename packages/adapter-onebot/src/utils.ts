@@ -17,18 +17,19 @@ export function createSession(server: Adapter, data: any) {
   session.platform = 'onebot'
   session.selfId = '' + session.selfId
   if (session.userId) session.userId = '' + session.userId
-  if (session.groupId) session.groupId = '' + session.groupId
+  if (session.groupId) session.groupId = session.channelId = '' + session.groupId
   if (session.targetId) session.targetId = '' + session.targetId
   if (session.operatorId) session.operatorId = '' + session.operatorId
 
   if (session.type === 'message') {
     CQBot.adaptMessage(session as any)
     renameProperty(session, 'subtype', 'messageType')
-    session.channelId = session.subtype === 'group' ? session.groupId : `private:${session.userId}`
+    session.channelId ||= `private:${session.userId}`
   } else if (data.post_type === 'request') {
     delete session['requestType']
     if (data.request_type === 'friend') {
       session.type = 'friend-request'
+      session.channelId = `private:${session.userId}`
     } else if (data.sub_type === 'add') {
       session.type = 'group-member-request'
     } else {
@@ -40,7 +41,6 @@ export function createSession(server: Adapter, data: any) {
       case 'group_recall':
         session.type = 'message-deleted'
         session.subtype = 'group'
-        session.channelId = session.groupId
         break
       case 'friend_recall':
         session.type = 'message-deleted'
@@ -71,7 +71,6 @@ export function createSession(server: Adapter, data: any) {
         break
       case 'notify':
         session.type = 'notice'
-        session.channelId = session.groupId
         session.subtype = paramCase(data.sub_type)
         session.subsubtype = paramCase(data.honor_type)
         break
