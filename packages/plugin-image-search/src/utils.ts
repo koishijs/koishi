@@ -19,7 +19,7 @@ export interface ShareData {
 export function getShareText({ imageUrl, title, thumbnail, authorUrl, source }: ShareData) {
   const output = [
     title,
-    CQCode.stringify('image', { file: thumbnail }),
+    CQCode('image', { file: thumbnail }),
   ]
   if (imageUrl) output.push(`链接：${getLink(imageUrl)}`)
   if (authorUrl) output.push(`作者：${getLink(authorUrl)}`)

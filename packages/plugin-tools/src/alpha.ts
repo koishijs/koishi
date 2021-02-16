@@ -9,7 +9,7 @@ function extractData(subpod: any, inline = false) {
     return text
   } else if (subpod.img) {
     const { src, height } = subpod.img._attributes
-    return (height >= 30 && inline ? '\n' : '') + CQCode.stringify('image', { file: src })
+    return (height >= 30 && inline ? '\n' : '') + CQCode('image', { file: src })
   }
 }
 

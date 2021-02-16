@@ -70,7 +70,7 @@ export class KaiheilaBot extends Bot {
 
   parseChannel(source: string) {
     if (/^\d+$/.test(source)) return source
-    const code = CQCode.parse(source)
+    const code = CQCode.find(source)
     if (code && code.type === 'sharp') {
       return code.data.id
     }
@@ -92,8 +92,16 @@ export class KaiheilaBot extends Bot {
     return camelize<T>(response.data)
   }
 
-  private processGuildMessage(content: string) {
-    return CQCode.parseAll(content).reduce<string>((prev, code) => {
+  private parseQuote(chain: CQCode.Chain) {
+    const code = chain[0]
+    if (typeof code === 'object' && code.type === 'reply') {
+      chain.shift()
+      return code.data.id
+    }
+  }
+
+  private renderMessage(chain: CQCode.Chain) {
+    return chain.reduce<string>((prev, code) => {
       if (typeof code === 'string') return prev + code
       const { type, data } = code
       if (type === 'at') {
@@ -110,13 +118,15 @@ export class KaiheilaBot extends Bot {
 
   async sendMessage(channelId: string, content: string) {
     let key = 'channelId', path = '/message/create'
+    const chain = CQCode.build(content)
+    const quote = this.parseQuote(chain)
     if (channelId.length > 30) {
       key = 'chatCode'
       path = '/user-chat/create-msg'
     } else {
-      content = this.processGuildMessage(content)
+      content = this.renderMessage(chain)
     }
-    const message = await this.request('POST', path, { [key]: channelId, content })
+    const message = await this.request('POST', path, { [key]: channelId, content, quote })
     return message.msgId
   }
 
@@ -137,8 +147,10 @@ export class KaiheilaBot extends Bot {
     if (channelId.length > 30) {
       await this.request('POST', '/user-chat/update-msg', { msgId, content })
     } else {
-      content = this.processGuildMessage(content)
-      await this.request('POST', '/message/update', { msgId, content })
+      const chain = CQCode.build(content)
+      const quote = this.parseQuote(chain)
+      content = this.renderMessage(chain)
+      await this.request('POST', '/message/update', { msgId, content, quote })
     }
   }
 

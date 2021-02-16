@@ -85,7 +85,7 @@ export class TelegramBot extends Bot {
 
   private async _sendMessage(chatId: string, content: string) {
     console.log(chatId, content)
-    const chain = CQCode.parseAll(content)
+    const chain = CQCode.build(content)
     const payload = { chatId, caption: '', photo: '' }
     let result: Telegram.Message
     for (const node of chain) {

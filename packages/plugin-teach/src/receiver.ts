@@ -201,9 +201,9 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
   state.dialogues = [dialogue]
   state.answer = dialogue.answer
     .replace(/\$\$/g, '@@__PLACEHOLDER__@@')
-    .replace(/\$A/g, CQCode.stringify('at', { qq: 'all' }))
-    .replace(/\$a/g, CQCode.stringify('at', { qq: session.userId }))
-    .replace(/\$m/g, CQCode.stringify('at', { qq: session.selfId }))
+    .replace(/\$A/g, CQCode('at', { qq: 'all' }))
+    .replace(/\$a/g, CQCode('at', { qq: session.userId }))
+    .replace(/\$m/g, CQCode('at', { qq: session.selfId }))
     .replace(/\$s/g, () => escapeAnswer(session.$username))
     .replace(/\$0/g, escapeAnswer(session.content))
 
@@ -329,7 +329,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 }
 
 function prepareSource(source: string) {
-  return CQCode.stringifyAll(CQCode.parseAll(source).map((code, index, arr) => {
+  return CQCode.join(CQCode.build(source).map((code, index, arr) => {
     if (typeof code !== 'string') return code
     let message = simplify(CQCode.unescape('' + code))
       .toLowerCase()

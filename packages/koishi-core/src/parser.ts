@@ -209,7 +209,7 @@ export namespace Domain {
   create('text', source => source)
   create('user', (source) => {
     if (source.startsWith('@')) return source.slice(1)
-    const code = CQCode.parse(source)
+    const code = CQCode.find(source)
     if (code && code.type === 'at') return code.data.qq
     throw new Error()
   })

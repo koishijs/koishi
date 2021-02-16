@@ -141,7 +141,7 @@ export class Daemon {
       }
       const messages = [output.join('\n')]
       if (title || image) {
-        messages.push(CQCode.stringify('share', { url, image, title, content }))
+        messages.push(CQCode('share', { url, image, title, content }))
       }
       if (app.bail('monitor/before-send', info, group)) return
       for (const message of messages) {

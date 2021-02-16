@@ -117,7 +117,7 @@ export class GitHub {
 }
 
 function formatReply(source: string) {
-  return CQCode.parseAll(source).map((value) => {
+  return CQCode.build(source).map((value) => {
     if (typeof value === 'string') return value
     if (value.type === 'image') return `![image](${value.data.url})`
     return ''

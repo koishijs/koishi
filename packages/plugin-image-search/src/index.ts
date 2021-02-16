@@ -61,7 +61,7 @@ export function apply(ctx: Context, config: Config = {}) {
       const id = session.channelId
       if (pendings.has(id)) return '存在正在进行的查询，请稍后再试。'
 
-      const code = CQCode.parse(session.content, 'image')
+      const code = CQCode.find(session.content, 'image')
       if (code && code.data.url) {
         pendings.add(id)
         return searchUrl(session, code.data.url, callback)
@@ -69,7 +69,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
       const dispose = session.middleware(({ content }, next) => {
         dispose()
-        const code = CQCode.parse(content, 'image')
+        const code = CQCode.find(content, 'image')
         if (!code || !code.data.url) return next()
         return searchUrl(session, code.data.url, callback)
       })

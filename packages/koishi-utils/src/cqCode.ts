@@ -11,7 +11,18 @@ interface ParsedCQCode {
   capture?: RegExpExecArray
 }
 
+export function CQCode(type: string, data: CQCodeData = {}) {
+  let output = '[CQ:' + type
+  for (const key in data) {
+    if (data[key]) output += `,${key}=${CQCode.escape(data[key], true)}`
+  }
+  return output + ']'
+}
+
 export namespace CQCode {
+  export type InputChain = (string | CQCode)[]
+  export type Chain = (string | ParsedCQCode)[]
+
   export function escape(source: any, insideCQ = false) {
     const result = String(source)
       .replace(/&/g, '&amp;')
@@ -30,20 +41,11 @@ export namespace CQCode {
       .replace(/&amp;/g, '&')
   }
 
-  export function stringify(type: string, data: CQCodeData = {}) {
-    if (type === 'text') return '' + data.text
-    let output = '[CQ:' + type
-    for (const key in data) {
-      if (data[key]) output += `,${key}=${escape(data[key], true)}`
-    }
-    return output + ']'
+  export function join(codes: InputChain) {
+    return codes.map(code => typeof code === 'string' ? code : CQCode(code.type, code.data)).join('')
   }
 
-  export function stringifyAll(codes: (string | CQCode)[]) {
-    return codes.map(code => typeof code === 'string' ? code : stringify(code.type, code.data)).join('')
-  }
-
-  export function parse(source: string, typeRegExp = '\\w+'): ParsedCQCode {
+  export function find(source: string, typeRegExp = '\\w+'): ParsedCQCode {
     const capture = new RegExp(`\\[CQ:(${typeRegExp})((,\\w+=[^,\\]]*)+)\\]`).exec(source)
     if (!capture) return null
     const [, type, attrs] = capture
@@ -55,18 +57,27 @@ export namespace CQCode {
     return { type, data, capture }
   }
 
-  export function parseAll(source: string) {
-    const codes: (ParsedCQCode | string)[] = []
+  export function build(source: string) {
+    const chain: Chain = []
     let result: ParsedCQCode
-    while ((result = parse(source))) {
+    while ((result = find(source))) {
       const { capture } = result
       if (capture.index) {
-        codes.push(source.slice(0, capture.index))
+        chain.push(source.slice(0, capture.index))
       }
-      codes.push(result)
+      chain.push(result)
       source = source.slice(capture.index + capture[0].length)
     }
-    if (source) codes.push(source)
-    return codes
+    if (source) chain.push(source)
+    return chain
   }
+
+  /** @deprecated */
+  export const stringify = CQCode
+  /** @deprecated */
+  export const stringifyAll = join
+  /** @deprecated */
+  export const parse = find
+  /** @deprecated */
+  export const parseAll = build
 }

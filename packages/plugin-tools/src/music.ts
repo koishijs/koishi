@@ -63,7 +63,7 @@ export function apply(ctx: Context, options: MusicOptions = {}) {
       try {
         const result = await search.call(ctx, keyword)
         if (typeof result === 'object') {
-          return CQCode.stringify('music', result)
+          return CQCode('music', result)
         }
       } catch {}
 

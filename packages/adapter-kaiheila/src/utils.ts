@@ -30,7 +30,7 @@ function adaptMessage(base: KHL.MessageBase, author: KHL.Author, session: Messag
       .replace(/@role:(\d+);/, (_, $1) => `[CQ:at,role=${$1}]`)
       .replace(/#channel:(\d+);/, (_, $1) => `[CQ:sharp,id=${$1}]`)
   } else if (base.type === KHL.Type.image) {
-    session.content = CQCode.stringify('image', { url: base.content })
+    session.content = CQCode('image', { url: base.content })
   }
   return session
 }

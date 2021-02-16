@@ -173,7 +173,7 @@ export class Bot<P extends Platform> {
 
   parseUser(source: string) {
     if (/^\d+$/.test(source)) return source
-    const code = CQCode.parse(source)
+    const code = CQCode.find(source)
     if (code && code.type === 'at') {
       return code.data.qq
     }

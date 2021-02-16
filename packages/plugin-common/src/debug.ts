@@ -66,7 +66,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   }
 
   async function formatMessage(session: Session) {
-    const codes = CQCode.parseAll(session.content)
+    const codes = CQCode.build(session.content)
     let output = ''
     for (const code of codes) {
       if (typeof code === 'string') {

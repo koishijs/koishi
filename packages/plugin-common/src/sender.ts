@@ -20,9 +20,9 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       }
 
       if (options.forceAnonymous) {
-        message = CQCode.stringify('anonymous') + message
+        message = CQCode('anonymous') + message
       } else if (options.anonymous) {
-        message = CQCode.stringify('anonymous', { ignore: true }) + message
+        message = CQCode('anonymous', { ignore: true }) + message
       }
 
       return message
