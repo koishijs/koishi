@@ -153,6 +153,12 @@ async function saucenao(url: string, session: Session, config: saucenao.Config, 
   if (!data) return
 
   if (!data.results) {
+    const message = data.header.message.toLowerCase()
+    if (message.includes('you need an image')) {
+      return session.send('没有传入图片 URL。')
+    } else if (message.includes('supplied url is not usable')) {
+      return session.send('无法使用传入的图片 URL。')
+    }
     logger.warn(`[error] saucenao:`, data.header)
     return session.send('由于未知原因搜索失败：' + data.header.message)
   }

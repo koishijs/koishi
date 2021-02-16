@@ -8,7 +8,7 @@ export interface CQCode {
 interface ParsedCQCode {
   type: string
   data: Record<string, string>
-  capture?: RegExpMatchArray
+  capture?: RegExpExecArray
 }
 
 export namespace CQCode {
@@ -43,14 +43,12 @@ export namespace CQCode {
     return codes.map(code => typeof code === 'string' ? code : stringify(code.type, code.data)).join('')
   }
 
-  const regexp = /\[CQ:(\w+)((,\w+=[^,\]]*)+)\]/
-
-  export function parse(source: string): ParsedCQCode {
-    const capture = source.match(regexp)
+  export function parse(source: string, typeRegExp = '\\w+'): ParsedCQCode {
+    const capture = new RegExp(`\\[CQ:(${typeRegExp})((,\\w+=[^,\\]]*)+)\\]`).exec(source)
     if (!capture) return null
     const [, type, attrs] = capture
     const data: Record<string, string> = {}
-    attrs.slice(1).split(/,/g).forEach((str) => {
+    attrs.slice(1).split(',').forEach((str) => {
       const index = str.indexOf('=')
       data[str.slice(0, index)] = unescape(str.slice(index + 1))
     })
