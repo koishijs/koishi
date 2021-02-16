@@ -18,14 +18,17 @@ export enum Type {
   system = 255,
 }
 
-export interface Data {
+export interface MessageBase {
+  type: Type
+  content: string
+}
+
+export interface Data extends MessageBase {
   channelType: 'GROUP' | 'PERSON' | 'WEBHOOK_CHALLENGE'
   challenge: string
   verifyToken: string
-  type: Type
   targetId: string
   authorId: string
-  content: string
   msgId: string
   msgTimestamp: number
   nonce: string
@@ -45,7 +48,7 @@ type NoticeType =
   | 'joined_channel' | 'exited_channel'
   | 'guild_member_online' | 'guild_member_offline'
 
-export interface MessageBase {
+export interface MessageMention {
   mention: string[]
   mentionAll: boolean
   mentionRoles: string[]
@@ -58,6 +61,7 @@ export interface MessageExtra {
   guildId: string
   channelName: string
   author: Author
+  quote: Message
   attachments: Attachment
 }
 
@@ -106,7 +110,7 @@ export interface Channel {
   permissionSync: 0 | 1
 }
 
-export interface NoticeBody extends Channel, MessageBase {
+export interface NoticeBody extends Channel, MessageMention {
   value: string
   msgId: string
   targetId: string
@@ -141,14 +145,12 @@ export interface Overwrite {
   deny: number
 }
 
-export interface Message {
+export interface Message extends MessageBase, MessageMention {
   id: string
-  type: number
   author: Author
-  content: string
   embeds: any[]
   attachments: any[]
   reactions: any[]
   quote: Message
-  mention_info: object
+  mentionInfo: object
 }

@@ -20,9 +20,9 @@ export namespace Session {
   type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
   type Actions = 'added' | 'deleted' | 'updated'
 
-  type MessageActions = 'message' | 'message-deleted' | 'message-updated' | 'send'
+  export type MessageAction = 'message' | 'message-deleted' | 'message-updated' | 'send'
 
-  export interface Events extends Record<`${Genres}-${Actions}`, {}>, Record<MessageActions, MessageType> {
+  export interface Events extends Record<`${Genres}-${Actions}`, {}>, Record<MessageAction, MessageType> {
     'friend-request': {}
     'group-request': {}
     'group-member-request': {}
@@ -508,6 +508,7 @@ export interface MessageBase {
   content?: string
   timestamp?: number
   author?: AuthorInfo
+  $reply?: MessageInfo
 }
 
 export interface MessageInfo extends MessageBase {

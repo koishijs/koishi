@@ -1,5 +1,6 @@
 import { App, Adapter, Logger, Time } from 'koishi-core'
-import { createSession, KaiheilaBot } from './bot'
+import { KaiheilaBot } from './bot'
+import { adaptSession } from './utils'
 import { Payload, Signal } from './types'
 import WebSocket from 'ws'
 
@@ -45,7 +46,7 @@ export default class WsClient extends Adapter.WsClient<'kaiheila'> {
 
       if (parsed.s === Signal.event) {
         bot._sn = Math.max(bot._sn, parsed.sn)
-        const session = createSession(bot, parsed.d)
+        const session = adaptSession(bot, parsed.d)
         if (session) this.dispatch(session)
       } else if (parsed.s === Signal.pong) {
         clearTimeout(bot._ping)

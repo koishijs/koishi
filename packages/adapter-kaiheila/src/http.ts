@@ -1,6 +1,7 @@
 import { App, Adapter } from 'koishi-core'
 import { Logger, assertProperty } from 'koishi-utils'
-import { createSession, KaiheilaBot } from './bot'
+import { KaiheilaBot } from './bot'
+import { adaptSession } from './utils'
 
 const logger = new Logger('kaiheila')
 
@@ -39,7 +40,7 @@ export default class HttpServer extends Adapter<'kaiheila'> {
       if (!bot) return
 
       // dispatch events
-      const session = createSession(bot, body.d)
+      const session = adaptSession(bot, body.d)
       if (session) this.dispatch(session)
     })
 
