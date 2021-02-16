@@ -18,23 +18,23 @@ export default class WsClient extends Adapter.WsClient<'kaiheila'> {
     return new WebSocket(url, { headers })
   }
 
-  heartbeat(bot: KaiheilaBot, socket: WebSocket) {
+  heartbeat(bot: KaiheilaBot) {
     let trials = 0
     function send() {
       if (trials >= 2) {
-        return socket.close(1013)
+        return bot.socket.close(1013)
       }
-      socket.send(JSON.stringify({ s: Signal.ping, sn: bot._sn }))
+      bot.socket.send(JSON.stringify({ s: Signal.ping, sn: bot._sn }))
       bot._ping = setTimeout(send, heartbeatIntervals[trials++])
     }
     send()
   }
 
-  async connect(bot: KaiheilaBot, socket: WebSocket) {
+  async connect(bot: KaiheilaBot) {
     bot._sn = 0
     bot.ready = true
 
-    socket.on('message', (data) => {
+    bot.socket.on('message', (data) => {
       data = data.toString()
       let parsed: Payload
       try {
@@ -49,13 +49,13 @@ export default class WsClient extends Adapter.WsClient<'kaiheila'> {
         if (session) this.dispatch(session)
       } else if (parsed.s === Signal.pong) {
         clearTimeout(bot._ping)
-        bot._ping = setTimeout(() => this.heartbeat(bot, socket), Time.minute * 0.5)
+        bot._ping = setTimeout(() => this.heartbeat(bot), Time.minute * 0.5)
       } else if (parsed.s === Signal.resume) {
-        socket.close(1013)
+        bot.socket.close(1013)
       }
     })
 
-    socket.on('close', () => {
+    bot.socket.on('close', () => {
       bot.ready = false
     })
   }

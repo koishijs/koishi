@@ -34,7 +34,8 @@ export default class WsServer extends Adapter<'onebot'> {
         const bot = this.bots[selfId]
         if (!bot) return socket.close(1008, 'invalid x-self-id')
 
-        this._channel.connect(bot, socket).then(() => {
+        bot.socket = socket
+        this._channel.connect(bot).then(() => {
           if (this.bots.every(({ version, server }) => version || server === null)) resolve()
         }, reject)
       })
@@ -44,5 +45,8 @@ export default class WsServer extends Adapter<'onebot'> {
   close() {
     logger.debug('ws server closing')
     this.wsServer.close()
+    for (const bot of this.bots) {
+      bot.socket = null
+    }
   }
 }

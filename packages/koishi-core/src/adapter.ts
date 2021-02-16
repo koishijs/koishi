@@ -82,10 +82,8 @@ export namespace Adapter {
   }
 
   export abstract class WsClient<P extends Platform = Platform> extends Adapter<P> {
-    private _sockets = new Set<WebSocket>()
-
     abstract createSocket(bot: BotInstance<P>): WebSocket | Promise<WebSocket>
-    abstract connect(bot: BotInstance<P>, socket: WebSocket): Promise<void>
+    abstract connect(bot: BotInstance<P>): Promise<void>
 
     constructor(app: App, Bot: BotConstructor<P>, public options: WsClientOptions) {
       super(app, Bot)
@@ -98,12 +96,11 @@ export namespace Adapter {
       const connect = async (resolve: (value: void) => void, reject: (reason: Error) => void) => {
         logger.debug('websocket client opening')
         const socket = await this.createSocket(bot)
-        this._sockets.add(socket)
 
         socket.on('error', error => logger.debug(error))
 
         socket.on('close', (code, reason) => {
-          this._sockets.delete(socket)
+          bot.socket = null
           if (this.app.status !== App.Status.open || code === 1005) return
 
           const message = reason || `failed to connect to ${socket.url}`
@@ -120,8 +117,9 @@ export namespace Adapter {
 
         socket.on('open', () => {
           _retryCount = 0
+          bot.socket = socket
           logger.debug('connect to ws server:', socket.url)
-          this.connect(bot, socket).then(resolve, reject)
+          this.connect(bot).then(resolve, reject)
         })
       }
 
@@ -134,8 +132,8 @@ export namespace Adapter {
 
     close() {
       logger.debug('websocket client closing')
-      for (const socket of this._sockets) {
-        socket.close()
+      for (const bot of this.bots) {
+        bot.socket?.close()
       }
     }
   }
@@ -145,6 +143,7 @@ export interface Bot<P = Platform> extends BotOptions {
   [Bot.send](session: Session, message: string): Promise<void>
 
   ready?: boolean
+  socket?: WebSocket
   version?: string
   username?: string
   platform?: P

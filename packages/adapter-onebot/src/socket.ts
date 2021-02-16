@@ -1,7 +1,6 @@
 import { CQBot, CQResponse, toVersion } from './bot'
 import { Adapter, Session } from 'koishi-core'
 import { Logger, camelCase, renameProperty, paramCase } from 'koishi-utils'
-import type WebSocket from 'ws'
 
 declare module 'koishi-core/dist/adapter' {
   interface BotOptions {
@@ -89,11 +88,11 @@ export default class Socket {
 
   constructor(private server: Adapter) {}
 
-  connect(bot: CQBot, socket: WebSocket) {
+  connect(bot: CQBot) {
     return new Promise<void>((resolve, reject) => {
       bot.ready = true
 
-      socket.on('message', (data) => {
+      bot.socket.on('message', (data) => {
         data = data.toString()
         let parsed: any
         try {
@@ -119,12 +118,12 @@ export default class Socket {
         }
       })
 
-      socket.on('close', () => {
+      bot.socket.on('close', () => {
         delete bot._request
         bot.ready = false
       })
 
-      socket.send(JSON.stringify({
+      bot.socket.send(JSON.stringify({
         action: 'get_version_info',
         echo: -1,
       }), (error) => {
@@ -140,7 +139,7 @@ export default class Socket {
             delete this._listeners[counter]
             reject(new Error('response timeout'))
           }, bot.app.options.onebot.responseTimeout)
-          socket.send(JSON.stringify(data), (error) => {
+          bot.socket.send(JSON.stringify(data), (error) => {
             if (error) reject(error)
           })
         })

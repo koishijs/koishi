@@ -16,7 +16,7 @@ export default class WsClient extends Adapter.WsClient<'onebot'> {
     return new WebSocket(bot.server, { headers })
   }
 
-  connect(bot: CQBot, socket: WebSocket) {
-    return this._channel.connect(bot, socket)
+  connect(bot: CQBot) {
+    return this._channel.connect(bot)
   }
 }
