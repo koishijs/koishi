@@ -237,6 +237,13 @@ export class CQBot extends Bot {
     return data
   }
 
+  async getChannel(channelId: string, noCache?: boolean) {
+    const data = await this.get('get_group_info', { groupId: channelId, noCache })
+    renameProperty(data, 'channelName', 'groupName')
+    renameProperty(data, 'channelId', 'groupId')
+    return data
+  }
+
   async getGroupList(): Promise<CQGroupInfo[]> {
     const data = await this.get('get_group_list')
     data.forEach(CQBot.adaptGroup)

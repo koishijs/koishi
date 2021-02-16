@@ -166,6 +166,10 @@ export interface Bot<P = Platform> extends BotOptions {
   // group member
   getGroupMember(groupId: string, userId: string): Promise<GroupMemberInfo>
   getGroupMemberList(groupId: string): Promise<GroupMemberInfo[]>
+
+  // channel
+  getChannel(channelId: string): Promise<ChannelInfo>
+  getChannelList(groupId: string): Promise<ChannelInfo[]>
 }
 
 export class Bot<P extends Platform> {
@@ -244,3 +248,8 @@ export namespace Bot {
 }
 
 export type Platform = keyof Bot.Platforms
+
+export interface ChannelInfo {
+  channelId: string
+  channelName: string
+}

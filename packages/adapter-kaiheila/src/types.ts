@@ -48,24 +48,29 @@ type NoticeType =
   | 'joined_channel' | 'exited_channel'
   | 'guild_member_online' | 'guild_member_offline'
 
-export interface MessageMention {
+export interface MessageMeta {
   mention: string[]
   mentionAll: boolean
   mentionRoles: string[]
   mentionHere: boolean
+  attachments: Attachment
+  quote: Message
+  author: Author
 }
 
-export interface MessageExtra {
+export interface MessageExtra extends MessageMeta {
   type: Type
   code: string
   guildId: string
   channelName: string
-  author: Author
-  quote: Message
-  attachments: Attachment
 }
 
-export type MessageMeta = Partial<MessageExtra & NoticeBody>
+export interface Message extends MessageBase, MessageMeta {
+  id: string
+  embeds: any[]
+  reactions: any[]
+  mentionInfo: object
+}
 
 export interface User {
   id: string
@@ -113,7 +118,7 @@ export interface Channel {
   permissionSync: 0 | 1
 }
 
-export interface NoticeBody extends Channel, MessageMention {
+export interface NoticeBody extends Channel, MessageMeta {
   value: string
   msgId: string
   targetId: string
@@ -146,16 +151,6 @@ export interface Overwrite {
   roleId: number
   allow: number
   deny: number
-}
-
-export interface Message extends MessageBase, MessageMention {
-  id: string
-  author: Author
-  embeds: any[]
-  attachments: any[]
-  reactions: any[]
-  quote: Message
-  mentionInfo: object
 }
 
 export interface ListMeta {

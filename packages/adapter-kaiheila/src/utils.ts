@@ -19,9 +19,11 @@ export function adaptUser(author: KHL.User): AuthorInfo {
   }
 }
 
-function adaptMessage(base: KHL.MessageBase, author: KHL.Author, session: MessageInfo = {}) {
-  session.author = adaptUser(author)
-  session.userId = author.id
+function adaptMessage(base: KHL.MessageBase, meta: KHL.MessageMeta, session: MessageInfo = {}) {
+  if (meta.author) {
+    session.author = adaptUser(meta.author)
+    session.userId = meta.author.id
+  }
   if (base.type === KHL.Type.text) {
     session.content = base.content
       .replace(/@(.+?)#(\d+)/, (_, $1, $2) => `[CQ:at,qq=${$2}]`)
@@ -30,17 +32,29 @@ function adaptMessage(base: KHL.MessageBase, author: KHL.Author, session: Messag
       .replace(/@role:(\d+);/, (_, $1) => `[CQ:at,role=${$1}]`)
       .replace(/#channel:(\d+);/, (_, $1) => `[CQ:sharp,id=${$1}]`)
   } else if (base.type === KHL.Type.image) {
-    session.content = CQCode('image', { url: base.content })
+    session.content = CQCode('image', { url: base.content, file: meta.attachments.name })
   }
   return session
 }
 
 function adaptMessageSession(data: KHL.Data, meta: KHL.MessageMeta, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
-  adaptMessage(data, meta.author, session)
-  session.groupId = meta.guildId
-  session.channelName = meta.channelName
+  adaptMessage(data, meta, session)
   session.messageId = data.msgId
   session.timestamp = data.msgTimestamp
+  session.subtype = data.channelType === 'GROUP' ? 'group' : 'private'
+  if (meta.quote) {
+    session.$reply = adaptMessage(meta.quote, meta.quote)
+    session.$reply.messageId = meta.quote.id
+    session.$reply.channelId = session.channelId
+    session.$reply.subtype = session.subtype
+  }
+  return session
+}
+
+function adaptMessageCreate(data: KHL.Data, meta: KHL.MessageExtra, session: Partial<Session.Payload<Session.MessageAction>>) {
+  adaptMessageSession(data, meta, session)
+  session.groupId = meta.guildId
+  session.channelName = meta.channelName
   if (data.channelType === 'GROUP') {
     session.subtype = 'group'
     session.channelId = data.targetId
@@ -48,14 +62,12 @@ function adaptMessageSession(data: KHL.Data, meta: KHL.MessageMeta, session: Par
     session.subtype = 'private'
     session.channelId = meta.code
   }
-  session.subtype = data.channelType === 'GROUP' ? 'group' : 'private'
-  if (meta.quote) {
-    session.$reply = adaptMessage(meta.quote, meta.quote.author)
-    session.$reply.messageId = meta.quote.id
-    session.$reply.channelId = session.channelId
-    session.$reply.subtype = session.subtype
-  }
-  return session
+}
+
+function adaptMessageModify(data: KHL.Data, meta: KHL.NoticeBody, session: Partial<Session.Payload<Session.MessageAction>>) {
+  adaptMessageSession(data, meta, session)
+  session.messageId = meta.msgId
+  session.channelId = meta.channelId
 }
 
 export function adaptSession(bot: KaiheilaBot, input: any) {
@@ -70,18 +82,18 @@ export function adaptSession(bot: KaiheilaBot, input: any) {
       case 'updated_message':
       case 'updated_private_message':
         session.type = 'message-updated'
-        adaptMessageSession(data, body, session)
+        adaptMessageModify(data, body, session)
         break
       case 'deleted_message':
       case 'deleted_private_message':
         session.type = 'message-deleted'
-        adaptMessageSession(data, body, session)
+        adaptMessageModify(data, body, session)
         break
       default: return
     }
   } else {
     session.type = 'message'
-    adaptMessageSession(data, data.extra as KHL.MessageExtra, session)
+    adaptMessageCreate(data, data.extra as KHL.MessageExtra, session)
   }
   return new Session(bot.app, session)
 }

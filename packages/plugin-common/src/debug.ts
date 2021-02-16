@@ -2,23 +2,11 @@ import { Context, Session } from 'koishi-core'
 import { Logger, CQCode, Time, interpolate, pick } from 'koishi-utils'
 
 export interface DebugOptions {
-  showUserId?: boolean
-  showChannelId?: boolean
+  format?: string
   refreshUserName?: number
   refreshChannelName?: number
   includeUsers?: string[]
   includeGroups?: string[]
-  /**
-   * 可用的字段：
-   * - channelName
-   * - channelId
-   * - username
-   * - nickname
-   * - userId
-   * - content
-   * - platform
-   */
-  format?: string
 }
 
 const cqTypes = {
@@ -34,6 +22,19 @@ const cqTypes = {
   poke: '戳一戳',
   json: 'JSON',
   xml: 'XML',
+}
+
+interface Params {
+  content?: string
+  username?: string
+  nickname?: string
+  platform?: string
+  userId?: string
+  channelId?: string
+  groupId?: string
+  selfId?: string
+  channelName?: string
+  groupName?: string
 }
 
 export function apply(ctx: Context, config: DebugOptions = {}) {
@@ -52,7 +53,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   Logger.levels.message = 3
 
   const tasks: ((params: any, session: Session) => Promise<any>)[] = []
-  const channelMap: Record<number, [Promise<string>, number]> = {}
+  const channelMap: Record<number, [string | Promise<string>, number]> = {}
   const userMap: Record<string, [string | Promise<string>, number]> = {}
 
   // function getAuthorName({ anonymous, author, userId }: Session) {
@@ -62,22 +63,22 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   //     + (showUserId ? ` (${userId})` : '')
   // }
 
-  function createTask(key: string, callback: (session: Session) => Promise<any>) {
+  function on<K extends keyof Params>(key: K, callback: (session: Session) => Promise<Params[K]>) {
     if (!keys.includes(key)) return
     tasks.push(async (params: any, session: Session) => params[key] = await callback(session))
   }
 
   async function onMessage(session: Session) {
     userMap[session.userId] = [session.author.username, Date.now()]
-    const params: any = {
-      ...pick(session, ['platform', 'channelId', 'userId']),
+    const params: Params = {
+      ...pick(session, ['platform', 'channelId', 'groupId', 'userId', 'selfId']),
       ...pick(session.author, ['username', 'nickname']),
     }
     await Promise.all(tasks.map(task => task(params, session)))
     logger.debug(interpolate(format, params))
   }
 
-  createTask('content', async (session: Session) => {
+  on('content', async (session: Session) => {
     const codes = CQCode.build(session.content.split('\n', 1)[0])
     let output = ''
     for (const code of codes) {
@@ -108,13 +109,13 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
     return output
   })
 
-  createTask('channelName', async (session: Session) => {
-    if (session.channelName) return session.channelName
-    if (session.subtype === 'private') return '私聊'
-    const { groupId: id, $bot } = session
+  on('channelName', async (session: Session) => {
     const timestamp = Date.now()
+    if (session.channelName) return (channelMap[session.channelId] = [session.channelName, timestamp])[0]
+    if (session.subtype === 'private') return '私聊'
+    const { channelId: id, $bot } = session
     if (!channelMap[id] || timestamp - channelMap[id][1] >= refreshChannelName) {
-      const promise = $bot.getGroup(id).then(d => d.name, () => '' + id)
+      const promise = $bot.getChannel?.(id).then(d => d.channelName, () => '' + id) || '' + id
       channelMap[id] = [promise, timestamp]
     }
     return await channelMap[id][0]
