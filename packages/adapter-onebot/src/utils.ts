@@ -8,7 +8,7 @@ declare module 'koishi-core/dist/adapter' {
   }
 }
 
-const logger = new Logger('server')
+const logger = new Logger('onebot')
 
 export function createSession(server: Adapter, data: any) {
   const session = new Session(server.app, camelCase(data))
@@ -82,68 +82,63 @@ export function createSession(server: Adapter, data: any) {
 }
 
 let counter = 0
+const listeners: Record<number, (response: CQResponse) => void> = {}
 
-export default class Socket {
-  private _listeners: Record<number, (response: CQResponse) => void> = {}
+export function connect(bot: CQBot) {
+  return new Promise<void>((resolve, reject) => {
+    bot.ready = true
 
-  constructor(private server: Adapter) {}
+    bot.socket.on('message', (data) => {
+      data = data.toString()
+      let parsed: any
+      try {
+        parsed = JSON.parse(data)
+      } catch (error) {
+        return logger.warn('cannot parse message', data)
+      }
 
-  connect(bot: CQBot) {
-    return new Promise<void>((resolve, reject) => {
-      bot.ready = true
-
-      bot.socket.on('message', (data) => {
-        data = data.toString()
-        let parsed: any
-        try {
-          parsed = JSON.parse(data)
-        } catch (error) {
-          return logger.warn('cannot parse message', data)
+      if ('post_type' in parsed) {
+        logger.debug('receive %o', parsed)
+        const session = createSession(bot.adapter, parsed)
+        if (session) bot.adapter.dispatch(session)
+      } else if (parsed.echo === -1) {
+        bot.version = toVersion(camelCase(parsed.data))
+        logger.debug('%d got version info', bot.selfId)
+        if (bot.server) {
+          logger.info('connected to %c', bot.server)
         }
-
-        if ('post_type' in parsed) {
-          logger.debug('receive %o', parsed)
-          const session = createSession(this.server, parsed)
-          if (session) this.server.dispatch(session)
-        } else if (parsed.echo === -1) {
-          bot.version = toVersion(camelCase(parsed.data))
-          logger.debug('%d got version info', bot.selfId)
-          if (bot.server) {
-            logger.info('connected to %c', bot.server)
-          }
-          resolve()
-        } else if (parsed.echo in this._listeners) {
-          this._listeners[parsed.echo](parsed)
-          delete this._listeners[parsed.echo]
-        }
-      })
-
-      bot.socket.on('close', () => {
-        delete bot._request
-        bot.ready = false
-      })
-
-      bot.socket.send(JSON.stringify({
-        action: 'get_version_info',
-        echo: -1,
-      }), (error) => {
-        if (error) reject(error)
-      })
-
-      bot._request = (action, params) => {
-        const data = { action, params, echo: ++counter }
-        data.echo = ++counter
-        return new Promise((resolve, reject) => {
-          this._listeners[counter] = resolve
-          setTimeout(() => {
-            delete this._listeners[counter]
-            reject(new Error('response timeout'))
-          }, bot.app.options.onebot.responseTimeout)
-          bot.socket.send(JSON.stringify(data), (error) => {
-            if (error) reject(error)
-          })
-        })
+        resolve()
+      } else if (parsed.echo in listeners) {
+        listeners[parsed.echo](parsed)
+        delete listeners[parsed.echo]
       }
     })
-  }
+
+    bot.socket.on('close', () => {
+      delete bot._request
+      bot.ready = false
+    })
+
+    bot.socket.send(JSON.stringify({
+      action: 'get_version_info',
+      echo: -1,
+    }), (error) => {
+      if (error) reject(error)
+    })
+
+    bot._request = (action, params) => {
+      const data = { action, params, echo: ++counter }
+      data.echo = ++counter
+      return new Promise((resolve, reject) => {
+        listeners[counter] = resolve
+        setTimeout(() => {
+          delete listeners[counter]
+          reject(new Error('response timeout'))
+        }, bot.app.options.onebot.responseTimeout)
+        bot.socket.send(JSON.stringify(data), (error) => {
+          if (error) reject(error)
+        })
+      })
+    }
+  })
 }

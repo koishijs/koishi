@@ -1,8 +1,6 @@
-import { Adapter, App, Context } from 'koishi-core'
-import { Time } from 'koishi-utils'
+import { Adapter, App, Context, Time } from 'koishi-core'
+import { WsClient, WsServer } from './ws'
 import HttpServer from './http'
-import WsClient from './ws'
-import WsServer from './ws-reverse'
 import axios from 'axios'
 
 interface OneBotOptions extends Adapter.WsClientOptions {
@@ -20,10 +18,9 @@ declare module 'koishi-core/dist/app' {
 }
 
 export * from './bot'
-export * from './socket'
+export * from './utils'
 export * from './http'
 export * from './ws'
-export * from './ws-reverse'
 
 App.defaultConfig.onebot = {
   responseTimeout: Time.second,

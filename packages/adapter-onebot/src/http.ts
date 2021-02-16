@@ -1,7 +1,7 @@
 import { App, Adapter } from 'koishi-core'
 import { Logger, defineProperty, snakeCase, assertProperty } from 'koishi-utils'
 import { CQBot, toVersion } from './bot'
-import { createSession } from './socket'
+import { createSession } from './utils'
 import { createHmac } from 'crypto'
 import axios from 'axios'
 
@@ -24,7 +24,7 @@ declare module 'koishi-core/dist/session' {
   }
 }
 
-const logger = new Logger('server')
+const logger = new Logger('onebot')
 
 export default class HttpServer extends Adapter<'onebot'> {
   constructor(app: App) {

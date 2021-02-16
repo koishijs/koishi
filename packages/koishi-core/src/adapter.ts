@@ -23,7 +23,7 @@ export function createBots<T extends Bot>(key: 'selfId' | 'sid') {
 export type At<O, T extends keyof O, F> = [T] extends [never] ? F : O[T]
 
 type BotInstance<T extends Platform> = At<Bot.Platforms, T, Bot<T>>
-type BotConstructor<T extends Platform> = new (app: App, options: BotOptions) => BotInstance<T>
+type BotConstructor<T extends Platform> = new (adapter: Adapter, options: BotOptions) => BotInstance<T>
 type AdapterConstructor<T extends Platform = Platform> = new (app: App, bot: BotOptions) => Adapter<T>
 
 export abstract class Adapter<P extends Platform = Platform> {
@@ -36,7 +36,7 @@ export abstract class Adapter<P extends Platform = Platform> {
   constructor(public app: App, private Bot: BotConstructor<P>) {}
 
   create(options: BotOptions) {
-    const bot = new this.Bot(this.app, options)
+    const bot = new this.Bot(this, options)
     this.bots.push(bot)
     this.app.bots.push(bot)
   }
@@ -183,8 +183,11 @@ export class Bot<P extends Platform> {
     if (/^\d+$/.test(source)) return source
   }
 
-  constructor(public app: App, options: BotOptions) {
+  app: App
+
+  constructor(public adapter: Adapter<P>, options: BotOptions) {
     Object.assign(this, options)
+    this.app = adapter.app
     this.platform = this.type.split(':', 1)[0] as never
   }
 

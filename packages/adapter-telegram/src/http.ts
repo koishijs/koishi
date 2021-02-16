@@ -5,7 +5,7 @@ import { assertProperty, camelCase, Logger } from 'koishi-utils'
 import { TelegramBot } from './bot'
 import Telegram from './interface'
 
-const logger = new Logger('server')
+const logger = new Logger('telegram')
 
 function trimSlash(source: string) {
   return source.replace(/\/$/, '')

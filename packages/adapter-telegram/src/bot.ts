@@ -1,6 +1,6 @@
 import { createReadStream } from 'fs'
 import { camelCase, Logger, snakeCase, renameProperty, CQCode, assertProperty } from 'koishi-utils'
-import { Bot, Session, GroupInfo, GroupMemberInfo, UserInfo, App, BotOptions } from 'koishi-core'
+import { Bot, Session, GroupInfo, GroupMemberInfo, UserInfo, BotOptions, Adapter } from 'koishi-core'
 import Telegram from './interface'
 
 declare module 'koishi-core/dist/adapter' {
@@ -56,7 +56,7 @@ export class TelegramBot extends Bot {
     return data as UserInfo
   }
 
-  constructor(app: App, options: BotOptions) {
+  constructor(adapter: Adapter, options: BotOptions) {
     assertProperty(options, 'token')
     if (!options.selfId) {
       if (options.token.includes(':')) {
@@ -65,7 +65,7 @@ export class TelegramBot extends Bot {
         assertProperty(options, 'selfId')
       }
     }
-    super(app, options)
+    super(adapter, options)
     this.version = 'telegram'
   }
 
