@@ -8,4 +8,5 @@ export interface AppConfig extends AppOptions {
   plugins?: PluginConfig
   logLevel?: number
   logFilter?: Record<string, number>
+  logTime?: string | boolean
 }

@@ -6,7 +6,9 @@ import { dirname, sep } from 'path'
 
 /* eslint-disable import/first */
 
+// time diff is not displayed because timestamp will not be synchronized between main thread and worker thread
 Logger.levels = workerData.logLevels
+Logger.showTime = workerData.logTime
 const logger = new Logger('eval')
 
 import { expose, wrap } from './transfer'

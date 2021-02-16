@@ -27,6 +27,7 @@ export class Logger {
 
   static baseLevel = 2
   static showDiff = false
+  static showTime = ''
   static levels: Record<string, number> = {}
   static timestamp = 0
 
@@ -50,8 +51,9 @@ export class Logger {
 
   public stream: NodeJS.WritableStream = process.stderr
 
-  constructor(public name: string, private showDiff?: boolean) {
+  constructor(public name: string) {
     if (name in instances) return instances[name]
+
     let hash = 0
     for (let i = 0; i < name.length; i++) {
       hash = ((hash << 3) - hash) + name.charCodeAt(i)
@@ -74,7 +76,19 @@ export class Logger {
   private createMethod(name: LogType, prefix: string, minLevel: number) {
     this[name] = (...args: [any, ...any[]]) => {
       if (this.level < minLevel) return
-      this.stream.write(prefix + this.displayName + this.format(...args) + '\n')
+      let indent = 4
+      if (Logger.showTime) {
+        indent += Logger.showTime.length + 1
+        this.stream.write(Time.template(Logger.showTime + ' '))
+      }
+      this.stream.write(prefix + this.displayName + this.format(indent, ...args))
+      if (Logger.showDiff) {
+        const now = Date.now()
+        const diff = Logger.timestamp && now - Logger.timestamp
+        this.stream.write(this.color(' +' + Time.formatTimeShort(diff)))
+        Logger.timestamp = now
+      }
+      this.stream.write('\n')
     }
   }
 
@@ -82,11 +96,11 @@ export class Logger {
     return Logger.levels[this.name] ?? Logger.baseLevel
   }
 
-  extend = (namespace: string, showDiff = this.showDiff) => {
-    return new Logger(`${this.name}:${namespace}`, showDiff)
+  extend = (namespace: string) => {
+    return new Logger(`${this.name}:${namespace}`)
   }
 
-  format: (format: any, ...param: any[]) => string = (...args) => {
+  private format(indent: number, ...args: any[]) {
     if (args[0] instanceof Error) {
       args[0] = args[0].stack || args[0].message
     } else if (typeof args[0] !== 'string') {
@@ -104,14 +118,7 @@ export class Logger {
         index -= 1
       }
       return match
-    }).split('\n').join('\n    ')
-
-    if (this.showDiff ?? Logger.showDiff) {
-      const now = Date.now()
-      const diff = Logger.timestamp && now - Logger.timestamp
-      args.push(this.color('+' + Time.formatTimeShort(diff)))
-      Logger.timestamp = now
-    }
+    }).replace(/\n/g, '\n' + ' '.repeat(indent))
 
     return format(...args)
   }

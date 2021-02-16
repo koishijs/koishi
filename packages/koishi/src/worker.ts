@@ -88,6 +88,9 @@ if (config.logLevel && !process.env.KOISHI_LOG_LEVEL) {
   Logger.baseLevel = config.logLevel
 }
 
+if (config.logTime === true) config.logTime = 'YYYY/MM/DD HH:MM:SS'
+if (config.logTime) Logger.showTime = config.logTime
+
 interface Message {
   type: 'send'
   payload: any

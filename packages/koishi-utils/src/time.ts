@@ -105,6 +105,17 @@ export namespace Time {
     return source.toString().padStart(2, '0')
   }
 
+  export function template(template: string, time = new Date()) {
+    return template
+      .replace('YYYY', time.getFullYear().toString())
+      .replace('YY', time.getFullYear().toString().slice(2))
+      .replace('MM', toDoubleDigit(time.getMonth() + 1))
+      .replace('DD', toDoubleDigit(time.getDate()))
+      .replace('HH', toDoubleDigit(time.getHours()))
+      .replace('MM', toDoubleDigit(time.getMinutes()))
+      .replace('SS', toDoubleDigit(time.getSeconds()))
+  }
+
   function toHourMinute(time: Date) {
     return `${toDoubleDigit(time.getHours())}:${toDoubleDigit(time.getMinutes())}`
   }
