@@ -23,7 +23,7 @@ export * from './http'
 export * from './ws'
 
 App.defaultConfig.onebot = {
-  responseTimeout: Time.second,
+  responseTimeout: Time.minute,
   quickOperation: 0.1 * Time.second,
   retryInterval: 5 * Time.second,
   retryTimes: 4,

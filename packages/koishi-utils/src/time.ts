@@ -111,9 +111,9 @@ export namespace Time {
       .replace('YY', time.getFullYear().toString().slice(2))
       .replace('MM', toDoubleDigit(time.getMonth() + 1))
       .replace('DD', toDoubleDigit(time.getDate()))
-      .replace('HH', toDoubleDigit(time.getHours()))
-      .replace('MM', toDoubleDigit(time.getMinutes()))
-      .replace('SS', toDoubleDigit(time.getSeconds()))
+      .replace('hh', toDoubleDigit(time.getHours()))
+      .replace('mm', toDoubleDigit(time.getMinutes()))
+      .replace('ss', toDoubleDigit(time.getSeconds()))
   }
 
   function toHourMinute(time: Date) {
