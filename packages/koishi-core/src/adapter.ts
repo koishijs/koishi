@@ -22,9 +22,9 @@ export function createBots<T extends Bot>(key: 'selfId' | 'sid') {
 
 export type At<O, T extends keyof O, F> = [T] extends [never] ? F : O[T]
 
-type BotInstance<T extends Platform> = At<Bot.Platforms, T, Bot>
-type BotStatic<T extends Platform> = new (app: App, options: BotOptions) => BotInstance<T>
-type AdapterStatic<T extends Platform = Platform> = new (app: App, bot: BotOptions) => Adapter<T>
+type BotInstance<T extends Platform> = At<Bot.Platforms, T, Bot<T>>
+type BotConstructor<T extends Platform> = new (app: App, options: BotOptions) => BotInstance<T>
+type AdapterConstructor<T extends Platform = Platform> = new (app: App, bot: BotOptions) => Adapter<T>
 
 export abstract class Adapter<P extends Platform = Platform> {
   public type: string
@@ -33,7 +33,7 @@ export abstract class Adapter<P extends Platform = Platform> {
   abstract listen(): Promise<void>
   abstract close(): void
 
-  constructor(public app: App, private Bot: BotStatic<P>) {}
+  constructor(public app: App, private Bot: BotConstructor<P>) {}
 
   create(options: BotOptions) {
     const bot = new this.Bot(this.app, options)
@@ -63,7 +63,7 @@ export namespace Adapter {
     [K in string]: K extends `${infer T}:${any}` ? Adapter<T & Platform> : Adapter<K & Platform>
   }
 
-  export const types: Record<string, AdapterStatic> = {}
+  export const types: Record<string, AdapterConstructor> = {}
 
   export function redirect(target: string | ((bot: BotOptions) => string)) {
     const callback = typeof target === 'string' ? () => target : target
@@ -73,7 +73,7 @@ export namespace Adapter {
         new Logger('server').info('infer type as %c', type)
         return app.adapters[type] || new Adapter.types[type](app, bot)
       }
-    } as AdapterStatic
+    } as AdapterConstructor
   }
 
   export interface WsClientOptions {
@@ -84,14 +84,14 @@ export namespace Adapter {
   export abstract class WsClient<P extends Platform = Platform> extends Adapter<P> {
     private _sockets = new Set<WebSocket>()
 
-    abstract createSocket(bot: Bot<P>): WebSocket | Promise<WebSocket>
-    abstract connect(bot: Bot<P>, socket: WebSocket): Promise<void>
+    abstract createSocket(bot: BotInstance<P>): WebSocket | Promise<WebSocket>
+    abstract connect(bot: BotInstance<P>, socket: WebSocket): Promise<void>
 
-    constructor(app: App, Bot: BotStatic<P>, public options: WsClientOptions) {
+    constructor(app: App, Bot: BotConstructor<P>, public options: WsClientOptions) {
       super(app, Bot)
     }
 
-    private async _listen(bot: Bot<P>) {
+    private async _listen(bot: BotInstance<P>) {
       let _retryCount = 0
       const { retryTimes, retryInterval } = this.options
 
