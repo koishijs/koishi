@@ -3,6 +3,8 @@
 import { AuthorInfo, Bot, MessageInfo } from 'koishi-core'
 import { camelize, CQCode, pick, renameProperty, snakeCase } from 'koishi-utils'
 import axios, { Method } from 'axios'
+import * as KHL from './types'
+import { adaptGroup, adaptUser } from './utils'
 
 declare module 'koishi-core/dist/adapter' {
   namespace Bot {
@@ -143,5 +145,27 @@ export class KaiheilaBot extends Bot {
   async getStatusCode() {
     if (!this.ready) return Bot.Status.BOT_IDLE
     return Bot.Status.GOOD
+  }
+
+  async getGroupList() {
+    const { items } = await this.request<KHL.GuildList>('GET', '/guild/list')
+    return items.map(adaptGroup)
+  }
+
+  async getGroupMemberList() {
+    const { items } = await this.request<KHL.GuildMemberList>('GET', '/guild/user-list')
+    return items.map(adaptUser)
+  }
+
+  async setGroupNickname(guildId: string, userId: string, nickname: string) {
+    await this.request('POST', '/guild/nickname', { guildId, userId, nickname })
+  }
+
+  async leaveGroup(guildId: string) {
+    await this.request('POST', '/guild/leave', { guildId })
+  }
+
+  async kickGroup(guildId: string, userId: string) {
+    await this.request('POST', '/guild/kickout', { guildId, userId })
   }
 }

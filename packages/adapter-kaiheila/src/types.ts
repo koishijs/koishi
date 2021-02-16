@@ -67,13 +67,16 @@ export interface MessageExtra {
 
 export type MessageMeta = Partial<MessageExtra & NoticeBody>
 
-export interface Author {
+export interface User {
   id: string
   username: string
   nickname: string
-  identifyNum: string
-  online: boolean
   avatar: string
+  online: boolean
+}
+
+export interface Author extends User {
+  identifyNum: string
   roles: number[]
   bot: boolean
 }
@@ -153,4 +156,49 @@ export interface Message extends MessageBase, MessageMention {
   reactions: any[]
   quote: Message
   mentionInfo: object
+}
+
+export interface ListMeta {
+  page: number
+  pageTotal: number
+  pageSize: number
+  total: number
+}
+
+export interface List<T> {
+  items: T[]
+  meta: ListMeta
+  sort: Partial<Record<keyof T, number>>
+}
+
+export interface Guild {
+  id: string
+  name: string
+  topic: string
+  masterId: string
+  isMaster: boolean
+  icon: string
+  inviteEnabled: number
+  notifyType: number
+  region: string
+  enableOpen: number
+  openId: string
+  defaultChannelId: string
+  welcomeChannelId: string
+}
+
+export interface GuildList extends List<Guild> {}
+
+export interface GuildMember extends User {
+  joinedAt: number
+  activeTime: number
+  roles: number[]
+  isMaster: boolean
+  abbr: string
+}
+
+export interface GuildMemberList extends List<GuildMember> {
+  userCount: number
+  onlineCount: number
+  offlineCount: number
 }
