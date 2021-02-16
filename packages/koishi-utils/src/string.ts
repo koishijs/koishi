@@ -36,7 +36,7 @@ with (context) {
     const expr = sub.substring(2, sub.length - 2)
     return eval(expr)
   })
-}`)
+}`) as ((template: string, context: object) => string)
 
 export function escapeRegExp(source: string) {
   return source

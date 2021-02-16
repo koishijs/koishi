@@ -1,14 +1,24 @@
 import { Context, Session } from 'koishi-core'
-import { Logger, CQCode, Time } from 'koishi-utils'
-import {} from 'koishi-adapter-onebot'
+import { Logger, CQCode, Time, interpolate, pick } from 'koishi-utils'
 
 export interface DebugOptions {
   showUserId?: boolean
-  showGroupId?: boolean
+  showChannelId?: boolean
   refreshUserName?: number
-  refreshGroupName?: number
+  refreshChannelName?: number
   includeUsers?: string[]
   includeGroups?: string[]
+  /**
+   * 可用的字段：
+   * - channelName
+   * - channelId
+   * - username
+   * - nickname
+   * - userId
+   * - content
+   * - platform
+   */
+  format?: string
 }
 
 const cqTypes = {
@@ -28,44 +38,50 @@ const cqTypes = {
 
 export function apply(ctx: Context, config: DebugOptions = {}) {
   const {
+    format = '[{{ channelName }}] {{ username }}: {{ content }}',
     refreshUserName = Time.hour,
-    refreshGroupName = Time.hour,
+    refreshChannelName = Time.hour,
     includeUsers = [],
     includeGroups = [],
-    showUserId,
-    showGroupId,
   } = config
+
+  const cap = format.match(/\{\{[\s\S]+?\}\}/g) || []
+  const keys = cap.map(seg => seg.slice(2, -2).trim())
 
   const logger = new Logger('message', true)
   Logger.levels.message = 3
 
-  const groupMap: Record<number, [Promise<string>, number]> = {}
-
-  async function getGroupName(session: Session) {
-    if (session.subtype === 'private') return '私聊'
-    const { groupId: id, $bot } = session
-    const timestamp = Date.now()
-    if (!groupMap[id] || timestamp - groupMap[id][1] >= refreshGroupName) {
-      const promise = $bot.getGroup(id).then(d => d.name, () => '' + id)
-      groupMap[id] = [promise, timestamp]
-    }
-    let output = await groupMap[id][0]
-    if (showGroupId && output !== '' + id) {
-      output += ` (${id})`
-    }
-    return output
-  }
-
+  const tasks: ((params: any, session: Session) => Promise<any>)[] = []
+  const channelMap: Record<number, [Promise<string>, number]> = {}
   const userMap: Record<string, [string | Promise<string>, number]> = {}
 
-  function getSenderName({ anonymous, author, userId }: Session) {
-    return anonymous
-      ? anonymous.name + (showUserId ? ` (${anonymous.id})` : '')
-      : (userMap[userId] = [author.nickname, Date.now()])[0]
-      + (showUserId ? ` (${userId})` : '')
+  // function getAuthorName({ anonymous, author, userId }: Session) {
+  //   return anonymous
+  //     ? anonymous.name + (showUserId ? ` (${anonymous.id})` : '')
+  //     : (userMap[userId] = [author.username, Date.now()])[0]
+  //     + (showUserId ? ` (${userId})` : '')
+  // }
+
+  ctx.on('connect', () => {
+    Logger.lastTime = Date.now()
+  })
+
+  function createTask(key: string, callback: (session: Session) => Promise<any>) {
+    if (!keys.includes(key)) return
+    tasks.push(async (params: any, session: Session) => params[key] = await callback(session))
   }
 
-  async function formatMessage(session: Session) {
+  async function onMessage(session: Session) {
+    userMap[session.userId] = [session.author.username, Date.now()]
+    const params: any = {
+      ...pick(session, ['platform', 'channelId', 'userId']),
+      ...pick(session.author, ['username', 'nickname']),
+    }
+    await Promise.all(tasks.map(task => task(params, session)))
+    logger.debug(interpolate(format, params))
+  }
+
+  createTask('content', async (session: Session) => {
     const codes = CQCode.build(session.content)
     let output = ''
     for (const code of codes) {
@@ -74,13 +90,13 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
       } else if (code.type === 'at') {
         if (code.data.qq === 'all') {
           output += '@全体成员'
-        } else {
+        } else if (session.subtype === 'group') {
           const id = code.data.qq
           const timestamp = Date.now()
           if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
             const promise = session.$bot
               .getGroupMember(session.groupId, id)
-              .then(d => d.nickname, () => id)
+              .then(d => d.username, () => id)
             userMap[id] = [promise, timestamp]
           }
           output += '@' + await userMap[id][0]
@@ -94,18 +110,19 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
       }
     }
     return output
-  }
-
-  ctx.on('connect', () => {
-    Logger.lastTime = Date.now()
   })
 
-  async function onMessage(session: Session) {
-    const groupName = await getGroupName(session)
-    const senderName = getSenderName(session)
-    const message = await formatMessage(session)
-    logger.debug(`[${groupName}] ${senderName}: ${message}`)
-  }
+  createTask('channelName', async (session: Session) => {
+    if (session.channelName) return session.channelName
+    if (session.subtype === 'private') return '私聊'
+    const { groupId: id, $bot } = session
+    const timestamp = Date.now()
+    if (!channelMap[id] || timestamp - channelMap[id][1] >= refreshChannelName) {
+      const promise = $bot.getGroup(id).then(d => d.name, () => '' + id)
+      channelMap[id] = [promise, timestamp]
+    }
+    return await channelMap[id][0]
+  })
 
   if (includeUsers) {
     ctx.private(...includeUsers).on('message', onMessage)
