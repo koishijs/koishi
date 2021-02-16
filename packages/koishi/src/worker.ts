@@ -159,5 +159,8 @@ app.start().then(() => {
   logger.info('%C', [...versions].join(' '))
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
   logger.success(`bot started successfully in ${time} ms.`)
+  Logger.timestamp = Date.now()
+  Logger.showDiff = true
+
   process.send({ type: 'start' })
 }, handleException)

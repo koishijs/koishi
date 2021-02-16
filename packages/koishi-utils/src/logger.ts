@@ -28,7 +28,7 @@ export class Logger {
   static baseLevel = 2
   static showDiff = false
   static levels: Record<string, number> = {}
-  static lastTime = 0
+  static timestamp = 0
 
   static options: InspectOptions = {
     colors: stderr.hasBasic,
@@ -50,7 +50,7 @@ export class Logger {
 
   public stream: NodeJS.WritableStream = process.stderr
 
-  constructor(public name: string, private showDiff = false) {
+  constructor(public name: string, private showDiff?: boolean) {
     if (name in instances) return instances[name]
     let hash = 0
     for (let i = 0; i < name.length; i++) {
@@ -106,12 +106,11 @@ export class Logger {
       return match
     }).split('\n').join('\n    ')
 
-    if (Logger.showDiff || this.showDiff) {
+    if (this.showDiff ?? Logger.showDiff) {
       const now = Date.now()
-      if (Logger.lastTime) {
-        args.push(this.color('+' + Time.formatTimeShort(now - Logger.lastTime)))
-      }
-      Logger.lastTime = now
+      const diff = Logger.timestamp && now - Logger.timestamp
+      args.push(this.color('+' + Time.formatTimeShort(diff)))
+      Logger.timestamp = now
     }
 
     return format(...args)

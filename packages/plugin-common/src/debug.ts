@@ -48,7 +48,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   const cap = format.match(/\{\{[\s\S]+?\}\}/g) || []
   const keys = cap.map(seg => seg.slice(2, -2).trim())
 
-  const logger = new Logger('message', true)
+  const logger = new Logger('message')
   Logger.levels.message = 3
 
   const tasks: ((params: any, session: Session) => Promise<any>)[] = []
@@ -61,10 +61,6 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   //     : (userMap[userId] = [author.username, Date.now()])[0]
   //     + (showUserId ? ` (${userId})` : '')
   // }
-
-  ctx.on('connect', () => {
-    Logger.lastTime = Date.now()
-  })
 
   function createTask(key: string, callback: (session: Session) => Promise<any>) {
     if (!keys.includes(key)) return
@@ -82,7 +78,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   }
 
   createTask('content', async (session: Session) => {
-    const codes = CQCode.build(session.content)
+    const codes = CQCode.build(session.content.split('\n', 1)[0])
     let output = ''
     for (const code of codes) {
       if (typeof code === 'string') {
