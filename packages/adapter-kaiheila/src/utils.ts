@@ -6,7 +6,7 @@ import * as KHL from './types'
 export function adaptGroup(data: KHL.Guild): GroupInfo {
   return {
     groupId: data.id,
-    name: data.name,
+    groupName: data.name,
   }
 }
 

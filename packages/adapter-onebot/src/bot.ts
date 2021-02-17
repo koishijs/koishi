@@ -1,5 +1,6 @@
-import { camelCase, Logger, snakeCase, capitalize, renameProperty } from 'koishi-utils'
-import { Bot, AccountInfo, StatusInfo, StrangerInfo, Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo, AuthorInfo } from 'koishi-core'
+import { camelCase, Logger, snakeCase } from 'koishi-utils'
+import { Bot, Session } from 'koishi-core'
+import * as OneBot from './types'
 
 declare module 'koishi-core/dist/adapter' {
   namespace Bot {
@@ -24,172 +25,38 @@ export class SenderError extends Error {
   }
 }
 
-export interface CQMessageInfo extends MessageInfo {
-  realId: number
-}
-
-export interface CQGroupInfo extends GroupInfo {
-  memberCount: number
-  maxMemberCount: number
-}
-
-export interface CQUserInfo extends UserInfo {
-  sex?: 'male' | 'female' | 'unknown'
-  age?: number
-}
-
-export interface CQGroupMemberInfo extends GroupMemberInfo, CQUserInfo {
-  cardChangeable: boolean
-  groupId: number
-  joinTime: number
-  lastSentTime: number
-  titleExpireTime: number
-  unfriendly: boolean
-}
-
-export interface CQAuthorInfo extends AuthorInfo, CQUserInfo {
-  area?: string
-  level?: string
-  title?: string
-}
-
-export interface CQResponse {
-  status: string
-  retcode: number
-  data: any
-  echo?: number
-}
-
-interface MessageResponse {
-  messageId: string
-}
-
-export type RecordFormat = 'mp3' | 'amr' | 'wma' | 'm4a' | 'spx' | 'ogg' | 'wav' | 'flac'
-export type DataDirectory = 'image' | 'record' | 'show' | 'bface'
-
-export interface FriendInfo extends AccountInfo {
-  remark: string
-}
-
-export interface Credentials {
-  cookies: string
-  csrfToken: number
-}
-
-export interface ImageInfo {
-  file: string
-}
-
-export interface RecordInfo {
-  file: string
-}
-
-export interface VersionInfo {
-  coolqDirectory: string
-  coolqEdition: 'air' | 'pro'
-  pluginVersion: string
-  pluginBuildNumber: number
-  pluginBuildConfiguration: 'debug' | 'release'
-}
-
-export type HonorType = 'talkative' | 'performer' | 'legend' | 'strong_newbie' | 'emotion'
-
-export interface TalkativeMemberInfo extends AccountInfo {
-  avatar: string
-  dayCount: number
-}
-
-export interface HonoredMemberInfo {
-  avatar: string
-  description: string
-}
-
-export interface HonorInfo {
-  currentTalkative: TalkativeMemberInfo
-  talkativeList: HonoredMemberInfo[]
-  performerList: HonoredMemberInfo[]
-  legendList: HonoredMemberInfo[]
-  strongNewbieList: HonoredMemberInfo[]
-  emotionList: HonoredMemberInfo[]
-}
-
-export interface CQBot {
-  _request?(action: string, params: Record<string, any>): Promise<CQResponse>
-  sendLike(userId: string, times?: number): Promise<void>
-  sendLikeAsync(userId: string, times?: number): Promise<void>
-  setGroupKick(groupId: string, userId: string, rejectAddRequest?: boolean): Promise<void>
-  setGroupKickAsync(groupId: string, userId: string, rejectAddRequest?: boolean): Promise<void>
-  setGroupBan(groupId: string, userId: string, duration?: number): Promise<void>
-  setGroupBanAsync(groupId: string, userId: string, duration?: number): Promise<void>
-  setGroupWholeBan(groupId: string, enable?: boolean): Promise<void>
-  setGroupWholeBanAsync(groupId: string, enable?: boolean): Promise<void>
-  setGroupAdmin(groupId: string, userId: string, enable?: boolean): Promise<void>
-  setGroupAdminAsync(groupId: string, userId: string, enable?: boolean): Promise<void>
-  setGroupAnonymous(groupId: string, enable?: boolean): Promise<void>
-  setGroupAnonymousAsync(groupId: string, enable?: boolean): Promise<void>
-  setGroupCard(groupId: string, userId: string, card?: string): Promise<void>
-  setGroupCardAsync(groupId: string, userId: string, card?: string): Promise<void>
-  setGroupLeave(groupId: string, isDismiss?: boolean): Promise<void>
-  setGroupLeaveAsync(groupId: string, isDismiss?: boolean): Promise<void>
-  setGroupSpecialTitle(groupId: string, userId: string, specialTitle?: string, duration?: number): Promise<void>
-  setGroupSpecialTitleAsync(groupId: string, userId: string, specialTitle?: string, duration?: number): Promise<void>
-  getLoginInfo(): Promise<AccountInfo>
-  getStrangerInfo(userId: string, noCache?: boolean): Promise<StrangerInfo>
-  getFriendList(): Promise<FriendInfo[]>
-  getGroupHonorInfo(groupId: string, type: HonorType): Promise<HonorInfo>
-  getCookies(domain?: string): Promise<string>
-  getCsrfToken(): Promise<number>
-  getCredentials(domain?: string): Promise<Credentials>
-  getRecord(file: string, outFormat: RecordFormat, fullPath?: boolean): Promise<RecordInfo>
-  getImage(file: string): Promise<ImageInfo>
-  canSendImage(): Promise<boolean>
-  canSendRecord(): Promise<boolean>
-  getVersionInfo(): Promise<VersionInfo>
-  setRestartPlugin(delay?: number): Promise<void>
-  cleanDataDir(dataDir: DataDirectory): Promise<void>
-  cleanDataDirAsync(dataDir: DataDirectory): Promise<void>
-  cleanPluginLog(): Promise<void>
-  cleanPluginLogAsync(): Promise<void>
-  getVipInfo(): Promise<VipInfo>
-  getGroupNotice(groupId: string): Promise<GroupNotice[]>
-  sendGroupNotice(groupId: string, title: string, content: string): Promise<void>
-  sendGroupNoticeAsync(groupId: string, title: string, content: string): Promise<void>
-  setRestart(cleanLog?: boolean, cleanCache?: boolean, cleanEvent?: boolean): Promise<void>
-  setGroupName(groupId: string, name: string): Promise<void>
-  setGroupNameAsync(groupId: string, name: string): Promise<void>
-  setGroupPortrait(groupId: string, file: string, cache?: boolean): Promise<void>
-  setGroupPortraitAsync(groupId: string, file: string, cache?: boolean): Promise<void>
-  getGroupMsg(messageId: string): Promise<GroupMessage>
-  getForwardMsg(messageId: string): Promise<ForwardMessage>
-  sendGroupForwardMsg(groupId: string, messages: readonly CQNode[]): Promise<void>
-  sendGroupForwardMsgAsync(groupId: string, messages: readonly CQNode[]): Promise<void>
-}
+export interface CQBot extends OneBot.API {}
 
 export class CQBot extends Bot {
-  handleContent(content: string) {
+  version = 'onebot'
+
+  _request?(action: string, params: Record<string, any>): Promise<OneBot.Response>
+
+  private handleContent(content: string) {
     return content.replace(/\[CQ:at,type=all\]/g, '[CQ:at,qq=all]')
   }
 
-  async [Bot.send](meta: Session, content: string, autoEscape = false) {
+  async [Bot.send](message: Session.Message, content: string) {
     if (!content) return
+    const { subtype, channelId, channelName } = message
     content = this.handleContent(content)
     if (this.app.options.onebot?.preferSync) {
-      await this.sendMessage(meta.channelId, content)
+      await this.sendMessage(channelId, content)
       return
     }
 
-    let ctxId: string
-    // eslint-disable-next-line no-cond-assign
-    const ctxType = (ctxId = meta.groupId) ? 'group' : (ctxId = meta.userId) ? 'user' : null
-    if (meta._response) {
-      const session = this.createSession(meta.subtype as any, ctxType, ctxId, content)
-      if (this.app.bail(session, 'before-send', session)) return
-      return session._response({ reply: session.content, autoEscape, atSender: false })
+    let key: string
+    const value = message.subtype === 'group' ? message[key = 'groupId'] : message[key = 'userId']
+    const session = this.createSession({ content, subtype, channelId, channelName, [key]: value })
+    if (this.app.bail(session, 'before-send', session)) return
+
+    if (message._response) {
+      return message._response({ reply: session.content, atSender: false })
     }
 
-    return ctxType === 'group'
-      ? this.sendGroupMessageAsync(ctxId, content, autoEscape)
-      : this.sendPrivateMessageAsync(ctxId, content, autoEscape)
+    return message.subtype === 'group'
+      ? this.$sendGroupMsgAsync(value, content)
+      : this.$sendPrivateMsgAsync(value, content)
   }
 
   async get<T = any>(action: string, params = {}, silent = false): Promise<T> {
@@ -218,118 +85,74 @@ export class CQBot extends Bot {
   }
 
   async getMessage(channelId: string, messageId: string) {
-    const data = await this.get<CQMessageInfo>('get_msg', { messageId })
-    CQBot.adaptMessage(data)
-    return data
+    const data = await this.$getMsg(messageId)
+    return OneBot.adaptMessage(data)
   }
 
   async deleteMessage(channelId: string, messageId: string) {
-    await this.get('delete_msg', { messageId })
+    await this.$deleteMsg(messageId)
   }
 
-  static adaptGroup(data: CQGroupInfo) {
-    renameProperty(data, 'name', 'groupName')
+  async getSelf() {
+    const data = await this.$getLoginInfo()
+    return OneBot.adaptUser(data)
   }
 
-  async getGroup(groupId: string, noCache?: boolean): Promise<CQGroupInfo> {
-    const data = await this.get('get_group_info', { groupId, noCache })
-    CQBot.adaptGroup(data)
-    return data
+  async getUser(userId: string) {
+    const data = await this.$getStrangerInfo(userId)
+    return OneBot.adaptUser(data)
   }
 
-  async getChannel(channelId: string, noCache?: boolean) {
-    const data = await this.get('get_group_info', { groupId: channelId, noCache })
-    renameProperty(data, 'channelName', 'groupName')
-    renameProperty(data, 'channelId', 'groupId')
-    return data
+  async getChannel(channelId: string) {
+    const data = await this.$getGroupInfo(channelId)
+    return OneBot.adaptChannel(data)
   }
 
-  async getGroupList(): Promise<CQGroupInfo[]> {
-    const data = await this.get('get_group_list')
-    data.forEach(CQBot.adaptGroup)
-    return data
+  async getGroup(groupId: string) {
+    const data = await this.$getGroupInfo(groupId)
+    return OneBot.adaptGroup(data)
   }
 
-  static adaptUser(data: UserInfo) {
-    renameProperty(data, 'username', 'nickname')
+  async getGroupList() {
+    const data = await this.$getGroupList()
+    return data.map(OneBot.adaptGroup)
   }
 
-  static adaptGroupMember(data: GroupMemberInfo) {
-    CQBot.adaptUser(data)
-    renameProperty(data, 'nickname', 'card')
+  async getGroupMember(groupId: string, userId: string) {
+    const data = await this.$getGroupMemberInfo(groupId, userId)
+    return OneBot.adaptGroupMember(data)
   }
 
-  static adaptAuthor(data: AuthorInfo) {
-    CQBot.adaptGroupMember(data)
+  async getGroupMemberList(groupId: string) {
+    const data = await this.$getGroupMemberList(groupId)
+    return data.map(OneBot.adaptGroupMember)
   }
 
-  static adaptMessage(data: MessageInfo) {
-    renameProperty(data, 'timestamp', 'time')
-    renameProperty(data, 'content', 'message')
-    renameProperty(data, 'author', 'sender')
-    data.messageId = '' + data.messageId
-    CQBot.adaptAuthor(data.author)
-  }
-
-  async getUser(userId: string, noCache?: boolean): Promise<CQUserInfo> {
-    const data = await this.get('get_strange_info', { userId, noCache })
-    CQBot.adaptUser(data)
-    return data
-  }
-
-  async getGroupMember(groupId: string, userId: string, noCache?: boolean): Promise<GroupMemberInfo> {
-    const data = await this.get('get_group_member_info', { groupId, userId, noCache })
-    CQBot.adaptGroupMember(data)
-    return data
-  }
-
-  async getGroupMemberList(groupId: string): Promise<GroupMemberInfo[]> {
-    const data = await this.get('get_group_member_list', { groupId })
-    data.forEach(CQBot.adaptGroupMember)
-    return data
-  }
-
-  async sendGroupMessage(groupId: string, content: string, autoEscape = false) {
+  async sendGroupMessage(groupId: string, content: string) {
     if (!content) return
-    const session = this.createSession('group', 'group', groupId, content)
+    const session = this.createSession({ content, subtype: 'group', groupId, channelId: groupId })
     if (this.app.bail(session, 'before-send', session)) return
-    const { messageId } = await this.get<MessageResponse>('send_group_msg', { groupId, message: session.content, autoEscape })
-    session.messageId = '' + messageId
+    session.messageId = '' + await this.$sendGroupMsg(groupId, content)
     this.app.emit(session, 'send', session)
-    return '' + messageId
+    return session.messageId
   }
 
-  sendGroupMessageAsync(groupId: string, content: string, autoEscape = false) {
+  async sendPrivateMessage(userId: string, content: string) {
     if (!content) return
-    const session = this.createSession('group', 'group', groupId, content)
+    const session = this.createSession({ content, subtype: 'private', userId, channelId: 'private:' + userId })
     if (this.app.bail(session, 'before-send', session)) return
-    return this.getAsync('send_group_msg', { groupId, message: session.content, autoEscape })
-  }
-
-  async sendPrivateMessage(userId: string, content: string, autoEscape = false) {
-    if (!content) return
-    const session = this.createSession('private', 'user', userId, content)
-    if (this.app.bail(session, 'before-send', session)) return
-    const { messageId } = await this.get<MessageResponse>('send_private_msg', { userId, message: session.content, autoEscape })
-    session.messageId = '' + messageId
+    session.messageId = '' + await this.$sendPrivateMsg(userId, content)
     this.app.emit(session, 'send', session)
-    return '' + messageId
+    return session.messageId
   }
 
-  sendPrivateMessageAsync(userId: string, content: string, autoEscape = false) {
-    if (!content) return
-    const session = this.createSession('private', 'user', userId, content)
-    if (this.app.bail(session, 'before-send', session)) return
-    return this.getAsync('send_private_msg', { userId, message: session.content, autoEscape })
-  }
-
-  async setGroupAnonymousBan(groupId: string, meta: string | object, duration?: number) {
+  async $setGroupAnonymousBan(groupId: string, meta: string | object, duration?: number) {
     const args = { groupId, duration } as any
     args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
     await this.get('set_group_anonymous_ban', args)
   }
 
-  setGroupAnonymousBanAsync(groupId: string, meta: string | object, duration?: number) {
+  $setGroupAnonymousBanAsync(groupId: string, meta: string | object, duration?: number) {
     const args = { groupId, duration } as any
     args[typeof meta === 'string' ? 'flag' : 'anonymous'] = meta
     return this.getAsync('set_group_anonymous_ban', args)
@@ -371,10 +194,10 @@ export class CQBot extends Bot {
     }
   }
 
-  async getStatusCode() {
+  async getStatus() {
     if (!this.ready) return Bot.Status.BOT_IDLE
     try {
-      const data = await this.get<StatusInfo>('get_status')
+      const data = await this.$getStatus()
       return data.good ? Bot.Status.GOOD : data.online ? Bot.Status.SERVER_ERROR : Bot.Status.BOT_OFFLINE
     } catch {
       return Bot.Status.NET_ERROR
@@ -382,143 +205,83 @@ export class CQBot extends Bot {
   }
 }
 
-function defineSync(name: string, ...params: string[]) {
-  const prop = camelCase(name.replace(/^_/, ''))
-  CQBot.prototype[prop] = function (this: CQBot, ...args: any[]) {
-    return this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
-  }
-}
-
-function defineAsync(name: string, ...params: string[]) {
-  const prop = camelCase(name.replace(/^_/, ''))
+function define(name: string, ...params: string[]) {
+  const prop = '$' + camelCase(name.replace(/^[_.]/, ''))
+  const isAsync = prop.startsWith('$set') || prop.startsWith('$send') || prop.startsWith('$delete')
   CQBot.prototype[prop] = async function (this: CQBot, ...args: any[]) {
-    await this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
+    const data = await this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
+    if (!isAsync) return data
   }
-  CQBot.prototype[prop + 'Async'] = async function (this: CQBot, ...args: any[]) {
+  isAsync && (CQBot.prototype[prop + 'Async'] = async function (this: CQBot, ...args: any[]) {
     await this.getAsync(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
-  }
+  })
 }
 
 function defineExtract(name: string, key: string, ...params: string[]) {
-  const prop = camelCase(name.replace(/^_/, ''))
+  const prop = '$' + camelCase(name.replace(/^[_.]/, ''))
+  const isAsync = prop.startsWith('$set') || prop.startsWith('$send') || prop.startsWith('$delete')
   CQBot.prototype[prop] = async function (this: CQBot, ...args: any[]) {
     const data = await this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
     return data[key]
   }
+  isAsync && (CQBot.prototype[prop + 'Async'] = async function (this: CQBot, ...args: any[]) {
+    await this.getAsync(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
+  })
 }
 
-defineAsync('send_like', 'user_id', 'times')
-defineAsync('set_group_kick', 'group_id', 'user_id', 'reject_add_request')
-defineAsync('set_group_ban', 'group_id', 'user_id', 'duration')
-defineAsync('set_group_whole_ban', 'group_id', 'enable')
-defineAsync('set_group_admin', 'group_id', 'user_id', 'enable')
-defineAsync('set_group_anonymous', 'group_id', 'enable')
-defineAsync('set_group_card', 'group_id', 'user_id', 'card')
-defineAsync('set_group_leave', 'group_id', 'is_dismiss')
-defineAsync('set_group_special_title', 'group_id', 'user_id', 'special_title', 'duration')
-defineSync('get_login_info')
-defineSync('get_friend_list')
-defineSync('get_group_list')
-defineSync('get_group_info', 'group_id', 'no_cache')
-defineSync('get_group_member_info', 'group_id', 'user_id', 'no_cache')
-defineSync('get_group_member_list', 'group_id')
-defineSync('get_group_honor_info', 'group_id', 'type')
+defineExtract('send_private_msg', 'message_id', 'user_id', 'message', 'auto_escape')
+defineExtract('send_group_msg', 'message_id', 'group_id', 'message', 'auto_escape')
+defineExtract('send_group_forward_msg', 'message_id', 'group_id', 'messages')
+define('delete_msg', 'message_id')
+define('set_essence_msg', 'message_id')
+define('delete_essence_msg', 'message_id')
+define('send_like', 'user_id', 'times')
+define('get_msg', 'message_id')
+define('get_essence_msg_list', 'group_id')
+define('ocr_image', 'image')
+defineExtract('get_forward_msg', 'messages', 'message_id')
+defineExtract('.get_word_slices', 'slices', 'content')
+define('get_group_msg_history', 'group_id', 'message_seq')
+
+define('set_group_kick', 'group_id', 'user_id', 'reject_add_request')
+define('set_group_ban', 'group_id', 'user_id', 'duration')
+define('set_group_whole_ban', 'group_id', 'enable')
+define('set_group_admin', 'group_id', 'user_id', 'enable')
+define('set_group_anonymous', 'group_id', 'enable')
+define('set_group_card', 'group_id', 'user_id', 'card')
+define('set_group_leave', 'group_id', 'is_dismiss')
+define('set_group_special_title', 'group_id', 'user_id', 'special_title', 'duration')
+define('set_group_name', 'group_id', 'group_name')
+define('set_group_portrait', 'group_id', 'file', 'cache')
+define('send_group_notice', 'group_id', 'content')
+define('get_group_at_all_remain', 'group_id')
+
+define('get_login_info')
+define('get_stranger_info', 'user_id', 'no_cache')
+define('_get_vip_info', 'user_id')
+define('get_friend_list')
+define('get_group_info', 'group_id', 'no_cache')
+define('get_group_list')
+define('get_group_member_info', 'group_id', 'user_id', 'no_cache')
+define('get_group_member_list', 'group_id')
+define('get_group_honor_info', 'group_id', 'type')
+define('get_group_system_msg')
+define('get_group_file_system_info', 'group_id')
+define('get_group_root_files', 'group_id')
+define('get_group_files_by_folder', 'group_id', 'folder_id')
+define('upload_group_file', 'group_id', 'file', 'name', 'folder')
+defineExtract('get_group_file_url', 'url', 'group_id', 'file_id', 'busid')
+defineExtract('download_file', 'file', 'url', 'headers', 'thread_count')
+defineExtract('get_online_clients', 'clients', 'no_cache')
+defineExtract('check_url_safely', 'level', 'url')
+
 defineExtract('get_cookies', 'cookies', 'domain')
 defineExtract('get_csrf_token', 'token')
-defineSync('get_credentials', 'domain')
-defineSync('get_record', 'file', 'out_format', 'full_path')
-defineSync('get_image', 'file')
+define('get_credentials', 'domain')
+define('get_record', 'file', 'out_format', 'full_path')
+define('get_image', 'file')
 defineExtract('can_send_image', 'yes')
 defineExtract('can_send_record', 'yes')
-defineSync('get_version_info')
-defineSync('set_restart_plugin', 'delay')
-defineAsync('clean_data_dir', 'data_dir')
-defineAsync('clean_plugin_log', 'group_id', 'name')
-
-// experimental api
-
-export interface VipInfo extends AccountInfo {
-  level: number
-  levelSpeed: number
-  vipLevel: number
-  vipGrowthSpeed: number
-  vipGrowthTotal: string
-}
-
-export interface GroupNotice {
-  cn: number
-  fid: string
-  fn: number
-  msg: {
-    text: string
-    textFace: string
-    title: string
-  }
-  pubt: number
-  readNum: number
-  settings: {
-    isShowEditCard: number
-    remindTs: number
-  }
-  u: number
-  vn: number
-}
-
-defineSync('_get_vip_info')
-defineSync('_get_group_notice', 'group_id')
-defineAsync('_send_group_notice', 'group_id', 'title', 'content')
-defineSync('_set_restart', 'clean_log', 'clean_cache', 'clean_event')
-
-// go-cqhttp extension
-
-export interface ImageInfo {
-  size?: number
-  filename?: string
-  url?: string
-}
-
-export interface VersionInfo {
-  version?: string
-  goCqhttp?: boolean
-  runtimeVersion?: string
-  runtimeOs?: string
-}
-
-export interface GroupMessage {
-  messageId: number
-  realId: number
-  sender: AccountInfo
-  time: number
-  content: string
-}
-
-export interface ForwardMessage {
-  messages: {
-    sender: AccountInfo
-    time: number
-    content: string
-  }[]
-}
-
-interface CQNode {
-  type: 'node'
-  data: {
-    id: number
-  } | {
-    name: string
-    uin: number
-    content: string
-  }
-}
-
-defineAsync('set_group_name', 'group_id', 'group_name')
-defineAsync('set_group_portrait', 'group_id', 'file', 'cache')
-
-export function toVersion(data: VersionInfo) {
-  const { coolqEdition, pluginVersion, goCqhttp, version } = data
-  if (goCqhttp) {
-    return `go-cqhttp/${version.slice(1)}`
-  } else {
-    return `coolq/${capitalize(coolqEdition)} cqhttp/${pluginVersion}`
-  }
-}
+define('get_status')
+define('get_version_info')
+define('set_restart', 'delay')

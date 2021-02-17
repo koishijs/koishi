@@ -2,11 +2,12 @@ import { Context, Session } from 'koishi-core'
 import { Logger, CQCode, Time, interpolate, pick } from 'koishi-utils'
 
 export interface DebugOptions {
-  format?: string
+  formatSend?: string
+  formatReceive?: string
+  includeUsers?: string[]
+  includeChannels?: string[]
   refreshUserName?: number
   refreshChannelName?: number
-  includeUsers?: string[]
-  includeGroups?: string[]
 }
 
 const cqTypes = {
@@ -37,22 +38,28 @@ interface Params {
   groupName?: string
 }
 
+function getDeps(template: string) {
+  const cap = template.match(/\{\{[\s\S]+?\}\}/g) || []
+  return cap.map(seg => seg.slice(2, -2).trim())
+}
+
 export function apply(ctx: Context, config: DebugOptions = {}) {
   const {
-    format = '[{{ channelName }}] {{ username }}: {{ content }}',
+    formatSend = '[{{ channelName }}] {{ content }}',
+    formatReceive = '[{{ channelName }}] {{ username }}: {{ content }}',
     refreshUserName = Time.hour,
     refreshChannelName = Time.hour,
     includeUsers = [],
-    includeGroups = [],
+    includeChannels = [],
   } = config
 
-  const cap = format.match(/\{\{[\s\S]+?\}\}/g) || []
-  const keys = cap.map(seg => seg.slice(2, -2).trim())
+  const sendDeps = getDeps(formatSend)
+  const receiveDeps = getDeps(formatReceive)
 
   const logger = new Logger('message')
   Logger.levels.message = 3
 
-  const tasks: ((params: any, session: Session) => Promise<any>)[] = []
+  const tasks: Record<string, (session: Session.Message) => Promise<any>> = {}
   const channelMap: Record<number, [string | Promise<string>, number]> = {}
   const userMap: Record<string, [string | Promise<string>, number]> = {}
 
@@ -63,22 +70,11 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   //     + (showUserId ? ` (${userId})` : '')
   // }
 
-  function on<K extends keyof Params>(key: K, callback: (session: Session) => Promise<Params[K]>) {
-    if (!keys.includes(key)) return
-    tasks.push(async (params: any, session: Session) => params[key] = await callback(session))
+  function on<K extends keyof Params>(key: K, callback: (session: Session.Message) => Promise<Params[K]>) {
+    tasks[key] = callback
   }
 
-  async function onMessage(session: Session) {
-    userMap[session.userId] = [session.author.username, Date.now()]
-    const params: Params = {
-      ...pick(session, ['platform', 'channelId', 'groupId', 'userId', 'selfId']),
-      ...pick(session.author, ['username', 'nickname']),
-    }
-    await Promise.all(tasks.map(task => task(params, session)))
-    logger.debug(interpolate(format, params))
-  }
-
-  on('content', async (session: Session) => {
+  on('content', async (session) => {
     const codes = CQCode.build(session.content.split('\n', 1)[0])
     let output = ''
     for (const code of codes) {
@@ -109,7 +105,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
     return output
   })
 
-  on('channelName', async (session: Session) => {
+  on('channelName', async (session) => {
     const timestamp = Date.now()
     if (session.channelName) return (channelMap[session.channelId] = [session.channelName, timestamp])[0]
     if (session.subtype === 'private') return '私聊'
@@ -121,11 +117,24 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
     return await channelMap[id][0]
   })
 
-  if (includeUsers) {
-    ctx.private(...includeUsers).on('message', onMessage)
+  function handleMessage(deps: string[], template: string, session: Session.Message) {
+    const params: Params = pick(session, ['platform', 'channelId', 'groupId', 'userId', 'selfId'])
+    userMap[session.userId] = [session.author.username, Date.now()]
+    Object.assign(params, pick(session.author, ['username', 'nickname']))
+    Promise.all(deps.map(async (key) => {
+      const callback = tasks[key]
+      params[key] ||= await callback(session)
+    })).then(() => logger.debug(interpolate(template, params)))
   }
 
-  if (includeGroups) {
-    ctx.group(...includeGroups).on('message', onMessage)
-  }
+  ctx.intersect((session) => {
+    if (session.subtype === 'private') {
+      return includeUsers.length ? includeUsers.includes(session.userId) : true
+    } else {
+      return includeChannels.length ? includeChannels.includes(session.channelId) : true
+    }
+  }).plugin((ctx) => {
+    ctx.on('message', handleMessage.bind(null, receiveDeps, formatReceive))
+    ctx.on('before-send', handleMessage.bind(null, sendDeps, formatSend))
+  })
 }

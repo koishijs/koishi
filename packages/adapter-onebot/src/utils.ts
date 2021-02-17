@@ -1,6 +1,7 @@
-import { CQBot, CQResponse, toVersion } from './bot'
+import { CQBot } from './bot'
 import { Adapter, Session } from 'koishi-core'
 import { Logger, camelCase, renameProperty, paramCase } from 'koishi-utils'
+import * as OneBot from './types'
 
 declare module 'koishi-core/dist/adapter' {
   interface BotOptions {
@@ -22,7 +23,7 @@ export function createSession(server: Adapter, data: any) {
   if (session.operatorId) session.operatorId = '' + session.operatorId
 
   if (session.type === 'message') {
-    CQBot.adaptMessage(session as any)
+    Object.assign(session, OneBot.adaptMessage(session as any))
     renameProperty(session, 'subtype', 'messageType')
     session.channelId ||= `private:${session.userId}`
   } else if (data.post_type === 'request') {
@@ -81,7 +82,7 @@ export function createSession(server: Adapter, data: any) {
 }
 
 let counter = 0
-const listeners: Record<number, (response: CQResponse) => void> = {}
+const listeners: Record<number, (response: OneBot.Response) => void> = {}
 
 export function connect(bot: CQBot) {
   return new Promise<void>((resolve, reject) => {
@@ -101,8 +102,8 @@ export function connect(bot: CQBot) {
         const session = createSession(bot.adapter, parsed)
         if (session) bot.adapter.dispatch(session)
       } else if (parsed.echo === -1) {
-        bot.version = toVersion(camelCase(parsed.data))
-        logger.debug('%d got version info', bot.selfId)
+        Object.assign(bot, camelCase(parsed.data))
+        logger.debug('%d got self info', parsed.data)
         if (bot.server) {
           logger.info('connected to %c', bot.server)
         }
@@ -119,7 +120,7 @@ export function connect(bot: CQBot) {
     })
 
     bot.socket.send(JSON.stringify({
-      action: 'get_version_info',
+      action: 'get_login_info',
       echo: -1,
     }), (error) => {
       if (error) reject(error)

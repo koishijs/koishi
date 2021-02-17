@@ -182,7 +182,7 @@ export function apply(ctx: Context, config: Config = {}) {
         platform: bot.platform,
         selfId: bot.selfId,
         label: bot.label,
-        code: await bot.getStatusCode(),
+        code: await bot.getStatus(),
         rate: bot.counter.slice(1).reduce((prev, curr) => prev + curr, 0),
       }))),
     ])

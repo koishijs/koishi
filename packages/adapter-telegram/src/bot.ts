@@ -110,11 +110,11 @@ export class TelegramBot extends Bot {
     return result ? ('' + result.messageId) : null
   }
 
-  async sendMessage(chatId: string, content: string) {
+  async sendMessage(channelId: string, content: string) {
     if (!content) return
-    const session = this.createSession('group', 'group', chatId, content)
+    const session = this.createSession({ content, channelId, subtype: 'group', groupId: channelId })
     if (this.app.bail(session, 'before-send', session)) return
-    session.messageId = await this._sendMessage(chatId, session.content)
+    session.messageId = await this._sendMessage(channelId, session.content)
     this.app.emit(session, 'send', session)
     return session.messageId
   }
@@ -133,7 +133,7 @@ export class TelegramBot extends Bot {
 
   static adaptGroup(data: Telegram.Chat & GroupInfo): GroupInfo {
     renameProperty(data, 'groupId', 'id')
-    renameProperty(data, 'name', 'title')
+    renameProperty(data, 'groupName', 'title')
     return data
   }
 
@@ -166,7 +166,7 @@ export class TelegramBot extends Bot {
     return TelegramBot.adaptUser(data)
   }
 
-  async getStatusCode() {
+  async getStatus() {
     if (!this.ready) return Bot.Status.BOT_IDLE
     try {
       await this.get('getMe')

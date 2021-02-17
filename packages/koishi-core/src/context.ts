@@ -41,6 +41,7 @@ export class Context {
   public user = this.createSelector('userId')
   public self = this.createSelector('selfId')
   public group = this.createSelector('groupId')
+  public channel = this.createSelector('channelId')
   public platform = this.createSelector('platform')
 
   constructor(public filter: Filter, public app?: App) {
@@ -360,7 +361,7 @@ export interface EventMap extends SessionEventMap {
   'before-attach-channel'(session: Session, fields: Set<Channel.Field>): void
   'attach-user'(session: Session): void | boolean | Promise<void | boolean>
   'attach-channel'(session: Session): void | boolean | Promise<void | boolean>
-  'before-send'(session: Session): void | boolean
+  'before-send'(session: Session<never, never, Platform, 'send'>): void | boolean
   'before-command'(argv: Argv): void | string | Promise<void | string>
   'command'(argv: Argv): void | Promise<void>
   'middleware'(session: Session): void

@@ -147,7 +147,7 @@ export interface Bot<P = Platform> extends BotOptions {
   version?: string
   username?: string
   platform?: P
-  getStatusCode(): Promise<Bot.Status>
+  getStatus(): Promise<Bot.Status>
 
   // message
   sendMessage(channelId: string, content: string): Promise<string>
@@ -157,6 +157,7 @@ export interface Bot<P = Platform> extends BotOptions {
   deleteMessage(channelId: string, messageId: string): Promise<void>
 
   // user
+  getSelf(): Promise<UserInfo>
   getUser(userId: string): Promise<UserInfo>
 
   // group
@@ -199,15 +200,17 @@ export class Bot<P extends Platform> {
     return `${this.platform}:${this.selfId}`
   }
 
-  createSession<T extends keyof Session.Events['send']>(subtype: T, ctxType: 'group' | 'user', ctxId: string, content: string) {
-    return new Session<never, never, P, 'send', T>(this.app, {
-      content,
-      subtype,
+  createSession(session: Partial<Session<never, never, P, 'send'>>) {
+    return new Session<never, never, P, 'send'>(this.app, {
+      ...session,
       type: 'send',
-      platform: this.platform,
       selfId: this.selfId,
-      [ctxType + 'Id']: ctxId,
-      timestamp: Math.round(Date.now() / 1000),
+      platform: this.platform,
+      timestamp: Date.now(),
+      author: {
+        userId: this.selfId,
+        username: this.username,
+      },
     })
   }
 

@@ -59,6 +59,8 @@ export namespace Session {
   type ParamY<X, Y> = Extract<InnerKeys<Events, ParamX<X>>, Y>
 
   export type Payload<X, Y = any> = Session<never, never, Platform, ParamX<X>, ParamY<X, Y>>
+
+  export type Message = Session<never, never, Platform, MessageAction>
 }
 
 export class Session<
@@ -93,10 +95,6 @@ export class Session<
   // request event
   comment?: string
   flag?: string
-
-  // metaEvent event
-  status?: StatusInfo
-  interval?: number
 
   $user?: User.Observed<U>
   $channel?: Channel.Observed<G>
@@ -478,27 +476,6 @@ export interface FileInfo {
   busid: number
 }
 
-export interface AccountInfo {
-  userId: string
-  nickname: string
-}
-
-export interface StrangerInfo extends AccountInfo {
-  sex: 'male' | 'female' | 'unknown'
-  age: number
-}
-
-export type GroupRole = 'owner' | 'admin' | 'member'
-
-export interface StatusInfo {
-  appInitialized: boolean
-  appEnabled: boolean
-  pluginsGood: boolean
-  appGood: boolean
-  online: boolean
-  good: boolean
-}
-
 export interface MessageBase {
   messageId?: string
   channelId?: string
@@ -516,7 +493,7 @@ export interface MessageInfo extends MessageBase {
 
 export interface GroupInfo {
   groupId: string
-  name: string
+  groupName: string
 }
 
 export interface UserInfo {

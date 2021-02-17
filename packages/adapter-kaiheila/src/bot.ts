@@ -117,17 +117,22 @@ export class KaiheilaBot extends Bot {
   }
 
   async sendMessage(channelId: string, content: string) {
-    let key = 'channelId', path = '/message/create'
+    let key = 'channelId', path = '/message/create', subtype: 'private' | 'group'
     const chain = CQCode.build(content)
     const quote = this.parseQuote(chain)
     if (channelId.length > 30) {
       key = 'chatCode'
       path = '/user-chat/create-msg'
+      subtype = 'private'
     } else {
       content = this.renderMessage(chain)
+      subtype = 'group'
     }
+    const session = this.createSession({ channelId, content, subtype })
+    if (this.app.bail(session, 'before-send', session)) return
     const message = await this.request('POST', path, { [key]: channelId, content, quote })
-    return message.msgId
+    this.app.emit(session, 'send', session)
+    return session.messageId = message.msgId
   }
 
   async sendPrivateMessage(targetId: string, content: string) {
@@ -154,7 +159,7 @@ export class KaiheilaBot extends Bot {
     }
   }
 
-  async getStatusCode() {
+  async getStatus() {
     if (!this.ready) return Bot.Status.BOT_IDLE
     return Bot.Status.GOOD
   }

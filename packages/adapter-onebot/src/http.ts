@@ -1,6 +1,6 @@
 import { App, Adapter } from 'koishi-core'
 import { Logger, defineProperty, snakeCase, assertProperty } from 'koishi-utils'
-import { CQBot, toVersion } from './bot'
+import { CQBot } from './bot'
 import { createSession } from './utils'
 import { createHmac } from 'crypto'
 import axios from 'axios'
@@ -44,8 +44,7 @@ export default class HttpServer extends Adapter<'onebot'> {
       const { data } = await axios.post(uri, params, { headers })
       return data
     }
-    bot.version = toVersion(await bot.getVersionInfo())
-    logger.debug('%d got version info', bot.selfId)
+    Object.assign(bot, await bot.getSelf())
     logger.info('connected to %c', bot.server)
   }
 
