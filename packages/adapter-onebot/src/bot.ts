@@ -1,6 +1,6 @@
 import { camelCase, Logger, snakeCase } from 'koishi-utils'
 import { Bot, Session } from 'koishi-core'
-import * as OneBot from './types'
+import * as OneBot from './utils'
 
 declare module 'koishi-core/dist/adapter' {
   namespace Bot {
@@ -285,3 +285,4 @@ defineExtract('can_send_record', 'yes')
 define('get_status')
 define('get_version_info')
 define('set_restart', 'delay')
+define('reload_event_filter')

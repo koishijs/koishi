@@ -1,6 +1,3 @@
-import * as Koishi from 'koishi-core'
-import { capitalize } from 'koishi-core'
-
 export interface Response {
   status: string
   retcode: number
@@ -16,11 +13,6 @@ export interface AccountInfo {
   userId: string
   nickname: string
 }
-
-export const adaptUser = (user: AccountInfo): Koishi.UserInfo => ({
-  userId: user.userId.toString(),
-  username: user.nickname,
-})
 
 export interface StrangerInfo extends AccountInfo {
   sex: 'male' | 'female' | 'unknown'
@@ -57,17 +49,6 @@ export interface SenderInfo extends StrangerInfo {
   card?: string
 }
 
-export const adaptGroupMember = (user: SenderInfo): Koishi.GroupMemberInfo => ({
-  ...adaptUser(user),
-  nickname: user.card,
-})
-
-export const adaptAuthor = (user: SenderInfo, anonymous?: AnonymousInfo): Koishi.AuthorInfo => ({
-  ...adaptUser(user),
-  nickname: anonymous?.name || user.card,
-  anonymous: anonymous?.flag,
-})
-
 export interface Message extends MessageId {
   realId: number
   time: number
@@ -82,13 +63,6 @@ export interface AnonymousInfo {
   name: string
   flag: string
 }
-
-export const adaptMessage = (message: Message): Koishi.MessageInfo => ({
-  messageId: message.messageId.toString(),
-  timestamp: message.time * 1000,
-  content: message.message,
-  author: adaptAuthor(message.sender, message.anonymous),
-})
 
 export type RecordFormat = 'mp3' | 'amr' | 'wma' | 'm4a' | 'spx' | 'ogg' | 'wav' | 'flac'
 export type DataDirectory = 'image' | 'record' | 'show' | 'bface'
@@ -106,16 +80,6 @@ export interface GroupInfo extends GroupBase {
   memberCount: number
   maxMemberCount: number
 }
-
-export const adaptGroup = (group: GroupInfo): Koishi.GroupInfo => ({
-  groupId: group.groupId.toString(),
-  groupName: group.groupName,
-})
-
-export const adaptChannel = (group: GroupInfo): Koishi.ChannelInfo => ({
-  channelId: group.groupId.toString(),
-  channelName: group.groupName,
-})
 
 export interface GroupMemberInfo extends SenderInfo {
   cardChangeable: boolean
@@ -155,15 +119,6 @@ export interface ImageInfo {
   size?: number
   filename?: string
   url?: string
-}
-
-export function toVersion(data: VersionInfo) {
-  const { coolqEdition, pluginVersion, goCqhttp, version } = data
-  if (goCqhttp) {
-    return `go-cqhttp/${version.slice(1)}`
-  } else {
-    return `coolq/${capitalize(coolqEdition)} cqhttp/${pluginVersion}`
-  }
 }
 
 export interface ForwardMessage {
@@ -394,4 +349,5 @@ export interface API {
   $getStatus(): Promise<StatusInfo>
   $getVersionInfo(): Promise<VersionInfo>
   $setRestart(delay?: number): Promise<void>
+  $reloadEventFilter(): Promise<void>
 }

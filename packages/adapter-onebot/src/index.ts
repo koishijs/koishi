@@ -20,7 +20,6 @@ declare module 'koishi-core/dist/app' {
 export * from './bot'
 export * from './utils'
 export * from './http'
-export * from './types'
 export * from './ws'
 
 App.defaultConfig.onebot = {

@@ -1,11 +1,56 @@
 import { CQBot } from './bot'
 import { Adapter, Session } from 'koishi-core'
 import { Logger, camelCase, renameProperty, paramCase } from 'koishi-utils'
+import * as Koishi from 'koishi-core'
 import * as OneBot from './types'
+
+export * from './types'
 
 declare module 'koishi-core/dist/adapter' {
   interface BotOptions {
     server?: string
+  }
+}
+
+export const adaptUser = (user: OneBot.AccountInfo): Koishi.UserInfo => ({
+  userId: user.userId.toString(),
+  username: user.nickname,
+})
+
+export const adaptGroupMember = (user: OneBot.SenderInfo): Koishi.GroupMemberInfo => ({
+  ...adaptUser(user),
+  nickname: user.card,
+})
+
+export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.AnonymousInfo): Koishi.AuthorInfo => ({
+  ...adaptUser(user),
+  nickname: anonymous?.name || user.card,
+  anonymous: anonymous?.flag,
+})
+
+export const adaptMessage = (message: OneBot.Message): Koishi.MessageInfo => ({
+  messageId: message.messageId.toString(),
+  timestamp: message.time * 1000,
+  content: message.message,
+  author: adaptAuthor(message.sender, message.anonymous),
+})
+
+export const adaptGroup = (group: OneBot.GroupInfo): Koishi.GroupInfo => ({
+  groupId: group.groupId.toString(),
+  groupName: group.groupName,
+})
+
+export const adaptChannel = (group: OneBot.GroupInfo): Koishi.ChannelInfo => ({
+  channelId: group.groupId.toString(),
+  channelName: group.groupName,
+})
+
+export function toVersion(data: OneBot.VersionInfo) {
+  const { coolqEdition, pluginVersion, goCqhttp, version } = data
+  if (goCqhttp) {
+    return `go-cqhttp/${version.slice(1)}`
+  } else {
+    return `coolq/${coolqEdition} cqhttp/${pluginVersion}`
   }
 }
 
@@ -23,7 +68,7 @@ export function createSession(server: Adapter, data: any) {
   if (session.operatorId) session.operatorId = '' + session.operatorId
 
   if (session.type === 'message') {
-    Object.assign(session, OneBot.adaptMessage(session as any))
+    Object.assign(session, adaptMessage(session as any))
     renameProperty(session, 'subtype', 'messageType')
     session.channelId ||= `private:${session.userId}`
   } else if (data.post_type === 'request') {
