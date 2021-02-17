@@ -1,4 +1,4 @@
-import { Context, Session } from 'koishi-core'
+import { Bot, Context, Session } from 'koishi-core'
 import { Logger, CQCode, Time, interpolate, pick } from 'koishi-utils'
 
 export interface DebugOptions {
@@ -74,6 +74,20 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
     tasks[key] = callback
   }
 
+  async function getUserName(bot: Bot, groupId: string, userId: string) {
+    try {
+      const { username } = await bot.getGroupMember(groupId, userId)
+      return username
+    } catch {
+      return userId
+    }
+  }
+
+  ctx.on('connect', () => {
+    const timestamp = Date.now()
+    ctx.bots.forEach(bot => userMap[bot.selfId] = [bot.username, timestamp])
+  })
+
   on('content', async (session) => {
     const codes = CQCode.build(session.content.split('\n', 1)[0])
     let output = ''
@@ -87,12 +101,11 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
           const id = code.data.qq
           const timestamp = Date.now()
           if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
-            const promise = session.$bot
-              .getGroupMember(session.groupId, id)
-              .then(d => d.username, () => id)
-            userMap[id] = [promise, timestamp]
+            userMap[id] = [getUserName(session.$bot, session.groupId, id), timestamp]
           }
           output += '@' + await userMap[id][0]
+        } else {
+          output += '@' + session.$bot.username
         }
       } else if (code.type === 'share' || code.type === 'location') {
         output += `[分享:${code.data.title}]`
@@ -105,14 +118,22 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
     return output
   })
 
+  async function getChannelName(bot: Bot, channelId: string) {
+    try {
+      const { channelName } = await bot.getChannel(channelId)
+      return channelName
+    } catch {
+      return channelId
+    }
+  }
+
   on('channelName', async (session) => {
     const timestamp = Date.now()
     if (session.channelName) return (channelMap[session.channelId] = [session.channelName, timestamp])[0]
     if (session.subtype === 'private') return '私聊'
-    const { channelId: id, $bot } = session
+    const { channelId: id } = session
     if (!channelMap[id] || timestamp - channelMap[id][1] >= refreshChannelName) {
-      const promise = $bot.getChannel?.(id).then(d => d.channelName, () => '' + id) || '' + id
-      channelMap[id] = [promise, timestamp]
+      channelMap[id] = [getChannelName(session.$bot, id), timestamp]
     }
     return await channelMap[id][0]
   })

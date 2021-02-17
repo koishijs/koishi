@@ -13,6 +13,9 @@ declare module 'koishi-core/dist/app' {
   }
 }
 
+export * from './types'
+export * from './utils'
+
 Adapter.types['kaiheila:http'] = HttpServer
 Adapter.types['kaiheila:ws'] = WsClient
 Adapter.types['kaiheila'] = Adapter.redirect((bot) => {

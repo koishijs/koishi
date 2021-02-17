@@ -9,8 +9,10 @@ export interface BotOptions {
   selfId?: string
 }
 
+type BotList<T extends Bot> = Array<T> & Record<string, T>
+
 export function createBots<T extends Bot>(key: 'selfId' | 'sid') {
-  const bots = [] as Array<T> & Record<string, T>
+  const bots = [] as BotList<T>
   return new Proxy(bots, {
     get(target, prop) {
       return typeof prop === 'symbol'
@@ -28,7 +30,7 @@ type AdapterConstructor<T extends Platform = Platform> = new (app: App, bot: Bot
 
 export abstract class Adapter<P extends Platform = Platform> {
   public type: string
-  public bots = createBots<BotInstance<P>>('selfId')
+  public bots: BotList<BotInstance<P>> = createBots('selfId')
 
   abstract listen(): Promise<void>
   abstract close(): void
@@ -247,6 +249,8 @@ export namespace Bot {
     NET_ERROR,
     /** 服务器状态异常 */
     SERVER_ERROR,
+    /** 机器人被封禁 */
+    BANNED,
   }
 }
 

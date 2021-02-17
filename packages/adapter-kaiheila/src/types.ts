@@ -75,15 +75,26 @@ export interface Message extends MessageBase, MessageMeta {
 export interface User {
   id: string
   username: string
-  nickname: string
+  identifyNum: string
   avatar: string
   online: boolean
+  bot?: boolean
+}
+
+export enum UserStatus { normal = 0, banned = 10 }
+
+export interface Self extends User {
+  status: UserStatus
+  mobileVerified: boolean
+  system: boolean
+  mobilePrefix: string
+  mobile: string
+  invitedCount: number
 }
 
 export interface Author extends User {
-  identifyNum: string
   roles: number[]
-  bot: boolean
+  nickname?: string
 }
 
 export interface Attachment {

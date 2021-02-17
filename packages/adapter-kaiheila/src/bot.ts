@@ -4,7 +4,7 @@ import { AuthorInfo, Bot, MessageInfo } from 'koishi-core'
 import { camelize, CQCode, pick, renameProperty, snakeCase } from 'koishi-utils'
 import axios, { Method } from 'axios'
 import * as KHL from './types'
-import { adaptGroup, adaptUser } from './utils'
+import { adaptGroup, adaptAuthor, adaptUser } from './utils'
 
 declare module 'koishi-core/dist/adapter' {
   namespace Bot {
@@ -89,7 +89,8 @@ export class KaiheilaBot extends Bot {
       headers,
       data: JSON.stringify(snakeCase(data)),
     })
-    return camelize<T>(response.data)
+    const result = camelize(response.data)
+    return result.data
   }
 
   private parseQuote(chain: CQCode.Chain) {
@@ -159,6 +160,11 @@ export class KaiheilaBot extends Bot {
     }
   }
 
+  async getSelf() {
+    const data = await this.request<KHL.Self>('GET', '/user/me')
+    return adaptUser(data)
+  }
+
   async getStatus() {
     if (!this.ready) return Bot.Status.BOT_IDLE
     return Bot.Status.GOOD
@@ -171,7 +177,7 @@ export class KaiheilaBot extends Bot {
 
   async getGroupMemberList() {
     const { items } = await this.request<KHL.GuildMemberList>('GET', '/guild/user-list')
-    return items.map(adaptUser)
+    return items.map(adaptAuthor)
   }
 
   async setGroupNickname(guildId: string, userId: string, nickname: string) {

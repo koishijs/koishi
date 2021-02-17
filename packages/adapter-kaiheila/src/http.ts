@@ -20,6 +20,7 @@ export default class HttpServer extends Adapter<'kaiheila'> {
 
   private async _listen(bot: KaiheilaBot) {
     bot.ready = true
+    Object.assign(bot, await bot.getSelf())
   }
 
   async listen() {

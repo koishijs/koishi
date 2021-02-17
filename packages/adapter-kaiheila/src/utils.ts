@@ -1,5 +1,5 @@
 import { KaiheilaBot } from './bot'
-import { Session, CQCode, MessageInfo, AuthorInfo, GroupInfo } from 'koishi-core'
+import { Session, CQCode, MessageInfo, AuthorInfo, GroupInfo, UserInfo } from 'koishi-core'
 import { camelCase } from 'koishi-utils'
 import * as KHL from './types'
 
@@ -10,18 +10,20 @@ export function adaptGroup(data: KHL.Guild): GroupInfo {
   }
 }
 
-export function adaptUser(author: KHL.User): AuthorInfo {
-  return {
-    userId: author.id,
-    avatar: author.avatar,
-    username: author.username,
-    nickname: author.nickname,
-  }
-}
+export const adaptUser = (user: KHL.User): UserInfo => ({
+  userId: user.id,
+  avatar: user.avatar,
+  username: user.username,
+})
+
+export const adaptAuthor = (author: KHL.Author): AuthorInfo => ({
+  ...adaptUser(author),
+  nickname: author.nickname,
+})
 
 function adaptMessage(base: KHL.MessageBase, meta: KHL.MessageMeta, session: MessageInfo = {}) {
   if (meta.author) {
-    session.author = adaptUser(meta.author)
+    session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id
   }
   if (base.type === KHL.Type.text) {
