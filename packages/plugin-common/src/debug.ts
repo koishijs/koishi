@@ -89,6 +89,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   })
 
   on('content', async (session) => {
+    if (!session.content) console.log(JSON.stringify(session))
     const codes = CQCode.build(session.content.split('\n', 1)[0])
     let output = ''
     for (const code of codes) {
