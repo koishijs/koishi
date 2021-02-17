@@ -6,7 +6,7 @@ import { contain, observe, Logger, defineProperty, Random, template } from 'kois
 import { Argv } from './parser'
 import { Middleware, NextFunction } from './context'
 import { App } from './app'
-import { Bot, ChannelInfo, Platform } from './adapter'
+import { AuthorInfo, Bot, ChannelInfo, MessageBase, MessageInfo, Platform } from './adapter'
 
 const logger = new Logger('session')
 
@@ -84,7 +84,6 @@ export class Session<
   rawMessage?: string
   font?: number
   author?: AuthorInfo
-  anonymous?: AnonymousInfo
 
   // notice event
   operatorId?: string
@@ -132,11 +131,9 @@ export class Session<
   get $username(): string {
     const defaultName = this.$user && this.$user['name']
       ? this.$user['name']
-      : this.anonymous
-        ? this.anonymous.name
-        : this.author
-          ? this.author.nickname || this.author.username
-          : '' + this.userId
+      : this.author
+        ? this.author.nickname || this.author.username
+        : this.userId
     return this.$app.chain('appellation', defaultName, this)
   }
 
@@ -262,7 +259,7 @@ export class Session<
     }
 
     // 对于已经绑定可观测用户的，判断字段是否需要自动补充
-    if ($user && !this.anonymous) {
+    if ($user && !this.author?.anonymous) {
       for (const key in $user) {
         fieldSet.delete(key as any)
       }
@@ -275,7 +272,7 @@ export class Session<
     if ($user) return $user as any
 
     // 确保匿名消息不会写回数据库
-    if (this.anonymous) {
+    if (this.author?.anonymous) {
       const fallback = User.create(this.platform, userId)
       fallback.authority = this._getValue(this.$app.options.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
@@ -463,48 +460,9 @@ function collectFields<T extends TableType>(argv: Argv, collectors: FieldCollect
   return fields
 }
 
-export interface AnonymousInfo {
-  id?: number
-  name: string
-  flag: string
-}
-
 export interface FileInfo {
   id: string
   name: string
   size: number
   busid: number
 }
-
-export interface MessageBase {
-  messageId?: string
-  channelId?: string
-  groupId?: string
-  userId?: string
-  content?: string
-  timestamp?: number
-  author?: AuthorInfo
-  $reply?: MessageInfo
-}
-
-export interface MessageInfo extends MessageBase {
-  subtype?: keyof Session.Events['message']
-}
-
-export interface GroupInfo {
-  groupId: string
-  groupName: string
-}
-
-export interface UserInfo {
-  userId: string
-  username: string
-  nickname?: string
-  avatar?: string
-}
-
-export interface GroupMemberInfo extends UserInfo {
-  roles?: string[]
-}
-
-export interface AuthorInfo extends GroupMemberInfo {}

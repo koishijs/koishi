@@ -1,5 +1,5 @@
 import { CQCode, Logger, paramCase, sleep, Time } from 'koishi-utils'
-import { Session, MessageInfo, GroupInfo, GroupMemberInfo, UserInfo } from './session'
+import { Session } from './session'
 import { App } from './app'
 import type WebSocket from 'ws'
 
@@ -259,4 +259,39 @@ export type Platform = keyof Bot.Platforms
 export interface ChannelInfo {
   channelId: string
   channelName: string
+}
+
+export interface GroupInfo {
+  groupId: string
+  groupName: string
+}
+
+export interface UserInfo {
+  userId: string
+  username: string
+  nickname?: string
+  avatar?: string
+}
+
+export interface GroupMemberInfo extends UserInfo {
+  roles?: string[]
+}
+
+export interface AuthorInfo extends GroupMemberInfo {
+  anonymous?: string
+}
+
+export interface MessageBase {
+  messageId?: string
+  channelId?: string
+  groupId?: string
+  userId?: string
+  content?: string
+  timestamp?: number
+  author?: AuthorInfo
+  $reply?: MessageInfo
+}
+
+export interface MessageInfo extends MessageBase {
+  subtype?: keyof Session.Events['message']
 }

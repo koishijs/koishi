@@ -73,13 +73,13 @@ export function unescapeAnswer(message: string) {
 }
 
 Context.prototype.getSessionState = function (session) {
-  const { channelId, anonymous, userId, $app } = session
+  const { channelId, userId, $app } = session
   if (!$app._dialogueStates[channelId]) {
     this.emit('dialogue/state', $app._dialogueStates[channelId] = { channelId } as SessionState)
   }
   const state = Object.create($app._dialogueStates[channelId])
   state.session = session
-  state.userId = anonymous ? -anonymous.id : userId
+  state.userId = userId
   return state
 }
 

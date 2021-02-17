@@ -57,9 +57,15 @@ export interface SenderInfo extends StrangerInfo {
   card?: string
 }
 
-export const adaptAuthor = (user: SenderInfo): Koishi.AuthorInfo => ({
+export const adaptGroupMember = (user: SenderInfo): Koishi.GroupMemberInfo => ({
   ...adaptUser(user),
   nickname: user.card,
+})
+
+export const adaptAuthor = (user: SenderInfo, anonymous?: AnonymousInfo): Koishi.AuthorInfo => ({
+  ...adaptUser(user),
+  nickname: anonymous?.name || user.card,
+  anonymous: anonymous?.flag,
 })
 
 export interface Message extends MessageId {
@@ -68,13 +74,20 @@ export interface Message extends MessageId {
   messageType: 'private' | 'group'
   sender: SenderInfo
   message: string
+  anonymous?: AnonymousInfo
+}
+
+export interface AnonymousInfo {
+  id: number
+  name: string
+  flag: string
 }
 
 export const adaptMessage = (message: Message): Koishi.MessageInfo => ({
   messageId: message.messageId.toString(),
   timestamp: message.time * 1000,
   content: message.message,
-  author: adaptAuthor(message.sender),
+  author: adaptAuthor(message.sender, message.anonymous),
 })
 
 export type RecordFormat = 'mp3' | 'amr' | 'wma' | 'm4a' | 'spx' | 'ogg' | 'wav' | 'flac'
@@ -112,8 +125,6 @@ export interface GroupMemberInfo extends SenderInfo {
   titleExpireTime: number
   unfriendly: boolean
 }
-
-export const adaptGroupMember = adaptAuthor
 
 export interface Credentials {
   cookies: string

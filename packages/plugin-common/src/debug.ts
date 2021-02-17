@@ -43,6 +43,24 @@ function getDeps(template: string) {
   return cap.map(seg => seg.slice(2, -2).trim())
 }
 
+async function getUserName(bot: Bot, groupId: string, userId: string) {
+  try {
+    const { username } = await bot.getGroupMember(groupId, userId)
+    return username
+  } catch {
+    return userId
+  }
+}
+
+async function getChannelName(bot: Bot, channelId: string) {
+  try {
+    const { channelName } = await bot.getChannel(channelId)
+    return channelName
+  } catch {
+    return channelId
+  }
+}
+
 export function apply(ctx: Context, config: DebugOptions = {}) {
   const {
     formatSend = '[{{ channelName }}] {{ content }}',
@@ -60,32 +78,16 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   Logger.levels.message = 3
 
   const tasks: Record<string, (session: Session.Message) => Promise<any>> = {}
-  const channelMap: Record<number, [string | Promise<string>, number]> = {}
+  const channelMap: Record<string, [string | Promise<string>, number]> = {}
   const userMap: Record<string, [string | Promise<string>, number]> = {}
-
-  // function getAuthorName({ anonymous, author, userId }: Session) {
-  //   return anonymous
-  //     ? anonymous.name + (showUserId ? ` (${anonymous.id})` : '')
-  //     : (userMap[userId] = [author.username, Date.now()])[0]
-  //     + (showUserId ? ` (${userId})` : '')
-  // }
 
   function on<K extends keyof Params>(key: K, callback: (session: Session.Message) => Promise<Params[K]>) {
     tasks[key] = callback
   }
 
-  async function getUserName(bot: Bot, groupId: string, userId: string) {
-    try {
-      const { username } = await bot.getGroupMember(groupId, userId)
-      return username
-    } catch {
-      return userId
-    }
-  }
-
   ctx.on('connect', () => {
     const timestamp = Date.now()
-    ctx.bots.forEach(bot => userMap[bot.selfId] = [bot.username, timestamp])
+    ctx.bots.forEach(bot => userMap[bot.sid] = [bot.username, timestamp])
   })
 
   on('content', async (session) => {
@@ -96,13 +98,13 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
       if (typeof code === 'string') {
         output += CQCode.unescape(code)
       } else if (code.type === 'at') {
-        if (code.data.qq === 'all') {
+        if (code.data.type === 'all') {
           output += '@全体成员'
         } else if (session.subtype === 'group') {
-          const id = code.data.qq
+          const id = `${session.platform}:${code.data.qq}`
           const timestamp = Date.now()
           if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
-            userMap[id] = [getUserName(session.$bot, session.groupId, id), timestamp]
+            userMap[id] = [getUserName(session.$bot, session.groupId, code.data.qq), timestamp]
           }
           output += '@' + await userMap[id][0]
         } else {
@@ -119,29 +121,20 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
     return output
   })
 
-  async function getChannelName(bot: Bot, channelId: string) {
-    try {
-      const { channelName } = await bot.getChannel(channelId)
-      return channelName
-    } catch {
-      return channelId
-    }
-  }
-
   on('channelName', async (session) => {
     const timestamp = Date.now()
-    if (session.channelName) return (channelMap[session.channelId] = [session.channelName, timestamp])[0]
+    const { cid, channelName } = session
+    if (channelName) return (channelMap[cid] = [channelName, timestamp])[0]
     if (session.subtype === 'private') return '私聊'
-    const { channelId: id } = session
-    if (!channelMap[id] || timestamp - channelMap[id][1] >= refreshChannelName) {
-      channelMap[id] = [getChannelName(session.$bot, id), timestamp]
+    if (!channelMap[cid] || timestamp - channelMap[cid][1] >= refreshChannelName) {
+      channelMap[cid] = [getChannelName(session.$bot, session.channelId), timestamp]
     }
-    return await channelMap[id][0]
+    return await channelMap[cid][0]
   })
 
   function handleMessage(deps: string[], template: string, session: Session.Message) {
     const params: Params = pick(session, ['platform', 'channelId', 'groupId', 'userId', 'selfId'])
-    userMap[session.userId] = [session.author.username, Date.now()]
+    if (session.type === 'message') userMap[session.uid] = [session.author.username, Date.now()]
     Object.assign(params, pick(session.author, ['username', 'nickname']))
     Promise.all(deps.map(async (key) => {
       const callback = tasks[key]
