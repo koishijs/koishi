@@ -295,6 +295,10 @@ export interface API {
   $getWordSlices(content: string): Promise<string[]>
   $ocrImage(image: string): Promise<OcrResult>
   $getGroupMsgHistory(groupId: id, messageSeq: id): Promise<Message[]>
+  $setFriendAddRequest(flag: string, approve: boolean, remark?: string): Promise<void>
+  $setFriendAddRequestAsync(flag: string, approve: boolean, remark?: string): Promise<void>
+  $setGroupAddRequest(flag: string, subType: 'add' | 'invite', approve: boolean, reason?: string): Promise<void>
+  $setGroupAddRequestAsync(flag: string, subType: 'add' | 'invite', approve: boolean, reason?: string): Promise<void>
 
   $setGroupKick(groupId: id, userId: id, rejectAddRequest?: boolean): Promise<void>
   $setGroupKickAsync(groupId: id, userId: id, rejectAddRequest?: boolean): Promise<void>

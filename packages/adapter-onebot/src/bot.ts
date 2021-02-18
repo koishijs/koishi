@@ -103,6 +103,11 @@ export class CQBot extends Bot {
     return OneBot.adaptUser(data)
   }
 
+  async getFriendList() {
+    const data = await this.$getFriendList()
+    return data.map(OneBot.adaptUser)
+  }
+
   async getChannel(channelId: string) {
     const data = await this.$getGroupInfo(channelId)
     return OneBot.adaptChannel(data)
@@ -158,40 +163,16 @@ export class CQBot extends Bot {
     return this.getAsync('set_group_anonymous_ban', args)
   }
 
-  setFriendAddRequest(flag: string, approve?: boolean): Promise<void>
-  setFriendAddRequest(flag: string, remark?: string): Promise<void>
-  async setFriendAddRequest(flag: string, info: string | boolean = true) {
-    if (typeof info === 'string') {
-      await this.get('set_friend_add_request', { flag, approve: true, remark: info })
-    } else {
-      await this.get('set_friend_add_request', { flag, approve: info })
-    }
+  async handleFriendRequest(messageId: string, approve: boolean, comment?: string) {
+    await this.$setFriendAddRequest(messageId, approve, comment)
   }
 
-  setFriendAddRequestAsync(flag: string, approve?: boolean): Promise<void>
-  setFriendAddRequestAsync(flag: string, remark?: string): Promise<void>
-  setFriendAddRequestAsync(flag: string, info: string | boolean = true) {
-    if (typeof info === 'string') {
-      return this.getAsync('set_friend_add_request', { flag, approve: true, remark: info })
-    } else {
-      return this.getAsync('set_friend_add_request', { flag, approve: info })
-    }
+  async handleGroupRequest(messageId: string, approve: boolean, comment?: string) {
+    await this.$setGroupAddRequest(messageId, 'invite', approve, comment)
   }
 
-  async setGroupAddRequest(flag: string, subtype: 'add' | 'invite', info?: string | boolean) {
-    if (typeof info === 'string') {
-      await this.get('set_group_add_request', { flag, subtype, approve: false, reason: info })
-    } else {
-      await this.get('set_group_add_request', { flag, subtype, approve: info })
-    }
-  }
-
-  setGroupAddRequestAsync(flag: string, subtype: 'add' | 'invite', info?: string | boolean) {
-    if (typeof info === 'string') {
-      return this.getAsync('set_group_add_request', { flag, subtype, approve: false, reason: info })
-    } else {
-      return this.getAsync('set_group_add_request', { flag, subtype, approve: info })
-    }
+  async handleGroupMemberRequest(messageId: string, approve: boolean, comment?: string) {
+    await this.$setGroupAddRequest(messageId, 'add', approve, comment)
   }
 
   async getStatus() {
@@ -242,6 +223,8 @@ define('ocr_image', 'image')
 defineExtract('get_forward_msg', 'messages', 'message_id')
 defineExtract('.get_word_slices', 'slices', 'content')
 define('get_group_msg_history', 'group_id', 'message_seq')
+define('set_friend_add_request', 'flag', 'approve', 'remark')
+define('set_group_add_request', 'flag', 'sub_type', 'approve', 'reason')
 
 define('set_group_kick', 'group_id', 'user_id', 'reject_add_request')
 define('set_group_ban', 'group_id', 'user_id', 'duration')

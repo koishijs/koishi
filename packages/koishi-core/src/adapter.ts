@@ -161,6 +161,7 @@ export interface Bot<P = Platform> extends BotOptions {
   // user
   getSelf(): Promise<UserInfo>
   getUser(userId: string): Promise<UserInfo>
+  getFriendList(): Promise<UserInfo[]>
 
   // group
   getGroup(groupId: string): Promise<GroupInfo>
@@ -173,6 +174,11 @@ export interface Bot<P = Platform> extends BotOptions {
   // channel
   getChannel(channelId: string): Promise<ChannelInfo>
   getChannelList(groupId: string): Promise<ChannelInfo[]>
+
+  // request
+  handleFriendRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
+  handleGroupRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
+  handleGroupMemberRequest(messageId: string, approve: boolean, comment?: string): Promise<void>
 }
 
 export class Bot<P extends Platform> {

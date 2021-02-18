@@ -15,38 +15,39 @@ export interface ThrottleConfig {
 // TODO pending typescript official helper
 type Awaited<T> = T | Promise<T>
 
-export type RequestHandler = string | boolean | ((session: Session) => Awaited<string | boolean | void>)
+export type RequestHandler = string | boolean | ((session: Session) => Awaited<string | boolean>)
 
 export interface HandlerOptions {
-  onFriend?: RequestHandler
-  onGroupAdd?: RequestHandler
-  onGroupInvite?: RequestHandler
+  onFriendRequest?: RequestHandler
+  onGroupMemberRequest?: RequestHandler
+  onGroupRequest?: RequestHandler
   respondents?: Respondent[]
   throttle?: ThrottleConfig | ThrottleConfig[]
 }
 
-type CQSession = Session<never, never, 'onebot'>
-
-async function getHandleResult(handler: RequestHandler, session: CQSession): Promise<any> {
-  // FIXME
-  return typeof handler === 'function' ? handler(session as any) : handler
+async function getHandleResult(handler: RequestHandler, session: Session): Promise<[boolean, string?]> {
+  const result = typeof handler === 'function' ? await handler(session) : handler
+  if (typeof result === 'string') {
+    return [true, result]
+  } else if (result !== undefined) {
+    return [result]
+  }
 }
 
 export default function apply(ctx: App, options: HandlerOptions = {}) {
-  ctx.on('friend-request', async (session: CQSession) => {
-    const result = await getHandleResult(options.onFriend, session)
-    return result !== undefined && session.$bot.setFriendAddRequest(session.flag, result)
+  ctx.on('friend-request', async (session) => {
+    const result = await getHandleResult(options.onFriendRequest, session)
+    return session.$bot.handleFriendRequest(session.messageId, ...result)
   })
 
-  // FIXME: subtype
-  ctx.on('group-member-request', async (session: CQSession) => {
-    const result = await getHandleResult(options.onGroupAdd, session)
-    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subtype as any, result)
+  ctx.on('group-member-request', async (session) => {
+    const result = await getHandleResult(options.onGroupMemberRequest, session)
+    return session.$bot.handleGroupRequest(session.messageId, ...result)
   })
 
-  ctx.on('group-request', async (session: CQSession) => {
-    const result = await getHandleResult(options.onGroupInvite, session)
-    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subtype as any, result)
+  ctx.on('group-request', async (session) => {
+    const result = await getHandleResult(options.onGroupRequest, session)
+    return session.$bot.handleGroupRequest(session.messageId, ...result)
   })
 
   const { respondents = [] } = options

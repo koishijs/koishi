@@ -150,6 +150,6 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
     }
   }).plugin((ctx) => {
     ctx.on('message', handleMessage.bind(null, receiveDeps, formatReceive))
-    ctx.on('before-send', handleMessage.bind(null, sendDeps, formatSend))
+    ctx.before('send', handleMessage.bind(null, sendDeps, formatSend))
   })
 }

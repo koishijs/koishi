@@ -20,9 +20,17 @@ export namespace Session {
   type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
   type Actions = 'added' | 'deleted' | 'updated'
 
-  export type MessageAction = 'message' | 'message-deleted' | 'message-updated' | 'send'
+  export interface Events extends Record<`${Genres}-${Actions}`, {}> {}
 
-  export interface Events extends Record<`${Genres}-${Actions}`, {}>, Record<MessageAction, MessageType> {
+  export type MessageAction = 'message' | 'message-deleted' | 'message-updated' | 'send'
+  export type Message = Session<never, never, Platform, MessageAction>
+  export interface Events extends Record<MessageAction, MessageType> {}
+
+  export type RequestAction = 'friend-request' | 'group-request' | 'group-member-request'
+  export type Request = Session<never, never, Platform, RequestAction>
+  export interface Events extends Record<RequestAction, {}> {}
+
+  export interface Events {
     'friend-request': {}
     'group-request': {}
     'group-member-request': {}
@@ -59,8 +67,6 @@ export namespace Session {
   type ParamY<X, Y> = Extract<InnerKeys<Events, ParamX<X>>, Y>
 
   export type Payload<X, Y = any> = Session<never, never, Platform, ParamX<X>, ParamY<X, Y>>
-
-  export type Message = Session<never, never, Platform, MessageAction>
 }
 
 export class Session<
@@ -90,10 +96,6 @@ export class Session<
   targetId?: string
   duration?: number
   file?: FileInfo
-
-  // request event
-  comment?: string
-  flag?: string
 
   $user?: User.Observed<U>
   $channel?: Channel.Observed<G>

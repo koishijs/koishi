@@ -73,6 +73,8 @@ export function createSession(server: Adapter, data: any) {
     session.channelId ||= `private:${session.userId}`
   } else if (data.post_type === 'request') {
     delete session['requestType']
+    renameProperty(session, 'content', 'comment')
+    renameProperty(session, 'messageId', 'flag')
     if (data.request_type === 'friend') {
       session.type = 'friend-request'
       session.channelId = `private:${session.userId}`
