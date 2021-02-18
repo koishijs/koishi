@@ -142,7 +142,7 @@ export namespace Adapter {
 }
 
 export interface Bot<P = Platform> extends BotOptions {
-  [Bot.send](session: Session, message: string): Promise<void>
+  [Session.send](session: Session, message: string): Promise<void>
 
   ready?: boolean
   socket?: WebSocket
@@ -182,8 +182,6 @@ export interface Bot<P = Platform> extends BotOptions {
 }
 
 export class Bot<P extends Platform> {
-  static readonly send = Symbol.for('koishi.send')
-
   parseUser(source: string) {
     if (/^\d+$/.test(source)) return source
     const code = CQCode.find(source)

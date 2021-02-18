@@ -36,27 +36,34 @@ export class CQBot extends Bot {
     return content.replace(/\[CQ:at,type=all\]/g, '[CQ:at,qq=all]')
   }
 
-  async [Bot.send](message: Session.Message, content: string) {
+  async [Session.send](message: Session, content: string) {
     if (!content) return
-    const { subtype, channelId, channelName } = message
+    const { userId, groupId, channelId, channelName } = message
     content = this.handleContent(content)
     if (this.app.options.onebot?.preferSync) {
       await this.sendMessage(channelId, content)
       return
     }
 
-    let key: string
-    const value = message.subtype === 'group' ? message[key = 'groupId'] : message[key = 'userId']
-    const session = this.createSession({ content, subtype, channelId, channelName, [key]: value })
+    let id: string
+    const session = this.createSession({ content, channelId, channelName })
+    if (groupId) {
+      id = session.groupId = groupId
+      session.subtype = 'group'
+    } else {
+      id = session.userId = userId
+      session.subtype = 'private'
+    }
+
     if (this.app.bail(session, 'before-send', session)) return
 
     if (message._response) {
       return message._response({ reply: session.content, atSender: false })
     }
 
-    return message.subtype === 'group'
-      ? this.$sendGroupMsgAsync(value, content)
-      : this.$sendPrivateMsgAsync(value, content)
+    return groupId
+      ? this.$sendGroupMsgAsync(id, content)
+      : this.$sendPrivateMsgAsync(id, content)
   }
 
   async get<T = any>(action: string, params = {}, silent = false): Promise<T> {

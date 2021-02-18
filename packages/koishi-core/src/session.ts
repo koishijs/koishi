@@ -111,6 +111,8 @@ export class Session<
   private _queued: Promise<void>
   private _hooks: (() => void)[]
 
+  static readonly send = Symbol.for('koishi.session.send')
+
   constructor(app: App, session: Partial<Session>) {
     defineProperty(this, '$app', app)
     defineProperty(this, '$uuid', Random.uuid())
@@ -156,8 +158,8 @@ export class Session<
   }
 
   async send(message: string) {
-    if (this.$bot[Bot.send]) {
-      return this.$bot[Bot.send](this, message)
+    if (this.$bot[Session.send]) {
+      return this.$bot[Session.send](this, message)
     }
     if (!message) return
     await this.$bot.sendMessage(this.channelId, message)

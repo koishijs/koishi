@@ -1,6 +1,6 @@
 import { createReadStream } from 'fs'
 import { camelCase, Logger, snakeCase, renameProperty, CQCode, assertProperty } from 'koishi-utils'
-import { Bot, Session, GroupInfo, GroupMemberInfo, UserInfo, BotOptions, Adapter } from 'koishi-core'
+import { Bot, GroupInfo, GroupMemberInfo, UserInfo, BotOptions, Adapter } from 'koishi-core'
 import Telegram from './interface'
 
 declare module 'koishi-core/dist/adapter' {
@@ -67,11 +67,6 @@ export class TelegramBot extends Bot {
     }
     super(adapter, options)
     this.version = 'telegram'
-  }
-
-  async [Bot.send](session: Session, content: string) {
-    if (!content) return
-    await this.sendMessage(session.channelId, content)
   }
 
   async get<T = any>(action: string, params = {}, field = '', content: Buffer = null): Promise<T> {
