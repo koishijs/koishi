@@ -131,14 +131,14 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
     return await channelMap[cid][0]
   })
 
-  function handleMessage(deps: string[], template: string, session: Session.Message) {
+  async function handleMessage(deps: string[], template: string, session: Session.Message) {
     const params: Params = pick(session, ['platform', 'channelId', 'groupId', 'userId', 'selfId'])
-    if (session.type === 'message') userMap[session.uid] = [session.author.username, Date.now()]
     Object.assign(params, pick(session.author, ['username', 'nickname']))
-    Promise.all(deps.map(async (key) => {
+    await Promise.all(deps.map(async (key) => {
       const callback = tasks[key]
       params[key] ||= await callback(session)
-    })).then(() => logger.debug(interpolate(template, params)))
+    }))
+    logger.debug(interpolate(template, params))
   }
 
   ctx.intersect((session) => {
@@ -148,7 +148,18 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
       return includeChannels.length ? includeChannels.includes(session.channelId) : true
     }
   }).plugin((ctx) => {
-    ctx.on('message', handleMessage.bind(null, receiveDeps, formatReceive))
-    ctx.before('send', handleMessage.bind(null, sendDeps, formatSend))
+    ctx.on('message', async (session) => {
+      if (session.subtype === 'group') {
+        const { assignee } = await session.observeChannel(['assignee'])
+        if (assignee !== session.selfId) return
+      }
+
+      userMap[session.uid] = [session.author.username, Date.now()]
+      handleMessage(receiveDeps, formatReceive, session)
+    })
+
+    ctx.before('send', (session) => {
+      handleMessage(sendDeps, formatSend, session)
+    })
   })
 }
