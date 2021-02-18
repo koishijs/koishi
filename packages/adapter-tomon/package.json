@@ -1,7 +1,7 @@
 {
   "name": "koishi-adapter-tomon",
   "description": "Tomon adapter for Koishi",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.4",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -24,15 +24,15 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.0.0-beta.8"
+    "koishi-core": "^3.0.0-beta.9"
   },
   "devDependencies": {
     "@types/pako": "^1.0.1",
-    "koishi-test-utils": "^6.0.0-beta.1"
+    "koishi-test-utils": "^6.0.0-beta.2"
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "koishi-utils": "^3.2.4",
+    "koishi-utils": "^3.2.5",
     "pako": "^2.0.3"
   }
 }
