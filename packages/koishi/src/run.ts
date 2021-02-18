@@ -60,8 +60,8 @@ function createWorker(options: WorkerOptions) {
 }
 
 export default function (cli: CAC) {
-  cli.command('run [file]', 'start a koishi bot')
-    .alias('start')
+  cli.command('start [file]', 'start a koishi bot')
+    .alias('run')
     .option('--debug [namespace]', 'specify debug namespace')
     .option('--level [level]', 'specify log level (default: 2)')
     .action((file, options) => {

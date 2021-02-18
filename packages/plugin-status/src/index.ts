@@ -6,10 +6,6 @@ import { ActiveData } from './database'
 export * from './database'
 
 declare module 'koishi-core/dist/adapter' {
-  interface BotOptions {
-    label?: string
-  }
-
   interface Bot {
     counter: number[]
   }
@@ -75,7 +71,7 @@ export interface Status extends ActiveData {
 }
 
 export interface BotStatus {
-  label?: string
+  username?: string
   selfId: string
   platform: Platform
   code: Bot.Status
@@ -95,7 +91,7 @@ const defaultConfig: Config = {
   path: '/status',
   refresh: Time.minute,
   // eslint-disable-next-line no-template-curly-in-string
-  formatBot: '{{ label || selfId }}：{{ code ? `无法连接` : `工作中（${rate}/min）` }}',
+  formatBot: '{{ username }}：{{ code ? `无法连接` : `工作中（${rate}/min）` }}',
   format: [
     '{{ bots }}',
     '==========',
@@ -124,7 +120,6 @@ export function apply(ctx: Context, config: Config = {}) {
   let timer: NodeJS.Timeout
   app.on('connect', async () => {
     app.bots.forEach((bot) => {
-      bot.label = bot.label || '' + bot.selfId
       bot.counter = new Array(61).fill(0)
     })
 
@@ -181,7 +176,7 @@ export function apply(ctx: Context, config: Config = {}) {
       Promise.all(botList.map(async (bot): Promise<BotStatus> => ({
         platform: bot.platform,
         selfId: bot.selfId,
-        label: bot.label,
+        username: bot.username,
         code: await bot.getStatus(),
         rate: bot.counter.slice(1).reduce((prev, curr) => prev + curr, 0),
       }))),

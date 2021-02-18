@@ -96,6 +96,10 @@ export function adaptSession(bot: KaiheilaBot, input: any) {
   } else {
     session.type = 'message'
     adaptMessageCreate(data, data.extra as KHL.MessageExtra, session)
+    if (!session.content) {
+      console.log(data)
+      return
+    }
     if (session.userId === bot.selfId) return
   }
   return new Session(bot.app, session)

@@ -1,6 +1,5 @@
 import { App, Session } from 'koishi-core'
 import { simplify, makeArray } from 'koishi-utils'
-import {} from 'koishi-adapter-onebot'
 
 export interface Respondent {
   match: string | RegExp

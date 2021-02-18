@@ -149,7 +149,7 @@ export function connect(bot: CQBot) {
         const session = createSession(bot.adapter, parsed)
         if (session) bot.adapter.dispatch(session)
       } else if (parsed.echo === -1) {
-        Object.assign(bot, camelCase(parsed.data))
+        Object.assign(bot, adaptUser(camelCase(parsed.data)))
         logger.debug('%d got self info', parsed.data)
         if (bot.server) {
           logger.info('connected to %c', bot.server)
