@@ -1,4 +1,4 @@
-import { CQCode, Logger, paramCase, sleep, Time } from 'koishi-utils'
+import { Segment, Logger, paramCase, sleep, Time } from 'koishi-utils'
 import { Session } from './session'
 import { App } from './app'
 import type WebSocket from 'ws'
@@ -184,7 +184,7 @@ export interface Bot<P = Platform> extends BotOptions {
 export class Bot<P extends Platform> {
   parseUser(source: string) {
     if (/^\d+$/.test(source)) return source
-    const code = CQCode.find(source)
+    const code = Segment.from(source)
     if (code && code.type === 'at') {
       return code.data.qq
     }
@@ -245,9 +245,9 @@ export namespace Bot {
   export enum Status {
     /** 正常运行 */
     GOOD,
-    /** Bot 处于闲置状态 */
+    /** 机器人处于闲置状态 */
     BOT_IDLE,
-    /** Bot 离线 */
+    /** 机器人离线 */
     BOT_OFFLINE,
     /** 无法获得状态 */
     NET_ERROR,

@@ -13,8 +13,10 @@ export enum Type {
   image = 2,
   video = 3,
   file = 4,
+  unknown = 7,
   audio = 8,
   kmarkdown = 9,
+  card = 10,
   system = 255,
 }
 

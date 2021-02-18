@@ -1,4 +1,4 @@
-import { camelCase, CQCode, escapeRegExp, paramCase, template } from 'koishi-utils'
+import { camelCase, Segment, escapeRegExp, paramCase, template } from 'koishi-utils'
 import { format } from 'util'
 import { Command } from './command'
 import { NextFunction } from './context'
@@ -209,7 +209,7 @@ export namespace Domain {
   create('text', source => source)
   create('user', (source) => {
     if (source.startsWith('@')) return source.slice(1)
-    const code = CQCode.find(source)
+    const code = Segment.from(source)
     if (code && code.type === 'at') return code.data.qq
     throw new Error()
   })

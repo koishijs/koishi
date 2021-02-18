@@ -3,7 +3,7 @@
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
 import { App, Session, User } from 'koishi-core'
-import { CQCode, Logger } from 'koishi-utils'
+import { Segment, Logger } from 'koishi-utils'
 import {} from 'koishi-plugin-puppeteer'
 
 declare module 'koishi-core/dist/database' {
@@ -117,9 +117,9 @@ export class GitHub {
 }
 
 function formatReply(source: string) {
-  return CQCode.build(source).map((value) => {
-    if (typeof value === 'string') return value
-    if (value.type === 'image') return `![image](${value.data.url})`
+  return Segment.parse(source).map((node) => {
+    if (node.type === 'text') return node.data.content
+    if (node.type === 'image') return `![image](${node.data.url})`
     return ''
   }).join('')
 }

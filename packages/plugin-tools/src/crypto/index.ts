@@ -3,7 +3,7 @@ import Vigenere from './algorithms/vigenere'
 import TwoSquare from './algorithms/two-square'
 import FourSquare from './algorithms/four-square'
 import { Context } from 'koishi-core'
-import { CQCode } from 'koishi-utils'
+import { Segment } from 'koishi-utils'
 
 export function apply(ctx: Context) {
   ctx.command('tools/crypto <algorithm> <text>', '加密解密工具')
@@ -28,8 +28,8 @@ export function apply(ctx: Context) {
     .action(({ options }, algorithms, text) => {
       if (!text) return '请输入文本。'
       if (!algorithms) return '请指定算法。'
-      text = CQCode.unescape(text)
-      algorithms = CQCode.unescape(algorithms)
+      text = Segment.unescape(text)
+      algorithms = Segment.unescape(algorithms)
 
       let cap: RegExpMatchArray
       const cryptos = []

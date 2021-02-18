@@ -1,5 +1,5 @@
 import { Bot, Context, Session } from 'koishi-core'
-import { Logger, CQCode, Time, interpolate, pick } from 'koishi-utils'
+import { Logger, Segment, Time, interpolate, pick } from 'koishi-utils'
 
 export interface DebugOptions {
   formatSend?: string
@@ -9,6 +9,8 @@ export interface DebugOptions {
   refreshUserName?: number
   refreshChannelName?: number
 }
+
+const textSegmentTypes = ['text', 'header', 'section']
 
 const cqTypes = {
   face: '表情',
@@ -23,6 +25,7 @@ const cqTypes = {
   poke: '戳一戳',
   json: 'JSON',
   xml: 'XML',
+  card: '卡片消息',
 }
 
 interface Params {
@@ -91,11 +94,11 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   })
 
   on('content', async (session) => {
-    const codes = CQCode.build(session.content.split('\n', 1)[0])
+    const codes = Segment.parse(session.content.split('\n', 1)[0])
     let output = ''
     for (const code of codes) {
-      if (typeof code === 'string') {
-        output += CQCode.unescape(code)
+      if (textSegmentTypes.includes(code.type)) {
+        output += Segment.unescape(code.data.content)
       } else if (code.type === 'at') {
         if (code.data.type === 'all') {
           output += '@全体成员'
@@ -114,7 +117,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
       } else if (code.type === 'contact') {
         output += `[推荐${code.data.type === 'qq' ? '好友' : '群'}:${code.data.id}]`
       } else {
-        output += `[${cqTypes[code.type]}]`
+        output += `[${cqTypes[code.type] || '未知'}]`
       }
     }
     return output

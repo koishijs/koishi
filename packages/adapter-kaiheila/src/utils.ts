@@ -1,5 +1,5 @@
 import { KaiheilaBot } from './bot'
-import { Session, CQCode, MessageInfo, AuthorInfo, GroupInfo, UserInfo } from 'koishi-core'
+import { Session, Segment, MessageInfo, AuthorInfo, GroupInfo, UserInfo } from 'koishi-core'
 import { camelCase } from 'koishi-utils'
 import * as KHL from './types'
 
@@ -34,7 +34,7 @@ function adaptMessage(base: KHL.MessageBase, meta: KHL.MessageMeta, session: Mes
       .replace(/@role:(\d+);/, (_, $1) => `[CQ:at,role=${$1}]`)
       .replace(/#channel:(\d+);/, (_, $1) => `[CQ:sharp,id=${$1}]`)
   } else if (base.type === KHL.Type.image) {
-    session.content = CQCode('image', { url: base.content, file: meta.attachments.name })
+    session.content = Segment('image', { url: base.content, file: meta.attachments.name })
   }
   return session
 }
@@ -96,10 +96,7 @@ export function adaptSession(bot: KaiheilaBot, input: any) {
   } else {
     session.type = 'message'
     adaptMessageCreate(data, data.extra as KHL.MessageExtra, session)
-    if (!session.content) {
-      console.log(data)
-      return
-    }
+    if (!session.content) return
     if (session.userId === bot.selfId) return
   }
   return new Session(bot.app, session)

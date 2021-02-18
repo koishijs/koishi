@@ -1,5 +1,5 @@
 import { Context, Session } from 'koishi-core'
-import { CQCode } from 'koishi-utils'
+import { Segment } from 'koishi-utils'
 import { xml2js } from 'xml-js'
 import axios from 'axios'
 
@@ -9,7 +9,7 @@ function extractData(subpod: any, inline = false) {
     return text
   } else if (subpod.img) {
     const { src, height } = subpod.img._attributes
-    return (height >= 30 && inline ? '\n' : '') + CQCode('image', { file: src })
+    return (height >= 30 && inline ? '\n' : '') + Segment('image', { file: src })
   }
 }
 

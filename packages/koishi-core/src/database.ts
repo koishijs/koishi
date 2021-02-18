@@ -25,7 +25,7 @@ export namespace User {
   export type Field = keyof User
   export const fields: Field[] = []
   export type Indexable = Platform | 'name' | 'id'
-  export type IndexType<T extends Indexable> = T extends Platform ? string : User[T];
+  export type IndexType<T extends Indexable> = [T] extends [Platform] ? string : User[T];
   export type Observed<K extends Field = Field> = utils.Observed<Pick<User, K>, Promise<void>>
   type Getter = <T extends Indexable>(type: T, id: IndexType<T> | string) => Partial<User>
   const getters: Getter[] = []
