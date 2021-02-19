@@ -11,9 +11,18 @@ declare module 'puppeteer-core/lib/types' {
     encoding: 'base64'
   }
 
+  interface BinaryScreenshotOptions extends ScreenshotOptions {
+    encoding?: 'binary'
+  }
+
   interface Page {
-    screenshot(options?: Base64ScreenshotOptions): Promise<string>;
-    screenshot(options?: ScreenshotOptions): Promise<Buffer>;
+    screenshot(options?: Base64ScreenshotOptions): Promise<string>
+    screenshot(options?: BinaryScreenshotOptions): Promise<Buffer>
+  }
+
+  interface ElementHandle {
+    screenshot(options?: Base64ScreenshotOptions): Promise<string>
+    screenshot(options?: BinaryScreenshotOptions): Promise<Buffer>
   }
 }
 
