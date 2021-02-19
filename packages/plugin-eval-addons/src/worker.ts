@@ -1,5 +1,5 @@
 import { WorkerAPI, Context, response, mapDirectory, formatError } from 'koishi-plugin-eval/dist/worker'
-import { Logger, Time, Segment, Random } from 'koishi-utils'
+import { Logger, Time, segment, Random } from 'koishi-utils'
 import { prepare, synthetize } from './loader'
 
 export * from './loader'
@@ -59,7 +59,7 @@ synthetize('koishi/addons.ts', {
 })
 
 synthetize('koishi/utils.ts', {
-  Time, Segment, Random,
+  Time, segment, Random,
 }, 'utils')
 
 export default prepare().then(() => {

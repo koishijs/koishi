@@ -1,5 +1,5 @@
 import { createReadStream } from 'fs'
-import { camelCase, Logger, snakeCase, renameProperty, Segment, assertProperty } from 'koishi-utils'
+import { camelCase, Logger, snakeCase, renameProperty, segment, assertProperty } from 'koishi-utils'
 import { Bot, GroupInfo, GroupMemberInfo, UserInfo, BotOptions, Adapter } from 'koishi-core'
 import Telegram from './interface'
 
@@ -80,7 +80,7 @@ export class TelegramBot extends Bot {
 
   private async _sendMessage(chatId: string, content: string) {
     console.log(chatId, content)
-    const chain = Segment.parse(content)
+    const chain = segment.parse(content)
     const payload = { chatId, caption: '', photo: '' }
     let result: Telegram.Message
     for (const node of chain) {

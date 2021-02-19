@@ -1,4 +1,4 @@
-import { Segment } from 'koishi-utils'
+import { segment } from 'koishi-utils'
 
 export function getLink(url: string) {
   const pidSearch = /pixiv.+illust_id=(\d+)/.exec(url)
@@ -19,7 +19,7 @@ export interface ShareData {
 export function getShareText({ imageUrl, title, thumbnail, authorUrl, source }: ShareData) {
   const output = [
     title,
-    Segment('image', { file: thumbnail }),
+    segment('image', { file: thumbnail }),
   ]
   if (imageUrl) output.push(`链接：${getLink(imageUrl)}`)
   if (authorUrl) output.push(`作者：${getLink(authorUrl)}`)

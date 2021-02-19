@@ -1,4 +1,4 @@
-import { Segment, Logger, paramCase, sleep, Time } from 'koishi-utils'
+import { segment, Logger, paramCase, sleep, Time } from 'koishi-utils'
 import { Session } from './session'
 import { App } from './app'
 import type WebSocket from 'ws'
@@ -184,7 +184,7 @@ export interface Bot<P = Platform> extends BotOptions {
 export class Bot<P extends Platform> {
   parseUser(source: string) {
     if (/^\d+$/.test(source)) return source
-    const code = Segment.from(source)
+    const code = segment.from(source)
     if (code && code.type === 'at') {
       return code.data.qq
     }

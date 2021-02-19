@@ -1,5 +1,5 @@
 import { Context, User, Session, NextFunction, Channel, Argv } from 'koishi-core'
-import { Segment, simplify, noop, escapeRegExp, Random, makeArray } from 'koishi-utils'
+import { segment, simplify, noop, escapeRegExp, Random, makeArray } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './utils'
 
 declare module 'koishi-core/dist/app' {
@@ -201,9 +201,9 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
   state.dialogues = [dialogue]
   state.answer = dialogue.answer
     .replace(/\$\$/g, '@@__PLACEHOLDER__@@')
-    .replace(/\$A/g, Segment('at', { qq: 'all' }))
-    .replace(/\$a/g, Segment('at', { qq: session.userId }))
-    .replace(/\$m/g, Segment('at', { qq: session.selfId }))
+    .replace(/\$A/g, segment('at', { qq: 'all' }))
+    .replace(/\$a/g, segment('at', { qq: session.userId }))
+    .replace(/\$m/g, segment('at', { qq: session.selfId }))
     .replace(/\$s/g, () => escapeAnswer(session.$username))
     .replace(/\$0/g, escapeAnswer(session.content))
 
@@ -329,9 +329,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 }
 
 function prepareSource(source: string) {
-  return Segment.join(Segment.parse(source).map((code, index, arr) => {
+  return segment.join(segment.parse(source).map((code, index, arr) => {
     if (code.type !== 'text') return code
-    let message = simplify(Segment.unescape('' + code.data.content))
+    let message = simplify(segment.unescape('' + code.data.content))
       .toLowerCase()
       .replace(/\s+/g, '')
       .replace(/，/g, ',')

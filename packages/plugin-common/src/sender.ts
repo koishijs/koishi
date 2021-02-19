@@ -1,5 +1,5 @@
 import { Context, Channel, Session, User } from 'koishi-core'
-import { Segment } from 'koishi-utils'
+import { segment } from 'koishi-utils'
 
 export interface SenderConfig {
   operator?: string
@@ -16,13 +16,13 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       if (!message) return '请输入要发送的文本。'
 
       if (options.unescape) {
-        message = Segment.unescape(message)
+        message = segment.unescape(message)
       }
 
       if (options.forceAnonymous) {
-        message = Segment('anonymous') + message
+        message = segment('anonymous') + message
       } else if (options.anonymous) {
-        message = Segment('anonymous', { ignore: true }) + message
+        message = segment('anonymous', { ignore: true }) + message
       }
 
       return message

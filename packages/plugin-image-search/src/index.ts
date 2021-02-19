@@ -1,4 +1,4 @@
-import { Context, Session, Command, makeArray, Segment } from 'koishi-core'
+import { Context, Session, Command, makeArray, segment } from 'koishi-core'
 import ascii2d from './ascii2d'
 import saucenao from './saucenao'
 
@@ -61,7 +61,7 @@ export function apply(ctx: Context, config: Config = {}) {
       const id = session.channelId
       if (pendings.has(id)) return '存在正在进行的查询，请稍后再试。'
 
-      const code = Segment.from(session.content, 'image')
+      const code = segment.from(session.content, 'image')
       if (code && code.data.url) {
         pendings.add(id)
         return searchUrl(session, code.data.url, callback)
@@ -69,7 +69,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
       const dispose = session.middleware(({ content }, next) => {
         dispose()
-        const code = Segment.from(content, 'image')
+        const code = segment.from(content, 'image')
         if (!code || !code.data.url) return next()
         return searchUrl(session, code.data.url, callback)
       })

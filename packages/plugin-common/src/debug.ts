@@ -1,5 +1,5 @@
 import { Bot, Context, Session } from 'koishi-core'
-import { Logger, Segment, Time, interpolate, pick } from 'koishi-utils'
+import { Logger, segment, Time, interpolate, pick } from 'koishi-utils'
 
 export interface DebugOptions {
   formatSend?: string
@@ -94,11 +94,11 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
   })
 
   on('content', async (session) => {
-    const codes = Segment.parse(session.content.split('\n', 1)[0])
+    const codes = segment.parse(session.content.split('\n', 1)[0])
     let output = ''
     for (const code of codes) {
       if (textSegmentTypes.includes(code.type)) {
-        output += Segment.unescape(code.data.content)
+        output += segment.unescape(code.data.content)
       } else if (code.type === 'at') {
         if (code.data.type === 'all') {
           output += '@全体成员'

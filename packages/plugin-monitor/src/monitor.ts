@@ -1,5 +1,5 @@
 import { Channel, App } from 'koishi-core'
-import { Segment, Logger } from 'koishi-utils'
+import { segment, Logger } from 'koishi-utils'
 import { Subscribe } from './database'
 import bilibili from './bilibili'
 import twitcasting from './twitCasting'
@@ -141,7 +141,7 @@ export class Daemon {
       }
       const messages = [output.join('\n')]
       if (title || image) {
-        messages.push(Segment('share', { url, image, title, content }))
+        messages.push(segment('share', { url, image, title, content }))
       }
       if (app.bail('monitor/before-send', info, group)) return
       for (const message of messages) {

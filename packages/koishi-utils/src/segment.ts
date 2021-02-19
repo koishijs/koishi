@@ -1,21 +1,21 @@
-export interface Segment {
+export interface segment {
   type: string
-  data: Segment.Data
+  data: segment.Data
 }
 
-export function Segment(type: string, data: Segment.Data = {}) {
+export function segment(type: string, data: segment.Data = {}) {
   let output = '[CQ:' + type
   for (const key in data) {
-    if (data[key]) output += `,${key}=${Segment.escape(data[key], true)}`
+    if (data[key]) output += `,${key}=${segment.escape(data[key], true)}`
   }
   return output + ']'
 }
 
-export namespace Segment {
-  export type Chain = Segment.Parsed[]
+export namespace segment {
+  export type Chain = segment.Parsed[]
   export type Data = Record<string, string | number | boolean>
 
-  export interface Parsed extends Segment {
+  export interface Parsed extends segment {
     data: Record<string, string>
     capture?: RegExpExecArray
   }
@@ -38,11 +38,11 @@ export namespace Segment {
       .replace(/&amp;/g, '&')
   }
 
-  export function join(codes: Segment[]) {
-    return codes.map(code => Segment(code.type, code.data)).join('')
+  export function join(codes: segment[]) {
+    return codes.map(code => segment(code.type, code.data)).join('')
   }
 
-  export function from(source: string, typeRegExp = '\\w+'): Segment.Parsed {
+  export function from(source: string, typeRegExp = '\\w+'): segment.Parsed {
     const capture = new RegExp(`\\[CQ:(${typeRegExp})((,\\w+=[^,\\]]*)*)\\]`).exec(source)
     if (!capture) return null
     const [, type, attrs] = capture
@@ -56,7 +56,7 @@ export namespace Segment {
 
   export function parse(source: string) {
     const chain: Chain = []
-    let result: Segment.Parsed
+    let result: segment.Parsed
     while ((result = from(source))) {
       const { capture } = result
       if (capture.index) {
@@ -69,3 +69,5 @@ export namespace Segment {
     return chain
   }
 }
+
+export { segment as s }

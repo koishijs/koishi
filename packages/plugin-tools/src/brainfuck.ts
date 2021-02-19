@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { Segment } from 'koishi-utils'
+import { segment } from 'koishi-utils'
 
 export interface BrainfuckOptions {
   cellSize?: number
@@ -120,10 +120,10 @@ export function apply(ctx: Context, config: BrainfuckOptions = {}) {
     .usage('语言介绍：http://www.muppetlabs.com/~breadbox/bf')
     .action(async ({ options }, source) => {
       if (!source) return '请输入源代码。'
-      source = Segment.unescape(source)
-      const input = Segment.unescape(options.input)
+      source = segment.unescape(source)
+      const input = segment.unescape(options.input)
       try {
-        return Segment.escape(new BrainFuck(source, config).exec(input))
+        return segment.escape(new BrainFuck(source, config).exec(input))
       } catch (error) {
         if (error.name === 'BFError') {
           return error.message

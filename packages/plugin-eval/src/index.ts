@@ -1,5 +1,5 @@
 import { Context, Argv } from 'koishi-core'
-import { Segment, Logger, defineProperty } from 'koishi-utils'
+import { segment, Logger, defineProperty } from 'koishi-utils'
 import { Script } from 'vm'
 import { EvalWorker, attachTraps, EvalConfig, Config, resolveAccess } from './main'
 
@@ -76,7 +76,7 @@ export function apply(ctx: Context, config: Config = {}) {
     }
 
     if (!expr) return '请输入要执行的脚本。'
-    expr = Segment.unescape(expr)
+    expr = segment.unescape(expr)
 
     try {
       Reflect.construct(Script, [expr, { filename: 'stdin' }])
@@ -127,7 +127,7 @@ export function apply(ctx: Context, config: Config = {}) {
   }
 
   Argv.interpolate('${', '}', (source) => {
-    const expr = Segment.unescape(source)
+    const expr = segment.unescape(source)
     try {
       Reflect.construct(Script, [expr])
     } catch (e) {
@@ -139,7 +139,7 @@ export function apply(ctx: Context, config: Config = {}) {
         const row = +cap[0] - 1
         const rest = sLines[row].slice(eLines[2].length) + sLines.slice(row + 1)
         source = sLines.slice(0, row) + sLines[row].slice(0, eLines[2].length - 1)
-        return { source, command, args: [source], rest: Segment.escape(rest) }
+        return { source, command, args: [source], rest: segment.escape(rest) }
       }
     }
     return { source, rest: source, tokens: [] }

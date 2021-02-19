@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { Segment } from 'koishi-utils'
+import { segment } from 'koishi-utils'
 import axios from 'axios'
 
 type Platform = 'netease' | 'qq'
@@ -63,7 +63,7 @@ export function apply(ctx: Context, options: MusicOptions = {}) {
       try {
         const result = await search.call(ctx, keyword)
         if (typeof result === 'object') {
-          return Segment('music', result)
+          return segment('music', result)
         }
       } catch {}
 

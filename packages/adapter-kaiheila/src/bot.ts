@@ -1,7 +1,7 @@
 /* eslint-disable quote-props */
 
 import { AuthorInfo, Bot, MessageInfo } from 'koishi-core'
-import { camelize, Segment, pick, renameProperty, snakeCase } from 'koishi-utils'
+import { camelize, segment, pick, renameProperty, snakeCase } from 'koishi-utils'
 import axios, { Method } from 'axios'
 import * as KHL from './types'
 import { adaptGroup, adaptAuthor, adaptUser } from './utils'
@@ -70,7 +70,7 @@ export class KaiheilaBot extends Bot {
 
   parseChannel(source: string) {
     if (/^\d+$/.test(source)) return source
-    const code = Segment.from(source)
+    const code = segment.from(source)
     if (code && code.type === 'sharp') {
       return code.data.id
     }
@@ -93,12 +93,12 @@ export class KaiheilaBot extends Bot {
     return result.data
   }
 
-  private parseQuote(chain: Segment.Chain) {
+  private parseQuote(chain: segment.Chain) {
     if (chain[0].type !== 'quote') return
     return chain.shift().data.id
   }
 
-  private parseNode(node: Segment.Parsed) {
+  private parseNode(node: segment.Parsed) {
     if (node.type === 'image') {
       return { type: 'image', src: node.data.url, size: node.data.size }
     } else if (node.type === 'button') {
@@ -106,7 +106,7 @@ export class KaiheilaBot extends Bot {
     }
   }
 
-  private parseCard(chain: Segment.Chain) {
+  private parseCard(chain: segment.Chain) {
     if (chain[0].type !== 'card') return
     const node = chain.shift()
     const card = { type: 'card', modules: [], ...pick(node.data, ['theme', 'color', 'size']) }
@@ -120,7 +120,7 @@ export class KaiheilaBot extends Bot {
           type: 'section',
           mode: node.data.mode,
           text: { type: 'kmarkdown', content: node.data.content },
-          accessory: this.parseNode(Segment.from(node.data.accessory)),
+          accessory: this.parseNode(segment.from(node.data.accessory)),
         })
       } else if (node.type === 'divider') {
         card.modules.push({ type: 'divider' })
@@ -129,7 +129,7 @@ export class KaiheilaBot extends Bot {
     return JSON.stringify([card])
   }
 
-  private renderText(chain: Segment.Chain) {
+  private renderText(chain: segment.Chain) {
     return chain.reduce<string>((prev, code) => {
       const { type, data } = code
       if (type === 'text') {
@@ -149,7 +149,7 @@ export class KaiheilaBot extends Bot {
   async sendMessage(channelId: string, rawContent: string) {
     let key: string, path: string, subtype: 'private' | 'group'
     let type = 1, content = rawContent
-    const chain = Segment.parse(content)
+    const chain = segment.parse(content)
     const quote = this.parseQuote(chain)
     const card = this.parseCard(chain)
     if (channelId.length > 30) {
@@ -188,7 +188,7 @@ export class KaiheilaBot extends Bot {
   }
 
   async editMessage(channelId: string, msgId: string, content: string) {
-    const chain = Segment.parse(content)
+    const chain = segment.parse(content)
     const quote = this.parseQuote(chain)
     content = this.renderText(chain)
     if (channelId.length > 30) {
