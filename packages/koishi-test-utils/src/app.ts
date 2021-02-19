@@ -24,9 +24,8 @@ class MockedBot extends Bot<'mock'> {
   async getMessage(messageId: string) {
     return {
       messageId,
-      message: '',
+      content: '',
       time: 0,
-      realId: 0,
       subtype: null,
       messageType: null,
       author: { userId: this.selfId } as AuthorInfo,

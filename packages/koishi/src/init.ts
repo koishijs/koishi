@@ -23,7 +23,7 @@ const serverQuestions: PromptObject[] = [{
   ],
 }, {
   name: 'port',
-  type: () => !config.bots.length ? 'number' : null,
+  type: () => !bots.length ? 'number' : null,
   message: 'Koishi Port',
   initial: 8080,
 }]
@@ -195,14 +195,15 @@ const cwd = process.cwd()
 const metaPath = resolve(cwd, 'package.json')
 const ecosystem: Record<string, Package> = require('../ecosystem')
 const builtinPackages = ['koishi-plugin-common']
-const config: AppConfig = { bots: [] }
+const config: AppConfig = {}
+const bots: BotOptions[] = []
 
 async function createConfig() {
   let bot: BotOptions
   do {
     Object.assign(config, await question(serverQuestions))
     const [platform] = config.type.split(':', 1)
-    config.bots.push(bot = { type: config.type })
+    bots.push(bot = { type: config.type })
     Object.assign(bot, await question(botMap[platform]))
     if (adapterMap[platform]) {
       config[platform] = await question(adapterMap[platform])
@@ -211,6 +212,7 @@ async function createConfig() {
   delete config.type
 
   // database
+  config.bots = bots
   config.plugins = {}
   const { database } = await question(databaseQuestions)
   if (database) {
@@ -246,43 +248,63 @@ const error = red('error')
 const success = green('success')
 const info = magenta('info')
 
-type Serializable = string | number | Serializable[] | { [key: string]: Serializable }
+type SerializableObject = { [key: string]: Serializable }
+type Serializable = string | number | Serializable[] | SerializableObject
 
 function joinLines(lines: string[], type: SourceType, indent: string) {
   if (!lines.length) return ''
-  return `\n  ${indent}${lines.join(',\n  ' + indent)}${type === 'json' ? '' : ','}\n${indent}`
+  // 如果是根节点就多个换行，看着舒服
+  const separator = indent ? ',\n  ' + indent : ',\n\n  '
+  return `\n  ${indent}${lines.join(separator)}${type === 'json' ? '' : ','}\n${indent}`
 }
 
-function codegen(value: Serializable, type: SourceType, indent = '') {
-  if (value === null) return 'null'
+function comment(data: SerializableObject, prop: string) {
+  if (prop === 'port') return 'Koishi 服务器监听的端口'
+  if (prop === 'server' && data.type === 'onebot:http') {
+    return '对应 cqhttp 配置项 http_config.port'
+  }
+  if (prop === 'server' && data.type === 'onebot:ws') {
+    return '对应 cqhttp 配置项 ws_config.port'
+  }
+  if (prop === 'path' && data === config['onebot']) {
+    return '对应 cqhttp 配置项 http_config.post_urls, ws_reverse_servers.reverse_url'
+  }
+}
 
-  switch (typeof value) {
-    case 'number': case 'boolean': return '' + value
-    case 'string': return type === 'json' || value.includes("'") && !value.includes('"')
-      ? `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
-      : `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
+function codegen(data: Serializable, type: SourceType, indent = '') {
+  if (data === null) return 'null'
+
+  switch (typeof data) {
+    case 'number': case 'boolean': return '' + data
+    case 'string': return type === 'json' || data.includes("'") && !data.includes('"')
+      ? `"${data.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+      : `'${data.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
     case 'undefined': return undefined
   }
 
-  if (Array.isArray(value)) {
-    return `[${value.map(value => codegen(value, type, indent)).join(', ')}]`
+  if (Array.isArray(data)) {
+    return `[${data.map(value => codegen(value, type, indent)).join(', ')}]`
     // return `[${joinLines(value.map(value => codegen(value, type, '  ' + indent)), type, indent)}]`
   }
 
-  return `{${joinLines(Object.entries(value).filter(([, value]) => value !== undefined).map(([key, value]) => {
-    const keyString = type === 'json' ? `"${key}"` : key
-    const valueString = codegen(value, type, '  ' + indent)
-    return keyString + ': ' + valueString
+  return `{${joinLines(Object.entries(data).filter(([, value]) => value !== undefined).map(([key, value]) => {
+    let output = type !== 'json' && comment(data, key) || ''
+    if (output) output = output.split('\n').map(line => '// ' + line + '\n  ' + indent).join('')
+    output += type === 'json' ? `"${key}"` : key
+    output += ': ' + codegen(value, type, '  ' + indent)
+    return output
   }), type, indent)}}`
 }
+
+const rootComment = '配置项文档：https://koishi.js.org/api/app.html'
 
 async function writeConfig(config: any, path: string, type: SourceType) {
   // generate output
   let output = codegen(config, type) + '\n'
   if (type === 'js') {
-    output = 'module.exports = ' + output
+    output = '// ' + rootComment + '\nmodule.exports = ' + output
   } else if (type === 'ts') {
-    output = 'export = ' + output
+    output = '// ' + rootComment + '\nexport = ' + output
   }
 
   // write to file
