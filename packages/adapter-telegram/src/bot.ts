@@ -108,7 +108,7 @@ export class TelegramBot extends Bot {
   async sendMessage(channelId: string, content: string) {
     if (!content) return
     const session = this.createSession({ content, channelId, subtype: 'group', groupId: channelId })
-    if (this.app.bail(session, 'before-send', session)) return
+    if (await this.app.serial(session, 'before-send', session)) return
     session.messageId = await this._sendMessage(channelId, session.content)
     this.app.emit(session, 'send', session)
     return session.messageId

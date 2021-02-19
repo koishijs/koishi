@@ -146,30 +146,37 @@ export class KaiheilaBot extends Bot {
     }, '')
   }
 
-  async sendMessage(channelId: string, rawContent: string) {
-    let key: string, path: string, subtype: 'private' | 'group'
-    let type = 1, content = rawContent
-    const chain = segment.parse(content)
-    const quote = this.parseQuote(chain)
-    const card = this.parseCard(chain)
+  async sendMessage(channelId: string, content: string) {
+    let path: string
+    const params: any = { type: 1 }
+    const session = this.createSession({ channelId, content })
     if (channelId.length > 30) {
-      key = 'chatCode'
+      params.chatCode = channelId
+      session.subtype = 'private'
       path = '/user-chat/create-msg'
-      subtype = 'private'
     } else {
-      key = 'channelId'
+      params.channelId = channelId
+      session.subtype = 'group'
       path = '/message/create'
-      subtype = 'group'
     }
+
+    // trigger before-send
+    if (await this.app.serial(session, 'before-send', session)) return
+
+    // parse quote
+    const chain = segment.parse(session.content)
+    params.quote = this.parseQuote(chain)
+
+    // parse card
+    const card = this.parseCard(chain)
     if (card) {
-      type = KHL.Type.card
-      content = card
+      params.type = KHL.Type.card
+      params.content = card
     } else {
-      content = this.renderText(chain)
+      params.content = this.renderText(chain)
     }
-    const session = this.createSession({ channelId, content: rawContent, subtype })
-    if (this.app.bail(session, 'before-send', session)) return
-    const message = await this.request('POST', path, { type, [key]: channelId, content, quote })
+
+    const message = await this.request('POST', path, params)
     this.app.emit(session, 'send', session)
     return session.messageId = message.msgId
   }

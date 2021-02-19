@@ -134,11 +134,11 @@ export class App extends Context {
       }
     })
 
-    this.on('before-attach-user', (session, fields) => {
+    this.before('attach-user', (session, fields) => {
       session.collect('user', session.$argv, fields)
     })
 
-    this.on('before-attach-channel', (session, fields) => {
+    this.before('attach-channel', (session, fields) => {
       session.collect('channel', session.$argv, fields)
     })
 

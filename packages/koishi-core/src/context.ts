@@ -13,6 +13,7 @@ export type PluginFunction<T = any> = (ctx: Context, options: T) => void
 export type PluginObject<T = any> = { name?: string, apply: PluginFunction<T> }
 export type Plugin<T = any> = PluginFunction<T> | PluginObject<T>
 export type Promisify<T> = T extends Promise<unknown> ? T : Promise<T>
+export type Awaitable<T> = T extends Promise<unknown> ? T : T | Promise<T>
 export type Await<T> = T extends Promise<infer U> ? U : T
 export type Disposable = () => void
 
@@ -359,15 +360,15 @@ export interface EventMap extends SessionEventMap {
   'parse'(argv: Argv, session: Session): string
   'before-attach-user'(session: Session, fields: Set<User.Field>): void
   'before-attach-channel'(session: Session, fields: Set<Channel.Field>): void
-  'attach-user'(session: Session): void | boolean | Promise<void | boolean>
-  'attach-channel'(session: Session): void | boolean | Promise<void | boolean>
-  'before-send'(session: Session<never, never, Platform, 'send'>): void | boolean
-  'before-command'(argv: Argv): void | string | Promise<void | string>
-  'command'(argv: Argv): void | Promise<void>
+  'attach-user'(session: Session): Awaitable<void | boolean>
+  'attach-channel'(session: Session): Awaitable<void | boolean>
+  'before-send'(session: Session<never, never, Platform, 'send'>): Awaitable<void | boolean>
+  'before-command'(argv: Argv): Awaitable<void | string>
+  'command'(argv: Argv): Awaitable<void>
   'middleware'(session: Session): void
-  'before-connect'(): void | Promise<void>
+  'before-connect'(): Awaitable<void>
   'connect'(): void
-  'before-disconnect'(): void | Promise<void>
+  'before-disconnect'(): Awaitable<void>
   'disconnect'(): void
   'dispose'(): void
 }

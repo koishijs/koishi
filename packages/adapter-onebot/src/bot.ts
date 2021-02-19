@@ -55,15 +55,15 @@ export class CQBot extends Bot {
       session.subtype = 'private'
     }
 
-    if (this.app.bail(session, 'before-send', session)) return
+    if (await this.app.serial(session, 'before-send', session)) return
 
     if (message._response) {
       return message._response({ reply: session.content, atSender: false })
     }
 
     return groupId
-      ? this.$sendGroupMsgAsync(id, content)
-      : this.$sendPrivateMsgAsync(id, content)
+      ? this.$sendGroupMsgAsync(id, session.content)
+      : this.$sendPrivateMsgAsync(id, session.content)
   }
 
   async get<T = any>(action: string, params = {}, silent = false): Promise<T> {
