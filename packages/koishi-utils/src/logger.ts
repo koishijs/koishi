@@ -76,19 +76,19 @@ export class Logger {
   private createMethod(name: LogType, prefix: string, minLevel: number) {
     this[name] = (...args: [any, ...any[]]) => {
       if (this.level < minLevel) return
-      let indent = 4
+      let indent = 4, output = ''
       if (Logger.showTime) {
         indent += Logger.showTime.length + 1
-        this.stream.write(Time.template(Logger.showTime + ' '))
+        output += Time.template(Logger.showTime + ' ')
       }
-      this.stream.write(prefix + this.displayName + this.format(indent, ...args))
+      output += prefix + this.displayName + this.format(indent, ...args)
       if (Logger.showDiff) {
         const now = Date.now()
         const diff = Logger.timestamp && now - Logger.timestamp
-        this.stream.write(this.color(' +' + Time.formatTimeShort(diff)))
+        output += this.color(' +' + Time.formatTimeShort(diff))
         Logger.timestamp = now
       }
-      this.stream.write('\n')
+      this.stream.write(output + '\n')
     }
   }
 
