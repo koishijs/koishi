@@ -85,7 +85,6 @@ extendDatabase(MysqlDatabase, {
     })
     const channel = Object.assign(Channel.create(type, pid), data)
     const keys = Object.keys(channel)
-    console.log(assignments)
     await this.query(
       `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
       ON DUPLICATE KEY UPDATE ${assignments.join(', ')}`,
@@ -106,23 +105,23 @@ extendDatabase(MysqlDatabase, {
 
 extendDatabase(MysqlDatabase, ({ tables, Domain }) => {
   tables.user = Object.assign<any, any>([
-    'PRIMARY KEY (`id`) USING BTREE',
-    'UNIQUE INDEX `name` (`name`) USING BTREE',
+    'primary key (`id`) using btree',
+    'unique index `name` (`name`) using btree',
   ], {
-    id: `BIGINT(20) UNSIGNED NOT NULL COMMENT 'QQ 号'`,
-    name: `VARCHAR(50) NULL DEFAULT NULL COMMENT '昵称' COLLATE 'utf8mb4_general_ci'`,
-    flag: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' COMMENT '状态标签'`,
-    authority: `TINYINT(4) UNSIGNED NOT NULL DEFAULT '0' COMMENT '权限等级'`,
+    id: `bigint(20) unsigned not null`,
+    name: `varchar(50) null default null collate 'utf8mb4_general_ci'`,
+    flag: `bigint(20) unsigned not null default '0'`,
+    authority: `tinyint(4) unsigned not null default '0'`,
     usage: new Domain.Json(),
     timers: new Domain.Json(),
   })
 
   tables.channel = Object.assign<any, any>([
-    'PRIMARY KEY (`id`) USING BTREE',
+    'primary key (`id`) using btree',
   ], {
-    id: `BIGINT(20) UNSIGNED NOT NULL COMMENT '群号'`,
-    flag: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' COMMENT '状态标签'`,
-    assignee: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0'`,
+    id: `varchar(50) unsigned not null`,
+    flag: `bigint(20) unsigned not null default '0'`,
+    assignee: `varchar(50) unsigned not null default '0'`,
   })
 })
 

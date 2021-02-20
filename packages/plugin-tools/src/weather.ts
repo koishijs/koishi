@@ -21,7 +21,7 @@ export function apply(ctx: Context) {
         })
         return segment.image('base64://' + Buffer.from(data).toString('base64'))
       } catch (error) {
-        console.log(error.toJSON())
+        ctx.logger('tools').warn(error)
       }
     })
 }
