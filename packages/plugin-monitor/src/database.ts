@@ -75,11 +75,11 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   },
 })
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables, DataType }) => {
-  tables.channel.subscribe = new DataType.Json()
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables, Domain }) => {
+  tables.channel.subscribe = new Domain.Json()
   tables.subscribe = Object.assign<any, any>([], {
     id: '`id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT',
-    names: new DataType.Array(),
+    names: new Domain.Array(),
   })
 })
 

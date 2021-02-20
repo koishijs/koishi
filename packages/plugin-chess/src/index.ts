@@ -6,8 +6,8 @@ import * as go from './go'
 import * as gomoku from './gomoku'
 import * as othello from './othello'
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables, DataType }) => {
-  tables.channel.chess = new DataType.Json()
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables, Domain }) => {
+  tables.channel.chess = new Domain.Json()
 })
 
 interface Rule {

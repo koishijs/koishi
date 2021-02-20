@@ -13,8 +13,8 @@ Channel.extend(() => ({
   rss: [],
 }))
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ DataType, tables }) => {
-  tables.channel.rss = new DataType.Array()
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Domain, tables }) => {
+  tables.channel.rss = new Domain.Array()
 })
 
 export interface Config {

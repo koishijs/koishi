@@ -68,18 +68,18 @@ class MysqlDatabase {
         platforms.forEach(name => table[name] = 'varchar(50)')
       }
       if (!tables[name]) {
-        const cols = Object.keys(table).filter((key) => {
-          return typeof table[key] !== 'function'
-        }).map((key) => {
-          if (+key * 0 === 0) return table[key]
-          return `\`${key}\` ${table[key]}`
-        })
+        const cols = Object.keys(table)
+          .filter((key) => typeof table[key] !== 'function')
+          .map((key) => {
+            if (+key * 0 === 0) return table[key]
+            return `\`${key}\` ${MysqlDatabase.Domain.definition(table[key])}`
+          })
         logger.info('auto creating table %c', name)
         await this.query(`CREATE TABLE ?? (${cols.join(',')}) COLLATE = ?`, [name, this.config.charset])
       } else {
         const cols = Object.keys(table)
           .filter(key => +key * 0 !== 0 && typeof table[key] !== 'function' && !tables[name].includes(key))
-          .map(key => `ADD \`${key}\` ${table[key]}`)
+          .map(key => `ADD \`${key}\` ${MysqlDatabase.Domain.definition(table[key])}`)
         if (!cols.length) continue
         logger.info('auto updating table %c', name)
         await this.query(`ALTER TABLE ?? ${cols.join(',')}`, [name])
@@ -191,7 +191,7 @@ MysqlDatabase.prototype.escapeId = escapeId
 namespace MysqlDatabase {
   type Declarations = {
     [T in TableType]?: {
-      [K in keyof Tables[T]]: string | (() => string) | DataType<Tables[T][K]>
+      [K in keyof Tables[T]]: string | (() => string) | Domain<Tables[T][K]>
     }
   }
 
@@ -199,14 +199,18 @@ namespace MysqlDatabase {
 
   type FieldInfo = Parameters<Exclude<TypeCast, boolean>>[0]
 
-  export interface DataType<T = any> {
+  export interface Domain<T = any> {
     definition: string
     toString(value: T): string
     valueOf(source: FieldInfo): T
   }
 
-  export namespace DataType {
-    export class Array implements DataType<string[]> {
+  export namespace Domain {
+    export function definition(domain: string | Domain) {
+      return typeof domain === 'string' ? domain : domain.definition
+    }
+
+    export class Array implements Domain<string[]> {
       constructor(public definition = 'TEXT') {}
 
       toString(value: string[]) {
@@ -219,7 +223,7 @@ namespace MysqlDatabase {
       }
     }
 
-    export class Json implements DataType {
+    export class Json implements Domain {
       constructor(public definition = 'JSON') {}
 
       toString(value: any) {

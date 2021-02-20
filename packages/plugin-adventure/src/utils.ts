@@ -87,13 +87,13 @@ User.extend(() => ({
   drunkAchv: 0,
 }))
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ DataType, tables }) => {
-  tables.user.gains = new DataType.Json()
-  tables.user.endings = new DataType.Json()
-  tables.user.warehouse = new DataType.Json()
-  tables.user.achievement = new DataType.Array()
-  tables.user.recent = new DataType.Array()
-  tables.user.phases = new DataType.Array()
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Domain, tables }) => {
+  tables.user.gains = new Domain.Json()
+  tables.user.endings = new Domain.Json()
+  tables.user.warehouse = new Domain.Json()
+  tables.user.achievement = new Domain.Array()
+  tables.user.recent = new Domain.Array()
+  tables.user.phases = new Domain.Array()
   tables.user.achvCount = () => 'list_length(`achievement`)'
 })
 

@@ -16,11 +16,11 @@
     "description": "Tomon adapter for Koishi"
   },
   "koishi-plugin-adventure": {
-    "version": "0.1.4",
+    "version": "0.1.5",
     "description": "COC / DND Tools for Koishi"
   },
   "koishi-plugin-chess": {
-    "version": "3.0.0-beta.4",
+    "version": "3.0.0-beta.5",
     "description": "Chess Plugin for Koishi"
   },
   "koishi-plugin-common": {
@@ -52,10 +52,10 @@
     "description": "MongoDB support for Koishi"
   },
   "koishi-plugin-monitor": {
-    "version": "1.0.0-beta.21"
+    "version": "1.0.0-beta.22"
   },
   "koishi-plugin-mysql": {
-    "version": "3.0.0-beta.6",
+    "version": "3.0.0-beta.7",
     "description": "MySQL support for Koishi"
   },
   "koishi-plugin-puppeteer": {
@@ -63,11 +63,11 @@
     "description": "Take Screenshots in Koishi"
   },
   "koishi-plugin-rss": {
-    "version": "2.0.0-beta.4",
+    "version": "2.0.0-beta.5",
     "description": "Subscribe RSS Url for Koishi"
   },
   "koishi-plugin-schedule": {
-    "version": "3.0.0-beta.4",
+    "version": "3.0.0-beta.5",
     "description": "Schedule plugin for Koishi"
   },
   "koishi-plugin-status": {
@@ -75,7 +75,7 @@
     "description": "Show Status of Koishi"
   },
   "koishi-plugin-teach": {
-    "version": "2.0.0-beta.6",
+    "version": "2.0.0-beta.7",
     "description": "Teach plugin for Koishi"
   },
   "koishi-plugin-tools": {

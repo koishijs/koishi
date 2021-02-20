@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-adventure",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "COC / DND Tools for Koishi",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -33,7 +33,7 @@
   "peerDependencies": {
     "koishi-core": "^3.0.0-beta.11",
     "koishi-plugin-common": "^4.0.0-beta.10",
-    "koishi-plugin-teach": "^2.0.0-beta.6",
+    "koishi-plugin-teach": "^2.0.0-beta.7",
     "koishi-utils": "^3.2.6"
   },
   "devDependencies": {

@@ -104,7 +104,7 @@ extendDatabase(MysqlDatabase, {
   },
 })
 
-extendDatabase(MysqlDatabase, ({ tables, DataType }) => {
+extendDatabase(MysqlDatabase, ({ tables, Domain }) => {
   tables.user = Object.assign<any, any>([
     'PRIMARY KEY (`id`) USING BTREE',
     'UNIQUE INDEX `name` (`name`) USING BTREE',
@@ -113,8 +113,8 @@ extendDatabase(MysqlDatabase, ({ tables, DataType }) => {
     name: `VARCHAR(50) NULL DEFAULT NULL COMMENT '昵称' COLLATE 'utf8mb4_general_ci'`,
     flag: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' COMMENT '状态标签'`,
     authority: `TINYINT(4) UNSIGNED NOT NULL DEFAULT '0' COMMENT '权限等级'`,
-    usage: new DataType.Json(),
-    timers: new DataType.Json(),
+    usage: new Domain.Json(),
+    timers: new Domain.Json(),
   })
 
   tables.channel = Object.assign<any, any>([
