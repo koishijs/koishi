@@ -45,10 +45,10 @@ function adaptMessageSession(data: KHL.Data, meta: KHL.MessageMeta, session: Par
   session.timestamp = data.msgTimestamp
   session.subtype = data.channelType === 'GROUP' ? 'group' : 'private'
   if (meta.quote) {
-    session.$reply = adaptMessage(meta.quote, meta.quote)
-    session.$reply.messageId = meta.quote.id
-    session.$reply.channelId = session.channelId
-    session.$reply.subtype = session.subtype
+    session.reply = adaptMessage(meta.quote, meta.quote)
+    session.reply.messageId = meta.quote.id
+    session.reply.channelId = session.channelId
+    session.reply.subtype = session.subtype
   }
   return session
 }

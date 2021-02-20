@@ -124,9 +124,9 @@ export class App extends Context {
     this.before('disconnect', this._close.bind(this))
 
     this.on('parse', (argv: Argv, session: Session) => {
-      const { $prefix, $appel, subtype } = session
+      const { parsed, subtype } = session
       // group message should have prefix or appel to be interpreted as a command call
-      if (argv.root && subtype !== 'private' && $prefix === null && !$appel) return
+      if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
       const name = argv.tokens[0]?.content
       if (name in this._commandMap) {
         argv.tokens.shift()
@@ -135,11 +135,11 @@ export class App extends Context {
     })
 
     this.before('attach-user', (session, fields) => {
-      session.collect('user', session.$argv, fields)
+      session.collect('user', session.argv, fields)
     })
 
     this.before('attach-channel', (session, fields) => {
-      session.collect('channel', session.$argv, fields)
+      session.collect('channel', session.argv, fields)
     })
 
     this.plugin(validate)
@@ -200,35 +200,38 @@ export class App extends Context {
   }
 
   private async _process(session: Session, next: NextFunction) {
-    let message = this.options.processMessage(session.content)
+    let content = this.options.processMessage(session.content)
 
-    let capture: RegExpMatchArray, atSelf = false
+    let capture: RegExpMatchArray
+    let atSelf = false, appel = false, prefix: string = null
     // eslint-disable-next-line no-cond-assign
-    if (capture = message.match(/^\[CQ:reply,id=(-?\d+)\]\s*/)) {
-      message = message.slice(capture[0].length)
-      session.$reply = await session.$bot.getMessage(session.channelId, capture[1]).catch(noop)
+    if (capture = content.match(/^\[CQ:reply,id=(-?\d+)\]\s*/)) {
+      content = content.slice(capture[0].length)
+      session.reply = await session.bot.getMessage(session.channelId, capture[1]).catch(noop)
     }
 
     // strip prefix
     const at = `[CQ:at,qq=${session.selfId}]`
-    if (session.subtype !== 'private' && message.startsWith(at)) {
-      atSelf = session.$appel = true
-      message = message.slice(at.length).trimStart()
+    if (session.subtype !== 'private' && content.startsWith(at)) {
+      atSelf = appel = true
+      content = content.slice(at.length).trimStart()
       // eslint-disable-next-line no-cond-assign
-    } else if (capture = message.match(this._nameRE)) {
-      session.$appel = true
-      message = message.slice(capture[0].length)
+    } else if (capture = content.match(this._nameRE)) {
+      appel = true
+      content = content.slice(capture[0].length)
       // eslint-disable-next-line no-cond-assign
-    } else if (capture = message.match(this._prefixRE)) {
-      session.$prefix = capture[0]
-      message = message.slice(capture[0].length)
+    } else if (capture = content.match(this._prefixRE)) {
+      prefix = capture[0]
+      content = content.slice(capture[0].length)
     }
 
     // store parsed message
-    session.$parsed = message
-    session.$argv = this.bail('before-parse', message, session) || Argv.parse(message)
-    session.$argv.root = true
-    session.$argv.session = session
+    defineProperty(session, 'parsed', { content, appel, prefix })
+    this.emit(session, 'before-attach', session)
+
+    defineProperty(session, 'argv', this.bail('before-parse', content, session))
+    session.argv.root = true
+    session.argv.session = session
 
     if (this.database) {
       if (session.subtype === 'group') {
@@ -258,14 +261,15 @@ export class App extends Context {
     }
 
     // execute command
-    if (!session.resolve(session.$argv)) return next()
-    return session.execute(session.$argv, next)
+    this.emit(session, 'attach', session)
+    if (!session.resolve(session.argv)) return next()
+    return session.execute(session.argv, next)
   }
 
   private _suggest(session: Session, next: NextFunction) {
-    const { $argv, $reply, $parsed, $prefix, $appel, subtype } = session
-    if ($argv || subtype !== 'private' && $prefix === null && !$appel) return next()
-    const target = $parsed.split(/\s/, 1)[0].toLowerCase()
+    const { argv, reply, subtype, parsed: { content, prefix, appel } } = session
+    if (argv || subtype !== 'private' && prefix === null && !appel) return next()
+    const target = content.split(/\s/, 1)[0].toLowerCase()
     if (!target) return next()
 
     const items = getCommands(session as any, this._commands).flatMap(cmd => cmd._aliases)
@@ -276,7 +280,7 @@ export class App extends Context {
       prefix: template('internal.command-suggestion-prefix'),
       suffix: template('internal.command-suggestion-suffix'),
       async apply(suggestion, next) {
-        const newMessage = suggestion + $parsed.slice(target.length) + ($reply ? ' ' + $reply.content : '')
+        const newMessage = suggestion + content.slice(target.length) + (reply ? ' ' + reply.content : '')
         return this.execute(newMessage, next)
       },
     })
@@ -324,15 +328,15 @@ export class App extends Context {
     this.emit(session, 'middleware', session)
 
     // flush user & group data
-    await session.$user?._update()
-    await session.$channel?._update()
+    await session.user?._update()
+    await session.channel?._update()
   }
 
   private _handleArgv(content: string, session: Session) {
     const argv = Argv.parse(content)
-    if (session.$reply) {
+    if (session.reply) {
       argv.tokens.push({
-        content: session.$reply.content,
+        content: session.reply.content,
         quoted: true,
         inters: [],
         terminator: '',
@@ -341,15 +345,15 @@ export class App extends Context {
     return argv
   }
 
-  private _handleShortcut(content: string, { $prefix, $reply, $appel }: Session) {
-    if ($prefix || $reply) return
+  private _handleShortcut(content: string, { parsed, reply }: Session) {
+    if (parsed.prefix || reply) return
     for (const shortcut of this._shortcuts) {
       const { name, fuzzy, command, greedy, prefix, options = {}, args = [] } = shortcut
-      if (prefix && !$appel) continue
+      if (prefix && !parsed.appel) continue
       if (typeof name === 'string') {
         if (!fuzzy && content !== name || !content.startsWith(name)) continue
         const message = content.slice(name.length)
-        if (fuzzy && !$appel && message.match(/^\S/)) continue
+        if (fuzzy && !parsed.appel && message.match(/^\S/)) continue
         const argv: Argv = greedy
           ? { options: {}, args: [message.trim()] }
           : command.parse(Argv.parse(message.trim()))

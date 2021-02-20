@@ -153,7 +153,7 @@ export function apply(ctx: Context) {
     .shortcut('查看直播状态', { options: { group: true } })
     .option('group', '-g  查看本群内全部直播')
     .action(async ({ session, options }) => {
-      const { subscribe } = session.$channel
+      const { subscribe } = session.channel
       const output = [options.group ? '当前群内关注的直播状态：' : '当前关注的账号列表：']
       for (const id in subscribe) {
         if (!monitors[id]) {
@@ -195,7 +195,7 @@ export function apply(ctx: Context) {
     .option('delete', '-d  取消关注账号')
     .option('deleteAll', '-D  取消全部关注账号')
     .action(async ({ session, options }, name: string) => {
-      const { subscribe } = session.$channel
+      const { subscribe } = session.channel
       // FIXME 0
       const userId = options.global ? '0' : session.userId
       if (options.deleteAll) {
@@ -211,7 +211,7 @@ export function apply(ctx: Context) {
           }
         }
         if (count) {
-          await session.$channel._update()
+          await session.channel._update()
           return `已成功取消关注 ${count} 个账号。`
         } else {
           return '未在本群内关注任何账号。'
@@ -236,7 +236,7 @@ export function apply(ctx: Context) {
         } else {
           subscribe[id].splice(index)
         }
-        await session.$channel._update()
+        await session.channel._update()
         return '已成功取消关注。'
       }
 
@@ -248,7 +248,7 @@ export function apply(ctx: Context) {
         monitors[id] = new Monitor(account, ctx.app)
         monitors[id].start()
       }
-      await session.$channel._update()
+      await session.channel._update()
       return '关注成功！'
     })
 }

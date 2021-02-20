@@ -106,9 +106,9 @@ export function attachTraps<A extends any[], O>(
   command.userFields([...userTrap.fields(userAccess.readable)])
   command.channelFields([...channelTrap.fields(channelAccess.readable)])
   command.action((argv, ...args) => {
-    const { $uuid, $user, $channel } = argv.session
-    const user = userTrap.get($user, userAccess.readable)
-    const channel = channelTrap.get($channel, channelAccess.readable)
+    const { $uuid } = argv.session
+    const user = userTrap.get(argv.session.user, userAccess.readable)
+    const channel = channelTrap.get(argv.session.channel, channelAccess.readable)
     const ctxOptions = { $uuid, user, channel, userWritable, channelWritable }
     return action({ ...argv, ctxOptions }, ...args)
   })
@@ -143,12 +143,12 @@ export class MainAPI {
 
   async updateUser(uuid: string, data: Partial<User>) {
     const session = this.getSession(uuid)
-    return userTrap.set(session.$user, data)
+    return userTrap.set(session.user, data)
   }
 
   async updateGroup(uuid: string, data: Partial<Channel>) {
     const session = this.getSession(uuid)
-    return channelTrap.set(session.$channel, data)
+    return channelTrap.set(session.channel, data)
   }
 }
 

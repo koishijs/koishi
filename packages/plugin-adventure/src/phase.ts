@@ -56,14 +56,14 @@ export namespace Phase {
 
     // check user state
     const _meta = metaMap[session.userId]
-    if (_meta && !(active && _meta.channelId === session.channelId && activeUsers.has(session.$user.id))) {
+    if (_meta && !(active && _meta.channelId === session.channelId && activeUsers.has(session.user.id))) {
       return '同一用户只能同时进行一处剧情。'
     }
   }
 
   export function sendEscaped(session: Session<Adventurer.Field>, message: string | void, ms?: number) {
     if (!message) return
-    message = session.$app.chain('adventure/text', message, session)
+    message = session.app.chain('adventure/text', message, session)
     return session.sendQueued(message, ms)
   }
 
@@ -158,13 +158,13 @@ export namespace Phase {
   }
 
   export const choose = (choices: Choice[], options: ChooseOptions = {}): Action => async (session) => {
-    const { $user, $app } = session
+    const { user, app } = session
     const { autoSelect, onSelect, onDrunk } = options
-    choices = choices.filter(({ when }) => !when || when($user))
+    choices = choices.filter(({ when }) => !when || when(user))
 
     if (choices.length === 1 && autoSelect) {
       logger.debug('%s choose auto', session.userId)
-      return getValue(choices[0].next, $user)
+      return getValue(choices[0].next, user)
     }
 
     const choiceMap: Record<number, Choice> = {}
@@ -175,17 +175,17 @@ export namespace Phase {
 
     function applyChoice(choice: Choice) {
       const { text, next, name = text } = choice
-      if (onSelect) onSelect(name, $user)
-      return getValue(next, $user)
+      if (onSelect) onSelect(name, user)
+      return getValue(next, user)
     }
 
-    if (checkTimer('$drunk', $user)) {
+    if (checkTimer('$drunk', user)) {
       await sendEscaped(session, output)
-      const index = onDrunk?.($user) ?? Random.int(choices.length)
+      const index = onDrunk?.(user) ?? Random.int(choices.length)
       logger.debug('%s choose drunk %c', session.userId, String.fromCharCode(65 + index))
-      $user.drunkAchv += 1
+      user.drunkAchv += 1
       const hints = [`$s 醉迷恍惚，随手选择了 ${String.fromCharCode(65 + index)}。`]
-      $app.emit('adventure/check', session, hints)
+      app.emit('adventure/check', session, hints)
       await sendEscaped(session, hints.join('\n'))
       return applyChoice(choices[index])
     }
@@ -193,7 +193,7 @@ export namespace Phase {
     session._skipCurrent = false
     await sendEscaped(session, '请输入选项对应的字母继续游戏。若 2 分钟内未选择，则默认随机选择。\n' + output, 0)
 
-    const { predecessors } = $app.getSessionState(session)
+    const { predecessors } = app.getSessionState(session)
     predecessors[HOOK_PENDING_CHOOSE] = null
 
     return new Promise((resolve) => {
@@ -202,8 +202,8 @@ export namespace Phase {
         _resolve(applyChoice(Random.pick(choices)))
       }, 120000)
 
-      const disposeListener = $app.on('adventure/use', (userId, progress) => {
-        if (userId !== $user.id) return
+      const disposeListener = app.on('adventure/use', (userId, progress) => {
+        if (userId !== user.id) return
         _resolve(progress)
       })
 
@@ -228,26 +228,26 @@ export namespace Phase {
 
   export const useItem = (items: Record<string, ReadonlyUser.Infer<string>>): Action => async (session) => {
     if (!items) return
-    const { $user, $app } = session
+    const { user, app } = session
 
-    if (checkTimer('$use', $user)) {
+    if (checkTimer('$use', user)) {
       logger.debug('%s use disabled', session.userId)
-      return getValue(items[''], $user)
+      return getValue(items[''], user)
     }
 
     // drunk: use random item
-    if (checkTimer('$drunk', $user)) {
+    if (checkTimer('$drunk', user)) {
       const nextMap: Record<string, string> = {}
       for (const name in items) {
-        if (name && !$user.warehouse[name]) continue
-        const next = getValue(items[name], $user)
+        if (name && !user.warehouse[name]) continue
+        const next = getValue(items[name], user)
         if (next) nextMap[name] = next
       }
       const name = Random.pick(Object.keys(nextMap))
       logger.debug('%s use drunk %c', session.userId, name)
-      $user.drunkAchv += 1
+      user.drunkAchv += 1
       const hints = [name ? `$s 醉迷恍惚，随手使用了${name}。` : `$s 醉迷恍惚，没有使用任何物品！`]
-      $app.emit('adventure/check', session, hints)
+      app.emit('adventure/check', session, hints)
       await sendEscaped(session, hints.join('\n'))
       return nextMap[name]
     }
@@ -255,18 +255,18 @@ export namespace Phase {
     session._skipCurrent = false
     await sendEscaped(session, '你现在可以使用特定的物品。若 5 分钟内未使用这些物品之一，将视为放弃使用。你也可以直接输入“不使用任何物品”跳过这个阶段。', 0)
 
-    const { predecessors } = $app.getSessionState(session)
+    const { predecessors } = app.getSessionState(session)
     predecessors[HOOK_PENDING_USE] = null
 
     return new Promise<string>((resolve) => {
       const timer = setTimeout(() => {
         disposeListener()
         logger.debug('%s use timeout', session.userId)
-        _resolve(getValue(items[''], $user))
+        _resolve(getValue(items[''], user))
       }, 300000)
 
-      const disposeListener = $app.on('adventure/use', (userId, progress) => {
-        if (userId !== $user.id) return
+      const disposeListener = app.on('adventure/use', (userId, progress) => {
+        if (userId !== user.id) return
         disposeListener()
         clearTimeout(timer)
         _resolve(progress)
@@ -305,36 +305,36 @@ export namespace Phase {
       }
     }
 
-    session.$app.emit('adventure/check', session, hints)
+    session.app.emit('adventure/check', session, hints)
     await sendEscaped(session, hints.join('\n'))
   }
 
   export const plot: Action = async (session) => {
-    const { $user } = session
+    const { user } = session
 
     // resolve phase
-    const phase = getPhase($user)
-    if (!phase) return logger.warn('phase not found %c', $user.progress)
+    const phase = getPhase(user)
+    if (!phase) return logger.warn('phase not found %c', user.progress)
 
-    logger.debug('%s phase %c', session.userId, $user.progress)
+    logger.debug('%s phase %c', session.userId, user.progress)
     const { items, choices, next, options, prepare = noop } = phase
 
     const state = prepare()
-    await print(session, phase.texts, $user.phases.includes($user.progress), state)
+    await print(session, phase.texts, user.phases.includes(user.progress), state)
     await epilog(session, phase.events)
 
     // resolve next phase
-    activeUsers.add($user.id)
+    activeUsers.add(user.id)
     const action = typeof next === 'function' && next
       || choices && choose(choices, options)
       || items && useItem(items)
       || (async () => next as string)
     const progress = await action(session, state)
-    activeUsers.delete($user.id)
+    activeUsers.delete(user.id)
 
     // save user data
-    await setProgress($user, progress)
-    if (!$user.phases.includes($user.progress)) {
+    await setProgress(user, progress)
+    if (!user.phases.includes(user.progress)) {
       session._skipCurrent = false
     }
 
@@ -394,7 +394,7 @@ export namespace Phase {
           return
         }
 
-        const { endings } = session.$user
+        const { endings } = session.user
         const storyMap: Record<string, string[]> = {}
         for (const ending in endings) {
           const [prefix] = ending.split('-', 1)
@@ -434,7 +434,7 @@ export namespace Phase {
         const totalCount = Object.keys(endingMap).length
         const totalBadCount = badEndings.size
         const userCount = Object.keys(endings).length
-        const userBadCount = getBadEndingCount(session.$user)
+        const userBadCount = getBadEndingCount(session.user)
         output.unshift(`${session.$username}，你已达成 ${userCount}/${totalCount} 个结局（BE: ${userBadCount}/${totalBadCount}）。`)
         return output.join('\n')
       })
@@ -469,7 +469,7 @@ export namespace Phase {
       ].join('\n'))
       .action(async ({ session }) => {
         // assert user progress
-        if (!session.$user.progress) return
+        if (!session.user.progress) return
 
         const message = checkStates(session)
         if (message) return message
@@ -507,7 +507,7 @@ export namespace Phase {
       .option('nothing', '-n  不使用任何物品，直接进入下一剧情')
       .action(({ session, options }) => {
         if (options.nothing) return
-        const user = session.$user
+        const user = session.user
         if (!checkTimer('$use', user)) return
         const buff = Buff.timers['$use']
         if (!checkUsage('$useHint', user, 1)) {
@@ -518,22 +518,22 @@ export namespace Phase {
       })
       .action(async (argv, item) => {
         const { options, session } = argv
-        const { $user } = session
+        const { user } = session
         const message = checkStates(session, true)
         if (message) return message
 
         if (!item && !options.nothing) return '请输入物品名。'
         if (item && !Item.data[item]) return Item.suggest(argv)
 
-        const possess = Item.data.map(i => i.name).filter(name => $user.warehouse[name])
+        const possess = Item.data.map(i => i.name).filter(name => user.warehouse[name])
         const result = ctx.bail('adventure/before-use', item, session)
         if (result) return result
 
-        const phase = getPhase($user)
+        const phase = getPhase(user)
         if (!phase) return
 
         const { items: itemMap = {}, itemsWhenDreamy = [] } = phase
-        const usableItems = checkTimer('$dream', $user)
+        const usableItems = checkTimer('$dream', user)
           ? new Set([...itemsWhenDreamy, ...possess])
           : new Set(possess)
 
@@ -543,20 +543,20 @@ export namespace Phase {
           return `你暂未持有物品“${item}”。`
         }
 
-        const progress = getValue(itemMap[item], $user)
+        const progress = getValue(itemMap[item], user)
         if (progress) {
-          logger.debug('%s use %c', session.$user.id, item)
-          if (activeUsers.has(session.$user.id)) {
-            await ctx.parallel('adventure/use', session.$user.id, progress)
+          logger.debug('%s use %c', session.user.id, item)
+          if (activeUsers.has(session.user.id)) {
+            await ctx.parallel('adventure/use', session.user.id, progress)
             return
           }
 
-          $user['_skip'] = session._skipAll
-          await setProgress($user, progress)
+          user['_skip'] = session._skipAll
+          await setProgress(user, progress)
           return start(session)
         } else {
           if (!item || session._skipAll) return
-          const next = !metaMap[session.userId] && getValue(mainPhase.items[item], $user)
+          const next = !metaMap[session.userId] && getValue(mainPhase.items[item], user)
           if (next) {
             return `物品“${item}”当前不可用，请尝试输入“继续当前剧情”。`
           } else {

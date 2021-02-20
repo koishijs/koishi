@@ -48,12 +48,12 @@ namespace Luck {
   }
 
   function showLotteryUsage(session: Session<User.Field>) {
-    const due = session.$user.timers.lottery
-    const affinity = Affinity.get(session.$user)
+    const due = session.user.timers.lottery
+    const affinity = Affinity.get(session.user)
     const maxUsage = Math.floor(affinity / 30) + 5
     const nextUsage = due ? (Math.max(0, due - Date.now()) / 1000).toFixed() : 0
     return [
-      `已调用次数：${Math.min(getUsage('lottery', session.$user), maxUsage)}/${maxUsage}。`,
+      `已调用次数：${Math.min(getUsage('lottery', session.user), maxUsage)}/${maxUsage}。`,
       `距离下次调用还需：${nextUsage}/${minInterval * 60} 秒。`,
       '十连抽卡不计入仓库，也不计入使用次数，但与普通抽卡共享冷却时间。',
     ].join('\n')
@@ -77,27 +77,27 @@ namespace Luck {
       .shortcut('十连抽卡', { options: { tenTimes: true } })
       .usage(showLotteryUsage)
       .action(async ({ session, options }) => {
-        const { $user } = session
+        const { user } = session
         if (Phase.metaMap[session.userId]) return '当前处于剧情模式中，无法抽卡。'
-        if ($user.progress) return '检测到你有未完成的剧情，请尝试输入“继续当前剧情”。'
+        if (user.progress) return '检测到你有未完成的剧情，请尝试输入“继续当前剧情”。'
 
-        if (checkTimer('lottery', $user, minInterval * 60 * 1000)) {
-          if (checkUsage('$lotteryHint', $user, 1)) return
+        if (checkTimer('lottery', user, minInterval * 60 * 1000)) {
+          if (checkUsage('$lotteryHint', user, 1)) return
           return `抽卡调用存在 ${minInterval} 分钟的冷却时间，请稍后再试叭~`
         }
 
         if (options.tenTimes) {
           const output = [`恭喜 ${session.$username} 获得了：`]
           for (let index = 10; index > 0; index--) {
-            const prize = Item.pick(Item.data[Random.weightedPick(probabilities)], $user)
+            const prize = Item.pick(Item.data[Random.weightedPick(probabilities)], user)
             output.push(`${prize.name}（${prize.rarity}）`)
           }
           return output.join('\n')
         }
 
-        const affinity = Affinity.get($user)
+        const affinity = Affinity.get(user)
         const maxUsage = Math.floor(affinity / 30) + 5
-        let times = maxUsage - getUsage('lottery', $user)
+        let times = maxUsage - getUsage('lottery', user)
         if (times <= 0) {
           return '调用次数已达上限。'
         }
@@ -106,16 +106,16 @@ namespace Luck {
         const output: string[] = []
         function getPrize(output: string[]) {
           times -= 1
-          const weights = $user.noSR >= 9 ? allowanceProbabilities : probabilities
-          const rarity = Luck.use($user).weightedPick(weights)
+          const weights = user.noSR >= 9 ? allowanceProbabilities : probabilities
+          const rarity = Luck.use(user).weightedPick(weights)
           if (rarity === 'R' || rarity === 'N') {
-            $user.noSR += 1
+            user.noSR += 1
           } else {
-            $user.noSR = 0
+            user.noSR = 0
           }
-          const item = Item.pick(Item.data[rarity], $user, !times)
+          const item = Item.pick(Item.data[rarity], user, !times)
           const { name, description } = item
-          const isOld = item.name in $user.warehouse
+          const isOld = item.name in user.warehouse
           gainList.push(name)
           session._item = name
           const result = Item.gain(session, item.name)
@@ -132,16 +132,16 @@ namespace Luck {
           getPrize(output)
         } else {
           if (options.simple) output.push(`恭喜 ${session.$username} 获得了：`)
-          while (times && !checkTimer('$lottery', $user)) {
+          while (times && !checkTimer('$lottery', user)) {
             getPrize(output)
           }
         }
 
         const result = Item.checkOverflow(session, gainList)
         if (result) output.push(result)
-        $user.usage.lottery = maxUsage - times
-        session.$app.emit('adventure/check', session, output)
-        await $user._update()
+        user.usage.lottery = maxUsage - times
+        session.app.emit('adventure/check', session, output)
+        await user._update()
 
         if (!times) output.push('您本日的抽奖次数已用完，请明天再试吧~')
         return output.join('\n').replace(/\$s/g, session.$username)

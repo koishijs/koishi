@@ -177,7 +177,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   getConfig<K extends keyof Command.Config>(key: K, session: Session): Exclude<Command.Config[K], (user: User) => any> {
     const value = this.config[key] as any
-    return typeof value === 'function' ? value(session.$user) : value
+    return typeof value === 'function' ? value(session.user) : value
   }
 
   action(callback: Command.Action<U, G, A, O>, append = false) {

@@ -42,26 +42,26 @@ namespace Achievement {
   export type Field = 'achievement' | 'name' | 'flag' | 'wealth' | 'money'
 
   Session.prototype.achieve = function (this: Session<Field>, id, hints, achieve = true) {
-    const { $user, $app } = this
-    if (!achieve || $user.achievement.includes(id)) return
+    const { user, app } = this
+    if (!achieve || user.achievement.includes(id)) return
     const achv = data[id]
-    const currentLevel = getLevel($user, achv)
+    const currentLevel = getLevel(user, achv)
     if (typeof achv.desc === 'string') {
       if (currentLevel) return
-      $user.achievement.push(id)
+      user.achievement.push(id)
     } else {
       const targetLevel = makeArray(achieve).reduce((prev, curr, index) => curr ? index + 1 : prev, 0)
       if (currentLevel >= targetLevel) return
       if (!currentLevel) {
-        $user.achievement.push(id += '-' + targetLevel)
+        user.achievement.push(id += '-' + targetLevel)
       } else {
-        const index = $user.achievement.indexOf(`${id}-${currentLevel}`)
-        $user.achievement[index] = id += '-' + targetLevel
+        const index = user.achievement.indexOf(`${id}-${currentLevel}`)
+        user.achievement[index] = id += '-' + targetLevel
       }
     }
 
-    hints.push(`恭喜 ${$user.name} 获得了成就「${data[id].name}」！`)
-    $app.emit('adventure/achieve', this, data[id], hints)
+    hints.push(`恭喜 ${user.name} 获得了成就「${data[id].name}」！`)
+    app.emit('adventure/achieve', this, data[id], hints)
     return hints.join('\n')
   }
 

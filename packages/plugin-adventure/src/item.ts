@@ -81,8 +81,8 @@ namespace Item {
   }
 
   export function lose(session: Session<'usage' | 'warehouse'>, name: string, count = 1) {
-    if (session.$user.warehouse[name]) {
-      session.$user.warehouse[name] -= count
+    if (session.user.warehouse[name]) {
+      session.user.warehouse[name] -= count
     }
     const item = Item.data[name]
     const result = item.onLose?.(session)
@@ -94,18 +94,18 @@ namespace Item {
   export function gain(session: Session<Adventurer.Field>, name: string, count = 1) {
     const item = Item.data[name]
     const output: string[] = []
-    session.$user.gains[name] = (session.$user.gains[name] || 0) + count
-    session.$user.warehouse[name] = (session.$user.warehouse[name] || 0) + count
+    session.user.gains[name] = (session.user.gains[name] || 0) + count
+    session.user.warehouse[name] = (session.user.warehouse[name] || 0) + count
 
     // update recent
     if (item.rarity !== 'SP') {
-      const index = session.$user.recent.indexOf(name)
+      const index = session.user.recent.indexOf(name)
       if (index >= 0) {
-        session.$user.recent.splice(index, 1)
+        session.user.recent.splice(index, 1)
       } else {
-        session.$user.recent.splice(MAX_RECENT_ITEMS - 1, Infinity)
+        session.user.recent.splice(MAX_RECENT_ITEMS - 1, Infinity)
       }
-      session.$user.recent.unshift(name)
+      session.user.recent.unshift(name)
     }
 
     // trigger event
@@ -133,16 +133,16 @@ namespace Item {
     }
   }
 
-  export function checkOverflow(session: Session<Adventurer.Field>, names = Object.keys(session.$user.warehouse)) {
+  export function checkOverflow(session: Session<Adventurer.Field>, names = Object.keys(session.user.warehouse)) {
     const itemMap: Record<string, number> = {}
     for (const name of names) {
       const { maxCount, value } = Item.data[name]
-      const overflow = session.$user.warehouse[name] - maxCount
+      const overflow = session.user.warehouse[name] - maxCount
       if (overflow > 0) {
-        if (value && !checkTimer('$shop', session.$user)) {
+        if (value && !checkTimer('$shop', session.user)) {
           itemMap[name] = overflow
         } else {
-          session.$user.warehouse[name] = maxCount
+          session.user.warehouse[name] = maxCount
         }
       }
     }
@@ -200,7 +200,7 @@ namespace Item {
       .option('format', '/ <format:string> 以特定的格式输出', { hidden: true })
       .action(async (argv, name) => {
         const { session, next, options } = argv
-        const { warehouse, gains } = session.$user
+        const { warehouse, gains } = session.user
 
         if (!name) {
           const achieved = Object.keys(warehouse).length
@@ -247,18 +247,18 @@ namespace Item {
         }
         if (item.rarity !== 'SP' && item.lottery !== 0) source.push('抽奖')
         if ('fishing' in item) source.push('钓鱼')
-        const value = ctx.app.adventure.createSeller(session.$user)(name)
+        const value = ctx.app.adventure.createSeller(session.user)(name)
         if (value) {
           output.push(`售出价格：${value}￥`)
         }
-        const bid = ctx.app.adventure.createBuyer(session.$user)(name)
+        const bid = ctx.app.adventure.createBuyer(session.user)(name)
         if (bid) {
           source.push('商店')
           output.push(`购入价格：${bid}￥`)
         }
         if (item.plot || !source.length) source.push('剧情')
         output.push(`获取来源：${source.join(' / ')}`)
-        const result = item.note?.(session.$user)
+        const result = item.note?.(session.user)
         if (result) output.push(result)
         output.push(item.description)
         return output.join('\n')
@@ -275,9 +275,9 @@ namespace Item {
         const { session } = argv
         const message = Phase.checkStates(session)
         if (message) return message
-        if (session.$user.progress) return '检测到你有未完成的剧情，请尝试输入“继续当前剧情”。'
+        if (session.user.progress) return '检测到你有未完成的剧情，请尝试输入“继续当前剧情”。'
 
-        const toBid = ctx.app.adventure.createBuyer(session.$user)
+        const toBid = ctx.app.adventure.createBuyer(session.user)
         if (!args.length) {
           const output = Item.data
             .map(i => ({ ...i, bid: toBid(i.name) }))
@@ -292,7 +292,7 @@ namespace Item {
         if (!buyMap) return
 
         let moneyLost = 0
-        const user = session.$user
+        const user = session.user
         for (const name in buyMap) {
           const count = buyMap[name]
           const { maxCount } = Item.data[name]
@@ -324,7 +324,7 @@ namespace Item {
         if (!entries.length) return '没有购买任何物品。'
 
         const hints = [Event.buy(buyMap)(session)]
-        session.$app.emit('adventure/check', session as any, hints)
+        session.app.emit('adventure/check', session as any, hints)
 
         await user._update()
         await session.send(hints.join('\n'))
@@ -342,12 +342,12 @@ namespace Item {
         const { session } = argv
         const message = Phase.checkStates(session)
         if (message) return message
-        if (session.$user.progress) return '检测到你有未完成的剧情，请尝试输入“继续当前剧情”。'
+        if (session.user.progress) return '检测到你有未完成的剧情，请尝试输入“继续当前剧情”。'
 
-        const toValue = ctx.app.adventure.createSeller(session.$user)
+        const toValue = ctx.app.adventure.createSeller(session.user)
         if (!args.length) {
           const output = Item.data
-            .filter(p => p.value && session.$user.warehouse[p.name])
+            .filter(p => p.value && session.user.warehouse[p.name])
             .sort((a, b) => a.value > b.value ? 1 : a.value < b.value ? -1 : Item.rarities[a.rarity] - Item.rarities[b.rarity])
             .map(p => `${p.name}（${p.rarity}） ${toValue(p.name)}￥`)
           output.unshift('物品名 售出价格')
@@ -357,7 +357,7 @@ namespace Item {
         const sellMap = await toItemMap(argv)
         if (!sellMap) return
 
-        const user = session.$user
+        const user = session.user
         for (const name in sellMap) {
           const count = sellMap[name]
           const { maxCount, value } = Item.data[name]
@@ -392,14 +392,14 @@ namespace Item {
           const progress = getValue<string, Shopper.Field>(saleAction, user)
           if (progress) {
             const _meta = session as Session<Adventurer.Field>
-            _meta.$user['_skip'] = session._skipAll
-            await Phase.setProgress(_meta.$user, progress)
+            _meta.user['_skip'] = session._skipAll
+            await Phase.setProgress(_meta.user, progress)
             return Phase.start(_meta)
           }
         }
 
         const hints = [Event.sell(sellMap)(session)]
-        session.$app.emit('adventure/check', session as any, hints)
+        session.app.emit('adventure/check', session as any, hints)
         await user._update()
         await session.send(hints.join('\n'))
       })

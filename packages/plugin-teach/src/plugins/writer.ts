@@ -74,7 +74,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 
     if (!options.modify && hasUnnamed && session.subtype === 'group') {
       try {
-        const memberMap = await session.$bot.getGroupMemberMap(session.groupId)
+        const memberMap = await session.bot.getGroupMemberMap(session.groupId)
         for (const userId in memberMap) {
           nameMap[idMap[userId]] ||= memberMap[userId]
         }
@@ -96,7 +96,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   // 锁定的问答需要 frozen 级权限才能修改
   ctx.on('dialogue/permit', ({ session, target, options, authMap }, { writer, flag }) => {
     const { writer: newWriter } = options
-    const { id, authority } = session.$user
+    const { id, authority } = session.user
     return (
       (newWriter && authority <= authMap[newWriter] && newWriter !== id) ||
       ((flag & Dialogue.Flag.frozen) && authority < config.authority.frozen) ||
@@ -120,7 +120,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     if (typeof writer !== 'undefined') {
       data.writer = writer
     } else if (!target) {
-      data.writer = session.$user.id
+      data.writer = session.user.id
     }
   })
 }

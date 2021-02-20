@@ -4,7 +4,7 @@ export interface segment {
 }
 
 export function segment(type: string, data: segment.Data = {}) {
-  if (type === 'text') return data.content
+  if (type === 'text') return data.content as string
   let output = '[CQ:' + type
   for (const key in data) {
     if (data[key]) output += `,${key}=${segment.escape(data[key], true)}`

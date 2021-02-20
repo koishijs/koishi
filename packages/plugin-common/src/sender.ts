@@ -38,17 +38,17 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       const { $username: name, userId } = session
       const nickname = name === '' + userId ? userId : `${name} (${userId})`
       const message = `收到来自 ${nickname} 的反馈信息：\n${text}`
-      const id = await session.$bot.sendPrivateMessage(config.operator, message)
+      const id = await session.bot.sendPrivateMessage(config.operator, message)
       interactions[id] = userId
       return '反馈信息发送成功！'
     })
 
   ctx.middleware((session, next) => {
-    const { $reply, $parsed } = session
-    if (!$parsed || !$reply) return next()
-    const userId = interactions[$reply.messageId]
+    const { reply, parsed } = session
+    if (!parsed.content || !reply) return next()
+    const userId = interactions[reply.messageId]
     if (!userId) return next()
-    return session.$bot.sendPrivateMessage(userId, $parsed)
+    return session.bot.sendPrivateMessage(userId, parsed.content)
   })
 
   dbctx.command('common/broadcast <message:text>', '全服广播', { authority: 4 })
@@ -65,7 +65,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       if (!options.forced) {
         groups = groups.filter(g => !(g.flag & Channel.Flag.silent))
       }
-      await session.$bot.broadcast(groups.map(g => g.id.slice(session.platform['length'] + 1)), message)
+      await session.bot.broadcast(groups.map(g => g.id.slice(session.platform['length'] + 1)), message)
     })
 
   dbctx.command('common/contextify <message:text>', '在特定上下文中触发指令', { authority: 3 })
@@ -103,33 +103,33 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
 
       if (!options.group) {
         newSession.subtype = 'private'
-        delete newSession.$channel
+        delete newSession.channel
       } else if (options.group !== session.groupId) {
         newSession.groupId = options.group
         newSession.subtype = 'group'
-        delete newSession.$channel
+        delete newSession.channel
         await newSession.observeChannel(Channel.fields)
       }
 
       if (options.user) {
-        const id = session.$bot.parseUser(options.user)
+        const id = session.bot.parseUser(options.user)
         if (!id) return '未指定目标。'
 
         newSession.userId = id
         newSession.author.userId = id
 
-        delete newSession.$user
+        delete newSession.user
         const user = await newSession.observeUser(User.fields)
-        if (session.$user.authority <= user.authority) {
+        if (session.user.authority <= user.authority) {
           return '权限不足。'
         }
       }
 
       if (options.group) {
-        const info = await session.$bot.getGroupMember(newSession.groupId, newSession.userId).catch(() => ({}))
+        const info = await session.bot.getGroupMember(newSession.groupId, newSession.userId).catch(() => ({}))
         Object.assign(newSession.author, info)
       } else if (options.user) {
-        const info = await session.$bot.getUser(newSession.userId).catch(() => ({}))
+        const info = await session.bot.getUser(newSession.userId).catch(() => ({}))
         Object.assign(newSession.author, info)
       }
 

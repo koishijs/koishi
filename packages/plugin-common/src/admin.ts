@@ -105,14 +105,14 @@ Command.prototype.adminUser = function (this: Command, callback) {
     const fields = session.collect('user', argv)
     let target: User.Observed<never>
     if (options.target) {
-      const id = session.$bot.parseUser(options.target)
+      const id = session.bot.parseUser(options.target)
       if (!id) return '请指定正确的目标。'
-      const { database } = session.$app
+      const { database } = session.app
       const data = await database.getUser(session.platform, id, [...fields])
       if (!data) return template('admin.user-not-found')
       if (id === session.userId) {
         target = await session.observeUser(fields)
-      } else if (session.$user.authority <= data.authority) {
+      } else if (session.user.authority <= data.authority) {
         return template('internal.low-authority')
       } else {
         target = observe(data, diff => database.setUser(session.platform, id, diff), `user ${id}`)
@@ -141,9 +141,9 @@ Command.prototype.adminChannel = function (this: Command, callback) {
     const fields = session.collect('channel', argv)
     let target: Channel.Observed
     if (options.target) {
-      const id = session.$bot.parseChannel(options.target)
+      const id = session.bot.parseChannel(options.target)
       if (!id) return '请指定正确的目标。'
-      const { database } = session.$app
+      const { database } = session.app
       const data = await session.getChannel(id, '', [...fields])
       if (!data) return template('admin.channel-not-found')
       target = observe(data, diff => database.setChannel(session.platform, id, diff), `channel ${id}`)
@@ -170,14 +170,14 @@ export function apply(ctx: Context) {
     .userFields(['id', 'name'])
     .shortcut('叫我', { prefix: true, fuzzy: true, greedy: true })
     .action(async ({ session }, name) => {
-      const { $user } = session
+      const { user } = session
       if (!name) {
-        if ($user.name) {
+        if (user.name) {
           return template('callme.current', session.$username)
         } else {
           return template('callme.unnamed')
         }
-      } else if (name === $user.name) {
+      } else if (name === user.name) {
         return template('callme.unchanged')
       } else if (!(name = name.trim())) {
         return template('callme.empty')
@@ -189,8 +189,8 @@ export function apply(ctx: Context) {
       if (result) return result
 
       try {
-        $user.name = name
-        await $user._update()
+        user.name = name
+        await user._update()
         return template('callme.updated', session.$username)
       } catch (error) {
         if (error[Symbol.for('koishi.error-type')] === 'duplicate-entry') {
@@ -231,7 +231,7 @@ export function apply(ctx: Context) {
     .adminUser(async ({ session, target }, value) => {
       const authority = Number(value)
       if (!isInteger(authority) || authority < 0) return '参数错误。'
-      if (authority >= session.$user.authority) return template('internal.low-authority')
+      if (authority >= session.user.authority) return template('internal.low-authority')
       await ctx.database.createUser(session.platform, target[session.platform], { authority })
       target._merge({ authority })
       return template('admin.user-updated')
@@ -310,7 +310,7 @@ export function apply(ctx: Context) {
   ctx.command('channel/assign [bot]', '受理者账号', { authority: 4 })
     .channelFields(['assignee'])
     .adminChannel(async ({ session, target }, value) => {
-      const assignee = value ? session.$bot.parseUser(value) : session.selfId
+      const assignee = value ? session.bot.parseUser(value) : session.selfId
       if (!assignee) return '参数错误。'
       await ctx.database.createChannel(session.platform, session.channelId, { assignee })
       target._merge({ assignee })

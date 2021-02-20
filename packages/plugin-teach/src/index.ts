@@ -39,7 +39,7 @@ declare module 'koishi-core/dist/context' {
 }
 
 const cheatSheet = (session: Session<'authority'>, config: Config) => {
-  const { authority } = session.$user
+  const { authority } = session.user
   const { authority: a, prefix: p } = config
   return `\
 教学系统基本用法：
@@ -93,7 +93,7 @@ const cheatSheet = (session: Session<'authority'>, config: Config) => {
 　$0：收到的原文本
 　$n：分条发送
 　$a：@说话人
-　$m：@${session.$app.options.nickname[0]}
+　$m：@${session.app.options.nickname[0]}
 　$s：说话人的名字
 　\$()：指令插值
 　\${}：表达式插值`
@@ -108,13 +108,13 @@ function registerPrefix(ctx: Context, prefix: string) {
   //                                   $1     $2
 
   ctx.on('parse', (argv, session) => {
-    if (argv.root && session.$prefix || session.$reply) return
+    if (argv.root && (session.parsed.prefix || session.reply)) return
     const capture = teachRegExp.exec(argv.tokens[0]?.content)
     if (!capture) return
 
     argv.tokens.shift()
     argv.tokens.forEach(Argv.revert)
-    argv.source = session.$parsed
+    argv.source = session.parsed.content
     argv.options = {}
     const { length } = argv.tokens
     if (capture[1] === prefix) {

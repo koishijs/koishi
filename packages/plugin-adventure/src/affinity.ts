@@ -77,7 +77,7 @@ export namespace Affinity {
         const hints: string[] = []
         let total = 0
 
-        const items = options.theoretical ? affinityList.map(a => a.theoretical()) : getAffinityItems(session.$user)
+        const items = options.theoretical ? affinityList.map(a => a.theoretical()) : getAffinityItems(session.user)
 
         for (const [value, label] of items) {
           if (!label) continue
@@ -87,7 +87,7 @@ export namespace Affinity {
 
         const date = new Date()
         for (const callback of hintList) {
-          for (const hint of callback(session.$user, date)) {
+          for (const hint of callback(session.user, date)) {
             hints.push(hint)
           }
         }

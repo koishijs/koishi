@@ -73,11 +73,11 @@ export function unescapeAnswer(message: string) {
 }
 
 Context.prototype.getSessionState = function (session) {
-  const { channelId, userId, $app } = session
-  if (!$app._dialogueStates[channelId]) {
-    this.emit('dialogue/state', $app._dialogueStates[channelId] = { channelId } as SessionState)
+  const { channelId, userId, app } = session
+  if (!app._dialogueStates[channelId]) {
+    this.emit('dialogue/state', app._dialogueStates[channelId] = { channelId } as SessionState)
   }
-  const state = Object.create($app._dialogueStates[channelId])
+  const state = Object.create(app._dialogueStates[channelId])
   state.session = session
   state.userId = userId
   return state
@@ -262,10 +262,10 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   }
 
-  ctx.on('message', (session) => {
-    if (session.$appel) return
+  ctx.before('attach', (session) => {
+    if (session.parsed.appel) return
     const { activated } = ctx.getSessionState(session)
-    if (activated[session.userId]) session.$appel = true
+    if (activated[session.userId]) session.parsed.appel = true
   })
 
   ctx2.middleware(async (session, next) => {
@@ -297,7 +297,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.on('group-member-deleted', triggerNotice.bind(null, 'leave'))
 
   ctx.on('dialogue/attach-user', ({ session }) => {
-    if (session.$user.flag & User.Flag.ignore) return true
+    if (session.user.flag & User.Flag.ignore) return true
   })
 
   ctx.on('dialogue/receive', ({ session, test }) => {

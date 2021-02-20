@@ -52,7 +52,7 @@ export function apply(ctx: Context, config: Config) {
       if (options.update) {
         const { files, summary } = await git.pull(worker.config.gitRemote)
         if (!files.length) return '所有模块均已是最新。'
-        await session.$app.worker.restart()
+        await session.app.worker.restart()
         return `更新成功！(${summary.insertions}A ${summary.deletions}D ${summary.changes}M)`
       }
       return session.execute('help addon')
@@ -109,7 +109,7 @@ export function apply(ctx: Context, config: Config) {
           .option('debug', '启用调试模式', { hidden: true })
 
         attachTraps(cmd, userAccess, channelAccess, async ({ session, command, options, ctxOptions }, ...args) => {
-          const { name } = command, { worker } = session.$app
+          const { name } = command, { worker } = session.app
           const result = await worker.remote.callAddon(ctxOptions, { name, args, options })
           return result
         })

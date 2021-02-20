@@ -9,7 +9,7 @@ const logger = new Logger('schedule')
 async function prepareSchedule({ id, session, interval, command, time, lastCall }: Schedule) {
   const now = Date.now()
   const date = time.valueOf()
-  const { database } = session.$app
+  const { database } = session.app
 
   async function executeSchedule() {
     logger.debug('execute %d: %c', id, command)

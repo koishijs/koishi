@@ -358,10 +358,12 @@ export interface EventMap extends SessionEventMap {
   'appellation'(name: string, session: Session): string
   'before-parse'(content: string, session: Session): Argv
   'parse'(argv: Argv, session: Session): string
-  'before-attach-user'(session: Session, fields: Set<User.Field>): void
   'before-attach-channel'(session: Session, fields: Set<Channel.Field>): void
-  'attach-user'(session: Session): Awaitable<void | boolean>
   'attach-channel'(session: Session): Awaitable<void | boolean>
+  'before-attach-user'(session: Session, fields: Set<User.Field>): void
+  'attach-user'(session: Session): Awaitable<void | boolean>
+  'before-attach'(session: Session): void
+  'attach'(session: Session): void
   'before-send'(session: Session<never, never, Platform, 'send'>): Awaitable<void | boolean>
   'before-command'(argv: Argv): Awaitable<void | string>
   'command'(argv: Argv): Awaitable<void>

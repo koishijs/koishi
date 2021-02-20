@@ -110,11 +110,11 @@ export function apply(ctx: Context, config: Config = {}) {
   const { refresh, formatBot, format } = { ...defaultConfig, ...config }
 
   app.before('command', ({ session }) => {
-    session.$user['lastCall'] = new Date()
+    session.user['lastCall'] = new Date()
   })
 
   app.before('send', (session) => {
-    session.$bot.counter[0] += 1
+    session.bot.counter[0] += 1
   })
 
   let timer: NodeJS.Timeout

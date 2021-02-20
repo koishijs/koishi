@@ -57,16 +57,16 @@ export default function apply(app: App) {
       }
     }
 
-    if (!session.$user) return
+    if (!session.user) return
     let isUsage = true
 
     // check authority
-    if (command.config.authority > session.$user.authority) {
+    if (command.config.authority > session.user.authority) {
       return sendHint('internal.low-authority')
     }
     for (const option of Object.values(command._options)) {
       if (option.name in options) {
-        if (option.authority > session.$user.authority) {
+        if (option.authority > session.user.authority) {
           return sendHint('internal.low-authority')
         }
         if (option.notUsage) isUsage = false
@@ -79,11 +79,11 @@ export default function apply(app: App) {
       const minInterval = command.getConfig('minInterval', session)
       const maxUsage = command.getConfig('maxUsage', session)
 
-      if (maxUsage < Infinity && checkUsage(name, session.$user, maxUsage)) {
+      if (maxUsage < Infinity && checkUsage(name, session.user, maxUsage)) {
         return sendHint('internal.usage-exhausted')
       }
 
-      if (minInterval > 0 && checkTimer(name, session.$user, minInterval)) {
+      if (minInterval > 0 && checkTimer(name, session.user, minInterval)) {
         return sendHint('internal.too-frequent')
       }
     }

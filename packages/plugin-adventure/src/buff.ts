@@ -10,7 +10,7 @@ declare module 'koishi-core/dist/command' {
 
 Command.prototype.checkTimer = function (this: Command, name) {
   return this.userFields(['timers', 'usage']).check(({ session }) => {
-    const user = session.$user
+    const user = session.user
     if (!checkTimer(name, user)) return
     const buff = Buff.timers[name]
     if (buff && !checkUsage(name + 'Hint', user, 1)) {
@@ -110,14 +110,14 @@ namespace Buff {
           const entry = Object.entries(timers).find(([, value]) => name === value[0])
           if (!entry) return `未找到状态「${name}」。`
           const output = [`状态「${name}」`, entry[1][1]]
-          const now = Date.now(), due = session.$user.timers[entry[0]]
+          const now = Date.now(), due = session.user.timers[entry[0]]
           if (now < due) output.push(`剩余时间：${Time.formatTime(due - now)}。`)
           return output.join('\n')
         }
 
         const output = [session.$username]
         for (const { callback } of buffList) {
-          const result = callback(session.$user)
+          const result = callback(session.user)
           if (result) output.push(result)
         }
 

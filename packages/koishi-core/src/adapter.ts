@@ -22,20 +22,14 @@ export function createBots<T extends Bot>(key: 'selfId' | 'sid') {
   })
 }
 
-export type At<O, T extends keyof O, F> = [T] extends [never] ? F : O[T]
-
-type BotInstance<T extends Platform> = At<Bot.Platforms, T, Bot<T>>
-type BotConstructor<T extends Platform> = new (adapter: Adapter, options: BotOptions) => BotInstance<T>
-type AdapterConstructor<T extends Platform = Platform> = new (app: App, bot: BotOptions) => Adapter<T>
-
 export abstract class Adapter<P extends Platform = Platform> {
   public type: string
-  public bots: BotList<BotInstance<P>> = createBots('selfId')
+  public bots: BotList<Bot.Instance<P>> = createBots('selfId')
 
   abstract listen(): Promise<void>
   abstract close(): void
 
-  constructor(public app: App, private Bot: BotConstructor<P>) {}
+  constructor(public app: App, private Bot: Bot.Constructor<P>) {}
 
   create(options: BotOptions) {
     const bot = new this.Bot(this, options)
@@ -61,11 +55,13 @@ export abstract class Adapter<P extends Platform = Platform> {
 const logger = new Logger('server')
 
 export namespace Adapter {
+  export type Constructor<T extends Platform = Platform> = new (app: App, bot: BotOptions) => Adapter<T>
+
   export type Instances = {
     [K in string]: K extends `${infer T}:${any}` ? Adapter<T & Platform> : Adapter<K & Platform>
   }
 
-  export const types: Record<string, AdapterConstructor> = {}
+  export const types: Record<string, Constructor> = {}
 
   export function redirect(target: string | ((bot: BotOptions) => string)) {
     const callback = typeof target === 'string' ? () => target : target
@@ -75,7 +71,7 @@ export namespace Adapter {
         new Logger('server').info('infer type as %c', type)
         return app.adapters[type] || new Adapter.types[type](app, bot)
       }
-    } as AdapterConstructor
+    } as Constructor
   }
 
   export interface WsClientOptions {
@@ -84,14 +80,14 @@ export namespace Adapter {
   }
 
   export abstract class WsClient<P extends Platform = Platform> extends Adapter<P> {
-    abstract createSocket(bot: BotInstance<P>): WebSocket | Promise<WebSocket>
-    abstract connect(bot: BotInstance<P>): Promise<void>
+    abstract createSocket(bot: Bot.Instance<P>): WebSocket | Promise<WebSocket>
+    abstract connect(bot: Bot.Instance<P>): Promise<void>
 
-    constructor(app: App, Bot: BotConstructor<P>, public options: WsClientOptions) {
+    constructor(app: App, Bot: Bot.Constructor<P>, public options: WsClientOptions) {
       super(app, Bot)
     }
 
-    private async _listen(bot: BotInstance<P>) {
+    private async _listen(bot: Bot.Instance<P>) {
       let _retryCount = 0
       const { retryTimes, retryInterval } = this.options
 
@@ -242,6 +238,9 @@ export class Bot<P extends Platform> {
 export namespace Bot {
   export interface Platforms {}
 
+  export type Instance<T extends Platform> = [T] extends [never] ? Bot<T> : Platforms[T]
+  export type Constructor<T extends Platform> = new (adapter: Adapter, options: BotOptions) => Instance<T>
+
   export enum Status {
     /** 正常运行 */
     GOOD,
@@ -293,7 +292,7 @@ export interface MessageBase {
   content?: string
   timestamp?: number
   author?: AuthorInfo
-  $reply?: MessageInfo
+  reply?: MessageInfo
 }
 
 export interface MessageInfo extends MessageBase {

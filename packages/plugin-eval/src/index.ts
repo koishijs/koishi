@@ -66,7 +66,7 @@ export function apply(ctx: Context, config: Config = {}) {
     .option('slient', '-s  不输出最后的结果')
     .option('restart', '-r  重启子线程', { authority: 3 })
     .action(({ session }) => {
-      if (!session['_redirected'] && session.$user?.authority < authority) return '权限不足。'
+      if (!session['_redirected'] && session.user?.authority < authority) return '权限不足。'
     })
 
   attachTraps(command, userAccess, groupAccess, async ({ session, options, ctxOptions }, expr) => {

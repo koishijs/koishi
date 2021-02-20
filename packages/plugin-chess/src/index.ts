@@ -83,7 +83,7 @@ export function apply(ctx: Context) {
       '目前默认使用图片模式。文本模式速度更快，但是在部分机型上可能无法正常显示，同时无法适应过大的棋盘。',
     ].join('\n'))
     .action(async ({ session, options }, position) => {
-      const { cid, userId, $channel = { chess: null } } = session
+      const { cid, userId, channel = { chess: null } } = session
 
       if (!states[cid]) {
         if (position || options.stop || options.repent || options.skip) {
@@ -114,7 +114,7 @@ export function apply(ctx: Context) {
 
       if (options.stop) {
         delete states[cid]
-        $channel.chess = null
+        channel.chess = null
         return '游戏已停止。'
       }
 
@@ -139,7 +139,7 @@ export function apply(ctx: Context) {
       if (options.skip) {
         if (state.next !== userId) return '当前不是你的回合。'
         state.next = state.p1 === userId ? state.p2 : state.p1
-        $channel.chess = state.serial()
+        channel.chess = state.serial()
         return `${session.$username} 选择跳过其回合，下一手轮到 [CQ:at,qq=${state.next}]。`
       }
 
@@ -150,7 +150,7 @@ export function apply(ctx: Context) {
         state.history.pop()
         state.refresh()
         state.next = last
-        $channel.chess = state.serial()
+        channel.chess = state.serial()
         return state.draw(session, `${session.$username} 进行了悔棋。`)
       }
 
@@ -198,17 +198,17 @@ export function apply(ctx: Context) {
         case MoveResult.p1Win:
           message += `恭喜 [CQ:at,qq=${state.p1}] 获胜！`
           delete states[cid]
-          $channel.chess = null
+          channel.chess = null
           break
         case MoveResult.p2Win:
           message += `恭喜 [CQ:at,qq=${state.p2}] 获胜！`
           delete states[cid]
-          $channel.chess = null
+          channel.chess = null
           break
         case MoveResult.draw:
           message += '本局游戏平局。'
           delete states[cid]
-          $channel.chess = null
+          channel.chess = null
           break
         case undefined:
           state.next = userId === state.p1 ? state.p2 : state.p1
@@ -219,7 +219,7 @@ export function apply(ctx: Context) {
           return `非法落子（${result}）。`
       }
 
-      $channel.chess = state.serial()
+      channel.chess = state.serial()
       return state.draw(session, message, x, y)
     })
 }

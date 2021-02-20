@@ -45,7 +45,7 @@ export default function apply(app: App) {
     .option('showHidden', '-H  查看隐藏的选项和指令')
     .action(async ({ session, options }, target) => {
       if (!target) {
-        const commands = session.$app._commands.filter(cmd => cmd.parent === null)
+        const commands = app._commands.filter(cmd => cmd.parent === null)
         const output = formatCommands('internal.global-help-prolog', session, commands, options)
         const epilog = template('internal.global-help-epilog')
         if (epilog) output.push(epilog)
@@ -74,7 +74,7 @@ export default function apply(app: App) {
 }
 
 export function getCommands(session: Session<'authority'>, commands: Command[], showHidden = false) {
-  const { authority } = session.$user || {}
+  const { authority } = session.user || {}
   return commands.filter(cmd => {
     return cmd.context.match(session)
       && (authority === undefined || cmd.config.authority <= authority)
@@ -106,7 +106,7 @@ function getOptions(command: Command, session: Session<ValidationField>, maxUsag
   const options = config.showHidden
     ? Object.values(command._options)
     : Object.values(command._options)
-      .filter(option => !option.hidden && (!session.$user || option.authority <= session.$user.authority))
+      .filter(option => !option.hidden && (!session.user || option.authority <= session.user.authority))
   if (!options.length) return []
 
   const output = config.authority && options.some(o => o.authority)
@@ -139,16 +139,16 @@ async function showHelp(command: Command, session: Session<ValidationField>, con
   }
 
   const maxUsage = command.getConfig('maxUsage', session)
-  if (session.$user) {
+  if (session.user) {
     const name = getUsageName(command)
     const minInterval = command.getConfig('minInterval', session)
-    const count = getUsage(name, session.$user)
+    const count = getUsage(name, session.user)
 
     if (maxUsage < Infinity) {
       output.push(template('internal.command-max-usage', Math.min(count, maxUsage), maxUsage))
     }
 
-    const due = session.$user.timers[name]
+    const due = session.user.timers[name]
     if (minInterval > 0) {
       const nextUsage = due ? (Math.max(0, due - Date.now()) / 1000).toFixed() : 0
       output.push(template('internal.command-min-interval', nextUsage, minInterval / 1000))

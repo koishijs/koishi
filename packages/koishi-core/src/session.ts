@@ -6,7 +6,7 @@ import { contain, observe, Logger, defineProperty, Random, template } from 'kois
 import { Argv } from './parser'
 import { Middleware, NextFunction } from './context'
 import { App } from './app'
-import { AuthorInfo, Bot, ChannelInfo, MessageBase, MessageInfo, Platform } from './adapter'
+import { Bot, ChannelInfo, MessageBase, Platform } from './adapter'
 
 const logger = new Logger('session')
 
@@ -69,6 +69,12 @@ export namespace Session {
   export type Payload<X, Y = any> = Session<never, never, Platform, ParamX<X>, ParamY<X, Y>>
 }
 
+export interface Parsed {
+  content: string
+  prefix: string
+  appel: boolean
+}
+
 export class Session<
   U extends User.Field = never,
   G extends Channel.Field = never,
@@ -82,29 +88,17 @@ export class Session<
   platform?: P
 
   selfId?: string
-  ancestors?: string[]
-
-  // message event
-  messageId?: string
-  content?: string
-  rawMessage?: string
-  font?: number
-  author?: AuthorInfo
-
-  // notice event
   operatorId?: string
   targetId?: string
   duration?: number
   file?: FileInfo
 
-  $user?: User.Observed<U>
-  $channel?: Channel.Observed<G>
-  $app?: App
-  $argv?: Argv<U, G>
-  $appel?: boolean
-  $prefix?: string
-  $parsed?: string
-  $reply?: MessageInfo
+  app?: App
+  bot?: Bot.Instance<P>
+  argv?: Argv<U, G>
+  user?: User.Observed<U>
+  channel?: Channel.Observed<G>
+  parsed?: Parsed
   $uuid?: string
 
   private _delay?: number
@@ -114,12 +108,12 @@ export class Session<
   static readonly send = Symbol.for('koishi.session.send')
 
   constructor(app: App, session: Partial<Session>) {
-    defineProperty(this, '$app', app)
+    Object.assign(this, session)
+    defineProperty(this, 'app', app)
+    defineProperty(this, 'bot', app.bots[this.sid])
     defineProperty(this, '$uuid', Random.uuid())
-    defineProperty(this, '$prefix', null)
     defineProperty(this, '_queued', Promise.resolve())
     defineProperty(this, '_hooks', [])
-    Object.assign(this, session)
   }
 
   toJSON() {
@@ -128,21 +122,17 @@ export class Session<
     }))
   }
 
-  get $bot(): [P] extends [never] ? Bot : Bot.Platforms[P] {
-    return this.$app.bots[this.sid] as any
-  }
-
   get $username(): string {
-    const defaultName = this.$user && this.$user['name']
-      ? this.$user['name']
+    const defaultName = this.user && this.user['name']
+      ? this.user['name']
       : this.author
         ? this.author.nickname || this.author.username
         : this.userId
-    return this.$app.chain('appellation', defaultName, this)
+    return this.app.chain('appellation', defaultName, this)
   }
 
   get database() {
-    return this.$app.database
+    return this.app.database
   }
 
   get uid() {
@@ -158,14 +148,14 @@ export class Session<
   }
 
   async send(message: string) {
-    if (this.$bot[Session.send]) {
-      return this.$bot[Session.send](this, message)
+    if (this.bot[Session.send]) {
+      return this.bot[Session.send](this, message)
     }
     if (!message) return
-    await this.$bot.sendMessage(this.channelId, message)
+    await this.bot.sendMessage(this.channelId, message)
   }
 
-  cancelQueued(delay = this.$app.options.delay.cancel) {
+  cancelQueued(delay = this.app.options.delay.cancel) {
     this._hooks.forEach(Reflect.apply)
     this._delay = delay
   }
@@ -173,7 +163,7 @@ export class Session<
   async sendQueued(content: string, delay?: number) {
     if (!content) return
     if (typeof delay === 'undefined') {
-      const { message, character } = this.$app.options.delay
+      const { message, character } = this.app.options.delay
       delay = Math.max(message, character * content.length)
     }
     return this._queued = this._queued.then(() => new Promise<void>((resolve) => {
@@ -210,32 +200,32 @@ export class Session<
   /** 在当前会话上绑定一个可观测频道实例 */
   async observeChannel<T extends Channel.Field = never>(fields: Iterable<T> = []): Promise<Channel.Observed<T | G>> {
     const fieldSet = new Set<Channel.Field>(fields)
-    const { platform, channelId, $channel } = this
+    const { platform, channelId, channel } = this
 
     // 对于已经绑定可观测频道的，判断字段是否需要自动补充
-    if ($channel) {
-      for (const key in $channel) {
+    if (channel) {
+      for (const key in channel) {
         fieldSet.delete(key as any)
       }
       if (fieldSet.size) {
         const data = await this.getChannel(channelId, '', [...fieldSet])
-        this.$app._groupCache.set(this.cid, $channel._merge(data))
+        this.app._groupCache.set(this.cid, channel._merge(data))
       }
-      return $channel as any
+      return channel as any
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    const cache = this.$app._groupCache.get(this.cid)
+    const cache = this.app._groupCache.get(this.cid)
     const fieldArray = [...fieldSet]
     const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
-    if (hasActiveCache) return this.$channel = cache as any
+    if (hasActiveCache) return this.channel = cache as any
 
     // 绑定一个新的可观测频道实例
-    const assignee = this._getValue(this.$app.options.autoAssign) ? this.selfId : ''
+    const assignee = this._getValue(this.app.options.autoAssign) ? this.selfId : ''
     const data = await this.getChannel(channelId, assignee, fieldArray)
-    const group = observe(data, diff => this.database.setChannel(platform, channelId, diff), `group ${channelId}`)
-    this.$app._groupCache.set(this.cid, group)
-    return this.$channel = group
+    const newChannel = observe(data, diff => this.database.setChannel(platform, channelId, diff), `channel ${channelId}`)
+    this.app._groupCache.set(this.cid, newChannel)
+    return this.channel = newChannel
   }
 
   async getUser<K extends User.Field = never>(id: string = this.userId, authority = 0, fields: readonly K[] = []) {
@@ -252,48 +242,48 @@ export class Session<
   /** 在当前会话上绑定一个可观测用户实例 */
   async observeUser<T extends User.Field = never>(fields: Iterable<T> = []): Promise<User.Observed<T | U>> {
     const fieldSet = new Set<User.Field>(fields)
-    const { userId, $user } = this
+    const { userId, user } = this
 
-    let userCache = this.$app._userCache[this.platform]
+    let userCache = this.app._userCache[this.platform]
     if (!userCache) {
-      userCache = this.$app._userCache[this.platform] = new LruCache({
-        max: this.$app.options.userCacheLength,
-        maxAge: this.$app.options.userCacheAge,
+      userCache = this.app._userCache[this.platform] = new LruCache({
+        max: this.app.options.userCacheLength,
+        maxAge: this.app.options.userCacheAge,
       })
     }
 
     // 对于已经绑定可观测用户的，判断字段是否需要自动补充
-    if ($user && !this.author?.anonymous) {
-      for (const key in $user) {
+    if (user && !this.author?.anonymous) {
+      for (const key in user) {
         fieldSet.delete(key as any)
       }
       if (fieldSet.size) {
         const data = await this.getUser(userId, 0, [...fieldSet])
-        userCache.set(userId, $user._merge(data) as any)
+        userCache.set(userId, user._merge(data) as any)
       }
     }
 
-    if ($user) return $user as any
+    if (user) return user as any
 
     // 确保匿名消息不会写回数据库
     if (this.author?.anonymous) {
       const fallback = User.create(this.platform, userId)
-      fallback.authority = this._getValue(this.$app.options.autoAuthorize)
+      fallback.authority = this._getValue(this.app.options.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
-      return this.$user = user
+      return this.user = user
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
     const cache = userCache.get(userId)
     const fieldArray = [...fieldSet]
     const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
-    if (hasActiveCache) return this.$user = cache as any
+    if (hasActiveCache) return this.user = cache as any
 
     // 绑定一个新的可观测用户实例
-    const data = await this.getUser(userId, this._getValue(this.$app.options.autoAuthorize), fieldArray)
-    const user = observe(data, diff => this.database.setUser(this.platform, userId as any, diff), `user ${userId}`)
-    userCache.set(userId, user)
-    return this.$user = user
+    const data = await this.getUser(userId, this._getValue(this.app.options.autoAuthorize), fieldArray)
+    const newUser = observe(data, diff => this.database.setUser(this.platform, userId as any, diff), `user ${userId}`)
+    userCache.set(userId, newUser)
+    return this.user = newUser
   }
 
   collect<T extends TableType>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()) {
@@ -314,8 +304,8 @@ export class Session<
 
   resolve(argv: Argv) {
     if (!argv.command) {
-      const { name = this.$app.bail('parse', argv, this) } = argv
-      if (!(argv.command = this.$app._commandMap[name])) return
+      const { name = this.app.bail('parse', argv, this) } = argv
+      if (!(argv.command = this.app._commandMap[name])) return
     }
     if (argv.tokens?.every(token => !token.inters.length)) {
       const { options, args, error } = argv.command.parse(argv)
@@ -347,7 +337,7 @@ export class Session<
       }
       if (!this.resolve(argv)) return ''
     } else {
-      argv.command ||= this.$app._commandMap[argv.name]
+      argv.command ||= this.app._commandMap[argv.name]
       if (!argv.command) {
         logger.warn(new Error(`cannot find command ${argv.name}`))
         return ''
@@ -373,13 +363,13 @@ export class Session<
 
   middleware(middleware: Middleware) {
     const identifier = getSessionId(this)
-    return this.$app.middleware(async (session, next) => {
+    return this.app.middleware(async (session, next) => {
       if (identifier && getSessionId(session) !== identifier) return next()
       return middleware(session, next)
     }, true)
   }
 
-  prompt(timeout = this.$app.options.delay.prompt) {
+  prompt(timeout = this.app.options.delay.prompt) {
     return new Promise((resolve) => {
       const dispose = this.middleware((session) => {
         clearTimeout(timer)
@@ -401,7 +391,7 @@ export class Session<
       suffix,
       apply,
       next = callback => callback(),
-      coefficient = this.$app.options.similarityCoefficient,
+      coefficient = this.app.options.similarityCoefficient,
     } = options
 
     let suggestions: string[], minDistance = Infinity

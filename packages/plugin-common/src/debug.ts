@@ -106,11 +106,11 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
           const id = `${session.platform}:${code.data.qq}`
           const timestamp = Date.now()
           if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
-            userMap[id] = [getUserName(session.$bot, session.groupId, code.data.qq), timestamp]
+            userMap[id] = [getUserName(session.bot, session.groupId, code.data.qq), timestamp]
           }
           output += '@' + await userMap[id][0]
         } else {
-          output += '@' + session.$bot.username
+          output += '@' + session.bot.username
         }
       } else if (code.type === 'share' || code.type === 'location') {
         output += `[分享:${code.data.title}]`
@@ -129,7 +129,7 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
     if (channelName) return (channelMap[cid] = [channelName, timestamp])[0]
     if (session.subtype === 'private') return '私聊'
     if (!channelMap[cid] || timestamp - channelMap[cid][1] >= refreshChannelName) {
-      channelMap[cid] = [getChannelName(session.$bot, session.channelId), timestamp]
+      channelMap[cid] = [getChannelName(session.bot, session.channelId), timestamp]
     }
     return await channelMap[cid][0]
   })

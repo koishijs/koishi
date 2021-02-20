@@ -100,7 +100,7 @@ export function apply(ctx: Context, config: Config = {}) {
     .option('list', '-l 查看订阅列表')
     .option('remove', '-r 取消订阅')
     .action(async ({ session, options }, url) => {
-      const { rss, id } = session.$channel
+      const { rss, id } = session.channel
       if (options.list) {
         if (!rss.length) return '未订阅任何链接。'
         return rss.join('\n')

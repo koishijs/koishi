@@ -94,7 +94,7 @@ namespace Rank {
     } else {
       let members: GroupMemberInfo[]
       try {
-        members = await session.$bot.getGroupMemberList(session.groupId)
+        members = await session.bot.getGroupMemberList(session.groupId)
       } catch (error) {
         return '无法获得群成员列表。'
       }
@@ -146,7 +146,7 @@ namespace Rank {
       })
 
     ctx.on('before-parse', (message, session) => {
-      if (session.$reply || session.$prefix) return
+      if (session.reply || session.parsed.prefix) return
       const capture = /^(全服|本群)?(.+)(全服|本群)?排[名行]榜?$/.exec(message)
       if (!capture) return
       const global = capture[1] === '全服' || capture[3] === '全服'

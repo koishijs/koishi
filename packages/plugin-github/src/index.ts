@@ -98,21 +98,21 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   ctx.before('attach-user', (session, fields) => {
-    if (!session.$reply) return
-    if (history[session.$reply.messageId.slice(0, 6)]) {
+    if (!session.reply) return
+    if (history[session.reply.messageId.slice(0, 6)]) {
       fields.add('ghAccessToken')
       fields.add('ghRefreshToken')
     }
   })
 
   ctx.middleware((session, next) => {
-    if (!session.$reply) return next()
-    const body = session.$parsed.trim()
-    const payloads = history[session.$reply.messageId.slice(0, 6)]
+    if (!session.reply) return next()
+    const body = session.parsed.content.trim()
+    const payloads = history[session.reply.messageId.slice(0, 6)]
     if (!body || !payloads) return next()
 
     let name: string, message: string
-    if (session.$prefix !== null) {
+    if (session.parsed.prefix !== null) {
       name = body.split(' ', 1)[0]
       message = body.slice(name.length).trim()
     } else {

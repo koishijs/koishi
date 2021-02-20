@@ -36,17 +36,17 @@ async function getHandleResult(handler: RequestHandler, session: Session): Promi
 export default function apply(ctx: App, options: HandlerOptions = {}) {
   ctx.on('friend-request', async (session) => {
     const result = await getHandleResult(options.onFriendRequest, session)
-    return session.$bot.handleFriendRequest(session.messageId, ...result)
+    return session.bot.handleFriendRequest(session.messageId, ...result)
   })
 
   ctx.on('group-member-request', async (session) => {
     const result = await getHandleResult(options.onGroupMemberRequest, session)
-    return session.$bot.handleGroupRequest(session.messageId, ...result)
+    return session.bot.handleGroupRequest(session.messageId, ...result)
   })
 
   ctx.on('group-request', async (session) => {
     const result = await getHandleResult(options.onGroupRequest, session)
-    return session.$bot.handleGroupRequest(session.messageId, ...result)
+    return session.bot.handleGroupRequest(session.messageId, ...result)
   })
 
   const { respondents = [] } = options

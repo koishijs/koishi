@@ -68,7 +68,7 @@ export class GitHub {
       timeout: this.config.requestTimeout,
       headers: {
         accept: 'application/vnd.github.v3+json',
-        authorization: `token ${session.$user.ghAccessToken}`,
+        authorization: `token ${session.user.ghAccessToken}`,
         ...headers,
       },
     })
@@ -82,7 +82,7 @@ export class GitHub {
   }
 
   async request(url: string, method: Method, session: ReplySession, body: any, headers?: Record<string, any>) {
-    if (!session.$user.ghAccessToken) {
+    if (!session.user.ghAccessToken) {
       return this.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
     }
 
@@ -98,11 +98,11 @@ export class GitHub {
 
     try {
       const data = await this.getTokens({
-        refresh_token: session.$user.ghRefreshToken,
+        refresh_token: session.user.ghRefreshToken,
         grant_type: 'refresh_token',
       })
-      session.$user.ghAccessToken = data.access_token
-      session.$user.ghRefreshToken = data.refresh_token
+      session.user.ghAccessToken = data.access_token
+      session.user.ghRefreshToken = data.refresh_token
     } catch {
       return this.authorize(session, '令牌已失效，需要重新授权。输入你的 GitHub 用户名。')
     }
@@ -184,7 +184,7 @@ export class ReplyHandler {
   }
 
   async shot(url: string, selector: string, padding: number[] = []) {
-    const page = await this.session.$app.browser.newPage()
+    const page = await this.session.app.browser.newPage()
     let buffer: Buffer
     try {
       await page.goto(url)
