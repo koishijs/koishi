@@ -79,7 +79,6 @@ export class TelegramBot extends Bot {
   }
 
   private async _sendMessage(chatId: string, content: string) {
-    console.log(chatId, content)
     const chain = segment.parse(content)
     const payload = { chatId, caption: '', photo: '' }
     let result: Telegram.Message

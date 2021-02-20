@@ -216,6 +216,7 @@ function define(name: string, ...params: string[]) {
 }
 
 function defineExtract(name: string, key: string, ...params: string[]) {
+  key = camelCase(key)
   const prop = '$' + camelCase(name.replace(/^[_.]/, ''))
   const isAsync = prop.startsWith('$set') || prop.startsWith('$send') || prop.startsWith('$delete')
   CQBot.prototype[prop] = async function (this: CQBot, ...args: any[]) {

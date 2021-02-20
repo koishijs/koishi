@@ -144,7 +144,6 @@ export interface Bot<P = Platform> extends BotOptions {
   socket?: WebSocket
   version?: string
   username?: string
-  platform?: P
   getStatus(): Promise<Bot.Status>
 
   // message
@@ -190,16 +189,15 @@ export class Bot<P extends Platform> {
     if (/^\d+$/.test(source)) return source
   }
 
-  app: App
+  readonly app: App
+  readonly sid: string
+  readonly platform: P
 
   constructor(public adapter: Adapter<P>, options: BotOptions) {
     Object.assign(this, options)
     this.app = adapter.app
     this.platform = this.type.split(':', 1)[0] as never
-  }
-
-  get sid() {
-    return `${this.platform}:${this.selfId}`
+    this.sid = `${this.platform}:${this.selfId}`
   }
 
   createSession(session: Partial<Session<never, never, P, 'send'>>) {
