@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios'
 import FormData from 'form-data'
 import { App, Adapter, Session } from 'koishi-core'
-import { assertProperty, camelCase, Logger } from 'koishi-utils'
+import { assertProperty, camelCase, Logger, segment } from 'koishi-utils'
 import { TelegramBot } from './bot'
 import Telegram from './interface'
 
@@ -78,10 +78,10 @@ export default class HttpServer extends Adapter<'telegram'> {
         for (const entity of message.entities || []) {
           if (entity.type === 'mention') {
             const name = msg.substr(entity.offset, entity.length)
-            if (name === '@' + bot.username) msg = msg.replace(name, `[CQ:at,qq=${selfId}]`)
+            if (name === '@' + bot.username) msg = msg.replace(name, segment.at(selfId))
             // TODO handle @others
           } else if (entity.type === 'text_mention') {
-            msg = msg.replace(msg.substr(entity.offset, entity.length), `[CQ:at,qq=${entity.user.id}]`)
+            msg = msg.replace(msg.substr(entity.offset, entity.length), segment.at(entity.user.id))
           }
         }
         body.content = msg

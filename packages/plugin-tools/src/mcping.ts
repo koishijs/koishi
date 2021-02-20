@@ -1,4 +1,4 @@
-import { Context } from 'koishi-core'
+import { Context, segment } from 'koishi-core'
 import { Socket } from 'net'
 
 function itob(n: number, length: number) {
@@ -69,7 +69,7 @@ export function apply(ctx: Context) {
             ]
             if (status.description) output.unshift(`简介：${status.description.text}`)
             // data:image/png;base64,
-            if (status.favicon) output.unshift(`[CQ:image,file=base64://${status.favicon.slice(22)}]`)
+            if (status.favicon) output.unshift(segment.image('base64://' + status.favicon.slice(22)))
             session.send(output.join('\n'))
           } catch (error) {
             session.send('无法解析服务器信息。')

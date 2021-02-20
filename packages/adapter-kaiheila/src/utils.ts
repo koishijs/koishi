@@ -28,7 +28,7 @@ function adaptMessage(base: KHL.MessageBase, meta: KHL.MessageMeta, session: Mes
   }
   if (base.type === KHL.Type.text) {
     session.content = base.content
-      .replace(/@(.+?)#(\d+)/, (_, $1, $2) => `[CQ:at,qq=${$2}]`)
+      .replace(/@(.+?)#(\d+)/, (_, $1, $2) => `[CQ:at,id=${$2}]`)
       .replace(/@全体成员/, () => `[CQ:at,type=all]`)
       .replace(/@在线成员/, () => `[CQ:at,type=here]`)
       .replace(/@role:(\d+);/, (_, $1) => `[CQ:at,role=${$1}]`)

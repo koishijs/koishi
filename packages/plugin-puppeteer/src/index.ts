@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer-core'
 import { Context } from 'koishi-core'
-import { Logger, defineProperty, noop } from 'koishi-utils'
+import { Logger, defineProperty, noop, segment } from 'koishi-utils'
 import { escape } from 'querystring'
 import { PNG } from 'pngjs'
 export * from './svg'
@@ -154,7 +154,7 @@ export function apply(ctx: Context, config: Config = {}) {
             buffer = PNG.sync.write(png)
           }).catch(noop)
         }
-        return `[CQ:image,file=base64://${buffer.toString('base64')}]`
+        return segment.image('base64://' + buffer.toString('base64'))
       }, (error) => {
         logger.debug(error)
         return '截图失败。'
@@ -180,11 +180,12 @@ export function apply(ctx: Context, config: Config = {}) {
         page.close()
         return text[1]
       } else {
-        const buffer = await page.screenshot({
+        const base64 = await page.screenshot({
+          encoding: 'base64',
           clip: await svg.boundingBox(),
         })
         page.close()
-        return `[CQ:image,file=base64://${buffer.toString('base64')}]`
+        return segment.image('base64://' + base64)
       }
     })
 }

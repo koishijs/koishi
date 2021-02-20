@@ -204,17 +204,20 @@ export class App extends Context {
 
     let capture: RegExpMatchArray
     let atSelf = false, appel = false, prefix: string = null
-    // eslint-disable-next-line no-cond-assign
-    if (capture = content.match(/^\[CQ:reply,id=(-?\d+)\]\s*/)) {
-      content = content.slice(capture[0].length)
-      session.reply = await session.bot.getMessage(session.channelId, capture[1]).catch(noop)
+    const pattern = /^\[CQ:(\w+)((,\w+=[^,\]]*)*)\]/
+    if ((capture = content.match(pattern)) && capture[1] === 'quote') {
+      content = content.slice(capture[0].length).trimStart()
+      for (const str of capture[2].slice(1).split(',')) {
+        if (!str.startsWith('id=')) continue
+        session.reply = await session.bot.getMessage(session.channelId, capture[1]).catch(noop)
+        break
+      }
     }
 
     // strip prefix
-    const at = `[CQ:at,qq=${session.selfId}]`
-    if (session.subtype !== 'private' && content.startsWith(at)) {
+    if (session.subtype !== 'private' && (capture = content.match(pattern)) && capture[1] === 'at' && capture[2].includes('qq=' + session.selfId)) {
       atSelf = appel = true
-      content = content.slice(at.length).trimStart()
+      content = content.slice(capture[0].length).trimStart()
       // eslint-disable-next-line no-cond-assign
     } else if (capture = content.match(this._nameRE)) {
       appel = true

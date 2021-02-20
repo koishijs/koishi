@@ -237,7 +237,8 @@ export function addListeners(on: <T extends EmitterWebhookEventName>(event: T, h
 
   onPullRequest('pull_request/opened', ({ repository, pull_request, sender }) => {
     const { full_name, owner } = repository
-    const { title, base, head, body, number } = pull_request
+    // FIXME: remove any after @octokit/webhooks-definitions/schema is fixed
+    const { title, base, head, body, number } = pull_request as any
 
     const prefix = new RegExp(`^${owner.login}:`)
     const baseLabel = base.label.replace(prefix, '')

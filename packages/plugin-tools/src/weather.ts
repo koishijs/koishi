@@ -1,4 +1,4 @@
-import { Context } from 'koishi-core'
+import { Context, segment } from 'koishi-core'
 import axios from 'axios'
 
 const lang = 'zh-CN'
@@ -19,7 +19,7 @@ export function apply(ctx: Context) {
           params: { lon, lat, lang, unit },
           responseType: 'arraybuffer',
         })
-        return `[CQ:image,file=base64://${Buffer.from(data).toString('base64')}]`
+        return segment.image('base64://' + Buffer.from(data).toString('base64'))
       } catch (error) {
         console.log(error.toJSON())
       }

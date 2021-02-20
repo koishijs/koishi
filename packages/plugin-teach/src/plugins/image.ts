@@ -1,5 +1,5 @@
 import { Context } from 'koishi-core'
-import { Random } from 'koishi-utils'
+import { Random, segment } from 'koishi-utils'
 import { createHmac } from 'crypto'
 import { resolve } from 'path'
 import { promises as fs, existsSync, readdirSync } from 'fs'
@@ -106,7 +106,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
           output += answer.slice(0, capture.index)
           answer = answer.slice(capture.index + text.length)
           await downloadFile(file, url)
-          output += `[CQ:image,file=${imageServer}/${file}]`
+          output += segment.image(`${imageServer}/${file}`)
         }
         args[1] = output + answer
       } catch (error) {

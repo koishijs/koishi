@@ -1,4 +1,4 @@
-import { Context } from 'koishi-core'
+import { Context, segment } from 'koishi-core'
 import { toDataURL } from 'qrcode'
 
 export function apply(ctx: Context) {
@@ -14,6 +14,7 @@ export function apply(ctx: Context) {
 
       const { margin, scale, width, dark, light } = options
       const dataURL = await toDataURL(text, { margin, scale, width, color: { dark, light } })
-      return `[CQ:image,file=base64://${dataURL.slice(22)}]`
+      // data:image/png;base64,
+      return segment.image('base64://' + dataURL.slice(22))
     })
 }

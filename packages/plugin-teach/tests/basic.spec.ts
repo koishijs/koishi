@@ -255,7 +255,7 @@ describe('Teach Plugin', () => {
 
     it('modify writer', async () => {
       await u2.shouldReply('#1 -W', '问答 1 因权限过低无法修改。')
-      await u4g2.shouldReply('#1 -w foo', '选项 writer 输入无效，请检查语法。')
+      await u4g2.shouldReply('#1 -w foo', '选项 writer 输入无效，输入帮助以查看用法。')
       await u4g2.shouldReply('#1 -w [CQ:at,qq=500]', '指定的目标用户不存在。')
       await u4g2.shouldReply('#1 -w [CQ:at,qq=200]', '问答 1 已成功修改。')
 
@@ -326,7 +326,7 @@ describe('Teach Plugin', () => {
     it('upload succeed', async () => {
       axiosGet.mockReturnValue(Promise.resolve())
       await u3g1.shouldReply('# foo [CQ:image,file=baz,url=bar]', '问答已添加，编号为 1。')
-      await u3g1.shouldReply('foo', '[CQ:image,file=https://127.0.0.1/image/baz]')
+      await u3g1.shouldReply('foo', '[CQ:image,url=https://127.0.0.1/image/baz]')
       expect(axiosGet.mock.calls).to.have.shape([[uploadServer, {
         params: { file: 'baz', url: 'bar' },
       }]])

@@ -4,7 +4,7 @@ export interface segment {
 }
 
 export function segment(type: string, data: segment.Data = {}) {
-  if (type === 'text') return data.content as string
+  if (type === 'text') return String(data.content)
   let output = '[CQ:' + type
   for (const key in data) {
     if (data[key]) output += `,${key}=${segment.escape(data[key], true)}`
@@ -12,9 +12,11 @@ export function segment(type: string, data: segment.Data = {}) {
   return output + ']'
 }
 
+type primitive = string | number | boolean
+
 export namespace segment {
   export type Chain = segment.Parsed[]
-  export type Data = Record<string, string | number | boolean>
+  export type Data = Record<string, primitive>
 
   export interface Parsed extends segment {
     data: Record<string, string>
@@ -48,7 +50,7 @@ export namespace segment {
     if (!capture) return null
     const [, type, attrs] = capture
     const data: Record<string, string> = {}
-    attrs.slice(1).split(',').forEach((str) => {
+    attrs && attrs.slice(1).split(',').forEach((str) => {
       const index = str.indexOf('=')
       data[str.slice(0, index)] = unescape(str.slice(index + 1))
     })
@@ -69,6 +71,19 @@ export namespace segment {
     if (source) chain.push({ type: 'text', data: { content: source } })
     return chain
   }
+
+  export type Factory = (value: primitive, data?: segment.Data) => string
+
+  function createFactory(type: string, key: string): Factory {
+    return (value, data = {}) => segment(type, { ...data, [key]: value })
+  }
+
+  export const at = createFactory('at', 'id')
+  export const sharp = createFactory('sharp', 'id')
+  export const quote = createFactory('quote', 'id')
+  export const image = createFactory('image', 'url')
+  export const video = createFactory('video', 'url')
+  export const audio = createFactory('audio', 'url')
 }
 
 export { segment as s }

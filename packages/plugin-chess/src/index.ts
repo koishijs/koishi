@@ -1,5 +1,5 @@
 import { Channel, Context, extendDatabase } from 'koishi-core'
-import { isInteger } from 'koishi-utils'
+import { isInteger, segment } from 'koishi-utils'
 import { State, MoveResult, StateData } from './state'
 import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 import * as go from './go'
@@ -140,7 +140,7 @@ export function apply(ctx: Context) {
         if (state.next !== userId) return '当前不是你的回合。'
         state.next = state.p1 === userId ? state.p2 : state.p1
         channel.chess = state.serial()
-        return `${session.$username} 选择跳过其回合，下一手轮到 [CQ:at,qq=${state.next}]。`
+        return `${session.$username} 选择跳过其回合，下一手轮到 ${segment.at(state.next)}。`
       }
 
       if (options.repent) {
@@ -193,15 +193,15 @@ export function apply(ctx: Context) {
           state.next = userId
           return '非法落子。'
         case MoveResult.skip:
-          message += `下一手依然轮到 [CQ:at,qq=${userId}]。`
+          message += `下一手依然轮到 ${segment.at(userId)}。`
           break
         case MoveResult.p1Win:
-          message += `恭喜 [CQ:at,qq=${state.p1}] 获胜！`
+          message += `恭喜 ${segment.at(state.p1)} 获胜！`
           delete states[cid]
           channel.chess = null
           break
         case MoveResult.p2Win:
-          message += `恭喜 [CQ:at,qq=${state.p2}] 获胜！`
+          message += `恭喜 ${segment.at(state.p2)} 获胜！`
           delete states[cid]
           channel.chess = null
           break
@@ -212,7 +212,7 @@ export function apply(ctx: Context) {
           break
         case undefined:
           state.next = userId === state.p1 ? state.p2 : state.p1
-          message += `下一手轮到 [CQ:at,qq=${state.next}]。`
+          message += `下一手轮到 ${segment.at(state.next)}。`
           break
         default:
           state.next = userId

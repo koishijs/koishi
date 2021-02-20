@@ -137,7 +137,7 @@ export class Daemon {
       } catch {}
       const subscribers = subscribe[this.config.id].filter(x => x)
       if (subscribers.length) {
-        output.push(subscribers.map(x => `[CQ:at,qq=${x}]`).join(''))
+        output.push(subscribers.map(x => segment.at(x)).join(''))
       }
       const messages = [output.join('\n')]
       if (title || image) {

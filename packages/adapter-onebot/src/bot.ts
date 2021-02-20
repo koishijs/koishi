@@ -1,5 +1,4 @@
-import { camelCase, Logger, snakeCase } from 'koishi-utils'
-import { Bot, Session } from 'koishi-core'
+import { Bot, Session, segment, camelCase, Logger, snakeCase } from 'koishi-core'
 import * as OneBot from './utils'
 
 declare module 'koishi-core/dist/adapter' {
@@ -25,6 +24,21 @@ export class SenderError extends Error {
   }
 }
 
+function renderText(source: string) {
+  return segment.parse(source).reduce((prev, { type, data }) => {
+    if (type === 'at') {
+      if (data.type === 'all') return prev + '[CQ:at,qq=all]'
+      return prev + `[CQ:at,qq=${data.id}]`
+    } else if (['video', 'audio', 'image'].includes(type)) {
+      if (type === 'audio') type = 'record'
+      if (!data.file) data.file = data.url
+    } else if (type === 'quote') {
+      type = 'reply'
+    }
+    return prev + segment(type, data)
+  }, '')
+}
+
 export interface CQBot extends OneBot.API {}
 
 export class CQBot extends Bot {
@@ -32,14 +46,9 @@ export class CQBot extends Bot {
 
   _request?(action: string, params: Record<string, any>): Promise<OneBot.Response>
 
-  private handleContent(content: string) {
-    return content.replace(/\[CQ:at,type=all\]/g, '[CQ:at,qq=all]')
-  }
-
   async [Session.send](message: Session, content: string) {
     if (!content) return
     const { userId, groupId, channelId, channelName } = message
-    content = this.handleContent(content)
     if (this.app.options.onebot?.preferSync) {
       await this.sendMessage(channelId, content)
       return
@@ -56,14 +65,15 @@ export class CQBot extends Bot {
     }
 
     if (await this.app.serial(session, 'before-send', session)) return
+    content = renderText(session.content)
 
     if (message._response) {
-      return message._response({ reply: session.content, atSender: false })
+      return message._response({ reply: content, atSender: false })
     }
 
     return groupId
-      ? this.$sendGroupMsgAsync(id, session.content)
-      : this.$sendPrivateMsgAsync(id, session.content)
+      ? this.$sendGroupMsgAsync(id, content)
+      : this.$sendPrivateMsgAsync(id, content)
   }
 
   async get<T = any>(action: string, params = {}, silent = false): Promise<T> {
@@ -85,7 +95,7 @@ export class CQBot extends Bot {
   }
 
   sendMessage(channelId: string, content: string) {
-    content = this.handleContent(content)
+    content = renderText(content)
     return channelId.startsWith('private:')
       ? this.sendPrivateMessage(channelId.slice(8), content)
       : this.sendGroupMessage(channelId, content)
