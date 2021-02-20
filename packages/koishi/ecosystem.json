@@ -4,7 +4,7 @@
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-onebot": {
-    "version": "3.0.0-beta.7",
+    "version": "3.0.0-beta.8",
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-adapter-telegram": {
@@ -24,7 +24,7 @@
     "description": "Chess Plugin for Koishi"
   },
   "koishi-plugin-common": {
-    "version": "4.0.0-beta.9",
+    "version": "4.0.0-beta.10",
     "description": "Common plugins for Koishi"
   },
   "koishi-plugin-dice": {
@@ -44,7 +44,7 @@
     "description": "GitHub webhook plugin for Koishi"
   },
   "koishi-plugin-image-search": {
-    "version": "3.0.0-beta.4",
+    "version": "3.0.0-beta.5",
     "description": "Image searching plugin for Koishi"
   },
   "koishi-plugin-mongo": {
@@ -55,7 +55,7 @@
     "version": "1.0.0-beta.21"
   },
   "koishi-plugin-mysql": {
-    "version": "3.0.0-beta.5",
+    "version": "3.0.0-beta.6",
     "description": "MySQL support for Koishi"
   },
   "koishi-plugin-puppeteer": {

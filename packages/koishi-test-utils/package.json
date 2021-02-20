@@ -37,7 +37,7 @@
   "dependencies": {
     "chai": "^4.3.0",
     "chai-as-promised": "^7.1.1",
-    "koishi-core": "^3.0.0-beta.10",
+    "koishi-core": "^3.0.0-beta.11",
     "koishi-utils": "^3.2.6"
   },
   "devDependencies": {
