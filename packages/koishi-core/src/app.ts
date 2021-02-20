@@ -209,7 +209,7 @@ export class App extends Context {
       content = content.slice(capture[0].length).trimStart()
       for (const str of capture[2].slice(1).split(',')) {
         if (!str.startsWith('id=')) continue
-        session.reply = await session.bot.getMessage(session.channelId, capture[1]).catch(noop)
+        session.quote = await session.bot.getMessage(session.channelId, capture[1]).catch(noop)
         break
       }
     }
@@ -270,7 +270,7 @@ export class App extends Context {
   }
 
   private _suggest(session: Session, next: NextFunction) {
-    const { argv, reply, subtype, parsed: { content, prefix, appel } } = session
+    const { argv, quote: reply, subtype, parsed: { content, prefix, appel } } = session
     if (argv || subtype !== 'private' && prefix === null && !appel) return next()
     const target = content.split(/\s/, 1)[0].toLowerCase()
     if (!target) return next()
@@ -337,9 +337,9 @@ export class App extends Context {
 
   private _handleArgv(content: string, session: Session) {
     const argv = Argv.parse(content)
-    if (session.reply) {
+    if (session.quote) {
       argv.tokens.push({
-        content: session.reply.content,
+        content: session.quote.content,
         quoted: true,
         inters: [],
         terminator: '',
@@ -348,7 +348,7 @@ export class App extends Context {
     return argv
   }
 
-  private _handleShortcut(content: string, { parsed, reply }: Session) {
+  private _handleShortcut(content: string, { parsed, quote: reply }: Session) {
     if (parsed.prefix || reply) return
     for (const shortcut of this._shortcuts) {
       const { name, fuzzy, command, greedy, prefix, options = {}, args = [] } = shortcut

@@ -292,7 +292,7 @@ export interface MessageBase {
   content?: string
   timestamp?: number
   author?: AuthorInfo
-  reply?: MessageInfo
+  quote?: MessageInfo
 }
 
 export interface MessageInfo extends MessageBase {

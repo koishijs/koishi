@@ -146,7 +146,7 @@ namespace Rank {
       })
 
     ctx.on('before-parse', (message, session) => {
-      if (session.reply || session.parsed.prefix) return
+      if (session.quote || session.parsed.prefix) return
       const capture = /^(全服|本群)?(.+)(全服|本群)?排[名行]榜?$/.exec(message)
       if (!capture) return
       const global = capture[1] === '全服' || capture[3] === '全服'
