@@ -49,7 +49,7 @@ export class CQBot extends Bot {
   async [Session.send](message: Session, content: string) {
     if (!content) return
     const { userId, groupId, channelId, channelName } = message
-    if (this.app.options.onebot?.preferSync) {
+    if (!this.app.options.onebot?.quickOperation) {
       await this.sendMessage(channelId, content)
       return
     }

@@ -6,7 +6,6 @@ import axios from 'axios'
 interface OneBotOptions extends Adapter.WsClientOptions {
   path?: string
   secret?: string
-  preferSync?: boolean
   quickOperation?: number
   responseTimeout?: number
 }
@@ -24,7 +23,6 @@ export * from './ws'
 
 App.defaultConfig.onebot = {
   responseTimeout: Time.minute,
-  quickOperation: 0.1 * Time.second,
   retryInterval: 5 * Time.second,
   retryTimes: 4,
 }
