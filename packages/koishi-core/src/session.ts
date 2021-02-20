@@ -370,7 +370,7 @@ export class Session<
   }
 
   prompt(timeout = this.app.options.delay.prompt) {
-    return new Promise((resolve) => {
+    return new Promise<string>((resolve) => {
       const dispose = this.middleware((session) => {
         clearTimeout(timer)
         dispose()

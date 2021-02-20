@@ -44,9 +44,9 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
     })
 
   ctx.middleware((session, next) => {
-    const { reply, parsed } = session
-    if (!parsed.content || !reply) return next()
-    const userId = interactions[reply.messageId]
+    const { quote, parsed } = session
+    if (!parsed.content || !quote) return next()
+    const userId = interactions[quote.messageId]
     if (!userId) return next()
     return session.bot.sendPrivateMessage(userId, parsed.content)
   })

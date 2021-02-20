@@ -270,7 +270,7 @@ export class App extends Context {
   }
 
   private _suggest(session: Session, next: NextFunction) {
-    const { argv, quote: reply, subtype, parsed: { content, prefix, appel } } = session
+    const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
     if (argv || subtype !== 'private' && prefix === null && !appel) return next()
     const target = content.split(/\s/, 1)[0].toLowerCase()
     if (!target) return next()
@@ -283,7 +283,7 @@ export class App extends Context {
       prefix: template('internal.command-suggestion-prefix'),
       suffix: template('internal.command-suggestion-suffix'),
       async apply(suggestion, next) {
-        const newMessage = suggestion + content.slice(target.length) + (reply ? ' ' + reply.content : '')
+        const newMessage = suggestion + content.slice(target.length) + (quote ? ' ' + quote.content : '')
         return this.execute(newMessage, next)
       },
     })
@@ -348,8 +348,8 @@ export class App extends Context {
     return argv
   }
 
-  private _handleShortcut(content: string, { parsed, quote: reply }: Session) {
-    if (parsed.prefix || reply) return
+  private _handleShortcut(content: string, { parsed, quote }: Session) {
+    if (parsed.prefix || quote) return
     for (const shortcut of this._shortcuts) {
       const { name, fuzzy, command, greedy, prefix, options = {}, args = [] } = shortcut
       if (prefix && !parsed.appel) continue

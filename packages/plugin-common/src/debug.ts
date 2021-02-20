@@ -18,7 +18,7 @@ const cqTypes = {
   video: '短视频',
   image: '图片',
   music: '音乐',
-  reply: '回复',
+  quote: '引用',
   forward: '合并转发',
   dice: '掷骰子',
   rps: '猜拳',
