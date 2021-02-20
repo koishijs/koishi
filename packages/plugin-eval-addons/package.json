@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-eval-addons",
-  "version": "2.0.0-beta.3",
+  "version": "2.0.0-beta.4",
   "description": "Execute JavaScript in Koishi",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -33,9 +33,9 @@
     "code"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.0.0-beta.9",
-    "koishi-plugin-eval": "^3.0.0-beta.3",
-    "koishi-utils": "^3.2.5"
+    "koishi-core": "^3.0.0-beta.10",
+    "koishi-plugin-eval": "^3.0.0-beta.4",
+    "koishi-utils": "^3.2.6"
   },
   "dependencies": {
     "js-yaml": "^4.0.0",
