@@ -60,11 +60,11 @@ class MysqlDatabase {
       tables[TABLE_NAME].push(COLUMN_NAME)
     }
 
-    const platforms = new Set<string>(this.app.bots.map(bot => bot.platform))
     for (const name in MysqlDatabase.tables) {
-      const table = Object.create(MysqlDatabase.tables[name])
+      const table = { ...MysqlDatabase.tables[name] }
       // create platform rows
       if (name === 'user') {
+        const platforms = new Set<string>(this.app.bots.map(bot => bot.platform))
         platforms.forEach(name => table[name] = 'varchar(50)')
       }
       if (!tables[name]) {

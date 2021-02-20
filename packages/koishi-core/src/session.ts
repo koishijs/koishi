@@ -93,8 +93,12 @@ export class Session<
   duration?: number
   file?: FileInfo
 
-  app?: App
-  bot?: Bot.Instance<P>
+  readonly app: App
+  readonly bot: Bot.Instance<P>
+  readonly sid: string
+  readonly uid: string
+  readonly cid: string
+
   argv?: Argv<U, G>
   user?: User.Observed<U>
   channel?: Channel.Observed<G>
@@ -110,6 +114,9 @@ export class Session<
   constructor(app: App, session: Partial<Session>) {
     Object.assign(this, session)
     defineProperty(this, 'app', app)
+    defineProperty(this, 'sid', `${this.platform}:${this.selfId}`)
+    defineProperty(this, 'uid', `${this.platform}:${this.userId}`)
+    defineProperty(this, 'cid', `${this.platform}:${this.channelId}`)
     defineProperty(this, 'bot', app.bots[this.sid])
     defineProperty(this, '$uuid', Random.uuid())
     defineProperty(this, '_queued', Promise.resolve())
@@ -133,18 +140,6 @@ export class Session<
 
   get database() {
     return this.app.database
-  }
-
-  get uid() {
-    return `${this.platform}:${this.userId}`
-  }
-
-  get cid() {
-    return `${this.platform}:${this.channelId}`
-  }
-
-  get sid() {
-    return `${this.platform}:${this.selfId}`
   }
 
   async send(message: string) {
