@@ -57,7 +57,7 @@ export function toVersion(data: OneBot.VersionInfo) {
 const logger = new Logger('onebot')
 
 export function createSession(server: Adapter, data: any) {
-  const session = new Session(server.app, camelCase(data))
+  const session = camelCase<Session>(data)
   renameProperty(session, 'type', 'postType')
   renameProperty(session, 'subtype', 'subType')
   session.platform = 'onebot'
@@ -125,7 +125,7 @@ export function createSession(server: Adapter, data: any) {
     }
   } else return
 
-  return session
+  return new Session(server.app, session)
 }
 
 let counter = 0
