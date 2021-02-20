@@ -4,7 +4,7 @@
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-onebot": {
-    "version": "3.0.0-beta.8",
+    "version": "3.0.0-beta.9",
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-adapter-telegram": {
@@ -55,7 +55,7 @@
     "version": "1.0.0-beta.22"
   },
   "koishi-plugin-mysql": {
-    "version": "3.0.0-beta.7",
+    "version": "3.0.0-beta.8",
     "description": "MySQL support for Koishi"
   },
   "koishi-plugin-puppeteer": {
