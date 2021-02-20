@@ -110,10 +110,10 @@ namespace saucenao {
 }
 
 async function search(url: string, session: Session, config: saucenao.Config, mixed?: boolean) {
-  const { $app } = session
+  const { app } = session
   const keys = new Set<string>()
   for (let i = 0; i < config.maxTrials || 3; ++i) {
-    const api_key = $app.bail('saucenao/get-key')
+    const api_key = app.bail('saucenao/get-key')
     if (!api_key || keys.has(api_key)) {
       if (!mixed) return session.send('当前没有可用的 API 令牌，请联系机器人作者。')
       return
@@ -121,7 +121,7 @@ async function search(url: string, session: Session, config: saucenao.Config, mi
     keys.add(api_key)
     try {
       const response = await axios.get<Response>('https://saucenao.com/search.php', {
-        ...$app.options.axiosConfig,
+        ...app.options.axiosConfig,
         ...config.axiosConfig,
         params: {
           db: 999,
@@ -137,7 +137,7 @@ async function search(url: string, session: Session, config: saucenao.Config, mi
         logger.warn(`[error] saucenao:`, err)
         return session.send('无法连接服务器。')
       } else if (err.response.status === 403) {
-        const result = $app.bail('saucenao/drop-key', api_key)
+        const result = app.bail('saucenao/drop-key', api_key)
         if (result) return session.send(result)
       } else if (err.response.status !== 429) {
         logger.warn(`[error] saucenao:`, err.response.data)
