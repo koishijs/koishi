@@ -13,6 +13,7 @@ temp
 /utsuho
 
 /build/*.js
+/packages/plugin-webui
 
 todo.md
 yarn.lock

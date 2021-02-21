@@ -1,7 +1,7 @@
 {
   "name": "koishi-adapter-telegram",
   "description": "Telegram adapter for Koishi",
-  "version": "1.0.0-beta.4",
+  "version": "1.0.0-beta.5",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -28,10 +28,10 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.0.0-beta.11"
+    "koishi-core": "^3.0.0-beta.12"
   },
   "devDependencies": {
-    "koishi-test-utils": "^6.0.0-beta.3"
+    "koishi-test-utils": "^6.0.0-beta.4"
   },
   "dependencies": {
     "axios": "^0.21.1",

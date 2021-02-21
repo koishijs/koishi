@@ -119,9 +119,9 @@ extendDatabase(MysqlDatabase, ({ tables, Domain }) => {
   tables.channel = Object.assign<any, any>([
     'primary key (`id`) using btree',
   ], {
-    id: `varchar(50) unsigned not null`,
+    id: `varchar(50) not null`,
     flag: `bigint(20) unsigned not null default '0'`,
-    assignee: `varchar(50) unsigned not null default '0'`,
+    assignee: `varchar(50) not null default '0'`,
   })
 })
 
