@@ -2,12 +2,21 @@ import { spawnAsync, getWorkspaces, cwd } from './utils'
 import { resolve } from 'path'
 import * as fs from 'fs-extra'
 import globby from 'globby'
-import json from 'json5'
+import json5 from 'json5'
 import cac from 'cac'
 
-const { args } = cac().parse()
+const { args, options } = cac().help().parse()
 
 const prefixes = ['packages/', 'packages/koishi-', 'packages/adapter-', 'packages/plugin-']
+
+delete options['--']
+
+const tsArgs = Object.keys(options).map(name => '--' + name)
+
+async function readJson(path: string) {
+  const data = await fs.readFile(path, 'utf8')
+  return json5.parse(data)
+}
 
 getWorkspaces().then(async (folders) => {
   if (args.length) {
@@ -17,8 +26,7 @@ getWorkspaces().then(async (folders) => {
       }))
     }
   } else {
-    const config = await fs.readFile(resolve(cwd, 'tsconfig.json'), 'utf8')
-    const { references } = json.parse(config)
+    const { references } = await readJson(resolve(cwd, 'tsconfig.json'))
     for (const { path } of references) {
       await build(path)
     }
@@ -30,13 +38,13 @@ getWorkspaces().then(async (folders) => {
 
     const [files, code, config] = await Promise.all([
       globby(srcpath),
-      spawnAsync(['tsc', '-b', path]),
-      fs.readFile(fullpath + '/tsconfig.json', 'utf8'),
+      spawnAsync(['tsc', '-b', path, ...tsArgs]),
+      readJson(fullpath + '/tsconfig.json'),
     ])
     if (code) process.exit(code)
 
-    if (!json.parse(config).compilerOptions.outFile) return
-    const entry = fullpath + '/dist/index.d.ts'
+    if (!config.compilerOptions.outFile) return
+    const entry = resolve(fullpath, config.compilerOptions.outFile)
     const modules = files.map(file => file.slice(srcpath.length + 1, -3))
     const moduleRE = `"(${modules.join('|')})"`
     const [content, meta] = await Promise.all([
