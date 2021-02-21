@@ -33,10 +33,9 @@ export function spawnSync(args: string[], silent?: boolean) {
   }
 }
 
-export function spawnAsync(command: string) {
-  const args = command.split(/\s+/)
-  const child = spawn(args[0], args.slice(1), { stdio: 'inherit' })
-  return new Promise((resolve) => {
+export function spawnAsync(args: string[]) {
+  const child = spawn(args[0], args.slice(1), { cwd, stdio: 'inherit' })
+  return new Promise<number>((resolve) => {
     child.on('close', resolve)
   })
 }

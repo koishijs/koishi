@@ -43,7 +43,11 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
   if (Object.keys(bumpMap).length) {
     for (const name in bumpMap) {
       console.log(`publishing ${name}@${bumpMap[name]} ...`)
-      await spawnAsync(`yarn publish ${name} --new-version ${bumpMap[name]} --tag ${prerelease(bumpMap[name]) ? 'next' : 'latest'}`)
+      await spawnAsync([
+        'yarn', 'publish', name,
+        '--new-version', bumpMap[name],
+        '--tag', prerelease(bumpMap[name]) ? 'next' : 'latest',
+      ])
     }
   }
 
