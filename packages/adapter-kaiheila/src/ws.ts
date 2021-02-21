@@ -13,7 +13,7 @@ export default class WsClient extends Adapter.WsClient<'kaiheila'> {
     super(app, KaiheilaBot, app.options.kaiheila)
   }
 
-  async createSocket(bot: KaiheilaBot) {
+  async prepare(bot: KaiheilaBot) {
     const { url } = await bot.request('GET', '/gateway/index?compress=0')
     const headers = { Authorization: `Bot ${bot.token}` }
     return new WebSocket(url, { headers })

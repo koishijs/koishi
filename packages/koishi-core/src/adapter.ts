@@ -30,7 +30,7 @@ export abstract class Adapter<P extends Platform = Platform> {
 
   constructor(public app: App, private Bot: Bot.Constructor<P>) {}
 
-  createBot(options: BotOptions) {
+  create(options: BotOptions) {
     const bot = new this.Bot(this, options)
     this.bots.push(bot)
     this.app.bots.push(bot)
@@ -90,7 +90,7 @@ export namespace Adapter {
   }
 
   export abstract class WsClient<P extends Platform = Platform> extends Adapter<P> {
-    abstract createSocket(bot: Bot.Instance<P>): WebSocket | Promise<WebSocket>
+    abstract prepare(bot: Bot.Instance<P>): WebSocket | Promise<WebSocket>
     abstract connect(bot: Bot.Instance<P>): Promise<void>
 
     constructor(app: App, Bot: Bot.Constructor<P>, public options: WsClientOptions) {
@@ -103,7 +103,7 @@ export namespace Adapter {
 
       const connect = async (resolve: (value: void) => void, reject: (reason: Error) => void) => {
         logger.debug('websocket client opening')
-        const socket = await this.createSocket(bot)
+        const socket = await this.prepare(bot)
 
         socket.on('error', error => logger.debug(error))
 

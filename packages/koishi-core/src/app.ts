@@ -99,8 +99,7 @@ export class App extends Context {
 
     if (options.port) this.createServer()
     for (const bot of options.bots) {
-      const adapter = Adapter.from(this, bot)
-      adapter.createBot(bot)
+      Adapter.from(this, bot).create(bot)
     }
 
     this.prepare()
