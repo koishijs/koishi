@@ -1,4 +1,4 @@
-import { getUsage, getUsageName, ValidationField } from './plugins/validate'
+import { getUsage, getUsageName, ValidationField } from './validate'
 import { TableType } from './database'
 import { Command } from './command'
 import { Session, FieldCollector } from './session'

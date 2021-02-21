@@ -7,7 +7,7 @@ export * from './database'
 export * from './help'
 export * from './parser'
 export * from './session'
-export * from './plugins/validate'
+export * from './validate'
 
 declare const KOISHI_VERSION: string
 export const version = KOISHI_VERSION

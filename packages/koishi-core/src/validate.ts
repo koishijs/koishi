@@ -1,8 +1,8 @@
 import { Time, template } from 'koishi-utils'
-import { User } from '../database'
-import { Command } from '../command'
-import { App } from '../app'
-import { Argv } from '../parser'
+import { User } from './database'
+import { Command } from './command'
+import { App } from './app'
+import { Argv } from './parser'
 
 export function getUsageName(command: Command) {
   return command.config.usageName || command.name
