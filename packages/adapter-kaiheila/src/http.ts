@@ -23,7 +23,7 @@ export default class HttpServer extends Adapter<'kaiheila'> {
     Object.assign(bot, await bot.getSelf())
   }
 
-  async listen() {
+  async start() {
     const { kaiheila = {} } = this.app.options
     const { path = '' } = kaiheila
     this.app.router.post(path, (ctx) => {
@@ -48,7 +48,7 @@ export default class HttpServer extends Adapter<'kaiheila'> {
     await Promise.all(this.bots.map(bot => this._listen(bot)))
   }
 
-  close() {
+  stop() {
     logger.debug('http server closing')
   }
 }

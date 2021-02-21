@@ -48,7 +48,7 @@ export default class HttpServer extends Adapter<'onebot'> {
     logger.info('connected to %c', bot.server)
   }
 
-  async listen() {
+  async start() {
     const { onebot = {} } = this.app.options
     const { secret, path = '' } = onebot
     this.app.router.post(path, (ctx) => {
@@ -94,7 +94,7 @@ export default class HttpServer extends Adapter<'onebot'> {
     await Promise.all(this.bots.map(bot => this._listen(bot)))
   }
 
-  close() {
+  stop() {
     logger.debug('http server closing')
   }
 }

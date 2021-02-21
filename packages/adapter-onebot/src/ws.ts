@@ -34,7 +34,7 @@ export class WsServer extends Adapter<'onebot'> {
     })
   }
 
-  listen() {
+  start() {
     return new Promise<void>((resolve, reject) => {
       this.wsServer.on('error', reject)
       this.wsServer.on('connection', (socket, { headers }) => {
@@ -54,7 +54,7 @@ export class WsServer extends Adapter<'onebot'> {
     })
   }
 
-  close() {
+  stop() {
     logger.debug('ws server closing')
     this.wsServer.close()
     for (const bot of this.bots) {

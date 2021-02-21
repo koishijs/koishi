@@ -64,9 +64,9 @@ Adapter.types.tomon = class TomonServer extends Adapter<'tomon'> {
     })
   }
 
-  async listen() {
+  async start() {
     await Promise.all(this.bots.map(bot => this._listen(bot)))
   }
 
-  close() {}
+  stop() {}
 }

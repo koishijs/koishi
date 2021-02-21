@@ -50,7 +50,7 @@ export default class HttpServer extends Adapter<'telegram'> {
     logger.debug('connected to %c', 'telegram:' + bot.selfId)
   }
 
-  async listen() {
+  async start() {
     const { endpoint, path } = this.app.options.telegram
     this.app.router.post(path, async (ctx) => {
       logger.debug('receive %s', JSON.stringify(ctx.request.body))
@@ -102,7 +102,7 @@ export default class HttpServer extends Adapter<'telegram'> {
     await Promise.all(this.bots.map(bot => this._listen(bot)))
   }
 
-  close() {
+  stop() {
     logger.debug('http server closing')
   }
 }

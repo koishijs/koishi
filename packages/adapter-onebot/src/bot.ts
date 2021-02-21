@@ -1,4 +1,4 @@
-import { Bot, Session, segment, camelCase, Logger, snakeCase } from 'koishi-core'
+import { Bot, Session, segment, camelCase, snakeCase } from 'koishi-core'
 import * as OneBot from './utils'
 
 declare module 'koishi-core/dist/adapter' {
@@ -8,8 +8,6 @@ declare module 'koishi-core/dist/adapter' {
     }
   }
 }
-
-const logger = new Logger('bot')
 
 export class SenderError extends Error {
   constructor(args: Record<string, any>, url: string, retcode: number, selfId: string) {
@@ -77,9 +75,9 @@ export class CQBot extends Bot {
   }
 
   async get<T = any>(action: string, params = {}, silent = false): Promise<T> {
-    logger.debug('[request] %s %o', action, params)
+    this.logger.debug('[request] %s %o', action, params)
     const response = await this._request(action, snakeCase(params))
-    logger.debug('[response] %o', response)
+    this.logger.debug('[response] %o', response)
     const { data, retcode } = response
     if (retcode === 0 && !silent) {
       return camelCase(data)

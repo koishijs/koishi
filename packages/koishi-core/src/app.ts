@@ -99,17 +99,8 @@ export class App extends Context {
 
     if (options.port) this.createServer()
     for (const bot of options.bots) {
-      let adapter = this.adapters[bot.type]
-      if (!adapter) {
-        const constructor = Adapter.types[bot.type]
-        if (!constructor) {
-          const platform = bot.type.split(':', 1)[0]
-          throw new Error(`unsupported platform "${platform}", you should import the adapter yourself`)
-        }
-        adapter = new constructor(this, bot)
-        this.adapters[bot.type] = adapter
-      }
-      adapter.create(bot)
+      const adapter = Adapter.from(this, bot)
+      adapter.createBot(bot)
     }
 
     this.prepare()
@@ -178,7 +169,7 @@ export class App extends Context {
         this._httpServer.listen(port)
         this.logger('server').info('server listening at %c', port)
       }
-      await Promise.all(Object.values(this.adapters).map(server => server.listen()))
+      await Promise.all(Object.values(this.adapters).map(adapter => adapter.start()))
     } catch (error) {
       this._close()
       throw error
@@ -194,7 +185,7 @@ export class App extends Context {
   }
 
   private _close() {
-    Object.values(this.adapters).forEach(server => server.close())
+    Object.values(this.adapters).forEach(adapter => adapter.stop?.())
     this.logger('server').debug('http server closing')
     this._httpServer?.close()
   }

@@ -1,5 +1,5 @@
 import { createReadStream } from 'fs'
-import { camelCase, Logger, snakeCase, renameProperty, segment, assertProperty } from 'koishi-utils'
+import { camelCase, snakeCase, renameProperty, segment, assertProperty } from 'koishi-utils'
 import { Bot, GroupInfo, GroupMemberInfo, UserInfo, BotOptions, Adapter } from 'koishi-core'
 import Telegram from './interface'
 
@@ -10,8 +10,6 @@ declare module 'koishi-core/dist/adapter' {
     }
   }
 }
-
-const logger = new Logger('bot')
 
 export class SenderError extends Error {
   constructor(args: Record<string, any>, url: string, retcode: number, selfId: string) {
@@ -70,9 +68,9 @@ export class TelegramBot extends Bot {
   }
 
   async get<T = any>(action: string, params = {}, field = '', content: Buffer = null): Promise<T> {
-    logger.debug('[request] %s %o', action, params)
+    this.logger.debug('[request] %s %o', action, params)
     const response = await this._request(action, snakeCase(params), field, content)
-    logger.debug('[response] %o', response)
+    this.logger.debug('[response] %o', response)
     const { ok, result } = response
     if (ok) return camelCase(result)
     throw new SenderError(params, action, -1, this.selfId)

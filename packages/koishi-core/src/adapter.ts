@@ -23,15 +23,14 @@ export function createBots<T extends Bot>(key: 'selfId' | 'sid') {
 }
 
 export abstract class Adapter<P extends Platform = Platform> {
-  public type: string
   public bots: BotList<Bot.Instance<P>> = createBots('selfId')
 
-  abstract listen(): Promise<void>
-  abstract close(): void
+  abstract start(): Promise<void>
+  abstract stop?(): void
 
   constructor(public app: App, private Bot: Bot.Constructor<P>) {}
 
-  create(options: BotOptions) {
+  createBot(options: BotOptions) {
     const bot = new this.Bot(this, options)
     this.bots.push(bot)
     this.app.bots.push(bot)
@@ -52,7 +51,7 @@ export abstract class Adapter<P extends Platform = Platform> {
   }
 }
 
-const logger = new Logger('server')
+const logger = new Logger('adapter')
 
 export namespace Adapter {
   export type Constructor<T extends Platform = Platform> = new (app: App, bot: BotOptions) => Adapter<T>
@@ -63,13 +62,24 @@ export namespace Adapter {
 
   export const types: Record<string, Constructor> = {}
 
+  export function from(app: App, bot: BotOptions) {
+    const type = bot.type = bot.type.toLowerCase()
+    if (app.adapters[type]) return app.adapters[type]
+    const constructor = Adapter.types[type]
+    if (!constructor) {
+      const platform = type.split(':', 1)[0]
+      throw new Error(`unsupported platform "${platform}", you should import the adapter yourself`)
+    }
+    const adapter = new constructor(app, bot)
+    return app.adapters[bot.type] = adapter
+  }
+
   export function redirect(target: string | ((bot: BotOptions) => string)) {
     const callback = typeof target === 'string' ? () => target : target
     return class {
       constructor(app: App, bot: BotOptions) {
-        const type = bot.type = callback(bot)
-        new Logger('server').info('infer type as %c', type)
-        return app.adapters[type] || new Adapter.types[type](app, bot)
+        logger.info('infer type as %c', bot.type = callback(bot))
+        return from(app, bot)
       }
     } as Constructor
   }
@@ -124,11 +134,11 @@ export namespace Adapter {
       return new Promise(connect)
     }
 
-    async listen() {
+    async start() {
       await Promise.all(this.bots.map(bot => this._listen(bot)))
     }
 
-    close() {
+    stop() {
       logger.debug('websocket client closing')
       for (const bot of this.bots) {
         bot.socket?.close()
@@ -191,6 +201,7 @@ export class Bot<P extends Platform> {
 
   readonly app: App
   readonly sid: string
+  readonly logger: Logger
   readonly platform: P
 
   constructor(public adapter: Adapter<P>, options: BotOptions) {
@@ -198,6 +209,7 @@ export class Bot<P extends Platform> {
     this.app = adapter.app
     this.platform = this.type.split(':', 1)[0] as never
     this.sid = `${this.platform}:${this.selfId}`
+    this.logger = new Logger(this.platform)
   }
 
   createSession(session: Partial<Session<never, never, P, 'send'>>) {
