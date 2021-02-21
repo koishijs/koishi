@@ -6,7 +6,7 @@ import * as OneBot from './types'
 
 export * from './types'
 
-declare module 'koishi-core/dist/adapter' {
+declare module 'koishi-core' {
   interface BotOptions {
     server?: string
   }

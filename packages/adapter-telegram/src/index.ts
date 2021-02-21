@@ -9,13 +9,11 @@ interface TelegramOptions {
   axiosConfig?: AxiosRequestConfig
 }
 
-declare module 'koishi-core/dist/adapter' {
+declare module 'koishi-core' {
   interface BotOptions {
     token?: string
   }
-}
 
-declare module 'koishi-core/dist/app' {
   interface AppOptions {
     telegram?: TelegramOptions
   }

@@ -10,7 +10,7 @@ interface OneBotOptions extends Adapter.WsClientOptions {
   responseTimeout?: number
 }
 
-declare module 'koishi-core/dist/app' {
+declare module 'koishi-core' {
   interface AppOptions {
     onebot?: OneBotOptions
   }

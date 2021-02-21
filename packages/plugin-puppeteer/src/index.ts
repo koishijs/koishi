@@ -26,13 +26,11 @@ declare module 'puppeteer-core/lib/types' {
   }
 }
 
-declare module 'koishi-core/dist/app' {
+declare module 'koishi-core' {
   interface App {
     browser: puppeteer.Browser
   }
-}
 
-declare module 'koishi-core/dist/context' {
   interface EventMap {
     'puppeteer/validate'(url: string): string
   }

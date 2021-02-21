@@ -6,7 +6,7 @@ import axios, { Method } from 'axios'
 import * as KHL from './types'
 import { adaptGroup, adaptAuthor, adaptUser } from './utils'
 
-declare module 'koishi-core/dist/adapter' {
+declare module 'koishi-core' {
   namespace Bot {
     interface Platforms {
       kaiheila: KaiheilaBot

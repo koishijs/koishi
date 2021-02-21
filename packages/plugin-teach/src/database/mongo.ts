@@ -4,7 +4,7 @@ import type { FilterQuery } from 'mongodb'
 import type MongoDatabase from 'koishi-plugin-mongo/dist/database'
 import { Dialogue, DialogueTest, equal } from '../utils'
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
     'dialogue/mongo'(test: DialogueTest, conditionals?: FilterQuery<Dialogue>[]): void
   }

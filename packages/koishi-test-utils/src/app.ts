@@ -12,7 +12,7 @@ interface MockedResponse {
   headers: Record<string, any>
 }
 
-declare module 'koishi-core/dist/adapter' {
+declare module 'koishi-core' {
   namespace Bot {
     interface Platforms {
       mock: MockedBot
@@ -39,9 +39,9 @@ class MockedServer extends Adapter {
     this.bots.forEach(bot => bot.ready = true)
   }
 
-  close() {}
+  stop() {}
 
-  async listen() {}
+  async start() {}
 
   get(path: string, headers?: Record<string, any>) {
     return this.receive('GET', path, headers, '')

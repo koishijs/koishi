@@ -1,6 +1,6 @@
 import { Context, Session } from 'koishi-core'
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
     'repeater'(session: Session, state: RepeatState): void
   }

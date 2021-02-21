@@ -6,7 +6,7 @@ import twitcasting from './twitCasting'
 import mirrativ from './mirrativ'
 import axios from 'axios'
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
     'monitor/before-send'(info: LiveInfo, group: Pick<Channel, 'id' | 'flag' | 'assignee' | 'subscribe'>): void | boolean
   }

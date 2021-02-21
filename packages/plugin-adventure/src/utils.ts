@@ -2,13 +2,6 @@ import { User, extendDatabase, Session, Context, Command, Argv, TableType, Field
 import MysqlDatabase from 'koishi-plugin-mysql'
 import Achievement from './achievement'
 
-declare module 'koishi-core/dist/command' {
-  interface Command<U, G, A, O> {
-    useRest(): Command<U, G, A, O & { rest: string }>
-    useRank(): Command<U, G, A, O>
-  }
-}
-
 function createCollector<T extends TableType>(key: T): FieldCollector<T, never, any[], { rest: string }> {
   return ({ tokens, session, options }, fields) => {
     if (tokens) {
@@ -36,7 +29,12 @@ Command.prototype.useRank = function (this: Command) {
     .option('threshold', '-t <value>  数据阈值')
 }
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
+  interface Command<U, G, A, O> {
+    useRest(): Command<U, G, A, O & { rest: string }>
+    useRank(): Command<U, G, A, O>
+  }
+
   interface EventMap {
     'adventure/check'(session: Session<Adventurer.Field>, hints: string[]): void
     'adventure/rank'(name: string): [string, string]
@@ -48,9 +46,7 @@ declare module 'koishi-core/dist/context' {
     'adventure/ending'(session: Session<Adventurer.Field>, id: string, hints: string[]): void
     'adventure/achieve'(session: Session<Achievement.Field>, achv: Achievement, hints: string[]): void
   }
-}
 
-declare module 'koishi-core/dist/database' {
   interface User extends Adventurer {
     noSR: number
     affinity: number

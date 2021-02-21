@@ -1,7 +1,7 @@
 import { Bot, Session, segment, camelCase, snakeCase } from 'koishi-core'
 import * as OneBot from './utils'
 
-declare module 'koishi-core/dist/adapter' {
+declare module 'koishi-core' {
   namespace Bot {
     interface Platforms {
       onebot: CQBot

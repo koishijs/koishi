@@ -5,7 +5,7 @@ import { RegExpValidator } from 'regexpp'
 import { formatQuestionAnswers } from './search'
 import { distance } from 'fastest-levenshtein'
 
-declare module 'koishi-core/dist/command' {
+declare module 'koishi-core' {
   namespace Command {
     interface Config {
       noInterp?: boolean

@@ -15,7 +15,7 @@ export { Achievement, Affinity, Buff, Event, Item, Luck, Phase, Profile, Rank }
 
 export * from './utils'
 
-declare module 'koishi-core/dist/app' {
+declare module 'koishi-core' {
   interface App {
     adventure: Config
   }

@@ -3,7 +3,7 @@ import MongoDatabase from 'koishi-plugin-mongo/dist/database'
 import { Channel, extendDatabase } from 'koishi-core'
 import { OkPacket } from 'mysql'
 
-declare module 'koishi-core/dist/database' {
+declare module 'koishi-core' {
   interface Channel {
     subscribe: Record<number, string[]>
   }

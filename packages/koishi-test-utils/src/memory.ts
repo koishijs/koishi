@@ -1,7 +1,7 @@
 import { Tables, TableType, App, extendDatabase, User, Channel } from 'koishi-core'
 import { clone } from 'koishi-utils'
 
-declare module 'koishi-core/dist/database' {
+declare module 'koishi-core' {
   interface Database extends MemoryDatabase {
     initUser(id: string, authority?: number): Promise<void>
     initChannel(id: string, assignee?: string): Promise<void>

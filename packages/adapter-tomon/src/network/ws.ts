@@ -11,7 +11,7 @@ export enum WSState {
 
 export type WSOptions = WebSocket.ClientOptions | http.ClientRequestArgs
 
-export default class WS {
+export class WS {
   static retryDelay(times: number): number {
     if (times <= 0) {
       return 500

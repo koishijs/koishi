@@ -6,7 +6,7 @@ import { App, Session, User } from 'koishi-core'
 import { segment, Logger } from 'koishi-utils'
 import {} from 'koishi-plugin-puppeteer'
 
-declare module 'koishi-core/dist/database' {
+declare module 'koishi-core' {
   interface User {
     ghAccessToken?: string
     ghRefreshToken?: string

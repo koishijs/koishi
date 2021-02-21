@@ -31,7 +31,7 @@ export * from './plugins/writer'
 
 export type Config = Dialogue.Config
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
     'dialogue/validate'(argv: Dialogue.Argv): void | string
     'dialogue/execute'(argv: Dialogue.Argv): void | Promise<void | string>

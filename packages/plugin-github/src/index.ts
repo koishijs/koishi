@@ -10,7 +10,7 @@ import { Config, GitHub, ReplyHandler, EventData } from './server'
 
 export * from './server'
 
-declare module 'koishi-core/dist/app' {
+declare module 'koishi-core' {
   interface App {
     github?: GitHub
   }

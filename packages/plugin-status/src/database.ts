@@ -2,18 +2,16 @@ import { Session, extendDatabase } from 'koishi-core'
 import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 import MongoDatabase from 'koishi-plugin-mongo/dist/database'
 
-declare module 'koishi-core/dist/database' {
-  interface User {
-    lastCall: Date
-  }
-}
-
 export interface ActiveData {
   activeUsers: number
   activeGroups: number
 }
 
-declare module 'koishi-core/dist/database' {
+declare module 'koishi-core' {
+  interface User {
+    lastCall: Date
+  }
+
   interface Database {
     getActiveData (): Promise<ActiveData>
   }

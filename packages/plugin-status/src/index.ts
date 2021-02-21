@@ -5,7 +5,7 @@ import { ActiveData } from './database'
 
 export * from './database'
 
-declare module 'koishi-core/dist/adapter' {
+declare module 'koishi-core' {
   interface Bot {
     counter: number[]
   }

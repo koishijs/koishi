@@ -2,7 +2,7 @@ import { Context, Command, checkTimer, checkUsage } from 'koishi-core'
 import { Time } from 'koishi-utils'
 import { Adventurer, Show } from './utils'
 
-declare module 'koishi-core/dist/command' {
+declare module 'koishi-core' {
   interface Command<U, G, A, O> {
     checkTimer(name: string): Command<U | 'timers', G, A, O>
   }

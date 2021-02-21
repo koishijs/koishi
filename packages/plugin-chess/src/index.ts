@@ -22,7 +22,7 @@ const rules: Record<string, Rule> = {
   othello,
 }
 
-declare module 'koishi-core/dist/database' {
+declare module 'koishi-core' {
   interface Channel {
     chess: StateData
   }

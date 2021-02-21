@@ -3,7 +3,7 @@ import { camelCase, snakeCase, renameProperty, segment, assertProperty } from 'k
 import { Bot, GroupInfo, GroupMemberInfo, UserInfo, BotOptions, Adapter } from 'koishi-core'
 import Telegram from './interface'
 
-declare module 'koishi-core/dist/adapter' {
+declare module 'koishi-core' {
   namespace Bot {
     interface Platforms {
       telegram: TelegramBot

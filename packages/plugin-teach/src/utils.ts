@@ -2,20 +2,16 @@ import { Session, Argv, App } from 'koishi-core'
 import { difference, observe, isInteger, defineProperty, Observed } from 'koishi-utils'
 import { RegExpValidator } from 'regexpp'
 
-declare module 'koishi-core/dist/app' {
+declare module 'koishi-core' {
   interface App {
     teachHistory: Record<number, Dialogue>
   }
-}
 
-declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/permit'(argv: Dialogue.Argv, dialogue: Dialogue): boolean
     'dialogue/flag'(flag: keyof typeof Dialogue.Flag): void
   }
-}
 
-declare module 'koishi-core/dist/database' {
   interface Tables {
     dialogue: Dialogue
   }

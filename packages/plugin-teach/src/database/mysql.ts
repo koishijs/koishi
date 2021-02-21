@@ -3,7 +3,7 @@ import { clone, defineProperty, Observed, pick } from 'koishi-utils'
 import { Dialogue, equal, DialogueTest } from '../utils'
 import type MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
     'dialogue/mysql'(test: DialogueTest, conditionals?: string[]): void
   }

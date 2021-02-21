@@ -18,7 +18,7 @@ export interface ResponsePayload {
   reason?: string
 }
 
-declare module 'koishi-core/dist/session' {
+declare module 'koishi-core' {
   interface Session {
     _response?: (payload: ResponsePayload) => void
   }

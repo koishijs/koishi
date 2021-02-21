@@ -3,7 +3,7 @@ import { Logger, Time } from 'koishi-utils'
 import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 import RssFeedEmitter from 'rss-feed-emitter'
 
-declare module 'koishi-core/dist/database' {
+declare module 'koishi-core' {
   interface Channel {
     rss?: string[]
   }

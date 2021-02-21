@@ -1,9 +1,9 @@
 import { Bot, MessageInfo, GroupInfo, UserInfo, GroupMemberInfo, AuthorInfo } from 'koishi-core'
 import { Method } from 'axios'
-import Route, { RequestOptions } from './network/route'
+import { Route, RequestOptions } from './network/route'
 import WebSocket from 'ws'
 
-declare module 'koishi-core/dist/adapter' {
+declare module 'koishi-core' {
   namespace Bot {
     interface Platforms {
       tomon: TomonBot

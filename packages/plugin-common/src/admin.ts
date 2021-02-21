@@ -5,14 +5,12 @@ type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[],
   = (argv: Argv<U | 'authority', G, A, O> & { target: T }, ...args: A)
     => void | string | Promise<void | string>
 
-declare module 'koishi-core/dist/command' {
+declare module 'koishi-core' {
   interface Command<U, G, A, O> {
     adminUser(callback: AdminAction<U, G, A, O, User.Observed<U | 'authority'>>): this
     adminChannel(callback: AdminAction<U, G, A, O, Channel.Observed<G>>): this
   }
-}
 
-declare module 'koishi-core/dist/context' {
   interface EventMap {
     'common/callme'(name: string, session: Session): string | void
   }

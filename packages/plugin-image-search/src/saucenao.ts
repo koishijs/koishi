@@ -8,7 +8,7 @@ import { Session } from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { getShareText, checkHost } from './utils'
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
     'saucenao/get-key'(): string
     'saucenao/drop-key'(key: string): string | void

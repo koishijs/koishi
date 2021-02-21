@@ -4,7 +4,7 @@ import { User, Database, extendDatabase, Context, Channel, Platform, pick } from
 export * from './database'
 export default MongoDatabase
 
-declare module 'koishi-core/dist/database' {
+declare module 'koishi-core' {
   interface Database extends MongoDatabase { }
   interface Channel {
     type: Platform,

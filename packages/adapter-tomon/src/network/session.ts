@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events'
 import { TextDecoder } from 'util'
-import WS, { WSState, WSOptions } from './ws'
+import { WS, WSState, WSOptions } from './ws'
 import pako from 'pako'
 
 export enum GatewayOp {
@@ -20,7 +20,7 @@ interface SessionOptions {
   wsOptions?: WSOptions
 }
 
-export default class Session {
+export class Session {
   _url: string
   _emitter?: EventEmitter
 

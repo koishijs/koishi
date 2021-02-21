@@ -2,13 +2,11 @@ import { Context, User, Session, NextFunction, Channel, Argv } from 'koishi-core
 import { segment, simplify, noop, escapeRegExp, Random, makeArray } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './utils'
 
-declare module 'koishi-core/dist/app' {
+declare module 'koishi-core' {
   interface App {
     _dialogueStates: Record<number, SessionState>
   }
-}
 
-declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/state'(state: SessionState): void
     'dialogue/receive'(state: SessionState): void | boolean
@@ -22,9 +20,7 @@ declare module 'koishi-core/dist/context' {
   interface Context {
     getSessionState(this: Context, session: Session): SessionState
   }
-}
 
-declare module 'koishi-core/dist/session' {
   interface Session {
     _redirected?: number
   }

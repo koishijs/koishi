@@ -8,7 +8,7 @@ import Rank from './rank'
 import Item from './item'
 import Buff from './buff'
 
-declare module 'koishi-core/dist/session' {
+declare module 'koishi-core' {
   interface Session<U> {
     /** skip current phase */
     _skipCurrent?: boolean

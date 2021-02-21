@@ -5,7 +5,7 @@ import {} from 'koishi-plugin-common'
 import Profile from './profile'
 import Rank from './rank'
 
-declare module 'koishi-core/dist/session' {
+declare module 'koishi-core' {
   interface Session<U> {
     achieve(id: string, hints: string[], achieve?: boolean | boolean[]): string
   }

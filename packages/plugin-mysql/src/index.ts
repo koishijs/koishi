@@ -5,7 +5,7 @@ import { difference } from 'koishi-utils'
 export * from './database'
 export default MysqlDatabase
 
-declare module 'koishi-core/dist/database' {
+declare module 'koishi-core' {
   interface Database extends MysqlDatabase {}
 }
 

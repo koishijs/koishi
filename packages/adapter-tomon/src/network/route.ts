@@ -21,7 +21,7 @@ export interface RequestOptions {
   timeout?: number
 }
 
-export default class Route {
+export class Route {
   path: string
   api: string
   token?: string

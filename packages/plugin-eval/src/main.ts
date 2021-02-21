@@ -5,7 +5,7 @@ import { WorkerAPI, WorkerConfig, WorkerData, Response, ContextOptions } from '.
 import { expose, Remote, wrap } from './transfer'
 import { resolve } from 'path'
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
     'worker/start'(): void | Promise<void>
     'worker/ready'(response: Response): void

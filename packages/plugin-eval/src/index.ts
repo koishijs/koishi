@@ -5,21 +5,17 @@ import { EvalWorker, attachTraps, EvalConfig, Config, resolveAccess } from './ma
 
 export * from './main'
 
-declare module 'koishi-core/dist/app' {
+declare module 'koishi-core' {
   interface App {
     worker: EvalWorker
   }
-}
 
-declare module 'koishi-core/dist/command' {
   namespace Command {
     interface Config {
       noEval?: boolean
     }
   }
-}
 
-declare module 'koishi-core/dist/session' {
   interface Session {
     _isEval: boolean
     _sendCount: number

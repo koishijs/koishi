@@ -7,7 +7,7 @@ interface KaiheilaOptions extends Adapter.WsClientOptions {
   endpoint?: string
 }
 
-declare module 'koishi-core/dist/app' {
+declare module 'koishi-core' {
   interface AppOptions {
     kaiheila?: KaiheilaOptions
   }
