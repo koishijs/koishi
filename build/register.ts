@@ -1,21 +1,18 @@
 import { install } from 'source-map-support'
-import { transformSync } from 'esbuild'
+import { transformSync, Message } from 'esbuild'
 import { readFileSync } from 'fs'
 
 const ignored = [
   'Indirect calls to "require" will not be bundled (surround with a try/catch to silence this warning)',
 ]
 
-const maps: Record<string, string> = {}
+const cache: Record<string, string> = {}
 
 install({
-  handleUncaughtExceptions: false,
+  handleUncaughtExceptions: true,
   environment: 'node',
-  retrieveSourceMap(file) {
-    return maps[file] && {
-      url: file,
-      map: maps[file],
-    }
+  retrieveFile(path) {
+    return cache[path] || ''
   },
 })
 
@@ -24,12 +21,19 @@ const KOISHI_VERSION = JSON.stringify(version)
 
 const prefix = '\u001B[35mwarning:\u001B[0m'
 
+function reportWarnings({ location, text }: Message) {
+  if (ignored.includes(text)) return
+  if (!location) return console.log(prefix, text)
+  const { file, line, column } = location
+  console.log(`\u001B[34m${file}:${line}:${column}:\u001B[0m`, prefix, text)
+}
+
 // eslint-disable-next-line node/no-deprecated-api
 require.extensions['.ts'] = (module, filename) => {
   const source = readFileSync(filename, 'utf8')
-  const { code, warnings, map } = transformSync(source, {
+  const { code, warnings } = transformSync(source, {
     sourcefile: filename,
-    sourcemap: true,
+    sourcemap: 'inline',
     format: 'cjs',
     loader: 'ts',
     charset: 'utf8',
@@ -38,12 +42,7 @@ require.extensions['.ts'] = (module, filename) => {
       KOISHI_VERSION,
     },
   })
-  maps[filename] = map
-  warnings.forEach(({ location, text }) => {
-    if (ignored.includes(text)) return
-    if (!location) return console.log(prefix, text)
-    const { file, line, column } = location
-    console.log(`\u001B[34m${file}:${line}:${column}:\u001B[0m`, prefix, text)
-  })
+  cache[filename] = code
+  warnings.forEach(reportWarnings)
   module['_compile'](code, filename)
 }
