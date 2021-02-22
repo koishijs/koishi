@@ -13,7 +13,7 @@
     "atri": "yarn workspace atri",
     "addons": "yarn workspace addons",
     "cli": "yarn workspace test koishi",
-    "build": "yarn compile & yarn dtsc",
+    "build": "yarn compile && yarn dtsc",
     "build:ci": "yarn build:reg && yarn build --listEmittedFiles",
     "build:reg": "esbuild build/register.ts --outdir=build --format=cjs --log-level=error",
     "dtsc": "node -r ./build/register build/dtsc",

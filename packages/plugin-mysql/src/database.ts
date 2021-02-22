@@ -64,8 +64,13 @@ class MysqlDatabase {
       const table = { ...MysqlDatabase.tables[name] }
       // create platform rows
       if (name === 'user') {
+        let index = MysqlDatabase.tables[name]['length']
         const platforms = new Set<string>(this.app.bots.map(bot => bot.platform))
-        platforms.forEach(name => table[name] = 'varchar(50)')
+        platforms.forEach(name => {
+          const key = escapeId(name)
+          table[name] = 'varchar(50) null default null'
+          table[index++] = `unique index ${key} (${key}) using btree`
+        })
       }
       if (!tables[name]) {
         const cols = Object.keys(table)

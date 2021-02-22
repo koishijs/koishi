@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "koishi-plugin-mongo": "^2.0.0-beta.4",
-    "koishi-plugin-mysql": "^3.0.0-beta.9",
+    "koishi-plugin-mysql": "^3.0.0-beta.10",
     "koishi-test-utils": "^6.0.0-beta.4"
   }
 }

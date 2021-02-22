@@ -108,7 +108,7 @@ extendDatabase(MysqlDatabase, ({ tables, Domain }) => {
     'primary key (`id`) using btree',
     'unique index `name` (`name`) using btree',
   ], {
-    id: `bigint(20) unsigned not null`,
+    id: `bigint(20) unsigned not null auto_increment`,
     name: `varchar(50) null default null collate 'utf8mb4_general_ci'`,
     flag: `bigint(20) unsigned not null default '0'`,
     authority: `tinyint(4) unsigned not null default '0'`,
