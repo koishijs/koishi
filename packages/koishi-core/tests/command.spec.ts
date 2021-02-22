@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { App } from 'koishi-test-utils'
-import { spyOn } from 'jest-mock'
 import { Logger, noop } from 'koishi-utils'
 import { Session } from 'koishi-core'
 import { inspect } from 'util'
 import { expect } from 'chai'
+import jest from 'jest-mock'
 
 describe('Command API', () => {
   describe('Register Commands', () => {
@@ -154,7 +154,7 @@ describe('Command API', () => {
     const app = new App()
     const command = app.command('test')
     const session = new Session(app, {})
-    const cmdWarn = spyOn(new Logger('command'), 'warn')
+    const cmdWarn = jest.spyOn(new Logger('command'), 'warn')
     const next = fallback => fallback()
     const argv = { command, session, next }
 

@@ -2,125 +2,115 @@ import { App } from 'koishi-test-utils'
 import { Session } from 'koishi-core'
 import { noop } from 'koishi-utils'
 import { expect } from 'chai'
-import { fn } from 'jest-mock'
+import jest from 'jest-mock'
 
 const app = new App()
 const groupSession = new Session(app, { userId: '123', groupId: '456', subtype: 'group' })
 const privateSession = new Session(app, { userId: '123', subtype: 'private' })
-const metaEventSession = new Session(app, { type: 'lifecycle' })
 
 describe('Context API', () => {
   describe('Composition API', () => {
     it('root context', () => {
       expect(app.match(groupSession)).to.be.true
       expect(app.match(privateSession)).to.be.true
-      expect(app.match(metaEventSession)).to.be.true
     })
 
     it('context.prototype.user', () => {
-      expect(app.select('userId').match(groupSession)).to.be.true
-      expect(app.select('userId').match(privateSession)).to.be.true
-      expect(app.select('userId').match(metaEventSession)).to.be.true
-      expect(app.select('userId', '123').match(groupSession)).to.be.true
-      expect(app.select('userId', '123').match(privateSession)).to.be.true
-      expect(app.select('userId', '456').match(groupSession)).to.be.false
-      expect(app.select('userId', '456').match(privateSession)).to.be.false
-      expect(app.select('userId', '456').match(metaEventSession)).to.be.true
+      expect(app.user().match(groupSession)).to.be.true
+      expect(app.user().match(privateSession)).to.be.true
+      expect(app.user('123').match(groupSession)).to.be.true
+      expect(app.user('123').match(privateSession)).to.be.true
+      expect(app.user('456').match(groupSession)).to.be.false
+      expect(app.user('456').match(privateSession)).to.be.false
     })
 
     it('context.prototype.private', () => {
-      expect(app.unselect('groupId').match(groupSession)).to.be.false
-      expect(app.unselect('groupId').match(privateSession)).to.be.true
-      expect(app.unselect('groupId').match(metaEventSession)).to.be.true
-      expect(app.unselect('groupId').select('userId', '123').match(groupSession)).to.be.false
-      expect(app.unselect('groupId').select('userId', '123').match(privateSession)).to.be.true
-      expect(app.unselect('groupId').select('userId', '456').match(groupSession)).to.be.false
-      expect(app.unselect('groupId').select('userId', '456').match(privateSession)).to.be.false
-      expect(app.unselect('groupId').select('userId', '123').match(metaEventSession)).to.be.true
+      expect(app.private().match(groupSession)).to.be.false
+      expect(app.private().match(privateSession)).to.be.true
+      expect(app.private().user('123').match(groupSession)).to.be.false
+      expect(app.private().user('123').match(privateSession)).to.be.true
+      expect(app.private().user('456').match(groupSession)).to.be.false
+      expect(app.private().user('456').match(privateSession)).to.be.false
     })
 
     it('context.prototype.group', () => {
-      expect(app.select('groupId').match(groupSession)).to.be.true
-      expect(app.select('groupId').match(privateSession)).to.be.false
-      expect(app.select('groupId').match(metaEventSession)).to.be.true
-      expect(app.select('groupId', '123').match(groupSession)).to.be.false
-      expect(app.select('groupId', '123').match(privateSession)).to.be.false
-      expect(app.select('groupId', '456').match(groupSession)).to.be.true
-      expect(app.select('groupId', '456').match(privateSession)).to.be.false
-      expect(app.select('groupId', '456').match(metaEventSession)).to.be.true
+      expect(app.group().match(groupSession)).to.be.true
+      expect(app.group().match(privateSession)).to.be.false
+      expect(app.group('123').match(groupSession)).to.be.false
+      expect(app.group('123').match(privateSession)).to.be.false
+      expect(app.group('456').match(groupSession)).to.be.true
+      expect(app.group('456').match(privateSession)).to.be.false
     })
 
     it('context chaining', () => {
-      expect(app.select('groupId', '456').select('userId', '123').match(groupSession)).to.be.true
-      expect(app.select('groupId', '456').select('userId', '456').match(groupSession)).to.be.false
-      expect(app.select('groupId', '123').select('userId', '123').match(groupSession)).to.be.false
-      expect(app.select('groupId', '456').select('userId', '123').match(metaEventSession)).to.be.true
-      expect(app.select('userId', '123').select('groupId', '456').match(groupSession)).to.be.true
-      expect(app.select('userId', '456').select('groupId', '456').match(groupSession)).to.be.false
-      expect(app.select('userId', '123').select('groupId', '123').match(groupSession)).to.be.false
-      expect(app.select('userId', '123').select('groupId', '456').match(metaEventSession)).to.be.true
+      expect(app.group('456').user('123').match(groupSession)).to.be.true
+      expect(app.group('456').user('456').match(groupSession)).to.be.false
+      expect(app.group('123').user('123').match(groupSession)).to.be.false
+      expect(app.user('123').group('456').match(groupSession)).to.be.true
+      expect(app.user('456').group('456').match(groupSession)).to.be.false
+      expect(app.user('123').group('123').match(groupSession)).to.be.false
     })
 
     it('context intersection', () => {
-      expect(app.select('groupId', '456', '789').select('groupId', '123', '456').match(groupSession)).to.be.true
-      expect(app.select('groupId', '456', '789').select('groupId', '123', '789').match(groupSession)).to.be.false
-      expect(app.select('groupId', '123', '789').select('groupId', '123', '456').match(groupSession)).to.be.false
-      expect(app.select('userId', '123', '789').select('userId', '123', '456').match(groupSession)).to.be.true
-      expect(app.select('userId', '456', '789').select('userId', '123', '456').match(groupSession)).to.be.false
-      expect(app.select('userId', '123', '789').select('userId', '456', '789').match(groupSession)).to.be.false
+      expect(app.group('456', '789').group('123', '456').match(groupSession)).to.be.true
+      expect(app.group('456', '789').group('123', '789').match(groupSession)).to.be.false
+      expect(app.group('123', '789').group('123', '456').match(groupSession)).to.be.false
+      expect(app.user('123', '789').user('123', '456').match(groupSession)).to.be.true
+      expect(app.user('456', '789').user('123', '456').match(groupSession)).to.be.false
+      expect(app.user('123', '789').user('456', '789').match(groupSession)).to.be.false
     })
   })
 
   describe('Composition Runtime', () => {
     beforeEach(() => {
-      delete app._hooks.command
+      delete app._hooks.attach
     })
 
     it('ctx.prototype.parallel', async () => {
-      await app.parallel('command', null)
-      const callback = fn<void, []>()
-      app.unselect('groupId').on('command', callback)
-      await app.parallel('command', null)
+      await app.parallel('attach', null)
+      const callback = jest.fn<void, []>()
+      app.private().on('attach', callback)
+      await app.parallel('attach', null)
       expect(callback.mock.calls).to.have.length(1)
-      await app.parallel(groupSession, 'command', null)
+      await app.parallel(groupSession, 'attach', null)
       expect(callback.mock.calls).to.have.length(1)
-      await app.parallel(privateSession, 'command', null)
+      await app.parallel(privateSession, 'attach', null)
       expect(callback.mock.calls).to.have.length(2)
     })
 
     it('ctx.prototype.emit', async () => {
-      app.emit('command', null)
-      const callback = fn<void, []>()
-      app.unselect('groupId').on('command', callback)
-      app.emit('command', null)
+      app.emit('attach', null)
+      const callback = jest.fn<void, []>()
+      app.private().on('attach', callback)
+      app.emit('attach', null)
       expect(callback.mock.calls).to.have.length(1)
-      app.emit(groupSession, 'command', null)
+      app.emit(groupSession, 'attach', null)
       expect(callback.mock.calls).to.have.length(1)
-      app.emit(privateSession, 'command', null)
+      app.emit(privateSession, 'attach', null)
       expect(callback.mock.calls).to.have.length(2)
     })
 
     it('ctx.prototype.serial', async () => {
-      app.serial('command', null)
-      const callback = fn<void, []>()
-      app.unselect('groupId').on('command', callback)
-      app.serial('command', null)
+      app.serial('attach', null)
+      const callback = jest.fn<void, []>()
+      app.private().on('attach', callback)
+      app.serial('attach', null)
       expect(callback.mock.calls).to.have.length(1)
-      app.serial(groupSession, 'command', null)
+      app.serial(groupSession, 'attach', null)
       expect(callback.mock.calls).to.have.length(1)
-      app.serial(privateSession, 'command', null)
+      app.serial(privateSession, 'attach', null)
       expect(callback.mock.calls).to.have.length(2)
     })
 
     it('ctx.prototype.bail', async () => {
-      app.bail('command', null)
-      const callback = fn<void, []>()
-      app.unselect('groupId').on('command', callback)
-      app.bail('command', null)
+      app.bail('attach', null)
+      const callback = jest.fn<void, []>()
+      app.private().on('attach', callback)
+      app.bail('attach', null)
       expect(callback.mock.calls).to.have.length(1)
-      app.bail(groupSession, 'command', null)
+      app.bail(groupSession, 'attach', null)
       expect(callback.mock.calls).to.have.length(1)
-      app.bail(privateSession, 'command', null)
+      app.bail(privateSession, 'attach', null)
       expect(callback.mock.calls).to.have.length(2)
     })
   })
@@ -129,12 +119,12 @@ describe('Context API', () => {
     it('call chaining', () => {
       expect(app.plugin(noop)).to.equal(app)
 
-      const ctx = app.select('userId', '123')
+      const ctx = app.user('123')
       expect(ctx.plugin(noop)).to.equal(ctx)
     })
 
     it('apply functional plugin', () => {
-      const callback = fn()
+      const callback = jest.fn()
       const options = { foo: 'bar' }
       app.plugin(callback, options)
 
@@ -143,7 +133,7 @@ describe('Context API', () => {
     })
 
     it('apply object plugin', () => {
-      const callback = fn()
+      const callback = jest.fn()
       const options = { bar: 'foo' }
       const plugin = { apply: callback }
       app.plugin(plugin, options)
@@ -153,14 +143,14 @@ describe('Context API', () => {
     })
 
     it('apply functional plugin with false', () => {
-      const callback = fn()
+      const callback = jest.fn()
       app.plugin(callback, false)
 
       expect(callback.mock.calls).to.have.length(0)
     })
 
     it('apply object plugin with true', () => {
-      const callback = fn()
+      const callback = jest.fn()
       const plugin = { apply: callback }
       app.plugin(plugin, true)
 

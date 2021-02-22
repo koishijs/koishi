@@ -27,7 +27,7 @@
     "test:html": "rimraf coverage && c8 -r html yarn test",
     "test:text": "c8 -r text yarn test",
     "lint": "eslint packages/*/src/**/*.ts --fix --cache",
-    "pub": "yarn build & node -r ./build/register build/publish",
+    "pub": "yarn build && node -r ./build/register build/publish",
     "webui": "yarn workspace koishi-plugin-webui",
     "shiki": "yarn workspace bot-shiki",
     "utsuho": "yarn workspace bot-utsuho"
