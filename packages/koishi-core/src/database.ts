@@ -115,7 +115,9 @@ export function extendDatabase<T extends {}>(module: string | T, extension: Data
   let Database: any
   try {
     Database = typeof module === 'string' ? require(module).default : module
-  } catch (error) {}
+  } catch (error) {
+    return
+  }
 
   if (typeof extension === 'function') {
     extension(Database)

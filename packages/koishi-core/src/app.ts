@@ -5,6 +5,7 @@ import { BotOptions, Adapter, createBots } from './adapter'
 import { Channel, User } from './database'
 import { Command } from './command'
 import { Session } from './session'
+import { inspect } from 'util'
 import help, { getCommands } from './help'
 import validate from './validate'
 import LruCache from 'lru-cache'
@@ -134,6 +135,10 @@ export class App extends Context {
 
     this.plugin(validate)
     this.plugin(help)
+  }
+
+  [inspect.custom]() {
+    return `App {}`
   }
 
   createServer() {
