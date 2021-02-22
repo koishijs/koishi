@@ -10,17 +10,19 @@ describe('Logger API', () => {
   const { colors } = Logger.options
 
   before(() => {
+    Logger.showDiff = true
     Logger.options.colors = false
     clock = install({ now: Date.now() })
   })
 
   after(() => {
+    Logger.showDiff = false
     Logger.options.colors = colors
     clock.uninstall()
   })
 
   it('basic support', () => {
-    logger = new Logger('test').extend('logger', true)
+    logger = new Logger('test').extend('logger')
     expect(logger.name).to.equal('test:logger')
     logger.stream = new Writable({
       write(chunk, encoding, callback) {
@@ -34,7 +36,7 @@ describe('Logger API', () => {
     const error = new Error('message')
     error.stack = null
     logger.error(error)
-    expect(data).to.equal('[E] test:logger message\n')
+    expect(data).to.equal('[E] test:logger message +0ms\n')
   })
 
   it('format object', () => {

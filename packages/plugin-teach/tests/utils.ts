@@ -3,7 +3,7 @@ import { defineProperty, Observed, clone, intersection } from 'koishi-utils'
 import { Dialogue, DialogueTest, equal } from 'koishi-plugin-teach'
 import MemoryDatabase from 'koishi-test-utils'
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
     'dialogue/memory'(dialogue: Dialogue, test: DialogueTest): boolean | void
   }
@@ -13,7 +13,7 @@ extendDatabase(MemoryDatabase, {
   async getDialoguesById(ids) {
     if (!ids.length) return []
     const table = this.$table('dialogue')
-    const dialogues = table.filter(row => ids.includes(row.id)).map(clone)
+    const dialogues = table.filter(row => ids.includes(row.id)).map<Dialogue>(clone)
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
     return dialogues
   },
@@ -21,7 +21,7 @@ extendDatabase(MemoryDatabase, {
   async getDialoguesByTest(test: DialogueTest) {
     const dialogues = this.$table('dialogue').filter((dialogue) => {
       return !this.app.bail('dialogue/memory', dialogue, test)
-    }).map(clone)
+    }).map<Dialogue>(clone)
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
     return dialogues.filter((data) => {
       if (!test.groups || test.partial) return true

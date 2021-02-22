@@ -1,6 +1,6 @@
 import { App } from 'koishi-test-utils'
 import { Random, Time } from 'koishi-utils'
-import { fn, spyOn } from 'jest-mock'
+import jest from 'jest-mock'
 import { install, InstalledClock } from '@sinonjs/fake-timers'
 import { expect } from 'chai'
 import * as teach from 'koishi-plugin-teach'
@@ -126,7 +126,7 @@ describe('Teach Plugin', () => {
     const { u3g1 } = createEnvironment({})
 
     let clock: InstalledClock
-    const randomReal = spyOn(Random, 'real')
+    const randomReal = jest.spyOn(Random, 'real')
 
     before(() => {
       clock = install({ shouldAdvanceTime: true, advanceTimeDelta: 5 })
@@ -261,7 +261,7 @@ describe('Teach Plugin', () => {
 
       // 实在找不到名字就只显示未知用户
       await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：未知用户')
-      const getGroupMemberMap = app.bots[0].getGroupMemberMap = fn()
+      const getGroupMemberMap = app.bots[0].getGroupMemberMap = jest.fn()
       getGroupMemberMap.mockReturnValue(Promise.resolve({ 200: 'mock2' }))
       await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：mock2')
       getGroupMemberMap.mockRestore()
@@ -317,7 +317,7 @@ describe('Teach Plugin', () => {
   })
 
   describe('Image (Client)', () => {
-    const axiosGet = spyOn(axios, 'get')
+    const axiosGet = jest.spyOn(axios, 'get')
     const uploadKey = Random.uuid()
     const imageServer = 'https://127.0.0.1/image'
     const uploadServer = 'https://127.0.0.1/upload'

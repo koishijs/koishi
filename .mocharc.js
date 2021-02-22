@@ -3,7 +3,7 @@ module.exports = {
   extension: ['ts'],
   spec: [
     // 'packages/koishi-core/tests/*.spec.ts',
-    // 'packages/koishi-utils/tests/*.spec.ts',
+    'packages/koishi-utils/tests/*.spec.ts',
     // 'packages/koishi-test-utils/tests/*.spec.ts',
     // 'packages/plugin-common/tests/admin.spec.ts',
     // 'packages/plugin-common/tests/handler.spec.ts',
@@ -13,8 +13,7 @@ module.exports = {
     'packages/plugin-teach/tests/*.spec.ts',
   ],
   require: [
-    'ts-node/register/transpile-only',
+    __dirname + '/build/register',
     'tsconfig-paths/register',
-    'build/setup-test',
   ],
 }

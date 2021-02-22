@@ -1,4 +1,4 @@
-import { Session, Argv, App } from 'koishi-core'
+import { Session, App } from 'koishi-core'
 import { difference, observe, isInteger, defineProperty, Observed } from 'koishi-utils'
 import { RegExpValidator } from 'regexpp'
 
