@@ -1,5 +1,5 @@
 import { App } from 'koishi-test-utils'
-import { Session } from 'koishi-core'
+import { Session, Context } from 'koishi-core'
 import { noop } from 'koishi-utils'
 import { expect } from 'chai'
 import jest from 'jest-mock'
@@ -61,56 +61,58 @@ describe('Context API', () => {
     })
   })
 
-  describe('Composition Runtime', () => {
+  describe('Hook API', () => {
+    const event = 'attach'
+
     beforeEach(() => {
-      delete app._hooks.attach
+      delete app._hooks[event]
     })
 
-    it('ctx.prototype.parallel', async () => {
-      await app.parallel('attach', null)
+    it('context.prototype.parallel', async () => {
+      await app.parallel(event, null)
       const callback = jest.fn<void, []>()
-      app.private().on('attach', callback)
-      await app.parallel('attach', null)
+      app.private().on(event, callback)
+      await app.parallel(event, null)
       expect(callback.mock.calls).to.have.length(1)
-      await app.parallel(groupSession, 'attach', null)
+      await app.parallel(groupSession, event, null)
       expect(callback.mock.calls).to.have.length(1)
-      await app.parallel(privateSession, 'attach', null)
+      await app.parallel(privateSession, event, null)
       expect(callback.mock.calls).to.have.length(2)
     })
 
-    it('ctx.prototype.emit', async () => {
-      app.emit('attach', null)
+    it('context.prototype.emit', async () => {
+      app.emit(event, null)
       const callback = jest.fn<void, []>()
-      app.private().on('attach', callback)
-      app.emit('attach', null)
+      app.private().on(event, callback)
+      app.emit(event, null)
       expect(callback.mock.calls).to.have.length(1)
-      app.emit(groupSession, 'attach', null)
+      app.emit(groupSession, event, null)
       expect(callback.mock.calls).to.have.length(1)
-      app.emit(privateSession, 'attach', null)
+      app.emit(privateSession, event, null)
       expect(callback.mock.calls).to.have.length(2)
     })
 
-    it('ctx.prototype.serial', async () => {
-      app.serial('attach', null)
+    it('context.prototype.serial', async () => {
+      app.serial(event, null)
       const callback = jest.fn<void, []>()
-      app.private().on('attach', callback)
-      app.serial('attach', null)
+      app.private().on(event, callback)
+      app.serial(event, null)
       expect(callback.mock.calls).to.have.length(1)
-      app.serial(groupSession, 'attach', null)
+      app.serial(groupSession, event, null)
       expect(callback.mock.calls).to.have.length(1)
-      app.serial(privateSession, 'attach', null)
+      app.serial(privateSession, event, null)
       expect(callback.mock.calls).to.have.length(2)
     })
 
-    it('ctx.prototype.bail', async () => {
-      app.bail('attach', null)
+    it('context.prototype.bail', async () => {
+      app.bail(event, null)
       const callback = jest.fn<void, []>()
-      app.private().on('attach', callback)
-      app.bail('attach', null)
+      app.private().on(event, callback)
+      app.bail(event, null)
       expect(callback.mock.calls).to.have.length(1)
-      app.bail(groupSession, 'attach', null)
+      app.bail(groupSession, event, null)
       expect(callback.mock.calls).to.have.length(1)
-      app.bail(privateSession, 'attach', null)
+      app.bail(privateSession, event, null)
       expect(callback.mock.calls).to.have.length(2)
     })
   })
@@ -162,6 +164,42 @@ describe('Context API', () => {
       expect(() => app.plugin(undefined)).to.throw()
       expect(() => app.plugin({} as any)).to.throw()
       expect(() => app.plugin({ apply: {} } as any)).to.throw()
+    })
+  })
+
+  describe('Disposable API', () => {
+    it('context.prototype.dispose', () => {
+      const callback = jest.fn()
+      let pluginCtx: Context
+      app.on('attach', callback)
+      app.plugin((ctx) => {
+        pluginCtx = ctx
+        ctx.on('attach', callback)
+        ctx.plugin((ctx) => {
+          ctx.on('attach', callback)
+        })
+      })
+
+      // 3 handlers now
+      expect(callback.mock.calls).to.have.length(0)
+      app.emit('attach', null)
+      expect(callback.mock.calls).to.have.length(3)
+
+      // only 1 handler left
+      pluginCtx.dispose()
+      app.emit('attach', null)
+      expect(callback.mock.calls).to.have.length(4)
+    })
+
+    it('dispose event', () => {
+      const callback = jest.fn()
+      app.on('dispose', callback)
+      expect(callback.mock.calls).to.have.length(0)
+      app.dispose()
+      expect(callback.mock.calls).to.have.length(1)
+      // callback should only be called once
+      app.dispose()
+      expect(callback.mock.calls).to.have.length(1)
     })
   })
 })
