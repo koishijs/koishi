@@ -1,7 +1,8 @@
-import { App, BotOptions, Context, Plugin, version } from 'koishi-core'
+import { App, BotOptions, version } from 'koishi-core'
 import { resolve, dirname } from 'path'
 import { Logger, noop } from 'koishi-utils'
 import { performance } from 'perf_hooks'
+import { watch } from 'chokidar'
 import { yellow } from 'kleur'
 import { AppConfig } from '..'
 
@@ -45,12 +46,7 @@ if (!config) {
   throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
 }
 
-const cacheMap: Record<string, any> = {}
-
 function loadEcosystem(type: string, name: string) {
-  const cache = cacheMap[name]
-  if (cache) return cache
-
   const prefix = `koishi-${type}-`
   const modules: string[] = []
   if ('./'.includes(name[0])) {
@@ -73,7 +69,7 @@ function loadEcosystem(type: string, name: string) {
     try {
       const result = require(path)
       logger.info('apply %s %c', type, result.name || name)
-      return cacheMap[name] = result
+      return [path, result]
     } catch (error) {
       if (isErrorModule(error)) {
         throw error
@@ -134,16 +130,14 @@ app.command('exit', '停止机器人运行', { authority: 4 })
   })
 
 // load plugins
-const pluginEntries = Array.isArray(config.plugins)
-  ? config.plugins
+const pluginMap = new Map<string, [name: string, options: any]>()
+const pluginEntries: [string, any?][] = Array.isArray(config.plugins)
+  ? config.plugins.map(item => Array.isArray(item) ? item : [item])
   : Object.entries(config.plugins || {})
-for (const item of pluginEntries) {
-  let plugin: Plugin<Context>, options: any
-  if (Array.isArray(item)) {
-    plugin = typeof item[0] === 'string' ? loadEcosystem('plugin', item[0]) : item[0]
-    options = item[1]
-  } else {
-    plugin = loadEcosystem('plugin', item)
+for (const [name, options] of pluginEntries) {
+  const [path, plugin] = loadEcosystem('plugin', name)
+  if (plugin.disposable) {
+    pluginMap.set(require.resolve(path), [name, options])
   }
   app.plugin(plugin, options)
 }
@@ -165,4 +159,63 @@ app.start().then(() => {
   Logger.showDiff = true
 
   process.send({ type: 'start' })
+  createWatcher()
 }, handleException)
+
+interface MapOrSet<T> {
+  has(value: T): boolean
+}
+
+function loadDependencies(filename: string, ignored: MapOrSet<string>) {
+  const dependencies = new Set<string>()
+  function loadModule({ filename, children }: NodeModule) {
+    if (ignored.has(filename) || dependencies.has(filename)) return
+    dependencies.add(filename)
+    children.forEach(loadModule)
+  }
+  loadModule(require.cache[filename])
+  return dependencies
+}
+
+function createWatcher() {
+  const watchRoot = process.env.KOISHI_WATCH_ROOT ?? config.root
+  if (watchRoot === undefined) return
+
+  const { ignored = [] } = config.watch || {}
+  const externals = loadDependencies(__filename, pluginMap)
+  const watcher = watch(resolve(process.cwd(), watchRoot), {
+    ...config.watch,
+    ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
+  })
+
+  watcher.on('change', (path) => {
+    if (!require.cache[path] || externals.has(path)) return
+    logger.debug('change detected:', path)
+
+    /** files that should be reloaded */
+    const accepted = new Set<string>()
+    /** files that should not be reloaded */
+    const declined = new Set([...externals, loadDependencies(path, externals)])
+    declined.delete(path)
+
+    const plugins: string[] = []
+    for (const [filename] of pluginMap) {
+      const dependencies = loadDependencies(filename, declined)
+      if (dependencies.has(path)) {
+        dependencies.forEach(dep => accepted.add(dep))
+
+        // dispose installed plugin
+        plugins.push(filename)
+        app.dispose(require(filename))
+      }
+    }
+
+    accepted.forEach(dep => delete require.cache[dep])
+    for (const filename of plugins) {
+      const plugin = require(filename)
+      const [name, options] = pluginMap.get(filename)
+      app.plugin(plugin, options)
+      logger.info('reload plugin %c', plugin.name || name)
+    }
+  })
+}

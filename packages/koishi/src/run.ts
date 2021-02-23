@@ -64,6 +64,7 @@ export default function (cli: CAC) {
     .alias('run')
     .option('--debug [namespace]', 'specify debug namespace')
     .option('--level [level]', 'specify log level (default: 2)')
+    .option('--watch [path]', 'watch and reload at change')
     .action((file, options) => {
       const { level } = options
       if (level !== undefined && (!isInteger(level) || level < 0)) {
@@ -73,6 +74,11 @@ export default function (cli: CAC) {
       process.env.KOISHI_LOG_LEVEL = level || ''
       process.env.KOISHI_DEBUG = options.debug || ''
       process.env.KOISHI_CONFIG_FILE = file || ''
+      if (options.watch === true) {
+        process.env.KOISHI_WATCH_ROOT = ''
+      } else if (options.watch) {
+        process.env.KOISHI_WATCH_ROOT = options.watch
+      }
       createWorker(options)
     })
 }

@@ -1,4 +1,5 @@
 import { AppOptions } from 'koishi-core'
+import { WatchOptions } from 'chokidar'
 
 export * from 'koishi-core'
 
@@ -9,4 +10,6 @@ export interface AppConfig extends AppOptions {
   logLevel?: number
   logFilter?: Record<string, number>
   logTime?: string | boolean
+  root?: string
+  watch?: WatchOptions
 }
