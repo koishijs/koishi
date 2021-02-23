@@ -35,7 +35,7 @@
     "@types/mysql": "^2.15.17"
   },
   "peerDependencies": {
-    "koishi-core": "^3.0.0-beta.12",
+    "koishi-core": "^3.0.0-beta.13",
     "koishi-utils": "^3.2.6"
   },
   "dependencies": {
