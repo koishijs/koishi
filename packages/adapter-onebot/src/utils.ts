@@ -1,6 +1,6 @@
 import { CQBot } from './bot'
 import { Adapter, Session } from 'koishi-core'
-import { Logger, camelCase, renameProperty, paramCase } from 'koishi-utils'
+import { Logger, camelCase, renameProperty, paramCase, segment } from 'koishi-utils'
 import * as Koishi from 'koishi-core'
 import * as OneBot from './types'
 
@@ -28,10 +28,22 @@ export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.Anonymou
   anonymous: anonymous?.flag,
 })
 
+function adaptContent(content: string) {
+  return segment.parse(content).reduce((prev, { type, data }) => {
+    if (type === 'at') {
+      if (data.qq === 'all') return prev + '[CQ:at,type=all]'
+      return prev + `[CQ:at,id=${data.qq}]`
+    } else if (type === 'reply') {
+      type = 'quote'
+    }
+    return prev + segment(type, data)
+  }, '')
+}
+
 export const adaptMessage = (message: OneBot.Message): Koishi.MessageInfo => ({
   messageId: message.messageId.toString(),
   timestamp: message.time * 1000,
-  content: message.message,
+  content: adaptContent(message.message),
   author: adaptAuthor(message.sender, message.anonymous),
 })
 
