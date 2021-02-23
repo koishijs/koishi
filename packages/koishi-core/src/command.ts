@@ -232,7 +232,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   dispose() {
-    for (const cmd of this.children) {
+    for (const cmd of this.children.slice()) {
       cmd.dispose()
     }
     this.app._shortcuts = this.app._shortcuts.filter(s => s.command !== this)

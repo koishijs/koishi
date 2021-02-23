@@ -5,17 +5,23 @@ import { User, Channel, Database } from './database'
 import { Argv, Domain } from './parser'
 import { Platform, Bot } from './adapter'
 import { App } from './app'
+import { inspect } from 'util'
 import type Router from 'koa-router'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
 export type PluginFunction<T = any> = (ctx: Context, options: T) => void
-export type PluginObject<T = any> = { name?: string, apply: PluginFunction<T> }
 export type Plugin<T = any> = PluginFunction<T> | PluginObject<T>
 export type Promisify<T> = T extends Promise<unknown> ? T : Promise<T>
 export type Awaitable<T> = T extends Promise<unknown> ? T : T | Promise<T>
 export type Await<T> = T extends Promise<infer U> ? U : T
 export type Disposable = () => void
+
+export interface PluginObject<T = any> {
+  name?: string
+  disposable?: boolean
+  apply: PluginFunction<T>
+}
 
 type PluginConfig<T extends Plugin> = T extends PluginFunction<infer U> ? U : T extends PluginObject<infer U> ? U : never
 
@@ -37,7 +43,7 @@ export class Context {
   protected _router: Router
   protected _database: Database
 
-  private _disposables: Disposable[]
+  private _plugin: Plugin = null
 
   public user = this.createSelector('userId')
   public self = this.createSelector('selfId')
@@ -45,8 +51,10 @@ export class Context {
   public channel = this.createSelector('channelId')
   public platform = this.createSelector('platform')
 
-  constructor(public filter: Filter, public app?: App) {
-    defineProperty(this, '_disposables', [])
+  constructor(public filter: Filter, public app?: App) {}
+
+  [inspect.custom]() {
+    return `Context {}`
   }
 
   private createSelector<K extends keyof Session>(key: K) {
@@ -78,6 +86,10 @@ export class Context {
     this.app._database = database
   }
 
+  private get _disposables() {
+    return this.app._plugins.get(this._plugin)
+  }
+
   logger(name: string) {
     return new Logger(name)
   }
@@ -96,12 +108,16 @@ export class Context {
 
   union(arg: Filter | Context) {
     const filter = typeof arg === 'function' ? arg : arg.filter
-    return new Context(s => this.filter(s) || filter(s), this.app)
+    const ctx = new Context(s => this.filter(s) || filter(s), this.app)
+    ctx._plugin = this._plugin
+    return ctx
   }
 
   intersect(arg: Filter | Context) {
     const filter = typeof arg === 'function' ? arg : arg.filter
-    return new Context(s => this.filter(s) && filter(s), this.app)
+    const ctx = new Context(s => this.filter(s) && filter(s), this.app)
+    ctx._plugin = this._plugin
+    return ctx
   }
 
   match(session?: Session) {
@@ -109,10 +125,16 @@ export class Context {
   }
 
   plugin<T extends Plugin>(plugin: T, options?: PluginConfig<T>) {
-    if (options === false) return
+    if (this.app._plugins.has(plugin)) {
+      this.logger('app').warn('duplicate plugin detected')
+      return this
+    }
+
+    if (options === false) return this
     if (options === true) options = undefined
     const ctx: this = Object.create(this)
-    defineProperty(ctx, '_disposables', [])
+    defineProperty(ctx, '_plugin', plugin)
+    this.app._plugins.set(plugin, [])
     if (typeof plugin === 'function') {
       (plugin as PluginFunction<this>)(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
@@ -122,6 +144,15 @@ export class Context {
     }
     this._disposables.push(() => ctx.dispose())
     return this
+  }
+
+  dispose(plugin = this._plugin) {
+    this.app._plugins.get(plugin)?.forEach(dispose => dispose())
+    if (plugin) {
+      this.app._plugins.delete(plugin)
+    } else {
+      throw new Error('cannot use ctx.dispose() outside a plugin')
+    }
   }
 
   async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<Await<ReturnType<EventMap[K]>>[]>
@@ -326,11 +357,6 @@ export class Context {
         return bot.broadcast(map[bot.selfId] || [], content)
       })
     }))).flat(1)
-  }
-
-  dispose() {
-    this._disposables.forEach(dispose => dispose())
-    this._disposables = []
   }
 }
 

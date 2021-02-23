@@ -5,6 +5,7 @@ import { cyan, yellow, red } from 'kleur'
 
 const ignored = [
   'This call to "require" will not be bundled because the argument is not a string literal',
+  'Indirect calls to "require" will not be bundled',
 ]
 
 function display(prefix: string) {

@@ -1,11 +1,10 @@
 import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop, template, merge } from 'koishi-utils'
-import { Context, Middleware, NextFunction } from './context'
+import { Context, Middleware, NextFunction, Plugin, Disposable } from './context'
 import { Argv } from './parser'
 import { BotOptions, Adapter, createBots } from './adapter'
 import { Channel, User } from './database'
 import { Command } from './command'
 import { Session } from './session'
-import { inspect } from 'util'
 import help, { getCommands } from './help'
 import validate from './validate'
 import LruCache from 'lru-cache'
@@ -51,14 +50,15 @@ export class App extends Context {
   public adapters: Adapter.Instances = {}
 
   _bots = createBots('sid')
-  _commands: Command[]
-  _commandMap: Record<string, Command>
-  _shortcuts: Command.Shortcut[]
-  _hooks: Record<keyof any, [Context, (...args: any[]) => any][]>
+  _commands: Command[] = []
+  _commandMap: Record<string, Command> = {}
+  _shortcuts: Command.Shortcut[] = []
+  _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
   _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
   _groupCache: LruCache<string, Observed<Partial<Channel>, Promise<void>>>
   _httpServer?: http.Server
-  _sessions: Record<string, Session>
+  _sessions: Record<string, Session> = {}
+  _plugins = new Map<Plugin, Disposable[]>()
 
   private _nameRE: RegExp
   private _prefixRE: RegExp
@@ -86,12 +86,7 @@ export class App extends Context {
     if (!options.bots) options.bots = [options]
     this.options = merge(options, App.defaultConfig)
 
-    defineProperty(this, '_hooks', {})
-    defineProperty(this, '_commands', [])
-    defineProperty(this, '_commandMap', {})
-    defineProperty(this, '_shortcuts', [])
-    defineProperty(this, '_shortcutMap', {})
-    defineProperty(this, '_sessions', {})
+    this._plugins.set(null, [])
     defineProperty(this, '_userCache', {})
     defineProperty(this, '_groupCache', new LruCache({
       max: options.groupCacheLength,
@@ -135,10 +130,6 @@ export class App extends Context {
 
     this.plugin(validate)
     this.plugin(help)
-  }
-
-  [inspect.custom]() {
-    return `App {}`
   }
 
   createServer() {

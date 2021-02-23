@@ -2,6 +2,10 @@ import { install } from 'source-map-support'
 import { transformSync, Message } from 'esbuild'
 import { readFileSync } from 'fs'
 
+if (process.env.TS_NODE_PROJECT) {
+  require('tsconfig-paths/register')
+}
+
 const ignored = [
   'Indirect calls to "require" will not be bundled (surround with a try/catch to silence this warning)',
 ]

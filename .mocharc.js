@@ -17,6 +17,7 @@ for (const name of readdirSync(__dirname + '/packages')) {
 function getSpecFromArgv() {
   if (!process.env.npm_config_argv) return
   const { original } = JSON.parse(process.env.npm_config_argv)
+  if (original.length === 1) return
   process.argv.splice(1 - original.length, Infinity)
   return original.slice(1).map((path) => {
     const [name] = path.split('/')
@@ -45,6 +46,5 @@ module.exports = {
     'build/setup-test',
   ] : [
     __dirname + '/build/register',
-    'tsconfig-paths/register',
   ],
 }
