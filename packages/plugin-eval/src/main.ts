@@ -152,7 +152,9 @@ export class MainAPI {
   }
 }
 
-export const workerScript = `require(${JSON.stringify(resolve(__dirname, 'worker.js'))});`
+function createRequire(filename: string) {
+  return `require(${JSON.stringify(filename)});\n`
+}
 
 export class EvalWorker {
   static restart = true
@@ -169,6 +171,15 @@ export class EvalWorker {
 
   async start() {
     await this.app.parallel('worker/start')
+
+    let index = 0
+    let workerScript = createRequire(resolve(__dirname, 'worker'))
+    while (index < process.execArgv.length) {
+      const arg = process.execArgv[index++]
+      if (arg === '-r' || arg === '--require') {
+        workerScript = createRequire(process.execArgv[index++]) + workerScript
+      }
+    }
 
     this.worker = new Worker(workerScript, {
       eval: true,

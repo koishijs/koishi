@@ -62,7 +62,7 @@ const KOISHI_VERSION = JSON.stringify(version)
       entryPoints.splice(0, 1, base + '/server/index.ts')
     }
 
-    let filter = /^[/\w-]+$/
+    let filter = /^[@/\w-]+$/
     const options: BuildOptions = {
       entryPoints,
       bundle: true,

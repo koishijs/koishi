@@ -2,12 +2,6 @@ import { App } from 'koishi-test-utils'
 import { resolve } from 'path'
 import * as pluginEval from 'koishi-plugin-eval'
 
-require('koishi-plugin-eval/src/main').workerScript = [
-  'require("ts-node/register/transpile-only");',
-  'require("tsconfig-paths/register");',
-  `require(${JSON.stringify(resolve(__dirname, '../src/worker.ts'))})`,
-].join('\n')
-
 const app = new App()
 
 app.plugin(pluginEval, {

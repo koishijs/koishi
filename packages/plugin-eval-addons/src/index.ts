@@ -42,7 +42,7 @@ export function apply(ctx: Context, config: Config) {
   const root = resolve(process.cwd(), assertProperty(worker.config, 'moduleRoot'))
   worker.config.moduleRoot = root
   worker.config.dataKeys.push('addonNames', 'moduleRoot')
-  worker.config.setupFiles['koishi/addons.ts'] = resolve(__dirname, 'worker.js')
+  worker.config.setupFiles['koishi/addons.ts'] = resolve(__dirname, 'worker')
 
   const git = Git(root)
 
