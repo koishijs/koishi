@@ -12,6 +12,7 @@ export interface Config extends HandlerOptions, RepeaterOptions, SenderConfig {
 }
 
 export const name = 'common'
+export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   ctx.command('common', '基础功能')

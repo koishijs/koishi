@@ -1,5 +1,5 @@
 import { isInteger, difference, observe, Time, enumKeys, Random, template } from 'koishi-utils'
-import { Context, User, Channel, Command, Argv, Platform, Session } from 'koishi-core'
+import { Context, User, Channel, Command, Argv, Platform } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
   = (argv: Argv<U | 'authority', G, A, O> & { target: T }, ...args: A)
