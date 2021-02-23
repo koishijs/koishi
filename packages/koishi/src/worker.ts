@@ -1,6 +1,6 @@
 import { App, BotOptions, version } from 'koishi-core'
 import { resolve, dirname } from 'path'
-import { Logger, noop } from 'koishi-utils'
+import { coerce, Logger, noop } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { watch } from 'chokidar'
 import { yellow } from 'kleur'
@@ -178,10 +178,10 @@ function loadDependencies(filename: string, ignored: MapOrSet<string>) {
 }
 
 function createWatcher() {
-  const watchRoot = process.env.KOISHI_WATCH_ROOT ?? config.root
-  if (watchRoot === undefined) return
+  if (process.env.KOISHI_WATCH_ROOT === undefined && !config.watch) return
 
-  const { ignored = [] } = config.watch || {}
+  const { root = '', ignored = [] } = config.watch || {}
+  const watchRoot = process.env.KOISHI_WATCH_ROOT ?? root
   const externals = loadDependencies(__filename, pluginMap)
   const watcher = watch(resolve(process.cwd(), watchRoot), {
     ...config.watch,
@@ -214,8 +214,14 @@ function createWatcher() {
     for (const filename of plugins) {
       const plugin = require(filename)
       const [name, options] = pluginMap.get(filename)
-      app.plugin(plugin, options)
-      logger.info('reload plugin %c', plugin.name || name)
+      const displayName = plugin.name || name
+      Logger.clearScreen()
+      try {
+        app.plugin(plugin, options)
+        logger.info('reload plugin %c', displayName)
+      } catch (err) {
+        logger.warn('failed to reload plugin %c\n' + coerce(err), displayName)
+      }
     }
   })
 }

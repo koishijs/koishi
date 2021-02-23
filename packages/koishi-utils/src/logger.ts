@@ -1,4 +1,5 @@
 import { inspect, InspectOptions, format } from 'util'
+import { clearScreenDown, cursorTo } from 'readline'
 import { stderr } from 'supports-color'
 import { Time } from './time'
 
@@ -30,6 +31,7 @@ export class Logger {
   static showTime = ''
   static levels: Record<string, number> = {}
   static timestamp = 0
+  static stream: NodeJS.WriteStream = process.stderr
 
   static options: InspectOptions = {
     colors: stderr.hasBasic,
@@ -46,10 +48,15 @@ export class Logger {
     return `\u001B[3${code < 8 ? code : '8;5;' + code}${decoration}m${value}\u001B[0m`
   }
 
+  static clearScreen() {
+    const blank = '\n'.repeat(Math.max(Logger.stream.rows - 2, 0))
+    console.log(blank)
+    cursorTo(Logger.stream, 0, 0)
+    clearScreenDown(Logger.stream)
+  }
+
   private code: number
   private displayName: string
-
-  public stream: NodeJS.WritableStream = process.stderr
 
   constructor(public name: string) {
     if (name in instances) return instances[name]
@@ -88,7 +95,7 @@ export class Logger {
         output += this.color(' +' + Time.formatTimeShort(diff))
         Logger.timestamp = now
       }
-      this.stream.write(output + '\n')
+      Logger.stream.write(output + '\n')
     }
   }
 
