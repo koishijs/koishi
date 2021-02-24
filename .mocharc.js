@@ -31,6 +31,7 @@ module.exports = {
   spec: getSpecFromArgv() || [
     // 'packages/koishi-core/tests/*.spec.ts',
     'packages/koishi-core/tests/context.spec.ts',
+    'packages/koishi-core/tests/session.spec.ts',
     'packages/koishi-utils/tests/*.spec.ts',
     // 'packages/koishi-test-utils/tests/*.spec.ts',
     // 'packages/plugin-common/tests/admin.spec.ts',

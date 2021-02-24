@@ -566,8 +566,10 @@ export namespace Phase {
       })
 
     ctx.on('connect', async () => {
+      const endings = Object.keys(endingCount)
+      if (!endings.length) return
       let sql = 'SELECT'
-      for (const id in endingCount) {
+      for (const id of endings) {
         sql += ` find_ending('${id}') AS '${id}',`
       }
       const [data] = await ctx.database.query<[Record<string, number>]>(sql.slice(0, -1))

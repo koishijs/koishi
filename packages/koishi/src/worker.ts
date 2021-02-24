@@ -230,7 +230,6 @@ function createWatcher() {
       const plugin = require(filename)
       const [name, options] = pluginMap.get(filename)
       const displayName = plugin.name || name
-      Logger.clearScreen()
       try {
         app.plugin(plugin, options)
         logger.info('reload plugin %c', displayName)
