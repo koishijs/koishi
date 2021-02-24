@@ -8,14 +8,6 @@ import { AppConfig } from '..'
 
 const logger = new Logger('app')
 
-if (process.env.KOISHI_LOG_LEVEL) {
-  Logger.baseLevel = +process.env.KOISHI_LOG_LEVEL
-}
-
-if (process.env.KOISHI_DEBUG) {
-  Logger.levels = Object.fromEntries(process.env.KOISHI_DEBUG.split(',').map(name => [name, 3]))
-}
-
 function handleException(error: any) {
   logger.error(error)
   process.exit(1)
@@ -79,13 +71,26 @@ function loadEcosystem(type: string, name: string) {
   throw new Error(`cannot resolve ${type} ${name}`)
 }
 
-Object.assign(Logger.levels, config.logFilter)
-if (config.logLevel && !process.env.KOISHI_LOG_LEVEL) {
-  Logger.baseLevel = config.logLevel
+// configurate logger levels
+if (typeof config.logLevel === 'object') {
+  Object.assign(Logger.levels, config.logLevel)
+} else if (typeof config.logLevel === 'number') {
+  Logger.levels.base = config.logLevel
 }
 
 if (config.logTime === true) config.logTime = 'YYYY/MM/DD hh:mm:ss'
 if (config.logTime) Logger.showTime = config.logTime
+
+// cli options have higher precedence
+if (process.env.KOISHI_LOG_LEVEL) {
+  Logger.levels.base = +process.env.KOISHI_LOG_LEVEL
+}
+
+if (process.env.KOISHI_DEBUG) {
+  for (const name of process.env.KOISHI_DEBUG.split(',')) {
+    new Logger(name).level = Logger.DEBUG
+  }
+}
 
 interface Message {
   type: 'send'
