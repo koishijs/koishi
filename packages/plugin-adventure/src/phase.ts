@@ -477,7 +477,7 @@ export namespace Phase {
         return start(session)
       })
 
-    ctx.command('adventure/skip [-- command...]', '跳过剧情')
+    ctx.command('adventure/skip [-- command:text]', '跳过剧情')
       .shortcut('跳过剧情')
       .shortcut('跳过当前剧情')
       .userFields(['phases', 'progress'])

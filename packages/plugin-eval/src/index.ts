@@ -56,7 +56,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const userAccess = resolveAccess(config.userFields)
   const groupAccess = resolveAccess(config.channelFields)
 
-  const command = ctx.command('evaluate [expr...]', '执行 JavaScript 脚本', { noEval: true })
+  const command = ctx.command('evaluate [expr:text]', '执行 JavaScript 脚本', { noEval: true })
     .alias('eval')
     .userFields(['authority'])
     .option('slient', '-s  不输出最后的结果')
