@@ -28,7 +28,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.0.0-beta.13"
+    "koishi-core": "^3.0.0-beta.14"
   },
   "devDependencies": {
     "koishi-test-utils": "^6.0.0-beta.4"
@@ -36,6 +36,6 @@
   "dependencies": {
     "axios": "^0.21.1",
     "form-data": "^3.0.0",
-    "koishi-utils": "^3.2.6"
+    "koishi-utils": "^4.0.0"
   }
 }

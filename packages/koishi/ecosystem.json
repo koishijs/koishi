@@ -1,6 +1,6 @@
 {
   "koishi-adapter-kaiheila": {
-    "version": "1.0.0-beta.7",
+    "version": "1.0.0-beta.8",
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-onebot": {
@@ -16,15 +16,15 @@
     "description": "Tomon adapter for Koishi"
   },
   "koishi-plugin-adventure": {
-    "version": "0.1.6",
-    "description": "COC / DND Tools for Koishi"
+    "version": "0.1.7",
+    "description": "Adventure Game for Koishi"
   },
   "koishi-plugin-chess": {
     "version": "3.0.0-beta.6",
     "description": "Chess Plugin for Koishi"
   },
   "koishi-plugin-common": {
-    "version": "4.0.0-beta.12",
+    "version": "4.0.0-beta.13",
     "description": "Common plugins for Koishi"
   },
   "koishi-plugin-dice": {
@@ -32,7 +32,7 @@
     "description": "COC / DND Tools for Koishi"
   },
   "koishi-plugin-eval": {
-    "version": "3.0.0-beta.6",
+    "version": "3.0.0-beta.7",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-eval-addons": {
@@ -75,7 +75,7 @@
     "description": "Show Status of Koishi"
   },
   "koishi-plugin-teach": {
-    "version": "2.0.0-beta.8",
+    "version": "2.0.0-beta.9",
     "description": "Teach plugin for Koishi"
   },
   "koishi-plugin-tools": {
