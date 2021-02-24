@@ -197,9 +197,9 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
   state.dialogues = [dialogue]
   state.answer = dialogue.answer
     .replace(/\$\$/g, '@@__PLACEHOLDER__@@')
-    .replace(/\$A/g, segment('at', { qq: 'all' }))
-    .replace(/\$a/g, segment('at', { qq: session.userId }))
-    .replace(/\$m/g, segment('at', { qq: session.selfId }))
+    .replace(/\$A/g, segment('at', { type: 'all' }))
+    .replace(/\$a/g, segment('at', { id: session.userId }))
+    .replace(/\$m/g, segment('at', { id: session.selfId }))
     .replace(/\$s/g, () => escapeAnswer(session.$username))
     .replace(/\$0/g, escapeAnswer(session.content))
 
