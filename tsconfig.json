@@ -16,6 +16,7 @@
     { "path": "./packages/adapter-tomon" },
     { "path": "./packages/adapter-kaiheila" },
     { "path": "./packages/adapter-telegram" },
+    { "path": "./packages/adapter-discord" },
 
     { "path": "./packages/plugin-common" },
     { "path": "./packages/plugin-mysql" },
