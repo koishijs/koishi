@@ -240,7 +240,7 @@ export namespace Domain {
         required: cap[0][0] === '<',
       })
     }
-    result.stripped = source.replace(/:[\w-]+[>\]]/g, str => str.slice(-1))
+    result.stripped = source.replace(/:[\w-]+[>\]]/g, str => str.slice(-1)).trimEnd()
     return result
   }
 

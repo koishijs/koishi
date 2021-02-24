@@ -191,21 +191,21 @@ describe('Context API', () => {
       expect(callback.mock.calls).to.have.length(4)
     })
 
-    it('root level dispose', () => {
+    it('root level dispose', async () => {
       // create a context without a plugin
       const ctx = app.platform.except()
-      expect(() => ctx.dispose()).to.throw()
+      await expect(ctx.dispose()).to.be.rejected
     })
 
     it('dispose event', () => {
-      const callback = jest.fn()
-      app.plugin((ctx) => {
+      const callback = jest.fn<void, []>()
+      app.plugin(async (ctx) => {
         ctx.on('dispose', callback)
         expect(callback.mock.calls).to.have.length(0)
-        ctx.dispose()
+        await ctx.dispose()
         expect(callback.mock.calls).to.have.length(1)
         // callback should only be called once
-        ctx.dispose()
+        await ctx.dispose()
         expect(callback.mock.calls).to.have.length(1)
       })
     })
