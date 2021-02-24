@@ -210,7 +210,7 @@ export namespace Domain {
   create('user', (source) => {
     if (source.startsWith('@')) return source.slice(1)
     const code = segment.from(source)
-    if (code && code.type === 'at') return code.data.qq
+    if (code && code.type === 'at') return code.data.id
     throw new Error()
   })
 

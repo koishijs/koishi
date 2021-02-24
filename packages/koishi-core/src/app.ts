@@ -201,7 +201,7 @@ export class App extends Context {
     }
 
     // strip prefix
-    if (session.subtype !== 'private' && (capture = content.match(pattern)) && capture[1] === 'at' && capture[2].includes('qq=' + session.selfId)) {
+    if (session.subtype !== 'private' && (capture = content.match(pattern)) && capture[1] === 'at' && capture[2].includes('id=' + session.selfId)) {
       atSelf = appel = true
       content = content.slice(capture[0].length).trimStart()
       // eslint-disable-next-line no-cond-assign

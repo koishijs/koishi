@@ -135,7 +135,7 @@ export class KaiheilaBot extends Bot {
       if (type === 'text') {
         return prev + data.content
       } else if (type === 'at') {
-        if (data.qq) return prev + `@user#${data.qq}`
+        if (data.id) return prev + `@user#${data.id}`
         if (data.type === 'all') return prev + '@全体成员'
         if (data.type === 'here') return prev + '@在线成员'
         if (data.role) return prev + `@role:${data.role};`
