@@ -14,7 +14,7 @@ const colors = stderr.level < 2 ? [6, 2, 3, 4, 5, 1] : [
 const instances: Record<string, Logger> = {}
 
 interface LogLevelConfig {
-  base?: number
+  base: number
   [K: string]: LogLevel
 }
 

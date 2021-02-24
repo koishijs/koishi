@@ -1,6 +1,6 @@
 import { App, BotOptions, version } from 'koishi-core'
 import { resolve, dirname } from 'path'
-import { coerce, Logger, noop } from 'koishi-utils'
+import { coerce, Logger, noop, LogLevelConfig } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { watch } from 'chokidar'
 import { yellow } from 'kleur'
@@ -71,9 +71,17 @@ function loadEcosystem(type: string, name: string) {
   throw new Error(`cannot resolve ${type} ${name}`)
 }
 
+function ensureBaseLevel(config: LogLevelConfig, base: number) {
+  config.base ??= base
+  Object.values(config).forEach((value) => {
+    if (typeof value !== 'object') return
+    ensureBaseLevel(value, config.base)
+  })
+}
+
 // configurate logger levels
 if (typeof config.logLevel === 'object') {
-  Object.assign(Logger.levels, config.logLevel)
+  Logger.levels = config.logLevel as any
 } else if (typeof config.logLevel === 'number') {
   Logger.levels.base = config.logLevel
 }
@@ -85,6 +93,8 @@ if (config.logTime) Logger.showTime = config.logTime
 if (process.env.KOISHI_LOG_LEVEL) {
   Logger.levels.base = +process.env.KOISHI_LOG_LEVEL
 }
+
+ensureBaseLevel(Logger.levels, 2)
 
 if (process.env.KOISHI_DEBUG) {
   for (const name of process.env.KOISHI_DEBUG.split(',')) {
