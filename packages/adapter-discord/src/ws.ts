@@ -28,7 +28,7 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
     bot._d = 0
     bot.ready = true
 
-    bot.socket.on('message', (data) => {
+    bot.socket.on('message', async (data) => {
       data = data.toString()
       let parsed: Payload
       try {
@@ -54,7 +54,7 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
       } else if (parsed.op === Opcode.HeartbeatACK) {
 
       } else if (parsed.op === Opcode.Dispatch) {
-        const session = adaptSession(bot, parsed)
+        const session = await adaptSession(bot, parsed)
         if (session) this.dispatch(session)
       }
     })

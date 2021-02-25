@@ -12,7 +12,7 @@ export const adaptAuthor = (author: DC.Author): AuthorInfo => ({
   nickname: author.username,
 })
 
-function adaptMessage(base: any, meta: DC.MessageCreateBody, session: MessageInfo = {}) {
+function adaptMessage(bot: DiscordBot, base: any, meta: DC.MessageCreateBody, session: MessageInfo = {}) {
   if (meta.author) {
     session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id
@@ -48,41 +48,47 @@ function adaptMessage(base: any, meta: DC.MessageCreateBody, session: MessageInf
   return session
 }
 
-function adaptMessageSession(data: DC.Payload, meta: DC.MessageCreateBody, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
-  adaptMessage(data, meta, session)
+async function adaptMessageSession(bot: DiscordBot, data: DC.Payload, meta: DC.MessageCreateBody, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
+  adaptMessage(bot, data, meta, session)
   session.messageId = meta.id
   session.timestamp = new Date(meta.timestamp).valueOf()
   session.subtype = meta.guild_id ? 'group' : 'private'
+  if (meta.message_reference) {
+    const msg = await bot.getMessage(meta.message_reference.channel_id, meta.message_reference.message_id)
+    session.quote = await adaptMessage(bot, null, msg)
+    session.quote.messageId = meta.message_reference.message_id
+    session.quote.channelId = meta.message_reference.channel_id
+  }
   return session
 }
 
-function adaptMessageCreate(data: DC.Payload, meta: DC.MessageCreateBody, session: Partial<Session.Payload<Session.MessageAction>>) {
-  adaptMessageSession(data, meta, session)
+async function adaptMessageCreate(bot: DiscordBot, data: DC.Payload, meta: DC.MessageCreateBody, session: Partial<Session.Payload<Session.MessageAction>>) {
+  await adaptMessageSession(bot, data, meta, session)
   session.groupId = meta.guild_id
   session.subtype = meta.guild_id ? 'group' : 'private'
   session.channelId = meta.channel_id
 }
 
-function adaptMessageModify(data: DC.Payload, meta: DC.MessageCreateBody, session: Partial<Session.Payload<Session.MessageAction>>) {
-  adaptMessageSession(data, meta, session)
+async function adaptMessageModify(bot: DiscordBot, data: DC.Payload, meta: DC.MessageCreateBody, session: Partial<Session.Payload<Session.MessageAction>>) {
+  await adaptMessageSession(bot, data, meta, session)
   session.groupId = meta.guild_id
   session.subtype = meta.guild_id ? 'group' : 'private'
   session.channelId = meta.channel_id
 }
 
-export function adaptSession(bot: DiscordBot, input: DC.Payload) {
+export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
   const session: Partial<Session.Payload<Session.MessageAction>> = {
     selfId: bot.selfId,
     platform: 'discord',
   }
   if (input.t === 'MESSAGE_CREATE') {
     session.type = 'message'
-    adaptMessageCreate(input, input.d as DC.MessageCreateBody, session)
+    await adaptMessageCreate(bot, input, input.d as DC.MessageCreateBody, session)
     if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_UPDATE') {
     session.type = 'message-updated'
-    adaptMessageModify(input, input.d as DC.MessageCreateBody, session)
+    await adaptMessageModify(bot, input, input.d as DC.MessageCreateBody, session)
     if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_DELETE') {

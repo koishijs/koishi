@@ -62,7 +62,14 @@ export interface MessageCreateBody {
   timestamp: string;
   channel_id: string
   attachments: Attachment[];
-  embeds: Embed[]
+  embeds: Embed[];
+  message_reference?: MessageReference
+}
+
+export interface MessageReference {
+  message_id?: string;
+  channel_id?: string;
+  guild_id?: string;
 }
 
 export interface Embed {

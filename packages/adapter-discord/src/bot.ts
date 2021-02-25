@@ -1,9 +1,12 @@
+/* eslint-disable camelcase */
+
 import axios, { Method } from 'axios'
 import { AuthorInfo, Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
 import { adaptUser } from './utils'
 import { segment } from 'koishi-utils'
 import FormData from 'form-data'
+import { MessageCreateBody } from './types'
 const fs = require('fs')
 declare module 'koishi-core' {
   namespace Bot {
@@ -37,9 +40,10 @@ export class DiscordBot extends Bot {
     return adaptUser(data)
   }
 
-  private async sendEmbedMessage(channelId: string, filePath: string) {
+  private async sendEmbedMessage(channelId: string, filePath: string, payload_json: Record<string, any> = {}) {
     const fd = new FormData()
     fd.append('file', fs.createReadStream(filePath))
+    fd.append('payload_json', JSON.stringify(payload_json))
     const headers: Record<string, any> = {
       Authorization: `Bot ${this.token}`,
     }
@@ -52,17 +56,28 @@ export class DiscordBot extends Bot {
     return response.data
   }
 
+  private parseQuote(chain: segment.Chain) {
+    if (chain[0].type !== 'quote') return
+    return chain.shift().data.id
+  }
+
   async sendMessage(channelId: string, content: string) {
     const session = this.createSession({ channelId, content })
     if (await this.app.serial(session, 'before-send', session)) return
 
     const chain = segment.parse(session.content)
+    const quote = this.parseQuote(chain)
+    const message_reference = quote ? {
+      message_id: quote,
+    } : undefined
+
     let sentMessageId = '0'
     for (const code of chain) {
       const { type, data } = code
       if (type === 'text') {
         const r = await this.request('POST', `/channels/${channelId}/messages`, {
           content: data.content,
+          message_reference,
         })
         sentMessageId = r.id
       } else if (type === 'image') {
@@ -70,11 +85,14 @@ export class DiscordBot extends Bot {
           const r = await this.request('POST', `/channels/${channelId}/messages`, {
             embed: {
               url: data.url,
+              message_reference,
             },
           })
           sentMessageId = r.id
         } else {
-          const r = await this.sendEmbedMessage(channelId, data.url)
+          const r = await this.sendEmbedMessage(channelId, data.url, {
+            message_reference,
+          })
           sentMessageId = r.id
         }
       }
@@ -82,5 +100,21 @@ export class DiscordBot extends Bot {
 
     this.app.emit(session, 'send', session)
     return session.messageId = sentMessageId
+  }
+
+  async deleteMessage(channelId: string, messageId: string) {
+    return this.request('DELETE', `/channels/${channelId}/messages/${messageId}`)
+  }
+
+  async editMessage(channelId: string, messageId: string, content: string) {
+    // @TODO 好像embed会出问题
+    return this.request('PATCH', `/channels/${channelId}/messages/${messageId}`, {
+      content,
+    })
+  }
+
+  // @ts-ignore
+  async getMessage(channelId: string, messageId: string) {
+    return this.request<MessageCreateBody>('GET', `/channels/${channelId}/messages/${messageId}`)
   }
 }
