@@ -18,6 +18,12 @@ function adaptMessage(base: any, meta: DC.MessageCreateBody, session: MessageInf
     session.userId = meta.author.id
   }
   session.content = meta.content
+  if (meta.attachments.length) {
+    session.content += meta.attachments.map(v => segment('image', {
+      url: v.url,
+      file: v.filename,
+    })).join('')
+  }
   return session
 }
 
@@ -25,14 +31,14 @@ function adaptMessageSession(data: DC.Payload, meta: DC.MessageCreateBody, sessi
   adaptMessage(data, meta, session)
   session.messageId = meta.id
   session.timestamp = new Date(meta.timestamp).valueOf()
-  session.subtype = 'group'
+  session.subtype = meta.guild_id ? 'group' : 'private'
   return session
 }
 
 function adaptMessageCreate(data: DC.Payload, meta: DC.MessageCreateBody, session: Partial<Session.Payload<Session.MessageAction>>) {
   adaptMessageSession(data, meta, session)
   session.groupId = meta.guild_id
-  session.subtype = 'group'
+  session.subtype = meta.guild_id ? 'group' : 'private'
   session.channelId = meta.channel_id
 }
 
@@ -44,6 +50,8 @@ export function adaptSession(bot: DiscordBot, input: DC.Payload) {
   if (input.t === 'MESSAGE_CREATE') {
     session.type = 'message'
     adaptMessageCreate(input, input.d as DC.MessageCreateBody, session)
+    if (!session.content) return
+    if (session.userId === bot.selfId) return
   }
   return new Session(bot.app, session)
 }

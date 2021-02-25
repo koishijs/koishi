@@ -1,5 +1,6 @@
-import { AuthorInfo, MessageBase } from 'koishi-core'
+/* eslint-disable camelcase */
 
+import { AuthorInfo, MessageBase } from 'koishi-core'
 type WSEventType =
   | 'READY'
   | 'RESUMED'
@@ -54,12 +55,23 @@ export interface Author {
 }
 
 export interface MessageCreateBody {
-  guild_id: string;
+  guild_id?: string;
   content: string;
   author: Author
   id: string;
   timestamp: string;
   channel_id: string
+  attachments: Attachment[];
+}
+
+export interface Attachment {
+  id: string;
+  filename: string;
+  size: number;
+  url: string;
+  proxy_url: string;
+  height?: number;
+  width?: number;
 }
 
 export interface User {

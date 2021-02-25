@@ -17,6 +17,7 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
   }
 
   heartbeat(bot: DiscordBot) {
+    logger.info(`heartbeat d ${bot._d}`)
     bot.socket.send(JSON.stringify({
       op: Opcode.Heartbeat,
       d: bot._d,
@@ -36,6 +37,9 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
         return logger.warn('cannot parse message', data)
       }
       console.log(parsed)
+      if (parsed.s) {
+        bot._d = parsed.s
+      }
       if (parsed.op === Opcode.Hello) {
         bot._ping = setInterval(() => this.heartbeat(bot), parsed.d.heartbeat_interval)
         bot.socket.send(JSON.stringify({
@@ -44,18 +48,15 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
             token: bot.token,
             properties: {},
             compress: false,
-            intents: 1 << 9,
+            intents: (1 << 9) + (1 << 12),
           },
         }))
       } else if (parsed.op === Opcode.HeartbeatACK) {
-        return
+
       } else if (parsed.op === Opcode.Dispatch) {
-        if (parsed.d?.author?.id !== bot.selfId) {
-          const session = adaptSession(bot, parsed)
-          if (session) this.dispatch(session)
-        }
+        const session = adaptSession(bot, parsed)
+        if (session) this.dispatch(session)
       }
-      bot._d = parsed.s
     })
 
     bot.socket.on('close', (c, r) => {
