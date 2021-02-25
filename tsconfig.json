@@ -3,11 +3,11 @@
     "target": "esnext",
     "module": "commonjs",
     "noEmit": true,
-    "composite": true,
-    "incremental": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
     "strictBindCallApply": true,
   },
-  "include": ["."],
+  "include": [
+    "build",
+  ],
 }
