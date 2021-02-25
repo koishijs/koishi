@@ -35,7 +35,7 @@
     "@types/prompts": "^2.0.9"
   },
   "dependencies": {
-    "cac": "^6.7.1",
+    "cac": "^6.7.2",
     "chokidar": "^3.5.1",
     "kleur": "^4.1.4",
     "koishi-core": "^3.0.0-beta.14",
