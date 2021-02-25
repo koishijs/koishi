@@ -3,10 +3,10 @@
 import axios, { Method } from 'axios'
 import { AuthorInfo, Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
-import { adaptUser } from './utils'
+import { adaptGroup, adaptUser } from './utils'
 import { segment } from 'koishi-utils'
 import FormData from 'form-data'
-import { MessageCreateBody } from './types'
+import { GuildMember, MessageCreateBody, PartialGuild } from './types'
 const fs = require('fs')
 declare module 'koishi-core' {
   namespace Bot {
@@ -116,5 +116,15 @@ export class DiscordBot extends Bot {
   // @ts-ignore
   async getMessage(channelId: string, messageId: string) {
     return this.request<MessageCreateBody>('GET', `/channels/${channelId}/messages/${messageId}`)
+  }
+
+  async getGroupList() {
+    const data = await this.request<PartialGuild[]>('GET', '/users/@me/guilds')
+    return data.map(adaptGroup)
+  }
+
+  async getGroupMemberList(guildId: string) {
+    const data = await this.request<GuildMember[]>('GET', `/guilds/${guildId}/members`)
+    return data.map(v => adaptUser(v.user))
   }
 }

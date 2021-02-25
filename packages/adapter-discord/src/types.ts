@@ -111,3 +111,12 @@ export interface Self extends User {
 export enum Opcode {
   Hello = 10, Identify = 2, Dispatch = 0, HeartbeatACK = 11, Heartbeat = 1
 }
+
+export interface PartialGuild {
+  id: string;
+  name: string;
+}
+
+export interface GuildMember {
+  user?: User
+}
