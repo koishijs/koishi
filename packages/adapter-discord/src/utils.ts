@@ -63,6 +63,13 @@ function adaptMessageCreate(data: DC.Payload, meta: DC.MessageCreateBody, sessio
   session.channelId = meta.channel_id
 }
 
+function adaptMessageModify(data: DC.Payload, meta: DC.MessageCreateBody, session: Partial<Session.Payload<Session.MessageAction>>) {
+  adaptMessageSession(data, meta, session)
+  session.groupId = meta.guild_id
+  session.subtype = meta.guild_id ? 'group' : 'private'
+  session.channelId = meta.channel_id
+}
+
 export function adaptSession(bot: DiscordBot, input: DC.Payload) {
   const session: Partial<Session.Payload<Session.MessageAction>> = {
     selfId: bot.selfId,
@@ -73,6 +80,14 @@ export function adaptSession(bot: DiscordBot, input: DC.Payload) {
     adaptMessageCreate(input, input.d as DC.MessageCreateBody, session)
     if (!session.content) return
     if (session.userId === bot.selfId) return
+  } else if (input.t === 'MESSAGE_UPDATE') {
+    session.type = 'message-updated'
+    adaptMessageModify(input, input.d as DC.MessageCreateBody, session)
+    if (!session.content) return
+    if (session.userId === bot.selfId) return
+  } else if (input.t === 'MESSAGE_DELETE') {
+    session.type = 'message-deleted'
+    session.messageId = input.d.id
   }
   return new Session(bot.app, session)
 }
