@@ -2,6 +2,7 @@ dist
 temp
 
 /build/*.js
+/tsconfig.temp.json
 
 /addons
 /atri
