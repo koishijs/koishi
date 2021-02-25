@@ -11,5 +11,4 @@ declare module 'koishi-core' {
   }
 }
 
-
 Adapter.types['discord'] = WsClient

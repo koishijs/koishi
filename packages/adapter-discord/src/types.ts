@@ -1,5 +1,4 @@
-import { AuthorInfo } from "koishi-core";
-import { MessageBase } from "koishi-core";
+import { AuthorInfo, MessageBase } from 'koishi-core'
 
 type WSEventType =
   | 'READY'
