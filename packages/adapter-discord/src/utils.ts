@@ -17,12 +17,33 @@ function adaptMessage(base: any, meta: DC.MessageCreateBody, session: MessageInf
     session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id
   }
-  session.content = meta.content
-  if (meta.attachments.length) {
-    session.content += meta.attachments.map(v => segment('image', {
-      url: v.url,
-      file: v.filename,
-    })).join('')
+  if (meta.embeds.length === 0) {
+    // pure message
+    session.content = meta.content
+    if (meta.attachments.length) {
+      session.content += meta.attachments.map(v => segment('image', {
+        url: v.url,
+        file: v.filename,
+      })).join('')
+    }
+    session.content = session.content.replace(/<@!(.+?)>/, (_, v) => segment('at', {
+      id: v,
+    }))
+  } else {
+    switch (meta.embeds[0].type) {
+      case 'video':
+        session.content = segment('video', { file: meta.embeds[0].url })
+        break
+      case 'image':
+        session.content = segment('image', { file: meta.embeds[0].url })
+        break
+      case 'gifv':
+        session.content = segment('video', { file: meta.embeds[0].video.url })
+        break
+      case 'link':
+        session.content = segment('image', { url: meta.embeds[0].url, title: meta.embeds[0].title, content: meta.embeds[0].description })
+        break
+    }
   }
   return session
 }

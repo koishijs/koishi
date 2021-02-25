@@ -62,6 +62,22 @@ export interface MessageCreateBody {
   timestamp: string;
   channel_id: string
   attachments: Attachment[];
+  embeds: Embed[]
+}
+
+export interface Embed {
+  title?: string;
+  type?: 'rich' | 'image' | 'video'|'gifv'|'article'|'link'
+  description?: string;
+  url?: string;
+  timestamp: string;
+
+  video?: {
+    url?: string;
+    proxy_url?: string;
+    height?: number;
+    width?: number;
+  }
 }
 
 export interface Attachment {

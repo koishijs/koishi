@@ -36,7 +36,7 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
       } catch (error) {
         return logger.warn('cannot parse message', data)
       }
-      console.log(parsed)
+      console.log(require('util').inspect(parsed, false, null, true))
       if (parsed.s) {
         bot._d = parsed.s
       }
