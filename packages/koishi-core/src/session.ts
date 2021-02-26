@@ -218,7 +218,7 @@ export class Session<
     // 绑定一个新的可观测频道实例
     const assignee = this._getValue(this.app.options.autoAssign) ? this.selfId : ''
     const data = await this.getChannel(channelId, assignee, fieldArray)
-    const newChannel = observe(data, diff => this.database.setChannel(platform, channelId, diff), `channel ${channelId}`)
+    const newChannel = observe(data, diff => this.database.setChannel(platform, channelId, diff), `channel ${this.cid}`)
     this.app._groupCache.set(this.cid, newChannel)
     return this.channel = newChannel
   }
@@ -276,7 +276,7 @@ export class Session<
 
     // 绑定一个新的可观测用户实例
     const data = await this.getUser(userId, this._getValue(this.app.options.autoAuthorize), fieldArray)
-    const newUser = observe(data, diff => this.database.setUser(this.platform, userId, diff), `user ${userId}`)
+    const newUser = observe(data, diff => this.database.setUser(this.platform, userId, diff), `user ${this.uid}`)
     userCache.set(userId, newUser)
     return this.user = newUser
   }

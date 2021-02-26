@@ -68,14 +68,6 @@ export class KaiheilaBot extends Bot {
     delete data.extra
   }
 
-  parseChannel(source: string) {
-    if (/^\d+$/.test(source)) return source
-    const code = segment.from(source)
-    if (code && code.type === 'sharp') {
-      return code.data.id
-    }
-  }
-
   async request<T = any>(method: Method, path: string, data: any = {}): Promise<T> {
     const url = `${this.app.options.kaiheila.endpoint}${path}`
     const headers: Record<string, any> = {

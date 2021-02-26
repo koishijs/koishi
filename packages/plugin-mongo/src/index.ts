@@ -89,7 +89,7 @@ extendDatabase(MongoDatabase, {
     const type = _type === 'id' ? '_id' : _type
     await this.user.updateOne(
       { [type]: id },
-      { $set: escapeKey(data), $setOnInsert: { _id: uid, id: uid } },
+      { $set: escapeKey(data), $setOnInsert: { _id: uid, id: uid.toString() } },
       { upsert: true },
     )
   },

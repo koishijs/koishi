@@ -148,6 +148,7 @@ export interface Domain {
   boolean: boolean
   text: string
   user: string
+  channel: string
 }
 
 export namespace Domain {
@@ -169,9 +170,11 @@ export namespace Domain {
 
   export type ArgumentType<S extends string> = [...Extract<Replace<S, '>', ']'>, ':', ']', string>, ...string[]]
 
+  // I don't know why I should write like this but
+  // [T] extends [xxx] just works, so don't touch it
   export type OptionType<S extends string, T extends Type>
-    = T extends Builtin ? Domain[T]
-    : T extends RegExp ? string
+    = [T] extends [Builtin] ? Domain[T]
+    : [T] extends [RegExp] ? string
     : T extends (source: string) => infer R ? R
     : ExtractFirst<Replace<S, '>', ']'>, ':', ']', any>
 
@@ -185,7 +188,7 @@ export namespace Domain {
     required?: boolean
   }
 
-  export type Transform<T> = (source: string) => T
+  export type Transform<T> = (source: string, session: Session) => T
 
   function resolveType(type: Declaration['type']) {
     if (typeof type === 'function') return type
@@ -207,11 +210,31 @@ export namespace Domain {
   create('string', source => source)
   create('number', source => +source)
   create('text', source => source)
-  create('user', (source) => {
-    if (source.startsWith('@')) return source.slice(1)
+
+  create('user', (source, session) => {
+    if (source.startsWith('@')) {
+      source = source.slice(1)
+      if (source.includes(':')) return source
+      return `${session.platform}:${source}`
+    }
     const code = segment.from(source)
-    if (code && code.type === 'at') return code.data.id
-    throw new Error()
+    if (code && code.type === 'at') {
+      return `${session.platform}:${code.data.id}`
+    }
+    throw new Error('请指定正确的目标。')
+  })
+
+  create('channel', (source, session) => {
+    if (source.startsWith('#')) {
+      source = source.slice(1)
+      if (source.includes(':')) return source
+      return `${session.platform}:${source}`
+    }
+    const code = segment.from(source)
+    if (code && code.type === 'sharp') {
+      return `${session.platform}:${code.data.id}`
+    }
+    throw new Error('请指定正确的目标。')
   })
 
   const BRACKET_REGEXP = /<[^>]+>|\[[^\]]+\]/g
@@ -352,7 +375,9 @@ export namespace Domain {
       return true
     }
 
-    private _parseValue(source: string, quoted: boolean, kind: string, { name, type, fallback }: Declaration = {}) {
+    private _parseValue(source: string, quoted: boolean, kind: string, session: Session, decl: Declaration = {}) {
+      const { name, type, fallback } = decl
+
       // no explicit parameter & has fallback
       const implicit = source === '' && !quoted
       if (implicit && fallback !== undefined) return fallback
@@ -361,7 +386,7 @@ export namespace Domain {
       const transform = resolveType(type)
       if (transform) {
         try {
-          return transform(source)
+          return transform(source, session)
         } catch (err) {
           const message = err['message'] || template('internal.check-syntax')
           this._error = template(`internal.invalid-${kind}`, name, message)
@@ -403,7 +428,7 @@ export namespace Domain {
         } else {
           // normal argument
           if (content[0] !== '-' || quoted) {
-            args.push(this._parseValue(content, quoted, 'argument', argDecl || { type: 'string' }))
+            args.push(this._parseValue(content, quoted, 'argument', argv.session, argDecl || { type: 'string' }))
             continue
           }
 
@@ -454,7 +479,7 @@ export namespace Domain {
             options[key] = optDecl.values[name]
           } else {
             const source = j + 1 < names.length ? '' : param
-            options[key] = this._parseValue(source, quoted, 'option', optDecl)
+            options[key] = this._parseValue(source, quoted, 'option', argv.session, optDecl)
           }
           if (this._error) break
         }
