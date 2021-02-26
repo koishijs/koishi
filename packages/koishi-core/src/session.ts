@@ -114,6 +114,8 @@ export class Session<
   constructor(app: App, session: Partial<Session>) {
     Object.assign(this, session)
     defineProperty(this, 'app', app)
+    defineProperty(this, 'user', null)
+    defineProperty(this, 'channel', null)
     defineProperty(this, 'sid', `${this.platform}:${this.selfId}`)
     defineProperty(this, 'uid', `${this.platform}:${this.userId}`)
     defineProperty(this, 'cid', `${this.platform}:${this.channelId}`)
