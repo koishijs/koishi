@@ -1,5 +1,5 @@
-import { Bot, Platform, Context, Channel, Session, User, Argv } from 'koishi-core'
-import { sleep, segment, template, makeArray } from 'koishi-utils'
+import { Context, Channel, Session, User, Argv } from 'koishi-core'
+import { sleep, segment, template, makeArray, Time } from 'koishi-utils'
 
 template.set('common', {
   'expect-text': '请输入要发送的文本。',
@@ -8,10 +8,20 @@ template.set('common', {
   'invalid-private-member': '无法在私聊上下文使用 --member 选项。',
   'feedback-receive': '收到来自 {0} 的反馈信息：\n{1}',
   'feedback-success': '反馈信息发送成功！',
+  // eslint-disable-next-line quote-props
+  'relay': '{0}: {1}',
 })
+
+interface RelayOptions {
+  source: string
+  destination: string
+  selfId?: string
+  lifespan?: number
+}
 
 export interface SenderConfig {
   operator?: string | string[]
+  relay?: RelayOptions | RelayOptions[]
 }
 
 export default function apply(ctx: Context, config: SenderConfig = {}) {
@@ -39,15 +49,8 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
 
   const operator = makeArray(config.operator)
   if (operator.length) {
-    const botMap: Record<Platform, Bot> = {}
-    for (const uid of operator) {
-      const [platform] = uid.split(':')
-      if (platform in botMap) continue
-      botMap[platform] = ctx.bots.find(bot => bot.platform === platform)
-    }
-
     type FeedbackData = [sid: string, channelId: string]
-    const interactions: Record<number, FeedbackData> = {}
+    const feedbacks: Record<number, FeedbackData> = {}
 
     ctx.command('common/feedback <message:text>', '发送反馈信息给作者')
       .userFields(['name', 'id'])
@@ -60,9 +63,9 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
         const data: FeedbackData = [session.sid, session.channelId]
         for (let index = 0; index < operator.length; ++index) {
           if (index && delay) await sleep(delay)
-          const [platform, userId] = operator[index].split(':')
-          const id = await botMap[platform].sendPrivateMessage(userId, message)
-          interactions[id] = data
+          const [platform, userId] = Argv.parsePid(operator[index])
+          const id = await ctx.getBot(platform).sendPrivateMessage(userId, message)
+          feedbacks[id] = data
         }
         return template('common.feedback-success')
       })
@@ -70,11 +73,37 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
     ctx.middleware((session, next) => {
       const { quote, parsed } = session
       if (!parsed.content || !quote) return next()
-      const data = interactions[quote.messageId]
+      const data = feedbacks[quote.messageId]
       if (!data) return next()
       return ctx.bots[data[0]].sendMessage(data[1], parsed.content)
     })
   }
+
+  const relay = makeArray(config.relay)
+  const relayMap: Record<string, RelayOptions> = {}
+
+  async function sendRelay(session: Session, { destination, selfId, lifespan = Time.hour }: RelayOptions) {
+    const [platform, channelId] = Argv.parsePid(destination)
+    const bot = ctx.getBot(platform, selfId)
+    if (!session.parsed.content) return
+    const content = template('common.relay', session.$username, session.parsed.content)
+    const id = await bot.sendMessage(channelId, content)
+    relayMap[id] = { source: destination, destination: session.cid, selfId: session.selfId, lifespan }
+    setTimeout(() => delete relayMap[id], lifespan)
+  }
+
+  ctx.middleware((session, next) => {
+    const { quote = {} } = session
+    const data = relayMap[quote.messageId]
+    if (data) return sendRelay(session, data)
+    const tasks: Promise<void>[] = []
+    for (const options of relay) {
+      if (session.cid !== options.source) continue
+      tasks.push(sendRelay(session, options).catch())
+    }
+    tasks.push(next())
+    return Promise.all(tasks)
+  })
 
   dbctx.command('common/broadcast <message:text>', '全服广播', { authority: 4 })
     .option('forced', '-f  无视 silent 标签进行广播')

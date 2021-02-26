@@ -219,10 +219,8 @@ export function apply(ctx: Context) {
 
   function generateToken(session: Session, pending: boolean) {
     const token = 'koishi:' + Random.uuid()
-    const data = tokens[token] = [session.platform, session.userId, pending]
-    setTimeout(() => {
-      if (tokens[token] === data) delete tokens[token]
-    }, 5 * Time.minute)
+    tokens[token] = [session.platform, session.userId, pending]
+    setTimeout(() => delete tokens[token], 5 * Time.minute)
     return token
   }
 
