@@ -1,5 +1,5 @@
 import { isInteger, difference, observe, Time, enumKeys, Random, template } from 'koishi-utils'
-import { Context, User, Channel, Command, Argv, Platform } from 'koishi-core'
+import { Context, User, Channel, Command, Argv, Platform, Session } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
   = (argv: Argv<U | 'authority', G, A, O> & { target: T }, ...args: A)
@@ -46,10 +46,15 @@ template.set('callme', {
 })
 
 template.set('bind', {
-  'generated': [
-    '请在 5 分钟内使用你的账号在已绑定的平台内私聊机器人发送以下文本：',
+  'generated-1': [
+    '请在 5 分钟内使用你的账号在要绑定的平台内向机器人发送以下文本：',
     '{0}',
     '注意：每个账号只能绑定到每个平台一次，此操作将会抹去你当前平台上的数据，请谨慎操作！',
+  ].join('\n'),
+  'generated-2': [
+    '令牌核验成功！下面将进行第二步操作。',
+    '请在 5 分钟内使用你的账号在之前的平台内向机器人发送以下文本：',
+    '{0}',
   ].join('\n'),
   'failed': '账号绑定失败：你已经绑定过该平台。',
   'success': '账号绑定成功！',
@@ -200,28 +205,39 @@ export function apply(ctx: Context) {
       }
     })
 
-  const ctx2 = ctx.private()
-  const tokens: Record<string, [platform: Platform, id: string]> = {}
+  type TokenData = [platform: Platform, id: string, pending: boolean]
+  const tokens: Record<string, TokenData> = {}
 
-  ctx2.command('user/bind', '绑定到账号', { authority: 0 })
+  function generateToken(session: Session, pending: boolean) {
+    const token = 'koishi:' + Random.uuid()
+    const data = tokens[token] = [session.platform, session.userId, pending]
+    setTimeout(() => {
+      if (tokens[token] === data) delete tokens[token]
+    }, 5 * Time.minute)
+    return token
+  }
+
+  ctx.command('user/bind', '绑定到账号', { authority: 0 })
     .action(({ session }) => {
-      const token = Random.uuid()
-      const data = tokens[token] = [session.platform, session.userId]
-      setTimeout(() => {
-        if (tokens[token] === data) delete tokens[token]
-      }, 5 * Time.minute)
-      return template('bind.generated', token)
+      const token = generateToken(session, session.subtype === 'group')
+      return template('bind.generated-1', token)
     })
 
-  ctx2.middleware(async (session, next) => {
+  ctx.middleware(async (session, next) => {
     const data = tokens[session.content]
     if (!data) return next()
     const user = await session.observeUser(['authority', data[0]])
-    if (!user.authority) return next()
+    if (!user.authority) return session.send(template('internal.low-authority'))
     if (user[data[0]]) return session.send(template('bind.failed'))
-    user[data[0] as any] = data[1]
-    await user._update()
-    return session.send(template('bind.success'))
+    if (data[2]) {
+      delete tokens[session.content]
+      const token = generateToken(session, false)
+      return session.send(template('bind.generated-2', token))
+    } else {
+      user[data[0] as any] = data[1]
+      await user._update()
+      return session.send(template('bind.success'))
+    }
   }, true)
 
   ctx.command('user/authorize <value>', '权限信息', { authority: 4 })

@@ -1,5 +1,5 @@
 import { App } from 'koishi-test-utils'
-import { User, Channel } from 'koishi-core'
+import { User, Channel, defineEnumProperty } from 'koishi-core'
 import { install } from '@sinonjs/fake-timers'
 import * as common from 'koishi-plugin-common'
 
@@ -7,16 +7,11 @@ const app = new App({ mockDatabase: true })
 const session = app.session('123', '321')
 
 app.plugin(common)
-app.command('foo', { maxUsage: 10 }).action(({ session }) => session.send('bar'))
-app.command('bar', { minInterval: 1000 }).action(({ session }) => session.send('foo'))
+app.command('foo', { maxUsage: 10 }).action(() => 'bar')
+app.command('bar', { minInterval: 1000 }).action(() => 'foo')
 
-;((flags: Record<keyof typeof User.Flag, number>) => {
-  flags[flags[1 << 4] = 'test'] = 1 << 4
-})(User.Flag)
-
-;((flags: Record<keyof typeof Channel.Flag, number>) => {
-  flags[flags[1 << 4] = 'test'] = 1 << 4
-})(Channel.Flag)
+defineEnumProperty(User.Flag, 'test', 1 << 4)
+defineEnumProperty(Channel.Flag, 'test', 1 << 4)
 
 before(async () => {
   await app.database.initUser('123', 4)
@@ -27,13 +22,13 @@ before(async () => {
 })
 
 describe('Admin Commands', () => {
-  it('user.auth', async () => {
-    await session.shouldReply('user.auth -u nan', '请指定正确的目标。')
-    await session.shouldReply('user.auth -u 321', '未找到指定的用户。')
-    await session.shouldReply('user.auth -u 789', '权限不足。')
-    await session.shouldReply('user.auth -u 456 -1', '参数错误。')
-    await session.shouldReply('user.auth -u 456 3', '用户数据未改动。')
-    await session.shouldReply('user.auth -u 456 4', '权限不足。')
+  it('user/authorize', async () => {
+    await session.shouldReply('authorize -u nan', '请指定正确的目标。')
+    await session.shouldReply('authorize -u 321', '未找到指定的用户。')
+    await session.shouldReply('authorize -u 789', '权限不足。')
+    await session.shouldReply('authorize -u 456 -1', '参数错误。')
+    await session.shouldReply('authorize -u 456 3', '用户数据未改动。')
+    await session.shouldReply('authorize -u 456 4', '权限不足。')
   })
 
   it('user.flag', async () => {
@@ -76,12 +71,12 @@ describe('Admin Commands', () => {
     clock.uninstall()
   })
 
-  it('group.assignee', async () => {
-    await app.session('123').shouldReply('group.assign', '当前不在群上下文中，请使用 -g 参数指定目标群。')
-    await session.shouldReply('group.assign -g nan', '请指定正确的目标。')
-    await session.shouldReply('group.assign -g 123', '未找到指定的群。')
-    await session.shouldReply('group.assign -g 321', '群数据未改动。')
-    await session.shouldReply('group.assign -g 321 nan', '参数错误。')
+  it('group/assign', async () => {
+    await app.session('123').shouldReply('assign', '当前不在群上下文中，请使用 -g 参数指定目标群。')
+    await session.shouldReply('assign -g nan', '请指定正确的目标。')
+    await session.shouldReply('assign -g 123', '未找到指定的群。')
+    await session.shouldReply('assign -g 321', '群数据未改动。')
+    await session.shouldReply('assign -g 321 nan', '参数错误。')
   })
 
   it('group.flag', async () => {

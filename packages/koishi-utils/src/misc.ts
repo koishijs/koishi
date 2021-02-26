@@ -12,6 +12,11 @@ export function enumKeys<T extends string>(data: Record<T, string | number>) {
   return Object.values(data).filter(value => typeof value === 'string') as T[]
 }
 
+export function defineEnumProperty(object: object, key: string, value: number | string) {
+  object[key] = value
+  object[value] = key
+}
+
 const primitives = ['number', 'string', 'bigint', 'boolean', 'symbol']
 
 export function clone<T extends unknown>(source: T): T {
