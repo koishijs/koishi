@@ -120,3 +120,9 @@ export interface PartialGuild {
 export interface GuildMember {
   user?: User
 }
+
+export interface ExecuteWebhookBody{
+  content: string;
+  username?: string;
+  avatar_url?: string;
+}

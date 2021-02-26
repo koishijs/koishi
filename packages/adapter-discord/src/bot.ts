@@ -6,7 +6,7 @@ import * as DC from './types'
 import { adaptGroup, adaptUser } from './utils'
 import { segment } from 'koishi-utils'
 import FormData from 'form-data'
-import { GuildMember, MessageCreateBody, PartialGuild } from './types'
+import { ExecuteWebhookBody, GuildMember, MessageCreateBody, PartialGuild } from './types'
 const fs = require('fs')
 declare module 'koishi-core' {
   namespace Bot {
@@ -59,6 +59,10 @@ export class DiscordBot extends Bot {
   private parseQuote(chain: segment.Chain) {
     if (chain[0].type !== 'quote') return
     return chain.shift().data.id
+  }
+
+  async sendPrivateMessage(channelId: string, content: string) {
+    return this.sendMessage(channelId, content)
   }
 
   async sendMessage(channelId: string, content: string) {
@@ -126,5 +130,9 @@ export class DiscordBot extends Bot {
   async getGroupMemberList(guildId: string) {
     const data = await this.request<GuildMember[]>('GET', `/guilds/${guildId}/members`)
     return data.map(v => adaptUser(v.user))
+  }
+
+  async executeWebhook(id: string, token: string, data: ExecuteWebhookBody) {
+    return this.request('POST', `/webhooks/${id}/${token}`, data)
   }
 }

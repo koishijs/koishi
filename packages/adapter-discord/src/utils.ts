@@ -34,9 +34,13 @@ function adaptMessage(bot: DiscordBot, meta: DC.MessageCreateBody, session: Mess
         file: v.filename,
       })).join('')
     }
-    session.content = session.content.replace(/<@!(.+?)>/, (_, v) => segment('at', {
-      id: v,
-    }))
+    session.content = session.content
+      .replace(/<@!(.+?)>/, (_, v) => segment('at', { id: v }))
+      .replace(/<@&(.+?)>/, (_, v) => segment('at', { id: v }))
+      .replace(/<:(.*):(.+?)>/, (_, __, v) => segment('face', { id: v })).replace(/@everyone/, () => segment('at', { type: 'all' }))
+      .replace(/@everyone/, () => segment('at', { type: 'all' }))
+      .replace(/@here/, () => segment('at', { type: 'here' }))
+      .replace(/<#(.+?)>/, (_, v) => segment('sharp', { id: v }))
   } else {
     switch (meta.embeds[0].type) {
       case 'video':
