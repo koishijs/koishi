@@ -12,9 +12,9 @@ export function enumKeys<T extends string>(data: Record<T, string | number>) {
   return Object.values(data).filter(value => typeof value === 'string') as T[]
 }
 
-export function defineEnumProperty(object: object, key: string, value: number | string) {
+export function defineEnumProperty<T extends object>(object: T, key: keyof T, value: T[keyof T]) {
   object[key] = value
-  object[value] = key
+  object[value as any] = key
 }
 
 const primitives = ['number', 'string', 'bigint', 'boolean', 'symbol']

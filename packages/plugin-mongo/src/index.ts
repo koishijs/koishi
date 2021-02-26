@@ -104,12 +104,12 @@ extendDatabase(MongoDatabase, {
 
   async getChannel(type, pid, fields = Channel.fields) {
     if (Array.isArray(pid)) {
-      if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` } as any))
+      if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` }))
       const channels = await this.channel.find({ _id: { $in: pid.map(id => `${type}:${id}`) } })
         .project(projection(fields)).toArray()
       return channels.map(channel => ({ ...pick(Channel.create(type, channel.pid), fields), ...channel, id: `${type}:${channel.pid}` }))
     }
-    if (fields && !fields.length) return { id: `${type}:${pid}` } as any
+    if (fields && !fields.length) return { id: `${type}:${pid}` }
     const [data] = await this.channel.find({ type, pid: pid as string }).project(projection(fields)).toArray()
     return data && { ...pick(Channel.create(type, pid as string), fields), ...data, id: `${type}:${pid}` }
   },

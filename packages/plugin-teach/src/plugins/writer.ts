@@ -4,20 +4,20 @@ import { Dialogue } from '../utils'
 
 declare module '../utils' {
   interface DialogueTest {
-    writer?: number
+    writer?: string
     frozen?: boolean
   }
 
   interface Dialogue {
-    writer: number
+    writer: string
   }
 
   namespace Dialogue {
     interface Argv {
-      writer?: number
-      nameMap?: Record<number, string>
+      writer?: string
+      nameMap?: Record<string, string>
       /** 用于保存用户权限的键值对，键的范围包括目标问答列表的全体作者以及 -w 参数 */
-      authMap?: Record<number, number>
+      authMap?: Record<string, number>
     }
 
     interface Config {
@@ -45,9 +45,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     const writers = deduplicate(dialogues.map(d => d.writer).filter(Boolean))
     const fields: User.Field[] = ['id', 'authority', session.platform]
     if (options.writer === '0') {
-      argv.writer = 0
+      argv.writer = '0'
     } else if (options.writer && !writers.includes(options.writer)) {
-      const user = await ctx.database.getUser(session.platform, options.writer, fields) as any
+      const user = await ctx.database.getUser(session.platform, options.writer, fields)
       if (user) {
         writers.push(user.id)
         argv.writer = user.id
@@ -57,7 +57,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     const users = await ctx.database.getUser('id', writers, fields)
 
     let hasUnnamed = false
-    const idMap: Record<string, number> = {}
+    const idMap: Record<string, string> = {}
     for (const user of users) {
       authMap[user.id] = user.authority
       if (options.modify) continue

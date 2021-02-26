@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import { extendDatabase } from 'koishi-core'
 import MemoryDatabase, { testDatabase, App } from 'koishi-test-utils'
 
-declare module 'koishi-core/dist/database' {
+declare module 'koishi-core' {
   interface Database {
     createFoo(data?: FooData): Promise<FooData>
     removeFoo(id: number): Promise<void>
