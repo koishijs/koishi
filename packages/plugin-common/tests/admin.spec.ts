@@ -12,11 +12,15 @@ app.command('bar', { minInterval: 1000 }).action(() => 'foo')
 
 declare module 'koishi-core' {
   namespace User {
-    enum Flag { test }
+    enum Flag {
+      test = 1 << 4,
+    }
   }
 
   namespace Channel {
-    enum Flag { test }
+    enum Flag {
+      test = 1 << 4,
+    }
   }
 }
 

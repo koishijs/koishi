@@ -1,145 +1,10 @@
 import { camelCase, segment, escapeRegExp, paramCase, template } from 'koishi-utils'
 import { format } from 'util'
+import { Platform } from './adapter'
 import { Command } from './command'
 import { NextFunction } from './context'
 import { Channel, User } from './database'
 import { Session } from './session'
-
-export interface Token {
-  rest?: string
-  content: string
-  quoted: boolean
-  terminator: string
-  inters: Argv[]
-}
-
-export interface Argv<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O = {}> {
-  args?: A
-  options?: O
-  error?: string
-  source?: string
-  initiator?: string
-  session?: Session<U, G>
-  command?: Command<U, G, A, O>
-  rest?: string
-  pos?: number
-  root?: boolean
-  inline?: boolean
-  tokens?: Token[]
-  name?: string
-  next?: NextFunction
-}
-
-const leftQuotes = `"'“‘`
-const rightQuotes = `"'”’`
-
-export namespace Argv {
-  export interface Interpolation {
-    terminator?: string
-    parse?(source: string): Argv
-  }
-
-  const bracs: Record<string, Interpolation> = {}
-
-  export function interpolate(initiator: string, terminator: string, parse?: (source: string) => Argv) {
-    bracs[initiator] = { terminator, parse }
-  }
-
-  interpolate('$(', ')')
-
-  export class Tokenizer {
-    private bracs: Record<string, Interpolation>
-
-    constructor() {
-      this.bracs = Object.create(bracs)
-    }
-
-    interpolate(initiator: string, terminator: string, parse?: (source: string) => Argv) {
-      this.bracs[initiator] = { terminator, parse }
-    }
-
-    parseToken(source: string, stopReg = '$'): Token {
-      const parent = { inters: [] } as Token
-      const index = leftQuotes.indexOf(source[0])
-      const quote = rightQuotes[index]
-      let content = ''
-      if (quote) {
-        source = source.slice(1)
-        stopReg = `${quote}(?=${stopReg})|$`
-      }
-      stopReg += `|${Object.keys({ ...this.bracs, ...bracs }).map(escapeRegExp).join('|')}`
-      const regExp = new RegExp(stopReg)
-      while (true) {
-        const capture = regExp.exec(source)
-        content += source.slice(0, capture.index)
-        if (capture[0] in this.bracs) {
-          source = source.slice(capture.index + capture[0].length).trimStart()
-          const { parse, terminator } = this.bracs[capture[0]]
-          const argv = parse?.(source) || this.parse(source, terminator)
-          source = argv.rest
-          parent.inters.push({ ...argv, pos: content.length, initiator: capture[0], inline: true })
-        } else {
-          const quoted = capture[0] === quote
-          const rest = source.slice(capture.index + +quoted).trimStart()
-          if (!quoted && quote) {
-            content = leftQuotes[index] + content
-            parent.inters.forEach(inter => inter.pos += 1)
-          }
-          parent.rest = rest
-          parent.quoted = quoted
-          parent.content = content
-          parent.terminator = capture[0]
-          if (quote === "'") Argv.revert(parent)
-          return parent
-        }
-      }
-    }
-
-    parse(source: string, terminator = ''): Argv {
-      const tokens: Token[] = []
-      let rest = source, term = ''
-      const stopReg = `\\s+|[${escapeRegExp(terminator)}]\\s*|$`
-      // eslint-disable-next-line no-unmodified-loop-condition
-      while (rest && !(terminator && rest.startsWith(terminator))) {
-        const token = this.parseToken(rest, stopReg)
-        tokens.push(token)
-        rest = token.rest
-        term = token.terminator
-        delete token.rest
-      }
-      if (rest.startsWith(terminator)) rest = rest.slice(1)
-      source = source.slice(0, -(rest + term).length)
-      return { tokens, rest, source }
-    }
-
-    stringify(argv: Argv) {
-      return argv.tokens.map((token) => {
-        return /^\s+$/.test(token.terminator)
-          ? token.content + token.terminator
-          : token.content
-      }).join('')
-    }
-  }
-
-  const defaultTokenizer = new Tokenizer()
-
-  export function parse(source: string, terminator = '') {
-    return defaultTokenizer.parse(source, terminator)
-  }
-
-  export function stringify(argv: Argv) {
-    return defaultTokenizer.stringify(argv)
-  }
-
-  export function revert(token: Token) {
-    while (token.inters.length) {
-      const { pos, source, initiator } = token.inters.pop()
-      token.content = token.content.slice(0, pos)
-        + initiator + source + bracs[initiator].terminator
-        + token.content.slice(pos)
-    }
-  }
-}
 
 // builtin domains
 export interface Domain {
@@ -190,7 +55,7 @@ export namespace Domain {
 
   export type Transform<T> = (source: string, session: Session) => T
 
-  function resolveType(type: Declaration['type']) {
+  function resolveType(type: Type) {
     if (typeof type === 'function') return type
     if (type instanceof RegExp) {
       return (source: string) => {
@@ -518,5 +383,150 @@ export namespace Domain {
       }
       return output
     }
+  }
+}
+
+export interface Token {
+  rest?: string
+  content: string
+  quoted: boolean
+  terminator: string
+  inters: Argv[]
+}
+
+export interface Argv<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O = {}> {
+  args?: A
+  options?: O
+  error?: string
+  source?: string
+  initiator?: string
+  session?: Session<U, G>
+  command?: Command<U, G, A, O>
+  rest?: string
+  pos?: number
+  root?: boolean
+  inline?: boolean
+  tokens?: Token[]
+  name?: string
+  next?: NextFunction
+}
+
+const leftQuotes = `"'“‘`
+const rightQuotes = `"'”’`
+
+export namespace Argv {
+  export interface Interpolation {
+    terminator?: string
+    parse?(source: string): Argv
+  }
+
+  const bracs: Record<string, Interpolation> = {}
+
+  export function interpolate(initiator: string, terminator: string, parse?: (source: string) => Argv) {
+    bracs[initiator] = { terminator, parse }
+  }
+
+  interpolate('$(', ')')
+
+  export class Tokenizer {
+    private bracs: Record<string, Interpolation>
+
+    constructor() {
+      this.bracs = Object.create(bracs)
+    }
+
+    interpolate(initiator: string, terminator: string, parse?: (source: string) => Argv) {
+      this.bracs[initiator] = { terminator, parse }
+    }
+
+    parseToken(source: string, stopReg = '$'): Token {
+      const parent = { inters: [] } as Token
+      const index = leftQuotes.indexOf(source[0])
+      const quote = rightQuotes[index]
+      let content = ''
+      if (quote) {
+        source = source.slice(1)
+        stopReg = `${quote}(?=${stopReg})|$`
+      }
+      stopReg += `|${Object.keys({ ...this.bracs, ...bracs }).map(escapeRegExp).join('|')}`
+      const regExp = new RegExp(stopReg)
+      while (true) {
+        const capture = regExp.exec(source)
+        content += source.slice(0, capture.index)
+        if (capture[0] in this.bracs) {
+          source = source.slice(capture.index + capture[0].length).trimStart()
+          const { parse, terminator } = this.bracs[capture[0]]
+          const argv = parse?.(source) || this.parse(source, terminator)
+          source = argv.rest
+          parent.inters.push({ ...argv, pos: content.length, initiator: capture[0], inline: true })
+        } else {
+          const quoted = capture[0] === quote
+          const rest = source.slice(capture.index + +quoted).trimStart()
+          if (!quoted && quote) {
+            content = leftQuotes[index] + content
+            parent.inters.forEach(inter => inter.pos += 1)
+          }
+          parent.rest = rest
+          parent.quoted = quoted
+          parent.content = content
+          parent.terminator = capture[0]
+          if (quote === "'") Argv.revert(parent)
+          return parent
+        }
+      }
+    }
+
+    parse(source: string, terminator = ''): Argv {
+      const tokens: Token[] = []
+      let rest = source, term = ''
+      const stopReg = `\\s+|[${escapeRegExp(terminator)}]\\s*|$`
+      // eslint-disable-next-line no-unmodified-loop-condition
+      while (rest && !(terminator && rest.startsWith(terminator))) {
+        const token = this.parseToken(rest, stopReg)
+        tokens.push(token)
+        rest = token.rest
+        term = token.terminator
+        delete token.rest
+      }
+      if (rest.startsWith(terminator)) rest = rest.slice(1)
+      source = source.slice(0, -(rest + term).length)
+      return { tokens, rest, source }
+    }
+
+    stringify(argv: Argv) {
+      return argv.tokens.map((token) => {
+        return /^\s+$/.test(token.terminator)
+          ? token.content + token.terminator
+          : token.content
+      }).join('')
+    }
+  }
+
+  const defaultTokenizer = new Tokenizer()
+
+  export function parse(source: string, terminator = '') {
+    return defaultTokenizer.parse(source, terminator)
+  }
+
+  export function stringify(argv: Argv) {
+    return defaultTokenizer.stringify(argv)
+  }
+
+  export function revert(token: Token) {
+    while (token.inters.length) {
+      const { pos, source, initiator } = token.inters.pop()
+      token.content = token.content.slice(0, pos)
+        + initiator + source + bracs[initiator].terminator
+        + token.content.slice(pos)
+    }
+  }
+
+  export const createDomain = Domain.create
+
+  export function parsePid(target: string): [Platform, string] {
+    const index = target.indexOf(':')
+    const platform = target.slice(0, index)
+    const id = target.slice(index + 1)
+    return [platform, id] as any
   }
 }

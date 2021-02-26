@@ -44,7 +44,7 @@ export function apply(ctx: Context, config: Config = {}) {
     }
     const { code, state } = ctx.query
     const data = await github.getTokens({ code, state, redirect_uri: redirect })
-    await database.setUser('id', targetId, {
+    await database.setUser('id', ctx.query.state, {
       ghAccessToken: data.access_token,
       ghRefreshToken: data.refresh_token,
     })

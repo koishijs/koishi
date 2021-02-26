@@ -96,8 +96,8 @@ export class Session<
   readonly app: App
   readonly bot: Bot.Instance<P>
   readonly sid: string
-  readonly uid: string
-  readonly cid: string
+  uid: string
+  cid: string
 
   argv?: Argv<U, G>
   user?: User.Observed<U>

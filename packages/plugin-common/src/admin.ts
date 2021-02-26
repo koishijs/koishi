@@ -98,13 +98,6 @@ function flagAction(map: FlagMap, { target, options }: FlagArgv, ...flags: strin
   return template('admin.current-flags', keys.join(', '))
 }
 
-function parseTarget(target: string) {
-  const index = target.indexOf(':')
-  const platform = target.slice(0, index)
-  const channelId = target.slice(index + 1)
-  return [platform, channelId] as [Platform, string]
-}
-
 Command.prototype.adminUser = function (this: Command, callback) {
   const { database } = this.app
   const command = this
@@ -123,7 +116,7 @@ Command.prototype.adminUser = function (this: Command, callback) {
     if (!options.target) {
       target = await session.observeUser(fields)
     } else {
-      const [platform, userId] = parseTarget(options.target)
+      const [platform, userId] = Argv.parsePid(options.target)
       if (session.user[platform] === userId) {
         target = await session.observeUser(fields)
       } else {
@@ -162,7 +155,7 @@ Command.prototype.adminChannel = function (this: Command, callback) {
     if ((!options.target || options.target === session.cid) && session.subtype === 'group') {
       target = await session.observeChannel(fields)
     } else if (options.target) {
-      const [platform, channelId] = parseTarget(options.target)
+      const [platform, channelId] = Argv.parsePid(options.target)
       const data = await database.getChannel(platform, channelId, [...fields])
       if (!data) return template('admin.channel-not-found')
       target = observe(data, diff => database.setChannel(platform, channelId, diff), `channel ${options.target}`)
@@ -341,7 +334,7 @@ export function apply(ctx: Context) {
   ctx.command('channel/assign [bot:user]', '受理者账号', { authority: 4 })
     .channelFields(['assignee'])
     .adminChannel(async ({ session, target }, value) => {
-      const assignee = value ? parseTarget(value)[1] : session.selfId
+      const assignee = value ? Argv.parsePid(value)[1] : session.selfId
       if (assignee === target.assignee) return template('admin.channel-unchanged')
       await ctx.database.createChannel(session.platform, session.channelId, { assignee })
       target._merge({ assignee })

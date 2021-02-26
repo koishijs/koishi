@@ -195,7 +195,7 @@ export class App extends Context {
       content = content.slice(capture[0].length).trimStart()
       for (const str of capture[2].slice(1).split(',')) {
         if (!str.startsWith('id=')) continue
-        session.quote = await session.bot.getMessage(session.channelId, capture[1]).catch(noop)
+        session.quote = await session.bot.getMessage(session.channelId, str.slice(3)).catch(noop)
         break
       }
     }

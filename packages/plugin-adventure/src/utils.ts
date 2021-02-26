@@ -1,5 +1,6 @@
 import { User, extendDatabase, Session, Context, Command, Argv, TableType, FieldCollector } from 'koishi-core'
 import MysqlDatabase from 'koishi-plugin-mysql'
+import { defineEnumProperty } from 'koishi-utils'
 import Achievement from './achievement'
 
 function createCollector<T extends TableType>(key: T): FieldCollector<T, never, any[], { rest: string }> {
@@ -39,7 +40,7 @@ declare module 'koishi-core' {
     'adventure/check'(session: Session<Adventurer.Field>, hints: string[]): void
     'adventure/rank'(name: string): [string, string]
     'adventure/text'(text: string, session: Session<Adventurer.Field>): string
-    'adventure/use'(userId: number, progress: string): void
+    'adventure/use'(userId: string, progress: string): void
     'adventure/before-sell'(itemMap: Record<string, number>, session: Session<Shopper.Field>): string | undefined
     'adventure/before-use'(item: string, session: Session<Adventurer.Field>): string | undefined
     'adventure/lose'(itemMap: Record<string, number>, session: Session<Shopper.Field>, hints: string[]): void
@@ -61,9 +62,7 @@ declare module 'koishi-core' {
   }
 }
 
-((flags: Record<keyof typeof User.Flag, number>) => {
-  flags[flags[1 << 3] = 'noLeading'] = 1 << 3
-})(User.Flag)
+defineEnumProperty(User.Flag, 'noLeading', 1 << 3)
 
 User.extend(() => ({
   noSR: 5,
@@ -99,7 +98,7 @@ type DeepReadonly<T> = T extends (...args: any[]) => any ? T
   : { readonly [P in keyof T]: T[P] extends {} ? DeepReadonly<T[P]> : T[P] }
 
 export interface Shopper {
-  id: number
+  id: string
   money: number
   wealth: number
   usage: Record<string, number>
