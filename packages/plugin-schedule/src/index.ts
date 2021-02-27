@@ -6,50 +6,6 @@ export * from './database'
 
 const logger = new Logger('schedule')
 
-async function prepareSchedule({ id, session, interval, command, time, lastCall }: Schedule) {
-  const now = Date.now()
-  const date = time.valueOf()
-  const { database } = session.app
-
-  async function executeSchedule() {
-    logger.debug('execute %d: %c', id, command)
-    await session.execute(command)
-    if (!lastCall || !interval) return
-    lastCall = new Date()
-    await database.updateSchedule(id, { lastCall })
-  }
-
-  if (!interval) {
-    if (date < now) {
-      database.removeSchedule(id)
-      if (lastCall) executeSchedule()
-      return
-    }
-
-    logger.debug('prepare %d: %c at %s', id, command, time)
-    return setTimeout(async () => {
-      if (!await database.getSchedule(id)) return
-      database.removeSchedule(id)
-      executeSchedule()
-    }, date - now)
-  }
-
-  logger.debug('prepare %d: %c from %s every %s', id, command, time, Time.formatTimeShort(interval))
-  const timeout = date < now ? interval - (now - date) % interval : date - now
-  if (lastCall && timeout + now - interval > +lastCall) {
-    executeSchedule()
-  }
-
-  setTimeout(async () => {
-    if (!await database.getSchedule(id)) return
-    const timer = setInterval(async () => {
-      if (!await database.getSchedule(id)) return clearInterval(timer)
-      executeSchedule()
-    }, interval)
-    executeSchedule()
-  }, timeout)
-}
-
 function formatContext(session: Session) {
   return session.subtype === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.groupId}`
 }
@@ -59,10 +15,55 @@ export interface Config {
 }
 
 export const name = 'schedule'
+export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   const { database } = ctx
   const { minInterval = Time.minute } = config
+
+  async function prepareSchedule({ id, session, interval, command, time, lastCall }: Schedule) {
+    const now = Date.now()
+    const date = time.valueOf()
+    const { database } = session.app
+
+    async function executeSchedule() {
+      logger.debug('execute %d: %c', id, command)
+      await session.execute(command)
+      if (!lastCall || !interval) return
+      lastCall = new Date()
+      await database.updateSchedule(id, { lastCall })
+    }
+
+    if (!interval) {
+      if (date < now) {
+        database.removeSchedule(id)
+        if (lastCall) executeSchedule()
+        return
+      }
+
+      logger.debug('prepare %d: %c at %s', id, command, time)
+      return ctx.setTimeout(async () => {
+        if (!await database.getSchedule(id)) return
+        database.removeSchedule(id)
+        executeSchedule()
+      }, date - now)
+    }
+
+    logger.debug('prepare %d: %c from %s every %s', id, command, time, Time.formatTimeShort(interval))
+    const timeout = date < now ? interval - (now - date) % interval : date - now
+    if (lastCall && timeout + now - interval > +lastCall) {
+      executeSchedule()
+    }
+
+    ctx.setTimeout(async () => {
+      if (!await database.getSchedule(id)) return
+      const timer = ctx.setInterval(async () => {
+        if (!await database.getSchedule(id)) return clearInterval(timer)
+        executeSchedule()
+      }, interval)
+      executeSchedule()
+    }, timeout)
+  }
 
   ctx.on('connect', async () => {
     const schedules = await database.getAllSchedules()

@@ -52,7 +52,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     if (session._redirected) return
     for (const { interval } of throttleConfig) {
       counters[interval]--
-      setTimeout(() => counters[interval]++, interval)
+      ctx.setTimeout(() => counters[interval]++, interval)
     }
   })
 

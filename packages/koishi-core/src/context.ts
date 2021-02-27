@@ -293,6 +293,18 @@ export class Context {
     return this.on(Context.middleware, middleware, prepend)
   }
 
+  setTimeout(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
+    const timer = setTimeout(callback, ms, ...args)
+    this.disposables.push(() => clearTimeout(timer))
+    return timer
+  }
+
+  setInterval(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
+    const timer = setInterval(callback, ms, ...args)
+    this.disposables.push(() => clearInterval(timer))
+    return timer
+  }
+
   command<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
   command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
   command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {
