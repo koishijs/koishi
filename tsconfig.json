@@ -1,41 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es2019",
+    "target": "esnext",
     "module": "commonjs",
-    "composite": true,
+    "noEmit": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
+    "strictBindCallApply": true,
   },
-  "references": [
-    { "path": "./build" },
-
-    { "path": "./packages/koishi-utils" },
-    { "path": "./packages/koishi-core" },
-    { "path": "./packages/koishi-test-utils" },
-    { "path": "./packages/adapter-onebot" },
-    { "path": "./packages/adapter-tomon" },
-    { "path": "./packages/adapter-kaiheila" },
-    { "path": "./packages/adapter-telegram" },
-    { "path": "./packages/adapter-discord" },
-
-    { "path": "./packages/plugin-common" },
-    { "path": "./packages/plugin-mysql" },
-    { "path": "./packages/plugin-mongo" },
-    { "path": "./packages/plugin-eval" },
-    { "path": "./packages/plugin-puppeteer" },
-    { "path": "./packages/plugin-teach" },
-
-    { "path": "./packages/plugin-adventure" },
-    { "path": "./packages/plugin-chess" },
-    { "path": "./packages/plugin-dice" },
-    { "path": "./packages/plugin-eval-addons" },
-    { "path": "./packages/plugin-github" },
-    { "path": "./packages/plugin-image-search" },
-    { "path": "./packages/plugin-monitor" },
-    { "path": "./packages/plugin-rss" },
-    { "path": "./packages/plugin-schedule" },
-    { "path": "./packages/plugin-status" },
-    { "path": "./packages/plugin-tools" },
+  "include": [
+    "build",
   ],
-  "files": [],
 }

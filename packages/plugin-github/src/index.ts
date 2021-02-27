@@ -37,6 +37,7 @@ export function apply(ctx: Context, config: Config = {}) {
   defineProperty(app, 'github', github)
 
   app.router.get(config.authorize, async (ctx) => {
+    // TODO better checks
     const targetId = parseInt('' + ctx.query.state)
     if (Number.isNaN(targetId)) {
       ctx.body = 'Invalid targetId'
@@ -44,7 +45,7 @@ export function apply(ctx: Context, config: Config = {}) {
     }
     const { code, state } = ctx.query
     const data = await github.getTokens({ code, state, redirect_uri: redirect })
-    await database.setUser('id', targetId, {
+    await database.setUser('id', targetId.toString(), {
       ghAccessToken: data.access_token,
       ghRefreshToken: data.refresh_token,
     })

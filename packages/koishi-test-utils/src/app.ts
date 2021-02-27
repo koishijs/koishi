@@ -21,9 +21,10 @@ declare module 'koishi-core' {
 }
 
 class MockedBot extends Bot<'mock'> {
-  async getMessage(messageId: string) {
+  async getMessage(channelId: string, messageId: string) {
     return {
       messageId,
+      channelId,
       content: '',
       time: 0,
       subtype: null,

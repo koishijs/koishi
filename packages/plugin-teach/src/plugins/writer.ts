@@ -1,23 +1,22 @@
 import { Context, User } from 'koishi-core'
-import { deduplicate } from 'koishi-utils'
 import { Dialogue } from '../utils'
 
 declare module '../utils' {
   interface DialogueTest {
-    writer?: number
+    writer?: string
     frozen?: boolean
   }
 
   interface Dialogue {
-    writer: number
+    writer: string
   }
 
   namespace Dialogue {
     interface Argv {
-      writer?: number
-      nameMap?: Record<number, string>
+      writer?: string
+      nameMap?: Record<string, string>
       /** 用于保存用户权限的键值对，键的范围包括目标问答列表的全体作者以及 -w 参数 */
-      authMap?: Record<number, number>
+      authMap?: Record<string, number>
     }
 
     interface Config {
@@ -34,7 +33,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('frozen', '-f  锁定这个问答', { authority: authority.frozen })
     .option('frozen', '-F, --no-frozen  解锁这个问答', { authority: authority.frozen, value: false })
     .option('writer', '-w <uid:user>  添加或设置问题的作者')
-    .option('writer', '-W, --anonymous  添加或设置匿名问题', { authority: authority.writer, value: '0' })
+    .option('writer', '-W, --anonymous  添加或设置匿名问题', { authority: authority.writer, value: '' })
 
   ctx.emit('dialogue/flag', 'frozen')
 
@@ -42,22 +41,23 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     argv.nameMap = {}
     argv.authMap = {}
     const { options, nameMap, session, dialogues, authMap } = argv
-    const writers = deduplicate(dialogues.map(d => d.writer).filter(Boolean))
+    const writers = new Set(dialogues.map(d => d.writer).filter(Boolean))
     const fields: User.Field[] = ['id', 'authority', session.platform]
-    if (options.writer === '0') {
-      argv.writer = 0
-    } else if (options.writer && !writers.includes(options.writer)) {
-      const user = await ctx.database.getUser(session.platform, options.writer, fields) as any
+    if (options.writer === '') {
+      argv.writer = ''
+    } else if (options.writer) {
+      const [platform, userId] = options.writer.split(':')
+      const user = await ctx.database.getUser(platform, userId, fields)
       if (user) {
-        writers.push(user.id)
+        writers.add(user.id)
         argv.writer = user.id
       }
     }
     if (!options.modify) fields.push('name')
-    const users = await ctx.database.getUser('id', writers, fields)
+    const users = await ctx.database.getUser('id', [...writers], fields)
 
     let hasUnnamed = false
-    const idMap: Record<string, number> = {}
+    const idMap: Record<string, string> = {}
     for (const user of users) {
       authMap[user.id] = user.authority
       if (options.modify) continue

@@ -1,5 +1,5 @@
 import { isInteger, difference, observe, Time, enumKeys, Random, template } from 'koishi-utils'
-import { Context, User, Channel, Command, Argv, Platform } from 'koishi-core'
+import { Context, User, Channel, Command, Argv, Platform, Session } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
   = (argv: Argv<U | 'authority', G, A, O> & { target: T }, ...args: A)
@@ -46,10 +46,15 @@ template.set('callme', {
 })
 
 template.set('bind', {
-  'generated': [
-    '请在 5 分钟内使用你的账号在已绑定的平台内私聊机器人发送以下文本：',
+  'generated-1': [
+    '请在 5 分钟内使用你的账号在要绑定的平台内向机器人发送以下文本：',
     '{0}',
     '注意：每个账号只能绑定到每个平台一次，此操作将会抹去你当前平台上的数据，请谨慎操作！',
+  ].join('\n'),
+  'generated-2': [
+    '令牌核验成功！下面将进行第二步操作。',
+    '请在 5 分钟内使用你的账号在之前的平台内向机器人发送以下文本：',
+    '{0}',
   ].join('\n'),
   'failed': '账号绑定失败：你已经绑定过该平台。',
   'success': '账号绑定成功！',
@@ -94,34 +99,42 @@ function flagAction(map: FlagMap, { target, options }: FlagArgv, ...flags: strin
 }
 
 Command.prototype.adminUser = function (this: Command, callback) {
+  const { database } = this.app
   const command = this
     .userFields(['authority'])
-    .option('target', '-t [user]  指定目标用户', { authority: 3 })
+    .option('target', '-t [user:user]  指定目标用户', { authority: 3 })
+    .userFields(({ options }, fields) => {
+      if (!options.target) return
+      const [platform] = options.target.split(':')
+      fields.add(platform as Platform)
+    })
 
   command._actions.unshift(async (argv) => {
     const { options, session, args } = argv
     const fields = session.collect('user', argv)
     let target: User.Observed<never>
-    if (options.target) {
-      const id = session.bot.parseUser(options.target)
-      if (!id) return '请指定正确的目标。'
-      const { database } = session.app
-      const data = await database.getUser(session.platform, id, [...fields])
-      if (!data) return template('admin.user-not-found')
-      if (id === session.userId) {
-        target = await session.observeUser(fields)
-      } else if (session.user.authority <= data.authority) {
-        return template('internal.low-authority')
-      } else {
-        target = observe(data, diff => database.setUser(session.platform, id, diff), `user ${id}`)
-      }
-    } else {
+    if (!options.target) {
       target = await session.observeUser(fields)
+    } else {
+      const [platform, userId] = Argv.parsePid(options.target)
+      if (session.user[platform] === userId) {
+        target = await session.observeUser(fields)
+      } else {
+        const data = await database.getUser(platform, userId, [...fields])
+        if (!data) return template('admin.user-not-found')
+        if (session.user.authority <= data.authority) {
+          return template('internal.low-authority')
+        } else {
+          target = observe(data, diff => database.setUser(platform, userId, diff), `user ${options.target}`)
+        }
+      }
     }
     const diffKeys = Object.keys(target._diff)
     const result = await callback({ ...argv, target }, ...args)
     if (typeof result === 'string') return result
-    if (!difference(Object.keys(target._diff), diffKeys).length) return template('admin.user-unchanged')
+    if (!difference(Object.keys(target._diff), diffKeys).length) {
+      return template('admin.user-unchanged')
+    }
     await target._update()
     return template('admin.user-updated')
   })
@@ -130,29 +143,30 @@ Command.prototype.adminUser = function (this: Command, callback) {
 }
 
 Command.prototype.adminChannel = function (this: Command, callback) {
+  const { database } = this.app
   const command = this
     .userFields(['authority'])
-    .option('target', '-t [channel]  指定目标频道', { authority: 3 })
+    .option('target', '-t [channel:channel]  指定目标频道', { authority: 3 })
 
   command._actions.unshift(async (argv, ...args) => {
     const { options, session } = argv
     const fields = session.collect('channel', argv)
     let target: Channel.Observed
-    if (options.target) {
-      const id = session.bot.parseChannel(options.target)
-      if (!id) return '请指定正确的目标。'
-      const { database } = session.app
-      const data = await session.getChannel(id, '', [...fields])
-      if (!data) return template('admin.channel-not-found')
-      target = observe(data, diff => database.setChannel(session.platform, id, diff), `channel ${id}`)
-    } else if (session.subtype === 'group') {
+    if ((!options.target || options.target === session.cid) && session.subtype === 'group') {
       target = await session.observeChannel(fields)
+    } else if (options.target) {
+      const [platform, channelId] = Argv.parsePid(options.target)
+      const data = await database.getChannel(platform, channelId, [...fields])
+      if (!data) return template('admin.channel-not-found')
+      target = observe(data, diff => database.setChannel(platform, channelId, diff), `channel ${options.target}`)
     } else {
       return template('admin.not-in-group')
     }
     const result = await callback({ ...argv, target }, ...args)
     if (typeof result === 'string') return result
-    if (!Object.keys(target._diff).length) return template('admin.channel-unchanged')
+    if (!Object.keys(target._diff).length) {
+      return template('admin.channel-unchanged')
+    }
     await target._update()
     return template('admin.channel-updated')
   })
@@ -200,28 +214,37 @@ export function apply(ctx: Context) {
       }
     })
 
-  const ctx2 = ctx.private()
-  const tokens: Record<string, [platform: Platform, id: string]> = {}
+  type TokenData = [platform: Platform, id: string, pending: boolean]
+  const tokens: Record<string, TokenData> = {}
 
-  ctx2.command('user/bind', '绑定到账号', { authority: 0 })
+  function generateToken(session: Session, pending: boolean) {
+    const token = 'koishi:' + Random.uuid()
+    tokens[token] = [session.platform, session.userId, pending]
+    setTimeout(() => delete tokens[token], 5 * Time.minute)
+    return token
+  }
+
+  ctx.command('user/bind', '绑定到账号', { authority: 0 })
     .action(({ session }) => {
-      const token = Random.uuid()
-      const data = tokens[token] = [session.platform, session.userId]
-      setTimeout(() => {
-        if (tokens[token] === data) delete tokens[token]
-      }, 5 * Time.minute)
-      return template('bind.generated', token)
+      const token = generateToken(session, session.subtype === 'group')
+      return template('bind.generated-1', token)
     })
 
-  ctx2.middleware(async (session, next) => {
+  ctx.middleware(async (session, next) => {
     const data = tokens[session.content]
     if (!data) return next()
     const user = await session.observeUser(['authority', data[0]])
-    if (!user.authority) return next()
+    if (!user.authority) return session.send(template('internal.low-authority'))
     if (user[data[0]]) return session.send(template('bind.failed'))
-    user[data[0] as any] = data[1]
-    await user._update()
-    return session.send(template('bind.success'))
+    if (data[2]) {
+      delete tokens[session.content]
+      const token = generateToken(session, false)
+      return session.send(template('bind.generated-2', token))
+    } else {
+      user[data[0] as any] = data[1]
+      await user._update()
+      return session.send(template('bind.success'))
+    }
   }, true)
 
   ctx.command('user/authorize <value>', '权限信息', { authority: 4 })
@@ -230,6 +253,7 @@ export function apply(ctx: Context) {
       const authority = Number(value)
       if (!isInteger(authority) || authority < 0) return '参数错误。'
       if (authority >= session.user.authority) return template('internal.low-authority')
+      if (authority === target.authority) return template('admin.user-unchanged')
       await ctx.database.createUser(session.platform, target[session.platform], { authority })
       target._merge({ authority })
       return template('admin.user-updated')
@@ -305,11 +329,11 @@ export function apply(ctx: Context) {
       return output.join('\n')
     })
 
-  ctx.command('channel/assign [bot]', '受理者账号', { authority: 4 })
+  ctx.command('channel/assign [bot:user]', '受理者账号', { authority: 4 })
     .channelFields(['assignee'])
     .adminChannel(async ({ session, target }, value) => {
-      const assignee = value ? session.bot.parseUser(value) : session.selfId
-      if (!assignee) return '参数错误。'
+      const assignee = value ? Argv.parsePid(value)[1] : session.selfId
+      if (assignee === target.assignee) return template('admin.channel-unchanged')
       await ctx.database.createChannel(session.platform, session.channelId, { assignee })
       target._merge({ assignee })
       return template('admin.channel-updated')

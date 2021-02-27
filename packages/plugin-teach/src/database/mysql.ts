@@ -108,7 +108,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Domain, tables })
     answer: `TEXT(65535) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
     predecessors: new Domain.Array(`TINYTEXT`),
     successorTimeout: `INT(10) UNSIGNED NOT NULL DEFAULT '0'`,
-    writer: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0'`,
+    writer: 'INT(11) UNSIGNED',
   })
 })
 

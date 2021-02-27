@@ -144,7 +144,7 @@ describe('Teach Plugin', () => {
       await u3g1.shouldReply('koishi, foo', 'bar')
       await u3g1.shouldReply('satori, foo', 'bar')
       // TODO support at-trigger
-      // await u3g1.shouldReply(`[CQ:at,qq=${app.selfId}] foo`, 'bar')
+      // await u3g1.shouldReply(`[CQ:at,id=${app.selfId}] foo`, 'bar')
       await u3g1.shouldReply('#1', '编号为 1 的问答信息：\n问题：koishi,foo\n回答：bar\n触发权重：p=0, P=1')
       await u3g1.shouldReply('## foo', SEARCH_HEAD + '1. [p=0, P=1] bar')
     })
@@ -255,9 +255,9 @@ describe('Teach Plugin', () => {
 
     it('modify writer', async () => {
       await u2.shouldReply('#1 -W', '问答 1 因权限过低无法修改。')
-      await u4g2.shouldReply('#1 -w foo', '选项 writer 输入无效，输入帮助以查看用法。')
-      await u4g2.shouldReply('#1 -w [CQ:at,qq=500]', '指定的目标用户不存在。')
-      await u4g2.shouldReply('#1 -w [CQ:at,qq=200]', '问答 1 已成功修改。')
+      await u4g2.shouldReply('#1 -w foo', '选项 writer 输入无效，请指定正确的目标。')
+      await u4g2.shouldReply('#1 -w [CQ:at,id=500]', '指定的目标用户不存在。')
+      await u4g2.shouldReply('#1 -w [CQ:at,id=200]', '问答 1 已成功修改。')
 
       // 实在找不到名字就只显示未知用户
       await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：未知用户')

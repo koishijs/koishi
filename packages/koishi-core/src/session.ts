@@ -96,8 +96,8 @@ export class Session<
   readonly app: App
   readonly bot: Bot.Instance<P>
   readonly sid: string
-  readonly uid: string
-  readonly cid: string
+  uid: string
+  cid: string
 
   argv?: Argv<U, G>
   user?: User.Observed<U>
@@ -114,6 +114,8 @@ export class Session<
   constructor(app: App, session: Partial<Session>) {
     Object.assign(this, session)
     defineProperty(this, 'app', app)
+    defineProperty(this, 'user', null)
+    defineProperty(this, 'channel', null)
     defineProperty(this, 'sid', `${this.platform}:${this.selfId}`)
     defineProperty(this, 'uid', `${this.platform}:${this.userId}`)
     defineProperty(this, 'cid', `${this.platform}:${this.channelId}`)
@@ -218,18 +220,18 @@ export class Session<
     // 绑定一个新的可观测频道实例
     const assignee = this._getValue(this.app.options.autoAssign) ? this.selfId : ''
     const data = await this.getChannel(channelId, assignee, fieldArray)
-    const newChannel = observe(data, diff => this.database.setChannel(platform, channelId, diff), `channel ${channelId}`)
+    const newChannel = observe(data, diff => this.database.setChannel(platform, channelId, diff), `channel ${this.cid}`)
     this.app._groupCache.set(this.cid, newChannel)
     return this.channel = newChannel
   }
 
   async getUser<K extends User.Field = never>(id = this.userId, authority = 0, fields: readonly K[] = []) {
-    const user = await this.database.getUser(this.platform, id as any, fields)
+    const user = await this.database.getUser(this.platform, id, fields)
     if (user) return user
     const fallback = User.create(this.platform, id)
     fallback.authority = authority
     if (authority) {
-      await this.database.createUser(this.platform, id as any, fallback)
+      await this.database.createUser(this.platform, id, fallback)
     }
     return fallback
   }
@@ -254,7 +256,7 @@ export class Session<
       }
       if (fieldSet.size) {
         const data = await this.getUser(userId, 0, [...fieldSet])
-        userCache.set(userId, user._merge(data) as any)
+        userCache.set(userId, user._merge(data))
       }
     }
 
@@ -276,7 +278,7 @@ export class Session<
 
     // 绑定一个新的可观测用户实例
     const data = await this.getUser(userId, this._getValue(this.app.options.autoAuthorize), fieldArray)
-    const newUser = observe(data, diff => this.database.setUser(this.platform, userId as any, diff), `user ${userId}`)
+    const newUser = observe(data, diff => this.database.setUser(this.platform, userId, diff), `user ${this.uid}`)
     userCache.set(userId, newUser)
     return this.user = newUser
   }

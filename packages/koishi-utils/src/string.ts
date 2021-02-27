@@ -48,7 +48,9 @@ export function template(path: string | string[], ...params: any[]) {
   if (!Array.isArray(path)) path = [path]
   for (const item of path) {
     const source = template.get(item)
-    if (source) return template.format(source, ...params)
+    if (typeof source === 'string') {
+      return template.format(source, ...params)
+    }
   }
   return path[0]
 }

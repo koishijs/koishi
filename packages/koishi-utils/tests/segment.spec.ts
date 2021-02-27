@@ -2,7 +2,7 @@ import { segment } from 'koishi-utils'
 import { expect } from 'chai'
 import 'koishi-test-utils'
 
-describe('CQ Code', () => {
+describe('Segment API', () => {
   it('segment.escape()', () => {
     expect(segment.escape('[CQ:at,qq=123]')).to.equal('&#91;CQ:at,qq=123&#93;')
   })

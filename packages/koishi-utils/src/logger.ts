@@ -13,25 +13,33 @@ const colors = stderr.level < 2 ? [6, 2, 3, 4, 5, 1] : [
 
 const instances: Record<string, Logger> = {}
 
-type LogFunction = (format: any, ...param: any[]) => void
+interface LogLevelConfig {
+  base: number
+  [K: string]: LogLevel
+}
 
+type LogLevel = number | LogLevelConfig
+type LogFunction = (format: any, ...param: any[]) => void
 type LogType = 'success' | 'error' | 'info' | 'warn' | 'debug'
 
 export interface Logger extends Record<LogType, LogFunction> {}
 
 export class Logger {
+  static readonly SILENT = 0
   static readonly SUCCESS = 1
   static readonly ERROR = 1
   static readonly INFO = 2
   static readonly WARN = 2
   static readonly DEBUG = 3
 
-  static baseLevel = 2
   static showDiff = false
   static showTime = ''
-  static levels: Record<string, number> = {}
   static timestamp = 0
-  static stream: NodeJS.WriteStream = process.stderr
+  static stream: NodeJS.WritableStream = process.stderr
+
+  static levels: LogLevelConfig = {
+    base: 2,
+  }
 
   static options: InspectOptions = {
     colors: stderr.hasBasic,
@@ -49,7 +57,8 @@ export class Logger {
   }
 
   static clearScreen() {
-    const blank = '\n'.repeat(Math.max(Logger.stream.rows - 2, 0))
+    if (!Logger.stream['isTTY'] || process.env.CI) return
+    const blank = '\n'.repeat(Math.max(Logger.stream['rows'] - 2, 0))
     console.log(blank)
     cursorTo(Logger.stream, 0, 0)
     clearScreenDown(Logger.stream)
@@ -68,7 +77,7 @@ export class Logger {
     }
     instances[name] = this
     this.code = colors[Math.abs(hash) % colors.length]
-    this.displayName = name ? this.color(name + ' ', ';1') : ''
+    this.displayName = this.color(name + ' ', ';1')
     this.createMethod('success', '[S] ', Logger.SUCCESS)
     this.createMethod('error', '[E] ', Logger.ERROR)
     this.createMethod('info', '[I] ', Logger.INFO)
@@ -100,7 +109,27 @@ export class Logger {
   }
 
   get level() {
-    return Logger.levels[this.name] ?? Logger.baseLevel
+    const paths = this.name.split(':')
+    let config: LogLevel = Logger.levels
+    do {
+      config = config[paths.shift()] ?? config['base']
+    } while (paths.length && typeof config === 'object')
+    return config as number
+  }
+
+  set level(value) {
+    const paths = this.name.split(':')
+    let config = Logger.levels
+    while (paths.length > 1) {
+      const name = paths.shift()
+      const value = config[name]
+      if (typeof value === 'object') {
+        config = value
+      } else {
+        config = config[name] = { base: value ?? config.base }
+      }
+    }
+    config[paths[0]] = value
   }
 
   extend = (namespace: string) => {

@@ -1,20 +1,12 @@
 import { App, BotOptions, version } from 'koishi-core'
 import { resolve, dirname } from 'path'
-import { coerce, Logger, noop } from 'koishi-utils'
+import { coerce, Logger, noop, LogLevelConfig } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { watch } from 'chokidar'
 import { yellow } from 'kleur'
 import { AppConfig } from '..'
 
 const logger = new Logger('app')
-
-if (process.env.KOISHI_LOG_LEVEL) {
-  Logger.baseLevel = +process.env.KOISHI_LOG_LEVEL
-}
-
-if (process.env.KOISHI_DEBUG) {
-  Logger.levels = Object.fromEntries(process.env.KOISHI_DEBUG.split(',').map(name => [name, 3]))
-}
 
 function handleException(error: any) {
   logger.error(error)
@@ -79,13 +71,36 @@ function loadEcosystem(type: string, name: string) {
   throw new Error(`cannot resolve ${type} ${name}`)
 }
 
-Object.assign(Logger.levels, config.logFilter)
-if (config.logLevel && !process.env.KOISHI_LOG_LEVEL) {
-  Logger.baseLevel = config.logLevel
+function ensureBaseLevel(config: LogLevelConfig, base: number) {
+  config.base ??= base
+  Object.values(config).forEach((value) => {
+    if (typeof value !== 'object') return
+    ensureBaseLevel(value, config.base)
+  })
 }
 
-if (config.logTime === true) config.logTime = 'YYYY/MM/DD hh:mm:ss'
+// configurate logger levels
+if (typeof config.logLevel === 'object') {
+  Logger.levels = config.logLevel as any
+} else if (typeof config.logLevel === 'number') {
+  Logger.levels.base = config.logLevel
+}
+
+if (config.logTime === true) config.logTime = 'yyyy/MM/dd hh:mm:ss'
 if (config.logTime) Logger.showTime = config.logTime
+
+// cli options have higher precedence
+if (process.env.KOISHI_LOG_LEVEL) {
+  Logger.levels.base = +process.env.KOISHI_LOG_LEVEL
+}
+
+ensureBaseLevel(Logger.levels, 2)
+
+if (process.env.KOISHI_DEBUG) {
+  for (const name of process.env.KOISHI_DEBUG.split(',')) {
+    new Logger(name).level = Logger.DEBUG
+  }
+}
 
 interface Message {
   type: 'send'
@@ -215,7 +230,6 @@ function createWatcher() {
       const plugin = require(filename)
       const [name, options] = pluginMap.get(filename)
       const displayName = plugin.name || name
-      Logger.clearScreen()
       try {
         app.plugin(plugin, options)
         logger.info('reload plugin %c', displayName)

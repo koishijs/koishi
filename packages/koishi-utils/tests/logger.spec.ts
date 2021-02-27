@@ -21,10 +21,15 @@ describe('Logger API', () => {
     clock.uninstall()
   })
 
+  beforeEach(() => {
+    data = ''
+  })
+
   it('basic support', () => {
     logger = new Logger('test').extend('logger')
     expect(logger.name).to.equal('test:logger')
-    logger.stream = new Writable({
+    expect(logger).to.equal(new Logger('test:logger'))
+    Logger.stream = new Writable({
       write(chunk, encoding, callback) {
         data = chunk.toString()
         callback()
@@ -49,8 +54,20 @@ describe('Logger API', () => {
   it('custom formatter', () => {
     clock.tick(1)
     Logger.formatters.x = () => 'custom'
-    Logger.levels[logger.name] = 2
     logger.info('%x%%x')
     expect(data).to.equal('[I] test:logger custom%x +1ms\n')
+  })
+
+  it('log levels', () => {
+    logger.debug('%c', 'foo bar')
+    expect(data).to.equal('')
+
+    logger.level = Logger.SILENT
+    logger.debug('%c', 'foo bar')
+    expect(data).to.equal('')
+
+    logger.level = Logger.DEBUG
+    logger.debug('%c', 'foo bar')
+    expect(data).to.be.ok
   })
 })

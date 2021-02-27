@@ -25,33 +25,33 @@ describe('Session API', () => {
     })
 
     it('apply suggestions 1', async () => {
-      await session1.shouldReply('fo bar', '你要找的是不是“foo”？发送空行或句号以调用推测的指令。')
+      await session1.shouldReply('fo bar', '您要找的是不是“foo”？发送空行或句号以使用推测的指令。')
       await session2.shouldReply('fooo -t bar', 'fooobar')
       await session1.shouldReply(' ', 'foobar')
       await session1.shouldNotReply(' ')
     })
 
     it('apply suggestions 2', async () => {
-      await session2.shouldReply('foooo -t bar', '你要找的是不是“fooo”？发送空行或句号以调用推测的指令。')
+      await session2.shouldReply('foooo -t bar', '您要找的是不是“fooo”？发送空行或句号以使用推测的指令。')
       await session1.shouldReply('foo bar', 'foobar')
       await session2.shouldReply(' ', 'fooobar')
       await session2.shouldNotReply(' ')
     })
 
     it('ignore suggestions 1', async () => {
-      await session1.shouldReply('fo bar', '你要找的是不是“foo”？发送空行或句号以调用推测的指令。')
+      await session1.shouldReply('fo bar', '您要找的是不是“foo”？发送空行或句号以使用推测的指令。')
       await session1.shouldNotReply('bar foo')
       await session1.shouldNotReply(' ')
     })
 
     it('ignore suggestions 2', async () => {
-      await session2.shouldReply('fo bar', '你要找的是不是“foo”？发送空行或句号以调用推测的指令。')
+      await session2.shouldReply('fo bar', '您要找的是不是“foo”？发送空行或句号以使用推测的指令。')
       await session2.shouldReply('foo bar', 'foobar')
       await session2.shouldNotReply(' ')
     })
 
     it('multiple suggestions', async () => {
-      await session1.shouldReply('fool bar', '你要找的是不是“foo”或“fooo”或“bool”？')
+      await session1.shouldReply('fool bar', '您要找的是不是“foo”或“fooo”或“bool”？')
       await session1.shouldNotReply(' ')
     })
   })
@@ -60,7 +60,7 @@ describe('Session API', () => {
     const app = new App({ prefix: '.' })
     const session = app.session('123', '456')
     const items = ['foo', 'bar']
-    const command = app.command('find [item]').action(({ session }, item) => {
+    app.command('find [item]').action(({ session }, item) => {
       if (items.includes(item)) return 'found:' + item
       return session.suggest({
         target: item,
@@ -68,7 +68,7 @@ describe('Session API', () => {
         prefix: 'PREFIX',
         suffix: 'SUFFIX',
         apply(message) {
-          return command.execute({ args: [message], session: this, command })
+          return session.execute({ args: [message], name: 'find' })
         },
       })
     })
@@ -81,9 +81,9 @@ describe('Session API', () => {
     it('show suggestions', async () => {
       await session.shouldReply('.find 111', 'PREFIX')
       await session.shouldNotReply(' ')
-      await session.shouldReply('.find for', `PREFIX你要找的是不是“foo”？SUFFIX`)
+      await session.shouldReply('.find for', `PREFIX您要找的是不是“foo”？SUFFIX`)
       await session.shouldReply(' ', 'found:foo')
-      await session.shouldReply('.find bax', `PREFIX你要找的是不是“bar”或“baz”？`)
+      await session.shouldReply('.find bax', `PREFIX您要找的是不是“bar”或“baz”？`)
       await session.shouldNotReply(' ')
     })
 
@@ -103,7 +103,7 @@ describe('Session API', () => {
     })
 
     it('session.prompt 2', async () => {
-      app.options.promptTimeout = 0
+      app.options.delay.prompt = 0
       await session.shouldReply('prompt', 'prompt text')
       await sleep(0)
       await session.shouldReply('foo', 'received nothing')
