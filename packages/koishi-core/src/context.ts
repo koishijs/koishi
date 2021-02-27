@@ -43,15 +43,13 @@ export class Context {
   protected _router: Router
   protected _database: Database
 
-  private _plugin: Plugin = null
-
   public user = this.createSelector('userId')
   public self = this.createSelector('selfId')
   public group = this.createSelector('groupId')
   public channel = this.createSelector('channelId')
   public platform = this.createSelector('platform')
 
-  constructor(public filter: Filter, public app?: App) {}
+  protected constructor(public filter: Filter, public app?: App, private _plugin: Plugin = null) {}
 
   [inspect.custom]() {
     return `Context {}`
@@ -109,18 +107,18 @@ export class Context {
     })
   }
 
+  all() {
+    return new Context(() => true, this.app, this._plugin)
+  }
+
   union(arg: Filter | Context) {
     const filter = typeof arg === 'function' ? arg : arg.filter
-    const ctx = new Context(s => this.filter(s) || filter(s), this.app)
-    ctx._plugin = this._plugin
-    return ctx
+    return new Context(s => this.filter(s) || filter(s), this.app, this._plugin)
   }
 
   intersect(arg: Filter | Context) {
     const filter = typeof arg === 'function' ? arg : arg.filter
-    const ctx = new Context(s => this.filter(s) && filter(s), this.app)
-    ctx._plugin = this._plugin
-    return ctx
+    return new Context(s => this.filter(s) && filter(s), this.app, this._plugin)
   }
 
   match(session?: Session) {

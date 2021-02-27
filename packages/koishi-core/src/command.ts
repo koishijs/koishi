@@ -4,7 +4,6 @@ import { Context, NextFunction } from './context'
 import { User, Channel } from './database'
 import { FieldCollector, Session } from './session'
 import { inspect, format } from 'util'
-import { App } from './app'
 
 const logger = new Logger('command')
 
@@ -273,8 +272,8 @@ Command.userFields(({ tokens, command, options = {} }, fields) => {
   }
 })
 
-export default function apply(app: App) {
-  app.before('command', async (argv: Argv<ValidationField>) => {
+export default function apply(ctx: Context) {
+  ctx.before('command', async (argv: Argv<ValidationField>) => {
     const { session, args, options, command } = argv
     function sendHint(message: string, ...param: any[]) {
       return command.config.showWarning ? template(message, param) : ''
