@@ -30,11 +30,11 @@ export interface AppOptions extends BotOptions {
   delay?: DelayOptions
   autoAssign?: boolean | ((session: Session) => boolean)
   autoAuthorize?: number | ((session: Session) => number)
-  similarityCoefficient?: number
-  userCacheLength?: number
-  groupCacheLength?: number
   userCacheAge?: number
-  groupCacheAge?: number
+  userCacheLength?: number
+  channelCacheLength?: number
+  channelCacheAge?: number
+  minSimilarity?: number
   axiosConfig?: AxiosRequestConfig
 }
 
@@ -54,7 +54,7 @@ export class App extends Context {
   _shortcuts: Command.Shortcut[] = []
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
   _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
-  _groupCache: LruCache<string, Observed<Partial<Channel>, Promise<void>>>
+  _channelCache: LruCache<string, Observed<Partial<Channel>, Promise<void>>>
   _httpServer?: http.Server
   _sessions: Record<string, Session> = {}
   _plugins = new Map<Plugin, Disposable[]>()
@@ -66,10 +66,10 @@ export class App extends Context {
     maxListeners: 64,
     prettyErrors: true,
     userCacheAge: Time.minute,
-    groupCacheAge: 5 * Time.minute,
+    channelCacheAge: 5 * Time.minute,
     autoAssign: false,
     autoAuthorize: 0,
-    similarityCoefficient: 0.4,
+    minSimilarity: 0.4,
     processMessage: message => simplify(message.trim()),
     delay: {
       character: 0,
@@ -87,9 +87,9 @@ export class App extends Context {
 
     this._plugins.set(null, [])
     defineProperty(this, '_userCache', {})
-    defineProperty(this, '_groupCache', new LruCache({
-      max: options.groupCacheLength,
-      maxAge: options.groupCacheAge,
+    defineProperty(this, '_channelCache', new LruCache({
+      max: options.channelCacheLength,
+      maxAge: options.channelCacheAge,
     }))
 
     if (options.port) this.createServer()
