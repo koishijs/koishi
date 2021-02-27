@@ -6,7 +6,7 @@ import { Argv, Domain } from './parser'
 import { Platform, Bot } from './adapter'
 import { App } from './app'
 import { inspect } from 'util'
-import type Router from 'koa-router'
+import Router from '@koa/router'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
@@ -67,8 +67,11 @@ export class Context {
     return this.unselect('groupId').user
   }
 
-  get router() {
-    return this.app._router
+  get router(): Router {
+    if (!this.app._router) return
+    const router = Object.create(this.app._router)
+    router._koishiContext = this
+    return router
   }
 
   get bots() {
@@ -407,4 +410,17 @@ export interface EventMap extends SessionEventMap {
   'before-disconnect'(): Awaitable<void>
   'disconnect'(): void
   'dispose'(): Awaitable<void>
+}
+
+// hack into router methods to make sure
+// that koa middlewares are disposable
+const register = Router.prototype.register
+Router.prototype.register = function (this: Router, ...args) {
+  const layer = register.apply(this, args)
+  const context: Context = this['_koishiContext']
+  context['disposables'].push(() => {
+    const index = this.stack.indexOf(layer)
+    if (index) this.stack.splice(index, 1)
+  })
+  return layer
 }

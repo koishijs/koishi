@@ -8,7 +8,7 @@ import { Session } from './session'
 import help, { getCommands } from './help'
 import LruCache from 'lru-cache'
 import { AxiosRequestConfig } from 'axios'
-import * as http from 'http'
+import { Server, createServer } from 'http'
 import type Koa from 'koa'
 
 export interface DelayOptions {
@@ -55,7 +55,7 @@ export class App extends Context {
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
   _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
   _channelCache: LruCache<string, Observed<Partial<Channel>, Promise<void>>>
-  _httpServer?: http.Server
+  _httpServer?: Server
   _sessions: Record<string, Session> = {}
   _plugins = new Map<Plugin, Disposable[]>()
 
@@ -133,11 +133,11 @@ export class App extends Context {
 
   createServer() {
     const koa: Koa = new (require('koa'))()
-    defineProperty(this, '_router', new (require('koa-router'))())
+    defineProperty(this, '_router', new (require('@koa/router'))())
     koa.use(require('koa-bodyparser')())
     koa.use(this._router.routes())
     koa.use(this._router.allowedMethods())
-    defineProperty(this, '_httpServer', http.createServer(koa.callback()))
+    defineProperty(this, '_httpServer', createServer(koa.callback()))
   }
 
   prepare() {
