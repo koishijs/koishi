@@ -95,7 +95,7 @@ export namespace Affinity {
         if (options.theoretical) {
           output.unshift(`好感度理论最高值为 ${total}`)
         } else {
-          output.unshift(`四季酱对 ${session.$username} 的好感度是 ${total}`)
+          output.unshift(`四季酱对 ${session.username} 的好感度是 ${total}`)
           if (total >= 200) {
             hints.push('四季酱也最喜欢你了呢！')
           } else if (total >= 150) {

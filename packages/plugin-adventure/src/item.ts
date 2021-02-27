@@ -209,7 +209,7 @@ namespace Item {
             itemMap[Item.data[item].rarity].push(item)
           }
           return [
-            `${session.$username}，你已经获得过 ${Item.data.length} 件物品中的 ${achieved} 件。`,
+            `${session.username}，你已经获得过 ${Item.data.length} 件物品中的 ${achieved} 件。`,
             ...['N', 'R', 'SR', 'SSR', 'EX', 'SP'].map((rarity: Item.Rarity) => {
               const { length } = itemMap[rarity]
               let output = `${rarity} (${length}/${Item.data[rarity].length})`

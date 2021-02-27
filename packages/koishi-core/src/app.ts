@@ -277,7 +277,7 @@ export class App extends Context {
 
   private async _handleMessage(session: Session) {
     // preparation
-    this._sessions[session.$uuid] = session
+    this._sessions[session.id] = session
     const middlewares: Middleware[] = this._hooks[Context.middleware as any]
       .filter(([context]) => context.match(session))
       .map(([, middleware]) => middleware)
@@ -295,7 +295,7 @@ export class App extends Context {
       }
 
       try {
-        if (!this._sessions[session.$uuid]) {
+        if (!this._sessions[session.id]) {
           throw new Error('isolated next function detected')
         }
         if (fallback) middlewares.push((_, next) => fallback(next))
@@ -313,7 +313,7 @@ export class App extends Context {
     await next()
 
     // update session map
-    delete this._sessions[session.$uuid]
+    delete this._sessions[session.id]
     this.emit(session, 'middleware', session)
 
     // flush user & group data

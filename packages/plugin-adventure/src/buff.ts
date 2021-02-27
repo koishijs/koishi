@@ -115,7 +115,7 @@ namespace Buff {
           return output.join('\n')
         }
 
-        const output = [session.$username]
+        const output = [session.username]
         for (const { callback } of buffList) {
           const result = callback(session.user)
           if (result) output.push(result)

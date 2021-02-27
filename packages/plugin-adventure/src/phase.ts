@@ -421,7 +421,7 @@ export namespace Phase {
             return `${id}. ${name}×${endings[id]}${badEndings.has(id) ? `（BE）` : ''}`
           }).sort()
           const [title, count] = lines[name]
-          output.unshift(`${session.$username}，你已达成${title}剧情线的 ${titles.length}/${count} 个结局：`)
+          output.unshift(`${session.username}，你已达成${title}剧情线的 ${titles.length}/${count} 个结局：`)
           return output.join('\n')
         }
 
@@ -435,7 +435,7 @@ export namespace Phase {
         const totalBadCount = badEndings.size
         const userCount = Object.keys(endings).length
         const userBadCount = getBadEndingCount(session.user)
-        output.unshift(`${session.$username}，你已达成 ${userCount}/${totalCount} 个结局（BE: ${userBadCount}/${totalBadCount}）。`)
+        output.unshift(`${session.username}，你已达成 ${userCount}/${totalCount} 个结局（BE: ${userBadCount}/${totalBadCount}）。`)
         return output.join('\n')
       })
 

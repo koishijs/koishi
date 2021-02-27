@@ -56,7 +56,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
       .userFields(['name', 'id'])
       .action(async ({ session }, text) => {
         if (!text) return template('common.expect-text')
-        const { $username: name, userId } = session
+        const { username: name, userId } = session
         const nickname = name === '' + userId ? userId : `${name} (${userId})`
         const message = template('common.feedback-receive', nickname, text)
         const delay = ctx.app.options.delay.broadcast
@@ -86,7 +86,7 @@ export default function apply(ctx: Context, config: SenderConfig = {}) {
     const [platform, channelId] = Argv.parsePid(destination)
     const bot = ctx.getBot(platform, selfId)
     if (!session.parsed.content) return
-    const content = template('common.relay', session.$username, session.parsed.content)
+    const content = template('common.relay', session.username, session.parsed.content)
     const id = await bot.sendMessage(channelId, content)
     relayMap[id] = { source: destination, destination: session.cid, selfId: session.selfId, lifespan }
     setTimeout(() => delete relayMap[id], lifespan)

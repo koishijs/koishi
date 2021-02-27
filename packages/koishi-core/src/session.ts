@@ -99,11 +99,11 @@ export class Session<
   uid: string
   cid: string
 
+  id?: string
   argv?: Argv<U, G>
   user?: User.Observed<U>
   channel?: Channel.Observed<G>
   parsed?: Parsed
-  $uuid?: string
 
   private _delay?: number
   private _queued: Promise<void>
@@ -120,7 +120,7 @@ export class Session<
     defineProperty(this, 'uid', `${this.platform}:${this.userId}`)
     defineProperty(this, 'cid', `${this.platform}:${this.channelId}`)
     defineProperty(this, 'bot', app.bots[this.sid])
-    defineProperty(this, '$uuid', Random.uuid())
+    defineProperty(this, 'id', Random.uuid())
     defineProperty(this, '_queued', Promise.resolve())
     defineProperty(this, '_hooks', [])
   }
@@ -131,7 +131,7 @@ export class Session<
     }))
   }
 
-  get $username(): string {
+  get username(): string {
     const defaultName = this.user && this.user['name']
       ? this.user['name']
       : this.author

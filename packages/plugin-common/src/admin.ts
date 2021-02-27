@@ -185,7 +185,7 @@ export function apply(ctx: Context) {
       const { user } = session
       if (!name) {
         if (user.name) {
-          return template('callme.current', session.$username)
+          return template('callme.current', session.username)
         } else {
           return template('callme.unnamed')
         }
@@ -203,7 +203,7 @@ export function apply(ctx: Context) {
       try {
         user.name = name
         await user._update()
-        return template('callme.updated', session.$username)
+        return template('callme.updated', session.username)
       } catch (error) {
         if (error[Symbol.for('koishi.error-type')] === 'duplicate-entry') {
           return template('callme.duplicate')
