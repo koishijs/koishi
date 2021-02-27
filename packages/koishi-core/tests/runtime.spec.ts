@@ -33,7 +33,7 @@ const cmd2 = app.command('cmd2')
   .shortcut('foo3', { prefix: true, fuzzy: true })
   .option('--bar', '', { authority: 3 })
   .option('--baz', '', { notUsage: true })
-  .action(({ session }) => session.send('cmd2:' + session.$user.id))
+  .action(({ session }) => session.send('cmd2:' + session.user.id))
 
 before(async () => {
   await app.start()
@@ -248,7 +248,7 @@ describe('Runtime', () => {
     it('check arg count', async () => {
       cmd1.config.checkArgCount = true
       cmd1.config.showWarning = true
-      await session4.shouldReply('cmd1', '缺少参数，请检查指令语法。')
+      await session4.shouldReply('cmd1', '缺少参数，输入帮助以查看用法。')
       await session4.shouldReply('cmd1 foo', 'cmd1:foo')
       await session4.shouldReply('cmd1 foo bar', '存在多余参数，请检查指令语法。')
       cmd1.config.showWarning = false
@@ -268,9 +268,9 @@ describe('Runtime', () => {
 
     it('option.validate', async () => {
       const cmd3 = app.command('cmd3').action(() => 'after cmd3')
-      cmd3.option('foo', '', { validate: () => true })
-      cmd3.option('bar', '', { validate: () => 'SUFFIX' })
-      cmd3.option('baz', '', { validate: /$^/ })
+      cmd3.option('foo', '', { type: () => true })
+      cmd3.option('bar', '', { type: () => { throw new Error('SUFFIX') } })
+      cmd3.option('baz', '', { type: /$^/ })
       await session1.shouldReply('cmd3', 'after cmd3')
       await session1.shouldReply('cmd3 --foo', '选项 foo 输入无效，请检查指令语法。')
       await session1.shouldReply('cmd3 --bar', '选项 bar 输入无效，SUFFIX')
@@ -282,7 +282,7 @@ describe('Runtime', () => {
       const cmd3 = app.command('cmd3').action(() => 'after cmd3')
       await session1.shouldReply('cmd3', 'after cmd3')
       let value: any = 'before cmd3'
-      cmd3.before(() => value)
+      cmd3.check(() => value)
       await session1.shouldReply('cmd3', 'before cmd3')
       value = true
       await session1.shouldNotReply('cmd3')

@@ -27,7 +27,7 @@ extendDatabase(MysqlDatabase, {
   },
 
   async createUser(type, id, data) {
-    data[type as any] = id
+    data[type] = id
     const newKeys = Object.keys(data)
     const assignments = difference(newKeys, [type]).map((key) => {
       key = this.escapeId(key)
@@ -43,7 +43,7 @@ extendDatabase(MysqlDatabase, {
   },
 
   async setUser(type, id, data) {
-    data[type as any] = id
+    data[type] = id
     const keys = Object.keys(data)
     const assignments = difference(keys, [type]).map((key) => {
       return `${this.escapeId(key)} = ${this.escape(data[key], 'user', key)}`
@@ -53,11 +53,11 @@ extendDatabase(MysqlDatabase, {
 
   async getChannel(type, pid, fields) {
     if (Array.isArray(pid)) {
-      if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` } as any))
+      if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` }))
       const placeholders = pid.map(() => '?').join(',')
       return this.select<Channel>('channel', fields, '`id` IN (' + placeholders + ')', pid.map(id => `${type}:${id}`))
     }
-    if (fields && !fields.length) return { id: `${type}:${pid}` } as any
+    if (fields && !fields.length) return { id: `${type}:${pid}` }
     const [data] = await this.select<Channel>('channel', fields, '`id` = ?', [`${type}:${pid}`])
     return data && { ...data, id: `${type}:${pid}` }
   },
@@ -108,7 +108,7 @@ extendDatabase(MysqlDatabase, ({ tables, Domain }) => {
     'primary key (`id`) using btree',
     'unique index `name` (`name`) using btree',
   ], {
-    id: `bigint(20) unsigned not null auto_increment`,
+    id: new Domain.String(`bigint(20) unsigned not null auto_increment`),
     name: `varchar(50) null default null collate 'utf8mb4_general_ci'`,
     flag: `bigint(20) unsigned not null default '0'`,
     authority: `tinyint(4) unsigned not null default '0'`,

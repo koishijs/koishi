@@ -28,20 +28,20 @@ export class MemoryDatabase {
 
   $create<K extends TableType>(table: K, data: Tables[K]) {
     const store = this.$table(table)
-    const max = store.length ? Math.max(...store.map(row => row.id as number)) : 0
-    data.id = max + 1
+    const max = store.length ? Math.max(...store.map(row => +row.id)) : 0
+    data.id = max + 1 as any
     store.push(data)
     return data
   }
 
   $remove<K extends TableType>(table: K, id: number) {
     const store = this.$table(table)
-    const index = store.findIndex(row => row.id === id)
+    const index = store.findIndex(row => +row.id === id)
     if (index >= 0) store.splice(index, 1)
   }
 
   $update<K extends TableType>(table: K, id: number, data: Partial<Tables[K]>) {
-    const row = this.$table(table).find(row => row.id === id)
+    const row = this.$table(table).find(row => +row.id === id)
     Object.assign(row, clone(data))
   }
 
@@ -53,7 +53,7 @@ export class MemoryDatabase {
 extendDatabase(MemoryDatabase, {
   async getUser(type, id) {
     if (Array.isArray(id)) {
-      return this.$select('user', type as any, id) as any
+      return this.$select('user', type, id) as any
     } else {
       return this.$select('user', type as any, [id])[0]
     }

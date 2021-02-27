@@ -41,7 +41,7 @@ export namespace Phase {
 
   export const metaMap: Record<number, Session<User.Field>> = {}
   export const groupStates: Record<number, number> = {}
-  export const activeUsers = new Set<number>()
+  export const activeUsers = new Set<string>()
 
   export function getBadEndingCount(user: Pick<User, 'endings'>) {
     return Object.keys(user.endings).filter(id => badEndings.has(id)).length
@@ -566,8 +566,10 @@ export namespace Phase {
       })
 
     ctx.on('connect', async () => {
+      const endings = Object.keys(endingCount)
+      if (!endings.length) return
       let sql = 'SELECT'
-      for (const id in endingCount) {
+      for (const id of endings) {
         sql += ` find_ending('${id}') AS '${id}',`
       }
       const [data] = await ctx.database.query<[Record<string, number>]>(sql.slice(0, -1))

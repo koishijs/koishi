@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base",
   "compilerOptions": {
     "rootDir": "src",
-    "outFile": "dist/index.d.ts",
+    "outFile": "temp/index.d.ts",
     "tsBuildInfoFile": "tsconfig.tsbuildinfo"
   },
   "include": [

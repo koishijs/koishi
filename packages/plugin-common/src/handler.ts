@@ -20,7 +20,6 @@ export interface HandlerOptions {
   onFriendRequest?: RequestHandler
   onGroupMemberRequest?: RequestHandler
   onGroupRequest?: RequestHandler
-  respondents?: Respondent[]
   throttle?: ThrottleConfig | ThrottleConfig[]
 }
 

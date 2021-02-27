@@ -1,9 +1,390 @@
 import { camelCase, segment, escapeRegExp, paramCase, template } from 'koishi-utils'
 import { format } from 'util'
+import { Platform } from './adapter'
 import { Command } from './command'
 import { NextFunction } from './context'
 import { Channel, User } from './database'
 import { Session } from './session'
+
+// builtin domains
+export interface Domain {
+  string: string
+  number: number
+  boolean: boolean
+  text: string
+  user: string
+  channel: string
+}
+
+export namespace Domain {
+  type Builtin = keyof Domain
+
+  type GetDomain<T extends string, F> = T extends Builtin ? Domain[T] : F
+
+  type GetParamDomain<S extends string, X extends string, F>
+    = S extends `${any}${X}${infer T}` ? GetDomain<T, F> : F
+
+  type Replace<S extends string, X extends string, Y extends string>
+    = S extends `${infer L}${X}${infer R}` ? `${L}${Y}${Replace<R, X, Y>}` : S
+
+  type Extract<S extends string, X extends string, Y extends string, F>
+    = S extends `${infer L}${Y}${infer R}` ? [GetParamDomain<L, X, F>, ...Extract<R, X, Y, F>] : []
+
+  type ExtractFirst<S extends string, X extends string, Y extends string, F>
+    = S extends `${infer L}${Y}${any}` ? GetParamDomain<L, X, F> : boolean
+
+  export type ArgumentType<S extends string> = [...Extract<Replace<S, '>', ']'>, ':', ']', string>, ...string[]]
+
+  // I don't know why I should write like this but
+  // [T] extends [xxx] just works, so don't touch it
+  export type OptionType<S extends string, T extends Type>
+    = [T] extends [Builtin] ? Domain[T]
+    : [T] extends [RegExp] ? string
+    : T extends (source: string) => infer R ? R
+    : ExtractFirst<Replace<S, '>', ']'>, ':', ']', any>
+
+  export type Type = Builtin | RegExp | Transform<any>
+
+  export interface Declaration {
+    name?: string
+    type?: Type
+    fallback?: any
+    variadic?: boolean
+    required?: boolean
+  }
+
+  export type Transform<T> = (source: string, session: Session) => T
+
+  function resolveType(type: Type) {
+    if (typeof type === 'function') return type
+    if (type instanceof RegExp) {
+      return (source: string) => {
+        if (type.test(source)) return source
+        throw new Error()
+      }
+    }
+    return builtin[type]
+  }
+
+  const builtin: Record<string, Transform<any>> = {}
+
+  export function create<K extends keyof Domain>(name: K, callback: Transform<Domain[K]>) {
+    builtin[name] = callback
+  }
+
+  create('string', source => source)
+  create('number', source => +source)
+  create('text', source => source)
+
+  create('user', (source, session) => {
+    if (source.startsWith('@')) {
+      source = source.slice(1)
+      if (source.includes(':')) return source
+      return `${session.platform}:${source}`
+    }
+    const code = segment.from(source)
+    if (code && code.type === 'at') {
+      return `${session.platform}:${code.data.id}`
+    }
+    throw new Error('请指定正确的目标。')
+  })
+
+  create('channel', (source, session) => {
+    if (source.startsWith('#')) {
+      source = source.slice(1)
+      if (source.includes(':')) return source
+      return `${session.platform}:${source}`
+    }
+    const code = segment.from(source)
+    if (code && code.type === 'sharp') {
+      return `${session.platform}:${code.data.id}`
+    }
+    throw new Error('请指定正确的目标。')
+  })
+
+  const BRACKET_REGEXP = /<[^>]+>|\[[^\]]+\]/g
+
+  interface DeclarationList extends Array<Declaration> {
+    stripped: string
+  }
+
+  function parseDecl(source: string) {
+    let cap: RegExpExecArray
+    const result = [] as DeclarationList
+    // eslint-disable-next-line no-cond-assign
+    while (cap = BRACKET_REGEXP.exec(source)) {
+      let rawName = cap[0].slice(1, -1)
+      let variadic = false
+      if (rawName.startsWith('...')) {
+        rawName = rawName.slice(3)
+        variadic = true
+      }
+      const [name, rawType] = rawName.split(':')
+      const type = rawType ? rawType.trim() as Builtin : undefined
+      result.push({
+        name,
+        variadic,
+        type,
+        required: cap[0][0] === '<',
+      })
+    }
+    result.stripped = source.replace(/:[\w-]+[>\]]/g, str => str.slice(-1)).trimEnd()
+    return result
+  }
+
+  export interface OptionConfig<T extends Type = Type> {
+    value?: any
+    fallback?: any
+    type?: T
+    /** hide the option by default */
+    hidden?: boolean
+    authority?: number
+    notUsage?: boolean
+  }
+
+  export interface OptionDeclaration extends Declaration, OptionConfig {
+    description?: string
+    values?: Record<string, any>
+  }
+
+  type OptionDeclarationMap = Record<string, OptionDeclaration>
+
+  export class CommandBase {
+    public declaration: string
+    public description: string
+
+    public _arguments: Declaration[]
+    public _options: OptionDeclarationMap = {}
+
+    private _error: string
+    private _namedOptions: OptionDeclarationMap = {}
+    private _symbolicOptions: OptionDeclarationMap = {}
+
+    constructor(public name: string, def: string) {
+      if (!name) throw new Error('expect a command name')
+      const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
+      this.description = def.slice(decl.length).trim()
+      this.declaration = name + (this._arguments = parseDecl(decl)).stripped
+    }
+
+    _createOption(name: string, def: string, config?: OptionConfig) {
+      const param = paramCase(name)
+      const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
+      const desc = def.slice(decl.length)
+      let syntax = decl.replace(/(?<=^|\s)(<[^<]+>|\[[^[]+\]).*/, '')
+      const bracket = decl.slice(syntax.length)
+      syntax = syntax.trim() || '--' + param
+
+      const names: string[] = []
+      const symbols: string[] = []
+      for (let param of syntax.trim().split(',')) {
+        param = param.trimStart()
+        const name = param.replace(/^-+/, '')
+        if (!name || !param.startsWith('-')) {
+          symbols.push(param)
+        } else {
+          names.push(name)
+        }
+      }
+
+      if (!config.value && !names.includes(param)) {
+        syntax += ', --' + param
+      }
+
+      const declList = parseDecl(bracket)
+      const option = this._options[name] ||= {
+        ...Command.defaultOptionConfig,
+        ...declList[0],
+        ...config,
+        name,
+        values: {},
+        description: syntax + '  ' + declList.stripped + desc,
+      }
+
+      if ('value' in config) {
+        names.forEach(name => option.values[name] = config.value)
+      } else if (!bracket.trim()) {
+        option.type = 'boolean'
+      }
+
+      this._assignOption(option, names, this._namedOptions)
+      this._assignOption(option, symbols, this._symbolicOptions)
+      if (!this._namedOptions[param]) {
+        this._namedOptions[param] = option
+      }
+    }
+
+    private _assignOption(option: OptionDeclaration, names: readonly string[], optionMap: OptionDeclarationMap) {
+      for (const name of names) {
+        if (name in optionMap) {
+          throw new Error(format('duplicate option names: "%s"', name))
+        }
+        optionMap[name] = option
+      }
+    }
+
+    removeOption<K extends string>(name: K) {
+      if (!this._options[name]) return false
+      const option = this._options[name]
+      delete this._options[name]
+      for (const key in this._namedOptions) {
+        if (this._namedOptions[key] === option) {
+          delete this._namedOptions[key]
+        }
+      }
+      for (const key in this._symbolicOptions) {
+        if (this._symbolicOptions[key] === option) {
+          delete this._symbolicOptions[key]
+        }
+      }
+      return true
+    }
+
+    private _parseValue(source: string, quoted: boolean, kind: string, session: Session, decl: Declaration = {}) {
+      const { name, type, fallback } = decl
+
+      // no explicit parameter & has fallback
+      const implicit = source === '' && !quoted
+      if (implicit && fallback !== undefined) return fallback
+
+      // apply domain callback
+      const transform = resolveType(type)
+      if (transform) {
+        try {
+          return transform(source, session)
+        } catch (err) {
+          const message = err['message'] || template('internal.check-syntax')
+          this._error = template(`internal.invalid-${kind}`, name, message)
+          return
+        }
+      }
+
+      // default behavior
+      if (implicit) return true
+      const n = +source
+      return n * 0 === 0 ? n : source
+    }
+
+    parse(argv: Argv): Argv {
+      const args: string[] = []
+      const options: Record<string, any> = {}
+      const source = this.name + ' ' + Argv.stringify(argv)
+      this._error = ''
+
+      while (!this._error && argv.tokens.length) {
+        const token = argv.tokens[0]
+        let { content, quoted } = token
+
+        // greedy argument
+        const argDecl = this._arguments[args.length]
+        if (content[0] !== '-' && argDecl?.type === 'text') {
+          args.push(Argv.stringify(argv))
+          break
+        }
+
+        // parse token
+        argv.tokens.shift()
+        let option: OptionDeclaration
+        let names: string | string[]
+        let param: string
+        // symbolic option
+        if (!quoted && (option = this._symbolicOptions[content])) {
+          names = [paramCase(option.name)]
+        } else {
+          // normal argument
+          if (content[0] !== '-' || quoted) {
+            args.push(this._parseValue(content, quoted, 'argument', argv.session, argDecl || { type: 'string' }))
+            continue
+          }
+
+          // find -
+          let i = 0
+          let name: string
+          for (; i < content.length; ++i) {
+            if (content.charCodeAt(i) !== 45) break
+          }
+          if (content.slice(i, i + 3) === 'no-' && !this._namedOptions[content.slice(i)]) {
+            name = content.slice(i + 3)
+            options[camelCase(name)] = false
+            continue
+          }
+
+          // find =
+          let j = i + 1
+          for (; j < content.length; j++) {
+            if (content.charCodeAt(j) === 61) break
+          }
+          name = content.slice(i, j)
+          names = i > 1 ? [name] : name
+          param = content.slice(++j)
+          option = this._namedOptions[names[names.length - 1]]
+        }
+
+        // get parameter from next token
+        quoted = false
+        if (!param) {
+          const { type } = option || {}
+          if (type === 'text') {
+            param = Argv.stringify(argv)
+            quoted = true
+            argv.tokens = []
+          } else if (type !== 'boolean' && argv.tokens.length && (type || argv.tokens[0]?.content !== '-')) {
+            const token = argv.tokens.shift()
+            param = token.content
+            quoted = token.quoted
+          }
+        }
+
+        // handle each name
+        for (let j = 0; j < names.length; j++) {
+          const name = names[j]
+          const optDecl = this._namedOptions[name]
+          const key = optDecl ? optDecl.name : camelCase(name)
+          if (optDecl && name in optDecl.values) {
+            options[key] = optDecl.values[name]
+          } else {
+            const source = j + 1 < names.length ? '' : param
+            options[key] = this._parseValue(source, quoted, 'option', argv.session, optDecl)
+          }
+          if (this._error) break
+        }
+      }
+
+      // assign default values
+      for (const { name, fallback } of Object.values(this._options)) {
+        if (fallback !== undefined && !(name in options)) {
+          options[name] = fallback
+        }
+      }
+
+      delete argv.tokens
+      return { options, args, source, error: this._error }
+    }
+
+    private stringifyArg(value: any) {
+      value = '' + value
+      return value.includes(' ') ? `"${value}"` : value
+    }
+
+    stringify(args: readonly string[], options: any) {
+      let output = this.name
+      for (const key in options) {
+        const value = options[key]
+        if (value === true) {
+          output += ` --${key}`
+        } else if (value === false) {
+          output += ` --no-${key}`
+        } else {
+          output += ` --${key} ${this.stringifyArg(value)}`
+        }
+      }
+      for (const arg of args) {
+        output += ' ' + this.stringifyArg(arg)
+      }
+      return output
+    }
+  }
+}
 
 export interface Token {
   rest?: string
@@ -139,359 +520,13 @@ export namespace Argv {
         + token.content.slice(pos)
     }
   }
-}
 
-// builtin domains
-export interface Domain {
-  string: string
-  number: number
-  boolean: boolean
-  text: string
-  user: string
-}
+  export const createDomain = Domain.create
 
-export namespace Domain {
-  type Builtin = keyof Domain
-
-  type GetDomain<T extends string, F> = T extends Builtin ? Domain[T] : F
-
-  type GetParamDomain<S extends string, X extends string, F>
-    = S extends `${any}${X}${infer T}` ? GetDomain<T, F> : F
-
-  type Replace<S extends string, X extends string, Y extends string>
-    = S extends `${infer L}${X}${infer R}` ? `${L}${Y}${Replace<R, X, Y>}` : S
-
-  type Extract<S extends string, X extends string, Y extends string, F>
-    = S extends `${infer L}${Y}${infer R}` ? [GetParamDomain<L, X, F>, ...Extract<R, X, Y, F>] : []
-
-  type ExtractFirst<S extends string, X extends string, Y extends string, F>
-    = S extends `${infer L}${Y}${any}` ? GetParamDomain<L, X, F> : boolean
-
-  export type ArgumentType<S extends string> = [...Extract<Replace<S, '>', ']'>, ':', ']', string>, ...string[]]
-
-  export type OptionType<S extends string, T extends Type>
-    = T extends Builtin ? Domain[T]
-    : T extends RegExp ? string
-    : T extends (source: string) => infer R ? R
-    : ExtractFirst<Replace<S, '>', ']'>, ':', ']', any>
-
-  export type Type = Builtin | RegExp | Transform<any>
-
-  export interface Declaration {
-    name?: string
-    type?: Type
-    fallback?: any
-    variadic?: boolean
-    required?: boolean
-  }
-
-  export type Transform<T> = (source: string) => T
-
-  function resolveType(type: Declaration['type']) {
-    if (typeof type === 'function') return type
-    if (type instanceof RegExp) {
-      return (source: string) => {
-        if (type.test(source)) return source
-        throw new Error()
-      }
-    }
-    return builtin[type]
-  }
-
-  const builtin: Record<string, Transform<any>> = {}
-
-  export function create<K extends keyof Domain>(name: K, callback: Transform<Domain[K]>) {
-    builtin[name] = callback
-  }
-
-  create('string', source => source)
-  create('number', source => +source)
-  create('text', source => source)
-  create('user', (source) => {
-    if (source.startsWith('@')) return source.slice(1)
-    const code = segment.from(source)
-    if (code && code.type === 'at') return code.data.qq
-    throw new Error()
-  })
-
-  const BRACKET_REGEXP = /<[^>]+>|\[[^\]]+\]/g
-
-  interface DeclarationList extends Array<Declaration> {
-    stripped: string
-  }
-
-  function parseDecl(source: string) {
-    let cap: RegExpExecArray
-    const result = [] as DeclarationList
-    // eslint-disable-next-line no-cond-assign
-    while (cap = BRACKET_REGEXP.exec(source)) {
-      let rawName = cap[0].slice(1, -1)
-      let variadic = false
-      if (rawName.startsWith('...')) {
-        rawName = rawName.slice(3)
-        variadic = true
-      }
-      const [name, rawType] = rawName.split(':')
-      const type = rawType ? rawType.trim() as Builtin : undefined
-      result.push({
-        name,
-        variadic,
-        type,
-        required: cap[0][0] === '<',
-      })
-    }
-    result.stripped = source.replace(/:[\w-]+[>\]]/g, str => str.slice(-1))
-    return result
-  }
-
-  export interface OptionConfig<T extends Type = Type> {
-    value?: any
-    fallback?: any
-    type?: T
-    /** hide the option by default */
-    hidden?: boolean
-    authority?: number
-    notUsage?: boolean
-  }
-
-  export interface OptionDeclaration extends Declaration, OptionConfig {
-    description?: string
-    values?: Record<string, any>
-  }
-
-  type OptionDeclarationMap = Record<string, OptionDeclaration>
-
-  export class CommandBase {
-    public declaration: string
-    public description: string
-
-    public _arguments: Declaration[]
-    public _options: OptionDeclarationMap = {}
-
-    private _error: string
-    private _namedOptions: OptionDeclarationMap = {}
-    private _symbolicOptions: OptionDeclarationMap = {}
-
-    constructor(public name: string, def: string) {
-      if (!name) throw new Error('expect a command name')
-      const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
-      this.description = def.slice(decl.length).trim()
-      this.declaration = name + (this._arguments = parseDecl(decl)).stripped
-    }
-
-    _createOption(name: string, def: string, config?: OptionConfig) {
-      const param = paramCase(name)
-      const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
-      const desc = def.slice(decl.length)
-      let syntax = decl.replace(/(?<=^|\s)(<[^<]+>|\[[^[]+\]).*/, '')
-      const bracket = decl.slice(syntax.length)
-      syntax = syntax.trim() || '--' + param
-
-      const names: string[] = []
-      const symbols: string[] = []
-      for (let param of syntax.trim().split(',')) {
-        param = param.trimStart()
-        const name = param.replace(/^-+/, '')
-        if (!name || !param.startsWith('-')) {
-          symbols.push(param)
-        } else {
-          names.push(name)
-        }
-      }
-
-      if (!config.value && !names.includes(param)) {
-        syntax += ', --' + param
-      }
-
-      const declList = parseDecl(bracket)
-      const option = this._options[name] ||= {
-        ...Command.defaultOptionConfig,
-        ...declList[0],
-        ...config,
-        name,
-        values: {},
-        description: syntax + '  ' + declList.stripped + desc,
-      }
-
-      if ('value' in config) {
-        names.forEach(name => option.values[name] = config.value)
-      } else if (!bracket.trim()) {
-        option.type = 'boolean'
-      }
-
-      this._assignOption(option, names, this._namedOptions)
-      this._assignOption(option, symbols, this._symbolicOptions)
-      if (!this._namedOptions[param]) {
-        this._namedOptions[param] = option
-      }
-    }
-
-    private _assignOption(option: OptionDeclaration, names: readonly string[], optionMap: OptionDeclarationMap) {
-      for (const name of names) {
-        if (name in optionMap) {
-          throw new Error(format('duplicate option names: "%s"', name))
-        }
-        optionMap[name] = option
-      }
-    }
-
-    removeOption<K extends string>(name: K) {
-      if (!this._options[name]) return false
-      const option = this._options[name]
-      delete this._options[name]
-      for (const key in this._namedOptions) {
-        if (this._namedOptions[key] === option) {
-          delete this._namedOptions[key]
-        }
-      }
-      for (const key in this._symbolicOptions) {
-        if (this._symbolicOptions[key] === option) {
-          delete this._symbolicOptions[key]
-        }
-      }
-      return true
-    }
-
-    private _parseValue(source: string, quoted: boolean, kind: string, { name, type, fallback }: Declaration = {}) {
-      // no explicit parameter & has fallback
-      const implicit = source === '' && !quoted
-      if (implicit && fallback !== undefined) return fallback
-
-      // apply domain callback
-      const transform = resolveType(type)
-      if (transform) {
-        try {
-          return transform(source)
-        } catch (err) {
-          const message = err['message'] || template('internal.check-syntax')
-          this._error = template(`internal.invalid-${kind}`, name, message)
-          return
-        }
-      }
-
-      // default behavior
-      if (implicit) return true
-      const n = +source
-      return n * 0 === 0 ? n : source
-    }
-
-    parse(argv: Argv): Argv {
-      const args: string[] = []
-      const options: Record<string, any> = {}
-      const source = this.name + ' ' + Argv.stringify(argv)
-      this._error = ''
-
-      while (!this._error && argv.tokens.length) {
-        const token = argv.tokens[0]
-        let { content, quoted } = token
-
-        // greedy argument
-        const argDecl = this._arguments[args.length]
-        if (content[0] !== '-' && argDecl?.type === 'text') {
-          args.push(Argv.stringify(argv))
-          break
-        }
-
-        // parse token
-        argv.tokens.shift()
-        let option: OptionDeclaration
-        let names: string | string[]
-        let param: string
-        // symbolic option
-        if (!quoted && (option = this._symbolicOptions[content])) {
-          names = [paramCase(option.name)]
-        } else {
-          // normal argument
-          if (content[0] !== '-' || quoted) {
-            args.push(this._parseValue(content, quoted, 'argument', argDecl || { type: 'string' }))
-            continue
-          }
-
-          // find -
-          let i = 0
-          let name: string
-          for (; i < content.length; ++i) {
-            if (content.charCodeAt(i) !== 45) break
-          }
-          if (content.slice(i, i + 3) === 'no-' && !this._namedOptions[content.slice(i)]) {
-            name = content.slice(i + 3)
-            options[camelCase(name)] = false
-            continue
-          }
-
-          // find =
-          let j = i + 1
-          for (; j < content.length; j++) {
-            if (content.charCodeAt(j) === 61) break
-          }
-          name = content.slice(i, j)
-          names = i > 1 ? [name] : name
-          param = content.slice(++j)
-          option = this._namedOptions[names[names.length - 1]]
-        }
-
-        // get parameter from next token
-        quoted = false
-        if (!param) {
-          const { type } = option || {}
-          if (type === 'text') {
-            param = Argv.stringify(argv)
-            quoted = true
-            argv.tokens = []
-          } else if (type !== 'boolean' && argv.tokens.length && (type || argv.tokens[0]?.content !== '-')) {
-            const token = argv.tokens.shift()
-            param = token.content
-            quoted = token.quoted
-          }
-        }
-
-        // handle each name
-        for (let j = 0; j < names.length; j++) {
-          const name = names[j]
-          const optDecl = this._namedOptions[name]
-          const key = optDecl ? optDecl.name : camelCase(name)
-          if (optDecl && name in optDecl.values) {
-            options[key] = optDecl.values[name]
-          } else {
-            const source = j + 1 < names.length ? '' : param
-            options[key] = this._parseValue(source, quoted, 'option', optDecl)
-          }
-          if (this._error) break
-        }
-      }
-
-      // assign default values
-      for (const { name, fallback } of Object.values(this._options)) {
-        if (fallback !== undefined && !(name in options)) {
-          options[name] = fallback
-        }
-      }
-
-      delete argv.tokens
-      return { options, args, source, error: this._error }
-    }
-
-    private stringifyArg(value: any) {
-      value = '' + value
-      return value.includes(' ') ? `"${value}"` : value
-    }
-
-    stringify(args: readonly string[], options: any) {
-      let output = this.name
-      for (const key in options) {
-        const value = options[key]
-        if (value === true) {
-          output += ` --${key}`
-        } else if (value === false) {
-          output += ` --no-${key}`
-        } else {
-          output += ` --${key} ${this.stringifyArg(value)}`
-        }
-      }
-      for (const arg of args) {
-        output += ' ' + this.stringifyArg(arg)
-      }
-      return output
-    }
+  export function parsePid(target: string): [Platform, string] {
+    const index = target.indexOf(':')
+    const platform = target.slice(0, index)
+    const id = target.slice(index + 1)
+    return [platform, id] as any
   }
 }

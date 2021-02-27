@@ -86,7 +86,7 @@ export class Context {
     this.app._database = database
   }
 
-  private get _disposables() {
+  private get disposables() {
     return this.app._plugins.get(this._plugin)
   }
 
@@ -125,16 +125,18 @@ export class Context {
   }
 
   plugin<T extends Plugin>(plugin: T, options?: PluginConfig<T>) {
+    if (options === false) return this
+    if (options === true) options = undefined
+
     if (this.app._plugins.has(plugin)) {
       this.logger('app').warn('duplicate plugin detected')
       return this
     }
 
-    if (options === false) return this
-    if (options === true) options = undefined
     const ctx: this = Object.create(this)
     defineProperty(ctx, '_plugin', plugin)
     this.app._plugins.set(plugin, [])
+
     if (typeof plugin === 'function') {
       (plugin as PluginFunction<this>)(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
@@ -142,17 +144,15 @@ export class Context {
     } else {
       throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
-    this._disposables.push(() => ctx.dispose())
+
+    this.disposables.push(() => ctx.dispose())
     return this
   }
 
-  dispose(plugin = this._plugin) {
-    this.app._plugins.get(plugin)?.forEach(dispose => dispose())
-    if (plugin) {
-      this.app._plugins.delete(plugin)
-    } else {
-      throw new Error('cannot use ctx.dispose() outside a plugin')
-    }
+  async dispose(plugin = this._plugin) {
+    if (!plugin) throw new Error('cannot use ctx.dispose() outside a plugin')
+    await Promise.all(this.app._plugins.get(plugin)?.map(dispose => dispose()))
+    this.app._plugins.delete(plugin)
   }
 
   async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<Await<ReturnType<EventMap[K]>>[]>
@@ -236,13 +236,16 @@ export class Context {
   }
 
   on<K extends EventName>(name: K, listener: EventMap[K], prepend = false) {
+    if (name === 'connect' && this.app.status === App.Status.open) {
+      return (listener as Disposable)(), () => false
+    }
     if (prepend) {
       this.getHooks(name).unshift([this, listener])
     } else {
       this.getHooks(name).push([this, listener])
     }
     const dispose = () => this.off(name, listener)
-    this._disposables.push(name === 'dispose' ? listener as Disposable : dispose)
+    this.disposables.push(name === 'dispose' ? listener as Disposable : dispose)
     return dispose
   }
 
@@ -312,8 +315,13 @@ export class Context {
     })
 
     Object.assign(parent.config, config)
-    this._disposables.push(() => parent.dispose())
+    this.disposables.push(() => parent.dispose())
     return parent
+  }
+
+  getBot(platform: Platform, selfId?: string) {
+    if (selfId) return this.bots[`${platform}:${selfId}`]
+    return this.bots.find(bot => bot.platform === platform)
   }
 
   getSelfIds(type?: Platform, assignees?: readonly string[]): Record<string, readonly string[]> {
@@ -398,5 +406,5 @@ export interface EventMap extends SessionEventMap {
   'connect'(): void
   'before-disconnect'(): Awaitable<void>
   'disconnect'(): void
-  'dispose'(): void
+  'dispose'(): Awaitable<void>
 }

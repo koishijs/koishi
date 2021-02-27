@@ -1,4 +1,4 @@
-import { segment, Logger, paramCase, sleep, Time } from 'koishi-utils'
+import { Logger, paramCase, sleep, Time } from 'koishi-utils'
 import { Session } from './session'
 import { App } from './app'
 import type WebSocket from 'ws'
@@ -93,7 +93,9 @@ export namespace Adapter {
     abstract prepare(bot: Bot.Instance<P>): WebSocket | Promise<WebSocket>
     abstract connect(bot: Bot.Instance<P>): Promise<void>
 
-    constructor(app: App, Bot: Bot.Constructor<P>, public options: WsClientOptions) {
+    private _listening = false
+
+    constructor(app: App, Bot: Bot.Constructor<P>, public options: WsClientOptions = {}) {
       super(app, Bot)
     }
 
@@ -109,7 +111,7 @@ export namespace Adapter {
 
         socket.on('close', (code, reason) => {
           bot.socket = null
-          if (this.app.status !== App.Status.open || code === 1005) return
+          if (!this._listening) return
 
           const message = reason || `failed to connect to ${socket.url}`
           if (!retryInterval || _retryCount >= retryTimes) {
@@ -119,7 +121,7 @@ export namespace Adapter {
           _retryCount++
           logger.warn(`${message}, will retry in ${Time.formatTimeShort(retryInterval)}...`)
           setTimeout(() => {
-            if (this.app.status === App.Status.open) connect(resolve, reject)
+            if (this._listening) connect(resolve, reject)
           }, retryInterval)
         })
 
@@ -135,10 +137,12 @@ export namespace Adapter {
     }
 
     async start() {
+      this._listening = true
       await Promise.all(this.bots.map(bot => this._listen(bot)))
     }
 
     stop() {
+      this._listening = false
       logger.debug('websocket client closing')
       for (const bot of this.bots) {
         bot.socket?.close()
@@ -187,18 +191,6 @@ export interface Bot<P = Platform> extends BotOptions {
 }
 
 export class Bot<P extends Platform> {
-  parseUser(source: string) {
-    if (/^\d+$/.test(source)) return source
-    const code = segment.from(source)
-    if (code && code.type === 'at') {
-      return code.data.qq
-    }
-  }
-
-  parseChannel(source: string) {
-    if (/^\d+$/.test(source)) return source
-  }
-
   readonly app: App
   readonly sid: string
   readonly logger: Logger

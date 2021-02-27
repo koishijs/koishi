@@ -101,23 +101,24 @@ export namespace Time {
 
   const dayMap = ['日', '一', '二', '三', '四', '五', '六']
 
-  function toDoubleDigit(source: number) {
-    return source.toString().padStart(2, '0')
+  function toDigits(source: number, length = 2) {
+    return source.toString().padStart(length, '0')
   }
 
   export function template(template: string, time = new Date()) {
     return template
-      .replace('YYYY', time.getFullYear().toString())
-      .replace('YY', time.getFullYear().toString().slice(2))
-      .replace('MM', toDoubleDigit(time.getMonth() + 1))
-      .replace('DD', toDoubleDigit(time.getDate()))
-      .replace('hh', toDoubleDigit(time.getHours()))
-      .replace('mm', toDoubleDigit(time.getMinutes()))
-      .replace('ss', toDoubleDigit(time.getSeconds()))
+      .replace('yyyy', time.getFullYear().toString())
+      .replace('yy', time.getFullYear().toString().slice(2))
+      .replace('MM', toDigits(time.getMonth() + 1))
+      .replace('dd', toDigits(time.getDate()))
+      .replace('hh', toDigits(time.getHours()))
+      .replace('mm', toDigits(time.getMinutes()))
+      .replace('ss', toDigits(time.getSeconds()))
+      .replace('SSS', toDigits(time.getMilliseconds(), 3))
   }
 
   function toHourMinute(time: Date) {
-    return `${toDoubleDigit(time.getHours())}:${toDoubleDigit(time.getMinutes())}`
+    return `${toDigits(time.getHours())}:${toDigits(time.getMinutes())}`
   }
 
   export function formatTimeInterval(time: Date, interval?: number) {

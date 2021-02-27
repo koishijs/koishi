@@ -195,13 +195,13 @@ export class App extends Context {
       content = content.slice(capture[0].length).trimStart()
       for (const str of capture[2].slice(1).split(',')) {
         if (!str.startsWith('id=')) continue
-        session.quote = await session.bot.getMessage(session.channelId, capture[1]).catch(noop)
+        session.quote = await session.bot.getMessage(session.channelId, str.slice(3)).catch(noop)
         break
       }
     }
 
     // strip prefix
-    if (session.subtype !== 'private' && (capture = content.match(pattern)) && capture[1] === 'at' && capture[2].includes('qq=' + session.selfId)) {
+    if (session.subtype !== 'private' && (capture = content.match(pattern)) && capture[1] === 'at' && capture[2].includes('id=' + session.selfId)) {
       atSelf = appel = true
       content = content.slice(capture[0].length).trimStart()
       // eslint-disable-next-line no-cond-assign
@@ -257,7 +257,7 @@ export class App extends Context {
 
   private _suggest(session: Session, next: NextFunction) {
     const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
-    if (argv || subtype !== 'private' && prefix === null && !appel) return next()
+    if (argv.command || subtype !== 'private' && prefix === null && !appel) return next()
     const target = content.split(/\s/, 1)[0].toLowerCase()
     if (!target) return next()
 

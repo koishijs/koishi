@@ -215,6 +215,18 @@ namespace MysqlDatabase {
       return typeof domain === 'string' ? domain : domain.definition
     }
 
+    export class String implements Domain<string> {
+      constructor(public definition = 'TEXT') {}
+
+      toString(value: any) {
+        return value
+      }
+
+      valueOf(field: FieldInfo) {
+        return field.string()
+      }
+    }
+
     export class Array implements Domain<string[]> {
       constructor(public definition = 'TEXT') {}
 

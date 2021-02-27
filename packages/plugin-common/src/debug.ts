@@ -103,10 +103,10 @@ export function apply(ctx: Context, config: DebugOptions = {}) {
         if (code.data.type === 'all') {
           output += '@全体成员'
         } else if (session.subtype === 'group') {
-          const id = `${session.platform}:${code.data.qq}`
+          const id = `${session.platform}:${code.data.id}`
           const timestamp = Date.now()
           if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
-            userMap[id] = [getUserName(session.bot, session.groupId, code.data.qq), timestamp]
+            userMap[id] = [getUserName(session.bot, session.groupId, code.data.id), timestamp]
           }
           output += '@' + await userMap[id][0]
         } else {
