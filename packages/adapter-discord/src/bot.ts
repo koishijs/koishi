@@ -16,7 +16,7 @@ declare module 'koishi-core' {
   }
 }
 
-export class DiscordBot extends Bot {
+export class DiscordBot extends Bot<'discord'> {
   _d = 0
   version = 'discord'
   _ping: NodeJS.Timeout
