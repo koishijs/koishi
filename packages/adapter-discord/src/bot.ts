@@ -46,7 +46,7 @@ export class DiscordBot extends Bot<'discord'> {
     return adaptUser(data)
   }
 
-  private async sendEmbedMessage(channelId: string, filePath: string, payload_json: Record<string, any> = {}) {
+  private async sendEmbedMessage(requestUrl: string, filePath: string, payload_json: Record<string, any> = {}) {
     const fd = new FormData()
     fd.append('file', fs.createReadStream(filePath))
     fd.append('payload_json', JSON.stringify(payload_json))
@@ -55,7 +55,7 @@ export class DiscordBot extends Bot<'discord'> {
     }
     const response = await axios({
       method: 'post',
-      url: `https://discord.com/api/v8/channels/${channelId}/messages`,
+      url: 'https://discord.com/api/v8' + requestUrl,
       headers: { ...headers, ...fd.getHeaders() },
       data: fd,
     })
@@ -100,7 +100,7 @@ export class DiscordBot extends Bot<'discord'> {
           })
           sentMessageId = r.id
         } else {
-          const r = await this.sendEmbedMessage(channelId, data.url, {
+          const r = await this.sendEmbedMessage(`/channels/${channelId}/messages`, data.url, {
             message_reference,
           })
           sentMessageId = r.id
@@ -117,7 +117,11 @@ export class DiscordBot extends Bot<'discord'> {
   }
 
   async editMessage(channelId: string, messageId: string, content: string) {
-    // @TODO 好像embed会出问题
+    const chain = segment.parse(content)
+    const image = chain.find(v => v.type === 'image')
+    if (image) {
+      throw new Error("You can't include embed object(s) while editing message.")
+    }
     return this.request('PATCH', `/channels/${channelId}/messages/${messageId}`, {
       content,
     })
@@ -166,6 +170,33 @@ export class DiscordBot extends Bot<'discord'> {
   }
 
   async executeWebhook(id: string, token: string, data: ExecuteWebhookBody) {
-    return this.request('POST', `/webhooks/${id}/${token}`, data)
+    const chain = segment.parse(data.content)
+    if (chain.filter(v => v.type === 'image').length > 10) {
+      throw new Error('Up to 10 embed objects')
+    }
+
+    let sentMessageId = '0'
+    for (const code of chain) {
+      const { type, data } = code
+      if (type === 'text') {
+        const r = await this.request('POST', `/webhooks/${id}/${token}`, {
+          content: data.content,
+        })
+        sentMessageId = r.id
+      } else if (type === 'image') {
+        if (data.url.startsWith('http://') || data.url.startsWith('https://')) {
+          const r = await this.request('POST', `/webhooks/${id}/${token}`, {
+            embed: {
+              url: data.url,
+            },
+          })
+          sentMessageId = r.id
+        } else {
+          const r = await this.sendEmbedMessage(`/webhooks/${id}/${token}`, data.url)
+          sentMessageId = r.id
+        }
+      }
+    }
+    return sentMessageId
   }
 }
