@@ -1,6 +1,5 @@
-import { getUsage, getUsageName, ValidationField } from './validate'
+import { Command, getUsage, getUsageName, ValidationField } from './command'
 import { TableType } from './database'
-import { Command } from './command'
 import { Session, FieldCollector } from './session'
 import { App } from './app'
 import { template } from 'koishi-utils'
