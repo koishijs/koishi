@@ -87,7 +87,7 @@ export class Context {
     this.app._database = database
   }
 
-  private get disposables() {
+  protected get disposables() {
     return this.app._plugins.get(this._plugin)
   }
 
@@ -125,6 +125,14 @@ export class Context {
     return !session || this.filter(session)
   }
 
+  private removeDisposable(listener: Disposable) {
+    const index = this.disposables.indexOf(listener)
+    if (index >= 0) {
+      this.disposables.splice(index, 1)
+      return true
+    }
+  }
+
   plugin<T extends Plugin>(plugin: T, options?: PluginConfig<T>) {
     if (options === false) return this
     if (options === true) options = undefined
@@ -136,17 +144,19 @@ export class Context {
 
     const ctx: this = Object.create(this)
     defineProperty(ctx, '_plugin', plugin)
-    this.app._plugins.set(plugin, [])
+    this.app._plugins.set(plugin, [() => this.removeDisposable(dispose)])
 
     if (typeof plugin === 'function') {
       (plugin as PluginFunction<this>)(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
       (plugin as PluginObject<this>).apply(ctx, options)
     } else {
+      this.app._plugins.delete(plugin)
       throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
 
-    this.disposables.push(() => ctx.dispose())
+    const dispose = () => ctx.dispose()
+    this.disposables.push(dispose)
     return this
   }
 
@@ -237,16 +247,22 @@ export class Context {
   }
 
   on<K extends EventName>(name: K, listener: EventMap[K], prepend = false) {
+    // handle plugin-related events
+    const _listener = listener as Disposable
     if (name === 'connect' && this.app.status === App.Status.open) {
-      return (listener as Disposable)(), () => false
+      return _listener(), () => false
+    } else if (name === 'before-disconnect') {
+      this.disposables.push(_listener)
+      return () => this.removeDisposable(_listener)
     }
+
     if (prepend) {
       this.getHooks(name).unshift([this, listener])
     } else {
       this.getHooks(name).push([this, listener])
     }
     const dispose = () => this.off(name, listener)
-    this.disposables.push(name === 'dispose' ? listener as Disposable : dispose)
+    this.disposables.push(dispose)
     return dispose
   }
 
@@ -407,7 +423,6 @@ export interface EventMap extends SessionEventMap {
   'connect'(): void
   'before-disconnect'(): Awaitable<void>
   'disconnect'(): void
-  'dispose'(): Awaitable<void>
 }
 
 // hack into router methods to make sure
