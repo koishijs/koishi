@@ -6,9 +6,10 @@ export default MongoDatabase
 
 declare module 'koishi-core' {
   interface Database extends MongoDatabase { }
+
   interface Channel {
-    type: Platform,
-    pid: string,
+    type: Platform
+    pid: string
   }
 }
 

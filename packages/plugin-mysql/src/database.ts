@@ -32,7 +32,7 @@ class MysqlDatabase {
     }) as (keyof Tables[T])[]
   }
 
-  constructor(public app: App, config: Config) {
+  constructor(public app: App, config?: Config) {
     this.config = {
       database: 'koishi',
       charset: 'utf8mb4_general_ci',
@@ -49,6 +49,7 @@ class MysqlDatabase {
       },
       ...config,
     }
+    this.start()
   }
 
   async start() {

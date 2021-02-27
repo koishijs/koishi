@@ -19,13 +19,21 @@ export interface Config {
 }
 
 export default class MongoDatabase {
+  public config: Config
   public client: MongoClient
   public db: Db
 
   user: Collection<User>
   channel: Collection<Channel>
 
-  constructor(public app: App, public config: Config) {
+  constructor(public app: App, config?: Config) {
+    this.config = {
+      host: 'localhost',
+      port: 27017,
+      name: 'koishi',
+      protocol: 'mongodb',
+      ...config,
+    }
     this.start()
   }
 
