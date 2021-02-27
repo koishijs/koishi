@@ -1,10 +1,8 @@
 FROM node:lts-alpine
+LABEL maintainer="NN708"
 
-EXPOSE 8080
-VOLUME [ "/config" ]
+WORKDIR /app
+COPY package.json ./
+RUN npm i koishi
 
-WORKDIR /config
-RUN npm i koishi -g
-COPY ./start.js /utilities/start.js
-
-CMD [ "node", "/utilities/start.js" ]
+CMD [ "npx", "koishi", "start" ]
