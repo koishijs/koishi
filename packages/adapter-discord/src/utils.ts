@@ -1,8 +1,8 @@
-import { Session, segment, MessageInfo, AuthorInfo, GroupInfo, UserInfo } from 'koishi-core'
+import { Session, segment, MessageInfo, AuthorInfo, GroupInfo, UserInfo, ChannelInfo } from 'koishi-core'
 import { DiscordBot } from './bot'
 import * as DC from './types'
-import { PartialGuild } from './types'
-export const adaptUser = (user: DC.User): UserInfo => ({
+import { DiscordChannel, PartialGuild } from './types'
+export const adaptUser = (user: DC.DiscordUser): UserInfo => ({
   userId: user.id,
   avatar: user.avatar,
   username: user.username,
@@ -15,12 +15,19 @@ export function adaptGroup(data: PartialGuild): GroupInfo {
   }
 }
 
+export function adaptChannel(data: DiscordChannel): ChannelInfo {
+  return {
+    channelId: data.id,
+    channelName: data.name
+  }
+}
+
 export const adaptAuthor = (author: DC.Author): AuthorInfo => ({
   ...adaptUser(author),
   nickname: author.username,
 })
 
-function adaptMessage(bot: DiscordBot, meta: DC.MessageCreateBody, session: MessageInfo = {}) {
+export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: MessageInfo = {}) {
   if (meta.author) {
     session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id
@@ -60,13 +67,13 @@ function adaptMessage(bot: DiscordBot, meta: DC.MessageCreateBody, session: Mess
   return session
 }
 
-async function adaptMessageSession(bot: DiscordBot, meta: DC.MessageCreateBody, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
+async function adaptMessageSession(bot: DiscordBot, meta: DC.DiscordMessage, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
   adaptMessage(bot, meta, session)
   session.messageId = meta.id
   session.timestamp = new Date(meta.timestamp).valueOf()
   session.subtype = meta.guild_id ? 'group' : 'private'
   if (meta.message_reference) {
-    const msg = await bot.getMessage(meta.message_reference.channel_id, meta.message_reference.message_id)
+    const msg = await bot.getMessageFromServer(meta.message_reference.channel_id, meta.message_reference.message_id)
     session.quote = await adaptMessage(bot, msg)
     session.quote.messageId = meta.message_reference.message_id
     session.quote.channelId = meta.message_reference.channel_id
@@ -74,14 +81,14 @@ async function adaptMessageSession(bot: DiscordBot, meta: DC.MessageCreateBody, 
   return session
 }
 
-async function adaptMessageCreate(bot: DiscordBot, meta: DC.MessageCreateBody, session: Partial<Session.Payload<Session.MessageAction>>) {
+async function adaptMessageCreate(bot: DiscordBot, meta: DC.DiscordMessage, session: Partial<Session.Payload<Session.MessageAction>>) {
   await adaptMessageSession(bot, meta, session)
   session.groupId = meta.guild_id
   session.subtype = meta.guild_id ? 'group' : 'private'
   session.channelId = meta.channel_id
 }
 
-async function adaptMessageModify(bot: DiscordBot, meta: DC.MessageCreateBody, session: Partial<Session.Payload<Session.MessageAction>>) {
+async function adaptMessageModify(bot: DiscordBot, meta: DC.DiscordMessage, session: Partial<Session.Payload<Session.MessageAction>>) {
   await adaptMessageSession(bot, meta, session)
   session.groupId = meta.guild_id
   session.subtype = meta.guild_id ? 'group' : 'private'
@@ -95,12 +102,12 @@ export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
   }
   if (input.t === 'MESSAGE_CREATE') {
     session.type = 'message'
-    await adaptMessageCreate(bot, input.d as DC.MessageCreateBody, session)
+    await adaptMessageCreate(bot, input.d as DC.DiscordMessage, session)
     if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_UPDATE') {
     session.type = 'message-updated'
-    await adaptMessageModify(bot, input.d as DC.MessageCreateBody, session)
+    await adaptMessageModify(bot, input.d as DC.DiscordMessage, session)
     if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_DELETE') {

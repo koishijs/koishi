@@ -1,12 +1,14 @@
 /* eslint-disable camelcase */
 
 import axios, { Method } from 'axios'
-import { AuthorInfo, Bot, MessageInfo } from 'koishi-core'
+import { Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
-import { adaptGroup, adaptUser } from './utils'
+import { ExecuteWebhookBody, GuildMember, DiscordMessage, PartialGuild, DiscordUser, DiscordChannel } from './types'
+import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
 import { segment } from 'koishi-utils'
 import FormData from 'form-data'
-import { ExecuteWebhookBody, GuildMember, MessageCreateBody, PartialGuild } from './types'
+import { TelegramResponse } from 'koishi-adapter-telegram'
+
 const fs = require('fs')
 declare module 'koishi-core' {
   namespace Bot {
@@ -14,6 +16,10 @@ declare module 'koishi-core' {
       discord: DiscordBot
     }
   }
+}
+
+export interface DiscordBot {
+  executeWebhook(id: string, token: string, data: ExecuteWebhookBody): Promise<any>
 }
 
 export class DiscordBot extends Bot<'discord'> {
@@ -36,7 +42,7 @@ export class DiscordBot extends Bot<'discord'> {
   }
 
   async getSelf() {
-    const data = await this.request<DC.Self>('GET', '/users/@me')
+    const data = await this.request<DC.DiscordUser>('GET', '/users/@me')
     return adaptUser(data)
   }
 
@@ -117,9 +123,31 @@ export class DiscordBot extends Bot<'discord'> {
     })
   }
 
-  // @ts-ignore
-  async getMessage(channelId: string, messageId: string) {
-    return this.request<MessageCreateBody>('GET', `/channels/${channelId}/messages/${messageId}`)
+  async getMessageFromServer(channelId: string, messageId: string) {
+    return this.request<DiscordMessage>('GET', `/channels/${channelId}/messages/${messageId}`)
+  }
+
+  async getMessage(channelId: string, messageId: string): Promise<MessageInfo> {
+    const msg = await this.getMessageFromServer(channelId, messageId)
+    const result: MessageInfo = {
+      messageId: msg.id,
+      channelId: msg.channel_id,
+      groupId: msg.guild_id,
+      userId: msg.author.id,
+      content: msg.content,
+      timestamp: new Date(msg.timestamp).valueOf(),
+      author: adaptUser(msg.author),
+    }
+    if (msg.message_reference) {
+      const quoteMsg = await this.getMessageFromServer(msg.message_reference.channel_id, msg.message_reference.message_id)
+      result.quote = await adaptMessage(this, quoteMsg)
+    }
+    return result
+  }
+
+  async getUser(userId: string) {
+    const data = await this.request<DiscordUser>('GET', `/users/${userId}`)
+    return adaptUser(data)
   }
 
   async getGroupList() {
@@ -130,6 +158,11 @@ export class DiscordBot extends Bot<'discord'> {
   async getGroupMemberList(guildId: string) {
     const data = await this.request<GuildMember[]>('GET', `/guilds/${guildId}/members`)
     return data.map(v => adaptUser(v.user))
+  }
+
+  async getChannel(channelId: string) {
+    const data = await this.request<DiscordChannel>('GET', `/channels/${channelId}`)
+    return adaptChannel(data)
   }
 
   async executeWebhook(id: string, token: string, data: ExecuteWebhookBody) {

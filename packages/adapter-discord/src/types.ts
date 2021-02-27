@@ -54,7 +54,7 @@ export interface Author {
   discriminator: string;
 }
 
-export interface MessageCreateBody {
+export interface DiscordMessage {
   guild_id?: string;
   content: string;
   author: Author
@@ -97,15 +97,13 @@ export interface Attachment {
   width?: number;
 }
 
-export interface User {
+export interface DiscordUser {
   id: string;
   username: string;
+  discriminator: string;
   bot?: boolean;
   avatar: string | null;
-}
-
-export interface Self extends User {
-
+  system?: boolean;
 }
 
 export enum Opcode {
@@ -118,11 +116,18 @@ export interface PartialGuild {
 }
 
 export interface GuildMember {
-  user?: User
+  user?: DiscordUser
 }
 
 export interface ExecuteWebhookBody{
   content: string;
   username?: string;
   avatar_url?: string;
+}
+
+export interface DiscordChannel {
+  id: string;
+  type: number;
+  guild_id?: string;
+  name?: string;
 }
