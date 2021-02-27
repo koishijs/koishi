@@ -41,21 +41,22 @@ declare module 'koishi-core' {
 const cheatSheet = (session: Session<'authority'>, config: Config) => {
   const { authority } = session.user
   const { authority: a, prefix: p } = config
+  const l = p[p.length - 1]
   return `\
 教学系统基本用法：
 　添加问答：${p} 问题 回答
-　搜索回答：${p}${p} 问题
-　搜索问题：${p}${p} ~ 回答
+　搜索回答：${p}${l} 问题
+　搜索问题：${p}${l} ~ 回答
 　查看问答：${p}id
 　修改问题：${p}id 问题
 　修改回答：${p}id ~ 回答
 　删除问答：${p}id -r
-　批量查看：${p}${p}id
+　批量查看：${p}${l}id
 搜索选项：
 　管道语法：　　　|
 　结果页码：　　　/ page
 　禁用递归查询：　-R${authority >= a.regExp ? `
-　正则+合并结果：${p}${p}${p}` : ''}${config.useContext ? `
+　正则+合并结果：${p}${l}${l}` : ''}${config.useContext ? `
 上下文选项：
 　允许本群：　　　-e
 　禁止本群：　　　-d` : ''}${config.useContext && authority >= a.context ? `
@@ -103,8 +104,10 @@ export const name = 'teach'
 
 function registerPrefix(ctx: Context, prefix: string) {
   const g = '\\d+(?:\\.\\.\\d+)?'
+  const last = prefix[prefix.length - 1]
   const p = escapeRegExp(prefix)
-  const teachRegExp = new RegExp(`^${p}(${p}?)((${g}(?:,${g})*)?|${p}?)$`)
+  const l = escapeRegExp(last)
+  const teachRegExp = new RegExp(`^${p}(${l}?)((${g}(?:,${g})*)?|${l}?)$`)
   //                                   $1     $2
 
   ctx.on('parse', (argv, session) => {
@@ -117,12 +120,12 @@ function registerPrefix(ctx: Context, prefix: string) {
     argv.source = session.parsed.content
     argv.options = {}
     const { length } = argv.tokens
-    if (capture[1] === prefix) {
+    if (capture[1] === last) {
       if (!argv.tokens.length) {
         return 'teach.status'
       }
       argv.options['search'] = true
-      if (capture[2] === prefix) {
+      if (capture[2] === last) {
         argv.options['autoMerge'] = true
         argv.options['regexp'] = true
       }
@@ -130,7 +133,7 @@ function registerPrefix(ctx: Context, prefix: string) {
       argv.options['help'] = true
     }
 
-    if (capture[2] && capture[2] !== prefix) {
+    if (capture[2] && capture[2] !== last) {
       argv.options['target'] = capture[2]
     }
 
