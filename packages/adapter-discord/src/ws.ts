@@ -28,8 +28,18 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
   }
 
   async connect(bot: DiscordBot) {
-    bot._d = 0
     bot.ready = true
+    if (bot._sessionId) {
+      logger.info('resuming')
+      bot.socket.send(JSON.stringify({
+        op: Opcode.Resume,
+        d: {
+          token: bot.token,
+          session_id: bot._sessionId,
+          seq: bot._d,
+        },
+      }))
+    }
 
     bot.socket.on('message', async (data) => {
       data = data.toString()
@@ -55,6 +65,10 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
           },
         }))
       } else if (parsed.op === Opcode.Dispatch) {
+        if (parsed.t === 'READY') {
+          bot._sessionId = parsed.d.session_id
+          logger.debug('session_id ' + bot._sessionId)
+        }
         const session = await adaptSession(bot, parsed)
         if (session) this.dispatch(session)
       }

@@ -107,7 +107,7 @@ export interface DiscordUser {
 }
 
 export enum Opcode {
-  Hello = 10, Identify = 2, Dispatch = 0, HeartbeatACK = 11, Heartbeat = 1
+  Hello = 10, Identify = 2, Dispatch = 0, HeartbeatACK = 11, Heartbeat = 1, Resume = 6, Reconnect = 7
 }
 
 export interface PartialGuild {

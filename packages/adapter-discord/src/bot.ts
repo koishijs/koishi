@@ -26,6 +26,7 @@ export class DiscordBot extends Bot<'discord'> {
   _d = 0
   version = 'discord'
   _ping: NodeJS.Timeout
+  _sessionId: string = ''
 
   async request<T = any>(method: Method, path: string, data?: any): Promise<T> {
     const url = `https://discord.com/api/v8${path}`
