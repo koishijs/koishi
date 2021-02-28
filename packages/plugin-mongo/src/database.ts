@@ -34,7 +34,6 @@ export default class MongoDatabase {
       protocol: 'mongodb',
       ...config,
     }
-    this.start()
   }
 
   async start() {

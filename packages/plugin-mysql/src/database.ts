@@ -49,7 +49,6 @@ class MysqlDatabase {
       },
       ...config,
     }
-    this.start()
   }
 
   async start() {

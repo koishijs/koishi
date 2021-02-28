@@ -294,14 +294,22 @@ export class Context {
   }
 
   setTimeout(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
-    const timer = setTimeout(callback, ms, ...args)
-    this.disposables.push(() => clearTimeout(timer))
+    const timer = setTimeout(() => {
+      this.removeDisposable(dispose)
+      callback()
+    }, ms, ...args)
+    const dispose = () => clearTimeout(timer)
+    this.disposables.push(dispose)
     return timer
   }
 
   setInterval(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
-    const timer = setInterval(callback, ms, ...args)
-    this.disposables.push(() => clearInterval(timer))
+    const timer = setInterval(() => {
+      this.removeDisposable(dispose)
+      callback()
+    }, ms, ...args)
+    const dispose = () => clearInterval(timer)
+    this.disposables.push(dispose)
     return timer
   }
 

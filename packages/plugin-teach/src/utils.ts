@@ -103,7 +103,7 @@ export namespace Dialogue {
     defineProperty(dialogue, '_timestamp', time)
     defineProperty(dialogue, '_operator', argv.session.userId)
     defineProperty(dialogue, '_type', type)
-    argv.app.setTimeout(() => {
+    setTimeout(() => {
       if (argv.app.teachHistory[dialogue.id]?._timestamp === time) {
         delete argv.app.teachHistory[dialogue.id]
       }

@@ -5,9 +5,9 @@ import { install } from '@sinonjs/fake-timers'
 
 const app = new App({
   mockDatabase: true,
-  groupCacheAge: Number.EPSILON,
+  channelCacheAge: Number.EPSILON,
   userCacheAge: Number.EPSILON,
-  similarityCoefficient: 0,
+  minSimilarity: 0,
 })
 
 // make coverage happy
