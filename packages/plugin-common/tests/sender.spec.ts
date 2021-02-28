@@ -4,7 +4,11 @@ import { expect } from 'chai'
 import jest from 'jest-mock'
 import * as common from 'koishi-plugin-common'
 
-const app = new App({ mockDatabase: true })
+const app = new App({
+  mockDatabase: true,
+  delay: { broadcast: 0 },
+})
+
 const session1 = app.session('123')
 const session2 = app.session('123', '456')
 const session3 = app.session('789', '654')

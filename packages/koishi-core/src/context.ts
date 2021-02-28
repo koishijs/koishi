@@ -247,20 +247,26 @@ export class Context {
   }
 
   on<K extends EventName>(name: K, listener: EventMap[K], prepend = false) {
+    const method = prepend ? 'unshift' : 'push'
+
     // handle plugin-related events
     const _listener = listener as Disposable
     if (name === 'connect' && this.app.status === App.Status.open) {
       return _listener(), () => false
     } else if (name === 'before-disconnect') {
-      this.disposables.push(_listener)
+      this.disposables[method](_listener)
       return () => this.removeDisposable(_listener)
     }
 
-    if (prepend) {
-      this.getHooks(name).unshift([this, listener])
-    } else {
-      this.getHooks(name).push([this, listener])
+    const hooks = this.app._hooks[name] ||= []
+    if (hooks.length >= this.app.options.maxListeners) {
+      this.logger('app').warn(
+        'max listener count (%d) for event "%s" exceeded, which may be caused by a memory leak',
+        this.app.options.maxListeners, name,
+      )
     }
+
+    hooks[method]([this, listener])
     const dispose = () => this.off(name, listener)
     this.disposables.push(dispose)
     return dispose
