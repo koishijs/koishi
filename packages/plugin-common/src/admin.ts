@@ -174,7 +174,14 @@ Command.prototype.adminChannel = function (this: Command, callback) {
   return command
 }
 
-export function apply(ctx: Context) {
+export interface AdminConfig {
+  admin?: boolean
+}
+
+export default function apply(ctx: Context, config: AdminConfig = {}) {
+  if (config.admin === false) return
+  ctx = ctx.select('database')
+
   ctx.command('common/user', '用户管理', { authority: 3 })
   ctx.command('common/channel', '频道管理', { authority: 3 })
 
@@ -266,7 +273,7 @@ export function apply(ctx: Context) {
     .option('unset', '-S  删除标记', { authority: 4 })
     .adminUser(flagAction.bind(null, User.Flag))
 
-  ctx.command('user.usage [key]', '调用次数信息')
+  ctx.command('user.usage [key] [value]', '调用次数信息')
     .userFields(['usage'])
     .option('set', '-s  设置调用次数', { authority: 4 })
     .option('clear', '-c  清空调用次数', { authority: 4 })
@@ -295,7 +302,7 @@ export function apply(ctx: Context) {
       return output.join('\n')
     })
 
-  ctx.command('user.timer [key]', '定时器信息')
+  ctx.command('user.timer [key] [value]', '定时器信息')
     .userFields(['timers'])
     .option('set', '-s  设置定时器', { authority: 4 })
     .option('clear', '-c  清空定时器', { authority: 4 })

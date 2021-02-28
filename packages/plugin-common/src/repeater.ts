@@ -1,4 +1,4 @@
-import { Context, Session } from 'koishi-core'
+import { Context } from 'koishi-core'
 
 declare module 'koishi-core' {
   interface EventMap {
