@@ -273,7 +273,7 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
     .option('unset', '-S  删除标记', { authority: 4 })
     .adminUser(flagAction.bind(null, User.Flag))
 
-  ctx.command('user.usage [key] [value]', '调用次数信息')
+  ctx.command('user.usage [key] [value]', '调用次数信息', { authority: 1 })
     .userFields(['usage'])
     .option('set', '-s  设置调用次数', { authority: 4 })
     .option('clear', '-c  清空调用次数', { authority: 4 })
@@ -302,7 +302,7 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       return output.join('\n')
     })
 
-  ctx.command('user.timer [key] [value]', '定时器信息')
+  ctx.command('user.timer [key] [value]', '定时器信息', { authority: 1 })
     .userFields(['timers'])
     .option('set', '-s  设置定时器', { authority: 4 })
     .option('clear', '-c  清空定时器', { authority: 4 })

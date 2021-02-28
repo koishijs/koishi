@@ -1,4 +1,4 @@
-import { Logger, coerce, merge, Time, template } from 'koishi-utils'
+import { Logger, coerce, Time, template } from 'koishi-utils'
 import { Argv, Domain } from './parser'
 import { Context, NextFunction } from './context'
 import { User, Channel } from './database'
@@ -92,9 +92,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  constructor(name: string, decl: string, desc: string, public context: Context, config: Command.Config = {}) {
+  constructor(name: string, decl: string, desc: string, public context: Context) {
     super(name, decl, desc)
-    this.config = merge(config, Command.defaultConfig)
+    this.config = { ...Command.defaultConfig }
     this._registerAlias(this.name)
     context.app._commands.push(this)
     this.option('help', '-h  显示此信息', { hidden: true })

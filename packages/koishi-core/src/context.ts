@@ -352,6 +352,7 @@ export class Context {
       command = new Command(name, decl, index === segments.length - 1 ? desc : '', this)
       if (parent) {
         command.parent = parent
+        command.config.authority = parent.config.authority
         parent.children.push(command)
       }
       parent = command
