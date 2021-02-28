@@ -92,8 +92,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  constructor(name: string, declaration: string, public context: Context, config: Command.Config = {}) {
-    super(name, declaration)
+  constructor(name: string, decl: string, desc: string, public context: Context, config: Command.Config = {}) {
+    super(name, decl, desc)
     this.config = merge(config, Command.defaultConfig)
     this._registerAlias(this.name)
     context.app._commands.push(this)
@@ -145,7 +145,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   subcommand<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
-  subcommand<D extends string>(def: D, decl: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
+  subcommand<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
   subcommand(def: string, ...args: any[]) {
     def = this.name + (def.charCodeAt(0) === 46 ? '' : '/') + def
     return this.context.command(def, ...args)

@@ -322,14 +322,14 @@ export class Context {
   command<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
   command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
   command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {
-    if (typeof args[0] === 'string') def += ' ' + args.shift()
+    const desc = typeof args[0] === 'string' ? args.shift() as string : ''
     const config = args[0] as Command.Config
-    const [path] = def.split(' ', 1)
+    const path = def.split(' ', 1)[0].toLowerCase()
     const decl = def.slice(path.length)
-    const segments = path.toLowerCase().split(/(?=[\\./])/)
+    const segments = path.split(/(?=[\\./])/)
 
     let parent: Command = null
-    segments.forEach((segment) => {
+    segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
       let command = this.app._commandMap[name]
@@ -349,7 +349,7 @@ export class Context {
         }
         return parent = command
       }
-      command = new Command(name, decl, this)
+      command = new Command(name, decl, index === segments.length - 1 ? desc : '', this)
       if (parent) {
         command.parent = parent
         parent.children.push(command)
@@ -357,6 +357,7 @@ export class Context {
       parent = command
     })
 
+    if (desc) parent.description = desc
     Object.assign(parent.config, config)
     this.disposables.push(() => parent.dispose())
     return parent

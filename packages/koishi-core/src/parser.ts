@@ -150,9 +150,6 @@ export namespace Domain {
   type OptionDeclarationMap = Record<string, OptionDeclaration>
 
   export class CommandBase {
-    public declaration: string
-    public description: string
-
     public _arguments: Declaration[]
     public _options: OptionDeclarationMap = {}
 
@@ -160,11 +157,9 @@ export namespace Domain {
     private _namedOptions: OptionDeclarationMap = {}
     private _symbolicOptions: OptionDeclarationMap = {}
 
-    constructor(public name: string, def: string) {
+    constructor(public name: string, public declaration: string, public description: string) {
       if (!name) throw new Error('expect a command name')
-      const decl = def.replace(/(?<=^|\s)[\w\x80-\uffff].*/, '')
-      this.description = def.slice(decl.length).trim()
-      this.declaration = name + (this._arguments = parseDecl(decl)).stripped
+      this._arguments = parseDecl(declaration)
     }
 
     _createOption(name: string, def: string, config?: OptionConfig) {
