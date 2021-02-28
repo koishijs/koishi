@@ -55,7 +55,7 @@ export interface Guild {
   id: string
 }
 
-export interface Data {
+export interface Data extends DiscordMessage {
   v: number
   user_settings: {}
   user: User

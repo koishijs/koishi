@@ -36,19 +36,18 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
   if (meta.embeds.length === 0) {
     // pure message
     session.content = meta.content
+      .replace(/<@!(.+?)>/, (_, id) => segment.at(id))
+      .replace(/<@&(.+?)>/, (_, id) => segment.at(id))
+      .replace(/<:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name }))
+      .replace(/@everyone/, () => segment('at', { type: 'all' }))
+      .replace(/@here/, () => segment('at', { type: 'here' }))
+      .replace(/<#(.+?)>/, (_, id) => segment.sharp(id))
     if (meta.attachments.length) {
       session.content += meta.attachments.map(v => segment('image', {
         url: v.url,
         file: v.filename,
       })).join('')
     }
-    session.content = session.content
-      .replace(/<@!(.+?)>/, (_, v) => segment('at', { id: v }))
-      .replace(/<@&(.+?)>/, (_, v) => segment('at', { id: v }))
-      .replace(/<:(.*):(.+?)>/, (_, __, v) => segment('face', { id: v, name: __ }))
-      .replace(/@everyone/, () => segment('at', { type: 'all' }))
-      .replace(/@here/, () => segment('at', { type: 'here' }))
-      .replace(/<#(.+?)>/, (_, v) => segment('sharp', { id: v }))
   } else {
     switch (meta.embeds[0].type) {
       case 'video':

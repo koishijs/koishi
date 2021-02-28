@@ -53,10 +53,6 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
       if (parsed.s) {
         bot._d = parsed.s
       }
-      if (parsed.d?.user) {
-        bot.username = parsed.d.user.username
-        bot.selfId = parsed.d.user.id
-      }
       if (parsed.op === Opcode.Hello) {
         bot._ping = setInterval(() => this.heartbeat(bot), parsed.d.heartbeat_interval)
         bot.socket.send(JSON.stringify({
@@ -71,6 +67,8 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
       } else if (parsed.op === Opcode.Dispatch) {
         if (parsed.t === 'READY') {
           bot._sessionId = parsed.d.session_id
+          bot.username = parsed.d.user.username
+          bot.selfId = parsed.d.user.id
           logger.debug('session_id ' + bot._sessionId)
         }
         const session = await adaptSession(bot, parsed)
