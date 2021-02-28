@@ -1,11 +1,13 @@
 import MongoDatabase, { Config } from './database'
-import { User, Database, extendDatabase, Context, Channel, Platform, pick } from 'koishi-core'
+import { User, extendDatabase, Context, Channel, Platform, pick } from 'koishi-core'
 
 export * from './database'
 export default MongoDatabase
 
 declare module 'koishi-core' {
-  interface Database extends MongoDatabase { }
+  interface Database {
+    $mongo: MongoDatabase
+  }
 
   interface Channel {
     type: Platform
@@ -139,7 +141,7 @@ export const name = 'mongo'
 
 export function apply(ctx: Context, config: Config) {
   const db = new MongoDatabase(ctx.app, { host: 'localhost', port: 27017, name: 'koishi', protocol: 'mongodb', ...config })
-  ctx.database = db as Database
+  ctx.database = db as any
   ctx.before('connect', () => db.start())
   ctx.before('disconnect', () => db.stop())
 }
