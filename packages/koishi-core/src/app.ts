@@ -112,7 +112,12 @@ export class App extends Context {
       const { parsed, subtype } = session
       // group message should have prefix or appel to be interpreted as a command call
       if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
-      const name = argv.tokens[0]?.content
+      if (!argv.tokens.length) return
+      const segments = argv.tokens[0].content.split('.')
+      let i = 1, name = segments[0]
+      while (this._commandMap[name] && i < segments.length) {
+        name = this._commandMap[name].name + '.' + segments[i++]
+      }
       if (name in this._commandMap) {
         argv.tokens.shift()
         return name

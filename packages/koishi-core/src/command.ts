@@ -1,4 +1,4 @@
-import { noop, Logger, coerce, merge, Time, template } from 'koishi-utils'
+import { Logger, coerce, merge, Time, template } from 'koishi-utils'
 import { Argv, Domain } from './parser'
 import { Context, NextFunction } from './context'
 import { User, Channel } from './database'
@@ -189,7 +189,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  async execute(argv0: Argv<U, G, A, O>, next: NextFunction = noop): Promise<string> {
+  async execute(argv0: Argv<U, G, A, O>, next: NextFunction = fallback => fallback?.()): Promise<string> {
     const argv = argv0 as Argv<U, G, A, O>
     if (!argv.args) argv.args = [] as any
     if (!argv.options) argv.options = {} as any
@@ -214,10 +214,12 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       }
       const result = await this.app.serial(session, 'before-command', argv)
       if (typeof result === 'string') return result
+      state = 'executing command'
       for (const action of this._actions) {
         const result = await action.call(this, argv, ...args)
         if (typeof result === 'string') return result
       }
+      state = 'after command'
       await this.app.parallel(session, 'command', argv)
       return ''
     } catch (error) {
@@ -227,7 +229,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
         const index = error.stack.indexOf(lastCall)
         stack = stack.slice(0, index - 1)
       }
-      logger.warn(`${argv.source ||= this.stringify(args, options)}\n${stack}`)
+      logger.warn(`${state}: ${argv.source ||= this.stringify(args, options)}\n${stack}`)
+      return ''
     }
   }
 
