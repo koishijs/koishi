@@ -40,10 +40,11 @@ export function apply(ctx: Context, config: Config = {}) {
   const tokens: Record<string, string> = {}
 
   ctx.router.get(config.authorize, async (ctx) => {
-    if (Array.isArray(ctx.query.state)) return ctx.status = 400
-    const id = tokens[ctx.query.state]
+    const token = ctx.query.state
+    if (!token || Array.isArray(token)) return ctx.status = 400
+    const id = tokens[token]
     if (!id) return ctx.status = 403
-    delete tokens[ctx.query.state]
+    delete tokens[token]
     const { code, state } = ctx.query
     const data = await github.getTokens({ code, state, redirect_uri: redirect })
     await database.setUser('id', id, {
@@ -89,6 +90,7 @@ export function apply(ctx: Context, config: Config = {}) {
     const event = ctx.headers['x-github-event']
     const signature = ctx.headers['x-hub-signature-256']
     const id = ctx.headers['x-github-delivery']
+    if (!ctx.request.body.payload) return ctx.status = 400
     const payload = JSON.parse(ctx.request.body.payload)
     const fullEvent = payload.action ? `${event}/${payload.action}` : event
     app.logger('github').debug('received %s (%s)', fullEvent, id)
@@ -117,7 +119,7 @@ export function apply(ctx: Context, config: Config = {}) {
     if (!body || !payloads) return next()
 
     let name: string, message: string
-    if (session.parsed.prefix !== null) {
+    if (session.parsed.prefix !== null || session.parsed.appel) {
       name = body.split(' ', 1)[0]
       message = body.slice(name.length).trim()
     } else {

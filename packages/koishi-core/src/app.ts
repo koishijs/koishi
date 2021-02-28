@@ -227,14 +227,14 @@ export class App extends Context {
         // attach group data
         const channelFields = new Set<Channel.Field>(['flag', 'assignee'])
         this.emit('before-attach-channel', session, channelFields)
-        const group = await session.observeChannel(channelFields)
+        const channel = await session.observeChannel(channelFields)
 
         // emit attach event
         if (await this.serial(session, 'attach-channel', session)) return
 
         // ignore some group calls
-        if (group.flag & Channel.Flag.ignore) return
-        if (group.assignee !== session.selfId && !atSelf) return
+        if (channel.flag & Channel.Flag.ignore) return
+        if (channel.assignee !== session.selfId && !atSelf) return
       }
 
       // attach user data
