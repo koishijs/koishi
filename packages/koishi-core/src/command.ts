@@ -166,6 +166,11 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this as Command<U, G, A, Extend<O, K, Domain.OptionType<D, T>>>
   }
 
+  match(session: Session) {
+    const { authority = Infinity } = (session.user || {}) as User
+    return this.context.match(session) && this.config.authority <= authority
+  }
+
   check(callback: Command.Action<U, G, A, O>, prepend = false) {
     if (prepend) {
       this._checkers.unshift(callback)

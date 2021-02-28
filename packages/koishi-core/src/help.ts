@@ -36,7 +36,7 @@ export default function apply(ctx: Context) {
     session.collect(key, { ...argv, command, args: [], options: { help: true } }, fields)
   }
 
-  ctx.command('help [command]  显示帮助信息', { authority: 0 })
+  ctx.command('help [command]', '显示帮助信息', { authority: 0 })
     .userFields(['authority'])
     .userFields(createCollector('user'))
     .channelFields(createCollector('channel'))
@@ -54,10 +54,9 @@ export default function apply(ctx: Context) {
 
       const command = findCommand(target)
       if (!command?.context.match(session)) {
-        const items = getCommands(session, app._commands).flatMap(cmd => cmd._aliases)
         session.suggest({
           target,
-          items,
+          items: getCommandNames(session),
           prefix: template('internal.help-suggestion-prefix'),
           suffix: template('internal.help-suggestion-suffix'),
           async apply(suggestion) {
@@ -73,18 +72,29 @@ export default function apply(ctx: Context) {
     })
 }
 
-export function getCommands(session: Session<'authority'>, commands: Command[], showHidden = false) {
-  const { authority } = session.user || {}
-  return commands.filter(cmd => {
-    return cmd.context.match(session)
-      && (authority === undefined || cmd.config.authority <= authority)
-      && (showHidden || !cmd.config.hidden)
-  }).sort((a, b) => a.name > b.name ? 1 : -1)
+export function getCommandNames(session: Session) {
+  return session.app._commands
+    .filter(cmd => cmd.match(session) && !cmd.config.hidden)
+    .flatMap(cmd => cmd._aliases)
 }
 
-function formatCommands(path: string, session: Session<ValidationField>, source: Command[], options: HelpConfig) {
-  const commands = getCommands(session, source, options.showHidden)
+function* getCommands(session: Session<'authority'>, commands: Command[], showHidden = false): Generator<Command> {
+  for (const command of commands) {
+    if (!showHidden && command.config.hidden) continue
+    if (command.match(session)) {
+      yield command
+    } else {
+      yield* getCommands(session, command.children, showHidden)
+    }
+  }
+}
+
+function formatCommands(path: string, session: Session<ValidationField>, children: Command[], options: HelpConfig) {
+  const commands = Array
+    .from(getCommands(session, children, options.showHidden))
+    .sort((a, b) => a.name > b.name ? 1 : -1)
   if (!commands.length) return []
+
   let hasSubcommand = false
   const output = commands.map(({ name, config, children, description }) => {
     let output = '    ' + name
