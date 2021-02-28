@@ -44,7 +44,7 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
     session.content = session.content
       .replace(/<@!(.+?)>/, (_, v) => segment('at', { id: v }))
       .replace(/<@&(.+?)>/, (_, v) => segment('at', { id: v }))
-      .replace(/<:(.*):(.+?)>/, (_, __, v) => segment('face', { id: v })).replace(/@everyone/, () => segment('at', { type: 'all' }))
+      .replace(/<:(.*):(.+?)>/, (_, __, v) => segment('face', { id: v, name: __ }))
       .replace(/@everyone/, () => segment('at', { type: 'all' }))
       .replace(/@here/, () => segment('at', { type: 'here' }))
       .replace(/<#(.+?)>/, (_, v) => segment('sharp', { id: v }))
@@ -60,7 +60,7 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
         session.content = segment('video', { file: meta.embeds[0].video.url })
         break
       case 'link':
-        session.content = segment('image', { url: meta.embeds[0].url, title: meta.embeds[0].title, content: meta.embeds[0].description })
+        session.content = segment('share', { url: meta.embeds[0].url, title: meta.embeds[0]?.title, content: meta.embeds[0]?.description })
         break
     }
   }

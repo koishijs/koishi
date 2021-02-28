@@ -9,6 +9,9 @@ const logger = new Logger('discord')
 
 export default class WsClient extends Adapter.WsClient<'discord'> {
   constructor(app: App) {
+    if (process.env.NODE_ENV !== 'production') {
+      logger.level = Logger.DEBUG
+    }
     super(app, DiscordBot, app.options.discord)
   }
 
@@ -17,7 +20,7 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
   }
 
   heartbeat(bot: DiscordBot) {
-    logger.info(`heartbeat d ${bot._d}`)
+    logger.debug(`heartbeat d ${bot._d}`)
     bot.socket.send(JSON.stringify({
       op: Opcode.Heartbeat,
       d: bot._d,
@@ -36,7 +39,7 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
       } catch (error) {
         return logger.warn('cannot parse message', data)
       }
-      console.log(require('util').inspect(parsed, false, null, true))
+      logger.debug(require('util').inspect(parsed, false, null, true))
       if (parsed.s) {
         bot._d = parsed.s
       }
@@ -51,8 +54,6 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
             intents: (1 << 9) + (1 << 12),
           },
         }))
-      } else if (parsed.op === Opcode.HeartbeatACK) {
-
       } else if (parsed.op === Opcode.Dispatch) {
         const session = await adaptSession(bot, parsed)
         if (session) this.dispatch(session)

@@ -71,6 +71,71 @@ export class DiscordBot extends Bot<'discord'> {
     return this.sendMessage(channelId, content)
   }
 
+  private async sendFullMessage(requestUrl: string, content: string, addition: Record<string, any> = {}): Promise<string> {
+    const chain = segment.parse(content)
+    let sentMessageId = '0'
+    let needSend = ''
+    const isWebhook = requestUrl.startsWith('/webhooks/')
+    const that = this
+    async function sendMessage() {
+      const r = await that.request('POST', requestUrl, {
+        content: needSend,
+        ...addition,
+      })
+      sentMessageId = r.id
+      needSend = ''
+    }
+    for (const code of chain) {
+      const { type, data } = code
+      if (type === 'text') {
+        needSend += data.content
+      } else if (type === 'at' && data.id) {
+        needSend += `<@${data.id}>`
+      } else if (type === 'at' && data.type === 'all') {
+        needSend += `@everyone`
+      } else if (type === 'at' && data.type === 'here') {
+        needSend += `@here`
+      } else if (type === 'sharp' && data.id) {
+        needSend += `<#${data.id}>`
+      } else if (type === 'face' && data.name && data.id) {
+        needSend += `<:${data.name}:${data.id}>`
+      } else {
+        if (needSend) await sendMessage()
+        if (type === 'share') {
+          const sendData = isWebhook ? {
+            embeds: [{ ...addition, ...data }],
+          } : {
+            embed: { ...addition, ...data },
+          }
+          const r = await this.request('POST', requestUrl, {
+            ...sendData,
+          })
+          sentMessageId = r.id
+        }
+        if (type === 'image' || type === 'video') {
+          if (data.url.startsWith('http://') || data.url.startsWith('https://')) {
+            const sendData = isWebhook ? {
+              embeds: [{ ...addition, ...data }],
+            } : {
+              embed: { ...addition, ...data },
+            }
+            const r = await this.request('POST', requestUrl, {
+              ...sendData,
+            })
+            sentMessageId = r.id
+          } else {
+            const r = await this.sendEmbedMessage(requestUrl, data.url, {
+              ...addition,
+            })
+            sentMessageId = r.id
+          }
+        }
+      }
+    }
+    if (needSend) await sendMessage()
+    return sentMessageId
+  }
+
   async sendMessage(channelId: string, content: string) {
     const session = this.createSession({ channelId, content })
     if (await this.app.serial(session, 'before-send', session)) return
@@ -81,32 +146,7 @@ export class DiscordBot extends Bot<'discord'> {
       message_id: quote,
     } : undefined
 
-    let sentMessageId = '0'
-    for (const code of chain) {
-      const { type, data } = code
-      if (type === 'text') {
-        const r = await this.request('POST', `/channels/${channelId}/messages`, {
-          content: data.content,
-          message_reference,
-        })
-        sentMessageId = r.id
-      } else if (type === 'image') {
-        if (data.url.startsWith('http://') || data.url.startsWith('https://')) {
-          const r = await this.request('POST', `/channels/${channelId}/messages`, {
-            embed: {
-              url: data.url,
-              message_reference,
-            },
-          })
-          sentMessageId = r.id
-        } else {
-          const r = await this.sendEmbedMessage(`/channels/${channelId}/messages`, data.url, {
-            message_reference,
-          })
-          sentMessageId = r.id
-        }
-      }
-    }
+    const sentMessageId = await this.sendFullMessage(`/channels/${channelId}/messages`, session.content, { message_reference })
 
     this.app.emit(session, 'send', session)
     return session.messageId = sentMessageId
@@ -175,28 +215,8 @@ export class DiscordBot extends Bot<'discord'> {
       throw new Error('Up to 10 embed objects')
     }
 
-    let sentMessageId = '0'
-    for (const code of chain) {
-      const { type, data } = code
-      if (type === 'text') {
-        const r = await this.request('POST', `/webhooks/${id}/${token}`, {
-          content: data.content,
-        })
-        sentMessageId = r.id
-      } else if (type === 'image') {
-        if (data.url.startsWith('http://') || data.url.startsWith('https://')) {
-          const r = await this.request('POST', `/webhooks/${id}/${token}`, {
-            embed: {
-              url: data.url,
-            },
-          })
-          sentMessageId = r.id
-        } else {
-          const r = await this.sendEmbedMessage(`/webhooks/${id}/${token}`, data.url)
-          sentMessageId = r.id
-        }
-      }
-    }
+    const sentMessageId = await this.sendFullMessage(`/webhooks/${id}/${token}`, data.content)
+
     return sentMessageId
   }
 }
