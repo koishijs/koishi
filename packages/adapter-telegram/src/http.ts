@@ -3,7 +3,7 @@ import FormData from 'form-data'
 import { App, Adapter, Session } from 'koishi-core'
 import { assertProperty, camelCase, Logger, segment } from 'koishi-utils'
 import { TelegramBot } from './bot'
-import Telegram from './interface'
+import * as Telegram from './types'
 
 const logger = new Logger('telegram')
 

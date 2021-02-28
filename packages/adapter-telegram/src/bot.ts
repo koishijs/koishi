@@ -1,15 +1,7 @@
 import { createReadStream } from 'fs'
 import { camelCase, snakeCase, renameProperty, segment, assertProperty } from 'koishi-utils'
 import { Bot, GroupInfo, GroupMemberInfo, UserInfo, BotOptions, Adapter } from 'koishi-core'
-import Telegram from './interface'
-
-declare module 'koishi-core' {
-  namespace Bot {
-    interface Platforms {
-      telegram: TelegramBot
-    }
-  }
-}
+import * as Telegram from './types'
 
 export class SenderError extends Error {
   constructor(args: Record<string, any>, url: string, retcode: number, selfId: string) {

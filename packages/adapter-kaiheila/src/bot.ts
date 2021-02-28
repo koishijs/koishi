@@ -3,20 +3,8 @@
 import { AuthorInfo, Bot, MessageInfo } from 'koishi-core'
 import { camelize, segment, pick, renameProperty, snakeCase } from 'koishi-utils'
 import axios, { Method } from 'axios'
-import * as KHL from './types'
+import * as Kaiheila from './types'
 import { adaptGroup, adaptAuthor, adaptUser } from './utils'
-
-declare module 'koishi-core' {
-  namespace Bot {
-    interface Platforms {
-      kaiheila: KaiheilaBot
-    }
-  }
-
-  interface BotOptions {
-    verifyToken?: string
-  }
-}
 
 export interface KaiheilaAuthorInfo extends AuthorInfo {
   avatar?: string
@@ -162,7 +150,7 @@ export class KaiheilaBot extends Bot {
     // parse card
     const card = this.parseCard(chain)
     if (card) {
-      params.type = KHL.Type.card
+      params.type = Kaiheila.Type.card
       params.content = card
     } else {
       params.content = this.renderText(chain)
@@ -198,7 +186,7 @@ export class KaiheilaBot extends Bot {
   }
 
   async getSelf() {
-    const data = await this.request<KHL.Self>('GET', '/user/me')
+    const data = await this.request<Kaiheila.Self>('GET', '/user/me')
     return adaptUser(data)
   }
 
@@ -208,12 +196,12 @@ export class KaiheilaBot extends Bot {
   }
 
   async getGroupList() {
-    const { items } = await this.request<KHL.GuildList>('GET', '/guild/list')
+    const { items } = await this.request<Kaiheila.GuildList>('GET', '/guild/list')
     return items.map(adaptGroup)
   }
 
   async getGroupMemberList() {
-    const { items } = await this.request<KHL.GuildMemberList>('GET', '/guild/user-list')
+    const { items } = await this.request<Kaiheila.GuildMemberList>('GET', '/guild/user-list')
     return items.map(adaptAuthor)
   }
 
