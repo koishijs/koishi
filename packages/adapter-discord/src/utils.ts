@@ -2,6 +2,7 @@ import { Session, segment, MessageInfo, AuthorInfo, GroupInfo, UserInfo, Channel
 import { DiscordBot } from './bot'
 import * as DC from './types'
 import { DiscordChannel, PartialGuild } from './types'
+
 export const adaptUser = (user: DC.DiscordUser): UserInfo => ({
   userId: user.id,
   avatar: user.avatar,
@@ -18,7 +19,7 @@ export function adaptGroup(data: PartialGuild): GroupInfo {
 export function adaptChannel(data: DiscordChannel): ChannelInfo {
   return {
     channelId: data.id,
-    channelName: data.name
+    channelName: data.name,
   }
 }
 

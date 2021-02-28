@@ -5,18 +5,9 @@ import { Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
 import { ExecuteWebhookBody, GuildMember, DiscordMessage, PartialGuild, DiscordUser, DiscordChannel } from './types'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
+import { createReadStream } from 'fs'
 import { segment } from 'koishi-utils'
 import FormData from 'form-data'
-import { TelegramResponse } from 'koishi-adapter-telegram'
-
-const fs = require('fs')
-declare module 'koishi-core' {
-  namespace Bot {
-    interface Platforms {
-      discord: DiscordBot
-    }
-  }
-}
 
 export interface DiscordBot {
   executeWebhook(id: string, token: string, data: ExecuteWebhookBody): Promise<any>
@@ -49,7 +40,7 @@ export class DiscordBot extends Bot<'discord'> {
 
   private async sendEmbedMessage(requestUrl: string, filePath: string, payload_json: Record<string, any> = {}) {
     const fd = new FormData()
-    fd.append('file', fs.createReadStream(filePath))
+    fd.append('file', createReadStream(filePath))
     fd.append('payload_json', JSON.stringify(payload_json))
     const headers: Record<string, any> = {
       Authorization: `Bot ${this.token}`,

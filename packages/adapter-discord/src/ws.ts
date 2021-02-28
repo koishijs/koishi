@@ -15,7 +15,7 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
     super(app, DiscordBot, app.options.discord)
   }
 
-  async prepare(bot: DiscordBot) {
+  async prepare() {
     return new WebSocket('wss://gateway.discord.gg/?v=8&encoding=json')
   }
 
@@ -52,6 +52,10 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
       logger.debug(require('util').inspect(parsed, false, null, true))
       if (parsed.s) {
         bot._d = parsed.s
+      }
+      if (parsed.d?.user) {
+        bot.username = parsed.d.user.username
+        bot.selfId = parsed.d.user.id
       }
       if (parsed.op === Opcode.Hello) {
         bot._ping = setInterval(() => this.heartbeat(bot), parsed.d.heartbeat_interval)

@@ -1,6 +1,5 @@
 /* eslint-disable camelcase */
 
-import { AuthorInfo, MessageBase } from 'koishi-core'
 type WSEventType =
   | 'READY'
   | 'RESUMED'
@@ -37,82 +36,125 @@ type WSEventType =
   | 'TYPING_START'
   | 'VOICE_STATE_UPDATE'
   | 'VOICE_SERVER_UPDATE'
-  | 'WEBHOOKS_UPDATE';
+  | 'WEBHOOKS_UPDATE'
 
 export type Payload = {
-  op: Opcode;
-  d?: any;
-  t?: WSEventType;
-  s?: number;
+  op: Opcode
+  d?: Data
+  t?: WSEventType
+  s?: number
+}
+
+export interface Application {
+  id: string
+  flag: number
+}
+
+export interface Guild {
+  unavailable: boolean
+  id: string
+}
+
+export interface Data {
+  v: number
+  user_settings: {}
+  user: User
+  session_id: string
+  relationships: []
+  private_channels: []
+  presences: []
+  guilds: Guild[]
+  guild_join_requests: []
+  geo_ordered_rtc_regions: string[]
+  application: Application
+  heartbeat_interval?: number
+}
+
+export interface User {
+  verified: boolean
+  username: string
+  mfa_enabled: boolean
+  id: string
+  flags: number
+  email: string
+  discriminator: string
+  bot: boolean
+  avatar: string
 }
 
 export interface Author {
-  username: string;
-  id: string;
-  avatar: string;
-  public_flags: number;
-  discriminator: string;
+  username: string
+  id: string
+  avatar: string
+  public_flags: number
+  discriminator: string
 }
 
 export interface DiscordMessage {
-  guild_id?: string;
-  content: string;
+  guild_id?: string
+  content: string
   author: Author
-  id: string;
-  timestamp: string;
+  id: string
+  timestamp: string
   channel_id: string
-  attachments: Attachment[];
-  embeds: Embed[];
+  attachments: Attachment[]
+  embeds: Embed[]
   message_reference?: MessageReference
 }
 
 export interface MessageReference {
-  message_id?: string;
-  channel_id?: string;
-  guild_id?: string;
+  message_id?: string
+  channel_id?: string
+  guild_id?: string
 }
 
 export interface Embed {
-  title?: string;
+  title?: string
   type?: 'rich' | 'image' | 'video'|'gifv'|'article'|'link'
-  description?: string;
-  url?: string;
-  timestamp: string;
+  description?: string
+  url?: string
+  timestamp: string
 
   video?: {
-    url?: string;
-    proxy_url?: string;
-    height?: number;
-    width?: number;
+    url?: string
+    proxy_url?: string
+    height?: number
+    width?: number
   }
 }
 
 export interface Attachment {
-  id: string;
-  filename: string;
-  size: number;
-  url: string;
-  proxy_url: string;
-  height?: number;
-  width?: number;
+  id: string
+  filename: string
+  size: number
+  url: string
+  proxy_url: string
+  height?: number
+  width?: number
 }
 
 export interface DiscordUser {
-  id: string;
-  username: string;
-  discriminator: string;
-  bot?: boolean;
-  avatar: string | null;
-  system?: boolean;
+  id: string
+  username: string
+  discriminator: string
+  bot?: boolean
+  avatar: string | null
+  system?: boolean
 }
 
 export enum Opcode {
-  Hello = 10, Identify = 2, Dispatch = 0, HeartbeatACK = 11, Heartbeat = 1, Resume = 6, Reconnect = 7
+  Hello = 10,
+  Identify = 2,
+  Dispatch = 0,
+  HeartbeatACK = 11,
+  Heartbeat = 1,
+  Resume = 6,
+  Reconnect = 7,
 }
 
 export interface PartialGuild {
-  id: string;
-  name: string;
+  id: string
+  name: string
 }
 
 export interface GuildMember {
@@ -120,14 +162,14 @@ export interface GuildMember {
 }
 
 export interface ExecuteWebhookBody{
-  content: string;
-  username?: string;
-  avatar_url?: string;
+  content: string
+  username?: string
+  avatar_url?: string
 }
 
 export interface DiscordChannel {
-  id: string;
-  type: number;
-  guild_id?: string;
-  name?: string;
+  id: string
+  type: number
+  guild_id?: string
+  name?: string
 }
