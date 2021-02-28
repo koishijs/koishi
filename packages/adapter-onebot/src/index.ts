@@ -1,6 +1,7 @@
 import { Adapter, App, Context, Time } from 'koishi-core'
 import { WsClient, WsServer } from './ws'
-import HttpServer from './http'
+import { CQBot } from './bot'
+import HttpServer, { ResponsePayload } from './http'
 import axios from 'axios'
 
 interface OneBotOptions extends Adapter.WsClientOptions {
@@ -13,6 +14,20 @@ interface OneBotOptions extends Adapter.WsClientOptions {
 declare module 'koishi-core' {
   interface AppOptions {
     onebot?: OneBotOptions
+  }
+
+  interface BotOptions {
+    server?: string
+  }
+
+  interface Session {
+    _response?: (payload: ResponsePayload) => void
+  }
+
+  namespace Bot {
+    interface Platforms {
+      onebot: CQBot
+    }
   }
 }
 

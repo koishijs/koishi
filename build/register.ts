@@ -2,7 +2,11 @@ import { install } from 'source-map-support'
 import { transformSync, Message } from 'esbuild'
 import { readFileSync } from 'fs'
 
+// hack for tests
 if (process.env.TS_NODE_PROJECT) {
+  if (!process.execArgv.some(arg => arg.includes('register'))) {
+    process.execArgv.push('-r', __filename)
+  }
   require('tsconfig-paths/register')
 }
 

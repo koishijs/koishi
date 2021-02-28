@@ -6,7 +6,7 @@ import { Argv, Domain } from './parser'
 import { Platform, Bot } from './adapter'
 import { App } from './app'
 import { inspect } from 'util'
-import type Router from 'koa-router'
+import Router from '@koa/router'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
@@ -43,15 +43,13 @@ export class Context {
   protected _router: Router
   protected _database: Database
 
-  private _plugin: Plugin = null
-
   public user = this.createSelector('userId')
   public self = this.createSelector('selfId')
   public group = this.createSelector('groupId')
   public channel = this.createSelector('channelId')
   public platform = this.createSelector('platform')
 
-  constructor(public filter: Filter, public app?: App) {}
+  protected constructor(public filter: Filter, public app?: App, private _plugin: Plugin = null) {}
 
   [inspect.custom]() {
     return `Context {}`
@@ -67,8 +65,11 @@ export class Context {
     return this.unselect('groupId').user
   }
 
-  get router() {
-    return this.app._router
+  get router(): Router {
+    if (!this.app._router) return
+    const router = Object.create(this.app._router)
+    router._koishiContext = this
+    return router
   }
 
   get bots() {
@@ -86,7 +87,7 @@ export class Context {
     this.app._database = database
   }
 
-  private get disposables() {
+  protected get disposables() {
     return this.app._plugins.get(this._plugin)
   }
 
@@ -106,22 +107,30 @@ export class Context {
     })
   }
 
+  all() {
+    return new Context(() => true, this.app, this._plugin)
+  }
+
   union(arg: Filter | Context) {
     const filter = typeof arg === 'function' ? arg : arg.filter
-    const ctx = new Context(s => this.filter(s) || filter(s), this.app)
-    ctx._plugin = this._plugin
-    return ctx
+    return new Context(s => this.filter(s) || filter(s), this.app, this._plugin)
   }
 
   intersect(arg: Filter | Context) {
     const filter = typeof arg === 'function' ? arg : arg.filter
-    const ctx = new Context(s => this.filter(s) && filter(s), this.app)
-    ctx._plugin = this._plugin
-    return ctx
+    return new Context(s => this.filter(s) && filter(s), this.app, this._plugin)
   }
 
   match(session?: Session) {
     return !session || this.filter(session)
+  }
+
+  private removeDisposable(listener: Disposable) {
+    const index = this.disposables.indexOf(listener)
+    if (index >= 0) {
+      this.disposables.splice(index, 1)
+      return true
+    }
   }
 
   plugin<T extends Plugin>(plugin: T, options?: PluginConfig<T>) {
@@ -135,17 +144,19 @@ export class Context {
 
     const ctx: this = Object.create(this)
     defineProperty(ctx, '_plugin', plugin)
-    this.app._plugins.set(plugin, [])
+    this.app._plugins.set(plugin, [() => this.removeDisposable(dispose)])
 
     if (typeof plugin === 'function') {
       (plugin as PluginFunction<this>)(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
       (plugin as PluginObject<this>).apply(ctx, options)
     } else {
+      this.app._plugins.delete(plugin)
       throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
 
-    this.disposables.push(() => ctx.dispose())
+    const dispose = () => ctx.dispose()
+    this.disposables.push(dispose)
     return this
   }
 
@@ -236,16 +247,28 @@ export class Context {
   }
 
   on<K extends EventName>(name: K, listener: EventMap[K], prepend = false) {
+    const method = prepend ? 'unshift' : 'push'
+
+    // handle plugin-related events
+    const _listener = listener as Disposable
     if (name === 'connect' && this.app.status === App.Status.open) {
-      return (listener as Disposable)(), () => false
+      return _listener(), () => false
+    } else if (name === 'before-disconnect') {
+      this.disposables[method](_listener)
+      return () => this.removeDisposable(_listener)
     }
-    if (prepend) {
-      this.getHooks(name).unshift([this, listener])
-    } else {
-      this.getHooks(name).push([this, listener])
+
+    const hooks = this.app._hooks[name] ||= []
+    if (hooks.length >= this.app.options.maxListeners) {
+      this.logger('app').warn(
+        'max listener count (%d) for event "%s" exceeded, which may be caused by a memory leak',
+        this.app.options.maxListeners, name,
+      )
     }
+
+    hooks[method]([this, listener])
     const dispose = () => this.off(name, listener)
-    this.disposables.push(name === 'dispose' ? listener as Disposable : dispose)
+    this.disposables.push(dispose)
     return dispose
   }
 
@@ -276,17 +299,37 @@ export class Context {
     return this.on(Context.middleware, middleware, prepend)
   }
 
+  setTimeout(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
+    const timer = setTimeout(() => {
+      this.removeDisposable(dispose)
+      callback()
+    }, ms, ...args)
+    const dispose = () => clearTimeout(timer)
+    this.disposables.push(dispose)
+    return timer
+  }
+
+  setInterval(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
+    const timer = setInterval(() => {
+      this.removeDisposable(dispose)
+      callback()
+    }, ms, ...args)
+    const dispose = () => clearInterval(timer)
+    this.disposables.push(dispose)
+    return timer
+  }
+
   command<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
   command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
   command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {
-    if (typeof args[0] === 'string') def += ' ' + args.shift()
+    const desc = typeof args[0] === 'string' ? args.shift() as string : ''
     const config = args[0] as Command.Config
-    const [path] = def.split(' ', 1)
+    const path = def.split(' ', 1)[0].toLowerCase()
     const decl = def.slice(path.length)
-    const segments = path.toLowerCase().split(/(?=[\\./])/)
+    const segments = path.split(/(?=[\\./])/)
 
     let parent: Command = null
-    segments.forEach((segment) => {
+    segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
       let command = this.app._commandMap[name]
@@ -306,7 +349,7 @@ export class Context {
         }
         return parent = command
       }
-      command = new Command(name, decl, this)
+      command = new Command(name, decl, index === segments.length - 1 ? desc : '', this)
       if (parent) {
         command.parent = parent
         parent.children.push(command)
@@ -314,6 +357,7 @@ export class Context {
       parent = command
     })
 
+    if (desc) parent.description = desc
     Object.assign(parent.config, config)
     this.disposables.push(() => parent.dispose())
     return parent
@@ -406,5 +450,17 @@ export interface EventMap extends SessionEventMap {
   'connect'(): void
   'before-disconnect'(): Awaitable<void>
   'disconnect'(): void
-  'dispose'(): Awaitable<void>
+}
+
+// hack into router methods to make sure
+// that koa middlewares are disposable
+const register = Router.prototype.register
+Router.prototype.register = function (this: Router, ...args) {
+  const layer = register.apply(this, args)
+  const context: Context = this['_koishiContext']
+  context['disposables'].push(() => {
+    const index = this.stack.indexOf(layer)
+    if (index) this.stack.splice(index, 1)
+  })
+  return layer
 }

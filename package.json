@@ -22,7 +22,7 @@
     "dep": "node -r ./build/register build/dep",
     "docs": "cd docs && yarn dev",
     "draft": "node -r ./build/register build/release",
-    "test": "mocha --experimental-vm-modules --enable-source-maps",
+    "test": "mocha --require ./build/register --experimental-vm-modules --enable-source-maps",
     "test:json": "c8 -r json yarn test",
     "test:html": "rimraf coverage && c8 -r html yarn test",
     "test:text": "c8 -r text yarn test",

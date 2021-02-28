@@ -37,6 +37,7 @@ const states: Record<string, State> = {}
 export * from './state'
 
 export const name = 'chess'
+export const disposable = true
 
 export function apply(ctx: Context) {
   ctx = ctx.group()
@@ -109,7 +110,7 @@ export function apply(ctx: Context) {
         state.update = rule.update
         states[cid] = state
 
-        return state.draw(session, `${session.$username} 发起了游戏！`)
+        return state.draw(session, `${session.username} 发起了游戏！`)
       }
 
       if (options.stop) {
@@ -140,7 +141,7 @@ export function apply(ctx: Context) {
         if (state.next !== userId) return '当前不是你的回合。'
         state.next = state.p1 === userId ? state.p2 : state.p1
         channel.chess = state.serial()
-        return `${session.$username} 选择跳过其回合，下一手轮到 ${segment.at(state.next)}。`
+        return `${session.username} 选择跳过其回合，下一手轮到 ${segment.at(state.next)}。`
       }
 
       if (options.repent) {
@@ -151,7 +152,7 @@ export function apply(ctx: Context) {
         state.refresh()
         state.next = last
         channel.chess = state.serial()
-        return state.draw(session, `${session.$username} 进行了悔棋。`)
+        return state.draw(session, `${session.username} 进行了悔棋。`)
       }
 
       if (!position) return '请输入坐标。'
@@ -180,9 +181,9 @@ export function apply(ctx: Context) {
       let message = ''
       if (!state.p2 && userId !== state.p1) {
         state.p2 = userId
-        message = `${session.$username} 加入了游戏并落子于 ${position.toUpperCase()}，`
+        message = `${session.username} 加入了游戏并落子于 ${position.toUpperCase()}，`
       } else {
-        message = `${session.$username} 落子于 ${position.toUpperCase()}，`
+        message = `${session.username} 落子于 ${position.toUpperCase()}，`
       }
 
       const value = state.history.length % 2 ? -1 : 1

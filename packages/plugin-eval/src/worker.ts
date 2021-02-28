@@ -65,7 +65,7 @@ export function formatError(error: Error) {
 const main = wrap<MainAPI>(parentPort)
 
 export interface ContextOptions {
-  $uuid: string
+  id: string
   user: Partial<User>
   channel: Partial<Channel>
   userWritable: User.Field[]
@@ -79,13 +79,13 @@ export interface Context {
   exec(message: string): Promise<string>
 }
 
-export const Context = ({ $uuid, user, userWritable, channel, channelWritable }: ContextOptions): Context => ({
+export const Context = ({ id, user, userWritable, channel, channelWritable }: ContextOptions): Context => ({
   user: user && observe(user, async (diff) => {
     const diffKeys = difference(Object.keys(diff), userWritable)
     if (diffKeys.length) {
       throw new TypeError(`cannot set user field: ${diffKeys.join(', ')}`)
     }
-    await main.updateUser($uuid, diff)
+    await main.updateUser(id, diff)
   }),
 
   channel: channel && observe(channel, async (diff) => {
@@ -93,18 +93,18 @@ export const Context = ({ $uuid, user, userWritable, channel, channelWritable }:
     if (diffKeys.length) {
       throw new TypeError(`cannot set group field: ${diffKeys.join(', ')}`)
     }
-    await main.updateGroup($uuid, diff)
+    await main.updateGroup(id, diff)
   }),
 
   async send(...param: [string, ...any[]]) {
-    return await main.send($uuid, formatResult(...param))
+    return await main.send(id, formatResult(...param))
   },
 
   async exec(message: string) {
     if (typeof message !== 'string') {
       throw new TypeError('The "message" argument must be of type string')
     }
-    return await main.execute($uuid, message)
+    return await main.execute(id, message)
   },
 })
 
@@ -125,7 +125,7 @@ export class WorkerAPI {
   async eval(ctxOptions: ContextOptions, evalOptions: EvalOptions) {
     const { source, silent } = evalOptions
 
-    const key = 'koishi-eval-context:' + ctxOptions.$uuid
+    const key = 'koishi-eval-context:' + ctxOptions.id
     const ctx = Context(ctxOptions)
     internal.setGlobal(Symbol.for(key), ctx, true)
 

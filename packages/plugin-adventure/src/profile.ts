@@ -30,7 +30,7 @@ namespace Profile {
       .userFields(['name', 'timers'])
       .action(async ({ session }) => {
         const user = await session.observeUser(fields)
-        const output = [`${session.$username}，您的权限为 ${user.authority} 级。`]
+        const output = [`${session.username}，您的权限为 ${user.authority} 级。`]
         for (const { callback } of data) {
           const result = callback(user)
           if (result) output.push(result)

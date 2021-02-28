@@ -106,10 +106,10 @@ export function attachTraps<A extends any[], O>(
   command.userFields([...userTrap.fields(userAccess.readable)])
   command.channelFields([...channelTrap.fields(channelAccess.readable)])
   command.action((argv, ...args) => {
-    const { $uuid } = argv.session
+    const { id } = argv.session
     const user = userTrap.get(argv.session.user, userAccess.readable)
     const channel = channelTrap.get(argv.session.channel, channelAccess.readable)
-    const ctxOptions = { $uuid, user, channel, userWritable, channelWritable }
+    const ctxOptions = { id, user, channel, userWritable, channelWritable }
     return action({ ...argv, ctxOptions }, ...args)
   })
 }

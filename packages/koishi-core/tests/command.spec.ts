@@ -15,7 +15,7 @@ describe('Command API', () => {
       expect(() => app.command('')).to.throw()
     })
 
-    it('context.command', () => {
+    it('context.prototype.command', () => {
       const ctx1 = app.user('10000')
       const ctx2 = app.group('10000')
       app.command('a')
@@ -73,7 +73,7 @@ describe('Command API', () => {
     let app: App
     beforeEach(() => app = new App())
 
-    it('command.subcommand', () => {
+    it('command.prototype.subcommand', () => {
       const a = app.command('a')
       const b = a.subcommand('b')
       const c = b.subcommand('.c')
@@ -155,8 +155,7 @@ describe('Command API', () => {
     const command = app.command('test')
     const session = new Session(app, {})
     const cmdWarn = jest.spyOn(new Logger('command'), 'warn')
-    const next = fallback => fallback()
-    const argv = { command, session, next }
+    const argv = { command, session }
 
     it('throw in action', async () => {
       command.action(async ({ next }) => {
@@ -164,7 +163,7 @@ describe('Command API', () => {
         throw new Error('message')
       })
 
-      await expect(command.execute(argv)).to.be.fulfilled
+      await expect(command.execute(argv)).eventually.to.equal('')
       expect(cmdWarn.mock.calls).to.have.length(1)
       expect(cmdWarn.mock.calls[0][0]).to.match(/^executing command: test\nError: message/)
     })
@@ -176,8 +175,9 @@ describe('Command API', () => {
         })
       })
 
+      cmdWarn.mockClear()
       await expect(command.execute(argv)).to.be.rejectedWith('message')
-      expect(cmdWarn.mock.calls).to.have.length(1)
+      expect(cmdWarn.mock.calls).to.have.length(0)
     })
   })
 })

@@ -99,11 +99,11 @@ export class Session<
   uid: string
   cid: string
 
+  id?: string
   argv?: Argv<U, G>
   user?: User.Observed<U>
   channel?: Channel.Observed<G>
   parsed?: Parsed
-  $uuid?: string
 
   private _delay?: number
   private _queued: Promise<void>
@@ -120,7 +120,7 @@ export class Session<
     defineProperty(this, 'uid', `${this.platform}:${this.userId}`)
     defineProperty(this, 'cid', `${this.platform}:${this.channelId}`)
     defineProperty(this, 'bot', app.bots[this.sid])
-    defineProperty(this, '$uuid', Random.uuid())
+    defineProperty(this, 'id', Random.uuid())
     defineProperty(this, '_queued', Promise.resolve())
     defineProperty(this, '_hooks', [])
   }
@@ -131,7 +131,7 @@ export class Session<
     }))
   }
 
-  get $username(): string {
+  get username(): string {
     const defaultName = this.user && this.user['name']
       ? this.user['name']
       : this.author
@@ -206,13 +206,13 @@ export class Session<
       }
       if (fieldSet.size) {
         const data = await this.getChannel(channelId, '', [...fieldSet])
-        this.app._groupCache.set(this.cid, channel._merge(data))
+        this.app._channelCache.set(this.cid, channel._merge(data))
       }
       return channel as any
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    const cache = this.app._groupCache.get(this.cid)
+    const cache = this.app._channelCache.get(this.cid)
     const fieldArray = [...fieldSet]
     const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
     if (hasActiveCache) return this.channel = cache as any
@@ -221,7 +221,7 @@ export class Session<
     const assignee = this._getValue(this.app.options.autoAssign) ? this.selfId : ''
     const data = await this.getChannel(channelId, assignee, fieldArray)
     const newChannel = observe(data, diff => this.database.setChannel(platform, channelId, diff), `channel ${this.cid}`)
-    this.app._groupCache.set(this.cid, newChannel)
+    this.app._channelCache.set(this.cid, newChannel)
     return this.channel = newChannel
   }
 
@@ -388,13 +388,13 @@ export class Session<
       suffix,
       apply,
       next = callback => callback(),
-      coefficient = this.app.options.similarityCoefficient,
+      minSimilarity = this.app.options.minSimilarity,
     } = options
 
     let suggestions: string[], minDistance = Infinity
     for (const name of items) {
       const dist = distance(name, target)
-      if (name.length <= 2 || dist > name.length * coefficient) continue
+      if (name.length <= 2 || dist > name.length * minSimilarity) continue
       if (dist === minDistance) {
         suggestions.push(name)
       } else if (dist < minDistance) {
@@ -426,7 +426,7 @@ export interface SuggestOptions {
   next?: NextFunction
   prefix?: string
   suffix: string
-  coefficient?: number
+  minSimilarity?: number
   apply: (this: Session, suggestion: string, next: NextFunction) => void
 }
 

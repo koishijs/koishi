@@ -191,6 +191,29 @@ describe('Context API', () => {
       expect(callback.mock.calls).to.have.length(4)
     })
 
+    it('memory leak test', async () => {
+      function plugin(ctx: Context) {
+        ctx.command('temp')
+        ctx.on('attach', () => {})
+        ctx.before('attach', () => {})
+        ctx.before('disconnect', () => {})
+        ctx.middleware(() => {})
+      }
+
+      function getHookSnapshot() {
+        const lists: any[][] = Object.values(app._hooks)
+        lists.unshift(app['disposables'])
+        return lists.map(list => list.length)
+      }
+
+      app.plugin(plugin)
+      const shot1 = getHookSnapshot()
+      await app.dispose(plugin)
+      app.plugin(plugin)
+      const shot2 = getHookSnapshot()
+      expect(shot1).to.deep.equal(shot2)
+    })
+
     it('root level dispose', async () => {
       // create a context without a plugin
       const ctx = app.platform.except()
@@ -200,7 +223,7 @@ describe('Context API', () => {
     it('dispose event', () => {
       const callback = jest.fn<void, []>()
       app.plugin(async (ctx) => {
-        ctx.on('dispose', callback)
+        ctx.before('disconnect', callback)
         expect(callback.mock.calls).to.have.length(0)
         await ctx.dispose()
         expect(callback.mock.calls).to.have.length(1)

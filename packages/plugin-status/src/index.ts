@@ -85,8 +85,6 @@ export function extend(callback: StatusCallback) {
   callbacks.push(callback)
 }
 
-const startTime = Date.now()
-
 const defaultConfig: Config = {
   path: '/status',
   refresh: Time.minute,
@@ -104,37 +102,41 @@ const defaultConfig: Config = {
 }
 
 export const name = 'status'
+export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
-  const app = ctx.app
+  const all = ctx.all()
   const { refresh, formatBot, format } = { ...defaultConfig, ...config }
 
-  app.before('command', ({ session }) => {
+  all.before('command', ({ session }) => {
     session.user['lastCall'] = new Date()
   })
 
-  app.before('send', (session) => {
+  all.before('send', (session) => {
     session.bot.counter[0] += 1
   })
 
+  let startTime: number
   let timer: NodeJS.Timeout
-  app.on('connect', async () => {
-    app.bots.forEach((bot) => {
+  ctx.on('connect', async () => {
+    startTime = Date.now()
+
+    ctx.bots.forEach((bot) => {
       bot.counter = new Array(61).fill(0)
     })
 
     timer = setInterval(() => {
       updateCpuUsage()
-      app.bots.forEach(({ counter }) => {
+      ctx.bots.forEach(({ counter }) => {
         counter.unshift(0)
         counter.splice(-1, 1)
       })
     }, 1000)
 
-    if (!app.router) return
-    app.router.get('/status', async (ctx) => {
+    if (!ctx.router) return
+    ctx.router.get('/status', async (ctx) => {
       const status = await getStatus().catch<Status>((error) => {
-        app.logger('status').warn(error)
+        all.logger('status').warn(error)
         return null
       })
       if (!status) return ctx.status = 500
@@ -144,7 +146,7 @@ export function apply(ctx: Context, config: Config = {}) {
     })
   })
 
-  app.before('disconnect', () => {
+  ctx.before('disconnect', () => {
     clearInterval(timer)
   })
 
@@ -170,9 +172,9 @@ export function apply(ctx: Context, config: Config = {}) {
     })
 
   async function _getStatus() {
-    const botList = app.bots
+    const botList = all.bots
     const [data, bots] = await Promise.all([
-      app.database.getActiveData(),
+      all.database.getActiveData(),
       Promise.all(botList.map(async (bot): Promise<BotStatus> => ({
         platform: bot.platform,
         selfId: bot.selfId,
@@ -184,7 +186,7 @@ export function apply(ctx: Context, config: Config = {}) {
     const memory = memoryRate()
     const cpu = { app: appRate, total: usedRate }
     const status: Status = { ...data, bots, memory, cpu, timestamp, startTime }
-    await Promise.all(callbacks.map(callback => callback.call(app, status, config)))
+    await Promise.all(callbacks.map(callback => callback.call(all, status, config)))
     return status
   }
 

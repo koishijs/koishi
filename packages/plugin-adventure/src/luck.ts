@@ -87,7 +87,7 @@ namespace Luck {
         }
 
         if (options.tenTimes) {
-          const output = [`恭喜 ${session.$username} 获得了：`]
+          const output = [`恭喜 ${session.username} 获得了：`]
           for (let index = 10; index > 0; index--) {
             const prize = Item.pick(Item.data[Random.weightedPick(probabilities)], user)
             output.push(`${prize.name}（${prize.rarity}）`)
@@ -122,7 +122,7 @@ namespace Luck {
           if (options.simple && options.quick) {
             output.push(`${session._item}（${rarity}${isOld ? '' : '，首次'}）`)
           } else {
-            output.push(`恭喜 ${session.$username} ${isOld ? '' : '首次'}获得了${session._item}（${rarity}）！`)
+            output.push(`恭喜 ${session.username} ${isOld ? '' : '首次'}获得了${session._item}（${rarity}）！`)
           }
           if (!options.simple || !isOld) output.push(description)
           if (result) output.push(result)
@@ -131,7 +131,7 @@ namespace Luck {
         if (!options.quick) {
           getPrize(output)
         } else {
-          if (options.simple) output.push(`恭喜 ${session.$username} 获得了：`)
+          if (options.simple) output.push(`恭喜 ${session.username} 获得了：`)
           while (times && !checkTimer('$lottery', user)) {
             getPrize(output)
           }
@@ -144,7 +144,7 @@ namespace Luck {
         await user._update()
 
         if (!times) output.push('您本日的抽奖次数已用完，请明天再试吧~')
-        return output.join('\n').replace(/\$s/g, session.$username)
+        return output.join('\n').replace(/\$s/g, session.username)
       })
   }
 }

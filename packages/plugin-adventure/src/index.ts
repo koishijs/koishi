@@ -107,12 +107,12 @@ export function apply(ctx: Context, config?: Config) {
     })
 
   const achvReward = [1000, 500, 200]
-  ctx.on('adventure/achieve', ({ app, user, $username }, achv) => {
+  ctx.on('adventure/achieve', ({ app, user, username }, achv) => {
     if (user.flag & User.Flag.noLeading) return
     const { count, name } = achv
     const reward = achvReward[count]
     if (reward) {
-      app.broadcast(`恭喜 ${$username} 获得了成就「${name}」的全服${leadingOrder[count]}，将获得 ${reward}￥ 的奖励！`).catch()
+      app.broadcast(`恭喜 ${username} 获得了成就「${name}」的全服${leadingOrder[count]}，将获得 ${reward}￥ 的奖励！`).catch()
       user.money += reward
       user.wealth += reward
     }
@@ -120,11 +120,11 @@ export function apply(ctx: Context, config?: Config) {
   })
 
   const endingReward = [300, 200, 100]
-  ctx.on('adventure/ending', ({ app, user, $username }, id) => {
+  ctx.on('adventure/ending', ({ app, user, username }, id) => {
     if (user.flag & User.Flag.noLeading) return
     const count = Phase.endingCount[id], reward = endingReward[count]
     if (reward) {
-      app.broadcast(`恭喜 ${$username} 达成了结局「${Phase.endingMap[id]}」的全服${leadingOrder[count]}，将获得 ${reward}￥ 的奖励！`).catch()
+      app.broadcast(`恭喜 ${username} 达成了结局「${Phase.endingMap[id]}」的全服${leadingOrder[count]}，将获得 ${reward}￥ 的奖励！`).catch()
       user.money += reward
       user.wealth += reward
     }

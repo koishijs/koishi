@@ -1,22 +1,11 @@
 import { expect } from 'chai'
 import { fn } from 'jest-mock'
-import { Meta } from 'koishi-core'
 import { App } from 'koishi-test-utils'
-import { sleep } from 'koishi-utils'
+import { sleep, Session } from 'koishi-core'
 import {} from 'koishi-adapter-onebot'
 import * as common from 'koishi-plugin-common'
 
 const app = new App({ mockDatabase: true })
-
-const options: common.Config = {
-  respondents: [{
-    match: '挖坑一时爽',
-    reply: '填坑火葬场',
-  }, {
-    match: /^(.+)一时爽$/,
-    reply: (_, action) => `一直${action}一直爽`,
-  }],
-}
 
 const session = app.session('123')
 
@@ -27,7 +16,7 @@ before(async () => {
   await app.database.initChannel('123')
 })
 
-const receive = (meta: Meta) => {
+const receive = (meta: Session) => {
   app.receive(meta)
   return sleep(0)
 }

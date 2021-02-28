@@ -26,6 +26,7 @@ export interface Config {
 const logger = new Logger('rss')
 
 export const name = 'rss'
+export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   const { timeout = 10 * Time.second, refresh = Time.minute, userAgent } = config
@@ -50,6 +51,10 @@ export function apply(ctx: Context, config: Config = {}) {
       logger.debug('unsubscribe', url)
     }
   }
+
+  ctx.before('disconnect', () => {
+    feeder.destroy()
+  })
 
   ctx.on('connect', async () => {
     feeder.on('error', (err: Error) => {

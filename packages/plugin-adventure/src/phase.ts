@@ -421,7 +421,7 @@ export namespace Phase {
             return `${id}. ${name}×${endings[id]}${badEndings.has(id) ? `（BE）` : ''}`
           }).sort()
           const [title, count] = lines[name]
-          output.unshift(`${session.$username}，你已达成${title}剧情线的 ${titles.length}/${count} 个结局：`)
+          output.unshift(`${session.username}，你已达成${title}剧情线的 ${titles.length}/${count} 个结局：`)
           return output.join('\n')
         }
 
@@ -435,7 +435,7 @@ export namespace Phase {
         const totalBadCount = badEndings.size
         const userCount = Object.keys(endings).length
         const userBadCount = getBadEndingCount(session.user)
-        output.unshift(`${session.$username}，你已达成 ${userCount}/${totalCount} 个结局（BE: ${userBadCount}/${totalBadCount}）。`)
+        output.unshift(`${session.username}，你已达成 ${userCount}/${totalCount} 个结局（BE: ${userBadCount}/${totalBadCount}）。`)
         return output.join('\n')
       })
 
@@ -572,7 +572,7 @@ export namespace Phase {
       for (const id of endings) {
         sql += ` find_ending('${id}') AS '${id}',`
       }
-      const [data] = await ctx.database.query<[Record<string, number>]>(sql.slice(0, -1))
+      const [data] = await ctx.database.$mysql.query<[Record<string, number>]>(sql.slice(0, -1))
       for (const key in data) {
         endingCount[key] = data[key]
       }

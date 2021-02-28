@@ -1,18 +1,17 @@
-import { getUsage, getUsageName, ValidationField } from './validate'
+import { Command, getUsage, getUsageName, ValidationField } from './command'
 import { TableType } from './database'
-import { Command } from './command'
 import { Session, FieldCollector } from './session'
-import { App } from './app'
 import { template } from 'koishi-utils'
+import { Context } from './context'
 
 interface HelpConfig {
   showHidden?: boolean
   authority?: boolean
 }
 
-export default function apply(app: App) {
+export default function apply(ctx: Context) {
   // show help when use `-h, --help` or when there is no action
-  app.before('command', async ({ command, session, options }) => {
+  ctx.before('command', async ({ command, session, options }) => {
     if (command._actions.length && !options['help']) return
     await session.execute({
       name: 'help',
@@ -21,6 +20,7 @@ export default function apply(app: App) {
     return ''
   })
 
+  const app = ctx.app
   function findCommand(target: string) {
     if (target in app._commandMap) return app._commandMap[target]
     const shortcut = app._shortcuts.find(({ name }) => {
@@ -36,7 +36,7 @@ export default function apply(app: App) {
     session.collect(key, { ...argv, command, args: [], options: { help: true } }, fields)
   }
 
-  app.command('help [command]  显示帮助信息', { authority: 0 })
+  ctx.command('help [command]  显示帮助信息', { authority: 0 })
     .userFields(['authority'])
     .userFields(createCollector('user'))
     .channelFields(createCollector('channel'))

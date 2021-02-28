@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection } from 'mongodb'
-import { App, Channel, Tables, TableType, User } from 'koishi-core'
+import { App, Channel, Database, Tables, TableType, User } from 'koishi-core'
 import { URLSearchParams } from 'url'
 
 export interface Config {
@@ -18,15 +18,26 @@ export interface Config {
   uri?: string
 }
 
-export default class MongoDatabase {
+export interface MongoDatabase extends Database {}
+
+export class MongoDatabase {
+  public config: Config
   public client: MongoClient
   public db: Db
+
+  $mongo = this
 
   user: Collection<User>
   channel: Collection<Channel>
 
-  constructor(public app: App, public config: Config) {
-    this.start()
+  constructor(public app: App, config?: Config) {
+    this.config = {
+      host: 'localhost',
+      port: 27017,
+      name: 'koishi',
+      protocol: 'mongodb',
+      ...config,
+    }
   }
 
   async start() {
@@ -65,3 +76,5 @@ export default class MongoDatabase {
     return mongourl
   }
 }
+
+export default MongoDatabase

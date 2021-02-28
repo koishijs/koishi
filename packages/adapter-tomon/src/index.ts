@@ -11,6 +11,12 @@ declare module 'koishi-core' {
     fullName?: string
     password?: string
   }
+
+  namespace Bot {
+    interface Platforms {
+      tomon: TomonBot
+    }
+  }
 }
 
 Adapter.types.tomon = class TomonServer extends Adapter<'tomon'> {

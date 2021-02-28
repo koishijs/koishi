@@ -25,7 +25,7 @@ async function showFull(session: Session, input: string, appid: string) {
   if (queryresult._attributes.success !== 'true') {
     return 'failed'
   }
-  const output = [`Question from ${session.$username}: ${input}`]
+  const output = [`Question from ${session.username}: ${input}`]
   queryresult.pod.forEach((el) => {
     if (Array.isArray(el.subpod)) {
       output.push(el._attributes.title + ': ', ...el.subpod.map(extractData).filter(t => t))

@@ -200,7 +200,7 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
     .replace(/\$A/g, segment('at', { type: 'all' }))
     .replace(/\$a/g, segment('at', { id: session.userId }))
     .replace(/\$m/g, segment('at', { id: session.selfId }))
-    .replace(/\$s/g, () => escapeAnswer(session.$username))
+    .replace(/\$s/g, () => escapeAnswer(session.username))
     .replace(/\$0/g, escapeAnswer(session.content))
 
   if (dialogue.flag & Dialogue.Flag.regexp) {

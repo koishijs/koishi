@@ -1,5 +1,5 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, OkPacket, TypeCast } from 'mysql'
-import { TableType, Tables, App } from 'koishi-core'
+import { TableType, Tables, App, Database } from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { types } from 'util'
 
@@ -13,9 +13,13 @@ const logger = new Logger('mysql')
 
 export interface Config extends PoolConfig {}
 
+interface MysqlDatabase extends Database {}
+
 class MysqlDatabase {
   public pool: Pool
   public config: Config
+
+  $mysql = this
 
   escapeId: (value: string) => string
 
@@ -32,7 +36,7 @@ class MysqlDatabase {
     }) as (keyof Tables[T])[]
   }
 
-  constructor(public app: App, config: Config) {
+  constructor(public app: App, config?: Config) {
     this.config = {
       database: 'koishi',
       charset: 'utf8mb4_general_ci',

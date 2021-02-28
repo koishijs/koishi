@@ -3,13 +3,12 @@ import { Context, Middleware, NextFunction, Plugin, Disposable } from './context
 import { Argv } from './parser'
 import { BotOptions, Adapter, createBots } from './adapter'
 import { Channel, User } from './database'
-import { Command } from './command'
+import validate, { Command } from './command'
 import { Session } from './session'
 import help, { getCommands } from './help'
-import validate from './validate'
 import LruCache from 'lru-cache'
 import { AxiosRequestConfig } from 'axios'
-import * as http from 'http'
+import { Server, createServer } from 'http'
 import type Koa from 'koa'
 
 export interface DelayOptions {
@@ -31,11 +30,11 @@ export interface AppOptions extends BotOptions {
   delay?: DelayOptions
   autoAssign?: boolean | ((session: Session) => boolean)
   autoAuthorize?: number | ((session: Session) => number)
-  similarityCoefficient?: number
-  userCacheLength?: number
-  groupCacheLength?: number
   userCacheAge?: number
-  groupCacheAge?: number
+  userCacheLength?: number
+  channelCacheLength?: number
+  channelCacheAge?: number
+  minSimilarity?: number
   axiosConfig?: AxiosRequestConfig
 }
 
@@ -55,8 +54,8 @@ export class App extends Context {
   _shortcuts: Command.Shortcut[] = []
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
   _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
-  _groupCache: LruCache<string, Observed<Partial<Channel>, Promise<void>>>
-  _httpServer?: http.Server
+  _channelCache: LruCache<string, Observed<Partial<Channel>, Promise<void>>>
+  _httpServer?: Server
   _sessions: Record<string, Session> = {}
   _plugins = new Map<Plugin, Disposable[]>()
 
@@ -67,10 +66,10 @@ export class App extends Context {
     maxListeners: 64,
     prettyErrors: true,
     userCacheAge: Time.minute,
-    groupCacheAge: 5 * Time.minute,
+    channelCacheAge: 5 * Time.minute,
     autoAssign: false,
     autoAuthorize: 0,
-    similarityCoefficient: 0.4,
+    minSimilarity: 0.4,
     processMessage: message => simplify(message.trim()),
     delay: {
       character: 0,
@@ -88,9 +87,9 @@ export class App extends Context {
 
     this._plugins.set(null, [])
     defineProperty(this, '_userCache', {})
-    defineProperty(this, '_groupCache', new LruCache({
-      max: options.groupCacheLength,
-      maxAge: options.groupCacheAge,
+    defineProperty(this, '_channelCache', new LruCache({
+      max: options.channelCacheLength,
+      maxAge: options.channelCacheAge,
     }))
 
     if (options.port) this.createServer()
@@ -113,7 +112,12 @@ export class App extends Context {
       const { parsed, subtype } = session
       // group message should have prefix or appel to be interpreted as a command call
       if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
-      const name = argv.tokens[0]?.content
+      if (!argv.tokens.length) return
+      const segments = argv.tokens[0].content.split('.')
+      let i = 1, name = segments[0]
+      while (this._commandMap[name] && i < segments.length) {
+        name = this._commandMap[name].name + '.' + segments[i++]
+      }
       if (name in this._commandMap) {
         argv.tokens.shift()
         return name
@@ -134,11 +138,11 @@ export class App extends Context {
 
   createServer() {
     const koa: Koa = new (require('koa'))()
-    defineProperty(this, '_router', new (require('koa-router'))())
+    defineProperty(this, '_router', new (require('@koa/router'))())
     koa.use(require('koa-bodyparser')())
     koa.use(this._router.routes())
     koa.use(this._router.allowedMethods())
-    defineProperty(this, '_httpServer', http.createServer(koa.callback()))
+    defineProperty(this, '_httpServer', createServer(koa.callback()))
   }
 
   prepare() {
@@ -173,7 +177,8 @@ export class App extends Context {
 
   async stop() {
     this.status = App.Status.closing
-    await this.parallel('before-disconnect')
+    // `before-disconnect` event is handled by ctx.disposables
+    await Promise.all(this.disposables.map(dispose => dispose()))
     this.status = App.Status.closed
     this.logger('app').debug('stopped')
     this.emit('disconnect')
@@ -227,14 +232,14 @@ export class App extends Context {
         // attach group data
         const channelFields = new Set<Channel.Field>(['flag', 'assignee'])
         this.emit('before-attach-channel', session, channelFields)
-        const group = await session.observeChannel(channelFields)
+        const channel = await session.observeChannel(channelFields)
 
         // emit attach event
         if (await this.serial(session, 'attach-channel', session)) return
 
         // ignore some group calls
-        if (group.flag & Channel.Flag.ignore) return
-        if (group.assignee !== session.selfId && !atSelf) return
+        if (channel.flag & Channel.Flag.ignore) return
+        if (channel.assignee !== session.selfId && !atSelf) return
       }
 
       // attach user data
@@ -277,7 +282,7 @@ export class App extends Context {
 
   private async _handleMessage(session: Session) {
     // preparation
-    this._sessions[session.$uuid] = session
+    this._sessions[session.id] = session
     const middlewares: Middleware[] = this._hooks[Context.middleware as any]
       .filter(([context]) => context.match(session))
       .map(([, middleware]) => middleware)
@@ -295,7 +300,7 @@ export class App extends Context {
       }
 
       try {
-        if (!this._sessions[session.$uuid]) {
+        if (!this._sessions[session.id]) {
           throw new Error('isolated next function detected')
         }
         if (fallback) middlewares.push((_, next) => fallback(next))
@@ -313,7 +318,7 @@ export class App extends Context {
     await next()
 
     // update session map
-    delete this._sessions[session.$uuid]
+    delete this._sessions[session.id]
     this.emit(session, 'middleware', session)
 
     // flush user & group data

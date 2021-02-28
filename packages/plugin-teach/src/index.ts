@@ -101,6 +101,7 @@ const cheatSheet = (session: Session<'authority'>, config: Config) => {
 }
 
 export const name = 'teach'
+export const disposable = true
 
 function registerPrefix(ctx: Context, prefix: string) {
   const g = '\\d+(?:\\.\\.\\d+)?'

@@ -111,7 +111,7 @@ export class MockedApp extends App {
       ...meta,
     })
     this.adapters.mock.dispatch(session)
-    return session.$uuid
+    return session.id
   }
 
   session(userId: string, channelId?: string) {
@@ -161,7 +161,7 @@ export class TestSession {
         if (length >= count) _resolve()
       }
       const dispose = this.app.on('middleware', (session) => {
-        if (session.$uuid === uuid) process.nextTick(_resolve)
+        if (session.id === uuid) process.nextTick(_resolve)
       })
       const uuid = this.app.receive({ ...this.meta, send, content })
     })
