@@ -3,7 +3,7 @@
 
 import { createHmac } from 'crypto'
 import { Context } from 'koishi-core'
-import { camelize, defineProperty, Time } from 'koishi-utils'
+import { camelize, defineProperty, Time, Random } from 'koishi-utils'
 import { encode } from 'querystring'
 import { CommonPayload, addListeners, defaultEvents } from './events'
 import { Config, GitHub, ReplyHandler, EventData } from './server'
@@ -27,6 +27,7 @@ const defaultOptions: Config = {
 }
 
 export const name = 'github'
+export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultOptions, ...config }
@@ -36,16 +37,16 @@ export function apply(ctx: Context, config: Config = {}) {
   const github = new GitHub(app, config)
   defineProperty(app, 'github', github)
 
-  app.router.get(config.authorize, async (ctx) => {
-    // TODO better checks
-    const targetId = parseInt('' + ctx.query.state)
-    if (Number.isNaN(targetId)) {
-      ctx.body = 'Invalid targetId'
-      return ctx.status = 400
-    }
+  const tokens: Record<string, string> = {}
+
+  ctx.router.get(config.authorize, async (ctx) => {
+    if (Array.isArray(ctx.query.state)) return ctx.status = 400
+    const id = tokens[ctx.query.state]
+    if (!id) return ctx.status = 403
+    delete tokens[ctx.query.state]
     const { code, state } = ctx.query
     const data = await github.getTokens({ code, state, redirect_uri: redirect })
-    await database.setUser('id', targetId.toString(), {
+    await database.setUser('id', id, {
       ghAccessToken: data.access_token,
       ghRefreshToken: data.refresh_token,
     })
@@ -55,11 +56,14 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.command('github', 'GitHub 相关功能')
 
   ctx.command('github.authorize <user>', 'GitHub 授权')
+    .userFields(['id'])
     .action(async ({ session }, user) => {
       if (!user) return '请输入用户名。'
+      const token = Random.uuid()
+      tokens[token] = session.user.id
       const url = 'https://github.com/login/oauth/authorize?' + encode({
         client_id: appId,
-        state: session.userId,
+        state: token,
         redirect_uri: redirect,
         scope: 'admin:repo_hook,repo',
         login: user,
@@ -81,7 +85,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   const history: Record<string, EventData> = {}
 
-  app.router.post(webhook, (ctx) => {
+  ctx.router.post(webhook, (ctx) => {
     const event = ctx.headers['x-github-event']
     const signature = ctx.headers['x-hub-signature-256']
     const id = ctx.headers['x-github-delivery']

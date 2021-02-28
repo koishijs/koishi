@@ -37,6 +37,7 @@ const states: Record<string, State> = {}
 export * from './state'
 
 export const name = 'chess'
+export const disposable = true
 
 export function apply(ctx: Context) {
   ctx = ctx.group()
