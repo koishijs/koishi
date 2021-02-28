@@ -19,7 +19,7 @@ class MysqlDatabase {
   public pool: Pool
   public config: Config
 
-  $mysql = this
+  mysql = this
 
   escapeId: (value: string) => string
 

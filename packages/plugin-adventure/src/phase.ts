@@ -572,7 +572,7 @@ export namespace Phase {
       for (const id of endings) {
         sql += ` find_ending('${id}') AS '${id}',`
       }
-      const [data] = await ctx.database.$mysql.query<[Record<string, number>]>(sql.slice(0, -1))
+      const [data] = await ctx.database.mysql.query<[Record<string, number>]>(sql.slice(0, -1))
       for (const key in data) {
         endingCount[key] = data[key]
       }

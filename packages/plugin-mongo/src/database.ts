@@ -25,7 +25,7 @@ export class MongoDatabase {
   public client: MongoClient
   public db: Db
 
-  $mongo = this
+  mongo = this
 
   user: Collection<User>
   channel: Collection<Channel>

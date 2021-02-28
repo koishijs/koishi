@@ -6,7 +6,7 @@ export default MongoDatabase
 
 declare module 'koishi-core' {
   interface Database {
-    $mongo: MongoDatabase
+    mongo: MongoDatabase
   }
 
   interface Channel {

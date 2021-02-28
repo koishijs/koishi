@@ -7,7 +7,7 @@ export default MysqlDatabase
 
 declare module 'koishi-core' {
   interface Database {
-    $mysql: MysqlDatabase
+    mysql: MysqlDatabase
   }
 }
 

@@ -309,7 +309,7 @@ namespace Achievement {
           sql += ` find_achv('${id}') AS '${id}',`
         }
       }
-      const [result] = await ctx.database.$mysql.query<[Record<string, number>]>(sql.slice(0, -1))
+      const [result] = await ctx.database.mysql.query<[Record<string, number>]>(sql.slice(0, -1))
       for (const key in result) {
         const achv = data[key]
         if (!achv.parent) {
