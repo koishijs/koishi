@@ -203,6 +203,8 @@ function createWatcher() {
     ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
   })
 
+  const logger = new Logger('app:watcher')
+
   watcher.on('change', (path) => {
     if (!require.cache[path] || externals.has(path)) return
     logger.debug('change detected:', path)

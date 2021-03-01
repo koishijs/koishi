@@ -212,13 +212,13 @@ export class EvalWorker {
 
     await this.remote.start().then((response) => {
       this.app.emit('worker/ready', response)
-      logger.info('worker started')
+      logger.debug('worker started')
       this.state = State.open
 
       this.worker.on('exit', (code) => {
         this.state = State.close
         this.app.emit('worker/exit')
-        logger.info('exited with code', code)
+        logger.debug('exited with code', code)
         if (!this.prevent) this.promise = this.start()
       })
     })
@@ -232,12 +232,12 @@ export class EvalWorker {
     this.state = State.closing
     this.beforeExit()
     process.off('beforeExit', this.beforeExit)
-    await this.worker.terminate()
+    await this.worker?.terminate()
   }
 
   async restart() {
     this.state = State.closing
-    await this.worker.terminate()
+    await this.worker?.terminate()
     await this.promise
   }
 

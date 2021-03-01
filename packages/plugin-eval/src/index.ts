@@ -57,10 +57,16 @@ const defaultConfig: EvalConfig = {
 const logger = new Logger('eval')
 
 export const name = 'eval'
+export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   const { prefix, authority } = config = { ...defaultConfig, ...config }
   const { app } = ctx
+
+  // addons are registered in another plugin
+  if (config.moduleRoot) {
+    ctx.plugin(addon, config)
+  }
 
   ctx.on('connect', () => {
     app.worker = new EvalWorker(app, config)
@@ -167,11 +173,6 @@ export function apply(ctx: Context, config: Config = {}) {
     }
     return { source, rest: source, tokens: [] }
   })
-
-  // addons are registered in another plugin
-  if (config.moduleRoot) {
-    ctx.plugin(addon, config)
-  }
 }
 
 function addon(ctx: Context, config: EvalConfig) {
