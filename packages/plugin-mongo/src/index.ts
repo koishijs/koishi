@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, extendDatabase, Context, Channel, Platform, pick } from 'koishi-core'
+import { User, extendDatabase, Context, Channel, Random, pick } from 'koishi-core'
 
 export * from './database'
 export default MongoDatabase
@@ -71,28 +71,23 @@ function unescapeKey<T extends Partial<User>>(data: T) {
 }
 
 extendDatabase(MongoDatabase, {
-  async getUser(_type, id, _fields) {
-    const fields = _fields || User.fields
-    if (fields && !fields.length) return { [_type]: id } as any
-    const type = _type === 'id' ? '_id' : _type
+  async getUser(type, id, fields = User.fields) {
+    if (fields && !fields.length) return { [type]: id } as any
     if (Array.isArray(id)) {
       const users = await this.user.find({ [type]: { $in: id } }).project(projection(fields)).toArray()
       return users.map(data => (data && {
-        ...pick(User.create(type as Platform, data[type]), fields), ...unescapeKey(data),
+        ...pick(User.create(type, data[type]), fields), ...unescapeKey(data),
       }))
     }
     const [data] = await this.user.find({ [type]: id }).project(projection(fields)).toArray()
-    const udoc = User.create(_type as Platform, id as number & string)
+    const udoc = User.create(type, id as any)
     return data && { ...pick(udoc, fields), ...unescapeKey(data), [type]: id }
   },
 
-  async setUser(_type, id, data) {
-    const [udoc] = await this.user.find({}).sort('_id', -1).limit(1).toArray()
-    const uid = udoc ? udoc.id + 1 : 1
-    const type = _type === 'id' ? '_id' : _type
+  async setUser(type, id, data) {
     await this.user.updateOne(
       { [type]: id },
-      { $set: escapeKey(data), $setOnInsert: { _id: uid, id: uid.toString() } },
+      { $set: escapeKey(data), $setOnInsert: { id: Random.uuid() } },
       { upsert: true },
     )
   },
