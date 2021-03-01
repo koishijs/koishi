@@ -59,9 +59,12 @@ Das ist wichtig!`
 
 // URL: https://github.com/koishijs/koishi/pull/90
 module.exports[`pull_request.opened.2`] = `
-[GitHub] jjyyxx opened a pull request koishijs/koishi#90 (mapping ← jjyyxx:mapping)
+[GitHub] jjyyxx drafted a pull request koishijs/koishi#90 (mapping ← jjyyxx:mapping)
 Title: test: fix path mapping
 According to \`tsconfig-paths\` documentation ...`
+
+module.exports[`pull_request.ready`] = `
+[GitHub] XxLittleCxX marked koishijs/koishi#139 as ready for review`
 
 // URL: https://github.com/koishijs/koishi/pull/20#pullrequestreview-345349537
 module.exports[`pull_request_review.submitted.2`] = `

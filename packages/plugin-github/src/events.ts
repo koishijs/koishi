@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 
-import { EventPayloadMap, WebhookEventName, Repository } from '@octokit/webhooks-definitions/schema'
+import { EventPayloadMap, WebhookEventName, Repository, PullRequest } from '@octokit/webhooks-definitions/schema'
 import { EventData } from './server'
 
 type Camelize<S extends string> = S extends `${infer L}_${infer M}${infer R}` ? `${L}${Uppercase<M>}${Camelize<R>}` : S
@@ -9,7 +9,7 @@ type ActionName<E extends WebhookEventName> = EventPayloadMap[E] extends { actio
 
 export type EventConfig = {
   [E in WebhookEventName as Camelize<E>]?: EventPayloadMap[E] extends { action: infer A }
-    ? boolean | { [K in A & string]?: boolean }
+    ? boolean | { [K in A & string as Camelize<K>]?: boolean }
     : boolean
 }
 
@@ -54,6 +54,7 @@ export const defaultEvents: EventConfig = {
   pullRequest: {
     closed: true,
     opened: true,
+    readyForReview: true,
   },
   pullRequestReview: {
     submitted: true,
@@ -238,16 +239,22 @@ export function addListeners(on: <T extends EmitterWebhookEventName>(event: T, h
   onPullRequest('pull_request/opened', ({ repository, pull_request, sender }) => {
     const { full_name, owner } = repository
     // FIXME: remove any after @octokit/webhooks-definitions/schema is fixed
-    const { title, base, head, body, number } = pull_request as any
+    const { title, base, head, body, number, draft } = pull_request as PullRequest
 
     const prefix = new RegExp(`^${owner.login}:`)
     const baseLabel = base.label.replace(prefix, '')
     const headLabel = head.label.replace(prefix, '')
     return [[
-      `${sender.login} opened a pull request ${full_name}#${number} (${baseLabel} ← ${headLabel})`,
+      `${sender.login} ${draft ? 'drafted' : 'opened'} a pull request ${full_name}#${number} (${baseLabel} ← ${headLabel})`,
       `Title: ${title}`,
       formatMarkdown(body),
     ].join('\n')]
+  })
+
+  onPullRequest('pull_request/ready_for_review', ({ repository, pull_request, sender }) => {
+    const { full_name } = repository
+    const { number } = pull_request as PullRequest
+    return [`${sender.login} marked ${full_name}#${number} as ready for review`]
   })
 
   on('push', ({ compare, pusher, commits, repository, ref, before, after }) => {
