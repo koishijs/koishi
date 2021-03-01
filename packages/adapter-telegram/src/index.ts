@@ -1,6 +1,7 @@
 import { Adapter } from 'koishi-core'
 import HttpServer from './http'
 import { AxiosRequestConfig } from 'axios'
+import { TelegramBot } from './bot'
 
 interface TelegramOptions {
   endpoint?: string
@@ -16,6 +17,12 @@ declare module 'koishi-core' {
 
   interface AppOptions {
     telegram?: TelegramOptions
+  }
+
+  namespace Bot {
+    interface Platforms {
+      telegram: TelegramBot
+    }
   }
 }
 

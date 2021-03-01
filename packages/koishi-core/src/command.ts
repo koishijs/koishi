@@ -1,4 +1,4 @@
-import { noop, Logger, coerce, merge, Time, template } from 'koishi-utils'
+import { Logger, coerce, Time, template } from 'koishi-utils'
 import { Argv, Domain } from './parser'
 import { Context, NextFunction } from './context'
 import { User, Channel } from './database'
@@ -92,9 +92,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  constructor(name: string, declaration: string, public context: Context, config: Command.Config = {}) {
-    super(name, declaration)
-    this.config = merge(config, Command.defaultConfig)
+  constructor(name: string, decl: string, desc: string, public context: Context) {
+    super(name, decl, desc)
+    this.config = { ...Command.defaultConfig }
     this._registerAlias(this.name)
     context.app._commands.push(this)
     this.option('help', '-h  显示此信息', { hidden: true })
@@ -145,7 +145,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   subcommand<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
-  subcommand<D extends string>(def: D, decl: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
+  subcommand<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
   subcommand(def: string, ...args: any[]) {
     def = this.name + (def.charCodeAt(0) === 46 ? '' : '/') + def
     return this.context.command(def, ...args)
@@ -164,6 +164,11 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   option<K extends string, D extends string, T extends Domain.Type>(name: K, desc: D, config: Domain.OptionConfig<T> = {}) {
     this._createOption(name, desc, config)
     return this as Command<U, G, A, Extend<O, K, Domain.OptionType<D, T>>>
+  }
+
+  match(session: Session) {
+    const { authority = Infinity } = (session.user || {}) as User
+    return this.context.match(session) && this.config.authority <= authority
   }
 
   check(callback: Command.Action<U, G, A, O>, prepend = false) {
@@ -189,7 +194,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  async execute(argv0: Argv<U, G, A, O>, next: NextFunction = noop): Promise<string> {
+  async execute(argv0: Argv<U, G, A, O>, next: NextFunction = fallback => fallback?.()): Promise<string> {
     const argv = argv0 as Argv<U, G, A, O>
     if (!argv.args) argv.args = [] as any
     if (!argv.options) argv.options = {} as any
@@ -214,10 +219,12 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       }
       const result = await this.app.serial(session, 'before-command', argv)
       if (typeof result === 'string') return result
+      state = 'executing command'
       for (const action of this._actions) {
         const result = await action.call(this, argv, ...args)
         if (typeof result === 'string') return result
       }
+      state = 'after command'
       await this.app.parallel(session, 'command', argv)
       return ''
     } catch (error) {
@@ -227,7 +234,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
         const index = error.stack.indexOf(lastCall)
         stack = stack.slice(0, index - 1)
       }
-      logger.warn(`${argv.source ||= this.stringify(args, options)}\n${stack}`)
+      logger.warn(`${state}: ${argv.source ||= this.stringify(args, options)}\n${stack}`)
+      return ''
     }
   }
 

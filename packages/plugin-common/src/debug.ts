@@ -64,7 +64,7 @@ async function getChannelName(bot: Bot, channelId: string) {
   }
 }
 
-export function apply(ctx: Context, config: DebugOptions = {}) {
+export default function apply(ctx: Context, config: DebugOptions = {}) {
   const {
     formatSend = '[{{ channelName }}] {{ content }}',
     formatReceive = '[{{ channelName }}] {{ username }}: {{ content }}',

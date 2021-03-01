@@ -66,7 +66,7 @@ namespace Rank {
 
     let data: ExtendedUser[]
     let prefix: string, postfix = ''
-    const db = session.database
+    const db = session.database.mysql
     const conditionals: string[] = []
     const staticFields = Array.from(fields) as User.Field[]
     if (!staticFields.includes('id')) staticFields.push('id')

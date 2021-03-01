@@ -18,12 +18,6 @@ export interface ResponsePayload {
   reason?: string
 }
 
-declare module 'koishi-core' {
-  interface Session {
-    _response?: (payload: ResponsePayload) => void
-  }
-}
-
 const logger = new Logger('onebot')
 
 export default class HttpServer extends Adapter<'onebot'> {

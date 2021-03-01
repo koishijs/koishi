@@ -192,7 +192,6 @@ export interface Bot<P = Platform> extends BotOptions {
 
 export class Bot<P extends Platform> {
   readonly app: App
-  readonly sid: string
   readonly logger: Logger
   readonly platform: P
 
@@ -200,8 +199,11 @@ export class Bot<P extends Platform> {
     Object.assign(this, options)
     this.app = adapter.app
     this.platform = this.type.split(':', 1)[0] as never
-    this.sid = `${this.platform}:${this.selfId}`
     this.logger = new Logger(this.platform)
+  }
+
+  get sid() {
+    return `${this.platform}:${this.selfId}`
   }
 
   createSession(session: Partial<Session<never, never, P, 'send'>>) {

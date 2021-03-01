@@ -5,7 +5,7 @@ import { BotOptions, Adapter, createBots } from './adapter'
 import { Channel, User } from './database'
 import validate, { Command } from './command'
 import { Session } from './session'
-import help, { getCommands } from './help'
+import help, { getCommandNames } from './help'
 import LruCache from 'lru-cache'
 import { AxiosRequestConfig } from 'axios'
 import { Server, createServer } from 'http'
@@ -112,7 +112,12 @@ export class App extends Context {
       const { parsed, subtype } = session
       // group message should have prefix or appel to be interpreted as a command call
       if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
-      const name = argv.tokens[0]?.content
+      if (!argv.tokens.length) return
+      const segments = argv.tokens[0].content.split('.')
+      let i = 1, name = segments[0]
+      while (this._commandMap[name] && i < segments.length) {
+        name = this._commandMap[name].name + '.' + segments[i++]
+      }
       if (name in this._commandMap) {
         argv.tokens.shift()
         return name
@@ -238,7 +243,8 @@ export class App extends Context {
       }
 
       // attach user data
-      const userFields = new Set<User.Field>(['flag'])
+      // authority is for suggestion TODO can be optimized
+      const userFields = new Set<User.Field>(['flag', 'authority'])
       this.emit('before-attach-user', session, userFields)
       const user = await session.observeUser(userFields)
 
@@ -261,11 +267,10 @@ export class App extends Context {
     const target = content.split(/\s/, 1)[0].toLowerCase()
     if (!target) return next()
 
-    const items = getCommands(session as any, this._commands).flatMap(cmd => cmd._aliases)
     return session.suggest({
       target,
       next,
-      items,
+      items: getCommandNames(session),
       prefix: template('internal.command-suggestion-prefix'),
       suffix: template('internal.command-suggestion-suffix'),
       async apply(suggestion, next) {

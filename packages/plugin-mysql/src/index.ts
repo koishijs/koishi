@@ -1,12 +1,14 @@
 import MysqlDatabase, { Config } from './database'
-import { User, Channel, Database, extendDatabase, Context } from 'koishi-core'
+import { User, Channel, extendDatabase, Context } from 'koishi-core'
 import { difference } from 'koishi-utils'
 
 export * from './database'
 export default MysqlDatabase
 
 declare module 'koishi-core' {
-  interface Database extends MysqlDatabase {}
+  interface Database {
+    mysql: MysqlDatabase
+  }
 }
 
 extendDatabase(MysqlDatabase, {
@@ -129,7 +131,7 @@ export const name = 'mysql'
 
 export function apply(ctx: Context, config: Config = {}) {
   const db = new MysqlDatabase(ctx.app, config)
-  ctx.database = db as Database
+  ctx.database = db as any
   ctx.before('connect', () => db.start())
   ctx.before('disconnect', () => db.stop())
 }

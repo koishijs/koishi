@@ -1,14 +1,6 @@
 import { Bot, Session, segment, camelCase, snakeCase } from 'koishi-core'
 import * as OneBot from './utils'
 
-declare module 'koishi-core' {
-  namespace Bot {
-    interface Platforms {
-      onebot: CQBot
-    }
-  }
-}
-
 export class SenderError extends Error {
   constructor(args: Record<string, any>, url: string, retcode: number, selfId: string) {
     super(`Error when trying to send to ${url}, args: ${JSON.stringify(args)}, retcode: ${retcode}`)

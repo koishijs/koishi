@@ -6,12 +6,6 @@ import * as OneBot from './types'
 
 export * from './types'
 
-declare module 'koishi-core' {
-  interface BotOptions {
-    server?: string
-  }
-}
-
 export const adaptUser = (user: OneBot.AccountInfo): Koishi.UserInfo => ({
   userId: user.userId.toString(),
   username: user.nickname,

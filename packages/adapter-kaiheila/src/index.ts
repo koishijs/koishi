@@ -1,4 +1,5 @@
 import { Adapter } from 'koishi-core'
+import { KaiheilaBot } from './bot'
 import HttpServer from './http'
 import WsClient from './ws'
 
@@ -10,6 +11,16 @@ interface KaiheilaOptions extends Adapter.WsClientOptions {
 declare module 'koishi-core' {
   interface AppOptions {
     kaiheila?: KaiheilaOptions
+  }
+
+  namespace Bot {
+    interface Platforms {
+      kaiheila: KaiheilaBot
+    }
+  }
+
+  interface BotOptions {
+    verifyToken?: string
   }
 }
 
