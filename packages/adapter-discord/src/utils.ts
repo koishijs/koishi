@@ -34,7 +34,7 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
     session.userId = meta.author.id
   }
   if (meta.embeds.length === 0) {
-    // pure message
+    // https://discord.com/developers/docs/reference#message-formatting
     session.content = meta.content
       .replace(/<@!(.+?)>/, (_, id) => segment.at(id))
       .replace(/<@&(.+?)>/, (_, id) => segment.at(id))

@@ -20,11 +20,14 @@ export class DiscordBot extends Bot<'discord'> {
   _sessionId: string = ''
 
   async request<T = any>(method: Method, path: string, data?: any): Promise<T> {
+    const { axiosConfig, discord } = this.app.options
     const url = `https://discord.com/api/v8${path}`
     const headers: Record<string, any> = {
       Authorization: `Bot ${this.token}`,
     }
     const response = await axios({
+      ...axiosConfig,
+      ...discord.axiosConfig,
       method,
       url,
       headers,
