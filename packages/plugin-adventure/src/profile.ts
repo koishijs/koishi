@@ -1,8 +1,8 @@
 import { Context, User } from 'koishi-core'
 
-type ProfileCallback<K extends User.Field = User.Field> = (user: Pick<User, K>) => string
+type ProfileCallback<K extends User.Field = never> = (user: Pick<User, K>) => string
 
-interface Profile<K extends User.Field = User.Field> {
+interface Profile<K extends User.Field = never> {
   order: number
   callback: ProfileCallback<K>
 }
@@ -24,15 +24,15 @@ namespace Profile {
   }
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/profile', '用户信息', { authority: 0, maxUsage: 100, usageName: 'show' })
+    ctx.command('adventure/profile', '用户信息', { maxUsage: 100, usageName: 'show' })
       .alias('info')
       .shortcut('我的信息')
-      .userFields(['name', 'timers'])
+      .userFields(['name', 'timers', 'authority'])
+      .userFields(fields)
       .action(async ({ session }) => {
-        const user = await session.observeUser(fields)
-        const output = [`${session.username}，您的权限为 ${user.authority} 级。`]
+        const output = [`${session.username}，您的权限为 ${session.user.authority} 级。`]
         for (const { callback } of data) {
-          const result = callback(user)
+          const result = callback(session.user)
           if (result) output.push(result)
         }
         return output.join('\n')
