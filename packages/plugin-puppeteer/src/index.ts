@@ -61,15 +61,14 @@ export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultConfig, ...config }
   const { executablePath, defaultViewport } = config.browser
 
-  const { app } = ctx
-  ctx.before('connect', async () => {
+  ctx.on('connect', async () => {
     try {
       if (!executablePath) {
         const findChrome = require('chrome-finder')
-        logger.info('chrome executable found at %c', config.browser.executablePath = findChrome())
+        logger.debug('chrome executable found at %c', config.browser.executablePath = findChrome())
       }
-      defineProperty(app, 'browser', await puppeteer.launch(config.browser))
-      logger.info('browser launched')
+      defineProperty(ctx.app, 'browser', await puppeteer.launch(config.browser))
+      logger.debug('browser launched')
     } catch (error) {
       logger.error(error)
       ctx.dispose()
@@ -77,10 +76,11 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   ctx.before('disconnect', async () => {
-    await app.browser?.close()
+    await ctx.app.browser?.close()
   })
 
-  ctx.command('shot <url>', '网页截图', { authority: 2 })
+  const ctx1 = ctx.intersect(sess => !!sess.app.browser)
+  ctx1.command('shot <url>', '网页截图', { authority: 2 })
     .alias('screenshot')
     .option('full', '-f  对整个可滚动区域截图')
     .option('viewport', '-v <viewport>  指定视口', { type: 'string' })
@@ -97,7 +97,7 @@ export function apply(ctx: Context, config: Config = {}) {
       if (typeof result === 'string') return result
 
       let loaded = false
-      const page = await app.browser.newPage()
+      const page = await ctx.app.browser.newPage()
       page.on('load', () => loaded = true)
 
       try {
@@ -160,12 +160,12 @@ export function apply(ctx: Context, config: Config = {}) {
       }).finally(() => page.close())
     })
 
-  ctx.command('tex <code:text>', 'TeX 渲染', { authority: 2 })
+  ctx1.command('tex <code:text>', 'TeX 渲染', { authority: 2 })
     .option('scale', '-s <scale>  缩放比例', { fallback: 2 })
     .usage('渲染器由 https://www.zhihu.com/equation 提供。')
     .action(async ({ options }, tex) => {
       if (!tex) return '请输入要渲染的 LaTeX 代码。'
-      const page = await app.browser.newPage()
+      const page = await ctx.app.browser.newPage()
       await page.setViewport({
         width: 1920,
         height: 1080,
