@@ -1,7 +1,12 @@
-import { Context, Argv } from 'koishi-core'
-import { segment, Logger, defineProperty } from 'koishi-utils'
+import { Domain, Context, Command, Argv } from 'koishi-core'
+import { segment, Logger, defineProperty, noop } from 'koishi-utils'
 import { Script } from 'vm'
-import { EvalWorker, attachTraps, EvalConfig, Config, resolveAccess } from './main'
+import { EvalWorker, Trap, EvalConfig, Config } from './main'
+import { resolve } from 'path'
+import { load } from 'js-yaml'
+import { promises as fs } from 'fs'
+import Git, { CheckRepoActions } from 'simple-git'
+import { WorkerResponse } from './worker'
 
 export * from './main'
 
@@ -22,6 +27,22 @@ declare module 'koishi-core' {
   }
 }
 
+interface OptionManifest extends Domain.OptionConfig {
+  name: string
+  desc: string
+}
+
+interface CommandManifest extends Command.Config, Trap.Config {
+  name: string
+  desc: string
+  options?: OptionManifest[]
+}
+
+interface Manifest {
+  version: number
+  commands?: CommandManifest[]
+}
+
 const defaultConfig: EvalConfig = {
   prefix: '>',
   authority: 2,
@@ -40,11 +61,14 @@ export const name = 'eval'
 export function apply(ctx: Context, config: Config = {}) {
   const { prefix, authority } = config = { ...defaultConfig, ...config }
   const { app } = ctx
-  const worker = new EvalWorker(app, config)
-  defineProperty(app, 'worker', worker)
 
-  app.before('connect', () => {
-    return worker.start()
+  ctx.on('connect', () => {
+    app.worker = new EvalWorker(app, config)
+    app.worker.start()
+  })
+
+  ctx.before('disconnect', () => {
+    return app.worker?.stop()
   })
 
   ctx.before('command', ({ command, session }) => {
@@ -53,8 +77,11 @@ export function apply(ctx: Context, config: Config = {}) {
     }
   })
 
-  const userAccess = resolveAccess(config.userFields)
-  const groupAccess = resolveAccess(config.channelFields)
+  const userAccess = Trap.resolve(config.userFields)
+  const channelAccess = Trap.resolve(config.channelFields)
+
+  // worker should be running for all the features
+  ctx = ctx.intersect(sess => sess.app.worker?.state === EvalWorker.State.open)
 
   const command = ctx.command('evaluate [expr:text]', '执行 JavaScript 脚本', { noEval: true })
     .alias('eval')
@@ -65,7 +92,7 @@ export function apply(ctx: Context, config: Config = {}) {
       if (!session['_redirected'] && session.user?.authority < authority) return '权限不足。'
     })
 
-  attachTraps(command, userAccess, groupAccess, async ({ session, options, ctxOptions }, expr) => {
+  Trap.action(command, userAccess, channelAccess, async ({ session, options, scope }, expr) => {
     if (options.restart) {
       await app.worker.restart()
       return '子线程已重启。'
@@ -107,7 +134,7 @@ export function apply(ctx: Context, config: Config = {}) {
         _resolve(message)
       })
 
-      app.worker.remote.eval(ctxOptions, {
+      app.worker.remote.eval(scope, {
         silent: options.slient,
         source: expr,
       }).then(_resolve, (error) => {
@@ -139,6 +166,94 @@ export function apply(ctx: Context, config: Config = {}) {
       }
     }
     return { source, rest: source, tokens: [] }
+  })
+
+  // addons are registered in another plugin
+  if (config.moduleRoot) {
+    ctx.plugin(addon, config)
+  }
+}
+
+function addon(ctx: Context, config: EvalConfig) {
+  const root = config.moduleRoot = resolve(process.cwd(), config.moduleRoot)
+  config.dataKeys.push('addonNames', 'moduleRoot')
+
+  const git = Git(root)
+
+  const addon = ctx.command('addon', '扩展功能')
+    .option('update', '-u  更新扩展模块', { authority: 3 })
+    .action(async ({ options, session }) => {
+      if (options.update) {
+        const { files, summary } = await git.pull(ctx.app.worker.config.gitRemote)
+        if (!files.length) return '所有模块均已是最新。'
+        await ctx.app.worker.restart()
+        return `更新成功！(${summary.insertions}A ${summary.deletions}D ${summary.changes}M)`
+      }
+      return session.execute('help addon')
+    })
+
+  // we only check it once
+  ctx.before('connect', async () => {
+    const isRepo = await git.checkIsRepo(CheckRepoActions.IS_REPO_ROOT)
+    if (!isRepo) throw new Error(`moduleRoot "${root}" is not git repository`)
+  })
+
+  let manifests: Record<string, Promise<Manifest>>
+  const { exclude = /^(\..+|node_modules)$/ } = config
+  const userBaseAccess = Trap.resolve(config.userFields)
+  const channelBaseAccess = Trap.resolve(config.channelFields)
+
+  async function loadManifest(path: string) {
+    const content = await fs.readFile(resolve(root, path, 'manifest.yml'), 'utf8')
+    return load(content) as Manifest
+  }
+
+  ctx.on('worker/start', async () => {
+    const dirents = await fs.readdir(root, { withFileTypes: true })
+    const paths = config.addonNames = dirents
+      .filter(dir => dir.isDirectory() && !exclude.test(dir.name))
+      .map(dir => dir.name)
+    // cmd.dispose() may affect addon.children, so here we make a slice
+    addon.children.slice().forEach(cmd => cmd.dispose())
+    manifests = Object.fromEntries(paths.map(path => [path, loadManifest(path).catch<null>(noop)]))
+  })
+
+  async function registerAddon(data: WorkerResponse, path: string) {
+    const manifest = await manifests[path]
+    if (!manifest) return
+
+    const { commands = [] } = manifest
+    commands.forEach((config) => {
+      const { name: rawName, desc, options = [] } = config
+      const [name] = rawName.split(' ', 1)
+      if (!data.commands.includes(name)) {
+        return logger.warn('unregistered command manifest: %c', name)
+      }
+
+      const userAccess = Trap.merge(userBaseAccess, config.userFields)
+      const channelAccess = Trap.merge(channelBaseAccess, config.channelFields)
+
+      const cmd = addon
+        .subcommand(rawName, desc, config)
+        .option('debug', '启用调试模式', { hidden: true })
+
+      Trap.action(cmd, userAccess, channelAccess, async ({ session, command, options, scope }, ...args) => {
+        const { name } = command, { remote } = session.app.worker
+        const result = await remote.callAddon(scope, { name, args, options })
+        return result
+      })
+
+      options.forEach((config) => {
+        const { name, desc } = config
+        cmd.option(name, desc, config)
+      })
+    })
+  }
+
+  ctx.on('worker/ready', (data) => {
+    config.addonNames.map((path) => {
+      registerAddon(data, path)
+    })
   })
 }
 

@@ -1,4 +1,4 @@
-import { config, context, internal } from 'koishi-plugin-eval/dist/worker'
+import { config, context, internal } from './worker'
 import { resolve, posix, dirname } from 'path'
 import { promises as fs } from 'fs'
 import { deserialize, serialize, cachedDataVersionTag } from 'v8'
@@ -6,7 +6,7 @@ import { Logger, noop } from 'koishi-utils'
 import json5 from 'json5'
 import ts from 'typescript'
 
-const logger = new Logger('addon')
+const logger = new Logger('eval:loader')
 
 // TODO pending @types/node
 const { SourceTextModule, SyntheticModule } = require('vm')
@@ -79,10 +79,12 @@ const CACHE_TAG = 1
 const V8_TAG = cachedDataVersionTag()
 const files: Record<string, FileCache> = {}
 const cachedFiles: Record<string, FileCache> = {}
-const tsconfigPath = resolve(config.moduleRoot, 'tsconfig.json')
-const cachePath = resolve(config.moduleRoot, config.cacheFile || '.koishi/cache')
 
-export async function prepare() {
+export default async function prepare() {
+  if (!config.moduleRoot) return
+
+  const tsconfigPath = resolve(config.moduleRoot, 'tsconfig.json')
+  const cachePath = resolve(config.moduleRoot, config.cacheFile || '.koishi/cache')
   await Promise.all([
     fs.readFile(tsconfigPath, 'utf8').then((tsconfig) => {
       Object.assign(compilerOptions, json5.parse(tsconfig))
@@ -98,7 +100,7 @@ export async function prepare() {
     }, noop),
   ])
   await Promise.all(config.addonNames.map(evaluate))
-  saveCache().catch(logger.warn)
+  saveCache(cachePath).catch(logger.warn)
   for (const key in synthetics) {
     exposeGlobal(key, synthetics[key].namespace)
   }
@@ -115,9 +117,9 @@ function exposeGlobal(name: string, namespace: {}) {
   internal.setGlobal(name, outer)
 }
 
-async function saveCache() {
-  await fs.mkdir(dirname(cachePath), { recursive: true })
-  await fs.writeFile(cachePath, serialize({ tag: CACHE_TAG, v8tag: V8_TAG, files }))
+async function saveCache(filename: string) {
+  await fs.mkdir(dirname(filename), { recursive: true })
+  await fs.writeFile(filename, serialize({ tag: CACHE_TAG, v8tag: V8_TAG, files }))
 }
 
 async function loadSource(path: string): Promise<[source: string, identifier: string]> {

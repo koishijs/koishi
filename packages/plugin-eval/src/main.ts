@@ -1,43 +1,39 @@
-import { App, Command, Channel, Argv, User } from 'koishi-core'
-import { Logger, Observed, pick } from 'koishi-utils'
+import { App, Command, Channel, Argv as IArgv, User } from 'koishi-core'
+import { Logger, Observed, pick, union } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
-import { WorkerAPI, WorkerConfig, WorkerData, Response, ContextOptions } from './worker'
+import { WorkerAPI, WorkerConfig, WorkerData, WorkerResponse, ScopeData } from './worker'
 import { expose, Remote, wrap } from './transfer'
 import { resolve } from 'path'
 
 declare module 'koishi-core' {
   interface EventMap {
     'worker/start'(): void | Promise<void>
-    'worker/ready'(response: Response): void
+    'worker/ready'(response: WorkerResponse): void
     'worker/exit'(): void
   }
 }
 
 const logger = new Logger('eval')
 
-export interface MainConfig extends FieldOptions {
+export interface MainConfig extends Trap.Config {
   prefix?: string
   authority?: number
   timeout?: number
   maxLogs?: number
   resourceLimits?: ResourceLimits
   dataKeys?: (keyof WorkerData)[]
+  gitRemote?: string
+  exclude?: RegExp
 }
 
 export interface EvalConfig extends MainConfig, WorkerData {}
 
 export interface Config extends MainConfig, WorkerConfig {}
 
-export interface Trap<O extends {}, T = any, K extends keyof O = never> {
-  fields: Iterable<K>
-  get?(data: Pick<O, K>): T
-  set?(data: Pick<O, K>, value: T): void
-}
+export class Trap<O extends {}> {
+  private traps: Record<string, Trap.Declaraion<O, any, any>> = {}
 
-export class DataTrap<O extends {}> {
-  private traps: Record<string, Trap<O, any, any>> = {}
-
-  define<T, K extends keyof O = never>(key: string, trap: Trap<O, T, K>) {
+  define<T, K extends keyof O = never>(key: string, trap: Trap.Declaraion<O, T, K>) {
     this.traps[key] = trap
   }
 
@@ -67,51 +63,65 @@ export class DataTrap<O extends {}> {
   }
 }
 
-export const userTrap = new DataTrap<User>()
-export const channelTrap = new DataTrap<Channel>()
+export namespace Trap {
+  export interface Declaraion<O extends {}, T = any, K extends keyof O = never> {
+    fields: Iterable<K>
+    get?(data: Pick<O, K>): T
+    set?(data: Pick<O, K>, value: T): void
+  }
 
-export interface AccessOptions<T> {
-  readable?: T[]
-  writable?: T[]
-}
+  export const user = new Trap<User>()
+  export const channel = new Trap<Channel>()
 
-export type Access<T> = T[] | AccessOptions<T>
+  export interface AccessObject<T> {
+    readable?: T[]
+    writable?: T[]
+  }
 
-interface TrappedArgv<A extends any[], O> extends Argv<never, never, A, O> {
-  ctxOptions?: ContextOptions
-}
+  export type Access<T> = T[] | AccessObject<T>
 
-type TrappedAction<A extends any[], O> = (argv: TrappedArgv<A, O>, ...args: A) => ReturnType<Command.Action>
+  interface Argv<A extends any[], O> extends IArgv<never, never, A, O> {
+    scope?: ScopeData
+  }
 
-export function resolveAccess<T>(fields: Access<T>): AccessOptions<T> {
-  return Array.isArray(fields)
-    ? { readable: fields, writable: [] }
-    : { readable: [], writable: [], ...fields }
-}
+  type Action<A extends any[], O> = (argv: Argv<A, O>, ...args: A) => ReturnType<Command.Action>
 
-export interface FieldOptions {
-  userFields?: Access<User.Field>
-  channelFields?: Access<Channel.Field>
-}
+  export function resolve<T>(fields: Access<T>): AccessObject<T> {
+    return Array.isArray(fields)
+      ? { readable: fields, writable: [] }
+      : { readable: [], writable: [], ...fields }
+  }
 
-export function attachTraps<A extends any[], O>(
-  command: Command<never, never, A, O>,
-  userAccess: AccessOptions<User.Field>,
-  channelAccess: AccessOptions<Channel.Field>,
-  action: TrappedAction<A, O>,
-) {
-  const userWritable = userAccess.writable
-  const channelWritable = channelAccess.writable
+  export function merge<T>(baseAccess: AccessObject<T>, fields: Access<T>): AccessObject<T> {
+    const { readable: r1, writable: w1 } = baseAccess
+    const { readable: r2, writable: w2 } = resolve(fields)
+    return { readable: union(r1, r2), writable: union(w1, w2) }
+  }
 
-  command.userFields([...userTrap.fields(userAccess.readable)])
-  command.channelFields([...channelTrap.fields(channelAccess.readable)])
-  command.action((argv, ...args) => {
-    const { id } = argv.session
-    const user = userTrap.get(argv.session.user, userAccess.readable)
-    const channel = channelTrap.get(argv.session.channel, channelAccess.readable)
-    const ctxOptions = { id, user, channel, userWritable, channelWritable }
-    return action({ ...argv, ctxOptions }, ...args)
-  })
+  export interface Config {
+    userFields?: Access<User.Field>
+    channelFields?: Access<Channel.Field>
+  }
+
+  export function action<A extends any[], O>(
+    command: Command<never, never, A, O>,
+    userAccess: AccessObject<User.Field>,
+    channelAccess: AccessObject<Channel.Field>,
+    action: Action<A, O>,
+  ) {
+    const userWritable = userAccess.writable
+    const channelWritable = channelAccess.writable
+
+    command.userFields([...Trap.user.fields(userAccess.readable)])
+    command.channelFields([...Trap.channel.fields(channelAccess.readable)])
+    command.action((argv, ...args) => {
+      const { id } = argv.session
+      const user = Trap.user.get(argv.session.user, userAccess.readable)
+      const channel = Trap.channel.get(argv.session.channel, channelAccess.readable)
+      const ctxOptions = { id, user, channel, userWritable, channelWritable }
+      return action({ ...argv, scope: ctxOptions }, ...args)
+    })
+  }
 }
 
 export class MainAPI {
@@ -143,12 +153,12 @@ export class MainAPI {
 
   async updateUser(uuid: string, data: Partial<User>) {
     const session = this.getSession(uuid)
-    return userTrap.set(session.user, data)
+    return Trap.user.set(session.user, data)
   }
 
   async updateGroup(uuid: string, data: Partial<Channel>) {
     const session = this.getSession(uuid)
-    return channelTrap.set(session.channel, data)
+    return Trap.channel.set(session.channel, data)
   }
 }
 
@@ -156,21 +166,27 @@ function createRequire(filename: string) {
   return `require(${JSON.stringify(filename)});\n`
 }
 
-export class EvalWorker {
-  static restart = true
+enum State { closing, close, opening, open }
 
+export class EvalWorker {
+  private prevent = false
   private worker: Worker
   private promise: Promise<void>
 
+  public state = State.close
   public local: MainAPI
   public remote: Remote<WorkerAPI>
+
+  static readonly State = State
 
   constructor(public app: App, public config: EvalConfig) {
     this.local = new MainAPI(app)
   }
 
   async start() {
+    this.state = State.opening
     await this.app.parallel('worker/start')
+    process.on('beforeExit', this.beforeExit)
 
     let index = 0
     let workerScript = createRequire(resolve(__dirname, 'worker'))
@@ -197,16 +213,30 @@ export class EvalWorker {
     await this.remote.start().then((response) => {
       this.app.emit('worker/ready', response)
       logger.info('worker started')
+      this.state = State.open
 
       this.worker.on('exit', (code) => {
+        this.state = State.close
         this.app.emit('worker/exit')
         logger.info('exited with code', code)
-        if (EvalWorker.restart) this.promise = this.start()
+        if (!this.prevent) this.promise = this.start()
       })
     })
   }
 
+  private beforeExit = () => {
+    this.prevent = true
+  }
+
+  async stop() {
+    this.state = State.closing
+    this.beforeExit()
+    process.off('beforeExit', this.beforeExit)
+    await this.worker.terminate()
+  }
+
   async restart() {
+    this.state = State.closing
     await this.worker.terminate()
     await this.promise
   }
@@ -216,7 +246,3 @@ export class EvalWorker {
     return () => this.worker.off('error', listener)
   }
 }
-
-process.on('beforeExit', () => {
-  EvalWorker.restart = false
-})
