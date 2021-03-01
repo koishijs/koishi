@@ -221,11 +221,14 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       }
     })
 
-  type TokenData = [platform: Platform, id: string, pending: boolean]
+  // 1: group (1st step)
+  // 0: private
+  // -1: group (2nd step)
+  type TokenData = [platform: Platform, id: string, pending: number]
   const tokens: Record<string, TokenData> = {}
 
-  function generateToken(session: Session, pending: boolean) {
-    const token = 'koishi:' + Random.uuid()
+  function generateToken(session: Session, pending: number) {
+    const token = 'koishi/' + Random.uuid()
     tokens[token] = [session.platform, session.userId, pending]
     setTimeout(() => delete tokens[token], 5 * Time.minute)
     return token
@@ -233,24 +236,33 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
 
   ctx.command('user/bind', '绑定到账号', { authority: 0 })
     .action(({ session }) => {
-      const token = generateToken(session, session.subtype === 'group')
+      const token = generateToken(session, +(session.subtype === 'group'))
       return template('bind.generated-1', token)
     })
 
   ctx.middleware(async (session, next) => {
     const data = tokens[session.content]
     if (!data) return next()
-    const user = await session.observeUser(['authority', data[0]])
-    if (!user.authority) return session.send(template('internal.low-authority'))
-    if (user[data[0]]) return session.send(template('bind.failed'))
-    if (data[2]) {
+    if (data[2] < 0) {
+      const sess = new Session(ctx.app, { ...session, platform: data[0], userId: data[1] })
+      const user = await sess.observeUser([session.platform])
+      user[session.platform] = session.userId as never
       delete tokens[session.content]
-      const token = generateToken(session, false)
-      return session.send(template('bind.generated-2', token))
-    } else {
-      user[data[0] as any] = data[1]
       await user._update()
       return session.send(template('bind.success'))
+    } else {
+      const user = await session.observeUser(['authority', data[0]])
+      if (!user.authority) return session.send(template('internal.low-authority'))
+      if (user[data[0]]) return session.send(template('bind.failed'))
+      delete tokens[session.content]
+      if (data[2]) {
+        const token = generateToken(session, -1)
+        return session.send(template('bind.generated-2', token))
+      } else {
+        user[data[0] as any] = data[1]
+        await user._update()
+        return session.send(template('bind.success'))
+      }
     }
   }, true)
 
