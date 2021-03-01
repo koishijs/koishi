@@ -1,22 +1,26 @@
 {
+  "koishi-adapter-discord": {
+    "version": "1.0.0-beta.1",
+    "description": "Discord adapter for Koishi"
+  },
   "koishi-adapter-kaiheila": {
-    "version": "1.0.0-rc.0",
+    "version": "1.0.0-rc.1",
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-onebot": {
-    "version": "3.0.0-rc.0",
+    "version": "3.0.0-rc.1",
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-adapter-telegram": {
-    "version": "1.0.0-rc.0",
+    "version": "1.0.0-rc.1",
     "description": "Telegram adapter for Koishi"
   },
   "koishi-adapter-tomon": {
-    "version": "1.0.0-beta.9",
+    "version": "1.0.0-beta.10",
     "description": "Tomon adapter for Koishi"
   },
   "koishi-plugin-adventure": {
-    "version": "0.1.10",
+    "version": "0.1.11",
     "description": "Adventure Game for Koishi"
   },
   "koishi-plugin-chess": {
@@ -24,7 +28,7 @@
     "description": "Chess Plugin for Koishi"
   },
   "koishi-plugin-common": {
-    "version": "4.0.0-beta.16",
+    "version": "4.0.0-beta.17",
     "description": "Common plugins for Koishi"
   },
   "koishi-plugin-dice": {
@@ -48,14 +52,14 @@
     "description": "Image searching plugin for Koishi"
   },
   "koishi-plugin-mongo": {
-    "version": "2.0.0-beta.6",
+    "version": "2.0.0-beta.7",
     "description": "MongoDB support for Koishi"
   },
   "koishi-plugin-monitor": {
     "version": "1.0.0-beta.26"
   },
   "koishi-plugin-mysql": {
-    "version": "3.0.0-beta.13",
+    "version": "3.0.0-beta.14",
     "description": "MySQL support for Koishi"
   },
   "koishi-plugin-puppeteer": {
