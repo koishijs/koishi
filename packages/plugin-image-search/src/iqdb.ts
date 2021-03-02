@@ -3,9 +3,9 @@ import { segment } from 'koishi-utils'
 import { Session } from 'koishi-core'
 
 async function makeSearch(url: string): Promise<string> {
-  const res: IQDBSearchResultItem = await searchPic(url, { lib: 'www' })
+  const res: any = await searchPic(url, { lib: 'www' })
   if (res.ok || (res.data && res.data.length > 1)) {
-    let data = res.data[1]
+    let data: any = res.data[1]
     let { head, sourceUrl, img, type, source } = data
 
     return [
@@ -13,7 +13,7 @@ async function makeSearch(url: string): Promise<string> {
       '准度：' + head.toLowerCase(),
       '来源：' + sourceUrl,
       '色图：' + (type.toLowerCase() === 'safe' ? '否' : '是⚠️'),
-      '源站：' + source.join(', ')
+      '源站：' + source.join(', '),
     ].join('\n')
   } else if (res.err) {
     return '搜图时遇到问题：' + res.err
