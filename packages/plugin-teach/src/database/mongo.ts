@@ -106,14 +106,13 @@ extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
 
   async getDialogueStats() {
     const [data, dialogues] = await Promise.all([
-      this.db.collection('dialogue').aggregate([
-        { $group: { _id: { $toLower: 'question' }, count: { $sum: 1 } } },
-        { $group: { _id: null, counts: { $push: { k: '$_id', v: '$count' } } } },
-        { $replaceRoot: { newRoot: { $arrayToObject: '$counts' } } },
+      this.db.collection("dialogue").aggregate([
+        { $group: { _id: null, questions: { $addToSet: '$question' } } },
+        { $project: { questions: { $size: '$questions' } } }
       ]).toArray(),
-      this.db.collection('dialogue').count(),
+      this.db.collection("dialogue").countDocuments(),
     ])
-    const questions = Object.keys(data).length
+    const { questions } = data[0]
     return { questions, dialogues }
   },
 })
