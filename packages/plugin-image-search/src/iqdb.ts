@@ -15,18 +15,18 @@ async function makeSearch(url: string): Promise<string> {
       '源站：' + source.join(', ')
     ].join('\n')
   } else if (res.err) {
-    return '搜图时遇到亿点问题：' + res.err
+    return '搜图时遇到问题：' + res.err
   } else {
-    return '搜图时遇到未知问题……'
+    return '搜图时遇到未知问题。'
   }
 }
 
 export default async function(url: string, session: Session) {
-  let result: string
+  let result: string = 'iqdb.org 搜图\n'
   try {
-    result = await makeSearch(url)
+    result += await makeSearch(url)
   } catch (err) {
-    result = '搜图时遇到亿点问题：' + err
+    result += '搜图时遇到问题：' + err
   }
-  session.send(result)
+  return session.send(result)
 }
