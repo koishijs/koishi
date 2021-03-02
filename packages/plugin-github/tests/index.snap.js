@@ -63,8 +63,11 @@ module.exports[`pull_request.opened.2`] = `
 Title: test: fix path mapping
 According to \`tsconfig-paths\` documentation ...`
 
-module.exports[`pull_request.ready`] = `
+module.exports[`pull_request.converted.1`] = `
 [GitHub] XxLittleCxX marked koishijs/koishi#139 as ready for review`
+
+module.exports[`pull_request.converted.2`] = `
+[GitHub] XxLittleCxX marked koishijs/koishi#145 as draft`
 
 module.exports[`pull_request.reopened`] = `
 [GitHub] Shigma reopened pull request koishijs/koishi#97

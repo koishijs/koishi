@@ -56,6 +56,7 @@ export const defaultEvents: EventConfig = {
     opened: true,
     reopened: true,
     readyForReview: true,
+    convertedToDraft: true,
     reviewRequested: true,
   },
   pullRequestReview: {
@@ -263,6 +264,12 @@ export function addListeners(on: <T extends EmitterWebhookEventName>(event: T, h
     const { full_name } = repository
     const { number } = pull_request as PullRequest
     return [`${sender.login} requeted a review from ${requested_reviewer.login} on ${full_name}#${number}`]
+  })
+
+  onPullRequest('pull_request/converted_to_draft', ({ repository, pull_request, sender }) => {
+    const { full_name } = repository
+    const { number } = pull_request as PullRequest
+    return [`${sender.login} marked ${full_name}#${number} as draft`]
   })
 
   onPullRequest('pull_request/ready_for_review', ({ repository, pull_request, sender }) => {
