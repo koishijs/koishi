@@ -33,23 +33,24 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
     session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id
   }
+  const urlKey = bot.app.options.discord.preferImageSource ? 'url' : 'proxy_url'
   if (meta.embeds.length === 0) {
     // https://discord.com/developers/docs/reference#message-formatting
     session.content = meta.content
       .replace(/<@!(.+?)>/, (_, id) => segment.at(id))
       .replace(/<@&(.+?)>/, (_, id) => segment.at(id))
       .replace(/<:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name }))
+      .replace(/<a:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name, animated: true }))
       .replace(/@everyone/, () => segment('at', { type: 'all' }))
       .replace(/@here/, () => segment('at', { type: 'here' }))
       .replace(/<#(.+?)>/, (_, id) => segment.sharp(id))
     if (meta.attachments.length) {
       session.content += meta.attachments.map(v => segment('image', {
-        url: v.url,
+        url: v[urlKey],
         file: v.filename,
       })).join('')
     }
   } else {
-    const urlKey = bot.app.options.discord.preferImageSource ? 'url' : 'proxy_url'
     switch (meta.embeds[0].type) {
       case 'video':
         session.content = segment('video', { file: meta.embeds[0][urlKey] })
