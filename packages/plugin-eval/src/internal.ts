@@ -3,7 +3,7 @@
 
 /* global Host */
 
-import type { Host } from './vm'
+import type { Host } from './sandbox'
 import { InspectOptions } from 'util'
 
 declare global {
@@ -673,7 +673,6 @@ connect(host.Buffer.prototype['inspect'], function inspect() {
 
 export const contextify: <T>(value: T) => T = Contextify.value.bind(Contextify)
 export const decontextify: <T>(value: T) => T = Decontextify.value.bind(Decontextify)
-export const sandbox = Decontextify.value(GLOBAL)
 
 delete global.console
 

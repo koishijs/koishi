@@ -64,7 +64,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const { app } = ctx
 
   // addons are registered in another plugin
-  if (config.moduleRoot) {
+  if (config.addonRoot) {
     ctx.plugin(addon, config)
   }
 
@@ -176,8 +176,8 @@ export function apply(ctx: Context, config: Config = {}) {
 }
 
 function addon(ctx: Context, config: EvalConfig) {
-  const root = config.moduleRoot = resolve(process.cwd(), config.moduleRoot)
-  config.dataKeys.push('addonNames', 'moduleRoot')
+  const root = config.addonRoot = resolve(process.cwd(), config.addonRoot)
+  config.dataKeys.push('addonNames', 'addonRoot')
 
   const git = Git(root)
 
@@ -196,7 +196,7 @@ function addon(ctx: Context, config: EvalConfig) {
   // we only check it once
   ctx.before('connect', async () => {
     const isRepo = await git.checkIsRepo(CheckRepoActions.IS_REPO_ROOT)
-    if (!isRepo) throw new Error(`moduleRoot "${root}" is not git repository`)
+    if (!isRepo) throw new Error(`addonRoot "${root}" is not git repository`)
   })
 
   let manifests: Record<string, Promise<Manifest>>

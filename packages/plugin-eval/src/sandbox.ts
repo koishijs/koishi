@@ -14,7 +14,7 @@ export interface VMOptions {
   wasm?: boolean
 }
 
-export class VM {
+export class Sandbox {
   readonly context: object
   readonly internal: typeof Internal = Object.create(null)
 

@@ -21,7 +21,7 @@ export const config: WorkerData = {
 
 import prepare, { synthetize } from './loader'
 import { expose, wrap } from './transfer'
-import { VM } from './vm'
+import { Sandbox } from './sandbox'
 import { MainAPI } from '.'
 
 export * from './loader'
@@ -29,7 +29,7 @@ export * from './loader'
 export interface WorkerConfig {
   setupFiles?: Record<string, string>
   inspect?: InspectOptions
-  moduleRoot?: string
+  addonRoot?: string
   cacheFile?: string
 }
 
@@ -42,10 +42,9 @@ interface EvalOptions {
   source: string
 }
 
-const vm = new VM()
+const vm = new Sandbox()
 export const context = vm.context
 export const internal = vm.internal
-export const sandbox = internal.sandbox
 
 const pathMapper: Record<string, RegExp> = {}
 

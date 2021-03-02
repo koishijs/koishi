@@ -30,7 +30,7 @@ export function synthetize(identifier: string, namespace: {}, name?: string) {
     }
   }, { context, identifier })
   modules[identifier] = module
-  config.addonNames.unshift(identifier)
+  config.addonNames?.unshift(identifier)
   if (name) synthetics[name] = module
 }
 
@@ -81,10 +81,10 @@ const files: Record<string, FileCache> = {}
 const cachedFiles: Record<string, FileCache> = {}
 
 export default async function prepare() {
-  if (!config.moduleRoot) return
+  if (!config.addonRoot) return
 
-  const tsconfigPath = resolve(config.moduleRoot, 'tsconfig.json')
-  const cachePath = resolve(config.moduleRoot, config.cacheFile || '.koishi/cache')
+  const tsconfigPath = resolve(config.addonRoot, 'tsconfig.json')
+  const cachePath = resolve(config.addonRoot, config.cacheFile || '.koishi/cache')
   await Promise.all([
     fs.readFile(tsconfigPath, 'utf8').then((tsconfig) => {
       Object.assign(compilerOptions, json5.parse(tsconfig))
@@ -126,7 +126,7 @@ async function loadSource(path: string): Promise<[source: string, identifier: st
   for (const postfix of suffixes) {
     try {
       const target = path + postfix
-      return [await fs.readFile(resolve(config.moduleRoot, target), 'utf8'), target]
+      return [await fs.readFile(resolve(config.addonRoot, target), 'utf8'), target]
     } catch {}
   }
   throw new Error(`cannot load source file "${path}"`)

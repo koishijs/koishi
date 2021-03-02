@@ -1,12 +1,12 @@
 /* eslint-disable no-new-wrappers, max-len */
 
 import 'koishi-test-utils'
-import { VM } from 'koishi-plugin-eval/src/vm'
+import { Sandbox } from 'koishi-plugin-eval/src/sandbox'
 import { inspect } from 'util'
 import { expect } from 'chai'
 
 describe('Eval Sandbox (Frozen)', () => {
-  const vm = new VM()
+  const vm = new Sandbox()
 
   vm.internal.setGlobal('test', {
     null: null,
@@ -136,7 +136,7 @@ describe('Eval Sandbox (Frozen)', () => {
 })
 
 describe('Eval Sandbox (Normal)', () => {
-  const vm = new VM()
+  const vm = new Sandbox()
 
   let baz = 3
 
@@ -212,5 +212,18 @@ describe('Eval Sandbox (Normal)', () => {
   it('preventExtensions', () => {
     expect(vm.run('Object.preventExtensions(test1)')).to.be.ok
     expect(catchError(() => vm.run('Object.preventExtensions(test2)')) instanceof Error).to.be.true
+  })
+
+  it('attack 1', async () => {
+    expect(vm.run(`
+      const func1 = this.constructor.constructor("return Function('return Function')")()();
+      const func2 = this.constructor.constructor("return Function")();
+      func1 === func2;
+    `)).to.be.true
+
+    expect(catchError(() => vm.run(`
+      const ForeignFunction = global.constructor.constructor;
+      const process1 = ForeignFunction("return process")();
+    `))).to.match(/^ReferenceError: process is not defined/)
   })
 })
