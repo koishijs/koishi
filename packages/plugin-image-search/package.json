@@ -39,6 +39,7 @@
   "dependencies": {
     "axios": "^0.21.1",
     "cheerio": "^1.0.0-rc.5",
+    "iqdb-client": "^1.0.3",
     "nhentai-api": "^3.0.2"
   }
 }
