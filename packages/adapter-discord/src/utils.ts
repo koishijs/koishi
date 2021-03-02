@@ -49,15 +49,16 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
       })).join('')
     }
   } else {
+    const urlKey = bot.app.options.discord.preferImageSource ? 'url' : 'proxy_url'
     switch (meta.embeds[0].type) {
       case 'video':
-        session.content = segment.video(meta.embeds[0].url)
+        session.content = segment('video', { file: meta.embeds[0][urlKey] })
         break
       case 'image':
-        session.content = segment.image(meta.embeds[0].url)
+        session.content = segment('image', { file: meta.embeds[0][urlKey] })
         break
       case 'gifv':
-        session.content = segment.video(meta.embeds[0].video.url)
+        session.content = segment('video', { file: meta.embeds[0].video.url })
         break
       case 'link':
         session.content = segment('share', { url: meta.embeds[0].url, title: meta.embeds[0]?.title, content: meta.embeds[0]?.description })
