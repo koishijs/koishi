@@ -126,7 +126,7 @@ export class Context {
   }
 
   private removeDisposable(listener: Disposable) {
-    const index = this.disposables?.indexOf(listener)
+    const index = this.disposables.indexOf(listener)
     if (index >= 0) {
       this.disposables.splice(index, 1)
       return true
@@ -164,8 +164,8 @@ export class Context {
     if (!plugin) throw new Error('cannot use ctx.dispose() outside a plugin')
     const disposables = this.app._plugins.get(plugin)
     if (!disposables) return
-    this.app._plugins.delete(plugin)
     await Promise.all(disposables.map(dispose => dispose()))
+    this.app._plugins.delete(plugin)
   }
 
   async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<Await<ReturnType<EventMap[K]>>[]>

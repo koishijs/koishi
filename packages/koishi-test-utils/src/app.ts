@@ -107,6 +107,7 @@ export class MockedApp extends App {
 
   receive(meta: Partial<Session>) {
     const session = new Session(this, {
+      platform: 'mock',
       selfId: this.selfId,
       ...meta,
     })
