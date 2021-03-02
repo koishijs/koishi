@@ -1,8 +1,9 @@
 import { searchPic } from 'iqdb-client'
 import { segment } from 'koishi-utils'
+import { Session } from 'koishi-core'
 
 async function makeSearch(url: string): Promise<string> {
-  const res = await searchPic(url, { lib: 'www' })
+  const res: IQDBSearchResultItem = await searchPic(url, { lib: 'www' })
   if (res.ok || (res.data && res.data.length > 1)) {
     let data = res.data[1]
     let { head, sourceUrl, img, type, source } = data
