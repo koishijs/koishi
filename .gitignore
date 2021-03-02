@@ -1,5 +1,6 @@
 dist
 temp
+.koishi
 
 /build/*.js
 /tsconfig.temp.json

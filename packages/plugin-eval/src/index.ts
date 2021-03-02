@@ -127,8 +127,8 @@ export function apply(ctx: Context, config: Config = {}) {
       }
 
       const timer = setTimeout(async () => {
+        await app.worker.restart()
         _resolve(!session._sendCount && '执行超时。')
-        app.worker.restart()
       }, config.timeout)
 
       const dispose = app.worker.onError((error: Error) => {
@@ -176,27 +176,29 @@ export function apply(ctx: Context, config: Config = {}) {
 }
 
 function addon(ctx: Context, config: EvalConfig) {
+  const logger = ctx.logger('eval:addons')
   const root = config.addonRoot = resolve(process.cwd(), config.addonRoot)
   config.dataKeys.push('addonNames', 'addonRoot')
 
   const git = Git(root)
 
   const addon = ctx.command('addon', '扩展功能')
-    .option('update', '-u  更新扩展模块', { authority: 3 })
-    .action(async ({ options, session }) => {
-      if (options.update) {
+    .action(async ({ session }) => {
+      await session.execute('help addon')
+    })
+
+  ctx.on('connect', async () => {
+    const isRepo = await git.checkIsRepo(CheckRepoActions.IS_REPO_ROOT)
+    if (!isRepo) return
+    addon
+      .option('update', '-u  更新扩展模块', { authority: 3 })
+      .action(async ({ options }) => {
+        if (!options.update) return
         const { files, summary } = await git.pull(ctx.app.worker.config.gitRemote)
         if (!files.length) return '所有模块均已是最新。'
         await ctx.app.worker.restart()
         return `更新成功！(${summary.insertions}A ${summary.deletions}D ${summary.changes}M)`
-      }
-      return session.execute('help addon')
-    })
-
-  // we only check it once
-  ctx.before('connect', async () => {
-    const isRepo = await git.checkIsRepo(CheckRepoActions.IS_REPO_ROOT)
-    if (!isRepo) throw new Error(`addonRoot "${root}" is not git repository`)
+      })
   })
 
   let manifests: Record<string, Promise<Manifest>>

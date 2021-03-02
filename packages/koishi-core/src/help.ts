@@ -136,7 +136,7 @@ function getOptions(command: Command, session: Session<ValidationField>, maxUsag
 }
 
 async function showHelp(command: Command, session: Session<ValidationField>, config: HelpConfig) {
-  const output = [command.declaration]
+  const output = [command.name + command.declaration]
 
   if (command.description) output.push(command.description)
 

@@ -1,12 +1,14 @@
 /* eslint-disable no-template-curly-in-string */
+
 import { App } from 'koishi-test-utils'
 import { resolve } from 'path'
-import * as pluginEval from 'koishi-plugin-eval'
+import { promises as fs } from 'fs'
+import * as eval from 'koishi-plugin-eval'
 
 const app = new App()
 
-app.plugin(pluginEval, {
-  timeout: 1000,
+app.plugin(eval, {
+  addonRoot: resolve(__dirname, 'fixtures'),
   setupFiles: {
     'test-worker': resolve(__dirname, 'worker.ts'),
   },
@@ -14,7 +16,13 @@ app.plugin(pluginEval, {
 
 const ses = app.session('123')
 
-before(() => app.start())
+before(async () => {
+  await fs.rmdir(resolve(__dirname, 'fixtures/.koishi'), { recursive: true })
+  return new Promise<void>((resolve) => {
+    app.on('worker/ready', () => resolve())
+    app.start()
+  })
+})
 
 after(() => app.stop())
 
@@ -68,6 +76,20 @@ describe('Eval Plugin', () => {
   })
 
   it('timeout', async () => {
+    app.worker.config.timeout = 10
     await ses.shouldReply('eval while(1);', '执行超时。')
+    app.worker.config.timeout = 1000
+  })
+})
+
+describe('Eval Addons', () => {
+  it('addon command', async () => {
+    await ses.shouldReply('addon', /^addon\n扩展功能/)
+    await ses.shouldReply('test -h', 'test\n测试功能')
+    await ses.shouldReply('test', 'bar')
+  })
+
+  it('sandbox injection', async () => {
+    await ses.shouldReply('> addon1.foo()', 'bar')
   })
 })

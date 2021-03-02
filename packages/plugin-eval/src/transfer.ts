@@ -1,5 +1,5 @@
 import { MessagePort, Worker } from 'worker_threads'
-import { noop, Random } from 'koishi-utils'
+import { Logger, noop, Random } from 'koishi-utils'
 
 type Endpoint = MessagePort | Worker
 
@@ -11,6 +11,8 @@ interface Message {
   value?: any
 }
 
+const logger = new Logger('eval:transfer')
+
 export function request(ep: Endpoint, payload: Partial<Message>) {
   const uuid = Random.uuid()
   return new Promise<Message>((resolve) => {
@@ -20,6 +22,7 @@ export function request(ep: Endpoint, payload: Partial<Message>) {
       ep.off('message', listener)
       resolve(message)
     })
+    logger.debug('[request] %o', { uuid, ...payload })
     ep.postMessage(JSON.stringify({ uuid, ...payload }))
   })
 }
@@ -49,6 +52,7 @@ export function wrap<T>(ep: Endpoint) {
 export function expose(ep: Endpoint, object: {}) {
   ep.on('message', async (data: string) => {
     const { type, key, uuid, args } = JSON.parse(data)
+    logger.debug('[receive] %o', { type, key, uuid, args })
     if (type !== 'apply') return
     const value = await object[key](...args)
     ep.postMessage(JSON.stringify({ uuid, value }))
