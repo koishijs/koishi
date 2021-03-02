@@ -142,7 +142,6 @@ export class MessageBuffer {
     this.original = false
     const send = this.session.send
     const sendQueued = this.session.sendQueued
-    argv.inline = false
     await this.session.execute(argv)
     this.session.sendQueued = sendQueued
     this.session.send = send

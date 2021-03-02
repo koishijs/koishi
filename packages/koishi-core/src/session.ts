@@ -324,7 +324,7 @@ export class Session<
         const { inters } = arg
         const output: string[] = []
         for (let i = 0; i < inters.length; ++i) {
-          output.push(await this.execute(inters[i]))
+          output.push(await this.execute(inters[i], true))
         }
         for (let i = inters.length - 1; i >= 0; --i) {
           const { pos } = inters[i]
@@ -348,13 +348,14 @@ export class Session<
       await this.observeUser(this.collect('user', argv))
     }
 
+    let shouldEmit = true
     if (next === true) {
-      argv.inline = true
-      next = async () => {}
+      shouldEmit = false
+      next = fallback => fallback()
     }
 
     const result = await argv.command.execute(argv, next)
-    if (!argv.inline) await this.send(result)
+    if (shouldEmit) await this.send(result)
     return result
   }
 

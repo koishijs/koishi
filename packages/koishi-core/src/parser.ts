@@ -400,7 +400,6 @@ export interface Argv<U extends User.Field = never, G extends Channel.Field = ne
   rest?: string
   pos?: number
   root?: boolean
-  inline?: boolean
   tokens?: Token[]
   name?: string
   next?: NextFunction
@@ -453,7 +452,7 @@ export namespace Argv {
           const { parse, terminator } = this.bracs[capture[0]]
           const argv = parse?.(source) || this.parse(source, terminator)
           source = argv.rest
-          parent.inters.push({ ...argv, pos: content.length, initiator: capture[0], inline: true })
+          parent.inters.push({ ...argv, pos: content.length, initiator: capture[0] })
         } else {
           const quoted = capture[0] === quote
           const rest = source.slice(capture.index + +quoted).trimStart()
