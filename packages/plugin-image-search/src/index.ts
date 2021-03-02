@@ -1,6 +1,7 @@
 import { Context, Session, Command, makeArray, segment } from 'koishi-core'
 import ascii2d from './ascii2d'
 import saucenao from './saucenao'
+import iqdb from './iqdb'
 
 export interface Config extends saucenao.Config {
   saucenaoApiKey?: string | string[]
@@ -40,6 +41,8 @@ export function apply(ctx: Context, config: Config = {}) {
     .action(search(saucenao))
     .subcommand('ascii2d [image]', '使用 ascii2d 搜图')
     .action(search(ascii2d))
+    .subcommand('iqdb [image]', '使用 iqdb 搜图')
+    .action(search(iqdb))
 
   const pendings = new Set<string>()
 
