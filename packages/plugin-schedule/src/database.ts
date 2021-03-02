@@ -31,7 +31,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Domain, tables })
     'PRIMARY KEY (`id`) USING BTREE',
   ], {
     id: `INT(10) UNSIGNED NOT NULL AUTO_INCREMENT`,
-    assignee: `BIGINT(20) NOT NULL DEFAULT '0'`,
+    assignee: `VARCHAR(50) NOT NULL DEFAULT '0'`,
     time: `TIMESTAMP NULL DEFAULT NULL`,
     lastCall: `TIMESTAMP NULL DEFAULT NULL`,
     interval: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0'`,
