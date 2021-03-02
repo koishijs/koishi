@@ -66,6 +66,13 @@ According to \`tsconfig-paths\` documentation ...`
 module.exports[`pull_request.ready`] = `
 [GitHub] XxLittleCxX marked koishijs/koishi#139 as ready for review`
 
+module.exports[`pull_request.reopened`] = `
+[GitHub] Shigma reopened pull request koishijs/koishi#97
+Storage API, fix #96`
+
+module.exports[`pull_request.requested`] = `
+[GitHub] Shigma requeted a review from Shigma on koishijs/koishi#141`
+
 // URL: https://github.com/koishijs/koishi/pull/20#pullrequestreview-345349537
 module.exports[`pull_request_review.submitted.2`] = `
 [GitHub] Kouchya reviewed pull request koishijs/koishi#20

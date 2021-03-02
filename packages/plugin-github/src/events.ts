@@ -54,7 +54,9 @@ export const defaultEvents: EventConfig = {
   pullRequest: {
     closed: true,
     opened: true,
+    reopened: true,
     readyForReview: true,
+    reviewRequested: true,
   },
   pullRequestReview: {
     submitted: true,
@@ -236,6 +238,12 @@ export function addListeners(on: <T extends EmitterWebhookEventName>(event: T, h
     return [`${sender.login} ${type} pull request ${full_name}#${number}\n${title}`]
   })
 
+  onPullRequest('pull_request/reopened', ({ repository, pull_request, sender }) => {
+    const { full_name } = repository
+    const { title, number } = pull_request
+    return [`${sender.login} reopened pull request ${full_name}#${number}\n${title}`]
+  })
+
   onPullRequest('pull_request/opened', ({ repository, pull_request, sender }) => {
     const { full_name, owner } = repository
     // FIXME: remove any after @octokit/webhooks-definitions/schema is fixed
@@ -249,6 +257,12 @@ export function addListeners(on: <T extends EmitterWebhookEventName>(event: T, h
       `Title: ${title}`,
       formatMarkdown(body),
     ].join('\n')]
+  })
+
+  onPullRequest('pull_request/review_requested', ({ repository, pull_request, sender, requested_reviewer }) => {
+    const { full_name } = repository
+    const { number } = pull_request as PullRequest
+    return [`${sender.login} requeted a review from ${requested_reviewer.login} on ${full_name}#${number}`]
   })
 
   onPullRequest('pull_request/ready_for_review', ({ repository, pull_request, sender }) => {
