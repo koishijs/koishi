@@ -13,7 +13,7 @@ declare module 'koishi-core' {
   }
 
   interface Database {
-    getActiveData (): Promise<ActiveData>
+    getActiveData(): Promise<ActiveData>
   }
 
   interface Tables {
@@ -38,6 +38,10 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
     ])
     return { activeGroups, activeUsers }
   },
+})
+
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables }) => {
+  tables.user.lastCall = 'timestamp'
 })
 
 extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {

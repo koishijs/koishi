@@ -31,7 +31,7 @@
     "koishi-core": "^3.0.0-rc.2",
     "koishi-plugin-common": "^4.0.0-beta.18",
     "koishi-plugin-mysql": "^3.0.0-beta.15",
-    "koishi-plugin-teach": "^2.0.0-beta.13",
+    "koishi-plugin-teach": "^2.0.0-beta.14",
     "koishi-utils": "^4.0.1"
   },
   "devDependencies": {
