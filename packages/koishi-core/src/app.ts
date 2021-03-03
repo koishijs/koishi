@@ -1,5 +1,5 @@
 import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop, template, merge } from 'koishi-utils'
-import { Context, Middleware, NextFunction, Plugin, Disposable } from './context'
+import { Context, Middleware, NextFunction, Plugin } from './context'
 import { Argv } from './parser'
 import { BotOptions, Adapter, createBots } from './adapter'
 import { Channel, User } from './database'
@@ -47,6 +47,7 @@ export class App extends Context {
   public options: AppOptions
   public status = App.Status.closed
   public adapters: Adapter.Instances = {}
+  public registry = new Map<Plugin, Plugin.State>()
 
   _bots = createBots('sid')
   _commands: Command[] = []
@@ -57,7 +58,6 @@ export class App extends Context {
   _channelCache: LruCache<string, Observed<Partial<Channel>, Promise<void>>>
   _httpServer?: Server
   _sessions: Record<string, Session> = {}
-  _plugins = new Map<Plugin, Disposable[]>()
 
   private _nameRE: RegExp
   private _prefixRE: RegExp
@@ -84,8 +84,12 @@ export class App extends Context {
     super(() => true)
     if (!options.bots) options.bots = [options]
     this.options = merge(options, App.defaultConfig)
+    this.registry.set(null, {
+      parent: null,
+      children: [],
+      disposables: [],
+    })
 
-    this._plugins.set(null, [])
     defineProperty(this, '_userCache', {})
     defineProperty(this, '_channelCache', new LruCache({
       max: options.channelCacheLength,

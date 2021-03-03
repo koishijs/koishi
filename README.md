@@ -66,33 +66,35 @@ Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间�
 
 欢迎[向下面的列表中添加](https://github.com/koishijs/koishi/edit/master/README.md)自己的插件或机器人。
 
-### 插件
+### 社区插件
 
 <!-- 左边填 npm 包名 -->
 
 - [koishi-plugin-blame](https://github.com/ArilyChan/koishi-plugin-blame): 拦截崩溃错误，推送到私信或群
 - [koishi-plugin-gosen-choyen](https://github.com/idlist/koishi-plugin-gosen-choyen): 生成并发送“我想要五千兆元！”风格的图片
 
-### 项目
+### 社区项目
 
 <!-- 左边填 github 仓库 -->
 
 - [ArilyChan/qq-bot](https://github.com/ArilyChan/qq-bot): 小阿日
 - [hydro-dev/HydroBot](https://github.com/hydro-dev/HydroBot): A Simple QQ Robot
 
-## 平台支持
+## 基础功能
+
+### 平台支持
 
 - koishi-adapter-onebot: [OneBot](https://github.com/howmanybots/onebot) 协议支持，可用于 QQ
 - koishi-adapter-discord: [Discord](https://discord.com/) 平台支持
 - koishi-adapter-telegram: [Telegram](https://telegram.org/) 平台支持
 - koishi-adapter-kaiheila: [开黑啦](https://kaiheila.cn/) 平台支持
 
-## 数据库支持
+### 数据库支持
 
 - koishi-plugin-mongo: MongoDB 支持
 - koishi-plugin-mysql: MySQL 5.7 / MariaDB 10.5 支持
 
-## 核心插件
+## 官方插件
 
 ### [koishi-plugin-common](https://koishi.js.org/plugins/common/)
 
@@ -113,7 +115,7 @@ koishi-plugin-eval 允许用户直接使用机器人执行脚本。它利用了 
 
 koishi-plugin-teach 允许用户在运行时编写问答并由机器人触发。每个人都可以随时随地修改机器人的行为，大大提高了互动的灵活性。支持概率控制、称呼匹配、指令插值、权限管理、频道过滤、正则匹配、后继问答等多种功能，足以应对绝大部分使用场景。
 
-## 其他官方插件
+### 其他官方插件
 
 - [koishi-plugin-chess](https://koishi.js.org/plugins/other/chess.md) / 下棋
 - [koishi-plugin-github](https://koishi.js.org/plugins/other/github.md) / 接入 GitHub

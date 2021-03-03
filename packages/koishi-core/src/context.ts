@@ -10,20 +10,30 @@ import Router from '@koa/router'
 
 export type NextFunction = (next?: NextFunction) => Promise<void>
 export type Middleware = (session: Session, next: NextFunction) => any
-export type PluginFunction<T = any> = (ctx: Context, options: T) => void
-export type Plugin<T = any> = PluginFunction<T> | PluginObject<T>
 export type Promisify<T> = T extends Promise<unknown> ? T : Promise<T>
 export type Awaitable<T> = T extends Promise<unknown> ? T : T | Promise<T>
 export type Await<T> = T extends Promise<infer U> ? U : T
 export type Disposable = () => void
 
-export interface PluginObject<T = any> {
-  name?: string
-  disposable?: boolean
-  apply: PluginFunction<T>
-}
+export type Plugin<T = any> = Plugin.Function<T> | Plugin.Object<T>
 
-type PluginConfig<T extends Plugin> = T extends PluginFunction<infer U> ? U : T extends PluginObject<infer U> ? U : never
+export namespace Plugin {
+  export type Function<T = any> = (ctx: Context, options: T) => void
+
+  export interface Object<T = any> {
+    name?: string
+    disposable?: boolean
+    apply: Function<T>
+  }
+
+  export type Config<T extends Plugin> = T extends Function<infer U> ? U : T extends Object<infer U> ? U : never
+
+  export interface State {
+    parent: State
+    children: Plugin[]
+    disposables: Disposable[]
+  }
+}
 
 function isBailed(value: any) {
   return value !== null && value !== false && value !== undefined
@@ -88,7 +98,7 @@ export class Context {
   }
 
   protected get disposables() {
-    return this.app._plugins.get(this._plugin)
+    return this.app.registry.get(this._plugin).disposables
   }
 
   logger(name: string) {
@@ -133,39 +143,48 @@ export class Context {
     }
   }
 
-  plugin<T extends Plugin>(plugin: T, options?: PluginConfig<T>) {
+  plugin<T extends Plugin>(plugin: T, options?: Plugin.Config<T>) {
     if (options === false) return this
     if (options === true) options = undefined
 
-    if (this.app._plugins.has(plugin)) {
+    if (this.app.registry.has(plugin)) {
       this.logger('app').warn('duplicate plugin detected')
       return this
     }
 
     const ctx: this = Object.create(this)
     defineProperty(ctx, '_plugin', plugin)
-    this.app._plugins.set(plugin, [() => this.removeDisposable(dispose)])
+    const parent = this.app.registry.get(this._plugin)
+    this.app.registry.set(plugin, {
+      parent,
+      children: [],
+      disposables: [],
+    })
 
     if (typeof plugin === 'function') {
-      (plugin as PluginFunction<this>)(ctx, options)
+      (plugin as Plugin.Function<this>)(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
-      (plugin as PluginObject<this>).apply(ctx, options)
+      (plugin as Plugin.Object<this>).apply(ctx, options)
     } else {
-      this.app._plugins.delete(plugin)
+      this.app.registry.delete(plugin)
       throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
 
-    const dispose = () => ctx.dispose()
-    this.disposables.push(dispose)
+    parent.children.push(plugin)
     return this
   }
 
   async dispose(plugin = this._plugin) {
     if (!plugin) throw new Error('cannot use ctx.dispose() outside a plugin')
-    const disposables = this.app._plugins.get(plugin)
-    if (!disposables) return
-    await Promise.all(disposables.map(dispose => dispose()))
-    this.app._plugins.delete(plugin)
+    const registry = this.app.registry.get(plugin)
+    if (!registry) return
+    await Promise.all([
+      ...registry.children.slice().map(plugin => this.dispose(plugin)),
+      ...registry.disposables.map(dispose => dispose()),
+    ])
+    this.app.registry.delete(plugin)
+    const index = registry.parent.children.indexOf(plugin)
+    if (index >= 0) registry.parent.children.splice(index, 1)
   }
 
   async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<Await<ReturnType<EventMap[K]>>[]>
@@ -235,17 +254,6 @@ export class Context {
       const result = callback.apply(session, args)
       if (isBailed(result)) return result
     }
-  }
-
-  private getHooks<K extends EventName>(name: K) {
-    const hooks = this.app._hooks[name] || (this.app._hooks[name] = [])
-    if (hooks.length >= this.app.options.maxListeners) {
-      this.logger('app').warn(
-        'max listener count (%d) for event "%s" exceeded, which may be caused by a memory leak',
-        this.app.options.maxListeners, name,
-      )
-    }
-    return hooks
   }
 
   on<K extends EventName>(name: K, listener: EventMap[K], prepend = false) {
