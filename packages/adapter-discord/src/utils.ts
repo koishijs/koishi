@@ -82,7 +82,6 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
 async function adaptMessageSession(bot: DiscordBot, meta: DC.DiscordMessage, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
   adaptMessage(bot, meta, session)
   session.messageId = meta.id
-  console.log(meta)
   session.timestamp = new Date(meta.timestamp).valueOf() || new Date().valueOf()
   session.subtype = meta.guild_id ? 'group' : 'private'
   if (meta.message_reference) {
