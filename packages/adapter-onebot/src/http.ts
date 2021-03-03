@@ -1,4 +1,4 @@
-import { App, Adapter } from 'koishi-core'
+import { App, Adapter, Bot } from 'koishi-core'
 import { Logger, defineProperty, snakeCase, assertProperty } from 'koishi-utils'
 import { CQBot } from './bot'
 import { createSession } from './utils'
@@ -28,7 +28,7 @@ export default class HttpServer extends Adapter<'onebot'> {
 
   private async _listen(bot: CQBot) {
     if (!bot.server) return
-    bot.ready = true
+    bot.status = Bot.Status.GOOD
     bot._request = async (action, params) => {
       const headers = { 'Content-Type': 'application/json' } as any
       if (bot.token) {

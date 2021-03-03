@@ -1,5 +1,4 @@
-import axios, { AxiosError } from 'axios'
-import FormData from 'form-data'
+import axios from 'axios'
 import { App, Adapter, Session } from 'koishi-core'
 import { assertProperty, camelCase, Logger, segment } from 'koishi-utils'
 import { TelegramBot } from './bot'
@@ -18,36 +17,6 @@ export default class HttpServer extends Adapter<'telegram'> {
     config.path ||= '/telegram'
     config.endpoint = trimSlash(config.endpoint || 'https://api.telegram.org')
     config.selfUrl = trimSlash(assertProperty(config, 'selfUrl'))
-  }
-
-  private async _listen(bot: TelegramBot) {
-    bot.ready = true
-    const { endpoint, selfUrl, path, axiosConfig } = this.app.options.telegram
-    bot._request = async (action, params, field, content, filename = 'file') => {
-      const payload = new FormData()
-      for (const key in params) {
-        payload.append(key, params[key].toString())
-      }
-      if (field) payload.append(field, content, filename)
-      const data = await axios.post(`${endpoint}/bot${bot.token}/${action}`, payload, {
-        ...this.app.options.axiosConfig,
-        ...axiosConfig,
-        headers: payload.getHeaders(),
-      }).then(res => {
-        return res.data
-      }).catch((e: AxiosError) => {
-        return e.response.data
-      })
-      return data
-    }
-    const { username } = await bot.getLoginInfo()
-    await bot.get('setWebhook', {
-      url: selfUrl + path + '?token=' + bot.token,
-      drop_pending_updates: true,
-    })
-    bot.username = username
-    logger.debug('%d got version debug', bot.selfId)
-    logger.debug('connected to %c', 'telegram:' + bot.selfId)
   }
 
   async start() {
@@ -99,7 +68,7 @@ export default class HttpServer extends Adapter<'telegram'> {
       const session = new Session(this.app, body)
       this.dispatch(session)
     })
-    await Promise.all(this.bots.map(bot => this._listen(bot)))
+    await Promise.all(this.bots.map(bot => bot._listen()))
   }
 
   stop() {

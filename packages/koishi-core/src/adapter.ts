@@ -105,12 +105,14 @@ export namespace Adapter {
 
       const connect = async (resolve: (value: void) => void, reject: (reason: Error) => void) => {
         logger.debug('websocket client opening')
+        bot.status = Bot.Status.CONNECTING
         const socket = await this.prepare(bot)
 
         socket.on('error', error => logger.debug(error))
 
         socket.on('close', (code, reason) => {
           bot.socket = null
+          bot.status = Bot.Status.NET_ERROR
           if (!this._listening) return
 
           const message = reason || `failed to connect to ${socket.url}`
@@ -129,7 +131,10 @@ export namespace Adapter {
           _retryCount = 0
           bot.socket = socket
           logger.debug('connect to ws server:', socket.url)
-          this.connect(bot).then(resolve, reject)
+          this.connect(bot).then(() => {
+            bot.status = Bot.Status.GOOD
+            resolve()
+          }, reject)
         })
       }
 
@@ -154,7 +159,7 @@ export namespace Adapter {
 export interface Bot<P = Platform> extends BotOptions {
   [Session.send](session: Session, message: string): Promise<void>
 
-  ready?: boolean
+  status: Bot.Status
   socket?: WebSocket
   version?: string
   username?: string
@@ -200,10 +205,15 @@ export class Bot<P extends Platform> {
     this.app = adapter.app
     this.platform = this.type.split(':', 1)[0] as never
     this.logger = new Logger(this.platform)
+    this.status = Bot.Status.BOT_IDLE
   }
 
   get sid() {
     return `${this.platform}:${this.selfId}`
+  }
+
+  async getStatus() {
+    return this.status
   }
 
   createSession(session: Partial<Session<never, never, P, 'send'>>) {
@@ -258,6 +268,8 @@ export namespace Bot {
     SERVER_ERROR,
     /** 机器人被封禁 */
     BANNED,
+    /** 正在尝试连接 */
+    CONNECTING,
   }
 }
 

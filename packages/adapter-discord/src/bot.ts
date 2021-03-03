@@ -210,8 +210,7 @@ export class DiscordBot extends Bot<'discord'> {
       throw new Error('Up to 10 embed objects')
     }
 
-    const sentMessageId = await this.sendFullMessage(`/webhooks/${id}/${token}`, data.content)
-
-    return sentMessageId
+    const messageId = await this.sendFullMessage(`/webhooks/${id}/${token}`, data.content)
+    return messageId
   }
 }

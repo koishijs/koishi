@@ -33,7 +33,6 @@ export default class WsClient extends Adapter.WsClient<'kaiheila'> {
 
   async connect(bot: KaiheilaBot) {
     bot._sn = 0
-    bot.ready = true
 
     bot.socket.on('message', (data) => {
       data = data.toString()
@@ -54,10 +53,6 @@ export default class WsClient extends Adapter.WsClient<'kaiheila'> {
       } else if (parsed.s === Signal.resume) {
         bot.socket.close(1013)
       }
-    })
-
-    bot.socket.on('close', () => {
-      bot.ready = false
     })
   }
 }

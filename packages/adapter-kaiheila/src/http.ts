@@ -1,4 +1,4 @@
-import { App, Adapter } from 'koishi-core'
+import { App, Bot, Adapter } from 'koishi-core'
 import { Logger, assertProperty } from 'koishi-utils'
 import { KaiheilaBot } from './bot'
 import { adaptSession } from './utils'
@@ -19,8 +19,8 @@ export default class HttpServer extends Adapter<'kaiheila'> {
   }
 
   private async _listen(bot: KaiheilaBot) {
-    bot.ready = true
     Object.assign(bot, await bot.getSelf())
+    bot.status = Bot.Status.GOOD
   }
 
   async start() {

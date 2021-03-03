@@ -110,11 +110,10 @@ export interface MessageReference {
 
 export interface Embed {
   title?: string
-  type?: 'rich' | 'image' | 'video'|'gifv'|'article'|'link'
+  type?: 'rich' | 'image' | 'video' | 'gifv' | 'article' | 'link'
   description?: string
   url?: string
   timestamp: string
-
   video?: {
     url?: string
     proxy_url?: string

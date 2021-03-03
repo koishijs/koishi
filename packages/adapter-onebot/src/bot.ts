@@ -183,7 +183,7 @@ export class CQBot extends Bot {
   }
 
   async getStatus() {
-    if (!this.ready) return Bot.Status.BOT_IDLE
+    if (this.status !== Bot.Status.GOOD) return this.status
     try {
       const data = await this.$getStatus()
       return data.good ? Bot.Status.GOOD : data.online ? Bot.Status.SERVER_ERROR : Bot.Status.BOT_OFFLINE

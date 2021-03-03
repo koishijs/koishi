@@ -190,11 +190,6 @@ export class KaiheilaBot extends Bot {
     return adaptUser(data)
   }
 
-  async getStatus() {
-    if (!this.ready) return Bot.Status.BOT_IDLE
-    return Bot.Status.GOOD
-  }
-
   async getGroupList() {
     const { items } = await this.request<Kaiheila.GuildList>('GET', '/guild/list')
     return items.map(adaptGroup)

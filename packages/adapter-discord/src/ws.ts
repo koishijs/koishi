@@ -27,7 +27,6 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
 
   async connect(bot: DiscordBot) {
     return new Promise<void>((resolve) => {
-      bot.ready = true
       if (bot._sessionId) {
         logger.info('resuming')
         bot.socket.send(JSON.stringify({
@@ -78,7 +77,6 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
       })
 
       bot.socket.on('close', (c, r) => {
-        bot.ready = false
         logger.warn(r)
         clearInterval(bot._ping)
       })

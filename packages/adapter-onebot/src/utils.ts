@@ -139,8 +139,6 @@ const listeners: Record<number, (response: OneBot.Response) => void> = {}
 
 export function connect(bot: CQBot) {
   return new Promise<void>((resolve, reject) => {
-    bot.ready = true
-
     bot.socket.on('message', (data) => {
       data = data.toString()
       let parsed: any
@@ -169,7 +167,6 @@ export function connect(bot: CQBot) {
 
     bot.socket.on('close', () => {
       delete bot._request
-      bot.ready = false
     })
 
     bot.socket.send(JSON.stringify({

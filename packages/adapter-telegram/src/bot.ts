@@ -1,7 +1,11 @@
 import { createReadStream } from 'fs'
-import { camelCase, snakeCase, renameProperty, segment, assertProperty } from 'koishi-utils'
+import { camelCase, snakeCase, renameProperty, segment, assertProperty, Logger } from 'koishi-utils'
 import { Bot, GroupInfo, GroupMemberInfo, UserInfo, BotOptions, Adapter } from 'koishi-core'
 import * as Telegram from './types'
+import axios, { AxiosError } from 'axios'
+import FormData from 'form-data'
+
+const logger = new Logger('telegram')
 
 export class SenderError extends Error {
   constructor(args: Record<string, any>, url: string, retcode: number, selfId: string) {
@@ -66,6 +70,36 @@ export class TelegramBot extends Bot {
     const { ok, result } = response
     if (ok) return camelCase(result)
     throw new SenderError(params, action, -1, this.selfId)
+  }
+
+  async _listen() {
+    const { endpoint, selfUrl, path, axiosConfig } = this.app.options.telegram
+    this._request = async (action, params, field, content, filename = 'file') => {
+      const payload = new FormData()
+      for (const key in params) {
+        payload.append(key, params[key].toString())
+      }
+      if (field) payload.append(field, content, filename)
+      const data = await axios.post(`${endpoint}/bot${this.token}/${action}`, payload, {
+        ...this.app.options.axiosConfig,
+        ...axiosConfig,
+        headers: payload.getHeaders(),
+      }).then(res => {
+        return res.data
+      }).catch((e: AxiosError) => {
+        return e.response.data
+      })
+      return data
+    }
+    const { username } = await this.getLoginInfo()
+    await this.get('setWebhook', {
+      url: selfUrl + path + '?token=' + this.token,
+      drop_pending_updates: true,
+    })
+    this.status = Bot.Status.GOOD
+    this.username = username
+    logger.debug('%d got version debug', this.selfId)
+    logger.debug('connected to %c', 'telegram:' + this.selfId)
   }
 
   private async _sendMessage(chatId: string, content: string) {
@@ -148,16 +182,6 @@ export class TelegramBot extends Bot {
   async getLoginInfo() {
     const data = await this.get<Telegram.User>('getMe')
     return TelegramBot.adaptUser(data)
-  }
-
-  async getStatus() {
-    if (!this.ready) return Bot.Status.BOT_IDLE
-    try {
-      await this.get('getMe')
-      return Bot.Status.GOOD
-    } catch {
-      return Bot.Status.NET_ERROR
-    }
   }
 }
 

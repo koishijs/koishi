@@ -21,6 +21,8 @@ declare module 'koishi-core' {
 }
 
 class MockedBot extends Bot<'mock'> {
+  status = Bot.Status.GOOD
+
   async getMessage(channelId: string, messageId: string) {
     return {
       messageId,
@@ -37,7 +39,6 @@ class MockedBot extends Bot<'mock'> {
 class MockedServer extends Adapter {
   constructor(app: App) {
     super(app, MockedBot)
-    this.bots.forEach(bot => bot.ready = true)
   }
 
   stop() {}

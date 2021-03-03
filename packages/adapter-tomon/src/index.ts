@@ -32,7 +32,6 @@ Adapter.types.tomon = class TomonServer extends Adapter<'tomon'> {
       auth: false,
     })
     Object.assign(bot, info)
-    bot.ready = true
     const selfId = bot.selfId = bot.id
 
     // part 2: connect to server
