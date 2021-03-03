@@ -34,7 +34,6 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
     session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id
   }
-  const urlKey = bot.app.options.discord.preferImageSource ? 'url' : 'proxy_url'
   // https://discord.com/developers/docs/reference#message-formatting
   session.content = ''
   if (meta.content) {
@@ -51,20 +50,17 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
   // embed 的 update event 太阴间了 只有 id embeds channel_id guild_id 四个成员
   if (meta.attachments?.length) {
     session.content += meta.attachments.map(v => segment('image', {
-      url: v[urlKey],
+      url: v.url,
+      proxy_url: v.proxy_url
     })).join('')
   }
   for (const embed of meta.embeds) {
     switch (embed.type) {
       case 'video':
-        session.content += segment('video', { url: embed[urlKey] })
+        session.content += segment('video', { url: embed.url, proxy_url: embed.video.proxy_url })
         break
       case 'image':
-        if (embed.thumbnail?.proxy_url && bot.app.options.discord.preferImageSource) {
-          session.content += segment('image', { url: embed.thumbnail[urlKey] ?? embed.thumbnail.url ?? embed.url })
-        } else {
-          session.content += segment('image', { url: embed.thumbnail.proxy_url })
-        }
+        session.content += segment('image', { url: embed.thumbnail.url, proxy_url: embed.thumbnail.proxy_url })
         break
       case 'gifv':
         session.content += segment('video', { url: embed.video.url })

@@ -5,7 +5,6 @@ import WsClient from './ws'
 
 interface DiscordOptions extends Adapter.WsClientOptions {
   axiosConfig?: AxiosRequestConfig
-  preferImageSource?: boolean
 }
 
 declare module 'koishi-core' {
