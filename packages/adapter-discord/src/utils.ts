@@ -3,12 +3,6 @@ import { DiscordBot } from './bot'
 import * as DC from './types'
 import { DiscordChannel, PartialGuild } from './types'
 
-declare module 'koishi-core' {
-  interface UserInfo {
-    discriminator: string;
-  }
-}
-
 export const adaptUser = (user: DC.DiscordUser): UserInfo => ({
   userId: user.id,
   avatar: user.avatar,
@@ -54,7 +48,7 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
       .replace(/<#(.+?)>/, (_, id) => segment.sharp(id))
   }
 
-  // embed的update event太阴间了 只有id embeds channel_id guild_id四个成员
+  // embed 的 update event 太阴间了 只有 id embeds channel_id guild_id 四个成员
   if (meta.attachments?.length) {
     session.content += meta.attachments.map(v => segment('image', {
       url: v[urlKey],
@@ -88,6 +82,7 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
 async function adaptMessageSession(bot: DiscordBot, meta: DC.DiscordMessage, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
   adaptMessage(bot, meta, session)
   session.messageId = meta.id
+  console.log(meta)
   session.timestamp = new Date(meta.timestamp).valueOf() || new Date().valueOf()
   session.subtype = meta.guild_id ? 'group' : 'private'
   if (meta.message_reference) {
