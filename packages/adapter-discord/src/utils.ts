@@ -3,10 +3,17 @@ import { DiscordBot } from './bot'
 import * as DC from './types'
 import { DiscordChannel, PartialGuild } from './types'
 
+declare module 'koishi-core' {
+  interface UserInfo {
+    discriminator: string;
+  }
+}
+
 export const adaptUser = (user: DC.DiscordUser): UserInfo => ({
   userId: user.id,
   avatar: user.avatar,
   username: user.username,
+  discriminator: user.discriminator,
 })
 
 export function adaptGroup(data: PartialGuild): GroupInfo {
@@ -35,17 +42,22 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
   }
   const urlKey = bot.app.options.discord.preferImageSource ? 'url' : 'proxy_url'
   // https://discord.com/developers/docs/reference#message-formatting
-  session.content = meta.content
-    .replace(/<@!(.+?)>/, (_, id) => segment.at(id))
-    .replace(/<@&(.+?)>/, (_, id) => segment.at(id))
-    .replace(/<:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name }))
-    .replace(/<a:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name, animated: true }))
-    .replace(/@everyone/, () => segment('at', { type: 'all' }))
-    .replace(/@here/, () => segment('at', { type: 'here' }))
-    .replace(/<#(.+?)>/, (_, id) => segment.sharp(id))
-  if (meta.attachments.length) {
+  session.content = ''
+  if (meta.content) {
+    session.content = meta.content
+      .replace(/<@!(.+?)>/, (_, id) => segment.at(id))
+      .replace(/<@&(.+?)>/, (_, id) => segment.at(id))
+      .replace(/<:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name }))
+      .replace(/<a:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name, animated: true }))
+      .replace(/@everyone/, () => segment('at', { type: 'all' }))
+      .replace(/@here/, () => segment('at', { type: 'here' }))
+      .replace(/<#(.+?)>/, (_, id) => segment.sharp(id))
+  }
+
+  // embed的update event太阴间了 只有id embeds channel_id guild_id四个成员
+  if (meta.attachments?.length) {
     session.content += meta.attachments.map(v => segment('image', {
-      url: v[urlKey]
+      url: v[urlKey],
     })).join('')
   }
   for (const embed of meta.embeds) {
@@ -66,6 +78,8 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
       case 'link':
         session.content += segment('share', { url: embed.url, title: embed?.title, content: embed?.description })
         break
+      case 'rich':
+        session.content += segment('share', { url: embed.url, title: embed?.title, content: embed?.description })
     }
   }
   return session
@@ -74,7 +88,7 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
 async function adaptMessageSession(bot: DiscordBot, meta: DC.DiscordMessage, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
   adaptMessage(bot, meta, session)
   session.messageId = meta.id
-  session.timestamp = new Date(meta.timestamp).valueOf()
+  session.timestamp = new Date(meta.timestamp).valueOf() || new Date().valueOf()
   session.subtype = meta.guild_id ? 'group' : 'private'
   if (meta.message_reference) {
     const msg = await bot.getMessageFromServer(meta.message_reference.channel_id, meta.message_reference.message_id)
