@@ -1,4 +1,4 @@
-import { Context } from 'koishi-core'
+import { Context, segment } from 'koishi-core'
 import axios from 'axios'
 
 const lang = 'zh-CN'
@@ -7,7 +7,8 @@ const products = ['astro', 'civil', 'civillight', 'meteo', 'two']
 
 export function apply(ctx: Context) {
   ctx.command('tools/weather <longitude> <latitude>', '查询天气')
-    .option('product', `-p <product>  晴天钟产品选择，可为 ${products.join(', ')}`, { fallback: 'civil' })
+    // typescript cannot infer type from string templates
+    .option('product', `-p <product>  晴天钟产品选择，可为 ${products.join(', ')}`, { type: 'string', fallback: 'civil' })
     .action(async ({ options }, lon, lat) => {
       if (!lon || !lat) return '请输入经纬度。'
       const { product } = options
@@ -19,9 +20,9 @@ export function apply(ctx: Context) {
           params: { lon, lat, lang, unit },
           responseType: 'arraybuffer',
         })
-        return `[CQ:image,file=base64://${Buffer.from(data).toString('base64')}]`
+        return segment.image('base64://' + Buffer.from(data).toString('base64'))
       } catch (error) {
-        console.log(error.toJSON())
+        ctx.logger('tools').warn(error)
       }
     })
 }

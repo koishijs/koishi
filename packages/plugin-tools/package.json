@@ -1,6 +1,7 @@
 {
   "name": "koishi-plugin-tools",
-  "version": "1.0.4",
+  "version": "2.0.0-beta.10",
+  "description": "Some simple tools for Koishi",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
@@ -8,10 +9,6 @@
   "files": [
     "dist"
   ],
-  "scripts": {
-    "lint": "eslint src --ext .ts",
-    "prepack": "tsc -b"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/koishijs/koishi.git"
@@ -21,11 +18,11 @@
   },
   "homepage": "https://github.com/koishijs/koishi#readme",
   "devDependencies": {
-    "@types/qrcode": "^1.3.5"
+    "@types/qrcode": "^1.4.0"
   },
   "peerDependencies": {
-    "koishi-core": "^2.5.2",
-    "koishi-utils": "^3.2.1"
+    "koishi-core": "^3.0.0",
+    "koishi-utils": "^4.0.1"
   },
   "dependencies": {
     "axios": "^0.21.1",

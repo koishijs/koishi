@@ -1,6 +1,4 @@
-import { App, Session } from 'koishi-core'
-import { simplify, makeArray } from 'koishi-utils'
-import {} from 'koishi-adapter-cqhttp'
+import { App, Session, simplify } from 'koishi-core'
 
 export interface Respondent {
   match: string | RegExp
@@ -15,80 +13,47 @@ export interface ThrottleConfig {
 // TODO pending typescript official helper
 type Awaited<T> = T | Promise<T>
 
-export type RequestHandler = string | boolean | ((session: Session) => Awaited<string | boolean | void>)
-export type WelcomeMessage = string | ((session: Session) => string | Promise<string>)
+export type RequestHandler = string | boolean | ((session: Session) => Awaited<string | boolean>)
 
 export interface HandlerOptions {
-  onFriend?: RequestHandler
-  onGroupAdd?: RequestHandler
-  onGroupInvite?: RequestHandler
+  onFriendRequest?: RequestHandler
+  onGroupMemberRequest?: RequestHandler
+  onGroupRequest?: RequestHandler
   respondents?: Respondent[]
-  throttle?: ThrottleConfig | ThrottleConfig[]
-  welcome?: WelcomeMessage
 }
 
-const defaultMessage: WelcomeMessage = session => `欢迎新大佬 [CQ:at,qq=${session.userId}]！`
-
-async function getHandleResult(handler: RequestHandler, session: Session): Promise<any> {
-  return typeof handler === 'function' ? handler(session) : handler
+async function getHandleResult(handler: RequestHandler, session: Session, prefer: boolean): Promise<[boolean, string?]> {
+  const result = typeof handler === 'function' ? await handler(session) : handler
+  if (typeof result === 'string') {
+    return [prefer, result]
+  } else if (result !== undefined) {
+    return [result]
+  }
 }
 
 export default function apply(ctx: App, options: HandlerOptions = {}) {
-  ctx.on('request/friend', async (session) => {
-    const result = await getHandleResult(options.onFriend, session)
-    return result !== undefined && session.$bot.setFriendAddRequest(session.flag, result)
+  ctx.on('friend-request', async (session) => {
+    const result = await getHandleResult(options.onFriendRequest, session, true)
+    return session.bot.handleFriendRequest(session.messageId, ...result)
   })
 
-  ctx.on('request/group/add', async (session) => {
-    const result = await getHandleResult(options.onGroupAdd, session)
-    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subType, result)
+  ctx.on('group-request', async (session) => {
+    const result = await getHandleResult(options.onGroupRequest, session, false)
+    return session.bot.handleGroupRequest(session.messageId, ...result)
   })
 
-  ctx.on('request/group/invite', async (session) => {
-    const result = await getHandleResult(options.onGroupInvite, session)
-    return result !== undefined && session.$bot.setGroupAddRequest(session.flag, session.subType, result)
+  ctx.on('group-member-request', async (session) => {
+    const result = await getHandleResult(options.onGroupMemberRequest, session, false)
+    return session.bot.handleGroupMemberRequest(session.messageId, ...result)
   })
 
-  const { respondents = [], welcome = defaultMessage } = options
-
+  const { respondents = [] } = options
   respondents.length && ctx.middleware((session, next) => {
-    const message = simplify(session.message)
+    const message = simplify(session.content)
     for (const { match, reply } of respondents) {
       const capture = typeof match === 'string' ? message === match && [message] : message.match(match)
-      if (capture) return session.$send(typeof reply === 'string' ? reply : reply(...capture))
+      if (capture) return session.send(typeof reply === 'string' ? reply : reply(...capture))
     }
     return next()
-  })
-
-  const throttleConfig = makeArray(options.throttle)
-  if (throttleConfig.length) {
-    const counters: Record<number, number> = {}
-    for (const { interval, messages } of throttleConfig) {
-      counters[interval] = messages
-    }
-
-    ctx.on('before-send', () => {
-      for (const { interval } of throttleConfig) {
-        counters[interval]--
-        setTimeout(() => counters[interval]++, interval)
-      }
-    })
-
-    ctx.prependMiddleware((session, next) => {
-      for (const interval in counters) {
-        if (counters[interval] <= 0) return
-      }
-      return next()
-    })
-  }
-
-  ctx.on('group-increase', async (session) => {
-    if (ctx.bots[session.userId]) return
-    if (ctx.database) {
-      const group = await ctx.database.getGroup(session.groupId, 0, ['assignee'])
-      if (group.assignee !== session.selfId) return
-    }
-    const output = typeof welcome === 'string' ? welcome : await welcome(session)
-    await session.$bot.sendGroupMsg(session.groupId, output)
   })
 }

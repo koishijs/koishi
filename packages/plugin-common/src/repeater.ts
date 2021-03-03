@@ -1,19 +1,19 @@
-import { Context, Session } from 'koishi-core'
+import { Context } from 'koishi-core'
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
     'repeater'(session: Session, state: RepeatState): void
   }
 }
 
 interface RepeatState {
-  message: string
+  content: string
   repeated: boolean
   times: number
   users: Record<number, number>
 }
 
-type RepeatHandler = (state: RepeatState, message: string, userId: number) => void | string
+type RepeatHandler = (state: RepeatState, content: string, userId: string) => void | string
 
 export interface RepeaterOptions {
   onRepeat?: RepeatHandler
@@ -23,46 +23,46 @@ export interface RepeaterOptions {
 export default function apply(ctx: Context, options: RepeaterOptions = {}) {
   ctx = ctx.group()
 
-  const states: Record<number, RepeatState> = {}
+  const states: Record<string, RepeatState> = {}
 
-  function getState(groupId: number) {
-    return states[groupId] || (states[groupId] = {
-      message: '',
+  function getState(id: string) {
+    return states[id] || (states[id] = {
+      content: '',
       repeated: false,
       times: 0,
       users: {},
     })
   }
 
-  ctx.on('before-send', ({ groupId, message }) => {
-    const state = getState(groupId)
+  ctx.before('send', ({ cid, content }) => {
+    const state = getState(cid)
     state.repeated = true
-    if (state.message === message) {
+    if (state.content === content) {
       state.times += 1
     } else {
-      state.message = message
+      state.content = content
       state.times = 1
       state.users = {}
     }
   })
 
   ctx.middleware((session, next) => {
-    const { message, groupId, userId } = session
+    const { content, uid, userId } = session
 
     // never respond to messages from self
-    if (ctx.bots[userId]) return
+    if (ctx.bots[uid]) return
 
-    const state = getState(groupId)
+    const state = getState(session.cid)
     const check = (handle: RepeatHandler) => {
-      const text = handle?.(state, message, userId)
+      const text = handle?.(state, content, userId)
       return text && next(() => {
         ctx.emit('repeater', session, state)
-        return session.$send(text)
+        return session.send(text)
       })
     }
 
     // duplicate repeating & normal repeating
-    if (message === state.message) {
+    if (content === state.content) {
       state.times += 1
       state.users[userId] = (state.users[userId] || 0) + 1
       return check(options.onRepeat) || next()
@@ -73,7 +73,7 @@ export default function apply(ctx: Context, options: RepeaterOptions = {}) {
     if (result) return result
 
     // unrepeated message
-    state.message = message
+    state.content = content
     state.repeated = false
     state.times = 1
     state.users = { [userId]: 1 }

@@ -1,16 +1,10 @@
 import { Context } from 'koishi-core'
-import { Random } from 'koishi-utils'
+import { Random, segment } from 'koishi-utils'
 import { createHmac } from 'crypto'
 import { resolve } from 'path'
 import { promises as fs, existsSync, readdirSync } from 'fs'
 import { Dialogue } from '../utils'
-import axios from 'axios'
-
-declare module 'koishi-core/dist/app' {
-  interface App {
-    getImageServerStatus (): Promise<ImageServerStatus>
-  }
-}
+import axios, { AxiosRequestConfig } from 'axios'
 
 declare module '../utils' {
   namespace Dialogue {
@@ -20,6 +14,7 @@ declare module '../utils' {
       uploadKey?: string
       uploadPath?: string
       uploadServer?: string
+      axiosConfig?: AxiosRequestConfig
     }
   }
 }
@@ -34,8 +29,10 @@ const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/
 export default function apply(ctx: Context, config: Dialogue.Config) {
   const logger = ctx.logger('teach')
   const { uploadKey, imagePath, imageServer, uploadPath, uploadServer } = config
+  const axiosConfig = { ...ctx.app.options.axiosConfig, ...config.axiosConfig }
 
   let downloadFile: (file: string, url: string) => Promise<void>
+  let getStatus: () => Promise<ImageServerStatus>
 
   if (uploadServer) {
     downloadFile = async (file, url) => {
@@ -44,11 +41,11 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         params.salt = Random.uuid()
         params.sign = createHmac('sha1', uploadKey).update(file + params.salt).digest('hex')
       }
-      await axios.get(uploadServer, { params })
+      await axios.get(uploadServer, { params, ...axiosConfig })
     }
 
-    ctx.app.getImageServerStatus = async () => {
-      const { data } = await axios.get(uploadServer)
+    getStatus = async () => {
+      const { data } = await axios.get(uploadServer, axiosConfig)
       return data
     }
   }
@@ -61,7 +58,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     downloadFile = async (file, url) => {
       const path = resolve(imagePath, file)
       if (!existsSync(path)) {
-        const { data } = await axios.get<ArrayBuffer>(url, { responseType: 'arraybuffer' })
+        const { data } = await axios.get<ArrayBuffer>(url, { responseType: 'arraybuffer', ...axiosConfig })
         await fs.writeFile(path, Buffer.from(data))
         totalCount += 1
         totalSize += data.byteLength
@@ -73,14 +70,17 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       totalSize += size
     }))
 
-    const getStatus = ctx.app.getImageServerStatus = async () => {
+    getStatus = async () => {
       await statPromise
       return { totalCount, totalSize }
     }
 
-    ctx.router.get(uploadPath, async (ctx) => {
+    ctx.app.router.get(uploadPath, async (ctx) => {
       const { salt, sign, url, file } = ctx.query
       if (!file) return ctx.body = await getStatus()
+      if (Array.isArray(file) || Array.isArray(url)) {
+        return ctx.status = 400
+      }
 
       if (uploadKey) {
         if (!salt || !sign) return ctx.status = 400
@@ -94,8 +94,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   }
 
   if (imageServer && downloadFile) {
-    ctx.on('dialogue/before-modify', async ({ options }) => {
-      let { answer } = options
+    ctx.before('dialogue/modify', async ({ args }) => {
+      let answer = args[1]
       if (!answer) return
       try {
         let output = ''
@@ -106,12 +106,23 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
           output += answer.slice(0, capture.index)
           answer = answer.slice(capture.index + text.length)
           await downloadFile(file, url)
-          output += `[CQ:image,file=${imageServer}/${file}]`
+          output += segment.image(`${imageServer}/${file}`)
         }
-        options.answer = output + answer
+        args[1] = output + answer
       } catch (error) {
         logger.warn(error.message)
         return '上传图片时发生错误。'
+      }
+    })
+  }
+
+  if (getStatus) {
+    ctx.on('dialogue/status', async () => {
+      try {
+        const { totalSize, totalCount } = await getStatus()
+        return `收录图片 ${totalCount} 张，总体积 ${+(totalSize / (1 << 20)).toFixed(1)} MB。`
+      } catch (err) {
+        ctx.logger('dialogue').warn(err)
       }
     })
   }

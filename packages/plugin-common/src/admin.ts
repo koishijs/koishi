@@ -1,16 +1,64 @@
-import { isInteger, difference, observe, Time, enumKeys } from 'koishi-utils'
-import { Context, getTargetId, User, Group, Command, ParsedArgv } from 'koishi-core'
+import { isInteger, difference, observe, Time, enumKeys, Random, template } from 'koishi-utils'
+import { Context, User, Channel, Command, Argv, Platform, Session } from 'koishi-core'
 
-type AdminAction<U extends User.Field, G extends Group.Field, O extends {}, T>
-  = (argv: ParsedArgv<U | 'authority', G, O> & { target: T }, ...args: string[])
+type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
+  = (argv: Argv<U | 'authority', G, A, O> & { target: T }, ...args: A)
     => void | string | Promise<void | string>
 
-declare module 'koishi-core/dist/command' {
-  interface Command<U, G, O> {
-    adminUser(callback: AdminAction<U, G, O, User.Observed<U | 'authority'>>): this
-    adminGruop(callback: AdminAction<U, G, O, Group.Observed<G>>): this
+declare module 'koishi-core' {
+  interface Command<U, G, A, O> {
+    adminUser(callback: AdminAction<U, G, A, O, User.Observed<U | 'authority'>>): this
+    adminChannel(callback: AdminAction<U, G, A, O, Channel.Observed<G>>): this
+  }
+
+  interface EventMap {
+    'common/callme'(name: string, session: Session): string | void
   }
 }
+
+/* eslint-disable quote-props */
+template.set('admin', {
+  // flag
+  'unknown-flag': '未找到标记 {0}。',
+  'all-flags': '全部标记为：{0}。',
+  'no-flags': '未设置任何标记。',
+  'current-flags': '当前的标记为：{0}。',
+
+  // admin helper
+  'user-not-found': '未找到指定的用户。',
+  'user-unchanged': '用户数据未改动。',
+  'user-updated': '用户数据已修改。',
+  'channel-not-found': '未找到指定的频道。',
+  'channel-unchanged': '频道数据未改动。',
+  'channel-updated': '频道数据已修改。',
+  'not-in-group': '当前不在群组上下文中，请使用 -t 参数指定目标频道。',
+})
+
+template.set('callme', {
+  'current': '好的呢，{0}！',
+  'unnamed': '你还没有给自己起一个称呼呢~',
+  'unchanged': '称呼未发生变化。',
+  'empty': '称呼不能为空。',
+  'invalid': '称呼中禁止包含纯文本以外的内容。',
+  'duplicate': '禁止与其他用户重名。',
+  'updated': '好的，{0}，请多指教！',
+  'failed': '修改称呼失败。',
+})
+
+template.set('bind', {
+  'generated-1': [
+    '请在 5 分钟内使用你的账号在要绑定的平台内向机器人发送以下文本：',
+    '{0}',
+    '注意：每个账号只能绑定到每个平台一次，此操作将会抹去你当前平台上的数据，请谨慎操作！',
+  ].join('\n'),
+  'generated-2': [
+    '令牌核验成功！下面将进行第二步操作。',
+    '请在 5 分钟内使用你的账号在之前的平台内向机器人发送以下文本：',
+    '{0}',
+  ].join('\n'),
+  'failed': '账号绑定失败：你已经绑定过该平台。',
+  'success': '账号绑定成功！',
+})
 
 interface FlagOptions {
   list?: boolean
@@ -20,15 +68,15 @@ interface FlagOptions {
 
 type FlagMap = Record<string, number> & Record<number, string>
 
-interface FlagArgv extends ParsedArgv<never, never, FlagOptions> {
-  target: User.Observed<'flag'> | Group.Observed<'flag'>
+interface FlagArgv extends Argv<never, never, string[], FlagOptions> {
+  target: User.Observed<'flag'> | Channel.Observed<'flag'>
 }
 
 function flagAction(map: any, { target, options }: FlagArgv, ...flags: string[]): string
 function flagAction(map: FlagMap, { target, options }: FlagArgv, ...flags: string[]) {
   if (options.set || options.unset) {
     const notFound = difference(flags, enumKeys(map))
-    if (notFound.length) return `未找到标记 ${notFound.join(', ')}。`
+    if (notFound.length) return template('admin.unknown-flag', notFound.join(', '))
     for (const name of flags) {
       options.set ? target.flag |= map[name] : target.flag &= ~map[name]
     }
@@ -36,7 +84,7 @@ function flagAction(map: FlagMap, { target, options }: FlagArgv, ...flags: strin
   }
 
   if (options.list) {
-    return `全部标记为：${enumKeys(map).join(', ')}。`
+    return template('admin.all-flags', enumKeys(map).join(', '))
   }
 
   let flag = target.flag
@@ -46,86 +94,188 @@ function flagAction(map: FlagMap, { target, options }: FlagArgv, ...flags: strin
     flag -= value
     keys.unshift(map[value])
   }
-  if (!keys.length) return '未设置任何标记。'
-  return `当前的标记为：${keys.join(', ')}。`
+  if (!keys.length) return template('admin.no-flags')
+  return template('admin.current-flags', keys.join(', '))
 }
 
-Command.prototype.adminUser = function (this: Command<never, never, { user?: string }>, callback) {
+Command.prototype.adminUser = function (this: Command, callback) {
+  const { database } = this.app
   const command = this
     .userFields(['authority'])
-    .option('user', '-u [user]  指定目标用户', { authority: 3 })
+    .option('target', '-t [user:user]  指定目标用户', { authority: 3 })
+    .userFields(({ options }, fields) => {
+      if (!options.target) return
+      const [platform] = options.target.split(':')
+      fields.add(platform as Platform)
+    })
 
-  command._action = async (argv) => {
+  command._actions.unshift(async (argv) => {
     const { options, session, args } = argv
-    const fields = Command.collect(argv, 'user')
-    let target: User.Observed
-    if (options.user) {
-      const qq = getTargetId(options.user)
-      if (!qq) return '请指定正确的目标。'
-      const { database } = session.$app
-      const data = await database.getUser(qq, -1, [...fields])
-      if (!data) return '未找到指定的用户。'
-      if (qq === session.userId) {
-        target = await session.$observeUser(fields)
-      } else if (session.$user.authority <= data.authority) {
-        return '权限不足。'
-      } else {
-        target = observe(data, diff => database.setUser(qq, diff), `user ${qq}`)
-      }
+    const fields = session.collect('user', argv)
+    let target: User.Observed<never>
+    if (!options.target) {
+      target = await session.observeUser(fields)
     } else {
-      target = await session.$observeUser(fields)
+      const [platform, userId] = Argv.parsePid(options.target)
+      if (session.user[platform] === userId) {
+        target = await session.observeUser(fields)
+      } else {
+        const data = await database.getUser(platform, userId, [...fields])
+        if (!data) return template('admin.user-not-found')
+        if (session.user.authority <= data.authority) {
+          return template('internal.low-authority')
+        } else {
+          target = observe(data, diff => database.setUser(platform, userId, diff), `user ${options.target}`)
+        }
+      }
     }
     const diffKeys = Object.keys(target._diff)
     const result = await callback({ ...argv, target }, ...args)
     if (typeof result === 'string') return result
-    if (!difference(Object.keys(target._diff), diffKeys).length) return '用户数据未改动。'
+    if (!difference(Object.keys(target._diff), diffKeys).length) {
+      return template('admin.user-unchanged')
+    }
     await target._update()
-    return '用户数据已修改。'
-  }
+    return template('admin.user-updated')
+  })
 
   return command
 }
 
-Command.prototype.adminGruop = function (this: Command<never, never, { group?: string }>, callback) {
+Command.prototype.adminChannel = function (this: Command, callback) {
+  const { database } = this.app
   const command = this
     .userFields(['authority'])
-    .option('group', '-g [group]  指定目标群', { authority: 3 })
+    .option('target', '-t [channel:channel]  指定目标频道', { authority: 3 })
 
-  command._action = async (argv) => {
-    const { options, session, args } = argv
-    const fields = Command.collect(argv, 'group')
-    let target: Group.Observed
-    if (options.group) {
-      const { database } = session.$app
-      if (!isInteger(options.group) || options.group <= 0) return '请指定正确的目标。'
-      const data = await database.getGroup(options.group, -1, [...fields])
-      if (!data) return '未找到指定的群。'
-      target = observe(data, diff => database.setGroup(options.group, diff), `group ${options.group}`)
-    } else if (session.messageType === 'group') {
-      target = await session.$observeGroup(fields)
+  command._actions.unshift(async (argv, ...args) => {
+    const { options, session } = argv
+    const fields = session.collect('channel', argv)
+    let target: Channel.Observed
+    if ((!options.target || options.target === session.cid) && session.subtype === 'group') {
+      target = await session.observeChannel(fields)
+    } else if (options.target) {
+      const [platform, channelId] = Argv.parsePid(options.target)
+      const data = await database.getChannel(platform, channelId, [...fields])
+      if (!data) return template('admin.channel-not-found')
+      target = observe(data, diff => database.setChannel(platform, channelId, diff), `channel ${options.target}`)
     } else {
-      return '当前不在群上下文中，请使用 -g 参数指定目标群。'
+      return template('admin.not-in-group')
     }
     const result = await callback({ ...argv, target }, ...args)
     if (typeof result === 'string') return result
-    if (!Object.keys(target._diff).length) return '群数据未改动。'
+    if (!Object.keys(target._diff).length) {
+      return template('admin.channel-unchanged')
+    }
     await target._update()
-    return '群数据已修改。'
-  }
+    return template('admin.channel-updated')
+  })
 
   return command
 }
 
-export function apply(ctx: Context) {
-  ctx.command('user', '用户管理', { authority: 3 })
-  ctx.command('group', '群管理', { authority: 3 })
+export interface AdminConfig {
+  admin?: boolean
+}
 
-  ctx.command('user.auth <value>', '权限信息', { authority: 4 })
-    .adminUser(({ session, target }, value) => {
+export default function apply(ctx: Context, config: AdminConfig = {}) {
+  if (config.admin === false) return
+  ctx = ctx.select('database')
+
+  ctx.command('common/user', '用户管理', { authority: 3 })
+  ctx.command('common/channel', '频道管理', { authority: 3 })
+
+  ctx.command('common/callme [name:text]', '修改自己的称呼')
+    .userFields(['id', 'name'])
+    .shortcut('叫我', { prefix: true, fuzzy: true, greedy: true })
+    .action(async ({ session }, name) => {
+      const { user } = session
+      if (!name) {
+        if (user.name) {
+          return template('callme.current', session.username)
+        } else {
+          return template('callme.unnamed')
+        }
+      } else if (name === user.name) {
+        return template('callme.unchanged')
+      } else if (!(name = name.trim())) {
+        return template('callme.empty')
+      } else if (name.includes('[CQ:')) {
+        return template('callme.invalid')
+      }
+
+      const result = ctx.bail('common/callme', name, session)
+      if (result) return result
+
+      try {
+        user.name = name
+        await user._update()
+        return template('callme.updated', session.username)
+      } catch (error) {
+        if (error[Symbol.for('koishi.error-type')] === 'duplicate-entry') {
+          return template('callme.duplicate')
+        } else {
+          ctx.logger('common').warn(error)
+          return template('callme.failed')
+        }
+      }
+    })
+
+  // 1: group (1st step)
+  // 0: private
+  // -1: group (2nd step)
+  type TokenData = [platform: Platform, id: string, pending: number]
+  const tokens: Record<string, TokenData> = {}
+
+  function generateToken(session: Session, pending: number) {
+    const token = 'koishi/' + Random.uuid()
+    tokens[token] = [session.platform, session.userId, pending]
+    setTimeout(() => delete tokens[token], 5 * Time.minute)
+    return token
+  }
+
+  ctx.command('user/bind', '绑定到账号', { authority: 0 })
+    .action(({ session }) => {
+      const token = generateToken(session, +(session.subtype === 'group'))
+      return template('bind.generated-1', token)
+    })
+
+  ctx.middleware(async (session, next) => {
+    const data = tokens[session.content]
+    if (!data) return next()
+    if (data[2] < 0) {
+      const sess = new Session(ctx.app, { ...session, platform: data[0], userId: data[1] })
+      const user = await sess.observeUser([session.platform])
+      user[session.platform] = session.userId as never
+      delete tokens[session.content]
+      await user._update()
+      return session.send(template('bind.success'))
+    } else {
+      const user = await session.observeUser(['authority', data[0]])
+      if (!user.authority) return session.send(template('internal.low-authority'))
+      if (user[data[0]]) return session.send(template('bind.failed'))
+      delete tokens[session.content]
+      if (data[2]) {
+        const token = generateToken(session, -1)
+        return session.send(template('bind.generated-2', token))
+      } else {
+        user[data[0] as any] = data[1]
+        await user._update()
+        return session.send(template('bind.success'))
+      }
+    }
+  }, true)
+
+  ctx.command('user/authorize <value>', '权限信息', { authority: 4 })
+    .alias('auth')
+    .adminUser(async ({ session, target }, value) => {
       const authority = Number(value)
       if (!isInteger(authority) || authority < 0) return '参数错误。'
-      if (authority >= session.$user.authority) return '权限不足。'
-      target.authority = authority
+      if (authority >= session.user.authority) return template('internal.low-authority')
+      if (authority === target.authority) return template('admin.user-unchanged')
+      await ctx.database.createUser(session.platform, target[session.platform], { authority })
+      target._merge({ authority })
+      return template('admin.user-updated')
     })
 
   ctx.command('user.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
@@ -135,8 +285,7 @@ export function apply(ctx: Context) {
     .option('unset', '-S  删除标记', { authority: 4 })
     .adminUser(flagAction.bind(null, User.Flag))
 
-  ctx.command('usage [key]', '调用次数信息')
-    .alias('usages')
+  ctx.command('user.usage [key] [value]', '调用次数信息', { authority: 1 })
     .userFields(['usage'])
     .option('set', '-s  设置调用次数', { authority: 4 })
     .option('clear', '-c  清空调用次数', { authority: 4 })
@@ -165,8 +314,7 @@ export function apply(ctx: Context) {
       return output.join('\n')
     })
 
-  ctx.command('timer [key]', '定时器信息')
-    .alias('timers')
+  ctx.command('user.timer [key] [value]', '定时器信息', { authority: 1 })
     .userFields(['timers'])
     .option('set', '-s  设置定时器', { authority: 4 })
     .option('clear', '-c  清空定时器', { authority: 4 })
@@ -200,18 +348,20 @@ export function apply(ctx: Context) {
       return output.join('\n')
     })
 
-  ctx.command('group.assign [bot]', '受理者账号', { authority: 4 })
-    .groupFields(['assignee'])
-    .adminGruop(({ session, target }, value) => {
-      const assignee = value ? getTargetId(value) : session.selfId
-      if (!isInteger(assignee) || assignee < 0) return '参数错误。'
-      target.assignee = assignee
+  ctx.command('channel/assign [bot:user]', '受理者账号', { authority: 4 })
+    .channelFields(['assignee'])
+    .adminChannel(async ({ session, target }, value) => {
+      const assignee = value ? Argv.parsePid(value)[1] : session.selfId
+      if (assignee === target.assignee) return template('admin.channel-unchanged')
+      await ctx.database.createChannel(session.platform, session.channelId, { assignee })
+      target._merge({ assignee })
+      return template('admin.channel-updated')
     })
 
-  ctx.command('group.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
-    .groupFields(['flag'])
+  ctx.command('channel.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
+    .channelFields(['flag'])
     .option('list', '-l  标记列表')
     .option('set', '-s  添加标记', { authority: 4 })
     .option('unset', '-S  删除标记', { authority: 4 })
-    .adminGruop(flagAction.bind(null, Group.Flag))
+    .adminChannel(flagAction.bind(null, Channel.Flag))
 }

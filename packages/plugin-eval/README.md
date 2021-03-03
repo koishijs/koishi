@@ -2,4 +2,4 @@
 
 Execute JavaScript in Koishi.
 
-Note: Run with `--enable-source-maps`.
+Note: Run with `--experimental-vm-modules --enable-source-maps`.

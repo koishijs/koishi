@@ -1,29 +1,27 @@
 import { extendDatabase, Context } from 'koishi-core'
 import { defineProperty, Observed, clone, intersection } from 'koishi-utils'
 import { Dialogue, DialogueTest, equal } from 'koishi-plugin-teach'
-import * as memory from 'koishi-test-utils/dist/memory'
+import MemoryDatabase from 'koishi-test-utils'
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
     'dialogue/memory'(dialogue: Dialogue, test: DialogueTest): boolean | void
   }
 }
 
-extendDatabase(memory.MemoryDatabase, {
+extendDatabase(MemoryDatabase, {
   async getDialoguesById(ids) {
     if (!ids.length) return []
     const table = this.$table('dialogue')
-    const dialogues = Object.keys(table)
-      .filter(id => ids.includes(+id))
-      .map(id => clone(table[id]))
+    const dialogues = table.filter(row => ids.includes(row.id)).map<Dialogue>(clone)
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
     return dialogues
   },
 
   async getDialoguesByTest(test: DialogueTest) {
-    const dialogues = Object.values(this.$table('dialogue')).filter((dialogue) => {
+    const dialogues = this.$table('dialogue').filter((dialogue) => {
       return !this.app.bail('dialogue/memory', dialogue, test)
-    }).map(clone)
+    }).map<Dialogue>(clone)
     dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
     return dialogues.filter((data) => {
       if (!test.groups || test.partial) return true
@@ -32,7 +30,7 @@ extendDatabase(memory.MemoryDatabase, {
   },
 
   async createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
-    dialogue = this.$create('dialogue', dialogue)
+    this.$create('dialogue', dialogue)
     Dialogue.addHistory(dialogue, '添加', argv, revert)
     return dialogue
   },
@@ -88,10 +86,10 @@ extendDatabase(memory.MemoryDatabase, {
 })
 
 export function apply(ctx: Context) {
-  ctx.plugin(memory)
+  ctx.database.$store.dialogue = []
 
   // flag
-  ctx.on('dialogue/flag', (flag) => {
+  ctx.on('dialogue/flag', (flag: string) => {
     ctx.on('dialogue/memory', (data, test) => {
       if (test[flag] !== undefined) {
         return !(data.flag & Dialogue.Flag[flag]) === test[flag]
@@ -102,13 +100,13 @@ export function apply(ctx: Context) {
   // internal
   ctx.on('dialogue/memory', (data, { regexp, answer, question, original }) => {
     if (regexp) {
-      if (answer !== undefined && !new RegExp(answer, 'i').test(data.answer)) return true
-      if (question !== undefined && !new RegExp(question, 'i').test(data.question)) return true
+      if (answer && !new RegExp(answer, 'i').test(data.answer)) return true
+      if (question && !new RegExp(question, 'i').test(data.question)) return true
       return
     }
 
-    if (answer !== undefined && answer !== data.answer) return true
-    if (question !== undefined) {
+    if (answer && answer !== data.answer) return true
+    if (question) {
       if (regexp === false || !(data.flag & Dialogue.Flag.regexp)) return question !== data.question
       const questionRegExp = new RegExp(data.question, 'i')
       return !questionRegExp.test(question) && !questionRegExp.test(original)

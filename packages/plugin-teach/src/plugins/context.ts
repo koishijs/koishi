@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
-import { union, difference } from 'koishi-utils'
-import { Dialogue, equal, RE_GROUPS } from '../utils'
+import { union, difference, defineProperty } from 'koishi-utils'
+import { Dialogue, equal } from '../utils'
 
 declare module '../utils' {
   interface DialogueTest {
@@ -14,17 +14,13 @@ declare module '../utils' {
   }
 
   namespace Dialogue {
-    interface Argv {
-      groups?: string[]
-      partial?: boolean
-      reversed?: boolean
-    }
-
     interface Config {
       useContext?: boolean
     }
   }
 }
+
+export const RE_GROUPS = /^\d+(,\d+)*$/
 
 export default function apply(ctx: Context, config: Dialogue.Config) {
   if (config.useContext === false) return
@@ -35,56 +31,59 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('disableGlobal', '-D  在所有环境下禁用问答', { authority })
     .option('enable', '-e  在当前环境下启用问答')
     .option('enableGlobal', '-E  在所有环境下启用问答', { authority })
-    .option('groups', '-g <gids>  设置具体的生效环境', { authority, type: 'string', validate: RE_GROUPS })
+    .option('groups', '-g <gids:string>  设置具体的生效环境', { authority, type: RE_GROUPS })
     .option('global', '-G  无视上下文搜索')
-
-  ctx.on('dialogue/validate', (argv) => {
-    const { options, session } = argv
-
-    if (options.disable && options.enable) {
-      return '选项 -d, -e 不能同时使用。'
-    } else if (options.disableGlobal && options.enableGlobal) {
-      return '选项 -D, -E 不能同时使用。'
-    } else if (options.disableGlobal && options.disable) {
-      return '选项 -D, -d 不能同时使用。'
-    } else if (options.enable && options.enableGlobal) {
-      return '选项 -E, -e 不能同时使用。'
-    }
-
-    let noContextOptions = false
-    if (options.disable) {
-      argv.reversed = true
-      argv.partial = !options.enableGlobal
-      argv.groups = ['' + session.groupId]
-    } else if (options.disableGlobal) {
-      argv.reversed = !!options.groups
-      argv.partial = false
-      argv.groups = options.enable ? ['' + session.groupId] : []
-    } else if (options.enableGlobal) {
-      argv.reversed = !options.groups
-      argv.partial = false
-      argv.groups = []
-    } else {
-      noContextOptions = !options.enable
-      if (options.target ? options.enable : !options.global) {
-        argv.reversed = false
-        argv.partial = true
-        argv.groups = ['' + session.groupId]
+    .check(({ options, session }) => {
+      if (options.disable && options.enable) {
+        return '选项 -d, -e 不能同时使用。'
+      } else if (options.disableGlobal && options.enableGlobal) {
+        return '选项 -D, -E 不能同时使用。'
+      } else if (options.disableGlobal && options.disable) {
+        return '选项 -D, -d 不能同时使用。'
+      } else if (options.enable && options.enableGlobal) {
+        return '选项 -E, -e 不能同时使用。'
       }
-    }
 
-    if ('groups' in options) {
-      if (noContextOptions) {
-        return '选项 -g, --groups 必须与 -d/-D/-e/-E 之一同时使用。'
+      let noContextOptions = false
+      let reversed: boolean, partial: boolean, groups: string[]
+      if (options.disable) {
+        reversed = true
+        partial = !options.enableGlobal
+        groups = [session.cid]
+      } else if (options.disableGlobal) {
+        reversed = !!options.groups
+        partial = false
+        groups = options.enable ? [session.cid] : []
+      } else if (options.enableGlobal) {
+        reversed = !options.groups
+        partial = false
+        groups = []
       } else {
-        argv.groups = options.groups ? options.groups.split(',') : []
+        noContextOptions = !options.enable
+        if (options['target'] ? options.enable : !options.global) {
+          reversed = false
+          partial = true
+          groups = [session.cid]
+        }
       }
-    } else if (session.messageType !== 'group' && argv.partial) {
-      return '非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --groups 选项。'
-    }
-  })
 
-  ctx.on('dialogue/modify', ({ groups, partial, reversed }, data) => {
+      defineProperty(options, 'reversed', reversed)
+      defineProperty(options, 'partial', partial)
+      if ('groups' in options) {
+        if (noContextOptions) {
+          return '选项 -g, --groups 必须与 -d/-D/-e/-E 之一同时使用。'
+        } else {
+          defineProperty(options, 'groups', options.groups ? options.groups.split(',').map(id => `${session.platform}:${id}`) : [])
+        }
+      } else if (session.subtype !== 'group' && options['partial']) {
+        return '非群聊上下文中请使用 -E/-D 进行操作或指定 -g, --groups 选项。'
+      } else {
+        defineProperty(options, 'groups', groups)
+      }
+    })
+
+  ctx.on('dialogue/modify', ({ options }, data) => {
+    const { groups, partial, reversed } = options
     if (!groups) return
     if (!data.groups) data.groups = []
     if (partial) {
@@ -102,14 +101,14 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.on('dialogue/before-search', ({ reversed, partial, groups }, test) => {
-    test.partial = partial
-    test.reversed = reversed
-    test.groups = groups
+  ctx.before('dialogue/search', ({ options }, test) => {
+    test.partial = options.partial
+    test.reversed = options.reversed
+    test.groups = options.groups
   })
 
   ctx.on('dialogue/detail', ({ groups, flag }, output, { session }) => {
-    const thisGroup = session.messageType === 'group' && groups.includes('' + session.groupId)
+    const thisGroup = session.subtype === 'group' && groups.includes(session.cid)
     output.push(`生效环境：${flag & Dialogue.Flag.complement
       ? thisGroup
         ? groups.length - 1 ? `除本群等 ${groups.length} 个群外的所有群` : '除本群'
@@ -119,10 +118,10 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
         : groups.length ? `${groups.length} 个群` : '全局禁止'}`)
   })
 
-  ctx.on('dialogue/detail-short', ({ groups, flag }, output, argv) => {
-    if (!argv.groups && argv.session.messageType === 'group') {
+  ctx.on('dialogue/detail-short', ({ groups, flag }, output, { session, options }) => {
+    if (!options.groups && session.subtype === 'group') {
       const isReversed = flag & Dialogue.Flag.complement
-      const hasGroup = groups.includes('' + argv.session.groupId)
+      const hasGroup = groups.includes(session.cid)
       output.unshift(!isReversed === hasGroup ? isReversed ? 'E' : 'e' : isReversed ? 'd' : 'D')
     }
   })
@@ -130,6 +129,6 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.on('dialogue/receive', ({ session, test }) => {
     test.partial = true
     test.reversed = false
-    test.groups = ['' + session.groupId]
+    test.groups = [session.cid]
   })
 }

@@ -1,121 +1,129 @@
 import MysqlDatabase, { Config } from './database'
-import { User, Group, Database, extendDatabase, Context } from 'koishi-core'
+import { User, Channel, extendDatabase, Context } from 'koishi-core'
+import { difference } from 'koishi-utils'
 
 export * from './database'
 export default MysqlDatabase
 
-declare module 'koishi-core/dist/database' {
-  interface Database extends MysqlDatabase {}
-}
-
-export const userGetters: Record<string, () => string> = {}
-
-function inferFields(keys: readonly string[]) {
-  return keys.map(key => key in userGetters ? `${userGetters[key]()} AS ${key}` : key) as User.Field[]
+declare module 'koishi-core' {
+  interface Database {
+    mysql: MysqlDatabase
+  }
 }
 
 extendDatabase(MysqlDatabase, {
-  async getUser(userId, ...args) {
-    const authority = typeof args[0] === 'number' ? args.shift() as number : 0
-    const fields = args[0] ? inferFields(args[0] as any) : User.fields
-    if (fields && !fields.length) return {} as any
-    const [data] = await this.select<User>('user', fields, '`id` = ?', [userId])
-    let fallback: User
-    if (data) {
-      data.id = userId
-    } else if (authority < 0) {
-      return null
-    } else {
-      fallback = User.create(userId, authority)
-      if (authority) {
-        await this.query(
-          'INSERT INTO `user` (' + this.joinKeys(User.fields) + ') VALUES (' + User.fields.map(() => '?').join(', ') + ')',
-          this.formatValues('user', fallback, User.fields),
-        )
-      }
+  async getUser(type, id, _fields) {
+    const fields = _fields ? this.inferFields('user', _fields) : User.fields
+    if (fields && !fields.length) return { [type]: id } as any
+    if (Array.isArray(id)) {
+      if (!id.length) return []
+      const list = id.map(id => this.escape(id)).join(',')
+      return this.select<User>('user', fields, `?? IN (${list})`, [type])
     }
-    return data || fallback
+    const [data] = await this.select<User>('user', fields, '?? = ?', [type, id])
+    return data && { ...data, [type]: id }
   },
 
-  async getUsers(...args) {
-    let ids: readonly number[], fields: readonly User.Field[]
-    if (args.length > 1) {
-      ids = args[0]
-      fields = inferFields(args[1])
-    } else if (args.length && typeof args[0][0] !== 'string') {
-      ids = args[0]
-      fields = User.fields
-    } else {
-      fields = inferFields(args[0] as any)
+  async removeUser(type, id) {
+    await this.query('DELETE FROM `user` WHERE ?? = ?', [type, id])
+  },
+
+  async createUser(type, id, data) {
+    data[type] = id
+    const newKeys = Object.keys(data)
+    const assignments = difference(newKeys, [type]).map((key) => {
+      key = this.escapeId(key)
+      return `${key} = VALUES(${key})`
+    }).join(', ')
+    const user = Object.assign(User.create(type, id), data)
+    const keys = Object.keys(user)
+    await this.query(
+      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
+      ON DUPLICATE KEY UPDATE ${assignments}`,
+      ['user', ...this.formatValues('user', user, keys)],
+    )
+  },
+
+  async setUser(type, id, data) {
+    data[type] = id
+    const keys = Object.keys(data)
+    const assignments = difference(keys, [type]).map((key) => {
+      return `${this.escapeId(key)} = ${this.escape(data[key], 'user', key)}`
+    }).join(', ')
+    await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['user', type, id])
+  },
+
+  async getChannel(type, pid, fields) {
+    if (Array.isArray(pid)) {
+      if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` }))
+      const placeholders = pid.map(() => '?').join(',')
+      return this.select<Channel>('channel', fields, '`id` IN (' + placeholders + ')', pid.map(id => `${type}:${id}`))
     }
-    if (ids && !ids.length) return []
-    return this.select<User>('user', fields, ids && `\`id\` IN (${ids.join(', ')})`)
+    if (fields && !fields.length) return { id: `${type}:${pid}` }
+    const [data] = await this.select<Channel>('channel', fields, '`id` = ?', [`${type}:${pid}`])
+    return data && { ...data, id: `${type}:${pid}` }
   },
 
-  async setUser(userId, data) {
-    await this.update('user', userId, data)
+  async getAssignedChannels(fields, assignMap = this.app.getSelfIds()) {
+    return this.select<Channel>('channel', fields, Object.entries(assignMap).map(([type, ids]) => {
+      return [
+        `LEFT(\`id\`, ${type.length}) = ${this.escape(type)}`,
+        `\`assignee\` IN (${ids.map(id => this.escape(id)).join(',')})`,
+      ].join(' AND ')
+    }).join(' OR '))
   },
 
-  async getGroup(groupId, ...args) {
-    const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
-    const fields = args[0] as any || Group.fields
-    if (fields && !fields.length) return {} as any
-    const [data] = await this.select<Group>('group', fields, '`id` = ?', [groupId])
-    let fallback: Group
-    if (!data) {
-      fallback = Group.create(groupId, selfId)
-      if (selfId && groupId) {
-        await this.query(
-          'INSERT INTO `group` (' + this.joinKeys(Group.fields) + ') VALUES (' + Group.fields.map(() => '?').join(', ') + ')',
-          this.formatValues('group', fallback, Group.fields),
-        )
-      }
-    } else {
-      data.id = groupId
-    }
-    return data || fallback
+  async removeChannel(type, pid) {
+    await this.query('DELETE FROM `channel` WHERE `id` = ?', [`${type}:${pid}`])
   },
 
-  async getAllGroups(...args) {
-    let assignees: readonly number[], fields: readonly Group.Field[]
-    if (args.length > 1) {
-      fields = args[0]
-      assignees = args[1]
-    } else if (args.length && typeof args[0][0] === 'number') {
-      fields = Group.fields
-      assignees = args[0] as any
-    } else {
-      fields = args[0] || Group.fields
-      assignees = await this.app.getSelfIds()
-    }
-    if (!assignees.length) return []
-    return this.select<Group>('group', fields, `\`assignee\` IN (${assignees.join(',')})`)
+  async createChannel(type, pid, data) {
+    data.id = `${type}:${pid}`
+    const newKeys = Object.keys(data)
+    if (!newKeys.length) return
+    const assignments = difference(newKeys, ['id']).map((key) => {
+      key = this.escapeId(key)
+      return `${key} = VALUES(${key})`
+    })
+    const channel = Object.assign(Channel.create(type, pid), data)
+    const keys = Object.keys(channel)
+    await this.query(
+      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})
+      ON DUPLICATE KEY UPDATE ${assignments.join(', ')}`,
+      ['channel', ...this.formatValues('channel', channel, keys)],
+    )
   },
 
-  async setGroup(groupId, data) {
-    await this.update('group', groupId, data)
+  async setChannel(type, pid, data) {
+    data.id = `${type}:${pid}`
+    const keys = Object.keys(data)
+    if (!keys.length) return
+    const assignments = difference(keys, ['id']).map((key) => {
+      return `${this.escapeId(key)} = ${this.escape(data[key], 'channel', key)}`
+    }).join(', ')
+    await this.query(`UPDATE ?? SET ${assignments} WHERE ?? = ?`, ['channel', 'id', data.id])
   },
 })
 
-extendDatabase(MysqlDatabase, (Database) => {
-  Object.assign(Database.tables.user = [
-    'PRIMARY KEY (`id`) USING BTREE',
-    'UNIQUE INDEX `name` (`name`) USING BTREE',
+extendDatabase(MysqlDatabase, ({ tables, Domain }) => {
+  tables.user = Object.assign<any, any>([
+    'primary key (`id`) using btree',
+    'unique index `name` (`name`) using btree',
   ], {
-    id: `BIGINT(20) UNSIGNED NOT NULL COMMENT 'QQ 号'`,
-    name: `VARCHAR(50) NOT NULL COMMENT '昵称' COLLATE 'utf8mb4_general_ci'`,
-    flag: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' COMMENT '状态标签'`,
-    authority: `TINYINT(4) UNSIGNED NOT NULL DEFAULT '0' COMMENT '权限等级'`,
-    usage: `JSON NOT NULL COMMENT ''`,
-    timers: `JSON NOT NULL COMMENT ''`,
+    id: new Domain.String(`bigint(20) unsigned not null auto_increment`),
+    name: `varchar(50) null default null collate 'utf8mb4_general_ci'`,
+    flag: `bigint(20) unsigned not null default '0'`,
+    authority: `tinyint(4) unsigned not null default '0'`,
+    usage: new Domain.Json(),
+    timers: new Domain.Json(),
   })
 
-  Object.assign(Database.tables.group = [
-    'PRIMARY KEY (`id`) USING BTREE',
+  tables.channel = Object.assign<any, any>([
+    'primary key (`id`) using btree',
   ], {
-    id: `BIGINT(20) UNSIGNED NOT NULL COMMENT '群号'`,
-    flag: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' COMMENT '状态标签'`,
-    assignee: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0'`,
+    id: `varchar(50) not null`,
+    flag: `bigint(20) unsigned not null default '0'`,
+    assignee: `varchar(50) null`,
   })
 })
 
@@ -123,7 +131,7 @@ export const name = 'mysql'
 
 export function apply(ctx: Context, config: Config = {}) {
   const db = new MysqlDatabase(ctx.app, config)
-  ctx.database = db as Database
-  ctx.on('before-connect', () => db.start())
-  ctx.on('before-disconnect', () => db.stop())
+  ctx.database = db as any
+  ctx.before('connect', () => db.start())
+  ctx.before('disconnect', () => db.stop())
 }

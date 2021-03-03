@@ -1,19 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { App } from 'koishi-test-utils'
-import { Time } from 'koishi-utils'
-import { Message } from 'koishi-core'
+import { Time, template } from 'koishi-utils'
 import { install } from '@sinonjs/fake-timers'
 
-Message.GLOBAL_HELP_EPILOG = 'EPILOG'
+template.set('internal.global-help-epilog', 'EPILOG')
 
 const app = new App({ mockDatabase: true })
-const session = app.session(123)
+const session = app.session('123')
 const now = Date.now()
 
 before(async () => {
-  await app.database.getUser(123, 2)
-  await app.database.setUser(123, {
+  await app.database.initUser('123', 2)
+  await app.database.setUser('mock', '123', {
     usage: { foo7: 1, $date: Time.getDateNumber() },
     timers: { foo8: now + Time.minute, $date: now + Time.day },
   })
@@ -37,7 +36,7 @@ describe('Help Command', () => {
       '    -H, --show-hidden  查看隐藏的选项和指令',
     ].join('\n'))
 
-    await session.shouldReply('help heip', '指令未找到。你要找的是不是“help”？发送空行或句号以调用推测的指令。')
+    await session.shouldReply('help heip', '指令未找到。您要找的是不是“help”？发送空行或句号以使用推测的指令。')
     await session.shouldReply('.', message)
     await session.shouldReply('help -h', message)
   })
@@ -45,7 +44,7 @@ describe('Help Command', () => {
   it('command attributes', async () => {
     app.command('foo1', 'DESCRIPTION').alias('foo')
     app.command('foo2', 'DESCRIPTION', { authority: 2 })
-    app.command('foo3', 'DESCRIPTION').before(() => true)
+    app.command('foo3', 'DESCRIPTION').shortcut(/foobar/)
     app.command('foo4', 'DESCRIPTION').usage('USAGE TEXT')
     app.command('foo5', 'DESCRIPTION').usage(({ userId }) => '' + userId)
     app.command('foo6', 'DESCRIPTION').example('EXAMPLE TEXT')
@@ -57,7 +56,7 @@ describe('Help Command', () => {
 
     await session.shouldReply('help foo1', 'foo1\nDESCRIPTION\n别名：foo。')
     await session.shouldReply('help foo2', 'foo2\nDESCRIPTION\n最低权限：2 级。')
-    await session.shouldReply('help foo3', 'foo3\nDESCRIPTION（指令已禁用）')
+    await session.shouldReply('help foobar', 'foo3\nDESCRIPTION')
     await session.shouldReply('help foo4', 'foo4\nDESCRIPTION\nUSAGE TEXT')
     await session.shouldReply('help foo5', 'foo5\nDESCRIPTION\n123')
     await session.shouldReply('help foo6', 'foo6\nDESCRIPTION\n使用示例：\n    EXAMPLE TEXT')
@@ -133,10 +132,10 @@ describe('Help Command', () => {
   })
 
   it('no database', async () => {
-    Message.GLOBAL_HELP_EPILOG = ''
+    template.set('internal.global-help-epilog', '')
 
     const app = new App()
-    const session = app.session(123)
+    const session = app.session('123')
     await session.shouldReply('help', '当前可用的指令有：\n    help  显示帮助信息')
   })
 })

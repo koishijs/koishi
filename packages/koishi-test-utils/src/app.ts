@@ -1,10 +1,10 @@
-import { AppOptions, App, Server, Session, AppStatus, Bot, SenderInfo } from 'koishi-core'
+import { AppOptions, App, Adapter, Session, Bot, AuthorInfo } from 'koishi-core'
 import { assert } from 'chai'
 import { Socket } from 'net'
 import * as http from 'http'
 import * as memory from './memory'
 
-export const BASE_SELF_ID = 514
+export const BASE_SELF_ID = '514'
 
 interface MockedResponse {
   code: number
@@ -12,26 +12,38 @@ interface MockedResponse {
   headers: Record<string, any>
 }
 
-Bot.prototype.getMsg = async function (this: Bot, messageId: number) {
-  return {
-    messageId,
-    message: '',
-    time: 0,
-    realId: 0,
-    messageType: null,
-    sender: { userId: this.selfId } as SenderInfo,
+declare module 'koishi-core' {
+  namespace Bot {
+    interface Platforms {
+      mock: MockedBot
+    }
   }
 }
 
-class MockedServer extends Server {
+class MockedBot extends Bot<'mock'> {
+  status = Bot.Status.GOOD
+
+  async getMessage(channelId: string, messageId: string) {
+    return {
+      messageId,
+      channelId,
+      content: '',
+      time: 0,
+      subtype: null,
+      messageType: null,
+      author: { userId: this.selfId } as AuthorInfo,
+    }
+  }
+}
+
+class MockedServer extends Adapter {
   constructor(app: App) {
-    super(app)
-    this.bots.forEach(bot => bot.ready = true)
+    super(app, MockedBot)
   }
 
-  _close() {}
+  stop() {}
 
-  async _listen() {}
+  async start() {}
 
   get(path: string, headers?: Record<string, any>) {
     return this.receive('GET', path, headers, '')
@@ -64,14 +76,14 @@ class MockedServer extends Server {
         const headers = res.getHeaders()
         resolve({ code, body, headers })
       }
-      this.server.emit('request', req, res)
+      this.app._httpServer.emit('request', req, res)
       req.emit('data', content)
       req.emit('end')
     })
   }
 }
 
-Server.types.mock = MockedServer
+Adapter.types.mock = MockedServer
 
 interface MockedAppOptions extends AppOptions {
   mockStart?: boolean
@@ -83,7 +95,10 @@ export class MockedApp extends App {
 
   constructor(options: MockedAppOptions = {}) {
     super({ selfId: BASE_SELF_ID, type: 'mock', ...options })
-    if (options.mockStart !== false) this.status = AppStatus.open
+
+    this.server = this.adapters.mock as any
+
+    if (options.mockStart !== false) this.status = App.Status.open
     if (options.mockDatabase) this.plugin(memory)
   }
 
@@ -93,15 +108,16 @@ export class MockedApp extends App {
 
   receive(meta: Partial<Session>) {
     const session = new Session(this, {
+      platform: 'mock',
       selfId: this.selfId,
       ...meta,
     })
-    this.server.dispatch(session)
-    return session.$uuid
+    this.adapters.mock.dispatch(session)
+    return session.id
   }
 
-  session(userId: number, groupId?: number) {
-    return new TestSession(this, userId, groupId)
+  session(userId: string, channelId?: string) {
+    return new TestSession(this, userId, channelId)
   }
 }
 
@@ -110,27 +126,28 @@ export class TestSession {
 
   private replies: string[] = []
 
-  constructor(public app: MockedApp, public userId: number, public groupId?: number) {
+  constructor(public app: MockedApp, public userId: string, public channelId?: string) {
     this.meta = {
-      postType: 'message',
+      platform: 'mock',
+      type: 'message',
       userId,
-      sender: {
-        sex: 'unknown',
-        age: 0,
+      author: {
         userId,
-        nickname: '' + userId,
+        username: '' + userId,
       },
     }
 
-    if (groupId) {
-      this.meta.groupId = groupId
-      this.meta.messageType = 'group'
+    if (channelId) {
+      this.meta.groupId = channelId
+      this.meta.channelId = channelId
+      this.meta.subtype = 'group'
     } else {
-      this.meta.messageType = 'private'
+      this.meta.channelId = 'private:' + userId
+      this.meta.subtype = 'private'
     }
   }
 
-  async receive(message: string, count?: number) {
+  async receive(content: string, count?: number) {
     return new Promise<string[]>((resolve) => {
       let resolved = false
       const _resolve = () => {
@@ -140,15 +157,15 @@ export class TestSession {
         resolve(this.replies)
         this.replies = []
       }
-      const $send = async (message: string) => {
-        if (!message) return
-        const length = this.replies.push(message)
+      const send = async (content: string) => {
+        if (!content) return
+        const length = this.replies.push(content)
         if (length >= count) _resolve()
       }
       const dispose = this.app.on('middleware', (session) => {
-        if (session.$uuid === uuid) process.nextTick(_resolve)
+        if (session.id === uuid) process.nextTick(_resolve)
       })
-      const uuid = this.app.receive({ ...this.meta, $send, message })
+      const uuid = this.app.receive({ ...this.meta, send, content })
     })
   }
 

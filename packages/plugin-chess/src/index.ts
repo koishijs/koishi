@@ -1,13 +1,13 @@
-import { Context, extendDatabase, Group } from 'koishi-core'
-import { isInteger } from 'koishi-utils'
+import { Channel, Context, extendDatabase } from 'koishi-core'
+import { isInteger, segment } from 'koishi-utils'
 import { State, MoveResult, StateData } from './state'
 import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 import * as go from './go'
 import * as gomoku from './gomoku'
 import * as othello from './othello'
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables }) => {
-  tables.group.chess = `JSON NULL DEFAULT NULL`
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables, Domain }) => {
+  tables.channel.chess = new Domain.Json()
 })
 
 interface Rule {
@@ -22,29 +22,30 @@ const rules: Record<string, Rule> = {
   othello,
 }
 
-declare module 'koishi-core/dist/database' {
-  interface Group {
+declare module 'koishi-core' {
+  interface Channel {
     chess: StateData
   }
 }
 
-Group.extend(() => ({
+Channel.extend(() => ({
   chess: null,
 }))
 
-const states: Record<number, State> = {}
+const states: Record<string, State> = {}
 
 export * from './state'
 
 export const name = 'chess'
+export const disposable = true
 
 export function apply(ctx: Context) {
   ctx = ctx.group()
 
   ctx.on('connect', async () => {
     if (!ctx.database) return
-    const groups = await ctx.database.getAllGroups(['id', 'chess'])
-    for (const { id, chess } of groups) {
+    const channels = await ctx.database.getAssignedChannels(['id', 'chess'])
+    for (const { id, chess } of channels) {
       if (chess) {
         states[id] = State.from(ctx.app, chess)
         states[id].update = rules[chess.rule].update
@@ -59,7 +60,7 @@ export function apply(ctx: Context) {
 
   const chess = ctx.command('chess [position]', '棋类游戏')
     .userFields(['name'])
-    .groupFields(['chess'])
+    .channelFields(['chess'])
     .shortcut('落子', { fuzzy: true })
     .shortcut('悔棋', { options: { repent: true } })
     .shortcut('围棋', { options: { size: 19, rule: 'go' }, fuzzy: true })
@@ -83,8 +84,9 @@ export function apply(ctx: Context) {
       '目前默认使用图片模式。文本模式速度更快，但是在部分机型上可能无法正常显示，同时无法适应过大的棋盘。',
     ].join('\n'))
     .action(async ({ session, options }, position) => {
-      const { $group = { chess: null } } = session
-      if (!states[session.groupId]) {
+      const { cid, userId, channel = { chess: null } } = session
+
+      if (!states[cid]) {
         if (position || options.stop || options.repent || options.skip) {
           return '没有正在进行的游戏。输入“下棋”开始一轮游戏。'
         }
@@ -97,7 +99,7 @@ export function apply(ctx: Context) {
         if (!rule) return '没有找到对应的规则。'
 
         const state = new State(ctx.app, options.rule, options.size, rule.placement || 'cross')
-        state.p1 = session.userId
+        state.p1 = userId
 
         if (options.textMode) state.imageMode = false
 
@@ -106,18 +108,18 @@ export function apply(ctx: Context) {
           if (result) return result
         }
         state.update = rule.update
-        states[session.groupId] = state
+        states[cid] = state
 
-        return state.draw(session, `${session.$username} 发起了游戏！`)
+        return state.draw(session, `${session.username} 发起了游戏！`)
       }
 
       if (options.stop) {
-        delete states[session.groupId]
-        $group.chess = null
+        delete states[cid]
+        channel.chess = null
         return '游戏已停止。'
       }
 
-      const state = states[session.groupId]
+      const state = states[cid]
 
       if (ctx.app.browser) {
         if (options.textMode) {
@@ -131,26 +133,26 @@ export function apply(ctx: Context) {
 
       if (options.show) return state.draw(session)
 
-      if (state.p2 && state.p1 !== session.userId && state.p2 !== session.userId) {
+      if (state.p2 && state.p1 !== userId && state.p2 !== userId) {
         return '游戏已经开始，无法加入。'
       }
 
       if (options.skip) {
-        if (state.next !== session.userId) return '当前不是你的回合。'
-        state.next = state.p1 === session.userId ? state.p2 : state.p1
-        $group.chess = state.serial()
-        return `${session.$username} 选择跳过其回合，下一手轮到 [CQ:at,qq=${state.next}]。`
+        if (state.next !== userId) return '当前不是你的回合。'
+        state.next = state.p1 === userId ? state.p2 : state.p1
+        channel.chess = state.serial()
+        return `${session.username} 选择跳过其回合，下一手轮到 ${segment.at(state.next)}。`
       }
 
       if (options.repent) {
         if (!state.p2) return '尚未有人行棋。'
         const last = state.p1 === state.next ? state.p2 : state.p1
-        if (last !== session.userId) return '上一手棋不是你所下。'
+        if (last !== userId) return '上一手棋不是你所下。'
         state.history.pop()
         state.refresh()
         state.next = last
-        $group.chess = state.serial()
-        return state.draw(session, `${session.$username} 进行了悔棋。`)
+        channel.chess = state.serial()
+        return state.draw(session, `${session.username} 进行了悔棋。`)
       }
 
       if (!position) return '请输入坐标。'
@@ -160,7 +162,7 @@ export function apply(ctx: Context) {
         return '请输入由字母+数字构成的坐标。'
       }
 
-      if (state.p2 && session.userId !== state.next) return '当前不是你的回合。'
+      if (state.p2 && userId !== state.next) return '当前不是你的回合。'
 
       const [x, y] = isLetterFirst ? [
         position.charCodeAt(0) % 32 - 1,
@@ -177,11 +179,11 @@ export function apply(ctx: Context) {
       if (state.get(x, y)) return '此处已有落子。'
 
       let message = ''
-      if (!state.p2 && session.userId !== state.p1) {
-        state.p2 = session.userId
-        message = `${session.$username} 加入了游戏并落子于 ${position.toUpperCase()}，`
+      if (!state.p2 && userId !== state.p1) {
+        state.p2 = userId
+        message = `${session.username} 加入了游戏并落子于 ${position.toUpperCase()}，`
       } else {
-        message = `${session.$username} 落子于 ${position.toUpperCase()}，`
+        message = `${session.username} 落子于 ${position.toUpperCase()}，`
       }
 
       const value = state.history.length % 2 ? -1 : 1
@@ -189,36 +191,36 @@ export function apply(ctx: Context) {
 
       switch (result) {
         case MoveResult.illegal:
-          state.next = session.userId
+          state.next = userId
           return '非法落子。'
         case MoveResult.skip:
-          message += `下一手依然轮到 [CQ:at,qq=${session.userId}]。`
+          message += `下一手依然轮到 ${segment.at(userId)}。`
           break
         case MoveResult.p1Win:
-          message += `恭喜 [CQ:at,qq=${state.p1}] 获胜！`
-          delete states[session.groupId]
-          $group.chess = null
+          message += `恭喜 ${segment.at(state.p1)} 获胜！`
+          delete states[cid]
+          channel.chess = null
           break
         case MoveResult.p2Win:
-          message += `恭喜 [CQ:at,qq=${state.p2}] 获胜！`
-          delete states[session.groupId]
-          $group.chess = null
+          message += `恭喜 ${segment.at(state.p2)} 获胜！`
+          delete states[cid]
+          channel.chess = null
           break
         case MoveResult.draw:
           message += '本局游戏平局。'
-          delete states[session.groupId]
-          $group.chess = null
+          delete states[cid]
+          channel.chess = null
           break
         case undefined:
-          state.next = session.userId === state.p1 ? state.p2 : state.p1
-          message += `下一手轮到 [CQ:at,qq=${state.next}]。`
+          state.next = userId === state.p1 ? state.p2 : state.p1
+          message += `下一手轮到 ${segment.at(state.next)}。`
           break
         default:
-          state.next = session.userId
+          state.next = userId
           return `非法落子（${result}）。`
       }
 
-      $group.chess = state.serial()
+      channel.chess = state.serial()
       return state.draw(session, message, x, y)
     })
 }

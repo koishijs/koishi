@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-common",
   "description": "Common plugins for Koishi",
-  "version": "3.0.3",
+  "version": "4.0.0-beta.19",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -10,8 +10,7 @@
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
   "scripts": {
-    "lint": "eslint src --ext .ts",
-    "prepack": "tsc -b"
+    "lint": "eslint src --ext .ts"
   },
   "repository": {
     "type": "git",
@@ -31,10 +30,10 @@
     "plugin"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.5.2",
-    "koishi-utils": "^3.2.1"
+    "koishi-core": "^3.0.0",
+    "koishi-utils": "^4.0.1"
   },
   "devDependencies": {
-    "koishi-test-utils": "^5.0.3"
+    "koishi-test-utils": "^6.0.0-beta.9"
   }
 }

@@ -1,10 +1,10 @@
 import { Context, extendDatabase } from 'koishi-core'
 import { clone, defineProperty, Observed, pick } from 'koishi-utils'
-import { FilterQuery } from 'mongodb'
-import MongoDatabase from 'koishi-plugin-mongo/dist/database'
+import type { FilterQuery } from 'mongodb'
+import type MongoDatabase from 'koishi-plugin-mongo/dist/database'
 import { Dialogue, DialogueTest, equal } from '../utils'
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
     'dialogue/mongo'(test: DialogueTest, conditionals?: FilterQuery<Dialogue>[]): void
   }
@@ -107,13 +107,12 @@ extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
   async getDialogueStats() {
     const [data, dialogues] = await Promise.all([
       this.db.collection('dialogue').aggregate([
-        { $group: { _id: { $toLower: 'question' }, count: { $sum: 1 } } },
-        { $group: { _id: null, counts: { $push: { k: '$_id', v: '$count' } } } },
-        { $replaceRoot: { newRoot: { $arrayToObject: '$counts' } } },
+        { $group: { _id: null, questions: { $addToSet: '$question' } } },
+        { $project: { questions: { $size: '$questions' } } }
       ]).toArray(),
-      this.db.collection('dialogue').count(),
+      this.db.collection('dialogue').countDocuments(),
     ])
-    const questions = Object.keys(data).length
+    const { questions } = data[0]
     return { questions, dialogues }
   },
 })
@@ -130,12 +129,12 @@ export default function apply(ctx: Context) {
 
   ctx.on('dialogue/mongo', ({ regexp, answer, question, original }, conditionals) => {
     if (regexp) {
-      if (answer !== undefined) conditionals.push({ answer: { $regex: new RegExp(answer, 'i') } })
-      if (question !== undefined) conditionals.push({ question: { $regex: new RegExp(original, 'i') } })
+      if (answer) conditionals.push({ answer: { $regex: new RegExp(answer, 'i') } })
+      if (question) conditionals.push({ question: { $regex: new RegExp(original, 'i') } })
       return
     }
-    if (answer !== undefined) conditionals.push({ answer })
-    if (question !== undefined) {
+    if (answer) conditionals.push({ answer })
+    if (question) {
       if (regexp === false) {
         conditionals.push({ question })
       } else {

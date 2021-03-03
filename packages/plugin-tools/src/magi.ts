@@ -1,6 +1,6 @@
 import { Context } from 'koishi-core'
-import { load } from 'cheerio'
 import { Element } from 'domhandler'
+import { load } from 'cheerio'
 import axios from 'axios'
 
 const tagMap = {
@@ -10,7 +10,7 @@ const tagMap = {
 }
 
 export function apply(ctx: Context) {
-  ctx.command('tools/magi <text...>', '使用 Magi 搜索')
+  ctx.command('tools/magi <text:text>', '使用 Magi 搜索')
     .option('confidence', '-c  显示数据可信度')
     .alias('搜索')
     .usage('由 https://magi.com 提供支持。')
@@ -69,7 +69,7 @@ export function apply(ctx: Context) {
         return `没有找到“${q}”相关的结果。`
       } else {
         for (const message of messages) {
-          await session.$send(message)
+          await session.send(message)
         }
       }
     })

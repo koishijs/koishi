@@ -1,5 +1,5 @@
 import { App, BASE_SELF_ID } from 'koishi-test-utils'
-import { App as RealApp, extendDatabase, Group, Session } from 'koishi-core'
+import { App as RealApp, Channel, extendDatabase, Session } from 'koishi-core'
 import { expect } from 'chai'
 import { fn, spyOn } from 'jest-mock'
 import { Logger } from 'koishi-utils'
@@ -67,10 +67,10 @@ describe('Server API', () => {
     })
 
     before(async () => {
-      await app.database.getGroup(123, BASE_SELF_ID)
-      await app.database.getGroup(456, BASE_SELF_ID)
-      await app.database.getGroup(789, BASE_SELF_ID)
-      await app.database.setGroup(456, { flag: Group.Flag.silent })
+      await app.database.getChannel(123, BASE_SELF_ID)
+      await app.database.getChannel(456, BASE_SELF_ID)
+      await app.database.getChannel(789, BASE_SELF_ID)
+      await app.database.setChannel(456, { flag: Channel.Flag.silent })
     })
 
     beforeEach(async () => {

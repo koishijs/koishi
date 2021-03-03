@@ -2,12 +2,13 @@ import { Session, extendDatabase } from 'koishi-core'
 import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 import MongoDatabase from 'koishi-plugin-mongo/dist/database'
 
-declare module 'koishi-core/dist/database' {
+declare module 'koishi-core' {
   interface Database {
-    createSchedule(time: Date, interval: number, command: string, session: Session): Promise<Schedule>
+    createSchedule(time: Date, interval: number, command: string, session: Session, ensure?: boolean): Promise<Schedule>
     removeSchedule(id: number): Promise<any>
     getSchedule(id: number): Promise<Schedule>
-    getAllSchedules(assignees?: number[]): Promise<Schedule[]>
+    updateSchedule(id: number, data: Partial<Schedule>): Promise<void>
+    getAllSchedules(assignee?: string): Promise<Schedule[]>
   }
 
   interface Tables {
@@ -17,29 +18,33 @@ declare module 'koishi-core/dist/database' {
 
 export interface Schedule {
   id: number
-  assignee: number
+  assignee: string
   time: Date
+  lastCall: Date
   interval: number
   command: string
   session: Session
 }
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', (Database) => {
-  Object.assign(Database.tables.schedule = [
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Domain, tables }) => {
+  tables.schedule = Object.assign<any, any>([
     'PRIMARY KEY (`id`) USING BTREE',
   ], {
     id: `INT(10) UNSIGNED NOT NULL AUTO_INCREMENT`,
-    assignee: `BIGINT(20) NOT NULL DEFAULT '0'`,
+    assignee: `VARCHAR(50) NOT NULL`,
     time: `TIMESTAMP NULL DEFAULT NULL`,
+    lastCall: `TIMESTAMP NULL DEFAULT NULL`,
     interval: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0'`,
     command: `MEDIUMTEXT NOT NULL COLLATE 'utf8mb4_general_ci'`,
-    session: `JSON NOT NULL`,
+    session: new Domain.Json(),
   })
 })
 
 extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
-  createSchedule(time, interval, command, session) {
-    return this.create('schedule', { time, assignee: session.selfId, interval, command, session })
+  createSchedule(time, interval, command, session, ensure) {
+    const data: Partial<Schedule> = { time, assignee: session.sid, interval, command, session }
+    if (ensure) data.lastCall = new Date()
+    return this.create('schedule', data)
   },
 
   removeSchedule(id) {
@@ -51,26 +56,31 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
     return data[0]
   },
 
-  async getAllSchedules(assignees) {
-    let queryString = 'SELECT * FROM `schedule`'
-    if (!assignees) assignees = await this.app.getSelfIds()
-    queryString += ` WHERE \`assignee\` IN (${assignees.join(',')})`
-    return this.query(queryString)
+  async updateSchedule(id, data) {
+    await this.update('schedule', id, data)
+  },
+
+  async getAllSchedules(assignee) {
+    const assignees = assignee
+      ? [this.escape(assignee)]
+      : this.app.bots.map(bot => this.escape(bot.sid))
+    return this.query(`SELECT * FROM \`schedule\` WHERE \`assignee\` IN (${assignees.join(',')})`)
   },
 })
 
 extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
-  async createSchedule(time, interval, command, session) {
+  async createSchedule(time, interval, command, session, ensure) {
     let _id = 1
     const [latest] = await this.db.collection('schedule').find().sort('_id', -1).limit(1).toArray()
     if (latest) _id = latest._id + 1
-    const data = { time, interval, command, assignee: session.selfId }
+    const data: Partial<Schedule> = { time, assignee: session.sid, interval, command }
+    if (ensure) data.lastCall = new Date()
     const result = await this.db.collection('schedule').insertOne({
       _id,
       ...data,
       session: JSON.stringify(session),
     })
-    return { ...data, session, id: result.insertedId }
+    return { ...data, session, id: result.insertedId } as Schedule
   },
 
   removeSchedule(_id) {
@@ -86,8 +96,10 @@ extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
     return res
   },
 
-  async getAllSchedules(assignees) {
-    const $in = assignees || await this.app.getSelfIds()
+  async getAllSchedules(assignee) {
+    const $in = assignee
+      ? [assignee]
+      : this.app.bots.map(bot => bot.sid)
     return await this.db.collection('schedule')
       .find({ assignee: { $in } })
       .map(doc => ({ ...doc, id: doc._id, session: JSON.parse(doc.session) }))

@@ -1,9 +1,9 @@
 import { Context } from 'koishi-core'
-import { difference, deduplicate, sleep, pick, isInteger, Time } from 'koishi-utils'
-import { Dialogue, prepareTargets, sendResult, split, RE_DIALOGUES } from './utils'
+import { difference, deduplicate, sleep, pick, Time } from 'koishi-utils'
+import { Dialogue, prepareTargets, sendResult, split, RE_DIALOGUES, isPositiveInteger } from './utils'
 import { getDetails, formatDetails, formatAnswer, formatQuestionAnswers } from './search'
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
     'dialogue/before-modify'(argv: Dialogue.Argv): void | string | Promise<void | string>
     'dialogue/modify'(argv: Dialogue.Argv, dialogue: Dialogue): void
@@ -16,8 +16,8 @@ declare module 'koishi-core/dist/context' {
 declare module './utils' {
   namespace Dialogue {
     interface Config {
-      detailDelay?: number
-      maxShownDialogues?: number
+      previewDelay?: number
+      maxPreviews?: number
     }
   }
 }
@@ -26,9 +26,9 @@ export default function apply(ctx: Context) {
   ctx.command('teach')
     .option('review', '-v  查看最近的修改')
     .option('revert', '-V  回退最近的修改')
-    .option('includeLast', '-l [count]  包含最近的修改数量', { type: 'string', validate: isIntegerOrInterval })
-    .option('excludeLast', '-L [count]  排除最近的修改数量', { type: 'string', validate: isIntegerOrInterval })
-    .option('target', '<ids>  查看或修改已有问题', { type: 'string', validate: RE_DIALOGUES })
+    .option('includeLast', '-l [count]  包含最近的修改数量', { type: isIntegerOrInterval })
+    .option('excludeLast', '-L [count]  排除最近的修改数量', { type: isIntegerOrInterval })
+    .option('target', '<ids>  查看或修改已有问题', { type: RE_DIALOGUES })
     .option('remove', '-r  彻底删除问答')
 
   ctx.on('dialogue/execute', (argv) => {
@@ -40,11 +40,11 @@ export default function apply(ctx: Context) {
       return update(argv)
     } catch (err) {
       ctx.logger('teach').warn(err)
-      return argv.session.$send(`${revert ? '回退' : remove ? '删除' : '修改'}问答时出现问题。`)
+      return argv.session.send(`${revert ? '回退' : remove ? '删除' : '修改'}问答时出现问题。`)
     }
   })
 
-  ctx.prependListener('dialogue/execute', (argv) => {
+  ctx.on('dialogue/execute', (argv) => {
     const { options, session } = argv
     const { includeLast, excludeLast } = options
     if (!options.review && !options.revert) return
@@ -61,11 +61,11 @@ export default function apply(ctx: Context) {
       return true
     })
 
-    if (!dialogues.length) return session.$send('没有搜索到满足条件的教学操作。')
+    if (!dialogues.length) return session.send('没有搜索到满足条件的教学操作。')
     return options.review ? review(dialogues, argv) : revert(dialogues, argv)
-  })
+  }, true)
 
-  ctx.on('dialogue/before-detail', async (argv) => {
+  ctx.before('dialogue/detail', async (argv) => {
     if (argv.options.modify) return
     await argv.app.parallel('dialogue/search', argv, {}, argv.dialogues)
   })
@@ -89,9 +89,15 @@ export default function apply(ctx: Context) {
   })
 }
 
-function isIntegerOrInterval(value: string) {
-  const n = +value
-  return n * 0 === 0 ? !isInteger(n) || n <= 0 : !Time.parseTime(value)
+function isIntegerOrInterval(source: string) {
+  const n = +source
+  if (n * 0 === 0) {
+    isPositiveInteger(source)
+    return source
+  } else {
+    if (Time.parseTime(source)) return source
+    throw new Error()
+  }
 }
 
 function review(dialogues: Dialogue[], argv: Dialogue.Argv) {
@@ -103,26 +109,26 @@ function review(dialogues: Dialogue[], argv: Dialogue.Argv) {
     return `${formatDetails(d, details)}${questionType}：${original}，${answerType}：${formatAnswer(answer, argv.config)}`
   })
   output.unshift('近期执行的教学操作有：')
-  return session.$send(output.join('\n'))
+  return session.send(output.join('\n'))
 }
 
 async function revert(dialogues: Dialogue[], argv: Dialogue.Argv) {
   try {
-    return argv.session.$send(await argv.app.database.revertDialogues(dialogues, argv))
+    return argv.session.send(await argv.app.database.revertDialogues(dialogues, argv))
   } catch (err) {
     argv.app.logger('teach').warn(err)
-    return argv.session.$send('回退问答中出现问题。')
+    return argv.session.send('回退问答中出现问题。')
   }
 }
 
 export async function update(argv: Dialogue.Argv) {
-  const { app, session, options, target, config } = argv
-  const { maxShownDialogues = 10, detailDelay: detailInterval = 500 } = config
+  const { app, session, options, target, config, args } = argv
+  const { maxPreviews = 10, previewDelay = 500 } = config
   const { revert, review, remove, search } = options
 
-  options.modify = !review && !search && Object.keys(options).length
-  if (!options.modify && !search && target.length > maxShownDialogues) {
-    return session.$send(`一次最多同时预览 ${maxShownDialogues} 个问答。`)
+  options.modify = !review && !search && (Object.keys(options).length || args.length)
+  if (!options.modify && !search && target.length > maxPreviews) {
+    return session.send(`一次最多同时预览 ${maxPreviews} 个问答。`)
   }
 
   argv.uneditable = []
@@ -134,7 +140,7 @@ export async function update(argv: Dialogue.Argv) {
   argv.dialogueMap = Object.fromEntries(dialogues.map(d => [d.id, { ...d }]))
 
   if (search) {
-    return session.$send(formatQuestionAnswers(argv, dialogues).join('\n'))
+    return session.send(formatQuestionAnswers(argv, dialogues).join('\n'))
   }
 
   const actualIds = argv.dialogues.map(d => d.id)
@@ -143,13 +149,13 @@ export async function update(argv: Dialogue.Argv) {
 
   if (!options.modify) {
     if (argv.unknown.length) {
-      await session.$send(`${review ? '最近无人修改过' : '没有搜索到'}编号为 ${argv.unknown.join(', ')} 的问答。`)
+      await session.send(`${review ? '最近无人修改过' : '没有搜索到'}编号为 ${argv.unknown.join(', ')} 的问答。`)
     }
     for (let index = 0; index < dialogues.length; index++) {
       const output = [`编号为 ${dialogues[index].id} 的${review ? '历史版本' : '问答信息'}：`]
       await app.serial('dialogue/detail', dialogues[index], output, argv)
-      if (index) await sleep(detailInterval)
-      await session.$send(output.join('\n'))
+      if (index) await sleep(previewDelay)
+      await session.send(output.join('\n'))
     }
     return
   }
@@ -186,9 +192,8 @@ export async function update(argv: Dialogue.Argv) {
 }
 
 export async function create(argv: Dialogue.Argv) {
-  const { app, options } = argv
+  const { app, options, args: [question, answer] } = argv
   options.create = options.modify = true
-  const { question, answer } = options
 
   argv.unknown = []
   argv.uneditable = []
@@ -201,7 +206,18 @@ export async function create(argv: Dialogue.Argv) {
 
   if (argv.dialogues.length) {
     argv.target = argv.dialogues.map(d => d.id)
+    argv.dialogueMap = Object.fromEntries(argv.dialogues.map(d => [d.id, d]))
     const targets = prepareTargets(argv)
+    if (options.remove) {
+      let message = ''
+      if (targets.length) {
+        const editable = targets.map(d => d.id)
+        await app.database.removeDialogues(editable, argv)
+        message = `问答 ${editable.join(', ')} 已成功删除。`
+      }
+      await app.serial('dialogue/after-modify', argv)
+      return sendResult(argv, message)
+    }
     for (const dialogue of targets) {
       app.emit('dialogue/modify', argv, dialogue)
     }
@@ -212,7 +228,7 @@ export async function create(argv: Dialogue.Argv) {
 
   const dialogue = { flag: 0 } as Dialogue
   if (app.bail('dialogue/permit', argv, dialogue)) {
-    return argv.session.$send('该问答因权限过低无法添加。')
+    return argv.session.send('该问答因权限过低无法添加。')
   }
 
   try {
@@ -222,7 +238,7 @@ export async function create(argv: Dialogue.Argv) {
     await app.serial('dialogue/after-modify', argv)
     return sendResult(argv, `问答已添加，编号为 ${argv.dialogues[0].id}。`)
   } catch (err) {
-    await argv.session.$send('添加问答时遇到错误。')
+    await argv.session.send('添加问答时遇到错误。')
     throw err
   }
 }

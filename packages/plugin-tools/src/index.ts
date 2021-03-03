@@ -20,6 +20,7 @@ export interface Options extends AlphaOptions, TranslateOptions {
 }
 
 export const name = 'tools'
+export const disposable = true
 
 export function apply(ctx: Context, config: Options = {}) {
   ctx.command('tools', '实用工具')

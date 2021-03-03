@@ -1,21 +1,17 @@
-import { Session, ParsedLine, App } from 'koishi-core'
+import { Session, App } from 'koishi-core'
 import { difference, observe, isInteger, defineProperty, Observed } from 'koishi-utils'
 import { RegExpValidator } from 'regexpp'
 
-declare module 'koishi-core/dist/app' {
+declare module 'koishi-core' {
   interface App {
     teachHistory: Record<number, Dialogue>
   }
-}
 
-declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/permit'(argv: Dialogue.Argv, dialogue: Dialogue): boolean
     'dialogue/flag'(flag: keyof typeof Dialogue.Flag): void
   }
-}
 
-declare module 'koishi-core/dist/database' {
   interface Tables {
     dialogue: Dialogue
   }
@@ -46,7 +42,7 @@ export interface Dialogue {
   _weight?: number
   _capture?: RegExpExecArray
   _type?: Dialogue.ModifyType
-  _operator?: number
+  _operator?: string
   _timestamp?: number
   _backup?: Readonly<Dialogue>
 }
@@ -66,11 +62,17 @@ export namespace Dialogue {
   export type Field = keyof Dialogue
 
   export interface AuthorityConfig {
+    /** 可访问教学系统，默认值为 2 */
     base?: number
+    /** 可修改非自己创建的问答，默认值为 3 */
     admin?: number
+    /** 可修改上下文设置，默认值为 3 */
     context?: number
+    /** 可修改锁定的问答，默认值为 4 */
     frozen?: number
+    /** 可使用正则表达式，默认值为 3 */
     regExp?: number
+    /** 可设置作者或匿名，默认值为 2 */
     writer?: number
   }
 
@@ -115,7 +117,6 @@ export namespace Dialogue {
     config: Config
     target?: number[]
     options: Record<string, any>
-    appellative?: boolean
 
     // modify status
     dialogues?: Dialogue[]
@@ -145,7 +146,7 @@ export function sendResult(argv: Dialogue.Argv, prefix?: string, suffix?: string
     output.push(`${revert ? '最近无人修改过' : '没有搜索到'}编号为 ${unknown.join(', ')} 的问答。`)
   }
   if (suffix) output.push(suffix)
-  return session.$send(output.join('\n'))
+  return session.send(output.join('\n'))
 }
 
 export function split(source: string) {
@@ -171,26 +172,16 @@ export function prepareTargets(argv: Dialogue.Argv, dialogues = argv.dialogues) 
   return targets.map(data => observe(data, `dialogue ${data.id}`))
 }
 
-export function parseTeachArgs({ args, options }: Partial<ParsedLine>) {
-  function parseArgument() {
-    if (!args.length) return
-    const [arg] = args.splice(0, 1)
-    if (!arg || arg === '~' || arg === '～') return
-    return arg
-  }
-
-  defineProperty(options, 'noArgs', !args.length)
-  options['question'] = parseArgument()
-  options['answer'] = options['redirect'] || parseArgument()
+export function isPositiveInteger(source: string) {
+  const n = +source
+  if (isInteger(n) && n > 0) return n
+  throw new Error('应为正整数。')
 }
 
-export function isPositiveInteger(value: any) {
-  return isInteger(value) && value > 0 ? '' : '应为正整数。'
+export function isZeroToOne(source: string) {
+  const n = +source
+  if (n >= 0 && n <= 1) return n
+  throw new Error('应为不超过 1 的正数。')
 }
 
-export function isZeroToOne(value: number) {
-  return value < 0 || value > 1 ? '应为不超过 1 的正数。' : ''
-}
-
-export const RE_GROUPS = /^\d+(,\d+)*$/
 export const RE_DIALOGUES = /^\d+(\.\.\d+)?(,\d+(\.\.\d+)?)*$/

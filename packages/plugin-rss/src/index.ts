@@ -1,21 +1,20 @@
-import { Context, Group, Session, extendDatabase } from 'koishi-core'
+import { Context, Channel, Session, extendDatabase } from 'koishi-core'
 import { Logger, Time } from 'koishi-utils'
 import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 import RssFeedEmitter from 'rss-feed-emitter'
 
-declare module 'koishi-core/dist/database' {
-  interface Group {
+declare module 'koishi-core' {
+  interface Channel {
     rss?: string[]
   }
 }
 
-Group.extend(() => ({
+Channel.extend(() => ({
   rss: [],
 }))
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields, tables }) => {
-  listFields.push('group.rss')
-  tables.group.rss = `TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Domain, tables }) => {
+  tables.channel.rss = new Domain.Array()
 })
 
 export interface Config {
@@ -27,13 +26,14 @@ export interface Config {
 const logger = new Logger('rss')
 
 export const name = 'rss'
+export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   const { timeout = 10 * Time.second, refresh = Time.minute, userAgent } = config
-  const feedMap: Record<string, Set<number>> = {}
+  const feedMap: Record<string, Set<string>> = {}
   const feeder = new RssFeedEmitter({ skipFirstLoad: true, userAgent })
 
-  function subscribe(url: string, groupId: number) {
+  function subscribe(url: string, groupId: string) {
     if (url in feedMap) {
       feedMap[url].add(groupId)
     } else {
@@ -43,7 +43,7 @@ export function apply(ctx: Context, config: Config = {}) {
     }
   }
 
-  function unsubscribe(url: string, groupId: number) {
+  function unsubscribe(url: string, groupId: string) {
     feedMap[url].delete(groupId)
     if (!feedMap[url].size) {
       delete feedMap[url]
@@ -52,15 +52,19 @@ export function apply(ctx: Context, config: Config = {}) {
     }
   }
 
+  ctx.before('disconnect', () => {
+    feeder.destroy()
+  })
+
   ctx.on('connect', async () => {
     feeder.on('error', (err: Error) => {
       logger.debug(err.message)
     })
 
-    const groups = await ctx.database.getAllGroups(['id', 'rss'])
-    for (const group of groups) {
-      for (const url of group.rss) {
-        subscribe(url, group.id)
+    const channels = await ctx.database.getAssignedChannels(['id', 'rss'])
+    for (const channel of channels) {
+      for (const url of channel.rss) {
+        subscribe(url, channel.id)
       }
     }
 
@@ -76,7 +80,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const validators: Record<string, Promise<unknown>> = {}
   async function validate(url: string, session: Session) {
     if (validators[url]) {
-      await session.$send('正在尝试连接……')
+      await session.send('正在尝试连接……')
       return validators[url]
     }
 
@@ -95,12 +99,13 @@ export function apply(ctx: Context, config: Config = {}) {
     })
   }
 
-  ctx.group().command('rss <url...>', '订阅 RSS 链接')
-    .groupFields(['rss', 'id'])
+  ctx.group()
+    .command('rss <url:text>', '订阅 RSS 链接')
+    .channelFields(['rss', 'id'])
     .option('list', '-l 查看订阅列表')
     .option('remove', '-r 取消订阅')
     .action(async ({ session, options }, url) => {
-      const { rss, id } = session.$group
+      const { rss, id } = session.channel
       if (options.list) {
         if (!rss.length) return '未订阅任何链接。'
         return rss.join('\n')

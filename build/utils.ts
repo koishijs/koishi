@@ -5,7 +5,7 @@ import spawn from 'cross-spawn'
 export const cwd = resolve(__dirname, '..')
 
 export function getWorkspaces() {
-  return globby(require('../package').workspaces, {
+  return globby(require('../package.json').workspaces, {
     cwd,
     deep: 0,
     onlyDirectories: true,
@@ -22,9 +22,8 @@ export interface PackageJson extends Partial<Record<DependencyType, Record<strin
   version?: string
 }
 
-export function spawnSync(command: string, silent?: boolean) {
-  if (!silent) console.log(`$ ${command}`)
-  const args = command.split(/\s+/)
+export function spawnSync(args: string[], silent?: boolean) {
+  if (!silent) console.log(`$ ${args.join(' ')}`)
   const result = spawn.sync(args[0], [...args.slice(1), '--color'], { cwd, encoding: 'utf8' })
   if (result.status) {
     throw new Error(result.stderr)
@@ -34,10 +33,9 @@ export function spawnSync(command: string, silent?: boolean) {
   }
 }
 
-export function spawnAsync(command: string) {
-  const args = command.split(/\s+/)
-  const child = spawn(args[0], args.slice(1), { stdio: 'inherit' })
-  return new Promise((resolve) => {
+export function spawnAsync(args: string[]) {
+  const child = spawn(args[0], args.slice(1), { cwd, stdio: 'inherit' })
+  return new Promise<number>((resolve) => {
     child.on('close', resolve)
   })
 }

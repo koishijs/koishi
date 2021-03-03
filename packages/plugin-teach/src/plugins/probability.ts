@@ -10,7 +10,7 @@ declare module '../utils' {
 
 declare module '../receiver' {
   interface SessionState {
-    activated: Record<number, number>
+    activated?: Record<number, number>
   }
 }
 
@@ -18,13 +18,13 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   const { appellationTimeout = 20000 } = config
 
   ctx.command('teach')
-    .option('probabilityStrict', '-p <prob>  设置问题的触发权重', { validate: isZeroToOne })
-    .option('probabilityAppellative', '-P <prob>  设置被称呼时问题的触发权重', { validate: isZeroToOne })
+    .option('probabilityStrict', '-p <prob>  设置问题的触发权重', { type: isZeroToOne })
+    .option('probabilityAppellative', '-P <prob>  设置被称呼时问题的触发权重', { type: isZeroToOne })
 
-  ctx.on('dialogue/modify', ({ options, appellative }, data) => {
+  ctx.on('dialogue/modify', ({ options }, data) => {
     if (options.create) {
-      data.probS = options.probabilityStrict ?? 1 - +appellative
-      data.probA = options.probabilityAppellative ?? +appellative
+      data.probS = options.probabilityStrict ?? 1 - +options.appellative
+      data.probA = options.probabilityAppellative ?? +options.appellative
     } else {
       if (options.probabilityStrict !== undefined) {
         data.probS = options.probabilityStrict
@@ -68,7 +68,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     })
   })
 
-  ctx.on('dialogue/before-send', ({ test, activated, userId }) => {
+  ctx.before('dialogue/send', ({ test, activated, userId }) => {
     if (!test.activated) return
     const time = activated[userId] = Date.now()
     setTimeout(() => {

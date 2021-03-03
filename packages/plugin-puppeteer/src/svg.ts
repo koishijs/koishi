@@ -1,4 +1,4 @@
-import { Context } from 'koishi-core'
+import { Context, segment } from 'koishi-core'
 
 interface Attributes {
   [key: string]: string | number | boolean
@@ -143,6 +143,6 @@ export class SVG extends Tag {
       },
     })
     page.close()
-    return `[CQ:image,file=base64://${base64}]`
+    return segment.image('base64://' + base64)
   }
 }

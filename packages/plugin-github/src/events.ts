@@ -1,80 +1,41 @@
 /* eslint-disable camelcase */
 
-import { EventTypesPayload } from '@octokit/webhooks/dist-types/generated/get-webhook-payload-type-from-event'
+import { EventPayloadMap, WebhookEventName, Repository, PullRequest } from '@octokit/webhooks-definitions/schema'
 import { EventData } from './server'
 
-type WebhookEvent = Exclude<keyof EventTypesPayload, 'error'>
+type Camelize<S extends string> = S extends `${infer L}_${infer M}${infer R}` ? `${L}${Uppercase<M>}${Camelize<R>}` : S
 
-type SubEvent<T extends WebhookEvent> = {
-  [K in WebhookEvent]: K extends '*' ? never : EventTypesPayload[K] extends EventTypesPayload[T] ? K : never
-}[WebhookEvent]
+type ActionName<E extends WebhookEventName> = EventPayloadMap[E] extends { action: infer A } ? A & string : never
 
-interface CommentEventConfig {
-  created?: boolean
-  deleted?: boolean
-  edited?: boolean
+export type EventConfig = {
+  [E in WebhookEventName as Camelize<E>]?: EventPayloadMap[E] extends { action: infer A }
+    ? boolean | { [K in A & string as Camelize<K>]?: boolean }
+    : boolean
 }
 
-export interface EventConfig {
-  commitComment?: boolean | CommentEventConfig
-  create?: boolean
-  delete?: boolean
-  fork?: boolean
-  issueComment?: boolean | CommentEventConfig
-  issues?: boolean | {
-    assigned?: boolean
-    closed?: boolean
-    deleted?: boolean
-    demilestoned?: boolean
-    edited?: boolean
-    labeled?: boolean
-    locked?: boolean
-    milestoned?: boolean
-    opened?: boolean
-    pinned?: boolean
-    reopened?: boolean
-    transferred?: boolean
-    unassigned?: boolean
-    unlabeled?: boolean
-    unlocked?: boolean
-    unpinned?: boolean
-  }
-  milestone?: boolean | {
-    closed?: boolean
-    created?: boolean
-    deleted?: boolean
-    edited?: boolean
-    opened?: boolean
-  }
-  pullRequest?: boolean | {
-    assigned?: boolean
-    closed?: boolean
-    edited?: boolean
-    labeled?: boolean
-    locked?: boolean
-    merged?: boolean
-    opened?: boolean
-    readyForReview?: boolean
-    reopened?: boolean
-    reviewRequestRemoved?: boolean
-    reviewRequested?: boolean
-    synchronize?: boolean
-    unassigned?: boolean
-    unlabeled?: boolean
-    unlocked?: boolean
-  }
-  pullRequestReview?: boolean | {
-    dismissed?: boolean
-    edited?: boolean
-    submitted?: boolean
-  }
-  pullRequestReviewComment?: boolean | CommentEventConfig
-  push?: boolean
-  star?: boolean | {
-    created?: boolean
-    deleted?: boolean
-  }
+type SubEvent<E extends WebhookEventName> = `${E}/${ActionName<E>}`
+
+type EmitterWebhookEventName = WebhookEventName | keyof {
+  [E in WebhookEventName as E | `${E}/${ActionName<E>}`]: any
 }
+
+export interface CommonPayload {
+  action?: string
+  repository?: Repository
+}
+
+type Payload<T extends EmitterWebhookEventName> = T extends `${infer E}/${infer A}`
+  ? EventPayloadMap[E & WebhookEventName] & { action: A }
+  : EventPayloadMap[T & WebhookEventName]
+
+// https://github.com/microsoft/TypeScript/issues/42790
+// declare module 'koishi-core' {
+//   type WebhookEventMap = {
+//     [E in EmitterWebhookEventName as `github/${E}`]: (payload: Payload<E>) => void
+//   }
+
+//   interface EventMap extends WebhookEventMap {}
+// }
 
 export const defaultEvents: EventConfig = {
   commitComment: {
@@ -93,6 +54,10 @@ export const defaultEvents: EventConfig = {
   pullRequest: {
     closed: true,
     opened: true,
+    reopened: true,
+    readyForReview: true,
+    convertedToDraft: true,
+    reviewRequested: true,
   },
   pullRequestReview: {
     submitted: true,
@@ -105,8 +70,7 @@ export const defaultEvents: EventConfig = {
   },
 }
 
-type Payload<T extends WebhookEvent> = EventTypesPayload[T]['payload']
-type EventHandler<T extends WebhookEvent, P = {}> = (payload: Payload<T>) => EventData<P>
+type EventHandler<T extends EmitterWebhookEventName, P = {}> = (payload: Payload<T>) => EventData<P>
 
 function formatMarkdown(source: string) {
   return source
@@ -115,12 +79,14 @@ function formatMarkdown(source: string) {
     .replace(/\n\s*\n/g, '\n')
 }
 
-type FactoryCreator = <T extends WebhookEvent, P = {}>
+type FactoryCreator = <T extends EmitterWebhookEventName, P = {}>
   (callback: (event: T, payload: Payload<T>, handler: EventHandler<T, P>) => EventData<P>)
     => <E extends T>(event: E, handler?: EventHandler<E, P>) => void
 
-export function addListeners(on: <T extends WebhookEvent>(event: T, handler: EventHandler<T>) => void) {
-  const createFactory: FactoryCreator = callback => (event, handler) => on(event, payload => callback(event, payload, handler))
+export function addListeners(on: <T extends EmitterWebhookEventName>(event: T, handler: EventHandler<T>) => void) {
+  const createFactory: FactoryCreator = callback => (event, handler) => {
+    on(event, payload => Reflect.apply(callback, null, [event, payload, handler]))
+  }
 
   type CommentEvent = 'commit_comment' | 'issue_comment' | 'pull_request_review_comment'
 
@@ -201,7 +167,7 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     }]
   })
 
-  onIssue('issues.opened', ({ repository, issue, sender }) => {
+  onIssue('issues/opened', ({ repository, issue, sender }) => {
     const { full_name } = repository
     const { title, body, number } = issue
     return [[
@@ -211,7 +177,7 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     ].join('\n')]
   })
 
-  onIssue('issues.closed', ({ repository, issue, sender }) => {
+  onIssue('issues/closed', ({ repository, issue, sender }) => {
     const { full_name } = repository
     const { title, number } = issue
     return [`${sender.login} closed issue ${full_name}#${number}\n${title}`]
@@ -226,13 +192,13 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     }]
   })
 
-  on('milestone.created', ({ repository, milestone, sender }) => {
+  on('milestone/created', ({ repository, milestone, sender }) => {
     const { full_name } = repository
     const { title, description } = milestone
     return [`${sender.login} created milestone ${title} for ${full_name}\n${description}`]
   })
 
-  on('pull_request_review.submitted', ({ repository, review, pull_request }) => {
+  on('pull_request_review/submitted', ({ repository, review, pull_request }) => {
     if (!review.body) return
     const { full_name } = repository
     const { number, comments_url } = pull_request
@@ -266,25 +232,50 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     }]
   })
 
-  onPullRequest('pull_request.closed', ({ repository, pull_request, sender }) => {
+  onPullRequest('pull_request/closed', ({ repository, pull_request, sender }) => {
     const { full_name } = repository
     const { title, number, merged } = pull_request
     const type = merged ? 'merged' : 'closed'
     return [`${sender.login} ${type} pull request ${full_name}#${number}\n${title}`]
   })
 
-  onPullRequest('pull_request.opened', ({ repository, pull_request, sender }) => {
+  onPullRequest('pull_request/reopened', ({ repository, pull_request, sender }) => {
+    const { full_name } = repository
+    const { title, number } = pull_request
+    return [`${sender.login} reopened pull request ${full_name}#${number}\n${title}`]
+  })
+
+  onPullRequest('pull_request/opened', ({ repository, pull_request, sender }) => {
     const { full_name, owner } = repository
-    const { title, base, head, body, number } = pull_request
+    // FIXME: remove any after @octokit/webhooks-definitions/schema is fixed
+    const { title, base, head, body, number, draft } = pull_request as PullRequest
 
     const prefix = new RegExp(`^${owner.login}:`)
     const baseLabel = base.label.replace(prefix, '')
     const headLabel = head.label.replace(prefix, '')
     return [[
-      `${sender.login} opened a pull request ${full_name}#${number} (${baseLabel} ← ${headLabel})`,
+      `${sender.login} ${draft ? 'drafted' : 'opened'} a pull request ${full_name}#${number} (${baseLabel} ← ${headLabel})`,
       `Title: ${title}`,
       formatMarkdown(body),
     ].join('\n')]
+  })
+
+  onPullRequest('pull_request/review_requested', ({ repository, pull_request, sender, requested_reviewer }) => {
+    const { full_name } = repository
+    const { number } = pull_request as PullRequest
+    return [`${sender.login} requeted a review from ${requested_reviewer.login} on ${full_name}#${number}`]
+  })
+
+  onPullRequest('pull_request/converted_to_draft', ({ repository, pull_request, sender }) => {
+    const { full_name } = repository
+    const { number } = pull_request as PullRequest
+    return [`${sender.login} marked ${full_name}#${number} as draft`]
+  })
+
+  onPullRequest('pull_request/ready_for_review', ({ repository, pull_request, sender }) => {
+    const { full_name } = repository
+    const { number } = pull_request as PullRequest
+    return [`${sender.login} marked ${full_name}#${number} as ready for review`]
   })
 
   on('push', ({ compare, pusher, commits, repository, ref, before, after }) => {
@@ -301,7 +292,7 @@ export function addListeners(on: <T extends WebhookEvent>(event: T, handler: Eve
     }]
   })
 
-  on('star.created', ({ repository, sender }) => {
+  on('star/created', ({ repository, sender }) => {
     const { full_name, stargazers_count } = repository
     return [`${sender.login} starred ${full_name} (total ${stargazers_count} stargazers)`]
   })

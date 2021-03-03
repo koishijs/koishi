@@ -1,4 +1,4 @@
-import { Context } from 'koishi-core'
+import { Context, segment } from 'koishi-core'
 import { Socket } from 'net'
 
 function itob(n: number, length: number) {
@@ -12,7 +12,7 @@ function itob(n: number, length: number) {
 }
 
 export function apply(ctx: Context) {
-  ctx.command('tools/mcping <server>', '查看 Minecraft 服务器信息')
+  ctx.command('tools/mcping <url>', '查看 Minecraft 服务器信息')
     .action(async ({ session }, address) => {
       if (!address) return '请输入正确的网址。'
       if (!address.match(/^\w+:\/\//)) address = 'http://' + address
@@ -69,21 +69,21 @@ export function apply(ctx: Context) {
             ]
             if (status.description) output.unshift(`简介：${status.description.text}`)
             // data:image/png;base64,
-            if (status.favicon) output.unshift(`[CQ:image,file=base64://${status.favicon.slice(22)}]`)
-            session.$send(output.join('\n'))
+            if (status.favicon) output.unshift(segment.image('base64://' + status.favicon.slice(22)))
+            session.send(output.join('\n'))
           } catch (error) {
-            session.$send('无法解析服务器信息。')
+            session.send('无法解析服务器信息。')
           }
         }
       })
 
       socket.setTimeout(5000, () => {
         socket.end()
-        if (!response) session.$send('服务器响应超时，请确认输入的地址。')
+        if (!response) session.send('服务器响应超时，请确认输入的地址。')
       })
       socket.on('error', () => {
         socket.destroy()
-        session.$send('无法获取服务器信息，请确认输入的地址。')
+        session.send('无法获取服务器信息，请确认输入的地址。')
       })
     })
 }

@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-image-search",
   "description": "Image searching plugin for Koishi",
-  "version": "2.1.0",
+  "version": "3.0.0-beta.10",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -9,10 +9,6 @@
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
-  "scripts": {
-    "lint": "eslint src --ext .ts",
-    "prepack": "tsc -b"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/koishijs/koishi.git"
@@ -37,8 +33,8 @@
     "pixiv"
   ],
   "peerDependencies": {
-    "koishi-core": "^2.5.2",
-    "koishi-utils": "^3.2.1"
+    "koishi-core": "^3.0.0",
+    "koishi-utils": "^4.0.1"
   },
   "dependencies": {
     "axios": "^0.21.1",

@@ -1,33 +1,37 @@
+/* eslint-disable no-template-curly-in-string */
+
 import { App } from 'koishi-test-utils'
 import { resolve } from 'path'
-import * as pluginEval from 'koishi-plugin-eval'
-
-require('koishi-plugin-eval/src/main').workerScript = [
-  'require("ts-node/register/transpile-only");',
-  'require("tsconfig-paths/register");',
-  `require(${JSON.stringify(resolve(__dirname, '../src/worker.ts'))})`,
-].join('\n')
+import { promises as fs } from 'fs'
+import * as eval from 'koishi-plugin-eval'
 
 const app = new App()
 
-app.plugin(pluginEval, {
+app.plugin(eval, {
+  addonRoot: resolve(__dirname, 'fixtures'),
   setupFiles: {
     'test-worker': resolve(__dirname, 'worker.ts'),
   },
 })
 
-const ses = app.session(123)
+const ses = app.session('123')
 
-before(() => app.start())
+before(async () => {
+  await fs.rmdir(resolve(__dirname, 'fixtures/.koishi'), { recursive: true })
+  return new Promise<void>((resolve) => {
+    app.on('worker/ready', () => resolve())
+    app.start()
+  })
+})
 
 after(() => app.stop())
 
 describe('Eval Plugin', () => {
   it('basic support', async () => {
-    await ses.shouldReply('> 1+1', '2')
-    await ses.shouldNotReply('>> 1+1')
-    await ses.shouldReply('> send(1+1)', '2')
-    await ses.shouldReply('>> send(1+1)', '2')
+    await ses.shouldReply('> 1 + 1', '2')
+    await ses.shouldNotReply('>> 1 + 1')
+    await ses.shouldReply('> send(1 + 1)', '2')
+    await ses.shouldReply('>> send(1 + 1)', '2')
   })
 
   it('validation', async () => {
@@ -45,6 +49,17 @@ describe('Eval Plugin', () => {
     await ses.shouldReply('> exec("help")', /^当前可用的指令有：/)
   })
 
+  it('noEval', async () => {
+    app.command('foo', { noEval: true })
+    await ses.shouldReply('> exec("foo")', /^不能在 evaluate 指令中调用 foo 指令。/)
+  })
+
+  it('interpolate', async () => {
+    app.command('echo <text:text>').action((_, text) => text)
+    await ses.shouldReply('echo 1${1 + 1}3', '123')
+    await ses.shouldReply('echo 1${2 + 3', '12 + 3')
+  })
+
   it('global', async () => {
     await ses.shouldNotReply('> global.console')
     await ses.shouldNotReply('> global.setTimeout')
@@ -53,16 +68,28 @@ describe('Eval Plugin', () => {
     await ses.shouldReply('> exec.toString()', 'function exec() { [native code] }')
   })
 
-  it('attack 1', async () => {
-    await ses.shouldReply(`>
-      const func1 = this.constructor.constructor("return Function('return Function')")()();
-      const func2 = this.constructor.constructor("return Function")();
-      func1 === func2;
-    `, 'true')
+  it('restart', async () => {
+    await ses.shouldNotReply('>> foo = 1')
+    await ses.shouldReply('> foo', '1')
+    await ses.shouldReply('eval -r', '子线程已重启。')
+    await ses.shouldReply('> foo', 'ReferenceError: foo is not defined\n    at stdin:1:1')
+  })
 
-    await ses.shouldReply(`>
-      const ForeignFunction = global.constructor.constructor;
-      const process1 = ForeignFunction("return process")();
-    `, /^ReferenceError: process is not defined/)
+  it('timeout', async () => {
+    app.worker.config.timeout = 10
+    await ses.shouldReply('eval while(1);', '执行超时。')
+    app.worker.config.timeout = 1000
+  })
+})
+
+describe('Eval Addons', () => {
+  it('addon command', async () => {
+    await ses.shouldReply('addon', /^addon\n扩展功能/)
+    await ses.shouldReply('test -h', 'test\n测试功能')
+    await ses.shouldReply('test', 'bar')
+  })
+
+  it('sandbox injection', async () => {
+    await ses.shouldReply('> addon1.foo()', 'bar')
   })
 })

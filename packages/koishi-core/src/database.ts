@@ -1,14 +1,15 @@
 import * as utils from 'koishi-utils'
+import { Platform } from './adapter'
 
 export type TableType = keyof Tables
 
 export interface Tables {
   user: User
-  group: Group
+  channel: Channel
 }
 
-export interface User {
-  id: number
+export interface User extends Record<Platform, string> {
+  id: string
   flag: number
   authority: number
   name: string
@@ -23,84 +24,82 @@ export namespace User {
 
   export type Field = keyof User
   export const fields: Field[] = []
+  export type Index = Platform | 'name' | 'id'
   export type Observed<K extends Field = Field> = utils.Observed<Pick<User, K>, Promise<void>>
-  type Getter = (id: number, authority: number) => Partial<User>
+  type Getter = <T extends Index>(type: T, id: string) => Partial<User>
   const getters: Getter[] = []
 
   export function extend(getter: Getter) {
     getters.push(getter)
-    fields.push(...Object.keys(getter(0, 0)) as any)
+    fields.push(...Object.keys(getter(null as never, '0')) as any)
   }
 
-  extend((id, authority) => ({
-    id,
-    authority,
+  extend(() => ({
+    authority: 0,
     flag: 0,
     usage: {},
     timers: {},
-    name: '' + id,
   }))
 
-  export function create(id: number, authority: number) {
-    const result = {} as User
+  export function create<T extends Index>(type: T, id: string) {
+    const result = { [type]: id } as Partial<User>
     for (const getter of getters) {
-      Object.assign(result, getter(id, authority))
+      Object.assign(result, getter(type, id))
     }
-    return result
+    return result as User
   }
 }
 
-export interface Group {
-  id: number
+export interface Channel {
+  id: string
   flag: number
-  assignee: number
+  assignee: string
 }
 
-export namespace Group {
+export namespace Channel {
   export enum Flag {
     ignore = 1,
-    noImage = 2,
     silent = 4,
   }
 
-  export type Field = keyof Group
+  export type Field = keyof Channel
   export const fields: Field[] = []
-  export type Observed<K extends Field = Field> = utils.Observed<Pick<Group, K>, Promise<void>>
-  type Getter = (id: number, assignee: number) => Partial<Group>
+  export type Observed<K extends Field = Field> = utils.Observed<Pick<Channel, K>, Promise<void>>
+  type Getter = (type: Platform, id: string) => Partial<Channel>
   const getters: Getter[] = []
 
   export function extend(getter: Getter) {
     getters.push(getter)
-    fields.push(...Object.keys(getter(0, 0)) as any)
+    fields.push(...Object.keys(getter(null as never, '')) as any)
   }
 
-  export function create(id: number, assignee: number) {
-    const result = {} as Group
+  export function create(type: Platform, id: string) {
+    const result = {} as Channel
     for (const getter of getters) {
-      Object.assign(result, getter(id, assignee))
+      Object.assign(result, getter(type, id))
     }
     return result
   }
 
-  extend((id, assignee) => ({
-    id,
-    assignee,
-    flag: 0,
-  }))
+  extend((type, id) => ({ id: `${type}:${id}`, flag: 0 }))
 }
 
-export interface Database {
-  getUser<K extends User.Field>(userId: number, fields?: readonly K[]): Promise<Pick<User, K | 'id'>>
-  getUser<K extends User.Field>(userId: number, defaultAuthority?: number, fields?: readonly K[]): Promise<Pick<User, K | 'id'>>
-  getUsers<K extends User.Field>(fields?: readonly K[]): Promise<Pick<User, K>[]>
-  getUsers<K extends User.Field>(ids: readonly number[], fields?: readonly K[]): Promise<Pick<User, K>[]>
-  setUser(userId: number, data: Partial<User>): Promise<void>
+type MaybeArray<T> = T | readonly T[]
 
-  getGroup<K extends Group.Field>(groupId: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id'>>
-  getGroup<K extends Group.Field>(groupId: number, selfId?: number, fields?: readonly K[]): Promise<Pick<Group, K | 'id'>>
-  getAllGroups<K extends Group.Field>(assignees?: readonly number[]): Promise<Pick<Group, K>[]>
-  getAllGroups<K extends Group.Field>(fields?: readonly K[], assignees?: readonly number[]): Promise<Pick<Group, K>[]>
-  setGroup(groupId: number, data: Partial<Group>): Promise<void>
+export interface Database {
+  getUser<K extends User.Field, T extends User.Index>(type: T, id: string, fields?: readonly K[]): Promise<Pick<User, K | T>>
+  getUser<K extends User.Field, T extends User.Index>(type: T, ids: readonly string[], fields?: readonly K[]): Promise<Pick<User, K | T>[]>
+  setUser<T extends User.Index>(type: T, id: string, data: Partial<User>): Promise<void>
+  createUser<T extends User.Index>(type: T, id: string, data: Partial<User>): Promise<void>
+  removeUser<T extends User.Index>(type: T, id: string): Promise<void>
+
+  getChannel<K extends Channel.Field>(type: Platform, id: string, fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>>
+  getChannel<K extends Channel.Field>(type: Platform, ids: readonly string[], fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>[]>
+  getChannel<K extends Channel.Field>(type: Platform, id: MaybeArray<string>, fields?: readonly K[]): Promise<any>
+  getAssignedChannels<K extends Channel.Field>(fields?: readonly K[], assignMap?: Record<string, readonly string[]>): Promise<Pick<Channel, K>[]>
+  setChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
+  createChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
+  removeChannel(type: Platform, id: string): Promise<void>
 }
 
 type DatabaseExtensionMethods<I> = {
@@ -112,12 +111,16 @@ type DatabaseExtension<T> =
   | DatabaseExtensionMethods<T extends new (...args: any[]) => infer I ? I : never>
 
 export function extendDatabase<T extends {}>(module: string | T, extension: DatabaseExtension<T>) {
+  let Database: any
   try {
-    const Database = typeof module === 'string' ? require(module).default : module
-    if (typeof extension === 'function') {
-      extension(Database)
-    } else {
-      Object.assign(Database.prototype, extension)
-    }
-  } catch (error) {}
+    Database = typeof module === 'string' ? require(module).default : module
+  } catch (error) {
+    return
+  }
+
+  if (typeof extension === 'function') {
+    extension(Database)
+  } else {
+    Object.assign(Database.prototype, extension)
+  }
 }

@@ -1,0 +1,42 @@
+{
+  "name": "koishi-adapter-discord",
+  "description": "Discord adapter for Koishi",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "author": "LittleC <i@ltlec.cn>",
+  "maintainers": [
+    "Shigma <1700011071@pku.edu.cn>",
+    "LittleC <i@ltlec.cn>"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi/tree/master/packages/koishi-core#readme",
+  "keywords": [
+    "bot",
+    "discord",
+    "chatbot",
+    "koishi"
+  ],
+  "peerDependencies": {
+    "koishi-core": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^7.4.0",
+    "koishi-test-utils": "^6.0.0-beta.9"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "form-data": "^4.0.0",
+    "ws": "^7.4.3"
+  }
+}

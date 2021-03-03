@@ -1,11 +1,11 @@
 import { Context } from 'koishi-core'
 import { contain, union, difference } from 'koishi-utils'
-import { equal, split, prepareTargets, RE_DIALOGUES, parseTeachArgs, isPositiveInteger, Dialogue } from '../utils'
+import { equal, split, prepareTargets, RE_DIALOGUES, isPositiveInteger, Dialogue } from '../utils'
 import { formatQuestionAnswers } from '../search'
 
 declare module '../receiver' {
   interface SessionState {
-    predecessors: Record<number, Record<number, number>>
+    predecessors?: Record<number, Record<number, number>>
   }
 }
 
@@ -42,12 +42,12 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   if (!successorTimeout) return
 
   ctx.command('teach')
-    .option('setPred', '< <ids>  设置前置问题', { type: 'string', validate: RE_DIALOGUES })
-    .option('addPred', '<< <ids>  添加前置问题', { type: 'string', validate: RE_DIALOGUES })
-    .option('setSucc', '> <ids>  设置后继问题', { type: 'string', validate: RE_DIALOGUES })
-    .option('addSucc', '>> <ids>  添加后继问题', { type: 'string', validate: RE_DIALOGUES })
-    .option('createSuccessor', '># <op...>  创建并添加后继问答')
-    .option('successorTimeout', '-z [time]  设置允许触发后继的时间', { validate: isPositiveInteger })
+    .option('setPred', '< <ids:string>  设置前置问题', { type: RE_DIALOGUES })
+    .option('addPred', '<< <ids:string>  添加前置问题', { type: RE_DIALOGUES })
+    .option('setSucc', '> <ids:string>  设置后继问题', { type: RE_DIALOGUES })
+    .option('addSucc', '>> <ids:string>  添加后继问题', { type: RE_DIALOGUES })
+    .option('createSuccessor', '># <op:text>  创建并添加后继问答')
+    .option('successorTimeout', '-z [time]  设置允许触发后继的时间', { type: isPositiveInteger })
     .option('context', '-c  允许后继问答被任何人触发')
     .option('context', '-C  后继问答只能被同一人触发', { value: false })
 
@@ -138,17 +138,16 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.on('dialogue/after-modify', async ({ options: { createSuccessor }, dialogues, session }) => {
     // 当存在 ># 时自动添加新问答并将当前处理的问答作为其前置
     if (!createSuccessor) return
-    if (!dialogues.length) return session.$send('没有搜索到任何问答。')
+    if (!dialogues.length) return session.send('没有搜索到任何问答。')
     const command = ctx.command('teach')
     const argv = { ...command.parse(createSuccessor), session, command }
     const target = argv.options['setPred'] = dialogues.map(d => d.id).join(',')
     argv.source = `# ${createSuccessor} < ${target}`
-    parseTeachArgs(argv)
-    await command.execute(session.$argv)
+    await command.execute(session.argv)
   })
 
   // get predecessors
-  ctx.on('dialogue/before-detail', async ({ options, dialogues }) => {
+  ctx.before('dialogue/detail', async ({ options, dialogues }) => {
     if (options.modify) return
     const predecessors = new Set<number>()
     for (const dialogue of dialogues) {
@@ -250,9 +249,9 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
-  ctx.on('dialogue/before-send', ({ dialogue, predecessors, userId }) => {
+  ctx.before('dialogue/send', ({ dialogue, predecessors, userId }) => {
     const time = Date.now()
-    if (dialogue.flag & Dialogue.Flag.context) userId = 0
+    if (dialogue.flag & Dialogue.Flag.context) userId = ''
     const predMap = predecessors[userId] || (predecessors[userId] = {})
     for (const id of dialogue.predecessors) {
       delete predMap[id]

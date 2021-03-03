@@ -1,6 +1,6 @@
 import { observe, noop } from 'koishi-utils'
-import { fn } from 'jest-mock'
 import { expect } from 'chai'
+import jest from 'jest-mock'
 import 'koishi-test-utils'
 
 describe('Observer API', () => {
@@ -84,7 +84,7 @@ describe('Observer API', () => {
   })
 
   it('flush changes', () => {
-    const flush = fn()
+    const flush = jest.fn()
     const object = observe({ a: 1, b: [2] }, flush)
     expect(object._diff).to.have.shape({})
 

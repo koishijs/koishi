@@ -1,14 +1,12 @@
-import { Context, User, Session, NextFunction, Command, Group } from 'koishi-core'
-import { CQCode, simplify, noop, escapeRegExp, Random, makeArray } from 'koishi-utils'
+import { Context, User, Session, NextFunction, Channel, Argv } from 'koishi-core'
+import { segment, simplify, noop, escapeRegExp, Random, makeArray } from 'koishi-utils'
 import { Dialogue, DialogueTest } from './utils'
 
-declare module 'koishi-core/dist/app' {
+declare module 'koishi-core' {
   interface App {
     _dialogueStates: Record<number, SessionState>
   }
-}
 
-declare module 'koishi-core/dist/context' {
   interface EventMap {
     'dialogue/state'(state: SessionState): void
     'dialogue/receive'(state: SessionState): void | boolean
@@ -22,9 +20,7 @@ declare module 'koishi-core/dist/context' {
   interface Context {
     getSessionState(this: Context, session: Session): SessionState
   }
-}
 
-declare module 'koishi-core/dist/session' {
   interface Session {
     _redirected?: number
   }
@@ -53,8 +49,8 @@ declare module './utils' {
 }
 
 export interface SessionState {
-  userId: number
-  groupId: number
+  userId?: string
+  channelId?: string
   answer?: string
   session?: Session<User.Field>
   test?: DialogueTest
@@ -65,21 +61,21 @@ export interface SessionState {
 }
 
 export function escapeAnswer(message: string) {
-  return message.replace(/%/g, '@@__PLACEHOLDER__@@')
+  return message.replace(/\$/g, '@@__PLACEHOLDER__@@')
 }
 
 export function unescapeAnswer(message: string) {
-  return message.replace(/@@__PLACEHOLDER__@@/g, '%')
+  return message.replace(/@@__PLACEHOLDER__@@/g, '$')
 }
 
 Context.prototype.getSessionState = function (session) {
-  const { groupId, anonymous, userId, $app } = session
-  if (!$app._dialogueStates[groupId]) {
-    this.emit('dialogue/state', $app._dialogueStates[groupId] = { groupId } as SessionState)
+  const { channelId, userId, app } = session
+  if (!app._dialogueStates[channelId]) {
+    this.emit('dialogue/state', app._dialogueStates[channelId] = { channelId } as SessionState)
   }
-  const state = Object.create($app._dialogueStates[groupId])
+  const state = Object.create(app._dialogueStates[channelId])
   state.session = session
-  state.userId = anonymous ? -anonymous.id : userId
+  state.userId = userId
   return state
 }
 
@@ -88,7 +84,7 @@ export async function getTotalWeight(ctx: Context, state: SessionState) {
   ctx.app.emit(session, 'dialogue/prepare', state)
   const userFields = new Set<User.Field>(['name', 'flag'])
   ctx.app.emit(session, 'dialogue/before-attach-user', state, userFields)
-  await session.$observeUser(userFields)
+  await session.observeUser(userFields)
   if (ctx.app.bail(session, 'dialogue/attach-user', state)) return 0
   return dialogues.reduce((prev, curr) => prev + curr._weight, 0)
 }
@@ -98,14 +94,14 @@ export class MessageBuffer {
   private original = false
 
   public hasData = false
-  public send: Session['$send']
-  public sendQueued: Session['$sendQueued']
+  public send: Session['send']
+  public sendQueued: Session['sendQueued']
 
   constructor(private session: Session) {
-    this.send = session.$send.bind(session)
-    this.sendQueued = session.$sendQueued.bind(session)
+    this.send = session.send.bind(session)
+    this.sendQueued = session.sendQueued.bind(session)
 
-    session.$send = async (message: string) => {
+    session.send = async (message: string) => {
       if (!message) return
       this.hasData = true
       if (this.original) {
@@ -114,7 +110,7 @@ export class MessageBuffer {
       this.buffer += message
     }
 
-    session.$sendQueued = async (message, delay) => {
+    session.sendQueued = async (message, delay) => {
       if (!message) return
       this.hasData = true
       if (this.original) {
@@ -142,25 +138,30 @@ export class MessageBuffer {
     return this._flush(this.buffer)
   }
 
-  async run<T>(callback: () => T | Promise<T>) {
+  async execute(argv: Argv) {
     this.original = false
-    const send = this.session.$send
-    const sendQueued = this.session.$sendQueued
-    const result = await callback()
-    this.session.$sendQueued = sendQueued
-    this.session.$send = send
+    const send = this.session.send
+    const sendQueued = this.session.sendQueued
+    await this.session.execute(argv)
+    this.session.sendQueued = sendQueued
+    this.session.send = send
     this.original = true
-    return result
   }
 
   async end(message = '') {
     this.write(message)
     await this.flush()
     this.original = true
-    delete this.session.$send
-    delete this.session.$sendQueued
+    delete this.session.send
+    delete this.session.sendQueued
   }
 }
+
+const tokenizer = new Argv.Tokenizer()
+
+tokenizer.interpolate('$n', '', (rest) => {
+  return { rest, tokens: [], source: '' }
+})
 
 export async function triggerDialogue(ctx: Context, session: Session, next: NextFunction = noop) {
   const state = ctx.getSessionState(session)
@@ -169,7 +170,7 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
 
   if (ctx.bail('dialogue/receive', state)) return next()
   const logger = ctx.logger('dialogue')
-  logger.debug('[receive]', session.messageId, session.message)
+  logger.debug('[receive]', session.messageId, session.content)
 
   // fetch matched dialogues
   const dialogues = state.dialogues = await ctx.database.getDialoguesByTest(state.test)
@@ -194,19 +195,19 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
   state.dialogue = dialogue
   state.dialogues = [dialogue]
   state.answer = dialogue.answer
-    .replace(/%%/g, '@@__PLACEHOLDER__@@')
-    .replace(/%A/g, CQCode.stringify('at', { qq: 'all' }))
-    .replace(/%a/g, CQCode.stringify('at', { qq: session.userId }))
-    .replace(/%m/g, CQCode.stringify('at', { qq: session.selfId }))
-    .replace(/%s/g, escapeAnswer(session.$username))
-    .replace(/%0/g, escapeAnswer(session.message))
+    .replace(/\$\$/g, '@@__PLACEHOLDER__@@')
+    .replace(/\$A/g, segment('at', { type: 'all' }))
+    .replace(/\$a/g, segment('at', { id: session.userId }))
+    .replace(/\$m/g, segment('at', { id: session.selfId }))
+    .replace(/\$s/g, () => escapeAnswer(session.username))
+    .replace(/\$0/g, escapeAnswer(session.content))
 
   if (dialogue.flag & Dialogue.Flag.regexp) {
     const capture = dialogue._capture || new RegExp(dialogue.question, 'i').exec(state.test.question)
     if (!capture) console.log(dialogue.question, state.test.question)
     capture.map((segment, index) => {
       if (index && index <= 9) {
-        state.answer = state.answer.replace(new RegExp(`%${index}`, 'g'), escapeAnswer(segment || ''))
+        state.answer = state.answer.replace(new RegExp(`\\$${index}`, 'g'), escapeAnswer(segment || ''))
       }
     })
   }
@@ -220,31 +221,18 @@ export async function triggerDialogue(ctx: Context, session: Session, next: Next
 
   // parse answer
   let index: number
-  while ((index = state.answer.indexOf('%')) >= 0) {
-    const char = state.answer[index + 1]
-    if (!'n{'.includes(char)) {
-      buffer.write(unescapeAnswer(state.answer.slice(0, index + 2)))
-      state.answer = state.answer.slice(index + 2)
-      continue
-    }
-    buffer.write(unescapeAnswer(state.answer.slice(0, index)))
-    state.answer = state.answer.slice(index + 2)
-    if (char === 'n') {
+  const { content, inters } = tokenizer.parseToken(unescapeAnswer(state.answer))
+  while (inters.length) {
+    const argv = inters.shift()
+    buffer.write(content.slice(index, argv.pos))
+    if (argv.initiator === '$n') {
       await buffer.flush()
-    } else if (char === '{') {
-      const message = unescapeAnswer(state.answer)
-      const argv = session.$parse(message, '}')
-      if (argv) {
-        state.answer = argv.rest.slice(1)
-        await buffer.run(() => session.$execute(argv))
-      } else {
-        logger.warn('cannot parse:', message)
-        const index = state.answer.indexOf('}')
-        state.answer = state.answer.slice(index + 1)
-      }
+    } else {
+      await buffer.execute(argv)
     }
+    index = argv.pos
   }
-  await buffer.end(unescapeAnswer(state.answer))
+  await buffer.end(content.slice(index))
   await ctx.app.parallel(session, 'dialogue/send', state)
 }
 
@@ -252,6 +240,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   const { nickname = ctx.app.options.nickname, maxRedirections = 3 } = config
   const nicknames = makeArray(nickname).map(escapeRegExp)
   const nicknameRE = new RegExp(`^((${nicknames.join('|')})[,，]?\\s*)+`)
+  const ctx2 = ctx.group()
 
   ctx.app._dialogueStates = {}
 
@@ -268,79 +257,76 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   }
 
-  ctx.prependListener('parse', (message, session) => {
-    if (session.$appel) return
+  ctx.before('attach', (session) => {
+    if (session.parsed.appel) return
     const { activated } = ctx.getSessionState(session)
-    if (activated[session.userId]) session.$appel = true
+    if (activated[session.userId]) session.parsed.appel = true
   })
 
-  ctx.group().middleware(async (session, next) => {
+  ctx2.middleware(async (session, next) => {
     return triggerDialogue(ctx, session, next)
   })
 
-  ctx.on('notify/poke', async (session) => {
+  ctx.on('notice/poke', async (session) => {
     if (session.targetId !== session.selfId) return
-    const { flag } = await session.$observeGroup(['flag'])
-    if (flag & Group.Flag.ignore) return
-    session.message = 'hook:poke'
+    const { flag } = await session.observeChannel(['flag'])
+    if (flag & Channel.Flag.ignore) return
+    session.content = 'hook:poke'
     triggerDialogue(ctx, session)
   })
 
   async function triggerNotice(name: string, session: Session) {
-    const { flag, assignee } = await session.$observeGroup(['flag', 'assignee'])
+    const { flag, assignee } = await session.observeChannel(['flag', 'assignee'])
     if (assignee !== session.selfId) return
-    if (flag & Group.Flag.ignore) return
-    session.message = 'hook:' + name + (session.userId === session.selfId ? ':self' : ':others')
+    if (flag & Channel.Flag.ignore) return
+    session.content = 'hook:' + name + (session.userId === session.selfId ? ':self' : ':others')
     triggerDialogue(ctx, session)
   }
 
-  ctx.on('notify/honor', async (session) => {
-    await triggerNotice(session.honorType, session)
+  ctx.on('notice/honor', async (session) => {
+    await triggerNotice(session.subsubtype, session)
   })
 
-  ctx.on('group-increase', triggerNotice.bind(null, 'join'))
+  ctx.on('group-member-added', triggerNotice.bind(null, 'join'))
 
-  ctx.on('group-decrease', triggerNotice.bind(null, 'leave'))
+  ctx.on('group-member-deleted', triggerNotice.bind(null, 'leave'))
 
   ctx.on('dialogue/attach-user', ({ session }) => {
-    if (session.$user.flag & User.Flag.ignore) return true
+    if (session.user.flag & User.Flag.ignore) return true
   })
 
   ctx.on('dialogue/receive', ({ session, test }) => {
-    if (session.message.includes('[CQ:image,')) return true
-    const { unprefixed, prefixed, appellative, activated } = config._stripQuestion(session.message)
+    if (session.content.includes('[CQ:image,')) return true
+    const { unprefixed, prefixed, appellative, activated } = config._stripQuestion(session.content)
     test.question = unprefixed
     test.original = prefixed
     test.activated = activated
     test.appellative = appellative
+    if (!test.question) return true
   })
 
   // 预判要获取的用户字段
-  ctx.on('dialogue/before-attach-user', ({ dialogues, session }, userFields) => {
+  ctx.before('dialogue/attach-user', ({ dialogues, session }, userFields) => {
     for (const data of dialogues) {
-      const capture = data.answer.match(/%\{.+?\}/g)
-      for (const message of capture || []) {
-        const argv = session.$parse(message.slice(2, -1))
-        Command.collect(argv, 'user', userFields)
-      }
-      if (capture || data.answer.includes('%n')) {
-        userFields.add('timers')
+      const { inters } = tokenizer.parseToken(data.answer)
+      for (const argv of inters) {
+        session.collect('user', argv, userFields)
       }
     }
   })
 
-  ctx.group().command('dialogue <message...>', '触发教学对话')
+  ctx2.command('dialogue <message:text>', '触发教学对话')
     .action(async ({ session, next }, message = '') => {
       if (session._redirected > maxRedirections) return next()
-      session.message = message
+      session.content = message
       return triggerDialogue(ctx, session, next)
     })
 }
 
 function prepareSource(source: string) {
-  return CQCode.stringifyAll(CQCode.parseAll(source).map((code, index, arr) => {
-    if (typeof code !== 'string') return code
-    let message = simplify(CQCode.unescape('' + code))
+  return segment.join(segment.parse(source).map((code, index, arr) => {
+    if (code.type !== 'text') return code
+    let message = simplify(segment.unescape('' + code.data.content))
       .toLowerCase()
       .replace(/\s+/g, '')
       .replace(/，/g, ',')
@@ -356,6 +342,7 @@ function prepareSource(source: string) {
       .replace(/…/g, '...')
     if (index === 0) message = message.replace(/^[()\[\]]*/, '')
     if (index === arr.length - 1) message = message.replace(/[\.,?!()\[\]~]*$/, '')
-    return message
+    code.data.content = message
+    return code
   }))
 }

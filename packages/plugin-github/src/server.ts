@@ -1,12 +1,12 @@
 /* eslint-disable camelcase */
 
-import { Webhooks } from '@octokit/webhooks'
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
-import { Session, User } from 'koishi-core'
-import { CQCode, Logger } from 'koishi-utils'
+import { App, Session, User } from 'koishi-core'
+import { segment, Logger } from 'koishi-utils'
+import {} from 'koishi-plugin-puppeteer'
 
-declare module 'koishi-core/dist/database' {
+declare module 'koishi-core' {
   interface User {
     ghAccessToken?: string
     ghRefreshToken?: string
@@ -29,7 +29,7 @@ export interface Config {
   promptTimeout?: number
   replyTimeout?: number
   requestTimeout?: number
-  repos?: Record<string, number[]>
+  repos?: Record<string, string[]>
   events?: EventConfig
 }
 
@@ -42,22 +42,12 @@ export interface OAuth {
   scope: string
 }
 
-interface RequestOptions {
-  url: string
-  method: Method
-  session: ReplySession
-  body: any
-  headers?: Record<string, any>
-}
-
 type ReplySession = Session<'ghAccessToken' | 'ghRefreshToken'>
 
 const logger = new Logger('github')
 
-export class GitHub extends Webhooks {
-  constructor(public config: Config) {
-    super({ ...config, path: config.webhook })
-  }
+export class GitHub {
+  constructor(public app: App, public config: Config) {}
 
   async getTokens(params: any) {
     const { data } = await axios.post<OAuth>('https://github.com/login/oauth/access_token', {
@@ -65,6 +55,7 @@ export class GitHub extends Webhooks {
       client_secret: this.config.appSecret,
       ...params,
     }, {
+      ...this.app.options.axiosConfig,
       headers: { Accept: 'application/json' },
     })
     return data
@@ -73,24 +64,25 @@ export class GitHub extends Webhooks {
   private async _request(url: string, method: Method, session: ReplySession, body: any, headers?: Record<string, any>) {
     logger.debug(method, url, body)
     await axios.post(url, body, {
+      ...this.app.options.axiosConfig,
       timeout: this.config.requestTimeout,
       headers: {
         accept: 'application/vnd.github.v3+json',
-        authorization: `token ${session.$user.ghAccessToken}`,
+        authorization: `token ${session.user.ghAccessToken}`,
         ...headers,
       },
     })
   }
 
   async authorize(session: Session, message: string) {
-    await session.$send(message)
-    const name = await session.$prompt(this.config.promptTimeout)
-    if (!name) return session.$send('输入超时。')
-    return session.$execute({ command: 'github.authorize', args: [name] })
+    await session.send(message)
+    const name = await session.prompt(this.config.promptTimeout)
+    if (!name) return session.send('输入超时。')
+    return session.execute({ name: 'github.authorize', args: [name] })
   }
 
   async request(url: string, method: Method, session: ReplySession, body: any, headers?: Record<string, any>) {
-    if (!session.$user.ghAccessToken) {
+    if (!session.user.ghAccessToken) {
       return this.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
     }
 
@@ -100,17 +92,17 @@ export class GitHub extends Webhooks {
       const { response } = error as AxiosError
       if (response?.status !== 401) {
         logger.warn(error)
-        return session.$send('发送失败。')
+        return session.send('发送失败。')
       }
     }
 
     try {
       const data = await this.getTokens({
-        refresh_token: session.$user.ghRefreshToken,
+        refresh_token: session.user.ghRefreshToken,
         grant_type: 'refresh_token',
       })
-      session.$user.ghAccessToken = data.access_token
-      session.$user.ghRefreshToken = data.refresh_token
+      session.user.ghAccessToken = data.access_token
+      session.user.ghRefreshToken = data.refresh_token
     } catch {
       return this.authorize(session, '令牌已失效，需要重新授权。输入你的 GitHub 用户名。')
     }
@@ -119,15 +111,15 @@ export class GitHub extends Webhooks {
       await this._request(url, method, session, body, headers)
     } catch (error) {
       logger.warn(error)
-      return session.$send('发送失败。')
+      return session.send('发送失败。')
     }
   }
 }
 
 function formatReply(source: string) {
-  return CQCode.parseAll(source).map((value) => {
-    if (typeof value === 'string') return value
-    if (value.type === 'image') return `![image](${value.data.url})`
+  return segment.parse(source).map((node) => {
+    if (node.type === 'text') return node.data.content
+    if (node.type === 'image') return `![image](${node.data.url})`
     return ''
   }).join('')
 }
@@ -142,7 +134,7 @@ export class ReplyHandler {
   constructor(public github: GitHub, public session: Session, public content?: string) {}
 
   link(url: string) {
-    return this.session.$send(url)
+    return this.session.send(url)
   }
 
   react(url: string) {
@@ -192,8 +184,8 @@ export class ReplyHandler {
   }
 
   async shot(url: string, selector: string, padding: number[] = []) {
-    const page = await this.session.$app.browser.newPage()
-    let buffer: Buffer
+    const page = await this.session.app.browser.newPage()
+    let base64: string
     try {
       await page.goto(url)
       const el = await page.$(selector)
@@ -203,13 +195,13 @@ export class ReplyHandler {
       clip.y -= top
       clip.width += left + right
       clip.height += top + bottom
-      buffer = await page.screenshot({ clip })
+      base64 = await page.screenshot({ clip, encoding: 'base64' })
     } catch (error) {
       new Logger('puppeteer').warn(error)
-      return this.session.$send('截图失败。')
+      return this.session.send('截图失败。')
     } finally {
       await page.close()
     }
-    return this.session.$send(`[CQ:image,file=base64://${buffer.toString('base64')}]`)
+    return this.session.send(segment.image('base64://' + base64))
   }
 }

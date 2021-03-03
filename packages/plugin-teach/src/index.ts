@@ -1,8 +1,8 @@
 /* eslint-disable no-irregular-whitespace */
 
-import { Context, ExecuteArgv, Session } from 'koishi-core'
-import { escapeRegExp } from 'koishi-utils'
-import { Dialogue, parseTeachArgs } from './utils'
+import { Argv, Context, Session } from 'koishi-core'
+import { escapeRegExp, merge } from 'koishi-utils'
+import { Dialogue } from './utils'
 import internal from './internal'
 import receiver from './receiver'
 import search from './search'
@@ -12,7 +12,6 @@ import mysql from './database/mysql'
 import context from './plugins/context'
 import image from './plugins/image'
 import throttle from './plugins/throttle'
-import preventLoop from './plugins/preventLoop'
 import probability from './plugins/probability'
 import successor from './plugins/successor'
 import time from './plugins/time'
@@ -25,7 +24,6 @@ export * from './update'
 export * from './plugins/context'
 export * from './plugins/image'
 export * from './plugins/throttle'
-export * from './plugins/preventLoop'
 export * from './plugins/probability'
 export * from './plugins/successor'
 export * from './plugins/time'
@@ -33,30 +31,32 @@ export * from './plugins/writer'
 
 export type Config = Dialogue.Config
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
     'dialogue/validate'(argv: Dialogue.Argv): void | string
     'dialogue/execute'(argv: Dialogue.Argv): void | Promise<void | string>
   }
 }
+
 const cheatSheet = (session: Session<'authority'>, config: Config) => {
-  const { authority } = session.$user
+  const { authority } = session.user
   const { authority: a, prefix: p } = config
+  const l = p[p.length - 1]
   return `\
 教学系统基本用法：
 　添加问答：${p} 问题 回答
-　搜索回答：${p}${p} 问题
-　搜索问题：${p}${p} ~ 回答
+　搜索回答：${p}${l} 问题
+　搜索问题：${p}${l} ~ 回答
 　查看问答：${p}id
 　修改问题：${p}id 问题
 　修改回答：${p}id ~ 回答
 　删除问答：${p}id -r
-　批量查看：${p}${p}id
+　批量查看：${p}${l}id
 搜索选项：
 　管道语法：　　　|
 　结果页码：　　　/ page
 　禁用递归查询：　-R${authority >= a.regExp ? `
-　正则+合并结果：${p}${p}${p}` : ''}${config.useContext ? `
+　正则+合并结果：${p}${l}${l}` : ''}${config.useContext ? `
 上下文选项：
 　允许本群：　　　-e
 　禁止本群：　　　-d` : ''}${config.useContext && authority >= a.context ? `
@@ -69,7 +69,7 @@ const cheatSheet = (session: Session<'authority'>, config: Config) => {
 　教学者代行：　　-s/-S` : ''}${config.useWriter && authority >= a.writer ? `
 　设置问题作者：　-w uid
 　设置为匿名：　　-W` : ''}
-　忽略智能提示：　-i
+　忽略智能提示：　-I
 　重定向：　　　　=>
 匹配规则：${authority >= a.regExp ? `
 　正则表达式：　　-x/-X` : ''}
@@ -90,84 +90,86 @@ const cheatSheet = (session: Session<'authority'>, config: Config) => {
 　回退近期改动：　-V
 　设置查看区间：　-l/-L
 特殊语法：
-　%%：一个普通的 % 字符
-　%0：收到的原文本
-　%n：分条发送
-　%a：@说话人
-　%m：@${session.$app.options.nickname[0]}
-　%s：说话人的名字
-　%{}：指令插值`
+　$$：一个普通的 $ 字符
+　$0：收到的原文本
+　$n：分条发送
+　$a：@说话人
+　$m：@${session.app.options.nickname[0]}
+　$s：说话人的名字
+　\$()：指令插值
+　\${}：表达式插值`
 }
 
 export const name = 'teach'
+export const disposable = true
 
 function registerPrefix(ctx: Context, prefix: string) {
   const g = '\\d+(?:\\.\\.\\d+)?'
+  const last = prefix[prefix.length - 1]
   const p = escapeRegExp(prefix)
-  const teachRegExp = new RegExp(`^${p}(${p}?)((${g}(?:,${g})*)?|${p}?)(\\s+|$)`)
+  const l = escapeRegExp(last)
+  const teachRegExp = new RegExp(`^${p}(${l}?)((${g}(?:,${g})*)?|${l}?)$`)
   //                                   $1     $2
 
-  ctx.on('parse', (source, session, builtin, terminator) => {
-    if (builtin && session.$prefix || session.$reply) return
-    const capture = source.match(teachRegExp)
+  ctx.on('parse', (argv, session) => {
+    if (argv.root && session.quote || !argv.tokens.length) return
+    let { content } = argv.tokens[0]
+    if (argv.root && session.parsed.prefix) {
+      content = session.parsed.prefix + content
+    }
+    const capture = teachRegExp.exec(content)
     if (!capture) return
 
-    const command = ctx.command('teach')
-    const message = source.slice(capture[0].length)
-    const { options, args, rest } = command.parse(message, terminator)
-    const argv: ExecuteArgv = { options, args, command, source, rest }
-
-    if (capture[1] === prefix) {
-      options['search'] = true
-      if (capture[2] === prefix) {
-        options['autoMerge'] = true
-        options['regexp'] = true
+    argv.tokens.shift()
+    argv.tokens.forEach(Argv.revert)
+    argv.source = session.parsed.content
+    argv.options = {}
+    const { length } = argv.tokens
+    if (capture[1] === last) {
+      if (!argv.tokens.length) {
+        return 'teach.status'
       }
-    } else if (!capture[2] && !message) {
-      options['help'] = true
+      argv.options['search'] = true
+      if (capture[2] === last) {
+        argv.options['autoMerge'] = true
+        argv.options['regexp'] = true
+      }
+    } else if (!capture[2] && !length) {
+      argv.options['help'] = true
     }
 
-    if (capture[2] && capture[2] !== prefix) {
-      options['target'] = capture[2]
+    if (capture[2] && capture[2] !== last) {
+      argv.options['target'] = capture[2]
     }
 
-    parseTeachArgs(argv)
-    return argv
+    return 'teach'
   })
 }
 
-const defaultConfig: Config = {
-  prefix: '#',
-  authority: {
-    base: 2,
-    admin: 3,
-    context: 3,
-    frozen: 4,
-    regExp: 3,
-    writer: 2,
-  },
-}
-
 export function apply(ctx: Context, config: Config = {}) {
-  config = {
-    ...defaultConfig,
-    ...config,
+  config = merge(config, {
+    prefix: '#',
     authority: {
-      ...defaultConfig.authority,
-      ...config.authority,
+      base: 2,
+      admin: 3,
+      context: 3,
+      frozen: 4,
+      regExp: 3,
+      writer: 2,
     },
-  }
+  })
 
   registerPrefix(ctx, config.prefix)
 
   ctx.command('teach', '添加教学对话', { authority: config.authority.base, checkUnknown: true, hideOptions: true })
     .userFields(['authority', 'id'])
     .usage(session => cheatSheet(session, config))
-    .action(async ({ options, session, args }) => {
-      const argv: Dialogue.Argv = { app: ctx.app, session, args, config, options }
-      return ctx.bail('dialogue/validate', argv)
-        || ctx.bail('dialogue/execute', argv)
-        || create(argv)
+    .action(async (argv) => {
+      const { options, session, args } = argv
+      const argd: Dialogue.Argv = { app: ctx.app, session, args, config, options }
+      return ctx.bail('dialogue/validate', argd)
+        || ctx.bail('dialogue/execute', argd)
+        || create(argd)
     })
 
   // features
@@ -182,7 +184,6 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(context, config)
   ctx.plugin(image, config)
   ctx.plugin(throttle, config)
-  ctx.plugin(preventLoop, config)
   ctx.plugin(probability, config)
   ctx.plugin(successor, config)
   ctx.plugin(time, config)

@@ -1,11 +1,24 @@
 import MongoDatabase, { Config } from './database'
-import { User, Group, Database, extendDatabase, Context } from 'koishi-core'
+import { User, extendDatabase, Context, Channel, Random, pick } from 'koishi-core'
 
 export * from './database'
 export default MongoDatabase
 
-declare module 'koishi-core/dist/database' {
-  interface Database extends MongoDatabase { }
+declare module 'koishi-core' {
+  interface Database {
+    mongo: MongoDatabase
+  }
+
+  interface Channel {
+    type: Platform
+    pid: string
+  }
+}
+
+function projection(keys: readonly string[]) {
+  const d = {}
+  for (const key of keys) d[key] = 1
+  return d
 }
 
 function escapeKey<T extends Partial<User>>(doc: T) {
@@ -58,76 +71,64 @@ function unescapeKey<T extends Partial<User>>(data: T) {
 }
 
 extendDatabase(MongoDatabase, {
-  async getUser(userId, ...args) {
-    const authority = typeof args[0] === 'number' ? args.shift() as number : 0
-    const fields = args[0] ? args[0] as any : User.fields
-    if (fields && !fields.length) return {} as any
-    const data: Partial<User> = (await this.user.findOne({ _id: userId })) || {}
-    if (authority < 0) return null
-    const fallback = User.create(userId, authority)
-    if (authority && [undefined, null].includes(data.authority)) await this.user.updateOne({ _id: userId }, { $set: { authority } }, { upsert: true })
-    return { ...fallback, ...unescapeKey(data) }
-  },
-
-  async getUsers(...args) {
-    let ids: readonly number[]
-    let fields: readonly User.Field[]
-    if (args.length > 1) {
-      ids = args[0]
-      fields = args[1]
-    } else if (args.length && typeof args[0][0] !== 'string') {
-      ids = args[0]
-      fields = User.fields
-    } else fields = args[0] as any
-    if (ids && !ids.length) return []
-    const f = {}
-    for (const field of fields) f[field] = 1
-    return this.user.find({ _id: { $in: ids as number[] } }).project(f).map(unescapeKey).toArray()
-  },
-
-  async setUser(userId, data) {
-    await this.user.updateOne({ _id: userId }, { $set: escapeKey(data) }, { upsert: true })
-  },
-
-  async getGroup(groupId, ...args) {
-    const selfId = typeof args[0] === 'number' ? args.shift() as number : 0
-    const fields = args[0] as any || Group.fields
-    if (fields && !fields.length) return {} as any
-    const f = {}
-    for (const field of fields) f[field] = 1
-    const [data] = await this.group.find({ _id: groupId }).project(f).toArray()
-    const fallback = Group.create(groupId, selfId)
-    if (!data?.assignee && selfId && groupId) {
-      await this.group.updateOne({ _id: groupId }, { $set: { assignee: selfId, flag: 0 } }, { upsert: true })
+  async getUser(type, id, fields = User.fields) {
+    if (fields && !fields.length) return { [type]: id } as any
+    if (Array.isArray(id)) {
+      const users = await this.user.find({ [type]: { $in: id } }).project(projection(fields)).toArray()
+      return users.map(data => (data && {
+        ...pick(User.create(type, data[type]), fields), ...unescapeKey(data),
+      }))
     }
-    return { ...fallback, ...data }
+    const [data] = await this.user.find({ [type]: id }).project(projection(fields)).toArray()
+    const udoc = User.create(type, id as any)
+    return data && { ...pick(udoc, fields), ...unescapeKey(data), [type]: id }
   },
 
-  async getAllGroups(...args) {
-    let assignees: number[]
-    let fields: readonly Group.Field[]
-    if (args.length > 1) {
-      fields = args[0]
-      assignees = args[1] as number[]
-    } else if (args.length && typeof args[0][0] === 'number') {
-      fields = Group.fields
-      assignees = args[0] as any
-    } else {
-      fields = args[0] || Group.fields
-      assignees = await this.app.getSelfIds()
+  async setUser(type, id, data) {
+    await this.user.updateOne(
+      { [type]: id },
+      { $set: escapeKey(data), $setOnInsert: { id: Random.uuid() } },
+      { upsert: true },
+    )
+  },
+
+  async createUser(type, id, data) {
+    await this.setUser(type, id, data)
+  },
+
+  async removeUser(type, id) {
+    await this.user.deleteOne({ [type]: id })
+  },
+
+  async getChannel(type, pid, fields = Channel.fields) {
+    if (Array.isArray(pid)) {
+      if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` }))
+      const channels = await this.channel.find({ _id: { $in: pid.map(id => `${type}:${id}`) } })
+        .project(projection(fields)).toArray()
+      return channels.map(channel => ({ ...pick(Channel.create(type, channel.pid), fields), ...channel, id: `${type}:${channel.pid}` }))
     }
-    if (!assignees.length) return []
-    const f = {}
-    for (const field of fields) f[field] = 1
-    const fallback = Group.create(0, 0)
-    const results = await this.group.find({ assignee: { $in: assignees } }).project(f).toArray()
-    return results.map(result => ({
-      ...fallback, ...result, id: result._id,
-    }))
+    if (fields && !fields.length) return { id: `${type}:${pid}` }
+    const [data] = await this.channel.find({ type, pid: pid as string }).project(projection(fields)).toArray()
+    return data && { ...pick(Channel.create(type, pid as string), fields), ...data, id: `${type}:${pid}` }
   },
 
-  async setGroup(groupId, data) {
-    await this.group.updateOne({ _id: groupId }, { $set: data })
+  async getAssignedChannels(fields, assignMap = this.app.getSelfIds()) {
+    const channels = await this.channel.find({
+      $or: Object.entries(assignMap).map<any>(([type, ids]) => ({ type, assignee: { $in: ids } })),
+    }).project(projection(fields)).toArray()
+    return channels.map(channel => ({ ...pick(Channel.create(channel.type, channel.pid), fields), ...channel, id: `${channel.type}:${channel.pid}` }))
+  },
+
+  async removeChannel(type, pid) {
+    await this.channel.deleteOne({ type, pid })
+  },
+
+  async setChannel(type, pid, data) {
+    await this.channel.updateOne({ type, pid }, { $set: data }, { upsert: true })
+  },
+
+  async createChannel(type, pid, data) {
+    await this.setChannel(type, pid, data)
   },
 })
 
@@ -135,7 +136,7 @@ export const name = 'mongo'
 
 export function apply(ctx: Context, config: Config) {
   const db = new MongoDatabase(ctx.app, { host: 'localhost', port: 27017, name: 'koishi', protocol: 'mongodb', ...config })
-  ctx.database = db as Database
-  ctx.on('before-connect', () => db.start())
-  ctx.on('before-disconnect', () => db.stop())
+  ctx.database = db as any
+  ctx.before('connect', () => db.start())
+  ctx.before('disconnect', () => db.stop())
 }

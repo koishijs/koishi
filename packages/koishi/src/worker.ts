@@ -1,19 +1,12 @@
-import { App, AppOptions, Context, Plugin } from 'koishi-core'
+import { App, BotOptions, version } from 'koishi-core'
 import { resolve, dirname } from 'path'
-import { Logger, noop } from 'koishi-utils'
+import { coerce, Logger, noop, LogLevelConfig } from 'koishi-utils'
 import { performance } from 'perf_hooks'
+import { watch } from 'chokidar'
 import { yellow } from 'kleur'
+import { AppConfig } from '..'
 
 const logger = new Logger('app')
-const { version } = require('../package')
-
-if (process.env.KOISHI_LOG_LEVEL) {
-  Logger.baseLevel = +process.env.KOISHI_LOG_LEVEL
-}
-
-if (process.env.KOISHI_DEBUG) {
-  Logger.levels = Object.fromEntries(process.env.KOISHI_DEBUG.split(',').map(name => [name, 3]))
-}
 
 function handleException(error: any) {
   logger.error(error)
@@ -39,26 +32,13 @@ function tryCallback<T>(callback: () => T) {
   }
 }
 
-export type PluginConfig = (string | Plugin<Context> | [string | Plugin<Context>, any?])[]
-
-export interface AppConfig extends AppOptions {
-  plugins?: PluginConfig
-  logLevel?: number
-  logFilter?: Record<string, number>
-}
-
 const config: AppConfig = tryCallback(() => require(configFile))
 
 if (!config) {
   throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
 }
 
-const cacheMap: Record<string, any> = {}
-
 function loadEcosystem(type: string, name: string) {
-  const cache = cacheMap[name]
-  if (cache) return cache
-
   const prefix = `koishi-${type}-`
   const modules: string[] = []
   if ('./'.includes(name[0])) {
@@ -81,7 +61,7 @@ function loadEcosystem(type: string, name: string) {
     try {
       const result = require(path)
       logger.info('apply %s %c', type, result.name || name)
-      return cacheMap[name] = result
+      return [path, result]
     } catch (error) {
       if (isErrorModule(error)) {
         throw error
@@ -91,9 +71,35 @@ function loadEcosystem(type: string, name: string) {
   throw new Error(`cannot resolve ${type} ${name}`)
 }
 
-Object.assign(Logger.levels, config.logFilter)
-if (config.logLevel && !process.env.KOISHI_LOG_LEVEL) {
-  Logger.baseLevel = config.logLevel
+function ensureBaseLevel(config: LogLevelConfig, base: number) {
+  config.base ??= base
+  Object.values(config).forEach((value) => {
+    if (typeof value !== 'object') return
+    ensureBaseLevel(value, config.base)
+  })
+}
+
+// configurate logger levels
+if (typeof config.logLevel === 'object') {
+  Logger.levels = config.logLevel as any
+} else if (typeof config.logLevel === 'number') {
+  Logger.levels.base = config.logLevel
+}
+
+if (config.logTime === true) config.logTime = 'yyyy/MM/dd hh:mm:ss'
+if (config.logTime) Logger.showTime = config.logTime
+
+// cli options have higher precedence
+if (process.env.KOISHI_LOG_LEVEL) {
+  Logger.levels.base = +process.env.KOISHI_LOG_LEVEL
+}
+
+ensureBaseLevel(Logger.levels, 2)
+
+if (process.env.KOISHI_DEBUG) {
+  for (const name of process.env.KOISHI_DEBUG.split(',')) {
+    new Logger(name).level = Logger.DEBUG
+  }
 }
 
 interface Message {
@@ -103,21 +109,23 @@ interface Message {
 
 process.on('message', (data: Message) => {
   if (data.type === 'send') {
-    const { groupId, userId, selfId, message } = data.payload
-    const bot = app.bots[selfId]
-    if (groupId) {
-      bot.sendGroupMsg(groupId, message)
-    } else {
-      bot.sendPrivateMsg(userId, message)
-    }
+    const { channelId, sid, message } = data.payload
+    const bot = app.bots[sid]
+    bot.sendMessage(channelId, message)
   }
 })
 
-// load adapter
-try {
-  const [name] = config.type.split(':', 1)
+function loadAdapter(bot: BotOptions) {
+  const [name] = bot.type.split(':', 1)
   loadEcosystem('adapter', name)
-} catch {}
+}
+
+// load adapter
+if (config.type) {
+  loadAdapter(config)
+} else {
+  config.bots.forEach(loadAdapter)
+}
 
 const app = new App(config)
 
@@ -126,30 +134,27 @@ app.command('exit', '停止机器人运行', { authority: 4 })
   .shortcut('关机', { prefix: true })
   .shortcut('重启', { prefix: true, options: { restart: true } })
   .action(async ({ options, session }) => {
-    const { groupId, userId, selfId } = session
+    const { channelId, sid } = session
     if (!options.restart) {
-      await session.$send('正在关机……').catch(noop)
+      await session.send('正在关机……').catch(noop)
       process.exit()
     }
-    process.send({ type: 'exit', payload: { groupId, userId, selfId, message: '已成功重启。' } })
-    await session.$send(`正在重启……`).catch(noop)
+    process.send({ type: 'exit', payload: { channelId, sid, message: '已成功重启。' } })
+    await session.send(`正在重启……`).catch(noop)
     process.exit(114)
   })
 
 // load plugins
-if (Array.isArray(config.plugins)) {
-  for (const item of config.plugins) {
-    let plugin: Plugin<Context>, options: any
-    if (Array.isArray(item)) {
-      plugin = typeof item[0] === 'string' ? loadEcosystem('plugin', item[0]) : item[0]
-      options = item[1]
-    } else if (typeof item === 'string') {
-      plugin = loadEcosystem('plugin', item)
-    } else {
-      plugin = item
-    }
-    app.plugin(plugin, options)
+const pluginMap = new Map<string, [name: string, options: any]>()
+const pluginEntries: [string, any?][] = Array.isArray(config.plugins)
+  ? config.plugins.map(item => Array.isArray(item) ? item : [item])
+  : Object.entries(config.plugins || {})
+for (const [name, options] of pluginEntries) {
+  const [path, plugin] = loadEcosystem('plugin', name)
+  if (plugin.disposable) {
+    pluginMap.set(require.resolve(path), [name, options])
   }
+  app.plugin(plugin, options)
 }
 
 process.on('unhandledRejection', (error) => {
@@ -157,12 +162,82 @@ process.on('unhandledRejection', (error) => {
 })
 
 app.start().then(() => {
+  logger.info('%C', `Koishi/${version}`)
+
   app.bots.forEach(bot => {
-    if (!bot.version) return
-    logger.info('%C', `Koishi/${version} ${bot.version}`)
+    logger.info('logged in to %s as %c (%s)', bot.platform, bot.username, bot.selfId)
   })
 
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
-  logger.success(`bot started successfully in ${time} ms.`)
+  logger.success(`bot started successfully in ${time} ms`)
+  Logger.timestamp = Date.now()
+  Logger.showDiff = true
+
   process.send({ type: 'start' })
+  createWatcher()
 }, handleException)
+
+interface MapOrSet<T> {
+  has(value: T): boolean
+}
+
+function loadDependencies(filename: string, ignored: MapOrSet<string>) {
+  const dependencies = new Set<string>()
+  function loadModule({ filename, children }: NodeModule) {
+    if (ignored.has(filename) || dependencies.has(filename)) return
+    dependencies.add(filename)
+    children.forEach(loadModule)
+  }
+  loadModule(require.cache[filename])
+  return dependencies
+}
+
+function createWatcher() {
+  if (process.env.KOISHI_WATCH_ROOT === undefined && !config.watch) return
+
+  const { root = '', ignored = [] } = config.watch || {}
+  const watchRoot = process.env.KOISHI_WATCH_ROOT ?? root
+  const externals = loadDependencies(__filename, pluginMap)
+  const watcher = watch(resolve(process.cwd(), watchRoot), {
+    ...config.watch,
+    ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
+  })
+
+  const logger = new Logger('app:watcher')
+
+  watcher.on('change', (path) => {
+    if (!require.cache[path] || externals.has(path)) return
+    logger.debug('change detected:', path)
+
+    /** files that should be reloaded */
+    const accepted = new Set<string>()
+    /** files that should not be reloaded */
+    const declined = new Set([...externals, loadDependencies(path, externals)])
+    declined.delete(path)
+
+    const plugins: string[] = []
+    for (const [filename] of pluginMap) {
+      const dependencies = loadDependencies(filename, declined)
+      if (dependencies.has(path)) {
+        dependencies.forEach(dep => accepted.add(dep))
+
+        // dispose installed plugin
+        plugins.push(filename)
+        app.dispose(require(filename))
+      }
+    }
+
+    accepted.forEach(dep => delete require.cache[dep])
+    for (const filename of plugins) {
+      const plugin = require(filename)
+      const [name, options] = pluginMap.get(filename)
+      const displayName = plugin.name || name
+      try {
+        app.plugin(plugin, options)
+        logger.info('reload plugin %c', displayName)
+      } catch (err) {
+        logger.warn('failed to reload plugin %c\n' + coerce(err), displayName)
+      }
+    }
+  })
+}

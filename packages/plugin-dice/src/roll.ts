@@ -18,7 +18,7 @@ export default function apply(ctx: Context, options: RollConfig = {}) {
 
       const expressions = message.split('+')
       let hasMultiple = false
-      let output = `${session.$username} 掷骰：${message}=`
+      let output = `${session.username} 掷骰：${message}=`
       let total = 0
 
       for (const expr of expressions) {

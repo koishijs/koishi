@@ -1,21 +1,18 @@
-import { Context, App, BotStatusCode } from 'koishi-core'
+import { Context, App, Bot, Platform } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
 import { interpolate, Time } from 'koishi-utils'
 import { ActiveData } from './database'
 
 export * from './database'
 
-declare module 'koishi-core/dist/server' {
-  interface BotOptions {
-    label?: string
-  }
-
+declare module 'koishi-core' {
   interface Bot {
     counter: number[]
   }
 }
 
 export interface Config {
+  path?: string
   refresh?: number
   format?: string
   formatBot?: string
@@ -74,25 +71,25 @@ export interface Status extends ActiveData {
 }
 
 export interface BotStatus {
-  label?: string
-  selfId: number
-  code: BotStatusCode
+  username?: string
+  selfId: string
+  platform: Platform
+  code: Bot.Status
   rate?: number
 }
 
 type StatusCallback = (this: App, status: Status, config: Config) => void | Promise<void>
-const callbacks: [callback: StatusCallback, local: boolean][] = []
+const callbacks: StatusCallback[] = []
 
-export function extendStatus(callback: StatusCallback, local = false) {
-  callbacks.push([callback, local])
+export function extend(callback: StatusCallback) {
+  callbacks.push(callback)
 }
 
-const startTime = Date.now()
-
 const defaultConfig: Config = {
+  path: '/status',
   refresh: Time.minute,
   // eslint-disable-next-line no-template-curly-in-string
-  formatBot: '{{ label || selfId }}：{{ code ? `无法连接` : `工作中（${rate}/min）` }}',
+  formatBot: '{{ username }}：{{ code ? `无法连接` : `工作中（${rate}/min）` }}',
   format: [
     '{{ bots }}',
     '==========',
@@ -105,41 +102,41 @@ const defaultConfig: Config = {
 }
 
 export const name = 'status'
+export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
-  const app = ctx.app
+  const all = ctx.all()
   const { refresh, formatBot, format } = { ...defaultConfig, ...config }
 
-  app.on('before-command', ({ session }) => {
-    session.$user['lastCall'] = new Date()
+  all.before('command', ({ session }) => {
+    session.user['lastCall'] = new Date()
   })
 
-  app.on('before-send', (session) => {
-    const { counter } = app.bots[session.selfId]
-    counter[0] += 1
+  all.before('send', (session) => {
+    session.bot.counter[0] += 1
   })
 
+  let startTime: number
   let timer: NodeJS.Timeout
-  app.on('connect', async () => {
-    await app.getSelfIds()
+  ctx.on('connect', async () => {
+    startTime = Date.now()
 
-    app.bots.forEach((bot) => {
-      bot.label = bot.label || '' + bot.selfId
+    ctx.bots.forEach((bot) => {
       bot.counter = new Array(61).fill(0)
     })
 
     timer = setInterval(() => {
       updateCpuUsage()
-      app.bots.forEach(({ counter }) => {
+      ctx.bots.forEach(({ counter }) => {
         counter.unshift(0)
         counter.splice(-1, 1)
       })
     }, 1000)
 
-    if (!app.router) return
-    app.router.get('/status', async (ctx) => {
-      const status = await getStatus(true).catch<Status>((error) => {
-        app.logger('status').warn(error)
+    if (!ctx.router) return
+    ctx.router.get('/status', async (ctx) => {
+      const status = await getStatus().catch<Status>((error) => {
+        all.logger('status').warn(error)
         return null
       })
       if (!status) return ctx.status = 500
@@ -149,7 +146,7 @@ export function apply(ctx: Context, config: Config = {}) {
     })
   })
 
-  app.on('before-disconnect', () => {
+  ctx.before('disconnect', () => {
     clearInterval(timer)
   })
 
@@ -158,40 +155,48 @@ export function apply(ctx: Context, config: Config = {}) {
     .shortcut('你的状况', { prefix: true })
     .shortcut('运行情况', { prefix: true })
     .shortcut('运行状态', { prefix: true })
-    .action(async () => {
-      const status = await getStatus()
+    .option('all', '-a  查看全部平台')
+    .action(async ({ session, options }) => {
+      const status = { ...await getStatus() }
+      if (!options.all) {
+        status.bots = status.bots.filter(bot => bot.platform === session.platform)
+      }
       status.bots.toString = () => {
-        return status.bots.map(bot => interpolate(formatBot, bot)).join('\n')
+        return status.bots.map(bot => {
+          let output = interpolate(formatBot, bot)
+          if (options.all) output = `[${bot.platform}] ` + output
+          return output
+        }).join('\n')
       }
       return interpolate(format, status)
     })
 
-  async function _getStatus(extend: boolean) {
+  async function _getStatus() {
+    const botList = all.bots
     const [data, bots] = await Promise.all([
-      app.database.getActiveData(),
-      Promise.all(app.bots.map(async (bot): Promise<BotStatus> => ({
+      all.database.getActiveData(),
+      Promise.all(botList.map(async (bot): Promise<BotStatus> => ({
+        platform: bot.platform,
         selfId: bot.selfId,
-        label: bot.label,
-        code: await bot.getStatusCode(),
+        username: bot.username,
+        code: await bot.getStatus(),
         rate: bot.counter.slice(1).reduce((prev, curr) => prev + curr, 0),
       }))),
     ])
     const memory = memoryRate()
     const cpu = { app: appRate, total: usedRate }
     const status: Status = { ...data, bots, memory, cpu, timestamp, startTime }
-    await Promise.all(callbacks.map(([callback, local]) => {
-      if (local || extend) return callback.call(app, status, config)
-    }))
+    await Promise.all(callbacks.map(callback => callback.call(all, status, config)))
     return status
   }
 
   let cachedStatus: Promise<Status>
   let timestamp: number
 
-  async function getStatus(extend = false): Promise<Status> {
+  async function getStatus(): Promise<Status> {
     const now = Date.now()
     if (now - timestamp < refresh) return cachedStatus
     timestamp = now
-    return cachedStatus = _getStatus(extend)
+    return cachedStatus = _getStatus()
   }
 }

@@ -1,15 +1,16 @@
-import { Context, RawSession, Session } from 'koishi-core'
-import { Logger, CQCode, Time } from 'koishi-utils'
-import {} from 'koishi-adapter-cqhttp'
+import { Bot, Context, Session } from 'koishi-core'
+import { Logger, segment, Time, interpolate, pick } from 'koishi-utils'
 
 export interface DebugOptions {
-  showUserId?: boolean
-  showGroupId?: boolean
+  formatSend?: string
+  formatReceive?: string
+  includeUsers?: string[]
+  includeChannels?: string[]
   refreshUserName?: number
-  refreshGroupName?: number
-  includeUsers?: number[]
-  includeGroups?: number[]
+  refreshChannelName?: number
 }
+
+const textSegmentTypes = ['text', 'header', 'section']
 
 const cqTypes = {
   face: '表情',
@@ -17,101 +18,151 @@ const cqTypes = {
   video: '短视频',
   image: '图片',
   music: '音乐',
-  reply: '回复',
+  quote: '引用',
   forward: '合并转发',
   dice: '掷骰子',
   rps: '猜拳',
   poke: '戳一戳',
   json: 'JSON',
   xml: 'XML',
+  card: '卡片消息',
 }
 
-export function apply(ctx: Context, config: DebugOptions = {}) {
+interface Params {
+  content?: string
+  username?: string
+  nickname?: string
+  platform?: string
+  userId?: string
+  channelId?: string
+  groupId?: string
+  selfId?: string
+  channelName?: string
+  groupName?: string
+}
+
+function getDeps(template: string) {
+  const cap = template.match(/\{\{[\s\S]+?\}\}/g) || []
+  return cap.map(seg => seg.slice(2, -2).trim())
+}
+
+async function getUserName(bot: Bot, groupId: string, userId: string) {
+  try {
+    const { username } = await bot.getGroupMember(groupId, userId)
+    return username
+  } catch {
+    return userId
+  }
+}
+
+async function getChannelName(bot: Bot, channelId: string) {
+  try {
+    const { channelName } = await bot.getChannel(channelId)
+    return channelName
+  } catch {
+    return channelId
+  }
+}
+
+export default function apply(ctx: Context, config: DebugOptions = {}) {
   const {
+    formatSend = '[{{ channelName }}] {{ content }}',
+    formatReceive = '[{{ channelName }}] {{ username }}: {{ content }}',
     refreshUserName = Time.hour,
-    refreshGroupName = Time.hour,
+    refreshChannelName = Time.hour,
     includeUsers = [],
-    includeGroups = [],
-    showUserId,
-    showGroupId,
+    includeChannels = [],
   } = config
 
-  const logger = new Logger('message', true)
+  const sendDeps = getDeps(formatSend)
+  const receiveDeps = getDeps(formatReceive)
+
+  const logger = new Logger('message')
   Logger.levels.message = 3
 
-  const groupMap: Record<number, [Promise<string>, number]> = {}
+  const tasks: Record<string, (session: Session.Message) => Promise<any>> = {}
+  const channelMap: Record<string, [string | Promise<string>, number]> = {}
+  const userMap: Record<string, [string | Promise<string>, number]> = {}
 
-  async function getGroupName(session: Session) {
-    if (session.messageType === 'private') return '私聊'
-    const { groupId: id, $bot } = session
+  function on<K extends keyof Params>(key: K, callback: (session: Session.Message) => Promise<Params[K]>) {
+    tasks[key] = callback
+  }
+
+  ctx.on('connect', () => {
     const timestamp = Date.now()
-    if (!groupMap[id] || timestamp - groupMap[id][1] >= refreshGroupName) {
-      const promise = $bot.getGroupInfo(id).then(d => d.groupName, () => '' + id)
-      groupMap[id] = [promise, timestamp]
-    }
-    let output = await groupMap[id][0]
-    if (showGroupId && output !== '' + id) {
-      output += ` (${id})`
-    }
-    return output
-  }
+    ctx.bots.forEach(bot => userMap[bot.sid] = [bot.username, timestamp])
+  })
 
-  const userMap: Record<number, [string | Promise<string>, number]> = {}
-
-  function getSenderName({ anonymous, sender, userId }: Session) {
-    return anonymous
-      ? anonymous.name + (showUserId ? ` (${anonymous.id})` : '')
-      : (userMap[userId] = [sender.nickname, Date.now()])[0]
-      + (showUserId ? ` (${userId})` : '')
-  }
-
-  async function formatMessage(session: Session) {
-    const codes = CQCode.parseAll(session.message)
+  on('content', async (session) => {
+    const codes = segment.parse(session.content.split('\n', 1)[0])
     let output = ''
     for (const code of codes) {
-      if (typeof code === 'string') {
-        output += CQCode.unescape(code)
+      if (textSegmentTypes.includes(code.type)) {
+        output += segment.unescape(code.data.content)
       } else if (code.type === 'at') {
-        if (code.data.qq === 'all') {
+        if (code.data.type === 'all') {
           output += '@全体成员'
-        } else {
-          const id = +code.data.qq
+        } else if (session.subtype === 'group') {
+          const id = `${session.platform}:${code.data.id}`
           const timestamp = Date.now()
           if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
-            const promise = session.$bot
-              .getGroupMemberInfo(session.groupId, id)
-              .then(d => d.nickname, () => '' + id)
-            userMap[id] = [promise, timestamp]
+            userMap[id] = [getUserName(session.bot, session.groupId, code.data.id), timestamp]
           }
           output += '@' + await userMap[id][0]
+        } else {
+          output += '@' + session.bot.username
         }
       } else if (code.type === 'share' || code.type === 'location') {
         output += `[分享:${code.data.title}]`
       } else if (code.type === 'contact') {
         output += `[推荐${code.data.type === 'qq' ? '好友' : '群'}:${code.data.id}]`
       } else {
-        output += `[${cqTypes[code.type]}]`
+        output += `[${cqTypes[code.type] || '未知'}]`
       }
     }
     return output
-  }
-
-  ctx.on('connect', () => {
-    Logger.lastTime = Date.now()
   })
 
-  async function onMessage(session: RawSession<'message'>) {
-    const groupName = await getGroupName(session)
-    const senderName = getSenderName(session)
-    const message = await formatMessage(session)
-    logger.debug(`[${groupName}] ${senderName}: ${message}`)
+  on('channelName', async (session) => {
+    const timestamp = Date.now()
+    const { cid, channelName } = session
+    if (channelName) return (channelMap[cid] = [channelName, timestamp])[0]
+    if (session.subtype === 'private') return '私聊'
+    if (!channelMap[cid] || timestamp - channelMap[cid][1] >= refreshChannelName) {
+      channelMap[cid] = [getChannelName(session.bot, session.channelId), timestamp]
+    }
+    return await channelMap[cid][0]
+  })
+
+  async function handleMessage(deps: string[], template: string, session: Session.Message) {
+    const params: Params = pick(session, ['platform', 'channelId', 'groupId', 'userId', 'selfId'])
+    Object.assign(params, pick(session.author, ['username', 'nickname']))
+    await Promise.all(deps.map(async (key) => {
+      const callback = tasks[key]
+      params[key] ||= await callback(session)
+    }))
+    logger.debug(interpolate(template, params))
   }
 
-  if (includeUsers) {
-    ctx.private(...includeUsers).on('message', onMessage)
-  }
+  ctx.intersect((session) => {
+    if (session.subtype === 'private') {
+      return includeUsers.length ? includeUsers.includes(session.userId) : true
+    } else {
+      return includeChannels.length ? includeChannels.includes(session.channelId) : true
+    }
+  }).plugin((ctx) => {
+    ctx.on('message', async (session) => {
+      if (session.subtype === 'group') {
+        const { assignee } = await session.observeChannel(['assignee'])
+        if (assignee !== session.selfId) return
+      }
 
-  if (includeGroups) {
-    ctx.group(...includeGroups).on('message', onMessage)
-  }
+      userMap[session.uid] = [session.author.username, Date.now()]
+      handleMessage(receiveDeps, formatReceive, session)
+    })
+
+    ctx.before('send', (session) => {
+      handleMessage(sendDeps, formatSend, session)
+    })
+  })
 }

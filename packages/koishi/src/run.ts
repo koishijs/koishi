@@ -59,18 +59,30 @@ function createWorker(options: WorkerOptions) {
   })
 }
 
+function setEnvArg(name: string, value: string | boolean) {
+  if (value === true) {
+    process.env[name] = ''
+  } else if (value) {
+    process.env[name] = value
+  }
+}
+
 export default function (cli: CAC) {
-  cli.command('run [file]', 'start a koishi bot')
-    .alias('start')
+  cli.command('start [file]', 'start a koishi bot')
+    .alias('run')
     .option('--debug [namespace]', 'specify debug namespace')
-    .option('--level [level]', 'specify log level (default: 2)')
+    .option('--log-level [level]', 'specify log level (default: 2)')
+    .option('--log-time [format]', 'show timestamp in logs')
+    .option('--watch [path]', 'watch and reload at change')
     .action((file, options) => {
-      const { level } = options
-      if (level !== undefined && (!isInteger(level) || level < 0)) {
+      const { logLevel } = options
+      if (logLevel !== undefined && (!isInteger(logLevel) || logLevel < 0)) {
         console.warn(`${kleur.red('error')} log level should be a positive integer.`)
         process.exit(1)
       }
-      process.env.KOISHI_LOG_LEVEL = level || ''
+      setEnvArg('KOISHI_WATCH_ROOT', options.watch)
+      setEnvArg('KOISHI_LOG_TIME', options.logTime)
+      process.env.KOISHI_LOG_LEVEL = logLevel || ''
       process.env.KOISHI_DEBUG = options.debug || ''
       process.env.KOISHI_CONFIG_FILE = file || ''
       createWorker(options)

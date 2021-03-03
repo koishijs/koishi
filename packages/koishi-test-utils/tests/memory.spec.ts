@@ -1,10 +1,10 @@
+import { expect } from 'chai'
 import { extendDatabase } from 'koishi-core'
 import MemoryDatabase, { testDatabase, App } from 'koishi-test-utils'
-import { expect } from 'chai'
 
-declare module 'koishi-core/dist/database' {
+declare module 'koishi-core' {
   interface Database {
-    createFoo(data?: Partial<FooData>): Promise<FooData>
+    createFoo(data?: FooData): Promise<FooData>
     removeFoo(id: number): Promise<void>
     getFooCount(): Promise<number>
   }
@@ -15,13 +15,13 @@ declare module 'koishi-core/dist/database' {
 }
 
 interface FooData {
-  id: number
+  id?: number
   bar: string
 }
 
 extendDatabase<typeof MemoryDatabase>('koishi-test-utils', {
-  async createFoo(data: Partial<FooData> = {}) {
-    return this.$create('foo', data) as FooData
+  async createFoo(data: FooData) {
+    return this.$create('foo', data)
   },
 
   async removeFoo(id: number) {
@@ -34,31 +34,21 @@ extendDatabase<typeof MemoryDatabase>('koishi-test-utils', {
 })
 
 describe('Memory Database', () => {
-  const app = testDatabase(new App({ mockDatabase: true }), {
-    beforeEachUser: app => app.database.$store.user = [],
-    beforeEachGroup: app => app.database.$store.group = [],
-  })
+  const db = testDatabase(new App({ mockDatabase: true }))
 
-  describe('Other Methods', () => {
-    const { database: db } = app
-    before(() => db.$store.foo = [])
+  it('extended methods', async () => {
+    db.$store.foo = []
 
-    it('create & remove', async () => {
-      await expect(db.getFooCount()).eventually.to.equal(0)
-      await expect(db.createFoo()).eventually.to.have.shape({ id: 1 })
-      await expect(db.getFooCount()).eventually.to.equal(1)
-      await expect(db.createFoo()).eventually.to.have.shape({ id: 2 })
-      await expect(db.getFooCount()).eventually.to.equal(2)
-      await expect(db.removeFoo(1)).eventually.to.be.undefined
-      await expect(db.getFooCount()).eventually.to.equal(1)
-      await expect(db.createFoo()).eventually.to.have.shape({ id: 1 })
-      await expect(db.getFooCount()).eventually.to.equal(2)
-      await expect(db.createFoo({ id: 100 })).eventually.to.have.shape({ id: 100 })
-      await expect(db.getFooCount()).eventually.to.equal(3)
-      await expect(db.removeFoo(1)).eventually.to.be.undefined
-      await expect(db.getFooCount()).eventually.to.equal(2)
-      await expect(db.createFoo()).eventually.to.have.shape({ id: 1 })
-      await expect(db.getFooCount()).eventually.to.equal(3)
-    })
+    await expect(db.getFooCount()).eventually.to.equal(0)
+    await expect(db.createFoo({ bar: '0' })).eventually.to.have.shape({ id: 1 })
+    await expect(db.getFooCount()).eventually.to.equal(1)
+    await expect(db.createFoo({ bar: '1' })).eventually.to.have.shape({ id: 2 })
+    await expect(db.getFooCount()).eventually.to.equal(2)
+    await expect(db.removeFoo(1)).eventually.to.be.undefined
+    await expect(db.getFooCount()).eventually.to.equal(1)
+    await expect(db.createFoo({ bar: '2' })).eventually.to.have.shape({ id: 3 })
+    await expect(db.getFooCount()).eventually.to.equal(2)
+    await expect(db.removeFoo(1)).eventually.to.be.undefined
+    await expect(db.getFooCount()).eventually.to.equal(2)
   })
 })

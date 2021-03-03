@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { App } from 'koishi-test-utils'
-import { spyOn } from 'jest-mock'
 import { Logger, noop } from 'koishi-utils'
 import { Session } from 'koishi-core'
 import { inspect } from 'util'
 import { expect } from 'chai'
+import jest from 'jest-mock'
 
 describe('Command API', () => {
   describe('Register Commands', () => {
@@ -15,9 +15,9 @@ describe('Command API', () => {
       expect(() => app.command('')).to.throw()
     })
 
-    it('context.command', () => {
-      const ctx1 = app.user(10000)
-      const ctx2 = app.group(10000)
+    it('context.prototype.command', () => {
+      const ctx1 = app.user('10000')
+      const ctx2 = app.group('10000')
       app.command('a')
       ctx1.command('b')
       ctx2.command('c')
@@ -35,11 +35,11 @@ describe('Command API', () => {
 
     it('modify commands', () => {
       const d1 = app.command('d', 'foo', { authority: 1 })
-      expect(app._commandMap.d.config.description).to.equal('foo')
+      expect(app._commandMap.d.description).to.equal('foo')
       expect(app._commandMap.d.config.authority).to.equal(1)
 
-      const d2 = app.command('d', { description: 'bar', authority: 2 })
-      expect(app._commandMap.d.config.description).to.equal('bar')
+      const d2 = app.command('d', 'bar', { authority: 2 })
+      expect(app._commandMap.d.description).to.equal('bar')
       expect(app._commandMap.d.config.authority).to.equal(2)
 
       expect(d1).to.equal(d2)
@@ -48,12 +48,12 @@ describe('Command API', () => {
     it('name conflicts', () => {
       expect(() => {
         app.command('e')
-        app.user(10000).command('e')
+        app.user('10000').command('e')
       }).not.to.throw()
 
       expect(() => {
         const x1 = app.command('e').alias('x')
-        const x2 = app.user(10000).command('x')
+        const x2 = app.user('10000').command('x')
         expect(x1).to.equal(x2)
       }).not.to.throw()
 
@@ -73,7 +73,7 @@ describe('Command API', () => {
     let app: App
     beforeEach(() => app = new App())
 
-    it('command.subcommand', () => {
+    it('command.prototype.subcommand', () => {
       const a = app.command('a')
       const b = a.subcommand('b')
       const c = b.subcommand('.c')
@@ -154,9 +154,8 @@ describe('Command API', () => {
     const app = new App()
     const command = app.command('test')
     const session = new Session(app, {})
-    const cmdWarn = spyOn(new Logger('command'), 'warn')
-    const next = fallback => fallback()
-    const argv = { command, session, next }
+    const cmdWarn = jest.spyOn(new Logger('command'), 'warn')
+    const argv = { command, session }
 
     it('throw in action', async () => {
       command.action(async ({ next }) => {
@@ -164,7 +163,7 @@ describe('Command API', () => {
         throw new Error('message')
       })
 
-      await expect(command.execute(argv)).to.be.fulfilled
+      await expect(command.execute(argv)).eventually.to.equal('')
       expect(cmdWarn.mock.calls).to.have.length(1)
       expect(cmdWarn.mock.calls[0][0]).to.match(/^executing command: test\nError: message/)
     })
@@ -176,8 +175,9 @@ describe('Command API', () => {
         })
       })
 
+      cmdWarn.mockClear()
       await expect(command.execute(argv)).to.be.rejectedWith('message')
-      expect(cmdWarn.mock.calls).to.have.length(1)
+      expect(cmdWarn.mock.calls).to.have.length(0)
     })
   })
 })

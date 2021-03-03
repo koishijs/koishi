@@ -1,49 +1,77 @@
-import Tomon from 'tomon-sdk'
-import { Bot, Server } from 'koishi-core'
+import { Session as SocketSession } from './network/session'
+import { App, Adapter, Session } from 'koishi-core'
+import { TomonBot, TomonMessageInfo } from './bot'
+import { camelize } from 'koishi-utils'
 
-export * from './api'
+export * from './bot'
 
-declare module 'koishi-core/dist/server' {
+declare module 'koishi-core' {
   interface BotOptions {
     token?: string
+    fullName?: string
+    password?: string
   }
 
-  interface Bot {
-    tomon?: Tomon
-  }
-}
-
-declare module 'koishi-core/dist/session' {
-  interface Session {
-    channelId?: number
+  namespace Bot {
+    interface Platforms {
+      tomon: TomonBot
+    }
   }
 }
 
-Server.types.tomon = class TomonServer extends Server {
-  async __listen(bot: Bot) {
-    const tomon = bot.tomon = new Tomon()
-    await tomon.start(bot.token)
-    bot.ready = true
-    const selfId = bot.selfId = +tomon.discriminator
-    tomon.on('MESSAGE_CREATE', async ({ d }) => {
-      const userId = +d.author.discriminator
-      if (userId === selfId) return
-      const session = this.prepare({
-        ...d,
-        selfId,
-        userId,
-        message: d.content,
-        postType: 'message',
-        messageType: d['guild_id'] ? 'group' : 'private',
-        groupId: d['guild_id'],
+Adapter.types.tomon = class TomonServer extends Adapter<'tomon'> {
+  constructor(app: App) {
+    super(app, TomonBot)
+  }
+
+  async _listen(bot: TomonBot) {
+    // part 1: authorization
+    const { token, fullName, password } = bot
+    const info = await bot.request('POST', '/auth/login', {
+      data: { token, fullName, password },
+      auth: false,
+    })
+    Object.assign(bot, info)
+    const selfId = bot.selfId = bot.id
+
+    // part 2: connect to server
+    return new Promise<void>((resolve) => {
+      const socket = new SocketSession()
+      socket.token = bot.token
+      socket.open()
+
+      socket._emitter.once('READY', () => {
+        console.log(`Bot ${bot.name}(${bot.username}#${bot.discriminator}) is ready to work!`)
+        resolve()
       })
-      this.dispatch(session)
+
+      const dispatchMessage = (data: TomonMessageInfo, type: keyof Session.Events) => {
+        TomonBot.toMessage(data = camelize(data))
+        const userId = data.author.id
+        if (userId === selfId) return
+        // TODO: 处理图片和表情
+        if (!data.content) data.content = ''
+        this.dispatch(new Session(this.app, {
+          ...data,
+          selfId,
+          userId,
+          type,
+          platform: 'tomon',
+          channelId: data['guildId'],
+          subtype: data['guildId'] ? 'group' : 'private',
+          author: data.author,
+        }))
+      }
+
+      socket._emitter.on('MESSAGE_CREATE', async ({ d }) => dispatchMessage(d, 'message'))
+      socket._emitter.on('MESSAGE_UPDATE', async ({ d }) => dispatchMessage(d, 'message-updated'))
+      socket._emitter.on('MESSAGE_DELETE', async ({ d }) => dispatchMessage(d, 'message-deleted'))
     })
   }
 
-  async _listen() {
-    await Promise.all(this.bots.map(bot => this.__listen(bot)))
+  async start() {
+    await Promise.all(this.bots.map(bot => this._listen(bot)))
   }
 
-  _close() {}
+  stop() {}
 }

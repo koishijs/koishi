@@ -1,4 +1,4 @@
-import { isPositiveInteger, parseTeachArgs, Dialogue, DialogueTest } from './utils'
+import { isPositiveInteger, Dialogue, DialogueTest } from './utils'
 import { Context } from 'koishi-core'
 import { getTotalWeight } from './receiver'
 
@@ -7,8 +7,9 @@ export interface SearchDetails extends Array<string> {
   answerType?: string
 }
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
+    'dialogue/status'(): Promise<string>
     'dialogue/list'(dialogue: Dialogue, output: string[], prefix: string, argv: Dialogue.Argv): void
     'dialogue/detail-short'(dialogue: Dialogue, output: SearchDetails, argv: Dialogue.Argv): void
     'dialogue/before-search'(argv: Dialogue.Argv, test: DialogueTest): void | boolean
@@ -35,22 +36,26 @@ declare module './utils' {
 }
 
 export default function apply(ctx: Context) {
-  ctx.command('teach')
-    .option('search', '搜索已有问答', { notUsage: true })
-    .option('page', '/ <page>  设置搜索结果的页码', { validate: isPositiveInteger })
-    .option('autoMerge', '自动合并相同的问题和回答')
-    .option('recursive', '-R  禁用递归查询', { fallback: true, value: false })
-    .option('pipe', '| <op...>  对每个搜索结果执行操作')
-
-  ctx.on('dialogue/execute', (argv) => {
-    const { search, noArgs } = argv.options
-    if (search) return noArgs ? showInfo(argv) : showSearch(argv)
+  ctx.command('teach.status').action(async () => {
+    const output = await ctx.parallel('dialogue/status')
+    return output.filter(x => x).join('\n')
   })
 
-  ctx.on('dialogue/validate', (argv) => {
-    if (!argv.options.search) {
-      delete argv.options.recursive
-    }
+  ctx.on('dialogue/status', async () => {
+    const { questions, dialogues } = await ctx.database.getDialogueStats()
+    return `共收录了 ${questions} 个问题和 ${dialogues} 个回答。`
+  })
+
+  ctx.command('teach')
+    .option('search', '搜索已有问答', { notUsage: true })
+    .option('page', '/ <page>  设置搜索结果的页码', { type: isPositiveInteger })
+    .option('autoMerge', '自动合并相同的问题和回答')
+    .option('recursive', '-R  禁用递归查询', { value: false })
+    .option('pipe', '| <op:text>  对每个搜索结果执行操作')
+
+  ctx.on('dialogue/execute', (argv) => {
+    const { search } = argv.options
+    if (search) return showSearch(argv)
   })
 
   ctx.on('dialogue/list', ({ _redirections }, output, prefix, argv) => {
@@ -64,12 +69,12 @@ export default function apply(ctx: Context) {
     }
   })
 
-  ctx.on('dialogue/before-search', ({ options }, test) => {
-    test.noRecursive = !options.recursive
+  ctx.before('dialogue/search', ({ options }, test) => {
+    test.noRecursive = options.recursive === false
   })
 
-  ctx.on('dialogue/before-search', (argv, test) => {
-    test.appellative = argv.appellative
+  ctx.before('dialogue/search', ({ options }, test) => {
+    test.appellative = options.appellative
   })
 
   ctx.on('dialogue/search', async (argv, test, dialogues) => {
@@ -156,8 +161,8 @@ export function formatQuestionAnswers(argv: Dialogue.Argv, dialogues: Dialogue[]
 }
 
 async function showSearch(argv: Dialogue.Argv) {
-  const { app, session, options } = argv
-  const { regexp, question, answer, page = 1, original, pipe, recursive, autoMerge } = options
+  const { app, session, options, args: [question, answer] } = argv
+  const { regexp, page = 1, original, pipe, recursive, autoMerge } = options
   const { itemsPerPage = 30, mergeThreshold = 5 } = argv.config
 
   const test: DialogueTest = { question, answer, regexp, original: options._original }
@@ -170,11 +175,10 @@ async function showSearch(argv: Dialogue.Argv) {
     const argv = { ...command.parse(pipe), session, command }
     const target = argv.options['target'] = dialogues.map(d => d.id).join(',')
     argv.source = `#${target} ${pipe}`
-    parseTeachArgs(argv)
     return command.execute(argv)
   }
 
-  if (recursive && !autoMerge) {
+  if (recursive !== false && !autoMerge) {
     await argv.app.parallel('dialogue/search', argv, test, dialogues)
   }
 
@@ -186,11 +190,11 @@ async function showSearch(argv: Dialogue.Argv) {
   if (!options.regexp) {
     const suffix = options.regexp !== false ? '，请尝试使用正则表达式匹配' : ''
     if (!question) {
-      if (!dialogues.length) return session.$send(`没有搜索到回答“${answer}”${suffix}。`)
+      if (!dialogues.length) return session.send(`没有搜索到回答“${answer}”${suffix}。`)
       const output = dialogues.map(d => `${formatPrefix(argv, d)}${d.original}`)
       return sendResult(`回答“${answer}”的问题如下`, output)
     } else if (!answer) {
-      if (!dialogues.length) return session.$send(`没有搜索到问题“${original}”${suffix}。`)
+      if (!dialogues.length) return session.send(`没有搜索到问题“${original}”${suffix}。`)
       const output = formatAnswers(argv, dialogues)
       const state = app.getSessionState(session)
       state.isSearch = true
@@ -199,7 +203,7 @@ async function showSearch(argv: Dialogue.Argv) {
       const total = await getTotalWeight(app, state)
       return sendResult(`问题“${original}”的回答如下`, output, dialogues.length > 1 ? `实际触发概率：${+Math.min(total, 1).toFixed(3)}` : '')
     } else {
-      if (!dialogues.length) return session.$send(`没有搜索到问答“${original}”“${answer}”${suffix}。`)
+      if (!dialogues.length) return session.send(`没有搜索到问答“${original}”“${answer}”${suffix}。`)
       const output = [dialogues.map(d => d.id).join(', ')]
       return sendResult(`“${original}”“${answer}”匹配的回答如下`, output)
     }
@@ -247,19 +251,4 @@ async function showSearch(argv: Dialogue.Argv) {
     }
     return output.join('\n')
   }
-}
-
-async function showInfo({ app }: Dialogue.Argv) {
-  const tasks: Promise<string>[] = []
-  tasks.push(app.database.getDialogueStats().then(({ questions, dialogues }) => {
-    return `共收录了 ${questions} 个问题和 ${dialogues} 个回答。`
-  }))
-  if (app.getImageServerStatus) {
-    tasks.push(app.getImageServerStatus().then(({ totalSize, totalCount }) => {
-      return `收录图片 ${totalCount} 张，总体积 ${+(totalSize / (1 << 20)).toFixed(1)} MB。`
-    }))
-  }
-
-  const output = await Promise.all(tasks)
-  return output.join('\n')
 }

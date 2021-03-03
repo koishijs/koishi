@@ -1,25 +1,9 @@
-import { Context, Session, CommandAction, getContextId } from 'koishi-core'
-import { assertProperty } from 'koishi-utils'
-import { AxiosRequestConfig } from 'axios'
+import { Context, Session, Command, makeArray, segment } from 'koishi-core'
 import ascii2d from './ascii2d'
 import saucenao from './saucenao'
 
-export interface Config {
-  lowSimilarity?: number
-  highSimilarity?: number
-  saucenaoApiKey?: string[]
-  axiosConfig?: AxiosRequestConfig
-}
-
-const imageRE = /\[CQ:image,file=([^,]+),url=([^\]]+)\]/g
-function extractImages(message: string) {
-  let search = imageRE.exec(message)
-  const result: string[] = []
-  while (search) {
-    result.push(search[2])
-    search = imageRE.exec(message)
-  }
-  return result
+export interface Config extends saucenao.Config {
+  saucenaoApiKey?: string | string[]
 }
 
 async function mixedSearch(url: string, session: Session, config: Config) {
@@ -27,51 +11,68 @@ async function mixedSearch(url: string, session: Session, config: Config) {
 }
 
 export const name = 'search'
+export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
-  assertProperty(config, 'saucenaoApiKey')
+  let index = 0
+  const keys = makeArray(config.saucenaoApiKey)
 
-  const command = ctx.command('search <...images>', '搜图片')
-    .alias('搜图')
+  ctx.on('saucenao/get-key', () => {
+    const result = keys[index]
+    index = (index + 1) % keys.length
+    return result
+  })
+
+  ctx.on('saucenao/drop-key', (key) => {
+    if (keys.indexOf(key) < 0) return
+    if (index === 0) {
+      keys.pop()
+    } else {
+      keys.splice(--index, 1)
+    }
+    return '令牌失效导致访问失败，请联系机器人作者。'
+  })
+
+  ctx.command('search [image]', '搜图片')
+    .shortcut('搜图', { fuzzy: true })
     .action(search(mixedSearch))
-
-  command.subcommand('saucenao <...images>', '使用 saucenao 搜图')
+    .subcommand('saucenao [image]', '使用 saucenao 搜图')
     .action(search(saucenao))
-
-  command.subcommand('ascii2d <...images>', '使用 ascii2d 搜图')
+    .subcommand('ascii2d [image]', '使用 ascii2d 搜图')
     .action(search(ascii2d))
 
-  const pending = new Set<string>()
+  const pendings = new Set<string>()
 
-  type SearchCallback = (url: string, session: Session, config: Config) => Promise<any>
+  type SearchCallback = (url: string, session: Session, config: Config) => Promise<boolean | void>
 
-  async function searchUrls(session: Session, urls: string[], callback: SearchCallback) {
-    const id = getContextId(session)
-    pending.add(id)
-    let hasSuccess = false, hasFailure = false
-    await Promise.all(urls.map((url) => {
-      return callback(url, session, config).then(() => hasSuccess = true, () => hasFailure = true)
-    }))
-    pending.delete(id)
-    if (!hasFailure) return
-    return session.$send(hasSuccess ? '其他图片搜索失败。' : '搜索失败。')
+  async function searchUrl(session: Session, url: string, callback: SearchCallback) {
+    const id = session.channelId
+    pendings.add(id)
+    try {
+      await callback(url, session, config)
+    } catch {
+      await session.send('搜索失败。')
+    } finally {
+      pendings.delete(id)
+    }
   }
 
-  function search(callback: SearchCallback): CommandAction {
+  function search(callback: SearchCallback): Command.Action {
     return async ({ session }) => {
-      const id = getContextId(session)
-      if (pending.has(id)) return '存在正在进行的查询，请稍后再试。'
+      const id = session.channelId
+      if (pendings.has(id)) return '存在正在进行的查询，请稍后再试。'
 
-      const urls = extractImages(session.message)
-      if (urls.length) {
-        return searchUrls(session, urls, callback)
+      const code = segment.from(session.content, 'image')
+      if (code && code.data.url) {
+        pendings.add(id)
+        return searchUrl(session, code.data.url, callback)
       }
 
-      const dispose = session.$use(({ message }, next) => {
+      const dispose = session.middleware(({ content }, next) => {
         dispose()
-        const urls = extractImages(message)
-        if (!urls.length) return next()
-        return searchUrls(session, urls, callback)
+        const code = segment.from(content, 'image')
+        if (!code || !code.data.url) return next()
+        return searchUrl(session, code.data.url, callback)
       })
 
       return '请发送图片。'

@@ -1,139 +1,190 @@
-import { Context, getTargetId, Group, Session, User } from 'koishi-core'
-import { CQCode } from 'koishi-utils'
+import { Context, Channel, Session, User, Argv } from 'koishi-core'
+import { sleep, segment, template, makeArray, Time } from 'koishi-utils'
+
+template.set('common', {
+  'expect-text': '请输入要发送的文本。',
+  'expect-command': '请输入要触发的指令。',
+  'expect-context': '请提供新的上下文。',
+  'invalid-private-member': '无法在私聊上下文使用 --member 选项。',
+  'feedback-receive': '收到来自 {0} 的反馈信息：\n{1}',
+  'feedback-success': '反馈信息发送成功！',
+  // eslint-disable-next-line quote-props
+  'relay': '{0}: {1}',
+})
+
+interface RelayOptions {
+  source: string
+  destination: string
+  selfId?: string
+  lifespan?: number
+}
 
 export interface SenderConfig {
-  operator?: number
+  echo?: boolean
+  broadcast?: boolean
+  contextify?: boolean
+  operator?: string | string[]
+  relay?: RelayOptions | RelayOptions[]
 }
 
 export default function apply(ctx: Context, config: SenderConfig = {}) {
-  ctx.command('broadcast <message...>', '全服广播', { authority: 4 })
-    .before(session => !session.$app.database)
-    .option('forced', '-f  无视 silent 标签进行广播')
-    .option('only', '-o  仅向当前 Bot 负责的群进行广播')
-    .action(async ({ options, session }, message) => {
-      if (!message) return '请输入要发送的文本。'
-      if (!options.only) {
-        await ctx.broadcast(message, options.forced)
-        return
-      }
+  const dbctx = ctx.select('database')
 
-      let groups = await ctx.database.getAllGroups(['id', 'flag'], [session.selfId])
-      if (!options.forced) {
-        groups = groups.filter(g => !(g.flag & Group.Flag.silent))
-      }
-      await session.$bot.broadcast(groups.map(g => g.id), message)
-    })
-
-  ctx.command('echo <message...>', '向当前上下文发送消息', { authority: 2 })
+  config.echo !== false && ctx
+    .command('common/echo <message:text>', '向当前上下文发送消息', { authority: 2 })
     .option('anonymous', '-a  匿名发送消息', { authority: 3 })
     .option('forceAnonymous', '-A  匿名发送消息', { authority: 3 })
-    .option('unescape', '-e  发送非转义的消息', { authority: 3 })
+    .option('escape', '-e  发送转义消息', { authority: 3 })
     .action(async ({ options }, message) => {
-      if (!message) return '请输入要发送的文本。'
+      if (!message) return template('common.expect-text')
 
-      if (options.unescape) {
-        message = CQCode.unescape(message)
+      if (options.escape) {
+        message = segment.unescape(message)
       }
 
       if (options.forceAnonymous) {
-        message = CQCode.stringify('anonymous') + message
+        message = segment('anonymous') + message
       } else if (options.anonymous) {
-        message = CQCode.stringify('anonymous', { ignore: true }) + message
+        message = segment('anonymous', { ignore: true }) + message
       }
 
       return message
     })
 
-  const interactions: Record<number, number> = {}
+  const operator = makeArray(config.operator)
+  if (operator.length) {
+    type FeedbackData = [sid: string, channelId: string]
+    const feedbacks: Record<number, FeedbackData> = {}
 
-  config.operator && ctx.command('feedback <message...>', '发送反馈信息给作者')
-    .userFields(['name', 'id'])
-    .action(async ({ session }, text) => {
-      if (!text) return '请输入要发送的文本。'
-      const { $username: name, userId } = session
-      const nickname = name === '' + userId ? userId : `${name} (${userId})`
-      const message = `收到来自 ${nickname} 的反馈信息：\n${text}`
-      const id = await session.$bot.sendPrivateMsg(config.operator, message)
-      interactions[id] = userId
-      return '反馈信息发送成功！'
+    ctx.command('common/feedback <message:text>', '发送反馈信息给作者')
+      .userFields(['name', 'id'])
+      .action(async ({ session }, text) => {
+        if (!text) return template('common.expect-text')
+        const { username: name, userId } = session
+        const nickname = name === '' + userId ? userId : `${name} (${userId})`
+        const message = template('common.feedback-receive', nickname, text)
+        const delay = ctx.app.options.delay.broadcast
+        const data: FeedbackData = [session.sid, session.channelId]
+        for (let index = 0; index < operator.length; ++index) {
+          if (index && delay) await sleep(delay)
+          const [platform, userId] = Argv.parsePid(operator[index])
+          const id = await ctx.getBot(platform).sendPrivateMessage(userId, message)
+          feedbacks[id] = data
+        }
+        return template('common.feedback-success')
+      })
+
+    ctx.middleware((session, next) => {
+      const { quote, parsed } = session
+      if (!parsed.content || !quote) return next()
+      const data = feedbacks[quote.messageId]
+      if (!data) return next()
+      return ctx.bots[data[0]].sendMessage(data[1], parsed.content)
     })
+  }
+
+  const relay = makeArray(config.relay)
+  const relayMap: Record<string, RelayOptions> = {}
+
+  async function sendRelay(session: Session, { destination, selfId, lifespan = Time.hour }: RelayOptions) {
+    const [platform, channelId] = Argv.parsePid(destination)
+    const bot = ctx.getBot(platform, selfId)
+    if (!session.parsed.content) return
+    const content = template('common.relay', session.username, session.parsed.content)
+    const id = await bot.sendMessage(channelId, content)
+    relayMap[id] = { source: destination, destination: session.cid, selfId: session.selfId, lifespan }
+    setTimeout(() => delete relayMap[id], lifespan)
+  }
 
   ctx.middleware((session, next) => {
-    const { $reply, $parsed } = session
-    if (!$parsed || !$reply) return next()
-    const userId = interactions[$reply.messageId]
-    if (!userId) return next()
-    return session.$bot.sendPrivateMsg(userId, $parsed)
+    const { quote = {} } = session
+    const data = relayMap[quote.messageId]
+    if (data) return sendRelay(session, data)
+    const tasks: Promise<void>[] = []
+    for (const options of relay) {
+      if (session.cid !== options.source) continue
+      tasks.push(sendRelay(session, options).catch())
+    }
+    tasks.push(next())
+    return Promise.all(tasks)
   })
 
-  ctx.command('contextify <message...>', '在特定上下文中触发指令', { authority: 3 })
+  config.broadcast !== false && dbctx
+    .command('common/broadcast <message:text>', '全服广播', { authority: 4 })
+    .option('forced', '-f  无视 silent 标签进行广播')
+    .option('only', '-o  仅向当前 Bot 负责的群进行广播')
+    .action(async ({ options, session }, message) => {
+      if (!message) return template('common.expect-text')
+      if (!options.only) {
+        await ctx.broadcast(message, options.forced)
+        return
+      }
+
+      const fields: ('id' | 'flag')[] = ['id']
+      if (!options.forced) fields.push('flag')
+      let groups = await ctx.database.getAssignedChannels(fields, { [session.platform]: [session.selfId] })
+      if (!options.forced) {
+        groups = groups.filter(g => !(g.flag & Channel.Flag.silent))
+      }
+      await session.bot.broadcast(groups.map(g => g.id.slice(session.platform['length'] + 1)), message)
+    })
+
+  config.contextify !== false && dbctx
+    .command('common/contextify <message:text>', '在特定上下文中触发指令', { authority: 3 })
     .alias('ctxf')
     .userFields(['authority'])
-    .before(session => !session.$app.database)
-    .option('user', '-u [id]  使用私聊上下文')
-    .option('group', '-g [id]  使用群聊上下文')
-    .option('member', '-m [id]  使用当前群/讨论组成员上下文')
-    .option('type', '-t [type]  确定发送信息的子类型')
-    .usage([
-      '私聊的子类型包括 other（默认），friend，group。',
-      '群聊的子类型包括 normal（默认），notice，anonymous。',
-      '讨论组聊天没有子类型。',
-    ].join('\n'))
+    .option('user', '-u [id:user]  使用用户私聊上下文')
+    .option('member', '-m [id:user]  使用当前频道成员上下文')
+    .option('channel', '-c [id:channel]  使用群聊上下文')
     .action(async ({ session, options }, message) => {
-      if (!message) return '请输入要触发的指令。'
+      if (!message) return template('common.expect-command')
 
       if (options.member) {
-        if (session.messageType === 'private') {
-          return '无法在私聊上下文使用 --member 选项。'
+        if (session.subtype === 'private') {
+          return template('common.invalid-private-member')
         }
-        options.group = session.groupId
+        options.channel = session.cid
         options.user = options.member
       }
 
-      if (!options.user && !options.group) {
-        return '请提供新的上下文。'
+      if (!options.user && !options.channel) {
+        return template('common.expect-context')
       }
 
-      const newSession = new Session(ctx.app, session)
-      newSession.$send = session.$send.bind(session)
-      newSession.$sendQueued = session.$sendQueued.bind(session)
+      const sess = new Session(ctx.app, session)
+      sess.send = session.send.bind(session)
+      sess.sendQueued = session.sendQueued.bind(session)
 
-      delete newSession.groupId
-
-      if (!options.group) {
-        newSession.messageType = 'private'
-        newSession.subType = options.type || 'other'
-        delete newSession.$group
-      } else if (options.group !== session.groupId) {
-        newSession.groupId = +options.group
-        newSession.messageType = 'group'
-        newSession.subType = options.type || 'normal'
-        delete newSession.$group
-        await newSession.$observeGroup(Group.fields)
+      if (!options.channel) {
+        sess.subtype = 'private'
+      } else if (options.channel !== session.cid) {
+        sess.channelId = Argv.parsePid(options.channel)[1]
+        sess.cid = `${sess.platform}:${sess.channelId}`
+        sess.subtype = 'group'
+        await sess.observeChannel(Channel.fields)
+      } else {
+        sess.channel = session.channel
       }
 
-      if (options.user) {
-        const id = getTargetId(options.user)
-        if (!id) return '未指定目标。'
-
-        newSession.userId = id
-        newSession.sender.userId = id
-
-        delete newSession.$user
-        const user = await newSession.$observeUser(User.fields)
-        if (session.$user.authority <= user.authority) {
-          return '权限不足。'
+      if (options.user && options.user !== session.uid) {
+        sess.userId = sess.author.userId = Argv.parsePid(options.user)[1]
+        sess.uid = `${sess.platform}:${sess.userId}`
+        const user = await sess.observeUser(User.fields)
+        if (session.user.authority <= user.authority) {
+          return template('internal.low-authority')
         }
+      } else {
+        sess.user = session.user
       }
 
-      if (options.group) {
-        const info = await session.$bot.getGroupMemberInfo(newSession.groupId, newSession.userId).catch(() => ({}))
-        Object.assign(newSession.sender, info)
+      if (options.member) {
+        const info = await session.bot.getGroupMember?.(sess.groupId, sess.userId).catch(() => ({}))
+        Object.assign(sess.author, info)
       } else if (options.user) {
-        const info = await session.$bot.getStrangerInfo(newSession.userId).catch(() => ({}))
-        Object.assign(newSession.sender, info)
+        const info = await session.bot.getUser?.(sess.userId).catch(() => ({}))
+        Object.assign(sess.author, info)
       }
 
-      return newSession.$execute(message)
+      await sess.execute(message)
     })
 }

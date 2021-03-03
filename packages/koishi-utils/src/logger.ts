@@ -1,4 +1,5 @@
 import { inspect, InspectOptions, format } from 'util'
+import { clearScreenDown, cursorTo } from 'readline'
 import { stderr } from 'supports-color'
 import { Time } from './time'
 
@@ -12,23 +13,33 @@ const colors = stderr.level < 2 ? [6, 2, 3, 4, 5, 1] : [
 
 const instances: Record<string, Logger> = {}
 
-type LogFunction = (format: any, ...param: any[]) => void
+interface LogLevelConfig {
+  base: number
+  [K: string]: LogLevel
+}
 
+type LogLevel = number | LogLevelConfig
+type LogFunction = (format: any, ...param: any[]) => void
 type LogType = 'success' | 'error' | 'info' | 'warn' | 'debug'
 
 export interface Logger extends Record<LogType, LogFunction> {}
 
 export class Logger {
+  static readonly SILENT = 0
   static readonly SUCCESS = 1
   static readonly ERROR = 1
   static readonly INFO = 2
   static readonly WARN = 2
   static readonly DEBUG = 3
 
-  static baseLevel = 2
   static showDiff = false
-  static levels: Record<string, number> = {}
-  static lastTime = 0
+  static showTime = ''
+  static timestamp = 0
+  static stream: NodeJS.WritableStream = process.stderr
+
+  static levels: LogLevelConfig = {
+    base: 2,
+  }
 
   static options: InspectOptions = {
     colors: stderr.hasBasic,
@@ -45,13 +56,20 @@ export class Logger {
     return `\u001B[3${code < 8 ? code : '8;5;' + code}${decoration}m${value}\u001B[0m`
   }
 
+  static clearScreen() {
+    if (!Logger.stream['isTTY'] || process.env.CI) return
+    const blank = '\n'.repeat(Math.max(Logger.stream['rows'] - 2, 0))
+    console.log(blank)
+    cursorTo(Logger.stream, 0, 0)
+    clearScreenDown(Logger.stream)
+  }
+
   private code: number
   private displayName: string
 
-  public stream: NodeJS.WritableStream = process.stderr
-
-  constructor(public name: string, private showDiff = false) {
+  constructor(public name: string) {
     if (name in instances) return instances[name]
+
     let hash = 0
     for (let i = 0; i < name.length; i++) {
       hash = ((hash << 3) - hash) + name.charCodeAt(i)
@@ -59,7 +77,7 @@ export class Logger {
     }
     instances[name] = this
     this.code = colors[Math.abs(hash) % colors.length]
-    this.displayName = name ? this.color(name + ' ', ';1') : ''
+    this.displayName = this.color(name + ' ', ';1')
     this.createMethod('success', '[S] ', Logger.SUCCESS)
     this.createMethod('error', '[E] ', Logger.ERROR)
     this.createMethod('info', '[I] ', Logger.INFO)
@@ -74,19 +92,51 @@ export class Logger {
   private createMethod(name: LogType, prefix: string, minLevel: number) {
     this[name] = (...args: [any, ...any[]]) => {
       if (this.level < minLevel) return
-      this.stream.write(prefix + this.displayName + this.format(...args) + '\n')
+      let indent = 4, output = ''
+      if (Logger.showTime) {
+        indent += Logger.showTime.length + 1
+        output += Time.template(Logger.showTime + ' ')
+      }
+      output += prefix + this.displayName + this.format(indent, ...args)
+      if (Logger.showDiff) {
+        const now = Date.now()
+        const diff = Logger.timestamp && now - Logger.timestamp
+        output += this.color(' +' + Time.formatTimeShort(diff))
+        Logger.timestamp = now
+      }
+      Logger.stream.write(output + '\n')
     }
   }
 
   get level() {
-    return Logger.levels[this.name] ?? Logger.baseLevel
+    const paths = this.name.split(':')
+    let config: LogLevel = Logger.levels
+    do {
+      config = config[paths.shift()] ?? config['base']
+    } while (paths.length && typeof config === 'object')
+    return config as number
   }
 
-  extend = (namespace: string, showDiff = this.showDiff) => {
-    return new Logger(`${this.name}:${namespace}`, showDiff)
+  set level(value) {
+    const paths = this.name.split(':')
+    let config = Logger.levels
+    while (paths.length > 1) {
+      const name = paths.shift()
+      const value = config[name]
+      if (typeof value === 'object') {
+        config = value
+      } else {
+        config = config[name] = { base: value ?? config.base }
+      }
+    }
+    config[paths[0]] = value
   }
 
-  format: (format: any, ...param: any[]) => string = (...args) => {
+  extend = (namespace: string) => {
+    return new Logger(`${this.name}:${namespace}`)
+  }
+
+  private format(indent: number, ...args: any[]) {
     if (args[0] instanceof Error) {
       args[0] = args[0].stack || args[0].message
     } else if (typeof args[0] !== 'string') {
@@ -104,15 +154,7 @@ export class Logger {
         index -= 1
       }
       return match
-    }).split('\n').join('\n    ')
-
-    if (Logger.showDiff || this.showDiff) {
-      const now = Date.now()
-      if (Logger.lastTime) {
-        args.push(this.color('+' + Time.formatTimeShort(now - Logger.lastTime)))
-      }
-      Logger.lastTime = now
-    }
+    }).replace(/\n/g, '\n' + ' '.repeat(indent))
 
     return format(...args)
   }

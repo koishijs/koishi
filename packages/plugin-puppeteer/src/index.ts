@@ -1,17 +1,36 @@
-import { launch, LaunchOptions, Browser } from 'puppeteer-core'
+import puppeteer from 'puppeteer-core'
 import { Context } from 'koishi-core'
-import { Logger, defineProperty, noop } from 'koishi-utils'
+import { Logger, defineProperty, noop, segment } from 'koishi-utils'
 import { escape } from 'querystring'
 import { PNG } from 'pngjs'
 export * from './svg'
 
-declare module 'koishi-core/dist/app' {
-  interface App {
-    browser: Browser
+// workaround puppeteer typings downgrade
+declare module 'puppeteer-core/lib/types' {
+  interface Base64ScreenshotOptions extends ScreenshotOptions {
+    encoding: 'base64'
+  }
+
+  interface BinaryScreenshotOptions extends ScreenshotOptions {
+    encoding?: 'binary'
+  }
+
+  interface Page {
+    screenshot(options?: Base64ScreenshotOptions): Promise<string>
+    screenshot(options?: BinaryScreenshotOptions): Promise<Buffer>
+  }
+
+  interface ElementHandle {
+    screenshot(options?: Base64ScreenshotOptions): Promise<string>
+    screenshot(options?: BinaryScreenshotOptions): Promise<Buffer>
   }
 }
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
+  interface App {
+    browser: puppeteer.Browser
+  }
+
   interface EventMap {
     'puppeteer/validate'(url: string): string
   }
@@ -20,7 +39,7 @@ declare module 'koishi-core/dist/context' {
 const logger = new Logger('puppeteer')
 
 export interface Config {
-  browser?: LaunchOptions
+  browser?: Parameters<typeof puppeteer.launch>[0]
   loadTimeout?: number
   idleTimeout?: number
   maxLength?: number
@@ -36,32 +55,32 @@ export const defaultConfig: Config = {
 }
 
 export const name = 'puppeteer'
+export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultConfig, ...config }
   const { executablePath, defaultViewport } = config.browser
 
-  const { app } = ctx
-  ctx.on('before-connect', async () => {
+  ctx.on('connect', async () => {
     try {
       if (!executablePath) {
         const findChrome = require('chrome-finder')
-        logger.info('finding chrome executable path...')
-        config.browser.executablePath = findChrome()
+        logger.debug('chrome executable found at %c', config.browser.executablePath = findChrome())
       }
-      defineProperty(app, 'browser', await launch(config.browser))
-      logger.info('browser launched')
+      defineProperty(ctx.app, 'browser', await puppeteer.launch(config.browser))
+      logger.debug('browser launched')
     } catch (error) {
       logger.error(error)
       ctx.dispose()
     }
   })
 
-  ctx.on('before-disconnect', async () => {
-    await app.browser?.close()
+  ctx.before('disconnect', async () => {
+    await ctx.app.browser?.close()
   })
 
-  ctx.command('shot <url>', '网页截图', { authority: 2 })
+  const ctx1 = ctx.intersect(sess => !!sess.app.browser)
+  ctx1.command('shot <url>', '网页截图', { authority: 2 })
     .alias('screenshot')
     .option('full', '-f  对整个可滚动区域截图')
     .option('viewport', '-v <viewport>  指定视口', { type: 'string' })
@@ -78,7 +97,7 @@ export function apply(ctx: Context, config: Config = {}) {
       if (typeof result === 'string') return result
 
       let loaded = false
-      const page = await app.browser.newPage()
+      const page = await ctx.app.browser.newPage()
       page.on('load', () => loaded = true)
 
       try {
@@ -107,7 +126,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
           const timer = setTimeout(() => {
             return loaded
-              ? session.$send('正在加载中，请稍等片刻~')
+              ? session.send('正在加载中，请稍等片刻~')
               : reject(new Error('navigation timeout'))
           }, config.loadTimeout)
         })
@@ -134,19 +153,19 @@ export function apply(ctx: Context, config: Config = {}) {
             buffer = PNG.sync.write(png)
           }).catch(noop)
         }
-        return `[CQ:image,file=base64://${buffer.toString('base64')}]`
+        return segment.image('base64://' + buffer.toString('base64'))
       }, (error) => {
         logger.debug(error)
         return '截图失败。'
       }).finally(() => page.close())
     })
 
-  ctx.command('tex <code...>', 'TeX 渲染', { authority: 2 })
+  ctx1.command('tex <code:text>', 'TeX 渲染', { authority: 2 })
     .option('scale', '-s <scale>  缩放比例', { fallback: 2 })
     .usage('渲染器由 https://www.zhihu.com/equation 提供。')
     .action(async ({ options }, tex) => {
       if (!tex) return '请输入要渲染的 LaTeX 代码。'
-      const page = await app.browser.newPage()
+      const page = await ctx.app.browser.newPage()
       await page.setViewport({
         width: 1920,
         height: 1080,
@@ -160,11 +179,12 @@ export function apply(ctx: Context, config: Config = {}) {
         page.close()
         return text[1]
       } else {
-        const buffer = await page.screenshot({
+        const base64 = await page.screenshot({
+          encoding: 'base64',
           clip: await svg.boundingBox(),
         })
         page.close()
-        return `[CQ:image,file=base64://${buffer.toString('base64')}]`
+        return segment.image('base64://' + base64)
       }
     })
 }

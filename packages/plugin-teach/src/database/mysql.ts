@@ -3,7 +3,7 @@ import { clone, defineProperty, Observed, pick } from 'koishi-utils'
 import { Dialogue, equal, DialogueTest } from '../utils'
 import type MysqlDatabase from 'koishi-plugin-mysql/dist/database'
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
     'dialogue/mysql'(test: DialogueTest, conditionals?: string[]): void
   }
@@ -92,10 +92,8 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   },
 })
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields, tables }) => {
-  listFields.push('dialogue.groups', 'dialogue.predecessors')
-
-  Object.assign(tables.dialogue = [
+extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Domain, tables }) => {
+  tables.dialogue = Object.assign<any, any>([
     'PRIMARY KEY (`id`) USING BTREE',
   ], {
     id: `INT(11) UNSIGNED NOT NULL AUTO_INCREMENT`,
@@ -104,13 +102,13 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ listFields, table
     probA: `DECIMAL(4,3) UNSIGNED NOT NULL DEFAULT '0.000'`,
     startTime: `INT(10) NOT NULL DEFAULT '0'`,
     endTime: `INT(10) NOT NULL DEFAULT '0'`,
-    groups: `TINYTEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
+    groups: new Domain.Array(`TINYTEXT`),
     original: `TINYTEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
     question: `TINYTEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
     answer: `TEXT(65535) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
-    predecessors: `TINYTEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci'`,
+    predecessors: new Domain.Array(`TINYTEXT`),
     successorTimeout: `INT(10) UNSIGNED NOT NULL DEFAULT '0'`,
-    writer: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0'`,
+    writer: 'INT(11) UNSIGNED',
   })
 })
 
@@ -144,16 +142,16 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/mysql', ({ regexp, answer, question, original }, conditionals) => {
-    const { escape } = require('koishi-plugin-mysql/dist/database').default.prototype as MysqlDatabase
+    const { escape } = require('koishi-plugin-mysql').default.prototype as MysqlDatabase
 
     if (regexp) {
-      if (answer !== undefined) conditionals.push('`answer` REGEXP ' + escape(answer))
-      if (question !== undefined) conditionals.push('`question` REGEXP ' + escape(original))
+      if (answer) conditionals.push('`answer` REGEXP ' + escape(answer))
+      if (question) conditionals.push('`question` REGEXP ' + escape(original))
       return
     }
 
-    if (answer !== undefined) conditionals.push('`answer` = ' + escape(answer))
-    if (question !== undefined) {
+    if (answer) conditionals.push('`answer` = ' + escape(answer))
+    if (question) {
       if (regexp === false) {
         conditionals.push('`question` = ' + escape(question))
       } else {
@@ -170,8 +168,8 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   ctx.on('dialogue/mysql', (test, conditionals) => {
     if (!test.groups || !test.groups.length) return
     conditionals.push(`(
-      !(\`flag\` & ${Dialogue.Flag.complement}) != ${test.reversed} && ${test.groups.map(id => `FIND_IN_SET(${id}, \`groups\`)`).join(' && ')} ||
-      !(\`flag\` & ${Dialogue.Flag.complement}) = ${test.reversed} && ${test.groups.map(id => `!FIND_IN_SET(${id}, \`groups\`)`).join(' && ')}
+      !(\`flag\` & ${Dialogue.Flag.complement}) != ${test.reversed} && ${test.groups.map(id => `FIND_IN_SET("${id}", \`groups\`)`).join(' && ')} ||
+      !(\`flag\` & ${Dialogue.Flag.complement}) = ${test.reversed} && ${test.groups.map(id => `!FIND_IN_SET("${id}", \`groups\`)`).join(' && ')}
     )`)
   })
 

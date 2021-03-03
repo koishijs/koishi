@@ -1,14 +1,14 @@
-import { Group, App } from 'koishi-core'
-import { CQCode, Logger } from 'koishi-utils'
+import { Channel, App } from 'koishi-core'
+import { segment, Logger } from 'koishi-utils'
 import { Subscribe } from './database'
 import bilibili from './bilibili'
 import twitcasting from './twitCasting'
 import mirrativ from './mirrativ'
 import axios from 'axios'
 
-declare module 'koishi-core/dist/context' {
+declare module 'koishi-core' {
   interface EventMap {
-    'monitor/before-send' (info: LiveInfo, group: Pick<Group, 'id' | 'flag' | 'assignee' | 'subscribe'>): void | boolean
+    'monitor/before-send'(info: LiveInfo, group: Pick<Channel, 'id' | 'flag' | 'assignee' | 'subscribe'>): void | boolean
   }
 }
 
@@ -121,29 +121,31 @@ export class Daemon {
     this.isLive = true
     const { url, content, image, title } = info
     const app = this.monitor.app
-    const groups = await app.database.getAllGroups(['id', 'flag', 'assignee', 'subscribe'])
-    groups.forEach(async (group) => {
+    const channels = await app.database.getAssignedChannels(['id', 'flag', 'assignee', 'subscribe'])
+    channels.forEach(async (group) => {
       const { id, flag, assignee, subscribe } = group
-      if (!subscribe[this.config.id] || flag & Group.Flag.silent) return
-      const bot = app.bots[assignee]
+      const [type, channelId] = id.split(':')
+      if (!subscribe[this.config.id] || flag & Channel.Flag.silent) return
+      const bot = app.bots[`${type}:${assignee}`]
       const output = [`[直播提示] ${this.config.names[0]} 正在 ${this._displayType} 上直播：${url}`]
       // at subscibers
       try {
-        const memberMap = await bot.getMemberMap(id)
+        // @ts-ignore // FIXME
+        const memberMap = await bot.getMemberMap(channelId)
         const subscribers = subscribe[this.config.id].filter(id => !id || id in memberMap)
         subscribe[this.config.id] = subscribers
       } catch {}
       const subscribers = subscribe[this.config.id].filter(x => x)
       if (subscribers.length) {
-        output.push(subscribers.map(x => `[CQ:at,qq=${x}]`).join(''))
+        output.push(subscribers.map(x => segment.at(x)).join(''))
       }
       const messages = [output.join('\n')]
       if (title || image) {
-        messages.push(CQCode.stringify('share', { url, image, title, content }))
+        messages.push(segment('share', { url, image, title, content }))
       }
       if (app.bail('monitor/before-send', info, group)) return
       for (const message of messages) {
-        await bot.sendGroupMsg(id, message)
+        await bot.sendMessage(channelId, message)
       }
     })
   }

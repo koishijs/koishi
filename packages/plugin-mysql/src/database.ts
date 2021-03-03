@@ -1,43 +1,51 @@
-import { createPool, Pool, PoolConfig, escape, escapeId, format, OkPacket } from 'mysql'
-import { TableType, Tables, App } from 'koishi-core'
+import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, OkPacket, TypeCast } from 'mysql'
+import { TableType, Tables, App, Database } from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { types } from 'util'
+
+declare module 'mysql' {
+  interface UntypedFieldInfo {
+    packet: UntypedFieldInfo
+  }
+}
 
 const logger = new Logger('mysql')
 
 export interface Config extends PoolConfig {}
 
-type MysqlColumn = string
+interface MysqlDatabase extends Database {}
 
-type MysqlTableMap = {
-  [T in TableType]?: string[] & {
-    [C in keyof Tables[T]]?: MysqlColumn
-  }
-}
-
-export default class MysqlDatabase {
-  static tables: MysqlTableMap = {}
-  static listFields: string[] = []
-
+class MysqlDatabase {
   public pool: Pool
   public config: Config
 
-  escape: typeof escape
-  escapeId: typeof escapeId
+  mysql = this
 
-  constructor(public app: App, config: Config) {
+  escapeId: (value: string) => string
+
+  escape(value: any, table?: TableType, field?: string) {
+    const type = MysqlDatabase.tables[table]?.[field]
+    return mysqlEscape(typeof type === 'object' ? type.toString(value) : value)
+  }
+
+  inferFields<T extends TableType>(table: T, keys: readonly string[]) {
+    const types = MysqlDatabase.tables[table] || {}
+    return keys.map((key) => {
+      const type = types[key]
+      return typeof type === 'function' ? `${type()} AS ${key}` : key
+    }) as (keyof Tables[T])[]
+  }
+
+  constructor(public app: App, config?: Config) {
     this.config = {
       database: 'koishi',
       charset: 'utf8mb4_general_ci',
       typeCast: (field, next) => {
-        const identifier = `${field['packet'].orgTable}.${field.name}`
-        if (MysqlDatabase.listFields.includes(identifier)) {
-          const source = field.string()
-          return source ? source.split(',') : []
+        const type = MysqlDatabase.tables[field.packet.orgTable]?.[field.packet.orgName]
+        if (typeof type === 'object') {
+          return type.valueOf(field)
         }
-        if (field.type === 'JSON') {
-          return JSON.parse(field.string())
-        } else if (field.type === 'BIT') {
+        if (field.type === 'BIT') {
           return Boolean(field.buffer()?.readUInt8(0))
         } else {
           return next()
@@ -57,18 +65,30 @@ export default class MysqlDatabase {
     }
 
     for (const name in MysqlDatabase.tables) {
-      const table = MysqlDatabase.tables[name]
-      if (!tables[name]) {
-        const cols = Object.keys(table).map((key) => {
-          if (+key * 0 === 0) return table[key]
-          return `\`${key}\` ${table[key]}`
+      const table = { ...MysqlDatabase.tables[name] }
+      // create platform rows
+      if (name === 'user') {
+        let index = MysqlDatabase.tables[name]['length']
+        const platforms = new Set<string>(this.app.bots.map(bot => bot.platform))
+        platforms.forEach(name => {
+          const key = escapeId(name)
+          table[name] = 'varchar(50) null default null'
+          table[index++] = `unique index ${key} (${key}) using btree`
         })
+      }
+      if (!tables[name]) {
+        const cols = Object.keys(table)
+          .filter((key) => typeof table[key] !== 'function')
+          .map((key) => {
+            if (+key * 0 === 0) return table[key]
+            return `\`${key}\` ${MysqlDatabase.Domain.definition(table[key])}`
+          })
         logger.info('auto creating table %c', name)
         await this.query(`CREATE TABLE ?? (${cols.join(',')}) COLLATE = ?`, [name, this.config.charset])
       } else {
         const cols = Object.keys(table)
-          .filter(key => +key * 0 !== 0 && !tables[name].includes(key))
-          .map(key => `ADD \`${key}\` ${table[key]}`)
+          .filter(key => +key * 0 !== 0 && typeof table[key] !== 'function' && !tables[name].includes(key))
+          .map(key => `ADD \`${key}\` ${MysqlDatabase.Domain.definition(table[key])}`)
         if (!cols.length) continue
         logger.info('auto updating table %c', name)
         await this.query(`ALTER TABLE ?? ${cols.join(',')}`, [name])
@@ -80,11 +100,11 @@ export default class MysqlDatabase {
     return keys ? keys.map(key => key.includes('`') ? key : `\`${key}\``).join(',') : '*'
   }
 
-  formatValues = (prefix: string, data: object, keys: readonly string[]) => {
+  formatValues = (table: string, data: object, keys: readonly string[]) => {
     return keys.map((key) => {
       if (typeof data[key] !== 'object' || types.isDate(data[key])) return data[key]
-      const identifier = `${prefix}.${key}`
-      if (MysqlDatabase.listFields.includes(identifier)) return data[key].join(',')
+      const type = MysqlDatabase.tables[table]?.[key]
+      if (type && typeof type !== 'string') return type.toString(data[key])
       return JSON.stringify(data[key])
     })
   }
@@ -112,6 +132,9 @@ export default class MysqlDatabase {
         if (!err) return resolve(results)
         logger.warn(sql)
         err.stack = err.message + error.stack.slice(7)
+        if (err.code === 'ER_DUP_ENTRY') {
+          err[Symbol.for('koishi.error-type')] = 'duplicate-entry'
+        }
         reject(err)
       })
     })
@@ -172,5 +195,67 @@ export default class MysqlDatabase {
   }
 }
 
-MysqlDatabase.prototype.escape = escape
 MysqlDatabase.prototype.escapeId = escapeId
+
+namespace MysqlDatabase {
+  type Declarations = {
+    [T in TableType]?: {
+      [K in keyof Tables[T]]: string | (() => string) | Domain<Tables[T][K]>
+    }
+  }
+
+  export const tables: Declarations = {}
+
+  type FieldInfo = Parameters<Exclude<TypeCast, boolean>>[0]
+
+  export interface Domain<T = any> {
+    definition: string
+    toString(value: T): string
+    valueOf(source: FieldInfo): T
+  }
+
+  export namespace Domain {
+    export function definition(domain: string | Domain) {
+      return typeof domain === 'string' ? domain : domain.definition
+    }
+
+    export class String implements Domain<string> {
+      constructor(public definition = 'TEXT') {}
+
+      toString(value: any) {
+        return value
+      }
+
+      valueOf(field: FieldInfo) {
+        return field.string()
+      }
+    }
+
+    export class Array implements Domain<string[]> {
+      constructor(public definition = 'TEXT') {}
+
+      toString(value: string[]) {
+        return value.join(',')
+      }
+
+      valueOf(field: FieldInfo) {
+        const source = field.string()
+        return source ? source.split(',') : []
+      }
+    }
+
+    export class Json implements Domain {
+      constructor(public definition = 'JSON') {}
+
+      toString(value: any) {
+        return JSON.stringify(value)
+      }
+
+      valueOf(field: FieldInfo) {
+        return JSON.parse(field.string())
+      }
+    }
+  }
+}
+
+export default MysqlDatabase

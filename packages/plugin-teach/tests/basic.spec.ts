@@ -1,6 +1,6 @@
 import { App } from 'koishi-test-utils'
 import { Random, Time } from 'koishi-utils'
-import { fn, spyOn } from 'jest-mock'
+import jest from 'jest-mock'
 import { install, InstalledClock } from '@sinonjs/fake-timers'
 import { expect } from 'chai'
 import * as teach from 'koishi-plugin-teach'
@@ -9,9 +9,9 @@ import axios from 'axios'
 
 describe('Teach Plugin', () => {
   describe('Basic Support', () => {
-    const app = new App({ prefix: '.' })
-    const session1 = app.session(123, 456)
-    const session2 = app.session(321, 456)
+    const app = new App({ prefix: '.', mockDatabase: true })
+    const session1 = app.session('123', '456')
+    const session2 = app.session('321', '456')
 
     app.plugin(teach, {
       historyAge: 0,
@@ -22,9 +22,9 @@ describe('Teach Plugin', () => {
 
     before(async () => {
       await app.start()
-      await app.database.getUser(123, 3)
-      await app.database.getUser(321, 2)
-      await app.database.getGroup(456, app.selfId)
+      await app.database.initUser('123', 3)
+      await app.database.initUser('321', 2)
+      await app.database.initChannel('456')
     })
 
     it('create', async () => {
@@ -44,8 +44,8 @@ describe('Teach Plugin', () => {
       await session1.shouldReply('# foo bar', '问答已存在，编号为 1，如要修改请尝试使用 #1 指令。')
       await session1.shouldReply('# foo bar -P 1', '修改了已存在的问答，编号为 1。')
       await session1.shouldReply('#1 -P 1', '问答 1 没有发生改动。')
-      await session1.shouldReply('#1 baz', '推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -i 选项以忽略本提示。')
-      await session1.shouldReply('#1 baz', '推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -i 选项以忽略本提示。')
+      await session1.shouldReply('#1 baz', '推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -I 选项以忽略本提示。')
+      await session1.shouldReply('#1 baz', '推测你想修改的是回答而不是问题。发送空行或句号以修改回答，使用 -I 选项以忽略本提示。')
       await session1.shouldReply('.', '问答 1 已成功修改。')
       await session1.shouldReply('foo', 'baz')
     })
@@ -81,9 +81,9 @@ describe('Teach Plugin', () => {
   })
 
   function createEnvironment(config: teach.Config) {
-    const app = new App({ userCacheAge: Number.EPSILON, nickname: ['koishi', 'satori'] })
-    const u2id = 200, u3id = 300, u4id = 400
-    const g1id = 100, g2id = 200
+    const app = new App({ userCacheAge: Number.EPSILON, nickname: ['koishi', 'satori'], mockDatabase: true })
+    const u2id = '200', u3id = '300', u4id = '400'
+    const g1id = '100', g2id = '200'
     const u2 = app.session(u2id)
     const u3 = app.session(u3id)
     const u4 = app.session(u4id)
@@ -107,11 +107,11 @@ describe('Teach Plugin', () => {
 
     async function start() {
       await app.start()
-      await app.database.getUser(u2id, 2)
-      await app.database.getUser(u3id, 3)
-      await app.database.getUser(u4id, 4)
-      await app.database.getGroup(g1id, app.selfId)
-      await app.database.getGroup(g2id, app.selfId)
+      await app.database.initUser(u2id, 2)
+      await app.database.initUser(u3id, 3)
+      await app.database.initUser(u4id, 4)
+      await app.database.initChannel(g1id)
+      await app.database.initChannel(g2id)
     }
 
     before(start)
@@ -126,7 +126,7 @@ describe('Teach Plugin', () => {
     const { u3g1 } = createEnvironment({})
 
     let clock: InstalledClock
-    const randomReal = spyOn(Random, 'real')
+    const randomReal = jest.spyOn(Random, 'real')
 
     before(() => {
       clock = install({ shouldAdvanceTime: true, advanceTimeDelta: 5 })
@@ -144,7 +144,7 @@ describe('Teach Plugin', () => {
       await u3g1.shouldReply('koishi, foo', 'bar')
       await u3g1.shouldReply('satori, foo', 'bar')
       // TODO support at-trigger
-      // await u3g1.shouldReply(`[CQ:at,qq=${app.selfId}] foo`, 'bar')
+      // await u3g1.shouldReply(`[CQ:at,id=${app.selfId}] foo`, 'bar')
       await u3g1.shouldReply('#1', '编号为 1 的问答信息：\n问题：koishi,foo\n回答：bar\n触发权重：p=0, P=1')
       await u3g1.shouldReply('## foo', SEARCH_HEAD + '1. [p=0, P=1] bar')
     })
@@ -237,37 +237,38 @@ describe('Teach Plugin', () => {
   })
 
   describe('Writer', () => {
-    const { app, u2, u2g1, u3g1, u4g2 } = createEnvironment({ useWriter: true })
+    const { app, u2, u3g1, u4g2 } = createEnvironment({ useWriter: true })
 
     app.command('test').action(({ session }) => '' + session.userId)
 
     it('create writer', async () => {
-      // 当自身未设置 name 时使用 session.sender
-      u3g1.meta.sender.nickname = 'nick3'
+      // 当自身未设置 username 时使用 session.sender
+      u3g1.meta.author.username = 'nick3'
       await u3g1.shouldReply('# foo bar', '问答已添加，编号为 1。')
       await u3g1.shouldReply('#1', DETAIL_HEAD + '来源：nick3 (300)')
 
       // 重复添加问答时不应该覆盖旧的作者
-      await app.database.setUser(300, { name: 'user3' })
+      await app.database.setUser('mock', '300', { name: 'user3' })
       await u4g2.shouldReply('# foo bar', '问答已存在，编号为 1，如要修改请尝试使用 #1 指令。')
       await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：user3 (300)')
     })
 
     it('modify writer', async () => {
       await u2.shouldReply('#1 -W', '问答 1 因权限过低无法修改。')
-      await u4g2.shouldReply('#1 -w foo', '参数 -w, --writer 错误，请检查指令语法。')
-      await u4g2.shouldReply('#1 -w [CQ:at,qq=500]', '指定的目标用户不存在。')
-      await u4g2.shouldReply('#1 -w [CQ:at,qq=200]', '问答 1 已成功修改。')
+      await u4g2.shouldReply('#1 -w foo', '选项 writer 输入无效，请指定正确的目标。')
+      await u4g2.shouldReply('#1 -w [CQ:at,id=500]', '指定的目标用户不存在。')
+      await u4g2.shouldReply('#1 -w [CQ:at,id=200]', '问答 1 已成功修改。')
 
-      // 实在找不到名字就只显示 QQ 号
-      await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：200')
-      const getMemberMap = app.bots[0].getMemberMap = fn()
-      getMemberMap.mockReturnValue(Promise.resolve({ 200: 'mock2' }))
-      await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：mock2 (200)')
+      // 实在找不到名字就只显示未知用户
+      await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：未知用户')
+      const getGroupMemberMap = app.bots[0].getGroupMemberMap = jest.fn()
+      getGroupMemberMap.mockReturnValue(Promise.resolve({ 200: 'mock2' }))
+      await u4g2.shouldReply('#1', DETAIL_HEAD + '来源：mock2')
+      getGroupMemberMap.mockRestore()
     })
 
     it('anonymous', async () => {
-      u2.meta.sender.nickname = 'nick2'
+      u2.meta.author.username = 'nick2'
       await u2.shouldReply('#1', DETAIL_HEAD + '来源：nick2 (200)')
       await u2.shouldReply('#1 -W', '问答 1 已成功修改。')
       await u2.shouldReply('#1', DETAIL_HEAD.slice(0, -1))
@@ -281,18 +282,6 @@ describe('Teach Plugin', () => {
       await u3g1.shouldReply('#1', DETAIL_HEAD + '此问答已锁定。')
       await u3g1.shouldReply('## foo', SEARCH_HEAD + '1. [锁定] bar')
       await u4g2.shouldReply('#1 -F', '问答 1 已成功修改。')
-    })
-
-    it('substitute', async () => {
-      u2g1.meta.sender.nickname = 'nick2'
-      const DETAIL_HEAD = '编号为 1 的问答信息：\n问题：foo\n回答：%s:%{test}\n'
-      await u3g1.shouldReply('#1 ~ %s:%{test}', '问答 1 已成功修改。')
-      await u2g1.shouldReply('foo', 'nick2:200')
-      await u3g1.shouldReply('#1 -s', '问答 1 已成功修改。')
-      await u3g1.shouldReply('#1 -w [CQ:at,qq=300]', '问答 1 已成功修改。')
-      await u3g1.shouldReply('#1', DETAIL_HEAD + '来源：user3 (300)\n回答中的指令由教学者代行。')
-      await u3g1.shouldReply('## foo', SEARCH_HEAD + '1. [代行] %s:%{test}')
-      await u2g1.shouldReply('foo', 'nick2:300')
     })
   })
 
@@ -328,7 +317,7 @@ describe('Teach Plugin', () => {
   })
 
   describe('Image (Client)', () => {
-    const axiosGet = spyOn(axios, 'get')
+    const axiosGet = jest.spyOn(axios, 'get')
     const uploadKey = Random.uuid()
     const imageServer = 'https://127.0.0.1/image'
     const uploadServer = 'https://127.0.0.1/upload'
@@ -337,7 +326,7 @@ describe('Teach Plugin', () => {
     it('upload succeed', async () => {
       axiosGet.mockReturnValue(Promise.resolve())
       await u3g1.shouldReply('# foo [CQ:image,file=baz,url=bar]', '问答已添加，编号为 1。')
-      await u3g1.shouldReply('foo', '[CQ:image,file=https://127.0.0.1/image/baz]')
+      await u3g1.shouldReply('foo', '[CQ:image,url=https://127.0.0.1/image/baz]')
       expect(axiosGet.mock.calls).to.have.shape([[uploadServer, {
         params: { file: 'baz', url: 'bar' },
       }]])
@@ -364,7 +353,9 @@ describe('Teach Plugin', () => {
     new App().plugin(teach, { preventLoop: 10 })
 
     it('throttle', async () => {
-      const { u2g1, u3g1, u4g1, u4g2, start } = createEnvironment({ throttle: { interval: 1000, responses: 2 } })
+      const { u2g1, u3g1, u4g1, u4g2, start } = createEnvironment({
+        throttle: { interval: 1000, responses: 2 },
+      })
 
       await start()
       await u3g1.shouldReply('# baz bar', '问答已添加，编号为 1。')
@@ -376,7 +367,9 @@ describe('Teach Plugin', () => {
     })
 
     it('preventLoop', async () => {
-      const { u2g1, u3g1, u4g1, start } = createEnvironment({ preventLoop: { length: 5, participants: 2 } })
+      const { u2g1, u3g1, u4g1, start } = createEnvironment({
+        preventLoop: { length: 5, participants: 2 },
+      })
 
       await start()
       await u3g1.shouldReply('# baz bar', '问答已添加，编号为 1。')

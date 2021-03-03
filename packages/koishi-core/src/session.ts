@@ -1,102 +1,128 @@
-import { User, Group } from './database'
-import { ExecuteArgv, ParsedArgv, Command } from './command'
-import { isInteger, contain, observe, noop, Logger, defineProperty, Random } from 'koishi-utils'
-import { NextFunction } from './context'
+import LruCache from 'lru-cache'
+import { distance } from 'fastest-levenshtein'
+import { User, Channel, TableType, Tables } from './database'
+import { Command } from './command'
+import { contain, observe, Logger, defineProperty, Random, template } from 'koishi-utils'
+import { Argv } from './parser'
+import { Middleware, NextFunction } from './context'
 import { App } from './app'
-
-export type PostType = 'message' | 'notice' | 'request' | 'meta_event' | 'send'
-export type MessageType = 'private' | 'group'
-export type NoticeType =
-  | 'group_upload' | 'group_admin' | 'group_increase' | 'group_decrease'
-  | 'group_ban' | 'friend_add' | 'group_recall' | 'friend_recall' | 'notify'
-export type RequestType = 'friend' | 'group'
-export type MetaEventType = 'lifecycle' | 'heartbeat'
-
-export interface MetaTypeMap {
-  message: MessageType
-  notice: NoticeType
-  request: RequestType
-  // eslint-disable-next-line camelcase
-  meta_event: MetaEventType
-  send: null
-}
-
-export interface SubTypeMap {
-  message: 'friend' | 'group' | 'other' | 'normal' | 'anonymous' | 'notice'
-  notice:
-    | 'set' | 'unset' | 'approve' | 'invite' | 'leave' | 'kick' | 'kick_me'
-    | 'ban' | 'lift_ban' | 'poke' | 'lucky_king' | 'honor'
-  request: 'add' | 'invite'
-  // eslint-disable-next-line camelcase
-  meta_event: 'enable' | 'disable' | 'connect'
-  send: null
-}
-
-/** CQHTTP Meta Information */
-export interface Meta<P extends PostType = PostType> {
-  // type
-  postType?: P
-  messageType?: MetaTypeMap[P & 'message']
-  noticeType?: MetaTypeMap[P & 'notice']
-  requestType?: MetaTypeMap[P & 'request']
-  metaEventType?: MetaTypeMap[P & 'meta_event']
-  sendType?: MetaTypeMap[P & 'send']
-  subType?: SubTypeMap[P]
-
-  // basic properties
-  selfId?: number
-  userId?: number
-  groupId?: number
-  time?: number
-
-  // message event
-  messageId?: number
-  message?: string
-  rawMessage?: string
-  font?: number
-  sender?: SenderInfo
-  anonymous?: AnonymousInfo
-
-  // notice event
-  operatorId?: number
-  targetId?: number
-  duration?: number
-  file?: FileInfo
-  honorType?: 'talkative' | 'performer' | 'emotion'
-
-  // request event
-  comment?: string
-  flag?: string
-
-  // metaEvent event
-  status?: StatusInfo
-  interval?: number
-}
+import { Bot, ChannelInfo, MessageBase, Platform } from './adapter'
 
 const logger = new Logger('session')
 
-export interface Session<U, G, O, P extends PostType = PostType> extends Meta<P> {}
+type UnionToIntersection<U> = (U extends any ? (key: U) => void : never) extends (key: infer I) => void ? I : never
+type Flatten<T, K extends keyof T = keyof T> = UnionToIntersection<T[K]>
+type InnerKeys<T, K extends keyof T = keyof T> = keyof Flatten<T> & keyof Flatten<T, K>
 
-export class Session<U extends User.Field = never, G extends Group.Field = never, O extends {} = {}> {
-  $user?: User.Observed<U>
-  $group?: Group.Observed<G>
-  $app?: App
-  $argv?: ParsedArgv<U, G, O>
-  $appel?: boolean
-  $prefix?: string = null
-  $parsed?: string
-  $reply?: MessageInfo
-  $uuid = Random.uuid()
+export interface Session<U, G, P, X, Y> extends MessageBase, Partial<ChannelInfo> {}
+
+export namespace Session {
+  type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
+  type Actions = 'added' | 'deleted' | 'updated'
+
+  export interface Events extends Record<`${Genres}-${Actions}`, {}> {}
+
+  export type MessageAction = 'message' | 'message-deleted' | 'message-updated' | 'send'
+  export type Message = Session<never, never, Platform, MessageAction>
+  export interface Events extends Record<MessageAction, MessageType> {}
+
+  export type RequestAction = 'friend-request' | 'group-request' | 'group-member-request'
+  export type Request = Session<never, never, Platform, RequestAction>
+  export interface Events extends Record<RequestAction, {}> {}
+
+  export interface Events {
+    'friend-request': {}
+    'group-request': {}
+    'group-member-request': {}
+    'group-added': GroupMemberChangeType
+    'group-member-added': GroupMemberChangeType
+    'group-deleted': GroupMemberChangeType
+    'group-member-deleted': GroupMemberChangeType
+    'group-member': {
+      'role': {}
+      'ban': {}
+    }
+    'notice': {
+      'poke': {}
+      'lucky-king': {}
+      'honor': {
+        'talkative': {}
+        'performer': {}
+        'emotion': {}
+      }
+    }
+  }
+
+  export interface GroupMemberChangeType {
+    'active': {}
+    'passive': {}
+  }
+
+  export interface MessageType {
+    'private': {}
+    'group': {}
+  }
+
+  type ParamX<X> = Extract<keyof Events, X>
+  type ParamY<X, Y> = Extract<InnerKeys<Events, ParamX<X>>, Y>
+
+  export type Payload<X, Y = any> = Session<never, never, Platform, ParamX<X>, ParamY<X, Y>>
+}
+
+export interface Parsed {
+  content: string
+  prefix: string
+  appel: boolean
+}
+
+export class Session<
+  U extends User.Field = never,
+  G extends Channel.Field = never,
+  P extends Platform = Platform,
+  X extends keyof Session.Events = keyof Session.Events,
+  Y extends InnerKeys<Session.Events, X> = InnerKeys<Session.Events, X>,
+> {
+  type?: X
+  subtype?: Y
+  subsubtype?: InnerKeys<UnionToIntersection<Session.Events[X]>, Y>
+  platform?: P
+
+  selfId?: string
+  operatorId?: string
+  targetId?: string
+  duration?: number
+  file?: FileInfo
+
+  readonly app: App
+  readonly bot: Bot.Instance<P>
+  readonly sid: string
+  uid: string
+  cid: string
+
+  id?: string
+  argv?: Argv<U, G>
+  user?: User.Observed<U>
+  channel?: Channel.Observed<G>
+  parsed?: Parsed
 
   private _delay?: number
   private _queued: Promise<void>
   private _hooks: (() => void)[]
 
+  static readonly send = Symbol.for('koishi.session.send')
+
   constructor(app: App, session: Partial<Session>) {
-    defineProperty(this, '$app', app)
+    Object.assign(this, session)
+    defineProperty(this, 'app', app)
+    defineProperty(this, 'user', null)
+    defineProperty(this, 'channel', null)
+    defineProperty(this, 'sid', `${this.platform}:${this.selfId}`)
+    defineProperty(this, 'uid', `${this.platform}:${this.userId}`)
+    defineProperty(this, 'cid', `${this.platform}:${this.channelId}`)
+    defineProperty(this, 'bot', app.bots[this.sid])
+    defineProperty(this, 'id', Random.uuid())
     defineProperty(this, '_queued', Promise.resolve())
     defineProperty(this, '_hooks', [])
-    Object.assign(this, session)
   }
 
   toJSON() {
@@ -105,40 +131,37 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
     }))
   }
 
-  get $bot() {
-    return this.$app.bots[this.selfId]
+  get username(): string {
+    const defaultName = this.user && this.user['name']
+      ? this.user['name']
+      : this.author
+        ? this.author.nickname || this.author.username
+        : this.userId
+    return this.app.chain('appellation', defaultName, this)
   }
 
-  get $username(): string {
-    const idString = '' + this.userId
-    return this.$user && this.$user['name'] && idString !== this.$user['name']
-      ? this.$user['name']
-      : this.anonymous
-        ? this.anonymous.name
-        : this.sender
-          ? this.sender.card || this.sender.nickname
-          : idString
+  get database() {
+    return this.app.database
   }
 
-  async $send(message: string) {
-    if (!message) return
-    if (this.groupId) {
-      await this.$bot.sendGroupMsg(this.groupId, message)
-    } else {
-      await this.$bot.sendPrivateMsg(this.userId, message)
+  async send(message: string) {
+    if (this.bot[Session.send]) {
+      return this.bot[Session.send](this, message)
     }
+    if (!message) return
+    await this.bot.sendMessage(this.channelId, message)
   }
 
-  $cancelQueued(delay = 0) {
+  cancelQueued(delay = this.app.options.delay.cancel) {
     this._hooks.forEach(Reflect.apply)
     this._delay = delay
   }
 
-  async $sendQueued(message: string | void, delay?: number) {
-    if (!message) return
+  async sendQueued(content: string, delay?: number) {
+    if (!content) return
     if (typeof delay === 'undefined') {
-      const { queueDelay = 100 } = this.$app.options
-      delay = typeof queueDelay === 'function' ? queueDelay(message, this) : queueDelay
+      const { message, character } = this.app.options.delay
+      delay = Math.max(message, character * content.length)
     }
     return this._queued = this._queued.then(() => new Promise<void>((resolve) => {
       const hook = () => {
@@ -149,139 +172,284 @@ export class Session<U extends User.Field = never, G extends Group.Field = never
       }
       this._hooks.push(hook)
       const timer = setTimeout(async () => {
-        await this.$send(message)
+        await this.send(content)
         this._delay = delay
         hook()
       }, this._delay || 0)
     }))
   }
 
-  /** 在元数据上绑定一个可观测群实例 */
-  async $observeGroup<T extends Group.Field = never>(fields: Iterable<T> = []): Promise<Group.Observed<T | G>> {
-    const fieldSet = new Set<Group.Field>(fields)
-    const { groupId, $argv, $group } = this
-    if ($argv) Command.collect($argv, 'group', fieldSet)
+  private _getValue<T>(source: T | ((session: Session) => T)): T {
+    return typeof source === 'function' ? Reflect.apply(source, null, [this]) : source
+  }
 
-    // 对于已经绑定可观测群的，判断字段是否需要自动补充
-    if ($group) {
-      for (const key in $group) {
+  async getChannel<K extends Channel.Field = never>(id = this.channelId, assignee = '', fields: readonly K[] = []) {
+    const group = await this.database.getChannel(this.platform, id, fields)
+    if (group) return group
+    const fallback = Channel.create(this.platform, id)
+    fallback.assignee = assignee
+    if (assignee) {
+      await this.database.createChannel(this.platform, id, fallback)
+    }
+    return fallback
+  }
+
+  /** 在当前会话上绑定一个可观测频道实例 */
+  async observeChannel<T extends Channel.Field = never>(fields: Iterable<T> = []): Promise<Channel.Observed<T | G>> {
+    const fieldSet = new Set<Channel.Field>(fields)
+    const { platform, channelId, channel } = this
+
+    // 对于已经绑定可观测频道的，判断字段是否需要自动补充
+    if (channel) {
+      for (const key in channel) {
         fieldSet.delete(key as any)
       }
       if (fieldSet.size) {
-        const data = await this.$app.database.getGroup(groupId, [...fieldSet])
-        this.$app._groupCache.set(groupId, $group._merge(data))
+        const data = await this.getChannel(channelId, '', [...fieldSet])
+        this.app._channelCache.set(this.cid, channel._merge(data))
       }
-      return $group as any
+      return channel as any
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    const cache = this.$app._groupCache.get(groupId)
+    const cache = this.app._channelCache.get(this.cid)
     const fieldArray = [...fieldSet]
     const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
-    if (hasActiveCache) return this.$group = cache as any
+    if (hasActiveCache) return this.channel = cache as any
 
-    const autoAssign = typeof this.$app.options.autoAssign === 'function'
-      ? this.$app.options.autoAssign(this)
-      : this.$app.options.autoAssign
-
-    // 绑定一个新的可观测群实例
-    const data = await this.$app.database.getGroup(groupId, autoAssign ? this.selfId : 0, fieldArray)
-    const group = observe(data, diff => this.$app.database.setGroup(groupId, diff), `group ${groupId}`)
-    this.$app._groupCache.set(groupId, group)
-    return this.$group = group
+    // 绑定一个新的可观测频道实例
+    const assignee = this._getValue(this.app.options.autoAssign) ? this.selfId : ''
+    const data = await this.getChannel(channelId, assignee, fieldArray)
+    const newChannel = observe(data, diff => this.database.setChannel(platform, channelId, diff), `channel ${this.cid}`)
+    this.app._channelCache.set(this.cid, newChannel)
+    return this.channel = newChannel
   }
 
-  /** 在元数据上绑定一个可观测用户实例 */
-  async $observeUser<T extends User.Field = never>(fields: Iterable<T> = []): Promise<User.Observed<T | U>> {
+  async getUser<K extends User.Field = never>(id = this.userId, authority = 0, fields: readonly K[] = []) {
+    const user = await this.database.getUser(this.platform, id, fields)
+    if (user) return user
+    const fallback = User.create(this.platform, id)
+    fallback.authority = authority
+    if (authority) {
+      await this.database.createUser(this.platform, id, fallback)
+    }
+    return fallback
+  }
+
+  /** 在当前会话上绑定一个可观测用户实例 */
+  async observeUser<T extends User.Field = never>(fields: Iterable<T> = []): Promise<User.Observed<T | U>> {
     const fieldSet = new Set<User.Field>(fields)
-    const { userId, $argv, $user } = this
-    if ($argv) Command.collect($argv, 'user', fieldSet)
+    const { userId, user } = this
+
+    let userCache = this.app._userCache[this.platform]
+    if (!userCache) {
+      userCache = this.app._userCache[this.platform] = new LruCache({
+        max: this.app.options.userCacheLength,
+        maxAge: this.app.options.userCacheAge,
+      })
+    }
 
     // 对于已经绑定可观测用户的，判断字段是否需要自动补充
-    if ($user && !this.anonymous) {
-      for (const key in $user) {
+    if (user && !this.author?.anonymous) {
+      for (const key in user) {
         fieldSet.delete(key as any)
       }
       if (fieldSet.size) {
-        const data = await this.$app.database.getUser(userId, [...fieldSet])
-        this.$app._userCache.set(userId, $user._merge(data))
+        const data = await this.getUser(userId, 0, [...fieldSet])
+        userCache.set(userId, user._merge(data))
       }
     }
 
-    if ($user) return $user as any
-
-    const defaultAuthority = typeof this.$app.options.defaultAuthority === 'function'
-      ? this.$app.options.defaultAuthority(this)
-      : this.$app.options.defaultAuthority
+    if (user) return user as any
 
     // 确保匿名消息不会写回数据库
-    if (this.anonymous) {
-      const user = observe(User.create(userId, defaultAuthority), () => Promise.resolve())
-      return this.$user = user
+    if (this.author?.anonymous) {
+      const fallback = User.create(this.platform, userId)
+      fallback.authority = this._getValue(this.app.options.autoAuthorize)
+      const user = observe(fallback, () => Promise.resolve())
+      return this.user = user
     }
 
     // 如果存在满足可用的缓存数据，使用缓存代替数据获取
-    const cache = this.$app._userCache.get(userId)
+    const cache = userCache.get(userId)
     const fieldArray = [...fieldSet]
     const hasActiveCache = cache && contain(Object.keys(cache), fieldArray)
-    if (hasActiveCache) return this.$user = cache as any
+    if (hasActiveCache) return this.user = cache as any
 
     // 绑定一个新的可观测用户实例
-    const data = await this.$app.database.getUser(userId, defaultAuthority, fieldArray)
-    const user = observe(data, diff => this.$app.database.setUser(userId, diff), `user ${userId}`)
-    this.$app._userCache.set(userId, user)
-    return this.$user = user
+    const data = await this.getUser(userId, this._getValue(this.app.options.autoAuthorize), fieldArray)
+    const newUser = observe(data, diff => this.database.setUser(this.platform, userId, diff), `user ${this.uid}`)
+    userCache.set(userId, newUser)
+    return this.user = newUser
   }
 
-  $resolve(argv: ExecuteArgv): ParsedArgv {
-    if (typeof argv.command === 'string') {
-      argv.command = this.$app._commandMap[argv.command]
-    }
-    if (!argv.command) {
-      logger.warn(new Error(`cannot find command ${argv}`))
-      return
-    }
-    if (!argv.command.context.match(this)) return
-    return { session: this, ...argv } as ParsedArgv
-  }
-
-  $parse(message: string, terminator = '', builtin = false): ParsedArgv {
-    if (!message) return
-    const argv = this.$app.bail(this, 'parse', message, this, builtin, terminator)
-    return argv && this.$resolve(argv)
-  }
-
-  $execute(argv: ExecuteArgv): Promise<void>
-  $execute(message: string, next?: NextFunction): Promise<void>
-  async $execute(...args: [ExecuteArgv] | [string, NextFunction?]) {
-    let argv: any, next: NextFunction
-    if (typeof args[0] === 'string') {
-      next = args[1] || noop
-      argv = this.$parse(args[0])
-    } else {
-      next = args[0].next || noop
-      argv = this.$resolve(args[0])
-    }
-    if (!argv) return next()
-
-    argv.next = next
-    argv.session = this
-    this.$argv = argv
-    if (this.$app.database) {
-      if (this.messageType === 'group') {
-        await this.$observeGroup()
+  collect<T extends TableType>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()) {
+    collectFields(argv, Command[`_${key}Fields`], fields)
+    const collect = (argv: Argv) => {
+      argv.session = this
+      if (argv.tokens) {
+        for (const { inters } of argv.tokens) {
+          inters.forEach(collect)
+        }
       }
-      await this.$observeUser()
+      if (!this.resolve(argv)) return
+      collectFields(argv, argv.command[`_${key}Fields`], fields)
+    }
+    collect(argv)
+    return fields
+  }
+
+  resolve(argv: Argv) {
+    if (!argv.command) {
+      const { name = this.app.bail('parse', argv, this) } = argv
+      if (!(argv.command = this.app._commandMap[name])) return
+    }
+    if (argv.tokens?.every(token => !token.inters.length)) {
+      const { options, args, error } = argv.command.parse(argv)
+      argv.options = { ...argv.options, ...options }
+      argv.args = [...argv.args || [], ...args]
+      argv.error = error
+    }
+    return argv.command
+  }
+
+  async execute(content: string, next?: true | NextFunction): Promise<string>
+  async execute(argv: Argv, next?: true | NextFunction): Promise<string>
+  async execute(argv: string | Argv, next?: true | NextFunction): Promise<string> {
+    if (typeof argv === 'string') argv = Argv.parse(argv)
+
+    argv.session = this
+    if (argv.tokens) {
+      for (const arg of argv.tokens) {
+        const { inters } = arg
+        const output: string[] = []
+        for (let i = 0; i < inters.length; ++i) {
+          output.push(await this.execute(inters[i], true))
+        }
+        for (let i = inters.length - 1; i >= 0; --i) {
+          const { pos } = inters[i]
+          arg.content = arg.content.slice(0, pos) + output[i] + arg.content.slice(pos)
+        }
+        arg.inters = []
+      }
+      if (!this.resolve(argv)) return ''
+    } else {
+      argv.command ||= this.app._commandMap[argv.name]
+      if (!argv.command) {
+        logger.warn(new Error(`cannot find command ${argv.name}`))
+        return ''
+      }
     }
 
-    return argv.command.execute(argv)
+    if (this.database) {
+      if (this.subtype === 'group') {
+        await this.observeChannel(this.collect('channel', argv))
+      }
+      await this.observeUser(this.collect('user', argv))
+    }
+
+    let shouldEmit = true
+    if (next === true) {
+      shouldEmit = false
+      next = fallback => fallback()
+    }
+
+    const result = await argv.command.execute(argv, next)
+    if (shouldEmit) await this.send(result)
+    return result
+  }
+
+  middleware(middleware: Middleware) {
+    const identifier = getSessionId(this)
+    return this.app.middleware(async (session, next) => {
+      if (identifier && getSessionId(session) !== identifier) return next()
+      return middleware(session, next)
+    }, true)
+  }
+
+  prompt(timeout = this.app.options.delay.prompt) {
+    return new Promise<string>((resolve) => {
+      const dispose = this.middleware((session) => {
+        clearTimeout(timer)
+        dispose()
+        resolve(session.content)
+      })
+      const timer = setTimeout(() => {
+        dispose()
+        resolve('')
+      }, timeout)
+    })
+  }
+
+  suggest(options: SuggestOptions) {
+    const {
+      target,
+      items,
+      prefix = '',
+      suffix,
+      apply,
+      next = callback => callback(),
+      minSimilarity = this.app.options.minSimilarity,
+    } = options
+
+    let suggestions: string[], minDistance = Infinity
+    for (const name of items) {
+      const dist = distance(name, target)
+      if (name.length <= 2 || dist > name.length * minSimilarity) continue
+      if (dist === minDistance) {
+        suggestions.push(name)
+      } else if (dist < minDistance) {
+        suggestions = [name]
+        minDistance = dist
+      }
+    }
+    if (!suggestions) return next(() => this.send(prefix))
+
+    return next(() => {
+      const message = prefix + template('internal.suggestion', suggestions.map(template.quote).join(template.get('basic.or')))
+      if (suggestions.length > 1) return this.send(message)
+
+      const dispose = this.middleware((session, next) => {
+        dispose()
+        const message = session.content.trim()
+        if (message && message !== '.' && message !== '。') return next()
+        return apply.call(session, suggestions[0], next)
+      })
+
+      return this.send(message + suffix)
+    })
   }
 }
 
-export interface AnonymousInfo {
-  id?: number
-  name: string
-  flag: string
+export interface SuggestOptions {
+  target: string
+  items: string[]
+  next?: NextFunction
+  prefix?: string
+  suffix: string
+  minSimilarity?: number
+  apply: (this: Session, suggestion: string, next: NextFunction) => void
+}
+
+export function getSessionId(session: Session) {
+  return '' + session.userId + session.channelId
+}
+
+export type FieldCollector<T extends TableType, K = keyof Tables[T], A extends any[] = any[], O = {}> =
+  | Iterable<K>
+  | ((argv: Argv<never, never, A, O>, fields: Set<keyof Tables[T]>) => void)
+
+function collectFields<T extends TableType>(argv: Argv, collectors: FieldCollector<T>[], fields: Set<keyof Tables[T]>) {
+  for (const collector of collectors) {
+    if (typeof collector === 'function') {
+      collector(argv, fields)
+      continue
+    }
+    for (const field of collector) {
+      fields.add(field)
+    }
+  }
+  return fields
 }
 
 export interface FileInfo {
@@ -289,63 +457,4 @@ export interface FileInfo {
   name: string
   size: number
   busid: number
-}
-
-export interface AccountInfo {
-  userId: number
-  nickname: string
-}
-
-export interface StrangerInfo extends AccountInfo {
-  sex: 'male' | 'female' | 'unknown'
-  age: number
-}
-
-export type GroupRole = 'owner' | 'admin' | 'member'
-
-export interface SenderInfo extends StrangerInfo {
-  area?: string
-  card?: string
-  level?: string
-  role?: GroupRole
-  title?: string
-}
-
-export interface StatusInfo {
-  appInitialized: boolean
-  appEnabled: boolean
-  pluginsGood: boolean
-  appGood: boolean
-  online: boolean
-  good: boolean
-}
-
-export interface MessageInfo {
-  time: number
-  messageType: MessageType
-  messageId: number
-  realId: number
-  sender: SenderInfo
-  message: string
-}
-
-/**
- * get context unique id
- * @example
- * getContextId(session) // user123, group456
- */
-export function getContextId(session: Session) {
-  const type = session.messageType === 'private' ? 'user' : session.messageType
-  return type + session[`${type}Id`]
-}
-
-export function getTargetId(target: string | number) {
-  if (typeof target !== 'string' && typeof target !== 'number') return
-  let qq = +target
-  if (!qq) {
-    const capture = /\[CQ:at,qq=(\d+)\]/.exec(target as any)
-    if (capture) qq = +capture[1]
-  }
-  if (!isInteger(qq)) return
-  return qq
 }

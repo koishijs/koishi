@@ -3,6 +3,7 @@
     ".*",
     "**/*.d.ts",
     "**/*.config.js",
+    "build/**",
     "coverage/**",
     "packages/*/tests/**",
     "packages/chai-extended/**",

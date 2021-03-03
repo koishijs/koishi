@@ -1,96 +1,131 @@
-import { User, Group, Tables, TableType, App, extendDatabase } from 'koishi-core'
+import { Tables, TableType, App, extendDatabase, User, Channel } from 'koishi-core'
 import { clone } from 'koishi-utils'
 
-declare module 'koishi-core/dist/database' {
-  interface Database extends MemoryDatabase {}
+declare module 'koishi-core' {
+  interface Database extends MemoryDatabase {
+    initUser(id: string, authority?: number): Promise<void>
+    initChannel(id: string, assignee?: string): Promise<void>
+  }
 }
 
 export interface MemoryConfig {}
 
 export class MemoryDatabase {
-  $store: Record<string, Record<number, any>> = {}
+  $store: { [K in TableType]?: Tables[K][] } = {
+    user: [],
+    channel: [],
+  }
 
   constructor(public app: App, public config: MemoryConfig) {}
 
-  $table<K extends TableType>(table: K): Record<number, Tables[K]> {
-    return this.$store[table] || (this.$store[table] = {})
+  $table<K extends TableType>(table: K): Tables[K][] {
+    return this.$store[table] as any
   }
 
-  $create<K extends TableType>(table: K, data: Partial<Tables[K]>) {
+  $select<T extends TableType, K extends keyof Tables[T]>(table: T, key: K, values: readonly Tables[T][K][]) {
+    return this.$table(table).filter(row => values.includes(row[key])).map(clone)
+  }
+
+  $create<K extends TableType>(table: K, data: Tables[K]) {
     const store = this.$table(table)
-    if (typeof data.id !== 'number') {
-      let index = 1
-      while (index in store) index++
-      data.id = index
-    }
-    return store[data.id] = data as Tables[K]
+    const max = store.length ? Math.max(...store.map(row => +row.id)) : 0
+    data.id = max + 1 as any
+    store.push(data)
+    return data
   }
 
   $remove<K extends TableType>(table: K, id: number) {
-    delete this.$table(table)[id]
+    const store = this.$table(table)
+    const index = store.findIndex(row => +row.id === id)
+    if (index >= 0) store.splice(index, 1)
   }
 
   $update<K extends TableType>(table: K, id: number, data: Partial<Tables[K]>) {
-    Object.assign(this.$table(table)[id], clone(data))
+    const row = this.$table(table).find(row => +row.id === id)
+    Object.assign(row, clone(data))
   }
 
-  $count<K extends TableType>(table: K, field?: keyof Tables[K]) {
-    if (!field) return Object.keys(this.$table(table)).length
-    return new Set(Object.values(this.$table(table)).map(data => data[field])).size
+  $count<K extends TableType>(table: K, field: keyof Tables[K] = 'id') {
+    return new Set(this.$table(table).map(data => data[field])).size
   }
 }
 
 extendDatabase(MemoryDatabase, {
-  async getUser(userId: number, authority?: any) {
-    const table = this.$table('user')
-    authority = typeof authority === 'number' ? authority : 0
-    const data = table[userId]
-    if (data) return clone(data)
-    if (authority < 0) return null
-    const fallback = User.create(userId, authority)
-    if (authority) table[userId] = fallback
-    return clone(fallback)
-  },
-
-  async getUsers(...args: any[][]) {
-    const table = this.$table('user')
-    if (args.length > 1 || args.length && typeof args[0][0] !== 'string') {
-      return Object.keys(table)
-        .filter(id => args[0].includes(+id))
-        .map(id => clone(table[id]))
+  async getUser(type, id) {
+    if (Array.isArray(id)) {
+      return this.$select('user', type, id) as any
     } else {
-      return Object.values(table)
+      return this.$select('user', type as any, [id])[0]
     }
   },
 
-  async setUser(userId: number, data: any) {
-    return this.$update('user', userId, data)
+  async setUser(type, id, data) {
+    const table = this.$table('user')
+    const index = table.findIndex(row => row[type] === id)
+    if (index < 0) return
+    Object.assign(table[index], clone(data))
   },
 
-  async getGroup(groupId: number, selfId: any) {
-    const table = this.$table('group')
-    selfId = typeof selfId === 'number' ? selfId : 0
-    const data = table[groupId]
-    if (data) return clone(data)
-    if (selfId < 0) return null
-    const fallback = Group.create(groupId, selfId)
-    if (selfId) table[groupId] = fallback
-    return clone(fallback)
+  async removeUser(type, id) {
+    const table = this.$table('user')
+    const index = table.findIndex(row => row[type] === id)
+    if (index >= 0) table.splice(index, 1)
   },
 
-  async getAllGroups(...args: any[][]) {
-    const table = this.$table('group')
-    const assignees = args.length > 1 ? args[1]
-      : args.length && typeof args[0][0] === 'number' ? args[0] as never
-        : await this.app.getSelfIds()
-    if (!assignees.length) return []
-    return Object.keys(table)
-      .filter(id => assignees.includes(table[id].assignee))
-      .map(id => clone(table[id]))
+  async createUser(type, id, data) {
+    const table = this.$table('user')
+    const index = table.findIndex(row => row[type] === id)
+    if (index >= 0) return
+    this.$create('user', {
+      ...User.create(type, id),
+      ...clone(data),
+    })
   },
 
-  async setGroup(groupId: number, data: any) {
-    return this.$update('group', groupId, data)
+  initUser(id, authority = 1) {
+    return this.createUser('mock', id, { authority })
+  },
+
+  async getChannel(type, id) {
+    if (Array.isArray(id)) {
+      return this.$select('channel', 'id', id.map(id => `${type}:${id}`))
+    } else {
+      return this.$select('channel', 'id', [`${type}:${id}`])[0]
+    }
+  },
+
+  async getAssignedChannels(fields, assignMap = this.app.getSelfIds()) {
+    return this.$table('channel').filter((row) => {
+      const [type] = row.id.split(':')
+      return assignMap[type]?.includes(row.assignee)
+    })
+  },
+
+  async setChannel(type, id, data) {
+    const table = this.$table('channel')
+    const index = table.findIndex(row => row.id === `${type}:${id}`)
+    if (index < 0) return
+    Object.assign(table[index], clone(data))
+  },
+
+  async removeChannel(type, id) {
+    const table = this.$table('channel')
+    const index = table.findIndex(row => row.id === `${type}:${id}`)
+    if (index >= 0) table.splice(index, 1)
+  },
+
+  async createChannel(type, id, data) {
+    const table = this.$table('channel')
+    const index = table.findIndex(row => row.id === `${type}:${id}`)
+    if (index >= 0) return
+    table.push({
+      ...Channel.create(type, id),
+      ...clone(data),
+    })
+  },
+
+  initChannel(id, assignee = this.app.bots[0].selfId) {
+    return this.createChannel('mock', id, { assignee })
   },
 })
 

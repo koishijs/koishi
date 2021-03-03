@@ -1,15 +1,21 @@
 dist
 temp
+.koishi
 
 /build/*.js
+/tsconfig.temp.json
 
 /addons
 /atri
 /coverage
 /docs
+/legacy
 /shiki
 /test
 /utsuho
+
+/build/*.js
+/packages/plugin-webui
 
 todo.md
 yarn.lock

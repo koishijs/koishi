@@ -1,109 +1,152 @@
-import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop } from 'koishi-utils'
-import { Command } from './command'
-import { Context, Middleware, NextFunction } from './context'
-import { Group, User, Database } from './database'
-import { BotOptions, Server } from './server'
+import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop, template, merge } from 'koishi-utils'
+import { Context, Middleware, NextFunction, Plugin } from './context'
+import { Argv } from './parser'
+import { BotOptions, Adapter, createBots } from './adapter'
+import { Channel, User } from './database'
+import validate, { Command } from './command'
 import { Session } from './session'
-import help from './plugins/help'
-import shortcut from './plugins/shortcut'
-import suggest from './plugins/suggest'
-import validate from './plugins/validate'
+import help, { getCommandNames } from './help'
 import LruCache from 'lru-cache'
+import { AxiosRequestConfig } from 'axios'
+import { Server, createServer } from 'http'
+import type Koa from 'koa'
+
+export interface DelayOptions {
+  character?: number
+  message?: number
+  cancel?: number
+  broadcast?: number
+  prompt?: number
+}
 
 export interface AppOptions extends BotOptions {
   port?: number
-  type?: string
   bots?: BotOptions[]
   prefix?: string | string[]
   nickname?: string | string[]
   maxListeners?: number
   prettyErrors?: boolean
-  promptTimeout?: number
   processMessage?: (message: string) => string
-  queueDelay?: number | ((message: string, session: Session) => number)
-  broadcastDelay?: number
-  defaultAuthority?: number | ((session: Session) => number)
+  delay?: DelayOptions
   autoAssign?: boolean | ((session: Session) => boolean)
-  similarityCoefficient?: number
-  userCacheLength?: number
-  groupCacheLength?: number
+  autoAuthorize?: number | ((session: Session) => number)
   userCacheAge?: number
-  groupCacheAge?: number
+  userCacheLength?: number
+  channelCacheLength?: number
+  channelCacheAge?: number
+  minSimilarity?: number
+  axiosConfig?: AxiosRequestConfig
 }
 
 function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
 }
 
-export enum AppStatus { closed, opening, open, closing }
-
 export class App extends Context {
-  app = this
-  options: AppOptions
-  server: Server
-  status = AppStatus.closed
+  public app = this
+  public options: AppOptions
+  public status = App.Status.closed
+  public adapters: Adapter.Instances = {}
+  public registry = new Map<Plugin, Plugin.State>()
 
-  _database: Database
-  _commands: Command[]
+  _bots = createBots('sid')
+  _commands: Command[] = []
+  _commandMap: Record<string, Command> = {}
+  _shortcuts: Command.Shortcut[] = []
+  _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
+  _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
+  _channelCache: LruCache<string, Observed<Partial<Channel>, Promise<void>>>
+  _httpServer?: Server
   _sessions: Record<string, Session> = {}
-  _commandMap: Record<string, Command>
-  _hooks: Record<keyof any, [Context, (...args: any[]) => any][]>
-  _userCache: LruCache<number, Observed<Partial<User>, Promise<void>>>
-  _groupCache: LruCache<number, Observed<Partial<Group>, Promise<void>>>
 
   private _nameRE: RegExp
   private _prefixRE: RegExp
-  private _getSelfIdsPromise: Promise<any>
 
   static defaultConfig: AppOptions = {
     maxListeners: 64,
     prettyErrors: true,
-    queueDelay: 0.1 * Time.second,
-    broadcastDelay: 0.5 * Time.second,
-    promptTimeout: Time.minute,
     userCacheAge: Time.minute,
-    groupCacheAge: 5 * Time.minute,
-    similarityCoefficient: 0.4,
-    defaultAuthority: 0,
+    channelCacheAge: 5 * Time.minute,
     autoAssign: false,
+    autoAuthorize: 0,
+    minSimilarity: 0.4,
     processMessage: message => simplify(message.trim()),
+    delay: {
+      character: 0,
+      cancel: 0,
+      message: 0.1 * Time.second,
+      broadcast: 0.5 * Time.second,
+      prompt: Time.minute,
+    },
   }
 
   constructor(options: AppOptions = {}) {
-    super({ groups: [], users: [], private: true })
-    options = this.options = { ...App.defaultConfig, ...options }
+    super(() => true)
     if (!options.bots) options.bots = [options]
+    this.options = merge(options, App.defaultConfig)
+    this.registry.set(null, {
+      parent: null,
+      children: [],
+      disposables: [],
+    })
 
-    defineProperty(this, '_hooks', {})
-    defineProperty(this, '_commands', [])
-    defineProperty(this, '_commandMap', {})
-    defineProperty(this, '_userCache', new LruCache({
-      max: options.userCacheLength,
-      maxAge: options.userCacheAge,
-    }))
-    defineProperty(this, '_groupCache', new LruCache({
-      max: options.groupCacheLength,
-      maxAge: options.groupCacheAge,
+    defineProperty(this, '_userCache', {})
+    defineProperty(this, '_channelCache', new LruCache({
+      max: options.channelCacheLength,
+      maxAge: options.channelCacheAge,
     }))
 
-    const { type } = this.options
-    const server = Server.types[type]
-    if (!server) {
-      throw new Error(`unsupported type "${type}", you should import the adapter yourself`)
+    if (options.port) this.createServer()
+    for (const bot of options.bots) {
+      Adapter.from(this, bot).create(bot)
     }
-    this.server = Reflect.construct(server, [this])
 
     this.prepare()
 
     // bind built-in event listeners
-    this.middleware(this._preprocess.bind(this))
-    this.on('message', this._receive.bind(this))
-    this.on('parse', this._parse.bind(this))
+    this.middleware(this._process.bind(this))
+    this.middleware(this._suggest.bind(this))
+    this.on('message', this._handleMessage.bind(this))
+    this.before('parse', this._handleArgv.bind(this))
+    this.before('parse', this._handleShortcut.bind(this))
+    this.before('connect', this._listen.bind(this))
+    this.before('disconnect', this._close.bind(this))
+
+    this.on('parse', (argv: Argv, session: Session) => {
+      const { parsed, subtype } = session
+      // group message should have prefix or appel to be interpreted as a command call
+      if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
+      if (!argv.tokens.length) return
+      const segments = argv.tokens[0].content.split('.')
+      let i = 1, name = segments[0]
+      while (this._commandMap[name] && i < segments.length) {
+        name = this._commandMap[name].name + '.' + segments[i++]
+      }
+      if (name in this._commandMap) {
+        argv.tokens.shift()
+        return name
+      }
+    })
+
+    this.before('attach-user', (session, fields) => {
+      session.collect('user', session.argv, fields)
+    })
+
+    this.before('attach-channel', (session, fields) => {
+      session.collect('channel', session.argv, fields)
+    })
 
     this.plugin(validate)
-    this.plugin(suggest)
-    this.plugin(shortcut)
     this.plugin(help)
+  }
+
+  createServer() {
+    const koa: Koa = new (require('koa'))()
+    defineProperty(this, '_router', new (require('@koa/router'))())
+    koa.use(require('koa-bodyparser')())
+    koa.use(this._router.routes())
+    koa.use(this._router.allowedMethods())
+    defineProperty(this, '_httpServer', createServer(koa.callback()))
   }
 
   prepare() {
@@ -114,86 +157,100 @@ export class App extends Context {
     this._prefixRE = createLeadingRE(this.options.prefix)
   }
 
-  async getSelfIds() {
-    const bots = this.server.bots.filter(bot => bot.ready)
-    if (!this._getSelfIdsPromise) {
-      this._getSelfIdsPromise = Promise.all(bots.map(async (bot) => {
-        if (bot.selfId || !bot.ready) return
-        bot.selfId = await bot.getSelfId()
-      }))
-    }
-    await this._getSelfIdsPromise
-    return bots.map(bot => bot.selfId)
-  }
-
   async start() {
-    this.status = AppStatus.opening
+    this.status = App.Status.opening
     await this.parallel('before-connect')
-    this.status = AppStatus.open
+    this.status = App.Status.open
     this.logger('app').debug('started')
     this.emit('connect')
   }
 
+  private async _listen() {
+    try {
+      const { port } = this.app.options
+      if (port) {
+        this._httpServer.listen(port)
+        this.logger('server').info('server listening at %c', port)
+      }
+      await Promise.all(Object.values(this.adapters).map(adapter => adapter.start()))
+    } catch (error) {
+      this._close()
+      throw error
+    }
+  }
+
   async stop() {
-    this.status = AppStatus.closing
-    await this.parallel('before-disconnect')
-    this.status = AppStatus.closed
+    this.status = App.Status.closing
+    // `before-disconnect` event is handled by ctx.disposables
+    await Promise.all(this.disposables.map(dispose => dispose()))
+    this.status = App.Status.closed
     this.logger('app').debug('stopped')
     this.emit('disconnect')
   }
 
-  private async _preprocess(session: Session, next: NextFunction) {
-    let message = this.options.processMessage(session.message)
+  private _close() {
+    Object.values(this.adapters).forEach(adapter => adapter.stop?.())
+    this.logger('server').debug('http server closing')
+    this._httpServer?.close()
+  }
 
-    let capture: RegExpMatchArray, atSelf = false
-    // eslint-disable-next-line no-cond-assign
-    if (capture = message.match(/^\[CQ:reply,id=(-?\d+)\]\s*/)) {
-      session.$reply = await session.$bot.getMsg(+capture[1]).catch(noop)
-      message = message.slice(capture[0].length)
-      if (session.$reply) {
-        const prefix = `[CQ:at,qq=${session.$reply.sender.userId}]`
-        message = message.slice(prefix.length).trimStart()
+  private async _process(session: Session, next: NextFunction) {
+    let content = this.options.processMessage(session.content)
+
+    let capture: RegExpMatchArray
+    let atSelf = false, appel = false, prefix: string = null
+    const pattern = /^\[CQ:(\w+)((,\w+=[^,\]]*)*)\]/
+    if ((capture = content.match(pattern)) && capture[1] === 'quote') {
+      content = content.slice(capture[0].length).trimStart()
+      for (const str of capture[2].slice(1).split(',')) {
+        if (!str.startsWith('id=')) continue
+        session.quote = await session.bot.getMessage(session.channelId, str.slice(3)).catch(noop)
+        break
       }
     }
 
     // strip prefix
-    const at = `[CQ:at,qq=${session.selfId}]`
-    if (session.messageType !== 'private' && message.startsWith(at)) {
-      atSelf = session.$appel = true
-      message = message.slice(at.length).trimStart()
+    if (session.subtype !== 'private' && (capture = content.match(pattern)) && capture[1] === 'at' && capture[2].includes('id=' + session.selfId)) {
+      atSelf = appel = true
+      content = content.slice(capture[0].length).trimStart()
       // eslint-disable-next-line no-cond-assign
-    } else if (capture = message.match(this._nameRE)) {
-      session.$appel = true
-      message = message.slice(capture[0].length)
+    } else if (capture = content.match(this._nameRE)) {
+      appel = true
+      content = content.slice(capture[0].length)
       // eslint-disable-next-line no-cond-assign
-    } else if (capture = message.match(this._prefixRE)) {
-      session.$prefix = capture[0]
-      message = message.slice(capture[0].length)
+    } else if (capture = content.match(this._prefixRE)) {
+      prefix = capture[0]
+      content = content.slice(capture[0].length)
     }
 
     // store parsed message
-    session.$parsed = message
-    session.$argv = session.$parse(message, '', true)
+    defineProperty(session, 'parsed', { content, appel, prefix })
+    this.emit(session, 'before-attach', session)
+
+    defineProperty(session, 'argv', this.bail('before-parse', content, session))
+    session.argv.root = true
+    session.argv.session = session
 
     if (this.database) {
-      if (session.messageType === 'group') {
+      if (session.subtype === 'group') {
         // attach group data
-        const groupFields = new Set<Group.Field>(['flag', 'assignee'])
-        this.emit('before-attach-group', session, groupFields)
-        const group = await session.$observeGroup(groupFields)
+        const channelFields = new Set<Channel.Field>(['flag', 'assignee'])
+        this.emit('before-attach-channel', session, channelFields)
+        const channel = await session.observeChannel(channelFields)
 
         // emit attach event
-        if (await this.serial(session, 'attach-group', session)) return
+        if (await this.serial(session, 'attach-channel', session)) return
 
         // ignore some group calls
-        if (group.flag & Group.Flag.ignore) return
-        if (group.assignee !== session.selfId && !atSelf) return
+        if (channel.flag & Channel.Flag.ignore) return
+        if (channel.assignee !== session.selfId && !atSelf) return
       }
 
       // attach user data
-      const userFields = new Set<User.Field>(['flag'])
+      // authority is for suggestion TODO can be optimized
+      const userFields = new Set<User.Field>(['flag', 'authority'])
       this.emit('before-attach-user', session, userFields)
-      const user = await session.$observeUser(userFields)
+      const user = await session.observeUser(userFields)
 
       // emit attach event
       if (await this.serial(session, 'attach-user', session)) return
@@ -202,18 +259,35 @@ export class App extends Context {
       if (user.flag & User.Flag.ignore) return
     }
 
-    await this.parallel(session, 'attach', session)
-
     // execute command
-    if (!session.$argv) return next()
-    session.$argv.next = next
-    return session.$argv.command.execute(session.$argv)
+    this.emit(session, 'attach', session)
+    if (!session.resolve(session.argv)) return next()
+    return session.execute(session.argv, next)
   }
 
-  private async _receive(session: Session) {
+  private _suggest(session: Session, next: NextFunction) {
+    const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
+    if (argv.command || subtype !== 'private' && prefix === null && !appel) return next()
+    const target = content.split(/\s/, 1)[0].toLowerCase()
+    if (!target) return next()
+
+    return session.suggest({
+      target,
+      next,
+      items: getCommandNames(session),
+      prefix: template('internal.command-suggestion-prefix'),
+      suffix: template('internal.command-suggestion-suffix'),
+      async apply(suggestion, next) {
+        const newMessage = suggestion + content.slice(target.length) + (quote ? ' ' + quote.content : '')
+        return this.execute(newMessage, next)
+      },
+    })
+  }
+
+  private async _handleMessage(session: Session) {
     // preparation
-    this._sessions[session.$uuid] = session
-    const middlewares: Middleware[] = this._hooks[Context.MIDDLEWARE_EVENT as any]
+    this._sessions[session.id] = session
+    const middlewares: Middleware[] = this._hooks[Context.middleware as any]
       .filter(([context]) => context.match(session))
       .map(([, middleware]) => middleware)
 
@@ -230,42 +304,83 @@ export class App extends Context {
       }
 
       try {
-        if (!this._sessions[session.$uuid]) {
+        if (!this._sessions[session.id]) {
           throw new Error('isolated next function detected')
         }
         if (fallback) middlewares.push((_, next) => fallback(next))
-        return middlewares[index++]?.(session, next)
+        return await middlewares[index++]?.(session, next)
       } catch (error) {
         let stack = coerce(error)
         if (prettyErrors) {
           const index = stack.indexOf(lastCall)
-          stack = `${stack.slice(0, index)}Middleware stack:${midStack}`
+          if (index >= 0) stack = stack.slice(0, index)
+          stack += `Middleware stack:${midStack}`
         }
-        this.logger('middleware').warn(`${session.message}\n${stack}`)
+        this.logger('session').warn(`${session.content}\n${stack}`)
       }
     }
     await next()
 
     // update session map
-    delete this._sessions[session.$uuid]
+    delete this._sessions[session.id]
     this.emit(session, 'middleware', session)
 
     // flush user & group data
-    await session.$user?._update()
-    await session.$group?._update()
+    await session.user?._update()
+    await session.channel?._update()
   }
 
-  private _parse(message: string, session: Session, builtin: boolean, terminator = '') {
-    // group message should have prefix or appel to be interpreted as a command call
-    const { $reply, $prefix, $appel, messageType } = session
-    if (builtin && messageType !== 'private' && $prefix === null && !$appel) return
-    terminator = escapeRegExp(terminator)
-    const name = message.split(new RegExp(`[\\s${terminator}]`), 1)[0]
-    const index = name.lastIndexOf('/')
-    const command = this.app._commandMap[name.slice(index + 1).toLowerCase()]
-    if (!command) return
-    message = message.slice(name.length).trim() + ($reply ? ' ' + $reply.message : '')
-    const result = command.parse(message, terminator)
-    return { command, ...result }
+  private _handleArgv(content: string, session: Session) {
+    const argv = Argv.parse(content)
+    if (session.quote) {
+      argv.tokens.push({
+        content: session.quote.content,
+        quoted: true,
+        inters: [],
+        terminator: '',
+      })
+    }
+    return argv
   }
+
+  private _handleShortcut(content: string, { parsed, quote }: Session) {
+    if (parsed.prefix || quote) return
+    for (const shortcut of this._shortcuts) {
+      const { name, fuzzy, command, greedy, prefix, options = {}, args = [] } = shortcut
+      if (prefix && !parsed.appel) continue
+      if (typeof name === 'string') {
+        if (!fuzzy && content !== name || !content.startsWith(name)) continue
+        const message = content.slice(name.length)
+        if (fuzzy && !parsed.appel && message.match(/^\S/)) continue
+        const argv: Argv = greedy
+          ? { options: {}, args: [message.trim()] }
+          : command.parse(Argv.parse(message.trim()))
+        argv.command = command
+        argv.options = { ...options, ...argv.options }
+        argv.args = [...args, ...argv.args]
+        return argv
+      } else {
+        const capture = name.exec(content)
+        if (!capture) continue
+        function escape(source: any) {
+          if (typeof source !== 'string') return source
+          source = source.replace(/\$\$/g, '@@__PLACEHOLDER__@@')
+          capture.map((segment, index) => {
+            if (!index || index > 9) return
+            source = source.replace(new RegExp(`\\$${index}`, 'g'), (segment || '').replace(/\$/g, '@@__PLACEHOLDER__@@'))
+          })
+          return source.replace(/@@__PLACEHOLDER__@@/g, '$')
+        }
+        return {
+          command,
+          args: args.map(escape),
+          options: Object.fromEntries(Object.entries(options).map(([k, v]) => [k, escape(v)])),
+        }
+      }
+    }
+  }
+}
+
+export namespace App {
+  export enum Status { closed, opening, open, closing }
 }
