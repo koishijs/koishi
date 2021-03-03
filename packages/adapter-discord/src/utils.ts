@@ -34,35 +34,37 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
     session.userId = meta.author.id
   }
   const urlKey = bot.app.options.discord.preferImageSource ? 'url' : 'proxy_url'
-  if (meta.embeds.length === 0) {
-    // https://discord.com/developers/docs/reference#message-formatting
-    session.content = meta.content
-      .replace(/<@!(.+?)>/, (_, id) => segment.at(id))
-      .replace(/<@&(.+?)>/, (_, id) => segment.at(id))
-      .replace(/<:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name }))
-      .replace(/<a:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name, animated: true }))
-      .replace(/@everyone/, () => segment('at', { type: 'all' }))
-      .replace(/@here/, () => segment('at', { type: 'here' }))
-      .replace(/<#(.+?)>/, (_, id) => segment.sharp(id))
-    if (meta.attachments.length) {
-      session.content += meta.attachments.map(v => segment('image', {
-        url: v[urlKey],
-        file: v.filename,
-      })).join('')
-    }
-  } else {
-    switch (meta.embeds[0].type) {
+  // https://discord.com/developers/docs/reference#message-formatting
+  session.content = meta.content
+    .replace(/<@!(.+?)>/, (_, id) => segment.at(id))
+    .replace(/<@&(.+?)>/, (_, id) => segment.at(id))
+    .replace(/<:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name }))
+    .replace(/<a:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name, animated: true }))
+    .replace(/@everyone/, () => segment('at', { type: 'all' }))
+    .replace(/@here/, () => segment('at', { type: 'here' }))
+    .replace(/<#(.+?)>/, (_, id) => segment.sharp(id))
+  if (meta.attachments.length) {
+    session.content += meta.attachments.map(v => segment('image', {
+      url: v[urlKey]
+    })).join('')
+  }
+  for (const embed of meta.embeds) {
+    switch (embed.type) {
       case 'video':
-        session.content = segment('video', { file: meta.embeds[0][urlKey] })
+        session.content += segment('video', { url: embed[urlKey] })
         break
       case 'image':
-        session.content = segment('image', { file: meta.embeds[0][urlKey] })
+        if (embed.thumbnail?.proxy_url && bot.app.options.discord.preferImageSource) {
+          session.content += segment('image', { url: embed.thumbnail[urlKey] ?? embed.thumbnail.url ?? embed.url })
+        } else {
+          session.content += segment('image', { url: embed.thumbnail.proxy_url })
+        }
         break
       case 'gifv':
-        session.content = segment('video', { file: meta.embeds[0].video.url })
+        session.content += segment('video', { url: embed.video.url })
         break
       case 'link':
-        session.content = segment('share', { url: meta.embeds[0].url, title: meta.embeds[0]?.title, content: meta.embeds[0]?.description })
+        session.content += segment('share', { url: embed.url, title: embed?.title, content: embed?.description })
         break
     }
   }
