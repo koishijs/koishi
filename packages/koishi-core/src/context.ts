@@ -20,19 +20,22 @@ export type Plugin<T = any> = Plugin.Function<T> | Plugin.Object<T>
 export namespace Plugin {
   export type Function<T = any> = (ctx: Context, options: T) => void
 
-  export interface Object<T = any> {
+  export interface Meta {
     name?: string
     sideEffect?: boolean
+  }
+
+  export interface Object<T = any> extends Meta {
     apply: Function<T>
   }
 
   export type Config<T extends Plugin> = T extends Function<infer U> ? U : T extends Object<infer U> ? U : never
 
-  export interface State {
+  export interface State extends Meta {
     parent: State
     children: Plugin[]
     disposables: Disposable[]
-    sideEffect?: boolean
+    dependencies: Set<State>
   }
 }
 
@@ -144,12 +147,21 @@ export class Context {
     }
   }
 
-  private setSideEffect() {
-    let state = this.state
+  addSideEffect(state = this.state) {
     while (state && !state.sideEffect) {
       state.sideEffect = true
       state = state.parent
     }
+  }
+
+  addDependency(plugin: string | Plugin) {
+    if (typeof plugin === 'string') {
+      plugin = require(plugin) as Plugin
+    }
+    const parent = this.app.registry.get(plugin)
+    if (!parent) throw new Error('dependency has not been installed')
+    this.state.dependencies.add(parent)
+    if (this.state.sideEffect) this.addSideEffect(parent)
   }
 
   plugin<T extends Plugin>(plugin: T, options?: Plugin.Config<T>): this
@@ -168,13 +180,14 @@ export class Context {
       parent: this.state,
       children: [],
       disposables: [],
-      sideEffect: false,
+      dependencies: new Set([this.state]),
     })
 
     if (typeof plugin === 'function') {
       plugin(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
-      if (plugin.sideEffect) ctx.setSideEffect()
+      ctx.state.name = plugin.name
+      if (plugin.sideEffect) ctx.addSideEffect()
       plugin.apply(ctx, options)
     } else {
       this.app.registry.delete(plugin)
@@ -281,7 +294,7 @@ export class Context {
       return () => this.removeDisposable(_listener)
     } else if (name === 'before-connect') {
       // before-connect is side effect
-      this.setSideEffect()
+      this.addSideEffect()
     }
 
     const hooks = this.app._hooks[name] ||= []

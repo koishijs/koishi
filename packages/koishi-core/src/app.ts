@@ -88,6 +88,7 @@ export class App extends Context {
       parent: null,
       children: [],
       disposables: [],
+      dependencies: new Set(),
     })
 
     defineProperty(this, '_userCache', {})
