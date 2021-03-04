@@ -1,4 +1,4 @@
-import { Tables, TableType, App, extendDatabase, User, Channel } from 'koishi-core'
+import { Tables, TableType, App, Database, User, Channel } from 'koishi-core'
 import { clone } from 'koishi-utils'
 
 declare module 'koishi-core' {
@@ -50,7 +50,7 @@ export class MemoryDatabase {
   }
 }
 
-extendDatabase(MemoryDatabase, {
+Database.extend(MemoryDatabase, {
   async getUser(type, id) {
     if (Array.isArray(id)) {
       return this.$select('user', type, id) as any

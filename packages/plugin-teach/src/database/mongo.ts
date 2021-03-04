@@ -1,7 +1,7 @@
-import { Context, extendDatabase } from 'koishi-core'
+import { Context, Database } from 'koishi-core'
 import { clone, defineProperty, Observed, pick } from 'koishi-utils'
 import type { FilterQuery } from 'mongodb'
-import type MongoDatabase from 'koishi-plugin-mongo/dist/database'
+import {} from 'koishi-plugin-mongo'
 import { Dialogue, DialogueTest, equal } from '../utils'
 
 declare module 'koishi-core' {
@@ -10,7 +10,7 @@ declare module 'koishi-core' {
   }
 }
 
-extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
+Database.extend('koishi-plugin-mongo', {
   async getDialoguesById(ids, fields) {
     if (!ids.length) return []
     let cursor = this.db.collection('dialogue').find({ _id: { $in: ids } })

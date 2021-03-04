@@ -1,6 +1,6 @@
-import { User, extendDatabase, Context, Command, Argv, TableType, FieldCollector } from 'koishi-core'
+import { User, Database, Context, Command, Argv, TableType, FieldCollector } from 'koishi-core'
 import { defineEnumProperty } from 'koishi-utils'
-import MysqlDatabase from 'koishi-plugin-mysql'
+import {} from 'koishi-plugin-mysql'
 import Achievement from './achv'
 
 function createCollector<T extends TableType>(key: T): FieldCollector<T, never, any[], { rest: string }> {
@@ -82,7 +82,7 @@ User.extend(() => ({
   drunkAchv: 0,
 }))
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Domain, tables }) => {
+Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
   tables.user.gains = new Domain.Json()
   tables.user.endings = new Domain.Json()
   tables.user.warehouse = new Domain.Json()

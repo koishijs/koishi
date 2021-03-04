@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, extendDatabase, Context, Channel, Random, pick } from 'koishi-core'
+import { User, Database, Context, Channel, Random, pick } from 'koishi-core'
 
 export * from './database'
 export default MongoDatabase
@@ -7,6 +7,12 @@ export default MongoDatabase
 declare module 'koishi-core' {
   interface Database {
     mongo: MongoDatabase
+  }
+
+  namespace Database {
+    interface Statics {
+      'koishi-plugin-mongo': typeof MongoDatabase
+    }
   }
 
   interface Channel {
@@ -70,7 +76,7 @@ function unescapeKey<T extends Partial<User>>(data: T) {
   return data
 }
 
-extendDatabase(MongoDatabase, {
+Database.extend(MongoDatabase, {
   async getUser(type, id, fields = User.fields) {
     if (fields && !fields.length) return { [type]: id } as any
     if (Array.isArray(id)) {

@@ -1,6 +1,6 @@
-import { Session, extendDatabase } from 'koishi-core'
-import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
-import MongoDatabase from 'koishi-plugin-mongo/dist/database'
+import { Session, Database } from 'koishi-core'
+import {} from 'koishi-plugin-mysql'
+import {} from 'koishi-plugin-mongo'
 
 export interface ActiveData {
   activeUsers: number
@@ -30,7 +30,7 @@ export interface Schedule {
   session: Session
 }
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
+Database.extend('koishi-plugin-mysql', {
   async getActiveData() {
     const [[{ 'COUNT(*)': activeUsers }], [{ 'COUNT(*)': activeGroups }]] = await this.query<[{ 'COUNT(*)': number }][]>([
       'SELECT COUNT(*) FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',
@@ -40,11 +40,11 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   },
 })
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables }) => {
+Database.extend('koishi-plugin-mysql', ({ tables }) => {
   tables.user.lastCall = 'timestamp'
 })
 
-extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
+Database.extend('koishi-plugin-mongo', {
   async getActiveData() {
     const $gt = new Date(new Date().getTime() - 1000 * 3600 * 24)
     const [activeGroups, activeUsers] = await Promise.all([
