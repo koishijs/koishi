@@ -22,7 +22,7 @@ export namespace Plugin {
 
   export interface Object<T = any> {
     name?: string
-    disposable?: boolean
+    sideEffect?: boolean
     apply: Function<T>
   }
 
@@ -32,6 +32,7 @@ export namespace Plugin {
     parent: State
     children: Plugin[]
     disposables: Disposable[]
+    sideEffect?: boolean
   }
 }
 
@@ -97,10 +98,6 @@ export class Context {
     this.app._database = database
   }
 
-  protected get disposables() {
-    return this.app.registry.get(this._plugin).disposables
-  }
-
   logger(name: string) {
     return new Logger(name)
   }
@@ -135,15 +132,28 @@ export class Context {
     return !session || this.filter(session)
   }
 
+  get state() {
+    return this.app.registry.get(this._plugin)
+  }
+
   private removeDisposable(listener: Disposable) {
-    const index = this.disposables.indexOf(listener)
+    const index = this.state.disposables.indexOf(listener)
     if (index >= 0) {
-      this.disposables.splice(index, 1)
+      this.state.disposables.splice(index, 1)
       return true
     }
   }
 
-  plugin<T extends Plugin>(plugin: T, options?: Plugin.Config<T>) {
+  private declareSideEffect() {
+    let state = this.state
+    while (state && !state.sideEffect) {
+      state.sideEffect = true
+      state = state.parent
+    }
+  }
+
+  plugin<T extends Plugin>(plugin: T, options?: Plugin.Config<T>): this
+  plugin(plugin: Plugin, options?: any) {
     if (options === false) return this
     if (options === true) options = undefined
 
@@ -154,37 +164,38 @@ export class Context {
 
     const ctx: this = Object.create(this)
     defineProperty(ctx, '_plugin', plugin)
-    const parent = this.app.registry.get(this._plugin)
     this.app.registry.set(plugin, {
-      parent,
+      parent: this.state,
       children: [],
       disposables: [],
+      sideEffect: false,
     })
 
     if (typeof plugin === 'function') {
-      (plugin as Plugin.Function<this>)(ctx, options)
+      plugin(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
-      (plugin as Plugin.Object<this>).apply(ctx, options)
+      if (plugin.sideEffect) ctx.declareSideEffect()
+      plugin.apply(ctx, options)
     } else {
       this.app.registry.delete(plugin)
       throw new Error('invalid plugin, expect function or object with an "apply" method')
     }
 
-    parent.children.push(plugin)
+    this.state.children.push(plugin)
     return this
   }
 
   async dispose(plugin = this._plugin) {
-    if (!plugin) throw new Error('cannot use ctx.dispose() outside a plugin')
-    const registry = this.app.registry.get(plugin)
-    if (!registry) return
+    const state = this.app.registry.get(plugin)
+    if (!state) return
+    if (state.sideEffect) throw new Error('plugins with side effect cannot be disposed')
     await Promise.all([
-      ...registry.children.slice().map(plugin => this.dispose(plugin)),
-      ...registry.disposables.map(dispose => dispose()),
+      ...state.children.slice().map(plugin => this.dispose(plugin)),
+      ...state.disposables.map(dispose => dispose()),
     ])
     this.app.registry.delete(plugin)
-    const index = registry.parent.children.indexOf(plugin)
-    if (index >= 0) registry.parent.children.splice(index, 1)
+    const index = state.parent.children.indexOf(plugin)
+    if (index >= 0) state.parent.children.splice(index, 1)
   }
 
   async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<Await<ReturnType<EventMap[K]>>[]>
@@ -264,8 +275,11 @@ export class Context {
     if (name === 'connect' && this.app.status === App.Status.open) {
       return _listener(), () => false
     } else if (name === 'before-disconnect') {
-      this.disposables[method](_listener)
+      this.state.disposables[method](_listener)
       return () => this.removeDisposable(_listener)
+    } else if (name === 'before-connect') {
+      // before-connect is side effect
+      this.declareSideEffect()
     }
 
     const hooks = this.app._hooks[name] ||= []
@@ -278,7 +292,7 @@ export class Context {
 
     hooks[method]([this, listener])
     const dispose = () => this.off(name, listener)
-    this.disposables.push(dispose)
+    this.state.disposables.push(dispose)
     return dispose
   }
 
@@ -315,7 +329,7 @@ export class Context {
       callback()
     }, ms, ...args)
     const dispose = () => clearTimeout(timer)
-    this.disposables.push(dispose)
+    this.state.disposables.push(dispose)
     return timer
   }
 
@@ -325,7 +339,7 @@ export class Context {
       callback()
     }, ms, ...args)
     const dispose = () => clearInterval(timer)
-    this.disposables.push(dispose)
+    this.state.disposables.push(dispose)
     return timer
   }
 
@@ -370,7 +384,7 @@ export class Context {
 
     if (desc) parent.description = desc
     Object.assign(parent.config, config)
-    this.disposables.push(() => parent.dispose())
+    this.state.disposables.push(() => parent.dispose())
     return parent
   }
 
@@ -469,7 +483,7 @@ const register = Router.prototype.register
 Router.prototype.register = function (this: Router, ...args) {
   const layer = register.apply(this, args)
   const context: Context = this['_koishiContext']
-  context['disposables'].push(() => {
+  context.state.disposables.push(() => {
     const index = this.stack.indexOf(layer)
     if (index) this.stack.splice(index, 1)
   })

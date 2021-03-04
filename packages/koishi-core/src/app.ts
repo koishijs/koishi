@@ -182,7 +182,7 @@ export class App extends Context {
   async stop() {
     this.status = App.Status.closing
     // `before-disconnect` event is handled by ctx.disposables
-    await Promise.all(this.disposables.map(dispose => dispose()))
+    await Promise.all(this.state.disposables.map(dispose => dispose()))
     this.status = App.Status.closed
     this.logger('app').debug('stopped')
     this.emit('disconnect')

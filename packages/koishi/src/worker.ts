@@ -151,9 +151,7 @@ const pluginEntries: [string, any?][] = Array.isArray(config.plugins)
   : Object.entries(config.plugins || {})
 for (const [name, options] of pluginEntries) {
   const [path, plugin] = loadEcosystem('plugin', name)
-  if (plugin.disposable) {
-    pluginMap.set(require.resolve(path), [name, options])
-  }
+  pluginMap.set(require.resolve(path), [name, options])
   app.plugin(plugin, options)
 }
 
@@ -220,10 +218,13 @@ function createWatcher() {
       const dependencies = loadDependencies(filename, declined)
       if (dependencies.has(path)) {
         dependencies.forEach(dep => accepted.add(dep))
+        const plugin = require(filename)
+        const state = app.registry.get(plugin)
+        if (state?.sideEffect) continue
 
         // dispose installed plugin
         plugins.push(filename)
-        app.dispose(require(filename))
+        app.dispose(plugin)
       }
     }
 
