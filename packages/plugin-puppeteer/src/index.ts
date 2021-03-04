@@ -55,7 +55,6 @@ export const defaultConfig: Config = {
 }
 
 export const name = 'puppeteer'
-export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultConfig, ...config }

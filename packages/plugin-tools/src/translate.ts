@@ -30,6 +30,8 @@ function encrypt(source: string) {
   return createHash('md5').update(source).digest('hex') // lgtm [js/weak-cryptographic-algorithm]
 }
 
+export const name = 'translate'
+
 export function apply(ctx: Context, config: TranslateOptions) {
   const appKey = assertProperty(config, 'youdaoAppKey')
   const secret = assertProperty(config, 'youdaoSecret')

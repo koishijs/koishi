@@ -15,7 +15,6 @@ export interface Config {
 }
 
 export const name = 'schedule'
-export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   const { database } = ctx

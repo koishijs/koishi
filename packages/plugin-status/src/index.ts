@@ -102,7 +102,6 @@ const defaultConfig: Config = {
 }
 
 export const name = 'status'
-export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   const all = ctx.all()

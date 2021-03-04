@@ -113,6 +113,8 @@ class BrainFuck {
   }
 }
 
+export const name = 'brainfuck'
+
 export function apply(ctx: Context, config: BrainfuckOptions = {}) {
   ctx.command('tools/brainfuck <code>', '运行 brainfuck 代码')
     .alias('bf')
