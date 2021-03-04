@@ -19,7 +19,7 @@ interface FooData {
   bar: string
 }
 
-Database.extend<typeof MemoryDatabase>('koishi-test-utils', {
+Database.extend(MemoryDatabase, {
   async createFoo(data: FooData) {
     return this.$create('foo', data)
   },
@@ -37,7 +37,7 @@ describe('Memory Database', () => {
   const db = testDatabase(new App({ mockDatabase: true }))
 
   it('extended methods', async () => {
-    db.$store.foo = []
+    db.memory.$store.foo = []
 
     await expect(db.getFooCount()).eventually.to.equal(0)
     await expect(db.createFoo({ bar: '0' })).eventually.to.have.shape({ id: 1 })
