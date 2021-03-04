@@ -144,7 +144,7 @@ export class Context {
     }
   }
 
-  private declareSideEffect() {
+  private setSideEffect() {
     let state = this.state
     while (state && !state.sideEffect) {
       state.sideEffect = true
@@ -174,7 +174,7 @@ export class Context {
     if (typeof plugin === 'function') {
       plugin(ctx, options)
     } else if (plugin && typeof plugin === 'object' && typeof plugin.apply === 'function') {
-      if (plugin.sideEffect) ctx.declareSideEffect()
+      if (plugin.sideEffect) ctx.setSideEffect()
       plugin.apply(ctx, options)
     } else {
       this.app.registry.delete(plugin)
@@ -281,7 +281,7 @@ export class Context {
       return () => this.removeDisposable(_listener)
     } else if (name === 'before-connect') {
       // before-connect is side effect
-      this.declareSideEffect()
+      this.setSideEffect()
     }
 
     const hooks = this.app._hooks[name] ||= []
@@ -325,24 +325,29 @@ export class Context {
     return this.on(Context.middleware, middleware, prepend)
   }
 
-  setTimeout(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
-    const timer = setTimeout(() => {
-      this.removeDisposable(dispose)
-      callback()
-    }, ms, ...args)
-    const dispose = () => clearTimeout(timer)
+  private createTimerDispose(timer: NodeJS.Timeout) {
+    const dispose = () => {
+      clearTimeout(timer)
+      return this.removeDisposable(dispose)
+    }
     this.state.disposables.push(dispose)
-    return timer
+    return dispose
+  }
+
+  setTimeout(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
+    const dispose = this.createTimerDispose(setTimeout(() => {
+      dispose()
+      callback()
+    }, ms, ...args))
+    return dispose
   }
 
   setInterval(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
-    const timer = setInterval(() => {
-      this.removeDisposable(dispose)
+    const dispose = this.createTimerDispose(setInterval(() => {
+      dispose()
       callback()
-    }, ms, ...args)
-    const dispose = () => clearInterval(timer)
-    this.state.disposables.push(dispose)
-    return timer
+    }, ms, ...args))
+    return dispose
   }
 
   command<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
