@@ -11,7 +11,6 @@ declare module 'koishi-core' {
   interface AppOptions {
     discord?: DiscordOptions
   }
-
   namespace Bot {
     interface Platforms {
       discord: DiscordBot

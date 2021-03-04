@@ -7,6 +7,7 @@ export const adaptUser = (user: DC.DiscordUser): UserInfo => ({
   userId: user.id,
   avatar: user.avatar,
   username: user.username,
+  discriminator: user.discriminator,
 })
 
 export function adaptGroup(data: PartialGuild): GroupInfo {
@@ -33,35 +34,42 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
     session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id
   }
-  if (meta.embeds.length === 0) {
-    // https://discord.com/developers/docs/reference#message-formatting
+  // https://discord.com/developers/docs/reference#message-formatting
+  session.content = ''
+  if (meta.content) {
     session.content = meta.content
       .replace(/<@!(.+?)>/, (_, id) => segment.at(id))
       .replace(/<@&(.+?)>/, (_, id) => segment.at(id))
       .replace(/<:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name }))
+      .replace(/<a:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name, animated: true }))
       .replace(/@everyone/, () => segment('at', { type: 'all' }))
       .replace(/@here/, () => segment('at', { type: 'here' }))
       .replace(/<#(.+?)>/, (_, id) => segment.sharp(id))
-    if (meta.attachments.length) {
-      session.content += meta.attachments.map(v => segment('image', {
-        url: v.url,
-        file: v.filename,
-      })).join('')
-    }
-  } else {
-    switch (meta.embeds[0].type) {
+  }
+
+  // embed 的 update event 太阴间了 只有 id embeds channel_id guild_id 四个成员
+  if (meta.attachments?.length) {
+    session.content += meta.attachments.map(v => segment('image', {
+      url: v.url,
+      proxy_url: v.proxy_url
+    })).join('')
+  }
+  for (const embed of meta.embeds) {
+    switch (embed.type) {
       case 'video':
-        session.content = segment.video(meta.embeds[0].url)
+        session.content += segment('video', { url: embed.url, proxy_url: embed.video.proxy_url })
         break
       case 'image':
-        session.content = segment.image(meta.embeds[0].url)
+        session.content += segment('image', { url: embed.thumbnail.url, proxy_url: embed.thumbnail.proxy_url })
         break
       case 'gifv':
-        session.content = segment.video(meta.embeds[0].video.url)
+        session.content += segment('video', { url: embed.video.url })
         break
       case 'link':
-        session.content = segment('share', { url: meta.embeds[0].url, title: meta.embeds[0]?.title, content: meta.embeds[0]?.description })
+        session.content += segment('share', { url: embed.url, title: embed?.title, content: embed?.description })
         break
+      case 'rich':
+        session.content += segment('share', { url: embed.url, title: embed?.title, content: embed?.description })
     }
   }
   return session
@@ -70,7 +78,7 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
 async function adaptMessageSession(bot: DiscordBot, meta: DC.DiscordMessage, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
   adaptMessage(bot, meta, session)
   session.messageId = meta.id
-  session.timestamp = new Date(meta.timestamp).valueOf()
+  session.timestamp = new Date(meta.timestamp).valueOf() || new Date().valueOf()
   session.subtype = meta.guild_id ? 'group' : 'private'
   if (meta.message_reference) {
     const msg = await bot.getMessageFromServer(meta.message_reference.channel_id, meta.message_reference.message_id)
