@@ -79,8 +79,9 @@ Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间�
 
 - [ArilyChan/qq-bot](https://github.com/ArilyChan/qq-bot): 小阿日
 - [hydro-dev/HydroBot](https://github.com/hydro-dev/HydroBot): A Simple QQ Robot
+- [Wjghj-Project/Chatbot-SILI](https://github.com/Wjghj-Project/Chatbot-SILI): 「即时通讯软件转接姬」SILI-t137-[Tumita]-Invoke-II@LD(A)
 
-## 基础功能
+## 官方生态
 
 ### 平台支持
 
@@ -94,11 +95,9 @@ Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间�
 - koishi-plugin-mongo: MongoDB 支持
 - koishi-plugin-mysql: MySQL 5.7 / MariaDB 10.5 支持
 
-## 官方插件
+### 核心插件
 
-### [koishi-plugin-common](https://koishi.js.org/plugins/common/)
-
-koishi-plugin-common 是一个插件合集，包含了一些最常用功能：
+[koishi-plugin-common](https://koishi.js.org/plugins/common/) 是一个插件合集，包含了一些最常用功能：
 
 - 发送和广播消息
 - 管理用户和频道数据
@@ -107,13 +106,9 @@ koishi-plugin-common 是一个插件合集，包含了一些最常用功能：
 - 输出聊天记录到控制台
 - 定制复读，处理申请，自定义回复……
 
-### [koishi-plugin-eval](https://koishi.js.org/plugins/eval/)
+[koishi-plugin-eval](https://koishi.js.org/plugins/eval/) 允许用户直接使用机器人执行脚本。它利用了 Node.js 的 [vm](https://nodejs.org/api/vm.html) 和 [worker_threads](https://nodejs.org/api/worker_threads.html) 模块，在保护执行安全的前提下能够获得较快的响应速度。同时，插件还提供了一些内置的 API 供用户调用，并允许用户编写自己的模块并永久保存，甚至可以动态定义新的指令。
 
-koishi-plugin-eval 允许用户直接使用机器人执行脚本。它利用了 Node.js 的 [vm](https://nodejs.org/api/vm.html) 和 [worker_threads](https://nodejs.org/api/worker_threads.html) 模块，在保护执行安全的前提下能够获得较快的响应速度。同时，插件还提供了一些内置的 API 供用户调用，并允许用户编写自己的模块并永久保存，甚至可以动态定义新的指令。
-
-### [koishi-plugin-teach](https://koishi.js.org/plugins/teach/)
-
-koishi-plugin-teach 允许用户在运行时编写问答并由机器人触发。每个人都可以随时随地修改机器人的行为，大大提高了互动的灵活性。支持概率控制、称呼匹配、指令插值、权限管理、频道过滤、正则匹配、后继问答等多种功能，足以应对绝大部分使用场景。
+[koishi-plugin-teach](https://koishi.js.org/plugins/teach/) 允许用户在运行时编写问答并由机器人触发。每个人都可以随时随地修改机器人的行为，大大提高了互动的灵活性。支持概率控制、称呼匹配、指令插值、权限管理、频道过滤、正则匹配、后继问答等多种功能，足以应对绝大部分使用场景。
 
 ### 其他官方插件
 
