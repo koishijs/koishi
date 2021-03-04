@@ -59,7 +59,6 @@ export interface TomonGroupInfo extends GroupInfo {
 }
 
 export interface TomonUserInfo extends UserInfo {
-  discriminator: string
   avatar?: string
   name: string
   createdAt: number
