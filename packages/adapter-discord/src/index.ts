@@ -11,9 +11,6 @@ declare module 'koishi-core' {
   interface AppOptions {
     discord?: DiscordOptions
   }
-  interface UserInfo {
-    discriminator?: string;
-  }
   namespace Bot {
     interface Platforms {
       discord: DiscordBot

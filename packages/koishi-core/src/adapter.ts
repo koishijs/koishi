@@ -290,6 +290,7 @@ export interface UserInfo {
   username: string
   nickname?: string
   avatar?: string
+  discriminator?: string
 }
 
 export interface GroupMemberInfo extends UserInfo {
