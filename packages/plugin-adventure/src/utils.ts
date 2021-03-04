@@ -1,7 +1,7 @@
-import { User, extendDatabase, Session, Context, Command, Argv, TableType, FieldCollector } from 'koishi-core'
-import MysqlDatabase from 'koishi-plugin-mysql'
+import { User, extendDatabase, Context, Command, Argv, TableType, FieldCollector } from 'koishi-core'
 import { defineEnumProperty } from 'koishi-utils'
-import Achievement from './achievement'
+import MysqlDatabase from 'koishi-plugin-mysql'
+import Achievement from './achv'
 
 function createCollector<T extends TableType>(key: T): FieldCollector<T, never, any[], { rest: string }> {
   return ({ tokens, session, options }, fields) => {
