@@ -72,6 +72,7 @@ export class DiscordBot extends Bot<'discord'> {
     let needSend = ''
     const isWebhook = requestUrl.startsWith('/webhooks/')
     const that = this
+    delete addition.content
     async function sendMessage() {
       const r = await that.request('POST', requestUrl, {
         content: needSend,
@@ -110,12 +111,13 @@ export class DiscordBot extends Bot<'discord'> {
         if (type === 'image' || type === 'video') {
           if (data.url.startsWith('http://') || data.url.startsWith('https://')) {
             const sendData = isWebhook ? {
-              embeds: [{ ...addition, ...data }],
+              embeds: [{ [type]: data }],
             } : {
-              embed: { ...addition, ...data },
+              embed: { [type]: data },
             }
             const r = await this.request('POST', requestUrl, {
               ...sendData,
+              ...addition
             })
             sentMessageId = r.id
           } else {
@@ -210,7 +212,7 @@ export class DiscordBot extends Bot<'discord'> {
       throw new Error('Up to 10 embed objects')
     }
 
-    const messageId = await this.sendFullMessage(`/webhooks/${id}/${token}`, data.content)
+    const messageId = await this.sendFullMessage(`/webhooks/${id}/${token}`, data.content, data)
     return messageId
   }
 }

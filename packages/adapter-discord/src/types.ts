@@ -137,6 +137,7 @@ export interface Attachment {
   proxy_url: string
   height?: number
   width?: number
+  content_type?: string
 }
 
 export interface DiscordUser {

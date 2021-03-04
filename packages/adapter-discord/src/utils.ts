@@ -49,10 +49,26 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
 
   // embed 的 update event 太阴间了 只有 id embeds channel_id guild_id 四个成员
   if (meta.attachments?.length) {
-    session.content += meta.attachments.map(v => segment('image', {
-      url: v.url,
-      proxy_url: v.proxy_url
-    })).join('')
+    session.content += meta.attachments.map(v => {
+      if (v.height && v.width && v.content_type?.startsWith('image/')) {
+        return segment('image', {
+          url: v.url,
+          proxy_url: v.proxy_url,
+          file: v.filename
+        })
+      } else if (v.height && v.width && v.content_type?.startsWith('video/')) {
+        return segment('video', {
+          url: v.url,
+          proxy_url: v.proxy_url,
+          file: v.filename
+        })
+      } else {
+        return segment('file', {
+          url: v.url,
+          file: v.filename
+        })
+      }
+    }).join('')
   }
   for (const embed of meta.embeds) {
     switch (embed.type) {
