@@ -1,0 +1,38 @@
+{
+  "name": "koishi-plugin-webui",
+  "version": "0.1.2",
+  "description": "Web UI for Koishi",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "client"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi#readme",
+  "peerDependencies": {
+    "koishi-core": "^3.0.0"
+  },
+  "dependencies": {
+    "vue": "^3.0.6"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^1.1.4",
+    "@vue/compiler-sfc": "^3.0.6",
+    "sass": "^1.32.8",
+    "vite": "^2.0.3"
+  }
+}

@@ -182,6 +182,7 @@ export class Context {
     }
 
     this.state.children.push(plugin)
+    this.emit('registry', this.app.registry)
     return this
   }
 
@@ -196,6 +197,7 @@ export class Context {
     this.app.registry.delete(plugin)
     const index = state.parent.children.indexOf(plugin)
     if (index >= 0) state.parent.children.splice(index, 1)
+    this.emit('registry', this.app.registry)
   }
 
   async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<Await<ReturnType<EventMap[K]>>[]>
@@ -471,6 +473,7 @@ export interface EventMap extends SessionEventMap {
   'before-command'(argv: Argv): Awaitable<void | string>
   'command'(argv: Argv): Awaitable<void>
   'middleware'(session: Session): void
+  'registry'(registry: Map<Plugin, Plugin.State>): void
   'before-connect'(): Awaitable<void>
   'connect'(): void
   'before-disconnect'(): Awaitable<void>
