@@ -113,8 +113,15 @@ export interface Embed {
   type?: 'rich' | 'image' | 'video' | 'gifv' | 'article' | 'link'
   description?: string
   url?: string
-  timestamp: string
+  timestamp?: string
+  color?: number;
   video?: {
+    url?: string
+    proxy_url?: string
+    height?: number
+    width?: number
+  }
+  image?: {
     url?: string
     proxy_url?: string
     height?: number
@@ -126,6 +133,24 @@ export interface Embed {
     proxy_url?: string
     height?: number
     width?: number
+  }
+
+  footer?: {
+    text: string;
+    icon_url?: string;
+    proxy_icon_url?: string;
+  }
+
+  author?: {
+    name?: string;
+    url?: string;
+    icon_url?: string;
+    proxy_icon_url?: string;
+  }
+
+  provider?: {
+    name?: string;
+    url?: string;
   }
 }
 
@@ -172,6 +197,8 @@ export interface ExecuteWebhookBody{
   content: string
   username?: string
   avatar_url?: string
+  embeds?: Embed[]
+  common_embeds?: Embed[]
 }
 
 export interface DiscordChannel {

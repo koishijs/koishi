@@ -3,15 +3,12 @@
 import axios, { Method } from 'axios'
 import { Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
-import { ExecuteWebhookBody, GuildMember, DiscordMessage, PartialGuild, DiscordUser, DiscordChannel } from './types'
+import { DiscordChannel, DiscordMessage, DiscordUser, ExecuteWebhookBody, GuildMember, PartialGuild } from './types'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
 import { createReadStream } from 'fs'
 import { segment } from 'koishi-utils'
 import FormData from 'form-data'
-
-export interface DiscordBot {
-  executeWebhook(id: string, token: string, data: ExecuteWebhookBody): Promise<any>
-}
+import merge from 'lodash.merge'
 
 export class DiscordBot extends Bot<'discord'> {
   _d = 0
@@ -115,10 +112,10 @@ export class DiscordBot extends Bot<'discord'> {
             } : {
               embed: { [type]: data },
             }
-            const r = await this.request('POST', requestUrl, {
-              ...sendData,
-              ...addition
-            })
+            const r = await this.request('POST', requestUrl, merge({},
+              sendData,
+              addition,
+            ))
             sentMessageId = r.id
           } else {
             const r = await this.sendEmbedMessage(requestUrl, data.url, {
@@ -206,13 +203,12 @@ export class DiscordBot extends Bot<'discord'> {
     return adaptChannel(data)
   }
 
-  async executeWebhook(id: string, token: string, data: ExecuteWebhookBody) {
+  async executeWebhook(id: string, token: string, data: ExecuteWebhookBody, wait = false): Promise<string> {
     const chain = segment.parse(data.content)
     if (chain.filter(v => v.type === 'image').length > 10) {
       throw new Error('Up to 10 embed objects')
     }
 
-    const messageId = await this.sendFullMessage(`/webhooks/${id}/${token}`, data.content, data)
-    return messageId
+    return await this.sendFullMessage(`/webhooks/${id}/${token}?wait=${wait}`, data.content, data)
   }
 }
