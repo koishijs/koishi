@@ -1,4 +1,4 @@
-import { isInteger, difference, observe, Time, enumKeys, Random, template } from 'koishi-utils'
+import { isInteger, difference, observe, Time, enumKeys, Random, template, deduplicate } from 'koishi-utils'
 import { Context, User, Channel, Command, Argv, Platform, Session } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
@@ -359,6 +359,32 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       await ctx.database.createChannel(session.platform, session.channelId, { assignee })
       target._merge({ assignee })
       return template('admin.channel-updated')
+    })
+
+  ctx.command('channel/switch <command...>', '启用和禁用功能', { authority: 3 })
+    .channelFields(['disable'])
+    .userFields(['authority'])
+    .adminChannel(({ session, target: { disable } }, ...names: string[]) => {
+      if (!names.length) {
+        if (!disable.length) return '当前没有禁用功能。'
+        return '当前禁用的功能有：' + disable.join(', ') + '。'
+      }
+
+      names = deduplicate(names)
+      const forbidden = names.filter(name => {
+        const command = ctx.app._commandMap[name]
+        return command && command.config.authority >= session.user.authority
+      })
+      if (forbidden.length) return `您无权修改 ${forbidden.join(', ')} 功能。`
+
+      for (const name of names) {
+        const index = disable.indexOf(name)
+        if (index >= 0) {
+          disable.splice(index)
+        } else {
+          disable.push(name)
+        }
+      }
     })
 
   ctx.command('channel.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })

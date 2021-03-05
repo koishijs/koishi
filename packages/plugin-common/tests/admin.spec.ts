@@ -9,6 +9,7 @@ const session = app.session('123', '321')
 app.plugin(common)
 app.command('foo', { maxUsage: 10 }).action(() => 'bar')
 app.command('bar', { minInterval: 1000 }).action(() => 'foo')
+app.command('baz').action(() => 'zab')
 
 declare module 'koishi-core' {
   namespace User {
@@ -92,6 +93,17 @@ describe('Admin Commands', () => {
     await session.shouldReply('assign -t #123', '未找到指定的频道。')
     await session.shouldReply('assign -t #321', '频道数据未改动。')
     await session.shouldReply('assign -t #321 nan', '参数 bot 输入无效，请指定正确的目标。')
+  })
+
+  it('channel/switch', async () => {
+    await session.shouldReply('switch', '当前没有禁用功能。')
+    await session.shouldReply('baz', 'zab')
+    await session.shouldReply('switch baz', '频道数据已修改。')
+    await session.shouldReply('switch', '当前禁用的功能有：baz。')
+    await session.shouldNotReply('baz')
+    await session.shouldReply('switch baz', '频道数据已修改。')
+    await session.shouldReply('baz', 'zab')
+    await session.shouldReply('switch assign', '您无权修改 assign 功能。')
   })
 
   it('channel.flag', async () => {
