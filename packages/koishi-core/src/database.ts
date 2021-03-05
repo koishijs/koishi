@@ -54,6 +54,7 @@ export interface Channel {
   id: string
   flag: number
   assignee: string
+  disable: string[]
 }
 
 export namespace Channel {
@@ -81,7 +82,7 @@ export namespace Channel {
     return result
   }
 
-  extend((type, id) => ({ id: `${type}:${id}`, flag: 0 }))
+  extend((type, id) => ({ id: `${type}:${id}`, flag: 0, disable: [] }))
 }
 
 type MaybeArray<T> = T | readonly T[]

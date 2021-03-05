@@ -168,7 +168,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   match(session: Session) {
     const { authority = Infinity } = (session.user || {}) as User
-    return this.context.match(session) && this.config.authority <= authority
+    const { disable = [] } = (session.channel || {}) as Channel
+    return this.context.match(session) && this.config.authority <= authority && !disable.includes(this.name)
   }
 
   check(callback: Command.Action<U, G, A, O>, prepend = false) {
@@ -281,33 +282,24 @@ Command.userFields(({ tokens, command, options = {} }, fields) => {
 })
 
 export default function apply(ctx: Context) {
-  ctx.before('command', async (argv: Argv<ValidationField>) => {
-    const { session, args, options, command } = argv
+  // check channel
+  ctx.before('command', ({ session, command }: Argv<never, 'disable'>) => {
+    if (!session.channel) return
+    while (command) {
+      if (session.channel.disable.includes(command.name)) return ''
+      command = command.parent as any
+    }
+  })
+
+  // check user
+  ctx.before('command', (argv: Argv<ValidationField>) => {
+    const { session, options, command } = argv
+    if (!session.user) return
+
     function sendHint(message: string, ...param: any[]) {
       return command.config.showWarning ? template(message, param) : ''
     }
 
-    // check argument count
-    if (command.config.checkArgCount) {
-      const nextArg = command._arguments[args.length] || {}
-      if (nextArg.required) {
-        return sendHint('internal.insufficient-arguments')
-      }
-      const finalArg = command._arguments[command._arguments.length - 1] || {}
-      if (args.length > command._arguments.length && finalArg.type !== 'text' && !finalArg.variadic) {
-        return sendHint('internal.redunant-arguments')
-      }
-    }
-
-    // check unknown options
-    if (command.config.checkUnknown) {
-      const unknown = Object.keys(options).filter(key => !command._options[key])
-      if (unknown.length) {
-        return sendHint('internal.unknown-option', unknown.join(', '))
-      }
-    }
-
-    if (!session.user) return
     let isUsage = true
 
     // check authority
@@ -335,6 +327,34 @@ export default function apply(ctx: Context) {
 
       if (minInterval > 0 && checkTimer(name, session.user, minInterval)) {
         return sendHint('internal.too-frequent')
+      }
+    }
+  })
+
+  // check argv
+  ctx.before('command', (argv: Argv) => {
+    const { args, options, command } = argv
+    function sendHint(message: string, ...param: any[]) {
+      return command.config.showWarning ? template(message, param) : ''
+    }
+
+    // check argument count
+    if (command.config.checkArgCount) {
+      const nextArg = command._arguments[args.length] || {}
+      if (nextArg.required) {
+        return sendHint('internal.insufficient-arguments')
+      }
+      const finalArg = command._arguments[command._arguments.length - 1] || {}
+      if (args.length > command._arguments.length && finalArg.type !== 'text' && !finalArg.variadic) {
+        return sendHint('internal.redunant-arguments')
+      }
+    }
+
+    // check unknown options
+    if (command.config.checkUnknown) {
+      const unknown = Object.keys(options).filter(key => !command._options[key])
+      if (unknown.length) {
+        return sendHint('internal.unknown-option', unknown.join(', '))
       }
     }
   })
