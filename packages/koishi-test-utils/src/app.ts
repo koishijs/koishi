@@ -1,6 +1,7 @@
 import { AppOptions, App, Adapter, Session, Bot, AuthorInfo } from 'koishi-core'
 import { assert } from 'chai'
 import { Socket } from 'net'
+import { format } from 'util'
 import * as http from 'http'
 import * as memory from './memory'
 
@@ -172,17 +173,19 @@ export class TestSession {
   async shouldReply(message: string, reply?: string | RegExp | (string | RegExp)[]) {
     if (!reply) {
       const result = await this.receive(message)
-      return assert.ok(result.length, `expected "${message}" to be replied but not received nothing`)
+      return assert.ok(result.length, format(RECEIVED_NOTHING, message))
     }
 
     if (!Array.isArray(reply)) reply = [reply]
     const result = await this.receive(message, reply.length)
     for (const index in reply) {
       const expected = reply[index]
+      const actual = result[index]
+      assert.ok(actual, format(RECEIVED_NOTHING, message))
       if (typeof expected === 'string') {
-        assert.strictEqual(result[index], expected)
+        assert.strictEqual(actual, expected, format(RECEIVED_OTHERWISE, message, `"${expected}"`, actual))
       } else {
-        assert.match(result[index], expected)
+        assert.match(actual, expected, format(RECEIVED_OTHERWISE, message, expected.toString(), actual))
       }
     }
   }
@@ -192,5 +195,8 @@ export class TestSession {
     assert.ok(!result.length, `expected "${message}" to have no reply but received "${result[0]}"`)
   }
 }
+
+const RECEIVED_NOTHING = 'expected "%s" to be replied but received nothing'
+const RECEIVED_OTHERWISE = 'expected "%s" to be replied with %s but received "%s"'
 
 export { MockedApp as App }
