@@ -72,6 +72,7 @@ Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间�
 
 - [koishi-plugin-blame](https://github.com/ArilyChan/koishi-plugin-blame): 拦截崩溃错误，推送到私信或群
 - [koishi-plugin-gosen-choyen](https://github.com/idlist/koishi-plugin-gosen-choyen): 生成并发送“我想要五千兆元！”风格的图片
+- [koishi-plugin-genshin](https://github.com/Dragon-Fish/koishi-plugin-genshin): 查询原神国服玩家数据
 
 ### 社区项目
 
