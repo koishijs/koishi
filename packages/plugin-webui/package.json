@@ -27,6 +27,7 @@
     "koishi-core": "^3.0.0"
   },
   "dependencies": {
+    "element-plus": "^1.0.2-beta.33",
     "vue": "^3.0.7"
   },
   "devDependencies": {
