@@ -267,8 +267,9 @@ export class App extends Context {
   }
 
   private _suggest(session: Session, next: NextFunction) {
+    // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
     const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
-    if (argv.command || subtype !== 'private' && prefix === null && !appel) return next()
+    if (argv.command || subtype !== 'private' && !prefix && !appel) return next()
     const target = content.split(/\s/, 1)[0].toLowerCase()
     if (!target) return next()
 

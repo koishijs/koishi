@@ -4,6 +4,7 @@ import { Socket } from 'net'
 import { format } from 'util'
 import * as http from 'http'
 import * as memory from './memory'
+import { pick } from 'koishi-utils'
 
 export const BASE_SELF_ID = '514'
 
@@ -123,7 +124,7 @@ export class MockedApp extends App {
 }
 
 export class TestSession {
-  public meta: Partial<Session>
+  public meta: Partial<Session.Message>
 
   private replies: string[] = []
 
@@ -160,6 +161,9 @@ export class TestSession {
       }
       const send = async (content: string) => {
         if (!content) return
+        const session = this.app.bots[0].createSession(pick(this.meta, ['userId', 'channelId', 'groupId']))
+        session.content = content
+        this.app.emit(session, 'before-send', session)
         const length = this.replies.push(content)
         if (length >= count) _resolve()
       }
