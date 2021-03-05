@@ -57,7 +57,7 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
     return console.log(`Tag ${version} already exists.`)
   }
 
-  const body = draft(tags[tags.length - 1])
+  const body = draft(tags[tags.length - 1], bumpMap)
   console.log(body)
 
   if (!GITHUB_TOKEN) return

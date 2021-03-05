@@ -1,7 +1,7 @@
-import { Context, extendDatabase } from 'koishi-core'
+import { Context, Database } from 'koishi-core'
 import { clone, defineProperty, Observed, pick } from 'koishi-utils'
 import { Dialogue, equal, DialogueTest } from '../utils'
-import type MysqlDatabase from 'koishi-plugin-mysql/dist/database'
+import {} from 'koishi-plugin-mysql'
 
 declare module 'koishi-core' {
   interface EventMap {
@@ -9,7 +9,7 @@ declare module 'koishi-core' {
   }
 }
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
+Database.extend('koishi-plugin-mysql', {
   async getDialoguesById(ids, fields) {
     if (!ids.length) return []
     const dialogues = await this.select<Dialogue>('dialogue', fields, `\`id\` IN (${ids.join(',')})`)
@@ -92,7 +92,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   },
 })
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Domain, tables }) => {
+Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
   tables.dialogue = Object.assign<any, any>([
     'PRIMARY KEY (`id`) USING BTREE',
   ], {
@@ -142,7 +142,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
   })
 
   ctx.on('dialogue/mysql', ({ regexp, answer, question, original }, conditionals) => {
-    const { escape } = require('koishi-plugin-mysql').default.prototype as MysqlDatabase
+    const { escape } = require('mysql') as typeof import('mysql')
 
     if (regexp) {
       if (answer) conditionals.push('`answer` REGEXP ' + escape(answer))

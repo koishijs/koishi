@@ -1,12 +1,12 @@
-import { Channel, Context, extendDatabase } from 'koishi-core'
+import { Channel, Context, Database } from 'koishi-core'
 import { isInteger, segment } from 'koishi-utils'
 import { State, MoveResult, StateData } from './state'
-import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
+import {} from 'koishi-plugin-mysql'
 import * as go from './go'
 import * as gomoku from './gomoku'
 import * as othello from './othello'
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables, Domain }) => {
+Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
   tables.channel.chess = new Domain.Json()
 })
 
@@ -37,7 +37,6 @@ const states: Record<string, State> = {}
 export * from './state'
 
 export const name = 'chess'
-export const disposable = true
 
 export function apply(ctx: Context) {
   ctx = ctx.group()

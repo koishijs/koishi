@@ -1,6 +1,6 @@
-import { User, Context, Session, GroupMemberInfo } from 'koishi-core'
+import { User, Context, Session, GroupMemberInfo, Database } from 'koishi-core'
 import { paramCase, camelCase, isInteger } from 'koishi-utils'
-import MysqlDatabase from 'koishi-plugin-mysql'
+import {} from 'koishi-plugin-mysql'
 
 type ExtendedUser<T extends User.Field = User.Field> = Pick<User, T> & { _value: number }
 
@@ -34,11 +34,13 @@ namespace Rank {
     const { threshold = 0, key } = options
     add(id, { names, value, threshold, ...options })
     if (!key) return
-    MysqlDatabase.tables.user[key] = () => `IF(\
-      ${typeof threshold === 'string' ? threshold : `${value} > ${threshold}`},\
-      (SELECT COUNT(*) + 1 FROM \`user\` WHERE ${value} > (SELECT ${value} FROM \`user\` WHERE \`id\` = _user.id)),\
-      0\
-    )`
+    Database.extend('koishi-plugin-mysql', ({ tables }) => {
+      tables.user[key] = () => `IF(\
+        ${typeof threshold === 'string' ? threshold : `${value} > ${threshold}`},\
+        (SELECT COUNT(*) + 1 FROM \`user\` WHERE ${value} > (SELECT ${value} FROM \`user\` WHERE \`id\` = _user.id)),\
+        0\
+      )`
+    })
   }
 
   export async function show<T extends User.Field>(rank: Rank<T>, session: Session, options: any) {

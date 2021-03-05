@@ -120,6 +120,13 @@ export interface Embed {
     height?: number
     width?: number
   }
+
+  thumbnail?: {
+    url?: string
+    proxy_url?: string
+    height?: number
+    width?: number
+  }
 }
 
 export interface Attachment {

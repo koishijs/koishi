@@ -5,6 +5,8 @@ import FourSquare from './algorithms/four-square'
 import { Context } from 'koishi-core'
 import { segment } from 'koishi-utils'
 
+export const name = 'crypto'
+
 export function apply(ctx: Context) {
   ctx.command('tools/crypto <algorithm> <text>', '加密解密工具')
     .option('encrypt', '-e  加密模式（默认）')

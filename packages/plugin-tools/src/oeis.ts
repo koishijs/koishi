@@ -3,6 +3,8 @@ import axios from 'axios'
 
 const BASE_URL = 'https://oeis.org'
 
+export const name = 'oeis'
+
 export function apply(ctx: Context) {
   ctx.command('tools/oeis <sequence>', '数列查询', { maxUsage: 10 })
     .option('start', '-s <start>  设置起始页码', { fallback: 0 })

@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer-core'
+import puppeteer, { Shooter } from 'puppeteer-core'
 import { Context } from 'koishi-core'
 import { Logger, defineProperty, noop, segment } from 'koishi-utils'
 import { escape } from 'querystring'
@@ -15,12 +15,17 @@ declare module 'puppeteer-core/lib/types' {
     encoding?: 'binary'
   }
 
-  interface Page {
+  interface Shooter {
     screenshot(options?: Base64ScreenshotOptions): Promise<string>
     screenshot(options?: BinaryScreenshotOptions): Promise<Buffer>
   }
 
-  interface ElementHandle {
+  interface Page extends Shooter {
+    screenshot(options?: Base64ScreenshotOptions): Promise<string>
+    screenshot(options?: BinaryScreenshotOptions): Promise<Buffer>
+  }
+
+  interface ElementHandle extends Shooter {
     screenshot(options?: Base64ScreenshotOptions): Promise<string>
     screenshot(options?: BinaryScreenshotOptions): Promise<Buffer>
   }
@@ -55,7 +60,6 @@ export const defaultConfig: Config = {
 }
 
 export const name = 'puppeteer'
-export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultConfig, ...config }
@@ -80,11 +84,11 @@ export function apply(ctx: Context, config: Config = {}) {
   })
 
   const ctx1 = ctx.intersect(sess => !!sess.app.browser)
-  ctx1.command('shot <url>', '网页截图', { authority: 2 })
+  ctx1.command('shot <url> [selector:text]', '网页截图', { authority: 2 })
     .alias('screenshot')
     .option('full', '-f  对整个可滚动区域截图')
     .option('viewport', '-v <viewport>  指定视口', { type: 'string' })
-    .action(async ({ session, options }, url) => {
+    .action(async ({ session, options }, url, selector) => {
       if (!url) return '请输入网址。'
       const scheme = /^(\w+):\/\//.exec(url)
       if (!scheme) {
@@ -136,7 +140,10 @@ export function apply(ctx: Context, config: Config = {}) {
         return '无法打开页面。'
       }
 
-      return page.screenshot({
+      const shooter: Shooter = selector ? await page.$(selector) : page
+      if (!shooter) return '找不到满足该选择器的元素。'
+
+      return shooter.screenshot({
         fullPage: options.full,
       }).then(async (buffer) => {
         if (buffer.byteLength > config.maxLength) {

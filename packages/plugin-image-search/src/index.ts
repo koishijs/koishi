@@ -11,7 +11,6 @@ async function mixedSearch(url: string, session: Session, config: Config) {
 }
 
 export const name = 'search'
-export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   let index = 0

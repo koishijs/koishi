@@ -15,7 +15,6 @@ export interface Config {
 }
 
 export const name = 'schedule'
-export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   const { database } = ctx
@@ -57,8 +56,8 @@ export function apply(ctx: Context, config: Config = {}) {
 
     ctx.setTimeout(async () => {
       if (!await database.getSchedule(id)) return
-      const timer = ctx.setInterval(async () => {
-        if (!await database.getSchedule(id)) return clearInterval(timer)
+      const dispose = ctx.setInterval(async () => {
+        if (!await database.getSchedule(id)) return dispose()
         executeSchedule()
       }, interval)
       executeSchedule()

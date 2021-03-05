@@ -45,6 +45,8 @@ async function showShort(session: Session, input: string, appid: string) {
   return data as string
 }
 
+export const name = 'alpha'
+
 export function apply(ctx: Context, config: AlphaOptions) {
   const { wolframAlphaAppId: appid } = config
   ctx.command('tools/alpha <expr:text>', '调用 WolframAlpha 查询', { maxUsage: 10 })

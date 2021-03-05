@@ -1,5 +1,5 @@
 import { App, BASE_SELF_ID } from 'koishi-test-utils'
-import { App as RealApp, Channel, extendDatabase, Session } from 'koishi-core'
+import { App as RealApp, Channel, Database, Session } from 'koishi-core'
 import { expect } from 'chai'
 import { fn, spyOn } from 'jest-mock'
 import { Logger } from 'koishi-utils'
@@ -116,13 +116,13 @@ describe('Server API', () => {
     it('extend database', () => {
       const callback = fn()
       const id = 'this-module-does-not-exist'
-      extendDatabase(id, callback)
+      Database.extend(id, callback)
       expect(callback.mock.calls).to.have.length(0)
       class CustomDatabase {}
       const module = require.cache[require.resolve('koishi-core/src/database.ts')]
       const mockedRequire = spyOn(module, 'require')
       mockedRequire.mockReturnValue({ default: CustomDatabase })
-      extendDatabase(id, callback)
+      Database.extend(id, callback)
       expect(callback.mock.calls).to.deep.equal([[CustomDatabase]])
       mockedRequire.mockRestore()
     })

@@ -57,7 +57,6 @@ const defaultConfig: EvalConfig = {
 const logger = new Logger('eval')
 
 export const name = 'eval'
-export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   const { prefix, authority } = config = { ...defaultConfig, ...config }

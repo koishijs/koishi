@@ -1,6 +1,6 @@
-import { Session, extendDatabase } from 'koishi-core'
-import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
-import MongoDatabase from 'koishi-plugin-mongo/dist/database'
+import { Session, Database } from 'koishi-core'
+import {} from 'koishi-plugin-mysql'
+import {} from 'koishi-plugin-mongo'
 
 declare module 'koishi-core' {
   interface Database {
@@ -26,7 +26,7 @@ export interface Schedule {
   session: Session
 }
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Domain, tables }) => {
+Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
   tables.schedule = Object.assign<any, any>([
     'PRIMARY KEY (`id`) USING BTREE',
   ], {
@@ -40,7 +40,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Domain, tables })
   })
 })
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
+Database.extend('koishi-plugin-mysql', {
   createSchedule(time, interval, command, session, ensure) {
     const data: Partial<Schedule> = { time, assignee: session.sid, interval, command, session }
     if (ensure) data.lastCall = new Date()
@@ -68,7 +68,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   },
 })
 
-extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
+Database.extend('koishi-plugin-mongo', {
   async createSchedule(time, interval, command, session, ensure) {
     let _id = 1
     const [latest] = await this.db.collection('schedule').find().sort('_id', -1).limit(1).toArray()

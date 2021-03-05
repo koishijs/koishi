@@ -5,6 +5,8 @@ const lang = 'zh-CN'
 const unit = 'metric'
 const products = ['astro', 'civil', 'civillight', 'meteo', 'two']
 
+export const name = 'weather'
+
 export function apply(ctx: Context) {
   ctx.command('tools/weather <longitude> <latitude>', '查询天气')
     // typescript cannot infer type from string templates

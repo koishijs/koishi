@@ -27,7 +27,6 @@ const defaultOptions: Config = {
 }
 
 export const name = 'github'
-export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultOptions, ...config }

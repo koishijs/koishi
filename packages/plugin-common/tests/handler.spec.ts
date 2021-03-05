@@ -4,8 +4,7 @@ import { sleep, Session } from 'koishi-core'
 import jest from 'jest-mock'
 import * as common from 'koishi-plugin-common'
 
-const app = new App({ mockDatabase: true })
-
+const app = new App()
 const session = app.session('123')
 
 const options: common.Config = {
@@ -19,11 +18,6 @@ const options: common.Config = {
 }
 
 app.plugin(common, options)
-
-before(async () => {
-  await app.database.initUser('123', 3)
-  await app.database.initChannel('123')
-})
 
 function receive(session: Partial<Session>) {
   app.receive(session)
@@ -78,15 +72,12 @@ describe('Common Handlers', () => {
     options.onGroupMemberRequest = 'bar'
 
     await receiveFriendRequest('321')
-    expect(handleFriendRequest.mock.calls).to.have.length(1)
     expect(handleFriendRequest.mock.calls).to.have.shape([['flag', true, 'foo']])
 
     await receiveGroupRequest('321')
-    expect(handleGroupRequest.mock.calls).to.have.length(1)
     expect(handleGroupRequest.mock.calls).to.have.shape([['flag', false, 'baz']])
 
     await receiveGroupMemberRequest('321')
-    expect(handleGroupMemberRequest.mock.calls).to.have.length(1)
     expect(handleGroupMemberRequest.mock.calls).to.have.shape([['flag', false, 'bar']])
   })
 
@@ -96,15 +87,12 @@ describe('Common Handlers', () => {
     options.onGroupMemberRequest = false
 
     await receiveFriendRequest('321')
-    expect(handleFriendRequest.mock.calls).to.have.length(1)
     expect(handleFriendRequest.mock.calls).to.have.shape([['flag', false]])
 
     await receiveGroupRequest('321')
-    expect(handleGroupRequest.mock.calls).to.have.length(1)
     expect(handleGroupRequest.mock.calls).to.have.shape([['flag', false]])
 
     await receiveGroupMemberRequest('321')
-    expect(handleGroupMemberRequest.mock.calls).to.have.length(1)
     expect(handleGroupMemberRequest.mock.calls).to.have.shape([['flag', false]])
   })
 
@@ -114,15 +102,12 @@ describe('Common Handlers', () => {
     options.onGroupMemberRequest = () => true
 
     await receiveFriendRequest('321')
-    expect(handleFriendRequest.mock.calls).to.have.length(1)
     expect(handleFriendRequest.mock.calls).to.have.shape([['flag', true]])
 
     await receiveGroupRequest('321')
-    expect(handleGroupRequest.mock.calls).to.have.length(1)
     expect(handleGroupRequest.mock.calls).to.have.shape([['flag', true]])
 
     await receiveGroupMemberRequest('321')
-    expect(handleGroupMemberRequest.mock.calls).to.have.length(1)
     expect(handleGroupMemberRequest.mock.calls).to.have.shape([['flag', true]])
   })
 

@@ -1,8 +1,9 @@
-import { Tables, TableType, App, extendDatabase, User, Channel } from 'koishi-core'
+import { Tables, TableType, App, Database, User, Channel } from 'koishi-core'
 import { clone } from 'koishi-utils'
 
 declare module 'koishi-core' {
-  interface Database extends MemoryDatabase {
+  interface Database {
+    memory: MemoryDatabase
     initUser(id: string, authority?: number): Promise<void>
     initChannel(id: string, assignee?: string): Promise<void>
   }
@@ -10,11 +11,15 @@ declare module 'koishi-core' {
 
 export interface MemoryConfig {}
 
+export interface MemoryDatabase extends Database {}
+
 export class MemoryDatabase {
   $store: { [K in TableType]?: Tables[K][] } = {
     user: [],
     channel: [],
   }
+
+  memory = this
 
   constructor(public app: App, public config: MemoryConfig) {}
 
@@ -50,7 +55,7 @@ export class MemoryDatabase {
   }
 }
 
-extendDatabase(MemoryDatabase, {
+Database.extend(MemoryDatabase, {
   async getUser(type, id) {
     if (Array.isArray(id)) {
       return this.$select('user', type, id) as any

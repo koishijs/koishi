@@ -2,7 +2,6 @@ import { Context } from 'koishi-core'
 import { AlphaOptions } from './alpha'
 import { BrainfuckOptions } from './brainfuck'
 import { MusicOptions } from './music'
-import { RollOptions } from './roll'
 import { TranslateOptions } from './translate'
 
 export interface Options extends AlphaOptions, TranslateOptions {
@@ -15,12 +14,10 @@ export interface Options extends AlphaOptions, TranslateOptions {
   music?: false | MusicOptions
   oeis?: false
   qrcode?: false
-  roll?: false | RollOptions
   weather?: false
 }
 
 export const name = 'tools'
-export const disposable = true
 
 export function apply(ctx: Context, config: Options = {}) {
   ctx.command('tools', '实用工具')
@@ -35,7 +32,6 @@ export function apply(ctx: Context, config: Options = {}) {
   if (config.music !== false) ctx.plugin(require('./music'), config.music)
   if (config.oeis !== false) ctx.plugin(require('./oeis'))
   if (config.qrcode !== false) ctx.plugin(require('./qrcode'))
-  if (config.roll !== false) ctx.plugin(require('./roll'), config.roll)
   if (config.youdaoAppKey) ctx.plugin(require('./translate'), config)
   if (config.weather !== false) ctx.plugin(require('./weather'))
 }

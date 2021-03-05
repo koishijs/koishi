@@ -88,6 +88,7 @@ export class App extends Context {
       parent: null,
       children: [],
       disposables: [],
+      dependencies: new Set(),
     })
 
     defineProperty(this, '_userCache', {})
@@ -182,7 +183,7 @@ export class App extends Context {
   async stop() {
     this.status = App.Status.closing
     // `before-disconnect` event is handled by ctx.disposables
-    await Promise.all(this.disposables.map(dispose => dispose()))
+    await Promise.all(this.state.disposables.map(dispose => dispose()))
     this.status = App.Status.closed
     this.logger('app').debug('stopped')
     this.emit('disconnect')
@@ -266,8 +267,10 @@ export class App extends Context {
   }
 
   private _suggest(session: Session, next: NextFunction) {
+    // use `!prefix` instead of `prefix === null` to prevent from blocking other middlewares
+    // we need to make sure that the user truly has the intension to call a command
     const { argv, quote, subtype, parsed: { content, prefix, appel } } = session
-    if (argv.command || subtype !== 'private' && prefix === null && !appel) return next()
+    if (argv.command || subtype !== 'private' && !prefix && !appel) return next()
     const target = content.split(/\s/, 1)[0].toLowerCase()
     if (!target) return next()
 

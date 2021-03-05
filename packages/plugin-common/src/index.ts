@@ -12,7 +12,6 @@ export interface Config extends AdminConfig, HandlerOptions, RepeaterOptions, Se
 }
 
 export const name = 'common'
-export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   ctx.command('common', '基础功能')

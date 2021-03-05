@@ -1,6 +1,6 @@
-import { Context, Channel, Session, extendDatabase } from 'koishi-core'
+import { Context, Channel, Session, Database } from 'koishi-core'
 import { Logger, Time } from 'koishi-utils'
-import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
+import {} from 'koishi-plugin-mysql'
 import RssFeedEmitter from 'rss-feed-emitter'
 
 declare module 'koishi-core' {
@@ -13,7 +13,7 @@ Channel.extend(() => ({
   rss: [],
 }))
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ Domain, tables }) => {
+Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
   tables.channel.rss = new Domain.Array()
 })
 
@@ -26,7 +26,6 @@ export interface Config {
 const logger = new Logger('rss')
 
 export const name = 'rss'
-export const disposable = true
 
 export function apply(ctx: Context, config: Config = {}) {
   const { timeout = 10 * Time.second, refresh = Time.minute, userAgent } = config

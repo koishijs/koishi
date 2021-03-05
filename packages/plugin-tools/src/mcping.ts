@@ -11,6 +11,8 @@ function itob(n: number, length: number) {
   return result
 }
 
+export const name = 'mcping'
+
 export function apply(ctx: Context) {
   ctx.command('tools/mcping <url>', '查看 Minecraft 服务器信息')
     .action(async ({ session }, address) => {
