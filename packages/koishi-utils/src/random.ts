@@ -74,6 +74,14 @@ export namespace Random {
       + hex[arr[12]] + hex[arr[13]] + hex[arr[14]] + hex[arr[15]]
   }
 
+  export function digits(length: number) {
+    let result = ''
+    for (let i = 0; i < length; ++i) {
+      result += Math.floor(Math.random() * 10)
+    }
+    return result
+  }
+
   /**
    * random real
    * @param start start number
