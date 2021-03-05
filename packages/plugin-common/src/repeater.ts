@@ -1,4 +1,4 @@
-import { Context } from 'koishi-core'
+import { Context, Session, Random } from 'koishi-core'
 
 declare module 'koishi-core' {
   interface EventMap {
@@ -13,11 +13,22 @@ interface RepeatState {
   users: Record<number, number>
 }
 
-type RepeatHandler = (state: RepeatState, content: string, userId: string) => void | string
+type StateCallback = (state: RepeatState, session: Session) => void | string
+
+interface RepeatHandler {
+  minTimes: number
+  probability?: number
+}
 
 export interface RepeaterOptions {
-  onRepeat?: RepeatHandler
-  onInterrupt?: RepeatHandler
+  onRepeat?: RepeatHandler | StateCallback
+  onInterrupt?: StateCallback
+}
+
+function onRepeat(options: RepeatHandler | StateCallback): StateCallback {
+  if (!options || typeof options !== 'object') return options as StateCallback
+  const { minTimes, probability = 1 } = options
+  return ({ repeated, times, content }) => times >= minTimes && !repeated && Random.bool(probability) ? content : ''
 }
 
 export default function apply(ctx: Context, options: RepeaterOptions = {}) {
@@ -53,8 +64,8 @@ export default function apply(ctx: Context, options: RepeaterOptions = {}) {
     if (ctx.bots[uid]) return
 
     const state = getState(session.cid)
-    const check = (handle: RepeatHandler) => {
-      const text = handle?.(state, content, userId)
+    const check = (handle: StateCallback) => {
+      const text = handle?.(state, session)
       return text && next(() => {
         ctx.emit('repeater', session, state)
         return session.send(text)
@@ -65,7 +76,7 @@ export default function apply(ctx: Context, options: RepeaterOptions = {}) {
     if (content === state.content) {
       state.times += 1
       state.users[userId] = (state.users[userId] || 0) + 1
-      return check(options.onRepeat) || next()
+      return check(onRepeat(options.onRepeat)) || next()
     }
 
     // interrupt repeating
