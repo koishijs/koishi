@@ -60,6 +60,25 @@ template.set('bind', {
   'success': '账号绑定成功！',
 })
 
+template.set('usage', {
+  'one': '今日 {0} 功能的调用次数为：{1}',
+  'list': '今日各功能的调用次数为：',
+  'none': '今日没有调用过消耗次数的功能。',
+})
+
+template.set('timer', {
+  'present': '定时器 {0} 的生效时间为：剩余 {1}',
+  'absent': '定时器 {0} 当前并未生效。',
+  'list': '各定时器的生效时间为：',
+  'none': '当前没有生效的定时器。',
+})
+
+template.set('switch', {
+  'forbidden': '您无权修改 {0} 功能。',
+  'list': '当前禁用的功能有：{0}',
+  'none': '当前没有禁用功能。',
+})
+
 interface FlagOptions {
   list?: boolean
   set?: boolean
@@ -299,21 +318,21 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       }
 
       if (options.set) {
-        if (value === undefined) return '参数不足。'
+        if (value === undefined) return template('internal.insufficient-arguments')
         const count = +value
         if (!isInteger(count) || count < 0) return '参数错误。'
         target.usage[name] = count
         return
       }
 
-      if (name) return `今日 ${name} 功能的调用次数为：${target.usage[name] || 0}`
+      if (name) return template('usage.one', name, target.usage[name] || 0)
       const output: string[] = []
       for (const name of Object.keys(target.usage).sort()) {
         if (name.startsWith('$')) continue
         output.push(`${name}：${target.usage[name]}`)
       }
-      if (!output.length) return '今日没有调用过消耗次数的功能。'
-      output.unshift('今日各功能的调用次数为：')
+      if (!output.length) return template('usage.none')
+      output.unshift(template('usage.list'))
       return output.join('\n')
     })
 
@@ -328,7 +347,7 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       }
 
       if (options.set) {
-        if (value === undefined) return '参数不足。'
+        if (value === undefined) return template('internal.insufficient-arguments')
         const timestamp = +Time.parseDate(value)
         if (!timestamp) return '请输入合法的时间。'
         target.timers[name] = timestamp
@@ -338,16 +357,16 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       const now = Date.now()
       if (name) {
         const delta = target.timers[name] - now
-        if (delta > 0) return `定时器 ${name} 的生效时间为：剩余 ${Time.formatTime(delta)}`
-        return `定时器 ${name} 当前并未生效。`
+        if (delta > 0) return template('timer.present', name, Time.formatTime(delta))
+        return template('timer.absent', name)
       }
       const output: string[] = []
       for (const name of Object.keys(target.timers).sort()) {
         if (name.startsWith('$')) continue
         output.push(`${name}：剩余 ${Time.formatTime(target.timers[name] - now)}`)
       }
-      if (!output.length) return '当前没有生效的定时器。'
-      output.unshift('各定时器的生效时间为：')
+      if (!output.length) return template('timer.none')
+      output.unshift(template('timer.list'))
       return output.join('\n')
     })
 
@@ -366,8 +385,8 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
     .userFields(['authority'])
     .adminChannel(({ session, target: { disable } }, ...names: string[]) => {
       if (!names.length) {
-        if (!disable.length) return '当前没有禁用功能。'
-        return '当前禁用的功能有：' + disable.join(', ') + '。'
+        if (!disable.length) return template('switch.none')
+        return template('switch.list', disable.join(', '))
       }
 
       names = deduplicate(names)
@@ -375,7 +394,7 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
         const command = ctx.app._commandMap[name]
         return command && command.config.authority >= session.user.authority
       })
-      if (forbidden.length) return `您无权修改 ${forbidden.join(', ')} 功能。`
+      if (forbidden.length) return template('switch.forbidden', forbidden.join(', '))
 
       for (const name of names) {
         const index = disable.indexOf(name)
