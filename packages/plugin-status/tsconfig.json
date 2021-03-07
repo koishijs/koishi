@@ -2,9 +2,9 @@
   "extends": "../../tsconfig.base",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": "server",
   },
   "include": [
-    "src",
+    "server",
   ],
 }

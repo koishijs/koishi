@@ -1,4 +1,4 @@
-import { Context, App, Bot, Platform } from 'koishi-core'
+import { Context, App, Argv, Bot, Platform } from 'koishi-core'
 import { cpus, totalmem, freemem } from 'os'
 import { interpolate, Time } from 'koishi-utils'
 import { ActiveData } from './database'
@@ -9,6 +9,24 @@ declare module 'koishi-core' {
   interface Bot {
     counter: number[]
   }
+
+  interface App {
+    startTime: number
+    getStatus(): Promise<BaseStatus>
+  }
+}
+
+App.prototype.getStatus = async function (this: App) {
+  const bots = await Promise.all(this.bots.map(async (bot): Promise<BotStatus> => ({
+    platform: bot.platform,
+    selfId: bot.selfId,
+    username: bot.username,
+    code: await bot.getStatus(),
+    rate: bot.counter.slice(1).reduce((prev, curr) => prev + curr, 0),
+  })))
+  const memory = memoryRate()
+  const cpu: Rate = [appRate, usedRate]
+  return { bots, memory, cpu, startTime: this.startTime }
 }
 
 export interface Config {
@@ -22,12 +40,9 @@ let usage = getCpuUsage()
 let appRate: number
 let usedRate: number
 
-function memoryRate() {
+function memoryRate(): Rate {
   const totalMemory = totalmem()
-  return {
-    app: process.memoryUsage().rss / totalMemory,
-    total: 1 - freemem() / totalMemory,
-  }
+  return [process.memoryUsage().rss / totalMemory, 1 - freemem() / totalMemory]
 }
 
 function getCpuUsage() {
@@ -57,17 +72,17 @@ function updateCpuUsage() {
   usage = newUsage
 }
 
-export interface Rate {
-  app: number
-  total: number
-}
+export type Rate = [app: number, total: number]
 
-export interface Status extends ActiveData {
+export interface BaseStatus {
   bots: BotStatus[]
   memory: Rate
   cpu: Rate
-  timestamp: number
   startTime: number
+}
+
+export interface Status extends BaseStatus, ActiveData {
+  timestamp: number
 }
 
 export interface BotStatus {
@@ -84,6 +99,11 @@ const callbacks: StatusCallback[] = []
 export function extend(callback: StatusCallback) {
   callbacks.push(callback)
 }
+
+extend(async function (status) {
+  if (!this.database) return
+  Object.assign(status, this.database.getActiveData())
+})
 
 const defaultConfig: Config = {
   path: '/status',
@@ -107,18 +127,17 @@ export function apply(ctx: Context, config: Config = {}) {
   const all = ctx.all()
   const { refresh, formatBot, format } = { ...defaultConfig, ...config }
 
-  all.before('command', ({ session }) => {
-    session.user['lastCall'] = new Date()
+  all.on('command', ({ session }: Argv<'lastCall'>) => {
+    session.user.lastCall = new Date()
   })
 
   all.before('send', (session) => {
     session.bot.counter[0] += 1
   })
 
-  let startTime: number
   let timer: NodeJS.Timeout
   ctx.on('connect', async () => {
-    startTime = Date.now()
+    ctx.app.startTime = Date.now()
 
     ctx.bots.forEach((bot) => {
       bot.counter = new Array(61).fill(0)
@@ -171,21 +190,9 @@ export function apply(ctx: Context, config: Config = {}) {
     })
 
   async function _getStatus() {
-    const botList = all.bots
-    const [data, bots] = await Promise.all([
-      all.database.getActiveData(),
-      Promise.all(botList.map(async (bot): Promise<BotStatus> => ({
-        platform: bot.platform,
-        selfId: bot.selfId,
-        username: bot.username,
-        code: await bot.getStatus(),
-        rate: bot.counter.slice(1).reduce((prev, curr) => prev + curr, 0),
-      }))),
-    ])
-    const memory = memoryRate()
-    const cpu = { app: appRate, total: usedRate }
-    const status: Status = { ...data, bots, memory, cpu, timestamp, startTime }
-    await Promise.all(callbacks.map(callback => callback.call(all, status, config)))
+    const status = await ctx.app.getStatus() as Status
+    await Promise.all(callbacks.map(callback => callback.call(ctx.app, status, config)))
+    status.timestamp = timestamp
     return status
   }
 
