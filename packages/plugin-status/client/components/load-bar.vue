@@ -50,7 +50,7 @@ export default {
       height: 100%;
       position: relative;
       float: left;
-      transition: 0.3s ease;
+      transition: 0.6s ease;
     };
     > *:hover {
       z-index: 10;

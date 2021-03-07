@@ -2,17 +2,14 @@ import { Context, Plugin } from 'koishi-core'
 import { assertProperty } from 'koishi-utils'
 import { resolve } from 'path'
 import { createServer, ViteDevServer } from 'vite'
+import WebSocket from 'ws'
 import vuePlugin from '@vitejs/plugin-vue'
-
-declare module 'koishi-core' {
-  interface App {
-    vite: ViteDevServer
-  }
-}
+import Profile from './profile'
 
 export interface Config {
+  path?: string
   port?: number
-  server?: string
+  selfUrl?: string
 }
 
 export interface PluginData extends Plugin.Meta {
@@ -24,19 +21,35 @@ export const name = 'webui'
 
 export function apply(ctx: Context, config: Config = {}) {
   const koishiPort = assertProperty(ctx.app.options, 'port')
-  const { port = 8080, server = `http://localhost:${koishiPort}` } = config
+  const { path = '/status', port = 8080, selfUrl = `ws://localhost:${koishiPort}` } = config
 
+  let vite: ViteDevServer
+  let wsServer: WebSocket.Server
   ctx.on('connect', async () => {
-    const vite = await createServer({
+    vite = await createServer({
       root: resolve(__dirname, '../client'),
       plugins: [vuePlugin()],
       define: {
-        KOISHI_SERVER: JSON.stringify(server),
+        KOISHI_ENDPOINT: JSON.stringify(selfUrl + path),
       },
     })
 
+    wsServer = new WebSocket.Server({
+      path,
+      server: ctx.app._httpServer,
+    })
+
+    wsServer.on('connection', async (socket) => {
+      if (!plugins) updatePlugins()
+      if (!profile) await updateProfile()
+      const data = JSON.stringify({
+        type: 'update',
+        body: { ...profile, plugins },
+      })
+      socket.send(data)
+    })
+
     await vite.listen(port)
-    ctx.app.vite = vite
   })
 
   function* getDeps(state: Plugin.State): Generator<string> {
@@ -58,20 +71,41 @@ export function apply(ctx: Context, config: Config = {}) {
     return [{ name, sideEffect, children, dependencies }]
   }
 
-  ctx.router.get('/plugins', (ctx) => {
-    ctx.set('access-control-allow-origin', '*')
-    ctx.body = traverse(null)
-  })
+  let plugins: PluginData[]
+  let profile: Profile
+
+  async function broadcast(callback: () => void | Promise<void>) {
+    if (!wsServer?.clients.size) return
+    await callback()
+    const data = JSON.stringify({
+      type: 'update',
+      body: { ...profile, plugins },
+    })
+    wsServer.clients.forEach((socket) => socket.send(data))
+  }
+
+  function updatePlugins() {
+    plugins = traverse(null)
+  }
+
+  async function updateProfile() {
+    profile = await Profile.from(ctx)
+  }
 
   ctx.on('registry', () => {
-    ctx.app.vite?.ws.send({
-      type: 'custom',
-      event: 'registry-update',
-      data: traverse(null),
-    })
+    broadcast(updatePlugins)
+  })
+
+  ctx.on('status/tick', () => {
+    broadcast(updateProfile)
   })
 
   ctx.before('disconnect', async () => {
-    await ctx.app.vite?.close()
+    await Promise.all([
+      vite?.close(),
+      new Promise<void>((resolve, reject) => {
+        wsServer.close((err) => err ? resolve() : reject(err))
+      }),
+    ])
   })
 }

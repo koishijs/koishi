@@ -27,17 +27,15 @@ interface Status {
 
 const status = ref<Status>(null)
 
-if (import.meta.hot) {
-  import.meta.hot.on('update', (data) => {
-    console.log('update', data)
-  })
-}
-
 onMounted(async () => {
-  const res = await fetch(KOISHI_SERVER + '/_')
-  const data = await res.json()
-  status.value = data
-  console.log('fetch', data)
+  const socket = new WebSocket(KOISHI_ENDPOINT)
+  socket.onmessage = (ev) => {
+    const data = JSON.parse(ev.data)
+    console.log('receive', data)
+    if (data.type === 'update') {
+      status.value = data.body
+    }
+  }
 })
 
 </script>
