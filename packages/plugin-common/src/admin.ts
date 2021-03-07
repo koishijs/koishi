@@ -1,4 +1,4 @@
-import { isInteger, difference, observe, Time, enumKeys, Random, template, deduplicate } from 'koishi-utils'
+import { difference, observe, Time, enumKeys, Random, template, deduplicate } from 'koishi-utils'
 import { Context, User, Channel, Command, Argv, Platform, Session } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
@@ -61,7 +61,7 @@ template.set('bind', {
 })
 
 template.set('usage', {
-  'one': '今日 {0} 功能的调用次数为：{1}',
+  'present': '今日 {0} 功能的调用次数为：{1}',
   'list': '今日各功能的调用次数为：',
   'none': '今日没有调用过消耗次数的功能。',
 })
@@ -288,11 +288,9 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
     }
   }, true)
 
-  ctx.command('user/authorize <value>', '权限信息', { authority: 4 })
+  ctx.command('user/authorize <value:posint>', '权限信息', { authority: 4 })
     .alias('auth')
-    .adminUser(async ({ session, target }, value) => {
-      const authority = Number(value)
-      if (!isInteger(authority) || authority < 0) return '参数错误。'
+    .adminUser(async ({ session, target }, authority) => {
       if (authority >= session.user.authority) return template('internal.low-authority')
       if (authority === target.authority) return template('admin.user-unchanged')
       await ctx.database.createUser(session.platform, target[session.platform], { authority })
@@ -307,25 +305,23 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
     .option('unset', '-S  删除标记', { authority: 4 })
     .adminUser(flagAction.bind(null, User.Flag))
 
-  ctx.command('user.usage [key] [value]', '调用次数信息', { authority: 1 })
+  ctx.command('user.usage [key] [value:posint]', '调用次数信息', { authority: 1 })
     .userFields(['usage'])
     .option('set', '-s  设置调用次数', { authority: 4 })
     .option('clear', '-c  清空调用次数', { authority: 4 })
-    .adminUser(({ target, options }, name, value) => {
+    .adminUser(({ target, options }, name, count) => {
       if (options.clear) {
         name ? delete target.usage[name] : target.usage = {}
         return
       }
 
       if (options.set) {
-        if (value === undefined) return template('internal.insufficient-arguments')
-        const count = +value
-        if (!isInteger(count) || count < 0) return '参数错误。'
+        if (!count) return template('internal.insufficient-arguments')
         target.usage[name] = count
         return
       }
 
-      if (name) return template('usage.one', name, target.usage[name] || 0)
+      if (name) return template('usage.present', name, target.usage[name] || 0)
       const output: string[] = []
       for (const name of Object.keys(target.usage).sort()) {
         if (name.startsWith('$')) continue
@@ -336,7 +332,7 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       return output.join('\n')
     })
 
-  ctx.command('user.timer [key] [value]', '定时器信息', { authority: 1 })
+  ctx.command('user.timer [key] [value:date]', '定时器信息', { authority: 1 })
     .userFields(['timers'])
     .option('set', '-s  设置定时器', { authority: 4 })
     .option('clear', '-c  清空定时器', { authority: 4 })
@@ -347,10 +343,8 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       }
 
       if (options.set) {
-        if (value === undefined) return template('internal.insufficient-arguments')
-        const timestamp = +Time.parseDate(value)
-        if (!timestamp) return '请输入合法的时间。'
-        target.timers[name] = timestamp
+        if (!value) return template('internal.insufficient-arguments')
+        target.timers[name] = +value
         return
       }
 

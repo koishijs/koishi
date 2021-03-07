@@ -1,4 +1,4 @@
-import { camelCase, segment, escapeRegExp, paramCase, template } from 'koishi-utils'
+import { camelCase, segment, escapeRegExp, paramCase, template, Time } from 'koishi-utils'
 import { format } from 'util'
 import { Platform } from './adapter'
 import { Command } from './command'
@@ -15,6 +15,8 @@ export interface Domain {
   user: string
   channel: string
   integer: number
+  posint: number
+  date: Date
 }
 
 export namespace Domain {
@@ -87,7 +89,19 @@ export namespace Domain {
   create('integer', (source) => {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value) return value
-    throw new Error(template('interval.invalid-integer'))
+    throw new Error(template('internal.invalid-integer'))
+  })
+
+  create('posint', (source) => {
+    const value = +source
+    if (value * 0 === 0 && Math.floor(value) === value && value > 0) return value
+    throw new Error(template('internal.invalid-posint'))
+  })
+
+  create('date', (source) => {
+    const timestamp = Time.parseDate(source)
+    if (+timestamp) return timestamp
+    throw new Error(template('internal.invalid-date'))
   })
 
   create('user', (source, session) => {
