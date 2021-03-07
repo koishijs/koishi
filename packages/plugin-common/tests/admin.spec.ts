@@ -9,6 +9,7 @@ const session = app.session('123', '321')
 app.plugin(common)
 app.command('foo', { maxUsage: 10 }).action(() => 'bar')
 app.command('bar', { minInterval: 1000 }).action(() => 'foo')
+app.command('baz').action(() => 'zab')
 
 declare module 'koishi-core' {
   namespace User {
@@ -37,10 +38,10 @@ before(async () => {
 
 describe('Admin Commands', () => {
   it('user/authorize', async () => {
-    await session.shouldReply('authorize -t nan', '选项 target 输入无效，请指定正确的目标。')
+    await session.shouldReply('authorize -t nan', '选项 target 输入无效，请指定正确的用户。')
     await session.shouldReply('authorize -t @321', '未找到指定的用户。')
     await session.shouldReply('authorize -t @789', '权限不足。')
-    await session.shouldReply('authorize -t @456 -1', '参数错误。')
+    await session.shouldReply('authorize -t @456 1.5', '参数 value 输入无效，请提供一个正整数。')
     await session.shouldReply('authorize -t @456 3', '用户数据未改动。')
     await session.shouldReply('authorize -t @456 4', '权限不足。')
     await session.shouldReply('authorize -t @456 2', '用户数据已修改。')
@@ -62,8 +63,8 @@ describe('Admin Commands', () => {
     await session.shouldReply('user.usage', '今日各功能的调用次数为：\nfoo：1')
     await session.shouldReply('user.usage -c foo', '用户数据已修改。')
     await session.shouldReply('user.usage', '今日没有调用过消耗次数的功能。')
-    await session.shouldReply('user.usage -s bar', '参数不足。')
-    await session.shouldReply('user.usage -s bar nan', '参数错误。')
+    await session.shouldReply('user.usage -s bar', '缺少参数，输入帮助以查看用法。')
+    await session.shouldReply('user.usage -s bar nan', '参数 value 输入无效，请提供一个正整数。')
     await session.shouldReply('user.usage -s bar 2', '用户数据已修改。')
     await session.shouldReply('user.usage bar', '今日 bar 功能的调用次数为：2')
     await session.shouldReply('user.usage baz', '今日 baz 功能的调用次数为：0')
@@ -77,8 +78,8 @@ describe('Admin Commands', () => {
     await session.shouldReply('user.timer', '各定时器的生效时间为：\nbar：剩余 1 秒')
     await session.shouldReply('user.timer -c bar', '用户数据已修改。')
     await session.shouldReply('user.timer', '当前没有生效的定时器。')
-    await session.shouldReply('user.timer -s foo', '参数不足。')
-    await session.shouldReply('user.timer -s foo nan', '请输入合法的时间。')
+    await session.shouldReply('user.timer -s foo', '缺少参数，输入帮助以查看用法。')
+    await session.shouldReply('user.timer -s foo nan', '参数 value 输入无效，请输入合法的时间。')
     await session.shouldReply('user.timer -s foo 2min', '用户数据已修改。')
     await session.shouldReply('user.timer foo', '定时器 foo 的生效时间为：剩余 2 分钟')
     await session.shouldReply('user.timer fox', '定时器 fox 当前并未生效。')
@@ -88,10 +89,21 @@ describe('Admin Commands', () => {
 
   it('channel/assign', async () => {
     await app.session('123').shouldReply('assign', '当前不在群组上下文中，请使用 -t 参数指定目标频道。')
-    await session.shouldReply('assign -t nan', '选项 target 输入无效，请指定正确的目标。')
+    await session.shouldReply('assign -t nan', '选项 target 输入无效，请指定正确的频道。')
     await session.shouldReply('assign -t #123', '未找到指定的频道。')
     await session.shouldReply('assign -t #321', '频道数据未改动。')
-    await session.shouldReply('assign -t #321 nan', '参数 bot 输入无效，请指定正确的目标。')
+    await session.shouldReply('assign -t #321 nan', '参数 bot 输入无效，请指定正确的用户。')
+  })
+
+  it('channel/switch', async () => {
+    await session.shouldReply('switch', '当前没有禁用功能。')
+    await session.shouldReply('baz', 'zab')
+    await session.shouldReply('switch baz', '频道数据已修改。')
+    await session.shouldReply('switch', '当前禁用的功能有：baz')
+    await session.shouldNotReply('baz')
+    await session.shouldReply('switch baz', '频道数据已修改。')
+    await session.shouldReply('baz', 'zab')
+    await session.shouldReply('switch assign', '您无权修改 assign 功能。')
   })
 
   it('channel.flag', async () => {
