@@ -356,11 +356,7 @@ export class Context {
   }
 
   setInterval(callback: (...args: any[]) => void, ms: number, ...args: any[]) {
-    const dispose = this.createTimerDispose(setInterval(() => {
-      dispose()
-      callback()
-    }, ms, ...args))
-    return dispose
+    return this.createTimerDispose(setInterval(callback, ms, ...args))
   }
 
   command<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
