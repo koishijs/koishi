@@ -14,6 +14,7 @@ export interface Domain {
   text: string
   user: string
   channel: string
+  integer: number
 }
 
 export namespace Domain {
@@ -75,8 +76,19 @@ export namespace Domain {
   }
 
   create('string', source => source)
-  create('number', source => +source)
   create('text', source => source)
+
+  create('number', (source) => {
+    const value = +source
+    if (value * 0 === 0) return value
+    throw new Error(template('internal.invalid-number'))
+  })
+
+  create('integer', (source) => {
+    const value = +source
+    if (value * 0 === 0 && Math.floor(value) === value) return value
+    throw new Error(template('interval.invalid-integer'))
+  })
 
   create('user', (source, session) => {
     if (source.startsWith('@')) {
@@ -88,7 +100,7 @@ export namespace Domain {
     if (code && code.type === 'at') {
       return `${session.platform}:${code.data.id}`
     }
-    throw new Error('请指定正确的目标。')
+    throw new Error(template('internal.invalid-user'))
   })
 
   create('channel', (source, session) => {
@@ -101,7 +113,7 @@ export namespace Domain {
     if (code && code.type === 'sharp') {
       return `${session.platform}:${code.data.id}`
     }
-    throw new Error('请指定正确的目标。')
+    throw new Error(template('internal.invalid-channel'))
   })
 
   const BRACKET_REGEXP = /<[^>]+>|\[[^\]]+\]/g

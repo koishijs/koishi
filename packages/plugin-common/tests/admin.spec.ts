@@ -38,7 +38,7 @@ before(async () => {
 
 describe('Admin Commands', () => {
   it('user/authorize', async () => {
-    await session.shouldReply('authorize -t nan', '选项 target 输入无效，请指定正确的目标。')
+    await session.shouldReply('authorize -t nan', '选项 target 输入无效，请指定正确的用户。')
     await session.shouldReply('authorize -t @321', '未找到指定的用户。')
     await session.shouldReply('authorize -t @789', '权限不足。')
     await session.shouldReply('authorize -t @456 -1', '参数错误。')
@@ -89,10 +89,10 @@ describe('Admin Commands', () => {
 
   it('channel/assign', async () => {
     await app.session('123').shouldReply('assign', '当前不在群组上下文中，请使用 -t 参数指定目标频道。')
-    await session.shouldReply('assign -t nan', '选项 target 输入无效，请指定正确的目标。')
+    await session.shouldReply('assign -t nan', '选项 target 输入无效，请指定正确的频道。')
     await session.shouldReply('assign -t #123', '未找到指定的频道。')
     await session.shouldReply('assign -t #321', '频道数据未改动。')
-    await session.shouldReply('assign -t #321 nan', '参数 bot 输入无效，请指定正确的目标。')
+    await session.shouldReply('assign -t #321 nan', '参数 bot 输入无效，请指定正确的用户。')
   })
 
   it('channel/switch', async () => {
