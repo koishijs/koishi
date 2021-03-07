@@ -19,21 +19,23 @@ export interface Domain {
 export namespace Domain {
   type Builtin = keyof Domain
 
-  type GetDomain<T extends string, F> = T extends Builtin ? Domain[T] : F
-
-  type GetParamDomain<S extends string, X extends string, F>
-    = S extends `${any}${X}${infer T}` ? GetDomain<T, F> : F
+  type ParamType<S extends string, F>
+    = S extends `${any}:${infer T}` ? T extends Builtin ? Domain[T] : F : F
 
   type Replace<S extends string, X extends string, Y extends string>
     = S extends `${infer L}${X}${infer R}` ? `${L}${Y}${Replace<R, X, Y>}` : S
 
-  type Extract<S extends string, X extends string, Y extends string, F>
-    = S extends `${infer L}${Y}${infer R}` ? [GetParamDomain<L, X, F>, ...Extract<R, X, Y, F>] : []
+  type ExtractAll<S extends string, F>
+    = S extends `${infer L}]${infer R}` ? [ParamType<L, F>, ...ExtractAll<R, F>] : []
 
-  type ExtractFirst<S extends string, X extends string, Y extends string, F>
-    = S extends `${infer L}${Y}${any}` ? GetParamDomain<L, X, F> : boolean
+  type ExtractFirst<S extends string, F>
+    = S extends `${infer L}]${any}` ? ParamType<L, F> : boolean
 
-  export type ArgumentType<S extends string> = [...Extract<Replace<S, '>', ']'>, ':', ']', string>, ...string[]]
+  type ExtractSpread<S extends string> = S extends `${infer L}...${infer R}`
+    ? [...ExtractAll<L, string>, ...ExtractFirst<R, string>[]]
+    : [...ExtractAll<S, string>, ...string[]]
+
+  export type ArgumentType<S extends string> = ExtractSpread<Replace<S, '>', ']'>>
 
   // I don't know why I should write like this but
   // [T] extends [xxx] just works, so don't touch it
@@ -41,7 +43,7 @@ export namespace Domain {
     = [T] extends [Builtin] ? Domain[T]
     : [T] extends [RegExp] ? string
     : T extends (source: string) => infer R ? R
-    : ExtractFirst<Replace<S, '>', ']'>, ':', ']', any>
+    : ExtractFirst<Replace<S, '>', ']'>, any>
 
   export type Type = Builtin | RegExp | Transform<any>
 
