@@ -1,5 +1,5 @@
 import MysqlDatabase, { Config } from './database'
-import { User, Channel, extendDatabase, Context } from 'koishi-core'
+import { User, Channel, Database, Context } from 'koishi-core'
 import { difference } from 'koishi-utils'
 
 export * from './database'
@@ -9,9 +9,15 @@ declare module 'koishi-core' {
   interface Database {
     mysql: MysqlDatabase
   }
+
+  namespace Database {
+    interface Statics {
+      'koishi-plugin-mysql': typeof MysqlDatabase
+    }
+  }
 }
 
-extendDatabase(MysqlDatabase, {
+Database.extend(MysqlDatabase, {
   async getUser(type, id, _fields) {
     const fields = _fields ? this.inferFields('user', _fields) : User.fields
     if (fields && !fields.length) return { [type]: id } as any
@@ -105,7 +111,7 @@ extendDatabase(MysqlDatabase, {
   },
 })
 
-extendDatabase(MysqlDatabase, ({ tables, Domain }) => {
+Database.extend(MysqlDatabase, ({ tables, Domain }) => {
   tables.user = Object.assign<any, any>([
     'primary key (`id`) using btree',
     'unique index `name` (`name`) using btree',

@@ -1,0 +1,23 @@
+$text: #303133;
+$text2: #606266;
+$text3: #909399;
+$border1: #dcdfe6;
+$border2: #ebe7ed;
+$border3: #ebeef5;
+$border4: #f2f6fc;
+$default: #409eff;
+$success: #67c23a;
+$error: #F56C6C;
+$warning: #E6A23C;
+
+.el-card {
+  max-width: 960px;
+  margin: 0 auto;
+  border-radius: 1rem;
+
+  .el-card__header {
+    font-size: 1.25rem;
+    font-weight: bolder;
+    padding: 1rem 1.5rem;
+  }
+}

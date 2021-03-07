@@ -176,6 +176,7 @@ Command.prototype.adminChannel = function (this: Command, callback) {
 
 export interface AdminConfig {
   admin?: boolean
+  generateToken?: () => string
 }
 
 export default function apply(ctx: Context, config: AdminConfig = {}) {
@@ -227,8 +228,10 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
   type TokenData = [platform: Platform, id: string, pending: number]
   const tokens: Record<string, TokenData> = {}
 
-  function generateToken(session: Session, pending: number) {
-    const token = 'koishi/' + Random.uuid()
+  const { generateToken = () => 'koishi/' + Random.uuid() } = config
+
+  function generate(session: Session, pending: number) {
+    const token = generateToken()
     tokens[token] = [session.platform, session.userId, pending]
     setTimeout(() => delete tokens[token], 5 * Time.minute)
     return token
@@ -236,7 +239,7 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
 
   ctx.command('user/bind', '绑定到账号', { authority: 0 })
     .action(({ session }) => {
-      const token = generateToken(session, +(session.subtype === 'group'))
+      const token = generate(session, +(session.subtype === 'group'))
       return template('bind.generated-1', token)
     })
 
@@ -256,7 +259,7 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       if (user[data[0]]) return session.send(template('bind.failed'))
       delete tokens[session.content]
       if (data[2]) {
-        const token = generateToken(session, -1)
+        const token = generate(session, -1)
         return session.send(template('bind.generated-2', token))
       } else {
         user[data[0] as any] = data[1]

@@ -102,25 +102,34 @@ export interface Database {
   removeChannel(type: Platform, id: string): Promise<void>
 }
 
-type DatabaseExtensionMethods<I> = {
-  [K in keyof Database]?: Database[K] extends (...args: infer R) => infer S ? (this: I & Database, ...args: R) => S : never
+type Methods<S, T> = {
+  [K in keyof S]?: S[K] extends (...args: infer R) => infer S ? (this: T, ...args: R) => S : never
 }
 
-type DatabaseExtension<T> =
-  | ((Database: T) => void)
-  | DatabaseExtensionMethods<T extends new (...args: any[]) => infer I ? I : never>
+export namespace Database {
+  export interface Statics {}
 
-export function extendDatabase<T extends {}>(module: string | T, extension: DatabaseExtension<T>) {
-  let Database: any
-  try {
-    Database = typeof module === 'string' ? require(module).default : module
-  } catch (error) {
-    return
-  }
+  type Constructor<T> = new (...args: any[]) => T
+  type ExtensionMethods<T> = Methods<Database, T extends Constructor<infer I> ? I : never>
+  type Extension<T> = ((Database: T) => void) | ExtensionMethods<T>
 
-  if (typeof extension === 'function') {
-    extension(Database)
-  } else {
-    Object.assign(Database.prototype, extension)
+  export function extend<K extends keyof Statics>(module: K, extension: Extension<Statics[K]>): void
+  export function extend<T extends Constructor<unknown>>(module: T, extension: Extension<T>): void
+  export function extend(module: any, extension: any) {
+    let Database: any
+    try {
+      Database = typeof module === 'string' ? require(module).default : module
+    } catch (error) {
+      return
+    }
+
+    if (typeof extension === 'function') {
+      extension(Database)
+    } else {
+      Object.assign(Database.prototype, extension)
+    }
   }
 }
+
+/** @deprecated use `Database.extend()` instead */
+export const extendDatabase = Database.extend

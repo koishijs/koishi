@@ -3,7 +3,7 @@ import { sleep } from 'koishi-utils'
 
 describe('Session API', () => {
   describe('Command Suggestions', () => {
-    const app = new App()
+    const app = new App({ prefix: '/' })
     const session1 = app.session('456')
     const session2 = app.session('789', '987')
 
@@ -26,13 +26,13 @@ describe('Session API', () => {
 
     it('apply suggestions 1', async () => {
       await session1.shouldReply('fo bar', '您要找的是不是“foo”？发送空行或句号以使用推测的指令。')
-      await session2.shouldReply('fooo -t bar', 'fooobar')
+      await session2.shouldReply('/fooo -t bar', 'fooobar')
       await session1.shouldReply(' ', 'foobar')
       await session1.shouldNotReply(' ')
     })
 
     it('apply suggestions 2', async () => {
-      await session2.shouldReply('foooo -t bar', '您要找的是不是“fooo”？发送空行或句号以使用推测的指令。')
+      await session2.shouldReply('/foooo -t bar', '您要找的是不是“fooo”？发送空行或句号以使用推测的指令。')
       await session1.shouldReply('foo bar', 'foobar')
       await session2.shouldReply(' ', 'fooobar')
       await session2.shouldNotReply(' ')
@@ -45,8 +45,8 @@ describe('Session API', () => {
     })
 
     it('ignore suggestions 2', async () => {
-      await session2.shouldReply('fo bar', '您要找的是不是“foo”？发送空行或句号以使用推测的指令。')
-      await session2.shouldReply('foo bar', 'foobar')
+      await session2.shouldReply('/fo bar', '您要找的是不是“foo”？发送空行或句号以使用推测的指令。')
+      await session2.shouldReply('/foo bar', 'foobar')
       await session2.shouldNotReply(' ')
     })
 

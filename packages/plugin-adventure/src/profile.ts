@@ -27,6 +27,7 @@ namespace Profile {
     ctx.command('adventure/profile', '用户信息', { maxUsage: 100, usageName: 'show' })
       .alias('info')
       .shortcut('我的信息')
+      .shortcut('查看信息')
       .userFields(['name', 'timers', 'authority'])
       .userFields(fields)
       .action(async ({ session }) => {

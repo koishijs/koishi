@@ -1,7 +1,7 @@
 import { Context, User } from 'koishi-core'
 import { isInteger } from 'koishi-utils'
 import { Show } from './utils'
-import Achievement from './achievement'
+import Achievement from './achv'
 import Affinity from './affinity'
 import Buff from './buff'
 import Event from './event'

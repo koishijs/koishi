@@ -1,4 +1,4 @@
-import { extendDatabase, Context } from 'koishi-core'
+import { Database, Context } from 'koishi-core'
 import { defineProperty, Observed, clone, intersection } from 'koishi-utils'
 import { Dialogue, DialogueTest, equal } from 'koishi-plugin-teach'
 import MemoryDatabase from 'koishi-test-utils'
@@ -9,7 +9,7 @@ declare module 'koishi-core' {
   }
 }
 
-extendDatabase(MemoryDatabase, {
+Database.extend(MemoryDatabase, {
   async getDialoguesById(ids) {
     if (!ids.length) return []
     const table = this.$table('dialogue')

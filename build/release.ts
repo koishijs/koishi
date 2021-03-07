@@ -4,30 +4,34 @@ const headerMap = {
   feat: 'Features',
   fix: 'Bug Fixes',
   dep: 'Dependencies',
+  '': 'Other Changes',
 }
 
 const prefixes = Object.keys(headerMap)
 const prefixRegExp = new RegExp(`^(${prefixes.join('|')})(?:\\((\\S+)\\))?: (.+)$`)
 
-export function draft(base: string) {
+export function draft(base: string, bumpMap: Record<string, string> = {}) {
   const updates = {}
   const commits = spawnSync(['git', 'log', `${base}..HEAD`, '--format=%H %s']).split(/\r?\n/).reverse()
   for (const commit of commits) {
     const hash = commit.slice(0, 40)
-    const details = prefixRegExp.exec(commit.slice(41))
-    if (!details) continue
-    let message = details[3]
-    if (details[2]) message = `**${details[2]}:** ${message}`
+    const message = commit.slice(41)
+    // skip merge commits
+    if (message.startsWith('Merge')) continue
+
+    const details = prefixRegExp.exec(message) || ['', '', '', message]
+    let body = details[3]
+    if (details[2]) body = `**${details[2]}:** ${body}`
     if (!updates[details[1]]) updates[details[1]] = ''
-    updates[details[1]] += `- ${message} (${hash})\n`
+    updates[details[1]] += `- ${body} (${hash})\n`
   }
 
-  let body = ''
+  let output = Object.entries(bumpMap).map(([name, version]) => `- ${name}@${version}`).join('\n') + '\n'
   for (const type in headerMap) {
     if (!updates[type]) continue
-    body += `## ${headerMap[type]}\n\n${updates[type]}\n`
+    output += `\n## ${headerMap[type]}\n\n${updates[type]}`
   }
-  return body
+  return output
 }
 
 if (require.main === module) {

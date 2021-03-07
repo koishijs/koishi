@@ -1,8 +1,9 @@
 <template>
-  <h2>All plugins:</h2>
-  <ul>
-    <plugin-view :data="data" v-for="(data, index) in plugins" :key="index"/>
-  </ul>
+  <el-card header="插件">
+    <ul class="plugin-list">
+      <plugin-view :data="data" v-for="(data, index) in plugins" :key="index"/>
+    </ul>
+  </el-card>
 </template>
 
 <script setup lang="ts">

@@ -15,10 +15,9 @@ export interface Config {
   server?: string
 }
 
-export interface PluginData {
-  name: string
-  sideEffect: boolean
+export interface PluginData extends Plugin.Meta {
   children: PluginData[]
+  dependencies: string[]
 }
 
 export const name = 'webui'
@@ -40,12 +39,23 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.app.vite = vite
   })
 
+  function* getDeps(state: Plugin.State): Generator<string> {
+    for (const dep of state.dependencies) {
+      if (dep.name) {
+        yield dep.name
+      } else {
+        yield* getDeps(dep)
+      }
+    }
+  }
+
   function traverse(plugin: Plugin): PluginData[] {
     const state = ctx.app.registry.get(plugin)
     const children = state.children.flatMap(traverse, 1)
-    if (typeof plugin === 'function' || !plugin?.name) return children
-    const { name } = plugin, { sideEffect } = state
-    return [{ name, sideEffect, children }]
+    const { name, sideEffect } = state
+    if (!name) return children
+    const dependencies = [...new Set(getDeps(state))]
+    return [{ name, sideEffect, children, dependencies }]
   }
 
   ctx.router.get('/plugins', (ctx) => {

@@ -43,6 +43,7 @@ describe('Admin Commands', () => {
     await session.shouldReply('authorize -t @456 -1', '参数错误。')
     await session.shouldReply('authorize -t @456 3', '用户数据未改动。')
     await session.shouldReply('authorize -t @456 4', '权限不足。')
+    await session.shouldReply('authorize -t @456 2', '用户数据已修改。')
   })
 
   it('user.flag', async () => {

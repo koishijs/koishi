@@ -1,6 +1,6 @@
-import MysqlDatabase from 'koishi-plugin-mysql/dist/database'
-import MongoDatabase from 'koishi-plugin-mongo/dist/database'
-import { Channel, extendDatabase } from 'koishi-core'
+import {} from 'koishi-plugin-mysql'
+import {} from 'koishi-plugin-mongo'
+import { Channel, Database } from 'koishi-core'
 import { OkPacket } from 'mysql'
 
 declare module 'koishi-core' {
@@ -47,7 +47,7 @@ const subscribeKeys = [
   'twitCasting', 'twitCastingStatus',
 ] as SubscribeField[]
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
+Database.extend('koishi-plugin-mysql', {
   async getSubscribes(ids, keys = subscribeKeys) {
     if (!ids) return this.query('SELECT * FROM `subscribe`')
     if (!ids.length) return []
@@ -75,7 +75,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', {
   },
 })
 
-extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables, Domain }) => {
+Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
   tables.channel.subscribe = new Domain.Json()
   tables.subscribe = Object.assign<any, any>([], {
     id: '`id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT',
@@ -83,7 +83,7 @@ extendDatabase<typeof MysqlDatabase>('koishi-plugin-mysql', ({ tables, Domain })
   })
 })
 
-extendDatabase<typeof MongoDatabase>('koishi-plugin-mongo', {
+Database.extend('koishi-plugin-mongo', {
   async getSubscribes(ids, keys = subscribeKeys) {
     if (!ids) return this.db.collection('subscribe').find().toArray()
     if (!ids.length) return []

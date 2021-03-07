@@ -202,7 +202,7 @@ describe('Context API', () => {
 
       function getHookSnapshot() {
         const lists: any[][] = Object.values(app._hooks)
-        lists.unshift(app['disposables'])
+        lists.unshift(app.state.disposables)
         return lists.map(list => list.length)
       }
 
