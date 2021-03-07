@@ -1,7 +1,6 @@
 import { Session, segment, MessageInfo, AuthorInfo, GroupInfo, UserInfo, ChannelInfo } from 'koishi-core'
 import { DiscordBot } from './bot'
 import * as DC from './types'
-import { DiscordChannel, PartialGuild } from './types'
 
 export const adaptUser = (user: DC.DiscordUser): UserInfo => ({
   userId: user.id,
@@ -10,14 +9,14 @@ export const adaptUser = (user: DC.DiscordUser): UserInfo => ({
   discriminator: user.discriminator,
 })
 
-export function adaptGroup(data: PartialGuild): GroupInfo {
+export function adaptGroup(data: DC.PartialGuild): GroupInfo {
   return {
     groupId: data.id,
     groupName: data.name,
   }
 }
 
-export function adaptChannel(data: DiscordChannel): ChannelInfo {
+export function adaptChannel(data: DC.DiscordChannel): ChannelInfo {
   return {
     channelId: data.id,
     channelName: data.name,
@@ -54,18 +53,18 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
         return segment('image', {
           url: v.url,
           proxy_url: v.proxy_url,
-          file: v.filename
+          file: v.filename,
         })
       } else if (v.height && v.width && v.content_type?.startsWith('video/')) {
         return segment('video', {
           url: v.url,
           proxy_url: v.proxy_url,
-          file: v.filename
+          file: v.filename,
         })
       } else {
         return segment('file', {
           url: v.url,
-          file: v.filename
+          file: v.filename,
         })
       }
     }).join('')

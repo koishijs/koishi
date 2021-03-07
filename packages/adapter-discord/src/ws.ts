@@ -2,7 +2,6 @@ import { App, Adapter, Logger } from 'koishi-core'
 import { DiscordBot } from './bot'
 import WebSocket from 'ws'
 import { Opcode, Payload } from './types'
-
 import { adaptSession } from './utils'
 
 const logger = new Logger('discord')
