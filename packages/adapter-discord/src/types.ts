@@ -100,6 +100,8 @@ export interface DiscordMessage {
   attachments: Attachment[]
   embeds: Embed[]
   message_reference?: MessageReference
+  mention_roles: string
+  mentions: User[]
 }
 
 export interface MessageReference {
@@ -206,4 +208,19 @@ export interface DiscordChannel {
   type: number
   guild_id?: string
   name?: string
+}
+
+export interface Role {
+  id: string
+  name: string
+  color: number;
+  hoist: boolean
+  position: number
+  permissions: string
+  managed: boolean
+  meantionable: boolean
+  tags?: {
+    bot_id: string
+    integration_id: string
+  }
 }

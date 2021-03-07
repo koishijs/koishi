@@ -1,4 +1,4 @@
-import { Session, segment, MessageInfo, AuthorInfo, GroupInfo, UserInfo, ChannelInfo } from 'koishi-core'
+import { AuthorInfo, ChannelInfo, GroupInfo, MessageInfo, segment, Session, UserInfo } from 'koishi-core'
 import { DiscordBot } from './bot'
 import * as DC from './types'
 
@@ -28,7 +28,7 @@ export const adaptAuthor = (author: DC.Author): AuthorInfo => ({
   nickname: author.username,
 })
 
-export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: MessageInfo = {}) {
+export async function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: MessageInfo = {}) {
   if (meta.author) {
     session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id
@@ -37,8 +37,13 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
   session.content = ''
   if (meta.content) {
     session.content = meta.content
-      .replace(/<@!(.+?)>/, (_, id) => segment.at(id))
-      .replace(/<@&(.+?)>/, (_, id) => segment.at(id))
+      .replace(/<@[!&](.+?)>/, (_, id) => {
+        if (meta.mention_roles.includes(id)) {
+          return segment('at', { role: id })
+        } else {
+          return segment('at', { id })
+        }
+      })
       .replace(/<:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name }))
       .replace(/<a:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name, animated: true }))
       .replace(/@everyone/, () => segment('at', { type: 'all' }))
@@ -91,7 +96,7 @@ export function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: 
 }
 
 async function adaptMessageSession(bot: DiscordBot, meta: DC.DiscordMessage, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
-  adaptMessage(bot, meta, session)
+  await adaptMessage(bot, meta, session)
   session.messageId = meta.id
   session.timestamp = new Date(meta.timestamp).valueOf() || new Date().valueOf()
   session.subtype = meta.guild_id ? 'group' : 'private'
@@ -105,10 +110,10 @@ async function adaptMessageSession(bot: DiscordBot, meta: DC.DiscordMessage, ses
 }
 
 async function adaptMessageCreate(bot: DiscordBot, meta: DC.DiscordMessage, session: Partial<Session.Payload<Session.MessageAction>>) {
-  await adaptMessageSession(bot, meta, session)
   session.groupId = meta.guild_id
   session.subtype = meta.guild_id ? 'group' : 'private'
   session.channelId = meta.channel_id
+  await adaptMessageSession(bot, meta, session)
 }
 
 async function adaptMessageModify(bot: DiscordBot, meta: DC.DiscordMessage, session: Partial<Session.Payload<Session.MessageAction>>) {
