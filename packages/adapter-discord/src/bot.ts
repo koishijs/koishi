@@ -5,10 +5,10 @@ import { Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
 import { DiscordChannel, DiscordMessage, DiscordUser, ExecuteWebhookBody, GuildMember, PartialGuild } from './types'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
-import { createReadStream } from 'fs'
+import { readFileSync } from 'fs'
 import { segment } from 'koishi-utils'
 import FormData from 'form-data'
-import merge from 'lodash.merge'
+import FileType from 'file-type'
 
 export class DiscordBot extends Bot<'discord'> {
   _d = 0
@@ -38,9 +38,10 @@ export class DiscordBot extends Bot<'discord'> {
     return adaptUser(data)
   }
 
-  private async sendEmbedMessage(requestUrl: string, filePath: string, payload_json: Record<string, any> = {}) {
+  private async sendEmbedMessage(requestUrl: string, fileBuffer: Buffer, payload_json: Record<string, any> = {}, fileType?: string) {
     const fd = new FormData()
-    fd.append('file', createReadStream(filePath))
+    const type = await FileType.fromBuffer(fileBuffer)
+    fd.append('file', fileBuffer, 'file.' + type.ext)
     fd.append('payload_json', JSON.stringify(payload_json))
     const headers: Record<string, any> = {
       Authorization: `Bot ${this.token}`,
@@ -107,18 +108,16 @@ export class DiscordBot extends Bot<'discord'> {
         }
         if (type === 'image' || type === 'video') {
           if (data.url.startsWith('http://') || data.url.startsWith('https://')) {
-            const sendData = isWebhook ? {
-              embeds: [{ [type]: data }],
-            } : {
-              embed: { [type]: data },
-            }
-            const r = await this.request('POST', requestUrl, merge({},
-              sendData,
-              addition,
-            ))
+            const a = await axios({
+              url: data.url,
+              responseType: 'arraybuffer',
+            })
+            const r = await this.sendEmbedMessage(requestUrl, a.data, {
+              ...addition,
+            })
             sentMessageId = r.id
           } else {
-            const r = await this.sendEmbedMessage(requestUrl, data.url, {
+            const r = await this.sendEmbedMessage(requestUrl, readFileSync(data.url), {
               ...addition,
             })
             sentMessageId = r.id
