@@ -69,12 +69,12 @@ describe('Help Command', () => {
 
   it('command options', async () => {
     const bar = app
-      .command('bar', 'DESCRIPTION', { maxUsage: 2, hideOptions: true })
+      .command('bar <arg:number>', 'DESCRIPTION', { maxUsage: 2, hideOptions: true })
       .option('opt1', '选项1', { authority: 2 })
       .option('opt2', '选项2', { notUsage: true })
       .option('opt3', '选项3', { hidden: true })
 
-    await session.shouldReply('help bar', message = 'bar\nDESCRIPTION\n已调用次数：0/2。')
+    await session.shouldReply('help bar', message = 'bar <arg>\nDESCRIPTION\n已调用次数：0/2。')
 
     bar.config.hideOptions = false
 
