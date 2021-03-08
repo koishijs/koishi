@@ -78,21 +78,16 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, ses
     }).join('')
   }
   for (const embed of meta.embeds) {
-    switch (embed.type) {
-      case 'video':
-        session.content += segment('video', { url: embed.url, proxy_url: embed.video.proxy_url })
-        break
-      case 'image':
-        session.content += segment('image', { url: embed.thumbnail.url, proxy_url: embed.thumbnail.proxy_url })
-        break
-      case 'gifv':
-        session.content += segment('video', { url: embed.video.url })
-        break
-      case 'link':
-        session.content += segment('share', { url: embed.url, title: embed?.title, content: embed?.description })
-        break
-      case 'rich':
-        session.content += segment('share', { url: embed.url, title: embed?.title, content: embed?.description })
+    // not using embed types
+    // https://discord.com/developers/docs/resources/channel#embed-object-embed-types
+    if (embed.image) {
+      session.content += segment('image', { url: embed.image.url, proxy_url: embed.image.proxy_url })
+    }
+    if (embed.thumbnail) {
+      session.content += segment('image', { url: embed.thumbnail.url, proxy_url: embed.thumbnail.proxy_url })
+    }
+    if (embed.video) {
+      session.content += segment('video', { url: embed.video.url, proxy_url: embed.video.proxy_url })
     }
   }
   return session
