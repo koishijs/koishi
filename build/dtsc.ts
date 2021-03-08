@@ -1,6 +1,7 @@
 /* eslint-disable no-cond-assign */
 
 import { spawnAsync, cwd } from './utils'
+import { EOL } from 'os'
 import { resolve } from 'path'
 import fs from 'fs-extra'
 import globby from 'globby'
@@ -18,8 +19,7 @@ async function readJson(path: string) {
 
 async function bundle(path: string) {
   const fullpath = resolve(cwd, 'packages', path)
-  const srcpath = fullpath + '/src'
-
+  const srcpath = fullpath.replace(/\\/g, '/') + '/src'
   const [files, code, config] = await Promise.all([
     globby(srcpath),
     spawnAsync(['tsc', '-b', 'packages/' + path, ...tsArgs]),
@@ -36,12 +36,12 @@ async function bundle(path: string) {
 
   let prolog = '', cap: RegExpExecArray
   let content = await fs.readFile(entry, 'utf8')
-  content = content.split('\n').filter((line) => {
+  content = content.split(EOL).filter((line) => {
     if (cap = /^ {4}import \* as (.+) from ["'](.+)["'];$/.exec(line)) {
       if (modules.includes(cap[2])) {
         namespaceMap[cap[2]] = cap[1]
       } else {
-        prolog += line.trimStart() + '\n'
+        prolog += line.trimStart() + EOL
       }
     } else if (cap = /^ {4}import +(\S*)(?:, *)?(?:\{(.+)\})? from ["'](.+)["'];$/.exec(line)) {
       if (!modules.includes(cap[3])) {
@@ -58,11 +58,11 @@ async function bundle(path: string) {
         })
       }
     } else if (line.startsWith('///')) {
-      prolog += line + '\n'
+      prolog += line + EOL
     } else {
       return true
     }
-  }).join('\n')
+  }).join(EOL)
 
   Object.entries(importMap).forEach(([name, map]) => {
     const output: string[] = []
@@ -74,18 +74,18 @@ async function bundle(path: string) {
         return `${left} as ${right}`
       }).join(', ') + ' }')
     }
-    prolog += `import ${output.join(', ')} from '${name}';\n`
+    prolog += `import ${output.join(', ')} from '${name}';${EOL}`
   })
 
   await fs.writeFile(resolve(fullpath, 'dist/index.d.ts'), prolog + content
     .replace(new RegExp('import\\(' + moduleRE + '\\)\\.', 'g'), '')
-    .replace(new RegExp('\n {4}export .+ from ' + moduleRE + ';', 'g'), '')
-    .replace(/^declare module ["'](.+)["'] \{\n/gm, (_, $1) => {
+    .replace(new RegExp('\r?\n {4}export .+ from ' + moduleRE + ';', 'g'), '')
+    .replace(/^declare module ["'](.+)["'] \{\r?\n/gm, (_, $1) => {
       const identifier = namespaceMap[$1]
       if (identifier) return `declare namespace ${identifier} {`
       return ''
     })
-    .replace(/\n}/g, '')
+    .replace(/\r?\n}/g, '')
     .replace(/^ {4}/gm, ''))
 }
 
