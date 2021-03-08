@@ -176,6 +176,7 @@ export class DiscordBot extends Bot<'discord'> {
       timestamp: new Date(msg.timestamp).valueOf(),
       author: adaptUser(msg.author),
     }
+    result.author.nickname = msg.member?.nick
     if (msg.message_reference) {
       const quoteMsg = await this.getMessageFromServer(msg.message_reference.channel_id, msg.message_reference.message_id)
       result.quote = await adaptMessage(this, quoteMsg)

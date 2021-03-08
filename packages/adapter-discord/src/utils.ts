@@ -33,6 +33,9 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, ses
     session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id
   }
+  if (meta.member?.nick) {
+    session.author.nickname = meta.member?.nick
+  }
   // https://discord.com/developers/docs/reference#message-formatting
   session.content = ''
   if (meta.content) {
@@ -116,13 +119,6 @@ async function adaptMessageCreate(bot: DiscordBot, meta: DC.DiscordMessage, sess
   await adaptMessageSession(bot, meta, session)
 }
 
-async function adaptMessageModify(bot: DiscordBot, meta: DC.DiscordMessage, session: Partial<Session.Payload<Session.MessageAction>>) {
-  await adaptMessageSession(bot, meta, session)
-  session.groupId = meta.guild_id
-  session.subtype = meta.guild_id ? 'group' : 'private'
-  session.channelId = meta.channel_id
-}
-
 export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
   const session: Partial<Session.Payload<Session.MessageAction>> = {
     selfId: bot.selfId,
@@ -135,7 +131,11 @@ export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_UPDATE') {
     session.type = 'message-updated'
-    await adaptMessageModify(bot, input.d as DC.DiscordMessage, session)
+    const d = input.d as DC.DiscordMessage
+    const msg = await bot.getMessageFromServer(d.channel_id, d.id)
+    // Unlike creates, message updates may contain only a subset of the full message object payload
+    // https://discord.com/developers/docs/topics/gateway#message-update
+    await adaptMessageCreate(bot, msg, session)
     if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_DELETE') {

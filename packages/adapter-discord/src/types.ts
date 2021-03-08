@@ -102,6 +102,11 @@ export interface DiscordMessage {
   message_reference?: MessageReference
   mention_roles: string
   mentions: User[]
+  member?: {
+    user?: User
+    nick?: string
+    roles: string[]
+  }
 }
 
 export interface MessageReference {
