@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
+    "file-type": "^16.3.0",
     "form-data": "^4.0.0",
     "ws": "^7.4.3"
   }
