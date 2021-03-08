@@ -156,13 +156,12 @@ export namespace Adapter {
   }
 }
 
-export interface Bot<P = Platform> extends BotOptions {
+export interface Bot<P = Platform> extends BotOptions, UserBase {
   [Session.send](session: Session, message: string): Promise<void>
 
   status: Bot.Status
   socket?: WebSocket
   version?: string
-  username?: string
   getStatus(): Promise<Bot.Status>
 
   // message
@@ -285,12 +284,15 @@ export interface GroupInfo {
   groupName: string
 }
 
-export interface UserInfo {
-  userId: string
+export interface UserBase {
   username: string
   nickname?: string
   avatar?: string
   discriminator?: string
+}
+
+export interface UserInfo extends UserBase {
+  userId: string
 }
 
 export interface GroupMemberInfo extends UserInfo {

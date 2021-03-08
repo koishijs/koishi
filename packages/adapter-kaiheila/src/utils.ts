@@ -3,17 +3,16 @@ import { Session, segment, MessageInfo, AuthorInfo, GroupInfo, UserInfo } from '
 import { camelCase } from 'koishi-utils'
 import * as KHL from './types'
 
-export function adaptGroup(data: KHL.Guild): GroupInfo {
-  return {
-    groupId: data.id,
-    groupName: data.name,
-  }
-}
+export const adaptGroup = (data: KHL.Guild): GroupInfo => ({
+  groupId: data.id,
+  groupName: data.name,
+})
 
 export const adaptUser = (user: KHL.User): UserInfo => ({
   userId: user.id,
   avatar: user.avatar,
   username: user.username,
+  discriminator: user.identifyNum,
 })
 
 export const adaptAuthor = (author: KHL.Author): AuthorInfo => ({
