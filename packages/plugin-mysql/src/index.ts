@@ -130,6 +130,7 @@ Database.extend(MysqlDatabase, ({ tables, Domain }) => {
     id: `varchar(50) not null`,
     flag: `bigint(20) unsigned not null default '0'`,
     assignee: `varchar(50) null`,
+    disable: new Domain.Array(),
   })
 })
 

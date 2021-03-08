@@ -1,4 +1,4 @@
-import { isInteger, difference, observe, Time, enumKeys, Random, template } from 'koishi-utils'
+import { difference, observe, Time, enumKeys, Random, template, deduplicate } from 'koishi-utils'
 import { Context, User, Channel, Command, Argv, Platform, Session } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
@@ -58,6 +58,25 @@ template.set('bind', {
   ].join('\n'),
   'failed': '账号绑定失败：你已经绑定过该平台。',
   'success': '账号绑定成功！',
+})
+
+template.set('usage', {
+  'present': '今日 {0} 功能的调用次数为：{1}',
+  'list': '今日各功能的调用次数为：',
+  'none': '今日没有调用过消耗次数的功能。',
+})
+
+template.set('timer', {
+  'present': '定时器 {0} 的生效时间为：剩余 {1}',
+  'absent': '定时器 {0} 当前并未生效。',
+  'list': '各定时器的生效时间为：',
+  'none': '当前没有生效的定时器。',
+})
+
+template.set('switch', {
+  'forbidden': '您无权修改 {0} 功能。',
+  'list': '当前禁用的功能有：{0}',
+  'none': '当前没有禁用功能。',
 })
 
 interface FlagOptions {
@@ -269,11 +288,9 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
     }
   }, true)
 
-  ctx.command('user/authorize <value>', '权限信息', { authority: 4 })
+  ctx.command('user/authorize <value:posint>', '权限信息', { authority: 4 })
     .alias('auth')
-    .adminUser(async ({ session, target }, value) => {
-      const authority = Number(value)
-      if (!isInteger(authority) || authority < 0) return '参数错误。'
+    .adminUser(async ({ session, target }, authority) => {
       if (authority >= session.user.authority) return template('internal.low-authority')
       if (authority === target.authority) return template('admin.user-unchanged')
       await ctx.database.createUser(session.platform, target[session.platform], { authority })
@@ -288,36 +305,34 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
     .option('unset', '-S  删除标记', { authority: 4 })
     .adminUser(flagAction.bind(null, User.Flag))
 
-  ctx.command('user.usage [key] [value]', '调用次数信息', { authority: 1 })
+  ctx.command('user.usage [key] [value:posint]', '调用次数信息', { authority: 1 })
     .userFields(['usage'])
     .option('set', '-s  设置调用次数', { authority: 4 })
     .option('clear', '-c  清空调用次数', { authority: 4 })
-    .adminUser(({ target, options }, name, value) => {
+    .adminUser(({ target, options }, name, count) => {
       if (options.clear) {
         name ? delete target.usage[name] : target.usage = {}
         return
       }
 
       if (options.set) {
-        if (value === undefined) return '参数不足。'
-        const count = +value
-        if (!isInteger(count) || count < 0) return '参数错误。'
+        if (!count) return template('internal.insufficient-arguments')
         target.usage[name] = count
         return
       }
 
-      if (name) return `今日 ${name} 功能的调用次数为：${target.usage[name] || 0}`
+      if (name) return template('usage.present', name, target.usage[name] || 0)
       const output: string[] = []
       for (const name of Object.keys(target.usage).sort()) {
         if (name.startsWith('$')) continue
         output.push(`${name}：${target.usage[name]}`)
       }
-      if (!output.length) return '今日没有调用过消耗次数的功能。'
-      output.unshift('今日各功能的调用次数为：')
+      if (!output.length) return template('usage.none')
+      output.unshift(template('usage.list'))
       return output.join('\n')
     })
 
-  ctx.command('user.timer [key] [value]', '定时器信息', { authority: 1 })
+  ctx.command('user.timer [key] [value:date]', '定时器信息', { authority: 1 })
     .userFields(['timers'])
     .option('set', '-s  设置定时器', { authority: 4 })
     .option('clear', '-c  清空定时器', { authority: 4 })
@@ -328,26 +343,24 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       }
 
       if (options.set) {
-        if (value === undefined) return '参数不足。'
-        const timestamp = +Time.parseDate(value)
-        if (!timestamp) return '请输入合法的时间。'
-        target.timers[name] = timestamp
+        if (!value) return template('internal.insufficient-arguments')
+        target.timers[name] = +value
         return
       }
 
       const now = Date.now()
       if (name) {
         const delta = target.timers[name] - now
-        if (delta > 0) return `定时器 ${name} 的生效时间为：剩余 ${Time.formatTime(delta)}`
-        return `定时器 ${name} 当前并未生效。`
+        if (delta > 0) return template('timer.present', name, Time.formatTime(delta))
+        return template('timer.absent', name)
       }
       const output: string[] = []
       for (const name of Object.keys(target.timers).sort()) {
         if (name.startsWith('$')) continue
         output.push(`${name}：剩余 ${Time.formatTime(target.timers[name] - now)}`)
       }
-      if (!output.length) return '当前没有生效的定时器。'
-      output.unshift('各定时器的生效时间为：')
+      if (!output.length) return template('timer.none')
+      output.unshift(template('timer.list'))
       return output.join('\n')
     })
 
@@ -359,6 +372,32 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       await ctx.database.createChannel(session.platform, session.channelId, { assignee })
       target._merge({ assignee })
       return template('admin.channel-updated')
+    })
+
+  ctx.command('channel/switch <command...>', '启用和禁用功能', { authority: 3 })
+    .channelFields(['disable'])
+    .userFields(['authority'])
+    .adminChannel(({ session, target: { disable } }, ...names: string[]) => {
+      if (!names.length) {
+        if (!disable.length) return template('switch.none')
+        return template('switch.list', disable.join(', '))
+      }
+
+      names = deduplicate(names)
+      const forbidden = names.filter(name => {
+        const command = ctx.app._commandMap[name]
+        return command && command.config.authority >= session.user.authority
+      })
+      if (forbidden.length) return template('switch.forbidden', forbidden.join(', '))
+
+      for (const name of names) {
+        const index = disable.indexOf(name)
+        if (index >= 0) {
+          disable.splice(index)
+        } else {
+          disable.push(name)
+        }
+      }
     })
 
   ctx.command('channel.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })

@@ -198,6 +198,14 @@ template.set('internal', {
   'invalid-option': '选项 {0} 输入无效，{1}',
   'check-syntax': '输入帮助以查看用法。',
 
+  // parser
+  'invalid-number': '请提供一个数字。',
+  'invalid-integer': '请提供一个整数。',
+  'invalid-posint': '请提供一个正整数。',
+  'invalid-date': '请输入合法的时间。',
+  'invalid-user': '请指定正确的用户。',
+  'invalid-channel': '请指定正确的频道。',
+
   // suggest
   'suggestion': '您要找的是不是{0}？',
   'command-suggestion-prefix': '',

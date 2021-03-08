@@ -6,18 +6,13 @@ import axios, { Method } from 'axios'
 import * as Kaiheila from './types'
 import { adaptGroup, adaptAuthor, adaptUser } from './utils'
 
-export interface KaiheilaAuthorInfo extends AuthorInfo {
-  avatar?: string
-  descriminator?: string
-}
-
 export interface KaiheilaMessageInfo extends MessageInfo {
   channelName?: string
   mention?: string[]
   mentionRoles?: string[]
   mentionAll?: boolean
   mentionHere?: boolean
-  author?: KaiheilaAuthorInfo
+  author?: AuthorInfo
 }
 
 export class KaiheilaBot extends Bot {
@@ -35,7 +30,7 @@ export class KaiheilaBot extends Bot {
     data.groupId = guildId
     data.author = {
       userId: data.userId,
-      descriminator: author.identifyNum,
+      discriminator: author.identifyNum,
       avatar: author.avatar,
       username: author.username,
       nickname: author.nickname,
