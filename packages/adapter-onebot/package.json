@@ -27,7 +27,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.0.1"
+    "koishi-core": "^3.1.0"
   },
   "devDependencies": {
     "@types/ws": "^7.4.0",

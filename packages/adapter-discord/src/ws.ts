@@ -1,9 +1,8 @@
-import { App, Adapter, Logger } from 'koishi-core'
+import { App, Adapter, Logger, renameProperty } from 'koishi-core'
+import { Opcode, Payload } from './types'
+import { adaptSession, adaptUser } from './utils'
 import { DiscordBot } from './bot'
 import WebSocket from 'ws'
-import { Opcode, Payload } from './types'
-
-import { adaptSession } from './utils'
 
 const logger = new Logger('discord')
 
@@ -66,10 +65,11 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
         } else if (parsed.op === Opcode.Dispatch) {
           if (parsed.t === 'READY') {
             bot._sessionId = parsed.d.session_id
-            bot.username = parsed.d.user.username
-            bot.selfId = parsed.d.user.id
-            resolve()
+            const self: any = adaptUser(parsed.d.user)
+            renameProperty(self, 'selfId', 'userId')
+            Object.assign(bot, self)
             logger.debug('session_id ' + bot._sessionId)
+            resolve()
           }
           const session = await adaptSession(bot, parsed)
           if (session) this.dispatch(session)

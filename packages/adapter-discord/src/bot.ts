@@ -3,15 +3,12 @@
 import axios, { Method } from 'axios'
 import { Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
-import { ExecuteWebhookBody, GuildMember, DiscordMessage, PartialGuild, DiscordUser, DiscordChannel } from './types'
+import { DiscordChannel, DiscordMessage, DiscordUser, ExecuteWebhookBody, GuildMember, PartialGuild } from './types'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
-import { createReadStream } from 'fs'
+import { readFileSync } from 'fs'
 import { segment } from 'koishi-utils'
 import FormData from 'form-data'
-
-export interface DiscordBot {
-  executeWebhook(id: string, token: string, data: ExecuteWebhookBody): Promise<any>
-}
+import FileType from 'file-type'
 
 export class DiscordBot extends Bot<'discord'> {
   _d = 0
@@ -41,9 +38,10 @@ export class DiscordBot extends Bot<'discord'> {
     return adaptUser(data)
   }
 
-  private async sendEmbedMessage(requestUrl: string, filePath: string, payload_json: Record<string, any> = {}) {
+  private async sendEmbedMessage(requestUrl: string, fileBuffer: Buffer, payload_json: Record<string, any> = {}, fileType?: string) {
     const fd = new FormData()
-    fd.append('file', createReadStream(filePath))
+    const type = await FileType.fromBuffer(fileBuffer)
+    fd.append('file', fileBuffer, 'file.' + type.ext)
     fd.append('payload_json', JSON.stringify(payload_json))
     const headers: Record<string, any> = {
       Authorization: `Bot ${this.token}`,
@@ -72,6 +70,7 @@ export class DiscordBot extends Bot<'discord'> {
     let needSend = ''
     const isWebhook = requestUrl.startsWith('/webhooks/')
     const that = this
+    delete addition.content
     async function sendMessage() {
       const r = await that.request('POST', requestUrl, {
         content: needSend,
@@ -109,17 +108,16 @@ export class DiscordBot extends Bot<'discord'> {
         }
         if (type === 'image' || type === 'video') {
           if (data.url.startsWith('http://') || data.url.startsWith('https://')) {
-            const sendData = isWebhook ? {
-              embeds: [{ ...addition, ...data }],
-            } : {
-              embed: { ...addition, ...data },
-            }
-            const r = await this.request('POST', requestUrl, {
-              ...sendData,
+            const a = await axios({
+              url: data.url,
+              responseType: 'arraybuffer',
+            })
+            const r = await this.sendEmbedMessage(requestUrl, a.data, {
+              ...addition,
             })
             sentMessageId = r.id
           } else {
-            const r = await this.sendEmbedMessage(requestUrl, data.url, {
+            const r = await this.sendEmbedMessage(requestUrl, readFileSync(data.url), {
               ...addition,
             })
             sentMessageId = r.id
@@ -177,6 +175,7 @@ export class DiscordBot extends Bot<'discord'> {
       timestamp: new Date(msg.timestamp).valueOf(),
       author: adaptUser(msg.author),
     }
+    result.author.nickname = msg.member?.nick
     if (msg.message_reference) {
       const quoteMsg = await this.getMessageFromServer(msg.message_reference.channel_id, msg.message_reference.message_id)
       result.quote = await adaptMessage(this, quoteMsg)
@@ -204,13 +203,12 @@ export class DiscordBot extends Bot<'discord'> {
     return adaptChannel(data)
   }
 
-  async executeWebhook(id: string, token: string, data: ExecuteWebhookBody) {
+  async executeWebhook(id: string, token: string, data: ExecuteWebhookBody, wait = false): Promise<string> {
     const chain = segment.parse(data.content)
     if (chain.filter(v => v.type === 'image').length > 10) {
       throw new Error('Up to 10 embed objects')
     }
 
-    const messageId = await this.sendFullMessage(`/webhooks/${id}/${token}`, data.content)
-    return messageId
+    return await this.sendFullMessage(`/webhooks/${id}/${token}?wait=${wait}`, data.content, data)
   }
 }

@@ -235,7 +235,7 @@ export class App extends Context {
     if (this.database) {
       if (session.subtype === 'group') {
         // attach group data
-        const channelFields = new Set<Channel.Field>(['flag', 'assignee'])
+        const channelFields = new Set<Channel.Field>(['flag', 'assignee', 'disable'])
         this.emit('before-attach-channel', session, channelFields)
         const channel = await session.observeChannel(channelFields)
 
@@ -248,7 +248,7 @@ export class App extends Context {
       }
 
       // attach user data
-      // authority is for suggestion TODO can be optimized
+      // authority is for suggestion
       const userFields = new Set<User.Field>(['flag', 'authority'])
       this.emit('before-attach-user', session, userFields)
       const user = await session.observeUser(userFields)
