@@ -1,3 +1,5 @@
+/* eslint-disable no-cond-assign */
+
 import { spawnAsync, cwd } from './utils'
 import { resolve } from 'path'
 import fs from 'fs-extra'
@@ -29,26 +31,62 @@ async function bundle(path: string) {
   const entry = resolve(fullpath, config.compilerOptions.outFile)
   const modules = files.map(file => file.slice(srcpath.length + 1, -3))
   const moduleRE = `"(${modules.join('|')})"`
-  const [content, meta] = await Promise.all([
-    fs.readFile(entry, 'utf8'),
-    fs.readJson(fullpath + '/package.json'),
-  ])
+  const importMap: Record<string, Record<string, string>> = {}
+  const namespaceMap: Record<string, string> = {}
 
-  const moduleMapper: Record<string, string> = {}
-  const starStmts = content.match(new RegExp('import \\* as (.+) from ' + moduleRE + ';\n', 'g')) || []
-  starStmts.forEach(stmt => {
-    const segments = stmt.split(' ')
-    const key = segments[5].slice(1, -3)
-    moduleMapper[key] = segments[3]
+  let prolog = '', cap: RegExpExecArray
+  let content = await fs.readFile(entry, 'utf8')
+  content = content.split('\n').filter((line) => {
+    if (cap = /^ {4}import \* as (.+) from ["'](.+)["'];$/.exec(line)) {
+      if (modules.includes(cap[2])) {
+        namespaceMap[cap[2]] = cap[1]
+      } else {
+        prolog += line.trimStart() + '\n'
+      }
+    } else if (cap = /^ {4}import +(\S*)(?:, *)?(?:\{(.+)\})? from ["'](.+)["'];$/.exec(line)) {
+      if (!modules.includes(cap[3])) {
+        const map = importMap[cap[3]] ||= {}
+        cap[1] && Object.defineProperty(map, 'default', { value: cap[1] })
+        cap[2] && cap[2].split(',').map((part) => {
+          part = part.trim()
+          if (part.includes(' as ')) {
+            const [left, right] = part.split(' as ')
+            map[left.trimEnd()] = right.trimStart()
+          } else {
+            map[part] = part
+          }
+        })
+      }
+    } else if (line.startsWith('///')) {
+      prolog += line + '\n'
+    } else {
+      return true
+    }
+  }).join('\n')
+
+  Object.entries(importMap).forEach(([name, map]) => {
+    const output: string[] = []
+    const entries = Object.entries(map)
+    if (map.default) output.push(map.default)
+    if (entries.length) {
+      output.push('{ ' + entries.map(([left, right]) => {
+        if (left === right) return left
+        return `${left} as ${right}`
+      }).join(', ') + ' }')
+    }
+    prolog += `import ${output.join(', ')} from '${name}';\n`
   })
 
-  await fs.writeFile(resolve(fullpath, 'dist/index.d.ts'), content
+  await fs.writeFile(resolve(fullpath, 'dist/index.d.ts'), prolog + content
     .replace(new RegExp('import\\(' + moduleRE + '\\)\\.', 'g'), '')
-    .replace(new RegExp('^    (import|export).+ from ' + moduleRE + ';$\n', 'gm'), '')
-    .replace(new RegExp('(declare module )' + moduleRE, 'g'), (_, $1, $2) => {
-      if (!moduleMapper[$2]) return `${$1}'${meta.name}'`
-      return `declare namespace ${moduleMapper[$2]}`
-    }))
+    .replace(new RegExp('\n {4}export .+ from ' + moduleRE + ';', 'g'), '')
+    .replace(/^declare module ["'](.+)["'] \{\n/gm, (_, $1) => {
+      const identifier = namespaceMap[$1]
+      if (identifier) return `declare namespace ${identifier} {`
+      return ''
+    })
+    .replace(/\n}/g, '')
+    .replace(/^ {4}/gm, ''))
 }
 
 async function bundleAll(names: readonly string[]) {

@@ -1,7 +1,7 @@
 import { Logger, paramCase, sleep, Time } from 'koishi-utils'
 import { Session } from './session'
 import { App } from './app'
-import type WebSocket from 'ws'
+import WebSocket from 'ws'
 
 export interface BotOptions {
   type?: string
