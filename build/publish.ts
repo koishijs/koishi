@@ -19,20 +19,20 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
   }
 
   const spinner = ora()
-  const bumpMap: Record<string, string> = {}
+  const bumpMap: Record<string, PackageJson> = {}
 
   let progress = 0
   spinner.start(`Loading workspaces (0/${folders.length})`)
   await Promise.all(folders.map(async (name) => {
     let meta: PackageJson
     try {
-      meta = require(`../${name}/package`)
+      meta = require(`../${name}/package.json`)
       if (!meta.private) {
         const version = prerelease(meta.version)
           ? await latest(meta.name, { version: 'next' }).catch(() => latest(meta.name))
           : await latest(meta.name)
         if (gt(meta.version, version)) {
-          bumpMap[name] = meta.version
+          bumpMap[name] = meta
         }
       }
     } catch { /* pass */ }
@@ -41,12 +41,13 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
   spinner.succeed()
 
   if (Object.keys(bumpMap).length) {
-    for (const name in bumpMap) {
-      console.log(`publishing ${name}@${bumpMap[name]} ...`)
+    for (const folder in bumpMap) {
+      const { name, version } = bumpMap[folder]
+      console.log(`publishing ${name}@${version} ...`)
       await spawnAsync([
-        'yarn', 'publish', name,
-        '--new-version', bumpMap[name],
-        '--tag', prerelease(bumpMap[name]) ? 'next' : 'latest',
+        'yarn', 'publish', folder,
+        '--new-version', version,
+        '--tag', prerelease(version) ? 'next' : 'latest',
       ])
     }
   }
