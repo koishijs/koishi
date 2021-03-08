@@ -72,7 +72,8 @@ describe('Help Command', () => {
       .command('bar <arg:number>', 'DESCRIPTION', { maxUsage: 2, hideOptions: true })
       .option('opt1', '选项1', { authority: 2 })
       .option('opt2', '选项2', { notUsage: true })
-      .option('opt3', '选项3', { hidden: true })
+      .option('opt3', '[arg:boolean]  选项3', { hidden: true })
+      .option('opt4', '-o [arg:boolean]', { hidden: true })
 
     await session.shouldReply('help bar', message = 'bar <arg>\nDESCRIPTION\n已调用次数：0/2。')
 
@@ -91,7 +92,8 @@ describe('Help Command', () => {
       '    -h, --help  显示此信息',
       '    --opt1  选项1',
       '    --opt2  选项2（不计入总次数）',
-      '    --opt3  选项3',
+      '    --opt3 [arg]  选项3',
+      '    -o, --opt4 [arg]',
     ].join('\n'))
 
     await session.shouldReply('help bar -a', [

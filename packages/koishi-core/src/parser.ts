@@ -218,13 +218,15 @@ export namespace Domain {
       }
 
       const declList = parseDecl(bracket)
+      if (declList.stripped) syntax += ' ' + declList.stripped
+      if (desc) syntax += '  ' + desc
       const option = this._options[name] ||= {
         ...Command.defaultOptionConfig,
         ...declList[0],
         ...config,
         name,
         values: {},
-        description: syntax + '  ' + declList.stripped + desc,
+        description: syntax,
       }
 
       if ('value' in config) {
