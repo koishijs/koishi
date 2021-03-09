@@ -7,6 +7,12 @@ declare module 'koishi-core' {
     initUser(id: string, authority?: number): Promise<void>
     initChannel(id: string, assignee?: string): Promise<void>
   }
+
+  namespace Database {
+    interface Statics {
+      'koishi-test-utils': typeof MemoryDatabase
+    }
+  }
 }
 
 export interface MemoryConfig {}
