@@ -7,3 +7,9 @@ declare module '*.vue' {
   const component: Component
   export default component
 }
+
+declare module '@/server' {
+  export * from 'koishi-plugin-status/server/webui'
+}
+
+declare const KOISHI_ENDPOINT: string

@@ -6,6 +6,8 @@ import WebSocket from 'ws'
 import vuePlugin from '@vitejs/plugin-vue'
 import Profile from './profile'
 
+export { BotData, Rate } from './profile'
+
 export interface Config {
   path?: string
   port?: number
@@ -15,6 +17,10 @@ export interface Config {
 export interface PluginData extends Plugin.Meta {
   children: PluginData[]
   dependencies: string[]
+}
+
+export interface Payload extends Profile {
+  plugins: PluginData[]
 }
 
 export const name = 'webui'

@@ -1,31 +1,26 @@
 <template>
-  <el-card v-if="status" header="负载">
-    <load-bar :status="status"/>
-  </el-card>
-  <el-card v-if="status" header="插件">
-    <ul class="plugin-list">
-      <plugin-view :data="data" v-for="(data, index) in status.plugins" :key="index"/>
-    </ul>
-  </el-card>
+  <template v-if="status">
+    <el-card header="负载状态" shadow="hover">
+      <load-bar :status="status"/>
+    </el-card>
+    <bot-table :bots="status.bots"/>
+    <el-card header="插件列表" shadow="hover">
+      <ul class="plugin-list">
+        <plugin-view :data="data" v-for="(data, index) in status.plugins" :key="index"/>
+      </ul>
+    </el-card>
+  </template>
 </template>
 
 <script setup lang="ts">
 
 import { onMounted, ref } from 'vue'
-import PluginView from './components/plugin-view.vue'
+import type { Payload } from '@/server'
 import LoadBar from './components/load-bar.vue'
+import BotTable from './components/bot-table.vue'
+import PluginView from './components/plugin-view.vue'
 
-interface PluginData {
-  name: string
-  disposable: boolean
-  children: PluginData[]
-}
-
-interface Status {
-  plugins: PluginData[]
-}
-
-const status = ref<Status>(null)
+const status = ref<Payload>(null)
 
 onMounted(async () => {
   const socket = new WebSocket(KOISHI_ENDPOINT)
@@ -42,12 +37,15 @@ onMounted(async () => {
 
 <style lang="scss">
 
+body {
+  padding: 0;
+}
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
-  margin-top: 60px;
 }
 
 </style>
