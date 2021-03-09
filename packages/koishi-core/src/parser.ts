@@ -506,7 +506,7 @@ export namespace Argv {
     parse(source: string, terminator = ''): Argv {
       const tokens: Token[] = []
       let rest = source, term = ''
-      const stopReg = `\\s+|[${escapeRegExp(terminator)}]\\s*|$`
+      const stopReg = `\\s+|[${escapeRegExp(terminator)}]|$`
       // eslint-disable-next-line no-unmodified-loop-condition
       while (rest && !(terminator && rest.startsWith(terminator))) {
         const token = this.parseToken(rest, stopReg)

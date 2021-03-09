@@ -57,7 +57,7 @@
     "cross-env": "^7.0.3",
     "cross-spawn": "^7.0.3",
     "del": "^6.0.0",
-    "esbuild": "^0.8.55",
+    "esbuild": "^0.8.57",
     "eslint": "^7.21.0",
     "eslint-config-standard": "^16.0.2",
     "eslint-import-resolver-typescript": "^2.4.0",
