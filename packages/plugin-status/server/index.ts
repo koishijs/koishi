@@ -8,7 +8,8 @@ export * from './database'
 
 declare module 'koishi-core' {
   interface Bot {
-    counter: number[]
+    messageSent: number[]
+    messageReceived: number[]
   }
 
   interface EventMap {

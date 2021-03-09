@@ -7,7 +7,7 @@
       </tr>
       <tr v-for="(bot, index) in bots" :key="index">
         <td>{{ bot.username }} ({{ bot.platform }}:{{ bot.selfId }})</td>
-        <td>{{ bot.rate }} ↑ / {{ bot.rate }} ↓</td>
+        <td>接收 {{ bot.received }}/min，发送 {{ bot.sent }}/min</td>
       </tr>
     </table>
   </el-card>

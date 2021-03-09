@@ -48,7 +48,8 @@ export interface BotData {
   selfId: string
   platform: Platform
   code: Bot.Status
-  rate?: number
+  sent: number
+  received: number
 }
 
 export namespace BotData {
@@ -57,7 +58,8 @@ export namespace BotData {
     selfId: bot.selfId,
     username: bot.username,
     code: await bot.getStatus(),
-    rate: bot.counter.slice(1).reduce((prev, curr) => prev + curr, 0),
+    sent: bot.messageSent.slice(1).reduce((prev, curr) => prev + curr, 0),
+    received: bot.messageReceived.slice(1).reduce((prev, curr) => prev + curr, 0),
   } as BotData)
 }
 
@@ -85,19 +87,26 @@ export namespace Profile {
     const { tick = 5 * Time.second } = config
 
     ctx.all().before('send', (session) => {
-      session.bot.counter[0] += 1
+      session.bot.messageSent[0] += 1
+    })
+
+    ctx.all().on('message', (session) => {
+      session.bot.messageReceived[0] += 1
     })
 
     ctx.on('connect', async () => {
       ctx.bots.forEach((bot) => {
-        bot.counter = new Array(61).fill(0)
+        bot.messageSent = new Array(61).fill(0)
+        bot.messageReceived = new Array(61).fill(0)
       })
 
       ctx.setInterval(() => {
         updateCpuUsage()
-        ctx.bots.forEach(({ counter }) => {
-          counter.unshift(0)
-          counter.splice(-1, 1)
+        ctx.bots.forEach(({ messageSent, messageReceived }) => {
+          messageSent.unshift(0)
+          messageSent.splice(-1, 1)
+          messageReceived.unshift(0)
+          messageReceived.splice(-1, 1)
         })
         ctx.emit('status/tick')
       }, tick)
