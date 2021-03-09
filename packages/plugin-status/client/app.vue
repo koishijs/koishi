@@ -1,7 +1,8 @@
 <template>
   <template v-if="status">
     <el-card header="负载状态" shadow="hover">
-      <load-bar :status="status"/>
+      <load-bar title="CPU" :rate="status.cpu"/>
+      <load-bar title="内存" :rate="status.memory"/>
     </el-card>
     <bot-table :bots="status.bots"/>
     <el-card header="插件列表" shadow="hover">
