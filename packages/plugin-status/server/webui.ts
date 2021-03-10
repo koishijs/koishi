@@ -5,8 +5,9 @@ import { createServer, ViteDevServer } from 'vite'
 import WebSocket from 'ws'
 import vuePlugin from '@vitejs/plugin-vue'
 import Profile from './profile'
+import Statistics from './stats'
 
-export { BotData, Rate } from './profile'
+export { BotData, LoadRate } from './profile'
 
 export interface Config {
   path?: string
@@ -96,6 +97,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   async function updateProfile() {
     profile = await Profile.from(ctx)
+    await Statistics.patch(profile)
   }
 
   ctx.on('registry', () => {

@@ -3,13 +3,14 @@ import { Time } from 'koishi-utils'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
 
-export type Rate = [app: number, total: number]
+export type LoadRate = [app: number, total: number]
+export type MessageRate = [send: number, receive: number]
 
 let usage = getCpuUsage()
 let appRate: number
 let usedRate: number
 
-async function memoryRate(): Promise<Rate> {
+async function memoryRate(): Promise<LoadRate> {
   const { total, active } = await mem()
   return [process.memoryUsage().rss / total, active / total]
 }
@@ -44,29 +45,32 @@ function updateCpuUsage() {
 }
 
 export interface BotData {
-  username?: string
+  username: string
   selfId: string
   platform: Platform
   code: Bot.Status
-  sent: number
-  received: number
+  currentRate: MessageRate
+  recentRate?: MessageRate[]
 }
 
 export namespace BotData {
+  function accumulate(record: number[]) {
+    return record.slice(1).reduce((prev, curr) => prev + curr, 0)
+  }
+
   export const from = async (bot: Bot) => ({
     platform: bot.platform,
     selfId: bot.selfId,
     username: bot.username,
     code: await bot.getStatus(),
-    sent: bot.messageSent.slice(1).reduce((prev, curr) => prev + curr, 0),
-    received: bot.messageReceived.slice(1).reduce((prev, curr) => prev + curr, 0),
+    currentRate: [accumulate(bot.messageSent), accumulate(bot.messageReceived)],
   } as BotData)
 }
 
 export interface Profile {
   bots: BotData[]
-  memory: Rate
-  cpu: Rate
+  memory: LoadRate
+  cpu: LoadRate
 }
 
 export namespace Profile {
@@ -79,7 +83,7 @@ export namespace Profile {
       memoryRate(),
       Promise.all(ctx.bots.map(BotData.from)),
     ])
-    const cpu: Rate = [appRate, usedRate]
+    const cpu: LoadRate = [appRate, usedRate]
     return { bots, memory, cpu } as Profile
   }
 
