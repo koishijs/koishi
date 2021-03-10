@@ -18,7 +18,7 @@
 import type { BotData } from '@/server'
 import { defineProps } from 'vue'
 
-const { bots } = defineProps<{ bots: BotData[] }>()
+defineProps<{ bots: BotData[] }>()
 
 </script>
 

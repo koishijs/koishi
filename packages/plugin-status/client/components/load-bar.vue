@@ -13,21 +13,21 @@
 
 <script lang="ts" setup>
 
-import type { Rate } from '@/server'
+import type { LoadRate } from '@/server'
 import { defineProps, computed } from 'vue'
 
-const { rate, title } = defineProps<{ rate: Rate, title: string }>()
+const props = defineProps<{ rate: LoadRate, title: string }>()
 
 function percentage(value: number, digits = 3) {
   return (value * 100).toFixed(digits) + '%'
 }
 
 const mainly = computed(() => {
-  return 1 + rate[0] > 2 * rate[1] ? 'free' : 'busy'
+  return 1 + props.rate[0] > 2 * props.rate[1] ? 'free' : 'busy'
 })
 
 const caption = computed(() => {
-  return `${percentage(rate[0], 1)} / ${percentage(rate[1], 1)}`
+  return `${percentage(props.rate[0], 1)} / ${percentage(props.rate[1], 1)}`
 })
 
 </script>

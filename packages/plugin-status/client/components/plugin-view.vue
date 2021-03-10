@@ -1,9 +1,9 @@
 <template>
   <li class="plugin-view" :class="{ 'has-children': data.children.length }">
-    <i class="el-icon-caret-right" :class="{ show: data.show }"/>
-    <span class="plugin-item" @click="data.show = !data.show" :class="state">{{ data.name }}</span>
+    <i class="el-icon-caret-right" :class="{ show }"/>
+    <span class="plugin-item" @click="show = !show" :class="state">{{ data.name }}</span>
     <el-collapse-transition v-if="data.children.length">
-      <ul class="plugin-list" v-show="data.show">
+      <ul class="plugin-list" v-show="show">
         <plugin-view :data="data" v-for="(data, index) in data.children" :key="index" />
       </ul>
     </el-collapse-transition>
@@ -12,12 +12,15 @@
 
 <script setup lang="ts">
 
-import { computed, defineProps } from 'vue'
+import type { PluginData } from '@/server'
+import { ref, computed, defineProps } from 'vue'
 
-const { data } = defineProps(['data'])
+const show = ref(false)
+
+const props = defineProps<{ data: PluginData }>()
 
 const state = computed(() => {
-  return data.sideEffect ? 'side-effect' : 'normal'
+  return props.data.sideEffect ? 'side-effect' : 'normal'
 })
 
 </script>
