@@ -47,10 +47,10 @@ export namespace Command {
   }
 
   export type Action<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}>
-    = (this: Command<U, G, A, O>, argv: Argv<U, G, A, O>, ...args: A) => void | string | Promise<void | string>
+    = (argv: Argv<U, G, A, O>, ...args: A) => void | string | Promise<void | string>
 
   export type Usage<U extends User.Field = never, G extends Channel.Field = never>
-    = string | ((this: Command<U, G>, session: Session<U, G>) => string | Promise<string>)
+    = string | ((session: Session<U, G>) => string | Promise<string>)
 }
 
 export class Command<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}> extends Domain.CommandBase {
@@ -64,9 +64,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   private _userFields: FieldCollector<'user'>[] = []
   private _channelFields: FieldCollector<'channel'>[] = []
-
-  _actions: Command.Action<U, G, A, O>[] = []
-  _checkers: Command.Action<U, G, A, O>[] = []
+  private _actions: Command.Action<U, G, A, O>[] = []
+  private _checkers: Command.Action<U, G, A, O>[] = []
 
   static defaultConfig: Command.Config = {
     authority: 1,
