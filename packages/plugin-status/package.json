@@ -39,11 +39,13 @@
     "@types/ws": "^7.4.0",
     "@vitejs/plugin-vue": "^1.1.5",
     "@vue/compiler-sfc": "^3.0.7",
+    "echarts": "^5.0.2",
     "element-plus": "^1.0.2-beta.33",
     "sass": "^1.32.8",
     "systeminformation": "^5.6.1",
     "vite": "^2.0.5",
     "vue": "^3.0.7",
+    "vue-echarts": "^6.0.0-rc.3",
     "ws": "^7.4.3"
   }
 }

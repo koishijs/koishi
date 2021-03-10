@@ -97,7 +97,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   async function updateProfile() {
     profile = await Profile.from(ctx)
-    await Statistics.patch(profile)
+    await Statistics.patch(ctx, profile)
   }
 
   ctx.on('registry', () => {

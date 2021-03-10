@@ -50,7 +50,7 @@ export interface BotData {
   platform: Platform
   code: Bot.Status
   currentRate: MessageRate
-  recentRate?: MessageRate[]
+  recentRate?: MessageRate
 }
 
 export namespace BotData {

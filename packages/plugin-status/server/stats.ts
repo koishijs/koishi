@@ -1,4 +1,4 @@
-import { Context, Channel, noop, Session, Logger, Time, Bot, App, Platform } from 'koishi'
+import { Context, Channel, noop, Session, Logger, Time, Bot, Platform, Database } from 'koishi'
 import {} from 'koishi-plugin-teach'
 import MysqlDatabase from 'koishi-plugin-mysql'
 import Profile from './profile'
@@ -100,6 +100,12 @@ namespace Stat {
           }).join(', ')})`
         },
       })
+
+      Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
+        tables[table] = Object.assign([
+          'primary key (`time`)',
+        ], Object.fromEntries(fields.map(key => [key, new Domain.Json('text')])))
+      })
     }
 
     add(field: K, key: string | number) {
@@ -117,6 +123,12 @@ namespace Stat {
           if (!value) return
           return `\`${key}\` = \`${key}\` + ${value}`
         },
+      })
+
+      Database.extend('koishi-plugin-mysql', ({ tables }) => {
+        tables[table] = Object.assign([
+          'primary key (`time`)',
+        ], Object.fromEntries(fields.map(key => [key, 'int unsigned'])))
       })
     }
   }
@@ -204,15 +216,15 @@ type DataPack = [
   Pick<Channel, 'id' | 'name' | 'assignee'>[],
 ]
 
-async function getStatusData(app: App, date: string) {
+async function getStatusData(ctx: Context, date: string) {
   const extension = {} as Statistics
 
-  const db = app.database.mysql
+  const db = ctx.database.mysql
   const [historyDaily, historyHourly, historyLongterm, groups] = await db.query<DataPack>([
     'SELECT * FROM `stats_daily` WHERE `time` < DATE(?) ORDER BY `time` DESC LIMIT ?',
     'SELECT * FROM `stats_hourly` WHERE `time` < DATE(?) ORDER BY `time` DESC LIMIT ?',
     'SELECT * FROM `stats_longterm` WHERE `time` < DATE(?) ORDER BY `time` DESC',
-    'SELECT `id`, `name`, `assignee` FROM `group`',
+    'SELECT `id`, `name`, `assignee` FROM `channel`',
   ], [date, RECENT_LENGTH, date, 24 * RECENT_LENGTH, date])
 
   // history
@@ -244,12 +256,12 @@ async function getStatusData(app: App, date: string) {
         platform: bot.platform,
         value: messageMap[id],
         last: historyDaily[0].group[id],
-        assignee: app.bots[assignee].selfId,
+        assignee: ctx.bots[assignee].selfId,
       })
     }
   }
 
-  await Promise.all(db.app.bots.map(bot => getGroupInfo(bot).catch(noop)))
+  await Promise.all(ctx.bots.map(bot => getGroupInfo(bot).catch(noop)))
 
   for (const key in messageMap) {
     if (!groupSet.has(key) && groupMap[key]) {
@@ -260,7 +272,7 @@ async function getStatusData(app: App, date: string) {
         name: name || key,
         value: messageMap[key],
         last: historyDaily[0].group[key],
-        assignee: app.bots[assignee].selfId,
+        assignee: ctx.bots[assignee].selfId,
       })
     }
   }
@@ -272,22 +284,24 @@ async function getStatusData(app: App, date: string) {
   })
 
   // dialogue
-  const dialogueMap = average(historyDaily.map(data => data.dialogue))
-  const dialogues = await app.database.getDialoguesById(Object.keys(dialogueMap) as any, ['id', 'original'])
-  const questionMap: Record<string, QuestionData> = {}
-  for (const dialogue of dialogues) {
-    const { id, original: name } = dialogue
-    if (name.includes('[CQ:') || name.startsWith('hook:')) continue
-    if (!questionMap[name]) {
-      questionMap[name] = {
-        name,
-        value: dialogueMap[id],
+  if (db.getDialoguesById) {
+    const dialogueMap = average(historyDaily.map(data => data.dialogue))
+    const dialogues = await ctx.database.getDialoguesById(Object.keys(dialogueMap) as any, ['id', 'original'])
+    const questionMap: Record<string, QuestionData> = {}
+    for (const dialogue of dialogues) {
+      const { id, original: name } = dialogue
+      if (name.includes('[CQ:') || name.startsWith('hook:')) continue
+      if (!questionMap[name]) {
+        questionMap[name] = {
+          name,
+          value: dialogueMap[id],
+        }
+      } else {
+        questionMap[name].value += dialogueMap[id]
       }
-    } else {
-      questionMap[name].value += dialogueMap[id]
     }
+    extension.questions = Object.values(questionMap)
   }
-  extension.questions = Object.values(questionMap)
 
   return { extension, historyDaily }
 }
@@ -309,21 +323,19 @@ namespace Statistics {
   let cachedDate: string
   let cachedData: Promise<CachedData>
 
-  export async function patch(profile: Profile) {
+  export async function patch(ctx: Context, profile: Profile) {
     const date = new Date().toLocaleDateString('zh-CN')
     if (date !== cachedDate) {
-      cachedData = getStatusData(this, date)
+      cachedData = getStatusData(ctx, date)
       cachedDate = date
     }
     const { extension, historyDaily } = await cachedData
-
     Object.assign(profile, extension)
 
+    const botSend = average(historyDaily.map(stat => stat.botSend))
+    const botReceive = average(historyDaily.map(stat => stat.botReceive))
     profile.bots.forEach((bot) => {
-      bot.recentRate = historyDaily.map(daily => [
-        daily.botSend[bot.selfId] || 0,
-        daily.botReceive[bot.selfId] || 0,
-      ])
+      bot.recentRate = [botSend[bot.selfId] || 0, botReceive[bot.selfId] || 0]
     })
   }
 
