@@ -4,12 +4,13 @@
     <bot-table :status="status"/>
     <plugin-list :status="status"/>
     <hour-chart :status="status"/>
+    <group-chart :status="status"/>
   </template>
 </template>
 
 <script setup lang="ts">
 
-import { useStatus, BotTable, HourChart, LoadChart, PluginList } from '.'
+import { useStatus, BotTable, GroupChart, HourChart, LoadChart, PluginList } from '.'
 
 const status = useStatus()
 

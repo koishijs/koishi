@@ -8,6 +8,13 @@
 
 import type { Payload } from '~/server'
 import { defineProps, computed } from 'vue'
+import { use } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { GridComponent, TooltipComponent } from 'echarts/components'
+import { BarChart } from 'echarts/charts'
+import VChart from 'vue-echarts'
+
+use([CanvasRenderer, GridComponent, TooltipComponent, BarChart])
 
 const formatHour = (value: number) => `${(value - 0.5).toFixed()}:00-${(value + 0.5).toFixed()}:00`
 
@@ -19,7 +26,7 @@ const option = computed(() => ({
     axisPointer: {
       type: 'cross',
     },
-    formatter (params) {
+    formatter(params) {
       const [{ data: [x], dataIndex, color }] = params
       const source = props.status.hours[dataIndex]
       const output = [

@@ -3,6 +3,7 @@ import { interpolate, Time } from 'koishi-utils'
 import { ActiveData } from './database'
 import * as WebUI from './webui'
 import Profile from './profile'
+import Statistics from './stats'
 
 export * from './database'
 
@@ -102,5 +103,6 @@ export function apply(ctx: Context, config: Config = {}) {
   }
 
   ctx.plugin(Profile)
+  ctx.plugin(Statistics)
   if (config.port) ctx.plugin(WebUI, config)
 }

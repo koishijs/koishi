@@ -1,6 +1,6 @@
 <template>
   <el-card class="bot-table frameless" header="账号数据" shadow="hover">
-    <table>
+    <table v-if="status.bots.length">
       <tr>
         <th>账号信息</th>
         <th>当前消息频率</th>
@@ -12,6 +12,7 @@
         <td>发送 {{ bot.recentRate[0] }}/min，接收 {{ bot.recentRate[1] }}/min</td>
       </tr>
     </table>
+    <p v-else>暂无数据。</p>
   </el-card>
 </template>
 

@@ -24,6 +24,10 @@ $warning: #E6A23C;
 
   .frameless > & .el-card__body {
     padding: 0;
+
+    p {
+      margin: 1.5rem 2rem;
+    }
   }
 }
 

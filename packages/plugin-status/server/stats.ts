@@ -3,7 +3,7 @@ import {} from 'koishi-plugin-teach'
 import MysqlDatabase from 'koishi-plugin-mysql'
 import Profile from './profile'
 
-const logger = new Logger('stats')
+const logger = new Logger('status')
 
 type Activity = Record<number, number>
 type StatRecord = Record<string, number>
@@ -96,7 +96,7 @@ namespace Stat {
           const entries = Object.entries(value)
           if (!entries.length) return
           return `\`${name}\` = JSON_SET(\`${name}\`, ${entries.map(([key, value]) => {
-            return `'$."${key}"', IFNULL(\`${name}\`->'$."${key}"', 0) + ${value}`
+            return `'$."${key}"', IFNULL(JSON_EXTRACT(\`${name}\`, '$."${key}"'), 0) + ${value}`
           }).join(', ')})`
         },
       })
@@ -137,7 +137,7 @@ namespace Stat {
 const daily = new Stat.Recorded('stats_daily', dailyFields)
 const hourly = new Stat.Numerical('stats_hourly', hourlyFields)
 const longterm = new Stat.Numerical('stats_longterm', longtermFields)
-const groups: Record<number, number> = {}
+const groups: Record<string, number> = {}
 
 let lastUpdate = new Date()
 let updateHour = lastUpdate.getHours()
@@ -161,8 +161,8 @@ async function updateStats(db: MysqlDatabase, forced = false) {
     for (const id in groups) {
       sqls.push(`
         UPDATE \`channel\` SET
-        \`activity\` = JSON_SET(\`activity\`, '$."${updateNumber}"', IFNULL(\`activity\`->'$."${updateNumber}"', 0) + ${groups[id]})
-        WHERE \`id\` = ${id}
+        \`activity\` = JSON_SET(\`activity\`, '$."${updateNumber}"', IFNULL(JSON_EXTRACT(\`activity\`, '$."${updateNumber}"'), 0) + ${groups[id]})
+        WHERE \`id\` = '${id}'
       `)
       delete groups[id]
     }
@@ -335,7 +335,8 @@ namespace Statistics {
     const botSend = average(historyDaily.map(stat => stat.botSend))
     const botReceive = average(historyDaily.map(stat => stat.botReceive))
     profile.bots.forEach((bot) => {
-      bot.recentRate = [botSend[bot.selfId] || 0, botReceive[bot.selfId] || 0]
+      const sid = `${bot.platform}:${bot.selfId}`
+      bot.recentRate = [botSend[sid] || 0, botReceive[sid] || 0]
     })
   }
 
@@ -351,8 +352,9 @@ namespace Statistics {
       process.on('SIGINT', handleSigInt)
     })
 
-    ctx.before('disconnect', () => {
+    ctx.before('disconnect', async () => {
       process.off('SIGINT', handleSigInt)
+      await updateStats(db, true)
     })
 
     ctx.before('command', ({ command, session }) => {
@@ -374,16 +376,16 @@ namespace Statistics {
       hourly.data.total += 1
       hourly.data[session.subtype] += 1
       longterm.data.message += 1
-      daily.add('botSend', session.selfId)
+      daily.add('botSend', session.sid)
       if (session.subtype === 'group') {
-        daily.add('group', session.groupId)
-        groups[session.groupId] = (groups[session.groupId] || 0) + 1
+        daily.add('group', session.gid)
+        groups[session.gid] = (groups[session.gid] || 0) + 1
       }
       updateStats(db)
     }
 
     ctx.on('message', (session) => {
-      daily.add('botReceive', session.selfId)
+      daily.add('botReceive', session.sid)
     })
 
     ctx.on('before-send', (session) => {

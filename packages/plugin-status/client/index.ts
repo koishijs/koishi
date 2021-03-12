@@ -1,12 +1,14 @@
 import { ref, onMounted } from 'vue'
 import type { Payload } from '~/server'
 import BotTable from './components/bot-table.vue'
+import GroupChart from './components/group-chart.vue'
 import HourChart from './components/hour-chart.vue'
 import LoadChart from './components/load-chart.vue'
 import PluginList from './components/plugin-list.vue'
 
 export {
   BotTable,
+  GroupChart,
   HourChart,
   LoadChart,
   PluginList,
