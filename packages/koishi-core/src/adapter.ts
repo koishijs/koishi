@@ -94,9 +94,16 @@ export namespace Adapter {
     abstract connect(bot: Bot.Instance<P>): Promise<void>
 
     private _listening = false
+    public options: WsClientOptions
 
-    constructor(app: App, Bot: Bot.Constructor<P>, public options: WsClientOptions = {}) {
+    static options: WsClientOptions = {
+      retryInterval: 5 * Time.second,
+      retryTimes: 6,
+    }
+
+    constructor(app: App, Bot: Bot.Constructor<P>, options: WsClientOptions = {}) {
       super(app, Bot)
+      this.options = { ...WsClient.options, ...options }
     }
 
     private async _listen(bot: Bot.Instance<P>) {
@@ -113,6 +120,7 @@ export namespace Adapter {
         socket.on('close', (code, reason) => {
           bot.socket = null
           bot.status = Bot.Status.NET_ERROR
+          logger.debug(`websocket closed with ${code}`)
           if (!this._listening) return
 
           const message = reason || `failed to connect to ${socket.url}`

@@ -33,13 +33,13 @@
     "code"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.1.0"
+    "koishi-core": "^3.1.1"
   },
   "dependencies": {
     "js-yaml": "^4.0.0",
     "json5": "^2.2.0",
-    "simple-git": "^2.36.0",
-    "typescript": "^4.2.2"
+    "simple-git": "^2.36.2",
+    "typescript": "^4.2.3"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.0",

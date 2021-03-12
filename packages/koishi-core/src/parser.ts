@@ -79,6 +79,7 @@ export namespace Domain {
 
   create('string', source => source)
   create('text', source => source)
+  create('boolean', () => true)
 
   create('number', (source) => {
     const value = +source
@@ -229,10 +230,13 @@ export namespace Domain {
         description: syntax,
       }
 
+      const fallbackType = typeof option.fallback
       if ('value' in config) {
         names.forEach(name => option.values[name] = config.value)
       } else if (!bracket.trim()) {
         option.type = 'boolean'
+      } else if (!option.type && fallbackType === 'string' || fallbackType === 'number') {
+        option.type = fallbackType
       }
 
       this._assignOption(option, names, this._namedOptions)
@@ -289,11 +293,16 @@ export namespace Domain {
 
       // default behavior
       if (implicit) return true
+      if (quoted) return source
       const n = +source
       return n * 0 === 0 ? n : source
     }
 
-    parse(argv: Argv): Argv {
+    parse(argv: Argv): Argv
+    parse(source: string, terminator?: string): Argv
+    parse(argv: string | Argv, terminator?: string): Argv {
+      if (typeof argv === 'string') argv = Argv.parse(argv, terminator)
+
       const args: string[] = []
       const options: Record<string, any> = {}
       const source = this.name + ' ' + Argv.stringify(argv)
@@ -386,7 +395,7 @@ export namespace Domain {
       }
 
       delete argv.tokens
-      return { options, args, source, error: this._error }
+      return { options, args, source, rest: argv.rest, error: this._error }
     }
 
     private stringifyArg(value: any) {
@@ -428,6 +437,7 @@ export interface Argv<U extends User.Field = never, G extends Channel.Field = ne
   error?: string
   source?: string
   initiator?: string
+  terminator?: string
   session?: Session<U, G>
   command?: Command<U, G, A, O>
   rest?: string
@@ -488,15 +498,17 @@ export namespace Argv {
           parent.inters.push({ ...argv, pos: content.length, initiator: capture[0] })
         } else {
           const quoted = capture[0] === quote
-          const rest = source.slice(capture.index + +quoted).trimStart()
-          if (!quoted && quote) {
+          const rest = source.slice(capture.index + +quoted)
+          parent.rest = rest.trimStart()
+          parent.quoted = quoted
+          parent.terminator = capture[0]
+          if (quoted) {
+            parent.terminator += rest.slice(0, -parent.rest.length)
+          } else if (quote) {
             content = leftQuotes[index] + content
             parent.inters.forEach(inter => inter.pos += 1)
           }
-          parent.rest = rest
-          parent.quoted = quoted
           parent.content = content
-          parent.terminator = capture[0]
           if (quote === "'") Argv.revert(parent)
           return parent
         }
@@ -506,7 +518,7 @@ export namespace Argv {
     parse(source: string, terminator = ''): Argv {
       const tokens: Token[] = []
       let rest = source, term = ''
-      const stopReg = `\\s+|[${escapeRegExp(terminator)}]\\s*|$`
+      const stopReg = `\\s+|[${escapeRegExp(terminator)}]|$`
       // eslint-disable-next-line no-unmodified-loop-condition
       while (rest && !(terminator && rest.startsWith(terminator))) {
         const token = this.parseToken(rest, stopReg)
@@ -521,11 +533,10 @@ export namespace Argv {
     }
 
     stringify(argv: Argv) {
-      return argv.tokens.map((token) => {
-        return /^\s+$/.test(token.terminator)
-          ? token.content + token.terminator
-          : token.content
-      }).join('')
+      return argv.tokens.reduce((prev, token) => {
+        if (token.quoted) prev += leftQuotes[rightQuotes.indexOf(token.terminator[0])]
+        return prev + token.content + token.terminator
+      }, '')
     }
   }
 
@@ -536,7 +547,12 @@ export namespace Argv {
   }
 
   export function stringify(argv: Argv) {
-    return defaultTokenizer.stringify(argv)
+    const source = defaultTokenizer.stringify(argv)
+    if (argv.rest) {
+      const { terminator } = argv.tokens[argv.tokens.length - 1]
+      if (!leftQuotes.includes(terminator[0])) return source.slice(0, -terminator.length)
+    }
+    return source
   }
 
   export function revert(token: Token) {

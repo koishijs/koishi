@@ -10,7 +10,7 @@ interface RepeatState {
   content: string
   repeated: boolean
   times: number
-  users: Record<number, number>
+  users: Record<string, number>
 }
 
 type StateCallback = (state: RepeatState, session: Session) => void | string
