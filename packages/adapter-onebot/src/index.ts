@@ -38,8 +38,6 @@ export * from './ws'
 
 App.defaultConfig.onebot = {
   responseTimeout: Time.minute,
-  retryInterval: 5 * Time.second,
-  retryTimes: 4,
 }
 
 Adapter.types['onebot:http'] = HttpServer

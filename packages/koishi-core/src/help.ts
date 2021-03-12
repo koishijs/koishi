@@ -12,7 +12,7 @@ interface HelpConfig {
 export default function apply(ctx: Context) {
   // show help when use `-h, --help` or when there is no action
   ctx.before('command', async ({ command, session, options }) => {
-    if (command._actions.length && !options['help']) return
+    if (command['_actions'].length && !options['help']) return
     await session.execute({
       name: 'help',
       args: [command.name],

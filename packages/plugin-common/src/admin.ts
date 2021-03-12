@@ -128,7 +128,7 @@ Command.prototype.adminUser = function (this: Command, callback) {
       fields.add(platform as Platform)
     })
 
-  command._actions.unshift(async (argv) => {
+  command.action(async (argv) => {
     const { options, session, args } = argv
     const fields = session.collect('user', argv)
     let target: User.Observed<never>
@@ -167,7 +167,7 @@ Command.prototype.adminChannel = function (this: Command, callback) {
     .userFields(['authority'])
     .option('target', '-t [channel:channel]  指定目标频道', { authority: 3 })
 
-  command._actions.unshift(async (argv, ...args) => {
+  command.action(async (argv, ...args) => {
     const { options, session } = argv
     const fields = session.collect('channel', argv)
     let target: Channel.Observed

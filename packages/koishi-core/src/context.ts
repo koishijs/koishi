@@ -170,7 +170,7 @@ export class Context {
     if (options === true) options = undefined
 
     if (this.app.registry.has(plugin)) {
-      this.logger('app').warn('duplicate plugin detected')
+      this.logger('app').warn(new Error('duplicate plugin detected'))
       return this
     }
 
