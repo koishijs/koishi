@@ -6,7 +6,7 @@
         <th>当前消息频率</th>
         <th>近期消息频率</th>
       </tr>
-      <tr v-for="(bot, index) in bots" :key="index">
+      <tr v-for="(bot, index) in status.bots" :key="index">
         <td>{{ bot.username }} ({{ bot.platform }}:{{ bot.selfId }})</td>
         <td>发送 {{ bot.currentRate[0] }}/min，接收 {{ bot.currentRate[1] }}/min</td>
         <td>发送 {{ bot.recentRate[0] }}/min，接收 {{ bot.recentRate[1] }}/min</td>
@@ -17,10 +17,10 @@
 
 <script lang="ts" setup>
 
-import type { BotData } from '@/server'
+import type { Payload } from '~/server'
 import { defineProps } from 'vue'
 
-defineProps<{ bots: BotData[] }>()
+defineProps<{ status: Payload }>()
 
 </script>
 

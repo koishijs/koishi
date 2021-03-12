@@ -8,8 +8,16 @@ declare module '*.vue' {
   export default component
 }
 
-declare module '@/server' {
+declare module '~/server' {
   export * from 'koishi-plugin-status/server/webui'
+}
+
+declare module '~/client' {
+  export * from 'koishi-plugin-status/client'
+}
+
+declare module '~/layout' {
+  export * from 'koishi-plugin-status/client/app.vue'
 }
 
 declare const KOISHI_ENDPOINT: string

@@ -13,6 +13,7 @@ export interface Config {
   path?: string
   port?: number
   selfUrl?: string
+  layout?: string
 }
 
 export interface PluginData extends Plugin.Meta {
@@ -27,15 +28,27 @@ export interface Payload extends Profile, Statistics {
 export const name = 'webui'
 
 export function apply(ctx: Context, config: Config = {}) {
+  const root = resolve(__dirname, '../client')
   const koishiPort = assertProperty(ctx.app.options, 'port')
-  const { path = '/status', port = 8080, selfUrl = `ws://localhost:${koishiPort}` } = config
+  const {
+    path = '/status',
+    port = 8080,
+    layout = root + '/app.vue',
+    selfUrl = `ws://localhost:${koishiPort}`,
+  } = config
 
   let vite: ViteDevServer
   let wsServer: WebSocket.Server
   ctx.on('connect', async () => {
     vite = await createServer({
-      root: resolve(__dirname, '../client'),
+      root,
       plugins: [vuePlugin()],
+      resolve: {
+        alias: {
+          '~/client': root,
+          '~/layout': resolve(process.cwd(), layout),
+        },
+      },
       define: {
         KOISHI_ENDPOINT: JSON.stringify(selfUrl + path),
       },

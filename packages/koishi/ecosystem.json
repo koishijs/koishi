@@ -71,7 +71,7 @@
     "description": "Schedule plugin for Koishi"
   },
   "koishi-plugin-status": {
-    "version": "3.0.1",
+    "version": "4.0.0-alpha.0",
     "description": "Show Status of Koishi"
   },
   "koishi-plugin-teach": {
@@ -81,9 +81,5 @@
   "koishi-plugin-tools": {
     "version": "2.0.0",
     "description": "Some simple tools for Koishi"
-  },
-  "koishi-plugin-webui": {
-    "version": "0.1.3",
-    "description": "Web UI for Koishi"
   }
 }

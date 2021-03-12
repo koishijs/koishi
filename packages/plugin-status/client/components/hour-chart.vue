@@ -6,11 +6,12 @@
 
 <script lang="ts" setup>
 
+import type { Payload } from '~/server'
 import { defineProps, computed } from 'vue'
 
 const formatHour = (value: number) => `${(value - 0.5).toFixed()}:00-${(value + 0.5).toFixed()}:00`
 
-const props = defineProps<{ hours: Record<string, number>[] }>()
+const props = defineProps<{ status: Payload }>()
 
 const option = computed(() => ({
   tooltip: {
@@ -20,7 +21,7 @@ const option = computed(() => ({
     },
     formatter (params) {
       const [{ data: [x], dataIndex, color }] = params
-      const source = props.hours[dataIndex]
+      const source = props.status.hours[dataIndex]
       const output = [
         `${formatHour(x)}`,
         `消息总量：${+source.total.toFixed(1)}`,
@@ -55,7 +56,7 @@ const option = computed(() => ({
   },
   series: [{
     name: '其他',
-    data: props.hours.map((val, index) => [index + 0.5, val.total || 0]),
+    data: props.status.hours.map((val, index) => [index + 0.5, val.total || 0]),
     type: 'bar',
     stack: 1,
     itemStyle: {
@@ -63,7 +64,7 @@ const option = computed(() => ({
     },
   }, {
     name: '教学',
-    data: props.hours.map((val, index) => [index + 0.5, (val.command || 0) + (val.dialogue || 0)]),
+    data: props.status.hours.map((val, index) => [index + 0.5, (val.command || 0) + (val.dialogue || 0)]),
     type: 'bar',
     stack: 1,
     itemStyle: {
@@ -71,7 +72,7 @@ const option = computed(() => ({
     },
   }, {
     name: '指令',
-    data: props.hours.map((val, index) => [index + 0.5, val.command || 0]),
+    data: props.status.hours.map((val, index) => [index + 0.5, val.command || 0]),
     type: 'bar',
     stack: 1,
     itemStyle: {

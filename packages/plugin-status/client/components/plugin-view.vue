@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 
-import type { PluginData } from '@/server'
+import type { PluginData } from '~/server'
 import { ref, computed, defineProps } from 'vue'
 
 const show = ref(false)

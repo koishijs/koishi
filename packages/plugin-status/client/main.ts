@@ -5,7 +5,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { GridComponent, TooltipComponent } from 'echarts/components'
 import { BarChart } from 'echarts/charts'
 import VChart, { THEME_KEY } from 'vue-echarts'
-import App from './app.vue'
+import Layout from '~/layout'
 
 // for el-collapse-transition
 import 'element-plus/lib/theme-chalk/base.css'
@@ -19,7 +19,7 @@ use(BarChart)
 use(GridComponent)
 use(TooltipComponent)
 
-const app = createApp(App)
+const app = createApp(Layout)
 
 app.provide(THEME_KEY, 'light')
 
