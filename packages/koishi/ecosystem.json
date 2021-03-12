@@ -28,7 +28,7 @@
     "description": "Chess Plugin for Koishi"
   },
   "koishi-plugin-common": {
-    "version": "4.1.0",
+    "version": "4.1.1",
     "description": "Common plugins for Koishi"
   },
   "koishi-plugin-dice": {

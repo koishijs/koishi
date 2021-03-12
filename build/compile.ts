@@ -92,8 +92,8 @@ const KOISHI_VERSION = JSON.stringify(version)
     tasks[name] = Promise.all([options, {
       ...options,
       entryPoints: [base + '/src/internal.ts'],
-      banner: '(function (host, exports, GLOBAL) {',
-      footer: '})',
+      banner: { js: '(function (host, exports, GLOBAL) {' },
+      footer: { js: '})' },
     }].map(bundle)).then(() => {})
   }))
 
