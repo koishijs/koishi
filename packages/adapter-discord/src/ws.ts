@@ -76,8 +76,7 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
         }
       })
 
-      bot.socket.on('close', (c, r) => {
-        logger.warn(r)
+      bot.socket.on('close', () => {
         clearInterval(bot._ping)
       })
     })
