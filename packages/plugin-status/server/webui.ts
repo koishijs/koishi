@@ -20,7 +20,7 @@ export interface PluginData extends Plugin.Meta {
   dependencies: string[]
 }
 
-export interface Payload extends Profile {
+export interface Payload extends Profile, Statistics {
   plugins: PluginData[]
 }
 

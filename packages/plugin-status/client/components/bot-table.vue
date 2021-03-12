@@ -1,5 +1,5 @@
 <template>
-  <el-card class="bot-table" header="账号数据" shadow="hover">
+  <el-card class="bot-table frameless" header="账号数据" shadow="hover">
     <table>
       <tr>
         <th>账号信息</th>
@@ -27,10 +27,6 @@ defineProps<{ bots: BotData[] }>()
 <style lang="scss">
 
 .bot-table {
-  .el-card__body {
-    padding: 0;
-  }
-
   table {
     text-align: center;
     width: 100%;

@@ -19,5 +19,17 @@ $warning: #E6A23C;
     font-size: 1.25rem;
     font-weight: bolder;
     padding: 1rem 1.5rem;
+    text-align: center;
   }
+
+  .frameless > & .el-card__body {
+    padding: 0;
+  }
+}
+
+.echarts {
+  width: 800px;
+  height: 400px;
+  max-width: 100%;
+  margin: 0 auto;
 }

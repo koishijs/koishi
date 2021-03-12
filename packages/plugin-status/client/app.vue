@@ -10,6 +10,7 @@
         <plugin-view :data="data" v-for="(data, index) in status.plugins" :key="index"/>
       </ul>
     </el-card>
+    <hour-chart :hours="status.hours"/>
   </template>
 </template>
 
@@ -20,6 +21,7 @@ import type { Payload } from '@/server'
 import LoadBar from './components/load-bar.vue'
 import BotTable from './components/bot-table.vue'
 import PluginView from './components/plugin-view.vue'
+import HourChart from './components/hour-chart.vue'
 
 const status = ref<Payload>(null)
 

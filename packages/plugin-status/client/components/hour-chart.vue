@@ -1,0 +1,83 @@
+<template>
+  <el-card class="frameless" header="每小时发言数量" shadow="hover">
+    <v-chart :option="option" autoresize/>
+  </el-card>
+</template>
+
+<script lang="ts" setup>
+
+import { defineProps, computed } from 'vue'
+
+const formatHour = (value: number) => `${(value - 0.5).toFixed()}:00-${(value + 0.5).toFixed()}:00`
+
+const props = defineProps<{ hours: Record<string, number>[] }>()
+
+const option = computed(() => ({
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: {
+      type: 'cross',
+    },
+    formatter (params) {
+      const [{ data: [x], dataIndex, color }] = params
+      const source = props.hours[dataIndex]
+      const output = [
+        `${formatHour(x)}`,
+        `消息总量：${+source.total.toFixed(1)}`,
+      ]
+      params.reverse().forEach(({ seriesName, color, data: [x, y], marker }, index) => {
+        const value = index === 0 ? source.command
+          : index === 1 ? source.dialogue
+          : Math.max(0, source.total - source.command - source.dialogue)
+        if (!value) return
+        output.push(`${marker}${seriesName}：${+value.toFixed(1)}`)
+      })
+      return output.join('<br>')
+    },
+  },
+  xAxis: {
+    type: 'value',
+    min: 0,
+    max: 24,
+    minInterval: 1,
+    maxInterval: 4,
+    axisLabel: {
+      formatter: value => value + ':00',
+    },
+    axisPointer: {
+      label: {
+        formatter: ({ value }) => formatHour(value),
+      },
+    },
+  },
+  yAxis: {
+    type: 'value',
+  },
+  series: [{
+    name: '其他',
+    data: props.hours.map((val, index) => [index + 0.5, val.total || 0]),
+    type: 'bar',
+    stack: 1,
+    itemStyle: {
+      color: 'rgb(255,219,92)',
+    },
+  }, {
+    name: '教学',
+    data: props.hours.map((val, index) => [index + 0.5, (val.command || 0) + (val.dialogue || 0)]),
+    type: 'bar',
+    stack: 1,
+    itemStyle: {
+      color: 'rgb(103,224,227)',
+    },
+  }, {
+    name: '指令',
+    data: props.hours.map((val, index) => [index + 0.5, val.command || 0]),
+    type: 'bar',
+    stack: 1,
+    itemStyle: {
+      color: 'rgb(55,162,218)',
+    },
+  }],
+}))
+
+</script>
