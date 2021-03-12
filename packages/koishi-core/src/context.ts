@@ -203,14 +203,15 @@ export class Context {
     const state = this.app.registry.get(plugin)
     if (!state) return
     if (state.sideEffect) throw new Error('plugins with side effect cannot be disposed')
-    await Promise.all([
+    await Promise.allSettled([
       ...state.children.slice().map(plugin => this.dispose(plugin)),
       ...state.disposables.map(dispose => dispose()),
-    ])
-    this.app.registry.delete(plugin)
-    const index = state.parent.children.indexOf(plugin)
-    if (index >= 0) state.parent.children.splice(index, 1)
-    this.emit('registry', this.app.registry)
+    ]).finally(() => {
+      this.app.registry.delete(plugin)
+      const index = state.parent.children.indexOf(plugin)
+      if (index >= 0) state.parent.children.splice(index, 1)
+      this.emit('registry', this.app.registry)
+    })
   }
 
   async parallel<K extends EventName>(name: K, ...args: Parameters<EventMap[K]>): Promise<Await<ReturnType<EventMap[K]>>[]>
