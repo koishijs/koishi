@@ -40,8 +40,10 @@ Database.extend('koishi-plugin-mysql', {
   },
 })
 
-Database.extend('koishi-plugin-mysql', ({ tables }) => {
+Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
   tables.user.lastCall = 'timestamp'
+  tables.channel.name = 'varchar(50)'
+  tables.channel.activity = new Domain.Json()
 })
 
 Database.extend('koishi-plugin-mongo', {

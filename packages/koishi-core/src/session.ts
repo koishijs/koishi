@@ -98,6 +98,7 @@ export class Session<
   readonly sid: string
   uid: string
   cid: string
+  gid: string
 
   id?: string
   argv?: Argv<U, G>
@@ -119,6 +120,7 @@ export class Session<
     defineProperty(this, 'sid', `${this.platform}:${this.selfId}`)
     defineProperty(this, 'uid', `${this.platform}:${this.userId}`)
     defineProperty(this, 'cid', `${this.platform}:${this.channelId}`)
+    defineProperty(this, 'gid', `${this.platform}:${this.groupId}`)
     defineProperty(this, 'bot', app.bots[this.sid])
     defineProperty(this, 'id', Random.uuid())
     defineProperty(this, '_queued', Promise.resolve())
