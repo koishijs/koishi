@@ -58,7 +58,6 @@ declare module 'koishi-core' {
 
   interface Database {
     getActiveData(): Promise<ActiveData>
-    getStatsData(): Promise<Synchronizer.Data>
     setChannels(data: Partial<Channel>[]): Promise<void>
     Synchronizer: new (db: Database) => Synchronizer
   }

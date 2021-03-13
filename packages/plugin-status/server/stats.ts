@@ -79,6 +79,7 @@ async function download(ctx: Context, date: string) {
   const updateList: Pick<Channel, 'id' | 'name'>[] = []
 
   async function getGroupInfo(bot: Bot) {
+    const { platform } = bot
     const groups = await bot.getGroupList()
     for (const { groupId, groupName: name } of groups) {
       const id = `${bot.platform}:${groupId}`
@@ -88,10 +89,10 @@ async function download(ctx: Context, date: string) {
       if (name !== oldName) updateList.push({ id, name })
       extension.groups.push({
         name,
-        platform: bot.platform,
+        platform,
+        assignee,
         value: messageMap[id],
         last: daily[0].group[id],
-        assignee: ctx.bots[assignee].selfId,
       })
     }
   }

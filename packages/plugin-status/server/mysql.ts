@@ -142,17 +142,13 @@ Database.extend('koishi-plugin-mysql', {
     async upload(date: Date): Promise<void> {
       const dateString = date.toLocaleDateString('zh-CN')
       const hourString = `${dateString}-${date.getHours()}:00`
-      const updateNumber = Time.getDateNumber(date)
       const sqls: string[] = []
       this._hourly.synchronize(hourString, sqls)
       this._daily.synchronize(dateString, sqls)
       this._longterm.synchronize(dateString, sqls)
       for (const id in this.groups) {
-        sqls.push(`
-          UPDATE \`channel\` SET
-          \`activity\` = JSON_SET(\`activity\`, '$."${updateNumber}"', IFNULL(JSON_EXTRACT(\`activity\`, '$."${updateNumber}"'), 0) + ${this.groups[id]})
-          WHERE \`id\` = '${id}'
-        `)
+        const update = Stat.Recorded.prototype.update('activity', { [Time.getDateNumber(date)]: this.groups[id] })
+        sqls.push(`UPDATE \`channel\` SET ${update} WHERE \`id\` = '${id}'`)
         delete this.groups[id]
       }
       if (!sqls.length) return
