@@ -6,6 +6,7 @@ import HistoryChart from './components/history-chart.vue'
 import HourChart from './components/hour-chart.vue'
 import LoadChart from './components/load-chart.vue'
 import PluginList from './components/plugin-list.vue'
+import WordCloud from './components/word-cloud.vue'
 
 export {
   BotTable,
@@ -14,6 +15,7 @@ export {
   HourChart,
   LoadChart,
   PluginList,
+  WordCloud,
 }
 
 export function useStatus() {

@@ -2,12 +2,14 @@
   <el-card class="bot-table frameless" header="账号数据" shadow="hover">
     <table v-if="status.bots.length">
       <tr>
-        <th>账号信息</th>
+        <th>平台名</th>
+        <th>用户名</th>
         <th>当前消息频率</th>
         <th>近期消息频率</th>
       </tr>
       <tr v-for="(bot, index) in status.bots" :key="index">
-        <td>{{ bot.username }} ({{ bot.platform }}:{{ bot.selfId }})</td>
+        <td>{{ bot.platform }}</td>
+        <td>{{ bot.username }}</td>
         <td>发送 {{ bot.currentRate[0] }}/min，接收 {{ bot.currentRate[1] }}/min</td>
         <td>发送 {{ bot.recentRate[0] }}/min，接收 {{ bot.recentRate[1] }}/min</td>
       </tr>

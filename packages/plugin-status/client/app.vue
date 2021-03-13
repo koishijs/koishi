@@ -6,12 +6,13 @@
     <history-chart :status="status"/>
     <hour-chart :status="status"/>
     <group-chart :status="status"/>
+    <word-cloud :status="status"/>
   </template>
 </template>
 
 <script setup lang="ts">
 
-import { useStatus, BotTable, GroupChart, HistoryChart, HourChart, LoadChart, PluginList } from '.'
+import { useStatus, BotTable, GroupChart, HistoryChart, HourChart, LoadChart, PluginList, WordCloud } from '.'
 
 const status = useStatus()
 
@@ -20,7 +21,7 @@ const status = useStatus()
 <style lang="scss">
 
 body {
-  padding: 0;
+  margin: 0;
 }
 
 #app {

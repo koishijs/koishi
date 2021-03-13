@@ -40,6 +40,7 @@
     "@vitejs/plugin-vue": "^1.1.5",
     "@vue/compiler-sfc": "^3.0.7",
     "echarts": "^5.0.2",
+    "echarts-wordcloud": "^2.0.0",
     "element-plus": "^1.0.2-beta.33",
     "sass": "^1.32.8",
     "systeminformation": "^5.6.1",
