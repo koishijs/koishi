@@ -1,4 +1,4 @@
-import { difference, observe, Time, enumKeys, Random, template, deduplicate } from 'koishi-utils'
+import { difference, observe, Time, enumKeys, Random, template, deduplicate, intersection } from 'koishi-utils'
 import { Context, User, Channel, Command, Argv, Platform, Session } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
@@ -377,10 +377,10 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
   ctx.command('channel/switch <command...>', '启用和禁用功能', { authority: 3 })
     .channelFields(['disable'])
     .userFields(['authority'])
-    .adminChannel(({ session, target: { disable } }, ...names: string[]) => {
+    .adminChannel(async ({ session, target }, ...names: string[]) => {
       if (!names.length) {
-        if (!disable.length) return template('switch.none')
-        return template('switch.list', disable.join(', '))
+        if (!target.disable.length) return template('switch.none')
+        return template('switch.list', target.disable.join(', '))
       }
 
       names = deduplicate(names)
@@ -390,14 +390,15 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       })
       if (forbidden.length) return template('switch.forbidden', forbidden.join(', '))
 
-      for (const name of names) {
-        const index = disable.indexOf(name)
-        if (index >= 0) {
-          disable.splice(index)
-        } else {
-          disable.push(name)
-        }
-      }
+      const add = difference(names, target.disable)
+      const remove = intersection(names, target.disable)
+      const preserve = difference(target.disable, names)
+      const output: string[] = []
+      if (add.length) output.push(`禁用 ${add.join(', ')} 功能`)
+      if (remove.length) output.push(`启用 ${remove.join(', ')} 功能`)
+      target.disable = [...preserve, ...add]
+      await target._update()
+      return `已${output.join('，')}。`
     })
 
   ctx.command('channel.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
