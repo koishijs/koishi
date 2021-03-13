@@ -104,7 +104,7 @@ export interface Database {
 }
 
 type Methods<S, T> = {
-  [K in keyof S]?: S[K] extends (...args: infer R) => infer S ? (this: T, ...args: R) => S : never
+  [K in keyof S]?: S[K] extends (...args: infer R) => infer U ? (this: T, ...args: R) => U : S[K]
 }
 
 export namespace Database {
