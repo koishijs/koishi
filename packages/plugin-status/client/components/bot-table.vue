@@ -4,12 +4,14 @@
       <tr>
         <th>平台名</th>
         <th>用户名</th>
+        <th>运行状态</th>
         <th>当前消息频率</th>
         <th>近期消息频率</th>
       </tr>
       <tr v-for="(bot, index) in status.bots" :key="index">
         <td>{{ bot.platform }}</td>
         <td>{{ bot.username }}</td>
+        <td>{{ codes[bot.code] }}</td>
         <td>发送 {{ bot.currentRate[0] }}/min，接收 {{ bot.currentRate[1] }}/min</td>
         <td>发送 {{ bot.recentRate[0] }}/min，接收 {{ bot.recentRate[1] }}/min</td>
       </tr>
@@ -24,6 +26,8 @@ import type { Payload } from '~/server'
 import { defineProps } from 'vue'
 
 defineProps<{ status: Payload }>()
+
+const codes = ['运行中', '闲置', '离线', '网络异常', '服务器异常', '封禁中', '尝试连接']
 
 </script>
 

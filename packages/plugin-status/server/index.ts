@@ -38,13 +38,13 @@ export function extend(callback: StatusCallback) {
 
 extend(async function (status) {
   if (!this.database) return
-  Object.assign(status, this.database.getActiveData())
+  Object.assign(status, await this.database.getActiveData())
 })
 
 const defaultConfig: Config = {
   refresh: Time.minute,
   // eslint-disable-next-line no-template-curly-in-string
-  formatBot: '{{ username }}：{{ code ? `无法连接` : `工作中（${rate}/min）` }}',
+  formatBot: '{{ username }}：{{ code ? `无法连接` : `工作中（${currentRate[0]}/min）` }}',
   format: [
     '{{ bots }}',
     '==========',
