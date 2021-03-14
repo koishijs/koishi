@@ -5,7 +5,9 @@ import './mongo'
 import './mysql'
 
 export interface ActiveData {
+  allUsers: number
   activeUsers: number
+  allGroups: number
   activeGroups: number
 }
 

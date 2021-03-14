@@ -111,11 +111,13 @@ namespace Stat {
 
 Database.extend('koishi-plugin-mysql', {
   async getActiveData() {
-    const [[{ 'COUNT(*)': activeUsers }], [{ 'COUNT(*)': activeGroups }]] = await this.query<[{ 'COUNT(*)': number }][]>([
-      'SELECT COUNT(*) FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',
-      'SELECT COUNT(*) FROM `channel` WHERE `assignee`',
+    const [[{ activeUsers }], [{ allUsers }], [{ activeGroups }], [{ allGroups }]] = await this.query([
+      'SELECT COUNT(*) as activeUsers FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',
+      'SELECT COUNT(*) as allUsers FROM `user`',
+      'SELECT COUNT(*) as activeGroups FROM `channel` WHERE `assignee`',
+      'SELECT COUNT(*) as allGroups FROM `channel`',
     ])
-    return { activeGroups, activeUsers }
+    return { activeUsers, allUsers, activeGroups, allGroups }
   },
 
   async setChannels(data) {
