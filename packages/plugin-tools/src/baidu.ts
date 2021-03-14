@@ -5,7 +5,7 @@ import axios from 'axios'
 import * as cheerio from 'cheerio'
 import { Context, segment } from 'koishi-core'
 
-interface Options {
+export interface BaiduOptions {
   maxSummaryLength: number
   sendError: boolean
   showImage: boolean
@@ -162,13 +162,13 @@ function formatAnswer({
 }
 
 export const apply = (koishi: Context, userOptions = {}) => {
-  const defaultOptions = {
+  const defaultOptions: BaiduOptions = {
     maxSummaryLength: 220,
     sendError: true,
     showImage: true,
   }
 
-  const pOptions: Options = Object.assign({}, defaultOptions, userOptions)
+  const pOptions: BaiduOptions = Object.assign({}, defaultOptions, userOptions)
 
   koishi
     .command('baidu <keyword>', '使用百度百科搜索')
