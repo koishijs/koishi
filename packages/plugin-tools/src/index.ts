@@ -5,6 +5,7 @@ import { MusicOptions } from './music'
 import { TranslateOptions } from './translate'
 
 export interface Options extends AlphaOptions, TranslateOptions {
+  baidu?: false | BaiduOptions
   brainfuck?: false | BrainfuckOptions
   bilibili?: false
   crypto?: false
@@ -23,6 +24,7 @@ export function apply(ctx: Context, config: Options = {}) {
   ctx.command('tools', '实用工具')
 
   if (config.wolframAlphaAppId) ctx.plugin(require('./alpha'), config)
+  if (config.baidu !== false) ctx.plugin(require('./baidu'), config.baidu)
   if (config.brainfuck !== false) ctx.plugin(require('./brainfuck'), config.brainfuck)
   if (config.bilibili !== false) ctx.plugin(require('./bilibili'))
   if (config.crypto !== false) ctx.plugin(require('./crypto'))
