@@ -1,5 +1,6 @@
 import { Context } from 'koishi-core'
 import { AlphaOptions } from './alpha'
+import { BaiduOptions } from './baidu'
 import { BrainfuckOptions } from './brainfuck'
 import { MusicOptions } from './music'
 import { TranslateOptions } from './translate'
