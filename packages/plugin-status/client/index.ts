@@ -1,4 +1,4 @@
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import type { Payload } from '~/server'
 import BotTable from './components/bot-table.vue'
 import GroupChart from './components/group-chart.vue'
@@ -16,20 +16,4 @@ export {
   WordCloud,
 }
 
-export function useStatus() {
-  const status = ref<Payload>(null)
-
-  onMounted(async () => {
-    // eslint-disable-next-line no-undef
-    const socket = new WebSocket(KOISHI_ENDPOINT)
-    socket.onmessage = (ev) => {
-      const data = JSON.parse(ev.data)
-      console.log('receive', data)
-      if (data.type === 'update') {
-        status.value = data.body
-      }
-    }
-  })
-
-  return status
-}
+export const status = ref<Payload>(null)

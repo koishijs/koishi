@@ -1,18 +1,16 @@
 <template>
-  <k-layout v-if="status">
+  <template v-if="status">
     <load-chart :status="status"/>
     <bot-table :status="status"/>
     <history-chart :status="status"/>
     <hour-chart :status="status"/>
     <group-chart :status="status"/>
     <word-cloud :status="status"/>
-  </k-layout>
+  </template>
 </template>
 
 <script setup lang="ts">
 
-import { useStatus, BotTable, GroupChart, HistoryChart, HourChart, LoadChart, WordCloud } from '..'
-
-const status = useStatus()
+import { status, BotTable, GroupChart, HistoryChart, HourChart, LoadChart, WordCloud } from '..'
 
 </script>

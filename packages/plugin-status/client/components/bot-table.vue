@@ -1,5 +1,5 @@
 <template>
-  <el-card class="bot-table frameless" header="账号数据" shadow="hover">
+  <k-card class="bot-table" title="账号数据">
     <table v-if="status.bots.length">
       <tr>
         <th>平台名</th>
@@ -13,11 +13,11 @@
         <td>{{ bot.username }}</td>
         <td>{{ codes[bot.code] }}</td>
         <td>发送 {{ bot.currentRate[0] }}/min，接收 {{ bot.currentRate[1] }}/min</td>
-        <td>发送 {{ bot.recentRate[0] }}/min，接收 {{ bot.recentRate[1] }}/min</td>
+        <td>发送 {{ bot.recentRate[0] }}/d，接收 {{ bot.recentRate[1] }}/d</td>
       </tr>
     </table>
     <p v-else>暂无数据。</p>
-  </el-card>
+  </k-card>
 </template>
 
 <script lang="ts" setup>
@@ -45,16 +45,16 @@ const codes = ['运行中', '闲置', '离线', '网络异常', '服务器异常
   }
 
   tr:hover {
-    background-color: #f6f8fa;
+    background-color: #474d8450;
   }
 
   td, th {
     padding: .6em 1em;
-    border-bottom: 1px solid #ebeef5;
+    border-bottom: 1px solid #040620;
   }
 
-  tr:last-child td {
-    border-bottom: none;
+  th {
+    border-top: 1px solid #040620;
   }
 }
 

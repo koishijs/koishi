@@ -1,5 +1,5 @@
 <template>
-  <el-card class="frameless word-cloud" v-if="status.questions" shadow="hover">
+  <k-card class="frameless word-cloud" v-if="status.questions">
     <template #header>
       问答日均触发次数
       <el-button class="refresh" @click="refresh" type="text">刷新</el-button>
@@ -8,7 +8,7 @@
     <div class="footer">
       <p>显示的次数为实际触发次数。不考虑重定向问答和指令调用。</p>
     </div>
-  </el-card>
+  </k-card>
 </template>
 
 <script lang="ts" setup>

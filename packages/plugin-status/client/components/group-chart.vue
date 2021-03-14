@@ -1,8 +1,8 @@
 <template>
-  <el-card class="frameless" header="各群发言数量" shadow="hover">
+  <k-card class="frameless" title="各群发言数量">
     <v-chart v-if="status.groups.length" :option="option" autoresize/>
     <p v-else>暂无数据。</p>
-  </el-card>
+  </k-card>
 </template>
 
 <script lang="ts" setup>

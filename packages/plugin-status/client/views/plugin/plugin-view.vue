@@ -27,7 +27,7 @@ const state = computed(() => {
 
 <style lang="scss">
 
-@import '../index.scss';
+@import '../../index.scss';
 
 :not(.has-children) > .el-icon-caret-right {
   font-size: 16px !important;

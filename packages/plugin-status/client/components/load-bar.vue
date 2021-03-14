@@ -1,5 +1,5 @@
 <template>
-  <div class="load">
+  <div class="load-bar">
     <span class="title">{{ title }}</span>
     <span class="body" :class="mainly">
       <span class="used bar" :style="{ width: percentage(rate[1] - rate[0]) }">
@@ -32,11 +32,9 @@ const caption = computed(() => {
 
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 
-.load {
-  margin: 1rem 0;
-  padding: 0 2rem;
+.load-bar {
   display: flex;
   align-items: center;
   user-select: none;
@@ -62,7 +60,7 @@ const caption = computed(() => {
     height: 100%;
     position: relative;
     float: left;
-    transition: 0.6s ease;
+    transition: 0.3s ease;
   }
 
   .used {
@@ -83,6 +81,10 @@ const caption = computed(() => {
   .caption {
     left: 1rem;
     position: relative;
+  }
+
+  & + & {
+    margin-top: 0.6rem;
   }
 }
 

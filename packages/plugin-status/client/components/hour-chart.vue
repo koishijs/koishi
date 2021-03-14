@@ -1,7 +1,7 @@
 <template>
-  <el-card class="frameless" header="每小时发言数量" shadow="hover">
+  <k-card class="frameless" title="每小时发言数量">
     <v-chart :option="option" autoresize/>
-  </el-card>
+  </k-card>
 </template>
 
 <script lang="ts" setup>

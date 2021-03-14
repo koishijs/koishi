@@ -1,8 +1,8 @@
 <template>
-  <el-card class="frameless" header="历史发言数量" shadow="hover">
+  <k-card class="frameless" title="历史发言数量">
     <v-chart v-if="Object.keys(status.history).length" :option="option" autoresize/>
     <p v-else>暂无数据。</p>
-  </el-card>
+  </k-card>
 </template>
 
 <script lang="ts" setup>

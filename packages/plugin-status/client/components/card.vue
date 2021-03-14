@@ -1,5 +1,5 @@
 <template>
-  <section class="k-card" :class="{ frameless }">
+  <section class="k-card">
     <header><slot name="header">{{ title }}</slot></header>
     <div class="k-card-body"><slot/></div>
   </section>
@@ -10,13 +10,15 @@
 import { defineProps } from 'vue'
 
 defineProps<{
-  title: string
-  frameless?: boolean
+  title?: string
 }>()
 
 </script>
 
 <style lang="scss" scoped>
+
+$paddingX: 1.2rem;
+$paddingY: 1.6rem;
 
 .k-card {
   max-width: 960px;
@@ -28,11 +30,13 @@ defineProps<{
   header {
     font-size: 1.25rem;
     font-weight: bolder;
-    padding: 1rem 1.5rem;
+    padding: $paddingX $paddingY;
+    transition: color 0.3s ease;
+    color: rgba(244, 244, 245, .8);
   }
 
   .k-card-body {
-    padding: 1rem;
+    padding: 0 $paddingY $paddingX;
   }
 
   &.frameless .k-card-body {
