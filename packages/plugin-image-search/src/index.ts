@@ -52,7 +52,8 @@ export function apply(ctx: Context, config: Config = {}) {
     pendings.add(id)
     try {
       await callback(url, session, config)
-    } catch {
+    } catch (error) {
+      ctx.logger('search').warn(error)
       await session.send('搜索失败。')
     } finally {
       pendings.delete(id)
