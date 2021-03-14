@@ -11,11 +11,6 @@ export interface BaiduOptions {
   showImage?: boolean
 }
 
-/**
- * @name koishi-plugin-baidu 百度百科插件
- * @author 机智的小鱼君 <dragon-fish@qq.com>
- * @license Apache-2.0
- */
 const pluginName = 'baidu-baike'
 export { pluginName as name }
 
@@ -171,7 +166,7 @@ export function apply (koishi: Context, userOptions = {}) {
   const pOptions: BaiduOptions = Object.assign({}, defaultOptions, userOptions)
 
   koishi
-    .command('baidu <keyword>', '使用百度百科搜索')
+    .command('tools/baidu <keyword>', '使用百度百科搜索')
     .example('baidu 最终幻想14')
     .action(async ({ session }, keyword) => {
       // 是否有关键词
