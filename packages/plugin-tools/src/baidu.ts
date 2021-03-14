@@ -17,7 +17,7 @@ export interface BaiduOptions {
  * @license Apache-2.0
  */
 const pluginName = 'plugin-baidu'
-export pluginName as name 
+export { name as pluginName }
 
 /**
  * @function _msg
