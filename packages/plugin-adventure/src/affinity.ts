@@ -35,8 +35,12 @@ export namespace Affinity {
     }
     for (const field of fields || []) {
       Affinity.fields.add(field)
+      // profile also needs affinity data
+      Profile.fields.add(field)
     }
   }
+
+  Profile.add(user => `好感度：${Affinity.get(user)}`, [], 20)
 
   export function hint<T extends User.Field = never>(callback: HintCallback<T>, fields: Iterable<T> = []) {
     hintList.push(callback)
@@ -59,10 +63,6 @@ export namespace Affinity {
   }
 
   export function apply(ctx: Context) {
-    ctx.before('connect', () => {
-      Profile.add(user => `好感度：${Affinity.get(user)}`, fields, 20)
-    })
-
     ctx.command('adventure/affinity', '查看好感度', { maxUsage: 100, usageName: 'show' })
       .alias('aff')
       .userFields(fields)
