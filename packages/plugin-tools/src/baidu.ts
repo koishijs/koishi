@@ -6,9 +6,9 @@ import * as cheerio from 'cheerio'
 import { Context, segment } from 'koishi-core'
 
 export interface BaiduOptions {
-  maxSummaryLength: number
-  sendError: boolean
-  showImage: boolean
+  maxSummaryLength?: number
+  sendError?: boolean
+  showImage?: boolean
 }
 
 /**
@@ -16,8 +16,8 @@ export interface BaiduOptions {
  * @author 机智的小鱼君 <dragon-fish@qq.com>
  * @license Apache-2.0
  */
-const pluginName = 'plugin-baidu'
-export { name as pluginName }
+const pluginName = 'baidu-baike'
+export { pluginName as name }
 
 /**
  * @function _msg
@@ -114,7 +114,7 @@ function formatAnswer({
 }: {
   $article: any
   from: string
-  pOptions: Options
+  pOptions: BaiduOptions
 }): string {
   let msg = []
 
@@ -161,7 +161,7 @@ function formatAnswer({
   return msg.join('\n')
 }
 
-export const apply = (koishi: Context, userOptions = {}) => {
+export function apply (koishi: Context, userOptions = {}) {
   const defaultOptions: BaiduOptions = {
     maxSummaryLength: 220,
     sendError: true,
