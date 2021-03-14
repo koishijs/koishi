@@ -47,10 +47,12 @@ const caption = computed(() => {
 
   .body {
     width: 100%;
-    height: 1.6rem;
+    height: 1.2rem;
     position: relative;
     display: inline;
-    background-color: #f6f8fa;
+    background-color: #474d84;
+    border-radius: 4px;
+    overflow: hidden;
     &.busy > .caption, &.free .used > .caption {
       display: none;
     }
@@ -61,31 +63,25 @@ const caption = computed(() => {
     position: relative;
     float: left;
     transition: 0.6s ease;
-    &:hover {
-      z-index: 10;
-      cursor: pointer;
-      box-shadow: 0 0 4px #000c;
-    }
   }
 
   .used {
-    background-color: rgb(50,197,233);
+    background-color: #2477ff;
     color: white;
     &:hover {
-      background-color: rgb(55,216,255);
+      background-color: lighten(#2477ff, 10%);
     }
   }
 
   .app {
-    background-color: rgb(255,159,127);
+    background-color: #e49400;
     &:hover {
-      background-color: rgb(255,174,139);
+      background-color: lighten(#e49400, 10%);
     }
   }
 
   .caption {
-    left: 0.6rem;
-    line-height: 1.7;
+    left: 1rem;
     position: relative;
   }
 }

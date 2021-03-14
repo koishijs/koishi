@@ -1,8 +1,8 @@
 <template>
-  <el-card header="负载状态" shadow="hover">
+  <k-card title="负载状态">
     <load-bar title="CPU" :rate="status.cpu"/>
     <load-bar title="内存" :rate="status.memory"/>
-  </el-card>
+  </k-card>
 </template>
 
 <script setup lang="ts">
