@@ -6,11 +6,17 @@ import * as cheerio from 'cheerio'
 import { Context, segment } from 'koishi-core'
 
 export interface BaiduOptions {
+  maxResultDisplay?: number
   maxSummaryLength?: number
   sendError?: boolean
   showImage?: boolean
 }
 
+/**
+ * @name koishi-plugin-baidu 百度百科插件
+ * @author 机智的小鱼君 <dragon-fish@qq.com>
+ * @license Apache-2.0
+ */
 const pluginName = 'baidu-baike'
 export { pluginName as name }
 
@@ -31,10 +37,12 @@ function _msg(msgKey: string, ...args: string[]): string {
   }
   let allMsg = {
     article_not_exist: '喵，百度百科尚未收录词条 “$1” 。\n您可以访问以确认：$2',
-    baikeArticle: 'https://baike.baidu.com/item/$1',
-    baikeSearch: 'https://baike.baidu.com/search?word=$1',
-    basicSearch: 'https://www.baidu.com/s?wd=$1',
+    baike_article: 'https://baike.baidu.com/item/$1',
+    baike_search: 'https://baike.baidu.com/search?word=$1',
+    basic_search: 'https://www.baidu.com/s?wd=$1',
+    await_choose_result: '请发送您想查看的词条编号（1 - $1）',
     error_with_link: '百度搜索时出现问题。\n您可以访问以确认：$1',
+    has_multi_result: '“$1”有多个搜索结果（显示前 $2 个）：',
   }
   if (allMsg[msgKey]) {
     let finalMsg = handleArgs(allMsg[msgKey], ...args)
@@ -54,7 +62,7 @@ function _msg(msgKey: string, ...args: string[]): string {
  * @return {Promise}
  */
 async function makeSearch(keyword): Promise<any> {
-  let { data } = await axios.get(_msg('baikeSearch', encodeURI(keyword)))
+  let { data } = await axios.get(_msg('baike_search', encodeURI(keyword)))
   return cheerio.load(data)
 }
 
@@ -76,7 +84,7 @@ function getArticleLink($search: any, index: number = 0): string | null {
   let url = $entry.find('a.result-title').attr('href')
   if (!url) return null
   if (/^\/item\//.test(url))
-    url = _msg('baikeArticle', url.replace('/item/', ''))
+    url = _msg('baike_article', url.replace('/item/', ''))
 
   return url
 }
@@ -87,8 +95,7 @@ function getArticleLink($search: any, index: number = 0): string | null {
  * @param {Number} index
  * @return {Promise}
  */
-async function getArticle($search: any, index: number = 0): Promise<any> {
-  let url: string = getArticleLink($search, index)
+async function getArticle(url): Promise<any> {
   if (!url) return null
 
   // 获取词条内容
@@ -156,9 +163,10 @@ function formatAnswer({
   return msg.join('\n')
 }
 
-export function apply (koishi: Context, userOptions = {}) {
+export function apply(koishi: Context, userOptions = {}) {
   const defaultOptions: BaiduOptions = {
-    maxSummaryLength: 220,
+    maxResultDisplay: 3,
+    maxSummaryLength: 200,
     sendError: true,
     showImage: true,
   }
@@ -167,7 +175,8 @@ export function apply (koishi: Context, userOptions = {}) {
 
   koishi
     .command('tools/baidu <keyword>', '使用百度百科搜索')
-    .example('baidu 最终幻想14')
+    .example('百度一下最终幻想14')
+    .shortcut(/^百度(一下)?(.+?)$/, { args: ['$2'] })
     .action(async ({ session }, keyword) => {
       // 是否有关键词
       if (!keyword) return session.execute('baidu -h')
@@ -178,33 +187,79 @@ export function apply (koishi: Context, userOptions = {}) {
         // console.log('搜索完成')
 
         // 没有相关词条
-        if ($search('.create-entrance').length > 0 || $search('.no-result').length > 0) {
+        if (
+          $search('.create-entrance').length > 0 ||
+          $search('.no-result').length > 0
+        ) {
           return _msg(
             'article_not_exist',
             keyword,
-            _msg('baikeSearch', encodeURI(keyword))
+            _msg('baike_search', encodeURI(keyword))
           )
         }
 
+        // 有多个搜索结果
+        const $resultList = $search('.search-list dd')
+        let nthOfResult = 0
+        let allResults = $resultList.length
+        let showedResult =
+          allResults > pOptions.maxResultDisplay
+            ? pOptions.maxResultDisplay
+            : allResults
+        if (allResults > 1) {
+          let question = []
+          question.push(_msg('has_multi_result', keyword, showedResult))
+          for (let i = 0; i < showedResult; i++) {
+            let $item = $resultList.eq(i)
+            let title = $item
+              .find('.result-title')
+              .text()
+              .trim()
+              .replace(/[_\-]\s*百度百科$/, '')
+              .trim()
+            let desc = $item
+              .find('.result-summary')
+              .text()
+              .trim()
+            question.push(`${String(i + 1)}. ${title}\n  ${desc}`)
+          }
+          question.push(_msg('await_choose_result', showedResult))
+          session.send(question.join('\n'))
+          let answer: string = await session.prompt(30 * 1000)
+
+          if (!answer) {
+            return
+          }
+          if (
+            isNaN(Number(answer)) ||
+            Number(answer) < 1 ||
+            Number(answer) > showedResult
+          ) {
+            return session.send('编号输入有误！')
+          }
+          nthOfResult = Number(answer) - 1
+        }
+
         // 获取词条内容
-        let $article = await getArticle($search, 0)
+        const articleLink = getArticleLink($search, nthOfResult)
+        let $article = await getArticle(articleLink)
         // console.log('已取得词条内容')
 
         if (!$article)
           return pOptions.sendError
-            ? _msg('error_with_link', _msg('baikeSearch', encodeURI(keyword)))
+            ? _msg('error_with_link', _msg('baike_search', encodeURI(keyword)))
             : ''
 
         // 获取格式化文本
         return formatAnswer({
           $article,
-          from: getArticleLink($search, 0),
+          from: articleLink,
           pOptions,
         })
       } catch (err) {
         // console.error('百度搜索时出现问题', err)
         return pOptions.sendError
-          ? _msg('error_with_link', _msg('baikeSearch', encodeURI(keyword)))
+          ? _msg('error_with_link', _msg('baike_search', encodeURI(keyword)))
           : ''
       }
     })
