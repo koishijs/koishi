@@ -21,7 +21,7 @@ export interface Synchronizer {
   longterm: Record<Synchronizer.LongtermField, number>
   addDaily(field: Synchronizer.DailyField, key: string | number): void
   upload(date: Date): Promise<void>
-  download(date: string): Promise<Synchronizer.Data>
+  download(date: Date): Promise<Synchronizer.Data>
 }
 
 export namespace Synchronizer {

@@ -158,13 +158,14 @@ Database.extend('koishi-plugin-mysql', {
       await this.db.query(sqls)
     }
 
-    async download(date: string) {
+    async download(date: Date) {
+      const dateString = date.toLocaleDateString()
       const [daily, hourly, longterm, groups] = await this.db.query([
         'SELECT * FROM `stats_daily` WHERE `time` < DATE(?) ORDER BY `time` DESC LIMIT ?',
         'SELECT * FROM `stats_hourly` WHERE `time` < DATE(?) ORDER BY `time` DESC LIMIT ?',
         'SELECT * FROM `stats_longterm` WHERE `time` < DATE(?) ORDER BY `time` DESC',
         'SELECT `id`, `name`, `assignee` FROM `channel`',
-      ], [date, RECENT_LENGTH, date, 24 * RECENT_LENGTH, date])
+      ], [dateString, RECENT_LENGTH, dateString, 24 * RECENT_LENGTH, dateString])
       return { daily, hourly, longterm, groups }
     }
   },
