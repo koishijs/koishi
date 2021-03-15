@@ -1,8 +1,11 @@
-// const axios = require('axios').default
-// const cheerio = require('cheerio')
-// const { segment } = require('koishi-utils')
+/**
+ * @name koishi-plugin-baidu 百度百科插件
+ * @author 机智的小鱼君 <dragon-fish@qq.com>
+ * @license Apache-2.0
+ */
+
 import axios from 'axios'
-import * as cheerio from 'cheerio'
+import { load } from 'cheerio'
 import { Context, segment } from 'koishi-core'
 
 export interface BaiduOptions {
@@ -12,13 +15,7 @@ export interface BaiduOptions {
   showImage?: boolean
 }
 
-/**
- * @name koishi-plugin-baidu 百度百科插件
- * @author 机智的小鱼君 <dragon-fish@qq.com>
- * @license Apache-2.0
- */
-const pluginName = 'baidu-baike'
-export { pluginName as name }
+export const name = 'baidu'
 
 /**
  * @function _msg
@@ -28,14 +25,14 @@ export { pluginName as name }
  */
 function _msg(msgKey: string, ...args: string[]): string {
   function handleArgs(message: string, ...args: string[]) {
-    args.forEach(function(elem, index) {
-      var rgx = new RegExp('\\$' + (index + 1), 'g')
+    args.forEach(function (elem, index) {
+      const rgx = new RegExp('\\$' + (index + 1), 'g')
       message = message.replace(rgx, elem)
     })
 
     return message
   }
-  let allMsg = {
+  const allMsg = {
     article_not_exist: '喵，百度百科尚未收录词条 “$1” 。\n您可以访问以确认：$2',
     baike_article: 'https://baike.baidu.com/item/$1',
     baike_search: 'https://baike.baidu.com/search?word=$1',
@@ -45,14 +42,14 @@ function _msg(msgKey: string, ...args: string[]): string {
     has_multi_result: '“$1”有多个搜索结果（显示前 $2 个）：',
   }
   if (allMsg[msgKey]) {
-    let finalMsg = handleArgs(allMsg[msgKey], ...args)
+    const finalMsg = handleArgs(allMsg[msgKey], ...args)
     return finalMsg
   } else {
     let showArgs = ''
     if (args.length > 0) {
       showArgs += ': ' + args.join(', ')
     }
-    return `<${pluginName}-${msgKey}${showArgs}>`
+    return `<${name}-${msgKey}${showArgs}>`
   }
 }
 
@@ -62,8 +59,8 @@ function _msg(msgKey: string, ...args: string[]): string {
  * @return {Promise}
  */
 async function makeSearch(keyword): Promise<any> {
-  let { data } = await axios.get(_msg('baike_search', encodeURI(keyword)))
-  return cheerio.load(data)
+  const { data } = await axios.get(_msg('baike_search', encodeURI(keyword)))
+  return load(data)
 }
 
 /**
@@ -73,18 +70,17 @@ async function makeSearch(keyword): Promise<any> {
  * @return {String} 词条的链接
  */
 function getArticleLink($search: any, index: number = 0): string | null {
-  let $list = $search('.search-list dd')
+  const $list = $search('.search-list dd')
 
   // 处理 index
   if (index < 0) index = 0
   if ($list.length < 1 || index + 1 > $list.length) return null
 
   // 获取词条链接
-  let $entry = $list.eq(index)
+  const $entry = $list.eq(index)
   let url = $entry.find('a.result-title').attr('href')
   if (!url) return null
-  if (/^\/item\//.test(url))
-    url = _msg('baike_article', url.replace('/item/', ''))
+  if (/^\/item\//.test(url)) { url = _msg('baike_article', url.replace('/item/', '')) }
 
   return url
 }
@@ -99,8 +95,8 @@ async function getArticle(url): Promise<any> {
   if (!url) return null
 
   // 获取词条内容
-  let { data } = await axios.get(url)
-  return cheerio.load(data)
+  const { data } = await axios.get(url)
+  return load(data)
 }
 
 /**
@@ -118,20 +114,20 @@ function formatAnswer({
   from: string
   pOptions: BaiduOptions
 }): string {
-  let msg = []
+  const msg = []
 
   // 获取简图
-  let summaryPic = $article('.summary-pic img')
+  const summaryPic = $article('.summary-pic img')
   if (summaryPic.length > 0 && pOptions.showImage) {
     msg.push(
       segment('image', {
         file: summaryPic.attr('src'),
-      })
+      }),
     )
   }
 
   // 获取词条标题
-  let title = $article('h1')
+  const title = $article('h1')
     .text()
     .trim()
   msg.push(title)
@@ -145,7 +141,7 @@ function formatAnswer({
 
   // 获取词条的第一段
   $article('.lemma-summary sup').remove() // 删掉 [1] 这种鬼玩意
-  let summary = $article('.lemma-summary')
+  const summary = $article('.lemma-summary')
     .text()
     .trim()
   let maxLength = summary.length
@@ -155,7 +151,7 @@ function formatAnswer({
   msg.push(
     summary.length > maxLength
       ? summary.substr(0, maxLength) + ' [...]'
-      : summary
+      : summary,
   )
 
   msg.push(`来自：${from}`)
@@ -183,7 +179,7 @@ export function apply(koishi: Context, userOptions = {}) {
 
       try {
         // 尝试搜索
-        let $search = await makeSearch(keyword)
+        const $search = await makeSearch(keyword)
         // console.log('搜索完成')
 
         // 没有相关词条
@@ -194,30 +190,30 @@ export function apply(koishi: Context, userOptions = {}) {
           return _msg(
             'article_not_exist',
             keyword,
-            _msg('baike_search', encodeURI(keyword))
+            _msg('baike_search', encodeURI(keyword)),
           )
         }
 
         // 有多个搜索结果
         const $resultList = $search('.search-list dd')
         let nthOfResult = 0
-        let allResults = $resultList.length
-        let showedResult =
+        const allResults = $resultList.length
+        const showedResult =
           allResults > pOptions.maxResultDisplay
             ? pOptions.maxResultDisplay
             : allResults
         if (allResults > 1) {
-          let question = []
+          const question = []
           question.push(_msg('has_multi_result', keyword, showedResult))
           for (let i = 0; i < showedResult; i++) {
-            let $item = $resultList.eq(i)
-            let title = $item
+            const $item = $resultList.eq(i)
+            const title = $item
               .find('.result-title')
               .text()
               .trim()
               .replace(/[_\-]\s*百度百科$/, '')
               .trim()
-            let desc = $item
+            const desc = $item
               .find('.result-summary')
               .text()
               .trim()
@@ -225,7 +221,7 @@ export function apply(koishi: Context, userOptions = {}) {
           }
           question.push(_msg('await_choose_result', showedResult))
           session.send(question.join('\n'))
-          let answer: string = await session.prompt(30 * 1000)
+          const answer: string = await session.prompt(30 * 1000)
 
           if (!answer) {
             return
@@ -242,13 +238,14 @@ export function apply(koishi: Context, userOptions = {}) {
 
         // 获取词条内容
         const articleLink = getArticleLink($search, nthOfResult)
-        let $article = await getArticle(articleLink)
+        const $article = await getArticle(articleLink)
         // console.log('已取得词条内容')
 
-        if (!$article)
+        if (!$article) {
           return pOptions.sendError
             ? _msg('error_with_link', _msg('baike_search', encodeURI(keyword)))
             : ''
+        }
 
         // 获取格式化文本
         return formatAnswer({
