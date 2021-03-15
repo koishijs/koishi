@@ -61,7 +61,7 @@ function formatAnswer($: CheerioRoot, link: string, options: BaiduOptions): stri
     tips: $('.view-tip-panel').text().trim(),
     summary,
     link,
-  }).replace(/\n+/, '\n')
+  }).replace(/\n+/g, '\n')
 }
 
 export function apply(ctx: Context, options: BaiduOptions = {}) {
@@ -74,8 +74,8 @@ export function apply(ctx: Context, options: BaiduOptions = {}) {
 
   ctx.command('tools/baidu <keyword>', '使用百度百科搜索')
     .example('百度一下最终幻想14')
-    .shortcut('百度', { fuzzy: true })
-    .shortcut('百度一下', { fuzzy: true })
+    .shortcut('百度', { fuzzy: true, greedy: true })
+    .shortcut('百度一下', { fuzzy: true, greedy: true })
     .action(async ({ session }, keyword) => {
       if (!keyword) return session.execute('baidu -h')
       const url = URL_SEARCH + encodeURI(keyword)
