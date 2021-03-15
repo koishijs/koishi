@@ -73,7 +73,7 @@ export function apply(ctx: Context, options: BaiduOptions = {}) {
   }
 
   ctx.command('tools/baidu <keyword>', '使用百度百科搜索')
-    .example('百度一下最终幻想14')
+    .example('百度一下 最终幻想14')
     .shortcut('百度一下', { fuzzy: true, greedy: true })
     .shortcut('百度', { fuzzy: true, greedy: true })
     .action(async ({ session }, keyword) => {
