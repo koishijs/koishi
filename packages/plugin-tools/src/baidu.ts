@@ -14,11 +14,11 @@ const URL_BASE = 'https://baike.baidu.com'
 const URL_SEARCH = URL_BASE + '/search?word='
 
 template.set('baidu', {
-  'article-not-exist': '喵，百度百科尚未收录词条 “{0}” 。\n您可以访问以确认：{1}',
+  'article-not-exist': '百度百科尚未收录词条 “{0}” 。',
   'await-choose-result': '请发送您想查看的词条编号。',
-  'error-with-link': '百度搜索时出现问题。\n您可以访问以确认：{0}',
+  'error-with-link': '百度搜索时出现问题。',
   'has-multi-result': '“{0}”有多个搜索结果（显示前 {1} 个）：',
-  'incorrect-index': '编号输入有误！',
+  'incorrect-index': '',
 })
 
 type CheerioRoot = ReturnType<typeof cheerio.load>
@@ -123,6 +123,7 @@ export function apply(ctx: Context, options: BaiduOptions = {}) {
         // 获取格式化文本
         return formatAnswer($article, articleLink, options)
       } catch (err) {
+        ctx.logger('baidu').warn(err)
         return template('baidu.error-with-link', url)
       }
     })
