@@ -211,8 +211,10 @@ export function apply(ctx: Context) {
           channel.chess = null
           break
         case undefined:
-          state.next = userId === state.p1 ? state.p2 : state.p1
-          message += `下一手轮到 ${segment.at(state.next)}。`
+          // eslint-disable-next-line no-cond-assign
+          if (state.next = userId === state.p1 ? state.p2 : state.p1) {
+            message += `下一手轮到 ${segment.at(state.next)}。`
+          }
           break
         default:
           state.next = userId

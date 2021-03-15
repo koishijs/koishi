@@ -1,4 +1,4 @@
-import { difference, observe, Time, enumKeys, Random, template, deduplicate } from 'koishi-utils'
+import { difference, observe, Time, enumKeys, Random, template, deduplicate, intersection } from 'koishi-utils'
 import { Context, User, Channel, Command, Argv, Platform, Session } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
@@ -256,6 +256,13 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
     return token
   }
 
+  async function bind(user: User.Observed<never>, platform: Platform, userId: string) {
+    await ctx.database.removeUser(platform, userId)
+    ctx.app._userCache[platform].set(userId, user)
+    user[platform] = userId as never
+    await user._update()
+  }
+
   ctx.command('user/bind', '绑定到账号', { authority: 0 })
     .action(({ session }) => {
       const token = generate(session, +(session.subtype === 'group'))
@@ -268,9 +275,8 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
     if (data[2] < 0) {
       const sess = new Session(ctx.app, { ...session, platform: data[0], userId: data[1] })
       const user = await sess.observeUser([session.platform])
-      user[session.platform] = session.userId as never
       delete tokens[session.content]
-      await user._update()
+      await bind(user, session.platform, session.userId)
       return session.send(template('bind.success'))
     } else {
       const user = await session.observeUser(['authority', data[0]])
@@ -281,8 +287,7 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
         const token = generate(session, -1)
         return session.send(template('bind.generated-2', token))
       } else {
-        user[data[0] as any] = data[1]
-        await user._update()
+        await bind(user, data[0], data[1])
         return session.send(template('bind.success'))
       }
     }
@@ -377,10 +382,10 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
   ctx.command('channel/switch <command...>', '启用和禁用功能', { authority: 3 })
     .channelFields(['disable'])
     .userFields(['authority'])
-    .adminChannel(({ session, target: { disable } }, ...names: string[]) => {
+    .adminChannel(async ({ session, target }, ...names: string[]) => {
       if (!names.length) {
-        if (!disable.length) return template('switch.none')
-        return template('switch.list', disable.join(', '))
+        if (!target.disable.length) return template('switch.none')
+        return template('switch.list', target.disable.join(', '))
       }
 
       names = deduplicate(names)
@@ -390,14 +395,15 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       })
       if (forbidden.length) return template('switch.forbidden', forbidden.join(', '))
 
-      for (const name of names) {
-        const index = disable.indexOf(name)
-        if (index >= 0) {
-          disable.splice(index)
-        } else {
-          disable.push(name)
-        }
-      }
+      const add = difference(names, target.disable)
+      const remove = intersection(names, target.disable)
+      const preserve = difference(target.disable, names)
+      const output: string[] = []
+      if (add.length) output.push(`禁用 ${add.join(', ')} 功能`)
+      if (remove.length) output.push(`启用 ${remove.join(', ')} 功能`)
+      target.disable = [...preserve, ...add]
+      await target._update()
+      return `已${output.join('，')}。`
     })
 
   ctx.command('channel.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })

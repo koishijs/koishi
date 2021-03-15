@@ -98,10 +98,10 @@ describe('Admin Commands', () => {
   it('channel/switch', async () => {
     await session.shouldReply('switch', '当前没有禁用功能。')
     await session.shouldReply('baz', 'zab')
-    await session.shouldReply('switch baz', '频道数据已修改。')
+    await session.shouldReply('switch baz', '已禁用 baz 功能。')
     await session.shouldReply('switch', '当前禁用的功能有：baz')
     await session.shouldNotReply('baz')
-    await session.shouldReply('switch baz', '频道数据已修改。')
+    await session.shouldReply('switch baz', '已启用 baz 功能。')
     await session.shouldReply('baz', 'zab')
     await session.shouldReply('switch assign', '您无权修改 assign 功能。')
   })

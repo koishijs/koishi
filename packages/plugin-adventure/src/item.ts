@@ -330,7 +330,7 @@ namespace Item {
         await session.send(hints.join('\n'))
       })
 
-    ctx.command('adventure/before-sell [item] [count]', '售出物品', { maxUsage: 100 })
+    ctx.command('adventure/sell [item] [count]', '售出物品', { maxUsage: 100 })
       .checkTimer('$system')
       .checkTimer('$shop')
       .userFields(['id', 'authority', 'warehouse', 'money', 'wealth', 'achievement', 'timers', 'progress', 'name', 'usage', 'gains'])

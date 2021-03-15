@@ -12,12 +12,32 @@ $warning: #E6A23C;
 
 .el-card {
   max-width: 960px;
-  margin: 0 auto;
-  border-radius: 1rem;
+  margin: 2rem auto;
+  border-radius: 6px;
 
   .el-card__header {
     font-size: 1.25rem;
     font-weight: bolder;
     padding: 1rem 1.5rem;
+    text-align: center;
   }
+
+  .frameless > & .el-card__body {
+    padding: 0;
+
+    p {
+      margin: 1.5rem 2rem;
+    }
+  }
+
+  .footer {
+    border-top: 1px solid #EBEEF5;
+  }
+}
+
+.echarts {
+  width: 800px;
+  height: 400px;
+  max-width: 100%;
+  margin: 0 auto;
 }

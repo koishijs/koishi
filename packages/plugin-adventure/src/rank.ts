@@ -147,7 +147,7 @@ namespace Rank {
         return Rank.show(rank, session, options)
       })
 
-    ctx.on('before-parse', (message, session) => {
+    ctx.before('parse', (message, session) => {
       if (session.quote || session.parsed.prefix) return
       const capture = /^(全服|本群)?(.+)(全服|本群)?排[名行]榜?$/.exec(message)
       if (!capture) return
