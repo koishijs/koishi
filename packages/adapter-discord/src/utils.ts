@@ -90,6 +90,7 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, ses
       session.content += segment('video', { url: embed.video.url, proxy_url: embed.video.proxy_url })
     }
   }
+  session.content = meta.embeds.map(v => segment('embed', { data: JSON.stringify(v) })).join('') + session.content
   return session
 }
 

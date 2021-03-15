@@ -1,4 +1,4 @@
-import { Context, Channel, noop, Session, Logger, Bot, Platform } from 'koishi'
+import { Context, Channel, noop, Session, Logger, Bot, Platform, Time } from 'koishi'
 import {} from 'koishi-plugin-teach'
 import { Synchronizer } from './database'
 import Profile from './profile'
@@ -57,7 +57,7 @@ async function upload(sync: Synchronizer, forced = false) {
   }
 }
 
-async function download(ctx: Context, date: string) {
+async function download(ctx: Context, date: Date) {
   const data = await ctx.app.synchronizer.download(date)
   const extension = data.extension = {} as Statistics
   const { daily, hourly, longterm, groups } = data
@@ -151,14 +151,15 @@ Session.prototype.send = function (this: Session, ...args) {
 }
 
 namespace Statistics {
-  let cachedDate: string
+  let cachedDate: number
   let cachedData: Promise<Synchronizer.Data>
 
   export async function patch(ctx: Context, profile: Profile) {
-    const dateString = new Date().toLocaleDateString('zh-CN')
-    if (dateString !== cachedDate) {
-      cachedData = download(ctx, dateString)
-      cachedDate = dateString
+    const date = new Date()
+    const dateNumber = Time.getDateNumber(date, date.getTimezoneOffset())
+    if (dateNumber !== cachedDate) {
+      cachedData = download(ctx, date)
+      cachedDate = dateNumber
     }
     const { extension, daily } = await cachedData
     Object.assign(profile, extension)
