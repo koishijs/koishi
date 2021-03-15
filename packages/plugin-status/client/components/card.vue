@@ -22,7 +22,7 @@ $paddingY: 1.6rem;
 
 .k-card {
   max-width: 960px;
-  margin: 2rem auto;
+  margin: 0 auto;
   border-radius: 6px;
   background: rgba(0, 0, 0, .24);
   box-shadow: 0 23px 20px -20px rgb(9 10 18 / 10%), 0 0 15px rgb(9 10 18 / 6%);
@@ -49,6 +49,10 @@ $paddingY: 1.6rem;
 
   .footer {
     border-top: 1px solid #EBEEF5;
+  }
+
+  & + & {
+    margin-top: 2rem;
   }
 }
 

@@ -34,7 +34,8 @@ body {
 }
 
 $navbarHeight: 4rem;
-$sidebarWidth: 20rem;
+$sidebarWidth: 16rem;
+$mainPadding: 2rem;
 
 nav {
   padding: 1rem 2rem;
@@ -49,18 +50,20 @@ nav {
 
 main {
   margin-left: $sidebarWidth;
+  padding: 0 $mainPadding;
 }
 
 aside {
   margin: 0 1rem;
   position: absolute;
   top: $navbarHeight;
-  width: $sidebarWidth - 2rem;
+  width: $sidebarWidth - 1rem;
 
   ul {
     list-style: none;
     width: 100%;
     padding-left: 0;
+    margin: 0;
   }
 
   li {

@@ -1,12 +1,14 @@
 <template>
   <div class="load-bar">
     <span class="title">{{ title }}</span>
-    <span class="body" :class="mainly">
+    <span class="body">
       <span class="used bar" :style="{ width: percentage(rate[1] - rate[0]) }">
-        <span class="caption">{{ caption }}</span>
+        <span v-if="mainly === 'used'" class="caption">{{ caption }}</span>
       </span>
-      <span class="app bar" :style="{ width: percentage(rate[0]) }"/>
-      <span class="caption">{{ caption }}</span>
+      <span class="app bar" :style="{ width: percentage(rate[0]) }">
+        <span v-if="mainly === 'app'" class="caption">{{ caption }}</span>
+      </span>
+      <span v-if="mainly === 'free'" class="caption">{{ caption }}</span>
     </span>
   </div>
 </template>
@@ -22,8 +24,12 @@ function percentage(value: number, digits = 3) {
   return (value * 100).toFixed(digits) + '%'
 }
 
-const mainly = computed(() => {
-  return 1 + props.rate[0] > 2 * props.rate[1] ? 'free' : 'busy'
+const segments = ['used', 'app', 'free'] as const
+
+const mainly = computed<typeof segments[number]>(() => {
+  const length = [props.rate[1] - props.rate[0], props.rate[0], 1 - props.rate[1]]
+  const index = length.indexOf(Math.max(...length))
+  return segments[index]
 })
 
 const caption = computed(() => {
@@ -51,9 +57,6 @@ const caption = computed(() => {
     background-color: #474d84;
     border-radius: 4px;
     overflow: hidden;
-    &.busy > .caption, &.free .used > .caption {
-      display: none;
-    }
   }
 
   .bar {
