@@ -12,7 +12,9 @@
       </li>
     </ul>
   </aside>
-  <main><slot/></main>
+  <main>
+    <router-view/>
+  </main>
 </template>
 
 <script lang="ts" setup>
@@ -73,7 +75,7 @@ aside {
 
   i {
     width: 1rem;
-    margin-right: 0.5rem;
+    margin-right: 1rem;
     text-align: center;
   }
 

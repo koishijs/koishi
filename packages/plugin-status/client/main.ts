@@ -1,15 +1,14 @@
-import { createApp, h } from 'vue'
-import { ElCard, ElButton, ElCollapseTransition } from 'element-plus'
+import { createApp } from 'vue'
+import { ElButton, ElCollapseTransition } from 'element-plus'
 import { THEME_KEY } from 'vue-echarts'
-import { createRouter, createWebHistory, RouterView } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import Card from './components/card.vue'
-import Layout from './components/layout/index.vue'
+import App from './views/layout/index.vue'
 import { status } from '.'
 
 // for el-collapse-transition
 import 'element-plus/lib/theme-chalk/base.css'
 import 'element-plus/lib/theme-chalk/el-icon.css'
-import 'element-plus/lib/theme-chalk/el-card.css'
 import 'element-plus/lib/theme-chalk/el-button.css'
 
 import '@fortawesome/fontawesome-free/css/fontawesome.css'
@@ -24,15 +23,14 @@ declare module 'vue-router' {
   }
 }
 
-const app = createApp(() => {
-  return h(Layout, [h(RouterView)])
-})
+const app = createApp(App)
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', name: '仪表盘', meta: { icon: 'tachometer-alt' }, component: () => import('./views/home.vue') },
-    { path: '/plugin', name: '插件', meta: { icon: 'plug' }, component: () => import('./views/plugin/index.vue') },
+    { path: '/', name: '仪表盘', meta: { icon: 'tachometer-alt' }, component: () => import('./views/home/index.vue') },
+    { path: '/bots', name: '机器人', meta: { icon: 'robot' }, component: () => import('./views/bots.vue') },
+    { path: '/plugins', name: '插件', meta: { icon: 'plug' }, component: () => import('./views/plugins/index.vue') },
   ],
 })
 
@@ -40,7 +38,6 @@ app.component('k-card', Card)
 
 app.provide(THEME_KEY, 'light')
 
-app.use(ElCard)
 app.use(ElButton)
 app.use(ElCollapseTransition)
 
