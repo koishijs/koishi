@@ -1,19 +1,17 @@
 import { Context, Plugin } from 'koishi-core'
 import { assertProperty } from 'koishi-utils'
 import { resolve } from 'path'
+import { WebAdapter } from './adapter'
 import { createServer, ViteDevServer } from 'vite'
-import WebSocket from 'ws'
 import vuePlugin from '@vitejs/plugin-vue'
 import Profile from './profile'
 import Statistics from './stats'
 
 export { BotData, LoadRate } from './profile'
 
-export interface Config {
-  path?: string
+export interface Config extends WebAdapter.Config {
   port?: number
   selfUrl?: string
-  layout?: string
 }
 
 export interface PluginData extends Plugin.Meta {
@@ -34,12 +32,11 @@ export function apply(ctx: Context, config: Config = {}) {
   const {
     path = '/status',
     port = 8080,
-    layout = root + '/app.vue',
     selfUrl = `ws://localhost:${koishiPort}`,
   } = config
 
   let vite: ViteDevServer
-  let wsServer: WebSocket.Server
+  let adapter: WebAdapter
   ctx.on('connect', async () => {
     vite = await createServer({
       root,
@@ -47,7 +44,6 @@ export function apply(ctx: Context, config: Config = {}) {
       resolve: {
         alias: {
           '~/client': root,
-          '~/layout': resolve(process.cwd(), layout),
         },
       },
       define: {
@@ -55,12 +51,9 @@ export function apply(ctx: Context, config: Config = {}) {
       },
     })
 
-    wsServer = new WebSocket.Server({
-      path,
-      server: ctx.app._httpServer,
-    })
+    adapter = ctx.app.adapters.sandbox = new WebAdapter(ctx.app, { path })
 
-    wsServer.on('connection', async (socket) => {
+    adapter.server.on('connection', async (socket) => {
       if (!plugins) updatePlugins()
       if (!profile) await updateProfile()
       const data = JSON.stringify({
@@ -70,6 +63,7 @@ export function apply(ctx: Context, config: Config = {}) {
       socket.send(data)
     })
 
+    await adapter.start()
     await vite.listen(port)
   })
 
@@ -98,13 +92,13 @@ export function apply(ctx: Context, config: Config = {}) {
   let profile: Profile
 
   async function broadcast(callback: () => void | Promise<void>) {
-    if (!wsServer?.clients.size) return
+    if (!adapter?.server.clients.size) return
     await callback()
     const data = JSON.stringify({
       type: 'update',
       body: { ...profile, plugins, pluginCount },
     })
-    wsServer.clients.forEach((socket) => socket.send(data))
+    adapter.server.clients.forEach((socket) => socket.send(data))
   }
 
   function updatePlugins() {
@@ -128,9 +122,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.before('disconnect', async () => {
     await Promise.all([
       vite?.close(),
-      new Promise<void>((resolve, reject) => {
-        wsServer.close((err) => err ? resolve() : reject(err))
-      }),
+      adapter?.stop(),
     ])
   })
 }

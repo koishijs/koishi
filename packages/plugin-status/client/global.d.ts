@@ -16,8 +16,4 @@ declare module '~/client' {
   export * from 'koishi-plugin-status/client'
 }
 
-declare module '~/layout' {
-  export * from 'koishi-plugin-status/client/app.vue'
-}
-
 declare const KOISHI_ENDPOINT: string

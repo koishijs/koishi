@@ -1,5 +1,5 @@
 <template>
-  <k-card title="负载状态">
+  <k-card class="load-chart" title="负载状态">
     <load-bar title="CPU" :rate="status.cpu"/>
     <load-bar title="内存" :rate="status.memory"/>
   </k-card>

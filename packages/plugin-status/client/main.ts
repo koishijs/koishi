@@ -3,9 +3,9 @@ import { ElButton, ElCollapseTransition } from 'element-plus'
 import { THEME_KEY } from 'vue-echarts'
 import { createRouter, createWebHistory } from 'vue-router'
 import Card from './components/card.vue'
-import CardNumeric from './components/card-numeric.vue'
+import Input from './components/input.vue'
 import App from './views/layout/index.vue'
-import { status } from '.'
+import { start } from '.'
 
 // for el-collapse-transition
 import 'element-plus/lib/theme-chalk/base.css'
@@ -44,27 +44,24 @@ const router = createRouter({
     name: '插件',
     meta: { icon: 'plug' },
     component: () => import('./views/plugins/index.vue'),
+  }, {
+    path: '/sandbox',
+    name: '沙盒',
+    meta: { icon: 'laptop-code' },
+    component: () => import('./views/sandbox.vue'),
   }],
 })
 
 app.component('k-card', Card)
-app.component('k-card-numeric', CardNumeric)
+app.component('k-input', Input)
 
-app.provide(THEME_KEY, 'light')
+app.provide(THEME_KEY, 'dark-blue')
 
 app.use(ElButton)
 app.use(ElCollapseTransition)
 
 app.use(router)
 
-// eslint-disable-next-line no-undef
-const socket = new WebSocket(KOISHI_ENDPOINT)
-socket.onmessage = (ev) => {
-  const data = JSON.parse(ev.data)
-  console.log('receive', data)
-  if (data.type === 'update') {
-    status.value = data.body
-  }
-}
+start()
 
 app.mount('#app')

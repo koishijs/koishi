@@ -23,7 +23,6 @@ $paddingX: 1.2rem;
 $paddingY: 1.6rem;
 
 .k-card {
-  max-width: 960px;
   margin: 0 auto;
   width: 100%;
   border-radius: 6px;

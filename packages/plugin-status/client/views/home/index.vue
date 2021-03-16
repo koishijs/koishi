@@ -1,23 +1,26 @@
 <template>
   <div class="basic-stats">
-    <k-card-numeric title="当前消息频率" icon="paper-plane">{{ upRate }} / min</k-card-numeric>
-    <k-card-numeric title="近期消息频率" icon="history">{{ recentRate }} / d</k-card-numeric>
-    <k-card-numeric title="命名插件数量" icon="plug">{{ status.pluginCount }}</k-card-numeric>
-    <k-card-numeric title="数据库体积" icon="database">456 MB</k-card-numeric>
-    <k-card-numeric title="活跃用户数量" icon="heart">456</k-card-numeric>
-    <k-card-numeric title="活跃群数量" icon="users">32</k-card-numeric>
+    <card-numeric title="当前消息频率" icon="paper-plane">{{ upRate }} / min</card-numeric>
+    <card-numeric title="近期消息频率" icon="history">{{ recentRate }} / d</card-numeric>
+    <card-numeric title="命名插件数量" icon="plug">{{ status.pluginCount }}</card-numeric>
+    <card-numeric title="数据库体积" icon="database">456 MB</card-numeric>
+    <card-numeric title="活跃用户数量" icon="heart">456</card-numeric>
+    <card-numeric title="活跃群数量" icon="users">32</card-numeric>
   </div>
   <load-chart :status="status"/>
-  <history-chart :status="status"/>
-  <hour-chart :status="status"/>
-  <group-chart :status="status"/>
-  <word-cloud :status="status"/>
+  <div class="chart-stats">
+    <history-chart :status="status"/>
+    <hour-chart :status="status"/>
+    <group-chart :status="status"/>
+    <word-cloud :status="status"/>
+  </div>
 </template>
 
 <script setup lang="ts">
 
 import { computed } from 'vue'
 import { status } from '~/client'
+import CardNumeric from './card-numeric.vue'
 import GroupChart from './group-chart.vue'
 import HistoryChart from './history-chart.vue'
 import HourChart from './hour-chart.vue'
@@ -42,6 +45,31 @@ const recentRate = computed(() => {
   grid-template-rows: repeat(2, 1fr);
   grid-gap: 2rem;
   margin-bottom: 2rem;
+}
+
+.chart-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  grid-gap: 2rem;
+  margin: 2rem 0 4rem;
+
+  .echarts {
+    width: 600px;
+    height: 400px;
+    max-width: 100%;
+    margin: 0 auto -3rem;
+  }
+
+  @media screen and (max-width: 1440px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, 1fr);
+
+    .echarts {
+      width: 800px;
+      height: 400px;
+    }
+  }
 }
 
 </style>

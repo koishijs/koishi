@@ -87,6 +87,11 @@ export namespace Profile {
     return { bots, memory, cpu } as Profile
   }
 
+  export function initBot(bot: Bot) {
+    bot.messageSent = new Array(61).fill(0)
+    bot.messageReceived = new Array(61).fill(0)
+  }
+
   export function apply(ctx: Context, config: Config = {}) {
     const { tick = 5 * Time.second } = config
 
@@ -99,10 +104,7 @@ export namespace Profile {
     })
 
     ctx.on('connect', async () => {
-      ctx.bots.forEach((bot) => {
-        bot.messageSent = new Array(61).fill(0)
-        bot.messageReceived = new Array(61).fill(0)
-      })
+      ctx.bots.forEach(initBot)
 
       ctx.setInterval(() => {
         updateCpuUsage()

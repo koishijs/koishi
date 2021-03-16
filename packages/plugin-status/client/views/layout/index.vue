@@ -55,8 +55,13 @@ nav {
 }
 
 main {
-  margin-left: $sidebarWidth;
+  margin: $navbarHeight 0;
   padding: 0 $mainPadding;
+  position: absolute;
+  bottom: 0;
+  top: 0;
+  right: 0;
+  left: $sidebarWidth;
 }
 
 aside {
@@ -78,8 +83,8 @@ aside {
   }
 
   i {
-    width: 1rem;
-    margin-right: 1rem;
+    width: 1.5rem;
+    margin-right: 0.5rem;
     text-align: center;
   }
 
