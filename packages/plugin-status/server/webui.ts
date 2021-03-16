@@ -23,6 +23,7 @@ export interface PluginData extends Plugin.Meta {
 
 export interface Payload extends Profile, Statistics {
   plugins: PluginData[]
+  pluginCount: number
 }
 
 export const name = 'webui'
@@ -64,7 +65,7 @@ export function apply(ctx: Context, config: Config = {}) {
       if (!profile) await updateProfile()
       const data = JSON.stringify({
         type: 'update',
-        body: { ...profile, plugins },
+        body: { ...profile, plugins, pluginCount },
       })
       socket.send(data)
     })
@@ -87,11 +88,13 @@ export function apply(ctx: Context, config: Config = {}) {
     const children = state.children.flatMap(traverse, 1)
     const { name, sideEffect } = state
     if (!name) return children
+    pluginCount += 1
     const dependencies = [...new Set(getDeps(state))]
     return [{ name, sideEffect, children, dependencies }]
   }
 
   let plugins: PluginData[]
+  let pluginCount: number
   let profile: Profile
 
   async function broadcast(callback: () => void | Promise<void>) {
@@ -99,12 +102,13 @@ export function apply(ctx: Context, config: Config = {}) {
     await callback()
     const data = JSON.stringify({
       type: 'update',
-      body: { ...profile, plugins },
+      body: { ...profile, plugins, pluginCount },
     })
     wsServer.clients.forEach((socket) => socket.send(data))
   }
 
   function updatePlugins() {
+    pluginCount = 0
     plugins = traverse(null)
   }
 

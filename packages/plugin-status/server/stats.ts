@@ -108,7 +108,7 @@ async function download(ctx: Context, date: Date) {
         name: name || key,
         value: messageMap[key],
         last: daily[0].group[key],
-        assignee: ctx.bots[assignee].selfId,
+        assignee: ctx.bots[`${platform}:${assignee}`].selfId,
       })
     }
   }

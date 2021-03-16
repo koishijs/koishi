@@ -1,6 +1,8 @@
 <template>
   <section class="k-card">
-    <header><slot name="header">{{ title }}</slot></header>
+    <header v-if="title || $slots.header">
+      <slot name="header">{{ title }}</slot>
+    </header>
     <div class="k-card-body"><slot/></div>
   </section>
 </template>
@@ -23,6 +25,7 @@ $paddingY: 1.6rem;
 .k-card {
   max-width: 960px;
   margin: 0 auto;
+  width: 100%;
   border-radius: 6px;
   background: rgba(0, 0, 0, .24);
   box-shadow: 0 23px 20px -20px rgb(9 10 18 / 10%), 0 0 15px rgb(9 10 18 / 6%);
@@ -30,13 +33,13 @@ $paddingY: 1.6rem;
   header {
     font-size: 1.25rem;
     font-weight: bolder;
-    padding: $paddingX $paddingY;
+    padding: $paddingX $paddingY 0;
     transition: color 0.3s ease;
     color: rgba(244, 244, 245, .8);
   }
 
   .k-card-body {
-    padding: 0 $paddingY $paddingX;
+    padding: $paddingX $paddingY;
   }
 
   &.frameless .k-card-body {
@@ -49,10 +52,6 @@ $paddingY: 1.6rem;
 
   .footer {
     border-top: 1px solid #EBEEF5;
-  }
-
-  & + & {
-    margin-top: 2rem;
   }
 }
 

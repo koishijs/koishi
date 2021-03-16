@@ -1,5 +1,5 @@
 <template>
-  <k-card v-if="status" class="bot-table" title="账号数据">
+  <k-card class="bot-table" title="账号数据">
     <table v-if="status.bots.length">
       <tr>
         <th>平台名</th>
@@ -23,7 +23,6 @@
 <script lang="ts" setup>
 
 import { status } from '~/client'
-import { defineProps } from 'vue'
 
 const codes = ['运行中', '闲置', '离线', '网络异常', '服务器异常', '封禁中', '尝试连接']
 
