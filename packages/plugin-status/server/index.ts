@@ -1,5 +1,5 @@
 import { Context, App, Argv } from 'koishi-core'
-import { interpolate, Time } from 'koishi-utils'
+import { interpolate, Random, Time } from 'koishi-utils'
 import { ActiveData } from './database'
 import * as WebUI from './webui'
 import Profile from './profile'
@@ -15,6 +15,11 @@ declare module 'koishi-core' {
 
   interface EventMap {
     'status/tick'(): void
+  }
+
+  interface User {
+    token: string
+    expire: number
   }
 }
 
@@ -55,6 +60,11 @@ const defaultConfig: Config = {
   ].join('\n'),
 }
 
+const states: Record<number, [string, number, boolean?]> = {}
+
+const TOKEN_SHORTTERM = 10 * 60 * 1000
+const TOKEN_LONGTERM = 7 * 24 * 60 * 60 * 1000
+
 export const name = 'status'
 
 export function apply(ctx: Context, config: Config = {}) {
@@ -63,6 +73,47 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.all().on('command', ({ session }: Argv<'lastCall'>) => {
     session.user.lastCall = new Date()
   })
+
+  ctx.router.get('/status', async (koa) => {
+    koa.set('Access-Control-Allow-Origin', '*')
+    koa.body = await getStatus()
+  })
+
+  ctx.router.get('/status/validate', async (koa) => {
+    const { platform, userId } = koa.query
+    koa.set('Access-Control-Allow-Origin', '*')
+    if (!platform || !userId) return koa.status = 403
+    const id = `${platform}:${userId}`
+    if (!states[id]) {
+      const token = Random.uuid()
+      const expire = Date.now() + TOKEN_SHORTTERM
+      states[id] = [token, expire]
+      setTimeout(() => {
+        if (states[id]?.[1] > Date.now()) delete states[token]
+      }, TOKEN_SHORTTERM)
+      return koa.body = { token, expire }
+    }
+    const [token, expire, valid] = states[id]
+    if (valid) {
+      const user = await ctx.database.getUser(platform, userId)
+      koa.body = { token, expire, user }
+      delete states[id]
+    } else {
+      koa.body = { token, expire }
+    }
+  })
+
+  ctx.all().middleware(async (session, next) => {
+    if (session.subtype !== 'private') return next()
+    const state = states[session.uid]
+    if (state && state[0] === session.content) {
+      const user = await session.observeUser<'token' | 'expire'>()
+      state[0] = user.token = Random.uuid()
+      state[1] = user.expire = Date.now() + TOKEN_LONGTERM
+      state[2] = true
+    }
+    return next()
+  }, true)
 
   ctx.command('status', '查看机器人运行状态')
     .shortcut('你的状态', { prefix: true })

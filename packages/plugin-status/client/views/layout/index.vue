@@ -1,18 +1,9 @@
 <template>
-  <nav>
-    <h1>Koishi 控制台</h1>
-  </nav>
-  <aside>
-    <ul>
-      <li v-for="(route, index) in $router.getRoutes()" :key="index" :class="{ current: route.name === $route.name }">
-        <router-link :to="route.path">
-          <i :class="['fas', `fa-${route.meta.icon}`]"/>
-          {{ route.name }}
-        </router-link>
-      </li>
-    </ul>
-  </aside>
-  <main>
+  <template v-if="!standalone">
+    <navbar/>
+    <sidebar/>
+  </template>
+  <main :class="{ standalone }">
     <router-view v-if="status"/>
   </main>
 </template>
@@ -20,10 +11,19 @@
 <script lang="ts" setup>
 
 import { status } from '~/client'
+import Navbar from './navbar.vue'
+import Sidebar from './sidebar.vue'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const standalone = computed(() => route.meta.standalone)
 
 </script>
 
 <style lang="scss">
+
+@import '../../index.scss';
 
 body {
   margin: 0;
@@ -39,21 +39,6 @@ body {
   position: relative;
 }
 
-$navbarHeight: 4rem;
-$sidebarWidth: 16rem;
-$mainPadding: 2rem;
-
-nav {
-  padding: 1rem 2rem;
-  line-height: 2rem;
-
-  h1 {
-    margin: 0;
-    font-size: 1.25rem;
-    color: rgba(244, 244, 245, .8);
-  }
-}
-
 main {
   margin: $navbarHeight 0;
   padding: 0 $mainPadding;
@@ -64,52 +49,11 @@ main {
   left: $sidebarWidth;
 }
 
-aside {
-  margin: 0 1rem;
-  position: absolute;
-  top: $navbarHeight;
-  width: $sidebarWidth - 1rem;
-
-  ul {
-    list-style: none;
-    width: 100%;
-    padding-left: 0;
-    margin: 0;
-  }
-
-  li {
-    border-radius: 0.5rem;
-    transition: 0.3s ease;
-  }
-
-  i {
-    width: 1.5rem;
-    margin-right: 0.5rem;
-    text-align: center;
-  }
-
-  li a {
-    display: block;
-    font-size: 1.05rem;
-    text-decoration: none;
-    cursor: pointer;
-    color: rgba(244, 244, 245, .6);
-    line-height: 3rem;
-    padding: 0 1rem;
-    transition: 0.3s ease;
-  }
-
-  li:hover {
-    background-color: rgba(4, 6, 32, .24);
-    a {
-      color: rgba(244, 244, 245, .8);
-    }
-  }
-
-  li.current a {
-    font-weight: bolder;
-    color: rgba(244, 244, 245);
-  }
+main.standalone {
+  margin: 0;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 </style>

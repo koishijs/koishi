@@ -32,7 +32,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const {
     path = '/status',
     port = 8080,
-    selfUrl = `ws://localhost:${koishiPort}`,
+    selfUrl = `http://localhost:${koishiPort}`,
   } = config
 
   let vite: ViteDevServer

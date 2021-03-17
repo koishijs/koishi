@@ -3,6 +3,7 @@ import { ElButton, ElCollapseTransition } from 'element-plus'
 import { THEME_KEY } from 'vue-echarts'
 import { createRouter, createWebHistory } from 'vue-router'
 import Card from './components/card.vue'
+import Button from './components/button.vue'
 import Input from './components/input.vue'
 import App from './views/layout/index.vue'
 import { start } from '.'
@@ -22,6 +23,8 @@ declare module 'vue-router' {
   interface RouteMeta {
     icon?: string
     status?: boolean
+    auth?: boolean
+    standalone?: boolean
   }
 }
 
@@ -47,12 +50,18 @@ const router = createRouter({
   }, {
     path: '/sandbox',
     name: '沙盒',
-    meta: { icon: 'laptop-code' },
+    meta: { icon: 'laptop-code', auth: true },
     component: () => import('./views/sandbox.vue'),
+  }, {
+    path: '/login',
+    name: '登录',
+    meta: { icon: 'sign-in-alt', standalone: true },
+    component: () => import('./views/login.vue'),
   }],
 })
 
 app.component('k-card', Card)
+app.component('k-button', Button)
 app.component('k-input', Input)
 
 app.provide(THEME_KEY, 'dark-blue')
@@ -61,6 +70,12 @@ app.use(ElButton)
 app.use(ElCollapseTransition)
 
 app.use(router)
+
+router.afterEach((route) => {
+  if (typeof route.name === 'string') {
+    document.title = route.name + ' | Koishi 控制台'
+  }
+})
 
 start()
 

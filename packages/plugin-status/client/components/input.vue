@@ -1,6 +1,6 @@
 <template>
   <div class="k-input" :class="{ focused, disabled }">
-    <i v-if="prefixIcon" :class="'icon-' + prefixIcon" class="prefix"/>
+    <i v-if="prefixIcon" :class="'fas fa-' + prefixIcon" class="prefix"/>
     <input
       ref="input"
       :value="modelValue"
@@ -21,7 +21,7 @@
       @blur="onBlur"
       @keydown.enter.stop="$emit('enter', $event)"
     />
-    <i v-if="suffixIcon" :class="'icon-' + suffixIcon" class="suffix"/>
+    <i v-if="suffixIcon" :class="'fas fa-' + suffixIcon" class="suffix"/>
   </div>
 </template>
 
@@ -49,7 +49,7 @@ const focused = ref(false)
 const invalid = ref(false)
 
 const inputStyle = computed(() => ({
-  fontSize: props.size + 'rem',
+  fontSize: props.size + 'em',
   paddingLeft: +!!(props.prefixIcon) + 1 + 'em',
   paddingRight: +!!(props.suffixIcon) + 1 + 'em',
 }))
@@ -104,7 +104,7 @@ function onBlur (event) {
     color: white;
     width: 100%;
     outline: none;
-    font-size: 1rem;
+    font-size: 1em;
     height: inherit;
     display: inline-block;
     border-radius: 0.3em;

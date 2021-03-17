@@ -25,7 +25,7 @@ $paddingY: 1.6rem;
 .k-card {
   margin: 0 auto;
   width: 100%;
-  border-radius: 6px;
+  border-radius: 8px;
   background: rgba(0, 0, 0, .24);
   box-shadow: 0 23px 20px -20px rgb(9 10 18 / 10%), 0 0 15px rgb(9 10 18 / 6%);
 

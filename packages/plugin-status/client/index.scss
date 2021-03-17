@@ -33,6 +33,7 @@ $tpBgColor1: #fff2;
 $tpBgColor2: #fff4;
 $tpBorderColor1: #dcdfe640;
 $tpBorderColor2: #dcdfe680;
+$tpBorderColor3: #dcdfe6;
 $tpInsetColor: #0004;
 
 // breakpoints
@@ -40,3 +41,12 @@ $bp_lg: 1440px;
 $bp_md: 1024px;
 $bp_sm: 768px;
 $bp_xs: 480px;
+
+$navbarHeight: 4rem;
+$sidebarWidth: 16rem;
+$mainPadding: 2rem;
+
+a {
+  color: $default;
+  text-decoration: none;
+}
