@@ -29,11 +29,7 @@ export const name = 'webui'
 export function apply(ctx: Context, config: Config = {}) {
   const root = resolve(__dirname, '../client')
   const koishiPort = assertProperty(ctx.app.options, 'port')
-  const {
-    path = '/status',
-    port = 8080,
-    selfUrl = `http://localhost:${koishiPort}`,
-  } = config
+  const { path, port, selfUrl = `http://localhost:${koishiPort}` } = config
 
   let vite: ViteDevServer
   let adapter: WebAdapter
@@ -44,6 +40,7 @@ export function apply(ctx: Context, config: Config = {}) {
       resolve: {
         alias: {
           '~/client': root,
+          '~/variables': root + '/index.scss',
         },
       },
       define: {
@@ -51,7 +48,7 @@ export function apply(ctx: Context, config: Config = {}) {
       },
     })
 
-    adapter = ctx.app.adapters.sandbox = new WebAdapter(ctx.app, { path })
+    adapter = ctx.app.adapters.sandbox = new WebAdapter(ctx, { path })
 
     adapter.server.on('connection', async (socket) => {
       if (!plugins) updatePlugins()

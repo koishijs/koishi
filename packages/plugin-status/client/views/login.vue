@@ -5,17 +5,18 @@
       /
       <span :class="{ inactive: type === 0 }" @click="type = 1">用户名密码登录</span>
     </h1>
-    <template v-if="token">
-      <p class="hint">您的账号：{{ form2 }}</p>
-      <p class="hint">请用上述账号将下面的验证码私聊发送给任意机器人</p>
-      <p class="token">{{ token }}</p>
+    <template v-if="data.token">
+      <p class="hint">欢迎你，{{ data.name || 'Koishi 用户' }}！</p>
+      <p class="hint">请用上述账号将下面的验证码私聊发送给任意机器人：</p>
+      <p class="token">{{ data.token }}</p>
     </template>
     <template v-else>
       <k-input :prefix-icon="presets[type][0]" :placeholder="presets[type][1]" v-model="form1"/>
-      <k-input :prefix-icon="presets[type][2]" :placeholder="presets[type][3]" v-model="form2"/>
+      <k-input :prefix-icon="presets[type][2]" :placeholder="presets[type][3]" v-model="form2" @enter="enter"/>
+      <p class="error" v-if="data.message">{{ data.message }}</p>
       <div class="control">
         <k-button @click="$router.back()">返回</k-button>
-        <k-button @click="validate">{{ presets[type][4] }}</k-button>
+        <k-button @click="enter">{{ presets[type][4] }}</k-button>
       </div>
     </template>
   </k-card>
@@ -23,28 +24,43 @@
 
 <script lang="ts" setup>
 
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { send, receive, user } from '~/client'
 
 const presets = [
   ['at', '平台名', 'user', '账号', '获取验证码'],
   ['user', '用户名', 'lock', '密码', '登录'],
 ]
 
+interface TokenData {
+  token?: string
+  name?: string
+  message?: string
+}
+
 const type = ref(0)
-const token = ref('')
+const data = ref<TokenData>({})
 const form1 = ref('')
 const form2 = ref('')
 
-async function validate() {
+const router = useRouter()
+
+receive('token', body => data.value = body)
+
+watch(user, (value) => {
+  if (!value) return
+  router.push('/profile')
+})
+
+const timestamp = ref(0)
+
+async function enter() {
+  const now = Date.now()
+  if (now < timestamp.value) return
   if (!form1.value || !form2.value) return
-  try {
-    const res = await fetch(`${KOISHI_ENDPOINT}/validate?platform=${form1.value}&userId=${form2.value}`, { mode: 'cors' })
-    const data = await res.json()
-    console.log(data)
-    token.value = data.token
-  } catch (err) {
-    console.error(err)
-  }
+  timestamp.value = now + 10000
+  send('token', { platform: form1.value, userId: form2.value })
 }
 
 </script>

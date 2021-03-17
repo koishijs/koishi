@@ -1,9 +1,9 @@
 <template>
-  <template v-if="!standalone">
+  <template v-if="!frameless">
     <navbar/>
     <sidebar/>
   </template>
-  <main :class="{ standalone }">
+  <main :class="{ frameless }">
     <router-view v-if="status"/>
   </main>
 </template>
@@ -17,13 +17,13 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const standalone = computed(() => route.meta.standalone)
+const frameless = computed(() => route.meta.frameless)
 
 </script>
 
 <style lang="scss">
 
-@import '../../index.scss';
+@import '~/variables';
 
 body {
   margin: 0;
@@ -39,6 +39,11 @@ body {
   position: relative;
 }
 
+a {
+  color: $default;
+  text-decoration: none;
+}
+
 main {
   margin: $navbarHeight 0;
   padding: 0 $mainPadding;
@@ -49,7 +54,7 @@ main {
   left: $sidebarWidth;
 }
 
-main.standalone {
+main.frameless {
   margin: 0;
   left: 0;
   top: 50%;

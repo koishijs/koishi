@@ -26,7 +26,7 @@ const messages = reactive<Message[]>([])
 function onEnter() {
   if (!text.value) return
   messages.push({ from: 'user', content: text.value })
-  send({ type: 'sandbox', body: text.value })
+  send('sandbox', text.value)
   text.value = ''
 }
 
