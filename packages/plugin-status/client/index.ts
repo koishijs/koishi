@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import type { User } from 'koishi-core'
 import type { Payload } from '~/server'
 
@@ -20,9 +20,26 @@ export namespace storage {
     if (typeof localStorage === 'undefined') return
     localStorage.setItem(prefix + key, JSON.stringify(value))
   }
+
+  export function create<T>(key: string, fallback?: T) {
+    const wrapper = ref<T>({ ...fallback, ...get(key) })
+    watch(wrapper, () => set(key, wrapper.value), {
+      deep: typeof fallback === 'object',
+    })
+    return wrapper
+  }
 }
 
-export const user = ref<User>(storage.get('user'))
+interface Config {
+  authType?: 0 | 1
+  username?: string
+  password?: string
+  platform?: string
+  userId?: string
+}
+
+export const user = storage.create<User>('user')
+export const config = storage.create<Config>('config', { authType: 0 })
 export const status = ref<Payload>(null)
 export const socket = ref<WebSocket>(null)
 
@@ -50,4 +67,15 @@ export function send(type: string, body: any) {
 
 export function receive<T = any>(event: string, listener: (data: T) => void) {
   listeners[event] = listener
+}
+
+export async function sha256(password: string) {
+  const data = new TextEncoder().encode(password)
+  const buffer = await crypto.subtle.digest('SHA-256', data)
+  const view = new DataView(buffer)
+  let output = ''
+  for (let i = 0; i < view.byteLength; i += 4) {
+    output += ('00000000' + view.getUint32(i).toString(16)).slice(-8)
+  }
+  return output
 }

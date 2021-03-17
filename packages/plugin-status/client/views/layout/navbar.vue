@@ -2,8 +2,13 @@
   <nav>
     <span class="title">Koishi 控制台</span>
     <span class="right">
-      <router-link v-if="user" to="/profile">{{ user.name }}</router-link>
-      <router-link v-else to="/login">登录</router-link>
+      <template v-if="user">
+        <router-link to="/profile">{{ user.name }}<i class="fas fa-user-circle"/></router-link>
+        <el-button type="text" @click="logout">登出<i class="fas fa-sign-in-alt"/></el-button>
+      </template>
+      <template v-else>
+        <router-link to="/login">登录<i class="fas fa-sign-in-alt"/></router-link>
+      </template>
     </span>
   </nav>
 </template>
@@ -11,6 +16,14 @@
 <script lang="ts" setup>
 
 import { user } from '~/client'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+async function logout() {
+  await router.push('/login')
+  user.value = null
+}
 
 </script>
 
@@ -30,6 +43,20 @@ nav {
   .right {
     font-size: 1.05rem;
     float: right;
+
+    i {
+      margin-left: 0.4rem;
+    }
+
+    > * + * {
+      margin-left: 1rem;
+    }
+  }
+
+  .el-button {
+    font-size: 1.05rem !important;
+    min-height: auto !important;
+    padding: 0 !important;
   }
 }
 

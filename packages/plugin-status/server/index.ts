@@ -16,6 +16,10 @@ declare module 'koishi-core' {
   interface EventMap {
     'status/tick'(): void
   }
+
+  interface User {
+    password: string
+  }
 }
 
 export interface Config extends WebUI.Config {

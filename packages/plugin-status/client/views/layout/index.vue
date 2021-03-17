@@ -27,7 +27,6 @@ const frameless = computed(() => route.meta.frameless)
 
 body {
   margin: 0;
-  font-size: 14px;
   min-height: 100vh;
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

@@ -2,9 +2,9 @@
   <aside>
     <ul>
       <template v-for="(route, index) in $router.getRoutes()" :key="index">
-        <li v-if="!route.meta.frameless" :class="{ current: route.name === $route.name }">
+        <li v-if="!route.meta.hidden" :class="{ current: route.name === $route.name }">
           <router-link :to="route.path">
-            <i :class="['fas', `fa-${route.meta.icon}`]"/>
+            <i :class="`fas fa-${route.meta.icon}`"/>
             {{ route.name }}
           </router-link>
         </li>

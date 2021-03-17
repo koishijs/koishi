@@ -1,5 +1,5 @@
 <template>
-  <div class="basic-stats">
+  <div class="stats-grid basic-stats">
     <card-numeric title="当前消息频率" icon="paper-plane">{{ upRate }} / min</card-numeric>
     <card-numeric title="近期消息频率" icon="history">{{ recentRate }} / d</card-numeric>
     <card-numeric title="命名插件数量" icon="plug">{{ status.pluginCount }}</card-numeric>
@@ -8,7 +8,7 @@
     <card-numeric title="活跃群数量" icon="users">32</card-numeric>
   </div>
   <load-chart :status="status"/>
-  <div class="chart-stats">
+  <div class="stats-grid chart-stats">
     <history-chart :status="status"/>
     <hour-chart :status="status"/>
     <group-chart :status="status"/>
@@ -38,6 +38,10 @@ const recentRate = computed(() => {
 </script>
 
 <style lang="scss">
+
+.stats-grid .k-card {
+  margin: 0;
+}
 
 .basic-stats {
   display: grid;

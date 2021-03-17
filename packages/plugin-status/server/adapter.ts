@@ -1,4 +1,5 @@
-import { Adapter, Bot, BotOptions, Context, Logger, Random } from 'koishi-core'
+import { Adapter, Bot, BotOptions, Context, Logger, omit, Random } from 'koishi-core'
+import { createHash } from 'crypto'
 import Profile from './profile'
 import WebSocket from 'ws'
 
@@ -17,11 +18,12 @@ class WebBot extends Bot<'sandbox'> {
   }
 
   async sendMessage(channelId: string, content: string) {
-    this.socket.send({
-      type: 'message',
-      body: content,
-    })
+    this._sendSocket('message', content)
     return Random.uuid()
+  }
+
+  _sendSocket(type: string, body: any) {
+    this.socket.send(JSON.stringify({ type, body }))
   }
 }
 
@@ -75,7 +77,7 @@ export class WebAdapter extends Adapter<'sandbox'> {
         if (type === 'token') {
           const { platform, userId } = body
           const user = await this.app.database.getUser(platform, userId, ['name'])
-          if (!user) return socket.send(JSON.stringify({ type: 'token', body: { message: '没有此账户。' } }))
+          if (!user) return bot._sendSocket('login', { message: '没有此账户。' })
           const id = `${platform}:${userId}`
           const token = Random.uuid()
           const expire = Date.now() + this.config.expiration
@@ -83,7 +85,18 @@ export class WebAdapter extends Adapter<'sandbox'> {
           setTimeout(() => {
             if (states[id]?.[1] > Date.now()) delete states[id]
           }, this.config.expiration)
-          socket.send(JSON.stringify({ type: 'token', body: { token, name: user.name } }))
+          bot._sendSocket('token', { token, name: user.name })
+        } else if (type === 'password') {
+          const { id, password } = body
+          await this.app.database.setUser('id', id, { password })
+        } else if (type === 'login') {
+          const { username, password } = body
+          const user = await this.app.database.getUser('name', username, ['password', 'authority', 'id'])
+          if (!user) return bot._sendSocket('login', { message: '没有此账户。' })
+          if (user.password !== createHash('sha256').update(password).digest('hex')) {
+            if (!user) return bot._sendSocket('login', { message: '用户名或密码错误。' })
+          }
+          bot._sendSocket('user', omit(user, ['password']))
         } else {
           logger.info(type, body)
         }

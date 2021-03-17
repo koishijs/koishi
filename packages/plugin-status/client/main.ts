@@ -15,6 +15,7 @@ import 'element-plus/lib/theme-chalk/el-button.css'
 
 import '@fortawesome/fontawesome-free/css/fontawesome.css'
 import '@fortawesome/fontawesome-free/css/brands.css'
+import '@fortawesome/fontawesome-free/css/regular.css'
 import '@fortawesome/fontawesome-free/css/solid.css'
 
 import './index.scss'
@@ -22,8 +23,8 @@ import './index.scss'
 declare module 'vue-router' {
   interface RouteMeta {
     icon?: string
-    status?: boolean
-    auth?: boolean
+    hidden?: boolean
+    authorize?: boolean
     frameless?: boolean
   }
 }
@@ -50,17 +51,17 @@ const router = createRouter({
   }, {
     path: '/sandbox',
     name: '沙盒',
-    meta: { icon: 'laptop-code', auth: true },
+    meta: { icon: 'laptop-code', authorize: true },
     component: () => import('./views/sandbox.vue'),
   }, {
     path: '/profile',
     name: '资料',
-    meta: { icon: 'user-circle', auth: true },
+    meta: { icon: 'user-circle', authorize: true, hidden: true },
     component: () => import('./views/profile.vue'),
   }, {
     path: '/login',
     name: '登录',
-    meta: { icon: 'sign-in-alt', frameless: true },
+    meta: { icon: 'sign-in-alt', frameless: true, hidden: true },
     component: () => import('./views/login.vue'),
   }],
 })
@@ -77,7 +78,7 @@ app.use(ElCollapseTransition)
 app.use(router)
 
 router.beforeEach((route) => {
-  if (route.meta.auth && !user.value) {
+  if (route.meta.authorize && !user.value) {
     return '/login'
   }
 })

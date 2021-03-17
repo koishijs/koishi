@@ -173,6 +173,7 @@ Database.extend('koishi-plugin-mysql', {
 
 Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
   tables.user.lastCall = 'timestamp'
+  tables.user.password = 'varchar(64)'
   tables.channel.name = 'varchar(50)'
   tables.channel.activity = new Domain.Json()
 })

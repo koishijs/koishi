@@ -23,7 +23,7 @@ $paddingX: 1.2rem;
 $paddingY: 1.6rem;
 
 .k-card {
-  margin: 0 auto;
+  margin: 0 auto 2rem;
   width: 100%;
   border-radius: 8px;
   background: rgba(0, 0, 0, .24);
@@ -39,6 +39,12 @@ $paddingY: 1.6rem;
 
   .k-card-body {
     padding: $paddingX $paddingY;
+    > :first-child {
+      margin-top: 0;
+    }
+    > :last-child {
+      margin-bottom: 0;
+    }
   }
 
   &.frameless .k-card-body {

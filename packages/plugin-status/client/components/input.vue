@@ -1,6 +1,6 @@
 <template>
   <div class="k-input" :class="{ focused, disabled }">
-    <i v-if="prefixIcon" :class="'fas fa-' + prefixIcon" class="prefix"/>
+    <i v-if="prefix" :class="'fas fa-' + prefix" class="prefix" @click="$emit('clickPrefix')"/>
     <input
       ref="input"
       :value="modelValue"
@@ -21,7 +21,7 @@
       @blur="onBlur"
       @keydown.enter.stop="$emit('enter', $event)"
     />
-    <i v-if="suffixIcon" :class="'fas fa-' + suffixIcon" class="suffix"/>
+    <i v-if="suffix" :class="'fas fa-' + suffix" class="suffix" @click="$emit('clickSuffix')"/>
   </div>
 </template>
 
@@ -30,8 +30,8 @@
 import { defineProps, ref, computed, defineEmit } from 'vue'
 
 const props = defineProps({
-  prefixIcon: String,
-  suffixIcon: String,
+  prefix: String,
+  suffix: String,
   placeholder: String,
   disabled: Boolean,
   validate: Function,
@@ -50,11 +50,11 @@ const invalid = ref(false)
 
 const inputStyle = computed(() => ({
   fontSize: props.size + 'em',
-  paddingLeft: +!!(props.prefixIcon) + 1 + 'em',
-  paddingRight: +!!(props.suffixIcon) + 1 + 'em',
+  paddingLeft: +!!(props.prefix) + 1 + 'em',
+  paddingRight: +!!(props.suffix) + 1 + 'em',
 }))
 
-const emit = defineEmit(['update:modelValue', 'focus', 'blur', 'enter'])
+const emit = defineEmit(['update:modelValue', 'focus', 'blur', 'enter', 'clickPrefix', 'clickSuffix'])
 
 function onInput (event) {
   if (props.validate) {
