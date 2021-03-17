@@ -1,6 +1,5 @@
 import { Database, Logger, Time } from 'koishi-core'
-import { StatRecord, Synchronizer } from './database'
-import { RECENT_LENGTH } from './stats'
+import { StatRecord, Synchronizer, RECENT_LENGTH } from './stats'
 import MysqlDatabase from 'koishi-plugin-mysql'
 
 const logger = new Logger('status')
@@ -174,6 +173,8 @@ Database.extend('koishi-plugin-mysql', {
 Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
   tables.user.lastCall = 'timestamp'
   tables.user.password = 'varchar(64)'
+  tables.user.token = 'varchar(64)'
+  tables.user.expire = 'bigint unsigned default 0'
   tables.channel.name = 'varchar(50)'
   tables.channel.activity = new Domain.Json()
 })

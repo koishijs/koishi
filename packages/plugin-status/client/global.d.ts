@@ -9,6 +9,7 @@ declare module '*.vue' {
 }
 
 declare module '~/server' {
+  import {} from 'koishi-plugin-status/server'
   export * from 'koishi-plugin-status/server/webui'
 }
 

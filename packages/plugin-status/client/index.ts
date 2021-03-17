@@ -31,11 +31,12 @@ export namespace storage {
 }
 
 interface Config {
-  authType?: 0 | 1
+  authType: 0 | 1
   username?: string
   password?: string
   platform?: string
   userId?: string
+  showPass?: boolean
 }
 
 export const user = storage.create<User>('user')

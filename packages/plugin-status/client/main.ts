@@ -6,7 +6,7 @@ import Card from './components/card.vue'
 import Button from './components/button.vue'
 import Input from './components/input.vue'
 import App from './views/layout/index.vue'
-import { start, user } from '.'
+import { start, user, receive } from '.'
 
 // for el-collapse-transition
 import 'element-plus/lib/theme-chalk/base.css'
@@ -76,6 +76,10 @@ app.use(ElButton)
 app.use(ElCollapseTransition)
 
 app.use(router)
+
+receive('expire', () => {
+  router.push('/login')
+})
 
 router.beforeEach((route) => {
   if (route.meta.authorize && !user.value) {

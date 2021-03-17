@@ -1,9 +1,43 @@
 import { Context, Channel, noop, Session, Logger, Bot, Platform, Time } from 'koishi'
 import {} from 'koishi-plugin-teach'
-import { Synchronizer } from './database'
 import Profile from './profile'
 
-type StatRecord = Record<string, number>
+export type StatRecord = Record<string, number>
+
+export interface Synchronizer {
+  groups: StatRecord
+  daily: Record<Synchronizer.DailyField, StatRecord>
+  hourly: Record<Synchronizer.HourlyField, number>
+  longterm: Record<Synchronizer.LongtermField, number>
+  addDaily(field: Synchronizer.DailyField, key: string | number): void
+  upload(date: Date): Promise<void>
+  download(date: Date): Promise<Synchronizer.Data>
+}
+
+export namespace Synchronizer {
+  export type DailyField = typeof dailyFields[number]
+  export const dailyFields = [
+    'command', 'dialogue', 'botSend', 'botReceive', 'group',
+  ] as const
+
+  export type HourlyField = typeof hourlyFields[number]
+  export const hourlyFields = [
+    'total', 'group', 'private', 'command', 'dialogue',
+  ] as const
+
+  export type LongtermField = typeof longtermFields[number]
+  export const longtermFields = [
+    'message',
+  ] as const
+
+  export interface Data {
+    extension?: Statistics
+    groups: Pick<Channel, 'id' | 'name' | 'assignee'>[]
+    daily: Record<DailyField, StatRecord>[]
+    hourly: ({ time: Date } & Record<HourlyField, number>)[]
+    longterm: ({ time: Date } & Record<LongtermField, number>)[]
+  }
+}
 
 export const RECENT_LENGTH = 5
 
@@ -150,6 +184,9 @@ Session.prototype.send = function (this: Session, ...args) {
   return send.apply(this, args)
 }
 
+const customTag = Symbol('custom-send')
+Session.prototype.send[customTag] = send
+
 namespace Statistics {
   let cachedDate: number
   let cachedData: Promise<Synchronizer.Data>
@@ -185,6 +222,10 @@ namespace Statistics {
     })
 
     ctx.before('disconnect', async () => {
+      // rollback to default implementation to prevent infinite call stack
+      if (Session.prototype.send[customTag]) {
+        Session.prototype.send = Session.prototype.send[customTag]
+      }
       process.off('SIGINT', handleSigInt)
       await upload(sync, true)
     })

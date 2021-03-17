@@ -1,13 +1,43 @@
-import { Context, App, Argv } from 'koishi-core'
+import { Context, Channel, App, Argv, User } from 'koishi-core'
 import { interpolate, Time } from 'koishi-utils'
-import { ActiveData } from './database'
 import * as WebUI from './webui'
 import Profile from './profile'
-import Statistics from './stats'
+import Statistics, { Synchronizer } from './stats'
+import { WebBot } from './adapter'
 
-export * from './database'
+import './mongo'
+import './mysql'
+
+export interface ActiveData {
+  allUsers: number
+  activeUsers: number
+  allGroups: number
+  activeGroups: number
+}
+
+export type Activity = Record<number, number>
 
 declare module 'koishi-core' {
+  interface App {
+    synchronizer: Synchronizer
+  }
+
+  interface Database {
+    getActiveData(): Promise<ActiveData>
+    setChannels(data: Partial<Channel>[]): Promise<void>
+    Synchronizer: new (db: Database) => Synchronizer
+  }
+
+  interface Session {
+    _sendType?: 'command' | 'dialogue'
+  }
+
+  namespace Bot {
+    interface Platforms {
+      'sandbox': WebBot
+    }
+  }
+
   interface Bot {
     messageSent: number[]
     messageReceived: number[]
@@ -18,9 +48,25 @@ declare module 'koishi-core' {
   }
 
   interface User {
+    lastCall: Date
     password: string
+    token: string
+    expire: number
+  }
+
+  interface Channel {
+    name: string
+    activity: Activity
   }
 }
+
+Channel.extend(() => ({
+  activity: {},
+}))
+
+User.extend(() => ({
+  expire: 0,
+}))
 
 export interface Config extends WebUI.Config {
   refresh?: number
@@ -47,7 +93,7 @@ extend(async function (status) {
 
 const defaultConfig: Config = {
   path: '/status',
-  expiration: Time.minute * 10,
+  expiration: Time.week,
   refresh: Time.minute,
   // eslint-disable-next-line no-template-curly-in-string
   formatBot: '{{ username }}：{{ code ? `无法连接` : `工作中（${currentRate[0]}/min）` }}',

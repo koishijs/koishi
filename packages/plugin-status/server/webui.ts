@@ -48,7 +48,7 @@ export function apply(ctx: Context, config: Config = {}) {
       },
     })
 
-    adapter = ctx.app.adapters.sandbox = new WebAdapter(ctx, { path })
+    adapter = ctx.app.adapters.sandbox = new WebAdapter(ctx, config)
 
     adapter.server.on('connection', async (socket) => {
       if (!plugins) updatePlugins()

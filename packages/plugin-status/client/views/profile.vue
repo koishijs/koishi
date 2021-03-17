@@ -5,9 +5,9 @@
   </k-card>
   <k-card title="设置密码">
     <k-input v-model="password" @enter="enter"
-      :type="hidden ? 'password' : 'text'"
-      :suffix="hidden ? 'eye-slash' : 'eye'"
-      @click-suffix="hidden = !hidden"
+      :type="config.showPass ? 'text' : 'password'"
+      :suffix="config.showPass ? 'eye' : 'eye-slash'"
+      @click-suffix="config.showPass = !config.showPass"
     />
     <p>
       <k-button type="danger" solid :disabled="!password" @click="enter">应用更改</k-button>
@@ -20,13 +20,12 @@
 import { user, config, send, sha256 } from '~/client'
 import { ref } from 'vue'
 
-const hidden = ref(true)
 const password = ref(config.value.password)
 
 async function enter() {
   if (!password.value) return
-  const { id } = user.value
-  send('password', { id, password: await sha256(password.value) })
+  const { id, token } = user.value
+  send('password', { id, token, password: await sha256(password.value) })
   config.value.password = password.value
 }
 
