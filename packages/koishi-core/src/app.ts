@@ -346,11 +346,12 @@ export class App extends Context {
     return argv
   }
 
-  private _handleShortcut(content: string, { parsed, quote }: Session) {
+  private _handleShortcut(content: string, session: Session) {
+    const { parsed, quote } = session
     if (parsed.prefix || quote) return
     for (const shortcut of this._shortcuts) {
       const { name, fuzzy, command, greedy, prefix, options = {}, args = [] } = shortcut
-      if (prefix && !parsed.appel) continue
+      if (prefix && !parsed.appel || !command.context.match(session)) continue
       if (typeof name === 'string') {
         if (!fuzzy && content !== name || !content.startsWith(name)) continue
         const message = content.slice(name.length)
