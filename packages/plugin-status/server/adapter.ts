@@ -41,16 +41,15 @@ export class WebBot extends Bot<'sandbox'> {
 
   async _validate<T extends User.Field>(id: string, token: string, fields: T[] = []) {
     const user = await this.app.database.getUser('id', id, ['token', 'expire', ...fields])
-    if (token !== user.token || user.expire <= Date.now()) {
-      this._send('expire')
-      return
+    if (!user || token !== user.token || user.expire <= Date.now()) {
+      return this._send('expire')
     }
     return user
   }
 
   async $password({ id, token, password }) {
     const user = await this._validate(id, token, ['password'])
-    if (password === user.password) return
+    if (!user || password === user.password) return
     await this.app.database.setUser('id', id, { password })
   }
 
@@ -67,6 +66,7 @@ export class WebBot extends Bot<'sandbox'> {
 
   async $sandbox({ id, token, content }) {
     const user = await this._validate(id, token, ['name'])
+    if (!user) return
     const session = new Session(this.app, {
       platform: 'sandbox',
       userId: id,
@@ -86,7 +86,7 @@ export class WebBot extends Bot<'sandbox'> {
 
 export namespace WebAdapter {
   export interface Config {
-    path?: string
+    apiPath?: string
     expiration?: number
   }
 }
@@ -97,7 +97,7 @@ export class WebAdapter extends Adapter<'sandbox'> {
   constructor(ctx: Context, public config: WebAdapter.Config) {
     super(ctx.app, WebBot)
     this.server = new WebSocket.Server({
-      path: config.path,
+      path: config.apiPath,
       server: ctx.app._httpServer,
     })
 

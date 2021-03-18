@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+
 import { createApp } from 'vue'
 import { ElButton, ElCollapseTransition } from 'element-plus'
 import { THEME_KEY } from 'vue-echarts'
@@ -33,7 +35,7 @@ declare module 'vue-router' {
 const app = createApp(App)
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(KOISHI_UI_PATH),
   routes: [{
     path: '/',
     name: '仪表盘',

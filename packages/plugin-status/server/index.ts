@@ -81,7 +81,8 @@ extend(async function (status) {
 })
 
 const defaultConfig: Config = {
-  path: '/status',
+  apiPath: '/status',
+  uiPath: '/console',
   expiration: Time.week,
   tickInterval: Time.second * 5,
   refreshInterval: Time.hour,
@@ -101,13 +102,13 @@ export const name = 'status'
 
 export function apply(ctx: Context, config: Config = {}) {
   config = Object.assign(defaultConfig, config)
-  const { path, formatBot, format } = config
+  const { apiPath, formatBot, format } = config
 
   ctx.all().on('command', ({ session }: Argv<'lastCall'>) => {
     session.user.lastCall = new Date()
   })
 
-  ctx.router?.get(path, async (koa) => {
+  ctx.router?.get(apiPath, async (koa) => {
     koa.set('Access-Control-Allow-Origin', '*')
     koa.body = await getStatus()
   })
@@ -141,5 +142,5 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.plugin(Profile, config)
   ctx.plugin(Statistics, config)
-  if (config.port) ctx.plugin(WebUI, config)
+  ctx.plugin(WebUI, config)
 }

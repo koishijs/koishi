@@ -1,6 +1,7 @@
 import { Context, Plugin } from 'koishi-core'
-import { assertProperty } from 'koishi-utils'
+import { assertProperty, noop } from 'koishi-utils'
 import { resolve } from 'path'
+import { promises as fs, Stats } from 'fs'
 import { WebAdapter } from './adapter'
 import { createServer, ViteDevServer } from 'vite'
 import vuePlugin from '@vitejs/plugin-vue'
@@ -10,8 +11,8 @@ import Statistics from './stats'
 export { BotData, LoadRate } from './profile'
 
 export interface Config extends WebAdapter.Config, Profile.Config {
-  port?: number
   selfUrl?: string
+  uiPath?: string
 }
 
 export interface PluginData extends Plugin.Meta {
@@ -31,13 +32,15 @@ export const name = 'webui'
 export function apply(ctx: Context, config: Config = {}) {
   const root = resolve(__dirname, '../client')
   const koishiPort = assertProperty(ctx.app.options, 'port')
-  const { path, port, selfUrl = `http://localhost:${koishiPort}` } = config
+  const { apiPath, uiPath, selfUrl = `http://localhost:${koishiPort}` } = config
 
   let vite: ViteDevServer
   let adapter: WebAdapter
   ctx.on('connect', async () => {
     vite = await createServer({
       root,
+      base: '/vite/',
+      server: { middlewareMode: true },
       plugins: [vuePlugin()],
       resolve: {
         alias: {
@@ -46,9 +49,26 @@ export function apply(ctx: Context, config: Config = {}) {
         },
       },
       define: {
-        KOISHI_ENDPOINT: JSON.stringify(selfUrl + path),
+        KOISHI_UI_PATH: JSON.stringify(uiPath),
+        KOISHI_ENDPOINT: JSON.stringify(selfUrl + apiPath),
       },
     })
+
+    ctx.router.get(uiPath + '(/.+)*', async (koa) => {
+      const filename = root + koa.path.slice(uiPath.length)
+      const stats = await fs.stat(filename).catch<Stats>(noop)
+      if (stats?.isFile()) {
+        return koa.body = await fs.readFile(filename)
+      }
+      const raw = await fs.readFile(resolve(root, 'index.html'), 'utf8')
+      const template = await vite.transformIndexHtml(uiPath, raw)
+      koa.set('content-type', 'text/html')
+      koa.body = template
+    })
+
+    ctx.router.all('/vite(/.+)+', (koa) => new Promise((resolve) => {
+      vite.middlewares(koa.req, koa.res, resolve)
+    }))
 
     adapter = ctx.app.adapters.sandbox = new WebAdapter(ctx, config)
 
@@ -63,7 +83,6 @@ export function apply(ctx: Context, config: Config = {}) {
     })
 
     await adapter.start()
-    await vite.listen(port)
   })
 
   function* getDeps(state: Plugin.State): Generator<string> {
