@@ -1,6 +1,6 @@
 {
   "koishi-adapter-discord": {
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "Discord adapter for Koishi"
   },
   "koishi-adapter-kaiheila": {
@@ -48,14 +48,14 @@
     "description": "Image searching plugin for Koishi"
   },
   "koishi-plugin-mongo": {
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "MongoDB support for Koishi"
   },
   "koishi-plugin-monitor": {
     "version": "1.0.0-beta.27"
   },
   "koishi-plugin-mysql": {
-    "version": "3.0.0",
+    "version": "3.1.0",
     "description": "MySQL support for Koishi"
   },
   "koishi-plugin-puppeteer": {
@@ -71,7 +71,7 @@
     "description": "Schedule plugin for Koishi"
   },
   "koishi-plugin-status": {
-    "version": "4.0.0-alpha.0",
+    "version": "4.0.0-alpha.1",
     "description": "Show Status of Koishi"
   },
   "koishi-plugin-teach": {
