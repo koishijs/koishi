@@ -3,7 +3,8 @@ import type MongoDatabase from 'koishi-plugin-mongo'
 import { RECENT_LENGTH, StatRecord, Synchronizer } from './stats'
 
 const logger = new Logger('status')
-declare module 'koishi-core' {
+
+declare module 'koishi-plugin-mongo' {
   interface Tables {
     'plugin-status': any
   }
