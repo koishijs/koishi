@@ -235,7 +235,7 @@ export class App extends Context {
     if (this.database) {
       if (session.subtype === 'group') {
         // attach group data
-        const channelFields = new Set<Channel.Field>(['flag', 'assignee', 'disable'])
+        const channelFields = new Set<Channel.Field>(['flag', 'assignee'])
         this.emit('before-attach-channel', session, channelFields)
         const channel = await session.observeChannel(channelFields)
 
@@ -346,11 +346,12 @@ export class App extends Context {
     return argv
   }
 
-  private _handleShortcut(content: string, { parsed, quote }: Session) {
+  private _handleShortcut(content: string, session: Session) {
+    const { parsed, quote } = session
     if (parsed.prefix || quote) return
     for (const shortcut of this._shortcuts) {
       const { name, fuzzy, command, greedy, prefix, options = {}, args = [] } = shortcut
-      if (prefix && !parsed.appel) continue
+      if (prefix && !parsed.appel || !command.context.match(session)) continue
       if (typeof name === 'string') {
         if (!fuzzy && content !== name || !content.startsWith(name)) continue
         const message = content.slice(name.length)

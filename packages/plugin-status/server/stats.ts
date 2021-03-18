@@ -1,9 +1,42 @@
-import { Context, Channel, noop, Session, Logger, Bot, Platform } from 'koishi'
+import { Context, Channel, noop, Session, Logger, Bot, Platform, Time } from 'koishi'
 import {} from 'koishi-plugin-teach'
-import { Synchronizer } from './database'
-import Profile from './profile'
 
-type StatRecord = Record<string, number>
+export type StatRecord = Record<string, number>
+
+export interface Synchronizer {
+  groups: StatRecord
+  daily: Record<Synchronizer.DailyField, StatRecord>
+  hourly: Record<Synchronizer.HourlyField, number>
+  longterm: Record<Synchronizer.LongtermField, number>
+  addDaily(field: Synchronizer.DailyField, key: string | number): void
+  upload(date: Date): Promise<void>
+  download(date: Date): Promise<Synchronizer.Data>
+}
+
+export namespace Synchronizer {
+  export type DailyField = typeof dailyFields[number]
+  export const dailyFields = [
+    'command', 'dialogue', 'botSend', 'botReceive', 'group',
+  ] as const
+
+  export type HourlyField = typeof hourlyFields[number]
+  export const hourlyFields = [
+    'total', 'group', 'private', 'command', 'dialogue',
+  ] as const
+
+  export type LongtermField = typeof longtermFields[number]
+  export const longtermFields = [
+    'message',
+  ] as const
+
+  export interface Data {
+    extension?: Statistics
+    groups: Pick<Channel, 'id' | 'name' | 'assignee'>[]
+    daily: Record<DailyField, StatRecord>[]
+    hourly: ({ time: Date } & Record<HourlyField, number>)[]
+    longterm: ({ time: Date } & Record<LongtermField, number>)[]
+  }
+}
 
 export const RECENT_LENGTH = 5
 
@@ -40,6 +73,8 @@ interface Statistics {
   hours: StatRecord[]
   questions: QuestionData[]
   groups: GroupData[]
+  botSend: StatRecord
+  botReceive: StatRecord
 }
 
 const REFRESH_INTERVAL = 60000
@@ -57,9 +92,9 @@ async function upload(sync: Synchronizer, forced = false) {
   }
 }
 
-async function download(ctx: Context, date: string) {
+async function download(ctx: Context, date: Date) {
   const data = await ctx.app.synchronizer.download(date)
-  const extension = data.extension = {} as Statistics
+  const extension = {} as Statistics
   const { daily, hourly, longterm, groups } = data
 
   // history
@@ -68,8 +103,10 @@ async function download(ctx: Context, date: string) {
     extension.history[stat.time.toLocaleDateString('zh-CN')] = stat.message
   })
 
-  // command
+  // command & bot
   extension.commands = average(daily.map(data => data.command))
+  extension.botSend = average(daily.map(stat => stat.botSend))
+  extension.botReceive = average(daily.map(stat => stat.botReceive))
 
   // group
   const groupSet = new Set<string>()
@@ -83,7 +120,7 @@ async function download(ctx: Context, date: string) {
     const groups = await bot.getGroupList()
     for (const { groupId, groupName: name } of groups) {
       const id = `${bot.platform}:${groupId}`
-      if (!messageMap[id] || groupSet.has(id)) continue
+      if (!messageMap[id] || !groupMap[id] || groupSet.has(id)) continue
       groupSet.add(id)
       const { name: oldName, assignee } = groupMap[id]
       if (name !== oldName) updateList.push({ id, name })
@@ -108,7 +145,7 @@ async function download(ctx: Context, date: string) {
         name: name || key,
         value: messageMap[key],
         last: daily[0].group[key],
-        assignee: ctx.bots[assignee].selfId,
+        assignee: ctx.bots[`${platform}:${assignee}`]?.selfId || '',
       })
     }
   }
@@ -122,7 +159,7 @@ async function download(ctx: Context, date: string) {
   // dialogue
   if (ctx.database.getDialoguesById) {
     const dialogueMap = average(daily.map(data => data.dialogue))
-    const dialogues = await ctx.database.getDialoguesById(Object.keys(dialogueMap) as any, ['id', 'original'])
+    const dialogues = await ctx.database.getDialoguesById(Object.keys(dialogueMap).map(i => +i), ['id', 'original'])
     const questionMap: Record<string, QuestionData> = {}
     for (const dialogue of dialogues) {
       const { id, original: name } = dialogue
@@ -139,7 +176,7 @@ async function download(ctx: Context, date: string) {
     extension.questions = Object.values(questionMap)
   }
 
-  return data
+  return extension
 }
 
 const send = Session.prototype.send
@@ -150,25 +187,21 @@ Session.prototype.send = function (this: Session, ...args) {
   return send.apply(this, args)
 }
 
+const customTag = Symbol('custom-send')
+Session.prototype.send[customTag] = send
+
 namespace Statistics {
-  let cachedDate: string
-  let cachedData: Promise<Synchronizer.Data>
+  let cachedDate: number
+  let cachedData: Promise<Statistics>
 
-  export async function patch(ctx: Context, profile: Profile) {
-    const dateString = new Date().toLocaleDateString('zh-CN')
-    if (dateString !== cachedDate) {
-      cachedData = download(ctx, dateString)
-      cachedDate = dateString
+  export async function get(ctx: Context) {
+    const date = new Date()
+    const dateNumber = Time.getDateNumber(date, date.getTimezoneOffset())
+    if (dateNumber !== cachedDate) {
+      cachedData = download(ctx, date)
+      cachedDate = dateNumber
     }
-    const { extension, daily } = await cachedData
-    Object.assign(profile, extension)
-
-    const botSend = average(daily.map(stat => stat.botSend))
-    const botReceive = average(daily.map(stat => stat.botReceive))
-    profile.bots.forEach((bot) => {
-      const sid = `${bot.platform}:${bot.selfId}`
-      bot.recentRate = [botSend[sid] || 0, botReceive[sid] || 0]
-    })
+    return cachedData
   }
 
   export function apply(ctx: Context) {
@@ -184,6 +217,10 @@ namespace Statistics {
     })
 
     ctx.before('disconnect', async () => {
+      // rollback to default implementation to prevent infinite call stack
+      if (Session.prototype.send[customTag]) {
+        Session.prototype.send = Session.prototype.send[customTag]
+      }
       process.off('SIGINT', handleSigInt)
       await upload(sync, true)
     })

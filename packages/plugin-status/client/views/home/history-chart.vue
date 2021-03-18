@@ -1,14 +1,14 @@
 <template>
-  <el-card class="frameless" header="历史发言数量" shadow="hover">
-    <v-chart v-if="Object.keys(status.history).length" :option="option" autoresize/>
+  <k-card class="frameless" title="历史发言数量">
+    <v-chart v-if="Object.keys(stats.history).length" :option="option" autoresize/>
     <p v-else>暂无数据。</p>
-  </el-card>
+  </k-card>
 </template>
 
 <script lang="ts" setup>
 
-import type { Payload } from '~/server'
-import { defineProps, computed } from 'vue'
+import { stats } from '~/client'
+import { computed } from 'vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { GridComponent, TooltipComponent } from 'echarts/components'
@@ -16,8 +16,6 @@ import { LineChart } from 'echarts/charts'
 import VChart from 'vue-echarts'
 
 use([CanvasRenderer, GridComponent, TooltipComponent, LineChart])
-
-const props = defineProps<{ status: Payload }>()
 
 const week = '日一二三四五六'
 
@@ -34,7 +32,7 @@ const option = computed(() => ({
   },
   xAxis: {
     type: 'category',
-    data: Object.keys(props.status.history).reverse(),
+    data: Object.keys(stats.value.history).reverse(),
   },
   yAxis: {
     type: 'value',
@@ -45,7 +43,7 @@ const option = computed(() => ({
   series: {
     type: 'line',
     smooth: true,
-    data: Object.values(props.status.history).reverse(),
+    data: Object.values(stats.value.history).reverse(),
   },
 }))
 

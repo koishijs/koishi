@@ -34,7 +34,7 @@ async function bundle(path: string) {
   const importMap: Record<string, Record<string, string>> = {}
   const namespaceMap: Record<string, string> = {}
 
-  let prolog = '', cap: RegExpExecArray
+  let prolog = '', epilog = '', cap: RegExpExecArray
   let content = await fs.readFile(entry, 'utf8')
   content = content.split(EOL).filter((line) => {
     if (cap = /^ {4}import \* as (.+) from ["'](.+)["'];$/.exec(line)) {
@@ -59,6 +59,8 @@ async function bundle(path: string) {
       }
     } else if (line.startsWith('///')) {
       prolog += line + EOL
+    } else if (line.startsWith('    export default ')) {
+      epilog = line.trimStart() + EOL
     } else {
       return true
     }
@@ -85,8 +87,9 @@ async function bundle(path: string) {
       if (identifier) return `declare namespace ${identifier} {`
       return ''
     })
+    .replace(/^( {4})((module|class|namespace) .+ \{)$/gm, (_, $1, $2) => `${$1}declare ${$2}`)
     .replace(/\r?\n}/g, '')
-    .replace(/^ {4}/gm, ''))
+    .replace(/^ {4}/gm, '') + epilog)
 }
 
 async function bundleAll(names: readonly string[]) {
@@ -95,15 +98,13 @@ async function bundleAll(names: readonly string[]) {
   }
 }
 
-const targets = ['koishi-utils', 'koishi-core']
-const databases = ['mongo', 'mysql']
+const targets = ['koishi-utils', 'koishi-core', 'plugin-mysql', 'plugin-mongo']
 const corePlugins = ['common', 'eval', 'puppeteer', 'teach']
 
 function precedence(name: string) {
   if (name.startsWith('adapter')) return 1
   if (name.startsWith('koishi')) return 5
   const plugin = name.slice(7)
-  if (databases.includes(plugin)) return 2
   if (corePlugins.includes(plugin)) return 3
   return 4
 }

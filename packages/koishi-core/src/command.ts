@@ -1,4 +1,4 @@
-import { Logger, coerce, Time, template } from 'koishi-utils'
+import { Logger, coerce, Time, template, remove } from 'koishi-utils'
 import { Argv, Domain } from './parser'
 import { Context, NextFunction } from './context'
 import { User, Channel } from './database'
@@ -245,11 +245,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     }
     this.app._shortcuts = this.app._shortcuts.filter(s => s.command !== this)
     this._aliases.forEach(name => delete this.app._commandMap[name])
-    const index = this.app._commands.indexOf(this)
-    this.app._commands.splice(index, 1)
+    remove(this.app._commands, this)
     if (this.parent) {
-      const index = this.parent.children.indexOf(this)
-      this.parent.children.splice(index, 1)
+      remove(this.parent.children, this)
     }
   }
 }
@@ -259,6 +257,8 @@ export function getUsageName(command: Command) {
 }
 
 export type ValidationField = 'authority' | 'usage' | 'timers'
+
+Command.channelFields(['disable'])
 
 Command.userFields(({ tokens, command, options = {} }, fields) => {
   if (!command) return

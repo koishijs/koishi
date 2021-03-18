@@ -1,5 +1,5 @@
 import { createPool, Pool, PoolConfig, escape as mysqlEscape, escapeId, format, OkPacket, TypeCast } from 'mysql'
-import { TableType, Tables, App, Database } from 'koishi-core'
+import { Tables as KoishiTables, App, Database } from 'koishi-core'
 import { Logger } from 'koishi-utils'
 import { types } from 'util'
 
@@ -8,6 +8,10 @@ declare module 'mysql' {
     packet: UntypedFieldInfo
   }
 }
+
+type TableType = keyof Tables
+
+export interface Tables extends KoishiTables {}
 
 const logger = new Logger('mysql')
 

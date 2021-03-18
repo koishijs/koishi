@@ -2,7 +2,7 @@ import LruCache from 'lru-cache'
 import { distance } from 'fastest-levenshtein'
 import { User, Channel, TableType, Tables } from './database'
 import { Command } from './command'
-import { contain, observe, Logger, defineProperty, Random, template } from 'koishi-utils'
+import { contain, observe, Logger, defineProperty, Random, template, remove } from 'koishi-utils'
 import { Argv } from './parser'
 import { Middleware, NextFunction } from './context'
 import { App } from './app'
@@ -169,8 +169,7 @@ export class Session<
       const hook = () => {
         resolve()
         clearTimeout(timer)
-        const index = this._hooks.indexOf(hook)
-        if (index >= 0) this._hooks.splice(index, 1)
+        remove(this._hooks, hook)
       }
       this._hooks.push(hook)
       const timer = setTimeout(async () => {

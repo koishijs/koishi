@@ -9,15 +9,12 @@ declare module '*.vue' {
 }
 
 declare module '~/server' {
+  import {} from 'koishi-plugin-status/server'
   export * from 'koishi-plugin-status/server/webui'
 }
 
 declare module '~/client' {
   export * from 'koishi-plugin-status/client'
-}
-
-declare module '~/layout' {
-  export * from 'koishi-plugin-status/client/app.vue'
 }
 
 declare const KOISHI_ENDPOINT: string

@@ -1,5 +1,4 @@
 import { Bot, Context, Platform } from 'koishi-core'
-import { Time } from 'koishi-utils'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
 
@@ -50,24 +49,23 @@ export interface BotData {
   platform: Platform
   code: Bot.Status
   currentRate: MessageRate
-  recentRate?: MessageRate
 }
 
-export namespace BotData {
-  function accumulate(record: number[]) {
-    return record.slice(1).reduce((prev, curr) => prev + curr, 0)
-  }
+function accumulate(record: number[]) {
+  return record.slice(1).reduce((prev, curr) => prev + curr, 0)
+}
 
-  export const from = async (bot: Bot) => ({
+export async function BotData(bot: Bot) {
+  return {
     platform: bot.platform,
     selfId: bot.selfId,
     username: bot.username,
     code: await bot.getStatus(),
     currentRate: [accumulate(bot.messageSent), accumulate(bot.messageReceived)],
-  } as BotData)
+  } as BotData
 }
 
-export interface Profile {
+export interface Profile extends Profile.Meta {
   bots: BotData[]
   memory: LoadRate
   cpu: LoadRate
@@ -75,20 +73,44 @@ export interface Profile {
 
 export namespace Profile {
   export interface Config {
-    tick?: number
+    tickInterval?: number
+    refreshInterval?: number
   }
 
-  export async function from(ctx: Context) {
+  export interface Meta {
+    allUsers: number
+    activeUsers: number
+    allGroups: number
+    activeGroups: number
+    storageSize: number
+  }
+
+  export async function get(ctx: Context, config: Config) {
     const [memory, bots] = await Promise.all([
       memoryRate(),
-      Promise.all(ctx.bots.map(BotData.from)),
+      Promise.all(ctx.bots.filter(bot => bot.platform !== 'sandbox').map(BotData)),
     ])
     const cpu: LoadRate = [appRate, usedRate]
-    return { bots, memory, cpu } as Profile
+    return { bots, memory, cpu, ...await getMeta(ctx, config) } as Profile
+  }
+
+  let timestamp = 0
+  let cachedMeta: Promise<Meta>
+
+  async function getMeta(ctx: Context, config: Config) {
+    const next = Date.now() + config.refreshInterval
+    if (timestamp > next) return cachedMeta
+    timestamp = next
+    return cachedMeta = ctx.database.getProfile()
+  }
+
+  export function initBot(bot: Bot) {
+    bot.messageSent = new Array(61).fill(0)
+    bot.messageReceived = new Array(61).fill(0)
   }
 
   export function apply(ctx: Context, config: Config = {}) {
-    const { tick = 5 * Time.second } = config
+    const { tickInterval } = config
 
     ctx.all().before('send', (session) => {
       session.bot.messageSent[0] += 1
@@ -99,10 +121,7 @@ export namespace Profile {
     })
 
     ctx.on('connect', async () => {
-      ctx.bots.forEach((bot) => {
-        bot.messageSent = new Array(61).fill(0)
-        bot.messageReceived = new Array(61).fill(0)
-      })
+      ctx.bots.forEach(initBot)
 
       ctx.setInterval(() => {
         updateCpuUsage()
@@ -113,7 +132,7 @@ export namespace Profile {
           messageReceived.splice(-1, 1)
         })
         ctx.emit('status/tick')
-      }, tick)
+      }, tickInterval)
     })
   }
 }

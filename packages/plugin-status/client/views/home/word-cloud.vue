@@ -1,5 +1,5 @@
 <template>
-  <el-card class="frameless word-cloud" v-if="status.questions" shadow="hover">
+  <k-card class="frameless word-cloud" v-if="stats.questions">
     <template #header>
       问答日均触发次数
       <el-button class="refresh" @click="refresh" type="text">刷新</el-button>
@@ -8,13 +8,13 @@
     <div class="footer">
       <p>显示的次数为实际触发次数。不考虑重定向问答和指令调用。</p>
     </div>
-  </el-card>
+  </k-card>
 </template>
 
 <script lang="ts" setup>
 
-import type { Payload } from '~/server'
-import { defineProps, computed, ref } from 'vue'
+import { stats } from '~/client'
+import { computed, ref } from 'vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { TooltipComponent } from 'echarts/components'
@@ -23,12 +23,10 @@ import 'echarts-wordcloud'
 
 use([CanvasRenderer, TooltipComponent])
 
-const props = defineProps<{ status: Payload }>()
-
-const questions = ref(props.status.questions)
+const questions = ref(stats.value.questions)
 
 function refresh() {
-  questions.value = props.status.questions
+  questions.value = stats.value.questions
 }
 
 const option = computed(() => ({

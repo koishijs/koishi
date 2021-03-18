@@ -1,6 +1,5 @@
 import { Database, Logger, Time } from 'koishi-core'
-import { StatRecord, Synchronizer } from './database'
-import { RECENT_LENGTH } from './stats'
+import { StatRecord, Synchronizer, RECENT_LENGTH } from './stats'
 import MysqlDatabase from 'koishi-plugin-mysql'
 
 const logger = new Logger('status')
@@ -110,14 +109,15 @@ namespace Stat {
 }
 
 Database.extend('koishi-plugin-mysql', {
-  async getActiveData() {
-    const [[{ activeUsers }], [{ allUsers }], [{ activeGroups }], [{ allGroups }]] = await this.query([
+  async getProfile() {
+    const [[{ activeUsers }], [{ allUsers }], [{ activeGroups }], [{ allGroups }], [{ storageSize }]] = await this.query([
       'SELECT COUNT(*) as activeUsers FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',
       'SELECT COUNT(*) as allUsers FROM `user`',
       'SELECT COUNT(*) as activeGroups FROM `channel` WHERE `assignee`',
       'SELECT COUNT(*) as allGroups FROM `channel`',
+      'SELECT SUM(DATA_LENGTH) as storageSize from information_schema.TABLES',
     ])
-    return { activeUsers, allUsers, activeGroups, allGroups }
+    return { activeUsers, allUsers, activeGroups, allGroups, storageSize }
   },
 
   async setChannels(data) {
@@ -158,13 +158,14 @@ Database.extend('koishi-plugin-mysql', {
       await this.db.query(sqls)
     }
 
-    async download(date: string) {
+    async download(date: Date) {
+      const dateString = date.toLocaleDateString()
       const [daily, hourly, longterm, groups] = await this.db.query([
         'SELECT * FROM `stats_daily` WHERE `time` < DATE(?) ORDER BY `time` DESC LIMIT ?',
         'SELECT * FROM `stats_hourly` WHERE `time` < DATE(?) ORDER BY `time` DESC LIMIT ?',
         'SELECT * FROM `stats_longterm` WHERE `time` < DATE(?) ORDER BY `time` DESC',
         'SELECT `id`, `name`, `assignee` FROM `channel`',
-      ], [date, RECENT_LENGTH, date, 24 * RECENT_LENGTH, date])
+      ], [dateString, RECENT_LENGTH, dateString, 24 * RECENT_LENGTH, dateString])
       return { daily, hourly, longterm, groups }
     }
   },
@@ -172,6 +173,9 @@ Database.extend('koishi-plugin-mysql', {
 
 Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
   tables.user.lastCall = 'timestamp'
+  tables.user.password = 'varchar(64)'
+  tables.user.token = 'varchar(64)'
+  tables.user.expire = 'bigint unsigned default 0'
   tables.channel.name = 'varchar(50)'
   tables.channel.activity = new Domain.Json()
 })

@@ -1,4 +1,4 @@
-import { Logger, defineProperty } from 'koishi-utils'
+import { Logger, defineProperty, remove } from 'koishi-utils'
 import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Database } from './database'
@@ -139,14 +139,6 @@ export class Context {
     return this.app.registry.get(this._plugin)
   }
 
-  private removeDisposable(listener: Disposable) {
-    const index = this.state.disposables.indexOf(listener)
-    if (index >= 0) {
-      this.state.disposables.splice(index, 1)
-      return true
-    }
-  }
-
   addSideEffect(state = this.state) {
     while (state && !state.sideEffect) {
       state.sideEffect = true
@@ -208,6 +200,7 @@ export class Context {
       ...state.disposables.map(dispose => dispose()),
     ]).finally(() => {
       this.app.registry.delete(plugin)
+      remove(state.parent.children, plugin)
       const index = state.parent.children.indexOf(plugin)
       if (index >= 0) state.parent.children.splice(index, 1)
       this.emit('registry', this.app.registry)
@@ -292,7 +285,7 @@ export class Context {
       return _listener(), () => false
     } else if (name === 'before-disconnect') {
       this.state.disposables[method](_listener)
-      return () => this.removeDisposable(_listener)
+      return () => remove(this.state.disposables, _listener)
     } else if (name === 'before-connect') {
       // before-connect is side effect
       this.addSideEffect()
@@ -342,7 +335,7 @@ export class Context {
   private createTimerDispose(timer: NodeJS.Timeout) {
     const dispose = () => {
       clearTimeout(timer)
-      return this.removeDisposable(dispose)
+      return remove(this.state.disposables, dispose)
     }
     this.state.disposables.push(dispose)
     return dispose
@@ -502,8 +495,7 @@ Router.prototype.register = function (this: Router, ...args) {
   const layer = register.apply(this, args)
   const context: Context = this['_koishiContext']
   context.state.disposables.push(() => {
-    const index = this.stack.indexOf(layer)
-    if (index) this.stack.splice(index, 1)
+    remove(this.stack, layer)
   })
   return layer
 }

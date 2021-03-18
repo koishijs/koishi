@@ -32,9 +32,9 @@
     "koishi-test-utils": "^6.0.0-beta.10"
   },
   "peerDependencies": {
-    "koishi-core": "^3.2.0",
+    "koishi-core": "^3.2.1",
     "koishi-plugin-puppeteer": "^2.0.0",
-    "koishi-utils": "^4.0.1"
+    "koishi-utils": "^4.0.2"
   },
   "dependencies": {
     "@octokit/webhooks-definitions": "^3.62.5",

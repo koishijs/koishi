@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-status",
   "description": "Show Status of Koishi",
-  "version": "4.0.0-alpha.0",
+  "version": "4.0.0-alpha.1",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -28,14 +28,15 @@
     "status"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.2.0"
+    "koishi-core": "^3.2.1"
   },
   "devDependencies": {
-    "koishi-plugin-mongo": "^2.0.0",
-    "koishi-plugin-mysql": "^3.0.0",
+    "koishi-plugin-mongo": "^2.1.0",
+    "koishi-plugin-mysql": "^3.1.0",
     "koishi-test-utils": "^6.0.0-beta.10"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.15.2",
     "@types/ws": "^7.4.0",
     "@vitejs/plugin-vue": "^1.1.5",
     "@vue/compiler-sfc": "^3.0.7",
@@ -47,6 +48,7 @@
     "vite": "^2.0.5",
     "vue": "^3.0.7",
     "vue-echarts": "^6.0.0-rc.3",
+    "vue-router": "^4.0.5",
     "ws": "^7.4.3"
   }
 }

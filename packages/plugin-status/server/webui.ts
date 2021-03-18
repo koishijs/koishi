@@ -1,19 +1,17 @@
 import { Context, Plugin } from 'koishi-core'
 import { assertProperty } from 'koishi-utils'
 import { resolve } from 'path'
+import { WebAdapter } from './adapter'
 import { createServer, ViteDevServer } from 'vite'
-import WebSocket from 'ws'
 import vuePlugin from '@vitejs/plugin-vue'
 import Profile from './profile'
 import Statistics from './stats'
 
 export { BotData, LoadRate } from './profile'
 
-export interface Config {
-  path?: string
+export interface Config extends WebAdapter.Config, Profile.Config {
   port?: number
   selfUrl?: string
-  layout?: string
 }
 
 export interface PluginData extends Plugin.Meta {
@@ -21,8 +19,11 @@ export interface PluginData extends Plugin.Meta {
   dependencies: string[]
 }
 
-export interface Payload extends Profile, Statistics {
+export { Statistics, Profile }
+
+export interface Registry {
   plugins: PluginData[]
+  pluginCount: number
 }
 
 export const name = 'webui'
@@ -30,15 +31,10 @@ export const name = 'webui'
 export function apply(ctx: Context, config: Config = {}) {
   const root = resolve(__dirname, '../client')
   const koishiPort = assertProperty(ctx.app.options, 'port')
-  const {
-    path = '/status',
-    port = 8080,
-    layout = root + '/app.vue',
-    selfUrl = `ws://localhost:${koishiPort}`,
-  } = config
+  const { path, port, selfUrl = `http://localhost:${koishiPort}` } = config
 
   let vite: ViteDevServer
-  let wsServer: WebSocket.Server
+  let adapter: WebAdapter
   ctx.on('connect', async () => {
     vite = await createServer({
       root,
@@ -46,7 +42,7 @@ export function apply(ctx: Context, config: Config = {}) {
       resolve: {
         alias: {
           '~/client': root,
-          '~/layout': resolve(process.cwd(), layout),
+          '~/variables': root + '/index.scss',
         },
       },
       define: {
@@ -54,21 +50,19 @@ export function apply(ctx: Context, config: Config = {}) {
       },
     })
 
-    wsServer = new WebSocket.Server({
-      path,
-      server: ctx.app._httpServer,
+    adapter = ctx.app.adapters.sandbox = new WebAdapter(ctx, config)
+
+    adapter.server.on('connection', async (socket) => {
+      function send(type: string, body: any) {
+        socket.send(JSON.stringify({ type, body }))
+      }
+
+      Statistics.get(ctx).then(data => send('stats', data))
+      getProfile().then(data => send('profile', data))
+      send('registry', getRegistry())
     })
 
-    wsServer.on('connection', async (socket) => {
-      if (!plugins) updatePlugins()
-      if (!profile) await updateProfile()
-      const data = JSON.stringify({
-        type: 'update',
-        body: { ...profile, plugins },
-      })
-      socket.send(data)
-    })
-
+    await adapter.start()
     await vite.listen(port)
   })
 
@@ -87,46 +81,44 @@ export function apply(ctx: Context, config: Config = {}) {
     const children = state.children.flatMap(traverse, 1)
     const { name, sideEffect } = state
     if (!name) return children
+    internal.pluginCount += 1
     const dependencies = [...new Set(getDeps(state))]
     return [{ name, sideEffect, children, dependencies }]
   }
 
-  let plugins: PluginData[]
-  let profile: Profile
+  let profile: Promise<Profile>
+  let internal: Registry
 
-  async function broadcast(callback: () => void | Promise<void>) {
-    if (!wsServer?.clients.size) return
-    await callback()
-    const data = JSON.stringify({
-      type: 'update',
-      body: { ...profile, plugins },
-    })
-    wsServer.clients.forEach((socket) => socket.send(data))
+  async function broadcast(type: string, body: any) {
+    if (!adapter?.server.clients.size) return
+    const data = JSON.stringify({ type, body })
+    adapter.server.clients.forEach((socket) => socket.send(data))
   }
 
-  function updatePlugins() {
-    plugins = traverse(null)
+  function getRegistry(forced = false) {
+    if (internal && !forced) return internal
+    internal = { pluginCount: 0 } as Registry
+    internal.plugins = traverse(null)
+    return internal
   }
 
-  async function updateProfile() {
-    profile = await Profile.from(ctx)
-    await Statistics.patch(ctx, profile)
+  function getProfile(forced = false) {
+    if (profile && !forced) return profile
+    return profile = Profile.get(ctx, config)
   }
 
   ctx.on('registry', () => {
-    broadcast(updatePlugins)
+    broadcast('registry', getRegistry(true))
   })
 
-  ctx.on('status/tick', () => {
-    broadcast(updateProfile)
+  ctx.on('status/tick', async () => {
+    broadcast('profile', await getProfile(true))
   })
 
   ctx.before('disconnect', async () => {
     await Promise.all([
       vite?.close(),
-      new Promise<void>((resolve, reject) => {
-        wsServer.close((err) => err ? resolve() : reject(err))
-      }),
+      adapter?.stop(),
     ])
   })
 }
