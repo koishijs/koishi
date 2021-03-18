@@ -258,6 +258,8 @@ export function getUsageName(command: Command) {
 
 export type ValidationField = 'authority' | 'usage' | 'timers'
 
+Command.channelFields(['disable'])
+
 Command.userFields(({ tokens, command, options = {} }, fields) => {
   if (!command) return
   const { maxUsage, minInterval, authority } = command.config
