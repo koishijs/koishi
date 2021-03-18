@@ -1,5 +1,5 @@
 import { Context, Channel, noop, Session, Logger, Bot, Platform, Time } from 'koishi'
-import { } from 'koishi-plugin-teach'
+import {} from 'koishi-plugin-teach'
 
 export type StatRecord = Record<string, number>
 
@@ -145,7 +145,7 @@ async function download(ctx: Context, date: Date) {
         name: name || key,
         value: messageMap[key],
         last: daily[0].group[key],
-        assignee: ctx.bots[`${platform}:${assignee}`]?.selfId || 'unknown',
+        assignee: ctx.bots[`${platform}:${assignee}`]?.selfId || '',
       })
     }
   }
