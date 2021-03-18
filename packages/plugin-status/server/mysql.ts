@@ -110,13 +110,14 @@ namespace Stat {
 
 Database.extend('koishi-plugin-mysql', {
   async getProfile() {
-    const [[{ activeUsers }], [{ allUsers }], [{ activeGroups }], [{ allGroups }]] = await this.query([
+    const [[{ activeUsers }], [{ allUsers }], [{ activeGroups }], [{ allGroups }], [{ storageSize }]] = await this.query([
       'SELECT COUNT(*) as activeUsers FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',
       'SELECT COUNT(*) as allUsers FROM `user`',
       'SELECT COUNT(*) as activeGroups FROM `channel` WHERE `assignee`',
       'SELECT COUNT(*) as allGroups FROM `channel`',
+      'SELECT SUM(DATA_LENGTH) as storageSize from information_schema.TABLES',
     ])
-    return { activeUsers, allUsers, activeGroups, allGroups }
+    return { activeUsers, allUsers, activeGroups, allGroups, storageSize }
   },
 
   async setChannels(data) {

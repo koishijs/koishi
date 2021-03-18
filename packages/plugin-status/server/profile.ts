@@ -82,6 +82,7 @@ export namespace Profile {
     activeUsers: number
     allGroups: number
     activeGroups: number
+    storageSize: number
   }
 
   export async function get(ctx: Context, config: Config) {
