@@ -31,6 +31,7 @@ Database.extend('koishi-plugin-mongo', {
     daily: any
     hourly: Record<Synchronizer.HourlyField, number>
     longterm: Record<Synchronizer.LongtermField, number>
+
     constructor(private db: MongoDatabase) {
       this.reset()
     }
