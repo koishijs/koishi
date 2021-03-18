@@ -120,7 +120,7 @@ async function download(ctx: Context, date: Date) {
     const groups = await bot.getGroupList()
     for (const { groupId, groupName: name } of groups) {
       const id = `${bot.platform}:${groupId}`
-      if (!messageMap[id] || groupSet.has(id)) continue
+      if (!messageMap[id] || !groupMap[id] || groupSet.has(id)) continue
       groupSet.add(id)
       const { name: oldName, assignee } = groupMap[id]
       if (name !== oldName) updateList.push({ id, name })
@@ -145,7 +145,7 @@ async function download(ctx: Context, date: Date) {
         name: name || key,
         value: messageMap[key],
         last: daily[0].group[key],
-        assignee: ctx.bots[`${platform}:${assignee}`].selfId,
+        assignee: ctx.bots[`${platform}:${assignee}`]?.selfId || '',
       })
     }
   }
@@ -159,7 +159,7 @@ async function download(ctx: Context, date: Date) {
   // dialogue
   if (ctx.database.getDialoguesById) {
     const dialogueMap = average(daily.map(data => data.dialogue))
-    const dialogues = await ctx.database.getDialoguesById(Object.keys(dialogueMap) as any, ['id', 'original'])
+    const dialogues = await ctx.database.getDialoguesById(Object.keys(dialogueMap).map(i => +i), ['id', 'original'])
     const questionMap: Record<string, QuestionData> = {}
     for (const dialogue of dialogues) {
       const { id, original: name } = dialogue
