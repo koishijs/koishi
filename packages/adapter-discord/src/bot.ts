@@ -106,7 +106,7 @@ export class DiscordBot extends Bot<'discord'> {
           })
           sentMessageId = r.id
         }
-        if (type === 'image' || type === 'video') {
+        if (type === 'image' || type === 'video' && data.url) {
           if (data.url.startsWith('http://') || data.url.startsWith('https://')) {
             const a = await axios({
               url: data.url,

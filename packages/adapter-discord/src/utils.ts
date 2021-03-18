@@ -28,7 +28,7 @@ export const adaptAuthor = (author: DC.Author): AuthorInfo => ({
   nickname: author.username,
 })
 
-export async function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: MessageInfo = {}) {
+export async function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
   if (meta.author) {
     session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id
@@ -90,7 +90,9 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, ses
       session.content += segment('video', { url: embed.video.url, proxy_url: embed.video.proxy_url })
     }
   }
-  session.content = meta.embeds.map(v => segment('embed', { data: JSON.stringify(v) })).join('') + session.content
+  session.discord = {
+    embeds: meta.embeds
+  }
   return session
 }
 
