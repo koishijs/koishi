@@ -26,6 +26,7 @@ declare module 'vue-router' {
     hidden?: boolean
     authorize?: boolean
     frameless?: boolean
+    require?: ('stats' | 'profile' | 'registry')[]
   }
 }
 
@@ -36,17 +37,17 @@ const router = createRouter({
   routes: [{
     path: '/',
     name: '仪表盘',
-    meta: { icon: 'tachometer-alt' },
+    meta: { icon: 'tachometer-alt', require: ['stats', 'profile', 'registry'] },
     component: () => import('./views/home/index.vue'),
   }, {
     path: '/bots',
     name: '机器人',
-    meta: { icon: 'robot' },
+    meta: { icon: 'robot', require: ['stats', 'profile'] },
     component: () => import('./views/bots.vue'),
   }, {
     path: '/plugins',
     name: '插件',
-    meta: { icon: 'plug' },
+    meta: { icon: 'plug', require: ['registry'] },
     component: () => import('./views/plugins/index.vue'),
   }, {
     path: '/sandbox',

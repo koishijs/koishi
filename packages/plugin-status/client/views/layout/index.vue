@@ -4,13 +4,13 @@
     <sidebar/>
   </template>
   <main :class="{ frameless }">
-    <router-view v-if="status"/>
+    <router-view v-if="loaded"/>
   </main>
 </template>
 
 <script lang="ts" setup>
 
-import { status } from '~/client'
+import * as client from '~/client'
 import Navbar from './navbar.vue'
 import Sidebar from './sidebar.vue'
 import { computed } from 'vue'
@@ -18,6 +18,7 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const frameless = computed(() => route.meta.frameless)
+const loaded = computed(() => (route.meta.require || []).every((key) => client[key].value))
 
 </script>
 

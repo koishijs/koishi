@@ -6,8 +6,8 @@
 
 <script lang="ts" setup>
 
-import type { Payload } from '~/server'
-import { defineProps, computed } from 'vue'
+import { stats } from '~/client'
+import { computed } from 'vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { GridComponent, TooltipComponent } from 'echarts/components'
@@ -18,8 +18,6 @@ use([CanvasRenderer, GridComponent, TooltipComponent, BarChart])
 
 const formatHour = (value: number) => `${(value - 0.5).toFixed()}:00-${(value + 0.5).toFixed()}:00`
 
-const props = defineProps<{ status: Payload }>()
-
 const option = computed(() => ({
   tooltip: {
     trigger: 'axis',
@@ -28,7 +26,7 @@ const option = computed(() => ({
     },
     formatter(params) {
       const [{ data: [x], dataIndex, color }] = params
-      const source = props.status.hours[dataIndex]
+      const source = stats.value.hours[dataIndex]
       const output = [
         `${formatHour(x)}`,
         `消息总量：${+source.total.toFixed(1)}`,
@@ -63,7 +61,7 @@ const option = computed(() => ({
   },
   series: [{
     name: '其他',
-    data: props.status.hours.map((val, index) => [index + 0.5, val.total || 0]),
+    data: stats.value.hours.map((val, index) => [index + 0.5, val.total || 0]),
     type: 'bar',
     stack: 1,
     itemStyle: {
@@ -71,7 +69,7 @@ const option = computed(() => ({
     },
   }, {
     name: '教学',
-    data: props.status.hours.map((val, index) => [index + 0.5, (val.command || 0) + (val.dialogue || 0)]),
+    data: stats.value.hours.map((val, index) => [index + 0.5, (val.command || 0) + (val.dialogue || 0)]),
     type: 'bar',
     stack: 1,
     itemStyle: {
@@ -79,7 +77,7 @@ const option = computed(() => ({
     },
   }, {
     name: '指令',
-    data: props.status.hours.map((val, index) => [index + 0.5, val.command || 0]),
+    data: stats.value.hours.map((val, index) => [index + 0.5, val.command || 0]),
     type: 'bar',
     stack: 1,
     itemStyle: {

@@ -1,25 +1,25 @@
 <template>
   <div class="stats-grid basic-stats">
-    <card-numeric title="当前消息频率" icon="paper-plane">{{ upRate }} / min</card-numeric>
+    <card-numeric title="当前消息频率" icon="paper-plane">{{ currentRate }} / min</card-numeric>
     <card-numeric title="近期消息频率" icon="history">{{ recentRate }} / d</card-numeric>
-    <card-numeric title="命名插件数量" icon="plug">{{ status.pluginCount }}</card-numeric>
+    <card-numeric title="命名插件数量" icon="plug">{{ registry.pluginCount }}</card-numeric>
     <card-numeric title="数据库体积" icon="database">456 MB</card-numeric>
     <card-numeric title="活跃用户数量" icon="heart">456</card-numeric>
     <card-numeric title="活跃群数量" icon="users">32</card-numeric>
   </div>
-  <load-chart :status="status"/>
+  <load-chart/>
   <div class="stats-grid chart-stats">
-    <history-chart :status="status"/>
-    <hour-chart :status="status"/>
-    <group-chart :status="status"/>
-    <word-cloud :status="status"/>
+    <history-chart/>
+    <hour-chart/>
+    <group-chart/>
+    <word-cloud/>
   </div>
 </template>
 
 <script setup lang="ts">
 
 import { computed } from 'vue'
-import { status } from '~/client'
+import { stats, profile, registry } from '~/client'
 import CardNumeric from './card-numeric.vue'
 import GroupChart from './group-chart.vue'
 import HistoryChart from './history-chart.vue'
@@ -27,12 +27,12 @@ import HourChart from './hour-chart.vue'
 import LoadChart from './load-chart.vue'
 import WordCloud from './word-cloud.vue'
 
-const upRate = computed(() => {
-  return status.value.bots.reduce((sum, bot) => sum + bot.currentRate[0], 0)
+const currentRate = computed(() => {
+  return profile.value.bots.reduce((sum, bot) => sum + bot.currentRate[0], 0)
 })
 
 const recentRate = computed(() => {
-  return status.value.bots.reduce((sum, bot) => sum + bot.recentRate[0], 0)
+  return Object.values(stats.value.botSend).reduce((sum, value) => sum + value, 0).toFixed(1)
 })
 
 </script>

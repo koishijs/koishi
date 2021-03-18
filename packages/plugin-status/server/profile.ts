@@ -1,5 +1,4 @@
 import { Bot, Context, Platform } from 'koishi-core'
-import { Time } from 'koishi-utils'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
 
@@ -50,7 +49,6 @@ export interface BotData {
   platform: Platform
   code: Bot.Status
   currentRate: MessageRate
-  recentRate?: MessageRate
 }
 
 export namespace BotData {
@@ -67,7 +65,7 @@ export namespace BotData {
   } as BotData)
 }
 
-export interface Profile {
+export interface Profile extends Profile.Meta {
   bots: BotData[]
   memory: LoadRate
   cpu: LoadRate
@@ -75,16 +73,34 @@ export interface Profile {
 
 export namespace Profile {
   export interface Config {
-    tick?: number
+    tickInterval?: number
+    refreshInterval?: number
   }
 
-  export async function from(ctx: Context) {
+  export interface Meta {
+    allUsers: number
+    activeUsers: number
+    allGroups: number
+    activeGroups: number
+  }
+
+  export async function get(ctx: Context, config: Config) {
     const [memory, bots] = await Promise.all([
       memoryRate(),
       Promise.all(ctx.bots.map(BotData.from)),
     ])
     const cpu: LoadRate = [appRate, usedRate]
-    return { bots, memory, cpu } as Profile
+    return { bots, memory, cpu, ...await getMeta(ctx, config) } as Profile
+  }
+
+  let timestamp = 0
+  let cachedMeta: Promise<Meta>
+
+  async function getMeta(ctx: Context, config: Config) {
+    const next = Date.now() + config.refreshInterval
+    if (timestamp > next) return cachedMeta
+    timestamp = next
+    return cachedMeta = ctx.database.getProfile()
   }
 
   export function initBot(bot: Bot) {
@@ -93,7 +109,7 @@ export namespace Profile {
   }
 
   export function apply(ctx: Context, config: Config = {}) {
-    const { tick = 5 * Time.second } = config
+    const { tickInterval } = config
 
     ctx.all().before('send', (session) => {
       session.bot.messageSent[0] += 1
@@ -115,7 +131,7 @@ export namespace Profile {
           messageReceived.splice(-1, 1)
         })
         ctx.emit('status/tick')
-      }, tick)
+      }, tickInterval)
     })
   }
 }

@@ -1,6 +1,5 @@
 import { Context, Channel, noop, Session, Logger, Bot, Platform, Time } from 'koishi'
 import {} from 'koishi-plugin-teach'
-import Profile from './profile'
 
 export type StatRecord = Record<string, number>
 
@@ -74,6 +73,8 @@ interface Statistics {
   hours: StatRecord[]
   questions: QuestionData[]
   groups: GroupData[]
+  botSend: StatRecord
+  botReceive: StatRecord
 }
 
 const REFRESH_INTERVAL = 60000
@@ -93,7 +94,7 @@ async function upload(sync: Synchronizer, forced = false) {
 
 async function download(ctx: Context, date: Date) {
   const data = await ctx.app.synchronizer.download(date)
-  const extension = data.extension = {} as Statistics
+  const extension = {} as Statistics
   const { daily, hourly, longterm, groups } = data
 
   // history
@@ -102,8 +103,10 @@ async function download(ctx: Context, date: Date) {
     extension.history[stat.time.toLocaleDateString('zh-CN')] = stat.message
   })
 
-  // command
+  // command & bot
   extension.commands = average(daily.map(data => data.command))
+  extension.botSend = average(daily.map(stat => stat.botSend))
+  extension.botReceive = average(daily.map(stat => stat.botReceive))
 
   // group
   const groupSet = new Set<string>()
@@ -173,7 +176,7 @@ async function download(ctx: Context, date: Date) {
     extension.questions = Object.values(questionMap)
   }
 
-  return data
+  return extension
 }
 
 const send = Session.prototype.send
@@ -189,24 +192,16 @@ Session.prototype.send[customTag] = send
 
 namespace Statistics {
   let cachedDate: number
-  let cachedData: Promise<Synchronizer.Data>
+  let cachedData: Promise<Statistics>
 
-  export async function patch(ctx: Context, profile: Profile) {
+  export async function get(ctx: Context) {
     const date = new Date()
     const dateNumber = Time.getDateNumber(date, date.getTimezoneOffset())
     if (dateNumber !== cachedDate) {
       cachedData = download(ctx, date)
       cachedDate = dateNumber
     }
-    const { extension, daily } = await cachedData
-    Object.assign(profile, extension)
-
-    const botSend = average(daily.map(stat => stat.botSend))
-    const botReceive = average(daily.map(stat => stat.botReceive))
-    profile.bots.forEach((bot) => {
-      const sid = `${bot.platform}:${bot.selfId}`
-      bot.recentRate = [botSend[sid] || 0, botReceive[sid] || 0]
-    })
+    return cachedData
   }
 
   export function apply(ctx: Context) {

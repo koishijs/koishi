@@ -9,7 +9,7 @@ import Statistics from './stats'
 
 export { BotData, LoadRate } from './profile'
 
-export interface Config extends WebAdapter.Config {
+export interface Config extends WebAdapter.Config, Profile.Config {
   port?: number
   selfUrl?: string
 }
@@ -19,7 +19,9 @@ export interface PluginData extends Plugin.Meta {
   dependencies: string[]
 }
 
-export interface Payload extends Profile, Statistics {
+export { Statistics, Profile }
+
+export interface Registry {
   plugins: PluginData[]
   pluginCount: number
 }
@@ -51,13 +53,13 @@ export function apply(ctx: Context, config: Config = {}) {
     adapter = ctx.app.adapters.sandbox = new WebAdapter(ctx, config)
 
     adapter.server.on('connection', async (socket) => {
-      if (!plugins) updatePlugins()
-      if (!profile) await updateProfile()
-      const data = JSON.stringify({
-        type: 'update',
-        body: { ...profile, plugins, pluginCount },
-      })
-      socket.send(data)
+      function send(type: string, body: any) {
+        socket.send(JSON.stringify({ type, body }))
+      }
+
+      Statistics.get(ctx).then(data => send('stats', data))
+      getProfile().then(data => send('profile', data))
+      send('registry', getRegistry())
     })
 
     await adapter.start()
@@ -79,41 +81,38 @@ export function apply(ctx: Context, config: Config = {}) {
     const children = state.children.flatMap(traverse, 1)
     const { name, sideEffect } = state
     if (!name) return children
-    pluginCount += 1
+    internal.pluginCount += 1
     const dependencies = [...new Set(getDeps(state))]
     return [{ name, sideEffect, children, dependencies }]
   }
 
-  let plugins: PluginData[]
-  let pluginCount: number
-  let profile: Profile
+  let profile: Promise<Profile>
+  let internal: Registry
 
-  async function broadcast(callback: () => void | Promise<void>) {
+  async function broadcast(type: string, body: any) {
     if (!adapter?.server.clients.size) return
-    await callback()
-    const data = JSON.stringify({
-      type: 'update',
-      body: { ...profile, plugins, pluginCount },
-    })
+    const data = JSON.stringify({ type, body })
     adapter.server.clients.forEach((socket) => socket.send(data))
   }
 
-  function updatePlugins() {
-    pluginCount = 0
-    plugins = traverse(null)
+  function getRegistry(forced = false) {
+    if (internal && !forced) return internal
+    internal = { pluginCount: 0 } as Registry
+    internal.plugins = traverse(null)
+    return internal
   }
 
-  async function updateProfile() {
-    profile = await Profile.from(ctx)
-    await Statistics.patch(ctx, profile)
+  function getProfile(forced = false) {
+    if (profile && !forced) return profile
+    return profile = Profile.get(ctx, config)
   }
 
   ctx.on('registry', () => {
-    broadcast(updatePlugins)
+    broadcast('registry', getRegistry(true))
   })
 
-  ctx.on('status/tick', () => {
-    broadcast(updateProfile)
+  ctx.on('status/tick', async () => {
+    broadcast('profile', await getProfile(true))
   })
 
   ctx.before('disconnect', async () => {

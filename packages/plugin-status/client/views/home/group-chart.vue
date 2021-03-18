@@ -1,14 +1,14 @@
 <template>
   <k-card class="frameless" title="各群发言数量">
-    <v-chart v-if="status.groups.length" :option="option" autoresize/>
+    <v-chart v-if="stats.groups.length" :option="option" autoresize/>
     <p v-else>暂无数据。</p>
   </k-card>
 </template>
 
 <script lang="ts" setup>
 
-import type { Payload } from '~/server'
-import { defineProps, computed } from 'vue'
+import { stats } from '~/client'
+import { computed } from 'vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { GridComponent, TooltipComponent } from 'echarts/components'
@@ -16,8 +16,6 @@ import { PieChart } from 'echarts/charts'
 import VChart from 'vue-echarts'
 
 use([CanvasRenderer, GridComponent, TooltipComponent, PieChart])
-
-const props = defineProps<{ status: Payload }>()
 
 const option = computed(() => ({
   tooltip: {
@@ -34,7 +32,7 @@ const option = computed(() => ({
   },
   series: [{
     type: 'pie',
-    data: props.status.groups.sort((a, b) => b.value - a.value),
+    data: stats.value.groups.sort((a, b) => b.value - a.value),
     radius: ['35%', '65%'],
     minShowLabelAngle: 3,
   }],

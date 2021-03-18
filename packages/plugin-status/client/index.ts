@@ -2,7 +2,7 @@
 
 import { ref, watch } from 'vue'
 import type { User } from 'koishi-core'
-import type { Payload } from '~/server'
+import type { Registry, Profile, Statistics } from '~/server'
 
 const prefix = 'koishi:'
 
@@ -41,7 +41,9 @@ interface Config {
 
 export const user = storage.create<User>('user')
 export const config = storage.create<Config>('config', { authType: 0 })
-export const status = ref<Payload>(null)
+export const profile = ref<Profile>(null)
+export const registry = ref<Registry>(null)
+export const stats = ref<Statistics>(null)
 export const socket = ref<WebSocket>(null)
 
 const listeners: Record<string, (data: any) => void> = {}
@@ -55,11 +57,10 @@ export function start() {
       listeners[data.type](data.body)
     }
   }
-  receive('update', data => status.value = data)
-  receive('user', data => {
-    user.value = data
-    storage.set('user', data)
-  })
+  receive('profile', data => profile.value = data)
+  receive('registry', data => registry.value = data)
+  receive('stats', data => stats.value = data)
+  receive('user', data => user.value = data)
 }
 
 export function send(type: string, body: any) {

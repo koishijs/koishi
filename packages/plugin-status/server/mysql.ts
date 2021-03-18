@@ -109,7 +109,7 @@ namespace Stat {
 }
 
 Database.extend('koishi-plugin-mysql', {
-  async getActiveData() {
+  async getProfile() {
     const [[{ activeUsers }], [{ allUsers }], [{ activeGroups }], [{ allGroups }]] = await this.query([
       'SELECT COUNT(*) as activeUsers FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',
       'SELECT COUNT(*) as allUsers FROM `user`',
