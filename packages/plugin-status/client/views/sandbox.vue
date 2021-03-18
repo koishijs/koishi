@@ -1,6 +1,6 @@
 <template>
   <k-card class="sandbox">
-    <div class="history">
+    <div class="history" ref="panel">
       <p v-for="({ from, content }, index) in messages" :key="index" :class="from">
         {{ content }}
       </p>
@@ -11,7 +11,7 @@
 
 <script lang="ts" setup>
 
-import { ref, reactive } from 'vue'
+import { ref, reactive, nextTick } from 'vue'
 import { send, receive, user } from '~/client'
 
 interface Message {
@@ -20,18 +20,31 @@ interface Message {
 }
 
 const text = ref('')
+const panel = ref<Element>(null)
 const messages = reactive<Message[]>([])
+
+function addMessage(from: 'user' | 'bot', content: string) {
+  messages.push({ from, content })
+  const { scrollTop, clientHeight, scrollHeight } = panel.value
+  if (Math.abs(scrollTop + clientHeight - scrollHeight) < 1) {
+    nextTick(scrollToBottom)
+  }
+}
+
+function scrollToBottom() {
+  panel.value.scrollTop = panel.value.scrollHeight - panel.value.clientHeight
+}
 
 function onEnter() {
   if (!text.value) return
-  messages.push({ from: 'user', content: text.value })
+  addMessage('user', text.value)
   const { token, id } = user.value
   send('sandbox', { token, id, content: text.value })
   text.value = ''
 }
 
 receive('sandbox', (data) => {
-  messages.push({ from: 'bot', content: data })
+  addMessage('bot', data)
 })
 
 </script>

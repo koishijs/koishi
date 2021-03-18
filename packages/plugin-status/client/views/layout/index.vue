@@ -61,4 +61,22 @@ main.frameless {
   transform: translateY(-50%);
 }
 
+::-webkit-scrollbar {
+  height: 100%;
+  width: 0.6rem;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 0.6rem;
+  background: #fff4;
+  &:hover {
+    background: #fff8;
+  }
+}
+
+::-webkit-scrollbar-track {
+  border-radius: 0.6rem;
+  box-shadow: inset 0 0 6px #000b;
+}
+
 </style>

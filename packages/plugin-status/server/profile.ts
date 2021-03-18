@@ -51,18 +51,18 @@ export interface BotData {
   currentRate: MessageRate
 }
 
-export namespace BotData {
-  function accumulate(record: number[]) {
-    return record.slice(1).reduce((prev, curr) => prev + curr, 0)
-  }
+function accumulate(record: number[]) {
+  return record.slice(1).reduce((prev, curr) => prev + curr, 0)
+}
 
-  export const from = async (bot: Bot) => ({
+export async function BotData(bot: Bot) {
+  return {
     platform: bot.platform,
     selfId: bot.selfId,
     username: bot.username,
     code: await bot.getStatus(),
     currentRate: [accumulate(bot.messageSent), accumulate(bot.messageReceived)],
-  } as BotData)
+  } as BotData
 }
 
 export interface Profile extends Profile.Meta {
@@ -88,7 +88,7 @@ export namespace Profile {
   export async function get(ctx: Context, config: Config) {
     const [memory, bots] = await Promise.all([
       memoryRate(),
-      Promise.all(ctx.bots.map(BotData.from)),
+      Promise.all(ctx.bots.filter(bot => bot.platform !== 'sandbox').map(BotData)),
     ])
     const cpu: LoadRate = [appRate, usedRate]
     return { bots, memory, cpu, ...await getMeta(ctx, config) } as Profile
