@@ -171,6 +171,11 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this.context.match(session) && this.config.authority <= authority && !disable.includes(this.name)
   }
 
+  getConfig<K extends keyof Command.Config>(key: K, session: Session): Exclude<Command.Config[K], (user: User) => any> {
+    const value = this.config[key] as any
+    return typeof value === 'function' ? value(session.user) : value
+  }
+
   check(callback: Command.Action<U, G, A, O>, prepend = false) {
     if (prepend) {
       this._checkers.unshift(callback)
@@ -178,11 +183,6 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       this._checkers.push(callback)
     }
     return this
-  }
-
-  getConfig<K extends keyof Command.Config>(key: K, session: Session): Exclude<Command.Config[K], (user: User) => any> {
-    const value = this.config[key] as any
-    return typeof value === 'function' ? value(session.user) : value
   }
 
   action(callback: Command.Action<U, G, A, O>, append = false) {

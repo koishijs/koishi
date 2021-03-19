@@ -370,7 +370,7 @@ export class Context {
       if (command) {
         if (parent) {
           if (command === parent) {
-            throw new Error('cannot set a command as its own subcommand')
+            throw new Error(`cannot set a command (${command.name}) as its own subcommand`)
           }
           if (command.parent) {
             if (command.parent !== parent) {
