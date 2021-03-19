@@ -47,6 +47,7 @@ const KOISHI_VERSION = JSON.stringify(version)
   await Promise.all(workspaces.map(async (name) => {
     if (name.startsWith('.')) return
 
+    let outdir = 'dist'
     const base = `${root}/${name}`
     const entryPoints = [base + '/src/index.ts']
 
@@ -60,6 +61,7 @@ const KOISHI_VERSION = JSON.stringify(version)
     } else if (name === 'koishi-test-utils') {
       await tasks[chai]
     } else if (name === 'plugin-status') {
+      outdir = 'lib'
       entryPoints.splice(0, 1, base + '/server/index.ts')
     }
 
@@ -70,7 +72,7 @@ const KOISHI_VERSION = JSON.stringify(version)
       platform: 'node',
       target: 'node12.19',
       charset: 'utf8',
-      outdir: `${root}/${name}/dist`,
+      outdir: `${root}/${name}/${outdir}`,
       logLevel: 'silent',
       sourcemap: true,
       define: {

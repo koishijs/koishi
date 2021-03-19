@@ -140,6 +140,12 @@ export class WebAdapter extends Adapter<'sandbox'> {
     })
   }
 
+  broadcast(type: string, body: any) {
+    if (!this?.server.clients.size) return
+    const data = JSON.stringify({ type, body })
+    this.server.clients.forEach((socket) => socket.send(data))
+  }
+
   stop() {
     this.server.close()
   }
