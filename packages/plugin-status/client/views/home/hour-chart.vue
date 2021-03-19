@@ -8,13 +8,6 @@
 
 import { stats } from '~/client'
 import { computed } from 'vue'
-import { use } from 'echarts/core'
-import { CanvasRenderer } from 'echarts/renderers'
-import { GridComponent, TooltipComponent } from 'echarts/components'
-import { BarChart } from 'echarts/charts'
-import VChart from 'vue-echarts'
-
-use([CanvasRenderer, GridComponent, TooltipComponent, BarChart])
 
 const formatHour = (value: number) => `${(value - 0.5).toFixed()}:00-${(value + 0.5).toFixed()}:00`
 

@@ -1,8 +1,7 @@
 /* eslint-disable no-undef */
 
-import { createApp } from 'vue'
+import { createApp, defineAsyncComponent } from 'vue'
 import { ElButton, ElCollapseTransition } from 'element-plus'
-import { THEME_KEY } from 'vue-echarts'
 import { createRouter, createWebHistory } from 'vue-router'
 import Card from './components/card.vue'
 import Button from './components/button.vue'
@@ -40,7 +39,7 @@ const router = createRouter({
     path: '/',
     name: '仪表盘',
     meta: { icon: 'tachometer-alt', require: ['stats', 'profile', 'registry'] },
-    component: () => import('./views/home/index.vue'),
+    component: () => import('./views/home/home.vue'),
   }, {
     path: '/bots',
     name: '机器人',
@@ -50,7 +49,7 @@ const router = createRouter({
     path: '/plugins',
     name: '插件',
     meta: { icon: 'plug', require: ['registry'] },
-    component: () => import('./views/plugins/index.vue'),
+    component: () => import('./views/plugins/plugins.vue'),
   }, {
     path: '/sandbox',
     name: '沙盒',
@@ -72,8 +71,9 @@ const router = createRouter({
 app.component('k-card', Card)
 app.component('k-button', Button)
 app.component('k-input', Input)
+app.component('k-chart', defineAsyncComponent(() => import('./components/echarts')))
 
-app.provide(THEME_KEY, 'dark-blue')
+app.provide('ecTheme', 'dark-blue')
 
 app.use(ElButton)
 app.use(ElCollapseTransition)

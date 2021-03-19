@@ -98,7 +98,10 @@ export function apply(ctx: Context, config: Config = {}) {
     const [vite] = await Promise.all([createVite(), createAdapter()])
 
     ctx.router.get(uiPath + '(/.+)*', async (koa) => {
-      const filename = root + koa.path.slice(uiPath.length)
+      const filename = resolve(root, koa.path.slice(uiPath.length).replace(/^\/+/, ''))
+      if (!filename.startsWith(root) && !filename.includes('node_modules')) {
+        return koa.status = 404
+      }
       const stats = await fs.stat(filename).catch<Stats>(noop)
       if (stats?.isFile()) {
         koa.type = extname(filename)

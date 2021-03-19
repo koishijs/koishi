@@ -1,6 +1,6 @@
 <template>
   <k-card class="frameless" title="历史发言数量">
-    <v-chart v-if="Object.keys(stats.history).length" :option="option" autoresize/>
+    <k-chart v-if="Object.keys(stats.history).length" :option="option" autoresize/>
     <p v-else>暂无数据。</p>
   </k-card>
 </template>
@@ -9,13 +9,6 @@
 
 import { stats } from '~/client'
 import { computed } from 'vue'
-import { use } from 'echarts/core'
-import { CanvasRenderer } from 'echarts/renderers'
-import { GridComponent, TooltipComponent } from 'echarts/components'
-import { LineChart } from 'echarts/charts'
-import VChart from 'vue-echarts'
-
-use([CanvasRenderer, GridComponent, TooltipComponent, LineChart])
 
 const week = '日一二三四五六'
 

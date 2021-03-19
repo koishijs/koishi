@@ -1,6 +1,6 @@
 <template>
   <k-card class="frameless" title="各群发言数量">
-    <v-chart v-if="stats.groups.length" :option="option" autoresize/>
+    <k-chart v-if="stats.groups.length" :option="option" autoresize/>
     <p v-else>暂无数据。</p>
   </k-card>
 </template>
@@ -9,13 +9,6 @@
 
 import { stats } from '~/client'
 import { computed } from 'vue'
-import { use } from 'echarts/core'
-import { CanvasRenderer } from 'echarts/renderers'
-import { GridComponent, TooltipComponent } from 'echarts/components'
-import { PieChart } from 'echarts/charts'
-import VChart from 'vue-echarts'
-
-use([CanvasRenderer, GridComponent, TooltipComponent, PieChart])
 
 const option = computed(() => ({
   tooltip: {
