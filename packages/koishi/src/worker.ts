@@ -203,7 +203,7 @@ function createWatcher() {
 
   const logger = new Logger('app:watcher')
 
-  watcher.on('change', (path) => {
+  watcher.on('change', async (path) => {
     if (!require.cache[path] || externals.has(path)) return
     logger.debug('change detected:', path)
 
@@ -214,7 +214,8 @@ function createWatcher() {
     declined.delete(path)
 
     const plugins: string[] = []
-    for (const [filename] of pluginMap) {
+    const tasks: Promise<void>[] = []
+    for (const [filename, [name]] of pluginMap) {
       const dependencies = loadDependencies(filename, declined)
       if (dependencies.has(path)) {
         dependencies.forEach(dep => accepted.add(dep))
@@ -224,9 +225,14 @@ function createWatcher() {
 
         // dispose installed plugin
         plugins.push(filename)
-        app.dispose(plugin)
+        const displayName = plugin.name || name
+        tasks.push(app.dispose(plugin).catch((err) => {
+          logger.warn('failed to dispose plugin %c\n' + coerce(err), displayName)
+        }))
       }
     }
+
+    await Promise.all(tasks)
 
     accepted.forEach(dep => delete require.cache[dep])
     for (const filename of plugins) {

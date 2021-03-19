@@ -201,8 +201,6 @@ export class Context {
     ]).finally(() => {
       this.app.registry.delete(plugin)
       remove(state.parent.children, plugin)
-      const index = state.parent.children.indexOf(plugin)
-      if (index >= 0) state.parent.children.splice(index, 1)
       this.emit('registry', this.app.registry)
     })
   }
