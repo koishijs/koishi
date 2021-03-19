@@ -2,7 +2,7 @@
   <k-card class="frameless word-cloud" v-if="stats.questions">
     <template #header>
       问答日均触发次数
-      <el-button class="refresh" @click="refresh" type="text">刷新</el-button>
+      <k-button class="refresh" frameless @click="refresh">刷新</k-button>
     </template>
     <k-chart :option="option" autoresize/>
     <div class="footer">

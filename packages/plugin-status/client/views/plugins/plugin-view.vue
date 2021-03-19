@@ -1,12 +1,12 @@
 <template>
   <li class="plugin-view" :class="{ 'has-children': data.children.length }">
-    <i class="el-icon-caret-right" :class="{ show }"/>
-    <span class="plugin-item" @click="show = !show" :class="state">{{ data.name }}</span>
-    <el-collapse-transition v-if="data.children.length">
+    <i class="fas fa-caret-right" :class="{ show }"/>
+    <span class="plugin-item" @click="data.children.length && (show = !show)" :class="state">{{ data.name }}</span>
+    <k-collapse v-if="data.children.length">
       <ul class="plugin-list" v-show="show">
         <plugin-view :data="data" v-for="(data, index) in data.children" :key="index" />
       </ul>
-    </el-collapse-transition>
+    </k-collapse>
   </li>
 </template>
 
@@ -29,25 +29,26 @@ const state = computed(() => {
 
 @import '../../index.scss';
 
-:not(.has-children) > .el-icon-caret-right {
+:not(.has-children) > .fa-caret-right {
   font-size: 16px !important;
-  width: 10px;
-  padding-left: 4px;
+  width: 16px;
+  transform: translateX(-1px);
 
   &::before {
     content: "•";
   }
 }
 
-.el-icon-caret-right {
-  margin-left: -1rem;
-  margin-right: 1rem;
+.fa-caret-right {
+  margin-right: 8px;
   transition: 0.3s ease;
   font-size: 14px !important;
+  width: 14px;
+  text-align: center;
   vertical-align: middle !important;
 }
 
-.el-icon-caret-right.show {
+.fa-caret-right.show {
   transform: rotate(90deg);
 }
 

@@ -1,18 +1,13 @@
 /* eslint-disable no-undef */
 
 import { createApp, defineAsyncComponent } from 'vue'
-import { ElButton, ElCollapseTransition } from 'element-plus'
 import { createRouter, createWebHistory } from 'vue-router'
 import Card from './components/card.vue'
+import Collapse from './components/collapse.vue'
 import Button from './components/button.vue'
 import Input from './components/input.vue'
 import App from './views/layout/index.vue'
 import { start, user, receive } from '.'
-
-// for el-collapse-transition
-import 'element-plus/lib/theme-chalk/base.css'
-import 'element-plus/lib/theme-chalk/el-icon.css'
-import 'element-plus/lib/theme-chalk/el-button.css'
 
 import '@fortawesome/fontawesome-free/css/fontawesome.css'
 import '@fortawesome/fontawesome-free/css/brands.css'
@@ -69,14 +64,13 @@ const router = createRouter({
 })
 
 app.component('k-card', Card)
+
+app.component('k-collapse', Collapse)
 app.component('k-button', Button)
 app.component('k-input', Input)
 app.component('k-chart', defineAsyncComponent(() => import('./components/echarts')))
 
 app.provide('ecTheme', 'dark-blue')
-
-app.use(ElButton)
-app.use(ElCollapseTransition)
 
 app.use(router)
 

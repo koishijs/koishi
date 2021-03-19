@@ -1,6 +1,6 @@
 <template>
   <k-card class="frameless" title="每小时发言数量">
-    <v-chart :option="option" autoresize/>
+    <k-chart :option="option" autoresize/>
   </k-card>
 </template>
 
