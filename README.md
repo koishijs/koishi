@@ -130,6 +130,10 @@ Koishi 完全使用 [MIT](./LICENSE) 协议开源，维护良好的开源生态�
 
 Copyright © 2019-present, Shigma
 
+## 贡献指南
+
+[查看这里](./.github/contributing.md)
+
 ## 联系方式
 
 [![QQ群](https://img.shields.io/badge/QQ%E7%BE%A4-963697928-blue.svg?style=flat-square)](https://jq.qq.com/?_wv=1027&k=89G3oKG0)
