@@ -18,3 +18,4 @@ declare module '~/client' {
 }
 
 declare const KOISHI_ENDPOINT: string
+declare const KOISHI_UI_PATH: string

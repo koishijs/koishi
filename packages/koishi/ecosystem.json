@@ -12,7 +12,7 @@
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-adapter-telegram": {
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Telegram adapter for Koishi"
   },
   "koishi-adapter-tomon": {
@@ -67,11 +67,11 @@
     "description": "Subscribe RSS Url for Koishi"
   },
   "koishi-plugin-schedule": {
-    "version": "3.0.1",
+    "version": "3.0.2",
     "description": "Schedule plugin for Koishi"
   },
   "koishi-plugin-status": {
-    "version": "4.0.0-alpha.1",
+    "version": "4.0.0-rc.0",
     "description": "Show Status of Koishi"
   },
   "koishi-plugin-teach": {

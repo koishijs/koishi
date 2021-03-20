@@ -1,8 +1,9 @@
 import { Context, Plugin } from 'koishi-core'
-import { assertProperty } from 'koishi-utils'
-import { resolve } from 'path'
+import { assertProperty, noop } from 'koishi-utils'
+import { resolve, extname } from 'path'
+import { promises as fs, Stats, createReadStream } from 'fs'
 import { WebAdapter } from './adapter'
-import { createServer, ViteDevServer } from 'vite'
+import { createServer } from 'vite'
 import vuePlugin from '@vitejs/plugin-vue'
 import Profile from './profile'
 import Statistics from './stats'
@@ -10,8 +11,9 @@ import Statistics from './stats'
 export { BotData, LoadRate } from './profile'
 
 export interface Config extends WebAdapter.Config, Profile.Config {
-  port?: number
   selfUrl?: string
+  uiPath?: string
+  devMode?: boolean
 }
 
 export interface PluginData extends Plugin.Meta {
@@ -29,15 +31,23 @@ export interface Registry {
 export const name = 'webui'
 
 export function apply(ctx: Context, config: Config = {}) {
-  const root = resolve(__dirname, '../client')
   const koishiPort = assertProperty(ctx.app.options, 'port')
-  const { path, port, selfUrl = `http://localhost:${koishiPort}` } = config
+  const { apiPath, uiPath, devMode, selfUrl = `http://localhost:${koishiPort}` } = config
 
-  let vite: ViteDevServer
-  let adapter: WebAdapter
-  ctx.on('connect', async () => {
-    vite = await createServer({
+  const globalVariables = Object.entries({
+    KOISHI_UI_PATH: uiPath,
+    KOISHI_ENDPOINT: selfUrl + apiPath,
+  }).map(([key, value]) => `window.${key} = ${JSON.stringify(value)};`).join('\n')
+
+  const root = resolve(__dirname, '..', devMode ? 'client' : 'dist')
+
+  async function createVite() {
+    if (!devMode) return
+
+    const vite = await createServer({
       root,
+      base: '/vite/',
+      server: { middlewareMode: true },
       plugins: [vuePlugin()],
       resolve: {
         alias: {
@@ -45,12 +55,19 @@ export function apply(ctx: Context, config: Config = {}) {
           '~/variables': root + '/index.scss',
         },
       },
-      define: {
-        KOISHI_ENDPOINT: JSON.stringify(selfUrl + path),
-      },
     })
 
-    adapter = ctx.app.adapters.sandbox = new WebAdapter(ctx, config)
+    ctx.router.all('/vite(/.+)+', (koa) => new Promise((resolve) => {
+      vite.middlewares(koa.req, koa.res, resolve)
+    }))
+
+    ctx.before('disconnect', () => vite.close())
+
+    return vite
+  }
+
+  async function createAdapter() {
+    const adapter = ctx.app.adapters.web = new WebAdapter(ctx, config)
 
     adapter.server.on('connection', async (socket) => {
       function send(type: string, body: any) {
@@ -63,7 +80,38 @@ export function apply(ctx: Context, config: Config = {}) {
     })
 
     await adapter.start()
-    await vite.listen(port)
+
+    ctx.before('disconnect', () => adapter.stop())
+
+    ctx.on('registry', () => {
+      adapter.broadcast('registry', getRegistry(true))
+    })
+
+    ctx.on('status/tick', async () => {
+      adapter.broadcast('profile', await getProfile(true))
+    })
+
+    return adapter
+  }
+
+  ctx.on('connect', async () => {
+    const [vite] = await Promise.all([createVite(), createAdapter()])
+
+    ctx.router.get(uiPath + '(/.+)*', async (koa) => {
+      const filename = resolve(root, koa.path.slice(uiPath.length).replace(/^\/+/, ''))
+      if (!filename.startsWith(root) && !filename.includes('node_modules')) {
+        return koa.status = 404
+      }
+      const stats = await fs.stat(filename).catch<Stats>(noop)
+      if (stats?.isFile()) {
+        koa.type = extname(filename)
+        return koa.body = createReadStream(filename)
+      }
+      let template = await fs.readFile(resolve(root, 'index.html'), 'utf8')
+      if (vite) template = await vite.transformIndexHtml(uiPath, template)
+      koa.set('content-type', 'text/html')
+      koa.body = template.replace('</head>', '<script>' + globalVariables + '</script></head>')
+    })
   })
 
   function* getDeps(state: Plugin.State): Generator<string> {
@@ -81,44 +129,22 @@ export function apply(ctx: Context, config: Config = {}) {
     const children = state.children.flatMap(traverse, 1)
     const { name, sideEffect } = state
     if (!name) return children
-    internal.pluginCount += 1
+    registry.pluginCount += 1
     const dependencies = [...new Set(getDeps(state))]
     return [{ name, sideEffect, children, dependencies }]
   }
 
   let profile: Promise<Profile>
-  let internal: Registry
-
-  async function broadcast(type: string, body: any) {
-    if (!adapter?.server.clients.size) return
-    const data = JSON.stringify({ type, body })
-    adapter.server.clients.forEach((socket) => socket.send(data))
-  }
-
-  function getRegistry(forced = false) {
-    if (internal && !forced) return internal
-    internal = { pluginCount: 0 } as Registry
-    internal.plugins = traverse(null)
-    return internal
-  }
-
   function getProfile(forced = false) {
     if (profile && !forced) return profile
     return profile = Profile.get(ctx, config)
   }
 
-  ctx.on('registry', () => {
-    broadcast('registry', getRegistry(true))
-  })
-
-  ctx.on('status/tick', async () => {
-    broadcast('profile', await getProfile(true))
-  })
-
-  ctx.before('disconnect', async () => {
-    await Promise.all([
-      vite?.close(),
-      adapter?.stop(),
-    ])
-  })
+  let registry: Registry
+  function getRegistry(forced = false) {
+    if (registry && !forced) return registry
+    registry = { pluginCount: 0 } as Registry
+    registry.plugins = traverse(null)
+    return registry
+  }
 }

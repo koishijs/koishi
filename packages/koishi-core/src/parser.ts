@@ -249,7 +249,7 @@ export namespace Domain {
     private _assignOption(option: OptionDeclaration, names: readonly string[], optionMap: OptionDeclarationMap) {
       for (const name of names) {
         if (name in optionMap) {
-          throw new Error(format('duplicate option names: "%s"', name))
+          throw new Error(format('duplicate option name "%s" for command "%s"', name, this.name))
         }
         optionMap[name] = option
       }

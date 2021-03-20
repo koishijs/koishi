@@ -1,7 +1,7 @@
 <template>
   <button
     :title="disabled ? '' : title"
-    :class="['k-button', type, { solid, round, unframed }]"
+    :class="['k-button', type, { solid, round, frameless }]"
     :disabled="disabled"
     @click.stop="$emit('click')"
   >
@@ -19,7 +19,7 @@ defineProps({
     default: 'default',
   },
   solid: Boolean,
-  unframed: Boolean,
+  frameless: Boolean,
   title: String,
   round: Boolean,
   disabled: Boolean,
@@ -101,23 +101,16 @@ button {
       @include active-bg-color($successColor);
     }
   }
-  // unframed
-  &.unframed {
+  // frameless
+  &.frameless {
     color: $tpFgColor4;
+    padding: 0;
     border-color: transparent;
     background-color: transparent;
     text-shadow: 1px 2px 3px #000a;
     &:hover {
-      border-color: $tpBorderColor1;
-      background-color: #ffffff40;
-    }
-    @media (max-width: $bp_xs) {
-      color: $tpFgColor5;
-      background-color: #ffffff40;
-      &:hover {
-        border-color: $tpBorderColor2;
-        background-color: #ffffff60;
-      }
+      border-color: transparent;
+      background-color: transparent;
     }
   }
 }

@@ -44,6 +44,11 @@ export default class HttpServer extends Adapter<'telegram'> {
           const { data } = await axios.get(endpoint + '/bot' + token + `/getFile?file_id=${fid}`)
           msg += ` [CQ:image,file=${fid},url=${endpoint}/file/bot${token}/${data.result.file_path}]`
         }
+        if (message.sticker) {
+          const fid = message.sticker.fileId
+          const { data } = await axios.get(endpoint + '/bot' + token + `/getFile?file_id=${fid}`)
+          msg += ` [CQ:image,file=${fid},url=${endpoint}/file/bot${token}/${data.result.file_path}]`
+        }
         for (const entity of message.entities || []) {
           if (entity.type === 'mention') {
             const name = msg.substr(entity.offset, entity.length)

@@ -64,6 +64,7 @@ Database.extend('koishi-plugin-mysql', {
     const assignees = assignee
       ? [this.escape(assignee)]
       : this.app.bots.map(bot => this.escape(bot.sid))
+    if (!assignees.length) return []
     return this.query(`SELECT * FROM \`schedule\` WHERE \`assignee\` IN (${assignees.join(',')})`)
   },
 })

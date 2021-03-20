@@ -57,22 +57,38 @@ export class Context {
   protected _router: Router
   protected _database: Database
 
-  public user = this.createSelector('userId')
-  public self = this.createSelector('selfId')
-  public group = this.createSelector('groupId')
-  public channel = this.createSelector('channelId')
-  public platform = this.createSelector('platform')
-
   protected constructor(public filter: Filter, public app?: App, private _plugin: Plugin = null) {}
 
   [inspect.custom]() {
-    return `Context {}`
+    const plugin = this._plugin
+    const name = !plugin ? 'root' : typeof plugin === 'object' && plugin.name || 'unknown'
+    return `Context <${name}>`
   }
 
   private createSelector<K extends keyof Session>(key: K) {
     const selector: Selector<Session[K]> = (...args) => this.select(key, ...args)
     selector.except = (...args) => this.unselect(key, ...args)
     return selector
+  }
+
+  get user() {
+    return this.createSelector('userId')
+  }
+
+  get self() {
+    return this.createSelector('selfId')
+  }
+
+  get group() {
+    return this.createSelector('groupId')
+  }
+
+  get channel() {
+    return this.createSelector('channelId')
+  }
+
+  get platform() {
+    return this.createSelector('platform')
   }
 
   get private() {
@@ -201,8 +217,6 @@ export class Context {
     ]).finally(() => {
       this.app.registry.delete(plugin)
       remove(state.parent.children, plugin)
-      const index = state.parent.children.indexOf(plugin)
-      if (index >= 0) state.parent.children.splice(index, 1)
       this.emit('registry', this.app.registry)
     })
   }
@@ -360,9 +374,9 @@ export class Context {
     const config = args[0] as Command.Config
     const path = def.split(' ', 1)[0].toLowerCase()
     const decl = def.slice(path.length)
-    const segments = path.split(/(?=[\\./])/)
+    const segments = path.split(/(?=[./])/g)
 
-    let parent: Command = null
+    let parent: Command, root: Command
     segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
@@ -370,7 +384,7 @@ export class Context {
       if (command) {
         if (parent) {
           if (command === parent) {
-            throw new Error('cannot set a command as its own subcommand')
+            throw new Error(`cannot set a command (${command.name}) as its own subcommand`)
           }
           if (command.parent) {
             if (command.parent !== parent) {
@@ -384,6 +398,7 @@ export class Context {
         return parent = command
       }
       command = new Command(name, decl, index === segments.length - 1 ? desc : '', this)
+      if (!root) root = command
       if (parent) {
         command.parent = parent
         command.config.authority = parent.config.authority
@@ -394,8 +409,15 @@ export class Context {
 
     if (desc) parent.description = desc
     Object.assign(parent.config, config)
-    this.state.disposables.push(() => parent.dispose())
-    return parent
+    if (!config?.patch) {
+      if (root) this.state.disposables.unshift(() => root.dispose())
+      return parent
+    }
+
+    if (root) root.dispose()
+    const command = Object.create(parent)
+    command._disposables = this.state.disposables
+    return command
   }
 
   getBot(platform: Platform, selfId?: string) {

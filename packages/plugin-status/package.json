@@ -1,11 +1,12 @@
 {
   "name": "koishi-plugin-status",
   "description": "Show Status of Koishi",
-  "version": "4.0.0-alpha.1",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "version": "4.0.0-rc.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "lib"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
@@ -28,27 +29,27 @@
     "status"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.2.1"
+    "koishi-core": "^3.3.0"
   },
   "devDependencies": {
-    "koishi-plugin-mongo": "^2.1.0",
-    "koishi-plugin-mysql": "^3.1.0",
-    "koishi-test-utils": "^6.0.0-beta.10"
-  },
-  "dependencies": {
-    "@fortawesome/fontawesome-free": "^5.15.2",
     "@types/ws": "^7.4.0",
+    "@fortawesome/fontawesome-free": "^5.15.3",
     "@vitejs/plugin-vue": "^1.1.5",
     "@vue/compiler-sfc": "^3.0.7",
     "echarts": "^5.0.2",
     "echarts-wordcloud": "^2.0.0",
-    "element-plus": "^1.0.2-beta.33",
+    "koishi-plugin-mongo": "^2.1.0",
+    "koishi-plugin-mysql": "^3.1.0",
+    "koishi-plugin-teach": "^2.0.0",
+    "koishi-test-utils": "^6.0.0-beta.10",
     "sass": "^1.32.8",
-    "systeminformation": "^5.6.1",
-    "vite": "^2.0.5",
     "vue": "^3.0.7",
     "vue-echarts": "^6.0.0-rc.3",
-    "vue-router": "^4.0.5",
-    "ws": "^7.4.3"
+    "vue-router": "^4.0.5"
+  },
+  "dependencies": {
+    "systeminformation": "^5.6.7",
+    "vite": "^2.1.2",
+    "ws": "^7.4.4"
   }
 }

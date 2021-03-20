@@ -1,4 +1,4 @@
-import { Logger, paramCase, remove, sleep, Time } from 'koishi-utils'
+import { Logger, paramCase, sleep, Time } from 'koishi-utils'
 import { Session } from './session'
 import { App } from './app'
 import WebSocket from 'ws'
@@ -28,10 +28,10 @@ export abstract class Adapter<P extends Platform = Platform> {
   abstract start(): Promise<void>
   abstract stop?(): void
 
-  constructor(public app: App, private Bot: Bot.Constructor<P>) {}
+  constructor(public app: App, private Bot?: Bot.Constructor<P>) {}
 
-  create(options: BotOptions) {
-    const bot = new this.Bot(this, options)
+  create(options: BotOptions, constructor = this.Bot) {
+    const bot = new constructor(this, options)
     this.bots.push(bot)
     this.app.bots.push(bot)
     return bot
@@ -254,12 +254,6 @@ export class Bot<P extends Platform> {
       }
     }
     return messageIds
-  }
-
-  dispose() {
-    const bot = this as Bot.Instance<P>
-    remove(this.adapter.bots, bot)
-    remove(this.app.bots, bot)
   }
 }
 
