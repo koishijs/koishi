@@ -374,9 +374,9 @@ export class Context {
     const config = args[0] as Command.Config
     const path = def.split(' ', 1)[0].toLowerCase()
     const decl = def.slice(path.length)
-    const segments = path.split(/(?=[\\./])/)
+    const segments = path.split(/(?=[./])/g)
 
-    let parent: Command = null
+    let parent: Command, root: Command
     segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
@@ -398,6 +398,7 @@ export class Context {
         return parent = command
       }
       command = new Command(name, decl, index === segments.length - 1 ? desc : '', this)
+      if (!root) root = command
       if (parent) {
         command.parent = parent
         command.config.authority = parent.config.authority
@@ -408,8 +409,15 @@ export class Context {
 
     if (desc) parent.description = desc
     Object.assign(parent.config, config)
-    this.state.disposables.push(() => parent.dispose())
-    return parent
+    if (!config?.patch) {
+      if (root) this.state.disposables.unshift(() => root.dispose())
+      return parent
+    }
+
+    if (root) root.dispose()
+    const command = Object.create(parent)
+    command._disposables = this.state.disposables
+    return command
   }
 
   getBot(platform: Platform, selfId?: string) {
