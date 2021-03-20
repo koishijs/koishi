@@ -22,7 +22,7 @@ export namespace storage {
   }
 
   export function create<T>(key: string, fallback?: T) {
-    const wrapper = ref<T>(fallback && { ...fallback, ...get(key) })
+    const wrapper = ref<T>(fallback ? { ...fallback, ...get(key) } : get(key))
     watch(wrapper, () => set(key, wrapper.value), {
       deep: typeof fallback === 'object',
     })

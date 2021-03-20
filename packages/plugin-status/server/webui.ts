@@ -67,7 +67,7 @@ export function apply(ctx: Context, config: Config = {}) {
   }
 
   async function createAdapter() {
-    const adapter = ctx.app.adapters.sandbox = new WebAdapter(ctx, config)
+    const adapter = ctx.app.adapters.web = new WebAdapter(ctx, config)
 
     adapter.server.on('connection', async (socket) => {
       function send(type: string, body: any) {
