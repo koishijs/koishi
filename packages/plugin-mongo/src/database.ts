@@ -1,10 +1,8 @@
 import { MongoClient, Db, Collection } from 'mongodb'
-import { App, Channel, Database, User, Tables as KoishiTables } from 'koishi-core'
+import { App, Channel, Database, User, Tables } from 'koishi-core'
 import { URLSearchParams } from 'url'
 
-type TableType = keyof Tables
-
-export interface Tables extends KoishiTables {}
+export interface Collections extends Tables { }
 
 export interface Config {
   username?: string
@@ -22,7 +20,7 @@ export interface Config {
   uri?: string
 }
 
-export interface MongoDatabase extends Database {}
+export interface MongoDatabase extends Database { }
 
 export class MongoDatabase {
   public config: Config
@@ -51,16 +49,21 @@ export class MongoDatabase {
     )
     this.db = this.client.db(this.config.name)
     if (this.config.prefix) {
-      this.db.collection = ((func, prefix) => function collection<T extends TableType>(name: T) {
+      this.db.collection = ((func, prefix) => function collection<T extends keyof Collections>(name: T) {
         return func(`${prefix}.${name}`)
       })(this.db.collection.bind(this.db), this.config.prefix)
     }
     this.user = this.db.collection('user')
     this.channel = this.db.collection('channel')
-    await this.channel.createIndex({ type: 1, pid: 1 }, { unique: true })
+    await Promise.all([
+      this.user.createIndex({ id: 1 }, { unique: true }),
+      this.user.createIndex({ onebot: 1 }, { unique: true, sparse: true }),
+      this.user.createIndex({ telegram: 1 }, { unique: true, sparse: true }),
+      this.channel.createIndex({ type: 1, pid: 1 }, { unique: true }),
+    ])
   }
 
-  collection<T extends TableType>(name: T): Collection<Tables[T]> {
+  collection<T extends keyof Collections>(name: T): Collection<Collections[T]> {
     return this.db.collection(name)
   }
 

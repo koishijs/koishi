@@ -5,7 +5,7 @@ import { RECENT_LENGTH, StatRecord, Synchronizer } from './stats'
 const logger = new Logger('status')
 
 declare module 'koishi-plugin-mongo' {
-  interface Tables {
+  interface Collections {
     'plugin-status': any
   }
 }

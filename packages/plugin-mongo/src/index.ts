@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Database, Context, Channel, Random, pick } from 'koishi-core'
+import { User, Database, Context, Channel, pick } from 'koishi-core'
 
 export * from './database'
 export default MongoDatabase
@@ -91,9 +91,11 @@ Database.extend(MongoDatabase, {
   },
 
   async setUser(type, id, data) {
+    const [udoc] = await this.user.find({}).sort({ id: -1 }).limit(1).project({ id: 1 }).toArray()
+    const uid = (+udoc?.id || 0) + 1
     await this.user.updateOne(
       { [type]: id },
-      { $set: escapeKey(data), $setOnInsert: { id: Random.uuid() } },
+      { $set: escapeKey(data), $setOnInsert: { id: uid.toString() } },
       { upsert: true },
     )
   },
