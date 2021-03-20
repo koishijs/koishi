@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-status",
   "description": "Show Status of Koishi",
-  "version": "4.0.0-alpha.1",
+  "version": "4.0.0-rc.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,7 +29,7 @@
     "status"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.2.1"
+    "koishi-core": "^3.3.0"
   },
   "devDependencies": {
     "@types/ws": "^7.4.0",
