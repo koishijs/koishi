@@ -1,10 +1,9 @@
-import { Context, Plugin } from 'koishi-core'
-import { noop } from 'koishi-utils'
+import { Context, Plugin, noop } from 'koishi-core'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import { WebAdapter } from './adapter'
-import { createServer } from 'vite'
-import vuePlugin from '@vitejs/plugin-vue'
+import type * as Vite from 'vite'
+import type PluginVue from '@vitejs/plugin-vue'
 import Profile from './profile'
 import Statistics from './stats'
 
@@ -43,11 +42,14 @@ export function apply(ctx: Context, config: Config = {}) {
   async function createVite() {
     if (!devMode) return
 
+    const { createServer } = require('vite') as typeof Vite
+    const pluginVue = require('@vitejs/plugin-vue').default as typeof PluginVue
+
     const vite = await createServer({
       root,
       base: '/vite/',
       server: { middlewareMode: true },
-      plugins: [vuePlugin()],
+      plugins: [pluginVue()],
       resolve: {
         alias: {
           '~/client': root,
