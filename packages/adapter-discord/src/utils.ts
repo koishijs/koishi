@@ -40,18 +40,18 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, ses
   session.content = ''
   if (meta.content) {
     session.content = meta.content
-      .replace(/<@[!&](.+?)>/, (_, id) => {
+      .replace(/<@[!&](.+?)>/g, (_, id) => {
         if (meta.mention_roles.includes(id)) {
           return segment('at', { role: id })
         } else {
           return segment('at', { id })
         }
       })
-      .replace(/<:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name }))
-      .replace(/<a:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name, animated: true }))
-      .replace(/@everyone/, () => segment('at', { type: 'all' }))
-      .replace(/@here/, () => segment('at', { type: 'here' }))
-      .replace(/<#(.+?)>/, (_, id) => segment.sharp(id))
+      .replace(/<:((?:[0-9]|[a-z]|[A-Z])+):(.+?)>/g, (_, name, id) => segment('face', { id: id, name }))
+      .replace(/<a:((?:[0-9]|[a-z]|[A-Z])+):(.+?)>/g, (_, name, id) => segment('face', { id: id, name, animated: true }))
+      .replace(/@everyone/g, () => segment('at', { type: 'all' }))
+      .replace(/@here/g, () => segment('at', { type: 'here' }))
+      .replace(/<#(.+?)>/g, (_, id) => segment.sharp(id))
   }
 
   // embed 的 update event 太阴间了 只有 id embeds channel_id guild_id 四个成员
