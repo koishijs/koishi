@@ -1,5 +1,5 @@
 import { Context, Plugin } from 'koishi-core'
-import { assertProperty, noop } from 'koishi-utils'
+import { noop } from 'koishi-utils'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import { WebAdapter } from './adapter'
@@ -31,8 +31,7 @@ export interface Registry {
 export const name = 'webui'
 
 export function apply(ctx: Context, config: Config = {}) {
-  const koishiPort = assertProperty(ctx.app.options, 'port')
-  const { apiPath, uiPath, devMode, selfUrl = `http://localhost:${koishiPort}` } = config
+  const { apiPath, uiPath, devMode, selfUrl } = config
 
   const globalVariables = Object.entries({
     KOISHI_UI_PATH: uiPath,
@@ -100,7 +99,7 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.router.get(uiPath + '(/.+)*', async (koa) => {
       const filename = resolve(root, koa.path.slice(uiPath.length).replace(/^\/+/, ''))
       if (!filename.startsWith(root) && !filename.includes('node_modules')) {
-        return koa.status = 404
+        return koa.status = 403
       }
       const stats = await fs.stat(filename).catch<Stats>(noop)
       if (stats?.isFile()) {

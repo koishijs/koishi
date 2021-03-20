@@ -83,6 +83,7 @@ extend(async function (status) {
 const defaultConfig: Config = {
   apiPath: '/status',
   uiPath: '/console',
+  selfUrl: '',
   expiration: Time.week,
   tickInterval: Time.second * 5,
   refreshInterval: Time.hour,
