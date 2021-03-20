@@ -1,4 +1,4 @@
-import { Context, Channel, noop, Session, Logger, Bot, Platform, Time } from 'koishi'
+import { Context, Channel, noop, Session, Logger, Bot, Platform, Time } from 'koishi-core'
 import {} from 'koishi-plugin-teach'
 
 export type StatRecord = Record<string, number>

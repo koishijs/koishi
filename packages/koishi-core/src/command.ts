@@ -1,6 +1,6 @@
 import { Logger, coerce, Time, template, remove } from 'koishi-utils'
 import { Argv, Domain } from './parser'
-import { Context, NextFunction } from './context'
+import { Context, Disposable, NextFunction } from './context'
 import { User, Channel } from './database'
 import { FieldCollector, Session } from './session'
 import { inspect, format } from 'util'
@@ -33,6 +33,8 @@ export namespace Command {
     maxUsage?: UserType<number>
     /** min interval */
     minInterval?: UserType<number>
+    /** depend on existing commands */
+    patch?: boolean
   }
 
   export interface Shortcut {
@@ -61,6 +63,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   _aliases: string[] = []
   _examples: string[] = []
   _usage?: Command.Usage
+  _disposed?: boolean
+  _disposables?: Disposable[]
 
   private _userFields: FieldCollector<'user'>[] = []
   private _channelFields: FieldCollector<'channel'>[] = []
@@ -129,17 +133,24 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   alias(...names: string[]) {
+    if (this._disposed) return this
     for (const name of names) {
       this._registerAlias(name)
+      this._disposables?.push(() => {
+        remove(this._aliases, name)
+        delete this.app._commandMap[name]
+      })
     }
     return this
   }
 
   shortcut(name: string | RegExp, config: Command.Shortcut = {}) {
+    if (this._disposed) return this
     config.name = name
     config.command = this
     config.authority ||= this.config.authority
     this.app._shortcuts.push(config)
+    this._disposables?.push(() => remove(this.app._shortcuts, config))
     return this
   }
 
@@ -147,7 +158,10 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   subcommand<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
   subcommand(def: string, ...args: any[]) {
     def = this.name + (def.charCodeAt(0) === 46 ? '' : '/') + def
-    return this.context.command(def, ...args)
+    const desc = typeof args[0] === 'string' ? args.shift() as string : ''
+    const config = args[0] as Command.Config || {}
+    if (this._disposed) config.patch = true
+    return this.context.command(def, desc, config)
   }
 
   usage(text: Command.Usage<U, G>) {
@@ -162,6 +176,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
 
   option<K extends string, D extends string, T extends Domain.Type>(name: K, desc: D, config: Domain.OptionConfig<T> = {}) {
     this._createOption(name, desc, config)
+    this._disposables?.push(() => this.removeOption(name))
     return this as Command<U, G, A, Extend<O, K, Domain.OptionType<D, T>>>
   }
 
@@ -182,6 +197,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     } else {
       this._checkers.push(callback)
     }
+    this._disposables?.push(() => remove(this._checkers, callback))
     return this
   }
 
@@ -191,6 +207,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     } else {
       this._actions.unshift(callback)
     }
+    this._disposables?.push(() => remove(this._actions, callback))
     return this
   }
 
@@ -240,6 +257,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   }
 
   dispose() {
+    this._disposed = true
     for (const cmd of this.children.slice()) {
       cmd.dispose()
     }

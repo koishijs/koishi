@@ -21,8 +21,9 @@ export namespace storage {
     localStorage.setItem(prefix + key, JSON.stringify(value))
   }
 
-  export function create<T>(key: string, fallback?: T) {
-    const wrapper = ref<T>(fallback && { ...fallback, ...get(key) })
+  export function create<T>(key: string, fallback?: T, merge?: boolean) {
+    const value = get(key)
+    const wrapper = ref<T>(merge ? { ...fallback, ...value } : value || fallback)
     watch(wrapper, () => set(key, wrapper.value), {
       deep: typeof fallback === 'object',
     })
@@ -40,7 +41,7 @@ interface Config {
 }
 
 export const user = storage.create<User>('user')
-export const config = storage.create<Config>('config', { authType: 0 })
+export const config = storage.create<Config>('config', { authType: 0 }, true)
 export const profile = ref<Profile>(null)
 export const registry = ref<Registry>(null)
 export const stats = ref<Statistics>(null)

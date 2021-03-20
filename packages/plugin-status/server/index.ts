@@ -3,7 +3,7 @@ import { interpolate, Time } from 'koishi-utils'
 import * as WebUI from './webui'
 import Profile from './profile'
 import Statistics, { Synchronizer } from './stats'
-import { WebBot } from './adapter'
+import { SandboxBot } from './adapter'
 
 import './mongo'
 import './mysql'
@@ -27,7 +27,7 @@ declare module 'koishi-core' {
 
   namespace Bot {
     interface Platforms {
-      'sandbox': WebBot
+      'web': SandboxBot
     }
   }
 

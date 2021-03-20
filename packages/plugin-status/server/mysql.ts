@@ -50,13 +50,14 @@ ON DUPLICATE KEY UPDATE ${updates.join(', ')}`)
 
 namespace Stat {
   export class Recorded<K extends string> extends Stat<K, StatRecord> {
-    constructor(table: string, fields: readonly K[]) {
+    constructor(table: string, fields: readonly K[], timeDomain: string) {
       super(table, fields)
 
       Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
         tables[table] = Object.assign([
           'primary key (`time`)',
         ], Object.fromEntries(fields.map(key => [key, new Domain.Json('text')])))
+        tables[table].time = timeDomain
       })
     }
 
@@ -83,13 +84,14 @@ namespace Stat {
   }
 
   export class Numerical<K extends string> extends Stat<K, number> {
-    constructor(table: string, fields: readonly K[]) {
+    constructor(table: string, fields: readonly K[], timeDomain: string) {
       super(table, fields)
 
       Database.extend('koishi-plugin-mysql', ({ tables }) => {
         tables[table] = Object.assign([
           'primary key (`time`)',
         ], Object.fromEntries(fields.map(key => [key, 'int unsigned'])))
+        tables[table].time = timeDomain
       })
     }
 
@@ -125,9 +127,9 @@ Database.extend('koishi-plugin-mysql', {
   },
 
   Synchronizer: class {
-    private _daily = new Stat.Recorded('stats_daily', Synchronizer.dailyFields)
-    private _hourly = new Stat.Numerical('stats_hourly', Synchronizer.hourlyFields)
-    private _longterm = new Stat.Numerical('stats_longterm', Synchronizer.longtermFields)
+    private _daily = new Stat.Recorded('stats_daily', Synchronizer.dailyFields, 'date')
+    private _hourly = new Stat.Numerical('stats_hourly', Synchronizer.hourlyFields, 'datetime')
+    private _longterm = new Stat.Numerical('stats_longterm', Synchronizer.longtermFields, 'date')
 
     groups: StatRecord = {}
     daily = this._daily.data
