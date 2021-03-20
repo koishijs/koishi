@@ -57,22 +57,38 @@ export class Context {
   protected _router: Router
   protected _database: Database
 
-  public user = this.createSelector('userId')
-  public self = this.createSelector('selfId')
-  public group = this.createSelector('groupId')
-  public channel = this.createSelector('channelId')
-  public platform = this.createSelector('platform')
-
   protected constructor(public filter: Filter, public app?: App, private _plugin: Plugin = null) {}
 
   [inspect.custom]() {
-    return `Context {}`
+    const plugin = this._plugin
+    const name = !plugin ? 'root' : typeof plugin === 'object' && plugin.name || 'unknown'
+    return `Context <${name}>`
   }
 
   private createSelector<K extends keyof Session>(key: K) {
     const selector: Selector<Session[K]> = (...args) => this.select(key, ...args)
     selector.except = (...args) => this.unselect(key, ...args)
     return selector
+  }
+
+  get user() {
+    return this.createSelector('userId')
+  }
+
+  get self() {
+    return this.createSelector('selfId')
+  }
+
+  get group() {
+    return this.createSelector('groupId')
+  }
+
+  get channel() {
+    return this.createSelector('channelId')
+  }
+
+  get platform() {
+    return this.createSelector('platform')
   }
 
   get private() {
