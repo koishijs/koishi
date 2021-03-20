@@ -1,5 +1,5 @@
 import { Adapter, App, Bot, Context, Logger, omit, pick, Random, Session, Time, User } from 'koishi-core'
-import Profile from './profile'
+import { Profile } from './profile'
 import WebSocket from 'ws'
 
 const logger = new Logger('status')

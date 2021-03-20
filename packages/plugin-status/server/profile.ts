@@ -136,5 +136,3 @@ export namespace Profile {
     })
   }
 }
-
-export default Profile

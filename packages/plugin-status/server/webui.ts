@@ -2,10 +2,10 @@ import { Context, Plugin, noop } from 'koishi-core'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import { WebAdapter } from './adapter'
+import { Profile } from './profile'
+import { Statistics } from './stats'
 import type * as Vite from 'vite'
 import type PluginVue from '@vitejs/plugin-vue'
-import Profile from './profile'
-import Statistics from './stats'
 
 export { BotData, LoadRate } from './profile'
 
