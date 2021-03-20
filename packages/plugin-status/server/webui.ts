@@ -13,7 +13,7 @@ export { BotData, LoadRate } from './profile'
 export interface Config extends WebAdapter.Config, Profile.Config {
   selfUrl?: string
   uiPath?: string
-  mode?: 'development' | 'production'
+  devMode?: boolean
 }
 
 export interface PluginData extends Plugin.Meta {
@@ -32,17 +32,17 @@ export const name = 'webui'
 
 export function apply(ctx: Context, config: Config = {}) {
   const koishiPort = assertProperty(ctx.app.options, 'port')
-  const { apiPath, uiPath, mode, selfUrl = `http://localhost:${koishiPort}` } = config
+  const { apiPath, uiPath, devMode, selfUrl = `http://localhost:${koishiPort}` } = config
 
   const globalVariables = Object.entries({
     KOISHI_UI_PATH: uiPath,
     KOISHI_ENDPOINT: selfUrl + apiPath,
   }).map(([key, value]) => `window.${key} = ${JSON.stringify(value)};`).join('\n')
 
-  const root = resolve(__dirname, '..', mode === 'development' ? 'client' : 'dist')
+  const root = resolve(__dirname, '..', devMode ? 'client' : 'dist')
 
   async function createVite() {
-    if (mode !== 'development') return
+    if (!devMode) return
 
     const vite = await createServer({
       root,
