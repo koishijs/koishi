@@ -99,6 +99,10 @@ export function apply(ctx: Context, config: Config = {}) {
     const [vite] = await Promise.all([createVite(), createAdapter()])
 
     ctx.router.get(uiPath + '(/.+)*', async (koa) => {
+      // add trailing slash and redirect
+      if (koa.path === uiPath && !uiPath.endsWith('/')) {
+        return koa.redirect(koa.path + '/')
+      }
       const filename = resolve(root, koa.path.slice(uiPath.length).replace(/^\/+/, ''))
       if (!filename.startsWith(root) && !filename.includes('node_modules')) {
         return koa.status = 403
