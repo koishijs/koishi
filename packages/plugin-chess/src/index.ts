@@ -138,7 +138,7 @@ export function apply(ctx: Context) {
       }
 
       if (options.skip) {
-        if (!state.next) return '尚未有人行棋。'
+        if (!state.next) return '对局尚未开始。'
         if (state.next !== userId) return '当前不是你的回合。'
         state.next = state.p1 === userId ? state.p2 : state.p1
         channel.chess = state.serial()
@@ -146,7 +146,7 @@ export function apply(ctx: Context) {
       }
 
       if (options.repent) {
-        if (!state.next) return '尚未有人行棋。'
+        if (!state.next) return '对局尚未开始。'
         const last = state.p1 === state.next ? state.p2 : state.p1
         if (last !== userId) return '上一手棋不是你所下。'
         state.history.pop()
