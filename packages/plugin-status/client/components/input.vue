@@ -2,7 +2,6 @@
   <div class="k-input" :class="{ focused, disabled }">
     <i v-if="prefix" :class="'fas fa-' + prefix" class="prefix" @click="$emit('clickPrefix')"/>
     <input
-      ref="input"
       :value="modelValue"
       :type="type"
       :style="inputStyle"
