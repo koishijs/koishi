@@ -89,6 +89,7 @@ const defaultConfig: Config = {
   apiPath: '/status',
   uiPath: '/console',
   selfUrl: '',
+  title: 'Koishi 控制台',
   expiration: Time.week,
   tickInterval: Time.second * 5,
   refreshInterval: Time.hour,

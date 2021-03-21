@@ -10,6 +10,7 @@ import type PluginVue from '@vitejs/plugin-vue'
 export { BotData, LoadRate } from './profile'
 
 export interface Config extends WebAdapter.Config, Profile.Config {
+  title?: string
   selfUrl?: string
   uiPath?: string
   devMode?: boolean
@@ -30,12 +31,13 @@ export interface Registry {
 export const name = 'webui'
 
 export function apply(ctx: Context, config: Config = {}) {
-  const { apiPath, uiPath, devMode, selfUrl } = config
+  const { apiPath, uiPath, devMode, selfUrl, title } = config
 
   const globalVariables = Object.entries({
-    KOISHI_UI_PATH: uiPath,
-    KOISHI_ENDPOINT: selfUrl + apiPath,
-  }).map(([key, value]) => `window.${key} = ${JSON.stringify(value)};`).join('\n')
+    TITLE: title,
+    UI_PATH: uiPath,
+    ENDPOINT: selfUrl + apiPath,
+  }).map(([key, value]) => `window.KOISHI_${key} = ${JSON.stringify(value)};`).join('\n')
 
   const root = resolve(__dirname, '..', devMode ? 'client' : 'dist')
 
