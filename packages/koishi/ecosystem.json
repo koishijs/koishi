@@ -71,7 +71,7 @@
     "description": "Schedule plugin for Koishi"
   },
   "koishi-plugin-status": {
-    "version": "4.0.0-rc.0",
+    "version": "4.0.0-rc.1",
     "description": "Show Status of Koishi"
   },
   "koishi-plugin-teach": {
