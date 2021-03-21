@@ -29,15 +29,16 @@
     "webhook"
   ],
   "devDependencies": {
+    "@types/marked": "^2.0.0",
+    "koishi-plugin-puppeteer": "^2.0.0",
     "koishi-test-utils": "^6.0.0-beta.10"
   },
   "peerDependencies": {
-    "koishi-core": "^3.3.0",
-    "koishi-plugin-puppeteer": "^2.0.0",
-    "koishi-utils": "^4.0.3"
+    "koishi-core": "^3.3.0"
   },
   "dependencies": {
     "@octokit/webhooks-definitions": "^3.63.1",
-    "axios": "^0.21.1"
+    "axios": "^0.21.1",
+    "marked": "^2.0.1"
   }
 }

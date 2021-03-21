@@ -2,6 +2,7 @@
 
 import { EventPayloadMap, WebhookEventName, Repository, PullRequest } from '@octokit/webhooks-definitions/schema'
 import { EventData } from './server'
+import { transform } from './markdown'
 
 type Camelize<S extends string> = S extends `${infer L}_${infer M}${infer R}` ? `${L}${Uppercase<M>}${Camelize<R>}` : S
 
@@ -72,13 +73,6 @@ export const defaultEvents: EventConfig = {
 
 type EventHandler<T extends EmitterWebhookEventName, P = {}> = (payload: Payload<T>) => EventData<P>
 
-function formatMarkdown(source: string) {
-  return source
-    .replace(/^```(.*)$/gm, '')
-    .replace(/^<!--(.*)-->$/gm, '')
-    .replace(/\n\s*\n/g, '\n')
-}
-
 type FactoryCreator = <T extends EmitterWebhookEventName, P = {}>
   (callback: (event: T, payload: Payload<T>, handler: EventHandler<T, P>) => EventData<P>)
     => <E extends T>(event: E, handler?: EventHandler<E, P>) => void
@@ -108,7 +102,7 @@ export function addListeners(on: <T extends EmitterWebhookEventName>(event: T, h
 
     const index = html_url.indexOf('#')
     const operation = payload.action === 'created' ? 'commented' : 'edited a comment'
-    return [`${user.login} ${operation} on ${target}\n${formatMarkdown(body)}`, {
+    return [`${user.login} ${operation} on ${target}\n${transform(body)}`, {
       link: [html_url],
       react: [url + `/reactions`],
       shot: [
@@ -173,7 +167,7 @@ export function addListeners(on: <T extends EmitterWebhookEventName>(event: T, h
     return [[
       `${sender.login} opened an issue ${full_name}#${number}`,
       `Title: ${title}`,
-      formatMarkdown(body),
+      transform(body),
     ].join('\n')]
   })
 
@@ -207,7 +201,7 @@ export function addListeners(on: <T extends EmitterWebhookEventName>(event: T, h
 
     return [[
       `${user.login} reviewed pull request ${full_name}#${number}`,
-      formatMarkdown(body),
+      transform(body),
     ].join('\n'), {
       link: [html_url],
       reply: [comments_url],
@@ -256,7 +250,7 @@ export function addListeners(on: <T extends EmitterWebhookEventName>(event: T, h
     return [[
       `${sender.login} ${draft ? 'drafted' : 'opened'} a pull request ${full_name}#${number} (${baseLabel} ← ${headLabel})`,
       `Title: ${title}`,
-      formatMarkdown(body),
+      transform(body),
     ].join('\n')]
   })
 
@@ -286,7 +280,7 @@ export function addListeners(on: <T extends EmitterWebhookEventName>(event: T, h
 
     return [[
       `${pusher.name} pushed to ${full_name}:${ref.replace(/^refs\/heads\//, '')}`,
-      ...commits.map(c => `[${c.id.slice(0, 6)}] ${formatMarkdown(c.message)}`),
+      ...commits.map(c => `[${c.id.slice(0, 6)}] ${transform(c.message)}`),
     ].join('\n'), {
       link: [compare],
     }]
