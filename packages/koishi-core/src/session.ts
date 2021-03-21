@@ -342,6 +342,8 @@ export class Session<
       }
     }
 
+    if (!argv.command.context.match(this)) return ''
+
     if (this.database) {
       if (this.subtype === 'group') {
         await this.observeChannel(this.collect('channel', argv))
