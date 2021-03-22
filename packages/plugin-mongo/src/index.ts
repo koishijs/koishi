@@ -119,10 +119,11 @@ Database.extend(MongoDatabase, {
   },
 
   async getAssignedChannels(fields, assignMap = this.app.getSelfIds()) {
+    fields.push('pid', 'type')
     const channels = await this.channel.find({
       $or: Object.entries(assignMap).map<any>(([type, ids]) => ({ type, assignee: { $in: ids } })),
     }).project(projection(fields)).toArray()
-    return channels.map(channel => ({ ...pick(Channel.create(channel.type, channel.id), fields), ...channel, id: `${channel.id}` }))
+    return channels.map(channel => ({ ...pick(Channel.create(channel.type, channel.id), fields), ...channel, id: `${channel.type}:${channel.pid}` }))
   },
 
   async removeChannel(type, pid) {
