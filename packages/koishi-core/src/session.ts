@@ -127,7 +127,7 @@ export class Session<
     defineProperty(this, '_hooks', [])
   }
 
-  toJSON() {
+  toJSON(): Partial<Session> {
     return Object.fromEntries(Object.entries(this).filter(([key]) => {
       return !key.startsWith('_') && !key.startsWith('$')
     }))

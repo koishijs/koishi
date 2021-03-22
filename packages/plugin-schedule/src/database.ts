@@ -20,7 +20,7 @@ export interface Schedule {
   lastCall: Date
   interval: number
   command: string
-  session: Session
+  session: Partial<Session>
 }
 
 Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {

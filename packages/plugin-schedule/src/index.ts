@@ -6,7 +6,7 @@ export * from './database'
 
 const logger = new Logger('schedule')
 
-function formatContext(session: Session) {
+function formatContext(session: Partial<Session>) {
   return session.subtype === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.groupId}`
 }
 
