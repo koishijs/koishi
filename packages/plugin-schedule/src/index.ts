@@ -35,15 +35,15 @@ export function apply(ctx: Context, config: Config = {}) {
 
     if (!interval) {
       if (date < now) {
-        database.removeSchedule(id)
+        database.remove('schedule', 'id', id)
         if (lastCall) executeSchedule()
         return
       }
 
       logger.debug('prepare %d: %c at %s', id, command, time)
       return ctx.setTimeout(async () => {
-        if (!await database.getSchedule(id)) return
-        database.removeSchedule(id)
+        if (!await database.get('schedule', 'id', id)) return
+        database.remove('schedule', 'id', id)
         executeSchedule()
       }, date - now)
     }
@@ -55,9 +55,9 @@ export function apply(ctx: Context, config: Config = {}) {
     }
 
     ctx.setTimeout(async () => {
-      if (!await database.getSchedule(id)) return
+      if (!await database.get('schedule', 'id', id)) return
       const dispose = ctx.setInterval(async () => {
-        if (!await database.getSchedule(id)) return dispose()
+        if (!await database.get('schedule', 'id', id)) return dispose()
         executeSchedule()
       }, interval)
       executeSchedule()
@@ -83,7 +83,7 @@ export function apply(ctx: Context, config: Config = {}) {
     .option('delete', '-d <id>  删除已经设置的日程')
     .action(async ({ session, options }, ...dateSegments) => {
       if (options.delete) {
-        await database.removeSchedule(options.delete)
+        await database.remove('schedule', 'id', options.delete)
         return `日程 ${options.delete} 已删除。`
       }
 
@@ -126,7 +126,13 @@ export function apply(ctx: Context, config: Config = {}) {
         return '时间间隔过短。'
       }
 
-      const schedule = await database.createSchedule(time, interval, options.rest, session, options.ensure)
+      const schedule = await database.create('schedule', {
+        time,
+        assignee: session.sid,
+        interval,
+        command: options.rest,
+        session: session.toJSON(),
+      })
       prepareSchedule(schedule)
       return `日程已创建，编号为 ${schedule.id}。`
     })

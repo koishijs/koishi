@@ -10,6 +10,10 @@ declare module 'koishi-core' {
   }
 }
 
+Database.extend('koishi-plugin-mongo', ({ tables }) => {
+  tables.dialogue = { primary: 'id', incremental: true }
+})
+
 Database.extend('koishi-plugin-mongo', {
   async getDialoguesById(ids, fields) {
     if (!ids.length) return []
