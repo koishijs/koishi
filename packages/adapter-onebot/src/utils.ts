@@ -126,7 +126,11 @@ export function createSession(adapter: Adapter, data: any) {
       case 'notify':
         session.type = 'notice'
         session.subtype = paramCase(data.sub_type)
-        session.subsubtype = paramCase(data.honor_type)
+        if (session.subtype === 'poke') {
+          session.channelId ||= `private:${session.userId}`
+        } else if (session.subtype === 'honor') {
+          session.subsubtype = paramCase(data.honor_type)
+        }
         break
     }
   } else return
