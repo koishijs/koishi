@@ -3,7 +3,7 @@
     <p>用户名：{{ user.name }}</p>
     <p>权限等级：{{ user.authority }}</p>
   </k-card>
-  <k-card title="设置密码">
+  <k-card title="设置密码" v-if="secure">
     <k-input v-model="password" @enter="enter"
       :type="config.showPass ? 'text' : 'password'"
       :suffix="config.showPass ? 'eye' : 'eye-slash'"
@@ -20,6 +20,7 @@
 import { user, config, send, sha256 } from '~/client'
 import { ref } from 'vue'
 
+const secure = isSecureContext
 const password = ref(config.value.password)
 
 async function enter() {
