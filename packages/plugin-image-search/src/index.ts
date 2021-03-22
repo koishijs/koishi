@@ -8,7 +8,7 @@ export interface Config extends saucenao.Config {
 }
 
 async function mixedSearch(url: string, session: Session, config: Config) {
-  return await saucenao(url, session, config, true) && ascii2d(url, session) && iqdb(url, session)
+  return await saucenao(url, session, config, true) && ascii2d(url, session)
 }
 
 export const name = 'search'
