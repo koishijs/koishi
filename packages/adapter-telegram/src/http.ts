@@ -47,19 +47,19 @@ export default class HttpServer extends Adapter<'telegram'> {
         if (message.photo) {
           const fid = message.photo[0].fileId
           const { data } = await axios.get(endpoint + '/bot' + token + `/getFile?file_id=${fid}`)
-          msg += `[CQ:image,file=${fid},url=${endpoint}/file/bot${token}/${data.result.file_path}]`
+          msg += segment.image(`${endpoint}/file/bot${token}/${data.result.file_path}`)
         } else if (message.sticker) {
           const fid = message.sticker.fileId
           const { data } = await axios.get(endpoint + '/bot' + token + `/getFile?file_id=${fid}`)
-          msg += `[CQ:image,file=${fid},url=${endpoint}/file/bot${token}/${data.result.file_path}]`
+          msg += segment.image(`${endpoint}/file/bot${token}/${data.result.file_path}`)
         } else if (message.animation) {
           const fid = message.animation.fileId
           const { data } = await axios.get(endpoint + '/bot' + token + `/getFile?file_id=${fid}`)
-          msg += `[CQ:image,file=${fid},url=${endpoint}/file/bot${token}/${data.result.file_path}]`
+          msg += segment.image(`${endpoint}/file/bot${token}/${data.result.file_path}`)
         } else if (message.video) {
           const fid = message.video.fileId
           const { data } = await axios.get(endpoint + '/bot' + token + `/getFile?file_id=${fid}`)
-          msg += `[CQ:video,url=${endpoint}/file/bot${token}/${data.result.file_path}]`
+          msg += segment.video(`${endpoint}/file/bot${token}/${data.result.file_path}`)
         } else if (!message.text) {
           msg += '[Unsupported message]'
         }
