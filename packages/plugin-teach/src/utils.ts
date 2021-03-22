@@ -19,7 +19,6 @@ declare module 'koishi-core' {
   interface Database {
     getDialoguesById<T extends Dialogue.Field>(ids: number[], fields?: T[]): Promise<Dialogue[]>
     getDialoguesByTest(test: DialogueTest): Promise<Dialogue[]>
-    createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert?: boolean): Promise<Dialogue>
     removeDialogues(ids: number[], argv: Dialogue.Argv, revert?: boolean): Promise<void>
     updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv): Promise<void>
     revertDialogues(dialogues: Dialogue[], argv: Dialogue.Argv): Promise<string>

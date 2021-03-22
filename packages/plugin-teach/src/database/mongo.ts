@@ -40,17 +40,6 @@ Database.extend('koishi-plugin-mongo', {
     })
   },
 
-  async createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
-    if (!dialogue.id) {
-      const [latest] = await this.db.collection('dialogue').find().sort('_id', -1).limit(1).toArray()
-      if (latest) dialogue.id = latest._id + 1
-      else dialogue.id = 1
-    }
-    await this.db.collection('dialogue').insertOne({ _id: dialogue.id, ...dialogue })
-    Dialogue.addHistory(dialogue, '添加', argv, revert)
-    return dialogue
-  },
-
   async removeDialogues(ids: number[], argv: Dialogue.Argv, revert = false) {
     if (!ids.length) return
     await this.db.collection('dialogue').deleteMany({ _id: { $in: ids } })
@@ -108,7 +97,7 @@ Database.extend('koishi-plugin-mongo', {
     const [data, dialogues] = await Promise.all([
       this.db.collection('dialogue').aggregate([
         { $group: { _id: null, questions: { $addToSet: '$question' } } },
-        { $project: { questions: { $size: '$questions' } } }
+        { $project: { questions: { $size: '$questions' } } },
       ]).toArray(),
       this.db.collection('dialogue').countDocuments(),
     ])

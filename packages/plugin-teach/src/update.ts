@@ -233,7 +233,9 @@ export async function create(argv: Dialogue.Argv) {
 
   try {
     app.emit('dialogue/modify', argv, dialogue)
-    argv.dialogues = [await app.database.createDialogue(dialogue, argv)]
+    const created = await app.database.create('dialogue', dialogue)
+    Dialogue.addHistory(dialogue, '添加', argv, false)
+    argv.dialogues = [created]
 
     await app.serial('dialogue/after-modify', argv)
     return sendResult(argv, `问答已添加，编号为 ${argv.dialogues[0].id}。`)

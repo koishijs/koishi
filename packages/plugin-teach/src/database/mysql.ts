@@ -30,12 +30,6 @@ Database.extend('koishi-plugin-mysql', {
     })
   },
 
-  async createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
-    dialogue = await this.create('dialogue', dialogue)
-    Dialogue.addHistory(dialogue, '添加', argv, revert)
-    return dialogue
-  },
-
   async removeDialogues(ids: number[], argv: Dialogue.Argv, revert = false) {
     if (!ids.length) return
     await this.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
