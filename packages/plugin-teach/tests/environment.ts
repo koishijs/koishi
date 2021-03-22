@@ -29,12 +29,6 @@ Database.extend('koishi-test-utils', {
     })
   },
 
-  async createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
-    this.$create('dialogue', dialogue)
-    Dialogue.addHistory(dialogue, '添加', argv, revert)
-    return dialogue
-  },
-
   async removeDialogues(ids: number[], argv: Dialogue.Argv, revert = false) {
     for (const id of ids) {
       this.$remove('dialogue', id)

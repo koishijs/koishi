@@ -37,20 +37,6 @@ export class MemoryDatabase {
     return this.$table(table).filter(row => values.includes(row[key])).map(clone)
   }
 
-  $create<K extends TableType>(table: K, data: Tables[K]) {
-    const store = this.$table(table)
-    const max = store.length ? Math.max(...store.map(row => +row.id)) : 0
-    data.id = max + 1 as any
-    store.push(data)
-    return data
-  }
-
-  $remove<K extends TableType>(table: K, id: number) {
-    const store = this.$table(table)
-    const index = store.findIndex(row => +row.id === id)
-    if (index >= 0) store.splice(index, 1)
-  }
-
   $update<K extends TableType>(table: K, id: number, data: Partial<Tables[K]>) {
     const row = this.$table(table).find(row => +row.id === id)
     Object.assign(row, clone(data))
@@ -62,6 +48,24 @@ export class MemoryDatabase {
 }
 
 Database.extend(MemoryDatabase, {
+  async get(table, key, value) {
+    return this.$select(table, key as any, [value])[0]
+  },
+
+  async create(table, data: any) {
+    const store = this.$table(table)
+    const max = store.length ? Math.max(...store.map(row => +row.id)) : 0
+    data.id = max + 1
+    store.push(data)
+    return data
+  },
+
+  async remove(table, key, id) {
+    const store = this.$table(table)
+    const index = store.findIndex(row => row[key] === id)
+    if (index >= 0) store.splice(index, 1)
+  },
+
   async getUser(type, id) {
     if (Array.isArray(id)) {
       return this.$select('user', type, id) as any
@@ -87,7 +91,7 @@ Database.extend(MemoryDatabase, {
     const table = this.$table('user')
     const index = table.findIndex(row => row[type] === id)
     if (index >= 0) return
-    this.$create('user', {
+    this.create('user', {
       ...User.create(type, id),
       ...clone(data),
     })

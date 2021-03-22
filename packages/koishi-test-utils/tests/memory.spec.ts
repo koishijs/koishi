@@ -21,11 +21,11 @@ interface FooData {
 
 Database.extend(MemoryDatabase, {
   async createFoo(data: FooData) {
-    return this.$create('foo', data)
+    return this.create('foo', data)
   },
 
   async removeFoo(id: number) {
-    return this.$remove('foo', id)
+    return this.remove('foo', 'id', id)
   },
 
   async getFooCount() {
