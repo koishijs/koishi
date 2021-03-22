@@ -50,7 +50,8 @@ export const socket = ref<WebSocket>(null)
 const listeners: Record<string, (data: any) => void> = {}
 
 export function start() {
-  socket.value = new WebSocket(KOISHI_ENDPOINT.replace(/^http/, 'ws'))
+  const endpoint = new URL(KOISHI_ENDPOINT, location.origin).toString()
+  socket.value = new WebSocket(endpoint.replace(/^http/, 'ws'))
   socket.value.onmessage = (ev) => {
     const data = JSON.parse(ev.data)
     console.log(data)

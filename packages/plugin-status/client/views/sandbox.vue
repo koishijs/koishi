@@ -21,7 +21,7 @@ interface Message {
 
 const text = ref('')
 const panel = ref<Element>(null)
-const messages = storage.create<Message[]>('messages', [])
+const messages = storage.create<Message[]>('sandbox', [])
 
 watch(user, () => messages.value = [])
 

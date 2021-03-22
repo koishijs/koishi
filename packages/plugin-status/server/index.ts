@@ -1,12 +1,17 @@
 import { Context, Channel, App, Argv, User } from 'koishi-core'
 import { interpolate, Time } from 'koishi-utils'
-import * as WebUI from './webui'
-import Profile from './profile'
-import Statistics, { Synchronizer } from './stats'
+import { Profile } from './profile'
+import { Statistics, Synchronizer } from './stats'
 import { SandboxBot } from './adapter'
+import * as WebUI from './webui'
 
 import './mongo'
 import './mysql'
+
+export * from './adapter'
+export * from './profile'
+export * from './stats'
+export { WebUI }
 
 export type Activity = Record<number, number>
 
@@ -61,7 +66,7 @@ User.extend(() => ({
   expire: 0,
 }))
 
-export interface Config extends WebUI.Config {
+export interface Config extends WebUI.Config, Statistics.Config {
   format?: string
   formatBot?: string
 }
@@ -83,6 +88,8 @@ extend(async function (status) {
 const defaultConfig: Config = {
   apiPath: '/status',
   uiPath: '/console',
+  selfUrl: '',
+  title: 'Koishi 控制台',
   expiration: Time.week,
   tickInterval: Time.second * 5,
   refreshInterval: Time.hour,

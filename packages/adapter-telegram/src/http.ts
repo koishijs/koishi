@@ -36,18 +36,32 @@ export default class HttpServer extends Adapter<'telegram'> {
         body.messageId = message.messageId.toString()
         body.type = 'message'
         body.timestamp = message.date
-        // TODO convert video message
-        let msg = message.text || ''
-        msg += message.caption || ''
+        let msg
+        if (message.text) {
+          msg = message.text
+        } else if (message.caption) {
+          msg = message.caption
+        } else {
+          msg = ''
+        }
         if (message.photo) {
           const fid = message.photo[0].fileId
           const { data } = await axios.get(endpoint + '/bot' + token + `/getFile?file_id=${fid}`)
-          msg += ` [CQ:image,file=${fid},url=${endpoint}/file/bot${token}/${data.result.file_path}]`
-        }
-        if (message.sticker) {
+          msg += segment.image(`${endpoint}/file/bot${token}/${data.result.file_path}`)
+        } else if (message.sticker) {
           const fid = message.sticker.fileId
           const { data } = await axios.get(endpoint + '/bot' + token + `/getFile?file_id=${fid}`)
-          msg += ` [CQ:image,file=${fid},url=${endpoint}/file/bot${token}/${data.result.file_path}]`
+          msg += segment.image(`${endpoint}/file/bot${token}/${data.result.file_path}`)
+        } else if (message.animation) {
+          const fid = message.animation.fileId
+          const { data } = await axios.get(endpoint + '/bot' + token + `/getFile?file_id=${fid}`)
+          msg += segment.image(`${endpoint}/file/bot${token}/${data.result.file_path}`)
+        } else if (message.video) {
+          const fid = message.video.fileId
+          const { data } = await axios.get(endpoint + '/bot' + token + `/getFile?file_id=${fid}`)
+          msg += segment.video(`${endpoint}/file/bot${token}/${data.result.file_path}`)
+        } else if (!message.text) {
+          msg += '[Unsupported message]'
         }
         for (const entity of message.entities || []) {
           if (entity.type === 'mention') {
