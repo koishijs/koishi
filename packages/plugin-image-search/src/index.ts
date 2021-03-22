@@ -8,7 +8,7 @@ export interface Config extends saucenao.Config {
 }
 
 async function mixedSearch(url: string, session: Session, config: Config) {
-  return await saucenao(url, session, config, true) && ascii2d(url, session)
+  return await saucenao(url, session, config, true) && ascii2d(url, session) && iqdb(url, session)
 }
 
 export const name = 'search'
@@ -36,10 +36,13 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.command('search [image]', '搜图片')
     .shortcut('搜图', { fuzzy: true })
     .action(search(mixedSearch))
+  ctx.command('search')
     .subcommand('saucenao [image]', '使用 saucenao 搜图')
     .action(search(saucenao))
+  ctx.command('search')
     .subcommand('ascii2d [image]', '使用 ascii2d 搜图')
     .action(search(ascii2d))
+  ctx.command('search')
     .subcommand('iqdb [image]', '使用 iqdb 搜图')
     .action(search(iqdb))
 
