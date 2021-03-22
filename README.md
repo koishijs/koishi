@@ -76,6 +76,7 @@ Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间�
 - [koishi-plugin-ink](https://github.com/idlist/koishi-plugin-ink): 通过 [ink](https://github.com/inkle/ink) 展示视觉小说
 - [koishi-plugin-bgp](https://github.com/Anillc/koishi-plugin-bgp): BGP工具集！
 - [koishi-plugin-dcqq-relay](https://github.com/XxLittleCxX/koishi-plugin-dcqq-relay): 同步Discord与QQ间的消息
+- [koishi-plugin-forward](https://github.com/Anillc/forward): 将你的消息转发至其他平台！
 
 ### 社区项目
 
