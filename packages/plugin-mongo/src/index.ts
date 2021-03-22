@@ -21,7 +21,7 @@ declare module 'koishi-core' {
   }
 }
 
-function projection(keys: readonly string[]) {
+function projection(keys: Iterable<string>) {
   const d = {}
   for (const key of keys) d[key] = 1
   return d
@@ -77,6 +77,38 @@ function unescapeKey<T extends Partial<User>>(data: T) {
 }
 
 Database.extend(MongoDatabase, {
+  async get(table, key, value, fields) {
+    const { primary } = MongoDatabase.tables[table] || {}
+    if (key === primary) key = '_id'
+    let cursor = this.db.collection(table).find({ [key]: value })
+    if (fields) cursor = cursor.project(projection(fields))
+    const [data] = await cursor.toArray()
+    if (primary) data[primary] = data._id
+    if (key !== '_id') data.key = value
+    return data
+  },
+
+  async create(table, data) {
+    const { primary, incremental } = MongoDatabase.tables[table] || {}
+    const copy = { ...data }
+    if (incremental) {
+      const [latest] = await this.db.collection(table).find().sort('_id', -1).limit(1).toArray()
+      copy['_id'] = latest ? latest._id + 1 : 1
+    } else if (primary) {
+      copy['_id'] = copy[primary]
+      delete copy[primary]
+    }
+    await this.db.collection(table).insertOne(copy)
+    if (primary) data[primary] = copy['_id']
+    return data as any
+  },
+
+  async remove(table, key, value) {
+    const { primary } = MongoDatabase.tables[table] || {}
+    if (key === primary) key = '_id'
+    await this.db.collection(table).deleteOne({ [key]: value })
+  },
+
   async getUser(type, id, fields = User.fields) {
     if (fields && !fields.length) return { [type]: id } as any
     if (Array.isArray(id)) {

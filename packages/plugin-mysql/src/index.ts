@@ -18,6 +18,15 @@ declare module 'koishi-core' {
 }
 
 Database.extend(MysqlDatabase, {
+  async get(table, key, id, fields) {
+    const [data] = await this.select(table, fields, '?? = ?', [key, id])
+    return data
+  },
+
+  async remove(table, key, id) {
+    await this.query('DELETE FROM ?? WHERE ?? = ?', [table, key, id])
+  },
+
   async getUser(type, id, _fields) {
     const fields = _fields ? this.inferFields('user', _fields) : User.fields
     if (fields && !fields.length) return { [type]: id } as any
