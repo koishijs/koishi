@@ -71,8 +71,7 @@ Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间�
 
 - [koishi-plugin-blame](https://github.com/ArilyChan/koishi-plugin-blame): 拦截崩溃错误，推送到私信或群
 - [koishi-plugin-gosen-choyen](https://github.com/idlist/koishi-plugin-gosen-choyen): 生成并发送“我想要五千兆元！”风格的图片
-- [koishi-plugin-genshin](https://github.com/Dragon-Fish/koishi-plugin-genshin): 查询原神国服玩家数据
-- [koishi-plugin-iqdb](https://github.com/Dragon-Fish/koishi-plugin-iqdb): 使用 [iqdb.org](http://iqdb.org/) 搜图
+- [koishi-plugin-genshin](https://github.com/koishijs/koishi-plugin-genshin): 查询原神国服玩家数据
 - [koishi-plugin-ink](https://github.com/idlist/koishi-plugin-ink): 通过 [ink](https://github.com/inkle/ink) 展示视觉小说
 - [koishi-plugin-bgp](https://github.com/Anillc/koishi-plugin-bgp): BGP工具集！
 - [koishi-plugin-dcqq-relay](https://github.com/XxLittleCxX/koishi-plugin-dcqq-relay): 同步Discord与QQ间的消息
