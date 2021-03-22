@@ -1,4 +1,4 @@
-import { Context, Channel, noop, Session, Logger, Bot, Platform, Time } from 'koishi'
+import { Context, Channel, noop, Session, Logger, Bot, Platform, Time } from 'koishi-core'
 import {} from 'koishi-plugin-teach'
 
 export type StatRecord = Record<string, number>
@@ -67,7 +67,7 @@ interface GroupData {
   last: number
 }
 
-interface Statistics {
+export interface Statistics {
   history: StatRecord
   commands: StatRecord
   hours: StatRecord[]
@@ -75,108 +75,6 @@ interface Statistics {
   groups: GroupData[]
   botSend: StatRecord
   botReceive: StatRecord
-}
-
-const REFRESH_INTERVAL = 60000
-
-let lastUpdate = new Date()
-let updateHour = lastUpdate.getHours()
-
-async function upload(sync: Synchronizer, forced = false) {
-  const date = new Date()
-  const dateHour = date.getHours()
-  if (forced || +date - +lastUpdate > REFRESH_INTERVAL || dateHour !== updateHour) {
-    lastUpdate = date
-    updateHour = dateHour
-    await sync.upload(date)
-  }
-}
-
-async function download(ctx: Context, date: Date) {
-  const data = await ctx.app.synchronizer.download(date)
-  const extension = {} as Statistics
-  const { daily, hourly, longterm, groups } = data
-
-  // history
-  extension.history = {}
-  longterm.forEach((stat) => {
-    extension.history[stat.time.toLocaleDateString('zh-CN')] = stat.message
-  })
-
-  // command & bot
-  extension.commands = average(daily.map(data => data.command))
-  extension.botSend = average(daily.map(stat => stat.botSend))
-  extension.botReceive = average(daily.map(stat => stat.botReceive))
-
-  // group
-  const groupSet = new Set<string>()
-  extension.groups = []
-  const groupMap = Object.fromEntries(groups.map(g => [g.id, g]))
-  const messageMap = average(daily.map(data => data.group))
-  const updateList: Pick<Channel, 'id' | 'name'>[] = []
-
-  async function getGroupInfo(bot: Bot) {
-    const { platform } = bot
-    const groups = await bot.getGroupList()
-    for (const { groupId, groupName: name } of groups) {
-      const id = `${bot.platform}:${groupId}`
-      if (!messageMap[id] || !groupMap[id] || groupSet.has(id)) continue
-      groupSet.add(id)
-      const { name: oldName, assignee } = groupMap[id]
-      if (name !== oldName) updateList.push({ id, name })
-      extension.groups.push({
-        name,
-        platform,
-        assignee,
-        value: messageMap[id],
-        last: daily[0].group[id],
-      })
-    }
-  }
-
-  await Promise.all(ctx.bots.map(bot => getGroupInfo(bot).catch(noop)))
-
-  for (const key in messageMap) {
-    if (!groupSet.has(key) && groupMap[key]) {
-      const { name, assignee } = groupMap[key]
-      const [platform] = key.split(':') as [never]
-      extension.groups.push({
-        platform,
-        name: name || key,
-        value: messageMap[key],
-        last: daily[0].group[key],
-        assignee: ctx.bots[`${platform}:${assignee}`]?.selfId || '',
-      })
-    }
-  }
-
-  await ctx.database.setChannels(updateList)
-
-  extension.hours = new Array(24).fill(0).map((_, index) => {
-    return average(hourly.filter(s => s.time.getHours() === index))
-  })
-
-  // dialogue
-  if (ctx.database.getDialoguesById) {
-    const dialogueMap = average(daily.map(data => data.dialogue))
-    const dialogues = await ctx.database.getDialoguesById(Object.keys(dialogueMap).map(i => +i), ['id', 'original'])
-    const questionMap: Record<string, QuestionData> = {}
-    for (const dialogue of dialogues) {
-      const { id, original: name } = dialogue
-      if (name.includes('[CQ:') || name.startsWith('hook:')) continue
-      if (!questionMap[name]) {
-        questionMap[name] = {
-          name,
-          value: dialogueMap[id],
-        }
-      } else {
-        questionMap[name].value += dialogueMap[id]
-      }
-    }
-    extension.questions = Object.values(questionMap)
-  }
-
-  return extension
 }
 
 const send = Session.prototype.send
@@ -190,7 +88,109 @@ Session.prototype.send = function (this: Session, ...args) {
 const customTag = Symbol('custom-send')
 Session.prototype.send[customTag] = send
 
-namespace Statistics {
+export namespace Statistics {
+  const REFRESH_INTERVAL = 60000
+
+  let lastUpdate = new Date()
+  let updateHour = lastUpdate.getHours()
+
+  async function upload(sync: Synchronizer, forced = false) {
+    const date = new Date()
+    const dateHour = date.getHours()
+    if (forced || +date - +lastUpdate > REFRESH_INTERVAL || dateHour !== updateHour) {
+      lastUpdate = date
+      updateHour = dateHour
+      await sync.upload(date)
+    }
+  }
+
+  async function download(ctx: Context, date: Date) {
+    const data = await ctx.app.synchronizer.download(date)
+    const extension = {} as Statistics
+    const { daily, hourly, longterm, groups } = data
+
+    // history
+    extension.history = {}
+    longterm.forEach((stat) => {
+      extension.history[stat.time.toLocaleDateString('zh-CN')] = stat.message
+    })
+
+    // command & bot
+    extension.commands = average(daily.map(data => data.command))
+    extension.botSend = average(daily.map(stat => stat.botSend))
+    extension.botReceive = average(daily.map(stat => stat.botReceive))
+
+    // group
+    const groupSet = new Set<string>()
+    extension.groups = []
+    const groupMap = Object.fromEntries(groups.map(g => [g.id, g]))
+    const messageMap = average(daily.map(data => data.group))
+    const updateList: Pick<Channel, 'id' | 'name'>[] = []
+
+    async function getGroupInfo(bot: Bot) {
+      const { platform } = bot
+      const groups = await bot.getGroupList()
+      for (const { groupId, groupName: name } of groups) {
+        const id = `${bot.platform}:${groupId}`
+        if (!messageMap[id] || !groupMap[id] || groupSet.has(id)) continue
+        groupSet.add(id)
+        const { name: oldName, assignee } = groupMap[id]
+        if (name !== oldName) updateList.push({ id, name })
+        extension.groups.push({
+          name,
+          platform,
+          assignee,
+          value: messageMap[id],
+          last: daily[0].group[id],
+        })
+      }
+    }
+
+    await Promise.all(ctx.bots.map(bot => getGroupInfo(bot).catch(noop)))
+
+    for (const key in messageMap) {
+      if (!groupSet.has(key) && groupMap[key]) {
+        const { name, assignee } = groupMap[key]
+        const [platform] = key.split(':') as [never]
+        extension.groups.push({
+          platform,
+          name: name || key,
+          value: messageMap[key],
+          last: daily[0].group[key],
+          assignee: ctx.bots[`${platform}:${assignee}`]?.selfId || '',
+        })
+      }
+    }
+
+    await ctx.database.setChannels(updateList)
+
+    extension.hours = new Array(24).fill(0).map((_, index) => {
+      return average(hourly.filter(s => s.time.getHours() === index))
+    })
+
+    // dialogue
+    if (ctx.database.getDialoguesById) {
+      const dialogueMap = average(daily.map(data => data.dialogue))
+      const dialogues = await ctx.database.getDialoguesById(Object.keys(dialogueMap).map(i => +i), ['id', 'original'])
+      const questionMap: Record<string, QuestionData> = {}
+      for (const dialogue of dialogues) {
+        const { id, original: name } = dialogue
+        if (name.includes('[CQ:') || name.startsWith('hook:')) continue
+        if (!questionMap[name]) {
+          questionMap[name] = {
+            name,
+            value: dialogueMap[id],
+          }
+        } else {
+          questionMap[name].value += dialogueMap[id]
+        }
+      }
+      extension.questions = Object.values(questionMap)
+    }
+
+    return extension
+  }
+
   let cachedDate: number
   let cachedData: Promise<Statistics>
 
@@ -204,24 +204,35 @@ namespace Statistics {
     return cachedData
   }
 
-  export function apply(ctx: Context) {
+  export interface Config {
+    handleSignals?: boolean
+  }
+
+  export function apply(ctx: Context, config: Config = {}) {
     const sync = ctx.app.synchronizer = new ctx.database.Synchronizer(ctx.database)
 
-    function handleSigInt() {
-      new Logger('app').info('terminated by SIGINT')
-      upload(sync, true).finally(() => process.exit())
-    }
+    if (config.handleSignals !== false) {
+      function handleSignal(signal: NodeJS.Signals) {
+        new Logger('app').info(`terminated by ${signal}`)
+        upload(sync, true).finally(() => process.exit())
+      }
 
-    ctx.on('connect', () => {
-      process.on('SIGINT', handleSigInt)
-    })
+      ctx.on('connect', () => {
+        process.on('SIGINT', handleSignal)
+        process.on('SIGTERM', handleSignal)
+      })
+
+      ctx.before('disconnect', async () => {
+        process.off('SIGINT', handleSignal)
+        process.off('SIGTERM', handleSignal)
+      })
+    }
 
     ctx.before('disconnect', async () => {
       // rollback to default implementation to prevent infinite call stack
       if (Session.prototype.send[customTag]) {
         Session.prototype.send = Session.prototype.send[customTag]
       }
-      process.off('SIGINT', handleSigInt)
       await upload(sync, true)
     })
 
@@ -261,5 +272,3 @@ namespace Statistics {
     })
   }
 }
-
-export default Statistics

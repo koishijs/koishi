@@ -130,15 +130,17 @@ describe('Command API', () => {
       expect(() => app.command('c/b')).to.throw()
       expect(() => app.command('a/d')).not.to.throw()
     })
+  })
 
-    it('dispose commands', () => {
-      const app = new App()
-      const foo = app.command('foo')
-      const bar = foo.subcommand('bar')
-      const test = bar.subcommand('test')
-      bar.alias('baz').shortcut('1')
-      test.alias('it').shortcut('2')
+  describe('Disposable Commands', () => {
+    const app = new App()
+    const foo = app.command('foo')
+    const bar = foo.subcommand('bar')
+    const test = bar.subcommand('test')
+    bar.alias('baz').shortcut('1')
+    test.alias('it').shortcut('2')
 
+    it('basic support', () => {
       // don't forget help
       expect(app._commands).to.have.length(4)
       expect(app._shortcuts).to.have.length(3)
@@ -147,6 +149,26 @@ describe('Command API', () => {
       expect(app._commands).to.have.length(2)
       expect(app._shortcuts).to.have.length(1)
       expect(foo.children).to.have.length(0)
+    })
+
+    it('patch command', () => {
+      app.plugin((ctx) => {
+        ctx.command('foo', 'desc', { patch: true }).alias('fooo').option('opt', 'option 1')
+        ctx.command('abc', 'desc', { patch: true }).alias('abcd').option('opt', 'option 1')
+
+        const { foo, fooo, abc, abcd } = app._commandMap
+        expect(foo).to.be.ok
+        expect(fooo).to.be.ok
+        expect(foo.description).to.equal('desc')
+        expect(Object.keys(foo._options)).to.have.length(2)
+        expect(abc).to.be.undefined
+        expect(abcd).to.be.undefined
+
+        ctx.dispose()
+        expect(app._commandMap.foo).to.be.ok
+        expect(app._commandMap.fooo).to.be.undefined
+        expect(Object.keys(foo._options)).to.have.length(1)
+      })
     })
   })
 

@@ -31,8 +31,8 @@
     "dice"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.2.1",
-    "koishi-utils": "^4.0.2"
+    "koishi-core": "^3.3.0",
+    "koishi-utils": "^4.0.3"
   },
   "devDependencies": {
     "koishi-test-utils": "^6.0.0-beta.10"

@@ -11,8 +11,8 @@
 
 <script lang="ts" setup>
 
-import { ref, reactive, nextTick } from 'vue'
-import { send, receive, user } from '~/client'
+import { ref, watch, nextTick } from 'vue'
+import { send, receive, user, storage } from '~/client'
 
 interface Message {
   from: 'user' | 'bot'
@@ -21,10 +21,12 @@ interface Message {
 
 const text = ref('')
 const panel = ref<Element>(null)
-const messages = reactive<Message[]>([])
+const messages = storage.create<Message[]>('sandbox', [])
+
+watch(user, () => messages.value = [])
 
 function addMessage(from: 'user' | 'bot', content: string) {
-  messages.push({ from, content })
+  messages.value.push({ from, content })
   const { scrollTop, clientHeight, scrollHeight } = panel.value
   if (Math.abs(scrollTop + clientHeight - scrollHeight) < 1) {
     nextTick(scrollToBottom)

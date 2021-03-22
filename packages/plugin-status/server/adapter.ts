@@ -1,34 +1,27 @@
-import { Adapter, Bot, BotOptions, Context, Logger, omit, pick, Random, Session, Time, User } from 'koishi-core'
-import Profile from './profile'
+import { Adapter, App, Bot, Context, Logger, omit, pick, Random, Session, Time, User } from 'koishi-core'
+import { Profile } from './profile'
 import WebSocket from 'ws'
 
 const logger = new Logger('status')
-const states: Record<string, [string, number, WebBot]> = {}
+const states: Record<string, [string, number, SocketChannel]> = {}
 
 const TOKEN_TIMEOUT = Time.minute * 10
 
-export class WebBot extends Bot<'sandbox'> {
-  adapter: WebAdapter
+class SocketChannel {
+  readonly app: App
+  readonly id = Random.uuid()
 
-  constructor(adapter: WebAdapter, options: BotOptions) {
-    super(adapter, options)
-    Profile.initBot(this)
+  constructor(public readonly adapter: WebAdapter, public socket: WebSocket) {
+    this.app = adapter.app
   }
 
-  async sendMessage(channelId: string, content: string) {
-    this._send('sandbox', content)
-    return Random.uuid()
-  }
-
-  // websocket api
-
-  _send(type: string, body?: any) {
+  send(type: string, body?: any) {
     this.socket.send(JSON.stringify({ type, body }))
   }
 
   async $token({ platform, userId }) {
     const user = await this.app.database.getUser(platform, userId, ['name'])
-    if (!user) return this._send('login', { message: '找不到此账户。' })
+    if (!user) return this.send('login', { message: '找不到此账户。' })
     const id = `${platform}:${userId}`
     const token = Random.uuid()
     const expire = Date.now() + TOKEN_TIMEOUT
@@ -36,19 +29,19 @@ export class WebBot extends Bot<'sandbox'> {
     setTimeout(() => {
       if (states[id]?.[1] > Date.now()) delete states[id]
     }, TOKEN_TIMEOUT)
-    this._send('login', { token, name: user.name })
+    this.send('login', { token, name: user.name })
   }
 
-  async _validate<T extends User.Field>(id: string, token: string, fields: T[] = []) {
+  async validate<T extends User.Field>(id: string, token: string, fields: T[] = []) {
     const user = await this.app.database.getUser('id', id, ['token', 'expire', ...fields])
     if (!user || token !== user.token || user.expire <= Date.now()) {
-      return this._send('expire')
+      return this.send('expire')
     }
     return user
   }
 
   async $password({ id, token, password }) {
-    const user = await this._validate(id, token, ['password'])
+    const user = await this.validate(id, token, ['password'])
     if (!user || password === user.password) return
     await this.app.database.setUser('id', id, { password })
   }
@@ -56,22 +49,23 @@ export class WebBot extends Bot<'sandbox'> {
   async $login({ username, password }) {
     const user = await this.app.database.getUser('name', username, ['password', 'authority', 'id', 'expire', 'token'])
     if (!user || user.password !== password) {
-      return this._send('login', { message: '用户名或密码错误。' })
+      return this.send('login', { message: '用户名或密码错误。' })
     }
     user.token = Random.uuid()
     user.expire = Date.now() + this.adapter.config.expiration
     await this.app.database.setUser('name', username, pick(user, ['token', 'expire']))
-    this._send('user', omit(user, ['password']))
+    this.send('user', omit(user, ['password']))
   }
 
   async $sandbox({ id, token, content }) {
-    const user = await this._validate(id, token, ['name'])
+    const user = await this.validate(id, token, ['name'])
     if (!user) return
     const session = new Session(this.app, {
-      platform: 'sandbox',
+      platform: 'web',
       userId: id,
       content,
-      selfId: this.selfId,
+      channelId: this.id,
+      selfId: 'sandbox',
       type: 'message',
       subtype: 'private',
       author: {
@@ -84,6 +78,21 @@ export class WebBot extends Bot<'sandbox'> {
   }
 }
 
+export class SandboxBot extends Bot<'web'> {
+  username = 'sandbox'
+  status = Bot.Status.GOOD
+
+  constructor(public readonly adapter: WebAdapter) {
+    super(adapter, { type: 'web', selfId: 'sandbox' })
+    Profile.initBot(this)
+  }
+
+  async sendMessage(id: string, content: string) {
+    this.adapter.channels[id]?.send('sandbox', content)
+    return Random.uuid()
+  }
+}
+
 export namespace WebAdapter {
   export interface Config {
     apiPath?: string
@@ -91,11 +100,14 @@ export namespace WebAdapter {
   }
 }
 
-export class WebAdapter extends Adapter<'sandbox'> {
+export class WebAdapter extends Adapter<'web'> {
   server: WebSocket.Server
+  channels: Record<string, SocketChannel> = {}
+  sandbox = this.create({}, SandboxBot)
 
   constructor(ctx: Context, public config: WebAdapter.Config) {
-    super(ctx.app, WebBot)
+    super(ctx.app)
+
     this.server = new WebSocket.Server({
       path: config.apiPath,
       server: ctx.app._httpServer,
@@ -108,7 +120,7 @@ export class WebAdapter extends Adapter<'sandbox'> {
         const user = await session.observeUser(['id', 'name', 'authority', 'token', 'expire'])
         user.token = Random.uuid()
         user.expire = Date.now() + config.expiration
-        return state[2]._send('user', user)
+        return state[2].send('user', user)
       }
       return next()
     }, true)
@@ -116,23 +128,21 @@ export class WebAdapter extends Adapter<'sandbox'> {
 
   async start() {
     this.server.on('connection', async (socket) => {
-      const bot = this.create({ type: 'sandbox', selfId: Random.uuid() })
-      bot.socket = socket
-      bot.username = '沙箱机器人'
-      bot.status = Bot.Status.GOOD
+      const channel = new SocketChannel(this, socket)
+      this.channels[channel.id] = channel
 
       socket.on('close', () => {
-        bot.dispose()
+        delete this.channels[channel.id]
         for (const id in states) {
-          if (states[id][2] === bot) delete states[id]
+          if (states[id][2] === channel) delete states[id]
         }
       })
 
       socket.on('message', async (data) => {
         const { type, body } = JSON.parse(data.toString())
-        const method = bot['$' + type]
+        const method = channel['$' + type]
         if (method) {
-          method.call(bot, body)
+          method.call(channel, body)
         } else {
           logger.info(type, body)
         }

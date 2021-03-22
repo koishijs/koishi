@@ -88,7 +88,7 @@ export namespace Profile {
   export async function get(ctx: Context, config: Config) {
     const [memory, bots] = await Promise.all([
       memoryRate(),
-      Promise.all(ctx.bots.filter(bot => bot.platform !== 'sandbox').map(BotData)),
+      Promise.all(ctx.bots.filter(bot => bot.platform !== 'web').map(BotData)),
     ])
     const cpu: LoadRate = [appRate, usedRate]
     return { bots, memory, cpu, ...await getMeta(ctx, config) } as Profile
@@ -136,5 +136,3 @@ export namespace Profile {
     })
   }
 }
-
-export default Profile

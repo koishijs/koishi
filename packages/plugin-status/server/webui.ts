@@ -1,19 +1,19 @@
-import { Context, Plugin } from 'koishi-core'
-import { assertProperty, noop } from 'koishi-utils'
+import { Context, Plugin, noop } from 'koishi-core'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import { WebAdapter } from './adapter'
-import { createServer } from 'vite'
-import vuePlugin from '@vitejs/plugin-vue'
-import Profile from './profile'
-import Statistics from './stats'
+import { Profile } from './profile'
+import { Statistics } from './stats'
+import type * as Vite from 'vite'
+import type PluginVue from '@vitejs/plugin-vue'
 
 export { BotData, LoadRate } from './profile'
 
 export interface Config extends WebAdapter.Config, Profile.Config {
+  title?: string
   selfUrl?: string
   uiPath?: string
-  mode?: 'development' | 'production'
+  devMode?: boolean
 }
 
 export interface PluginData extends Plugin.Meta {
@@ -31,24 +31,27 @@ export interface Registry {
 export const name = 'webui'
 
 export function apply(ctx: Context, config: Config = {}) {
-  const koishiPort = assertProperty(ctx.app.options, 'port')
-  const { apiPath, uiPath, mode, selfUrl = `http://localhost:${koishiPort}` } = config
+  const { apiPath, uiPath, devMode, selfUrl, title } = config
 
   const globalVariables = Object.entries({
-    KOISHI_UI_PATH: uiPath,
-    KOISHI_ENDPOINT: selfUrl + apiPath,
-  }).map(([key, value]) => `window.${key} = ${JSON.stringify(value)};`).join('\n')
+    TITLE: title,
+    UI_PATH: uiPath,
+    ENDPOINT: selfUrl + apiPath,
+  }).map(([key, value]) => `window.KOISHI_${key} = ${JSON.stringify(value)};`).join('\n')
 
-  const root = resolve(__dirname, '..', mode === 'development' ? 'client' : 'dist')
+  const root = resolve(__dirname, '..', devMode ? 'client' : 'dist')
 
   async function createVite() {
-    if (mode !== 'development') return
+    if (!devMode) return
+
+    const { createServer } = require('vite') as typeof Vite
+    const pluginVue = require('@vitejs/plugin-vue').default as typeof PluginVue
 
     const vite = await createServer({
       root,
       base: '/vite/',
       server: { middlewareMode: true },
-      plugins: [vuePlugin()],
+      plugins: [pluginVue()],
       resolve: {
         alias: {
           '~/client': root,
@@ -67,7 +70,7 @@ export function apply(ctx: Context, config: Config = {}) {
   }
 
   async function createAdapter() {
-    const adapter = ctx.app.adapters.sandbox = new WebAdapter(ctx, config)
+    const adapter = ctx.app.adapters.web = new WebAdapter(ctx, config)
 
     adapter.server.on('connection', async (socket) => {
       function send(type: string, body: any) {
@@ -98,9 +101,13 @@ export function apply(ctx: Context, config: Config = {}) {
     const [vite] = await Promise.all([createVite(), createAdapter()])
 
     ctx.router.get(uiPath + '(/.+)*', async (koa) => {
+      // add trailing slash and redirect
+      if (koa.path === uiPath && !uiPath.endsWith('/')) {
+        return koa.redirect(koa.path + '/')
+      }
       const filename = resolve(root, koa.path.slice(uiPath.length).replace(/^\/+/, ''))
       if (!filename.startsWith(root) && !filename.includes('node_modules')) {
-        return koa.status = 404
+        return koa.status = 403
       }
       const stats = await fs.stat(filename).catch<Stats>(noop)
       if (stats?.isFile()) {

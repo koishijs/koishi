@@ -7,8 +7,8 @@ const numbers = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
 const alphabet = 'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ'
 
 export enum MoveResult {
-  p1Win = -1,
-  p2Win = 1,
+  p1Win = 1,
+  p2Win = -1,
   draw = -2,
   skip = 2,
   illegal = 3,
@@ -192,7 +192,6 @@ export class State {
       this.wBoard &= ~chess
       this.bBoard &= ~chess
     }
-    this.save()
     return board
   }
 

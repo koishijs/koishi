@@ -86,7 +86,7 @@ router.beforeEach((route) => {
 
 router.afterEach((route) => {
   if (typeof route.name === 'string') {
-    document.title = route.name + ' | Koishi 控制台'
+    document.title = `${route.name} | ${KOISHI_TITLE}`
   }
 })
 
