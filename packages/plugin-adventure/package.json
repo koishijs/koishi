@@ -28,7 +28,7 @@
     "adventure"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.3.0",
+    "koishi-core": "^3.3.1",
     "koishi-plugin-common": "^4.1.2",
     "koishi-plugin-mysql": "^3.1.0",
     "koishi-plugin-teach": "^2.0.0",
