@@ -47,7 +47,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
       logger.debug('prepare %d: %c at %s', id, command, time)
       return ctx.setTimeout(async () => {
-        if (!hasSchedule(id)) return
+        if (!await hasSchedule(id)) return
         database.remove('schedule', 'id', [id])
         executeSchedule()
       }, date - now)

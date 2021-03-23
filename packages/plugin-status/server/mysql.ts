@@ -122,10 +122,6 @@ Database.extend('koishi-plugin-mysql', {
     return { activeUsers, allUsers, activeGroups, allGroups, storageSize }
   },
 
-  async setChannels(data) {
-    await this.update('channel', data)
-  },
-
   Synchronizer: class {
     private _daily = new Stat.Recorded('stats_daily', Synchronizer.dailyFields, 'date')
     private _hourly = new Stat.Numerical('stats_hourly', Synchronizer.hourlyFields, 'datetime')
