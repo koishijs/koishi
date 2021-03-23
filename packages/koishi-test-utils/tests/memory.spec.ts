@@ -19,13 +19,17 @@ interface FooData {
   bar: string
 }
 
+Database.extend(MemoryDatabase, ({ tables }) => {
+  tables.foo = { primary: 'id' }
+})
+
 Database.extend(MemoryDatabase, {
   async createFoo(data: FooData) {
     return this.create('foo', data)
   },
 
   async removeFoo(id: number) {
-    return this.remove('foo', 'id', id)
+    return this.remove('foo', 'id', [id])
   },
 
   async getFooCount() {

@@ -1,5 +1,5 @@
 import { Tables, TableType, App, Database, User, Channel } from 'koishi-core'
-import { clone } from 'koishi-utils'
+import { clone, pick } from 'koishi-utils'
 
 declare module 'koishi-core' {
   interface Database {
@@ -19,6 +19,10 @@ export interface MemoryConfig {}
 
 export interface MemoryDatabase extends Database {}
 
+interface TableConfig<O> {
+  primary?: keyof O
+}
+
 export class MemoryDatabase {
   $store: { [K in TableType]?: Tables[K][] } = {
     user: [],
@@ -27,14 +31,15 @@ export class MemoryDatabase {
 
   memory = this
 
-  constructor(public app: App, public config: MemoryConfig) {}
-
-  $table<K extends TableType>(table: K): Tables[K][] {
-    return this.$store[table] as any
+  static tables: { [K in TableType]?: TableConfig<Tables[K]> } = {
+    user: { primary: 'id' },
+    channel: { primary: 'id' },
   }
 
-  $select<T extends TableType, K extends keyof Tables[T]>(table: T, key: K, values: readonly Tables[T][K][]) {
-    return this.$table(table).filter(row => values.includes(row[key])).map(clone)
+  constructor(public app: App, public config: MemoryConfig) {}
+
+  $table<K extends TableType>(table: K): any[] {
+    return this.$store[table] as any
   }
 
   $update<K extends TableType>(table: K, id: number, data: Partial<Tables[K]>) {
@@ -48,29 +53,44 @@ export class MemoryDatabase {
 }
 
 Database.extend(MemoryDatabase, {
-  async get(table, key, value) {
-    return this.$select(table, key as any, [value])[0]
+  async get(table, key, values, fields) {
+    return this.$table<any>(table)
+      .filter(row => values.includes(row[key]))
+      .map(row => fields ? pick(row, fields) : row)
+      .map(clone)
   },
 
   async create(table, data: any) {
     const store = this.$table(table)
-    const max = store.length ? Math.max(...store.map(row => +row.id)) : 0
-    data.id = max + 1
+    const { primary } = MemoryDatabase.tables[table]
+    if (!data[primary]) {
+      const max = store.length ? Math.max(...store.map(row => row[primary])) : 0
+      data[primary] = max + 1
+    }
     store.push(data)
     return data
   },
 
-  async remove(table, key, id) {
+  async remove(table, key, values) {
     const store = this.$table(table)
-    const index = store.findIndex(row => row[key] === id)
-    if (index >= 0) store.splice(index, 1)
+    for (const id of values) {
+      const index = store.findIndex(row => row[key] === id)
+      if (index >= 0) store.splice(index, 1)
+    }
   },
 
-  async getUser(type, id) {
+  async update(table, data) {
+    for (const item of data) {
+      const row = this.$table(table).find(row => row.id === item.id)
+      Object.assign(row, clone(data))
+    }
+  },
+
+  async getUser(type, id, fields) {
     if (Array.isArray(id)) {
-      return this.$select('user', type, id) as any
+      return this.get('user', type, id, fields) as any
     } else {
-      return this.$select('user', type as any, [id])[0]
+      return (await this.get('user', type as any, [id], fields))[0]
     }
   },
 
@@ -101,11 +121,11 @@ Database.extend(MemoryDatabase, {
     return this.createUser('mock', id, { authority })
   },
 
-  async getChannel(type, id) {
+  async getChannel(type, id, fields) {
     if (Array.isArray(id)) {
-      return this.$select('channel', 'id', id.map(id => `${type}:${id}`))
+      return this.get('channel', 'id', id.map(id => `${type}:${id}`), fields)
     } else {
-      return this.$select('channel', 'id', [`${type}:${id}`])[0]
+      return (await this.get('channel', 'id', [`${type}:${id}`], fields))[0]
     }
   },
 
