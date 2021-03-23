@@ -22,7 +22,7 @@ const primitives = ['number', 'string', 'bigint', 'boolean', 'symbol']
 export function clone<T extends unknown>(source: T): T {
   return primitives.includes(typeof source) ? source
     : Array.isArray(source) ? source.map(clone) as any
-      : Object.fromEntries(Object.entries(source).map(([key, value]) => [key, clone(value)]))
+      : source ? Object.fromEntries(Object.entries(source).map(([key, value]) => [key, clone(value)])) : source
 }
 
 export function merge<T extends object>(head: T, base: T): T {
