@@ -20,6 +20,11 @@ export function apply(ctx: Context, config: Config = {}) {
   const { database } = ctx
   const { minInterval = Time.minute } = config
 
+  async function hasSchedule(id: number) {
+    const data = await database.get('schedule', 'id', [id])
+    return data.length
+  }
+
   async function prepareSchedule({ id, session, interval, command, time, lastCall }: Schedule) {
     const now = Date.now()
     const date = time.valueOf()
@@ -30,20 +35,20 @@ export function apply(ctx: Context, config: Config = {}) {
       await session.execute(command)
       if (!lastCall || !interval) return
       lastCall = new Date()
-      await database.updateSchedule(id, { lastCall })
+      await database.update('schedule', [{ id, lastCall }])
     }
 
     if (!interval) {
       if (date < now) {
-        database.remove('schedule', 'id', id)
+        database.remove('schedule', 'id', [id])
         if (lastCall) executeSchedule()
         return
       }
 
       logger.debug('prepare %d: %c at %s', id, command, time)
       return ctx.setTimeout(async () => {
-        if (!await database.get('schedule', 'id', id)) return
-        database.remove('schedule', 'id', id)
+        if (!hasSchedule(id)) return
+        database.remove('schedule', 'id', [id])
         executeSchedule()
       }, date - now)
     }
@@ -55,9 +60,9 @@ export function apply(ctx: Context, config: Config = {}) {
     }
 
     ctx.setTimeout(async () => {
-      if (!await database.get('schedule', 'id', id)) return
+      if (!await hasSchedule(id)) return
       const dispose = ctx.setInterval(async () => {
-        if (!await database.get('schedule', 'id', id)) return dispose()
+        if (!await hasSchedule(id)) return dispose()
         executeSchedule()
       }, interval)
       executeSchedule()
@@ -65,7 +70,7 @@ export function apply(ctx: Context, config: Config = {}) {
   }
 
   ctx.on('connect', async () => {
-    const schedules = await database.getAllSchedules()
+    const schedules = await database.get('schedule', 'assignee', ctx.bots.map(bot => bot.sid))
     schedules.forEach((schedule) => {
       const { session, assignee } = schedule
       if (!ctx.bots[assignee]) return
@@ -88,7 +93,7 @@ export function apply(ctx: Context, config: Config = {}) {
       }
 
       if (options.list) {
-        let schedules = await database.getAllSchedules(session.sid)
+        let schedules = await database.get('schedule', 'assignee', [session.sid])
         if (!options.full) {
           schedules = schedules.filter(s => session.channelId === s.session.channelId)
         }

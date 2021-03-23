@@ -3,11 +3,6 @@ import {} from 'koishi-plugin-mysql'
 import {} from 'koishi-plugin-mongo'
 
 declare module 'koishi-core' {
-  interface Database {
-    updateSchedule(id: number, data: Partial<Schedule>): Promise<void>
-    getAllSchedules(assignee?: string): Promise<Schedule[]>
-  }
-
   interface Tables {
     schedule: Schedule
   }
@@ -37,28 +32,6 @@ Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
   })
 })
 
-Database.extend('koishi-plugin-mysql', {
-  async getAllSchedules(assignee) {
-    const assignees = assignee
-      ? [this.escape(assignee)]
-      : this.app.bots.map(bot => this.escape(bot.sid))
-    if (!assignees.length) return []
-    return this.query(`SELECT * FROM \`schedule\` WHERE \`assignee\` IN (${assignees.join(',')})`)
-  },
-})
-
 Database.extend('koishi-plugin-mongo', ({ tables }) => {
-  tables.schedule = { primary: 'id', incremental: true }
-})
-
-Database.extend('koishi-plugin-mongo', {
-  async getAllSchedules(assignee) {
-    const $in = assignee
-      ? [assignee]
-      : this.app.bots.map(bot => bot.sid)
-    return await this.db.collection('schedule')
-      .find({ assignee: { $in } })
-      .map(doc => ({ ...doc, id: doc._id, session: JSON.parse(doc.session) }))
-      .toArray()
-  },
+  tables.schedule = { primary: 'id', type: 'incremental' }
 })
