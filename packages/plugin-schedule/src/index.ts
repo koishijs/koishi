@@ -28,7 +28,6 @@ export function apply(ctx: Context, config: Config = {}) {
   async function prepareSchedule({ id, session, interval, command, time, lastCall }: Schedule) {
     const now = Date.now()
     const date = time.valueOf()
-    const { database } = session.app
 
     async function executeSchedule() {
       logger.debug('execute %d: %c', id, command)
@@ -88,7 +87,7 @@ export function apply(ctx: Context, config: Config = {}) {
     .option('delete', '-d <id>  删除已经设置的日程')
     .action(async ({ session, options }, ...dateSegments) => {
       if (options.delete) {
-        await database.remove('schedule', 'id', options.delete)
+        await database.remove('schedule', 'id', [options.delete])
         return `日程 ${options.delete} 已删除。`
       }
 
@@ -138,6 +137,7 @@ export function apply(ctx: Context, config: Config = {}) {
         command: options.rest,
         session: session.toJSON(),
       })
+      schedule.session = session
       prepareSchedule(schedule)
       return `日程已创建，编号为 ${schedule.id}。`
     })
