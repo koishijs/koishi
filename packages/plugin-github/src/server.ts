@@ -2,14 +2,28 @@
 
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
-import { App, Session, User } from 'koishi-core'
+import { App, Channel, Database, Session, User } from 'koishi-core'
 import { segment, Logger } from 'koishi-utils'
 import {} from 'koishi-plugin-puppeteer'
+import {} from 'koishi-plugin-mysql'
+import {} from 'koishi-plugin-mongo'
 
 declare module 'koishi-core' {
+  interface App {
+    github?: GitHub
+  }
+
   interface User {
-    ghAccessToken?: string
-    ghRefreshToken?: string
+    ghAccessToken: string
+    ghRefreshToken: string
+  }
+
+  interface Channel {
+    githubWebhooks: Record<string, {}>
+  }
+
+  interface Tables {
+    github: Repository
   }
 }
 
@@ -17,6 +31,33 @@ User.extend(() => ({
   ghAccessToken: '',
   ghRefreshToken: '',
 }))
+
+Channel.extend(() => ({
+  githubWebhooks: {},
+}))
+
+Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
+  tables.user.ghAccessToken = 'varchar(50)'
+  tables.user.ghRefreshToken = 'varchar(50)'
+  tables.channel.githubWebhooks = new Domain.Json()
+  tables.github = Object.assign<any, any>(['primary key (`name`)'], {
+    name: 'varchar(50)',
+    secret: 'varchar(50)',
+  })
+})
+
+Database.extend('koishi-plugin-mongo', ({ tables }) => {
+  tables.github = { primary: 'name' }
+})
+
+interface Repository {
+  name: string
+  secret: string
+}
+
+interface RepoConfig extends Repository {
+  targets: string[]
+}
 
 export interface Config {
   secret?: string
@@ -29,7 +70,7 @@ export interface Config {
   promptTimeout?: number
   replyTimeout?: number
   requestTimeout?: number
-  repos?: Record<string, string[]>
+  repos?: RepoConfig[]
   events?: EventConfig
 }
 
@@ -42,7 +83,7 @@ export interface OAuth {
   scope: string
 }
 
-type ReplySession = Session<'ghAccessToken' | 'ghRefreshToken'>
+export type ReplySession = Session<'ghAccessToken' | 'ghRefreshToken'>
 
 const logger = new Logger('github')
 
@@ -131,7 +172,7 @@ type ReplyPayloads = {
 export type EventData<T = {}> = [string, (ReplyPayloads & T)?]
 
 export class ReplyHandler {
-  constructor(public github: GitHub, public session: Session, public content?: string) {}
+  constructor(public github: GitHub, public session: ReplySession, public content?: string) {}
 
   link(url: string) {
     return this.session.send(url)

@@ -23,7 +23,7 @@ export interface Config {
 }
 
 interface TableConfig<O> {
-  primary: keyof O
+  primary?: keyof O
   type?: 'incremental'
 }
 

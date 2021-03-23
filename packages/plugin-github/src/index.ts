@@ -2,19 +2,12 @@
 /* eslint-disable quote-props */
 
 import { createHmac } from 'crypto'
-import { Context } from 'koishi-core'
-import { camelize, defineProperty, Time, Random } from 'koishi-utils'
 import { encode } from 'querystring'
+import { Context, camelize, Time, Random } from 'koishi-core'
 import { CommonPayload, addListeners, defaultEvents } from './events'
-import { Config, GitHub, ReplyHandler, EventData } from './server'
+import { Config, GitHub, ReplyHandler, ReplySession, EventData } from './server'
 
 export * from './server'
-
-declare module 'koishi-core' {
-  interface App {
-    github?: GitHub
-  }
-}
 
 const defaultOptions: Config = {
   secret: '',
@@ -22,7 +15,7 @@ const defaultOptions: Config = {
   webhook: '/github/webhook',
   authorize: '/github/authorize',
   replyTimeout: Time.hour,
-  repos: {},
+  repos: [],
   events: {},
 }
 
@@ -111,7 +104,7 @@ export function apply(ctx: Context, config: Config = {}) {
     }
   })
 
-  ctx.middleware((session, next) => {
+  ctx.middleware((session: ReplySession, next) => {
     if (!session.quote) return next()
     const body = session.parsed.content.trim()
     const payloads = history[session.quote.messageId.slice(0, 6)]
