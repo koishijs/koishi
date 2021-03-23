@@ -36,7 +36,7 @@ export class MemoryDatabase {
   constructor(public app: App, public config: MemoryConfig) {}
 
   $table<K extends TableType>(table: K): any[] {
-    return this.$store[table] as any
+    return this.$store[table]
   }
 
   $count<K extends TableType>(table: K, field: keyof Tables[K] = 'id') {
@@ -71,10 +71,11 @@ Database.extend(MemoryDatabase, {
     }
   },
 
-  async update(table, data) {
+  async update(table, data, key: string) {
+    if (key) key = (MemoryDatabase.tables[table] || {}).primary || 'id'
     for (const item of data) {
-      const row = this.$table(table).find(row => row.id === item.id)
-      Object.assign(row, clone(data))
+      const row = this.$table(table).find(row => row[key] === item[key])
+      Object.assign(row, clone(item))
     }
   },
 

@@ -110,9 +110,9 @@ export namespace Dialogue {
     return `问答 ${dialogues.map(d => d.id).sort((a, b) => a - b)} 已回退完成。`
   }
 
-  export function addHistory(dialogue: Dialogue, type: Dialogue.ModifyType, argv: Dialogue.Argv, revert: boolean, target = argv.app.teachHistory) {
-    if (revert) return delete target[dialogue.id]
-    target[dialogue.id] = dialogue
+  export function addHistory(dialogue: Dialogue, type: Dialogue.ModifyType, argv: Dialogue.Argv, revert: boolean) {
+    if (revert) return delete argv.app.teachHistory[dialogue.id]
+    argv.app.teachHistory[dialogue.id] = dialogue
     const time = Date.now()
     defineProperty(dialogue, '_timestamp', time)
     defineProperty(dialogue, '_operator', argv.session.userId)

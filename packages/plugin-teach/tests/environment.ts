@@ -30,29 +30,23 @@ Database.extend('koishi-test-utils', {
   },
 
   async updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
-    const fields = new Set<Dialogue.Field>(['id'])
-    for (const { _diff } of dialogues) {
-      for (const key in _diff) {
-        fields.add(key as Dialogue.Field)
-      }
-    }
-    const temp: Record<number, Dialogue> = {}
+    const data: Partial<Dialogue>[] = []
     for (const dialogue of dialogues) {
       if (!Object.keys(dialogue._diff).length) {
         argv.skipped.push(dialogue.id)
       } else {
+        data.push({ id: dialogue.id, ...dialogue._diff })
         dialogue._diff = {}
         argv.updated.push(dialogue.id)
-        this.$update('dialogue', dialogue.id, dialogue)
-        Dialogue.addHistory(dialogue._backup, '修改', argv, false, temp)
+        Dialogue.addHistory(dialogue._backup, '修改', argv, false)
       }
     }
-    Object.assign(this.app.teachHistory, temp)
+    await this.update('dialogue', data)
   },
 
   async recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {
     for (const dialogue of dialogues) {
-      this.$update('dialogue', dialogue.id, dialogue)
+      this.update('dialogue', [dialogue])
       Dialogue.addHistory(dialogue, '修改', argv, true)
     }
   },

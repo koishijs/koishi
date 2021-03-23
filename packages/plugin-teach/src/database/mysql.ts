@@ -38,7 +38,6 @@ Database.extend('koishi-plugin-mysql', {
         fields.add(key as Dialogue.Field)
       }
     }
-    const temp: Record<number, Dialogue> = {}
     for (const dialogue of dialogues) {
       if (!Object.keys(dialogue._diff).length) {
         argv.skipped.push(dialogue.id)
@@ -46,11 +45,10 @@ Database.extend('koishi-plugin-mysql', {
         dialogue._diff = {}
         argv.updated.push(dialogue.id)
         data.push(pick(dialogue, fields))
-        Dialogue.addHistory(dialogue._backup, '修改', argv, false, temp)
+        Dialogue.addHistory(dialogue._backup, '修改', argv, false)
       }
     }
     await this.update('dialogue', data)
-    Object.assign(this.app.teachHistory, temp)
   },
 
   async recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {

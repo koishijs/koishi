@@ -1,5 +1,5 @@
 import { Context, Database } from 'koishi-core'
-import { clone, defineProperty, Observed, pick } from 'koishi-utils'
+import { clone, defineProperty, Observed } from 'koishi-utils'
 import type { FilterQuery } from 'mongodb'
 import {} from 'koishi-plugin-mongo'
 import { Dialogue, DialogueTest, equal } from '../utils'
@@ -41,28 +41,18 @@ Database.extend('koishi-plugin-mongo', {
   },
 
   async updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
-    const fields = new Set<Dialogue.Field>(['id'])
-    for (const { _diff } of dialogues) {
-      for (const key in _diff) {
-        fields.add(key as Dialogue.Field)
-      }
-    }
-    const temp: Record<number, Dialogue> = {}
-    const tasks = []
+    const data: Partial<Dialogue>[] = []
     for (const dialogue of dialogues) {
       if (!Object.keys(dialogue._diff).length) {
         argv.skipped.push(dialogue.id)
       } else {
+        data.push({ id: dialogue.id, ...dialogue._diff })
         dialogue._diff = {}
         argv.updated.push(dialogue.id)
-        tasks.push(
-          await this.db.collection('dialogue').updateOne({ _id: dialogue.id }, { $set: pick(dialogue, fields) }),
-        )
-        Dialogue.addHistory(dialogue._backup, '修改', argv, false, temp)
+        Dialogue.addHistory(dialogue._backup, '修改', argv, false)
       }
     }
-    await Promise.all(tasks)
-    Object.assign(this.app.teachHistory, temp)
+    await this.update('dialogue', data)
   },
 
   async recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {
