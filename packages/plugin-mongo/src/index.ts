@@ -83,6 +83,7 @@ Database.extend(MongoDatabase, ({ tables }) => {
 
 Database.extend(MongoDatabase, {
   async get(table, key, value, fields) {
+    if (!value.length) return []
     const { primary } = MongoDatabase.tables[table]
     if (key === primary) key = '_id'
     let cursor = this.db.collection(table).find({ [key]: { $in: value } })
@@ -107,19 +108,20 @@ Database.extend(MongoDatabase, {
   },
 
   async remove(table, key, value) {
+    if (!value.length) return
     const { primary } = MongoDatabase.tables[table]
     if (key === primary) key = '_id'
     await this.db.collection(table).deleteMany({ [key]: { $in: value } })
   },
 
   async update(table, data: any[]) {
+    if (!data.length) return
     const { primary } = MongoDatabase.tables[table]
-    const tasks: Promise<any>[] = []
-    const col = this.db.collection(table)
+    const bulk = this.db.collection(table).initializeUnorderedBulkOp()
     for (const item of data) {
-      tasks.push(col.updateOne({ _id: data[primary] }, { $set: omit(item, [primary]) }))
+      bulk.find({ _id: data[primary] }).updateOne({ $set: omit(item, [primary]) })
     }
-    await Promise.all(tasks)
+    await bulk.execute()
   },
 
   async getUser(type, id, fields = User.fields) {

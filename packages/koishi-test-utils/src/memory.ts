@@ -39,11 +39,6 @@ export class MemoryDatabase {
     return this.$store[table] as any
   }
 
-  $update<K extends TableType>(table: K, id: number, data: Partial<Tables[K]>) {
-    const row = this.$table(table).find(row => +row.id === id)
-    Object.assign(row, clone(data))
-  }
-
   $count<K extends TableType>(table: K, field: keyof Tables[K] = 'id') {
     return new Set(this.$table(table).map(data => data[field])).size
   }
