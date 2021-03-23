@@ -11,7 +11,7 @@ declare module 'koishi-core' {
 }
 
 Database.extend('koishi-plugin-mongo', ({ tables }) => {
-  tables.dialogue = { primary: 'id', incremental: true }
+  tables.dialogue = { primary: 'id', type: 'incremental' }
 })
 
 Database.extend('koishi-plugin-mongo', {
@@ -44,14 +44,6 @@ Database.extend('koishi-plugin-mongo', {
     })
   },
 
-  async removeDialogues(ids: number[], argv: Dialogue.Argv, revert = false) {
-    if (!ids.length) return
-    await this.db.collection('dialogue').deleteMany({ _id: { $in: ids } })
-    for (const id of ids) {
-      Dialogue.addHistory(argv.dialogueMap[id], '删除', argv, revert)
-    }
-  },
-
   async updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
     const fields = new Set<Dialogue.Field>(['id'])
     for (const { _diff } of dialogues) {
@@ -75,14 +67,6 @@ Database.extend('koishi-plugin-mongo', {
     }
     await Promise.all(tasks)
     Object.assign(this.app.teachHistory, temp)
-  },
-
-  async revertDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {
-    const created = dialogues.filter(d => d._type === '添加')
-    const edited = dialogues.filter(d => d._type !== '添加')
-    await this.removeDialogues(created.map(d => d.id), argv, true)
-    await this.recoverDialogues(edited, argv)
-    return `问答 ${dialogues.map(d => d.id).sort((a, b) => a - b)} 已回退完成。`
   },
 
   async recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {
