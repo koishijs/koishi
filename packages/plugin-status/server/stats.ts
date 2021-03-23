@@ -162,7 +162,7 @@ export namespace Statistics {
       }
     }
 
-    await ctx.database.setChannels(updateList)
+    await ctx.database.update('channel', updateList)
 
     extension.hours = new Array(24).fill(0).map((_, index) => {
       return average(hourly.filter(s => s.time.getHours() === index))

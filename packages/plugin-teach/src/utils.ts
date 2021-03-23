@@ -19,10 +19,7 @@ declare module 'koishi-core' {
   interface Database {
     getDialoguesById<T extends Dialogue.Field>(ids: number[], fields?: T[]): Promise<Dialogue[]>
     getDialoguesByTest(test: DialogueTest): Promise<Dialogue[]>
-    createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert?: boolean): Promise<Dialogue>
-    removeDialogues(ids: number[], argv: Dialogue.Argv, revert?: boolean): Promise<void>
     updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv): Promise<void>
-    revertDialogues(dialogues: Dialogue[], argv: Dialogue.Argv): Promise<string>
     recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv): Promise<void>
     getDialogueStats(): Promise<DialogueStats>
   }
@@ -96,9 +93,26 @@ export namespace Dialogue {
     complement = 16,
   }
 
-  export function addHistory(dialogue: Dialogue, type: Dialogue.ModifyType, argv: Dialogue.Argv, revert: boolean, target = argv.app.teachHistory) {
-    if (revert) return delete target[dialogue.id]
-    target[dialogue.id] = dialogue
+  export async function remove(dialogues: Dialogue[], argv: Dialogue.Argv, revert = false) {
+    const ids = dialogues.map(d => d.id)
+    argv.app.database.remove('dialogue', 'id', ids)
+    for (const id of ids) {
+      addHistory(argv.dialogueMap[id], '删除', argv, revert)
+    }
+    return ids
+  }
+
+  export async function revert(dialogues: Dialogue[], argv: Dialogue.Argv) {
+    const created = dialogues.filter(d => d._type === '添加')
+    const edited = dialogues.filter(d => d._type !== '添加')
+    await Dialogue.remove(created, argv, true)
+    await argv.app.database.recoverDialogues(edited, argv)
+    return `问答 ${dialogues.map(d => d.id).sort((a, b) => a - b)} 已回退完成。`
+  }
+
+  export function addHistory(dialogue: Dialogue, type: Dialogue.ModifyType, argv: Dialogue.Argv, revert: boolean) {
+    if (revert) return delete argv.app.teachHistory[dialogue.id]
+    argv.app.teachHistory[dialogue.id] = dialogue
     const time = Date.now()
     defineProperty(dialogue, '_timestamp', time)
     defineProperty(dialogue, '_operator', argv.session.userId)

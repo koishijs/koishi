@@ -85,9 +85,17 @@ export namespace Channel {
   extend((type, id) => ({ id: `${type}:${id}`, flag: 0, disable: [] }))
 }
 
-type MaybeArray<T> = T | readonly T[]
+type MaybeArray<T> = T | T[]
+type IndexKeys<O, T = any> = string & { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
+type TableIndex<T extends TableType> = IndexKeys<Tables[T], string | number>
 
+/* eslint-disable max-len */
 export interface Database {
+  get<T extends TableType, K extends TableIndex<T>, F extends string & keyof Tables[T]>(table: T, key: K, value: Tables[T][K][], fields?: readonly F[]): Promise<Pick<Tables[T], F>[]>
+  create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
+  update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: TableIndex<T>): Promise<void>
+  remove<T extends TableType, K extends TableIndex<T>>(table: T, key: K, value: Tables[T][K][]): Promise<void>
+
   getUser<K extends User.Field, T extends User.Index>(type: T, id: string, fields?: readonly K[]): Promise<Pick<User, K | T>>
   getUser<K extends User.Field, T extends User.Index>(type: T, ids: readonly string[], fields?: readonly K[]): Promise<Pick<User, K | T>[]>
   setUser<T extends User.Index>(type: T, id: string, data: Partial<User>): Promise<void>
@@ -102,6 +110,7 @@ export interface Database {
   createChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
   removeChannel(type: Platform, id: string): Promise<void>
 }
+/* eslint-enable max-len */
 
 type Methods<S, T> = {
   [K in keyof S]?: S[K] extends (...args: infer R) => infer U ? (this: T, ...args: R) => U : S[K]

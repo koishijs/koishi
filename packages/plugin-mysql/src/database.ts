@@ -104,6 +104,10 @@ class MysqlDatabase {
     return keys ? keys.map(key => key.includes('`') ? key : `\`${key}\``).join(',') : '*'
   }
 
+  $in = (table: TableType, key: string, values: readonly any[]) => {
+    return `${this.escapeId(key)} IN (${values.map(val => this.escape(val, table, key)).join(', ')})`
+  }
+
   formatValues = (table: string, data: object, keys: readonly string[]) => {
     return keys.map((key) => {
       if (typeof data[key] !== 'object' || types.isDate(data[key])) return data[key]
@@ -163,30 +167,6 @@ class MysqlDatabase {
       [table, ...this.formatValues(table, data, keys)],
     )
     return { ...data, id: header.insertId } as any
-  }
-
-  async update<K extends TableType>(table: K, data: Partial<Tables[K]>[]): Promise<OkPacket>
-  async update<K extends TableType>(table: K, id: number | string, data: Partial<Tables[K]>): Promise<OkPacket>
-  async update<K extends TableType>(table: K, arg1: number | string | Tables[K][], data?: Partial<Tables[K]>) {
-    if (typeof arg1 === 'object') {
-      if (!arg1.length) return
-      const keys = Object.keys(arg1[0])
-      const placeholder = `(${keys.map(() => '?').join(', ')})`
-      const header = await this.query(
-        `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES ${arg1.map(() => placeholder).join(', ')}
-        ON DUPLICATE KEY UPDATE ${keys.filter(key => key !== 'id').map(key => `\`${key}\` = VALUES(\`${key}\`)`).join(', ')}`,
-        [table, ...[].concat(...arg1.map(data => this.formatValues(table, data, keys)))],
-      )
-      return header as OkPacket
-    }
-
-    const keys = Object.keys(data)
-    if (!keys.length) return
-    const header = await this.query(
-      'UPDATE ?? SET ' + keys.map(key => `\`${key}\` = ?`).join(', ') + ' WHERE `id` = ?',
-      [table, ...this.formatValues(table, data, keys), arg1],
-    )
-    return header as OkPacket
   }
 
   async count<K extends TableType>(table: K, conditional?: string) {

@@ -123,13 +123,13 @@ export namespace Time {
 
   export function formatTimeInterval(time: Date, interval?: number) {
     if (!interval) {
-      return time.toLocaleString()
+      return template('yyyy-MM-dd hh:mm:ss', time)
     } else if (interval === day) {
       return `每天 ${toHourMinute(time)}`
     } else if (interval === week) {
       return `每周${dayMap[time.getDay()]} ${toHourMinute(time)}`
     } else {
-      return `${time.toLocaleString('zh-CN', { hour12: false })} 起每隔 ${formatTime(interval)}`
+      return `${template('yyyy-MM-dd hh:mm:ss', time)} 起每隔 ${formatTime(interval)}`
     }
   }
 }

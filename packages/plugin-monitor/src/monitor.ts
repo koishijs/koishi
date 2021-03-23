@@ -86,7 +86,10 @@ export class Daemon {
     this._status.unshift(value)
     this._status = this._status.slice(0, 5)
     if (status !== value) {
-      this.monitor.app.database.setSubscribe(this.config.id, { [this._statusKey]: value })
+      this.monitor.app.database.update('subscribe', [{
+        id: this.config.id,
+        [this._statusKey]: value,
+      }])
     }
   }
 

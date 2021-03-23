@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { Database } from 'koishi-core'
-import MemoryDatabase, { testDatabase, App } from 'koishi-test-utils'
+import { testDatabase, App } from 'koishi-test-utils'
 
 declare module 'koishi-core' {
   interface Database {
@@ -19,13 +19,13 @@ interface FooData {
   bar: string
 }
 
-Database.extend(MemoryDatabase, {
+Database.extend('koishi-test-utils', {
   async createFoo(data: FooData) {
-    return this.$create('foo', data)
+    return this.create('foo', data)
   },
 
   async removeFoo(id: number) {
-    return this.$remove('foo', id)
+    return this.remove('foo', 'id', [id])
   },
 
   async getFooCount() {

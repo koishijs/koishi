@@ -29,51 +29,24 @@ Database.extend('koishi-test-utils', {
     })
   },
 
-  async createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
-    this.$create('dialogue', dialogue)
-    Dialogue.addHistory(dialogue, '添加', argv, revert)
-    return dialogue
-  },
-
-  async removeDialogues(ids: number[], argv: Dialogue.Argv, revert = false) {
-    for (const id of ids) {
-      this.$remove('dialogue', id)
-      Dialogue.addHistory(argv.dialogueMap[id], '删除', argv, revert)
-    }
-  },
-
   async updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
-    const fields = new Set<Dialogue.Field>(['id'])
-    for (const { _diff } of dialogues) {
-      for (const key in _diff) {
-        fields.add(key as Dialogue.Field)
-      }
-    }
-    const temp: Record<number, Dialogue> = {}
+    const data: Partial<Dialogue>[] = []
     for (const dialogue of dialogues) {
       if (!Object.keys(dialogue._diff).length) {
         argv.skipped.push(dialogue.id)
       } else {
+        data.push({ id: dialogue.id, ...dialogue._diff })
         dialogue._diff = {}
         argv.updated.push(dialogue.id)
-        this.$update('dialogue', dialogue.id, dialogue)
-        Dialogue.addHistory(dialogue._backup, '修改', argv, false, temp)
+        Dialogue.addHistory(dialogue._backup, '修改', argv, false)
       }
     }
-    Object.assign(this.app.teachHistory, temp)
-  },
-
-  async revertDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {
-    const created = dialogues.filter(d => d._type === '添加')
-    const edited = dialogues.filter(d => d._type !== '添加')
-    await this.removeDialogues(created.map(d => d.id), argv, true)
-    await this.recoverDialogues(edited, argv)
-    return `问答 ${dialogues.map(d => d.id).sort((a, b) => a - b)} 已回退完成。`
+    await this.update('dialogue', data)
   },
 
   async recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {
     for (const dialogue of dialogues) {
-      this.$update('dialogue', dialogue.id, dialogue)
+      this.update('dialogue', [dialogue])
       Dialogue.addHistory(dialogue, '修改', argv, true)
     }
   },

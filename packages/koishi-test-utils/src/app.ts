@@ -108,12 +108,13 @@ export class MockedApp extends App {
     return this.bots[0].selfId
   }
 
+  async start() {
+    this.status = App.Status.open
+    this.emit('connect')
+  }
+
   receive(meta: Partial<Session>) {
-    const session = new Session(this, {
-      platform: 'mock',
-      selfId: this.selfId,
-      ...meta,
-    })
+    const session = new Session(this, meta)
     this.adapters.mock.dispatch(session)
     return session.id
   }
@@ -132,6 +133,7 @@ export class TestSession {
     this.meta = {
       platform: 'mock',
       type: 'message',
+      selfId: app.selfId,
       userId,
       author: {
         userId,

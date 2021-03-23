@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Database, Context, Channel, Random, pick } from 'koishi-core'
+import { User, Database, Context, Channel, Random, pick, omit } from 'koishi-core'
 
 export * from './database'
 export default MongoDatabase
@@ -21,7 +21,7 @@ declare module 'koishi-core' {
   }
 }
 
-function projection(keys: readonly string[]) {
+function projection(keys: Iterable<string>) {
   const d = {}
   for (const key of keys) d[key] = 1
   return d
@@ -76,7 +76,55 @@ function unescapeKey<T extends Partial<User>>(data: T) {
   return data
 }
 
+Database.extend(MongoDatabase, ({ tables }) => {
+  tables.user = { primary: 'id' }
+  tables.channel = { primary: 'id' }
+})
+
 Database.extend(MongoDatabase, {
+  async get(table, key, value, fields) {
+    if (!value.length) return []
+    const { primary } = this.getConfig(table)
+    if (key === primary) key = '_id'
+    let cursor = this.db.collection(table).find({ [key]: { $in: value } })
+    if (fields) cursor = cursor.project(projection(fields))
+    const data = await cursor.toArray()
+    for (const item of data) item[primary] = item._id
+    return data
+  },
+
+  async create(table, data: any) {
+    const { primary, type } = this.getConfig(table)
+    const copy = { ...data }
+    if (copy[primary]) {
+      copy['_id'] = copy[primary]
+      delete copy[primary]
+    } else if (type === 'incremental') {
+      const [latest] = await this.db.collection(table).find().sort('_id', -1).limit(1).toArray()
+      copy['_id'] = data[primary] = latest ? latest._id + 1 : 1
+    }
+    await this.db.collection(table).insertOne(copy)
+    return data
+  },
+
+  async remove(table, key, value) {
+    if (!value.length) return
+    const { primary } = this.getConfig(table)
+    if (key === primary) key = '_id'
+    await this.db.collection(table).deleteMany({ [key]: { $in: value } })
+  },
+
+  async update(table, data: any[], key: string) {
+    if (!data.length) return
+    const { primary } = this.getConfig(table)
+    if (!key || key === primary) key = '_id'
+    const bulk = this.db.collection(table).initializeUnorderedBulkOp()
+    for (const item of data) {
+      bulk.find({ [key]: data[primary] }).updateOne({ $set: omit(item, [primary]) })
+    }
+    await bulk.execute()
+  },
+
   async getUser(type, id, fields = User.fields) {
     if (fields && !fields.length) return { [type]: id } as any
     if (Array.isArray(id)) {

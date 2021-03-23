@@ -22,6 +22,11 @@ export interface Config {
   uri?: string
 }
 
+interface TableConfig<O> {
+  primary: keyof O
+  type?: 'incremental'
+}
+
 export interface MongoDatabase extends Database {}
 
 export class MongoDatabase {
@@ -33,6 +38,8 @@ export class MongoDatabase {
 
   user: Collection<User>
   channel: Collection<Channel>
+
+  static readonly tables: { [T in TableType]?: TableConfig<Tables[T]> } = {}
 
   constructor(public app: App, config?: Config) {
     this.config = {
@@ -62,6 +69,14 @@ export class MongoDatabase {
 
   collection<T extends TableType>(name: T): Collection<Tables[T]> {
     return this.db.collection(name)
+  }
+
+  getConfig<T extends TableType>(name: T): TableConfig<Tables[T]> {
+    return {
+      primary: 'id',
+      type: 'incremental',
+      ...MongoDatabase.tables[name],
+    }
   }
 
   stop() {
