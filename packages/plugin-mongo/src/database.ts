@@ -23,8 +23,8 @@ export interface Config {
 }
 
 interface TableConfig<O> {
-  primary?: keyof O
-  incremental?: boolean
+  primary: keyof O
+  type?: 'incremental'
 }
 
 export interface MongoDatabase extends Database {}

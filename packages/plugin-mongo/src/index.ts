@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Database, Context, Channel, Random, pick } from 'koishi-core'
+import { User, Database, Context, Channel, Random, pick, omit } from 'koishi-core'
 
 export * from './database'
 export default MongoDatabase
@@ -76,37 +76,50 @@ function unescapeKey<T extends Partial<User>>(data: T) {
   return data
 }
 
+Database.extend(MongoDatabase, ({ tables }) => {
+  tables.user = { primary: 'id' }
+  tables.channel = { primary: 'id' }
+})
+
 Database.extend(MongoDatabase, {
   async get(table, key, value, fields) {
-    const { primary } = MongoDatabase.tables[table] || {}
+    const { primary } = MongoDatabase.tables[table]
     if (key === primary) key = '_id'
-    let cursor = this.db.collection(table).find({ [key]: value })
+    let cursor = this.db.collection(table).find({ [key]: { $in: value } })
     if (fields) cursor = cursor.project(projection(fields))
-    const [data] = await cursor.toArray()
-    if (primary) data[primary] = data._id
-    if (key !== '_id') data.key = value
+    const data = await cursor.toArray()
+    for (const item of data) item[primary] = item._id
     return data
   },
 
-  async create(table, data) {
-    const { primary, incremental } = MongoDatabase.tables[table] || {}
+  async create(table, data: any) {
+    const { primary, type } = MongoDatabase.tables[table]
     const copy = { ...data }
-    if (incremental) {
+    if (type === 'incremental') {
       const [latest] = await this.db.collection(table).find().sort('_id', -1).limit(1).toArray()
-      copy['_id'] = latest ? latest._id + 1 : 1
-    } else if (primary) {
+      copy['_id'] = data[primary] = latest ? latest._id + 1 : 1
+    } else {
       copy['_id'] = copy[primary]
       delete copy[primary]
     }
     await this.db.collection(table).insertOne(copy)
-    if (primary) data[primary] = copy['_id']
-    return data as any
+    return data
   },
 
   async remove(table, key, value) {
-    const { primary } = MongoDatabase.tables[table] || {}
+    const { primary } = MongoDatabase.tables[table]
     if (key === primary) key = '_id'
-    await this.db.collection(table).deleteOne({ [key]: value })
+    await this.db.collection(table).deleteMany({ [key]: { $in: value } })
+  },
+
+  async update(table, data: any[]) {
+    const { primary } = MongoDatabase.tables[table]
+    const tasks: Promise<any>[] = []
+    const col = this.db.collection(table)
+    for (const item of data) {
+      tasks.push(col.updateOne({ _id: data[primary] }, { $set: omit(item, [primary]) }))
+    }
+    await Promise.all(tasks)
   },
 
   async getUser(type, id, fields = User.fields) {

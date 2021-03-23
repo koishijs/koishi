@@ -1,6 +1,7 @@
 import MysqlDatabase, { Config } from './database'
 import { User, Channel, Database, Context } from 'koishi-core'
 import { difference } from 'koishi-utils'
+import { OkPacket } from 'mysql'
 
 export * from './database'
 export default MysqlDatabase
@@ -18,13 +19,35 @@ declare module 'koishi-core' {
 }
 
 Database.extend(MysqlDatabase, {
-  async get(table, key, id, fields) {
-    const [data] = await this.select(table, fields, '?? = ?', [key, id])
-    return data
+  async get(table, key, values, fields) {
+    if (!values.length) return []
+    return this.select(table, fields, this.$in(table, key, values))
   },
 
-  async remove(table, key, id) {
-    await this.query('DELETE FROM ?? WHERE ?? = ?', [table, key, id])
+  async remove(table, key, value) {
+    if (!value.length) return
+    await this.query('DELETE FROM ?? WHERE ' + this.$in(table, key, value), [table])
+  },
+
+  async create(table, data) {
+    const keys = Object.keys(data)
+    if (!keys.length) return
+    const header = await this.query<OkPacket>(
+      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
+      [table, ...this.formatValues(table, data, keys)],
+    )
+    return { ...data, id: header.insertId } as any
+  },
+
+  async update(table, data) {
+    if (!data.length) return
+    const keys = Object.keys(data[0])
+    const placeholder = `(${keys.map(() => '?').join(', ')})`
+    await this.query(
+      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES ${data.map(() => placeholder).join(', ')}
+      ON DUPLICATE KEY UPDATE ${keys.filter(key => key !== 'id').map(key => `\`${key}\` = VALUES(\`${key}\`)`).join(', ')}`,
+      [table, ...[].concat(...data.map(data => this.formatValues(table, data, keys)))],
+    )
   },
 
   async getUser(type, id, _fields) {
