@@ -73,10 +73,6 @@ Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
   })
 })
 
-Database.extend('koishi-plugin-mongo', ({ tables }) => {
-  tables.subscribe = { primary: 'id', type: 'incremental' }
-})
-
 Database.extend('koishi-plugin-mongo', {
   async getSubscribes(ids, keys = subscribeKeys) {
     if (!ids) return this.db.collection('subscribe').find().toArray()

@@ -84,7 +84,7 @@ Database.extend(MongoDatabase, ({ tables }) => {
 Database.extend(MongoDatabase, {
   async get(table, key, value, fields) {
     if (!value.length) return []
-    const { primary } = MongoDatabase.tables[table]
+    const { primary } = this.getConfig(table)
     if (key === primary) key = '_id'
     let cursor = this.db.collection(table).find({ [key]: { $in: value } })
     if (fields) cursor = cursor.project(projection(fields))
@@ -94,14 +94,14 @@ Database.extend(MongoDatabase, {
   },
 
   async create(table, data: any) {
-    const { primary, type } = MongoDatabase.tables[table]
+    const { primary, type } = this.getConfig(table)
     const copy = { ...data }
-    if (type === 'incremental') {
-      const [latest] = await this.db.collection(table).find().sort('_id', -1).limit(1).toArray()
-      copy['_id'] = data[primary] = latest ? latest._id + 1 : 1
-    } else {
+    if (copy[primary]) {
       copy['_id'] = copy[primary]
       delete copy[primary]
+    } else if (type === 'incremental') {
+      const [latest] = await this.db.collection(table).find().sort('_id', -1).limit(1).toArray()
+      copy['_id'] = data[primary] = latest ? latest._id + 1 : 1
     }
     await this.db.collection(table).insertOne(copy)
     return data
@@ -109,17 +109,18 @@ Database.extend(MongoDatabase, {
 
   async remove(table, key, value) {
     if (!value.length) return
-    const { primary } = MongoDatabase.tables[table]
+    const { primary } = this.getConfig(table)
     if (key === primary) key = '_id'
     await this.db.collection(table).deleteMany({ [key]: { $in: value } })
   },
 
-  async update(table, data: any[]) {
+  async update(table, data: any[], key: string) {
     if (!data.length) return
-    const { primary } = MongoDatabase.tables[table]
+    const { primary } = this.getConfig(table)
+    if (!key || key === primary) key = '_id'
     const bulk = this.db.collection(table).initializeUnorderedBulkOp()
     for (const item of data) {
-      bulk.find({ _id: data[primary] }).updateOne({ $set: omit(item, [primary]) })
+      bulk.find({ [key]: data[primary] }).updateOne({ $set: omit(item, [primary]) })
     }
     await bulk.execute()
   },

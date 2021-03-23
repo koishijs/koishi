@@ -31,7 +31,3 @@ Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
     session: new Domain.Json(),
   })
 })
-
-Database.extend('koishi-plugin-mongo', ({ tables }) => {
-  tables.schedule = { primary: 'id', type: 'incremental' }
-})

@@ -71,6 +71,14 @@ export class MongoDatabase {
     return this.db.collection(name)
   }
 
+  getConfig<T extends TableType>(name: T): TableConfig<Tables[T]> {
+    return {
+      primary: 'id',
+      type: 'incremental',
+      ...MongoDatabase.tables[name],
+    }
+  }
+
   stop() {
     return this.client.close()
   }

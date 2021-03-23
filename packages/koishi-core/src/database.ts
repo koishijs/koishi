@@ -93,7 +93,7 @@ type TableIndex<T extends TableType> = IndexKeys<Tables[T], string | number>
 export interface Database {
   get<T extends TableType, K extends TableIndex<T>, F extends string & keyof Tables[T]>(table: T, key: K, value: Tables[T][K][], fields?: readonly F[]): Promise<Pick<Tables[T], F>[]>
   create<T extends TableType>(table: T, data: Partial<Tables[T]>): Promise<Tables[T]>
-  update<T extends TableType>(table: T, data: Partial<Tables[T]>[]): Promise<void>
+  update<T extends TableType>(table: T, data: Partial<Tables[T]>[], key?: TableIndex<T>): Promise<void>
   remove<T extends TableType, K extends TableIndex<T>>(table: T, key: K, value: Tables[T][K][]): Promise<void>
 
   getUser<K extends User.Field, T extends User.Index>(type: T, id: string, fields?: readonly K[]): Promise<Pick<User, K | T>>
