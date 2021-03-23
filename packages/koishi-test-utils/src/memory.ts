@@ -31,10 +31,7 @@ export class MemoryDatabase {
 
   memory = this
 
-  static tables: { [K in TableType]?: TableConfig<Tables[K]> } = {
-    user: { primary: 'id' },
-    channel: { primary: 'id' },
-  }
+  static tables: { [K in TableType]?: TableConfig<Tables[K]> } = {}
 
   constructor(public app: App, public config: MemoryConfig) {}
 
@@ -62,9 +59,9 @@ Database.extend(MemoryDatabase, {
 
   async create(table, data: any) {
     const store = this.$table(table)
-    const { primary } = MemoryDatabase.tables[table]
+    const { primary = 'id' } = MemoryDatabase.tables[table] || {}
     if (!data[primary]) {
-      const max = store.length ? Math.max(...store.map(row => row[primary])) : 0
+      const max = store.length ? Math.max(...store.map(row => +row[primary])) : 0
       data[primary] = max + 1
     }
     store.push(data)
@@ -111,10 +108,11 @@ Database.extend(MemoryDatabase, {
     const table = this.$table('user')
     const index = table.findIndex(row => row[type] === id)
     if (index >= 0) return
-    this.create('user', {
+    const user = await this.create('user', {
       ...User.create(type, id),
       ...clone(data),
     })
+    user.id = '' + user.id
   },
 
   initUser(id, authority = 1) {

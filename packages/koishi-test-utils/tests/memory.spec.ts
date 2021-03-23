@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { Database } from 'koishi-core'
-import MemoryDatabase, { testDatabase, App } from 'koishi-test-utils'
+import { testDatabase, App } from 'koishi-test-utils'
 
 declare module 'koishi-core' {
   interface Database {
@@ -19,11 +19,7 @@ interface FooData {
   bar: string
 }
 
-Database.extend(MemoryDatabase, ({ tables }) => {
-  tables.foo = { primary: 'id' }
-})
-
-Database.extend(MemoryDatabase, {
+Database.extend('koishi-test-utils', {
   async createFoo(data: FooData) {
     return this.create('foo', data)
   },
