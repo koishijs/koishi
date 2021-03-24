@@ -3,22 +3,28 @@
 
 import { createHmac } from 'crypto'
 import { encode } from 'querystring'
-import { Context, camelize, Time, Random, sanitize } from 'koishi-core'
-import { CommonPayload, addListeners, defaultEvents } from './events'
+import { Context, camelize, Time, Random, sanitize, Logger } from 'koishi-core'
+import { CommonPayload, addListeners, defaultEvents, EventConfig } from './events'
 import { Config, GitHub, ReplyHandler, ReplySession, EventData } from './server'
+import axios from 'axios'
 
 export * from './server'
 
+const logger = new Logger('github')
+
 const defaultOptions: Config = {
-  secret: '',
+  path: '/github',
   messagePrefix: '[GitHub] ',
   replyTimeout: Time.hour,
   repos: [],
-  events: {},
 }
 
-function authorize(ctx: Context, config: Config) {
-  const { appId, redirect } = config
+interface RuntimeConfig extends Config {
+  subscriptions: Record<string, Record<string, EventConfig>>
+}
+
+function authorize(ctx: Context, config: RuntimeConfig) {
+  const { appId, redirect, subscriptions } = config
   const { app, database } = ctx
 
   const tokens: Record<string, string> = {}
@@ -59,6 +65,7 @@ function authorize(ctx: Context, config: Config) {
     .userFields(['ghAccessToken', 'ghRefreshToken'])
     .option('add', '-a  监听一个新的仓库')
     .option('delete', '-d  移除已监听的仓库')
+    .option('subscribe', '-s  添加完成后更新到订阅', { hidden: true })
     .action(async ({ session, options }, name) => {
       if (options.add || options.delete) {
         if (!name) return '请输入仓库名。'
@@ -72,19 +79,43 @@ function authorize(ctx: Context, config: Config) {
         if (options.add) {
           if (repo) return `已经添加过仓库 ${name}。`
           const secret = Random.uuid()
-          const { id } = await ctx.app.github.request(url, 'POST', session, {
-            events: ['*'],
-            config: {
-              secret,
-              url: app.options.selfUrl + config.path + '/webhook',
-            },
-          })
-          await ctx.database.create('github', { name, id, secret })
-          return '添加仓库成功！'
+          let data: any
+          try {
+            data = await ctx.app.github.request('POST', url, session, {
+              events: ['*'],
+              config: {
+                secret,
+                url: app.options.selfUrl + config.path + '/webhook',
+              },
+            })
+          } catch (err) {
+            if (!axios.isAxiosError(err)) throw err
+            if (err.response?.status === 404) {
+              return '仓库不存在或您无权访问。'
+            } else if (err.response?.status === 403) {
+              return '第三方访问受限，请尝试授权此应用。\nhttps://docs.github.com/articles/restricting-access-to-your-organization-s-data/'
+            } else {
+              logger.warn(err)
+              return '由于未知原因添加仓库失败。'
+            }
+          }
+          await ctx.database.create('github', { name, id: data.id, secret })
+          if (!options.subscribe) return '添加仓库成功！'
+          return session.execute({
+            name: 'github',
+            args: [name],
+            options: { add: true },
+          }, true)
         } else {
-          const [repo] = await ctx.database.get('github', [name])
           if (!repo) return `尚未添加过仓库 ${name}。`
-          await ctx.app.github.request(`${url}/${repo.id}`, 'DELETE', session)
+          try {
+            await ctx.app.github.request('DELETE', `${url}/${repo.id}`, session)
+          } catch (err) {
+            if (!axios.isAxiosError(err)) throw err
+            logger.warn(err)
+            return '移除仓库失败。'
+          }
+          await ctx.database.remove('github', [name])
           return '移除仓库成功！'
         }
       }
@@ -93,6 +124,17 @@ function authorize(ctx: Context, config: Config) {
       if (!repos.length) return '当前没有监听的仓库。'
       return repos.map(repo => repo.name).join('\n')
     })
+
+  function subscribe(repo: string, id: string, meta: EventConfig) {
+    (subscriptions[repo] ||= {})[id] = meta
+  }
+
+  function unsubscribe(repo: string, id: string) {
+    delete subscriptions[repo][id]
+    if (!Object.keys(subscriptions[repo]).length) {
+      delete subscriptions[repo]
+    }
+  }
 
   ctx.command('github [name]')
     .channelFields(['githubWebhooks'])
@@ -111,34 +153,63 @@ function authorize(ctx: Context, config: Config) {
         if (!session.channel) return '当前不是群聊上下文。'
         if (!name) return '请输入仓库名。'
         if (!/^[\w-]+\/[\w-]+$/.test(name)) return '请输入正确的仓库名。'
-        const [repo] = await ctx.database.get('github', [name])
-        if (!repo) return `尚未添加过仓库 ${name}。`
 
         const webhooks = session.channel.githubWebhooks
         if (options.add) {
           if (webhooks[name]) return `已经在当前频道订阅过仓库 ${name}。`
+          const [repo] = await ctx.database.get('github', [name])
+          if (!repo) {
+            const dispose = session.middleware(({ content }, next) => {
+              dispose()
+              content = content.trim()
+              if (content && content !== '.' && content !== '。') return next()
+              return session.execute({
+                name: 'github.repos',
+                args: [name],
+                options: { add: true, subscribe: true },
+              })
+            })
+            return `尚未添加过仓库 ${name}。发送空行或句号以立即添加并订阅该仓库。`
+          }
           webhooks[name] = {}
+          await session.channel._update()
+          subscribe(name, session.cid, {})
           return '添加订阅成功！'
         } else if (options.delete) {
           if (!webhooks[name]) return `尚未在当前频道订阅过仓库 ${name}。`
           delete webhooks[name]
+          await session.channel._update()
+          unsubscribe(name, session.cid)
           return '移除订阅成功！'
         }
       }
     })
+
+  ctx.on('connect', async () => {
+    const channels = await ctx.database.getAssignedChannels(['id', 'githubWebhooks'])
+    for (const channel of channels) {
+      for (const repo in channel.githubWebhooks) {
+        subscribe(repo, channel.id, channel.githubWebhooks[repo])
+      }
+    }
+  })
 }
 
 export const name = 'github'
 
-export function apply(ctx: Context, config: Config = {}) {
-  config = { ...defaultOptions, ...config }
-  config.path = sanitize(config.path || '/github')
-  const { app } = ctx
+export function apply(ctx: Context, rawConfig: Config = {}) {
+  const config: RuntimeConfig = {
+    ...defaultOptions,
+    ...rawConfig,
+    subscriptions: {},
+  }
+  config.path = sanitize(config.path)
 
+  const { app } = ctx
   const github = app.github = new GitHub(app, config)
 
   ctx.command('github', 'GitHub 相关功能').alias('gh')
-    .action(({ session }) => session.execute('help github'))
+    .action(({ session }) => session.execute('help github', true))
 
   ctx.command('github.recent', '查看最近的通知')
     .action(async () => {
@@ -152,6 +223,12 @@ export function apply(ctx: Context, config: Config = {}) {
 
   if (ctx.database) {
     ctx.plugin(authorize, config)
+  } else {
+    config.repos.forEach(({ name, channels }) => {
+      config.subscriptions[name] = Array.isArray(channels)
+        ? Object.fromEntries(channels.map(id => [id, {}]))
+        : channels
+    })
   }
 
   const reactions = ['+1', '-1', 'laugh', 'confused', 'heart', 'hooray', 'rocket', 'eyes']
@@ -223,31 +300,32 @@ export function apply(ctx: Context, config: Config = {}) {
 
   addListeners((event, handler) => {
     const base = camelize(event.split('/', 1)[0])
-    app.on(`github/${event}` as any, async (payload: CommonPayload) => {
-      // step 1: filter repository
-      const groupIds = config.repos[payload.repository.full_name]
-      if (!groupIds) return
+    ctx.on(`github/${event}` as any, async (payload: CommonPayload) => {
+      // step 1: filter event
+      const repoConfig = config.subscriptions[payload.repository.full_name] || {}
+      const targets = Object.keys(repoConfig).filter((id) => {
+        const baseConfig = repoConfig[id][base] || {}
+        if (baseConfig === false) return
+        const action = camelize(payload.action)
+        if (action && baseConfig !== true) {
+          const actionConfig = baseConfig[action]
+          if (actionConfig === false) return
+          if (actionConfig !== true && !(defaultEvents[base] || {})[action]) return
+        }
+        return true
+      })
+      if (!targets.length) return
 
-      // step 2: filter event
-      const baseConfig = config.events[base] || {}
-      if (baseConfig === false) return
-      const action = camelize(payload.action)
-      if (action && baseConfig !== true) {
-        const actionConfig = baseConfig[action]
-        if (actionConfig === false) return
-        if (actionConfig !== true && !(defaultEvents[base] || {})[action]) return
-      }
-
-      // step 3: handle event
+      // step 2: handle event
       const result = handler(payload as any)
       if (!result) return
 
-      // step 4: broadcast message
+      // step 3: broadcast message
       app.logger('github').debug('broadcast', result[0].split('\n', 1)[0])
-      const messageIds = await ctx.broadcast(groupIds, config.messagePrefix + result[0])
+      const messageIds = await ctx.broadcast(targets, config.messagePrefix + result[0])
       const hexIds = messageIds.map(id => id.slice(0, 6))
 
-      // step 5: save message ids for interactions
+      // step 4: save message ids for interactions
       for (const id of hexIds) {
         history[id] = result
       }
