@@ -3,7 +3,7 @@
 
 import { createHmac } from 'crypto'
 import { encode } from 'querystring'
-import { Context, camelize, Time, Random } from 'koishi-core'
+import { Context, camelize, Time, Random, sanitize } from 'koishi-core'
 import { CommonPayload, addListeners, defaultEvents } from './events'
 import { Config, GitHub, ReplyHandler, ReplySession, EventData } from './server'
 
@@ -12,33 +12,26 @@ export * from './server'
 const defaultOptions: Config = {
   secret: '',
   messagePrefix: '[GitHub] ',
-  webhook: '/github/webhook',
-  authorize: '/github/authorize',
   replyTimeout: Time.hour,
   repos: [],
   events: {},
 }
 
-export const name = 'github'
-
-export function apply(ctx: Context, config: Config = {}) {
-  config = { ...defaultOptions, ...config }
+function authorize(ctx: Context, config: Config) {
+  const { appId, redirect } = config
   const { app, database } = ctx
-  const { appId, redirect, webhook } = config
-
-  const github = new GitHub(app, config)
-  defineProperty(app, 'github', github)
 
   const tokens: Record<string, string> = {}
+  const path = config.path + '/authorize'
 
-  ctx.router.get(config.authorize, async (ctx) => {
+  ctx.router.get(path, async (ctx) => {
     const token = ctx.query.state
     if (!token || Array.isArray(token)) return ctx.status = 400
     const id = tokens[token]
     if (!id) return ctx.status = 403
     delete tokens[token]
     const { code, state } = ctx.query
-    const data = await github.getTokens({ code, state, redirect_uri: redirect })
+    const data = await app.github.getTokens({ code, state, redirect_uri: redirect })
     await database.setUser('id', id, {
       ghAccessToken: data.access_token,
       ghRefreshToken: data.refresh_token,
@@ -46,9 +39,8 @@ export function apply(ctx: Context, config: Config = {}) {
     return ctx.status = 200
   })
 
-  ctx.command('github', 'GitHub 相关功能')
-
   ctx.command('github.authorize <user>', 'GitHub 授权')
+    .alias('github.auth')
     .userFields(['id'])
     .action(async ({ session }, user) => {
       if (!user) return '请输入用户名。'
@@ -64,6 +56,57 @@ export function apply(ctx: Context, config: Config = {}) {
       return '请点击下面的链接继续操作：\n' + url
     })
 
+  ctx.command('github.repos [name]', 'GitHub 仓库')
+    .userFields(['ghAccessToken', 'ghRefreshToken'])
+    .option('add', '-a [name]  添加仓库')
+    .option('delete', '-d [name]  移除仓库')
+    .action(async ({ session, options }, name) => {
+      if (options.add || options.delete) {
+        if (!name) return '请输入仓库名。'
+        if (!/^\w+\/\w+$/.test(name)) return '请输入正确的仓库名。'
+        if (!session.user.ghAccessToken) {
+          return ctx.app.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
+        }
+
+        const url = `https://api.github.com/repos/${name}/hooks`
+        const [repo] = await ctx.database.get('github', 'name', [name])
+        if (options.add) {
+          if (repo) return `已添加过仓库 ${name}。`
+          const secret = Random.uuid()
+          const id = await ctx.app.github.request(url, 'POST', session, {
+            events: ['*'],
+            config: {
+              secret,
+              url: app.options.selfUrl + path,
+            },
+          })
+          await ctx.database.create('github', { name, id, secret })
+          return '添加仓库成功！'
+        } else {
+          const [repo] = await ctx.database.get('github', 'name', [name])
+          if (!repo) return `未添加过仓库 ${name}。`
+          await ctx.app.github.request(`${url}/${repo.id}`, 'DELETE', session)
+          return '移除仓库成功！'
+        }
+      }
+
+      const repos = await ctx.database.getAll('github')
+      if (!repos.length) return '当前没有监听的仓库。'
+      return repos.map(repo => repo.name).join('\n')
+    })
+}
+
+export const name = 'github'
+
+export function apply(ctx: Context, config: Config = {}) {
+  config = { ...defaultOptions, ...config }
+  config.path = sanitize(config.path || '/github')
+  const { app } = ctx
+
+  const github = app.github = new GitHub(app, config)
+
+  ctx.command('github', 'GitHub 相关功能').alias('gh')
+
   ctx.command('github.recent', '查看最近的通知')
     .action(async () => {
       const output = Object.entries(history).slice(0, 10).map(([messageId, [message]]) => {
@@ -74,19 +117,36 @@ export function apply(ctx: Context, config: Config = {}) {
       return output.join('\n')
     })
 
+  if (ctx.database) {
+    ctx.plugin(authorize, config)
+  }
+
   const reactions = ['+1', '-1', 'laugh', 'confused', 'heart', 'hooray', 'rocket', 'eyes']
 
   const history: Record<string, EventData> = {}
 
-  ctx.router.post(webhook, (ctx) => {
+  async function getSecret(name: string) {
+    if (!ctx.database) return config.repos.find(repo => repo.name === name)?.secret
+    const [data] = await ctx.database.get('github', 'name', [name])
+    return data.secret
+  }
+
+  function safeParse(source: string) {
+    try {
+      return JSON.parse(source)
+    } catch {}
+  }
+
+  ctx.router.post(config.path + '/webhook', async (ctx) => {
     const event = ctx.headers['x-github-event']
     const signature = ctx.headers['x-hub-signature-256']
     const id = ctx.headers['x-github-delivery']
-    if (!ctx.request.body.payload) return ctx.status = 400
-    const payload = JSON.parse(ctx.request.body.payload)
+    const payload = safeParse(ctx.request.body.payload)
+    if (!payload) return ctx.status = 400
     const fullEvent = payload.action ? `${event}/${payload.action}` : event
     app.logger('github').debug('received %s (%s)', fullEvent, id)
-    if (signature !== `sha256=${createHmac('sha256', github.config.secret).update(ctx.request.rawBody).digest('hex')}`) {
+    const secret = await getSecret(payload.repository.full_name)
+    if (signature !== `sha256=${createHmac('sha256', secret).update(ctx.request.rawBody).digest('hex')}`) {
       return ctx.status = 403
     }
     ctx.status = 200

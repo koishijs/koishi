@@ -53,6 +53,7 @@ Database.extend('koishi-plugin-mongo', ({ tables }) => {
 interface Repository {
   name: string
   secret: string
+  id?: number
 }
 
 interface RepoConfig extends Repository {
@@ -60,9 +61,8 @@ interface RepoConfig extends Repository {
 }
 
 export interface Config {
+  path?: string
   secret?: string
-  webhook?: string
-  authorize?: string
   messagePrefix?: string
   appId?: string
   appSecret?: string
@@ -102,10 +102,12 @@ export class GitHub {
     return data
   }
 
-  private async _request(url: string, method: Method, session: ReplySession, body: any, headers?: Record<string, any>) {
-    logger.debug(method, url, body)
-    await axios.post(url, body, {
+  private async _request(url: string, method: Method, session: ReplySession, data?: any, headers?: Record<string, any>) {
+    logger.debug(method, url, data)
+    const response = await axios(url, {
       ...this.app.options.axiosConfig,
+      data,
+      method,
       timeout: this.config.requestTimeout,
       headers: {
         accept: 'application/vnd.github.v3+json',
@@ -113,16 +115,17 @@ export class GitHub {
         ...headers,
       },
     })
+    return response.data
   }
 
   async authorize(session: Session, message: string) {
     await session.send(message)
     const name = await session.prompt(this.config.promptTimeout)
     if (!name) return session.send('输入超时。')
-    return session.execute({ name: 'github.authorize', args: [name] })
+    await session.execute({ name: 'github.authorize', args: [name] })
   }
 
-  async request(url: string, method: Method, session: ReplySession, body: any, headers?: Record<string, any>) {
+  async request(url: string, method: Method, session: ReplySession, body?: any, headers?: Record<string, any>) {
     if (!session.user.ghAccessToken) {
       return this.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
     }
@@ -149,7 +152,7 @@ export class GitHub {
     }
 
     try {
-      await this._request(url, method, session, body, headers)
+      return await this._request(url, method, session, body, headers)
     } catch (error) {
       logger.warn(error)
       return session.send('发送失败。')
