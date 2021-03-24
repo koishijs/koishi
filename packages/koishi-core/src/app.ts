@@ -1,4 +1,4 @@
-import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop, template, merge } from 'koishi-utils'
+import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop, template, trimSlash, merge } from 'koishi-utils'
 import { Context, Middleware, NextFunction, Plugin } from './context'
 import { Argv } from './parser'
 import { BotOptions, Adapter, createBots } from './adapter'
@@ -35,6 +35,7 @@ export interface AppOptions extends BotOptions {
   channelCacheLength?: number
   channelCacheAge?: number
   minSimilarity?: number
+  selfUrl?: string
   axiosConfig?: AxiosRequestConfig
 }
 
@@ -83,6 +84,7 @@ export class App extends Context {
   constructor(options: AppOptions = {}) {
     super(() => true)
     if (!options.bots) options.bots = [options]
+    if (options.selfUrl) options.selfUrl = trimSlash(options.selfUrl)
     this.options = merge(options, App.defaultConfig)
     this.registry.set(null, {
       parent: null,
