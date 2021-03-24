@@ -82,6 +82,15 @@ Database.extend(MongoDatabase, ({ tables }) => {
 })
 
 Database.extend(MongoDatabase, {
+  async getAll(table, fields) {
+    const { primary } = this.getConfig(table)
+    let cursor = this.db.collection(table).find()
+    if (fields) cursor = cursor.project(projection(fields))
+    const data = await cursor.toArray()
+    for (const item of data) item[primary] = item._id
+    return data
+  },
+
   async get(table, key, value, fields) {
     if (!value.length) return []
     const { primary } = this.getConfig(table)

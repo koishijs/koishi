@@ -22,9 +22,8 @@ function authorize(ctx: Context, config: Config) {
   const { app, database } = ctx
 
   const tokens: Record<string, string> = {}
-  const path = config.path + '/authorize'
 
-  ctx.router.get(path, async (ctx) => {
+  ctx.router.get(config.path + '/authorize', async (ctx) => {
     const token = ctx.query.state
     if (!token || Array.isArray(token)) return ctx.status = 400
     const id = tokens[token]
@@ -58,12 +57,12 @@ function authorize(ctx: Context, config: Config) {
 
   ctx.command('github.repos [name]', 'GitHub 仓库')
     .userFields(['ghAccessToken', 'ghRefreshToken'])
-    .option('add', '-a [name]  添加仓库')
-    .option('delete', '-d [name]  移除仓库')
+    .option('add', '-a  监听一个新的仓库')
+    .option('delete', '-d  移除已监听的仓库')
     .action(async ({ session, options }, name) => {
       if (options.add || options.delete) {
         if (!name) return '请输入仓库名。'
-        if (!/^\w+\/\w+$/.test(name)) return '请输入正确的仓库名。'
+        if (!/^[\w-]+\/[\w-]+$/.test(name)) return '请输入正确的仓库名。'
         if (!session.user.ghAccessToken) {
           return ctx.app.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
         }
@@ -71,20 +70,20 @@ function authorize(ctx: Context, config: Config) {
         const url = `https://api.github.com/repos/${name}/hooks`
         const [repo] = await ctx.database.get('github', 'name', [name])
         if (options.add) {
-          if (repo) return `已添加过仓库 ${name}。`
+          if (repo) return `已经添加过仓库 ${name}。`
           const secret = Random.uuid()
-          const id = await ctx.app.github.request(url, 'POST', session, {
+          const { id } = await ctx.app.github.request(url, 'POST', session, {
             events: ['*'],
             config: {
               secret,
-              url: app.options.selfUrl + path,
+              url: app.options.selfUrl + config.path + '/webhook',
             },
           })
           await ctx.database.create('github', { name, id, secret })
           return '添加仓库成功！'
         } else {
           const [repo] = await ctx.database.get('github', 'name', [name])
-          if (!repo) return `未添加过仓库 ${name}。`
+          if (!repo) return `尚未添加过仓库 ${name}。`
           await ctx.app.github.request(`${url}/${repo.id}`, 'DELETE', session)
           return '移除仓库成功！'
         }
@@ -93,6 +92,39 @@ function authorize(ctx: Context, config: Config) {
       const repos = await ctx.database.getAll('github')
       if (!repos.length) return '当前没有监听的仓库。'
       return repos.map(repo => repo.name).join('\n')
+    })
+
+  ctx.command('github [name]')
+    .channelFields(['githubWebhooks'])
+    .option('list', '-l  查看当前频道订阅的仓库列表')
+    .option('add', '-a  为当前频道添加仓库订阅')
+    .option('delete', '-d  从当前频道移除仓库订阅')
+    .action(async ({ session, options }, name) => {
+      if (options.list) {
+        if (!session.channel) return '当前不是群聊上下文。'
+        const names = Object.keys(session.channel.githubWebhooks)
+        if (!names.length) return '当前没有订阅的仓库。'
+        return names.join('\n')
+      }
+
+      if (options.add || options.delete) {
+        if (!session.channel) return '当前不是群聊上下文。'
+        if (!name) return '请输入仓库名。'
+        if (!/^[\w-]+\/[\w-]+$/.test(name)) return '请输入正确的仓库名。'
+        const [repo] = await ctx.database.get('github', 'name', [name])
+        if (!repo) return `尚未添加过仓库 ${name}。`
+
+        const webhooks = session.channel.githubWebhooks
+        if (options.add) {
+          if (webhooks[name]) return `已经在当前频道订阅过仓库 ${name}。`
+          webhooks[name] = {}
+          return '添加订阅成功！'
+        } else if (options.delete) {
+          if (!webhooks[name]) return `尚未在当前频道订阅过仓库 ${name}。`
+          delete webhooks[name]
+          return '移除订阅成功！'
+        }
+      }
     })
 }
 
@@ -106,6 +138,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const github = app.github = new GitHub(app, config)
 
   ctx.command('github', 'GitHub 相关功能').alias('gh')
+    .action(({ session }) => session.execute('help github'))
 
   ctx.command('github.recent', '查看最近的通知')
     .action(async () => {
@@ -128,7 +161,7 @@ export function apply(ctx: Context, config: Config = {}) {
   async function getSecret(name: string) {
     if (!ctx.database) return config.repos.find(repo => repo.name === name)?.secret
     const [data] = await ctx.database.get('github', 'name', [name])
-    return data.secret
+    return data?.secret
   }
 
   function safeParse(source: string) {
@@ -146,6 +179,9 @@ export function apply(ctx: Context, config: Config = {}) {
     const fullEvent = payload.action ? `${event}/${payload.action}` : event
     app.logger('github').debug('received %s (%s)', fullEvent, id)
     const secret = await getSecret(payload.repository.full_name)
+    // 202：服务器已接受请求，但尚未处理
+    // 在 github.repos -a 时确保获得一个 2xx 的状态码
+    if (!secret) return ctx.status = 202
     if (signature !== `sha256=${createHmac('sha256', secret).update(ctx.request.rawBody).digest('hex')}`) {
       return ctx.status = 403
     }

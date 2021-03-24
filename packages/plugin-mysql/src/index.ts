@@ -19,6 +19,10 @@ declare module 'koishi-core' {
 }
 
 Database.extend(MysqlDatabase, {
+  async getAll(table, fields) {
+    return this.select(table, fields)
+  },
+
   async get(table, key, values, fields) {
     if (!values.length) return []
     return this.select(table, fields, this.$in(table, key, values))
