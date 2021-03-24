@@ -70,7 +70,6 @@ export interface Config {
   promptTimeout?: number
   replyTimeout?: number
   requestTimeout?: number
-  repos?: RepoConfig[]
 }
 
 export interface OAuth {

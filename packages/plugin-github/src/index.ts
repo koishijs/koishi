@@ -16,16 +16,31 @@ const defaultOptions: Config = {
   path: '/github',
   messagePrefix: '[GitHub] ',
   replyTimeout: Time.hour,
-  repos: [],
 }
 
-interface RuntimeConfig extends Config {
-  subscriptions: Record<string, Record<string, EventConfig>>
-}
+export const name = 'github'
 
-function authorize(ctx: Context, config: RuntimeConfig) {
-  const { appId, redirect, subscriptions } = config
+export function apply(ctx: Context, config: Config = {}) {
+  config = { ...defaultOptions, ...config }
+  config.path = sanitize(config.path)
+
   const { app, database } = ctx
+  const { appId, redirect } = config
+  const subscriptions: Record<string, Record<string, EventConfig>> = {}
+  const github = app.github = new GitHub(app, config)
+
+  ctx.command('github', 'GitHub 相关功能').alias('gh')
+    .action(({ session }) => session.execute('help github', true))
+
+  ctx.command('github.recent', '查看最近的通知')
+    .action(async () => {
+      const output = Object.entries(history).slice(0, 10).map(([messageId, [message]]) => {
+        const [brief] = message.split('\n', 1)
+        return `${messageId}. ${brief}`
+      })
+      if (!output.length) return '最近没有 GitHub 通知。'
+      return output.join('\n')
+    })
 
   const tokens: Record<string, string> = {}
 
@@ -74,6 +89,7 @@ function authorize(ctx: Context, config: RuntimeConfig) {
           return ctx.app.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
         }
 
+        name = name.toLowerCase()
         const url = `https://api.github.com/repos/${name}/hooks`
         const [repo] = await ctx.database.get('github', [name])
         if (options.add) {
@@ -154,6 +170,7 @@ function authorize(ctx: Context, config: RuntimeConfig) {
         if (!name) return '请输入仓库名。'
         if (!/^[\w-]+\/[\w-]+$/.test(name)) return '请输入正确的仓库名。'
 
+        name = name.toLowerCase()
         const webhooks = session.channel.githubWebhooks
         if (options.add) {
           if (webhooks[name]) return `已经在当前频道订阅过仓库 ${name}。`
@@ -187,59 +204,16 @@ function authorize(ctx: Context, config: RuntimeConfig) {
 
   ctx.on('connect', async () => {
     const channels = await ctx.database.getAssignedChannels(['id', 'githubWebhooks'])
-    for (const channel of channels) {
-      for (const repo in channel.githubWebhooks) {
-        subscribe(repo, channel.id, channel.githubWebhooks[repo])
+    for (const { id, githubWebhooks } of channels) {
+      for (const repo in githubWebhooks) {
+        subscribe(repo, id, githubWebhooks[repo])
       }
     }
   })
-}
-
-export const name = 'github'
-
-export function apply(ctx: Context, rawConfig: Config = {}) {
-  const config: RuntimeConfig = {
-    ...defaultOptions,
-    ...rawConfig,
-    subscriptions: {},
-  }
-  config.path = sanitize(config.path)
-
-  const { app } = ctx
-  const github = app.github = new GitHub(app, config)
-
-  ctx.command('github', 'GitHub 相关功能').alias('gh')
-    .action(({ session }) => session.execute('help github', true))
-
-  ctx.command('github.recent', '查看最近的通知')
-    .action(async () => {
-      const output = Object.entries(history).slice(0, 10).map(([messageId, [message]]) => {
-        const [brief] = message.split('\n', 1)
-        return `${messageId}. ${brief}`
-      })
-      if (!output.length) return '最近没有 GitHub 通知。'
-      return output.join('\n')
-    })
-
-  if (ctx.database) {
-    ctx.plugin(authorize, config)
-  } else {
-    config.repos.forEach(({ name, channels }) => {
-      config.subscriptions[name] = Array.isArray(channels)
-        ? Object.fromEntries(channels.map(id => [id, {}]))
-        : channels
-    })
-  }
 
   const reactions = ['+1', '-1', 'laugh', 'confused', 'heart', 'hooray', 'rocket', 'eyes']
 
   const history: Record<string, EventData> = {}
-
-  async function getSecret(name: string) {
-    if (!ctx.database) return config.repos.find(repo => repo.name === name)?.secret
-    const [data] = await ctx.database.get('github', [name])
-    return data?.secret
-  }
 
   function safeParse(source: string) {
     try {
@@ -254,12 +228,12 @@ export function apply(ctx: Context, rawConfig: Config = {}) {
     const payload = safeParse(ctx.request.body.payload)
     if (!payload) return ctx.status = 400
     const fullEvent = payload.action ? `${event}/${payload.action}` : event
-    app.logger('github').debug('received %s (%s)', fullEvent, id)
-    const secret = await getSecret(payload.repository.full_name)
+    logger.debug('received %s (%s)', fullEvent, id)
+    const [data] = await database.get('github', [payload.repository.full_name.toLowerCase()])
     // 202：服务器已接受请求，但尚未处理
     // 在 github.repos -a 时确保获得一个 2xx 的状态码
-    if (!secret) return ctx.status = 202
-    if (signature !== `sha256=${createHmac('sha256', secret).update(ctx.request.rawBody).digest('hex')}`) {
+    if (!data) return ctx.status = 202
+    if (signature !== `sha256=${createHmac('sha256', data.secret).update(ctx.request.rawBody).digest('hex')}`) {
       return ctx.status = 403
     }
     ctx.status = 200
@@ -302,7 +276,7 @@ export function apply(ctx: Context, rawConfig: Config = {}) {
     const base = camelize(event.split('/', 1)[0])
     ctx.on(`github/${event}` as any, async (payload: CommonPayload) => {
       // step 1: filter event
-      const repoConfig = config.subscriptions[payload.repository.full_name] || {}
+      const repoConfig = subscriptions[payload.repository.full_name.toLowerCase()] || {}
       const targets = Object.keys(repoConfig).filter((id) => {
         const baseConfig = repoConfig[id][base] || {}
         if (baseConfig === false) return
@@ -321,7 +295,7 @@ export function apply(ctx: Context, rawConfig: Config = {}) {
       if (!result) return
 
       // step 3: broadcast message
-      app.logger('github').debug('broadcast', result[0].split('\n', 1)[0])
+      logger.debug('broadcast', result[0].split('\n', 1)[0])
       const messageIds = await ctx.broadcast(targets, config.messagePrefix + result[0])
       const hexIds = messageIds.map(id => id.slice(0, 6))
 
