@@ -1,20 +1,16 @@
 import { App, Bot, Adapter } from 'koishi-core'
-import { Logger, assertProperty, omit } from 'koishi-utils'
+import { Logger, assertProperty, omit, trimSlash, sanitize } from 'koishi-utils'
 import { KaiheilaBot } from './bot'
 import { adaptSession } from './utils'
 
 const logger = new Logger('kaiheila')
-
-function trimSlash(source: string) {
-  return source.replace(/\/$/, '')
-}
 
 export default class HttpServer extends Adapter<'kaiheila'> {
   constructor(app: App) {
     assertProperty(app.options, 'port')
     super(app, KaiheilaBot)
     const config = this.app.options.kaiheila ||= {}
-    config.path ||= '/kaiheila'
+    config.path = sanitize(config.path || '/kaiheila')
     config.endpoint = trimSlash(config.endpoint || 'https://www.kaiheila.cn/api/v3')
   }
 

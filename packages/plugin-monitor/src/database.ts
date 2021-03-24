@@ -1,6 +1,6 @@
 import {} from 'koishi-plugin-mysql'
 import {} from 'koishi-plugin-mongo'
-import { Channel, Database } from 'koishi-core'
+import { Channel, Database, Tables } from 'koishi-core'
 import { OkPacket } from 'mysql'
 
 declare module 'koishi-core' {
@@ -16,8 +16,6 @@ declare module 'koishi-core' {
     getSubscribes(ids?: number[], keys?: SubscribeField[]): Promise<Subscribe[]>
     findSubscribe(name: string[], keys?: SubscribeField[]): Promise<Subscribe[]>
     findSubscribe(name: string, keys?: SubscribeField[]): Promise<Subscribe>
-    setSubscribe(id: number, data: Partial<Subscribe>): Promise<any>
-    createSubscribe(options: SubscribeOptions): Promise<Subscribe>
     removeSubscribe(name: string): Promise<boolean>
   }
 }
@@ -47,6 +45,8 @@ const subscribeKeys = [
   'twitCasting', 'twitCastingStatus',
 ] as SubscribeField[]
 
+Tables.extend('subscribe')
+
 Database.extend('koishi-plugin-mysql', {
   async getSubscribes(ids, keys = subscribeKeys) {
     if (!ids) return this.query('SELECT * FROM `subscribe`')
@@ -64,14 +64,6 @@ Database.extend('koishi-plugin-mysql', {
   async removeSubscribe(name) {
     const { changedRows } = await this.query<OkPacket>('DELETE FROM `subscribe` WHERE FIND_IN_SET(?, `names`)', [name])
     return !!changedRows
-  },
-
-  setSubscribe(id, data) {
-    return this.update('subscribe', id, data)
-  },
-
-  createSubscribe(options) {
-    return this.create('subscribe', options)
   },
 })
 
@@ -104,17 +96,5 @@ Database.extend('koishi-plugin-mongo', {
   async removeSubscribe(name) {
     const result = await this.db.collection('subscribe').deleteMany({ names: { $elemMatch: { $eq: name } } })
     return !!result.deletedCount
-  },
-
-  setSubscribe(_id, data) {
-    return this.db.collection('subscribe').updateOne({ _id }, { $set: data })
-  },
-
-  async createSubscribe(options) {
-    let _id = 1
-    const [latest] = await this.db.collection('subscribe').find().sort('_id', -1).limit(1).toArray()
-    if (latest) _id = latest._id + 1
-    const res = await this.db.collection('subscribe').insertOne({ _id, id: _id, ...options })
-    return { id: res.insertedId, ...options, bilibiliStatus: false, mirrativStatus: false, twitcastingStatus: false }
   },
 })

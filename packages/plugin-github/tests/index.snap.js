@@ -74,7 +74,7 @@ module.exports[`pull_request.reopened`] = `
 Storage API, fix #96`
 
 module.exports[`pull_request.requested`] = `
-[GitHub] Shigma requeted a review from Shigma on koishijs/koishi#141`
+[GitHub] Shigma requested a review from Shigma on koishijs/koishi#141`
 
 // URL: https://github.com/koishijs/koishi/pull/20#pullrequestreview-345349537
 module.exports[`pull_request_review.submitted.2`] = `

@@ -27,6 +27,7 @@ const specs = [
   'packages/plugin-common/tests/*.spec.ts',
   'packages/plugin-eval/tests/*.spec.ts',
   'packages/plugin-github/tests/*.spec.ts',
+  'packages/plugin-schedule/tests/*.spec.ts',
   'packages/plugin-teach/tests/*.spec.ts',
 ]
 

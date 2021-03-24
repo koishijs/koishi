@@ -21,8 +21,7 @@
     "@types/qrcode": "^1.4.0"
   },
   "peerDependencies": {
-    "koishi-core": "^3.3.1",
-    "koishi-utils": "^4.0.3"
+    "koishi-core": "^3.4.0"
   },
   "dependencies": {
     "axios": "^0.21.1",

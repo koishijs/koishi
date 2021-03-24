@@ -60,7 +60,7 @@ export function apply(ctx: Context) {
       const { bilibili, twitcasting, mirrativ } = options
       if (!bilibili && !twitcasting && !mirrativ) return '请提供至少一种社交账号。'
       try {
-        await ctx.database.createSubscribe({ names, bilibili, twitcasting, mirrativ })
+        await ctx.database.create('subscribe', { names, bilibili, twitcasting, mirrativ })
         return '账号添加成功。'
       } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
@@ -110,7 +110,7 @@ export function apply(ctx: Context) {
       const addList = (options.addName || '').split(',')
       const usedNames = await checkNames(addList)
       if (usedNames.length) return `名称 ${usedNames.join(', ')} 已被使用。`
-      const account = observe(data, diff => ctx.database.setSubscribe(data.id, diff), `subscribe ${data.id}`)
+      const account = observe(data, diff => ctx.database.update('subscribe', [{ id: data.id, ...diff }]), `subscribe ${data.id}`)
 
       let configUpdated = false
       for (const key of ['bilibili', 'mirrativ', 'twitcasting']) {

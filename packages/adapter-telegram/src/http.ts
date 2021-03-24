@@ -1,22 +1,22 @@
 import axios from 'axios'
 import { App, Adapter, Session } from 'koishi-core'
-import { assertProperty, camelCase, Logger, segment } from 'koishi-utils'
+import { assertProperty, camelCase, Logger, segment, trimSlash, sanitize } from 'koishi-utils'
 import { TelegramBot } from './bot'
 import * as Telegram from './types'
 
 const logger = new Logger('telegram')
 
-function trimSlash(source: string) {
-  return source.replace(/\/$/, '')
-}
-
 export default class HttpServer extends Adapter<'telegram'> {
   constructor(app: App) {
     super(app, TelegramBot)
-    const config = this.app.options.telegram ||= {}
-    config.path ||= '/telegram'
+    const config = app.options.telegram ||= {}
+    config.path = sanitize(config.path || '/telegram')
     config.endpoint = trimSlash(config.endpoint || 'https://api.telegram.org')
-    config.selfUrl = trimSlash(assertProperty(config, 'selfUrl'))
+    if (config.selfUrl) {
+      config.selfUrl = trimSlash(config.selfUrl)
+    } else {
+      config.selfUrl = assertProperty(app.options, 'selfUrl')
+    }
   }
 
   async start() {

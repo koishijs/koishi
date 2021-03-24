@@ -137,11 +137,19 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     }
   })
 
+  ctx.before('dialogue/attach-user', (state, userFields) => {
+    for (const dialogue of state.dialogues) {
+      if (dialogue.flag & Dialogue.Flag.substitute) {
+        userFields.add('id')
+      }
+    }
+  })
+
   // 触发代行者模式
   ctx.on('dialogue/before-send', async (state) => {
     const { dialogue, session } = state
     if (dialogue.flag & Dialogue.Flag.substitute && dialogue.writer && session.user.id !== dialogue.writer) {
-      const userFields = new Set<User.Field>(['id'])
+      const userFields = new Set<User.Field>(['name', 'flag'])
       ctx.app.emit(session, 'dialogue/before-attach-user', state, userFields)
       // do a little trick here
       const { platform, userId } = session

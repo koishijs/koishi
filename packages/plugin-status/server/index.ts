@@ -22,7 +22,6 @@ declare module 'koishi-core' {
 
   interface Database {
     getProfile(): Promise<Profile.Meta>
-    setChannels(data: Partial<Channel>[]): Promise<void>
     Synchronizer: new (db: Database) => Synchronizer
   }
 

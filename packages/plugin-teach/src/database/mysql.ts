@@ -30,20 +30,6 @@ Database.extend('koishi-plugin-mysql', {
     })
   },
 
-  async createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
-    dialogue = await this.create('dialogue', dialogue)
-    Dialogue.addHistory(dialogue, '添加', argv, revert)
-    return dialogue
-  },
-
-  async removeDialogues(ids: number[], argv: Dialogue.Argv, revert = false) {
-    if (!ids.length) return
-    await this.query(`DELETE FROM \`dialogue\` WHERE \`id\` IN (${ids.join(',')})`)
-    for (const id of ids) {
-      Dialogue.addHistory(argv.dialogueMap[id], '删除', argv, revert)
-    }
-  },
-
   async updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
     const data: Partial<Dialogue>[] = []
     const fields = new Set<Dialogue.Field>(['id'])
@@ -52,7 +38,6 @@ Database.extend('koishi-plugin-mysql', {
         fields.add(key as Dialogue.Field)
       }
     }
-    const temp: Record<number, Dialogue> = {}
     for (const dialogue of dialogues) {
       if (!Object.keys(dialogue._diff).length) {
         argv.skipped.push(dialogue.id)
@@ -60,19 +45,10 @@ Database.extend('koishi-plugin-mysql', {
         dialogue._diff = {}
         argv.updated.push(dialogue.id)
         data.push(pick(dialogue, fields))
-        Dialogue.addHistory(dialogue._backup, '修改', argv, false, temp)
+        Dialogue.addHistory(dialogue._backup, '修改', argv, false)
       }
     }
     await this.update('dialogue', data)
-    Object.assign(this.app.teachHistory, temp)
-  },
-
-  async revertDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {
-    const created = dialogues.filter(d => d._type === '添加')
-    const edited = dialogues.filter(d => d._type !== '添加')
-    await this.removeDialogues(created.map(d => d.id), argv, true)
-    await this.recoverDialogues(edited, argv)
-    return `问答 ${dialogues.map(d => d.id).sort((a, b) => a - b)} 已回退完成。`
   },
 
   async recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {

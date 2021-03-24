@@ -6,7 +6,7 @@ export * from './database'
 
 const logger = new Logger('schedule')
 
-function formatContext(session: Session) {
+function formatContext(session: Partial<Session>) {
   return session.subtype === 'private' ? `私聊 ${session.userId}` : `群聊 ${session.groupId}`
 }
 
@@ -20,30 +20,34 @@ export function apply(ctx: Context, config: Config = {}) {
   const { database } = ctx
   const { minInterval = Time.minute } = config
 
+  async function hasSchedule(id: number) {
+    const data = await database.get('schedule', [id])
+    return data.length
+  }
+
   async function prepareSchedule({ id, session, interval, command, time, lastCall }: Schedule) {
     const now = Date.now()
     const date = time.valueOf()
-    const { database } = session.app
 
     async function executeSchedule() {
       logger.debug('execute %d: %c', id, command)
       await session.execute(command)
       if (!lastCall || !interval) return
       lastCall = new Date()
-      await database.updateSchedule(id, { lastCall })
+      await database.update('schedule', [{ id, lastCall }])
     }
 
     if (!interval) {
       if (date < now) {
-        database.removeSchedule(id)
+        database.remove('schedule', [id])
         if (lastCall) executeSchedule()
         return
       }
 
       logger.debug('prepare %d: %c at %s', id, command, time)
       return ctx.setTimeout(async () => {
-        if (!await database.getSchedule(id)) return
-        database.removeSchedule(id)
+        if (!await hasSchedule(id)) return
+        database.remove('schedule', [id])
         executeSchedule()
       }, date - now)
     }
@@ -55,9 +59,9 @@ export function apply(ctx: Context, config: Config = {}) {
     }
 
     ctx.setTimeout(async () => {
-      if (!await database.getSchedule(id)) return
+      if (!await hasSchedule(id)) return
       const dispose = ctx.setInterval(async () => {
-        if (!await database.getSchedule(id)) return dispose()
+        if (!await hasSchedule(id)) return dispose()
         executeSchedule()
       }, interval)
       executeSchedule()
@@ -65,7 +69,7 @@ export function apply(ctx: Context, config: Config = {}) {
   }
 
   ctx.on('connect', async () => {
-    const schedules = await database.getAllSchedules()
+    const schedules = await database.get('schedule', { assignee: ctx.bots.map(bot => bot.sid) })
     schedules.forEach((schedule) => {
       const { session, assignee } = schedule
       if (!ctx.bots[assignee]) return
@@ -83,12 +87,12 @@ export function apply(ctx: Context, config: Config = {}) {
     .option('delete', '-d <id>  删除已经设置的日程')
     .action(async ({ session, options }, ...dateSegments) => {
       if (options.delete) {
-        await database.removeSchedule(options.delete)
+        await database.remove('schedule', [options.delete])
         return `日程 ${options.delete} 已删除。`
       }
 
       if (options.list) {
-        let schedules = await database.getAllSchedules(session.sid)
+        let schedules = await database.get('schedule', { assignee: [session.sid] })
         if (!options.full) {
           schedules = schedules.filter(s => session.channelId === s.session.channelId)
         }
@@ -126,7 +130,14 @@ export function apply(ctx: Context, config: Config = {}) {
         return '时间间隔过短。'
       }
 
-      const schedule = await database.createSchedule(time, interval, options.rest, session, options.ensure)
+      const schedule = await database.create('schedule', {
+        time,
+        assignee: session.sid,
+        interval,
+        command: options.rest,
+        session: session.toJSON(),
+      })
+      schedule.session = session
       prepareSchedule(schedule)
       return `日程已创建，编号为 ${schedule.id}。`
     })

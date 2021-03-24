@@ -2,14 +2,28 @@
 
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
-import { App, Session, User } from 'koishi-core'
+import { App, Channel, Database, Session, Tables, User } from 'koishi-core'
 import { segment, Logger } from 'koishi-utils'
 import {} from 'koishi-plugin-puppeteer'
+import {} from 'koishi-plugin-mysql'
+import {} from 'koishi-plugin-mongo'
 
 declare module 'koishi-core' {
+  interface App {
+    github?: GitHub
+  }
+
   interface User {
-    ghAccessToken?: string
-    ghRefreshToken?: string
+    ghAccessToken: string
+    ghRefreshToken: string
+  }
+
+  interface Channel {
+    githubWebhooks: Record<string, EventConfig>
+  }
+
+  interface Tables {
+    github: Repository
   }
 }
 
@@ -18,19 +32,44 @@ User.extend(() => ({
   ghRefreshToken: '',
 }))
 
+Channel.extend(() => ({
+  githubWebhooks: {},
+}))
+
+Tables.extend('github', { primary: 'name' })
+
+Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
+  tables.user.ghAccessToken = 'varchar(50)'
+  tables.user.ghRefreshToken = 'varchar(50)'
+  tables.channel.githubWebhooks = new Domain.Json()
+  tables.github = Object.assign<any, any>(['primary key (`name`)'], {
+    id: 'int',
+    name: 'varchar(50)',
+    secret: 'varchar(50)',
+  })
+})
+
+interface Repository {
+  name: string
+  secret: string
+  id: number
+}
+
+interface RepoConfig {
+  name: string
+  secret: string
+  channels: string[] | Record<string, EventConfig>
+}
+
 export interface Config {
-  secret?: string
-  webhook?: string
-  authorize?: string
-  messagePrefix?: string
+  path?: string
   appId?: string
   appSecret?: string
+  messagePrefix?: string
   redirect?: string
   promptTimeout?: number
   replyTimeout?: number
   requestTimeout?: number
-  repos?: Record<string, string[]>
-  events?: EventConfig
 }
 
 export interface OAuth {
@@ -42,7 +81,7 @@ export interface OAuth {
   scope: string
 }
 
-type ReplySession = Session<'ghAccessToken' | 'ghRefreshToken'>
+export type ReplySession = Session<'ghAccessToken' | 'ghRefreshToken'>
 
 const logger = new Logger('github')
 
@@ -61,10 +100,12 @@ export class GitHub {
     return data
   }
 
-  private async _request(url: string, method: Method, session: ReplySession, body: any, headers?: Record<string, any>) {
-    logger.debug(method, url, body)
-    await axios.post(url, body, {
+  private async _request(method: Method, url: string, session: ReplySession, data?: any, headers?: Record<string, any>) {
+    logger.debug(method, url, data)
+    const response = await axios(url, {
       ...this.app.options.axiosConfig,
+      data,
+      method,
       timeout: this.config.requestTimeout,
       headers: {
         accept: 'application/vnd.github.v3+json',
@@ -72,28 +113,26 @@ export class GitHub {
         ...headers,
       },
     })
+    return response.data
   }
 
   async authorize(session: Session, message: string) {
     await session.send(message)
     const name = await session.prompt(this.config.promptTimeout)
     if (!name) return session.send('输入超时。')
-    return session.execute({ name: 'github.authorize', args: [name] })
+    await session.execute({ name: 'github.authorize', args: [name] })
   }
 
-  async request(url: string, method: Method, session: ReplySession, body: any, headers?: Record<string, any>) {
+  async request(method: Method, url: string, session: ReplySession, body?: any, headers?: Record<string, any>) {
     if (!session.user.ghAccessToken) {
       return this.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
     }
 
     try {
-      return await this._request(url, method, session, body, headers)
+      return await this._request(method, url, session, body, headers)
     } catch (error) {
       const { response } = error as AxiosError
-      if (response?.status !== 401) {
-        logger.warn(error)
-        return session.send('发送失败。')
-      }
+      if (response?.status !== 401) throw error
     }
 
     try {
@@ -107,12 +146,7 @@ export class GitHub {
       return this.authorize(session, '令牌已失效，需要重新授权。输入你的 GitHub 用户名。')
     }
 
-    try {
-      await this._request(url, method, session, body, headers)
-    } catch (error) {
-      logger.warn(error)
-      return session.send('发送失败。')
-    }
+    return await this._request(method, url, session, body, headers)
   }
 }
 
@@ -131,14 +165,24 @@ type ReplyPayloads = {
 export type EventData<T = {}> = [string, (ReplyPayloads & T)?]
 
 export class ReplyHandler {
-  constructor(public github: GitHub, public session: Session, public content?: string) {}
+  constructor(public github: GitHub, public session: ReplySession, public content?: string) {}
+
+  async request(method: Method, url: string, message: string, body?: any, headers?: Record<string, any>) {
+    try {
+      await this.github.request(method, url, this.session, body, headers)
+    } catch (err) {
+      if (!axios.isAxiosError(err)) throw err
+      logger.warn(err)
+      return this.session.send(message)
+    }
+  }
 
   link(url: string) {
     return this.session.send(url)
   }
 
   react(url: string) {
-    return this.github.request(url, 'POST', this.session, {
+    return this.request('POST', url, '发送失败。', {
       content: this.content,
     }, {
       accept: 'application/vnd.github.squirrel-girl-preview',
@@ -146,14 +190,14 @@ export class ReplyHandler {
   }
 
   reply(url: string, params?: Record<string, any>) {
-    return this.github.request(url, 'POST', this.session, {
+    return this.request('POST', url, '发送失败。', {
       body: formatReply(this.content),
       ...params,
     })
   }
 
   base(url: string) {
-    return this.github.request(url, 'PATCH', this.session, {
+    return this.request('PATCH', url, '修改失败。', {
       base: this.content,
     })
   }
@@ -161,7 +205,7 @@ export class ReplyHandler {
   merge(url: string, method?: 'merge' | 'squash' | 'rebase') {
     const [title] = this.content.split('\n', 1)
     const message = this.content.slice(title.length)
-    return this.github.request(url, 'PUT', this.session, {
+    return this.request('PUT', url, '操作失败。', {
       merge_method: method,
       commit_title: title.trim(),
       commit_message: message.trim(),
@@ -178,7 +222,7 @@ export class ReplyHandler {
 
   async close(url: string, commentUrl: string) {
     if (this.content) await this.reply(commentUrl)
-    await this.github.request(url, 'PATCH', this.session, {
+    await this.request('PATCH', url, '操作失败。', {
       state: 'closed',
     })
   }
