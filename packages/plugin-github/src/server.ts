@@ -2,7 +2,7 @@
 
 import { EventConfig } from './events'
 import axios, { AxiosError, Method } from 'axios'
-import { App, Channel, Database, Session, User } from 'koishi-core'
+import { App, Channel, Database, Session, Tables, User } from 'koishi-core'
 import { segment, Logger } from 'koishi-utils'
 import {} from 'koishi-plugin-puppeteer'
 import {} from 'koishi-plugin-mysql'
@@ -36,6 +36,8 @@ Channel.extend(() => ({
   githubWebhooks: {},
 }))
 
+Tables.extend('github', { primary: 'name' })
+
 Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
   tables.user.ghAccessToken = 'varchar(50)'
   tables.user.ghRefreshToken = 'varchar(50)'
@@ -45,10 +47,6 @@ Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
     name: 'varchar(50)',
     secret: 'varchar(50)',
   })
-})
-
-Database.extend('koishi-plugin-mongo', ({ tables }) => {
-  tables.github = { primary: 'name' }
 })
 
 interface Repository {

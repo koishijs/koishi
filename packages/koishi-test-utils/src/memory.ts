@@ -45,11 +45,18 @@ export class MemoryDatabase {
 }
 
 Database.extend(MemoryDatabase, {
-  async get(table, key, values, fields) {
-    return this.$table<any>(table)
-      .filter(row => values.includes(row[key]))
+  async get(name, query, fields) {
+    const entries = Object.entries(Tables.resolveQuery(name, query))
+    return this.$table(name)
+      .filter(row => entries.every(([key, value]) => value.includes(row[key])))
       .map(row => fields ? pick(row, fields) : row)
       .map(clone)
+  },
+
+  async remove(name, query) {
+    const entries = Object.entries(Tables.resolveQuery(name, query))
+    this.$store[name] = this.$table(name)
+      .filter(row => !entries.every(([key, value]) => value.includes(row[key])))
   },
 
   async create(table, data: any) {
@@ -63,14 +70,6 @@ Database.extend(MemoryDatabase, {
     return data
   },
 
-  async remove(table, key, values) {
-    const store = this.$table(table)
-    for (const id of values) {
-      const index = store.findIndex(row => row[key] === id)
-      if (index >= 0) store.splice(index, 1)
-    }
-  },
-
   async update(table, data, key: string) {
     if (key) key = (MemoryDatabase.tables[table] || {}).primary || 'id'
     for (const item of data) {
@@ -81,9 +80,9 @@ Database.extend(MemoryDatabase, {
 
   async getUser(type, id, fields) {
     if (Array.isArray(id)) {
-      return this.get('user', type, id, fields) as any
+      return this.get('user', { [type]: id }, fields) as any
     } else {
-      return (await this.get('user', type as any, [id], fields))[0]
+      return (await this.get('user', { [type]: [id] }, fields))[0]
     }
   },
 
@@ -117,9 +116,9 @@ Database.extend(MemoryDatabase, {
 
   async getChannel(type, id, fields) {
     if (Array.isArray(id)) {
-      return this.get('channel', 'id', id.map(id => `${type}:${id}`), fields)
+      return this.get('channel', id.map(id => `${type}:${id}`), fields)
     } else {
-      return (await this.get('channel', 'id', [`${type}:${id}`], fields))[0]
+      return (await this.get('channel', [`${type}:${id}`], fields))[0]
     }
   },
 

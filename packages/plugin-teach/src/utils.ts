@@ -1,4 +1,4 @@
-import { Session, App } from 'koishi-core'
+import { Session, App, Tables } from 'koishi-core'
 import { difference, observe, isInteger, defineProperty, Observed } from 'koishi-utils'
 import { RegExpValidator } from 'regexpp'
 
@@ -24,6 +24,8 @@ declare module 'koishi-core' {
     getDialogueStats(): Promise<DialogueStats>
   }
 }
+
+Tables.extend('dialogue')
 
 interface DialogueStats {
   questions: number
@@ -95,7 +97,7 @@ export namespace Dialogue {
 
   export async function remove(dialogues: Dialogue[], argv: Dialogue.Argv, revert = false) {
     const ids = dialogues.map(d => d.id)
-    argv.app.database.remove('dialogue', 'id', ids)
+    argv.app.database.remove('dialogue', ids)
     for (const id of ids) {
       addHistory(argv.dialogueMap[id], '删除', argv, revert)
     }

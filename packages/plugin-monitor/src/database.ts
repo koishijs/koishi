@@ -1,6 +1,6 @@
 import {} from 'koishi-plugin-mysql'
 import {} from 'koishi-plugin-mongo'
-import { Channel, Database } from 'koishi-core'
+import { Channel, Database, Tables } from 'koishi-core'
 import { OkPacket } from 'mysql'
 
 declare module 'koishi-core' {
@@ -44,6 +44,8 @@ const subscribeKeys = [
   'mirrativ', 'mirrativStatus',
   'twitCasting', 'twitCastingStatus',
 ] as SubscribeField[]
+
+Tables.extend('subscribe')
 
 Database.extend('koishi-plugin-mysql', {
   async getSubscribes(ids, keys = subscribeKeys) {

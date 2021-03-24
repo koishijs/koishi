@@ -68,7 +68,7 @@ function authorize(ctx: Context, config: Config) {
         }
 
         const url = `https://api.github.com/repos/${name}/hooks`
-        const [repo] = await ctx.database.get('github', 'name', [name])
+        const [repo] = await ctx.database.get('github', [name])
         if (options.add) {
           if (repo) return `已经添加过仓库 ${name}。`
           const secret = Random.uuid()
@@ -82,14 +82,14 @@ function authorize(ctx: Context, config: Config) {
           await ctx.database.create('github', { name, id, secret })
           return '添加仓库成功！'
         } else {
-          const [repo] = await ctx.database.get('github', 'name', [name])
+          const [repo] = await ctx.database.get('github', [name])
           if (!repo) return `尚未添加过仓库 ${name}。`
           await ctx.app.github.request(`${url}/${repo.id}`, 'DELETE', session)
           return '移除仓库成功！'
         }
       }
 
-      const repos = await ctx.database.getAll('github')
+      const repos = await ctx.database.get('github', {})
       if (!repos.length) return '当前没有监听的仓库。'
       return repos.map(repo => repo.name).join('\n')
     })
@@ -111,7 +111,7 @@ function authorize(ctx: Context, config: Config) {
         if (!session.channel) return '当前不是群聊上下文。'
         if (!name) return '请输入仓库名。'
         if (!/^[\w-]+\/[\w-]+$/.test(name)) return '请输入正确的仓库名。'
-        const [repo] = await ctx.database.get('github', 'name', [name])
+        const [repo] = await ctx.database.get('github', [name])
         if (!repo) return `尚未添加过仓库 ${name}。`
 
         const webhooks = session.channel.githubWebhooks
@@ -160,7 +160,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   async function getSecret(name: string) {
     if (!ctx.database) return config.repos.find(repo => repo.name === name)?.secret
-    const [data] = await ctx.database.get('github', 'name', [name])
+    const [data] = await ctx.database.get('github', [name])
     return data?.secret
   }
 

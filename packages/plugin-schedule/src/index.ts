@@ -21,7 +21,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const { minInterval = Time.minute } = config
 
   async function hasSchedule(id: number) {
-    const data = await database.get('schedule', 'id', [id])
+    const data = await database.get('schedule', [id])
     return data.length
   }
 
@@ -39,7 +39,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
     if (!interval) {
       if (date < now) {
-        database.remove('schedule', 'id', [id])
+        database.remove('schedule', [id])
         if (lastCall) executeSchedule()
         return
       }
@@ -47,7 +47,7 @@ export function apply(ctx: Context, config: Config = {}) {
       logger.debug('prepare %d: %c at %s', id, command, time)
       return ctx.setTimeout(async () => {
         if (!await hasSchedule(id)) return
-        database.remove('schedule', 'id', [id])
+        database.remove('schedule', [id])
         executeSchedule()
       }, date - now)
     }
@@ -69,7 +69,7 @@ export function apply(ctx: Context, config: Config = {}) {
   }
 
   ctx.on('connect', async () => {
-    const schedules = await database.get('schedule', 'assignee', ctx.bots.map(bot => bot.sid))
+    const schedules = await database.get('schedule', { assignee: ctx.bots.map(bot => bot.sid) })
     schedules.forEach((schedule) => {
       const { session, assignee } = schedule
       if (!ctx.bots[assignee]) return
@@ -87,12 +87,12 @@ export function apply(ctx: Context, config: Config = {}) {
     .option('delete', '-d <id>  删除已经设置的日程')
     .action(async ({ session, options }, ...dateSegments) => {
       if (options.delete) {
-        await database.remove('schedule', 'id', [options.delete])
+        await database.remove('schedule', [options.delete])
         return `日程 ${options.delete} 已删除。`
       }
 
       if (options.list) {
-        let schedules = await database.get('schedule', 'assignee', [session.sid])
+        let schedules = await database.get('schedule', { assignee: [session.sid] })
         if (!options.full) {
           schedules = schedules.filter(s => session.channelId === s.session.channelId)
         }

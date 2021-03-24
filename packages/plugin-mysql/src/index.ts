@@ -1,7 +1,7 @@
-import MysqlDatabase, { Config } from './database'
-import { User, Channel, Database, Context } from 'koishi-core'
+import MysqlDatabase, { Config, escape } from './database'
+import { User, Channel, Database, Context, TableType, Tables } from 'koishi-core'
 import { difference } from 'koishi-utils'
-import { OkPacket } from 'mysql'
+import { OkPacket, escapeId } from 'mysql'
 
 export * from './database'
 export default MysqlDatabase
@@ -18,19 +18,28 @@ declare module 'koishi-core' {
   }
 }
 
+function createFilter<T extends TableType>(name: T, _query: Tables.Query<T>) {
+  const query = Tables.resolveQuery(name, _query)
+  const output: string[] = []
+  for (const key in query) {
+    const value = query[key]
+    if (!value.length) return '0'
+    output.push(`${escapeId(key)} IN (${value.map(val => escape(val, name, key)).join(', ')})`)
+  }
+  return output.join(' AND ')
+}
+
 Database.extend(MysqlDatabase, {
-  async getAll(table, fields) {
-    return this.select(table, fields)
+  async get(name, query, fields) {
+    const filter = createFilter(name, query)
+    if (filter === '0') return []
+    return this.select(name, fields, filter)
   },
 
-  async get(table, key, values, fields) {
-    if (!values.length) return []
-    return this.select(table, fields, this.$in(table, key, values))
-  },
-
-  async remove(table, key, value) {
-    if (!value.length) return
-    await this.query('DELETE FROM ?? WHERE ' + this.$in(table, key, value), [table])
+  async remove(name, query) {
+    const filter = createFilter(name, query)
+    if (filter === '0') return
+    await this.query('DELETE FROM ?? WHERE ' + filter, [name])
   },
 
   async create(table, data) {

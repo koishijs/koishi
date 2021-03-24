@@ -19,18 +19,19 @@ export interface Config extends PoolConfig {}
 
 interface MysqlDatabase extends Database {}
 
+export function escape(value: any, table?: TableType, field?: string) {
+  const type = MysqlDatabase.tables[table]?.[field]
+  return mysqlEscape(typeof type === 'object' ? type.toString(value) : value)
+}
+
 class MysqlDatabase {
   public pool: Pool
   public config: Config
 
   mysql = this
 
+  escape: (value: any, table?: TableType, field?: string) => string
   escapeId: (value: string) => string
-
-  escape(value: any, table?: TableType, field?: string) {
-    const type = MysqlDatabase.tables[table]?.[field]
-    return mysqlEscape(typeof type === 'object' ? type.toString(value) : value)
-  }
 
   inferFields<T extends TableType>(table: T, keys: readonly string[]) {
     const types = MysqlDatabase.tables[table] || {}
@@ -179,6 +180,7 @@ class MysqlDatabase {
   }
 }
 
+MysqlDatabase.prototype.escape = escape
 MysqlDatabase.prototype.escapeId = escapeId
 
 namespace MysqlDatabase {

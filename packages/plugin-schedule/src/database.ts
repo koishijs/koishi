@@ -1,4 +1,4 @@
-import { Session, Database } from 'koishi-core'
+import { Session, Database, Tables } from 'koishi-core'
 import {} from 'koishi-plugin-mysql'
 import {} from 'koishi-plugin-mongo'
 
@@ -17,6 +17,8 @@ export interface Schedule {
   command: string
   session: Partial<Session>
 }
+
+Tables.extend('schedule')
 
 Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
   tables.schedule = Object.assign<any, any>([

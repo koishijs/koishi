@@ -1,5 +1,5 @@
 import MongoDatabase, { Config } from './database'
-import { User, Database, Context, Channel, Random, pick, omit } from 'koishi-core'
+import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType } from 'koishi-core'
 
 export * from './database'
 export default MongoDatabase
@@ -76,58 +76,59 @@ function unescapeKey<T extends Partial<User>>(data: T) {
   return data
 }
 
-Database.extend(MongoDatabase, ({ tables }) => {
-  tables.user = { primary: 'id' }
-  tables.channel = { primary: 'id' }
-})
+function createFilter<T extends TableType>(name: T, _query: Tables.Query<T>) {
+  const query = Tables.resolveQuery(name, _query)
+  const filter = {}
+  for (const key in query) {
+    const value = query[key]
+    if (!value.length) return
+    filter[key] = { $in: value }
+  }
+  const { primary } = Tables.config[name]
+  if (filter[primary]) {
+    filter['_id'] = filter[primary]
+    delete filter[primary]
+  }
+  return filter
+}
 
 Database.extend(MongoDatabase, {
-  async getAll(table, fields) {
-    const { primary } = this.getConfig(table)
-    let cursor = this.db.collection(table).find()
+  async get(name, query, fields) {
+    const filter = createFilter(name, query)
+    if (!filter) return []
+    let cursor = this.db.collection(name).find(filter)
     if (fields) cursor = cursor.project(projection(fields))
     const data = await cursor.toArray()
+    const { primary } = Tables.config[name]
     for (const item of data) item[primary] = item._id
     return data
   },
 
-  async get(table, key, value, fields) {
-    if (!value.length) return []
-    const { primary } = this.getConfig(table)
-    if (key === primary) key = '_id'
-    let cursor = this.db.collection(table).find({ [key]: { $in: value } })
-    if (fields) cursor = cursor.project(projection(fields))
-    const data = await cursor.toArray()
-    for (const item of data) item[primary] = item._id
-    return data
+  async remove(name, query) {
+    const filter = createFilter(name, query)
+    if (!filter) return
+    await this.db.collection(name).deleteMany(filter)
   },
 
-  async create(table, data: any) {
-    const { primary, type } = this.getConfig(table)
+  async create(name, data: any) {
+    const { primary, type } = Tables.config[name]
     const copy = { ...data }
     if (copy[primary]) {
       copy['_id'] = copy[primary]
       delete copy[primary]
     } else if (type === 'incremental') {
-      const [latest] = await this.db.collection(table).find().sort('_id', -1).limit(1).toArray()
+      const [latest] = await this.db.collection(name).find().sort('_id', -1).limit(1).toArray()
       copy['_id'] = data[primary] = latest ? latest._id + 1 : 1
     }
-    await this.db.collection(table).insertOne(copy)
+    await this.db.collection(name).insertOne(copy)
     return data
   },
 
-  async remove(table, key, value) {
-    if (!value.length) return
-    const { primary } = this.getConfig(table)
-    if (key === primary) key = '_id'
-    await this.db.collection(table).deleteMany({ [key]: { $in: value } })
-  },
-
-  async update(table, data: any[], key: string) {
+  async update(name, data: any[], key: string) {
     if (!data.length) return
-    const { primary } = this.getConfig(table)
+    const { primary } = Tables.config[name]
     if (!key || key === primary) key = '_id'
-    const bulk = this.db.collection(table).initializeUnorderedBulkOp()
+    const bulk = this.db.collection(name).initializeUnorderedBulkOp()
     for (const item of data) {
       bulk.find({ [key]: data[primary] }).updateOne({ $set: omit(item, [primary]) })
     }
