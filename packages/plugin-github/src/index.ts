@@ -76,6 +76,8 @@ export function apply(ctx: Context, config: Config = {}) {
       return '请点击下面的链接继续操作：\n' + url
     })
 
+  const repoRegExp = /^[\w.-]+\/[\w.-]+$/
+
   ctx.command('github.repos [name]', 'GitHub 仓库')
     .userFields(['ghAccessToken', 'ghRefreshToken'])
     .option('add', '-a  监听一个新的仓库')
@@ -84,7 +86,7 @@ export function apply(ctx: Context, config: Config = {}) {
     .action(async ({ session, options }, name) => {
       if (options.add || options.delete) {
         if (!name) return '请输入仓库名。'
-        if (!/^[\w-]+\/[\w-]+$/.test(name)) return '请输入正确的仓库名。'
+        if (!repoRegExp.test(name)) return '请输入正确的仓库名。'
         if (!session.user.ghAccessToken) {
           return ctx.app.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
         }
@@ -168,7 +170,7 @@ export function apply(ctx: Context, config: Config = {}) {
       if (options.add || options.delete) {
         if (!session.channel) return '当前不是群聊上下文。'
         if (!name) return '请输入仓库名。'
-        if (!/^[\w-]+\/[\w-]+$/.test(name)) return '请输入正确的仓库名。'
+        if (!repoRegExp.test(name)) return '请输入正确的仓库名。'
 
         name = name.toLowerCase()
         const webhooks = session.channel.githubWebhooks
