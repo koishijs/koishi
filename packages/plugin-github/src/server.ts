@@ -41,7 +41,7 @@ Tables.extend('github', { primary: 'name' })
 Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
   tables.user.ghAccessToken = 'varchar(50)'
   tables.user.ghRefreshToken = 'varchar(50)'
-  tables.channel.githubWebhooks = new Domain.Json()
+  tables.channel.githubWebhooks = new Domain.Json('json default "{}"')
   tables.github = Object.assign<any, any>(['primary key (`name`)'], {
     id: 'int',
     name: 'varchar(50)',
