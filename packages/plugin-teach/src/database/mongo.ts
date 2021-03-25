@@ -11,18 +11,6 @@ declare module 'koishi-core' {
 }
 
 Database.extend('koishi-plugin-mongo', {
-  async getDialoguesById(ids, fields) {
-    if (!ids.length) return []
-    let cursor = this.db.collection('dialogue').find({ _id: { $in: ids } })
-    if (fields) cursor = cursor.project(Object.fromEntries(fields.map(k => [k, 1])))
-    const dialogues = await cursor.toArray()
-    dialogues.forEach(d => {
-      d._id = d.id
-      defineProperty(d, '_backup', clone(d))
-    })
-    return dialogues
-  },
-
   async getDialoguesByTest(test: DialogueTest) {
     const query: FilterQuery<Dialogue> = { $and: [] }
     this.app.emit('dialogue/mongo', test, query.$and)
@@ -53,18 +41,6 @@ Database.extend('koishi-plugin-mongo', {
       }
     }
     await this.update('dialogue', data)
-  },
-
-  async recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {
-    if (!dialogues.length) return
-    const tasks = []
-    for (const dialogue of dialogues) {
-      tasks.push(await this.db.collection('dialogue').updateOne({ _id: dialogue.id }, { $set: dialogue }))
-    }
-    await Promise.all(tasks)
-    for (const dialogue of dialogues) {
-      Dialogue.addHistory(dialogue, '修改', argv, true)
-    }
   },
 
   async getDialogueStats() {

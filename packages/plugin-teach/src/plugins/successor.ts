@@ -109,7 +109,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     const { succOverwrite, successors, dialogues } = argv
     if (!successors) return
     const predecessors = dialogues.map(dialogue => '' + dialogue.id)
-    const successorDialogues = await ctx.database.getDialoguesById(successors)
+    const successorDialogues = await Dialogue.get(ctx, successors)
     const newTargets = successorDialogues.map(d => d.id)
     argv.unknown = difference(successors, newTargets)
 
@@ -156,7 +156,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       }
     }
     const dialogueMap: Record<string, Dialogue> = {}
-    for (const dialogue of await ctx.database.getDialoguesById([...predecessors])) {
+    for (const dialogue of await Dialogue.get(ctx, [...predecessors])) {
       dialogueMap[dialogue.id] = dialogue
     }
     for (const dialogue of dialogues) {

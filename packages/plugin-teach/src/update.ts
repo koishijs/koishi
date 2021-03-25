@@ -136,7 +136,7 @@ export async function update(argv: Dialogue.Argv) {
   argv.skipped = []
   const dialogues = argv.dialogues = revert || review
     ? Object.values(pick(argv.app.teachHistory, target)).filter(Boolean)
-    : await app.database.getDialoguesById(target)
+    : await Dialogue.get(app, target, null)
   argv.dialogueMap = Object.fromEntries(dialogues.map(d => [d.id, { ...d }]))
 
   if (search) {

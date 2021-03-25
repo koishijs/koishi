@@ -10,14 +10,6 @@ declare module 'koishi-core' {
 }
 
 Database.extend('koishi-test-utils', {
-  async getDialoguesById(ids) {
-    if (!ids.length) return []
-    const table = this.$table('dialogue')
-    const dialogues = table.filter(row => ids.includes(row.id)).map<Dialogue>(clone)
-    dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
-    return dialogues
-  },
-
   async getDialoguesByTest(test: DialogueTest) {
     const dialogues = this.$table('dialogue').filter((dialogue) => {
       return !this.app.bail('dialogue/memory', dialogue, test)
@@ -42,13 +34,6 @@ Database.extend('koishi-test-utils', {
       }
     }
     await this.update('dialogue', data)
-  },
-
-  async recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {
-    for (const dialogue of dialogues) {
-      this.update('dialogue', [dialogue])
-      Dialogue.addHistory(dialogue, '修改', argv, true)
-    }
   },
 
   async getDialogueStats() {
