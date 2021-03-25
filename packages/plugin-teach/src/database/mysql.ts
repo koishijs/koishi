@@ -69,9 +69,7 @@ Database.extend('koishi-plugin-mysql', {
 })
 
 Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
-  tables.dialogue = Object.assign<any, any>([
-    'PRIMARY KEY (`id`) USING BTREE',
-  ], {
+  tables.dialogue = {
     id: `INT(11) UNSIGNED NOT NULL AUTO_INCREMENT`,
     flag: `INT(10) UNSIGNED NOT NULL DEFAULT '0'`,
     probS: `DECIMAL(4,3) UNSIGNED NOT NULL DEFAULT '1.000'`,
@@ -85,7 +83,7 @@ Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
     predecessors: new Domain.Array(`TINYTEXT`),
     successorTimeout: `INT(10) UNSIGNED NOT NULL DEFAULT '0'`,
     writer: 'INT(11) UNSIGNED',
-  })
+  }
 })
 
 export default function apply(ctx: Context, config: Dialogue.Config) {

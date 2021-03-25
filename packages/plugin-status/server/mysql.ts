@@ -54,9 +54,7 @@ namespace Stat {
       super(table, fields)
 
       Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
-        tables[table] = Object.assign([
-          'primary key (`time`)',
-        ], Object.fromEntries(fields.map(key => [key, new Domain.Json('text')])))
+        tables[table] = Object.fromEntries(fields.map(key => [key, new Domain.Json()]))
         tables[table].time = timeDomain
       })
     }
@@ -88,9 +86,7 @@ namespace Stat {
       super(table, fields)
 
       Database.extend('koishi-plugin-mysql', ({ tables }) => {
-        tables[table] = Object.assign([
-          'primary key (`time`)',
-        ], Object.fromEntries(fields.map(key => [key, 'int unsigned'])))
+        tables[table] = Object.fromEntries(fields.map(key => [key, 'int unsigned']))
         tables[table].time = timeDomain
       })
     }

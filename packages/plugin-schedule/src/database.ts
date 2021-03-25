@@ -21,15 +21,13 @@ export interface Schedule {
 Tables.extend('schedule')
 
 Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
-  tables.schedule = Object.assign<any, any>([
-    'PRIMARY KEY (`id`) USING BTREE',
-  ], {
+  tables.schedule = {
     id: `INT(10) UNSIGNED NOT NULL AUTO_INCREMENT`,
     assignee: `VARCHAR(50) NOT NULL`,
     time: `TIMESTAMP NULL DEFAULT NULL`,
     lastCall: `TIMESTAMP NULL DEFAULT NULL`,
     interval: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0'`,
-    command: `MEDIUMTEXT NOT NULL COLLATE 'utf8mb4_general_ci'`,
+    command: `MEDIUMTEXT NOT NULL`,
     session: new Domain.Json(),
-  })
+  }
 })
