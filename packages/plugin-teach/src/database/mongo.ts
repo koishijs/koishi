@@ -24,6 +24,7 @@ Database.extend('koishi-plugin-mongo', {
       if (test.groups && !test.partial) {
         return !(value.flag & Dialogue.Flag.complement) === test.reversed || !equal(test.groups, value.groups)
       }
+      value.id = value._id
       return true
     })
   },

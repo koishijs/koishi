@@ -151,11 +151,10 @@ export class GitHub {
 }
 
 function formatReply(source: string) {
-  return segment.parse(source).map((node) => {
-    if (node.type === 'text') return node.data.content
-    if (node.type === 'image') return `![image](${node.data.url})`
-    return ''
-  }).join('')
+  return segment.transform(source, {
+    text: ({ content }) => content,
+    image: ({ url }) => `![image](${url})`,
+  }, true)
 }
 
 type ReplyPayloads = {

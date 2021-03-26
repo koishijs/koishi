@@ -17,6 +17,7 @@ type primitive = string | number | boolean
 export namespace segment {
   export type Chain = segment.Parsed[]
   export type Data = Record<string, primitive>
+  export type Transformer = string | ((data: Record<string, string>, index: number, chain: Chain) => string)
 
   export interface Parsed extends segment {
     data: Record<string, string>
@@ -70,6 +71,15 @@ export namespace segment {
     }
     if (source) chain.push({ type: 'text', data: { content: source } })
     return chain
+  }
+
+  export function transform(source: string, rules: Record<string, Transformer>, dropOthers = false) {
+    return parse(source).map(({ type, data, capture }, index, chain) => {
+      const transformer = rules[type]
+      return typeof transformer === 'string' ? transformer
+        : typeof transformer === 'function' ? transformer(data, index, chain)
+          : dropOthers ? '' : capture[0]
+    }).join('')
   }
 
   export type Factory = (value: primitive, data?: segment.Data) => string
