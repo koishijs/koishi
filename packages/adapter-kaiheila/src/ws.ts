@@ -1,4 +1,5 @@
-import { App, Adapter, Logger, Time } from 'koishi-core'
+import { App, Adapter, Bot } from 'koishi-core'
+import { Logger, Time, trimSlash, sanitize } from 'koishi-utils'
 import { KaiheilaBot } from './bot'
 import { adaptSession } from './utils'
 import { Payload, Signal } from './types'
@@ -11,6 +12,9 @@ const heartbeatIntervals = [6, 2, 4]
 export default class WsClient extends Adapter.WsClient<'kaiheila'> {
   constructor(app: App) {
     super(app, KaiheilaBot, app.options.kaiheila)
+    const config = this.app.options.kaiheila ||= {}
+    config.path = sanitize(config.path || '/kaiheila')
+    config.endpoint = trimSlash(config.endpoint || 'https://www.kaiheila.cn/api/v3')
   }
 
   async prepare(bot: KaiheilaBot) {
@@ -20,19 +24,24 @@ export default class WsClient extends Adapter.WsClient<'kaiheila'> {
   }
 
   heartbeat(bot: KaiheilaBot) {
+    if (!bot.socket || bot.status !== Bot.Status.GOOD) {
+      clearInterval(bot._heartbeat)
+      return
+    }
     let trials = 0
     function send() {
       if (trials >= 2) {
         return bot.socket.close(1013)
       }
       bot.socket.send(JSON.stringify({ s: Signal.ping, sn: bot._sn }))
-      bot._ping = setTimeout(send, heartbeatIntervals[trials++])
+      bot._ping = setTimeout(send, heartbeatIntervals[trials++] * Time.second)
     }
     send()
   }
 
   async connect(bot: KaiheilaBot) {
     bot._sn = 0
+    clearInterval(bot._heartbeat)
 
     bot.socket.on('message', (data) => {
       data = data.toString()
@@ -47,9 +56,10 @@ export default class WsClient extends Adapter.WsClient<'kaiheila'> {
         bot._sn = Math.max(bot._sn, parsed.sn)
         const session = adaptSession(bot, parsed.d)
         if (session) this.dispatch(session)
+      } else if (parsed.s === Signal.hello) {
+        bot._heartbeat = setInterval(() => this.heartbeat(bot), Time.minute * 0.5)
       } else if (parsed.s === Signal.pong) {
         clearTimeout(bot._ping)
-        bot._ping = setTimeout(() => this.heartbeat(bot), Time.minute * 0.5)
       } else if (parsed.s === Signal.resume) {
         bot.socket.close(1013)
       }
