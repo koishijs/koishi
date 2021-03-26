@@ -43,26 +43,30 @@ export default class WsClient extends Adapter.WsClient<'kaiheila'> {
     bot._sn = 0
     clearInterval(bot._heartbeat)
 
-    bot.socket.on('message', (data) => {
-      data = data.toString()
-      let parsed: Payload
-      try {
-        parsed = JSON.parse(data)
-      } catch (error) {
-        return logger.warn('cannot parse message', data)
-      }
+    return new Promise<void>((resolve) => {
+      bot.socket.on('message', async (data) => {
+        data = data.toString()
+        let parsed: Payload
+        try {
+          parsed = JSON.parse(data)
+        } catch (error) {
+          return logger.warn('cannot parse message', data)
+        }
 
-      if (parsed.s === Signal.event) {
-        bot._sn = Math.max(bot._sn, parsed.sn)
-        const session = adaptSession(bot, parsed.d)
-        if (session) this.dispatch(session)
-      } else if (parsed.s === Signal.hello) {
-        bot._heartbeat = setInterval(() => this.heartbeat(bot), Time.minute * 0.5)
-      } else if (parsed.s === Signal.pong) {
-        clearTimeout(bot._ping)
-      } else if (parsed.s === Signal.resume) {
-        bot.socket.close(1013)
-      }
+        if (parsed.s === Signal.event) {
+          bot._sn = Math.max(bot._sn, parsed.sn)
+          const session = adaptSession(bot, parsed.d)
+          if (session) this.dispatch(session)
+        } else if (parsed.s === Signal.hello) {
+          bot._heartbeat = setInterval(() => this.heartbeat(bot), Time.minute * 0.5)
+          Object.assign(bot, await bot.getSelf())
+          resolve()
+        } else if (parsed.s === Signal.pong) {
+          clearTimeout(bot._ping)
+        } else if (parsed.s === Signal.resume) {
+          bot.socket.close(1013)
+        }
+      })
     })
   }
 }

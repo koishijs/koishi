@@ -182,8 +182,9 @@ export class KaiheilaBot extends Bot {
   }
 
   async getSelf() {
-    const data = await this.request<Kaiheila.Self>('GET', '/user/me')
-    return adaptUser(data)
+    const data = adaptUser(await this.request<Kaiheila.Self>('GET', '/user/me'))
+    renameProperty(data, 'selfId' as never, 'userId')
+    return data
   }
 
   async getGroupList() {
