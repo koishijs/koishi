@@ -18,6 +18,7 @@ export interface KaiheilaMessageInfo extends MessageInfo {
 export class KaiheilaBot extends Bot {
   _sn = 0
   _ping: NodeJS.Timeout
+  _heartbeat: NodeJS.Timeout
   version = 'kaiheila'
 
   static toMessage(data: KaiheilaMessageInfo & Record<string, any>) {
