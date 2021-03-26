@@ -4,6 +4,9 @@
       <slot name="header">{{ title }}</slot>
     </header>
     <div class="k-card-body"><slot/></div>
+    <footer v-if="$slots.footer">
+      <slot name="footer"></slot>
+    </footer>
   </section>
 </template>
 
@@ -35,6 +38,10 @@ $paddingY: 1.6rem;
     padding: $paddingX $paddingY 0;
     transition: color 0.3s ease;
     color: rgba(244, 244, 245, .8);
+  }
+
+  footer {
+    padding: 0 $paddingY $paddingX;
   }
 
   .k-card-body {
