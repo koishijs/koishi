@@ -4,11 +4,11 @@
     "description": "Discord adapter for Koishi"
   },
   "koishi-adapter-kaiheila": {
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-onebot": {
-    "version": "3.0.1",
+    "version": "3.0.2",
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-adapter-telegram": {
@@ -22,6 +22,10 @@
   "koishi-plugin-adventure": {
     "version": "0.1.15",
     "description": "Adventure Game for Koishi"
+  },
+  "koishi-plugin-assets": {
+    "version": "1.0.0",
+    "description": "Asset provider plugin for Koishi"
   },
   "koishi-plugin-chess": {
     "version": "3.0.1",
@@ -40,7 +44,7 @@
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-github": {
-    "version": "3.0.0",
+    "version": "3.0.1",
     "description": "GitHub webhook plugin for Koishi"
   },
   "koishi-plugin-image-search": {
@@ -52,10 +56,10 @@
     "description": "MongoDB support for Koishi"
   },
   "koishi-plugin-monitor": {
-    "version": "1.0.0-beta.28"
+    "version": "1.0.0-beta.29"
   },
   "koishi-plugin-mysql": {
-    "version": "3.2.0",
+    "version": "3.3.0",
     "description": "MySQL support for Koishi"
   },
   "koishi-plugin-puppeteer": {
@@ -67,15 +71,15 @@
     "description": "Subscribe RSS Url for Koishi"
   },
   "koishi-plugin-schedule": {
-    "version": "3.0.3",
+    "version": "3.0.4",
     "description": "Schedule plugin for Koishi"
   },
   "koishi-plugin-status": {
-    "version": "4.0.0-rc.2",
+    "version": "4.0.0",
     "description": "Show Status of Koishi"
   },
   "koishi-plugin-teach": {
-    "version": "2.0.1",
+    "version": "2.0.2",
     "description": "Teach plugin for Koishi"
   },
   "koishi-plugin-tools": {
