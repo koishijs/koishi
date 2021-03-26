@@ -5,7 +5,7 @@ import { createHmac } from 'crypto'
 import { encode } from 'querystring'
 import { Context, camelize, Time, Random, sanitize, Logger } from 'koishi-core'
 import { CommonPayload, addListeners, defaultEvents, EventConfig } from './events'
-import { Config, GitHub, ReplyHandler, ReplySession, EventData } from './server'
+import { Config, GitHub, ReplyHandler, ReplySession, ReplyPayloads } from './server'
 import axios from 'axios'
 
 export * from './server'
@@ -31,16 +31,6 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.command('github', 'GitHub 相关功能').alias('gh')
     .action(({ session }) => session.execute('help github', true))
-
-  ctx.command('github.recent', '查看最近的通知')
-    .action(async () => {
-      const output = Object.entries(history).slice(0, 10).map(([messageId, [message]]) => {
-        const [brief] = message.split('\n', 1)
-        return `${messageId}. ${brief}`
-      })
-      if (!output.length) return '最近没有 GitHub 通知。'
-      return output.join('\n')
-    })
 
   const tokens: Record<string, string> = {}
 
@@ -215,7 +205,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   const reactions = ['+1', '-1', 'laugh', 'confused', 'heart', 'hooray', 'rocket', 'eyes']
 
-  const history: Record<string, EventData> = {}
+  const history: Record<string, ReplyPayloads> = {}
 
   function safeParse(source: string) {
     try {
@@ -247,7 +237,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.before('attach-user', (session, fields) => {
     if (!session.quote) return
-    if (history[session.quote.messageId.slice(0, 6)]) {
+    if (history[session.quote.messageId]) {
       fields.add('ghAccessToken')
       fields.add('ghRefreshToken')
     }
@@ -256,11 +246,11 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.middleware((session: ReplySession, next) => {
     if (!session.quote) return next()
     const body = session.parsed.content.trim()
-    const payloads = history[session.quote.messageId.slice(0, 6)]
+    const payloads = history[session.quote.messageId]
     if (!body || !payloads) return next()
 
     let name: string, message: string
-    if (session.parsed.prefix !== null || session.parsed.appel) {
+    if (session.parsed.prefix !== null) {
       name = body.split(' ', 1)[0]
       message = body.slice(name.length).trim()
     } else {
@@ -268,7 +258,7 @@ export function apply(ctx: Context, config: Config = {}) {
       message = body
     }
 
-    const payload = payloads[1][name]
+    const payload = payloads[name]
     if (!payload) return next()
     const handler = new ReplyHandler(github, session, message)
     return handler[name](...payload)
@@ -299,15 +289,14 @@ export function apply(ctx: Context, config: Config = {}) {
       // step 3: broadcast message
       logger.debug('broadcast', result[0].split('\n', 1)[0])
       const messageIds = await ctx.broadcast(targets, config.messagePrefix + result[0])
-      const hexIds = messageIds.map(id => id.slice(0, 6))
 
       // step 4: save message ids for interactions
-      for (const id of hexIds) {
-        history[id] = result
+      for (const id of messageIds) {
+        history[id] = result[1]
       }
 
       setTimeout(() => {
-        for (const id of hexIds) {
+        for (const id of messageIds) {
           delete history[id]
         }
       }, config.replyTimeout)

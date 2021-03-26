@@ -136,14 +136,14 @@ class SmmsAssets implements Assets {
     config.endpoint = trimSlash(config.endpoint || 'https://sm.ms/api/v2')
   }
 
-  async upload(url: string) {
+  async upload(url: string, file: string) {
     const { token, endpoint, axiosConfig } = this.config
     const { data: filedata } = await axios.get<ArrayBuffer>(url, {
       ...axiosConfig,
       responseType: 'arraybuffer',
     })
     const payload = new FormData()
-    payload.append('smfile', filedata)
+    payload.append('smfile', filedata, file)
     const { data } = await axios.post(endpoint + '/upload', payload, {
       ...axiosConfig,
       headers: {
@@ -151,6 +151,13 @@ class SmmsAssets implements Assets {
         ...payload.getHeaders(),
       },
     })
+    if (data.code === 'image_repeated') {
+      return data.images
+    }
+    if (!data.data) {
+      const error = new Error(data.message)
+      return Object.assign(error, data)
+    }
     return data.data.url
   }
 

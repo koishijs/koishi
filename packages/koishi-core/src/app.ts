@@ -220,8 +220,10 @@ export class App extends Context {
     } else if (capture = content.match(this._nameRE)) {
       appel = true
       content = content.slice(capture[0].length)
-      // eslint-disable-next-line no-cond-assign
-    } else if (capture = content.match(this._prefixRE)) {
+    }
+
+    // eslint-disable-next-line no-cond-assign
+    if (capture = content.match(this._prefixRE)) {
       prefix = capture[0]
       content = content.slice(capture[0].length)
     }

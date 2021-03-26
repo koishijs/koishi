@@ -55,12 +55,6 @@ interface Repository {
   id: number
 }
 
-interface RepoConfig {
-  name: string
-  secret: string
-  channels: string[] | Record<string, EventConfig>
-}
-
 export interface Config {
   path?: string
   appId?: string
@@ -150,7 +144,7 @@ export class GitHub {
   }
 }
 
-type ReplyPayloads = {
+export type ReplyPayloads = {
   [K in keyof ReplyHandler]?: ReplyHandler[K] extends (...args: infer P) => any ? P : never
 }
 
