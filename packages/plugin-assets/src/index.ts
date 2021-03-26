@@ -162,7 +162,13 @@ class SmmsAssets implements Assets {
   }
 
   async stats() {
-    const { data } = await axios.post(this.config.endpoint + '/profile', null, this.config.axiosConfig)
+    const { token, endpoint, axiosConfig } = this.config
+    const { data } = await axios.post(endpoint + '/profile', null, {
+      ...axiosConfig,
+      headers: {
+        authorization: token,
+      },
+    })
     return {
       assetSize: data.data.disk_usage_raw,
     }

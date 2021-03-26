@@ -19,16 +19,11 @@ declare module 'koishi-core' {
   interface Database {
     getDialoguesByTest(test: DialogueTest): Promise<Dialogue[]>
     updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv): Promise<void>
-    getDialogueStats(): Promise<DialogueStats>
+    getDialogueStats(): Promise<Dialogue.Stats>
   }
 }
 
 Tables.extend('dialogue')
-
-interface DialogueStats {
-  questions: number
-  dialogues: number
-}
 
 export interface Dialogue {
   id?: number
@@ -78,6 +73,11 @@ export namespace Dialogue {
     authority?: AuthorityConfig
     historyAge?: number
     validateRegExp?: RegExpValidator.Options
+  }
+
+  export interface Stats {
+    questions: number
+    dialogues: number
   }
 
   export enum Flag {
