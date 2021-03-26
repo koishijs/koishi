@@ -8,7 +8,7 @@
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-onebot": {
-    "version": "3.0.2",
+    "version": "3.0.3",
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-adapter-telegram": {
@@ -44,7 +44,7 @@
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-github": {
-    "version": "3.0.1",
+    "version": "3.0.2",
     "description": "GitHub webhook plugin for Koishi"
   },
   "koishi-plugin-image-search": {
@@ -79,7 +79,7 @@
     "description": "Show Status of Koishi"
   },
   "koishi-plugin-teach": {
-    "version": "2.0.2",
+    "version": "2.0.3",
     "description": "Teach plugin for Koishi"
   },
   "koishi-plugin-tools": {

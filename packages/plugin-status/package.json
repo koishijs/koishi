@@ -29,7 +29,7 @@
     "status"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.5.0"
+    "koishi-core": "^3.5.1"
   },
   "devDependencies": {
     "@types/ws": "^7.4.0",
@@ -40,7 +40,7 @@
     "echarts-wordcloud": "^2.0.0",
     "koishi-plugin-mongo": "^2.2.0",
     "koishi-plugin-mysql": "^3.3.0",
-    "koishi-plugin-teach": "^2.0.2",
+    "koishi-plugin-teach": "^2.0.3",
     "koishi-test-utils": "^6.0.0-beta.11",
     "sass": "^1.32.8",
     "vite": "^2.1.2",
