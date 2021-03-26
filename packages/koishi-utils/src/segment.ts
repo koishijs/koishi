@@ -78,7 +78,7 @@ export namespace segment {
       const transformer = rules[type]
       return typeof transformer === 'string' ? transformer
         : typeof transformer === 'function' ? transformer(data, index, chain)
-          : dropOthers ? '' : capture[0]
+          : dropOthers ? '' : type === 'text' ? data.content : capture[0]
     }).join('')
   }
 

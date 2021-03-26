@@ -168,7 +168,7 @@ export namespace Database {
 }
 
 export interface Assets {
-  types: Assets.Type[]
+  types: readonly Assets.Type[]
   upload(url: string, file: string): Promise<string>
   stats(): Promise<Assets.Stats>
 }

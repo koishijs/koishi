@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-assets",
-  "description": "GitHub webhook plugin for Koishi",
-  "version": "3.0.0",
+  "description": "Asset provider plugin for Koishi",
+  "version": "1.0.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -32,6 +32,7 @@
     "koishi-core": "^3.4.0"
   },
   "dependencies": {
-    "axios": "^0.21.1"
+    "axios": "^0.21.1",
+    "form-data": "^4.0.0"
   }
 }

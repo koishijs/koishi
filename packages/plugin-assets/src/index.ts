@@ -3,6 +3,7 @@ import axios, { AxiosRequestConfig } from 'axios'
 import { promises as fs, createReadStream, existsSync } from 'fs'
 import { extname, resolve } from 'path'
 import { createHmac } from 'crypto'
+import FormData from 'form-data'
 
 interface ServerConfig {
   path?: string
@@ -13,7 +14,7 @@ interface ServerConfig {
 }
 
 class AssetServer implements Assets {
-  types: ['video', 'audio', 'image']
+  types = ['video', 'audio', 'image'] as const
 
   private _promise: Promise<void>
   private _stats: Assets.Stats = {
@@ -100,7 +101,7 @@ interface ClientConfig {
 }
 
 class AssetClient implements Assets {
-  types: ['video', 'audio', 'image']
+  types = ['video', 'audio', 'image'] as const
 
   constructor(public ctx: Context, public config: ClientConfig) {}
 
@@ -121,7 +122,47 @@ class AssetClient implements Assets {
   }
 }
 
-export type Config = ServerConfig | ClientConfig
+interface SmmsConfig {
+  type: 'smms'
+  endpoint?: string
+  token: string
+  axiosConfig?: AxiosRequestConfig
+}
+
+class SmmsAssets implements Assets {
+  types = ['image'] as const
+
+  constructor(public ctx: Context, public config: SmmsConfig) {
+    config.endpoint = trimSlash(config.endpoint || 'https://sm.ms/api/v2')
+  }
+
+  async upload(url: string) {
+    const { token, endpoint, axiosConfig } = this.config
+    const { data: filedata } = await axios.get<ArrayBuffer>(url, {
+      ...axiosConfig,
+      responseType: 'arraybuffer',
+    })
+    const payload = new FormData()
+    payload.append('smfile', filedata)
+    const { data } = await axios.post(endpoint + '/upload', payload, {
+      ...axiosConfig,
+      headers: {
+        authorization: token,
+        ...payload.getHeaders(),
+      },
+    })
+    return data.data.url
+  }
+
+  async stats() {
+    const { data } = await axios.post(this.config.endpoint + '/profile', null, this.config.axiosConfig)
+    return {
+      assetSize: data.data.disk_usage_raw,
+    }
+  }
+}
+
+export type Config = ServerConfig | ClientConfig | SmmsConfig
 
 export const name = 'assets'
 
@@ -131,7 +172,15 @@ export function apply(ctx: Context, config: Config = {}) {
     ...config.axiosConfig,
   }
 
-  ctx.assets = 'server' in config
-    ? new AssetClient(ctx, config)
-    : new AssetServer(ctx, config)
+  if ('type' in config) {
+    if (config.type === 'smms') {
+      ctx.assets = new SmmsAssets(ctx, config)
+    } else {
+      throw new Error(`unsupported asset provider type "${config.type}"`)
+    }
+  } else if ('server' in config) {
+    ctx.assets = new AssetClient(ctx, config)
+  } else {
+    ctx.assets = new AssetServer(ctx, config)
+  }
 }
