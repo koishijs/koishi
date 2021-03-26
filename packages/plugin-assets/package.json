@@ -1,0 +1,37 @@
+{
+  "name": "koishi-plugin-assets",
+  "description": "GitHub webhook plugin for Koishi",
+  "version": "3.0.0",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/plugin-assets.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/plugin-assets/issues"
+  },
+  "homepage": "https://koishi.js.org/plugins/other/assets",
+  "keywords": [
+    "bot",
+    "qqbot",
+    "cqhttp",
+    "coolq",
+    "chatbot",
+    "koishi",
+    "plugin",
+    "assets",
+    "server"
+  ],
+  "peerDependencies": {
+    "koishi-core": "^3.4.0"
+  },
+  "dependencies": {
+    "axios": "^0.21.1"
+  }
+}
