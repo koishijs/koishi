@@ -167,5 +167,17 @@ export namespace Database {
   }
 }
 
-/** @deprecated use `Database.extend()` instead */
-export const extendDatabase = Database.extend
+export interface Assets {
+  types: Assets.Type[]
+  upload(url: string, file: string): Promise<string>
+  stats(): Promise<Assets.Stats>
+}
+
+export namespace Assets {
+  export type Type = 'image' | 'audio' | 'video'
+
+  export interface Stats {
+    assetCount?: number
+    assetSize?: number
+  }
+}
