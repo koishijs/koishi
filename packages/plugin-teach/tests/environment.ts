@@ -1,4 +1,4 @@
-import { Database, Context } from 'koishi-core'
+import { Database, Context, Assets } from 'koishi-core'
 import { defineProperty, Observed, clone, intersection } from 'koishi-utils'
 import { Dialogue, DialogueTest, equal, Config, apply } from 'koishi-plugin-teach'
 import { App } from 'koishi-test-utils'
@@ -106,12 +106,26 @@ function getProduct({ startTime, endTime }: Dialogue, time: number) {
   return (startTime - time) * (time - endTime) * (endTime - startTime)
 }
 
+class MockAssets implements Assets {
+  types = ['image'] as const
+
+  async upload(url: string) {
+    return url
+  }
+
+  async stats() {
+    return {}
+  }
+}
+
 export default function (config: Config) {
   const app = new App({
     userCacheAge: Number.EPSILON,
     nickname: ['koishi', 'satori'],
     mockDatabase: true,
   })
+
+  app.assets = new MockAssets()
 
   const u2id = '200', u3id = '300', u4id = '400'
   const g1id = '100', g2id = '200'
