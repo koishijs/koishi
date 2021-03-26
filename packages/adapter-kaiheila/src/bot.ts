@@ -18,6 +18,7 @@ export interface KaiheilaMessageInfo extends MessageInfo {
 export class KaiheilaBot extends Bot {
   _sn = 0
   _ping: NodeJS.Timeout
+  _heartbeat: NodeJS.Timeout
   version = 'kaiheila'
 
   static toMessage(data: KaiheilaMessageInfo & Record<string, any>) {
@@ -181,8 +182,9 @@ export class KaiheilaBot extends Bot {
   }
 
   async getSelf() {
-    const data = await this.request<Kaiheila.Self>('GET', '/user/me')
-    return adaptUser(data)
+    const data = adaptUser(await this.request<Kaiheila.Self>('GET', '/user/me'))
+    renameProperty(data, 'selfId' as never, 'userId')
+    return data
   }
 
   async getGroupList() {

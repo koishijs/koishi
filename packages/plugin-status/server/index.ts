@@ -21,7 +21,7 @@ declare module 'koishi-core' {
   }
 
   interface Database {
-    getProfile(): Promise<Profile.Meta>
+    getProfile(): Promise<Profile.Stats>
     Synchronizer: new (db: Database) => Synchronizer
   }
 

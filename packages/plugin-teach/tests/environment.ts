@@ -1,4 +1,4 @@
-import { Database, Context } from 'koishi-core'
+import { Database, Context, Assets } from 'koishi-core'
 import { defineProperty, Observed, clone, intersection } from 'koishi-utils'
 import { Dialogue, DialogueTest, equal, Config, apply } from 'koishi-plugin-teach'
 import { App } from 'koishi-test-utils'
@@ -10,14 +10,6 @@ declare module 'koishi-core' {
 }
 
 Database.extend('koishi-test-utils', {
-  async getDialoguesById(ids) {
-    if (!ids.length) return []
-    const table = this.$table('dialogue')
-    const dialogues = table.filter(row => ids.includes(row.id)).map<Dialogue>(clone)
-    dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
-    return dialogues
-  },
-
   async getDialoguesByTest(test: DialogueTest) {
     const dialogues = this.$table('dialogue').filter((dialogue) => {
       return !this.app.bail('dialogue/memory', dialogue, test)
@@ -42,13 +34,6 @@ Database.extend('koishi-test-utils', {
       }
     }
     await this.update('dialogue', data)
-  },
-
-  async recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {
-    for (const dialogue of dialogues) {
-      this.update('dialogue', [dialogue])
-      Dialogue.addHistory(dialogue, '修改', argv, true)
-    }
   },
 
   async getDialogueStats() {
@@ -121,12 +106,26 @@ function getProduct({ startTime, endTime }: Dialogue, time: number) {
   return (startTime - time) * (time - endTime) * (endTime - startTime)
 }
 
+class MockAssets implements Assets {
+  types = ['image'] as const
+
+  async upload(url: string) {
+    return url
+  }
+
+  async stats() {
+    return {}
+  }
+}
+
 export default function (config: Config) {
   const app = new App({
     userCacheAge: Number.EPSILON,
     nickname: ['koishi', 'satori'],
     mockDatabase: true,
   })
+
+  app.assets = new MockAssets()
 
   const u2id = '200', u3id = '300', u4id = '400'
   const g1id = '100', g2id = '200'

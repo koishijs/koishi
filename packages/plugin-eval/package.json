@@ -33,7 +33,7 @@
     "code"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.4.0"
+    "koishi-core": "^3.5.0"
   },
   "dependencies": {
     "js-yaml": "^4.0.0",

@@ -41,24 +41,18 @@ Tables.extend('github', { primary: 'name' })
 Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
   tables.user.ghAccessToken = 'varchar(50)'
   tables.user.ghRefreshToken = 'varchar(50)'
-  tables.channel.githubWebhooks = new Domain.Json()
-  tables.github = Object.assign<any, any>(['primary key (`name`)'], {
+  tables.channel.githubWebhooks = new Domain.Json('text', {})
+  tables.github = {
     id: 'int',
     name: 'varchar(50)',
     secret: 'varchar(50)',
-  })
+  }
 })
 
 interface Repository {
   name: string
   secret: string
   id: number
-}
-
-interface RepoConfig {
-  name: string
-  secret: string
-  channels: string[] | Record<string, EventConfig>
 }
 
 export interface Config {
@@ -150,15 +144,7 @@ export class GitHub {
   }
 }
 
-function formatReply(source: string) {
-  return segment.parse(source).map((node) => {
-    if (node.type === 'text') return node.data.content
-    if (node.type === 'image') return `![image](${node.data.url})`
-    return ''
-  }).join('')
-}
-
-type ReplyPayloads = {
+export type ReplyPayloads = {
   [K in keyof ReplyHandler]?: ReplyHandler[K] extends (...args: infer P) => any ? P : never
 }
 
@@ -189,9 +175,17 @@ export class ReplyHandler {
     })
   }
 
-  reply(url: string, params?: Record<string, any>) {
+  async transform(source: string) {
+    source = await this.session.app.transformAssets(source)
+    return segment.transform(source, {
+      text: ({ content }) => content,
+      image: ({ url }) => `![image](${url})`,
+    }, true)
+  }
+
+  async reply(url: string, params?: Record<string, any>) {
     return this.request('POST', url, '发送失败。', {
-      body: formatReply(this.content),
+      body: await this.transform(this.content),
       ...params,
     })
   }

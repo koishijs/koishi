@@ -18,13 +18,14 @@ export namespace Tables {
 
   interface Meta<O> {
     primary?: keyof O
+    unique?: (keyof O)[]
     type?: 'incremental'
   }
 
   export const config: { [T in TableType]?: Meta<Tables[T]> } = {}
 
   export function extend<T extends TableType>(name: T, meta?: Meta<Tables[T]>) {
-    config[name] = { primary: 'id', type: 'incremental', ...meta } as any
+    config[name] = { primary: 'id', unique: [], type: 'incremental', ...meta } as any
   }
 
   extend('user')
@@ -166,5 +167,17 @@ export namespace Database {
   }
 }
 
-/** @deprecated use `Database.extend()` instead */
-export const extendDatabase = Database.extend
+export interface Assets {
+  types: readonly Assets.Type[]
+  upload(url: string, file: string): Promise<string>
+  stats(): Promise<Assets.Stats>
+}
+
+export namespace Assets {
+  export type Type = 'image' | 'audio' | 'video'
+
+  export interface Stats {
+    assetCount?: number
+    assetSize?: number
+  }
+}

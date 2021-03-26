@@ -10,7 +10,6 @@ import update, { create } from './update'
 import mongo from './database/mongo'
 import mysql from './database/mysql'
 import context from './plugins/context'
-import image from './plugins/image'
 import throttle from './plugins/throttle'
 import probability from './plugins/probability'
 import successor from './plugins/successor'
@@ -22,7 +21,6 @@ export * from './receiver'
 export * from './search'
 export * from './update'
 export * from './plugins/context'
-export * from './plugins/image'
 export * from './plugins/throttle'
 export * from './plugins/probability'
 export * from './plugins/successor'
@@ -182,7 +180,6 @@ export function apply(ctx: Context, config: Config = {}) {
   // options
   ctx.plugin(internal, config)
   ctx.plugin(context, config)
-  ctx.plugin(image, config)
   ctx.plugin(throttle, config)
   ctx.plugin(probability, config)
   ctx.plugin(successor, config)

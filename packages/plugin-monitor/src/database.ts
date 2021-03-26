@@ -69,10 +69,10 @@ Database.extend('koishi-plugin-mysql', {
 
 Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
   tables.channel.subscribe = new Domain.Json()
-  tables.subscribe = Object.assign<any, any>([], {
+  tables.subscribe = {
     id: '`id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT',
     names: new Domain.Array(),
-  })
+  }
 })
 
 Database.extend('koishi-plugin-mongo', {

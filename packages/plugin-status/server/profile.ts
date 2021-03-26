@@ -1,6 +1,7 @@
-import { Bot, Context, Platform } from 'koishi-core'
+import { Assets, Bot, Context, Platform } from 'koishi-core'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
+import { Dialogue } from 'koishi-plugin-teach'
 
 export type LoadRate = [app: number, total: number]
 export type MessageRate = [send: number, receive: number]
@@ -77,13 +78,15 @@ export namespace Profile {
     refreshInterval?: number
   }
 
-  export interface Meta {
+  export interface Stats {
     allUsers: number
     activeUsers: number
     allGroups: number
     activeGroups: number
     storageSize: number
   }
+
+  export interface Meta extends Stats, Dialogue.Stats, Assets.Stats {}
 
   export async function get(ctx: Context, config: Config) {
     const [memory, bots] = await Promise.all([
@@ -95,13 +98,17 @@ export namespace Profile {
   }
 
   let timestamp = 0
-  let cachedMeta: Promise<Meta>
+  let cachedMeta: Promise<Partial<Meta>>
 
   async function getMeta(ctx: Context, config: Config) {
-    const next = Date.now() + config.refreshInterval
-    if (timestamp > next) return cachedMeta
-    timestamp = next
-    return cachedMeta = ctx.database.getProfile()
+    const now = Date.now()
+    if (timestamp > now) return cachedMeta
+    timestamp = now + config.refreshInterval
+    return cachedMeta = Promise.all([
+      ctx.assets?.stats(),
+      ctx.database.getProfile(),
+      ctx.database?.getDialogueStats(),
+    ]).then(data => Object.assign({}, ...data))
   }
 
   export function initBot(bot: Bot) {

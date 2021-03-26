@@ -86,6 +86,7 @@ export namespace Adapter {
   }
 
   export interface WsClientOptions {
+    retryLazy?: number
     retryTimes?: number
     retryInterval?: number
   }
@@ -98,6 +99,7 @@ export namespace Adapter {
     public options: WsClientOptions
 
     static options: WsClientOptions = {
+      retryLazy: Time.minute,
       retryInterval: 5 * Time.second,
       retryTimes: 6,
     }
@@ -109,7 +111,7 @@ export namespace Adapter {
 
     private async _listen(bot: Bot.Instance<P>) {
       let _retryCount = 0
-      const { retryTimes, retryInterval } = this.options
+      const { retryTimes, retryInterval, retryLazy } = this.options
 
       const connect = async (resolve: (value: void) => void, reject: (reason: Error) => void) => {
         logger.debug('websocket client opening')
@@ -125,15 +127,20 @@ export namespace Adapter {
           if (!this._listening) return
 
           const message = reason || `failed to connect to ${socket.url}`
-          if (!retryInterval || _retryCount >= retryTimes) {
-            return reject(new Error(message))
+          let timeout = retryInterval
+          if (_retryCount >= retryTimes) {
+            if (this.app.status === App.Status.open) {
+              timeout = retryLazy
+            } else {
+              return reject(new Error(message))
+            }
           }
 
           _retryCount++
-          logger.warn(`${message}, will retry in ${Time.formatTimeShort(retryInterval)}...`)
+          logger.warn(`${message}, will retry in ${Time.formatTimeShort(timeout)}...`)
           setTimeout(() => {
             if (this._listening) connect(resolve, reject)
-          }, retryInterval)
+          }, timeout)
         })
 
         socket.on('open', () => {

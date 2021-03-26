@@ -1,5 +1,5 @@
-import { Session, App, Tables } from 'koishi-core'
-import { difference, observe, isInteger, defineProperty, Observed } from 'koishi-utils'
+import { Session, App, Context, Tables } from 'koishi-core'
+import { difference, observe, isInteger, defineProperty, Observed, clone } from 'koishi-utils'
 import { RegExpValidator } from 'regexpp'
 
 declare module 'koishi-core' {
@@ -17,20 +17,13 @@ declare module 'koishi-core' {
   }
 
   interface Database {
-    getDialoguesById<T extends Dialogue.Field>(ids: number[], fields?: T[]): Promise<Dialogue[]>
     getDialoguesByTest(test: DialogueTest): Promise<Dialogue[]>
     updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv): Promise<void>
-    recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv): Promise<void>
-    getDialogueStats(): Promise<DialogueStats>
+    getDialogueStats(): Promise<Dialogue.Stats>
   }
 }
 
 Tables.extend('dialogue')
-
-interface DialogueStats {
-  questions: number
-  dialogues: number
-}
 
 export interface Dialogue {
   id?: number
@@ -82,6 +75,11 @@ export namespace Dialogue {
     validateRegExp?: RegExpValidator.Options
   }
 
+  export interface Stats {
+    questions: number
+    dialogues: number
+  }
+
   export enum Flag {
     /** 冻结：只有 4 级以上权限者可修改 */
     frozen = 1,
@@ -93,6 +91,12 @@ export namespace Dialogue {
     substitute = 8,
     /** 补集：上下文匹配时取补集 */
     complement = 16,
+  }
+
+  export async function get<K extends Dialogue.Field>(ctx: Context, ids: number[], fields?: K[]) {
+    const dialogues = await ctx.database.get('dialogue', ids, fields)
+    dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
+    return dialogues
   }
 
   export async function remove(dialogues: Dialogue[], argv: Dialogue.Argv, revert = false) {
@@ -108,8 +112,15 @@ export namespace Dialogue {
     const created = dialogues.filter(d => d._type === '添加')
     const edited = dialogues.filter(d => d._type !== '添加')
     await Dialogue.remove(created, argv, true)
-    await argv.app.database.recoverDialogues(edited, argv)
+    await recover(edited, argv)
     return `问答 ${dialogues.map(d => d.id).sort((a, b) => a - b)} 已回退完成。`
+  }
+
+  export async function recover(dialogues: Dialogue[], argv: Dialogue.Argv) {
+    await argv.app.database.update('dialogue', dialogues)
+    for (const dialogue of dialogues) {
+      Dialogue.addHistory(dialogue, '修改', argv, true)
+    }
   }
 
   export function addHistory(dialogue: Dialogue, type: Dialogue.ModifyType, argv: Dialogue.Argv, revert: boolean) {

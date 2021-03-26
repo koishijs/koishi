@@ -10,13 +10,6 @@ declare module 'koishi-core' {
 }
 
 Database.extend('koishi-plugin-mysql', {
-  async getDialoguesById(ids, fields) {
-    if (!ids.length) return []
-    const dialogues = await this.select<Dialogue>('dialogue', fields, `\`id\` IN (${ids.join(',')})`)
-    dialogues.forEach(d => defineProperty(d, '_backup', clone(d)))
-    return dialogues
-  },
-
   async getDialoguesByTest(test: DialogueTest) {
     let query = 'SELECT * FROM `dialogue`'
     const conditionals: string[] = []
@@ -51,14 +44,6 @@ Database.extend('koishi-plugin-mysql', {
     await this.update('dialogue', data)
   },
 
-  async recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {
-    if (!dialogues.length) return
-    await this.update('dialogue', dialogues)
-    for (const dialogue of dialogues) {
-      Dialogue.addHistory(dialogue, '修改', argv, true)
-    }
-  },
-
   async getDialogueStats() {
     const [{
       'COUNT(DISTINCT `question`)': questions,
@@ -69,9 +54,7 @@ Database.extend('koishi-plugin-mysql', {
 })
 
 Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
-  tables.dialogue = Object.assign<any, any>([
-    'PRIMARY KEY (`id`) USING BTREE',
-  ], {
+  tables.dialogue = {
     id: `INT(11) UNSIGNED NOT NULL AUTO_INCREMENT`,
     flag: `INT(10) UNSIGNED NOT NULL DEFAULT '0'`,
     probS: `DECIMAL(4,3) UNSIGNED NOT NULL DEFAULT '1.000'`,
@@ -85,7 +68,7 @@ Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
     predecessors: new Domain.Array(`TINYTEXT`),
     successorTimeout: `INT(10) UNSIGNED NOT NULL DEFAULT '0'`,
     writer: 'INT(11) UNSIGNED',
-  })
+  }
 })
 
 export default function apply(ctx: Context, config: Dialogue.Config) {

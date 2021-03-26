@@ -6,6 +6,7 @@ import Card from './components/card.vue'
 import Collapse from './components/collapse.vue'
 import Button from './components/button.vue'
 import Input from './components/input.vue'
+import Numeric from './components/numeric.vue'
 import App from './views/layout/index.vue'
 import { start, user, receive } from '.'
 import * as client from '.'
@@ -56,6 +57,11 @@ const router = createRouter({
     meta: { icon: 'laptop-code', require: ['user'] },
     component: () => import('./views/sandbox.vue'),
   }, {
+    path: '/teach',
+    name: '问答',
+    meta: { icon: 'book', require: ['stats', 'profile'] },
+    component: () => import('./views/teach/teach.vue'),
+  }, {
     path: '/profile',
     name: '资料',
     meta: { icon: 'user-circle', require: ['user'], hidden: true },
@@ -69,10 +75,11 @@ const router = createRouter({
 })
 
 app.component('k-card', Card)
+app.component('k-button', Button)
 
 app.component('k-collapse', Collapse)
-app.component('k-button', Button)
 app.component('k-input', Input)
+app.component('k-numeric', Numeric)
 app.component('k-chart', defineAsyncComponent(() => import('./components/echarts')))
 
 app.provide('ecTheme', 'dark-blue')

@@ -169,9 +169,9 @@ export namespace Statistics {
     })
 
     // dialogue
-    if (ctx.database.getDialoguesById) {
+    if (ctx.database.getDialogueStats) {
       const dialogueMap = average(daily.map(data => data.dialogue))
-      const dialogues = await ctx.database.getDialoguesById(Object.keys(dialogueMap).map(i => +i), ['id', 'original'])
+      const dialogues = await ctx.database.get('dialogue', Object.keys(dialogueMap).map(i => +i), ['id', 'original'])
       const questionMap: Record<string, QuestionData> = {}
       for (const dialogue of dialogues) {
         const { id, original: name } = dialogue

@@ -125,10 +125,6 @@ describe('GitHub Plugin', () => {
       await ses.shouldReply('.github -d foo/bar', '移除订阅成功！')
       await ses.shouldReply('.github -d foo/bar', '尚未在当前频道订阅过仓库 foo/bar。')
     })
-
-    it('github.recent (no history)', async () => {
-      await ses.shouldReply('.github.recent', '最近没有 GitHub 通知。')
-    })
   })
 
   const idMap: Record<string, string> = {}
@@ -263,10 +259,6 @@ describe('GitHub Plugin', () => {
       await ses.shouldReply(`[CQ:quote,id=${idMap['issue_comment.created.1']}] test`, '发送失败。')
       expect(unauthorized.mock.calls).to.have.length(1)
       expect(notFound.mock.calls).to.have.length(1)
-    })
-
-    it('github.recent', async () => {
-      await ses.shouldReply('.github.recent', /^\w{6}\./)
     })
   })
 })
