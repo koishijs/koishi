@@ -27,7 +27,7 @@ Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
     time: `TIMESTAMP NULL DEFAULT NULL`,
     lastCall: `TIMESTAMP NULL DEFAULT NULL`,
     interval: `BIGINT(20) UNSIGNED NOT NULL DEFAULT '0'`,
-    command: `MEDIUMTEXT NOT NULL`,
+    command: `MEDIUMTEXT NULL`,
     session: new Domain.Json(),
   }
 })

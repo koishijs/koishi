@@ -16,6 +16,7 @@ const serverQuestions: PromptObject[] = [{
     { title: 'OneBot - HTTP', value: 'onebot:http' },
     { title: 'OneBot - WebSocket', value: 'onebot:ws' },
     { title: 'OneBot - WebSocket Reverse', value: 'onebot:ws-reverse' },
+    { title: 'Discord - WebSocket', value: 'discord' },
     { title: 'Telegram - HTTP', value: 'telegram' },
     { title: 'Kaiheila - HTTP', value: 'kaiheila:http' },
     { title: 'Kaiheila - WebSocket', value: 'kaiheila:ws' },
@@ -50,18 +51,19 @@ const botMap: PromptDict = {
     type: 'text',
     message: 'Token for CQHTTP Server',
   }],
+  'discord': [{
+    name: 'token',
+    type: 'text',
+    message: 'Token for Discord',
+  }],
   'telegram': [{
     name: 'token',
     type: 'text',
     message: 'Token for Telegram',
   }],
   'kaiheila': [{
-    name: 'selfId',
-    type: 'number',
-    message: 'Your Bot\'s Id',
-  }, {
     name: 'token',
-    type: 'text',
+    type: () => config.type === 'kaiheila:ws' ? 'text' : null,
     message: 'Token for Kaiheila',
   }, {
     name: 'verifyToken',
@@ -96,7 +98,7 @@ const adapterMap: PromptDict = {
   }],
   'kaiheila': [{
     name: 'path',
-    type: () => !config['onebot'] && config.type !== 'kaiheila:ws' ? 'text' : null,
+    type: () => !config['kaiheila'] && config.type !== 'kaiheila:ws' ? 'text' : null,
     message: 'Kaiheila Path',
   }],
 }
