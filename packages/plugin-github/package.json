@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-github",
   "description": "GitHub webhook plugin for Koishi",
-  "version": "3.0.0-beta.11",
+  "version": "3.0.2",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -11,12 +11,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koishijs/plugin-github-webhook.git"
+    "url": "git+https://github.com/koishijs/koishi.git"
   },
   "bugs": {
-    "url": "https://github.com/koishijs/plugin-github-webhook/issues"
+    "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/other/github-webhook",
+  "homepage": "https://koishi.js.org/plugins/other/github",
   "keywords": [
     "bot",
     "qqbot",
@@ -30,11 +30,13 @@
   ],
   "devDependencies": {
     "@types/marked": "^2.0.0",
+    "koishi-plugin-mongo": "^2.2.0",
+    "koishi-plugin-mysql": "^3.3.0",
     "koishi-plugin-puppeteer": "^2.0.0",
-    "koishi-test-utils": "^6.0.0-beta.10"
+    "koishi-test-utils": "^6.0.0-beta.11"
   },
   "peerDependencies": {
-    "koishi-core": "^3.3.0"
+    "koishi-core": "^3.5.1"
   },
   "dependencies": {
     "@octokit/webhooks-definitions": "^3.63.1",

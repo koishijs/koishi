@@ -163,4 +163,14 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
       return template('teach.prohibited-command', command.name)
     }
   })
+
+  ctx.before('dialogue/modify', async ({ args }) => {
+    if (!args[1]) return
+    try {
+      args[1] = await ctx.transformAssets(args[1])
+    } catch (error) {
+      ctx.logger('teach').warn(error.message)
+      return '上传图片时发生错误。'
+    }
+  })
 }

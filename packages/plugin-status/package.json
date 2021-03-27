@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-status",
   "description": "Show Status of Koishi",
-  "version": "4.0.0-rc.1",
+  "version": "4.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -29,7 +29,7 @@
     "status"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.3.0"
+    "koishi-core": "^3.5.1"
   },
   "devDependencies": {
     "@types/ws": "^7.4.0",
@@ -38,10 +38,10 @@
     "@vue/compiler-sfc": "^3.0.7",
     "echarts": "^5.0.2",
     "echarts-wordcloud": "^2.0.0",
-    "koishi-plugin-mongo": "^2.1.0",
-    "koishi-plugin-mysql": "^3.1.0",
-    "koishi-plugin-teach": "^2.0.0",
-    "koishi-test-utils": "^6.0.0-beta.10",
+    "koishi-plugin-mongo": "^2.2.0",
+    "koishi-plugin-mysql": "^3.3.0",
+    "koishi-plugin-teach": "^2.0.3",
+    "koishi-test-utils": "^6.0.0-beta.11",
     "sass": "^1.32.8",
     "vite": "^2.1.2",
     "vue": "^3.0.7",

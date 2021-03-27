@@ -324,25 +324,25 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
 }
 
 function prepareSource(source: string) {
-  return segment.join(segment.parse(source).map((code, index, arr) => {
-    if (code.type !== 'text') return code
-    let message = simplify(segment.unescape('' + code.data.content))
-      .toLowerCase()
-      .replace(/\s+/g, '')
-      .replace(/，/g, ',')
-      .replace(/、/g, ',')
-      .replace(/。/g, '.')
-      .replace(/？/g, '?')
-      .replace(/！/g, '!')
-      .replace(/（/g, '(')
-      .replace(/）/g, ')')
-      .replace(/【/g, '[')
-      .replace(/】/g, ']')
-      .replace(/～/g, '~')
-      .replace(/…/g, '...')
-    if (index === 0) message = message.replace(/^[()\[\]]*/, '')
-    if (index === arr.length - 1) message = message.replace(/[\.,?!()\[\]~]*$/, '')
-    code.data.content = message
-    return code
-  }))
+  return segment.transform(source, {
+    text: ({ content }, index, chain) => {
+      let message = simplify(segment.unescape('' + content))
+        .toLowerCase()
+        .replace(/\s+/g, '')
+        .replace(/，/g, ',')
+        .replace(/、/g, ',')
+        .replace(/。/g, '.')
+        .replace(/？/g, '?')
+        .replace(/！/g, '!')
+        .replace(/（/g, '(')
+        .replace(/）/g, ')')
+        .replace(/【/g, '[')
+        .replace(/】/g, ']')
+        .replace(/～/g, '~')
+        .replace(/…/g, '...')
+      if (index === 0) message = message.replace(/^[()\[\]]*/, '')
+      if (index === chain.length - 1) message = message.replace(/[\.,?!()\[\]~]*$/, '')
+      return message
+    },
+  })
 }

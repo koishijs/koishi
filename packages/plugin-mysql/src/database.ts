@@ -19,18 +19,19 @@ export interface Config extends PoolConfig {}
 
 interface MysqlDatabase extends Database {}
 
+export function escape(value: any, table?: TableType, field?: string) {
+  const type = MysqlDatabase.tables[table]?.[field]
+  return mysqlEscape(typeof type === 'object' ? type.toString(value) : value)
+}
+
 class MysqlDatabase {
   public pool: Pool
   public config: Config
 
   mysql = this
 
+  escape: (value: any, table?: TableType, field?: string) => string
   escapeId: (value: string) => string
-
-  escape(value: any, table?: TableType, field?: string) {
-    const type = MysqlDatabase.tables[table]?.[field]
-    return mysqlEscape(typeof type === 'object' ? type.toString(value) : value)
-  }
 
   inferFields<T extends TableType>(table: T, keys: readonly string[]) {
     const types = MysqlDatabase.tables[table] || {}
@@ -71,27 +72,31 @@ class MysqlDatabase {
     for (const name in MysqlDatabase.tables) {
       const table = { ...MysqlDatabase.tables[name] }
       // create platform rows
+      const platforms = new Set<string>(this.app.bots.map(bot => bot.platform))
       if (name === 'user') {
-        let index = MysqlDatabase.tables[name]['length']
-        const platforms = new Set<string>(this.app.bots.map(bot => bot.platform))
-        platforms.forEach(name => {
-          const key = escapeId(name)
+        for (const name of platforms) {
           table[name] = 'varchar(50) null default null'
-          table[index++] = `unique index ${key} (${key}) using btree`
-        })
+        }
       }
       if (!tables[name]) {
         const cols = Object.keys(table)
           .filter((key) => typeof table[key] !== 'function')
-          .map((key) => {
-            if (+key * 0 === 0) return table[key]
-            return `\`${key}\` ${MysqlDatabase.Domain.definition(table[key])}`
-          })
+          .map((key) => `${escapeId(key)} ${MysqlDatabase.Domain.definition(table[key])}`)
+        const { primary, unique } = KoishiTables.config[name as TableType]
+        cols.push(`primary key (${escapeId(primary)})`)
+        for (const key of unique) {
+          cols.push(`unique index (${escapeId(key)})`)
+        }
+        if (name === 'user') {
+          for (const key of platforms) {
+            cols.push(`unique index (${escapeId(key)})`)
+          }
+        }
         logger.info('auto creating table %c', name)
         await this.query(`CREATE TABLE ?? (${cols.join(',')}) COLLATE = ?`, [name, this.config.charset])
       } else {
         const cols = Object.keys(table)
-          .filter(key => +key * 0 !== 0 && typeof table[key] !== 'function' && !tables[name].includes(key))
+          .filter(key => typeof table[key] !== 'function' && !tables[name].includes(key))
           .map(key => `ADD \`${key}\` ${MysqlDatabase.Domain.definition(table[key])}`)
         if (!cols.length) continue
         logger.info('auto updating table %c', name)
@@ -102,6 +107,10 @@ class MysqlDatabase {
 
   joinKeys = (keys: readonly string[]) => {
     return keys ? keys.map(key => key.includes('`') ? key : `\`${key}\``).join(',') : '*'
+  }
+
+  $in = (table: TableType, key: string, values: readonly any[]) => {
+    return `${this.escapeId(key)} IN (${values.map(val => this.escape(val, table, key)).join(', ')})`
   }
 
   formatValues = (table: string, data: object, keys: readonly string[]) => {
@@ -165,30 +174,6 @@ class MysqlDatabase {
     return { ...data, id: header.insertId } as any
   }
 
-  async update<K extends TableType>(table: K, data: Partial<Tables[K]>[]): Promise<OkPacket>
-  async update<K extends TableType>(table: K, id: number | string, data: Partial<Tables[K]>): Promise<OkPacket>
-  async update<K extends TableType>(table: K, arg1: number | string | Tables[K][], data?: Partial<Tables[K]>) {
-    if (typeof arg1 === 'object') {
-      if (!arg1.length) return
-      const keys = Object.keys(arg1[0])
-      const placeholder = `(${keys.map(() => '?').join(', ')})`
-      const header = await this.query(
-        `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES ${arg1.map(() => placeholder).join(', ')}
-        ON DUPLICATE KEY UPDATE ${keys.filter(key => key !== 'id').map(key => `\`${key}\` = VALUES(\`${key}\`)`).join(', ')}`,
-        [table, ...[].concat(...arg1.map(data => this.formatValues(table, data, keys)))],
-      )
-      return header as OkPacket
-    }
-
-    const keys = Object.keys(data)
-    if (!keys.length) return
-    const header = await this.query(
-      'UPDATE ?? SET ' + keys.map(key => `\`${key}\` = ?`).join(', ') + ' WHERE `id` = ?',
-      [table, ...this.formatValues(table, data, keys), arg1],
-    )
-    return header as OkPacket
-  }
-
   async count<K extends TableType>(table: K, conditional?: string) {
     const [{ 'COUNT(*)': count }] = await this.query(`SELECT COUNT(*) FROM ?? ${conditional ? 'WHERE ' + conditional : ''}`, [table])
     return count as number
@@ -199,12 +184,13 @@ class MysqlDatabase {
   }
 }
 
+MysqlDatabase.prototype.escape = escape
 MysqlDatabase.prototype.escapeId = escapeId
 
 namespace MysqlDatabase {
   type Declarations = {
     [T in TableType]?: {
-      [K in keyof Tables[T]]: string | (() => string) | Domain<Tables[T][K]>
+      [K in keyof Tables[T]]?: string | (() => string) | Domain<Tables[T][K]>
     }
   }
 
@@ -249,14 +235,15 @@ namespace MysqlDatabase {
     }
 
     export class Json implements Domain {
-      constructor(public definition = 'JSON') {}
+      // mysql does not support text column with default value
+      constructor(public definition = 'text', private defaultValue?: any) {}
 
       toString(value: any) {
         return JSON.stringify(value)
       }
 
       valueOf(field: FieldInfo) {
-        return JSON.parse(field.string())
+        return JSON.parse(field.string()) || this.defaultValue
       }
     }
   }

@@ -23,15 +23,15 @@ export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.Anonymou
 })
 
 function adaptContent(content: string) {
-  return segment.parse(content).reduce((prev, { type, data }) => {
-    if (type === 'at') {
-      if (data.qq === 'all') return prev + '[CQ:at,type=all]'
-      return prev + `[CQ:at,id=${data.qq}]`
-    } else if (type === 'reply') {
-      type = 'quote'
-    }
-    return prev + segment(type, data)
-  }, '')
+  return segment.transform(content, {
+    at({ qq }) {
+      if (qq === 'all') return segment('at', { type: 'all' })
+      return segment.at(qq)
+    },
+    reply(data) {
+      return segment('quote', data)
+    },
+  })
 }
 
 export const adaptMessage = (message: OneBot.Message): Koishi.MessageInfo => ({
@@ -126,7 +126,11 @@ export function createSession(adapter: Adapter, data: any) {
       case 'notify':
         session.type = 'notice'
         session.subtype = paramCase(data.sub_type)
-        session.subsubtype = paramCase(data.honor_type)
+        if (session.subtype === 'poke') {
+          session.channelId ||= `private:${session.userId}`
+        } else if (session.subtype === 'honor') {
+          session.subsubtype = paramCase(data.honor_type)
+        }
         break
     }
   } else return

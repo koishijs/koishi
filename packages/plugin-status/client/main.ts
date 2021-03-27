@@ -1,13 +1,15 @@
 /* eslint-disable no-undef */
 
-import { createApp, defineAsyncComponent } from 'vue'
+import { createApp, defineAsyncComponent, Ref } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import Card from './components/card.vue'
 import Collapse from './components/collapse.vue'
 import Button from './components/button.vue'
 import Input from './components/input.vue'
+import Numeric from './components/numeric.vue'
 import App from './views/layout/index.vue'
 import { start, user, receive } from '.'
+import * as client from '.'
 
 import '@fortawesome/fontawesome-free/css/fontawesome.css'
 import '@fortawesome/fontawesome-free/css/brands.css'
@@ -16,13 +18,17 @@ import '@fortawesome/fontawesome-free/css/solid.css'
 
 import './index.scss'
 
+type Keys<O, T = any> = {
+  [K in keyof O]: O[K] extends T ? K : never
+}[keyof O]
+
 declare module 'vue-router' {
   interface RouteMeta {
     icon?: string
     hidden?: boolean
     authorize?: boolean
     frameless?: boolean
-    require?: ('stats' | 'profile' | 'registry')[]
+    require?: Keys<typeof client, Ref>[]
   }
 }
 
@@ -48,12 +54,17 @@ const router = createRouter({
   }, {
     path: '/sandbox',
     name: '沙盒',
-    meta: { icon: 'laptop-code', authorize: true },
+    meta: { icon: 'laptop-code', require: ['user'] },
     component: () => import('./views/sandbox.vue'),
+  }, {
+    path: '/teach',
+    name: '问答',
+    meta: { icon: 'book', require: ['stats', 'profile'] },
+    component: () => import('./views/teach/teach.vue'),
   }, {
     path: '/profile',
     name: '资料',
-    meta: { icon: 'user-circle', authorize: true, hidden: true },
+    meta: { icon: 'user-circle', require: ['user'], hidden: true },
     component: () => import('./views/profile.vue'),
   }, {
     path: '/login',
@@ -64,10 +75,11 @@ const router = createRouter({
 })
 
 app.component('k-card', Card)
+app.component('k-button', Button)
 
 app.component('k-collapse', Collapse)
-app.component('k-button', Button)
 app.component('k-input', Input)
+app.component('k-numeric', Numeric)
 app.component('k-chart', defineAsyncComponent(() => import('./components/echarts')))
 
 app.provide('ecTheme', 'dark-blue')
@@ -79,7 +91,7 @@ receive('expire', () => {
 })
 
 router.beforeEach((route) => {
-  if (route.meta.authorize && !user.value) {
+  if (route.meta.require.includes('user') && !user.value) {
     return '/login'
   }
 })

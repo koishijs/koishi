@@ -44,6 +44,15 @@ export function escapeRegExp(source: string) {
     .replace(/-/g, '\\x2d')
 }
 
+export function trimSlash(source: string) {
+  return source.replace(/\/$/, '')
+}
+
+export function sanitize(source: string) {
+  if (!source.startsWith('/')) source = '/' + source
+  return trimSlash(source)
+}
+
 export function template(path: string | string[], ...params: any[]) {
   if (!Array.isArray(path)) path = [path]
   for (const item of path) {

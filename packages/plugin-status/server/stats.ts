@@ -162,16 +162,16 @@ export namespace Statistics {
       }
     }
 
-    await ctx.database.setChannels(updateList)
+    await ctx.database.update('channel', updateList)
 
     extension.hours = new Array(24).fill(0).map((_, index) => {
       return average(hourly.filter(s => s.time.getHours() === index))
     })
 
     // dialogue
-    if (ctx.database.getDialoguesById) {
+    if (ctx.database.getDialogueStats) {
       const dialogueMap = average(daily.map(data => data.dialogue))
-      const dialogues = await ctx.database.getDialoguesById(Object.keys(dialogueMap).map(i => +i), ['id', 'original'])
+      const dialogues = await ctx.database.get('dialogue', Object.keys(dialogueMap).map(i => +i), ['id', 'original'])
       const questionMap: Record<string, QuestionData> = {}
       for (const dialogue of dialogues) {
         const { id, original: name } = dialogue

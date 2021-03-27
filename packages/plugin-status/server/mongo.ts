@@ -23,10 +23,6 @@ Database.extend('koishi-plugin-mongo', {
     return { allGroups, activeGroups, allUsers, activeUsers, storageSize }
   },
 
-  async setChannels(data) {
-    await Promise.all(data.map(ch => this.setChannel(ch.type, ch.id, ch)))
-  },
-
   Synchronizer: class {
     groups: StatRecord
     daily: any
