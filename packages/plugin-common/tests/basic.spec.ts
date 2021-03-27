@@ -19,6 +19,13 @@ app.plugin(common, {
     source: 'mock:456',
     destination: 'mock:654',
   },
+  respondent: [{
+    match: '挖坑一时爽',
+    reply: '填坑火葬场',
+  }, {
+    match: /^(.+)一时爽$/,
+    reply: (_, action) => `一直${action}一直爽`,
+  }],
 })
 
 app.command('show-context')
@@ -112,5 +119,11 @@ describe('Sender Commands', () => {
       await session2.shouldReply('ctxf -u @456 show-context', '456,456,undefined')
       await session2.shouldReply('ctxf -m @456 show-context', '456,456,mock:456')
     })
+  })
+
+  it('respondents', async () => {
+    await session1.shouldReply('挖坑一时爽', '填坑火葬场')
+    await session1.shouldReply('填坑一时爽', '一直填坑一直爽')
+    await session1.shouldNotReply('填坑一直爽')
   })
 })
