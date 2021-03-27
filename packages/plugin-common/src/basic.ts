@@ -12,13 +12,6 @@ template.set('common', {
   'relay': '{0}: {1}',
 })
 
-interface RelayOptions {
-  source: string
-  destination: string
-  selfId?: string
-  lifespan?: number
-}
-
 export function broadcast(ctx: Context) {
   ctx.select('database')
     .command('common/broadcast <message:text>', '全服广播', { authority: 4 })
@@ -169,6 +162,40 @@ export function feedback(ctx: Context, operators: string[]) {
   })
 }
 
+export interface RecallConfig {
+  recallCount?: number
+}
+
+export function recall(ctx: Context, { recallCount = 10 }: RecallConfig) {
+  ctx = ctx.group()
+  const recent: Record<string, string[]> = {}
+
+  ctx.on('send', (session) => {
+    const list = recent[session.channelId] ||= []
+    list.unshift(session.messageId)
+    if (list.length > recallCount) {
+      list.pop()
+    }
+  })
+
+  ctx.command('common/recall [count:number]', '撤回 bot 发送的消息', { authority: 2 })
+    .action(({ session }, count = 1) => {
+      const list = recent[session.channelId]
+      if (!list) return '近期没有发送消息。'
+      list.splice(0, count).map((id) => {
+        return session.bot.deleteMessage(session.channelId, id)
+      })
+      if (!list.length) delete recent[session.channelId]
+    })
+}
+
+interface RelayOptions {
+  source: string
+  destination: string
+  selfId?: string
+  lifespan?: number
+}
+
 export function relay(ctx: Context, relays: RelayOptions[]) {
   const relayMap: Record<string, RelayOptions> = {}
 
@@ -212,7 +239,7 @@ export function respond(ctx: Context, respondents: Respondent[]) {
   })
 }
 
-export interface BasicConfig {
+export interface BasicConfig extends RecallConfig {
   echo?: boolean
   broadcast?: boolean
   contextify?: boolean
@@ -225,6 +252,7 @@ export default function apply(ctx: Context, config: BasicConfig = {}) {
   if (config.broadcast !== false) ctx.plugin(broadcast)
   if (config.contextify !== false) ctx.plugin(contextify)
   if (config.echo !== false) ctx.plugin(echo)
+  if (config.recallCount !== 0) ctx.plugin(recall, config)
 
   const operators = makeArray(config.operator)
   if (operators.length) ctx.plugin(feedback, operators)

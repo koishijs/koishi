@@ -109,6 +109,14 @@ describe('Common Plugin - Basic', () => {
     expect(send2.mock.calls).to.have.shape([['private:123', 'bar']])
   })
 
+  it('recall', async () => {
+    const del = app.bots[0].deleteMessage = jest.fn()
+    await session2.shouldReply('recall', '近期没有发送消息。')
+    app.receive(app.bots[0].createSession({ messageId: '1234', channelId: '456', groupId: '456' }).toJSON())
+    await session2.shouldNotReply('recall')
+    expect(del.mock.calls).to.have.shape([[session2.meta.channelId, '1234']])
+  })
+
   it('relay', async () => {
     const send = app.bots[0].sendMessage = jest.fn(async () => '2000')
     await session2.shouldNotReply('hello')
