@@ -107,7 +107,9 @@ export function echo(ctx: Context) {
     .option('anonymous', '-a  匿名发送消息', { authority: 3 })
     .option('forceAnonymous', '-A  匿名发送消息', { authority: 3 })
     .option('escape', '-e  发送转义消息', { authority: 3 })
-    .action(async ({ options }, message) => {
+    .option('user', '-u [user:user]  发送到用户', { authority: 3 })
+    .option('channel', '-c [channel:channel]  发送到频道', { authority: 3 })
+    .action(async ({ options, session }, message) => {
       if (!message) return template('common.expect-text')
 
       if (options.escape) {
@@ -118,6 +120,18 @@ export function echo(ctx: Context) {
         message = segment('anonymous') + message
       } else if (options.anonymous) {
         message = segment('anonymous', { ignore: true }) + message
+      }
+
+      const target = options.user || options.channel
+      if (target) {
+        const [platform] = target.split(':')
+        const id = target.slice(platform.length + 1)
+        if (options.user) {
+          await session.bot.sendPrivateMessage(id, message)
+        } else {
+          await session.bot.sendMessage(id, message)
+        }
+        return
       }
 
       return message
