@@ -64,7 +64,8 @@ Database.extend('koishi-plugin-mongo', {
       if (Object.keys($inc).length) await coll.updateOne({ type: 'daily', time: _date }, { $inc }, { upsert: true })
       await coll.updateOne({ type: 'longterm', time: _date }, { $inc: this.longterm }, { upsert: true })
       for (const id in this.groups) {
-        await this.db.channel.updateOne({ id }, { $inc: { ['activity.' + Time.getDateNumber(date)]: this.groups[id] } } as any)
+        const [type, pid] = id.split(':') as any;
+        await this.db.channel.updateOne({ type, pid }, { $inc: { ['activity.' + Time.getDateNumber(date)]: this.groups[id] } } as any)
       }
       this.reset()
       logger.debug('stats updated')

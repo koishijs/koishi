@@ -1,5 +1,4 @@
 import MongoDatabase, { Config } from './database'
-import { User, Database, Context, Channel, pick } from 'koishi-core'
 import { User, Tables, Database, Context, Channel, Random, pick, omit, TableType } from 'koishi-core'
 
 export * from './database'
@@ -172,11 +171,11 @@ Database.extend(MongoDatabase, {
       if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` }))
       const channels = await this.channel.find({ _id: { $in: pid.map(id => `${type}:${id}`) } })
         .project(projection(fields)).toArray()
-      return channels.map(channel => ({ ...pick(Channel.create(type, channel.pid), fields), ...channel, id: `${type}:${channel.pid}` }))
+      return channels.map(channel => ({ ...pick(Channel.create(type, channel.pid), fields), ...channel, _id: `${type}:${channel.pid}`, id: `${type}:${channel.pid}` }))
     }
     if (fields && !fields.length) return { id: `${type}:${pid}` }
     const [data] = await this.channel.find({ type, pid: pid as string }).project(projection(fields)).toArray()
-    return data && { ...pick(Channel.create(type, pid as string), fields), ...data, id: `${type}:${pid}` }
+    return data && { ...pick(Channel.create(type, pid as string), fields), ...data, _id: `${type}:${pid}`, id: `${type}:${pid}` }
   },
 
   async getAssignedChannels(fields, assignMap = this.app.getSelfIds()) {
@@ -184,7 +183,7 @@ Database.extend(MongoDatabase, {
     const channels = await this.channel.find({
       $or: Object.entries(assignMap).map<any>(([type, ids]) => ({ type, assignee: { $in: ids } })),
     }).project(project).toArray()
-    return channels.map(channel => ({ ...pick(Channel.create(channel.type, channel.pid), fields), ...channel, id: `${channel.type}:${channel.pid}` }))
+    return channels.map(channel => ({ ...pick(Channel.create(channel.type, channel.pid), fields), ...channel, _id: `${channel.type}:${channel.pid}`, id: `${channel.type}:${channel.pid}` }))
   },
 
   async removeChannel(type, pid) {
