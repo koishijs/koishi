@@ -244,7 +244,7 @@ define('set_group_leave', 'group_id', 'is_dismiss')
 define('set_group_special_title', 'group_id', 'user_id', 'special_title', 'duration')
 define('set_group_name', 'group_id', 'group_name')
 define('set_group_portrait', 'group_id', 'file', 'cache')
-define('send_group_notice', 'group_id', 'content')
+define('_send_group_notice', 'group_id', 'content')
 define('get_group_at_all_remain', 'group_id')
 
 define('get_login_info')
