@@ -1,6 +1,5 @@
 import puppeteer, { Shooter } from 'puppeteer-core'
-import { Context } from 'koishi-core'
-import { Logger, defineProperty, noop, segment } from 'koishi-utils'
+import { Context, Logger, defineProperty, noop, segment } from 'koishi-core'
 import { escape } from 'querystring'
 import { PNG } from 'pngjs'
 export * from './svg'
@@ -178,7 +177,7 @@ export function apply(ctx: Context, config: Config = {}) {
         height: 1080,
         deviceScaleFactor: options.scale,
       })
-      await page.goto('https://www.zhihu.com/equation?tex=' + escape(tex))
+      await page.goto('https://www.zhihu.com/equation?tex=' + escape(segment.unescape(tex)))
       const svg = await page.$('svg')
       const inner = await svg.evaluate(node => node.innerHTML)
       const text = inner.match(/>([^<]+)<\/text>/)
