@@ -1,8 +1,8 @@
 {
   "extends": "../../tsconfig.base",
   "compilerOptions": {
-    "outDir": "lib",
     "rootDir": "server",
+    "outFile": "temp/index.d.ts",
   },
   "include": [
     "server",

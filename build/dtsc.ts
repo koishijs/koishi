@@ -7,6 +7,7 @@ import fs from 'fs-extra'
 import globby from 'globby'
 import json5 from 'json5'
 import cac from 'cac'
+import ts from 'typescript'
 
 const { args, options } = cac().help().parse()
 delete options['--']
@@ -17,46 +18,55 @@ async function readJson(path: string) {
   return json5.parse(data)
 }
 
+async function getModules(srcpath: string) {
+  const files = await globby(srcpath)
+  return files.map(file => file.slice(srcpath.length + 1, -3))
+}
+
+async function compile(path: string, filename: string) {
+  const code = await spawnAsync(['tsc', '-b', 'packages/' + path, ...tsArgs])
+  if (code) process.exit(code)
+  return fs.readFile(filename, 'utf8')
+}
+
 async function bundle(path: string) {
   const fullpath = resolve(cwd, 'packages', path)
-  const srcpath = fullpath.replace(/\\/g, '/') + '/src'
-  const [files, code, config] = await Promise.all([
-    globby(srcpath),
-    spawnAsync(['tsc', '-b', 'packages/' + path, ...tsArgs]),
-    readJson(fullpath + '/tsconfig.json'),
-  ])
-  if (code) process.exit(code)
+  const config = await readJson(fullpath + '/tsconfig.json')
+  const { outFile, rootDir } = config.compilerOptions as ts.CompilerOptions
+  if (!outFile) return
 
-  if (!config.compilerOptions.outFile) return
-  const entry = resolve(fullpath, config.compilerOptions.outFile)
-  const modules = files.map(file => file.slice(srcpath.length + 1, -3))
-  const moduleRE = `"(${modules.join('|')})"`
+  const srcpath = `${fullpath.replace(/\\/g, '/')}/${rootDir}`
+  const [files, content] = await Promise.all([getModules(srcpath), compile(path, resolve(fullpath, outFile))])
+
+  const moduleRE = `"(${files.join('|')})"`
+  const internalImport = new RegExp('import\\(' + moduleRE + '\\)\\.', 'g')
+  const internalExport = new RegExp('^ {4}export .+ from ' + moduleRE + ';$')
   const importMap: Record<string, Record<string, string>> = {}
   const namespaceMap: Record<string, string> = {}
 
-  let prolog = '', epilog = '', cap: RegExpExecArray
-  let content = await fs.readFile(entry, 'utf8')
-  content = content.split(EOL).filter((line) => {
-    if (cap = /^ {4}import \* as (.+) from ["'](.+)["'];$/.exec(line)) {
-      if (modules.includes(cap[2])) {
+  let prolog = '', epilog = '', cap: RegExpExecArray, identifier: string
+  const output = content.split(EOL).filter((line) => {
+    if (cap = /^ {4}import ["'](.+)["'];$/.exec(line)) {
+      if (!files.includes(cap[1])) prolog += line.trimStart() + EOL
+    } else if (cap = /^ {4}import \* as (.+) from ["'](.+)["'];$/.exec(line)) {
+      if (files.includes(cap[2])) {
         namespaceMap[cap[2]] = cap[1]
       } else {
         prolog += line.trimStart() + EOL
       }
     } else if (cap = /^ {4}import +(\S*)(?:, *)?(?:\{(.+)\})? from ["'](.+)["'];$/.exec(line)) {
-      if (!modules.includes(cap[3])) {
-        const map = importMap[cap[3]] ||= {}
-        cap[1] && Object.defineProperty(map, 'default', { value: cap[1] })
-        cap[2] && cap[2].split(',').map((part) => {
-          part = part.trim()
-          if (part.includes(' as ')) {
-            const [left, right] = part.split(' as ')
-            map[left.trimEnd()] = right.trimStart()
-          } else {
-            map[part] = part
-          }
-        })
-      }
+      if (files.includes(cap[3])) return
+      const map = importMap[cap[3]] ||= {}
+      cap[1] && Object.defineProperty(map, 'default', { value: cap[1] })
+      cap[2] && cap[2].split(',').map((part) => {
+        part = part.trim()
+        if (part.includes(' as ')) {
+          const [left, right] = part.split(' as ')
+          map[left.trimEnd()] = right.trimStart()
+        } else {
+          map[part] = part
+        }
+      })
     } else if (line.startsWith('///')) {
       prolog += line + EOL
     } else if (line.startsWith('    export default ')) {
@@ -64,7 +74,20 @@ async function bundle(path: string) {
     } else {
       return true
     }
-  }).join(EOL)
+  }).map((line) => {
+    if (cap = /^declare module ["'](.+)["'] \{( \})?$/.exec(line)) {
+      if (cap[2]) return
+      identifier = namespaceMap[cap[1]]
+      return identifier ? `declare namespace ${identifier} {` : ''
+    } else if (line === '}') {
+      return identifier ? '}' : ''
+    } else if (!internalExport.exec(line)) {
+      if (!identifier) line = line.slice(4)
+      return line
+        .replace(internalImport, '')
+        .replace(/^((module|class|namespace) .+ \{)$/, (_) => `declare ${_}`)
+    }
+  }).filter(line => line).join(EOL)
 
   Object.entries(importMap).forEach(([name, map]) => {
     const output: string[] = []
@@ -79,17 +102,7 @@ async function bundle(path: string) {
     prolog += `import ${output.join(', ')} from '${name}';${EOL}`
   })
 
-  await fs.writeFile(resolve(fullpath, 'dist/index.d.ts'), prolog + content
-    .replace(new RegExp('import\\(' + moduleRE + '\\)\\.', 'g'), '')
-    .replace(new RegExp('\r?\n {4}export .+ from ' + moduleRE + ';', 'g'), '')
-    .replace(/^declare module ["'](.+)["'] \{\r?\n/gm, (_, $1) => {
-      const identifier = namespaceMap[$1]
-      if (identifier) return `declare namespace ${identifier} {`
-      return ''
-    })
-    .replace(/^( {4})((module|class|namespace) .+ \{)$/gm, (_, $1, $2) => `${$1}declare ${$2}`)
-    .replace(/\r?\n}/g, '')
-    .replace(/^ {4}/gm, '') + epilog)
+  await fs.writeFile(resolve(fullpath, 'lib/index.d.ts'), prolog + output + epilog)
 }
 
 async function bundleAll(names: readonly string[]) {
@@ -98,7 +111,7 @@ async function bundleAll(names: readonly string[]) {
   }
 }
 
-const targets = ['koishi-utils', 'koishi-core', 'plugin-mysql', 'plugin-mongo']
+const targets = ['koishi-utils', 'koishi-core', 'plugin-mysql', 'plugin-mongo', 'plugin-status']
 const corePlugins = ['common', 'eval', 'puppeteer', 'teach']
 
 function precedence(name: string) {

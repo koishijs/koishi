@@ -2,12 +2,12 @@
   "name": "koishi-plugin-tools",
   "version": "2.1.0",
   "description": "Some simple tools for Koishi",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
   "files": [
-    "dist"
+    "lib"
   ],
   "repository": {
     "type": "git",

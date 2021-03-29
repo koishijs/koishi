@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base",
   "compilerOptions": {
     "target": "esnext",
-    "outDir": "dist",
+    "outDir": "lib",
     "rootDir": "src",
   },
   "include": [

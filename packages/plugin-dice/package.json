@@ -2,13 +2,13 @@
   "name": "koishi-plugin-dice",
   "version": "0.1.10",
   "description": "COC / DND Tools for Koishi",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "engines": {
     "node": ">=14.6.0"
   },
   "files": [
-    "dist"
+    "lib"
   ],
   "license": "MIT",
   "author": "Shigma <1700011071@pku.edu.cn>",
