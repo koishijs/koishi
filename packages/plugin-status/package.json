@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
-    "dist",
+    "lib",
     "lib"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
