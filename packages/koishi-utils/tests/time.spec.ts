@@ -64,7 +64,7 @@ describe('Time Manipulations', () => {
   })
 
   it('format time interval', () => {
-    expect(Time.formatTimeInterval(date)).to.equal(date.toLocaleString())
+    expect(Time.formatTimeInterval(date)).to.equal('2020-04-01 01:30:00')
     expect(Time.formatTimeInterval(date, Time.day)).to.equal('每天 01:30')
     Time.formatTimeInterval(date, Time.week) // make coverage happy
     Time.formatTimeInterval(date, Time.hour) // make coverage happy

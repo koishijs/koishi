@@ -1,6 +1,7 @@
-import MysqlDatabase, { Config } from './database'
-import { User, Channel, Database, Context } from 'koishi-core'
+import MysqlDatabase, { Config, escape } from './database'
+import { User, Channel, Database, Context, TableType, Tables } from 'koishi-core'
 import { difference } from 'koishi-utils'
+import { OkPacket, escapeId } from 'mysql'
 
 export * from './database'
 export default MysqlDatabase
@@ -17,7 +18,51 @@ declare module 'koishi-core' {
   }
 }
 
+function createFilter<T extends TableType>(name: T, _query: Tables.Query<T>) {
+  const query = Tables.resolveQuery(name, _query)
+  const output: string[] = []
+  for (const key in query) {
+    const value = query[key]
+    if (!value.length) return '0'
+    output.push(`${escapeId(key)} IN (${value.map(val => escape(val, name, key)).join(', ')})`)
+  }
+  return output.join(' AND ')
+}
+
 Database.extend(MysqlDatabase, {
+  async get(name, query, fields) {
+    const filter = createFilter(name, query)
+    if (filter === '0') return []
+    return this.select(name, fields, filter)
+  },
+
+  async remove(name, query) {
+    const filter = createFilter(name, query)
+    if (filter === '0') return
+    await this.query('DELETE FROM ?? WHERE ' + filter, [name])
+  },
+
+  async create(table, data) {
+    const keys = Object.keys(data)
+    if (!keys.length) return
+    const header = await this.query<OkPacket>(
+      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES (${keys.map(() => '?').join(', ')})`,
+      [table, ...this.formatValues(table, data, keys)],
+    )
+    return { ...data, id: header.insertId } as any
+  },
+
+  async update(table, data) {
+    if (!data.length) return
+    const keys = Object.keys(data[0])
+    const placeholder = `(${keys.map(() => '?').join(', ')})`
+    await this.query(
+      `INSERT INTO ?? (${this.joinKeys(keys)}) VALUES ${data.map(() => placeholder).join(', ')}
+      ON DUPLICATE KEY UPDATE ${keys.filter(key => key !== 'id').map(key => `\`${key}\` = VALUES(\`${key}\`)`).join(', ')}`,
+      [table, ...[].concat(...data.map(data => this.formatValues(table, data, keys)))],
+    )
+  },
+
   async getUser(type, id, _fields) {
     const fields = _fields ? this.inferFields('user', _fields) : User.fields
     if (fields && !fields.length) return { [type]: id } as any
@@ -112,26 +157,21 @@ Database.extend(MysqlDatabase, {
 })
 
 Database.extend(MysqlDatabase, ({ tables, Domain }) => {
-  tables.user = Object.assign<any, any>([
-    'primary key (`id`) using btree',
-    'unique index `name` (`name`) using btree',
-  ], {
+  tables.user = {
     id: new Domain.String(`bigint(20) unsigned not null auto_increment`),
     name: `varchar(50) null default null collate 'utf8mb4_general_ci'`,
     flag: `bigint(20) unsigned not null default '0'`,
     authority: `tinyint(4) unsigned not null default '0'`,
     usage: new Domain.Json(),
     timers: new Domain.Json(),
-  })
+  }
 
-  tables.channel = Object.assign<any, any>([
-    'primary key (`id`) using btree',
-  ], {
+  tables.channel = {
     id: `varchar(50) not null`,
     flag: `bigint(20) unsigned not null default '0'`,
     assignee: `varchar(50) null`,
     disable: new Domain.Array(),
-  })
+  }
 })
 
 export const name = 'mysql'

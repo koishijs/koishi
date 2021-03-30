@@ -116,6 +116,8 @@ export class TelegramBot extends Bot {
           payload.photo = ''
         }
         payload.photo = node.data.url || node.data.file
+      } else {
+        payload.caption += '[Unsupported message]'
       }
     }
     if (payload.photo) {

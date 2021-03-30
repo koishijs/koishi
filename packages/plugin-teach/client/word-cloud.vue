@@ -5,15 +5,15 @@
       <k-button class="refresh" frameless @click="refresh">刷新</k-button>
     </template>
     <k-chart :option="option" autoresize/>
-    <div class="footer">
-      <p>显示的次数为实际触发次数。不考虑重定向问答和指令调用。</p>
-    </div>
+    <template #footer>
+      显示的次数为实际触发次数。不考虑重定向问答和指令调用。
+    </template>
   </k-card>
 </template>
 
 <script lang="ts" setup>
 
-import { stats } from '~/client'
+import { stats } from 'koishi-plugin-status/client'
 import { computed, ref } from 'vue'
 
 const questions = ref(stats.value.questions)

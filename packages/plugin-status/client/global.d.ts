@@ -1,6 +1,3 @@
-// I don't know why do I need this
-// this should be provided by vue
-
 declare module '*.vue' {
   import { Component } from 'vue'
 
@@ -9,8 +6,7 @@ declare module '*.vue' {
 }
 
 declare module '~/server' {
-  import {} from 'koishi-plugin-status/server'
-  export * from 'koishi-plugin-status/server/webui'
+  export * from 'koishi-plugin-status/server'
 }
 
 declare module '~/client' {
@@ -18,4 +14,6 @@ declare module '~/client' {
 }
 
 declare const KOISHI_ENDPOINT: string
+declare const KOISHI_TITLE: string
 declare const KOISHI_UI_PATH: string
+declare const KOISHI_DEV_MODE: boolean

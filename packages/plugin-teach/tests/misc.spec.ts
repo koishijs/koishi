@@ -1,10 +1,8 @@
 import { App } from 'koishi-test-utils'
-import { Logger, Random, Time } from 'koishi-utils'
+import { Logger, Time } from 'koishi-utils'
 import createEnvironment from './environment'
-import { expect } from 'chai'
 import { install } from '@sinonjs/fake-timers'
 import * as teach from 'koishi-plugin-teach'
-import axios from 'axios'
 import jest from 'jest-mock'
 
 const DETAIL_HEAD = '编号为 1 的问答信息：\n问题：foo\n回答：bar\n'
@@ -42,36 +40,23 @@ describe('Teach Plugin - Miscellaneous', () => {
     })
   })
 
-  describe('Image (Client)', () => {
+  describe('Assets', () => {
     const logger = new Logger('teach')
-    const axiosGet = jest.spyOn(axios, 'get')
-    const uploadKey = Random.uuid()
-    const imageServer = 'https://127.0.0.1/image'
-    const uploadServer = 'https://127.0.0.1/upload'
-    const { u3g1 } = createEnvironment({ uploadKey, uploadServer, imageServer })
+    const { app, u3g1 } = createEnvironment({})
+    const upload = jest.spyOn(app.assets, 'upload')
 
     it('upload succeed', async () => {
-      axiosGet.mockReturnValue(Promise.resolve())
+      upload.mockResolvedValue('https://127.0.0.1/image/baz')
       await u3g1.shouldReply('# foo [CQ:image,file=baz,url=bar]', '问答已添加，编号为 1。')
       await u3g1.shouldReply('foo', '[CQ:image,url=https://127.0.0.1/image/baz]')
-      expect(axiosGet.mock.calls).to.have.shape([[uploadServer, {
-        params: { file: 'baz', url: 'bar' },
-      }]])
     })
 
     it('upload failed', async () => {
       logger.level = Logger.ERROR
-      axiosGet.mockReturnValue(Promise.reject(new Error('failed')))
+      upload.mockRejectedValue('failed')
       await u3g1.shouldReply('#1 fooo', '问答 1 已成功修改。')
       await u3g1.shouldReply('#1 ~ [CQ:image,file=bar,url=baz]', '上传图片时发生错误。')
       logger.level = Logger.WARN
-    })
-
-    it('get status', async () => {
-      axiosGet.mockReturnValue(Promise.resolve({
-        data: { totalSize: 10000000, totalCount: 10 },
-      }))
-      await u3g1.shouldReply('##', '共收录了 1 个问题和 1 个回答。\n收录图片 10 张，总体积 9.5 MB。')
     })
   })
 

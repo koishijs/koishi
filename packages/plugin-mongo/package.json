@@ -1,11 +1,11 @@
 {
   "name": "koishi-plugin-mongo",
   "description": "MongoDB support for Koishi",
-  "version": "2.1.0",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "version": "2.2.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "files": [
-    "dist"
+    "lib"
   ],
   "author": "undefined <masnn0@outlook.com>",
   "maintainers": [
@@ -35,7 +35,7 @@
     "@types/mongodb": "^3.6.10"
   },
   "peerDependencies": {
-    "koishi-core": "^3.3.0"
+    "koishi-core": "^3.5.1"
   },
   "dependencies": {
     "mongodb": "^3.6.5"

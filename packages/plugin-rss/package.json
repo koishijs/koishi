@@ -1,11 +1,11 @@
 {
   "name": "koishi-plugin-rss",
   "description": "Subscribe RSS Url for Koishi",
-  "version": "2.0.0-beta.10",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "version": "2.0.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "files": [
-    "dist"
+    "lib"
   ],
   "author": "undefined <masnn0@outlook.com>",
   "maintainers": [
@@ -31,11 +31,10 @@
     "rss"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.3.0",
-    "koishi-utils": "^4.0.3"
+    "koishi-core": "^3.5.1"
   },
   "devDependencies": {
-    "koishi-test-utils": "^6.0.0-beta.10"
+    "koishi-test-utils": "^6.0.0-beta.11"
   },
   "dependencies": {
     "rss-feed-emitter": "^3.2.2"

@@ -1,7 +1,7 @@
-import { Logger, defineProperty, remove } from 'koishi-utils'
+import { Logger, defineProperty, remove, segment } from 'koishi-utils'
 import { Command } from './command'
 import { Session } from './session'
-import { User, Channel, Database } from './database'
+import { User, Channel, Database, Assets } from './database'
 import { Argv, Domain } from './parser'
 import { Platform, Bot } from './adapter'
 import { App } from './app'
@@ -55,7 +55,9 @@ export class Context {
 
   protected _bots: Bot[] & Record<string, Bot>
   protected _router: Router
-  protected _database: Database
+
+  public database: Database
+  public assets: Assets
 
   protected constructor(public filter: Filter, public app?: App, private _plugin: Plugin = null) {}
 
@@ -104,17 +106,6 @@ export class Context {
 
   get bots() {
     return this.app._bots
-  }
-
-  get database() {
-    return this.app._database
-  }
-
-  set database(database) {
-    if (this.app._database && this.app._database !== database) {
-      this.logger('app').warn('ctx.database is overwritten')
-    }
-    this.app._database = database
   }
 
   logger(name: string) {
@@ -420,6 +411,18 @@ export class Context {
     return command
   }
 
+  async transformAssets(content: string, assets = this.assets) {
+    if (!assets) return content
+    const urlMap: Record<string, string> = {}
+    await Promise.all(segment.parse(content).map(async ({ type, data }) => {
+      if (!assets.types.includes(type as Assets.Type)) return
+      urlMap[data.url] = await assets.upload(data.url, data.file)
+    }))
+    return segment.transform(content, Object.fromEntries(assets.types.map((type) => {
+      return [type, (data) => segment(type, { url: urlMap[data.url] })]
+    })))
+  }
+
   getBot(platform: Platform, selfId?: string) {
     if (selfId) return this.bots[`${platform}:${selfId}`]
     return this.bots.find(bot => bot.platform === platform)
@@ -468,6 +471,24 @@ export class Context {
     }))).flat(1)
   }
 }
+
+export function delegate(ctx: Context, key: string & keyof Context) {
+  const privateKey = Symbol(key)
+  Object.defineProperty(ctx, key, {
+    get() {
+      return this.app[privateKey]
+    },
+    set(value) {
+      if (this.app[privateKey] && this.app[privateKey] !== value) {
+        this.logger('app').warn('ctx.%s is overwritten', key)
+      }
+      this.app[privateKey] = value
+    },
+  })
+}
+
+delegate(Context.prototype, 'database')
+delegate(Context.prototype, 'assets')
 
 type FlattenEvents<T> = {
   [K in keyof T & string]: K | `${K}/${FlattenEvents<T[K]>}`

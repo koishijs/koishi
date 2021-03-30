@@ -1,24 +1,28 @@
 import { Context, Channel, App, Argv, User } from 'koishi-core'
 import { interpolate, Time } from 'koishi-utils'
-import * as WebUI from './webui'
-import Profile from './profile'
-import Statistics, { Synchronizer } from './stats'
+import { Meta } from './data'
+import { Statistics, Synchronizer } from './stats'
 import { SandboxBot } from './adapter'
+import { WebServer } from './server'
 
 import './mongo'
 import './mysql'
+
+export * from './adapter'
+export * from './data'
+export * from './stats'
+export * from './server'
 
 export type Activity = Record<number, number>
 
 declare module 'koishi-core' {
   interface App {
-    synchronizer: Synchronizer
+    webui: WebServer
   }
 
   interface Database {
-    getProfile(): Promise<Profile.Meta>
-    setChannels(data: Partial<Channel>[]): Promise<void>
-    Synchronizer: new (db: Database) => Synchronizer
+    getStats(): Promise<Meta.Stats>
+    createSynchronizer(): Synchronizer
   }
 
   interface Session {
@@ -61,28 +65,16 @@ User.extend(() => ({
   expire: 0,
 }))
 
-export interface Config extends WebUI.Config {
+export interface Config extends WebServer.Config, Statistics.Config {
   format?: string
   formatBot?: string
 }
 
-export interface Status extends Profile {}
-
-type StatusCallback = (this: App, status: Status, config: Config) => void | Promise<void>
-const callbacks: StatusCallback[] = []
-
-export function extend(callback: StatusCallback) {
-  callbacks.push(callback)
-}
-
-extend(async function (status) {
-  if (!this.database) return
-  Object.assign(status, await this.database.getProfile())
-})
-
 const defaultConfig: Config = {
   apiPath: '/status',
   uiPath: '/console',
+  selfUrl: '',
+  title: 'Koishi 控制台',
   expiration: Time.week,
   tickInterval: Time.second * 5,
   refreshInterval: Time.hour,
@@ -104,11 +96,15 @@ export function apply(ctx: Context, config: Config = {}) {
   config = Object.assign(defaultConfig, config)
   const { apiPath, formatBot, format } = config
 
+  const webui = ctx.app.webui = new WebServer(ctx, config)
+
+  ctx.on('connect', () => webui.start())
+
   ctx.all().on('command', ({ session }: Argv<'lastCall'>) => {
     session.user.lastCall = new Date()
   })
 
-  ctx.router?.get(apiPath, async (koa) => {
+  ctx.router.get(apiPath, async (koa) => {
     koa.set('Access-Control-Allow-Origin', '*')
     koa.body = await getStatus()
   })
@@ -120,7 +116,7 @@ export function apply(ctx: Context, config: Config = {}) {
     .shortcut('运行状态', { prefix: true })
     .option('all', '-a  查看全部平台')
     .action(async ({ session, options }) => {
-      const status = { ...await getStatus() }
+      const status = await getStatus()
       if (!options.all) {
         status.bots = status.bots.filter(bot => bot.platform === session.platform)
       }
@@ -135,12 +131,10 @@ export function apply(ctx: Context, config: Config = {}) {
     })
 
   async function getStatus() {
-    const status = await Profile.get(ctx, config) as Status
-    await Promise.all(callbacks.map(callback => callback.call(ctx.app, status, config)))
-    return status
+    const [profile, meta] = await Promise.all([
+      webui.sources.profile.get(),
+      webui.sources.meta.get(),
+    ])
+    return { ...profile, ...meta }
   }
-
-  ctx.plugin(Profile, config)
-  ctx.plugin(Statistics, config)
-  ctx.plugin(WebUI, config)
 }

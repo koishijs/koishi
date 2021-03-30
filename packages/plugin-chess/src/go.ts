@@ -58,6 +58,4 @@ export function update(this: State, x: number, y: number, value: -1 | 1) {
     this.wBoard = wBoard
     return '全局同形'
   }
-
-  this.save()
 }

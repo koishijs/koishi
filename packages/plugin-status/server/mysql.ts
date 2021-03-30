@@ -54,9 +54,7 @@ namespace Stat {
       super(table, fields)
 
       Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
-        tables[table] = Object.assign([
-          'primary key (`time`)',
-        ], Object.fromEntries(fields.map(key => [key, new Domain.Json('text')])))
+        tables[table] = Object.fromEntries(fields.map(key => [key, new Domain.Json()]))
         tables[table].time = timeDomain
       })
     }
@@ -88,9 +86,7 @@ namespace Stat {
       super(table, fields)
 
       Database.extend('koishi-plugin-mysql', ({ tables }) => {
-        tables[table] = Object.assign([
-          'primary key (`time`)',
-        ], Object.fromEntries(fields.map(key => [key, 'int unsigned'])))
+        tables[table] = Object.fromEntries(fields.map(key => [key, 'int unsigned']))
         tables[table].time = timeDomain
       })
     }
@@ -110,8 +106,54 @@ namespace Stat {
   }
 }
 
+class MysqlSynchronizer implements Synchronizer {
+  private _daily = new Stat.Recorded('stats_daily', Synchronizer.dailyFields, 'date')
+  private _hourly = new Stat.Numerical('stats_hourly', Synchronizer.hourlyFields, 'datetime')
+  private _longterm = new Stat.Numerical('stats_longterm', Synchronizer.longtermFields, 'date')
+
+  groups: StatRecord = {}
+  daily = this._daily.data
+  hourly = this._hourly.data
+  longterm = this._longterm.data
+
+  constructor(private db: MysqlDatabase) {}
+
+  addDaily(field: Synchronizer.DailyField, key: string | number) {
+    const stat: Record<string, number> = this._daily.data[field]
+    stat[key] = (stat[key] || 0) + 1
+  }
+
+  async upload(date: Date): Promise<void> {
+    const dateString = date.toLocaleDateString('zh-CN')
+    const hourString = `${dateString}-${date.getHours()}:00`
+    const sqls: string[] = []
+    this._hourly.synchronize(hourString, sqls)
+    this._daily.synchronize(dateString, sqls)
+    this._longterm.synchronize(dateString, sqls)
+    for (const id in this.groups) {
+      const update = Stat.Recorded.prototype.update('activity', { [Time.getDateNumber(date)]: this.groups[id] })
+      sqls.push(`UPDATE \`channel\` SET ${update} WHERE \`id\` = '${id}'`)
+      delete this.groups[id]
+    }
+    if (!sqls.length) return
+    logger.debug('stats updated')
+    await this.db.query(sqls)
+  }
+
+  async download(date: Date) {
+    const dateString = date.toLocaleDateString()
+    const [daily, hourly, longterm, groups] = await this.db.query([
+      'SELECT * FROM `stats_daily` WHERE `time` < DATE(?) ORDER BY `time` DESC LIMIT ?',
+      'SELECT * FROM `stats_hourly` WHERE `time` < DATE(?) ORDER BY `time` DESC LIMIT ?',
+      'SELECT * FROM `stats_longterm` WHERE `time` < DATE(?) ORDER BY `time` DESC',
+      'SELECT `id`, `name`, `assignee` FROM `channel`',
+    ], [dateString, RECENT_LENGTH, dateString, 24 * RECENT_LENGTH, dateString])
+    return { daily, hourly, longterm, groups }
+  }
+}
+
 Database.extend('koishi-plugin-mysql', {
-  async getProfile() {
+  async getStats() {
     const [[{ activeUsers }], [{ allUsers }], [{ activeGroups }], [{ allGroups }], [{ storageSize }]] = await this.query([
       'SELECT COUNT(*) as activeUsers FROM `user` WHERE CURRENT_TIMESTAMP() - `lastCall` < 1000 * 3600 * 24',
       'SELECT COUNT(*) as allUsers FROM `user`',
@@ -122,54 +164,8 @@ Database.extend('koishi-plugin-mysql', {
     return { activeUsers, allUsers, activeGroups, allGroups, storageSize }
   },
 
-  async setChannels(data) {
-    await this.update('channel', data)
-  },
-
-  Synchronizer: class {
-    private _daily = new Stat.Recorded('stats_daily', Synchronizer.dailyFields, 'date')
-    private _hourly = new Stat.Numerical('stats_hourly', Synchronizer.hourlyFields, 'datetime')
-    private _longterm = new Stat.Numerical('stats_longterm', Synchronizer.longtermFields, 'date')
-
-    groups: StatRecord = {}
-    daily = this._daily.data
-    hourly = this._hourly.data
-    longterm = this._longterm.data
-
-    constructor(private db: MysqlDatabase) {}
-
-    addDaily(field: Synchronizer.DailyField, key: string | number) {
-      const stat: Record<string, number> = this._daily.data[field]
-      stat[key] = (stat[key] || 0) + 1
-    }
-
-    async upload(date: Date): Promise<void> {
-      const dateString = date.toLocaleDateString('zh-CN')
-      const hourString = `${dateString}-${date.getHours()}:00`
-      const sqls: string[] = []
-      this._hourly.synchronize(hourString, sqls)
-      this._daily.synchronize(dateString, sqls)
-      this._longterm.synchronize(dateString, sqls)
-      for (const id in this.groups) {
-        const update = Stat.Recorded.prototype.update('activity', { [Time.getDateNumber(date)]: this.groups[id] })
-        sqls.push(`UPDATE \`channel\` SET ${update} WHERE \`id\` = '${id}'`)
-        delete this.groups[id]
-      }
-      if (!sqls.length) return
-      logger.debug('stats updated')
-      await this.db.query(sqls)
-    }
-
-    async download(date: Date) {
-      const dateString = date.toLocaleDateString()
-      const [daily, hourly, longterm, groups] = await this.db.query([
-        'SELECT * FROM `stats_daily` WHERE `time` < DATE(?) ORDER BY `time` DESC LIMIT ?',
-        'SELECT * FROM `stats_hourly` WHERE `time` < DATE(?) ORDER BY `time` DESC LIMIT ?',
-        'SELECT * FROM `stats_longterm` WHERE `time` < DATE(?) ORDER BY `time` DESC',
-        'SELECT `id`, `name`, `assignee` FROM `channel`',
-      ], [dateString, RECENT_LENGTH, dateString, 24 * RECENT_LENGTH, dateString])
-      return { daily, hourly, longterm, groups }
-    }
+  createSynchronizer() {
+    return new MysqlSynchronizer(this)
   },
 })
 

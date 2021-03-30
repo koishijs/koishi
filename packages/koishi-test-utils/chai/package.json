@@ -1,12 +1,12 @@
 {
   "name": "chai-extended",
   "private": true,
-  "main": "dist/index.js",
+  "main": "lib/index.js",
   "typings": "index.d.ts",
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
   "files": [
     "index.d.ts",
-    "dist"
+    "lib"
   ]
 }

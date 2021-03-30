@@ -51,7 +51,7 @@ export function apply(ctx: Context) {
       }
     }
 
-    if (ctx.app.browser) {
+    if (!ctx.app.browser) {
       chess.removeOption('imageMode')
       chess.removeOption('textMode')
     }
@@ -108,6 +108,7 @@ export function apply(ctx: Context) {
         }
         state.update = rule.update
         states[cid] = state
+        state.save()
 
         return state.draw(session, `${session.username} 发起了游戏！`)
       }
@@ -137,6 +138,7 @@ export function apply(ctx: Context) {
       }
 
       if (options.skip) {
+        if (!state.next) return '对局尚未开始。'
         if (state.next !== userId) return '当前不是你的回合。'
         state.next = state.p1 === userId ? state.p2 : state.p1
         channel.chess = state.serial()
@@ -144,7 +146,7 @@ export function apply(ctx: Context) {
       }
 
       if (options.repent) {
-        if (!state.p2) return '尚未有人行棋。'
+        if (!state.next) return '对局尚未开始。'
         const last = state.p1 === state.next ? state.p2 : state.p1
         if (last !== userId) return '上一手棋不是你所下。'
         state.history.pop()
@@ -178,14 +180,19 @@ export function apply(ctx: Context) {
       if (state.get(x, y)) return '此处已有落子。'
 
       let message = ''
-      if (!state.p2 && userId !== state.p1) {
-        state.p2 = userId
-        message = `${session.username} 加入了游戏并落子于 ${position.toUpperCase()}，`
-      } else {
+      if (state.next || userId === state.p1) {
         message = `${session.username} 落子于 ${position.toUpperCase()}，`
+      } else {
+        if (state.history.length === 1) {
+          state.p2 = state.p1
+          state.p1 = userId
+        } else {
+          state.p2 = userId
+        }
+        message = `${session.username} 加入了游戏并落子于 ${position.toUpperCase()}，`
       }
 
-      const value = state.history.length % 2 ? -1 : 1
+      const value = userId === state.p1 ? 1 : -1
       const result = state.update(x, y, value)
 
       switch (result) {
@@ -196,24 +203,23 @@ export function apply(ctx: Context) {
           message += `下一手依然轮到 ${segment.at(userId)}。`
           break
         case MoveResult.p1Win:
-          message += `恭喜 ${segment.at(state.p1)} 获胜！`
           delete states[cid]
           channel.chess = null
-          break
+          return message + `恭喜 ${segment.at(state.p1)} 获胜！`
         case MoveResult.p2Win:
-          message += `恭喜 ${segment.at(state.p2)} 获胜！`
           delete states[cid]
           channel.chess = null
-          break
+          return message + `恭喜 ${segment.at(state.p2)} 获胜！`
         case MoveResult.draw:
-          message += '本局游戏平局。'
           delete states[cid]
           channel.chess = null
-          break
+          return message + '本局游戏平局。'
         case undefined:
           // eslint-disable-next-line no-cond-assign
           if (state.next = userId === state.p1 ? state.p2 : state.p1) {
             message += `下一手轮到 ${segment.at(state.next)}。`
+          } else {
+            message = message.slice(0, -1) + '。'
           }
           break
         default:
@@ -221,6 +227,7 @@ export function apply(ctx: Context) {
           return `非法落子（${result}）。`
       }
 
+      state.save()
       channel.chess = state.serial()
       return state.draw(session, message, x, y)
     })

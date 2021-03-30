@@ -10,19 +10,19 @@ import update, { create } from './update'
 import mongo from './database/mongo'
 import mysql from './database/mysql'
 import context from './plugins/context'
-import image from './plugins/image'
 import throttle from './plugins/throttle'
 import probability from './plugins/probability'
 import successor from './plugins/successor'
 import time from './plugins/time'
 import writer from './plugins/writer'
+import {} from 'koishi-plugin-status'
+import { resolve } from 'path'
 
 export * from './utils'
 export * from './receiver'
 export * from './search'
 export * from './update'
 export * from './plugins/context'
-export * from './plugins/image'
 export * from './plugins/throttle'
 export * from './plugins/probability'
 export * from './plugins/successor'
@@ -36,6 +36,23 @@ declare module 'koishi-core' {
     'dialogue/validate'(argv: Dialogue.Argv): void | string
     'dialogue/execute'(argv: Dialogue.Argv): void | Promise<void | string>
   }
+}
+
+declare module 'koishi-plugin-status' {
+  namespace Meta {
+    interface Payload extends Dialogue.Stats {}
+  }
+
+  namespace Statistics {
+    interface Payload {
+      questions: QuestionData[]
+    }
+  }
+}
+
+interface QuestionData {
+  name: string
+  value: number
 }
 
 const cheatSheet = (session: Session<'authority'>, config: Config) => {
@@ -182,10 +199,49 @@ export function apply(ctx: Context, config: Config = {}) {
   // options
   ctx.plugin(internal, config)
   ctx.plugin(context, config)
-  ctx.plugin(image, config)
   ctx.plugin(throttle, config)
   ctx.plugin(probability, config)
   ctx.plugin(successor, config)
   ctx.plugin(time, config)
   ctx.plugin(writer, config)
+
+  const webui = ctx.app.webui
+  if (webui) {
+    const { stats, meta } = webui.sources
+    ctx.addDependency('koishi-plugin-status')
+
+    ctx.on('dialogue/before-send', ({ session, dialogue }) => {
+      session._sendType = 'dialogue'
+      stats.sync.addDaily('dialogue', dialogue.id)
+      stats.upload()
+    })
+
+    meta.extend(() => ctx.database.getDialogueStats())
+
+    stats.extend(async (payload, data) => {
+      const dialogueMap = stats.average(data.daily.map(data => data.dialogue))
+      const dialogues = await ctx.database.get('dialogue', Object.keys(dialogueMap).map(i => +i), ['id', 'original'])
+      const questionMap: Record<string, QuestionData> = {}
+      for (const dialogue of dialogues) {
+        const { id, original: name } = dialogue
+        if (name.includes('[CQ:') || name.startsWith('hook:')) continue
+        if (!questionMap[name]) {
+          questionMap[name] = {
+            name,
+            value: dialogueMap[id],
+          }
+        } else {
+          questionMap[name].value += dialogueMap[id]
+        }
+      }
+      payload.questions = Object.values(questionMap)
+    })
+
+    const filename = resolve(__dirname, webui.config.devMode ? '../client' : '../dist/index.js')
+    webui.entries['teach.js'] = filename
+
+    ctx.before('disconnect', () => {
+      delete webui.entries['teach.js']
+    })
+  }
 }

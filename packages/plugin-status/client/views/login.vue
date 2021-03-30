@@ -10,11 +10,12 @@
       </div>
     </template>
     <template v-else>
-      <h1>
+      <h1 v-if="secure">
         <span :class="{ inactive: config.authType === 1 }" @click="config.authType = 0">平台账户登录</span>
         /
         <span :class="{ inactive: config.authType === 0 }" @click="config.authType = 1">用户名密码登录</span>
       </h1>
+      <h1 v-else><span>平台账户登录</span></h1>
       <template v-if="config.authType === 0">
         <k-input prefix="at" placeholder="平台名" v-model="config.platform"/>
         <k-input prefix="user" placeholder="账号" v-model="config.userId" @enter="enter"/>
@@ -52,6 +53,9 @@ interface LoginData {
   name?: string
   message?: string
 }
+
+const secure = isSecureContext
+if (!secure) config.value.authType = 0
 
 const data = ref<LoginData>({})
 const router = useRouter()

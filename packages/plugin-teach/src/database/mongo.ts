@@ -1,5 +1,5 @@
 import { Context, Database } from 'koishi-core'
-import { clone, defineProperty, Observed, pick } from 'koishi-utils'
+import { clone, defineProperty, Observed } from 'koishi-utils'
 import type { FilterQuery } from 'mongodb'
 import {} from 'koishi-plugin-mongo'
 import { Dialogue, DialogueTest, equal } from '../utils'
@@ -11,18 +11,6 @@ declare module 'koishi-core' {
 }
 
 Database.extend('koishi-plugin-mongo', {
-  async getDialoguesById(ids, fields) {
-    if (!ids.length) return []
-    let cursor = this.db.collection('dialogue').find({ _id: { $in: ids } })
-    if (fields) cursor = cursor.project(Object.fromEntries(fields.map(k => [k, 1])))
-    const dialogues = await cursor.toArray()
-    dialogues.forEach(d => {
-      d._id = d.id
-      defineProperty(d, '_backup', clone(d))
-    })
-    return dialogues
-  },
-
   async getDialoguesByTest(test: DialogueTest) {
     const query: FilterQuery<Dialogue> = { $and: [] }
     this.app.emit('dialogue/mongo', test, query.$and)
@@ -36,79 +24,31 @@ Database.extend('koishi-plugin-mongo', {
       if (test.groups && !test.partial) {
         return !(value.flag & Dialogue.Flag.complement) === test.reversed || !equal(test.groups, value.groups)
       }
+      value.id = value._id
       return true
     })
   },
 
-  async createDialogue(dialogue: Dialogue, argv: Dialogue.Argv, revert = false) {
-    if (!dialogue.id) {
-      const [latest] = await this.db.collection('dialogue').find().sort('_id', -1).limit(1).toArray()
-      if (latest) dialogue.id = latest._id + 1
-      else dialogue.id = 1
-    }
-    await this.db.collection('dialogue').insertOne({ _id: dialogue.id, ...dialogue })
-    Dialogue.addHistory(dialogue, '添加', argv, revert)
-    return dialogue
-  },
-
-  async removeDialogues(ids: number[], argv: Dialogue.Argv, revert = false) {
-    if (!ids.length) return
-    await this.db.collection('dialogue').deleteMany({ _id: { $in: ids } })
-    for (const id of ids) {
-      Dialogue.addHistory(argv.dialogueMap[id], '删除', argv, revert)
-    }
-  },
-
   async updateDialogues(dialogues: Observed<Dialogue>[], argv: Dialogue.Argv) {
-    const fields = new Set<Dialogue.Field>(['id'])
-    for (const { _diff } of dialogues) {
-      for (const key in _diff) {
-        fields.add(key as Dialogue.Field)
-      }
-    }
-    const temp: Record<number, Dialogue> = {}
-    const tasks = []
+    const data: Partial<Dialogue>[] = []
     for (const dialogue of dialogues) {
       if (!Object.keys(dialogue._diff).length) {
         argv.skipped.push(dialogue.id)
       } else {
+        data.push({ id: dialogue.id, ...dialogue._diff })
         dialogue._diff = {}
         argv.updated.push(dialogue.id)
-        tasks.push(
-          await this.db.collection('dialogue').updateOne({ _id: dialogue.id }, { $set: pick(dialogue, fields) }),
-        )
-        Dialogue.addHistory(dialogue._backup, '修改', argv, false, temp)
+        Dialogue.addHistory(dialogue._backup, '修改', argv, false)
       }
     }
-    await Promise.all(tasks)
-    Object.assign(this.app.teachHistory, temp)
-  },
-
-  async revertDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {
-    const created = dialogues.filter(d => d._type === '添加')
-    const edited = dialogues.filter(d => d._type !== '添加')
-    await this.removeDialogues(created.map(d => d.id), argv, true)
-    await this.recoverDialogues(edited, argv)
-    return `问答 ${dialogues.map(d => d.id).sort((a, b) => a - b)} 已回退完成。`
-  },
-
-  async recoverDialogues(dialogues: Dialogue[], argv: Dialogue.Argv) {
-    if (!dialogues.length) return
-    const tasks = []
-    for (const dialogue of dialogues) {
-      tasks.push(await this.db.collection('dialogue').updateOne({ _id: dialogue.id }, { $set: dialogue }))
-    }
-    await Promise.all(tasks)
-    for (const dialogue of dialogues) {
-      Dialogue.addHistory(dialogue, '修改', argv, true)
-    }
+    await this.update('dialogue', data)
   },
 
   async getDialogueStats() {
     const [data, dialogues] = await Promise.all([
       this.db.collection('dialogue').aggregate([
         { $group: { _id: null, questions: { $addToSet: '$question' } } },
-        { $project: { questions: { $size: '$questions' } } }
+        { $project: { questions: { $size: '$questions' } } },
       ]).toArray(),
       this.db.collection('dialogue').countDocuments(),
     ])

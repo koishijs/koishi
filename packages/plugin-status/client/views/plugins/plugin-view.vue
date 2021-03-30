@@ -12,12 +12,12 @@
 
 <script setup lang="ts">
 
-import type { PluginData } from '~/server'
+import type { Registry } from '~/server'
 import { ref, computed, defineProps } from 'vue'
 
 const show = ref(false)
 
-const props = defineProps<{ data: PluginData }>()
+const props = defineProps<{ data: Registry.PluginData }>()
 
 const state = computed(() => {
   return props.data.sideEffect ? 'side-effect' : 'normal'

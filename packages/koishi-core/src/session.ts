@@ -127,7 +127,7 @@ export class Session<
     defineProperty(this, '_hooks', [])
   }
 
-  toJSON() {
+  toJSON(): Partial<Session> {
     return Object.fromEntries(Object.entries(this).filter(([key]) => {
       return !key.startsWith('_') && !key.startsWith('$')
     }))
@@ -285,7 +285,6 @@ export class Session<
   }
 
   collect<T extends TableType>(key: T, argv: Argv, fields = new Set<keyof Tables[T]>()) {
-    collectFields(argv, Command[`_${key}Fields`], fields)
     const collect = (argv: Argv) => {
       argv.session = this
       if (argv.tokens) {
@@ -294,6 +293,7 @@ export class Session<
         }
       }
       if (!this.resolve(argv)) return
+      collectFields(argv, Command[`_${key}Fields`], fields)
       collectFields(argv, argv.command[`_${key}Fields`], fields)
     }
     collect(argv)
@@ -341,6 +341,8 @@ export class Session<
         return ''
       }
     }
+
+    if (!argv.command.context.match(this)) return ''
 
     if (this.database) {
       if (this.subtype === 'group') {
