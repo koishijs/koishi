@@ -2,13 +2,13 @@
   "name": "koishi-core",
   "description": "Core features for Koishi",
   "version": "3.5.1",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "engines": {
     "node": ">=12.0.0"
   },
   "files": [
-    "dist"
+    "lib"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",

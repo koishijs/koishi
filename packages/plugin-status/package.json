@@ -5,8 +5,10 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
+    "lib",
     "dist",
-    "lib"
+    "client/index.ts",
+    "client/global.d.ts"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",

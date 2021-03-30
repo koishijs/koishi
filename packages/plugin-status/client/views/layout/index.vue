@@ -5,6 +5,7 @@
   </template>
   <main :class="{ frameless }">
     <router-view v-if="loaded"/>
+    <p v-else>正在加载数据……</p>
   </main>
 </template>
 

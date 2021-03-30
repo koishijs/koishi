@@ -2,10 +2,10 @@
   "name": "koishi-plugin-chess",
   "description": "Chess Plugin for Koishi",
   "version": "3.0.1",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "files": [
-    "dist"
+    "lib"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",

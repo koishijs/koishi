@@ -2,13 +2,13 @@
   "name": "koishi-plugin-teach",
   "description": "Teach plugin for Koishi",
   "version": "2.0.3",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "engines": {
     "node": ">=12.0.0"
   },
   "files": [
-    "dist"
+    "lib"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
@@ -38,6 +38,7 @@
   "devDependencies": {
     "koishi-plugin-mongo": "^2.2.0",
     "koishi-plugin-mysql": "^3.3.0",
+    "koishi-plugin-status": "^4.0.0",
     "koishi-test-utils": "^6.0.0-beta.11"
   },
   "dependencies": {

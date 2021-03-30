@@ -2,10 +2,10 @@
   "name": "koishi-adapter-tomon",
   "description": "Tomon adapter for Koishi",
   "version": "1.0.0-beta.11",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "files": [
-    "dist"
+    "lib"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",

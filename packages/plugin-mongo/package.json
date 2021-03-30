@@ -2,10 +2,10 @@
   "name": "koishi-plugin-mongo",
   "description": "MongoDB support for Koishi",
   "version": "2.2.0",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "files": [
-    "dist"
+    "lib"
   ],
   "author": "undefined <masnn0@outlook.com>",
   "maintainers": [

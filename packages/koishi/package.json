@@ -8,11 +8,11 @@
     "node": ">=12.0.0"
   },
   "files": [
-    "dist",
+    "lib",
     "index.d.ts",
     "index.js"
   ],
-  "bin": "dist/index.js",
+  "bin": "lib/index.js",
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
   "repository": {

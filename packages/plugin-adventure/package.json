@@ -2,10 +2,10 @@
   "name": "koishi-plugin-adventure",
   "version": "0.1.15",
   "description": "Adventure Game for Koishi",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "files": [
-    "dist"
+    "lib"
   ],
   "license": "MIT",
   "author": "Shigma <1700011071@pku.edu.cn>",
