@@ -117,7 +117,14 @@ export class DiscordBot extends Bot<'discord'> {
             })
             sentMessageId = r.id
           } else {
-            const r = await this.sendEmbedMessage(requestUrl, readFileSync(data.url), {
+            const file = (() => {
+              try {
+                return readFileSync(data.url)
+              } catch {
+                return Buffer.from(data.url, 'base64')
+              }
+            })()
+            const r = await this.sendEmbedMessage(requestUrl, file, {
               ...addition,
             })
             sentMessageId = r.id
