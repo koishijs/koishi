@@ -120,7 +120,7 @@ export class Statistics implements DataSource<Statistics.Payload> {
       session._sendType = 'command'
     })
 
-    async function updateSendStats(session: Session) {
+    const updateSendStats = async (session: Session) => {
       this.sync.hourly.total += 1
       this.sync.hourly[session.subtype] += 1
       this.sync.longterm.message += 1
