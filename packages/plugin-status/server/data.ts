@@ -156,6 +156,7 @@ export class Meta implements DataSource<Meta.Payload> {
   }
 
   extend(callback: Meta.Extension) {
+    this.timestamp = 0
     this.callbacks.push(callback)
   }
 }

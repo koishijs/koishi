@@ -1,12 +1,12 @@
 /* eslint-disable quote-props */
 
-import { build } from 'vite'
+import * as vite from 'vite'
 import { resolve } from 'path'
 import { copyFile } from 'fs-extra'
 import createPluginVue from '@vitejs/plugin-vue'
 
 const root = resolve(__dirname, '../client')
-const pkgRoot = resolve(__dirname, '..')
+const dist = resolve(__dirname, '../dist')
 const pluginVue = createPluginVue()
 
 function findModulePath(id: string) {
@@ -15,79 +15,76 @@ function findModulePath(id: string) {
   return path.slice(0, path.indexOf(keyword)) + keyword.slice(0, -1)
 }
 
-;(async () => {
-  // build for index.html
-  await build({
+function build(root: string, config: vite.UserConfig) {
+  const { rollupOptions } = config.build || {}
+  return vite.build({
+    ...config,
     root,
-    base: './',
     build: {
       outDir: '../dist',
       minify: 'esbuild',
       emptyOutDir: true,
+      ...config.build,
       rollupOptions: {
-        external: ['./~/vue', './~/client'],
+        ...rollupOptions,
+        external: [root + '/vue.js', root + '/vue-router.js', root + '/client.js'],
+        output: rollupOptions?.input ? {
+          format: 'module',
+          entryFileNames: '[name].js',
+          ...rollupOptions.output,
+        } : undefined,
       },
     },
+    resolve: {
+      alias: {
+        'vue': root + '/vue.js',
+        'vue-router': root + '/vue-router.js',
+        '~/client': root + '/client.js',
+        ...config.resolve?.alias,
+      },
+    },
+  })
+}
+
+;(async () => {
+  // build for index.html
+  await build(root, {
+    base: './',
     plugins: [pluginVue],
     resolve: {
       alias: {
-        'vue': './~/vue',
-        '~/client': './~/client',
         '~/variables': root + '/index.scss',
       },
     },
   })
 
-  // build for client.js
-  await build({
-    root,
+  await copyFile(findModulePath('vue') + '/dist/vue.runtime.esm-browser.prod.js', dist + '/vue.js')
+
+  // build for client.js, vue-router.js
+  await build(resolve(__dirname, '../../..'), {
     build: {
-      outDir: '../dist/~',
-      minify: 'esbuild',
-      lib: {
-        formats: ['es'],
-        entry: 'index.ts',
-        name: 'KoishiClient',
-      },
+      outDir: dist,
+      emptyOutDir: false,
       rollupOptions: {
-        external: ['./~/vue', './~/client'],
-        output: {
-          entryFileNames: 'client.js',
+        input: {
+          'client': root + '/index.ts',
+          'vue-router': findModulePath('vue-router') + '/dist/vue-router.esm-browser.js',
         },
-      },
-    },
-    resolve: {
-      alias: {
-        'vue': './~/vue',
-        '~/client': './~/client',
+        treeshake: false,
+        preserveEntrySignatures: 'strict',
       },
     },
   })
 
-  await copyFile(findModulePath('vue') + '/dist/vue.runtime.esm-browser.prod.js', pkgRoot + '/dist/~/vue.js')
-
   // build for koishi-plugin-teach
-  build({
+  const teach = resolve(__dirname, '../../plugin-teach/client')
+  build(teach, {
     build: {
-      minify: 'esbuild',
-      emptyOutDir: true,
       assetsDir: '',
-      outDir: resolve(__dirname, '../../plugin-teach/dist'),
       rollupOptions: {
-        input: resolve(__dirname, '../../plugin-teach/client'),
-        external: ['./~/client', './~/vue'],
-        output: {
-          format: 'es',
-          entryFileNames: '[name].js',
-        },
+        input: teach + '/index.ts',
       },
     },
     plugins: [pluginVue],
-    resolve: {
-      alias: {
-        'vue': './~/vue',
-        'koishi-plugin-status/client': './~/client',
-      },
-    },
   })
 })()

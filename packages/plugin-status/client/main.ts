@@ -7,7 +7,7 @@ import Button from './components/button.vue'
 import Input from './components/input.vue'
 import Numeric from './components/numeric.vue'
 import App from './views/layout/index.vue'
-import { start, user, receive, router } from '.'
+import { start, user, receive, router } from '~/client'
 
 import '@fortawesome/fontawesome-free/css/fontawesome.css'
 import '@fortawesome/fontawesome-free/css/brands.css'

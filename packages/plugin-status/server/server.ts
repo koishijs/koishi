@@ -54,30 +54,27 @@ export class WebServer {
     const { uiPath } = this.config
     const [vite] = await Promise.all([this.createVite(), this.createAdapter()])
 
-    this.ctx.router.get(uiPath + '/plugin/:name', async (ctx) => {
-      const filename = this.entries[ctx.params.name]
-      if (!filename) return ctx.status = 404
-      ctx.type = extname(filename)
-      return ctx.body = createReadStream(filename)
-    })
-
     this.ctx.router.get(uiPath + '(/.+)*', async (ctx) => {
       // add trailing slash and redirect
       if (ctx.path === uiPath && !uiPath.endsWith('/')) {
         return ctx.redirect(ctx.path + '/')
       }
-      const filename = resolve(this.root, ctx.path.slice(uiPath.length).replace(/^\/+/, ''))
+      const name = ctx.path.slice(uiPath.length).replace(/^\/+/, '')
+      const sendFile = (filename: string) => {
+        ctx.type = extname(filename)
+        return ctx.body = createReadStream(filename)
+      }
+      if (this.entries[name]) return sendFile(this.entries[name])
+      const filename = resolve(this.root, name)
       if (!filename.startsWith(this.root) && !filename.includes('node_modules')) {
         return ctx.status = 403
       }
       const stats = await fs.stat(filename).catch<Stats>(noop)
-      if (stats?.isFile()) {
-        ctx.type = extname(filename)
-        return ctx.body = createReadStream(filename)
-      }
-      let template = await fs.readFile(resolve(this.root, `index.${this.config.devMode ? 'dev.' : ''}html`), 'utf8')
+      if (stats?.isFile()) return sendFile(filename)
+      console.log(ctx.path, stats)
+      let template = await fs.readFile(resolve(this.root, 'index.html'), 'utf8')
       if (vite) template = await vite.transformIndexHtml(uiPath, template)
-      ctx.set('content-type', 'text/html')
+      ctx.type = 'html'
       ctx.body = this.transformHtml(template)
     })
   }
@@ -87,9 +84,7 @@ export class WebServer {
       return `window.KOISHI_${snakeCase(key).toUpperCase()} = ${JSON.stringify(value)};`
     }).join('\n') + '</script>'
     const bodyInjection = Object.entries(this.entries).map(([name, filename]) => {
-      const src = this.config.devMode
-        ? '/vite/@fs' + filename
-        : this.config.uiPath + '/~/' + name
+      const src = this.config.devMode ? '/vite/@fs' + filename : `./${name}`
       return `<script type="module" src="${src}"></script>`
     }).join('\n')
     return template

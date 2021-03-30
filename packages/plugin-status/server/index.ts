@@ -104,7 +104,7 @@ export function apply(ctx: Context, config: Config = {}) {
     session.user.lastCall = new Date()
   })
 
-  ctx.router?.get(apiPath, async (koa) => {
+  ctx.router.get(apiPath, async (koa) => {
     koa.set('Access-Control-Allow-Origin', '*')
     koa.body = await getStatus()
   })

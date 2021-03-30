@@ -238,10 +238,10 @@ export function apply(ctx: Context, config: Config = {}) {
     })
 
     const filename = resolve(__dirname, webui.config.devMode ? '../client' : '../dist/index.js')
-    webui.entries.teach = filename
+    webui.entries['teach.js'] = filename
 
     ctx.before('disconnect', () => {
-      delete webui.entries.teach
+      delete webui.entries['teach.js']
     })
   }
 }
