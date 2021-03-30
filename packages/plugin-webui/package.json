@@ -1,6 +1,6 @@
 {
-  "name": "koishi-plugin-status",
-  "description": "Show Status of Koishi",
+  "name": "koishi-plugin-webui",
+  "description": "Show Web UI of Koishi",
   "version": "4.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -19,7 +19,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://github.com/koishijs/plugins/plugin-status#readme",
+  "homepage": "https://github.com/koishijs/plugins/plugin-webui#readme",
   "keywords": [
     "bot",
     "qqbot",
@@ -28,7 +28,7 @@
     "chatbot",
     "koishi",
     "plugin",
-    "status"
+    "webui"
   ],
   "peerDependencies": {
     "koishi-core": "^3.5.1"
