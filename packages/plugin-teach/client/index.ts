@@ -1,4 +1,4 @@
-import { router } from 'koishi-plugin-status/client'
+import { router } from 'koishi-plugin-webui/client'
 import Teach from './teach.vue'
 import 'vite/dynamic-import-polyfill'
 

@@ -6,11 +6,11 @@ declare module '*.vue' {
 }
 
 declare module '~/server' {
-  export * from 'koishi-plugin-status/server'
+  export * from 'koishi-plugin-webui/server'
 }
 
 declare module '~/client' {
-  export * from 'koishi-plugin-status/client'
+  export * from 'koishi-plugin-webui/client'
 }
 
 declare const KOISHI_ENDPOINT: string

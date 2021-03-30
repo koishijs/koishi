@@ -71,7 +71,6 @@ export class WebServer {
       }
       const stats = await fs.stat(filename).catch<Stats>(noop)
       if (stats?.isFile()) return sendFile(filename)
-      console.log(ctx.path, stats)
       let template = await fs.readFile(resolve(this.root, 'index.html'), 'utf8')
       if (vite) template = await vite.transformIndexHtml(uiPath, template)
       ctx.type = 'html'

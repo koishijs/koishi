@@ -15,7 +15,7 @@ import probability from './plugins/probability'
 import successor from './plugins/successor'
 import time from './plugins/time'
 import writer from './plugins/writer'
-import {} from 'koishi-plugin-status'
+import {} from 'koishi-plugin-webui'
 import { resolve } from 'path'
 
 export * from './utils'
@@ -38,7 +38,7 @@ declare module 'koishi-core' {
   }
 }
 
-declare module 'koishi-plugin-status' {
+declare module 'koishi-plugin-webui' {
   namespace Meta {
     interface Payload extends Dialogue.Stats {}
   }
@@ -205,10 +205,9 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(time, config)
   ctx.plugin(writer, config)
 
-  const webui = ctx.app.webui
-  if (webui) {
+  ctx.with('koishi-plugin-webui', (ctx) => {
+    const { webui } = ctx.app
     const { stats, meta } = webui.sources
-    ctx.addDependency('koishi-plugin-status')
 
     ctx.on('dialogue/before-send', ({ session, dialogue }) => {
       session._sendType = 'dialogue'
@@ -243,5 +242,5 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.before('disconnect', () => {
       delete webui.entries['teach.js']
     })
-  }
+  })
 }
