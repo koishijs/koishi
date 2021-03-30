@@ -13,7 +13,7 @@
 
 <script lang="ts" setup>
 
-import { stats } from 'koishi-plugin-status/client'
+import { stats } from 'koishi-plugin-webui/client'
 import { computed, ref } from 'vue'
 
 const questions = ref(stats.value.questions)
