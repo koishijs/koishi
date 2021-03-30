@@ -182,9 +182,12 @@ export class Registry implements DataSource<Registry.Payload> {
   payload: Registry.Payload
 
   constructor(private ctx: Context, public config: Registry.Config) {
-    ctx.on('registry', async () => {
-      this.ctx.app.webui.adapter?.broadcast('registry', await this.get(true))
-    })
+    ctx.on('plugin-added', this.update)
+    ctx.on('plugin-removed', this.update)
+  }
+
+  update = async () => {
+    this.ctx.app.webui.adapter?.broadcast('registry', await this.get(true))
   }
 
   async get(forced = false) {

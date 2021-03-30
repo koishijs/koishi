@@ -205,10 +205,9 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(time, config)
   ctx.plugin(writer, config)
 
-  const webui = ctx.app.webui
-  if (webui) {
+  ctx.with('koishi-plugin-webui', (ctx) => {
+    const { webui } = ctx.app
     const { stats, meta } = webui.sources
-    ctx.addDependency('koishi-plugin-webui')
 
     ctx.on('dialogue/before-send', ({ session, dialogue }) => {
       session._sendType = 'dialogue'
@@ -243,5 +242,5 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.before('disconnect', () => {
       delete webui.entries['teach.js']
     })
-  }
+  })
 }

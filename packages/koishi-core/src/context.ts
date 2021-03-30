@@ -153,14 +153,27 @@ export class Context {
     }
   }
 
-  addDependency(plugin: string | Plugin) {
-    if (typeof plugin === 'string') {
-      plugin = require(plugin) as Plugin
-    }
-    const parent = this.app.registry.get(plugin)
-    if (!parent) throw new Error('dependency has not been installed')
-    this.state.dependencies.add(parent)
-    if (this.state.sideEffect) this.addSideEffect(parent)
+  private teleport(parent: Plugin, callback: Plugin) {
+    const state = this.app.registry.get(parent)
+    if (!state) return
+    this.plugin(callback)
+    const dispose = () => this.dispose(callback)
+    state.disposables.push(dispose)
+    this.before('disconnect', () => {
+      remove(state.disposables, dispose)
+    })
+  }
+
+  with(dependency: string, callback: Plugin) {
+    let parent: Plugin
+    try {
+      parent = require(dependency)
+    } catch {}
+    if (!parent) return
+    this.teleport(parent, callback)
+    this.on('plugin-added', (added) => {
+      if (added === parent) this.teleport(parent, callback)
+    })
   }
 
   plugin<T extends Plugin>(plugin: T, options?: Plugin.Config<T>): this
@@ -194,7 +207,7 @@ export class Context {
     }
 
     this.state.children.push(plugin)
-    this.emit('registry', this.app.registry)
+    this.emit('plugin-added', plugin, this.app.registry)
     return this
   }
 
@@ -208,7 +221,7 @@ export class Context {
     ]).finally(() => {
       this.app.registry.delete(plugin)
       remove(state.parent.children, plugin)
-      this.emit('registry', this.app.registry)
+      this.emit('plugin-removed', plugin, this.app.registry)
     })
   }
 
@@ -524,7 +537,8 @@ export interface EventMap extends SessionEventMap {
   'before-command'(argv: Argv): Awaitable<void | string>
   'command'(argv: Argv): Awaitable<void>
   'middleware'(session: Session): void
-  'registry'(registry: Map<Plugin, Plugin.State>): void
+  'plugin-added'(plugin: Plugin, registry: Map<Plugin, Plugin.State>): void
+  'plugin-removed'(plugin: Plugin, registry: Map<Plugin, Plugin.State>): void
   'before-connect'(): Awaitable<void>
   'connect'(): void
   'before-disconnect'(): Awaitable<void>
