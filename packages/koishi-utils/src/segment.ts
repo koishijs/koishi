@@ -1,3 +1,5 @@
+import { types } from 'util'
+
 export interface segment {
   type: string
   data: segment.Data
@@ -82,18 +84,29 @@ export namespace segment {
     }).join('')
   }
 
-  export type Factory = (value: primitive, data?: segment.Data) => string
+  export type Factory<T> = (value: T, data?: segment.Data) => string
 
-  function createFactory(type: string, key: string): Factory {
+  function createFactory(type: string, key: string): Factory<primitive> {
     return (value, data = {}) => segment(type, { ...data, [key]: value })
+  }
+
+  function createAssetFactory(type: string): Factory<string | Buffer | ArrayBuffer> {
+    return (value, data = {}) => {
+      if (Buffer.isBuffer(value)) {
+        value = 'base64://' + value.toString('base64')
+      } else if (types.isArrayBuffer(value)) {
+        value = 'base64://' + Buffer.from(value).toString('base64')
+      }
+      return segment(type, { ...data, url: value })
+    }
   }
 
   export const at = createFactory('at', 'id')
   export const sharp = createFactory('sharp', 'id')
   export const quote = createFactory('quote', 'id')
-  export const image = createFactory('image', 'url')
-  export const video = createFactory('video', 'url')
-  export const audio = createFactory('audio', 'url')
+  export const image = createAssetFactory('image')
+  export const video = createAssetFactory('video')
+  export const audio = createAssetFactory('audio')
 }
 
 export { segment as s }

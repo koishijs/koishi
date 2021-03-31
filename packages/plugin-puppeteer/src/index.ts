@@ -159,7 +159,7 @@ export function apply(ctx: Context, config: Config = {}) {
             buffer = PNG.sync.write(png)
           }).catch(noop)
         }
-        return segment.image('base64://' + buffer.toString('base64'))
+        return segment.image(buffer)
       }, (error) => {
         logger.debug(error)
         return '截图失败。'
