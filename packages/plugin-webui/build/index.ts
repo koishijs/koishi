@@ -35,6 +35,7 @@ function build(root: string, config: vite.UserConfig) {
         } : undefined,
       },
     },
+    plugins: [pluginVue],
     resolve: {
       alias: {
         'vue': root + '/vue.js',
@@ -50,7 +51,6 @@ function build(root: string, config: vite.UserConfig) {
   // build for index.html
   await build(root, {
     base: './',
-    plugins: [pluginVue],
     resolve: {
       alias: {
         '~/variables': root + '/index.scss',
@@ -76,15 +76,25 @@ function build(root: string, config: vite.UserConfig) {
     },
   })
 
+  // build for koishi-plugin-chat
+  const chat = resolve(__dirname, '../../plugin-chat/client')
+  await build(chat, {
+    build: {
+      assetsDir: '',
+      rollupOptions: {
+        input: chat + '/index.ts',
+      },
+    },
+  })
+
   // build for koishi-plugin-teach
   const teach = resolve(__dirname, '../../plugin-teach/client')
-  build(teach, {
+  await build(teach, {
     build: {
       assetsDir: '',
       rollupOptions: {
         input: teach + '/index.ts',
       },
     },
-    plugins: [pluginVue],
   })
 })()

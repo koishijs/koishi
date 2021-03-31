@@ -3,7 +3,7 @@ import { interpolate, Time } from 'koishi-utils'
 import { Meta } from './data'
 import { Synchronizer } from './stats'
 import { SandboxBot } from './adapter'
-import { WebServer } from './server'
+import { WebServer, Config } from './server'
 
 import './mongo'
 import './mysql'
@@ -16,7 +16,7 @@ export * from './server'
 export type Activity = Record<number, number>
 
 declare module 'koishi-core' {
-  interface App {
+  interface Context {
     webui: WebServer
   }
 
@@ -94,17 +94,10 @@ export const name = 'status'
 
 export function apply(ctx: Context, config: Config = {}) {
   config = Object.assign(defaultConfig, config)
-  const { apiPath, formatBot, format } = config
 
-  const webui = ctx.app.webui = new WebServer(ctx, config)
+  ctx.webui = new WebServer(ctx, config)
 
-  ctx.on('connect', () => webui.start())
-
-  ctx.all().on('command', ({ session }: Argv<'lastCall'>) => {
-    session.user.lastCall = new Date()
-  })
-
-  ctx.router.get(apiPath, async (koa) => {
+  ctx.router.get(config.apiPath, async (koa) => {
     koa.set('Access-Control-Allow-Origin', '*')
     koa.body = await getStatus()
   })
@@ -132,8 +125,8 @@ export function apply(ctx: Context, config: Config = {}) {
 
   async function getStatus() {
     const [profile, meta] = await Promise.all([
-      webui.sources.profile.get(),
-      webui.sources.meta.get(),
+      ctx.webui.sources.profile.get(),
+      ctx.webui.sources.meta.get(),
     ])
     return { ...profile, ...meta }
   }

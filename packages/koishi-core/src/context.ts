@@ -487,25 +487,23 @@ export class Context {
       })
     }))).flat(1)
   }
+
+  static delegate(key: string & keyof Context) {
+    if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
+    const privateKey = Symbol(key)
+    Object.defineProperty(Context.prototype, key, {
+      get() {
+        return this.app[privateKey]
+      },
+      set(value) {
+        this.app[privateKey] = value
+      },
+    })
+  }
 }
 
-export function delegate(ctx: Context, key: string & keyof Context) {
-  const privateKey = Symbol(key)
-  Object.defineProperty(ctx, key, {
-    get() {
-      return this.app[privateKey]
-    },
-    set(value) {
-      if (this.app[privateKey] && this.app[privateKey] !== value) {
-        this.logger('app').warn('ctx.%s is overwritten', key)
-      }
-      this.app[privateKey] = value
-    },
-  })
-}
-
-delegate(Context.prototype, 'database')
-delegate(Context.prototype, 'assets')
+Context.delegate('database')
+Context.delegate('assets')
 
 type FlattenEvents<T> = {
   [K in keyof T & string]: K | `${K}/${FlattenEvents<T[K]>}`

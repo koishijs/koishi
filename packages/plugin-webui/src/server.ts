@@ -7,14 +7,16 @@ import { Statistics } from './stats'
 import type * as Vite from 'vite'
 import type PluginVue from '@vitejs/plugin-vue'
 
-export namespace WebServer {
-  export interface Config extends WebAdapter.Config, Profile.Config, Meta.Config, Registry.Config, Statistics.Config {
-    title?: string
-    selfUrl?: string
-    uiPath?: string
-    devMode?: boolean
-  }
+Context.delegate('webui')
 
+export interface Config extends WebAdapter.Config, Profile.Config, Meta.Config, Registry.Config, Statistics.Config {
+  title?: string
+  selfUrl?: string
+  uiPath?: string
+  devMode?: boolean
+}
+
+export namespace WebServer {
   export interface Global {
     title: string
     uiPath: string
@@ -37,7 +39,7 @@ export class WebServer {
   sources: WebServer.Sources
   entries: Record<string, string> = {}
 
-  constructor(private ctx: Context, public config: WebServer.Config) {
+  constructor(private ctx: Context, public config: Config) {
     this.root = resolve(__dirname, '..', config.devMode ? 'client' : 'dist')
     const { apiPath, uiPath, devMode, selfUrl, title } = config
     const endpoint = selfUrl + apiPath
@@ -48,6 +50,8 @@ export class WebServer {
       registry: new Registry(ctx, config),
       stats: new Statistics(ctx, config),
     }
+
+    ctx.on('connect', () => this.start())
   }
 
   async start() {
@@ -71,6 +75,8 @@ export class WebServer {
       }
       const stats = await fs.stat(filename).catch<Stats>(noop)
       if (stats?.isFile()) return sendFile(filename)
+      const ext = extname(filename)
+      if (ext && ext !== '.html') return ctx.status = 404
       let template = await fs.readFile(resolve(this.root, 'index.html'), 'utf8')
       if (vite) template = await vite.transformIndexHtml(uiPath, template)
       ctx.type = 'html'
