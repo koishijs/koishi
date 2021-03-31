@@ -1,11 +1,11 @@
 {
   "name": "koishi-adapter-onebot",
   "description": "CQHTTP adapter for Koishi",
-  "version": "3.0.2",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "version": "3.0.4",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "files": [
-    "dist"
+    "lib"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
@@ -27,7 +27,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.5.0"
+    "koishi-core": "^3.6.0"
   },
   "devDependencies": {
     "@types/ws": "^7.4.0",
@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "koishi-utils": "^4.1.0",
+    "koishi-utils": "^4.1.2",
     "ws": "^7.4.4"
   }
 }

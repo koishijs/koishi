@@ -92,10 +92,13 @@ export namespace template {
   }
 
   export function format(source: string, ...params: any[]) {
+    if (params[0] && typeof params[0] === 'object') {
+      source = interpolate(source, params[0])
+    }
     let result = ''
     let cap: RegExpExecArray
     // eslint-disable-next-line no-cond-assign
-    while (cap = /\{([\w-]+)\}/.exec(source)) {
+    while (cap = /\{(\w+)\}/.exec(source)) {
       result += source.slice(0, cap.index) + (cap[1] in params ? params[cap[1]] : '')
       source = source.slice(cap.index + cap[0].length)
     }

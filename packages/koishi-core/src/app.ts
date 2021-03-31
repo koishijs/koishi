@@ -145,10 +145,10 @@ export class App extends Context {
 
   createServer() {
     const koa: Koa = new (require('koa'))()
-    defineProperty(this, '_router', new (require('@koa/router'))())
+    this.router = new (require('@koa/router'))()
     koa.use(require('koa-bodyparser')())
-    koa.use(this._router.routes())
-    koa.use(this._router.allowedMethods())
+    koa.use(this.router.routes())
+    koa.use(this.router.allowedMethods())
     defineProperty(this, '_httpServer', createServer(koa.callback()))
   }
 

@@ -2,10 +2,10 @@
   "name": "koishi-adapter-tomon",
   "description": "Tomon adapter for Koishi",
   "version": "1.0.0-beta.11",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "files": [
-    "dist"
+    "lib"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",
   "license": "MIT",
@@ -24,7 +24,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.5.0"
+    "koishi-core": "^3.6.0"
   },
   "devDependencies": {
     "@types/pako": "^1.0.1",
@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "koishi-utils": "^4.1.0",
+    "koishi-utils": "^4.1.2",
     "pako": "^2.0.3",
     "ws": "^7.4.4"
   }

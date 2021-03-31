@@ -1,11 +1,11 @@
 {
   "name": "koishi-utils",
   "description": "Utilities for Koishi",
-  "version": "4.1.0",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "version": "4.1.2",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "files": [
-    "dist",
+    "lib",
     "chinese.txt"
   ],
   "author": "Shigma <1700011071@pku.edu.cn>",

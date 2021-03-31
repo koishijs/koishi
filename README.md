@@ -122,7 +122,7 @@ Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间�
 - [koishi-plugin-puppeteer](https://koishi.js.org/plugins/other/puppeteer.md) / 网页截图
 - [koishi-plugin-rss](https://koishi.js.org/plugins/other/rss.md) / 订阅 RSS
 - [koishi-plugin-schedule](https://koishi.js.org/plugins/other/schedule.md) / 设置计划任务
-- [koishi-plugin-status](https://koishi.js.org/plugins/other/status.md) / 状态监控
+- [koishi-plugin-webui](https://koishi.js.org/plugins/other/webui.md) / 状态监控
 - [koishi-plugin-tools](https://koishi.js.org/plugins/other/tools.md) / 实用工具
 
 ## 使用协议

@@ -5,7 +5,7 @@ import { Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
 import { DiscordChannel, DiscordMessage, DiscordUser, ExecuteWebhookBody, GuildMember, PartialGuild } from './types'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import { segment } from 'koishi-utils'
 import FormData from 'form-data'
 import FileType from 'file-type'
@@ -116,7 +116,13 @@ export class DiscordBot extends Bot<'discord'> {
               ...addition,
             })
             sentMessageId = r.id
-          } else {
+          } else if (data.url.startsWith('base64://')) {
+            const a = Buffer.from(data.url.substring('base64://'.length), 'base64')
+            const r = await this.sendEmbedMessage(requestUrl, a, {
+              ...addition,
+            })
+            sentMessageId = r.id
+          } else if (existsSync(data.url)) {
             const r = await this.sendEmbedMessage(requestUrl, readFileSync(data.url), {
               ...addition,
             })

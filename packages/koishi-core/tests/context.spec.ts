@@ -171,7 +171,7 @@ describe('Context API', () => {
       expect(inspect(app)).to.equal('Context <root>')
 
       app.plugin(function foo(ctx) {
-        expect(inspect(ctx)).to.equal('Context <unknown>')
+        expect(inspect(ctx)).to.equal('Context <anonymous>')
       })
 
       app.plugin({
