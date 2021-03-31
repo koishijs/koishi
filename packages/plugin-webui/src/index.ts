@@ -1,5 +1,5 @@
-import { Context, Channel, Argv, User } from 'koishi-core'
-import { interpolate, Time } from 'koishi-utils'
+import { Context, Channel, User } from 'koishi-core'
+import { template, Time } from 'koishi-utils'
 import { Meta } from './data'
 import { Synchronizer } from './stats'
 import { SandboxBot } from './adapter'
@@ -65,10 +65,18 @@ User.extend(() => ({
   expire: 0,
 }))
 
-export interface Config extends WebServer.Config {
-  format?: string
-  formatBot?: string
-}
+template.set('status', {
+  // eslint-disable-next-line no-template-curly-in-string
+  bot: '{{ username }}：{{ code ? `无法连接` : `工作中（${currentRate[0]}/min）` }}',
+  output: [
+    '{{ bots }}',
+    '==========',
+    '活跃用户数量：{{ activeUsers }}',
+    '活跃群数量：{{ activeGroups }}',
+    'CPU 使用率：{{ (cpu[0] * 100).toFixed() }}% / {{ (cpu[1] * 100).toFixed() }}%',
+    '内存使用率：{{ (memory[0] * 100).toFixed() }}% / {{ (memory[1] * 100).toFixed() }}%',
+  ].join('\n'),
+})
 
 const defaultConfig: Config = {
   apiPath: '/status',
@@ -78,16 +86,6 @@ const defaultConfig: Config = {
   expiration: Time.week,
   tickInterval: Time.second * 5,
   refreshInterval: Time.hour,
-  // eslint-disable-next-line no-template-curly-in-string
-  formatBot: '{{ username }}：{{ code ? `无法连接` : `工作中（${currentRate[0]}/min）` }}',
-  format: [
-    '{{ bots }}',
-    '==========',
-    '活跃用户数量：{{ activeUsers }}',
-    '活跃群数量：{{ activeGroups }}',
-    'CPU 使用率：{{ (cpu[0] * 100).toFixed() }}% / {{ (cpu[1] * 100).toFixed() }}%',
-    '内存使用率：{{ (memory[0] * 100).toFixed() }}% / {{ (memory[1] * 100).toFixed() }}%',
-  ].join('\n'),
 }
 
 export const name = 'status'
@@ -115,12 +113,12 @@ export function apply(ctx: Context, config: Config = {}) {
       }
       status.bots.toString = () => {
         return status.bots.map(bot => {
-          let output = interpolate(formatBot, bot)
+          let output = template('status.bot', bot)
           if (options.all) output = `[${bot.platform}] ` + output
           return output
         }).join('\n')
       }
-      return interpolate(format, status)
+      return template('status.output', status)
     })
 
   async function getStatus() {
