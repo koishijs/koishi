@@ -1,4 +1,4 @@
-import { Assets, Context, Random, sanitize, trimSlash } from 'koishi-core'
+import { Assets, Context, Random, sanitize, Time, trimSlash } from 'koishi-core'
 import axios, { AxiosRequestConfig } from 'axios'
 import { promises as fs, createReadStream, existsSync } from 'fs'
 import { extname, resolve } from 'path'
@@ -181,6 +181,7 @@ export const name = 'assets'
 
 export function apply(ctx: Context, config: Config = {}) {
   config.axiosConfig = {
+    timeout: Time.second * 5,
     ...ctx.app.options.axiosConfig,
     ...config.axiosConfig,
   }
