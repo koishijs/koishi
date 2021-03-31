@@ -32,7 +32,7 @@
     "mysql"
   ],
   "devDependencies": {
-    "@types/mongodb": "^3.6.10"
+    "@types/mongodb": "^3.6.11"
   },
   "peerDependencies": {
     "koishi-core": "^3.5.1"

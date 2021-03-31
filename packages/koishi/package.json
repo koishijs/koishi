@@ -32,7 +32,7 @@
     "koishi"
   ],
   "devDependencies": {
-    "@types/prompts": "^2.0.9"
+    "@types/prompts": "^2.0.10"
   },
   "dependencies": {
     "cac": "^6.7.2",
