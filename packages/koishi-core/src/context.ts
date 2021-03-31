@@ -57,19 +57,20 @@ interface Selector<T> extends PartialSeletor<T> {
 }
 
 export class Context {
-  static readonly middleware = Symbol('mid')
+  static readonly middleware = Symbol('middleware')
+  static readonly current = Symbol('source')
 
   protected _bots: Bot[] & Record<string, Bot>
-  protected _router: Router
 
   public database: Database
   public assets: Assets
+  public router: Router
 
   protected constructor(public filter: Filter, public app?: App, private _plugin: Plugin = null) {}
 
   [inspect.custom]() {
     const plugin = this._plugin
-    const name = !plugin ? 'root' : typeof plugin === 'object' && plugin.name || 'unknown'
+    const name = !plugin ? 'root' : typeof plugin === 'object' && plugin.name || 'anonymous'
     return `Context <${name}>`
   }
 
@@ -101,13 +102,6 @@ export class Context {
 
   get private() {
     return this.unselect('groupId').user
-  }
-
-  get router(): Router {
-    if (!this.app._router) return
-    const router = Object.create(this.app._router)
-    router._koishiContext = this
-    return router
   }
 
   get bots() {
@@ -493,7 +487,10 @@ export class Context {
     const privateKey = Symbol(key)
     Object.defineProperty(Context.prototype, key, {
       get() {
-        return this.app[privateKey]
+        if (!this.app[privateKey]) return
+        const value = Object.create(this.app[privateKey])
+        value[Context.current] = this
+        return value
       },
       set(value) {
         this.app[privateKey] = value
@@ -504,6 +501,7 @@ export class Context {
 
 Context.delegate('database')
 Context.delegate('assets')
+Context.delegate('router')
 
 type FlattenEvents<T> = {
   [K in keyof T & string]: K | `${K}/${FlattenEvents<T[K]>}`
@@ -552,7 +550,7 @@ export interface EventMap extends SessionEventMap {
 const register = Router.prototype.register
 Router.prototype.register = function (this: Router, ...args) {
   const layer = register.apply(this, args)
-  const context: Context = this['_koishiContext']
+  const context: Context = this[Context.current]
   context.state.disposables.push(() => {
     remove(this.stack, layer)
   })

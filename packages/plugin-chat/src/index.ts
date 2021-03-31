@@ -9,13 +9,8 @@ export const name = 'chat'
 
 export function apply(ctx: Context, options: Config = {}) {
   ctx.plugin(debug, options)
-  ctx.with('koishi-plugin-webui', () => {
-    const { config, entries } = ctx.webui
-
-    const filename = resolve(__dirname, config.devMode ? '../client/index.ts' : '../dist/index.js')
-    entries.chat = filename
-    ctx.before('disconnect', () => {
-      delete entries.chat
-    })
+  ctx.with('koishi-plugin-webui', (ctx) => {
+    const filename = ctx.webui.config.devMode ? '../client/index.ts' : '../dist/index.js'
+    ctx.webui.addEntry(resolve(__dirname, filename))
   })
 }

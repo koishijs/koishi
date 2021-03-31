@@ -39,6 +39,9 @@ export class WebServer {
   sources: WebServer.Sources
   entries: Record<string, string> = {}
 
+  private vite: Vite.ViteDevServer
+  private readonly [Context.current]: Context
+
   constructor(private ctx: Context, public config: Config) {
     this.root = resolve(__dirname, '..', config.devMode ? 'client' : 'dist')
     const { apiPath, uiPath, devMode, selfUrl, title } = config
@@ -54,9 +57,23 @@ export class WebServer {
     ctx.on('connect', () => this.start())
   }
 
-  async start() {
+  addEntry(filename: string) {
+    const ctx = this[Context.current]
+    let { state } = ctx
+    while (state && !state.name) state = state.parent
+    const hash = Math.floor(Math.random() * (16 ** 8)).toString(16).padStart(8, '0')
+    const key = `${state?.name || 'entry'}-${hash}.js`
+    this.entries[key] = filename
+    this.vite?.ws.send({ type: 'full-reload' })
+    ctx.before('disconnect', () => {
+      delete this.entries[key]
+      this.vite?.ws.send({ type: 'full-reload' })
+    })
+  }
+
+  private async start() {
     const { uiPath } = this.config
-    const [vite] = await Promise.all([this.createVite(), this.createAdapter()])
+    await Promise.all([this.createVite(), this.createAdapter()])
 
     this.ctx.router.get(uiPath + '(/.+)*', async (ctx) => {
       // add trailing slash and redirect
@@ -68,7 +85,10 @@ export class WebServer {
         ctx.type = extname(filename)
         return ctx.body = createReadStream(filename)
       }
-      if (this.entries[name]) return sendFile(this.entries[name])
+      if (name.startsWith('assets/')) {
+        const key = name.slice(7)
+        if (this.entries[key]) return sendFile(this.entries[key])
+      }
       const filename = resolve(this.root, name)
       if (!filename.startsWith(this.root) && !filename.includes('node_modules')) {
         return ctx.status = 403
@@ -77,19 +97,21 @@ export class WebServer {
       if (stats?.isFile()) return sendFile(filename)
       const ext = extname(filename)
       if (ext && ext !== '.html') return ctx.status = 404
-      let template = await fs.readFile(resolve(this.root, 'index.html'), 'utf8')
-      if (vite) template = await vite.transformIndexHtml(uiPath, template)
+      const template = await fs.readFile(resolve(this.root, 'index.html'), 'utf8')
       ctx.type = 'html'
-      ctx.body = this.transformHtml(template)
+      ctx.body = await this.transformHtml(template)
     })
   }
 
-  private transformHtml(template: string) {
+  private async transformHtml(template: string) {
+    if (this.vite) {
+      template = await this.vite.transformIndexHtml(this.config.uiPath, template)
+    }
     const headInjection = '<script>' + Object.entries(this.global).map(([key, value]) => {
       return `window.KOISHI_${snakeCase(key).toUpperCase()} = ${JSON.stringify(value)};`
     }).join('\n') + '</script>'
     const bodyInjection = Object.entries(this.entries).map(([name, filename]) => {
-      const src = this.config.devMode ? '/vite/@fs' + filename : `./${name}`
+      const src = this.config.devMode ? '/vite/@fs' + filename : `./assets/${name}`
       return `<script type="module" src="${src}"></script>`
     }).join('\n')
     return template
@@ -119,7 +141,7 @@ export class WebServer {
     const { createServer } = require('vite') as typeof Vite
     const pluginVue = require('@vitejs/plugin-vue').default as typeof PluginVue
 
-    const vite = await createServer({
+    this.vite = await createServer({
       root: this.root,
       base: '/vite/',
       server: { middlewareMode: true },
@@ -133,11 +155,9 @@ export class WebServer {
     })
 
     this.ctx.router.all('/vite(/.+)+', (ctx) => new Promise((resolve) => {
-      vite.middlewares(ctx.req, ctx.res, resolve)
+      this.vite.middlewares(ctx.req, ctx.res, resolve)
     }))
 
-    this.ctx.before('disconnect', () => vite.close())
-
-    return vite
+    this.ctx.before('disconnect', () => this.vite.close())
   }
 }
