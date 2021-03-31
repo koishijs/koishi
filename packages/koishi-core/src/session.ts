@@ -180,7 +180,7 @@ export class Session<
     }))
   }
 
-  private _getValue<T>(source: T | ((session: Session) => T)): T {
+  resolveValue<T>(source: T | ((session: Session) => T)): T {
     return typeof source === 'function' ? Reflect.apply(source, null, [this]) : source
   }
 
@@ -219,7 +219,7 @@ export class Session<
     if (hasActiveCache) return this.channel = cache as any
 
     // 绑定一个新的可观测频道实例
-    const assignee = this._getValue(this.app.options.autoAssign) ? this.selfId : ''
+    const assignee = this.resolveValue(this.app.options.autoAssign) ? this.selfId : ''
     const data = await this.getChannel(channelId, assignee, fieldArray)
     const newChannel = observe(data, diff => this.database.setChannel(platform, channelId, diff), `channel ${this.cid}`)
     this.app._channelCache.set(this.cid, newChannel)
@@ -266,7 +266,7 @@ export class Session<
     // 确保匿名消息不会写回数据库
     if (this.author?.anonymous) {
       const fallback = User.create(this.platform, userId)
-      fallback.authority = this._getValue(this.app.options.autoAuthorize)
+      fallback.authority = this.resolveValue(this.app.options.autoAuthorize)
       const user = observe(fallback, () => Promise.resolve())
       return this.user = user
     }
@@ -278,7 +278,7 @@ export class Session<
     if (hasActiveCache) return this.user = cache as any
 
     // 绑定一个新的可观测用户实例
-    const data = await this.getUser(userId, this._getValue(this.app.options.autoAuthorize), fieldArray)
+    const data = await this.getUser(userId, this.resolveValue(this.app.options.autoAuthorize), fieldArray)
     const newUser = observe(data, diff => this.database.setUser(this.platform, userId, diff), `user ${this.uid}`)
     userCache.set(userId, newUser)
     return this.user = newUser

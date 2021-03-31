@@ -166,7 +166,7 @@ export namespace Domain {
     fallback?: any
     type?: T
     /** hide the option by default */
-    hidden?: boolean
+    hidden?: boolean | ((session: Session) => boolean)
     authority?: number
     notUsage?: boolean
   }
