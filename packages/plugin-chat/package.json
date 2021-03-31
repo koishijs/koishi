@@ -30,7 +30,7 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.5.1"
+    "koishi-core": "^3.6.0"
   },
   "devDependencies": {
     "koishi-plugin-webui": "^4.0.0"
