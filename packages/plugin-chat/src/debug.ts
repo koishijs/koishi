@@ -1,7 +1,7 @@
 import { Bot, Context, Session } from 'koishi-core'
 import { Logger, segment, Time, interpolate, pick } from 'koishi-utils'
 
-export interface DebugOptions {
+export interface DebugConfig {
   formatSend?: string
   formatReceive?: string
   includeUsers?: string[]
@@ -64,7 +64,7 @@ async function getChannelName(bot: Bot, channelId: string) {
   }
 }
 
-export default function apply(ctx: Context, config: DebugOptions = {}) {
+export default function apply(ctx: Context, config: DebugConfig = {}) {
   const {
     formatSend = '[{{ channelName }}] {{ content }}',
     formatReceive = '[{{ channelName }}] {{ username }}: {{ content }}',

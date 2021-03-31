@@ -42,14 +42,14 @@ router.addRoute({
 router.addRoute({
   path: '/sandbox',
   name: '沙盒',
-  meta: { icon: 'laptop-code', require: ['user'] },
+  meta: { icon: 'laptop-code', authority: 1 },
   component: () => import('./views/sandbox.vue'),
 })
 
 router.addRoute({
   path: '/profile',
   name: '资料',
-  meta: { icon: 'user-circle', require: ['user'], hidden: true },
+  meta: { icon: 'user-circle', authority: 1, hidden: true },
   component: () => import('./views/profile.vue'),
 })
 
@@ -77,7 +77,7 @@ receive('expire', () => {
 })
 
 router.beforeEach((route) => {
-  if (route.meta.require?.includes('user') && !user.value) {
+  if (route.meta.authority && !user.value) {
     return '/login'
   }
 })

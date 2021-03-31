@@ -5,6 +5,6 @@ import 'vite/dynamic-import-polyfill'
 router.addRoute({
   path: '/chat',
   name: '聊天',
-  meta: { icon: 'comments', require: ['user'] },
+  meta: { icon: 'comments', require: ['user'], authority: 4 },
   component: Chat,
 })

@@ -43,6 +43,12 @@ function isBailed(value: any) {
   return value !== null && value !== false && value !== undefined
 }
 
+function safeRequire(id: string) {
+  try {
+    return require(id)
+  } catch {}
+}
+
 type Filter = (session: Session) => boolean
 type PartialSeletor<T> = (...values: T[]) => Context
 
@@ -165,13 +171,11 @@ export class Context {
   }
 
   with(dependency: string, callback: Plugin) {
-    let parent: Plugin
-    try {
-      parent = require(dependency)
-    } catch {}
+    const parent = safeRequire(dependency)
     if (!parent) return
     this.teleport(parent, callback)
     this.on('plugin-added', (added) => {
+      const parent = safeRequire(dependency)
       if (added === parent) this.teleport(parent, callback)
     })
   }

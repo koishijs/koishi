@@ -1,7 +1,7 @@
-import { Context, Channel, App, Argv, User } from 'koishi-core'
+import { Context, Channel, Argv, User } from 'koishi-core'
 import { interpolate, Time } from 'koishi-utils'
 import { Meta } from './data'
-import { Statistics, Synchronizer } from './stats'
+import { Synchronizer } from './stats'
 import { SandboxBot } from './adapter'
 import { WebServer } from './server'
 
@@ -65,7 +65,7 @@ User.extend(() => ({
   expire: 0,
 }))
 
-export interface Config extends WebServer.Config, Statistics.Config {
+export interface Config extends WebServer.Config {
   format?: string
   formatBot?: string
 }

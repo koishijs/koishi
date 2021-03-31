@@ -206,8 +206,8 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(writer, config)
 
   ctx.with('koishi-plugin-webui', (ctx) => {
-    const { webui } = ctx.app
-    const { stats, meta } = webui.sources
+    const { config, entries } = ctx.app.webui
+    const { stats, meta } = ctx.app.webui.sources
 
     ctx.on('dialogue/before-send', ({ session, dialogue }) => {
       session._sendType = 'dialogue'
@@ -236,11 +236,10 @@ export function apply(ctx: Context, config: Config = {}) {
       payload.questions = Object.values(questionMap)
     })
 
-    const filename = resolve(__dirname, webui.config.devMode ? '../client' : '../dist/index.js')
-    webui.entries['teach.js'] = filename
-
+    const filename = resolve(__dirname, config.devMode ? '../client' : '../dist/index.js')
+    entries.teach = filename
     ctx.before('disconnect', () => {
-      delete webui.entries['teach.js']
+      delete entries.teach
     })
   })
 }
