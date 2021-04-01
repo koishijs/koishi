@@ -358,8 +358,9 @@ export class Session<
     }
 
     const result = await argv.command.execute(argv, next)
-    if (shouldEmit) await this.send(result)
-    return result
+    if (!shouldEmit) return result
+    await this.send(result)
+    return ''
   }
 
   middleware(middleware: Middleware) {
