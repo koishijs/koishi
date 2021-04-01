@@ -20,6 +20,7 @@ const specs = [
   'packages/koishi-core/tests/context.spec.ts',
   'packages/koishi-core/tests/help.spec.ts',
   'packages/koishi-core/tests/hook.spec.ts',
+  'packages/koishi-core/tests/runtime.spec.ts',
   'packages/koishi-core/tests/session.spec.ts',
   'packages/koishi-core/tests/parser.spec.ts',
   'packages/koishi-utils/tests/*.spec.ts',
