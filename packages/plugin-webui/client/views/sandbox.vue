@@ -11,7 +11,7 @@
 
 <script lang="ts" setup>
 
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, onMounted } from 'vue'
 import { send, receive, user, storage } from '~/client'
 
 interface Message {
@@ -33,6 +33,8 @@ function addMessage(from: 'user' | 'bot', content: string) {
   }
 }
 
+onMounted(scrollToBottom)
+
 function scrollToBottom() {
   panel.value.scrollTop = panel.value.scrollHeight - panel.value.clientHeight
 }
@@ -47,6 +49,10 @@ function onEnter() {
 
 receive('sandbox', (data) => {
   addMessage('bot', data)
+})
+
+receive('clear', (data) => {
+  messages.value = []
 })
 
 </script>

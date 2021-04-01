@@ -113,6 +113,9 @@ export class WebAdapter extends Adapter<'web'> {
       server: ctx.app._httpServer,
     })
 
+    ctx.self('sandbox').command('clear', '清空消息列表')
+      .action(({ session }) => this.channels[session.channelId].send('clear'))
+
     ctx.all().middleware(async (session, next) => {
       if (session.subtype !== 'private') return next()
       const state = states[session.uid]

@@ -14,6 +14,7 @@
 
 import type { Registry } from '~/server'
 import { ref, computed, defineProps } from 'vue'
+import PluginView from './plugin-view.vue'
 
 const show = ref(false)
 
