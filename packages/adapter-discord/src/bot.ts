@@ -16,7 +16,7 @@ export class DiscordBot extends Bot<'discord'> {
   _ping: NodeJS.Timeout
   _sessionId: string = ''
 
-  async request<T = any>(method: Method, path: string, data?: any): Promise<T> {
+  async request<T = any>(method: Method, path: string, data?: any, exHeaders?: any): Promise<T> {
     const { axiosConfig, discord = {} } = this.app.options
     const url = `https://discord.com/api/v8${path}`
     const headers: Record<string, any> = {
@@ -27,7 +27,7 @@ export class DiscordBot extends Bot<'discord'> {
       ...discord.axiosConfig,
       method,
       url,
-      headers,
+      headers: { ...headers, ...exHeaders },
       data,
     })
     return response.data
@@ -43,17 +43,8 @@ export class DiscordBot extends Bot<'discord'> {
     const type = await FileType.fromBuffer(fileBuffer)
     fd.append('file', fileBuffer, 'file.' + type.ext)
     fd.append('payload_json', JSON.stringify(payload_json))
-    const headers: Record<string, any> = {
-      Authorization: `Bot ${this.token}`,
-    }
-    const response = await axios({
-      ...this.app.options.axiosConfig,
-      method: 'post',
-      url: 'https://discord.com/api/v8' + requestUrl,
-      headers: { ...headers, ...fd.getHeaders() },
-      data: fd,
-    })
-    return response.data
+    const data = await this.reauest('POST', reauestUrl, fd, fd.getHeaders())
+    return data
   }
 
   private parseQuote(chain: segment.Chain) {
