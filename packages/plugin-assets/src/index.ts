@@ -2,8 +2,21 @@ import { Assets, Context, Random, sanitize, Time, trimSlash } from 'koishi-core'
 import axios, { AxiosRequestConfig } from 'axios'
 import { promises as fs, createReadStream, existsSync } from 'fs'
 import { extname, resolve } from 'path'
-import { createHmac } from 'crypto'
+import { createHmac, createHash } from 'crypto'
 import FormData from 'form-data'
+
+const PTC_BASE64 = 'base64://'
+
+async function getAssetBuffer(url: string, axiosConfig: AxiosRequestConfig) {
+  if (url.startsWith(PTC_BASE64)) {
+    return Buffer.from(url.slice(PTC_BASE64.length), 'base64')
+  }
+  const { data } = await axios.get<ArrayBuffer>(url, {
+    ...axiosConfig,
+    responseType: 'arraybuffer',
+  })
+  return Buffer.from(data)
+}
 
 interface ServerConfig {
   path?: string
@@ -77,13 +90,10 @@ class AssetServer implements Assets {
     const { selfUrl, path, root, axiosConfig } = this.config
     const filename = resolve(root, file)
     if (!existsSync(filename)) {
-      const { data } = await axios.get<ArrayBuffer>(url, {
-        ...axiosConfig,
-        responseType: 'arraybuffer',
-      })
-      await fs.writeFile(filename, Buffer.from(data))
+      const buffer = await getAssetBuffer(url, axiosConfig)
+      await fs.writeFile(filename, buffer)
       this._stats.assetCount += 1
-      this._stats.assetSize += data.byteLength
+      this._stats.assetSize += buffer.byteLength
     }
     return `${selfUrl}${path}/${file}`
   }
@@ -138,12 +148,9 @@ class SmmsAssets implements Assets {
 
   async upload(url: string, file: string) {
     const { token, endpoint, axiosConfig } = this.config
-    const { data: filedata } = await axios.get<ArrayBuffer>(url, {
-      ...axiosConfig,
-      responseType: 'arraybuffer',
-    })
+    const buffer = await getAssetBuffer(url, axiosConfig)
     const payload = new FormData()
-    payload.append('smfile', filedata, file)
+    payload.append('smfile', buffer, file || createHash('sha1').update(buffer).digest('hex'))
     const { data } = await axios.post(endpoint + '/upload', payload, {
       ...axiosConfig,
       headers: {
@@ -164,6 +171,7 @@ class SmmsAssets implements Assets {
   async stats() {
     const { token, endpoint, axiosConfig } = this.config
     const { data } = await axios.post(endpoint + '/profile', null, {
+      timeout: Time.second * 5,
       ...axiosConfig,
       headers: {
         authorization: token,
@@ -181,7 +189,6 @@ export const name = 'assets'
 
 export function apply(ctx: Context, config: Config = {}) {
   config.axiosConfig = {
-    timeout: Time.second * 5,
     ...ctx.app.options.axiosConfig,
     ...config.axiosConfig,
   }
