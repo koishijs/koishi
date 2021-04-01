@@ -47,6 +47,7 @@ export class DiscordBot extends Bot<'discord'> {
       Authorization: `Bot ${this.token}`,
     }
     const response = await axios({
+      ...this.app.options.axiosConfig,
       method: 'post',
       url: 'https://discord.com/api/v8' + requestUrl,
       headers: { ...headers, ...fd.getHeaders() },
