@@ -130,7 +130,7 @@ Database.extend(MongoDatabase, {
     if (!key || key === primary) key = '_id'
     const bulk = this.db.collection(name).initializeUnorderedBulkOp()
     for (const item of data) {
-      bulk.find({ [key]: data[primary] }).updateOne({ $set: omit(item, [primary]) })
+      bulk.find({ [key]: item[primary] }).updateOne({ $set: omit(item, [primary]) })
     }
     await bulk.execute()
   },
