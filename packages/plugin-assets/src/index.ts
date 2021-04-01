@@ -18,7 +18,8 @@ async function getAssetBuffer(url: string, axiosConfig: AxiosRequestConfig) {
   return Buffer.from(data)
 }
 
-interface ServerConfig {
+interface LocalConfig {
+  type: 'local'
   path?: string
   root?: string
   selfUrl?: string
@@ -26,7 +27,7 @@ interface ServerConfig {
   axiosConfig?: AxiosRequestConfig
 }
 
-class AssetServer implements Assets {
+class LocalAssets implements Assets {
   types = ['video', 'audio', 'image'] as const
 
   private _promise: Promise<void>
@@ -35,9 +36,13 @@ class AssetServer implements Assets {
     assetSize: 0,
   }
 
-  constructor(public ctx: Context, public config: ServerConfig) {
-    const path = sanitize(config.path || '/assets')
-    config.root ||= resolve(__dirname, '../public')
+  constructor(public ctx: Context, public config: LocalConfig) {
+    config.path = sanitize(config.path || '/assets')
+    if (config.root) {
+      config.root = resolve(process.cwd(), config.root)
+    } else {
+      config.root = resolve(__dirname, '../public')
+    }
 
     if (config.selfUrl) {
       config.selfUrl = trimSlash(config.selfUrl)
@@ -45,17 +50,17 @@ class AssetServer implements Assets {
       throw new Error(`missing configuration "selfUrl" or "server"`)
     }
 
-    ctx.router.get(path, async (ctx) => {
+    ctx.router.get(config.path, async (ctx) => {
       return ctx.body = await this.stats()
     })
 
-    ctx.router.get(path + '/:name', (ctx) => {
+    ctx.router.get(config.path + '/:name', (ctx) => {
       const filename = resolve(config.root, ctx.params.name)
       ctx.type = extname(filename)
       return ctx.body = createReadStream(filename)
     })
 
-    ctx.router.post(path, async (ctx) => {
+    ctx.router.post(config.path, async (ctx) => {
       const { salt, sign, url, file } = ctx.query
       if (Array.isArray(file) || Array.isArray(url)) {
         return ctx.status = 400
@@ -85,15 +90,25 @@ class AssetServer implements Assets {
     }))
   }
 
+  async write(buffer: Buffer, filename: string) {
+    await fs.writeFile(filename, buffer)
+    this._stats.assetCount += 1
+    this._stats.assetSize += buffer.byteLength
+  }
+
   async upload(url: string, file: string) {
     await this._promise
     const { selfUrl, path, root, axiosConfig } = this.config
-    const filename = resolve(root, file)
-    if (!existsSync(filename)) {
+    if (file) {
+      const filename = resolve(root, file)
+      if (!existsSync(filename)) {
+        const buffer = await getAssetBuffer(url, axiosConfig)
+        await this.write(buffer, filename)
+      }
+    } else {
       const buffer = await getAssetBuffer(url, axiosConfig)
-      await fs.writeFile(filename, buffer)
-      this._stats.assetCount += 1
-      this._stats.assetSize += buffer.byteLength
+      file = createHash('sha1').update(buffer).digest('hex')
+      await this.write(buffer, resolve(root, file))
     }
     return `${selfUrl}${path}/${file}`
   }
@@ -104,16 +119,17 @@ class AssetServer implements Assets {
   }
 }
 
-interface ClientConfig {
+interface RemoteConfig {
+  type: 'remote'
   server: string
   secret?: string
   axiosConfig?: AxiosRequestConfig
 }
 
-class AssetClient implements Assets {
+class RemoteAssets implements Assets {
   types = ['video', 'audio', 'image'] as const
 
-  constructor(public ctx: Context, public config: ClientConfig) {}
+  constructor(public ctx: Context, public config: RemoteConfig) {}
 
   async upload(url: string, file: string) {
     const { server, secret, axiosConfig } = this.config
@@ -183,25 +199,20 @@ class SmmsAssets implements Assets {
   }
 }
 
-export type Config = ServerConfig | ClientConfig | SmmsConfig
+export type Config = LocalConfig | RemoteConfig | SmmsConfig
 
 export const name = 'assets'
 
-export function apply(ctx: Context, config: Config = {}) {
+export function apply(ctx: Context, config: Config) {
   config.axiosConfig = {
     ...ctx.app.options.axiosConfig,
     ...config.axiosConfig,
   }
 
-  if ('type' in config) {
-    if (config.type === 'smms') {
-      ctx.assets = new SmmsAssets(ctx, config)
-    } else {
-      throw new Error(`unsupported asset provider type "${config.type}"`)
-    }
-  } else if ('server' in config) {
-    ctx.assets = new AssetClient(ctx, config)
-  } else {
-    ctx.assets = new AssetServer(ctx, config)
+  switch (config.type) {
+    case 'local': ctx.assets = new LocalAssets(ctx, config); break
+    case 'remote': ctx.assets = new RemoteAssets(ctx, config); break
+    case 'smms': ctx.assets = new SmmsAssets(ctx, config); break
+    default: throw new Error(`unsupported asset provider type "${config['type']}"`)
   }
 }
