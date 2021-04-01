@@ -21,7 +21,7 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 const frameless = computed(() => route.meta.frameless)
 const loaded = computed(() => (route.meta.require || []).every((key) => client[key].value))
-const invalid = computed(() => route.meta.authority > client.user.value.authority)
+const invalid = computed(() => route.meta.authority > client.user.value?.authority)
 
 </script>
 

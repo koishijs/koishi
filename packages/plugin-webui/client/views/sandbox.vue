@@ -2,17 +2,17 @@
   <k-card class="sandbox">
     <div class="history" ref="panel">
       <p v-for="({ from, content }, index) in messages" :key="index" :class="from">
-        {{ content }}
+        <k-message :text="content"/>
       </p>
     </div>
-    <k-input v-model="text" @enter="onEnter"></k-input>
+    <k-input v-model="text" @enter="onEnter" @paste="onPaste"></k-input>
   </k-card>
 </template>
 
 <script lang="ts" setup>
 
 import { ref, watch, nextTick, onMounted } from 'vue'
-import { send, receive, user, storage } from '~/client'
+import { send, receive, user, storage, segment } from '~/client'
 
 interface Message {
   from: 'user' | 'bot'
@@ -28,7 +28,7 @@ watch(user, () => messages.value = [])
 function addMessage(from: 'user' | 'bot', content: string) {
   messages.value.push({ from, content })
   const { scrollTop, clientHeight, scrollHeight } = panel.value
-  if (Math.abs(scrollTop + clientHeight - scrollHeight) < 1) {
+  if (from === 'user' || Math.abs(scrollTop + clientHeight - scrollHeight) < 1) {
     nextTick(scrollToBottom)
   }
 }
@@ -39,19 +39,40 @@ function scrollToBottom() {
   panel.value.scrollTop = panel.value.scrollHeight - panel.value.clientHeight
 }
 
+function sendSandbox(content: string) {
+  const { token, id } = user.value
+  send('sandbox', { token, id, content })
+}
+
 function onEnter() {
   if (!text.value) return
-  addMessage('user', text.value)
-  const { token, id } = user.value
-  send('sandbox', { token, id, content: text.value })
+  sendSandbox(text.value)
   text.value = ''
 }
 
-receive('sandbox', (data) => {
+async function onPaste(event) {
+  const item = event.clipboardData.items[0]
+  if (item.kind === 'file') {
+    event.preventDefault()
+    const file = item.getAsFile()
+    const reader  = new FileReader()
+    reader.addEventListener('load', function () {
+      const { token, id } = user.value
+      sendSandbox(segment.image('base64://' + reader.result.slice(22)))
+    }, false)
+    reader.readAsDataURL(file)
+  }
+}
+
+receive('sandbox:bot', (data) => {
   addMessage('bot', data)
 })
 
-receive('clear', (data) => {
+receive('sandbox:user', (data) => {
+  addMessage('user', data)
+})
+
+receive('sandbox:clear', (data) => {
   messages.value = []
 })
 

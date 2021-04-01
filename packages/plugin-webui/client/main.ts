@@ -5,6 +5,7 @@ import Card from './components/card.vue'
 import Collapse from './components/collapse.vue'
 import Button from './components/button.vue'
 import Input from './components/input.vue'
+import Message from './components/message.vue'
 import Numeric from './components/numeric.vue'
 import App from './views/layout/index.vue'
 import { start, user, receive, router } from '~/client'
@@ -62,9 +63,9 @@ router.addRoute({
 
 app.component('k-card', Card)
 app.component('k-button', Button)
-
 app.component('k-collapse', Collapse)
 app.component('k-input', Input)
+app.component('k-message', Message)
 app.component('k-numeric', Numeric)
 app.component('k-chart', defineAsyncComponent(() => import('./components/echarts')))
 

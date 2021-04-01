@@ -1,4 +1,4 @@
-import { Adapter, App, Bot, Context, Logger, omit, pick, Random, Session, Time, User } from 'koishi-core'
+import { Adapter, App, Bot, Context, Logger, omit, pick, Random, remove, Session, Time, User } from 'koishi-core'
 import { Profile } from './data'
 import WebSocket from 'ws'
 
@@ -60,6 +60,8 @@ class SocketChannel {
   async $sandbox({ id, token, content }) {
     const user = await this.validate(id, token, ['name'])
     if (!user) return
+    content = await this.app.transformAssets(content)
+    this.send('sandbox:user', content)
     const session = new Session(this.app, {
       platform: 'web',
       userId: id,
@@ -88,7 +90,7 @@ export class SandboxBot extends Bot<'web'> {
   }
 
   async sendMessage(id: string, content: string) {
-    this.adapter.channels[id]?.send('sandbox', content)
+    this.adapter.channels[id]?.send('sandbox:bot', content)
     return Random.uuid()
   }
 }
@@ -113,8 +115,11 @@ export class WebAdapter extends Adapter<'web'> {
       server: ctx.app._httpServer,
     })
 
-    ctx.self('sandbox').command('clear', '清空消息列表')
-      .action(({ session }) => this.channels[session.channelId].send('clear'))
+    ctx.self('sandbox')
+      .command('clear', '清空消息列表')
+      .action(({ session }) => {
+        this.channels[session.channelId].send('sandbox:clear')
+      })
 
     ctx.all().middleware(async (session, next) => {
       if (session.subtype !== 'private') return next()
@@ -161,5 +166,8 @@ export class WebAdapter extends Adapter<'web'> {
 
   stop() {
     this.server.close()
+    for (const bot of this.bots) {
+      remove(this.app.bots, bot as Bot)
+    }
   }
 }
