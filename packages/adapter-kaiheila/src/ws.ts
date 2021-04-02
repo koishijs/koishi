@@ -30,6 +30,7 @@ export default class WsClient extends Adapter.WsClient<'kaiheila'> {
     }
     let trials = 0
     function send() {
+      if (!bot.socket) return
       if (trials >= 2) {
         return bot.socket.close(1013)
       }
