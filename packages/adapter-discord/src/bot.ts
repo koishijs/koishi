@@ -43,7 +43,7 @@ export class DiscordBot extends Bot<'discord'> {
     const type = await FileType.fromBuffer(fileBuffer)
     fd.append('file', fileBuffer, 'file.' + type.ext)
     fd.append('payload_json', JSON.stringify(payload_json))
-    const data = await this.reauest('POST', reauestUrl, fd, fd.getHeaders())
+    const data = await this.reauest('POST', requestUrl, fd, fd.getHeaders())
     return data
   }
 
