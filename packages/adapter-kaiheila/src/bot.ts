@@ -133,6 +133,8 @@ export class KaiheilaBot extends Bot {
     } else {
       params.channelId = channelId
       session.subtype = 'group'
+      // FIXME this is incorrect but to workarournd ctx.group()
+      session.groupId = 'unknown'
       path = '/message/create'
     }
 

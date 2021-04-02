@@ -2,7 +2,31 @@ import { App } from 'koishi-test-utils'
 import { sleep } from 'koishi-utils'
 
 describe('Session API', () => {
-  describe('Command Suggestions', () => {
+  describe('Command Execution', () => {
+    const app = new App()
+    const sess = app.session('456')
+    app.command('echo [content:text]').action((_, text) => text)
+    app.command('exec [command:text]').action(({ session }, text) => session.execute(text))
+
+    it('basic support', async () => {
+      await sess.shouldReply('echo 0', '0')
+      await sess.shouldReply('exec echo 0', '0')
+    })
+
+    it('interpolate 1', async () => {
+      await sess.shouldReply('echo $(echo 0)', '0')
+      await sess.shouldReply('echo $(exec echo 0)', '0')
+      await sess.shouldReply('echo 1$(echo 0)2', '102')
+      await sess.shouldReply('echo 1 $(echo 0)  2', '1 0  2')
+    })
+
+    it('interpolate 2', async () => {
+      await sess.shouldReply('echo $(echo $(echo 0))', '0')
+      await sess.shouldReply('echo 1 $(echo $(echo 0))2', '1 02')
+    })
+  })
+
+  describe('Command Suggestion', () => {
     const app = new App({ prefix: '/' })
     const session1 = app.session('456')
     const session2 = app.session('789', '987')

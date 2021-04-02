@@ -182,7 +182,7 @@ interface MapOrSet<T> {
 function loadDependencies(filename: string, ignored: MapOrSet<string>) {
   const dependencies = new Set<string>()
   function loadModule({ filename, children }: NodeModule) {
-    if (ignored.has(filename) || dependencies.has(filename)) return
+    if (ignored.has(filename) || dependencies.has(filename) || filename.includes('/node_modules/')) return
     dependencies.add(filename)
     children.forEach(loadModule)
   }
