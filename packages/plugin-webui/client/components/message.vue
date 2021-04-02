@@ -1,6 +1,6 @@
 <template>
   <div class="k-message">
-    <template v-for="({ type, data }, index) in segment.parse(text)" :key="index">
+    <template v-for="({ type, data }, index) in segment.parse(content)" :key="index">
       <span v-if="type === 'text'">{{ data.content }}</span>
       <img v-else-if="type === 'image'" :src="data.url || data.file"/>
     </template>
@@ -13,7 +13,7 @@ import { defineProps } from 'vue'
 import { segment } from '~/client'
 
 defineProps<{
-  text: string
+  content: string
 }>()
 
 </script>

@@ -6,7 +6,7 @@ declare module '*.vue' {
 }
 
 declare module '~/server' {
-  export * from 'koishi-plugin-webui/src'
+  export * from 'koishi-plugin-webui'
 }
 
 declare module '~/client' {
