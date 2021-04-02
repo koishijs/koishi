@@ -24,7 +24,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.6.0"
+    "koishi-core": "^3.6.1"
   },
   "devDependencies": {
     "@types/pako": "^1.0.1",
