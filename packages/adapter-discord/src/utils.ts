@@ -7,7 +7,7 @@ export const adaptUser = (user: DC.DiscordUser): UserInfo => ({
   avatar: user.avatar,
   username: user.username,
   discriminator: user.discriminator,
-  bot: user.bot || false,
+  isBot: user.bot || false,
 })
 
 export function adaptGroup(data: DC.PartialGuild): GroupInfo {
