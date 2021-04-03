@@ -1,4 +1,4 @@
-import { Argv, Assets, Bot, Context, Platform, Plugin, Time } from 'koishi-core'
+import { Argv, Assets, Bot, Context, Platform, Plugin, Time, noop } from 'koishi-core'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
 
@@ -142,8 +142,8 @@ export class Meta implements DataSource<Meta.Payload> {
   callbacks: Meta.Extension[] = []
 
   constructor(private ctx: Context, public config: Meta.Config) {
-    this.extend(() => ctx.assets?.stats())
-    this.extend(() => ctx.database?.getStats())
+    this.extend(async () => ctx.assets?.stats())
+    this.extend(async () => ctx.database.getStats())
 
     ctx.all().on('command', ({ session }: Argv<'lastCall'>) => {
       session.user.lastCall = new Date()
@@ -155,7 +155,7 @@ export class Meta implements DataSource<Meta.Payload> {
     if (this.timestamp > now) return this.cachedMeta
     this.timestamp = now + Time.hour
     return this.cachedMeta = Promise
-      .all(this.callbacks.map(cb => cb().catch(() => ({}))))
+      .all(this.callbacks.map(cb => cb().catch(noop)))
       .then(data => Object.assign({}, ...data))
   }
 

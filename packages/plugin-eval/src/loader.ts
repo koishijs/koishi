@@ -2,7 +2,7 @@ import { config, context, internal } from './worker'
 import { resolve, posix, dirname } from 'path'
 import { promises as fs } from 'fs'
 import { deserialize, serialize, cachedDataVersionTag } from 'v8'
-import { Logger, noop } from 'koishi-utils'
+import { Logger } from 'koishi-utils'
 import json5 from 'json5'
 import ts from 'typescript'
 
@@ -80,6 +80,23 @@ const V8_TAG = cachedDataVersionTag()
 const files: Record<string, FileCache> = {}
 const cachedFiles: Record<string, FileCache> = {}
 
+export async function readSerialized(filename: string) {
+  try {
+    const buffer = await fs.readFile(filename)
+    return deserialize(buffer)
+  } catch {}
+}
+
+// errors should be catched because we should not expose file paths to users
+export async function safeWriteFile(filename: string, data: any) {
+  try {
+    await fs.mkdir(dirname(filename), { recursive: true })
+    await fs.writeFile(filename, data)
+  } catch (error) {
+    logger.warn(error)
+  }
+}
+
 export default async function prepare() {
   if (!config.root) return
 
@@ -92,15 +109,14 @@ export default async function prepare() {
       logger.info('auto generating tsconfig.json...')
       return fs.writeFile(tsconfigPath, json5.stringify({ compilerOptions }, null, 2))
     }),
-    fs.readFile(cachePath).then((source) => {
-      const data = deserialize(source)
+    readSerialized(cachePath).then((data) => {
       if (data.tag === CACHE_TAG && data.v8tag === V8_TAG) {
         Object.assign(cachedFiles, data.files)
       }
-    }, noop),
+    }),
   ])
   await Promise.all(config.addonNames.map(evaluate))
-  saveCache(cachePath).catch(logger.warn)
+  safeWriteFile(cachePath, serialize({ tag: CACHE_TAG, v8tag: V8_TAG, files }))
   for (const key in synthetics) {
     exposeGlobal(key, synthetics[key].namespace)
   }
@@ -115,11 +131,6 @@ function exposeGlobal(name: string, namespace: {}) {
   }
   internal.connect(outer, namespace)
   internal.setGlobal(name, outer)
-}
-
-async function saveCache(filename: string) {
-  await fs.mkdir(dirname(filename), { recursive: true })
-  await fs.writeFile(filename, serialize({ tag: CACHE_TAG, v8tag: V8_TAG, files }))
 }
 
 async function loadSource(path: string): Promise<[source: string, identifier: string]> {
