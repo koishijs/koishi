@@ -81,7 +81,7 @@ receive('expire', () => {
 
 router.beforeEach((route) => {
   if (route.meta.authority && !user.value) {
-    return '/login'
+    return history.state.forward === '/login' ? '/' : '/login'
   }
 })
 

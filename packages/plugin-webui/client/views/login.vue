@@ -64,7 +64,7 @@ receive('login', body => data.value = body)
 
 watch(user, (value) => {
   if (!value) return
-  router.push('/profile')
+  router.push(router.currentRoute.value.redirectedFrom?.fullPath || '/profile')
 })
 
 let timestamp = 0
