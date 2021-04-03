@@ -34,7 +34,7 @@ class MongoSynchronizer implements Synchronizer {
   }
 
   async upload(date: Date): Promise<void> {
-    logger.debug(this.hourly, this.daily, this.longterm, this.groups)
+    logger.info('Updating status', this.hourly, this.daily, this.longterm, this.groups)
     const coll = this.db.collection('plugin-status')
     const _date = new Date(date)
     _date.setMinutes(0)
@@ -51,7 +51,7 @@ class MongoSynchronizer implements Synchronizer {
     if (Object.keys($inc).length) await coll.updateOne({ type: 'daily', time: _date }, { $inc }, { upsert: true })
     await coll.updateOne({ type: 'longterm', time: _date }, { $inc: this.longterm }, { upsert: true })
     for (const id in this.groups) {
-      const [type, pid] = id.split(':') as any;
+      const [type, pid] = id.split(':') as any
       await this.db.channel.updateOne({ type, pid }, { $inc: { ['activity.' + Time.getDateNumber(date)]: this.groups[id] } } as any)
     }
     this.reset()
