@@ -179,13 +179,20 @@ export function recall(ctx: Context, { recallCount = 10 }: RecallConfig) {
   })
 
   ctx.command('common/recall [count:number]', '撤回 bot 发送的消息', { authority: 2 })
-    .action(({ session }, count = 1) => {
+    .action(async ({ session }, count = 1) => {
       const list = recent[session.channelId]
       if (!list) return '近期没有发送消息。'
-      list.splice(0, count).map((id) => {
-        return session.bot.deleteMessage(session.channelId, id)
-      })
+      const removal = list.splice(0, count)
+      const delay = ctx.app.options.delay.broadcast
       if (!list.length) delete recent[session.channelId]
+      for (let index = 0; index < removal.length; index++) {
+        if (index && delay) await sleep(delay)
+        try {
+          await session.bot.deleteMessage(session.channelId, removal[index])
+        } catch (error) {
+          this.app.logger('bot').warn(error)
+        }
+      }
     })
 }
 

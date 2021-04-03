@@ -1,5 +1,5 @@
 import { App } from 'koishi-test-utils'
-import { Logger, Time } from 'koishi-utils'
+import { Assets, Logger, Time } from 'koishi-core'
 import createEnvironment from './environment'
 import { install } from '@sinonjs/fake-timers'
 import * as teach from 'koishi-plugin-teach'
@@ -43,7 +43,13 @@ describe('Teach Plugin - Miscellaneous', () => {
   describe('Assets', () => {
     const logger = new Logger('teach')
     const { app, u3g1 } = createEnvironment({})
-    const upload = jest.spyOn(app.assets, 'upload')
+    const upload = jest.fn(async (url: string) => url)
+
+    app.assets = new class MockAssets implements Assets {
+      types = ['image'] as const
+      stats = async () => ({})
+      upload = upload
+    }()
 
     it('upload succeed', async () => {
       upload.mockResolvedValue('https://127.0.0.1/image/baz')

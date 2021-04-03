@@ -166,7 +166,7 @@ export namespace Domain {
     fallback?: any
     type?: T
     /** hide the option by default */
-    hidden?: boolean
+    hidden?: boolean | ((session: Session) => boolean)
     authority?: number
     notUsage?: boolean
   }
@@ -533,10 +533,14 @@ export namespace Argv {
     }
 
     stringify(argv: Argv) {
-      return argv.tokens.reduce((prev, token) => {
+      const output = argv.tokens.reduce((prev, token) => {
         if (token.quoted) prev += leftQuotes[rightQuotes.indexOf(token.terminator[0])]
         return prev + token.content + token.terminator
       }, '')
+      if (argv.rest && !rightQuotes.includes(output[output.length - 1]) || argv.initiator) {
+        return output.slice(0, -1)
+      }
+      return output
     }
   }
 
@@ -547,12 +551,7 @@ export namespace Argv {
   }
 
   export function stringify(argv: Argv) {
-    const source = defaultTokenizer.stringify(argv)
-    if (argv.rest) {
-      const { terminator } = argv.tokens[argv.tokens.length - 1]
-      if (!leftQuotes.includes(terminator[0])) return source.slice(0, -terminator.length)
-    }
-    return source
+    return defaultTokenizer.stringify(argv)
   }
 
   export function revert(token: Token) {

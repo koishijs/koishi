@@ -1,17 +1,16 @@
 <template>
-  <k-card class="sandbox">
-    <div class="history" ref="panel">
-      <p v-for="({ from, content }, index) in messages" :key="index" :class="from">
-        {{ content }}
+  <k-chat-panel class="sandbox" :messages="messages" @enter="sendSandbox" :pinned="pinned">
+    <template #default="{ from, content }">
+      <p :class="from">
+        <k-message :content="content"/>
       </p>
-    </div>
-    <k-input v-model="text" @enter="onEnter"></k-input>
-  </k-card>
+    </template>
+  </k-chat-panel>
 </template>
 
 <script lang="ts" setup>
 
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch } from 'vue'
 import { send, receive, user, storage } from '~/client'
 
 interface Message {
@@ -19,34 +18,31 @@ interface Message {
   content: string
 }
 
-const text = ref('')
-const panel = ref<Element>(null)
+const pinned = ref(true)
 const messages = storage.create<Message[]>('sandbox', [])
 
 watch(user, () => messages.value = [])
 
 function addMessage(from: 'user' | 'bot', content: string) {
+  pinned.value = from === 'bot'
   messages.value.push({ from, content })
-  const { scrollTop, clientHeight, scrollHeight } = panel.value
-  if (Math.abs(scrollTop + clientHeight - scrollHeight) < 1) {
-    nextTick(scrollToBottom)
-  }
 }
 
-function scrollToBottom() {
-  panel.value.scrollTop = panel.value.scrollHeight - panel.value.clientHeight
-}
-
-function onEnter() {
-  if (!text.value) return
-  addMessage('user', text.value)
+function sendSandbox(content: string) {
   const { token, id } = user.value
-  send('sandbox', { token, id, content: text.value })
-  text.value = ''
+  send('sandbox', { token, id, content })
 }
 
-receive('sandbox', (data) => {
+receive('sandbox:bot', (data) => {
   addMessage('bot', data)
+})
+
+receive('sandbox:user', (data) => {
+  addMessage('user', data)
+})
+
+receive('sandbox:clear', (data) => {
+  messages.value = []
 })
 
 </script>
@@ -54,19 +50,6 @@ receive('sandbox', (data) => {
 <style lang="scss">
 
 .sandbox {
-  height: 100%;
-  position: relative;
-
-  .history {
-    position: absolute;
-    top: 2rem;
-    left: 2rem;
-    right: 2rem;
-    bottom: 6rem;
-    overflow-x: visible;
-    overflow-y: auto;
-  }
-
   p {
     padding-left: 1rem;
     white-space: break-spaces;
@@ -89,13 +72,6 @@ receive('sandbox', (data) => {
     content: '<';
     position: absolute;
     left: -.1rem;
-  }
-
-  .k-input {
-    position: absolute;
-    bottom: 2rem;
-    left: 2rem;
-    right: 2rem;
   }
 }
 

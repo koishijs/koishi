@@ -59,8 +59,6 @@ const KOISHI_VERSION = JSON.stringify(version)
       entryPoints.push(base + '/src/worker.ts')
     } else if (name === 'koishi-test-utils') {
       await tasks[chai]
-    } else if (name === 'plugin-webui') {
-      entryPoints.splice(0, 1, base + '/server/index.ts')
     }
 
     let filter = /^[@/\w-]+$/

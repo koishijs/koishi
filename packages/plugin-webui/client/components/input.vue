@@ -18,6 +18,7 @@
       @input="onInput"
       @focus="onFocus"
       @blur="onBlur"
+      @paste="$emit('paste', $event)"
       @keydown.enter.stop="$emit('enter', $event)"
     />
     <i v-if="suffix" :class="'fas fa-' + suffix" class="suffix" @click="$emit('clickSuffix')"/>
@@ -53,21 +54,21 @@ const inputStyle = computed(() => ({
   paddingRight: +!!(props.suffix) + 1 + 'em',
 }))
 
-const emit = defineEmit(['update:modelValue', 'focus', 'blur', 'enter', 'clickPrefix', 'clickSuffix'])
+const emit = defineEmit(['update:modelValue', 'paste', 'focus', 'blur', 'enter', 'clickPrefix', 'clickSuffix'])
 
-function onInput (event) {
+function onInput(event) {
   if (props.validate) {
     invalid.value = !props.validate(event.target.value)
   }
   emit('update:modelValue', event.target.value)
 }
 
-function onFocus (event) {
+function onFocus(event) {
   focused.value = true
   emit('focus', event)
 }
 
-function onBlur (event) {
+function onBlur(event) {
   focused.value = false
   emit('blur', event)
 }

@@ -114,12 +114,18 @@ export namespace Trap {
 
     command.userFields([...Trap.user.fields(userAccess.readable)])
     command.channelFields([...Trap.channel.fields(channelAccess.readable)])
-    command.action((argv, ...args) => {
-      const { id } = argv.session
+    command.action(async (argv, ...args) => {
+      const { id, app } = argv.session
       const user = Trap.user.get(argv.session.user, userAccess.readable)
       const channel = Trap.channel.get(argv.session.channel, channelAccess.readable)
       const ctxOptions = { id, user, channel, userWritable, channelWritable }
-      return action({ ...argv, scope: ctxOptions }, ...args)
+      const inactive = !app._sessions[id]
+      app._sessions[id] = argv.session
+      try {
+        return await action({ ...argv, scope: ctxOptions }, ...args)
+      } finally {
+        if (inactive) delete app._sessions[id]
+      }
     })
   }
 }

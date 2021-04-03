@@ -3,7 +3,7 @@
 
 import { createHmac } from 'crypto'
 import { encode } from 'querystring'
-import { Context, camelize, Time, Random, sanitize, Logger } from 'koishi-core'
+import { Context, camelize, Time, Random, sanitize, Logger, Session } from 'koishi-core'
 import { CommonPayload, addListeners, defaultEvents, EventConfig } from './events'
 import { Config, GitHub, ReplyHandler, ReplySession, ReplyPayloads } from './server'
 import axios from 'axios'
@@ -144,11 +144,13 @@ export function apply(ctx: Context, config: Config = {}) {
     }
   }
 
+  const hidden = (sess: Session) => sess.subtype !== 'group'
+
   ctx.command('github [name]')
     .channelFields(['githubWebhooks'])
-    .option('list', '-l  查看当前频道订阅的仓库列表')
-    .option('add', '-a  为当前频道添加仓库订阅')
-    .option('delete', '-d  从当前频道移除仓库订阅')
+    .option('list', '-l  查看当前频道订阅的仓库列表', { hidden })
+    .option('add', '-a  为当前频道添加仓库订阅', { hidden, authority: 2 })
+    .option('delete', '-d  从当前频道移除仓库订阅', { hidden, authority: 2 })
     .action(async ({ session, options }, name) => {
       if (options.list) {
         if (!session.channel) return '当前不是群聊上下文。'

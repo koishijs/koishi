@@ -11,7 +11,7 @@
 
 <script lang="ts" setup>
 
-import { meta } from 'koishi-plugin-webui/client'
+import { meta } from '~/client'
 import WordCloud from './word-cloud.vue'
 
 </script>

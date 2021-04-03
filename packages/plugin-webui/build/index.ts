@@ -3,11 +3,10 @@
 import * as vite from 'vite'
 import { resolve } from 'path'
 import { copyFile } from 'fs-extra'
-import createPluginVue from '@vitejs/plugin-vue'
+import pluginVue from '@vitejs/plugin-vue'
 
 const root = resolve(__dirname, '../client')
 const dist = resolve(__dirname, '../dist')
-const pluginVue = createPluginVue()
 
 function findModulePath(id: string) {
   const path = require.resolve(id)
@@ -35,32 +34,54 @@ function build(root: string, config: vite.UserConfig) {
         } : undefined,
       },
     },
+    plugins: [pluginVue(), ...config.plugins || []],
     resolve: {
       alias: {
         'vue': root + '/vue.js',
         'vue-router': root + '/vue-router.js',
         '~/client': root + '/client.js',
+        'koishi-plugin-webui/client': root + '/client.js',
         ...config.resolve?.alias,
       },
     },
   })
 }
 
+function buildExtension(name: string) {
+  const root = resolve(__dirname, '../../plugin-' + name)
+  return build(root, {
+    build: {
+      outDir: 'dist',
+      assetsDir: '',
+      minify: false,
+      rollupOptions: {
+        input: root + '/client/index.ts',
+      },
+    },
+  })
+}
+
 ;(async () => {
-  // build for index.html
   await build(root, {
     base: './',
-    plugins: [pluginVue],
     resolve: {
       alias: {
         '~/variables': root + '/index.scss',
       },
     },
+    plugins: [{
+      // magic, don't touch
+      name: 'fuck-echarts',
+      renderChunk(code, chunk) {
+        if (chunk.fileName.includes('echarts')) {
+          return code.replace(/\bSymbol(?!\.toStringTag)/g, 'FuckSymbol')
+        }
+      },
+    }],
   })
 
   await copyFile(findModulePath('vue') + '/dist/vue.runtime.esm-browser.prod.js', dist + '/vue.js')
 
-  // build for client.js, vue-router.js
   await build(resolve(__dirname, '../../..'), {
     build: {
       outDir: dist,
@@ -76,15 +97,6 @@ function build(root: string, config: vite.UserConfig) {
     },
   })
 
-  // build for koishi-plugin-teach
-  const teach = resolve(__dirname, '../../plugin-teach/client')
-  build(teach, {
-    build: {
-      assetsDir: '',
-      rollupOptions: {
-        input: teach + '/index.ts',
-      },
-    },
-    plugins: [pluginVue],
-  })
+  await buildExtension('chat')
+  await buildExtension('teach')
 })()

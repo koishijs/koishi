@@ -25,6 +25,12 @@ declare module 'koishi-core' {
     _isEval: boolean
     _sendCount: number
   }
+
+  namespace Plugin {
+    interface Packages {
+      'koishi-plugin-eval': typeof import('.')
+    }
+  }
 }
 
 interface OptionManifest extends Domain.OptionConfig {
@@ -63,7 +69,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const { app } = ctx
 
   // addons are registered in another plugin
-  if (config.addonRoot) {
+  if (config.root) {
     ctx.plugin(addon, config)
   }
 
@@ -176,8 +182,8 @@ export function apply(ctx: Context, config: Config = {}) {
 
 function addon(ctx: Context, config: EvalConfig) {
   const logger = ctx.logger('eval:addons')
-  const root = config.addonRoot = resolve(process.cwd(), config.addonRoot)
-  config.dataKeys.push('addonNames', 'addonRoot')
+  const root = config.root = resolve(process.cwd(), config.root)
+  config.dataKeys.push('addonNames', 'root')
 
   const git = Git(root)
 

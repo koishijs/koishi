@@ -1,8 +1,9 @@
-import { Channel, User, Logger, escapeRegExp, observe, difference, Time, segment, Random } from 'koishi-core'
+import { Channel, User, Logger, escapeRegExp, observe, difference, Time, segment, Random, noop, Observed } from 'koishi-core'
 import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
 import { findSourceMap } from 'module'
-import { dirname, sep } from 'path'
+import { resolve, dirname, sep } from 'path'
+import { promises as fs } from 'fs'
 
 /* eslint-disable import/first */
 
@@ -27,10 +28,11 @@ import { MainAPI } from '.'
 export * from './loader'
 
 export interface WorkerConfig {
-  setupFiles?: Record<string, string>
+  root?: string
   inspect?: InspectOptions
-  addonRoot?: string
   cacheFile?: string
+  storageFile?: string
+  setupFiles?: Record<string, string>
 }
 
 export interface WorkerData extends WorkerConfig {
@@ -77,14 +79,28 @@ export interface ScopeData {
   channelWritable: Channel.Field[]
 }
 
+type Serializable = string | number | boolean | Serializable[] | SerializableObject
+type SerializableObject = { [K in string]: Serializable }
+
 export interface Scope {
+  storage: Observed<SerializableObject>
   user: User.Observed<any>
   channel: Channel.Observed<any>
   send(...param: any[]): Promise<void>
   exec(message: string): Promise<string>
 }
 
+let storage: Observed<SerializableObject>
+const storagePath = resolve(config.root || process.cwd(), config.storageFile || '.koishi/storage')
+
+async function loadStorage() {
+  const source = await fs.readFile(storagePath, 'utf8')
+  return JSON.parse(source)
+}
+
 export const Scope = ({ id, user, userWritable, channel, channelWritable }: ScopeData): Scope => ({
+  storage,
+
   user: user && observe(user, async (diff) => {
     const diffKeys = difference(Object.keys(diff), userWritable)
     if (diffKeys.length) {
@@ -138,6 +154,7 @@ export class WorkerAPI {
   async sync(scope: Scope) {
     await scope.user?._update()
     await scope.channel?._update()
+    await scope.storage?._update()
   }
 
   async eval(data: ScopeData, options: EvalOptions) {
@@ -198,7 +215,13 @@ export function mapDirectory(identifier: string, filename: string) {
 Object.values(config.setupFiles).map(require)
 
 async function start() {
-  await prepare()
+  const data = await Promise.all([loadStorage().catch(noop), prepare()])
+  storage = observe(data[0] || {}, async (diff) => {
+    console.log(diff)
+    await fs.mkdir(dirname(storagePath), { recursive: true })
+    await fs.writeFile(storagePath, Buffer.from(JSON.stringify(storage)))
+  })
+
   response.commands = Object.keys(commandMap)
   mapDirectory('koishi/utils/', require.resolve('koishi-utils'))
   mapDirectory('koishi/', __filename)

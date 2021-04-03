@@ -1,11 +1,11 @@
 <template>
   <aside>
     <ul>
-      <template v-for="(route, index) in $router.getRoutes()" :key="index">
-        <li v-if="!route.meta.hidden" :class="{ current: route.name === $route.name }">
-          <router-link :to="route.path">
-            <i :class="`fas fa-${route.meta.icon}`"/>
-            {{ route.name }}
+      <template v-for="({ name, path, meta }, index) in $router.getRoutes()" :key="index">
+        <li v-if="isShown(meta)" :class="{ current: name === $route.name }">
+          <router-link :to="path">
+            <i :class="`fas fa-${meta.icon}`"/>
+            {{ name }}
           </router-link>
         </li>
       </template>
@@ -14,6 +14,16 @@
 </template>
 
 <script lang="ts" setup>
+
+import { user } from '~/client'
+import type { RouteMeta } from 'vue-router'
+
+function isShown(meta: RouteMeta) {
+  if (meta.hidden) return false
+  if (meta.authority && meta.authority > 1 && meta.authority > user.value?.authority) return false
+  return true
+}
+
 </script>
 
 <style lang="scss">
