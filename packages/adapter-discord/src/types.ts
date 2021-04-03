@@ -316,3 +316,15 @@ export interface GuildRoleBody {
   hoist: boolean;
   mentionable: boolean
 }
+
+export interface Webhook {
+  id: string;
+  type: number;
+  guild_id?: string;
+  channel_id: string;
+  user?: User;
+  name: string | null;
+  avatar: string | null;
+  token?: string;
+  application_id: string
+}

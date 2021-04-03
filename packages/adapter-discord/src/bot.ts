@@ -3,7 +3,7 @@
 import axios, { Method } from 'axios'
 import { Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
-import { DiscordChannel, DiscordMessage, DiscordUser, ExecuteWebhookBody, GuildBody, GuildMember, GuildRoleBody, PartialGuild, Role } from './types'
+import { DiscordChannel, DiscordMessage, DiscordUser, ExecuteWebhookBody, GuildBody, GuildMember, GuildRoleBody, PartialGuild, Role, Webhook } from './types'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
 import { readFileSync } from 'fs'
 import { segment } from 'koishi-utils'
@@ -267,5 +267,28 @@ export class DiscordBot extends Bot<'discord'> {
 
   async $modifyGuild(guildId: string, data: GuildBody) {
     return this.request('PATCH', `/guilds/${guildId}`, data)
+  }
+
+  async $createWebhook(channelId: string, data: {
+    name: string;
+    avatar?: string
+  }) {
+    return this.request('POST', `/channels/${channelId}/webhooks`, data)
+  }
+
+  async $modifyWebhook(webhookId: string, data: {
+    name?: string;
+    avatar?: string
+    channel_id?: string
+  }) {
+    return this.request('PATCH', `/webhooks/${webhookId}`, data)
+  }
+
+  async $getChannelWebhooks(channelId: string) {
+    return this.request<Webhook[]>('GET', `/channels/${channelId}/webhooks`)
+  }
+
+  async $getGuildWebhooks(guildId: string) {
+    return this.request<Webhook[]>('GET', `/guilds/${guildId}/webhooks`)
   }
 }
