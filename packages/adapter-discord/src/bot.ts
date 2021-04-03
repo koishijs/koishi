@@ -189,12 +189,12 @@ export class DiscordBot extends Bot<'discord'> {
   }
 
   async getGroupMemberList(guildId: string) {
-    const data = await this.request<DC.GuildMember[]>('GET', `/guilds/${guildId}/members`)
+    const data = await this.$listGuildMembers(guildId)
     return data.map(v => adaptUser(v.user))
   }
 
   async getChannel(channelId: string) {
-    const data = await this.request<DC.DiscordChannel>('GET', `/channels/${channelId}`)
+    const data = await this.$getChannel(channelId)
     return adaptChannel(data)
   }
 
@@ -209,6 +209,14 @@ export class DiscordBot extends Bot<'discord'> {
 
   async $getGuildMember(guildId: string, userId: string) {
     return this.request<DC.GuildMember>('GET', `/guilds/${guildId}/members/${userId}`)
+  }
+
+  async getGroupMember(groupId: string, userId: string) {
+    const member = await this.$getGuildMember(groupId, userId)
+    return {
+      ...adaptUser(member.user),
+      nickname: member.nick
+    }
   }
 
   async $getGuildRoles(guildId: string) {
