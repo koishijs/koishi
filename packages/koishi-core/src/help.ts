@@ -3,6 +3,7 @@ import { TableType } from './database'
 import { Session, FieldCollector } from './session'
 import { template } from 'koishi-utils'
 import { Context } from './context'
+import { Domain } from './parser'
 
 interface HelpConfig {
   showHidden?: boolean
@@ -111,12 +112,16 @@ function formatCommands(path: string, session: Session<ValidationField>, childre
   return output
 }
 
+function getOptionVisibility(option: Domain.OptionConfig, session: Session<ValidationField>) {
+  if (session.user && option.authority > session.user.authority) return false
+  return !session.resolveValue(option.hidden)
+}
+
 function getOptions(command: Command, session: Session<ValidationField>, maxUsage: number, config: HelpConfig) {
   if (command.config.hideOptions && !config.showHidden) return []
   const options = config.showHidden
     ? Object.values(command._options)
-    : Object.values(command._options)
-      .filter(option => !option.hidden && (!session.user || option.authority <= session.user.authority))
+    : Object.values(command._options).filter(option => getOptionVisibility(option, session))
   if (!options.length) return []
 
   const output = config.authority && options.some(o => o.authority)

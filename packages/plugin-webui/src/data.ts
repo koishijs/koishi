@@ -1,4 +1,4 @@
-import { Assets, Bot, Context, Platform, Plugin, Time } from 'koishi-core'
+import { Argv, Assets, Bot, Context, Platform, Plugin, Time } from 'koishi-core'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
 
@@ -76,7 +76,7 @@ export class Profile implements DataSource<Profile.Payload> {
     this.apply(ctx, config)
 
     ctx.on('status/tick', async () => {
-      this.ctx.app.webui.adapter?.broadcast('profile', await this.get(true))
+      this.ctx.webui.adapter?.broadcast('profile', await this.get(true))
     })
   }
 
@@ -144,6 +144,10 @@ export class Meta implements DataSource<Meta.Payload> {
   constructor(private ctx: Context, public config: Meta.Config) {
     this.extend(() => ctx.assets?.stats())
     this.extend(() => ctx.database?.getStats())
+
+    ctx.all().on('command', ({ session }: Argv<'lastCall'>) => {
+      session.user.lastCall = new Date()
+    })
   }
 
   async get(): Promise<Meta.Payload> {
@@ -151,7 +155,7 @@ export class Meta implements DataSource<Meta.Payload> {
     if (this.timestamp > now) return this.cachedMeta
     this.timestamp = now + Time.hour
     return this.cachedMeta = Promise
-      .all(this.callbacks.map(cb => cb()))
+      .all(this.callbacks.map(cb => cb().catch(() => ({}))))
       .then(data => Object.assign({}, ...data))
   }
 
@@ -187,7 +191,7 @@ export class Registry implements DataSource<Registry.Payload> {
   }
 
   update = async () => {
-    this.ctx.app.webui.adapter?.broadcast('registry', await this.get(true))
+    this.ctx.webui.adapter?.broadcast('registry', await this.get(true))
   }
 
   async get(forced = false) {

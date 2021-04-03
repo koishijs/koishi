@@ -1,6 +1,5 @@
 import { App } from 'koishi-test-utils'
-import { User, Channel, Command } from 'koishi-core'
-import { sleep } from 'koishi-utils'
+import { User, Channel, Command, sleep } from 'koishi-core'
 import { install } from '@sinonjs/fake-timers'
 
 const app = new App({
@@ -33,7 +32,7 @@ const cmd2 = app.command('cmd2')
   .shortcut('foo3', { prefix: true, fuzzy: true })
   .option('--bar', '', { authority: 3 })
   .option('--baz', '', { notUsage: true })
-  .action(({ session }) => session.send('cmd2:' + session.user.id))
+  .action(({ session }) => session.send('cmd2:' + session.userId))
 
 before(async () => {
   await app.start()
@@ -116,7 +115,7 @@ describe('Runtime', () => {
       await session4.shouldNotReply('cmd2')
       await session1.shouldReply('-cmd2', 'cmd2:123')
       await session4.shouldReply('-cmd2', 'cmd2:123')
-      await session4.shouldNotReply(`[CQ:reply,id=123] [CQ:at,qq=${app.selfId}] cmd2`)
+      await session4.shouldNotReply(`[CQ:reply,id=123] [CQ:at,id=${app.selfId}] cmd2`)
     })
 
     it('single nickname', async () => {
@@ -173,13 +172,13 @@ describe('Runtime', () => {
 
     it('nickname prefix & fuzzy', async () => {
       await session4.shouldNotReply('foo3 -t baz')
-      await session4.shouldReply(`[CQ:at,qq=${app.selfId}] foo3 -t baz`, 'cmd2:123')
+      await session4.shouldReply(`[CQ:at,id=${app.selfId}] foo3 -t baz`, 'cmd2:123')
     })
 
     it('one argument & fuzzy', async () => {
       await session4.shouldReply('foo4 bar baz', 'cmd1:bar baz')
       await session4.shouldNotReply('foo4bar baz')
-      await session4.shouldReply(`[CQ:at,qq=${app.selfId}] foo4bar baz`, 'cmd1:bar baz')
+      await session4.shouldReply(`[CQ:at,id=${app.selfId}] foo4bar baz`, 'cmd1:bar baz')
     })
   })
 
@@ -193,19 +192,19 @@ describe('Runtime', () => {
       await session3.shouldNotReply('cmd2')
     })
 
-    it('group.assignee', async () => {
+    it('channel.assignee', async () => {
       await session4.shouldReply('cmd1 test --baz', 'cmd1:test')
       await session4.shouldReply('mid', 'mid')
       await session5.shouldNotReply('cmd1 test --baz')
-      await session5.shouldReply(`[CQ:at,qq=${app.selfId}] cmd1 test --baz`, 'cmd1:test')
+      await session5.shouldReply(`[CQ:at,id=${app.selfId}] cmd1 test --baz`, 'cmd1:test')
     })
 
-    it('group.flag.ignore', async () => {
+    it('channel.flag.ignore', async () => {
       await app.database.setChannel('mock', '321', { flag: Channel.Flag.ignore })
       await sleep(0)
       await session4.shouldNotReply('mid')
       await session4.shouldNotReply('cmd1 --baz')
-      await session4.shouldNotReply(`[CQ:at,qq=${app.selfId}] cmd1 --baz`)
+      await session4.shouldNotReply(`[CQ:at,id=${app.selfId}] cmd1 --baz`)
       await app.database.setChannel('mock', '321', { flag: 0 })
     })
   })
@@ -250,7 +249,7 @@ describe('Runtime', () => {
       cmd1.config.showWarning = true
       await session4.shouldReply('cmd1', '缺少参数，输入帮助以查看用法。')
       await session4.shouldReply('cmd1 foo', 'cmd1:foo')
-      await session4.shouldReply('cmd1 foo bar', '存在多余参数，请检查指令语法。')
+      await session4.shouldReply('cmd1 foo bar', '存在多余参数，输入帮助以查看用法。')
       cmd1.config.showWarning = false
       await session4.shouldNotReply('cmd1')
       cmd1.config.checkArgCount = false
@@ -260,7 +259,7 @@ describe('Runtime', () => {
       cmd2.config.checkUnknown = true
       cmd2.config.showWarning = true
       await session2.shouldReply('cmd2', 'cmd2:456')
-      await session2.shouldReply('cmd2 --foo', '存在未知选项 foo，请检查指令语法。')
+      await session2.shouldReply('cmd2 --foo', '存在未知选项 foo，输入帮助以查看用法。')
       cmd2.config.showWarning = false
       await session2.shouldNotReply('cmd2 --foo')
       cmd2.config.checkUnknown = false
@@ -268,23 +267,23 @@ describe('Runtime', () => {
 
     it('option.validate', async () => {
       const cmd3 = app.command('cmd3').action(() => 'after cmd3')
-      cmd3.option('foo', '', { type: () => true })
-      cmd3.option('bar', '', { type: () => { throw new Error('SUFFIX') } })
-      cmd3.option('baz', '', { type: /$^/ })
+      cmd3.option('foo', '<foo>', { type: () => { throw new Error() } })
+      cmd3.option('bar', '<bar>', { type: () => { throw new Error('SUFFIX') } })
+      cmd3.option('baz', '<baz>', { type: /$^/ })
       await session1.shouldReply('cmd3', 'after cmd3')
-      await session1.shouldReply('cmd3 --foo', '选项 foo 输入无效，请检查指令语法。')
-      await session1.shouldReply('cmd3 --bar', '选项 bar 输入无效，SUFFIX')
-      await session1.shouldReply('cmd3 --baz', '选项 baz 输入无效，请检查指令语法。')
+      await session1.shouldReply('cmd3 --foo xxx', '选项 foo 输入无效，输入帮助以查看用法。')
+      await session1.shouldReply('cmd3 --bar xxx', '选项 bar 输入无效，SUFFIX')
+      await session1.shouldReply('cmd3 --baz xxx', '选项 baz 输入无效，输入帮助以查看用法。')
       cmd3.dispose()
     })
 
-    it('command.before', async () => {
+    it('command.check', async () => {
       const cmd3 = app.command('cmd3').action(() => 'after cmd3')
       await session1.shouldReply('cmd3', 'after cmd3')
-      let value: any = 'before cmd3'
+      let value = 'before cmd3'
       cmd3.check(() => value)
       await session1.shouldReply('cmd3', 'before cmd3')
-      value = true
+      value = ''
       await session1.shouldNotReply('cmd3')
       cmd3.dispose()
     })

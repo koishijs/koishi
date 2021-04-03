@@ -19,6 +19,12 @@ declare module 'koishi-core' {
   interface App {
     adventure: Config
   }
+
+  namespace Plugin {
+    interface Packages {
+      'koishi-plugin-adventure': typeof import('.')
+    }
+  }
 }
 
 export interface Config extends Item.Config {}

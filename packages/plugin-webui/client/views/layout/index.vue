@@ -4,7 +4,8 @@
     <sidebar/>
   </template>
   <main :class="{ frameless }">
-    <router-view v-if="loaded"/>
+    <p v-if="invalid">权限不足。</p>
+    <router-view v-else-if="loaded"/>
     <p v-else>正在加载数据……</p>
   </main>
 </template>
@@ -20,6 +21,7 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 const frameless = computed(() => route.meta.frameless)
 const loaded = computed(() => (route.meta.require || []).every((key) => client[key].value))
+const invalid = computed(() => route.meta.authority > client.user.value?.authority)
 
 </script>
 

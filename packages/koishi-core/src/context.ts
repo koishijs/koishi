@@ -37,10 +37,24 @@ export namespace Plugin {
     disposables: Disposable[]
     dependencies: Set<State>
   }
+
+  export interface Packages {}
+
+  export type Teleporter<D extends readonly (keyof Packages)[]> = (...modules: From<D>) => void
+
+  type From<D extends readonly unknown[]> = D extends readonly [infer L, ...infer R]
+    ? [L extends keyof Packages ? Packages[L] : unknown, ...From<R>]
+    : []
 }
 
 function isBailed(value: any) {
   return value !== null && value !== false && value !== undefined
+}
+
+function safeRequire(id: string) {
+  try {
+    return require(id)
+  } catch {}
 }
 
 type Filter = (session: Session) => boolean
@@ -51,19 +65,20 @@ interface Selector<T> extends PartialSeletor<T> {
 }
 
 export class Context {
-  static readonly middleware = Symbol('mid')
+  static readonly middleware = Symbol('middleware')
+  static readonly current = Symbol('source')
 
   protected _bots: Bot[] & Record<string, Bot>
-  protected _router: Router
 
   public database: Database
   public assets: Assets
+  public router: Router
 
   protected constructor(public filter: Filter, public app?: App, private _plugin: Plugin = null) {}
 
   [inspect.custom]() {
     const plugin = this._plugin
-    const name = !plugin ? 'root' : typeof plugin === 'object' && plugin.name || 'unknown'
+    const name = !plugin ? 'root' : typeof plugin === 'object' && plugin.name || 'anonymous'
     return `Context <${name}>`
   }
 
@@ -95,13 +110,6 @@ export class Context {
 
   get private() {
     return this.unselect('groupId').user
-  }
-
-  get router(): Router {
-    if (!this.app._router) return
-    const router = Object.create(this.app._router)
-    router._koishiContext = this
-    return router
   }
 
   get bots() {
@@ -153,26 +161,29 @@ export class Context {
     }
   }
 
-  private teleport(parent: Plugin, callback: Plugin) {
-    const state = this.app.registry.get(parent)
-    if (!state) return
-    this.plugin(callback)
-    const dispose = () => this.dispose(callback)
-    state.disposables.push(dispose)
+  private teleport(modules: any[], callback: Plugin.Teleporter<never[]>) {
+    const states: Plugin.State[] = []
+    for (const module of modules) {
+      const state = this.app.registry.get(module)
+      if (!state) return
+      states.push(state)
+    }
+    const plugin = () => callback(...modules as [])
+    const dispose = () => this.dispose(plugin)
+    this.plugin(plugin)
+    states.every(state => state.disposables.push(dispose))
     this.before('disconnect', () => {
-      remove(state.disposables, dispose)
+      states.every(state => remove(state.disposables, dispose))
     })
   }
 
-  with(dependency: string, callback: Plugin) {
-    let parent: Plugin
-    try {
-      parent = require(dependency)
-    } catch {}
-    if (!parent) return
-    this.teleport(parent, callback)
+  with<D extends readonly (keyof Plugin.Packages)[]>(deps: D, callback: Plugin.Teleporter<D>) {
+    const modules = deps.map(safeRequire)
+    if (!modules.every(val => val)) return
+    this.teleport(modules, callback)
     this.on('plugin-added', (added) => {
-      if (added === parent) this.teleport(parent, callback)
+      const modules = deps.map(safeRequire)
+      if (modules.includes(added)) this.teleport(modules, callback)
     })
   }
 
@@ -483,25 +494,27 @@ export class Context {
       })
     }))).flat(1)
   }
+
+  static delegate(key: string & keyof Context) {
+    if (Object.prototype.hasOwnProperty.call(Context.prototype, key)) return
+    const privateKey = Symbol(key)
+    Object.defineProperty(Context.prototype, key, {
+      get() {
+        if (!this.app[privateKey]) return
+        const value = Object.create(this.app[privateKey])
+        value[Context.current] = this
+        return value
+      },
+      set(value) {
+        this.app[privateKey] = value
+      },
+    })
+  }
 }
 
-export function delegate(ctx: Context, key: string & keyof Context) {
-  const privateKey = Symbol(key)
-  Object.defineProperty(ctx, key, {
-    get() {
-      return this.app[privateKey]
-    },
-    set(value) {
-      if (this.app[privateKey] && this.app[privateKey] !== value) {
-        this.logger('app').warn('ctx.%s is overwritten', key)
-      }
-      this.app[privateKey] = value
-    },
-  })
-}
-
-delegate(Context.prototype, 'database')
-delegate(Context.prototype, 'assets')
+Context.delegate('database')
+Context.delegate('assets')
+Context.delegate('router')
 
 type FlattenEvents<T> = {
   [K in keyof T & string]: K | `${K}/${FlattenEvents<T[K]>}`
@@ -550,7 +563,7 @@ export interface EventMap extends SessionEventMap {
 const register = Router.prototype.register
 Router.prototype.register = function (this: Router, ...args) {
   const layer = register.apply(this, args)
-  const context: Context = this['_koishiContext']
+  const context: Context = this[Context.current]
   context.state.disposables.push(() => {
     remove(this.stack, layer)
   })

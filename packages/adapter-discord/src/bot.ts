@@ -16,7 +16,7 @@ export class DiscordBot extends Bot<'discord'> {
   _ping: NodeJS.Timeout
   _sessionId: string = ''
 
-  async request<T = any>(method: Method, path: string, data?: any): Promise<T> {
+  async request<T = any>(method: Method, path: string, data?: any, exHeaders?: any): Promise<T> {
     const { axiosConfig, discord = {} } = this.app.options
     const url = `https://discord.com/api/v8${path}`
     const headers: Record<string, any> = {
@@ -27,7 +27,7 @@ export class DiscordBot extends Bot<'discord'> {
       ...discord.axiosConfig,
       method,
       url,
-      headers,
+      headers: { ...headers, ...exHeaders },
       data,
     })
     return response.data
@@ -38,21 +38,12 @@ export class DiscordBot extends Bot<'discord'> {
     return adaptUser(data)
   }
 
-  private async sendEmbedMessage(requestUrl: string, fileBuffer: Buffer, payload_json: Record<string, any> = {}, fileType?: string) {
+  private async sendEmbedMessage(requestUrl: string, fileBuffer: Buffer, payload_json: Record<string, any> = {}) {
     const fd = new FormData()
     const type = await FileType.fromBuffer(fileBuffer)
     fd.append('file', fileBuffer, 'file.' + type.ext)
     fd.append('payload_json', JSON.stringify(payload_json))
-    const headers: Record<string, any> = {
-      Authorization: `Bot ${this.token}`,
-    }
-    const response = await axios({
-      method: 'post',
-      url: 'https://discord.com/api/v8' + requestUrl,
-      headers: { ...headers, ...fd.getHeaders() },
-      data: fd,
-    })
-    return response.data
+    return this.request('POST', requestUrl, fd, fd.getHeaders())
   }
 
   private parseQuote(chain: segment.Chain) {
@@ -107,17 +98,22 @@ export class DiscordBot extends Bot<'discord'> {
           sentMessageId = r.id
         }
         if (type === 'image' || type === 'video' && data.url) {
-          if (data.url.startsWith('http://') || data.url.startsWith('https://')) {
-            const a = await axios({
-              url: data.url,
-              responseType: 'arraybuffer',
+          if (data.url.startsWith('file://')) {
+            const r = await this.sendEmbedMessage(requestUrl, readFileSync(data.url.slice(7)), {
+              ...addition,
             })
-            const r = await this.sendEmbedMessage(requestUrl, a.data, {
+            sentMessageId = r.id
+          } else if (data.url.startsWith('base64://')) {
+            const a = Buffer.from(data.url.slice(9), 'base64')
+            const r = await this.sendEmbedMessage(requestUrl, a, {
               ...addition,
             })
             sentMessageId = r.id
           } else {
-            const r = await this.sendEmbedMessage(requestUrl, readFileSync(data.url), {
+            const a = await axios.get(data.url, {
+              responseType: 'arraybuffer',
+            })
+            const r = await this.sendEmbedMessage(requestUrl, a.data, {
               ...addition,
             })
             sentMessageId = r.id

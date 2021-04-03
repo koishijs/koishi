@@ -5,7 +5,9 @@ import Card from './components/card.vue'
 import Collapse from './components/collapse.vue'
 import Button from './components/button.vue'
 import Input from './components/input.vue'
+import Message from './components/message.vue'
 import Numeric from './components/numeric.vue'
+import ChatPanel from './components/chat-panel.vue'
 import App from './views/layout/index.vue'
 import { start, user, receive, router } from '~/client'
 
@@ -42,14 +44,14 @@ router.addRoute({
 router.addRoute({
   path: '/sandbox',
   name: '沙盒',
-  meta: { icon: 'laptop-code', require: ['user'] },
+  meta: { icon: 'laptop-code', authority: 1 },
   component: () => import('./views/sandbox.vue'),
 })
 
 router.addRoute({
   path: '/profile',
   name: '资料',
-  meta: { icon: 'user-circle', require: ['user'], hidden: true },
+  meta: { icon: 'user-circle', authority: 1, hidden: true },
   component: () => import('./views/profile.vue'),
 })
 
@@ -61,12 +63,13 @@ router.addRoute({
 })
 
 app.component('k-card', Card)
+app.component('k-chart', defineAsyncComponent(() => import('./components/echarts')))
 app.component('k-button', Button)
-
 app.component('k-collapse', Collapse)
 app.component('k-input', Input)
+app.component('k-message', Message)
 app.component('k-numeric', Numeric)
-app.component('k-chart', defineAsyncComponent(() => import('./components/echarts')))
+app.component('k-chat-panel', ChatPanel)
 
 app.provide('ecTheme', 'dark-blue')
 
@@ -77,7 +80,7 @@ receive('expire', () => {
 })
 
 router.beforeEach((route) => {
-  if (route.meta.require?.includes('user') && !user.value) {
+  if (route.meta.authority && !user.value) {
     return '/login'
   }
 })

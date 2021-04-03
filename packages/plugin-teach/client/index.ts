@@ -1,6 +1,5 @@
 import { router } from 'koishi-plugin-webui/client'
 import Teach from './teach.vue'
-import 'vite/dynamic-import-polyfill'
 
 router.addRoute({
   path: '/teach',
