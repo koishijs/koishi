@@ -50,10 +50,60 @@ export interface Application {
   flag: number
 }
 
+export interface Emoji {}
+
+export interface Channel {}
+
 export interface Guild {
-  unavailable: boolean
-  id: string
+  id: string;
+  name: string;
+  icon: string | null;
+  icon_hash?: string | null;
+  splash: string | null;
+  discovery_splash: string | null;
+  owner?: boolean;
+  owner_id: string;
+  permissions?: string;
+  region: string;
+  afk_channel_id: string;
+  afk_timeout: number;
+  widget_enabled?: boolean;
+  widget_channel_id?: string;
+  verification_level: number;
+  default_message_notifications: number;
+  explicit_content_filter: number;
+  roles: Role[];
+  emojis: Emoji[];
+  features: string[];
+  mfa_level: number;
+  application_id: string;
+  system_channel_id: string;
+  system_channel_flags: number;
+  rules_channel_id: string;
+  joined_at?: string;
+  large?: boolean;
+  unavailable?: boolean;
+  member_count?: number;
+  voice_states?: any[];
+  members?: GuildMember[];
+  channels?:Channel[]
+  presences?: any[];
+  max_presences?: number | null;
+  max_members?: number;
+  vanity_url_code: string | null;
+  description: string | null;
+  banner: string | null;
+  premium_tier: number;
+  premium_subscription_count?: number;
+  preferred_locale: string;
+  public_updates_channel_id: string | null;
+  max_video_channel_users?: number;
+  approximate_member_count?: number;
+  approximate_presence_count?: number;
+  welcome_screen?: any;
 }
+
+export interface GuildBody extends Pick<Guild, 'name' | 'region' | 'verification_level' | 'default_message_notifications' | 'explicit_content_filter' | 'afk_channel_id' | 'afk_timeout' | 'icon'| 'owner_id' | 'splash' | 'banner' | 'system_channel_id' | 'rules_channel_id' | 'public_updates_channel_id' | 'preferred_locale'> {}
 
 export interface Data extends DiscordMessage {
   v: number

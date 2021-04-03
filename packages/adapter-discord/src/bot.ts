@@ -3,7 +3,7 @@
 import axios, { Method } from 'axios'
 import { Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
-import { DiscordChannel, DiscordMessage, DiscordUser, ExecuteWebhookBody, GuildMember, GuildRoleBody, PartialGuild, Role } from './types'
+import { DiscordChannel, DiscordMessage, DiscordUser, ExecuteWebhookBody, GuildBody, GuildMember, GuildRoleBody, PartialGuild, Role } from './types'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
 import { readFileSync } from 'fs'
 import { segment } from 'koishi-utils'
@@ -263,5 +263,9 @@ export class DiscordBot extends Bot<'discord'> {
 
   async $modifyGuildRole(guildId: string, roleId: string, data: Partial<GuildRoleBody>) {
     return this.request('PATCH', `/guilds/${guildId}/roles/${roleId}`, data)
+  }
+
+  async $modifyGuild(guildId: string, data: GuildBody) {
+    return this.request('PATCH', `/guilds/${guildId}`, data)
   }
 }
