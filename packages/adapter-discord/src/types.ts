@@ -59,14 +59,14 @@ export interface Channel {
   position?: number;
   permission_overwrites?: Overwrite[];
   name?: string;
-  topic?: string | null;
+  topic?: string;
   nsfw?: boolean;
   last_message_id?: string;
   bitrate?: number;
   user_limit?: number;
   rate_limit_per_user?: number;
   recipients?: User[];
-  icon?: string | null;
+  icon?: string;
   owner_id?: string;
   application_id?: string;
   parent_id?: string;
@@ -76,10 +76,10 @@ export interface Channel {
 export interface Guild {
   id: string;
   name: string;
-  icon: string | null;
-  icon_hash?: string | null;
-  splash: string | null;
-  discovery_splash: string | null;
+  icon?: string ;
+  icon_hash?: string;
+  splash?: string;
+  discovery_splash?: string;
   owner?: boolean;
   owner_id: string;
   permissions?: string;
@@ -107,15 +107,15 @@ export interface Guild {
   members?: GuildMember[];
   channels?: Channel[]
   presences?: any[];
-  max_presences?: number | null;
+  max_presences?: number;
   max_members?: number;
-  vanity_url_code: string | null;
-  description: string | null;
-  banner: string | null;
+  vanity_url_code?: string;
+  description?: string;
+  banner?: string;
   premium_tier: number;
   premium_subscription_count?: number;
   preferred_locale: string;
-  public_updates_channel_id: string | null;
+  public_updates_channel_id?: string;
   max_video_channel_users?: number;
   approximate_member_count?: number;
   approximate_presence_count?: number;
@@ -244,12 +244,12 @@ export interface DiscordUser {
   username: string
   discriminator: string
   bot?: boolean
-  avatar: string | null
+  avatar?: string
   system?: boolean
   mfa_enabled?: boolean
   locale?: string
   verfied?: boolean
-  email: string | null
+  email?: string
   premium_type?: number
   public_flags?: number
 }
@@ -303,18 +303,18 @@ export interface DiscordChannel {
   position?: number
   permission_overwrites?: Overwrite[]
   name?: string
-  topic?: string | null
+  topic?: string
   nsfw?: boolean
-  last_message_id?: string | null
+  last_message_id?: string
   bitrate?: number
   user_limit?: number
   rate_limit_per_user?: number
   recipients?: User[]
-  icon?: string | null
+  icon?: string
   over_id?: string
   application_id?: string
-  parent_id?: string | null
-  last_pin_timestamp?: string | null
+  parent_id?: string
+  last_pin_timestamp?: string
 }
 
 export interface Role {
@@ -345,8 +345,8 @@ export interface Webhook {
   guild_id?: string;
   channel_id: string;
   user?: User;
-  name: string | null;
-  avatar: string | null;
+  name?: string;
+  avatar?: string;
   token?: string;
   application_id: string
 }

@@ -3,19 +3,6 @@
 import axios, { Method } from 'axios'
 import { Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
-import {
-  Channel,
-  DiscordChannel,
-  DiscordMessage,
-  DiscordUser,
-  ExecuteWebhookBody,
-  GuildBody,
-  GuildMember,
-  GuildRoleBody,
-  PartialGuild,
-  Role,
-  Webhook,
-} from './types'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
 import { readFileSync } from 'fs'
 import { segment } from 'koishi-utils'
@@ -169,7 +156,7 @@ export class DiscordBot extends Bot<'discord'> {
   }
 
   async getMessageFromServer(channelId: string, messageId: string) {
-    return this.request<DiscordMessage>('GET', `/channels/${channelId}/messages/${messageId}`)
+    return this.request<DC.DiscordMessage>('GET', `/channels/${channelId}/messages/${messageId}`)
   }
 
   async getMessage(channelId: string, messageId: string): Promise<MessageInfo> {
@@ -192,26 +179,26 @@ export class DiscordBot extends Bot<'discord'> {
   }
 
   async getUser(userId: string) {
-    const data = await this.request<DiscordUser>('GET', `/users/${userId}`)
+    const data = await this.request<DC.DiscordUser>('GET', `/users/${userId}`)
     return adaptUser(data)
   }
 
   async getGroupList() {
-    const data = await this.request<PartialGuild[]>('GET', '/users/@me/guilds')
+    const data = await this.request<DC.PartialGuild[]>('GET', '/users/@me/guilds')
     return data.map(adaptGroup)
   }
 
   async getGroupMemberList(guildId: string) {
-    const data = await this.request<GuildMember[]>('GET', `/guilds/${guildId}/members`)
+    const data = await this.request<DC.GuildMember[]>('GET', `/guilds/${guildId}/members`)
     return data.map(v => adaptUser(v.user))
   }
 
   async getChannel(channelId: string) {
-    const data = await this.request<DiscordChannel>('GET', `/channels/${channelId}`)
+    const data = await this.request<DC.DiscordChannel>('GET', `/channels/${channelId}`)
     return adaptChannel(data)
   }
 
-  async executeWebhook(id: string, token: string, data: ExecuteWebhookBody, wait = false): Promise<string> {
+  async executeWebhook(id: string, token: string, data: DC.ExecuteWebhookBody, wait = false): Promise<string> {
     const chain = segment.parse(data.content)
     if (chain.filter(v => v.type === 'image').length > 10) {
       throw new Error('Up to 10 embed objects')
@@ -221,23 +208,23 @@ export class DiscordBot extends Bot<'discord'> {
   }
 
   async $getGuildMember(guildId: string, userId: string) {
-    return this.request<GuildMember>('GET', `/guilds/${guildId}/members/${userId}`)
+    return this.request<DC.GuildMember>('GET', `/guilds/${guildId}/members/${userId}`)
   }
 
   async $getGuildRoles(guildId: string) {
-    return this.request<Role[]>('GET', `/guilds/${guildId}/roles`)
+    return this.request<DC.Role[]>('GET', `/guilds/${guildId}/roles`)
   }
 
   async $getChannel(channelId: string) {
-    return this.request<DiscordChannel>('GET', `/channels/${channelId}`)
+    return this.request<DC.DiscordChannel>('GET', `/channels/${channelId}`)
   }
 
   async $listGuildMembers(guildId: string, limit?: number, after?: string) {
-    return this.request<GuildMember[]>('GET', `/guilds/${guildId}/members?limit=${limit || 1000}&after=${after || '0'}`)
+    return this.request<DC.GuildMember[]>('GET', `/guilds/${guildId}/members?limit=${limit || 1000}&after=${after || '0'}`)
   }
 
   async $getRoleMembers(guildId: string, roleId: string) {
-    let members: GuildMember[] = []
+    let members: DC.GuildMember[] = []
     let after = '0'
     while (true) {
       const data = await this.$listGuildMembers(guildId, 1000, after)
@@ -269,15 +256,15 @@ export class DiscordBot extends Bot<'discord'> {
     return this.request('DELETE', `/guilds/${guildId}/members/${userId}/roles/${roleId}`)
   }
 
-  async $createGuildRole(guildId: string, data: GuildRoleBody) {
+  async $createGuildRole(guildId: string, data: DC.GuildRoleBody) {
     return this.request('POST', `/guilds/${guildId}/roles`, data)
   }
 
-  async $modifyGuildRole(guildId: string, roleId: string, data: Partial<GuildRoleBody>) {
+  async $modifyGuildRole(guildId: string, roleId: string, data: Partial<DC.GuildRoleBody>) {
     return this.request('PATCH', `/guilds/${guildId}/roles/${roleId}`, data)
   }
 
-  async $modifyGuild(guildId: string, data: GuildBody) {
+  async $modifyGuild(guildId: string, data: DC.GuildBody) {
     return this.request('PATCH', `/guilds/${guildId}`, data)
   }
 
@@ -297,14 +284,14 @@ export class DiscordBot extends Bot<'discord'> {
   }
 
   async $getChannelWebhooks(channelId: string) {
-    return this.request<Webhook[]>('GET', `/channels/${channelId}/webhooks`)
+    return this.request<DC.Webhook[]>('GET', `/channels/${channelId}/webhooks`)
   }
 
   async $getGuildWebhooks(guildId: string) {
-    return this.request<Webhook[]>('GET', `/guilds/${guildId}/webhooks`)
+    return this.request<DC.Webhook[]>('GET', `/guilds/${guildId}/webhooks`)
   }
 
-  async $modifyChannel(channelId, data: Pick<Channel, 'name' | 'type' | 'position' | 'topic' | 'nsfw' | 'rate_limit_per_user' | 'bitrate' | 'user_limit' | 'permission_overwrites' | 'parent_id'>) {
+  async $modifyChannel(channelId, data: Pick<DC.Channel, 'name' | 'type' | 'position' | 'topic' | 'nsfw' | 'rate_limit_per_user' | 'bitrate' | 'user_limit' | 'permission_overwrites' | 'parent_id'>) {
     return this.request('PATCH', `/channels/${channelId}`, data)
   }
 }
