@@ -4,7 +4,7 @@
     "baseUrl": ".",
     "paths": {
       "koishi-plugin-*": ["packages/plugin-*/src"],
-      "koishi-plugin-eval/dist/worker": ["packages/plugin-eval/src/worker"],
+      "koishi-plugin-eval/lib/worker": ["packages/plugin-eval/src/worker"],
       "koishi-adapter-*": ["packages/adapter-*/src"],
       "koishi-*": ["packages/koishi-*/src"],
     },

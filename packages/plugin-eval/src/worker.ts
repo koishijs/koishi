@@ -1,4 +1,4 @@
-import { Channel, User, Logger, escapeRegExp, observe, difference, Time, segment, Random, Observed } from 'koishi-core'
+import { Channel, User, Logger, escapeRegExp, observe, difference, Time, segment, Random } from 'koishi-core'
 import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
 import { findSourceMap } from 'module'
@@ -113,7 +113,9 @@ export const Scope = ({ id, user, userWritable, channel, channelWritable }: Scop
   }),
 
   async send(...param: [string, ...any[]]) {
-    return await main.send(id, formatResult(...param))
+    const content = formatResult(...param)
+    if (!content) return
+    return await main.send(id, content)
   },
 
   async exec(message: string) {

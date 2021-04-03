@@ -11,7 +11,7 @@ interface Message {
   value?: any
 }
 
-const logger = new Logger('eval:transfer')
+const logger = new Logger('transfer')
 
 export function request(ep: Endpoint, payload: Partial<Message>) {
   const uuid = Random.uuid()
@@ -51,8 +51,9 @@ export function wrap<T>(ep: Endpoint) {
 
 export function expose(ep: Endpoint, object: {}) {
   ep.on('message', async (data: string) => {
-    const { type, key, uuid, args } = JSON.parse(data)
-    logger.debug('[receive] %o', { type, key, uuid, args })
+    const payload = JSON.parse(data)
+    logger.debug('[receive] %o', payload)
+    const { type, key, uuid, args } = payload
     if (type !== 'apply') return
     const value = await object[key](...args)
     ep.postMessage(JSON.stringify({ uuid, value }))
