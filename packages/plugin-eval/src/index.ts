@@ -25,6 +25,12 @@ declare module 'koishi-core' {
     _isEval: boolean
     _sendCount: number
   }
+
+  namespace Plugin {
+    interface Packages {
+      'koishi-plugin-eval': typeof import('.')
+    }
+  }
 }
 
 interface OptionManifest extends Domain.OptionConfig {

@@ -55,6 +55,12 @@ declare module 'koishi-core' {
     name: string
     activity: Activity
   }
+
+  namespace Plugin {
+    interface Packages {
+      'koishi-plugin-webui': typeof import('.')
+    }
+  }
 }
 
 Channel.extend(() => ({

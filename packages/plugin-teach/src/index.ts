@@ -36,6 +36,12 @@ declare module 'koishi-core' {
     'dialogue/validate'(argv: Dialogue.Argv): void | string
     'dialogue/execute'(argv: Dialogue.Argv): void | Promise<void | string>
   }
+
+  namespace Plugin {
+    interface Packages {
+      'koishi-plugin-teach': typeof import('.')
+    }
+  }
 }
 
 declare module 'koishi-plugin-webui' {
@@ -205,7 +211,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(time, config)
   ctx.plugin(writer, config)
 
-  ctx.with('koishi-plugin-webui', (ctx) => {
+  ctx.with(['koishi-plugin-webui'], () => {
     const { stats, meta } = ctx.webui.sources
 
     ctx.on('dialogue/before-send', ({ session, dialogue }) => {
