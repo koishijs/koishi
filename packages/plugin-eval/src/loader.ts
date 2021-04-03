@@ -81,10 +81,10 @@ const files: Record<string, FileCache> = {}
 const cachedFiles: Record<string, FileCache> = {}
 
 export default async function prepare() {
-  if (!config.addonRoot) return
+  if (!config.root) return
 
-  const tsconfigPath = resolve(config.addonRoot, 'tsconfig.json')
-  const cachePath = resolve(config.addonRoot, config.cacheFile || '.koishi/cache')
+  const tsconfigPath = resolve(config.root, 'tsconfig.json')
+  const cachePath = resolve(config.root, config.cacheFile || '.koishi/cache')
   await Promise.all([
     fs.readFile(tsconfigPath, 'utf8').then((tsconfig) => {
       Object.assign(compilerOptions, json5.parse(tsconfig))
@@ -126,7 +126,7 @@ async function loadSource(path: string): Promise<[source: string, identifier: st
   for (const postfix of suffixes) {
     try {
       const target = path + postfix
-      return [await fs.readFile(resolve(config.addonRoot, target), 'utf8'), target]
+      return [await fs.readFile(resolve(config.root, target), 'utf8'), target]
     } catch {}
   }
   throw new Error(`cannot load source file "${path}"`)
