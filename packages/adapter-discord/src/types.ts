@@ -52,7 +52,26 @@ export interface Application {
 
 export interface Emoji {}
 
-export interface Channel {}
+export interface Channel {
+  id: string;
+  type: number;
+  guild_id?: string;
+  position?: number;
+  permission_overwrites?: Overwrite[];
+  name?: string;
+  topic?: string | null;
+  nsfw?: boolean;
+  last_message_id?: string;
+  bitrate?: number;
+  user_limit?: number;
+  rate_limit_per_user?: number;
+  recipients?: User[];
+  icon?: string | null;
+  owner_id?: string;
+  application_id?: string;
+  parent_id?: string;
+  last_pin_timestamp?: string;
+}
 
 export interface Guild {
   id: string;
@@ -86,7 +105,7 @@ export interface Guild {
   member_count?: number;
   voice_states?: any[];
   members?: GuildMember[];
-  channels?:Channel[]
+  channels?: Channel[]
   presences?: any[];
   max_presences?: number | null;
   max_members?: number;
@@ -271,7 +290,10 @@ export interface ExecuteWebhookBody{
 }
 
 export interface Overwrite {
-
+  id: string;
+  type: 0 | 1;
+  allow: string;
+  deny: string;
 }
 
 export interface DiscordChannel {
