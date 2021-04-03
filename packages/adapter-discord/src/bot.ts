@@ -183,11 +183,6 @@ export class DiscordBot extends Bot<'discord'> {
     return adaptUser(data)
   }
 
-  async getGroupList() {
-    const data = await this.request<DC.PartialGuild[]>('GET', '/users/@me/guilds')
-    return data.map(adaptGroup)
-  }
-
   async getGroupMemberList(guildId: string) {
     const data = await this.$listGuildMembers(guildId)
     return data.map(v => adaptUser(v.user))
@@ -198,7 +193,7 @@ export class DiscordBot extends Bot<'discord'> {
     return adaptChannel(data)
   }
 
-  async executeWebhook(id: string, token: string, data: DC.ExecuteWebhookBody, wait = false): Promise<string> {
+  async $executeWebhook(id: string, token: string, data: DC.ExecuteWebhookBody, wait = false): Promise<string> {
     const chain = segment.parse(data.content)
     if (chain.filter(v => v.type === 'image').length > 10) {
       throw new Error('Up to 10 embed objects')
@@ -215,7 +210,7 @@ export class DiscordBot extends Bot<'discord'> {
     const member = await this.$getGuildMember(groupId, userId)
     return {
       ...adaptUser(member.user),
-      nickname: member.nick
+      nickname: member.nick,
     }
   }
 
@@ -301,5 +296,32 @@ export class DiscordBot extends Bot<'discord'> {
 
   async $modifyChannel(channelId, data: Pick<DC.Channel, 'name' | 'type' | 'position' | 'topic' | 'nsfw' | 'rate_limit_per_user' | 'bitrate' | 'user_limit' | 'permission_overwrites' | 'parent_id'>) {
     return this.request('PATCH', `/channels/${channelId}`, data)
+  }
+
+  async $getGuild(guildId: string) {
+    return this.request<DC.Guild>('GET', `/guilds/${guildId}`)
+  }
+
+  async getGroup(groupId: string) {
+    const data = await this.$getGuild(groupId)
+    return adaptGroup(data)
+  }
+
+  async $getUserGuilds() {
+    return this.request<DC.PartialGuild[]>('GET', '/users/@me/guilds')
+  }
+
+  async getGroupList() {
+    const data = await this.$getUserGuilds()
+    return data.map(v => adaptGroup(v))
+  }
+
+  async $getGuildChannels(guildId: string) {
+    return this.request<DC.Channel[]>('GET', `/guilds/${guildId}/channels`)
+  }
+
+  async getChannelList(groupId: string) {
+    const data = await this.$getGuildChannels(groupId)
+    return data.map(v => adaptChannel(v))
   }
 }
