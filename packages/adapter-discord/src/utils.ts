@@ -7,6 +7,7 @@ export const adaptUser = (user: DC.DiscordUser): UserInfo => ({
   avatar: user.avatar,
   username: user.username,
   discriminator: user.discriminator,
+  bot: user.bot || false,
 })
 
 export function adaptGroup(data: DC.PartialGuild): GroupInfo {
@@ -23,7 +24,7 @@ export function adaptChannel(data: DC.DiscordChannel): ChannelInfo {
   }
 }
 
-export const adaptAuthor = (author: DC.Author): AuthorInfo => ({
+export const adaptAuthor = (author: DC.User): AuthorInfo => ({
   ...adaptUser(author),
   nickname: author.username,
 })
@@ -91,7 +92,7 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, ses
     }
   }
   session.discord = {
-    embeds: meta.embeds
+    embeds: meta.embeds,
   }
   return session
 }

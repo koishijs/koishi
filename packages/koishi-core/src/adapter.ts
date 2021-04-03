@@ -305,6 +305,7 @@ export interface UserBase {
   nickname?: string
   avatar?: string
   discriminator?: string
+  bot?: boolean
 }
 
 export interface UserInfo extends UserBase {

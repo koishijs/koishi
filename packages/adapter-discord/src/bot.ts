@@ -3,7 +3,7 @@
 import axios, { Method } from 'axios'
 import { Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
-import { DiscordChannel, DiscordMessage, DiscordUser, ExecuteWebhookBody, GuildMember, PartialGuild } from './types'
+import { DiscordChannel, DiscordMessage, DiscordUser, ExecuteWebhookBody, GuildMember, PartialGuild, Role } from './types'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
 import { readFileSync } from 'fs'
 import { segment } from 'koishi-utils'
@@ -206,5 +206,36 @@ export class DiscordBot extends Bot<'discord'> {
     }
 
     return await this.sendFullMessage(`/webhooks/${id}/${token}?wait=${wait}`, data.content, data)
+  }
+
+  async $getGuildMember(guildId: string, userId: string) {
+    return this.request<GuildMember>('GET', `/guilds/${guildId}/members/${userId}`)
+  }
+
+  async $getGuildRoles(guildId: string) {
+    return this.request<Role[]>('GET', `/guilds/${guildId}/roles`)
+  }
+
+  async $getChannel(channelId: string) {
+    return this.request<DiscordChannel>('GET', `/channels/${channelId}`)
+  }
+
+  async $listGuildMembers(guildId: string, limit?: number, after?: string) {
+    return this.request<GuildMember[]>('GET', `/guilds/${guildId}/members?limit=${limit || 1000}&after=${after || '0'}`)
+  }
+
+  async $getRoleMembers(guildId: string, roleId: string) {
+    let members: GuildMember[] = []
+    let after = '0'
+    while (true) {
+      const data = await this.$listGuildMembers(guildId, 1000, after)
+      members = members.concat(data)
+      if (data.length) {
+        after = data[data.length - 1].user.id
+      } else {
+        break
+      }
+    }
+    return members.filter(v => v.roles.includes(roleId))
   }
 }

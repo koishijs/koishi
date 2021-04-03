@@ -82,18 +82,10 @@ export interface User {
   avatar: string
 }
 
-export interface Author {
-  username: string
-  id: string
-  avatar: string
-  public_flags: number
-  discriminator: string
-}
-
 export interface DiscordMessage {
   guild_id?: string
   content: string
-  author: Author
+  author: User
   id: string
   timestamp: string
   channel_id: string
@@ -185,6 +177,12 @@ export interface DiscordUser {
   bot?: boolean
   avatar: string | null
   system?: boolean
+  mfa_enabled?: boolean
+  locale?: string
+  verfied?: boolean
+  email: string | null
+  premium_type?: number
+  public_flags?: number
 }
 
 export enum Opcode {
@@ -204,6 +202,14 @@ export interface PartialGuild {
 
 export interface GuildMember {
   user?: DiscordUser
+  nick?: string
+  roles: string[]
+  joined_at: string;
+  premium_since?: string;
+  deaf: boolean;
+  mute: boolean;
+  pending?: boolean;
+  permissions?: string
 }
 
 export interface ExecuteWebhookBody{
@@ -214,11 +220,29 @@ export interface ExecuteWebhookBody{
   common_embeds?: Embed[]
 }
 
+export interface Overwrite {
+
+}
+
 export interface DiscordChannel {
   id: string
   type: number
   guild_id?: string
+  position?: number
+  permission_overwrites?: Overwrite[]
   name?: string
+  topic?: string | null
+  nsfw?: boolean
+  last_message_id?: string | null
+  bitrate?: number
+  user_limit?: number
+  rate_limit_per_user?: number
+  recipients?: User[]
+  icon?: string | null
+  over_id?: string
+  application_id?: string
+  parent_id?: string | null
+  last_pin_timestamp?: string | null
 }
 
 export interface Role {
@@ -229,7 +253,7 @@ export interface Role {
   position: number
   permissions: string
   managed: boolean
-  meantionable: boolean
+  mentionable: boolean
   tags?: {
     bot_id: string
     integration_id: string
