@@ -259,3 +259,10 @@ export interface Role {
     integration_id: string
   }
 }
+export interface GuildRoleBody {
+  name: string;
+  permissions: string
+  color: number;
+  hoist: boolean;
+  mentionable: boolean
+}

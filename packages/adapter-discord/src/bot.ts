@@ -3,7 +3,7 @@
 import axios, { Method } from 'axios'
 import { Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
-import { DiscordChannel, DiscordMessage, DiscordUser, ExecuteWebhookBody, GuildMember, PartialGuild, Role } from './types'
+import { DiscordChannel, DiscordMessage, DiscordUser, ExecuteWebhookBody, GuildMember, GuildRoleBody, PartialGuild, Role } from './types'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
 import { readFileSync } from 'fs'
 import { segment } from 'koishi-utils'
@@ -237,5 +237,31 @@ export class DiscordBot extends Bot<'discord'> {
       }
     }
     return members.filter(v => v.roles.includes(roleId))
+  }
+
+  async $modifyGuildMember(guildId: string, userId: string, data: {
+    nick?: string
+    roles?: string[]
+    mute?: boolean
+    deaf?: boolean
+    channel_id?: string
+  }) {
+    return this.request('PATCH', `/guilds/${guildId}/members/${userId}`, data)
+  }
+
+  async $addGuildMemberRole(guildId: string, userId: string, roleId: string) {
+    return this.request('PUT', `/guilds/${guildId}/members/${userId}/roles/${roleId}`)
+  }
+
+  async $removeGuildMemberRole(guildId: string, userId: string, roleId: string) {
+    return this.request('DELETE', `/guilds/${guildId}/members/${userId}/roles/${roleId}`)
+  }
+
+  async $createGuildRole(guildId: string, data: GuildRoleBody) {
+    return this.request('POST', `/guilds/${guildId}/roles`, data)
+  }
+
+  async $modifyGuildRole(guildId: string, roleId: string, data: Partial<GuildRoleBody>) {
+    return this.request('PATCH', `/guilds/${guildId}/roles/${roleId}`, data)
   }
 }
