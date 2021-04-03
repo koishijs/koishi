@@ -5,7 +5,7 @@ import { Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
 import { DiscordChannel, DiscordMessage, DiscordUser, ExecuteWebhookBody, GuildMember, PartialGuild } from './types'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
-import { readFileSync, existsSync } from 'fs'
+import { readFileSync } from 'fs'
 import { segment } from 'koishi-utils'
 import FormData from 'form-data'
 import FileType from 'file-type'
@@ -38,7 +38,7 @@ export class DiscordBot extends Bot<'discord'> {
     return adaptUser(data)
   }
 
-  private async sendEmbedMessage(requestUrl: string, fileBuffer: Buffer, payload_json: Record<string, any> = {}, fileType?: string) {
+  private async sendEmbedMessage(requestUrl: string, fileBuffer: Buffer, payload_json: Record<string, any> = {}) {
     const fd = new FormData()
     const type = await FileType.fromBuffer(fileBuffer)
     fd.append('file', fileBuffer, 'file.' + type.ext)
@@ -98,23 +98,22 @@ export class DiscordBot extends Bot<'discord'> {
           sentMessageId = r.id
         }
         if (type === 'image' || type === 'video' && data.url) {
-          if (data.url.startsWith('http://') || data.url.startsWith('https://')) {
-            const a = await axios({
-              url: data.url,
-              responseType: 'arraybuffer',
-            })
-            const r = await this.sendEmbedMessage(requestUrl, a.data, {
+          if (data.url.startsWith('file://')) {
+            const r = await this.sendEmbedMessage(requestUrl, readFileSync(data.url.slice(7)), {
               ...addition,
             })
             sentMessageId = r.id
           } else if (data.url.startsWith('base64://')) {
-            const a = Buffer.from(data.url.substring('base64://'.length), 'base64')
+            const a = Buffer.from(data.url.slice(9), 'base64')
             const r = await this.sendEmbedMessage(requestUrl, a, {
               ...addition,
             })
             sentMessageId = r.id
-          } else if (existsSync(data.url)) {
-            const r = await this.sendEmbedMessage(requestUrl, readFileSync(data.url), {
+          } else {
+            const a = await axios.get(data.url, {
+              responseType: 'arraybuffer',
+            })
+            const r = await this.sendEmbedMessage(requestUrl, a.data, {
               ...addition,
             })
             sentMessageId = r.id
