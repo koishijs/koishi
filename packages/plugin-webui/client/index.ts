@@ -115,7 +115,7 @@ export interface segment {
 }
 
 export function segment(type: string, data: segment.Data = {}) {
-  if (type === 'text') return String(data.content)
+  if (type === 'text') return segment.escape(String(data.content))
   let output = '[CQ:' + type
   for (const key in data) {
     if (data[key]) output += `,${key}=${segment.escape(data[key], true)}`
@@ -175,12 +175,12 @@ export namespace segment {
     while ((result = from(source))) {
       const { capture } = result
       if (capture.index) {
-        chain.push({ type: 'text', data: { content: source.slice(0, capture.index) } })
+        chain.push({ type: 'text', data: { content: unescape(source.slice(0, capture.index)) } })
       }
       chain.push(result)
       source = source.slice(capture.index + capture[0].length)
     }
-    if (source) chain.push({ type: 'text', data: { content: source } })
+    if (source) chain.push({ type: 'text', data: { content: unescape(source) } })
     return chain
   }
 
@@ -189,7 +189,7 @@ export namespace segment {
       const transformer = rules[type]
       return typeof transformer === 'string' ? transformer
         : typeof transformer === 'function' ? transformer(data, index, chain)
-          : dropOthers ? '' : type === 'text' ? data.content : capture[0]
+          : dropOthers ? '' : type === 'text' ? escape(data.content) : capture[0]
     }).join('')
   }
 
