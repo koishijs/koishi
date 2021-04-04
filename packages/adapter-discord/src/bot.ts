@@ -156,7 +156,7 @@ export class DiscordBot extends Bot<'discord'> {
   }
 
   async getMessageFromServer(channelId: string, messageId: string) {
-    return this.request<DC.DiscordMessage>('GET', `/channels/${channelId}/messages/${messageId}`)
+    return this.request<DC.Message>('GET', `/channels/${channelId}/messages/${messageId}`)
   }
 
   async getMessage(channelId: string, messageId: string): Promise<MessageInfo> {
@@ -219,7 +219,7 @@ export class DiscordBot extends Bot<'discord'> {
   }
 
   async $getChannel(channelId: string) {
-    return this.request<DC.DiscordChannel>('GET', `/channels/${channelId}`)
+    return this.request<DC.Channel>('GET', `/channels/${channelId}`)
   }
 
   async $listGuildMembers(guildId: string, limit?: number, after?: string) {
