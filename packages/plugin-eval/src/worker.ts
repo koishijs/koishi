@@ -2,7 +2,8 @@ import { Channel, User, Logger, escapeRegExp, observe, difference, Time, segment
 import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
 import { findSourceMap } from 'module'
-import { dirname, sep } from 'path'
+import { resolve, dirname, sep } from 'path'
+import { serialize } from 'v8'
 
 /* eslint-disable import/first */
 
@@ -19,7 +20,7 @@ export const config: WorkerData = {
   },
 }
 
-import prepare, { synthetize } from './loader'
+import prepare, { synthetize, readSerialized, safeWriteFile } from './loader'
 import { expose, wrap } from './transfer'
 import { Sandbox } from './sandbox'
 import { MainAPI } from '.'
@@ -27,10 +28,11 @@ import { MainAPI } from '.'
 export * from './loader'
 
 export interface WorkerConfig {
-  setupFiles?: Record<string, string>
+  root?: string
   inspect?: InspectOptions
-  addonRoot?: string
   cacheFile?: string
+  storageFile?: string
+  setupFiles?: Record<string, string>
 }
 
 export interface WorkerData extends WorkerConfig {
@@ -77,14 +79,23 @@ export interface ScopeData {
   channelWritable: Channel.Field[]
 }
 
+type Serializable = string | number | boolean | Serializable[] | SerializableObject
+type SerializableObject = { [K in string]: Serializable }
+
 export interface Scope {
+  storage: SerializableObject
   user: User.Observed<any>
   channel: Channel.Observed<any>
   send(...param: any[]): Promise<void>
   exec(message: string): Promise<string>
 }
 
+let storage: SerializableObject
+const storagePath = resolve(config.root || process.cwd(), config.storageFile || '.koishi/storage')
+
 export const Scope = ({ id, user, userWritable, channel, channelWritable }: ScopeData): Scope => ({
+  storage,
+
   user: user && observe(user, async (diff) => {
     const diffKeys = difference(Object.keys(diff), userWritable)
     if (diffKeys.length) {
@@ -102,7 +113,9 @@ export const Scope = ({ id, user, userWritable, channel, channelWritable }: Scop
   }),
 
   async send(...param: [string, ...any[]]) {
-    return await main.send(id, formatResult(...param))
+    const content = formatResult(...param)
+    if (!content) return
+    return await main.send(id, content)
   },
 
   async exec(message: string) {
@@ -138,6 +151,8 @@ export class WorkerAPI {
   async sync(scope: Scope) {
     await scope.user?._update()
     await scope.channel?._update()
+    const buffer = serialize(storage)
+    await safeWriteFile(storagePath, buffer)
   }
 
   async eval(data: ScopeData, options: EvalOptions) {
@@ -198,7 +213,9 @@ export function mapDirectory(identifier: string, filename: string) {
 Object.values(config.setupFiles).map(require)
 
 async function start() {
-  await prepare()
+  const data = await Promise.all([readSerialized(storagePath), prepare()])
+  storage = data[0] || {}
+
   response.commands = Object.keys(commandMap)
   mapDirectory('koishi/utils/', require.resolve('koishi-utils'))
   mapDirectory('koishi/', __filename)

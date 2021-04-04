@@ -1,7 +1,8 @@
-import { PackageJson, getWorkspaces, spawnAsync, spawnSync } from './utils'
+import { cwd, PackageJson, getWorkspaces, spawnAsync, spawnSync } from './utils'
 import { gt, prerelease } from 'semver'
 import { Octokit } from '@octokit/rest'
 import { draft } from './release'
+import { writeJson } from 'fs-extra'
 import latest from 'latest-version'
 import ora from 'ora'
 
@@ -40,15 +41,35 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
   }))
   spinner.succeed()
 
+  function publish(folder: string, name: string, version: string, tag: string) {
+    console.log(`publishing ${name}@${version} ...`)
+    return spawnAsync([
+      'yarn', 'publish', folder,
+      '--new-version', version,
+      '--tag', tag,
+    ])
+  }
+
   if (Object.keys(bumpMap).length) {
     for (const folder in bumpMap) {
-      const { name, version } = bumpMap[folder]
-      console.log(`publishing ${name}@${version} ...`)
-      await spawnAsync([
-        'yarn', 'publish', folder,
-        '--new-version', version,
-        '--tag', prerelease(version) ? 'next' : 'latest',
-      ])
+      const { name, version, dependencies, devDependencies } = bumpMap[folder]
+      await publish(folder, name, version, prerelease(version) ? 'next' : 'latest')
+      if (name === 'koishi-plugin-webui') {
+        const filename = cwd + '/packages/plugin-webui/package.json'
+        await writeJson(filename, {
+          ...bumpMap[folder],
+          version: version + '-dev',
+          files: ['lib', 'dist', 'client'],
+          dependencies: Object.fromEntries([
+            ...Object.entries(dependencies),
+            ...Object.entries(devDependencies).filter(([key]) => {
+              return !key.startsWith('@types') && !key.startsWith('koishi')
+            }),
+          ]),
+        }, { spaces: 2 })
+        await publish(folder, name, version + '-dev', 'dev')
+        await writeJson(filename, bumpMap[folder])
+      }
     }
   }
 

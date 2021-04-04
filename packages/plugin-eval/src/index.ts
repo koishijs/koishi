@@ -23,7 +23,18 @@ declare module 'koishi-core' {
 
   interface Session {
     _isEval: boolean
-    _sendCount: number
+  }
+
+  namespace Plugin {
+    interface Packages {
+      'koishi-plugin-eval': typeof import('.')
+    }
+  }
+
+  interface EventMap {
+    'eval/before-send'(content: string, session: Session): string | Promise<string>
+    'eval/before-start'(): void | Promise<void>
+    'eval/start'(response: WorkerResponse): void
   }
 }
 
@@ -48,7 +59,6 @@ const defaultConfig: EvalConfig = {
   authority: 2,
   timeout: 1000,
   setupFiles: {},
-  maxLogs: Infinity,
   channelFields: ['id'],
   userFields: ['id', 'authority'],
   dataKeys: ['inspect', 'setupFiles'],
@@ -63,12 +73,12 @@ export function apply(ctx: Context, config: Config = {}) {
   const { app } = ctx
 
   // addons are registered in another plugin
-  if (config.addonRoot) {
+  if (config.root) {
     ctx.plugin(addon, config)
   }
 
   ctx.on('connect', () => {
-    app.worker = new EvalWorker(app, config)
+    app.worker = new EvalWorker(ctx.app, config)
     app.worker.start()
   })
 
@@ -86,23 +96,24 @@ export function apply(ctx: Context, config: Config = {}) {
   const channelAccess = Trap.resolve(config.channelFields)
 
   // worker should be running for all the features
-  ctx = ctx.intersect(sess => sess.app.worker?.state === EvalWorker.State.open)
+  ctx = ctx.intersect(() => app.worker?.state === EvalWorker.State.open)
 
   const command = ctx.command('evaluate [expr:text]', '执行 JavaScript 脚本', { noEval: true })
     .alias('eval')
     .userFields(['authority'])
     .option('slient', '-s  不输出最后的结果')
     .option('restart', '-r  重启子线程', { authority: 3 })
-    .action(({ session }) => {
+    .check(({ session }) => {
       if (!session['_redirected'] && session.user?.authority < authority) return '权限不足。'
+    })
+    .action(async ({ options }) => {
+      if (options.restart) {
+        await app.worker.restart()
+        return '子线程已重启。'
+      }
     })
 
   Trap.action(command, userAccess, channelAccess, async ({ session, options, scope }, expr) => {
-    if (options.restart) {
-      await app.worker.restart()
-      return '子线程已重启。'
-    }
-
     if (!expr) return '请输入要执行的脚本。'
     expr = segment.unescape(expr)
 
@@ -127,7 +138,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
       const timer = setTimeout(async () => {
         await app.worker.restart()
-        _resolve(!session._sendCount && '执行超时。')
+        _resolve('执行超时。')
       }, config.timeout)
 
       const dispose = app.worker.onError((error: Error) => {
@@ -176,8 +187,8 @@ export function apply(ctx: Context, config: Config = {}) {
 
 function addon(ctx: Context, config: EvalConfig) {
   const logger = ctx.logger('eval:addons')
-  const root = config.addonRoot = resolve(process.cwd(), config.addonRoot)
-  config.dataKeys.push('addonNames', 'addonRoot')
+  const root = config.root = resolve(process.cwd(), config.root)
+  config.dataKeys.push('addonNames', 'root')
 
   const git = Git(root)
 
@@ -210,7 +221,7 @@ function addon(ctx: Context, config: EvalConfig) {
     return load(content) as Manifest
   }
 
-  ctx.on('worker/start', async () => {
+  ctx.before('eval/start', async () => {
     const dirents = await fs.readdir(root, { withFileTypes: true })
     const paths = config.addonNames = dirents
       .filter(dir => dir.isDirectory() && !exclude.test(dir.name))
@@ -239,10 +250,9 @@ function addon(ctx: Context, config: EvalConfig) {
         .subcommand(rawName, desc, config)
         .option('debug', '启用调试模式', { hidden: true })
 
-      Trap.action(cmd, userAccess, channelAccess, async ({ session, command, options, scope }, ...args) => {
-        const { name } = command, { remote } = session.app.worker
-        const result = await remote.callAddon(scope, { name, args, options })
-        return result
+      Trap.action(cmd, userAccess, channelAccess, async ({ command, options, scope }, ...args) => {
+        const { name } = command
+        return ctx.app.worker.remote.callAddon(scope, { name, args, options })
       })
 
       options.forEach((config) => {
@@ -252,7 +262,7 @@ function addon(ctx: Context, config: EvalConfig) {
     })
   }
 
-  ctx.on('worker/ready', (data) => {
+  ctx.on('eval/start', (data) => {
     config.addonNames.map((path) => {
       registerAddon(data, path)
     })

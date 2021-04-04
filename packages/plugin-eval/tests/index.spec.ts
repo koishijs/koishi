@@ -8,7 +8,7 @@ import * as eval from 'koishi-plugin-eval'
 const app = new App()
 
 app.plugin(eval, {
-  addonRoot: resolve(__dirname, 'fixtures'),
+  root: resolve(__dirname, 'fixtures'),
   setupFiles: {
     'test-worker': resolve(__dirname, 'worker.ts'),
   },
@@ -19,7 +19,7 @@ const ses = app.session('123')
 before(async () => {
   await fs.rmdir(resolve(__dirname, 'fixtures/.koishi'), { recursive: true })
   return new Promise<void>((resolve) => {
-    app.on('worker/ready', () => resolve())
+    app.on('eval/start', () => resolve())
     app.start()
   })
 })
@@ -29,9 +29,9 @@ after(() => app.stop())
 describe('Eval Plugin', () => {
   it('basic support', async () => {
     await ses.shouldReply('> 1 + 1', '2')
-    await ses.shouldNotReply('>> 1 + 1')
-    await ses.shouldReply('> send(1 + 1)', '2')
-    await ses.shouldReply('>> send(1 + 1)', '2')
+    await ses.shouldNotReply('>> 1 + 2')
+    await ses.shouldReply('> send(1 + 3)', '4')
+    await ses.shouldReply('>> send(1 + 4)', '5')
   })
 
   it('validation', async () => {

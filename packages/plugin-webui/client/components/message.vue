@@ -21,6 +21,8 @@ defineProps<{
 <style lang="scss" scoped>
 
 .k-message {
+  white-space: break-spaces;
+
   img {
     max-height: 400px;
   }

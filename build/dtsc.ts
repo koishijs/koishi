@@ -85,6 +85,7 @@ async function bundle(path: string) {
       if (!identifier) line = line.slice(4)
       return line
         .replace(internalImport, '')
+        .replace(/import\("index"\)/g, 'import(".")')
         .replace(/^((module|class|namespace) .+ \{)$/, (_) => `declare ${_}`)
     }
   }).filter(line => line).join(EOL)

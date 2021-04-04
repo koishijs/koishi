@@ -116,14 +116,15 @@ Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间�
 
 ### 其他官方插件
 
-- [koishi-plugin-chess](https://koishi.js.org/plugins/other/chess) / 下棋
+- [koishi-plugin-assets](https://koishi.js.org/plugins/other/assets) / 资源转存
+- [koishi-plugin-chess](https://koishi.js.org/plugins/other/chess) / 棋类游戏
 - [koishi-plugin-github](https://koishi.js.org/plugins/other/github) / 接入 GitHub
-- [koishi-plugin-image-search](https://koishi.js.org/plugins/other/image-search) / 搜图
+- [koishi-plugin-image-search](https://koishi.js.org/plugins/other/image-search) / 图片搜索
 - [koishi-plugin-puppeteer](https://koishi.js.org/plugins/other/puppeteer) / 网页截图
-- [koishi-plugin-rss](https://koishi.js.org/plugins/other/rss) / 订阅 RSS
-- [koishi-plugin-schedule](https://koishi.js.org/plugins/other/schedule) / 设置计划任务
-- [koishi-plugin-webui](https://koishi.js.org/plugins/other/webui) / 状态监控
+<!-- - [koishi-plugin-rss](https://koishi.js.org/plugins/other/rss) / 订阅 RSS -->
+- [koishi-plugin-schedule](https://koishi.js.org/plugins/other/schedule) / 计划任务
 - [koishi-plugin-tools](https://koishi.js.org/plugins/other/tools) / 实用工具
+- [koishi-plugin-webui](https://koishi.js.org/plugins/other/webui) / 网页控制台
 
 ## 使用协议
 

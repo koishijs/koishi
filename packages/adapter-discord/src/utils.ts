@@ -7,28 +7,29 @@ export const adaptUser = (user: DC.DiscordUser): UserInfo => ({
   avatar: user.avatar,
   username: user.username,
   discriminator: user.discriminator,
+  isBot: user.bot || false,
 })
 
-export function adaptGroup(data: DC.PartialGuild): GroupInfo {
+export function adaptGroup(data: DC.PartialGuild | DC.Guild): GroupInfo {
   return {
     groupId: data.id,
     groupName: data.name,
   }
 }
 
-export function adaptChannel(data: DC.DiscordChannel): ChannelInfo {
+export function adaptChannel(data: DC.Channel): ChannelInfo {
   return {
     channelId: data.id,
     channelName: data.name,
   }
 }
 
-export const adaptAuthor = (author: DC.Author): AuthorInfo => ({
+export const adaptAuthor = (author: DC.User): AuthorInfo => ({
   ...adaptUser(author),
   nickname: author.username,
 })
 
-export async function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
+export async function adaptMessage(bot: DiscordBot, meta: DC.Message, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
   if (meta.author) {
     session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id
@@ -91,12 +92,12 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.DiscordMessage, ses
     }
   }
   session.discord = {
-    embeds: meta.embeds
+    embeds: meta.embeds,
   }
   return session
 }
 
-async function adaptMessageSession(bot: DiscordBot, meta: DC.DiscordMessage, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
+async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
   await adaptMessage(bot, meta, session)
   session.messageId = meta.id
   session.timestamp = new Date(meta.timestamp).valueOf() || new Date().valueOf()
@@ -110,7 +111,7 @@ async function adaptMessageSession(bot: DiscordBot, meta: DC.DiscordMessage, ses
   return session
 }
 
-async function adaptMessageCreate(bot: DiscordBot, meta: DC.DiscordMessage, session: Partial<Session.Payload<Session.MessageAction>>) {
+async function adaptMessageCreate(bot: DiscordBot, meta: DC.Message, session: Partial<Session.Payload<Session.MessageAction>>) {
   session.groupId = meta.guild_id
   session.subtype = meta.guild_id ? 'group' : 'private'
   session.channelId = meta.channel_id
@@ -124,12 +125,12 @@ export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
   }
   if (input.t === 'MESSAGE_CREATE') {
     session.type = 'message'
-    await adaptMessageCreate(bot, input.d as DC.DiscordMessage, session)
+    await adaptMessageCreate(bot, input.d as DC.Message, session)
     if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_UPDATE') {
     session.type = 'message-updated'
-    const d = input.d as DC.DiscordMessage
+    const d = input.d as DC.Message
     const msg = await bot.getMessageFromServer(d.channel_id, d.id)
     // Unlike creates, message updates may contain only a subset of the full message object payload
     // https://discord.com/developers/docs/topics/gateway#message-update

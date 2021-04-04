@@ -37,6 +37,14 @@ export namespace Plugin {
     disposables: Disposable[]
     dependencies: Set<State>
   }
+
+  export interface Packages {}
+
+  export type Teleporter<D extends readonly (keyof Packages)[]> = (...modules: From<D>) => void
+
+  type From<D extends readonly unknown[]> = D extends readonly [infer L, ...infer R]
+    ? [L extends keyof Packages ? Packages[L] : unknown, ...From<R>]
+    : []
 }
 
 function isBailed(value: any) {
@@ -153,24 +161,29 @@ export class Context {
     }
   }
 
-  private teleport(parent: Plugin, callback: Plugin) {
-    const state = this.app.registry.get(parent)
-    if (!state) return
-    this.plugin(callback)
-    const dispose = () => this.dispose(callback)
-    state.disposables.push(dispose)
+  private teleport(modules: any[], callback: Plugin.Teleporter<never[]>) {
+    const states: Plugin.State[] = []
+    for (const module of modules) {
+      const state = this.app.registry.get(module)
+      if (!state) return
+      states.push(state)
+    }
+    const plugin = () => callback(...modules as [])
+    const dispose = () => this.dispose(plugin)
+    this.plugin(plugin)
+    states.every(state => state.disposables.push(dispose))
     this.before('disconnect', () => {
-      remove(state.disposables, dispose)
+      states.every(state => remove(state.disposables, dispose))
     })
   }
 
-  with(dependency: string, callback: Plugin) {
-    const parent = safeRequire(dependency)
-    if (!parent) return
-    this.teleport(parent, callback)
+  with<D extends readonly (keyof Plugin.Packages)[]>(deps: D, callback: Plugin.Teleporter<D>) {
+    const modules = deps.map(safeRequire)
+    if (!modules.every(val => val)) return
+    this.teleport(modules, callback)
     this.on('plugin-added', (added) => {
-      const parent = safeRequire(dependency)
-      if (added === parent) this.teleport(parent, callback)
+      const modules = deps.map(safeRequire)
+      if (modules.includes(added)) this.teleport(modules, callback)
     })
   }
 
