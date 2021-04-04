@@ -1,8 +1,9 @@
 <template>
-  <k-chat-panel class="sandbox" :messages="messages">
-    <template #default="{ username, content }">
+  <k-chat-panel class="sandbox" :messages="messages" pinned>
+    <template #default="{ channelName, username, content }">
       <p>
-        {{ username }}: <k-message :content="content"/>
+        [{{ channelName || '私聊' }}] {{ username }}:
+        <k-message :content="content"/>
       </p>
     </template>
   </k-chat-panel>

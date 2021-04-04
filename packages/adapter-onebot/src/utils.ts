@@ -8,6 +8,7 @@ export * from './types'
 
 export const adaptUser = (user: OneBot.AccountInfo): Koishi.UserInfo => ({
   userId: user.userId.toString(),
+  avatar: `http://q.qlogo.cn/headimg_dl?dst_uin=${user.userId}&spec=640`,
   username: user.nickname,
 })
 
