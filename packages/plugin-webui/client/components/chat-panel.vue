@@ -1,9 +1,9 @@
 <template>
   <k-card class="k-chat-panel">
-    <div class="k-chat-panel-body" ref="body">
-      <template v-for="(message, index) in messages" :key="index">
+    <div class="k-chat-body" ref="body">
+      <div class="k-chat-message" v-for="(message, index) in messages" :key="index">
         <slot v-bind="message"/>
-      </template>
+      </div>
     </div>
     <k-input v-model="text" @enter="onEnter" @paste="onPaste"></k-input>
   </k-card>
@@ -56,25 +56,37 @@ async function onPaste(event: ClipboardEvent) {
 
 <style lang="scss">
 
+$padding: 1.5rem;
+
 .k-chat-panel {
   height: 100%;
   position: relative;
 
-  .k-chat-panel-body {
+  .k-chat-body {
     position: absolute;
-    top: 2rem;
-    left: 2rem;
-    right: 2rem;
-    bottom: 6rem;
+    top: $padding;
+    left: $padding;
+    right: $padding;
+    bottom: 2rem + $padding * 2;
     overflow-x: visible;
     overflow-y: auto;
   }
 
+  .k-chat-message {
+    &:hover {
+      background-color: rgba(4, 4, 5, 0.2);
+    }
+
+    & + .k-chat-message {
+      margin-top: 0.5rem;
+    }
+  }
+
   .k-input {
     position: absolute;
-    bottom: 2rem;
-    left: 2rem;
-    right: 2rem;
+    bottom: $padding;
+    left: $padding;
+    right: $padding;
   }
 }
 

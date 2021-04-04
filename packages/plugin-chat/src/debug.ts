@@ -28,6 +28,7 @@ const cqTypes = {
 }
 
 interface Message {
+  avatar?: string
   content?: string
   abstract?: string
   username?: string
@@ -151,7 +152,7 @@ export default function apply(ctx: Context, config: DebugConfig = {}) {
 
   function handleMessage(session: Session) {
     const params: Message = pick(session, ['content', 'timestamp', 'platform', 'channelId', 'channelName', 'groupId', 'groupName', 'userId', 'selfId'])
-    Object.assign(params, pick(session.author, ['username', 'nickname']))
+    Object.assign(params, pick(session.author, ['username', 'nickname', 'avatar']))
     if (session.type === 'message') {
       userMap[session.uid] = [Promise.resolve(session.author.username), Date.now()]
     }

@@ -1,9 +1,7 @@
 <template>
   <k-chat-panel class="sandbox" :messages="messages" @enter="sendSandbox" :pinned="pinned">
     <template #default="{ from, content }">
-      <p :class="from">
-        <k-message :content="content"/>
-      </p>
+      <k-message :class="from" :content="content"/>
     </template>
   </k-chat-panel>
 </template>
@@ -55,18 +53,12 @@ receive('sandbox:clear', (data) => {
     color: rgba(244, 244, 245, .8);
   }
 
-  p:first-child {
-    margin-top: 0;
-  }
-  p:last-child {
-    margin-bottom: 0;
-  }
-
   p.user::before {
     content: '>';
     position: absolute;
     left: -.1rem;
   }
+
   p.bot::before {
     content: '<';
     position: absolute;

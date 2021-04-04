@@ -4,6 +4,7 @@ import { promises as fs, Stats, createReadStream } from 'fs'
 import { WebAdapter } from './adapter'
 import { DataSource, Profile, Meta, Registry } from './data'
 import { Statistics } from './stats'
+import axios from 'axios'
 import type * as Vite from 'vite'
 import type PluginVue from '@vitejs/plugin-vue'
 
@@ -42,6 +43,11 @@ export class WebServer {
   private vite: Vite.ViteDevServer
   private readonly [Context.current]: Context
 
+  static whitelist = [
+    'http://gchat.qpic.cn/',
+    'http://c2cpicdw.qpic.cn',
+  ]
+
   constructor(private ctx: Context, public config: Config) {
     this.root = resolve(__dirname, '..', config.devMode ? 'client' : 'dist')
     this.sources = {
@@ -69,7 +75,7 @@ export class WebServer {
   }
 
   private async start() {
-    const { uiPath } = this.config
+    const { uiPath, apiPath } = this.config
     await Promise.all([this.createVite(), this.createAdapter()])
 
     this.ctx.router.get(uiPath + '(/.+)*', async (ctx) => {
@@ -97,6 +103,15 @@ export class WebServer {
       const template = await fs.readFile(resolve(this.root, 'index.html'), 'utf8')
       ctx.type = 'html'
       ctx.body = await this.transformHtml(template)
+    })
+
+    this.ctx.router.get(apiPath + '/assets/:url', async (ctx) => {
+      if (!WebServer.whitelist.some(prefix => ctx.params.url.startsWith(prefix))) {
+        console.log(ctx.params.url)
+        return ctx.status = 403
+      }
+      const { data } = await axios.get(ctx.params.url, { responseType: 'stream' })
+      return ctx.body = data
     })
   }
 

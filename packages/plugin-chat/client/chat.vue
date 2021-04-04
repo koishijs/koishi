@@ -1,14 +1,12 @@
 <template>
   <k-chat-panel class="page-chat" :messages="messages" pinned>
     <template #default="{ channelName, username, timestamp, content }">
-      <p>
-        <div class="header">
-          <span class="channel">{{ channelName || '私聊' }}</span>
-          <span class="username">{{ username }}</span>
-          <span class="timestamp">{{ formatDateTime(timestamp) }}</span>
-        </div>
-        <k-message :content="content"/>
-      </p>
+      <div class="header">
+        <span class="channel">{{ channelName || '私聊' }}</span>
+        <span class="username">{{ username }}</span>
+        <span class="timestamp">{{ formatDateTime(timestamp) }}</span>
+      </div>
+      <k-message :content="content"/>
     </template>
   </k-chat-panel>
 </template>

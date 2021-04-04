@@ -9,8 +9,10 @@ export const name = 'chat'
 
 export function apply(ctx: Context, options: Config = {}) {
   ctx.plugin(debug, options)
+
   ctx.with(['koishi-plugin-webui'], (ctx) => {
-    const filename = ctx.webui.config.devMode ? '../client/index.ts' : '../dist/index.js'
+    const { devMode } = ctx.webui.config
+    const filename = devMode ? '../client/index.ts' : '../dist/index.js'
     ctx.webui.addEntry(resolve(__dirname, filename))
   })
 }
