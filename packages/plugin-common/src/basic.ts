@@ -190,7 +190,7 @@ export function recall(ctx: Context, { recallCount = 10 }: RecallConfig) {
         try {
           await session.bot.deleteMessage(session.channelId, removal[index])
         } catch (error) {
-          this.app.logger('bot').warn(error)
+          ctx.logger('bot').warn(error)
         }
       }
     })
