@@ -39,6 +39,7 @@ interface Message {
   selfId?: string
   channelName?: string
   groupName?: string
+  timestamp?: number
 }
 
 async function getUserName(bot: Bot, groupId: string, userId: string) {
@@ -149,7 +150,7 @@ export default function apply(ctx: Context, config: DebugConfig = {}) {
   }
 
   function handleMessage(session: Session) {
-    const params: Message = pick(session, ['content', 'platform', 'channelId', 'channelName', 'groupId', 'groupName', 'userId', 'selfId'])
+    const params: Message = pick(session, ['content', 'timestamp', 'platform', 'channelId', 'channelName', 'groupId', 'groupName', 'userId', 'selfId'])
     Object.assign(params, pick(session.author, ['username', 'nickname']))
     if (session.type === 'message') {
       userMap[session.uid] = [Promise.resolve(session.author.username), Date.now()]
@@ -165,8 +166,6 @@ export default function apply(ctx: Context, config: DebugConfig = {}) {
 
   async function dispatchMessage(session: Session, params: Message, timestamp: number) {
     await Promise.all([prepareChannelName, prepareGroupName, prepareAbstract].map(cb => cb(session, params, timestamp)))
-
-    console.log(params)
 
     // webui
     ctx?.webui?.adapter.broadcast('chat', params)
