@@ -52,7 +52,6 @@ receive('sandbox:clear', (data) => {
 .sandbox {
   p {
     padding-left: 1rem;
-    white-space: break-spaces;
     color: rgba(244, 244, 245, .8);
   }
 

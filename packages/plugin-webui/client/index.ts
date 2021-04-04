@@ -23,7 +23,7 @@ declare module 'vue-router' {
 }
 
 export const router = createRouter({
-  history: createWebHistory(KOISHI_UI_PATH),
+  history: createWebHistory(KOISHI_CONFIG.uiPath),
   routes: [],
 })
 
@@ -74,7 +74,7 @@ export const socket = ref<WebSocket>(null)
 const listeners: Record<string, (data: any) => void> = {}
 
 export function start() {
-  const endpoint = new URL(KOISHI_ENDPOINT, location.origin).toString()
+  const endpoint = new URL(KOISHI_CONFIG.endpoint, location.origin).toString()
   socket.value = new WebSocket(endpoint.replace(/^http/, 'ws'))
   socket.value.onmessage = (ev) => {
     const data = JSON.parse(ev.data)
