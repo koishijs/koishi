@@ -241,13 +241,7 @@ export class DiscordBot extends Bot<'discord'> {
     return members.filter(v => v.roles.includes(roleId))
   }
 
-  async $modifyGuildMember(guildId: string, userId: string, data: {
-    nick?: string
-    roles?: string[]
-    mute?: boolean
-    deaf?: boolean
-    channel_id?: string
-  }) {
+  async $modifyGuildMember(guildId: string, userId: string, data: Partial<DC.ModifyGuildMember>) {
     return this.request('PATCH', `/guilds/${guildId}/members/${userId}`, data)
   }
 
@@ -294,7 +288,7 @@ export class DiscordBot extends Bot<'discord'> {
     return this.request<DC.Webhook[]>('GET', `/guilds/${guildId}/webhooks`)
   }
 
-  async $modifyChannel(channelId, data: Pick<DC.Channel, 'name' | 'type' | 'position' | 'topic' | 'nsfw' | 'rate_limit_per_user' | 'bitrate' | 'user_limit' | 'permission_overwrites' | 'parent_id'>) {
+  async $modifyChannel(channelId, data: Partial<DC.ModifyGuild>) {
     return this.request('PATCH', `/channels/${channelId}`, data)
   }
 

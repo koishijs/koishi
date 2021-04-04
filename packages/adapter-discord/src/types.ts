@@ -81,6 +81,8 @@ export interface Channel {
   last_pin_timestamp?: ISO8601;
 }
 
+export interface ModifyGuild extends Pick<Channel, 'name' | 'type' | 'position' | 'topic' | 'nsfw' | 'rate_limit_per_user' | 'bitrate' | 'user_limit' | 'permission_overwrites' | 'parent_id'> {}
+
 /** https://discord.com/developers/docs/resources/guild#guild-object-guild-structure */
 export interface Guild {
   id: snowflake;
@@ -262,32 +264,32 @@ export interface Embed {
     height?: number
     width?: number
   }
-  
+
   thumbnail?: {
     url?: string
     proxy_url?: string
     height?: number
     width?: number
   }
-  
+
   footer?: {
     text: string;
     icon_url?: string;
     proxy_icon_url?: string;
   }
-  
+
   author?: {
     name?: string;
     url?: string;
     icon_url?: string;
     proxy_icon_url?: string;
   }
-  
+
   provider?: {
     name?: string;
     url?: string;
   }
-  
+
   fields?: {
     name: string
     value: string
@@ -349,6 +351,10 @@ export interface GuildMember {
   mute: boolean;
   pending?: boolean;
   permissions?: string
+}
+
+export interface ModifyGuildMember extends Pick<GuildMember, 'nick' | 'roles' | 'mute' | 'deaf'> {
+  channel_id: snowflake
 }
 
 /** https://discord.com/developers/docs/resources/webhook#execute-webhook-jsonform-params */
