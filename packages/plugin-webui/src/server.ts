@@ -10,18 +10,20 @@ import type PluginVue from '@vitejs/plugin-vue'
 
 Context.delegate('webui')
 
-export interface Config extends WebAdapter.Config, Profile.Config, Meta.Config, Registry.Config, Statistics.Config {
+interface BaseConfig {
   title?: string
-  selfUrl?: string
-  uiPath?: string
   devMode?: boolean
+  uiPath?: string
+  whitelist?: string[]
 }
 
-export interface ClientConfig {
-  title: string
-  uiPath: string
+export interface Config extends BaseConfig, WebAdapter.Config, Profile.Config, Meta.Config, Registry.Config, Statistics.Config {
+  title?: string
+  selfUrl?: string
+}
+
+export interface ClientConfig extends Required<BaseConfig> {
   endpoint: string
-  devMode: boolean
   extensions: string[]
 }
 
@@ -42,11 +44,6 @@ export class WebServer {
 
   private vite: Vite.ViteDevServer
   private readonly [Context.current]: Context
-
-  static whitelist = [
-    'http://gchat.qpic.cn/',
-    'http://c2cpicdw.qpic.cn',
-  ]
 
   constructor(private ctx: Context, public config: Config) {
     this.root = resolve(__dirname, '..', config.devMode ? 'client' : 'dist')
@@ -75,7 +72,7 @@ export class WebServer {
   }
 
   private async start() {
-    const { uiPath, apiPath } = this.config
+    const { uiPath, apiPath, whitelist } = this.config
     await Promise.all([this.createVite(), this.createAdapter()])
 
     this.ctx.router.get(uiPath + '(/.+)*', async (ctx) => {
@@ -106,7 +103,7 @@ export class WebServer {
     })
 
     this.ctx.router.get(apiPath + '/assets/:url', async (ctx) => {
-      if (!WebServer.whitelist.some(prefix => ctx.params.url.startsWith(prefix))) {
+      if (!whitelist.some(prefix => ctx.params.url.startsWith(prefix))) {
         console.log(ctx.params.url)
         return ctx.status = 403
       }
@@ -117,12 +114,12 @@ export class WebServer {
 
   private async transformHtml(template: string) {
     if (this.vite) template = await this.vite.transformIndexHtml(this.config.uiPath, template)
-    const { apiPath, uiPath, devMode, selfUrl, title } = this.config
+    const { apiPath, uiPath, devMode, selfUrl, title, whitelist } = this.config
     const endpoint = selfUrl + apiPath
     const extensions = Object.entries(this.entries).map(([name, filename]) => {
       return this.config.devMode ? '/vite/@fs' + filename : `./${name}`
     })
-    const global: ClientConfig = { title, uiPath, endpoint, devMode, extensions }
+    const global: ClientConfig = { title, uiPath, endpoint, devMode, extensions, whitelist }
     const headInjection = `<script>KOISHI_CONFIG = ${JSON.stringify(global)}</script>`
     return template.replace('</title>', '</title>' + headInjection)
   }

@@ -27,7 +27,7 @@ const cqTypes = {
   card: '卡片消息',
 }
 
-interface Message {
+export interface Message {
   avatar?: string
   content?: string
   abstract?: string

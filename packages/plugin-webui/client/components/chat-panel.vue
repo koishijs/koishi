@@ -1,11 +1,14 @@
 <template>
   <k-card class="k-chat-panel">
     <div class="k-chat-body" ref="body">
-      <div class="k-chat-message" v-for="(message, index) in messages" :key="index">
+      <div class="k-chat-message" v-for="(message, index) in messages" :key="index" @click="$emit('click', message)">
         <slot v-bind="message"/>
       </div>
     </div>
-    <k-input v-model="text" @enter="onEnter" @paste="onPaste"></k-input>
+    <div class="k-chat-footer">
+      <slot name="footer"/>
+      <k-input v-model="text" @enter="onEnter" @paste="onPaste"/>
+    </div>
   </k-card>
 </template>
 
@@ -14,7 +17,7 @@
 import { ref, watch, defineProps, onMounted, nextTick, defineEmit } from 'vue'
 import { segment } from '~/client'
 
-const emit = defineEmit(['enter'])
+const emit = defineEmit(['send', 'click'])
 const props = defineProps<{ messages: any[], pinned?: boolean }>()
 
 const text = ref('')
@@ -35,7 +38,7 @@ watch(props.messages, () => {
 
 function onEnter() {
   if (!text.value) return
-  emit('enter', text.value)
+  emit('send', text.value)
   text.value = ''
 }
 
@@ -46,7 +49,7 @@ async function onPaste(event: ClipboardEvent) {
     const file = item.getAsFile()
     const reader  = new FileReader()
     reader.addEventListener('load', function () {
-      emit('enter', segment.image('base64://' + reader.result.slice(22)))
+      emit('send', segment.image('base64://' + reader.result.slice(22)))
     }, false)
     reader.readAsDataURL(file)
   }
@@ -62,12 +65,13 @@ $padding: 1.5rem;
   height: 100%;
   position: relative;
 
+  .k-card-body {
+    display: flex;
+    flex-direction: column;
+    height: -webkit-fill-available;
+  }
+
   .k-chat-body {
-    position: absolute;
-    top: $padding;
-    left: $padding;
-    right: $padding;
-    bottom: 2rem + $padding * 2;
     overflow-x: visible;
     overflow-y: auto;
   }
@@ -83,10 +87,8 @@ $padding: 1.5rem;
   }
 
   .k-input {
-    position: absolute;
-    bottom: $padding;
-    left: $padding;
-    right: $padding;
+    padding-top: 1rem;
+    width: -webkit-fill-available;
   }
 }
 

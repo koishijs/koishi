@@ -1,5 +1,5 @@
 <template>
-  <k-chat-panel class="page-chat" :messages="messages" pinned>
+  <k-chat-panel class="page-chat" :messages="messages" pinned @click="handleClick" @send="handleSend">
     <template #default="{ channelName, username, timestamp, content }">
       <div class="header">
         <span class="channel">{{ channelName || '私聊' }}</span>
@@ -8,23 +8,37 @@
       </div>
       <k-message :content="content"/>
     </template>
+    <template #footer v-if="activeMessage">
+      发送到频道：{{ activeMessage.channelName }}
+    </template>
   </k-chat-panel>
 </template>
 
 <script lang="ts" setup>
 
-import { receive, storage } from '~/client'
+import { receive, storage, send, user } from '~/client'
+import { ref } from 'vue'
+import type { Message } from '../src'
 
-interface Message {
-  username: string
-  content: string
-}
-
+const pinned = ref(true)
+const activeMessage = ref<Message>()
 const messages = storage.create<Message[]>('chat', [])
 
 receive('chat', (body) => {
   messages.value.push(body)
 })
+
+function handleClick(message: Message) {
+  activeMessage.value = message
+}
+
+function handleSend(content: string) {
+  if (!activeMessage.value) return
+  pinned.value = false
+  const { platform, selfId, channelId } = activeMessage.value
+  const { token, id } = user.value
+  send('chat', { token, id, content, platform, selfId, channelId })
+}
 
 function formatDateTime(timestamp: number) {
   const date = new Date(timestamp)

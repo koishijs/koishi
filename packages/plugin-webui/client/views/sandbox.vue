@@ -1,5 +1,5 @@
 <template>
-  <k-chat-panel class="sandbox" :messages="messages" @enter="sendSandbox" :pinned="pinned">
+  <k-chat-panel class="sandbox" :messages="messages" @send="sendSandbox" :pinned="pinned">
     <template #default="{ from, content }">
       <k-message :class="from" :content="content"/>
     </template>
