@@ -155,12 +155,12 @@ export class DiscordBot extends Bot<'discord'> {
     })
   }
 
-  async getMessageFromServer(channelId: string, messageId: string) {
+  async $getMessage(channelId: string, messageId: string) {
     return this.request<DC.Message>('GET', `/channels/${channelId}/messages/${messageId}`)
   }
 
   async getMessage(channelId: string, messageId: string): Promise<MessageInfo> {
-    const msg = await this.getMessageFromServer(channelId, messageId)
+    const msg = await this.$getMessage(channelId, messageId)
     const result: MessageInfo = {
       messageId: msg.id,
       channelId: msg.channel_id,
@@ -172,7 +172,7 @@ export class DiscordBot extends Bot<'discord'> {
     }
     result.author.nickname = msg.member?.nick
     if (msg.message_reference) {
-      const quoteMsg = await this.getMessageFromServer(msg.message_reference.channel_id, msg.message_reference.message_id)
+      const quoteMsg = await this.$getMessage(msg.message_reference.channel_id, msg.message_reference.message_id)
       result.quote = await adaptMessage(this, quoteMsg)
     }
     return result
