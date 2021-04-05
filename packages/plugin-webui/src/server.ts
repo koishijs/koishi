@@ -1,29 +1,33 @@
-import { Context, noop, snakeCase } from 'koishi-core'
+import { Context, noop } from 'koishi-core'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import { WebAdapter } from './adapter'
 import { DataSource, Profile, Meta, Registry } from './data'
 import { Statistics } from './stats'
+import axios from 'axios'
 import type * as Vite from 'vite'
 import type PluginVue from '@vitejs/plugin-vue'
 
 Context.delegate('webui')
 
-export interface Config extends WebAdapter.Config, Profile.Config, Meta.Config, Registry.Config, Statistics.Config {
+interface BaseConfig {
+  title?: string
+  devMode?: boolean
+  uiPath?: string
+  whitelist?: string[]
+}
+
+export interface Config extends BaseConfig, WebAdapter.Config, Profile.Config, Meta.Config, Registry.Config, Statistics.Config {
   title?: string
   selfUrl?: string
-  uiPath?: string
-  devMode?: boolean
+}
+
+export interface ClientConfig extends Required<BaseConfig> {
+  endpoint: string
+  extensions: string[]
 }
 
 export namespace WebServer {
-  export interface Global {
-    title: string
-    uiPath: string
-    endpoint: string
-    devMode: boolean
-  }
-
   export interface Sources extends Record<string, DataSource> {
     meta: Meta
     stats: Statistics
@@ -35,7 +39,6 @@ export namespace WebServer {
 export class WebServer {
   root: string
   adapter: WebAdapter
-  global: WebServer.Global
   sources: WebServer.Sources
   entries: Record<string, string> = {}
 
@@ -44,9 +47,6 @@ export class WebServer {
 
   constructor(private ctx: Context, public config: Config) {
     this.root = resolve(__dirname, '..', config.devMode ? 'client' : 'dist')
-    const { apiPath, uiPath, devMode, selfUrl, title } = config
-    const endpoint = selfUrl + apiPath
-    this.global = { title, uiPath, endpoint, devMode }
     this.sources = {
       profile: new Profile(ctx, config),
       meta: new Meta(ctx, config),
@@ -72,7 +72,7 @@ export class WebServer {
   }
 
   private async start() {
-    const { uiPath } = this.config
+    const { uiPath, apiPath, whitelist } = this.config
     await Promise.all([this.createVite(), this.createAdapter()])
 
     this.ctx.router.get(uiPath + '(/.+)*', async (ctx) => {
@@ -101,22 +101,27 @@ export class WebServer {
       ctx.type = 'html'
       ctx.body = await this.transformHtml(template)
     })
+
+    this.ctx.router.get(apiPath + '/assets/:url', async (ctx) => {
+      if (!whitelist.some(prefix => ctx.params.url.startsWith(prefix))) {
+        console.log(ctx.params.url)
+        return ctx.status = 403
+      }
+      const { data } = await axios.get(ctx.params.url, { responseType: 'stream' })
+      return ctx.body = data
+    })
   }
 
   private async transformHtml(template: string) {
-    if (this.vite) {
-      template = await this.vite.transformIndexHtml(this.config.uiPath, template)
-    }
-    const headInjection = '<script>' + Object.entries(this.global).map(([key, value]) => {
-      return `window.KOISHI_${snakeCase(key).toUpperCase()} = ${JSON.stringify(value)};`
-    }).join('\n') + '</script>'
-    const bodyInjection = Object.entries(this.entries).map(([name, filename]) => {
-      const src = this.config.devMode ? '/vite/@fs' + filename : `./assets/${name}`
-      return `<script type="module" src="${src}"></script>`
-    }).join('\n')
-    return template
-      .replace('</title>', '</title>' + headInjection)
-      .replace('</body>', bodyInjection + '</body>')
+    if (this.vite) template = await this.vite.transformIndexHtml(this.config.uiPath, template)
+    const { apiPath, uiPath, devMode, selfUrl, title, whitelist } = this.config
+    const endpoint = selfUrl + apiPath
+    const extensions = Object.entries(this.entries).map(([name, filename]) => {
+      return this.config.devMode ? '/vite/@fs' + filename : `./${name}`
+    })
+    const global: ClientConfig = { title, uiPath, endpoint, devMode, extensions, whitelist }
+    const headInjection = `<script>KOISHI_CONFIG = ${JSON.stringify(global)}</script>`
+    return template.replace('</title>', '</title>' + headInjection)
   }
 
   private async createAdapter() {

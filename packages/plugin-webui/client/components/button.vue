@@ -3,7 +3,6 @@
     :title="disabled ? '' : title"
     :class="['k-button', type, { solid, round, frameless }]"
     :disabled="disabled"
-    @click.stop="$emit('click')"
   >
     <slot/>
   </button>

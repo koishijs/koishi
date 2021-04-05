@@ -110,7 +110,7 @@ export default async function prepare() {
       return fs.writeFile(tsconfigPath, json5.stringify({ compilerOptions }, null, 2))
     }),
     readSerialized(cachePath).then((data) => {
-      if (data.tag === CACHE_TAG && data.v8tag === V8_TAG) {
+      if (data && data.tag === CACHE_TAG && data.v8tag === V8_TAG) {
         Object.assign(cachedFiles, data.files)
       }
     }),

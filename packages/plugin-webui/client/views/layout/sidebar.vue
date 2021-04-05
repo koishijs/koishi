@@ -20,7 +20,7 @@ import type { RouteMeta } from 'vue-router'
 
 function isShown(meta: RouteMeta) {
   if (meta.hidden) return false
-  if (meta.authority && meta.authority > 1 && meta.authority > user.value?.authority) return false
+  if (meta.authority > 1 && !(meta.authority <= user.value?.authority)) return false
   return true
 }
 

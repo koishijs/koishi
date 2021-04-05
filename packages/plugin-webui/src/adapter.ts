@@ -7,7 +7,7 @@ const states: Record<string, [string, number, SocketChannel]> = {}
 
 const TOKEN_TIMEOUT = Time.minute * 10
 
-class SocketChannel {
+export class SocketChannel {
   readonly app: App
   readonly id = Random.uuid()
 

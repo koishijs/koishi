@@ -1,5 +1,4 @@
-import { User, Database, Context, Command, Argv, TableType, FieldCollector } from 'koishi-core'
-import { defineEnumProperty } from 'koishi-utils'
+import { User, Database, Context, Command, Argv, TableType, FieldCollector, defineEnumProperty } from 'koishi-core'
 import {} from 'koishi-plugin-mysql'
 import Achievement from './achv'
 

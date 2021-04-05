@@ -1,6 +1,7 @@
 /* eslint-disable no-undef */
 
 import { createApp, defineAsyncComponent } from 'vue'
+import { START_LOCATION } from 'vue-router'
 import Card from './components/card.vue'
 import Collapse from './components/collapse.vue'
 import Button from './components/button.vue'
@@ -79,18 +80,25 @@ receive('expire', () => {
   router.push('/login')
 })
 
-router.beforeEach((route) => {
+router.beforeEach((route, from) => {
+  if (from === START_LOCATION && !route.matched.length) {
+    loadingExtensions.then(() => router.replace(route))
+  }
   if (route.meta.authority && !user.value) {
-    return '/login'
+    return history.state.forward === '/login' ? '/' : '/login'
   }
 })
 
 router.afterEach((route) => {
   if (typeof route.name === 'string') {
-    document.title = `${route.name} | ${KOISHI_TITLE}`
+    document.title = `${route.name} | ${KOISHI_CONFIG.title}`
   }
 })
 
 start()
 
-app.mount('#app')
+const loadingExtensions = Promise.all(KOISHI_CONFIG.extensions.map(path => {
+  return import(/* @vite-ignore */ path)
+}))
+
+loadingExtensions.then(() => app.mount('#app'))

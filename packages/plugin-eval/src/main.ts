@@ -1,17 +1,9 @@
 import { App, Command, Channel, Argv as IArgv, User } from 'koishi-core'
 import { Logger, Observed, pick, union } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
-import { WorkerAPI, WorkerConfig, WorkerData, WorkerResponse, ScopeData } from './worker'
+import { WorkerAPI, WorkerConfig, WorkerData, ScopeData } from './worker'
 import { expose, Remote, wrap } from './transfer'
 import { resolve } from 'path'
-
-declare module 'koishi-core' {
-  interface EventMap {
-    'worker/start'(): void | Promise<void>
-    'worker/ready'(response: WorkerResponse): void
-    'worker/exit'(): void
-  }
-}
 
 const logger = new Logger('eval')
 
@@ -19,7 +11,6 @@ export interface MainConfig extends Trap.Config {
   prefix?: string
   authority?: number
   timeout?: number
-  maxLogs?: number
   resourceLimits?: ResourceLimits
   dataKeys?: (keyof WorkerData)[]
   gitRemote?: string
@@ -126,7 +117,7 @@ export namespace Trap {
       } finally {
         if (inactive) delete app._sessions[id]
       }
-    })
+    }, true)
   }
 }
 
@@ -149,12 +140,10 @@ export class MainAPI {
     return result
   }
 
-  async send(uuid: string, message: string) {
+  async send(uuid: string, content: string) {
     const session = this.getSession(uuid)
-    if (!session._sendCount) session._sendCount = 0
-    if (this.app.worker.config.maxLogs > session._sendCount++) {
-      return await session.sendQueued(message)
-    }
+    content = await this.app.waterfall('eval/before-send', content, session)
+    if (content) return await session.sendQueued(content)
   }
 
   async updateUser(uuid: string, data: Partial<User>) {
@@ -191,7 +180,7 @@ export class EvalWorker {
 
   async start() {
     this.state = State.opening
-    await this.app.parallel('worker/start')
+    await this.app.parallel('eval/before-start')
     process.on('beforeExit', this.beforeExit)
 
     let index = 0
@@ -217,13 +206,12 @@ export class EvalWorker {
     this.remote = wrap(this.worker)
 
     await this.remote.start().then((response) => {
-      this.app.emit('worker/ready', response)
+      this.app.emit('eval/start', response)
       logger.debug('worker started')
       this.state = State.open
 
       this.worker.on('exit', (code) => {
         this.state = State.close
-        this.app.emit('worker/exit')
         logger.debug('exited with code', code)
         if (!this.prevent) this.promise = this.start()
       })

@@ -1,5 +1,4 @@
-import { Context, User } from 'koishi-core'
-import { isInteger } from 'koishi-utils'
+import { Context, User, isInteger } from 'koishi-core'
 import { Show } from './utils'
 import Achievement from './achv'
 import Affinity from './affinity'

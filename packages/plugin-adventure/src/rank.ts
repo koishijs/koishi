@@ -1,5 +1,4 @@
-import { User, Context, Session, GroupMemberInfo, Database } from 'koishi-core'
-import { paramCase, camelCase, isInteger } from 'koishi-utils'
+import { User, Context, Session, GroupMemberInfo, Database, paramCase, camelCase, isInteger } from 'koishi-core'
 import {} from 'koishi-plugin-mysql'
 
 type ExtendedUser<T extends User.Field = User.Field> = Pick<User, T> & { _value: number }
