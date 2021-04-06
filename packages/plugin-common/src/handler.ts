@@ -101,17 +101,17 @@ async function getHandlerResult(handler: RequestHandler, session: Session, prefe
 export function verify(ctx: Context, config: HandlerConfig) {
   ctx.on('friend-request', async (session) => {
     const result = await getHandlerResult(config.onFriendRequest, session, true)
-    return session.bot.handleFriendRequest(session.messageId, ...result)
+    if (result) return session.bot.handleFriendRequest(session.messageId, ...result)
   })
 
   ctx.on('group-request', async (session) => {
     const result = await getHandlerResult(config.onGroupRequest, session, false)
-    return session.bot.handleGroupRequest(session.messageId, ...result)
+    if (result) return session.bot.handleGroupRequest(session.messageId, ...result)
   })
 
   ctx.on('group-member-request', async (session) => {
     const result = await getHandlerResult(config.onGroupMemberRequest, session, false)
-    return session.bot.handleGroupMemberRequest(session.messageId, ...result)
+    if (result) return session.bot.handleGroupMemberRequest(session.messageId, ...result)
   })
 }
 

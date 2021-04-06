@@ -16,7 +16,7 @@ export function broadcast(ctx: Context) {
   ctx.select('database')
     .command('common/broadcast <message:text>', '全服广播', { authority: 4 })
     .option('forced', '-f  无视 silent 标签进行广播')
-    .option('only', '-o  仅向当前 Bot 负责的群进行广播')
+    .option('only', '-o  仅向当前账号负责的群进行广播')
     .action(async ({ options, session }, message) => {
       if (!message) return template('common.expect-text')
       if (!options.only) {
@@ -36,7 +36,7 @@ export function broadcast(ctx: Context) {
 
 export function contextify(ctx: Context) {
   ctx.select('database')
-    .command('common/contextify <message:text>', '在特定上下文中触发指令', { authority: 3 })
+    .command('common/contextify <command:text>', '在特定上下文中触发指令', { authority: 3 })
     .alias('ctxf')
     .userFields(['authority'])
     .option('user', '-u [id:user]  使用用户私聊上下文')
