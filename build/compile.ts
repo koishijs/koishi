@@ -23,7 +23,7 @@ const displayWarning = display(yellow('warning:'))
 let code = 0
 
 function bundle(options: BuildOptions) {
-  for (const path of options.entryPoints) {
+  for (const path of options.entryPoints as string[]) {
     if (process.env.CI) console.log('entry:', path)
   }
   return build(options).then(({ warnings }) => {

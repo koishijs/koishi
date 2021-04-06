@@ -32,7 +32,10 @@ function tryCallback<T>(callback: () => T) {
   }
 }
 
-const config: AppConfig = tryCallback(() => require(configFile))
+const config: AppConfig = tryCallback(() => {
+  const exports = require(configFile)
+  return exports.__esModule ? exports.default : exports
+})
 
 if (!config) {
   throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
