@@ -45,9 +45,9 @@ function formatDateTime(timestamp: number) {
   const now = new Date()
   let output = `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`
   if (date.toLocaleDateString() === now.toLocaleDateString()) return output
-  output = `${date.getMonth() + 1} 月 ${date.getDate()} 日 ${output}`
+  output = `${date.getMonth() + 1}-${date.getDate()} ${output}`
   if (date.getFullYear() === now.getFullYear()) return output
-  return `${date.getFullYear()} 年 ${output}`
+  return `${date.getFullYear()}-${output}`
 }
 
 </script>
@@ -56,12 +56,14 @@ function formatDateTime(timestamp: number) {
 
 .page-chat {
   .header {
+    color: #72767d;
     span {
       margin-right: 0.5rem;
     }
   }
 
   .username {
+    color: rgba(244, 244, 245, 0.8);
     font-weight: bold;
     line-height: 1.375rem;
   }

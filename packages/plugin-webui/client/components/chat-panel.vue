@@ -63,7 +63,6 @@ $padding: 1.5rem;
 
 .k-chat-panel {
   height: 100%;
-  position: relative;
 
   .k-card-body {
     display: flex;
