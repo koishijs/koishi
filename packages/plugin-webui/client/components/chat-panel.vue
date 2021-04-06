@@ -61,10 +61,11 @@ async function onPaste(event: ClipboardEvent) {
 
 $padding: 1.5rem;
 
-.k-chat-panel {
+.k-card.k-chat-panel {
   height: 100%;
 
   .k-card-body {
+    padding: 1rem 0.5rem;
     display: flex;
     flex-direction: column;
     height: -webkit-fill-available;
@@ -75,7 +76,15 @@ $padding: 1.5rem;
     overflow-y: auto;
   }
 
+  .k-chat-footer {
+    padding: 0 0.5rem;
+  }
+
   .k-chat-message {
+    position: relative;
+    line-height: 1.5rem;
+    padding: 0 0.5rem;
+
     &:hover {
       background-color: rgba(4, 4, 5, 0.2);
     }

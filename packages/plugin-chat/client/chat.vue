@@ -1,6 +1,7 @@
 <template>
   <k-chat-panel class="page-chat" :messages="messages" pinned @click="handleClick" @send="handleSend">
-    <template #default="{ channelName, username, timestamp, content }">
+    <template #default="{ avatar, channelName, username, timestamp, content }">
+      <img class="avatar" :src="avatar"/>
       <div class="header">
         <span class="channel">{{ channelName || '私聊' }}</span>
         <span class="username">{{ username }}</span>
@@ -54,8 +55,19 @@ function formatDateTime(timestamp: number) {
 
 <style lang="scss">
 
+$avatarSize: 2.5rem;
+
 .page-chat {
+  .avatar {
+    position: absolute;
+    margin-top: 4px;
+    width: $avatarSize;
+    height: $avatarSize;
+    border-radius: $avatarSize;
+  }
+
   .header {
+    padding-left: $avatarSize + 1rem;
     color: #72767d;
     span {
       margin-right: 0.5rem;
@@ -70,6 +82,10 @@ function formatDateTime(timestamp: number) {
 
   .timestamp {
     color: #72767d;
+  }
+
+  .k-message {
+    padding-left: $avatarSize + 1rem;
   }
 }
 

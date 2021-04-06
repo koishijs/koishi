@@ -22,8 +22,8 @@ defineProps<{
 
 <style lang="scss" scoped>
 
-$paddingX: 1.2rem;
-$paddingY: 1.6rem;
+$paddingX: 1.25rem;
+$paddingY: 1.5rem;
 
 .k-card {
   margin: 0 auto 2rem;
