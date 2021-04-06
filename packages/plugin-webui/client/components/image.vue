@@ -1,5 +1,5 @@
 <template>
-  <img :src="normalizeUrl(src)" @click="handleClick"/>
+  <img class="k-image" :src="normalizeUrl(src)" @click="handleClick"/>
 </template>
 
 <script lang="ts" setup>
