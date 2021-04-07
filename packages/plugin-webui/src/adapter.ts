@@ -3,13 +3,14 @@ import { Profile } from './data'
 import WebSocket from 'ws'
 
 const logger = new Logger('status')
-const states: Record<string, [string, number, SocketChannel]> = {}
+const states: Record<string, [string, number, SocketHandle]> = {}
 
 const TOKEN_TIMEOUT = Time.minute * 10
 
-class SocketChannel {
+export class SocketHandle {
   readonly app: App
   readonly id = Random.uuid()
+  authority: number
 
   constructor(public readonly adapter: WebAdapter, public socket: WebSocket) {
     this.app = adapter.app
@@ -19,64 +20,13 @@ class SocketChannel {
     this.socket.send(JSON.stringify({ type, body }))
   }
 
-  async $token({ platform, userId }) {
-    const user = await this.app.database.getUser(platform, userId, ['name'])
-    if (!user) return this.send('login', { message: '找不到此账户。' })
-    const id = `${platform}:${userId}`
-    const token = Random.uuid()
-    const expire = Date.now() + TOKEN_TIMEOUT
-    states[id] = [token, expire, this]
-    setTimeout(() => {
-      if (states[id]?.[1] > Date.now()) delete states[id]
-    }, TOKEN_TIMEOUT)
-    this.send('login', { token, name: user.name })
-  }
-
   async validate<T extends User.Field>(id: string, token: string, fields: T[] = []) {
-    const user = await this.app.database.getUser('id', id, ['token', 'expire', ...fields])
+    const user = await this.app.database.getUser('id', id, ['token', 'expire', 'authority', ...fields])
     if (!user || token !== user.token || user.expire <= Date.now()) {
       return this.send('expire')
     }
+    this.authority = user.authority
     return user
-  }
-
-  async $password({ id, token, password }) {
-    const user = await this.validate(id, token, ['password'])
-    if (!user || password === user.password) return
-    await this.app.database.setUser('id', id, { password })
-  }
-
-  async $login({ username, password }) {
-    const user = await this.app.database.getUser('name', username, ['password', 'authority', 'id', 'expire', 'token'])
-    if (!user || user.password !== password) {
-      return this.send('login', { message: '用户名或密码错误。' })
-    }
-    user.token = Random.uuid()
-    user.expire = Date.now() + this.adapter.config.expiration
-    await this.app.database.setUser('name', username, pick(user, ['token', 'expire']))
-    this.send('user', omit(user, ['password']))
-  }
-
-  async $sandbox({ id, token, content }) {
-    const user = await this.validate(id, token, ['name'])
-    if (!user) return
-    content = await this.app.transformAssets(content)
-    this.send('sandbox:user', content)
-    const session = new Session(this.app, {
-      platform: 'web',
-      userId: id,
-      content,
-      channelId: this.id,
-      selfId: 'sandbox',
-      type: 'message',
-      subtype: 'private',
-      author: {
-        userId: 'id',
-        username: user.name,
-      },
-    })
-    session.platform = 'id' as never
-    this.adapter.dispatch(session)
   }
 }
 
@@ -90,7 +40,7 @@ export class SandboxBot extends Bot<'web'> {
   }
 
   async sendMessage(id: string, content: string) {
-    this.adapter.channels[id]?.send('sandbox:bot', content)
+    this.adapter.handles[id]?.send('sandbox:bot', content)
     return Random.uuid()
   }
 }
@@ -100,12 +50,16 @@ export namespace WebAdapter {
     apiPath?: string
     expiration?: number
   }
+
+  export type Listener = (this: SocketHandle, payload: any) => Promise<void>
 }
 
 export class WebAdapter extends Adapter<'web'> {
-  server: WebSocket.Server
-  channels: Record<string, SocketChannel> = {}
-  sandbox = this.create({}, SandboxBot)
+  readonly server: WebSocket.Server
+  readonly handles: Record<string, SocketHandle> = {}
+  readonly sandbox = this.create({}, SandboxBot)
+
+  static readonly listeners: Record<string, WebAdapter.Listener> = {}
 
   constructor(ctx: Context, public config: WebAdapter.Config) {
     super(ctx.app)
@@ -118,7 +72,7 @@ export class WebAdapter extends Adapter<'web'> {
     ctx.self('sandbox')
       .command('clear', '清空消息列表')
       .action(({ session }) => {
-        this.channels[session.channelId].send('sandbox:clear')
+        this.handles[session.channelId].send('sandbox:clear')
       })
 
     ctx.all().middleware(async (session, next) => {
@@ -136,11 +90,11 @@ export class WebAdapter extends Adapter<'web'> {
 
   async start() {
     this.server.on('connection', async (socket) => {
-      const channel = new SocketChannel(this, socket)
-      this.channels[channel.id] = channel
+      const channel = new SocketHandle(this, socket)
+      this.handles[channel.id] = channel
 
       socket.on('close', () => {
-        delete this.channels[channel.id]
+        delete this.handles[channel.id]
         for (const id in states) {
           if (states[id][2] === channel) delete states[id]
         }
@@ -148,9 +102,9 @@ export class WebAdapter extends Adapter<'web'> {
 
       socket.on('message', async (data) => {
         const { type, body } = JSON.parse(data.toString())
-        const method = channel['$' + type]
+        const method = WebAdapter.listeners[type]
         if (method) {
-          method.call(channel, body)
+          await method.call(channel, body)
         } else {
           logger.info(type, body)
         }
@@ -170,4 +124,61 @@ export class WebAdapter extends Adapter<'web'> {
       remove(this.app.bots, bot as Bot)
     }
   }
+}
+
+WebAdapter.listeners.validate = async function ({ id, token }) {
+  await this.validate(id, token)
+}
+
+WebAdapter.listeners.token = async function ({ platform, userId }) {
+  const user = await this.app.database.getUser(platform, userId, ['name'])
+  if (!user) return this.send('login', { message: '找不到此账户。' })
+  const id = `${platform}:${userId}`
+  const token = Random.uuid()
+  const expire = Date.now() + TOKEN_TIMEOUT
+  states[id] = [token, expire, this]
+  setTimeout(() => {
+    if (states[id]?.[1] > Date.now()) delete states[id]
+  }, TOKEN_TIMEOUT)
+  this.send('login', { token, name: user.name })
+}
+
+WebAdapter.listeners.password = async function ({ id, token, password }) {
+  const user = await this.validate(id, token, ['password'])
+  if (!user || password === user.password) return
+  await this.app.database.setUser('id', id, { password })
+}
+
+WebAdapter.listeners.login = async function ({ username, password }) {
+  const user = await this.app.database.getUser('name', username, ['password', 'authority', 'id', 'expire', 'token'])
+  if (!user || user.password !== password) {
+    return this.send('login', { message: '用户名或密码错误。' })
+  }
+  user.token = Random.uuid()
+  user.expire = Date.now() + this.adapter.config.expiration
+  await this.app.database.setUser('name', username, pick(user, ['token', 'expire']))
+  this.send('user', omit(user, ['password']))
+  this.authority = user.authority
+}
+
+WebAdapter.listeners.sandbox = async function ({ id, token, content }) {
+  const user = await this.validate(id, token, ['name'])
+  if (!user) return
+  content = await this.app.transformAssets(content)
+  this.send('sandbox:user', content)
+  const session = new Session(this.app, {
+    platform: 'web',
+    userId: id,
+    content,
+    channelId: this.id,
+    selfId: 'sandbox',
+    type: 'message',
+    subtype: 'private',
+    author: {
+      userId: 'id',
+      username: user.name,
+    },
+  })
+  session.platform = 'id' as never
+  this.adapter.dispatch(session)
 }

@@ -40,7 +40,7 @@ export namespace Plugin {
 
   export interface Packages {}
 
-  export type Teleporter<D extends readonly (keyof Packages)[]> = (...modules: From<D>) => void
+  export type Teleporter<D extends readonly (keyof Packages)[]> = (ctx: Context, ...modules: From<D>) => void
 
   type From<D extends readonly unknown[]> = D extends readonly [infer L, ...infer R]
     ? [L extends keyof Packages ? Packages[L] : unknown, ...From<R>]
@@ -161,14 +161,14 @@ export class Context {
     }
   }
 
-  private teleport(modules: any[], callback: Plugin.Teleporter<never[]>) {
+  private teleport(modules: any[], callback: Plugin.Teleporter<any>) {
     const states: Plugin.State[] = []
     for (const module of modules) {
       const state = this.app.registry.get(module)
       if (!state) return
       states.push(state)
     }
-    const plugin = () => callback(...modules as [])
+    const plugin = (ctx: Context) => callback(ctx, ...modules as [])
     const dispose = () => this.dispose(plugin)
     this.plugin(plugin)
     states.every(state => state.disposables.push(dispose))

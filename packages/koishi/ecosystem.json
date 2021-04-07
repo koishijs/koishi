@@ -8,7 +8,7 @@
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-onebot": {
-    "version": "3.0.5",
+    "version": "3.0.6",
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-adapter-telegram": {
@@ -20,7 +20,7 @@
     "description": "Tomon adapter for Koishi"
   },
   "koishi-plugin-adventure": {
-    "version": "0.1.16",
+    "version": "0.2.0",
     "description": "Adventure Game for Koishi"
   },
   "koishi-plugin-assets": {
@@ -28,7 +28,7 @@
     "description": "Asset provider plugin for Koishi"
   },
   "koishi-plugin-chat": {
-    "version": "0.1.2",
+    "version": "0.2.0",
     "description": "Chat plugin for Koishi"
   },
   "koishi-plugin-chess": {
@@ -36,7 +36,7 @@
     "description": "Chess Plugin for Koishi"
   },
   "koishi-plugin-common": {
-    "version": "4.2.1",
+    "version": "4.2.2",
     "description": "Common plugins for Koishi"
   },
   "koishi-plugin-dice": {
@@ -79,7 +79,7 @@
     "description": "Schedule plugin for Koishi"
   },
   "koishi-plugin-teach": {
-    "version": "2.1.1",
+    "version": "2.1.2",
     "description": "Teach plugin for Koishi"
   },
   "koishi-plugin-tools": {
@@ -87,7 +87,7 @@
     "description": "Some simple tools for Koishi"
   },
   "koishi-plugin-webui": {
-    "version": "4.0.2",
+    "version": "4.1.0",
     "description": "Show Web UI of Koishi"
   }
 }

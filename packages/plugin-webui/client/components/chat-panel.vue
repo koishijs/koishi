@@ -1,11 +1,14 @@
 <template>
   <k-card class="k-chat-panel">
-    <div class="k-chat-panel-body" ref="body">
-      <template v-for="(message, index) in messages" :key="index">
+    <div class="k-chat-body" ref="body">
+      <div class="k-chat-message" v-for="(message, index) in messages" :key="index" @click="$emit('click', message)">
         <slot v-bind="message"/>
-      </template>
+      </div>
     </div>
-    <k-input v-model="text" @enter="onEnter" @paste="onPaste"></k-input>
+    <div class="k-chat-footer">
+      <slot name="footer"/>
+      <k-input v-model="text" @enter="onEnter" @paste="onPaste"/>
+    </div>
   </k-card>
 </template>
 
@@ -14,7 +17,7 @@
 import { ref, watch, defineProps, onMounted, nextTick, defineEmit } from 'vue'
 import { segment } from '~/client'
 
-const emit = defineEmit(['enter'])
+const emit = defineEmit(['send', 'click'])
 const props = defineProps<{ messages: any[], pinned?: boolean }>()
 
 const text = ref('')
@@ -35,7 +38,7 @@ watch(props.messages, () => {
 
 function onEnter() {
   if (!text.value) return
-  emit('enter', text.value)
+  emit('send', text.value)
   text.value = ''
 }
 
@@ -46,7 +49,7 @@ async function onPaste(event: ClipboardEvent) {
     const file = item.getAsFile()
     const reader  = new FileReader()
     reader.addEventListener('load', function () {
-      emit('enter', segment.image('base64://' + reader.result.slice(22)))
+      emit('send', segment.image('base64://' + reader.result.slice(22)))
     }, false)
     reader.readAsDataURL(file)
   }
@@ -56,25 +59,40 @@ async function onPaste(event: ClipboardEvent) {
 
 <style lang="scss">
 
-.k-chat-panel {
-  height: 100%;
-  position: relative;
+$padding: 1.5rem;
 
-  .k-chat-panel-body {
-    position: absolute;
-    top: 2rem;
-    left: 2rem;
-    right: 2rem;
-    bottom: 6rem;
+.k-card.k-chat-panel {
+  height: 100%;
+
+  .k-card-body {
+    padding: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    height: -webkit-fill-available;
+  }
+
+  .k-chat-body {
     overflow-x: visible;
     overflow-y: auto;
   }
 
+  .k-chat-footer {
+    padding: 0 1rem;
+  }
+
+  .k-chat-message {
+    position: relative;
+    line-height: 1.5rem;
+    padding: 0.25rem 1rem;
+
+    &:hover {
+      background-color: rgba(4, 4, 5, 0.2);
+    }
+  }
+
   .k-input {
-    position: absolute;
-    bottom: 2rem;
-    left: 2rem;
-    right: 2rem;
+    margin-top: 1rem;
+    width: -webkit-fill-available;
   }
 }
 

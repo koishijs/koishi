@@ -1,5 +1,4 @@
-import { Context, getUsage, Session, checkTimer, checkUsage, User } from 'koishi-core'
-import { Random } from 'koishi-utils'
+import { Context, getUsage, Session, checkTimer, checkUsage, User, Random } from 'koishi-core'
 import { Adventurer, ReadonlyUser } from './utils'
 import Affinity from './affinity'
 import Phase from './phase'

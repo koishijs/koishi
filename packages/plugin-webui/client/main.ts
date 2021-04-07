@@ -81,7 +81,7 @@ receive('expire', () => {
 })
 
 router.beforeEach((route, from) => {
-  if (from === START_LOCATION) {
+  if (from === START_LOCATION && !route.matched.length) {
     loadingExtensions.then(() => router.replace(route))
   }
   if (route.meta.authority && !user.value) {

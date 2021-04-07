@@ -2,7 +2,7 @@ import LruCache from 'lru-cache'
 import { distance } from 'fastest-levenshtein'
 import { User, Channel, TableType, Tables } from './database'
 import { Command } from './command'
-import { contain, observe, Logger, defineProperty, Random, template, remove } from 'koishi-utils'
+import { contain, observe, Logger, defineProperty, Random, template, remove, noop } from 'koishi-utils'
 import { Argv } from './parser'
 import { Middleware, NextFunction } from './context'
 import { App } from './app'
@@ -109,6 +109,7 @@ export class Session<
   private _delay?: number
   private _queued: Promise<void>
   private _hooks: (() => void)[]
+  private _promise: Promise<string>
 
   static readonly send = Symbol.for('koishi.session.send')
 
@@ -131,6 +132,25 @@ export class Session<
     return Object.fromEntries(Object.entries(this).filter(([key]) => {
       return !key.startsWith('_') && !key.startsWith('$')
     }))
+  }
+
+  private async _preprocess() {
+    let capture: RegExpMatchArray
+    let content = this.app.options.processMessage(this.content)
+    const pattern = /^\[CQ:(\w+)((,\w+=[^,\]]*)*)\]/
+    if ((capture = this.content.match(pattern)) && capture[1] === 'quote') {
+      content = content.slice(capture[0].length).trimStart()
+      for (const str of capture[2].slice(1).split(',')) {
+        if (!str.startsWith('id=')) continue
+        this.quote = await this.bot.getMessage(this.channelId, str.slice(3)).catch(noop)
+        break
+      }
+    }
+    return content
+  }
+
+  async preprocess() {
+    return this._promise ||= this._preprocess()
   }
 
   get username(): string {

@@ -306,7 +306,7 @@ async function writeConfig(config: any, path: string, type: SourceType) {
   if (type === 'js') {
     output = '// ' + rootComment + '\nmodule.exports = ' + output
   } else if (type === 'ts') {
-    output = '// ' + rootComment + '\nexport = ' + output
+    output = '// ' + rootComment + '\nexport default ' + output
   }
 
   // write to file
