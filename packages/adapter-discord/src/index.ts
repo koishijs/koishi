@@ -18,7 +18,7 @@ declare module 'koishi-core' {
 
   interface Session {
     discord?: {
-      raw: Message
+      raw: any
     }
   }
 
