@@ -4,7 +4,7 @@
 
 <script lang="ts" setup>
 
-import { defineProps, ref } from 'vue'
+import { defineProps } from 'vue'
 import { store } from '~/client'
 
 const props = defineProps<{ src: string }>()

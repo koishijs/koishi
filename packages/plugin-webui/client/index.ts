@@ -93,6 +93,12 @@ export function start() {
   receive('registry', data => registry.value = data)
   receive('stats', data => stats.value = data)
   receive('user', data => user.value = data)
+
+  socket.value.onopen = () => {
+    if (!user.value) return
+    const { id, token } = user.value
+    send('validate', { id, token })
+  }
 }
 
 export function send(type: string, body: any) {

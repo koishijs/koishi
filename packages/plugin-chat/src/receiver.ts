@@ -1,9 +1,7 @@
 import { Bot, Context, Session } from 'koishi-core'
-import { Logger, template, Time, pick, segment } from 'koishi-utils'
+import { Time, pick, segment } from 'koishi-utils'
 
-export interface DebugConfig {
-  includeUsers?: string[]
-  includeChannels?: string[]
+export interface ReceiverConfig {
   refreshUserName?: number
   refreshGroupName?: number
   refreshChannelName?: number
@@ -70,22 +68,12 @@ async function getChannelName(bot: Bot, channelId: string) {
   }
 }
 
-template.set('chat', {
-  send: '[{{ channelName || "私聊" }}] {{ abstract }}',
-  receive: '[{{ channelName || "私聊" }}] {{ username }}: {{ abstract }}',
-})
-
-export default function apply(ctx: Context, config: DebugConfig = {}) {
+export default function apply(ctx: Context, config: ReceiverConfig = {}) {
   const {
     refreshUserName = Time.hour,
     refreshGroupName = Time.hour,
     refreshChannelName = Time.hour,
-    includeUsers,
-    includeChannels,
   } = config
-
-  const logger = new Logger('message')
-  Logger.levels.message = 3
 
   const channelMap: Record<string, [Promise<string>, number]> = {}
   const groupMap: Record<string, [Promise<string>, number]> = {}
@@ -162,24 +150,9 @@ export default function apply(ctx: Context, config: DebugConfig = {}) {
       session.channelName = channelName
       channelMap[cid] = [Promise.resolve(channelName), timestamp]
     }
-    dispatchMessage(session, params, timestamp)
-  }
-
-  async function dispatchMessage(session: Session, params: Message, timestamp: number) {
-    await Promise.all([prepareChannelName, prepareGroupName, prepareAbstract].map(cb => cb(session, params, timestamp)))
-
-    // webui
-    ctx?.webui?.adapter.broadcast('chat', params)
-
-    // logger
-    if (session.subtype === 'private') {
-      if (includeUsers && !includeUsers.includes(session.userId)) return
-    } else {
-      if (includeChannels && !includeChannels.includes(session.channelId)) return
-      const { assignee } = await session.observeChannel(['assignee'])
-      if (assignee !== session.selfId) return
-    }
-    logger.debug(template('chat.' + (session.type === 'message' ? 'receive' : 'send'), params))
+    Promise
+      .all([prepareChannelName, prepareGroupName, prepareAbstract].map(cb => cb(session, params, timestamp)))
+      .then(() => ctx.emit('chat/receive', params, session))
   }
 
   ctx.on('message', handleMessage)
