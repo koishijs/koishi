@@ -44,7 +44,7 @@
     "description": "COC / DND Tools for Koishi"
   },
   "koishi-plugin-eval": {
-    "version": "3.0.0-beta.14",
+    "version": "3.0.0-beta.15",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-github": {
