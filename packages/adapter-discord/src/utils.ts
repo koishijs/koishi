@@ -91,9 +91,6 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.Message, session: P
       session.content += segment('video', { url: embed.video.url, proxy_url: embed.video.proxy_url })
     }
   }
-  session.discord = {
-    embeds: meta.embeds,
-  }
   return session
 }
 
@@ -103,7 +100,7 @@ async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: P
   session.timestamp = new Date(meta.timestamp).valueOf() || new Date().valueOf()
   session.subtype = meta.guild_id ? 'group' : 'private'
   if (meta.message_reference) {
-    const msg = await bot.getMessageFromServer(meta.message_reference.channel_id, meta.message_reference.message_id)
+    const msg = await bot.$getMessage(meta.message_reference.channel_id, meta.message_reference.message_id)
     session.quote = await adaptMessage(bot, msg)
     session.quote.messageId = meta.message_reference.message_id
     session.quote.channelId = meta.message_reference.channel_id
@@ -131,7 +128,7 @@ export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
   } else if (input.t === 'MESSAGE_UPDATE') {
     session.type = 'message-updated'
     const d = input.d as DC.Message
-    const msg = await bot.getMessageFromServer(d.channel_id, d.id)
+    const msg = await bot.$getMessage(d.channel_id, d.id)
     // Unlike creates, message updates may contain only a subset of the full message object payload
     // https://discord.com/developers/docs/topics/gateway#message-update
     await adaptMessageCreate(bot, msg, session)
@@ -140,6 +137,9 @@ export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
   } else if (input.t === 'MESSAGE_DELETE') {
     session.type = 'message-deleted'
     session.messageId = input.d.id
+  }
+  session.discord = {
+    raw: input.d,
   }
   return new Session(bot.app, session)
 }
