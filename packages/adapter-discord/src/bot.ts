@@ -88,7 +88,7 @@ export class DiscordBot extends Bot<'discord'> {
     for (const code of chain) {
       const { type, data } = code
       if (type === 'text') {
-        needSend += data.content
+        needSend += data.content.trim()
       } else if (type === 'at' && data.id) {
         needSend += `<@${data.id}>`
       } else if (type === 'at' && data.type === 'all') {
