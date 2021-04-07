@@ -99,7 +99,10 @@ async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: P
   session.messageId = meta.id
   session.timestamp = new Date(meta.timestamp).valueOf() || new Date().valueOf()
   session.subtype = meta.guild_id ? 'group' : 'private'
-  if (meta.message_reference) {
+  // 遇到过 cross post 的消息在这里不会传消息id
+  // 别的 guild 传来的可能没有权限 在这同意忽略
+  // eslint-disable-next-line camelcase
+  if (meta.message_reference?.message_id && meta.message_reference?.guild_id === meta.guild_id) {
     const msg = await bot.$getMessage(meta.message_reference.channel_id, meta.message_reference.message_id)
     session.quote = await adaptMessage(bot, msg)
     session.quote.messageId = meta.message_reference.message_id
@@ -123,7 +126,8 @@ export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
   if (input.t === 'MESSAGE_CREATE') {
     session.type = 'message'
     await adaptMessageCreate(bot, input.d as DC.Message, session)
-    if (!session.content) return
+    // dc 情况特殊 可能有 embeds 但是没有消息主体
+    // if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_UPDATE') {
     session.type = 'message-updated'
@@ -132,7 +136,7 @@ export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
     // Unlike creates, message updates may contain only a subset of the full message object payload
     // https://discord.com/developers/docs/topics/gateway#message-update
     await adaptMessageCreate(bot, msg, session)
-    if (!session.content) return
+    // if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_DELETE') {
     session.type = 'message-deleted'
