@@ -98,7 +98,6 @@ async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: P
   await adaptMessage(bot, meta, session)
   session.messageId = meta.id
   session.timestamp = new Date(meta.timestamp).valueOf() || new Date().valueOf()
-  session.subtype = meta.guild_id ? 'group' : 'private'
   // 遇到过 cross post 的消息在这里不会传消息id
   // 别的 guild 传来的可能没有权限 在这同意忽略
   // eslint-disable-next-line camelcase
@@ -111,13 +110,6 @@ async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: P
   return session
 }
 
-async function adaptMessageCreate(bot: DiscordBot, meta: DC.Message, session: Partial<Session.Payload<Session.MessageAction>>) {
-  session.groupId = meta.guild_id
-  session.subtype = meta.guild_id ? 'group' : 'private'
-  session.channelId = meta.channel_id
-  await adaptMessageSession(bot, meta, session)
-}
-
 export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
   const session: Partial<Session.Payload<Session.MessageAction>> = {
     selfId: bot.selfId,
@@ -125,17 +117,24 @@ export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
   }
   if (input.t === 'MESSAGE_CREATE') {
     session.type = 'message'
-    await adaptMessageCreate(bot, input.d as DC.Message, session)
+    const msg = input.d as DC.Message
+    session.groupId = msg.guild_id
+    session.subtype = msg.guild_id ? 'group' : 'private'
+    session.channelId = msg.channel_id
+    await adaptMessageSession(bot, input.d, session)
     // dc 情况特殊 可能有 embeds 但是没有消息主体
     // if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_UPDATE') {
     session.type = 'message-updated'
     const d = input.d as DC.Message
+    session.groupId = d.guild_id
+    session.subtype = d.guild_id ? 'group' : 'private'
+    session.channelId = d.channel_id
     const msg = await bot.$getMessage(d.channel_id, d.id)
     // Unlike creates, message updates may contain only a subset of the full message object payload
     // https://discord.com/developers/docs/topics/gateway#message-update
-    await adaptMessageCreate(bot, msg, session)
+    await adaptMessageSession(bot, msg, session)
     // if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_DELETE') {
