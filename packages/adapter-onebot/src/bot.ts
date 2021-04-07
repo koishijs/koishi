@@ -1,4 +1,4 @@
-import { Bot, Session, segment, camelCase, snakeCase } from 'koishi-core'
+import { Bot, Session, segment, camelCase, snakeCase, BotOptions, Adapter } from 'koishi-core'
 import * as OneBot from './utils'
 
 export class SenderError extends Error {
@@ -35,6 +35,11 @@ export class CQBot extends Bot {
   version = 'onebot'
 
   _request?(action: string, params: Record<string, any>): Promise<OneBot.Response>
+
+  constructor(adapter: Adapter<'onebot'>, options: BotOptions) {
+    super(adapter, options)
+    this.avatar = `http://q.qlogo.cn/headimg_dl?dst_uin=${options.selfId}&spec=640`
+  }
 
   async [Session.send](message: Session, content: string) {
     if (!content) return
