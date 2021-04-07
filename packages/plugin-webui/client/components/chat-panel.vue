@@ -65,7 +65,7 @@ $padding: 1.5rem;
   height: 100%;
 
   .k-card-body {
-    padding: 1rem 0.5rem;
+    padding: 1rem 0;
     display: flex;
     flex-direction: column;
     height: -webkit-fill-available;
@@ -77,25 +77,21 @@ $padding: 1.5rem;
   }
 
   .k-chat-footer {
-    padding: 0 0.5rem;
+    padding: 0 1rem;
   }
 
   .k-chat-message {
     position: relative;
     line-height: 1.5rem;
-    padding: 0 0.5rem;
+    padding: 0.25rem 1rem;
 
     &:hover {
       background-color: rgba(4, 4, 5, 0.2);
     }
-
-    & + .k-chat-message {
-      margin-top: 0.5rem;
-    }
   }
 
   .k-input {
-    padding-top: 1rem;
+    margin-top: 1rem;
     width: -webkit-fill-available;
   }
 }

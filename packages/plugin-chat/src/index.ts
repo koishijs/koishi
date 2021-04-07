@@ -52,7 +52,7 @@ export function apply(ctx: Context, options: Config = {}) {
       ctx.bots[`${platform}:${selfId}`]?.sendMessage(channelId, content)
     })
 
-    ctx.on('chat/receive', (message) => {
+    ctx.on('chat/receive', async (message) => {
       Object.values(ctx.webui.adapter.handles).forEach((handle) => {
         if (handle.authority >= 4) handle.socket.send(JSON.stringify({ type: 'chat', body: message }))
       })

@@ -9,7 +9,7 @@ export interface ReceiverConfig {
 
 const textSegmentTypes = ['text', 'header', 'section']
 
-const cqTypes = {
+const segmentTypes = {
   face: '表情',
   record: '语音',
   video: '短视频',
@@ -32,6 +32,7 @@ export interface Message {
   username?: string
   nickname?: string
   platform?: string
+  messageId?: string
   userId?: string
   channelId?: string
   groupId?: string
@@ -39,6 +40,7 @@ export interface Message {
   channelName?: string
   groupName?: string
   timestamp?: number
+  quote?: Message
 }
 
 async function getUserName(bot: Bot, groupId: string, userId: string) {
@@ -84,7 +86,7 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
     ctx.bots.forEach(bot => userMap[bot.sid] = [Promise.resolve(bot.username), timestamp])
   })
 
-  async function prepareChannelName(session: Session, params: Message, timestamp: number) {
+  async function prepareChannel(session: Session, params: Message, timestamp: number) {
     const { cid, groupId, channelName } = session
     if (channelName) {
       channelMap[cid] = [Promise.resolve(channelName), timestamp]
@@ -97,7 +99,7 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
     params.channelName = await channelMap[cid][0]
   }
 
-  async function prepareGroupName(session: Session, params: Message, timestamp: number) {
+  async function prepareGroup(session: Session, params: Message, timestamp: number) {
     const { cid, gid, groupId, groupName } = session
     if (groupName) {
       groupMap[gid] = [Promise.resolve(groupName), timestamp]
@@ -111,7 +113,7 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
   }
 
   async function prepareAbstract(session: Session, params: Message, timestamp: number) {
-    const codes = segment.parse(session.content.split('\n', 1)[0])
+    const codes = segment.parse(params.content.split('\n', 1)[0])
     params.abstract = ''
     for (const code of codes) {
       if (textSegmentTypes.includes(code.type)) {
@@ -133,13 +135,26 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
       } else if (code.type === 'contact') {
         params.abstract += `[推荐${code.data.type === 'qq' ? '好友' : '群'}:${code.data.id}]`
       } else {
-        params.abstract += `[${cqTypes[code.type] || '未知'}]`
+        params.abstract += `[${segmentTypes[code.type] || '未知'}]`
       }
     }
   }
 
-  function handleMessage(session: Session) {
-    const params: Message = pick(session, ['content', 'timestamp', 'platform', 'channelId', 'channelName', 'groupId', 'groupName', 'userId', 'selfId'])
+  async function prepareContent(session: Session, message: Message, timestamp: number) {
+    message.content = await session.preprocess()
+    const tasks = [prepareAbstract(session, message, timestamp)]
+    // eslint-disable-next-line no-cond-assign
+    if (message.quote = session.quote) {
+      tasks.push(prepareAbstract(session, message.quote, timestamp))
+    }
+    await Promise.all(tasks)
+  }
+
+  async function handleMessage(session: Session) {
+    const params: Message = pick(session, [
+      'content', 'timestamp', 'messageId', 'platform', 'selfId',
+      'channelId', 'channelName', 'groupId', 'groupName', 'userId',
+    ])
     Object.assign(params, pick(session.author, ['username', 'nickname', 'avatar']))
     if (session.type === 'message') {
       userMap[session.uid] = [Promise.resolve(session.author.username), Date.now()]
@@ -150,11 +165,15 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
       session.channelName = channelName
       channelMap[cid] = [Promise.resolve(channelName), timestamp]
     }
-    Promise
-      .all([prepareChannelName, prepareGroupName, prepareAbstract].map(cb => cb(session, params, timestamp)))
-      .then(() => ctx.emit('chat/receive', params, session))
+    await Promise.all([prepareChannel, prepareGroup, prepareContent].map(cb => cb(session, params, timestamp)))
+    ctx.emit('chat/receive', params, session)
   }
 
-  ctx.on('message', handleMessage)
-  ctx.before('send', handleMessage)
+  ctx.on('message', (session) => {
+    handleMessage(session)
+  })
+
+  ctx.before('send', (session) => {
+    handleMessage(session)
+  })
 }

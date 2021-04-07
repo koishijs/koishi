@@ -1,10 +1,10 @@
 <template>
   <div class="k-message">
-    <template v-for="({ type, data }, index) in segment.parse(content)" :key="index">
+    <template v-for="({ type, data }) in segment.parse(content)">
       <span v-if="type === 'text'">{{ data.content }}</span>
-      <span v-else-if="type === 'quote'">[引用]</span>
-      <span v-else-if="type === 'face'">[表情]</span>
       <k-image v-else-if="type === 'image'" :src="data.url"/>
+      <span v-else-if="segmentTypes[type]">[{{ segmentTypes[type] }}]</span>
+      <span v-else>[未知]</span>
     </template>
   </div>
 </template>
@@ -18,6 +18,24 @@ import KImage from './image.vue'
 defineProps<{
   content: string
 }>()
+
+const segmentTypes = {
+  face: '表情',
+  record: '语音',
+  video: '短视频',
+  image: '图片',
+  music: '音乐',
+  quote: '引用',
+  forward: '合并转发',
+  dice: '掷骰子',
+  rps: '猜拳',
+  poke: '戳一戳',
+  json: 'JSON',
+  xml: 'XML',
+  share: '分享',
+  location: '地点',
+  card: '卡片消息',
+}
 
 </script>
 
