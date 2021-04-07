@@ -1,9 +1,7 @@
 import { Bot, Context, Session } from 'koishi-core'
-import { Logger, template, Time, pick, segment } from 'koishi-utils'
+import { Time, pick, segment } from 'koishi-utils'
 
-export interface DebugConfig {
-  includeUsers?: string[]
-  includeChannels?: string[]
+export interface ReceiverConfig {
   refreshUserName?: number
   refreshGroupName?: number
   refreshChannelName?: number
@@ -11,7 +9,7 @@ export interface DebugConfig {
 
 const textSegmentTypes = ['text', 'header', 'section']
 
-const cqTypes = {
+const segmentTypes = {
   face: '表情',
   record: '语音',
   video: '短视频',
@@ -34,6 +32,7 @@ export interface Message {
   username?: string
   nickname?: string
   platform?: string
+  messageId?: string
   userId?: string
   channelId?: string
   groupId?: string
@@ -41,6 +40,7 @@ export interface Message {
   channelName?: string
   groupName?: string
   timestamp?: number
+  quote?: Message
 }
 
 async function getUserName(bot: Bot, groupId: string, userId: string) {
@@ -70,22 +70,12 @@ async function getChannelName(bot: Bot, channelId: string) {
   }
 }
 
-template.set('chat', {
-  send: '[{{ channelName || "私聊" }}] {{ abstract }}',
-  receive: '[{{ channelName || "私聊" }}] {{ username }}: {{ abstract }}',
-})
-
-export default function apply(ctx: Context, config: DebugConfig = {}) {
+export default function apply(ctx: Context, config: ReceiverConfig = {}) {
   const {
     refreshUserName = Time.hour,
     refreshGroupName = Time.hour,
     refreshChannelName = Time.hour,
-    includeUsers,
-    includeChannels,
   } = config
-
-  const logger = new Logger('message')
-  Logger.levels.message = 3
 
   const channelMap: Record<string, [Promise<string>, number]> = {}
   const groupMap: Record<string, [Promise<string>, number]> = {}
@@ -96,7 +86,7 @@ export default function apply(ctx: Context, config: DebugConfig = {}) {
     ctx.bots.forEach(bot => userMap[bot.sid] = [Promise.resolve(bot.username), timestamp])
   })
 
-  async function prepareChannelName(session: Session, params: Message, timestamp: number) {
+  async function prepareChannel(session: Session, params: Message, timestamp: number) {
     const { cid, groupId, channelName } = session
     if (channelName) {
       channelMap[cid] = [Promise.resolve(channelName), timestamp]
@@ -109,7 +99,7 @@ export default function apply(ctx: Context, config: DebugConfig = {}) {
     params.channelName = await channelMap[cid][0]
   }
 
-  async function prepareGroupName(session: Session, params: Message, timestamp: number) {
+  async function prepareGroup(session: Session, params: Message, timestamp: number) {
     const { cid, gid, groupId, groupName } = session
     if (groupName) {
       groupMap[gid] = [Promise.resolve(groupName), timestamp]
@@ -123,7 +113,7 @@ export default function apply(ctx: Context, config: DebugConfig = {}) {
   }
 
   async function prepareAbstract(session: Session, params: Message, timestamp: number) {
-    const codes = segment.parse(session.content.split('\n', 1)[0])
+    const codes = segment.parse(params.content.split('\n', 1)[0])
     params.abstract = ''
     for (const code of codes) {
       if (textSegmentTypes.includes(code.type)) {
@@ -145,13 +135,26 @@ export default function apply(ctx: Context, config: DebugConfig = {}) {
       } else if (code.type === 'contact') {
         params.abstract += `[推荐${code.data.type === 'qq' ? '好友' : '群'}:${code.data.id}]`
       } else {
-        params.abstract += `[${cqTypes[code.type] || '未知'}]`
+        params.abstract += `[${segmentTypes[code.type] || '未知'}]`
       }
     }
   }
 
-  function handleMessage(session: Session) {
-    const params: Message = pick(session, ['content', 'timestamp', 'platform', 'channelId', 'channelName', 'groupId', 'groupName', 'userId', 'selfId'])
+  async function prepareContent(session: Session, message: Message, timestamp: number) {
+    message.content = await session.preprocess()
+    const tasks = [prepareAbstract(session, message, timestamp)]
+    // eslint-disable-next-line no-cond-assign
+    if (message.quote = session.quote) {
+      tasks.push(prepareAbstract(session, message.quote, timestamp))
+    }
+    await Promise.all(tasks)
+  }
+
+  async function handleMessage(session: Session) {
+    const params: Message = pick(session, [
+      'content', 'timestamp', 'messageId', 'platform', 'selfId',
+      'channelId', 'channelName', 'groupId', 'groupName', 'userId',
+    ])
     Object.assign(params, pick(session.author, ['username', 'nickname', 'avatar']))
     if (session.type === 'message') {
       userMap[session.uid] = [Promise.resolve(session.author.username), Date.now()]
@@ -162,26 +165,15 @@ export default function apply(ctx: Context, config: DebugConfig = {}) {
       session.channelName = channelName
       channelMap[cid] = [Promise.resolve(channelName), timestamp]
     }
-    dispatchMessage(session, params, timestamp)
+    await Promise.all([prepareChannel, prepareGroup, prepareContent].map(cb => cb(session, params, timestamp)))
+    ctx.emit('chat/receive', params, session)
   }
 
-  async function dispatchMessage(session: Session, params: Message, timestamp: number) {
-    await Promise.all([prepareChannelName, prepareGroupName, prepareAbstract].map(cb => cb(session, params, timestamp)))
+  ctx.on('message', (session) => {
+    handleMessage(session)
+  })
 
-    // webui
-    ctx?.webui?.adapter.broadcast('chat', params)
-
-    // logger
-    if (session.subtype === 'private') {
-      if (includeUsers && !includeUsers.includes(session.userId)) return
-    } else {
-      if (includeChannels && !includeChannels.includes(session.channelId)) return
-      const { assignee } = await session.observeChannel(['assignee'])
-      if (assignee !== session.selfId) return
-    }
-    logger.debug(template('chat.' + (session.type === 'message' ? 'receive' : 'send'), params))
-  }
-
-  ctx.on('message', handleMessage)
-  ctx.before('send', handleMessage)
+  ctx.before('send', (session) => {
+    handleMessage(session)
+  })
 }

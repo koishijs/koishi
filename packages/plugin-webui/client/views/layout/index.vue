@@ -8,6 +8,7 @@
     <router-view v-else-if="loaded"/>
     <p v-else>正在加载数据……</p>
   </main>
+  <overlay/>
 </template>
 
 <script lang="ts" setup>
@@ -15,6 +16,7 @@
 import * as client from '~/client'
 import Navbar from './navbar.vue'
 import Sidebar from './sidebar.vue'
+import Overlay from './overlay.vue'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
@@ -36,7 +38,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: rgba(244, 244, 245, .6);
-  overflow-x: hidden;
+  overflow: hidden;
   background: radial-gradient(farthest-side ellipse at 10% 0, #333867, #17193b);
   background-attachment: fixed;
   position: relative;

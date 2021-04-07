@@ -2,11 +2,16 @@
 
 /// <reference types="./global"/>
 
-import { ref, watch, Ref } from 'vue'
+import { ref, watch, reactive, Ref } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import type { User } from 'koishi-core'
 import type { Registry, Profile, Meta, Statistics } from '~/server'
 import * as client from '~/client'
+
+export const store = reactive({
+  showOverlay: false,
+  overlayImage: null as HTMLImageElement,
+})
 
 type Keys<O, T = any> = {
   [K in keyof O]: O[K] extends T ? K : never
@@ -88,6 +93,12 @@ export function start() {
   receive('registry', data => registry.value = data)
   receive('stats', data => stats.value = data)
   receive('user', data => user.value = data)
+
+  socket.value.onopen = () => {
+    if (!user.value) return
+    const { id, token } = user.value
+    send('validate', { id, token })
+  }
 }
 
 export function send(type: string, body: any) {

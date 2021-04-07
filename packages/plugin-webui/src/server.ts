@@ -71,6 +71,10 @@ export class WebServer {
     })
   }
 
+  addListener(event: string, listener: WebAdapter.Listener) {
+    WebAdapter.listeners[event] = listener
+  }
+
   private async start() {
     const { uiPath, apiPath, whitelist } = this.config
     await Promise.all([this.createVite(), this.createAdapter()])

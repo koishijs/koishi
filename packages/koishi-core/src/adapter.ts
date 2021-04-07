@@ -241,6 +241,9 @@ export class Bot<P extends Platform> {
       author: {
         userId: this.selfId,
         username: this.username,
+        avatar: this.avatar,
+        discriminator: this.discriminator,
+        isBot: true,
       },
     })
   }

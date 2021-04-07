@@ -1,4 +1,4 @@
-import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop, template, trimSlash, merge } from 'koishi-utils'
+import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, template, trimSlash, merge } from 'koishi-utils'
 import { Context, Middleware, NextFunction, Plugin } from './context'
 import { Argv } from './parser'
 import { BotOptions, Adapter, createBots } from './adapter'
@@ -198,19 +198,10 @@ export class App extends Context {
   }
 
   private async _process(session: Session, next: NextFunction) {
-    let content = this.options.processMessage(session.content)
-
     let capture: RegExpMatchArray
     let atSelf = false, appel = false, prefix: string = null
     const pattern = /^\[CQ:(\w+)((,\w+=[^,\]]*)*)\]/
-    if ((capture = content.match(pattern)) && capture[1] === 'quote') {
-      content = content.slice(capture[0].length).trimStart()
-      for (const str of capture[2].slice(1).split(',')) {
-        if (!str.startsWith('id=')) continue
-        session.quote = await session.bot.getMessage(session.channelId, str.slice(3)).catch(noop)
-        break
-      }
-    }
+    let content = await session.preprocess()
 
     // strip prefix
     if (session.subtype !== 'private' && (capture = content.match(pattern)) && capture[1] === 'at' && capture[2].includes('id=' + session.selfId)) {
