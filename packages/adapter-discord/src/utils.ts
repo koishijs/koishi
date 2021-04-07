@@ -136,7 +136,7 @@ export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
     // Unlike creates, message updates may contain only a subset of the full message object payload
     // https://discord.com/developers/docs/topics/gateway#message-update
     await adaptMessageCreate(bot, msg, session)
-    if (!session.content) return
+    // if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_DELETE') {
     session.type = 'message-deleted'
