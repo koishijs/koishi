@@ -361,10 +361,10 @@ export type AllowedMentionType = 'roles' | 'users' | 'everyone'
 
 /** https://discord.com/developers/docs/resources/channel#allowed-mentions-object */
 export interface AllowedMention {
-  parse: AllowedMentionType[]
-  roles: snowflake[]
-  users: snowflake[]
-  replied_user: boolean
+  parse?: AllowedMentionType[]
+  roles?: snowflake[]
+  users?: snowflake[]
+  replied_user?: boolean
 }
 
 /** https://discord.com/developers/docs/resources/webhook#execute-webhook-jsonform-params */
@@ -375,7 +375,7 @@ export interface ExecuteWebhookBody {
   tts?: boolean;
   embeds?: Embed[]
   common_embeds?: Embed[]
-  allowed_mentions?: Partial<AllowedMention>[]
+  allowed_mentions?: AllowedMention[]
 }
 
 /** https://discord.com/developers/docs/resources/channel#overwrite-object-overwrite-structure */

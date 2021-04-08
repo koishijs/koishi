@@ -2,8 +2,7 @@ import { Adapter } from 'koishi-core'
 import { AxiosRequestConfig } from 'axios'
 import { DiscordBot } from './bot'
 import WsClient from './ws'
-import { Message } from './types'
-
+import * as dc from './types'
 export * from './bot'
 export * as dc from './types'
 
@@ -18,7 +17,7 @@ declare module 'koishi-core' {
 
   interface Session {
     discord?: {
-      raw: any
+      raw: dc.Message
     }
   }
 
