@@ -1,5 +1,5 @@
 <template>
-  <k-chat-panel class="page-chat" :messages="messages" pinned @click="handleClick" @send="handleSend">
+  <k-chat-panel class="page-chat" :messages="messages" pinned @click="handleClick" @send="handleSend" :item-class="getItemClass">
     <template #default="{ avatar, messageId, channelName, username, timestamp, content, quote }">
       <div class="quote" v-if="quote" @click="onClickQuote(quote.messageId)">
         <img class="quote-avatar" :src="quote.author.avatar"/>
@@ -37,6 +37,12 @@ const divs = ref<Record<string, HTMLElement>>({})
 receive('chat', (body) => {
   messages.value.push(body)
 })
+
+function getItemClass({ quote, userId }: Message, index: number) {
+  const prev = messages.value[index - 1]
+  if (quote || prev?.userId !== userId) return 'k-chat-message'
+  return 'k-chat-message successive'
+}
 
 function handleClick(message: Message) {
   activeMessage.value = message
@@ -80,6 +86,13 @@ $padding: $avatarSize + 1rem;
 
 .page-chat {
   position: relative;
+
+  .successive {
+    margin-top: -0.5rem;
+    .avatar, .header {
+      display: none;
+    }
+  }
 
   .avatar {
     position: absolute;

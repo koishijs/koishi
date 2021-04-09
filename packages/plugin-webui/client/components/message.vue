@@ -46,7 +46,7 @@ const segmentTypes = {
   line-height: 1.5;
 
   img {
-    max-height: 400px;
+    max-height: 320px;
     max-width: 100%;
   }
 }
