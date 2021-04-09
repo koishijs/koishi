@@ -48,8 +48,15 @@ export namespace segment {
     return codes.map(code => segment(code.type, code.data)).join('')
   }
 
-  export function from(source: string, typeRegExp = '\\w+'): segment.Parsed {
-    const capture = new RegExp(`\\[CQ:(${typeRegExp})((,\\w+=[^,\\]]*)*)\\]`).exec(source)
+  export interface FindOptions {
+    type?: string
+    caret?: boolean
+  }
+
+  export function from(source: string, options: FindOptions = {}): segment.Parsed {
+    let regExpSource = `\\[CQ:(${options.type || '\\w+'})((,\\w+=[^,\\]]*)*)\\]`
+    if (options.caret) regExpSource = '^' + regExpSource
+    const capture = new RegExp(regExpSource).exec(source)
     if (!capture) return null
     const [, type, attrs] = capture
     const data: Record<string, string> = {}

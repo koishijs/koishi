@@ -2,7 +2,7 @@ import LruCache from 'lru-cache'
 import { distance } from 'fastest-levenshtein'
 import { User, Channel, TableType, Tables } from './database'
 import { Command } from './command'
-import { contain, observe, Logger, defineProperty, Random, template, remove, noop } from 'koishi-utils'
+import { contain, observe, Logger, defineProperty, Random, template, remove, noop, segment } from 'koishi-utils'
 import { Argv } from './parser'
 import { Middleware, NextFunction } from './context'
 import { App } from './app'
@@ -135,16 +135,12 @@ export class Session<
   }
 
   private async _preprocess() {
-    let capture: RegExpMatchArray
+    let node: segment.Parsed
     let content = this.app.options.processMessage(this.content)
-    const pattern = /^\[CQ:(\w+)((,\w+=[^,\]]*)*)\]/
-    if ((capture = this.content.match(pattern)) && capture[1] === 'quote') {
-      content = content.slice(capture[0].length).trimStart()
-      for (const str of capture[2].slice(1).split(',')) {
-        if (!str.startsWith('id=')) continue
-        this.quote = await this.bot.getMessage(this.channelId, str.slice(3)).catch(noop)
-        break
-      }
+    // eslint-disable-next-line no-cond-assign
+    if (node = segment.from(content, { type: 'quote', caret: true })) {
+      content = content.slice(node.capture[0].length).trimStart()
+      this.quote = await this.bot.getMessage(node.data.channelId || this.channelId, node.data.id).catch(noop)
     }
     return content
   }
