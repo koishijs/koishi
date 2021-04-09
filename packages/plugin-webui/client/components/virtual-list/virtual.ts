@@ -1,7 +1,5 @@
 import { reactive } from 'vue'
 
-enum DIRECTION_TYPE { FRONT, BEHIND }
-
 enum CALC_TYPE { INIT, FIXED, DYNAMIC }
 
 const LEADING_BUFFER = 2
@@ -14,8 +12,6 @@ export interface Range {
 }
 
 interface VirtualConfig {
-  headerSize: number
-  footerSize: number
   count: number
   estimated: number
   buffer: number
@@ -23,31 +19,33 @@ interface VirtualConfig {
 }
 
 export default class Virtual {
-  sizes = new Map<string, number>()
+  sizes = new Map<string, number>([
+    ['header', 0],
+    ['footer', 0],
+  ])
+
   firstRangeTotalSize = 0
   firstRangeAverageSize = 0
   lastCalcIndex = 0
   fixedSizeValue = 0
   calcType = CALC_TYPE.INIT
   offset = 0
-  direction: DIRECTION_TYPE = null
+  direction: 0 | 1 | -1 = 0
   range = reactive<Range>({})
 
   constructor(public param: VirtualConfig) {
     this.checkRange(0, param.count)
   }
 
-  updateParam(key, value) {
-    if (key === 'uids') {
-      this.sizes.forEach((v, key) => {
-        if (!value.includes(key)) this.sizes.delete(key)
-      })
-    }
-    this.param[key] = value
+  updateUids(uids: string[]) {
+    this.param.uids = uids
+    this.sizes.forEach((v, key) => {
+      if (!uids.includes(key) && key !== 'header' && key !== 'footer') this.sizes.delete(key)
+    })
   }
 
   // save each size map by id
-  saveSize(id: string, size: number) {
+  saveSize = (id: string, size: number) => {
     this.sizes.set(id, size)
 
     // we assume size type is fixed at the beginning and remember first size value
@@ -76,12 +74,12 @@ export default class Virtual {
 
   // in some special situation (e.g. length change) we need to update in a row
   // try goiong to render next range by a leading buffer according to current direction
-  handleDataSourcesChange() {
+  handleDataChange() {
     let start = this.range.start
 
-    if (this.direction === DIRECTION_TYPE.FRONT) {
+    if (this.direction < 0) {
       start = start - LEADING_BUFFER
-    } else if (this.direction === DIRECTION_TYPE.BEHIND) {
+    } else if (this.direction > 0) {
       start = start + LEADING_BUFFER
     }
 
@@ -92,17 +90,17 @@ export default class Virtual {
 
   // when slot size change, we also need force update
   handleSlotSizeChange() {
-    this.handleDataSourcesChange()
+    this.handleDataChange()
   }
 
   // calculating range on scroll
   handleScroll(offset: number) {
-    this.direction = offset < this.offset ? DIRECTION_TYPE.FRONT : DIRECTION_TYPE.BEHIND
+    this.direction = Math.sign(offset - this.offset) as any
     this.offset = offset
 
-    if (this.direction === DIRECTION_TYPE.FRONT) {
+    if (this.direction < 0) {
       this.handleFront()
-    } else if (this.direction === DIRECTION_TYPE.BEHIND) {
+    } else if (this.direction > 0) {
       this.handleBehind()
     }
   }
@@ -130,12 +128,9 @@ export default class Virtual {
   }
 
   // return the pass overs according to current scroll offset
-  getScrollOvers() {
-    // if slot header exist, we need subtract its size
-    const offset = this.offset - this.param.headerSize
-    if (offset <= 0) {
-      return 0
-    }
+  private getScrollOvers() {
+    const offset = this.offset - this.sizes.get('header')
+    if (offset <= 0) return 0
 
     // if is fixed type, that can be easily
     if (this.isFixedType()) {
@@ -148,8 +143,7 @@ export default class Virtual {
     let high = this.param.uids.length
 
     while (low <= high) {
-      // this.__bsearchCalls++
-      middle = low + Math.floor((high - low) / 2)
+      middle = Math.floor((high + low) / 2)
       middleOffset = this.getOffset(middle)
 
       if (middleOffset === offset) {

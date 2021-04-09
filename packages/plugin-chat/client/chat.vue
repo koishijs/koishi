@@ -1,24 +1,25 @@
 <template>
   <k-chat-panel class="page-chat" :messages="messages" pinned
-    @click="handleClick" @send="handleSend" :index="index" :item-class="getItemClass">
-    <template #default="{ index, userId, avatar, messageId, channelName, username, timestamp, content, quote }">
-      <div class="quote" v-if="quote" @click="onClickQuote(quote.messageId)">
-        <img class="quote-avatar" :src="quote.author.avatar"/>
-        <span class="username">{{ quote.author.username }}</span>
-        <span class="abstract">{{ formatAbstract(quote.abstract) }}</span>
+    v-model:active-key="index" :item-class="getItemClass"
+    @click="handleClick" @send="handleSend">
+    <template #default="message">
+      <div class="quote" v-if="message.quote" @click="onClickQuote(message.quote.messageId)">
+        <img class="quote-avatar" :src="message.quote.author.avatar"/>
+        <span class="username">{{ message.quote.author.username }}</span>
+        <span class="abstract">{{ formatAbstract(message.quote.abstract) }}</span>
       </div>
-      <template v-if="isSuccessive(index, quote, userId)">
-        <span class="timestamp">{{ formatTime(new Date(timestamp)) }}</span>
+      <template v-if="isSuccessive(message, message.index)">
+        <span class="timestamp">{{ formatTime(new Date(message.timestamp)) }}</span>
       </template>
       <template v-else>
-        <img class="avatar" :src="avatar"/>
-        <div class="header" :ref="el => divs[messageId] = el?.['parentElement']">
-          <span class="channel">{{ channelName || '私聊' }}</span>
-          <span class="username">{{ username }}</span>
-          <span class="timestamp">{{ formatDateTime(new Date(timestamp)) }}</span>
+        <img class="avatar" :src="message.avatar"/>
+        <div class="header" :ref="el => divs[message.messageId] = el?.['parentElement']">
+          <span class="channel">{{ message.channelName || '私聊' }}</span>
+          <span class="username">{{ message.username }}</span>
+          <span class="timestamp">{{ formatDateTime(new Date(message.timestamp)) }}</span>
         </div>
       </template>
-      <k-message :content="content"/>
+      <k-message :content="message.content"/>
     </template>
     <template #footer>
       <p class="hint">
@@ -45,13 +46,13 @@ receive('chat', (body) => {
   messages.value.push(body)
 })
 
-function isSuccessive(index: number, quote: Message, userId: string) {
+function isSuccessive({ quote, userId, channelId }: Message, index: number) {
   const prev = messages.value[index - 1]
-  return !quote && prev?.userId === userId
+  return !quote && prev && prev.userId === userId && prev.channelId === channelId
 }
 
-function getItemClass({ quote, userId }: Message, index: number) {
-  return isSuccessive(index, quote, userId) ? 'successive' : ''
+function getItemClass(message: Message, index: number) {
+  return isSuccessive(message, index) ? 'successive' : ''
 }
 
 function handleClick(message: Message) {
@@ -105,7 +106,9 @@ $padding: $avatarSize + 1rem;
       left: 0;
       width: $padding + 1rem;
       text-align: center;
+      user-select: none;
     }
+
     &:hover {
       .timestamp {
         visibility: initial;

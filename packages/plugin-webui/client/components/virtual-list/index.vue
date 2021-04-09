@@ -1,40 +1,40 @@
 <template>
   <component :is="tag" @scroll="onScroll">
-    <virtual-item v-if="$slots.header" @resize="onResizeSlot" uid="header">
+    <virtual-item v-if="$slots.header" @resize="virtual.saveSize" uid="header">
       <slot name="header"/>
     </virtual-item>
     <div :style="wrapperStyle">
       <virtual-item v-for="(item, index) in data.slice(range.start, range.end)"
-        :tag="itemTag" :class="resolveItemClass(item, index)" :uid="item[dataKey]"
-        @click.stop="emit('item-click', item, $event)" @resize="onResizeItem">
+        :tag="itemTag" :class="resolveItemClass(item, index)" :uid="item[keyName]"
+        @click.stop="emit('click', item, $event)" @resize="virtual.saveSize">
         <slot v-bind="item" :index="index + range.start"/>
       </virtual-item>
     </div>
-    <virtual-item v-if="$slots.footer" @resize="onResizeSlot" uid="footer">
+    <virtual-item v-if="$slots.footer" @resize="virtual.saveSize" uid="footer">
       <slot name="footer"/>
     </virtual-item>
-    <div ref="shepherd"></div>
+    <div ref="shepherd"/>
   </component>
 </template>
 
 <script lang="ts" setup>
 
-import { defineEmit, ref, defineProps, computed, watch, getCurrentInstance, onMounted, onActivated, onUpdated, onBeforeUnmount, defineComponent, h } from 'vue'
+import { defineEmit, ref, defineProps, computed, watch, getCurrentInstance, nextTick, onMounted, onActivated, onUpdated, onBeforeUnmount, defineComponent, h } from 'vue'
 import Virtual from './virtual'
 
-const emit = defineEmit(['item-click', 'resize', 'scroll', 'top', 'bottom'])
+const emit = defineEmit(['click', 'scroll', 'top', 'bottom', 'update:activeKey'])
 
 const props = defineProps({
   tag: { default: 'div' },
-  dataKey: { type: String, required: true },
+  keyName: { type: String, required: true },
   data: { type: Array, required: true },
   count: { default: 50 },
   estimated: { default: 50 },
   itemTag: { default: 'div' },
   itemClass: {},
-  index: { default: '' },
-  topThreshold: { default: 0 },
-  bottomThreshold: { default: 0 },
+  pinned: Boolean,
+  activeKey: { default: '' },
+  threshold: { default: 0 },
 })
 
 function resolveItemClass(item: any, index: number) {
@@ -44,17 +44,18 @@ function resolveItemClass(item: any, index: number) {
 }
 
 watch(() => props.data.length, () => {
-  virtual.updateParam('uids', getUniqueIdFromDataSources())
-  virtual.handleDataSourcesChange()
+  const { scrollTop, clientHeight, scrollHeight } = ctx.$el
+  if (!props.pinned || Math.abs(scrollTop + clientHeight - scrollHeight) < 1) {
+    nextTick(scrollToBottom)
+  }
+  virtual.updateUids(getUids())
+  virtual.handleDataChange()
 })
 
-watch(() => props.count, (newValue) => {
-  virtual.updateParam('keeps', newValue)
-  virtual.handleSlotSizeChange()
-})
-
-watch(() => props.index, (newValue) => {
-  scrollToUid(newValue)
+watch(() => props.activeKey, (value) => {
+  if (!value) return
+  emit('update:activeKey', null)
+  scrollToUid(value)
 })
 
 const shepherd = ref<HTMLElement>()
@@ -65,32 +66,17 @@ const wrapperStyle = computed(() => {
 })
 
 const virtual = new Virtual({
-  headerSize: 0,
-  footerSize: 0,
   count: props.count,
   estimated: props.estimated,
-  buffer: props.count,
-  uids: getUniqueIdFromDataSources(),
+  buffer: Math.floor(props.count / 3),
+  uids: getUids(),
 })
 
 const range = virtual.range
 
-function getUniqueIdFromDataSources() {
-  const { dataKey } = props
-  return props.data.map(dataSource => dataSource[dataKey])
-}
-
-function onResizeItem(id: string, size: number) {
-  virtual.saveSize(id, size)
-  emit('resize', id, size)
-}
-
-function onResizeSlot(type, size) {
-  if (type === 'header') {
-    virtual.updateParam('slotHeaderSize', size)
-  } else if (type === 'footer') {
-    virtual.updateParam('slotFooterSize', size)
-  }
+function getUids() {
+  const { keyName, data } = props
+  return data.map(item => item[keyName])
 }
 
 const { ctx } = getCurrentInstance()
@@ -100,8 +86,8 @@ onActivated(() => {
 })
 
 onMounted(() => {
-  if (props.index) {
-    scrollToUid(props.index)
+  if (props.activeKey) {
+    scrollToUid(props.activeKey)
   } else {
     scrollToBottom()
   }
@@ -151,10 +137,9 @@ function onScroll(ev: MouseEvent) {
 
 function emitEvent(offset: number, clientLength: number, scrollLength: number, ev: MouseEvent) {
   emit('scroll', ev, virtual.range)
-
-  if (virtual.direction === 0 && !!props.data.length && (offset - props.topThreshold <= 0)) {
+  if (virtual.direction < 0 && !!props.data.length && (offset - props.threshold <= 0)) {
     emit('top')
-  } else if (virtual.direction === 1 && (offset + clientLength + props.bottomThreshold >= scrollLength)) {
+  } else if (virtual.direction > 0 && (offset + clientLength + props.threshold >= scrollLength)) {
     emit('bottom')
   }
 }
@@ -184,8 +169,8 @@ const VirtualItem = defineComponent({
     })
 
     function dispatchSizeChange() {
-      const length = ctx.$el ? ctx.$el.offsetHeight : 0
-      emit('resize', props.uid, length)
+      const marginTop = +(getComputedStyle(ctx.$el).marginTop.slice(0, -2))
+      emit('resize', props.uid, ctx.$el.offsetHeight + marginTop)
     }
 
     return () => h(props.tag, slots.default())

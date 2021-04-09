@@ -2,8 +2,9 @@
   <k-card class="k-chat-panel">
     <virtual-list
       class="k-chat-body" :item-class="resolveItemClass"
-      @item-click="(message) => $emit('click', message)"
-      data-key="messageId" :data="messages" :index="index">
+      key-name="messageId" :data="messages" :pinned="pinned"
+      @click="(message) => $emit('click', message)"
+      :active-key="activeKey" @update:active-key="$emit('update:activeKey', $event)">
       <template #default="props"><slot v-bind="props"/></template>
     </virtual-list>
     <div class="k-chat-footer">
@@ -15,39 +16,24 @@
 
 <script lang="ts" setup>
 
-import { ref, defineProps, onMounted, defineEmit, getCurrentInstance } from 'vue'
+import { ref, defineProps, defineEmit } from 'vue'
 import { segment } from '~/client'
 import VirtualList from './virtual-list/index.vue'
 
-const emit = defineEmit(['send', 'click'])
+const emit = defineEmit(['send', 'click', 'update:activeKey'])
+
 const props = defineProps<{
   messages: any[],
   pinned?: boolean,
   itemClass?: Function,
-  index?: string
+  activeKey?: string
 }>()
 
 const text = ref('')
 
-onMounted(scrollToBottom)
-
-const { ctx } = getCurrentInstance()
-
 function resolveItemClass(item: any, index: number) {
   return 'k-chat-message ' + (props.itemClass?.(item, index) ?? '')
 }
-
-function scrollToBottom() {
-  const body = ctx.$el.firstElementChild
-  body.scrollTop = body.scrollHeight - body.clientHeight
-}
-
-// watch(props.messages, () => {
-//   const { scrollTop, clientHeight, scrollHeight } = body.value
-//   if (!props.pinned || Math.abs(scrollTop + clientHeight - scrollHeight) < 1) {
-//     nextTick(scrollToBottom)
-//   }
-// })
 
 function onEnter() {
   if (!text.value) return
