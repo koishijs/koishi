@@ -321,7 +321,9 @@ async function loadMeta() {
 }
 
 function execute(bin: string, args: string[] = [], stdio: StdioOptions = 'inherit') {
-  const child = spawn(bin, args, { stdio })
+  // fix for #205
+  // https://stackoverflow.com/questions/43230346/error-spawn-npm-enoent
+  const child = spawn(bin + (process.platform === 'win32' ? '.cmd' : ''), args, { stdio })
   return new Promise<number>((resolve) => {
     child.on('close', resolve)
   })
