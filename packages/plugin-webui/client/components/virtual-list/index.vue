@@ -19,7 +19,7 @@
 
 <script lang="ts" setup>
 
-import { defineEmit, ref, defineProps, computed, watch, getCurrentInstance, nextTick, onMounted, onActivated, onUpdated, onBeforeUnmount, defineComponent, h } from 'vue'
+import { defineEmit, ref, defineProps, computed, watch, getCurrentInstance, nextTick, onMounted, onUpdated, onBeforeUnmount, defineComponent, h } from 'vue'
 import Virtual from './virtual'
 
 const emit = defineEmit(['click', 'scroll', 'top', 'bottom', 'update:activeKey'])
@@ -55,7 +55,7 @@ watch(() => props.data.length, () => {
 watch(() => props.activeKey, (value) => {
   if (!value) return
   emit('update:activeKey', null)
-  scrollToUid(value)
+  scrollToUid(value, true)
 })
 
 const shepherd = ref<HTMLElement>()
@@ -81,10 +81,6 @@ function getUids() {
 
 const { ctx } = getCurrentInstance()
 
-onActivated(() => {
-  scrollToOffset(virtual.offset)
-})
-
 onMounted(() => {
   if (props.activeKey) {
     scrollToUid(props.activeKey)
@@ -93,13 +89,17 @@ onMounted(() => {
   }
 })
 
-function scrollToOffset(offset: number) {
-  ctx.$el.scrollTop = offset
+function scrollToOffset(offset: number, smooth = false) {
+  if (smooth) {
+    ctx.$el.scrollTo({ top: offset, behavior: 'smooth' })
+  } else {
+    ctx.$el.scrollTop = offset
+  }
 }
 
 // set current scroll position to a expectant index
-function scrollToUid(uid: string) {
-  scrollToOffset(virtual.getUidOffset(uid))
+function scrollToUid(uid: string, smooth = false) {
+  scrollToOffset(virtual.getUidOffset(uid), smooth)
 }
 
 function scrollToBottom() {

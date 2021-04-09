@@ -10,11 +10,11 @@
       <span class="button bottom" @click.stop>
         <i class="fas fa-search-minus" @click="scale -= 0.2"/>
         <i class="fas fa-search-plus" @click="scale += 0.2"/>
-        <i class="fas fa-expand" @click="scale = 1"/>
-        <i class="fas fa-undo" @click="rotate -= 90"/>
-        <i class="fas fa-redo" @click="rotate += 90"/>
+        <i class="fas fa-expand" @click="scale = 1, rotate = 0"/>
+        <i class="fas fa-undo" @click="rotate = (rotate - 90) % 180"/>
+        <i class="fas fa-redo" @click="rotate = (rotate + 90) % 180"/>
       </span>
-      <transition @before-appear="moveToOrigin" @after-appear="moveToCenter" appear :duration="1">
+      <transition appear :duration="1" @before-appear="moveToOrigin" @after-appear="moveToCenter">
         <img ref="img" :style="{ transform }" :src="store.overlayImage.src"/>
       </transition>
     </div>
@@ -24,7 +24,7 @@
 <script lang="ts" setup>
 
 import { store } from '~/client'
-import { computed, watch, ref } from 'vue'
+import { computed, watch, ref, onMounted, onBeforeUnmount } from 'vue'
 
 const scale = ref(1)
 const rotate = ref(0)
@@ -88,6 +88,29 @@ function moveToCenter(el: HTMLImageElement) {
   el.style.height = height + 'px'
   el.style.left = (innerWidth - width) / 2 + 'px'
   el.style.top = (innerHeight - height) / 2 + 'px'
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', onKeyDown)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', onKeyDown)
+})
+
+function onKeyDown(ev: KeyboardEvent) {
+  if (!store.overlayImage) return
+  ev.preventDefault()
+  if (ev.key === 'ArrowUp' || ev.key === 'ArrowLeft') {
+    setImage(siblings.value.prev)
+  } else if (ev.key === 'ArrowDown' || ev.key === 'ArrowRight') {
+    setImage(siblings.value.next)
+  } else if (ev.key === 'Escape') {
+    setImage(null)
+  } else if (ev.key === 'Enter') {
+    store.overlayImage.offsetParent.scrollIntoView({ behavior: 'smooth' })
+    setImage(null)
+  }
 }
 
 </script>
