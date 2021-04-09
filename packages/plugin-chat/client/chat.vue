@@ -1,17 +1,23 @@
 <template>
-  <k-chat-panel class="page-chat" :messages="messages" pinned @click="handleClick" @send="handleSend" :item-class="getItemClass">
-    <template #default="{ avatar, messageId, channelName, username, timestamp, content, quote }">
+  <k-chat-panel class="page-chat" :messages="messages" pinned
+    @click="handleClick" @send="handleSend" :index="index" :item-class="getItemClass">
+    <template #default="{ index, userId, avatar, messageId, channelName, username, timestamp, content, quote }">
       <div class="quote" v-if="quote" @click="onClickQuote(quote.messageId)">
         <img class="quote-avatar" :src="quote.author.avatar"/>
         <span class="username">{{ quote.author.username }}</span>
         <span class="abstract">{{ formatAbstract(quote.abstract) }}</span>
       </div>
-      <img class="avatar" :src="avatar"/>
-      <div class="header" :ref="el => divs[messageId] = el?.['parentElement']">
-        <span class="channel">{{ channelName || '私聊' }}</span>
-        <span class="username">{{ username }}</span>
-        <span class="timestamp">{{ formatDateTime(timestamp) }}</span>
-      </div>
+      <template v-if="isSuccessive(index, quote, userId)">
+        <span class="timestamp">{{ formatTime(new Date(timestamp)) }}</span>
+      </template>
+      <template v-else>
+        <img class="avatar" :src="avatar"/>
+        <div class="header" :ref="el => divs[messageId] = el?.['parentElement']">
+          <span class="channel">{{ channelName || '私聊' }}</span>
+          <span class="username">{{ username }}</span>
+          <span class="timestamp">{{ formatDateTime(new Date(timestamp)) }}</span>
+        </div>
+      </template>
       <k-message :content="content"/>
     </template>
     <template #footer>
@@ -30,6 +36,7 @@ import { ref } from 'vue'
 import type { Message } from '../src'
 
 const pinned = ref(true)
+const index = ref<string>()
 const activeMessage = ref<Message>()
 const messages = storage.create<Message[]>('chat', [])
 const divs = ref<Record<string, HTMLElement>>({})
@@ -38,10 +45,13 @@ receive('chat', (body) => {
   messages.value.push(body)
 })
 
-function getItemClass({ quote, userId }: Message, index: number) {
+function isSuccessive(index: number, quote: Message, userId: string) {
   const prev = messages.value[index - 1]
-  if (quote || prev?.userId !== userId) return 'k-chat-message'
-  return 'k-chat-message successive'
+  return !quote && prev?.userId === userId
+}
+
+function getItemClass({ quote, userId }: Message, index: number) {
+  return isSuccessive(index, quote, userId) ? 'successive' : ''
 }
 
 function handleClick(message: Message) {
@@ -57,9 +67,7 @@ function handleSend(content: string) {
 }
 
 function onClickQuote(id: string) {
-  const el = divs.value[id]
-  if (!el) return
-  el.scrollIntoView({ behavior: 'smooth' })
+  index.value = id
 }
 
 function formatAbstract(content: string) {
@@ -67,14 +75,15 @@ function formatAbstract(content: string) {
   return content.slice(0, 48) + '……'
 }
 
-function formatDateTime(timestamp: number) {
-  const date = new Date(timestamp)
+function formatTime(date: Date) {
+  return `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`
+}
+
+function formatDateTime(date: Date) {
   const now = new Date()
-  let output = `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`
+  let output = formatTime(date)
   if (date.toLocaleDateString() === now.toLocaleDateString()) return output
-  output = `${date.getMonth() + 1}-${date.getDate()} ${output}`
-  if (date.getFullYear() === now.getFullYear()) return output
-  return `${date.getFullYear()}-${output}`
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${output}`
 }
 
 </script>
@@ -89,8 +98,18 @@ $padding: $avatarSize + 1rem;
 
   .successive {
     margin-top: -0.5rem;
-    .avatar, .header {
-      display: none;
+
+    .timestamp {
+      position: absolute;
+      visibility: hidden;
+      left: 0;
+      width: $padding + 1rem;
+      text-align: center;
+    }
+    &:hover {
+      .timestamp {
+        visibility: initial;
+      }
     }
   }
 
@@ -159,7 +178,7 @@ $padding: $avatarSize + 1rem;
 
   .timestamp {
     color: #72767d;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
   }
 
   .k-message {

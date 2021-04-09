@@ -1,18 +1,18 @@
 <template>
   <component :is="tag" @scroll="onScroll">
-    <virtual-slot v-if="$slots.header" @resize="onResizeSlot" uuid="header">
+    <virtual-item v-if="$slots.header" @resize="onResizeSlot" uid="header">
       <slot name="header"/>
-    </virtual-slot>
+    </virtual-item>
     <div :style="wrapperStyle">
       <virtual-item v-for="(item, index) in data.slice(range.start, range.end)"
-        :tag="itemTag" :class="resolveItemClass(item, index)" :uuid="item[dataKey]"
+        :tag="itemTag" :class="resolveItemClass(item, index)" :uid="item[dataKey]"
         @click.stop="emit('item-click', item, $event)" @resize="onResizeItem">
-        <slot v-bind="item"/>
+        <slot v-bind="item" :index="index + range.start"/>
       </virtual-item>
     </div>
-    <virtual-slot v-if="$slots.footer" @resize="onResizeSlot" uuid="footer">
+    <virtual-item v-if="$slots.footer" @resize="onResizeSlot" uid="footer">
       <slot name="footer"/>
-    </virtual-slot>
+    </virtual-item>
     <div ref="shepherd"></div>
   </component>
 </template>
@@ -21,7 +21,6 @@
 
 import { defineEmit, ref, defineProps, computed, watch, getCurrentInstance, onMounted, onActivated, onUpdated, onBeforeUnmount, defineComponent, h } from 'vue'
 import Virtual from './virtual'
-import type { Range } from './virtual'
 
 const emit = defineEmit(['item-click', 'resize', 'scroll', 'top', 'bottom'])
 
@@ -30,22 +29,22 @@ const props = defineProps({
   dataKey: { type: String, required: true },
   data: { type: Array, required: true },
   count: { default: 50 },
-  estimated: { default: 100 },
+  estimated: { default: 50 },
   itemTag: { default: 'div' },
   itemClass: {},
-  index: { default: 0 },
+  index: { default: '' },
   topThreshold: { default: 0 },
   bottomThreshold: { default: 0 },
 })
 
 function resolveItemClass(item: any, index: number) {
   return typeof props.itemClass === 'function'
-    ? props.itemClass(item, index + range.value.start)
+    ? props.itemClass(item, index + range.start)
     : props.itemClass
 }
 
 watch(() => props.data.length, () => {
-  virtual.updateParam('uniqueIds', getUniqueIdFromDataSources())
+  virtual.updateParam('uids', getUniqueIdFromDataSources())
   virtual.handleDataSourcesChange()
 })
 
@@ -55,34 +54,33 @@ watch(() => props.count, (newValue) => {
 })
 
 watch(() => props.index, (newValue) => {
-  scrollToIndex(newValue)
+  scrollToUid(newValue)
 })
 
-let range = ref<Range>()
 const shepherd = ref<HTMLElement>()
 
 const wrapperStyle = computed(() => {
-  const { padFront, padBehind } = range.value
+  const { padFront, padBehind } = range
   return { padding: `${padFront}px 0px ${padBehind}px` }
 })
 
 const virtual = new Virtual({
-  slotHeaderSize: 0,
-  slotFooterSize: 0,
+  headerSize: 0,
+  footerSize: 0,
   count: props.count,
   estimated: props.estimated,
   buffer: props.count,
-  uniqueIds: getUniqueIdFromDataSources(),
-}, (newRange: Range) => range.value = newRange)
+  uids: getUniqueIdFromDataSources(),
+})
 
-range.value = virtual.getRange()
+const range = virtual.range
 
 function getUniqueIdFromDataSources() {
   const { dataKey } = props
   return props.data.map(dataSource => dataSource[dataKey])
 }
 
-function onResizeItem(id, size) {
+function onResizeItem(id: string, size: number) {
   virtual.saveSize(id, size)
   emit('resize', id, size)
 }
@@ -103,7 +101,7 @@ onActivated(() => {
 
 onMounted(() => {
   if (props.index) {
-    scrollToIndex(props.index)
+    scrollToUid(props.index)
   } else {
     scrollToBottom()
   }
@@ -114,14 +112,8 @@ function scrollToOffset(offset: number) {
 }
 
 // set current scroll position to a expectant index
-function scrollToIndex(index) {
-  // scroll to bottom
-  if (index >= props.data.length - 1) {
-    scrollToBottom()
-  } else {
-    const offset = virtual.getOffset(index)
-    scrollToOffset(offset)
-  }
+function scrollToUid(uid: string) {
+  scrollToOffset(virtual.getUidOffset(uid))
 }
 
 function scrollToBottom() {
@@ -158,61 +150,44 @@ function onScroll(ev: MouseEvent) {
 }
 
 function emitEvent(offset: number, clientLength: number, scrollLength: number, ev: MouseEvent) {
-  emit('scroll', ev, virtual.getRange())
+  emit('scroll', ev, virtual.range)
 
-  if (virtual.isFront() && !!props.data.length && (offset - props.topThreshold <= 0)) {
+  if (virtual.direction === 0 && !!props.data.length && (offset - props.topThreshold <= 0)) {
     emit('top')
-  } else if (virtual.isBehind() && (offset + clientLength + props.bottomThreshold >= scrollLength)) {
+  } else if (virtual.direction === 1 && (offset + clientLength + props.bottomThreshold >= scrollLength)) {
     emit('bottom')
-  }
-}
-
-function useWrapper(uuid: string) {
-  let resizeObserver: ResizeObserver
-
-  const { ctx } = getCurrentInstance()
-
-  onMounted(() => {
-    resizeObserver = new ResizeObserver(dispatchSizeChange)
-    resizeObserver.observe(ctx.$el)
-  })
-
-  onUpdated(dispatchSizeChange)
-
-  onBeforeUnmount(() => {
-    resizeObserver.disconnect()
-  })
-
-  function dispatchSizeChange() {
-    const length = ctx.$el ? ctx.$el.offsetHeight : 0
-    ctx.$emit('resize', uuid, length)
   }
 }
 
 const VirtualItem = defineComponent({
   props: {
     tag: String,
-    uuid: String,
+    uid: String,
   },
 
   emits: ['resize'],
 
-  setup(props, { slots }) {
-    useWrapper(props.uuid)
-    return () => h(props.tag, slots.default())
-  },
-})
+  setup(props, { slots, emit }) {
+    let resizeObserver: ResizeObserver
 
-const VirtualSlot = defineComponent({
-  props: {
-    tag: String,
-    uuid: String,
-  },
+    const { ctx } = getCurrentInstance()
 
-  emits: ['resize'],
+    onMounted(() => {
+      resizeObserver = new ResizeObserver(dispatchSizeChange)
+      resizeObserver.observe(ctx.$el)
+    })
 
-  setup(props, { slots }) {
-    useWrapper(props.uuid)
+    onUpdated(dispatchSizeChange)
+
+    onBeforeUnmount(() => {
+      resizeObserver.disconnect()
+    })
+
+    function dispatchSizeChange() {
+      const length = ctx.$el ? ctx.$el.offsetHeight : 0
+      emit('resize', props.uid, length)
+    }
+
     return () => h(props.tag, slots.default())
   },
 })

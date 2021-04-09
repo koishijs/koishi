@@ -1,9 +1,9 @@
 <template>
   <k-card class="k-chat-panel">
     <virtual-list
-      class="k-chat-body" :item-class="itemClass || 'k-chat-message'"
+      class="k-chat-body" :item-class="resolveItemClass"
       @item-click="(message) => $emit('click', message)"
-      data-key="messageId" :data="messages">
+      data-key="messageId" :data="messages" :index="index">
       <template #default="props"><slot v-bind="props"/></template>
     </virtual-list>
     <div class="k-chat-footer">
@@ -20,13 +20,22 @@ import { segment } from '~/client'
 import VirtualList from './virtual-list/index.vue'
 
 const emit = defineEmit(['send', 'click'])
-const props = defineProps<{ messages: any[], pinned?: boolean, itemClass?: any }>()
+const props = defineProps<{
+  messages: any[],
+  pinned?: boolean,
+  itemClass?: Function,
+  index?: string
+}>()
 
 const text = ref('')
 
 onMounted(scrollToBottom)
 
 const { ctx } = getCurrentInstance()
+
+function resolveItemClass(item: any, index: number) {
+  return 'k-chat-message ' + (props.itemClass?.(item, index) ?? '')
+}
 
 function scrollToBottom() {
   const body = ctx.$el.firstElementChild
