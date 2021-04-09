@@ -15,9 +15,12 @@ declare module 'koishi-core' {
     discord?: DiscordOptions
   }
 
-  interface Session {
+   interface Session {
     discord?: {
-      raw: dc.Message
+      mentions: dc.User[];
+      // eslint-disable-next-line camelcase
+      webhook_id?: dc.snowflake
+      flags: number
     }
   }
 

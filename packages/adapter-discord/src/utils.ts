@@ -1,4 +1,5 @@
-import { AuthorInfo, ChannelInfo, GroupInfo, MessageInfo, segment, Session, UserInfo } from 'koishi-core'
+/* eslint-disable camelcase */
+import { AuthorInfo, ChannelInfo, GroupInfo, segment, Session, UserInfo } from 'koishi-core'
 import { DiscordBot } from './bot'
 import * as DC from './types'
 
@@ -91,6 +92,11 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.Message, session: P
       session.content += segment('video', { url: embed.video.url, proxy_url: embed.video.proxy_url })
     }
   }
+  session.discord = {
+    mentions: meta.mentions,
+    webhook_id: meta.webhook_id,
+    flags: meta.flags
+  }
   return session
 }
 
@@ -104,8 +110,9 @@ async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: P
   if (meta.message_reference?.message_id && meta.message_reference?.guild_id === meta.guild_id) {
     const msg = await bot.$getMessage(meta.message_reference.channel_id, meta.message_reference.message_id)
     session.quote = await adaptMessage(bot, msg)
-    session.quote.messageId = meta.message_reference.message_id
-    session.quote.channelId = meta.message_reference.channel_id
+    session.quote.messageId = meta.message_reference?.message_id
+    session.quote.channelId = meta.message_reference?.channel_id
+    session.quote.groupId = meta.message_reference?.guild_id
   }
   return session
 }
@@ -140,9 +147,6 @@ export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
   } else if (input.t === 'MESSAGE_DELETE') {
     session.type = 'message-deleted'
     session.messageId = input.d.id
-  }
-  session.discord = {
-    raw: input.d,
   }
   return new Session(bot.app, session)
 }

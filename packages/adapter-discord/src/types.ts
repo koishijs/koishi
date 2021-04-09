@@ -45,7 +45,7 @@ export type Payload = {
   s?: number
 }
 
-type snowflake = string
+export type snowflake = string
 
 /** https://discord.com/developers/docs/resources/emoji#emoji-object */
 export interface Emoji {
