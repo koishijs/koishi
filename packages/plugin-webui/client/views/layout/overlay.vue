@@ -36,7 +36,7 @@ const transform = computed(() => {
 
 const siblings = computed(() => {
   if (!store.overlayImage) return
-  const elements = [...document.querySelectorAll<HTMLImageElement>('.k-image')]
+  const elements = Array.from(document.querySelectorAll<HTMLImageElement>('.k-image'))
   const index = elements.indexOf(store.overlayImage)
   return {
     prev: elements[index - 1],
@@ -76,8 +76,8 @@ function moveToOrigin(el: HTMLImageElement, origin = store.overlayImage) {
   el.style.transition = '0.3s ease'
 }
 
-const paddingVertical = 72
-const paddingHorizontal = 144
+const paddingVertical = 0
+const paddingHorizontal = 0
 
 function moveToCenter(el: HTMLImageElement) {
   const { naturalHeight, naturalWidth } = store.overlayImage
@@ -145,6 +145,7 @@ $buttonBg: #303133;
     @each $tag in left, right {
       &.#{$tag} {
         top: 50%;
+        z-index: 2000;
         transform: translateY(-50%);
         width: $buttonSize;
         #{$tag}: $buttonSize;
@@ -155,6 +156,7 @@ $buttonBg: #303133;
     }
 
     &.bottom {
+      z-index: 2000;
       bottom: $buttonSize;
       width: $buttonSize * 6;
       left: 50%;
