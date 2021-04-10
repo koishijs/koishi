@@ -179,7 +179,7 @@ export class Context {
 
   with<D extends readonly (keyof Plugin.Packages)[]>(deps: D, callback: Plugin.Teleporter<D>) {
     const modules = deps.map(safeRequire)
-    if (!modules.every(val => val)) return
+    if (!modules.every(val => val)) return this
     this.teleport(modules, callback)
     this.on('plugin-added', (added) => {
       const modules = deps.map(safeRequire)

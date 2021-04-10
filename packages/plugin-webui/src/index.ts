@@ -100,7 +100,7 @@ const builtinWhitelist = [
   'http://c2cpicdw.qpic.cn',
 ]
 
-export const name = 'status'
+export const name = 'webui'
 
 export function apply(ctx: Context, config: Config = {}) {
   config = Object.assign(defaultConfig, config)

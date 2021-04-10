@@ -204,7 +204,7 @@ function createWatcher() {
     ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
   })
 
-  const logger = new Logger('app:watcher')
+  const logger = new Logger('watcher')
 
   watcher.on('change', async (path) => {
     if (!require.cache[path] || externals.has(path)) return
@@ -213,7 +213,7 @@ function createWatcher() {
     /** files that should be reloaded */
     const accepted = new Set<string>()
     /** files that should not be reloaded */
-    const declined = new Set([...externals, loadDependencies(path, externals)])
+    const declined = new Set([...externals, ...loadDependencies(path, externals)])
     declined.delete(path)
 
     const plugins: string[] = []
@@ -237,7 +237,11 @@ function createWatcher() {
 
     await Promise.all(tasks)
 
-    accepted.forEach(dep => delete require.cache[dep])
+    accepted.forEach((path) => {
+      logger.debug('cache deleted:', path)
+      delete require.cache[path]
+    })
+
     for (const filename of plugins) {
       const plugin = require(filename)
       const [name, options] = pluginMap.get(filename)
