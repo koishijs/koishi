@@ -45,7 +45,7 @@ export type Payload = {
   s?: number
 }
 
-type snowflake = string
+export type snowflake = string
 
 /** https://discord.com/developers/docs/resources/emoji#emoji-object */
 export interface Emoji {
@@ -357,14 +357,25 @@ export interface ModifyGuildMember extends Pick<GuildMember, 'nick' | 'roles' | 
   channel_id: snowflake
 }
 
+export type AllowedMentionType = 'roles' | 'users' | 'everyone'
+
+/** https://discord.com/developers/docs/resources/channel#allowed-mentions-object */
+export interface AllowedMention {
+  parse?: AllowedMentionType[]
+  roles?: snowflake[]
+  users?: snowflake[]
+  replied_user?: boolean
+}
+
 /** https://discord.com/developers/docs/resources/webhook#execute-webhook-jsonform-params */
 export interface ExecuteWebhookBody {
   content: string
   username?: string
   avatar_url?: string
-  tts: boolean;
+  tts?: boolean;
   embeds?: Embed[]
   common_embeds?: Embed[]
+  allowed_mentions?: AllowedMention[]
 }
 
 /** https://discord.com/developers/docs/resources/channel#overwrite-object-overwrite-structure */
