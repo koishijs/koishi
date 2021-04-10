@@ -5,7 +5,7 @@ import { resolve } from 'path'
 import { promises as fs } from 'fs'
 import * as eval from 'koishi-plugin-eval'
 
-const app = new App()
+const app = new App({ mockStart: false })
 
 app.plugin(eval, {
   root: resolve(__dirname, 'fixtures'),

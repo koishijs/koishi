@@ -2,8 +2,7 @@ import { Adapter } from 'koishi-core'
 import { AxiosRequestConfig } from 'axios'
 import { DiscordBot } from './bot'
 import WsClient from './ws'
-import { Embed } from './types'
-
+import * as dc from './types'
 export * from './bot'
 export * as dc from './types'
 
@@ -16,9 +15,12 @@ declare module 'koishi-core' {
     discord?: DiscordOptions
   }
 
-  interface Session {
+   interface Session {
     discord?: {
-      embeds: Embed[]
+      mentions: dc.User[];
+      // eslint-disable-next-line camelcase
+      webhook_id?: dc.snowflake
+      flags: number
     }
   }
 

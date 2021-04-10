@@ -1,4 +1,4 @@
-import { App, Command, Channel, Argv as IArgv, User } from 'koishi-core'
+import { App, Command, Channel, Argv as IArgv, User, Context } from 'koishi-core'
 import { Logger, Observed, pick, union } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
 import { WorkerAPI, WorkerConfig, WorkerData, ScopeData } from './worker'
@@ -174,13 +174,24 @@ export class EvalWorker {
 
   static readonly State = State
 
-  constructor(public app: App, public config: EvalConfig) {
-    this.local = new MainAPI(app)
+  constructor(public ctx: Context, public config: EvalConfig) {
+    this.local = new MainAPI(ctx.app)
   }
 
-  async start() {
+  addSetupFile(name: string, filename: string) {
+    if (this.config.setupFiles[name] === filename) return
+    const ctx = this[Context.current]
+    this.config.setupFiles[name] = filename
+    ctx.before('disconnect', () => {
+      delete this.config.setupFiles[name]
+    })
+  }
+
+  // delegated class methods which use instance properties
+  // should be written in arrow functions
+  start = async () => {
     this.state = State.opening
-    await this.app.parallel('eval/before-start')
+    await this.ctx.parallel('eval/before-start')
     process.on('beforeExit', this.beforeExit)
 
     let index = 0
@@ -206,7 +217,7 @@ export class EvalWorker {
     this.remote = wrap(this.worker)
 
     await this.remote.start().then((response) => {
-      this.app.emit('eval/start', response)
+      this.ctx.emit('eval/start', response)
       logger.debug('worker started')
       this.state = State.open
 
@@ -222,20 +233,20 @@ export class EvalWorker {
     this.prevent = true
   }
 
-  async stop() {
+  stop = async () => {
     this.state = State.closing
     this.beforeExit()
     process.off('beforeExit', this.beforeExit)
     await this.worker?.terminate()
   }
 
-  async restart() {
+  restart = async () => {
     this.state = State.closing
     await this.worker?.terminate()
     await this.promise
   }
 
-  onError(listener: (error: Error) => void) {
+  onError = (listener: (error: Error) => void) => {
     this.worker.on('error', listener)
     return () => this.worker.off('error', listener)
   }

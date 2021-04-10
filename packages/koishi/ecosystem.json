@@ -1,6 +1,6 @@
 {
   "koishi-adapter-discord": {
-    "version": "1.0.7",
+    "version": "1.0.8",
     "description": "Discord adapter for Koishi"
   },
   "koishi-adapter-kaiheila": {
@@ -28,7 +28,7 @@
     "description": "Asset provider plugin for Koishi"
   },
   "koishi-plugin-chat": {
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "Chat plugin for Koishi"
   },
   "koishi-plugin-chess": {
@@ -44,7 +44,7 @@
     "description": "COC / DND Tools for Koishi"
   },
   "koishi-plugin-eval": {
-    "version": "3.0.0-beta.14",
+    "version": "3.0.0-beta.16",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-github": {
@@ -52,7 +52,7 @@
     "description": "GitHub webhook plugin for Koishi"
   },
   "koishi-plugin-image-search": {
-    "version": "3.0.2",
+    "version": "3.0.3",
     "description": "Image searching plugin for Koishi"
   },
   "koishi-plugin-mongo": {
@@ -79,7 +79,7 @@
     "description": "Schedule plugin for Koishi"
   },
   "koishi-plugin-teach": {
-    "version": "2.1.2",
+    "version": "2.1.3",
     "description": "Teach plugin for Koishi"
   },
   "koishi-plugin-tools": {
@@ -87,7 +87,7 @@
     "description": "Some simple tools for Koishi"
   },
   "koishi-plugin-webui": {
-    "version": "4.1.0",
+    "version": "4.1.1",
     "description": "Show Web UI of Koishi"
   }
 }

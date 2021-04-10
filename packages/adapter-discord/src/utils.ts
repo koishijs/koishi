@@ -1,4 +1,5 @@
-import { AuthorInfo, ChannelInfo, GroupInfo, MessageInfo, segment, Session, UserInfo } from 'koishi-core'
+/* eslint-disable camelcase */
+import { AuthorInfo, ChannelInfo, GroupInfo, segment, Session, UserInfo } from 'koishi-core'
 import { DiscordBot } from './bot'
 import * as DC from './types'
 
@@ -92,7 +93,9 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.Message, session: P
     }
   }
   session.discord = {
-    embeds: meta.embeds,
+    mentions: meta.mentions,
+    webhook_id: meta.webhook_id,
+    flags: meta.flags,
   }
   return session
 }
@@ -101,21 +104,10 @@ async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: P
   await adaptMessage(bot, meta, session)
   session.messageId = meta.id
   session.timestamp = new Date(meta.timestamp).valueOf() || new Date().valueOf()
-  session.subtype = meta.guild_id ? 'group' : 'private'
-  if (meta.message_reference) {
-    const msg = await bot.getMessageFromServer(meta.message_reference.channel_id, meta.message_reference.message_id)
-    session.quote = await adaptMessage(bot, msg)
-    session.quote.messageId = meta.message_reference.message_id
-    session.quote.channelId = meta.message_reference.channel_id
-  }
+  // 遇到过 cross post 的消息在这里不会传消息id
+  // eslint-disable-next-line camelcase
+  session.content = segment('quote', { id: meta.message_reference.message_id, channelId: meta.message_reference.channel_id }) + session.content
   return session
-}
-
-async function adaptMessageCreate(bot: DiscordBot, meta: DC.Message, session: Partial<Session.Payload<Session.MessageAction>>) {
-  session.groupId = meta.guild_id
-  session.subtype = meta.guild_id ? 'group' : 'private'
-  session.channelId = meta.channel_id
-  await adaptMessageSession(bot, meta, session)
 }
 
 export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
@@ -125,17 +117,25 @@ export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
   }
   if (input.t === 'MESSAGE_CREATE') {
     session.type = 'message'
-    await adaptMessageCreate(bot, input.d as DC.Message, session)
-    if (!session.content) return
+    const msg = input.d as DC.Message
+    session.groupId = msg.guild_id
+    session.subtype = msg.guild_id ? 'group' : 'private'
+    session.channelId = msg.channel_id
+    await adaptMessageSession(bot, input.d, session)
+    // dc 情况特殊 可能有 embeds 但是没有消息主体
+    // if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_UPDATE') {
     session.type = 'message-updated'
     const d = input.d as DC.Message
-    const msg = await bot.getMessageFromServer(d.channel_id, d.id)
+    session.groupId = d.guild_id
+    session.subtype = d.guild_id ? 'group' : 'private'
+    session.channelId = d.channel_id
+    const msg = await bot.$getMessage(d.channel_id, d.id)
     // Unlike creates, message updates may contain only a subset of the full message object payload
     // https://discord.com/developers/docs/topics/gateway#message-update
-    await adaptMessageCreate(bot, msg, session)
-    if (!session.content) return
+    await adaptMessageSession(bot, msg, session)
+    // if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_DELETE') {
     session.type = 'message-deleted'

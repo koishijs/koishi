@@ -11,7 +11,7 @@ import { WorkerResponse } from './worker'
 export * from './main'
 
 declare module 'koishi-core' {
-  interface App {
+  interface Context {
     worker: EvalWorker
   }
 
@@ -68,22 +68,20 @@ const logger = new Logger('eval')
 
 export const name = 'eval'
 
+Context.delegate('worker')
+
 export function apply(ctx: Context, config: Config = {}) {
   const { prefix, authority } = config = { ...defaultConfig, ...config }
-  const { app } = ctx
+
+  ctx.worker = new EvalWorker(ctx, config)
 
   // addons are registered in another plugin
-  if (config.root) {
-    ctx.plugin(addon, config)
-  }
+  if (config.root) ctx.plugin(addon, config)
 
-  ctx.on('connect', () => {
-    app.worker = new EvalWorker(ctx.app, config)
-    app.worker.start()
-  })
-
-  ctx.before('disconnect', () => {
-    return app.worker?.stop()
+  // wait for dependents to be executed
+  process.nextTick(() => {
+    ctx.on('connect', () => ctx.worker.start())
+    ctx.before('disconnect', () => ctx.worker.stop())
   })
 
   ctx.before('command', ({ command, session }) => {
@@ -96,7 +94,7 @@ export function apply(ctx: Context, config: Config = {}) {
   const channelAccess = Trap.resolve(config.channelFields)
 
   // worker should be running for all the features
-  ctx = ctx.intersect(() => app.worker?.state === EvalWorker.State.open)
+  ctx = ctx.intersect(() => ctx.worker?.state === EvalWorker.State.open)
 
   const command = ctx.command('evaluate [expr:text]', '执行 JavaScript 脚本', { noEval: true })
     .alias('eval')
@@ -108,7 +106,7 @@ export function apply(ctx: Context, config: Config = {}) {
     })
     .action(async ({ options }) => {
       if (options.restart) {
-        await app.worker.restart()
+        await ctx.worker.restart()
         return '子线程已重启。'
       }
     })
@@ -137,11 +135,11 @@ export function apply(ctx: Context, config: Config = {}) {
       }
 
       const timer = setTimeout(async () => {
-        await app.worker.restart()
+        await ctx.worker.restart()
         _resolve('执行超时。')
       }, config.timeout)
 
-      const dispose = app.worker.onError((error: Error) => {
+      const dispose = ctx.worker.onError((error: Error) => {
         let message = ERROR_CODES[error['code']]
         if (!message) {
           logger.warn(error)
@@ -150,7 +148,7 @@ export function apply(ctx: Context, config: Config = {}) {
         _resolve(message)
       })
 
-      app.worker.remote.eval(scope, {
+      ctx.worker.remote.eval(scope, {
         silent: options.slient,
         source: expr,
       }).then(_resolve, (error) => {
@@ -204,9 +202,9 @@ function addon(ctx: Context, config: EvalConfig) {
       .option('update', '-u  更新扩展模块', { authority: 3 })
       .action(async ({ options }) => {
         if (!options.update) return
-        const { files, summary } = await git.pull(ctx.app.worker.config.gitRemote)
+        const { files, summary } = await git.pull(ctx.worker.config.gitRemote)
         if (!files.length) return '所有模块均已是最新。'
-        await ctx.app.worker.restart()
+        await ctx.worker.restart()
         return `更新成功！(${summary.insertions}A ${summary.deletions}D ${summary.changes}M)`
       })
   })
@@ -252,7 +250,7 @@ function addon(ctx: Context, config: EvalConfig) {
 
       Trap.action(cmd, userAccess, channelAccess, async ({ command, options, scope }, ...args) => {
         const { name } = command
-        return ctx.app.worker.remote.callAddon(scope, { name, args, options })
+        return ctx.worker.remote.callAddon(scope, { name, args, options })
       })
 
       options.forEach((config) => {

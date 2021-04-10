@@ -8,6 +8,14 @@ import type { User } from 'koishi-core'
 import type { Registry, Profile, Meta, Statistics } from '~/server'
 import * as client from '~/client'
 
+declare module '@vue/runtime-core' {
+  export interface ComponentInternalInstance {
+    ctx: Omit<ComponentPublicInstance, '$el'> & {
+      readonly $el: HTMLElement
+    }
+  }
+}
+
 export const store = reactive({
   showOverlay: false,
   overlayImage: null as HTMLImageElement,
@@ -76,30 +84,7 @@ export const registry = ref<Registry.Payload>(null)
 export const stats = ref<Statistics.Payload>(null)
 export const socket = ref<WebSocket>(null)
 
-const listeners: Record<string, (data: any) => void> = {}
-
-export function start() {
-  const endpoint = new URL(KOISHI_CONFIG.endpoint, location.origin).toString()
-  socket.value = new WebSocket(endpoint.replace(/^http/, 'ws'))
-  socket.value.onmessage = (ev) => {
-    const data = JSON.parse(ev.data)
-    console.debug(data)
-    if (data.type in listeners) {
-      listeners[data.type](data.body)
-    }
-  }
-  receive('meta', data => meta.value = data)
-  receive('profile', data => profile.value = data)
-  receive('registry', data => registry.value = data)
-  receive('stats', data => stats.value = data)
-  receive('user', data => user.value = data)
-
-  socket.value.onopen = () => {
-    if (!user.value) return
-    const { id, token } = user.value
-    send('validate', { id, token })
-  }
-}
+export const listeners: Record<string, (data: any) => void> = {}
 
 export function send(type: string, body: any) {
   socket.value.send(JSON.stringify({ type, body }))
