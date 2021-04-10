@@ -185,6 +185,7 @@ export class Context {
       const modules = deps.map(safeRequire)
       if (modules.includes(added)) this.teleport(modules, callback)
     })
+    return this
   }
 
   plugin<T extends Plugin>(plugin: T, options?: Plugin.Config<T>): this
@@ -502,11 +503,11 @@ export class Context {
       get() {
         if (!this.app[privateKey]) return
         const value = Object.create(this.app[privateKey])
-        value[Context.current] = this
+        defineProperty(value, Context.current, this)
         return value
       },
       set(value) {
-        this.app[privateKey] = value
+        defineProperty(this.app, privateKey, value)
       },
     })
   }
