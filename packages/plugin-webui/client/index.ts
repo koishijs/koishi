@@ -8,14 +8,6 @@ import type { User } from 'koishi-core'
 import type { Registry, Profile, Meta, Statistics } from '~/server'
 import * as client from '~/client'
 
-declare module '@vue/runtime-core' {
-  export interface ComponentInternalInstance {
-    ctx: Omit<ComponentPublicInstance, '$el'> & {
-      readonly $el: HTMLElement
-    }
-  }
-}
-
 export const store = reactive({
   showOverlay: false,
   overlayImage: null as HTMLImageElement,

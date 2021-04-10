@@ -1,5 +1,5 @@
 <template>
-  <component :is="tag" @scroll="onScroll">
+  <component ref="root" :is="tag" @scroll="onScroll">
     <virtual-item v-if="$slots.header" @resize="virtual.saveSize" uid="header">
       <slot name="header"/>
     </virtual-item>
@@ -43,8 +43,10 @@ function resolveItemClass(item: any, index: number) {
     : props.itemClass
 }
 
+const root = ref<HTMLElement>()
+
 watch(() => props.data.length, () => {
-  const { scrollTop, clientHeight, scrollHeight } = ctx.$el
+  const { scrollTop, clientHeight, scrollHeight } = root.value
   if (!props.pinned || Math.abs(scrollTop + clientHeight - scrollHeight) < 1) {
     nextTick(scrollToBottom)
   }
@@ -79,8 +81,6 @@ function getUids() {
   return data.map(item => item[keyName])
 }
 
-const { ctx } = getCurrentInstance()
-
 onMounted(() => {
   if (props.activeKey) {
     scrollToUid(props.activeKey)
@@ -91,9 +91,9 @@ onMounted(() => {
 
 function scrollToOffset(offset: number, smooth = false) {
   if (smooth) {
-    ctx.$el.scrollTo({ top: offset, behavior: 'smooth' })
+    root.value.scrollTo({ top: offset, behavior: 'smooth' })
   } else {
-    ctx.$el.scrollTop = offset
+    root.value.scrollTop = offset
   }
 }
 
@@ -111,9 +111,9 @@ function scrollToBottom() {
     // maybe list doesn't render and calculate to last range
     // so we need retry in next event loop until it really at bottom
     setTimeout(() => {
-      const offset = Math.ceil(ctx.$el.scrollTop)
-      const clientLength = Math.ceil(ctx.$el.clientHeight)
-      const scrollLength = Math.ceil(ctx.$el.scrollHeight)
+      const offset = Math.ceil(root.value.scrollTop)
+      const clientLength = Math.ceil(root.value.clientHeight)
+      const scrollLength = Math.ceil(root.value.scrollHeight)
       if (offset + clientLength < scrollLength) {
         scrollToBottom()
       }
@@ -122,9 +122,9 @@ function scrollToBottom() {
 }
 
 function onScroll(ev: MouseEvent) {
-  const offset = Math.ceil(ctx.$el.scrollTop)
-  const clientLength = Math.ceil(ctx.$el.clientHeight)
-  const scrollLength = Math.ceil(ctx.$el.scrollHeight)
+  const offset = Math.ceil(root.value.scrollTop)
+  const clientLength = Math.ceil(root.value.clientHeight)
+  const scrollLength = Math.ceil(root.value.scrollHeight)
 
   // iOS scroll-spring-back behavior will make direction mistake
   if (offset < 0 || (offset + clientLength > scrollLength + 1) || !scrollLength) {
@@ -154,12 +154,11 @@ const VirtualItem = defineComponent({
 
   setup(props, { slots, emit }) {
     let resizeObserver: ResizeObserver
-
-    const { ctx } = getCurrentInstance()
+    const root = ref<HTMLElement>()
 
     onMounted(() => {
       resizeObserver = new ResizeObserver(dispatchSizeChange)
-      resizeObserver.observe(ctx.$el)
+      resizeObserver.observe(root.value)
     })
 
     onUpdated(dispatchSizeChange)
@@ -169,11 +168,11 @@ const VirtualItem = defineComponent({
     })
 
     function dispatchSizeChange() {
-      const marginTop = +(getComputedStyle(ctx.$el).marginTop.slice(0, -2))
-      emit('resize', props.uid, ctx.$el.offsetHeight + marginTop)
+      const marginTop = +(getComputedStyle(root.value).marginTop.slice(0, -2))
+      emit('resize', props.uid, root.value.offsetHeight + marginTop)
     }
 
-    return () => h(props.tag, slots.default())
+    return () => h(props.tag, { ref: root }, slots.default())
   },
 })
 
