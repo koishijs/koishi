@@ -8,15 +8,15 @@
     <router-view v-else-if="loaded"/>
     <p v-else>正在加载数据……</p>
   </main>
-  <overlay/>
+  <component v-for="view in views" :is="view"/>
 </template>
 
 <script lang="ts" setup>
 
 import * as client from '~/client'
+import { views } from '~/client'
 import Navbar from './navbar.vue'
 import Sidebar from './sidebar.vue'
-import Overlay from './overlay.vue'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 

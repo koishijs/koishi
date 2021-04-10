@@ -1,6 +1,9 @@
-import { router } from 'koishi-plugin-webui/client'
+import { router, views } from 'koishi-plugin-webui/client'
 import Chat from './chat.vue'
 import Sandbox from './sandbox.vue'
+import Overlay from './overlay.vue'
+
+views.push(Overlay)
 
 router.addRoute({
   path: '/sandbox',
