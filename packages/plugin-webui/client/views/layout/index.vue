@@ -38,7 +38,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: rgba(244, 244, 245, .6);
-  overflow: hidden;
   background: radial-gradient(farthest-side ellipse at 10% 0, #333867, #17193b);
   background-attachment: fixed;
   position: relative;
@@ -64,6 +63,7 @@ main.frameless {
   left: 0;
   top: 50%;
   transform: translateY(-50%);
+  height: fit-content;
 }
 
 ::-webkit-scrollbar {
