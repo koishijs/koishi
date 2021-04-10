@@ -18,7 +18,7 @@
 
 import { ref, defineProps, defineEmit } from 'vue'
 import { segment } from '~/client'
-import VirtualList from './virtual-list/index.vue'
+import VirtualList from './list.vue'
 
 const emit = defineEmit(['send', 'click', 'update:activeKey'])
 

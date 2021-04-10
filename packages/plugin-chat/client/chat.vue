@@ -1,5 +1,5 @@
 <template>
-  <k-chat-panel class="page-chat" :messages="messages" pinned
+  <chat-panel class="page-chat" :messages="messages" pinned
     v-model:active-key="index" :item-class="getItemClass"
     @click="handleClick" @send="handleSend">
     <template #default="message">
@@ -19,7 +19,7 @@
           <span class="timestamp">{{ formatDateTime(new Date(message.timestamp)) }}</span>
         </div>
       </template>
-      <k-message :content="message.content"/>
+      <chat-message :content="message.content"/>
     </template>
     <template #footer>
       <p class="hint">
@@ -27,13 +27,15 @@
         <template v-else>点击消息已选择要发送的频道。</template>
       </p>
     </template>
-  </k-chat-panel>
+  </chat-panel>
 </template>
 
 <script lang="ts" setup>
 
 import { receive, storage, send, user } from '~/client'
 import { ref } from 'vue'
+import ChatPanel from './utils/panel.vue'
+import ChatMessage from './utils/message.vue'
 import type { Message } from '../src'
 
 const pinned = ref(true)

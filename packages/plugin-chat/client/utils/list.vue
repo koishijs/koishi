@@ -4,7 +4,7 @@
       <slot name="header"/>
     </virtual-item>
     <div :style="wrapperStyle">
-      <virtual-item v-for="(item, index) in data.slice(range.start, range.end)"
+      <virtual-item v-for="(item, index) in dataShown"
         :tag="itemTag" :class="resolveItemClass(item, index)" :uid="item[keyName]"
         @click.stop="emit('click', item, $event)" @resize="virtual.saveSize">
         <slot v-bind="item" :index="index + range.start"/>
@@ -19,7 +19,7 @@
 
 <script lang="ts" setup>
 
-import { defineEmit, ref, defineProps, computed, watch, getCurrentInstance, nextTick, onMounted, onUpdated, onBeforeUnmount, defineComponent, h } from 'vue'
+import { defineEmit, ref, defineProps, computed, watch, nextTick, onMounted, onUpdated, onBeforeUnmount, defineComponent, h } from 'vue'
 import Virtual from './virtual'
 
 const emit = defineEmit(['click', 'scroll', 'top', 'bottom', 'update:activeKey'])
@@ -36,6 +36,8 @@ const props = defineProps({
   activeKey: { default: '' },
   threshold: { default: 0 },
 })
+
+const dataShown = computed<any[]>(() => props.data.slice(range.start, range.end))
 
 function resolveItemClass(item: any, index: number) {
   return typeof props.itemClass === 'function'

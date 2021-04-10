@@ -1,15 +1,17 @@
 <template>
-  <k-chat-panel class="sandbox" :messages="messages" @send="sendSandbox" :pinned="pinned">
+  <chat-panel class="sandbox" :messages="messages" @send="sendSandbox" :pinned="pinned">
     <template #default="{ from, content }">
-      <k-message :class="from" :content="content"/>
+      <chat-message :class="from" :content="content"/>
     </template>
-  </k-chat-panel>
+  </chat-panel>
 </template>
 
 <script lang="ts" setup>
 
 import { ref, watch } from 'vue'
 import { send, receive, user, storage } from '~/client'
+import ChatPanel from './utils/panel.vue'
+import ChatMessage from './utils/message.vue'
 
 interface Message {
   from: 'user' | 'bot'
