@@ -105,11 +105,8 @@ async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: P
   session.messageId = meta.id
   session.timestamp = new Date(meta.timestamp).valueOf() || new Date().valueOf()
   // 遇到过 cross post 的消息在这里不会传消息id
-  // 别的 guild 传来的可能没有权限 在这忽略
   // eslint-disable-next-line camelcase
-  if (meta.message_reference?.message_id && meta.message_reference?.guild_id === meta.guild_id) {
-    session.content = segment('quote', { id: meta.message_reference.message_id, channelId: meta.message_reference.channel_id })
-  }
+  session.content = segment('quote', { id: meta.message_reference.message_id, channelId: meta.message_reference.channel_id }) + session.content
   return session
 }
 
