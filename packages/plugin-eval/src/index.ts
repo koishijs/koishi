@@ -78,6 +78,12 @@ export function apply(ctx: Context, config: Config = {}) {
   // addons are registered in another plugin
   if (config.root) ctx.plugin(addon, config)
 
+  // wait for dependents to be executed
+  process.nextTick(() => {
+    ctx.on('connect', () => ctx.worker.start())
+    ctx.before('disconnect', () => ctx.worker.stop())
+  })
+
   ctx.before('command', ({ command, session }) => {
     if (command.config.noEval && session._isEval) {
       return `不能在 evaluate 指令中调用 ${command.name} 指令。`

@@ -176,8 +176,15 @@ export class EvalWorker {
 
   constructor(public ctx: Context, public config: EvalConfig) {
     this.local = new MainAPI(ctx.app)
-    ctx.on('connect', () => this.start())
-    ctx.before('disconnect', () => this.stop())
+  }
+
+  addSetupFile(name: string, filename: string) {
+    if (this.config.setupFiles[name] === filename) return
+    const ctx = this[Context.current]
+    this.config.setupFiles[name] = filename
+    ctx.before('disconnect', () => {
+      delete this.config.setupFiles[name]
+    })
   }
 
   // delegated class methods which use instance properties
