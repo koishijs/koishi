@@ -11,7 +11,6 @@ export interface MainConfig extends Trap.Config {
   prefix?: string
   authority?: number
   timeout?: number
-  loader?: string
   resourceLimits?: ResourceLimits
   dataKeys?: (keyof WorkerData)[]
   gitRemote?: string

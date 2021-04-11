@@ -5,8 +5,7 @@ import { resolve } from 'path'
 import { load } from 'js-yaml'
 import { promises as fs } from 'fs'
 import Git, { CheckRepoActions } from 'simple-git'
-import { WorkerResponse } from './worker'
-import { Loader } from './transfer'
+import { WorkerResponse, Loader } from './worker'
 
 export * from './main'
 
@@ -54,17 +53,17 @@ interface Manifest {
   commands?: CommandManifest[]
 }
 
-const builtinLoaders = ['native']
+const builtinLoaders = ['default', 'esbuild', 'typescript']
 
 const defaultConfig: EvalConfig = {
   prefix: '>',
   authority: 2,
   timeout: 1000,
   setupFiles: {},
-  loader: 'native',
+  loader: 'default',
   channelFields: ['id'],
   userFields: ['id', 'authority'],
-  dataKeys: ['inspect', 'setupFiles'],
+  dataKeys: ['inspect', 'loader', 'setupFiles'],
 }
 
 const logger = new Logger('eval')
@@ -164,12 +163,18 @@ export function apply(ctx: Context, config: Config = {}) {
   }
 
   Argv.interpolate('${', '}', (source) => {
-    const expr = segment.unescape(source)
-    const result = loader.extract(expr)
-    if (result) return { source, command, args: [result], rest: segment.escape(source.slice(result.length + 1)) }
-    const index = source.indexOf('}')
-    if (index >= 0) return { source, rest: source.slice(index + 1), tokens: [] }
-    return { source, rest: '', tokens: [] }
+    const result = loader.extract(segment.unescape(source))
+    if (!result) {
+      const index = source.indexOf('}')
+      if (index >= 0) return { source, rest: source.slice(index + 1), tokens: [] }
+      return { source, rest: '', tokens: [] }
+    }
+    return {
+      source,
+      command,
+      args: [result],
+      rest: segment.escape(source.slice(result.length + 1)),
+    }
   })
 }
 

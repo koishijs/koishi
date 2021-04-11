@@ -59,10 +59,3 @@ export function expose(ep: Endpoint, object: {}) {
     ep.postMessage(JSON.stringify({ uuid, value }))
   })
 }
-
-// createLoader() is not relavant to transfer
-// we put it here since it's a cross-thread feature
-export interface Loader {
-  extract(expr: string): string
-  transform(expr: string): string | Promise<string>
-}

@@ -1,11 +1,10 @@
-import { config, context, internal } from '.'
+import { config, context, internal, Loader } from '.'
 import { resolve, posix, dirname } from 'path'
 import { promises as fs } from 'fs'
 import { deserialize, serialize, cachedDataVersionTag } from 'v8'
 import { Logger } from 'koishi-utils'
-import json5 from 'json5'
-import ts from 'typescript'
 
+let loader: Loader
 const logger = new Logger('eval:loader')
 
 // TODO pending @types/node
@@ -64,12 +63,6 @@ async function linker(specifier: string, { identifier }: Module) {
   throw new Error(`Unable to resolve dependency "${specifier}" in "${identifier}"`)
 }
 
-const compilerOptions: ts.CompilerOptions = {
-  inlineSourceMap: true,
-  module: ts.ModuleKind.ES2020,
-  target: ts.ScriptTarget.ES2020,
-}
-
 interface FileCache {
   outputText: string
   cachedData: Buffer
@@ -100,15 +93,10 @@ export async function safeWriteFile(filename: string, data: any) {
 export default async function prepare() {
   if (!config.root) return
 
-  const tsconfigPath = resolve(config.root, 'tsconfig.json')
+  loader = require(config.loader) as Loader
   const cachePath = resolve(config.root, config.cacheFile || '.koishi/cache')
   await Promise.all([
-    fs.readFile(tsconfigPath, 'utf8').then((tsconfig) => {
-      Object.assign(compilerOptions, json5.parse(tsconfig))
-    }, () => {
-      logger.info('auto generating tsconfig.json...')
-      return fs.writeFile(tsconfigPath, json5.stringify({ compilerOptions }, null, 2))
-    }),
+    loader.prepare?.(config),
     readSerialized(cachePath).then((data) => {
       if (data && data.tag === CACHE_TAG && data.v8tag === V8_TAG) {
         Object.assign(cachedFiles, data.files)
@@ -154,9 +142,7 @@ async function createModule(path: string) {
       module = new SourceTextModule(outputText, { context, identifier, cachedData })
     } else {
       type = 'source text'
-      const { outputText } = ts.transpileModule(source, {
-        compilerOptions,
-      })
+      const outputText = await loader.transform(source)
       module = new SourceTextModule(outputText, { context, identifier })
       const cachedData = module.createCachedData()
       files[source] = { outputText, cachedData }
