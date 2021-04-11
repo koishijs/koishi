@@ -1,5 +1,5 @@
 import { App, BotOptions, version } from 'koishi-core'
-import { resolve, dirname } from 'path'
+import { resolve, dirname, relative } from 'path'
 import { coerce, Logger, noop, LogLevelConfig } from 'koishi-utils'
 import { performance } from 'perf_hooks'
 import { watch } from 'chokidar'
@@ -196,10 +196,10 @@ function loadDependencies(filename: string, ignored: MapOrSet<string>) {
 function createWatcher() {
   if (process.env.KOISHI_WATCH_ROOT === undefined && !config.watch) return
 
-  const { root = '', ignored = [] } = config.watch || {}
-  const watchRoot = process.env.KOISHI_WATCH_ROOT ?? root
+  const { root = '', ignored = [], fullReload } = config.watch || {}
+  const watchRoot = resolve(process.cwd(), process.env.KOISHI_WATCH_ROOT ?? root)
   const externals = loadDependencies(__filename, pluginMap)
-  const watcher = watch(resolve(process.cwd(), watchRoot), {
+  const watcher = watch(watchRoot, {
     ...config.watch,
     ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
   })
@@ -207,8 +207,14 @@ function createWatcher() {
   const logger = new Logger('watcher')
 
   watcher.on('change', async (path) => {
-    if (!require.cache[path] || externals.has(path)) return
-    logger.debug('change detected:', path)
+    if (!require.cache[path]) return
+    logger.info('change detected:', relative(watchRoot, path))
+
+    if (externals.has(path)) {
+      if (!fullReload) return
+      logger.info('trigger full reload')
+      process.exit(114)
+    }
 
     /** files that should be reloaded */
     const accepted = new Set<string>()
