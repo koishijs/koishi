@@ -1,12 +1,12 @@
 import { Domain, Context, Command, Argv } from 'koishi-core'
 import { segment, Logger, defineProperty, noop } from 'koishi-utils'
-import { Script } from 'vm'
 import { EvalWorker, Trap, EvalConfig, Config } from './main'
 import { resolve } from 'path'
 import { load } from 'js-yaml'
 import { promises as fs } from 'fs'
 import Git, { CheckRepoActions } from 'simple-git'
 import { WorkerResponse } from './worker'
+import { Loader } from './transfer'
 
 export * from './main'
 
@@ -54,11 +54,14 @@ interface Manifest {
   commands?: CommandManifest[]
 }
 
+const builtinLoaders = ['native']
+
 const defaultConfig: EvalConfig = {
   prefix: '>',
   authority: 2,
   timeout: 1000,
   setupFiles: {},
+  loader: 'native',
   channelFields: ['id'],
   userFields: ['id', 'authority'],
   dataKeys: ['inspect', 'setupFiles'],
@@ -75,14 +78,14 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.worker = new EvalWorker(ctx, config)
 
+  // resolve loader filepath
+  if (builtinLoaders.includes(config.loader)) {
+    config.loader = resolve(__dirname, 'loaders', config.loader)
+  }
+  const loader = require(config.loader) as Loader
+
   // addons are registered in another plugin
   if (config.root) ctx.plugin(addon, config)
-
-  // wait for dependents to be executed
-  process.nextTick(() => {
-    ctx.on('connect', () => ctx.worker.start())
-    ctx.before('disconnect', () => ctx.worker.stop())
-  })
 
   ctx.before('command', ({ command, session }) => {
     if (command.config.noEval && session._isEval) {
@@ -113,14 +116,11 @@ export function apply(ctx: Context, config: Config = {}) {
 
   Trap.action(command, userAccess, channelAccess, async ({ session, options, scope }, expr) => {
     if (!expr) return '请输入要执行的脚本。'
-    expr = segment.unescape(expr)
 
     try {
-      Reflect.construct(Script, [expr, { filename: 'stdin' }])
-    } catch (e) {
-      if (!(e instanceof SyntaxError)) throw e
-      const lines = e.stack.split('\n', 5)
-      return `${lines[4]}\n    at ${lines[0]}:${lines[2].length}`
+      expr = await loader.transform(segment.unescape(expr))
+    } catch (err) {
+      return err.message
     }
 
     return await new Promise((resolve) => {
@@ -165,21 +165,11 @@ export function apply(ctx: Context, config: Config = {}) {
 
   Argv.interpolate('${', '}', (source) => {
     const expr = segment.unescape(source)
-    try {
-      Reflect.construct(Script, [expr])
-    } catch (e) {
-      if (!(e instanceof Error)) throw e
-      if (e.message === "Unexpected token '}'") {
-        const eLines = e.stack.split('\n')
-        const sLines = expr.split('\n')
-        const cap = /\d+$/.exec(eLines[0])
-        const row = +cap[0] - 1
-        const rest = sLines[row].slice(eLines[2].length) + sLines.slice(row + 1)
-        source = sLines.slice(0, row) + sLines[row].slice(0, eLines[2].length - 1)
-        return { source, command, args: [source], rest: segment.escape(rest) }
-      }
-    }
-    return { source, rest: source, tokens: [] }
+    const result = loader.extract(expr)
+    if (result) return { source, command, args: [result], rest: segment.escape(source.slice(result.length + 1)) }
+    const index = source.indexOf('}')
+    if (index >= 0) return { source, rest: source.slice(index + 1), tokens: [] }
+    return { source, rest: '', tokens: [] }
   })
 }
 

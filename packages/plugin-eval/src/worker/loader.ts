@@ -1,4 +1,4 @@
-import { config, context, internal } from './worker'
+import { config, context, internal } from '.'
 import { resolve, posix, dirname } from 'path'
 import { promises as fs } from 'fs'
 import { deserialize, serialize, cachedDataVersionTag } from 'v8'

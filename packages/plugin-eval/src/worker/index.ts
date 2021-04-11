@@ -21,9 +21,9 @@ export const config: WorkerData = {
 }
 
 import prepare, { synthetize, readSerialized, safeWriteFile } from './loader'
-import { expose, wrap } from './transfer'
+import { expose, wrap } from '../transfer'
 import { Sandbox } from './sandbox'
-import { MainAPI } from '.'
+import { MainHandle } from '..'
 
 export * from './loader'
 
@@ -69,7 +69,7 @@ export function formatError(error: Error) {
     .join('\n')
 }
 
-const main = wrap<MainAPI>(parentPort)
+const main = wrap<MainHandle>(parentPort)
 
 export interface ScopeData {
   id: string
@@ -143,7 +143,7 @@ interface AddonScope extends AddonArgv, Scope {}
 type AddonAction = (scope: AddonScope) => string | void | Promise<string | void>
 const commandMap: Record<string, AddonAction> = {}
 
-export class WorkerAPI {
+export class WorkerHandle {
   start() {
     return response
   }
@@ -224,7 +224,7 @@ async function start() {
     if (sourceMap) path = sourceMap.payload.sources[0].slice(7)
     return pathMapper[name] = new RegExp(`(at | \\()${escapeRegExp(path)}`, 'g')
   })
-  expose(parentPort, new WorkerAPI())
+  expose(parentPort, new WorkerHandle())
 }
 
 start()

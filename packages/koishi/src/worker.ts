@@ -208,7 +208,7 @@ function createWatcher() {
 
   watcher.on('change', async (path) => {
     if (!require.cache[path]) return
-    logger.info('change detected:', relative(watchRoot, path))
+    logger.debug('change detected:', relative(watchRoot, path))
 
     if (externals.has(path)) {
       if (!fullReload) return

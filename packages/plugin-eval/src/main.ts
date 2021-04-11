@@ -1,7 +1,7 @@
 import { App, Command, Channel, Argv as IArgv, User, Context } from 'koishi-core'
 import { Logger, Observed, pick, union } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
-import { WorkerAPI, WorkerConfig, WorkerData, ScopeData } from './worker'
+import { WorkerHandle, WorkerConfig, WorkerData, ScopeData } from './worker'
 import { expose, Remote, wrap } from './transfer'
 import { resolve } from 'path'
 
@@ -11,6 +11,7 @@ export interface MainConfig extends Trap.Config {
   prefix?: string
   authority?: number
   timeout?: number
+  loader?: string
   resourceLimits?: ResourceLimits
   dataKeys?: (keyof WorkerData)[]
   gitRemote?: string
@@ -121,7 +122,7 @@ export namespace Trap {
   }
 }
 
-export class MainAPI {
+export class MainHandle {
   constructor(public app: App) {}
 
   private getSession(uuid: string) {
@@ -169,13 +170,19 @@ export class EvalWorker {
   private promise: Promise<void>
 
   public state = State.close
-  public local: MainAPI
-  public remote: Remote<WorkerAPI>
+  public local: MainHandle
+  public remote: Remote<WorkerHandle>
 
   static readonly State = State
 
   constructor(public ctx: Context, public config: EvalConfig) {
-    this.local = new MainAPI(ctx.app)
+    this.local = new MainHandle(ctx.app)
+
+    // wait for dependents to be executed
+    process.nextTick(() => {
+      ctx.on('connect', () => this.start())
+      ctx.before('disconnect', () => this.stop())
+    })
   }
 
   addSetupFile(name: string, filename: string) {
