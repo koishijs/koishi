@@ -1,21 +1,6 @@
 import esbuild from 'esbuild'
 
-export async function transform(expr: string) {
-  try {
-    const { code } = await esbuild.transform(expr, {
-      sourcemap: 'inline',
-      loader: 'ts',
-      charset: 'utf8',
-      target: 'es2020',
-    })
-    return code
-  } catch (e) {
-    const [{ location, text }] = e.errors as esbuild.Message[]
-    throw new Error(`${text}\n    at stdin:${location.line}:${location.column}`)
-  }
-}
-
-export function extract(expr: string) {
+export function extractScript(expr: string) {
   try {
     esbuild.transformSync(expr, {
       loader: 'ts',
@@ -30,3 +15,20 @@ export function extract(expr: string) {
     }
   }
 }
+
+export async function transformScript(expr: string) {
+  try {
+    const { code } = await esbuild.transform(expr, {
+      sourcemap: 'inline',
+      loader: 'ts',
+      charset: 'utf8',
+      target: 'es2020',
+    })
+    return code
+  } catch (e) {
+    const [{ location, text }] = e.errors as esbuild.Message[]
+    throw new Error(`${text}\n    at stdin:${location.line}:${location.column}`)
+  }
+}
+
+export const transformModule = transformScript

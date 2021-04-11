@@ -5,7 +5,7 @@ import { WorkerData } from '../worker'
 import { resolve } from 'path'
 import { Logger } from 'koishi-utils'
 
-export { extract } from './default'
+export { extractScript } from './default'
 
 const compilerOptions: ts.CompilerOptions = {
   inlineSourceMap: true,
@@ -24,6 +24,10 @@ export async function prepare(config: WorkerData) {
   })
 }
 
-export async function transform(expr: string) {
+export async function transformScript(expr: string) {
   return ts.transpile(expr, compilerOptions)
+}
+
+export async function transformModule(expr: string) {
+  return ts.transpileModule(expr, { compilerOptions })
 }

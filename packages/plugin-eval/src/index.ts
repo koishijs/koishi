@@ -117,7 +117,7 @@ export function apply(ctx: Context, config: Config = {}) {
     if (!expr) return '请输入要执行的脚本。'
 
     try {
-      expr = await loader.transform(segment.unescape(expr))
+      expr = await loader.transformScript(segment.unescape(expr))
     } catch (err) {
       return err.message
     }
@@ -163,7 +163,7 @@ export function apply(ctx: Context, config: Config = {}) {
   }
 
   Argv.interpolate('${', '}', (source) => {
-    const result = loader.extract(segment.unescape(source))
+    const result = loader.extractScript(segment.unescape(source))
     if (!result) {
       const index = source.indexOf('}')
       if (index >= 0) return { source, rest: source.slice(index + 1), tokens: [] }

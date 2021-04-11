@@ -43,9 +43,10 @@ export interface WorkerData extends WorkerConfig {
 // createLoader() is not relavant to transfer
 // we put it here since it's a cross-thread feature
 export interface Loader {
-  extract(expr: string): string
   prepare(config: WorkerData): void | Promise<void>
-  transform(expr: string): string | Promise<string>
+  extractScript(expr: string): string
+  transformScript(expr: string): string | Promise<string>
+  transformModule(expr: string): string | Promise<string>
 }
 
 interface EvalOptions {

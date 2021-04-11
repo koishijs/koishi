@@ -142,7 +142,7 @@ async function createModule(path: string) {
       module = new SourceTextModule(outputText, { context, identifier, cachedData })
     } else {
       type = 'source text'
-      const outputText = await loader.transform(source)
+      const outputText = await loader.transformModule(source)
       module = new SourceTextModule(outputText, { context, identifier })
       const cachedData = module.createCachedData()
       files[source] = { outputText, cachedData }
