@@ -1,6 +1,6 @@
 {
   "koishi-adapter-discord": {
-    "version": "1.0.8",
+    "version": "1.0.9",
     "description": "Discord adapter for Koishi"
   },
   "koishi-adapter-kaiheila": {
@@ -28,7 +28,7 @@
     "description": "Asset provider plugin for Koishi"
   },
   "koishi-plugin-chat": {
-    "version": "0.2.1",
+    "version": "0.3.0",
     "description": "Chat plugin for Koishi"
   },
   "koishi-plugin-chess": {
@@ -44,7 +44,7 @@
     "description": "COC / DND Tools for Koishi"
   },
   "koishi-plugin-eval": {
-    "version": "3.0.0-beta.16",
+    "version": "3.0.0-rc.0",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-github": {
@@ -67,7 +67,7 @@
     "description": "MySQL support for Koishi"
   },
   "koishi-plugin-puppeteer": {
-    "version": "2.0.1",
+    "version": "2.0.2",
     "description": "Take Screenshots in Koishi"
   },
   "koishi-plugin-rss": {
@@ -87,7 +87,7 @@
     "description": "Some simple tools for Koishi"
   },
   "koishi-plugin-webui": {
-    "version": "4.1.1",
+    "version": "4.2.0",
     "description": "Show Web UI of Koishi"
   }
 }
