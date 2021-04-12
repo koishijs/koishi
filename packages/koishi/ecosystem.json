@@ -8,7 +8,7 @@
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-onebot": {
-    "version": "3.0.6",
+    "version": "3.0.7",
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-adapter-telegram": {

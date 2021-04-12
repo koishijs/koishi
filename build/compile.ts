@@ -79,10 +79,7 @@ const KOISHI_VERSION = JSON.stringify(version)
       plugins: [{
         name: 'external library',
         setup(build) {
-          build.onResolve({ filter }, (args) => {
-            if (args.path.match(/\./)) console.log(args.importer, '->', args.path)
-            return { external: true }
-          })
+          build.onResolve({ filter }, () => ({ external: true }))
         },
       }],
     }

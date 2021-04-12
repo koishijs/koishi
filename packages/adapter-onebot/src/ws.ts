@@ -27,7 +27,7 @@ export class WsServer extends Adapter<'onebot'> {
     assertProperty(app.options, 'port')
     super(app, CQBot)
     const { onebot = {} } = this.app.options
-    const { path = '/' } = onebot
+    const { path = '/onebot' } = onebot
     this.wsServer = new WebSocket.Server({
       path,
       server: this.app._httpServer,
