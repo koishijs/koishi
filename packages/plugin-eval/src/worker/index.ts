@@ -21,14 +21,15 @@ export const config: WorkerData = {
 }
 
 import prepare, { synthetize, readSerialized, safeWriteFile } from './loader'
-import { expose, wrap } from './transfer'
+import { expose, wrap } from '../transfer'
 import { Sandbox } from './sandbox'
-import { MainAPI } from '.'
+import { MainHandle } from '..'
 
 export * from './loader'
 
 export interface WorkerConfig {
   root?: string
+  loader?: string
   inspect?: InspectOptions
   cacheFile?: string
   storageFile?: string
@@ -37,6 +38,15 @@ export interface WorkerConfig {
 
 export interface WorkerData extends WorkerConfig {
   addonNames?: string[]
+}
+
+// createLoader() is not relavant to transfer
+// we put it here since it's a cross-thread feature
+export interface Loader {
+  prepare(config: WorkerData): void | Promise<void>
+  extractScript(expr: string): string
+  transformScript(expr: string): string | Promise<string>
+  transformModule(expr: string): string | Promise<string>
 }
 
 interface EvalOptions {
@@ -69,7 +79,7 @@ export function formatError(error: Error) {
     .join('\n')
 }
 
-const main = wrap<MainAPI>(parentPort)
+const main = wrap<MainHandle>(parentPort)
 
 export interface ScopeData {
   id: string
@@ -143,7 +153,7 @@ interface AddonScope extends AddonArgv, Scope {}
 type AddonAction = (scope: AddonScope) => string | void | Promise<string | void>
 const commandMap: Record<string, AddonAction> = {}
 
-export class WorkerAPI {
+export class WorkerHandle {
   start() {
     return response
   }
@@ -151,7 +161,7 @@ export class WorkerAPI {
   async sync(scope: Scope) {
     await scope.user?._update()
     await scope.channel?._update()
-    const buffer = serialize(storage)
+    const buffer = serialize(scope.storage)
     await safeWriteFile(storagePath, buffer)
   }
 
@@ -224,7 +234,7 @@ async function start() {
     if (sourceMap) path = sourceMap.payload.sources[0].slice(7)
     return pathMapper[name] = new RegExp(`(at | \\()${escapeRegExp(path)}`, 'g')
   })
-  expose(parentPort, new WorkerAPI())
+  expose(parentPort, new WorkerHandle())
 }
 
 start()

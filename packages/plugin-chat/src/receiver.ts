@@ -113,7 +113,7 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
   }
 
   async function prepareAbstract(session: Session, params: Message, timestamp: number) {
-    const codes = segment.parse(params.content.split('\n', 1)[0])
+    const codes = segment.parse(params.content.split(/\r?\n/, 1)[0])
     params.abstract = ''
     for (const code of codes) {
       if (textSegmentTypes.includes(code.type)) {

@@ -36,6 +36,7 @@ declare module 'koishi-core' {
   }
 
   interface EventMap {
+    'puppeteer/start'(): void
     'puppeteer/validate'(url: string): string
   }
 }
@@ -72,6 +73,7 @@ export function apply(ctx: Context, config: Config = {}) {
       }
       defineProperty(ctx.app, 'browser', await puppeteer.launch(config.browser))
       logger.debug('browser launched')
+      ctx.emit('puppeteer/start')
     } catch (error) {
       logger.error(error)
       ctx.dispose()

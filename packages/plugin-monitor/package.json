@@ -17,6 +17,6 @@
   },
   "homepage": "https://github.com/koishijs/koishi#readme",
   "peerDependencies": {
-    "koishi-core": "^3.7.2"
+    "koishi-core": "^3.8.0"
   }
 }

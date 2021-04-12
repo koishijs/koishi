@@ -44,6 +44,7 @@ const segmentTypes = {
 .k-message {
   white-space: break-spaces;
   line-height: 1.5;
+  position: relative;
 
   img {
     max-height: 320px;

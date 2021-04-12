@@ -1,7 +1,7 @@
 import { App, Command, Channel, Argv as IArgv, User, Context } from 'koishi-core'
 import { Logger, Observed, pick, union } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
-import { WorkerAPI, WorkerConfig, WorkerData, ScopeData } from './worker'
+import { WorkerHandle, WorkerConfig, WorkerData, ScopeData } from './worker'
 import { expose, Remote, wrap } from './transfer'
 import { resolve } from 'path'
 
@@ -121,7 +121,7 @@ export namespace Trap {
   }
 }
 
-export class MainAPI {
+export class MainHandle {
   constructor(public app: App) {}
 
   private getSession(uuid: string) {
@@ -169,26 +169,23 @@ export class EvalWorker {
   private promise: Promise<void>
 
   public state = State.close
-  public local: MainAPI
-  public remote: Remote<WorkerAPI>
+  public local: MainHandle
+  public remote: Remote<WorkerHandle>
 
   static readonly State = State
 
   constructor(public ctx: Context, public config: EvalConfig) {
-    this.local = new MainAPI(ctx.app)
-  }
+    this.local = new MainHandle(ctx.app)
 
-  addSetupFile(name: string, filename: string) {
-    if (this.config.setupFiles[name] === filename) return
-    const ctx = this[Context.current]
-    this.config.setupFiles[name] = filename
-    ctx.before('disconnect', () => {
-      delete this.config.setupFiles[name]
+    // wait for dependents to be executed
+    process.nextTick(() => {
+      ctx.on('connect', () => this.start())
+      ctx.before('disconnect', () => this.stop())
     })
   }
 
   // delegated class methods which use instance properties
-  // should be written in arrow functions
+  // should be written in arrow functions to ensure accessibility
   start = async () => {
     this.state = State.opening
     await this.ctx.parallel('eval/before-start')

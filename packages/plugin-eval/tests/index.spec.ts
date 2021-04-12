@@ -57,7 +57,7 @@ describe('Eval Plugin', () => {
   it('interpolate', async () => {
     app.command('echo <text:text>').action((_, text) => text)
     await ses.shouldReply('echo 1${1 + 1}3', '123')
-    await ses.shouldReply('echo 1${2 + 3', '12 + 3')
+    await ses.shouldReply('echo 1${2 + 3', '1')
   })
 
   it('global', async () => {

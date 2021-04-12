@@ -68,8 +68,8 @@ export class App extends Context {
     prettyErrors: true,
     userCacheAge: Time.minute,
     channelCacheAge: 5 * Time.minute,
-    autoAssign: false,
-    autoAuthorize: 0,
+    autoAssign: true,
+    autoAuthorize: 1,
     minSimilarity: 0.4,
     processMessage: message => simplify(message.trim()),
     delay: {

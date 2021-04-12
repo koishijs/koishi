@@ -93,6 +93,7 @@ section.login {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  margin-bottom: 0 !important;
 
   .k-card-body {
     padding: 3rem 0 !important;

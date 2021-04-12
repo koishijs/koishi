@@ -2,19 +2,13 @@
 
 /// <reference types="./global"/>
 
-import { ref, watch, reactive, Ref } from 'vue'
+import { ref, watch, reactive, Ref, Component } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import type { User } from 'koishi-core'
 import type { Registry, Profile, Meta, Statistics } from '~/server'
 import * as client from '~/client'
 
-declare module '@vue/runtime-core' {
-  export interface ComponentInternalInstance {
-    ctx: Omit<ComponentPublicInstance, '$el'> & {
-      readonly $el: HTMLElement
-    }
-  }
-}
+export const views: Component[] = []
 
 export const store = reactive({
   showOverlay: false,

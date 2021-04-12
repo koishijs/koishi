@@ -104,9 +104,11 @@ async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: P
   await adaptMessage(bot, meta, session)
   session.messageId = meta.id
   session.timestamp = new Date(meta.timestamp).valueOf() || new Date().valueOf()
-  // 遇到过 cross post 的消息在这里不会传消息id
-  // eslint-disable-next-line camelcase
-  session.content = segment('quote', { id: meta.message_reference.message_id, channelId: meta.message_reference.channel_id }) + session.content
+  // 遇到过 cross post 的消息在这里不会传消息 id
+  if (meta.message_reference) {
+    const { message_id, channel_id } = meta.message_reference
+    session.content = segment('quote', { id: message_id, channelId: channel_id }) + session.content
+  }
   return session
 }
 

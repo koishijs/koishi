@@ -1,5 +1,4 @@
-import { Adapter, App, Bot, Context, Logger, omit, pick, Random, remove, Session, Time, User } from 'koishi-core'
-import { Profile } from './data'
+import { Adapter, App, Bot, Context, Logger, omit, pick, Random, remove, Time, User } from 'koishi-core'
 import WebSocket from 'ws'
 
 const logger = new Logger('status')
@@ -30,21 +29,6 @@ export class SocketHandle {
   }
 }
 
-export class SandboxBot extends Bot<'web'> {
-  username = 'sandbox'
-  status = Bot.Status.GOOD
-
-  constructor(public readonly adapter: WebAdapter) {
-    super(adapter, { type: 'web', selfId: 'sandbox' })
-    Profile.initBot(this)
-  }
-
-  async sendMessage(id: string, content: string) {
-    this.adapter.handles[id]?.send('sandbox:bot', content)
-    return Random.uuid()
-  }
-}
-
 export namespace WebAdapter {
   export interface Config {
     apiPath?: string
@@ -57,7 +41,6 @@ export namespace WebAdapter {
 export class WebAdapter extends Adapter<'web'> {
   readonly server: WebSocket.Server
   readonly handles: Record<string, SocketHandle> = {}
-  readonly sandbox = this.create({}, SandboxBot)
 
   static readonly listeners: Record<string, WebAdapter.Listener> = {}
 
@@ -68,12 +51,6 @@ export class WebAdapter extends Adapter<'web'> {
       path: config.apiPath,
       server: ctx.app._httpServer,
     })
-
-    ctx.self('sandbox')
-      .command('clear', '清空消息列表')
-      .action(({ session }) => {
-        this.handles[session.channelId].send('sandbox:clear')
-      })
 
     ctx.all().middleware(async (session, next) => {
       if (session.subtype !== 'private') return next()
@@ -159,26 +136,4 @@ WebAdapter.listeners.login = async function ({ username, password }) {
   await this.app.database.setUser('name', username, pick(user, ['token', 'expire']))
   this.send('user', omit(user, ['password']))
   this.authority = user.authority
-}
-
-WebAdapter.listeners.sandbox = async function ({ id, token, content }) {
-  const user = await this.validate(id, token, ['name'])
-  if (!user) return
-  content = await this.app.transformAssets(content)
-  this.send('sandbox:user', content)
-  const session = new Session(this.app, {
-    platform: 'web',
-    userId: id,
-    content,
-    channelId: this.id,
-    selfId: 'sandbox',
-    type: 'message',
-    subtype: 'private',
-    author: {
-      userId: 'id',
-      username: user.name,
-    },
-  })
-  session.platform = 'id' as never
-  this.adapter.dispatch(session)
 }
