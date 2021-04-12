@@ -184,17 +184,8 @@ export class EvalWorker {
     })
   }
 
-  addSetupFile(name: string, filename: string) {
-    if (this.config.setupFiles[name] === filename) return
-    const ctx = this[Context.current]
-    this.config.setupFiles[name] = filename
-    ctx.before('disconnect', () => {
-      delete this.config.setupFiles[name]
-    })
-  }
-
   // delegated class methods which use instance properties
-  // should be written in arrow functions
+  // should be written in arrow functions to ensure accessibility
   start = async () => {
     this.state = State.opening
     await this.ctx.parallel('eval/before-start')

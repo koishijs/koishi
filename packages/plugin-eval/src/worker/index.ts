@@ -161,7 +161,7 @@ export class WorkerHandle {
   async sync(scope: Scope) {
     await scope.user?._update()
     await scope.channel?._update()
-    const buffer = serialize(storage)
+    const buffer = serialize(scope.storage)
     await safeWriteFile(storagePath, buffer)
   }
 
