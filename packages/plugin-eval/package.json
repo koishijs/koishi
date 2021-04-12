@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-eval",
-  "version": "3.0.0-rc.0",
+  "version": "3.0.0-rc.1",
   "description": "Execute JavaScript in Koishi",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
