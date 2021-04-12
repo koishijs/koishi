@@ -22,7 +22,7 @@ interface Module {
 export const modules: Record<string, Module> = {}
 export const synthetics: Record<string, Module> = {}
 
-export function synthetize(identifier: string, namespace: {}, name?: string) {
+export function synthetize(identifier: string, namespace: {}, globalName?: string) {
   const module = new SyntheticModule(Object.keys(namespace), function () {
     for (const key in namespace) {
       this.setExport(key, internal.contextify(namespace[key]))
@@ -30,7 +30,7 @@ export function synthetize(identifier: string, namespace: {}, name?: string) {
   }, { context, identifier })
   modules[identifier] = module
   config.addonNames?.unshift(identifier)
-  if (name) synthetics[name] = module
+  if (globalName) synthetics[globalName] = module
 }
 
 const suffixes = ['', '.ts', '/index.ts']
@@ -73,11 +73,13 @@ const V8_TAG = cachedDataVersionTag()
 const files: Record<string, FileCache> = {}
 const cachedFiles: Record<string, FileCache> = {}
 
-export async function readSerialized(filename: string) {
+export async function readSerialized(filename: string): Promise<[any?, Buffer?]> {
   try {
     const buffer = await fs.readFile(filename)
-    return deserialize(buffer)
-  } catch {}
+    return [deserialize(buffer), buffer]
+  } catch {
+    return []
+  }
 }
 
 // errors should be catched because we should not expose file paths to users
@@ -97,7 +99,7 @@ export default async function prepare() {
   const cachePath = resolve(config.root, config.cacheFile || '.koishi/cache')
   await Promise.all([
     loader.prepare?.(config),
-    readSerialized(cachePath).then((data) => {
+    readSerialized(cachePath).then(([data]) => {
       if (data && data.tag === CACHE_TAG && data.v8tag === V8_TAG) {
         Object.assign(cachedFiles, data.files)
       }

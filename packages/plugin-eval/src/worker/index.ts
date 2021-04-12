@@ -3,7 +3,7 @@ import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
 import { findSourceMap } from 'module'
 import { resolve, dirname, sep } from 'path'
-import { serialize } from 'v8'
+import { deserialize, serialize } from 'v8'
 
 /* eslint-disable import/first */
 
@@ -81,7 +81,7 @@ export function formatError(error: Error) {
 
 const main = wrap<MainHandle>(parentPort)
 
-export interface ScopeData {
+export interface SessionData {
   id: string
   user: Partial<User>
   channel: Partial<Channel>
@@ -92,7 +92,7 @@ export interface ScopeData {
 type Serializable = string | number | boolean | Serializable[] | SerializableObject
 type SerializableObject = { [K in string]: Serializable }
 
-export interface Scope {
+export interface Session {
   storage: SerializableObject
   user: User.Observed<any>
   channel: Channel.Observed<any>
@@ -101,9 +101,10 @@ export interface Scope {
 }
 
 let storage: SerializableObject
+let backupStorage: Buffer
 const storagePath = resolve(config.root || process.cwd(), config.storageFile || '.koishi/storage')
 
-export const Scope = ({ id, user, userWritable, channel, channelWritable }: ScopeData): Scope => ({
+export const createSession = ({ id, user, userWritable, channel, channelWritable }: SessionData): Session => ({
   storage,
 
   user: user && observe(user, async (diff) => {
@@ -148,7 +149,7 @@ interface AddonArgv {
   options: Record<string, any>
 }
 
-interface AddonScope extends AddonArgv, Scope {}
+interface AddonScope extends AddonArgv, Session {}
 
 type AddonAction = (scope: AddonScope) => string | void | Promise<string | void>
 const commandMap: Record<string, AddonAction> = {}
@@ -158,18 +159,23 @@ export class WorkerHandle {
     return response
   }
 
-  async sync(scope: Scope) {
+  async sync(scope: Session) {
     await scope.user?._update()
     await scope.channel?._update()
-    const buffer = serialize(scope.storage)
-    await safeWriteFile(storagePath, buffer)
+    try {
+      const buffer = serialize(scope.storage)
+      await safeWriteFile(storagePath, backupStorage = buffer)
+    } catch (error) {
+      storage = deserialize(backupStorage)
+      throw error
+    }
   }
 
-  async eval(data: ScopeData, options: EvalOptions) {
+  async eval(data: SessionData, options: EvalOptions) {
     const { source, silent } = options
 
     const key = 'koishi-eval-context:' + data.id
-    const scope = Scope(data)
+    const scope = createSession(data)
     internal.setGlobal(Symbol.for(key), scope, true)
 
     let result: any
@@ -189,10 +195,10 @@ export class WorkerHandle {
     return formatResult(result)
   }
 
-  async callAddon(options: ScopeData, argv: AddonArgv) {
+  async callAddon(options: SessionData, argv: AddonArgv) {
     const callback = commandMap[argv.name]
     try {
-      const ctx = { ...argv, ...Scope(options) }
+      const ctx = { ...argv, ...createSession(options) }
       const result = await callback(ctx)
       await this.sync(ctx)
       return result
@@ -224,7 +230,12 @@ Object.values(config.setupFiles).map(require)
 
 async function start() {
   const data = await Promise.all([readSerialized(storagePath), prepare()])
-  storage = data[0] || {}
+  storage = data[0][0]
+  backupStorage = data[0][1]
+  if (!storage) {
+    storage = {}
+    backupStorage = serialize({})
+  }
 
   response.commands = Object.keys(commandMap)
   mapDirectory('koishi/utils/', require.resolve('koishi-utils'))

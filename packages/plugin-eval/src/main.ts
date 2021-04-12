@@ -1,7 +1,7 @@
 import { App, Command, Channel, Argv as IArgv, User, Context } from 'koishi-core'
 import { Logger, Observed, pick, union } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
-import { WorkerHandle, WorkerConfig, WorkerData, ScopeData } from './worker'
+import { WorkerHandle, WorkerConfig, WorkerData, SessionData } from './worker'
 import { expose, Remote, wrap } from './transfer'
 import { resolve } from 'path'
 
@@ -72,7 +72,7 @@ export namespace Trap {
   export type Access<T> = T[] | AccessObject<T>
 
   interface Argv<A extends any[], O> extends IArgv<never, never, A, O> {
-    scope?: ScopeData
+    scope?: SessionData
   }
 
   type Action<A extends any[], O> = (argv: Argv<A, O>, ...args: A) => ReturnType<Command.Action>
