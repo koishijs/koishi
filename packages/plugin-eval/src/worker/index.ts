@@ -79,7 +79,7 @@ export function formatError(error: Error) {
     .join('\n')
 }
 
-const main = wrap<MainHandle>(parentPort)
+export const main = wrap<MainHandle>(parentPort)
 
 export interface SessionData {
   id: string
