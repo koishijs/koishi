@@ -53,8 +53,10 @@ const KOISHI_VERSION = JSON.stringify(version)
     if (name === 'koishi') {
       entryPoints.push(base + '/src/worker.ts')
     } else if (name === 'plugin-eval') {
-      entryPoints.push(base + '/src/worker.ts')
+      const loaders = await readdir(base + '/src/loaders')
+      entryPoints.push(base + '/src/worker/index.ts')
       entryPoints.push(base + '/src/transfer.ts')
+      entryPoints.push(...loaders.map(name => `${base}/src/loaders/${name}`))
     } else if (name === 'plugin-eval-addons') {
       entryPoints.push(base + '/src/worker.ts')
     } else if (name === 'koishi-test-utils') {
@@ -86,10 +88,11 @@ const KOISHI_VERSION = JSON.stringify(version)
       return tasks[name] = bundle(options)
     }
 
-    filter = /^([/\w-]+|\.\/transfer)$/
+    filter = /^([@/\w-]+|.+\/transfer)$/
     tasks[name] = Promise.all([options, {
       ...options,
-      entryPoints: [base + '/src/internal.ts'],
+      outdir: `${root}/${name}/lib/worker`,
+      entryPoints: [base + '/src/worker/internal.ts'],
       banner: { js: '(function (host, exports, GLOBAL) {' },
       footer: { js: '})' },
     }].map(bundle)).then(() => {})

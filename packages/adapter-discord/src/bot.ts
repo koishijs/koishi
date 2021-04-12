@@ -9,6 +9,18 @@ import { segment } from 'koishi-utils'
 import FormData from 'form-data'
 import FileType from 'file-type'
 
+export class SenderError extends Error {
+  constructor(url: string, data: any, selfId: string) {
+    super(`Error when trying to request ${url}, data: ${JSON.stringify(data)}`)
+    Object.defineProperties(this, {
+      name: { value: 'SenderError' },
+      selfId: { value: selfId },
+      data: { value: data },
+      url: { value: url },
+    })
+  }
+}
+
 export class DiscordBot extends Bot<'discord'> {
   _d = 0
   version = 'discord'
@@ -21,15 +33,19 @@ export class DiscordBot extends Bot<'discord'> {
     const headers: Record<string, any> = {
       Authorization: `Bot ${this.token}`,
     }
-    const response = await axios({
-      ...axiosConfig,
-      ...discord.axiosConfig,
-      method,
-      url,
-      headers: { ...headers, ...exHeaders },
-      data,
-    })
-    return response.data
+    try {
+      const response = await axios({
+        ...axiosConfig,
+        ...discord.axiosConfig,
+        method,
+        url,
+        headers: { ...headers, ...exHeaders },
+        data,
+      })
+      return response.data
+    } catch (e) {
+      throw new SenderError(url, data, this.selfId)
+    }
   }
 
   async getSelf() {
@@ -63,7 +79,7 @@ export class DiscordBot extends Bot<'discord'> {
     delete addition.content
     async function sendMessage() {
       const r = await that.request('POST', requestUrl, {
-        content: needSend,
+        content: needSend.trim(),
         ...addition,
       })
       sentMessageId = r.id
@@ -72,7 +88,7 @@ export class DiscordBot extends Bot<'discord'> {
     for (const code of chain) {
       const { type, data } = code
       if (type === 'text') {
-        needSend += data.content
+        needSend += data.content.trim()
       } else if (type === 'at' && data.id) {
         needSend += `<@${data.id}>`
       } else if (type === 'at' && data.type === 'all') {
@@ -84,7 +100,7 @@ export class DiscordBot extends Bot<'discord'> {
       } else if (type === 'face' && data.name && data.id) {
         needSend += `<:${data.name}:${data.id}>`
       } else {
-        if (needSend) await sendMessage()
+        if (needSend.trim()) await sendMessage()
         if (type === 'share') {
           const sendData = isWebhook ? {
             embeds: [{ ...addition, ...data }],
@@ -109,18 +125,22 @@ export class DiscordBot extends Bot<'discord'> {
             })
             sentMessageId = r.id
           } else {
-            const a = await axios.get(data.url, {
-              responseType: 'arraybuffer',
-            })
-            const r = await this.sendEmbedMessage(requestUrl, a.data, {
-              ...addition,
-            })
-            sentMessageId = r.id
+            try {
+              const a = await axios.get(data.url, {
+                responseType: 'arraybuffer',
+              })
+              const r = await this.sendEmbedMessage(requestUrl, a.data, {
+                ...addition,
+              })
+              sentMessageId = r.id
+            } catch (e) {
+              throw new SenderError(data.url, data, this.selfId)
+            }
           }
         }
       }
     }
-    if (needSend) await sendMessage()
+    if (needSend.trim()) await sendMessage()
     return sentMessageId
   }
 
@@ -155,12 +175,12 @@ export class DiscordBot extends Bot<'discord'> {
     })
   }
 
-  async getMessageFromServer(channelId: string, messageId: string) {
+  async $getMessage(channelId: string, messageId: string) {
     return this.request<DC.Message>('GET', `/channels/${channelId}/messages/${messageId}`)
   }
 
   async getMessage(channelId: string, messageId: string): Promise<MessageInfo> {
-    const msg = await this.getMessageFromServer(channelId, messageId)
+    const msg = await this.$getMessage(channelId, messageId)
     const result: MessageInfo = {
       messageId: msg.id,
       channelId: msg.channel_id,
@@ -172,7 +192,7 @@ export class DiscordBot extends Bot<'discord'> {
     }
     result.author.nickname = msg.member?.nick
     if (msg.message_reference) {
-      const quoteMsg = await this.getMessageFromServer(msg.message_reference.channel_id, msg.message_reference.message_id)
+      const quoteMsg = await this.$getMessage(msg.message_reference.channel_id, msg.message_reference.message_id)
       result.quote = await adaptMessage(this, quoteMsg)
     }
     return result

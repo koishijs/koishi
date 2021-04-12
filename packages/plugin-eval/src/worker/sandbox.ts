@@ -24,7 +24,7 @@ export class Sandbox {
       codeGeneration: { strings, wasm },
     })
 
-    const filename = resolve(__dirname, '../lib/internal.js')
+    const filename = resolve(__dirname, '../../lib/worker/internal.js')
     const data = readFileSync(filename, 'utf8')
     const script = new Script(data, { filename })
 

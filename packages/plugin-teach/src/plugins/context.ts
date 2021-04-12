@@ -33,7 +33,7 @@ export default function apply(ctx: Context, config: Dialogue.Config) {
     .option('enableGlobal', '-E  在所有环境下启用问答', { authority })
     .option('groups', '-g <gids:string>  设置具体的生效环境', { authority, type: RE_GROUPS })
     .option('global', '-G  无视上下文搜索')
-    .check(({ options, session }) => {
+    .action(({ options, session }) => {
       if (options.disable && options.enable) {
         return '选项 -d, -e 不能同时使用。'
       } else if (options.disableGlobal && options.enableGlobal) {

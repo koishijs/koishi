@@ -113,7 +113,7 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
   }
 
   async function prepareAbstract(session: Session, params: Message, timestamp: number) {
-    const codes = segment.parse(params.content.split('\n', 1)[0])
+    const codes = segment.parse(params.content.split(/\r?\n/, 1)[0])
     params.abstract = ''
     for (const code of codes) {
       if (textSegmentTypes.includes(code.type)) {
@@ -169,11 +169,6 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
     ctx.emit('chat/receive', params, session)
   }
 
-  ctx.on('message', (session) => {
-    handleMessage(session)
-  })
-
-  ctx.before('send', (session) => {
-    handleMessage(session)
-  })
+  ctx.on('message', handleMessage)
+  ctx.on('send', handleMessage)
 }

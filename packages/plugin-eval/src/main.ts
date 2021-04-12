@@ -1,7 +1,7 @@
-import { App, Command, Channel, Argv as IArgv, User } from 'koishi-core'
+import { App, Command, Channel, Argv as IArgv, User, Context } from 'koishi-core'
 import { Logger, Observed, pick, union } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
-import { WorkerAPI, WorkerConfig, WorkerData, ScopeData } from './worker'
+import { WorkerHandle, WorkerConfig, WorkerData, ScopeData } from './worker'
 import { expose, Remote, wrap } from './transfer'
 import { resolve } from 'path'
 
@@ -121,7 +121,7 @@ export namespace Trap {
   }
 }
 
-export class MainAPI {
+export class MainHandle {
   constructor(public app: App) {}
 
   private getSession(uuid: string) {
@@ -169,18 +169,26 @@ export class EvalWorker {
   private promise: Promise<void>
 
   public state = State.close
-  public local: MainAPI
-  public remote: Remote<WorkerAPI>
+  public local: MainHandle
+  public remote: Remote<WorkerHandle>
 
   static readonly State = State
 
-  constructor(public app: App, public config: EvalConfig) {
-    this.local = new MainAPI(app)
+  constructor(public ctx: Context, public config: EvalConfig) {
+    this.local = new MainHandle(ctx.app)
+
+    // wait for dependents to be executed
+    process.nextTick(() => {
+      ctx.on('connect', () => this.start())
+      ctx.before('disconnect', () => this.stop())
+    })
   }
 
-  async start() {
+  // delegated class methods which use instance properties
+  // should be written in arrow functions to ensure accessibility
+  start = async () => {
     this.state = State.opening
-    await this.app.parallel('eval/before-start')
+    await this.ctx.parallel('eval/before-start')
     process.on('beforeExit', this.beforeExit)
 
     let index = 0
@@ -206,7 +214,7 @@ export class EvalWorker {
     this.remote = wrap(this.worker)
 
     await this.remote.start().then((response) => {
-      this.app.emit('eval/start', response)
+      this.ctx.emit('eval/start', response)
       logger.debug('worker started')
       this.state = State.open
 
@@ -222,20 +230,20 @@ export class EvalWorker {
     this.prevent = true
   }
 
-  async stop() {
+  stop = async () => {
     this.state = State.closing
     this.beforeExit()
     process.off('beforeExit', this.beforeExit)
     await this.worker?.terminate()
   }
 
-  async restart() {
+  restart = async () => {
     this.state = State.closing
     await this.worker?.terminate()
     await this.promise
   }
 
-  onError(listener: (error: Error) => void) {
+  onError = (listener: (error: Error) => void) => {
     this.worker.on('error', listener)
     return () => this.worker.off('error', listener)
   }

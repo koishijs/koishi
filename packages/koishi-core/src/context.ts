@@ -179,12 +179,13 @@ export class Context {
 
   with<D extends readonly (keyof Plugin.Packages)[]>(deps: D, callback: Plugin.Teleporter<D>) {
     const modules = deps.map(safeRequire)
-    if (!modules.every(val => val)) return
+    if (!modules.every(val => val)) return this
     this.teleport(modules, callback)
     this.on('plugin-added', (added) => {
       const modules = deps.map(safeRequire)
       if (modules.includes(added)) this.teleport(modules, callback)
     })
+    return this
   }
 
   plugin<T extends Plugin>(plugin: T, options?: Plugin.Config<T>): this
@@ -502,11 +503,11 @@ export class Context {
       get() {
         if (!this.app[privateKey]) return
         const value = Object.create(this.app[privateKey])
-        value[Context.current] = this
+        defineProperty(value, Context.current, this)
         return value
       },
       set(value) {
-        this.app[privateKey] = value
+        defineProperty(this.app, privateKey, value)
       },
     })
   }

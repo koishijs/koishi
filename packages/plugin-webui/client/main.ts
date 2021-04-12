@@ -7,9 +7,7 @@ import Card from './components/card.vue'
 import Collapse from './components/collapse.vue'
 import Button from './components/button.vue'
 import Input from './components/input.vue'
-import Message from './components/message.vue'
 import Numeric from './components/numeric.vue'
-import ChatPanel from './components/chat-panel.vue'
 import App from './views/layout/index.vue'
 
 import '@fortawesome/fontawesome-free/css/fontawesome.css'
@@ -49,13 +47,6 @@ router.addRoute({
 })
 
 router.addRoute({
-  path: '/sandbox',
-  name: '沙盒',
-  meta: { icon: 'laptop-code', authority: 1 },
-  component: () => import('./views/sandbox.vue'),
-})
-
-router.addRoute({
   path: '/profile',
   name: '资料',
   meta: { icon: 'user-circle', authority: 1, hidden: true },
@@ -74,9 +65,7 @@ app.component('k-chart', Vue.defineAsyncComponent(() => import('./components/ech
 app.component('k-button', Button)
 app.component('k-collapse', Collapse)
 app.component('k-input', Input)
-app.component('k-message', Message)
 app.component('k-numeric', Numeric)
-app.component('k-chat-panel', ChatPanel)
 
 app.provide('ecTheme', 'dark-blue')
 

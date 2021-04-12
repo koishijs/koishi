@@ -1,7 +1,7 @@
 <template>
   <aside>
     <ul>
-      <template v-for="({ name, path, meta }, index) in $router.getRoutes()" :key="index">
+      <template v-for="({ name, path, meta }) in $router.getRoutes()">
         <li v-if="isShown(meta)" :class="{ current: name === $route.name }">
           <router-link :to="path">
             <i :class="`fas fa-${meta.icon}`"/>

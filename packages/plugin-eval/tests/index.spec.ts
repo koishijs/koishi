@@ -5,7 +5,7 @@ import { resolve } from 'path'
 import { promises as fs } from 'fs'
 import * as eval from 'koishi-plugin-eval'
 
-const app = new App()
+const app = new App({ mockStart: false })
 
 app.plugin(eval, {
   root: resolve(__dirname, 'fixtures'),
@@ -57,7 +57,7 @@ describe('Eval Plugin', () => {
   it('interpolate', async () => {
     app.command('echo <text:text>').action((_, text) => text)
     await ses.shouldReply('echo 1${1 + 1}3', '123')
-    await ses.shouldReply('echo 1${2 + 3', '12 + 3')
+    await ses.shouldReply('echo 1${2 + 3', '1')
   })
 
   it('global', async () => {

@@ -76,7 +76,7 @@ export class Profile implements DataSource<Profile.Payload> {
     this.apply(ctx, config)
 
     ctx.on('status/tick', async () => {
-      this.ctx.webui.adapter?.broadcast('profile', await this.get(true))
+      this.ctx.webui.broadcast('profile', await this.get(true))
     })
   }
 
@@ -191,7 +191,7 @@ export class Registry implements DataSource<Registry.Payload> {
   }
 
   update = async () => {
-    this.ctx.webui.adapter?.broadcast('registry', await this.get(true))
+    this.ctx.webui.broadcast('registry', await this.get(true))
   }
 
   async get(forced = false) {
