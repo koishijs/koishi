@@ -50,21 +50,22 @@ receive('sandbox:clear', (data) => {
 <style lang="scss">
 
 .sandbox {
-  p {
-    padding-left: 1rem;
+  .k-message {
+    padding-left: 1.25rem;
     color: rgba(244, 244, 245, .8);
+
+    &::before {
+      position: absolute;
+      left: 0;
+    }
   }
 
-  p.user::before {
+  .k-message.user::before {
     content: '>';
-    position: absolute;
-    left: -.1rem;
   }
 
-  p.bot::before {
+  .k-message.bot::before {
     content: '<';
-    position: absolute;
-    left: -.1rem;
   }
 }
 
