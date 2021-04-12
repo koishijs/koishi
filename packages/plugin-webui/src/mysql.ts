@@ -1,4 +1,4 @@
-import { Database, Logger, Time } from 'koishi-core'
+import { Database, Logger, Tables, Time } from 'koishi-core'
 import { StatRecord, Synchronizer, RECENT_LENGTH } from './stats'
 import MysqlDatabase from 'koishi-plugin-mysql'
 
@@ -52,7 +52,7 @@ namespace Stat {
   export class Recorded<K extends string> extends Stat<K, StatRecord> {
     constructor(table: string, fields: readonly K[], timeDomain: string) {
       super(table, fields)
-
+      Tables.extend(table as never, { primary: 'time' })
       Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
         tables[table] = Object.fromEntries(fields.map(key => [key, new Domain.Json()]))
         tables[table].time = timeDomain
@@ -84,7 +84,7 @@ namespace Stat {
   export class Numerical<K extends string> extends Stat<K, number> {
     constructor(table: string, fields: readonly K[], timeDomain: string) {
       super(table, fields)
-
+      Tables.extend(table as never, { primary: 'time' })
       Database.extend('koishi-plugin-mysql', ({ tables }) => {
         tables[table] = Object.fromEntries(fields.map(key => [key, 'int unsigned']))
         tables[table].time = timeDomain
