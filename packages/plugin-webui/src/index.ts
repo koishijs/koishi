@@ -7,7 +7,6 @@ import { WebServer, Config } from './server'
 import './mongo'
 import './mysql'
 
-export * from './adapter'
 export * from './data'
 export * from './stats'
 export * from './server'

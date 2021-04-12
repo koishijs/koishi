@@ -1,6 +1,6 @@
 import { Bot, Context, Random, Session, template } from 'koishi-core'
 import { resolve } from 'path'
-import { WebAdapter } from 'koishi-plugin-webui'
+import { WebServer } from 'koishi-plugin-webui'
 import receiver, { Message, ReceiverConfig } from './receiver'
 
 export * from './receiver'
@@ -31,7 +31,7 @@ export class SandboxBot extends Bot<'web'> {
   username = 'sandbox'
   status = Bot.Status.GOOD
 
-  constructor(public readonly adapter: WebAdapter) {
+  constructor(public readonly adapter: WebServer) {
     super(adapter, { type: 'web', selfId: 'sandbox' })
   }
 
@@ -72,15 +72,19 @@ export function apply(ctx: Context, options: Config = {}) {
       ctx.bots[`${platform}:${selfId}`]?.sendMessage(channelId, content)
     })
 
-    const sandbox = ctx.webui.adapter.create({}, SandboxBot)
-    Profile.initBot(sandbox)
+    ctx.on('connect', () => {
+      // create bot after connection
+      // to prevent mysql from altering user table
+      const sandbox = ctx.webui.create({}, SandboxBot)
+      Profile.initBot(sandbox)
+    })
 
     ctx.webui.addListener('sandbox', async function ({ id, token, content }) {
       const user = await this.validate(id, token, ['name'])
       if (!user) return
-      content = await this.app.transformAssets(content)
+      content = await ctx.transformAssets(content)
       this.send('sandbox:user', content)
-      const session = new Session(this.app, {
+      const session = new Session(ctx.app, {
         platform: 'web',
         userId: id,
         content,
@@ -94,7 +98,7 @@ export function apply(ctx: Context, options: Config = {}) {
         },
       })
       session.platform = 'id' as never
-      this.adapter.dispatch(session)
+      ctx.webui.dispatch(session)
     })
 
     ctx.self('sandbox')
@@ -104,7 +108,7 @@ export function apply(ctx: Context, options: Config = {}) {
       })
 
     ctx.on('chat/receive', async (message) => {
-      Object.values(ctx.webui.adapter.handles).forEach((handle) => {
+      Object.values(ctx.webui.handles).forEach((handle) => {
         if (handle.authority >= 4) handle.socket.send(JSON.stringify({ type: 'chat', body: message }))
       })
     })
