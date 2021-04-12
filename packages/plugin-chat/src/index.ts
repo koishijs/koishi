@@ -9,6 +9,12 @@ declare module 'koishi-core' {
   interface EventMap {
     'chat/receive'(message: Message, session: Session): void
   }
+
+  namespace Bot {
+    interface Platforms {
+      'web': SandboxBot
+    }
+  }
 }
 
 export interface Config extends ReceiverConfig {

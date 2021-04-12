@@ -2,7 +2,6 @@ import { Context, Channel, User } from 'koishi-core'
 import { template, Time } from 'koishi-utils'
 import { Meta } from './data'
 import { Synchronizer } from './stats'
-import { SandboxBot } from './adapter'
 import { WebServer, Config } from './server'
 
 import './mongo'
@@ -27,12 +26,6 @@ declare module 'koishi-core' {
 
   interface Session {
     _sendType?: 'command' | 'dialogue'
-  }
-
-  namespace Bot {
-    interface Platforms {
-      'web': SandboxBot
-    }
   }
 
   interface Bot {
