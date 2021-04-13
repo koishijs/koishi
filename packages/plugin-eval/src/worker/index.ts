@@ -40,15 +40,6 @@ export interface WorkerData extends WorkerConfig {
   addonNames?: string[]
 }
 
-export interface Loader {
-  name: string
-  isTextLoader: boolean
-  prepare(config: WorkerData): void | Promise<void>
-  extractScript(expr: string): string
-  transformScript(expr: string): string | Promise<string>
-  transformModule(expr: string): string | Promise<string>
-}
-
 interface EvalOptions {
   silent: boolean
   source: string

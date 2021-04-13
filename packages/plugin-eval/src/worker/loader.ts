@@ -1,4 +1,4 @@
-import { config, context, internal, Loader } from '.'
+import { config, context, internal, WorkerData } from '.'
 import { resolve, posix, dirname, extname } from 'path'
 import { promises as fs } from 'fs'
 import { deserialize, serialize, cachedDataVersionTag } from 'v8'
@@ -16,6 +16,15 @@ interface Module {
   link(linker: (specifier: string, referenceModule: Module) => Promise<Module>): Promise<void>
   evaluate(): Promise<void>
   createCachedData(): Buffer
+}
+
+export interface Loader {
+  name: string
+  synthetize: boolean
+  prepare(config: WorkerData): void | Promise<void>
+  extractScript(expr: string): string
+  transformScript(expr: string): string | Promise<string>
+  transformModule(expr: string, extension: string): string | Promise<string>
 }
 
 export const modules: Record<string, Module> = {}
@@ -141,8 +150,8 @@ function resolveLoader(extension: string) {
     return require(resolve(process.cwd(), filename))
   } else if (extension === '.js') {
     return require('../loaders/default')
-  } else if (extension === '.yml' || extension === '.yaml') {
-    return require('../loaders/yaml')
+  } else if (extension === '.json' || extension === '.yml' || extension === '.yaml') {
+    return require('../loaders/json+yaml')
   } else if (extension === '.ts') {
     for (const filename of ['esbuild', 'typescript']) {
       try {
@@ -178,15 +187,15 @@ async function createModule(path: string) {
     } else {
       const extension = extname(identifier)
       const loader = fileAssoc[extension] ||= await createLoader(extension)
-      if (loader.isTextLoader !== false) {
+      if (loader.synthetize) {
+        const exports = await loader.transformModule(source, extension)
+        module = synthetize(identifier, { default: exports })
+      } else {
         type = 'source text'
-        const outputText = await loader.transformModule(source)
+        const outputText = await loader.transformModule(source, extension)
         module = new SourceTextModule(outputText, { context, identifier })
         const cachedData = module.createCachedData()
         files[source] = { outputText, cachedData }
-      } else {
-        const exports = await loader.transformModule(source)
-        module = synthetize(identifier, { default: exports })
       }
     }
     modules[identifier] = module
