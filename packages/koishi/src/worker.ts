@@ -91,6 +91,7 @@ if (typeof config.logLevel === 'object') {
 
 if (config.logTime === true) config.logTime = 'yyyy/MM/dd hh:mm:ss'
 if (config.logTime) Logger.showTime = config.logTime
+if (config.logDiff !== undefined) Logger.showDiff = config.logDiff
 
 // cli options have higher precedence
 if (process.env.KOISHI_LOG_LEVEL) {
