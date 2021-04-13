@@ -3,7 +3,7 @@
     <k-numeric title="当前消息频率" icon="paper-plane">{{ currentRate }} / min</k-numeric>
     <k-numeric title="近期消息频率" icon="history">{{ recentRate }} / d</k-numeric>
     <k-numeric title="命名插件数量" icon="plug">{{ registry.pluginCount }}</k-numeric>
-    <k-numeric title="数据库体积" icon="database">{{ (meta.storageSize / 1048576).toFixed(1) }} MB</k-numeric>
+    <k-numeric title="数据库体积" icon="database" type="size" :value="meta.storageSize"/>
     <k-numeric title="活跃用户数量" icon="heart">{{ meta.activeUsers }}</k-numeric>
     <k-numeric title="活跃群数量" icon="users">{{ meta.activeGroups }}</k-numeric>
   </div>
