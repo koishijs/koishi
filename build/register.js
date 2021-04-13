@@ -1,7 +1,7 @@
-import { install } from 'source-map-support'
-import { transformSync, Message } from 'esbuild'
-import { readFileSync, readdirSync } from 'fs'
-import { resolve } from 'path'
+const { install } = require('source-map-support')
+const { transformSync } = require('esbuild')
+const { readFileSync, readdirSync } = require('fs')
+const { resolve } = require('path')
 
 // hack for tests
 if (process.env.TS_NODE_PROJECT) {
@@ -15,7 +15,8 @@ const ignored = [
   'Indirect calls to "require" will not be bundled (surround with a try/catch to silence this warning)',
 ]
 
-const cache: Record<string, string> = {}
+/** @type { Record<string, string> } */
+const cache = {}
 
 install({
   handleUncaughtExceptions: true,
@@ -27,7 +28,8 @@ install({
 
 const prefix = '\u001B[35mwarning:\u001B[0m'
 
-function reportWarnings({ location, text }: Message) {
+/** @param { import('esbuild').Message } param0 */
+function reportWarnings({ location, text }) {
   if (ignored.includes(text)) return
   if (!location) return console.log(prefix, text)
   const { file, line, column } = location
@@ -44,10 +46,10 @@ const globalInjections = {
   },
 }
 
-// eslint-disable-next-line node/no-deprecated-api
 require.extensions['.ts'] = (module, filename) => {
   const source = readFileSync(filename, 'utf8')
-  const define: Record<string, string> = {}
+  /** @type { Record<string, string> } */
+  const define = {}
   for (const key in globalInjections) {
     if (source.includes(key)) {
       define[key] = JSON.stringify(globalInjections[key]())

@@ -133,7 +133,7 @@ function exposeGlobal(name: string, namespace: {}) {
 }
 
 function resolveLoader(extension: string) {
-  const filename = (config.moduleLoaders || {})[extension]
+  const filename = config.moduleLoaders[extension]
   if (BUILTIN_LOADERS.includes(filename)) {
     return require('../loaders/' + filename)
   } else if (filename) {

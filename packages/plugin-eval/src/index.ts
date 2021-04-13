@@ -58,6 +58,7 @@ const defaultConfig: EvalConfig = {
   authority: 2,
   timeout: 1000,
   setupFiles: {},
+  moduleLoaders: {},
   scriptLoader: 'default',
   channelFields: ['id'],
   userFields: ['id', 'authority'],

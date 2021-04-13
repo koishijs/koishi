@@ -3,7 +3,6 @@ dist
 temp
 .koishi
 
-/build/*.js
 /tsconfig.temp.json
 
 /addons
@@ -15,8 +14,6 @@ temp
 /shiki
 /test
 /utsuho
-
-/build/*.js
 
 todo.md
 yarn.lock
