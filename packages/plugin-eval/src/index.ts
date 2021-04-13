@@ -53,18 +53,18 @@ interface Manifest {
   commands?: CommandManifest[]
 }
 
-const builtinLoaders = ['default', 'esbuild', 'typescript']
-
 const defaultConfig: EvalConfig = {
   prefix: '>',
   authority: 2,
   timeout: 1000,
   setupFiles: {},
-  loader: 'default',
+  scriptLoader: 'default',
   channelFields: ['id'],
   userFields: ['id', 'authority'],
-  dataKeys: ['inspect', 'loader', 'setupFiles'],
+  dataKeys: ['inspect', 'moduleLoaders', 'setupFiles'],
 }
+
+declare const BUILTIN_LOADERS: string[]
 
 const logger = new Logger('eval')
 
@@ -78,10 +78,12 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.worker = new EvalWorker(ctx, config)
 
   // resolve loader filepath
-  if (builtinLoaders.includes(config.loader)) {
-    config.loader = resolve(__dirname, 'loaders', config.loader)
+  if (BUILTIN_LOADERS.includes(config.scriptLoader)) {
+    config.scriptLoader = resolve(__dirname, 'loaders', config.scriptLoader)
+  } else {
+    config.scriptLoader = resolve(process.cwd(), config.scriptLoader)
   }
-  const loader = require(config.loader) as Loader
+  const loader = require(config.scriptLoader) as Loader
 
   // addons are registered in another plugin
   if (config.root) ctx.plugin(addon, config)

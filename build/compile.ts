@@ -50,19 +50,6 @@ const KOISHI_VERSION = JSON.stringify(version)
     const base = `${root}/${name}`
     const entryPoints = [base + '/src/index.ts']
 
-    if (name === 'koishi') {
-      entryPoints.push(base + '/src/worker.ts')
-    } else if (name === 'plugin-eval') {
-      const loaders = await readdir(base + '/src/loaders')
-      entryPoints.push(base + '/src/worker/index.ts')
-      entryPoints.push(base + '/src/transfer.ts')
-      entryPoints.push(...loaders.map(name => `${base}/src/loaders/${name}`))
-    } else if (name === 'plugin-eval-addons') {
-      entryPoints.push(base + '/src/worker.ts')
-    } else if (name === 'koishi-test-utils') {
-      await tasks[chai]
-    }
-
     let filter = /^[@/\w-]+$/
     const options: BuildOptions = {
       entryPoints,
@@ -82,6 +69,18 @@ const KOISHI_VERSION = JSON.stringify(version)
           build.onResolve({ filter }, () => ({ external: true }))
         },
       }],
+    }
+
+    if (name === 'koishi') {
+      entryPoints.push(base + '/src/worker.ts')
+    } else if (name === 'plugin-eval') {
+      const loaders = await readdir(base + '/src/loaders')
+      entryPoints.push(base + '/src/worker/index.ts')
+      entryPoints.push(base + '/src/transfer.ts')
+      entryPoints.push(...loaders.map(name => `${base}/src/loaders/${name}`))
+      options.define.BUILTIN_LOADERS = JSON.stringify(loaders.map(name => name.slice(0, -3)))
+    } else if (name === 'koishi-test-utils') {
+      await tasks[chai]
     }
 
     if (name !== 'plugin-eval') {

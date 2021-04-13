@@ -29,7 +29,7 @@ export * from './loader'
 
 export interface WorkerConfig {
   root?: string
-  loader?: string
+  moduleLoaders?: Record<string, string>
   inspect?: InspectOptions
   cacheFile?: string
   storageFile?: string
@@ -40,8 +40,6 @@ export interface WorkerData extends WorkerConfig {
   addonNames?: string[]
 }
 
-// createLoader() is not relavant to transfer
-// we put it here since it's a cross-thread feature
 export interface Loader {
   prepare(config: WorkerData): void | Promise<void>
   extractScript(expr: string): string

@@ -1,10 +1,9 @@
 import { config, context, internal, Loader } from '.'
-import { resolve, posix, dirname } from 'path'
+import { resolve, posix, dirname, extname } from 'path'
 import { promises as fs } from 'fs'
 import { deserialize, serialize, cachedDataVersionTag } from 'v8'
 import { Logger } from 'koishi-utils'
 
-let loader: Loader
 const logger = new Logger('eval:loader')
 
 // TODO pending @types/node
@@ -33,8 +32,7 @@ export function synthetize(identifier: string, namespace: {}, globalName?: strin
   if (globalName) synthetics[globalName] = module
 }
 
-const suffixes = ['', '.ts', '/index.ts']
-const relativeRE = /^\.\.?[\\/]/
+const suffixes = ['', '.js', '.ts', '/index.js', '/index.ts']
 
 function locateModule(specifier: string) {
   for (const suffix of suffixes) {
@@ -42,6 +40,18 @@ function locateModule(specifier: string) {
     if (target in modules) return modules[target]
   }
 }
+
+async function loadSource(path: string): Promise<[source: string, identifier: string]> {
+  for (const suffix of suffixes) {
+    try {
+      const target = path + suffix
+      return [await fs.readFile(resolve(config.root, target), 'utf8'), target]
+    } catch {}
+  }
+  throw new Error(`cannot load source file "${path}"`)
+}
+
+const relativeRE = /^\.\.?[\\/]/
 
 async function linker(specifier: string, { identifier }: Module) {
   // resolve path based on reference module
@@ -92,19 +102,18 @@ export async function safeWriteFile(filename: string, data: any) {
   }
 }
 
+declare const BUILTIN_LOADERS: string[]
+
+const loaders: Record<string, Loader> = {}
+
 export default async function prepare() {
   if (!config.root) return
-
-  loader = require(config.loader) as Loader
   const cachePath = resolve(config.root, config.cacheFile || '.koishi/cache')
-  await Promise.all([
-    loader.prepare?.(config),
-    readSerialized(cachePath).then(([data]) => {
-      if (data && data.tag === CACHE_TAG && data.v8tag === V8_TAG) {
-        Object.assign(cachedFiles, data.files)
-      }
-    }),
-  ])
+  await readSerialized(cachePath).then(([data]) => {
+    if (data && data.tag === CACHE_TAG && data.v8tag === V8_TAG) {
+      Object.assign(cachedFiles, data.files)
+    }
+  })
   await Promise.all(config.addonNames.map(evaluate))
   safeWriteFile(cachePath, serialize({ tag: CACHE_TAG, v8tag: V8_TAG, files }))
   for (const key in synthetics) {
@@ -123,14 +132,31 @@ function exposeGlobal(name: string, namespace: {}) {
   internal.setGlobal(name, outer)
 }
 
-async function loadSource(path: string): Promise<[source: string, identifier: string]> {
-  for (const postfix of suffixes) {
-    try {
-      const target = path + postfix
-      return [await fs.readFile(resolve(config.root, target), 'utf8'), target]
-    } catch {}
+function resolveLoader(extension: string) {
+  const filename = (config.moduleLoaders || {})[extension]
+  if (BUILTIN_LOADERS.includes(filename)) {
+    return require('../loaders/' + filename)
+  } else if (filename) {
+    return require(resolve(process.cwd(), filename))
+  } else if (extension === '.js') {
+    return require('../loaders/default')
+  } else if (extension === '.ts') {
+    for (const filename of ['esbuild', 'typescript']) {
+      try {
+        return require('../loaders/' + filename)
+      } catch {}
+    }
+    throw new Error('cannot resolve loader for ".ts", you should install either esbuild or typescript + json5 by yourself')
+  } else {
+    throw new Error(`cannot resolve loader for "${extension}", you should specify a custom loader through "config.moduleLoaders"`)
   }
-  throw new Error(`cannot load source file "${path}"`)
+}
+
+async function createLoader(extension: string) {
+  const loader: Loader = resolveLoader(extension)
+  logger.debug('creating loader for %c', extension)
+  await loader.prepare?.(config)
+  return loader
 }
 
 async function createModule(path: string) {
@@ -144,6 +170,8 @@ async function createModule(path: string) {
       module = new SourceTextModule(outputText, { context, identifier, cachedData })
     } else {
       type = 'source text'
+      const extension = extname(identifier)
+      const loader = loaders[extension] ||= await createLoader(extension)
       const outputText = await loader.transformModule(source)
       module = new SourceTextModule(outputText, { context, identifier })
       const cachedData = module.createCachedData()
