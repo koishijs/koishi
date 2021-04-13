@@ -1,5 +1,7 @@
 import esbuild from 'esbuild'
 
+export const name = 'typescript'
+
 export function extractScript(expr: string) {
   try {
     esbuild.transformSync(expr, {

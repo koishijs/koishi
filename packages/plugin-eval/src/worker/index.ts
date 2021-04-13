@@ -41,6 +41,8 @@ export interface WorkerData extends WorkerConfig {
 }
 
 export interface Loader {
+  name: string
+  isTextLoader: boolean
   prepare(config: WorkerData): void | Promise<void>
   extractScript(expr: string): string
   transformScript(expr: string): string | Promise<string>

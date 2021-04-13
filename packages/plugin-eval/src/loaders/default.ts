@@ -1,5 +1,7 @@
 import { Script } from 'vm'
 
+export const name = 'default'
+
 export function extractScript(expr: string) {
   try {
     Reflect.construct(Script, [expr])

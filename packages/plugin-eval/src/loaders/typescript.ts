@@ -7,6 +7,8 @@ import { Logger } from 'koishi-utils'
 
 export { extractScript } from './default'
 
+export const name = 'typescript'
+
 const compilerOptions: ts.CompilerOptions = {
   inlineSourceMap: true,
   module: ts.ModuleKind.ES2020,

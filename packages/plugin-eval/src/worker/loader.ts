@@ -30,6 +30,7 @@ export function synthetize(identifier: string, namespace: {}, globalName?: strin
   modules[identifier] = module
   config.addonNames?.unshift(identifier)
   if (globalName) synthetics[globalName] = module
+  return module
 }
 
 const suffixes = ['', '.js', '.ts', '/index.js', '/index.ts']
@@ -102,10 +103,6 @@ export async function safeWriteFile(filename: string, data: any) {
   }
 }
 
-declare const BUILTIN_LOADERS: string[]
-
-const loaders: Record<string, Loader> = {}
-
 export default async function prepare() {
   if (!config.root) return
   const cachePath = resolve(config.root, config.cacheFile || '.koishi/cache')
@@ -132,6 +129,10 @@ function exposeGlobal(name: string, namespace: {}) {
   internal.setGlobal(name, outer)
 }
 
+declare const BUILTIN_LOADERS: string[]
+const fileAssoc: Record<string, Loader> = {}
+const loaderSet = new Set<Loader>()
+
 function resolveLoader(extension: string) {
   const filename = config.moduleLoaders[extension]
   if (BUILTIN_LOADERS.includes(filename)) {
@@ -140,6 +141,8 @@ function resolveLoader(extension: string) {
     return require(resolve(process.cwd(), filename))
   } else if (extension === '.js') {
     return require('../loaders/default')
+  } else if (extension === '.yml' || extension === '.yaml') {
+    return require('../loaders/yaml')
   } else if (extension === '.ts') {
     for (const filename of ['esbuild', 'typescript']) {
       try {
@@ -148,14 +151,18 @@ function resolveLoader(extension: string) {
     }
     throw new Error('cannot resolve loader for ".ts", you should install either esbuild or typescript + json5 by yourself')
   } else {
-    throw new Error(`cannot resolve loader for "${extension}", you should specify a custom loader through "config.moduleLoaders"`)
+    throw new Error(`cannot resolve loader for "${extension}", you should specify a custom loader via "config.moduleLoaders"`)
   }
 }
 
 async function createLoader(extension: string) {
   const loader: Loader = resolveLoader(extension)
-  logger.debug('creating loader for %c', extension)
-  await loader.prepare?.(config)
+  // loader.prepare() should only be called once
+  if (!loaderSet.has(loader)) {
+    loaderSet.add(loader)
+    logger.debug('creating loader %c', loader.name)
+    await loader.prepare?.(config)
+  }
   return loader
 }
 
@@ -169,13 +176,18 @@ async function createModule(path: string) {
       const { outputText, cachedData } = files[source] = cache
       module = new SourceTextModule(outputText, { context, identifier, cachedData })
     } else {
-      type = 'source text'
       const extension = extname(identifier)
-      const loader = loaders[extension] ||= await createLoader(extension)
-      const outputText = await loader.transformModule(source)
-      module = new SourceTextModule(outputText, { context, identifier })
-      const cachedData = module.createCachedData()
-      files[source] = { outputText, cachedData }
+      const loader = fileAssoc[extension] ||= await createLoader(extension)
+      if (loader.isTextLoader !== false) {
+        type = 'source text'
+        const outputText = await loader.transformModule(source)
+        module = new SourceTextModule(outputText, { context, identifier })
+        const cachedData = module.createCachedData()
+        files[source] = { outputText, cachedData }
+      } else {
+        const exports = await loader.transformModule(source)
+        module = synthetize(identifier, { default: exports })
+      }
     }
     modules[identifier] = module
   } else if (module.status !== 'unlinked') {
