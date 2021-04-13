@@ -30,14 +30,11 @@
     "database",
     "mysql"
   ],
-  "devDependencies": {
-    "@types/debug": "^4.1.5",
-    "@types/mysql": "^2.15.18"
-  },
   "peerDependencies": {
     "koishi-core": "^3.8.0"
   },
   "dependencies": {
+    "@types/mysql": "^2.15.18",
     "mysql": "^2.18.1"
   }
 }
