@@ -86,7 +86,7 @@ describe('Eval Addons', () => {
   it('addon command', async () => {
     await ses.shouldReply('addon', /^addon\n扩展功能/)
     await ses.shouldReply('test -h', 'test\n测试功能')
-    await ses.shouldReply('test', 'bar')
+    await ses.shouldReply('test', 'barbaz')
   })
 
   it('sandbox injection', async () => {

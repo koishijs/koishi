@@ -14,12 +14,7 @@ export function extractScript(expr: string) {
 }
 
 export function transformScript(expr: string) {
-  try {
-    return compile(expr, {bare: true})
-  } catch (e) {
-    if (e.name !== 'SyntaxError') throw new Error('unknown error encounted')
-    throw e
-  }
+  return compile(expr, {bare: true})
 }
 
 export const transformModule = transformScript
