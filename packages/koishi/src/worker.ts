@@ -149,13 +149,13 @@ app.command('exit', '停止机器人运行', { authority: 4 })
   })
 
 // load plugins
-const pluginMap = new Map<string, [name: string, options: any]>()
+const plugins = new Set<string>()
 const pluginEntries: [string, any?][] = Array.isArray(config.plugins)
   ? config.plugins.map(item => Array.isArray(item) ? item : [item])
   : Object.entries(config.plugins || {})
 for (const [name, options] of pluginEntries) {
   const [path, plugin] = loadEcosystem('plugin', name)
-  pluginMap.set(require.resolve(path), [name, options])
+  plugins.add(require.resolve(path))
   app.plugin(plugin, options)
 }
 
@@ -179,18 +179,14 @@ app.start().then(() => {
   createWatcher()
 }, handleException)
 
-interface MapOrSet<T> {
-  has(value: T): boolean
-}
-
-function loadDependencies(filename: string, ignored: MapOrSet<string>) {
+function loadDependencies(filename: string, ignored: Set<string>) {
   const dependencies = new Set<string>()
-  function loadModule({ filename, children }: NodeModule) {
+  function traverse({ filename, children }: NodeModule) {
     if (ignored.has(filename) || dependencies.has(filename) || filename.includes('/node_modules/')) return
     dependencies.add(filename)
-    children.forEach(loadModule)
+    children.forEach(traverse)
   }
-  loadModule(require.cache[filename])
+  traverse(require.cache[filename])
   return dependencies
 }
 
@@ -199,11 +195,17 @@ function createWatcher() {
 
   const { root = '', ignored = [], fullReload } = config.watch || {}
   const watchRoot = resolve(cwd, process.env.KOISHI_WATCH_ROOT ?? root)
-  const externals = loadDependencies(__filename, pluginMap)
   const watcher = watch(watchRoot, {
     ...config.watch,
     ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
   })
+
+  /**
+   * changes from externals E will always trigger a full reload
+   *
+   * - root R -> external E -> none of plugin Q
+   */
+  const externals = loadDependencies(__filename, plugins)
 
   const logger = new Logger('app:watcher')
   function triggerFullReload() {
@@ -212,20 +214,50 @@ function createWatcher() {
     process.exit(114)
   }
 
-  watcher.on('change', async (path) => {
-    if (!require.cache[path]) return
-    logger.debug('change detected:', path)
+  /**
+   * files X that should not be marked as declined
+   *
+   * - including all changes C
+   * - some change C -> file X -> some change D
+   */
+  let stashed = new Set<string>()
+  let currentUpdate: Promise<void>
 
-    if (externals.has(path)) return triggerFullReload()
-
+  function flushChanges() {
     const tasks: Promise<void>[] = []
-    const reloads: [plugin: Plugin, state: Plugin.State, name: string][] = []
+    const reloads: [filename: string, state: Plugin.State][] = []
 
-    /** files that should be reloaded */
+    /**
+     * files X that should be reloaded
+     *
+     * - some plugin P -> file X -> some change C
+     * - file X -> none of plugin Q -> some change D
+     */
     const accepted = new Set<string>()
-    /** files that should not be reloaded */
-    const declined = new Set([...externals, ...loadDependencies(path, externals)])
-    declined.delete(path)
+
+    /**
+     * files X that should not be reloaded
+     *
+     * - including all externals E
+     * - some change C -> file X
+     * - file X -> none of change D
+     */
+    const declined = new Set(externals)
+
+    function traverse(filename: string) {
+      if (externals.has(filename) || filename.includes('/node_modules/')) return
+      const { children } = require.cache[filename]
+      let isActive = stashed.has(filename)
+      for (const module of children) {
+        if (traverse(module.filename)) {
+          stashed.add(filename)
+          isActive = true
+        }
+      }
+      if (isActive) return isActive
+      declined.add(filename)
+    }
+    Array.from(stashed).forEach(traverse)
 
     for (const filename in require.cache) {
       // we only detect reloads at plugin level
@@ -234,8 +266,8 @@ function createWatcher() {
       if (!state) continue
 
       // check if it is a dependent of the changed file
-      const dependencies = loadDependencies(filename, declined)
-      if (!dependencies.has(path)) continue
+      const dependencies = [...loadDependencies(filename, declined)]
+      if (!dependencies.some(dep => stashed.has(dep))) continue
 
       // accept dependencies to be reloaded
       dependencies.forEach(dep => accepted.add(dep))
@@ -247,26 +279,43 @@ function createWatcher() {
 
       // dispose installed plugin
       const displayName = plugin.name || relative(watchRoot, filename)
-      reloads.push([module.exports, state, displayName])
+      reloads.push([filename, state])
       tasks.push(app.dispose(plugin).catch((err) => {
         logger.warn('failed to dispose plugin %c\n' + coerce(err), displayName)
       }))
     }
 
-    await Promise.all(tasks)
+    stashed = new Set()
+    currentUpdate = Promise.all(tasks).then(() => {
+      // delete module cache before re-require
+      accepted.forEach((path) => {
+        logger.debug('cache deleted:', path)
+        delete require.cache[path]
+      })
 
-    accepted.forEach((path) => {
-      logger.debug('cache deleted:', path)
-      delete require.cache[path]
-    })
-
-    for (const [plugin, state, displayName] of reloads) {
-      try {
-        state.context.plugin(plugin, state.config)
-        logger.info('reload plugin %c', displayName)
-      } catch (err) {
-        logger.warn('failed to reload plugin %c\n' + coerce(err), displayName)
+      // reload all dependent plugins
+      for (const [filename, state] of reloads) {
+        try {
+          const plugin = require(filename)
+          state.context.plugin(plugin, state.config)
+          const displayName = plugin.name || relative(watchRoot, filename)
+          logger.info('reload plugin %c', displayName)
+        } catch (err) {
+          logger.warn('failed to reload plugin at %c\n' + coerce(err), relative(watchRoot, filename))
+        }
       }
-    }
+    })
+  }
+
+  watcher.on('change', (path) => {
+    if (!require.cache[path]) return
+    logger.debug('change detected:', path)
+
+    // files independent from any plugins will trigger a full reload
+    if (externals.has(path)) return triggerFullReload()
+
+    // do not trigger another reload during one reload
+    stashed.add(path)
+    Promise.resolve(currentUpdate).then(flushChanges)
   })
 }

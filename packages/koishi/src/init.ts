@@ -306,7 +306,10 @@ async function writeConfig(config: any, path: string, type: SourceType) {
   if (type === 'js') {
     output = '// ' + rootComment + '\nmodule.exports = ' + output
   } else if (type === 'ts') {
-    output = '// ' + rootComment + '\nexport default ' + output
+    output = "import { AppConfig } from 'koishi'\n\n// "
+      + rootComment
+      + '\nexport default '
+      + output.replace(/\n$/, ' as AppConfig\n')
   }
 
   // write to file
