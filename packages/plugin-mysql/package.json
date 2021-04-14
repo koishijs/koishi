@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-mysql",
   "description": "MySQL support for Koishi",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -31,7 +31,7 @@
     "mysql"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.8.0"
+    "koishi-core": "^3.9.0"
   },
   "dependencies": {
     "@types/mysql": "^2.15.18",
