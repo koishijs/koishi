@@ -14,7 +14,7 @@ export function extractScript(expr: string) {
 }
 
 export function transformScript(expr: string) {
-  return compile(expr, {bare: true})
+  return compile(expr, { bare: true })
 }
 
 export const transformModule = transformScript
