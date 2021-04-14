@@ -3,20 +3,34 @@
     <i :class="`fas fa-${icon}`"/>
     <div class="content">
       <p class="title">{{ title }}</p>
-      <p class="value"><slot/></p>
+      <p class="value"><slot>{{ text }}</slot></p>
     </div>
   </k-card>
 </template>
 
 <script lang="ts" setup>
 
-import { defineProps } from 'vue'
+import { defineProps, computed } from 'vue'
 
-defineProps<{
+const props = defineProps<{
   title: string
   icon: string
-  to?: string
+  type?: 'size'
+  value?: number
 }>()
+
+const text = computed(() => {
+  if (!props.value) return '暂无数据'
+  if (props.type === 'size') {
+    if (props.value >= (1 << 20) * 1000) {
+      return +(props.value / (1 << 30)).toFixed(1) + ' GB'
+    } else if (props.value >= (1 << 10) * 1000) {
+      return +(props.value / (1 << 20)).toFixed(1) + ' MB'
+    } else {
+      return +(props.value / (1 << 10)).toFixed(1) + ' KB'
+    }
+  }
+})
 
 </script>
 

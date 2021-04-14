@@ -90,6 +90,6 @@ describe('Eval Addons', () => {
   })
 
   it('sandbox injection', async () => {
-    await ses.shouldReply('> addon1.foo()', 'bar')
+    await ses.shouldReply('> addon1.foo(1)', 'baz')
   })
 })

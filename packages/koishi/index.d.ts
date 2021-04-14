@@ -22,6 +22,7 @@ export interface WatchConfig extends WatchOptions {
 export interface AppConfig extends AppOptions {
   plugins?: PluginConfig
   logLevel?: LogLevel
+  logDiff?: boolean
   logTime?: string | boolean
   watch?: WatchConfig
 }
