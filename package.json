@@ -12,7 +12,7 @@
   "scripts": {
     "atri": "yarn workspace atri",
     "addons": "yarn workspace addons",
-    "cli": "yarn workspace test koishi",
+    "cli": "yarn compile koishi && yarn workspace test koishi",
     "build": "yarn compile && yarn dtsc",
     "build:ci": "yarn build --listEmittedFiles && yarn build:web",
     "build:web": "node -r ./build/register packages/plugin-webui/build",

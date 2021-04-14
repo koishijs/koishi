@@ -243,7 +243,7 @@ async function createConfig() {
   }
 }
 
-const sourceTypes = ['js', 'ts', 'json'] as const
+const sourceTypes = ['js', 'ts', 'json', 'yaml', 'yml'] as const
 type SourceType = typeof sourceTypes[number]
 
 const error = red('error')
@@ -256,8 +256,9 @@ type Serializable = string | number | Serializable[] | SerializableObject
 function joinLines(lines: string[], type: SourceType, indent: string) {
   if (!lines.length) return ''
   // 如果是根节点就多个换行，看着舒服
-  const separator = indent ? ',\n  ' + indent : ',\n\n  '
-  return `\n  ${indent}${lines.join(separator)}${type === 'json' ? '' : ','}\n${indent}`
+  let separator = '\n  ' + indent
+  if (type !== 'yaml') separator = ',' + separator
+  return `\n  ${indent}${lines.join(separator)}${type === 'json' || type === 'yaml' ? '' : ','}\n${indent}`
 }
 
 function comment(data: SerializableObject, prop: string) {
@@ -273,34 +274,41 @@ function comment(data: SerializableObject, prop: string) {
   }
 }
 
-function codegen(data: Serializable, type: SourceType, indent = '') {
+function codegen(data: Serializable, type: SourceType, indent = ''): string {
   if (data === null) return 'null'
 
   switch (typeof data) {
     case 'number': case 'boolean': return '' + data
-    case 'string': return type === 'json' || data.includes("'") && !data.includes('"')
-      ? `"${data.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
-      : `'${data.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
+    case 'string': return type === 'yaml' ? data
+      : type === 'json' || data.includes("'") && !data.includes('"')
+        ? `"${data.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+        : `'${data.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
     case 'undefined': return undefined
   }
 
   if (Array.isArray(data)) {
-    return `[${data.map(value => codegen(value, type, indent)).join(', ')}]`
-    // return `[${joinLines(value.map(value => codegen(value, type, '  ' + indent)), type, indent)}]`
+    return type === 'yaml'
+      ? joinLines(data.map(value => '- ' + codegen(value, type, '  ' + indent).trimStart()), type, indent)
+      : `[${data.map(value => codegen(value, type, indent)).join(', ')}]`
   }
 
-  return `{${joinLines(Object.entries(data).filter(([, value]) => value !== undefined).map(([key, value]) => {
+  // object
+  const prefix = type === 'yaml' ? '# ' : '// '
+  const output = joinLines(Object.entries(data).filter(([, value]) => value !== undefined).map(([key, value]) => {
     let output = type !== 'json' && comment(data, key) || ''
-    if (output) output = output.split('\n').map(line => '// ' + line + '\n  ' + indent).join('')
+    if (output) output = output.split('\n').map(line => prefix + line + '\n  ' + indent).join('')
     output += type === 'json' ? `"${key}"` : key
     output += ': ' + codegen(value, type, '  ' + indent)
     return output
-  }), type, indent)}}`
+  }), type, indent)
+  return type === 'yaml' ? output : `{${output}}`
 }
 
 const rootComment = '配置项文档：https://koishi.js.org/api/app.html'
 
 async function writeConfig(config: any, path: string, type: SourceType) {
+  if (type === 'yml') type = 'yaml'
+
   // generate output
   let output = codegen(config, type) + '\n'
   if (type === 'js') {
@@ -310,12 +318,14 @@ async function writeConfig(config: any, path: string, type: SourceType) {
       + rootComment
       + '\nexport default '
       + output.replace(/\n$/, ' as AppConfig\n')
+  } else if (type === 'yaml') {
+    output = '# ' + rootComment + '\n' + output.replace(/^ {2}/mg, '')
   }
 
   // write to file
   const folder = dirname(path)
   await fs.mkdir(folder, { recursive: true })
-  await fs.writeFile(path, output)
+  await fs.writeFile(path, output.replace(/^ +$/mg, ''))
   console.log(`${success} created config file: ${path}`)
 }
 

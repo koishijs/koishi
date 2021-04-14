@@ -32,11 +32,13 @@
     "koishi"
   ],
   "devDependencies": {
+    "@types/js-yaml": "^4.0.0",
     "@types/prompts": "^2.0.10"
   },
   "dependencies": {
     "cac": "^6.7.2",
     "chokidar": "^3.5.1",
+    "js-yaml": "^4.0.0",
     "kleur": "^4.1.4",
     "koishi-core": "^3.8.0",
     "koishi-utils": "^4.2.0",

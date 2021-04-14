@@ -1,13 +1,13 @@
 import { App, BotOptions, Plugin, version } from 'koishi-core'
-import { resolve, dirname, relative } from 'path'
+import { resolve, relative, extname, dirname } from 'path'
 import { coerce, Logger, noop, LogLevelConfig } from 'koishi-utils'
+import { readFileSync, readdirSync } from 'fs'
 import { performance } from 'perf_hooks'
-import { watch } from 'chokidar'
 import { yellow } from 'kleur'
 import { AppConfig } from '..'
 
 const logger = new Logger('app')
-const cwd = process.cwd()
+let configDir = process.cwd()
 
 function handleException(error: any) {
   logger.error(error)
@@ -16,30 +16,31 @@ function handleException(error: any) {
 
 process.on('uncaughtException', handleException)
 
-const configFile = resolve(cwd, process.env.KOISHI_CONFIG_FILE || 'koishi.config')
-const configDir = dirname(configFile)
+let config: AppConfig, configFile: string, configExt: string
+const basename = 'koishi.config'
+if (process.env.KOISHI_CONFIG_FILE) {
+  configFile = resolve(configDir, process.env.KOISHI_CONFIG_FILE)
+  configExt = extname(configFile)
+  configDir = dirname(configFile)
+} else {
+  const files = readdirSync(configDir)
+  const ext = ['.js', '.json', '.ts', '.yaml', '.yml'].find(ext => files.includes(basename + ext))
+  if (!ext) {
+    throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
+  }
+  configFile = configDir + '/' + basename + ext
+}
+
+if (['.yaml', '.yml'].includes(configExt)) {
+  const { load } = require('js-yaml') as typeof import('js-yaml')
+  config = load(readFileSync(configFile, 'utf8')) as any
+} else {
+  const exports = require(configFile)
+  config = exports.__esModule ? exports.default : exports
+}
 
 function isErrorModule(error: any) {
   return error.code !== 'MODULE_NOT_FOUND' || error.requireStack && error.requireStack[0] !== __filename
-}
-
-function tryCallback<T>(callback: () => T) {
-  try {
-    return callback()
-  } catch (error) {
-    if (isErrorModule(error) && error.code !== 'ENOENT') {
-      throw error
-    }
-  }
-}
-
-const config: AppConfig = tryCallback(() => {
-  const exports = require(configFile)
-  return exports.__esModule ? exports.default : exports
-})
-
-if (!config) {
-  throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
 }
 
 function loadEcosystem(type: string, name: string) {
@@ -193,8 +194,9 @@ function loadDependencies(filename: string, ignored: Set<string>) {
 function createWatcher() {
   if (process.env.KOISHI_WATCH_ROOT === undefined && !config.watch) return
 
+  const { watch } = require('chokidar') as typeof import('chokidar')
   const { root = '', ignored = [], fullReload } = config.watch || {}
-  const watchRoot = resolve(cwd, process.env.KOISHI_WATCH_ROOT ?? root)
+  const watchRoot = resolve(configDir, process.env.KOISHI_WATCH_ROOT ?? root)
   const watcher = watch(watchRoot, {
     ...config.watch,
     ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
