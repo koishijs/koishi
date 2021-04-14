@@ -33,6 +33,7 @@ declare module 'koishi-core' {
   interface EventMap {
     'eval/before-send'(content: string, session: Session): string | Promise<string>
     'eval/before-start'(): void | Promise<void>
+    'eval/before-eval'(script: string): string | Promise<string>
     'eval/start'(response: WorkerResponse): void
   }
 }
@@ -125,6 +126,7 @@ export function apply(ctx: Context, config: Config = {}) {
       return err.message
     }
 
+    expr = await ctx.waterfall('eval/before-eval', expr)
     return await new Promise((resolve) => {
       logger.debug(expr)
       defineProperty(session, '_isEval', true)
