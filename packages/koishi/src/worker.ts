@@ -1,4 +1,4 @@
-import { App, BotOptions, version } from 'koishi-core'
+import { App, BotOptions, Plugin, version } from 'koishi-core'
 import { resolve, dirname, relative } from 'path'
 import { coerce, Logger, noop, LogLevelConfig } from 'koishi-utils'
 import { performance } from 'perf_hooks'
@@ -7,6 +7,7 @@ import { yellow } from 'kleur'
 import { AppConfig } from '..'
 
 const logger = new Logger('app')
+const cwd = process.cwd()
 
 function handleException(error: any) {
   logger.error(error)
@@ -15,7 +16,7 @@ function handleException(error: any) {
 
 process.on('uncaughtException', handleException)
 
-const configFile = resolve(process.cwd(), process.env.KOISHI_CONFIG_FILE || 'koishi.config')
+const configFile = resolve(cwd, process.env.KOISHI_CONFIG_FILE || 'koishi.config')
 const configDir = dirname(configFile)
 
 function isErrorModule(error: any) {
@@ -91,7 +92,6 @@ if (typeof config.logLevel === 'object') {
 
 if (config.logTime === true) config.logTime = 'yyyy/MM/dd hh:mm:ss'
 if (config.logTime) Logger.showTime = config.logTime
-if (config.logDiff !== undefined) Logger.showDiff = config.logDiff
 
 // cli options have higher precedence
 if (process.env.KOISHI_LOG_LEVEL) {
@@ -173,7 +173,7 @@ app.start().then(() => {
   const time = Math.max(0, performance.now() - +process.env.KOISHI_START_TIME).toFixed()
   logger.success(`bot started successfully in ${time} ms`)
   Logger.timestamp = Date.now()
-  Logger.showDiff = true
+  Logger.showDiff = config.logDiff ?? !Logger.showTime
 
   process.send({ type: 'start' })
   createWatcher()
@@ -198,24 +198,28 @@ function createWatcher() {
   if (process.env.KOISHI_WATCH_ROOT === undefined && !config.watch) return
 
   const { root = '', ignored = [], fullReload } = config.watch || {}
-  const watchRoot = resolve(process.cwd(), process.env.KOISHI_WATCH_ROOT ?? root)
+  const watchRoot = resolve(cwd, process.env.KOISHI_WATCH_ROOT ?? root)
   const externals = loadDependencies(__filename, pluginMap)
   const watcher = watch(watchRoot, {
     ...config.watch,
     ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
   })
 
-  const logger = new Logger('watcher')
+  const logger = new Logger('app:watcher')
+  function triggerFullReload() {
+    if (!fullReload) return
+    logger.info('trigger full reload')
+    process.exit(114)
+  }
 
   watcher.on('change', async (path) => {
     if (!require.cache[path]) return
-    logger.debug('change detected:', relative(watchRoot, path))
+    logger.debug('change detected:', path)
 
-    if (externals.has(path)) {
-      if (!fullReload) return
-      logger.info('trigger full reload')
-      process.exit(114)
-    }
+    if (externals.has(path)) return triggerFullReload()
+
+    const tasks: Promise<void>[] = []
+    const reloads: [plugin: Plugin, state: Plugin.State, name: string][] = []
 
     /** files that should be reloaded */
     const accepted = new Set<string>()
@@ -223,23 +227,30 @@ function createWatcher() {
     const declined = new Set([...externals, ...loadDependencies(path, externals)])
     declined.delete(path)
 
-    const plugins: string[] = []
-    const tasks: Promise<void>[] = []
-    for (const [filename, [name]] of pluginMap) {
-      const dependencies = loadDependencies(filename, declined)
-      if (dependencies.has(path)) {
-        dependencies.forEach(dep => accepted.add(dep))
-        const plugin = require(filename)
-        const state = app.registry.get(plugin)
-        if (state?.sideEffect) continue
+    for (const filename in require.cache) {
+      // we only detect reloads at plugin level
+      const module = require.cache[filename]
+      const state = app.registry.get(module.exports)
+      if (!state) continue
 
-        // dispose installed plugin
-        plugins.push(filename)
-        const displayName = plugin.name || name
-        tasks.push(app.dispose(plugin).catch((err) => {
-          logger.warn('failed to dispose plugin %c\n' + coerce(err), displayName)
-        }))
+      // check if it is a dependent of the changed file
+      const dependencies = loadDependencies(filename, declined)
+      if (!dependencies.has(path)) continue
+
+      // accept dependencies to be reloaded
+      dependencies.forEach(dep => accepted.add(dep))
+      const plugin = require(filename)
+      if (state?.sideEffect) {
+        triggerFullReload()
+        continue
       }
+
+      // dispose installed plugin
+      const displayName = plugin.name || relative(watchRoot, filename)
+      reloads.push([module.exports, state, displayName])
+      tasks.push(app.dispose(plugin).catch((err) => {
+        logger.warn('failed to dispose plugin %c\n' + coerce(err), displayName)
+      }))
     }
 
     await Promise.all(tasks)
@@ -249,12 +260,9 @@ function createWatcher() {
       delete require.cache[path]
     })
 
-    for (const filename of plugins) {
-      const plugin = require(filename)
-      const [name, options] = pluginMap.get(filename)
-      const displayName = plugin.name || name
+    for (const [plugin, state, displayName] of reloads) {
       try {
-        app.plugin(plugin, options)
+        state.context.plugin(plugin, state.config)
         logger.info('reload plugin %c', displayName)
       } catch (err) {
         logger.warn('failed to reload plugin %c\n' + coerce(err), displayName)

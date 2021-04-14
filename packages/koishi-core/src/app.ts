@@ -88,9 +88,10 @@ export class App extends Context {
     this.options = merge(options, App.defaultConfig)
     this.registry.set(null, {
       parent: null,
+      context: null,
+      config: null,
       children: [],
       disposables: [],
-      dependencies: new Set(),
     })
 
     defineProperty(this, '_userCache', {})
