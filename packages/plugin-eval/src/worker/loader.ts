@@ -42,7 +42,7 @@ export function synthetize(identifier: string, namespace: {}, globalName?: strin
   return module
 }
 
-const suffixes = ['', '.js', '.ts', '/index.js', '/index.ts']
+const suffixes = ['', '.js', '.ts', '.coffee', '/index.js', '/index.ts', '/index.coffee']
 
 function locateModule(specifier: string) {
   for (const suffix of suffixes) {
@@ -159,6 +159,12 @@ function resolveLoader(extension: string) {
       } catch {}
     }
     throw new Error('cannot resolve loader for ".ts", you should install either esbuild or typescript + json5 by yourself')
+  } else if (extension === '.coffee') {
+    try {
+      return require('../loaders/coffeescript')
+    } catch {
+      throw new Error('cannot resolve loader for ".coffee", you should indtall coffeescript by yourself')
+    }
   } else {
     throw new Error(`cannot resolve loader for "${extension}", you should specify a custom loader via "config.moduleLoaders"`)
   }
