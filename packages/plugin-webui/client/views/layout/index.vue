@@ -107,7 +107,7 @@ main.frameless {
 
   .echarts {
     max-width: 100%;
-    margin: 0 auto -3rem;
+    margin: 0 auto;
   }
 
   @media (min-width: 1400px) {
@@ -119,7 +119,7 @@ main.frameless {
         width: 600px;
         height: 400px;
         max-width: 100%;
-        margin: 0 auto -3rem;
+        margin: 0 auto;
       }
     }
 
