@@ -101,13 +101,6 @@ describe('Eval Loaders', () => {
     await app.stop()
   })
 
-  it('typescript', async () => {
-    const app = await createApp('typescript')
-    const ses = app.session('123')
-    await ses.shouldReply('echo 1${"bar" as string}3', '1bar3')
-    await app.stop()
-  })
-
   it('coffeescript', async () => {
     const app = await createApp('coffeescript')
     const ses = app.session('123')
