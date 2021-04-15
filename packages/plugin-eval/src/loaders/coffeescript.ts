@@ -1,4 +1,11 @@
 const { compile } = require('coffeescript')
+const { transformAsync } = require('@babel/core')
+
+const options = {
+  plugins: [
+    ['@babel/plugin-transform-react-jsx']
+  ]
+}
 
 export function extractScript(expr: string) {
   try {
@@ -13,8 +20,10 @@ export function extractScript(expr: string) {
   }
 }
 
-export function transformScript(expr: string) {
-  return compile(expr, { bare: true })
+export async function transformScript(expr: string) {
+  const jsx = compile(expr, { bare: true })
+  const js = await transformAsync(jsx, options)
+  return js.code
 }
 
 export const transformModule = transformScript
