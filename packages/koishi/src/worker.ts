@@ -16,7 +16,7 @@ function handleException(error: any) {
 
 process.on('uncaughtException', handleException)
 
-let config: AppConfig, configFile: string, configExt: string
+let configFile: string, configExt: string
 const basename = 'koishi.config'
 if (process.env.KOISHI_CONFIG_FILE) {
   configFile = resolve(configDir, process.env.KOISHI_CONFIG_FILE)
@@ -31,12 +31,14 @@ if (process.env.KOISHI_CONFIG_FILE) {
   configFile = configDir + '/' + basename + ext
 }
 
-if (['.yaml', '.yml'].includes(configExt)) {
-  const { load } = require('js-yaml') as typeof import('js-yaml')
-  config = load(readFileSync(configFile, 'utf8')) as any
-} else {
-  const exports = require(configFile)
-  config = exports.__esModule ? exports.default : exports
+function loadConfig() {
+  if (['.yaml', '.yml'].includes(configExt)) {
+    const { load } = require('js-yaml') as typeof import('js-yaml')
+    return load(readFileSync(configFile, 'utf8')) as any
+  } else {
+    const exports = require(configFile)
+    return exports.__esModule ? exports.default : exports
+  }
 }
 
 function isErrorModule(error: any) {
@@ -83,6 +85,8 @@ function ensureBaseLevel(config: LogLevelConfig, base: number) {
     ensureBaseLevel(value, config.base)
   })
 }
+
+const config: AppConfig = loadConfig()
 
 // configurate logger levels
 if (typeof config.logLevel === 'object') {
@@ -358,7 +362,9 @@ function createWatcher() {
     logger.debug('change detected:', path)
 
     // files independent from any plugins will trigger a full reload
-    if (externals.has(path)) return triggerFullReload()
+    if (path === configFile || externals.has(path)) {
+      return triggerFullReload()
+    }
 
     // do not trigger another reload during one reload
     stashed.add(path)
