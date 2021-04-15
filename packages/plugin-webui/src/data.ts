@@ -201,24 +201,13 @@ export class Registry implements DataSource<Registry.Payload> {
     return this.payload
   }
 
-  * getDeps(state: Plugin.State): Generator<string> {
-    for (const dep of state.dependencies) {
-      if (dep.name) {
-        yield dep.name
-      } else {
-        yield* this.getDeps(dep)
-      }
-    }
-  }
-
   traverse = (plugin: Plugin): Registry.PluginData[] => {
     const state = this.ctx.app.registry.get(plugin)
     const children = state.children.flatMap(this.traverse, 1)
     const { name, sideEffect } = state
     if (!name) return children
     this.payload.pluginCount += 1
-    const dependencies = [...new Set(this.getDeps(state))]
-    return [{ name, sideEffect, children, dependencies }]
+    return [{ name, sideEffect, children }]
   }
 }
 
@@ -228,7 +217,6 @@ export namespace Registry {
 
   export interface PluginData extends Plugin.Meta {
     children: PluginData[]
-    dependencies: string[]
   }
 
   export interface Payload {

@@ -1,10 +1,9 @@
-import { config, context, internal, Loader } from '.'
-import { resolve, posix, dirname } from 'path'
+import { config, context, internal, WorkerData } from '.'
+import { resolve, posix, dirname, extname } from 'path'
 import { promises as fs } from 'fs'
 import { deserialize, serialize, cachedDataVersionTag } from 'v8'
 import { Logger } from 'koishi-utils'
 
-let loader: Loader
 const logger = new Logger('eval:loader')
 
 // TODO pending @types/node
@@ -19,10 +18,19 @@ interface Module {
   createCachedData(): Buffer
 }
 
+export interface Loader {
+  name: string
+  synthetize: boolean
+  prepare(config: WorkerData): void | Promise<void>
+  extractScript(expr: string): string
+  transformScript(expr: string): string | Promise<string>
+  transformModule(expr: string, extension: string): string | Promise<string>
+}
+
 export const modules: Record<string, Module> = {}
 export const synthetics: Record<string, Module> = {}
 
-export function synthetize(identifier: string, namespace: {}, name?: string) {
+export function synthetize(identifier: string, namespace: {}, globalName?: string) {
   const module = new SyntheticModule(Object.keys(namespace), function () {
     for (const key in namespace) {
       this.setExport(key, internal.contextify(namespace[key]))
@@ -30,11 +38,11 @@ export function synthetize(identifier: string, namespace: {}, name?: string) {
   }, { context, identifier })
   modules[identifier] = module
   config.addonNames?.unshift(identifier)
-  if (name) synthetics[name] = module
+  if (globalName) synthetics[globalName] = module
+  return module
 }
 
-const suffixes = ['', '.ts', '/index.ts']
-const relativeRE = /^\.\.?[\\/]/
+const suffixes = ['', '.js', '.ts', '/index.js', '/index.ts']
 
 function locateModule(specifier: string) {
   for (const suffix of suffixes) {
@@ -42,6 +50,18 @@ function locateModule(specifier: string) {
     if (target in modules) return modules[target]
   }
 }
+
+async function loadSource(path: string): Promise<[source: string, identifier: string]> {
+  for (const suffix of suffixes) {
+    try {
+      const target = path + suffix
+      return [await fs.readFile(resolve(config.root, target), 'utf8'), target]
+    } catch {}
+  }
+  throw new Error(`cannot load source file "${path}"`)
+}
+
+const relativeRE = /^\.\.?[\\/]/
 
 async function linker(specifier: string, { identifier }: Module) {
   // resolve path based on reference module
@@ -73,11 +93,13 @@ const V8_TAG = cachedDataVersionTag()
 const files: Record<string, FileCache> = {}
 const cachedFiles: Record<string, FileCache> = {}
 
-export async function readSerialized(filename: string) {
+export async function readSerialized(filename: string): Promise<[any?, Buffer?]> {
   try {
     const buffer = await fs.readFile(filename)
-    return deserialize(buffer)
-  } catch {}
+    return [deserialize(buffer), buffer]
+  } catch {
+    return []
+  }
 }
 
 // errors should be catched because we should not expose file paths to users
@@ -92,17 +114,12 @@ export async function safeWriteFile(filename: string, data: any) {
 
 export default async function prepare() {
   if (!config.root) return
-
-  loader = require(config.loader) as Loader
   const cachePath = resolve(config.root, config.cacheFile || '.koishi/cache')
-  await Promise.all([
-    loader.prepare?.(config),
-    readSerialized(cachePath).then((data) => {
-      if (data && data.tag === CACHE_TAG && data.v8tag === V8_TAG) {
-        Object.assign(cachedFiles, data.files)
-      }
-    }),
-  ])
+  await readSerialized(cachePath).then(([data]) => {
+    if (data && data.tag === CACHE_TAG && data.v8tag === V8_TAG) {
+      Object.assign(cachedFiles, data.files)
+    }
+  })
   await Promise.all(config.addonNames.map(evaluate))
   safeWriteFile(cachePath, serialize({ tag: CACHE_TAG, v8tag: V8_TAG, files }))
   for (const key in synthetics) {
@@ -121,14 +138,41 @@ function exposeGlobal(name: string, namespace: {}) {
   internal.setGlobal(name, outer)
 }
 
-async function loadSource(path: string): Promise<[source: string, identifier: string]> {
-  for (const postfix of suffixes) {
-    try {
-      const target = path + postfix
-      return [await fs.readFile(resolve(config.root, target), 'utf8'), target]
-    } catch {}
+declare const BUILTIN_LOADERS: string[]
+const fileAssoc: Record<string, Loader> = {}
+const loaderSet = new Set<Loader>()
+
+function resolveLoader(extension: string) {
+  const filename = config.moduleLoaders[extension]
+  if (BUILTIN_LOADERS.includes(filename)) {
+    return require('../loaders/' + filename)
+  } else if (filename) {
+    return require(resolve(process.cwd(), filename))
+  } else if (extension === '.js') {
+    return require('../loaders/default')
+  } else if (extension === '.json' || extension === '.yml' || extension === '.yaml') {
+    return require('../loaders/json+yaml')
+  } else if (extension === '.ts') {
+    for (const filename of ['esbuild', 'typescript']) {
+      try {
+        return require('../loaders/' + filename)
+      } catch {}
+    }
+    throw new Error('cannot resolve loader for ".ts", you should install either esbuild or typescript + json5 by yourself')
+  } else {
+    throw new Error(`cannot resolve loader for "${extension}", you should specify a custom loader via "config.moduleLoaders"`)
   }
-  throw new Error(`cannot load source file "${path}"`)
+}
+
+async function createLoader(extension: string) {
+  const loader: Loader = resolveLoader(extension)
+  // loader.prepare() should only be called once
+  if (!loaderSet.has(loader)) {
+    loaderSet.add(loader)
+    logger.debug('creating loader %c', loader.name)
+    await loader.prepare?.(config)
+  }
+  return loader
 }
 
 async function createModule(path: string) {
@@ -141,11 +185,18 @@ async function createModule(path: string) {
       const { outputText, cachedData } = files[source] = cache
       module = new SourceTextModule(outputText, { context, identifier, cachedData })
     } else {
-      type = 'source text'
-      const outputText = await loader.transformModule(source)
-      module = new SourceTextModule(outputText, { context, identifier })
-      const cachedData = module.createCachedData()
-      files[source] = { outputText, cachedData }
+      const extension = extname(identifier)
+      const loader = fileAssoc[extension] ||= await createLoader(extension)
+      if (loader.synthetize) {
+        const exports = await loader.transformModule(source, extension)
+        module = synthetize(identifier, { default: exports })
+      } else {
+        type = 'source text'
+        const outputText = await loader.transformModule(source, extension)
+        module = new SourceTextModule(outputText, { context, identifier })
+        const cachedData = module.createCachedData()
+        files[source] = { outputText, cachedData }
+      }
     }
     modules[identifier] = module
   } else if (module.status !== 'unlinked') {

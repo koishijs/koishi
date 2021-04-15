@@ -1,6 +1,7 @@
-import { install } from 'source-map-support'
-import { transformSync, Message } from 'esbuild'
-import { readFileSync } from 'fs'
+const { install } = require('source-map-support')
+const { transformSync } = require('esbuild')
+const { readFileSync, readdirSync } = require('fs')
+const { resolve } = require('path')
 
 // hack for tests
 if (process.env.TS_NODE_PROJECT) {
@@ -14,7 +15,8 @@ const ignored = [
   'Indirect calls to "require" will not be bundled (surround with a try/catch to silence this warning)',
 ]
 
-const cache: Record<string, string> = {}
+/** @type { Record<string, string> } */
+const cache = {}
 
 install({
   handleUncaughtExceptions: true,
@@ -24,21 +26,35 @@ install({
   },
 })
 
-const { version } = require('../packages/koishi-core/package.json')
-const KOISHI_VERSION = JSON.stringify(version)
-
 const prefix = '\u001B[35mwarning:\u001B[0m'
 
-function reportWarnings({ location, text }: Message) {
+/** @param { import('esbuild').Message } param0 */
+function reportWarnings({ location, text }) {
   if (ignored.includes(text)) return
   if (!location) return console.log(prefix, text)
   const { file, line, column } = location
   console.log(`\u001B[34m${file}:${line}:${column}:\u001B[0m`, prefix, text)
 }
 
-// eslint-disable-next-line node/no-deprecated-api
+const globalInjections = {
+  KOISHI_VERSION() {
+    return require('../packages/koishi-core/package.json').version
+  },
+  BUILTIN_LOADERS() {
+    const loaders = readdirSync(resolve(__dirname, '../packages/plugin-eval/src/loaders'))
+    return loaders.map(name => name.slice(0, -3))
+  },
+}
+
 require.extensions['.ts'] = (module, filename) => {
   const source = readFileSync(filename, 'utf8')
+  /** @type { Record<string, string> } */
+  const define = {}
+  for (const key in globalInjections) {
+    if (source.includes(key)) {
+      define[key] = JSON.stringify(globalInjections[key]())
+    }
+  }
   const { code, warnings } = transformSync(source, {
     sourcefile: filename,
     sourcemap: 'inline',
@@ -46,9 +62,7 @@ require.extensions['.ts'] = (module, filename) => {
     loader: 'ts',
     charset: 'utf8',
     target: 'es2020',
-    define: {
-      KOISHI_VERSION,
-    },
+    define,
   })
   cache[filename] = code
   warnings.forEach(reportWarnings)

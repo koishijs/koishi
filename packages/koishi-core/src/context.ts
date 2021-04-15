@@ -33,9 +33,10 @@ export namespace Plugin {
 
   export interface State extends Meta {
     parent: State
+    context: Context
+    config: Config<Plugin>
     children: Plugin[]
     disposables: Disposable[]
-    dependencies: Set<State>
   }
 
   export interface Packages {}
@@ -146,6 +147,11 @@ export class Context {
     return new Context(s => this.filter(s) && filter(s), this.app, this._plugin)
   }
 
+  except(arg: Filter | Context) {
+    const filter = typeof arg === 'function' ? arg : arg.filter
+    return new Context(s => this.filter(s) && !filter(s), this.app, this._plugin)
+  }
+
   match(session?: Session) {
     return !session || this.filter(session)
   }
@@ -201,10 +207,11 @@ export class Context {
     const ctx: this = Object.create(this)
     defineProperty(ctx, '_plugin', plugin)
     this.app.registry.set(plugin, {
+      context: this,
+      config: options,
       parent: this.state,
       children: [],
       disposables: [],
-      dependencies: new Set([this.state]),
     })
 
     if (typeof plugin === 'function') {

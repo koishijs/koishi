@@ -95,22 +95,31 @@ receive('expire', () => {
   router.push('/login')
 })
 
-const endpoint = new URL(KOISHI_CONFIG.endpoint, location.origin).toString()
-const socket = client.socket.value = new WebSocket(endpoint.replace(/^http/, 'ws'))
+function connect() {
+  const endpoint = new URL(KOISHI_CONFIG.endpoint, location.origin).toString()
+  const socket = client.socket.value = new WebSocket(endpoint.replace(/^http/, 'ws'))
 
-socket.onmessage = (ev) => {
-  const data = JSON.parse(ev.data)
-  console.debug(data)
-  if (data.type in client.listeners) {
-    client.listeners[data.type](data.body)
+  socket.onmessage = (ev) => {
+    const data = JSON.parse(ev.data)
+    console.debug(data)
+    if (data.type in client.listeners) {
+      client.listeners[data.type](data.body)
+    }
+  }
+
+  socket.onopen = () => {
+    if (!client.user.value) return
+    const { id, token } = client.user.value
+    client.send('validate', { id, token })
+  }
+
+  socket.onclose = () => {
+    console.log('[koishi] websocket disconnected, will retry in 1s...')
+    setTimeout(connect, 1000)
   }
 }
 
-socket.onopen = () => {
-  if (!client.user.value) return
-  const { id, token } = client.user.value
-  client.send('validate', { id, token })
-}
+connect()
 
 const loadingExtensions = Promise.all(KOISHI_CONFIG.extensions.map(path => {
   return import(/* @vite-ignore */ path)

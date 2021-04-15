@@ -231,7 +231,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     const lastCall = this.app.options.prettyErrors && new Error().stack.split('\n', 4)[3]
     try {
       for (const validator of this._checkers) {
-        const result = validator.call(this, argv, ...args)
+        const result = await validator.call(this, argv, ...args)
         if (typeof result === 'string') return result
       }
       const result = await this.app.serial(session, 'before-command', argv)
