@@ -2,6 +2,7 @@ import { Bot, Context, Random, Session, template } from 'koishi-core'
 import { resolve } from 'path'
 import { WebServer } from 'koishi-plugin-webui'
 import receiver, { Message, ReceiverConfig } from './receiver'
+import axios from 'axios'
 
 export * from './receiver'
 
@@ -17,7 +18,14 @@ declare module 'koishi-core' {
   }
 }
 
+declare module 'koishi-plugin-webui' {
+  interface ClientConfig {
+    whitelist: string[]
+  }
+}
+
 export interface Config extends ReceiverConfig {
+  whitelist?: string[]
   includeUsers?: string[]
   includeChannels?: string[]
 }
@@ -41,6 +49,11 @@ export class SandboxBot extends Bot<'web'> {
   }
 }
 
+const builtinWhitelist = [
+  'http://gchat.qpic.cn/',
+  'http://c2cpicdw.qpic.cn',
+]
+
 export const name = 'chat'
 
 export function apply(ctx: Context, options: Config = {}) {
@@ -60,8 +73,11 @@ export function apply(ctx: Context, options: Config = {}) {
   })
 
   ctx.with(['koishi-plugin-webui'] as const, (ctx, { Profile }) => {
-    const { devMode } = ctx.webui.config
+    const { devMode, apiPath } = ctx.webui.config
     const filename = devMode ? '../client/index.ts' : '../dist/index.js'
+    const whitelist = [...builtinWhitelist, ...options.whitelist || []]
+
+    ctx.webui.global.whitelist = whitelist
     ctx.webui.addEntry(resolve(__dirname, filename))
 
     ctx.webui.addListener('chat', async function ({ id, token, content, platform, selfId, channelId }) {
@@ -111,6 +127,15 @@ export function apply(ctx: Context, options: Config = {}) {
       Object.values(ctx.webui.handles).forEach((handle) => {
         if (handle.authority >= 4) handle.socket.send(JSON.stringify({ type: 'chat', body: message }))
       })
+    })
+
+    ctx.router.get(apiPath + '/assets/:url', async (ctx) => {
+      if (!whitelist.some(prefix => ctx.params.url.startsWith(prefix))) {
+        console.log(ctx.params.url)
+        return ctx.status = 403
+      }
+      const { data } = await axios.get(ctx.params.url, { responseType: 'stream' })
+      return ctx.body = data
     })
   })
 }

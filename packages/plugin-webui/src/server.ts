@@ -3,7 +3,6 @@ import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import { DataSource, Profile, Meta, Registry } from './data'
 import { Statistics } from './stats'
-import axios from 'axios'
 import WebSocket from 'ws'
 import type * as Vite from 'vite'
 import type PluginVue from '@vitejs/plugin-vue'
@@ -14,7 +13,6 @@ interface BaseConfig {
   title?: string
   devMode?: boolean
   uiPath?: string
-  whitelist?: string[]
 }
 
 export interface Config extends BaseConfig, Profile.Config, Meta.Config, Registry.Config, Statistics.Config {
@@ -58,23 +56,28 @@ export class SocketHandle {
 export class WebServer extends Adapter {
   readonly root: string
   readonly sources: WebServer.Sources
+  readonly global: ClientConfig
   readonly entries: Record<string, string> = {}
   readonly handles: Record<string, SocketHandle> = {}
   readonly states: Record<string, [string, number, SocketHandle]> = {}
 
   private vite: Vite.ViteDevServer
-  private server: WebSocket.Server
+  private readonly server: WebSocket.Server
   private readonly [Context.current]: Context
 
   constructor(private ctx: Context, public config: Config) {
     super(ctx.app)
 
+    const { apiPath, uiPath, devMode, selfUrl, title } = config
+    const endpoint = selfUrl + apiPath
+    this.global = { title, uiPath, endpoint, devMode, extensions: [] }
+    this.root = resolve(__dirname, '..', devMode ? 'client' : 'dist')
+
     this.server = new WebSocket.Server({
-      path: config.apiPath,
+      path: apiPath,
       server: ctx.app._httpServer,
     })
 
-    this.root = resolve(__dirname, '..', config.devMode ? 'client' : 'dist')
     this.sources = {
       profile: new Profile(ctx, config),
       meta: new Meta(ctx, config),
@@ -104,6 +107,13 @@ export class WebServer extends Adapter {
     this.server.clients.forEach((socket) => socket.send(data))
   }
 
+  private triggerReload() {
+    this.global.extensions = Object.entries(this.entries).map(([name, filename]) => {
+      return this.config.devMode ? '/vite/@fs' + filename : `./${name}`
+    })
+    this.vite?.ws.send({ type: 'full-reload' })
+  }
+
   addEntry(filename: string) {
     const ctx = this[Context.current]
     let { state } = ctx
@@ -111,10 +121,10 @@ export class WebServer extends Adapter {
     const hash = Math.floor(Math.random() * (16 ** 8)).toString(16).padStart(8, '0')
     const key = `${state?.name || 'entry'}-${hash}.js`
     this.entries[key] = filename
-    this.vite?.ws.send({ type: 'full-reload' })
+    this.triggerReload()
     ctx.before('disconnect', () => {
       delete this.entries[key]
-      this.vite?.ws.send({ type: 'full-reload' })
+      this.triggerReload()
     })
   }
 
@@ -164,7 +174,7 @@ export class WebServer extends Adapter {
   }
 
   private serveAssets() {
-    const { uiPath, apiPath, whitelist } = this.config
+    const { uiPath } = this.config
 
     this.ctx.router.get(uiPath + '(/.+)*', async (ctx) => {
       // add trailing slash and redirect
@@ -192,26 +202,11 @@ export class WebServer extends Adapter {
       ctx.type = 'html'
       ctx.body = await this.transformHtml(template)
     })
-
-    this.ctx.router.get(apiPath + '/assets/:url', async (ctx) => {
-      if (!whitelist.some(prefix => ctx.params.url.startsWith(prefix))) {
-        console.log(ctx.params.url)
-        return ctx.status = 403
-      }
-      const { data } = await axios.get(ctx.params.url, { responseType: 'stream' })
-      return ctx.body = data
-    })
   }
 
   private async transformHtml(template: string) {
     if (this.vite) template = await this.vite.transformIndexHtml(this.config.uiPath, template)
-    const { apiPath, uiPath, devMode, selfUrl, title, whitelist } = this.config
-    const endpoint = selfUrl + apiPath
-    const extensions = Object.entries(this.entries).map(([name, filename]) => {
-      return this.config.devMode ? '/vite/@fs' + filename : `./${name}`
-    })
-    const global: ClientConfig = { title, uiPath, endpoint, devMode, extensions, whitelist }
-    const headInjection = `<script>KOISHI_CONFIG = ${JSON.stringify(global)}</script>`
+    const headInjection = `<script>KOISHI_CONFIG = ${JSON.stringify(this.global)}</script>`
     return template.replace('</title>', '</title>' + headInjection)
   }
 
