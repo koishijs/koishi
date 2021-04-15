@@ -389,8 +389,8 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       }
 
       names = deduplicate(names)
-      const forbidden = names.filter(name => {
-        const command = ctx.app._commandMap[name]
+      const forbidden = names.filter((name) => {
+        const command = ctx.app._commands.get(name)
         return command && command.config.authority >= session.user.authority
       })
       if (forbidden.length) return template('switch.forbidden', forbidden.join(', '))

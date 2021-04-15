@@ -403,7 +403,7 @@ export class Context {
     segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
-      let command = this.app._commandMap[name]
+      let command = this.app._commands.get(name)
       if (command) {
         if (parent) {
           if (command === parent) {

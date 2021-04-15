@@ -23,10 +23,10 @@ describe('Command API', () => {
       ctx2.command('c')
 
       // a, b, c, help
-      expect(app._commands).to.have.length(4)
-      expect(app._commandMap.a.context).to.equal(app)
-      expect(app._commandMap.b.context).to.equal(ctx1)
-      expect(app._commandMap.c.context).to.equal(ctx2)
+      expect(app._commandList).to.have.length(4)
+      expect(app._commands.get('a').context).to.equal(app)
+      expect(app._commands.get('b').context).to.equal(ctx1)
+      expect(app._commands.get('c').context).to.equal(ctx2)
     })
 
     it('custom inspect', () => {
@@ -35,12 +35,12 @@ describe('Command API', () => {
 
     it('modify commands', () => {
       const d1 = app.command('d', 'foo', { authority: 1 })
-      expect(app._commandMap.d.description).to.equal('foo')
-      expect(app._commandMap.d.config.authority).to.equal(1)
+      expect(app._commands.get('d').description).to.equal('foo')
+      expect(app._commands.get('d').config.authority).to.equal(1)
 
       const d2 = app.command('d', 'bar', { authority: 2 })
-      expect(app._commandMap.d.description).to.equal('bar')
-      expect(app._commandMap.d.config.authority).to.equal(2)
+      expect(app._commands.get('d').description).to.equal('bar')
+      expect(app._commands.get('d').config.authority).to.equal(2)
 
       expect(d1).to.equal(d2)
     })
@@ -142,11 +142,11 @@ describe('Command API', () => {
 
     it('basic support', () => {
       // don't forget help
-      expect(app._commands).to.have.length(4)
+      expect(app._commandList).to.have.length(4)
       expect(app._shortcuts).to.have.length(3)
       expect(foo.children).to.have.length(1)
       bar.dispose()
-      expect(app._commands).to.have.length(2)
+      expect(app._commandList).to.have.length(2)
       expect(app._shortcuts).to.have.length(1)
       expect(foo.children).to.have.length(0)
     })
@@ -156,17 +156,17 @@ describe('Command API', () => {
         ctx.command('foo', 'desc', { patch: true }).alias('fooo').option('opt', 'option 1')
         ctx.command('abc', 'desc', { patch: true }).alias('abcd').option('opt', 'option 1')
 
-        const { foo, fooo, abc, abcd } = app._commandMap
+        const foo = app._commands.get('foo')
         expect(foo).to.be.ok
-        expect(fooo).to.be.ok
+        expect(app._commands.get('fooo')).to.be.ok
         expect(foo.description).to.equal('desc')
         expect(Object.keys(foo._options)).to.have.length(2)
-        expect(abc).to.be.undefined
-        expect(abcd).to.be.undefined
+        expect(app._commands.get('abc')).to.be.undefined
+        expect(app._commands.get('abcd')).to.be.undefined
 
         ctx.dispose()
-        expect(app._commandMap.foo).to.be.ok
-        expect(app._commandMap.fooo).to.be.undefined
+        expect(app._commands.get('foo')).to.be.ok
+        expect(app._commands.get('fooo')).to.be.undefined
         expect(Object.keys(foo._options)).to.have.length(1)
       })
     })
