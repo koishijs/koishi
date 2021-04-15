@@ -147,6 +147,11 @@ export class Context {
     return new Context(s => this.filter(s) && filter(s), this.app, this._plugin)
   }
 
+  except(arg: Filter | Context) {
+    const filter = typeof arg === 'function' ? arg : arg.filter
+    return new Context(s => this.filter(s) && !filter(s), this.app, this._plugin)
+  }
+
   match(session?: Session) {
     return !session || this.filter(session)
   }

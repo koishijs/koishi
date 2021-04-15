@@ -44,7 +44,7 @@
     "description": "COC / DND Tools for Koishi"
   },
   "koishi-plugin-eval": {
-    "version": "3.0.0-rc.1",
+    "version": "3.0.0",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-github": {
@@ -56,14 +56,14 @@
     "description": "Image searching plugin for Koishi"
   },
   "koishi-plugin-mongo": {
-    "version": "2.2.1",
+    "version": "2.2.2",
     "description": "MongoDB support for Koishi"
   },
   "koishi-plugin-monitor": {
     "version": "1.0.0-beta.29"
   },
   "koishi-plugin-mysql": {
-    "version": "3.3.0",
+    "version": "3.3.1",
     "description": "MySQL support for Koishi"
   },
   "koishi-plugin-puppeteer": {
@@ -79,7 +79,7 @@
     "description": "Schedule plugin for Koishi"
   },
   "koishi-plugin-teach": {
-    "version": "2.1.3",
+    "version": "2.1.4",
     "description": "Teach plugin for Koishi"
   },
   "koishi-plugin-tools": {
@@ -87,7 +87,7 @@
     "description": "Some simple tools for Koishi"
   },
   "koishi-plugin-webui": {
-    "version": "4.2.0",
+    "version": "4.2.1",
     "description": "Show Web UI of Koishi"
   }
 }

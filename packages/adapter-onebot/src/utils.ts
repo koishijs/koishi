@@ -185,9 +185,9 @@ export function connect(bot: CQBot) {
       const data = { action, params, echo: ++counter }
       data.echo = ++counter
       return new Promise((resolve, reject) => {
-        listeners[counter] = resolve
+        listeners[data.echo] = resolve
         setTimeout(() => {
-          delete listeners[counter]
+          delete listeners[data.echo]
           reject(new Error('response timeout'))
         }, bot.app.options.onebot.responseTimeout)
         bot.socket.send(JSON.stringify(data), (error) => {

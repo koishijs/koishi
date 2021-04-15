@@ -1,13 +1,13 @@
-import { App, BotOptions, Plugin, version } from 'koishi-core'
-import { resolve, dirname, relative } from 'path'
-import { coerce, Logger, noop, LogLevelConfig } from 'koishi-utils'
+import { App, BotOptions, Context, Plugin, version } from 'koishi-core'
+import { resolve, relative, extname, dirname } from 'path'
+import { coerce, Logger, noop, LogLevelConfig, makeArray } from 'koishi-utils'
+import { readFileSync, readdirSync } from 'fs'
 import { performance } from 'perf_hooks'
-import { watch } from 'chokidar'
 import { yellow } from 'kleur'
 import { AppConfig } from '..'
 
 const logger = new Logger('app')
-const cwd = process.cwd()
+let configDir = process.cwd()
 
 function handleException(error: any) {
   logger.error(error)
@@ -16,30 +16,31 @@ function handleException(error: any) {
 
 process.on('uncaughtException', handleException)
 
-const configFile = resolve(cwd, process.env.KOISHI_CONFIG_FILE || 'koishi.config')
-const configDir = dirname(configFile)
+let config: AppConfig, configFile: string, configExt: string
+const basename = 'koishi.config'
+if (process.env.KOISHI_CONFIG_FILE) {
+  configFile = resolve(configDir, process.env.KOISHI_CONFIG_FILE)
+  configExt = extname(configFile)
+  configDir = dirname(configFile)
+} else {
+  const files = readdirSync(configDir)
+  const ext = ['.js', '.json', '.ts', '.yaml', '.yml'].find(ext => files.includes(basename + ext))
+  if (!ext) {
+    throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
+  }
+  configFile = configDir + '/' + basename + ext
+}
+
+if (['.yaml', '.yml'].includes(configExt)) {
+  const { load } = require('js-yaml') as typeof import('js-yaml')
+  config = load(readFileSync(configFile, 'utf8')) as any
+} else {
+  const exports = require(configFile)
+  config = exports.__esModule ? exports.default : exports
+}
 
 function isErrorModule(error: any) {
   return error.code !== 'MODULE_NOT_FOUND' || error.requireStack && error.requireStack[0] !== __filename
-}
-
-function tryCallback<T>(callback: () => T) {
-  try {
-    return callback()
-  } catch (error) {
-    if (isErrorModule(error) && error.code !== 'ENOENT') {
-      throw error
-    }
-  }
-}
-
-const config: AppConfig = tryCallback(() => {
-  const exports = require(configFile)
-  return exports.__esModule ? exports.default : exports
-})
-
-if (!config) {
-  throw new Error(`config file not found. use ${yellow('koishi init')} command to initialize a config file.`)
 }
 
 function loadEcosystem(type: string, name: string) {
@@ -148,15 +149,59 @@ app.command('exit', '停止机器人运行', { authority: 4 })
     process.exit(114)
   })
 
+const selectors = ['user', 'group', 'channel', 'self', 'private', 'platform'] as const
+
+type SelectorType = typeof selectors[number]
+type SelectorValue = boolean | string | number | (string | number)[]
+type BaseSelection = { [K in SelectorType as `$${K}`]: SelectorValue }
+
+interface Selection extends BaseSelection {
+  $union: Selection[]
+  $except: Selection
+}
+
+function createContext(options: Selection) {
+  let ctx: Context = app
+
+  // basic selectors
+  for (const type of selectors) {
+    const value = options[`$${type}`] as SelectorValue
+    if (value === true) {
+      ctx = ctx[type]()
+    } else if (value === false) {
+      ctx = ctx[type].except()
+    } else if (value !== undefined) {
+      // we turn everything into string
+      ctx = ctx[type](...makeArray(value).map(item => '' + item as never))
+    }
+  }
+
+  // union
+  if (options.$union) {
+    let ctx2: Context = app
+    for (const selection of options.$union) {
+      ctx2 = ctx2.union(createContext(selection))
+    }
+    ctx = ctx.intersect(ctx2)
+  }
+
+  // except
+  if (options.$except) {
+    ctx = ctx.except(createContext(options.$except))
+  }
+
+  return ctx
+}
+
 // load plugins
-const pluginMap = new Map<string, [name: string, options: any]>()
+const plugins = new Set<string>()
 const pluginEntries: [string, any?][] = Array.isArray(config.plugins)
   ? config.plugins.map(item => Array.isArray(item) ? item : [item])
   : Object.entries(config.plugins || {})
 for (const [name, options] of pluginEntries) {
   const [path, plugin] = loadEcosystem('plugin', name)
-  pluginMap.set(require.resolve(path), [name, options])
-  app.plugin(plugin, options)
+  plugins.add(require.resolve(path))
+  createContext(options).plugin(plugin, options)
 }
 
 process.on('unhandledRejection', (error) => {
@@ -179,31 +224,34 @@ app.start().then(() => {
   createWatcher()
 }, handleException)
 
-interface MapOrSet<T> {
-  has(value: T): boolean
-}
-
-function loadDependencies(filename: string, ignored: MapOrSet<string>) {
+function loadDependencies(filename: string, ignored: Set<string>) {
   const dependencies = new Set<string>()
-  function loadModule({ filename, children }: NodeModule) {
+  function traverse({ filename, children }: NodeModule) {
     if (ignored.has(filename) || dependencies.has(filename) || filename.includes('/node_modules/')) return
     dependencies.add(filename)
-    children.forEach(loadModule)
+    children.forEach(traverse)
   }
-  loadModule(require.cache[filename])
+  traverse(require.cache[filename])
   return dependencies
 }
 
 function createWatcher() {
   if (process.env.KOISHI_WATCH_ROOT === undefined && !config.watch) return
 
+  const { watch } = require('chokidar') as typeof import('chokidar')
   const { root = '', ignored = [], fullReload } = config.watch || {}
-  const watchRoot = resolve(cwd, process.env.KOISHI_WATCH_ROOT ?? root)
-  const externals = loadDependencies(__filename, pluginMap)
+  const watchRoot = resolve(configDir, process.env.KOISHI_WATCH_ROOT ?? root)
   const watcher = watch(watchRoot, {
     ...config.watch,
     ignored: ['**/node_modules/**', '**/.git/**', ...ignored],
   })
+
+  /**
+   * changes from externals E will always trigger a full reload
+   *
+   * - root R -> external E -> none of plugin Q
+   */
+  const externals = loadDependencies(__filename, plugins)
 
   const logger = new Logger('app:watcher')
   function triggerFullReload() {
@@ -212,20 +260,50 @@ function createWatcher() {
     process.exit(114)
   }
 
-  watcher.on('change', async (path) => {
-    if (!require.cache[path]) return
-    logger.debug('change detected:', path)
+  /**
+   * files X that should not be marked as declined
+   *
+   * - including all changes C
+   * - some change C -> file X -> some change D
+   */
+  let stashed = new Set<string>()
+  let currentUpdate: Promise<void>
 
-    if (externals.has(path)) return triggerFullReload()
-
+  function flushChanges() {
     const tasks: Promise<void>[] = []
-    const reloads: [plugin: Plugin, state: Plugin.State, name: string][] = []
+    const reloads: [filename: string, state: Plugin.State][] = []
 
-    /** files that should be reloaded */
+    /**
+     * files X that should be reloaded
+     *
+     * - some plugin P -> file X -> some change C
+     * - file X -> none of plugin Q -> some change D
+     */
     const accepted = new Set<string>()
-    /** files that should not be reloaded */
-    const declined = new Set([...externals, ...loadDependencies(path, externals)])
-    declined.delete(path)
+
+    /**
+     * files X that should not be reloaded
+     *
+     * - including all externals E
+     * - some change C -> file X
+     * - file X -> none of change D
+     */
+    const declined = new Set(externals)
+
+    function traverse(filename: string) {
+      if (externals.has(filename) || filename.includes('/node_modules/')) return
+      const { children } = require.cache[filename]
+      let isActive = stashed.has(filename)
+      for (const module of children) {
+        if (traverse(module.filename)) {
+          stashed.add(filename)
+          isActive = true
+        }
+      }
+      if (isActive) return isActive
+      declined.add(filename)
+    }
+    Array.from(stashed).forEach(traverse)
 
     for (const filename in require.cache) {
       // we only detect reloads at plugin level
@@ -234,8 +312,8 @@ function createWatcher() {
       if (!state) continue
 
       // check if it is a dependent of the changed file
-      const dependencies = loadDependencies(filename, declined)
-      if (!dependencies.has(path)) continue
+      const dependencies = [...loadDependencies(filename, declined)]
+      if (!dependencies.some(dep => stashed.has(dep))) continue
 
       // accept dependencies to be reloaded
       dependencies.forEach(dep => accepted.add(dep))
@@ -247,26 +325,43 @@ function createWatcher() {
 
       // dispose installed plugin
       const displayName = plugin.name || relative(watchRoot, filename)
-      reloads.push([module.exports, state, displayName])
+      reloads.push([filename, state])
       tasks.push(app.dispose(plugin).catch((err) => {
         logger.warn('failed to dispose plugin %c\n' + coerce(err), displayName)
       }))
     }
 
-    await Promise.all(tasks)
+    stashed = new Set()
+    currentUpdate = Promise.all(tasks).then(() => {
+      // delete module cache before re-require
+      accepted.forEach((path) => {
+        logger.debug('cache deleted:', path)
+        delete require.cache[path]
+      })
 
-    accepted.forEach((path) => {
-      logger.debug('cache deleted:', path)
-      delete require.cache[path]
-    })
-
-    for (const [plugin, state, displayName] of reloads) {
-      try {
-        state.context.plugin(plugin, state.config)
-        logger.info('reload plugin %c', displayName)
-      } catch (err) {
-        logger.warn('failed to reload plugin %c\n' + coerce(err), displayName)
+      // reload all dependent plugins
+      for (const [filename, state] of reloads) {
+        try {
+          const plugin = require(filename)
+          state.context.plugin(plugin, state.config)
+          const displayName = plugin.name || relative(watchRoot, filename)
+          logger.info('reload plugin %c', displayName)
+        } catch (err) {
+          logger.warn('failed to reload plugin at %c\n' + coerce(err), relative(watchRoot, filename))
+        }
       }
-    }
+    })
+  }
+
+  watcher.on('change', (path) => {
+    if (!require.cache[path]) return
+    logger.debug('change detected:', path)
+
+    // files independent from any plugins will trigger a full reload
+    if (externals.has(path)) return triggerFullReload()
+
+    // do not trigger another reload during one reload
+    stashed.add(path)
+    Promise.resolve(currentUpdate).then(flushChanges)
   })
 }

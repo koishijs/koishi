@@ -42,17 +42,23 @@ export function synthetize(identifier: string, namespace: {}, globalName?: strin
   return module
 }
 
-const suffixes = ['', '.js', '.ts', '.coffee', '/index.js', '/index.ts', '/index.coffee']
+const extnames = new Set(['.js', '.ts', '.coffee', '.json', '.yml', '.yaml'])
+
+function* suffixes() {
+  yield ''
+  for (const ext of extnames) yield ext
+  for (const ext of extnames) yield '/index' + ext
+}
 
 function locateModule(specifier: string) {
-  for (const suffix of suffixes) {
+  for (const suffix of suffixes()) {
     const target = specifier + suffix
     if (target in modules) return modules[target]
   }
 }
 
 async function loadSource(path: string): Promise<[source: string, identifier: string]> {
-  for (const suffix of suffixes) {
+  for (const suffix of suffixes()) {
     try {
       const target = path + suffix
       return [await fs.readFile(resolve(config.root, target), 'utf8'), target]
@@ -114,6 +120,9 @@ export async function safeWriteFile(filename: string, data: any) {
 
 export default async function prepare() {
   if (!config.root) return
+  for (const ext in config.moduleLoaders || {}) {
+    extnames.add(ext)
+  }
   const cachePath = resolve(config.root, config.cacheFile || '.koishi/cache')
   await readSerialized(cachePath).then(([data]) => {
     if (data && data.tag === CACHE_TAG && data.v8tag === V8_TAG) {
