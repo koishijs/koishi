@@ -129,11 +129,11 @@ export function apply(ctx: Context, config: Config = {}) {
       logger.debug(expr)
       defineProperty(session, '_isEval', true)
 
-      const _resolve = (result?: string) => {
+      const _resolve = async (content?: string) => {
         clearTimeout(timer)
         session._isEval = false
         dispose()
-        resolve(result)
+        resolve(content)
       }
 
       const timer = setTimeout(async () => {
@@ -150,13 +150,11 @@ export function apply(ctx: Context, config: Config = {}) {
         _resolve(message)
       })
 
-      ctx.worker.remote.eval(payload, {
-        silent: options.slient,
-        source: expr,
-      }).then(_resolve, (error) => {
-        logger.warn(error)
-        _resolve()
-      })
+      ctx.worker.remote
+        .eval(payload, { silent: options.slient, source: expr })
+        .then(content => ctx.waterfall('eval/before-send', content, session))
+        .catch(error => logger.warn(error))
+        .then(_resolve)
     })
   })
 
