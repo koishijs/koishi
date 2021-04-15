@@ -120,7 +120,7 @@ export function apply(ctx: Context, options: Config = {}) {
     ctx.self('sandbox')
       .command('clear', '清空消息列表')
       .action(({ session }) => {
-        this.handles[session.channelId].send('sandbox:clear')
+        ctx.webui.handles[session.channelId].send('sandbox:clear')
       })
 
     ctx.on('chat/receive', async (message) => {

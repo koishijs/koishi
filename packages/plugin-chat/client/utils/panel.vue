@@ -67,12 +67,14 @@ $padding: 1.5rem;
     padding: 1rem 0;
     display: flex;
     flex-direction: column;
-    height: -webkit-fill-available;
+    height: 100%;
+    box-sizing: border-box;
   }
 
   .k-chat-body {
     overflow-x: visible;
     overflow-y: auto;
+    height: 100%;
   }
 
   .k-chat-footer {
