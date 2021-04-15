@@ -1,17 +1,25 @@
 const { compile } = require('coffeescript')
-const { transformAsync } = require('@babel/core')
 
 const options = {
   plugins: [
-    ['@babel/plugin-transform-react-jsx']
-  ]
+    ['@babel/plugin-transform-react-jsx'],
+  ],
 }
+
+let babel
+
+try {
+  require('@babel/plugin-transform-react-jsx')
+  babel = require('@babel/core')
+} catch {}
+
+export const name = 'coffeescript'
 
 export function extractScript(expr: string) {
   try {
     compile(expr)
   } catch (e) {
-    if (e.message !== "unmatched }") throw e
+    if (e.message !== 'unmatched }') throw e
     const location = e.location
     const sLines = expr.split('\n')
     const row = location.first_line
@@ -22,7 +30,10 @@ export function extractScript(expr: string) {
 
 export async function transformScript(expr: string) {
   const jsx = compile(expr, { bare: true })
-  const js = await transformAsync(jsx, options)
+  if (!babel) {
+    return jsx
+  }
+  const js = await babel.transformAsync(jsx, options)
   return js.code
 }
 
