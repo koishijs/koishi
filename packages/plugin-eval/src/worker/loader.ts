@@ -172,8 +172,7 @@ function resolveLoader(extension: string) {
     try {
       return require('../loaders/coffeescript')
     } catch {
-      throw new Error('cannot resolve loader for ".coffee", you should install coffeescript by yourself. '
-        + 'If you want to use jsx in coffeescript, you should install @babel/core and @babel/plugin-transform-react-jsx')
+      throw new Error('cannot resolve loader for ".coffee", you should install coffeescript by yourself')
     }
   } else {
     throw new Error(`cannot resolve loader for "${extension}", you should specify a custom loader via "config.moduleLoaders"`)

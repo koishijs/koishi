@@ -39,9 +39,7 @@
     "esbuild": "^0.11.6",
     "json5": "^2.2.0",
     "typescript": "^4.2.3",
-    "coffeescript": "^2.5.1",
-    "@babel/core": "^7.13.15",
-    "@babel/plugin-transform-react-jsx": "^7.13.12"
+    "coffeescript": "^2.5.1"
   },
   "dependencies": {
     "esbuild": "^0.11.6",
