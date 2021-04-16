@@ -80,23 +80,16 @@ const defaultConfig: Config = {
   apiPath: '/status',
   uiPath: '/console',
   selfUrl: '',
-  whitelist: [],
   title: 'Koishi 控制台',
   expiration: Time.week,
   tickInterval: Time.second * 5,
   refreshInterval: Time.hour,
 }
 
-const builtinWhitelist = [
-  'http://gchat.qpic.cn/',
-  'http://c2cpicdw.qpic.cn',
-]
-
 export const name = 'webui'
 
 export function apply(ctx: Context, config: Config = {}) {
   config = Object.assign(defaultConfig, config)
-  config.whitelist.push(...builtinWhitelist)
 
   ctx.webui = new WebServer(ctx, config)
 

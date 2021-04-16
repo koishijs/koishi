@@ -319,7 +319,7 @@ export class Session<
   resolve(argv: Argv) {
     if (!argv.command) {
       const { name = this.app.bail('parse', argv, this) } = argv
-      if (!(argv.command = this.app._commandMap[name])) return
+      if (!(argv.command = this.app._commands.get(name))) return
     }
     if (argv.tokens?.every(token => !token.inters.length)) {
       const { options, args, error } = argv.command.parse(argv)
@@ -351,7 +351,7 @@ export class Session<
       }
       if (!this.resolve(argv)) return ''
     } else {
-      argv.command ||= this.app._commandMap[argv.name]
+      argv.command ||= this.app._commands.get(argv.name)
       if (!argv.command) {
         logger.warn(new Error(`cannot find command ${argv.name}`))
         return ''

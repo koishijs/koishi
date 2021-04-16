@@ -116,7 +116,7 @@ export function apply(ctx: Context, config: Config = {}) {
       }
     })
 
-  Trap.action(command, userAccess, channelAccess, async ({ session, options, scope }, expr) => {
+  Trap.action(command, userAccess, channelAccess, async ({ session, options, payload }, expr) => {
     if (!expr) return '请输入要执行的脚本。'
 
     try {
@@ -129,11 +129,11 @@ export function apply(ctx: Context, config: Config = {}) {
       logger.debug(expr)
       defineProperty(session, '_isEval', true)
 
-      const _resolve = (result?: string) => {
+      const _resolve = async (content?: string) => {
         clearTimeout(timer)
         session._isEval = false
         dispose()
-        resolve(result)
+        resolve(content)
       }
 
       const timer = setTimeout(async () => {
@@ -150,13 +150,11 @@ export function apply(ctx: Context, config: Config = {}) {
         _resolve(message)
       })
 
-      ctx.worker.remote.eval(scope, {
-        silent: options.slient,
-        source: expr,
-      }).then(_resolve, (error) => {
-        logger.warn(error)
-        _resolve()
-      })
+      ctx.worker.remote
+        .eval(payload, { silent: options.slient, source: expr })
+        .then(content => ctx.waterfall('eval/before-send', content, session))
+        .catch(error => logger.warn(error))
+        .then(_resolve)
     })
   })
 
@@ -246,9 +244,9 @@ function addon(ctx: Context, config: EvalConfig) {
         .subcommand(rawName, desc, config)
         .option('debug', '启用调试模式', { hidden: true })
 
-      Trap.action(cmd, userAccess, channelAccess, async ({ command, options, scope }, ...args) => {
+      Trap.action(cmd, userAccess, channelAccess, async ({ command, options, payload }, ...args) => {
         const { name } = command
-        return ctx.worker.remote.callAddon(scope, { name, args, options })
+        return ctx.worker.remote.callAddon(payload, { name, args, options })
       })
 
       options.forEach((config) => {

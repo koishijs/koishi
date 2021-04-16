@@ -99,7 +99,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     super(name, decl, desc)
     this.config = { ...Command.defaultConfig }
     this._registerAlias(this.name)
-    context.app._commands.push(this)
+    context.app._commandList.push(this)
     this.option('help', '-h  显示此信息', { hidden: true })
   }
 
@@ -110,9 +110,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   private _registerAlias(name: string) {
     name = name.toLowerCase()
     this._aliases.push(name)
-    const previous = this.app._commandMap[name]
+    const previous = this.app._commands.get(name)
     if (!previous) {
-      this.app._commandMap[name] = this
+      this.app._commands.set(name, this)
     } else if (previous !== this) {
       throw new Error(format('duplicate command names: "%s"', name))
     }
@@ -138,7 +138,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       this._registerAlias(name)
       this._disposables?.push(() => {
         remove(this._aliases, name)
-        delete this.app._commandMap[name]
+        this.app._commands.delete(name)
       })
     }
     return this
@@ -262,8 +262,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       cmd.dispose()
     }
     this.app._shortcuts = this.app._shortcuts.filter(s => s.command !== this)
-    this._aliases.forEach(name => delete this.app._commandMap[name])
-    remove(this.app._commands, this)
+    this._aliases.forEach(name => this.app._commands.delete(name))
+    remove(this.app._commandList, this)
     if (this.parent) {
       remove(this.parent.children, this)
     }

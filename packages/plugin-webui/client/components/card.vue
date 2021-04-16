@@ -46,12 +46,6 @@ $paddingY: 1.5rem;
 
   .k-card-body {
     padding: $paddingX $paddingY;
-    > :first-child {
-      margin-top: 0;
-    }
-    > :last-child {
-      margin-bottom: 0;
-    }
   }
 
   &.frameless .k-card-body {
