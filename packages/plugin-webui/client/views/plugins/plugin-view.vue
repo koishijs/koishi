@@ -5,7 +5,7 @@
         <i class="fas fa-angle-right" :class="{ show }"/>
         {{ data.name }}
         <k-badge type="default" v-if="data.webExtension" title="拥有网页扩展的插件停用和启用后将刷新页面。">网页扩展</k-badge>
-        <k-badge type="warn" v-if="data.sideEffect" title="拥有副作用的插件无法被停用。">副作用</k-badge>
+        <k-badge type="warning" v-if="data.sideEffect" title="拥有副作用的插件无法被停用。">副作用</k-badge>
       </span>
       <span class="complexity">{{ data.complexity || '-' }}</span>
       <span class="operation">

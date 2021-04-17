@@ -8,7 +8,7 @@
 
 import { defineProps } from 'vue'
 
-defineProps<{ type?: 'warn' }>()
+defineProps<{ type?: 'warning' }>()
 
 </script>
 
@@ -31,7 +31,11 @@ defineProps<{ type?: 'warn' }>()
     background-color: $default;
   }
 
-  &.warn {
+  &.success {
+    background-color: $success;
+  }
+
+  &.warning {
     background-color: $warning;
   }
 }

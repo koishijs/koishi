@@ -151,4 +151,27 @@ main.frameless {
   }
 }
 
+table {
+  text-align: center;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+tr {
+  transition: 0.3s ease;
+}
+
+tr:hover {
+  background-color: #474d8450;
+}
+
+td, th {
+  padding: .5em 1em;
+  border-bottom: 1px solid $borderColor;
+}
+
+th {
+  border-top: 1px solid $borderColor;
+}
+
 </style>
