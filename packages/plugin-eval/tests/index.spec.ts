@@ -100,13 +100,20 @@ describe('Eval Loaders', () => {
     await ses.shouldReply('echo 1${"foo" as string}3', '1foo3')
     await app.stop()
   })
+
+  it('coffeescript', async () => {
+    const app = await createApp('coffeescript')
+    const ses = app.session('123')
+    await ses.shouldReply('echo 1${"foobar"}3', '1foobar3')
+    await app.stop()
+  })
 })
 
 describe('Eval Addons', () => {
   it('addon command', async () => {
     await ses.shouldReply('addon', /^addon\n扩展功能/)
     await ses.shouldReply('test -h', 'test\n测试功能')
-    await ses.shouldReply('test', 'bar')
+    await ses.shouldReply('test', 'barbaz')
   })
 
   it('sandbox injection', async () => {
