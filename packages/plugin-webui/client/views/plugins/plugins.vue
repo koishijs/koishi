@@ -1,5 +1,5 @@
 <template>
-  <k-card class="page-plugins" title="插件列表">
+  <k-card class="page-plugins" :class="{ authorized: user?.authority >= 4 }" title="插件列表">
     <div class="header plugin-item">
       <span class="title">插件名</span>
       <span class="complexity">复杂度</span>
@@ -14,7 +14,7 @@
 <script setup lang="ts">
 
 import PluginView from './plugin-view.vue'
-import { registry } from '~/client'
+import { registry, user } from '~/client'
 
 </script>
 
@@ -28,6 +28,12 @@ import { registry } from '~/client'
 
   .title {
     margin-left: 3rem;
+  }
+}
+
+.page-plugins:not(.authorized) {
+  .complexity, .operation {
+    display: none;
   }
 }
 

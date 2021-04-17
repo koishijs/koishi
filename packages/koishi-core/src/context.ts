@@ -1,4 +1,4 @@
-import { Logger, defineProperty, remove, segment } from 'koishi-utils'
+import { Logger, defineProperty, remove, segment, Random } from 'koishi-utils'
 import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Database, Assets } from './database'
@@ -32,9 +32,11 @@ export namespace Plugin {
   export type Config<T extends Plugin> = T extends Function<infer U> ? U : T extends Object<infer U> ? U : never
 
   export interface State extends Meta {
-    parent: State
-    context: Context
-    config: Config<Plugin>
+    id?: string
+    parent?: State
+    context?: Context
+    config?: Config<Plugin>
+    plugin?: Plugin
     children: Plugin[]
     disposables: Disposable[]
   }
@@ -207,6 +209,8 @@ export class Context {
     const ctx: this = Object.create(this)
     defineProperty(ctx, '_plugin', plugin)
     this.app.registry.set(plugin, {
+      plugin,
+      id: Random.uuid(),
       context: this,
       config: options,
       parent: this.state,

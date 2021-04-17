@@ -5,9 +5,9 @@
         <i class="fas fa-angle-right" :class="{ show }"/>
         {{ data.name }}
       </span>
-      <span class="complexity">{{ data.complexity }}</span>
+      <span class="complexity">{{ data.disabled ? '-' : data.complexity }}</span>
       <span class="operation">
-        <k-button class="right" frameless :disabled="data.sideEffect" @click="send('switch', data.id)">{{ '停用' }}</k-button>
+        <k-button class="right" frameless :disabled="data.sideEffect" @click="toggle(data.id)">{{ data.disabled ? '启用' : '停用' }}</k-button>
       </span>
     </div>
     <k-collapse v-if="data.children.length">
@@ -21,13 +21,18 @@
 <script setup lang="ts">
 
 import type { Registry } from '~/server'
-import { send } from '~/client'
+import { send, user } from '~/client'
 import { ref, defineProps } from 'vue'
 import PluginView from './plugin-view.vue'
 
 const show = ref(false)
 
 defineProps<{ data: Registry.PluginData }>()
+
+function toggle(plugin: string) {
+  const { id, token } = user.value
+  send('switch', { plugin, id, token })
+}
 
 </script>
 
