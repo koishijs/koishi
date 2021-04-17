@@ -182,8 +182,6 @@ export namespace Meta {
   export type Extension = () => Promise<Partial<Payload>>
 }
 
-const original = Symbol('webui.original-plugin')
-
 function debounce(callback: Function, ms: number) {
   let timer: number
   return function () {
@@ -195,6 +193,9 @@ function debounce(callback: Function, ms: number) {
 export class Registry implements DataSource<Registry.Payload> {
   payload: Registry.Payload
   promise: Promise<void>
+
+  static readonly placeholder = Symbol('webui.registry.placeholder')
+  static readonly webExtension = Symbol('webui.registry.web-extension')
 
   constructor(private ctx: Context, public config: Registry.Config) {
     ctx.on('plugin-added', this.update)
@@ -220,8 +221,8 @@ export class Registry implements DataSource<Registry.Payload> {
     await this.promise
     for (const [plugin, state] of this.registry) {
       if (id !== state.id) continue
-      const replacer = plugin[original] || {
-        [original]: state.plugin,
+      const replacer = plugin[Registry.placeholder] || {
+        [Registry.placeholder]: state.plugin,
         name: state.name,
         apply: () => {},
       }
@@ -233,11 +234,13 @@ export class Registry implements DataSource<Registry.Payload> {
   traverse = (plugin: Plugin): Registry.PluginData => {
     const state = this.registry.get(plugin)
     this.payload.pluginCount += 1
-    let complexity = 1 + state.disposables.length
+    let webExtension = state[Registry.webExtension]
+    let complexity = plugin?.[Registry.placeholder] ? 0 : 1 + state.disposables.length
     const children: Registry.PluginData[] = []
     state.children.forEach((plugin) => {
       const data = this.traverse(plugin)
       complexity += data.complexity
+      webExtension ||= data.webExtension
       if (data.name) {
         children.push(data)
       } else {
@@ -245,9 +248,8 @@ export class Registry implements DataSource<Registry.Payload> {
       }
     })
     const { id, name, sideEffect } = state
-    const disabled = plugin && !!plugin[original]
     children.sort((a, b) => a.name > b.name ? 1 : -1)
-    return { id, name, sideEffect, disabled, children, complexity }
+    return { id, name, sideEffect, children, complexity, webExtension }
   }
 }
 
@@ -257,9 +259,9 @@ export namespace Registry {
 
   export interface PluginData extends Plugin.Meta {
     id: string
-    disabled: boolean
     children: PluginData[]
     complexity: number
+    webExtension: boolean
   }
 
   export interface Payload {

@@ -110,6 +110,15 @@ button {
       border-color: transparent;
       background-color: transparent;
     }
+    &.default {
+      color: $default;
+    }
+    &.danger {
+      color: $error;
+    }
+    &.success {
+      color: $success;
+    }
   }
 }
 

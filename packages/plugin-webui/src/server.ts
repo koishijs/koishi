@@ -117,6 +117,7 @@ export class WebServer extends Adapter {
   addEntry(filename: string) {
     const ctx = this[Context.current]
     let { state } = ctx
+    state[Registry.webExtension] = true
     while (state && !state.name) state = state.parent
     const hash = Math.floor(Math.random() * (16 ** 8)).toString(16).padStart(8, '0')
     const key = `${state?.name || 'entry'}-${hash}.js`
