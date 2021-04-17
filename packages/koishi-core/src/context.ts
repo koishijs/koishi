@@ -1,4 +1,4 @@
-import { Logger, defineProperty, remove, segment } from 'koishi-utils'
+import { Logger, defineProperty, remove, segment, Random } from 'koishi-utils'
 import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Database, Assets } from './database'
@@ -32,9 +32,11 @@ export namespace Plugin {
   export type Config<T extends Plugin> = T extends Function<infer U> ? U : T extends Object<infer U> ? U : never
 
   export interface State extends Meta {
-    parent: State
-    context: Context
-    config: Config<Plugin>
+    id?: string
+    parent?: State
+    context?: Context
+    config?: Config<Plugin>
+    plugin?: Plugin
     children: Plugin[]
     disposables: Disposable[]
   }
@@ -147,6 +149,11 @@ export class Context {
     return new Context(s => this.filter(s) && filter(s), this.app, this._plugin)
   }
 
+  except(arg: Filter | Context) {
+    const filter = typeof arg === 'function' ? arg : arg.filter
+    return new Context(s => this.filter(s) && !filter(s), this.app, this._plugin)
+  }
+
   match(session?: Session) {
     return !session || this.filter(session)
   }
@@ -202,6 +209,8 @@ export class Context {
     const ctx: this = Object.create(this)
     defineProperty(ctx, '_plugin', plugin)
     this.app.registry.set(plugin, {
+      plugin,
+      id: Random.uuid(),
       context: this,
       config: options,
       parent: this.state,
@@ -398,7 +407,7 @@ export class Context {
     segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
-      let command = this.app._commandMap[name]
+      let command = this.app._commands.get(name)
       if (command) {
         if (parent) {
           if (command === parent) {

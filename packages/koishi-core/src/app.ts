@@ -51,8 +51,8 @@ export class App extends Context {
   public registry = new Map<Plugin, Plugin.State>()
 
   _bots = createBots('sid')
-  _commands: Command[] = []
-  _commandMap: Record<string, Command> = {}
+  _commandList: Command[] = []
+  _commands = new Map<string, Command>()
   _shortcuts: Command.Shortcut[] = []
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
   _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
@@ -87,9 +87,6 @@ export class App extends Context {
     if (options.selfUrl) options.selfUrl = trimSlash(options.selfUrl)
     this.options = merge(options, App.defaultConfig)
     this.registry.set(null, {
-      parent: null,
-      context: null,
-      config: null,
       children: [],
       disposables: [],
     })
@@ -122,11 +119,11 @@ export class App extends Context {
       if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
       if (!argv.tokens.length) return
       const segments = argv.tokens[0].content.split('.')
-      let i = 1, name = segments[0]
-      while (this._commandMap[name] && i < segments.length) {
-        name = this._commandMap[name].name + '.' + segments[i++]
+      let i = 1, name = segments[0], cmd: Command
+      while ((cmd = this._commands.get(name)) && i < segments.length) {
+        name = cmd.name + '.' + segments[i++]
       }
-      if (name in this._commandMap) {
+      if (cmd) {
         argv.tokens.shift()
         return name
       }

@@ -82,11 +82,38 @@ describe('Eval Plugin', () => {
   })
 })
 
+describe('Eval Loaders', () => {
+  function createApp(scriptLoader: string) {
+    const app = new App({ mockStart: false })
+    app.command('echo <text:text>').action((_, text) => text)
+    app.plugin(eval, { scriptLoader })
+
+    return new Promise<App>((resolve) => {
+      app.on('eval/start', () => resolve(app))
+      app.start()
+    })
+  }
+
+  it('esbuild', async () => {
+    const app = await createApp('esbuild')
+    const ses = app.session('123')
+    await ses.shouldReply('echo 1${"foo" as string}3', '1foo3')
+    await app.stop()
+  })
+
+  it('coffeescript', async () => {
+    const app = await createApp('coffeescript')
+    const ses = app.session('123')
+    await ses.shouldReply('echo 1${"foobar"}3', '1foobar3')
+    await app.stop()
+  })
+})
+
 describe('Eval Addons', () => {
   it('addon command', async () => {
     await ses.shouldReply('addon', /^addon\n扩展功能/)
     await ses.shouldReply('test -h', 'test\n测试功能')
-    await ses.shouldReply('test', 'bar')
+    await ses.shouldReply('test', 'barbaz')
   })
 
   it('sandbox injection', async () => {

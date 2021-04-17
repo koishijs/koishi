@@ -30,6 +30,8 @@ const codes = ['运行中', '闲置', '离线', '网络异常', '服务器异常
 
 <style lang="scss">
 
+@import '~/variables';
+
 .bot-table {
   table {
     text-align: center;
@@ -46,12 +48,12 @@ const codes = ['运行中', '闲置', '离线', '网络异常', '服务器异常
   }
 
   td, th {
-    padding: .6em 1em;
-    border-bottom: 1px solid #040620;
+    padding: .5em 1em;
+    border-bottom: 1px solid $borderColor;
   }
 
   th {
-    border-top: 1px solid #040620;
+    border-top: 1px solid $borderColor;
   }
 }
 

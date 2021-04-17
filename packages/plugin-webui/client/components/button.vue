@@ -102,7 +102,6 @@ button {
   }
   // frameless
   &.frameless {
-    color: $tpFgColor4;
     padding: 0;
     border-color: transparent;
     background-color: transparent;

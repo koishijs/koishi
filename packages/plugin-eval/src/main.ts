@@ -36,7 +36,7 @@ export class Trap<O extends {}> {
     }
   }
 
-  get(target: Observed<{}, Promise<void>>, fields: string[]) {
+  get(target: Observed<{}, Promise<void>>, fields: Iterable<string>) {
     if (!target) return
     const result: Partial<O> = {}
     for (const field of fields) {
@@ -58,8 +58,8 @@ export class Trap<O extends {}> {
 export namespace Trap {
   export interface Declaraion<O extends {}, T = any, K extends keyof O = never> {
     fields: Iterable<K>
-    get?(data: Pick<O, K>): T
-    set?(data: Pick<O, K>, value: T): void
+    get?(target: Pick<O, K>): T
+    set?(target: Pick<O, K>, value: T): void
   }
 
   export const user = new Trap<User>()
@@ -73,7 +73,7 @@ export namespace Trap {
   export type Access<T> = T[] | AccessObject<T>
 
   interface Argv<A extends any[], O> extends IArgv<never, never, A, O> {
-    scope?: SessionData
+    payload?: SessionData
   }
 
   type Action<A extends any[], O> = (argv: Argv<A, O>, ...args: A) => ReturnType<Command.Action>
@@ -110,11 +110,11 @@ export namespace Trap {
       const { id, app } = argv.session
       const user = Trap.user.get(argv.session.user, userAccess.readable)
       const channel = Trap.channel.get(argv.session.channel, channelAccess.readable)
-      const ctxOptions = { id, user, channel, userWritable, channelWritable }
+      const payload = { id, user, channel, userWritable, channelWritable }
       const inactive = !app._sessions[id]
       app._sessions[id] = argv.session
       try {
-        return await action({ ...argv, scope: ctxOptions }, ...args)
+        return await action({ ...argv, payload }, ...args)
       } finally {
         if (inactive) delete app._sessions[id]
       }

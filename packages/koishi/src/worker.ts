@@ -1,6 +1,6 @@
-import { App, BotOptions, Plugin, version } from 'koishi-core'
+import { App, BotOptions, Context, Plugin, version } from 'koishi-core'
 import { resolve, relative, extname, dirname } from 'path'
-import { coerce, Logger, noop, LogLevelConfig } from 'koishi-utils'
+import { coerce, Logger, noop, LogLevelConfig, makeArray } from 'koishi-utils'
 import { readFileSync, readdirSync } from 'fs'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
@@ -16,7 +16,7 @@ function handleException(error: any) {
 
 process.on('uncaughtException', handleException)
 
-let config: AppConfig, configFile: string, configExt: string
+let configFile: string, configExt: string
 const basename = 'koishi.config'
 if (process.env.KOISHI_CONFIG_FILE) {
   configFile = resolve(configDir, process.env.KOISHI_CONFIG_FILE)
@@ -31,12 +31,14 @@ if (process.env.KOISHI_CONFIG_FILE) {
   configFile = configDir + '/' + basename + ext
 }
 
-if (['.yaml', '.yml'].includes(configExt)) {
-  const { load } = require('js-yaml') as typeof import('js-yaml')
-  config = load(readFileSync(configFile, 'utf8')) as any
-} else {
-  const exports = require(configFile)
-  config = exports.__esModule ? exports.default : exports
+function loadConfig() {
+  if (['.yaml', '.yml'].includes(configExt)) {
+    const { load } = require('js-yaml') as typeof import('js-yaml')
+    return load(readFileSync(configFile, 'utf8')) as any
+  } else {
+    const exports = require(configFile)
+    return exports.__esModule ? exports.default : exports
+  }
 }
 
 function isErrorModule(error: any) {
@@ -83,6 +85,8 @@ function ensureBaseLevel(config: LogLevelConfig, base: number) {
     ensureBaseLevel(value, config.base)
   })
 }
+
+const config: AppConfig = loadConfig()
 
 // configurate logger levels
 if (typeof config.logLevel === 'object') {
@@ -149,6 +153,50 @@ app.command('exit', '停止机器人运行', { authority: 4 })
     process.exit(114)
   })
 
+const selectors = ['user', 'group', 'channel', 'self', 'private', 'platform'] as const
+
+type SelectorType = typeof selectors[number]
+type SelectorValue = boolean | string | number | (string | number)[]
+type BaseSelection = { [K in SelectorType as `$${K}`]: SelectorValue }
+
+interface Selection extends BaseSelection {
+  $union: Selection[]
+  $except: Selection
+}
+
+function createContext(options: Selection) {
+  let ctx: Context = app
+
+  // basic selectors
+  for (const type of selectors) {
+    const value = options[`$${type}`] as SelectorValue
+    if (value === true) {
+      ctx = ctx[type]()
+    } else if (value === false) {
+      ctx = ctx[type].except()
+    } else if (value !== undefined) {
+      // we turn everything into string
+      ctx = ctx[type](...makeArray(value).map(item => '' + item as never))
+    }
+  }
+
+  // union
+  if (options.$union) {
+    let ctx2: Context = app
+    for (const selection of options.$union) {
+      ctx2 = ctx2.union(createContext(selection))
+    }
+    ctx = ctx.intersect(ctx2)
+  }
+
+  // except
+  if (options.$except) {
+    ctx = ctx.except(createContext(options.$except))
+  }
+
+  return ctx
+}
+
 // load plugins
 const plugins = new Set<string>()
 const pluginEntries: [string, any?][] = Array.isArray(config.plugins)
@@ -157,7 +205,7 @@ const pluginEntries: [string, any?][] = Array.isArray(config.plugins)
 for (const [name, options] of pluginEntries) {
   const [path, plugin] = loadEcosystem('plugin', name)
   plugins.add(require.resolve(path))
-  app.plugin(plugin, options)
+  createContext(options).plugin(plugin, options)
 }
 
 process.on('unhandledRejection', (error) => {
@@ -314,7 +362,9 @@ function createWatcher() {
     logger.debug('change detected:', path)
 
     // files independent from any plugins will trigger a full reload
-    if (externals.has(path)) return triggerFullReload()
+    if (path === configFile || externals.has(path)) {
+      return triggerFullReload()
+    }
 
     // do not trigger another reload during one reload
     stashed.add(path)
