@@ -19,14 +19,15 @@ declare module 'koishi-core' {
 }
 
 declare module 'koishi-plugin-webui' {
-  interface ClientConfig {
-    whitelist: string[]
-  }
+  interface ClientConfig extends ClientExtension {}
 }
 
-export interface Config extends ReceiverConfig {
+interface ClientExtension {
   whitelist?: string[]
+  maxMessages?: number
 }
+
+export interface Config extends ReceiverConfig, ClientExtension {}
 
 template.set('chat', {
   send: '[{{ channelName || "私聊" }}] {{ abstract }}',
@@ -52,9 +53,14 @@ const builtinWhitelist = [
   'http://c2cpicdw.qpic.cn',
 ]
 
+const defaultOptions: Config = {
+  maxMessages: 1000,
+}
+
 export const name = 'chat'
 
 export function apply(ctx: Context, options: Config = {}) {
+  options = { ...defaultOptions, ...options }
   ctx.plugin(receiver, options)
 
   ctx.on('chat/receive', async (message, session) => {
@@ -71,6 +77,7 @@ export function apply(ctx: Context, options: Config = {}) {
     const whitelist = [...builtinWhitelist, ...options.whitelist || []]
 
     ctx.webui.global.whitelist = whitelist
+    ctx.webui.global.maxMessages = options.maxMessages
     ctx.webui.addEntry(resolve(__dirname, filename))
 
     ctx.webui.addListener('chat', async function ({ id, token, content, platform, selfId, channelId }) {
