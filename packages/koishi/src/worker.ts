@@ -259,7 +259,7 @@ function createWatcher() {
 
   const logger = new Logger('app:watcher')
   function triggerFullReload() {
-    if (!fullReload) return
+    if (fullReload === false) return
     logger.info('trigger full reload')
     process.exit(114)
   }

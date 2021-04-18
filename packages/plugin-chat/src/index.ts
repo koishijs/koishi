@@ -26,8 +26,6 @@ declare module 'koishi-plugin-webui' {
 
 export interface Config extends ReceiverConfig {
   whitelist?: string[]
-  includeUsers?: string[]
-  includeChannels?: string[]
 }
 
 template.set('chat', {
@@ -57,15 +55,10 @@ const builtinWhitelist = [
 export const name = 'chat'
 
 export function apply(ctx: Context, options: Config = {}) {
-  const { includeUsers, includeChannels } = options
-
   ctx.plugin(receiver, options)
 
   ctx.on('chat/receive', async (message, session) => {
-    if (session.subtype === 'private') {
-      if (includeUsers && !includeUsers.includes(session.userId)) return
-    } else {
-      if (includeChannels && !includeChannels.includes(session.channelId)) return
+    if (session.subtype !== 'private') {
       const { assignee } = await session.observeChannel(['assignee'])
       if (assignee !== session.selfId) return
     }
