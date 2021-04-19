@@ -1,4 +1,4 @@
-import { config, context, internal, WorkerData } from '.'
+import { config, context, internal } from '.'
 import { resolve, posix, dirname, extname } from 'path'
 import { promises as fs } from 'fs'
 import { deserialize, serialize, cachedDataVersionTag } from 'v8'
@@ -21,10 +21,15 @@ interface Module {
 export interface Loader {
   name: string
   synthetize: boolean
-  prepare(config: WorkerData): void | Promise<void>
+  prepare(config: LoaderConfig, root?: string): void | Promise<void>
   extractScript(expr: string): string
   transformScript(expr: string): string | Promise<string>
   transformModule(expr: string, extension: string): string | Promise<string>
+}
+
+export interface LoaderConfig {
+  jsxFactory?: string
+  jsxFragment?: string
 }
 
 export const modules: Record<string, Module> = {}
@@ -185,7 +190,7 @@ async function createLoader(extension: string) {
   if (!loaderSet.has(loader)) {
     loaderSet.add(loader)
     logger.debug('creating loader %c', loader.name)
-    await loader.prepare?.(config)
+    await loader.prepare?.(config.loaderConfig, config.root)
   }
   return loader
 }

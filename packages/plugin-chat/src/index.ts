@@ -50,7 +50,7 @@ export class SandboxBot extends Bot<'web'> {
 
 const builtinWhitelist = [
   'http://gchat.qpic.cn/',
-  'http://c2cpicdw.qpic.cn',
+  'http://c2cpicdw.qpic.cn/',
 ]
 
 const defaultOptions: Config = {
