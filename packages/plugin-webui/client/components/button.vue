@@ -102,7 +102,6 @@ button {
   }
   // frameless
   &.frameless {
-    color: $tpFgColor4;
     padding: 0;
     border-color: transparent;
     background-color: transparent;
@@ -110,6 +109,15 @@ button {
     &:hover {
       border-color: transparent;
       background-color: transparent;
+    }
+    &.default {
+      color: $default;
+    }
+    &.danger {
+      color: $error;
+    }
+    &.success {
+      color: $success;
     }
   }
 }

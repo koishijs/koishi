@@ -1,4 +1,4 @@
-import { Argv, Assets, Bot, Context, Platform, Plugin, Time, noop } from 'koishi-core'
+import { Argv, Assets, Bot, Context, noop, Platform, Time } from 'koishi-core'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
 
@@ -138,7 +138,7 @@ export namespace Profile {
 
 export class Meta implements DataSource<Meta.Payload> {
   timestamp = 0
-  cachedMeta: Promise<Meta.Payload>
+  cached: Promise<Meta.Payload>
   callbacks: Meta.Extension[] = []
 
   constructor(private ctx: Context, public config: Meta.Config) {
@@ -152,9 +152,9 @@ export class Meta implements DataSource<Meta.Payload> {
 
   async get(): Promise<Meta.Payload> {
     const now = Date.now()
-    if (this.timestamp > now) return this.cachedMeta
+    if (this.timestamp > now) return this.cached
     this.timestamp = now + Time.hour
-    return this.cachedMeta = Promise
+    return this.cached = Promise
       .all(this.callbacks.map(cb => cb().catch(noop)))
       .then(data => Object.assign({}, ...data))
   }
@@ -180,47 +180,4 @@ export namespace Meta {
   export interface Payload extends Stats, Assets.Stats {}
 
   export type Extension = () => Promise<Partial<Payload>>
-}
-
-export class Registry implements DataSource<Registry.Payload> {
-  payload: Registry.Payload
-
-  constructor(private ctx: Context, public config: Registry.Config) {
-    ctx.on('plugin-added', this.update)
-    ctx.on('plugin-removed', this.update)
-  }
-
-  update = async () => {
-    this.ctx.webui.broadcast('registry', await this.get(true))
-  }
-
-  async get(forced = false) {
-    if (this.payload && !forced) return this.payload
-    this.payload = { pluginCount: 0 } as Registry.Payload
-    this.payload.plugins = this.traverse(null)
-    return this.payload
-  }
-
-  traverse = (plugin: Plugin): Registry.PluginData[] => {
-    const state = this.ctx.app.registry.get(plugin)
-    const children = state.children.flatMap(this.traverse, 1)
-    const { name, sideEffect } = state
-    if (!name) return children
-    this.payload.pluginCount += 1
-    return [{ name, sideEffect, children }]
-  }
-}
-
-export namespace Registry {
-  export interface Config {
-  }
-
-  export interface PluginData extends Plugin.Meta {
-    children: PluginData[]
-  }
-
-  export interface Payload {
-    plugins: PluginData[]
-    pluginCount: number
-  }
 }

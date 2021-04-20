@@ -42,7 +42,7 @@ export function synthetize(identifier: string, namespace: {}, globalName?: strin
   return module
 }
 
-const extnames = new Set(['.js', '.ts', '.json', '.yml', '.yaml'])
+const extnames = new Set(['.js', '.ts', '.coffee', '.json', '.yml', '.yaml'])
 
 function* suffixes() {
   yield ''
@@ -168,6 +168,12 @@ function resolveLoader(extension: string) {
       } catch {}
     }
     throw new Error('cannot resolve loader for ".ts", you should install either esbuild or typescript + json5 by yourself')
+  } else if (extension === '.coffee') {
+    try {
+      return require('../loaders/coffeescript')
+    } catch {
+      throw new Error('cannot resolve loader for ".coffee", you should install coffeescript by yourself')
+    }
   } else {
     throw new Error(`cannot resolve loader for "${extension}", you should specify a custom loader via "config.moduleLoaders"`)
   }

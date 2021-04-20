@@ -87,9 +87,6 @@ export class App extends Context {
     if (options.selfUrl) options.selfUrl = trimSlash(options.selfUrl)
     this.options = merge(options, App.defaultConfig)
     this.registry.set(null, {
-      parent: null,
-      context: null,
-      config: null,
       children: [],
       disposables: [],
     })
