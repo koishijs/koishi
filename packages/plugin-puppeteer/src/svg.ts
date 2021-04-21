@@ -131,10 +131,9 @@ export class SVG extends Tag {
   }
 
   async render(ctx: Context) {
-    const page = await ctx.app.browser.newPage()
+    const page = await ctx.puppeteer.newPage()
     await page.setContent(this.outer)
-    const base64 = await page.screenshot({
-      encoding: 'base64',
+    const buffer = await page.screenshot({
       clip: {
         x: 0,
         y: 0,
@@ -143,6 +142,6 @@ export class SVG extends Tag {
       },
     })
     page.close()
-    return segment.image('base64://' + base64)
+    return segment.image(buffer)
   }
 }
