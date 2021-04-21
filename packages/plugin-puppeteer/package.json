@@ -30,6 +30,9 @@
   ],
   "devDependencies": {
     "@types/pngjs": "^6.0.0",
+    "@types/react": "^17.0.3",
+    "@types/react-dom": "^17.0.3",
+    "koishi-plugin-eval": "^3.1.0",
     "koishi-test-utils": "^6.0.0-beta.11"
   },
   "peerDependencies": {
@@ -38,6 +41,8 @@
   "dependencies": {
     "chrome-finder": "^1.0.7",
     "pngjs": "^6.0.0",
-    "puppeteer-core": "^8.0.0"
+    "puppeteer-core": "^8.0.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
   }
 }

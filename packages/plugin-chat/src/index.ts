@@ -1,4 +1,4 @@
-import { Bot, Context, Random, Session, template } from 'koishi-core'
+import { Bot, Context, Random, segment, Session, template } from 'koishi-core'
 import { resolve } from 'path'
 import { WebServer } from 'koishi-plugin-webui'
 import receiver, { Message, ReceiverConfig } from './receiver'
@@ -43,6 +43,12 @@ export class SandboxBot extends Bot<'web'> {
   }
 
   async sendMessage(id: string, content: string) {
+    content = segment.transform(content, {
+      image(data) {
+        if (!data.url.startsWith('base64://')) return segment('image', data)
+        return segment.image('data:image/png;base64,' + data.url.slice(9))
+      },
+    })
     this.adapter.handles[id]?.send('sandbox:bot', content)
     return Random.uuid()
   }

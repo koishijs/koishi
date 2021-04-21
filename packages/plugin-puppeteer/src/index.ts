@@ -2,6 +2,9 @@ import puppeteer, { Shooter } from 'puppeteer-core'
 import { Context, Logger, defineProperty, noop, segment } from 'koishi-core'
 import { escape } from 'querystring'
 import { PNG } from 'pngjs'
+import { resolve } from 'path'
+import {} from 'koishi-plugin-eval'
+
 export * from './svg'
 
 // workaround puppeteer typings downgrade
@@ -49,6 +52,7 @@ export interface Config {
   idleTimeout?: number
   maxLength?: number
   protocols?: string[]
+  fragment?: puppeteer.Viewport
 }
 
 export const defaultConfig: Config = {
@@ -57,6 +61,11 @@ export const defaultConfig: Config = {
   idleTimeout: 30000, // 30s
   maxLength: 1000000, // 1MB
   protocols: ['http', 'https'],
+  fragment: {
+    width: 800,
+    height: 600,
+    deviceScaleFactor: 2,
+  },
 }
 
 export const name = 'puppeteer'
@@ -169,16 +178,11 @@ export function apply(ctx: Context, config: Config = {}) {
     })
 
   ctx1.command('tex <code:text>', 'TeX 渲染', { authority: 2 })
-    .option('scale', '-s <scale>  缩放比例', { fallback: 2 })
     .usage('渲染器由 https://www.zhihu.com/equation 提供。')
-    .action(async ({ options }, tex) => {
+    .action(async (_, tex) => {
       if (!tex) return '请输入要渲染的 LaTeX 代码。'
       const page = await ctx.app.browser.newPage()
-      await page.setViewport({
-        width: 1920,
-        height: 1080,
-        deviceScaleFactor: options.scale,
-      })
+      await page.setViewport(config.fragment)
       await page.goto('https://www.zhihu.com/equation?tex=' + escape(segment.unescape(tex)))
       const svg = await page.$('svg')
       const inner = await svg.evaluate(node => node.innerHTML)
@@ -195,4 +199,28 @@ export function apply(ctx: Context, config: Config = {}) {
         return segment.image('base64://' + base64)
       }
     })
+
+  ctx.with(['koishi-plugin-eval'], (ctx) => {
+    ctx.worker.config.loaderConfig.jsxFactory = 'jsxFactory'
+    ctx.worker.config.loaderConfig.jsxFragment = 'jsxFragment'
+    ctx.worker.config.setupFiles['puppeteer.ts'] = resolve(__dirname, 'worker')
+
+    ctx.before('eval/send', (content) => {
+      return segment.transformAsync(content, {
+        async fragment({ content }) {
+          const page = await ctx.app.browser.newPage()
+          await page.setViewport(config.fragment)
+          await page.setContent(`<!doctype html>
+            <html><body>${content}</body></html>
+          `)
+          const shooter = await page.$('body')
+          const base64 = await shooter.screenshot({
+            encoding: 'base64',
+          })
+          page.close()
+          return segment.image('base64://' + base64)
+        },
+      })
+    })
+  })
 }
