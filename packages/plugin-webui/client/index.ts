@@ -63,6 +63,7 @@ export namespace storage {
 
 interface Config {
   authType: 0 | 1
+  pluginTab: 0 | 1
   username?: string
   password?: string
   platform?: string
@@ -71,7 +72,7 @@ interface Config {
 }
 
 export const user = storage.create<User>('user')
-export const config = storage.create<Config>('config', { authType: 0 }, true)
+export const config = storage.create<Config>('config', { authType: 0, pluginTab: 0 }, true)
 export const meta = ref<Meta.Payload>(null)
 export const profile = ref<Profile.Payload>(null)
 export const registry = ref<Registry.Payload>(null)

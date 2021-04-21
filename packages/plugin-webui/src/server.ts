@@ -1,7 +1,8 @@
 import { Adapter, App, Context, Logger, noop, omit, pick, Random, remove, Time, User } from 'koishi-core'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
-import { DataSource, Profile, Meta, Registry } from './data'
+import { DataSource, Profile, Meta } from './data'
+import { Registry } from './registry'
 import { Statistics } from './stats'
 import WebSocket from 'ws'
 import type * as Vite from 'vite'
@@ -117,6 +118,7 @@ export class WebServer extends Adapter {
   addEntry(filename: string) {
     const ctx = this[Context.current]
     let { state } = ctx
+    state[Registry.webExtension] = true
     while (state && !state.name) state = state.parent
     const hash = Math.floor(Math.random() * (16 ** 8)).toString(16).padStart(8, '0')
     const key = `${state?.name || 'entry'}-${hash}.js`

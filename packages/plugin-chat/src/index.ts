@@ -1,4 +1,4 @@
-import { Bot, Context, Random, Session, template } from 'koishi-core'
+import { Bot, Context, Random, segment, Session, template } from 'koishi-core'
 import { resolve } from 'path'
 import { WebServer } from 'koishi-plugin-webui'
 import receiver, { Message, ReceiverConfig } from './receiver'
@@ -19,16 +19,15 @@ declare module 'koishi-core' {
 }
 
 declare module 'koishi-plugin-webui' {
-  interface ClientConfig {
-    whitelist: string[]
-  }
+  interface ClientConfig extends ClientExtension {}
 }
 
-export interface Config extends ReceiverConfig {
+interface ClientExtension {
   whitelist?: string[]
-  includeUsers?: string[]
-  includeChannels?: string[]
+  maxMessages?: number
 }
+
+export interface Config extends ReceiverConfig, ClientExtension {}
 
 template.set('chat', {
   send: '[{{ channelName || "私聊" }}] {{ abstract }}',
@@ -44,6 +43,12 @@ export class SandboxBot extends Bot<'web'> {
   }
 
   async sendMessage(id: string, content: string) {
+    content = segment.transform(content, {
+      image(data) {
+        if (!data.url.startsWith('base64://')) return segment('image', data)
+        return segment.image('data:image/png;base64,' + data.url.slice(9))
+      },
+    })
     this.adapter.handles[id]?.send('sandbox:bot', content)
     return Random.uuid()
   }
@@ -51,21 +56,21 @@ export class SandboxBot extends Bot<'web'> {
 
 const builtinWhitelist = [
   'http://gchat.qpic.cn/',
-  'http://c2cpicdw.qpic.cn',
+  'http://c2cpicdw.qpic.cn/',
 ]
+
+const defaultOptions: Config = {
+  maxMessages: 1000,
+}
 
 export const name = 'chat'
 
 export function apply(ctx: Context, options: Config = {}) {
-  const { includeUsers, includeChannels } = options
-
+  options = { ...defaultOptions, ...options }
   ctx.plugin(receiver, options)
 
   ctx.on('chat/receive', async (message, session) => {
-    if (session.subtype === 'private') {
-      if (includeUsers && !includeUsers.includes(session.userId)) return
-    } else {
-      if (includeChannels && !includeChannels.includes(session.channelId)) return
+    if (session.subtype !== 'private') {
       const { assignee } = await session.observeChannel(['assignee'])
       if (assignee !== session.selfId) return
     }
@@ -78,6 +83,7 @@ export function apply(ctx: Context, options: Config = {}) {
     const whitelist = [...builtinWhitelist, ...options.whitelist || []]
 
     ctx.webui.global.whitelist = whitelist
+    ctx.webui.global.maxMessages = options.maxMessages
     ctx.webui.addEntry(resolve(__dirname, filename))
 
     ctx.webui.addListener('chat', async function ({ id, token, content, platform, selfId, channelId }) {

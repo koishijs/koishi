@@ -71,7 +71,7 @@ const KOISHI_VERSION = JSON.stringify(version)
       }],
     }
 
-    if (name === 'koishi') {
+    if (name === 'koishi' || name === 'plugin-puppeteer') {
       entryPoints.push(base + '/src/worker.ts')
     } else if (name === 'plugin-eval') {
       const loaders = await readdir(base + '/src/loaders')

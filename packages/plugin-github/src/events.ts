@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 
-import { EventPayloadMap, WebhookEventName, Repository, PullRequest } from '@octokit/webhooks-definitions/schema'
+import { EventPayloadMap, WebhookEventName, Repository, PullRequest } from '@octokit/webhooks-types/schema'
 import { EventData } from './server'
 import { transform } from './markdown'
 

@@ -20,7 +20,7 @@ export const config: WorkerData = {
   },
 }
 
-import prepare, { synthetize, readSerialized, safeWriteFile } from './loader'
+import prepare, { synthetize, readSerialized, safeWriteFile, LoaderConfig } from './loader'
 import { expose, wrap } from '../transfer'
 import { Sandbox } from './sandbox'
 import { MainHandle } from '..'
@@ -34,6 +34,7 @@ export interface WorkerConfig {
   cacheFile?: string
   storageFile?: string
   setupFiles?: Record<string, string>
+  loaderConfig?: LoaderConfig
 }
 
 export interface WorkerData extends WorkerConfig {

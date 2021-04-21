@@ -1,6 +1,24 @@
-const { compile } = require('coffeescript')
+import { compile } from 'coffeescript'
+import { transformAsync, TransformOptions } from '@babel/core'
+import { LoaderConfig } from '../worker'
 
 export const name = 'coffeescript'
+
+const options: TransformOptions = {
+  sourceMaps: 'inline',
+  plugins: [],
+}
+
+export function prepare(config: LoaderConfig) {
+  if (config.jsxFactory) {
+    options.plugins.push(['@babel/plugin-transform-react-jsx', {
+      pragma: config.jsxFactory,
+      pragmaFrag: config.jsxFragment,
+      useBuiltIns: true,
+      useSpread: true,
+    }])
+  }
+}
 
 export function extractScript(expr: string) {
   try {
@@ -16,7 +34,9 @@ export function extractScript(expr: string) {
 }
 
 export async function transformScript(expr: string) {
-  return compile(expr, { bare: true })
+  const raw = compile(expr, { bare: true })
+  const { code } = await transformAsync(raw, options)
+  return code
 }
 
 export const transformModule = transformScript

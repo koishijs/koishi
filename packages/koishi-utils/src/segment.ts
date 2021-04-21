@@ -20,6 +20,7 @@ export namespace segment {
   export type Chain = segment.Parsed[]
   export type Data = Record<string, primitive>
   export type Transformer = string | ((data: Record<string, string>, index: number, chain: Chain) => string)
+  export type AsyncTransformer = string | ((data: Record<string, string>, index: number, chain: Chain) => string | Promise<string>)
 
   export interface Parsed extends segment {
     data: Record<string, string>
@@ -44,8 +45,8 @@ export namespace segment {
       .replace(/&amp;/g, '&')
   }
 
-  export function join(codes: segment[]) {
-    return codes.map(code => segment(code.type, code.data)).join('')
+  export function join(chain: segment[]) {
+    return chain.map(node => segment(node.type, node.data)).join('')
   }
 
   export interface FindOptions {
@@ -89,6 +90,17 @@ export namespace segment {
         : typeof transformer === 'function' ? transformer(data, index, chain)
           : dropOthers ? '' : type === 'text' ? escape(data.content) : capture[0]
     }).join('')
+  }
+
+  export async function transformAsync(source: string, rules: Record<string, AsyncTransformer>) {
+    const chain = segment.parse(source)
+    const cache = new Map<Parsed, string>()
+    await Promise.all(chain.map(async (node, index, chain) => {
+      const transformer = rules[node.type]
+      if (!transformer) return
+      cache.set(node, typeof transformer === 'string' ? transformer : await transformer(node.data, index, chain))
+    }))
+    return chain.map(node => cache.get(node) || segment(node.type, node.data)).join('')
   }
 
   export type Factory<T> = (value: T, data?: segment.Data) => string

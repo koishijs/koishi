@@ -3,6 +3,7 @@
 import * as Vue from 'vue'
 import * as Router from 'vue-router'
 import * as client from '~/client'
+import Badge from './components/badge.vue'
 import Card from './components/card.vue'
 import Collapse from './components/collapse.vue'
 import Button from './components/button.vue'
@@ -60,6 +61,7 @@ router.addRoute({
   component: () => import('./views/login.vue'),
 })
 
+app.component('k-badge', Badge)
 app.component('k-card', Card)
 app.component('k-chart', Vue.defineAsyncComponent(() => import('./components/echarts')))
 app.component('k-button', Button)

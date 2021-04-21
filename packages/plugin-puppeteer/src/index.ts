@@ -1,7 +1,11 @@
 import puppeteer, { Shooter } from 'puppeteer-core'
-import { Context, Logger, defineProperty, noop, segment } from 'koishi-core'
+import { Context, Logger, noop, segment } from 'koishi-core'
 import { escape } from 'querystring'
 import { PNG } from 'pngjs'
+import { resolve } from 'path'
+import {} from 'koishi-plugin-eval'
+import { SVG, SVGOptions } from './svg'
+
 export * from './svg'
 
 // workaround puppeteer typings downgrade
@@ -31,8 +35,14 @@ declare module 'puppeteer-core/lib/types' {
 }
 
 declare module 'koishi-core' {
-  interface App {
-    browser: puppeteer.Browser
+  interface Context {
+    puppeteer: Puppeteer
+  }
+
+  namespace Plugin {
+    interface Packages {
+      'koishi-plugin-puppeteer': typeof import('.'),
+    }
   }
 
   interface EventMap {
@@ -41,14 +51,75 @@ declare module 'koishi-core' {
   }
 }
 
-const logger = new Logger('puppeteer')
+type LaunchOptions = Parameters<typeof puppeteer.launch>[0]
+
+type RenderCallback = (page: puppeteer.Page, next: (handle?: puppeteer.ElementHandle) => Promise<string>) => Promise<string>
 
 export interface Config {
-  browser?: Parameters<typeof puppeteer.launch>[0]
+  browser?: LaunchOptions
+  renderViewport?: Partial<puppeteer.Viewport>
   loadTimeout?: number
   idleTimeout?: number
   maxLength?: number
   protocols?: string[]
+}
+
+enum Status { close, opening, open, closing }
+
+class Puppeteer {
+  status = Status.close
+  browser: puppeteer.Browser
+  private promise: Promise<puppeteer.Browser>
+
+  constructor(private context: Context, public config: Config) {
+    if (!config.browser.executablePath) {
+      const findChrome = require('chrome-finder')
+      logger.debug('chrome executable found at %c', config.browser.executablePath = findChrome())
+    }
+  }
+
+  launch = async () => {
+    this.status = Status.opening
+    this.browser = await (this.promise = puppeteer.launch(this.config.browser))
+    this.status = Status.open
+    logger.debug('browser launched')
+    this.context.emit('puppeteer/start')
+  }
+
+  close = async () => {
+    this.status = Status.closing
+    await this.browser?.close()
+    this.status = Status.close
+  }
+
+  page = () => this.browser.newPage()
+
+  svg = (options?: SVGOptions) => new SVG(options)
+
+  render = async (content: string, callback?: RenderCallback) => {
+    if (this.status === Status.opening) {
+      await this.promise
+    } else if (this.status !== Status.open) {
+      throw new Error('browser instance is not running')
+    }
+
+    const page = await this.page()
+    await page.setViewport({
+      ...this.config.browser.defaultViewport,
+      ...this.config.renderViewport,
+    })
+    if (content) await page.setContent(content)
+
+    callback ||= async (_, next) => page.$('body').then(next)
+    const output = await callback(page, async (handle) => {
+      const clip = handle ? await handle.boundingBox() : null
+      const buffer = await page.screenshot({ clip })
+      return segment.image(buffer)
+    })
+
+    page.close()
+    return output
+  }
 }
 
 export const defaultConfig: Config = {
@@ -57,34 +128,37 @@ export const defaultConfig: Config = {
   idleTimeout: 30000, // 30s
   maxLength: 1000000, // 1MB
   protocols: ['http', 'https'],
+  renderViewport: {
+    width: 800,
+    height: 600,
+    deviceScaleFactor: 2,
+  },
 }
+
+Context.delegate('puppeteer')
+
+const logger = new Logger('puppeteer')
 
 export const name = 'puppeteer'
 
 export function apply(ctx: Context, config: Config = {}) {
   config = { ...defaultConfig, ...config }
-  const { executablePath, defaultViewport } = config.browser
+  const { defaultViewport } = config.browser
 
   ctx.on('connect', async () => {
-    try {
-      if (!executablePath) {
-        const findChrome = require('chrome-finder')
-        logger.debug('chrome executable found at %c', config.browser.executablePath = findChrome())
-      }
-      defineProperty(ctx.app, 'browser', await puppeteer.launch(config.browser))
-      logger.debug('browser launched')
-      ctx.emit('puppeteer/start')
-    } catch (error) {
+    ctx.puppeteer = new Puppeteer(ctx, config)
+    await ctx.puppeteer.launch().catch((error) => {
       logger.error(error)
       ctx.dispose()
-    }
+    })
   })
 
   ctx.before('disconnect', async () => {
-    await ctx.app.browser?.close()
+    await ctx.puppeteer?.close()
+    delete ctx.puppeteer
   })
 
-  const ctx1 = ctx.intersect(sess => !!sess.app.browser)
+  const ctx1 = ctx.intersect(sess => !!sess.app.puppeteer)
   ctx1.command('shot <url> [selector:text]', '网页截图', { authority: 2 })
     .alias('screenshot')
     .option('full', '-f  对整个可滚动区域截图')
@@ -102,7 +176,7 @@ export function apply(ctx: Context, config: Config = {}) {
       if (typeof result === 'string') return result
 
       let loaded = false
-      const page = await ctx.app.browser.newPage()
+      const page = await ctx.puppeteer.page()
       page.on('load', () => loaded = true)
 
       try {
@@ -169,30 +243,34 @@ export function apply(ctx: Context, config: Config = {}) {
     })
 
   ctx1.command('tex <code:text>', 'TeX 渲染', { authority: 2 })
-    .option('scale', '-s <scale>  缩放比例', { fallback: 2 })
     .usage('渲染器由 https://www.zhihu.com/equation 提供。')
-    .action(async ({ options }, tex) => {
+    .action(async (_, tex) => {
       if (!tex) return '请输入要渲染的 LaTeX 代码。'
-      const page = await ctx.app.browser.newPage()
-      await page.setViewport({
-        width: 1920,
-        height: 1080,
-        deviceScaleFactor: options.scale,
-      })
-      await page.goto('https://www.zhihu.com/equation?tex=' + escape(segment.unescape(tex)))
-      const svg = await page.$('svg')
-      const inner = await svg.evaluate(node => node.innerHTML)
-      const text = inner.match(/>([^<]+)<\/text>/)
-      if (text) {
-        page.close()
-        return text[1]
-      } else {
-        const base64 = await page.screenshot({
-          encoding: 'base64',
-          clip: await svg.boundingBox(),
+      return ctx.puppeteer.render(null, async (page, next) => {
+        await page.goto('https://www.zhihu.com/equation?tex=' + escape(segment.unescape(tex)))
+        const svg = await page.$('svg')
+        const inner: string = await svg.evaluate((node: SVGElement) => {
+          node.style.padding = '0.25rem 0.375rem'
+          return node.innerHTML
         })
-        page.close()
-        return segment.image('base64://' + base64)
-      }
+        const text = inner.match(/>([^<]+)<\/text>/)
+        return text ? text[1] : next(svg)
+      })
     })
+
+  ctx.with(['koishi-plugin-eval'], (ctx) => {
+    ctx.worker.config.loaderConfig.jsxFactory = 'jsxFactory'
+    ctx.worker.config.loaderConfig.jsxFragment = 'jsxFragment'
+    ctx.worker.config.setupFiles['puppeteer.ts'] = resolve(__dirname, 'worker')
+
+    ctx.before('eval/send', (content) => {
+      return segment.transformAsync(content, {
+        async fragment({ content }) {
+          return segment.image(await ctx.puppeteer.render(`<!doctype html>
+            <html><body>${content}</body></html>
+          `))
+        },
+      })
+    })
+  })
 }

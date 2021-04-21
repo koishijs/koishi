@@ -1,4 +1,4 @@
-import { Argv, Assets, Bot, Context, noop, Platform, Plugin, Time } from 'koishi-core'
+import { Argv, Assets, Bot, Context, noop, Platform, Time } from 'koishi-core'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
 
@@ -138,7 +138,7 @@ export namespace Profile {
 
 export class Meta implements DataSource<Meta.Payload> {
   timestamp = 0
-  cachedMeta: Promise<Meta.Payload>
+  cached: Promise<Meta.Payload>
   callbacks: Meta.Extension[] = []
 
   constructor(private ctx: Context, public config: Meta.Config) {
@@ -152,9 +152,9 @@ export class Meta implements DataSource<Meta.Payload> {
 
   async get(): Promise<Meta.Payload> {
     const now = Date.now()
-    if (this.timestamp > now) return this.cachedMeta
+    if (this.timestamp > now) return this.cached
     this.timestamp = now + Time.hour
-    return this.cachedMeta = Promise
+    return this.cached = Promise
       .all(this.callbacks.map(cb => cb().catch(noop)))
       .then(data => Object.assign({}, ...data))
   }
@@ -180,90 +180,4 @@ export namespace Meta {
   export interface Payload extends Stats, Assets.Stats {}
 
   export type Extension = () => Promise<Partial<Payload>>
-}
-
-const original = Symbol('webui.original-plugin')
-
-function debounce(callback: Function, ms: number) {
-  let timer: number
-  return function () {
-    if (timer) clearTimeout(timer)
-    timer = setTimeout(callback, ms)
-  }
-}
-
-export class Registry implements DataSource<Registry.Payload> {
-  payload: Registry.Payload
-  promise: Promise<void>
-
-  constructor(private ctx: Context, public config: Registry.Config) {
-    ctx.on('plugin-added', this.update)
-    ctx.on('plugin-removed', this.update)
-  }
-
-  get registry() {
-    return this.ctx.app.registry
-  }
-
-  update = debounce(async () => {
-    this.ctx.webui.broadcast('registry', await this.get(true))
-  }, 0)
-
-  async get(forced = false) {
-    if (this.payload && !forced) return this.payload
-    this.payload = { pluginCount: 0 } as Registry.Payload
-    this.payload.plugins = this.traverse(null).children
-    return this.payload
-  }
-
-  async switch(id: string) {
-    await this.promise
-    for (const [plugin, state] of this.registry) {
-      if (id !== state.id) continue
-      const replacer = plugin[original] || {
-        [original]: state.plugin,
-        name: state.name,
-        apply: () => {},
-      }
-      this.promise = this.ctx.dispose(plugin)
-      state.context.plugin(replacer, state.config)
-    }
-  }
-
-  traverse = (plugin: Plugin): Registry.PluginData => {
-    const state = this.registry.get(plugin)
-    this.payload.pluginCount += 1
-    let complexity = 1 + state.disposables.length
-    const children: Registry.PluginData[] = []
-    state.children.forEach((plugin) => {
-      const data = this.traverse(plugin)
-      complexity += data.complexity
-      if (data.name) {
-        children.push(data)
-      } else {
-        children.push(...data.children)
-      }
-    })
-    const { id, name, sideEffect } = state
-    const disabled = plugin && !!plugin[original]
-    children.sort((a, b) => a.name > b.name ? 1 : -1)
-    return { id, name, sideEffect, disabled, children, complexity }
-  }
-}
-
-export namespace Registry {
-  export interface Config {
-  }
-
-  export interface PluginData extends Plugin.Meta {
-    id: string
-    disabled: boolean
-    children: PluginData[]
-    complexity: number
-  }
-
-  export interface Payload {
-    plugins: PluginData[]
-    pluginCount: number
-  }
 }

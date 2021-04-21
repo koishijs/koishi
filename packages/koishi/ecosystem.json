@@ -28,11 +28,11 @@
     "description": "Asset provider plugin for Koishi"
   },
   "koishi-plugin-chat": {
-    "version": "0.3.1",
+    "version": "0.4.0",
     "description": "Chat plugin for Koishi"
   },
   "koishi-plugin-chess": {
-    "version": "3.0.1",
+    "version": "3.0.2",
     "description": "Chess Plugin for Koishi"
   },
   "koishi-plugin-common": {
@@ -44,11 +44,11 @@
     "description": "COC / DND Tools for Koishi"
   },
   "koishi-plugin-eval": {
-    "version": "3.1.0",
+    "version": "3.1.1",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-github": {
-    "version": "3.0.3",
+    "version": "3.0.4",
     "description": "GitHub webhook plugin for Koishi"
   },
   "koishi-plugin-image-search": {
@@ -60,14 +60,14 @@
     "description": "MongoDB support for Koishi"
   },
   "koishi-plugin-monitor": {
-    "version": "1.0.0-beta.29"
+    "version": "1.0.0-beta.30"
   },
   "koishi-plugin-mysql": {
     "version": "3.3.1",
     "description": "MySQL support for Koishi"
   },
   "koishi-plugin-puppeteer": {
-    "version": "2.0.2",
+    "version": "2.1.0",
     "description": "Take Screenshots in Koishi"
   },
   "koishi-plugin-rss": {
@@ -87,7 +87,7 @@
     "description": "Some simple tools for Koishi"
   },
   "koishi-plugin-webui": {
-    "version": "4.3.0",
+    "version": "4.4.0",
     "description": "Show Web UI of Koishi"
   }
 }

@@ -1,6 +1,6 @@
 import { load } from 'js-yaml'
 
-export const name = 'json+yaml'
+export const name = 'synthetize'
 export const synthetize = true
 
 export function transformModule(source: string, extension: string) {

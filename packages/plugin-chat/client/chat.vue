@@ -46,6 +46,7 @@ const divs = ref<Record<string, HTMLElement>>({})
 
 receive('chat', (body) => {
   messages.value.push(body)
+  messages.value.splice(0, messages.value.length - KOISHI_CONFIG.maxMessages)
 })
 
 function isSuccessive({ quote, userId, channelId }: Message, index: number) {
