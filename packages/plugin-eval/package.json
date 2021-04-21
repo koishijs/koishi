@@ -36,16 +36,19 @@
     "koishi-core": "^3.9.1"
   },
   "optionalDependencies": {
+    "@babel/core": "^7.13.15",
+    "@babel/plugin-transform-react-jsx": "^7.13.12",
+    "coffeescript": "^2.5.1",
     "esbuild": "^0.11.6",
     "json5": "^2.2.0",
-    "typescript": "^4.2.3",
-    "coffeescript": "^2.5.1"
+    "typescript": "^4.2.3"
   },
   "dependencies": {
     "js-yaml": "^4.0.0",
     "simple-git": "^2.37.0"
   },
   "devDependencies": {
+    "@types/babel__core": "^7.1.14",
     "@types/js-yaml": "^4.0.0",
     "koishi-test-utils": "^6.0.0-beta.11"
   }

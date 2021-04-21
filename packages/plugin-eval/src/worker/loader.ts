@@ -165,8 +165,8 @@ function resolveLoader(extension: string) {
   } else if (extension === '.js') {
     return require('../loaders/default')
   } else if (extension === '.json' || extension === '.yml' || extension === '.yaml') {
-    return require('../loaders/json+yaml')
-  } else if (extension === '.ts') {
+    return require('../loaders/markup')
+  } else if (extension === '.ts' || extension === '.jsx' || extension === '.tsx') {
     for (const filename of ['esbuild', 'typescript']) {
       try {
         return require('../loaders/' + filename)
