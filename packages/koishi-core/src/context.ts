@@ -450,7 +450,7 @@ export class Context {
   async transformAssets(content: string, assets = this.assets) {
     if (!assets) return content
     return segment.transformAsync(content, Object.fromEntries(assets.types.map((type) => {
-      return [type, (data) => assets.upload(data.url, data.file)]
+      return [type, async (data) => segment(type, { url: await assets.upload(data.url, data.file) })]
     })))
   }
 

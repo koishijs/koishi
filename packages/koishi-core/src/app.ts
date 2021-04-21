@@ -107,6 +107,7 @@ export class App extends Context {
     }
 
     this._commands.resolve = (key) => {
+      if (!key) return
       const segments = key.split('.')
       let i = 1, name = segments[0], cmd: Command
       while ((cmd = this._commands.get(name)) && i < segments.length) {
