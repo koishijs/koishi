@@ -1,6 +1,6 @@
 /* global BigInt */
 
-import * as puppeteer from 'koishi-plugin-puppeteer'
+import type * as puppeteer from 'koishi-plugin-puppeteer'
 import { Session, App } from 'koishi-core'
 
 const numbers = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
@@ -29,7 +29,7 @@ export class State {
   constructor(public app: App, public readonly rule: string, public readonly size: number, public readonly placement: 'cross' | 'grid') {
     this.area = BigInt(size * size)
     this.full = (1n << this.area) - 1n
-    this.imageMode = !!app.browser
+    this.imageMode = !!app.puppeteer
   }
 
   get pBoard() {

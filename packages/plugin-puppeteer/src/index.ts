@@ -4,6 +4,7 @@ import { escape } from 'querystring'
 import { PNG } from 'pngjs'
 import { resolve } from 'path'
 import {} from 'koishi-plugin-eval'
+import { SVG, SVGOptions } from './svg'
 
 export * from './svg'
 
@@ -36,6 +37,12 @@ declare module 'puppeteer-core/lib/types' {
 declare module 'koishi-core' {
   interface Context {
     puppeteer: Puppeteer
+  }
+
+  namespace Plugin {
+    interface Packages {
+      'koishi-plugin-puppeteer': typeof import('.'),
+    }
   }
 
   interface EventMap {
@@ -85,7 +92,9 @@ class Puppeteer {
     this.status = Status.close
   }
 
-  newPage = () => this.browser.newPage()
+  page = () => this.browser.newPage()
+
+  svg = (options?: SVGOptions) => new SVG(options)
 
   render = async (content: string, callback?: RenderCallback) => {
     if (this.status === Status.opening) {
@@ -94,7 +103,7 @@ class Puppeteer {
       throw new Error('browser instance is not running')
     }
 
-    const page = await this.newPage()
+    const page = await this.page()
     await page.setViewport({
       ...this.config.browser.defaultViewport,
       ...this.config.renderViewport,
@@ -167,7 +176,7 @@ export function apply(ctx: Context, config: Config = {}) {
       if (typeof result === 'string') return result
 
       let loaded = false
-      const page = await ctx.puppeteer.newPage()
+      const page = await ctx.puppeteer.page()
       page.on('load', () => loaded = true)
 
       try {

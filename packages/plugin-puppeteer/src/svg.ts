@@ -131,7 +131,7 @@ export class SVG extends Tag {
   }
 
   async render(ctx: Context) {
-    const page = await ctx.puppeteer.newPage()
+    const page = await ctx.puppeteer.page()
     await page.setContent(this.outer)
     const buffer = await page.screenshot({
       clip: {

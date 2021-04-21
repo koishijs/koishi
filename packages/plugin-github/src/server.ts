@@ -222,8 +222,8 @@ export class ReplyHandler {
   }
 
   async shot(url: string, selector: string, padding: number[] = []) {
-    const page = await this.session.app.browser.newPage()
-    let base64: string
+    const page = await this.session.app.puppeteer.page()
+    let buffer: Buffer
     try {
       await page.goto(url)
       const el = await page.$(selector)
@@ -233,13 +233,13 @@ export class ReplyHandler {
       clip.y -= top
       clip.width += left + right
       clip.height += top + bottom
-      base64 = await page.screenshot({ clip, encoding: 'base64' })
+      buffer = await page.screenshot({ clip })
     } catch (error) {
       new Logger('puppeteer').warn(error)
       return this.session.send('截图失败。')
     } finally {
       await page.close()
     }
-    return this.session.send(segment.image('base64://' + base64))
+    return this.session.send(segment.image(buffer))
   }
 }
