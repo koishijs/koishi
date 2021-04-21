@@ -43,6 +43,10 @@ function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
 }
 
+interface CommandMap extends Map<string, Command> {
+  resolve(key: string): Command
+}
+
 export class App extends Context {
   public app = this
   public options: AppOptions
@@ -52,7 +56,7 @@ export class App extends Context {
 
   _bots = createBots('sid')
   _commandList: Command[] = []
-  _commands = new Map<string, Command>()
+  _commands: CommandMap = new Map<string, Command>() as never
   _shortcuts: Command.Shortcut[] = []
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
   _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
@@ -102,6 +106,15 @@ export class App extends Context {
       Adapter.from(this, bot).create(bot)
     }
 
+    this._commands.resolve = (key) => {
+      const segments = key.split('.')
+      let i = 1, name = segments[0], cmd: Command
+      while ((cmd = this._commands.get(name)) && i < segments.length) {
+        name = cmd.name + '.' + segments[i++]
+      }
+      return cmd
+    }
+
     this.prepare()
 
     // bind built-in event listeners
@@ -118,14 +131,10 @@ export class App extends Context {
       // group message should have prefix or appel to be interpreted as a command call
       if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
       if (!argv.tokens.length) return
-      const segments = argv.tokens[0].content.split('.')
-      let i = 1, name = segments[0], cmd: Command
-      while ((cmd = this._commands.get(name)) && i < segments.length) {
-        name = cmd.name + '.' + segments[i++]
-      }
+      const cmd = this._commands.resolve(argv.tokens[0].content)
       if (cmd) {
         argv.tokens.shift()
-        return name
+        return cmd.name
       }
     })
 
