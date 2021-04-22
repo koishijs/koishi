@@ -6,24 +6,170 @@ import { NextFunction } from './context'
 import { Channel, User } from './database'
 import { Session } from './session'
 
-// builtin domains
-export interface Domain {
-  string: string
-  number: number
-  boolean: boolean
-  text: string
-  user: string
-  channel: string
-  integer: number
-  posint: number
-  date: Date
+export interface Token {
+  rest?: string
+  content: string
+  quoted: boolean
+  terminator: string
+  inters: Argv[]
 }
 
-export namespace Domain {
-  type Builtin = keyof Domain
+export interface Argv<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O = {}> {
+  args?: A
+  options?: O
+  error?: string
+  source?: string
+  initiator?: string
+  terminator?: string
+  session?: Session<U, G>
+  command?: Command<U, G, A, O>
+  rest?: string
+  pos?: number
+  root?: boolean
+  tokens?: Token[]
+  name?: string
+  next?: NextFunction
+}
+
+const leftQuotes = `"'“‘`
+const rightQuotes = `"'”’`
+
+export namespace Argv {
+  export interface Interpolation {
+    terminator?: string
+    parse?(source: string): Argv
+  }
+
+  const bracs: Record<string, Interpolation> = {}
+
+  export function interpolate(initiator: string, terminator: string, parse?: (source: string) => Argv) {
+    bracs[initiator] = { terminator, parse }
+  }
+
+  interpolate('$(', ')')
+
+  export class Tokenizer {
+    private bracs: Record<string, Interpolation>
+
+    constructor() {
+      this.bracs = Object.create(bracs)
+    }
+
+    interpolate(initiator: string, terminator: string, parse?: (source: string) => Argv) {
+      this.bracs[initiator] = { terminator, parse }
+    }
+
+    parseToken(source: string, stopReg = '$'): Token {
+      const parent = { inters: [] } as Token
+      const index = leftQuotes.indexOf(source[0])
+      const quote = rightQuotes[index]
+      let content = ''
+      if (quote) {
+        source = source.slice(1)
+        stopReg = `${quote}(?=${stopReg})|$`
+      }
+      stopReg += `|${Object.keys({ ...this.bracs, ...bracs }).map(escapeRegExp).join('|')}`
+      const regExp = new RegExp(stopReg)
+      while (true) {
+        const capture = regExp.exec(source)
+        content += source.slice(0, capture.index)
+        if (capture[0] in this.bracs) {
+          source = source.slice(capture.index + capture[0].length).trimStart()
+          const { parse, terminator } = this.bracs[capture[0]]
+          const argv = parse?.(source) || this.parse(source, terminator)
+          source = argv.rest
+          parent.inters.push({ ...argv, pos: content.length, initiator: capture[0] })
+        } else {
+          const quoted = capture[0] === quote
+          const rest = source.slice(capture.index + +quoted)
+          parent.rest = rest.trimStart()
+          parent.quoted = quoted
+          parent.terminator = capture[0]
+          if (quoted) {
+            parent.terminator += rest.slice(0, -parent.rest.length)
+          } else if (quote) {
+            content = leftQuotes[index] + content
+            parent.inters.forEach(inter => inter.pos += 1)
+          }
+          parent.content = content
+          if (quote === "'") Argv.revert(parent)
+          return parent
+        }
+      }
+    }
+
+    parse(source: string, terminator = ''): Argv {
+      const tokens: Token[] = []
+      let rest = source, term = ''
+      const stopReg = `\\s+|[${escapeRegExp(terminator)}]|$`
+      // eslint-disable-next-line no-unmodified-loop-condition
+      while (rest && !(terminator && rest.startsWith(terminator))) {
+        const token = this.parseToken(rest, stopReg)
+        tokens.push(token)
+        rest = token.rest
+        term = token.terminator
+        delete token.rest
+      }
+      if (rest.startsWith(terminator)) rest = rest.slice(1)
+      source = source.slice(0, -(rest + term).length)
+      return { tokens, rest, source }
+    }
+
+    stringify(argv: Argv) {
+      const output = argv.tokens.reduce((prev, token) => {
+        if (token.quoted) prev += leftQuotes[rightQuotes.indexOf(token.terminator[0])]
+        return prev + token.content + token.terminator
+      }, '')
+      if (argv.rest && !rightQuotes.includes(output[output.length - 1]) || argv.initiator) {
+        return output.slice(0, -1)
+      }
+      return output
+    }
+  }
+
+  const defaultTokenizer = new Tokenizer()
+
+  export function parse(source: string, terminator = '') {
+    return defaultTokenizer.parse(source, terminator)
+  }
+
+  export function stringify(argv: Argv) {
+    return defaultTokenizer.stringify(argv)
+  }
+
+  export function revert(token: Token) {
+    while (token.inters.length) {
+      const { pos, source, initiator } = token.inters.pop()
+      token.content = token.content.slice(0, pos)
+        + initiator + source + bracs[initiator].terminator
+        + token.content.slice(pos)
+    }
+  }
+
+  export function parsePid(target: string): [Platform, string] {
+    const index = target.indexOf(':')
+    const platform = target.slice(0, index)
+    const id = target.slice(index + 1)
+    return [platform, id] as any
+  }
+
+  // builtin domains
+  export interface Domain {
+    string: string
+    number: number
+    boolean: boolean
+    text: string
+    user: string
+    channel: string
+    integer: number
+    posint: number
+    date: Date
+  }
+
+  type DomainType = keyof Domain
 
   type ParamType<S extends string, F>
-    = S extends `${any}:${infer T}` ? T extends Builtin ? Domain[T] : F : F
+    = S extends `${any}:${infer T}` ? T extends DomainType ? Domain[T] : F : F
 
   type Replace<S extends string, X extends string, Y extends string>
     = S extends `${infer L}${X}${infer R}` ? `${L}${Y}${Replace<R, X, Y>}` : S
@@ -43,12 +189,12 @@ export namespace Domain {
   // I don't know why I should write like this but
   // [T] extends [xxx] just works, so don't touch it
   export type OptionType<S extends string, T extends Type>
-    = [T] extends [Builtin] ? Domain[T]
+    = [T] extends [DomainType] ? Domain[T]
     : [T] extends [RegExp] ? string
     : T extends (source: string) => infer R ? R
     : ExtractFirst<Replace<S, '>', ']'>, any>
 
-  export type Type = Builtin | RegExp | Transform<any>
+  export type Type = DomainType | RegExp | Transform<any>
 
   export interface Declaration {
     name?: string
@@ -73,39 +219,39 @@ export namespace Domain {
 
   const builtin: Record<string, Transform<any>> = {}
 
-  export function create<K extends keyof Domain>(name: K, callback: Transform<Domain[K]>) {
+  export function createDomain<K extends keyof Domain>(name: K, callback: Transform<Domain[K]>) {
     builtin[name] = callback
   }
 
-  create('string', source => source)
-  create('text', source => source)
-  create('boolean', () => true)
+  createDomain('string', source => source)
+  createDomain('text', source => source)
+  createDomain('boolean', () => true)
 
-  create('number', (source) => {
+  createDomain('number', (source) => {
     const value = +source
     if (value * 0 === 0) return value
     throw new Error(template('internal.invalid-number'))
   })
 
-  create('integer', (source) => {
+  createDomain('integer', (source) => {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value) return value
     throw new Error(template('internal.invalid-integer'))
   })
 
-  create('posint', (source) => {
+  createDomain('posint', (source) => {
     const value = +source
     if (value * 0 === 0 && Math.floor(value) === value && value > 0) return value
     throw new Error(template('internal.invalid-posint'))
   })
 
-  create('date', (source) => {
+  createDomain('date', (source) => {
     const timestamp = Time.parseDate(source)
     if (+timestamp) return timestamp
     throw new Error(template('internal.invalid-date'))
   })
 
-  create('user', (source, session) => {
+  createDomain('user', (source, session) => {
     if (source.startsWith('@')) {
       source = source.slice(1)
       if (source.includes(':')) return source
@@ -118,7 +264,7 @@ export namespace Domain {
     throw new Error(template('internal.invalid-user'))
   })
 
-  create('channel', (source, session) => {
+  createDomain('channel', (source, session) => {
     if (source.startsWith('#')) {
       source = source.slice(1)
       if (source.includes(':')) return source
@@ -149,7 +295,7 @@ export namespace Domain {
         variadic = true
       }
       const [name, rawType] = rawName.split(':')
-      const type = rawType ? rawType.trim() as Builtin : undefined
+      const type = rawType ? rawType.trim() as DomainType : undefined
       result.push({
         name,
         variadic,
@@ -420,155 +566,5 @@ export namespace Domain {
       }
       return output
     }
-  }
-}
-
-export interface Token {
-  rest?: string
-  content: string
-  quoted: boolean
-  terminator: string
-  inters: Argv[]
-}
-
-export interface Argv<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O = {}> {
-  args?: A
-  options?: O
-  error?: string
-  source?: string
-  initiator?: string
-  terminator?: string
-  session?: Session<U, G>
-  command?: Command<U, G, A, O>
-  rest?: string
-  pos?: number
-  root?: boolean
-  tokens?: Token[]
-  name?: string
-  next?: NextFunction
-}
-
-const leftQuotes = `"'“‘`
-const rightQuotes = `"'”’`
-
-export namespace Argv {
-  export interface Interpolation {
-    terminator?: string
-    parse?(source: string): Argv
-  }
-
-  const bracs: Record<string, Interpolation> = {}
-
-  export function interpolate(initiator: string, terminator: string, parse?: (source: string) => Argv) {
-    bracs[initiator] = { terminator, parse }
-  }
-
-  interpolate('$(', ')')
-
-  export class Tokenizer {
-    private bracs: Record<string, Interpolation>
-
-    constructor() {
-      this.bracs = Object.create(bracs)
-    }
-
-    interpolate(initiator: string, terminator: string, parse?: (source: string) => Argv) {
-      this.bracs[initiator] = { terminator, parse }
-    }
-
-    parseToken(source: string, stopReg = '$'): Token {
-      const parent = { inters: [] } as Token
-      const index = leftQuotes.indexOf(source[0])
-      const quote = rightQuotes[index]
-      let content = ''
-      if (quote) {
-        source = source.slice(1)
-        stopReg = `${quote}(?=${stopReg})|$`
-      }
-      stopReg += `|${Object.keys({ ...this.bracs, ...bracs }).map(escapeRegExp).join('|')}`
-      const regExp = new RegExp(stopReg)
-      while (true) {
-        const capture = regExp.exec(source)
-        content += source.slice(0, capture.index)
-        if (capture[0] in this.bracs) {
-          source = source.slice(capture.index + capture[0].length).trimStart()
-          const { parse, terminator } = this.bracs[capture[0]]
-          const argv = parse?.(source) || this.parse(source, terminator)
-          source = argv.rest
-          parent.inters.push({ ...argv, pos: content.length, initiator: capture[0] })
-        } else {
-          const quoted = capture[0] === quote
-          const rest = source.slice(capture.index + +quoted)
-          parent.rest = rest.trimStart()
-          parent.quoted = quoted
-          parent.terminator = capture[0]
-          if (quoted) {
-            parent.terminator += rest.slice(0, -parent.rest.length)
-          } else if (quote) {
-            content = leftQuotes[index] + content
-            parent.inters.forEach(inter => inter.pos += 1)
-          }
-          parent.content = content
-          if (quote === "'") Argv.revert(parent)
-          return parent
-        }
-      }
-    }
-
-    parse(source: string, terminator = ''): Argv {
-      const tokens: Token[] = []
-      let rest = source, term = ''
-      const stopReg = `\\s+|[${escapeRegExp(terminator)}]|$`
-      // eslint-disable-next-line no-unmodified-loop-condition
-      while (rest && !(terminator && rest.startsWith(terminator))) {
-        const token = this.parseToken(rest, stopReg)
-        tokens.push(token)
-        rest = token.rest
-        term = token.terminator
-        delete token.rest
-      }
-      if (rest.startsWith(terminator)) rest = rest.slice(1)
-      source = source.slice(0, -(rest + term).length)
-      return { tokens, rest, source }
-    }
-
-    stringify(argv: Argv) {
-      const output = argv.tokens.reduce((prev, token) => {
-        if (token.quoted) prev += leftQuotes[rightQuotes.indexOf(token.terminator[0])]
-        return prev + token.content + token.terminator
-      }, '')
-      if (argv.rest && !rightQuotes.includes(output[output.length - 1]) || argv.initiator) {
-        return output.slice(0, -1)
-      }
-      return output
-    }
-  }
-
-  const defaultTokenizer = new Tokenizer()
-
-  export function parse(source: string, terminator = '') {
-    return defaultTokenizer.parse(source, terminator)
-  }
-
-  export function stringify(argv: Argv) {
-    return defaultTokenizer.stringify(argv)
-  }
-
-  export function revert(token: Token) {
-    while (token.inters.length) {
-      const { pos, source, initiator } = token.inters.pop()
-      token.content = token.content.slice(0, pos)
-        + initiator + source + bracs[initiator].terminator
-        + token.content.slice(pos)
-    }
-  }
-
-  export const createDomain = Domain.create
-
-  export function parsePid(target: string): [Platform, string] {
-    const index = target.indexOf(':')
-    const platform = target.slice(0, index)
-    const id = target.slice(index + 1)
-    return [platform, id] as any
   }
 }

@@ -2,7 +2,7 @@ import { Logger, defineProperty, remove, segment, Random } from 'koishi-utils'
 import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Database, Assets } from './database'
-import { Argv, Domain } from './parser'
+import { Argv } from './parser'
 import { Platform, Bot } from './adapter'
 import { App } from './app'
 import { inspect } from 'util'
@@ -394,8 +394,8 @@ export class Context {
     return this.createTimerDispose(setInterval(callback, ms, ...args))
   }
 
-  command<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
-  command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
+  command<D extends string>(def: D, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
+  command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
   command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {
     const desc = typeof args[0] === 'string' ? args.shift() as string : ''
     const config = args[0] as Command.Config
