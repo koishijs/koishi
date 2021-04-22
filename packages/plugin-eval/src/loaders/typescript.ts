@@ -1,7 +1,7 @@
 import ts from 'typescript'
 import json5 from 'json5'
 import { promises as fs } from 'fs'
-import { WorkerData } from '../worker'
+import { LoaderConfig } from '../worker'
 import { resolve } from 'path'
 import { Logger } from 'koishi-utils'
 
@@ -15,9 +15,12 @@ const compilerOptions: ts.CompilerOptions = {
   target: ts.ScriptTarget.ES2020,
 }
 
-export async function prepare(config: WorkerData) {
+export async function prepare(config: LoaderConfig, root: string) {
+  compilerOptions.jsxFactory = config.jsxFactory
+  compilerOptions.jsxFragmentFactory = config.jsxFragment
+  if (!root) return
   const logger = new Logger('eval:loader')
-  const tsconfigPath = resolve(config.root, 'tsconfig.json')
+  const tsconfigPath = resolve(root, 'tsconfig.json')
   return fs.readFile(tsconfigPath, 'utf8').then((tsconfig) => {
     Object.assign(compilerOptions, json5.parse(tsconfig))
   }, () => {

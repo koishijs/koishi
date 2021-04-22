@@ -23,7 +23,7 @@ export default function apply(ctx: Context) {
 
   const app = ctx.app
   function findCommand(target: string) {
-    const command = app._commands.get(target)
+    const command = app._commands.resolve(target)
     if (command) return command
     const shortcut = app._shortcuts.find(({ name }) => {
       return typeof name === 'string' ? name === target : name.test(target)

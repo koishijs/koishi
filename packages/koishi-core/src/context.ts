@@ -449,13 +449,8 @@ export class Context {
 
   async transformAssets(content: string, assets = this.assets) {
     if (!assets) return content
-    const urlMap: Record<string, string> = {}
-    await Promise.all(segment.parse(content).map(async ({ type, data }) => {
-      if (!assets.types.includes(type as Assets.Type)) return
-      urlMap[data.url] = await assets.upload(data.url, data.file)
-    }))
-    return segment.transform(content, Object.fromEntries(assets.types.map((type) => {
-      return [type, (data) => segment(type, { url: urlMap[data.url] })]
+    return segment.transformAsync(content, Object.fromEntries(assets.types.map((type) => {
+      return [type, async (data) => segment(type, { url: await assets.upload(data.url, data.file) })]
     })))
   }
 

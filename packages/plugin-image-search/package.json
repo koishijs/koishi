@@ -33,11 +33,11 @@
     "pixiv"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.9.1"
+    "koishi-core": "^3.9.2"
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "cheerio": "^1.0.0-rc.5",
+    "cheerio": "^1.0.0-rc.6",
     "iqdb-client": "^1.0.3",
     "nhentai-api": "^3.0.2"
   }

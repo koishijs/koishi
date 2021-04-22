@@ -5,7 +5,7 @@ import { resolve } from 'path'
 import { load } from 'js-yaml'
 import { promises as fs } from 'fs'
 import Git, { CheckRepoActions } from 'simple-git'
-import { WorkerResponse, Loader } from './worker'
+import { WorkerResponse } from './worker'
 
 export * from './main'
 
@@ -58,14 +58,13 @@ const defaultConfig: EvalConfig = {
   authority: 2,
   timeout: 1000,
   setupFiles: {},
+  loaderConfig: {},
   moduleLoaders: {},
   scriptLoader: 'default',
   channelFields: ['id'],
   userFields: ['id', 'authority'],
-  dataKeys: ['inspect', 'moduleLoaders', 'setupFiles'],
+  dataKeys: ['inspect', 'moduleLoaders', 'setupFiles', 'loaderConfig'],
 }
-
-declare const BUILTIN_LOADERS: string[]
 
 const logger = new Logger('eval')
 
@@ -77,14 +76,6 @@ export function apply(ctx: Context, config: Config = {}) {
   const { prefix, authority } = config = { ...defaultConfig, ...config }
 
   ctx.worker = new EvalWorker(ctx, config)
-
-  // resolve loader filepath
-  if (BUILTIN_LOADERS.includes(config.scriptLoader)) {
-    config.scriptLoader = resolve(__dirname, 'loaders', config.scriptLoader)
-  } else {
-    config.scriptLoader = resolve(process.cwd(), config.scriptLoader)
-  }
-  const loader = require(config.scriptLoader) as Loader
 
   // addons are registered in another plugin
   if (config.root) ctx.plugin(addon, config)
@@ -120,7 +111,7 @@ export function apply(ctx: Context, config: Config = {}) {
     if (!expr) return '请输入要执行的脚本。'
 
     try {
-      expr = await loader.transformScript(segment.unescape(expr))
+      expr = await ctx.worker.loader.transformScript(segment.unescape(expr))
     } catch (err) {
       return err.message
     }
@@ -164,7 +155,7 @@ export function apply(ctx: Context, config: Config = {}) {
   }
 
   Argv.interpolate('${', '}', (source) => {
-    const result = loader.extractScript(segment.unescape(source))
+    const result = ctx.worker.loader.extractScript(segment.unescape(source))
     if (!result) {
       const index = source.indexOf('}')
       if (index >= 0) return { source, rest: source.slice(index + 1), tokens: [] }

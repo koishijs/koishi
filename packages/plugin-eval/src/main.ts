@@ -1,7 +1,7 @@
 import { App, Command, Channel, Argv as IArgv, User, Context } from 'koishi-core'
 import { Logger, Observed, pick, union } from 'koishi-utils'
 import { Worker, ResourceLimits } from 'worker_threads'
-import { WorkerHandle, WorkerConfig, WorkerData, SessionData } from './worker'
+import { WorkerHandle, WorkerConfig, WorkerData, SessionData, Loader } from './worker'
 import { expose, Remote, wrap } from './transfer'
 import { resolve } from 'path'
 
@@ -164,6 +164,8 @@ function createRequire(filename: string) {
 
 enum State { closing, close, opening, open }
 
+declare const BUILTIN_LOADERS: string[]
+
 export class EvalWorker {
   private prevent = false
   private worker: Worker
@@ -171,6 +173,7 @@ export class EvalWorker {
 
   public state = State.close
   public local: MainHandle
+  public loader: Loader
   public remote: Remote<WorkerHandle>
 
   static readonly State = State
@@ -178,11 +181,24 @@ export class EvalWorker {
   constructor(public ctx: Context, public config: EvalConfig) {
     this.local = new MainHandle(ctx.app)
 
+    ctx.before('eval/start', () => this.prepare(config))
+
     // wait for dependents to be executed
     process.nextTick(() => {
       ctx.on('connect', () => this.start())
       ctx.before('disconnect', () => this.stop())
     })
+  }
+
+  prepare = async ({ scriptLoader, loaderConfig }: EvalConfig) => {
+    // resolve loader filepath
+    if (BUILTIN_LOADERS.includes(scriptLoader)) {
+      scriptLoader = resolve(__dirname, 'loaders', scriptLoader)
+    } else {
+      scriptLoader = resolve(process.cwd(), scriptLoader)
+    }
+    this.loader = require(scriptLoader)
+    return this.loader.prepare?.(loaderConfig)
   }
 
   // delegated class methods which use instance properties

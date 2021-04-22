@@ -1,5 +1,4 @@
 import { Context } from 'koishi-core'
-import { Element } from 'domhandler'
 import { load } from 'cheerio'
 import axios from 'axios'
 
@@ -28,7 +27,7 @@ export function apply(ctx: Context) {
       const messages = []
 
       $('main .card[data-type="fact"]').each((_, el) => {
-        const header = el.firstChild.nextSibling as Element
+        const header = el.firstChild.nextSibling as never
         const title = $('h2', header).text()
         const category = $('span', header).text()
         let message = `${title} [${category}]`
