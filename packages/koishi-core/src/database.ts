@@ -17,15 +17,18 @@ export namespace Tables {
   export type Field<T extends TableType> = string & keyof Tables[T]
 
   interface Meta<O> {
+    type?: 'incremental'
     primary?: keyof O
     unique?: (keyof O)[]
-    type?: 'incremental'
+    foreign?: {
+      [K in keyof O]: [TableType, string]
+    }
   }
 
   export const config: { [T in TableType]?: Meta<Tables[T]> } = {}
 
   export function extend<T extends TableType>(name: T, meta?: Meta<Tables[T]>) {
-    config[name] = { primary: 'id', unique: [], type: 'incremental', ...meta } as any
+    config[name] = { primary: 'id', unique: [], type: 'incremental', foreign: {}, ...meta } as any
   }
 
   extend('user')
