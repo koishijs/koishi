@@ -130,7 +130,6 @@ export interface Database {
   getUser<K extends User.Field, T extends User.Index>(type: T, ids: readonly string[], fields?: readonly K[]): Promise<Pick<User, K | T>[]>
   setUser<T extends User.Index>(type: T, id: string, data: Partial<User>): Promise<void>
   createUser<T extends User.Index>(type: T, id: string, data: Partial<User>): Promise<void>
-  removeUser<T extends User.Index>(type: T, id: string): Promise<void>
 
   getChannel<K extends Channel.Field>(type: Platform, id: string, fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>>
   getChannel<K extends Channel.Field>(type: Platform, ids: readonly string[], fields?: readonly K[]): Promise<Pick<Channel, K | 'id'>[]>
@@ -138,7 +137,6 @@ export interface Database {
   getAssignedChannels<K extends Channel.Field>(fields?: readonly K[], assignMap?: Record<string, readonly string[]>): Promise<Pick<Channel, K>[]>
   setChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
   createChannel(type: Platform, id: string, data: Partial<Channel>): Promise<void>
-  removeChannel(type: Platform, id: string): Promise<void>
 }
 
 type Methods<S, T> = {

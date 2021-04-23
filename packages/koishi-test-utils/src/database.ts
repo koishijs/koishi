@@ -27,7 +27,7 @@ export function testDatabase(app: App) {
       authority: 2,
     })
 
-    await db.removeUser('mock', 'A')
+    await db.remove('user', { mock: ['A'] })
     await expect(db.getUser('mock', ['A'])).eventually.to.deep.equal([])
   })
 
@@ -51,7 +51,7 @@ export function testDatabase(app: App) {
     await expect(db.getAssignedChannels(null)).eventually.to.have.length(2)
     await expect(db.getAssignedChannels(null, { mock: ['321'] })).eventually.to.have.length(1)
 
-    await db.removeChannel('mock', 'A')
+    await db.remove('channel', { id: ['mock:A'] })
     await expect(db.getChannel('mock', ['A'])).eventually.to.deep.equal([])
   })
 

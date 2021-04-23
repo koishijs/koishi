@@ -21,7 +21,7 @@ interface MysqlDatabase extends Database {}
 
 export function escape(value: any, table?: TableType, field?: string) {
   const type = MysqlDatabase.tables[table]?.[field]
-  return mysqlEscape(typeof type === 'object' ? type.toString(value) : value)
+  return mysqlEscape(typeof type === 'object' ? type.stringify(value) : value)
 }
 
 class MysqlDatabase {
@@ -48,7 +48,7 @@ class MysqlDatabase {
       typeCast: (field, next) => {
         const type = MysqlDatabase.tables[field.packet.orgTable]?.[field.packet.orgName]
         if (typeof type === 'object') {
-          return type.valueOf(field)
+          return type.parse(field)
         }
         if (field.type === 'BIT') {
           return Boolean(field.buffer()?.readUInt8(0))
@@ -204,8 +204,8 @@ namespace MysqlDatabase {
 
   export interface Domain<T = any> {
     definition: string
-    toString(value: T): string
-    valueOf(source: FieldInfo): T
+    parse(source: FieldInfo): T
+    stringify(value: T): string
   }
 
   export namespace Domain {
@@ -216,25 +216,25 @@ namespace MysqlDatabase {
     export class String implements Domain<string> {
       constructor(public definition = 'TEXT') {}
 
-      toString(value: any) {
-        return value
+      parse(field: FieldInfo) {
+        return field.string()
       }
 
-      valueOf(field: FieldInfo) {
-        return field.string()
+      stringify(value: any) {
+        return value
       }
     }
 
     export class Array implements Domain<string[]> {
       constructor(public definition = 'TEXT') {}
 
-      toString(value: string[]) {
-        return value.join(',')
-      }
-
-      valueOf(field: FieldInfo) {
+      parse(field: FieldInfo) {
         const source = field.string()
         return source ? source.split(',') : []
+      }
+
+      stringify(value: string[]) {
+        return value.join(',')
       }
     }
 
@@ -242,12 +242,12 @@ namespace MysqlDatabase {
       // mysql does not support text column with default value
       constructor(public definition = 'text', private defaultValue?: any) {}
 
-      toString(value: any) {
-        return JSON.stringify(value)
+      parse(field: FieldInfo) {
+        return JSON.parse(field.string()) || this.defaultValue
       }
 
-      valueOf(field: FieldInfo) {
-        return JSON.parse(field.string()) || this.defaultValue
+      stringify(value: any) {
+        return JSON.stringify(value)
       }
     }
   }
