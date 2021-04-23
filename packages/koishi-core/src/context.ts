@@ -317,19 +317,21 @@ export class Context {
     }
   }
 
-  on<K extends EventName>(name: K, listener: EventMap[K], prepend = false) {
+  on<K extends EventName>(name: K, listener: EventMap[K], prepend?: boolean): () => boolean
+  on(name: string & EventName, listener: Disposable, prepend = false) {
     const method = prepend ? 'unshift' : 'push'
 
-    // handle plugin-related events
-    const _listener = listener as Disposable
+    // handle special events
     if (name === 'connect' && this.app.status === App.Status.open) {
-      return _listener(), () => false
+      return listener(), () => false
     } else if (name === 'before-disconnect') {
-      this.state.disposables[method](_listener)
-      return () => remove(this.state.disposables, _listener)
+      this.state.disposables[method](listener)
+      return () => remove(this.state.disposables, listener)
     } else if (name === 'before-connect') {
       // before-connect is side effect
       this.addSideEffect()
+    } else if (typeof name === 'string' && name.startsWith('delegate/')) {
+      if (this[name.slice(9)]) return listener(), () => false
     }
 
     const hooks = this.app._hooks[name] ||= []
@@ -513,6 +515,7 @@ export class Context {
         return value
       },
       set(value) {
+        if (!this.app[privateKey]) this.emit('delegate/' + key)
         defineProperty(this.app, privateKey, value)
       },
     })
@@ -544,6 +547,8 @@ export interface EventMap extends SessionEventMap {
   [Context.middleware]: Middleware
 
   // Koishi events
+  'delegate/assets'(): void
+  'delegate/database'(): void
   'appellation'(name: string, session: Session): string
   'before-parse'(content: string, session: Session): Argv
   'parse'(argv: Argv, session: Session): string

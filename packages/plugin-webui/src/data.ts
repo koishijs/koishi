@@ -143,7 +143,7 @@ export class Meta implements DataSource<Meta.Payload> {
 
   constructor(private ctx: Context, public config: Meta.Config) {
     this.extend(async () => ctx.assets?.stats())
-    this.extend(async () => ctx.database.getStats())
+    this.extend(async () => ctx.database?.getStats())
 
     ctx.all().on('command', ({ session }: Argv<'lastCall'>) => {
       session.user.lastCall = new Date()

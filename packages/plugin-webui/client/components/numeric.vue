@@ -17,17 +17,18 @@ const props = defineProps<{
   icon: string
   type?: 'size'
   value?: number
+  fallback?: string
 }>()
 
 const text = computed(() => {
-  if (!props.value) return '暂无数据'
+  if (!props.value) return props.fallback
   if (props.type === 'size') {
     if (props.value >= (1 << 20) * 1000) {
-      return +(props.value / (1 << 30)).toFixed(1) + ' GB'
+      return (props.value / (1 << 30)).toFixed(1) + ' GB'
     } else if (props.value >= (1 << 10) * 1000) {
-      return +(props.value / (1 << 20)).toFixed(1) + ' MB'
+      return (props.value / (1 << 20)).toFixed(1) + ' MB'
     } else {
-      return +(props.value / (1 << 10)).toFixed(1) + ' KB'
+      return (props.value / (1 << 10)).toFixed(1) + ' KB'
     }
   }
 })
