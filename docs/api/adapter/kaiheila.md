@@ -5,13 +5,33 @@ sidebarDepth: 2
 
 # koishi-adapter-kaiheila
 
-## 注册机器人
+## 创建机器人
 
 1. 前往 [开发者平台](https://developer.kaiheila.cn/)，选择「机器人」并点击「新建」
 2. 在机器人连接模式中配置 Webhook 或 WebSocket 中的一种：
     - 如果是 Webhook，请记下页面中的 token 和 verify_token，并作为机器人的配置项，同时让 Koishi 暴露一个 URL，填入下方的 Callback URL 中，启动 Koishi 后点击「机器人上线」
     - 如果是 WebSocket，则只需记录 token 并作为机器人的配置项即可，你可以在任何时候启动 Koishi
     - 页面中的其他值不用管，但请注意 token 不要泄露
+
+## 机器人选项
+
+### options(.bots[]).type
+
+- 可选值: kaiheila, kaiheila:http, kaiheila:ws
+
+如果使用了 kaiheila，则 Koishi 会根据你是否配置了 `verifyToken` 来判断你使用的通信方式。
+
+### options(.bots[]).token
+
+- 类型: `string`
+
+机器人账户的令牌。
+
+### options(.bots[]).verifyToken
+
+- 类型: `string`
+
+机器人账户的验证令牌。仅限 Webhook 通信方式。
 
 ## 适配器选项
 

@@ -65,7 +65,7 @@ Meta 对象还提供了一个快捷回复方法 `session.send`，调用它可以
 
 - 可选值: onebot, onebot:http, onebot:ws, onebot:ws-reverse
 
-如果使用了 `onebot`，Koishi 会读取你的 `server` 选项，根据你配置的服务器 URL 进行适配。
+如果使用了 onebot，Koishi 会读取你的 `server` 选项，根据你配置的服务器 URL 进行适配。
 
 相关 OneBot 配置：`use_http`, `use_ws`。
 

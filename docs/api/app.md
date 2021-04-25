@@ -107,6 +107,23 @@ Koishi 服务暴露在公网的地址。部分功能（例如 [adapter-telegram]
 
 用于模糊匹配的相似系数，应该是一个 0 到 1 之间的数值。数值越高，模糊匹配越严格。设置为 1 可以完全禁用模糊匹配。参见 [**模糊匹配**](../guide/command.md#模糊匹配) 一节。
 
+### options.axiosConfig
+
+- 类型: [`AxiosRequestConfig`](https://github.com/axios/axios#request-config)
+
+用于 axios 请求的配置项。下面是一个利用此配置项设置代理的例子：
+
+```js koishi.config.js
+const { SocksProxyAgent } = require('socks-proxy-agent')
+
+module.exports = {
+  axiosConfig: {
+    httpAgent: new SocksProxyAgent('socks://127.0.0.1:1086'),
+    httpsAgent: new SocksProxyAgent('socks://127.0.0.1:1086'),
+  },
+}
+```
+
 ## 配置文件选项
 
 下面的配置项来自 koishi 的命令行工具，仅可用于 koishi.config.js。
