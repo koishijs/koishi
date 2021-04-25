@@ -5,6 +5,8 @@ import { camelize, segment, pick, renameProperty, snakeCase } from 'koishi-utils
 import axios, { Method } from 'axios'
 import * as KHL from './types'
 import { adaptGroup, adaptAuthor, adaptUser } from './utils'
+import FormData from 'form-data'
+import { createReadStream } from 'fs'
 
 export interface KaiheilaMessageInfo extends MessageInfo {
   channelName?: string
@@ -52,11 +54,12 @@ export class KaiheilaBot extends Bot {
     delete data.extra
   }
 
-  async request<T = any>(method: Method, path: string, data: any = {}): Promise<T> {
+  async request<T = any>(method: Method, path: string, data: any = {}, headers: any = {}): Promise<T> {
     const url = `${this.app.options.kaiheila.endpoint}${path}`
-    const headers: Record<string, any> = {
+    headers = {
       'Authorization': `Bot ${this.token}`,
       'Content-Type': 'application/json',
+      ...headers,
     }
 
     const response = await axios({
@@ -88,15 +91,19 @@ export class KaiheilaBot extends Bot {
     // trigger before-send
     if (await this.app.serial(session, 'before-send', session)) return
 
+    const send = async (type: KHL.Type, content: string) => {
+      params.type = type
+      params.content = content
+      const message = await this.request('POST', path, params)
+      session.messageId = message.msgId
+      this.app.emit(session, 'send', session)
+    }
+
     let textBuffer = ''
     const flush = async () => {
       textBuffer = textBuffer.trim()
       if (!textBuffer) return
-      params.type = KHL.Type.text
-      params.content = textBuffer
-      const message = await this.request('POST', path, params)
-      session.messageId = message.msgId
-      this.app.emit(session, 'send', session)
+      await send(KHL.Type.text, textBuffer)
       params.quote = null
       textBuffer = ''
     }
@@ -120,14 +127,20 @@ export class KaiheilaBot extends Bot {
         }
       } else if (type === 'sharp') {
         textBuffer += `#channel:${data.id};`
+      } else if (type === 'image' || type === 'video' || type === 'file') {
+        await flush()
+        if (data.url.startsWith('file://') || data.url.startsWith('base64://')) {
+          const payload = new FormData()
+          payload.append('file', data.url.startsWith('file://')
+            ? createReadStream(data.url.slice(7))
+            : Buffer.from(data.url.slice(9), 'base64'))
+          const { url } = await this.request('POST', '/asset/create', payload, payload.getHeaders())
+          data.url = url
+        }
+        await send(KHL.Type[type], data.url)
       } else if (type === 'card') {
         await flush()
-        params.type = KHL.Type.card
-        params.content = JSON.stringify([JSON.parse(data.content)])
-        console.log(params)
-        const message = await this.request('POST', path, params)
-        session.messageId = message.msgId
-        this.app.emit(session, 'send', session)
+        await send(KHL.Type.card, JSON.stringify([JSON.parse(data.content)]))
       }
     }
 

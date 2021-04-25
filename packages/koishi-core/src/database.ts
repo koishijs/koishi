@@ -175,7 +175,7 @@ export interface Assets {
 }
 
 export namespace Assets {
-  export type Type = 'image' | 'audio' | 'video'
+  export type Type = 'image' | 'audio' | 'video' | 'file'
 
   export interface Stats {
     assetCount?: number
