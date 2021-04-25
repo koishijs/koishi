@@ -1,0 +1,23 @@
+{
+  "name": "docs",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
+  "scripts": {
+    "tsbuild": "ts-node .build",
+    "dev": "vuepress dev .",
+    "build": "yarn tsbuild & vuepress build ."
+  },
+  "devDependencies": {
+    "@types/node": "^13.1.8",
+    "@vuepress/plugin-register-components": "^2.0.0-beta.9",
+    "diacritics": "^1.3.0",
+    "shiki": "^0.9.3",
+    "ts-node": "^8.6.2",
+    "typescript": "^3.7.5",
+    "vuepress-plugin-medium-zoom": "^1.1.9",
+    "vuepress-vite": "^2.0.0-beta.9"
+  }
+}
