@@ -14,3 +14,31 @@ sidebarDepth: 2
 5. 创建完毕后，你会获得一个 token（请注意不要泄露），将其作为机器人配置项即可使用
 
 参考文档：[https://core.telegram.org/bots](https://core.telegram.org/bots)
+
+## 适配器选项
+
+### options.telegram.path
+
+- 类型：`string`
+- 默认值：`'/telegram'`
+
+服务器监听的路径。
+
+### options.telegram.selfUrl
+
+- 类型：`string`
+
+Koishi 服务暴露在公网的地址，会覆盖 [`options.selfUrl`](../app.md#options-selfurl) 的值。
+
+### options.telegram.endpoint
+
+- 类型: `string`
+- 默认值: `'https://api.telegram.org'`
+
+要请求的 API 网址。
+
+### options.telegram.axiosConfig
+
+- 类型: [`AxiosRequestConfig`](https://github.com/axios/axios#request-config)
+
+用于 telegram 适配器的请求配置。
