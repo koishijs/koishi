@@ -1,4 +1,4 @@
-import { Domain, Context, Command, Argv } from 'koishi-core'
+import { Context, Command, Argv } from 'koishi-core'
 import { segment, Logger, defineProperty, noop } from 'koishi-utils'
 import { EvalWorker, Trap, EvalConfig, Config } from './main'
 import { resolve } from 'path'
@@ -37,7 +37,7 @@ declare module 'koishi-core' {
   }
 }
 
-interface OptionManifest extends Domain.OptionConfig {
+interface OptionManifest extends Argv.OptionConfig {
   name: string
   desc: string
 }
