@@ -79,6 +79,7 @@ Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间�
 - [koishi-plugin-animal-picture](https://github.com/idlist/koishi-plugin-animal-picture): 发送各种动物图片
 - [koishi-plugin-shell](https://github.com/koishijs/koishi-plugin-shell): 使用 Koishi 执行终端命令
 - [koishi-plugin-eval-enhance](https://github.com/Anillc/koishi-plugin-eval-enhance): koishi-plugin-eval的增强！
+- [koishi-plugin-work](https://github.com/NWYLZW/koishi-plugin-work): 工作学习工具，已有功能 todos: 代办管理
 
 ### 社区项目
 
