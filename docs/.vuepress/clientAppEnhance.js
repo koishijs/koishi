@@ -13,11 +13,15 @@ export default defineClientAppEnhance(({ app }) => {
     manager: 'yarn',
     language: 'ts',
   }
-  const config = localStorage.getItem(key)
-  if (config) Object.assign(data, JSON.parse(config))
+  if (typeof localStorage !== 'undefined') {
+    const config = localStorage.getItem(key)
+    if (config) Object.assign(data, JSON.parse(config))
+  }
   const storage = reactive(data)
   app.provide('$storage', storage)
-  watch(storage, (val) => {
-    localStorage.setItem(key, JSON.stringify(val))
-  })
+  if (typeof localStorage !== 'undefined') {
+    watch(storage, (val) => {
+      localStorage.setItem(key, JSON.stringify(val))
+    })
+  }
 })

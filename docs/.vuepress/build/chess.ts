@@ -2,14 +2,14 @@ import { State } from 'koishi-plugin-chess'
 import { mkdirSync, writeFile } from 'fs-extra'
 import { resolve } from 'path'
 
-const outFolder = resolve(__dirname, 'public/chess')
+const outFolder = resolve(__dirname, '../public/chess')
 mkdirSync(outFolder, { recursive: true })
 
 class ImageState extends State {
   index = 0
 
   constructor(size: number, placement: 'cross' | 'grid', public file: string) {
-    super(null, null, size, placement)
+    super(null, size, placement)
   }
 
   dump(x?: number, y?: number) {
