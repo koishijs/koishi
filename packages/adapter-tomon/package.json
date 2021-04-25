@@ -24,7 +24,7 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.6.1"
+    "koishi-core": "^3.9.2"
   },
   "devDependencies": {
     "@types/pako": "^1.0.1",
@@ -32,8 +32,8 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "koishi-utils": "^4.1.2",
+    "koishi-utils": "^4.2.1",
     "pako": "^2.0.3",
-    "ws": "^7.4.4"
+    "ws": "^7.4.5"
   }
 }

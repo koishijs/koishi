@@ -30,6 +30,11 @@ function build(root: string, config: vite.UserConfig) {
         output: rollupOptions?.input ? {
           format: 'module',
           entryFileNames: '[name].js',
+          globals: {
+            [root + '/vue.js']: 'Vue',
+            [root + '/vue-router.js']: 'VueRouter',
+            [root + '/client.js']: 'KoishiClient',
+          },
           ...rollupOptions.output,
         } : undefined,
       },
@@ -53,9 +58,12 @@ function buildExtension(name: string) {
     build: {
       outDir: 'dist',
       assetsDir: '',
-      minify: false,
+      minify: 'esbuild',
       rollupOptions: {
         input: root + '/client/index.ts',
+        output: {
+          format: 'iife',
+        },
       },
     },
   })

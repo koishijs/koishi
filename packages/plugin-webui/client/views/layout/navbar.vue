@@ -1,6 +1,6 @@
 <template>
   <nav>
-    <span class="title">Koishi 控制台</span>
+    <span class="title">{{ title }}</span>
     <span class="right">
       <template v-if="user">
         <router-link to="/profile">{{ user.name }}<i class="fas fa-user-circle"/></router-link>
@@ -17,6 +17,8 @@
 
 import { user } from '~/client'
 import { useRouter } from 'vue-router'
+
+const { title } = KOISHI_CONFIG
 
 const router = useRouter()
 

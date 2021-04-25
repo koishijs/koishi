@@ -162,10 +162,6 @@ Database.extend(MongoDatabase, {
     await this.setUser(type, id, data)
   },
 
-  async removeUser(type, id) {
-    await this.user.deleteOne({ [type]: id })
-  },
-
   async getChannel(type, pid, fields = Channel.fields) {
     if (Array.isArray(pid)) {
       if (fields && !fields.length) return pid.map(id => ({ id: `${type}:${id}` }))
@@ -184,10 +180,6 @@ Database.extend(MongoDatabase, {
       $or: Object.entries(assignMap).map<any>(([type, ids]) => ({ type, assignee: { $in: ids } })),
     }).project(project).toArray()
     return channels.map(channel => ({ ...pick(Channel.create(channel.type, channel.pid), fields), ...channel, _id: `${channel.type}:${channel.pid}`, id: `${channel.type}:${channel.pid}` }))
-  },
-
-  async removeChannel(type, pid) {
-    await this.channel.deleteOne({ type, pid })
   },
 
   async setChannel(type, pid, data) {

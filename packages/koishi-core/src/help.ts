@@ -3,7 +3,7 @@ import { TableType } from './database'
 import { Session, FieldCollector } from './session'
 import { template } from 'koishi-utils'
 import { Context } from './context'
-import { Domain } from './parser'
+import { Argv } from './parser'
 
 interface HelpConfig {
   showHidden?: boolean
@@ -23,7 +23,8 @@ export default function apply(ctx: Context) {
 
   const app = ctx.app
   function findCommand(target: string) {
-    if (target in app._commandMap) return app._commandMap[target]
+    const command = app._commands.resolve(target)
+    if (command) return command
     const shortcut = app._shortcuts.find(({ name }) => {
       return typeof name === 'string' ? name === target : name.test(target)
     })
@@ -46,7 +47,7 @@ export default function apply(ctx: Context) {
     .option('showHidden', '-H  查看隐藏的选项和指令')
     .action(async ({ session, options }, target) => {
       if (!target) {
-        const commands = app._commands.filter(cmd => cmd.parent === null)
+        const commands = app._commandList.filter(cmd => cmd.parent === null)
         const output = formatCommands('internal.global-help-prolog', session, commands, options)
         const epilog = template('internal.global-help-epilog')
         if (epilog) output.push(epilog)
@@ -62,7 +63,7 @@ export default function apply(ctx: Context) {
           suffix: template('internal.help-suggestion-suffix'),
           async apply(suggestion) {
             await this.observeUser(['authority', 'usage', 'timers'])
-            const output = await showHelp(app._commandMap[suggestion], this as any, options)
+            const output = await showHelp(app._commands.get(suggestion), this as any, options)
             return session.send(output)
           },
         })
@@ -74,7 +75,7 @@ export default function apply(ctx: Context) {
 }
 
 export function getCommandNames(session: Session) {
-  return session.app._commands
+  return session.app._commandList
     .filter(cmd => cmd.match(session) && !cmd.config.hidden)
     .flatMap(cmd => cmd._aliases)
 }
@@ -112,7 +113,7 @@ function formatCommands(path: string, session: Session<ValidationField>, childre
   return output
 }
 
-function getOptionVisibility(option: Domain.OptionConfig, session: Session<ValidationField>) {
+function getOptionVisibility(option: Argv.OptionConfig, session: Session<ValidationField>) {
   if (session.user && option.authority > session.user.authority) return false
   return !session.resolveValue(option.hidden)
 }

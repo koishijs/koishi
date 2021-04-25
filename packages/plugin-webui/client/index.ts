@@ -2,11 +2,18 @@
 
 /// <reference types="./global"/>
 
-import { ref, watch, Ref } from 'vue'
+import { ref, watch, reactive, Ref, Component } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import type { User } from 'koishi-core'
 import type { Registry, Profile, Meta, Statistics } from '~/server'
 import * as client from '~/client'
+
+export const views: Component[] = []
+
+export const store = reactive({
+  showOverlay: false,
+  overlayImage: null as HTMLImageElement,
+})
 
 type Keys<O, T = any> = {
   [K in keyof O]: O[K] extends T ? K : never
@@ -23,7 +30,7 @@ declare module 'vue-router' {
 }
 
 export const router = createRouter({
-  history: createWebHistory(KOISHI_UI_PATH),
+  history: createWebHistory(KOISHI_CONFIG.uiPath),
   routes: [],
 })
 
@@ -56,6 +63,7 @@ export namespace storage {
 
 interface Config {
   authType: 0 | 1
+  pluginTab: 0 | 1
   username?: string
   password?: string
   platform?: string
@@ -64,31 +72,14 @@ interface Config {
 }
 
 export const user = storage.create<User>('user')
-export const config = storage.create<Config>('config', { authType: 0 }, true)
+export const config = storage.create<Config>('config', { authType: 0, pluginTab: 0 }, true)
 export const meta = ref<Meta.Payload>(null)
 export const profile = ref<Profile.Payload>(null)
 export const registry = ref<Registry.Payload>(null)
 export const stats = ref<Statistics.Payload>(null)
 export const socket = ref<WebSocket>(null)
 
-const listeners: Record<string, (data: any) => void> = {}
-
-export function start() {
-  const endpoint = new URL(KOISHI_ENDPOINT, location.origin).toString()
-  socket.value = new WebSocket(endpoint.replace(/^http/, 'ws'))
-  socket.value.onmessage = (ev) => {
-    const data = JSON.parse(ev.data)
-    console.debug(data)
-    if (data.type in listeners) {
-      listeners[data.type](data.body)
-    }
-  }
-  receive('meta', data => meta.value = data)
-  receive('profile', data => profile.value = data)
-  receive('registry', data => registry.value = data)
-  receive('stats', data => stats.value = data)
-  receive('user', data => user.value = data)
-}
+export const listeners: Record<string, (data: any) => void> = {}
 
 export function send(type: string, body: any) {
   socket.value.send(JSON.stringify({ type, body }))
@@ -115,7 +106,7 @@ export interface segment {
 }
 
 export function segment(type: string, data: segment.Data = {}) {
-  if (type === 'text') return String(data.content)
+  if (type === 'text') return segment.escape(String(data.content))
   let output = '[CQ:' + type
   for (const key in data) {
     if (data[key]) output += `,${key}=${segment.escape(data[key], true)}`
@@ -175,12 +166,12 @@ export namespace segment {
     while ((result = from(source))) {
       const { capture } = result
       if (capture.index) {
-        chain.push({ type: 'text', data: { content: source.slice(0, capture.index) } })
+        chain.push({ type: 'text', data: { content: unescape(source.slice(0, capture.index)) } })
       }
       chain.push(result)
       source = source.slice(capture.index + capture[0].length)
     }
-    if (source) chain.push({ type: 'text', data: { content: source } })
+    if (source) chain.push({ type: 'text', data: { content: unescape(source) } })
     return chain
   }
 
@@ -189,7 +180,7 @@ export namespace segment {
       const transformer = rules[type]
       return typeof transformer === 'string' ? transformer
         : typeof transformer === 'function' ? transformer(data, index, chain)
-          : dropOthers ? '' : type === 'text' ? data.content : capture[0]
+          : dropOthers ? '' : type === 'text' ? escape(data.content) : capture[0]
     }).join('')
   }
 

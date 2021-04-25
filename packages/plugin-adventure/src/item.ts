@@ -1,5 +1,4 @@
-import { Context, checkTimer, Argv, Session, User } from 'koishi-core'
-import { isInteger, Random } from 'koishi-utils'
+import { Context, checkTimer, Argv, Session, User, isInteger, Random } from 'koishi-core'
 import { getValue, Shopper, Adventurer, ReadonlyUser, Show } from './utils'
 import Event from './event'
 import Phase from './phase'

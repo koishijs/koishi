@@ -1,4 +1,4 @@
-import { Argv, Assets, Bot, Context, Platform, Plugin, Time } from 'koishi-core'
+import { Argv, Assets, Bot, Context, noop, Platform, Time } from 'koishi-core'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
 
@@ -76,7 +76,7 @@ export class Profile implements DataSource<Profile.Payload> {
     this.apply(ctx, config)
 
     ctx.on('status/tick', async () => {
-      this.ctx.webui.adapter?.broadcast('profile', await this.get(true))
+      this.ctx.webui.broadcast('profile', await this.get(true))
     })
   }
 
@@ -138,12 +138,12 @@ export namespace Profile {
 
 export class Meta implements DataSource<Meta.Payload> {
   timestamp = 0
-  cachedMeta: Promise<Meta.Payload>
+  cached: Promise<Meta.Payload>
   callbacks: Meta.Extension[] = []
 
   constructor(private ctx: Context, public config: Meta.Config) {
-    this.extend(() => ctx.assets?.stats())
-    this.extend(() => ctx.database?.getStats())
+    this.extend(async () => ctx.assets?.stats())
+    this.extend(async () => ctx.database?.getStats())
 
     ctx.all().on('command', ({ session }: Argv<'lastCall'>) => {
       session.user.lastCall = new Date()
@@ -152,10 +152,10 @@ export class Meta implements DataSource<Meta.Payload> {
 
   async get(): Promise<Meta.Payload> {
     const now = Date.now()
-    if (this.timestamp > now) return this.cachedMeta
+    if (this.timestamp > now) return this.cached
     this.timestamp = now + Time.hour
-    return this.cachedMeta = Promise
-      .all(this.callbacks.map(cb => cb().catch(() => ({}))))
+    return this.cached = Promise
+      .all(this.callbacks.map(cb => cb().catch(noop)))
       .then(data => Object.assign({}, ...data))
   }
 
@@ -180,59 +180,4 @@ export namespace Meta {
   export interface Payload extends Stats, Assets.Stats {}
 
   export type Extension = () => Promise<Partial<Payload>>
-}
-
-export class Registry implements DataSource<Registry.Payload> {
-  payload: Registry.Payload
-
-  constructor(private ctx: Context, public config: Registry.Config) {
-    ctx.on('plugin-added', this.update)
-    ctx.on('plugin-removed', this.update)
-  }
-
-  update = async () => {
-    this.ctx.webui.adapter?.broadcast('registry', await this.get(true))
-  }
-
-  async get(forced = false) {
-    if (this.payload && !forced) return this.payload
-    this.payload = { pluginCount: 0 } as Registry.Payload
-    this.payload.plugins = this.traverse(null)
-    return this.payload
-  }
-
-  * getDeps(state: Plugin.State): Generator<string> {
-    for (const dep of state.dependencies) {
-      if (dep.name) {
-        yield dep.name
-      } else {
-        yield* this.getDeps(dep)
-      }
-    }
-  }
-
-  traverse = (plugin: Plugin): Registry.PluginData[] => {
-    const state = this.ctx.app.registry.get(plugin)
-    const children = state.children.flatMap(this.traverse, 1)
-    const { name, sideEffect } = state
-    if (!name) return children
-    this.payload.pluginCount += 1
-    const dependencies = [...new Set(this.getDeps(state))]
-    return [{ name, sideEffect, children, dependencies }]
-  }
-}
-
-export namespace Registry {
-  export interface Config {
-  }
-
-  export interface PluginData extends Plugin.Meta {
-    children: PluginData[]
-    dependencies: string[]
-  }
-
-  export interface Payload {
-    plugins: PluginData[]
-    pluginCount: number
-  }
 }

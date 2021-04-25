@@ -2,11 +2,11 @@ import LruCache from 'lru-cache'
 import { distance } from 'fastest-levenshtein'
 import { User, Channel, TableType, Tables } from './database'
 import { Command } from './command'
-import { contain, observe, Logger, defineProperty, Random, template, remove } from 'koishi-utils'
+import { contain, observe, Logger, defineProperty, Random, template, remove, noop, segment } from 'koishi-utils'
 import { Argv } from './parser'
 import { Middleware, NextFunction } from './context'
 import { App } from './app'
-import { Bot, ChannelInfo, MessageBase, Platform } from './adapter'
+import { Bot, ChannelInfo, GroupInfo, MessageBase, Platform } from './adapter'
 
 const logger = new Logger('session')
 
@@ -14,7 +14,7 @@ type UnionToIntersection<U> = (U extends any ? (key: U) => void : never) extends
 type Flatten<T, K extends keyof T = keyof T> = UnionToIntersection<T[K]>
 type InnerKeys<T, K extends keyof T = keyof T> = keyof Flatten<T> & keyof Flatten<T, K>
 
-export interface Session<U, G, P, X, Y> extends MessageBase, Partial<ChannelInfo> {}
+export interface Session<U, G, P, X, Y> extends MessageBase, Partial<ChannelInfo>, Partial<GroupInfo> {}
 
 export namespace Session {
   type Genres = 'friend' | 'channel' | 'group' | 'group-member' | 'group-role' | 'group-file' | 'group-emoji'
@@ -109,6 +109,7 @@ export class Session<
   private _delay?: number
   private _queued: Promise<void>
   private _hooks: (() => void)[]
+  private _promise: Promise<string>
 
   static readonly send = Symbol.for('koishi.session.send')
 
@@ -131,6 +132,21 @@ export class Session<
     return Object.fromEntries(Object.entries(this).filter(([key]) => {
       return !key.startsWith('_') && !key.startsWith('$')
     }))
+  }
+
+  private async _preprocess() {
+    let node: segment.Parsed
+    let content = this.app.options.processMessage(this.content)
+    // eslint-disable-next-line no-cond-assign
+    if (node = segment.from(content, { type: 'quote', caret: true })) {
+      content = content.slice(node.capture[0].length).trimStart()
+      this.quote = await this.bot.getMessage(node.data.channelId || this.channelId, node.data.id).catch(noop)
+    }
+    return content
+  }
+
+  async preprocess() {
+    return this._promise ||= this._preprocess()
   }
 
   get username(): string {
@@ -303,7 +319,7 @@ export class Session<
   resolve(argv: Argv) {
     if (!argv.command) {
       const { name = this.app.bail('parse', argv, this) } = argv
-      if (!(argv.command = this.app._commandMap[name])) return
+      if (!(argv.command = this.app._commands.get(name))) return
     }
     if (argv.tokens?.every(token => !token.inters.length)) {
       const { options, args, error } = argv.command.parse(argv)
@@ -335,7 +351,7 @@ export class Session<
       }
       if (!this.resolve(argv)) return ''
     } else {
-      argv.command ||= this.app._commandMap[argv.name]
+      argv.command ||= this.app._commands.get(argv.name)
       if (!argv.command) {
         logger.warn(new Error(`cannot find command ${argv.name}`))
         return ''

@@ -64,6 +64,17 @@ export function template(path: string | string[], ...params: any[]) {
   return path[0]
 }
 
+function deepAssign(head: any, base: any): any {
+  Object.entries(base).forEach(([key, value]) => {
+    if (typeof value === 'object' && typeof head[key] === 'object') {
+      head[key] = deepAssign(head[key], value)
+    } else {
+      head[key] = base[key]
+    }
+  })
+  return head
+}
+
 export namespace template {
   export type Node = string | Store
 
@@ -79,7 +90,7 @@ export namespace template {
     while (seg.length > 1) {
       node = node[seg.shift()] ||= {}
     }
-    node[seg[0]] = value
+    deepAssign(node, { [seg[0]]: value })
   }
 
   export function get(path: string) {

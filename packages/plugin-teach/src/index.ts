@@ -22,6 +22,8 @@ export * from './utils'
 export * from './receiver'
 export * from './search'
 export * from './update'
+export * from './database/mongo'
+export * from './database/mysql'
 export * from './plugins/context'
 export * from './plugins/throttle'
 export * from './plugins/probability'
@@ -211,7 +213,7 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.plugin(time, config)
   ctx.plugin(writer, config)
 
-  ctx.with(['koishi-plugin-webui'], () => {
+  ctx.with(['koishi-plugin-webui'], (ctx) => {
     const { stats, meta } = ctx.webui.sources
 
     ctx.on('dialogue/before-send', ({ session, dialogue }) => {

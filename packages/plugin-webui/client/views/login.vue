@@ -64,7 +64,7 @@ receive('login', body => data.value = body)
 
 watch(user, (value) => {
   if (!value) return
-  router.push('/profile')
+  router.push(router.currentRoute.value.redirectedFrom?.fullPath || '/profile')
 })
 
 let timestamp = 0
@@ -93,6 +93,7 @@ section.login {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  margin-bottom: 0 !important;
 
   .k-card-body {
     padding: 3rem 0 !important;

@@ -3,7 +3,6 @@
     :title="disabled ? '' : title"
     :class="['k-button', type, { solid, round, frameless }]"
     :disabled="disabled"
-    @click.stop="$emit('click')"
   >
     <slot/>
   </button>
@@ -103,7 +102,6 @@ button {
   }
   // frameless
   &.frameless {
-    color: $tpFgColor4;
     padding: 0;
     border-color: transparent;
     background-color: transparent;
@@ -111,6 +109,15 @@ button {
     &:hover {
       border-color: transparent;
       background-color: transparent;
+    }
+    &.default {
+      color: $default;
+    }
+    &.danger {
+      color: $error;
+    }
+    &.success {
+      color: $success;
     }
   }
 }

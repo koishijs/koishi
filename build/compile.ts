@@ -23,7 +23,7 @@ const displayWarning = display(yellow('warning:'))
 let code = 0
 
 function bundle(options: BuildOptions) {
-  for (const path of options.entryPoints) {
+  for (const path of options.entryPoints as string[]) {
     if (process.env.CI) console.log('entry:', path)
   }
   return build(options).then(({ warnings }) => {
@@ -50,17 +50,6 @@ const KOISHI_VERSION = JSON.stringify(version)
     const base = `${root}/${name}`
     const entryPoints = [base + '/src/index.ts']
 
-    if (name === 'koishi') {
-      entryPoints.push(base + '/src/worker.ts')
-    } else if (name === 'plugin-eval') {
-      entryPoints.push(base + '/src/worker.ts')
-      entryPoints.push(base + '/src/transfer.ts')
-    } else if (name === 'plugin-eval-addons') {
-      entryPoints.push(base + '/src/worker.ts')
-    } else if (name === 'koishi-test-utils') {
-      await tasks[chai]
-    }
-
     let filter = /^[@/\w-]+$/
     const options: BuildOptions = {
       entryPoints,
@@ -82,14 +71,27 @@ const KOISHI_VERSION = JSON.stringify(version)
       }],
     }
 
+    if (name === 'koishi' || name === 'plugin-puppeteer') {
+      entryPoints.push(base + '/src/worker.ts')
+    } else if (name === 'plugin-eval') {
+      const loaders = await readdir(base + '/src/loaders')
+      entryPoints.push(base + '/src/worker/index.ts')
+      entryPoints.push(base + '/src/transfer.ts')
+      entryPoints.push(...loaders.map(name => `${base}/src/loaders/${name}`))
+      options.define.BUILTIN_LOADERS = JSON.stringify(loaders.map(name => name.slice(0, -3)))
+    } else if (name === 'koishi-test-utils') {
+      await tasks[chai]
+    }
+
     if (name !== 'plugin-eval') {
       return tasks[name] = bundle(options)
     }
 
-    filter = /^([/\w-]+|\.\/transfer)$/
+    filter = /^([@/\w-]+|.+\/transfer)$/
     tasks[name] = Promise.all([options, {
       ...options,
-      entryPoints: [base + '/src/internal.ts'],
+      outdir: `${root}/${name}/lib/worker`,
+      entryPoints: [base + '/src/worker/internal.ts'],
       banner: { js: '(function (host, exports, GLOBAL) {' },
       footer: { js: '})' },
     }].map(bundle)).then(() => {})

@@ -46,18 +46,14 @@ export function apply(ctx: Context) {
     const channels = await ctx.database.getAssignedChannels(['id', 'chess'])
     for (const { id, chess } of channels) {
       if (chess) {
-        states[id] = State.from(ctx.app, chess)
+        states[id] = State.from(chess)
         states[id].update = rules[chess.rule].update
+        states[id].imageMode = !!ctx.puppeteer
       }
-    }
-
-    if (!ctx.app.browser) {
-      chess.removeOption('imageMode')
-      chess.removeOption('textMode')
     }
   })
 
-  const chess = ctx.command('chess [position]', '棋类游戏')
+  ctx.command('chess [position]', '棋类游戏')
     .userFields(['name'])
     .channelFields(['chess'])
     .shortcut('落子', { fuzzy: true })
@@ -69,8 +65,6 @@ export function apply(ctx: Context) {
     .shortcut('停止下棋', { options: { stop: true } })
     .shortcut('跳过回合', { options: { skip: true } })
     .shortcut('查看棋盘', { options: { show: true } })
-    .option('imageMode', '-i  使用图片模式')
-    .option('textMode', '-t  使用文本模式')
     .option('rule', '<rule>  设置规则，支持的规则有 go, gomoku, othello')
     .option('size', '<size>  设置大小')
     .option('skip', '跳过回合')
@@ -97,10 +91,8 @@ export function apply(ctx: Context) {
         const rule = rules[options.rule]
         if (!rule) return '没有找到对应的规则。'
 
-        const state = new State(ctx.app, options.rule, options.size, rule.placement || 'cross')
+        const state = new State(options.rule, options.size, rule.placement || 'cross')
         state.p1 = userId
-
-        if (options.textMode) state.imageMode = false
 
         if (rule.create) {
           const result = rule.create.call(state)
@@ -120,16 +112,6 @@ export function apply(ctx: Context) {
       }
 
       const state = states[cid]
-
-      if (ctx.app.browser) {
-        if (options.textMode) {
-          state.imageMode = false
-          return state.draw(session, '已切换到文本模式。')
-        } else if (options.imageMode) {
-          state.imageMode = true
-          return state.draw(session, '已切换到图片模式。')
-        }
-      }
 
       if (options.show) return state.draw(session)
 
@@ -231,4 +213,24 @@ export function apply(ctx: Context) {
       channel.chess = state.serial()
       return state.draw(session, message, x, y)
     })
+
+  ctx.with(['koishi-plugin-puppeteer'], (ctx) => {
+    ctx.command('chess', { patch: true })
+      .option('imageMode', '-i  使用图片模式')
+      .option('textMode', '-t  使用文本模式')
+      .action(({ session, options }) => {
+        const state = states[session.cid]
+        if (!state) return
+
+        if (ctx.app.puppeteer) {
+          if (options.textMode) {
+            state.imageMode = false
+            return state.draw(session, '已切换到文本模式。')
+          } else if (options.imageMode) {
+            state.imageMode = true
+            return state.draw(session, '已切换到图片模式。')
+          }
+        }
+      })
+  })
 }

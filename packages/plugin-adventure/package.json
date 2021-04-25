@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-adventure",
-  "version": "0.1.15",
+  "version": "0.2.0",
   "description": "Adventure Game for Koishi",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -28,11 +28,11 @@
     "adventure"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.6.1",
-    "koishi-plugin-common": "^4.2.1",
-    "koishi-plugin-mysql": "^3.3.0",
-    "koishi-plugin-teach": "^2.1.0",
-    "koishi-utils": "^4.1.2"
+    "koishi-core": "^3.9.2",
+    "koishi-plugin-common": "^4.2.3",
+    "koishi-plugin-mysql": "^3.3.1",
+    "koishi-plugin-teach": "^2.1.4",
+    "koishi-utils": "^4.2.1"
   },
   "devDependencies": {
     "koishi-test-utils": "^6.0.0-beta.11"

@@ -1,7 +1,7 @@
 <template>
   <aside>
     <ul>
-      <template v-for="({ name, path, meta }, index) in $router.getRoutes()" :key="index">
+      <template v-for="({ name, path, meta }) in $router.getRoutes()">
         <li v-if="isShown(meta)" :class="{ current: name === $route.name }">
           <router-link :to="path">
             <i :class="`fas fa-${meta.icon}`"/>
@@ -20,7 +20,7 @@ import type { RouteMeta } from 'vue-router'
 
 function isShown(meta: RouteMeta) {
   if (meta.hidden) return false
-  if (meta.authority && meta.authority > 1 && meta.authority > user.value?.authority) return false
+  if (meta.authority > 1 && !(meta.authority <= user.value?.authority)) return false
   return true
 }
 

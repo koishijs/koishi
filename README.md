@@ -73,9 +73,13 @@ Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间�
 - [koishi-plugin-gosen-choyen](https://github.com/idlist/koishi-plugin-gosen-choyen): 生成并发送“我想要五千兆元！”风格的图片
 - [koishi-plugin-genshin](https://github.com/koishijs/koishi-plugin-genshin): 查询原神国服玩家数据
 - [koishi-plugin-ink](https://github.com/idlist/koishi-plugin-ink): 通过 [ink](https://github.com/inkle/ink) 展示视觉小说
-- [koishi-plugin-bgp](https://github.com/Anillc/koishi-plugin-bgp): BGP工具集！
-- [koishi-plugin-dcqq-relay](https://github.com/XxLittleCxX/koishi-plugin-dcqq-relay): 同步Discord与QQ间的消息
+- [koishi-plugin-bgp](https://github.com/Anillc/koishi-plugin-bgp): BGP 工具集！
+- [koishi-plugin-dcqq-relay](https://github.com/XxLittleCxX/koishi-plugin-dcqq-relay): 同步 Discord 与 QQ 间的消息
 - [koishi-plugin-forward](https://github.com/Anillc/forward): 将你的消息转发至其他平台！
+- [koishi-plugin-animal-picture](https://github.com/idlist/koishi-plugin-animal-picture): 发送各种动物图片
+- [koishi-plugin-shell](https://github.com/koishijs/koishi-plugin-shell): 使用 Koishi 执行终端命令
+- [koishi-plugin-eval-enhance](https://github.com/Anillc/koishi-plugin-eval-enhance): koishi-plugin-eval的增强！
+- [koishi-plugin-work](https://github.com/NWYLZW/koishi-plugin-work): 工作学习工具，已有功能 todos: 代办管理
 
 ### 社区项目
 
@@ -84,6 +88,7 @@ Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间�
 - [ArilyChan/qq-bot](https://github.com/ArilyChan/qq-bot): 小阿日
 - [hydro-dev/HydroBot](https://github.com/hydro-dev/HydroBot): A Simple QQ Robot
 - [Wjghj-Project/Chatbot-SILI](https://github.com/Wjghj-Project/Chatbot-SILI): 「即时通讯软件转接姬」SILI-t137-[Tumita]-Invoke-II@LD(A)
+- [idlist/2bot-v3](https://github.com/idlist/2bot-v3): 2bot（名称来源于 FFXIV 的阿尔博特）
 
 ## 官方生态
 
@@ -116,14 +121,14 @@ Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间�
 
 ### 其他官方插件
 
-- [koishi-plugin-chess](https://koishi.js.org/plugins/other/chess) / 下棋
+- [koishi-plugin-assets](https://koishi.js.org/plugins/other/assets) / 资源转存
+- [koishi-plugin-chess](https://koishi.js.org/plugins/other/chess) / 棋类游戏
 - [koishi-plugin-github](https://koishi.js.org/plugins/other/github) / 接入 GitHub
-- [koishi-plugin-image-search](https://koishi.js.org/plugins/other/image-search) / 搜图
+- [koishi-plugin-image-search](https://koishi.js.org/plugins/other/image-search) / 图片搜索
 - [koishi-plugin-puppeteer](https://koishi.js.org/plugins/other/puppeteer) / 网页截图
-- [koishi-plugin-rss](https://koishi.js.org/plugins/other/rss) / 订阅 RSS
-- [koishi-plugin-schedule](https://koishi.js.org/plugins/other/schedule) / 设置计划任务
-- [koishi-plugin-webui](https://koishi.js.org/plugins/other/webui) / 状态监控
+- [koishi-plugin-schedule](https://koishi.js.org/plugins/other/schedule) / 计划任务
 - [koishi-plugin-tools](https://koishi.js.org/plugins/other/tools) / 实用工具
+- [koishi-plugin-webui](https://koishi.js.org/plugins/other/webui) / 网页控制台
 
 ## 使用协议
 

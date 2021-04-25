@@ -8,11 +8,13 @@
     <router-view v-else-if="loaded"/>
     <p v-else>正在加载数据……</p>
   </main>
+  <component v-for="view in views" :is="view"/>
 </template>
 
 <script lang="ts" setup>
 
 import * as client from '~/client'
+import { views } from '~/client'
 import Navbar from './navbar.vue'
 import Sidebar from './sidebar.vue'
 import { computed } from 'vue'
@@ -36,7 +38,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: rgba(244, 244, 245, .6);
-  overflow-x: hidden;
   background: radial-gradient(farthest-side ellipse at 10% 0, #333867, #17193b);
   background-attachment: fixed;
   position: relative;
@@ -62,6 +63,7 @@ main.frameless {
   left: 0;
   top: 50%;
   transform: translateY(-50%);
+  height: fit-content;
 }
 
 ::-webkit-scrollbar {
@@ -105,7 +107,7 @@ main.frameless {
 
   .echarts {
     max-width: 100%;
-    margin: 0 auto -3rem;
+    margin: 0 auto;
   }
 
   @media (min-width: 1400px) {
@@ -117,7 +119,7 @@ main.frameless {
         width: 600px;
         height: 400px;
         max-width: 100%;
-        margin: 0 auto -3rem;
+        margin: 0 auto;
       }
     }
 
@@ -147,6 +149,29 @@ main.frameless {
       }
     }
   }
+}
+
+table {
+  text-align: center;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+tr {
+  transition: 0.3s ease;
+}
+
+tr:hover {
+  background-color: #474d8450;
+}
+
+td, th {
+  padding: .5em 1em;
+  border-bottom: 1px solid $borderColor;
+}
+
+th {
+  border-top: 1px solid $borderColor;
 }
 
 </style>

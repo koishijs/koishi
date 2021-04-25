@@ -21,11 +21,11 @@
     "@types/qrcode": "^1.4.0"
   },
   "peerDependencies": {
-    "koishi-core": "^3.6.1"
+    "koishi-core": "^3.9.2"
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "cheerio": "^1.0.0-rc.5",
+    "cheerio": "^1.0.0-rc.6",
     "qrcode": "^1.4.4",
     "xml-js": "^1.6.11"
   }

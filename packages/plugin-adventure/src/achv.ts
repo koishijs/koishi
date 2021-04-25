@@ -1,5 +1,4 @@
-import { User, Context, Session } from 'koishi-core'
-import { difference, defineProperty, union, makeArray } from 'koishi-utils'
+import { User, Context, Session, difference, defineProperty, union, makeArray } from 'koishi-core'
 import { Show } from './utils'
 import {} from 'koishi-plugin-common'
 import Profile from './profile'

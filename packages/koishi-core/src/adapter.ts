@@ -117,6 +117,7 @@ export namespace Adapter {
         logger.debug('websocket client opening')
         bot.status = Bot.Status.CONNECTING
         const socket = await this.prepare(bot)
+        const url = socket.url.replace(/\?.+/, '')
 
         socket.on('error', error => logger.debug(error))
 
@@ -126,7 +127,8 @@ export namespace Adapter {
           logger.debug(`websocket closed with ${code}`)
           if (!this._listening) return
 
-          const message = reason || `failed to connect to ${socket.url}`
+          // remove query args to protect privacy
+          const message = reason || `failed to connect to ${url}`
           let timeout = retryInterval
           if (_retryCount >= retryTimes) {
             if (this.app.status === App.Status.open) {
@@ -146,7 +148,7 @@ export namespace Adapter {
         socket.on('open', () => {
           _retryCount = 0
           bot.socket = socket
-          logger.debug('connect to ws server:', socket.url)
+          logger.info('connect to ws server:', url)
           this.connect(bot).then(() => {
             bot.status = Bot.Status.GOOD
             resolve()
@@ -241,6 +243,9 @@ export class Bot<P extends Platform> {
       author: {
         userId: this.selfId,
         username: this.username,
+        avatar: this.avatar,
+        discriminator: this.discriminator,
+        isBot: true,
       },
     })
   }
@@ -305,6 +310,7 @@ export interface UserBase {
   nickname?: string
   avatar?: string
   discriminator?: string
+  isBot?: boolean
 }
 
 export interface UserInfo extends UserBase {

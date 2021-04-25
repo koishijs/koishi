@@ -3,12 +3,23 @@
 import axios, { Method } from 'axios'
 import { Bot, MessageInfo } from 'koishi-core'
 import * as DC from './types'
-import { DiscordChannel, DiscordMessage, DiscordUser, ExecuteWebhookBody, GuildMember, PartialGuild } from './types'
 import { adaptChannel, adaptGroup, adaptMessage, adaptUser } from './utils'
 import { readFileSync } from 'fs'
 import { segment } from 'koishi-utils'
 import FormData from 'form-data'
 import FileType from 'file-type'
+
+export class SenderError extends Error {
+  constructor(url: string, data: any, selfId: string) {
+    super(`Error when trying to request ${url}, data: ${JSON.stringify(data)}`)
+    Object.defineProperties(this, {
+      name: { value: 'SenderError' },
+      selfId: { value: selfId },
+      data: { value: data },
+      url: { value: url },
+    })
+  }
+}
 
 export class DiscordBot extends Bot<'discord'> {
   _d = 0
@@ -22,15 +33,19 @@ export class DiscordBot extends Bot<'discord'> {
     const headers: Record<string, any> = {
       Authorization: `Bot ${this.token}`,
     }
-    const response = await axios({
-      ...axiosConfig,
-      ...discord.axiosConfig,
-      method,
-      url,
-      headers: { ...headers, ...exHeaders },
-      data,
-    })
-    return response.data
+    try {
+      const response = await axios({
+        ...axiosConfig,
+        ...discord.axiosConfig,
+        method,
+        url,
+        headers: { ...headers, ...exHeaders },
+        data,
+      })
+      return response.data
+    } catch (e) {
+      throw new SenderError(url, data, this.selfId)
+    }
   }
 
   async getSelf() {
@@ -64,7 +79,7 @@ export class DiscordBot extends Bot<'discord'> {
     delete addition.content
     async function sendMessage() {
       const r = await that.request('POST', requestUrl, {
-        content: needSend,
+        content: needSend.trim(),
         ...addition,
       })
       sentMessageId = r.id
@@ -73,7 +88,7 @@ export class DiscordBot extends Bot<'discord'> {
     for (const code of chain) {
       const { type, data } = code
       if (type === 'text') {
-        needSend += data.content
+        needSend += data.content.trim()
       } else if (type === 'at' && data.id) {
         needSend += `<@${data.id}>`
       } else if (type === 'at' && data.type === 'all') {
@@ -85,7 +100,7 @@ export class DiscordBot extends Bot<'discord'> {
       } else if (type === 'face' && data.name && data.id) {
         needSend += `<:${data.name}:${data.id}>`
       } else {
-        if (needSend) await sendMessage()
+        if (needSend.trim()) await sendMessage()
         if (type === 'share') {
           const sendData = isWebhook ? {
             embeds: [{ ...addition, ...data }],
@@ -110,18 +125,22 @@ export class DiscordBot extends Bot<'discord'> {
             })
             sentMessageId = r.id
           } else {
-            const a = await axios.get(data.url, {
-              responseType: 'arraybuffer',
-            })
-            const r = await this.sendEmbedMessage(requestUrl, a.data, {
-              ...addition,
-            })
-            sentMessageId = r.id
+            try {
+              const a = await axios.get(data.url, {
+                responseType: 'arraybuffer',
+              })
+              const r = await this.sendEmbedMessage(requestUrl, a.data, {
+                ...addition,
+              })
+              sentMessageId = r.id
+            } catch (e) {
+              throw new SenderError(data.url, data, this.selfId)
+            }
           }
         }
       }
     }
-    if (needSend) await sendMessage()
+    if (needSend.trim()) await sendMessage()
     return sentMessageId
   }
 
@@ -156,12 +175,12 @@ export class DiscordBot extends Bot<'discord'> {
     })
   }
 
-  async getMessageFromServer(channelId: string, messageId: string) {
-    return this.request<DiscordMessage>('GET', `/channels/${channelId}/messages/${messageId}`)
+  async $getMessage(channelId: string, messageId: string) {
+    return this.request<DC.Message>('GET', `/channels/${channelId}/messages/${messageId}`)
   }
 
   async getMessage(channelId: string, messageId: string): Promise<MessageInfo> {
-    const msg = await this.getMessageFromServer(channelId, messageId)
+    const msg = await this.$getMessage(channelId, messageId)
     const result: MessageInfo = {
       messageId: msg.id,
       channelId: msg.channel_id,
@@ -173,38 +192,150 @@ export class DiscordBot extends Bot<'discord'> {
     }
     result.author.nickname = msg.member?.nick
     if (msg.message_reference) {
-      const quoteMsg = await this.getMessageFromServer(msg.message_reference.channel_id, msg.message_reference.message_id)
+      const quoteMsg = await this.$getMessage(msg.message_reference.channel_id, msg.message_reference.message_id)
       result.quote = await adaptMessage(this, quoteMsg)
     }
     return result
   }
 
   async getUser(userId: string) {
-    const data = await this.request<DiscordUser>('GET', `/users/${userId}`)
+    const data = await this.request<DC.DiscordUser>('GET', `/users/${userId}`)
     return adaptUser(data)
   }
 
-  async getGroupList() {
-    const data = await this.request<PartialGuild[]>('GET', '/users/@me/guilds')
-    return data.map(adaptGroup)
-  }
-
   async getGroupMemberList(guildId: string) {
-    const data = await this.request<GuildMember[]>('GET', `/guilds/${guildId}/members`)
+    const data = await this.$listGuildMembers(guildId)
     return data.map(v => adaptUser(v.user))
   }
 
   async getChannel(channelId: string) {
-    const data = await this.request<DiscordChannel>('GET', `/channels/${channelId}`)
+    const data = await this.$getChannel(channelId)
     return adaptChannel(data)
   }
 
-  async executeWebhook(id: string, token: string, data: ExecuteWebhookBody, wait = false): Promise<string> {
+  async $executeWebhook(id: string, token: string, data: DC.ExecuteWebhookBody, wait = false): Promise<string> {
     const chain = segment.parse(data.content)
     if (chain.filter(v => v.type === 'image').length > 10) {
       throw new Error('Up to 10 embed objects')
     }
 
     return await this.sendFullMessage(`/webhooks/${id}/${token}?wait=${wait}`, data.content, data)
+  }
+
+  async $getGuildMember(guildId: string, userId: string) {
+    return this.request<DC.GuildMember>('GET', `/guilds/${guildId}/members/${userId}`)
+  }
+
+  async getGroupMember(groupId: string, userId: string) {
+    const member = await this.$getGuildMember(groupId, userId)
+    return {
+      ...adaptUser(member.user),
+      nickname: member.nick,
+    }
+  }
+
+  async $getGuildRoles(guildId: string) {
+    return this.request<DC.Role[]>('GET', `/guilds/${guildId}/roles`)
+  }
+
+  async $getChannel(channelId: string) {
+    return this.request<DC.Channel>('GET', `/channels/${channelId}`)
+  }
+
+  async $listGuildMembers(guildId: string, limit?: number, after?: string) {
+    return this.request<DC.GuildMember[]>('GET', `/guilds/${guildId}/members?limit=${limit || 1000}&after=${after || '0'}`)
+  }
+
+  async $getRoleMembers(guildId: string, roleId: string) {
+    let members: DC.GuildMember[] = []
+    let after = '0'
+    while (true) {
+      const data = await this.$listGuildMembers(guildId, 1000, after)
+      members = members.concat(data)
+      if (data.length) {
+        after = data[data.length - 1].user.id
+      } else {
+        break
+      }
+    }
+    return members.filter(v => v.roles.includes(roleId))
+  }
+
+  async $modifyGuildMember(guildId: string, userId: string, data: Partial<DC.ModifyGuildMember>) {
+    return this.request('PATCH', `/guilds/${guildId}/members/${userId}`, data)
+  }
+
+  async $addGuildMemberRole(guildId: string, userId: string, roleId: string) {
+    return this.request('PUT', `/guilds/${guildId}/members/${userId}/roles/${roleId}`)
+  }
+
+  async $removeGuildMemberRole(guildId: string, userId: string, roleId: string) {
+    return this.request('DELETE', `/guilds/${guildId}/members/${userId}/roles/${roleId}`)
+  }
+
+  async $createGuildRole(guildId: string, data: DC.GuildRoleBody) {
+    return this.request('POST', `/guilds/${guildId}/roles`, data)
+  }
+
+  async $modifyGuildRole(guildId: string, roleId: string, data: Partial<DC.GuildRoleBody>) {
+    return this.request('PATCH', `/guilds/${guildId}/roles/${roleId}`, data)
+  }
+
+  async $modifyGuild(guildId: string, data: DC.GuildBody) {
+    return this.request('PATCH', `/guilds/${guildId}`, data)
+  }
+
+  async $createWebhook(channelId: string, data: {
+    name: string;
+    avatar?: string
+  }) {
+    return this.request('POST', `/channels/${channelId}/webhooks`, data)
+  }
+
+  async $modifyWebhook(webhookId: string, data: {
+    name?: string;
+    avatar?: string
+    channel_id?: string
+  }) {
+    return this.request('PATCH', `/webhooks/${webhookId}`, data)
+  }
+
+  async $getChannelWebhooks(channelId: string) {
+    return this.request<DC.Webhook[]>('GET', `/channels/${channelId}/webhooks`)
+  }
+
+  async $getGuildWebhooks(guildId: string) {
+    return this.request<DC.Webhook[]>('GET', `/guilds/${guildId}/webhooks`)
+  }
+
+  async $modifyChannel(channelId, data: Partial<DC.ModifyGuild>) {
+    return this.request('PATCH', `/channels/${channelId}`, data)
+  }
+
+  async $getGuild(guildId: string) {
+    return this.request<DC.Guild>('GET', `/guilds/${guildId}`)
+  }
+
+  async getGroup(groupId: string) {
+    const data = await this.$getGuild(groupId)
+    return adaptGroup(data)
+  }
+
+  async $getUserGuilds() {
+    return this.request<DC.PartialGuild[]>('GET', '/users/@me/guilds')
+  }
+
+  async getGroupList() {
+    const data = await this.$getUserGuilds()
+    return data.map(v => adaptGroup(v))
+  }
+
+  async $getGuildChannels(guildId: string) {
+    return this.request<DC.Channel[]>('GET', `/guilds/${guildId}/channels`)
+  }
+
+  async getChannelList(groupId: string) {
+    const data = await this.$getGuildChannels(groupId)
+    return data.map(v => adaptChannel(v))
   }
 }

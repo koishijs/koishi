@@ -1,4 +1,4 @@
-import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, noop, template, trimSlash, merge } from 'koishi-utils'
+import { simplify, defineProperty, Time, Observed, coerce, escapeRegExp, makeArray, template, trimSlash, merge } from 'koishi-utils'
 import { Context, Middleware, NextFunction, Plugin } from './context'
 import { Argv } from './parser'
 import { BotOptions, Adapter, createBots } from './adapter'
@@ -43,6 +43,10 @@ function createLeadingRE(patterns: string[], prefix = '', suffix = '') {
   return patterns.length ? new RegExp(`^${prefix}(${patterns.map(escapeRegExp).join('|')})${suffix}`) : /$^/
 }
 
+interface CommandMap extends Map<string, Command> {
+  resolve(key: string): Command
+}
+
 export class App extends Context {
   public app = this
   public options: AppOptions
@@ -51,8 +55,8 @@ export class App extends Context {
   public registry = new Map<Plugin, Plugin.State>()
 
   _bots = createBots('sid')
-  _commands: Command[] = []
-  _commandMap: Record<string, Command> = {}
+  _commandList: Command[] = []
+  _commands: CommandMap = new Map<string, Command>() as never
   _shortcuts: Command.Shortcut[] = []
   _hooks: Record<keyof any, [Context, (...args: any[]) => any][]> = {}
   _userCache: Record<string, LruCache<string, Observed<Partial<User>, Promise<void>>>>
@@ -68,8 +72,8 @@ export class App extends Context {
     prettyErrors: true,
     userCacheAge: Time.minute,
     channelCacheAge: 5 * Time.minute,
-    autoAssign: false,
-    autoAuthorize: 0,
+    autoAssign: true,
+    autoAuthorize: 1,
     minSimilarity: 0.4,
     processMessage: message => simplify(message.trim()),
     delay: {
@@ -87,10 +91,8 @@ export class App extends Context {
     if (options.selfUrl) options.selfUrl = trimSlash(options.selfUrl)
     this.options = merge(options, App.defaultConfig)
     this.registry.set(null, {
-      parent: null,
       children: [],
       disposables: [],
-      dependencies: new Set(),
     })
 
     defineProperty(this, '_userCache', {})
@@ -102,6 +104,16 @@ export class App extends Context {
     if (options.port) this.createServer()
     for (const bot of options.bots) {
       Adapter.from(this, bot).create(bot)
+    }
+
+    this._commands.resolve = (key) => {
+      if (!key) return
+      const segments = key.split('.')
+      let i = 1, name = segments[0], cmd: Command
+      while ((cmd = this._commands.get(name)) && i < segments.length) {
+        name = cmd.name + '.' + segments[i++]
+      }
+      return cmd
     }
 
     this.prepare()
@@ -120,14 +132,10 @@ export class App extends Context {
       // group message should have prefix or appel to be interpreted as a command call
       if (argv.root && subtype !== 'private' && parsed.prefix === null && !parsed.appel) return
       if (!argv.tokens.length) return
-      const segments = argv.tokens[0].content.split('.')
-      let i = 1, name = segments[0]
-      while (this._commandMap[name] && i < segments.length) {
-        name = this._commandMap[name].name + '.' + segments[i++]
-      }
-      if (name in this._commandMap) {
+      const cmd = this._commands.resolve(argv.tokens[0].content)
+      if (cmd) {
         argv.tokens.shift()
-        return name
+        return cmd.name
       }
     })
 
@@ -198,19 +206,10 @@ export class App extends Context {
   }
 
   private async _process(session: Session, next: NextFunction) {
-    let content = this.options.processMessage(session.content)
-
     let capture: RegExpMatchArray
     let atSelf = false, appel = false, prefix: string = null
     const pattern = /^\[CQ:(\w+)((,\w+=[^,\]]*)*)\]/
-    if ((capture = content.match(pattern)) && capture[1] === 'quote') {
-      content = content.slice(capture[0].length).trimStart()
-      for (const str of capture[2].slice(1).split(',')) {
-        if (!str.startsWith('id=')) continue
-        session.quote = await session.bot.getMessage(session.channelId, str.slice(3)).catch(noop)
-        break
-      }
-    }
+    let content = await session.preprocess()
 
     // strip prefix
     if (session.subtype !== 'private' && (capture = content.match(pattern)) && capture[1] === 'at' && capture[2].includes('id=' + session.selfId)) {

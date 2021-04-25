@@ -1,5 +1,4 @@
-import { Context, Command, checkTimer, checkUsage } from 'koishi-core'
-import { Time } from 'koishi-utils'
+import { Context, Command, checkTimer, checkUsage, Time } from 'koishi-core'
 import { Adventurer, Show } from './utils'
 
 declare module 'koishi-core' {

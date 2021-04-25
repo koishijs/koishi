@@ -1,8 +1,8 @@
-import { Logger, defineProperty, remove, segment } from 'koishi-utils'
+import { Logger, defineProperty, remove, segment, Random } from 'koishi-utils'
 import { Command } from './command'
 import { Session } from './session'
 import { User, Channel, Database, Assets } from './database'
-import { Argv, Domain } from './parser'
+import { Argv } from './parser'
 import { Platform, Bot } from './adapter'
 import { App } from './app'
 import { inspect } from 'util'
@@ -32,15 +32,18 @@ export namespace Plugin {
   export type Config<T extends Plugin> = T extends Function<infer U> ? U : T extends Object<infer U> ? U : never
 
   export interface State extends Meta {
-    parent: State
+    id?: string
+    parent?: State
+    context?: Context
+    config?: Config<Plugin>
+    plugin?: Plugin
     children: Plugin[]
     disposables: Disposable[]
-    dependencies: Set<State>
   }
 
   export interface Packages {}
 
-  export type Teleporter<D extends readonly (keyof Packages)[]> = (...modules: From<D>) => void
+  export type Teleporter<D extends readonly (keyof Packages)[]> = (ctx: Context, ...modules: From<D>) => void
 
   type From<D extends readonly unknown[]> = D extends readonly [infer L, ...infer R]
     ? [L extends keyof Packages ? Packages[L] : unknown, ...From<R>]
@@ -146,6 +149,11 @@ export class Context {
     return new Context(s => this.filter(s) && filter(s), this.app, this._plugin)
   }
 
+  except(arg: Filter | Context) {
+    const filter = typeof arg === 'function' ? arg : arg.filter
+    return new Context(s => this.filter(s) && !filter(s), this.app, this._plugin)
+  }
+
   match(session?: Session) {
     return !session || this.filter(session)
   }
@@ -161,14 +169,14 @@ export class Context {
     }
   }
 
-  private teleport(modules: any[], callback: Plugin.Teleporter<never[]>) {
+  private teleport(modules: any[], callback: Plugin.Teleporter<any>) {
     const states: Plugin.State[] = []
     for (const module of modules) {
       const state = this.app.registry.get(module)
       if (!state) return
       states.push(state)
     }
-    const plugin = () => callback(...modules as [])
+    const plugin = (ctx: Context) => callback(ctx, ...modules as [])
     const dispose = () => this.dispose(plugin)
     this.plugin(plugin)
     states.every(state => state.disposables.push(dispose))
@@ -179,12 +187,13 @@ export class Context {
 
   with<D extends readonly (keyof Plugin.Packages)[]>(deps: D, callback: Plugin.Teleporter<D>) {
     const modules = deps.map(safeRequire)
-    if (!modules.every(val => val)) return
+    if (!modules.every(val => val)) return this
     this.teleport(modules, callback)
     this.on('plugin-added', (added) => {
       const modules = deps.map(safeRequire)
       if (modules.includes(added)) this.teleport(modules, callback)
     })
+    return this
   }
 
   plugin<T extends Plugin>(plugin: T, options?: Plugin.Config<T>): this
@@ -200,10 +209,13 @@ export class Context {
     const ctx: this = Object.create(this)
     defineProperty(ctx, '_plugin', plugin)
     this.app.registry.set(plugin, {
+      plugin,
+      id: Random.uuid(),
+      context: this,
+      config: options,
       parent: this.state,
       children: [],
       disposables: [],
-      dependencies: new Set([this.state]),
     })
 
     if (typeof plugin === 'function') {
@@ -305,19 +317,21 @@ export class Context {
     }
   }
 
-  on<K extends EventName>(name: K, listener: EventMap[K], prepend = false) {
+  on<K extends EventName>(name: K, listener: EventMap[K], prepend?: boolean): () => boolean
+  on(name: string & EventName, listener: Disposable, prepend = false) {
     const method = prepend ? 'unshift' : 'push'
 
-    // handle plugin-related events
-    const _listener = listener as Disposable
+    // handle special events
     if (name === 'connect' && this.app.status === App.Status.open) {
-      return _listener(), () => false
+      return listener(), () => false
     } else if (name === 'before-disconnect') {
-      this.state.disposables[method](_listener)
-      return () => remove(this.state.disposables, _listener)
+      this.state.disposables[method](listener)
+      return () => remove(this.state.disposables, listener)
     } else if (name === 'before-connect') {
       // before-connect is side effect
       this.addSideEffect()
+    } else if (typeof name === 'string' && name.startsWith('delegate/')) {
+      if (this[name.slice(9)]) return listener(), () => false
     }
 
     const hooks = this.app._hooks[name] ||= []
@@ -382,8 +396,8 @@ export class Context {
     return this.createTimerDispose(setInterval(callback, ms, ...args))
   }
 
-  command<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
-  command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
+  command<D extends string>(def: D, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
+  command<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
   command(def: string, ...args: [Command.Config?] | [string, Command.Config?]) {
     const desc = typeof args[0] === 'string' ? args.shift() as string : ''
     const config = args[0] as Command.Config
@@ -395,7 +409,7 @@ export class Context {
     segments.forEach((segment, index) => {
       const code = segment.charCodeAt(0)
       const name = code === 46 ? parent.name + segment : code === 47 ? segment.slice(1) : segment
-      let command = this.app._commandMap[name]
+      let command = this.app._commands.get(name)
       if (command) {
         if (parent) {
           if (command === parent) {
@@ -437,13 +451,8 @@ export class Context {
 
   async transformAssets(content: string, assets = this.assets) {
     if (!assets) return content
-    const urlMap: Record<string, string> = {}
-    await Promise.all(segment.parse(content).map(async ({ type, data }) => {
-      if (!assets.types.includes(type as Assets.Type)) return
-      urlMap[data.url] = await assets.upload(data.url, data.file)
-    }))
-    return segment.transform(content, Object.fromEntries(assets.types.map((type) => {
-      return [type, (data) => segment(type, { url: urlMap[data.url] })]
+    return segment.transformAsync(content, Object.fromEntries(assets.types.map((type) => {
+      return [type, async (data) => segment(type, { url: await assets.upload(data.url, data.file) })]
     })))
   }
 
@@ -502,11 +511,12 @@ export class Context {
       get() {
         if (!this.app[privateKey]) return
         const value = Object.create(this.app[privateKey])
-        value[Context.current] = this
+        defineProperty(value, Context.current, this)
         return value
       },
       set(value) {
-        this.app[privateKey] = value
+        if (!this.app[privateKey]) this.emit('delegate/' + key)
+        defineProperty(this.app, privateKey, value)
       },
     })
   }
@@ -537,6 +547,8 @@ export interface EventMap extends SessionEventMap {
   [Context.middleware]: Middleware
 
   // Koishi events
+  'delegate/assets'(): void
+  'delegate/database'(): void
   'appellation'(name: string, session: Session): string
   'before-parse'(content: string, session: Session): Argv
   'parse'(argv: Argv, session: Session): string

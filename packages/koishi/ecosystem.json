@@ -1,6 +1,6 @@
 {
   "koishi-adapter-discord": {
-    "version": "1.0.6",
+    "version": "1.0.9",
     "description": "Discord adapter for Koishi"
   },
   "koishi-adapter-kaiheila": {
@@ -8,7 +8,7 @@
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-onebot": {
-    "version": "3.0.4",
+    "version": "3.0.8",
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-adapter-telegram": {
@@ -20,7 +20,7 @@
     "description": "Tomon adapter for Koishi"
   },
   "koishi-plugin-adventure": {
-    "version": "0.1.15",
+    "version": "0.2.0",
     "description": "Adventure Game for Koishi"
   },
   "koishi-plugin-assets": {
@@ -28,15 +28,15 @@
     "description": "Asset provider plugin for Koishi"
   },
   "koishi-plugin-chat": {
-    "version": "0.1.1",
+    "version": "0.4.0",
     "description": "Chat plugin for Koishi"
   },
   "koishi-plugin-chess": {
-    "version": "3.0.1",
+    "version": "3.0.2",
     "description": "Chess Plugin for Koishi"
   },
   "koishi-plugin-common": {
-    "version": "4.2.1",
+    "version": "4.2.3",
     "description": "Common plugins for Koishi"
   },
   "koishi-plugin-dice": {
@@ -44,30 +44,30 @@
     "description": "COC / DND Tools for Koishi"
   },
   "koishi-plugin-eval": {
-    "version": "3.0.0-beta.13",
+    "version": "3.1.1",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-github": {
-    "version": "3.0.3",
+    "version": "3.0.4",
     "description": "GitHub webhook plugin for Koishi"
   },
   "koishi-plugin-image-search": {
-    "version": "3.0.2",
+    "version": "3.0.3",
     "description": "Image searching plugin for Koishi"
   },
   "koishi-plugin-mongo": {
-    "version": "2.2.1",
+    "version": "2.2.2",
     "description": "MongoDB support for Koishi"
   },
   "koishi-plugin-monitor": {
-    "version": "1.0.0-beta.29"
+    "version": "1.0.0-beta.30"
   },
   "koishi-plugin-mysql": {
-    "version": "3.3.0",
+    "version": "3.3.1",
     "description": "MySQL support for Koishi"
   },
   "koishi-plugin-puppeteer": {
-    "version": "2.0.1",
+    "version": "2.1.0",
     "description": "Take Screenshots in Koishi"
   },
   "koishi-plugin-rss": {
@@ -79,7 +79,7 @@
     "description": "Schedule plugin for Koishi"
   },
   "koishi-plugin-teach": {
-    "version": "2.1.0",
+    "version": "2.1.4",
     "description": "Teach plugin for Koishi"
   },
   "koishi-plugin-tools": {
@@ -87,7 +87,7 @@
     "description": "Some simple tools for Koishi"
   },
   "koishi-plugin-webui": {
-    "version": "4.0.1",
+    "version": "4.4.0",
     "description": "Show Web UI of Koishi"
   }
 }

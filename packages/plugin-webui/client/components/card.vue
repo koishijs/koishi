@@ -22,8 +22,8 @@ defineProps<{
 
 <style lang="scss" scoped>
 
-$paddingX: 1.2rem;
-$paddingY: 1.6rem;
+$paddingX: 1.25rem;
+$paddingY: 1.5rem;
 
 .k-card {
   margin: 0 auto 2rem;
@@ -46,12 +46,6 @@ $paddingY: 1.6rem;
 
   .k-card-body {
     padding: $paddingX $paddingY;
-    > :first-child {
-      margin-top: 0;
-    }
-    > :last-child {
-      margin-bottom: 0;
-    }
   }
 
   &.frameless .k-card-body {

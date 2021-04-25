@@ -22,7 +22,7 @@ const option = computed(() => ({
       const source = stats.value.hours[dataIndex]
       const output = [
         `${formatHour(x)}`,
-        `消息总量：${+source.total.toFixed(1)}`,
+        `消息总量：${+(source.total || 0).toFixed(1)}`,
       ]
       params.reverse().forEach(({ seriesName, color, data: [x, y], marker }, index) => {
         const value = index === 0 ? source.command

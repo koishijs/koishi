@@ -1,5 +1,5 @@
 import { Logger, coerce, Time, template, remove } from 'koishi-utils'
-import { Argv, Domain } from './parser'
+import { Argv } from './parser'
 import { Context, Disposable, NextFunction } from './context'
 import { User, Channel } from './database'
 import { FieldCollector, Session } from './session'
@@ -55,7 +55,7 @@ export namespace Command {
     = string | ((session: Session<U, G>) => string | Promise<string>)
 }
 
-export class Command<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}> extends Domain.CommandBase {
+export class Command<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}> extends Argv.CommandBase {
   config: Command.Config
   children: Command[] = []
   parent: Command = null
@@ -78,7 +78,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     minInterval: 0,
   }
 
-  static defaultOptionConfig: Domain.OptionConfig = {
+  static defaultOptionConfig: Argv.OptionConfig = {
     authority: 0,
   }
 
@@ -99,7 +99,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     super(name, decl, desc)
     this.config = { ...Command.defaultConfig }
     this._registerAlias(this.name)
-    context.app._commands.push(this)
+    context.app._commandList.push(this)
     this.option('help', '-h  显示此信息', { hidden: true })
   }
 
@@ -110,9 +110,9 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
   private _registerAlias(name: string) {
     name = name.toLowerCase()
     this._aliases.push(name)
-    const previous = this.app._commandMap[name]
+    const previous = this.app._commands.get(name)
     if (!previous) {
-      this.app._commandMap[name] = this
+      this.app._commands.set(name, this)
     } else if (previous !== this) {
       throw new Error(format('duplicate command names: "%s"', name))
     }
@@ -138,7 +138,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       this._registerAlias(name)
       this._disposables?.push(() => {
         remove(this._aliases, name)
-        delete this.app._commandMap[name]
+        this.app._commands.delete(name)
       })
     }
     return this
@@ -154,8 +154,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  subcommand<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
-  subcommand<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
+  subcommand<D extends string>(def: D, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
+  subcommand<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
   subcommand(def: string, ...args: any[]) {
     def = this.name + (def.charCodeAt(0) === 46 ? '' : '/') + def
     const desc = typeof args[0] === 'string' ? args.shift() as string : ''
@@ -174,10 +174,10 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  option<K extends string, D extends string, T extends Domain.Type>(name: K, desc: D, config: Domain.OptionConfig<T> = {}) {
+  option<K extends string, D extends string, T extends Argv.Type>(name: K, desc: D, config: Argv.OptionConfig<T> = {}) {
     this._createOption(name, desc, config)
     this._disposables?.push(() => this.removeOption(name))
-    return this as Command<U, G, A, Extend<O, K, Domain.OptionType<D, T>>>
+    return this as Command<U, G, A, Extend<O, K, Argv.OptionType<D, T>>>
   }
 
   match(session: Session) {
@@ -231,7 +231,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     const lastCall = this.app.options.prettyErrors && new Error().stack.split('\n', 4)[3]
     try {
       for (const validator of this._checkers) {
-        const result = validator.call(this, argv, ...args)
+        const result = await validator.call(this, argv, ...args)
         if (typeof result === 'string') return result
       }
       const result = await this.app.serial(session, 'before-command', argv)
@@ -262,8 +262,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
       cmd.dispose()
     }
     this.app._shortcuts = this.app._shortcuts.filter(s => s.command !== this)
-    this._aliases.forEach(name => delete this.app._commandMap[name])
-    remove(this.app._commands, this)
+    this._aliases.forEach(name => this.app._commands.delete(name))
+    remove(this.app._commandList, this)
     if (this.parent) {
       remove(this.parent.children, this)
     }

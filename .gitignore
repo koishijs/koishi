@@ -2,21 +2,19 @@ lib
 dist
 temp
 .koishi
+.temp
+.cache
 
-/build/*.js
-/tsconfig.temp.json
+tsconfig.temp.json
 
 /addons
 /public
 /atri
 /coverage
-/docs
 /legacy
 /shiki
 /test
 /utsuho
-
-/build/*.js
 
 todo.md
 yarn.lock

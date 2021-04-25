@@ -1,63 +1,82 @@
 <template>
-  <li class="plugin-view" :class="{ 'has-children': data.children.length }">
-    <i class="fas fa-caret-right" :class="{ show }"/>
-    <span class="plugin-item" @click="data.children.length && (show = !show)" :class="state">{{ data.name }}</span>
+  <div class="plugin-view">
+    <div class="plugin-item">
+      <span :class="['title', { 'has-children': data.children.length }]" @click="data.children.length && (show = !show)">
+        <i class="fas fa-angle-right" :class="{ show }"/>
+        {{ data.name }}
+        <k-badge type="default" v-if="data.webExtension" title="拥有网页扩展的插件停用和启用后将刷新页面。">网页扩展</k-badge>
+        <k-badge type="warning" v-if="data.sideEffect" title="拥有副作用的插件无法被停用。">副作用</k-badge>
+      </span>
+      <span class="complexity">{{ data.complexity || '-' }}</span>
+      <span class="operation">
+        <k-button class="right" frameless :type="data.name === 'webui' ? 'danger' : ''"
+          :disabled="data.sideEffect" @click="toggle(data.id)"
+        >{{ data.complexity ? '停用' : '启用' }}</k-button>
+      </span>
+    </div>
     <k-collapse v-if="data.children.length">
-      <ul class="plugin-list" v-show="show">
+      <div class="plugin-list" v-show="show">
         <plugin-view :data="data" v-for="(data, index) in data.children" :key="index" />
-      </ul>
+      </div>
     </k-collapse>
-  </li>
+  </div>
 </template>
 
 <script setup lang="ts">
 
 import type { Registry } from '~/server'
-import { ref, computed, defineProps } from 'vue'
+import { send, user } from '~/client'
+import { ref, defineProps } from 'vue'
 import PluginView from './plugin-view.vue'
 
 const show = ref(false)
 
-const props = defineProps<{ data: Registry.PluginData }>()
+defineProps<{ data: Registry.PluginData }>()
 
-const state = computed(() => {
-  return props.data.sideEffect ? 'side-effect' : 'normal'
-})
+function toggle(plugin: string) {
+  const { id, token } = user.value
+  send('switch', { plugin, id, token })
+}
 
 </script>
 
 <style lang="scss">
 
-@import '../../index.scss';
+@import '~/variables';
 
-:not(.has-children) > .fa-caret-right {
-  font-size: 16px !important;
-  width: 16px;
-  transform: translateX(-1px);
+:not(.has-children) > .fa-angle-right {
+  font-size: 1.25rem !important;
 
   &::before {
     content: "•";
   }
 }
 
-.fa-caret-right {
-  margin-right: 8px;
+.fa-angle-right {
+  margin-left: 0.75rem;
+  margin-right: 0.5rem;
   transition: 0.3s ease;
-  font-size: 14px !important;
-  width: 14px;
+  font-size: 1.25rem !important;
+  width: 1.5rem;
   text-align: center;
   vertical-align: middle !important;
 }
 
-.fa-caret-right.show {
+.fa-angle-right.show {
   transform: rotate(90deg);
 }
 
 .plugin-item {
   line-height: 1.6;
   user-select: none;
+  padding: 0.5rem 0;
+  border-bottom: $borderColor 1px solid;
 
-  .has-children > & {
+  .title {
+    font-weight: bold;
+  }
+
+  .title.has-children {
     cursor: pointer;
   }
 
@@ -68,10 +87,26 @@ const state = computed(() => {
   &.side-effect {
     color: $error;
   }
+
+  &:hover {
+    background-color: #474d8450;
+  }
+
+  .complexity {
+    position: absolute;
+    left: 45%;
+    width: 10%;
+    text-align: center;
+  }
+
+  .operation {
+    float: right;
+    margin-right: 3rem;
+  }
 }
 
-.plugin-list {
-  list-style-type: none;
+.plugin-view .plugin-list {
+  padding-left: 2rem;
 }
 
 </style>
