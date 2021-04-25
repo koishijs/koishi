@@ -10,7 +10,7 @@ Koishi 需要 [NodeJS](https://nodejs.org/) (v12 以上) 运行环境，你需�
 
 Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相应的准备工作。
 
-### OneBot (QQ)
+### [OneBot (QQ)](../api/adapter/onebot.md)
 
 [OneBot](https://github.com/howmanybots/onebot) 是一个聊天机器人应用接口标准，目前可用于 QQ 聊天机器人的实现。你可以使用下列实现该协议的框架：
 
@@ -20,9 +20,7 @@ Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相�
 
 对于每一种框架，请分别参考它们对应的文档。
 
-请注意：尽管 Koishi 使用的协议是 [MIT](https://choosealicense.com/licenses/mit/) 协议，但上面陈述的三种途径的相关框架都使用了基于 [AGPL 3.0](https://choosealicense.com/licenses/agpl-3.0/) 的协议。**因此如果你使用 koishi-adapter-onebot 运行你的机器人，你将可能受到 AGPL 3.0 协议的限制，必须将你的代码开源并保持同协议**。Koishi 及其作者对使用上述框架或违反上述限制的行为所可能造成的一切后果概不负责。
-
-### Telegram (Telegram)
+### [Telegram (Telegram)](../api/adapter/telegram.md)
 
 1. 搜索 @botfather（有个官方认证的符号）并进入聊天界面
 2. 输入 `/start` 后，会出现一个使用菜单，你可以使用这里指令对你的机器人进行配置
@@ -32,7 +30,7 @@ Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相�
 
 参考文档：[https://core.telegram.org/bots](https://core.telegram.org/bots)
 
-### Discord (Discord)
+### [Discord (Discord)](../api/adapter/discord.md)
 
 1. 前往 [https://discord.com/developers/applications](https://discord.com/developers/applications)，登录账号创建一个应用
 2. 点击「Bot」并创建一个新的机器人，保存这个页面中的 token（请注意不要泄露）
@@ -40,7 +38,7 @@ Koishi 支持多个聊天平台，对于不同的平台，你也需要做好相�
 4. 打开生成的链接，选择你具有管理权限的服务器，就成功把机器人添加进去了
 5. 将上面的 token 作为机器人配置项即可使用
 
-### 开黑啦 (Kaiheila)
+### [开黑啦 (Kaiheila)](../api/adapter/kaiheila.md)
 
 1. 前往 [开发者平台](https://developer.kaiheila.cn/)，选择「机器人」并点击「新建」
 2. 在机器人连接模式中配置 Webhook 或 WebSocket 中的一种：

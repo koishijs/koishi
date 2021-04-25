@@ -25,7 +25,6 @@ Koishi 官方提供了许多插件。为了更好地模块化开发，它们被�
 - [plugin-github](./other/github.md) / 接入 GitHub
 - [plugin-image-search](./other/image-search.md) / 图片搜索
 - [plugin-puppeteer](./other/puppeteer.md) / 网页截图
-<!-- - [plugin-rss](./other/rss.md) / 订阅 RSS -->
 - [plugin-schedule](./other/schedule.md) / 计划任务
 - [plugin-tools](./other/tools.md) / 实用工具
 - [plugin-webui](./other/webui.md) / 网页控制台
