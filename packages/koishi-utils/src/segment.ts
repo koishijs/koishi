@@ -126,6 +126,7 @@ export namespace segment {
   export const image = createAssetFactory('image')
   export const video = createAssetFactory('video')
   export const audio = createAssetFactory('audio')
+  export const file = createAssetFactory('file')
 }
 
 export { segment as s }

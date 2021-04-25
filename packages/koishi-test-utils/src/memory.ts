@@ -93,12 +93,6 @@ Database.extend(MemoryDatabase, {
     Object.assign(table[index], clone(data))
   },
 
-  async removeUser(type, id) {
-    const table = this.$table('user')
-    const index = table.findIndex(row => row[type] === id)
-    if (index >= 0) table.splice(index, 1)
-  },
-
   async createUser(type, id, data) {
     const table = this.$table('user')
     const index = table.findIndex(row => row[type] === id)
@@ -134,12 +128,6 @@ Database.extend(MemoryDatabase, {
     const index = table.findIndex(row => row.id === `${type}:${id}`)
     if (index < 0) return
     Object.assign(table[index], clone(data))
-  },
-
-  async removeChannel(type, id) {
-    const table = this.$table('channel')
-    const index = table.findIndex(row => row.id === `${type}:${id}`)
-    if (index >= 0) table.splice(index, 1)
   },
 
   async createChannel(type, id, data) {

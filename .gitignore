@@ -2,14 +2,15 @@ lib
 dist
 temp
 .koishi
+.temp
+.cache
 
-/tsconfig.temp.json
+tsconfig.temp.json
 
 /addons
 /public
 /atri
 /coverage
-/docs
 /legacy
 /shiki
 /test

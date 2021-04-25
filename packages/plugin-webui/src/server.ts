@@ -24,6 +24,7 @@ export interface Config extends BaseConfig, Profile.Config, Meta.Config, Registr
 }
 
 export interface ClientConfig extends Required<BaseConfig> {
+  database: boolean
   endpoint: string
   extensions: string[]
 }
@@ -71,7 +72,7 @@ export class WebServer extends Adapter {
 
     const { apiPath, uiPath, devMode, selfUrl, title } = config
     const endpoint = selfUrl + apiPath
-    this.global = { title, uiPath, endpoint, devMode, extensions: [] }
+    this.global = { title, uiPath, endpoint, devMode, extensions: [], database: false }
     this.root = resolve(__dirname, '..', devMode ? 'client' : 'dist')
 
     this.server = new WebSocket.Server({
@@ -100,6 +101,10 @@ export class WebServer extends Adapter {
 
     ctx.on('connect', () => this.start())
     ctx.before('disconnect', () => this.stop())
+
+    ctx.on('delegate/database', () => {
+      this.global.database = !!ctx.database
+    })
   }
 
   broadcast(type: string, body: any) {
@@ -165,6 +170,7 @@ export class WebServer extends Adapter {
     })
 
     socket.on('message', async (data) => {
+      if (!this.ctx.database) return
       const { type, body } = JSON.parse(data.toString())
       const method = WebServer.listeners[type]
       if (method) {
@@ -240,7 +246,7 @@ export class WebServer extends Adapter {
 export namespace WebServer {
   export interface Sources extends Record<string, DataSource> {
     meta: Meta
-    stats: Statistics
+    stats?: Statistics
     profile: Profile
     registry: Registry
   }

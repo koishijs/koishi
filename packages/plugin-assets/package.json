@@ -29,7 +29,7 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.9.2"
+    "koishi-core": "^3.10.0"
   },
   "dependencies": {
     "axios": "^0.21.1",

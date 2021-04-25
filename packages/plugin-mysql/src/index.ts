@@ -75,10 +75,6 @@ Database.extend(MysqlDatabase, {
     return data && { ...data, [type]: id }
   },
 
-  async removeUser(type, id) {
-    await this.query('DELETE FROM `user` WHERE ?? = ?', [type, id])
-  },
-
   async createUser(type, id, data) {
     data[type] = id
     const newKeys = Object.keys(data)
@@ -122,10 +118,6 @@ Database.extend(MysqlDatabase, {
         `\`assignee\` IN (${ids.map(id => this.escape(id)).join(',')})`,
       ].join(' AND ')
     }).join(' OR '))
-  },
-
-  async removeChannel(type, pid) {
-    await this.query('DELETE FROM `channel` WHERE `id` = ?', [`${type}:${pid}`])
   },
 
   async createChannel(type, pid, data) {

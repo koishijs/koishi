@@ -46,8 +46,9 @@ export function apply(ctx: Context) {
     const channels = await ctx.database.getAssignedChannels(['id', 'chess'])
     for (const { id, chess } of channels) {
       if (chess) {
-        states[id] = State.from(ctx.app, chess)
+        states[id] = State.from(chess)
         states[id].update = rules[chess.rule].update
+        states[id].imageMode = !!ctx.puppeteer
       }
     }
   })
@@ -90,7 +91,7 @@ export function apply(ctx: Context) {
         const rule = rules[options.rule]
         if (!rule) return '没有找到对应的规则。'
 
-        const state = new State(ctx.app, options.rule, options.size, rule.placement || 'cross')
+        const state = new State(options.rule, options.size, rule.placement || 'cross')
         state.p1 = userId
 
         if (rule.create) {

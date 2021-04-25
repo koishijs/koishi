@@ -20,6 +20,16 @@ export enum Type {
   system = 255,
 }
 
+export interface MessageParams {
+  type: Type
+  msgId: string
+  chatCode: string
+  targetId: string
+  content: any
+  quote: string
+  nonce: string
+}
+
 export interface MessageBase {
   type: Type
   content: string

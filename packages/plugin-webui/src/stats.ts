@@ -84,8 +84,6 @@ export class Statistics implements DataSource<Statistics.Payload> {
   average = average
 
   constructor(private ctx: Context, public config: Statistics.Config = {}) {
-    this.sync = ctx.database.createSynchronizer()
-
     if (config.handleSignals !== false) {
       const handleSignal = (signal: NodeJS.Signals) => {
         new Logger('app').info(`terminated by ${signal}`)
@@ -103,6 +101,10 @@ export class Statistics implements DataSource<Statistics.Payload> {
       })
     }
 
+    ctx.on('delegate/database', () => {
+      this.sync = ctx.database.createSynchronizer()
+    })
+
     ctx.before('disconnect', async () => {
       // rollback to default implementation to prevent infinite call stack
       if (Session.prototype.send[customTag]) {
@@ -110,6 +112,8 @@ export class Statistics implements DataSource<Statistics.Payload> {
       }
       await this.upload(true)
     })
+
+    ctx = ctx.select('database')
 
     ctx.before('command', ({ command, session }) => {
       if (command.parent?.name !== 'test') {
@@ -150,7 +154,7 @@ export class Statistics implements DataSource<Statistics.Payload> {
     if (forced || +date - +this.lastUpdate > REFRESH_INTERVAL || dateHour !== this.updateHour) {
       this.lastUpdate = date
       this.updateHour = dateHour
-      await this.sync.upload(date)
+      await this.sync?.upload(date)
     }
   }
 
@@ -229,6 +233,7 @@ export class Statistics implements DataSource<Statistics.Payload> {
   }
 
   async get() {
+    if (!this.sync) return
     const date = new Date()
     const dateNumber = Time.getDateNumber(date, date.getTimezoneOffset())
     if (dateNumber !== this.cachedDate) {

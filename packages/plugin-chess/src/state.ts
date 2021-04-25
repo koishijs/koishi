@@ -1,7 +1,7 @@
 /* global BigInt */
 
 import type * as puppeteer from 'koishi-plugin-puppeteer'
-import { Session, App } from 'koishi-core'
+import { Session } from 'koishi-core'
 
 const numbers = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
 const alphabet = 'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ'
@@ -26,10 +26,9 @@ export class State {
   imageMode: boolean
   update: (this: State, x: number, y: number, value: 1 | -1) => MoveResult | string
 
-  constructor(public app: App, public readonly rule: string, public readonly size: number, public readonly placement: 'cross' | 'grid') {
+  constructor(public readonly rule: string, public readonly size: number, public readonly placement: 'cross' | 'grid') {
     this.area = BigInt(size * size)
     this.full = (1n << this.area) - 1n
-    this.imageMode = !!app.puppeteer
   }
 
   get pBoard() {
@@ -144,10 +143,6 @@ export class State {
     return svg
   }
 
-  drawImage(x?: number, y?: number) {
-    return this.drawSvg(x, y).render(this.app)
-  }
-
   drawText(x?: number, y?: number) {
     const max = this.size - 1
     let output = '　' + numbers.slice(0, this.size)
@@ -168,7 +163,7 @@ export class State {
   async draw(session: Session, message: string = '', x?: number, y?: number) {
     if (this.imageMode) {
       const [image] = await Promise.all([
-        this.drawImage(x, y),
+        this.drawSvg(x, y).render(session.app),
         message && session.send(message),
       ])
       await session.send(image)
@@ -210,8 +205,8 @@ export class State {
     return { rule, size, placement, p1, p2, next, history: history.join(',') }
   }
 
-  static from(app: App, data: StateData) {
-    const state = new State(app, data.rule, data.size, data.placement)
+  static from(data: StateData) {
+    const state = new State(data.rule, data.size, data.placement)
     state.p1 = data.p1
     state.p2 = data.p2
     state.next = data.next

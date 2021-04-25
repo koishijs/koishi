@@ -257,7 +257,7 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
   }
 
   async function bind(user: User.Observed<never>, platform: Platform, userId: string) {
-    await ctx.database.removeUser(platform, userId)
+    await ctx.database.remove('user', { [platform]: [userId] })
     ctx.app._userCache[platform].set(userId, user)
     user[platform] = userId as never
     await user._update()
