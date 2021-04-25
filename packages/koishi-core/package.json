@@ -1,7 +1,7 @@
 {
   "name": "koishi-core",
   "description": "Core features for Koishi",
-  "version": "3.9.2",
+  "version": "3.10.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -30,7 +30,7 @@
   ],
   "devDependencies": {
     "@types/koa": "^2.13.1",
-    "koishi-test-utils": "^6.0.0-beta.11"
+    "koishi-test-utils": "^6.0.0-beta.12"
   },
   "dependencies": {
     "@koa/router": "^10.0.0",
@@ -42,7 +42,7 @@
     "fastest-levenshtein": "^1.0.12",
     "koa": "^2.13.1",
     "koa-bodyparser": "^4.3.0",
-    "koishi-utils": "^4.2.1",
+    "koishi-utils": "^4.2.2",
     "lru-cache": "^6.0.0"
   }
 }
