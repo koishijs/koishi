@@ -71,7 +71,10 @@ module.exports = {
           '/guide/unit-tests.md',
         ],
       }],
-      '/api': [['/api/', '总览'], {
+      '/api': [{
+        text: '总览',
+        link: '/api/',
+      }, {
         text: '核心 API',
         isGroup: true,
         children: [
@@ -106,7 +109,10 @@ module.exports = {
           '/api/migration.md',
         ],
       }],
-      '/plugins/': [['/plugins/', '总览'], {
+      '/plugins/': [{
+        text: '总览',
+        link: '/plugins/',
+      }, {
         text: '常用功能 (Common)',
         isGroup: true,
         children: [
