@@ -29,7 +29,8 @@ export class DiscordBot extends Bot<'discord'> {
 
   async request<T = any>(method: Method, path: string, data?: any, exHeaders?: any): Promise<T> {
     const { axiosConfig, discord = {} } = this.app.options
-    const url = `https://discord.com/api/v8${path}`
+    const endpoint = discord.endpoint || 'https://discord.com/api/v8'
+    const url = `${endpoint}${path}`
     const headers: Record<string, any> = {
       Authorization: `Bot ${this.token}`,
     }

@@ -5,6 +5,10 @@ sidebarDepth: 2
 
 # koishi-adapter-onebot
 
+::: warning
+尽管 Koishi 使用了 [MIT](https://choosealicense.com/licenses/mit/) 协议，但 OneBot 相关框架普遍使用了基于 [AGPL 3.0](https://choosealicense.com/licenses/agpl-3.0/) 的协议。因此如果你使用 koishi-adapter-onebot 运行你的机器人，你将可能受到 AGPL 3.0 协议的限制，必须将你的代码开源并保持同协议。Koishi 及其作者对使用上述框架或违反上述限制的行为所可能造成的一切后果概不负责。
+:::
+
 [OneBot](https://github.com/howmanybots/onebot) (旧名 CQHTTP) 是一个聊天机器人应用接口标准，目前可用于 QQ 机器人。要使用 koishi-adapter-onebot，你需要首先下载一个实现该协议的框架：
 
 - [Mrs4s/go-cqhttp](https://github.com/Mrs4s/go-cqhttp)（推荐）
@@ -15,7 +19,15 @@ sidebarDepth: 2
 
 - 标有 <Badge vertical="baseline" text="go-cqhttp" type="warn"/> 的 API 只能基于 go-cqhttp 运行
 
-## 机制说明
+## 特性介绍
+
+### 协议选择
+
+目前 Koishi 已经完全实现了 OneBot 所定义的全部三种通信方式，因此它们之间**不存在任何功能上的差别**。
+
+但是，HTTP 需要 Koishi 和 OneBot 所处于同一台机器，或所处的机器都拥有公网 IP；而 WebSocket 只需要 Koishi 和 OneBot 所处于同一台机器，或运行 OneBot 的机器拥有公网 IP。因此如果你在服务端运行 CoolQ，同时在个人电脑上调试你的 Koishi 应用，你应当选择使用 WebSocket 模式。
+
+从性能上说，WebSocket 占用的资源会更少（因为不需要每次都建立连接），但是响应速度可能不如 HTTP；另一方面，当一个 Koishi 应用同时管理着多个机器人时，HTTP 能通过快捷调用和服务器复用的方式来提高性能，但是 WebSocket 并没有这些机制。
 
 ### 异步调用
 
@@ -27,13 +39,13 @@ OneBot 提出了**异步调用**的概念，当 OneBot 服务器受到异步调�
 
 ```js
 // 普通版本
-const messageId = await app.sender.sendPrivateMsg(123456789, 'Hello world')
+const messageId = await bot.$sendPrivateMsg('123456789', 'Hello world')
 
 // 异步版本，无法获得调用结果
-await app.sender.sendPrivateMsgAsync(123456789, 'Hello world')
+await bot.$sendPrivateMsgAsync('123456789', 'Hello world')
 ```
 
-::: tip 提示
+::: tip
 虽然异步调用方法的名字以 Async 结尾，但是其他方法也是**异步函数**，它们都会返回一个 `Promise` 对象。取这样的名字只是为了与 OneBot 保持一致。
 :::
 
@@ -41,53 +53,21 @@ await app.sender.sendPrivateMsgAsync(123456789, 'Hello world')
 
 Meta 对象还提供了一个快捷回复方法 `session.send`，调用它可以快速实现对原消息的回复。快捷操作的响应速度会高于普通的 Sender API 调用，但是默认情况下这种操作同上面的异步调用一样，这些操作也是无法获得调用结果的。完整的快捷操作列表参见 [Koishi 添加的属性](#koishi-添加的属性)。
 
-这里也简单介绍一下快捷操作的原理。当正常使用 HTTP 模式时，每个事件上报和 API 调用都使用了不同的连接。那么快捷操作则相当于将 API 调用作为事件上报的响应。当然，这种做法有着很多限制，例如对 WebSocket 无效，同一个事件只能响应一次，以及需要手动处理响应超时的问题。因此，默认情况下这种优化是不开启的。如果手动配置了 `quickOperationTimeout`，则会将这个配置项作为时间限制，在这个时间限制内第一个调用快捷操作的会享受这种优化（事实上大部分操作都只有一个响应，所以这种优化对 HTTP 往往是非常有效的），之后的所有快捷操作调用都会自动转化为异步调用，这样可以保证快捷操作永远都是可用的。
+这里也简单介绍一下快捷操作的原理。当正常使用 HTTP 模式时，每个事件上报和 API 调用都使用了不同的连接。那么快捷操作则相当于将 API 调用作为事件上报的响应。当然，这种做法有着很多限制，例如对 WebSocket 无效，同一个事件只能响应一次，以及需要手动处理响应超时的问题。因此，默认情况下这种优化是不开启的。如果手动配置了 [`quickOperation`](#options-quickoperation)，则会将这个配置项作为时间限制，在这个时间限制内第一个调用快捷操作的会享受这种优化（事实上大部分操作都只有一个响应，所以这种优化对 HTTP 往往是非常有效的），之后的所有快捷操作调用都会自动转化为异步调用，这样可以保证快捷操作永远都是可用的。
 
 下面这张图比较了使用 HTTP 时，快捷操作与默认机制的区别：
 
 ![quick-operation](/quick-operation.png)
 
-### HTTP 和 WebSocket 应该如何选择？
+## 机器人选项
 
-目前 Koishi 已经完全实现了 OneBot 提供的 HTTP 和 WebSocket 通信方式，因此它们之间**不存在任何功能上的差别**。
+### options(.bots[]).type
 
-但是，HTTP 需要 Koishi 和 OneBot 所处于同一台机器，或所处的机器都拥有公网 IP；而 WebSocket 只需要 Koishi 和 OneBot 所处于同一台机器，或运行 OneBot 的机器拥有公网 IP。因此如果你在服务端运行 CoolQ，同时在个人电脑上调试你的 Koishi 应用，你应当选择使用 WebSocket 模式。
+- 可选值: onebot, onebot:http, onebot:ws, onebot:ws-reverse
 
-从性能上说，WebSocket 占用的资源会更少（因为不需要每次都建立连接），但是响应速度可能不如 HTTP；另一方面，当一个 Koishi 应用同时管理着多个机器人时，HTTP 能通过快捷调用和服务器复用的方式来提高性能，但是 WebSocket 并没有这些机制。
-
-## 事件
-
-metaEvent 系列事件对应这 CQHTTP 插件本身的元事件，**只会在 App 实例触发**。所有这些事件的回调函数都会传入一个 [`Meta` 对象](../guide/message.md#深入-meta-对象)。这些事件的共同点是 `meta.postType` 都为 `'meta_event'`。
-
-### 事件：heartbeat
-
-心跳元事件，**仅对 WebSocket 生效**。产生此事件需要通过将配置项 `enable_heartbeat` 设置为 `true`，并可通过 `heartbeat_interval` 配置心跳间隔（单位毫秒）。
-
-### 事件：lifecycle
-
-生命周期事件，**仅对 HTTP 生效**。拥有下面的子事件：
-
-- lifecycle/enable: CQHTTP 插件启用
-- lifecycle/disable: CQHTTP 插件停用
-- lifecycle/connect: 成功建立 WebSocket 连接
-
-## App 构造函数选项
-
-下面的配置项来自 koishi-adapter-cqhttp。你需要将你的 [`type`](#options-type) 字段配置为 `cqhttp`, `cqhttp:http`, `cqhttp:ws` 或 `cqhttp:ws-reverse` 中的一种。如果缺省或使用了 `cqhttp`，Koishi 会读取你的 `server` 选项，根据你配置的服务器 URL 进行适配。
+如果使用了 onebot，Koishi 会读取你的 `server` 选项，根据你配置的服务器 URL 进行适配。
 
 相关 OneBot 配置：`use_http`, `use_ws`。
-
-### options.path
-
-- 类型：`string`
-
-服务器监听的路径。相关 OneBot 配置：`post_url`。
-
-### options.secret
-
-- 类型：`string`
-
-接收信息时用于验证的字段，应与 OneBot 的 `secret` 配置保持一致。
 
 ### options(.bots[]).server
 
@@ -103,23 +83,30 @@ metaEvent 系列事件对应这 CQHTTP 插件本身的元事件，**只会在 Ap
 
 发送信息时用于验证的字段，应与 OneBot 的 `access_token` 配置保持一致。
 
-### options.retryTimes
+## 适配器选项
+
+包括全部的 [`WsClient`](../adapter.md#类-adapter-wsclient) 选项和下列额外选项：
+
+### options.onebot.path
+
+- 类型：`string`
+- 默认值：`'/onebot'`
+
+服务器监听的路径。仅用于 HTTP 通信方式。
+
+相关 OneBot 配置：`post_url`。
+
+### options.onebot.secret
+
+- 类型：`string`
+
+接收信息时用于验证的字段，应与 OneBot 的 `secret` 配置保持一致。
+
+### options.onebot.quickOperation
 
 - 类型：`number`
 
-WebSocket 允许重新连接的次数。默认值为 `0`。
-
-### options.retryInterval
-
-- 类型：`number`
-
-WebSocket 重新尝试连接前的等待时间，单位为毫秒。默认值为 `5000`。
-
-### options.quickOperation
-
-- 类型：`number`
-
-快捷操作的时间限制，单位为毫秒。如果配置了这个选项且使用了 HTTP 通信方式，则在这段时间内的首次调用 `meta.send()` 或类似的方法将不产生新的 HTTP 请求。默认值为 `100`。参见 [**快捷操作**](../guide/message.md#快捷操作) 一节。
+快捷操作的时间限制，单位为毫秒。如果配置了这个选项且使用了 HTTP 通信方式，则在这段时间内的首次调用 `session.send()` 或类似的方法将不产生新的 HTTP 请求。默认值为 `100`。参见 [**快捷操作**](#快捷操作) 一节。
 
 ## 发送消息
 
