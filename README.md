@@ -47,11 +47,11 @@ yarn koishi start
 
 ### 开箱即用的 CLI
 
-Koishi 高度配置化的命令行工具可以让你无需写代码就搭建属于你的机器人。与此同时，CLI 还配备了丰富和人性化的提示，进一步提高调试体验。
+Koishi 高度配置化的命令行工具可以让你无需写代码就搭建属于你的机器人。与此同时，CLI 还配备了丰富和人性化的提示，进一步提高调试体验。我们甚至还实现了**插件级别的 HMR（模块热替换）**，让你开发和调试插件也拥有如同前端开发一样的丝滑体验。
 
 ### 功能强大的 API
 
-经过了几个版本的迭代，Koishi 已经发展出了丰富的 API，功能覆盖机器人领域的方方面面。从上层负责交互的指令、会话、中间件，再到中层负责控制的应用、上下文、插件，最后到底层的机器人和适配器，每一个部分都经过了精心的编写，可以让你轻松实现任何需求。
+经过了几个版本的迭代，Koishi 已经发展出了丰富的 API，功能覆盖机器人领域的方方面面。从上层负责交互的指令、会话、中间件，再到中层负责控制的应用、上下文、插件，最后到底层的机器人和适配器，每一个部分都经过了精心的编写，可以让你轻松实现任何需求。如果担心在复杂的功能中迷失方向，我也准备了细致的文档来提供帮助。
 
 ### 丰富的生态系统
 
@@ -59,36 +59,15 @@ Koishi 在编写时，也同样编写了大量的官方插件作为补充。它�
 
 ### 多账户与跨平台支持
 
-Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间互通数据、共用服务器、保证数据安全提供了原生的解决方案，这有助于在保持高性能的同时，将风控和迁移造成的影响降低到最小。
+Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间互通数据、共用服务器、保证数据安全提供了原生的解决方案，这有助于在保持高性能的同时，将风控和迁移造成的影响降低到最小。Koishi 的用户甚至可以**在不同的平台间绑定数据**，使你无论切换到哪个平台，机器人都能记住你的用户信息。
 
-## 应用案例
+除此以外，Koishi 还内置了一套用户管理机制，不仅几乎能满足一切需求，还具有良好的扩展性，任何人都可以在插件中扩展用户的字段。Koishi 的模块化开发使得这套机制并不仅限于单一的平台或者数据库。目前支持的平台已经包括 QQ (OneBot)，Telegram，Discord 等等，支持的数据库包括 MySQL (mariadb) 和 MongoDB。
 
-欢迎[向下面的列表中添加](https://github.com/koishijs/koishi/edit/master/README.md)自己的插件或机器人。
+### 便利的网页控制台
 
-### 社区插件
+Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个控制台包含了非常多的功能：查看机器人运行状态、收集并展示统计数据、管理你的插件和依赖……
 
-<!-- 左边填 npm 包名 -->
-
-- [koishi-plugin-blame](https://github.com/ArilyChan/koishi-plugin-blame): 拦截崩溃错误，推送到私信或群
-- [koishi-plugin-gosen-choyen](https://github.com/idlist/koishi-plugin-gosen-choyen): 生成并发送“我想要五千兆元！”风格的图片
-- [koishi-plugin-genshin](https://github.com/koishijs/koishi-plugin-genshin): 查询原神国服玩家数据
-- [koishi-plugin-ink](https://github.com/idlist/koishi-plugin-ink): 通过 [ink](https://github.com/inkle/ink) 展示视觉小说
-- [koishi-plugin-bgp](https://github.com/Anillc/koishi-plugin-bgp): BGP 工具集！
-- [koishi-plugin-dcqq-relay](https://github.com/XxLittleCxX/koishi-plugin-dcqq-relay): 同步 Discord 与 QQ 间的消息
-- [koishi-plugin-forward](https://github.com/Anillc/forward): 将你的消息转发至其他平台！
-- [koishi-plugin-animal-picture](https://github.com/idlist/koishi-plugin-animal-picture): 发送各种动物图片
-- [koishi-plugin-shell](https://github.com/koishijs/koishi-plugin-shell): 使用 Koishi 执行终端命令
-- [koishi-plugin-eval-enhance](https://github.com/Anillc/koishi-plugin-eval-enhance): koishi-plugin-eval的增强！
-- [koishi-plugin-work](https://github.com/NWYLZW/koishi-plugin-work): 工作学习工具，已有功能 todos: 代办管理
-
-### 社区项目
-
-<!-- 左边填 github 仓库 -->
-
-- [ArilyChan/qq-bot](https://github.com/ArilyChan/qq-bot): 小阿日
-- [hydro-dev/HydroBot](https://github.com/hydro-dev/HydroBot): A Simple QQ Robot
-- [Wjghj-Project/Chatbot-SILI](https://github.com/Wjghj-Project/Chatbot-SILI): 「即时通讯软件转接姬」SILI-t137-[Tumita]-Invoke-II@LD(A)
-- [idlist/2bot-v3](https://github.com/idlist/2bot-v3): 2bot（名称来源于 FFXIV 的阿尔博特）
+这个控制台本身的也提供了接口，允许其他插件来新增页面。当你安装了另一个插件 koishi-plugin-chat 之后，你甚至可以利用控制台，直接使用机器人的号进行聊天！
 
 ## 官方生态
 
@@ -130,6 +109,35 @@ Koishi 原生地支持了多账户与跨平台，同时为这些机器人之间�
 - [koishi-plugin-tools](https://koishi.js.org/plugins/other/tools) / 实用工具
 - [koishi-plugin-webui](https://koishi.js.org/plugins/other/webui) / 网页控制台
 
+## 应用案例
+
+欢迎[向下面的列表中添加](https://github.com/koishijs/koishi/edit/master/README.md)自己的插件或机器人。
+
+### 社区插件
+
+<!-- 左边填 npm 包名 -->
+
+- [koishi-plugin-blame](https://github.com/ArilyChan/koishi-plugin-blame): 拦截崩溃错误，推送到私信或群
+- [koishi-plugin-gosen-choyen](https://github.com/idlist/koishi-plugin-gosen-choyen): 生成并发送“我想要五千兆元！”风格的图片
+- [koishi-plugin-genshin](https://github.com/koishijs/koishi-plugin-genshin): 查询原神国服玩家数据
+- [koishi-plugin-ink](https://github.com/idlist/koishi-plugin-ink): 通过 [ink](https://github.com/inkle/ink) 展示视觉小说
+- [koishi-plugin-bgp](https://github.com/Anillc/koishi-plugin-bgp): BGP 工具集！
+- [koishi-plugin-dcqq-relay](https://github.com/XxLittleCxX/koishi-plugin-dcqq-relay): 同步 Discord 与 QQ 间的消息
+- [koishi-plugin-forward](https://github.com/Anillc/forward): 将你的消息转发至其他平台！
+- [koishi-plugin-animal-picture](https://github.com/idlist/koishi-plugin-animal-picture): 发送各种动物图片
+- [koishi-plugin-shell](https://github.com/koishijs/koishi-plugin-shell): 使用 Koishi 执行终端命令
+- [koishi-plugin-eval-enhance](https://github.com/Anillc/koishi-plugin-eval-enhance): koishi-plugin-eval的增强！
+- [koishi-plugin-work](https://github.com/NWYLZW/koishi-plugin-work): 工作学习工具，已有功能 todos: 代办管理
+
+### 社区项目
+
+<!-- 左边填 github 仓库 -->
+
+- [ArilyChan/qq-bot](https://github.com/ArilyChan/qq-bot): 小阿日
+- [hydro-dev/HydroBot](https://github.com/hydro-dev/HydroBot): A Simple QQ Robot
+- [Wjghj-Project/Chatbot-SILI](https://github.com/Wjghj-Project/Chatbot-SILI): 「即时通讯软件转接姬」SILI-t137-[Tumita]-Invoke-II@LD(A)
+- [idlist/2bot-v3](https://github.com/idlist/2bot-v3): 2bot（名称来源于 FFXIV 的阿尔博特）
+
 ## 使用协议
 
 Koishi 完全使用 [MIT](./LICENSE) 协议开源，维护良好的开源生态从我做起 (*>ω<)φ
@@ -142,6 +150,6 @@ Copyright © 2019-present, Shigma
 
 ## 联系方式
 
-[![QQ群](https://img.shields.io/badge/QQ%E7%BE%A4-963697928-blue.svg?style=flat-square)](https://jq.qq.com/?_wv=1027&k=89G3oKG0)
+[![Discord](https://img.shields.io/discord/811975252883800125?label=discord&style=flat-square)](https://discord.com/channels/811975252883800125)
 
 本群只交流程序开发，不欢迎伸手党，禁止谈论商业行为。
