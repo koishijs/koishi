@@ -29,6 +29,11 @@ abstract class Stat<K extends string, V> {
   synchronize(date: string, sqls: string[]) {
     const updates: string[] = []
     for (const name in this.data) {
+      if (!this.fields.includes(name)) {
+        logger.warn(new Error(`unknown key "${name}" in stats table "${this.table}"`))
+        delete this.data[name]
+        continue
+      }
       const update = this.update(name, this.data[name])
       if (update) updates.push(update)
     }
@@ -73,11 +78,6 @@ namespace Stat {
       return `\`${name}\` = JSON_SET(\`${name}\`, ${entries.map(([key, value]) => {
         return `'$."${key}"', IFNULL(JSON_EXTRACT(\`${name}\`, '$."${key}"'), 0) + ${value}`
       }).join(', ')})`
-    }
-
-    add(field: K, key: string | number) {
-      const stat: Record<string, number> = this.data[field]
-      stat[key] = (stat[key] || 0) + 1
     }
   }
 
