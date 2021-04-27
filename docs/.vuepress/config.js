@@ -87,6 +87,7 @@ module.exports = {
           '/api/segment.md',
           '/api/database.md',
           '/api/adapter.md',
+          '/api/global.md',
         ],
       }, {
         text: '其他官方包',
