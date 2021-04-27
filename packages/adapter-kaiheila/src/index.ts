@@ -6,6 +6,7 @@ import WsClient from './ws'
 interface KaiheilaOptions extends Adapter.WsClientOptions {
   path?: string
   endpoint?: string
+  attachMode?: 'separate' | 'card' | 'mixed'
 }
 
 declare module 'koishi-core' {
