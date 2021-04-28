@@ -41,7 +41,7 @@
     "koishi-utils": "^4.2.2"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.16",
+    "@types/chai": "^4.2.17",
     "@types/chai-as-promised": "^7.1.3"
   }
 }

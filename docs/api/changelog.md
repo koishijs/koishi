@@ -1,6 +1,6 @@
 ---
 sidebarDepth: 1
-noOutboundLinks: true
+externalIcon: false
 ---
 
 # v3 更新日志
