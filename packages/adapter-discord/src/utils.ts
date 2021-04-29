@@ -5,7 +5,7 @@ import * as DC from './types'
 
 export const adaptUser = (user: DC.DiscordUser): UserInfo => ({
   userId: user.id,
-  avatar: user.avatar,
+  avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`,
   username: user.username,
   discriminator: user.discriminator,
   isBot: user.bot || false,

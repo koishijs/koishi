@@ -72,7 +72,7 @@ export function apply(ctx: Context, config: Config = {}) {
     .userFields(['ghAccessToken', 'ghRefreshToken'])
     .option('add', '-a  监听一个新的仓库')
     .option('delete', '-d  移除已监听的仓库')
-    .option('subscribe', '-s  添加完成后更新到订阅', { hidden: true })
+    .option('subscribe', '-s  添加完成后更新到订阅')
     .action(async ({ session, options }, name) => {
       if (options.add || options.delete) {
         if (!name) return '请输入仓库名。'
