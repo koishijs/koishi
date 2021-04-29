@@ -6,7 +6,7 @@ import { encode } from 'querystring'
 import { Context, camelize, Time, Random, sanitize, Logger, Session } from 'koishi-core'
 import { CommonPayload, addListeners, defaultEvents, EventConfig } from './events'
 import { Config, GitHub, ReplyHandler, ReplySession, ReplyPayloads } from './server'
-import axios from 'axios'
+import axios, { Method } from 'axios'
 
 export * from './server'
 
@@ -68,7 +68,7 @@ export function apply(ctx: Context, config: Config = {}) {
 
   const repoRegExp = /^[\w.-]+\/[\w.-]+$/
 
-  ctx.command('github.repos [name]', 'GitHub 仓库')
+  ctx.command('github.repos [name]', '管理监听的仓库')
     .userFields(['ghAccessToken', 'ghRefreshToken'])
     .option('add', '-a  监听一个新的仓库')
     .option('delete', '-d  移除已监听的仓库')
@@ -194,6 +194,43 @@ export function apply(ctx: Context, config: Config = {}) {
           return '移除订阅成功！'
         }
       }
+    })
+
+  async function request(method: Method, url: string, session: ReplySession, body: any, message: string) {
+    return ctx.app.github.request(method, 'https://api.github.com' + url, session, body)
+      .then(() => message + '成功！')
+      .catch((err) => {
+        logger.warn(err)
+        return message + '失败。'
+      })
+  }
+
+  ctx.command('github.issue [title] [body:text]', '创建和查看 issue')
+    .userFields(['ghAccessToken', 'ghRefreshToken'])
+    .option('repo', '-r [repo:string]  仓库名')
+    .action(async ({ session, options }, title, body) => {
+      if (!options.repo) return '请输入仓库名。'
+      if (!repoRegExp.test(options.repo)) return '请输入正确的仓库名。'
+      if (!session.user.ghAccessToken) {
+        return ctx.app.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
+      }
+
+      return request('POST', `/repos/${options.repo}/issues`, session, {
+        title,
+        body,
+      }, '创建')
+    })
+
+  ctx.command('github.star [repo]', '给仓库点个 star')
+    .userFields(['ghAccessToken', 'ghRefreshToken'])
+    .action(async ({ session }, repo) => {
+      if (!repo) return '请输入仓库名。'
+      if (!repoRegExp.test(repo)) return '请输入正确的仓库名。'
+      if (!session.user.ghAccessToken) {
+        return ctx.app.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
+      }
+
+      return request('PUT', `/user/starred/${repo}`, session, null, '创建')
     })
 
   ctx.on('connect', async () => {
