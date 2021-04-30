@@ -24,4 +24,17 @@ module.exports = {
       after: () => '</panel-view>',
     }],
   ],
+
+  extendsPageData(page) {
+    adjustSidebarItems(page.headers)
+  },
+}
+
+function adjustSidebarItems(headers) {
+  headers.forEach(header => {
+    header.title = header.title.replace(/(\S)\(.+\)(?=\s|$)/, '$1()')
+    if (header.children) {
+      adjustSidebarItems(header.children)
+    }
+  })
 }
