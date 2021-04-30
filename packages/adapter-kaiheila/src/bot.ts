@@ -1,6 +1,6 @@
 /* eslint-disable quote-props */
 
-import { AuthorInfo, Bot, MessageInfo } from 'koishi-core'
+import { AuthorInfo, Bot, MessageInfo, Session } from 'koishi-core'
 import { camelize, segment, pick, renameProperty, snakeCase } from 'koishi-utils'
 import axios, { Method } from 'axios'
 import * as KHL from './types'
@@ -16,6 +16,10 @@ export interface KaiheilaMessageInfo extends MessageInfo {
   mentionHere?: boolean
   author?: AuthorInfo
 }
+
+const attachmentTypes = ['image', 'video', 'audio', 'file']
+
+type SendHandle = [string, KHL.MessageParams, Session<never, never, 'kaiheila', 'send'>]
 
 export class KaiheilaBot extends Bot {
   _sn = 0
@@ -66,13 +70,13 @@ export class KaiheilaBot extends Bot {
       method,
       url,
       headers,
-      data: JSON.stringify(snakeCase(data)),
+      data: data instanceof FormData ? data : JSON.stringify(snakeCase(data)),
     })
     const result = camelize(response.data)
     return result.data
   }
 
-  async sendMessage(channelId: string, content: string) {
+  private _prepareHandle(channelId: string, content: string): SendHandle {
     let path: string
     const params = {} as KHL.MessageParams
     const session = this.createSession({ channelId, content })
@@ -87,31 +91,106 @@ export class KaiheilaBot extends Bot {
       session.groupId = 'unknown'
       path = '/message/create'
     }
+    return [path, params, session]
+  }
 
-    // trigger before-send
-    if (await this.app.serial(session, 'before-send', session)) return
+  private async _sendHandle([path, params, session]: SendHandle, type: KHL.Type, content: string) {
+    params.type = type
+    params.content = content
+    const message = await this.request('POST', path, params)
+    session.messageId = message.msgId
+    this.app.emit(session, 'send', session)
+  }
 
-    const send = async (type: KHL.Type, content: string) => {
-      params.type = type
-      params.content = content
-      const message = await this.request('POST', path, params)
-      session.messageId = message.msgId
-      this.app.emit(session, 'send', session)
+  private async _transformUrl({ type, data }: segment.Parsed) {
+    if (data.url.startsWith('file://') || data.url.startsWith('base64://')) {
+      const payload = new FormData()
+      payload.append('file', data.url.startsWith('file://')
+        ? createReadStream(data.url.slice(7))
+        : Buffer.from(data.url.slice(9), 'base64'))
+      const { url } = await this.request('POST', '/asset/create', payload, payload.getHeaders())
+      data.url = url
+    } else if (!data.url.includes('kaiheila')) {
+      const res = await axios.get<ReadableStream>(data.url, {
+        responseType: 'stream',
+        headers: { accept: type },
+      })
+      const payload = new FormData()
+      payload.append('file', res.data)
+      const { url } = await this.request('POST', '/asset/create', payload, payload.getHeaders())
+      data.url = url
+      console.log(url)
+    }
+  }
+
+  private async _sendCard(handle: SendHandle, chain: segment.Chain) {
+    let text: KHL.Card.Text = { type: 'plain-text', content: '' }
+    let card: KHL.Card = { type: 'card', modules: [] }
+    const output: KHL.Card[] = []
+    const flushText = () => {
+      text.content = text.content.trim()
+      if (!text.content) return
+      card.modules.push({ type: 'section', text })
+      text = { type: 'plain-text', content: '' }
+    }
+    const flushCard = () => {
+      flushText()
+      if (!card.modules.length) return
+      output.push(card)
+      card = { type: 'card', modules: [] }
     }
 
+    for (const { type, data } of chain) {
+      if (type === 'text') {
+        text.content += data.content
+      } else if (type === 'at') {
+        if (data.id) {
+          text.content += `@user#${data.id}`
+        } else if (data.type === 'all') {
+          text.content += '@全体成员'
+        } else if (data.type === 'here') {
+          text.content += '@在线成员'
+        } else if (data.role) {
+          text.content += `@role:${data.role};`
+        }
+      } else if (type === 'sharp') {
+        text.content += `#channel:${data.id};`
+      } else if (attachmentTypes.includes(type)) {
+        flushText()
+        await this._transformUrl({ type, data })
+        if (type === 'image') {
+          card.modules.push({
+            type: 'image-group',
+            elements: [{
+              type: 'image',
+              src: data.url,
+            }],
+          })
+        } else {
+          card.modules.push({
+            type: type as never,
+            src: data.url,
+          })
+        }
+      } else if (type === 'card') {
+        flushCard()
+        output.push(JSON.parse(data.content))
+      }
+    }
+    flushCard()
+    await this._sendHandle(handle, KHL.Type.card, JSON.stringify(output))
+  }
+
+  private async _sendSeparate(handle: SendHandle, chain: segment.Chain) {
     let textBuffer = ''
     const flush = async () => {
       textBuffer = textBuffer.trim()
       if (!textBuffer) return
-      await send(KHL.Type.text, textBuffer)
-      params.quote = null
+      await this._sendHandle(handle, KHL.Type.text, textBuffer)
+      handle[1].quote = null
       textBuffer = ''
     }
 
-    const chain = segment.parse(content)
-    if (chain[0].type === 'quote') {
-      params.quote = chain.shift().data.id
-    }
     for (const { type, data } of chain) {
       if (type === 'text') {
         textBuffer += data.content
@@ -127,24 +206,38 @@ export class KaiheilaBot extends Bot {
         }
       } else if (type === 'sharp') {
         textBuffer += `#channel:${data.id};`
-      } else if (type === 'image' || type === 'video' || type === 'file') {
+      } else if (attachmentTypes.includes(type)) {
         await flush()
-        if (data.url.startsWith('file://') || data.url.startsWith('base64://')) {
-          const payload = new FormData()
-          payload.append('file', data.url.startsWith('file://')
-            ? createReadStream(data.url.slice(7))
-            : Buffer.from(data.url.slice(9), 'base64'))
-          const { url } = await this.request('POST', '/asset/create', payload, payload.getHeaders())
-          data.url = url
-        }
-        await send(KHL.Type[type], data.url)
+        await this._transformUrl({ type, data })
+        await this._sendHandle(handle, KHL.Type[type], data.url)
       } else if (type === 'card') {
         await flush()
-        await send(KHL.Type.card, JSON.stringify([JSON.parse(data.content)]))
+        await this._sendHandle(handle, KHL.Type.card, JSON.stringify([JSON.parse(data.content)]))
       }
     }
-
     await flush()
+  }
+
+  async sendMessage(channelId: string, content: string) {
+    const handle = this._prepareHandle(channelId, content)
+    const [, params, session] = handle
+    if (await this.app.serial(session, 'before-send', session)) return
+
+    const chain = segment.parse(content)
+    if (chain[0].type === 'quote') {
+      params.quote = chain.shift().data.id
+    }
+
+    const { attachMode } = this.app.options.kaiheila
+    const hasAttachment = chain.some(node => attachmentTypes.includes(node.type))
+    const useCard = hasAttachment && (attachMode === 'card' || attachMode === 'mixed' && chain.length > 1)
+
+    if (useCard) {
+      await this._sendCard(handle, chain)
+    } else {
+      await this._sendSeparate(handle, chain)
+    }
+
     return session.messageId
   }
 

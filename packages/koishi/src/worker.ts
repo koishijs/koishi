@@ -293,12 +293,15 @@ function createWatcher() {
      * - file X -> none of change D
      */
     const declined = new Set(externals)
+    const visited = new Set<string>()
 
     function traverse(filename: string) {
-      if (externals.has(filename) || filename.includes('/node_modules/')) return
+      if (declined.has(filename) || filename.includes('/node_modules/')) return
+      visited.add(filename)
       const { children } = require.cache[filename]
       let isActive = stashed.has(filename)
       for (const module of children) {
+        if (visited.has(filename)) continue
         if (traverse(module.filename)) {
           stashed.add(filename)
           isActive = true

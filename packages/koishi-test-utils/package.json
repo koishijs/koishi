@@ -37,11 +37,11 @@
   "dependencies": {
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
-    "koishi-core": "^3.10.0",
+    "koishi-core": "^3.10.1",
     "koishi-utils": "^4.2.2"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.16",
+    "@types/chai": "^4.2.17",
     "@types/chai-as-promised": "^7.1.3"
   }
 }

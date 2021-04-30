@@ -27,10 +27,10 @@
     "koishi"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.10.0"
+    "koishi-core": "^3.10.1"
   },
   "devDependencies": {
-    "@types/ws": "^7.4.1",
+    "@types/ws": "^7.4.2",
     "get-port": "^5.1.1",
     "koishi-test-utils": "^6.0.0-beta.12"
   },

@@ -5,38 +5,8 @@ sidebarDepth: 2
 # 常用工具 (Utils)
 
 ::: tip 注意
-本页显示的版本号都表示对应的 koishi-utils 版本号（而不是对应的 koishi 版本号）。
+尽管本页介绍的 API 由 koishi-utils 包提供，但你仍然可以直接从 koishi-core 中引入它们。
 :::
-
-包含了被 Koishi 使用的工具函数，它们由 `koishi-utils` 包提供。
-
-## 观察者对象
-
-### observe(target, update?, label?)
-
-- **target:** `T extends object` 要观测的对象
-- **update:** `(diff: Partial<T>) => R` 更新回调函数
-- **label:** `string` 对象的标签，用于标识
-- 返回值: `Observed<T>`
-
-创建一个观察者对象。目前只支持从普通对象创建（不支持 Array / Set / Map）。
-
-### observed._diff
-
-观察者当前的对象变化。
-
-### observed._merge(source)
-
-- **source:** `object` 要合并的对象
-- 返回值: `this`
-
-将某些属性合并入当前观察者，不会触发 diff 更新。
-
-### observed._update()
-
-- 返回值: `R`
-
-更新观察者对象，同时清除 diff。
 
 ## 字符串操作
 
@@ -81,39 +51,6 @@ sidebarDepth: 2
 - 返回值: `any` 转换结果
 
 如果输入的是字符串，则将字符串转换成 snake_case；如果是数组或对象，则递归地将对象中的每个（可枚举）的键转换成 snake_case；其他情况不受影响。
-
-## 模板操作
-
-### template(path, ...params)
-
-- **path:** `string` 模板路径
-- **params:** `any[]` 参数列表
-- 返回值: `string` 生成的字符串
-
-根据模板路径返回插值后的字符串。如果路径不存在将会返回路径本身。
-
-### template.set(path, value)
-
-- **path:** `string` 模板路径
-- **value:** `string | object` 模板字符串
-- 返回值: `void`
-
-定义模板字符串。如果 `value` 是一个对象，则会将 `path` 作为前缀添加到每个路径中。
-
-### template.get(path)
-
-- **path:** `string` 模板路径
-- 返回值: `string` 模板字符串
-
-根据模板路径返回模板字符串。如果路径不存在将会返回路径本身。
-
-### template.format(source, ...params)
-
-- **source:** `string` 模板字符串
-- **params:** `any[]` 参数列表
-- 返回值: `string` 生成的字符串
-
-使用模板语法插值。
 
 ## 集合操作
 
@@ -199,24 +136,6 @@ sidebarDepth: 2
 - **time:** `Date` 起始时间
 - **interval:** `number` 时间间隔，单位为毫秒
 - 返回值: `string`
-
-## 输出日志
-
-### new Logger(name)
-
-### logger.level
-
-### logger.extend()
-
-### logger.error()
-
-### logger.success()
-
-### logger.warn()
-
-### logger.info()
-
-### logger.debug()
 
 ## 随机数操作
 

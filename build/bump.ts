@@ -165,9 +165,13 @@ if (!args.length && !options.all) {
     return pkg.save()
   }))
 
+  const beta = ['adventure', 'dice', 'monitor', 'rss', 'tomon']
   const ecosystem: Record<string, Pick<PackageJson, 'version' | 'description'>> = {}
+
   for (const path in packages) {
-    if (!path.startsWith('packages/') || path.startsWith('packages/koishi')) continue
+    if (!path.startsWith('packages/')) continue
+    if (path.startsWith('packages/koishi')) continue
+    if (beta.some(name => path.endsWith(name))) continue
     const { name, version, description } = packages[path].meta
     ecosystem[name] = { version, description }
   }

@@ -1,9 +1,95 @@
 ---
 sidebarDepth: 1
-noOutboundLinks: true
+externalIcon: false
 ---
 
 # v3 更新日志
+
+## [Koishi 3.10.0](https://github.com/koishijs/koishi/releases/tag/3.10.0)
+
+### Notable Changes
+
+- 全部文档已经合并到了主仓库，并补充了许多内容，也更便于接收 Pull Request
+
+### Features
+
+- **core:** 移除了 `database.removeUser()` 等方法，请使用 ORM API (=10d157002de0c0da902bd97278761f845201d9cb)
+- **core:** 重构代码并调整了 Argv 的类型标注 (=9139e7a7eed8e20921420201ca1822858029fd3d)
+- **discord:** 支持了 `discord.endpoint` 配置项 (=1646d9c720b81496178498987031e666e86f2464)
+- **kaiheila:** 支持了 card, image, video, file 消息段的发送 (=41566d99d04e075631098a0d5ce14a68b4dc03e3, =6d82272488e5aec4f637e85ae8912bfb7e170e46)
+- **mysql:** 支持了 ORM 声明中外键的初始化 (#243) (=6104b9aedeb1668f24f704470c892b48108a869f)
+- **webui:** 支持了无数据库条件下使用 WebUI (#234) (=b211cd8fff64f4abbc9c9832106411fa8c63fa8d)
+
+### Bug Fixes
+
+- **puppeteer:** 优化了类型标注 (=db5177584b4e8744138257d5fa8ecd7590e9a52e)
+- **utils:** `template.set()` 对于对象模板应该使用深层合并而非覆盖 (#244) (=8d0551441e61796a0af90a1f9f26359b2886c56d)
+
+## [Koishi 3.9.2](https://github.com/koishijs/koishi/releases/tag/3.9.2)
+
+### Notable Changes
+
+- koishi-plugin-eval + koishi-plugin-puppeteer 组合支持了 JSX 渲染的功能
+
+### Features
+
+- **chat:** 移除了上下文相关配置，请直接使用上下文选择器 (=2060ed543acbe0aa09a09f6b8c08e0479e5d4539)
+- **chat:** 新增了 `maxMessages` 配置项，可用于控制最大保存的消息数量 (=8b91a7be35b3ce4348595df777c7dbe8f273ecc2)
+- **core:** 支持了 `app._command.resolve()`，可用于查找可能的指令 (#241) (=48598db9d6b46d7dc5f340d52f57a2ab3dfce0f9)
+- **eval:** 对 esbuild, typescript, coffeescript 支持了 JSX 语法 (=5425e526f733a64031f4a61d6c3414b05bc1517d, =ef71dd26f4935bdeb8aebe1efa427a8d5c01cd4f)
+- **puppeteer:** 为 koishi-plugin-eval 提供了渲染 JSX 并输出的功能 (=fc00ff6b92e71fefa94fdacefab2c907ad95b744)
+- **puppeteer:** 新增了 `ctx.puppeteer` 接口，可用于 koishi-plugin-chess 等插件 (=7a8254402577824b7ddda37eb835bced6b57a4f7, =49f50c7f77a5fd446d3c45cd3976f64fd169080f)
+- **utils:** 支持了 `segment.transformAsync()` 方法 (=861c3223bb18f7cc99d3a7393b44abd8302b5111)
+- **webui:** 加入了插件状态徽章，部分插件将被标记为“副作用”“网页扩展” (=69a69201ac3a0c557dcbff9b1afa66dced92d982)
+- **webui:** 加入了 npm 版本显示，可用于查看非本地依赖是否是最新版本 (=2827a5c353860507f9c4c6c3241ba8d15a167ca2)
+
+### Bug Fixes
+
+- **monitor:** 修复了 MySQL 数据库初始化报错的问题 (#238) (=6ccca1be332d5a221c28530831e7d8ab5669e4ae)
+
+## [Koishi 3.9.1](https://github.com/koishijs/koishi/releases/tag/3.9.1)
+
+### Features
+
+- **cli:** 支持了在配置文件中使用上下文选择器 (#226) (=1612a0984eaccb5a16ee8e81deab2dc5600875c8)
+- **eval:** 支持了 addons 中补全用户定义的后缀名并加载 (=1834daf2e9cba6edbf4ca8c7b146817e458937fd)
+- **eval:** 支持了 CoffeeScript (#230) (=61e5ea983bb014b044a8229f8ef235d443cc0947)
+- **webui:** 优化了插件页面，支持了运行时热重载插件 (=0e2672325119da2eed5b50c3aa86b8fe0540c268, =722f34360bd51a12ce9941f4a12f8ae7fb739011)
+- **webui:** 将本地图片代理服务器的逻辑重构到 chat 插件中 (=47b1e525abe190f3ac42abd4cc0b0f77479a0a48)
+
+### Bug Fixes
+
+- **chat:** 修复了聊天页面的内容溢出问题 (#222) (=92873e264de37960911fb1eac0d2ed2549526d60)
+- **cli:** 热重载现在可以监测 yaml, json 配置文件的变化了 (=51552f72ba031a0a322e161d0801aa57852cc296)
+- **core:** 使用 Map 代替 Object 存储指令别名，以避免可能的攻击 (#232) (=bc8729044e818535b1eb222d79587fe8c75f393e)
+- **eval:** evaluate 指令的返回值现在也经过 eval/before-send 事件了 (=a1e80ddb9ac3c33fcbcb99c28366784898f8d377)
+- **onebot:** 修复了错误的垃圾回收行为 (#227) (=2097fe8f2cf3944b38ff101599a4cd7b027041b5)
+- **webui:** 优化了 `<k-card>` 组件中的文本样式 (#228) (=ad94455f02a7aebf1144ebba1fe40f9b1c809235)
+
+## [Koishi 3.9.0](https://github.com/koishijs/koishi/releases/tag/3.9.0)
+
+### Notable Changes
+
+- koishi-plugin-eval@3.0.0 正式发布
+- koishi 支持了文件级别的插件热重载和重载缓冲机制，能够更好地应对复杂项目中的热重载
+
+### Features
+
+- **cli:** 支持了 `config.logDiff` 配置项，将应用于 `Logger.showDiff` (=c07692bb352aa702729de53f27906bf34110b72f)
+- **cli:** 支持了文件级别的插件热重载 (=753c560da7df7db45de3a6eabd23024626ae0770)
+- **cli:** 支持了 yaml 格式的配置文件的生成和读取 (=33ca25ee68e135a584616021959809173182e3d1)
+- **eval:** 支持了 `moduleLoaders` 配置项，可用于配置 addons 中使用的语言解析器 (=593131625d4149f5e035fd27ea2cb4c2005f71d7)
+- **eval:** 支持了在 addons 中直接引入 yaml 文件作为模块 (=a3b529765cbfb5ce60a2df5b147bb45631527ba1)
+- **webui:** 支持了 WebSocket 断线重连 (=b0df6d857acc9c54b6738a642c7597004a6a0724)
+- **webui:** `<k-numeric>` 组件将自动适配数据大小所适合的单位 (=4ee40b77a88b3ca75a9b8137ced58556adbcff03)
+
+### Bug Fixes
+
+- **cli:** 修复了短时间多次重载可能导致的崩溃问题 (=3d4ebb8481743b4a0245493319e54024dce12ab8)
+- **core:** 支持了异步的 `cmd.check()` 回调函数 (#218) (=2818e32b126f23c8ea800848bb05133cd8d627d4)
+- **eval:** 修复了保存 storage 数据失败时，下一次会继续失败的问题 (#225) (=2b6cc3b8162b37dd225248851e92d5a3e0f93df7)
+- **mongo:** 补全了缺少的类型依赖 (=cc4e004b832b0b290dc7beaf36665426e11b4d5f)
+- **mysql:** 补全了缺少的类型依赖 (=cc4e004b832b0b290dc7beaf36665426e11b4d5f)
 
 ## [Koishi 3.8.0](https://github.com/koishijs/koishi/releases/tag/3.8.0)
 

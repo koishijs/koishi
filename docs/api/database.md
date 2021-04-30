@@ -46,16 +46,38 @@ sidebarDepth: 2
 
 创建一个新用户 / 频道数据对象。
 
+### Tables.extend(name, config?)
+
+- **name:** `string` 数据表名
+- **config:** `TableMeta` 表的基本配置
+  - **config.primary:** `string` 主键名，默认为 `'id'`
+  - **config.unique:** `string[]` 值唯一的键名列表
+  - **config.type:** `string` 主键产生的方式，目前支持：
+    - `incremental`: 检测目前最大的主键值，并增加 1 作为新的主键值
+
+扩展一个新的数据表。
+
 ### Database.extend(database, extension)
 
-- **database:** `string | (new () => Database)` 要扩展的数据库类；如果传入一个字符串，则会将这个模块的默认导出作为目标类
-- **extension:** `Partial<Database>` 要添加到原型链的方法
+- **database:** `string | (new () => Database)` 要扩展的数据库类
+  - 如果传入一个字符串，则会将这个模块的默认导出作为目标类
+- **extension:** `Partial<Database> | ((Database: T) => void)`
+  - 如果传入一个对象，则表示要添加到原型链的方法
+  - 如果传入一个函数，则会传入上述类构造器并立即执行
 
-扩展一个数据库的方法。
+扩展数据库的功能。
 
 ## 数据库对象
 
 一个 Database 对象代理了 Koishi 上下文绑定的应用实例有关的所有数据库访问。同时它具有注入特性，任何插件都可以自己定义数据库上的方法。本章主要介绍数据库的官方接口。注意：**它们并不由 Koishi 自身实现，而是由每个数据库分别实现的**。Koishi 只是提供了一套标准。
+
+### db.get(table, query, fields?)
+
+### db.remove(table, query)
+
+### db.create(table, data)
+
+### db.update(table, data, key?)
 
 ### db.getUser(type, id, fields?)
 
