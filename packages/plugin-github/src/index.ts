@@ -223,14 +223,15 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.command('github.star [repo]', '给仓库点个 star')
     .userFields(['ghAccessToken', 'ghRefreshToken'])
-    .action(async ({ session }, repo) => {
-      if (!repo) return '请输入仓库名。'
-      if (!repoRegExp.test(repo)) return '请输入正确的仓库名。'
+    .option('repo', '-r [repo:string]  仓库名')
+    .action(async ({ session, options }) => {
+      if (!options.repo) return '请输入仓库名。'
+      if (!repoRegExp.test(options.repo)) return '请输入正确的仓库名。'
       if (!session.user.ghAccessToken) {
         return ctx.app.github.authorize(session, '要使用此功能，请对机器人进行授权。输入你的 GitHub 用户名。')
       }
 
-      return request('PUT', `/user/starred/${repo}`, session, null, '创建')
+      return request('PUT', `/user/starred/${options.repo}`, session, null, '创建')
     })
 
   ctx.on('connect', async () => {

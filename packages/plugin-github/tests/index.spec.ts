@@ -125,6 +125,20 @@ describe('GitHub Plugin', () => {
       await ses.shouldReply('.github -d foo/bar', '移除订阅成功！')
       await ses.shouldReply('.github -d foo/bar', '尚未在当前频道订阅过仓库 foo/bar。')
     })
+
+    it('github.issue', async () => {
+      await ses.shouldReply('.github.issue', '请输入仓库名。')
+      await ses.shouldReply('.github.issue -r foo', '请输入正确的仓库名。')
+      apiScope.post('/repos/koishijs/koishi/issues').reply(200)
+      await ses.shouldReply('.github.issue -r koishijs/koishi foo bar', '创建成功！')
+    })
+
+    it('github.star', async () => {
+      await ses.shouldReply('.github.star', '请输入仓库名。')
+      await ses.shouldReply('.github.star -r foo', '请输入正确的仓库名。')
+      apiScope.put('/user/starred/koishijs/koishi').reply(200)
+      await ses.shouldReply('.github.star -r koishijs/koishi', '创建成功！')
+    })
   })
 
   const idMap: Record<string, string> = {}
