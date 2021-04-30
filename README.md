@@ -100,14 +100,14 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 
 ### 其他官方插件
 
-- [koishi-plugin-assets](https://koishi.js.org/plugins/other/assets) / 资源转存
-- [koishi-plugin-chess](https://koishi.js.org/plugins/other/chess) / 棋类游戏
-- [koishi-plugin-github](https://koishi.js.org/plugins/other/github) / 接入 GitHub
-- [koishi-plugin-image-search](https://koishi.js.org/plugins/other/image-search) / 图片搜索
-- [koishi-plugin-puppeteer](https://koishi.js.org/plugins/other/puppeteer) / 网页截图
-- [koishi-plugin-schedule](https://koishi.js.org/plugins/other/schedule) / 计划任务
-- [koishi-plugin-tools](https://koishi.js.org/plugins/other/tools) / 实用工具
-- [koishi-plugin-webui](https://koishi.js.org/plugins/other/webui) / 网页控制台
+- [koishi-plugin-assets](https://koishi.js.org/plugins/other/assets.html) / 资源转存
+- [koishi-plugin-chess](https://koishi.js.org/plugins/other/chess.html) / 棋类游戏
+- [koishi-plugin-github](https://koishi.js.org/plugins/other/github.html) / 接入 GitHub
+- [koishi-plugin-image-search](https://koishi.js.org/plugins/other/image-search.html) / 图片搜索
+- [koishi-plugin-puppeteer](https://koishi.js.org/plugins/other/puppeteer.html) / 网页截图
+- [koishi-plugin-schedule](https://koishi.js.org/plugins/other/schedule.html) / 计划任务
+- [koishi-plugin-tools](https://koishi.js.org/plugins/other/tools.html) / 实用工具
+- [koishi-plugin-webui](https://koishi.js.org/plugins/other/webui.html) / 网页控制台
 
 ## 应用案例
 
