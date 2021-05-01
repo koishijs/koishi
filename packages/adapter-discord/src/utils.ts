@@ -142,6 +142,8 @@ export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
   } else if (input.t === 'MESSAGE_DELETE') {
     session.type = 'message-deleted'
     session.messageId = input.d.id
+    session.groupId = input.d.guild_id
+    session.channelId = input.d.channel_id
   }
   return new Session(bot.app, session)
 }
