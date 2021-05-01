@@ -17,10 +17,7 @@ export interface ShareData {
 }
 
 export function getShareText({ imageUrl, title, thumbnail, authorUrl, source }: ShareData) {
-  const output = [
-    title,
-    segment('image', { file: thumbnail }),
-  ]
+  const output = [title, segment.image(thumbnail)]
   if (imageUrl) output.push(`链接：${getLink(imageUrl)}`)
   if (authorUrl) output.push(`作者：${getLink(authorUrl)}`)
   if (source) output.push(`来源：${getLink(source)}`)

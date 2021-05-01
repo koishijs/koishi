@@ -29,7 +29,8 @@ export class DiscordBot extends Bot<'discord'> {
 
   async request<T = any>(method: Method, path: string, data?: any, exHeaders?: any): Promise<T> {
     const { axiosConfig, discord = {} } = this.app.options
-    const url = `https://discord.com/api/v8${path}`
+    const endpoint = discord.endpoint || 'https://discord.com/api/v8'
+    const url = `${endpoint}${path}`
     const headers: Record<string, any> = {
       Authorization: `Bot ${this.token}`,
     }
@@ -180,11 +181,14 @@ export class DiscordBot extends Bot<'discord'> {
   }
 
   async getMessage(channelId: string, messageId: string): Promise<MessageInfo> {
-    const msg = await this.$getMessage(channelId, messageId)
+    const [msg, channel] = await Promise.all([
+      this.$getMessage(channelId, messageId),
+      this.$getChannel(channelId),
+    ])
     const result: MessageInfo = {
       messageId: msg.id,
       channelId: msg.channel_id,
-      groupId: msg.guild_id,
+      groupId: channel.guild_id,
       userId: msg.author.id,
       content: msg.content,
       timestamp: new Date(msg.timestamp).valueOf(),

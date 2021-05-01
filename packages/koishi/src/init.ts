@@ -196,7 +196,8 @@ interface Package extends Partial<Record<DependencyType, Record<string, string>>
 const cwd = process.cwd()
 const metaPath = resolve(cwd, 'package.json')
 const ecosystem: Record<string, Package> = require('../ecosystem')
-const builtinPackages = ['koishi-plugin-common']
+const builtinPlugins = ['common', 'webui']
+const dbRelatedPlugins = ['schedule', 'teach']
 const config: AppConfig = {}
 const bots: BotOptions[] = []
 
@@ -226,8 +227,9 @@ async function createConfig() {
     if (!title.startsWith('koishi-plugin-')) return
     const value = title.slice(14)
     if (value in databaseMap) return
+    if (!database && dbRelatedPlugins.includes(value)) return
     const { description } = meta
-    const selected = builtinPackages.includes(title)
+    const selected = builtinPlugins.includes(value)
     return { title, value, description, selected }
   }).filter(Boolean)
 

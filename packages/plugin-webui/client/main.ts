@@ -26,18 +26,13 @@ self['KoishiClient'] = client
 
 const app = Vue.createApp(App)
 
+const stats: 'stats'[] = KOISHI_CONFIG.database ? ['stats'] : []
+
 router.addRoute({
   path: '/',
   name: '仪表盘',
-  meta: { icon: 'tachometer-alt', require: ['stats', 'meta', 'profile', 'registry'] },
+  meta: { icon: 'tachometer-alt', require: [...stats, 'meta', 'profile'] },
   component: () => import('./views/home/home.vue'),
-})
-
-router.addRoute({
-  path: '/bots',
-  name: '机器人',
-  meta: { icon: 'robot', require: ['stats', 'profile'] },
-  component: () => import('./views/bots.vue'),
 })
 
 router.addRoute({

@@ -1,5 +1,5 @@
 import { Logger, coerce, Time, template, remove } from 'koishi-utils'
-import { Argv, Domain } from './parser'
+import { Argv } from './parser'
 import { Context, Disposable, NextFunction } from './context'
 import { User, Channel } from './database'
 import { FieldCollector, Session } from './session'
@@ -55,7 +55,7 @@ export namespace Command {
     = string | ((session: Session<U, G>) => string | Promise<string>)
 }
 
-export class Command<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}> extends Domain.CommandBase {
+export class Command<U extends User.Field = never, G extends Channel.Field = never, A extends any[] = any[], O extends {} = {}> extends Argv.CommandBase {
   config: Command.Config
   children: Command[] = []
   parent: Command = null
@@ -78,7 +78,7 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     minInterval: 0,
   }
 
-  static defaultOptionConfig: Domain.OptionConfig = {
+  static defaultOptionConfig: Argv.OptionConfig = {
     authority: 0,
   }
 
@@ -154,8 +154,8 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  subcommand<D extends string>(def: D, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
-  subcommand<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Domain.ArgumentType<D>>
+  subcommand<D extends string>(def: D, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
+  subcommand<D extends string>(def: D, desc: string, config?: Command.Config): Command<never, never, Argv.ArgumentType<D>>
   subcommand(def: string, ...args: any[]) {
     def = this.name + (def.charCodeAt(0) === 46 ? '' : '/') + def
     const desc = typeof args[0] === 'string' ? args.shift() as string : ''
@@ -174,10 +174,10 @@ export class Command<U extends User.Field = never, G extends Channel.Field = nev
     return this
   }
 
-  option<K extends string, D extends string, T extends Domain.Type>(name: K, desc: D, config: Domain.OptionConfig<T> = {}) {
+  option<K extends string, D extends string, T extends Argv.Type>(name: K, desc: D, config: Argv.OptionConfig<T> = {}) {
     this._createOption(name, desc, config)
     this._disposables?.push(() => this.removeOption(name))
-    return this as Command<U, G, A, Extend<O, K, Domain.OptionType<D, T>>>
+    return this as Command<U, G, A, Extend<O, K, Argv.OptionType<D, T>>>
   }
 
   match(session: Session) {

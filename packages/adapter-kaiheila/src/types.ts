@@ -20,6 +20,16 @@ export enum Type {
   system = 255,
 }
 
+export interface MessageParams {
+  type: Type
+  msgId: string
+  chatCode: string
+  targetId: string
+  content: any
+  quote: string
+  nonce: string
+}
+
 export interface MessageBase {
   type: Type
   content: string
@@ -72,6 +82,93 @@ export interface Message extends MessageBase, MessageMeta {
   embeds: any[]
   reactions: any[]
   mentionInfo: object
+}
+
+export interface Card {
+  type: 'card'
+  theme?: Card.Theme
+  size?: 'lg' | 'sm'
+  color?: string
+  modules: Card.Module[]
+}
+
+export namespace Card {
+  export type Theme = 'primary' | 'secondary' | 'warning' | 'danger' | 'info'
+  export type Module = Section | ImageGroup | Header | Divider | File | Countdown | Context
+
+  export interface Text {
+    type: 'plain-text' | 'kmarkdown'
+    content: string
+    emoji?: boolean
+  }
+
+  export interface Paragraph {
+    type: 'paragraph'
+    content: string
+    cols: number
+    fields: Text[]
+  }
+
+  export interface Section {
+    type: 'section'
+    mode?: 'left' | 'right'
+    text: Text | Paragraph
+    accessory?: Image | Button
+  }
+
+  export interface Image {
+    type: 'image'
+    size?: 'lg' | 'sm'
+    src: string
+    alt?: string
+    circle?: boolean
+  }
+
+  export interface Button {
+    type: 'button'
+    theme?: Theme
+    value: string
+    text: Text
+    click?: string
+  }
+
+  export interface ImageGroup {
+    type: 'image-group'
+    elements: Image[]
+  }
+
+  export interface Header {
+    type: 'header'
+    text: Text
+  }
+
+  export interface Divider {
+    type: 'divider'
+  }
+
+  export interface ActionGroup {
+    type: 'action-group'
+    elements: Button[]
+  }
+
+  export interface Context {
+    type: 'context'
+    elements: (Text | Image)[]
+  }
+
+  export interface File {
+    type: 'file' | 'audio' | 'video'
+    src: string
+    title: string
+    cover?: string
+  }
+
+  export interface Countdown {
+    type: 'countdown'
+    endTime: string
+    startTime: string
+    mode: 'day' | 'hour' | 'second'
+  }
 }
 
 export interface User {

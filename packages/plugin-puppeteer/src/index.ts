@@ -1,4 +1,4 @@
-import puppeteer, { Shooter } from 'puppeteer-core'
+import puppeteer, { Browser, ElementHandle, Page, Shooter, Viewport } from 'puppeteer-core'
 import { Context, Logger, noop, segment } from 'koishi-core'
 import { escape } from 'querystring'
 import { PNG } from 'pngjs'
@@ -53,11 +53,11 @@ declare module 'koishi-core' {
 
 type LaunchOptions = Parameters<typeof puppeteer.launch>[0]
 
-type RenderCallback = (page: puppeteer.Page, next: (handle?: puppeteer.ElementHandle) => Promise<string>) => Promise<string>
+type RenderCallback = (page: Page, next: (handle?: ElementHandle) => Promise<string>) => Promise<string>
 
 export interface Config {
   browser?: LaunchOptions
-  renderViewport?: Partial<puppeteer.Viewport>
+  renderViewport?: Partial<Viewport>
   loadTimeout?: number
   idleTimeout?: number
   maxLength?: number
@@ -66,10 +66,10 @@ export interface Config {
 
 enum Status { close, opening, open, closing }
 
-class Puppeteer {
+export class Puppeteer {
   status = Status.close
-  browser: puppeteer.Browser
-  private promise: Promise<puppeteer.Browser>
+  browser: Browser
+  private promise: Promise<Browser>
 
   constructor(private context: Context, public config: Config) {
     if (!config.browser.executablePath) {
