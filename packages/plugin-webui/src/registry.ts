@@ -46,23 +46,16 @@ export class Registry implements DataSource<Registry.Payload> {
     this.ctx.webui.broadcast('registry', await this.get(true))
   }, 0)
 
-  private countDescendant(plugin: Registry.PluginData): number {
-    return 1 + plugin.children.reduce((prev, curr) => prev + this.countDescendant(curr), 0)
-  }
-
   async get(forced = false) {
     if (this.cached && !forced) return this.cached
     return this.cached = this.getForced()
   }
 
   private async getForced() {
-    const root = this.traverse(null)
-    const payload = {
-      plugins: root.children,
-      pluginCount: this.countDescendant(root),
+    return {
+      plugins: this.traverse(null).children,
       packages: await this.getPackages(),
     } as Registry.Payload
-    return payload
   }
 
   async switch(id: string) {
@@ -175,6 +168,5 @@ export namespace Registry {
   export interface Payload {
     packages: PackageData[]
     plugins: PluginData[]
-    pluginCount: number
   }
 }
