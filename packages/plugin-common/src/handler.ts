@@ -87,13 +87,13 @@ export function repeater(ctx: Context, config: HandlerConfig) {
   })
 }
 
-type RequestHandler = string | boolean | ((session: Session) => string | boolean | Promise<string | boolean>)
+type RequestHandler = string | boolean | ((session: Session) => string | boolean | void | Promise<string | boolean | void>)
 
 async function getHandlerResult(handler: RequestHandler, session: Session, prefer: boolean): Promise<[boolean, string?]> {
   const result = typeof handler === 'function' ? await handler(session) : handler
   if (typeof result === 'string') {
     return [prefer, result]
-  } else if (result !== undefined) {
+  } else if (typeof result === 'boolean') {
     return [result]
   }
 }
