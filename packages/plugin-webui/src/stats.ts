@@ -200,7 +200,7 @@ export class Statistics implements DataSource<Statistics.Payload> {
           platform,
           assignee,
           value: messageMap[id],
-          last: data.daily[0].group[id],
+          last: data.daily[0].group[id] || 0,
         })
       }
     }
@@ -215,7 +215,7 @@ export class Statistics implements DataSource<Statistics.Payload> {
           platform,
           name: name || key,
           value: messageMap[key],
-          last: data.daily[0].group[key],
+          last: data.daily[0].group[key] || 0,
           assignee: this.ctx.bots[`${platform}:${assignee}`]?.selfId || '',
         })
       }
