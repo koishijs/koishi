@@ -31,6 +31,7 @@
     <history-chart/>
     <hour-chart/>
     <group-chart/>
+    <command-chart/>
   </div>
 </template>
 
@@ -38,6 +39,7 @@
 
 import { computed } from 'vue'
 import { stats, profile, meta } from '~/client'
+import CommandChart from './command-chart.vue'
 import GroupChart from './group-chart.vue'
 import HistoryChart from './history-chart.vue'
 import HourChart from './hour-chart.vue'

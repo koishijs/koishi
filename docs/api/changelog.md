@@ -5,6 +5,23 @@ externalIcon: false
 
 # v3 更新日志
 
+## [Koishi 3.10.1](https://github.com/koishijs/koishi/releases/tag/3.10.1)
+
+### Features
+
+- **cli:** 优化了 koishi init 时可供选择的插件列表 (a9b7000ac6c2da383bb3fe679cc84f78be2f5f1b)
+- **kaiheila:** 新增了 `kaiheila.attachMode` 配置项 (7bc59993f59bea5e2b4d3e751965fa58e4c85d58)
+- **github:** 新增了 github.issue 和 github.star 指令 (104841c9be749ade6c44dab6bcc59d5d4e32a596)
+- **webui:** 将「机器人」页面合并入「仪表盘」页面 (d70fdcff63690ae4ec0e3afb8d2c57c4f08d8652)
+
+### Bug Fixes
+
+- **cli:** 修复了插件热重载功能将小概率触发调用爆栈的问题 (45690007150441cbb568f85049395085756a301e)
+- **discord:** 修复了不符合规范的 `user.avatar` (14c92ca96723f7f96ebda93e20f7c5ce8436d9b1)
+- **discord:** 修复了 `bot.getMessage()` 返回值缺少 `groupId` 的问题 (c5a012437744e396d500d67a3996fc5d9dfc2c3c)
+- **image-search:** 修复了消息段错误导致在部分平台上无法发送的问题 (ff82bd60fa2959f5387d71d84028e046a04f93aa)
+- **webui:** 修复了配合 MySQL 使用时小概率上传数据失败的问题 (#248) (2a0bbfb2d53520ba14a9014e9015f511a5d92d24)
+
 ## [Koishi 3.10.0](https://github.com/koishijs/koishi/releases/tag/3.10.0)
 
 ### Notable Changes

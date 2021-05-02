@@ -39,7 +39,6 @@ export namespace Synchronizer {
 }
 
 export const RECENT_LENGTH = 5
-export const REFRESH_INTERVAL = 60000
 
 export function average(stats: {}[]) {
   const result: StatRecord = {}
@@ -151,7 +150,7 @@ export class Statistics implements DataSource<Statistics.Payload> {
   async upload(forced = false) {
     const date = new Date()
     const dateHour = date.getHours()
-    if (forced || +date - +this.lastUpdate > REFRESH_INTERVAL || dateHour !== this.updateHour) {
+    if (forced || +date - +this.lastUpdate > this.config.statsInternal || dateHour !== this.updateHour) {
       this.lastUpdate = date
       this.updateHour = dateHour
       await this.sync?.upload(date)
@@ -201,7 +200,7 @@ export class Statistics implements DataSource<Statistics.Payload> {
           platform,
           assignee,
           value: messageMap[id],
-          last: data.daily[0].group[id],
+          last: data.daily[0].group[id] || 0,
         })
       }
     }
@@ -216,7 +215,7 @@ export class Statistics implements DataSource<Statistics.Payload> {
           platform,
           name: name || key,
           value: messageMap[key],
-          last: data.daily[0].group[key],
+          last: data.daily[0].group[key] || 0,
           assignee: this.ctx.bots[`${platform}:${assignee}`]?.selfId || '',
         })
       }
@@ -256,6 +255,7 @@ export namespace Statistics {
 
   export interface Config {
     handleSignals?: boolean
+    statsInternal?: number
   }
 
   export type Extension = (payload: Payload, data: Synchronizer.Data) => Promise<void>

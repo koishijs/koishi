@@ -83,7 +83,8 @@ const defaultConfig: Config = {
   title: 'Koishi 控制台',
   expiration: Time.week,
   tickInterval: Time.second * 5,
-  refreshInterval: Time.hour,
+  statsInternal: Time.minute * 10,
+  metaInterval: Time.hour,
 }
 
 export const name = 'webui'
