@@ -27,6 +27,7 @@ declare module 'koishi-core' {
 
 export * from './types'
 export * from './utils'
+export * from './bot'
 
 Adapter.types['kaiheila:http'] = HttpServer
 Adapter.types['kaiheila:ws'] = WsClient
