@@ -14,6 +14,10 @@ module.exports = {
     ['medium-zoom', {
       selector: '.theme-default-content :not(a) > img:not(.no-zooming)',
     }],
+    ['@vuepress/docsearch', {
+      apiKey: '24a872e49e34cdb7736d132917a308c6',
+      indexName: 'koishi',
+    }],
     ['@vuepress/container', {
       type: 'code-group',
       before: (info) => {
