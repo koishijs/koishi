@@ -68,7 +68,9 @@ module.exports = {
 const { MockedApp } = require('koishi-test-utils')
 
 // 这里的 MockedApp 是 App 的一个子类，因此你仍然可以像过去那样编写代码
-const app = new MockedApp()
+const app = new MockedApp({
+  mockDatabase: true
+})
 
 // 这是一个简单的中间件例子，下面将测试这个中间件
 app.middleware(({ message, send }, next) => {
@@ -77,22 +79,22 @@ app.middleware(({ message, send }, next) => {
 })
 
 test('example', async () => {
-  // 尝试接收一个 message 事件
-  await app.receiveMessage('user', '天王盖地虎', 123)
-
-  // 判断 app 应该最终发送了这个请求
-  // 这里的请求名相当于 sender 中对应的接口名，不用写 async
-  // 请求参数与 sender 相一致
-  app.shouldHaveLastRequest('send_private_msg', {
-    userId: 123,
-    message: '宝塔镇河妖',
+  // 向 mock 数据库注入用户数据
+  before(async () => {
+    await app.database.initUser('001', 4)
   })
+  // 基于模拟数据，创建一个 session
+  const superSes = app.session('001')
 
-  // 再次尝试接收一个 message 事件
-  await app.receiveMessage('user', '宫廷玉液酒', 123)
-
-  // 判断 app 应该最终没有发送任何请求
-  app.shouldHaveNoRequests()
+  // 测试返回结果是否正确
+  it('should reply 宝塔镇河妖', async () => {
+    await superSes.shouldReply(
+      '天王盖地虎', '宝塔镇河妖'
+    )
+  })
+  it('should not reply', async () => {
+    await superSes.shouldNotReply('宫廷玉液酒')
+  })
 })
 ```
 
@@ -115,7 +117,7 @@ app.middleware(({ message, send }, next) => {
   return next()
 })
 
-test('example', () => {
+test('example', async () => {
   // 将 foo 发送给机器人将会获得 bar 的回复
   await session.shouldHaveResponse('天王盖地虎', '宝塔镇河妖')
 
