@@ -51,8 +51,8 @@ after(() => app.stop())
 describe('Runtime', () => {
   describe('Command Prefix', () => {
     it('single prefix', async () => {
-      app.options.prefix = '!'
-      app.prepare()
+      // also support functions
+      app.options.prefix = () => '!'
 
       await session1.shouldReply('cmd2', 'cmd2:123')
       await session4.shouldNotReply('cmd2')
@@ -64,7 +64,6 @@ describe('Runtime', () => {
 
     it('multiple prefixes', async () => {
       app.options.prefix = ['!', '.']
-      app.prepare()
 
       await session1.shouldReply('cmd2', 'cmd2:123')
       await session4.shouldNotReply('cmd2')
@@ -76,7 +75,6 @@ describe('Runtime', () => {
 
     it('optional prefix', async () => {
       app.options.prefix = ['.', '']
-      app.prepare()
 
       await session1.shouldReply('cmd2', 'cmd2:123')
       await session4.shouldReply('cmd2', 'cmd2:123')
@@ -88,7 +86,6 @@ describe('Runtime', () => {
 
     it('no prefix', async () => {
       app.options.prefix = null
-      app.prepare()
 
       await session1.shouldReply('cmd2', 'cmd2:123')
       await session4.shouldReply('cmd2', 'cmd2:123')

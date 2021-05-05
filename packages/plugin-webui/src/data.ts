@@ -1,4 +1,4 @@
-import { Argv, Assets, Bot, Context, noop, Platform, Time } from 'koishi-core'
+import { Argv, Assets, Bot, Context, noop, Platform } from 'koishi-core'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
 
@@ -126,7 +126,6 @@ export class Profile implements DataSource<Profile.Payload> {
 export namespace Profile {
   export interface Config {
     tickInterval?: number
-    refreshInterval?: number
   }
 
   export interface Payload {
@@ -153,7 +152,7 @@ export class Meta implements DataSource<Meta.Payload> {
   async get(): Promise<Meta.Payload> {
     const now = Date.now()
     if (this.timestamp > now) return this.cached
-    this.timestamp = now + Time.hour
+    this.timestamp = now + this.config.metaInterval
     return this.cached = Promise
       .all(this.callbacks.map(cb => cb().catch(noop)))
       .then(data => Object.assign({}, ...data))
@@ -167,6 +166,7 @@ export class Meta implements DataSource<Meta.Payload> {
 
 export namespace Meta {
   export interface Config {
+    metaInterval?: number
   }
 
   export interface Stats {

@@ -46,14 +46,18 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.Message, session: P
         if (meta.mention_roles.includes(id)) {
           return segment('at', { role: id })
         } else {
-          return segment('at', { id })
+          const user = meta.mentions?.find(u => u.id === id)
+          return segment.at(id, { name: user?.username })
         }
       })
       .replace(/<:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name }))
       .replace(/<a:(.*):(.+?)>/, (_, name, id) => segment('face', { id: id, name, animated: true }))
       .replace(/@everyone/, () => segment('at', { type: 'all' }))
       .replace(/@here/, () => segment('at', { type: 'here' }))
-      .replace(/<#(.+?)>/, (_, id) => segment.sharp(id))
+      .replace(/<#(.+?)>/, (_, id) => {
+        const channel = meta.mention_channels?.find(c => c.id === id)
+        return segment.sharp(id, { name: channel?.name })
+      })
   }
 
   // embed 的 update event 太阴间了 只有 id embeds channel_id guild_id 四个成员
@@ -100,10 +104,10 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.Message, session: P
   return session
 }
 
-async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
+async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: Partial<Session.Message> = {}) {
   await adaptMessage(bot, meta, session)
   session.messageId = meta.id
-  session.timestamp = new Date(meta.timestamp).valueOf() || new Date().valueOf()
+  session.timestamp = new Date(meta.timestamp).valueOf() || Date.now()
   // 遇到过 cross post 的消息在这里不会传消息 id
   if (meta.message_reference) {
     const { message_id, channel_id } = meta.message_reference
@@ -142,6 +146,8 @@ export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
   } else if (input.t === 'MESSAGE_DELETE') {
     session.type = 'message-deleted'
     session.messageId = input.d.id
+    session.groupId = input.d.guild_id
+    session.channelId = input.d.channel_id
   }
   return new Session(bot.app, session)
 }

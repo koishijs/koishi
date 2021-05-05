@@ -1,0 +1,16 @@
+{
+  "name": "Koishi",
+  "short_name": "Koishi",
+  "description": "跨平台机器人框架",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#5546a3",
+  "icons": [
+    {
+      "src": "/koishi.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    }
+  ]
+}
