@@ -5,22 +5,41 @@ externalIcon: false
 
 # v3 更新日志
 
+## [Koishi 3.10.2](https://github.com/koishijs/koishi/releases/tag/3.10.2)
+
+### Features
+
+- **chat:** 优化了 at 消息段的处理 (=d80af91267986e1455c1f52998248c2d460c5a3c)
+- **common:** assign 指令支持了 -T 选项，用于取消频道代理者 (=40afea00a027b62b2a5e51375c7036a75309d5f2)
+- **core:** 支持了函数类型的 `app.options.prefix` (=578008098031fc7942a074e907d8c9ca8601a46b)
+- **discord:** 为 at, sharp 消息段添加了 name 属性 (=43a23cae0c096d257dcd4aa944455d16215956c2)
+- **kaiheila:** 导出了 `KaiheilaBot` 构造函数 (#258) (=8fb118e57b8bfafda1711e2b50a7cb9cdd5c6dc6)
+- **puppeteer:** 使用 inline-block 布局以获得更好的截图区域 (=8f3c98dd7bcbf4ab41289db025894d228f9f438b)
+- **webui:** 将自动删除距今过于遥远的统计数据 (=767853efadae08db3c1ba06fe4daedc085ee3e20)
+- **webui:** 新增了指令调用频率的统计图表 (#252) (=4d5d87a533e02ecab5f573247f4732ae40156feb)
+
+### Bug Fixes
+
+- **common:** 修复了错误的类型标注 (#254) (=ab64feec34f59aab3a21f25409d089398604d41b)
+- **discord:** 修复了 message-deleted 事件缺少 `id` 属性的问题 (#251) (=bbd8d6c3e9684ddb3bc6ca2e71ab839c7b1d6aa3)
+- **webui:** 修复了群聊消息频率统计图表当鼠标悬浮时出现报错的问题 (=361ea7c145b1e247f30fed394511a9c4e0756c9b)
+
 ## [Koishi 3.10.1](https://github.com/koishijs/koishi/releases/tag/3.10.1)
 
 ### Features
 
-- **cli:** 优化了 koishi init 时可供选择的插件列表 (a9b7000ac6c2da383bb3fe679cc84f78be2f5f1b)
-- **kaiheila:** 新增了 `kaiheila.attachMode` 配置项 (7bc59993f59bea5e2b4d3e751965fa58e4c85d58)
-- **github:** 新增了 github.issue 和 github.star 指令 (104841c9be749ade6c44dab6bcc59d5d4e32a596)
-- **webui:** 将「机器人」页面合并入「仪表盘」页面 (d70fdcff63690ae4ec0e3afb8d2c57c4f08d8652)
+- **cli:** 优化了 koishi init 时可供选择的插件列表 (=a9b7000ac6c2da383bb3fe679cc84f78be2f5f1b)
+- **kaiheila:** 新增了 `kaiheila.attachMode` 配置项 (=7bc59993f59bea5e2b4d3e751965fa58e4c85d58)
+- **github:** 新增了 github.issue 和 github.star 指令 (=104841c9be749ade6c44dab6bcc59d5d4e32a596)
+- **webui:** 将「机器人」页面合并入「仪表盘」页面 (=d70fdcff63690ae4ec0e3afb8d2c57c4f08d8652)
 
 ### Bug Fixes
 
-- **cli:** 修复了插件热重载功能将小概率触发调用爆栈的问题 (45690007150441cbb568f85049395085756a301e)
-- **discord:** 修复了不符合规范的 `user.avatar` (14c92ca96723f7f96ebda93e20f7c5ce8436d9b1)
-- **discord:** 修复了 `bot.getMessage()` 返回值缺少 `groupId` 的问题 (c5a012437744e396d500d67a3996fc5d9dfc2c3c)
-- **image-search:** 修复了消息段错误导致在部分平台上无法发送的问题 (ff82bd60fa2959f5387d71d84028e046a04f93aa)
-- **webui:** 修复了配合 MySQL 使用时小概率上传数据失败的问题 (#248) (2a0bbfb2d53520ba14a9014e9015f511a5d92d24)
+- **cli:** 修复了插件热重载功能将小概率触发调用爆栈的问题 (=45690007150441cbb568f85049395085756a301e)
+- **discord:** 修复了不符合规范的 `user.avatar` (=14c92ca96723f7f96ebda93e20f7c5ce8436d9b1)
+- **discord:** 修复了 `bot.getMessage()` 返回值缺少 `groupId` 的问题 (=c5a012437744e396d500d67a3996fc5d9dfc2c3c)
+- **image-search:** 修复了消息段错误导致在部分平台上无法发送的问题 (=ff82bd60fa2959f5387d71d84028e046a04f93aa)
+- **webui:** 修复了配合 MySQL 使用时小概率上传数据失败的问题 (#248) (=2a0bbfb2d53520ba14a9014e9015f511a5d92d24)
 
 ## [Koishi 3.10.0](https://github.com/koishijs/koishi/releases/tag/3.10.0)
 
