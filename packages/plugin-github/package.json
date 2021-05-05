@@ -32,14 +32,14 @@
     "@types/marked": "^2.0.2",
     "koishi-plugin-mongo": "^2.2.3",
     "koishi-plugin-mysql": "^3.3.2",
-    "koishi-plugin-puppeteer": "^2.1.1",
+    "koishi-plugin-puppeteer": "^2.1.2",
     "koishi-test-utils": "^6.0.0-beta.12"
   },
   "peerDependencies": {
-    "koishi-core": "^3.10.1"
+    "koishi-core": "^3.10.2"
   },
   "dependencies": {
-    "@octokit/webhooks-types": "^3.70.1",
+    "@octokit/webhooks-types": "^3.71.2",
     "axios": "^0.21.1",
     "marked": "^2.0.3"
   }

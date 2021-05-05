@@ -258,7 +258,7 @@ export function apply(ctx: Context, config: Config = {}) {
       })
     })
 
-  ctx.with(['koishi-plugin-eval'], (ctx) => {
+  ctx1.with(['koishi-plugin-eval'], (ctx) => {
     ctx.worker.config.loaderConfig.jsxFactory = 'jsxFactory'
     ctx.worker.config.loaderConfig.jsxFragment = 'jsxFragment'
     ctx.worker.config.setupFiles['puppeteer.ts'] = resolve(__dirname, 'worker')
@@ -266,9 +266,9 @@ export function apply(ctx: Context, config: Config = {}) {
     ctx.before('eval/send', (content) => {
       return segment.transformAsync(content, {
         async fragment({ content }) {
-          return segment.image(await ctx.puppeteer.render(`<!doctype html>
-            <html><body>${content}</body></html>
-          `))
+          return await ctx.puppeteer.render(`<!doctype html>
+            <html><body style="display: inline-block; padding: 0.25rem 0.375rem">${content}</body></html>
+          `, async (page, next) => next(await page.$('body')))
         },
       })
     })
