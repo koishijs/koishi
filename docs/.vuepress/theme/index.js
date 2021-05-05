@@ -16,7 +16,7 @@ module.exports = {
     }],
     ['@vuepress/pwa', {
       skipWaiting: true,
-    }]
+    }],
     ['@vuepress/docsearch', {
       apiKey: '24a872e49e34cdb7736d132917a308c6',
       indexName: 'koishi',

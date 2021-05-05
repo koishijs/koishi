@@ -107,7 +107,37 @@ User.extend(() => ({ foo: 'bar' }))
 ```
 :::
 
+如果你是插件开发者，你还需要手动处理 MySQL 字段的定义：
+
+::: code-group language
+```js
+const { Database } = require('koishi-core')
+
+Database.extend('koishi-plugin-mysql', ({ tables }) => {
+  tables.user.foo = 'varchar(100)' // MySQL 类型
+})
+```
+```ts
+import { Database } from 'koishi-core'
+
+// 引入 koishi-plugin-mysql 的类型定义
+// 如果你是插件开发者，你应该将 koishi-plugin-mysql 作为你的 devDep
+// 这行代码不会真正 require 这个依赖，因此即使用户使用的不是 MySQL 也没有关系
+import {} from 'koishi-plugin-mysql'
+
+Database.extend('koishi-plugin-mysql', ({ tables }) => {
+  tables.user.foo = 'varchar(100)' // MySQL 类型
+})
+```
+:::
+
 向 Channel 注入字段同理。
+
+::: tip
+#### 为什么 MySQL 需要编写两份代码
+
+看起来这是不必要的重复，但其实不然。`User.extend()` 定义的是用户表中各列的**默认值**，而 `Database.extend()` 定义的是数据库的**字段类型**，会被用于自动建表和补全字段。换句话说，如果你已经手动建好表了，那么你确实不需要编写后面的额外代码。但是反过来，如果你是插件开发者，你的用户很可能不知道这个插件需要哪些用户字段，因此这样的写法可以在用户安装插件的时候就自动创建字段。
+:::
 
 ## 使用 ORM API
 
@@ -211,6 +241,34 @@ Tables.extend('schedule', {
   type: 'incremental',
 })
 ```
+
+与上面一致，如果你是插件开发者，你还需要手动处理 MySQL 字段的定义：
+
+::: code-group language
+```js
+const { Database } = require('koishi-core')
+
+Database.extend('koishi-plugin-mysql', ({ tables }) => {
+  tables.schedule = {
+    id: 'int',
+    assignee: 'varchar(50)',
+    // 其他字段定义
+  }
+})
+```
+```ts
+import { Database } from 'koishi-core'
+import {} from 'koishi-plugin-mysql'
+
+Database.extend('koishi-plugin-mysql', ({ tables }) => {
+  tables.schedule = {
+    id: 'int',
+    assignee: 'varchar(50)',
+    // 其他字段定义
+  }
+})
+```
+:::
 
 ## 扩展数据库
 
