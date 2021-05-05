@@ -39,7 +39,7 @@
     "koishi-core": "^3.10.1"
   },
   "dependencies": {
-    "@octokit/webhooks-types": "^3.70.1",
+    "@octokit/webhooks-types": "^3.71.2",
     "axios": "^0.21.1",
     "marked": "^2.0.3"
   }
