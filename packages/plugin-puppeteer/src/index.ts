@@ -35,8 +35,10 @@ declare module 'puppeteer-core/lib/types' {
 }
 
 declare module 'koishi-core' {
-  interface Context {
-    puppeteer: Puppeteer
+  namespace Context {
+    interface Delegates {
+      puppeteer: Puppeteer
+    }
   }
 
   namespace Plugin {

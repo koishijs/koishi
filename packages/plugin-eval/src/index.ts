@@ -10,8 +10,10 @@ import { WorkerResponse } from './worker'
 export * from './main'
 
 declare module 'koishi-core' {
-  interface Context {
-    worker: EvalWorker
+  namespace Context {
+    interface Delegates {
+      worker: EvalWorker
+    }
   }
 
   namespace Command {
