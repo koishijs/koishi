@@ -15,12 +15,14 @@ export const adaptUser = (user: OneBot.AccountInfo): Koishi.UserInfo => ({
 export const adaptGroupMember = (user: OneBot.SenderInfo): Koishi.GroupMemberInfo => ({
   ...adaptUser(user),
   nickname: user.card,
+  roles: [user.role],
 })
 
 export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.AnonymousInfo): Koishi.AuthorInfo => ({
   ...adaptUser(user),
   nickname: anonymous?.name || user.card,
   anonymous: anonymous?.flag,
+  roles: [user.role],
 })
 
 function adaptContent(content: string) {
