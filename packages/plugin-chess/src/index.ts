@@ -41,6 +41,9 @@ export const name = 'chess'
 export function apply(ctx: Context) {
   ctx = ctx.group()
 
+  State.imageMode = !!ctx.puppeteer
+  ctx.on('delegate/puppeteer', () => State.imageMode = true)
+
   ctx.on('connect', async () => {
     if (!ctx.database) return
     const channels = await ctx.database.getAssignedChannels(['id', 'chess'])
@@ -48,7 +51,6 @@ export function apply(ctx: Context) {
       if (chess) {
         states[id] = State.from(chess)
         states[id].update = rules[chess.rule].update
-        states[id].imageMode = !!ctx.puppeteer
       }
     }
   })
@@ -221,15 +223,12 @@ export function apply(ctx: Context) {
       .action(({ session, options }) => {
         const state = states[session.cid]
         if (!state) return
-
-        if (ctx.app.puppeteer) {
-          if (options.textMode) {
-            state.imageMode = false
-            return state.draw(session, '已切换到文本模式。')
-          } else if (options.imageMode) {
-            state.imageMode = true
-            return state.draw(session, '已切换到图片模式。')
-          }
+        if (options.textMode) {
+          state.imageMode = false
+          return state.draw(session, '已切换到文本模式。')
+        } else if (options.imageMode) {
+          state.imageMode = true
+          return state.draw(session, '已切换到图片模式。')
         }
       })
   })

@@ -102,7 +102,7 @@ export function echo(ctx: Context) {
     .option('escape', '-e  发送转义消息', { authority: 3 })
     .option('user', '-u [user:user]  发送到用户', { authority: 3 })
     .option('channel', '-c [channel:channel]  发送到频道', { authority: 3 })
-    .action(async ({ options, session }, message) => {
+    .action(async ({ options }, message) => {
       if (!message) return template('common.expect-text')
 
       if (options.escape) {
@@ -119,10 +119,11 @@ export function echo(ctx: Context) {
       if (target) {
         const [platform] = target.split(':')
         const id = target.slice(platform.length + 1)
+        const bot = ctx.getBot(platform as never)
         if (options.user) {
-          await session.bot.sendPrivateMessage(id, message)
+          await bot.sendPrivateMessage(id, message)
         } else {
-          await session.bot.sendMessage(id, message)
+          await bot.sendMessage(id, message)
         }
         return
       }

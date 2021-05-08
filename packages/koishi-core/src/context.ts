@@ -67,15 +67,13 @@ interface Selector<T> extends PartialSeletor<T> {
   except?: PartialSeletor<T>
 }
 
+export interface Context extends Context.Delegates {}
+
 export class Context {
   static readonly middleware = Symbol('middleware')
   static readonly current = Symbol('source')
 
   protected _bots: Bot[] & Record<string, Bot>
-
-  public database: Database
-  public assets: Assets
-  public router: Router
 
   protected constructor(public filter: Filter, public app?: App, private _plugin: Plugin = null) {}
 
@@ -526,6 +524,14 @@ Context.delegate('database')
 Context.delegate('assets')
 Context.delegate('router')
 
+export namespace Context {
+  export interface Delegates {
+    database: Database
+    assets: Assets
+    router: Router
+  }
+}
+
 type FlattenEvents<T> = {
   [K in keyof T & string]: K | `${K}/${FlattenEvents<T[K]>}`
 }[keyof T & string]
@@ -538,17 +544,19 @@ type SessionEventMap = {
     : (session: Session.Payload<K>) => void
 }
 
+type DelegateEventMap = {
+  [K in keyof Context.Delegates as `delegate/${K}`]: () => void
+}
+
 type EventName = keyof EventMap
 type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
 type BeforeEventName = OmitSubstring<EventName & string, 'before-'>
 type BeforeEventMap = { [E in EventName & string as OmitSubstring<E, 'before-'>]: EventMap[E] }
 
-export interface EventMap extends SessionEventMap {
+export interface EventMap extends SessionEventMap, DelegateEventMap {
   [Context.middleware]: Middleware
 
   // Koishi events
-  'delegate/assets'(): void
-  'delegate/database'(): void
   'appellation'(name: string, session: Session): string
   'before-parse'(content: string, session: Session): Argv
   'parse'(argv: Argv, session: Session): string
