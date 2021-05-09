@@ -113,12 +113,12 @@ if (process.env.KOISHI_DEBUG) {
 
 interface Message {
   type: 'send'
-  payload: any
+  body: any
 }
 
 process.on('message', (data: Message) => {
   if (data.type === 'send') {
-    const { channelId, sid, message } = data.payload
+    const { channelId, sid, message } = data.body
     const bot = app.bots[sid]
     bot.sendMessage(channelId, message)
   }
@@ -138,7 +138,10 @@ if (config.type) {
 
 const app = new App(config)
 
-app.command('exit', '停止机器人运行', { authority: 4 })
+const { exitCommand, autoRestart = true } = config.deamon || {}
+
+exitCommand && app
+  .command('exit', '停止机器人运行', { authority: 4 })
   .option('restart', '-r  重新启动')
   .shortcut('关机', { prefix: true })
   .shortcut('重启', { prefix: true, options: { restart: true } })
@@ -148,7 +151,7 @@ app.command('exit', '停止机器人运行', { authority: 4 })
       await session.send('正在关机……').catch(noop)
       process.exit()
     }
-    process.send({ type: 'exit', payload: { channelId, sid, message: '已成功重启。' } })
+    process.send({ type: 'queue', body: { channelId, sid, message: '已成功重启。' } })
     await session.send(`正在重启……`).catch(noop)
     process.exit(114)
   })
@@ -224,7 +227,7 @@ app.start().then(() => {
   Logger.timestamp = Date.now()
   Logger.showDiff = config.logDiff ?? !Logger.showTime
 
-  process.send({ type: 'start' })
+  process.send({ type: 'start', body: { autoRestart } })
   createWatcher()
 }, handleException)
 

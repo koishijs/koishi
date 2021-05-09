@@ -19,10 +19,16 @@ export interface WatchConfig extends WatchOptions {
   fullReload?: boolean
 }
 
+interface DeamonConfig {
+  exitCommand?: boolean | string
+  autoRestart?: boolean
+}
+
 export interface AppConfig extends AppOptions {
   plugins?: PluginConfig
   logLevel?: LogLevel
   logDiff?: boolean
   logTime?: string | boolean
   watch?: WatchConfig
+  deamon?: DeamonConfig
 }

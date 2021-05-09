@@ -11,11 +11,6 @@ interface WorkerOptions {
   '--'?: string[]
 }
 
-const codes = [
-  134, // heap out of memory
-  114, // preserved for koishi
-]
-
 let child: ChildProcess
 
 process.on('SIGINT', () => {
@@ -27,32 +22,32 @@ process.on('SIGINT', () => {
 })
 
 interface Message {
-  type: 'start' | 'exit'
-  payload: any
+  type: 'start' | 'queue'
+  body: any
 }
 
-let payload: any
+let buffer: any
 
 function createWorker(options: WorkerOptions) {
   child = fork(resolve(__dirname, 'worker'), [], {
     execArgv: options['--'],
   })
 
-  let started = false
+  let config: { autoRestart: boolean }
 
   child.on('message', (message: Message) => {
     if (message.type === 'start') {
-      started = true
-      if (payload) {
-        child.send({ type: 'send', payload })
+      config = message.body
+      if (buffer) {
+        child.send({ type: 'send', body: buffer })
       }
-    } else if (message.type === 'exit') {
-      payload = message.payload
+    } else if (message.type === 'queue') {
+      buffer = message.body
     }
   })
 
   child.on('exit', (code) => {
-    if (!started || !codes.includes(code)) {
+    if (!config || (!config.autoRestart && code !== 114)) {
       process.exit(code)
     }
     createWorker(options)
