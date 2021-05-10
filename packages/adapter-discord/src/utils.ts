@@ -38,6 +38,24 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.Message, session: P
   if (meta.member?.nick) {
     session.author.nickname = meta.member?.nick
   }
+
+  session.mention = {
+    everyone: meta.mention_everyone,
+    users: meta.mentions.map(adaptUser),
+    roles: meta.mention_roles.map(id => ({ id })),
+    channels: meta.mention_channels.map(data => ({
+      channelId: data.id,
+      channelName: data.name,
+      groupId: data.guild_id,
+    })),
+  }
+
+  // TODO remove in a future version
+  session.discord = {
+    webhook_id: meta.webhook_id,
+    flags: meta.flags,
+  }
+
   // https://discord.com/developers/docs/reference#message-formatting
   session.content = ''
   if (meta.content) {
@@ -95,11 +113,6 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.Message, session: P
     if (embed.video) {
       session.content += segment('video', { url: embed.video.url, proxy_url: embed.video.proxy_url })
     }
-  }
-  session.discord = {
-    mentions: meta.mentions,
-    webhook_id: meta.webhook_id,
-    flags: meta.flags,
   }
   return session
 }

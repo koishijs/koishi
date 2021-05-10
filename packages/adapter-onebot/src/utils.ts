@@ -25,24 +25,29 @@ export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.Anonymou
   roles: [user.role],
 })
 
-function adaptContent(content: string) {
-  return segment.transform(content, {
-    at({ qq }) {
-      if (qq === 'all') return segment('at', { type: 'all' })
-      return segment.at(qq)
-    },
-    reply(data) {
-      return segment('quote', data)
-    },
-  })
-}
+export function adaptMessage(message: OneBot.Message): Koishi.MessageInfo {
+  const mention = {
+    roles: [],
+    channels: [],
+  } as Koishi.MentionInfo
 
-export const adaptMessage = (message: OneBot.Message): Koishi.MessageInfo => ({
-  messageId: message.messageId.toString(),
-  timestamp: message.time * 1000,
-  content: adaptContent(message.message),
-  author: adaptAuthor(message.sender, message.anonymous),
-})
+  return {
+    mention,
+    messageId: message.messageId.toString(),
+    timestamp: message.time * 1000,
+    author: adaptAuthor(message.sender, message.anonymous),
+    content: segment.transform(message.message, {
+      at({ qq }) {
+        if (qq !== 'all') return segment.at(qq)
+        mention.everyone = true
+        return segment('at', { type: 'all' })
+      },
+      reply(data) {
+        return segment('quote', data)
+      },
+    }),
+  }
+}
 
 export const adaptGroup = (group: OneBot.GroupInfo): Koishi.GroupInfo => ({
   groupId: group.groupId.toString(),

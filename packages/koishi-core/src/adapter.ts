@@ -306,7 +306,7 @@ export interface GroupInfo {
 }
 
 export interface UserBase {
-  username: string
+  username?: string
   nickname?: string
   avatar?: string
   discriminator?: string
@@ -325,6 +325,17 @@ export interface AuthorInfo extends GroupMemberInfo {
   anonymous?: string
 }
 
+export interface RoleInfo {
+  id: string
+}
+
+export interface MentionInfo {
+  everyone: boolean
+  users: UserInfo[]
+  roles: RoleInfo[]
+  channels: ChannelInfo[]
+}
+
 export interface MessageBase {
   messageId?: string
   channelId?: string
@@ -334,6 +345,7 @@ export interface MessageBase {
   timestamp?: number
   author?: AuthorInfo
   quote?: MessageInfo
+  mention?: MentionInfo
 }
 
 export interface MessageInfo extends MessageBase {
