@@ -26,7 +26,7 @@ interface Message {
   body: any
 }
 
-let buffer: any
+let buffer = null
 
 function createWorker(options: WorkerOptions) {
   child = fork(resolve(__dirname, 'worker'), [], {
@@ -40,6 +40,7 @@ function createWorker(options: WorkerOptions) {
       config = message.body
       if (buffer) {
         child.send({ type: 'send', body: buffer })
+        buffer = null
       }
     } else if (message.type === 'queue') {
       buffer = message.body

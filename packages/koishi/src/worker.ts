@@ -1,6 +1,6 @@
 import { App, BotOptions, Context, Plugin, version } from 'koishi-core'
 import { resolve, relative, extname, dirname } from 'path'
-import { coerce, Logger, noop, LogLevelConfig, makeArray } from 'koishi-utils'
+import { coerce, Logger, noop, LogLevelConfig, makeArray, template } from 'koishi-utils'
 import { readFileSync, readdirSync } from 'fs'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
@@ -140,19 +140,25 @@ const app = new App(config)
 
 const { exitCommand, autoRestart = true } = config.deamon || {}
 
+template.set('deamon', {
+  exiting: '正在关机……',
+  restarting: '正在重启……',
+  restarted: '已成功重启。',
+})
+
 exitCommand && app
-  .command('exit', '停止机器人运行', { authority: 4 })
+  .command(exitCommand === true ? 'exit' : exitCommand, '停止机器人运行', { authority: 4 })
   .option('restart', '-r  重新启动')
   .shortcut('关机', { prefix: true })
   .shortcut('重启', { prefix: true, options: { restart: true } })
   .action(async ({ options, session }) => {
     const { channelId, sid } = session
     if (!options.restart) {
-      await session.send('正在关机……').catch(noop)
+      await session.send(template('deamon.exiting')).catch(noop)
       process.exit()
     }
-    process.send({ type: 'queue', body: { channelId, sid, message: '已成功重启。' } })
-    await session.send(`正在重启……`).catch(noop)
+    process.send({ type: 'queue', body: { channelId, sid, message: template('deamon.restarted') } })
+    await session.send(template('deamon.restarting')).catch(noop)
     process.exit(114)
   })
 
