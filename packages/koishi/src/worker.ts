@@ -140,6 +140,14 @@ const app = new App(config)
 
 const { exitCommand, autoRestart = true } = config.deamon || {}
 
+const handleSignal = (signal: NodeJS.Signals) => {
+  new Logger('app').info(`terminated by ${signal}`)
+  app.parallel('exit', signal).finally(() => process.exit())
+}
+
+process.on('SIGINT', handleSignal)
+process.on('SIGTERM', handleSignal)
+
 template.set('deamon', {
   exiting: '正在关机……',
   restarting: '正在重启……',
