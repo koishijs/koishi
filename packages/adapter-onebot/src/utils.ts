@@ -27,20 +27,13 @@ export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.Anonymou
 })
 
 export function adaptMessage(message: OneBot.Message): Koishi.MessageInfo {
-  const mention = {
-    roles: [],
-    channels: [],
-  } as Koishi.MentionInfo
-
   return {
-    mention,
     messageId: message.messageId.toString(),
     timestamp: message.time * 1000,
     author: adaptAuthor(message.sender, message.anonymous),
     content: segment.transform(message.message, {
       at({ qq }) {
         if (qq !== 'all') return segment.at(qq)
-        mention.everyone = true
         return segment('at', { type: 'all' })
       },
       face: ({ id }) => segment('face', { id, url: qface.getUrl(id) }),

@@ -39,17 +39,6 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.Message, session: P
     session.author.nickname = meta.member?.nick
   }
 
-  session.mention = {
-    everyone: meta.mention_everyone,
-    users: meta.mentions.map(adaptUser),
-    roles: meta.mention_roles.map(id => ({ id })),
-    channels: (meta.mention_channels || []).map(data => ({
-      channelId: data.id,
-      channelName: data.name,
-      groupId: data.guild_id,
-    })),
-  }
-
   // TODO remove in a future version
   session.discord = {
     webhook_id: meta.webhook_id,
