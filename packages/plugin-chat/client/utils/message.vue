@@ -2,6 +2,7 @@
   <div class="k-message">
     <template v-for="({ type, data }) in segment.parse(content)">
       <span v-if="type === 'text'">{{ data.content }}</span>
+      <span v-else-if="type === 'at'">@{{ data.name }}</span>
       <k-image v-else-if="type === 'image'" :src="data.url"/>
       <img class="face" v-else-if="type === 'face'" :src="data.url"/>
       <span v-else-if="segmentTypes[type]">[{{ segmentTypes[type] }}]</span>
