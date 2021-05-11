@@ -584,7 +584,7 @@ const register = Router.prototype.register
 Router.prototype.register = function (this: Router, ...args) {
   const layer = register.apply(this, args)
   const context: Context = this[Context.current]
-  context.state.disposables.push(() => {
+  context?.state.disposables.push(() => {
     remove(this.stack, layer)
   })
   return layer
