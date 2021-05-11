@@ -1,6 +1,7 @@
 import { CQBot } from './bot'
 import { Adapter, Session } from 'koishi-core'
 import { Logger, camelCase, renameProperty, paramCase, segment } from 'koishi-utils'
+import * as qface from 'qface'
 import * as Koishi from 'koishi-core'
 import * as OneBot from './types'
 
@@ -42,9 +43,8 @@ export function adaptMessage(message: OneBot.Message): Koishi.MessageInfo {
         mention.everyone = true
         return segment('at', { type: 'all' })
       },
-      reply(data) {
-        return segment('quote', data)
-      },
+      face: ({ id }) => segment('face', { id, url: qface.getUrl(id) }),
+      reply: (data) => segment('quote', data),
     }),
   }
 }

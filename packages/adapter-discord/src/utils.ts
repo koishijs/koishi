@@ -43,7 +43,7 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.Message, session: P
     everyone: meta.mention_everyone,
     users: meta.mentions.map(adaptUser),
     roles: meta.mention_roles.map(id => ({ id })),
-    channels: meta.mention_channels.map(data => ({
+    channels: (meta.mention_channels || []).map(data => ({
       channelId: data.id,
       channelName: data.name,
       groupId: data.guild_id,

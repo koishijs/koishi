@@ -3,6 +3,7 @@
     <template v-for="({ type, data }) in segment.parse(content)">
       <span v-if="type === 'text'">{{ data.content }}</span>
       <k-image v-else-if="type === 'image'" :src="data.url"/>
+      <img class="face" v-else-if="type === 'face'" :src="data.url"/>
       <span v-else-if="segmentTypes[type]">[{{ segmentTypes[type] }}]</span>
       <span v-else>[未知]</span>
     </template>
@@ -20,7 +21,6 @@ defineProps<{
 }>()
 
 const segmentTypes = {
-  face: '表情',
   record: '语音',
   video: '短视频',
   image: '图片',
@@ -49,6 +49,11 @@ const segmentTypes = {
   img {
     max-height: 320px;
     max-width: 100%;
+  }
+
+  img.face {
+    height: 1.25rem;
+    vertical-align: middle;
   }
 }
 

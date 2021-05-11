@@ -37,6 +37,7 @@
   "dependencies": {
     "axios": "^0.21.1",
     "koishi-utils": "^4.2.2",
+    "qface": "1.1.0",
     "ws": "^7.4.5"
   }
 }
