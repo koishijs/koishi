@@ -26,12 +26,20 @@ function adaptMessage(base: KHL.MessageBase, meta: KHL.MessageMeta, session: Mes
     session.userId = meta.author.id
   }
   if (base.type === KHL.Type.text) {
+    const users = new Map<string, string>()
+    const channels = new Set<string>()
     session.content = base.content
-      .replace(/@(.+?)#(\d+)/, (_, $1, $2) => `[CQ:at,id=${$2}]`)
+      .replace(/@(.+?)#(\d+)/, (_, $1, $2) => (users.set($2, $1), `[CQ:at,id=${$2}]`))
       .replace(/@全体成员/, () => `[CQ:at,type=all]`)
       .replace(/@在线成员/, () => `[CQ:at,type=here]`)
       .replace(/@role:(\d+);/, (_, $1) => `[CQ:at,role=${$1}]`)
-      .replace(/#channel:(\d+);/, (_, $1) => `[CQ:sharp,id=${$1}]`)
+      .replace(/#channel:(\d+);/, (_, $1) => (channels.add($1), `[CQ:sharp,id=${$1}]`))
+    session.mention = {
+      everyone: meta.mentionAll || meta.mentionHere,
+      roles: meta.mentionRoles.map(id => ({ id })),
+      channels: [...channels].map(channelId => ({ channelId })),
+      users: [...users].map(([userId, username]) => ({ userId, username })),
+    }
   } else if (base.type === KHL.Type.image) {
     session.content = segment('image', { url: base.content, file: meta.attachments.name })
   }

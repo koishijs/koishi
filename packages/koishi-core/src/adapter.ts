@@ -297,12 +297,12 @@ export type Platform = keyof Bot.Platforms
 
 export interface ChannelInfo {
   channelId: string
-  channelName: string
+  channelName?: string
 }
 
 export interface GroupInfo {
   groupId: string
-  groupName: string
+  groupName?: string
 }
 
 export interface UserBase {
