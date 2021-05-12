@@ -108,11 +108,6 @@ export class MockedApp extends App {
     return this.bots[0].selfId
   }
 
-  async start() {
-    this.status = App.Status.open
-    this.emit('connect')
-  }
-
   receive(meta: Partial<Session>) {
     const session = new Session(this, meta)
     this.adapters.mock.dispatch(session)
