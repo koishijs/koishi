@@ -15,31 +15,24 @@
         <plugin-view :data="data" v-for="(data) in registry.plugins"/>
       </div>
     </template>
-    <table v-else-if="registry.packages">
+    <table v-else-if="manager.packages.length">
       <tr>
         <th>模块名称</th>
         <th>当前版本</th>
         <th>最新版本</th>
+        <th>综合评分</th>
       </tr>
-      <tr v-for="{ name, version, latest, isLocal } in registry.packages">
-        <td class="package-name">
-          <a :href="'http://npmjs.com/package/' + name" target="blank" rel="noopener noreferrer">{{ name }}</a>
-          <k-badge type="default" v-if="isLocal">本地</k-badge>
-          <k-badge type="danger" v-else-if="!latest">未知</k-badge>
-          <k-badge type="success" v-else-if="latest === version">最新</k-badge>
-          <k-badge type="warning" v-else>可更新</k-badge>
-        </td>
-        <td>{{ version }}</td>
-        <td>{{ isLocal ? '-' : latest || '无法获取' }}</td>
-      </tr>
+      <dep-view v-for="remote in manager.packages" :remote="remote"/>
     </table>
-    <p v-else>暂无数据。</p>
+    <p v-else>正在加载……</p>
   </k-card>
 </template>
 
 <script setup lang="ts">
 
 import PluginView from './plugin-view.vue'
+import DepView from './dep-view.vue'
+import { manager } from './manager'
 import { registry, user, config } from '~/client'
 
 </script>
