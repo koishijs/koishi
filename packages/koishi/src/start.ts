@@ -11,11 +11,6 @@ interface WorkerOptions {
   '--'?: string[]
 }
 
-const codes = [
-  134, // heap out of memory
-  114, // preserved for koishi
-]
-
 let child: ChildProcess
 
 process.on('SIGINT', () => {
@@ -27,32 +22,42 @@ process.on('SIGINT', () => {
 })
 
 interface Message {
-  type: 'start' | 'exit'
-  payload: any
+  type: 'start' | 'queue'
+  body: any
 }
 
-let payload: any
+let buffer = null
 
 function createWorker(options: WorkerOptions) {
   child = fork(resolve(__dirname, 'worker'), [], {
     execArgv: options['--'],
   })
 
-  let started = false
+  let config: { autoRestart: boolean }
 
   child.on('message', (message: Message) => {
     if (message.type === 'start') {
-      started = true
-      if (payload) {
-        child.send({ type: 'send', payload })
+      config = message.body
+      if (buffer) {
+        child.send({ type: 'send', body: buffer })
+        buffer = null
       }
-    } else if (message.type === 'exit') {
-      payload = message.payload
+    } else if (message.type === 'queue') {
+      buffer = message.body
     }
   })
 
+  /**
+   * https://tldp.org/LDP/abs/html/exitcodes.html
+   * - 0: exit manually
+   * - 130: SIGINT
+   * - 137: SIGKILL
+   * - **114: exit and restart (Koishi)**
+   */
+  const closingCode = [0, 130, 137]
+
   child.on('exit', (code) => {
-    if (!started || !codes.includes(code)) {
+    if (!config || closingCode.includes(code) || code !== 114 && !config.autoRestart) {
       process.exit(code)
     }
     createWorker(options)

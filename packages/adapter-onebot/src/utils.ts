@@ -1,6 +1,7 @@
 import { CQBot } from './bot'
 import { Adapter, Session } from 'koishi-core'
 import { Logger, camelCase, renameProperty, paramCase, segment } from 'koishi-utils'
+import * as qface from 'qface'
 import * as Koishi from 'koishi-core'
 import * as OneBot from './types'
 
@@ -15,32 +16,31 @@ export const adaptUser = (user: OneBot.AccountInfo): Koishi.UserInfo => ({
 export const adaptGroupMember = (user: OneBot.SenderInfo): Koishi.GroupMemberInfo => ({
   ...adaptUser(user),
   nickname: user.card,
+  roles: [user.role],
 })
 
 export const adaptAuthor = (user: OneBot.SenderInfo, anonymous?: OneBot.AnonymousInfo): Koishi.AuthorInfo => ({
   ...adaptUser(user),
   nickname: anonymous?.name || user.card,
   anonymous: anonymous?.flag,
+  roles: [user.role],
 })
 
-function adaptContent(content: string) {
-  return segment.transform(content, {
-    at({ qq }) {
-      if (qq === 'all') return segment('at', { type: 'all' })
-      return segment.at(qq)
-    },
-    reply(data) {
-      return segment('quote', data)
-    },
-  })
+export function adaptMessage(message: OneBot.Message): Koishi.MessageInfo {
+  return {
+    messageId: message.messageId.toString(),
+    timestamp: message.time * 1000,
+    author: adaptAuthor(message.sender, message.anonymous),
+    content: segment.transform(message.message, {
+      at({ qq }) {
+        if (qq !== 'all') return segment.at(qq)
+        return segment('at', { type: 'all' })
+      },
+      face: ({ id }) => segment('face', { id, url: qface.getUrl(id) }),
+      reply: (data) => segment('quote', data),
+    }),
+  }
 }
-
-export const adaptMessage = (message: OneBot.Message): Koishi.MessageInfo => ({
-  messageId: message.messageId.toString(),
-  timestamp: message.time * 1000,
-  content: adaptContent(message.message),
-  author: adaptAuthor(message.sender, message.anonymous),
-})
 
 export const adaptGroup = (group: OneBot.GroupInfo): Koishi.GroupInfo => ({
   groupId: group.groupId.toString(),

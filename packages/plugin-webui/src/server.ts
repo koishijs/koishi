@@ -8,8 +8,6 @@ import WebSocket from 'ws'
 import type * as Vite from 'vite'
 import type PluginVue from '@vitejs/plugin-vue'
 
-Context.delegate('webui')
-
 interface BaseConfig {
   title?: string
   devMode?: boolean

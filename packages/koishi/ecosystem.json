@@ -1,14 +1,14 @@
 {
   "koishi-adapter-discord": {
-    "version": "1.1.2",
+    "version": "1.1.3",
     "description": "Discord adapter for Koishi"
   },
   "koishi-adapter-kaiheila": {
-    "version": "1.1.2",
+    "version": "1.1.3",
     "description": "Kaiheila adapter for Koishi"
   },
   "koishi-adapter-onebot": {
-    "version": "3.0.8",
+    "version": "3.0.9",
     "description": "CQHTTP adapter for Koishi"
   },
   "koishi-adapter-telegram": {
@@ -20,19 +20,19 @@
     "description": "Asset provider plugin for Koishi"
   },
   "koishi-plugin-chat": {
-    "version": "0.4.1",
+    "version": "0.5.0",
     "description": "Chat plugin for Koishi"
   },
   "koishi-plugin-chess": {
-    "version": "3.0.2",
+    "version": "3.0.3",
     "description": "Chess Plugin for Koishi"
   },
   "koishi-plugin-common": {
-    "version": "4.2.5",
+    "version": "4.2.6",
     "description": "Common plugins for Koishi"
   },
   "koishi-plugin-eval": {
-    "version": "3.1.2",
+    "version": "3.1.3",
     "description": "Execute JavaScript in Koishi"
   },
   "koishi-plugin-github": {
@@ -52,7 +52,7 @@
     "description": "MySQL support for Koishi"
   },
   "koishi-plugin-puppeteer": {
-    "version": "2.1.2",
+    "version": "2.1.3",
     "description": "Take Screenshots in Koishi"
   },
   "koishi-plugin-schedule": {
@@ -68,7 +68,7 @@
     "description": "Some simple tools for Koishi"
   },
   "koishi-plugin-webui": {
-    "version": "4.5.0",
+    "version": "4.5.1",
     "description": "Show Web UI of Koishi"
   }
 }

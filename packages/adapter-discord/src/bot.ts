@@ -115,7 +115,7 @@ export class DiscordBot extends Bot<'discord'> {
         }
         if (type === 'image' || type === 'video' && data.url) {
           if (data.url.startsWith('file://')) {
-            const r = await this.sendEmbedMessage(requestUrl, readFileSync(data.url.slice(7)), {
+            const r = await this.sendEmbedMessage(requestUrl, readFileSync(data.url.slice(8)), {
               ...addition,
             })
             sentMessageId = r.id

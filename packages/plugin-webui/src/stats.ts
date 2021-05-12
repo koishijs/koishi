@@ -1,5 +1,6 @@
-import { Context, Channel, noop, Session, Logger, Bot, Platform, Time } from 'koishi-core'
+import { Context, Channel, noop, Session, Bot, Platform, Time } from 'koishi-core'
 import { DataSource } from './data'
+import {} from 'koishi'
 
 export type StatRecord = Record<string, number>
 
@@ -83,22 +84,7 @@ export class Statistics implements DataSource<Statistics.Payload> {
   average = average
 
   constructor(private ctx: Context, public config: Statistics.Config = {}) {
-    if (config.handleSignals !== false) {
-      const handleSignal = (signal: NodeJS.Signals) => {
-        new Logger('app').info(`terminated by ${signal}`)
-        this.upload(true).finally(() => process.exit())
-      }
-
-      ctx.on('connect', () => {
-        process.on('SIGINT', handleSignal)
-        process.on('SIGTERM', handleSignal)
-      })
-
-      ctx.before('disconnect', async () => {
-        process.off('SIGINT', handleSignal)
-        process.off('SIGTERM', handleSignal)
-      })
-    }
+    ctx.on('exit', () => this.upload(true))
 
     ctx.on('delegate/database', () => {
       this.sync = ctx.database.createSynchronizer()
@@ -254,7 +240,6 @@ export namespace Statistics {
   }
 
   export interface Config {
-    handleSignals?: boolean
     statsInternal?: number
   }
 

@@ -132,7 +132,7 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
           } else if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
             userMap[id] = [getUserName(session.bot, session.groupId, code.data.id), timestamp]
           }
-          params.abstract += '@' + await userMap[id][0]
+          params.abstract += '@' + (code.data.name = await userMap[id][0])
         } else {
           params.abstract += '@' + session.bot.username
         }
@@ -144,6 +144,7 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
         params.abstract += `[${segmentTypes[code.type] || '未知'}]`
       }
     }
+    params.content = codes.map(({ type, data }) => segment(type, data)).join('')
   }
 
   async function prepareContent(session: Session, message: Message, timestamp: number) {

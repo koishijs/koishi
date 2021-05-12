@@ -14,8 +14,10 @@ export * from './server'
 export type Activity = Record<number, number>
 
 declare module 'koishi-core' {
-  interface Context {
-    webui: WebServer
+  namespace Context {
+    interface Delegates {
+      webui: WebServer
+    }
   }
 
   interface Database {
@@ -54,6 +56,8 @@ declare module 'koishi-core' {
     }
   }
 }
+
+Context.delegate('webui')
 
 Channel.extend(() => ({
   activity: {},

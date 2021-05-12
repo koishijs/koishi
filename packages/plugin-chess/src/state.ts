@@ -26,6 +26,8 @@ export class State {
   imageMode: boolean
   update: (this: State, x: number, y: number, value: 1 | -1) => MoveResult | string
 
+  static imageMode: boolean
+
   constructor(public readonly rule: string, public readonly size: number, public readonly placement: 'cross' | 'grid') {
     this.area = BigInt(size * size)
     this.full = (1n << this.area) - 1n
@@ -161,7 +163,7 @@ export class State {
   }
 
   async draw(session: Session, message: string = '', x?: number, y?: number) {
-    if (this.imageMode) {
+    if (this.imageMode ?? State.imageMode) {
       const [image] = await Promise.all([
         this.drawSvg(x, y).render(session.app),
         message && session.send(message),
