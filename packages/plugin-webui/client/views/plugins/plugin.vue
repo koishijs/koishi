@@ -22,12 +22,12 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 
 import type { Registry } from '~/server'
 import { send, user } from '~/client'
 import { ref, defineProps } from 'vue'
-import PluginView from './plugin-view.vue'
+import PluginView from './plugin.vue'
 
 const show = ref(false)
 

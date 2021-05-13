@@ -1,6 +1,6 @@
 import { Database, Logger, Time } from 'koishi-core'
+import { RECENT_LENGTH, StatRecord, Synchronizer } from '../payload/stats'
 import type MongoDatabase from 'koishi-plugin-mongo'
-import { RECENT_LENGTH, StatRecord, Synchronizer } from './stats'
 
 const logger = new Logger('status')
 
