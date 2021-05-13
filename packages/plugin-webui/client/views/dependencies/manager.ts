@@ -9,6 +9,9 @@ interface PackageBase {
 }
 
 interface PackageJson {
+  dist: {
+    unpackedSize: number
+  }
   dependencies: Record<string, string>
   devDependencies: Record<string, string>
   peerDependencies: Record<string, string>
@@ -17,7 +20,7 @@ interface PackageJson {
 
 export interface PackageMeta extends PackageBase {
   versions: Record<string, PackageJson>
-  'dist-tags': Record<string, string>
+  distSize: number
   score: {
     final: number
     quality: number
@@ -47,11 +50,11 @@ if (KOISHI_CONFIG.devMode || data.timestamp + timeout < timestamp) {
 export const manager = reactive(data)
 
 export async function update() {
-  const res = await fetch('https://api.npms.io/v2/search?q=koishi-plugin&size=250', { mode: 'cors' })
+  const res = await fetch('https://api.npms.io/v2/search?q=koishi-plugin+not:deprecated&size=250', { mode: 'cors' })
   const json = await res.json()
-  data.version = version
-  data.timestamp = Date.now()
-  data.packages = json.results.map((data) => ({
+  manager.version = version
+  manager.timestamp = Date.now()
+  manager.packages = json.results.map((data) => ({
     ...data.package,
     score: {
       final: data.score.final,
@@ -59,18 +62,19 @@ export async function update() {
     },
   })).sort((a, b) => b.score.final - a.score.final)
 
-  await Promise.all(json.results.map(async ({ package: meta }) => {
+  await Promise.all(manager.packages.map(async (meta) => {
     const res = await fetch(KOISHI_CONFIG.endpoint + '/registry/' + meta.name, { mode: 'cors' })
     const json: PackageMeta = await res.json()
     const { dependencies = {}, peerDependencies = {} } = json.versions[meta.version]
     const core = { ...dependencies, ...peerDependencies }['koishi-core']
     if (core && satisfies(registry.value.version, core)) {
+      json.distSize = json.versions[meta.version].dist.unpackedSize
       Object.assign(meta, json)
     } else {
-      const index = data.packages.findIndex(pkg => pkg.name === meta.name)
-      data.packages.splice(index, 1)
+      const index = manager.packages.findIndex(pkg => pkg.name === meta.name)
+      manager.packages.splice(index, 1)
     }
   }))
 
-  storage.set('packages', data)
+  storage.set('packages', manager)
 }

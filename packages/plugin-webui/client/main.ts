@@ -45,7 +45,7 @@ router.addRoute({
 router.addRoute({
   path: '/dependencies',
   name: '依赖',
-  meta: { icon: 'puzzle-piece', require: ['registry'] },
+  meta: { icon: 'puzzle-piece', authority: 4, require: ['registry'] },
   component: () => import('./views/dependencies/index.vue'),
 })
 
