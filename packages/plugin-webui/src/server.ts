@@ -1,4 +1,4 @@
-import { Adapter, App, Context, Logger, noop, omit, pick, Random, remove, Time, User } from 'koishi-core'
+import { Adapter, App, Context, Logger, noop, omit, pick, Random, remove, Time, User, version } from 'koishi-core'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
 import { DataSource, Profile, Meta } from './data'
@@ -22,6 +22,7 @@ export interface Config extends BaseConfig, Profile.Config, Meta.Config, Registr
 }
 
 export interface ClientConfig extends Required<BaseConfig> {
+  version: string
   database: boolean
   endpoint: string
   extensions: string[]
@@ -70,7 +71,7 @@ export class WebServer extends Adapter {
 
     const { apiPath, uiPath, devMode, selfUrl, title } = config
     const endpoint = selfUrl + apiPath
-    this.global = { title, uiPath, endpoint, devMode, extensions: [], database: false }
+    this.global = { title, uiPath, endpoint, devMode, extensions: [], database: false, version }
     this.root = resolve(__dirname, '..', devMode ? 'client' : 'dist')
 
     this.server = new WebSocket.Server({

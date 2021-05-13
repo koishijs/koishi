@@ -1,4 +1,4 @@
-import { Context, pick, Plugin, version } from 'koishi-core'
+import { Context, pick, Plugin } from 'koishi-core'
 import { dirname } from 'path'
 import { promises as fs } from 'fs'
 import { DataSource } from './data'
@@ -67,7 +67,6 @@ export class Registry implements DataSource<Registry.Payload> {
 
   private async getForced() {
     return {
-      version,
       plugins: this.traverse(null).children,
       packages: await this.getPackages(),
     } as Registry.Payload
@@ -78,9 +77,10 @@ export class Registry implements DataSource<Registry.Payload> {
     for (const [plugin, state] of this.registry) {
       if (id !== state.id) continue
       const replacer = plugin[Registry.placeholder] || {
-        [Registry.placeholder]: state.plugin,
         name: state.name,
-        apply: () => {},
+        apply: Object.assign(() => {}, {
+          [Registry.placeholder]: state.plugin,
+        }),
       }
       this.promise = this.ctx.dispose(plugin)
       state.context.plugin(replacer, state.config)
@@ -120,12 +120,6 @@ export class Registry implements DataSource<Registry.Payload> {
       const { exports } = require.cache[filename]
       return this.registry.has(exports)
     })
-
-    try {
-      filenames.push(require.resolve('koishi'))
-    } catch {
-      filenames.push(require.resolve('koishi-core'))
-    }
 
     await Promise.all(filenames.map(loadPackage))
     const data = await Promise.all(Object.values(packages))
@@ -171,7 +165,6 @@ export namespace Registry {
   }
 
   export interface Payload {
-    version: string
     packages: Record<string, PackageData>
     plugins: PluginData[]
   }

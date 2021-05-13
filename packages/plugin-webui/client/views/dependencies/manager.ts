@@ -67,7 +67,7 @@ export async function update() {
     const json: PackageMeta = await res.json()
     const { dependencies = {}, peerDependencies = {} } = json.versions[meta.version]
     const core = { ...dependencies, ...peerDependencies }['koishi-core']
-    if (core && satisfies(registry.value.version, core)) {
+    if (core && satisfies(KOISHI_CONFIG.version, core)) {
       json.distSize = json.versions[meta.version].dist.unpackedSize
       Object.assign(meta, json)
     } else {
