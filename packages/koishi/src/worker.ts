@@ -1,6 +1,6 @@
 import { App, BotOptions, Context, Plugin, version } from 'koishi-core'
 import { resolve, relative, extname, dirname } from 'path'
-import { coerce, Logger, noop, LogLevelConfig, makeArray } from 'koishi-utils'
+import { coerce, Logger, noop, LogLevelConfig, makeArray, template } from 'koishi-utils'
 import { readFileSync, readdirSync } from 'fs'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
@@ -113,12 +113,12 @@ if (process.env.KOISHI_DEBUG) {
 
 interface Message {
   type: 'send'
-  payload: any
+  body: any
 }
 
 process.on('message', (data: Message) => {
   if (data.type === 'send') {
-    const { channelId, sid, message } = data.payload
+    const { channelId, sid, message } = data.body
     const bot = app.bots[sid]
     bot.sendMessage(channelId, message)
   }
@@ -138,18 +138,35 @@ if (config.type) {
 
 const app = new App(config)
 
-app.command('exit', '停止机器人运行', { authority: 4 })
+const { exitCommand, autoRestart = true } = config.deamon || {}
+
+const handleSignal = (signal: NodeJS.Signals) => {
+  new Logger('app').info(`terminated by ${signal}`)
+  app.parallel('exit', signal).finally(() => process.exit())
+}
+
+process.on('SIGINT', handleSignal)
+process.on('SIGTERM', handleSignal)
+
+template.set('deamon', {
+  exiting: '正在关机……',
+  restarting: '正在重启……',
+  restarted: '已成功重启。',
+})
+
+exitCommand && app
+  .command(exitCommand === true ? 'exit' : exitCommand, '停止机器人运行', { authority: 4 })
   .option('restart', '-r  重新启动')
   .shortcut('关机', { prefix: true })
   .shortcut('重启', { prefix: true, options: { restart: true } })
   .action(async ({ options, session }) => {
     const { channelId, sid } = session
     if (!options.restart) {
-      await session.send('正在关机……').catch(noop)
+      await session.send(template('deamon.exiting')).catch(noop)
       process.exit()
     }
-    process.send({ type: 'exit', payload: { channelId, sid, message: '已成功重启。' } })
-    await session.send(`正在重启……`).catch(noop)
+    process.send({ type: 'queue', body: { channelId, sid, message: template('deamon.restarted') } })
+    await session.send(template('deamon.restarting')).catch(noop)
     process.exit(114)
   })
 
@@ -224,7 +241,7 @@ app.start().then(() => {
   Logger.timestamp = Date.now()
   Logger.showDiff = config.logDiff ?? !Logger.showTime
 
-  process.send({ type: 'start' })
+  process.send({ type: 'start', body: { autoRestart } })
   createWatcher()
 }, handleException)
 

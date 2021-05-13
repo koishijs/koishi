@@ -1,14 +1,14 @@
 /* eslint-disable quote-props */
 
-import { AuthorInfo, Bot, MessageInfo, Session } from 'koishi-core'
-import { camelize, segment, pick, renameProperty, snakeCase } from 'koishi-utils'
+import { AuthorInfo, Bot, Session } from 'koishi-core'
+import { camelize, segment, renameProperty, snakeCase } from 'koishi-utils'
 import axios, { Method } from 'axios'
 import * as KHL from './types'
 import { adaptGroup, adaptAuthor, adaptUser } from './utils'
 import FormData from 'form-data'
 import { createReadStream } from 'fs'
 
-export interface KaiheilaMessageInfo extends MessageInfo {
+export interface KaiheilaMessageInfo {
   channelName?: string
   mention?: string[]
   mentionRoles?: string[]
@@ -26,37 +26,6 @@ export class KaiheilaBot extends Bot {
   _ping: NodeJS.Timeout
   _heartbeat: NodeJS.Timeout
   version = 'kaiheila'
-
-  static toMessage(data: KaiheilaMessageInfo & Record<string, any>) {
-    renameProperty(data, 'channelId', 'targetId')
-    renameProperty(data, 'timestamp', 'msgTimestamp')
-    renameProperty(data, 'messageId', 'msgId')
-    renameProperty(data, 'userId', 'authorId')
-    const { author, channelName, guildId } = data.extra
-    data.channelName = channelName
-    data.groupId = guildId
-    data.author = {
-      userId: data.userId,
-      discriminator: author.identifyNum,
-      avatar: author.avatar,
-      username: author.username,
-      nickname: author.nickname,
-      roles: author.roles,
-    }
-    data.subtype = data['channelType'] === 'GROUP' ? 'group' : 'private'
-    data.content = data.content
-      .replace(/@(.+?)#(\d+)/, (_, $1, $2) => `[CQ:at,id=${$2}]`)
-      .replace(/@全体成员/, () => `[CQ:at,type=all]`)
-      .replace(/@在线成员/, () => `[CQ:at,type=here]`)
-      .replace(/@role:(\d+);/, (_, $1) => `[CQ:at,role=${$1}]`)
-      .replace(/#channel:(\d+);/, (_, $1) => `[CQ:sharp,id=${$1}]`)
-    Object.assign(data, pick(data.extra, ['mention', 'mentionRoles', 'memtionAll', 'mentionHere']))
-    delete data.channelType
-    delete data.verifyToken
-    delete data.nonce
-    delete data.type
-    delete data.extra
-  }
 
   async request<T = any>(method: Method, path: string, data: any = {}, headers: any = {}): Promise<T> {
     const url = `${this.app.options.kaiheila.endpoint}${path}`
@@ -106,7 +75,7 @@ export class KaiheilaBot extends Bot {
     if (data.url.startsWith('file://') || data.url.startsWith('base64://')) {
       const payload = new FormData()
       payload.append('file', data.url.startsWith('file://')
-        ? createReadStream(data.url.slice(7))
+        ? createReadStream(data.url.slice(8))
         : Buffer.from(data.url.slice(9), 'base64'))
       const { url } = await this.request('POST', '/asset/create', payload, payload.getHeaders())
       data.url = url

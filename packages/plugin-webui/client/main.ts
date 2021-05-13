@@ -39,7 +39,14 @@ router.addRoute({
   path: '/plugins',
   name: '插件',
   meta: { icon: 'plug', require: ['registry'] },
-  component: () => import('./views/plugins/plugins.vue'),
+  component: () => import('./views/plugins/index.vue'),
+})
+
+router.addRoute({
+  path: '/dependencies',
+  name: '依赖',
+  meta: { icon: 'puzzle-piece', authority: 4, require: ['registry'] },
+  component: () => import('./views/dependencies/index.vue'),
 })
 
 router.addRoute({

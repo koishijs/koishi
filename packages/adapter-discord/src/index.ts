@@ -17,7 +17,6 @@ declare module 'koishi-core' {
 
   interface Session {
     discord?: {
-      mentions: DC.User[]
       // eslint-disable-next-line camelcase
       webhook_id?: DC.snowflake
       flags: number

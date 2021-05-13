@@ -1,4 +1,4 @@
-import { Context, pick, Plugin } from 'koishi-core'
+import { Context, pick, Plugin, version } from 'koishi-core'
 import { dirname } from 'path'
 import { promises as fs } from 'fs'
 import { DataSource } from './data'
@@ -26,6 +26,12 @@ function debounce(callback: Function, ms: number) {
   }
 }
 
+const officialPlugins = [
+  'adventure', 'assets', 'chat', 'chess', 'common', 'dice',
+  'eval', 'github', 'image-search', 'mongo', 'mysql',
+  'puppeteer', 'schedule', 'teach', 'tools', 'webui',
+]
+
 export class Registry implements DataSource<Registry.Payload> {
   cached: Promise<Registry.Payload>
   promise: Promise<void>
@@ -36,6 +42,14 @@ export class Registry implements DataSource<Registry.Payload> {
   constructor(private ctx: Context, public config: Registry.Config) {
     ctx.on('plugin-added', this.update)
     ctx.on('plugin-removed', this.update)
+
+    // npm registry proxy
+    ctx.router.get(config.apiPath + '/registry(/.+)+', async (ctx) => {
+      const name = ctx.path.slice(config.apiPath.length + 10)
+      const { data } = await axios.get(`https://registry.npmjs.org/${name}`)
+      ctx.body = data
+      ctx.set('Access-Control-Allow-Origin', '*')
+    })
   }
 
   get registry() {
@@ -53,6 +67,7 @@ export class Registry implements DataSource<Registry.Payload> {
 
   private async getForced() {
     return {
+      version,
       plugins: this.traverse(null).children,
       packages: await this.getPackages(),
     } as Registry.Payload
@@ -74,7 +89,6 @@ export class Registry implements DataSource<Registry.Payload> {
   }
 
   private dirCache: Record<string, Promise<string[]>>
-  private metaCache: Record<string, Promise<PackageMeta>>
 
   private async readDir(filename: string) {
     return this.dirCache[filename] ||= fs.readdir(filename)
@@ -84,22 +98,12 @@ export class Registry implements DataSource<Registry.Payload> {
     const data: PackageJson = JSON.parse(await fs.readFile(filename + '/package.json', 'utf8'))
     if (data.private) return null
     const isLocal = !filename.includes('node_modules')
-    const meta = await (this.metaCache[data.name] ||= this.getMeta(data.name))
-    const latest = !meta || isLocal ? null
-      : data.version.includes('-dev.') ? meta['dist-tags'].dev : meta['dist-tags'].latest
-    return { isLocal, latest, ...pick(data, ['name', 'version', 'description']) }
-  }
-
-  private async getMeta(name: string) {
-    try {
-      const { data } = await axios.get<PackageMeta>(`https://registry.npmjs.org/${name}`)
-      return data
-    } catch {}
+    const isOfficial = officialPlugins.includes(data.name.slice(14))
+    return { isLocal, isOfficial, ...pick(data, ['name', 'version', 'description']) }
   }
 
   private async getPackages() {
     this.dirCache = {}
-    this.metaCache = {}
 
     const loadPackage = async (filename: string) => {
       do {
@@ -125,7 +129,7 @@ export class Registry implements DataSource<Registry.Payload> {
 
     await Promise.all(filenames.map(loadPackage))
     const data = await Promise.all(Object.values(packages))
-    return data.filter(x => x).sort((a, b) => a.name > b.name ? 1 : -1)
+    return Object.fromEntries(data.filter(x => x).map(data => [data.name, data] as const))
   }
 
   traverse = (plugin: Plugin): Registry.PluginData => {
@@ -151,11 +155,12 @@ export class Registry implements DataSource<Registry.Payload> {
 
 export namespace Registry {
   export interface Config {
+    apiPath?: string
   }
 
   export interface PackageData extends PackageBase {
     isLocal: boolean
-    latest: string
+    isOfficial: boolean
   }
 
   export interface PluginData extends Plugin.Meta {
@@ -166,7 +171,8 @@ export namespace Registry {
   }
 
   export interface Payload {
-    packages: PackageData[]
+    version: string
+    packages: Record<string, PackageData>
     plugins: PluginData[]
   }
 }

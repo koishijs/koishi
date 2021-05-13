@@ -98,9 +98,9 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.webui = new WebServer(ctx, config)
 
-  ctx.router.get(config.apiPath, async (koa) => {
-    koa.set('Access-Control-Allow-Origin', '*')
-    koa.body = await getStatus()
+  ctx.router.get(config.apiPath, async (ctx) => {
+    ctx.set('Access-Control-Allow-Origin', '*')
+    ctx.body = await getStatus()
   })
 
   ctx.command('status', '查看机器人运行状态')
