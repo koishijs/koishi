@@ -1,6 +1,7 @@
 import { Context, pick, version as coreVersion } from 'koishi-core'
-import { dirname } from 'path'
-import { promises as fs } from 'fs'
+import { dirname, resolve } from 'path'
+import { existsSync, promises as fs } from 'fs'
+import { spawn, StdioOptions } from 'child_process'
 import { satisfies } from 'semver'
 import axios from 'axios'
 
@@ -40,6 +41,32 @@ const officialPlugins = [
   'eval', 'github', 'image-search', 'mongo', 'mysql',
   'puppeteer', 'schedule', 'teach', 'tools', 'webui',
 ]
+
+type Manager = 'yarn' | 'npm'
+
+const cwd = process.cwd()
+
+function execute(bin: string, args: string[] = [], stdio: StdioOptions = 'inherit') {
+  // fix for #205
+  // https://stackoverflow.com/questions/43230346/error-spawn-npm-enoent
+  const child = spawn(bin + (process.platform === 'win32' ? '.cmd' : ''), args, { stdio })
+  return new Promise<number>((resolve) => {
+    child.on('close', resolve)
+  })
+}
+
+let _managerPromise: Promise<Manager>
+async function getManager(): Promise<Manager> {
+  if (existsSync(resolve(cwd, 'yarn.lock'))) return 'yarn'
+  if (existsSync(resolve(cwd, 'package-lock.json'))) return 'npm'
+  if (!await execute('yarn', ['--version'], 'ignore')) return 'yarn'
+  return 'npm'
+}
+
+const installArgs: Record<Manager, string[]> = {
+  yarn: ['add'],
+  npm: ['install', '--loglevel', 'error'],
+}
 
 class Awesome {
   cached: Promise<Awesome.PackageData[]>
@@ -113,6 +140,13 @@ class Awesome {
         },
       } as Awesome.PackageData
     })).then(data => data.filter(Boolean))
+  }
+
+  async install(name: string) {
+    const kind = await (_managerPromise ||= getManager())
+    const args = [...installArgs[kind], name]
+    await execute(kind, args)
+    this.ctx.webui.broadcast('awesome', await this.get(true))
   }
 }
 

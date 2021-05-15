@@ -301,6 +301,13 @@ export namespace WebServer {
     this.authority = user.authority
   }
 
+  listeners.install = async function ({ id, token, name }) {
+    const user = await this.validate(id, token, ['name', 'authority'])
+    if (!user) return
+    if (user.authority < 4) return this.send('unauthorized')
+    this.webui.sources.awesome.install(name)
+  }
+
   listeners.switch = async function ({ id, token, plugin }) {
     const user = await this.validate(id, token, ['name', 'authority'])
     if (!user) return

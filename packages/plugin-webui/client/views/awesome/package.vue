@@ -7,7 +7,8 @@
           target="blank" rel="noopener noreferrer"
         >{{ data.name.replace('koishi-plugin-', '') }}</a>
         <k-badge type="success" v-if="data.official">官方</k-badge>
-        <k-badge type="warning" v-if="hasUpdate">可更新</k-badge>
+        <k-badge type="default" v-if="data.local?.isWorkspace">本地</k-badge>
+        <k-badge type="warning" v-else-if="hasUpdate">可更新</k-badge>
       </div>
       <div class="description">
         {{ data.description }}
@@ -18,8 +19,10 @@
     <td class="size">{{ formatSize(data.size) }}</td>
     <td class="score">{{ +data.score.final.toFixed(2) }}</td>
     <td class="operation">
-      <k-button frameless v-if="hasUpdate || !data.local"
-      >{{ data.local ? '更新' : '下载' }}</k-button>
+      <span v-if="downloading.includes(data.name)">安装中</span>
+      <k-button frameless v-else-if="!data.local || hasUpdate"
+        @click="toggle(data)"
+      >{{ data.local ? '更新' : '安装' }}</k-button>
     </td>
   </tr>
 </template>
@@ -27,7 +30,8 @@
 <script lang="ts" setup>
 
 import type { Awesome } from '~/server'
-import { defineProps, computed } from 'vue'
+import { send, user } from '~/client'
+import { defineProps, computed, ref } from 'vue'
 
 const props = defineProps<{ data: Awesome.PackageData }>()
 
@@ -42,6 +46,14 @@ function formatSize(size: number) {
   } else {
     return Math.round(size / 1024) + ' KB'
   }
+}
+
+const downloading = ref([])
+
+function toggle(data: Awesome.PackageData) {
+  const { id, token } = user.value
+  send('install', { name: `${data.name}@${data.version}`, id, token })
+  downloading.value.push(data.name)
 }
 
 </script>
