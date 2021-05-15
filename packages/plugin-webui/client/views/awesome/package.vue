@@ -19,7 +19,7 @@
     <td class="size">{{ formatSize(data.size) }}</td>
     <td class="score">{{ +data.score.final.toFixed(2) }}</td>
     <td class="operation">
-      <span v-if="downloading.includes(data.name)">安装中</span>
+      <span v-if="downloading">安装中</span>
       <k-button frameless v-else-if="!data.local || hasUpdate"
         @click="toggle(data)"
       >{{ data.local ? '更新' : '安装' }}</k-button>
@@ -31,7 +31,7 @@
 
 import type { Awesome } from '~/server'
 import { send, user } from '~/client'
-import { defineProps, computed, ref } from 'vue'
+import { defineProps, computed, ref, watch } from 'vue'
 
 const props = defineProps<{ data: Awesome.PackageData }>()
 
@@ -48,12 +48,16 @@ function formatSize(size: number) {
   }
 }
 
-const downloading = ref([])
+const downloading = ref(false)
+
+watch(() => props.data.local, () => {
+  downloading.value = false
+}, { deep: true })
 
 function toggle(data: Awesome.PackageData) {
   const { id, token } = user.value
   send('install', { name: `${data.name}@${data.version}`, id, token })
-  downloading.value.push(data.name)
+  downloading.value = true
 }
 
 </script>
@@ -91,17 +95,18 @@ function toggle(data: Awesome.PackageData) {
     top: 50%;
     left: 1.25rem;
     transform: translateY(-50%);
+    transition: 0.3s ease;
     box-shadow: 1px 1px 2px #3333;
   }
 
   &.active::before {
-    background: $success;
+    background-color: $success;
   }
   &.local::before {
-    background: $warning;
+    background-color: $warning;
   }
   &.remote::before {
-    background: #eeeeee5f;
+    background-color: #eeeeee5f;
   }
 }
 
