@@ -89,7 +89,7 @@ export namespace Phase {
   }
 
   export const endingMap: Record<string, string> = {}
-  export const endingCount: Record<string, number> = {}
+  export const endingCount: Record<string, Set<string>> = {}
   export const reversedEndingMap: Record<string, string> = {}
   /** 键：prefix，值：[剧情线名，结局数] */
   export const lines: Record<string, [string, number]> = {}
@@ -114,7 +114,7 @@ export namespace Phase {
     for (const id in map) {
       const name = `${prefix}-${id}`
       endingMap[name] = map[id]
-      endingCount[name] = 0
+      endingCount[name] = new Set()
       Show.redirect(map[id], 'ending', checkEnding)
       reversedEndingMap[map[id]] = name
       if (bad.includes(id)) {
@@ -565,15 +565,12 @@ export namespace Phase {
       })
 
     ctx.on('connect', async () => {
-      const endings = Object.keys(endingCount)
-      if (!endings.length) return
-      let sql = 'SELECT'
-      for (const id of endings) {
-        sql += ` find_ending('${id}') AS '${id}',`
-      }
-      const [data] = await ctx.database.mysql.query<[Record<string, number>]>(sql.slice(0, -1))
-      for (const key in data) {
-        endingCount[key] = data[key]
+      if (!Object.keys(endingCount).length) return
+      const data = await ctx.database.mysql.query<Pick<User, 'id' | 'endings'>[]>('select id, endings from user where json_length(endings)')
+      for (const { id, endings } of data) {
+        for (const name in endings) {
+          endingCount[name]?.add(id)
+        }
       }
     })
   }
