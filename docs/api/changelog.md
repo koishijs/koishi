@@ -5,6 +5,24 @@ externalIcon: false
 
 # v3 更新日志
 
+## [Koishi 3.11.1](https://github.com/koishijs/koishi/releases/tag/3.11.1)
+
+### Notable Changes
+
+- koishi-plugin-webui 新增了插件市场视图
+
+### Features
+
+- **webui:** 新增了插件市场视图 (=b2604777c6a3d9be194f60ca8dbc45aa9d05b244, =5913209cb61ba8ad4a5074f5c1860e6b299f2a62, =54bd7633884736ce6eadfd7ff899f53e9050407a, =983c374e6e8389a567de948885cc968a76e5a56f, =23274905df657c20b92c93d60c97bb708c10364e, =b7eff39add979c091e3a7a89d0afb1f63fd37602)
+
+### Bug Fixes
+
+- **core:** 修复了由于 esbuild 导致的插件不一致问题 (=398ad5bd3f882a2922293afff8b0b5dc72ec9969)
+- **adventure:** 修复了重复计算结局达成次数的问题 (=dfd683c5c9a488157010c8c20f26e7b792134431)
+- **cli:** 修复了成功启动前 SIGINT/SIGTERM 无效的问题 (=632dc6156febb0a613b0c2dcd1c84a7e4d3e6ffb)
+- **adventure:** 修复了 ending 指令查看剧情线失效的问题 (=4d77b86af6d3e00ea063b9ffdec2862423ef0fe0)
+- **adventure:** 修复了 show 指令直接调用时参数丢失的问题 (e87ac4dc619a1d889534ece2c625fe89fac57802)
+
 ## [Koishi 3.11.0](https://github.com/koishijs/koishi/releases/tag/3.11.0)
 
 ### Notable Changes
