@@ -145,9 +145,6 @@ const handleSignal = (signal: NodeJS.Signals) => {
   app.parallel('exit', signal).finally(() => process.exit())
 }
 
-process.on('SIGINT', handleSignal)
-process.on('SIGTERM', handleSignal)
-
 template.set('deamon', {
   exiting: '正在关机……',
   restarting: '正在重启……',
@@ -243,6 +240,9 @@ app.start().then(() => {
 
   process.send({ type: 'start', body: { autoRestart } })
   createWatcher()
+
+  process.on('SIGINT', handleSignal)
+  process.on('SIGTERM', handleSignal)
 }, handleException)
 
 function loadDependencies(filename: string, ignored: Set<string>) {
