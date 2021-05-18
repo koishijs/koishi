@@ -161,7 +161,7 @@ export namespace Show {
   }
 
   export function apply(ctx: Context) {
-    ctx.command('adv/show [name]', '查看图鉴', { maxUsage: 100 })
+    const show = ctx.command('adv/show [name]', '查看图鉴', { maxUsage: 100 })
       .shortcut('查看', { fuzzy: true })
       .userFields(['usage'])
       .userFields((argv, fields) => {
@@ -172,8 +172,8 @@ export namespace Show {
         if (item[0] === 'redirect') {
           const command = ctx.command(item[1])
           argv.command = command as any
-          Object.assign(argv, command.parse(Argv.parse(argv.source.slice(5))))
           argv.session.collect('user', argv, fields)
+          argv.command = show
         } else if (item[0] === 'callback') {
           for (const field of item[1]) {
             fields.add(field)
@@ -187,7 +187,8 @@ export namespace Show {
         if (item[0] === 'redirect') {
           const result = item[2]?.(session.user, target)
           if (result) return next(() => session.send(`你尚未解锁图鉴「${target}」。`))
-          return ctx.command(item[1]).execute({ session, args, options: { pass: true }, next })
+          const command = ctx.command(item[1])
+          return command.execute({ command, session, args, options: { pass: true }, next })
         } else if (item[0] === 'callback') {
           const result = item[2]?.(session.user, target)
           return result || next(() => session.send(`你尚未解锁图鉴「${target}」。`))

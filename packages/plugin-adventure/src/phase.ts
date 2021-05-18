@@ -429,7 +429,7 @@ export namespace Phase {
 
         const output = Object.keys(storyMap).sort().map((key) => {
           const { length } = storyMap[key]
-          let output = `${reversedLineMap[key]} (${length}/${lines[key][1]})`
+          let output = `${lines[key][0]} (${length}/${lines[key][1]})`
           if (length) output += '：' + storyMap[key].join('，')
           return output
         })
