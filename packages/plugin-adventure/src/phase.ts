@@ -93,10 +93,12 @@ export namespace Phase {
   export const reversedEndingMap: Record<string, string> = {}
   /** 键：prefix，值：[剧情线名，结局数] */
   export const lines: Record<string, [string, number]> = {}
+  export const reversedLineMap: Record<string, string> = {}
   export const badEndings = new Set<string>()
 
   function checkLine(user: Pick<User, 'endings'>, target: string) {
-    return !Object.keys(user.endings).some(name => name.startsWith(target))
+    const prefix = reversedLineMap[target]
+    return !Object.keys(user.endings).some(name => name.startsWith(prefix))
   }
 
   function checkEnding(user: Pick<User, 'endings'>, target: string) {
@@ -108,6 +110,7 @@ export namespace Phase {
       lines[prefix][1] += Object.keys(map).length
     } else {
       lines[prefix] = [name, Object.keys(map).length]
+      reversedLineMap[name] = prefix
       Show.redirect(name, 'ending', checkLine)
     }
 
@@ -373,7 +376,7 @@ export namespace Phase {
   }
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/ending [story]', '查看结局', { maxUsage: 100, usageName: 'show' })
+    ctx.command('adv/ending [name]', '查看结局', { maxUsage: 100, usageName: 'show' })
       .userFields(['id', 'endings', 'name', 'timers'])
       .alias('endings', 'ed')
       .shortcut('我的结局')
@@ -413,20 +416,20 @@ export namespace Phase {
             ].join('\n')
           }
 
-          const titles = storyMap[name]
+          const titles = storyMap[reversedLineMap[name]]
           if (!titles) return options['pass'] ? next().then(() => '') : `你尚未解锁剧情「${name}」。`
           const output = titles.map((name) => {
             const id = reversedEndingMap[name]
             return `${id}. ${name}×${endings[id]}${badEndings.has(id) ? `（BE）` : ''}`
           }).sort()
-          const [title, count] = lines[name]
+          const [title, count] = lines[reversedLineMap[name]]
           output.unshift(`${session.username}，你已达成${title}剧情线的 ${titles.length}/${count} 个结局：`)
           return output.join('\n')
         }
 
         const output = Object.keys(storyMap).sort().map((key) => {
           const { length } = storyMap[key]
-          let output = `${key} (${length}/${lines[key][1]})`
+          let output = `${reversedLineMap[key]} (${length}/${lines[key][1]})`
           if (length) output += '：' + storyMap[key].join('，')
           return output
         })
@@ -457,7 +460,7 @@ export namespace Phase {
         }, session, options)
       })
 
-    ctx.command('adventure/continue', '继续剧情', { maxUsage: 10 })
+    ctx.command('adv/continue', '继续剧情', { maxUsage: 10 })
       .userFields(Adventurer.fields)
       .checkTimer('$system')
       .shortcut('继续剧情')
@@ -476,7 +479,7 @@ export namespace Phase {
         return start(session)
       })
 
-    ctx.command('adventure/skip [-- command:text]', '跳过剧情')
+    ctx.command('adv/skip [-- command:text]', '跳过剧情')
       .shortcut('跳过剧情')
       .shortcut('跳过当前剧情')
       .userFields(['phases', 'progress'])
@@ -496,7 +499,7 @@ export namespace Phase {
         session._skipCurrent = true
       })
 
-    ctx.command('adventure/use [item]', '使用物品', { maxUsage: 100 })
+    ctx.command('adv/use [item]', '使用物品', { maxUsage: 100 })
       .userFields(['progress'])
       .userFields(Adventurer.fields)
       .checkTimer('$system')

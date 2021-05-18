@@ -99,7 +99,7 @@ namespace Buff {
   }, ['flag'])
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/buff [name]', '查看当前状态', { maxUsage: 100, usageName: 'show' })
+    ctx.command('adv/buff [name]', '查看当前状态', { maxUsage: 100, usageName: 'show' })
       .userFields(['name'])
       .userFields(fields)
       .shortcut('我的状态')

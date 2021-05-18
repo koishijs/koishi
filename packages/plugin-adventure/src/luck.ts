@@ -61,7 +61,7 @@ namespace Luck {
   const minInterval = 5
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/lottery', '每日抽卡')
+    ctx.command('adv/lottery', '每日抽卡')
       .userFields(['noSR'])
       .checkTimer('$system')
       .checkTimer('$lottery')

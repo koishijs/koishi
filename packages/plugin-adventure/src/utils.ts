@@ -161,7 +161,7 @@ export namespace Show {
   }
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/show [name]', '查看图鉴', { maxUsage: 100 })
+    ctx.command('adv/show [name]', '查看图鉴', { maxUsage: 100 })
       .shortcut('查看', { fuzzy: true })
       .userFields(['usage'])
       .userFields((argv, fields) => {
@@ -183,14 +183,14 @@ export namespace Show {
       .action(({ session, args, next }) => {
         const target = session.content.slice(5)
         const item = data[target]
-        if (!item) return next(() => session.send(`未解锁图鉴「${target}」。`))
+        if (!item) return next(() => session.send(`你尚未解锁图鉴「${target}」。`))
         if (item[0] === 'redirect') {
           const result = item[2]?.(session.user, target)
-          if (result) return next(() => session.send(`未解锁图鉴「${target}」。`))
+          if (result) return next(() => session.send(`你尚未解锁图鉴「${target}」。`))
           return ctx.command(item[1]).execute({ session, args, options: { pass: true }, next })
         } else if (item[0] === 'callback') {
           const result = item[2]?.(session.user, target)
-          return result || next(() => session.send(`未解锁图鉴「${target}」。`))
+          return result || next(() => session.send(`你尚未解锁图鉴「${target}」。`))
         }
       })
   }
