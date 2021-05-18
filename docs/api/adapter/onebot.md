@@ -108,6 +108,100 @@ Meta 对象还提供了一个快捷回复方法 `session.send`，调用它可以
 
 快捷操作的时间限制，单位为毫秒。如果配置了这个选项且使用了 HTTP 通信方式，则在这段时间内的首次调用 `session.send()` 或类似的方法将不产生新的 HTTP 请求。默认值为 `100`。参见 [**快捷操作**](#快捷操作) 一节。
 
+## 配置参考
+
+### HTTP
+
+```js koishi.config.js
+module.exports = {
+  type: 'onebot:http',
+  selfId: '123456789',
+  server: 'http://127.0.0.1:5700',
+  secret: 'my-secret',
+  port: 8080,
+}
+```
+
+```yaml config.yml
+account:
+  uin: 123456789
+
+servers:
+  - http:
+      disabled: false
+      host: 127.0.0.1
+      port: 5700
+      post:
+        - url: http://localhost:8080/onebot
+          secret: my-secret
+```
+
+### WebSocket
+
+```js koishi.config.js
+module.exports = {
+  type: 'onebot:ws',
+  selfId: '123456789',
+  server: 'ws://127.0.0.1:6700',
+}
+```
+
+```yaml config.yml
+account:
+  uin: 123456789
+
+servers:
+  - ws:
+      disabled: false
+      host: 127.0.0.1
+      port: 6700
+```
+
+### 反向 WebSocket
+
+```js koishi.config.js
+module.exports = {
+  type: 'onebot:ws-reverse',
+  selfId: '123456789',
+  port: 8080,
+}
+```
+
+```yaml config.yml
+account:
+  uin: 123456789
+
+servers:
+  - ws-reverse:
+      disabled: false
+      universal: ws://127.0.0.1:8080/onebot
+```
+
+### 配置 `path` 和 `selfUrl`
+
+```js koishi.config.js
+module.exports = {
+  // 请注意这里的 port 可能跟 selfUrl 中的不一致
+  // 你可以通过 nginx，candy 等工具实现端口的转发和 SSL 等需求
+  port: 8080,
+  selfUrl: 'https://my-host:9090',
+  onebot: {
+    path: '/foo',
+  },
+}
+```
+
+```yaml config.yml
+servers:
+  # 这里同时列出了 http 和 ws-reverse 中需要做的修改
+  # 实际情况下你可能只需要用到其中一份配置
+  - http:
+      post:
+        - url: https://my-host:9090/onebot
+  - ws-reverse:
+      universal: wss://my-host:9090/onebot
+```
+
 ## 发送消息
 
 ### bot.$sendGroupMsg(groupId, message, autoEscape?)
