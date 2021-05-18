@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-adventure",
   "version": "0.2.0",
-  "description": "Adventure game framework for Koishi.js",
+  "description": "Adventure game framework for Koishi",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [

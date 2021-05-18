@@ -56,7 +56,7 @@ watch(() => props.data.local, () => {
 
 function toggle(data: Awesome.PackageData) {
   const { id, token } = user.value
-  send('install', { name: `${data.name}@${data.version}`, id, token })
+  send('install', { name: `${data.name}@^${data.version}`, id, token })
   downloading.value = true
 }
 

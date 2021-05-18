@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-webui",
-  "description": "Show Web UI of Koishi",
+  "description": "Create web user interface for Koishi",
   "version": "4.5.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
