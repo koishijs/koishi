@@ -1,10 +1,6 @@
-import { Argv, Assets, Bot, Context, noop, Platform } from 'koishi-core'
+import { Bot, Context, Platform } from 'koishi-core'
 import { cpus } from 'os'
 import { mem } from 'systeminformation'
-
-export interface DataSource<T = any> {
-  get(forced?: boolean): Promise<T>
-}
 
 export type LoadRate = [app: number, total: number]
 export type MessageRate = [send: number, receive: number]
@@ -69,7 +65,7 @@ export async function BotData(bot: Bot) {
   } as BotData
 }
 
-export class Profile implements DataSource<Profile.Payload> {
+class Profile {
   cached: Profile.Payload
 
   constructor(private ctx: Context, config: Profile.Config) {
@@ -123,7 +119,7 @@ export class Profile implements DataSource<Profile.Payload> {
   }
 }
 
-export namespace Profile {
+namespace Profile {
   export interface Config {
     tickInterval?: number
   }
@@ -135,49 +131,4 @@ export namespace Profile {
   }
 }
 
-export class Meta implements DataSource<Meta.Payload> {
-  timestamp = 0
-  cached: Promise<Meta.Payload>
-  callbacks: Meta.Extension[] = []
-
-  constructor(private ctx: Context, public config: Meta.Config) {
-    this.extend(async () => ctx.assets?.stats())
-    this.extend(async () => ctx.database?.getStats())
-
-    ctx.all().on('command', ({ session }: Argv<'lastCall'>) => {
-      session.user.lastCall = new Date()
-    })
-  }
-
-  async get(): Promise<Meta.Payload> {
-    const now = Date.now()
-    if (this.timestamp > now) return this.cached
-    this.timestamp = now + this.config.metaInterval
-    return this.cached = Promise
-      .all(this.callbacks.map(cb => cb().catch(noop)))
-      .then(data => Object.assign({}, ...data))
-  }
-
-  extend(callback: Meta.Extension) {
-    this.timestamp = 0
-    this.callbacks.push(callback)
-  }
-}
-
-export namespace Meta {
-  export interface Config {
-    metaInterval?: number
-  }
-
-  export interface Stats {
-    allUsers: number
-    activeUsers: number
-    allGroups: number
-    activeGroups: number
-    storageSize: number
-  }
-
-  export interface Payload extends Stats, Assets.Stats {}
-
-  export type Extension = () => Promise<Partial<Payload>>
-}
+export default Profile

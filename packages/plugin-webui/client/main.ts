@@ -39,7 +39,14 @@ router.addRoute({
   path: '/plugins',
   name: '插件',
   meta: { icon: 'plug', require: ['registry'] },
-  component: () => import('./views/plugins/plugins.vue'),
+  component: () => import('./views/plugins/index.vue'),
+})
+
+router.addRoute({
+  path: '/awesome',
+  name: '依赖',
+  meta: { icon: 'puzzle-piece', authority: 4, require: ['awesome'] },
+  component: () => import('./views/awesome/index.vue'),
 })
 
 router.addRoute({
@@ -84,6 +91,7 @@ router.afterEach((route) => {
 })
 
 receive('meta', data => client.meta.value = data)
+receive('awesome', data => client.awesome.value = data)
 receive('profile', data => client.profile.value = data)
 receive('registry', data => client.registry.value = data)
 receive('stats', data => client.stats.value = data)

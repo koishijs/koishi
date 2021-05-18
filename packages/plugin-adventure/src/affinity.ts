@@ -81,7 +81,7 @@ export namespace Affinity {
   }
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/affinity', '查看好感度', { maxUsage: 100, usageName: 'show' })
+    ctx.command('adv/affinity', '查看好感度', { maxUsage: 100, usageName: 'show' })
       .alias('aff')
       .userFields(fields)
       .userFields(hintFields)

@@ -48,6 +48,28 @@ export namespace Plugin {
   type From<D extends readonly unknown[]> = D extends readonly [infer L, ...infer R]
     ? [L extends keyof Packages ? Packages[L] : unknown, ...From<R>]
     : []
+
+  export class Registry extends Map<Plugin, State> {
+    resolve(plugin: Plugin) {
+      return plugin && (typeof plugin === 'function' ? plugin : plugin.apply)
+    }
+
+    get(plugin: Plugin) {
+      return super.get(this.resolve(plugin))
+    }
+
+    set(plugin: Plugin, state: State) {
+      return super.set(this.resolve(plugin), state)
+    }
+
+    has(plugin: Plugin) {
+      return super.has(this.resolve(plugin))
+    }
+
+    delete(plugin: Plugin) {
+      return super.delete(this.resolve(plugin))
+    }
+  }
 }
 
 function isBailed(value: any) {

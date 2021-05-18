@@ -5,6 +5,31 @@ externalIcon: false
 
 # v3 更新日志
 
+## [Koishi 3.11.0](https://github.com/koishijs/koishi/releases/tag/3.11.0)
+
+### Notable Changes
+
+- koishi-test-utils@6.0.0 正式发布
+- koishi 配置文件新增了 deamon 配置项，用于定制监控进程的行为
+
+### Features
+
+- **adapter:** 为部分平台支持了 at 消息段的 `name` 属性 (=142597470f5034738018fe9fbe82bcabf7745266, =bf3721c4d91bfdb5c586a937ec40c96a0ba82bc0, =824874c2b96225638632793d905c7ae4508bb3f3)
+- **chat:** 支持了 QQ 系统内置表情包 (=eb7f7a90c23c9e84ef8b86faaf16bf306090ac14)
+- **chat:** 支持了 @用户名 的显示 (=8b667ba61a1bf2cafa2f2f0b580bd52eac1361af)
+- **cli:** 新增了 `deamon` 配置项 (=46be1006b648393f91dfacfd4a969a2fd2346a5f)
+- **cli:** 支持了 exit 指令的输出内容模板 (=8880c863313657dddd7c1a1a9f03a342ac5fdb84)
+- **cli:** 新增了 exit 事件，用于处理接收到 SIGINT 时的行为 (=3ca3f728875d306304870891eea712e0a41744ac)
+- **core:** 每一个 `Context.delegate()` 注册的属性都有对应的事件了 (=3dd372dbd161cbe57d839d3177cfb4ea12dc6895)
+- **onebot:** 支持了 `session.author.roles` 属性 (=aef0404018071ec2fd7a29cdb93d80012bcacaed)
+
+### Bug Fixes
+
+- **adapter:** 修复了部分平台无法发送本地图片的问题 (#266) (=409dcbc7108b6906adb62dc69081d3ec63c6d727)
+- **chess:** 修复了图片发送失败和自动检测环境中存在的问题 (#263) (=0e9b724cb7b93566469fbe2eb1052235afc9f5d8)
+- **common:** 修复了无法使用 echo 指令发送跨平台消息的问题 (#264) (=5b56651ec5cde3d4131a7ce1bcd58bd3041aaa1f)
+- **test-utils:** 移除了错误的 `mockedApp.start()` 方法 (=5d1023aef7c85d91535f541f5cd18e92aa757457)
+
 ## [Koishi 3.10.2](https://github.com/koishijs/koishi/releases/tag/3.10.2)
 
 ### Features

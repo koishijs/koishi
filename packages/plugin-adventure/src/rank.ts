@@ -125,7 +125,7 @@ namespace Rank {
   }
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/rank [type]', '显示排行')
+    ctx.command('adv/rank [type]', '显示排行')
       .useRank()
       .action(async ({ session, options }, type) => {
         if (!type) {

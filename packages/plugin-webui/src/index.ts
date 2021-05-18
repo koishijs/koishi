@@ -1,14 +1,12 @@
 import { Context, Channel, User } from 'koishi-core'
 import { template, Time } from 'koishi-utils'
-import { Meta } from './data'
-import { Synchronizer } from './stats'
+import { Synchronizer } from './payload/stats'
 import { WebServer, Config } from './server'
+import Meta from './payload/meta'
 
-import './mongo'
-import './mysql'
+import './database/mongo'
+import './database/mysql'
 
-export * from './data'
-export * from './stats'
 export * from './server'
 
 export type Activity = Record<number, number>
@@ -98,9 +96,9 @@ export function apply(ctx: Context, config: Config = {}) {
 
   ctx.webui = new WebServer(ctx, config)
 
-  ctx.router.get(config.apiPath, async (koa) => {
-    koa.set('Access-Control-Allow-Origin', '*')
-    koa.body = await getStatus()
+  ctx.router.get(config.apiPath, async (ctx) => {
+    ctx.set('Access-Control-Allow-Origin', '*')
+    ctx.body = await getStatus()
   })
 
   ctx.command('status', '查看机器人运行状态')

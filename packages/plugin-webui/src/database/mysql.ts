@@ -1,6 +1,6 @@
 import { Database, Logger, Tables, Time } from 'koishi-core'
-import { StatRecord, Synchronizer, RECENT_LENGTH } from './stats'
-import MysqlDatabase from 'koishi-plugin-mysql'
+import { StatRecord, Synchronizer, RECENT_LENGTH } from '../payload/stats'
+import type MysqlDatabase from 'koishi-plugin-mysql'
 
 const logger = new Logger('status')
 

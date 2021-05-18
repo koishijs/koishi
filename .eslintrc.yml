@@ -15,6 +15,9 @@ env:
   mocha: true
   es2020: true
 
+globals:
+  KOISHI_CONFIG: true
+
 extends:
   - standard
 

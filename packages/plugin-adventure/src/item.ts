@@ -190,7 +190,7 @@ namespace Item {
   }
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/item [item]', '查看物品', { maxUsage: 100, usageName: 'show' })
+    ctx.command('adv/item [item]', '查看物品', { maxUsage: 100, usageName: 'show' })
       .userFields(['id', 'warehouse', 'achievement', 'name', 'gains', 'authority', 'timers', 'flag'])
       .shortcut(/^(查看|我的)(背包|物品|仓库|道具)$/)
       .shortcut('物品', { fuzzy: true })
@@ -263,7 +263,7 @@ namespace Item {
         return output.join('\n')
       })
 
-    ctx.command('adventure/buy [item] [count]', '购入物品', { maxUsage: 100 })
+    ctx.command('adv/buy [item] [count]', '购入物品', { maxUsage: 100 })
       .checkTimer('$system')
       .checkTimer('$shop')
       .userFields(['id', 'authority', 'warehouse', 'money', 'wealth', 'achievement', 'timers', 'name', 'usage', 'progress', 'gains'])
@@ -329,7 +329,7 @@ namespace Item {
         await session.send(hints.join('\n'))
       })
 
-    ctx.command('adventure/sell [item] [count]', '售出物品', { maxUsage: 100 })
+    ctx.command('adv/sell [item] [count]', '售出物品', { maxUsage: 100 })
       .checkTimer('$system')
       .checkTimer('$shop')
       .userFields(['id', 'authority', 'warehouse', 'money', 'wealth', 'achievement', 'timers', 'progress', 'name', 'usage', 'gains'])
