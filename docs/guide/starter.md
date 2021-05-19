@@ -92,7 +92,7 @@ module.exports = {
   // 协议类型
   type: 'onebot:http',
   // 机器人自己的账号
-  selfId: 123456789,
+  selfId: '123456789',
   // 插件列表
   plugins: {
     common: {},

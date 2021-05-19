@@ -52,7 +52,7 @@ export class App extends Context {
   public options: AppOptions
   public status = App.Status.closed
   public adapters: Adapter.Instances = {}
-  public registry = new Map<Plugin, Plugin.State>()
+  public registry = new Plugin.Registry()
 
   _bots = createBots('sid')
   _commandList: Command[] = []

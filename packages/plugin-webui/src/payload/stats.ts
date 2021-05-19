@@ -1,5 +1,4 @@
 import { Context, Channel, noop, Session, Bot, Platform, Time } from 'koishi-core'
-import { DataSource } from './data'
 import {} from 'koishi'
 
 export type StatRecord = Record<string, number>
@@ -74,7 +73,7 @@ Session.prototype.send = function (this: Session, ...args) {
 const customTag = Symbol('custom-send')
 Session.prototype.send[customTag] = send
 
-export class Statistics implements DataSource<Statistics.Payload> {
+class Statistics {
   sync: Synchronizer
   lastUpdate = new Date()
   updateHour = this.lastUpdate.getHours()
@@ -229,7 +228,7 @@ export class Statistics implements DataSource<Statistics.Payload> {
   }
 }
 
-export namespace Statistics {
+namespace Statistics {
   export interface Payload {
     history: StatRecord
     commands: StatRecord
@@ -245,3 +244,5 @@ export namespace Statistics {
 
   export type Extension = (payload: Payload, data: Synchronizer.Data) => Promise<void>
 }
+
+export default Statistics

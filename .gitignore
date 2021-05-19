@@ -16,6 +16,8 @@ tsconfig.temp.json
 /test
 /utsuho
 
+/packages/plugin-cryptocurrency
+
 todo.md
 yarn.lock
 node_modules/

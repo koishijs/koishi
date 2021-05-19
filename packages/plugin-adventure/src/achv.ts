@@ -229,7 +229,7 @@ namespace Achievement {
   }
 
   export function apply(ctx: Context) {
-    ctx.command('adventure/achievement [name]', '成就信息', { maxUsage: 100, usageName: 'show' })
+    ctx.command('adv/achievement [name]', '成就信息', { maxUsage: 100, usageName: 'show' })
       .userFields(fields)
       .alias('achv')
       .shortcut('查看成就')

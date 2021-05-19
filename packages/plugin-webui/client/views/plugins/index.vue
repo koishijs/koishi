@@ -6,14 +6,14 @@
       <span class="operation">操作</span>
     </div>
     <div class="plugin-list root">
-      <plugin-view :data="data" v-for="(data) in registry.plugins"/>
+      <plugin-view :data="data" v-for="data in registry"/>
     </div>
   </k-card>
 </template>
 
 <script setup lang="ts">
 
-import PluginView from './plugin-view.vue'
+import PluginView from './plugin.vue'
 import { registry, user } from '~/client'
 
 </script>

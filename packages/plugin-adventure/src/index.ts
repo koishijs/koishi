@@ -127,12 +127,12 @@ export function apply(ctx: Context, config?: Config) {
   const endingReward = [300, 200, 100]
   ctx.on('adventure/ending', ({ app, user, username }, id) => {
     if (user.flag & User.Flag.noLeading) return
-    const count = Phase.endingCount[id], reward = endingReward[count]
-    if (reward) {
+    const set = Phase.endingCount[id]
+    const count = set.size, reward = endingReward[count]
+    if (reward && set.add(user.id).size > count) {
       app.broadcast(`恭喜 ${username} 达成了结局「${Phase.endingMap[id]}」的全服${leadingOrder[count]}，将获得 ${reward}￥ 的奖励！`).catch()
       user.money += reward
       user.wealth += reward
     }
-    Phase.endingCount[id] += 1
   })
 }

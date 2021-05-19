@@ -1,14 +1,12 @@
 import { Context, Channel, User } from 'koishi-core'
 import { template, Time } from 'koishi-utils'
-import { Meta } from './data'
-import { Synchronizer } from './stats'
+import { Synchronizer } from './payload/stats'
 import { WebServer, Config } from './server'
+import Meta from './payload/meta'
 
-import './mongo'
-import './mysql'
+import './database/mongo'
+import './database/mysql'
 
-export * from './data'
-export * from './stats'
 export * from './server'
 
 export type Activity = Record<number, number>
