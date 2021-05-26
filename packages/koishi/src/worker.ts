@@ -45,7 +45,12 @@ function isErrorModule(error: any) {
   return error.code !== 'MODULE_NOT_FOUND' || error.requireStack && error.requireStack[0] !== __filename
 }
 
+const cache: Record<string, [string, any]> = {}
+
 function loadEcosystem(type: string, name: string) {
+  const key = `${type}:${name}`
+  if (key in cache) return cache[key]
+
   const prefix = `koishi-${type}-`
   const modules: string[] = []
   if ('./'.includes(name[0])) {
@@ -68,7 +73,7 @@ function loadEcosystem(type: string, name: string) {
     try {
       const result = require(path)
       logger.info('apply %s %c', type, result.name || name)
-      return [path, result]
+      return cache[key] = [path, result]
     } catch (error) {
       if (isErrorModule(error)) {
         throw error
