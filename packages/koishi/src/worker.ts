@@ -297,7 +297,7 @@ function createWatcher() {
 
   function flushChanges() {
     const tasks: Promise<void>[] = []
-    const reloads: [filename: string, state: Plugin.State][] = []
+    const reloads = new Map<Plugin.State, string>()
 
     /**
      * files X that should be reloaded
@@ -353,11 +353,15 @@ function createWatcher() {
       }
 
       // dispose installed plugin
-      const displayName = plugin.name || relative(watchRoot, filename)
-      reloads.push([filename, state])
       tasks.push(app.dispose(plugin).catch((err) => {
+        const displayName = plugin.name || relative(watchRoot, filename)
         logger.warn('failed to dispose plugin %c\n' + coerce(err), displayName)
       }))
+
+      // prepare for reload
+      let ancestor = state, isMarked = false
+      while ((ancestor = ancestor.parent) && !(isMarked = reloads.has(ancestor)));
+      if (!isMarked) reloads.set(state, filename)
     }
 
     stashed = new Set()
@@ -369,7 +373,7 @@ function createWatcher() {
       })
 
       // reload all dependent plugins
-      for (const [filename, state] of reloads) {
+      for (const [state, filename] of reloads) {
         try {
           const plugin = require(filename)
           state.context.plugin(plugin, state.config)
