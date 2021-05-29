@@ -133,7 +133,7 @@ export class DiscordBot extends Bot<'discord'> {
                 ...discord.axiosConfig,
                 responseType: 'arraybuffer',
               })
-              const r = await this.sendEmbedMessage(requestUrl, a.data, {
+              const r = await that.sendEmbedMessage(requestUrl, a.data, {
                 ...addition,
               })
               sentMessageId = r.id
