@@ -126,26 +126,38 @@ export class DiscordBot extends Bot<'discord'> {
             })
             sentMessageId = r.id
           } else {
-            try {
-              const head = await axios.head(data.url)
-              if (head.headers?.['Content-Type']?.includes('image')) {
+            const { axiosConfig, discord = {} } = this.app.options
+            async function downloadSend() {
+              const a = await axios.get(data.url, {
+                ...axiosConfig,
+                ...discord.axiosConfig,
+                responseType: 'arraybuffer',
+              })
+              const r = await this.sendEmbedMessage(requestUrl, a.data, {
+                ...addition,
+              })
+              sentMessageId = r.id
+            }
+            axios.head(data.url, {
+              ...axiosConfig,
+              ...discord.axiosConfig,
+            }).then(async ({ headers }) => {
+              if (headers?.['content-type']?.includes('image')) {
                 const r = await this.request('POST', requestUrl, {
                   content: data.url,
                   ...addition,
                 })
                 sentMessageId = r.id
               } else {
-                const a = await axios.get(data.url, {
-                  responseType: 'arraybuffer',
-                })
-                const r = await this.sendEmbedMessage(requestUrl, a.data, {
-                  ...addition,
-                })
-                sentMessageId = r.id
+                await downloadSend()
               }
-            } catch (e) {
-              throw new SenderError(data.url, data, this.selfId)
-            }
+            }, async () => {
+              try {
+                await downloadSend()
+              } catch (e) {
+                throw new SenderError(data.url, data, this.selfId)
+              }
+            })
           }
         }
       }
