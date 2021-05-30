@@ -123,9 +123,9 @@ interface Message {
 
 process.on('message', (data: Message) => {
   if (data.type === 'send') {
-    const { channelId, sid, message } = data.body
+    const { channelId, groupId, sid, message } = data.body
     const bot = app.bots[sid]
-    bot.sendMessage(channelId, message)
+    bot.sendMessage(channelId, message, groupId)
   }
 })
 
@@ -162,12 +162,12 @@ exitCommand && app
   .shortcut('关机', { prefix: true })
   .shortcut('重启', { prefix: true, options: { restart: true } })
   .action(async ({ options, session }) => {
-    const { channelId, sid } = session
+    const { channelId, groupId, sid } = session
     if (!options.restart) {
       await session.send(template('deamon.exiting')).catch(noop)
       process.exit()
     }
-    process.send({ type: 'queue', body: { channelId, sid, message: template('deamon.restarted') } })
+    process.send({ type: 'queue', body: { channelId, groupId, sid, message: template('deamon.restarted') } })
     await session.send(template('deamon.restarting')).catch(noop)
     process.exit(114)
   })

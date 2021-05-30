@@ -45,10 +45,10 @@ export class KaiheilaBot extends Bot {
     return result.data
   }
 
-  private _prepareHandle(channelId: string, content: string): SendHandle {
+  private _prepareHandle(channelId: string, content: string, groupId: string): SendHandle {
     let path: string
     const params = {} as KHL.MessageParams
-    const session = this.createSession({ channelId, content })
+    const session = this.createSession({ channelId, content, groupId })
     if (channelId.length > 30) {
       params.chatCode = channelId
       session.subtype = 'private'
@@ -56,8 +56,6 @@ export class KaiheilaBot extends Bot {
     } else {
       params.targetId = channelId
       session.subtype = 'group'
-      // FIXME this is incorrect but to workarournd ctx.group()
-      session.groupId = 'unknown'
       path = '/message/create'
     }
     return [path, params, session]
@@ -189,8 +187,8 @@ export class KaiheilaBot extends Bot {
     await flush()
   }
 
-  async sendMessage(channelId: string, content: string) {
-    const handle = this._prepareHandle(channelId, content)
+  async sendMessage(channelId: string, content: string, groupId?: string) {
+    const handle = this._prepareHandle(channelId, content, groupId)
     const [, params, session] = handle
     if (await this.app.serial(session, 'before-send', session)) return
 
