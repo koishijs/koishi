@@ -503,7 +503,14 @@ export class Context {
     const [content, forced] = args as [string, boolean]
     if (!content) return []
 
-    const data = await this.database.getAssignedChannels(['id', 'assignee', 'flag'])
+    const data = this.database
+      ? await this.database.getAssignedChannels(['id', 'assignee', 'flag'])
+      : channels.map((id) => {
+        const [type] = id.split(':')
+        const bot = this.getBot(type as never)
+        return bot && { id, assignee: bot.selfId, flag: 0 }
+      }).filter(Boolean)
+
     const assignMap: Record<string, Record<string, string[]>> = {}
     for (const { id, assignee, flag } of data) {
       if (channels && !channels.includes(id)) continue
