@@ -293,7 +293,7 @@ export class DiscordBot extends Bot<'discord'> {
     return this.request('PATCH', `/guilds/${guildId}`, data)
   }
 
-  $setGroupName(guildId:string, name: string) {
+  $setGroupName(guildId: string, name: string) {
     return this.$modifyGuild(guildId, { name })
   }
 
