@@ -155,11 +155,10 @@ export class DiscordBot extends Bot<'discord'> {
       message_id: quote,
     } : undefined
 
-    const sentMessageId = await this.sendFullMessage(`/channels/${channelId}/messages`, session.content, { message_reference })
-    session.messageId = sentMessageId
+    session.messageId = await this.sendFullMessage(`/channels/${channelId}/messages`, session.content, { message_reference })
 
     this.app.emit(session, 'send', session)
-    return session.messageId = sentMessageId
+    return session.messageId
   }
 
   async deleteMessage(channelId: string, messageId: string) {

@@ -179,7 +179,9 @@ export function recall(ctx: Context, { recallCount = 10 }: RecallConfig) {
     }
   })
 
-  ctx.command('common/recall [count:number]', '撤回 bot 发送的消息', { authority: 2 })
+  ctx
+    .group()
+    .command('common/recall [count:number]', '撤回 bot 发送的消息', { authority: 2 })
     .action(async ({ session }, count = 1) => {
       const list = recent[session.channelId]
       if (!list) return '近期没有发送消息。'
