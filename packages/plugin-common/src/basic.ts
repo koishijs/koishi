@@ -168,10 +168,10 @@ export interface RecallConfig {
 }
 
 export function recall(ctx: Context, { recallCount = 10 }: RecallConfig) {
-  ctx = ctx.group()
   const recent: Record<string, string[]> = {}
 
   ctx.on('send', (session) => {
+    if (!session.channelId || session.subtype === 'private') return
     const list = recent[session.channelId] ||= []
     list.unshift(session.messageId)
     if (list.length > recallCount) {

@@ -156,6 +156,7 @@ export class DiscordBot extends Bot<'discord'> {
     } : undefined
 
     const sentMessageId = await this.sendFullMessage(`/channels/${channelId}/messages`, session.content, { message_reference })
+    session.messageId = sentMessageId
 
     this.app.emit(session, 'send', session)
     return session.messageId = sentMessageId
