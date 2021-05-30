@@ -269,7 +269,7 @@ export class DiscordBot extends Bot<'discord'> {
     return this.request('PATCH', `/guilds/${guildId}/members/${userId}`, data)
   }
 
-  $setGroupCard(guildId: string, userId: string, nick: string){
+  $setGroupCard(guildId: string, userId: string, nick: string) {
     return this.$modifyGuildMember(guildId, userId, { nick })
   }
 
@@ -291,6 +291,10 @@ export class DiscordBot extends Bot<'discord'> {
 
   $modifyGuild(guildId: string, data: DC.GuildBody) {
     return this.request('PATCH', `/guilds/${guildId}`, data)
+  }
+
+  $setGroupName(guildId:string, name: string) {
+    return this.$modifyGuild(guildId, { name })
   }
 
   $createWebhook(channelId: string, data: {
