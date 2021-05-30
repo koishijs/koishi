@@ -27,7 +27,7 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
   async connect(bot: DiscordBot) {
     return new Promise<void>((resolve) => {
       if (bot._sessionId) {
-        logger.info('resuming')
+        logger.debug('resuming')
         bot.socket.send(JSON.stringify({
           op: Opcode.Resume,
           d: {

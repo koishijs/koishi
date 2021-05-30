@@ -296,10 +296,13 @@ function codegen(data: Serializable, type: SourceType, indent = ''): string {
 
   // object
   const prefix = type === 'yaml' ? '# ' : '// '
+  const shouldQuote = type === 'json' ? true
+    : type === 'yaml' ? Object.keys(data).some(name => name.startsWith('@'))
+      : !Object.keys(data).every(name => name.match(/^[\w$]+$/))
   const output = joinLines(Object.entries(data).filter(([, value]) => value !== undefined).map(([key, value]) => {
     let output = type !== 'json' && comment(data, key) || ''
     if (output) output = output.split('\n').map(line => prefix + line + '\n  ' + indent).join('')
-    output += type === 'json' ? `"${key}"` : key
+    output += type === 'json' ? `"${key}"` : shouldQuote ? `'${key}'` : key
     output += ': ' + codegen(value, type, '  ' + indent)
     return output
   }), type, indent)

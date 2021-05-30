@@ -1,6 +1,4 @@
 atri
 dist
 lib
-build/*.js
-
-/build/*.js
+*.js

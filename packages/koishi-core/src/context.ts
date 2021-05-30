@@ -99,10 +99,12 @@ export class Context {
 
   protected constructor(public filter: Filter, public app?: App, private _plugin: Plugin = null) {}
 
+  private static inspect(plugin: Plugin) {
+    return !plugin ? 'root' : typeof plugin === 'object' && plugin.name || 'anonymous'
+  }
+
   [inspect.custom]() {
-    const plugin = this._plugin
-    const name = !plugin ? 'root' : typeof plugin === 'object' && plugin.name || 'anonymous'
-    return `Context <${name}>`
+    return `Context <${Context.inspect(this._plugin)}>`
   }
 
   private createSelector<K extends keyof Session>(key: K) {
@@ -222,7 +224,7 @@ export class Context {
     if (options === true) options = undefined
 
     if (this.app.registry.has(plugin)) {
-      this.logger('app').warn(new Error('duplicate plugin detected'))
+      this.logger('app').warn(new Error(`duplicate plugin <${Context.inspect(plugin)}> detected`))
       return this
     }
 
@@ -501,7 +503,14 @@ export class Context {
     const [content, forced] = args as [string, boolean]
     if (!content) return []
 
-    const data = await this.database.getAssignedChannels(['id', 'assignee', 'flag'])
+    const data = this.database
+      ? await this.database.getAssignedChannels(['id', 'assignee', 'flag'])
+      : channels.map((id) => {
+        const [type] = id.split(':')
+        const bot = this.getBot(type as never)
+        return bot && { id, assignee: bot.selfId, flag: 0 }
+      }).filter(Boolean)
+
     const assignMap: Record<string, Record<string, string[]>> = {}
     for (const { id, assignee, flag } of data) {
       if (channels && !channels.includes(id)) continue

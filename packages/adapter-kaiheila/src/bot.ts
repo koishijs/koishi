@@ -92,15 +92,16 @@ export class KaiheilaBot extends Bot {
     }
   }
 
-  private async _sendCard(handle: SendHandle, chain: segment.Chain) {
-    let text: KHL.Card.Text = { type: 'plain-text', content: '' }
+  private async _sendCard(handle: SendHandle, chain: segment.Chain, useMarkdown: boolean) {
+    const type = useMarkdown ? 'kmarkdown' : 'plain-text'
+    let text: KHL.Card.Text = { type, content: '' }
     let card: KHL.Card = { type: 'card', modules: [] }
     const output: KHL.Card[] = []
     const flushText = () => {
       text.content = text.content.trim()
       if (!text.content) return
       card.modules.push({ type: 'section', text })
-      text = { type: 'plain-text', content: '' }
+      text = { type, content: '' }
     }
     const flushCard = () => {
       flushText()
@@ -150,12 +151,13 @@ export class KaiheilaBot extends Bot {
     await this._sendHandle(handle, KHL.Type.card, JSON.stringify(output))
   }
 
-  private async _sendSeparate(handle: SendHandle, chain: segment.Chain) {
+  private async _sendSeparate(handle: SendHandle, chain: segment.Chain, useMarkdown: boolean) {
     let textBuffer = ''
+    const type = useMarkdown ? KHL.Type.kmarkdown : KHL.Type.text
     const flush = async () => {
       textBuffer = textBuffer.trim()
       if (!textBuffer) return
-      await this._sendHandle(handle, KHL.Type.text, textBuffer)
+      await this._sendHandle(handle, type, textBuffer)
       handle[1].quote = null
       textBuffer = ''
     }
@@ -192,9 +194,14 @@ export class KaiheilaBot extends Bot {
     const [, params, session] = handle
     if (await this.app.serial(session, 'before-send', session)) return
 
+    let useMarkdown = false
     const chain = segment.parse(content)
     if (chain[0].type === 'quote') {
       params.quote = chain.shift().data.id
+    }
+    if (chain[0].type === 'markdown') {
+      useMarkdown = true
+      chain.shift()
     }
 
     const { attachMode } = this.app.options.kaiheila
@@ -202,9 +209,9 @@ export class KaiheilaBot extends Bot {
     const useCard = hasAttachment && (attachMode === 'card' || attachMode === 'mixed' && chain.length > 1)
 
     if (useCard) {
-      await this._sendCard(handle, chain)
+      await this._sendCard(handle, chain, useMarkdown)
     } else {
-      await this._sendSeparate(handle, chain)
+      await this._sendSeparate(handle, chain, useMarkdown)
     }
 
     return session.messageId

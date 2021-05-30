@@ -31,7 +31,7 @@
     "rss"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.11.1"
+    "koishi-core": "^3.11.2"
   },
   "devDependencies": {
     "koishi-test-utils": "^6.0.0"

@@ -5,6 +5,40 @@ externalIcon: false
 
 # v3 更新日志
 
+## [Koishi 3.11.2](https://github.com/koishijs/koishi/releases/tag/3.11.2)
+
+### Features
+
+- **cli:** 加入了模块缓存以获得更快的加载速度 (=5f1860ccdd0216d68221d482f12b7b64a11047c2)
+- **core:** 支持了在无数据库情况下使用 `ctx.broadcast()` (=cfca0798bda7cad913966a338b83c8ae3d39ec70)
+- **dice:** 支持了经典的 rxdy 掷骰语法 (=8a5f9152a9169e930fe2d492f0d099e4268f1a5d)
+- **kaiheila:** 支持了 markdown 消息段 (=f7d9dca5b83bf4ed0d4386b60b74cf22e2db434e)
+
+### Bug Fixes
+
+- **cli:** 修复了生成的配置文件中，含有特殊字符的插件名没有引号的问题 (#275) (=2badfdfb645f7d5f6d10d1fa3e8ed27bf8d0fd12)
+- **cli:** 修复了当一个插件含有文件级命名子插件时，子插件重载可能失败的问题 (=3a0d25d372e966c1e1124615c17ea08caad301c0)
+- **webui:** 补全了依赖库 (#277) (=4053909020a8d1827b2d8b6bee39bb4068aaf68c)
+- **github:** 支持了 request review from team (=b60c8903f6b2de3bc7caaffe107628ae560eb862)
+
+## [Koishi 3.11.1](https://github.com/koishijs/koishi/releases/tag/3.11.1)
+
+### Notable Changes
+
+- koishi-plugin-webui 新增了插件市场视图
+
+### Features
+
+- **webui:** 新增了插件市场视图 (=b2604777c6a3d9be194f60ca8dbc45aa9d05b244, =5913209cb61ba8ad4a5074f5c1860e6b299f2a62, =54bd7633884736ce6eadfd7ff899f53e9050407a, =983c374e6e8389a567de948885cc968a76e5a56f, =23274905df657c20b92c93d60c97bb708c10364e, =b7eff39add979c091e3a7a89d0afb1f63fd37602)
+
+### Bug Fixes
+
+- **core:** 修复了由于 esbuild 导致的插件不一致问题 (=398ad5bd3f882a2922293afff8b0b5dc72ec9969)
+- **adventure:** 修复了重复计算结局达成次数的问题 (=dfd683c5c9a488157010c8c20f26e7b792134431)
+- **cli:** 修复了成功启动前 SIGINT/SIGTERM 无效的问题 (=632dc6156febb0a613b0c2dcd1c84a7e4d3e6ffb)
+- **adventure:** 修复了 ending 指令查看剧情线失效的问题 (=4d77b86af6d3e00ea063b9ffdec2862423ef0fe0)
+- **adventure:** 修复了 show 指令直接调用时参数丢失的问题 (e87ac4dc619a1d889534ece2c625fe89fac57802)
+
 ## [Koishi 3.11.0](https://github.com/koishijs/koishi/releases/tag/3.11.0)
 
 ### Notable Changes
