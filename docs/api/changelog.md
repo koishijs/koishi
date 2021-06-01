@@ -5,6 +5,22 @@ externalIcon: false
 
 # v3 更新日志
 
+## [Koishi 3.11.2](https://github.com/koishijs/koishi/releases/tag/3.11.2)
+
+### Features
+
+- **cli:** 加入了模块缓存以获得更快的加载速度 (=5f1860ccdd0216d68221d482f12b7b64a11047c2)
+- **core:** 支持了在无数据库情况下使用 `ctx.broadcast()` (=cfca0798bda7cad913966a338b83c8ae3d39ec70)
+- **dice:** 支持了经典的 rxdy 掷骰语法 (=8a5f9152a9169e930fe2d492f0d099e4268f1a5d)
+- **kaiheila:** 支持了 markdown 消息段 (=f7d9dca5b83bf4ed0d4386b60b74cf22e2db434e)
+
+### Bug Fixes
+
+- **cli:** 修复了生成的配置文件中，含有特殊字符的插件名没有引号的问题 (#275) (=2badfdfb645f7d5f6d10d1fa3e8ed27bf8d0fd12)
+- **cli:** 修复了当一个插件含有文件级命名子插件时，子插件重载可能失败的问题 (=3a0d25d372e966c1e1124615c17ea08caad301c0)
+- **github:** 支持了 request review from team (=b60c8903f6b2de3bc7caaffe107628ae560eb862)
+- **webui:** 补全了缺失的依赖库 (#277) (=4053909020a8d1827b2d8b6bee39bb4068aaf68c)
+
 ## [Koishi 3.11.1](https://github.com/koishijs/koishi/releases/tag/3.11.1)
 
 ### Notable Changes

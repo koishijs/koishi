@@ -148,7 +148,7 @@ export class Daemon {
       }
       if (app.bail('monitor/before-send', info, group)) return
       for (const message of messages) {
-        await bot.sendMessage(channelId, message)
+        await bot.sendMessage(channelId, message, 'unknown')
       }
     })
   }

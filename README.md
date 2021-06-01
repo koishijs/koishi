@@ -128,6 +128,8 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - [koishi-plugin-shell](https://github.com/koishijs/koishi-plugin-shell): 使用 Koishi 执行终端命令
 - [koishi-plugin-eval-enhance](https://github.com/Anillc/koishi-plugin-eval-enhance): koishi-plugin-eval的增强！
 - [koishi-plugin-work](https://github.com/NWYLZW/koishi-plugin-work): 工作学习工具，已有功能 todos: 代办管理
+- [koishi-plugin-aircon](https://github.com/idlist/koishi-plugin-aircon): 群空调
+- [koishi-plugin-cryptocurrency](https://github.com/koishijs/plugin-cryptocurrency): 查看和订阅加密货币的市场价格
 
 ### 社区项目
 
@@ -136,7 +138,7 @@ Koishi v3 的另一大亮点就是拥有官方的网页控制台插件。这个�
 - [ArilyChan/qq-bot](https://github.com/ArilyChan/qq-bot): 小阿日
 - [hydro-dev/HydroBot](https://github.com/hydro-dev/HydroBot): A Simple QQ Robot
 - [Wjghj-Project/Chatbot-SILI](https://github.com/Wjghj-Project/Chatbot-SILI): 「即时通讯软件转接姬」SILI-t137-[Tumita]-Invoke-II@LD(A)
-- [idlist/2bot-v3](https://github.com/idlist/2bot-v3): 2bot（名称来源于 FFXIV 的阿尔博特）
+- [idlist/2bot-v3](https://github.com/idlist/2bot-v3): 2bot，一个很 2 的 FFXIV bot
 
 ## 使用协议
 

@@ -1,5 +1,5 @@
 import { cwd, PackageJson, getWorkspaces, spawnAsync, spawnSync } from './utils'
-import { gt, prerelease } from 'semver'
+import { gt, maxSatisfying, prerelease } from 'semver'
 import { Octokit } from '@octokit/rest'
 import { draft } from './release'
 import { writeJson } from 'fs-extra'
@@ -79,7 +79,7 @@ if (CI && (GITHUB_REF !== 'refs/heads/master' || GITHUB_EVENT_NAME !== 'push')) 
     return console.log(`Tag ${version} already exists.`)
   }
 
-  const body = draft(tags[tags.length - 1], bumpMap)
+  const body = draft(maxSatisfying(tags, '*'), bumpMap)
   console.log(body)
 
   if (!GITHUB_TOKEN) return

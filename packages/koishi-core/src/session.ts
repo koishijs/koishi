@@ -167,7 +167,7 @@ export class Session<
       return this.bot[Session.send](this, message)
     }
     if (!message) return
-    await this.bot.sendMessage(this.channelId, message)
+    await this.bot.sendMessage(this.channelId, message, this.groupId)
   }
 
   cancelQueued(delay = this.app.options.delay.cancel) {

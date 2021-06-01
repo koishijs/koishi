@@ -145,8 +145,8 @@ export class DiscordBot extends Bot<'discord'> {
     return sentMessageId
   }
 
-  async sendMessage(channelId: string, content: string) {
-    const session = this.createSession({ channelId, content })
+  async sendMessage(channelId: string, content: string, groupId?: string) {
+    const session = this.createSession({ channelId, content, groupId, subtype: groupId ? 'group' : 'private' })
     if (await this.app.serial(session, 'before-send', session)) return
 
     const chain = segment.parse(session.content)
@@ -155,10 +155,10 @@ export class DiscordBot extends Bot<'discord'> {
       message_id: quote,
     } : undefined
 
-    const sentMessageId = await this.sendFullMessage(`/channels/${channelId}/messages`, session.content, { message_reference })
+    session.messageId = await this.sendFullMessage(`/channels/${channelId}/messages`, session.content, { message_reference })
 
     this.app.emit(session, 'send', session)
-    return session.messageId = sentMessageId
+    return session.messageId
   }
 
   async deleteMessage(channelId: string, messageId: string) {

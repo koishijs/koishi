@@ -254,10 +254,13 @@ export function addListeners(on: <T extends EmitterWebhookEventName>(event: T, h
     ].join('\n')]
   })
 
-  onPullRequest('pull_request/review_requested', ({ repository, pull_request, sender, requested_reviewer }) => {
+  onPullRequest('pull_request/review_requested', (payload) => {
+    const { repository, pull_request, sender } = payload
     const { full_name } = repository
-    const { number } = pull_request as PullRequest
-    return [`${sender.login} requested a review from ${requested_reviewer.login} on ${full_name}#${number}`]
+    const { number } = pull_request
+    return ['requested_reviewer' in payload
+      ? `${sender.login} requested a review from ${payload.requested_reviewer.login} on ${full_name}#${number}`
+      : `${sender.login} requested a review from team ${payload.requested_team.name} on ${full_name}#${number}`]
   })
 
   onPullRequest('pull_request/converted_to_draft', ({ repository, pull_request, sender }) => {

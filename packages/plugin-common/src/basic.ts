@@ -123,7 +123,7 @@ export function echo(ctx: Context) {
         if (options.user) {
           await bot.sendPrivateMessage(id, message)
         } else {
-          await bot.sendMessage(id, message)
+          await bot.sendMessage(id, message, 'unknown')
         }
         return
       }
@@ -133,7 +133,7 @@ export function echo(ctx: Context) {
 }
 
 export function feedback(ctx: Context, operators: string[]) {
-  type FeedbackData = [sid: string, channelId: string]
+  type FeedbackData = [sid: string, channelId: string, groupId: string]
   const feedbacks: Record<number, FeedbackData> = {}
 
   ctx.command('common/feedback <message:text>', '发送反馈信息给作者')
@@ -144,7 +144,7 @@ export function feedback(ctx: Context, operators: string[]) {
       const nickname = name === '' + userId ? userId : `${name} (${userId})`
       const message = template('common.feedback-receive', nickname, text)
       const delay = ctx.app.options.delay.broadcast
-      const data: FeedbackData = [session.sid, session.channelId]
+      const data: FeedbackData = [session.sid, session.channelId, session.groupId]
       for (let index = 0; index < operators.length; ++index) {
         if (index && delay) await sleep(delay)
         const [platform, userId] = Argv.parsePid(operators[index])
@@ -159,7 +159,7 @@ export function feedback(ctx: Context, operators: string[]) {
     if (!parsed.content || !quote) return next()
     const data = feedbacks[quote.messageId]
     if (!data) return next()
-    return ctx.bots[data[0]].sendMessage(data[1], parsed.content)
+    return ctx.bots[data[0]].sendMessage(data[1], parsed.content, data[2])
   })
 }
 
@@ -212,7 +212,7 @@ export function relay(ctx: Context, relays: RelayOptions[]) {
     const bot = ctx.getBot(platform, selfId)
     if (!session.parsed.content) return
     const content = template('common.relay', session.username, session.parsed.content)
-    const id = await bot.sendMessage(channelId, content)
+    const id = await bot.sendMessage(channelId, content, 'unknown')
     relayMap[id] = { source: destination, destination: session.cid, selfId: session.selfId, lifespan }
     setTimeout(() => delete relayMap[id], lifespan)
   }

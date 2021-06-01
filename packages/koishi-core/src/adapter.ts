@@ -183,7 +183,7 @@ export interface Bot<P = Platform> extends BotOptions, UserBase {
   getStatus(): Promise<Bot.Status>
 
   // message
-  sendMessage(channelId: string, content: string): Promise<string>
+  sendMessage(channelId: string, content: string, groupId?: string): Promise<string>
   sendPrivateMessage(userId: string, content: string): Promise<string>
   getMessage(channelId: string, messageId: string): Promise<MessageInfo>
   editMessage(channelId: string, messageId: string, content: string): Promise<void>
@@ -260,7 +260,7 @@ export class Bot<P extends Platform> {
     for (let index = 0; index < channels.length; index++) {
       if (index && delay) await sleep(delay)
       try {
-        messageIds.push(await this.sendMessage(channels[index], content))
+        messageIds.push(await this.sendMessage(channels[index], content, 'unknown'))
       } catch (error) {
         this.app.logger('bot').warn(error)
       }
