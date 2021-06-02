@@ -1,6 +1,6 @@
 import { Database, Logger, Tables, Time } from 'koishi-core'
-import { StatRecord, Synchronizer, RECENT_LENGTH } from './stats'
-import MysqlDatabase from 'koishi-plugin-mysql'
+import { StatRecord, Synchronizer, RECENT_LENGTH } from '../payload/stats'
+import type MysqlDatabase from 'koishi-plugin-mysql'
 
 const logger = new Logger('status')
 
@@ -12,7 +12,7 @@ abstract class Stat<K extends string, V> {
   public data = {} as Record<K, V>
   private key: string = null
 
-  constructor(private table: string, private fields: readonly K[]) {
+  constructor(private table: string, private fields: readonly K[], private preserve: boolean) {
     this.clear()
   }
 
@@ -29,6 +29,11 @@ abstract class Stat<K extends string, V> {
   synchronize(date: string, sqls: string[]) {
     const updates: string[] = []
     for (const name in this.data) {
+      if (!this.fields.includes(name)) {
+        logger.warn(new Error(`unknown key "${name}" in stats table "${this.table}"`))
+        delete this.data[name]
+        continue
+      }
       const update = this.update(name, this.data[name])
       if (update) updates.push(update)
     }
@@ -44,18 +49,19 @@ INSERT INTO \`${this.table}\` (\`time\`, ${joinKeys(Object.keys(this.data))}) \
 VALUES ("${date}", ${Object.values(this.data).map(this.create).join(', ')}) \
 ON DUPLICATE KEY UPDATE ${updates.join(', ')}`)
     }
+    if (!this.preserve) sqls.push(`DELETE FROM \`${this.table}\` WHERE datediff("${date}", \`time\`) > 10`)
     this.clear()
   }
 }
 
 namespace Stat {
   export class Recorded<K extends string> extends Stat<K, StatRecord> {
-    constructor(table: string, fields: readonly K[], timeDomain: string) {
-      super(table, fields)
+    constructor(table: string, fields: readonly K[], preserve: boolean) {
+      super(table, fields, preserve)
       Tables.extend(table as never, { primary: 'time' })
       Database.extend('koishi-plugin-mysql', ({ tables, Domain }) => {
         tables[table] = Object.fromEntries(fields.map(key => [key, new Domain.Json()]))
-        tables[table].time = timeDomain
+        tables[table].time = 'datetime'
       })
     }
 
@@ -74,20 +80,15 @@ namespace Stat {
         return `'$."${key}"', IFNULL(JSON_EXTRACT(\`${name}\`, '$."${key}"'), 0) + ${value}`
       }).join(', ')})`
     }
-
-    add(field: K, key: string | number) {
-      const stat: Record<string, number> = this.data[field]
-      stat[key] = (stat[key] || 0) + 1
-    }
   }
 
   export class Numerical<K extends string> extends Stat<K, number> {
-    constructor(table: string, fields: readonly K[], timeDomain: string) {
-      super(table, fields)
+    constructor(table: string, fields: readonly K[], preserve: boolean) {
+      super(table, fields, preserve)
       Tables.extend(table as never, { primary: 'time' })
       Database.extend('koishi-plugin-mysql', ({ tables }) => {
         tables[table] = Object.fromEntries(fields.map(key => [key, 'int unsigned']))
-        tables[table].time = timeDomain
+        tables[table].time = 'datetime'
       })
     }
 
@@ -107,9 +108,9 @@ namespace Stat {
 }
 
 class MysqlSynchronizer implements Synchronizer {
-  private _daily = new Stat.Recorded('stats_daily', Synchronizer.dailyFields, 'date')
-  private _hourly = new Stat.Numerical('stats_hourly', Synchronizer.hourlyFields, 'datetime')
-  private _longterm = new Stat.Numerical('stats_longterm', Synchronizer.longtermFields, 'date')
+  private _daily = new Stat.Recorded('stats_daily', Synchronizer.dailyFields, false)
+  private _hourly = new Stat.Numerical('stats_hourly', Synchronizer.hourlyFields, false)
+  private _longterm = new Stat.Numerical('stats_longterm', Synchronizer.longtermFields, true)
 
   groups: StatRecord = {}
   daily = this._daily.data

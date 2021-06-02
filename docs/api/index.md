@@ -19,6 +19,7 @@ koishi-core 中提供的 API，包括以下几个子页面：
 - [消息段 (Segment)](./segment.md)
 - [数据库 (Database)](./database.md)
 - [适配器 (Adapter)](./adapter.md)
+- [其他内置 API](./global.md)
 
 ## 其他官方包 API
 

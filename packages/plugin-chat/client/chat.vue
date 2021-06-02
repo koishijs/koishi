@@ -65,9 +65,9 @@ function handleClick(message: Message) {
 function handleSend(content: string) {
   if (!activeMessage.value) return
   pinned.value = false
-  const { platform, selfId, channelId } = activeMessage.value
+  const { platform, selfId, channelId, groupId } = activeMessage.value
   const { token, id } = user.value
-  send('chat', { token, id, content, platform, selfId, channelId })
+  send('chat', { token, id, content, platform, selfId, channelId, groupId })
 }
 
 function onClickQuote(id: string) {

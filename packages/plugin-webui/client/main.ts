@@ -26,27 +26,27 @@ self['KoishiClient'] = client
 
 const app = Vue.createApp(App)
 
-const statsPrerequisite: 'stats'[] = KOISHI_CONFIG.database ? ['stats'] : []
+const stats: 'stats'[] = KOISHI_CONFIG.database ? ['stats'] : []
 
 router.addRoute({
   path: '/',
   name: '仪表盘',
-  meta: { icon: 'tachometer-alt', require: [...statsPrerequisite, 'meta', 'profile', 'registry'] },
+  meta: { icon: 'tachometer-alt', require: [...stats, 'meta', 'profile'] },
   component: () => import('./views/home/home.vue'),
-})
-
-router.addRoute({
-  path: '/bots',
-  name: '机器人',
-  meta: { icon: 'robot', require: [...statsPrerequisite, 'profile'] },
-  component: () => import('./views/bots.vue'),
 })
 
 router.addRoute({
   path: '/plugins',
   name: '插件',
   meta: { icon: 'plug', require: ['registry'] },
-  component: () => import('./views/plugins/plugins.vue'),
+  component: () => import('./views/plugins/index.vue'),
+})
+
+router.addRoute({
+  path: '/awesome',
+  name: '依赖',
+  meta: { icon: 'puzzle-piece', authority: 4, require: ['awesome'] },
+  component: () => import('./views/awesome/index.vue'),
 })
 
 router.addRoute({
@@ -91,6 +91,7 @@ router.afterEach((route) => {
 })
 
 receive('meta', data => client.meta.value = data)
+receive('awesome', data => client.awesome.value = data)
 receive('profile', data => client.profile.value = data)
 receive('registry', data => client.registry.value = data)
 receive('stats', data => client.stats.value = data)

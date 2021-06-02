@@ -5,7 +5,7 @@
 import { ref, watch, reactive, Ref, Component } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import type { User } from 'koishi-core'
-import type { Registry, Profile, Meta, Statistics } from '~/server'
+import type { Registry, Profile, Meta, Statistics, Awesome } from '~/server'
 import * as client from '~/client'
 
 export const views: Component[] = []
@@ -63,7 +63,6 @@ export namespace storage {
 
 interface Config {
   authType: 0 | 1
-  pluginTab: 0 | 1
   username?: string
   password?: string
   platform?: string
@@ -72,10 +71,11 @@ interface Config {
 }
 
 export const user = storage.create<User>('user')
-export const config = storage.create<Config>('config', { authType: 0, pluginTab: 0 }, true)
+export const config = storage.create<Config>('config', { authType: 0 }, true)
 export const meta = ref<Meta.Payload>(null)
 export const profile = ref<Profile.Payload>(null)
-export const registry = ref<Registry.Payload>(null)
+export const awesome = ref<Awesome.PackageData[]>(null)
+export const registry = ref<Registry.PluginData[]>(null)
 export const stats = ref<Statistics.Payload>(null)
 export const socket = ref<WebSocket>(null)
 

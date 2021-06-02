@@ -371,8 +371,9 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
 
   ctx.command('channel/assign [bot:user]', '受理者账号', { authority: 4 })
     .channelFields(['assignee'])
-    .adminChannel(async ({ session, target }, value) => {
-      const assignee = value ? Argv.parsePid(value)[1] : session.selfId
+    .option('noTarget', '-T  移除受理者')
+    .adminChannel(async ({ session, options, target }, value) => {
+      const assignee = options.noTarget ? null : value ? Argv.parsePid(value)[1] : session.selfId
       if (assignee === target.assignee) return template('admin.channel-unchanged')
       await ctx.database.createChannel(session.platform, session.channelId, { assignee })
       target._merge({ assignee })

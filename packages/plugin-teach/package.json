@@ -34,13 +34,13 @@
     "conversation"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.10.0"
+    "koishi-core": "^3.11.2"
   },
   "devDependencies": {
     "koishi-plugin-mongo": "^2.2.3",
     "koishi-plugin-mysql": "^3.3.2",
-    "koishi-plugin-webui": "^4.4.1",
-    "koishi-test-utils": "^6.0.0-beta.12"
+    "koishi-plugin-webui": "^4.6.1",
+    "koishi-test-utils": "^6.0.0"
   },
   "dependencies": {
     "axios": "^0.21.1",

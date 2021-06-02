@@ -22,7 +22,7 @@ export interface DelayOptions {
 export interface AppOptions extends BotOptions {
   port?: number
   bots?: BotOptions[]
-  prefix?: string | string[]
+  prefix?: string | string[] | ((session: Session.Message) => void | string | string[])
   nickname?: string | string[]
   maxListeners?: number
   prettyErrors?: boolean
@@ -52,7 +52,7 @@ export class App extends Context {
   public options: AppOptions
   public status = App.Status.closed
   public adapters: Adapter.Instances = {}
-  public registry = new Map<Plugin, Plugin.State>()
+  public registry = new Plugin.Registry()
 
   _bots = createBots('sid')
   _commandList: Command[] = []
@@ -65,7 +65,6 @@ export class App extends Context {
   _sessions: Record<string, Session> = {}
 
   private _nameRE: RegExp
-  private _prefixRE: RegExp
 
   static defaultConfig: AppOptions = {
     maxListeners: 64,
@@ -161,11 +160,9 @@ export class App extends Context {
   }
 
   prepare() {
-    const { nickname, prefix } = this.options
+    const { nickname } = this.options
     this.options.nickname = makeArray(nickname)
-    this.options.prefix = Array.isArray(prefix) ? prefix : [prefix || '']
     this._nameRE = createLeadingRE(this.options.nickname, '@?', '([,，]\\s*|\\s+)')
-    this._prefixRE = createLeadingRE(this.options.prefix)
   }
 
   async start() {
@@ -205,7 +202,13 @@ export class App extends Context {
     this._httpServer?.close()
   }
 
-  private async _process(session: Session, next: NextFunction) {
+  private _resolvePrefixes(session: Session.Message) {
+    const { prefix } = this.options
+    const temp = typeof prefix === 'function' ? prefix(session) : prefix
+    return Array.isArray(temp) ? temp : [temp || '']
+  }
+
+  private async _process(session: Session.Message, next: NextFunction) {
     let capture: RegExpMatchArray
     let atSelf = false, appel = false, prefix: string = null
     const pattern = /^\[CQ:(\w+)((,\w+=[^,\]]*)*)\]/
@@ -221,10 +224,10 @@ export class App extends Context {
       content = content.slice(capture[0].length)
     }
 
-    // eslint-disable-next-line no-cond-assign
-    if (capture = content.match(this._prefixRE)) {
-      prefix = capture[0]
-      content = content.slice(capture[0].length)
+    for (const _prefix of this._resolvePrefixes(session)) {
+      if (!content.startsWith(_prefix)) continue
+      prefix = _prefix
+      content = content.slice(_prefix.length)
     }
 
     // store parsed message

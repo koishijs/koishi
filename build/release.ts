@@ -1,3 +1,4 @@
+import { maxSatisfying } from 'semver'
 import { PackageJson, spawnSync } from './utils'
 
 const headerMap = {
@@ -37,6 +38,10 @@ export function draft(base: string, bumpMap: Record<string, PackageJson> = {}) {
 }
 
 if (require.main === module) {
-  const tags = spawnSync(['git', 'tag', '-l']).split(/\r?\n/)
-  console.log(draft(tags[tags.length - 1]))
+  let version = process.argv[2]
+  if (!version) {
+    const tags = spawnSync(['git', 'tag', '-l']).split(/\r?\n/)
+    version = maxSatisfying(tags, '*')
+  }
+  console.log(draft(version))
 }

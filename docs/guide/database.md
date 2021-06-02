@@ -53,32 +53,11 @@ const user = await ctx.database.getUser(type, id)
 await ctx.database.setChannel(type, id, { assignee: 123456789 })
 ```
 
-你可以在后面的 API 文档中看到全部内置的 [数据库方法](../api/database.md)。不过在这里我先介绍一下 Koishi 的数据库接口的几种设计，方便理解。
+你可以在后面的 API 文档中看到全部内置的 [数据库方法](../api/database.md)。
 
-### 常见的接口设计
+### 使用会话 API
 
-下面的代码展示了一个 Koishi 数据库最常见的接口设计，它广泛地运用于各种插件中：
-
-```js
-// 向数据库中获取一行，可以采用 getXXX(id, fields) 的形式
-// 其中 id 是该行的标识符，fields 是需要的字段
-// 对于有些数据库这个参数是自动忽略的，无论填写什么都会返回一切字段
-// 如果该行存在则返回该行的对应字段，否则返回 null
-ctx.database.getSchedule(id, fields)
-
-// 向数据库中添加一行，可以采用 createXXX(data) 的形式
-// 其中 data 是一个键值对；返回值是添加的行的完整数据（包括自动生成的 id 和默认属性等）
-ctx.database.createSchedule(data)
-
-// 修改数据库中的一行，可以采用 setXXX(id, data) 的形式
-// 其中 id 是该行的标识符，data 是要更改的数据
-// 修改时只会用 data 中的键进行覆盖，不会影响未记录在 data 中的资源
-ctx.database.setSchedule(id, data)
-```
-
-### 获取数据的高级方法
-
-对于 Koishi 内部的两个抽象表 User 和 Channel，情况略有不同。我们在此基础上设计了几个高级方法，你可以在 [会话对象](../api/session.md) 中找到它们。
+对于 Koishi 内部的两个抽象表 User 和 Channel，我们在 [会话对象](../api/session.md) 中封装了几个高级方法：
 
 ```js
 // 中间增加了一个第二参数，表示默认情况下的权限等级
@@ -102,41 +81,204 @@ session.getChannel(id, selfId, fields)
 session.observeChannel(fields)
 ```
 
-## 使用 ORM
-
-## 扩展数据库
-
-由于 Koishi 的数据库实现使用了注入策略，因此无论是字段，表，方法还是数据库都是可以扩展的。
-
 ### 扩展用户和频道字段
 
-向内置的 User 和 Channel 两张表中注入字段的方式如下：
+向内置的 User 表中注入字段的方式如下：
 
+::: code-group language
 ```js
 const { User } = require('koishi-core')
 
 // 向用户数据库中注入字段 foo，默认值为 'bar'
 User.extend(() => ({ foo: 'bar' }))
 ```
-
-如果你是 TypeScript 用户，你可能还需要进行定义合并：
-
-```js
+```ts
 import { User } from 'koishi-core'
 
+// TypeScript 用户需要进行类型合并
 declare module 'koishi-core' {
   interface User {
     foo: string
   }
 }
 
+// 向用户数据库中注入字段 foo，默认值为 'bar'
 User.extend(() => ({ foo: 'bar' }))
 ```
+:::
 
-### 扩展方法和表实现
+如果你是插件开发者，你还需要手动处理 MySQL 字段的定义：
+
+::: code-group language
+```js
+const { Database } = require('koishi-core')
+
+Database.extend('koishi-plugin-mysql', ({ tables }) => {
+  tables.user.foo = 'varchar(100)' // MySQL 类型
+})
+```
+```ts
+import { Database } from 'koishi-core'
+
+// 引入 koishi-plugin-mysql 的类型定义
+// 如果你是插件开发者，你应该将 koishi-plugin-mysql 作为你的 devDep
+// 这行代码不会真正 require 这个依赖，因此即使用户使用的不是 MySQL 也没有关系
+import {} from 'koishi-plugin-mysql'
+
+Database.extend('koishi-plugin-mysql', ({ tables }) => {
+  tables.user.foo = 'varchar(100)' // MySQL 类型
+})
+```
+:::
+
+向 Channel 注入字段同理。
+
+::: tip
+#### 为什么 MySQL 需要编写两份代码
+
+看起来这是不必要的重复，但其实不然。`User.extend()` 定义的是用户表中各列的**默认值**，而 `Database.extend()` 定义的是数据库的**字段类型**，会被用于自动建表和补全字段。换句话说，如果你已经手动建好表了，那么你确实不需要编写后面的额外代码。但是反过来，如果你是插件开发者，你的用户很可能不知道这个插件需要哪些用户字段，因此这样的写法可以在用户安装插件的时候就自动创建字段。
+:::
+
+## 使用 ORM API
+
+Koishi 设计了一套对象关系映射（ORM）接口，它易于扩展并广泛地运用于各种插件中。
+
+### 获取和删除数据
+
+使用 `database.get()` 方法以获取特定表中的数据。下面是一个最基本的形式：
+
+```js
+// 获取 schedule 表中 id 为 1234 或 5678 的数据行，返回一个数组
+const rows = await ctx.database.get('schedule', [1234, 5678])
+```
+
+对于复杂的数据表，如果你只需要获取少数字段，你可以通过第三个参数手动指定要获取的字段：
+
+```js
+// 返回的数组中每个元素只会包含 command, lastCall 属性
+const rows = await ctx.database.get('schedule', [1234], ['command', 'lastCall'])
+```
+
+你还可以向第二个参数传入一个对象，用来查询非主键上的数据或者同时指定多列的值：
+
+```js
+// 获取名为 schedule 的表中 assignee 为 onebot:123456 的数据行
+const rows = await ctx.database.get('schedule', { assignee: ['onebot:123456'] })
+```
+
+删除数据的语法与获取数据类似：
+
+```js
+// 从 schedule 表中删除特定 id 的数据行
+// 第二个参数也可以使用上面介绍的对象语法
+await ctx.database.remove('schedule', [id])
+```
+
+### 添加和修改数据
+
+除了获取和删除数据，常用的需求还有添加和修改数据。
+
+```js
+// 向 schedule 表中添加一行数据，data 是要添加的数据行
+// 返回值是添加的行的完整数据（包括自动生成的 id 和默认属性等）
+await ctx.database.create('schedule', row)
+```
+
+修改数据的逻辑稍微有些不同，需要你传入一个数组：
+
+```js
+// 用 rows 来对数据进行更新，你需要确保每一个元素都拥有 id 属性
+// 修改时只会用 rows 中出现的键进行覆盖，不会影响未记录在 data 中的字段
+await ctx.database.update('schedule', rows)
+```
+
+如果想以非主键来索引要修改的数据，可以使用第三个参数：
+
+```js
+// 用 rows 来对数据进行更新，你需要确保每一个元素都拥有 onebot 属性
+await ctx.database.update('user', rows, 'onebot')
+```
+
+### 定义数据表
+
+以上面的 schedule 数据表为例，让我们看看如何定义新的数据表：
+
+::: code-group language
+```js
+const { Tables } = require('koishi-core')
+
+Tables.extend('schedule')
+```
+```ts
+import { Tables } from 'koishi-core'
+
+declare module 'koishi-core' {
+  interface Tables {
+    schedule: Schedule
+  }
+}
+
+export interface Schedule {
+  id: number
+  assignee: string
+  lastCall: Date
+  command: string
+}
+
+Tables.extend('schedule')
+```
+:::
+
+这个方法还可以传入第二个参数，用于配置数据表：
+
+```js
+Tables.extend('schedule', {
+  // 主键名称，将用于 database.get() 等方法
+  primary: 'id',
+  // 所有数据值唯一的字段名称构成的列表
+  unique: [],
+  // 主键产生的方式，incremental 表示自增
+  type: 'incremental',
+})
+```
+
+与上面一致，如果你是插件开发者，你还需要手动处理 MySQL 字段的定义：
+
+::: code-group language
+```js
+const { Database } = require('koishi-core')
+
+Database.extend('koishi-plugin-mysql', ({ tables }) => {
+  tables.schedule = {
+    id: 'int',
+    assignee: 'varchar(50)',
+    // 其他字段定义
+  }
+})
+```
+```ts
+import { Database } from 'koishi-core'
+import {} from 'koishi-plugin-mysql'
+
+Database.extend('koishi-plugin-mysql', ({ tables }) => {
+  tables.schedule = {
+    id: 'int',
+    assignee: 'varchar(50)',
+    // 其他字段定义
+  }
+})
+```
+:::
+
+## 扩展数据库
+
+由于 Koishi 的数据库实现使用了注入策略，因此无论是字段，表，方法还是数据库都是可以扩展的。
+
+### 扩展数据库方法
 
 要添加新的数据库方法，只需调用 `Database.extend()`：
 
+::: code-group language
 ```js
 const { Database } = require('koishi-core')
 
@@ -144,7 +286,7 @@ const { Database } = require('koishi-core')
 // 第二个参数表明这次调用注入的是 user 表
 Database.extend('koishi-plugin-mysql', {
   // 要扩展的方法实现
-  createSchedule(...args) {
+  myMethod(...args) {
     // 此时这里的 this 实际上是一个 MysqlDatabase 对象
     return this.query(sql)
   },
@@ -152,41 +294,36 @@ Database.extend('koishi-plugin-mysql', {
 
 ctx.database.myMethod(...args)
 ```
-
-请放心，这么做并不需要你引入 koishi-plugin-mysql 作为插件的依赖。
-
-如果你是 TypeScript 用户，你可能还需要进行定义合并：
-
-```js
+```ts
 // 你应该将 koishi-plugin-mysql 作为插件的 devDependency
 // 这个空的导入在编译中会自然消失，但会提供必要的类型注入
 import {} from 'koishi-plugin-mysql'
 import { Database } from 'koishi-core'
 
-// 导出这张表的接口可以方便别人向这张表注入新的字段
-export interface Schedule {
-  foo: string
-}
-
 declare module 'koishi-core' {
   interface Database {
-    createSchedule(...args): Promise<Schedule>
+    myMethod(...args): Promise<SomeType>
   }
 }
 
+// 第一个参数声明这个方法依赖于 mysql 数据库
+// 第二个参数表明这次调用注入的是 user 表
 Database.extend('koishi-database-mysql', {
-  createSchedule(...args) {
-    // 这里已经可以进行类型推断了
+  myMethod(...args) {
+    // 此时这里的 this 实际上是一个 MysqlDatabase 对象
     return this.query(sql)
   },
 })
 ```
+:::
+
+请放心，这么做并不需要你引入 koishi-plugin-mysql 作为插件的依赖。
 
 ### 编写数据库支持
 
 最后，让我们介绍一下如何编写一个数据库支持。与上面介绍的方法类似，我们也采用注入的方式，不过这次我们需要先实现一个类。我们用 mysql 来举个例子：
 
-对于 TypeScript 的使用者，你可以像这样进行类型合并：
+由于数据库支持往往要被其他插件或用户所使用，有一个好的类型标注是非常重要的。因此这里我们就只提供 TypeScript 的范例了。
 
 ```js
 import { createPool, Pool, PoolConfig } from 'mysql'
@@ -196,7 +333,7 @@ import { Database } from 'koishi-core'
 declare module 'koishi-core' {
   namespace Database {
     interface Statics {
-      // 别忘了加 typeof
+      // 别忘了加 typeof，不然就不对了~
       'koishi-plugin-mysql': typeof MysqlDatabase
     }
   }

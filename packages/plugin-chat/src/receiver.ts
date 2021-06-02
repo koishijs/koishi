@@ -121,12 +121,18 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
       } else if (code.type === 'at') {
         if (code.data.type === 'all') {
           params.abstract += '@全体成员'
+        } else if (code.data.type === 'here') {
+          params.abstract += '@在线成员'
+        } else if (code.data.role) {
+          params.abstract += '@角色组'
         } else if (session.subtype === 'group') {
           const id = `${session.platform}:${code.data.id}`
-          if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
+          if (code.data.name) {
+            userMap[session.uid] = [Promise.resolve(code.data.name), timestamp]
+          } else if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
             userMap[id] = [getUserName(session.bot, session.groupId, code.data.id), timestamp]
           }
-          params.abstract += '@' + await userMap[id][0]
+          params.abstract += '@' + (code.data.name = await userMap[id][0])
         } else {
           params.abstract += '@' + session.bot.username
         }
@@ -138,6 +144,7 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
         params.abstract += `[${segmentTypes[code.type] || '未知'}]`
       }
     }
+    params.content = codes.map(({ type, data }) => segment(type, data)).join('')
   }
 
   async function prepareContent(session: Session, message: Message, timestamp: number) {

@@ -1,14 +1,16 @@
-import { Adapter, App, Context, Logger, noop, omit, pick, Random, remove, Time, User } from 'koishi-core'
+import { Adapter, App, Context, Logger, noop, omit, pick, Random, remove, Time, User, version } from 'koishi-core'
 import { resolve, extname } from 'path'
 import { promises as fs, Stats, createReadStream } from 'fs'
-import { DataSource, Profile, Meta } from './data'
-import { Registry } from './registry'
-import { Statistics } from './stats'
+import Awesome from './payload/awesome'
+import Registry from './payload/registry'
+import Meta from './payload/meta'
+import Profile from './payload/profile'
+import Statistics from './payload/stats'
 import WebSocket from 'ws'
 import type * as Vite from 'vite'
 import type PluginVue from '@vitejs/plugin-vue'
 
-Context.delegate('webui')
+export { Awesome, Registry, Meta, Profile, Statistics }
 
 interface BaseConfig {
   title?: string
@@ -24,6 +26,7 @@ export interface Config extends BaseConfig, Profile.Config, Meta.Config, Registr
 }
 
 export interface ClientConfig extends Required<BaseConfig> {
+  version: string
   database: boolean
   endpoint: string
   extensions: string[]
@@ -72,7 +75,7 @@ export class WebServer extends Adapter {
 
     const { apiPath, uiPath, devMode, selfUrl, title } = config
     const endpoint = selfUrl + apiPath
-    this.global = { title, uiPath, endpoint, devMode, extensions: [], database: false }
+    this.global = { title, uiPath, endpoint, devMode, extensions: [], database: false, version }
     this.root = resolve(__dirname, '..', devMode ? 'client' : 'dist')
 
     this.server = new WebSocket.Server({
@@ -81,6 +84,7 @@ export class WebServer extends Adapter {
     })
 
     this.sources = {
+      awesome: new Awesome(ctx, config),
       profile: new Profile(ctx, config),
       meta: new Meta(ctx, config),
       registry: new Registry(ctx, config),
@@ -244,9 +248,14 @@ export class WebServer extends Adapter {
 }
 
 export namespace WebServer {
+  export interface DataSource<T = any> {
+    get(forced?: boolean): Promise<T>
+  }
+
   export interface Sources extends Record<string, DataSource> {
     meta: Meta
-    stats?: Statistics
+    awesome: Awesome
+    stats: Statistics
     profile: Profile
     registry: Registry
   }
@@ -290,6 +299,13 @@ export namespace WebServer {
     await this.app.database.setUser('name', username, pick(user, ['token', 'expire']))
     this.send('user', omit(user, ['password']))
     this.authority = user.authority
+  }
+
+  listeners.install = async function ({ id, token, name }) {
+    const user = await this.validate(id, token, ['name', 'authority'])
+    if (!user) return
+    if (user.authority < 4) return this.send('unauthorized')
+    this.webui.sources.awesome.install(name)
   }
 
   listeners.switch = async function ({ id, token, plugin }) {

@@ -6,6 +6,7 @@ import WsClient from './ws'
 interface KaiheilaOptions extends Adapter.WsClientOptions {
   path?: string
   endpoint?: string
+  attachMode?: 'separate' | 'card' | 'mixed'
 }
 
 declare module 'koishi-core' {
@@ -26,6 +27,7 @@ declare module 'koishi-core' {
 
 export * from './types'
 export * from './utils'
+export * from './bot'
 
 Adapter.types['kaiheila:http'] = HttpServer
 Adapter.types['kaiheila:ws'] = WsClient

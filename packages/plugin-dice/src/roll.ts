@@ -8,13 +8,14 @@ export interface RollConfig {
 
 export default function apply(ctx: Context, options: RollConfig = {}) {
   const { maxPoint = 1 << 16, maxTimes = 64 } = options
+  const regexp = /^((\d*)d)?(\d+)(\+((\d*)d)?(\d+))*$/i
 
-  ctx.command('tools/roll [expr]', '掷骰')
+  ctx.command('roll [expr]', '掷骰')
     .userFields(['name', 'timers'])
     .shortcut('掷骰', { fuzzy: true })
     .example('roll 2d6+d10')
     .action(async ({ session }, message = '1d6') => {
-      if (!/^((\d*)d)?(\d+)(\+((\d*)d)?(\d+))*$/i.test(message)) return '表达式语法错误。'
+      if (!regexp.test(message)) return '表达式语法错误。'
 
       const expressions = message.split('+')
       let hasMultiple = false
@@ -62,4 +63,12 @@ export default function apply(ctx: Context, options: RollConfig = {}) {
       }
       return output
     })
+
+  ctx.middleware((session, next) => {
+    const { content, prefix } = session.parsed
+    if (!prefix || content[0] !== 'r') return next()
+    const expr = content.slice(1)
+    if (!regexp.test(expr)) return next()
+    return session.execute({ name: 'roll', args: [expr] })
+  })
 }

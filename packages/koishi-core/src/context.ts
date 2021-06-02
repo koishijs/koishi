@@ -48,6 +48,28 @@ export namespace Plugin {
   type From<D extends readonly unknown[]> = D extends readonly [infer L, ...infer R]
     ? [L extends keyof Packages ? Packages[L] : unknown, ...From<R>]
     : []
+
+  export class Registry extends Map<Plugin, State> {
+    resolve(plugin: Plugin) {
+      return plugin && (typeof plugin === 'function' ? plugin : plugin.apply)
+    }
+
+    get(plugin: Plugin) {
+      return super.get(this.resolve(plugin))
+    }
+
+    set(plugin: Plugin, state: State) {
+      return super.set(this.resolve(plugin), state)
+    }
+
+    has(plugin: Plugin) {
+      return super.has(this.resolve(plugin))
+    }
+
+    delete(plugin: Plugin) {
+      return super.delete(this.resolve(plugin))
+    }
+  }
 }
 
 function isBailed(value: any) {
@@ -67,22 +89,22 @@ interface Selector<T> extends PartialSeletor<T> {
   except?: PartialSeletor<T>
 }
 
+export interface Context extends Context.Delegates {}
+
 export class Context {
   static readonly middleware = Symbol('middleware')
   static readonly current = Symbol('source')
 
   protected _bots: Bot[] & Record<string, Bot>
 
-  public database: Database
-  public assets: Assets
-  public router: Router
-
   protected constructor(public filter: Filter, public app?: App, private _plugin: Plugin = null) {}
 
+  private static inspect(plugin: Plugin) {
+    return !plugin ? 'root' : typeof plugin === 'object' && plugin.name || 'anonymous'
+  }
+
   [inspect.custom]() {
-    const plugin = this._plugin
-    const name = !plugin ? 'root' : typeof plugin === 'object' && plugin.name || 'anonymous'
-    return `Context <${name}>`
+    return `Context <${Context.inspect(this._plugin)}>`
   }
 
   private createSelector<K extends keyof Session>(key: K) {
@@ -202,7 +224,7 @@ export class Context {
     if (options === true) options = undefined
 
     if (this.app.registry.has(plugin)) {
-      this.logger('app').warn(new Error('duplicate plugin detected'))
+      this.logger('app').warn(new Error(`duplicate plugin <${Context.inspect(plugin)}> detected`))
       return this
     }
 
@@ -481,7 +503,14 @@ export class Context {
     const [content, forced] = args as [string, boolean]
     if (!content) return []
 
-    const data = await this.database.getAssignedChannels(['id', 'assignee', 'flag'])
+    const data = this.database
+      ? await this.database.getAssignedChannels(['id', 'assignee', 'flag'])
+      : channels.map((id) => {
+        const [type] = id.split(':')
+        const bot = this.getBot(type as never)
+        return bot && { id, assignee: bot.selfId, flag: 0 }
+      }).filter(Boolean)
+
     const assignMap: Record<string, Record<string, string[]>> = {}
     for (const { id, assignee, flag } of data) {
       if (channels && !channels.includes(id)) continue
@@ -526,6 +555,14 @@ Context.delegate('database')
 Context.delegate('assets')
 Context.delegate('router')
 
+export namespace Context {
+  export interface Delegates {
+    database: Database
+    assets: Assets
+    router: Router
+  }
+}
+
 type FlattenEvents<T> = {
   [K in keyof T & string]: K | `${K}/${FlattenEvents<T[K]>}`
 }[keyof T & string]
@@ -538,17 +575,19 @@ type SessionEventMap = {
     : (session: Session.Payload<K>) => void
 }
 
+type DelegateEventMap = {
+  [K in keyof Context.Delegates as `delegate/${K}`]: () => void
+}
+
 type EventName = keyof EventMap
 type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
 type BeforeEventName = OmitSubstring<EventName & string, 'before-'>
 type BeforeEventMap = { [E in EventName & string as OmitSubstring<E, 'before-'>]: EventMap[E] }
 
-export interface EventMap extends SessionEventMap {
+export interface EventMap extends SessionEventMap, DelegateEventMap {
   [Context.middleware]: Middleware
 
   // Koishi events
-  'delegate/assets'(): void
-  'delegate/database'(): void
   'appellation'(name: string, session: Session): string
   'before-parse'(content: string, session: Session): Argv
   'parse'(argv: Argv, session: Session): string
@@ -576,7 +615,7 @@ const register = Router.prototype.register
 Router.prototype.register = function (this: Router, ...args) {
   const layer = register.apply(this, args)
   const context: Context = this[Context.current]
-  context.state.disposables.push(() => {
+  context?.state.disposables.push(() => {
     remove(this.stack, layer)
   })
   return layer

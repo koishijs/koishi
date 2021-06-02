@@ -51,6 +51,17 @@ sidebarDepth: 2
 
 要请求的 API 网址。
 
+### options.kaiheila.attachMode
+
+- 类型: `'separate' | 'mixed' | 'card'`
+- 默认值: `'separate'`
+
+控制当尝试发送含有[资源消息段](../segment.md#资源消息段)的消息时的行为。
+
+- **separate:** 每一个资源消息段，以及资源消息段之间的文本都将单独发送一条消息
+- **mixed:** 当要发送的内容中含有多个资源消息段或资源消息段和文本的混合时，发送卡片消息；否则将单独发送资源消息段
+- **card:** 当要发送的内容中含有资源消息段，则以卡片消息的形式发送
+
 ### options.kaiheila.axiosConfig
 
 - 类型: [`AxiosRequestConfig`](https://github.com/axios/axios#request-config)

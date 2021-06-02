@@ -1,5 +1,5 @@
-import { Context, Channel, noop, Session, Logger, Bot, Platform, Time } from 'koishi-core'
-import { DataSource } from './data'
+import { Context, Channel, noop, Session, Bot, Platform, Time } from 'koishi-core'
+import {} from 'koishi'
 
 export type StatRecord = Record<string, number>
 
@@ -39,7 +39,6 @@ export namespace Synchronizer {
 }
 
 export const RECENT_LENGTH = 5
-export const REFRESH_INTERVAL = 60000
 
 export function average(stats: {}[]) {
   const result: StatRecord = {}
@@ -74,7 +73,7 @@ Session.prototype.send = function (this: Session, ...args) {
 const customTag = Symbol('custom-send')
 Session.prototype.send[customTag] = send
 
-export class Statistics implements DataSource<Statistics.Payload> {
+class Statistics {
   sync: Synchronizer
   lastUpdate = new Date()
   updateHour = this.lastUpdate.getHours()
@@ -84,22 +83,7 @@ export class Statistics implements DataSource<Statistics.Payload> {
   average = average
 
   constructor(private ctx: Context, public config: Statistics.Config = {}) {
-    if (config.handleSignals !== false) {
-      const handleSignal = (signal: NodeJS.Signals) => {
-        new Logger('app').info(`terminated by ${signal}`)
-        this.upload(true).finally(() => process.exit())
-      }
-
-      ctx.on('connect', () => {
-        process.on('SIGINT', handleSignal)
-        process.on('SIGTERM', handleSignal)
-      })
-
-      ctx.before('disconnect', async () => {
-        process.off('SIGINT', handleSignal)
-        process.off('SIGTERM', handleSignal)
-      })
-    }
+    ctx.on('exit', () => this.upload(true))
 
     ctx.on('delegate/database', () => {
       this.sync = ctx.database.createSynchronizer()
@@ -151,7 +135,7 @@ export class Statistics implements DataSource<Statistics.Payload> {
   async upload(forced = false) {
     const date = new Date()
     const dateHour = date.getHours()
-    if (forced || +date - +this.lastUpdate > REFRESH_INTERVAL || dateHour !== this.updateHour) {
+    if (forced || +date - +this.lastUpdate > this.config.statsInternal || dateHour !== this.updateHour) {
       this.lastUpdate = date
       this.updateHour = dateHour
       await this.sync?.upload(date)
@@ -201,7 +185,7 @@ export class Statistics implements DataSource<Statistics.Payload> {
           platform,
           assignee,
           value: messageMap[id],
-          last: data.daily[0].group[id],
+          last: data.daily[0].group[id] || 0,
         })
       }
     }
@@ -216,7 +200,7 @@ export class Statistics implements DataSource<Statistics.Payload> {
           platform,
           name: name || key,
           value: messageMap[key],
-          last: data.daily[0].group[key],
+          last: data.daily[0].group[key] || 0,
           assignee: this.ctx.bots[`${platform}:${assignee}`]?.selfId || '',
         })
       }
@@ -244,7 +228,7 @@ export class Statistics implements DataSource<Statistics.Payload> {
   }
 }
 
-export namespace Statistics {
+namespace Statistics {
   export interface Payload {
     history: StatRecord
     commands: StatRecord
@@ -255,8 +239,10 @@ export namespace Statistics {
   }
 
   export interface Config {
-    handleSignals?: boolean
+    statsInternal?: number
   }
 
   export type Extension = (payload: Payload, data: Synchronizer.Data) => Promise<void>
 }
+
+export default Statistics

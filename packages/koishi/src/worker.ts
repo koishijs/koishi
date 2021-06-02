@@ -1,6 +1,6 @@
 import { App, BotOptions, Context, Plugin, version } from 'koishi-core'
 import { resolve, relative, extname, dirname } from 'path'
-import { coerce, Logger, noop, LogLevelConfig, makeArray } from 'koishi-utils'
+import { coerce, Logger, noop, LogLevelConfig, makeArray, template } from 'koishi-utils'
 import { readFileSync, readdirSync } from 'fs'
 import { performance } from 'perf_hooks'
 import { yellow } from 'kleur'
@@ -45,7 +45,12 @@ function isErrorModule(error: any) {
   return error.code !== 'MODULE_NOT_FOUND' || error.requireStack && error.requireStack[0] !== __filename
 }
 
+const cache: Record<string, [string, any]> = {}
+
 function loadEcosystem(type: string, name: string) {
+  const key = `${type}:${name}`
+  if (key in cache) return cache[key]
+
   const prefix = `koishi-${type}-`
   const modules: string[] = []
   if ('./'.includes(name[0])) {
@@ -68,7 +73,7 @@ function loadEcosystem(type: string, name: string) {
     try {
       const result = require(path)
       logger.info('apply %s %c', type, result.name || name)
-      return [path, result]
+      return cache[key] = [path, result]
     } catch (error) {
       if (isErrorModule(error)) {
         throw error
@@ -113,14 +118,14 @@ if (process.env.KOISHI_DEBUG) {
 
 interface Message {
   type: 'send'
-  payload: any
+  body: any
 }
 
 process.on('message', (data: Message) => {
   if (data.type === 'send') {
-    const { channelId, sid, message } = data.payload
+    const { channelId, groupId, sid, message } = data.body
     const bot = app.bots[sid]
-    bot.sendMessage(channelId, message)
+    bot.sendMessage(channelId, message, groupId)
   }
 })
 
@@ -138,18 +143,32 @@ if (config.type) {
 
 const app = new App(config)
 
-app.command('exit', '停止机器人运行', { authority: 4 })
+const { exitCommand, autoRestart = true } = config.deamon || {}
+
+const handleSignal = (signal: NodeJS.Signals) => {
+  new Logger('app').info(`terminated by ${signal}`)
+  app.parallel('exit', signal).finally(() => process.exit())
+}
+
+template.set('deamon', {
+  exiting: '正在关机……',
+  restarting: '正在重启……',
+  restarted: '已成功重启。',
+})
+
+exitCommand && app
+  .command(exitCommand === true ? 'exit' : exitCommand, '停止机器人运行', { authority: 4 })
   .option('restart', '-r  重新启动')
   .shortcut('关机', { prefix: true })
   .shortcut('重启', { prefix: true, options: { restart: true } })
   .action(async ({ options, session }) => {
-    const { channelId, sid } = session
+    const { channelId, groupId, sid } = session
     if (!options.restart) {
-      await session.send('正在关机……').catch(noop)
+      await session.send(template('deamon.exiting')).catch(noop)
       process.exit()
     }
-    process.send({ type: 'exit', payload: { channelId, sid, message: '已成功重启。' } })
-    await session.send(`正在重启……`).catch(noop)
+    process.send({ type: 'queue', body: { channelId, groupId, sid, message: template('deamon.restarted') } })
+    await session.send(template('deamon.restarting')).catch(noop)
     process.exit(114)
   })
 
@@ -224,8 +243,11 @@ app.start().then(() => {
   Logger.timestamp = Date.now()
   Logger.showDiff = config.logDiff ?? !Logger.showTime
 
-  process.send({ type: 'start' })
+  process.send({ type: 'start', body: { autoRestart } })
   createWatcher()
+
+  process.on('SIGINT', handleSignal)
+  process.on('SIGTERM', handleSignal)
 }, handleException)
 
 function loadDependencies(filename: string, ignored: Set<string>) {
@@ -275,7 +297,7 @@ function createWatcher() {
 
   function flushChanges() {
     const tasks: Promise<void>[] = []
-    const reloads: [filename: string, state: Plugin.State][] = []
+    const reloads = new Map<Plugin.State, string>()
 
     /**
      * files X that should be reloaded
@@ -293,12 +315,15 @@ function createWatcher() {
      * - file X -> none of change D
      */
     const declined = new Set(externals)
+    const visited = new Set<string>()
 
     function traverse(filename: string) {
-      if (externals.has(filename) || filename.includes('/node_modules/')) return
+      if (declined.has(filename) || filename.includes('/node_modules/')) return
+      visited.add(filename)
       const { children } = require.cache[filename]
       let isActive = stashed.has(filename)
       for (const module of children) {
+        if (visited.has(filename)) continue
         if (traverse(module.filename)) {
           stashed.add(filename)
           isActive = true
@@ -328,11 +353,15 @@ function createWatcher() {
       }
 
       // dispose installed plugin
-      const displayName = plugin.name || relative(watchRoot, filename)
-      reloads.push([filename, state])
       tasks.push(app.dispose(plugin).catch((err) => {
+        const displayName = plugin.name || relative(watchRoot, filename)
         logger.warn('failed to dispose plugin %c\n' + coerce(err), displayName)
       }))
+
+      // prepare for reload
+      let ancestor = state, isMarked = false
+      while ((ancestor = ancestor.parent) && !(isMarked = reloads.has(ancestor)));
+      if (!isMarked) reloads.set(state, filename)
     }
 
     stashed = new Set()
@@ -344,7 +373,7 @@ function createWatcher() {
       })
 
       // reload all dependent plugins
-      for (const [filename, state] of reloads) {
+      for (const [state, filename] of reloads) {
         try {
           const plugin = require(filename)
           state.context.plugin(plugin, state.config)

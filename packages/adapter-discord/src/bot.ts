@@ -115,7 +115,7 @@ export class DiscordBot extends Bot<'discord'> {
         }
         if (type === 'image' || type === 'video' && data.url) {
           if (data.url.startsWith('file://')) {
-            const r = await this.sendEmbedMessage(requestUrl, readFileSync(data.url.slice(7)), {
+            const r = await this.sendEmbedMessage(requestUrl, readFileSync(data.url.slice(8)), {
               ...addition,
             })
             sentMessageId = r.id
@@ -145,8 +145,8 @@ export class DiscordBot extends Bot<'discord'> {
     return sentMessageId
   }
 
-  async sendMessage(channelId: string, content: string) {
-    const session = this.createSession({ channelId, content })
+  async sendMessage(channelId: string, content: string, groupId?: string) {
+    const session = this.createSession({ channelId, content, groupId, subtype: groupId ? 'group' : 'private' })
     if (await this.app.serial(session, 'before-send', session)) return
 
     const chain = segment.parse(session.content)
@@ -155,10 +155,10 @@ export class DiscordBot extends Bot<'discord'> {
       message_id: quote,
     } : undefined
 
-    const sentMessageId = await this.sendFullMessage(`/channels/${channelId}/messages`, session.content, { message_reference })
+    session.messageId = await this.sendFullMessage(`/channels/${channelId}/messages`, session.content, { message_reference })
 
     this.app.emit(session, 'send', session)
-    return session.messageId = sentMessageId
+    return session.messageId
   }
 
   async deleteMessage(channelId: string, messageId: string) {
@@ -181,11 +181,14 @@ export class DiscordBot extends Bot<'discord'> {
   }
 
   async getMessage(channelId: string, messageId: string): Promise<MessageInfo> {
-    const msg = await this.$getMessage(channelId, messageId)
+    const [msg, channel] = await Promise.all([
+      this.$getMessage(channelId, messageId),
+      this.$getChannel(channelId),
+    ])
     const result: MessageInfo = {
       messageId: msg.id,
       channelId: msg.channel_id,
-      groupId: msg.guild_id,
+      groupId: channel.guild_id,
       userId: msg.author.id,
       content: msg.content,
       timestamp: new Date(msg.timestamp).valueOf(),

@@ -1,9 +1,104 @@
 ---
 sidebarDepth: 1
-noOutboundLinks: true
+externalIcon: false
 ---
 
 # v3 更新日志
+
+## [Koishi 3.11.2](https://github.com/koishijs/koishi/releases/tag/3.11.2)
+
+### Features
+
+- **cli:** 加入了模块缓存以获得更快的加载速度 (=5f1860ccdd0216d68221d482f12b7b64a11047c2)
+- **core:** 支持了在无数据库情况下使用 `ctx.broadcast()` (=cfca0798bda7cad913966a338b83c8ae3d39ec70)
+- **dice:** 支持了经典的 rxdy 掷骰语法 (=8a5f9152a9169e930fe2d492f0d099e4268f1a5d)
+- **kaiheila:** 支持了 markdown 消息段 (=f7d9dca5b83bf4ed0d4386b60b74cf22e2db434e)
+
+### Bug Fixes
+
+- **cli:** 修复了生成的配置文件中，含有特殊字符的插件名没有引号的问题 (#275) (=2badfdfb645f7d5f6d10d1fa3e8ed27bf8d0fd12)
+- **cli:** 修复了当一个插件含有文件级命名子插件时，子插件重载可能失败的问题 (=3a0d25d372e966c1e1124615c17ea08caad301c0)
+- **github:** 支持了 request review from team (=b60c8903f6b2de3bc7caaffe107628ae560eb862)
+- **webui:** 补全了缺失的依赖库 (#277) (=4053909020a8d1827b2d8b6bee39bb4068aaf68c)
+
+## [Koishi 3.11.1](https://github.com/koishijs/koishi/releases/tag/3.11.1)
+
+### Notable Changes
+
+- koishi-plugin-webui 新增了插件市场视图
+
+### Features
+
+- **webui:** 新增了插件市场视图 (=b2604777c6a3d9be194f60ca8dbc45aa9d05b244, =5913209cb61ba8ad4a5074f5c1860e6b299f2a62, =54bd7633884736ce6eadfd7ff899f53e9050407a, =983c374e6e8389a567de948885cc968a76e5a56f, =23274905df657c20b92c93d60c97bb708c10364e, =b7eff39add979c091e3a7a89d0afb1f63fd37602)
+
+### Bug Fixes
+
+- **core:** 修复了由于 esbuild 导致的插件不一致问题 (=398ad5bd3f882a2922293afff8b0b5dc72ec9969)
+- **adventure:** 修复了重复计算结局达成次数的问题 (=dfd683c5c9a488157010c8c20f26e7b792134431)
+- **cli:** 修复了成功启动前 SIGINT/SIGTERM 无效的问题 (=632dc6156febb0a613b0c2dcd1c84a7e4d3e6ffb)
+- **adventure:** 修复了 ending 指令查看剧情线失效的问题 (=4d77b86af6d3e00ea063b9ffdec2862423ef0fe0)
+- **adventure:** 修复了 show 指令直接调用时参数丢失的问题 (e87ac4dc619a1d889534ece2c625fe89fac57802)
+
+## [Koishi 3.11.0](https://github.com/koishijs/koishi/releases/tag/3.11.0)
+
+### Notable Changes
+
+- koishi-test-utils@6.0.0 正式发布
+- koishi 配置文件新增了 deamon 配置项，用于定制监控进程的行为
+
+### Features
+
+- **adapter:** 为部分平台支持了 at 消息段的 `name` 属性 (=142597470f5034738018fe9fbe82bcabf7745266, =bf3721c4d91bfdb5c586a937ec40c96a0ba82bc0, =824874c2b96225638632793d905c7ae4508bb3f3)
+- **chat:** 支持了 QQ 系统内置表情包 (=eb7f7a90c23c9e84ef8b86faaf16bf306090ac14)
+- **chat:** 支持了 @用户名 的显示 (=8b667ba61a1bf2cafa2f2f0b580bd52eac1361af)
+- **cli:** 新增了 `deamon` 配置项 (=46be1006b648393f91dfacfd4a969a2fd2346a5f)
+- **cli:** 支持了 exit 指令的输出内容模板 (=8880c863313657dddd7c1a1a9f03a342ac5fdb84)
+- **cli:** 新增了 exit 事件，用于处理接收到 SIGINT 时的行为 (=3ca3f728875d306304870891eea712e0a41744ac)
+- **core:** 每一个 `Context.delegate()` 注册的属性都有对应的事件了 (=3dd372dbd161cbe57d839d3177cfb4ea12dc6895)
+- **onebot:** 支持了 `session.author.roles` 属性 (=aef0404018071ec2fd7a29cdb93d80012bcacaed)
+
+### Bug Fixes
+
+- **adapter:** 修复了部分平台无法发送本地图片的问题 (#266) (=409dcbc7108b6906adb62dc69081d3ec63c6d727)
+- **chess:** 修复了图片发送失败和自动检测环境中存在的问题 (#263) (=0e9b724cb7b93566469fbe2eb1052235afc9f5d8)
+- **common:** 修复了无法使用 echo 指令发送跨平台消息的问题 (#264) (=5b56651ec5cde3d4131a7ce1bcd58bd3041aaa1f)
+- **test-utils:** 移除了错误的 `mockedApp.start()` 方法 (=5d1023aef7c85d91535f541f5cd18e92aa757457)
+
+## [Koishi 3.10.2](https://github.com/koishijs/koishi/releases/tag/3.10.2)
+
+### Features
+
+- **chat:** 优化了 at 消息段的处理 (=d80af91267986e1455c1f52998248c2d460c5a3c)
+- **common:** assign 指令支持了 -T 选项，用于取消频道代理者 (=40afea00a027b62b2a5e51375c7036a75309d5f2)
+- **core:** 支持了函数类型的 `app.options.prefix` (=578008098031fc7942a074e907d8c9ca8601a46b)
+- **discord:** 为 at, sharp 消息段添加了 name 属性 (=43a23cae0c096d257dcd4aa944455d16215956c2)
+- **kaiheila:** 导出了 `KaiheilaBot` 构造函数 (#258) (=8fb118e57b8bfafda1711e2b50a7cb9cdd5c6dc6)
+- **puppeteer:** 使用 inline-block 布局以获得更好的截图区域 (=8f3c98dd7bcbf4ab41289db025894d228f9f438b)
+- **webui:** 将自动删除距今过于遥远的统计数据 (=767853efadae08db3c1ba06fe4daedc085ee3e20)
+- **webui:** 新增了指令调用频率的统计图表 (#252) (=4d5d87a533e02ecab5f573247f4732ae40156feb)
+
+### Bug Fixes
+
+- **common:** 修复了错误的类型标注 (#254) (=ab64feec34f59aab3a21f25409d089398604d41b)
+- **discord:** 修复了 message-deleted 事件缺少 `id` 属性的问题 (#251) (=bbd8d6c3e9684ddb3bc6ca2e71ab839c7b1d6aa3)
+- **webui:** 修复了群聊消息频率统计图表当鼠标悬浮时出现报错的问题 (=361ea7c145b1e247f30fed394511a9c4e0756c9b)
+
+## [Koishi 3.10.1](https://github.com/koishijs/koishi/releases/tag/3.10.1)
+
+### Features
+
+- **cli:** 优化了 koishi init 时可供选择的插件列表 (=a9b7000ac6c2da383bb3fe679cc84f78be2f5f1b)
+- **kaiheila:** 新增了 `kaiheila.attachMode` 配置项 (=7bc59993f59bea5e2b4d3e751965fa58e4c85d58)
+- **github:** 新增了 github.issue 和 github.star 指令 (=104841c9be749ade6c44dab6bcc59d5d4e32a596)
+- **webui:** 将「机器人」页面合并入「仪表盘」页面 (=d70fdcff63690ae4ec0e3afb8d2c57c4f08d8652)
+
+### Bug Fixes
+
+- **cli:** 修复了插件热重载功能将小概率触发调用爆栈的问题 (=45690007150441cbb568f85049395085756a301e)
+- **discord:** 修复了不符合规范的 `user.avatar` (=14c92ca96723f7f96ebda93e20f7c5ce8436d9b1)
+- **discord:** 修复了 `bot.getMessage()` 返回值缺少 `groupId` 的问题 (=c5a012437744e396d500d67a3996fc5d9dfc2c3c)
+- **image-search:** 修复了消息段错误导致在部分平台上无法发送的问题 (=ff82bd60fa2959f5387d71d84028e046a04f93aa)
+- **webui:** 修复了配合 MySQL 使用时小概率上传数据失败的问题 (#248) (=2a0bbfb2d53520ba14a9014e9015f511a5d92d24)
 
 ## [Koishi 3.10.0](https://github.com/koishijs/koishi/releases/tag/3.10.0)
 
