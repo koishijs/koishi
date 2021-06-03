@@ -3,7 +3,6 @@ import { parentPort, workerData } from 'worker_threads'
 import { InspectOptions, formatWithOptions } from 'util'
 import { findSourceMap } from 'module'
 import { resolve, dirname, sep } from 'path'
-import { deserialize, serialize } from 'v8'
 
 /* eslint-disable import/first */
 
@@ -20,7 +19,7 @@ export const config: WorkerData = {
   },
 }
 
-import prepare, { synthetize, readSerialized, safeWriteFile, LoaderConfig } from './loader'
+import prepare, { synthetize, LoaderConfig, system } from './loader'
 import { expose, wrap } from '../transfer'
 import { Sandbox } from './sandbox'
 import { MainHandle } from '..'
@@ -29,6 +28,7 @@ export * from './loader'
 
 export interface WorkerConfig {
   root?: string
+  serializer?: 'yaml' | 'v8'
   moduleLoaders?: Record<string, string>
   inspect?: InspectOptions
   cacheFile?: string
@@ -155,10 +155,10 @@ export class WorkerHandle {
     await scope.user?._update()
     await scope.channel?._update()
     try {
-      const buffer = serialize(scope.storage)
-      await safeWriteFile(storagePath, backupStorage = buffer)
+      const buffer = system.serialize(scope.storage)
+      await system.write(storagePath, backupStorage = buffer)
     } catch (error) {
-      storage = deserialize(backupStorage)
+      storage = system.deserialize(backupStorage)
       throw error
     }
   }
@@ -221,12 +221,13 @@ export function mapDirectory(identifier: string, filename: string) {
 Object.values(config.setupFiles).map(require)
 
 async function start() {
-  const data = await Promise.all([readSerialized(storagePath), prepare()])
-  storage = data[0][0]
-  backupStorage = data[0][1]
-  if (!storage) {
+  const [data] = await Promise.all([system.read(storagePath), prepare()])
+  if (data) {
+    storage = data[0]
+    backupStorage = data[1]
+  } else {
     storage = {}
-    backupStorage = serialize({})
+    backupStorage = system.serialize({})
   }
 
   response.commands = Object.keys(commandMap)

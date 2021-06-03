@@ -65,7 +65,7 @@ const defaultConfig: EvalConfig = {
   scriptLoader: 'default',
   channelFields: ['id'],
   userFields: ['id', 'authority'],
-  dataKeys: ['inspect', 'moduleLoaders', 'setupFiles', 'loaderConfig'],
+  dataKeys: ['inspect', 'moduleLoaders', 'setupFiles', 'loaderConfig', 'serializer'],
 }
 
 const logger = new Logger('eval')
