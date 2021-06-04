@@ -94,7 +94,7 @@ export function apply(ctx: Context, config: Config = {}) {
   // worker should be running for all the features
   ctx = ctx.intersect(() => ctx.worker?.state === EvalWorker.State.open)
 
-  const command = ctx.command('evaluate [expr:text]', '执行 JavaScript 脚本', { noEval: true })
+  const command = ctx.command('evaluate [expr:rawtext]', '执行 JavaScript 脚本', { noEval: true })
     .alias('eval')
     .userFields(['authority'])
     .option('slient', '-s  不输出最后的结果')
@@ -113,7 +113,7 @@ export function apply(ctx: Context, config: Config = {}) {
     if (!expr) return '请输入要执行的脚本。'
 
     try {
-      expr = await ctx.worker.loader.transformScript(segment.unescape(expr))
+      expr = await ctx.worker.loader.transformScript(expr)
     } catch (err) {
       return err.message
     }
