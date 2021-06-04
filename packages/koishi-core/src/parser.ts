@@ -159,6 +159,7 @@ export namespace Argv {
     number: number
     boolean: boolean
     text: string
+    rawtext: string
     user: string
     channel: string
     integer: number
@@ -206,6 +207,15 @@ export namespace Argv {
 
   export type Transform<T> = (source: string, session: Session) => T
 
+  export interface DomainConfig<T> {
+    transform?: Transform<T>
+    greedy?: boolean
+  }
+
+  function resolveConfig(type: Type) {
+    return typeof type === 'string' ? builtin[type] || {} : {}
+  }
+
   function resolveType(type: Type) {
     if (typeof type === 'function') return type
     if (type instanceof RegExp) {
@@ -214,17 +224,19 @@ export namespace Argv {
         throw new Error()
       }
     }
-    return builtin[type]
+    return builtin[type]?.transform
   }
 
-  const builtin: Record<string, Transform<any>> = {}
+  const builtin: Record<string, DomainConfig<any>> = {}
 
-  export function createDomain<K extends keyof Domain>(name: K, callback: Transform<Domain[K]>) {
-    builtin[name] = callback
+  export function createDomain<K extends keyof Domain>(name: K, transform: Transform<Domain[K]>, options?: DomainConfig<Domain[K]>) {
+    builtin[name] = { ...options, transform }
   }
 
+  createDomain('rawtext', source => source)
   createDomain('string', source => source)
-  createDomain('text', source => source)
+  createDomain('text', source => source, { greedy: true })
+  createDomain('rawtext', source => segment.unescape(source), { greedy: true })
   createDomain('boolean', () => true)
 
   createDomain('number', (source) => {
@@ -460,7 +472,7 @@ export namespace Argv {
 
         // greedy argument
         const argDecl = this._arguments[args.length]
-        if (content[0] !== '-' && argDecl?.type === 'text') {
+        if (content[0] !== '-' && resolveConfig(argDecl?.type).greedy) {
           args.push(Argv.stringify(argv))
           break
         }
@@ -507,7 +519,7 @@ export namespace Argv {
         quoted = false
         if (!param) {
           const { type } = option || {}
-          if (type === 'text') {
+          if (resolveConfig(type).greedy) {
             param = Argv.stringify(argv)
             quoted = true
             argv.tokens = []
