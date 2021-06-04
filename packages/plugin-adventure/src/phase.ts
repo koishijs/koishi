@@ -117,7 +117,6 @@ export namespace Phase {
     for (const id in map) {
       const name = `${prefix}-${id}`
       endingMap[name] = map[id]
-      endingCount[name] = new Set()
       Show.redirect(map[id], 'ending', checkEnding)
       reversedEndingMap[map[id]] = name
       if (bad.includes(id)) {
@@ -427,7 +426,7 @@ export namespace Phase {
           return output.join('\n')
         }
 
-        const output = Object.keys(storyMap).sort().map((key) => {
+        const output = Object.keys(storyMap).filter(key => lines[key]).sort().map((key) => {
           const { length } = storyMap[key]
           let output = `${lines[key][0]} (${length}/${lines[key][1]})`
           if (length) output += '：' + storyMap[key].join('，')
@@ -568,11 +567,11 @@ export namespace Phase {
       })
 
     ctx.on('connect', async () => {
-      if (!Object.keys(endingCount).length) return
-      const data = await ctx.database.mysql.query<Pick<User, 'id' | 'endings'>[]>('select id, endings from user where json_length(endings)')
-      for (const { id, endings } of data) {
+      const data = await ctx.database.mysql.query<Pick<User, 'id' | 'flag' | 'endings'>[]>('select id, flag, endings from user where json_length(endings)')
+      for (const { id, flag, endings } of data) {
+        if (flag & User.Flag.noLeading) continue
         for (const name in endings) {
-          endingCount[name]?.add(id)
+          (endingCount[name] ||= new Set()).add(id)
         }
       }
     })
