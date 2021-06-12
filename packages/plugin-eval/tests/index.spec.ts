@@ -41,7 +41,7 @@ describe('Eval Plugin', () => {
   it('error', async () => {
     await ses.shouldReply('> throw 1', 'Uncaught: 1')
     await ses.shouldReply('> foo', 'ReferenceError: foo is not defined\n    at stdin:1:1')
-    await ses.shouldReply('> 1f', 'SyntaxError: Invalid or unexpected token\n    at stdin:1:1')
+    await ses.shouldReply('> 1f', /^SyntaxError/)
   })
 
   it('exec', async () => {

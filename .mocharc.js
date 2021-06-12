@@ -41,5 +41,6 @@ function getSpecFromArgv() {
 
 module.exports = {
   exit: true,
+  timeout: 5000,
   spec: getSpecFromArgv(),
 }

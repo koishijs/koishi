@@ -23,6 +23,7 @@ export function transformScript(expr: string) {
     return expr
   } catch (e) {
     if (!(e instanceof SyntaxError)) throw new Error('unknown error encounted')
+    if (e.stack.startsWith('SyntaxError')) return e.stack.split('\n', 1)[0]
     const lines = e.stack.split('\n', 5)
     throw new Error(`${lines[4]}\n    at ${lines[0]}:${lines[2].length}`)
   }
