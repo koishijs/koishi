@@ -25,14 +25,15 @@
 
 ::-webkit-scrollbar {
   width: 6px;
-  height: 6px;}
+  height: 6px;
+}
 
 ::-webkit-scrollbar-track-piece {
-  background-color: #eaecef;
+  background-color: var(--c-scroll-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #5546a3;
+  background-color: var(--c-brand);
 }
 
 @media (max-width: 960px /* $MQMobile */) {
