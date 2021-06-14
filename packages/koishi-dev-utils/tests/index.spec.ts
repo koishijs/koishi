@@ -7,11 +7,15 @@ import jest from 'jest-mock'
 describe('Plugin Context', () => {
   const fn = jest.fn()
 
+  interface Config {
+    text: string
+  }
+
   @Plugin('test-1')
-  class MyPlugin extends PluginContext {
-    @Middleware
+  class MyPlugin extends PluginContext<Config> {
+    @Middleware()
     hello(session: Session, next: NextFunction) {
-      session.send('hello!')
+      session.send(this.config.text)
     }
 
     @Event('disconnect')
@@ -20,7 +24,7 @@ describe('Plugin Context', () => {
     }
   }
 
-  const app = new App().plugin(new MyPlugin())
+  const app = new App().plugin(new MyPlugin(), { text: 'hello!' })
   const sess = app.session('123')
 
   it('middleware', async () => {

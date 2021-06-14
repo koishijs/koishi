@@ -15,11 +15,12 @@ export type Plugin = K.Plugin
 export const Plugin = ((name) => (factory) => {
   return class {
     name = name
-    apply(context: K.Context, options: any) {
+    apply(context: K.Context, config: any) {
       const instance = Object.create(context)
-      instance.options = options
+      instance.config = config
       const cbs = map.get(factory.prototype) || []
       cbs.forEach(cb => cb.call(instance))
+      factory.prototype.apply?.call(instance)
     }
   }
 }) as PluginStatic
@@ -30,16 +31,16 @@ type MethodDecorator<T> = (target: Object, key: string | symbol, desc: TypedProp
 
 export type Middleware = K.Middleware
 
-export const Middleware: MethodDecorator<K.Middleware> = (target, key, desc) => {
+export const Middleware: (prepend?: boolean) => MethodDecorator<K.Middleware> = (prepend) => (target, key, desc) => {
   if (!map.has(target)) map.set(target, [])
   map.get(target).push(function() {
-    this.middleware(desc.value)
+    this.middleware(desc.value.bind(this), prepend)
   })
 }
 
 export const Event: <E extends keyof K.EventMap>(name: E, prepend?: boolean) => MethodDecorator<K.EventMap[E]> = (name, prepend) => (target, key, desc) => {
   if (!map.has(target)) map.set(target, [])
   map.get(target).push(function() {
-    this.on(name, desc.value, prepend)
+    this.on(name, (desc.value as any).bind(this), prepend)
   })
 }
