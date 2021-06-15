@@ -1,6 +1,6 @@
 import { NextFunction, Session } from 'koishi-core'
 import { App } from 'koishi-test-utils'
-import { Plugin, PluginContext, Middleware, Event } from 'koishi-dev-utils'
+import { Plugin, PluginContext, Middleware, Event, User } from 'koishi-dev-utils'
 import { expect } from 'chai'
 import jest from 'jest-mock'
 
@@ -13,9 +13,10 @@ describe('Plugin Context', () => {
 
   @Plugin('test-1')
   class MyPlugin extends PluginContext<Config> {
+    @User.except('456')
     @Middleware()
     hello(session: Session, next: NextFunction) {
-      session.send(this.config.text)
+      session.send(this.state.config.text)
     }
 
     @Event('disconnect')
@@ -25,10 +26,15 @@ describe('Plugin Context', () => {
   }
 
   const app = new App().plugin(new MyPlugin(), { text: 'hello!' })
-  const sess = app.session('123')
+  const ses1 = app.session('123')
+  const ses2 = app.session('456')
 
   it('middleware', async () => {
-    await sess.shouldReply('say hello', 'hello!')
+    await ses1.shouldReply('say hello', 'hello!')
+  })
+
+  it('selector', async () => {
+    await ses2.shouldNotReply('say hello')
   })
 
   it('event', async () => {
