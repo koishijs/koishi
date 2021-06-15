@@ -19,9 +19,8 @@ export const Plugin = ((name) => (factory) => {
     apply(context: K.Context, config: any) {
       const instance = Object.create(context)
       instance.config = config
-      const cbs = registry.get(factory.prototype) || []
-      cbs.forEach(cb => cb.call(instance))
-      factory.prototype.apply?.call(instance)
+      const map = registry.get(factory.prototype)
+      map?.forEach(cb => cb.call(instance))
     }
   }
 }) as PluginStatic
@@ -34,21 +33,28 @@ export type Middleware = K.Middleware
 
 export const Middleware: (prepend?: boolean) => MethodDecorator<K.Middleware> = (prepend) => (target, key, desc) => {
   if (!registry.has(target)) registry.set(target, new Map())
-  registry.get(target).set(desc.value, function() {
+  registry.get(target).set(desc.value, function () {
     this.middleware(desc.value.bind(this), prepend)
+  })
+}
+
+export const Apply: MethodDecorator<() => void> = (target, key, desc) => {
+  if (!registry.has(target)) registry.set(target, new Map())
+  registry.get(target).set(desc.value, function () {
+    desc.value.call(this)
   })
 }
 
 export const Event: <E extends keyof K.EventMap>(name: E, prepend?: boolean) => MethodDecorator<K.EventMap[E]> = (name, prepend) => (target, key, desc) => {
   if (!registry.has(target)) registry.set(target, new Map())
-  registry.get(target).set(desc.value, function() {
+  registry.get(target).set(desc.value, function () {
     this.on(name, (desc.value as any).bind(this), prepend)
   })
 }
 
 export const Before: <E extends keyof K.BeforeEventMap>(name: E, append?: boolean) => MethodDecorator<K.BeforeEventMap[E]> = (name, append) => (target, key, desc) => {
   if (!registry.has(target)) registry.set(target, new Map())
-  registry.get(target).set(desc.value, function() {
+  registry.get(target).set(desc.value, function () {
     this.before(name, (desc.value as any).bind(this), append)
   })
 }
@@ -59,20 +65,22 @@ interface Selector<R extends any[]> extends PartialSeletor<R> {
   except?: PartialSeletor<R>
 }
 
-function createPartialSelector<T extends keyof K.Context>(name: T, except?: boolean): PartialSeletor<K.Context[T] extends (...args: infer R) => any ? R : never> {
-  return (...values) => (target, key, desc) => {
+type ExtractParameter<U, T extends keyof U> = U[T] extends (...args: infer R) => any ? R : never
+
+function createPartialSelector<T extends keyof K.Context>(name: T, except?: boolean): PartialSeletor<ExtractParameter<K.Context, T>> {
+  return (...args) => (target, key, desc) => {
     const map = registry.get(target)
     const callback = map?.get(desc.value)
     if (!callback) return
     map.set(desc.value, function () {
       let selector: any = this[name]
       if (except) selector = selector.except
-      callback.call(selector(...values))
+      callback.call(selector(...args))
     })
   }
 }
 
-function createSelector<T extends keyof K.Context, U>(name: T, target?: U): U & Selector<K.Context[T] extends (...args: infer R) => any ? R : never> {
+function createSelector<T extends keyof K.Context, U>(name: T, target?: U): U & Selector<ExtractParameter<K.Context, T>> {
   const value: any = createPartialSelector(name)
   value.except = createPartialSelector(name, true)
   return Object.assign(value, target)
