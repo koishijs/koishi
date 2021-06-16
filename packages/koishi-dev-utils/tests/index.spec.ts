@@ -1,6 +1,6 @@
-import { NextFunction, Session } from 'koishi-core'
+import { Session } from 'koishi-core'
 import { App } from 'koishi-test-utils'
-import { Plugin, PluginContext, Middleware, Event, User, Apply } from 'koishi-dev-utils'
+import { Plugin, PluginContext, Middleware, Event, User, Channel, Apply, Command, Usage, Example } from 'koishi-dev-utils'
 import { expect } from 'chai'
 import jest from 'jest-mock'
 
@@ -14,15 +14,24 @@ describe('Plugin Context', () => {
 
   @Plugin('test-1')
   class MyPlugin extends PluginContext<Config> {
-    @User.except('456')
+    @User.Except('456')
     @Middleware()
-    hello(session: Session, next: NextFunction) {
-      session.send(this.state.config.text)
+    hello(session: Session) {
+      return session.send(this.state.config.text)
     }
 
     @Event('disconnect')
     onDisconnect() {
       callback2()
+    }
+
+    @Command('echo [text]')
+    @User.Field(['flag'])
+    @Channel.Field(['flag'])
+    @Usage('usage')
+    @Example('echo lalala')
+    echo(_, text: string) {
+      return text
     }
 
     @Apply
@@ -43,6 +52,10 @@ describe('Plugin Context', () => {
 
   it('middleware', async () => {
     await ses1.shouldReply('say hello', 'hello!')
+  })
+
+  it('command', async () => {
+    await ses1.shouldReply('echo foo', 'foo')
   })
 
   it('selector', async () => {
