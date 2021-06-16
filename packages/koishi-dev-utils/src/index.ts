@@ -17,8 +17,11 @@ const commands = new Registry(() => [] as ((this: K.Command) => void)[])
 export interface PluginContext<T = any> extends K.Plugin.Object<T>, K.Context {}
 
 export class PluginContext<T = any> {
-  protected config: T
   readonly state: K.Plugin.State<T>
+
+  protected get config() {
+    return this.state.config
+  }
 }
 
 type PluginStatic = typeof K.Plugin & (<T extends new () => any>(name?: string) => (factory: T) => T)
@@ -45,13 +48,13 @@ type MethodDecorator<T = (...args: any[]) => any>
 
 export type Middleware = K.Middleware
 
-export const Middleware: (prepend?: boolean) => MethodDecorator = (prepend) => (target, key, desc) => {
+export const Middleware: (prepend?: boolean) => MethodDecorator = (prepend) => (target, prop, desc) => {
   plugins.ensure(target).set(desc.value, function () {
     this.middleware(desc.value.bind(this), prepend)
   })
 }
 
-export const Apply: MethodDecorator = (target, key, desc) => {
+export const Apply: MethodDecorator = (target, prop, desc) => {
   plugins.ensure(target).set(desc.value, function () {
     desc.value.call(this)
   })
@@ -61,11 +64,11 @@ type CommandStatic = typeof K.Command & ((def?: string, config?: K.Command.Confi
 
 export type Command = K.Command
 
-export const Command = ((def, config) => (target, key, desc) => {
-  if (typeof key !== 'string') return
+export const Command = ((def, config) => (target, prop, desc) => {
+  if (typeof prop !== 'string') return
   plugins.ensure(target).set(desc.value, function () {
-    const command = this.command(def || key, config)
-    const callbacks = commands.get(command)
+    const command = this.command(def || prop, config)
+    const callbacks = commands.get(desc.value)
     callbacks?.forEach(cb => cb.call(command))
     command.action(desc.value.bind(this))
   })
@@ -73,19 +76,19 @@ export const Command = ((def, config) => (target, key, desc) => {
 
 Object.assign(Command, K.Command)
 
-export const Usage = (text: K.Command.Usage): MethodDecorator => (target, key, desc) => {
+export const Usage = (text: K.Command.Usage): MethodDecorator => (target, prop, desc) => {
   commands.ensure(desc.value).push(function () {
     this.usage(text)
   })
 }
 
-export const Example = (text: string): MethodDecorator => (target, key, desc) => {
+export const Example = (text: string): MethodDecorator => (target, prop, desc) => {
   commands.ensure(desc.value).push(function () {
     this.example(text)
   })
 }
 
-export const Option = (name: string, def: string, config?: K.Argv.OptionConfig): MethodDecorator => (target, key, desc) => {
+export const Option = (name: string, def: string, config?: K.Argv.OptionConfig): MethodDecorator => (target, prop, desc) => {
   commands.ensure(desc.value).push(function () {
     this.option(name, def, config)
   })
@@ -93,15 +96,33 @@ export const Option = (name: string, def: string, config?: K.Argv.OptionConfig):
 
 type EventDecorator<T> = <E extends keyof T>(name: E, xpend?: boolean) => MethodDecorator
 
-export const Event: EventDecorator<K.EventMap> = (name, prepend) => (target, key, desc) => {
+export const Event: EventDecorator<K.EventMap> = (name, prepend) => (target, prop, desc) => {
   plugins.ensure(target).set(desc.value, function () {
     this.on(name, desc.value.bind(this), prepend)
   })
 }
 
-export const Before: EventDecorator<K.BeforeEventMap> = (name, append) => (target, key, desc) => {
+export const Before: EventDecorator<K.BeforeEventMap> = (name, append) => (target, prop, desc) => {
   plugins.ensure(target).set(desc.value, function () {
     this.before(name, desc.value.bind(this), append)
+  })
+}
+
+export const Select = <T extends keyof K.Session>(key: T, ...values: K.Session[T][]): MethodDecorator => (target, prop, desc) => {
+  const map = plugins.get(target)
+  const callback = map?.get(desc.value)
+  if (!callback) return
+  map.set(desc.value, function () {
+    callback.call(this.select(key, ...values))
+  })
+}
+
+export const Unselect = <T extends keyof K.Session>(key: T, ...values: K.Session[T][]): MethodDecorator => (target, prop, desc) => {
+  const map = plugins.get(target)
+  const callback = map?.get(desc.value)
+  if (!callback) return
+  map.set(desc.value, function () {
+    callback.call(this.unselect(key, ...values))
   })
 }
 
@@ -114,7 +135,7 @@ interface Selector<R extends any[]> extends PartialSeletor<R> {
 type ExtractParameter<U, T extends keyof U> = U[T] extends (...args: infer R) => any ? R : never
 
 function createPartialSelector<T extends keyof K.Context>(name: T, except?: boolean): PartialSeletor<ExtractParameter<K.Context, T>> {
-  return (...args) => (target, key, desc) => {
+  return (...args) => (target, prop, desc) => {
     const map = plugins.get(target)
     const callback = map?.get(desc.value)
     if (!callback) return
@@ -142,13 +163,13 @@ type ChannelStatic = typeof K.Channel & FieldStatic<'channel'>
 const UserStatic = K.User as UserStatic
 const ChannelStatic = K.Channel as ChannelStatic
 
-UserStatic.Field = (fields) => (target, key, desc) => {
+UserStatic.Field = (fields) => (target, prop, desc) => {
   commands.ensure(desc.value).push(function () {
     this.userFields(fields)
   })
 }
 
-ChannelStatic.Field = (fields) => (target, key, desc) => {
+ChannelStatic.Field = (fields) => (target, prop, desc) => {
   commands.ensure(desc.value).push(function () {
     this.channelFields(fields)
   })

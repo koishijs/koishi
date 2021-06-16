@@ -1,12 +1,13 @@
 import { Session } from 'koishi-core'
 import { App } from 'koishi-test-utils'
-import { Plugin, PluginContext, Middleware, Event, User, Channel, Apply, Command, Usage, Example } from 'koishi-dev-utils'
+import { Plugin, PluginContext, Middleware, Before, Event, User, Channel, Apply, Command, Option, Usage, Example, Select, Unselect } from 'koishi-dev-utils'
 import { expect } from 'chai'
 import jest from 'jest-mock'
 
 describe('Plugin Context', () => {
   const callback1 = jest.fn()
   const callback2 = jest.fn()
+  const callback3 = jest.fn()
 
   interface Config {
     text: string
@@ -20,23 +21,31 @@ describe('Plugin Context', () => {
       return session.send(this.state.config.text)
     }
 
+    @Apply
+    custom() {
+      callback1()
+    }
+
+    @Select('database')
+    @Before('connect')
+    beforeConnect() {
+      callback2()
+    }
+
+    @Unselect('database')
     @Event('disconnect')
     onDisconnect() {
-      callback2()
+      callback3()
     }
 
     @Command('echo [text]')
     @User.Field(['flag'])
     @Channel.Field(['flag'])
+    @Option('-a', 'alpha')
     @Usage('usage')
     @Example('echo lalala')
     echo(_, text: string) {
       return text
-    }
-
-    @Apply
-    custom() {
-      callback1()
     }
   }
 
@@ -64,7 +73,11 @@ describe('Plugin Context', () => {
 
   it('event', async () => {
     expect(callback2.mock.calls).to.have.length(0)
-    app.emit('disconnect')
+    app.emit('before-connect')
     expect(callback2.mock.calls).to.have.length(1)
+
+    expect(callback3.mock.calls).to.have.length(0)
+    app.emit('disconnect')
+    expect(callback3.mock.calls).to.have.length(1)
   })
 })
