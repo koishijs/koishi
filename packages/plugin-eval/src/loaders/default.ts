@@ -2,7 +2,20 @@ import { Script } from 'vm'
 
 export const name = 'default'
 
+let noLocation: boolean
+
+try {
+  Reflect.construct(Script, ['}'])
+} catch (e) {
+  noLocation = e.stack.startsWith('SyntaxError')
+}
+
 export function extractScript(expr: string) {
+  if (noLocation) {
+    const segments = expr.split('}')
+    return segments.length > 1 ? segments[0] : null
+  }
+
   try {
     Reflect.construct(Script, [expr])
   } catch (e) {
@@ -23,6 +36,7 @@ export function transformScript(expr: string) {
     return expr
   } catch (e) {
     if (!(e instanceof SyntaxError)) throw new Error('unknown error encounted')
+    if (noLocation) return e.stack.split('\n', 1)[0]
     const lines = e.stack.split('\n', 5)
     throw new Error(`${lines[4]}\n    at ${lines[0]}:${lines[2].length}`)
   }

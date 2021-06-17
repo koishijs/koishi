@@ -31,11 +31,11 @@ export namespace Plugin {
 
   export type Config<T extends Plugin> = T extends Function<infer U> ? U : T extends Object<infer U> ? U : never
 
-  export interface State extends Meta {
+  export interface State<T = any> extends Meta {
     id?: string
     parent?: State
     context?: Context
-    config?: Config<Plugin>
+    config?: T
     plugin?: Plugin
     children: Plugin[]
     disposables: Disposable[]
@@ -582,7 +582,8 @@ type DelegateEventMap = {
 type EventName = keyof EventMap
 type OmitSubstring<S extends string, T extends string> = S extends `${infer L}${T}${infer R}` ? `${L}${R}` : never
 type BeforeEventName = OmitSubstring<EventName & string, 'before-'>
-type BeforeEventMap = { [E in EventName & string as OmitSubstring<E, 'before-'>]: EventMap[E] }
+
+export type BeforeEventMap = { [E in EventName & string as OmitSubstring<E, 'before-'>]: EventMap[E] }
 
 export interface EventMap extends SessionEventMap, DelegateEventMap {
   [Context.middleware]: Middleware

@@ -18,8 +18,8 @@ externalIcon: false
 
 - **cli:** 修复了生成的配置文件中，含有特殊字符的插件名没有引号的问题 (#275) (=2badfdfb645f7d5f6d10d1fa3e8ed27bf8d0fd12)
 - **cli:** 修复了当一个插件含有文件级命名子插件时，子插件重载可能失败的问题 (=3a0d25d372e966c1e1124615c17ea08caad301c0)
-- **webui:** 补全了依赖库 (#277) (=4053909020a8d1827b2d8b6bee39bb4068aaf68c)
 - **github:** 支持了 request review from team (=b60c8903f6b2de3bc7caaffe107628ae560eb862)
+- **webui:** 补全了缺失的依赖库 (#277) (=4053909020a8d1827b2d8b6bee39bb4068aaf68c)
 
 ## [Koishi 3.11.1](https://github.com/koishijs/koishi/releases/tag/3.11.1)
 

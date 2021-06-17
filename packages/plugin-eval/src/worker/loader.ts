@@ -1,8 +1,9 @@
 import { config, context, internal } from '.'
 import { resolve, posix, dirname, extname } from 'path'
 import { promises as fs } from 'fs'
-import { deserialize, serialize, cachedDataVersionTag } from 'v8'
 import { Logger } from 'koishi-utils'
+import * as yaml from 'js-yaml'
+import * as v8 from 'v8'
 
 const logger = new Logger('eval:loader')
 
@@ -100,21 +101,34 @@ interface FileCache {
 }
 
 const CACHE_TAG = 1
-const V8_TAG = cachedDataVersionTag()
+const V8_TAG = v8.cachedDataVersionTag()
 const files: Record<string, FileCache> = {}
 const cachedFiles: Record<string, FileCache> = {}
 
-export async function readSerialized(filename: string): Promise<[any?, Buffer?]> {
-  try {
-    const buffer = await fs.readFile(filename)
-    return [deserialize(buffer), buffer]
-  } catch {
-    return []
+export const system = new class System {
+  serialize: (value: any) => Buffer
+  deserialize: (data: Buffer) => any
+
+  async read(filename: string) {
+    try {
+      const buffer = await fs.readFile(filename)
+      return [this.deserialize(buffer), buffer] as const
+    } catch {}
   }
-}
+
+  // errors should be catched because we should not expose file paths to users
+  async write(filename: string, data: Buffer) {
+    try {
+      await fs.mkdir(dirname(filename), { recursive: true })
+      await fs.writeFile(filename, data)
+    } catch (error) {
+      logger.warn(error)
+    }
+  }
+}()
 
 // errors should be catched because we should not expose file paths to users
-export async function safeWriteFile(filename: string, data: any) {
+export async function safeWriteFile(filename: string, data: Buffer) {
   try {
     await fs.mkdir(dirname(filename), { recursive: true })
     await fs.writeFile(filename, data)
@@ -124,18 +138,27 @@ export async function safeWriteFile(filename: string, data: any) {
 }
 
 export default async function prepare() {
+  if (config.serializer === 'yaml') {
+    system.serialize = value => Buffer.from(yaml.dump(value))
+    system.deserialize = data => yaml.load(data.toString())
+  } else {
+    system.serialize = v8.serialize
+    system.deserialize = v8.deserialize
+  }
+
   if (!config.root) return
   for (const ext in config.moduleLoaders || {}) {
     extnames.add(ext)
   }
   const cachePath = resolve(config.root, config.cacheFile || '.koishi/cache')
-  await readSerialized(cachePath).then(([data]) => {
-    if (data && data.tag === CACHE_TAG && data.v8tag === V8_TAG) {
-      Object.assign(cachedFiles, data.files)
+  await system.read(cachePath).then((data) => {
+    if (!data) return
+    if (data[0].tag === CACHE_TAG && data[0].v8tag === V8_TAG) {
+      Object.assign(cachedFiles, data[0].files)
     }
   })
   await Promise.all(config.addonNames.map(evaluate))
-  safeWriteFile(cachePath, serialize({ tag: CACHE_TAG, v8tag: V8_TAG, files }))
+  safeWriteFile(cachePath, system.serialize({ tag: CACHE_TAG, v8tag: V8_TAG, files }))
   for (const key in synthetics) {
     exposeGlobal(key, synthetics[key].namespace)
   }

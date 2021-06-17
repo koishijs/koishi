@@ -53,6 +53,13 @@ evaluate 指令和插值所使用的 Loader。内置的可选值包括 default, 
 
 要在子线程执行的文件名的键值对。键表示你希望在报错信息中显示的模块名，值表示文件的实际路径。如果你要扩展 eval 插件在子线程的行为，你可能需要这个选项。
 
+## serializer
+
+- 类型: `'v8' | 'yaml'`
+- 默认值: `'v8'`
+
+要使用的序列化方法。此配置将会影响 [storage](./sandbox.md#storage) 能够支持的类型。
+
 ## inspect
 
 - 类型: [`InspectOptions`](https://nodejs.org/api/util.html#util_util_formatwithoptions_inspectoptions_format_args)
