@@ -117,6 +117,8 @@ function onKeyDown(ev: KeyboardEvent) {
 
 <style lang="scss">
 
+@use "sass:math";
+
 $buttonSize: 3rem;
 $buttonBg: #303133;
 
@@ -145,7 +147,7 @@ $buttonBg: #303133;
     cursor: pointer;
     user-select: none;
     opacity: 0.5;
-    font-size: $buttonSize / 2;
+    font-size: math.div($buttonSize, 2);
     height: $buttonSize;
     background-color: $buttonBg;
     display: flex;
