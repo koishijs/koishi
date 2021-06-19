@@ -415,14 +415,15 @@ export namespace Phase {
             ].join('\n')
           }
 
-          const titles = storyMap[reversedLineMap[name]]
+          const prefix = reversedLineMap[name]
+          const titles = storyMap[prefix]
           if (!titles) return options['pass'] ? next().then(() => '') : `你尚未解锁剧情「${name}」。`
           const output = titles.map((name) => {
             const id = reversedEndingMap[name]
-            return `${id}. ${name}×${endings[id]}${badEndings.has(id) ? `（BE）` : ''}`
+            return `${id.slice(prefix.length + 1)}. ${name}×${endings[id]}${badEndings.has(id) ? `（BE）` : ''}`
           }).sort()
-          const [title, count] = lines[reversedLineMap[name]]
-          output.unshift(`${session.username}，你已达成${title}剧情线的 ${titles.length}/${count} 个结局：`)
+          const [title, count] = lines[prefix]
+          output.unshift(`${session.username}，你已达成${title}的 ${titles.length}/${count} 个结局：`)
           return output.join('\n')
         }
 
