@@ -31,12 +31,17 @@ export function capitalize(source: string) {
 
 // eslint-disable-next-line no-new-func
 export const interpolate = new Function('template', 'context', `
-with (context) {
   return template.replace(/\\{\\{[\\s\\S]+?\\}\\}/g, (sub) => {
     const expr = sub.substring(2, sub.length - 2)
-    return eval(expr)
+    try {
+      with (context) {
+        return eval(expr)
+      }
+    } catch {
+      return ''
+    }
   })
-}`) as ((template: string, context: object) => string)
+`) as ((template: string, context: object) => string)
 
 export function escapeRegExp(source: string) {
   return source
