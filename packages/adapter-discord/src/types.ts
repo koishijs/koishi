@@ -81,7 +81,19 @@ export interface Channel {
   last_pin_timestamp?: ISO8601;
 }
 
-export interface ModifyGuild extends Pick<Channel, 'name' | 'type' | 'position' | 'topic' | 'nsfw' | 'rate_limit_per_user' | 'bitrate' | 'user_limit' | 'permission_overwrites' | 'parent_id'> {}
+type ChannelModifyProps = 
+  | 'name'
+  | 'type'
+  | 'position'
+  | 'topic'
+  | 'nsfw'
+  | 'rate_limit_per_user'
+  | 'bitrate'
+  | 'user_limit'
+  | 'permission_overwrites'
+  | 'parent_id'
+
+export type ModifyChannel = Partial<Pick<Channel, ChannelModifyProps>>
 
 /** https://discord.com/developers/docs/resources/guild#guild-object-guild-structure */
 export interface Guild {
@@ -133,8 +145,24 @@ export interface Guild {
   welcome_screen?: any;
 }
 
-export interface GuildBody extends Pick<Guild, 'name' | 'region' | 'verification_level' | 'default_message_notifications' | 'explicit_content_filter' | 'afk_channel_id' | 'afk_timeout' | 'icon' | 'owner_id' | 'splash' | 'banner' | 'system_channel_id' | 'rules_channel_id' | 'public_updates_channel_id' | 'preferred_locale'> {
-}
+type GuildModifyProps =
+  | 'name'
+  | 'region'
+  | 'verification_level'
+  | 'default_message_notifications'
+  | 'explicit_content_filter'
+  | 'afk_channel_id'
+  | 'afk_timeout'
+  | 'icon'
+  | 'owner_id'
+  | 'splash'
+  | 'banner'
+  | 'system_channel_id'
+  | 'rules_channel_id'
+  | 'public_updates_channel_id'
+  | 'preferred_locale'
+
+export type GuildModify = Partial<Pick<Guild, GuildModifyProps>>
 
 /** https://discord.com/developers/docs/resources/user#user-object-user-structure */
 export interface User {
