@@ -77,7 +77,7 @@ namespace Luck {
       .usage(showLotteryUsage)
       .action(async ({ session, options }) => {
         const { user } = session
-        if (Phase.metaMap[session.userId]) return '当前处于剧情模式中，无法抽卡。'
+        if (Phase.userSessionMap[session.user.id]) return '当前处于剧情模式中，无法抽卡。'
         if (user.progress) return '检测到你有未完成的剧情，请尝试输入“继续当前剧情”。'
 
         if (checkTimer('lottery', user, minInterval * 60 * 1000)) {
