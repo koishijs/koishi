@@ -289,7 +289,7 @@ export class DiscordBot extends Bot<'discord'> {
     return this.request('PATCH', `/guilds/${guildId}/roles/${roleId}`, data)
   }
 
-  $modifyGuild(guildId: string, data: DC.GuildBody) {
+  $modifyGuild(guildId: string, data: DC.GuildModify) {
     return this.request('PATCH', `/guilds/${guildId}`, data)
   }
 
@@ -320,7 +320,7 @@ export class DiscordBot extends Bot<'discord'> {
     return this.request<DC.Webhook[]>('GET', `/guilds/${guildId}/webhooks`)
   }
 
-  $modifyChannel(channelId, data: Partial<DC.ModifyGuild>) {
+  $modifyChannel(channelId: string, data: DC.ModifyChannel) {
     return this.request('PATCH', `/channels/${channelId}`, data)
   }
 
