@@ -8,6 +8,7 @@ export * from './bot'
 interface DiscordOptions extends Adapter.WsClientOptions {
   endpoint?: string
   axiosConfig?: AxiosRequestConfig
+  urlImageSendMode?: 'auto' | 'download' | 'direct'
 }
 
 declare module 'koishi-core' {

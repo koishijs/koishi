@@ -127,6 +127,12 @@ export class DiscordBot extends Bot<'discord'> {
             sentMessageId = r.id
           } else {
             const { axiosConfig, discord = {} } = this.app.options
+            const sendMode: 'auto' | 'download' | 'direct' =
+              data.mode || // define in segment
+              discord.urlImageSendMode || // define in app options
+              'auto' // default
+
+            // Utils
             async function downloadSend() {
               const a = await axios.get(data.url, {
                 ...axiosConfig,
@@ -138,26 +144,41 @@ export class DiscordBot extends Bot<'discord'> {
               })
               sentMessageId = r.id
             }
-            axios.head(data.url, {
-              ...axiosConfig,
-              ...discord.axiosConfig,
-            }).then(async ({ headers }) => {
-              if (headers?.['content-type']?.includes('image')) {
-                const r = await this.request('POST', requestUrl, {
-                  content: data.url,
-                  ...addition,
+            async function directSend() {
+              const r = await this.request('POST', requestUrl, {
+                content: data.url,
+                ...addition,
+              })
+              sentMessageId = r.id
+            }
+
+            if (sendMode === 'direct') {
+              // send url directly
+              await directSend()
+            } else if (sendMode === 'download') {
+              // download send
+              await downloadSend()
+            } else {
+              // auto mode
+              axios.head(data.url, {
+                ...axiosConfig,
+                ...discord.axiosConfig,
+              })
+                .then(async ({ headers }) => {
+                  if (headers?.['content-type']?.includes('image')) {
+                    directSend()
+                  } else {
+                    await downloadSend()
+                  }
                 })
-                sentMessageId = r.id
-              } else {
-                await downloadSend()
-              }
-            }, async () => {
-              try {
-                await downloadSend()
-              } catch (e) {
-                throw new SenderError(data.url, data, this.selfId)
-              }
-            })
+                .catch(async () => {
+                  try {
+                    await downloadSend()
+                  } catch (e) {
+                    throw new SenderError(data.url, data, this.selfId)
+                  }
+                })
+            }
           }
         }
       }
