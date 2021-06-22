@@ -96,7 +96,13 @@ export class MockedApp extends App {
   public server: MockedServer
 
   constructor(options: MockedAppOptions = {}) {
-    super({ selfId: BASE_SELF_ID, type: 'mock', ...options })
+    super({
+      type: 'mock',
+      selfId: BASE_SELF_ID,
+      channelCacheAge: Number.EPSILON,
+      userCacheAge: Number.EPSILON,
+      ...options,
+    })
 
     this.server = this.adapters.mock as any
 
