@@ -127,10 +127,10 @@ export class DiscordBot extends Bot<'discord'> {
             sentMessageId = r.id
           } else {
             const { axiosConfig, discord = {} } = this.app.options
-            type SendMode = 'auto' | 'download' | 'direct' | ''
-            const sendMode: SendMode =
+            type SendMode = 'auto' | 'download' | 'direct'
+            const sendMode =
               data.mode as SendMode || // define in segment
-              discord.urlImageSendMode as SendMode || // define in app options
+              discord.handleExternalAssets as SendMode || // define in app options
               'auto' // default
 
             // Utils
