@@ -2,9 +2,11 @@ import { App } from 'koishi-test-utils'
 import { User, Channel, defineEnumProperty } from 'koishi-core'
 import { install } from '@sinonjs/fake-timers'
 import * as common from 'koishi-plugin-common'
+import { expect } from 'chai'
 
 const app = new App({ mockDatabase: true })
 const session = app.session('123', '321')
+const session2 = app.session('123')
 
 app.plugin(common)
 app.command('foo', { maxUsage: 10 }).action(() => 'bar')
@@ -38,17 +40,19 @@ before(async () => {
 
 describe('Admin Commands', () => {
   it('user/authorize', async () => {
+    await session.shouldReply('authorize', '请指定目标用户。')
     await session.shouldReply('authorize -t nan', '选项 target 输入无效，请指定正确的用户。')
-    await session.shouldReply('authorize -t @321', '未找到指定的用户。')
     await session.shouldReply('authorize -t @789', '权限不足。')
     await session.shouldReply('authorize -t @456 1.5', '参数 value 输入无效，请提供一个正整数。')
     await session.shouldReply('authorize -t @456 3', '用户数据未改动。')
     await session.shouldReply('authorize -t @456 4', '权限不足。')
     await session.shouldReply('authorize -t @456 2', '用户数据已修改。')
+    await session.shouldReply('authorize -t @111 1', '用户数据已修改。')
   })
 
   it('user.flag', async () => {
     await session.shouldReply('user.flag -t @123', '未设置任何标记。')
+    await session.shouldReply('user.flag -t @321', '未找到指定的用户。')
     await session.shouldReply('user.flag -l', '全部标记为：ignore, test。')
     await session.shouldReply('user.flag -s foo', '未找到标记 foo。')
     await session.shouldReply('user.flag -s test', '用户数据已修改。')
@@ -90,12 +94,21 @@ describe('Admin Commands', () => {
   it('channel/assign', async () => {
     await app.session('123').shouldReply('assign', '当前不在群组上下文中，请使用 -t 参数指定目标频道。')
     await session.shouldReply('assign -t nan', '选项 target 输入无效，请指定正确的频道。')
-    await session.shouldReply('assign -t #123', '未找到指定的频道。')
     await session.shouldReply('assign -t #321', '频道数据未改动。')
     await session.shouldReply('assign -t #321 nan', '参数 bot 输入无效，请指定正确的用户。')
+    await session.shouldReply('assign -t #321 @foo:bar', '代理者应与目标频道属于同一平台。')
+    await session.shouldReply('assign -t #333', '频道数据已修改。')
+
+    const getChannel = () => expect(app.database.getChannel('mock', '321')).eventually
+    await getChannel().to.have.property('assignee', '514')
+    await session.shouldReply('assign -t #321 @123', '频道数据已修改。')
+    await getChannel().to.have.property('assignee', '123')
+    await session2.shouldReply('assign -t #321', '频道数据已修改。')
+    await getChannel().to.have.property('assignee', '514')
   })
 
   it('channel/switch', async () => {
+    await session.shouldReply('switch -t #123', '未找到指定的频道。')
     await session.shouldReply('switch', '当前没有禁用功能。')
     await session.shouldReply('baz', 'zab')
     await session.shouldReply('switch baz', '已禁用 baz 功能。')
