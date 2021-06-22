@@ -5,10 +5,12 @@ import WsClient from './ws'
 import * as DC from './types'
 export * from './bot'
 
+export type HandleExternalAssets = 'auto' | 'download' | 'direct'
+
 interface DiscordOptions extends Adapter.WsClientOptions {
   endpoint?: string
   axiosConfig?: AxiosRequestConfig
-  handleExternalAssets?: 'auto' | 'download' | 'direct'
+  handleExternalAssets?: HandleExternalAssets
 }
 
 declare module 'koishi-core' {

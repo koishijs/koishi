@@ -8,6 +8,7 @@ import { readFileSync } from 'fs'
 import { segment } from 'koishi-utils'
 import FormData from 'form-data'
 import FileType from 'file-type'
+import { HandleExternalAssets } from '.'
 
 export class SenderError extends Error {
   constructor(url: string, data: any, selfId: string) {
@@ -127,14 +128,13 @@ export class DiscordBot extends Bot<'discord'> {
             sentMessageId = r.id
           } else {
             const { axiosConfig, discord = {} } = this.app.options
-            type SendMode = 'auto' | 'download' | 'direct'
             const sendMode =
-              data.mode as SendMode || // define in segment
-              discord.handleExternalAssets as SendMode || // define in app options
+              data.mode as HandleExternalAssets || // define in segment
+              discord.handleExternalAssets || // define in app options
               'auto' // default
 
             // Utils
-            async function downloadSend() {
+            async function sendDownload() {
               const a = await axios.get(data.url, {
                 ...axiosConfig,
                 ...discord.axiosConfig,
@@ -145,7 +145,7 @@ export class DiscordBot extends Bot<'discord'> {
               })
               sentMessageId = r.id
             }
-            async function directSend() {
+            async function sendDirect() {
               const r = await that.request('POST', requestUrl, {
                 content: data.url,
                 ...addition,
@@ -155,10 +155,10 @@ export class DiscordBot extends Bot<'discord'> {
 
             if (sendMode === 'direct') {
               // send url directly
-              await directSend()
+              await sendDirect()
             } else if (sendMode === 'download') {
               // download send
-              await downloadSend()
+              await sendDownload()
             } else {
               // auto mode
               axios.head(data.url, {
@@ -167,14 +167,14 @@ export class DiscordBot extends Bot<'discord'> {
               })
                 .then(async ({ headers }) => {
                   if (headers?.['content-type']?.includes('image')) {
-                    await directSend()
+                    await sendDirect()
                   } else {
-                    await downloadSend()
+                    await sendDownload()
                   }
                 })
                 .catch(async () => {
                   try {
-                    await downloadSend()
+                    await sendDownload()
                   } catch (e) {
                     throw new SenderError(data.url, data, this.selfId)
                   }
