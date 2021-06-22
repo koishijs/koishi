@@ -164,21 +164,19 @@ export class DiscordBot extends Bot<'discord'> {
               axios.head(data.url, {
                 ...axiosConfig,
                 ...discord.axiosConfig,
+              }).then(async ({ headers }) => {
+                if (headers['content-type'].includes('image')) {
+                  await sendDirect()
+                } else {
+                  await sendDownload()
+                }
+              }, async () => {
+                try {
+                  await sendDownload()
+                } catch (e) {
+                  throw new SenderError(data.url, data, this.selfId)
+                }
               })
-                .then(async ({ headers }) => {
-                  if (headers?.['content-type']?.includes('image')) {
-                    await sendDirect()
-                  } else {
-                    await sendDownload()
-                  }
-                })
-                .catch(async () => {
-                  try {
-                    await sendDownload()
-                  } catch (e) {
-                    throw new SenderError(data.url, data, this.selfId)
-                  }
-                })
             }
           }
         }
