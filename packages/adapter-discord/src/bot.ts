@@ -127,9 +127,10 @@ export class DiscordBot extends Bot<'discord'> {
             sentMessageId = r.id
           } else {
             const { axiosConfig, discord = {} } = this.app.options
-            const sendMode: 'auto' | 'download' | 'direct' =
-              data.mode || // define in segment
-              discord.urlImageSendMode || // define in app options
+            type SendMode = 'auto' | 'download' | 'direct' | ''
+            const sendMode: SendMode =
+              data.mode as SendMode || // define in segment
+              discord.urlImageSendMode as SendMode || // define in app options
               'auto' // default
 
             // Utils
@@ -145,7 +146,7 @@ export class DiscordBot extends Bot<'discord'> {
               sentMessageId = r.id
             }
             async function directSend() {
-              const r = await this.request('POST', requestUrl, {
+              const r = await that.request('POST', requestUrl, {
                 content: data.url,
                 ...addition,
               })
@@ -166,7 +167,7 @@ export class DiscordBot extends Bot<'discord'> {
               })
                 .then(async ({ headers }) => {
                   if (headers?.['content-type']?.includes('image')) {
-                    directSend()
+                    await directSend()
                   } else {
                     await downloadSend()
                   }
