@@ -69,6 +69,7 @@ module.exports = {
           '/guide/adapter.md',
           '/guide/logger.md',
           '/guide/unit-tests.md',
+          '/guide/decorator.md',
         ],
       }],
       '/api': [{

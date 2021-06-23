@@ -193,6 +193,7 @@ export interface Bot<P = Platform> extends BotOptions, UserBase {
   getSelf(): Promise<UserInfo>
   getUser(userId: string): Promise<UserInfo>
   getFriendList(): Promise<UserInfo[]>
+  deleteFriend(userId: string): Promise<void>
 
   // group
   getGroup(groupId: string): Promise<GroupInfo>

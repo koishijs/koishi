@@ -270,6 +270,11 @@ export interface Device {
   deviceKind: string
 }
 
+export interface ModelVariant {
+  modelShow: string
+  needPay: boolean
+}
+
 export enum SafetyLevel { safe, unknown, danger }
 
 type id = string | number
@@ -295,6 +300,8 @@ export interface API {
   $getWordSlices(content: string): Promise<string[]>
   $ocrImage(image: string): Promise<OcrResult>
   $getGroupMsgHistory(groupId: id, messageSeq: id): Promise<Message[]>
+  $deleteFriend(userId: id): Promise<void>
+  $deleteFriendAsync(userId: id): Promise<void>
   $setFriendAddRequest(flag: string, approve: boolean, remark?: string): Promise<void>
   $setFriendAddRequestAsync(flag: string, approve: boolean, remark?: string): Promise<void>
   $setGroupAddRequest(flag: string, subType: 'add' | 'invite', approve: boolean, reason?: string): Promise<void>
@@ -338,10 +345,15 @@ export interface API {
   $getGroupRootFiles(groupId: id): Promise<GroupFileList>
   $getGroupFilesByFolder(groupId: id, folderId: string): Promise<GroupFileList>
   $getGroupFileUrl(groupId: id, fileId: string, busid: number): Promise<string>
-  $uploadGroupFile(groupId: id, file: string, name: string, folder?: string): Promise<void>
   $downloadFile(url: string, headers?: string | string[], threadCount?: number): Promise<string>
+  $uploadGroupFile(groupId: id, file: string, name: string, folder?: string): Promise<void>
+  $createGroupFileFolder(groupId: id, folderId: string, name: string): Promise<void>
+  $deleteGroupFolder(groupId: id, folderId: string): Promise<void>
+  $deleteGroupFile(groupId: id, folderId: string, fileId: string, busid: number): Promise<void>
   $getOnlineClients(noCache?: boolean): Promise<Device[]>
   $checkUrlSafely(url: string): Promise<SafetyLevel>
+  $getModelShow(model: string): Promise<ModelVariant[]>
+  $setModelShow(model: string, modelShow: string): Promise<void>
 
   $getCookies(domain?: string): Promise<string>
   $getCsrfToken(): Promise<number>

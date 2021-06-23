@@ -10,3 +10,11 @@ export * from './session'
 
 declare const KOISHI_VERSION: string
 export const version = KOISHI_VERSION
+
+declare module 'koa' {
+  // koa-bodyparser
+  interface Request {
+    body: any
+    rawBody: string
+  }
+}

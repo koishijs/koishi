@@ -38,8 +38,8 @@ export namespace Phase {
   export const phaseMap: Record<string, Adventurer.Infer<Phase>> = { '': mainPhase }
   export const salePlots: Record<string, ReadonlyUser.Infer<string, Shopper.Field>> = {}
 
-  export const metaMap: Record<number, Session<User.Field>> = {}
-  export const groupStates: Record<number, number> = {}
+  export const userSessionMap: Record<string, [Session<Adventurer.Field>, NodeJS.Timer]> = {}
+  export const channelUserMap: Record<string, [string, NodeJS.Timer]> = {}
   export const activeUsers = new Set<string>()
 
   export function getBadEndingCount(user: Pick<User, 'endings'>) {
@@ -47,15 +47,15 @@ export namespace Phase {
   }
 
   export function checkStates(session: Session<'id'>, active = false) {
-    // check group state
-    const groupState = groupStates[session.groupId]
-    if (session.subtype === 'group' && groupState && groupState !== session.userId) {
+    // check channel state
+    const userState = channelUserMap[session.cid]
+    if (session.subtype === 'group' && userState && userState[0] !== session.user.id) {
       return '同一个群内只能同时进行一处剧情，请尝试私聊或稍后重试。'
     }
 
     // check user state
-    const _meta = metaMap[session.userId]
-    if (_meta && !(active && _meta.channelId === session.channelId && activeUsers.has(session.user.id))) {
+    const sessionState = userSessionMap[session.user.id]
+    if (sessionState && !(active && sessionState[0].cid === session.cid && activeUsers.has(session.user.id))) {
       return '同一用户只能同时进行一处剧情。'
     }
   }
@@ -344,20 +344,28 @@ export namespace Phase {
     logger.debug('%s phase finish', session.userId)
   }
 
-  export async function start(session: Session<Adventurer.Field>) {
-    metaMap[session.userId] = session
-    if (session.subtype === 'group') {
-      groupStates[session.groupId] = session.userId
+  function setState<V>(map: Record<string, [V, NodeJS.Timer]>, key: string, value: V) {
+    const current = map[key]
+    if (current) clearTimeout(current[1])
+    const timer = setTimeout(() => this.map.delete(key), Time.hour)
+    const entry = map[key] = [value, timer]
+    return () => {
+      if (map[key] !== entry) return
+      clearTimeout(entry[1])
+      delete map[key]
     }
+  }
+
+  export async function start(session: Session<Adventurer.Field>) {
+    const disposeUser = setState(userSessionMap, session.user.id, session)
+    const disposeChannel = setState(channelUserMap, session.cid, session.user.id)
     try {
       await plot(session)
     } catch (error) {
       new Logger('cosmos').warn(error)
     }
-    delete metaMap[session.userId]
-    if (session.subtype === 'group') {
-      delete groupStates[session.groupId]
-    }
+    disposeUser()
+    disposeChannel()
   }
 
   function findEndings(names: string[]) {
@@ -415,14 +423,15 @@ export namespace Phase {
             ].join('\n')
           }
 
-          const titles = storyMap[reversedLineMap[name]]
+          const prefix = reversedLineMap[name]
+          const titles = storyMap[prefix]
           if (!titles) return options['pass'] ? next().then(() => '') : `你尚未解锁剧情「${name}」。`
           const output = titles.map((name) => {
             const id = reversedEndingMap[name]
-            return `${id}. ${name}×${endings[id]}${badEndings.has(id) ? `（BE）` : ''}`
+            return `${id.slice(prefix.length + 1)}. ${name}×${endings[id]}${badEndings.has(id) ? `（BE）` : ''}`
           }).sort()
-          const [title, count] = lines[reversedLineMap[name]]
-          output.unshift(`${session.username}，你已达成${title}剧情线的 ${titles.length}/${count} 个结局：`)
+          const [title, count] = lines[prefix]
+          output.unshift(`${session.username}，你已达成${title}的 ${titles.length}/${count} 个结局：`)
           return output.join('\n')
         }
 
@@ -481,7 +490,7 @@ export namespace Phase {
     ctx.command('adv/skip [-- command:text]', '跳过剧情')
       .shortcut('跳过剧情')
       .shortcut('跳过当前剧情')
-      .userFields(['phases', 'progress'])
+      .userFields(['phases', 'progress', 'id'])
       .useRest()
       .usage('这个指令用于跳过剧情的主体部分，并不会略去结算文字。当进入下一段剧情时需要再次跳过。未读过的剧情无法跳过。')
       .action(async ({ session, next, options }) => {
@@ -492,7 +501,7 @@ export namespace Phase {
           return
         }
         if (session._skipAll) return
-        if (!(session = metaMap[session.userId])) return
+        if (!(session = userSessionMap[session.user.id]?.[0])) return
         if (session._skipCurrent || !session._canSkip) return
         session.cancelQueued()
         session._skipCurrent = true
@@ -557,7 +566,7 @@ export namespace Phase {
           return start(session)
         } else {
           if (!item || session._skipAll) return
-          const next = !metaMap[session.userId] && getValue(mainPhase.items[item], user)
+          const next = !userSessionMap[session.user.id] && getValue(mainPhase.items[item], user)
           if (next) {
             return `物品“${item}”当前不可用，请尝试输入“继续当前剧情”。`
           } else {

@@ -1,14 +1,14 @@
 import { difference, observe, Time, enumKeys, Random, template, deduplicate, intersection } from 'koishi-utils'
-import { Context, User, Channel, Command, Argv, Platform, Session } from 'koishi-core'
+import { Context, User, Channel, Command, Argv, Platform, Session, Extend } from 'koishi-core'
 
 type AdminAction<U extends User.Field, G extends Channel.Field, A extends any[], O extends {}, T>
-  = (argv: Argv<U | 'authority', G, A, O> & { target: T }, ...args: A)
+  = (argv: Argv<U | 'authority', G, A, Extend<O, 'target', string>> & { target: T }, ...args: A)
     => void | string | Promise<void | string>
 
 declare module 'koishi-core' {
   interface Command<U, G, A, O> {
-    adminUser(callback: AdminAction<U, G, A, O, User.Observed<U | 'authority'>>): this
-    adminChannel(callback: AdminAction<U, G, A, O, Channel.Observed<G>>): this
+    adminUser(callback: AdminAction<U, G, A, O, User.Observed<U | 'authority'>>, autoCreate?: boolean): this
+    adminChannel(callback: AdminAction<U, G, A, O, Channel.Observed<G>>, autoCreate?: boolean): this
   }
 
   interface EventMap {
@@ -25,12 +25,14 @@ template.set('admin', {
   'current-flags': '当前的标记为：{0}。',
 
   // admin helper
+  'user-expected': '请指定目标用户。',
   'user-not-found': '未找到指定的用户。',
   'user-unchanged': '用户数据未改动。',
   'user-updated': '用户数据已修改。',
   'channel-not-found': '未找到指定的频道。',
   'channel-unchanged': '频道数据未改动。',
   'channel-updated': '频道数据已修改。',
+  'invalid-assignee-platform': '代理者应与目标频道属于同一平台。',
   'not-in-group': '当前不在群组上下文中，请使用 -t 参数指定目标频道。',
 })
 
@@ -117,14 +119,13 @@ function flagAction(map: FlagMap, { target, options }: FlagArgv, ...flags: strin
   return template('admin.current-flags', keys.join(', '))
 }
 
-Command.prototype.adminUser = function (this: Command, callback) {
+Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
   const { database } = this.app
   const command = this
     .userFields(['authority'])
     .option('target', '-t [user:user]  指定目标用户', { authority: 3 })
-    .userFields(({ options }, fields) => {
-      if (!options.target) return
-      const [platform] = options.target.split(':')
+    .userFields(({ session, options }, fields) => {
+      const platform = options.target ? options.target.split(':')[0] : session.platform
       fields.add(platform as Platform)
     })
 
@@ -140,8 +141,14 @@ Command.prototype.adminUser = function (this: Command, callback) {
         target = await session.observeUser(fields)
       } else {
         const data = await database.getUser(platform, userId, [...fields])
-        if (!data) return template('admin.user-not-found')
-        if (session.user.authority <= data.authority) {
+        if (!data) {
+          if (!autoCreate) return template('admin.user-not-found')
+          const fallback = observe(User.create(platform, userId), async () => {
+            if (!fallback.authority) return
+            await database.createUser(platform, userId, fallback)
+          })
+          target = fallback
+        } else if (session.user.authority <= data.authority) {
           return template('internal.low-authority')
         } else {
           target = observe(data, diff => database.setUser(platform, userId, diff), `user ${options.target}`)
@@ -161,7 +168,7 @@ Command.prototype.adminUser = function (this: Command, callback) {
   return command
 }
 
-Command.prototype.adminChannel = function (this: Command, callback) {
+Command.prototype.adminChannel = function (this: Command, callback, autoCreate) {
   const { database } = this.app
   const command = this
     .userFields(['authority'])
@@ -176,8 +183,16 @@ Command.prototype.adminChannel = function (this: Command, callback) {
     } else if (options.target) {
       const [platform, channelId] = Argv.parsePid(options.target)
       const data = await database.getChannel(platform, channelId, [...fields])
-      if (!data) return template('admin.channel-not-found')
-      target = observe(data, diff => database.setChannel(platform, channelId, diff), `channel ${options.target}`)
+      if (!data) {
+        if (!autoCreate) return template('admin.channel-not-found')
+        const fallback = observe(Channel.create(platform, channelId), async () => {
+          if (!fallback.assignee) return
+          await database.createChannel(platform, channelId, fallback)
+        })
+        target = fallback
+      } else {
+        target = observe(data, diff => database.setChannel(platform, channelId, diff), `channel ${options.target}`)
+      }
     } else {
       return template('admin.not-in-group')
     }
@@ -296,12 +311,11 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
   ctx.command('user/authorize <value:posint>', '权限信息', { authority: 4 })
     .alias('auth')
     .adminUser(async ({ session, target }, authority) => {
+      if (session.userId === target[session.platform]) return template('admin.user-expected')
       if (authority >= session.user.authority) return template('internal.low-authority')
       if (authority === target.authority) return template('admin.user-unchanged')
-      await ctx.database.createUser(session.platform, target[session.platform], { authority })
-      target._merge({ authority })
-      return template('admin.user-updated')
-    })
+      target.authority = authority
+    }, true)
 
   ctx.command('user.flag [-s|-S] [...flags]', '标记信息', { authority: 3 })
     .userFields(['flag'])
@@ -373,12 +387,18 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
     .channelFields(['assignee'])
     .option('noTarget', '-T  移除受理者')
     .adminChannel(async ({ session, options, target }, value) => {
-      const assignee = options.noTarget ? null : value ? Argv.parsePid(value)[1] : session.selfId
-      if (assignee === target.assignee) return template('admin.channel-unchanged')
-      await ctx.database.createChannel(session.platform, session.channelId, { assignee })
-      target._merge({ assignee })
-      return template('admin.channel-updated')
-    })
+      if (options.noTarget) {
+        target.assignee = ''
+      } else if (!value) {
+        target.assignee = session.selfId
+      } else {
+        const [platform, userId] = Argv.parsePid(value)
+        if (platform !== Argv.parsePid(options.target)[0]) {
+          return template('admin.invalid-assignee-platform')
+        }
+        target.assignee = userId
+      }
+    }, true)
 
   ctx.command('channel/switch <command...>', '启用和禁用功能', { authority: 3 })
     .channelFields(['disable'])

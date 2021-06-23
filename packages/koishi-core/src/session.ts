@@ -41,6 +41,7 @@ export namespace Session {
     'group-member': {
       'role': {}
       'ban': {}
+      'nickname': {}
     }
     'notice': {
       'poke': {}

@@ -4,8 +4,6 @@ import { install } from '@sinonjs/fake-timers'
 
 const app = new App({
   mockDatabase: true,
-  channelCacheAge: Number.EPSILON,
-  userCacheAge: Number.EPSILON,
   minSimilarity: 0,
 })
 

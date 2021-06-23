@@ -1,14 +1,17 @@
 {
-  "name": "koishi-plugin-adventure",
-  "version": "0.2.2",
-  "description": "Adventure game framework for Koishi",
+  "name": "koishi-dev-utils",
+  "description": "Test utilities for Koishi",
+  "version": "0.1.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
+  "engines": {
+    "node": ">=12.0.0"
+  },
   "files": [
     "lib"
   ],
-  "license": "MIT",
   "author": "Shigma <1700011071@pku.edu.cn>",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/koishijs/koishi.git"
@@ -16,7 +19,7 @@
   "bugs": {
     "url": "https://github.com/koishijs/koishi/issues"
   },
-  "homepage": "https://koishi.js.org/plugins/adventure.html",
+  "homepage": "https://github.com/koishijs/koishi/packages/dev-utils#readme",
   "keywords": [
     "bot",
     "qqbot",
@@ -25,16 +28,10 @@
     "chatbot",
     "koishi",
     "plugin",
-    "adventure"
+    "utilities"
   ],
   "peerDependencies": {
     "koishi-core": "^3.12.0",
-    "koishi-plugin-common": "^4.2.7",
-    "koishi-plugin-mysql": "^3.3.2",
-    "koishi-plugin-teach": "^2.1.5",
     "koishi-utils": "^4.2.2"
-  },
-  "devDependencies": {
-    "koishi-test-utils": "^6.0.0"
   }
 }

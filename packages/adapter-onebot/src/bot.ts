@@ -187,6 +187,10 @@ export class CQBot extends Bot {
     await this.$setGroupAddRequest(messageId, 'add', approve, comment)
   }
 
+  async deleteFriend(userId: string) {
+    await this.$deleteFriend(userId)
+  }
+
   async getStatus() {
     if (this.status !== Bot.Status.GOOD) return this.status
     try {
@@ -198,9 +202,16 @@ export class CQBot extends Bot {
   }
 }
 
-function define(name: string, ...params: string[]) {
+const asyncPrefixes = ['$set', '$send', '$delete', '$create', '$upload']
+
+function prepareMethod(name: string) {
   const prop = '$' + camelCase(name.replace(/^[_.]/, ''))
-  const isAsync = prop.startsWith('$set') || prop.startsWith('$send') || prop.startsWith('$delete')
+  const isAsync = asyncPrefixes.some(prefix => prop.startsWith(prefix))
+  return [prop, isAsync] as const
+}
+
+function define(name: string, ...params: string[]) {
+  const [prop, isAsync] = prepareMethod(name)
   CQBot.prototype[prop] = async function (this: CQBot, ...args: any[]) {
     const data = await this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
     if (!isAsync) return data
@@ -212,8 +223,7 @@ function define(name: string, ...params: string[]) {
 
 function defineExtract(name: string, key: string, ...params: string[]) {
   key = camelCase(key)
-  const prop = '$' + camelCase(name.replace(/^[_.]/, ''))
-  const isAsync = prop.startsWith('$set') || prop.startsWith('$send') || prop.startsWith('$delete')
+  const [prop, isAsync] = prepareMethod(name)
   CQBot.prototype[prop] = async function (this: CQBot, ...args: any[]) {
     const data = await this.get(name, Object.fromEntries(params.map((name, index) => [name, args[index]])))
     return data[key]
@@ -238,6 +248,8 @@ defineExtract('.get_word_slices', 'slices', 'content')
 define('get_group_msg_history', 'group_id', 'message_seq')
 define('set_friend_add_request', 'flag', 'approve', 'remark')
 define('set_group_add_request', 'flag', 'sub_type', 'approve', 'reason')
+defineExtract('_get_model_show', 'variants', 'model')
+define('_set_model_show', 'model', 'model_show')
 
 define('set_group_kick', 'group_id', 'user_id', 'reject_add_request')
 define('set_group_ban', 'group_id', 'user_id', 'duration')
@@ -266,10 +278,14 @@ define('get_group_file_system_info', 'group_id')
 define('get_group_root_files', 'group_id')
 define('get_group_files_by_folder', 'group_id', 'folder_id')
 define('upload_group_file', 'group_id', 'file', 'name', 'folder')
+define('create_group_file_folder', 'group_id', 'folder_id', 'name')
+define('delete_group_folder', 'group_id', 'folder_id')
+define('delete_group_file', 'group_id', 'folder_id', 'file_id', 'busid')
 defineExtract('get_group_file_url', 'url', 'group_id', 'file_id', 'busid')
 defineExtract('download_file', 'file', 'url', 'headers', 'thread_count')
 defineExtract('get_online_clients', 'clients', 'no_cache')
 defineExtract('check_url_safely', 'level', 'url')
+define('delete_friend', 'user_id')
 
 defineExtract('get_cookies', 'cookies', 'domain')
 defineExtract('get_csrf_token', 'token')

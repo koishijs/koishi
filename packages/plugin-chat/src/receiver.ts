@@ -128,7 +128,7 @@ export default function apply(ctx: Context, config: ReceiverConfig = {}) {
         } else if (session.subtype === 'group') {
           const id = `${session.platform}:${code.data.id}`
           if (code.data.name) {
-            userMap[session.uid] = [Promise.resolve(code.data.name), timestamp]
+            userMap[id] = [Promise.resolve(code.data.name), timestamp]
           } else if (!userMap[id] || timestamp - userMap[id][1] >= refreshUserName) {
             userMap[id] = [getUserName(session.bot, session.groupId, code.data.id), timestamp]
           }

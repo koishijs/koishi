@@ -124,6 +124,10 @@ export function createSession(adapter: Adapter, data: any) {
         session.type = session.userId === session.selfId ? 'group-added' : 'group-member-added'
         session.subtype = session.userId === session.operatorId ? 'active' : 'passive'
         break
+      case 'group_card':
+        session.type = 'group-member'
+        session.subtype = 'nickname'
+        break
       case 'notify':
         session.type = 'notice'
         session.subtype = paramCase(data.sub_type)
