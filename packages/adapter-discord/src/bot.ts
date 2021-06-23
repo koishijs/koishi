@@ -166,6 +166,9 @@ export class DiscordBot extends Bot<'discord'> {
                 .head(data.url, {
                   ...axiosConfig,
                   ...discord.axiosConfig,
+                  headers: {
+                    accept: 'image/*',
+                  },
                 })
                 .then(async ({ headers }) => {
                   if (headers['content-type'].includes('image')) {
