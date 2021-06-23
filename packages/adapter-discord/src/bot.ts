@@ -140,6 +140,9 @@ export class DiscordBot extends Bot<'discord'> {
                 ...axiosConfig,
                 ...discord.axiosConfig,
                 responseType: 'arraybuffer',
+                headers: {
+                  accept: 'image/*',
+                },
               })
               const r = await that.sendEmbedMessage(requestUrl, a.data, {
                 ...addition,
