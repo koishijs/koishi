@@ -1,11 +1,9 @@
 import { Adapter } from 'koishi-core'
 import { AxiosRequestConfig } from 'axios'
-import { DiscordBot } from './bot'
+import { DiscordBot, HandleExternalAssets } from './bot'
 import WsClient from './ws'
 import * as DC from './types'
 export * from './bot'
-
-export type HandleExternalAssets = 'auto' | 'download' | 'direct'
 
 interface DiscordOptions extends Adapter.WsClientOptions {
   endpoint?: string

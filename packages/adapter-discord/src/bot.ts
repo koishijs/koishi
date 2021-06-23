@@ -8,7 +8,8 @@ import { readFileSync } from 'fs'
 import { segment } from 'koishi-utils'
 import FormData from 'form-data'
 import FileType from 'file-type'
-import { HandleExternalAssets } from '.'
+
+export type HandleExternalAssets = 'auto' | 'download' | 'direct'
 
 export class SenderError extends Error {
   constructor(url: string, data: any, selfId: string) {
@@ -161,22 +162,23 @@ export class DiscordBot extends Bot<'discord'> {
               await sendDownload()
             } else {
               // auto mode
-              axios.head(data.url, {
-                ...axiosConfig,
-                ...discord.axiosConfig,
-              }).then(async ({ headers }) => {
-                if (headers['content-type'].includes('image')) {
-                  await sendDirect()
-                } else {
+              await axios
+                .head(data.url, {
+                  ...axiosConfig,
+                  ...discord.axiosConfig,
+                })
+                .then(async ({ headers }) => {
+                  if (headers['content-type'].includes('image')) {
+                    await sendDirect()
+                  } else {
+                    await sendDownload()
+                  }
+                }, async () => {
                   await sendDownload()
-                }
-              }, async () => {
-                try {
-                  await sendDownload()
-                } catch (e) {
+                })
+                .catch(() => {
                   throw new SenderError(data.url, data, this.selfId)
-                }
-              })
+                })
             }
           }
         }
