@@ -356,18 +356,14 @@ export class App extends Context {
     const { parsed, quote } = session
     if (parsed.prefix || quote) return
     for (const shortcut of this._shortcuts) {
-      const { name, fuzzy, command, greedy, prefix, options = {}, args = [] } = shortcut
+      const { name, fuzzy, command, prefix, options = {}, args = [] } = shortcut
       if (prefix && !parsed.appel || !command.context.match(session)) continue
       if (typeof name === 'string') {
         if (!fuzzy && content !== name || !content.startsWith(name)) continue
         const message = content.slice(name.length)
         if (fuzzy && !parsed.appel && message.match(/^\S/)) continue
-        const argv: Argv = greedy
-          ? { options: {}, args: [message.trim()] }
-          : command.parse(Argv.parse(message.trim()))
+        const argv = command.parse(message.trim(), '', [...args], { ...options })
         argv.command = command
-        argv.options = { ...options, ...argv.options }
-        argv.args = [...args, ...argv.args]
         return argv
       } else {
         const capture = name.exec(content)

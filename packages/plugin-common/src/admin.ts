@@ -222,7 +222,7 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
 
   ctx.command('common/callme [name:text]', '修改自己的称呼')
     .userFields(['id', 'name'])
-    .shortcut('叫我', { prefix: true, fuzzy: true, greedy: true })
+    .shortcut('叫我', { prefix: true, fuzzy: true })
     .action(async ({ session }, name) => {
       const { user } = session
       if (!name) {

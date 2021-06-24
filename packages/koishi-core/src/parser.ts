@@ -456,12 +456,10 @@ export namespace Argv {
     }
 
     parse(argv: Argv): Argv
-    parse(source: string, terminator?: string): Argv
-    parse(argv: string | Argv, terminator?: string): Argv {
+    parse(source: string, terminator?: string, args?: any[], options?: Record<string, any>): Argv
+    parse(argv: string | Argv, terminator?: string, args = [], options = {}): Argv {
       if (typeof argv === 'string') argv = Argv.parse(argv, terminator)
 
-      const args: string[] = []
-      const options: Record<string, any> = {}
       const source = this.name + ' ' + Argv.stringify(argv)
       while (!argv.error && argv.tokens.length) {
         const token = argv.tokens[0]
