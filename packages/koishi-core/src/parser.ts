@@ -319,6 +319,32 @@ export namespace Argv {
     return result
   }
 
+  export function parseValue(source: string, quoted: boolean, kind: string, argv: Argv, decl: Declaration = {}) {
+    const { name, type, fallback } = decl
+
+    // no explicit parameter & has fallback
+    const implicit = source === '' && !quoted
+    if (implicit && fallback !== undefined) return fallback
+
+    // apply domain callback
+    const transform = resolveType(type)
+    if (transform) {
+      try {
+        return transform(source, argv.session)
+      } catch (err) {
+        const message = err['message'] || template('internal.check-syntax')
+        argv.error = template(`internal.invalid-${kind}`, name, message)
+        return
+      }
+    }
+
+    // default behavior
+    if (implicit) return true
+    if (quoted) return source
+    const n = +source
+    return n * 0 === 0 ? n : source
+  }
+
   export interface OptionConfig<T extends Type = Type> {
     value?: any
     fallback?: any
@@ -342,7 +368,6 @@ export namespace Argv {
     public _arguments: Declaration[]
     public _options: OptionDeclarationMap = {}
 
-    private _error: string
     private _namedOptions: OptionDeclarationMap = {}
     private _symbolicOptions: OptionDeclarationMap = {}
 
@@ -430,32 +455,6 @@ export namespace Argv {
       return true
     }
 
-    private _parseValue(source: string, quoted: boolean, kind: string, session: Session, decl: Declaration = {}) {
-      const { name, type, fallback } = decl
-
-      // no explicit parameter & has fallback
-      const implicit = source === '' && !quoted
-      if (implicit && fallback !== undefined) return fallback
-
-      // apply domain callback
-      const transform = resolveType(type)
-      if (transform) {
-        try {
-          return transform(source, session)
-        } catch (err) {
-          const message = err['message'] || template('internal.check-syntax')
-          this._error = template(`internal.invalid-${kind}`, name, message)
-          return
-        }
-      }
-
-      // default behavior
-      if (implicit) return true
-      if (quoted) return source
-      const n = +source
-      return n * 0 === 0 ? n : source
-    }
-
     parse(argv: Argv): Argv
     parse(source: string, terminator?: string): Argv
     parse(argv: string | Argv, terminator?: string): Argv {
@@ -464,16 +463,14 @@ export namespace Argv {
       const args: string[] = []
       const options: Record<string, any> = {}
       const source = this.name + ' ' + Argv.stringify(argv)
-      this._error = ''
-
-      while (!this._error && argv.tokens.length) {
+      while (!argv.error && argv.tokens.length) {
         const token = argv.tokens[0]
         let { content, quoted } = token
 
         // greedy argument
         const argDecl = this._arguments[args.length]
         if (content[0] !== '-' && resolveConfig(argDecl?.type).greedy) {
-          args.push(Argv.stringify(argv))
+          args.push(Argv.parseValue(Argv.stringify(argv), true, 'argument', argv, argDecl))
           break
         }
 
@@ -488,7 +485,7 @@ export namespace Argv {
         } else {
           // normal argument
           if (content[0] !== '-' || quoted) {
-            args.push(this._parseValue(content, quoted, 'argument', argv.session, argDecl || { type: 'string' }))
+            args.push(Argv.parseValue(content, quoted, 'argument', argv, argDecl || { type: 'string' }))
             continue
           }
 
@@ -539,9 +536,9 @@ export namespace Argv {
             options[key] = optDecl.values[name]
           } else {
             const source = j + 1 < names.length ? '' : param
-            options[key] = this._parseValue(source, quoted, 'option', argv.session, optDecl)
+            options[key] = Argv.parseValue(source, quoted, 'option', argv, optDecl)
           }
-          if (this._error) break
+          if (argv.error) break
         }
       }
 
@@ -553,7 +550,7 @@ export namespace Argv {
       }
 
       delete argv.tokens
-      return { options, args, source, rest: argv.rest, error: this._error }
+      return { options, args, source, rest: argv.rest, error: argv.error || '' }
     }
 
     private stringifyArg(value: any) {
