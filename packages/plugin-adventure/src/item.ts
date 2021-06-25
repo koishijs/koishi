@@ -90,7 +90,7 @@ namespace Item {
 
   const MAX_RECENT_ITEMS = 10
 
-  export function gain(session: Session<Adventurer.Field>, name: string, count = 1) {
+  export function gain(session: Adventurer.Session, name: string, count = 1) {
     const item = Item.data[name]
     const output: string[] = []
     session.user.gains[name] = (session.user.gains[name] || 0) + count
@@ -132,7 +132,7 @@ namespace Item {
     }
   }
 
-  export function checkOverflow(session: Session<Adventurer.Field>, names = Object.keys(session.user.warehouse)) {
+  export function checkOverflow(session: Adventurer.Session, names = Object.keys(session.user.warehouse)) {
     const itemMap: Record<string, number> = {}
     for (const name of names) {
       const { maxCount, value } = Item.data[name]
@@ -150,7 +150,15 @@ namespace Item {
     }
   }
 
-  async function toItemMap(argv: Argv) {
+  export function listToMap(list: string[]) {
+    const map: Record<string, number> = {}
+    for (const name of list) {
+      map[name] = (map[name] || 0) + 1
+    }
+    return map
+  }
+
+  async function argvToMap(argv: Argv) {
     const { args } = argv
     const itemMap: Record<string, number> = {}
     for (let i = 0; i < args.length; i++) {
@@ -287,7 +295,7 @@ namespace Item {
           return output.join('\n')
         }
 
-        const buyMap = await toItemMap(argv)
+        const buyMap = await argvToMap(argv)
         if (!buyMap) return
 
         let moneyLost = 0
@@ -353,7 +361,7 @@ namespace Item {
           return output.join('\n')
         }
 
-        const sellMap = await toItemMap(argv)
+        const sellMap = await argvToMap(argv)
         if (!sellMap) return
 
         const user = session.user
@@ -390,7 +398,7 @@ namespace Item {
           await session.observeUser(Adventurer.fields)
           const progress = getValue<string, Shopper.Field>(saleAction, user)
           if (progress) {
-            const _meta = session as Session<Adventurer.Field>
+            const _meta = session as Adventurer.Session
             _meta.user['_skip'] = session._skipAll
             await Phase.setProgress(_meta.user, progress)
             return Phase.start(_meta)

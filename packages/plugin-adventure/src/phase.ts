@@ -38,7 +38,7 @@ export namespace Phase {
   export const phaseMap: Record<string, Adventurer.Infer<Phase>> = { '': mainPhase }
   export const salePlots: Record<string, ReadonlyUser.Infer<string, Shopper.Field>> = {}
 
-  export const userSessionMap: Record<string, [Session<Adventurer.Field>, NodeJS.Timer]> = {}
+  export const userSessionMap: Record<string, [Adventurer.Session, NodeJS.Timer]> = {}
   export const channelUserMap: Record<string, [string, NodeJS.Timer]> = {}
   export const activeUsers = new Set<string>()
 
@@ -60,7 +60,7 @@ export namespace Phase {
     }
   }
 
-  export function sendEscaped(session: Session<Adventurer.Field>, message: string | void, ms?: number) {
+  export function sendEscaped(session: Adventurer.Session, message: string | void, ms?: number) {
     if (!message) return
     message = session.app.chain('adventure/text', message, session)
     return session.sendQueued(message, ms)
@@ -140,7 +140,7 @@ export namespace Phase {
     return phase || (user.progress = '', null)
   }
 
-  export type Action<S = {}> = (session: Session<Adventurer.Field>, state?: S) => Promise<string | void>
+  export type Action<S = {}> = (session: Adventurer.Session, state?: S) => Promise<string | void>
 
   const HOOK_PENDING_USE = 4182
   const HOOK_PENDING_CHOOSE = 4185
@@ -283,7 +283,7 @@ export namespace Phase {
   }
 
   /** display phase texts */
-  export async function print(session: Session<Adventurer.Field>, texts: string[], canSkip = true, state = {}) {
+  export async function print(session: Adventurer.Session, texts: string[], canSkip = true, state = {}) {
     session._canSkip = canSkip
     if (!session._skipAll || !session._canSkip) {
       for (const text of texts || []) {
@@ -295,7 +295,7 @@ export namespace Phase {
   }
 
   /** handle events */
-  async function epilog(session: Session<Adventurer.Field>, events: Event[] = []) {
+  async function epilog(session: Adventurer.Session, events: Event[] = []) {
     const hints: string[] = []
     for (const event of events || []) {
       const result = event(session)
@@ -356,7 +356,7 @@ export namespace Phase {
     }
   }
 
-  export async function start(session: Session<Adventurer.Field>) {
+  export async function start(session: Adventurer.Session) {
     const disposeUser = setState(userSessionMap, session.user.id, session)
     const disposeChannel = setState(channelUserMap, session.cid, session.user.id)
     try {

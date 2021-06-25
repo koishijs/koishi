@@ -1,5 +1,6 @@
 import { User, Database, Context, Command, Argv, TableType, FieldCollector, defineEnumProperty } from 'koishi-core'
 import {} from 'koishi-plugin-mysql'
+import * as Koishi from 'koishi-core'
 import Achievement from './achv'
 
 function createCollector<T extends TableType>(key: T): FieldCollector<T, never, any[], { rest: string }> {
@@ -36,14 +37,16 @@ declare module 'koishi-core' {
   }
 
   interface EventMap {
-    'adventure/check'(session: Session<Adventurer.Field>, hints: string[]): void
+    'adventure/check'(session: Adventurer.Session, hints: string[]): void
     'adventure/rank'(name: string): [string, string]
-    'adventure/text'(text: string, session: Session<Adventurer.Field>): string
+    'adventure/text'(text: string, session: Adventurer.Session): string
     'adventure/use'(userId: string, progress: string): void
     'adventure/before-sell'(itemMap: Record<string, number>, session: Session<Shopper.Field>): string | undefined
-    'adventure/before-use'(item: string, session: Session<Adventurer.Field>): string | undefined
+    'adventure/before-use'(item: string, session: Adventurer.Session): string | undefined
     'adventure/lose'(itemMap: Record<string, number>, session: Session<Shopper.Field>, hints: string[]): void
-    'adventure/ending'(session: Session<Adventurer.Field>, id: string, hints: string[]): void
+    'adventure/gain'(itemMap: Record<string, number>, session: Session<Shopper.Field>, hints: string[]): void
+    'adventure/before-timer'(name: string, reason: string, session: Adventurer.Session): string | undefined
+    'adventure/ending'(session: Adventurer.Session, id: string, hints: string[]): void
     'adventure/achieve'(session: Session<Achievement.Field>, achv: Achievement, hints: string[]): void
   }
 
@@ -126,6 +129,8 @@ export interface Adventurer extends Shopper {
 
 export namespace Adventurer {
   export type Field = keyof Adventurer
+
+  export type Session = Koishi.Session<Field>
 
   export type Infer<U, T extends User.Field = Adventurer.Field> = InferFrom<U, [User.Observed<T>]>
 
