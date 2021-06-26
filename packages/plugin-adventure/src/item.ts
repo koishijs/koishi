@@ -1,5 +1,5 @@
 import { Context, checkTimer, Argv, Session, User, isInteger, Random } from 'koishi-core'
-import { getValue, Shopper, Adventurer, ReadonlyUser, Show } from './utils'
+import { getValue, Adventurer, ReadonlyUser, Show } from './utils'
 import Event from './event'
 import Phase from './phase'
 import Rank from './rank'
@@ -150,14 +150,6 @@ namespace Item {
     }
   }
 
-  export function listToMap(list: string[]) {
-    const map: Record<string, number> = {}
-    for (const name of list) {
-      map[name] = (map[name] || 0) + 1
-    }
-    return map
-  }
-
   async function argvToMap(argv: Argv) {
     const { args } = argv
     const itemMap: Record<string, number> = {}
@@ -274,7 +266,7 @@ namespace Item {
     ctx.command('adv/buy [item] [count]', '购入物品', { maxUsage: 100 })
       .checkTimer('$system')
       .checkTimer('$shop')
-      .userFields(['id', 'authority', 'warehouse', 'money', 'wealth', 'achievement', 'timers', 'name', 'usage', 'progress', 'gains'])
+      .userFields(Adventurer.fields)
       .shortcut('购入', { fuzzy: true })
       .shortcut('购买', { fuzzy: true })
       .shortcut('买入', { fuzzy: true })
@@ -340,7 +332,7 @@ namespace Item {
     ctx.command('adv/sell [item] [count]', '售出物品', { maxUsage: 100 })
       .checkTimer('$system')
       .checkTimer('$shop')
-      .userFields(['id', 'authority', 'warehouse', 'money', 'wealth', 'achievement', 'timers', 'progress', 'name', 'usage', 'gains'])
+      .userFields(Adventurer.fields)
       .shortcut('售出', { fuzzy: true })
       .shortcut('出售', { fuzzy: true })
       .shortcut('卖出', { fuzzy: true })
@@ -396,7 +388,7 @@ namespace Item {
         if (!user.progress && entries.length === 1 && entries[0][1] === 1 && entries[0][0] in Phase.salePlots) {
           const saleAction = Phase.salePlots[entries[0][0]]
           await session.observeUser(Adventurer.fields)
-          const progress = getValue<string, Shopper.Field>(saleAction, user)
+          const progress = getValue(saleAction, user)
           if (progress) {
             const _meta = session as Adventurer.Session
             _meta.user['_skip'] = session._skipAll

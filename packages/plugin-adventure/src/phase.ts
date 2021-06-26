@@ -1,5 +1,5 @@
 import { Context, User, Session, checkTimer, checkUsage, Logger, Random, interpolate, noop, Time } from 'koishi-core'
-import { ReadonlyUser, getValue, Adventurer, Shopper, Show } from './utils'
+import { ReadonlyUser, getValue, Adventurer, Show } from './utils'
 import Event from './event'
 import {} from 'koishi-plugin-common'
 import {} from 'koishi-plugin-teach'
@@ -36,7 +36,7 @@ export namespace Phase {
 
   export const mainPhase: Phase = { items: {} }
   export const phaseMap: Record<string, Adventurer.Infer<Phase>> = { '': mainPhase }
-  export const salePlots: Record<string, ReadonlyUser.Infer<string, Shopper.Field>> = {}
+  export const salePlots: Record<string, ReadonlyUser.Infer<string, Adventurer.Field>> = {}
 
   export const userSessionMap: Record<string, [Adventurer.Session, NodeJS.Timer]> = {}
   export const channelUserMap: Record<string, [string, NodeJS.Timer]> = {}

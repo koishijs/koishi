@@ -41,11 +41,11 @@ declare module 'koishi-core' {
     'adventure/rank'(name: string): [string, string]
     'adventure/text'(text: string, session: Adventurer.Session): string
     'adventure/use'(userId: string, progress: string): void
-    'adventure/before-sell'(itemMap: Record<string, number>, session: Session<Shopper.Field>): string | undefined
+    'adventure/before-sell'(itemMap: Record<string, number>, session: Adventurer.Session): string | undefined
     'adventure/before-use'(item: string, session: Adventurer.Session): string | undefined
-    'adventure/lose'(itemMap: Record<string, number>, session: Session<Shopper.Field>, hints: string[]): void
-    'adventure/gain'(itemMap: Record<string, number>, session: Session<Shopper.Field>, hints: string[]): void
     'adventure/before-timer'(name: string, reason: string, session: Adventurer.Session): string | undefined
+    'adventure/lose'(itemMap: Record<string, number>, session: Adventurer.Session, hints: string[]): void
+    'adventure/gain'(itemMap: Record<string, number>, session: Adventurer.Session, hints: string[]): void
     'adventure/ending'(session: Adventurer.Session, id: string, hints: string[]): void
     'adventure/achieve'(session: Session<Achievement.Field>, achv: Achievement, hints: string[]): void
   }
@@ -80,7 +80,6 @@ User.extend(() => ({
   progress: '',
   phases: [],
   endings: {},
-  avatarAchv: 0,
   drunkAchv: 0,
 }))
 
@@ -99,7 +98,7 @@ type InferFrom<T, R extends any[]> = T extends (...args: any[]) => any ? never :
 type DeepReadonly<T> = T extends (...args: any[]) => any ? T
   : { readonly [P in keyof T]: T[P] extends {} ? DeepReadonly<T[P]> : T[P] }
 
-export interface Shopper {
+export interface Adventurer {
   id: string
   money: number
   wealth: number
@@ -107,13 +106,6 @@ export interface Shopper {
   timers: Record<string, number>
   gains: Record<string, number>
   warehouse: Record<string, number>
-}
-
-export namespace Shopper {
-  export type Field = keyof Shopper
-}
-
-export interface Adventurer extends Shopper {
   name: string
   flag: number
   luck: number
@@ -122,7 +114,6 @@ export interface Adventurer extends Shopper {
   progress: string
   phases: string[]
   endings: Record<string, number>
-  avatarAchv: number
   drunkAchv: number
   achievement: string[]
 }
@@ -137,7 +128,7 @@ export namespace Adventurer {
   export const fields: Field[] = [
     'id', 'money', 'warehouse', 'wealth', 'timers', 'gains',
     'flag', 'luck', 'taste', 'recent', 'progress', 'phases',
-    'endings', 'usage', 'avatarAchv', 'drunkAchv', 'name', 'achievement',
+    'endings', 'usage', 'drunkAchv', 'name', 'achievement',
   ]
 }
 
@@ -187,6 +178,7 @@ export namespace Show {
       })
       .action(({ session, args, next }) => {
         const target = session.content.slice(5)
+        if (!target) return '请输入要查看的图鉴名称。'
         const item = data[target]
         if (!item) return next(() => session.send(`你尚未解锁图鉴「${target}」。`))
         if (item[0] === 'redirect') {

@@ -1,4 +1,4 @@
-import { getValue, Shopper, Adventurer } from './utils'
+import { getValue, Adventurer } from './utils'
 import { User, checkTimer, Session, Logger } from 'koishi-core'
 import Buff from './buff'
 import Item from './item'
@@ -25,7 +25,7 @@ namespace Event {
     return output.join('\n')
   }
 
-  export const sell = (itemMap: Readonly<Record<string, number>>): Visible<Shopper.Field> => ({ user, app }) => {
+  export const sell = (itemMap: Readonly<Record<string, number>>): Visible => ({ user, app }) => {
     let moneyGained = 0
     const toValue = app.adventure.createSeller(user)
     for (const name in itemMap) {
@@ -40,7 +40,7 @@ namespace Event {
     return `已售出${Item.format(itemMap)}，获得 ${+moneyGained.toFixed(1)}￥，余额 ${+user.money.toFixed(1)}￥。`
   }
 
-  export const buy = (itemMap: Readonly<Record<string, number>>): Visible<Shopper.Field> => ({ user, app }) => {
+  export const buy = (itemMap: Readonly<Record<string, number>>): Visible => ({ user, app }) => {
     let moneyLost = 0
     const toBid = app.adventure.createBuyer(user)
     for (const name in itemMap) {
@@ -97,6 +97,8 @@ namespace Event {
     return reason
   }
 
+  // Money
+
   export const loseMoney = (value: Adventurer.Infer<number>): Event => ({ user }) => {
     const loss = Math.min(getValue(value, user), user.money)
     user.money -= loss
@@ -110,50 +112,37 @@ namespace Event {
     return `$s 获得了 ${+gain.toFixed(1)}￥！`
   }
 
-  export const gain = (...names: string[]): Event => (session) => {
+  // Item
+
+  function toItemMap(items: Item.Pack) {
+    if (!Array.isArray(items)) return items
+    const map: Record<string, number> = {}
+    for (const name of items) {
+      map[name] = (map[name] || 0) + 1
+    }
+    return map
+  }
+
+  export const gain = (items: Adventurer.Infer<Item.Pack>, reason = '$s $n获得了$i$r！'): Visible => (session) => {
     const output: string[] = []
-    for (const name of names) {
+    const itemMap = toItemMap(getValue(items, session.user))
+    for (const name in itemMap) {
       const isOld = name in session.user.warehouse
       const { rarity, description } = Item.data[name]
       session._item = name
-      const result = Item.gain(session, name)
-      output.push(`$s ${isOld ? '' : '首次'}获得了${session._item}（${rarity}）！`)
+      const count = itemMap[name]
+      const result = Item.gain(session, name, count)
+      output.push(reason
+        .replace('$n', isOld ? '' : '首次')
+        .replace('$i', (count > 1 ? count + '×' : '') + session._item)
+        .replace('$r', `（${rarity}）`))
       if (!session._skipAll) output.push(description)
       if (result) output.push(result)
     }
-    const result = Item.checkOverflow(session, names)
+    session.app.emit('adventure/gain', itemMap, session, output)
+    const result = Item.checkOverflow(session, Object.keys(itemMap))
     if (result) output.push(result)
     return output.join('\n')
-  }
-
-  export function gainSingle(name: string, reason: string): Event.Visible
-  export function gainSingle(name: string, count: Adventurer.Infer<number>): Event.Visible
-  export function gainSingle(name: string, arg: string | Adventurer.Infer<number>): Visible {
-    return (session) => {
-      let output: string
-      if (typeof arg === 'string') {
-        session._item = name
-        const result = Item.gain(session, name)
-        output = arg.replace('$i', session._item)
-        if (!session._skipAll) output += '\n' + Item.data[name].description
-        if (result) output += '\n' + result
-      } else {
-        const { warehouse, gains } = session.user
-        const _count = getValue(arg, session.user)
-        const isOld = name in gains
-        if (!isOld) {
-          warehouse[name] = 0
-          gains[name] = 0
-        }
-        warehouse[name] += _count
-        gains[name] += _count
-        output = `$s ${isOld ? '' : '首次'}获得了${name}×${_count}！`
-        if (!session._skipAll) output += '\n' + Item.data[name].description
-      }
-      const result = Item.checkOverflow(session, [name])
-      if (result) output += '\n' + result
-      return output
-    }
   }
 
   const rarities = ['N', 'R', 'SR', 'SSR', 'EX'] as Item.Rarity[]
@@ -183,23 +172,24 @@ namespace Event {
     }
 
     output.unshift(`$s 获得了 ${_count} 件随机物品：${Item.format(gainListFormatted)}！`)
-    const result = Item.checkOverflow(session, gainListOriginal)
+    const itemMap = toItemMap(gainListOriginal)
+    session.app.emit('adventure/gain', itemMap, session, output)
+    const result = Item.checkOverflow(session, Object.keys(itemMap))
     if (result) output.push(result)
     return output.join('\n')
   }
 
-  export function lose(items: Item.Pack, reason = '$s 失去了$i！'): Visible<Shopper.Field> {
-    reason = reason.replace('$i', () => Item.format(items))
-    const itemMap = Array.isArray(items) ? Item.listToMap(items) : items
-    return (session) => {
-      const output = [reason]
-      for (const name in itemMap) {
-        const result = Item.lose(session, name)
-        if (result) output.push(result)
-      }
-      session.app.emit('adventure/lose', itemMap, session, output)
-      return output.join('\n')
+  export const lose = (items: Adventurer.Infer<Item.Pack>, reason = '$s 失去了$i！'): Visible => (session) => {
+    const itemMap = toItemMap(getValue(items, session.user))
+    const output = [reason.replace('$i', () => {
+      return Item.format(Array.isArray(items) ? items : itemMap)
+    })]
+    for (const name in itemMap) {
+      const result = Item.lose(session, name)
+      if (result) output.push(result)
     }
+    session.app.emit('adventure/lose', itemMap, session, output)
+    return output.join('\n')
   }
 
   export const loseRandom = (count: Adventurer.Infer<number>, exclude: readonly string[] = []): Event => (session) => {
@@ -228,7 +218,7 @@ namespace Event {
       if (result) output.push(result)
     }
     output.unshift(`$s 失去了 ${length} 件随机物品：${Item.format(lostList)}！`)
-    session.app.emit('adventure/lose', Item.listToMap(lostList), session, output)
+    session.app.emit('adventure/lose', toItemMap(lostList), session, output)
     return output.join('\n')
   }
 
@@ -241,7 +231,7 @@ namespace Event {
       const result = Item.lose(session, name)
       if (result) output.push(result)
     }
-    session.app.emit('adventure/lose', Item.listToMap(recent), session, output)
+    session.app.emit('adventure/lose', toItemMap(recent), session, output)
     session.user.recent = []
     return output.join('\n')
   }
