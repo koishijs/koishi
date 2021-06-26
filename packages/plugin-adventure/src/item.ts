@@ -5,7 +5,7 @@ import Phase from './phase'
 import Rank from './rank'
 
 type Note = (user: Pick<ReadonlyUser, 'flag' | 'warehouse'>) => string
-type Condition = (user: ReadonlyUser, isLast: boolean) => boolean
+type BeforePick = (session: Adventurer.Session) => boolean
 
 interface Item {
   name: string
@@ -15,12 +15,12 @@ interface Item {
   value?: number
   bid?: number
   onGain?: Event
-  onLose?: Event<'usage'>
+  onLose?: Event
+  beforePick?: BeforePick
   lottery?: number
   fishing?: number
   plot?: boolean
   note?: Note
-  condition?: Condition
 }
 
 namespace Item {
@@ -54,10 +54,6 @@ namespace Item {
     data[name].note = note
   }
 
-  export function condition(name: string, condition: Condition) {
-    data[name].condition = condition
-  }
-
   export function onGain(name: string, event: Event) {
     data[name].onGain = event
   }
@@ -66,20 +62,27 @@ namespace Item {
     data[name].onLose = event
   }
 
+  export function beforePick(name: string, event: BeforePick) {
+    data[name].beforePick = event
+  }
+
   export interface Config {
     createBuyer?: (user: User.Observed<'timers'>) => (name: string) => number
     createSeller?: (user: User.Observed<'timers'>) => (name: string) => number
   }
 
-  export function pick(items: Item[], user: ReadonlyUser, isLast = false) {
-    const weightEntries = items.filter(({ lottery, condition }) => {
-      return lottery !== 0 && (!condition || condition(user, isLast))
-    }).map(({ name, lottery }) => [name, lottery ?? 1] as const)
-    const weight = Object.fromEntries(weightEntries)
-    return Item.data[Random.weightedPick(weight)]
+  type Keys<O, T = any> = { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
+
+  export function pick(items: Item[], session: Adventurer.Session, key: Keys<Item, number>, fallback: number) {
+    const weightEntries = items.map<[string, number]>((item) => {
+      const probability = item[key] ?? fallback
+      if (!probability || item.beforePick?.(session)) return [item.name, 0]
+      return [item.name, probability]
+    })
+    return Item.data[Random.weightedPick(Object.fromEntries(weightEntries))]
   }
 
-  export function lose(session: Session<'usage' | 'warehouse'>, name: string, count = 1) {
+  export function lose(session: Adventurer.Session, name: string, count = 1) {
     if (session.user.warehouse[name]) {
       session.user.warehouse[name] -= count
     }
@@ -132,7 +135,7 @@ namespace Item {
     }
   }
 
-  export function checkOverflow(session: Adventurer.Session, names = Object.keys(session.user.warehouse)) {
+  export function checkOverflow(session: Adventurer.Session, names: Iterable<string> = session._gains) {
     const itemMap: Record<string, number> = {}
     for (const name of names) {
       const { maxCount, value } = Item.data[name]

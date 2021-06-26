@@ -99,13 +99,13 @@ namespace Event {
 
   // Money
 
-  export const loseMoney = (value: Adventurer.Infer<number>): Event => ({ user }) => {
+  export const loseMoney = (value: Adventurer.Infer<number>): Visible => ({ user }) => {
     const loss = Math.min(getValue(value, user), user.money)
     user.money -= loss
     return `$s 损失了 ${+loss.toFixed(1)}￥！`
   }
 
-  export const gainMoney = (value: Adventurer.Infer<number>): Event => ({ user }) => {
+  export const gainMoney = (value: Adventurer.Infer<number>): Visible => ({ user }) => {
     const gain = Math.min(getValue(value, user), user.money)
     user.money += gain
     user.wealth += gain
@@ -140,22 +140,20 @@ namespace Event {
       if (result) output.push(result)
     }
     session.app.emit('adventure/gain', itemMap, session, output)
-    const result = Item.checkOverflow(session, Object.keys(itemMap))
-    if (result) output.push(result)
     return output.join('\n')
   }
 
   const rarities = ['N', 'R', 'SR', 'SSR', 'EX'] as Item.Rarity[]
 
-  export const gainRandom = (count: Adventurer.Infer<number>, exclude: readonly string[] = []): Event => (session) => {
+  export const gainRandom = (count: Adventurer.Infer<number>, exclude: readonly string[] = []): Visible => (session) => {
     const _count = getValue(count, session.user)
-    const gainListOriginal: string[] = []
-    const gainListFormatted: string[] = []
+    const itemMap: Record<string, number> = {}
+    const gainList: string[] = []
 
     const data = {} as Record<Item.Rarity, string[]>
     for (const rarity of rarities) {
-      data[rarity] = Item.data[rarity].filter(({ name, condition }) => {
-        return !exclude.includes(name) && (!condition || condition(session.user, false))
+      data[rarity] = Item.data[rarity].filter(({ name, beforePick }) => {
+        return !exclude.includes(name) && !beforePick?.(session)
       }).map(({ name }) => name)
     }
 
@@ -167,15 +165,13 @@ namespace Event {
       session._item = item
       const result = Item.gain(session, item)
       if (result) output.push(result)
-      gainListOriginal.push(item)
-      gainListFormatted.push(session._item)
+      session._gains.add(item)
+      itemMap[item] = (itemMap[item] || 0) + 1
+      gainList.push(session._item)
     }
 
-    output.unshift(`$s 获得了 ${_count} 件随机物品：${Item.format(gainListFormatted)}！`)
-    const itemMap = toItemMap(gainListOriginal)
+    output.unshift(`$s 获得了 ${_count} 件随机物品：${Item.format(gainList)}！`)
     session.app.emit('adventure/gain', itemMap, session, output)
-    const result = Item.checkOverflow(session, Object.keys(itemMap))
-    if (result) output.push(result)
     return output.join('\n')
   }
 
@@ -192,7 +188,7 @@ namespace Event {
     return output.join('\n')
   }
 
-  export const loseRandom = (count: Adventurer.Infer<number>, exclude: readonly string[] = []): Event => (session) => {
+  export const loseRandom = (count: Adventurer.Infer<number>, exclude: readonly string[] = []): Visible => (session) => {
     const lostList: string[] = []
     let length = 0
 
@@ -222,7 +218,7 @@ namespace Event {
     return output.join('\n')
   }
 
-  export const loseRecent = (count: Adventurer.Infer<number>): Event => (session) => {
+  export const loseRecent = (count: Adventurer.Infer<number>): Visible => (session) => {
     const _count = getValue(count, session.user)
     const recent = session.user.recent.slice(0, _count)
     if (!recent.length) return

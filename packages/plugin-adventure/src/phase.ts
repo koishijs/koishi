@@ -17,6 +17,10 @@ declare module 'koishi-core' {
     _canSkip?: boolean
     /** 即将获得的道具名 */
     _item: string
+    /** 当前获得的物品列表 */
+    _gains: Set<string>
+    /** 剩余抽卡次数 */
+    _lotteryLast: number
   }
 }
 
@@ -296,6 +300,8 @@ export namespace Phase {
 
   /** handle events */
   async function epilog(session: Adventurer.Session, events: Event[] = []) {
+    session._gains = new Set()
+
     const hints: string[] = []
     for (const event of events || []) {
       const result = event(session)
@@ -306,6 +312,8 @@ export namespace Phase {
       }
     }
 
+    const result = Item.checkOverflow(session)
+    if (result) hints.push(result)
     session.app.emit('adventure/check', session, hints)
     await sendEscaped(session, hints.join('\n'))
   }
