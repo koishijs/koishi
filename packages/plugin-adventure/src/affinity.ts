@@ -26,7 +26,7 @@ type AffinityCallback<T extends User.Field = never> = (user: Pick<User, T>, date
 type TheoreticalAffinityCallback = () => AffinityResult
 type HintCallback<T extends User.Field = User.Field> = (user: Pick<User, T>, now: Date) => Iterable<string>
 
-export interface Affinity<T extends User.Field = never> {
+interface Affinity<T extends User.Field = never> {
   order: number
   callback: AffinityCallback<T>
   theoretical: TheoreticalAffinityCallback
@@ -35,7 +35,7 @@ export interface Affinity<T extends User.Field = never> {
 const affinityList: Affinity[] = []
 const hintList: HintCallback[] = []
 
-export namespace Affinity {
+namespace Affinity {
   export const fields = new Set<User.Field>(['name', 'affinity'])
   export const hintFields = new Set<User.Field>()
 

@@ -34,8 +34,8 @@ namespace Luck {
   export const probabilities: Record<Item.Rarity, number> = {
     N: 500,
     R: 300,
-    SR: 150,
-    SSR: 49,
+    SR: 160,
+    SSR: 39,
     EX: 1,
     SP: 0,
   }

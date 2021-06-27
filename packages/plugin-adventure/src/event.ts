@@ -1,5 +1,5 @@
 import { getValue, Adventurer } from './utils'
-import { User, checkTimer, Session, Logger } from 'koishi-core'
+import { User, checkTimer, Logger } from 'koishi-core'
 import Buff from './buff'
 import Item from './item'
 import Luck from './luck'
@@ -7,10 +7,10 @@ import Phase from './phase'
 
 const logger = new Logger('cosmos').extend('event')
 
-type Event<T extends User.Field = Adventurer.Field> = (session: Session<T>) => string | void
+type Event<T = any> = (session: Adventurer.Session, state?: T) => string | void
 
 namespace Event {
-  export type Visible<T extends User.Field = Adventurer.Field> = (session: Session<T>) => string
+  export type Visible<T = any> = (session: Adventurer.Session, state?: T) => string
 
   export const ending = (id: string): Visible => (session) => {
     const { app, user } = session
@@ -55,7 +55,7 @@ namespace Event {
     return `已购入${Item.format(itemMap)}，花费 ${+moneyLost.toFixed(1)}￥，余额 ${+user.money.toFixed(1)}￥。`
   }
 
-  export const updateTimer = (name: string, hours: Adventurer.Infer<number>, reason = ''): Event => (session) => {
+  export const updateTimer = <T>(name: string, hours: Adventurer.Infer<number, T>, reason = ''): Event<T> => (session, state) => {
     const { app, user } = session
     const result = app.bail('adventure/before-timer', name, reason, session)
     if (result) return result
@@ -67,7 +67,7 @@ namespace Event {
 
     // 生死流转仅对显式状态生效
     const scale = reason && checkTimer('$dirt', user) ? 1800000 : 3600000
-    checkTimer(name, user, getValue(hours, user) * scale)
+    checkTimer(name, user, getValue(hours, user, state) * scale)
     return reason
   }
 
@@ -123,9 +123,9 @@ namespace Event {
     return map
   }
 
-  export const gain = (items: Adventurer.Infer<Item.Pack>, reason = '$s $n获得了$i$r！'): Visible => (session) => {
+  export const gain = <T>(items: Adventurer.Infer<Item.Pack, T>, reason = '$s $n获得了$i$r！'): Visible<T> => (session, state) => {
     const output: string[] = []
-    const itemMap = toItemMap(getValue(items, session.user))
+    const itemMap = toItemMap(getValue(items, session.user, state))
     for (const name in itemMap) {
       const isOld = name in session.user.warehouse
       const { rarity, description } = Item.data[name]
@@ -134,7 +134,7 @@ namespace Event {
       const result = Item.gain(session, name, count)
       output.push(reason
         .replace('$n', isOld ? '' : '首次')
-        .replace('$i', (count > 1 ? count + '×' : '') + session._item)
+        .replace('$i', session._item + (count > 1 ? '×' + count : ''))
         .replace('$r', `（${rarity}）`))
       if (!session._skipAll) output.push(description)
       if (result) output.push(result)
@@ -145,8 +145,8 @@ namespace Event {
 
   const rarities = ['N', 'R', 'SR', 'SSR', 'EX'] as Item.Rarity[]
 
-  export const gainRandom = (count: Adventurer.Infer<number>, exclude: readonly string[] = []): Visible => (session) => {
-    const _count = getValue(count, session.user)
+  export const gainRandom = <T>(count: Adventurer.Infer<number, T>, exclude: readonly string[] = []): Visible<T> => (session, state) => {
+    const _count = getValue(count, session.user, state)
     const itemMap: Record<string, number> = {}
     const gainList: string[] = []
 
@@ -162,6 +162,7 @@ namespace Event {
       const rarity = Luck.use(session.user).weightedPick(Luck.probabilities)
       const index = Math.floor(Math.random() * data[rarity].length)
       const [item] = data[rarity].splice(index, 1)
+      if (!data[rarity].length) delete data[rarity]
       session._item = item
       const result = Item.gain(session, item)
       if (result) output.push(result)
@@ -175,8 +176,8 @@ namespace Event {
     return output.join('\n')
   }
 
-  export const lose = (items: Adventurer.Infer<Item.Pack>, reason = '$s 失去了$i！'): Visible => (session) => {
-    const itemMap = toItemMap(getValue(items, session.user))
+  export const lose = <T>(items: Adventurer.Infer<Item.Pack, T>, reason = '$s 失去了$i！'): Visible<T> => (session, state) => {
+    const itemMap = toItemMap(getValue(items, session.user, state))
     const output = [reason.replace('$i', () => {
       return Item.format(Array.isArray(items) ? items : itemMap)
     })]
@@ -188,7 +189,7 @@ namespace Event {
     return output.join('\n')
   }
 
-  export const loseRandom = (count: Adventurer.Infer<number>, exclude: readonly string[] = []): Visible => (session) => {
+  export const loseRandom = <T>(count: Adventurer.Infer<number, T>, exclude: readonly string[] = []): Visible<T> => (session, state) => {
     const lostList: string[] = []
     let length = 0
 
@@ -201,7 +202,7 @@ namespace Event {
       length += data[rarity].length
       if (!data[rarity].length) probabilities[rarity] = 0
     }
-    length = Math.min(length, getValue(count, session.user))
+    length = Math.min(length, getValue(count, session.user, state))
 
     const output: string[] = []
     for (let i = 0; i < length; i += 1) {
@@ -218,8 +219,8 @@ namespace Event {
     return output.join('\n')
   }
 
-  export const loseRecent = (count: Adventurer.Infer<number>): Visible => (session) => {
-    const _count = getValue(count, session.user)
+  export const loseRecent = <T>(count: Adventurer.Infer<number, T>): Visible<T> => (session, state) => {
+    const _count = getValue(count, session.user, state)
     const recent = session.user.recent.slice(0, _count)
     if (!recent.length) return
     const output = [`$s 失去了最后获得的 ${recent.length} 件物品：${Item.format(recent)}！`]

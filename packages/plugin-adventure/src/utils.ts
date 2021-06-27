@@ -93,7 +93,7 @@ Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
   tables.user.achvCount = () => 'list_length(`achievement`)'
 })
 
-type InferFrom<T, R extends any[]> = T extends (...args: any[]) => any ? never : T | ((...args: R) => T)
+type InferFrom<T, R extends any[]> = [T] extends [(...args: any[]) => any] ? never : T | ((...args: R) => T)
 
 type DeepReadonly<T> = T extends (...args: any[]) => any ? T
   : { readonly [P in keyof T]: T[P] extends {} ? DeepReadonly<T[P]> : T[P] }
@@ -123,7 +123,9 @@ export namespace Adventurer {
 
   export type Session = Koishi.Session<Field>
 
-  export type Infer<U, T extends User.Field = Adventurer.Field> = InferFrom<U, [User.Observed<T>]>
+  export type Callback<T> = (session: Session) => T
+
+  export type Infer<U, T = any> = InferFrom<U, [user: User.Observed<Field>, state?: T]>
 
   export const fields: Field[] = [
     'id', 'money', 'warehouse', 'wealth', 'timers', 'gains',
@@ -135,11 +137,11 @@ export namespace Adventurer {
 export type ReadonlyUser = DeepReadonly<Adventurer>
 
 export namespace ReadonlyUser {
-  export type Infer<U, T extends Adventurer.Field = Adventurer.Field> = InferFrom<U, [Pick<ReadonlyUser, T>]>
+  export type Infer<U, T = any> = InferFrom<U, [user: ReadonlyUser, state?: T]>
 }
 
-export function getValue<U, T extends Adventurer.Field = Adventurer.Field>(source: ReadonlyUser.Infer<U, T>, user: Pick<ReadonlyUser, T>): U {
-  return typeof source === 'function' ? (source as any)(user) : source
+export function getValue<U, T>(source: ReadonlyUser.Infer<U, T>, user: ReadonlyUser, state?: T): U {
+  return typeof source === 'function' ? (source as any)(user, state) : source
 }
 
 export namespace Show {

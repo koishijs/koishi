@@ -1,11 +1,10 @@
-import { Context, checkTimer, Argv, Session, User, isInteger, Random } from 'koishi-core'
+import { Context, checkTimer, Argv, User, isInteger, Random } from 'koishi-core'
 import { getValue, Adventurer, ReadonlyUser, Show } from './utils'
 import Event from './event'
 import Phase from './phase'
 import Rank from './rank'
 
 type Note = (user: Pick<ReadonlyUser, 'flag' | 'warehouse'>) => string
-type BeforePick = (session: Adventurer.Session) => boolean
 
 interface Item {
   name: string
@@ -16,9 +15,8 @@ interface Item {
   bid?: number
   onGain?: Event
   onLose?: Event
-  beforePick?: BeforePick
+  beforePick?: Adventurer.Callback<boolean>
   lottery?: number
-  fishing?: number
   plot?: boolean
   note?: Note
 }
@@ -58,11 +56,11 @@ namespace Item {
     data[name].onGain = event
   }
 
-  export function onLose(name: string, event: Event<'usage'>) {
+  export function onLose(name: string, event: Event) {
     data[name].onLose = event
   }
 
-  export function beforePick(name: string, event: BeforePick) {
+  export function beforePick(name: string, event: Adventurer.Callback<boolean>) {
     data[name].beforePick = event
   }
 
@@ -73,9 +71,9 @@ namespace Item {
 
   type Keys<O, T = any> = { [K in keyof O]: O[K] extends T ? K : never }[keyof O]
 
-  export function pick(items: Item[], session: Adventurer.Session, key: Keys<Item, number>, fallback: number) {
+  export function pick(items: Item[], session: Adventurer.Session, key?: Keys<Item, number>, fallback = 0) {
     const weightEntries = items.map<[string, number]>((item) => {
-      const probability = item[key] ?? fallback
+      const probability = key ? item[key] ?? fallback : 1
       if (!probability || item.beforePick?.(session)) return [item.name, 0]
       return [item.name, probability]
     })

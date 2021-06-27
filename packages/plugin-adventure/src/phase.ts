@@ -24,22 +24,22 @@ declare module 'koishi-core' {
   }
 }
 
-export interface Phase<S = {}> {
-  prepare?: () => S
+interface Phase<S = any> {
+  prepare?: Adventurer.Callback<S>
   texts?: string[]
   items?: Record<string, ReadonlyUser.Infer<string>>
   choices?: Phase.Choice[]
   options?: Phase.ChooseOptions
-  next?: string | Phase.Action<S>
+  next?: string | Phase.Action<S extends infer T ? T : any>
   itemsWhenDreamy?: string[]
-  events?: Event[]
+  events?: Event<S extends infer T ? T : any>[]
 }
 
-export namespace Phase {
+namespace Phase {
   const logger = new Logger('adventure')
 
   export const mainPhase: Phase = { items: {} }
-  export const phaseMap: Record<string, Adventurer.Infer<Phase>> = { '': mainPhase }
+  export const phaseMap: Record<string, Phase> = { '': mainPhase }
   export const salePlots: Record<string, ReadonlyUser.Infer<string, Adventurer.Field>> = {}
 
   export const userSessionMap: Record<string, [Adventurer.Session, NodeJS.Timer]> = {}
@@ -70,26 +70,26 @@ export namespace Phase {
     return session.sendQueued(message, ms)
   }
 
-  export function use(name: string, next: string, phase: Adventurer.Infer<Phase>): void
+  export function use(name: string, next: string, phase: Phase): void
   export function use(name: string, next: (user: ReadonlyUser) => string): void
-  export function use(name: string, next: ReadonlyUser.Infer<string>, phase?: Adventurer.Infer<Phase>) {
+  export function use(name: string, next: ReadonlyUser.Infer<string>, phase?: Phase) {
     mainPhase.items[name] = next
     if (typeof next === 'string' && phase) {
       phaseMap[next] = phase
     }
   }
 
-  export function sell(name: string, next: string, phase: Adventurer.Infer<Phase>): void
+  export function sell(name: string, next: string, phase: Phase): void
   export function sell(name: string, next: (user: ReadonlyUser) => string): void
-  export function sell(name: string, next: ReadonlyUser.Infer<string>, phase?: Adventurer.Infer<Phase>) {
+  export function sell(name: string, next: ReadonlyUser.Infer<string>, phase?: Phase) {
     salePlots[name] = next
     if (typeof next === 'string' && phase) {
       phaseMap[next] = phase
     }
   }
 
-  export function phase(id: string, phase: Adventurer.Infer<Phase>) {
-    return phaseMap[id] = phase
+  export function phase<S>(id: string, phase: Phase<S>): void {
+    phaseMap[id] = phase
   }
 
   export const endingMap: Record<string, string> = {}
@@ -140,7 +140,7 @@ export namespace Phase {
   }
 
   export function getPhase(user: Adventurer) {
-    const phase = getValue(phaseMap[user.progress], user)
+    const phase = phaseMap[user.progress]
     return phase || (user.progress = '', null)
   }
 
@@ -328,7 +328,7 @@ export namespace Phase {
     logger.debug('%s phase %c', session.userId, user.progress)
     const { items, choices, next, options, prepare = noop } = phase
 
-    const state = prepare()
+    const state = prepare(session)
     await print(session, phase.texts, user.phases.includes(user.progress), state)
     await epilog(session, phase.events)
 
