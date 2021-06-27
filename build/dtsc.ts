@@ -112,7 +112,7 @@ async function bundleAll(names: readonly string[]) {
   }
 }
 
-const targets = ['koishi-utils', 'koishi-core', 'plugin-mysql', 'plugin-mongo', 'plugin-webui']
+const targets = ['koishi-utils', 'koishi-core', 'plugin-adventure', 'plugin-mysql', 'plugin-mongo', 'plugin-webui']
 const corePlugins = ['common', 'eval', 'puppeteer', 'teach']
 
 function precedence(name: string) {

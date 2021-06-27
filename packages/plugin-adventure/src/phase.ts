@@ -26,13 +26,13 @@ declare module 'koishi-core' {
 
 interface Phase<S = any> {
   prepare?: Adventurer.Callback<S>
-  texts?: string[]
-  items?: Record<string, ReadonlyUser.Infer<string>>
+  texts?: Adventurer.Infer<string[], S>
+  items?: Record<string, ReadonlyUser.Infer<string, S>>
   choices?: Phase.Choice[]
   options?: Phase.ChooseOptions
-  next?: string | Phase.Action<S extends infer T ? T : any>
+  next?: string | Phase.Action<S>
   itemsWhenDreamy?: string[]
-  events?: Event<S extends infer T ? T : any>[]
+  events?: Event<S>[]
 }
 
 namespace Phase {
@@ -70,7 +70,7 @@ namespace Phase {
     return session.sendQueued(message, ms)
   }
 
-  export function use(name: string, next: string, phase: Phase): void
+  export function use<S>(name: string, next: string, phase: Phase<S>): void
   export function use(name: string, next: (user: ReadonlyUser) => string): void
   export function use(name: string, next: ReadonlyUser.Infer<string>, phase?: Phase) {
     mainPhase.items[name] = next
@@ -79,7 +79,7 @@ namespace Phase {
     }
   }
 
-  export function sell(name: string, next: string, phase: Phase): void
+  export function sell<S>(name: string, next: string, phase: Phase<S>): void
   export function sell(name: string, next: (user: ReadonlyUser) => string): void
   export function sell(name: string, next: ReadonlyUser.Infer<string>, phase?: Phase) {
     salePlots[name] = next
@@ -150,21 +150,40 @@ namespace Phase {
   const HOOK_PENDING_CHOOSE = 4185
 
   export interface Choice {
-    name?: string
-    text: string
+    /** 选项名 */
+    name: string
+    /** 实际显示的文本，默认与 `name` 相同 */
+    text?: string
+    /** 实际显示的序号，设置为 null 将不显示此选项（仍然可通过输入 `name` 的方式触发） */
+    order?: string
+    /** 触发选项后跳转到的下个阶段 */
     next: Adventurer.Infer<string>
+    /** 选项出现的条件 */
     when?(user: ReadonlyUser): boolean
   }
 
   export interface ChooseOptions {
+    template?: string
+    /** 当仅有一个选项时，跳过此选择支 */
     autoSelect?: boolean
+    /**
+     * 超时未选后的默认行为
+     * - 当未设置时表现为在所有非隐藏分支中随机选择
+     * - 如果这里指定为隐藏分支，则提示文本仍然显示为随机选择，但实际效果会进入该隐藏分支
+     */
+    onTimeout?: string
+    /**
+     * 醉酒后的默认行为
+     * - 当未设置时表现为在所有非隐藏分支中随机选择
+     * - 当设置了 `onTimeout` 时，醉酒状态将失效
+     */
+    onDrunk?: string
     onSelect?(name: string, user: Adventurer): void
-    onDrunk?(user: Adventurer): number
   }
 
   export const choose = (choices: Choice[], options: ChooseOptions = {}): Action => async (session) => {
     const { user, app } = session
-    const { autoSelect, onSelect, onDrunk } = options
+    const { autoSelect, onTimeout, onDrunk, onSelect } = options
     choices = choices.filter(({ when }) => !when || when(user))
 
     if (choices.length === 1 && autoSelect) {
@@ -172,53 +191,68 @@ namespace Phase {
       return getValue(choices[0].next, user)
     }
 
-    const choiceMap: Record<number, Choice> = {}
+    let fallback: Choice
+    const orderMap: Record<string, string> = {}
+    const choiceMap: Record<string, Choice> = {}
     const output = choices.map((choice, index) => {
-      choiceMap[index] = choice
-      return `${String.fromCharCode(65 + index)}. ${choice.text}`
-    }).join('\n')
+      const { name, order = String.fromCharCode(65 + index), text = name } = choice
+      choiceMap[text.toUpperCase()] = choice
+      if (name === onTimeout) fallback = choice
+      if (!order) return
+      choiceMap[order] = choice
+      orderMap[name] = order
+      return `${order}. ${text}`
+    }).filter(Boolean).join('\n')
 
     function applyChoice(choice: Choice) {
-      const { text, next, name = text } = choice
+      const { name, next } = choice
       if (onSelect) onSelect(name, user)
       return getValue(next, user)
     }
 
-    if (checkTimer('$drunk', user)) {
+    if (fallback && checkTimer('$drunk', user)) {
       await sendEscaped(session, output)
-      const index = onDrunk?.(user) ?? Random.int(choices.length)
-      logger.debug('%s choose drunk %c', session.userId, String.fromCharCode(65 + index))
-      user.drunkAchv += 1
-      const hints = [`$s 醉迷恍惚，随手选择了 ${String.fromCharCode(65 + index)}。`]
+      const choice = onDrunk
+        ? choices.find(c => c.name === onDrunk)
+        : Random.pick(choices.filter(c => c.order !== null))
+      logger.debug('%s choose drunk %c', session.userId, choice.name)
+      if (onDrunk) user.drunkAchv += 1
+      const hints: string[] = []
+      if (choice.order !== null) {
+        hints.push(`$s 醉迷恍惚，随手选择了 ${orderMap[choice.name]}。`)
+      }
       app.emit('adventure/check', session, hints)
       await sendEscaped(session, hints.join('\n'))
-      return applyChoice(choices[index])
+      return applyChoice(choice)
     }
 
     session._skipCurrent = false
-    await sendEscaped(session, '请输入选项对应的字母继续游戏。若 2 分钟内未选择，则默认随机选择。\n' + output, 0)
+    const behavior = fallback && fallback.order !== null ? `将自动选择${fallback.name}` : '默认随机选择'
+    const template = options.template || `请输入选项对应的字母继续游戏。若 2 分钟内未选择，则${behavior}。\n{{ choices }}`
+    await sendEscaped(session, interpolate(template, { choices: output }), 0)
 
     const { predecessors } = app.getSessionState(session)
     predecessors[HOOK_PENDING_CHOOSE] = null
 
     return new Promise((resolve) => {
+      // 超时行为
       const timer = setTimeout(() => {
         logger.debug('%s choose timeout', session.userId)
-        _resolve(applyChoice(Random.pick(choices)))
+        _resolve(applyChoice(fallback ?? Random.pick(choices)))
       }, 120000)
 
+      // 使用物品进入隐藏分支
       const disposeListener = app.on('adventure/use', (userId, progress) => {
         if (userId !== user.id) return
         _resolve(progress)
       })
 
+      // 正常选择
       const disposeMiddleware = session.middleware((session, next) => {
-        const message = session.content.trim().toUpperCase()
-        if (message.length !== 1) return next()
-        logger.debug('%s choose %c', session.userId, message)
-        const key = message.charCodeAt(0) - 65
-        if (!choiceMap[key]) return next()
-        _resolve(applyChoice(choiceMap[key]))
+        const choice = choiceMap[session.content.trim().toUpperCase()]
+        if (!choice) return next()
+        logger.debug('%s choose %c', session.userId, choice.name)
+        _resolve(applyChoice(choice))
       })
 
       function _resolve(value: string) {
@@ -329,7 +363,7 @@ namespace Phase {
     const { items, choices, next, options, prepare = noop } = phase
 
     const state = prepare(session)
-    await print(session, phase.texts, user.phases.includes(user.progress), state)
+    await print(session, getValue(phase.texts, user, state), user.phases.includes(user.progress), state)
     await epilog(session, phase.events)
 
     // resolve next phase
