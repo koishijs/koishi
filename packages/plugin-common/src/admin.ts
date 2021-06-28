@@ -213,7 +213,7 @@ export interface AdminConfig {
   generateToken?: () => string
 }
 
-export default function apply(ctx: Context, config: AdminConfig = {}) {
+export function admin(ctx: Context, config: AdminConfig = {}) {
   if (config.admin === false) return
   ctx = ctx.select('database')
 
