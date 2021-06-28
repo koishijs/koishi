@@ -1,4 +1,4 @@
-import { Context, User, Session, checkTimer, checkUsage, Logger, Random, interpolate, noop, Time } from 'koishi-core'
+import { Context, User, Session, checkTimer, checkUsage, Logger, Random, interpolate, Time } from 'koishi-core'
 import { ReadonlyUser, getValue, Adventurer, Show } from './utils'
 import Event from './event'
 import {} from 'koishi-plugin-common'
@@ -66,8 +66,7 @@ namespace Phase {
 
   export function sendEscaped(session: Adventurer.Session, message: string | void, ms?: number) {
     if (!message) return
-    message = session.app.chain('adventure/text', message, session)
-    return session.sendQueued(message, ms)
+    return session.sendQueued(message.replace(/\$s/g, () => session.username), ms)
   }
 
   export function use<S>(name: string, next: string, phase: Phase<S>): void
@@ -321,7 +320,7 @@ namespace Phase {
   }
 
   /** display phase texts */
-  export async function print(session: Adventurer.Session, texts: string[], canSkip = true, state = {}) {
+  export async function print(session: Adventurer.Session, texts: string[], state = {}, canSkip = true) {
     session._canSkip = canSkip
     if (!session._skipAll || !session._canSkip) {
       for (const text of texts || []) {
@@ -333,12 +332,12 @@ namespace Phase {
   }
 
   /** handle events */
-  async function epilog(session: Adventurer.Session, events: Event[] = []) {
+  export async function dispatch(session: Adventurer.Session, events: Event[] = [], state = {}) {
     session._gains = new Set()
 
     const hints: string[] = []
     for (const event of events || []) {
-      const result = event(session)
+      const result = event(session, state)
       if (!session._skipAll) {
         await sendEscaped(session, result)
       } else if (result) {
@@ -360,11 +359,11 @@ namespace Phase {
     if (!phase) return logger.warn('phase not found %c', user.progress)
 
     logger.debug('%s phase %c', session.userId, user.progress)
-    const { items, choices, next, options, prepare = noop } = phase
+    const { items, choices, next, options, prepare = ({ user }) => user } = phase
 
     const state = prepare(session)
-    await print(session, getValue(phase.texts, user, state), user.phases.includes(user.progress), state)
-    await epilog(session, phase.events)
+    await print(session, getValue(phase.texts, user, state), state, user.phases.includes(user.progress))
+    await dispatch(session, phase.events, state)
 
     // resolve next phase
     activeUsers.add(user.id)

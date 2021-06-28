@@ -264,6 +264,38 @@ namespace Item {
         return output.join('\n')
       })
 
+    ctx.command('item.add', '添加物品', { authority: 4 })
+      .userFields(Adventurer.fields)
+      .adminUser(async ({ session }, item, count = '1') => {
+        if (!Item.data[item]) return `未找到物品“${item}”。`
+        const nCount = Number(count)
+        if (!isInteger(nCount) || nCount <= 0) return '参数错误。'
+        await Phase.dispatch(session, [Event.gain({ [item]: nCount })])
+        await session.user._update()
+        return ''
+      })
+
+    ctx.command('item.remove', '移除物品', { authority: 4 })
+      .userFields(Adventurer.fields)
+      .adminUser(async ({ session }, item, count = '1') => {
+        if (!Item.data[item]) return `未找到物品“${item}”。`
+        const nCount = Number(count)
+        if (!isInteger(nCount) || nCount <= 0) return '参数错误。'
+        await Phase.dispatch(session, [Event.lose({ [item]: nCount })])
+        await session.user._update()
+        return ''
+      })
+
+    ctx.command('item.set', '设置物品数量', { authority: 4 })
+      .usage('此指令不会触发物品得失相关的事件。')
+      .userFields(['warehouse'])
+      .adminUser(({ session }, item, count) => {
+        if (!Item.data[item]) return `未找到物品“${item}”。`
+        const nCount = Number(count)
+        if (!isInteger(nCount) || nCount < 0) return '参数错误。'
+        session.user.warehouse[item] = nCount
+      })
+
     ctx.command('adv/buy [item] [count]', '购入物品', { maxUsage: 100 })
       .checkTimer('$system')
       .checkTimer('$shop')
