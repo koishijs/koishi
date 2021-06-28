@@ -29,7 +29,7 @@
     "webui"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.12.0"
+    "koishi-core": "^3.12.1"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.15.3",
@@ -39,7 +39,7 @@
     "echarts-wordcloud": "^2.0.0",
     "koishi-plugin-mongo": "^2.2.3",
     "koishi-plugin-mysql": "^3.3.2",
-    "koishi-test-utils": "^6.0.0",
+    "koishi-test-utils": "^6.0.1",
     "sass": "^1.32.12",
     "vite": "^2.2.4",
     "vue": "^3.0.11",

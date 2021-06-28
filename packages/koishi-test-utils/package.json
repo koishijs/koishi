@@ -1,7 +1,7 @@
 {
   "name": "koishi-test-utils",
   "description": "Test utilities for Koishi",
-  "version": "6.0.0",
+  "version": "6.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "engines": {
@@ -37,8 +37,8 @@
   "dependencies": {
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
-    "koishi-core": "^3.12.0",
-    "koishi-utils": "^4.2.2"
+    "koishi-core": "^3.12.1",
+    "koishi-utils": "^4.2.3"
   },
   "devDependencies": {
     "@types/chai": "^4.2.17",
