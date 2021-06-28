@@ -38,8 +38,8 @@ interface Phase<S = any> {
 namespace Phase {
   const logger = new Logger('adventure')
 
-  export const mainPhase: Phase = { items: {} }
-  export const phaseMap: Record<string, Phase> = { '': mainPhase }
+  export const mainEntry: Phase = { items: {} }
+  export const registry: Record<string, Phase> = { '': mainEntry }
   export const salePlots: Record<string, ReadonlyUser.Infer<string, Adventurer.Field>> = {}
 
   export const userSessionMap: Record<string, [Adventurer.Session, NodeJS.Timer]> = {}
@@ -73,9 +73,9 @@ namespace Phase {
   export function use<S>(name: string, next: string, phase: Phase<S>): void
   export function use(name: string, next: (user: ReadonlyUser) => string): void
   export function use(name: string, next: ReadonlyUser.Infer<string>, phase?: Phase) {
-    mainPhase.items[name] = next
+    mainEntry.items[name] = next
     if (typeof next === 'string' && phase) {
-      phaseMap[next] = phase
+      registry[next] = phase
     }
   }
 
@@ -84,12 +84,12 @@ namespace Phase {
   export function sell(name: string, next: ReadonlyUser.Infer<string>, phase?: Phase) {
     salePlots[name] = next
     if (typeof next === 'string' && phase) {
-      phaseMap[next] = phase
+      registry[next] = phase
     }
   }
 
   export function phase<S>(id: string, phase: Phase<S>): void {
-    phaseMap[id] = phase
+    registry[id] = phase
   }
 
   export const endingMap: Record<string, string> = {}
@@ -140,7 +140,7 @@ namespace Phase {
   }
 
   export function getPhase(user: Adventurer) {
-    const phase = phaseMap[user.progress]
+    const phase = registry[user.progress]
     return phase || (user.progress = '', null)
   }
 
@@ -608,7 +608,7 @@ namespace Phase {
           return start(session)
         } else {
           if (!item || session._skipAll) return
-          const next = !userSessionMap[session.user.id] && getValue(mainPhase.items[item], user)
+          const next = !userSessionMap[session.user.id] && getValue(mainEntry.items[item], user)
           if (next) {
             return `物品“${item}”当前不可用，请尝试输入“继续当前剧情”。`
           } else {

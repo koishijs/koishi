@@ -56,9 +56,9 @@ export function apply(ctx: Context, config?: Config) {
   ctx.plugin(Show)
 
   ctx.command('user.add-item', '添加物品', { authority: 4 })
-    .option('effect', '-e 触发效果')
+    .option('passive', '-p 不触发效果')
     .userFields<Adventurer.Field>(({ options }, fields) => {
-      if (!options.effect) {
+      if (options.passive) {
         return fields.add('warehouse')
       }
       for (const field of Adventurer.fields) {
@@ -69,7 +69,7 @@ export function apply(ctx: Context, config?: Config) {
       if (!Item.data[item]) return `未找到物品“${item}”。`
       const nCount = Number(count)
       if (!isInteger(nCount) || nCount <= 0) return '参数错误。'
-      if (options.effect) {
+      if (!options.passive) {
         return Event.gain({ [item]: nCount })(session).replace(/\$s/g, session.username)
       }
       const currentCount = target.warehouse[item] || 0
