@@ -51,9 +51,9 @@ export function apply(ctx: Context, options: MusicOptions = {}) {
     // typescript cannot infer type from string templates
     .option('platform', `-p <platform>  点歌平台，目前支持 qq, netease，默认为 ${platform}`, { type: 'string' })
     .alias('点歌')
-    .shortcut('来一首', { fuzzy: true, greedy: true })
-    .shortcut('点一首', { fuzzy: true, greedy: true })
-    .shortcut('整一首', { fuzzy: true, greedy: true })
+    .shortcut('来一首', { fuzzy: true })
+    .shortcut('点一首', { fuzzy: true })
+    .shortcut('整一首', { fuzzy: true })
     .action(async ({ options }, keyword) => {
       if (!options.platform) options.platform = platform
       const search = platforms[options.platform]

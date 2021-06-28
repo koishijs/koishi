@@ -148,7 +148,14 @@ module.exports = {
           '/plugins/eval/sandbox.md',
           '/plugins/eval/config.md',
         ],
-      }, {
+      }, ...process.env.NODE_ENV === 'production' ? [] : [{
+        text: '冒险系统 (Adventure)',
+        isGroup: true,
+        children: [
+          '/plugins/adventure/index.md',
+          '/plugins/adventure/events.md',
+        ],
+      }], {
         text: '其他官方插件',
         isGroup: true,
         children: [

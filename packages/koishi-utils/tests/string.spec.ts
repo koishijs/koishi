@@ -31,6 +31,7 @@ describe('String Manipulations', () => {
 
   it('interpolate', () => {
     expect(interpolate('foo{{ bar }}foo', { bar: 'baz' })).to.equal('foobazfoo')
+    expect(interpolate('foo{{ bar }}foo', {})).to.equal('foofoo')
   })
 
   it('escape regexp', () => {

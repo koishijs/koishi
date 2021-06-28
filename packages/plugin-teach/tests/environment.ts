@@ -108,7 +108,6 @@ function getProduct({ startTime, endTime }: Dialogue, time: number) {
 
 export default function (config: Config) {
   const app = new App({
-    userCacheAge: Number.EPSILON,
     nickname: ['koishi', 'satori'],
     mockDatabase: true,
   })

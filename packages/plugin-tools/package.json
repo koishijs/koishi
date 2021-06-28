@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-tools",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "Some simple tools for Koishi",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -21,7 +21,7 @@
     "@types/qrcode": "^1.4.0"
   },
   "peerDependencies": {
-    "koishi-core": "^3.12.0"
+    "koishi-core": "^3.12.1"
   },
   "dependencies": {
     "axios": "^0.21.1",

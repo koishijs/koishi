@@ -1,5 +1,6 @@
 import { User, Database, Context, Command, Argv, TableType, FieldCollector, defineEnumProperty } from 'koishi-core'
 import {} from 'koishi-plugin-mysql'
+import * as Koishi from 'koishi-core'
 import Achievement from './achv'
 
 function createCollector<T extends TableType>(key: T): FieldCollector<T, never, any[], { rest: string }> {
@@ -36,14 +37,16 @@ declare module 'koishi-core' {
   }
 
   interface EventMap {
-    'adventure/check'(session: Session<Adventurer.Field>, hints: string[]): void
+    'adventure/check'(session: Adventurer.Session, hints: string[]): void
     'adventure/rank'(name: string): [string, string]
-    'adventure/text'(text: string, session: Session<Adventurer.Field>): string
+    'adventure/text'(text: string, session: Adventurer.Session): string
     'adventure/use'(userId: string, progress: string): void
-    'adventure/before-sell'(itemMap: Record<string, number>, session: Session<Shopper.Field>): string | undefined
-    'adventure/before-use'(item: string, session: Session<Adventurer.Field>): string | undefined
-    'adventure/lose'(itemMap: Record<string, number>, session: Session<Shopper.Field>, hints: string[]): void
-    'adventure/ending'(session: Session<Adventurer.Field>, id: string, hints: string[]): void
+    'adventure/before-sell'(itemMap: Record<string, number>, session: Adventurer.Session): string | undefined
+    'adventure/before-use'(item: string, session: Adventurer.Session): string | undefined
+    'adventure/before-timer'(name: string, reason: string, session: Adventurer.Session): string | undefined
+    'adventure/lose'(itemMap: Record<string, number>, session: Adventurer.Session, hints: string[]): void
+    'adventure/gain'(itemMap: Record<string, number>, session: Adventurer.Session, hints: string[]): void
+    'adventure/ending'(session: Adventurer.Session, id: string, hints: string[]): void
     'adventure/achieve'(session: Session<Achievement.Field>, achv: Achievement, hints: string[]): void
   }
 
@@ -77,7 +80,6 @@ User.extend(() => ({
   progress: '',
   phases: [],
   endings: {},
-  avatarAchv: 0,
   drunkAchv: 0,
 }))
 
@@ -91,12 +93,12 @@ Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
   tables.user.achvCount = () => 'list_length(`achievement`)'
 })
 
-type InferFrom<T, R extends any[]> = T extends (...args: any[]) => any ? never : T | ((...args: R) => T)
+type InferFrom<T, R extends any[]> = [T] extends [(...args: any[]) => any] ? never : T | ((...args: R) => T)
 
 type DeepReadonly<T> = T extends (...args: any[]) => any ? T
   : { readonly [P in keyof T]: T[P] extends {} ? DeepReadonly<T[P]> : T[P] }
 
-export interface Shopper {
+export interface Adventurer {
   id: string
   money: number
   wealth: number
@@ -104,13 +106,6 @@ export interface Shopper {
   timers: Record<string, number>
   gains: Record<string, number>
   warehouse: Record<string, number>
-}
-
-export namespace Shopper {
-  export type Field = keyof Shopper
-}
-
-export interface Adventurer extends Shopper {
   name: string
   flag: number
   luck: number
@@ -119,7 +114,6 @@ export interface Adventurer extends Shopper {
   progress: string
   phases: string[]
   endings: Record<string, number>
-  avatarAchv: number
   drunkAchv: number
   achievement: string[]
 }
@@ -127,23 +121,27 @@ export interface Adventurer extends Shopper {
 export namespace Adventurer {
   export type Field = keyof Adventurer
 
-  export type Infer<U, T extends User.Field = Adventurer.Field> = InferFrom<U, [User.Observed<T>]>
+  export type Session = Koishi.Session<Field>
+
+  export type Callback<T> = (session: Session) => T
+
+  export type Infer<U, T = any> = InferFrom<U, [user: User.Observed<Field>, state?: T]>
 
   export const fields: Field[] = [
     'id', 'money', 'warehouse', 'wealth', 'timers', 'gains',
     'flag', 'luck', 'taste', 'recent', 'progress', 'phases',
-    'endings', 'usage', 'avatarAchv', 'drunkAchv', 'name', 'achievement',
+    'endings', 'usage', 'drunkAchv', 'name', 'achievement',
   ]
 }
 
 export type ReadonlyUser = DeepReadonly<Adventurer>
 
 export namespace ReadonlyUser {
-  export type Infer<U, T extends Adventurer.Field = Adventurer.Field> = InferFrom<U, [Pick<ReadonlyUser, T>]>
+  export type Infer<U, T = any> = InferFrom<U, [user: ReadonlyUser, state?: T]>
 }
 
-export function getValue<U, T extends Adventurer.Field = Adventurer.Field>(source: ReadonlyUser.Infer<U, T>, user: Pick<ReadonlyUser, T>): U {
-  return typeof source === 'function' ? (source as any)(user) : source
+export function getValue<U, T>(source: ReadonlyUser.Infer<U, T>, user: ReadonlyUser, state?: T): U {
+  return typeof source === 'function' ? (source as any)(user, state) : source
 }
 
 export namespace Show {
@@ -182,6 +180,7 @@ export namespace Show {
       })
       .action(({ session, args, next }) => {
         const target = session.content.slice(5)
+        if (!target) return '请输入要查看的图鉴名称。'
         const item = data[target]
         if (!item) return next(() => session.send(`你尚未解锁图鉴「${target}」。`))
         if (item[0] === 'redirect') {

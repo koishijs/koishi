@@ -1,10 +1,9 @@
 import { Context } from 'koishi-core'
-import admin, { AdminConfig } from './admin'
+import { admin, AdminConfig } from './admin'
 import basic, { BasicConfig } from './basic'
 import handler, { HandlerConfig } from './handler'
 
-export { admin }
-
+export * from './admin'
 export * from './basic'
 export * from './handler'
 
