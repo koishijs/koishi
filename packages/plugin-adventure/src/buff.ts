@@ -49,7 +49,6 @@ namespace Buff {
     Show.redirect(name, 'buff')
   }
 
-  timer('$healing', '愈疗加护', '一段时间内免疫状态「无法使用物品」。')
   timer('$drunk', '醉迷恍惚', '一段时间内进行剧情选择时改为随机选择。')
   timer('$mellow', '至醇佳酿', '一段时间内幸运值提高 10 点。')
   timer('$dirt', '生死流转', '一段时间内新获得的状态持续时间减半。')

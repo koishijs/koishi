@@ -138,6 +138,7 @@ namespace Event {
         .replace('$r', `（${rarity}）`))
       if (!session._skipAll) output.push(description)
       if (result) output.push(result)
+      session._gains.add(name)
     }
     session.app.emit('adventure/gain', itemMap, session, output)
     return output.join('\n')
