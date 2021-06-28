@@ -3,7 +3,7 @@ import { Time, Random } from 'koishi-utils'
 import Profile from './profile'
 import Rank from './rank'
 
-declare module 'koishi-plugin-teach/lib/utils' {
+declare module 'koishi-plugin-teach' {
   interface DialogueTest {
     matchAffinity?: number
     mismatchAffinity?: number
@@ -15,7 +15,7 @@ declare module 'koishi-plugin-teach/lib/utils' {
   }
 }
 
-declare module 'koishi-plugin-teach/lib/receiver' {
+declare module 'koishi-plugin-teach' {
   interface SessionState {
     noAffinityTest?: boolean
   }
