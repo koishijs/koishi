@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-chat",
   "description": "Display and respond to messages for Koishi",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,7 +30,7 @@
     "server"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.12.0"
+    "koishi-core": "^3.12.1"
   },
   "devDependencies": {
     "koishi-plugin-webui": "^4.6.2"

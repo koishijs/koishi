@@ -55,40 +55,6 @@ export function apply(ctx: Context, config?: Config) {
   ctx.plugin(Rank)
   ctx.plugin(Show)
 
-  ctx.command('user.add-item', '添加物品', { authority: 4 })
-    .userFields(['warehouse'])
-    .adminUser(({ target }, item, count = '1') => {
-      if (!Item.data[item]) return `未找到物品“${item}”。`
-      const currentCount = target.warehouse[item] || 0
-      const nCount = Number(count)
-      if (!isInteger(nCount) || nCount <= 0) return '参数错误。'
-      target.warehouse[item] = currentCount + nCount
-    })
-
-  ctx.command('user.remove-item', '删除物品', { authority: 4 })
-    .userFields(['warehouse'])
-    .adminUser(({ target }, item, count) => {
-      if (!Item.data[item]) return `未找到物品“${item}”。`
-      const { warehouse } = target
-      if (!count) {
-        delete warehouse[item]
-      } else {
-        const currentCount = warehouse[item] || 0
-        const nCount = Number(count)
-        if (!isInteger(nCount) || nCount <= 0 || nCount > currentCount) return '参数错误。'
-        warehouse[item] = currentCount - nCount
-      }
-    })
-
-  ctx.command('user.set-item', '设置物品数量', { authority: 4 })
-    .userFields(['warehouse'])
-    .adminUser(({ target }, item, count) => {
-      if (!Item.data[item]) return `未找到物品“${item}”。`
-      const nCount = Number(count)
-      if (!isInteger(nCount) || nCount < 0) return '参数错误。'
-      target.warehouse[item] = nCount
-    })
-
   ctx.command('user.phase <value>', '设置剧情阶段', { authority: 4 })
     .userFields(['progress'])
     .adminUser(({ target }, value) => {

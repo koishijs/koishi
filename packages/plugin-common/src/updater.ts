@@ -120,7 +120,8 @@ function flagAction(map: FlagMap, { target, options }: FlagArgv, ...flags: strin
 }
 
 Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
-  const { database } = this.app
+  this.config.checkUnknown = true
+
   const command = this
     .userFields(['authority'])
     .option('target', '-t [user:user]  指定目标用户', { authority: 3 })
@@ -130,15 +131,15 @@ Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
     })
 
   command.action(async (argv) => {
-    const { options, session, args } = argv
-    const fields = session.collect('user', argv)
-    let target: User.Observed<never>
+    const { options, args, session: { user, database } } = argv
+    const fields = argv.session.collect('user', argv)
+    let target: User.Observed, session = argv.session
     if (!options.target) {
-      target = await session.observeUser(fields)
+      target = await argv.session.observeUser(fields)
     } else {
       const [platform, userId] = Argv.parsePid(options.target)
-      if (session.user[platform] === userId) {
-        target = await session.observeUser(fields)
+      if (user[platform] === userId) {
+        target = await argv.session.observeUser(fields)
       } else {
         const data = await database.getUser(platform, userId, [...fields])
         if (!data) {
@@ -148,15 +149,22 @@ Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
             await database.createUser(platform, userId, fallback)
           })
           target = fallback
-        } else if (session.user.authority <= data.authority) {
+        } else if (user.authority <= data.authority) {
           return template('internal.low-authority')
         } else {
           target = observe(data, diff => database.setUser(platform, userId, diff), `user ${options.target}`)
+          if (!autoCreate) {
+            session = Object.create(argv.session)
+            session.user = target
+            session.uid = options.target
+            session.userId = userId
+            session.platform = platform
+          }
         }
       }
     }
     const diffKeys = Object.keys(target._diff)
-    const result = await callback({ ...argv, target }, ...args)
+    const result = await callback({ ...argv, target, session }, ...args)
     if (typeof result === 'string') return result
     if (!difference(Object.keys(target._diff), diffKeys).length) {
       return template('admin.user-unchanged')
@@ -169,17 +177,18 @@ Command.prototype.adminUser = function (this: Command, callback, autoCreate) {
 }
 
 Command.prototype.adminChannel = function (this: Command, callback, autoCreate) {
-  const { database } = this.app
+  this.config.checkUnknown = true
+
   const command = this
     .userFields(['authority'])
     .option('target', '-t [channel:channel]  指定目标频道', { authority: 3 })
 
   command.action(async (argv, ...args) => {
-    const { options, session } = argv
-    const fields = session.collect('channel', argv)
-    let target: Channel.Observed
-    if ((!options.target || options.target === session.cid) && session.subtype === 'group') {
-      target = await session.observeChannel(fields)
+    const { options, session: { cid, subtype, database } } = argv
+    const fields = argv.session.collect('channel', argv)
+    let target: Channel.Observed, session = argv.session
+    if ((!options.target || options.target === cid) && subtype === 'group') {
+      target = await argv.session.observeChannel(fields)
     } else if (options.target) {
       const [platform, channelId] = Argv.parsePid(options.target)
       const data = await database.getChannel(platform, channelId, [...fields])
@@ -192,11 +201,18 @@ Command.prototype.adminChannel = function (this: Command, callback, autoCreate) 
         target = fallback
       } else {
         target = observe(data, diff => database.setChannel(platform, channelId, diff), `channel ${options.target}`)
+        if (!autoCreate) {
+          session = Object.create(argv.session)
+          session.channel = target
+          session.cid = options.target
+          session.channelId = channelId
+          session.platform = platform
+        }
       }
     } else {
       return template('admin.not-in-group')
     }
-    const result = await callback({ ...argv, target }, ...args)
+    const result = await callback({ ...argv, target, session }, ...args)
     if (typeof result === 'string') return result
     if (!Object.keys(target._diff).length) {
       return template('admin.channel-unchanged')
@@ -208,21 +224,12 @@ Command.prototype.adminChannel = function (this: Command, callback, autoCreate) 
   return command
 }
 
-export interface AdminConfig {
-  admin?: boolean
-  generateToken?: () => string
-}
-
-export default function apply(ctx: Context, config: AdminConfig = {}) {
-  if (config.admin === false) return
+export function callme(ctx: Context) {
   ctx = ctx.select('database')
-
-  ctx.command('common/user', '用户管理', { authority: 3 })
-  ctx.command('common/channel', '频道管理', { authority: 3 })
 
   ctx.command('common/callme [name:text]', '修改自己的称呼')
     .userFields(['id', 'name'])
-    .shortcut('叫我', { prefix: true, fuzzy: true, greedy: true })
+    .shortcut('叫我', { prefix: true, fuzzy: true })
     .action(async ({ session }, name) => {
       const { user } = session
       if (!name) {
@@ -255,6 +262,14 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
         }
       }
     })
+}
+
+export interface BindConfig {
+  generateToken?: () => string
+}
+
+export function bind(ctx: Context, config: BindConfig = {}) {
+  ctx = ctx.select('database')
 
   // 1: group (1st step)
   // 0: private
@@ -278,7 +293,7 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
     await user._update()
   }
 
-  ctx.command('user/bind', '绑定到账号', { authority: 0 })
+  ctx.command('common/bind', '绑定到账号', { authority: 0 })
     .action(({ session }) => {
       const token = generate(session, +(session.subtype === 'group'))
       return template('bind.generated-1', token)
@@ -307,6 +322,13 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
       }
     }
   }, true)
+}
+
+export function admin(ctx: Context) {
+  ctx = ctx.select('database')
+
+  ctx.command('common/user', '用户管理', { authority: 3 })
+  ctx.command('common/channel', '频道管理', { authority: 3 })
 
   ctx.command('user/authorize <value:posint>', '权限信息', { authority: 4 })
     .alias('auth')
@@ -433,4 +455,16 @@ export default function apply(ctx: Context, config: AdminConfig = {}) {
     .option('set', '-s  添加标记', { authority: 4 })
     .option('unset', '-S  删除标记', { authority: 4 })
     .adminChannel(flagAction.bind(null, Channel.Flag))
+}
+
+export interface UpdaterConfig extends BindConfig {
+  admin?: boolean
+  bind?: boolean
+  callme?: boolean
+}
+
+export default function apply(ctx: Context, config: UpdaterConfig = {}) {
+  if (config.admin !== false) ctx.plugin(admin)
+  if (config.bind !== false) ctx.plugin(bind, config)
+  if (config.callme !== false) ctx.plugin(callme)
 }

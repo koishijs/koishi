@@ -9,6 +9,8 @@ import { segment } from 'koishi-utils'
 import FormData from 'form-data'
 import FileType from 'file-type'
 
+export type HandleExternalAssets = 'auto' | 'download' | 'direct'
+
 export class SenderError extends Error {
   constructor(url: string, data: any, selfId: string) {
     super(`Error when trying to request ${url}, data: ${JSON.stringify(data)}`)
@@ -126,16 +128,63 @@ export class DiscordBot extends Bot<'discord'> {
             })
             sentMessageId = r.id
           } else {
-            try {
+            const { axiosConfig, discord = {} } = this.app.options
+            const sendMode =
+              data.mode as HandleExternalAssets || // define in segment
+              discord.handleExternalAssets || // define in app options
+              'auto' // default
+
+            // Utils
+            async function sendDownload() {
               const a = await axios.get(data.url, {
+                ...axiosConfig,
+                ...discord.axiosConfig,
                 responseType: 'arraybuffer',
+                headers: {
+                  accept: 'image/*',
+                },
               })
-              const r = await this.sendEmbedMessage(requestUrl, a.data, {
+              const r = await that.sendEmbedMessage(requestUrl, a.data, {
                 ...addition,
               })
               sentMessageId = r.id
-            } catch (e) {
-              throw new SenderError(data.url, data, this.selfId)
+            }
+            async function sendDirect() {
+              const r = await that.request('POST', requestUrl, {
+                content: data.url,
+                ...addition,
+              })
+              sentMessageId = r.id
+            }
+
+            if (sendMode === 'direct') {
+              // send url directly
+              await sendDirect()
+            } else if (sendMode === 'download') {
+              // download send
+              await sendDownload()
+            } else {
+              // auto mode
+              await axios
+                .head(data.url, {
+                  ...axiosConfig,
+                  ...discord.axiosConfig,
+                  headers: {
+                    accept: 'image/*',
+                  },
+                })
+                .then(async ({ headers }) => {
+                  if (headers['content-type'].includes('image')) {
+                    await sendDirect()
+                  } else {
+                    await sendDownload()
+                  }
+                }, async () => {
+                  await sendDownload()
+                })
+                .catch(() => {
+                  throw new SenderError(data.url, data, this.selfId)
+                })
             }
           }
         }

@@ -1,5 +1,5 @@
-import { Context, User, Session, checkTimer, checkUsage, Logger, Random, interpolate, noop, Time } from 'koishi-core'
-import { ReadonlyUser, getValue, Adventurer, Shopper, Show } from './utils'
+import { Context, User, Session, checkTimer, checkUsage, Logger, Random, interpolate, Time } from 'koishi-core'
+import { ReadonlyUser, getValue, Adventurer, Show } from './utils'
 import Event from './event'
 import {} from 'koishi-plugin-common'
 import {} from 'koishi-plugin-teach'
@@ -17,28 +17,32 @@ declare module 'koishi-core' {
     _canSkip?: boolean
     /** 即将获得的道具名 */
     _item: string
+    /** 当前获得的物品列表 */
+    _gains: Set<string>
+    /** 剩余抽卡次数 */
+    _lotteryLast: number
   }
 }
 
-export interface Phase<S = {}> {
-  prepare?: () => S
-  texts?: string[]
-  items?: Record<string, ReadonlyUser.Infer<string>>
+interface Phase<S = any> {
+  prepare?: Adventurer.Callback<S>
+  texts?: Adventurer.Infer<string[], S>
+  items?: Record<string, ReadonlyUser.Infer<string, S>>
   choices?: Phase.Choice[]
   options?: Phase.ChooseOptions
   next?: string | Phase.Action<S>
   itemsWhenDreamy?: string[]
-  events?: Event[]
+  events?: Event<S>[]
 }
 
-export namespace Phase {
+namespace Phase {
   const logger = new Logger('adventure')
 
-  export const mainPhase: Phase = { items: {} }
-  export const phaseMap: Record<string, Adventurer.Infer<Phase>> = { '': mainPhase }
-  export const salePlots: Record<string, ReadonlyUser.Infer<string, Shopper.Field>> = {}
+  export const mainEntry: Phase = { items: {} }
+  export const registry: Record<string, Phase> = { '': mainEntry }
+  export const salePlots: Record<string, ReadonlyUser.Infer<string, Adventurer.Field>> = {}
 
-  export const userSessionMap: Record<string, [Session<Adventurer.Field>, NodeJS.Timer]> = {}
+  export const userSessionMap: Record<string, [Adventurer.Session, NodeJS.Timer]> = {}
   export const channelUserMap: Record<string, [string, NodeJS.Timer]> = {}
   export const activeUsers = new Set<string>()
 
@@ -60,32 +64,31 @@ export namespace Phase {
     }
   }
 
-  export function sendEscaped(session: Session<Adventurer.Field>, message: string | void, ms?: number) {
+  export function sendEscaped(session: Adventurer.Session, message: string | void, ms?: number) {
     if (!message) return
-    message = session.app.chain('adventure/text', message, session)
-    return session.sendQueued(message, ms)
+    return session.sendQueued(message.replace(/\$s/g, () => session.username), ms)
   }
 
-  export function use(name: string, next: string, phase: Adventurer.Infer<Phase>): void
+  export function use<S>(name: string, next: string, phase: Phase<S>): void
   export function use(name: string, next: (user: ReadonlyUser) => string): void
-  export function use(name: string, next: ReadonlyUser.Infer<string>, phase?: Adventurer.Infer<Phase>) {
-    mainPhase.items[name] = next
+  export function use(name: string, next: ReadonlyUser.Infer<string>, phase?: Phase) {
+    mainEntry.items[name] = next
     if (typeof next === 'string' && phase) {
-      phaseMap[next] = phase
+      registry[next] = phase
     }
   }
 
-  export function sell(name: string, next: string, phase: Adventurer.Infer<Phase>): void
+  export function sell<S>(name: string, next: string, phase: Phase<S>): void
   export function sell(name: string, next: (user: ReadonlyUser) => string): void
-  export function sell(name: string, next: ReadonlyUser.Infer<string>, phase?: Adventurer.Infer<Phase>) {
+  export function sell(name: string, next: ReadonlyUser.Infer<string>, phase?: Phase) {
     salePlots[name] = next
     if (typeof next === 'string' && phase) {
-      phaseMap[next] = phase
+      registry[next] = phase
     }
   }
 
-  export function phase(id: string, phase: Adventurer.Infer<Phase>) {
-    return phaseMap[id] = phase
+  export function phase<S>(id: string, phase: Phase<S>): void {
+    registry[id] = phase
   }
 
   export const endingMap: Record<string, string> = {}
@@ -136,31 +139,50 @@ export namespace Phase {
   }
 
   export function getPhase(user: Adventurer) {
-    const phase = getValue(phaseMap[user.progress], user)
+    const phase = registry[user.progress]
     return phase || (user.progress = '', null)
   }
 
-  export type Action<S = {}> = (session: Session<Adventurer.Field>, state?: S) => Promise<string | void>
+  export type Action<S = {}> = (session: Adventurer.Session, state?: S) => Promise<string | void>
 
   const HOOK_PENDING_USE = 4182
   const HOOK_PENDING_CHOOSE = 4185
 
   export interface Choice {
-    name?: string
-    text: string
+    /** 选项名 */
+    name: string
+    /** 实际显示的文本，默认与 `name` 相同 */
+    text?: string
+    /** 实际显示的序号，设置为 null 将不显示此选项（仍然可通过输入 `name` 的方式触发） */
+    order?: string
+    /** 触发选项后跳转到的下个阶段 */
     next: Adventurer.Infer<string>
+    /** 选项出现的条件 */
     when?(user: ReadonlyUser): boolean
   }
 
   export interface ChooseOptions {
+    template?: string
+    /** 当仅有一个选项时，跳过此选择支 */
     autoSelect?: boolean
+    /**
+     * 超时未选后的默认行为
+     * - 当未设置时表现为在所有非隐藏分支中随机选择
+     * - 如果这里指定为隐藏分支，则提示文本仍然显示为随机选择，但实际效果会进入该隐藏分支
+     */
+    onTimeout?: string
+    /**
+     * 醉酒后的默认行为
+     * - 当未设置时表现为在所有非隐藏分支中随机选择
+     * - 当设置了 `onTimeout` 时，醉酒状态将失效
+     */
+    onDrunk?: string
     onSelect?(name: string, user: Adventurer): void
-    onDrunk?(user: Adventurer): number
   }
 
   export const choose = (choices: Choice[], options: ChooseOptions = {}): Action => async (session) => {
     const { user, app } = session
-    const { autoSelect, onSelect, onDrunk } = options
+    const { autoSelect, onTimeout, onDrunk, onSelect } = options
     choices = choices.filter(({ when }) => !when || when(user))
 
     if (choices.length === 1 && autoSelect) {
@@ -168,53 +190,68 @@ export namespace Phase {
       return getValue(choices[0].next, user)
     }
 
-    const choiceMap: Record<number, Choice> = {}
+    let fallback: Choice
+    const orderMap: Record<string, string> = {}
+    const choiceMap: Record<string, Choice> = {}
     const output = choices.map((choice, index) => {
-      choiceMap[index] = choice
-      return `${String.fromCharCode(65 + index)}. ${choice.text}`
-    }).join('\n')
+      const { name, order = String.fromCharCode(65 + index), text = name } = choice
+      choiceMap[text.toUpperCase()] = choice
+      if (name === onTimeout) fallback = choice
+      if (!order) return
+      choiceMap[order] = choice
+      orderMap[name] = order
+      return `${order}. ${text}`
+    }).filter(Boolean).join('\n')
 
     function applyChoice(choice: Choice) {
-      const { text, next, name = text } = choice
+      const { name, next } = choice
       if (onSelect) onSelect(name, user)
       return getValue(next, user)
     }
 
-    if (checkTimer('$drunk', user)) {
+    if (fallback && checkTimer('$drunk', user)) {
       await sendEscaped(session, output)
-      const index = onDrunk?.(user) ?? Random.int(choices.length)
-      logger.debug('%s choose drunk %c', session.userId, String.fromCharCode(65 + index))
-      user.drunkAchv += 1
-      const hints = [`$s 醉迷恍惚，随手选择了 ${String.fromCharCode(65 + index)}。`]
+      const choice = onDrunk
+        ? choices.find(c => c.name === onDrunk)
+        : Random.pick(choices.filter(c => c.order !== null))
+      logger.debug('%s choose drunk %c', session.userId, choice.name)
+      if (onDrunk) user.drunkAchv += 1
+      const hints: string[] = []
+      if (choice.order !== null) {
+        hints.push(`$s 醉迷恍惚，随手选择了 ${orderMap[choice.name]}。`)
+      }
       app.emit('adventure/check', session, hints)
       await sendEscaped(session, hints.join('\n'))
-      return applyChoice(choices[index])
+      return applyChoice(choice)
     }
 
     session._skipCurrent = false
-    await sendEscaped(session, '请输入选项对应的字母继续游戏。若 2 分钟内未选择，则默认随机选择。\n' + output, 0)
+    const behavior = fallback && fallback.order !== null ? `将自动选择${fallback.name}` : '默认随机选择'
+    const template = options.template || `请输入选项对应的字母继续游戏。若 2 分钟内未选择，则${behavior}。\n{{ choices }}`
+    await sendEscaped(session, interpolate(template, { choices: output }), 0)
 
     const { predecessors } = app.getSessionState(session)
     predecessors[HOOK_PENDING_CHOOSE] = null
 
     return new Promise((resolve) => {
+      // 超时行为
       const timer = setTimeout(() => {
         logger.debug('%s choose timeout', session.userId)
-        _resolve(applyChoice(Random.pick(choices)))
+        _resolve(applyChoice(fallback ?? Random.pick(choices)))
       }, 120000)
 
+      // 使用物品进入隐藏分支
       const disposeListener = app.on('adventure/use', (userId, progress) => {
         if (userId !== user.id) return
         _resolve(progress)
       })
 
+      // 正常选择
       const disposeMiddleware = session.middleware((session, next) => {
-        const message = session.content.trim().toUpperCase()
-        if (message.length !== 1) return next()
-        logger.debug('%s choose %c', session.userId, message)
-        const key = message.charCodeAt(0) - 65
-        if (!choiceMap[key]) return next()
-        _resolve(applyChoice(choiceMap[key]))
+        const choice = choiceMap[session.content.trim().toUpperCase()]
+        if (!choice) return next()
+        logger.debug('%s choose %c', session.userId, choice.name)
+        _resolve(applyChoice(choice))
       })
 
       function _resolve(value: string) {
@@ -283,7 +320,7 @@ export namespace Phase {
   }
 
   /** display phase texts */
-  export async function print(session: Session<Adventurer.Field>, texts: string[], canSkip = true, state = {}) {
+  export async function print(session: Adventurer.Session, texts: string[], state = {}, canSkip = true) {
     session._canSkip = canSkip
     if (!session._skipAll || !session._canSkip) {
       for (const text of texts || []) {
@@ -295,10 +332,12 @@ export namespace Phase {
   }
 
   /** handle events */
-  async function epilog(session: Session<Adventurer.Field>, events: Event[] = []) {
+  export async function dispatch(session: Adventurer.Session, events: Event[] = [], state = {}) {
+    session._gains = new Set()
+
     const hints: string[] = []
     for (const event of events || []) {
-      const result = event(session)
+      const result = event(session, state)
       if (!session._skipAll) {
         await sendEscaped(session, result)
       } else if (result) {
@@ -306,6 +345,8 @@ export namespace Phase {
       }
     }
 
+    const result = Item.checkOverflow(session)
+    if (result) hints.push(result)
     session.app.emit('adventure/check', session, hints)
     await sendEscaped(session, hints.join('\n'))
   }
@@ -318,11 +359,11 @@ export namespace Phase {
     if (!phase) return logger.warn('phase not found %c', user.progress)
 
     logger.debug('%s phase %c', session.userId, user.progress)
-    const { items, choices, next, options, prepare = noop } = phase
+    const { items, choices, next, options, prepare = ({ user }) => user } = phase
 
-    const state = prepare()
-    await print(session, phase.texts, user.phases.includes(user.progress), state)
-    await epilog(session, phase.events)
+    const state = prepare(session)
+    await print(session, getValue(phase.texts, user, state), state, user.phases.includes(user.progress))
+    await dispatch(session, phase.events, state)
 
     // resolve next phase
     activeUsers.add(user.id)
@@ -356,7 +397,7 @@ export namespace Phase {
     }
   }
 
-  export async function start(session: Session<Adventurer.Field>) {
+  export async function start(session: Adventurer.Session) {
     const disposeUser = setState(userSessionMap, session.user.id, session)
     const disposeChannel = setState(channelUserMap, session.cid, session.user.id)
     try {
@@ -566,7 +607,7 @@ export namespace Phase {
           return start(session)
         } else {
           if (!item || session._skipAll) return
-          const next = !userSessionMap[session.user.id] && getValue(mainPhase.items[item], user)
+          const next = !userSessionMap[session.user.id] && getValue(mainEntry.items[item], user)
           if (next) {
             return `物品“${item}”当前不可用，请尝试输入“继续当前剧情”。`
           } else {

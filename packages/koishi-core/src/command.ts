@@ -44,7 +44,6 @@ export namespace Command {
     prefix?: boolean
     fuzzy?: boolean
     args?: string[]
-    greedy?: boolean
     options?: Record<string, any>
   }
 
