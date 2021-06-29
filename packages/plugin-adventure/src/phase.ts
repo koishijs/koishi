@@ -1,11 +1,10 @@
-import { Context, User, Session, checkTimer, checkUsage, Logger, Random, interpolate, Time } from 'koishi-core'
+import { Context, User, Session, checkTimer, Logger, Random, interpolate, Time } from 'koishi-core'
 import { ReadonlyUser, getValue, Adventurer, Show } from './utils'
-import Event from './event'
 import {} from 'koishi-plugin-common'
 import {} from 'koishi-plugin-teach'
+import Event from './event'
 import Rank from './rank'
 import Item from './item'
-import Buff from './buff'
 
 declare module 'koishi-core' {
   interface Session<U> {
@@ -209,7 +208,7 @@ namespace Phase {
       return getValue(next, user)
     }
 
-    if (fallback && checkTimer('$drunk', user)) {
+    if (!fallback && checkTimer('$drunk', user)) {
       await sendEscaped(session, output)
       const choice = onDrunk
         ? choices.find(c => c.name === onDrunk)
@@ -551,22 +550,12 @@ namespace Phase {
     ctx.command('adv/use [item]', '使用物品', { maxUsage: 100 })
       .userFields(['progress'])
       .userFields(Adventurer.fields)
-      .checkTimer('$system')
       .shortcut('使用', { fuzzy: true })
       .shortcut('不使用物品', { options: { nothing: true } })
       .shortcut('不使用任何物品', { options: { nothing: true } })
       .option('nothing', '-n  不使用任何物品，直接进入下一剧情')
-      .action(({ session, options }) => {
-        if (options.nothing) return
-        const user = session.user
-        if (!checkTimer('$use', user)) return
-        const buff = Buff.timers['$use']
-        if (!checkUsage('$useHint', user, 1)) {
-          const rest = user.timers['$use'] - Date.now()
-          session.send(`您当前处于「${buff[0]}」状态，无法调用本功能，剩余 ${Time.formatTime(rest)}。`)
-        }
-        return ''
-      })
+      .checkTimer('$system')
+      .checkTimer('$use', ({ options }) => !options.nothing)
       .action(async (argv, item) => {
         const { options, session } = argv
         const { user } = session
