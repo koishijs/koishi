@@ -81,7 +81,7 @@ export interface Channel {
   last_pin_timestamp?: ISO8601;
 }
 
-type ChannelModifyProps = 
+type ChannelModifyProps =
   | 'name'
   | 'type'
   | 'position'

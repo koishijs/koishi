@@ -33,16 +33,16 @@ export class DiscordBot extends Bot<'discord'> {
     const { axiosConfig, discord = {} } = this.app.options
     const endpoint = discord.endpoint || 'https://discord.com/api/v8'
     const url = `${endpoint}${path}`
-    const headers: Record<string, any> = {
-      Authorization: `Bot ${this.token}`,
-    }
     try {
       const response = await axios({
         ...axiosConfig,
         ...discord.axiosConfig,
         method,
         url,
-        headers: { ...headers, ...exHeaders },
+        headers: {
+          Authorization: `Bot ${this.token}`,
+          ...exHeaders,
+        },
         data,
       })
       return response.data
@@ -56,12 +56,21 @@ export class DiscordBot extends Bot<'discord'> {
     return adaptUser(data)
   }
 
-  private async sendEmbedMessage(requestUrl: string, fileBuffer: Buffer, payload_json: Record<string, any> = {}) {
+  private async sendEmbed(requestUrl: string, fileBuffer: Buffer, payload_json: Record<string, any> = {}) {
     const fd = new FormData()
     const type = await FileType.fromBuffer(fileBuffer)
     fd.append('file', fileBuffer, 'file.' + type.ext)
     fd.append('payload_json', JSON.stringify(payload_json))
-    return this.request('POST', requestUrl, fd, fd.getHeaders())
+    const r = await this.request('POST', requestUrl, fd, fd.getHeaders())
+    return r.id as string
+  }
+
+  private async sendContent(requestUrl: string, content: string, addition: Record<string, any>) {
+    const r = await this.request('POST', requestUrl, {
+      ...addition,
+      content,
+    })
+    return r.id as string
   }
 
   private parseQuote(chain: segment.Chain) {
@@ -73,21 +82,71 @@ export class DiscordBot extends Bot<'discord'> {
     return this.sendMessage(channelId, content)
   }
 
+  private async sendEmbedAsset(requestUrl: string, type: string, data: Record<string, string>, addition: Record<string, any>) {
+    if (!data.url) throw new Error('invalid segment: url expected')
+    if (data.url.startsWith('file://')) {
+      return this.sendEmbed(requestUrl, readFileSync(data.url.slice(8)), addition)
+    } else if (data.url.startsWith('base64://')) {
+      const a = Buffer.from(data.url.slice(9), 'base64')
+      return await this.sendEmbed(requestUrl, a, addition)
+    }
+
+    const { axiosConfig, discord = {} } = this.app.options
+    const sendMode =
+      data.mode as HandleExternalAssets || // define in segment
+      discord.handleExternalAssets || // define in app options
+      'auto' // default
+
+    const sendDownload = async () => {
+      const a = await axios.get(data.url, {
+        ...axiosConfig,
+        ...discord.axiosConfig,
+        responseType: 'arraybuffer',
+        headers: {
+          accept: type + '/*',
+        },
+      })
+      return this.sendEmbed(requestUrl, a.data, addition)
+    }
+
+    if (sendMode === 'direct') {
+      // send url directly
+      return this.sendContent(requestUrl, data.url, addition)
+    } else if (sendMode === 'download') {
+      // download send
+      return sendDownload()
+    }
+
+    // auto mode
+    await axios.head(data.url, {
+      ...axiosConfig,
+      ...discord.axiosConfig,
+      headers: {
+        accept: type + '/*',
+      },
+    }).then(({ headers }) => {
+      if (headers['content-type'].includes(type)) {
+        return this.sendContent(requestUrl, data.url, addition)
+      } else {
+        return sendDownload()
+      }
+    }, sendDownload)
+  }
+
   private async sendFullMessage(requestUrl: string, content: string, addition: Record<string, any> = {}): Promise<string> {
     const chain = segment.parse(content)
     let sentMessageId = '0'
     let needSend = ''
     const isWebhook = requestUrl.startsWith('/webhooks/')
-    const that = this
     delete addition.content
-    async function sendMessage() {
-      const r = await that.request('POST', requestUrl, {
-        content: needSend.trim(),
-        ...addition,
-      })
-      sentMessageId = r.id
+
+    const sendBuffer = async () => {
+      const content = needSend.trim()
+      if (!content) return
+      sentMessageId = await this.sendContent(requestUrl, content, addition)
       needSend = ''
     }
+
     for (const code of chain) {
       const { type, data } = code
       if (type === 'text') {
@@ -103,8 +162,10 @@ export class DiscordBot extends Bot<'discord'> {
       } else if (type === 'face' && data.name && data.id) {
         needSend += `<:${data.name}:${data.id}>`
       } else {
-        if (needSend.trim()) await sendMessage()
-        if (type === 'share') {
+        await sendBuffer()
+        if (type === 'image' || type === 'video') {
+          sentMessageId = await this.sendEmbedAsset(requestUrl, type, data, addition)
+        } else if (type === 'share') {
           const sendData = isWebhook ? {
             embeds: [{ ...addition, ...data }],
           } : {
@@ -115,82 +176,10 @@ export class DiscordBot extends Bot<'discord'> {
           })
           sentMessageId = r.id
         }
-        if (type === 'image' || type === 'video' && data.url) {
-          if (data.url.startsWith('file://')) {
-            const r = await this.sendEmbedMessage(requestUrl, readFileSync(data.url.slice(8)), {
-              ...addition,
-            })
-            sentMessageId = r.id
-          } else if (data.url.startsWith('base64://')) {
-            const a = Buffer.from(data.url.slice(9), 'base64')
-            const r = await this.sendEmbedMessage(requestUrl, a, {
-              ...addition,
-            })
-            sentMessageId = r.id
-          } else {
-            const { axiosConfig, discord = {} } = this.app.options
-            const sendMode =
-              data.mode as HandleExternalAssets || // define in segment
-              discord.handleExternalAssets || // define in app options
-              'auto' // default
-
-            // Utils
-            async function sendDownload() {
-              const a = await axios.get(data.url, {
-                ...axiosConfig,
-                ...discord.axiosConfig,
-                responseType: 'arraybuffer',
-                headers: {
-                  accept: 'image/*',
-                },
-              })
-              const r = await that.sendEmbedMessage(requestUrl, a.data, {
-                ...addition,
-              })
-              sentMessageId = r.id
-            }
-            async function sendDirect() {
-              const r = await that.request('POST', requestUrl, {
-                content: data.url,
-                ...addition,
-              })
-              sentMessageId = r.id
-            }
-
-            if (sendMode === 'direct') {
-              // send url directly
-              await sendDirect()
-            } else if (sendMode === 'download') {
-              // download send
-              await sendDownload()
-            } else {
-              // auto mode
-              await axios
-                .head(data.url, {
-                  ...axiosConfig,
-                  ...discord.axiosConfig,
-                  headers: {
-                    accept: 'image/*',
-                  },
-                })
-                .then(async ({ headers }) => {
-                  if (headers['content-type'].includes('image')) {
-                    await sendDirect()
-                  } else {
-                    await sendDownload()
-                  }
-                }, async () => {
-                  await sendDownload()
-                })
-                .catch(() => {
-                  throw new SenderError(data.url, data, this.selfId)
-                })
-            }
-          }
-        }
       }
     }
-    if (needSend.trim()) await sendMessage()
+
+    await sendBuffer()
     return sentMessageId
   }
 
