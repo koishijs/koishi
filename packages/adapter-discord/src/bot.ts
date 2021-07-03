@@ -85,6 +85,13 @@ export class DiscordBot extends Bot<'discord'> {
   }
 
   private async _sendAsset(requestUrl: string, type: string, data: Record<string, string>, addition: Record<string, any>) {
+    const { axiosConfig, discord = {} } = this.app.options
+
+    if (discord.handleMixedContent === 'separate' && addition.content) {
+      await this._sendContent(requestUrl, addition.content, addition)
+      addition.content = ''
+    }
+
     if (data.url.startsWith('file://')) {
       return this._sendEmbed(requestUrl, readFileSync(data.url.slice(8)), addition)
     } else if (data.url.startsWith('base64://')) {
@@ -92,11 +99,12 @@ export class DiscordBot extends Bot<'discord'> {
       return await this._sendEmbed(requestUrl, a, addition)
     }
 
-    const { axiosConfig, discord = {} } = this.app.options
-    const sendMode =
-      data.mode as HandleExternalAsset || // define in segment
-      discord.handleExternalAsset || // define in app options
-      'auto' // default
+    const sendDirect = async () => {
+      if (addition.content) {
+        await this._sendContent(requestUrl, addition.content, addition)
+      }
+      return this._sendContent(requestUrl, data.url, addition)
+    }
 
     const sendDownload = async () => {
       const a = await axios.get(data.url, {
@@ -110,12 +118,11 @@ export class DiscordBot extends Bot<'discord'> {
       return this._sendEmbed(requestUrl, a.data, addition)
     }
 
-    if (addition.content) {
+    const mode = data.mode as HandleExternalAsset || discord.handleExternalAsset
+    if (mode === 'download' || discord.handleMixedContent === 'attach' && addition.content) {
       return sendDownload()
-    } else if (sendMode === 'direct') {
-      return this._sendContent(requestUrl, data.url, addition)
-    } else if (sendMode === 'download') {
-      return sendDownload()
+    } else if (mode === 'direct') {
+      return sendDirect()
     }
 
     // auto mode
@@ -126,8 +133,8 @@ export class DiscordBot extends Bot<'discord'> {
         accept: type + '/*',
       },
     }).then(({ headers }) => {
-      if (headers['content-type'].includes(type)) {
-        return this._sendContent(requestUrl, data.url, addition)
+      if (headers['content-type'].startsWith(type)) {
+        return sendDirect()
       } else {
         return sendDownload()
       }
@@ -135,7 +142,6 @@ export class DiscordBot extends Bot<'discord'> {
   }
 
   private async _sendMessage(requestUrl: string, content: string, addition: Record<string, any> = {}) {
-    const { discord = {} } = this.app.options
     const chain = segment.parse(content)
     let messageId = '0'
     let textBuffer = ''
@@ -163,16 +169,11 @@ export class DiscordBot extends Bot<'discord'> {
       } else if (type === 'face' && data.name && data.id) {
         textBuffer += `<:${data.name}:${data.id}>`
       } else if ((type === 'image' || type === 'video') && data.url) {
-        if (discord.handleMixedContent === 'separate') {
-          await sendBuffer()
-          messageId = await this._sendAsset(requestUrl, type, data, addition)
-        } else {
-          messageId = await this._sendAsset(requestUrl, type, data, {
-            ...addition,
-            content: textBuffer.trim(),
-          })
-          textBuffer = ''
-        }
+        messageId = await this._sendAsset(requestUrl, type, data, {
+          ...addition,
+          content: textBuffer.trim(),
+        })
+        textBuffer = ''
       } else if (type === 'share') {
         await sendBuffer()
         const r = await this.request('POST', requestUrl, {

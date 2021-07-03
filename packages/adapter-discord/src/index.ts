@@ -18,7 +18,8 @@ interface DiscordOptions extends Adapter.WsClientOptions {
   /**
    * 发送图文等混合内容时采用的方法
    * - separate：将每个不同形式的内容分开发送
-   * - attach：图片前如果有文本内容，则将文本作为图片的附带信息进行发送（默认）
+   * - attach：图片前如果有文本内容，则将文本作为图片的附带信息进行发送
+   * - auto：如果图片本身采用直接发送则与前面的文本分开，否则将文本作为图片的附带信息发送（默认）
    */
   handleMixedContent?: HandleMixedContent
 }
