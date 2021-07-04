@@ -1,5 +1,5 @@
 /* eslint-disable camelcase */
-import { AuthorInfo, ChannelInfo, GroupInfo, segment, Session, UserInfo } from 'koishi-core'
+import { AuthorInfo, ChannelInfo, GroupInfo, MessageInfo, segment, Session, UserInfo } from 'koishi-core'
 import { DiscordBot } from './bot'
 import * as DC from './types'
 
@@ -103,7 +103,7 @@ export function adaptMessage(bot: DiscordBot, meta: DC.Message, session: Partial
       session.content += segment('video', { url: embed.video.url, proxy_url: embed.video.proxy_url })
     }
   }
-  return session
+  return session as MessageInfo
 }
 
 function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: Partial<Session> = {}) {

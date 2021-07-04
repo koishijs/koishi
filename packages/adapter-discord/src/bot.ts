@@ -240,7 +240,7 @@ export class DiscordBot extends Bot<'discord'> {
     result.author.nickname = msg.member?.nick
     if (msg.message_reference) {
       const quoteMsg = await this.$getMessage(msg.message_reference.channel_id, msg.message_reference.message_id)
-      result.quote = await adaptMessage(this, quoteMsg)
+      result.quote = adaptMessage(this, quoteMsg)
     }
     return result
   }
@@ -258,6 +258,19 @@ export class DiscordBot extends Bot<'discord'> {
   async getChannel(channelId: string) {
     const data = await this.$getChannel(channelId)
     return adaptChannel(data)
+  }
+
+  async $createReaction(channelId: string, messageId: string, emoji: string) {
+    await this.request('PUT', `/channels/${channelId}/messages/${messageId}/reactions/${emoji}/@me`)
+  }
+
+  async $deleteReaction(channelId: string, messageId: string, emoji: string, userId = '@me') {
+    await this.request('DELETE', `/channels/${channelId}/messages/${messageId}/reactions/${emoji}/${userId}`)
+  }
+
+  async $deleteAllReactions(channelId: string, messageId: string, emoji?: string) {
+    const path = emoji ? '/' + emoji : ''
+    await this.request('DELETE', `/channels/${channelId}/messages/${messageId}/reactions${path}`)
   }
 
   async $executeWebhook(id: string, token: string, data: DC.ExecuteWebhookBody, wait = false): Promise<string> {
