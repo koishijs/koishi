@@ -30,7 +30,7 @@ export const adaptAuthor = (author: DC.User): AuthorInfo => ({
   nickname: author.username,
 })
 
-export async function adaptMessage(bot: DiscordBot, meta: DC.Message, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
+export async function adaptMessage(bot: DiscordBot, meta: DC.Message, session: Partial<Session> = {}) {
   if (meta.author) {
     session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id
@@ -106,7 +106,7 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.Message, session: P
   return session
 }
 
-async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: Partial<Session.Message> = {}) {
+async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: Partial<Session> = {}) {
   await adaptMessage(bot, meta, session)
   session.messageId = meta.id
   session.timestamp = new Date(meta.timestamp).valueOf() || Date.now()
@@ -119,7 +119,7 @@ async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: P
 }
 
 export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
-  const session: Partial<Session.Payload<Session.MessageAction>> = {
+  const session: Partial<Session> = {
     selfId: bot.selfId,
     platform: 'discord',
   }

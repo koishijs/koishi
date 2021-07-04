@@ -69,7 +69,7 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
             renameProperty(self, 'selfId', 'userId')
             Object.assign(bot, self)
             logger.debug('session_id ' + bot._sessionId)
-            resolve()
+            return resolve()
           }
           const session = await adaptSession(bot, parsed)
           if (session) this.dispatch(session)
