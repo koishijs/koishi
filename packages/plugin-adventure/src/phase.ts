@@ -43,7 +43,7 @@ namespace Phase {
 
   export const userSessionMap: Record<string, [Adventurer.Session, NodeJS.Timer]> = {}
   export const channelUserMap: Record<string, [string, NodeJS.Timer]> = {}
-  export const activeUsers = new Set<string>()
+  export const activeUsers = new Map<string, any>()
 
   export function getBadEndingCount(user: Pick<User, 'endings'>) {
     return Object.keys(user.endings).filter(id => badEndings.has(id)).length
@@ -365,7 +365,7 @@ namespace Phase {
     await dispatch(session, phase.events, state)
 
     // resolve next phase
-    activeUsers.add(user.id)
+    activeUsers.set(user.id, state)
     const action = typeof next === 'function' && next
       || choices && choose(choices, options)
       || items && useItem(items)
@@ -583,7 +583,8 @@ namespace Phase {
           return `你暂未持有物品“${item}”。`
         }
 
-        const progress = getValue(itemMap[item], user)
+        const state = activeUsers.get(user.id)
+        const progress = getValue(itemMap[item], user, state)
         if (progress) {
           logger.debug('%s use %c', session.user.id, item)
           if (activeUsers.has(session.user.id)) {
