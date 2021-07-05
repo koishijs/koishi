@@ -39,7 +39,6 @@ declare module 'koishi-core' {
   interface EventMap {
     'adventure/check'(session: Adventurer.Session, hints: string[]): void
     'adventure/rank'(name: string): [string, string]
-    'adventure/text'(text: string, session: Adventurer.Session): string
     'adventure/use'(userId: string, progress: string): void
     'adventure/before-sell'(itemMap: Record<string, number>, session: Adventurer.Session): string | undefined
     'adventure/before-use'(item: string, session: Adventurer.Session): string | undefined

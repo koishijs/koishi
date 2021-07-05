@@ -52,6 +52,12 @@ export namespace Session {
         'emotion': {}
       }
     }
+    'reaction-added': {}
+    'reaction-deleted': {
+      'one': {}
+      'all': {}
+      'emoji': {}
+    }
   }
 
   export interface GroupMemberChangeType {

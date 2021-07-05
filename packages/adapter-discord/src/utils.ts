@@ -1,5 +1,5 @@
 /* eslint-disable camelcase */
-import { AuthorInfo, ChannelInfo, GroupInfo, segment, Session, UserInfo } from 'koishi-core'
+import { AuthorInfo, ChannelInfo, GroupInfo, MessageInfo, segment, Session, UserInfo } from 'koishi-core'
 import { DiscordBot } from './bot'
 import * as DC from './types'
 
@@ -30,7 +30,7 @@ export const adaptAuthor = (author: DC.User): AuthorInfo => ({
   nickname: author.username,
 })
 
-export async function adaptMessage(bot: DiscordBot, meta: DC.Message, session: Partial<Session.Payload<Session.MessageAction>> = {}) {
+export function adaptMessage(bot: DiscordBot, meta: DC.Message, session: Partial<Session> = {}) {
   if (meta.author) {
     session.author = adaptAuthor(meta.author)
     session.userId = meta.author.id
@@ -103,11 +103,11 @@ export async function adaptMessage(bot: DiscordBot, meta: DC.Message, session: P
       session.content += segment('video', { url: embed.video.url, proxy_url: embed.video.proxy_url })
     }
   }
-  return session
+  return session as MessageInfo
 }
 
-async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: Partial<Session.Message> = {}) {
-  await adaptMessage(bot, meta, session)
+function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: Partial<Session> = {}) {
+  adaptMessage(bot, meta, session)
   session.messageId = meta.id
   session.timestamp = new Date(meta.timestamp).valueOf() || Date.now()
   // 遇到过 cross post 的消息在这里不会传消息 id
@@ -118,38 +118,64 @@ async function adaptMessageSession(bot: DiscordBot, meta: DC.Message, session: P
   return session
 }
 
+function prepareMessageSession(session: Partial<Session>, data: DC.Message) {
+  session.groupId = data.guild_id
+  session.subtype = data.guild_id ? 'group' : 'private'
+  session.channelId = data.channel_id
+}
+
+function prepareReactionSession(session: Partial<Session>, data: any) {
+  session.userId = data.user_id
+  session.messageId = data.message_id
+  session.groupId = data.guild_id
+  session.channelId = data.channel_id
+  session.subtype = data.guild_id ? 'group' : 'private'
+  if (!data.emoji) return
+  const { id, name } = data.emoji
+  session.content = id ? `${name}:${id}` : name
+}
+
 export async function adaptSession(bot: DiscordBot, input: DC.Payload) {
-  const session: Partial<Session.Payload<Session.MessageAction>> = {
+  const session: Partial<Session> = {
     selfId: bot.selfId,
     platform: 'discord',
   }
   if (input.t === 'MESSAGE_CREATE') {
     session.type = 'message'
-    const msg = input.d as DC.Message
-    session.groupId = msg.guild_id
-    session.subtype = msg.guild_id ? 'group' : 'private'
-    session.channelId = msg.channel_id
-    await adaptMessageSession(bot, input.d, session)
+    prepareMessageSession(session, input.d)
+    adaptMessageSession(bot, input.d, session)
     // dc 情况特殊 可能有 embeds 但是没有消息主体
     // if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_UPDATE') {
     session.type = 'message-updated'
-    const d = input.d as DC.Message
-    session.groupId = d.guild_id
-    session.subtype = d.guild_id ? 'group' : 'private'
-    session.channelId = d.channel_id
-    const msg = await bot.$getMessage(d.channel_id, d.id)
+    prepareMessageSession(session, input.d)
+    const msg = await bot.$getMessage(input.d.channel_id, input.d.id)
     // Unlike creates, message updates may contain only a subset of the full message object payload
     // https://discord.com/developers/docs/topics/gateway#message-update
-    await adaptMessageSession(bot, msg, session)
+    adaptMessageSession(bot, msg, session)
     // if (!session.content) return
     if (session.userId === bot.selfId) return
   } else if (input.t === 'MESSAGE_DELETE') {
     session.type = 'message-deleted'
-    session.messageId = input.d.id
-    session.groupId = input.d.guild_id
-    session.channelId = input.d.channel_id
+    prepareMessageSession(session, input.d)
+  } else if (input.t === 'MESSAGE_REACTION_ADD') {
+    session.type = 'reaction-added'
+    prepareReactionSession(session, input.d)
+  } else if (input.t === 'MESSAGE_REACTION_REMOVE') {
+    session.type = 'reaction-deleted'
+    session.subtype = 'one'
+    prepareReactionSession(session, input.d)
+  } else if (input.t === 'MESSAGE_REACTION_REMOVE_ALL') {
+    session.type = 'reaction-deleted'
+    session.subtype = 'all'
+    prepareReactionSession(session, input.d)
+  } else if (input.t === 'MESSAGE_REACTION_REMOVE_EMOJI') {
+    session.type = 'reaction-deleted'
+    session.subtype = 'emoji'
+    prepareReactionSession(session, input.d)
+  } else {
+    return
   }
   return new Session(bot.app, session)
 }

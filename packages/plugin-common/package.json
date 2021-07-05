@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-common",
   "description": "Common plugins for Koishi",
-  "version": "4.3.0",
+  "version": "4.3.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,7 +30,7 @@
     "plugin"
   ],
   "peerDependencies": {
-    "koishi-core": "^3.12.1",
+    "koishi-core": "^3.12.2",
     "koishi-utils": "^4.2.3"
   },
   "devDependencies": {

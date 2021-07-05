@@ -6,7 +6,7 @@ import WebSocket from 'ws'
 
 const logger = new Logger('discord')
 
-// https://discord.com/developers/docs/topics/gateway
+/** https://discord.com/developers/docs/topics/gateway */
 export default class WsClient extends Adapter.WsClient<'discord'> {
   constructor(app: App) {
     super(app, DiscordBot, app.options.discord)
@@ -59,17 +59,20 @@ export default class WsClient extends Adapter.WsClient<'discord'> {
               token: bot.token,
               properties: {},
               compress: false,
-              intents: (1 << 9) + (1 << 12),
+              // https://discord.com/developers/docs/topics/gateway#gateway-intents
+              intents: (1 << 9) + (1 << 10) + (1 << 12) + (1 << 13),
             },
           }))
-        } else if (parsed.op === Opcode.Dispatch) {
+        }
+
+        if (parsed.op === Opcode.Dispatch) {
           if (parsed.t === 'READY') {
             bot._sessionId = parsed.d.session_id
             const self: any = adaptUser(parsed.d.user)
             renameProperty(self, 'selfId', 'userId')
             Object.assign(bot, self)
             logger.debug('session_id ' + bot._sessionId)
-            resolve()
+            return resolve()
           }
           const session = await adaptSession(bot, parsed)
           if (session) this.dispatch(session)

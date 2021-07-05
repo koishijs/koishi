@@ -162,18 +162,14 @@ export class State {
     return output
   }
 
-  async draw(session: Session, message: string = '', x?: number, y?: number) {
+  async draw(session: Session, message = '', x?: number, y?: number) {
+    if (message) message += '\n'
     if (this.imageMode ?? State.imageMode) {
-      const [image] = await Promise.all([
-        this.drawSvg(x, y).render(session.app),
-        message && session.send(message),
-      ])
-      await session.send(image)
+      message += await this.drawSvg(x, y).render(session.app)
     } else {
-      if (message) message += '\n'
       message += this.drawText(x, y)
-      await session.send(message)
     }
+    await session.send(message)
   }
 
   set(x: number, y: number, value: 0 | 1 | -1) {

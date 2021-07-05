@@ -138,6 +138,7 @@ namespace Event {
         .replace('$r', `（${rarity}）`))
       if (!session._skipAll) output.push(description)
       if (result) output.push(result)
+      session._gains.add(name)
     }
     session.app.emit('adventure/gain', itemMap, session, output)
     return output.join('\n')
@@ -178,9 +179,9 @@ namespace Event {
 
   export const lose = <T>(items: Adventurer.Infer<Item.Pack, T>, reason = '$s 失去了$i！'): Visible<T> => (session, state) => {
     const itemMap = toItemMap(getValue(items, session.user, state))
-    const output = [reason.replace('$i', () => {
-      return Item.format(Array.isArray(items) ? items : itemMap)
-    })]
+    const output = reason
+      ? [reason.replace('$i', () => Item.format(Array.isArray(items) ? items : itemMap))]
+      : []
     for (const name in itemMap) {
       const result = Item.lose(session, name)
       if (result) output.push(result)

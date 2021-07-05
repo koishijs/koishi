@@ -236,6 +236,22 @@ export class KaiheilaBot extends Bot {
     }
   }
 
+  async $createReaction(channelId: string, messageId: string, emoji: string) {
+    if (channelId.length > 30) {
+      await this.request('POST', '/direct-message/add-reaction', { msg_id: messageId, emoji })
+    } else {
+      await this.request('POST', '/message/add-reaction', { msg_id: messageId, emoji })
+    }
+  }
+
+  async $deleteReaction(channelId: string, messageId: string, emoji: string, userId?: string) {
+    if (channelId.length > 30) {
+      await this.request('POST', '/direct-message/delete-reaction', { msg_id: messageId, emoji })
+    } else {
+      await this.request('POST', '/message/delete-reaction', { msg_id: messageId, emoji, user_id: userId })
+    }
+  }
+
   async getSelf() {
     const data = adaptUser(await this.request<KHL.Self>('GET', '/user/me'))
     renameProperty(data, 'selfId' as never, 'userId')

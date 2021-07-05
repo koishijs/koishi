@@ -1,11 +1,10 @@
-import { Context, User, Session, checkTimer, checkUsage, Logger, Random, interpolate, noop, Time } from 'koishi-core'
+import { Context, User, Session, checkTimer, Logger, Random, interpolate, Time } from 'koishi-core'
 import { ReadonlyUser, getValue, Adventurer, Show } from './utils'
-import Event from './event'
 import {} from 'koishi-plugin-common'
 import {} from 'koishi-plugin-teach'
+import Event from './event'
 import Rank from './rank'
 import Item from './item'
-import Buff from './buff'
 
 declare module 'koishi-core' {
   interface Session<U> {
@@ -44,7 +43,7 @@ namespace Phase {
 
   export const userSessionMap: Record<string, [Adventurer.Session, NodeJS.Timer]> = {}
   export const channelUserMap: Record<string, [string, NodeJS.Timer]> = {}
-  export const activeUsers = new Set<string>()
+  export const activeUsers = new Map<string, any>()
 
   export function getBadEndingCount(user: Pick<User, 'endings'>) {
     return Object.keys(user.endings).filter(id => badEndings.has(id)).length
@@ -66,8 +65,7 @@ namespace Phase {
 
   export function sendEscaped(session: Adventurer.Session, message: string | void, ms?: number) {
     if (!message) return
-    message = session.app.chain('adventure/text', message, session)
-    return session.sendQueued(message, ms)
+    return session.sendQueued(message.replace(/\$s/g, () => session.username), ms)
   }
 
   export function use<S>(name: string, next: string, phase: Phase<S>): void
@@ -210,7 +208,7 @@ namespace Phase {
       return getValue(next, user)
     }
 
-    if (fallback && checkTimer('$drunk', user)) {
+    if (!fallback && checkTimer('$drunk', user)) {
       await sendEscaped(session, output)
       const choice = onDrunk
         ? choices.find(c => c.name === onDrunk)
@@ -321,7 +319,7 @@ namespace Phase {
   }
 
   /** display phase texts */
-  export async function print(session: Adventurer.Session, texts: string[], canSkip = true, state = {}) {
+  export async function print(session: Adventurer.Session, texts: string[], state = {}, canSkip = true) {
     session._canSkip = canSkip
     if (!session._skipAll || !session._canSkip) {
       for (const text of texts || []) {
@@ -333,12 +331,12 @@ namespace Phase {
   }
 
   /** handle events */
-  async function epilog(session: Adventurer.Session, events: Event[] = []) {
+  export async function dispatch(session: Adventurer.Session, events: Event[] = [], state = {}) {
     session._gains = new Set()
 
     const hints: string[] = []
     for (const event of events || []) {
-      const result = event(session)
+      const result = event(session, state)
       if (!session._skipAll) {
         await sendEscaped(session, result)
       } else if (result) {
@@ -360,14 +358,14 @@ namespace Phase {
     if (!phase) return logger.warn('phase not found %c', user.progress)
 
     logger.debug('%s phase %c', session.userId, user.progress)
-    const { items, choices, next, options, prepare = noop } = phase
+    const { items, choices, next, options, prepare = ({ user }) => user } = phase
 
     const state = prepare(session)
-    await print(session, getValue(phase.texts, user, state), user.phases.includes(user.progress), state)
-    await epilog(session, phase.events)
+    await print(session, getValue(phase.texts, user, state), state, user.phases.includes(user.progress))
+    await dispatch(session, phase.events, state)
 
     // resolve next phase
-    activeUsers.add(user.id)
+    activeUsers.set(user.id, state)
     const action = typeof next === 'function' && next
       || choices && choose(choices, options)
       || items && useItem(items)
@@ -552,22 +550,12 @@ namespace Phase {
     ctx.command('adv/use [item]', '使用物品', { maxUsage: 100 })
       .userFields(['progress'])
       .userFields(Adventurer.fields)
-      .checkTimer('$system')
       .shortcut('使用', { fuzzy: true })
       .shortcut('不使用物品', { options: { nothing: true } })
       .shortcut('不使用任何物品', { options: { nothing: true } })
       .option('nothing', '-n  不使用任何物品，直接进入下一剧情')
-      .action(({ session, options }) => {
-        if (options.nothing) return
-        const user = session.user
-        if (!checkTimer('$use', user)) return
-        const buff = Buff.timers['$use']
-        if (!checkUsage('$useHint', user, 1)) {
-          const rest = user.timers['$use'] - Date.now()
-          session.send(`您当前处于「${buff[0]}」状态，无法调用本功能，剩余 ${Time.formatTime(rest)}。`)
-        }
-        return ''
-      })
+      .checkTimer('$system')
+      .checkTimer('$use', ({ options }) => !options.nothing)
       .action(async (argv, item) => {
         const { options, session } = argv
         const { user } = session
@@ -595,7 +583,8 @@ namespace Phase {
           return `你暂未持有物品“${item}”。`
         }
 
-        const progress = getValue(itemMap[item], user)
+        const state = activeUsers.get(user.id)
+        const progress = getValue(itemMap[item], user, state)
         if (progress) {
           logger.debug('%s use %c', session.user.id, item)
           if (activeUsers.has(session.user.id)) {

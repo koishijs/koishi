@@ -41,3 +41,27 @@ sidebarDepth: 2
 - 类型: [`AxiosRequestConfig`](https://github.com/axios/axios#request-config)
 
 用于 discord 适配器的请求配置。
+
+### options.discord.handleExternalAsset
+
+- 可选值: `string`
+- 默认值: `'auto'`
+
+指定单独发送外链资源时采用的方法：
+
+- **download:** 先下载后发送
+- **direct:** 直接发送链接
+- **auto:** 发送一个 HEAD 请求，如果返回的 Content-Type 正确，则直接发送链接，否则先下载后发送
+
+### options.discord.handleMixedContent
+
+- 可选值: `string`
+- 默认值: `'auto'`
+
+指定发送图文混合内容时采用的方法：
+
+- **separate:** 将每个不同形式的内容分开发送
+- **attach:** 图片前如果有文本内容，则将文本作为图片的附带信息进行发送
+- **auto:** 如果图片本身采用直接发送则与前面的文本分开，否则将文本作为图片的附带信息发送
+
+当配置为 `attach` 并且发送文本+图片形式的消息时，无论 [`handleExternalAsset`](#options-discord-handleexternalasset) 配置为何都会先下载后发送。

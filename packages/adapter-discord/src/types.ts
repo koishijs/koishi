@@ -61,27 +61,27 @@ export interface Emoji {
 
 /** https://discord.com/developers/docs/resources/channel#channel-object-channel-structure */
 export interface Channel {
-  id: snowflake;
-  type: number;
-  guild_id?: string;
-  position?: number;
-  permission_overwrites?: Overwrite[];
-  name?: string;
-  topic?: string;
-  nsfw?: boolean;
-  last_message_id?: snowflake;
-  bitrate?: number;
-  user_limit?: number;
-  rate_limit_per_user?: number;
-  recipients?: User[];
-  icon?: string;
-  owner_id?: snowflake;
-  application_id?: snowflake;
-  parent_id?: snowflake;
-  last_pin_timestamp?: ISO8601;
+  id: snowflake
+  type: number
+  guild_id?: string
+  position?: number
+  permission_overwrites?: Overwrite[]
+  name?: string
+  topic?: string
+  nsfw?: boolean
+  last_message_id?: snowflake
+  bitrate?: number
+  user_limit?: number
+  rate_limit_per_user?: number
+  recipients?: User[]
+  icon?: string
+  owner_id?: snowflake
+  application_id?: snowflake
+  parent_id?: snowflake
+  last_pin_timestamp?: ISO8601
 }
 
-type ChannelModifyProps = 
+type ChannelModifyProps =
   | 'name'
   | 'type'
   | 'position'
@@ -97,52 +97,52 @@ export type ModifyChannel = Partial<Pick<Channel, ChannelModifyProps>>
 
 /** https://discord.com/developers/docs/resources/guild#guild-object-guild-structure */
 export interface Guild {
-  id: snowflake;
-  name: string;
-  icon?: string;
-  icon_hash?: string;
-  splash?: string;
-  discovery_splash?: string;
-  owner?: boolean;
-  owner_id: snowflake;
-  permissions?: string;
-  region: string;
-  afk_channel_id: snowflake;
-  afk_timeout: number;
-  widget_enabled?: boolean;
-  widget_channel_id?: snowflake;
-  verification_level: number;
-  default_message_notifications: number;
-  explicit_content_filter: number;
-  roles: Role[];
-  emojis: Emoji[];
-  features: string[];
-  mfa_level: number;
-  application_id: snowflake;
-  system_channel_id: snowflake;
-  system_channel_flags: number;
-  rules_channel_id: snowflake;
-  joined_at?: string;
-  large?: boolean;
-  unavailable?: boolean;
-  member_count?: number;
-  voice_states?: any[];
-  members?: GuildMember[];
+  id: snowflake
+  name: string
+  icon?: string
+  icon_hash?: string
+  splash?: string
+  discovery_splash?: string
+  owner?: boolean
+  owner_id: snowflake
+  permissions?: string
+  region: string
+  afk_channel_id: snowflake
+  afk_timeout: number
+  widget_enabled?: boolean
+  widget_channel_id?: snowflake
+  verification_level: number
+  default_message_notifications: number
+  explicit_content_filter: number
+  roles: Role[]
+  emojis: Emoji[]
+  features: string[]
+  mfa_level: number
+  application_id: snowflake
+  system_channel_id: snowflake
+  system_channel_flags: number
+  rules_channel_id: snowflake
+  joined_at?: string
+  large?: boolean
+  unavailable?: boolean
+  member_count?: number
+  voice_states?: any[]
+  members?: GuildMember[]
   channels?: Channel[]
-  presences?: any[];
-  max_presences?: number;
-  max_members?: number;
-  vanity_url_code?: string;
-  description?: string;
-  banner?: string;
-  premium_tier: number;
-  premium_subscription_count?: number;
-  preferred_locale: string;
-  public_updates_channel_id?: snowflake;
-  max_video_channel_users?: number;
-  approximate_member_count?: number;
-  approximate_presence_count?: number;
-  welcome_screen?: any;
+  presences?: any[]
+  max_presences?: number
+  max_members?: number
+  vanity_url_code?: string
+  description?: string
+  banner?: string
+  premium_tier: number
+  premium_subscription_count?: number
+  preferred_locale: string
+  public_updates_channel_id?: snowflake
+  max_video_channel_users?: number
+  approximate_member_count?: number
+  approximate_presence_count?: number
+  welcome_screen?: any
 }
 
 type GuildModifyProps =
@@ -177,7 +177,7 @@ export interface User {
   verified?: boolean
   email?: string
   flags: number
-  premium_type?: number;
+  premium_type?: number
   public_flags?: number
 }
 
@@ -193,43 +193,43 @@ export interface ChannelMention {
 
 /** https://discord.com/developers/docs/resources/channel#reaction-object-reaction-structure */
 export interface Reaction {
-  count: number;
-  me: boolean;
+  count: number
+  me: boolean
   emoji: Partial<Emoji>
 }
 
 /** https://discord.com/developers/docs/resources/channel#message-object-message-activity-structure */
 export interface MessageActivity {
-  type: number;
+  type: number
   party_id?: string
 }
 
 /** https://discord.com/developers/docs/resources/channel#message-object-message-application-structure */
 export interface MessageApplication {
-  id: snowflake;
+  id: snowflake
   cover_image?: string
-  description: string;
-  icon?: string;
+  description: string
+  icon?: string
   name: string
 }
 
 /** https://discord.com/developers/docs/resources/channel#message-object-message-sticker-structure */
 export interface Sticker {
-  id: snowflake;
-  pack_id: snowflake;
-  name: string;
-  description: string;
-  tags?: string;
-  asset: string;
-  preview_asset?: string;
+  id: snowflake
+  pack_id: snowflake
+  name: string
+  description: string
+  tags?: string
+  asset: string
+  preview_asset?: string
   format_type: number
 }
 
 /** https://discord.com/developers/docs/interactions/slash-commands#messageinteraction */
 export interface MessageInteraction {
-  id: snowflake;
-  type: number;
-  name: string;
+  id: snowflake
+  type: number
+  name: string
   user: User
 }
 
@@ -245,7 +245,7 @@ export interface Message {
   edited_timestamp: ISO8601
   tts: boolean
   mention_everyone: boolean
-  mentions: User[];
+  mentions: User[]
   mention_roles: snowflake[]
   mention_channels: ChannelMention[]
   attachments: Attachment[]
@@ -279,7 +279,7 @@ export interface Embed {
   description?: string
   url?: string
   timestamp?: string
-  color?: number;
+  color?: number
   video?: {
     url?: string
     proxy_url?: string
@@ -301,21 +301,21 @@ export interface Embed {
   }
 
   footer?: {
-    text: string;
-    icon_url?: string;
-    proxy_icon_url?: string;
+    text: string
+    icon_url?: string
+    proxy_icon_url?: string
   }
 
   author?: {
-    name?: string;
-    url?: string;
-    icon_url?: string;
-    proxy_icon_url?: string;
+    name?: string
+    url?: string
+    icon_url?: string
+    proxy_icon_url?: string
   }
 
   provider?: {
-    name?: string;
-    url?: string;
+    name?: string
+    url?: string
   }
 
   fields?: {
@@ -373,11 +373,11 @@ export interface GuildMember {
   user?: DiscordUser
   nick?: string
   roles: snowflake[]
-  joined_at: string;
-  premium_since?: string;
-  deaf: boolean;
-  mute: boolean;
-  pending?: boolean;
+  joined_at: string
+  premium_since?: string
+  deaf: boolean
+  mute: boolean
+  pending?: boolean
   permissions?: string
 }
 
@@ -400,7 +400,7 @@ export interface ExecuteWebhookBody {
   content: string
   username?: string
   avatar_url?: string
-  tts?: boolean;
+  tts?: boolean
   embeds?: Embed[]
   common_embeds?: Embed[]
   allowed_mentions?: AllowedMention[]
@@ -408,17 +408,17 @@ export interface ExecuteWebhookBody {
 
 /** https://discord.com/developers/docs/resources/channel#overwrite-object-overwrite-structure */
 export interface Overwrite {
-  id: snowflake;
-  type: 0 | 1;
-  allow: string;
-  deny: string;
+  id: snowflake
+  type: 0 | 1
+  allow: string
+  deny: string
 }
 
 /** https://discord.com/developers/docs/topics/permissions#role-object-role-structure */
 export interface Role {
   id: snowflake
   name: string
-  color: number;
+  color: number
   hoist: boolean
   position: number
   permissions: string
@@ -433,22 +433,22 @@ export interface Role {
 
 /** https://discord.com/developers/docs/resources/guild#create-guild-role-json-params */
 export interface GuildRoleBody {
-  name: string;
+  name: string
   permissions: string
-  color: number;
-  hoist: boolean;
+  color: number
+  hoist: boolean
   mentionable: boolean
 }
 
 /** https://discord.com/developers/docs/resources/webhook#webhook-object-webhook-structure */
 export interface Webhook {
-  id: snowflake;
-  type: number;
-  guild_id?: snowflake;
-  channel_id: snowflake;
-  user?: User;
-  name?: string;
-  avatar?: string;
-  token?: string;
+  id: snowflake
+  type: number
+  guild_id?: snowflake
+  channel_id: snowflake
+  user?: User
+  name?: string
+  avatar?: string
+  token?: string
   application_id: snowflake
 }
