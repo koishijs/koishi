@@ -80,7 +80,7 @@ sidebarDepth: 2
 - **timeout:** `number` 中间件的生效时间，缺省时会使用 [`app.options.delay.prompt`](./app.md#options-delay)
 - 返回值: `Promise<string>` 用户输入
 
-等待当前会话的下一次输入，如果超时则会 reject。
+等待当前会话的下一次输入，如果超时则会返回 `''`。
 
 ### session.suggest(options)
 
