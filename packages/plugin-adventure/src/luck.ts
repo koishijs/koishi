@@ -1,5 +1,5 @@
 import { Context, getUsage, Session, checkTimer, checkUsage, User, Random } from 'koishi-core'
-import { Adventurer, ReadonlyUser } from './utils'
+import { Adventurer } from './utils'
 import Affinity from './affinity'
 import Phase from './phase'
 import Item from './item'
@@ -15,19 +15,19 @@ namespace Luck {
     return Math.min(Math.max(luck, -MAX_LUCKY), MAX_LUCKY)
   }
 
-  export function coefficient(user: Pick<ReadonlyUser, 'timers'>) {
-    return checkTimer('$reverseLucky', user) ? -1 : 1
+  export function coefficient(user: Adventurer.Readonly<'timers'>) {
+    return checkTimer('$reverseLucky', user as Adventurer) ? -1 : 1
   }
 
-  export function get(user: Pick<ReadonlyUser, Field>) {
+  export function get(user: Adventurer.Readonly<Field>) {
     return restrict(
       (coefficient(user) * user.luck) +
-      (checkTimer('$mellow', user) ? 10 : 0) +
-      (checkTimer('$luckyBonus', user) ? 5 : 0),
+      (checkTimer('$mellow', user as Adventurer) ? 10 : 0) +
+      (checkTimer('$luckyBonus', user as Adventurer) ? 5 : 0),
     )
   }
 
-  export function use(user: Pick<ReadonlyUser, Field>, base = DEFAULT_BASE) {
+  export function use(user: Adventurer.Readonly<Field>, base = DEFAULT_BASE) {
     return new Random(1 / (1 + (1 / Math.random() - 1) * base ** get(user)))
   }
 

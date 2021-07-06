@@ -1,5 +1,5 @@
 import { Context, User, Session, checkTimer, Logger, Random, interpolate, Time } from 'koishi-core'
-import { ReadonlyUser, getValue, Adventurer, Show } from './utils'
+import { getValue, Adventurer, Show } from './utils'
 import {} from 'koishi-plugin-common'
 import {} from 'koishi-plugin-teach'
 import Event from './event'
@@ -24,14 +24,14 @@ declare module 'koishi-core' {
 }
 
 interface Phase<S = any> {
-  prepare?: Adventurer.Callback<S>
+  prepare?: (session: Adventurer.Session) => S
   texts?: Adventurer.Infer<string[], S>
-  items?: Record<string, ReadonlyUser.Infer<string, S>>
+  items?: Record<string, Adventurer.Infer<string, S>>
   choices?: Phase.Choice[]
   options?: Phase.ChooseOptions
   next?: string | Phase.Action<S>
-  itemsWhenDreamy?: string[]
   events?: Event<S>[]
+  beforeUse?(session: Adventurer.Session, usable: Set<string>): void
 }
 
 namespace Phase {
@@ -39,7 +39,7 @@ namespace Phase {
 
   export const mainEntry: Phase = { items: {} }
   export const registry: Record<string, Phase> = { '': mainEntry }
-  export const salePlots: Record<string, ReadonlyUser.Infer<string, Adventurer.Field>> = {}
+  export const salePlots: Record<string, Adventurer.Infer<string, Adventurer.Field>> = {}
 
   export const userSessionMap: Record<string, [Adventurer.Session, NodeJS.Timer]> = {}
   export const channelUserMap: Record<string, [string, NodeJS.Timer]> = {}
@@ -69,8 +69,8 @@ namespace Phase {
   }
 
   export function use<S>(name: string, next: string, phase: Phase<S>): void
-  export function use(name: string, next: (user: ReadonlyUser) => string): void
-  export function use(name: string, next: ReadonlyUser.Infer<string>, phase?: Phase) {
+  export function use(name: string, next: (user: Adventurer.Readonly) => string): void
+  export function use(name: string, next: Adventurer.Infer<string>, phase?: Phase) {
     mainEntry.items[name] = next
     if (typeof next === 'string' && phase) {
       registry[next] = phase
@@ -78,8 +78,8 @@ namespace Phase {
   }
 
   export function sell<S>(name: string, next: string, phase: Phase<S>): void
-  export function sell(name: string, next: (user: ReadonlyUser) => string): void
-  export function sell(name: string, next: ReadonlyUser.Infer<string>, phase?: Phase) {
+  export function sell(name: string, next: (user: Adventurer.Readonly) => string): void
+  export function sell(name: string, next: Adventurer.Infer<string>, phase?: Phase) {
     salePlots[name] = next
     if (typeof next === 'string' && phase) {
       registry[next] = phase
@@ -157,7 +157,7 @@ namespace Phase {
     /** 触发选项后跳转到的下个阶段 */
     next: Adventurer.Infer<string>
     /** 选项出现的条件 */
-    when?(user: ReadonlyUser): boolean
+    when?(user: Adventurer.Readonly): boolean
   }
 
   export interface ChooseOptions {
@@ -263,7 +263,7 @@ namespace Phase {
     })
   }
 
-  export const useItem = (items: Record<string, ReadonlyUser.Infer<string>>): Action => async (session) => {
+  export const useItem = (items: Record<string, Adventurer.Infer<string>>): Action => async (session) => {
     if (!items) return
     const { user, app } = session
 
@@ -572,19 +572,16 @@ namespace Phase {
         const phase = getPhase(user)
         if (!phase) return
 
-        const { items: itemMap = {}, itemsWhenDreamy = [] } = phase
-        const usableItems = checkTimer('$dream', user)
-          ? new Set([...itemsWhenDreamy, ...possess])
-          : new Set(possess)
-
+        const usable = new Set(possess)
+        phase.beforeUse?.(session, usable)
         if (options.nothing) item = ''
-        if (item && !usableItems.has(item)) {
+        if (item && !usable.has(item)) {
           if (session._skipAll) return
           return `你暂未持有物品“${item}”。`
         }
 
         const state = activeUsers.get(user.id)
-        const progress = getValue(itemMap[item], user, state)
+        const progress = getValue(phase.items[item], user, state)
         if (progress) {
           logger.debug('%s use %c', session.user.id, item)
           if (activeUsers.has(session.user.id)) {
