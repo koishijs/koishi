@@ -1,5 +1,5 @@
 import { Context, checkTimer, Argv, User, isInteger, Random } from 'koishi-core'
-import { getValue, Adventurer, Show } from './utils'
+import { Adventurer, Show } from './utils'
 import Event from './event'
 import Phase from './phase'
 import Rank from './rank'
@@ -421,7 +421,7 @@ namespace Item {
         if (!user.progress && entries.length === 1 && entries[0][1] === 1 && entries[0][0] in Phase.salePlots) {
           const saleAction = Phase.salePlots[entries[0][0]]
           await session.observeUser(Adventurer.fields)
-          const progress = getValue(saleAction, user)
+          const progress = Adventurer.getValue(saleAction, user, null)
           if (progress) {
             const _meta = session as Adventurer.Session
             _meta.user['_skip'] = session._skipAll

@@ -120,22 +120,21 @@ export interface Adventurer {
 
 export namespace Adventurer {
   export type Field = keyof Adventurer
-
   export type Session = Koishi.Session<Field>
-
+  export type Observed<K extends Field = Field> = User.Observed<K>
   export type Readonly<K extends Field = Field> = Pick<DeepReadonly<Adventurer>, K>
-
-  export type Infer<U, T = any> = U extends (...args: any[]) => any ? never : U | ((user: Readonly, state?: T) => U)
+  export type Infer<U, T = any> = [U] extends [(...args: any[]) => any] ? never : U | ((user: Readonly, state?: T) => U)
+  export type Update<U, T = any> = [U] extends [(...args: any[]) => any] ? never : U | ((user: Observed, state?: T) => U)
 
   export const fields: Field[] = [
     'id', 'money', 'warehouse', 'wealth', 'timers', 'gains',
     'flag', 'luck', 'taste', 'recent', 'progress', 'phases',
     'endings', 'usage', 'drunkAchv', 'name', 'achievement',
   ]
-}
 
-export function getValue<U, T>(source: Adventurer.Infer<U, T>, user: Adventurer.Readonly, state?: T): U {
-  return typeof source === 'function' ? (source as any)(user, state) : source
+  export function getValue<U, T>(source: Infer<U, T>, user: Adventurer.Readonly, state: T): U {
+    return typeof source === 'function' ? (source as any)(user, state) : source
+  }
 }
 
 export namespace Show {

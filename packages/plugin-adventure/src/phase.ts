@@ -1,5 +1,5 @@
 import { Context, User, Session, checkTimer, Logger, Random, interpolate, Time } from 'koishi-core'
-import { getValue, Adventurer, Show } from './utils'
+import { Adventurer, Show } from './utils'
 import {} from 'koishi-plugin-common'
 import {} from 'koishi-plugin-teach'
 import Event from './event'
@@ -23,15 +23,13 @@ declare module 'koishi-core' {
   }
 }
 
-interface Phase<S = any> {
+interface Phase<S = any> extends Phase.ChooseOptions, Phase.UseOptions {
   prepare?: (session: Adventurer.Session) => S
   texts?: Adventurer.Infer<string[], S>
   items?: Record<string, Adventurer.Infer<string, S>>
   choices?: Phase.Choice[]
-  options?: Phase.ChooseOptions
   next?: string | Phase.Action<S>
   events?: Event<S>[]
-  beforeUse?(session: Adventurer.Session, usable: Set<string>): void
 }
 
 namespace Phase {
@@ -160,16 +158,20 @@ namespace Phase {
     when?(user: Adventurer.Readonly): boolean
   }
 
-  export interface ChooseOptions {
+  export interface CommonOptions {
+    /** 供当前阶段交互提示使用的模板 */
     template?: string
-    /** 当仅有一个选项时，跳过此选择支 */
-    autoSelect?: boolean
     /**
      * 超时未选后的默认行为
      * - 当未设置时表现为在所有非隐藏分支中随机选择
      * - 如果这里指定为隐藏分支，则提示文本仍然显示为随机选择，但实际效果会进入该隐藏分支
      */
     onTimeout?: string
+  }
+
+  export interface ChooseOptions extends CommonOptions {
+    /** 当仅有一个选项时，跳过此选择支 */
+    autoSelect?: boolean
     /**
      * 醉酒后的默认行为
      * - 当未设置时表现为在所有非隐藏分支中随机选择
@@ -179,14 +181,18 @@ namespace Phase {
     onSelect?(name: string, user: Adventurer): void
   }
 
-  export const choose = (choices: Choice[], options: ChooseOptions = {}): Action => async (session) => {
+  export interface UseOptions extends CommonOptions {
+    beforeUse?(session: Adventurer.Session, usable: Set<string>): void
+  }
+
+  export const choose = (choices: Choice[], options: ChooseOptions = {}): Action => async (session, state) => {
     const { user, app } = session
     const { autoSelect, onTimeout, onDrunk, onSelect } = options
     choices = choices.filter(({ when }) => !when || when(user))
 
     if (choices.length === 1 && autoSelect) {
       logger.debug('%s choose auto', session.userId)
-      return getValue(choices[0].next, user)
+      return Adventurer.getValue(choices[0].next, user, state)
     }
 
     let fallback: Choice
@@ -205,7 +211,7 @@ namespace Phase {
     function applyChoice(choice: Choice) {
       const { name, next } = choice
       if (onSelect) onSelect(name, user)
-      return getValue(next, user)
+      return Adventurer.getValue(next, user, state)
     }
 
     if (!fallback && checkTimer('$drunk', user)) {
@@ -263,13 +269,13 @@ namespace Phase {
     })
   }
 
-  export const useItem = (items: Record<string, Adventurer.Infer<string>>): Action => async (session) => {
-    if (!items) return
+  export const useItem = (items: Record<string, Adventurer.Infer<string>>, options: UseOptions = {}): Action => async (session, state) => {
     const { user, app } = session
+    const { onTimeout = '' } = options
 
     if (checkTimer('$use', user)) {
       logger.debug('%s use disabled', session.userId)
-      return getValue(items[''], user)
+      return Adventurer.getValue(items[''], user, state)
     }
 
     // drunk: use random item
@@ -277,7 +283,7 @@ namespace Phase {
       const nextMap: Record<string, string> = {}
       for (const name in items) {
         if (name && !user.warehouse[name]) continue
-        const next = getValue(items[name], user)
+        const next = Adventurer.getValue(items[name], user, state)
         if (next) nextMap[name] = next
       }
       const name = Random.pick(Object.keys(nextMap))
@@ -290,22 +296,22 @@ namespace Phase {
     }
 
     session._skipCurrent = false
-    await sendEscaped(session, '你现在可以使用特定的物品。若 5 分钟内未使用这些物品之一，将视为放弃使用。你也可以直接输入“不使用任何物品”跳过这个阶段。', 0)
+    let template = `你现在可以使用特定的物品。若 5 分钟内未使用这些物品之一，`
+    template += (onTimeout ? `将自动使用${onTimeout}。` : '将视为放弃使用。')
+    if ('' in items) template += '你也可以直接输入“不使用任何物品”跳过这个阶段。'
+    await sendEscaped(session, options.template || template, 0)
 
     const { predecessors } = app.getSessionState(session)
     predecessors[HOOK_PENDING_USE] = null
 
     return new Promise<string>((resolve) => {
       const timer = setTimeout(() => {
-        disposeListener()
         logger.debug('%s use timeout', session.userId)
-        _resolve(getValue(items[''], user))
+        _resolve(Adventurer.getValue(items[onTimeout], user, state))
       }, 300000)
 
       const disposeListener = app.on('adventure/use', (userId, progress) => {
         if (userId !== user.id) return
-        disposeListener()
-        clearTimeout(timer)
         _resolve(progress)
       })
 
@@ -358,17 +364,17 @@ namespace Phase {
     if (!phase) return logger.warn('phase not found %c', user.progress)
 
     logger.debug('%s phase %c', session.userId, user.progress)
-    const { items, choices, next, options, prepare = ({ user }) => user } = phase
+    const { items, choices, next, prepare = ({ user }) => user } = phase
 
     const state = prepare(session)
-    await print(session, getValue(phase.texts, user, state), state, user.phases.includes(user.progress))
+    await print(session, Adventurer.getValue(phase.texts, user, state), state, user.phases.includes(user.progress))
     await dispatch(session, phase.events, state)
 
     // resolve next phase
     activeUsers.set(user.id, state)
     const action = typeof next === 'function' && next
-      || choices && choose(choices, options)
-      || items && useItem(items)
+      || choices && choose(choices, phase)
+      || items && useItem(items, phase)
       || (async () => next as string)
     const progress = await action(session, state)
     activeUsers.delete(user.id)
@@ -581,7 +587,7 @@ namespace Phase {
         }
 
         const state = activeUsers.get(user.id)
-        const progress = getValue(phase.items[item], user, state)
+        const progress = Adventurer.getValue(phase.items[item], user, state)
         if (progress) {
           logger.debug('%s use %c', session.user.id, item)
           if (activeUsers.has(session.user.id)) {
@@ -594,7 +600,7 @@ namespace Phase {
           return start(session)
         } else {
           if (!item || session._skipAll) return
-          const next = !userSessionMap[session.user.id] && getValue(mainEntry.items[item], user)
+          const next = !userSessionMap[session.user.id] && Adventurer.getValue(mainEntry.items[item], user, state)
           if (next) {
             return `物品“${item}”当前不可用，请尝试输入“继续当前剧情”。`
           } else {
