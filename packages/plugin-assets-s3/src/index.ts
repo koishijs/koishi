@@ -1,10 +1,6 @@
 import {
   Assets,
   Context,
-  Random,
-  sanitize,
-  Time,
-  trimSlash,
 } from "koishi-core";
 import axios, { AxiosRequestConfig } from "axios";
 import {
@@ -14,7 +10,6 @@ import {
   S3ClientConfig,
 } from "@aws-sdk/client-s3";
 import _ from "lodash";
-import FormData from "form-data";
 import { createHash } from "crypto";
 
 const PTC_BASE64 = "base64://";
